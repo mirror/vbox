@@ -2241,6 +2241,51 @@ typedef struct AUDIOTESTFILECMPPARMS
 typedef AUDIOTESTFILECMPPARMS *PAUDIOTESTFILECMPPARMS;
 
 /**
+ * Determines if a given file chunk contains all silence (i.e. non-audible audio data) or not.
+ *
+ * What "silence" means depends on the given PCM parameters.
+ *
+ * @returns VBox status code.
+ * @param   phFile              File handle of file to determine silence for.
+ * @param   pProps              PCM properties to use.
+ * @param   offStart            Start offset (absolute, in bytes) to start at.
+ * @param   cbSize              Size (in bytes) to process.
+ * @param   pfIsSilence         Where to return the result.
+ *
+ * @note    Does *not* modify the file's current position.
+ */
+static int audioTestFileChunkIsSilence(PRTFILE phFile, PPDMAUDIOPCMPROPS pProps, uint64_t offStart, size_t cbSize,
+                                       bool *pfIsSilence)
+{
+    bool fIsSilence = true;
+
+    int rc = RTFileSeek(*phFile, offStart, RTFILE_SEEK_BEGIN, NULL);
+    AssertRCReturn(rc, rc);
+
+    uint8_t auBuf[_64K];
+    while (cbSize)
+    {
+        size_t cbRead;
+        rc = RTFileRead(*phFile, auBuf, RT_MIN(cbSize, sizeof(auBuf)), &cbRead);
+        AssertRC(rc);
+
+        if (!PDMAudioPropsIsBufferSilence(pProps, auBuf, cbRead))
+        {
+            fIsSilence = false;
+            break;
+        }
+
+        AssertBreak(cbSize >= cbRead);
+        cbSize -= cbRead;
+    }
+
+    if (RT_SUCCESS(rc))
+        *pfIsSilence = fIsSilence;
+
+    return RTFileSeek(*phFile, offStart, RTFILE_SEEK_BEGIN, NULL);
+}
+
+/**
  * Finds differences in two audio test files by binary comparing chunks.
  *
  * @returns Number of differences. 0 means they are equal (but not necessarily identical).
@@ -2297,20 +2342,27 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
         {
             if (fInDiff)
             {
-                bool const fIsAllSilenceA = PDMAudioPropsIsBufferSilence(&pToneParms->Props, auBufA, cbToCmp);
-                bool const fIsAllSilenceB = PDMAudioPropsIsBufferSilence(&pToneParms->Props, auBufB, cbToCmp);
+                bool fIsAllSilenceA;
+                rc = audioTestFileChunkIsSilence(&pCmpA->hFile, &pToneParms->Props,
+                                                 pCmpA->offStart + offDiffStart, offCur - offDiffStart, &fIsAllSilenceA);
+                AssertRCBreak(rc);
+
+                bool fIsAllSilenceB;
+                rc = audioTestFileChunkIsSilence(&pCmpB->hFile, &pToneParms->Props,
+                                                 pCmpB->offStart + offDiffStart, offCur - offDiffStart, &fIsAllSilenceB);
+                AssertRCBreak(rc);
 
                 uint32_t const cbDiff = offCur - offDiffStart;
-                int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x [%08RU64-%08RU64] vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
-                                                                                     pCmpA->offStart + offDiffStart, pCmpA->offStart + offDiffStart, pCmpA->offStart + offCur,
-                                                                                     pCmpB->offStart + offDiffStart, pCmpB->offStart + offDiffStart, pCmpB->offStart + offCur,
+                int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: '%s' @ %#x [%08RU64-%08RU64] vs. '%s' @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
+                                                                                     pCmpA->pszName, pCmpA->offStart + offDiffStart, pCmpA->offStart + offDiffStart, pCmpA->offStart + offCur,
+                                                                                     pCmpB->pszName, pCmpB->offStart + offDiffStart, pCmpB->offStart + offDiffStart, pCmpB->offStart + offCur,
                                                                                      cbDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, cbDiff));
                 AssertRC(rc2);
                 if (   fIsAllSilenceA
                     || fIsAllSilenceB)
                 {
                     rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunk %s @ %#x (%RU64 bytes, %RU64ms) is all silence",
-                                                                                     fIsAllSilenceA ? "A" : "B",
+                                                                                     fIsAllSilenceA ? pCmpA->pszName : pCmpB->pszName,
                                                                                      offDiffStart, cbDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, cbDiff));
                     AssertRC(rc2);
                 }
@@ -2329,9 +2381,9 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
     if (fInDiff)
     {
         uint32_t const cbDiff = offCur - offDiffStart;
-        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: A @ %#x [%08RU64-%08RU64] vs. B @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
-                                                                             pCmpA->offStart + offDiffStart, pCmpA->offStart + offDiffStart, pCmpA->offStart + offCur,
-                                                                             pCmpB->offStart + offDiffStart, pCmpB->offStart + offDiffStart, pCmpB->offStart + offCur,
+        int rc2 = audioTestErrorDescAddInfo(pVerJob->pErr, pVerJob->idxTest, "Chunks differ: '%s' @ %#x [%08RU64-%08RU64] vs. '%s' @ %#x [%08RU64-%08RU64] (%RU64 bytes, %RU64ms)",
+                                                                             pCmpA->pszName, pCmpA->offStart + offDiffStart, pCmpA->offStart + offDiffStart, pCmpA->offStart + offCur,
+                                                                             pCmpB->pszName, pCmpB->offStart + offDiffStart, pCmpB->offStart + offDiffStart, pCmpB->offStart + offCur,
                                                                              cbDiff, PDMAudioPropsBytesToMilli(&pToneParms->Props, cbDiff));
         AssertRC(rc2);
 
