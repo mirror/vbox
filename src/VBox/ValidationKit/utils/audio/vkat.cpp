@@ -1468,24 +1468,28 @@ int main(int argc, char **argv)
             {
                 case 1:
                     rc = RTLogGroupSettings(g_pRelLogger,
-                                            "drv_audio.e.l+audio_mixer.e.l+audio_test.e.l");
+                                            "drv_audio.e.l+drv_host_audio.e.l+"
+                                            "audio_mixer.e.l+audio_test.e.l");
                     break;
 
                 case 2:
                     rc = RTLogGroupSettings(g_pRelLogger,
-                                            "drv_audio.e.l.l2+audio_mixer.e.l.l2+audio_test.e.l.l2");
+                                            "drv_audio.e.l.l2+drv_host_audio.e.l.l2+"
+                                            "audio_mixer.e.l.l2+audio_test.e.l.l2");
                     break;
 
                 case 3:
                     rc = RTLogGroupSettings(g_pRelLogger,
-                                            "drv_audio.e.l.l2.l3+audio_mixer.e.l.l2.l3+audio_test.e.l.l2.l3");
+                                            "drv_audio.e.l.l2.l3+drv_host_audio.e.l.l2.l3+"
+                                            "audio_mixer.e.l.l2.l3+audio_test.e.l.l2.l3");
                     break;
 
                 case 4:
                     RT_FALL_THROUGH();
                 default:
                     rc = RTLogGroupSettings(g_pRelLogger,
-                                            "drv_audio.e.l.l2.l3.l4.f+audio_mixer.e.l.l2.l3.l4.f+audio_test.e.l.l2.l3.l4.f");
+                                            "drv_audio.e.l.l2.l3.l4.f+drv_host_audio.e.l.l2.l3.l4.f+"
+                                            "audio_mixer.e.l.l2.l3.l4.f+audio_test.e.l.l2.l3.l4.f");
                     break;
             }
             if (RT_FAILURE(rc))
