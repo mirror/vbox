@@ -66,8 +66,9 @@
 using namespace com;
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
+ * Defined Constants And Macros                                                                                                  *
 *********************************************************************************************************************************/
+
 #define GCTLCMD_COMMON_OPT_USER             999 /**< The --username option number. */
 #define GCTLCMD_COMMON_OPT_PASSWORD         998 /**< The --password option number. */
 #define GCTLCMD_COMMON_OPT_PASSWORD_FILE    997 /**< The --password-file option number. */
