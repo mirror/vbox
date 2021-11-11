@@ -30,6 +30,8 @@
 #ifdef RT_OS_WINDOWS
 #include <iprt/nt/hyperv.h>
 #include <iprt/critsect.h>
+#elif defined(RT_OS_DARWIN)
+# include "VMXInternal.h"
 #endif
 
 RT_C_DECLS_BEGIN
@@ -110,6 +112,30 @@ typedef struct NEMWINIOCTL
 /** @} */
 
 #endif /* RT_OS_WINDOWS */
+
+
+#ifdef RT_OS_DARWIN
+/** vCPU ID declaration to avoid dragging in HV headers here. */
+typedef unsigned hv_vcpuid_t;
+/** The HV VM memory space ID (ASID). */
+typedef unsigned hv_vm_space_t;
+
+
+/** @name Darwin: Our two-bit physical page state for PGMPAGE
+ * @{ */
+# define NEM_DARWIN_PAGE_STATE_NOT_SET     0
+# define NEM_DARWIN_PAGE_STATE_UNMAPPED    1
+# define NEM_DARWIN_PAGE_STATE_READABLE    2
+# define NEM_DARWIN_PAGE_STATE_WRITABLE    3
+/** @} */
+
+/** The CPUMCTX_EXTRN_XXX mask for IEM. */
+# define NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM      (  IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT \
+                                                     | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI )
+/** The CPUMCTX_EXTRN_XXX mask for IEM when raising exceptions. */
+# define NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT (IEM_CPUMCTX_EXTRN_XCPT_MASK | NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM)
+
+#endif
 
 
 /** Trick to make slickedit see the static functions in the template. */
@@ -246,6 +272,17 @@ typedef struct NEM
         uint64_t                cPagesAvailable;
         uint64_t                cPagesInUse;
     } R0Stats;
+#elif defined(RT_OS_DARWIN)
+    /** Set if we've created the EMTs. */
+    bool                        fCreatedEmts : 1;
+    /** Set if hv_vm_create() was called successfully. */
+    bool                        fCreatedVm : 1;
+    /** Number of currently mapped pages. */
+    uint32_t volatile           cMappedPages;
+    STAMCOUNTER                 StatMapPage;
+    STAMCOUNTER                 StatUnmapPage;
+    STAMCOUNTER                 StatMapPageFailed;
+    STAMCOUNTER                 StatUnmapPageFailed;
 #endif /* RT_OS_WINDOWS */
 } NEM;
 /** Pointer to NEM VM instance data. */
@@ -371,7 +408,100 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatImportOnReturnSkipped;
     STAMCOUNTER                 StatQueryCpuTick;
     /** @} */
-#endif /* RT_OS_WINDOWS */
+#elif defined(RT_OS_DARWIN)
+    /** The vCPU handle associated with the EMT executing this vCPU. */
+    hv_vcpuid_t                 hVCpuId;
+
+    /** @name State shared with the VT-x code.
+     * @{ */
+    /** Whether we should use the debug loop because of single stepping or special
+     *  debug breakpoints / events are armed. */
+    bool                        fUseDebugLoop;
+    /** Whether we're executing a single instruction. */
+    bool                        fSingleInstruction;
+
+    bool                        afAlignment0[2];
+
+    /** An additional error code used for some gurus. */
+    uint32_t                    u32HMError;
+    /** The last exit-to-ring-3 reason. */
+    int32_t                     rcLastExitToR3;
+    /** CPU-context changed flags (see HM_CHANGED_xxx). */
+    uint64_t                    fCtxChanged;
+
+    /** The guest VMCS information. */
+    VMXVMCSINFO                 VmcsInfo;
+
+    /** VT-x data.   */
+    struct HMCPUVMX
+    {
+        /** @name Guest information.
+         * @{ */
+        /** Guest VMCS information shared with ring-3. */
+        VMXVMCSINFOSHARED           VmcsInfo;
+        /** Nested-guest VMCS information shared with ring-3. */
+        VMXVMCSINFOSHARED           VmcsInfoNstGst;
+        /** Whether the nested-guest VMCS was the last current VMCS (shadow copy for ring-3).
+         * @see HMR0PERVCPU::vmx.fSwitchedToNstGstVmcs  */
+        bool                        fSwitchedToNstGstVmcsCopyForRing3;
+        /** Whether the static guest VMCS controls has been merged with the
+         *  nested-guest VMCS controls. */
+        bool                        fMergedNstGstCtls;
+        /** Whether the nested-guest VMCS has been copied to the shadow VMCS. */
+        bool                        fCopiedNstGstToShadowVmcs;
+        /** Whether flushing the TLB is required due to switching to/from the
+         *  nested-guest. */
+        bool                        fSwitchedNstGstFlushTlb;
+        /** Alignment. */
+        bool                        afAlignment0[4];
+        /** Cached guest APIC-base MSR for identifying when to map the APIC-access page. */
+        uint64_t                    u64GstMsrApicBase;
+        /** @} */
+
+        /** @name Error reporting and diagnostics.
+         * @{ */
+        /** VT-x error-reporting (mainly for ring-3 propagation). */
+        struct
+        {
+            RTCPUID                 idCurrentCpu;
+            RTCPUID                 idEnteredCpu;
+            RTHCPHYS                HCPhysCurrentVmcs;
+            uint32_t                u32VmcsRev;
+            uint32_t                u32InstrError;
+            uint32_t                u32ExitReason;
+            uint32_t                u32GuestIntrState;
+        } LastError;
+        /** @} */
+    } vmx;
+
+    /** Event injection state. */
+    HMEVENT                     Event;
+
+    /** Current shadow paging mode for updating CR4.
+     * @todo move later (@bugref{9217}).  */
+    PGMMODE                     enmShadowMode;
+    uint32_t                    u32TemporaryPadding;
+
+    /** The PAE PDPEs used with Nested Paging (only valid when
+     *  VMCPU_FF_HM_UPDATE_PAE_PDPES is set). */
+    X86PDPE                     aPdpes[4];
+    /** Pointer to the VMX statistics. */
+    PVMXSTATISTICS              pVmxStats;
+
+    /** @name Statistics
+     * @{ */
+    STAMCOUNTER                 StatBreakOnCancel;
+    STAMCOUNTER                 StatBreakOnFFPre;
+    STAMCOUNTER                 StatBreakOnFFPost;
+    STAMCOUNTER                 StatBreakOnStatus;
+    STAMCOUNTER                 StatImportOnDemand;
+    STAMCOUNTER                 StatImportOnReturn;
+    STAMCOUNTER                 StatImportOnReturnSkipped;
+    STAMCOUNTER                 StatQueryCpuTick;
+    /** @} */
+
+    /** @} */
+#endif /* RT_OS_DARWIN */
 } NEMCPU;
 /** Pointer to NEM VMCPU instance data. */
 typedef NEMCPU *PNEMCPU;
