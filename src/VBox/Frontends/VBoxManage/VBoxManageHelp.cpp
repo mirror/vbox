@@ -877,11 +877,14 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
         RTStrmPrintf(pStrm,
                            "%s hostonlyif %s      ipconfig <name>\n"
                      "                            [--dhcp |\n"
-                     "                            --ip<ipv4> [--netmask<ipv4> (def: 255.255.255.0)] |\n"
-                     "                            --ipv6<ipv6> [--netmasklengthv6<length> (def: 64)]]\n"
+                     "                            --ip <ipv4> [--netmask <ipv4> (def:255.255.255.0)]|\n"
+                     "                            --ipv6 <ipv6> [--netmasklengthv6 <N> (def:64)]]"
 # if !defined(RT_OS_SOLARIS) || defined(VBOX_ONLY_DOCS)
+                     " |\n"
                      "                            create |\n"
                      "                            remove <name>\n"
+# else
+                     "\n"
 # endif
                      "\n", SEP);
     }
