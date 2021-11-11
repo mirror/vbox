@@ -80,9 +80,9 @@ fi
 # Load the extension, exit on first error except on BigSur onwards as an error
 # is expected there and the user has to reboot.
 #
-MACOS_VERS=$(sw_vers -productVersion)
+MACOS_VERSION_MAJOR=$(sw_vers -productVersion | /usr/bin/sed -e 's/^\([0-9]*\).*$/\1/')
 sync
-if [[ ${MACOS_VERS} != 11.* ]]; then
+if [[ ${MACOS_VERSION_MAJOR} -lt 11 ]]; then
     set -e
     kextload    '/Library/Application Support/VirtualBox/VBoxDrv.kext'
     kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxUSB.kext'
