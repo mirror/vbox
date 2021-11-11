@@ -336,8 +336,6 @@ VMMDECL(void)           PGMDeregisterStringFormatTypes(void);
 VMMDECL(RTHCPHYS)       PGMGetHyperCR3(PVMCPU pVCpu);
 VMMDECL(int)            PGMTrap0eHandler(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
 VMMDECL(int)            PGMPrefetchPage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage);
-VMMDECL(int)            PGMVerifyAccess(PVMCPUCC pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess);
-VMMDECL(int)            PGMIsValidAccess(PVMCPUCC pVCpu, RTGCPTR Addr, uint32_t cbSize, uint32_t fAccess);
 VMMDECL(VBOXSTRICTRC)   PGMInterpretInstruction(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
 VMMDECL(int)            PGMShwGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTHCPHYS pHCPhys);
 VMMDECL(int)            PGMShwMakePageReadonly(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint32_t fFlags);
