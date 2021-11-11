@@ -206,8 +206,10 @@ typedef struct ATADEVSTATE
     bool                                fIrqPending;
     /** Currently configured number of sectors in a multi-sector transfer. */
     uint8_t                             cMultSectors;
-    /** PCHS disk geometry. */
+    /** Physical CHS disk geometry (static). */
     PDMMEDIAGEOMETRY                    PCHSGeometry;
+    /** Translated CHS disk geometry (variable). */
+    PDMMEDIAGEOMETRY                    XCHSGeometry;
     /** Total number of sectors on this disk. */
     uint64_t                            cTotalSectors;
     /** Sector size of the medium. */
@@ -379,7 +381,7 @@ typedef struct ATADEVSTATE
     char                                szInquiryRevision[SCSI_INQUIRY_REVISION_LENGTH+1];
 
     /** Padding the structure to a multiple of 4096 for better I/O buffer alignment. */
-    uint8_t                             abAlignment4[7 + 3544];
+    uint8_t                             abAlignment4[7 + 3528];
 } ATADEVSTATE;
 AssertCompileMemberAlignment(ATADEVSTATE, cTotalSectors, 8);
 AssertCompileMemberAlignment(ATADEVSTATE, StatATADMA, 8);
@@ -1358,7 +1360,7 @@ static void ataR3CmdError(PATACONTROLLER pCtl, PATADEVSTATE s, uint8_t uErrorCod
     Log(("%s: code=%#x\n", __FUNCTION__, uErrorCode));
     Assert(uErrorCode);
     s->uATARegError = uErrorCode;
-    ataSetStatusValue(pCtl, s, ATA_STAT_READY | ATA_STAT_ERR);
+    ataSetStatusValue(pCtl, s, ATA_STAT_READY | ATA_STAT_SEEK | ATA_STAT_ERR);
     s->cbTotalTransfer = 0;
     s->cbElementaryTransfer = 0;
     s->iIOBufferCur = 0;
@@ -1415,15 +1417,15 @@ static bool ataR3IdentifySS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTAT
     p[51] = RT_H2LE_U16(240); /* PIO transfer cycle */
     p[52] = RT_H2LE_U16(240); /* DMA transfer cycle */
     p[53] = RT_H2LE_U16(1 | 1 << 1 | 1 << 2); /* words 54-58,64-70,88 valid */
-    p[54] = RT_H2LE_U16(RT_MIN(s->PCHSGeometry.cCylinders, 16383));
-    p[55] = RT_H2LE_U16(s->PCHSGeometry.cHeads);
-    p[56] = RT_H2LE_U16(s->PCHSGeometry.cSectors);
-    p[57] = RT_H2LE_U16(  RT_MIN(s->PCHSGeometry.cCylinders, 16383)
-                        * s->PCHSGeometry.cHeads
-                        * s->PCHSGeometry.cSectors);
-    p[58] = RT_H2LE_U16(  RT_MIN(s->PCHSGeometry.cCylinders, 16383)
-                        * s->PCHSGeometry.cHeads
-                        * s->PCHSGeometry.cSectors >> 16);
+    p[54] = RT_H2LE_U16(RT_MIN(s->XCHSGeometry.cCylinders, 16383));
+    p[55] = RT_H2LE_U16(s->XCHSGeometry.cHeads);
+    p[56] = RT_H2LE_U16(s->XCHSGeometry.cSectors);
+    p[57] = RT_H2LE_U16(  RT_MIN(s->XCHSGeometry.cCylinders, 16383)
+                        * s->XCHSGeometry.cHeads
+                        * s->XCHSGeometry.cSectors);
+    p[58] = RT_H2LE_U16(  RT_MIN(s->XCHSGeometry.cCylinders, 16383)
+                        * s->XCHSGeometry.cHeads
+                        * s->XCHSGeometry.cSectors >> 16);
     if (s->cMultSectors)
         p[59] = RT_H2LE_U16(0x100 | s->cMultSectors);
     if (s->cTotalSectors <= (1 << 28) - 1)
@@ -1633,8 +1635,8 @@ static uint64_t ataR3GetSector(PATADEVSTATE s)
     else
     {
         /* CHS */
-        iLBA = (((uint32_t)s->uATARegHCyl << 8) | s->uATARegLCyl) * s->PCHSGeometry.cHeads * s->PCHSGeometry.cSectors
-             + (s->uATARegSelect & 0x0f) * s->PCHSGeometry.cSectors
+        iLBA = (((uint32_t)s->uATARegHCyl << 8) | s->uATARegLCyl) * s->XCHSGeometry.cHeads * s->XCHSGeometry.cSectors
+             + (s->uATARegSelect & 0x0f) * s->XCHSGeometry.cSectors
              + (s->uATARegSector - 1);
         LogFlowFunc(("CHS %u/%u/%u -> LBA %llu\n", ((uint32_t)s->uATARegHCyl << 8) | s->uATARegLCyl, s->uATARegSelect & 0x0f, s->uATARegSector, iLBA));
     }
@@ -1669,13 +1671,13 @@ static void ataR3SetSector(PATADEVSTATE s, uint64_t iLBA)
     else
     {
         /* CHS */
-        AssertMsgReturnVoid(s->PCHSGeometry.cHeads && s->PCHSGeometry.cSectors, ("Device geometry not set!\n"));
-        cyl = iLBA / (s->PCHSGeometry.cHeads * s->PCHSGeometry.cSectors);
-        r = iLBA % (s->PCHSGeometry.cHeads * s->PCHSGeometry.cSectors);
+        AssertMsgReturnVoid(s->XCHSGeometry.cHeads && s->XCHSGeometry.cSectors, ("Device geometry not set!\n"));
+        cyl = iLBA / (s->XCHSGeometry.cHeads * s->XCHSGeometry.cSectors);
+        r = iLBA % (s->XCHSGeometry.cHeads * s->XCHSGeometry.cSectors);
         s->uATARegHCyl = cyl >> 8;
         s->uATARegLCyl = cyl;
-        s->uATARegSelect = (s->uATARegSelect & 0xf0) | ((r / s->PCHSGeometry.cSectors) & 0x0f);
-        s->uATARegSector = (r % s->PCHSGeometry.cSectors) + 1;
+        s->uATARegSelect = (s->uATARegSelect & 0xf0) | ((r / s->XCHSGeometry.cSectors) & 0x0f);
+        s->uATARegSector = (r % s->XCHSGeometry.cSectors) + 1;
         LogFlowFunc(("LBA %llu -> CHS %u/%u/%u\n", iLBA, cyl, s->uATARegSelect & 0x0f, s->uATARegSector));
     }
 }
@@ -4135,6 +4137,7 @@ static void ataR3PacketBT(PATACONTROLLER pCtl, PATADEVSTATE s)
 
 static void ataR3ResetDevice(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE s)
 {
+    LogFlowFunc(("\n"));
     s->cMultSectors = ATA_MAX_MULT_SECTORS;
     s->cNotifiedMediaChange = 0;
     ASMAtomicWriteU32(&s->MediaEventStatus, ATA_EVENT_STATUS_UNCHANGED);
@@ -4142,7 +4145,7 @@ static void ataR3ResetDevice(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTA
     ataUnsetIRQ(pDevIns, pCtl, s);
 
     s->uATARegSelect = 0x20;
-    ataSetStatusValue(pCtl, s, ATA_STAT_READY);
+    ataSetStatusValue(pCtl, s, ATA_STAT_READY | ATA_STAT_SEEK);
     ataR3SetSignature(s);
     s->cbTotalTransfer = 0;
     s->cbElementaryTransfer = 0;
@@ -4154,6 +4157,8 @@ static void ataR3ResetDevice(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTA
     s->fDMA = false;
     s->fATAPITransfer = false;
     s->uATATransferMode = ATA_MODE_UDMA | 2; /* PIIX3 supports only up to UDMA2 */
+
+    s->XCHSGeometry = s->PCHSGeometry;  /* Restore default CHS translation. */
 
     s->uATARegFeature = 0;
 }
@@ -4198,12 +4203,63 @@ static bool ataR3InitDevParmSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVS
 {
     RT_NOREF(pDevR3);
     LogFlowFunc(("\n"));
-    LogRel(("ATA: LUN#%d: INITIALIZE DEVICE PARAMETERS: %u logical sectors, %u heads\n",
-            s->iLUN, s->uATARegNSector, (s->uATARegSelect & 0x0f) + 1));
-    ataR3LockLeave(pDevIns, pCtl);
-    RTThreadSleep(pCtl->msDelayIRQ);
-    ataR3LockEnter(pDevIns, pCtl);
-    ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
+
+    /* Technical Note:
+     * On ST506 type drives with a separate controller, the INITIALIZE DRIVE PARAMETERS command was
+     * required to inform the controller of drive geometry. The controller needed to know the
+     * number of heads and sectors per track so that it could correctly advance to the next track
+     * or cylinder when executing multi-sector commands. Setting a geometry that didn't match the
+     * drive made very little sense because sectors had fixed CHS addresses. It was at best
+     * possible to reduce the drive's capacity by limiting the number of heads and/or sectors
+     * per track.
+     *
+     * IDE drives inherently have to know their true geometry, but most of them also support
+     * programmable translation that can be set through the INITIALIZE DEVICE PARAMETERS command.
+     * In fact most older IDE drives typically weren't operated using their default (native) geometry,
+     * and with newer IDE drives that's not even an option.
+     *
+     * Up to and including ATA-5, the standard defined a CHS to LBA translation (since ATA-6, CHS
+     * support is optional):
+     *
+     * LBA = (((cyl_num * heads_per_cyl) + head_num) * sectors_per_track) + sector_num - 1
+     *
+     * The INITIALIZE DEVICE PARAMETERS command sets the heads_per_cyl and sectors_per_track
+     * values used in the above formula.
+     *
+     * Drives must obviously support an INITIALIZE DRIVE PARAMETERS command matching the drive's
+     * default CHS translation. Everything else is optional.
+     *
+     * We support any geometry with non-zero sectors per track because there's no reason not to;
+     * this behavior is common in many if not most IDE drives.
+     */
+
+    PDMMEDIAGEOMETRY    Geom = { 0 };
+
+    Geom.cHeads   = (s->uATARegSelect & 0x0f) + 1;  /* Effective range 1-16. */
+    Geom.cSectors = s->uATARegNSector;              /* Range 0-255, zero is not valid. */
+
+    if (Geom.cSectors)
+    {
+        uint64_t cCylinders = s->cTotalSectors / (Geom.cHeads * Geom.cSectors);
+        Geom.cCylinders = RT_MAX(RT_MIN(cCylinders, 16383), 1);
+
+        s->XCHSGeometry = Geom;
+
+        ataR3LockLeave(pDevIns, pCtl);
+        LogRel(("ATA: LUN#%d: INITIALIZE DEVICE PARAMETERS: %u sectors per track, %u heads\n",
+                s->iLUN, s->uATARegNSector, (s->uATARegSelect & 0x0f) + 1));
+        RTThreadSleep(pCtl->msDelayIRQ);
+        ataR3LockEnter(pDevIns, pCtl);
+        ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
+    }
+    else
+    {
+        ataR3LockLeave(pDevIns, pCtl);
+        LogRel(("ATA: LUN#%d: INITIALIZE DEVICE PARAMETERS error (zero sectors per track)!\n", s->iLUN));
+        RTThreadSleep(pCtl->msDelayIRQ);
+        ataR3LockEnter(pDevIns, pCtl);
+        ataR3CmdError(pCtl, s, ABRT_ERR);
+    }
     return false;
 }
 
@@ -6960,6 +7016,8 @@ static int ataR3ConfigLun(PATADEVSTATE pIf, PATADEVSTATER3 pIfR3)
         if (pIfR3->pDrvMedia->pfnDiscard)
             LogRel(("PIIX3 ATA: LUN#%d: TRIM enabled\n", pIf->iLUN));
     }
+    /* Initialize the translated geometry. */
+    pIf->XCHSGeometry = pIf->PCHSGeometry;
 
     /*
      * Check if SMP system to adjust the agressiveness of the busy yield hack (@bugref{1960}).
@@ -7204,9 +7262,9 @@ static DECLCALLBACK(int) ataR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             pHlp->pfnSSMPutBool(pSSM, pThis->aCts[i].aIfs[j].fATAPI);
             pHlp->pfnSSMPutBool(pSSM, pThis->aCts[i].aIfs[j].fIrqPending);
             pHlp->pfnSSMPutU8(pSSM, pThis->aCts[i].aIfs[j].cMultSectors);
-            pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].PCHSGeometry.cCylinders);
-            pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].PCHSGeometry.cHeads);
-            pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].PCHSGeometry.cSectors);
+            pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].XCHSGeometry.cCylinders);
+            pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].XCHSGeometry.cHeads);
+            pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].XCHSGeometry.cSectors);
             pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].cSectorsPerIRQ);
             pHlp->pfnSSMPutU64(pSSM, pThis->aCts[i].aIfs[j].cTotalSectors);
             pHlp->pfnSSMPutU8(pSSM, pThis->aCts[i].aIfs[j].uATARegFeature);
@@ -7386,9 +7444,9 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             pHlp->pfnSSMGetBool(pSSM, &pThis->aCts[i].aIfs[j].fATAPI);
             pHlp->pfnSSMGetBool(pSSM, &pThis->aCts[i].aIfs[j].fIrqPending);
             pHlp->pfnSSMGetU8(pSSM, &pThis->aCts[i].aIfs[j].cMultSectors);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].PCHSGeometry.cCylinders);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].PCHSGeometry.cHeads);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].PCHSGeometry.cSectors);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].XCHSGeometry.cCylinders);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].XCHSGeometry.cHeads);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].XCHSGeometry.cSectors);
             pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].cSectorsPerIRQ);
             pHlp->pfnSSMGetU64(pSSM, &pThis->aCts[i].aIfs[j].cTotalSectors);
             pHlp->pfnSSMGetU8(pSSM, &pThis->aCts[i].aIfs[j].uATARegFeature);
