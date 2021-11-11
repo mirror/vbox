@@ -1746,10 +1746,6 @@ QUuid UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType enm
 QUuid UICommon::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strDefaultFolder /* = QString */,
                                                   const QString &strMachineName /* = QString */)
 {
-    QString strVisoSaveFolder(strDefaultFolder);
-    if (strVisoSaveFolder.isEmpty())
-        strVisoSaveFolder = defaultFolderPathForType(UIMediumDeviceType_DVD);
-
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     UIVisoCreatorDialog *pVisoCreator = 0;//new UIVisoCreatorDialog(pDialogParent, strMachineName);
 
@@ -1776,6 +1772,11 @@ QUuid UICommon::createVisoMediumWithVisoCreator(QWidget *pParent, const QString 
         /* Produce the VISO. */
         char szVisoPath[RTPATH_MAX];
         QString strFileName = QString("%1%2").arg(strVisoName).arg(".viso");
+
+        QString strVisoSaveFolder(strDefaultFolder);
+        if (strVisoSaveFolder.isEmpty())
+            strVisoSaveFolder = defaultFolderPathForType(UIMediumDeviceType_DVD);
+
         int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strVisoSaveFolder.toUtf8().constData(), strFileName.toUtf8().constData());
         if (RT_SUCCESS(vrc))
         {
