@@ -941,7 +941,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                        "                            remove <name>\n"));
 # else
         RTStrmPrintf(pStrm,
-                     Help::tr(
                        "\n");
 # endif
         RTStrmPrintf(pStrm,
