@@ -204,10 +204,6 @@ class tdAudioTest(vbox.TestDriver):
         if not self.importVBoxApi(): # So we can use the constant below.
             return False;
 
-        # Disable maximum logging line restrictions per group.
-        # This comes in handy when running this test driver in a (very) verbose mode, e.g. for debugging.
-        os.environ['VBOX_RELEASE_LOG_MAX_PER_GROUP'] = '0';
-
         # Make sure that the Validation Kit .ISO is mounted
         # to find the VKAT (Validation Kit Audio Test) binary on it.
         assert self.sVBoxValidationKitIso is not None;
@@ -217,6 +213,13 @@ class tdAudioTest(vbox.TestDriver):
         """
         Executes the test driver.
         """
+
+        # Disable maximum logging line restrictions per group.
+        # This comes in handy when running this test driver in a (very) verbose mode, e.g. for debugging.
+        os.environ['VBOX_LOG_MAX_PER_GROUP'] = '0';
+        os.environ['VBOX_RELEASE_LOG_MAX_PER_GROUP'] = '0';
+        os.environ['VKAT_RELEASE_LOG_MAX_PER_GROUP'] = '0';
+
         if self.sRunningVmName is None:
             return self.oTestVmSet.actionExecute(self, self.testOneVmConfig);
         return self.actionExecuteOnRunnigVM();
