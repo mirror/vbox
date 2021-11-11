@@ -2175,7 +2175,7 @@ int pgmR3PhysRamTerm(PVM pVM)
 
     /*
      * Flush the handy pages updates to make sure no shared pages are hiding
-     * in there.  (No unlikely if the VM shuts down, apparently.)
+     * in there.  (Not unlikely if the VM shuts down, apparently.)
      */
     rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_FLUSH_HANDY_PAGES, 0, NULL);
 #endif
@@ -5810,105 +5810,6 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
     /* The page map TLB references chunks, so invalidate that one too. */
     pgmPhysInvalidatePageMapTLB(pVM);
     PGM_UNLOCK(pVM);
-}
-
-
-/**
- * Response to VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE to allocate a large
- * (2MB) page for use with a nested paging PDE.
- *
- * @returns The following VBox status codes.
- * @retval  VINF_SUCCESS on success.
- * @retval  VINF_EM_NO_MEMORY if we're out of memory.
- *
- * @param   pVM         The cross context VM structure.
- * @param   GCPhys      GC physical start address of the 2 MB range
- */
-VMMR3_INT_DECL(int) PGMR3PhysAllocateLargePage(PVM pVM, RTGCPHYS GCPhys)
-{
-#ifdef PGM_WITH_LARGE_PAGES
-    PGM_LOCK_VOID(pVM);
-
-    STAM_PROFILE_START(&pVM->pgm.s.Stats.StatAllocLargePage, a);
-    uint64_t const msAllocStart = RTTimeMilliTS();
-    int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE, 0, NULL);
-    uint64_t const cMsElapsed   = RTTimeMilliTS() - msAllocStart;
-    STAM_PROFILE_STOP(&pVM->pgm.s.Stats.StatAllocLargePage, a);
-    if (RT_SUCCESS(rc))
-    {
-        Assert(pVM->pgm.s.cLargeHandyPages == 1);
-
-        uint32_t idPage = pVM->pgm.s.aLargeHandyPage[0].idPage;
-        RTHCPHYS HCPhys = pVM->pgm.s.aLargeHandyPage[0].HCPhysGCPhys;
-        Assert(pVM->pgm.s.aLargeHandyPage[0].fZeroed);
-
-        /*
-         * Enter the pages into PGM.
-         */
-        STAM_PROFILE_START(&pVM->pgm.s.Stats.StatClearLargePage, b);
-        for (unsigned i = 0; i < _2M/PAGE_SIZE; i++)
-        {
-            PPGMPAGE pPage;
-            rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
-            AssertRC(rc);
-
-            Assert(PGM_PAGE_IS_ZERO(pPage));
-            STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatRZPageReplaceZero);
-            pVM->pgm.s.cZeroPages--;
-
-            /*
-             * Do the PGMPAGE modifications.
-             */
-            pVM->pgm.s.cPrivatePages++;
-            PGM_PAGE_SET_HCPHYS(pVM, pPage, HCPhys);
-            PGM_PAGE_SET_PAGEID(pVM, pPage, idPage);
-            PGM_PAGE_SET_STATE(pVM, pPage, PGM_PAGE_STATE_ALLOCATED);
-            PGM_PAGE_SET_PDE_TYPE(pVM, pPage, PGM_PAGE_PDE_TYPE_PDE);
-            PGM_PAGE_SET_PTE_INDEX(pVM, pPage, 0);
-            PGM_PAGE_SET_TRACKING(pVM, pPage, 0);
-
-            /* Somewhat dirty assumption that page ids are increasing. */
-            idPage++;
-
-            HCPhys += PAGE_SIZE;
-            GCPhys += PAGE_SIZE;
-            Log3(("PGMR3PhysAllocateLargePage: idPage=%#x HCPhys=%RGp\n", idPage, HCPhys));
-        }
-        STAM_PROFILE_STOP(&pVM->pgm.s.Stats.StatClearLargePage, b);
-
-        /* Flush all TLBs. */
-        PGM_INVL_ALL_VCPU_TLBS(pVM);
-        pgmPhysInvalidatePageMapTLB(pVM);
-
-        pVM->pgm.s.cLargeHandyPages = 0;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        static uint32_t cTimeOut = 0;
-        if (cMsElapsed > 100)
-        {
-            STAM_COUNTER_INC(&pVM->pgm.s.Stats.StatLargePageOverflow);
-            if (   ++cTimeOut > 10
-                || cMsElapsed > 1000 /* more than one second forces an early retirement from allocating large pages. */)
-            {
-                /* If repeated attempts to allocate a large page takes more than 100 ms, then we fall back to normal 4k pages.
-                 * E.g. Vista 64 tries to move memory around, which takes a huge amount of time.
-                 */
-                LogRel(("PGMR3PhysAllocateLargePage: allocating large pages takes too long (last attempt %RU64 ms; nr of timeouts %d); DISABLE\n", cMsElapsed, cTimeOut));
-                PGMSetLargePageUsage(pVM, false);
-            }
-        }
-        else if (cTimeOut > 0)
-            cTimeOut--;
-    }
-
-    PGM_UNLOCK(pVM);
-    return rc;
-#else
-    RT_NOREF(pVM, GCPhys);
-    return VERR_NOT_IMPLEMENTED;
-#endif /* PGM_WITH_LARGE_PAGES */
 }
 
 

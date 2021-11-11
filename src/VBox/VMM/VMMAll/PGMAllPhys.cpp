@@ -1024,8 +1024,7 @@ int pgmPhysAllocLargePage(PVMCC pVM, RTGCPHYS GCPhys)
             /* Lazy approach: check all pages in the 2 MB range.
              * The whole range must be ram and unallocated. */
             GCPhys = GCPhysBase;
-            unsigned iPage;
-            for (iPage = 0; iPage < _2M/PAGE_SIZE; iPage++)
+            for (unsigned iPage = 0; iPage < _2M/PAGE_SIZE; iPage++)
             {
                 PPGMPAGE pSubPage;
                 rc = pgmPhysGetPageEx(pVM, GCPhys, &pSubPage);
@@ -1034,26 +1033,24 @@ int pgmPhysAllocLargePage(PVMCC pVM, RTGCPHYS GCPhys)
                      || PGM_PAGE_GET_STATE(pSubPage) != PGM_PAGE_STATE_ZERO) /* Allocated, monitored or shared means we can't use a large page here */
                 {
                     LogFlow(("Found page %RGp with wrong attributes (type=%d; state=%d); cancel check. rc=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pSubPage), PGM_PAGE_GET_STATE(pSubPage), rc));
-                    break;
+                    /* Failed. Mark as requiring a PT so we don't check the whole thing again in the future. */
+                    STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageRefused);
+                    PGM_PAGE_SET_PDE_TYPE(pVM, pFirstPage, PGM_PAGE_PDE_TYPE_PT);
+                    return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
                 }
                 Assert(PGM_PAGE_GET_PDE_TYPE(pSubPage) == PGM_PAGE_PDE_TYPE_DONTCARE);
                 GCPhys += PAGE_SIZE;
-            }
-            if (iPage != _2M/PAGE_SIZE)
-            {
-                /* Failed. Mark as requiring a PT so we don't check the whole thing again in the future. */
-                STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageRefused);
-                PGM_PAGE_SET_PDE_TYPE(pVM, pFirstPage, PGM_PAGE_PDE_TYPE_PT);
-                return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
             }
 
             /*
              * Do the allocation.
              */
 # ifdef IN_RING3
-            rc = PGMR3PhysAllocateLargePage(pVM, GCPhysBase);
+            rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_LARGE_PAGE, GCPhys, NULL);
+# elif defined(IN_RING0)
+            rc = PGMR0PhysAllocateLargePage(pVM, VMMGetCpuId(pVM), GCPhysBase);
 # else
-            rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE, GCPhysBase);
+#  error "Port me"
 # endif
             if (RT_SUCCESS(rc))
             {
@@ -1065,8 +1062,6 @@ int pgmPhysAllocLargePage(PVMCC pVM, RTGCPHYS GCPhys)
             /* If we fail once, it most likely means the host's memory is too
                fragmented; don't bother trying again. */
             LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
-            if (rc != VERR_TRY_AGAIN)
-                PGMSetLargePageUsage(pVM, false);
             return rc;
         }
     }

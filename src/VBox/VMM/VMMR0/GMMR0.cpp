@@ -3253,8 +3253,14 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t cbPage
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
-    if (RT_SUCCESS(rc))
-        rc = gmmR0MutexAcquire(pGMM);
+    AssertRCReturn(rc, rc);
+
+    VMMR0EMTBLOCKCTX Ctx;
+    PGVMCPU          pGVCpu = &pGVM->aCpus[idCpu];
+    rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, "GMMR0AllocateLargePage", pGMM, &Ctx);
+    AssertRCReturn(rc, rc);
+
+    rc = gmmR0MutexAcquire(pGMM);
     if (RT_SUCCESS(rc))
     {
         if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
@@ -3306,6 +3312,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t cbPage
                         gmmR0LinkChunk(pChunk, pSet);
                         gmmR0MutexRelease(pGMM);
 
+                        VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
                         LogFlow(("GMMR0AllocateLargePage: returns VINF_SUCCESS\n"));
                         return VINF_SUCCESS;
                     }
@@ -3316,6 +3323,8 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t cbPage
                     RTR0MemObjFree(hMemObj, true /* fFreeMappings */);
                     *pHCPhys = NIL_RTHCPHYS;
                 }
+                /** @todo r=bird: Turn VERR_NO_MEMORY etc into VERR_TRY_AGAIN?  Docs say we
+                 *        return it, but I am sure IPRT doesn't... */
             }
             else
             {
@@ -3332,6 +3341,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t cbPage
         }
     }
 
+    VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
     LogFlow(("GMMR0AllocateLargePage: returns %Rrc\n", rc));
     return rc;
 }

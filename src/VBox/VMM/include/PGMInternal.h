@@ -3014,12 +3014,7 @@ typedef struct PGMSTATS
     STAMCOUNTER StatTrackOverflows;                 /**< The number of times the extent list grows to long. */
     STAMPROFILE StatTrackDeref;                     /**< Profiling of SyncPageWorkerTrackDeref (expensive). */
 
-    /** Time spent by the host OS for large page allocation. */
-    STAMPROFILE StatAllocLargePage;
-    /** Time spent clearing the newly allocated large pages. */
-    STAMPROFILE StatClearLargePage;
-    /** The number of times allocating a large pages takes more than the allowed period. */
-    STAMCOUNTER StatLargePageOverflow;
+    STAMPROFILE StatLargePageSetup;                 /**< Time spent setting up newly allocated large pages. */
     /** pgmPhysIsValidLargePage profiling - R3 */
     STAMPROFILE StatR3IsValidLargePage;
     /** pgmPhysIsValidLargePage profiling - RZ*/
@@ -3246,6 +3241,11 @@ typedef struct PGM
      * an intermediary.
      */
     GMMPAGEDESC                     aLargeHandyPage[1];
+    /** When to try allocate large pages again after a failure. */
+    uint64_t                        nsLargePageRetry;
+    /** Number of repeated long allocation times.   */
+    uint32_t                        cLargePageLongAllocRepeats;
+    uint32_t                        uPadding5;
 
     /**
      * Live save data.
@@ -3320,9 +3320,8 @@ typedef struct PGM
     uint32_t                        cLargePagesDisabled;    /**< The number of disabled large pages. */
 /*    uint32_t                        aAlignment4[1]; */
 
-    /** The number of times we were forced to change the hypervisor region location. */
-    STAMCOUNTER                     cRelocations;
-
+    STAMPROFILE                     StatLargePageAlloc;     /**< Time spent by the host OS for large page allocation. */
+    STAMCOUNTER                     StatLargePageOverflow;  /**< The number of times allocating a large pages takes more than the allowed period. */
     STAMCOUNTER                     StatLargePageReused;    /**< The number of large pages we've reused.*/
     STAMCOUNTER                     StatLargePageRefused;   /**< The number of times we couldn't use a large page.*/
     STAMCOUNTER                     StatLargePageRecheck;   /**< The number of times we rechecked a disabled large page.*/
@@ -3344,7 +3343,6 @@ AssertCompileMemberAlignment(PGM, PhysTlbR3, 32); /** @todo 32 byte alignment! *
 AssertCompileMemberAlignment(PGM, PhysTlbR0, 32);
 AssertCompileMemberAlignment(PGM, HCPhysZeroPg, 8);
 AssertCompileMemberAlignment(PGM, aHandyPages, 8);
-AssertCompileMemberAlignment(PGM, cRelocations, 8);
 #endif /* !IN_TSTVMSTRUCTGC */
 /** Pointer to the PGM instance data. */
 typedef PGM *PPGM;

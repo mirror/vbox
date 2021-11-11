@@ -59,8 +59,6 @@ typedef enum VMMCALLRING3
 
     /** Allocates more handy pages. */
     VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES,
-    /** Allocates a large (2MB) page. */
-    VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE,
     /** The usual 32-bit hack. */
     VMMCALLRING3_32BIT_HACK = 0x7fffffff
 } VMMCALLRING3;
@@ -293,7 +291,7 @@ typedef enum VMMR0OPERATION
     /** Call PGMR0PhysFlushHandyPages(). */
     VMMR0_DO_PGM_FLUSH_HANDY_PAGES,
     /** Call PGMR0AllocateLargePage(). */
-    VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE,
+    VMMR0_DO_PGM_ALLOCATE_LARGE_PAGE,
     /** Call PGMR0PhysSetupIommu(). */
     VMMR0_DO_PGM_PHYS_SETUP_IOMMU,
     /** Call PGMR0PoolGrow(). */

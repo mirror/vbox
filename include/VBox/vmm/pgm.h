@@ -673,7 +673,7 @@ VMMR0_INT_DECL(int)  PGMR0InitVM(PGVM pGVM);
 VMMR0_INT_DECL(void) PGMR0CleanupVM(PGVM pGVM);
 VMMR0_INT_DECL(int)  PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  PGMR0PhysFlushHandyPages(PGVM pGVM, VMCPUID idCpu);
-VMMR0_INT_DECL(int)  PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int)  PGMR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys);
 VMMR0_INT_DECL(int)  PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
                                              size_t offSub, size_t cbSub, void **ppvMapping);
 VMMR0_INT_DECL(int)  PGMR0PhysSetupIoMmu(PGVM pGVM);
@@ -792,7 +792,6 @@ VMMR3DECL(int)      PGMR3PhysBulkGCPhys2CCPtrReadOnlyExternal(PVM pVM, uint32_t 
                                                               void const **papvPages, PPGMPAGEMAPLOCK paLocks);
 VMMR3DECL(void)     PGMR3PhysChunkInvalidateTLB(PVM pVM);
 VMMR3DECL(int)      PGMR3PhysAllocateHandyPages(PVM pVM);
-VMMR3_INT_DECL(int) PGMR3PhysAllocateLargePage(PVM pVM, RTGCPHYS GCPhys);
 
 VMMR3DECL(int)      PGMR3CheckIntegrity(PVM pVM);
 

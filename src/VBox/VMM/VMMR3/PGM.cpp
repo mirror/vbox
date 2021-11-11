@@ -1156,7 +1156,6 @@ static int pgmR3InitStats(PVM pVM)
     STAM_REL_REG(pVM, &pPGM->cHandyPages,                        STAMTYPE_U32,     "/PGM/Page/cHandyPages",              STAMUNIT_COUNT,     "The number of handy pages (not included in cAllPages).");
     STAM_REL_REG(pVM, &pPGM->cLargePages,                        STAMTYPE_U32,     "/PGM/Page/cLargePages",              STAMUNIT_COUNT,     "The number of large pages allocated (includes disabled).");
     STAM_REL_REG(pVM, &pPGM->cLargePagesDisabled,                STAMTYPE_U32,     "/PGM/Page/cLargePagesDisabled",      STAMUNIT_COUNT,     "The number of disabled large pages.");
-    STAM_REL_REG(pVM, &pPGM->cRelocations,                       STAMTYPE_COUNTER, "/PGM/cRelocations",                  STAMUNIT_OCCURENCES,"Number of hypervisor relocations.");
     STAM_REL_REG(pVM, &pPGM->ChunkR3Map.c,                       STAMTYPE_U32,     "/PGM/ChunkR3Map/c",                  STAMUNIT_COUNT,     "Number of mapped chunks.");
     STAM_REL_REG(pVM, &pPGM->ChunkR3Map.cMax,                    STAMTYPE_U32,     "/PGM/ChunkR3Map/cMax",               STAMUNIT_COUNT,     "Maximum number of mapped chunks.");
     STAM_REL_REG(pVM, &pPGM->cMappedChunks,                      STAMTYPE_U32,     "/PGM/ChunkR3Map/Mapped",             STAMUNIT_COUNT,     "Number of times we mapped a chunk.");
@@ -1189,25 +1188,29 @@ static int pgmR3InitStats(PVM pVM)
     STAM_REL_REG_USED(pVM, &pPGM->LiveSave.Mmio2.cZeroPages,     STAMTYPE_U32,     "/PGM/LiveSave/Mmio2/cZeroPages",     STAMUNIT_COUNT,     "MMIO2: Ready zero pages.");
     STAM_REL_REG_USED(pVM, &pPGM->LiveSave.Mmio2.cMonitoredPages,STAMTYPE_U32,     "/PGM/LiveSave/Mmio2/cMonitoredPages",STAMUNIT_COUNT,     "MMIO2: Write monitored pages.");
 
-#ifdef VBOX_WITH_STATISTICS
-
-# define PGM_REG_COUNTER(a, b, c) \
+#define PGM_REG_COUNTER(a, b, c) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b); \
         AssertRC(rc);
 
-# define PGM_REG_COUNTER_BYTES(a, b, c) \
+#define PGM_REG_COUNTER_BYTES(a, b, c) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, c, b); \
         AssertRC(rc);
 
-# define PGM_REG_PROFILE(a, b, c) \
+#define PGM_REG_PROFILE(a, b, c) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b); \
         AssertRC(rc);
+#define PGM_REG_PROFILE_NS(a, b, c) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, c, b); \
+        AssertRC(rc);
 
-    PGMSTATS *pStats = &pVM->pgm.s.Stats;
+#ifdef VBOX_WITH_STATISTICS
+    PGMSTATS *pStats = &pPGM->Stats;
+#endif
 
-    PGM_REG_PROFILE(&pStats->StatAllocLargePage,                "/PGM/LargePage/Alloc",               "Time spent by the host OS for large page allocation.");
-    PGM_REG_PROFILE(&pStats->StatClearLargePage,                "/PGM/LargePage/Clear",               "Time spent clearing the newly allocated large pages.");
-    PGM_REG_COUNTER(&pStats->StatLargePageOverflow,             "/PGM/LargePage/Overflow",            "The number of times allocating a large page took too long.");
+    PGM_REG_PROFILE_NS(&pPGM->StatLargePageAlloc,               "/PGM/LargePage/Alloc",               "Time spent by the host OS for large page allocation.");
+    PGM_REG_COUNTER(&pPGM->StatLargePageOverflow,               "/PGM/LargePage/Overflow",            "The number of times allocating a large page took too long.");
+#ifdef VBOX_WITH_STATISTICS
+    PGM_REG_PROFILE(&pStats->StatLargePageSetup,                "/PGM/LargePage/Setup",               "Time spent setting up the newly allocated large pages.");
     PGM_REG_PROFILE(&pStats->StatR3IsValidLargePage,            "/PGM/LargePage/IsValidR3",           "pgmPhysIsValidLargePage profiling - R3.");
     PGM_REG_PROFILE(&pStats->StatRZIsValidLargePage,            "/PGM/LargePage/IsValidRZ",           "pgmPhysIsValidLargePage profiling - RZ.");
 
@@ -1286,10 +1289,11 @@ static int pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER(&pStats->StatTrackOverflows,                "/PGM/Track/Overflows",               "The number of times the extent list grows too long.");
     PGM_REG_COUNTER(&pStats->StatTrackNoExtentsLeft,            "/PGM/Track/NoExtentLeft",            "The number of times the extent list was exhausted.");
     PGM_REG_PROFILE(&pStats->StatTrackDeref,                    "/PGM/Track/Deref",                   "Profiling of SyncPageWorkerTrackDeref (expensive).");
-
-# undef PGM_REG_COUNTER
-# undef PGM_REG_PROFILE
 #endif
+
+#undef PGM_REG_COUNTER
+#undef PGM_REG_PROFILE
+#undef PGM_REG_PROFILE_NS
 
     /*
      * Note! The layout below matches the member layout exactly!

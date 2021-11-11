@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
+#include <iprt/time.h>
 
 
 /*
@@ -285,7 +286,7 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, VMCPUID idCpu)
 
 
 /**
- * Worker function for PGMR3PhysAllocateLargeHandyPage
+ * Allocate a large page at @a GCPhys.
  *
  * @returns The following VBox status codes.
  * @retval  VINF_SUCCESS on success.
@@ -293,33 +294,126 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, VMCPUID idCpu)
  *
  * @param   pGVM        The global (ring-0) VM structure.
  * @param   idCpu       The ID of the calling EMT.
+ * @param   GCPhys      The guest physical address of the page.
  *
  * @thread  EMT(idCpu)
  *
  * @remarks Must be called from within the PGM critical section. The caller
  *          must clear the new pages.
  */
-VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, VMCPUID idCpu)
+VMMR0_INT_DECL(int) PGMR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
 {
     /*
      * Validate inputs.
      */
-    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
     PGM_LOCK_ASSERT_OWNER_EX(pGVM, &pGVM->aCpus[idCpu]);
     Assert(!pGVM->pgm.s.cLargeHandyPages);
 
+    /* The caller might have done this already, but since we're ring-3 callable we
+       need to make sure everything is fine before starting the allocation here. */
+    for (unsigned i = 0; i < _2M / PAGE_SIZE; i++)
+    {
+        PPGMPAGE pPage;
+        int rc = pgmPhysGetPageEx(pGVM, GCPhys + i * PAGE_SIZE, &pPage);
+        AssertRCReturn(rc, rc);
+        AssertReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, VERR_PGM_PHYS_NOT_RAM);
+        AssertReturn(PGM_PAGE_IS_ZERO(pPage), VERR_PGM_UNEXPECTED_PAGE_STATE);
+    }
+
     /*
-     * Do the job.
+     * Allocate a large page.
      */
     RTHCPHYS HCPhys = NIL_GMMPAGEDESC_PHYS;
-    int rc = GMMR0AllocateLargePage(pGVM, idCpu, _2M, &pGVM->pgm.s.aLargeHandyPage[0].idPage, &HCPhys);
-    if (RT_SUCCESS(rc))
-        pGVM->pgm.s.cLargeHandyPages = 1;
-    pGVM->pgm.s.aLargeHandyPage[0].HCPhysGCPhys = HCPhys;
-    pGVM->pgm.s.aLargeHandyPage[0].fZeroed      = true;
+    uint32_t idPage = NIL_GMM_PAGEID;
 
-    return rc;
+    if (true) /** @todo pre-allocate 2-3 pages on the allocation thread. */
+    {
+        uint64_t const nsAllocStart = RTTimeNanoTS();
+        if (nsAllocStart < pGVM->pgm.s.nsLargePageRetry)
+        {
+            LogFlowFunc(("returns VERR_TRY_AGAIN - %RU64 ns left of hold off period\n", pGVM->pgm.s.nsLargePageRetry - nsAllocStart));
+            return VERR_TRY_AGAIN;
+        }
+
+        int const rc = GMMR0AllocateLargePage(pGVM, idCpu, _2M, &idPage, &HCPhys);
+
+        uint64_t const nsAllocEnd = RTTimeNanoTS();
+        uint64_t const cNsElapsed = nsAllocEnd - nsAllocStart;
+        STAM_REL_PROFILE_ADD_PERIOD(&pGVM->pgm.s.StatLargePageAlloc, cNsElapsed);
+        if (cNsElapsed < RT_NS_100MS)
+            pGVM->pgm.s.cLargePageLongAllocRepeats = 0;
+        else
+        {
+            /* If a large page allocation takes more than 100ms back off for a
+               while so the host OS can reshuffle memory and make some more large
+               pages available.  However if it took over a second, just disable it. */
+            STAM_REL_COUNTER_INC(&pGVM->pgm.s.StatLargePageOverflow);
+            pGVM->pgm.s.cLargePageLongAllocRepeats++;
+            if (cNsElapsed > RT_NS_1SEC)
+            {
+                LogRel(("PGMR0PhysAllocateLargePage: Disabling large pages after %'RU64 ns allocation time.\n", cNsElapsed));
+                PGMSetLargePageUsage(pGVM, false);
+            }
+            else
+            {
+                Log(("PGMR0PhysAllocateLargePage: Suspending large page allocations for %u sec after %'RU64 ns allocation time.\n",
+                     30 * pGVM->pgm.s.cLargePageLongAllocRepeats, cNsElapsed));
+                pGVM->pgm.s.nsLargePageRetry = nsAllocEnd + RT_NS_30SEC * pGVM->pgm.s.cLargePageLongAllocRepeats;
+            }
+        }
+
+        if (RT_FAILURE(rc))
+        {
+            Log(("PGMR0PhysAllocateLargePage: Failed: %Rrc\n", rc));
+            return rc;
+        }
+    }
+
+    /*
+     * Enter the pages into PGM.
+     */
+    STAM_PROFILE_START(&pGVM->pgm.s.Stats.StatLargePageSetup, b);
+    unsigned cLeft = _2M / PAGE_SIZE;
+    while (cLeft-- > 0)
+    {
+        PPGMPAGE pPage;
+        int rc = pgmPhysGetPageEx(pGVM, GCPhys, &pPage);
+        AssertRCReturn(rc, rc);
+        AssertReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, VERR_PGM_PHYS_NOT_RAM);
+        AssertReturn(PGM_PAGE_IS_ZERO(pPage), VERR_PGM_UNEXPECTED_PAGE_STATE);
+
+        STAM_COUNTER_INC(&pGVM->pgm.s.Stats.StatRZPageReplaceZero);
+        pGVM->pgm.s.cZeroPages--;
+        pGVM->pgm.s.cPrivatePages++;
+        PGM_PAGE_SET_HCPHYS(pGVM, pPage, HCPhys);
+        PGM_PAGE_SET_PAGEID(pGVM, pPage, idPage);
+        PGM_PAGE_SET_STATE(pGVM, pPage, PGM_PAGE_STATE_ALLOCATED);
+        PGM_PAGE_SET_PDE_TYPE(pGVM, pPage, PGM_PAGE_PDE_TYPE_PDE);
+        PGM_PAGE_SET_PTE_INDEX(pGVM, pPage, 0);
+        PGM_PAGE_SET_TRACKING(pGVM, pPage, 0);
+        Log3(("PGMR0PhysAllocateLargePage: GCPhys=%RGp: idPage=%#x HCPhys=%RGp\n", GCPhys, idPage, HCPhys));
+
+        /* advance */
+        idPage++;
+        HCPhys += PAGE_SIZE;
+        GCPhys += PAGE_SIZE;
+    }
+    STAM_PROFILE_STOP(&pGVM->pgm.s.Stats.StatLargePageSetup, b);
+
+    /*
+     * Flush all TLBs.
+     */
+    /** @todo r=bird: we don't really have to flush the VCPU TLBs for this, we could
+     *        do that lazily since we've replace 512 ZERO pages meaning that writes
+     *        will trigger an exit where we could do the necessary flushing.
+     *
+     *        Will need to check the Trap0eHandler code first though. */
+    PGM_INVL_ALL_VCPU_TLBS(pGVM);
+    pgmPhysInvalidatePageMapTLB(pGVM);
+
+    return VINF_SUCCESS;
 }
 
 
