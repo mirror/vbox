@@ -118,8 +118,8 @@
 
 /** Profiling macro. */
 #ifdef HM_PROFILE_EXIT_DISPATCH
-# define HMVMX_START_EXIT_DISPATCH_PROF()           STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatExitDispatch, ed)
-# define HMVMX_STOP_EXIT_DISPATCH_PROF()            STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatExitDispatch, ed)
+# define HMVMX_START_EXIT_DISPATCH_PROF()           STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatExitDispatch, ed)
+# define HMVMX_STOP_EXIT_DISPATCH_PROF()            STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatExitDispatch, ed)
 #else
 # define HMVMX_START_EXIT_DISPATCH_PROF()           do { } while (0)
 # define HMVMX_STOP_EXIT_DISPATCH_PROF()            do { } while (0)
@@ -3872,7 +3872,7 @@ static int vmxHCExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
                 CPUMR0LoadGuestDebugState(pVCpu, true /* include DR6 */);
                 Assert(CPUMIsGuestDebugStateActive(pVCpu));
                 Assert(!CPUMIsHyperDebugStateActive(pVCpu));
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatDRxArmed);
+                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatDRxArmed);
             }
             Assert(!fInterceptMovDRx);
         }
@@ -4206,7 +4206,9 @@ static int vmxHCExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransi
 #endif
     PCCPUMCTX           pCtx            = &pVCpu->cpum.GstCtx;
     PVMXVMCSINFO        pVmcsInfo       = pVmxTransient->pVmcsInfo;
+#ifdef IN_RING0
     PVMXVMCSINFOSHARED  pVmcsInfoShared = pVmcsInfo->pShared;
+#endif
 
     /*
      * Guest Segment registers: CS, SS, DS, ES, FS, GS.
@@ -4658,20 +4660,20 @@ static void vmxHCUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSIEN
         if (   idCurrentCpu == pVCpu->hmr0.s.idLastCpu
             && TMVirtualSyncIsCurrentDeadlineVersion(pVM, pVCpu->hmr0.s.vmx.uTscDeadlineVersion))
         {
-            STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatVmxPreemptionReusingDeadline);
+            STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatVmxPreemptionReusingDeadline);
             fOffsettedTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &uTscOffset, &fParavirtTsc);
             cTicksToDeadline = pVCpu->hmr0.s.vmx.uTscDeadline - SUPReadTsc();
             if ((int64_t)cTicksToDeadline > 0)
             { /* hopefully */ }
             else
             {
-                STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatVmxPreemptionReusingDeadlineExpired);
+                STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatVmxPreemptionReusingDeadlineExpired);
                 cTicksToDeadline = 0;
             }
         }
         else
         {
-            STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatVmxPreemptionRecalcingDeadline);
+            STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatVmxPreemptionRecalcingDeadline);
             cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVM, pVCpu, &uTscOffset, &fOffsettedTsc, &fParavirtTsc,
                                                                 &pVCpu->hmr0.s.vmx.uTscDeadline,
                                                                 &pVCpu->hmr0.s.vmx.uTscDeadlineVersion);
@@ -4679,7 +4681,7 @@ static void vmxHCUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSIEN
             if (cTicksToDeadline >= 128)
             { /* hopefully */ }
             else
-                STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatVmxPreemptionRecalcingDeadlineExpired);
+                STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatVmxPreemptionRecalcingDeadlineExpired);
         }
 
         /* Make sure the returned values have sane upper and lower boundaries. */
@@ -4706,7 +4708,7 @@ static void vmxHCUpdateTscOffsettingAndPreemptTimer(PVMCPUCC pVCpu, PVMXTRANSIEN
         int rc = GIMR0UpdateParavirtTsc(pVM, 0 /* u64Offset */);
         AssertRC(rc);
 #endif
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatTscParavirt);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatTscParavirt);
     }
 
     if (   fOffsettedTsc
@@ -5199,7 +5201,7 @@ static int vmxHCImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_
         return VERR_HM_IPE_1;
 # endif
 
-    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatImportGuestState, x);
+    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatImportGuestState, x);
 
 #ifdef IN_RING0
     /*
@@ -5543,7 +5545,7 @@ static int vmxHCImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_
     ASMSetFlags(fEFlags);
 #endif
 
-    STAM_PROFILE_ADV_STOP(& VCPU_2_VMXSTATE(pVCpu).StatImportGuestState, x);
+    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatImportGuestState, x);
 
     if (RT_SUCCESS(rc))
     { /* likely */ }
@@ -5647,7 +5649,7 @@ static VBOXSTRICTRC vmxHCCheckForceFlags(PVMCPUCC pVCpu, bool fIsNestedGuest, bo
     if (   VM_FF_IS_ANY_SET(pVM, VM_FF_HM_TO_R3_MASK)
         || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchHmToR3FF);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchHmToR3FF);
         int rc = RT_LIKELY(!VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_RAW_TO_R3 : VINF_EM_NO_MEMORY;
         Log4Func(("HM_TO_R3 forcing us back to ring-3. rc=%d\n", rc));
         return rc;
@@ -5657,7 +5659,7 @@ static VBOXSTRICTRC vmxHCCheckForceFlags(PVMCPUCC pVCpu, bool fIsNestedGuest, bo
     if (   VM_FF_IS_SET(pVM, VM_FF_REQUEST)
         || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_REQUEST))
     {
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchVmReq);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchVmReq);
         Log4Func(("Pending VM request forcing us back to ring-3\n"));
         return VINF_EM_PENDING_REQUEST;
     }
@@ -5665,7 +5667,7 @@ static VBOXSTRICTRC vmxHCCheckForceFlags(PVMCPUCC pVCpu, bool fIsNestedGuest, bo
     /* Pending PGM pool flushes. */
     if (VM_FF_IS_SET(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
     {
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchPgmPoolFlush);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchPgmPoolFlush);
         Log4Func(("PGM pool flush pending forcing us back to ring-3\n"));
         return VINF_PGM_POOL_FLUSH_PENDING;
     }
@@ -5673,7 +5675,7 @@ static VBOXSTRICTRC vmxHCCheckForceFlags(PVMCPUCC pVCpu, bool fIsNestedGuest, bo
     /* Pending DMA requests. */
     if (VM_FF_IS_SET(pVM, VM_FF_PDM_DMA))
     {
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchDma);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchDma);
         Log4Func(("Pending DMA request forcing us back to ring-3\n"));
         return VINF_EM_RAW_TO_R3;
     }
@@ -5959,16 +5961,16 @@ static int vmxHCLeave(PVMCPUCC pVCpu, bool fImportState)
     /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
     pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs = false;
 
-    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATE(pVCpu).StatEntry);
-    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATE(pVCpu).StatImportGuestState);
-    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATE(pVCpu).StatExportGuestState);
-    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATE(pVCpu).StatPreExit);
-    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATE(pVCpu).StatExitHandling);
-    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATE(pVCpu).StatExitIO);
-    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATE(pVCpu).StatExitMovCRx);
-    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATE(pVCpu).StatExitXcptNmi);
-    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATE(pVCpu).StatExitVmentry);
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchLongJmpToR3);
+    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATS(pVCpu).StatEntry);
+    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATS(pVCpu).StatImportGuestState);
+    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATS(pVCpu).StatExportGuestState);
+    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATS(pVCpu).StatPreExit);
+    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATS(pVCpu).StatExitHandling);
+    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATS(pVCpu).StatExitIO);
+    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATS(pVCpu).StatExitMovCRx);
+    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATS(pVCpu).StatExitXcptNmi);
+    STAM_PROFILE_ADV_SET_STOPPED(&VCPU_2_VMXSTATS(pVCpu).StatExitVmentry);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchLongJmpToR3);
 
     VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
 
@@ -6161,7 +6163,7 @@ static int vmxHCExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
     /* Save guest state and restore host state bits. */
     int rc = vmxHCLeaveSession(pVCpu);
     AssertRCReturn(rc, rc);
-    STAM_COUNTER_DEC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchLongJmpToR3);
+    STAM_COUNTER_DEC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchLongJmpToR3);
 
     /* Thread-context hooks are unregistered at this point!!! */
     /* Ring-3 callback notifications are unregistered at this point!!! */
@@ -6191,7 +6193,7 @@ static int vmxHCExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
         ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_ALL_GUEST);
     }
 
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchExitToR3);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchExitToR3);
     VMMRZCallRing3Enable(pVCpu);
     return rc;
 }
@@ -6300,10 +6302,10 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
         Assert(uVector <= X86_XCPT_LAST);
         Assert(uIntType != VMX_EXIT_INT_INFO_TYPE_NMI          || uVector == X86_XCPT_NMI);
         Assert(uIntType != VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT || uVector == X86_XCPT_DB);
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).aStatInjectedXcpts[uVector]);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).aStatInjectedXcpts[uVector]);
     }
     else
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).aStatInjectedIrqs[uVector & MASK_INJECT_IRQ_STAT]);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).aStatInjectedIrqs[uVector & MASK_INJECT_IRQ_STAT]);
 
     /*
      * Hardware interrupts & exceptions cannot be delivered through the software interrupt
@@ -6605,7 +6607,7 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
                 }
                 else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
                 {
-                    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchTprMaskedIrq);
+                    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchTprMaskedIrq);
 
                     if (   !fIsNestedGuest
                         && (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
@@ -6619,7 +6621,7 @@ static VBOXSTRICTRC vmxHCEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
                      */
                 }
                 else
-                    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchGuestIrq);
+                    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchGuestIrq);
 
                 /* We've injected the interrupt or taken necessary action, bail. */
                 return VINF_SUCCESS;
@@ -6724,9 +6726,9 @@ static VBOXSTRICTRC vmxHCInjectPendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsIn
         AssertRCReturn(VBOXSTRICTRC_VAL(rcStrict), rcStrict);
 
         if (uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatInjectInterrupt);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatInjectInterrupt);
         else
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatInjectXcpt);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatInjectXcpt);
     }
 
     /*
@@ -6810,7 +6812,7 @@ static VBOXSTRICTRC vmxHCExportGuestState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
     LogFlowFunc(("pVCpu=%p\n", pVCpu));
 
-    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatExportGuestState, x);
+    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatExportGuestState, x);
 
 #ifdef IN_RING0
     /*
@@ -6876,7 +6878,7 @@ static VBOXSTRICTRC vmxHCExportGuestState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
                                                   |  HM_CHANGED_GUEST_OTHER_MSRS
                                                   | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_VMX_MASK)));
 
-    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatExportGuestState, x);
+    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatExportGuestState, x);
     return rc;
 }
 
@@ -6961,7 +6963,7 @@ static VBOXSTRICTRC vmxHCExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT p
         vmxHCExportGuestRsp(pVCpu);
         vmxHCExportGuestRflags(pVCpu, pVmxTransient);
         rcStrict = vmxHCExportGuestHwvirtState(pVCpu, pVmxTransient);
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExportMinimal);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExportMinimal);
     }
     /* If anything else also changed, go through the full export routine and export as required. */
     else if (fCtxChanged & fCtxMask)
@@ -6978,7 +6980,7 @@ static VBOXSTRICTRC vmxHCExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT p
 #endif
             return rcStrict;
         }
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExportFull);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExportFull);
     }
     /* Nothing changed, nothing to load here. */
     else
@@ -7661,7 +7663,7 @@ static int vmxHCExitHostNmi(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
     ASMSetFlags(fEFlags);
     if (fDispatched)
     {
-        STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitHostNmiInGC);
+        STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitHostNmiInGC);
         return VINF_SUCCESS;
     }
 
@@ -7670,7 +7672,7 @@ static int vmxHCExitHostNmi(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
      * there should be no race or recursion even if we are unlucky enough to be preempted
      * (to the target CPU) without dispatching the host NMI above.
      */
-    STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitHostNmiInGCIpi);
+    STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitHostNmiInGCIpi);
     return RTMpOnSpecific(idCpu, &hmR0DispatchHostNmi, NULL /* pvUser1 */,  NULL /* pvUser2 */);
 }
 
@@ -8073,7 +8075,7 @@ static VBOXSTRICTRC vmxHCRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
     {
         Assert(!HMR0SuspendPending());
         HMVMX_ASSERT_CPU_SAFE(pVCpu);
-        STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatEntry, x);
+        STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatEntry, x);
 
         /*
          * Preparatory work for running nested-guest code, this may force us to
@@ -8098,7 +8100,7 @@ static VBOXSTRICTRC vmxHCRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
         { /* very likely */ }
         else
         {
-            STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatPreExit, x);
+            STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatPreExit, x);
             vmxHCReportWorldSwitchError(pVCpu, rcRun, &VmxTransient);
             return rcRun;
         }
@@ -8107,9 +8109,9 @@ static VBOXSTRICTRC vmxHCRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
          * Profile the VM-exit.
          */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitAll);
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).aStatExitReason[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
-        STAM_PROFILE_ADV_STOP_START(&VCPU_2_VMXSTATE(pVCpu).StatPreExit, &VCPU_2_VMXSTATE(pVCpu).StatExitHandling, x);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitAll);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).aStatExitReason[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
+        STAM_PROFILE_ADV_STOP_START(&VCPU_2_VMXSTATS(pVCpu).StatPreExit, &VCPU_2_VMXSTATS(pVCpu).StatExitHandling, x);
         HMVMX_START_EXIT_DISPATCH_PROF();
 
         VBOXVMM_R0_HMVMX_VMEXIT_NOCTX(pVCpu, &pVCpu->cpum.GstCtx, VmxTransient.uExitReason);
@@ -8122,18 +8124,18 @@ static VBOXSTRICTRC vmxHCRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
 #else
         rcStrict = vmxHCHandleExit(pVCpu, &VmxTransient);
 #endif
-        STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatExitHandling, x);
+        STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatExitHandling, x);
         if (rcStrict == VINF_SUCCESS)
         {
             if (++(*pcLoops) <= cMaxResumeLoops)
                 continue;
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchMaxResumeLoops);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchMaxResumeLoops);
             rcStrict = VINF_EM_RAW_INTERRUPT;
         }
         break;
     }
 
-    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatEntry, x);
+    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatEntry, x);
     return rcStrict;
 }
 
@@ -8185,7 +8187,7 @@ static VBOXSTRICTRC vmxHCRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
     {
         Assert(!HMR0SuspendPending());
         HMVMX_ASSERT_CPU_SAFE(pVCpu);
-        STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatEntry, x);
+        STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatEntry, x);
 
         /*
          * Preparatory work for running guest code, this may force us to
@@ -8210,7 +8212,7 @@ static VBOXSTRICTRC vmxHCRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
         { /* very likely */ }
         else
         {
-            STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatPreExit, x);
+            STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatPreExit, x);
             vmxHCReportWorldSwitchError(pVCpu, rcRun, &VmxTransient);
             return rcRun;
         }
@@ -8219,10 +8221,10 @@ static VBOXSTRICTRC vmxHCRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
          * Profile the VM-exit.
          */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitAll);
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatNestedExitAll);
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).aStatNestedExitReason[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
-        STAM_PROFILE_ADV_STOP_START(&VCPU_2_VMXSTATE(pVCpu).StatPreExit, &VCPU_2_VMXSTATE(pVCpu).StatExitHandling, x);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitAll);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatNestedExitAll);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).aStatNestedExitReason[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
+        STAM_PROFILE_ADV_STOP_START(&VCPU_2_VMXSTATS(pVCpu).StatPreExit, &VCPU_2_VMXSTATS(pVCpu).StatExitHandling, x);
         HMVMX_START_EXIT_DISPATCH_PROF();
 
         VBOXVMM_R0_HMVMX_VMEXIT_NOCTX(pVCpu, &pVCpu->cpum.GstCtx, VmxTransient.uExitReason);
@@ -8231,19 +8233,19 @@ static VBOXSTRICTRC vmxHCRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
          * Handle the VM-exit.
          */
         rcStrict = vmxHCHandleExitNested(pVCpu, &VmxTransient);
-        STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatExitHandling, x);
+        STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatExitHandling, x);
         if (rcStrict == VINF_SUCCESS)
         {
             if (!CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
             {
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchNstGstVmexit);
+                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchNstGstVmexit);
                 rcStrict = VINF_VMX_VMEXIT;
             }
             else
             {
                 if (++(*pcLoops) <= cMaxResumeLoops)
                     continue;
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchMaxResumeLoops);
+                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchMaxResumeLoops);
                 rcStrict = VINF_EM_RAW_INTERRUPT;
             }
         }
@@ -8252,7 +8254,7 @@ static VBOXSTRICTRC vmxHCRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
         break;
     }
 
-    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatEntry, x);
+    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatEntry, x);
     return rcStrict;
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
@@ -9341,7 +9343,7 @@ static VBOXSTRICTRC vmxHCRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
     {
         Assert(!HMR0SuspendPending());
         HMVMX_ASSERT_CPU_SAFE(pVCpu);
-        STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatEntry, x);
+        STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatEntry, x);
         bool fStepping = VCPU_2_VMXSTATE(pVCpu).fSingleInstruction;
 
         /* Set up VM-execution controls the next two can respond to. */
@@ -9376,16 +9378,16 @@ static VBOXSTRICTRC vmxHCRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
         { /* very likely */ }
         else
         {
-            STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatPreExit, x);
+            STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatPreExit, x);
             vmxHCReportWorldSwitchError(pVCpu, rcRun, &VmxTransient);
             return rcRun;
         }
 
         /* Profile the VM-exit. */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitAll);
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).aStatExitReason[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
-        STAM_PROFILE_ADV_STOP_START(&VCPU_2_VMXSTATE(pVCpu).StatPreExit, &VCPU_2_VMXSTATE(pVCpu).StatExitHandling, x);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitAll);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).aStatExitReason[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
+        STAM_PROFILE_ADV_STOP_START(&VCPU_2_VMXSTATS(pVCpu).StatPreExit, &VCPU_2_VMXSTATS(pVCpu).StatExitHandling, x);
         HMVMX_START_EXIT_DISPATCH_PROF();
 
         VBOXVMM_R0_HMVMX_VMEXIT_NOCTX(pVCpu, &pVCpu->cpum.GstCtx, VmxTransient.uExitReason);
@@ -9394,12 +9396,12 @@ static VBOXSTRICTRC vmxHCRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
          * Handle the VM-exit - we quit earlier on certain VM-exits, see vmxHCHandleExitDebug().
          */
         rcStrict = vmxHCRunDebugHandleExit(pVCpu, &VmxTransient, &DbgState);
-        STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatExitHandling, x);
+        STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatExitHandling, x);
         if (rcStrict != VINF_SUCCESS)
             break;
         if (++(*pcLoops) > cMaxResumeLoops)
         {
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchMaxResumeLoops);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchMaxResumeLoops);
             rcStrict = VINF_EM_RAW_INTERRUPT;
             break;
         }
@@ -9451,7 +9453,7 @@ static VBOXSTRICTRC vmxHCRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
     pVCpu->hmr0.s.fDebugWantRdTscExit = false;
     VCPU_2_VMXSTATE(pVCpu).fSingleInstruction  = fSavedSingleInstruction;
 
-    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatEntry, x);
+    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatEntry, x);
     return rcStrict;
 }
 #endif
@@ -9987,7 +9989,7 @@ static VBOXSTRICTRC vmxHCCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PVMXTRANSIE
                     u32ErrCode = 0;
 
                 /* If uExitVector is #PF, CR2 value will be updated from the VMCS if it's a guest #PF, see vmxHCExitXcptPF(). */
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatInjectReflect);
+                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatInjectReflect);
                 vmxHCSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(uIdtVectorInfo), 0 /* cbInstr */,
                                        u32ErrCode, pVCpu->cpum.GstCtx.cr2);
 
@@ -10016,7 +10018,7 @@ static VBOXSTRICTRC vmxHCCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PVMXTRANSIE
                 }
                 else
                 {
-                    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatInjectConvertDF);
+                    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatInjectConvertDF);
                     vmxHCSetPendingXcptDF(pVCpu);
                     Log4Func(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", VCPU_2_VMXSTATE(pVCpu).Event.u64IntInfo,
                               uIdtVector, VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo)));
@@ -10366,7 +10368,7 @@ static VBOXSTRICTRC vmxHCExitLmsw(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_
         rcStrict = VINF_SUCCESS;
     }
 
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitLmsw);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitLmsw);
     Log4Func(("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
@@ -10391,7 +10393,7 @@ static VBOXSTRICTRC vmxHCExitClts(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint8_
         rcStrict = VINF_SUCCESS;
     }
 
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitClts);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitClts);
     Log4Func(("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
@@ -10419,11 +10421,11 @@ static VBOXSTRICTRC vmxHCExitMovFromCrX(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, 
 #ifdef VBOX_WITH_STATISTICS
     switch (iCrReg)
     {
-        case 0: STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitCR0Read); break;
-        case 2: STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitCR2Read); break;
-        case 3: STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitCR3Read); break;
-        case 4: STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitCR4Read); break;
-        case 8: STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitCR8Read); break;
+        case 0: STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitCR0Read); break;
+        case 2: STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitCR2Read); break;
+        case 3: STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitCR3Read); break;
+        case 4: STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitCR4Read); break;
+        case 8: STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitCR8Read); break;
     }
 #endif
     Log4Func(("CR%d Read access rcStrict=%Rrc\n", iCrReg, VBOXSTRICTRC_VAL(rcStrict)));
@@ -10448,24 +10450,24 @@ static VBOXSTRICTRC vmxHCExitMovToCrX(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
         case 0:
             ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0
                                                      | HM_CHANGED_GUEST_EFER_MSR | HM_CHANGED_VMX_ENTRY_EXIT_CTLS);
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitCR0Write);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitCR0Write);
             Log4Func(("CR0 write. rcStrict=%Rrc CR0=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cr0));
             break;
 
         case 2:
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitCR2Write);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitCR2Write);
             /* Nothing to do here, CR2 it's not part of the VMCS. */
             break;
 
         case 3:
             ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR3);
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitCR3Write);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitCR3Write);
             Log4Func(("CR3 write. rcStrict=%Rrc CR3=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cr3));
             break;
 
         case 4:
             ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR4);
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitCR4Write);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitCR4Write);
 #ifdef IN_RING0
             Log4Func(("CR4 write. rc=%Rrc CR4=%#RX64 fLoadSaveGuestXcr0=%u\n", VBOXSTRICTRC_VAL(rcStrict),
                       pVCpu->cpum.GstCtx.cr4, pVCpu->hmr0.s.fLoadSaveGuestXcr0));
@@ -10477,7 +10479,7 @@ static VBOXSTRICTRC vmxHCExitMovToCrX(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
         case 8:
             ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged,
                              HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_APIC_TPR);
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitCR8Write);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitCR8Write);
             break;
 
         default:
@@ -10527,7 +10529,7 @@ static VBOXSTRICTRC vmxHCExitXcptPF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             vmxHCSetPendingXcptDF(pVCpu);
             Log4Func(("Pending #DF due to vectoring #PF w/ NestedPaging\n"));
         }
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestPF);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestPF);
         return VINF_SUCCESS;
     }
 
@@ -10560,7 +10562,7 @@ static VBOXSTRICTRC vmxHCExitXcptPF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
          */
         ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_ALL_GUEST);
         TRPMResetTrap(pVCpu);
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitShadowPF);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitShadowPF);
         return rc;
     }
 
@@ -10584,12 +10586,12 @@ static VBOXSTRICTRC vmxHCExitXcptPF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             Log4Func(("#PF: Pending #DF due to vectoring #PF\n"));
         }
 
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestPF);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestPF);
         return VINF_SUCCESS;
     }
 
     TRPMResetTrap(pVCpu);
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitShadowPFEM);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitShadowPFEM);
     return rc;
 }
 
@@ -10602,7 +10604,7 @@ static VBOXSTRICTRC vmxHCExitXcptPF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 static VBOXSTRICTRC vmxHCExitXcptMF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestMF);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestMF);
 
     int rc = vmxHCImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_CR0);
     AssertRCReturn(rc, rc);
@@ -10634,7 +10636,7 @@ static VBOXSTRICTRC vmxHCExitXcptMF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 static VBOXSTRICTRC vmxHCExitXcptBP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestBP);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestBP);
 
     int rc = vmxHCImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
     AssertRCReturn(rc, rc);
@@ -10683,7 +10685,7 @@ static VBOXSTRICTRC vmxHCExitXcptAC(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         /*
          * Check for debug/trace events and import state accordingly.
          */
-        STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestACSplitLock);
+        STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestACSplitLock);
         PVMCC pVM = pVCpu->CTX_SUFF(pVM);
         if (   !DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_VMX_SPLIT_LOCK)
 #ifdef IN_RING0
@@ -10752,7 +10754,7 @@ static VBOXSTRICTRC vmxHCExitXcptAC(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         return VINF_EM_EMULATE_SPLIT_LOCK;
     }
 
-    STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestAC);
+    STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestAC);
     Log8Func(("cs:rip=%#04x:%#RX64 rflags=%#RX64 cr0=%#RX64 cpl=%d -> #AC\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
               pVCpu->cpum.GstCtx.rflags, pVCpu->cpum.GstCtx.cr0, CPUMGetGuestCPL(pVCpu) ));
 
@@ -10771,7 +10773,7 @@ static VBOXSTRICTRC vmxHCExitXcptAC(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 static VBOXSTRICTRC vmxHCExitXcptDB(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestDB);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestDB);
 
     /*
      * Get the DR6-like values from the Exit qualification and pass it to DBGF for processing.
@@ -10942,7 +10944,7 @@ DECLINLINE(bool) vmxHCIsMesaDrvGp(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, P
 static VBOXSTRICTRC vmxHCExitXcptGP(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestGP);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestGP);
 
     PCPUMCTX            pCtx            = &pVCpu->cpum.GstCtx;
     PVMXVMCSINFO        pVmcsInfo       = pVmxTransient->pVmcsInfo;
@@ -11059,24 +11061,24 @@ static VBOXSTRICTRC vmxHCExitXcptOthers(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 #ifdef VBOX_WITH_STATISTICS
     switch (uVector)
     {
-        case X86_XCPT_DE:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestDE);     break;
-        case X86_XCPT_DB:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestDB);     break;
-        case X86_XCPT_BP:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestBP);     break;
-        case X86_XCPT_OF:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestOF);     break;
-        case X86_XCPT_BR:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestBR);     break;
-        case X86_XCPT_UD:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestUD);     break;
-        case X86_XCPT_NM:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestOF);     break;
-        case X86_XCPT_DF:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestDF);     break;
-        case X86_XCPT_TS:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestTS);     break;
-        case X86_XCPT_NP:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestNP);     break;
-        case X86_XCPT_SS:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestSS);     break;
-        case X86_XCPT_GP:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestGP);     break;
-        case X86_XCPT_PF:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestPF);     break;
-        case X86_XCPT_MF:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestMF);     break;
-        case X86_XCPT_AC:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestAC);     break;
-        case X86_XCPT_XF:   STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestXF);     break;
+        case X86_XCPT_DE:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestDE);     break;
+        case X86_XCPT_DB:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestDB);     break;
+        case X86_XCPT_BP:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestBP);     break;
+        case X86_XCPT_OF:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestOF);     break;
+        case X86_XCPT_BR:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestBR);     break;
+        case X86_XCPT_UD:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestUD);     break;
+        case X86_XCPT_NM:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestOF);     break;
+        case X86_XCPT_DF:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestDF);     break;
+        case X86_XCPT_TS:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestTS);     break;
+        case X86_XCPT_NP:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestNP);     break;
+        case X86_XCPT_SS:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestSS);     break;
+        case X86_XCPT_GP:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestGP);     break;
+        case X86_XCPT_PF:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestPF);     break;
+        case X86_XCPT_MF:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestMF);     break;
+        case X86_XCPT_AC:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestAC);     break;
+        case X86_XCPT_XF:   STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestXF);     break;
         default:
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitGuestXcpUnk);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitGuestXcpUnk);
             break;
     }
 #endif
@@ -11160,7 +11162,7 @@ static VBOXSTRICTRC vmxHCExitXcpt(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL vmxHCExitExtInt(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitExtInt);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitExtInt);
 
 #ifdef IN_RING0
     /* Windows hosts (32-bit and 64-bit) have DPC latency issues. See @bugref{6853}. */
@@ -11180,7 +11182,7 @@ HMVMX_EXIT_DECL vmxHCExitExtInt(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL vmxHCExitXcptOrNmi(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatExitXcptNmi, y3);
+    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatExitXcptNmi, y3);
 
     vmxHCReadExitIntInfoVmcs(pVCpu, pVmxTransient);
 
@@ -11246,7 +11248,7 @@ HMVMX_EXIT_DECL vmxHCExitXcptOrNmi(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         }
     }
 
-    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatExitXcptNmi, y3);
+    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatExitXcptNmi, y3);
     return rcStrict;
 }
 
@@ -11263,7 +11265,7 @@ HMVMX_EXIT_NSRC_DECL vmxHCExitIntWindow(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     vmxHCClearIntWindowExitVmcs(pVCpu, pVmcsInfo);
 
     /* Evaluate and deliver pending events and resume guest execution. */
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitIntWindow);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitIntWindow);
     return VINF_SUCCESS;
 }
 
@@ -11646,7 +11648,7 @@ HMVMX_EXIT_DECL vmxHCExitHlt(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         rc = VINF_EM_HALT;
 
     if (rc != VINF_SUCCESS)
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchHltToR3);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchHltToR3);
     return rc;
 }
 
@@ -11677,7 +11679,7 @@ Log12(("vmxHCExitPreemptTimer:\n"));
     /* If there are any timer events pending, fall back to ring-3, otherwise resume guest execution. */
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     bool fTimersPending = TMTimerPollBool(pVM, pVCpu);
-    STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitPreemptTimer);
+    STAM_REL_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitPreemptTimer);
     return fTimersPending ? VINF_EM_RAW_TIMER_PENDING : VINF_SUCCESS;
 }
 
@@ -11950,7 +11952,7 @@ HMVMX_EXIT_DECL vmxHCExitRdmsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 #endif
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedRdmsr(pVCpu, pVmxTransient->cbExitInstr);
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitRdmsr);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitRdmsr);
     if (rcStrict == VINF_SUCCESS)
         ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
@@ -12000,7 +12002,7 @@ HMVMX_EXIT_DECL vmxHCExitWrmsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     Log4Func(("ecx=%#RX32 edx:eax=%#RX32:%#RX32\n", idMsr, pVCpu->cpum.GstCtx.edx, pVCpu->cpum.GstCtx.eax));
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedWrmsr(pVCpu, pVmxTransient->cbExitInstr);
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitWrmsr);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitWrmsr);
 
     if (rcStrict == VINF_SUCCESS)
     {
@@ -12146,7 +12148,7 @@ HMVMX_EXIT_NSRC_DECL vmxHCExitTprBelowThreshold(PVMCPUCC pVCpu, PVMXTRANSIENT pV
      * We'll re-evaluate pending interrupts and inject them before the next VM
      * entry so we can just continue execution here.
      */
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitTprBelowThreshold);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitTprBelowThreshold);
     return VINF_SUCCESS;
 }
 
@@ -12163,7 +12165,7 @@ HMVMX_EXIT_NSRC_DECL vmxHCExitTprBelowThreshold(PVMCPUCC pVCpu, PVMXTRANSIENT pV
 HMVMX_EXIT_DECL vmxHCExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatExitMovCRx, y2);
+    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatExitMovCRx, y2);
 
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
@@ -12321,7 +12323,7 @@ HMVMX_EXIT_DECL vmxHCExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                                    == (HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS));
     Assert(rcStrict != VINF_IEM_RAISED_XCPT);
 
-    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatExitMovCRx, y2);
+    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatExitMovCRx, y2);
     NOREF(pVM);
     return rcStrict;
 }
@@ -12334,7 +12336,7 @@ HMVMX_EXIT_DECL vmxHCExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL vmxHCExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatExitIO, y1);
+    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatExitIO, y1);
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
@@ -12428,7 +12430,7 @@ HMVMX_EXIT_DECL vmxHCExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             if (fIOWrite)
             {
                 rcStrict = IOMIOPortWrite(pVM, pVCpu, uIOPort, pCtx->eax & uAndVal, cbValue);
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitIOWrite);
+                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitIOWrite);
 #ifdef IN_RING0
                 if (    rcStrict == VINF_IOM_R3_IOPORT_WRITE
                     && !pCtx->eflags.Bits.u1TF)
@@ -12449,7 +12451,7 @@ HMVMX_EXIT_DECL vmxHCExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                     && !pCtx->eflags.Bits.u1TF)
                     rcStrict = EMRZSetPendingIoPortRead(pVCpu, uIOPort, cbInstr, cbValue);
 #endif
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitIORead);
+                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitIORead);
             }
         }
 
@@ -12486,7 +12488,7 @@ HMVMX_EXIT_DECL vmxHCExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                                 && (pCtx->cr4 & X86_CR4_DE))
                             || DBGFBpIsHwIoArmed(pVM)))
             {
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatDRxIoCheck);
+                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatDRxIoCheck);
 
 #ifdef IN_RING0
                 /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
@@ -12543,7 +12545,7 @@ HMVMX_EXIT_DECL vmxHCExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 # endif
         }
 #endif
-        STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatExitIO, y1);
+        STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatExitIO, y1);
     }
     else
     {
@@ -12552,8 +12554,8 @@ HMVMX_EXIT_DECL vmxHCExitIoInstr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
          */
         int rc2 = vmxHCImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
         AssertRCReturn(rc2, rc2);
-        STAM_COUNTER_INC(!fIOString ? fIOWrite ? &VCPU_2_VMXSTATE(pVCpu).StatExitIOWrite : &VCPU_2_VMXSTATE(pVCpu).StatExitIORead
-                         : fIOWrite ? &VCPU_2_VMXSTATE(pVCpu).StatExitIOStringWrite : &VCPU_2_VMXSTATE(pVCpu).StatExitIOStringRead);
+        STAM_COUNTER_INC(!fIOString ? fIOWrite ? &VCPU_2_VMXSTATS(pVCpu).StatExitIOWrite : &VCPU_2_VMXSTATS(pVCpu).StatExitIORead
+                         : fIOWrite ? &VCPU_2_VMXSTATS(pVCpu).StatExitIOStringWrite : &VCPU_2_VMXSTATS(pVCpu).StatExitIOStringRead);
         Log4(("IOExit/%u: %04x:%08RX64: %s%s%s %#x LB %u -> EMHistoryExec\n",
               pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
               VMX_EXIT_QUAL_IO_IS_REP(pVmxTransient->uExitQual) ? "REP " : "",
@@ -12607,13 +12609,13 @@ HMVMX_EXIT_DECL vmxHCExitTaskSwitch(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
             Log4Func(("Pending event. uIntType=%#x uVector=%#x\n", VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo),
                       VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo)));
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitTaskSwitch);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitTaskSwitch);
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
         }
     }
 
     /* Fall back to the interpreter to emulate the task-switch. */
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitTaskSwitch);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitTaskSwitch);
     return VERR_EM_INTERPRETER;
 }
 
@@ -12639,7 +12641,7 @@ HMVMX_EXIT_DECL vmxHCExitMtf(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL vmxHCExitApicAccess(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitApicAccess);
+    STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitApicAccess);
 
     vmxHCReadExitIntInfoVmcs(pVCpu, pVmxTransient);
     vmxHCReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
@@ -12656,7 +12658,7 @@ HMVMX_EXIT_DECL vmxHCExitApicAccess(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         /* For some crazy guest, if an event delivery causes an APIC-access VM-exit, go to instruction emulation. */
         if (RT_UNLIKELY(VCPU_2_VMXSTATE(pVCpu).Event.fPending))
         {
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatInjectInterpret);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatInjectInterpret);
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
         }
     }
@@ -12716,7 +12718,7 @@ HMVMX_EXIT_DECL vmxHCExitApicAccess(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     }
 
     if (rcStrict != VINF_SUCCESS)
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatSwitchApicAccessToR3);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatSwitchApicAccessToR3);
     return rcStrict;
 }
 
@@ -12773,11 +12775,11 @@ HMVMX_EXIT_DECL vmxHCExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 #ifdef VBOX_WITH_STATISTICS
             vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
             if (VMX_EXIT_QUAL_DRX_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_DRX_DIRECTION_WRITE)
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitDRxWrite);
+                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitDRxWrite);
             else
-                STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitDRxRead);
+                STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitDRxRead);
 #endif
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatDRxContextSwitch);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatDRxContextSwitch);
             return VINF_SUCCESS;
         }
     }
@@ -12801,14 +12803,14 @@ HMVMX_EXIT_DECL vmxHCExitMovDRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                                  VMX_EXIT_QUAL_DRX_GENREG(pVmxTransient->uExitQual));
         if (RT_SUCCESS(rc))
             ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_DR7);
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitDRxWrite);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitDRxWrite);
     }
     else
     {
         rc = EMInterpretDRxRead(pVM, pVCpu, CPUMCTX2CORE(pCtx),
                                 VMX_EXIT_QUAL_DRX_GENREG(pVmxTransient->uExitQual),
                                 VMX_EXIT_QUAL_DRX_REGISTER(pVmxTransient->uExitQual));
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitDRxRead);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitDRxRead);
     }
 
     Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER);
@@ -12854,7 +12856,7 @@ HMVMX_EXIT_DECL vmxHCExitEptMisconfig(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
         { /* likely */ }
         else
         {
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatInjectInterpret);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatInjectInterpret);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             /** @todo NSTVMX: Think about how this should be handled. */
             if (pVmxTransient->fIsNestedGuest)
@@ -12964,7 +12966,7 @@ HMVMX_EXIT_DECL vmxHCExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
          * we shall resolve the nested #PF and re-inject the original event.
          */
         if (VCPU_2_VMXSTATE(pVCpu).Event.fPending)
-            STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatInjectReflectNPF);
+            STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatInjectReflectNPF);
     }
     else
     {
@@ -13007,7 +13009,7 @@ HMVMX_EXIT_DECL vmxHCExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
         || rcStrict == VERR_PAGE_NOT_PRESENT)
     {
         /* Successfully synced our nested page tables. */
-        STAM_COUNTER_INC(&VCPU_2_VMXSTATE(pVCpu).StatExitReasonNpf);
+        STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExitReasonNpf);
         ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS);
         return VINF_SUCCESS;
     }
@@ -13143,9 +13145,9 @@ HMVMX_EXIT_DECL vmxHCExitVmlaunch(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
-    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatExitVmentry, z);
+    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatExitVmentry, z);
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmlaunchVmresume(pVCpu, pVmxTransient->cbExitInstr, VMXINSTRID_VMLAUNCH);
-    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatExitVmentry, z);
+    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatExitVmentry, z);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
         ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_ALL_GUEST);
@@ -13289,9 +13291,9 @@ HMVMX_EXIT_DECL vmxHCExitVmresume(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 
     HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
 
-    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATE(pVCpu).StatExitVmentry, z);
+    STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatExitVmentry, z);
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmlaunchVmresume(pVCpu, pVmxTransient->cbExitInstr, VMXINSTRID_VMRESUME);
-    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATE(pVCpu).StatExitVmentry, z);
+    STAM_PROFILE_ADV_STOP(&VCPU_2_VMXSTATS(pVCpu).StatExitVmentry, z);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
     {
         ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_ALL_GUEST);
