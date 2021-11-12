@@ -343,30 +343,47 @@ static int drmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn
     return (fValid && cDisplaysOut > 0) ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
 }
 
-static void drmSendHints(RTFILE hDevice, struct DRMVMWRECT *paRects, unsigned cHeads)
+/**
+ * This function sends screen layout data to DRM stack.
+ *
+ * @return  VINF_SUCCESS on success, IPRT error code otherwise.
+ * @param   hDevice             Handle to opened DRM device.
+ * @param   paRects             Array of screen configuration data.
+ * @param   cRects              Number of elements in screen configuration array.
+ */
+static int drmSendHints(RTFILE hDevice, struct DRMVMWRECT *paRects, uint32_t cRects)
 {
-    int rc;
-    struct DRMVMWUPDATELAYOUT ioctlLayout;
-    uid_t curuid = getuid();
-    if (setreuid(0, 0) != 0)
+    int rc = 0;
+    uid_t curuid;
+
+    /* Store real user id. */
+    curuid = getuid();
+
+    /* Chenge effective user id. */
+    if (setreuid(0, 0) == 0)
+    {
+        struct DRMVMWUPDATELAYOUT ioctlLayout;
+
+        RT_ZERO(ioctlLayout);
+        ioctlLayout.cOutputs = cRects;
+        ioctlLayout.ptrRects = (uint64_t)paRects;
+
+        rc = RTFileIoCtl(hDevice, DRM_IOCTL_VMW_UPDATE_LAYOUT,
+                         &ioctlLayout, sizeof(ioctlLayout), NULL);
+
+        if (setreuid(curuid, 0) != 0)
+        {
+            VBClLogError("VBoxDRMClient: reset of setreuid failed after drm ioctl");
+            rc = VERR_ACCESS_DENIED;
+        }
+    }
+    else
     {
         VBClLogError("VBoxDRMClient: setreuid failed during drm ioctl\n");
-        return;
+        rc = VERR_ACCESS_DENIED;
     }
 
-    ioctlLayout.cOutputs = cHeads;
-    ioctlLayout.ptrRects = (uint64_t)paRects;
-
-    rc = RTFileIoCtl(hDevice, DRM_IOCTL_VMW_UPDATE_LAYOUT,
-                     &ioctlLayout, sizeof(ioctlLayout), NULL);
-
-    VBClLogInfo("VBoxDRMClient: push layout data to DRM stack %s, %Rrc\n",
-                RT_SUCCESS(rc) ? "successful" : "failed", rc);
-
-    if (setreuid(curuid, 0) != 0)
-    {
-        VBClLogError("VBoxDRMClient: reset of setreuid failed after drm ioctl");
-    }
+    return rc;
 }
 
 static void drmMainLoop(RTFILE hDevice)
@@ -404,8 +421,9 @@ static void drmMainLoop(RTFILE hDevice)
             rc = drmValidateLayout(aDisplaysIn, cDisplaysIn, aDisplaysOut, sizeof(aDisplaysOut), &cDisplaysOut);
             if (RT_SUCCESS(rc))
             {
-                VBClLogInfo("VBoxDRMClient: push to DRM stack info about %u display(s)\n", cDisplaysOut);
-                drmSendHints(hDevice, aDisplaysOut, cDisplaysOut);
+                rc = drmSendHints(hDevice, aDisplaysOut, cDisplaysOut);
+                VBClLogInfo("VBoxDRMClient: push screen layout data of %u display(s) to DRM stack has %s (%Rrc)\n",
+                            cDisplaysOut, RT_SUCCESS(rc) ? "succeeded" : "failed", rc);
             }
             else
             {
@@ -434,8 +452,6 @@ int main(int argc, char *argv[])
     rc = VbglR3InitUser();
     if (RT_FAILURE(rc))
         VBClLogFatalError("VBoxDRMClient: VbglR3InitUser failed: %Rrc", rc);
-
-
 
     rc = VBClLogCreate("");
     if (RT_FAILURE(rc))
