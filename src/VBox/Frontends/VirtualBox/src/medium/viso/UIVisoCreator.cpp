@@ -39,6 +39,8 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
+#include <iprt/getopt.h>
+
 
 /*********************************************************************************************************************************
 *   UIVisoCreatorWidget implementation.                                                                                          *
@@ -547,6 +549,29 @@ void UIVisoCreatorWidget::prepareVerticalToolBar()
     m_pVerticalToolBar->addAction(m_pResetAction);
 
     m_pVerticalToolBar->addWidget(bottomSpacerWidget);
+}
+
+/* static */
+int UIVisoCreatorWidget::visoWriteQuotedString(PRTSTREAM pStrmDst, const char *pszPrefix,
+                                               QString const &rStr, const char *pszPostFix)
+{
+    QByteArray const utf8Array   = rStr.toUtf8();
+    const char      *apszArgv[2] = { utf8Array.constData(), NULL };
+    char            *pszQuoted;
+    int vrc = RTGetOptArgvToString(&pszQuoted, apszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+    if (RT_SUCCESS(vrc))
+    {
+        if (pszPrefix)
+            vrc = RTStrmPutStr(pStrmDst, pszPrefix);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTStrmPutStr(pStrmDst, pszQuoted);
+            if (pszPostFix && RT_SUCCESS(vrc))
+                vrc = RTStrmPutStr(pStrmDst, pszPostFix);
+        }
+        RTStrFree(pszQuoted);
+    }
+    return vrc;
 }
 
 

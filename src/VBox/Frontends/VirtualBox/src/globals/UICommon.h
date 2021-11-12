@@ -55,6 +55,7 @@ class CCloudMachine;
 class CHostVideoInputDevice;
 class CMachine;
 class CUSBDevice;
+class UIActionPool;
 class UIMedium;
 class UIMediumEnumerator;
 class UIThreadPool;
@@ -429,9 +430,8 @@ public:
           * @param  strMachineGuestOSTypeId  Passes the type ID of machine's guest os,
           * @param  fEnableCreate            Passes whether to show/enable create action in the medium selector dialog,
           * returns QUuid of the new medium */
-        QUuid openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
-                                      const QString &strMachineFolder = QString(),
-                                      const QString &strMachineName = QString(),
+        QUuid openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pParent, UIMediumDeviceType  enmMediumType,
+                                      const QString &strMachineFolder = QString(), const QString &strMachineName = QString(),
                                       const QString &strMachineGuestOSTypeId = QString());
 
         /** Prepares storage menu according passed parameters.
@@ -445,7 +445,7 @@ public:
                                 QObject *pListener, const char *pszSlotName,
                                 const CMachine &comMachine, const QString &strControllerName, const StorageSlot &storageSlot);
         /** Updates @a comConstMachine storage with data described by @a target. */
-        void updateMachineStorage(const CMachine &comConstMachine, const UIMediumTarget &target);
+        void updateMachineStorage(const CMachine &comConstMachine, const UIMediumTarget &target, UIActionPool *pActionPool);
 
         /** Generates details for passed @a comMedium.
           * @param  fPredictDiff  Brings whether medium will be marked differencing on attaching.
@@ -612,7 +612,8 @@ private:
           * @param  pParent           Passes the dialog parent.
           * @param  strDefaultFolder  Passes the folder to save the VISO file.
           * @param  strMachineName    Passes the name of the machine, */
-        QUuid createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strDefaultFolder = QString(), const QString &strMachineName = QString());
+        QUuid createVisoMediumWithVisoCreator(UIActionPool *pActionPool, QWidget *pParent,
+                                              const QString &strDefaultFolder = QString(), const QString &strMachineName = QString());
 
         /** Creates and shows a dialog thru which user can create a new floppy disk a VISO using the file-open dialog.
           * @param  parent            Passes the parent of the dialog,

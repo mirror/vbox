@@ -458,7 +458,7 @@ void UIMediumManagerWidget::sltAddMedium()
 
 void UIMediumManagerWidget::sltCreateMedium()
 {
-    uiCommon().openMediumCreatorDialog(this, currentMediumType());
+    uiCommon().openMediumCreatorDialog(m_pActionPool, this, currentMediumType());
 }
 
 void UIMediumManagerWidget::sltCopyMedium()

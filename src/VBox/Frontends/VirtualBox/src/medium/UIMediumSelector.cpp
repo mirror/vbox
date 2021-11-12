@@ -451,8 +451,8 @@ void UIMediumSelector::sltAddMedium()
 
 void UIMediumSelector::sltCreateMedium()
 {
-    QUuid uMediumId = uiCommon().openMediumCreatorDialog(this, m_enmMediumType, m_strMachineFolder,
-                                                         m_strMachineName, m_strMachineGuestOSTypeId);
+    QUuid uMediumId;// = uiCommon().openMediumCreatorDialog(this, m_enmMediumType, m_strMachineFolder,
+    //                                   m_strMachineName, m_strMachineGuestOSTypeId);
     /* Make sure that the data structure is updated and newly created medium is selected and visible: */
     sltHandleMediumCreated(uMediumId);
 }

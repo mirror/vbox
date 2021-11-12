@@ -683,7 +683,7 @@ void UIDetailsElement::sltMountStorageMedium()
     const UIMediumTarget target = pAction->data().value<UIMediumTarget>();
 
     /* Update current machine mount-target: */
-    uiCommon().updateMachineStorage(machine(), target);
+    uiCommon().updateMachineStorage(machine(), target, gpManager->actionPool());
 }
 
 void UIDetailsElement::prepareElement()

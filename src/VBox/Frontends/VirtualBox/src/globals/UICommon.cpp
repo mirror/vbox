@@ -113,11 +113,9 @@
 #include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
-#include <iprt/getopt.h>
 #include <iprt/ldr.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
-#include <iprt/stream.h>
 #include <iprt/system.h>
 #include <VBox/sup.h>
 #include <VBox/VBoxOGL.h>
@@ -1681,38 +1679,7 @@ QUuid UICommon::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, Q
     return QUuid();
 }
 
-
-/**
- * Helper for createVisoMediumWithVisoCreator.
- * @returns IPRT status code.
- * @param   pStrmDst            Where to write the quoted string.
- * @param   pszPrefix           Stuff to put in front of it.
- * @param   rStr                The string to quote and write out.
- * @param   pszPrefix           Stuff to put after it.
- */
-DECLINLINE(int) visoWriteQuotedString(PRTSTREAM pStrmDst, const char *pszPrefix, QString const &rStr, const char *pszPostFix)
-{
-    QByteArray const utf8Array   = rStr.toUtf8();
-    const char      *apszArgv[2] = { utf8Array.constData(), NULL };
-    char            *pszQuoted;
-    int vrc = RTGetOptArgvToString(&pszQuoted, apszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
-    if (RT_SUCCESS(vrc))
-    {
-        if (pszPrefix)
-            vrc = RTStrmPutStr(pStrmDst, pszPrefix);
-        if (RT_SUCCESS(vrc))
-        {
-            vrc = RTStrmPutStr(pStrmDst, pszQuoted);
-            if (pszPostFix && RT_SUCCESS(vrc))
-                vrc = RTStrmPutStr(pStrmDst, pszPostFix);
-        }
-        RTStrFree(pszQuoted);
-    }
-
-    return vrc;
-}
-
-QUuid UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType enmMediumType,
+QUuid UICommon::openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pParent, UIMediumDeviceType enmMediumType,
                                        const QString &strDefaultFolder /* = QString() */,
                                        const QString &strMachineName /* = QString() */,
                                        const QString &strMachineGuestOSTypeId /*= QString() */)
@@ -1725,7 +1692,7 @@ QUuid UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType enm
             uMediumId = createVDWithWizard(pParent, strDefaultFolder, strMachineName, strMachineGuestOSTypeId);
             break;
         case UIMediumDeviceType_DVD:
-            uMediumId = createVisoMediumWithVisoCreator(pParent, strDefaultFolder, strMachineName);
+            uMediumId = createVisoMediumWithVisoCreator(pActionPool, pParent, strDefaultFolder, strMachineName);
             break;
         case UIMediumDeviceType_Floppy:
             uMediumId = showCreateFloppyDiskDialog(pParent, strDefaultFolder, strMachineName);
@@ -1742,11 +1709,11 @@ QUuid UICommon::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType enm
     return uMediumId;
 }
 
-QUuid UICommon::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strDefaultFolder /* = QString */,
-                                                  const QString &strMachineName /* = QString */)
+QUuid UICommon::createVisoMediumWithVisoCreator(UIActionPool *pActionPool, QWidget *pParent, const QString &strDefaultFolder /* = QString */,
+                                                const QString &strMachineName /* = QString */)
 {
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
-    UIVisoCreatorDialog *pVisoCreator = 0;//new UIVisoCreatorDialog(pDialogParent, strMachineName);
+    UIVisoCreatorDialog *pVisoCreator = new UIVisoCreatorDialog(pActionPool, pDialogParent, strMachineName);
 
     if (!pVisoCreator)
         return QString();
@@ -1788,10 +1755,10 @@ QUuid UICommon::createVisoMediumWithVisoCreator(QWidget *pParent, const QString 
                 if (RT_SUCCESS(vrc))
                 {
                     RTStrmPrintf(pStrmViso, "--iprt-iso-maker-file-marker-bourne-sh %RTuuid\n", &Uuid);
-                    vrc = visoWriteQuotedString(pStrmViso, "--volume-id=", strVisoName, "\n");
+                    vrc = UIVisoCreatorWidget::visoWriteQuotedString(pStrmViso, "--volume-id=", strVisoName, "\n");
 
                     for (int iFile = 0; iFile < files.size() && RT_SUCCESS(vrc); iFile++)
-                        vrc = visoWriteQuotedString(pStrmViso, NULL, files[iFile], "\n");
+                        vrc = UIVisoCreatorWidget::visoWriteQuotedString(pStrmViso, NULL, files[iFile], "\n");
 
                     /* Append custom options if any to the file: */
                     const QStringList &customOptions = pVisoCreator->customOptions();
@@ -2076,7 +2043,7 @@ void UICommon::prepareStorageMenu(QMenu &menu,
     }
 }
 
-void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMediumTarget &target)
+void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMediumTarget &target, UIActionPool *pActionPool)
 {
     /* Mount (by default): */
     bool fMount = true;
@@ -2136,7 +2103,8 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
                                                              strMachineFolder, false /* fUseLastFolder */);
                 }
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)
-                    uMediumID = createVisoMediumWithVisoCreator(windowManager().mainWindowShown(), strMachineFolder, comConstMachine.GetName());
+                    uMediumID = createVisoMediumWithVisoCreator(pActionPool, windowManager().mainWindowShown(), strMachineFolder,
+                                                                comConstMachine.GetName());
 
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)
                     uMediumID = showCreateFloppyDiskDialog(windowManager().mainWindowShown(), strMachineFolder, comConstMachine.GetName());

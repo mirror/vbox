@@ -2280,7 +2280,7 @@ void UIMachineLogic::sltMountStorageMedium()
     const UIMediumTarget target = pAction->data().value<UIMediumTarget>();
 
     /* Update current machine mount-target: */
-    uiCommon().updateMachineStorage(machine(), target);
+    uiCommon().updateMachineStorage(machine(), target, actionPool());
 }
 
 void UIMachineLogic::sltAttachUSBDevice()
