@@ -150,7 +150,9 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
     /*
      * Check for error injection.
      */
-    if (RT_UNLIKELY(pGVM->pgm.s.fErrInjHandyPages))
+    if (RT_LIKELY(!pGVM->pgm.s.fErrInjHandyPages))
+    { /* likely */ }
+    else
         return VERR_NO_MEMORY;
 
     /*
@@ -179,66 +181,8 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
     }
     else
     {
-        if (    (   rc == VERR_GMM_HIT_GLOBAL_LIMIT
-                 || rc == VERR_GMM_HIT_VM_ACCOUNT_LIMIT)
-            &&  iFirst < PGM_HANDY_PAGES_MIN)
-        {
-
-#ifdef VBOX_STRICT
-            /* We're ASSUMING that GMM has updated all the entires before failing us. */
-            uint32_t i;
-            for (i = iFirst; i < RT_ELEMENTS(pGVM->pgm.s.aHandyPages); i++)
-            {
-                Assert(pGVM->pgm.s.aHandyPages[i].idPage       == NIL_GMM_PAGEID);
-                Assert(pGVM->pgm.s.aHandyPages[i].idSharedPage == NIL_GMM_PAGEID);
-                Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys == NIL_GMMPAGEDESC_PHYS);
-                Assert(pGVM->pgm.s.aHandyPages[i].fZeroed      == false);
-            }
-#endif
-
-            /*
-             * Reduce the number of pages until we hit the minimum limit.
-             */
-            do
-            {
-                cPages >>= 1;
-                if (cPages + iFirst < PGM_HANDY_PAGES_MIN)
-                    cPages = PGM_HANDY_PAGES_MIN - iFirst;
-                rc = GMMR0AllocateHandyPages(pGVM, idCpu, 0, cPages, &pGVM->pgm.s.aHandyPages[iFirst]);
-            } while (   (   rc == VERR_GMM_HIT_GLOBAL_LIMIT
-                         || rc == VERR_GMM_HIT_VM_ACCOUNT_LIMIT)
-                     && cPages + iFirst > PGM_HANDY_PAGES_MIN);
-            if (RT_SUCCESS(rc))
-            {
-#ifdef VBOX_STRICT
-                i = iFirst + cPages;
-                while (i-- > 0)
-                {
-                    Assert(pGVM->pgm.s.aHandyPages[i].idPage != NIL_GMM_PAGEID);
-                    Assert(pGVM->pgm.s.aHandyPages[i].idPage <= GMM_PAGEID_LAST);
-                    Assert(pGVM->pgm.s.aHandyPages[i].idSharedPage == NIL_GMM_PAGEID);
-                    Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys != NIL_GMMPAGEDESC_PHYS);
-                    Assert(!(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys & ~X86_PTE_PAE_PG_MASK));
-                }
-
-                for (i = cPages + iFirst; i < RT_ELEMENTS(pGVM->pgm.s.aHandyPages); i++)
-                {
-                    Assert(pGVM->pgm.s.aHandyPages[i].idPage       == NIL_GMM_PAGEID);
-                    Assert(pGVM->pgm.s.aHandyPages[i].idSharedPage == NIL_GMM_PAGEID);
-                    Assert(pGVM->pgm.s.aHandyPages[i].HCPhysGCPhys == NIL_GMMPAGEDESC_PHYS);
-                    Assert(pGVM->pgm.s.aHandyPages[i].fZeroed      == false);
-                }
-#endif
-
-                pGVM->pgm.s.cHandyPages = iFirst + cPages;
-            }
-        }
-
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("PGMR0PhysAllocateHandyPages: rc=%Rrc iFirst=%d cPages=%d\n", rc, iFirst, cPages));
-            VM_FF_SET(pGVM, VM_FF_PGM_NO_MEMORY);
-        }
+        LogRel(("PGMR0PhysAllocateHandyPages: rc=%Rrc iFirst=%d cPages=%d\n", rc, iFirst, cPages));
+        VM_FF_SET(pGVM, VM_FF_PGM_NO_MEMORY);
     }
 
     LogFlow(("PGMR0PhysAllocateHandyPages: cPages=%d rc=%Rrc\n", cPages, rc));
