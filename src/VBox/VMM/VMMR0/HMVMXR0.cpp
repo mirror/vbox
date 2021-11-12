@@ -8690,68 +8690,50 @@ static int hmR0VmxExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
 
 /**
  * VMMRZCallRing3() callback wrapper which saves the guest state before we
- * longjump to ring-3 and possibly get preempted.
+ * longjump due to a ring-0 assertion.
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   enmOperation    The operation causing the ring-3 longjump.
  */
-VMMR0DECL(int) VMXR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation)
+VMMR0DECL(int) VMXR0AssertionCallback(PVMCPUCC pVCpu)
 {
-    if (enmOperation == VMMCALLRING3_VM_R0_ASSERTION)
-    {
-        /*
-         * !!! IMPORTANT !!!
-         * If you modify code here, check whether hmR0VmxLeave() and hmR0VmxLeaveSession() needs to be updated too.
-         * This is a stripped down version which gets out ASAP, trying to not trigger any further assertions.
-         */
-        VMMRZCallRing3RemoveNotification(pVCpu);
-        VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT(pVCpu);
-
-        PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
-        hmR0VmxImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
-        CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu);
-        CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */);
-
-        /* Restore host-state bits that VT-x only restores partially. */
-        if (pVCpu->hmr0.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
-            VMXRestoreHostState(pVCpu->hmr0.s.vmx.fRestoreHostFlags, &pVCpu->hmr0.s.vmx.RestoreHost);
-        pVCpu->hmr0.s.vmx.fRestoreHostFlags = 0;
-
-        /* Restore the lazy host MSRs as we're leaving VT-x context. */
-        if (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
-            hmR0VmxLazyRestoreHostMsrs(pVCpu);
-
-        /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
-        pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs = false;
-        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
-
-        /* Clear the current VMCS data back to memory (shadow VMCS if any would have been
-           cleared as part of importing the guest state above. */
-        hmR0VmxClearVmcs(pVmcsInfo);
-
-        /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
-        VMMR0ThreadCtxHookDisable(pVCpu);
-
-        /* Leave HM context. This takes care of local init (term). */
-        HMR0LeaveCpu(pVCpu);
-        HM_RESTORE_PREEMPT();
-        return VINF_SUCCESS;
-    }
-
-    Assert(pVCpu);
-    Assert(VMMRZCallRing3IsEnabled(pVCpu));
-    HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
-
+    /*
+     * !!! IMPORTANT !!!
+     * If you modify code here, check whether hmR0VmxLeave() and hmR0VmxLeaveSession() needs to be updated too.
+     * This is a stripped down version which gets out ASAP, trying to not trigger any further assertions.
+     */
+    VMMR0AssertionRemoveNotification(pVCpu);
     VMMRZCallRing3Disable(pVCpu);
+    HM_DISABLE_PREEMPT(pVCpu);
 
-    Log4Func(("-> hmR0VmxLongJmpToRing3 enmOperation=%d\n", enmOperation));
+    PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
+    hmR0VmxImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
+    CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu);
+    CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */);
 
-    int rc = hmR0VmxLongJmpToRing3(pVCpu);
-    AssertRCReturn(rc, rc);
+    /* Restore host-state bits that VT-x only restores partially. */
+    if (pVCpu->hmr0.s.vmx.fRestoreHostFlags > VMX_RESTORE_HOST_REQUIRED)
+        VMXRestoreHostState(pVCpu->hmr0.s.vmx.fRestoreHostFlags, &pVCpu->hmr0.s.vmx.RestoreHost);
+    pVCpu->hmr0.s.vmx.fRestoreHostFlags = 0;
 
-    VMMRZCallRing3Enable(pVCpu);
+    /* Restore the lazy host MSRs as we're leaving VT-x context. */
+    if (pVCpu->hmr0.s.vmx.fLazyMsrs & VMX_LAZY_MSRS_LOADED_GUEST)
+        hmR0VmxLazyRestoreHostMsrs(pVCpu);
+
+    /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
+    pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs = false;
+    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
+
+    /* Clear the current VMCS data back to memory (shadow VMCS if any would have been
+       cleared as part of importing the guest state above. */
+    hmR0VmxClearVmcs(pVmcsInfo);
+
+    /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
+    VMMR0ThreadCtxHookDisable(pVCpu);
+
+    /* Leave HM context. This takes care of local init (term). */
+    HMR0LeaveCpu(pVCpu);
+    HM_RESTORE_PREEMPT();
     return VINF_SUCCESS;
 }
 
@@ -12969,7 +12951,7 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPUCC pVCpu)
         rcStrict = rc2;
     }
     Assert(!ASMAtomicUoReadU64(&pCtx->fExtrn));
-    Assert(!VMMRZCallRing3IsNotificationSet(pVCpu));
+    Assert(!VMMR0AssertionIsNotificationSet(pVCpu));
     return rcStrict;
 }
 

@@ -264,7 +264,6 @@ int main()
 
     PVM pVM = NULL; NOREF(pVM);
 
-    CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.u64CallRing3Arg, 8);
 #if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
     CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.CallRing3JmpBufR0, 16);
     CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.CallRing3JmpBufR0.xmm6, 16);

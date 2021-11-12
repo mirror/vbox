@@ -77,7 +77,7 @@ typedef struct HMR0VTABLE
 {
     DECLR0CALLBACKMEMBER(int,          pfnEnterSession, (PVMCPUCC pVCpu));
     DECLR0CALLBACKMEMBER(void,         pfnThreadCtxCallback, (RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu, bool fGlobalInit));
-    DECLR0CALLBACKMEMBER(int,          pfnCallRing3Callback, (PVMCPUCC pVCpu, VMMCALLRING3 enmOperation));
+    DECLR0CALLBACKMEMBER(int,          pfnAssertionCallback, (PVMCPUCC pVCpu));
     DECLR0CALLBACKMEMBER(int,          pfnExportHostState, (PVMCPUCC pVCpu));
     DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnRunGuestCode, (PVMCPUCC pVCpu));
     DECLR0CALLBACKMEMBER(int,          pfnEnableCpu, (PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
@@ -161,7 +161,7 @@ static HMR0VTABLE const g_HmR0OpsVmx =
 {
     /* .pfnEnterSession = */        VMXR0Enter,
     /* .pfnThreadCtxCallback = */   VMXR0ThreadCtxCallback,
-    /* .pfnCallRing3Callback = */   VMXR0CallRing3Callback,
+    /* .pfnAssertionCallback = */   VMXR0AssertionCallback,
     /* .pfnExportHostState = */     VMXR0ExportHostState,
     /* .pfnRunGuestCode = */        VMXR0RunGuestCode,
     /* .pfnEnableCpu = */           VMXR0EnableCpu,
@@ -176,7 +176,7 @@ static HMR0VTABLE const g_HmR0OpsSvm =
 {
     /* .pfnEnterSession = */        SVMR0Enter,
     /* .pfnThreadCtxCallback = */   SVMR0ThreadCtxCallback,
-    /* .pfnCallRing3Callback = */   SVMR0CallRing3Callback,
+    /* .pfnAssertionCallback = */   SVMR0AssertionCallback,
     /* .pfnExportHostState = */     SVMR0ExportHostState,
     /* .pfnRunGuestCode = */        SVMR0RunGuestCode,
     /* .pfnEnableCpu = */           SVMR0EnableCpu,
@@ -232,9 +232,9 @@ static DECLCALLBACK(int) hmR0DummySetupVM(PVMCC pVM)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) hmR0DummyCallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation)
+static DECLCALLBACK(int) hmR0DummyAssertionCallback(PVMCPUCC pVCpu)
 {
-    RT_NOREF(pVCpu, enmOperation);
+    RT_NOREF(pVCpu);
     return VINF_SUCCESS;
 }
 
@@ -255,7 +255,7 @@ static HMR0VTABLE const g_HmR0OpsDummy =
 {
     /* .pfnEnterSession = */        hmR0DummyEnter,
     /* .pfnThreadCtxCallback = */   hmR0DummyThreadCtxCallback,
-    /* .pfnCallRing3Callback = */   hmR0DummyCallRing3Callback,
+    /* .pfnAssertionCallback = */   hmR0DummyAssertionCallback,
     /* .pfnExportHostState = */     hmR0DummyExportHostState,
     /* .pfnRunGuestCode = */        hmR0DummyRunGuestCode,
     /* .pfnEnableCpu = */           hmR0DummyEnableCpu,
@@ -1372,19 +1372,18 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVMCC pVM)
 
 
 /**
- * Notification callback before performing a longjump to ring-3.
+ * Notification callback before an assertion longjump and guru mediation.
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   enmOperation    The operation causing the ring-3 longjump.
  * @param   pvUser          User argument, currently unused, NULL.
  */
-static DECLCALLBACK(int) hmR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
+static DECLCALLBACK(int) hmR0AssertionCallback(PVMCPUCC pVCpu, void *pvUser)
 {
     RT_NOREF(pvUser);
     Assert(pVCpu);
-    Assert(g_HmR0Ops.pfnCallRing3Callback);
-    return g_HmR0Ops.pfnCallRing3Callback(pVCpu, enmOperation);
+    Assert(g_HmR0Ops.pfnAssertionCallback);
+    return g_HmR0Ops.pfnAssertionCallback(pVCpu);
 }
 
 
@@ -1411,7 +1410,7 @@ VMMR0_INT_DECL(int) hmR0EnterCpu(PVMCPUCC pVCpu)
         rc = hmR0EnableCpu(pVCpu->CTX_SUFF(pVM), idCpu);
 
     /* Register a callback to fire prior to performing a longjmp to ring-3 so HM can disable VT-x/AMD-V if needed. */
-    VMMRZCallRing3SetNotification(pVCpu, hmR0CallRing3Callback, NULL /* pvUser */);
+    VMMR0AssertionSetNotification(pVCpu, hmR0AssertionCallback, NULL /*pvUser*/);
 
     /* Reload host-state (back from ring-3/migrated CPUs) and shared guest/host bits. */
     if (g_fHmVmxSupported)
@@ -1496,7 +1495,7 @@ VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPUCC pVCpu)
     pVCpu->hmr0.s.idEnteredCpu = NIL_RTCPUID;
 
     /* De-register the longjmp-to-ring 3 callback now that we have reliquished hardware resources. */
-    VMMRZCallRing3RemoveNotification(pVCpu);
+    VMMR0AssertionRemoveNotification(pVCpu);
     return VINF_SUCCESS;
 }
 

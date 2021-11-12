@@ -407,7 +407,6 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetToR3Iom;
     STAMCOUNTER                 StatRZRetTimerPending;
     STAMCOUNTER                 StatRZRetInterruptPending;
-    STAMCOUNTER                 StatRZRetCallRing3;
     STAMCOUNTER                 StatRZRetPATMDuplicateFn;
     STAMCOUNTER                 StatRZRetPGMChangeMode;
     STAMCOUNTER                 StatRZRetPendingRequest;
@@ -465,24 +464,16 @@ typedef struct VMMCPU
     SUPDRVTRACERUSRCTX          TracerCtx;
     /** @} */
 
-    /** Alignment padding, making sure u64CallRing3Arg and CallRing3JmpBufR0 are nicely aligned. */
-    uint32_t                    au32Padding3[1];
-
     /** @name Call Ring-3
      * Formerly known as host calls.
      * @{ */
     /** The disable counter. */
     uint32_t                    cCallRing3Disabled;
-    /** The pending operation. */
-    VMMCALLRING3                enmCallRing3Operation;
-    /** The result of the last operation. */
-    int32_t                     rcCallRing3;
-    /** The argument to the operation. */
-    uint64_t                    u64CallRing3Arg;
-    /** The Ring-0 notification callback. */
-    R0PTRTYPE(PFNVMMR0CALLRING3NOTIFICATION)   pfnCallRing3CallbackR0;
-    /** The Ring-0 notification callback user argument. */
-    R0PTRTYPE(void *)           pvCallRing3CallbackUserR0;
+    uint32_t                    u32Padding3;
+    /** Ring-0 assertion notification callback. */
+    R0PTRTYPE(PFNVMMR0ASSERTIONNOTIFICATION) pfnRing0AssertCallback;
+    /** Argument for pfnRing0AssertionNotificationCallback. */
+    R0PTRTYPE(void *)           pvRing0AssertCallbackUser;
     /** The Ring-0 jmp buffer.
      * @remarks The size of this type isn't stable in assembly, so don't put
      *          anything that needs to be accessed from assembly after it. */

@@ -126,15 +126,11 @@ struc VMMCPU
         alignb 8
         .TracerCtx              resb SUPDRVTRACERUSRCTX64_size
 
-        .au32Padding3           resd 1
-
         .cCallRing3Disabled     resd 1
-        .enmCallRing3Operation  resd 1
-        .rcCallRing3            resd 1
         alignb 8
-        .u64CallRing3Arg        resq 1
-        .pfnCallRing3CallbackR0         RTR0PTR_RES 1
-        .pvCallRing3CallbackUserR0      RTR0PTR_RES 1
-        ; .CallRing3JmpBufR0    resb no-can-do
+        .pfnRing0AssertCallback RTR0PTR_RES 1
+        .pvRing0AssertCallbackUser RTR0PTR_RES 1
+        alignb 16
+        .CallRing3JmpBufR0      resb 1
 endstruc
 

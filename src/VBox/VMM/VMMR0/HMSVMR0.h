@@ -40,7 +40,7 @@ VMMR0DECL(int)          SVMR0GlobalInit(void);
 VMMR0DECL(void)         SVMR0GlobalTerm(void);
 VMMR0DECL(int)          SVMR0Enter(PVMCPUCC pVCpu);
 VMMR0DECL(void)         SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu, bool fGlobalInit);
-VMMR0DECL(int)          SVMR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation);
+VMMR0DECL(int)          SVMR0AssertionCallback(PVMCPUCC pVCpu);
 VMMR0DECL(int)          SVMR0EnableCpu(PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvPageCpu, RTHCPHYS HCPhysCpuPage,
                                        bool fEnabledBySystem, PCSUPHWVIRTMSRS pHwvirtMsrs);
 VMMR0DECL(int)          SVMR0DisableCpu(PHMPHYSCPU pHostCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);

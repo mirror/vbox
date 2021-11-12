@@ -32,7 +32,7 @@ RT_C_DECLS_BEGIN
 #ifdef IN_RING0
 VMMR0DECL(int)          VMXR0Enter(PVMCPUCC pVCpu);
 VMMR0DECL(void)         VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu, bool fGlobalInit);
-VMMR0DECL(int)          VMXR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation);
+VMMR0DECL(int)          VMXR0AssertionCallback(PVMCPUCC pVCpu);
 VMMR0DECL(int)          VMXR0EnableCpu(PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys,
                                        bool fEnabledBySystem, PCSUPHWVIRTMSRS pHwvirtMsrs);
 VMMR0DECL(int)          VMXR0DisableCpu(PHMPHYSCPU pHostCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);

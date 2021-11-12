@@ -1185,8 +1185,6 @@
 #endif
     GEN_CHECK_OFF(VMMCPU, cCallRing3Disabled);
     GEN_CHECK_OFF(VMMCPU, enmCallRing3Operation);
-    GEN_CHECK_OFF(VMMCPU, rcCallRing3);
-    GEN_CHECK_OFF(VMMCPU, u64CallRing3Arg);
     GEN_CHECK_OFF(VMMCPU, CallRing3JmpBufR0);
     GEN_CHECK_OFF_DOT(VMMCPU, CallRing3JmpBufR0.SpCheck);
     GEN_CHECK_OFF_DOT(VMMCPU, CallRing3JmpBufR0.SpResume);

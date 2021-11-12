@@ -48,29 +48,15 @@ RT_C_DECLS_BEGIN
 
 
 /**
- * VMMRZCallRing3 operations.
- */
-typedef enum VMMCALLRING3
-{
-    /** Invalid operation.  */
-    VMMCALLRING3_INVALID = 0,
-    /** Signal a ring 0 assertion. */
-    VMMCALLRING3_VM_R0_ASSERTION,
-    /** The usual 32-bit hack. */
-    VMMCALLRING3_32BIT_HACK = 0x7fffffff
-} VMMCALLRING3;
-
-/**
- * VMMRZCallRing3 notification callback.
+ * Ring-0 assertion notification callback.
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   enmOperation    The operation causing the ring-3 jump.
  * @param   pvUser          The user argument.
  */
-typedef DECLCALLBACKTYPE(int, FNVMMR0CALLRING3NOTIFICATION,(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation, void *pvUser));
-/** Pointer to a FNRTMPNOTIFICATION(). */
-typedef FNVMMR0CALLRING3NOTIFICATION *PFNVMMR0CALLRING3NOTIFICATION;
+typedef DECLCALLBACKTYPE(int, FNVMMR0ASSERTIONNOTIFICATION,(PVMCPUCC pVCpu, void *pvUser));
+/** Pointer to a FNVMMR0ASSERTIONNOTIFICATION(). */
+typedef FNVMMR0ASSERTIONNOTIFICATION *PFNVMMR0ASSERTIONNOTIFICATION;
 
 /**
  * Rendezvous callback.
@@ -512,6 +498,9 @@ VMMR0_INT_DECL(void) VMMR0EmtResumeAfterBlocking(PVMCPUCC pVCpu, PVMMR0EMTBLOCKC
 VMMR0_INT_DECL(int)  VMMR0EmtWaitEventInner(PGVMCPU pGVCpu, uint32_t fFlags, RTSEMEVENT hEvent, RTMSINTERVAL cMsTimeout);
 VMMR0_INT_DECL(int)  VMMR0EmtSignalSupEvent(PGVM pGVM, PGVMCPU pGVCpu, SUPSEMEVENT hEvent);
 VMMR0_INT_DECL(int)  VMMR0EmtSignalSupEventByGVM(PGVM pGVM, SUPSEMEVENT hEvent);
+VMMR0_INT_DECL(int)  VMMR0AssertionSetNotification(PVMCPUCC pVCpu, PFNVMMR0ASSERTIONNOTIFICATION pfnCallback, RTR0PTR pvUser);
+VMMR0_INT_DECL(void) VMMR0AssertionRemoveNotification(PVMCPUCC pVCpu);
+VMMR0_INT_DECL(bool) VMMR0AssertionIsNotificationSet(PVMCPUCC pVCpu);
 
 /** @name VMMR0EMTWAIT_F_XXX - flags for VMMR0EmtWaitEventInner and friends.
  * @{ */
@@ -591,14 +580,9 @@ VMMR3_INT_DECL(void)    VMMR3InitR0StackUnwindState(PUVM pUVM, VMCPUID idCpu, PR
 /** @defgroup grp_vmm_api_rz    The VMM Raw-Mode and Ring-0 Context API
  * @{
  */
-VMMRZDECL(int)      VMMRZCallRing3(PVMCC pVMCC, PVMCPUCC pVCpu, VMMCALLRING3 enmOperation, uint64_t uArg);
-VMMRZDECL(int)      VMMRZCallRing3NoCpu(PVMCC pVM, VMMCALLRING3 enmOperation, uint64_t uArg);
 VMMRZDECL(void)     VMMRZCallRing3Disable(PVMCPUCC pVCpu);
 VMMRZDECL(void)     VMMRZCallRing3Enable(PVMCPUCC pVCpu);
 VMMRZDECL(bool)     VMMRZCallRing3IsEnabled(PVMCPUCC pVCpu);
-VMMRZDECL(int)      VMMRZCallRing3SetNotification(PVMCPUCC pVCpu, R0PTRTYPE(PFNVMMR0CALLRING3NOTIFICATION) pfnCallback, RTR0PTR pvUser);
-VMMRZDECL(void)     VMMRZCallRing3RemoveNotification(PVMCPUCC pVCpu);
-VMMRZDECL(bool)     VMMRZCallRing3IsNotificationSet(PVMCPUCC pVCpu);
 /** @} */
 #endif
 

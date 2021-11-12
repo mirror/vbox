@@ -1290,15 +1290,6 @@ static void vmmR0RecordRC(PVMCC pVM, PVMCPUCC pVCpu, int rc)
         case VINF_EM_RAW_INTERRUPT_PENDING:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetInterruptPending);
             break;
-        case VINF_VMM_CALL_HOST:
-            switch (pVCpu->vmm.s.enmCallRing3Operation)
-            {
-                case VMMCALLRING3_VM_R0_ASSERTION:
-                default:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetCallRing3);
-                    break;
-            }
-            break;
         case VINF_PATM_DUPLICATE_FUNCTION:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPATMDuplicateFn);
             break;
@@ -1457,7 +1448,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                              */
                             if (RT_UNLIKELY(   VMCPU_GET_STATE(pGVCpu) != VMCPUSTATE_STARTED_HM
                                             && RT_SUCCESS_NP(rc)
-                                            && rc != VINF_VMM_CALL_HOST ))
+                                            && rc != VERR_VMM_RING0_ASSERTION ))
                             {
                                 pGVM->vmm.s.szRing0AssertMsg1[0] = '\0';
                                 RTStrPrintf(pGVM->vmm.s.szRing0AssertMsg2, sizeof(pGVM->vmm.s.szRing0AssertMsg2),
@@ -3539,6 +3530,54 @@ static void vmmR0CleanupLoggers(PGVM pGVM)
 *   Assertions                                                                                                                   *
 *********************************************************************************************************************************/
 
+/**
+ * Installs a notification callback for ring-0 assertions.
+ *
+ * @param   pVCpu         The cross context virtual CPU structure.
+ * @param   pfnCallback   Pointer to the callback.
+ * @param   pvUser        The user argument.
+ *
+ * @return VBox status code.
+ */
+VMMR0_INT_DECL(int) VMMR0AssertionSetNotification(PVMCPUCC pVCpu, PFNVMMR0ASSERTIONNOTIFICATION pfnCallback, RTR0PTR pvUser)
+{
+    AssertPtrReturn(pVCpu, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
+
+    if (!pVCpu->vmm.s.pfnRing0AssertCallback)
+    {
+        pVCpu->vmm.s.pfnRing0AssertCallback    = pfnCallback;
+        pVCpu->vmm.s.pvRing0AssertCallbackUser = pvUser;
+        return VINF_SUCCESS;
+    }
+    return VERR_ALREADY_EXISTS;
+}
+
+
+/**
+ * Removes the ring-0 callback.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+VMMR0_INT_DECL(void) VMMR0AssertionRemoveNotification(PVMCPUCC pVCpu)
+{
+    pVCpu->vmm.s.pfnRing0AssertCallback    = NULL;
+    pVCpu->vmm.s.pvRing0AssertCallbackUser = NULL;
+}
+
+
+/**
+ * Checks whether there is a ring-0 callback notification active.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @returns true if there the notification is active, false otherwise.
+ */
+VMMR0_INT_DECL(bool) VMMR0AssertionIsNotificationSet(PVMCPUCC pVCpu)
+{
+    return pVCpu->vmm.s.pfnRing0AssertCallback != NULL;
+}
+
+
 /*
  * Jump back to ring-3 if we're the EMT and the longjmp is armed.
  *
@@ -3564,7 +3603,9 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
                 &&  !pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
 # endif
             {
-                int rc = VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_VM_R0_ASSERTION, 0);
+                if (pVCpu->vmm.s.pfnRing0AssertCallback)
+                    pVCpu->vmm.s.pfnRing0AssertCallback(pVCpu, pVCpu->vmm.s.pvRing0AssertCallbackUser);
+                int rc = vmmR0CallRing3LongJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, VERR_VMM_RING0_ASSERTION);
                 return RT_FAILURE_NP(rc);
             }
         }

@@ -3042,71 +3042,39 @@ static int hmR0SvmLeaveSession(PVMCPUCC pVCpu)
 
 
 /**
- * Does the necessary state syncing before doing a longjmp to ring-3.
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- *
- * @remarks No-long-jmp zone!!!
- */
-static int hmR0SvmLongJmpToRing3(PVMCPUCC pVCpu)
-{
-    return hmR0SvmLeaveSession(pVCpu);
-}
-
-
-/**
  * VMMRZCallRing3() callback wrapper which saves the guest state (or restores
- * any remaining host state) before we longjump to ring-3 and possibly get
- * preempted.
+ * any remaining host state) before we go back to ring-3 due to an assertion.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   enmOperation    The operation causing the ring-3 longjump.
  */
-VMMR0DECL(int) SVMR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation)
+VMMR0DECL(int) SVMR0AssertionCallback(PVMCPUCC pVCpu)
 {
-    if (enmOperation == VMMCALLRING3_VM_R0_ASSERTION)
-    {
-        /*
-         * !!! IMPORTANT !!!
-         * If you modify code here, make sure to check whether hmR0SvmLeave() and hmR0SvmLeaveSession() needs
-         * to be updated too. This is a stripped down version which gets out ASAP trying to not trigger any assertion.
-         */
-        VMMRZCallRing3RemoveNotification(pVCpu);
-        VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT(pVCpu);
-
-        /* Import the entire guest state. */
-        hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
-
-        /* Restore host FPU state if necessary and resync on next R0 reentry. */
-        CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu);
-
-        /* Restore host debug registers if necessary and resync on next R0 reentry. */
-        CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */);
-
-        /* Deregister the hook now that we've left HM context before re-enabling preemption. */
-        /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
-        VMMR0ThreadCtxHookDisable(pVCpu);
-
-        /* Leave HM context. This takes care of local init (term). */
-        HMR0LeaveCpu(pVCpu);
-
-        HM_RESTORE_PREEMPT();
-        return VINF_SUCCESS;
-    }
-
-    Assert(pVCpu);
-    Assert(VMMRZCallRing3IsEnabled(pVCpu));
-    HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
-
+    /*
+     * !!! IMPORTANT !!!
+     * If you modify code here, make sure to check whether hmR0SvmLeave() and hmR0SvmLeaveSession() needs
+     * to be updated too. This is a stripped down version which gets out ASAP trying to not trigger any assertion.
+     */
+    VMMR0AssertionRemoveNotification(pVCpu);
     VMMRZCallRing3Disable(pVCpu);
+    HM_DISABLE_PREEMPT(pVCpu);
 
-    Log4Func(("Calling hmR0SvmLongJmpToRing3\n"));
-    int rc = hmR0SvmLongJmpToRing3(pVCpu);
-    AssertRCReturn(rc, rc);
+    /* Import the entire guest state. */
+    hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
 
-    VMMRZCallRing3Enable(pVCpu);
+    /* Restore host FPU state if necessary and resync on next R0 reentry. */
+    CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(pVCpu);
+
+    /* Restore host debug registers if necessary and resync on next R0 reentry. */
+    CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */);
+
+    /* Deregister the hook now that we've left HM context before re-enabling preemption. */
+    /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
+    VMMR0ThreadCtxHookDisable(pVCpu);
+
+    /* Leave HM context. This takes care of local init (term). */
+    HMR0LeaveCpu(pVCpu);
+
+    HM_RESTORE_PREEMPT();
     return VINF_SUCCESS;
 }
 
@@ -4813,7 +4781,7 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPUCC pVCpu)
     /* Prepare to return to ring-3. This will remove longjmp notifications. */
     rc = hmR0SvmExitToRing3(pVCpu, rc);
     Assert(!ASMAtomicUoReadU64(&pCtx->fExtrn));
-    Assert(!VMMRZCallRing3IsNotificationSet(pVCpu));
+    Assert(!VMMR0AssertionIsNotificationSet(pVCpu));
     return rc;
 }
 
