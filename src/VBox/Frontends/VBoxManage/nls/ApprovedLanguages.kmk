@@ -16,4 +16,4 @@
 #
 
 # The list of approved VBoxManage languages.
-VBOX_APPROVED_MAIN_LANGUAGES :=
+VBOX_APPROVED_VBOXMANAGE_LANGUAGES :=
