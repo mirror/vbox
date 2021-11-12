@@ -1272,18 +1272,8 @@
  * Re-install if you are a user.  Developers should make sure the build is
  * complete or try with a clean build. */
 #define VERR_VMM_RC_VERSION_MISMATCH        (-2705)
-/** VMM set jump error. */
-#define VERR_VMM_SET_JMP_ERROR              (-2706)
-/** VMM set jump stack overflow error. */
-#define VERR_VMM_SET_JMP_STACK_OVERFLOW     (-2707)
-/** VMM set jump resume error. */
-#define VERR_VMM_SET_JMP_ABORTED_RESUME     (-2708)
 /** VMM long jump error. */
 #define VERR_VMM_LONG_JMP_ERROR             (-2709)
-/** Unknown ring-3 call attempted. */
-#define VERR_VMM_UNKNOWN_RING3_CALL         (-2710)
-/** The ring-3 call didn't set an RC. */
-#define VERR_VMM_RING3_CALL_NO_RC           (-2711)
 /** Reason for leaving RC: Caller the tracer in ring-0. */
 #define VINF_VMM_CALL_TRACER                (2712)
 /** Internal processing error \#1 in the switcher code. */

@@ -264,11 +264,6 @@ int main()
 
     PVM pVM = NULL; NOREF(pVM);
 
-#if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
-    CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.CallRing3JmpBufR0, 16);
-    CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.CallRing3JmpBufR0.xmm6, 16);
-#endif
-
     /* the VMCPUs are page aligned TLB hit reasons. */
     CHECK_SIZE_ALIGNMENT(VMCPU, 4096);
 

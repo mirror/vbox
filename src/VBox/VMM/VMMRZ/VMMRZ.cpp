@@ -43,8 +43,8 @@ VMMRZDECL(void) VMMRZCallRing3Disable(PVMCPUCC pVCpu)
     RTCCUINTREG fFlags = ASMIntDisableFlags(); /* preemption consistency. */
 #endif
 
-    Assert(pVCpu->vmm.s.cCallRing3Disabled < 16);
-    if (ASMAtomicUoIncU32(&pVCpu->vmm.s.cCallRing3Disabled) == 1)
+    Assert(pVCpu->vmmr0.s.cCallRing3Disabled < 16);
+    if (ASMAtomicUoIncU32(&pVCpu->vmmr0.s.cCallRing3Disabled) == 1)
     {
 #ifdef IN_RC
         pVCpu->pVMRC->vmm.s.fRCLoggerFlushingDisabled = true;
@@ -72,8 +72,8 @@ VMMRZDECL(void) VMMRZCallRing3Enable(PVMCPUCC pVCpu)
     RTCCUINTREG fFlags = ASMIntDisableFlags(); /* preemption consistency. */
 #endif
 
-    Assert(pVCpu->vmm.s.cCallRing3Disabled > 0);
-    if (ASMAtomicUoDecU32(&pVCpu->vmm.s.cCallRing3Disabled) == 0)
+    Assert(pVCpu->vmmr0.s.cCallRing3Disabled > 0);
+    if (ASMAtomicUoDecU32(&pVCpu->vmmr0.s.cCallRing3Disabled) == 0)
     {
 #ifdef IN_RC
         pVCpu->pVMRC->vmm.s.fRCLoggerFlushingDisabled = false;
@@ -97,7 +97,7 @@ VMMRZDECL(void) VMMRZCallRing3Enable(PVMCPUCC pVCpu)
 VMMRZDECL(bool) VMMRZCallRing3IsEnabled(PVMCPUCC pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    Assert(pVCpu->vmm.s.cCallRing3Disabled <= 16);
-    return pVCpu->vmm.s.cCallRing3Disabled == 0;
+    Assert(pVCpu->vmmr0.s.cCallRing3Disabled <= 16);
+    return pVCpu->vmmr0.s.cCallRing3Disabled == 0;
 }
 

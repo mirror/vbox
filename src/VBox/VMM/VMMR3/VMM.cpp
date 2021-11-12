@@ -164,7 +164,6 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int                  vmmR3InitStacks(PVM pVM);
 static void                 vmmR3InitRegisterStats(PVM pVM);
 static DECLCALLBACK(int)    vmmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
@@ -279,85 +278,34 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     if (RT_FAILURE(rc))
         return rc;
 
+#ifdef VBOX_WITH_NMI
     /*
-     * Init various sub-components.
+     * Allocate mapping for the host APIC.
      */
-    rc = vmmR3InitStacks(pVM);
+    rc = MMR3HyperReserve(pVM, PAGE_SIZE, "Host APIC", &pVM->vmm.s.GCPtrApicBase);
+    AssertRC(rc);
+#endif
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_NMI
         /*
-         * Allocate mapping for the host APIC.
+         * Start the log flusher thread.
          */
-        rc = MMR3HyperReserve(pVM, PAGE_SIZE, "Host APIC", &pVM->vmm.s.GCPtrApicBase);
-        AssertRC(rc);
-#endif
+        rc = RTThreadCreate(&pVM->vmm.s.hLogFlusherThread, vmmR3LogFlusher, pVM, 0 /*cbStack*/,
+                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "R0LogWrk");
         if (RT_SUCCESS(rc))
         {
+
             /*
-             * Start the log flusher thread.
+             * Debug info and statistics.
              */
-            rc = RTThreadCreate(&pVM->vmm.s.hLogFlusherThread, vmmR3LogFlusher, pVM, 0 /*cbStack*/,
-                                RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "R0LogWrk");
-            if (RT_SUCCESS(rc))
-            {
+            DBGFR3InfoRegisterInternal(pVM, "fflags", "Displays the current Forced actions Flags.", vmmR3InfoFF);
+            vmmR3InitRegisterStats(pVM);
+            vmmInitFormatTypes();
 
-                /*
-                 * Debug info and statistics.
-                 */
-                DBGFR3InfoRegisterInternal(pVM, "fflags", "Displays the current Forced actions Flags.", vmmR3InfoFF);
-                vmmR3InitRegisterStats(pVM);
-                vmmInitFormatTypes();
-
-                return VINF_SUCCESS;
-            }
+            return VINF_SUCCESS;
         }
     }
     /** @todo Need failure cleanup? */
-
-    return rc;
-}
-
-
-/**
- * Allocate & setup the VMM RC stack(s) (for EMTs).
- *
- * The stacks are also used for long jumps in Ring-0.
- *
- * @returns VBox status code.
- * @param   pVM     The cross context VM structure.
- *
- * @remarks The optional guard page gets it protection setup up during R3 init
- *          completion because of init order issues.
- */
-static int vmmR3InitStacks(PVM pVM)
-{
-    int rc = VINF_SUCCESS;
-#ifdef VMM_R0_SWITCH_STACK
-    uint32_t fFlags = MMHYPER_AONR_FLAGS_KERNEL_MAPPING;
-#else
-    uint32_t fFlags = 0;
-#endif
-
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-
-#ifdef VBOX_STRICT_VMM_STACK
-        rc = MMR3HyperAllocOnceNoRelEx(pVM, PAGE_SIZE + VMM_STACK_SIZE + PAGE_SIZE,
-#else
-        rc = MMR3HyperAllocOnceNoRelEx(pVM, VMM_STACK_SIZE,
-#endif
-                                       PAGE_SIZE, MM_TAG_VMM, fFlags, (void **)&pVCpu->vmm.s.pbEMTStackR3);
-        if (RT_SUCCESS(rc))
-        {
-#ifdef VBOX_STRICT_VMM_STACK
-            pVCpu->vmm.s.pbEMTStackR3 += PAGE_SIZE;
-#endif
-            pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack = MMHyperR3ToR0(pVM, pVCpu->vmm.s.pbEMTStackR3);
-
-        }
-    }
 
     return rc;
 }
@@ -432,15 +380,6 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAMR3Register(pVM, &pVM->vmm.s.StatLogFlusherFlushes,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, "/VMM/LogFlush/00-Flushes",  STAMUNIT_OCCURENCES, "Total number of buffer flushes");
     STAMR3Register(pVM, &pVM->vmm.s.StatLogFlusherNoWakeUp, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, "/VMM/LogFlush/00-NoWakups", STAMUNIT_OCCURENCES, "Times the flusher thread didn't need waking up.");
 
-#ifdef VBOX_WITH_STATISTICS
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU pVCpu = pVM->apCpusR3[i];
-        STAMR3RegisterF(pVM, &pVCpu->vmm.s.CallRing3JmpBufR0.cbUsedMax,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Max amount of stack used.", "/VMM/Stack/CPU%u/Max", i);
-        STAMR3RegisterF(pVM, &pVCpu->vmm.s.CallRing3JmpBufR0.cbUsedAvg,  STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Average stack usage.",      "/VMM/Stack/CPU%u/Avg", i);
-        STAMR3RegisterF(pVM, &pVCpu->vmm.s.CallRing3JmpBufR0.cUsedTotal, STAMTYPE_U64,       STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of stack usages.",   "/VMM/Stack/CPU%u/Uses", i);
-    }
-#endif
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = pVM->apCpusR3[i];
@@ -2264,33 +2203,40 @@ VMMR3_INT_DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR R0Addr,
     AssertReturn(pVCpu, VERR_INVALID_PARAMETER);
     AssertReturn(cbRead < ~(size_t)0 / 2, VERR_INVALID_PARAMETER);
 
-    int rc;
-#ifdef VMM_R0_SWITCH_STACK
-    RTHCUINTPTR off = R0Addr - MMHyperCCToR0(pVM, pVCpu->vmm.s.pbEMTStackR3);
-#else
-    RTHCUINTPTR off = pVCpu->vmm.s.CallRing3JmpBufR0.cbSavedStack - (pVCpu->vmm.s.CallRing3JmpBufR0.SpCheck - R0Addr);
-#endif
-    if (   off < VMM_STACK_SIZE
-        && off + cbRead <= VMM_STACK_SIZE)
+    /*
+     * Hopefully we've got all the requested bits.  If not supply what we
+     * can and zero the remaining stuff.
+     */
+    RTHCUINTPTR off = R0Addr - pVCpu->vmm.s.AssertJmpBuf.UnwindSp;
+    if (off < pVCpu->vmm.s.AssertJmpBuf.cbStackValid)
     {
-        memcpy(pvBuf, &pVCpu->vmm.s.pbEMTStackR3[off], cbRead);
-        rc = VINF_SUCCESS;
+        size_t const cbValid = pVCpu->vmm.s.AssertJmpBuf.cbStackValid - off;
+        if (cbRead <= cbValid)
+        {
+            memcpy(pvBuf, &pVCpu->vmm.s.abAssertStack[off], cbRead);
+            return VINF_SUCCESS;
+        }
+
+        memcpy(pvBuf, &pVCpu->vmm.s.abAssertStack[off], cbValid);
+        RT_BZERO((uint8_t *)pvBuf + cbValid, cbRead - cbValid);
     }
     else
-        rc = VERR_INVALID_POINTER;
+        RT_BZERO(pvBuf, cbRead);
 
-    /* Supply the setjmp return RIP/EIP.  */
-    if (   pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation + sizeof(RTR0UINTPTR) > R0Addr
-        && pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation < R0Addr + cbRead)
+    /*
+     * Supply the setjmp return RIP/EIP if requested.
+     */
+    if (   pVCpu->vmm.s.AssertJmpBuf.UnwindRetPcLocation + sizeof(RTR0UINTPTR) > R0Addr
+        && pVCpu->vmm.s.AssertJmpBuf.UnwindRetPcLocation < R0Addr + cbRead)
     {
-        uint8_t const  *pbSrc  = (uint8_t const *)&pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcValue;
-        size_t          cbSrc  = sizeof(pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcValue);
+        uint8_t const  *pbSrc  = (uint8_t const *)&pVCpu->vmm.s.AssertJmpBuf.UnwindRetPcValue;
+        size_t          cbSrc  = sizeof(pVCpu->vmm.s.AssertJmpBuf.UnwindRetPcValue);
         size_t          offDst = 0;
-        if (R0Addr < pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation)
-            offDst = pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation - R0Addr;
-        else if (R0Addr > pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation)
+        if (R0Addr < pVCpu->vmm.s.AssertJmpBuf.UnwindRetPcLocation)
+            offDst = pVCpu->vmm.s.AssertJmpBuf.UnwindRetPcLocation - R0Addr;
+        else if (R0Addr > pVCpu->vmm.s.AssertJmpBuf.UnwindRetPcLocation)
         {
-            size_t offSrc = R0Addr - pVCpu->vmm.s.CallRing3JmpBufR0.UnwindRetPcLocation;
+            size_t offSrc = R0Addr - pVCpu->vmm.s.AssertJmpBuf.UnwindRetPcLocation;
             Assert(offSrc < cbSrc);
             pbSrc -= offSrc;
             cbSrc -= offSrc;
@@ -2299,11 +2245,11 @@ VMMR3_INT_DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR R0Addr,
             cbSrc = cbRead - offDst;
         memcpy((uint8_t *)pvBuf + offDst, pbSrc, cbSrc);
 
-        if (cbSrc == cbRead)
-            rc = VINF_SUCCESS;
+        //if (cbSrc == cbRead)
+        //    rc = VINF_SUCCESS;
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -2320,79 +2266,66 @@ VMMR3_INT_DECL(void) VMMR3InitR0StackUnwindState(PUVM pUVM, VMCPUID idCpu, struc
     AssertReturnVoid(pVCpu);
 
     /*
+     * This is all we really need here if we had proper unwind info (win64 only)...
+     */
+    pState->u.x86.auRegs[X86_GREG_xBP] = pVCpu->vmm.s.AssertJmpBuf.UnwindBp;
+    pState->u.x86.auRegs[X86_GREG_xSP] = pVCpu->vmm.s.AssertJmpBuf.UnwindSp;
+    pState->uPc                        = pVCpu->vmm.s.AssertJmpBuf.UnwindPc;
+
+    /*
      * Locate the resume point on the stack.
      */
-#ifdef VMM_R0_SWITCH_STACK
-    uintptr_t off = pVCpu->vmm.s.CallRing3JmpBufR0.SpResume - MMHyperCCToR0(pVCpu->pVMR3, pVCpu->vmm.s.pbEMTStackR3);
-    AssertReturnVoid(off < VMM_STACK_SIZE);
-#else
     uintptr_t off = 0;
-#endif
 
 #ifdef RT_ARCH_AMD64
     /*
-     * This code must match the .resume stuff in VMMR0JmpA-amd64.asm exactly.
+     * This code must match the vmmR0CallRing3LongJmp stack frame setup in VMMR0JmpA-amd64.asm exactly.
      */
-# ifdef VBOX_STRICT
-    Assert(*(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off] == UINT32_C(0x7eadf00d));
-    off += 8; /* RESUME_MAGIC */
-# endif
 # ifdef RT_OS_WINDOWS
     off += 0xa0; /* XMM6 thru XMM15 */
 # endif
-    pState->u.x86.uRFlags              = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.uRFlags              = *(uint64_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 8;
-    pState->u.x86.auRegs[X86_GREG_xBX] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_xBX] = *(uint64_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 8;
 # ifdef RT_OS_WINDOWS
-    pState->u.x86.auRegs[X86_GREG_xSI] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_xSI] = *(uint64_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 8;
-    pState->u.x86.auRegs[X86_GREG_xDI] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_xDI] = *(uint64_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 8;
 # endif
-    pState->u.x86.auRegs[X86_GREG_x12] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_x12] = *(uint64_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 8;
-    pState->u.x86.auRegs[X86_GREG_x13] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_x13] = *(uint64_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 8;
-    pState->u.x86.auRegs[X86_GREG_x14] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_x14] = *(uint64_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 8;
-    pState->u.x86.auRegs[X86_GREG_x15] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_x15] = *(uint64_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 8;
-    pState->u.x86.auRegs[X86_GREG_xBP] = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_xBP] = *(uint64_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 8;
-    pState->uPc                        = *(uint64_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
-    off += 8;
+    pState->uPc                        = *(uint64_t const *)&pVCpu->vmm.s.abAssertStack[off];
+    pState->u.x86.auRegs[X86_GREG_xSP] = pVCpu->vmm.s.AssertJmpBuf.UnwindRetSp;
 
 #elif defined(RT_ARCH_X86)
     /*
-     * This code must match the .resume stuff in VMMR0JmpA-x86.asm exactly.
+     * This code must match the vmmR0CallRing3LongJmp stack frame setup in VMMR0JmpA-x86.asm exactly.
      */
-# ifdef VBOX_STRICT
-    Assert(*(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off] == UINT32_C(0x7eadf00d));
-    off += 4; /* RESUME_MAGIC */
-# endif
-    pState->u.x86.uRFlags              = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.uRFlags              = *(uint32_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 4;
-    pState->u.x86.auRegs[X86_GREG_xBX] = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_xBX] = *(uint32_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 4;
-    pState->u.x86.auRegs[X86_GREG_xSI] = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_xSI] = *(uint32_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 4;
-    pState->u.x86.auRegs[X86_GREG_xDI] = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_xDI] = *(uint32_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 4;
-    pState->u.x86.auRegs[X86_GREG_xBP] = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
+    pState->u.x86.auRegs[X86_GREG_xBP] = *(uint32_t const *)&pVCpu->vmm.s.abAssertStack[off];
     off += 4;
-    pState->uPc                        = *(uint32_t const *)&pVCpu->vmm.s.pbEMTStackR3[off];
-    off += 4;
+    pState->uPc                        = *(uint32_t const *)&pVCpu->vmm.s.abAssertStack[off];
+    pState->u.x86.auRegs[X86_GREG_xSP] = pVCpu->vmm.s.AssertJmpBuf.UnwindRetSp;
 #else
 # error "Port me"
 #endif
-
-    /*
-     * This is all we really need here, though the above helps if the assembly
-     * doesn't contain unwind info (currently only on win/64, so that is useful).
-     */
-    pState->u.x86.auRegs[X86_GREG_xBP] = pVCpu->vmm.s.CallRing3JmpBufR0.SavedEbp;
-    pState->u.x86.auRegs[X86_GREG_xSP] = pVCpu->vmm.s.CallRing3JmpBufR0.SpResume;
 }
 
 
@@ -2463,19 +2396,7 @@ VMMR3_INT_DECL(int) VMMR3CallR0Emt(PVM pVM, PVMCPU pVCpu, VMMR0OPERATION enmOper
  */
 static int vmmR3HandleRing0Assert(PVM pVM, PVMCPU pVCpu)
 {
-    /*
-     * Signal a ring 0 hypervisor assertion.
-     * Cancel the longjmp operation that's in progress.
-     */
-    pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call = false;
-#ifdef RT_ARCH_X86
-    pVCpu->vmm.s.CallRing3JmpBufR0.eip = 0;
-#else
-    pVCpu->vmm.s.CallRing3JmpBufR0.rip = 0;
-#endif
-#ifdef VMM_R0_SWITCH_STACK
-    *(uint64_t *)pVCpu->vmm.s.pbEMTStackR3 = 0; /* clear marker  */
-#endif
+    RT_NOREF(pVCpu);
     LogRel(("%s", pVM->vmm.s.szRing0AssertMsg1));
     LogRel(("%s", pVM->vmm.s.szRing0AssertMsg2));
     return VERR_VMM_RING0_ASSERTION;

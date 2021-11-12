@@ -139,38 +139,6 @@ static int pgmR0PoolGrowInner(PGVM pGVM, PPGMPOOL pPool)
 
 
 /**
- * Move this back to PGMR0PoolGrow when VMM_R0_SWITCH_STACK is gonne.
- */
-#ifndef VMM_R0_SWITCH_STACK
-static int pgmR0PoolGrowOnKrnlStk(PGVM pGVM, PGVMCPU pGVCpu, PPGMPOOL pPool)
-#else
-DECLASM(int) pgmR0PoolGrowOnKrnlStk(PGVM pGVM, PGVMCPU pGVCpu, PPGMPOOL pPool);
-DECLASM(int) StkBack_pgmR0PoolGrowOnKrnlStk(PGVM pGVM, PGVMCPU pGVCpu, PPGMPOOL pPool)
-#endif
-{
-    /*
-     * Enter the grow critical section and call worker.
-     */
-    STAM_REL_PROFILE_START(&pPool->StatGrow, a);
-
-    VMMR0EMTBLOCKCTX Ctx;
-    int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, __FUNCTION__, &pGVM->pgmr0.s.PoolGrowCritSect, &Ctx);
-    AssertRCReturn(rc, rc);
-
-    rc = RTCritSectEnter(&pGVM->pgmr0.s.PoolGrowCritSect);
-    AssertRCReturn(rc, rc);
-
-    rc = pgmR0PoolGrowInner(pGVM, pPool);
-
-    STAM_REL_PROFILE_STOP(&pPool->StatGrow, a);
-    RTCritSectLeave(&pGVM->pgmr0.s.PoolGrowCritSect);
-
-    VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
-    return rc;
-}
-
-
-/**
  * Grows the shadow page pool.
  *
  * I.e. adds more pages to it, assuming that hasn't reached cMaxPages yet.
@@ -193,6 +161,24 @@ VMMR0_INT_DECL(int) PGMR0PoolGrow(PGVM pGVM, VMCPUID idCpu)
     AssertReturn(idCpu < pGVM->cCpus, VERR_VM_THREAD_NOT_EMT);
     PGVMCPU const pGVCpu = &pGVM->aCpus[idCpu];
 
-    return pgmR0PoolGrowOnKrnlStk(pGVM, pGVCpu, pPool);
+    /*
+     * Enter the grow critical section and call worker.
+     */
+    STAM_REL_PROFILE_START(&pPool->StatGrow, a);
+
+    VMMR0EMTBLOCKCTX Ctx;
+    int rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, __FUNCTION__, &pGVM->pgmr0.s.PoolGrowCritSect, &Ctx);
+    AssertRCReturn(rc, rc);
+
+    rc = RTCritSectEnter(&pGVM->pgmr0.s.PoolGrowCritSect);
+    AssertRCReturn(rc, rc);
+
+    rc = pgmR0PoolGrowInner(pGVM, pPool);
+
+    STAM_REL_PROFILE_STOP(&pPool->StatGrow, a);
+    RTCritSectLeave(&pGVM->pgmr0.s.PoolGrowCritSect);
+
+    VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
+    return rc;
 }
 

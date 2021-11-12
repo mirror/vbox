@@ -218,7 +218,7 @@ typedef struct VMCPU
 #ifdef VMM_INCLUDED_SRC_include_VMMInternal_h
         struct VMMCPU       s;
 #endif
-        uint8_t             padding[1344];       /* multiple of 64 */
+        uint8_t             padding[9536];       /* multiple of 64 */
     } vmm;
 
     /** PDM part. */

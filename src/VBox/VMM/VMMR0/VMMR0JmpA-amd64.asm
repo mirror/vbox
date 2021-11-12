@@ -15,42 +15,17 @@
 ; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;
 
-;*******************************************************************************
-;* Header Files                                                                *
-;*******************************************************************************
+;*********************************************************************************************************************************
+;*  Header Files                                                                                                                 *
+;*********************************************************************************************************************************
 %define RT_ASM_WITH_SEH64_ALT
 %include "VBox/asmdefs.mac"
 %include "VMMInternal.mac"
 %include "VBox/err.mac"
 %include "VBox/param.mac"
-%ifdef VMM_R0_SWITCH_STACK
- %include "VBox/SUPR0StackWrapper.mac"
-%endif
-
-
-;*******************************************************************************
-;*  Defined Constants And Macros                                               *
-;*******************************************************************************
-%define RESUME_MAGIC    07eadf00dh
-%define STACK_PADDING   0eeeeeeeeeeeeeeeeh
-
-;; Workaround for linux 4.6 fast/slow syscall stack depth difference.
-;; Update: This got worse with linux 5.13 and CONFIG_RANDOMIZE_KSTACK_OFFSET_DEFAULT.
-;;         The x86 arch_exit_to_user_mode_prepare code limits the offset to 255,
-;;         while the generic limit is 1023.  See bugref:10064 for details.
-%ifdef VMM_R0_SWITCH_STACK
- %define STACK_FUZZ_SIZE 0
-%else
- %ifdef RT_OS_LINUX
-  %define STACK_FUZZ_SIZE 384
- %else
-  %define STACK_FUZZ_SIZE 128
- %endif
-%endif
 
 
 BEGINCODE
-
 
 ;;
 ; The setjmp variant used for calling Ring-3.
@@ -76,14 +51,14 @@ BEGINPROC vmmR0CallRing3SetJmp
     mov     rbp, rsp
     SEH64_SET_FRAME_xBP 0
  %ifdef ASM_CALL64_MSC
-    sub     rsp, 30h + STACK_FUZZ_SIZE  ; (10h is used by resume (??), 20h for callee spill area)
-    SEH64_ALLOCATE_STACK 30h + STACK_FUZZ_SIZE
+    sub     rsp, 30h                    ; (10h is used by resume (??), 20h for callee spill area)
+    SEH64_ALLOCATE_STACK 30h
 SEH64_END_PROLOGUE
     mov     r11, rdx                    ; pfn
     mov     rdx, rcx                    ; pJmpBuf;
  %else
-    sub     rsp, 10h + STACK_FUZZ_SIZE  ; (10h is used by resume (??))
-    SEH64_ALLOCATE_STACK 10h + STACK_FUZZ_SIZE
+    sub     rsp, 10h                    ; (10h is used by resume (??))
+    SEH64_ALLOCATE_STACK 10h
 SEH64_END_PROLOGUE
     mov     r8, rdx                     ; pvUser1 (save it like MSC)
     mov     r9, rcx                     ; pvUser2 (save it like MSC)
@@ -125,53 +100,11 @@ SEH64_END_PROLOGUE
     mov     [xDX + VMMR0JMPBUF.rflags], xAX
 
     ;
-    ; If we're not in a ring-3 call, call pfn and return.
+    ; Save the call then make it.
     ;
-    test    byte [xDX + VMMR0JMPBUF.fInRing3Call], 1
-    jnz     .resume
-
-.different_call_continue:
     mov     [xDX + VMMR0JMPBUF.pfn], r11
     mov     [xDX + VMMR0JMPBUF.pvUser1], r8
     mov     [xDX + VMMR0JMPBUF.pvUser2], r9
-
- %ifdef VMM_R0_SWITCH_STACK
-    mov     r15, [xDX + VMMR0JMPBUF.pvSavedStack]
-    test    r15, r15
-    jz      .entry_error
-  %ifdef VBOX_STRICT
-    cmp     dword [r15], 0h
-    jne     .entry_error
-    mov     rdi, r15
-    mov     rcx, VMM_STACK_SIZE / 8
-    mov     rax, qword 0eeeeeeeffeeeeeeeh
-    repne stosq
-    mov     [rdi - 10h], rbx
-  %endif
-
-    ; New RSP
-  %ifdef WITHOUT_SUPR0STACKINFO
-    lea     r15, [r15 + VMM_STACK_SIZE]
-  %else
-    lea     r15, [r15 + VMM_STACK_SIZE - SUPR0STACKINFO_size]
-
-    ; Plant SUPR0 stack info.
-    mov     [r15 + SUPR0STACKINFO.pResumeKernelStack], rsp
-    mov     [r15 + SUPR0STACKINFO.pSelf], r15
-    mov     dword [r15 + SUPR0STACKINFO.magic0], SUPR0STACKINFO_MAGIC0
-    mov     dword [r15 + SUPR0STACKINFO.magic1], SUPR0STACKINFO_MAGIC1
-    mov     dword [r15 + SUPR0STACKINFO.magic2], SUPR0STACKINFO_MAGIC2
-    mov     dword [r15 + SUPR0STACKINFO.magic3], SUPR0STACKINFO_MAGIC3
-
-  %endif
-
-    ; Switch stack!
-  %ifdef ASM_CALL64_MSC
-    lea     rsp, [r15 - 20h]
-  %else
-    mov     rsp, r15
-  %endif
- %endif ; VMM_R0_SWITCH_STACK
 
     mov     r12, rdx                    ; Save pJmpBuf.
  %ifdef ASM_CALL64_MSC
@@ -183,17 +116,6 @@ SEH64_END_PROLOGUE
  %endif
     call    r11
     mov     rdx, r12                    ; Restore pJmpBuf
-
- %ifdef VMM_R0_SWITCH_STACK
-    ; Reset the debug mark and the stack info header.
-    mov     r15, [xDX + VMMR0JMPBUF.pvSavedStack]
-  %ifndef WITHOUT_SUPR0STACKINFO
-    mov     qword [r15 + VMM_STACK_SIZE - SUPR0STACKINFO_size + SUPR0STACKINFO.magic0], 0h
-  %endif
-  %ifdef VBOX_STRICT
-    mov     dword [r15], 0h             ; Reset the marker
-  %endif
- %endif
 
     ;
     ; Return like in the long jump but clear eip, no shortcuts here.
@@ -226,144 +148,6 @@ SEH64_END_PROLOGUE
     push    qword [xDX + VMMR0JMPBUF.rflags]
     popf
     leave
-    ret
-
-.entry_error:
-    mov     eax, VERR_VMM_SET_JMP_ERROR
-    jmp     .proper_return
-
-.stack_overflow:
-    mov     eax, VERR_VMM_SET_JMP_STACK_OVERFLOW
-    jmp     .proper_return
-
-    ;
-    ; Aborting resume.
-    ; Note! No need to restore XMM registers here since we haven't touched them yet.
-    ;
-.bad:
-    and     qword [xDX + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
-    mov     rbx, [xDX + VMMR0JMPBUF.rbx]
- %ifdef ASM_CALL64_MSC
-    mov     rsi, [xDX + VMMR0JMPBUF.rsi]
-    mov     rdi, [xDX + VMMR0JMPBUF.rdi]
- %endif
-    mov     r12, [xDX + VMMR0JMPBUF.r12]
-    mov     r13, [xDX + VMMR0JMPBUF.r13]
-    mov     r14, [xDX + VMMR0JMPBUF.r14]
-    mov     r15, [xDX + VMMR0JMPBUF.r15]
-    mov     eax, VERR_VMM_SET_JMP_ABORTED_RESUME
-    leave
-    ret
-
-    ;
-    ; Not the same call as went to ring-3.
-    ;
-.different_call:
-    mov     byte [xDX + VMMR0JMPBUF.fInRing3Call], 0
-    ;; @todo or should we fail here instead?
-    jmp     .different_call_continue
-
-    ;
-    ; Resume VMMRZCallRing3 the call.
-    ;
-.resume:
-    ; Check if it's actually the same call, if not just continue with it
-    ; as a regular call (ring-0 assert, then VM destroy).
-    cmp     [xDX + VMMR0JMPBUF.pfn], r11
-    jne     .different_call
-    cmp     [xDX + VMMR0JMPBUF.pvUser1], r8
-    jne     .different_call
-    cmp     [xDX + VMMR0JMPBUF.pvUser2], r9
-    jne     .different_call
-
- %ifndef VMM_R0_SWITCH_STACK
-    ; Sanity checks incoming stack, applying fuzz if needed.
-    sub     r10, [xDX + VMMR0JMPBUF.SpCheck]
-    jz      .resume_stack_checked_out
-    add     r10, STACK_FUZZ_SIZE        ; plus/minus STACK_FUZZ_SIZE is fine.
-    cmp     r10, STACK_FUZZ_SIZE * 2
-    ja      .bad
-
-    mov     r10, [xDX + VMMR0JMPBUF.SpCheck]
-    mov     [xDX + VMMR0JMPBUF.rsp], r10 ; Must be update in case of another long jump (used for save calc).
-
-.resume_stack_checked_out:
-    mov     ecx, [xDX + VMMR0JMPBUF.cbSavedStack]
-    cmp     rcx, VMM_STACK_SIZE
-    ja      .bad
-    test    rcx, 7
-    jnz     .bad
-    mov     rdi, [xDX + VMMR0JMPBUF.SpCheck]
-    sub     rdi, [xDX + VMMR0JMPBUF.SpResume]
-    cmp     rcx, rdi
-    jne     .bad
- %endif
-
-%ifdef VMM_R0_SWITCH_STACK
-    ; Update the signature in case the kernel stack moved.
-    mov     r15, [xDX + VMMR0JMPBUF.pvSavedStack]
-    test    r15, r15
-    jz      .entry_error
- %ifndef WITHOUT_SUPR0STACKINFO
-    lea     r15, [r15 + VMM_STACK_SIZE - SUPR0STACKINFO_size]
-
-    mov     [r15 + SUPR0STACKINFO.pResumeKernelStack], rsp
-    mov     [r15 + SUPR0STACKINFO.pSelf], r15
-    mov     dword [r15 + SUPR0STACKINFO.magic0], SUPR0STACKINFO_MAGIC0
-    mov     dword [r15 + SUPR0STACKINFO.magic1], SUPR0STACKINFO_MAGIC1
-    mov     dword [r15 + SUPR0STACKINFO.magic2], SUPR0STACKINFO_MAGIC2
-    mov     dword [r15 + SUPR0STACKINFO.magic3], SUPR0STACKINFO_MAGIC3
- %endif
-
-    ; Switch stack.
-    mov     rsp, [xDX + VMMR0JMPBUF.SpResume]
-%else
-    ; Restore the stack.
-    mov     ecx, [xDX + VMMR0JMPBUF.cbSavedStack]
-    shr     ecx, 3
-    mov     rsi, [xDX + VMMR0JMPBUF.pvSavedStack]
-    mov     rdi, [xDX + VMMR0JMPBUF.SpResume]
-    mov     rsp, rdi
-    rep movsq
-%endif ; !VMM_R0_SWITCH_STACK
-    mov     byte [xDX + VMMR0JMPBUF.fInRing3Call], 0
-
-    ;
-    ; Continue where we left off.
-    ;
-%ifdef VBOX_STRICT
-    pop     rax                         ; magic
-    cmp     rax, RESUME_MAGIC
-    je      .magic_ok
-    mov     ecx, 0123h
-    mov     [ecx], edx
-.magic_ok:
-%endif
-%ifdef RT_OS_WINDOWS
-    movdqa  xmm6,  [rsp + 000h]
-    movdqa  xmm7,  [rsp + 010h]
-    movdqa  xmm8,  [rsp + 020h]
-    movdqa  xmm9,  [rsp + 030h]
-    movdqa  xmm10, [rsp + 040h]
-    movdqa  xmm11, [rsp + 050h]
-    movdqa  xmm12, [rsp + 060h]
-    movdqa  xmm13, [rsp + 070h]
-    movdqa  xmm14, [rsp + 080h]
-    movdqa  xmm15, [rsp + 090h]
-    add     rsp, 0a0h
-%endif
-    popf
-    pop     rbx
-%ifdef ASM_CALL64_MSC
-    pop     rsi
-    pop     rdi
-%endif
-    pop     r12
-    pop     r13
-    pop     r14
-    pop     r15
-    pop     rbp
-    xor     eax, eax                    ; VINF_SUCCESS
     ret
 ENDPROC vmmR0CallRing3SetJmp
 
@@ -415,10 +199,6 @@ BEGINPROC vmmR0CallRing3LongJmp
     movdqa  [rsp + 080h], xmm14
     movdqa  [rsp + 090h], xmm15
 %endif
-%ifdef VBOX_STRICT
-    push    RESUME_MAGIC
-    SEH64_ALLOCATE_STACK 8
-%endif
 SEH64_END_PROLOGUE
 
     ;
@@ -439,36 +219,21 @@ SEH64_END_PROLOGUE
     je      .nok
 
     ;
-    ; Sanity checks.
+    ; Also check that the stack is in the vicinity of the RSP we entered
+    ; on so the stack mirroring below doesn't go wild.
     ;
-    mov     rdi, [xDX + VMMR0JMPBUF.pvSavedStack]
-    test    rdi, rdi                    ; darwin may set this to 0.
-    jz      .nok
-    mov     [xDX + VMMR0JMPBUF.SpResume], rsp
- %ifndef VMM_R0_SWITCH_STACK
     mov     rsi, rsp
     mov     rcx, [xDX + VMMR0JMPBUF.rsp]
     sub     rcx, rsi
-
-    ; two sanity checks on the size.
-    cmp     rcx, VMM_STACK_SIZE         ; check max size.
+    cmp     rcx, _64K
     jnbe    .nok
 
     ;
-    ; Copy the stack
-    ;
-    test    ecx, 7                      ; check alignment
-    jnz     .nok
-    mov     [xDX + VMMR0JMPBUF.cbSavedStack], ecx
-    shr     ecx, 3
-    rep movsq
-
- %endif ; !VMM_R0_SWITCH_STACK
-
     ; Save a PC and return PC here to assist unwinding.
+    ;
 .unwind_point:
     lea     rcx, [.unwind_point wrt RIP]
-    mov     [xDX + VMMR0JMPBUF.SavedEipForUnwind], rcx
+    mov     [xDX + VMMR0JMPBUF.UnwindPc], rcx
     mov     rcx, [xDX + VMMR0JMPBUF.rbp]
     lea     rcx, [rcx + 8]
     mov     [xDX + VMMR0JMPBUF.UnwindRetPcLocation], rcx
@@ -476,15 +241,58 @@ SEH64_END_PROLOGUE
     mov     [xDX + VMMR0JMPBUF.UnwindRetPcValue], rcx
 
     ; Save RSP & RBP to enable stack dumps
+    mov     [xDX + VMMR0JMPBUF.UnwindSp], rsp
     mov     rcx, rbp
-    mov     [xDX + VMMR0JMPBUF.SavedEbp], rcx
+    mov     [xDX + VMMR0JMPBUF.UnwindBp], rcx
     sub     rcx, 8
-    mov     [xDX + VMMR0JMPBUF.SavedEsp], rcx
+    mov     [xDX + VMMR0JMPBUF.UnwindRetSp], rcx
 
-    ; store the last pieces of info.
+    ;
+    ; Make sure the direction flag is clear before we do any rep movsb below.
+    ;
+    cld
+
+    ;
+    ; Mirror the stack.
+    ;
+    xor     ebx, ebx
+
+    mov     rdi, [xDX + VMMR0JMPBUF.pvStackBuf]
+    or      rdi, rdi
+    jz      .skip_stack_mirroring
+
+    mov     ebx, [xDX + VMMR0JMPBUF.cbStackBuf]
+    or      ebx, ebx
+    jz      .skip_stack_mirroring
+
     mov     rcx, [xDX + VMMR0JMPBUF.rsp]
-    mov     [xDX + VMMR0JMPBUF.SpCheck], rcx
-    mov     byte [xDX + VMMR0JMPBUF.fInRing3Call], 1
+    sub     rcx, rsp
+    and     rcx, ~0fffh                 ; copy up to the page boundrary
+
+    cmp     rcx, rbx                    ; rbx = rcx = RT_MIN(rbx, rcx);
+    jbe     .do_stack_buffer_big_enough
+    mov     ecx, ebx                    ; too much to copy, limit to ebx
+    jmp     .do_stack_copying
+.do_stack_buffer_big_enough:
+    mov     ebx, ecx                    ; ecx is smaller, update ebx for cbStackValid
+
+.do_stack_copying:
+    mov     rsi, rsp
+    rep movsb
+
+.skip_stack_mirroring:
+    mov     [xDX + VMMR0JMPBUF.cbStackValid], ebx
+
+    ;
+    ; Do buffer mirroring.
+    ;
+    mov     rdi, [xDX + VMMR0JMPBUF.pMirrorBuf]
+    or      rdi, rdi
+    jz      .skip_buffer_mirroring
+    mov     rsi, rdx
+    mov     ecx, VMMR0JMPBUF_size
+    rep movsb
+.skip_buffer_mirroring:
 
     ;
     ; Do the long jump.
@@ -521,14 +329,6 @@ SEH64_END_PROLOGUE
     ; Failure
     ;
 .nok:
-%ifdef VBOX_STRICT
-    pop     rax                         ; magic
-    cmp     rax, RESUME_MAGIC
-    je      .magic_ok
-    mov     ecx, 0123h
-    mov     [rcx], edx
-.magic_ok:
-%endif
     mov     eax, VERR_VMM_LONG_JMP_ERROR
 %ifdef RT_OS_WINDOWS
     add     rsp, 0a0h                   ; skip XMM registers since they are unmodified.

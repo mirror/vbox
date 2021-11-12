@@ -70,7 +70,6 @@ PROGRAMS += \
 	tstIEMCheckMc \
 	tstSSM \
 	tstVMMR0CallHost-1 \
-	tstVMMR0CallHost-2 \
 	tstX86-FpuSaveRestore
   ifn1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.x86 solaris.amd64 win.amd64 ) ## TODO: Fix the code.
 PROGRAMS += tstX86-1
@@ -299,10 +298,9 @@ tstCompressionBenchmark_TEMPLATE = VBOXR3TSTEXE
 tstCompressionBenchmark_SOURCES  = tstCompressionBenchmark.cpp
 
 #
-# Two testcases for checking the ring-3 "long jump" code.
+# Two testcases for checking the ring-0 setjmp/longjmp code.
 #
 tstVMMR0CallHost-1_TEMPLATE = VBOXR3TSTEXE
-tstVMMR0CallHost-1_DEFS = VMM_R0_NO_SWITCH_STACK
 tstVMMR0CallHost-1_INCS = $(VBOX_PATH_VMM_SRC)/include
 tstVMMR0CallHost-1_SOURCES = \
 	tstVMMR0CallHost-1.cpp
@@ -311,11 +309,6 @@ tstVMMR0CallHost-1_SOURCES.amd64 = \
 tstVMMR0CallHost-1_SOURCES.x86 = \
 	$(VBOX_PATH_VMM_SRC)/VMMR0/VMMR0JmpA-x86.asm
 
-tstVMMR0CallHost-2_EXTENDS = tstVMMR0CallHost-1
-tstVMMR0CallHost-2_DEFS = VMM_R0_SWITCH_STACK
-tstVMMR0CallHost-2_SOURCES.amd64 = \
-	$(tstVMMR0CallHost-1_SOURCES.amd64) \
-	tstVMMR0CallHost-2A.asm
 
 #
 # For testing the VM request queue code.

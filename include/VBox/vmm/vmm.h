@@ -202,7 +202,6 @@ VMMDECL(PVMCPUCC)           VMMGetCpu0(PVMCC pVM);
 VMMDECL(PVMCPUCC)           VMMGetCpuById(PVMCC pVM, VMCPUID idCpu);
 VMMR3DECL(PVMCPUCC)         VMMR3GetCpuByIdU(PUVM pVM, VMCPUID idCpu);
 VMM_INT_DECL(uint32_t)      VMMGetSvnRev(void);
-VMM_INT_DECL(bool)          VMMIsInRing3Call(PVMCPUCC pVCpu);
 VMM_INT_DECL(void)          VMMTrashVolatileXMMRegs(void);
 
 
@@ -487,7 +486,6 @@ VMMR0_INT_DECL(int)  VMMR0InitPerVMData(PGVM pGVM);
 VMMR0_INT_DECL(int)  VMMR0TermVM(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(void) VMMR0CleanupVM(PGVM pGVM);
 VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPUCC pVCpu);
-VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(int)  VMMR0ThreadCtxHookCreateForEmt(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPUCC pVCpu);

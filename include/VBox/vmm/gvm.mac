@@ -50,7 +50,7 @@ struc GVMCPU
         .nemr0              resb 64
 %endif
         alignb 64
-        .vmmr0              resb 512
+        .vmmr0              resb 896
         alignb 64
         .pgmr0              resb 64
         alignb 4096

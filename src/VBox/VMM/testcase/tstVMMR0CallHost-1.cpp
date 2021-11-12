@@ -35,18 +35,12 @@
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-#if !defined(VMM_R0_SWITCH_STACK) && !defined(VMM_R0_NO_SWITCH_STACK)
-# error "VMM_R0_SWITCH_STACK or VMM_R0_NO_SWITCH_STACK has to be defined."
-#endif
-
-
-/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** The jump buffer. */
 static VMMR0JMPBUF          g_Jmp;
+/** The mirror jump buffer. */
+static VMMR0JMPBUF          g_JmpMirror;
 /** The number of jumps we've done. */
 static unsigned volatile    g_cJmps;
 /** Number of bytes allocated last time we called foo(). */
@@ -66,10 +60,7 @@ int foo(int i, int iZero, int iMinusOne)
     g_cbFoo = cb;
     char  *pv = (char *)alloca(cb);
     RTStrPrintf(pv, cb, "i=%d%*s\n", i, cb, "");
-#ifdef VMM_R0_SWITCH_STACK
-    g_cbFooUsed = VMM_STACK_SIZE - ((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack);
-    RTTESTI_CHECK_MSG_RET(g_cbFooUsed < (intptr_t)VMM_STACK_SIZE - 128, ("%#x - (%p - %p) -> %#x; cb=%#x i=%d\n", VMM_STACK_SIZE, pv, g_Jmp.pvSavedStack, g_cbFooUsed, cb, i), -15);
-#elif defined(RT_ARCH_AMD64)
+#if defined(RT_ARCH_AMD64)
     g_cbFooUsed = (uintptr_t)g_Jmp.rsp - (uintptr_t)pv;
     RTTESTI_CHECK_MSG_RET(g_cbFooUsed < VMM_STACK_SIZE - 128, ("%p - %p -> %#x; cb=%#x i=%d\n", g_Jmp.rsp, pv, g_cbFooUsed, cb, i), -15);
 #elif defined(RT_ARCH_X86)
@@ -121,355 +112,25 @@ DECLCALLBACK(DECL_NO_INLINE(RT_NOTHING, int)) stackRandom(PVMMR0JMPBUF pJmpBuf, 
 
 void tst(int iFrom, int iTo, int iInc)
 {
-#ifdef VMM_R0_SWITCH_STACK
-    int const cIterations = iFrom > iTo ? iFrom - iTo : iTo - iFrom;
-    void   *pvPrev = alloca(1);
-#endif
-
-    RTR0PTR R0PtrSaved = g_Jmp.pvSavedStack;
-    RT_ZERO(g_Jmp);
-    g_Jmp.pvSavedStack = R0PtrSaved;
-    memset((void *)g_Jmp.pvSavedStack, '\0', VMM_STACK_SIZE);
+    RT_BZERO(&g_Jmp, RT_UOFFSETOF(VMMR0JMPBUF, cbStackBuf));
+    g_Jmp.cbStackValid = _1M;
+    memset((void *)g_Jmp.pvStackBuf, '\0', g_Jmp.cbStackBuf);
     g_cbFoo = 0;
     g_cJmps = 0;
     g_cbFooUsed = 0;
     g_fInLongJmp = false;
 
-    int iOrg = iFrom;
     for (int i = iFrom, iItr = 0; i != iTo; i += iInc, iItr++)
     {
-        if (!g_fInLongJmp)
-            iOrg = i;
-        int rc = stackRandom(&g_Jmp, (PFNVMMR0SETJMP)(uintptr_t)tst2, (PVM)(uintptr_t)iOrg, 0);
+        g_fInLongJmp = false;
+        int rc = stackRandom(&g_Jmp, (PFNVMMR0SETJMP)(uintptr_t)tst2, (PVM)(uintptr_t)i, 0);
         RTTESTI_CHECK_MSG_RETV(rc == (g_fInLongJmp ? 42 : 0),
-                               ("i=%d iOrg=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x fInLongJmp=%d\n",
-                                i, iOrg, rc, g_cbFoo, g_cbFooUsed, g_fInLongJmp));
+                               ("i=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x fInLongJmp=%d\n",
+                                i, rc, g_cbFoo, g_cbFooUsed, g_fInLongJmp));
 
-#ifdef VMM_R0_SWITCH_STACK
-        /* Make the stack pointer slide for the second half of the calls. */
-        if (iItr >= cIterations / 2)
-        {
-            /* Note! gcc does funny rounding up of alloca(). */
-# if !defined(VBOX_WITH_GCC_SANITIZER) && !defined(__MSVC_RUNTIME_CHECKS)
-            void  *pv2 = alloca((i % 63) | 1);
-            size_t cb2 = (uintptr_t)pvPrev - (uintptr_t)pv2;
-# else
-            size_t cb2 = ((i % 3) + 1) * 16; /* We get what we ask for here, and it's not at RSP/ESP due to guards. */
-            void  *pv2 = alloca(cb2);
-# endif
-            RTTESTI_CHECK_MSG(cb2 >= 16 && cb2 <= 128, ("cb2=%zu pv2=%p pvPrev=%p iAlloca=%d\n", cb2, pv2, pvPrev, iItr));
-            memset(pv2, 0xff, cb2);
-            memset(pvPrev, 0xee, 1);
-            pvPrev = pv2;
-        }
-#endif
     }
     RTTESTI_CHECK_MSG_RETV(g_cJmps, ("No jumps!"));
-    if (g_Jmp.cbUsedAvg || g_Jmp.cUsedTotal)
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "cbUsedAvg=%#x cbUsedMax=%#x cUsedTotal=%#llx\n",
-                      g_Jmp.cbUsedAvg, g_Jmp.cbUsedMax, g_Jmp.cUsedTotal);
 }
-
-
-#if defined(VMM_R0_SWITCH_STACK) && defined(RT_ARCH_AMD64)
-/*
- * Stack switch back tests.
- */
-RT_C_DECLS_BEGIN
-DECLCALLBACK(int) tstWrapped4(         PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4);
-DECLCALLBACK(int) StkBack_tstWrapped4( PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4);
-DECLCALLBACK(int) tstWrapped5(         PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5);
-DECLCALLBACK(int) StkBack_tstWrapped5( PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5);
-DECLCALLBACK(int) tstWrapped6(         PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6);
-DECLCALLBACK(int) StkBack_tstWrapped6( PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6);
-DECLCALLBACK(int) tstWrapped7(         PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7);
-DECLCALLBACK(int) StkBack_tstWrapped7( PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7);
-DECLCALLBACK(int) tstWrapped8(         PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8);
-DECLCALLBACK(int) StkBack_tstWrapped8( PVMMR0JMPBUF pJmp, uintptr_t u2, uintptr_t u3,  uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8);
-DECLCALLBACK(int) tstWrapped9(         PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9);
-DECLCALLBACK(int) StkBack_tstWrapped9( PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9);
-DECLCALLBACK(int) tstWrapped10(        PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10);
-DECLCALLBACK(int) StkBack_tstWrapped10(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10);
-DECLCALLBACK(int) tstWrapped16(        PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16);
-DECLCALLBACK(int) StkBack_tstWrapped16(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16);
-DECLCALLBACK(int) tstWrapped20(        PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16, uintptr_t u17, uintptr_t u18, uintptr_t u19, uintptr_t u20);
-DECLCALLBACK(int) StkBack_tstWrapped20(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16, uintptr_t u17, uintptr_t u18, uintptr_t u19, uintptr_t u20);
-
-DECLCALLBACK(int) tstWrappedThin(PVMMR0JMPBUF pJmp);
-DECLCALLBACK(int) StkBack_tstWrappedThin(PVMMR0JMPBUF pJmp);
-RT_C_DECLS_END
-
-
-
-DECLCALLBACK(int) StkBack_tstWrapped4(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4)
-{
-    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
-    RTTESTI_CHECK_RET(u2 == (uintptr_t)2U, -2);
-    RTTESTI_CHECK_RET(u3 == (uintptr_t)3U, -3);
-    RTTESTI_CHECK_RET(u4 == (uintptr_t)4U, -4);
-
-    void *pv = alloca(32);
-    memset(pv, 'a', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
-
-    return 42;
-}
-
-
-DECLCALLBACK(int) StkBack_tstWrapped5(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5)
-{
-    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
-    RTTESTI_CHECK_RET(u2 == ~(uintptr_t)2U, -2);
-    RTTESTI_CHECK_RET(u3 == ~(uintptr_t)3U, -3);
-    RTTESTI_CHECK_RET(u4 == ~(uintptr_t)4U, -4);
-    RTTESTI_CHECK_RET(u5 == ~(uintptr_t)5U, -5);
-
-    void *pv = alloca(32);
-    memset(pv, 'a', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
-
-    return 42;
-}
-
-
-DECLCALLBACK(int) StkBack_tstWrapped6(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6)
-{
-    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
-    RTTESTI_CHECK_RET(u2 ==  (uintptr_t)2U, -2);
-    RTTESTI_CHECK_RET(u3 ==  (uintptr_t)3U, -3);
-    RTTESTI_CHECK_RET(u4 ==  (uintptr_t)4U, -4);
-    RTTESTI_CHECK_RET(u5 ==  (uintptr_t)5U, -5);
-    RTTESTI_CHECK_RET(u6 ==  (uintptr_t)6U, -6);
-
-    void *pv = alloca(32);
-    memset(pv, 'a', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
-
-    return 42;
-}
-
-
-DECLCALLBACK(int) StkBack_tstWrapped7(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7)
-{
-    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
-    RTTESTI_CHECK_RET(u2 == ~(uintptr_t)2U, -2);
-    RTTESTI_CHECK_RET(u3 == ~(uintptr_t)3U, -3);
-    RTTESTI_CHECK_RET(u4 == ~(uintptr_t)4U, -4);
-    RTTESTI_CHECK_RET(u5 == ~(uintptr_t)5U, -5);
-    RTTESTI_CHECK_RET(u6 == ~(uintptr_t)6U, -6);
-    RTTESTI_CHECK_RET(u7 == ~(uintptr_t)7U, -7);
-
-    void *pv = alloca(32);
-    memset(pv, 'a', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
-
-    return 42;
-}
-
-
-DECLCALLBACK(int) StkBack_tstWrapped8(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8)
-{
-    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
-    RTTESTI_CHECK_RET(u2 ==  (uintptr_t)2U, -2);
-    RTTESTI_CHECK_RET(u3 ==  (uintptr_t)3U, -3);
-    RTTESTI_CHECK_RET(u4 ==  (uintptr_t)4U, -4);
-    RTTESTI_CHECK_RET(u5 ==  (uintptr_t)5U, -5);
-    RTTESTI_CHECK_RET(u6 ==  (uintptr_t)6U, -6);
-    RTTESTI_CHECK_RET(u7 ==  (uintptr_t)7U, -7);
-    RTTESTI_CHECK_RET(u8 ==  (uintptr_t)8U, -8);
-
-    void *pv = alloca(32);
-    memset(pv, 'a', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
-
-    return 42;
-}
-
-DECLCALLBACK(int) StkBack_tstWrapped9(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9)
-{
-    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
-    RTTESTI_CHECK_RET(u2 == ~(uintptr_t)2U, -2);
-    RTTESTI_CHECK_RET(u3 == ~(uintptr_t)3U, -3);
-    RTTESTI_CHECK_RET(u4 == ~(uintptr_t)4U, -4);
-    RTTESTI_CHECK_RET(u5 == ~(uintptr_t)5U, -5);
-    RTTESTI_CHECK_RET(u6 == ~(uintptr_t)6U, -6);
-    RTTESTI_CHECK_RET(u7 == ~(uintptr_t)7U, -7);
-    RTTESTI_CHECK_RET(u8 == ~(uintptr_t)8U, -8);
-    RTTESTI_CHECK_RET(u9 == ~(uintptr_t)9U, -9);
-
-    void *pv = alloca(32);
-    memset(pv, 'a', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
-
-    return 42;
-}
-
-
-DECLCALLBACK(int) StkBack_tstWrapped10(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10)
-{
-    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
-    RTTESTI_CHECK_RET(u2 ==  (uintptr_t)2U, -2);
-    RTTESTI_CHECK_RET(u3 ==  (uintptr_t)3U, -3);
-    RTTESTI_CHECK_RET(u4 ==  (uintptr_t)4U, -4);
-    RTTESTI_CHECK_RET(u5 ==  (uintptr_t)5U, -5);
-    RTTESTI_CHECK_RET(u6 ==  (uintptr_t)6U, -6);
-    RTTESTI_CHECK_RET(u7 ==  (uintptr_t)7U, -7);
-    RTTESTI_CHECK_RET(u8 ==  (uintptr_t)8U, -8);
-    RTTESTI_CHECK_RET(u9 ==  (uintptr_t)9U, -9);
-    RTTESTI_CHECK_RET(u10 == (uintptr_t)10U, -10);
-
-    void *pv = alloca(32);
-    memset(pv, 'a', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
-
-    return 42;
-}
-
-
-DECLCALLBACK(int) StkBack_tstWrapped16(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16)
-{
-    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
-    RTTESTI_CHECK_RET(u2 ==  (uintptr_t)2U, -2);
-    RTTESTI_CHECK_RET(u3 ==  (uintptr_t)3U, -3);
-    RTTESTI_CHECK_RET(u4 ==  (uintptr_t)4U, -4);
-    RTTESTI_CHECK_RET(u5 ==  (uintptr_t)5U, -5);
-    RTTESTI_CHECK_RET(u6 ==  (uintptr_t)6U, -6);
-    RTTESTI_CHECK_RET(u7 ==  (uintptr_t)7U, -7);
-    RTTESTI_CHECK_RET(u8 ==  (uintptr_t)8U, -8);
-    RTTESTI_CHECK_RET(u9 ==  (uintptr_t)9U, -9);
-    RTTESTI_CHECK_RET(u10 == (uintptr_t)10U, -10);
-    RTTESTI_CHECK_RET(u11 == (uintptr_t)11U, -11);
-    RTTESTI_CHECK_RET(u12 == (uintptr_t)12U, -12);
-    RTTESTI_CHECK_RET(u13 == (uintptr_t)13U, -13);
-    RTTESTI_CHECK_RET(u14 == (uintptr_t)14U, -14);
-    RTTESTI_CHECK_RET(u15 == (uintptr_t)15U, -15);
-    RTTESTI_CHECK_RET(u16 == (uintptr_t)16U, -16);
-
-    void *pv = alloca(32);
-    memset(pv, 'a', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
-
-    return 42;
-}
-
-
-DECLCALLBACK(int) StkBack_tstWrapped20(PVMMR0JMPBUF pJmp, uintptr_t u2,  uintptr_t u3, uintptr_t u4, uintptr_t u5, uintptr_t u6, uintptr_t u7, uintptr_t u8, uintptr_t u9, uintptr_t u10, uintptr_t u11, uintptr_t u12, uintptr_t u13, uintptr_t u14, uintptr_t u15, uintptr_t u16, uintptr_t u17, uintptr_t u18, uintptr_t u19, uintptr_t u20)
-{
-    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -1);
-    RTTESTI_CHECK_RET(u2 ==  (uintptr_t)2U, -2);
-    RTTESTI_CHECK_RET(u3 ==  (uintptr_t)3U, -3);
-    RTTESTI_CHECK_RET(u4 ==  (uintptr_t)4U, -4);
-    RTTESTI_CHECK_RET(u5 ==  (uintptr_t)5U, -5);
-    RTTESTI_CHECK_RET(u6 ==  (uintptr_t)6U, -6);
-    RTTESTI_CHECK_RET(u7 ==  (uintptr_t)7U, -7);
-    RTTESTI_CHECK_RET(u8 ==  (uintptr_t)8U, -8);
-    RTTESTI_CHECK_RET(u9 ==  (uintptr_t)9U, -9);
-    RTTESTI_CHECK_RET(u10 == (uintptr_t)10U, -10);
-    RTTESTI_CHECK_RET(u11 == (uintptr_t)11U, -11);
-    RTTESTI_CHECK_RET(u12 == (uintptr_t)12U, -12);
-    RTTESTI_CHECK_RET(u13 == (uintptr_t)13U, -13);
-    RTTESTI_CHECK_RET(u14 == (uintptr_t)14U, -14);
-    RTTESTI_CHECK_RET(u15 == (uintptr_t)15U, -15);
-    RTTESTI_CHECK_RET(u16 == (uintptr_t)16U, -16);
-    RTTESTI_CHECK_RET(u17 == (uintptr_t)17U, -17);
-    RTTESTI_CHECK_RET(u18 == (uintptr_t)18U, -18);
-    RTTESTI_CHECK_RET(u19 == (uintptr_t)19U, -19);
-    RTTESTI_CHECK_RET(u20 == (uintptr_t)20U, -20);
-
-    void *pv = alloca(32);
-    memset(pv, 'a', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -11);
-
-    return 42;
-}
-
-
-DECLCALLBACK(int) tstSwitchBackInner(intptr_t i1, intptr_t i2)
-{
-    RTTESTI_CHECK_RET(i1 == -42, -20);
-    RTTESTI_CHECK_RET(i2 == (intptr_t)&g_Jmp, -21);
-
-    void *pv = alloca(32);
-    memset(pv, 'b', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack < VMM_STACK_SIZE, -22);
-
-    int rc;
-    rc = tstWrapped4(&g_Jmp,  (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U);
-    RTTESTI_CHECK_RET(rc == 42, -23);
-
-    rc = tstWrapped5(&g_Jmp, ~(uintptr_t)2U, ~(uintptr_t)3U, ~(uintptr_t)4U, ~(uintptr_t)5U);
-    RTTESTI_CHECK_RET(rc == 42, -23);
-
-    rc = tstWrapped6(&g_Jmp,  (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U,  (uintptr_t)5U,  (uintptr_t)6U);
-    RTTESTI_CHECK_RET(rc == 42, -23);
-
-    rc = tstWrapped7(&g_Jmp, ~(uintptr_t)2U, ~(uintptr_t)3U, ~(uintptr_t)4U, ~(uintptr_t)5U, ~(uintptr_t)6U, ~(uintptr_t)7U);
-    RTTESTI_CHECK_RET(rc == 42, -23);
-
-    rc = tstWrapped8(&g_Jmp,  (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U,  (uintptr_t)5U,  (uintptr_t)6U,  (uintptr_t)7U,  (uintptr_t)8U);
-    RTTESTI_CHECK_RET(rc == 42, -23);
-
-    rc = tstWrapped9(&g_Jmp, ~(uintptr_t)2U, ~(uintptr_t)3U, ~(uintptr_t)4U, ~(uintptr_t)5U, ~(uintptr_t)6U, ~(uintptr_t)7U, ~(uintptr_t)8U, ~(uintptr_t)9U);
-    RTTESTI_CHECK_RET(rc == 42, -23);
-
-    rc = tstWrapped10(&g_Jmp, (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U,  (uintptr_t)5U,  (uintptr_t)6U,  (uintptr_t)7U,  (uintptr_t)8U,  (uintptr_t)9U,  (uintptr_t)10);
-    RTTESTI_CHECK_RET(rc == 42, -23);
-
-    rc = tstWrapped16(&g_Jmp, (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U,  (uintptr_t)5U,  (uintptr_t)6U,  (uintptr_t)7U,  (uintptr_t)8U,  (uintptr_t)9U,  (uintptr_t)10,  (uintptr_t)11,  (uintptr_t)12,  (uintptr_t)13,  (uintptr_t)14,  (uintptr_t)15,  (uintptr_t)16);
-    RTTESTI_CHECK_RET(rc == 42, -23);
-
-    rc = tstWrapped20(&g_Jmp, (uintptr_t)2U,  (uintptr_t)3U,  (uintptr_t)4U,  (uintptr_t)5U,  (uintptr_t)6U,  (uintptr_t)7U,  (uintptr_t)8U,  (uintptr_t)9U,  (uintptr_t)10,  (uintptr_t)11,  (uintptr_t)12,  (uintptr_t)13,  (uintptr_t)14,  (uintptr_t)15,  (uintptr_t)16,  (uintptr_t)17,  (uintptr_t)18,  (uintptr_t)19,  (uintptr_t)20);
-    RTTESTI_CHECK_RET(rc == 42, -23);
-    return rc;
-}
-
-
-DECLCALLBACK(int) StkBack_tstWrappedThin(PVMMR0JMPBUF pJmp)
-{
-    RTTESTI_CHECK_RET(pJmp == &g_Jmp, -31);
-
-    void *pv = alloca(32);
-    memset(pv, 'c', 32);
-    RTTESTI_CHECK_RET((uintptr_t)pv - (uintptr_t)g_Jmp.pvSavedStack > VMM_STACK_SIZE, -32);
-
-    return 42;
-}
-
-DECLCALLBACK(int) tstSwitchBackInnerThin(intptr_t i1, intptr_t i2)
-{
-    RT_NOREF(i1);
-    return tstWrappedThin((PVMMR0JMPBUF)i2);
-}
-
-
-void tstSwitchBack(void)
-{
-    RTR0PTR R0PtrSaved = g_Jmp.pvSavedStack;
-    RT_ZERO(g_Jmp);
-    g_Jmp.pvSavedStack = R0PtrSaved;
-    memset((void *)g_Jmp.pvSavedStack, '\0', VMM_STACK_SIZE);
-    g_cbFoo = 0;
-    g_cJmps = 0;
-    g_cbFooUsed = 0;
-    g_fInLongJmp = false;
-
-    //for (int i = iFrom, iItr = 0; i != iTo; i += iInc, iItr++)
-    {
-        int rc = stackRandom(&g_Jmp, (PFNVMMR0SETJMP)(uintptr_t)tstSwitchBackInner, (PVM)(intptr_t)-42, (PVMCPU)&g_Jmp);
-        RTTESTI_CHECK_MSG_RETV(rc == 42,
-                               ("i=%d iOrg=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x fInLongJmp=%d\n",
-                                0, 0 /*i, iOrg*/, rc, g_cbFoo, g_cbFooUsed, g_fInLongJmp));
-
-        rc = stackRandom(&g_Jmp, (PFNVMMR0SETJMP)(uintptr_t)tstSwitchBackInnerThin, NULL, (PVMCPU)&g_Jmp);
-        RTTESTI_CHECK_MSG_RETV(rc == 42,
-                               ("i=%d iOrg=%d rc=%d setjmp; cbFoo=%#x cbFooUsed=%#x fInLongJmp=%d\n",
-                                0, 0 /*i, iOrg*/, rc, g_cbFoo, g_cbFooUsed, g_fInLongJmp));
-
-    }
-    //RTTESTI_CHECK_MSG_RETV(g_cJmps, ("No jumps!"));
-}
-
-#endif
 
 
 int main()
@@ -478,16 +139,14 @@ int main()
      * Init.
      */
     RTTEST hTest;
-#ifdef VMM_R0_NO_SWITCH_STACK
     RTEXITCODE rcExit = RTTestInitAndCreate("tstVMMR0CallHost-1", &hTest);
-#else
-    RTEXITCODE rcExit = RTTestInitAndCreate("tstVMMR0CallHost-2", &hTest);
-#endif
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(hTest);
 
-    g_Jmp.pvSavedStack = (RTR0PTR)RTTestGuardedAllocTail(hTest, VMM_STACK_SIZE);
+    g_Jmp.cbStackBuf = PAGE_SIZE;
+    g_Jmp.pvStackBuf = (uintptr_t)RTTestGuardedAllocTail(hTest, g_Jmp.cbStackBuf);
+    g_Jmp.pMirrorBuf = (uintptr_t)&g_JmpMirror;
 
     /*
      * Run two test with about 1000 long jumps each.
@@ -496,10 +155,6 @@ int main()
     tst(0, 7000, 1);
     RTTestSub(hTest, "Decreasing stack usage");
     tst(7599, 0, -1);
-#if defined(VMM_R0_SWITCH_STACK) && defined(RT_ARCH_AMD64)
-    RTTestSub(hTest, "Switch back");
-    tstSwitchBack();
-#endif
 
     return RTTestSummaryAndDestroy(hTest);
 }

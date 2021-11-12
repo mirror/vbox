@@ -100,12 +100,7 @@ static int32_t g_fCmpWriteSupported = -1;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
-#else
-DECLASM(int) pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
-DECLASM(int) StkBack_pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
-#endif
 
 
 #ifdef RTASM_HAVE_CMP_WRITE_U128
@@ -555,15 +550,8 @@ static int pdmCritSectRwEnterSharedContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRIT
  * @param   pSrcPos     The source position. (Can be NULL.)
  * @param   fNoVal      No validation records.
  */
-#if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
                                     PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
-#else
-DECLASM(int) pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
-                                      PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal);
-DECLASM(int) StkBack_pdmCritSectRwEnterShared(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
-                                              PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
-#endif
 {
     /*
      * Validate input.
@@ -898,11 +886,7 @@ VMMR3DECL(int) PDMR3CritSectRwEnterSharedEx(PVM pVM, PPDMCRITSECTRW pThis, bool 
  *          PDMCritSectRwEnterSharedDebug, PDMCritSectRwTryEnterSharedDebug,
  *          PDMCritSectRwLeaveExcl, RTCritSectRwLeaveShared.
  */
-#if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
-#else
-DECLASM(int) StkBack_pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
-#endif
 {
     /*
      * Validate handle.
@@ -1320,15 +1304,8 @@ static int pdmR3R0CritSectRwEnterExclContended(PVMCC pVM, PVMCPUCC pVCpu, PPDMCR
  * @param   pSrcPos     The source position. (Can be NULL.)
  * @param   fNoVal      No validation records.
  */
-#if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
                                   PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
-#else
-DECLASM(int) pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
-                                    PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal);
-DECLASM(int) StkBack_pdmCritSectRwEnterExcl(PVMCC pVM, PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly,
-                                            PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
-#endif
 {
     /*
      * Validate input.
@@ -1695,12 +1672,7 @@ VMMR3DECL(int) PDMR3CritSectRwEnterExclEx(PVM pVM, PPDMCRITSECTRW pThis, bool fC
  * @param   fNoVal      No validation records (i.e. queued release).
  * @sa      PDMCritSectRwLeaveShared, RTCritSectRwLeaveExcl.
  */
-#if !defined(VMM_R0_SWITCH_STACK) || !defined(IN_RING0)
 static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
-#else
-DECLASM(int) pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal);
-DECLASM(int) StkBack_pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fNoVal)
-#endif
 {
     /*
      * Validate handle.

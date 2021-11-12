@@ -2002,7 +2002,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  LIB_XPCOM_IMP   = $(PATH_STAGE_LIB)/VBoxXPCOMImp.dylib
  VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.dylib
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.dylib
- VBOX_LIB_SUPR0  = $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
+ VBOX_LIB_SUPR0 :=
 endif
 if1of ($(KBUILD_TARGET), freebsd haiku linux netbsd openbsd solaris)
  LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.so

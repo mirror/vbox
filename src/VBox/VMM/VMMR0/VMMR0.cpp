@@ -322,6 +322,10 @@ VMMR0_INT_DECL(int) VMMR0InitPerVMData(PGVM pGVM)
         Assert(pGVCpu->iHostCpuSet == UINT32_MAX);
         pGVCpu->vmmr0.s.pPreemptState               = NULL;
         pGVCpu->vmmr0.s.hCtxHook                    = NIL_RTTHREADCTXHOOK;
+        pGVCpu->vmmr0.s.AssertJmpBuf.pMirrorBuf     = &pGVCpu->vmm.s.AssertJmpBuf;
+        pGVCpu->vmmr0.s.AssertJmpBuf.pvStackBuf     = &pGVCpu->vmm.s.abAssertStack[0];
+        pGVCpu->vmmr0.s.AssertJmpBuf.cbStackBuf     = sizeof(pGVCpu->vmm.s.abAssertStack);
+
         for (size_t iLogger = 0; iLogger < RT_ELEMENTS(pGVCpu->vmmr0.s.u.aLoggers); iLogger++)
             pGVCpu->vmmr0.s.u.aLoggers[iLogger].hEventFlushWait = NIL_RTSEMEVENT;
     }
@@ -1440,7 +1444,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
                             /*
                              * Setup the longjmp machinery and execute guest code (calls HMR0RunGuestCode).
                              */
-                            rc = vmmR0CallRing3SetJmp(&pGVCpu->vmm.s.CallRing3JmpBufR0, HMR0RunGuestCode, pGVM, pGVCpu);
+                            rc = vmmR0CallRing3SetJmp(&pGVCpu->vmmr0.s.AssertJmpBuf, HMR0RunGuestCode, pGVM, pGVCpu);
 
                             /*
                              * Assert sanity on the way out.  Using manual assertions code here as normal
@@ -1569,9 +1573,9 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
              * Setup the longjmp machinery and execute guest code (calls NEMR0RunGuestCode).
              */
 #  ifdef VBOXSTRICTRC_STRICT_ENABLED
-            int rc = vmmR0CallRing3SetJmp2(&pGVCpu->vmm.s.CallRing3JmpBufR0, (PFNVMMR0SETJMP2)NEMR0RunGuestCode, pGVM, idCpu);
+            int rc = vmmR0CallRing3SetJmp2(&pGVCpu->vmmr0.s.AssertJmpBuf, (PFNVMMR0SETJMP2)NEMR0RunGuestCode, pGVM, idCpu);
 #  else
-            int rc = vmmR0CallRing3SetJmp2(&pGVCpu->vmm.s.CallRing3JmpBufR0, NEMR0RunGuestCode, pGVM, idCpu);
+            int rc = vmmR0CallRing3SetJmp2(&pGVCpu->vmmr0.s.AssertJmpBuf, NEMR0RunGuestCode, pGVM, idCpu);
 #  endif
             STAM_COUNTER_INC(&pGVM->vmm.s.StatRunGC);
 
@@ -2356,7 +2360,7 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
     return rc;
 }
 
-#ifndef VMM_R0_SWITCH_STACK /* Not safe unless we disable preemption first. */
+
 /**
  * This is just a longjmp wrapper function for VMMR0EntryEx calls.
  *
@@ -2373,7 +2377,6 @@ static DECLCALLBACK(int) vmmR0EntryExWrapper(void *pvArgs)
                               pGVCpu->vmmr0.s.u64Arg,
                               pGVCpu->vmmr0.s.pSession);
 }
-#endif
 
 
 /**
@@ -2393,66 +2396,36 @@ static DECLCALLBACK(int) vmmR0EntryExWrapper(void *pvArgs)
 VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
                             PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION pSession)
 {
-#ifndef VMM_R0_SWITCH_STACK /* Not safe unless we disable preemption first. */
     /*
      * Requests that should only happen on the EMT thread will be
-     * wrapped in a setjmp so we can assert without causing trouble.
+     * wrapped in a setjmp so we can assert without causing too much trouble.
      */
     if (   pVM  != NULL
         && pGVM != NULL
         && pVM  == pGVM /** @todo drop pVM or pGVM */
         && idCpu < pGVM->cCpus
         && pGVM->pSession == pSession
-        && pGVM->pSelf    == pVM)
+        && pGVM->pSelf    == pGVM
+        && enmOperation != VMMR0_DO_GVMM_DESTROY_VM
+        && enmOperation != VMMR0_DO_GVMM_SCHED_WAKE_UP /* idCpu is not caller but target. Sigh. */ /** @todo fix*/
+       )
     {
-        switch (enmOperation)
+        PGVMCPU        pGVCpu        = &pGVM->aCpus[idCpu];
+        RTNATIVETHREAD hNativeThread = RTThreadNativeSelf();
+        if (RT_LIKELY(   pGVCpu->hEMT            == hNativeThread
+                      && pGVCpu->hNativeThreadR0 == hNativeThread))
         {
-            /* These might/will be called before VMMR3Init. */
-            case VMMR0_DO_GMM_INITIAL_RESERVATION:
-            case VMMR0_DO_GMM_UPDATE_RESERVATION:
-            case VMMR0_DO_GMM_ALLOCATE_PAGES:
-            case VMMR0_DO_GMM_FREE_PAGES:
-            case VMMR0_DO_GMM_BALLOONED_PAGES:
-            /* On the mac we might not have a valid jmp buf, so check these as well. */
-            case VMMR0_DO_VMMR0_INIT:
-            case VMMR0_DO_VMMR0_TERM:
-
-            case VMMR0_DO_PDM_DEVICE_CREATE:
-            case VMMR0_DO_PDM_DEVICE_GEN_CALL:
-            case VMMR0_DO_IOM_GROW_IO_PORTS:
-            case VMMR0_DO_IOM_GROW_IO_PORT_STATS:
-            case VMMR0_DO_DBGF_BP_INIT:
-            case VMMR0_DO_DBGF_BP_CHUNK_ALLOC:
-            case VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC:
-            {
-                PGVMCPU        pGVCpu        = &pGVM->aCpus[idCpu];
-                RTNATIVETHREAD hNativeThread = RTThreadNativeSelf();
-                if (RT_LIKELY(   pGVCpu->hEMT            == hNativeThread
-                              && pGVCpu->hNativeThreadR0 == hNativeThread))
-                {
-                    if (!pGVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack)
-                        break;
-
-                    pGVCpu->vmmr0.s.pGVM         = pGVM;
-                    pGVCpu->vmmr0.s.idCpu        = idCpu;
-                    pGVCpu->vmmr0.s.enmOperation = enmOperation;
-                    pGVCpu->vmmr0.s.pReq         = pReq;
-                    pGVCpu->vmmr0.s.u64Arg       = u64Arg;
-                    pGVCpu->vmmr0.s.pSession     = pSession;
-                    return vmmR0CallRing3SetJmpEx(&pGVCpu->vmm.s.CallRing3JmpBufR0, vmmR0EntryExWrapper, pGVCpu,
-                                                  ((uintptr_t)u64Arg << 16) | (uintptr_t)enmOperation);
-                }
-                return VERR_VM_THREAD_NOT_EMT;
-            }
-
-            default:
-            case VMMR0_DO_PGM_POOL_GROW:
-                break;
+            pGVCpu->vmmr0.s.pGVM         = pGVM;
+            pGVCpu->vmmr0.s.idCpu        = idCpu;
+            pGVCpu->vmmr0.s.enmOperation = enmOperation;
+            pGVCpu->vmmr0.s.pReq         = pReq;
+            pGVCpu->vmmr0.s.u64Arg       = u64Arg;
+            pGVCpu->vmmr0.s.pSession     = pSession;
+            return vmmR0CallRing3SetJmpEx(&pGVCpu->vmmr0.s.AssertJmpBuf, vmmR0EntryExWrapper, pGVCpu,
+                                          ((uintptr_t)u64Arg << 16) | (uintptr_t)enmOperation);
         }
+        return VERR_VM_THREAD_NOT_EMT;
     }
-#else
-    RT_NOREF(pVM);
-#endif
     return vmmR0EntryExWorker(pGVM, idCpu, enmOperation, pReq, u64Arg, pSession);
 }
 
@@ -2472,25 +2445,10 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
 VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPUCC pVCpu)
 {
 #ifdef RT_ARCH_X86
-    return pVCpu->vmm.s.CallRing3JmpBufR0.eip
-        && !pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
+    return pVCpu->vmmr0.s.AssertJmpBuf.eip != 0;
 #else
-    return pVCpu->vmm.s.CallRing3JmpBufR0.rip
-        && !pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
+    return pVCpu->vmmr0.s.AssertJmpBuf.rip != 0;
 #endif
-}
-
-
-/**
- * Checks whether we've done a ring-3 long jump.
- *
- * @returns @c true / @c false
- * @param   pVCpu       The cross context virtual CPU structure.
- * @thread  EMT
- */
-VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPUCC pVCpu)
-{
-    return pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
 }
 
 
@@ -3004,12 +2962,7 @@ static int vmmR0LogWaitFlushed(PGVM pGVM, VMCPUID idCpu, size_t idxLogger)
 /**
  * Inner worker for vmmR0LoggerFlushCommon.
  */
-#ifndef VMM_R0_SWITCH_STACK
 static bool   vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger, size_t idxBuffer, uint32_t cbToFlush)
-#else
-DECLASM(bool) vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger, size_t idxBuffer, uint32_t cbToFlush);
-DECLASM(bool) StkBack_vmmR0LoggerFlushInner(PGVM pGVM, PGVMCPU pGVCpu, uint32_t idxLogger, size_t idxBuffer, uint32_t cbToFlush)
-#endif
 {
     PVMMR0PERVCPULOGGER const pR0Log    = &pGVCpu->vmmr0.s.u.aLoggers[idxLogger];
     PVMMR3CPULOGGER const     pShared   = &pGVCpu->vmm.s.u.aLoggers[idxLogger];
@@ -3544,10 +3497,10 @@ VMMR0_INT_DECL(int) VMMR0AssertionSetNotification(PVMCPUCC pVCpu, PFNVMMR0ASSERT
     AssertPtrReturn(pVCpu, VERR_INVALID_POINTER);
     AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
 
-    if (!pVCpu->vmm.s.pfnRing0AssertCallback)
+    if (!pVCpu->vmmr0.s.pfnAssertCallback)
     {
-        pVCpu->vmm.s.pfnRing0AssertCallback    = pfnCallback;
-        pVCpu->vmm.s.pvRing0AssertCallbackUser = pvUser;
+        pVCpu->vmmr0.s.pfnAssertCallback    = pfnCallback;
+        pVCpu->vmmr0.s.pvAssertCallbackUser = pvUser;
         return VINF_SUCCESS;
     }
     return VERR_ALREADY_EXISTS;
@@ -3561,8 +3514,8 @@ VMMR0_INT_DECL(int) VMMR0AssertionSetNotification(PVMCPUCC pVCpu, PFNVMMR0ASSERT
  */
 VMMR0_INT_DECL(void) VMMR0AssertionRemoveNotification(PVMCPUCC pVCpu)
 {
-    pVCpu->vmm.s.pfnRing0AssertCallback    = NULL;
-    pVCpu->vmm.s.pvRing0AssertCallbackUser = NULL;
+    pVCpu->vmmr0.s.pfnAssertCallback    = NULL;
+    pVCpu->vmmr0.s.pvAssertCallbackUser = NULL;
 }
 
 
@@ -3574,7 +3527,7 @@ VMMR0_INT_DECL(void) VMMR0AssertionRemoveNotification(PVMCPUCC pVCpu)
  */
 VMMR0_INT_DECL(bool) VMMR0AssertionIsNotificationSet(PVMCPUCC pVCpu)
 {
-    return pVCpu->vmm.s.pfnRing0AssertCallback != NULL;
+    return pVCpu->vmmr0.s.pfnAssertCallback != NULL;
 }
 
 
@@ -3596,16 +3549,14 @@ DECLEXPORT(bool) RTCALL RTAssertShouldPanic(void)
         if (pVCpu)
         {
 # ifdef RT_ARCH_X86
-            if (    pVCpu->vmm.s.CallRing3JmpBufR0.eip
-                &&  !pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
+            if (pVCpu->vmmr0.s.AssertJmpBuf.eip)
 # else
-            if (    pVCpu->vmm.s.CallRing3JmpBufR0.rip
-                &&  !pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call)
+            if (pVCpu->vmmr0.s.AssertJmpBuf.rip)
 # endif
             {
-                if (pVCpu->vmm.s.pfnRing0AssertCallback)
-                    pVCpu->vmm.s.pfnRing0AssertCallback(pVCpu, pVCpu->vmm.s.pvRing0AssertCallbackUser);
-                int rc = vmmR0CallRing3LongJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, VERR_VMM_RING0_ASSERTION);
+                if (pVCpu->vmmr0.s.pfnAssertCallback)
+                    pVCpu->vmmr0.s.pfnAssertCallback(pVCpu, pVCpu->vmmr0.s.pvAssertCallbackUser);
+                int rc = vmmR0CallRing3LongJmp(&pVCpu->vmmr0.s.AssertJmpBuf, VERR_VMM_RING0_ASSERTION);
                 return RT_FAILURE_NP(rc);
             }
         }

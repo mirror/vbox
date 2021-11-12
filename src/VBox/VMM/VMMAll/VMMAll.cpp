@@ -268,23 +268,6 @@ VMM_INT_DECL(uint32_t) VMMGetSvnRev(void)
 
 
 /**
- * Checks whether we're in a ring-3 call or not.
- *
- * @returns true / false.
- * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
- * @thread  EMT
- */
-VMM_INT_DECL(bool) VMMIsInRing3Call(PVMCPU pVCpu)
-{
-#ifdef RT_ARCH_X86
-    return pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
-#else
-    return pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
-#endif
-}
-
-
-/**
  * Returns the build type for matching components.
  *
  * @returns Build type value.

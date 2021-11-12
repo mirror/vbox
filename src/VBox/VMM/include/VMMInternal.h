@@ -137,6 +137,8 @@ typedef VMMR3CPULOGGER *PVMMR3CPULOGGER;
 /** @} */
 
 
+/** Pointer to a ring-0 jump buffer. */
+typedef struct VMMR0JMPBUF *PVMMR0JMPBUF;
 /**
  * Jump buffer for the setjmp/longjmp like constructs used to
  * quickly 'call' back into Ring-3.
@@ -183,23 +185,14 @@ typedef struct VMMR0JMPBUF
 #endif
     /** @} */
 
-    /** Flag that indicates that we've done a ring-3 call. */
-    bool                        fInRing3Call;
-    /** The number of bytes we've saved. */
-    uint32_t                    cbSavedStack;
-    /** Pointer to the buffer used to save the stack.
-     * This is assumed to be 8KB. */
-    RTR0PTR                     pvSavedStack;
-    /** Esp we we match against esp on resume to make sure the stack wasn't relocated. */
-    RTHCUINTREG                 SpCheck;
-    /** The esp we should resume execution with after the restore. */
-    RTHCUINTREG                 SpResume;
-    /** ESP/RSP at the time of the jump to ring 3. */
-    RTHCUINTREG                 SavedEsp;
-    /** EBP/RBP at the time of the jump to ring 3. */
-    RTHCUINTREG                 SavedEbp;
-    /** EIP/RIP within vmmR0CallRing3LongJmp for assisting unwinding. */
-    RTHCUINTREG                 SavedEipForUnwind;
+    /** RSP/ESP at the time of the stack mirroring (what pvStackBuf starts with). */
+    RTHCUINTREG                 UnwindSp;
+    /** RSP/ESP at the time of the long jump call. */
+    RTHCUINTREG                 UnwindRetSp;
+    /** RBP/EBP inside the vmmR0CallRing3LongJmp frame. */
+    RTHCUINTREG                 UnwindBp;
+    /** RIP/EIP within vmmR0CallRing3LongJmp for assisting unwinding. */
+    RTHCUINTREG                 UnwindPc;
     /** Unwind: The vmmR0CallRing3SetJmp return address value. */
     RTHCUINTREG                 UnwindRetPcValue;
     /** Unwind: The vmmR0CallRing3SetJmp return address stack location. */
@@ -212,22 +205,16 @@ typedef struct VMMR0JMPBUF
     /** The second argument to the function. */
     RTHCUINTREG                 pvUser2;
 
-#if HC_ARCH_BITS == 32
-    /** Alignment padding. */
-    uint32_t                    uPadding;
-#endif
-
-    /** Stats: Max amount of stack used. */
-    uint32_t                    cbUsedMax;
-    /** Stats: Average stack usage. (Avg = cbUsedTotal / cUsedTotal) */
-    uint32_t                    cbUsedAvg;
-    /** Stats: Total amount of stack used. */
-    uint64_t                    cbUsedTotal;
-    /** Stats: Number of stack usages. */
-    uint64_t                    cUsedTotal;
+    /** Number of valid bytes in pvStackBuf.  */
+    uint32_t                    cbStackValid;
+    /** Size of buffer pvStackBuf points to. */
+    uint32_t                    cbStackBuf;
+    /** Pointer to buffer for mirroring the stack. Optional. */
+    RTR0PTR                     pvStackBuf;
+    /** Pointer to a ring-3 accessible jump buffer structure for automatic
+     *  mirroring on longjmp. Optional. */
+    R0PTRTYPE(PVMMR0JMPBUF)     pMirrorBuf;
 } VMMR0JMPBUF;
-/** Pointer to a ring-0 jump buffer. */
-typedef VMMR0JMPBUF *PVMMR0JMPBUF;
 
 
 /**
@@ -428,11 +415,6 @@ typedef struct VMMCPU
     /** Alignment padding. */
     uint32_t                    u32Padding0;
 
-    /** VMM stack, pointer to the top of the stack in R3.
-     * Stack is allocated from the hypervisor heap and is page aligned
-     * and always writable in RC. */
-    R3PTRTYPE(uint8_t *)        pbEMTStackR3;
-
     /** @name Rendezvous
      * @{ */
     /** Whether the EMT is executing a rendezvous right now. For detecting
@@ -464,20 +446,12 @@ typedef struct VMMCPU
     SUPDRVTRACERUSRCTX          TracerCtx;
     /** @} */
 
-    /** @name Call Ring-3
-     * Formerly known as host calls.
+    /** @name Ring-0 assertion info for this EMT.
      * @{ */
-    /** The disable counter. */
-    uint32_t                    cCallRing3Disabled;
-    uint32_t                    u32Padding3;
-    /** Ring-0 assertion notification callback. */
-    R0PTRTYPE(PFNVMMR0ASSERTIONNOTIFICATION) pfnRing0AssertCallback;
-    /** Argument for pfnRing0AssertionNotificationCallback. */
-    R0PTRTYPE(void *)           pvRing0AssertCallbackUser;
-    /** The Ring-0 jmp buffer.
-     * @remarks The size of this type isn't stable in assembly, so don't put
-     *          anything that needs to be accessed from assembly after it. */
-    VMMR0JMPBUF                 CallRing3JmpBufR0;
+    /** Copy of the ring-0 jmp buffer after an assertion. */
+    VMMR0JMPBUF                 AssertJmpBuf;
+    /** Copy of the assertion stack. */
+    uint8_t                     abAssertStack[8192];
     /** @} */
 
     /**
@@ -539,6 +513,8 @@ typedef struct VMMR0PERVCPU
     /** @name Arguments passed by VMMR0EntryEx via vmmR0CallRing3SetJmpEx.
      * @note Cannot be put on the stack as the location may change and upset the
      *       validation of resume-after-ring-3-call logic.
+     * @todo This no longer needs to be here now that we don't call ring-3 and mess
+     *       around with stack restoring/switching.
      * @{ */
     PGVM                                pGVM;
     VMCPUID                             idCpu;
@@ -546,6 +522,19 @@ typedef struct VMMR0PERVCPU
     PSUPVMMR0REQHDR                     pReq;
     uint64_t                            u64Arg;
     PSUPDRVSESSION                      pSession;
+    /** @} */
+
+    /** @name Ring-0 setjmp / assertion handling.
+     * @{ */
+    /** The ring-0 setjmp buffer. */
+    VMMR0JMPBUF                         AssertJmpBuf;
+    /** The disable counter. */
+    uint32_t                            cCallRing3Disabled;
+    uint32_t                            u32Padding3;
+    /** Ring-0 assertion notification callback. */
+    R0PTRTYPE(PFNVMMR0ASSERTIONNOTIFICATION) pfnAssertCallback;
+    /** Argument for pfnRing0AssertionNotificationCallback. */
+    R0PTRTYPE(void *)                   pvAssertCallbackUser;
     /** @} */
 
     /**
@@ -568,6 +557,7 @@ AssertCompile(   RTASSERT_OFFSET_OF(VMMR0PERVCPU, u.s.Logger)
               == RTASSERT_OFFSET_OF(VMMR0PERVCPU, u.aLoggers) + sizeof(VMMR0PERVCPULOGGER) * VMMLOGGER_IDX_REGULAR);
 AssertCompile(RTASSERT_OFFSET_OF(VMMR0PERVCPU, u.s.RelLogger)
               == RTASSERT_OFFSET_OF(VMMR0PERVCPU, u.aLoggers) + sizeof(VMMR0PERVCPULOGGER) * VMMLOGGER_IDX_RELEASE);
+AssertCompileMemberAlignment(VMMR0PERVCPU, AssertJmpBuf, 64);
 /** Pointer to VMM ring-0 VMCPU instance data. */
 typedef VMMR0PERVCPU *PVMMR0PERVCPU;
 

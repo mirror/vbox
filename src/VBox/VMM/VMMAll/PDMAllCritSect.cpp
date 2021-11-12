@@ -421,32 +421,6 @@ static int pdmR3R0CritSectEnterContended(PVMCC pVM, PVMCPU pVCpu, PPDMCRITSECT p
 #endif /* IN_RING3 || IN_RING0 */
 
 
-#if defined(VMM_R0_SWITCH_STACK) && defined(IN_RING0)
-/**
- * We must be on kernel stack before disabling preemption, thus this wrapper.
- */
-DECLASM(int) StkBack_pdmR0CritSectEnterContendedOnKrnlStk(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRITSECT pCritSect,
-                                                          RTNATIVETHREAD hNativeSelf, int rcBusy, PCRTLOCKVALSRCPOS pSrcPos)
-{
-    VMMR0EMTBLOCKCTX Ctx;
-    int rc = VMMR0EmtPrepareToBlock(pVCpu, rcBusy, __FUNCTION__, pCritSect, &Ctx);
-    if (rc == VINF_SUCCESS)
-    {
-        Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-
-        rc = pdmR3R0CritSectEnterContended(pVM, pVCpu, pCritSect, hNativeSelf, pSrcPos, rcBusy);
-
-        VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
-    }
-    else
-        STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLockBusy);
-    return rc;
-}
-DECLASM(int) pdmR0CritSectEnterContendedOnKrnlStk(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRITSECT pCritSect,
-                                                  RTNATIVETHREAD hNativeSelf, int rcBusy, PCRTLOCKVALSRCPOS pSrcPos);
-#endif
-
-
 /**
  * Common worker for the debug and normal APIs.
  *
@@ -547,7 +521,6 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
     PVMCPUCC pVCpu = VMMGetCpu(pVM);
     if (pVCpu)
     {
-#  ifndef VMM_R0_SWITCH_STACK
         VMMR0EMTBLOCKCTX Ctx;
         int rc = VMMR0EmtPrepareToBlock(pVCpu, rcBusy, __FUNCTION__, pCritSect, &Ctx);
         if (rc == VINF_SUCCESS)
@@ -561,9 +534,6 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PVMCC pVM, PPDMCRITSECT pCritSect, int r
         else
             STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZLockBusy);
         return rc;
-#  else
-        return pdmR0CritSectEnterContendedOnKrnlStk(pVM, pVCpu, pCritSect, hNativeSelf, rcBusy, pSrcPos);
-#  endif
     }
 
     /* Non-EMT. */
@@ -812,67 +782,6 @@ VMMR3DECL(int) PDMR3CritSectEnterEx(PVM pVM, PPDMCRITSECT pCritSect, bool fCallR
 #endif /* IN_RING3 */
 
 
-#if defined(VMM_R0_SWITCH_STACK) && defined(IN_RING0)
-/**
- * We must be on kernel stack before disabling preemption, thus this wrapper.
- */
-DECLASM(int) StkBack_pdmR0CritSectLeaveSignallingOnKrnlStk(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRITSECT pCritSect,
-                                                           int32_t const cLockers, SUPSEMEVENT const hEventToSignal)
-{
-    VMMR0EMTBLOCKCTX    Ctx;
-    bool                fLeaveCtx = false;
-    if (cLockers < 0)
-        AssertMsg(cLockers == -1, ("cLockers=%d\n", cLockers));
-    else
-    {
-        /* Someone is waiting, wake up one of them. */
-        Assert(cLockers < _8K);
-        SUPSEMEVENT hEvent = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
-        if (!RTSemEventIsSignalSafe() && (pVCpu = VMMGetCpu(pVM)) != NULL)
-        {
-            int rc = VMMR0EmtPrepareToBlock(pVCpu, VINF_SUCCESS, __FUNCTION__, pCritSect, &Ctx);
-            VMM_ASSERT_RELEASE_MSG_RETURN(pVM, RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
-            fLeaveCtx = true;
-        }
-        int rc = SUPSemEventSignal(pVM->pSession, hEvent);
-        AssertRC(rc);
-    }
-
-    /*
-     * Signal exit event.
-     */
-    if (RT_LIKELY(hEventToSignal == NIL_SUPSEMEVENT))
-    { /* likely */ }
-    else
-    {
-        if (!fLeaveCtx && pVCpu != NULL && !RTSemEventIsSignalSafe() && (pVCpu = VMMGetCpu(pVM)) != NULL)
-        {
-            int rc = VMMR0EmtPrepareToBlock(pVCpu, VINF_SUCCESS, __FUNCTION__, pCritSect, &Ctx);
-            VMM_ASSERT_RELEASE_MSG_RETURN(pVM, RT_SUCCESS(rc), ("rc=%Rrc\n", rc), rc);
-            fLeaveCtx = true;
-        }
-        Log8(("Signalling %#p\n", hEventToSignal));
-        int rc = SUPSemEventSignal(pVM->pSession, hEventToSignal);
-        AssertRC(rc);
-    }
-
-    /*
-     * Restore HM context if needed.
-     */
-    if (!fLeaveCtx)
-    { /* contention should be unlikely */ }
-    else
-        VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
-
-# ifdef DEBUG_bird
-    VMMTrashVolatileXMMRegs();
-# endif
-    return VINF_SUCCESS;
-}
-DECLASM(int) pdmR0CritSectLeaveSignallingOnKrnlStk(PVMCC pVM, PVMCPUCC pVCpu, PPDMCRITSECT pCritSect,
-                                                   int32_t const cLockers, SUPSEMEVENT const hEventToSignal);
-#endif
-
 /**
  * Leaves a critical section entered with PDMCritSectEnter().
  *
@@ -1028,7 +937,6 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
         }
         if (!fQueueIt)
         {
-# ifndef VMM_R0_SWITCH_STACK
             VMMR0EMTBLOCKCTX    Ctx;
             bool                fLeaveCtx = false;
             if (cLockers < 0)
@@ -1074,13 +982,10 @@ VMMDECL(int) PDMCritSectLeave(PVMCC pVM, PPDMCRITSECT pCritSect)
             else
                 VMMR0EmtResumeAfterBlocking(pVCpu, &Ctx);
 
-#  ifdef DEBUG_bird
+# ifdef DEBUG_bird
             VMMTrashVolatileXMMRegs();
-#  endif
+# endif
             return VINF_SUCCESS;
-# else  /* VMM_R0_SWITCH_STACK */
-            return pdmR0CritSectLeaveSignallingOnKrnlStk(pVM, pVCpu, pCritSect, cLockers, hEventToSignal);
-# endif /* VMM_R0_SWITCH_STACK */
         }
 
         /*

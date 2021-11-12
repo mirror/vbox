@@ -18,94 +18,72 @@
 %include "VBox/asmdefs.mac"
 %include "VBox/sup.mac"
 
-;
-; Determine the default stack switching unless specified explicitly.
-;
-%ifndef VMM_R0_SWITCH_STACK
- %ifndef VMM_R0_NO_SWITCH_STACK
-  %ifdef RT_OS_DARWIN
-   %define VMM_R0_SWITCH_STACK
-  %endif
- %endif
-%endif
-
 
 struc VMMR0JMPBUF
+        ;
+        ; traditional jmp_buf
+        ;
 %ifdef RT_ARCH_X86
-    ; traditional jmp_buf
-    .ebx            resd 1
-    .esi            resd 1
-    .edi            resd 1
-    .ebp            resd 1
-    .esp            resd 1
-    .eip            resd 1
-    .eflags         resd 1
-
-    ; additional state and stack info.
-    .fInRing3Call   resd 1
-    .cbSavedStack   resd 1
-    .pvSavedStack   resd 1
-    .SpCheck        resd 1
-    .SpResume       resd 1
-    .SavedEsp       resd 1
-    .SavedEbp       resd 1
-    .SavedEipForUnwind      resd 1
-    .UnwindRetPcValue       resd 1
-    .UnwindRetPcLocation    resd 1
-    .pfn            resd 1
-    .pvUser1        resd 1
-    .pvUser2        resd 1
+        .ebx                    resd 1
+        .esi                    resd 1
+        .edi                    resd 1
+        .ebp                    resd 1
+        .esp                    resd 1
+        .eip                    resd 1
+        .eflags                 resd 1
 %endif
 %ifdef RT_ARCH_AMD64
-    ; traditional jmp_buf
-    .rbx            resq 1
+        .rbx                    resq 1
  %ifdef RT_OS_WINDOWS
-    .rsi            resq 1
-    .rdi            resq 1
+        .rsi                    resq 1
+        .rdi                    resq 1
  %endif
-    .rbp            resq 1
-    .r12            resq 1
-    .r13            resq 1
-    .r14            resq 1
-    .r15            resq 1
-    .rsp            resq 1
-    .rip            resq 1
+        .rbp                    resq 1
+        .r12                    resq 1
+        .r13                    resq 1
+        .r14                    resq 1
+        .r15                    resq 1
+        .rsp                    resq 1
+        .rip                    resq 1
  %ifdef RT_OS_WINDOWS
-    .xmm6           resq 2
-    .xmm7           resq 2
-    .xmm8           resq 2
-    .xmm9           resq 2
-    .xmm10          resq 2
-    .xmm11          resq 2
-    .xmm12          resq 2
-    .xmm13          resq 2
-    .xmm14          resq 2
-    .xmm15          resq 2
+        .xmm6                   resq 2
+        .xmm7                   resq 2
+        .xmm8                   resq 2
+        .xmm9                   resq 2
+        .xmm10                  resq 2
+        .xmm11                  resq 2
+        .xmm12                  resq 2
+        .xmm13                  resq 2
+        .xmm14                  resq 2
+        .xmm15                  resq 2
  %endif
-    .rflags         resq 1
-
-    ; additional state and stack info.
-    .fInRing3Call   resd 1
-    .cbSavedStack   resd 1
-    .pvSavedStack   resq 1
-    .SpCheck        resq 1
-    .SpResume       resq 1
-    .SavedEsp       resq 1
-    .SavedEbp       resq 1
-    .SavedEipForUnwind      resq 1
-    .UnwindRetPcValue       resq 1
-    .UnwindRetPcLocation    resq 1
-    .pfn            resq 1
-    .pvUser1        resq 1
-    .pvUser2        resq 1
+        .rflags                 resq 1
 %endif
 
-    ; Statistics
-    alignb 8
-    .cbUsedMax      resd 1
-    .cbUsedAvg      resd 1
-    .cbUsedTotal    resq 1
-    .cUsedTotal     resq 1
+        ;
+        ; Additional state and stack info for unwinding.
+        ;
+        .UnwindSp               RTR0PTR_RES 1
+        .UnwindRetSp            RTR0PTR_RES 1
+        .UnwindBp               RTR0PTR_RES 1
+        .UnwindPc               RTR0PTR_RES 1
+        .UnwindRetPcValue       RTR0PTR_RES 1
+        .UnwindRetPcLocation    RTR0PTR_RES 1
+
+        ;
+        ; Info about what we were doing in case it's helpful.
+        ;
+        .pfn                    RTR0PTR_RES 1
+        .pvUser1                RTR0PTR_RES 1
+        .pvUser2                RTR0PTR_RES 1
+
+        ;
+        ; For mirroring the jump buffer and stack to ring-3 for unwinding and analysis.
+        ;
+        .cbStackValid           resd        1
+        .cbStackBuf             resd        1
+        .pvStackBuf             RTR0PTR_RES 1
+        .pMirrorBuf             RTR0PTR_RES 1
 endstruc
 
 
@@ -113,7 +91,6 @@ struc VMMCPU
 
         .iLastGZRc              resd 1
         alignb 8
-        .pbEMTStackR3           RTR3PTR_RES 1
 
         .fInRendezvous          resb 1
         .afPadding1             resb 2
@@ -126,11 +103,7 @@ struc VMMCPU
         alignb 8
         .TracerCtx              resb SUPDRVTRACERUSRCTX64_size
 
-        .cCallRing3Disabled     resd 1
         alignb 8
-        .pfnRing0AssertCallback RTR0PTR_RES 1
-        .pvRing0AssertCallbackUser RTR0PTR_RES 1
-        alignb 16
-        .CallRing3JmpBufR0      resb 1
+        .AssertJmpBuf           resb 1
 endstruc
 
