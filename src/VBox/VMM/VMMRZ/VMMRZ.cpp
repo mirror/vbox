@@ -23,7 +23,7 @@
 #include <VBox/vmm/vmm.h>
 #include "VMMInternal.h"
 #include <VBox/vmm/vmcc.h>
-#include <VBox/err.h>
+#include <VBox/errcore.h>
 
 #include <iprt/assert.h>
 #include <iprt/asm-amd64-x86.h>
