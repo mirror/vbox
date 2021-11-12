@@ -5842,8 +5842,6 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
     uint32_t iClear = pVM->pgm.s.cHandyPages;
     AssertMsgReturn(iClear <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d", iClear), VERR_PGM_HANDY_PAGE_IPE);
     Log(("PGMR3PhysAllocateHandyPages: %d -> %d\n", iClear, RT_ELEMENTS(pVM->pgm.s.aHandyPages)));
-    int rcAlloc = VINF_SUCCESS;
-    int rcSeed  = VINF_SUCCESS;
     int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES, 0, NULL);
     /** @todo we should split this up into an allocate and flush operation. sometimes you want to flush and not allocate more (which will trigger the vm account limit error) */
     if (    rc == VERR_GMM_HIT_VM_ACCOUNT_LIMIT
@@ -5857,9 +5855,6 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
     {
         AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
         Assert(pVM->pgm.s.cHandyPages > 0);
-        VM_FF_CLEAR(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
-        VM_FF_CLEAR(pVM, VM_FF_PGM_NO_MEMORY);
-
 #ifdef VBOX_STRICT
         uint32_t i;
         for (i = iClear; i < pVM->pgm.s.cHandyPages; i++)
@@ -5880,41 +5875,9 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
             RTAssertPanic();
         }
 #endif
-        /*
-         * Clear the pages.
-         */
-        while (iClear < pVM->pgm.s.cHandyPages)
-        {
-            PGMMPAGEDESC pPage = &pVM->pgm.s.aHandyPages[iClear];
-            if (!pPage->fZeroed)
-            {
-                void *pv;
-                rc = pgmPhysPageMapByPageID(pVM, pPage->idPage, pPage->HCPhysGCPhys, &pv);
-                AssertLogRelMsgBreak(RT_SUCCESS(rc),
-                                     ("%u/%u: idPage=%#x HCPhysGCPhys=%RHp rc=%Rrc\n",
-                                      iClear, pVM->pgm.s.cHandyPages, pPage->idPage, pPage->HCPhysGCPhys, rc));
-                ASMMemZeroPage(pv);
-                pPage->fZeroed = true;
-            }
-#ifdef VBOX_STRICT
-            else
-            {
-                void *pv;
-                rc = pgmPhysPageMapByPageID(pVM, pPage->idPage, pPage->HCPhysGCPhys, &pv);
-                AssertLogRelMsgBreak(RT_SUCCESS(rc),
-                                     ("%u/%u: idPage=%#x HCPhysGCPhys=%RHp rc=%Rrc\n",
-                                      iClear, pVM->pgm.s.cHandyPages, pPage->idPage, pPage->HCPhysGCPhys, rc));
-                Assert(ASMMemIsZeroPage(pv));
-            }
-#endif
-            iClear++;
-            Log3(("PGMR3PhysAllocateHandyPages: idPage=%#x HCPhys=%RGp\n", pPage->idPage, pPage->HCPhysGCPhys));
-        }
     }
     else
     {
-        uint64_t cAllocPages, cMaxPages, cBalloonPages;
-
         /*
          * We should never get here unless there is a genuine shortage of
          * memory (or some internal error). Flag the error so the VM can be
@@ -5922,27 +5885,14 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
          * handy pages we will return failure.
          */
         /* Report the failure. */
-        LogRel(("PGM: Failed to procure handy pages; rc=%Rrc rcAlloc=%Rrc rcSeed=%Rrc cHandyPages=%#x\n"
+        LogRel(("PGM: Failed to procure handy pages; rc=%Rrc cHandyPages=%#x\n"
                 "     cAllPages=%#x cPrivatePages=%#x cSharedPages=%#x cZeroPages=%#x\n",
-                rc, rcAlloc, rcSeed,
-                pVM->pgm.s.cHandyPages,
-                pVM->pgm.s.cAllPages,
-                pVM->pgm.s.cPrivatePages,
-                pVM->pgm.s.cSharedPages,
-                pVM->pgm.s.cZeroPages));
-
-        if (GMMR3QueryMemoryStats(pVM, &cAllocPages, &cMaxPages, &cBalloonPages) == VINF_SUCCESS)
-        {
-            LogRel(("GMM: Statistics:\n"
-                    "     Allocated pages: %RX64\n"
-                    "     Maximum   pages: %RX64\n"
-                    "     Ballooned pages: %RX64\n", cAllocPages, cMaxPages, cBalloonPages));
-        }
+                rc, pVM->pgm.s.cHandyPages,
+                pVM->pgm.s.cAllPages, pVM->pgm.s.cPrivatePages, pVM->pgm.s.cSharedPages, pVM->pgm.s.cZeroPages));
 
         if (   rc != VERR_NO_MEMORY
             && rc != VERR_NO_PHYS_MEMORY
             && rc != VERR_LOCK_FAILED)
-        {
             for (uint32_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
             {
                 LogRel(("PGM: aHandyPages[#%#04x] = {.HCPhysGCPhys=%RHp, .idPage=%#08x, .idSharedPage=%#08x}\n",
@@ -5963,7 +5913,6 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
                     }
                 }
             }
-        }
 
         if (rc == VERR_NO_MEMORY)
         {

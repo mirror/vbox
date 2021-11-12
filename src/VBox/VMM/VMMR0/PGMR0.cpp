@@ -132,19 +132,21 @@ VMMR0_INT_DECL(void) PGMR0CleanupVM(PGVM pGVM)
  *
  * @param   pGVM        The global (ring-0) VM structure.
  * @param   idCpu       The ID of the calling EMT.
+ * @param   fRing3      Set if the caller is ring-3.  Determins whether to
+ *                      return VINF_EM_NO_MEMORY or not.
  *
  * @thread  EMT(idCpu)
  *
  * @remarks Must be called from within the PGM critical section. The caller
  *          must clear the new pages.
  */
-VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
+int pgmR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu, bool fRing3)
 {
     /*
      * Validate inputs.
      */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
-    AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
+    Assert(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf());
     PGM_LOCK_ASSERT_OWNER_EX(pGVM, &pGVM->aCpus[idCpu]);
 
     /*
@@ -158,16 +160,23 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
     /*
      * Try allocate a full set of handy pages.
      */
-    uint32_t iFirst = pGVM->pgm.s.cHandyPages;
-    AssertReturn(iFirst <= RT_ELEMENTS(pGVM->pgm.s.aHandyPages), VERR_PGM_HANDY_PAGE_IPE);
-    uint32_t cPages = RT_ELEMENTS(pGVM->pgm.s.aHandyPages) - iFirst;
+    uint32_t const iFirst = pGVM->pgm.s.cHandyPages;
+    AssertMsgReturn(iFirst <= RT_ELEMENTS(pGVM->pgm.s.aHandyPages), ("%#x\n", iFirst), VERR_PGM_HANDY_PAGE_IPE);
+
+    uint32_t const cPages = RT_ELEMENTS(pGVM->pgm.s.aHandyPages) - iFirst;
     if (!cPages)
         return VINF_SUCCESS;
+
     int rc = GMMR0AllocateHandyPages(pGVM, idCpu, cPages, cPages, &pGVM->pgm.s.aHandyPages[iFirst]);
     if (RT_SUCCESS(rc))
     {
+        uint32_t const cHandyPages = RT_ELEMENTS(pGVM->pgm.s.aHandyPages); /** @todo allow allocating less... */
+        pGVM->pgm.s.cHandyPages = cHandyPages;
+        VM_FF_CLEAR(pGVM, VM_FF_PGM_NEED_HANDY_PAGES);
+        VM_FF_CLEAR(pGVM, VM_FF_PGM_NO_MEMORY);
+
 #ifdef VBOX_STRICT
-        for (uint32_t i = 0; i < RT_ELEMENTS(pGVM->pgm.s.aHandyPages); i++)
+        for (uint32_t i = 0; i < cHandyPages; i++)
         {
             Assert(pGVM->pgm.s.aHandyPages[i].idPage != NIL_GMM_PAGEID);
             Assert(pGVM->pgm.s.aHandyPages[i].idPage <= GMM_PAGEID_LAST);
@@ -177,15 +186,121 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
         }
 #endif
 
-        pGVM->pgm.s.cHandyPages = RT_ELEMENTS(pGVM->pgm.s.aHandyPages);
+        /*
+         * Clear the pages.
+         */
+        for (uint32_t iPage = iFirst; iPage < cHandyPages; iPage++)
+        {
+            PGMMPAGEDESC pPage = &pGVM->pgm.s.aHandyPages[iPage];
+            if (!pPage->fZeroed)
+            {
+                void *pv = NULL;
+#ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
+                rc = SUPR0HCPhysToVirt(pPage->HCPhysGCPhys, &pv);
+#else
+                rc = GMMR0PageIdToVirt(pGVM, pPage->idPage, &pv);
+#endif
+                AssertMsgRCReturn(rc, ("idPage=%#x HCPhys=%RHp rc=%Rrc\n", pPage->idPage, pPage->HCPhysGCPhys, rc), rc);
+
+                ASMMemZeroPage(pv);
+                pPage->fZeroed = true;
+            }
+#ifdef VBOX_STRICT
+            else
+            {
+                void *pv = NULL;
+# ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
+                rc = SUPR0HCPhysToVirt(pPage->HCPhysGCPhys, &pv);
+# else
+                rc = GMMR0PageIdToVirt(pGVM, pPage->idPage, &pv);
+# endif
+                AssertMsgRCReturn(rc, ("idPage=%#x HCPhys=%RHp rc=%Rrc\n", pPage->idPage, pPage->HCPhysGCPhys, rc), rc);
+                AssertReturn(ASMMemIsZeroPage(pv), VERR_PGM_HANDY_PAGE_IPE);
+            }
+#endif
+            Log3(("PGMR0PhysAllocateHandyPages: idPage=%#x HCPhys=%RGp\n", pPage->idPage, pPage->HCPhysGCPhys));
+        }
     }
     else
     {
-        LogRel(("PGMR0PhysAllocateHandyPages: rc=%Rrc iFirst=%d cPages=%d\n", rc, iFirst, cPages));
+        /*
+         * We should never get here unless there is a genuine shortage of
+         * memory (or some internal error). Flag the error so the VM can be
+         * suspended ASAP and the user informed. If we're totally out of
+         * handy pages we will return failure.
+         */
+        /* Report the failure. */
+        LogRel(("PGM: Failed to procure handy pages; rc=%Rrc cHandyPages=%#x\n"
+                "     cAllPages=%#x cPrivatePages=%#x cSharedPages=%#x cZeroPages=%#x\n",
+                rc, pGVM->pgm.s.cHandyPages,
+                pGVM->pgm.s.cAllPages, pGVM->pgm.s.cPrivatePages, pGVM->pgm.s.cSharedPages, pGVM->pgm.s.cZeroPages));
+
+        GMMMEMSTATSREQ Stats = { { SUPVMMR0REQHDR_MAGIC, sizeof(Stats) }, 0, 0, 0, 0, 0 };
+        if (RT_SUCCESS(GMMR0QueryMemoryStatsReq(pGVM, idCpu, &Stats)))
+            LogRel(("GMM: Statistics:\n"
+                    "     Allocated pages: %RX64\n"
+                    "     Free      pages: %RX64\n"
+                    "     Shared    pages: %RX64\n"
+                    "     Maximum   pages: %RX64\n"
+                    "     Ballooned pages: %RX64\n",
+                    Stats.cAllocPages, Stats.cFreePages, Stats.cSharedPages, Stats.cMaxPages, Stats.cBalloonedPages));
+
+        if (   rc != VERR_NO_MEMORY
+            && rc != VERR_NO_PHYS_MEMORY
+            && rc != VERR_LOCK_FAILED)
+            for (uint32_t iPage = 0; iPage < RT_ELEMENTS(pGVM->pgm.s.aHandyPages); iPage++)
+                LogRel(("PGM: aHandyPages[#%#04x] = {.HCPhysGCPhys=%RHp, .idPage=%#08x, .idSharedPage=%#08x}\n",
+                        iPage, pGVM->pgm.s.aHandyPages[iPage].HCPhysGCPhys, pGVM->pgm.s.aHandyPages[iPage].idPage,
+                        pGVM->pgm.s.aHandyPages[iPage].idSharedPage));
+
+        /* Set the FFs and adjust rc. */
+        VM_FF_SET(pGVM, VM_FF_PGM_NEED_HANDY_PAGES);
         VM_FF_SET(pGVM, VM_FF_PGM_NO_MEMORY);
+        if (!fRing3)
+            if (   rc == VERR_NO_MEMORY
+                || rc == VERR_NO_PHYS_MEMORY
+                || rc == VERR_LOCK_FAILED
+                || rc == VERR_MAP_FAILED)
+                rc = VINF_EM_NO_MEMORY;
     }
 
     LogFlow(("PGMR0PhysAllocateHandyPages: cPages=%d rc=%Rrc\n", cPages, rc));
+    return rc;
+}
+
+
+/**
+ * Worker function for PGMR3PhysAllocateHandyPages / VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES.
+ *
+ * @returns The following VBox status codes.
+ * @retval  VINF_SUCCESS on success. FF cleared.
+ * @retval  VINF_EM_NO_MEMORY if we're out of memory. The FF is set in this case.
+ *
+ * @param   pGVM        The global (ring-0) VM structure.
+ * @param   idCpu       The ID of the calling EMT.
+ *
+ * @thread  EMT(idCpu)
+ *
+ * @remarks Must be called from within the PGM critical section. The caller
+ *          must clear the new pages.
+ */
+VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu)
+{
+    /*
+     * Validate inputs.
+     */
+    AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
+    AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
+
+    /*
+     * Enter the PGM lock and call the worker.
+     */
+    int rc = PGM_LOCK(pGVM);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pgmR0PhysAllocateHandyPages(pGVM, idCpu, true /*fRing3*/);
+        PGM_UNLOCK(pGVM);
+    }
     return rc;
 }
 
