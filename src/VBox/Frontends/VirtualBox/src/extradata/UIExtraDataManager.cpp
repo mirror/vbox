@@ -1894,7 +1894,8 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
     return QStringList()
            << QString()
            << GUI_RestrictedDialogs
-           << GUI_SuppressMessages << GUI_InvertMessageOption << GUI_KeepSuccessfullNotificationProgresses
+           << GUI_SuppressMessages << GUI_InvertMessageOption
+           << GUI_NotificationCenter_KeepSuccessfullProgresses
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
            << GUI_PreventApplicationUpdate << GUI_UpdateDate << GUI_UpdateCheckCount
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
@@ -2341,13 +2342,13 @@ QStringList UIExtraDataManager::messagesWithInvertedOption()
 bool UIExtraDataManager::keepSuccessfullNotificationProgresses()
 {
     /* 'False' unless feature allowed: */
-    return isFeatureAllowed(GUI_KeepSuccessfullNotificationProgresses);
+    return isFeatureAllowed(GUI_NotificationCenter_KeepSuccessfullProgresses);
 }
 
 void UIExtraDataManager::setKeepSuccessfullNotificationProgresses(bool fKeep)
 {
     /* 'True' if feature allowed, null-string otherwise: */
-    setExtraDataString(GUI_KeepSuccessfullNotificationProgresses, toFeatureAllowed(fKeep));
+    setExtraDataString(GUI_NotificationCenter_KeepSuccessfullProgresses, toFeatureAllowed(fKeep));
 }
 
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
