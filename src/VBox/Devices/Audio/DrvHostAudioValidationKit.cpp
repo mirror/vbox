@@ -156,8 +156,6 @@ typedef struct DRVHOSTVALKITAUDIO
     AUDIOTESTSET        Set;
     /** Number of total tests in \a lstTestsRec and \a lstTestsPlay. */
     uint32_t            cTestsTotal;
-    /** Increasing number to identify tests. */
-    uint32_t            idxTest;
     /** Number of tests in \a lstTestsRec. */
     uint32_t            cTestsRec;
     /** List keeping the recording tests (FIFO). */
@@ -502,43 +500,43 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
 {
     PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
 
-    PVALKITTESTDATA pTestData = (PVALKITTESTDATA)RTMemAllocZ(sizeof(VALKITTESTDATA));
-    AssertPtrReturn(pTestData, VERR_NO_MEMORY);
+    PVALKITTESTDATA pTst = (PVALKITTESTDATA)RTMemAllocZ(sizeof(VALKITTESTDATA));
+    AssertPtrReturn(pTst, VERR_NO_MEMORY);
 
-    pTestData->enmState = AUDIOTESTSTATE_INIT;
+    pTst->enmState = AUDIOTESTSTATE_INIT;
 
-    memcpy(&pTestData->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
+    memcpy(&pTst->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
-    PPDMAUDIOPCMPROPS const pProps = &pTestData->t.TestTone.Parms.Props;
+    PPDMAUDIOPCMPROPS const pProps = &pTst->t.TestTone.Parms.Props;
 
-    AssertReturn(pTestData->t.TestTone.Parms.msDuration, VERR_INVALID_PARAMETER);
+    AssertReturn(pTst->t.TestTone.Parms.msDuration, VERR_INVALID_PARAMETER);
     AssertReturn(PDMAudioPropsAreValid(pProps), VERR_INVALID_PARAMETER);
 
-    AudioTestToneInit(&pTestData->t.TestTone.Tone, pProps, pTestData->t.TestTone.Parms.dbFreqHz);
+    AudioTestToneInit(&pTst->t.TestTone.Tone, pProps, pTst->t.TestTone.Parms.dbFreqHz);
 
-    pTestData->t.TestTone.u.Rec.cbToWrite = PDMAudioPropsMilliToBytes(pProps,
-                                                                      pTestData->t.TestTone.Parms.msDuration);
+    pTst->t.TestTone.u.Rec.cbToWrite = PDMAudioPropsMilliToBytes(pProps,
+                                                                      pTst->t.TestTone.Parms.msDuration);
 
     /* We inject a pre + post beacon before + after the actual test tone.
      * We always start with the pre beacon. */
-    AudioTestBeaconInit(&pTestData->t.TestTone.Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_PRE, pProps);
+    AudioTestBeaconInit(&pTst->t.TestTone.Beacon, pToneParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_PRE, pProps);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
         LogRel(("ValKit: Registering guest recording test #%RU32 (%RU32ms, %RU64 bytes, host test #%RU32)\n",
-                pThis->idxTest, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Rec.cbToWrite,
-                pToneParms->Hdr.idxSeq));
+                pThis->cTestsRec, pTst->t.TestTone.Parms.msDuration, pTst->t.TestTone.u.Rec.cbToWrite,
+                pToneParms->Hdr.idxTest));
 
-        const uint32_t cbBeacon = AudioTestBeaconGetSize(&pTestData->t.TestTone.Beacon);
+        const uint32_t cbBeacon = AudioTestBeaconGetSize(&pTst->t.TestTone.Beacon);
         if (cbBeacon)
             LogRel2(("ValKit: Guest recording test #%RU32 includes 2 x %RU32 bytes of pre/post beacons\n",
-                     pThis->idxTest, cbBeacon));
+                     pThis->cTestsRec, cbBeacon));
 
-        RTListAppend(&pThis->lstTestsRec, &pTestData->Node);
+        RTListAppend(&pThis->lstTestsRec, &pTst->Node);
 
-        pTestData->msRegisteredTS = RTTimeMilliTS();
-        pTestData->idxTest        = pThis->idxTest++;
+        pTst->msRegisteredTS = RTTimeMilliTS();
+        pTst->idxTest        = pToneParms->Hdr.idxTest; /* Use the test ID from the host (so that the beacon IDs match). */
 
         pThis->cTestsRec++;
         pThis->cTestsTotal++;
@@ -559,41 +557,41 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
 {
     PDRVHOSTVALKITAUDIO pThis = (PDRVHOSTVALKITAUDIO)pvUser;
 
-    PVALKITTESTDATA pTestData = (PVALKITTESTDATA)RTMemAllocZ(sizeof(VALKITTESTDATA));
-    AssertPtrReturn(pTestData, VERR_NO_MEMORY);
+    PVALKITTESTDATA pTst = (PVALKITTESTDATA)RTMemAllocZ(sizeof(VALKITTESTDATA));
+    AssertPtrReturn(pTst, VERR_NO_MEMORY);
 
-    pTestData->enmState = AUDIOTESTSTATE_INIT;
+    pTst->enmState = AUDIOTESTSTATE_INIT;
 
-    memcpy(&pTestData->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
+    memcpy(&pTst->t.TestTone.Parms, pToneParms, sizeof(AUDIOTESTTONEPARMS));
 
-    PPDMAUDIOPCMPROPS const pProps = &pTestData->t.TestTone.Parms.Props;
+    PPDMAUDIOPCMPROPS const pProps = &pTst->t.TestTone.Parms.Props;
 
-    AssertReturn(pTestData->t.TestTone.Parms.msDuration, VERR_INVALID_PARAMETER);
+    AssertReturn(pTst->t.TestTone.Parms.msDuration, VERR_INVALID_PARAMETER);
     AssertReturn(PDMAudioPropsAreValid(pProps), VERR_INVALID_PARAMETER);
 
-    pTestData->t.TestTone.u.Play.cbToRead  = PDMAudioPropsMilliToBytes(pProps,
-                                                                       pTestData->t.TestTone.Parms.msDuration);
+    pTst->t.TestTone.u.Play.cbToRead  = PDMAudioPropsMilliToBytes(pProps,
+                                                                       pTst->t.TestTone.Parms.msDuration);
 
     /* We play a pre + post beacon before + after the actual test tone.
      * We always start with the pre beacon. */
-    AudioTestBeaconInit(&pTestData->t.TestTone.Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_PRE, pProps);
+    AudioTestBeaconInit(&pTst->t.TestTone.Beacon, pToneParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_PRE, pProps);
 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
         LogRel(("ValKit: Registering guest playback test #%RU32 (%RU32ms, %RU64 bytes, host test #%RU32)\n",
-                pThis->idxTest, pTestData->t.TestTone.Parms.msDuration, pTestData->t.TestTone.u.Play.cbToRead,
-                pToneParms->Hdr.idxSeq));
+                pThis->cTestsPlay, pTst->t.TestTone.Parms.msDuration, pTst->t.TestTone.u.Play.cbToRead,
+                pToneParms->Hdr.idxTest));
 
-        const uint32_t cbBeacon = AudioTestBeaconGetSize(&pTestData->t.TestTone.Beacon);
+        const uint32_t cbBeacon = AudioTestBeaconGetSize(&pTst->t.TestTone.Beacon);
         if (cbBeacon)
             LogRel2(("ValKit: Guest playback test #%RU32 includes 2 x %RU32 bytes of pre/post beacons\n",
-                     pThis->idxTest, cbBeacon));
+                     pThis->cTestsPlay, cbBeacon));
 
-        RTListAppend(&pThis->lstTestsPlay, &pTestData->Node);
+        RTListAppend(&pThis->lstTestsPlay, &pTst->Node);
 
-        pTestData->msRegisteredTS = RTTimeMilliTS();
-        pTestData->idxTest        = pThis->idxTest++;
+        pTst->msRegisteredTS = RTTimeMilliTS();
+        pTst->idxTest        = pToneParms->Hdr.idxTest; /* Use the test ID from the host (so that the beacon IDs match). */
 
         pThis->cTestsTotal++;
         pThis->cTestsPlay++;
@@ -875,7 +873,7 @@ static DECLCALLBACK(uint32_t) drvHostValKitAudioHA_StreamGetReadable(PPDMIHOSTAU
             LogRel(("ValKit: Test #%RU32: Injecting audio input data (%RU16Hz, %RU32ms, %RU32 bytes) for host test #%RU32 started (delay is %RU32ms)\n",
                     pTst->idxTest, (uint16_t)pTst->t.TestTone.Tone.rdFreqHz,
                     pTst->t.TestTone.Parms.msDuration, pTst->t.TestTone.u.Rec.cbToWrite,
-                    Parms.TestTone.Hdr.idxSeq, RTTimeMilliTS() - pTst->msRegisteredTS));
+                    Parms.TestTone.Hdr.idxTest, RTTimeMilliTS() - pTst->msRegisteredTS));
 
             char szTimeCreated[RTTIME_STR_LEN];
             RTTimeToString(&Parms.TestTone.Hdr.tsCreated, szTimeCreated, sizeof(szTimeCreated));
@@ -1080,7 +1078,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
             pTst->msStartedTS = RTTimeMilliTS();
             LogRel(("ValKit: Test #%RU32: Recording audio data (%RU16Hz, %RU32ms) for host test #%RU32 started (delay is %RU32ms)\n",
                     pTst->idxTest, (uint16_t)Parms.TestTone.dbFreqHz, Parms.TestTone.msDuration,
-                    Parms.TestTone.Hdr.idxSeq, RTTimeMilliTS() - pTst->msRegisteredTS));
+                    Parms.TestTone.Hdr.idxTest, RTTimeMilliTS() - pTst->msRegisteredTS));
 
             char szTimeCreated[RTTIME_STR_LEN];
             RTTimeToString(&Parms.TestTone.Hdr.tsCreated, szTimeCreated, sizeof(szTimeCreated));
@@ -1181,7 +1179,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                     pTst->enmState = AUDIOTESTSTATE_POST;
 
                     /* Re-use the beacon object, but this time it's the post beacon. */
-                    AudioTestBeaconInit(&pTst->t.TestTone.Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_POST, &pTst->t.TestTone.Parms.Props);
+                    AudioTestBeaconInit(&pTst->t.TestTone.Beacon, pTst->idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
+                                        &pTst->t.TestTone.Parms.Props);
                 }
                 break;
             }
@@ -1372,8 +1371,11 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
                         pTst->idxTest, RTTimeMilliTS() - pTst->msStartedTS));
 
                 pTst->enmState = AUDIOTESTSTATE_POST;
+
                 /* Re-use the beacon object, but this time it's the post beacon. */
-                AudioTestBeaconInit(&pTst->t.TestTone.Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_POST, &pTst->t.TestTone.Parms.Props);
+                AudioTestBeaconInit(&pTst->t.TestTone.Beacon, pTst->idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
+                                    &pTst->t.TestTone.Parms.Props);
+
                 pStrmValKit->cbAvail += AudioTestBeaconGetSize(&pTst->t.TestTone.Beacon);
             }
             break;

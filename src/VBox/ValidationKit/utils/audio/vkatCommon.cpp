@@ -527,7 +527,7 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
         /* We play a pre + post beacon before + after the actual test tone.
          * We always start with the pre beacon. */
         AUDIOTESTTONEBEACON Beacon;
-        AudioTestBeaconInit(&Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_PRE, &pStream->Cfg.Props);
+        AudioTestBeaconInit(&Beacon, (uint8_t)pParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_PRE, &pStream->Cfg.Props);
 
         uint32_t const cbBeacon = AudioTestBeaconGetSize(&Beacon);
         if (cbBeacon)
@@ -536,19 +536,17 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
             cbToPlayTotal += cbBeacon * 2 /* Pre + post beacon */;
         }
 
-        if (pTstEnv)
-        {
-            AudioTestObjAddMetadataStr(Obj, "beacon_type=%RU32\n", (uint32_t)AudioTestBeaconGetType(&Beacon));
-            AudioTestObjAddMetadataStr(Obj, "beacon_pre_bytes=%RU32\n", cbBeacon);
-            AudioTestObjAddMetadataStr(Obj, "beacon_post_bytes=%RU32\n", cbBeacon);
-            AudioTestObjAddMetadataStr(Obj, "stream_to_play_bytes=%RU32\n",      cbToPlayTotal);
-            AudioTestObjAddMetadataStr(Obj, "stream_period_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPeriod);
-            AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesBufferSize);
-            AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPreBuffering);
-            /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
-             *       has nothing to do with the device emulation scheduling hint. */
-            AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pStream->Cfg.Device.cMsSchedulingHint);
-        }
+        AudioTestObjAddMetadataStr(Obj, "test_id=%04RU32\n", pParms->Hdr.idxTest);
+        AudioTestObjAddMetadataStr(Obj, "beacon_type=%RU32\n", (uint32_t)AudioTestBeaconGetType(&Beacon));
+        AudioTestObjAddMetadataStr(Obj, "beacon_pre_bytes=%RU32\n", cbBeacon);
+        AudioTestObjAddMetadataStr(Obj, "beacon_post_bytes=%RU32\n", cbBeacon);
+        AudioTestObjAddMetadataStr(Obj, "stream_to_play_bytes=%RU32\n",      cbToPlayTotal);
+        AudioTestObjAddMetadataStr(Obj, "stream_period_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPeriod);
+        AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesBufferSize);
+        AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPreBuffering);
+        /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
+         *       has nothing to do with the device emulation scheduling hint. */
+        AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pStream->Cfg.Device.cMsSchedulingHint);
 
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing %RU32 bytes total\n", cbToPlayTotal);
 
@@ -617,7 +615,8 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                     {
                         if (AudioTestBeaconGetSize(&Beacon)) /* Play the post beacon, if any. */
                         {
-                            AudioTestBeaconInit(&Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_POST, &pStream->Cfg.Props);
+                            AudioTestBeaconInit(&Beacon, (uint8_t)pParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
+                                                &pStream->Cfg.Props);
                             continue;
                         }
 
@@ -752,12 +751,13 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         /* We expect a pre + post beacon before + after the actual test tone.
          * We always start with the pre beacon. */
         AUDIOTESTTONEBEACON Beacon;
-        AudioTestBeaconInit(&Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_PRE, &pStream->Cfg.Props);
+        AudioTestBeaconInit(&Beacon, (uint8_t)pParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_PRE, &pStream->Cfg.Props);
 
         uint32_t const cbBeacon = AudioTestBeaconGetSize(&Beacon);
         if (cbBeacon)
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Expecting 2 x %RU32 bytes pre/post beacons\n", cbBeacon);
 
+        AudioTestObjAddMetadataStr(Obj, "test_id=%04RU32\n", pParms->Hdr.idxTest);
         AudioTestObjAddMetadataStr(Obj, "beacon_type=%RU32\n", (uint32_t)AudioTestBeaconGetType(&Beacon));
         AudioTestObjAddMetadataStr(Obj, "beacon_pre_bytes=%RU32\n", cbBeacon);
         AudioTestObjAddMetadataStr(Obj, "beacon_post_bytes=%RU32\n", cbBeacon);
@@ -869,7 +869,8 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                             {
                                 enmState = AUDIOTESTSTATE_POST;
                                 /* Re-use the beacon object, but this time it's the post beacon. */
-                                AudioTestBeaconInit(&Beacon, AUDIOTESTTONEBEACONTYPE_PLAY_POST, &pStream->Cfg.Props);
+                                AudioTestBeaconInit(&Beacon, (uint8_t)pParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
+                                                    &pStream->Cfg.Props);
                             }
                         }
 
@@ -1033,7 +1034,7 @@ static DECLCALLBACK(int) audioTestGstAtsTonePlayCallback(void const *pvUser, PAU
     PAUDIOTESTIOOPTS pIoOpts = &pTstEnv->IoOpts;
 
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Got request for playing test tone #%RU32 (%RU16Hz, %RU32ms) ...\n",
-                 pToneParms->Hdr.idxSeq, (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);
+                 pToneParms->Hdr.idxTest, (uint16_t)pToneParms->dbFreqHz, pToneParms->msDuration);
 
     char szTimeCreated[RTTIME_STR_LEN];
     RTTimeToString(&pToneParms->Hdr.tsCreated, szTimeCreated, sizeof(szTimeCreated));
@@ -1081,7 +1082,7 @@ static DECLCALLBACK(int) audioTestGstAtsToneRecordCallback(void const *pvUser, P
     PAUDIOTESTIOOPTS pIoOpts = &pTstEnv->IoOpts;
 
     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Got request for recording test tone #%RU32 (%RU32ms) ...\n",
-                 pToneParms->Hdr.idxSeq, pToneParms->msDuration);
+                 pToneParms->Hdr.idxTest, pToneParms->msDuration);
 
     char szTimeCreated[RTTIME_STR_LEN];
     RTTimeToString(&pToneParms->Hdr.tsCreated, szTimeCreated, sizeof(szTimeCreated));

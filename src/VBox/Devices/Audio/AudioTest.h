@@ -31,14 +31,25 @@
 #define AUDIOTEST_ERROR_DESC_MAX        256
 /** Prefix for audio test (set) directories. */
 #define AUDIOTEST_PATH_PREFIX_STR       "vkat"
-/** Audio beacon data (single byte) to use for the playback pre beacon (intro). */
-#define AUDIOTEST_BEACON_BYTE_PLAY_PRE  0x42
-/** Audio beacon data (single byte) to use for the playback post beacon (outro). */
-#define AUDIOTEST_BEACON_BYTE_PLAY_POST 0x24
-/** Audio beacon data (single byte) to use for the recording pre beacon (intro). */
-#define AUDIOTEST_BEACON_BYTE_REC_PRE   0x75
-/** Audio beacon data (single byte) to use for the recording post beacon (outro). */
-#define AUDIOTEST_BEACON_BYTE_REC_POST  0x57
+/** Maximum tests a beacon can have.
+ *  Maximum number of tests is 240 (so it can fit into 8-bit mono channels). */
+#define AUDIOTEST_BEACON_TESTS_MAX      240
+/** Returns a pre-beacon for a given test number.
+ *  Maximum number of tests is 240 (so it can fit into 8-bit mono channels).
+ *
+ *  That way it's easy to visually inspect beacon data in a hex editor --
+ *  e.g. for test #5 a pre-beacon would be 0x5A + post-beacon 0x5B. */
+#define AUDIOTEST_BEACON_MAKE_PRE(a_TstNum) \
+    (  (uint8_t)((a_TstNum) & 0xf) << 4 \
+     | (uint8_t)(0xA))
+/** Returns a post-beacon for a given test number.
+ *  Maximum number of tests is 250 (so it can fit into 8-bit mono channels).
+ *
+ *  That way it's easy to visually inspect beacon data in a hex editor --
+ *  e.g. for test #2 a pre-beacon would be 0x2A + post-beacon 0x2B. */
+#define AUDIOTEST_BEACON_MAKE_POST(a_TstNum) \
+    (  (uint8_t)((a_TstNum) & 0xf) << 4 \
+     | (uint8_t)(0xB))
 /** Pre / post audio beacon size (in audio frames). */
 #define AUDIOTEST_BEACON_SIZE_FRAMES    1024
 
@@ -85,10 +96,9 @@ typedef AUDIOTESTTONE *PAUDIOTESTTONE;
  */
 typedef struct AUDIOTESTPARMSHDR
 {
-    /** Index in some defined sequence this test has. Can be freely used / assigned
-     *  and depends on the actual implementation.
+    /** Test index these test parameters belong to.
      *  Set to UINT32_MAX if not being used. */
-    uint32_t idxSeq;
+    uint32_t idxTest;
     /** Time of the caller when this test was being created. */
     RTTIME   tsCreated;
 } AUDIOTESTPARMSHDR;
@@ -146,6 +156,8 @@ typedef enum AUDIOTESTTONEBEACONTYPE
  */
 typedef struct AUDIOTESTTONEBEACON
 {
+    /** Test number this beacon is for. */
+    uint8_t                 uTest;
     /** The beacon type. */
     AUDIOTESTTONEBEACONTYPE enmType;
     /** PCM properties to use for this beacon. */
@@ -199,10 +211,6 @@ typedef enum AUDIOTESTTYPE
  */
 typedef struct AUDIOTESTPARMS
 {
-    /** Specifies the current test iteration. */
-    uint32_t                idxCurrent;
-    /** How many iterations the test should be executed. */
-    uint32_t                cIterations;
     /** Audio device to use. */
     PDMAUDIOHOSTDEV         Dev;
     /** How much to delay (wait, in ms) the test being executed. */
@@ -376,7 +384,7 @@ double AudioTestToneInitRandom(PAUDIOTESTTONE pTone, PPDMAUDIOPCMPROPS pProps);
 double AudioTestToneGetRandomFreq(void);
 int    AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 
-void   AudioTestBeaconInit(PAUDIOTESTTONEBEACON pBeacon, AUDIOTESTTONEBEACONTYPE enmType, PPDMAUDIOPCMPROPS pProps);
+void   AudioTestBeaconInit(PAUDIOTESTTONEBEACON pBeacon,  uint8_t uTest, AUDIOTESTTONEBEACONTYPE enmType, PPDMAUDIOPCMPROPS pProps);
 int    AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *auBuf, size_t cbBuf, size_t *pOff);
 int    AudioTestBeaconWrite(PAUDIOTESTTONEBEACON pBeacon, void *pvBuf, uint32_t cbBuf);
 uint32_t AudioTestBeaconGetSize(PCAUDIOTESTTONEBEACON pBeacon);

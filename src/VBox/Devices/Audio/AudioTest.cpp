@@ -2410,15 +2410,17 @@ static uint32_t audioTestFilesFindDiffsBinary(PAUDIOTESTVERIFYJOB pVerJob,
  *
  * @returns VBox status code.
  * @param   pBeacon             Audio test beacon to (re-)initialize.
+ * @param   uTest               Test number to set beacon to.
  * @param   enmType             Beacon type to set.
  * @param   pProps              PCM properties to use for producing audio beacon data.
  */
-void AudioTestBeaconInit(PAUDIOTESTTONEBEACON pBeacon, AUDIOTESTTONEBEACONTYPE enmType, PPDMAUDIOPCMPROPS pProps)
+void AudioTestBeaconInit(PAUDIOTESTTONEBEACON pBeacon, uint8_t uTest, AUDIOTESTTONEBEACONTYPE enmType, PPDMAUDIOPCMPROPS pProps)
 {
     AssertReturnVoid(PDMAudioPropsFrameSize(pProps) == 4); /** @todo Make this more dynamic. */
 
     RT_BZERO(pBeacon, sizeof(AUDIOTESTTONEBEACON));
 
+    pBeacon->uTest   = uTest;
     pBeacon->enmType = enmType;
     memcpy(&pBeacon->Props, pProps, sizeof(PDMAUDIOPCMPROPS));
 
@@ -2429,16 +2431,17 @@ void AudioTestBeaconInit(PAUDIOTESTTONEBEACON pBeacon, AUDIOTESTTONEBEACONTYPE e
  * Returns the beacon byte of a beacon type.
  *
  * @returns Beacon byte if found, 0 otherwise.
+ * @param   uTest               Test number to get beacon byte for.
  * @param   enmType             Beacon type to get beacon byte for.
  */
-DECLINLINE(uint8_t) AudioTestBeaconByteFromType(AUDIOTESTTONEBEACONTYPE enmType)
+DECLINLINE(uint8_t) AudioTestBeaconByteFromType(uint8_t uTest, AUDIOTESTTONEBEACONTYPE enmType)
 {
     switch (enmType)
     {
-        case AUDIOTESTTONEBEACONTYPE_PLAY_PRE:  return AUDIOTEST_BEACON_BYTE_PLAY_PRE;
-        case AUDIOTESTTONEBEACONTYPE_PLAY_POST: return AUDIOTEST_BEACON_BYTE_PLAY_POST;
-        case AUDIOTESTTONEBEACONTYPE_REC_PRE:   return AUDIOTEST_BEACON_BYTE_REC_PRE;
-        case AUDIOTESTTONEBEACONTYPE_REC_POST:  return AUDIOTEST_BEACON_BYTE_REC_POST;
+        case AUDIOTESTTONEBEACONTYPE_PLAY_PRE:  return AUDIOTEST_BEACON_MAKE_PRE(uTest);
+        case AUDIOTESTTONEBEACONTYPE_PLAY_POST: return AUDIOTEST_BEACON_MAKE_POST(uTest);
+        case AUDIOTESTTONEBEACONTYPE_REC_PRE:   return AUDIOTEST_BEACON_MAKE_PRE(uTest);
+        case AUDIOTESTTONEBEACONTYPE_REC_POST:  return AUDIOTEST_BEACON_MAKE_POST(uTest);
         default:                                break;
     }
 
@@ -2502,7 +2505,7 @@ int AudioTestBeaconWrite(PAUDIOTESTTONEBEACON pBeacon, void *pvBuf, uint32_t cbB
 {
     AssertReturn(pBeacon->cbUsed + cbBuf <= pBeacon->cbSize, VERR_BUFFER_OVERFLOW);
 
-    memset(pvBuf, AudioTestBeaconByteFromType(pBeacon->enmType), cbBuf);
+    memset(pvBuf, AudioTestBeaconByteFromType(pBeacon->uTest, pBeacon->enmType), cbBuf);
 
     pBeacon->cbUsed += cbBuf;
 
@@ -2551,7 +2554,7 @@ int AudioTestBeaconAddConsecutive(PAUDIOTESTTONEBEACON pBeacon, const uint8_t *p
     uint64_t       offBeacon   = UINT64_MAX;
     uint32_t const cbFrameSize = PDMAudioPropsFrameSize(&pBeacon->Props); /* Use the audio frame size as chunk size. */
 
-    uint8_t  const byBeacon      = AudioTestBeaconByteFromType(pBeacon->enmType);
+    uint8_t  const byBeacon      = AudioTestBeaconByteFromType(pBeacon->uTest, pBeacon->enmType);
     unsigned const cbStep        = cbFrameSize;
 
     /* Make sure that we do frame-aligned reads. */
@@ -2623,7 +2626,7 @@ static int audioTestToneVerifyBeacon(PAUDIOTESTVERIFYJOB pVerJob,
     AssertRCReturn(rc, rc);
 
     AUDIOTESTTONEBEACON Beacon;
-    AudioTestBeaconInit(&Beacon,
+    AudioTestBeaconInit(&Beacon, pVerJob->idxTest,
                           fIn
                         ? (fPre ? AUDIOTESTTONEBEACONTYPE_PLAY_PRE : AUDIOTESTTONEBEACONTYPE_PLAY_POST)
                         : (fPre ? AUDIOTESTTONEBEACONTYPE_REC_PRE  : AUDIOTESTTONEBEACONTYPE_REC_POST), &pToneParms->Props);
