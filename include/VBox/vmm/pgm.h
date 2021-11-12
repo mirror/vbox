@@ -694,6 +694,7 @@ VMMR0_INT_DECL(int)  PGMR0PoolGrow(PGVM pGVM, VMCPUID idCpu);
  * @{
  */
 VMMR3_INT_DECL(void)    PGMR3EnableNemMode(PVM pVM);
+VMMR3_INT_DECL(bool)    PGMR3IsNemModeEnabled(PVM pVM);
 VMMR3DECL(int)      PGMR3Init(PVM pVM);
 VMMR3DECL(int)      PGMR3InitFinalize(PVM pVM);
 VMMR3_INT_DECL(int) PGMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);

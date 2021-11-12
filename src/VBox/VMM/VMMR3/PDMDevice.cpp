@@ -277,7 +277,8 @@ int pdmR3DevInit(PVM pVM)
         /* RZEnabled, R0Enabled, RCEnabled*/
         bool fR0Enabled = false;
         bool fRCEnabled = false;
-        if (pReg->fFlags & (PDM_DEVREG_FLAGS_R0 | PDM_DEVREG_FLAGS_RC))
+        if (   (pReg->fFlags & (PDM_DEVREG_FLAGS_R0 | PDM_DEVREG_FLAGS_RC))
+            && !PGMR3IsNemModeEnabled(pVM) /* No ring-0 in simplified memory mode. */ )
         {
             if (pReg->fFlags & PDM_DEVREG_FLAGS_R0)
             {
@@ -413,9 +414,15 @@ int pdmR3DevInit(PVM pVM)
                                    pReg->szName, cb, PDM_MAX_DEVICE_INSTANCE_SIZE_R3),
                                   VERR_ALLOCATION_TOO_BIG);
 
+#if 0  /* Several devices demands cacheline aligned data, if not page aligned. Real problem in NEM mode. */
             rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_DEVICE, cb, (void **)&pDevIns);
             AssertLogRelMsgRCReturn(rc, ("Failed to allocate %zu bytes of instance data for device '%s'. rc=%Rrc\n",
                                          cb, pReg->szName, rc), rc);
+#else
+            pDevIns = (PPDMDEVINS)RTMemPageAllocZ(cb);
+            AssertLogRelMsgReturn(pDevIns, ("Failed to allocate %zu bytes of instance data for device '%s'\n", cb, pReg->szName),
+                                  VERR_NO_PAGE_MEMORY);
+#endif
 
             /* Initialize it: */
             pDevIns->u32Version             = PDM_DEVINSR3_VERSION;
