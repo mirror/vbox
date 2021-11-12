@@ -116,6 +116,9 @@ AssertCompileSize(struct DRMVMWUPDATELAYOUT, 16);
 unsigned g_cRespawn = 0;
 unsigned g_cVerbosity = 0;
 
+/** Path to the PID file. */
+static const char g_szPidFile[RTPATH_MAX] = "/var/run/VBoxDRMClient";
+
 /**
  * Attempts to open DRM device by given path and check if it is
  * compatible for screen resize.
@@ -209,35 +212,219 @@ static RTFILE drmOpenVmwgfx(void)
     return hDevice;
 }
 
+/**
+ * This function converts input monitors layout array passed from DevVMM
+ * into monitors layout array to be passed to DRM stack.
+ *
+ * @return  VINF_SUCCESS on success, IPRT error code otherwise.
+ * @param   aDisplaysIn         Input displays array.
+ * @param   cDisplaysIn         Number of elements in input displays array.
+ * @param   aDisplaysOut        Output displays array.
+ * @param   cDisplaysOutMax     Number of elements in output displays array.
+ * @param   pcActualDisplays    Number of displays to report to DRM stack (number of enabled displays).
+ */
+static int drmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn,
+                             struct DRMVMWRECT *aDisplaysOut, uint32_t cDisplaysOutMax, uint32_t *pcActualDisplays)
+{
+    /* This array is a cache of what was received from DevVMM so far.
+     * DevVMM may send to us partial information bout scree layout. This
+     * cache remembers entire picture. */
+    static struct VMMDevDisplayDef aVmMonitorsCache[VMW_MAX_HEADS];
+    /* Number of valid (enabled) displays in output array. */
+    uint32_t cDisplaysOut = 0;
+    /* Flag indicates that current layout cache is consistent and can be passed to DRM stack. */
+    bool fValid = true;
+
+    /* Make sure input array fits cache size. */
+    if (cDisplaysIn > VMW_MAX_HEADS)
+    {
+        VBClLogError("VBoxDRMClient: unable to validate screen layout: input (%u) array does not fit to cache size (%u)\n",
+                     cDisplaysIn, VMW_MAX_HEADS);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Make sure there is enough space in output array. */
+    if (cDisplaysIn > cDisplaysOutMax)
+    {
+        VBClLogError("VBoxDRMClient: unable to validate screen layout: input array (%u) is bigger than output one (%u)\n",
+                     cDisplaysIn, cDisplaysOut);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Make sure input and output arrays are of non-zero size. */
+    if (!(cDisplaysIn > 0 && cDisplaysOutMax > 0))
+    {
+        VBClLogError("VBoxDRMClient: unable to validate screen layout: invalid size of either input (%u) or output display array\n",
+                     cDisplaysIn, cDisplaysOutMax);
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Update cache. */
+    for (uint32_t i = 0; i < cDisplaysIn; i++)
+    {
+        uint32_t idDisplay = aDisplaysIn[i].idDisplay;
+        if (idDisplay < VMW_MAX_HEADS)
+        {
+            aVmMonitorsCache[idDisplay].idDisplay = idDisplay;
+            aVmMonitorsCache[idDisplay].fDisplayFlags = aDisplaysIn[i].fDisplayFlags;
+            aVmMonitorsCache[idDisplay].cBitsPerPixel = aDisplaysIn[i].cBitsPerPixel;
+            aVmMonitorsCache[idDisplay].cx = aDisplaysIn[i].cx;
+            aVmMonitorsCache[idDisplay].cy = aDisplaysIn[i].cy;
+            aVmMonitorsCache[idDisplay].xOrigin = aDisplaysIn[i].xOrigin;
+            aVmMonitorsCache[idDisplay].yOrigin = aDisplaysIn[i].yOrigin;
+        }
+        else
+        {
+            VBClLogError("VBoxDRMClient: received display ID (0x%x, position %u) is invalid\n", idDisplay, i);
+            /* If monitor configuration cannot be placed into cache, consider entire cache is invalid. */
+            fValid = false;
+        }
+    }
+
+    /* Now, go though complete cache and check if it is valid. */
+    for (uint32_t i = 0; i < VMW_MAX_HEADS; i++)
+    {
+        if (i == 0)
+        {
+            if (aVmMonitorsCache[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED)
+            {
+                VBClLogError("VBoxDRMClient: unable to validate screen layout: first monitor is not allowed to be disabled");
+                fValid = false;
+            }
+            else
+                cDisplaysOut++;
+        }
+        else
+        {
+            /* Check if there is no hole in between monitors (i.e., if current monitor is enabled, but privious one does not). */
+            if (   !(aVmMonitorsCache[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED)
+                && aVmMonitorsCache[i - 1].fDisplayFlags & VMMDEV_DISPLAY_DISABLED)
+            {
+                VBClLogError("VBoxDRMClient: unable to validate screen layout: there is a hole in displays layout config, "
+                             "monitor (%u) is ENABLED while (%u) does not\n", i, i - 1);
+                fValid = false;
+            }
+            else
+            {
+                /* Align displays next to each other (if needed) and check if there is no holes in between monitors. */
+                if (!(aVmMonitorsCache[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN))
+                {
+                    aVmMonitorsCache[i].xOrigin = aVmMonitorsCache[i - 1].xOrigin + aVmMonitorsCache[i - 1].cx;
+                    aVmMonitorsCache[i].yOrigin = aVmMonitorsCache[i - 1].yOrigin;
+                }
+
+                /* Only count enabled monitors. */
+                if (!(aVmMonitorsCache[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
+                    cDisplaysOut++;
+            }
+        }
+    }
+
+    /* Copy out layout data. */
+    if (fValid)
+    {
+        for (uint32_t i = 0; i < cDisplaysOut; i++)
+        {
+            aDisplaysOut[i].x = aVmMonitorsCache[i].xOrigin;
+            aDisplaysOut[i].y = aVmMonitorsCache[i].yOrigin;
+            aDisplaysOut[i].w = aVmMonitorsCache[i].cx;
+            aDisplaysOut[i].h = aVmMonitorsCache[i].cy;
+
+            VBClLogInfo("VBoxDRMClient: update monitor %u parameters: %dx%d, (%d, %d)\n",
+                        i,
+                        aDisplaysOut[i].w, aDisplaysOut[i].h,
+                        aDisplaysOut[i].x, aDisplaysOut[i].y);
+
+        }
+
+        *pcActualDisplays = cDisplaysOut;
+    }
+
+    return (fValid && cDisplaysOut > 0) ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
+}
+
 static void drmSendHints(RTFILE hDevice, struct DRMVMWRECT *paRects, unsigned cHeads)
 {
-    uid_t curuid = getuid();
-    if (setreuid(0, 0) != 0)
-        perror("setreuid failed during drm ioctl.");
     int rc;
     struct DRMVMWUPDATELAYOUT ioctlLayout;
+    uid_t curuid = getuid();
+    if (setreuid(0, 0) != 0)
+    {
+        VBClLogError("VBoxDRMClient: setreuid failed during drm ioctl\n");
+        return;
+    }
 
     ioctlLayout.cOutputs = cHeads;
     ioctlLayout.ptrRects = (uint64_t)paRects;
+
     rc = RTFileIoCtl(hDevice, DRM_IOCTL_VMW_UPDATE_LAYOUT,
                      &ioctlLayout, sizeof(ioctlLayout), NULL);
-    if (RT_FAILURE(rc) && rc != VERR_INVALID_PARAMETER)
-        VBClLogFatalError("Failure updating layout, rc=%Rrc\n", rc);
+
+    VBClLogInfo("VBoxDRMClient: push layout data to DRM stack %s, %Rrc\n",
+                RT_SUCCESS(rc) ? "successful" : "failed", rc);
+
     if (setreuid(curuid, 0) != 0)
-        perror("reset of setreuid failed after drm ioctl.");
+    {
+        VBClLogError("VBoxDRMClient: reset of setreuid failed after drm ioctl");
+    }
+}
+
+static void drmMainLoop(RTFILE hDevice)
+{
+    int rc;
+
+    for (;;)
+    {
+        /* Do not acknowledge the first event we query for to pick up old events,
+         * e.g. from before a guest reboot. */
+        bool fAck = false;
+
+        uint32_t events;
+
+        VMMDevDisplayDef aDisplaysIn[VMW_MAX_HEADS];
+        uint32_t cDisplaysIn = 0;
+
+        struct DRMVMWRECT aDisplaysOut[VMW_MAX_HEADS];
+        uint32_t cDisplaysOut = 0;
+
+        RT_ZERO(aDisplaysIn);
+        RT_ZERO(aDisplaysOut);
+
+        /* Query the first size without waiting.  This lets us e.g. pick up
+         * the last event before a guest reboot when we start again after. */
+        rc = VbglR3GetDisplayChangeRequestMulti(VMW_MAX_HEADS, &cDisplaysIn, aDisplaysIn, fAck);
+        fAck = true;
+        if (RT_FAILURE(rc))
+        {
+            VBClLogError("Failed to get display change request, rc=%Rrc\n", rc);
+        }
+        else
+        {
+            /* Validate displays layout and push it to DRM stack if valid. */
+            rc = drmValidateLayout(aDisplaysIn, cDisplaysIn, aDisplaysOut, sizeof(aDisplaysOut), &cDisplaysOut);
+            if (RT_SUCCESS(rc))
+            {
+                VBClLogInfo("VBoxDRMClient: push to DRM stack info about %u display(s)\n", cDisplaysOut);
+                drmSendHints(hDevice, aDisplaysOut, cDisplaysOut);
+            }
+            else
+            {
+                VBClLogError("VBoxDRMClient: displays layout is invalid, will not notify guest driver, rc=%Rrc\n", rc);
+            }
+        }
+
+        do
+        {
+            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, RT_INDEFINITE_WAIT, &events);
+        } while (rc == VERR_INTERRUPTED);
+        if (RT_FAILURE(rc))
+            VBClLogFatalError("Failure waiting for event, rc=%Rrc\n", rc);
+    }
 }
 
 int main(int argc, char *argv[])
 {
     RTFILE hDevice = NIL_RTFILE;
-    static struct VMMDevDisplayDef aMonitors[VMW_MAX_HEADS];
-    unsigned cEnabledMonitors;
-    /* Do not acknowledge the first event we query for to pick up old events,
-     * e.g. from before a guest reboot. */
-    bool fAck = false;
-
-    /** The name and handle of the PID file. */
-    static const char szPidFile[RTPATH_MAX] = "/var/run/VBoxDRMClient";
     RTFILE hPidFile;
 
     int rc = RTR3InitExe(argc, &argv, 0);
@@ -246,10 +433,28 @@ int main(int argc, char *argv[])
 
     rc = VbglR3InitUser();
     if (RT_FAILURE(rc))
-        VBClLogFatalError("VbglR3InitUser failed: %Rrc", rc);
+        VBClLogFatalError("VBoxDRMClient: VbglR3InitUser failed: %Rrc", rc);
+
+
+
+    rc = VBClLogCreate("");
+    if (RT_FAILURE(rc))
+        VBClLogFatalError("VBoxDRMClient: failed to setup logging, rc=%Rrc\n", rc);
+
+    PRTLOGGER pReleaseLog = RTLogRelGetDefaultInstance();
+    if (pReleaseLog)
+    {
+        rc = RTLogDestinations(pReleaseLog, "stdout");
+        if (RT_FAILURE(rc))
+            VBClLogFatalError("VBoxDRMClient: failed to redirert error output, rc=%Rrc", rc);
+    }
+    else
+    {
+        VBClLogFatalError("VBoxDRMClient: failed to get logger instance");
+    }
 
     /* Check PID file before attempting to initialize anything. */
-    rc = VbglR3PidFile(szPidFile, &hPidFile);
+    rc = VbglR3PidFile(g_szPidFile, &hPidFile);
     if (rc == VERR_FILE_LOCK_VIOLATION)
     {
         VBClLogInfo("VBoxDRMClient: already running, exiting\n");
@@ -282,69 +487,7 @@ int main(int argc, char *argv[])
         return VERR_INVALID_HANDLE;
     }
 
-    for (;;)
-    {
-        uint32_t events;
-        struct VMMDevDisplayDef aDisplays[VMW_MAX_HEADS];
-        uint32_t cDisplaysOut;
-        /* Query the first size without waiting.  This lets us e.g. pick up
-         * the last event before a guest reboot when we start again after. */
-        rc = VbglR3GetDisplayChangeRequestMulti(VMW_MAX_HEADS, &cDisplaysOut, aDisplays, fAck);
-        fAck = true;
-        if (RT_FAILURE(rc))
-            VBClLogError("Failed to get display change request, rc=%Rrc\n", rc);
-        if (cDisplaysOut > VMW_MAX_HEADS)
-            VBClLogError("Display change request contained, rc=%Rrc\n", rc);
-        if (cDisplaysOut > 0)
-        {
-            for (unsigned i = 0; i < cDisplaysOut && i < VMW_MAX_HEADS; ++i)
-            {
-                uint32_t idDisplay = aDisplays[i].idDisplay;
-                if (idDisplay >= VMW_MAX_HEADS)
-                    continue;
-                aMonitors[idDisplay].fDisplayFlags = aDisplays[i].fDisplayFlags;
-                if (!(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
-                {
-                    if ((idDisplay == 0) || (aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN))
-                    {
-                        aMonitors[idDisplay].xOrigin = aDisplays[i].xOrigin;
-                        aMonitors[idDisplay].yOrigin = aDisplays[i].yOrigin;
-                    } else {
-                        aMonitors[idDisplay].xOrigin = aMonitors[idDisplay - 1].xOrigin + aMonitors[idDisplay - 1].cx;
-                        aMonitors[idDisplay].yOrigin = aMonitors[idDisplay - 1].yOrigin;
-                    }
-                    aMonitors[idDisplay].cx = aDisplays[i].cx;
-                    aMonitors[idDisplay].cy = aDisplays[i].cy;
-                }
-            }
-            /* Create an dense (consisting of enabled monitors only) array to pass to DRM. */
-            cEnabledMonitors = 0;
-            struct DRMVMWRECT aEnabledMonitors[VMW_MAX_HEADS];
-            for (int j = 0; j < VMW_MAX_HEADS; ++j)
-            {
-                if (!(aMonitors[j].fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
-                {
-                    aEnabledMonitors[cEnabledMonitors].x = aMonitors[j].xOrigin;
-                    aEnabledMonitors[cEnabledMonitors].y = aMonitors[j].yOrigin;
-                    aEnabledMonitors[cEnabledMonitors].w = aMonitors[j].cx;
-                    aEnabledMonitors[cEnabledMonitors].h = aMonitors[j].cy;
-                    if (cEnabledMonitors > 0)
-                        aEnabledMonitors[cEnabledMonitors].x = aEnabledMonitors[cEnabledMonitors - 1].x + aEnabledMonitors[cEnabledMonitors - 1].w;
-                    ++cEnabledMonitors;
-                }
-            }
-            for (unsigned i = 0; i < cEnabledMonitors; ++i)
-                printf("Monitor %u: %dx%d, (%d, %d)\n", i, (int)aEnabledMonitors[i].w, (int)aEnabledMonitors[i].h,
-                       (int)aEnabledMonitors[i].x, (int)aEnabledMonitors[i].y);
-            drmSendHints(hDevice, aEnabledMonitors, cEnabledMonitors);
-        }
-        do
-        {
-            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, RT_INDEFINITE_WAIT, &events);
-        } while (rc == VERR_INTERRUPTED);
-        if (RT_FAILURE(rc))
-            VBClLogFatalError("Failure waiting for event, rc=%Rrc\n", rc);
-    }
+    drmMainLoop(hDevice);
 
     /** @todo this code never executed since we do not have yet a clean way to exit
      * main event loop above. */
@@ -352,7 +495,7 @@ int main(int argc, char *argv[])
     RTFileClose(hDevice);
 
     VBClLogInfo("VBoxDRMClient: releasing PID file lock\n");
-    VbglR3ClosePidFile(szPidFile, hPidFile);
+    VbglR3ClosePidFile(g_szPidFile, hPidFile);
 
     return 0;
 }
