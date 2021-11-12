@@ -8544,20 +8544,6 @@ static int hmR0VmxLeaveSession(PVMCPUCC pVCpu)
 
 
 /**
- * Does the necessary state syncing before doing a longjmp to ring-3.
- *
- * @returns VBox status code.
- * @param   pVCpu   The cross context virtual CPU structure.
- *
- * @remarks No-long-jmp zone!!!
- */
-DECLINLINE(int) hmR0VmxLongJmpToRing3(PVMCPUCC pVCpu)
-{
-    return hmR0VmxLeaveSession(pVCpu);
-}
-
-
-/**
  * Take necessary actions before going back to ring-3.
  *
  * An action requires us to go back to ring-3. This function does the necessary
