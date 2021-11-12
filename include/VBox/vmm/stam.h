@@ -201,6 +201,8 @@ typedef enum STAMUNIT
     STAMUNIT_COUNT,
     /** Count of bytes. */
     STAMUNIT_BYTES,
+    /** Count of bytes per call. */
+    STAMUNIT_BYTES_PER_CALL,
     /** Count of bytes. */
     STAMUNIT_PAGES,
     /** Error count. */
@@ -1313,6 +1315,8 @@ typedef FNSTAMR3ENUM *PFNSTAMR3ENUM;
 
 VMMR3DECL(int)  STAMR3Enum(PUVM pUVM, const char *pszPat, PFNSTAMR3ENUM pfnEnum, void *pvUser);
 VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit);
+VMMR3DECL(const char *) STAMR3GetUnit1(STAMUNIT enmUnit);
+VMMR3DECL(const char *) STAMR3GetUnit2(STAMUNIT enmUnit);
 
 /** @} */
 

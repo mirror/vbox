@@ -2461,9 +2461,11 @@ static int stamR3PrintOne(PSTAMDESC pDesc, void *pvArg)
                 return VINF_SUCCESS;
 
             uint64_t u64 = pDesc->u.pProfile->cPeriods ? pDesc->u.pProfile->cPeriods : 1;
-            pArgs->pfnPrintf(pArgs, "%-32s %8llu %s (%12llu ticks, %7llu times, max %9llu, min %7lld)\n", pDesc->pszName,
+            pArgs->pfnPrintf(pArgs, "%-32s %8llu %s (%12llu %s, %7llu %s, max %9llu, min %7lld)\n", pDesc->pszName,
                              pDesc->u.pProfile->cTicks / u64, STAMR3GetUnit(pDesc->enmUnit),
-                             pDesc->u.pProfile->cTicks, pDesc->u.pProfile->cPeriods, pDesc->u.pProfile->cTicksMax, pDesc->u.pProfile->cTicksMin);
+                             pDesc->u.pProfile->cTicks, STAMR3GetUnit1(pDesc->enmUnit),
+                             pDesc->u.pProfile->cPeriods, STAMR3GetUnit2(pDesc->enmUnit),
+                             pDesc->u.pProfile->cTicksMax, pDesc->u.pProfile->cTicksMin);
             break;
         }
 
@@ -2999,6 +3001,7 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
         case STAMUNIT_CALLS:                return "calls";
         case STAMUNIT_COUNT:                return "count";
         case STAMUNIT_BYTES:                return "bytes";
+        case STAMUNIT_BYTES_PER_CALL:       return "bytes/call";
         case STAMUNIT_PAGES:                return "pages";
         case STAMUNIT_ERRORS:               return "errors";
         case STAMUNIT_OCCURENCES:           return "times";
@@ -3017,6 +3020,67 @@ VMMR3DECL(const char *) STAMR3GetUnit(STAMUNIT enmUnit)
         default:
             AssertMsgFailed(("Unknown unit %d\n", enmUnit));
             return "(?unit?)";
+    }
+}
+
+
+/**
+ * For something per something-else unit, get the first something.
+ *
+ * @returns Pointer to read only unit string.
+ * @param   enmUnit     The unit.
+ */
+VMMR3DECL(const char *) STAMR3GetUnit1(STAMUNIT enmUnit)
+{
+    switch (enmUnit)
+    {
+        case STAMUNIT_NONE:                 return "";
+        case STAMUNIT_CALLS:                return "calls";
+        case STAMUNIT_COUNT:                return "count";
+        case STAMUNIT_BYTES:                return "bytes";
+        case STAMUNIT_BYTES_PER_CALL:       return "bytes";
+        case STAMUNIT_PAGES:                return "pages";
+        case STAMUNIT_ERRORS:               return "errors";
+        case STAMUNIT_OCCURENCES:           return "times";
+        case STAMUNIT_TICKS:                return "ticks";
+        case STAMUNIT_TICKS_PER_CALL:       return "ticks";
+        case STAMUNIT_TICKS_PER_OCCURENCE:  return "ticks";
+        case STAMUNIT_GOOD_BAD:             return "good";
+        case STAMUNIT_MEGABYTES:            return "megabytes";
+        case STAMUNIT_KILOBYTES:            return "kilobytes";
+        case STAMUNIT_NS:                   return "ns";
+        case STAMUNIT_NS_PER_CALL:          return "ns";
+        case STAMUNIT_NS_PER_OCCURENCE:     return "ns";
+        case STAMUNIT_PCT:                  return "%";
+        case STAMUNIT_HZ:                   return "Hz";
+
+        default:
+            AssertMsgFailed(("Unknown unit %d\n", enmUnit));
+            return "(?unit?)";
+    }
+}
+
+
+/**
+ * For something per something-else unit, get the something-else.
+ *
+ * @returns Pointer to read only unit string.
+ * @param   enmUnit     The unit.
+ */
+VMMR3DECL(const char *) STAMR3GetUnit2(STAMUNIT enmUnit)
+{
+    switch (enmUnit)
+    {
+        case STAMUNIT_TICKS_PER_CALL:       return "calls";
+        case STAMUNIT_NS_PER_CALL:          return "calls";
+        case STAMUNIT_BYTES_PER_CALL:       return "calls";
+        case STAMUNIT_TICKS_PER_OCCURENCE:  return "times";
+        case STAMUNIT_NS_PER_OCCURENCE:     return "times";
+        case STAMUNIT_NONE:                 return "times";
+        case STAMUNIT_GOOD_BAD:             return "bad";
+        default:
+            AssertMsgFailed(("Wrong unit %d\n", enmUnit));
+            return "times";
     }
 }
 
