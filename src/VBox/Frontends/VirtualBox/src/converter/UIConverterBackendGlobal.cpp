@@ -31,6 +31,7 @@
 
 /* Determines if <Object of type X> can be converted to object of other type.
  * These functions returns 'true' for all allowed conversions. */
+template<> bool canConvert<Qt::SortOrder>() { return true; }
 template<> bool canConvert<SizeSuffix>() { return true; }
 template<> bool canConvert<StorageSlot>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::DialogType>() { return true; }
@@ -81,6 +82,38 @@ template<> bool canConvert<UIMediumFormat>() { return true; }
 template<> bool canConvert<UISettingsDefs::RecordingMode>() { return true; }
 template<> bool canConvert<VMActivityOverviewColumn>(){ return true; };
 
+
+/* QString <= Qt::SortOrder: */
+template<> QString toInternalString(const Qt::SortOrder &enmSortOrder)
+{
+    QString strResult;
+    switch (enmSortOrder)
+    {
+        case Qt::AscendingOrder: strResult = "Ascending"; break;
+        case Qt::DescendingOrder: strResult = "Descending"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for sort order=%d", enmSortOrder));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* Qt::SortOrder <= QString: */
+template<> Qt::SortOrder fromInternalString<Qt::SortOrder>(const QString &strSortOrder)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;     QList<Qt::SortOrder> values;
+    keys << "Ascending";  values << Qt::AscendingOrder;
+    keys << "Descending"; values << Qt::DescendingOrder;
+    /* Qt::AscendingOrder type for unknown words: */
+    if (!keys.contains(strSortOrder, Qt::CaseInsensitive))
+        return Qt::AscendingOrder;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strSortOrder, Qt::CaseInsensitive)));
+}
 
 /* QString <= SizeSuffix: */
 template<> QString toString(const SizeSuffix &sizeSuffix)

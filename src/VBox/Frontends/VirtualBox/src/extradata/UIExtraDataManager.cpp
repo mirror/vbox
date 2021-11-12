@@ -1895,7 +1895,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << QString()
            << GUI_RestrictedDialogs
            << GUI_SuppressMessages << GUI_InvertMessageOption
-           << GUI_NotificationCenter_KeepSuccessfullProgresses
+           << GUI_NotificationCenter_KeepSuccessfullProgresses << GUI_NotificationCenter_Order
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
            << GUI_PreventApplicationUpdate << GUI_UpdateDate << GUI_UpdateCheckCount
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
@@ -2349,6 +2349,17 @@ void UIExtraDataManager::setKeepSuccessfullNotificationProgresses(bool fKeep)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     setExtraDataString(GUI_NotificationCenter_KeepSuccessfullProgresses, toFeatureAllowed(fKeep));
+}
+
+Qt::SortOrder UIExtraDataManager::notificationCenterOrder()
+{
+    return gpConverter->fromInternalString<Qt::SortOrder>(extraDataString(GUI_NotificationCenter_Order));
+}
+
+void UIExtraDataManager::setNotificationCenterOrder(Qt::SortOrder enmOrder)
+{
+    const QString strValue = enmOrder == Qt::AscendingOrder ? QString() : gpConverter->toInternalString(enmOrder);
+    setExtraDataString(GUI_NotificationCenter_Order, strValue);
 }
 
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
@@ -4725,6 +4736,9 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
     {
         if (strKey.startsWith("GUI/"))
         {
+            /* Notification-center order? */
+            if (strKey == GUI_NotificationCenter_Order)
+                emit sigNotificationCenterOrderChange();
             /* Language changed? */
             if (strKey == GUI_LanguageID)
                 emit sigLanguageChange(extraDataString(strKey));

@@ -58,6 +58,8 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_InvertMessageOption;
         /** Holds whether successfull notification-progresses should NOT close automatically. */
         SHARED_LIBRARY_STUFF extern const char *GUI_NotificationCenter_KeepSuccessfullProgresses;
+        /** Holds notification-center order. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_NotificationCenter_Order;
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
         /** Holds version for which user wants to prevent BETA build warning. */
         SHARED_LIBRARY_STUFF extern const char *GUI_PreventBetaWarning;

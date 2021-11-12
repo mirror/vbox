@@ -77,6 +77,7 @@ template<class X> X fromInternalInteger(const int & /* iData */) { AssertFailed(
 
 
 /* Declare global canConvert specializations: */
+template<> SHARED_LIBRARY_STUFF bool canConvert<Qt::SortOrder>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<SizeSuffix>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<StorageSlot>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DialogType>();
@@ -156,6 +157,8 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<KNATProtocol>();
 
 
 /* Declare global conversion specializations: */
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const Qt::SortOrder &enmSortOrder);
+template<> SHARED_LIBRARY_STUFF Qt::SortOrder fromInternalString<Qt::SortOrder>(const QString &strSortOrder);
 template<> SHARED_LIBRARY_STUFF QString toString(const SizeSuffix &sizeSuffix);
 template<> SHARED_LIBRARY_STUFF SizeSuffix fromString<SizeSuffix>(const QString &strSizeSuffix);
 template<> SHARED_LIBRARY_STUFF QString toString(const StorageSlot &storageSlot);

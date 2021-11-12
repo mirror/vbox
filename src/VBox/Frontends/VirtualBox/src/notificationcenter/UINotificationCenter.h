@@ -100,6 +100,9 @@ protected:
 
 private slots:
 
+    /** Handles order changes. */
+    void sltHandleOrderChange();
+
     /** Issues request to make open button @a fToggled. */
     void sltHandleOpenButtonToggled(bool fToggled);
     /** Toggles notification-progresses keep approach. */
@@ -150,6 +153,9 @@ private:
 
     /** Holds the model instance. */
     UINotificationModel *m_pModel;
+
+    /** Holds the order. */
+    Qt::SortOrder  m_enmOrder;
 
     /** Holds the main layout instance. */
     QVBoxLayout  *m_pLayoutMain;
