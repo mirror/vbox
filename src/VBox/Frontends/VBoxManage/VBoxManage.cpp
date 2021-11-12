@@ -171,6 +171,7 @@ typedef ListenerImpl<VBoxEventListener> VBoxEventListenerImpl;
 VBOX_LISTENER_DECLARE(VBoxEventListenerImpl)
 #endif /* !VBOX_WITH_VBOXMANAGE_NLS */
 
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
