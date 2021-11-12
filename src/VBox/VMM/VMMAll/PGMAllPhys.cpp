@@ -758,7 +758,7 @@ static int pgmPhysEnsureHandyPage(PVMCC pVM)
 #ifdef IN_RING3
             int rc = PGMR3PhysAllocateHandyPages(pVM);
 #else
-            int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES, 0);
+            int rc = pgmR0PhysAllocateHandyPages(pVM, VMMGetCpuId(pVM), false /*fRing3*/);
 #endif
             if (RT_UNLIKELY(rc != VINF_SUCCESS))
             {
@@ -797,7 +797,6 @@ static int pgmPhysEnsureHandyPage(PVMCC pVM)
 
     return VINF_SUCCESS;
 }
-
 
 
 /**

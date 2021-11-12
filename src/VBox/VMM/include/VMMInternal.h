@@ -413,7 +413,6 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetPendingRequest;
     STAMCOUNTER                 StatRZRetPGMFlushPending;
     STAMCOUNTER                 StatRZRetPatchTPR;
-    STAMCOUNTER                 StatRZCallPGMAllocHandy;
     /** @} */
 } VMM;
 /** Pointer to VMM. */

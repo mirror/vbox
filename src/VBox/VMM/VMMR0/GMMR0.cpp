@@ -2941,7 +2941,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
              pGVM, cPagesToUpdate, cPagesToAlloc, paPages));
 
     /*
-     * Validate, get basics and take the semaphore.
+     * Validate & get basics.
      * (This is a relatively busy path, so make predictions where possible.)
      */
     PGMM pGMM;
@@ -2982,8 +2982,17 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
         AssertMsgReturn(paPages[iPage].idSharedPage == NIL_GMM_PAGEID, ("#%#x: %#x\n", iPage, paPages[iPage].idSharedPage),  VERR_INVALID_PARAMETER);
     }
 
-    gmmR0MutexAcquire(pGMM);
-    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+    /*
+     * Take the semaphore
+     */
+    VMMR0EMTBLOCKCTX Ctx;
+    PGVMCPU          pGVCpu = &pGVM->aCpus[idCpu];
+    rc = VMMR0EmtPrepareToBlock(pGVCpu, VINF_SUCCESS, "GMMR0AllocateHandyPages", pGMM, &Ctx);
+    AssertRCReturn(rc, rc);
+
+    rc = gmmR0MutexAcquire(pGMM);
+    if (   RT_SUCCESS(rc)
+        && GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
         /* No allocations before the initial reservation has been made! */
         if (RT_LIKELY(    pGVM->gmm.s.Stats.Reserved.cBasePages
@@ -3104,10 +3113,15 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
         else
             rc = VERR_WRONG_ORDER;
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+        gmmR0MutexRelease(pGMM);
     }
-    else
+    else if (RT_SUCCESS(rc))
+    {
+        gmmR0MutexRelease(pGMM);
         rc = VERR_GMM_IS_NOT_SANE;
-    gmmR0MutexRelease(pGMM);
+    }
+    VMMR0EmtResumeAfterBlocking(pGVCpu, &Ctx);
+
     LogFlow(("GMMR0AllocateHandyPages: returns %Rrc\n", rc));
     return rc;
 }

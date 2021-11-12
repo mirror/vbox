@@ -56,9 +56,6 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_INVALID = 0,
     /** Signal a ring 0 assertion. */
     VMMCALLRING3_VM_R0_ASSERTION,
-
-    /** Allocates more handy pages. */
-    VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES,
     /** The usual 32-bit hack. */
     VMMCALLRING3_32BIT_HACK = 0x7fffffff
 } VMMCALLRING3;

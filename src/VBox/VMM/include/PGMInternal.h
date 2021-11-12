@@ -3811,6 +3811,7 @@ int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 int             pgmPhysAllocPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysAllocLargePage(PVMCC pVM, RTGCPHYS GCPhys);
 #ifdef IN_RING0
+int             pgmR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu, bool fRing3);
 int             pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys);
 #endif
 int             pgmPhysRecheckLargePage(PVMCC pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage);
