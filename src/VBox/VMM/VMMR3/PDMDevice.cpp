@@ -278,7 +278,10 @@ int pdmR3DevInit(PVM pVM)
         bool fR0Enabled = false;
         bool fRCEnabled = false;
         if (   (pReg->fFlags & (PDM_DEVREG_FLAGS_R0 | PDM_DEVREG_FLAGS_RC))
-            && !PGMR3IsNemModeEnabled(pVM) /* No ring-0 in simplified memory mode. */ )
+#ifdef VBOX_WITH_PGM_NEM_MODE
+            && !PGMR3IsNemModeEnabled(pVM) /* No ring-0 in simplified memory mode. */
+#endif
+           )
         {
             if (pReg->fFlags & PDM_DEVREG_FLAGS_R0)
             {
