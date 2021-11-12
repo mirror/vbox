@@ -174,7 +174,7 @@ static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cM
     STAMR3RegisterF(pVM, &pQueue->StatFlush,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,        "Calls to pdmR3QueueFlush.",        "/PDM/Queue/%s/Flush",          pQueue->pszName);
     STAMR3RegisterF(pVM, &pQueue->StatFlushLeftovers,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,   "Left over items after flush.",     "/PDM/Queue/%s/FlushLeftovers", pQueue->pszName);
 #ifdef VBOX_WITH_STATISTICS
-    STAMR3RegisterF(pVM, &pQueue->StatFlushPrf,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS,        "Profiling pdmR3QueueFlush.",       "/PDM/Queue/%s/FlushPrf",       pQueue->pszName);
+    STAMR3RegisterF(pVM, &pQueue->StatFlushPrf,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling pdmR3QueueFlush.",     "/PDM/Queue/%s/FlushPrf",       pQueue->pszName);
     STAMR3RegisterF(pVM, (void *)&pQueue->cStatPending, STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,        "Pending items.",                   "/PDM/Queue/%s/Pending",        pQueue->pszName);
 #endif
 

@@ -176,21 +176,21 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
      * sub-trees appear at the end of each group).
      */
     STAM_REG(pVM, &pVM->iom.s.StatIoPortCommits,    STAMTYPE_COUNTER, "/IOM/IoPortCommits",     STAMUNIT_OCCURENCES, "Number of ring-3 I/O port commits.");
-    STAM_REG(pVM, &pVM->iom.s.StatIoPortIn,         STAMTYPE_PROFILE, "/IOM/IoPortIN",          STAMUNIT_OCCURENCES, "Number of IN instructions (attempts)");
-    STAM_REG(pVM, &pVM->iom.s.StatIoPortInS,        STAMTYPE_PROFILE, "/IOM/IoPortINS",         STAMUNIT_OCCURENCES, "Number of INS instructions (attempts)");
-    STAM_REG(pVM, &pVM->iom.s.StatIoPortOutS,       STAMTYPE_PROFILE, "/IOM/IoPortOUT",         STAMUNIT_OCCURENCES, "Number of OUT instructions (attempts)");
-    STAM_REG(pVM, &pVM->iom.s.StatIoPortOutS,       STAMTYPE_PROFILE, "/IOM/IoPortOUTS",        STAMUNIT_OCCURENCES, "Number of OUTS instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortIn,         STAMTYPE_COUNTER, "/IOM/IoPortIN",          STAMUNIT_OCCURENCES, "Number of IN instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortInS,        STAMTYPE_COUNTER, "/IOM/IoPortINS",         STAMUNIT_OCCURENCES, "Number of INS instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortOutS,       STAMTYPE_COUNTER, "/IOM/IoPortOUT",         STAMUNIT_OCCURENCES, "Number of OUT instructions (attempts)");
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortOutS,       STAMTYPE_COUNTER, "/IOM/IoPortOUTS",        STAMUNIT_OCCURENCES, "Number of OUTS instructions (attempts)");
 
     STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR3,    STAMTYPE_COUNTER, "/IOM/MmioHandlerR3",     STAMUNIT_OCCURENCES, "Number of calls to iomMmioHandlerNew from ring-3.");
     STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR0,    STAMTYPE_COUNTER, "/IOM/MmioHandlerR0",     STAMUNIT_OCCURENCES, "Number of calls to iomMmioHandlerNew from ring-0.");
     STAM_REG(pVM, &pVM->iom.s.StatMmioReadsR0ToR3,  STAMTYPE_COUNTER, "/IOM/MmioR0ToR3Reads",   STAMUNIT_OCCURENCES, "Number of reads deferred to ring-3.");
     STAM_REG(pVM, &pVM->iom.s.StatMmioWritesR0ToR3, STAMTYPE_COUNTER, "/IOM/MmioR0ToR3Writes",  STAMUNIT_OCCURENCES, "Number of writes deferred to ring-3.");
     STAM_REG(pVM, &pVM->iom.s.StatMmioCommitsR0ToR3,STAMTYPE_COUNTER, "/IOM/MmioR0ToR3Commits", STAMUNIT_OCCURENCES, "Number of commits deferred to ring-3.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioPfHandler,    STAMTYPE_PROFILE, "/IOM/MmioPfHandler",     STAMUNIT_OCCURENCES, "Number of calls to iomMmioPfHandlerNew.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioPhysHandler,  STAMTYPE_PROFILE, "/IOM/MmioPhysHandler",   STAMUNIT_OCCURENCES, "Number of calls to IOMR0MmioPhysHandler.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioPfHandler,    STAMTYPE_PROFILE, "/IOM/MmioPfHandler",     STAMUNIT_TICKS_PER_CALL, "Number of calls to iomMmioPfHandlerNew.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioPhysHandler,  STAMTYPE_PROFILE, "/IOM/MmioPhysHandler",   STAMUNIT_TICKS_PER_CALL, "Number of calls to IOMR0MmioPhysHandler.");
     STAM_REG(pVM, &pVM->iom.s.StatMmioCommitsDirect,STAMTYPE_COUNTER, "/IOM/MmioCommitsDirect", STAMUNIT_OCCURENCES, "Number of ring-3 MMIO commits direct to handler via handle hint.");
     STAM_REG(pVM, &pVM->iom.s.StatMmioCommitsPgm,   STAMTYPE_COUNTER, "/IOM/MmioCommitsPgm",    STAMUNIT_OCCURENCES, "Number of ring-3 MMIO commits via PGM.");
-    STAM_REL_REG(pVM, &pVM->iom.s.StatMmioStaleMappings,   STAMTYPE_PROFILE, "/IOM/MmioMappingsStale",              STAMUNIT_TICKS_PER_CALL, "Number of times iomMmioHandlerNew got a call for a remapped range at the old mapping.");
+    STAM_REL_REG(pVM, &pVM->iom.s.StatMmioStaleMappings,   STAMTYPE_COUNTER, "/IOM/MmioMappingsStale",              STAMUNIT_TICKS_PER_CALL, "Number of times iomMmioHandlerNew got a call for a remapped range at the old mapping.");
     STAM_REG(pVM, &pVM->iom.s.StatMmioDevLockContentionR0, STAMTYPE_COUNTER, "/IOM/MmioDevLockContentionR0",        STAMUNIT_OCCURENCES,     "Number of device lock contention force return to ring-3.");
 
     LogFlow(("IOMR3Init: returns VINF_SUCCESS\n"));
