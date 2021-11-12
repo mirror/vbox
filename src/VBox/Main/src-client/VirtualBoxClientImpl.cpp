@@ -130,7 +130,7 @@ public:
 
 typedef ListenerImpl<VBoxEventListener> VBoxEventListenerImpl;
 
-VBOX_LISTENER_DECLARE(VBoxTrEventListenerImpl)
+VBOX_LISTENER_DECLARE(VBoxEventListenerImpl)
 
 #endif /* VBOX_WITH_MAIN_NLS */
 

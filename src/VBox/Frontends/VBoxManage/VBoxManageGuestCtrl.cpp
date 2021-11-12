@@ -2930,6 +2930,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
                 RTStrPrintf(szValue, sizeof(szValue), "%ls r%u", guestString.raw(), uRevision);
                 SHOW_UTF8_STRING("GuestAdditionsVersion", GuestCtrl::tr("Additions version:"), szValue);
             }
+        }
 #endif
 
     if (RT_SUCCESS(vrc))

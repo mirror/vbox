@@ -123,7 +123,59 @@ ifdef VBOX_WITH_VBOXMANAGE_NLS
  	$(PATH_ROOT)/src/VBox/Main/src-all/VirtualBoxTranslator.cpp \
  	$(PATH_ROOT)/src/VBox/Main/src-all/QMTranslatorImpl.cpp \
  	$(PATH_ROOT)/src/VBox/Main/src-all/GlobalStatusConversion.cpp
-endif
+
+# define qt5 tools for translation
+ USES += qt5
+
+ VBOX_PATH_VBOXMANAGE_SRC := $(PATH_SUB_CURRENT)
+ include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
+
+ PROGRAMS += VBoxManageNls
+ VBoxManageNls_TEMPLATE = VBoxNLS
+ VBoxManageNls_QT_TRANSLATIONS = $(addsuffix .ts,$(addprefix $(VBOX_PATH_VBOXMANAGE_SRC)/nls/VBoxManageNls_,$(VBOX_APPROVED_VBOXMANAGE_LANGUAGES)))
+ VBoxManageNls_VBOX_ALL_NLS_SOURCES = $(wildcard \
+	$(VBOX_PATH_VBOXMANAGE_SRC)/*.h\
+	$(VBOX_PATH_VBOXMANAGE_SRC)/*.cpp )
+
+ updatenls:: makeallnls $(VBOX_PATH_VBOXMANAGE_SRC)/nls/VBoxManageNls_en.ts
+
+ makeallnls:: $(VBoxManageNls_VBOX_ALL_NLS_SOURCES)
+	$(call MSG_L1,lupdate all languages (nls/*.ts))
+	$(QUIET)$(TOOL_QT5_LUPDATE) \
+		$^ \
+		-ts \
+		$(filter-out nls/VBoxManageNls_en.ts, $(VBoxManageNls_QT_TRANSLATIONS)) \
+		$(VBOX_PATH_VBOXMANAGE_SRC)/nls/VBoxManageNls_xx_YY.ts
+
+# fake-main-nls:
+#	$(foreach file, $(VBoxManageNls_QT_TRANSLATIONS) \
+#	,$(NLTAB)$(SED) -i \
+#       	-e '/<source>.*<\/source>/h' \
+#       	-e '/<source>.*<\/source>/p' \
+#       	-e '/<translation type="unfinished"><\/translation>/{' \
+#       		-e 'x' \
+#       		-e 's/<source>\(.*\)<\/source>/<translation type="unfinished">$(notdir $(file)): \1<\/translation>/' \
+#       	-e '}' \
+#		$(file) )
+
+
+# Create the English translation file. This is something special cause it will
+# contain the plural forms only.
+ $(VBOX_PATH_VBOXMANAGE_SRC)/nls/VBoxManageNls_en.ts: $(VBoxManageNls_VBOX_ALL_NLS_SOURCES)
+	$(call MSG_L1,lupdate $@)
+	$(QUIET)$(TOOL_QT5_LUPDATE) \
+		$^ \
+		-ts \
+		"$@"
+	$(QUIET)$(SED) -n -i \
+		-e '/<context>/,/<\/context>/!p' \
+		-e '/<context>/h'  \
+		-e '/<name>/H' \
+		-e '/<message numerus="yes">/,/<\/message>/H' \
+		-e '/<\/context>/{H;x;/<message/p}' \
+		"$@"
+
+endif # VBOX_WITH_VBOXMANAGE_NLS
 
 
  # VBoxNetPortForwardString.h

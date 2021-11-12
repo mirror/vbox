@@ -31,6 +31,11 @@
 # include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
 
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+# include <VBox/com/AutoLock.h>
+# include <VBox/com/listeners.h>
+#endif
+
 #include <VBox/version.h>
 
 #include <iprt/asm.h>
@@ -39,6 +44,7 @@
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
+#include <iprt/log.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -84,6 +90,86 @@ typedef VBMGCMD const *PCVBMGCMD;
 
 DECLARE_TRANSLATION_CONTEXT(VBoxManage);
 
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+/* listener class for language updates */
+class VBoxEventListener
+{
+public:
+    VBoxEventListener()
+    {}
+
+
+    HRESULT init(void *)
+    {
+        return S_OK;
+    }
+
+    HRESULT init()
+    {
+        return S_OK;
+    }
+
+    void uninit()
+    {
+    }
+
+    virtual ~VBoxEventListener()
+    {
+    }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
+    {
+        switch(aType)
+        {
+            case VBoxEventType_OnLanguageChanged:
+            {
+                /*
+                 * Proceed with uttmost care as we might be racing com::Shutdown()
+                 * and have the ground open up beneath us.
+                 */
+                LogFunc(("VBoxEventType_OnLanguageChanged\n"));
+                VirtualBoxTranslator *pTranslator = VirtualBoxTranslator::tryInstance();
+                if (pTranslator)
+                {
+                    ComPtr<ILanguageChangedEvent> pEvent = aEvent;
+                    Assert(pEvent);
+
+                    /* This call may fail if we're racing COM shutdown. */
+                    com::Bstr bstrLanguageId;
+                    HRESULT hrc = pEvent->COMGETTER(LanguageId)(bstrLanguageId.asOutParam());
+                    if (SUCCEEDED(hrc))
+                    {
+                        try
+                        {
+                            com::Utf8Str strLanguageId(bstrLanguageId);
+                            LogFunc(("New language ID: %s\n", strLanguageId.c_str()));
+                            pTranslator->i_loadLanguage(strLanguageId.c_str());
+                        }
+                        catch (std::bad_alloc &)
+                        {
+                            LogFunc(("Caught bad_alloc"));
+                        }
+                    }
+                    else
+                        LogFunc(("Failed to get new language ID: %Rhrc\n", hrc));
+
+                    pTranslator->release();
+                }
+                break;
+            }
+
+            default:
+              AssertFailed();
+        }
+
+        return S_OK;
+    }
+};
+
+typedef ListenerImpl<VBoxEventListener> VBoxEventListenerImpl;
+
+VBOX_LISTENER_DECLARE(VBoxEventListenerImpl)
+#endif /* !VBOX_WITH_VBOXMANAGE_NLS */
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -443,6 +529,36 @@ int main(int argc, char *argv[])
     char      **papszNewArgv          = NULL;
 #endif
 
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+    ComPtr<IEventListener> pEventListener;
+    PTRCOMPONENT          pTrComponent = NULL;
+    util::InitAutoLockSystem();
+    VirtualBoxTranslator *pTranslator = VirtualBoxTranslator::instance();
+    if (pTranslator != NULL)
+    {
+        char szNlsPath[RTPATH_MAX];
+        vrc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
+        if (RT_SUCCESS(vrc))
+            vrc = RTPathAppend(szNlsPath, sizeof(szNlsPath), "nls" RTPATH_SLASH_STR "VBoxManageNls");
+
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = pTranslator->registerTranslation(szNlsPath, true, &pTrComponent);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = pTranslator->i_loadLanguage(NULL);
+                if (RT_FAILURE(vrc))
+                    LogRelFunc(("Load language failed: %Rrc\n", vrc));
+            }
+            else
+                LogRelFunc(("Register translation failed: %Rrc\n", vrc));
+        }
+        else
+            LogRelFunc(("Path constructing failed: %Rrc\n", vrc));
+
+    }
+#endif
+
     for (int i = 1; i < argc || argc <= iCmd; i++)
     {
         if (    argc <= iCmd
@@ -643,6 +759,36 @@ int main(int argc, char *argv[])
             hrc = virtualBoxClient->COMGETTER(VirtualBox)(virtualBox.asOutParam());
         if (SUCCEEDED(hrc))
         {
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+            if (pTranslator != NULL)
+            {
+                HRESULT hrc1 = pTranslator->loadLanguage(virtualBox);
+                if (FAILED(hrc1))
+                {
+                    /* Just log and ignore the language error */
+                    LogRel(("Failed to load API language, %Rhrc", hrc1));
+                }
+                /* VirtualBox language events registration. */
+                ComPtr<IEventSource> pES;
+                hrc1 = virtualBox->COMGETTER(EventSource)(pES.asOutParam());
+                if (SUCCEEDED(hrc1))
+                {
+                    ComObjPtr<VBoxEventListenerImpl> listener;
+                    listener.createObject();
+                    listener->init(new VBoxEventListener());
+                    pEventListener = listener;
+                    com::SafeArray<VBoxEventType_T> eventTypes;
+                    eventTypes.push_back(VBoxEventType_OnLanguageChanged);
+                    hrc1 = pES->RegisterListener(pEventListener, ComSafeArrayAsInParam(eventTypes), true);
+                    if (FAILED(hrc1))
+                    {
+                        pEventListener.setNull();
+                        LogRel(("Failed to register event listener, %Rhrc", hrc1));
+                    }
+                }
+            }
+#endif
+
             ComPtr<ISession> session;
             hrc = session.createInprocObject(CLSID_Session);
             if (SUCCEEDED(hrc))
@@ -695,6 +841,21 @@ int main(int argc, char *argv[])
                 com::GluePrintErrorInfo(info);
         }
 
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+        /* VirtualBox event callback unregistration. */
+        if (pEventListener.isNotNull())
+        {
+            ComPtr<IEventSource> pES;
+            HRESULT hrc1 = virtualBox->COMGETTER(EventSource)(pES.asOutParam());
+            if (pES.isNotNull())
+            {
+                hrc1 = pES->UnregisterListener(pEventListener);
+                if (FAILED(hrc1))
+                    LogRel(("Failed to unregister listener, %Rhrc", hrc1));
+            }
+            pEventListener.setNull();
+        }
+#endif
         /*
          * Terminate COM, make sure the virtualBox object has been released.
          */
@@ -713,6 +874,15 @@ int main(int argc, char *argv[])
         handlerArg.argv = &argv[iCmdArg];
         rcExit = pCmd->pfnHandler(&handlerArg);
     }
+
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+    if (pTranslator != NULL)
+    {
+        pTranslator->release();
+        pTranslator = NULL;
+        pTrComponent = NULL;
+    }
+#endif
 
     if (papszResponseFileArgs)
     {
