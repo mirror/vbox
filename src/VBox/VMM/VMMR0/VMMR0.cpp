@@ -2407,7 +2407,9 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
         && pGVM->pSession == pSession
         && pGVM->pSelf    == pGVM
         && enmOperation != VMMR0_DO_GVMM_DESTROY_VM
-        && enmOperation != VMMR0_DO_GVMM_SCHED_WAKE_UP /* idCpu is not caller but target. Sigh. */ /** @todo fix*/
+        && enmOperation != VMMR0_DO_GVMM_REGISTER_VMCPU
+        && enmOperation != VMMR0_DO_GVMM_SCHED_WAKE_UP  /* idCpu is not caller but target. Sigh. */ /** @todo fix*/
+        && enmOperation != VMMR0_DO_GVMM_SCHED_POKE     /* idCpu is not caller but target. Sigh. */ /** @todo fix*/
        )
     {
         PGVMCPU        pGVCpu        = &pGVM->aCpus[idCpu];
