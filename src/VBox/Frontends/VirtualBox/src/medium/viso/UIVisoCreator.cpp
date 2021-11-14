@@ -67,7 +67,6 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pActionPool(pActionPool)
 {
     m_visoOptions.m_strVisoName = !strMachineName.isEmpty() ? strMachineName : "ad-hoc";
-    prepareActions();
     prepareWidgets();
     populateMenuMainToolbar();
     prepareConnections();
@@ -268,34 +267,34 @@ void UIVisoCreatorWidget::prepareWidgets()
     // if (m_pActionOptions)
     //     m_pMainMenu->addAction(m_pActionOptions);
 
-    // m_pToolBar = new QIToolBar;
-    // if (m_pToolBar)
-    // {
-    //     /* Configure toolbar: */
-    //     const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
-    //     m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-    //     m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-    //     m_pMainLayout->addWidget(m_pToolBar, 0, 0, 1, 5);
-    // }
+    m_pToolBar = new QIToolBar(parentWidget());
+    if (m_pToolBar)
+    {
+        /* Configure toolbar: */
+        const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
+        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+        m_pMainLayout->addWidget(m_pToolBar, 0, 0, 1, 5);
+    }
 
     m_pHostBrowser = new UIVisoHostBrowser;
     if (m_pHostBrowser)
     {
-        m_pMainLayout->addWidget(m_pHostBrowser, 0, 0, 1, 2);
+        m_pMainLayout->addWidget(m_pHostBrowser, 1, 0, 1, 2);
         m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pHostBrowser), 2);
     }
 
     prepareVerticalToolBar();
     if (m_pVerticalToolBar)
     {
-        m_pMainLayout->addWidget(m_pVerticalToolBar, 0, 2, 1, 1);
+        m_pMainLayout->addWidget(m_pVerticalToolBar, 1, 2, 1, 1);
         m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVerticalToolBar), 1);
     }
 
     m_pVisoBrowser = new UIVisoContentBrowser;
     if (m_pVisoBrowser)
     {
-        m_pMainLayout->addWidget(m_pVisoBrowser, 0, 3, 1, 2);
+        m_pMainLayout->addWidget(m_pVisoBrowser, 1, 3, 1, 2);
         m_pVisoBrowser->setVisoName(m_visoOptions.m_strVisoName);
         m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVisoBrowser), 2);
     }
@@ -303,7 +302,7 @@ void UIVisoCreatorWidget::prepareWidgets()
     m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
     if (m_pConfigurationPanel)
     {
-        m_pMainLayout->addWidget(m_pConfigurationPanel, 1, 0, 1, 5);
+        m_pMainLayout->addWidget(m_pConfigurationPanel, 2, 0, 1, 5);
         m_pConfigurationPanel->hide();
         m_pConfigurationPanel->setVisoName(m_visoOptions.m_strVisoName);
         m_pConfigurationPanel->setVisoCustomOptions(m_visoOptions.m_customOptions);
@@ -313,7 +312,7 @@ void UIVisoCreatorWidget::prepareWidgets()
     if (m_pCreatorOptionsPanel)
     {
         m_pCreatorOptionsPanel->setShowHiddenbjects(m_browserOptions.m_fShowHiddenObjects);
-        m_pMainLayout->addWidget(m_pCreatorOptionsPanel, 2, 0, 1, 5);
+        m_pMainLayout->addWidget(m_pCreatorOptionsPanel, 3, 0, 1, 5);
         m_pCreatorOptionsPanel->hide();
     }
 }
@@ -385,85 +384,95 @@ void UIVisoCreatorWidget::prepareConnections()
 
 void UIVisoCreatorWidget::prepareActions()
 {
-    m_pActionConfiguration = new QAction(this);
-    if (m_pActionConfiguration)
+    if (!m_pActionPool)
     {
-        m_pActionConfiguration->setCheckable(true);
-        m_pActionConfiguration->setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",
-                                                          ":/%file_manager_options_16px.png",
-                                                          ":/file_manager_options_disabled_32px.png",
-                                                          ":/file_manager_options_disabled_16px.png"));
-    }
+        m_pActionConfiguration = new QAction(this);
+        if (m_pActionConfiguration)
+        {
+            m_pActionConfiguration->setCheckable(true);
+            m_pActionConfiguration->setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",
+                                                                    ":/%file_manager_options_16px.png",
+                                                                    ":/file_manager_options_disabled_32px.png",
+                                                                    ":/file_manager_options_disabled_16px.png"));
+        }
 
-    m_pActionOptions = new QAction(this);
-    if (m_pActionOptions)
-    {
-        m_pActionOptions->setCheckable(true);
+        m_pActionOptions = new QAction(this);
+        if (m_pActionOptions)
+        {
+            m_pActionOptions->setCheckable(true);
 
-        m_pActionOptions->setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",
-                                                          ":/%file_manager_options_16px.png",
-                                                          ":/file_manager_options_disabled_32px.png",
-                                                          ":/file_manager_options_disabled_16px.png"));
-    }
+            m_pActionOptions->setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",
+                                                              ":/%file_manager_options_16px.png",
+                                                              ":/file_manager_options_disabled_32px.png",
+                                                              ":/file_manager_options_disabled_16px.png"));
+        }
 
-    m_pAddAction = new QAction(this);
-    if (m_pAddAction)
-    {
-        m_pAddAction->setIcon(UIIconPool::iconSetFull(":/file_manager_copy_to_guest_24px.png",
-                                                      ":/file_manager_copy_to_guest_16px.png",
-                                                      ":/file_manager_copy_to_guest_disabled_24px.png",
-                                                      ":/file_manager_copy_to_guest_disabled_16px.png"));
-        m_pAddAction->setText(QApplication::translate("UIVisoCreator", "Add"));
-        m_pAddAction->setEnabled(false);
-    }
-    m_pRemoveAction = new QAction(this);
-    if (m_pRemoveAction)
-    {
-        m_pRemoveAction->setIcon(UIIconPool::iconSetFull(":/file_manager_delete_24px.png", ":/file_manager_delete_16px.png",
-                                                     ":/file_manager_delete_disabled_24px.png", ":/file_manager_delete_disabled_16px.png"));
-        m_pRemoveAction->setEnabled(false);
-    }
+        // m_pAddAction = new QAction(this);
+        // if (m_pAddAction)
+        // {
+        //     m_pAddAction->setIcon(UIIconPool::iconSetFull(":/file_manager_copy_to_guest_24px.png",
+        //                                                   ":/file_manager_copy_to_guest_16px.png",
+        //                                                   ":/file_manager_copy_to_guest_disabled_24px.png",
+        //                                                   ":/file_manager_copy_to_guest_disabled_16px.png"));
+        //     m_pAddAction->setText(QApplication::translate("UIVisoCreator", "Add"));
+        //     m_pAddAction->setEnabled(false);
+        // }
+        // m_pRemoveAction = new QAction(this);
+        // if (m_pRemoveAction)
+        // {
+        //     m_pRemoveAction->setIcon(UIIconPool::iconSetFull(":/file_manager_delete_24px.png", ":/file_manager_delete_16px.png",
+        //                                                  ":/file_manager_delete_disabled_24px.png", ":/file_manager_delete_disabled_16px.png"));
+        //     m_pRemoveAction->setEnabled(false);
+        // }
 
-    m_pNewDirectoryAction = new QAction(this);
-    if (m_pNewDirectoryAction)
-    {
-        m_pNewDirectoryAction->setIcon(UIIconPool::iconSetFull(":/file_manager_new_directory_24px.png", ":/file_manager_new_directory_16px.png",
-                                                           ":/file_manager_new_directory_disabled_24px.png", ":/file_manager_new_directory_disabled_16px.png"));
-        m_pNewDirectoryAction->setEnabled(true);
-    }
+        // m_pNewDirectoryAction = new QAction(this);
+        // if (m_pNewDirectoryAction)
+        // {
+        //     m_pNewDirectoryAction->setIcon(UIIconPool::iconSetFull(":/file_manager_new_directory_24px.png", ":/file_manager_new_directory_16px.png",
+        //                                                        ":/file_manager_new_directory_disabled_24px.png", ":/file_manager_new_directory_disabled_16px.png"));
+        //     m_pNewDirectoryAction->setEnabled(true);
+        // }
 
-    //m_pRenameAction = new QAction(this);
-    if (m_pRenameAction)
-    {
-        /** @todo Handle rename correctly in the m_entryMap as well and then enable this rename action. */
-        /* m_pVerticalToolBar->addAction(m_pRenameAction); */
-        m_pRenameAction->setIcon(UIIconPool::iconSet(":/file_manager_rename_16px.png", ":/file_manager_rename_disabled_16px.png"));
-        m_pRenameAction->setEnabled(false);
-    }
+        // //m_pRenameAction = new QAction(this);
+        // if (m_pRenameAction)
+        // {
+        //     /** @todo Handle rename correctly in the m_entryMap as well and then enable this rename action. */
+        //     /* m_pVerticalToolBar->addAction(m_pRenameAction); */
+        //     m_pRenameAction->setIcon(UIIconPool::iconSet(":/file_manager_rename_16px.png", ":/file_manager_rename_disabled_16px.png"));
+        //     m_pRenameAction->setEnabled(false);
+        // }
 
-    m_pResetAction = new QAction(this);
-    if (m_pResetAction)
+        // m_pResetAction = new QAction(this);
+        // if (m_pResetAction)
+        // {
+        //     m_pResetAction->setIcon(UIIconPool::iconSet(":/cd_remove_16px.png", ":/cd_remove_disabled_16px.png"));
+        //     m_pResetAction->setEnabled(true);
+        // }
+    }//    if (m_pActionPool)
+    else
     {
-        m_pResetAction->setIcon(UIIconPool::iconSet(":/cd_remove_16px.png", ":/cd_remove_disabled_16px.png"));
-        m_pResetAction->setEnabled(true);
+        m_pActionConfiguration = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleConfigPanel);
+        m_pActionOptions = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleOptionsPanel);
     }
 }
 
 void UIVisoCreatorWidget::populateMenuMainToolbar()
 {
-    if (!m_pMainMenu || !m_pToolBar)
-        return;
-
-    m_pToolBar->addAction(m_pActionConfiguration);
-    m_pMainMenu->addAction(m_pActionConfiguration);
-
-    m_pToolBar->addAction(m_pActionOptions);
-    m_pMainMenu->addAction(m_pActionOptions);
-    m_pMainMenu->addSeparator();
-    m_pMainMenu->addAction(m_pAddAction);
-    m_pMainMenu->addAction(m_pRemoveAction);
-    m_pMainMenu->addAction(m_pNewDirectoryAction);
-    m_pMainMenu->addAction(m_pResetAction);
+    prepareActions();
+    if (m_pToolBar)
+    {
+        if (m_pActionConfiguration)
+            m_pToolBar->addAction(m_pActionConfiguration);
+        if (m_pActionOptions)
+            m_pToolBar->addAction(m_pActionOptions);
+    }
+    // m_pMainMenu->addAction(m_pActionConfiguration);
+    // m_pMainMenu->addAction(m_pActionOptions);
+    // m_pMainMenu->addSeparator();
+    // m_pMainMenu->addAction(m_pAddAction);
+    // m_pMainMenu->addAction(m_pRemoveAction);
+    // m_pMainMenu->addAction(m_pNewDirectoryAction);
+    // m_pMainMenu->addAction(m_pResetAction);
 }
 
 void UIVisoCreatorWidget::hidePanel(UIDialogPanel* panel)
@@ -542,11 +551,11 @@ void UIVisoCreatorWidget::prepareVerticalToolBar()
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     bottomSpacerWidget->setVisible(true);
 
-    m_pVerticalToolBar->addWidget(topSpacerWidget);
-    m_pVerticalToolBar->addAction(m_pAddAction);
-    m_pVerticalToolBar->addAction(m_pRemoveAction);
-    m_pVerticalToolBar->addAction(m_pNewDirectoryAction);
-    m_pVerticalToolBar->addAction(m_pResetAction);
+    // m_pVerticalToolBar->addWidget(topSpacerWidget);
+    // m_pVerticalToolBar->addAction(m_pAddAction);
+    // m_pVerticalToolBar->addAction(m_pRemoveAction);
+    // m_pVerticalToolBar->addAction(m_pNewDirectoryAction);
+    // m_pVerticalToolBar->addAction(m_pResetAction);
 
     m_pVerticalToolBar->addWidget(bottomSpacerWidget);
 }
