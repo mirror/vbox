@@ -35,9 +35,10 @@ class QITreeWidget;
 class QITreeWidgetItem;
 class QVBoxLayout;
 class QIDialogButtonBox;
+class QIToolBar;
+class UIActionPool;
 class UIMediumItem;
 class UIMediumSearchWidget;
-class QIToolBar;
 
 
 /** QIDialog extension providing GUI with a dialog to select an existing medium. */
@@ -52,7 +53,7 @@ public:
 
     UIMediumSelector(const QUuid &uCurrentMediumId, UIMediumDeviceType enmMediumType, const QString &machineName,
                      const QString &machineSettingsFilePath, const QString &strMachineGuestOSTypeId,
-                     const QUuid &uMachineID, QWidget *pParent);
+                     const QUuid &uMachineID, QWidget *pParent, UIActionPool *pActionPool);
     /** Disables/enables the create action and controls its visibility. */
     void         setEnableCreateAction(bool fEnable);
     QList<QUuid> selectedMediumIds() const;
@@ -153,6 +154,7 @@ private:
     QString               m_strMachineGuestOSTypeId;
     QUuid                 m_uMachineID;
     QUuid                 m_uCurrentMediumId;
+    UIActionPool         *m_pActionPool;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumSelector_h */

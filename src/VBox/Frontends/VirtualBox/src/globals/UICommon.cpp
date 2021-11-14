@@ -1821,13 +1821,12 @@ int UICommon::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enm
                                        const QString &strMachineGuestOSTypeId, bool fEnableCreate, const QUuid &uMachineID,
                                        UIActionPool *pActionPool)
 {
-    Q_UNUSED(pActionPool);
     QUuid uMachineOrGlobalId = uMachineID == QUuid() ? gEDataManager->GlobalID : uMachineID;
 
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     QPointer<UIMediumSelector> pSelector = new UIMediumSelector(uCurrentMediumId, enmMediumType, strMachineName,
                                                                 strMachineFolder, strMachineGuestOSTypeId,
-                                                                uMachineOrGlobalId, pDialogParent);
+                                                                uMachineOrGlobalId, pDialogParent, pActionPool);
 
     if (!pSelector)
         return static_cast<int>(UIMediumSelector::ReturnCode_Rejected);
