@@ -51,7 +51,8 @@ UIUnattendedInstallData::UIUnattendedInstallData()
 {
 }
 
-UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /* = QString() */,
+UIWizardNewVM::UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
+                             const QString &strMachineGroup /* = QString() */,
                              const QString &strHelpHashtag /* = QString() */)
     : UINativeWizard(pParent, WizardType_NewVM, WizardMode_Auto, strHelpHashtag)
     , m_strMachineGroup(strMachineGroup)
@@ -70,6 +71,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup /*
     , m_uMediumSize(0)
     , m_enmDiskSource(SelectedDiskSource_New)
     , m_fEmptyDiskRecommended(false)
+    , m_pActionPool(pActionPool)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -94,13 +96,13 @@ void UIWizardNewVM::populatePages()
             m_iUnattendedInstallPageIndex = addPage(new UIWizardNewVMUnattendedPage);
             setUnattendedPageVisible(false);
             addPage(new UIWizardNewVMHardwarePage);
-            addPage(new UIWizardNewVMDiskPage);
+            addPage(new UIWizardNewVMDiskPage(m_pActionPool));
             addPage(new UIWizardNewVMSummaryPage);
             break;
         }
         case WizardMode_Expert:
         {
-            addPage(new UIWizardNewVMExpertPage);
+            addPage(new UIWizardNewVMExpertPage(m_pActionPool));
             break;
         }
         default:

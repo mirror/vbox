@@ -41,7 +41,7 @@
 
 QUuid UIWizardNewVMDiskCommon::getWithFileOpenDialog(const QString &strOSTypeID,
                                                      const QString &strMachineFolder,
-                                                     QWidget *pCaller)
+                                                     QWidget *pCaller, UIActionPool *pActionPool)
 {
     QUuid uMediumId;
     int returnCode = uiCommon().openMediumSelectorDialog(pCaller, UIMediumDeviceType_HardDisk,
@@ -51,13 +51,13 @@ QUuid UIWizardNewVMDiskCommon::getWithFileOpenDialog(const QString &strOSTypeID,
                                                          QString() /* strMachineName */,
                                                          strOSTypeID,
                                                          false /* don't show/enable the create action: */,
-                                                         QUuid() /* Machinie Id */);
+                                                         QUuid() /* Machinie Id */, pActionPool);
     if (returnCode != static_cast<int>(UIMediumSelector::ReturnCode_Accepted))
         return QUuid();
     return uMediumId;
 }
 
-UIWizardNewVMDiskPage::UIWizardNewVMDiskPage()
+UIWizardNewVMDiskPage::UIWizardNewVMDiskPage(UIActionPool *pActionPool)
     : m_pDiskSourceButtonGroup(0)
     , m_pDiskEmpty(0)
     , m_pDiskNew(0)
@@ -74,6 +74,7 @@ UIWizardNewVMDiskPage::UIWizardNewVMDiskPage()
     , m_fVDIFormatFound(false)
     , m_uMediumSizeMin(_4M)
     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
+    , m_pActionPool(pActionPool)
 {
     prepare();
 }
@@ -190,7 +191,7 @@ void UIWizardNewVMDiskPage::sltGetWithFileOpenDialog()
     AssertReturnVoid(!comOSType.isNull());
     QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(comOSType.GetId(),
                                                                      pWizard->machineFolder(),
-                                                                     this);
+                                                                     this, m_pActionPool);
     if (!uMediumId.isNull())
     {
         m_pDiskSelector->setCurrentItem(uMediumId);

@@ -31,6 +31,9 @@
 #include "CMediumFormat.h"
 #include "CGuestOSType.h"
 
+/* Forward declarations: */
+class UIActionPool;
+
 enum SelectedDiskSource
 {
     SelectedDiskSource_Empty = 0,
@@ -70,7 +73,8 @@ class UIWizardNewVM : public UINativeWizard
 
 public:
 
-    UIWizardNewVM(QWidget *pParent, const QString &strMachineGroup = QString(), const QString &strHelpHashtag = QString());
+    UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
+                  const QString &strMachineGroup = QString(), const QString &strHelpHashtag = QString());
     bool isUnattendedEnabled() const;
     void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
     const UIUnattendedInstallData &unattendedInstallData() const;
@@ -240,6 +244,7 @@ private:
        SelectedDiskSource m_enmDiskSource;
        bool m_fEmptyDiskRecommended;
        QVector<KMediumVariant> m_mediumVariants;
+       UIActionPool *m_pActionPool;
     /** @} */
 };
 

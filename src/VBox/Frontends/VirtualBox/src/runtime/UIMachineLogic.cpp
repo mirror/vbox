@@ -2152,7 +2152,7 @@ void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QSt
      * Its necessary to allow QObject hierarchy cleanup to delete this dialog if necessary: */
     QPointer<UISettingsDialogMachine> pDialog = new UISettingsDialogMachine(activeMachineWindow(),
                                                                             machine().GetId(),
-                                                                            strCategory, strControl);
+                                                                            strCategory, strControl, actionPool());
     /* Executing VM settings window.
      * This blocking function calls for the internal event-loop to process all further events,
      * including event which can delete the dialog itself. */

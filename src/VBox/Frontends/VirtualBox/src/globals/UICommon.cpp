@@ -1818,8 +1818,10 @@ QUuid UICommon::showCreateFloppyDiskDialog(QWidget *pParent, const QString &strD
 
 int UICommon::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType, const QUuid &uCurrentMediumId,
                                        QUuid &uSelectedMediumUuid, const QString &strMachineFolder, const QString &strMachineName,
-                                       const QString &strMachineGuestOSTypeId, bool fEnableCreate, const QUuid &uMachineID)
+                                       const QString &strMachineGuestOSTypeId, bool fEnableCreate, const QUuid &uMachineID,
+                                       UIActionPool *pActionPool)
 {
+    Q_UNUSED(pActionPool);
     QUuid uMachineOrGlobalId = uMachineID == QUuid() ? gEDataManager->GlobalID : uMachineID;
 
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
@@ -2092,7 +2094,8 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
                     int iDialogReturn = openMediumSelectorDialog(windowManager().mainWindowShown(), target.mediumType,
                                                                  uCurrentID, uMediumID,
                                                                  strMachineFolder, comConstMachine.GetName(),
-                                                                 comConstMachine.GetOSTypeId(), true /*fEnableCreate */, comConstMachine.GetId());
+                                                                 comConstMachine.GetOSTypeId(), true /*fEnableCreate */,
+                                                                 comConstMachine.GetId(), pActionPool);
                     if (iDialogReturn == UIMediumSelector::ReturnCode_LeftEmpty &&
                         (target.mediumType == UIMediumDeviceType_DVD || target.mediumType == UIMediumDeviceType_Floppy))
                         fMount = false;

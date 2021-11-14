@@ -319,11 +319,12 @@ bool UISettingsDialogGlobal::isPageAvailable(int) const
 *********************************************************************************************************************************/
 
 UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QUuid &uMachineId,
-                                                 const QString &strCategory, const QString &strControl)
+                                                 const QString &strCategory, const QString &strControl, UIActionPool *pActionPool)
     : UISettingsDialog(pParent)
     , m_uMachineId(uMachineId)
     , m_strCategory(strCategory)
     , m_strControl(strControl)
+    , m_pActionPool(pActionPool)
 {
     /* Prepare: */
     prepare();
@@ -704,7 +705,7 @@ void UISettingsDialogMachine::prepare()
                 /* Storage page: */
                 case MachineSettingsPageType_Storage:
                 {
-                    pSettingsPage = new UIMachineSettingsStorage;
+                    pSettingsPage = new UIMachineSettingsStorage(m_pActionPool);
                     addItem(":/hd_32px.png", ":/hd_24px.png", ":/hd_16px.png",
                             iPageIndex, "#storage", pSettingsPage);
                     addPageHelpKeyword(iPageIndex, "settings-storage");

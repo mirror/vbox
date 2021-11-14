@@ -2942,7 +2942,7 @@ void StorageDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
 const QString UIMachineSettingsStorage::s_strControllerMimeType = QString("application/virtualbox;value=StorageControllerID");
 const QString UIMachineSettingsStorage::s_strAttachmentMimeType = QString("application/virtualbox;value=StorageAttachmentID");
 
-UIMachineSettingsStorage::UIMachineSettingsStorage()
+UIMachineSettingsStorage::UIMachineSettingsStorage(UIActionPool *pActionPool)
     : m_pModelStorage(0)
     , m_pMediumIdHolder(new UIMediumIDHolder(this))
     , m_fLoadingInProgress(0)
@@ -2999,6 +2999,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     , m_pFieldUsage(0)
     , m_pLabelEncryption(0)
     , m_pFieldEncryption(0)
+    , m_pActionPool(pActionPool)
 {
     /* Prepare: */
     prepare();
@@ -4009,7 +4010,7 @@ void UIMachineSettingsStorage::sltChooseExistingMedium()
     int iResult = uiCommon().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uCurrentMediumId, uSelectedMediumId,
                                                       strMachineFolder, m_strMachineName,
                                                       m_strMachineGuestOSTypeId,
-                                                      true /* enable create action: */, m_uMachineId);
+                                                      true /* enable create action: */, m_uMachineId, m_pActionPool);
 
     if (iResult == UIMediumSelector::ReturnCode_Rejected ||
         (iResult == UIMediumSelector::ReturnCode_Accepted && uSelectedMediumId.isNull()))
@@ -5222,7 +5223,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDeviceType)
                                                       QUuid() /* current medium Id */, uMediumId,
                                                       strMachineFolder, m_strMachineName,
                                                       m_strMachineGuestOSTypeId,
-                                                      true /* enable cr1eate action: */, m_uMachineId);
+                                                      true /* enable cr1eate action: */, m_uMachineId, m_pActionPool);
 
     /* Continue only if iResult is either UIMediumSelector::ReturnCode_Accepted or UIMediumSelector::ReturnCode_LeftEmpty: */
     /* If iResult is UIMediumSelector::ReturnCode_Accepted then we have to have a valid uMediumId: */

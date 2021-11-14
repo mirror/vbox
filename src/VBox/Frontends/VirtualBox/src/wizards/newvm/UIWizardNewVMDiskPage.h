@@ -39,6 +39,7 @@ class QRadioButton;
 class QLabel;
 class QIRichTextLabel;
 class QIToolButton;
+class UIActionPool;
 class UIMediaComboBox;
 class UIMediumSizeEditor;
 
@@ -46,7 +47,7 @@ namespace UIWizardNewVMDiskCommon
 {
     QUuid getWithFileOpenDialog(const QString &strOSTypeID,
                                 const QString &strMachineFolder,
-                                QWidget *pCaller);
+                                QWidget *pCaller, UIActionPool *pActionPool);
 }
 
 
@@ -56,7 +57,7 @@ class UIWizardNewVMDiskPage : public UINativeWizardPage
 
 public:
 
-    UIWizardNewVMDiskPage();
+    UIWizardNewVMDiskPage(UIActionPool *pActionPool);
 
 protected:
 
@@ -109,6 +110,7 @@ private:
         qulonglong m_uMediumSizeMin;
         qulonglong m_uMediumSizeMax;
     /** @} */
+    UIActionPool *m_pActionPool;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVMDiskPage_h */

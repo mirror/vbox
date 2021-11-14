@@ -972,7 +972,8 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
     {
         /* Use the "safe way" to open stack of Mac OS X Sheets: */
         QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, m_pWidget->fullGroupName(), "gui-createvm");
+        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, actionPool(),
+                                                             m_pWidget->fullGroupName(), "gui-createvm");
         windowManager().registerNewParent(pWizard, pWizardParent);
 
         CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
@@ -1098,7 +1099,7 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
             QWidget *pDialogParent = windowManager().realParentWindow(this);
             UISafePointerSettingsDialogMachine pDialog = new UISettingsDialogMachine(pDialogParent,
                                                                                      uID.isNull() ? pItem->id() : uID,
-                                                                                     strCategory, strControl);
+                                                                                     strCategory, strControl, actionPool());
             windowManager().registerNewParent(pDialog, pDialogParent);
 
             /* Execute dialog: */

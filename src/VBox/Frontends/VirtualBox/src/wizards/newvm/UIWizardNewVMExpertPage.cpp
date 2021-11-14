@@ -40,7 +40,7 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-UIWizardNewVMExpertPage::UIWizardNewVMExpertPage()
+UIWizardNewVMExpertPage::UIWizardNewVMExpertPage(UIActionPool *pActionPool)
     : m_pToolBox(0)
     , m_pDiskFormatVariantGroupBox(0)
     , m_pDiskVariantWidget(0)
@@ -61,6 +61,7 @@ UIWizardNewVMExpertPage::UIWizardNewVMExpertPage()
     , m_fRecommendedNoDisk(false)
     , m_uMediumSizeMin(_4M)
     , m_uMediumSizeMax(uiCommon().virtualBox().GetSystemProperties().GetInfoVDSize())
+    , m_pActionPool(pActionPool)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -129,7 +130,7 @@ void UIWizardNewVMExpertPage::sltGetWithFileOpenDialog()
     AssertReturnVoid(!comOSType.isNull());
     QUuid uMediumId = UIWizardNewVMDiskCommon::getWithFileOpenDialog(comOSType.GetId(),
                                                                      pWizard->machineFolder(),
-                                                                     this);
+                                                                     this, m_pActionPool);
     if (!uMediumId.isNull())
     {
         m_pDiskSelector->setCurrentItem(uMediumId);

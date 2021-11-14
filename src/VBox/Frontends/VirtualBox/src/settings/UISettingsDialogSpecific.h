@@ -33,6 +33,8 @@
 #include "CMachine.h"
 #include "CSession.h"
 
+/* Forward declarations: */
+class UIActionPool;
 
 /** UISettingsDialog extension encapsulating all the specific functionality of the Global Preferences. */
 class SHARED_LIBRARY_STUFF UISettingsDialogGlobal : public UISettingsDialog
@@ -91,9 +93,10 @@ public:
     /** Constructs settings dialog passing @a pParent to the base-class.
       * @param  uMachineId    Brings the machine ID.
       * @param  strCategory   Brings the name of category to be opened.
-      * @param  strControl    Brings the name of control to be focused. */
+      * @param  strControl    Brings the name of control to be focused.
+      * @param  pActionPool   Brings the action pool instance.  */
     UISettingsDialogMachine(QWidget *pParent, const QUuid &uMachineId,
-                            const QString &strCategory, const QString &strControl);
+                            const QString &strCategory, const QString &strControl, UIActionPool *pActionPool);
 
 protected:
 
@@ -165,6 +168,7 @@ private:
     /** Holds the console reference. */
     CConsole  m_console;
 
+    UIActionPool *m_pActionPool;
 };
 
 /** Safe pointer to cloud machine settings dialog. */
