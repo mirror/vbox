@@ -2241,8 +2241,10 @@ public:
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        setIcon(UIIconPool::iconSetFull(":/file_manager_session_32px.png",          ":/file_manager_session_16px.png",
-                                        ":/file_manager_session_disabled_32px.png", ":/file_manager_session_disabled_16px.png"));
+        setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",
+                                        ":/%file_manager_options_16px.png",
+                                        ":/file_manager_options_disabled_32px.png",
+                                        ":/file_manager_options_disabled_16px.png"));
     }
 
 protected:
@@ -2265,7 +2267,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Configuration"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Open panel for VISO Creator configuration"));
-        setToolTip(  QApplication::translate("UIActionPool", "Open Configuration Panel")
+        setToolTip(QApplication::translate("UIActionPool", "Open Configuration Panel")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2282,8 +2284,10 @@ public:
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        setIcon(UIIconPool::iconSetFull(":/file_manager_session_32px.png",          ":/file_manager_session_16px.png",
-                                        ":/file_manager_session_disabled_32px.png", ":/file_manager_session_disabled_16px.png"));
+        setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",
+                                        ":/%file_manager_options_16px.png",
+                                        ":/file_manager_options_disabled_32px.png",
+                                        ":/file_manager_options_disabled_16px.png"));
     }
 
 protected:
@@ -2291,7 +2295,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ToggleVISOCreatorOptionsurationPanel");
+        return QString("ToggleVISOCreatorOptionsPanel");
     }
 
     /** Returns default shortcut. */
@@ -2306,7 +2310,179 @@ protected:
         setName(QApplication::translate("UIActionPool", "Configuration"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Open panel for VISO Creator options"));
-        setToolTip(  QApplication::translate("UIActionPool", "Open Options Panel")
+        setToolTip(QApplication::translate("UIActionPool", "Open Options Panel")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+class UIActionMenuVISOCreatorAdd : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorAdd(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_copy_to_guest_24px.png",
+                         ":/file_manager_copy_to_guest_16px.png",
+                         ":/file_manager_copy_to_guest_disabled_24px.png",
+                         ":/file_manager_copy_to_guest_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Add");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Add"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Add selected item(s) to VISO"));
+        setToolTip(QApplication::translate("UIActionPool", "Add Selected Item(s) to VISO")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+class UIActionMenuVISOCreatorRemove : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorRemove(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_delete_24px.png",
+                         ":/file_manager_delete_16px.png",
+                         ":/file_manager_delete_disabled_24px.png",
+                         ":/file_manager_delete_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Remove");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Remove"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Remove selected item(s) from VISO"));
+        setToolTip(QApplication::translate("UIActionPool", "Remove Selected Item(s) from VISO")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+class UIActionMenuVISOCreatorCreateNewDirectory : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorCreateNewDirectory(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_new_directory_24px.png",
+                         ":/file_manager_new_directory_16px.png",
+                         ":/file_manager_new_directory_disabled_24px.png",
+                         ":/file_manager_new_directory_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("NewDirectory");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&New Directory"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create a new directory under the current location"));
+        setToolTip(QApplication::translate("UIActionPool", "Create a New Directory Under the Current Location")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+class UIActionMenuVISOCreatorRename : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorRename(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/file_manager_rename_24px.png",
+                         ":/file_manager_rename_16px.png",
+                         ":/file_manager_rename_disabled_24px.png",
+                         ":/file_manager_rename_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Rename");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&New Directory"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Rename the selected object"));
+        setToolTip(QApplication::translate("UIActionPool", "Rename the Selected Object")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+class UIActionMenuVISOCreatorReset : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuVISOCreatorReset(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cd_remove_16px.png", ":/cd_remove_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Reset");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&New Directory"));
+        setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
+        setStatusTip(QApplication::translate("UIActionPool", "Reset the VISO content."));
+        setToolTip(QApplication::translate("UIActionPool", "Reset the VISO content.")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -2694,6 +2870,11 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_VISOCreator] = new UIActionMenuVISOCreator(this);
     m_pool[UIActionIndex_M_VISOCreator_ToggleConfigPanel] = new UIActionMenuVISOCreatorToggleConfigPanel(this);
     m_pool[UIActionIndex_M_VISOCreator_ToggleOptionsPanel] = new UIActionMenuVISOCreatorToggleOptionsPanel(this);
+    m_pool[UIActionIndex_M_VISOCreator_Add] = new UIActionMenuVISOCreatorAdd(this);
+    m_pool[UIActionIndex_M_VISOCreator_Remove] = new UIActionMenuVISOCreatorRemove(this);
+    m_pool[UIActionIndex_M_VISOCreator_CreateNewDirectory] = new UIActionMenuVISOCreatorCreateNewDirectory(this);
+    m_pool[UIActionIndex_M_VISOCreator_Rename] = new UIActionMenuVISOCreatorRename(this);
+    m_pool[UIActionIndex_M_VISOCreator_Reset] = new UIActionMenuVISOCreatorReset(this);
 
     /* Prepare update-handlers for known menus: */
 #ifdef VBOX_WS_MAC

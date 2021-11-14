@@ -141,6 +141,11 @@ enum UIActionIndex
     UIActionIndex_M_VISOCreator,
     UIActionIndex_M_VISOCreator_ToggleConfigPanel,
     UIActionIndex_M_VISOCreator_ToggleOptionsPanel,
+    UIActionIndex_M_VISOCreator_Add,
+    UIActionIndex_M_VISOCreator_Remove,
+    UIActionIndex_M_VISOCreator_CreateNewDirectory,
+    UIActionIndex_M_VISOCreator_Rename,
+    UIActionIndex_M_VISOCreator_Reset,
 
     /* Maximum index: */
     UIActionIndex_Max
