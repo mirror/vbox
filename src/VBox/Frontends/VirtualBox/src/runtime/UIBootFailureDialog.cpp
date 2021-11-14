@@ -92,7 +92,7 @@ void UIBootFailureDialog::retranslateUi()
 
     if (m_pLabel)
         m_pLabel->setText(tr("The virtual machine failed to boot. That might be caused by a missing operating system "
-                             "or misconfigured boot order. Mounting an operation system install DVD might solve this problem. "
+                             "or misconfigured boot order. Mounting an operating system install DVD might solve this problem. "
                              "Selecting an ISO file will attempt to mount it after the dialog is closed."));
 
     if (m_pBootImageLabel)
