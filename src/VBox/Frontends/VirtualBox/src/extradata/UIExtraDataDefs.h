@@ -446,10 +446,10 @@ namespace UIExtraDataDefs
 
     /** @name Help Browser
       * @{ */
-        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowserLastURLList;
-        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowserDialogGeometry;
-        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowserBookmarks;
-        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowserZoomPercentage;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowser_LastURLList;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowser_DialogGeometry;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowser_Bookmarks;
+        SHARED_LIBRARY_STUFF extern const char *GUI_HelpBrowser_ZoomPercentage;
     /** @} */
 
     /** @name Manager UI: VM Activity Overview Related stuff

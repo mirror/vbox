@@ -1982,10 +1982,10 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #endif /* VBOX_WITH_DEBUGGER_GUI */
            << GUI_ExtraDataManager_Geometry << GUI_ExtraDataManager_SplitterHints
            << GUI_LogWindowGeometry
-           << GUI_HelpBrowserLastURLList
-           << GUI_HelpBrowserDialogGeometry
-           << GUI_HelpBrowserBookmarks
-           << GUI_HelpBrowserZoomPercentage;
+           << GUI_HelpBrowser_LastURLList
+           << GUI_HelpBrowser_DialogGeometry
+           << GUI_HelpBrowser_Bookmarks
+           << GUI_HelpBrowser_ZoomPercentage;
 }
 
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
@@ -4644,27 +4644,27 @@ QStringList UIExtraDataManager::logViewerVisiblePanels()
 
 void UIExtraDataManager::setHelpBrowserLastUrlList(const QStringList &urlList)
 {
-    setExtraDataStringList(GUI_HelpBrowserLastURLList, urlList);
+    setExtraDataStringList(GUI_HelpBrowser_LastURLList, urlList);
 }
 
 QStringList UIExtraDataManager::helpBrowserLastUrlList()
 {
-    return extraDataStringList(GUI_HelpBrowserLastURLList);
+    return extraDataStringList(GUI_HelpBrowser_LastURLList);
 }
 
 void UIExtraDataManager::setHelpBrowserZoomPercentage(int iZoomPercentage)
 {
-    setExtraDataString(GUI_HelpBrowserZoomPercentage, QString::number(iZoomPercentage));
+    setExtraDataString(GUI_HelpBrowser_ZoomPercentage, QString::number(iZoomPercentage));
 }
 
 int UIExtraDataManager::helpBrowserZoomPercentage()
 {
-    return extraDataString(GUI_HelpBrowserZoomPercentage).toInt();
+    return extraDataString(GUI_HelpBrowser_ZoomPercentage).toInt();
 }
 
 QRect UIExtraDataManager::helpBrowserDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)
 {
-    return dialogGeometry(GUI_HelpBrowserDialogGeometry, pWidget, pParentWidget, defaultGeometry);
+    return dialogGeometry(GUI_HelpBrowser_DialogGeometry, pWidget, pParentWidget, defaultGeometry);
 }
 
 void UIExtraDataManager::setHelpBrowserDialogGeometry(const QRect &geometry, bool fMaximized)
@@ -4679,13 +4679,13 @@ void UIExtraDataManager::setHelpBrowserDialogGeometry(const QRect &geometry, boo
         data << GUI_Geometry_State_Max;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_HelpBrowserDialogGeometry, data);
+    setExtraDataStringList(GUI_HelpBrowser_DialogGeometry, data);
 }
 
 bool UIExtraDataManager::helpBrowserDialogShouldBeMaximized()
 {
     /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_HelpBrowserDialogGeometry);
+    const QStringList data = extraDataStringList(GUI_HelpBrowser_DialogGeometry);
 
     /* Make sure 5th item has required value: */
     return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
@@ -4693,12 +4693,12 @@ bool UIExtraDataManager::helpBrowserDialogShouldBeMaximized()
 
 void UIExtraDataManager::setHelpBrowserBookmarks(const QStringList &bookmarks)
 {
-    setExtraDataStringList(GUI_HelpBrowserBookmarks, bookmarks);
+    setExtraDataStringList(GUI_HelpBrowser_Bookmarks, bookmarks);
 }
 
 QStringList UIExtraDataManager::helpBrowserBookmarks()
 {
-    return extraDataStringList(GUI_HelpBrowserBookmarks);
+    return extraDataStringList(GUI_HelpBrowser_Bookmarks);
 }
 
 void UIExtraDataManager::setVMActivityOverviewHiddenColumnList(const QStringList &hiddenColumnList)

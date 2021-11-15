@@ -242,10 +242,10 @@ const char *UIExtraDataDefs::GUI_LogViewerNoFontStyleName = "noFontStyleName";
 const char *UIExtraDataDefs::GUI_GuestControl_LogViewerVisiblePanels = "GUI/LogViewerVisiblePanels";
 
 /* Help Browser */
-const char *UIExtraDataDefs::GUI_HelpBrowserLastURLList = "GUI/HelpBrowserLastURLList";
-const char *UIExtraDataDefs::GUI_HelpBrowserDialogGeometry = "GUI/HelpBrowserDialogGeomety";
-const char *UIExtraDataDefs::GUI_HelpBrowserBookmarks = "GUI/HelpBrowserBookmarks";
-const char *UIExtraDataDefs::GUI_HelpBrowserZoomPercentage = "GUI/HelpBrowserZoomPercentage";
+const char *UIExtraDataDefs::GUI_HelpBrowser_LastURLList = "GUI/HelpBrowserLastURLList";
+const char *UIExtraDataDefs::GUI_HelpBrowser_DialogGeometry = "GUI/HelpBrowserDialogGeomety";
+const char *UIExtraDataDefs::GUI_HelpBrowser_Bookmarks = "GUI/HelpBrowserBookmarks";
+const char *UIExtraDataDefs::GUI_HelpBrowser_ZoomPercentage = "GUI/HelpBrowserZoomPercentage";
 
 /* VM Activity Overview: */
 const char *UIExtraDataDefs::GUI_VMActivityOverview_HiddenColumns = "GUI/VMActivityOverviewHiddenColumns";
