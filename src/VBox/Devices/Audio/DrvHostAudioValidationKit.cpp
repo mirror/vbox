@@ -515,7 +515,7 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
     AudioTestToneInit(&pTst->t.TestTone.Tone, pProps, pTst->t.TestTone.Parms.dbFreqHz);
 
     pTst->t.TestTone.u.Rec.cbToWrite = PDMAudioPropsMilliToBytes(pProps,
-                                                                      pTst->t.TestTone.Parms.msDuration);
+                                                                 pTst->t.TestTone.Parms.msDuration);
 
     /* We inject a pre + post beacon before + after the actual test tone.
      * We always start with the pre beacon. */
@@ -524,14 +524,14 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestRecTest(void const *pvUser, P
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        LogRel(("ValKit: Registering guest recording test #%RU32 (%RU32ms, %RU64 bytes, host test #%RU32)\n",
+        LogRel(("ValKit: Registering guest recording test #%RU32 (%RU32ms, %RU64 bytes) as test #%RU32\n",
                 pThis->cTestsRec, pTst->t.TestTone.Parms.msDuration, pTst->t.TestTone.u.Rec.cbToWrite,
                 pToneParms->Hdr.idxTest));
 
         const uint32_t cbBeacon = AudioTestBeaconGetSize(&pTst->t.TestTone.Beacon);
         if (cbBeacon)
-            LogRel2(("ValKit: Guest recording test #%RU32 includes 2 x %RU32 bytes of pre/post beacons\n",
-                     pThis->cTestsRec, cbBeacon));
+            LogRel2(("ValKit: Test #%RU32: Uses 2 x %RU32 bytes of pre/post beacons\n",
+                     pToneParms->Hdr.idxTest, cbBeacon));
 
         RTListAppend(&pThis->lstTestsRec, &pTst->Node);
 
@@ -570,7 +570,7 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
     AssertReturn(PDMAudioPropsAreValid(pProps), VERR_INVALID_PARAMETER);
 
     pTst->t.TestTone.u.Play.cbToRead  = PDMAudioPropsMilliToBytes(pProps,
-                                                                       pTst->t.TestTone.Parms.msDuration);
+                                                                  pTst->t.TestTone.Parms.msDuration);
 
     /* We play a pre + post beacon before + after the actual test tone.
      * We always start with the pre beacon. */
@@ -579,14 +579,14 @@ static DECLCALLBACK(int) drvHostValKitRegisterGuestPlayTest(void const *pvUser, 
     int rc = RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        LogRel(("ValKit: Registering guest playback test #%RU32 (%RU32ms, %RU64 bytes, host test #%RU32)\n",
+        LogRel(("ValKit: Registering guest playback test #%RU32 (%RU32ms, %RU64 bytes) as test #%RU32\n",
                 pThis->cTestsPlay, pTst->t.TestTone.Parms.msDuration, pTst->t.TestTone.u.Play.cbToRead,
                 pToneParms->Hdr.idxTest));
 
         const uint32_t cbBeacon = AudioTestBeaconGetSize(&pTst->t.TestTone.Beacon);
         if (cbBeacon)
-            LogRel2(("ValKit: Guest playback test #%RU32 includes 2 x %RU32 bytes of pre/post beacons\n",
-                     pThis->cTestsPlay, cbBeacon));
+            LogRel2(("ValKit: Test #%RU32: Uses x %RU32 bytes of pre/post beacons\n",
+                     pToneParms->Hdr.idxTest, cbBeacon));
 
         RTListAppend(&pThis->lstTestsPlay, &pTst->Node);
 
@@ -1057,7 +1057,12 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
         pThis->cbPlayedSilence = 0;
     }
 
-    LogRel4(("Playback audio data (%RU32 bytes):\n"
+    LogRel3(("ValKit: Test #%RU32: Playing stream '%s' (%RU32 bytes / %RU64ms) -- state is '%s' ...\n",
+             pTst->idxTest, pStream->pStream->Cfg.szName,
+             cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf),
+             AudioTestStateToStr(pTst->enmState)));
+
+    LogRel4(("ValKit: Playback audio data (%RU32 bytes):\n"
              "%.*Rhxd\n", cbBuf, cbBuf, pvBuf));
 
     if (pTst->enmState == AUDIOTESTSTATE_INIT) /* Test not started yet? */
@@ -1087,11 +1092,6 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
             pTst->enmState = AUDIOTESTSTATE_PRE;
         }
     }
-
-    LogRel3(("ValKit: Test #%RU32: Playing stream '%s' (%RU32 bytes / %RU64ms) -- state is '%s' ...\n",
-             pTst->idxTest, pStream->pStream->Cfg.szName,
-             cbBuf, PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbBuf),
-             AudioTestStateToStr(pTst->enmState)));
 
     uint32_t cbWritten = 0;
     uint8_t *auBuf     = (uint8_t *)pvBuf;
@@ -1283,7 +1283,7 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
         AssertRC(rc2);
     }
 
-    LogRel4(("Capture audio data (%RU32 bytes):\n"
+    LogRel4(("ValKit: Capture audio data (%RU32 bytes):\n"
              "%.*Rhxd\n", cbBuf, cbBuf, pvBuf));
 
     if (pTst == NULL) /* Empty list? */
