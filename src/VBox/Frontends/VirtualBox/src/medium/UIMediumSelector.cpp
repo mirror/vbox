@@ -114,9 +114,6 @@ QList<QUuid> UIMediumSelector::selectedMediumIds() const
 
 void UIMediumSelector::retranslateUi()
 {
-    if (m_pMainMenu)
-        m_pMainMenu->setTitle(tr("&Medium"));
-
     if (m_pCancelButton)
         m_pCancelButton->setText(tr("&Cancel"));
     if (m_pLeaveEmptyButton)
@@ -331,7 +328,12 @@ void UIMediumSelector::prepareWidgets()
     if (!m_pMainLayout || !menuBar())
         return;
 
-    m_pMainMenu = menuBar()->addMenu(tr("&Medium"));
+    if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_MediumSelector))
+    {
+        m_pMainMenu = m_pActionPool->action(UIActionIndex_M_MediumSelector)->menu();
+        if (m_pMainMenu)
+            menuBar()->addMenu(m_pMainMenu);
+    }
 
     m_pToolBar = new QIToolBar;
     if (m_pToolBar)
@@ -570,7 +572,7 @@ void UIMediumSelector::showEvent(QShowEvent *pEvent)
         /* On the basis of current host-screen geometry if possible: */
         const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
         if (screenGeometry.isValid())
-            proposedSize = screenGeometry.size() * 5 / 15;
+            proposedSize = screenGeometry.size() / 2.5;
     }
     /* Fallback to default size if we failed: */
     if (proposedSize.isNull())
