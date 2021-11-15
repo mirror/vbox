@@ -406,30 +406,24 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     /*
      * Setup the base ram (PGM).
      */
-    pVM->mm.s.cbRamHole = cbRamHole;
+    pVM->mm.s.cbRamHole     = cbRamHole;
+    pVM->mm.s.cbRamBelow4GB = cbRam > offRamHole ? offRamHole         : cbRam;
+    pVM->mm.s.cbRamAbove4GB = cbRam > offRamHole ? cbRam - offRamHole : 0;
 
     /* First the conventional memory: */
     rc = PGMR3PhysRegisterRam(pVM, 0, RT_MIN(cbRam, 640*_1K), "Conventional RAM");
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) && cbRam >= _1M)
     {
-        /* The extended memory from 1MiB up to 4GiB: */
-        if (cbRam > offRamHole)
+        /* The extended memory from 1MiB to 2MiB to align better with large pages in NEM mode: */
+        rc = PGMR3PhysRegisterRam(pVM, _1M, RT_MIN(_1M, cbRam - _1M), "Extended RAM, 1-2MB");
+        if (cbRam > _2M)
         {
-            pVM->mm.s.cbRamBelow4GB = offRamHole;
-            rc = PGMR3PhysRegisterRam(pVM, _1M, offRamHole - _1M, "Extended RAM");
-            if (RT_SUCCESS(rc))
-            {
-                /* Then all the memory above 4GiB: */
-                pVM->mm.s.cbRamAbove4GB = cbRam - offRamHole;
+            /* The extended memory from 2MiB up to 4GiB: */
+            rc = PGMR3PhysRegisterRam(pVM, _2M, pVM->mm.s.cbRamBelow4GB - _2M, "Extended RAM, >2MB");
+
+            /* Then all the memory above 4GiB: */
+            if (RT_SUCCESS(rc) && pVM->mm.s.cbRamAbove4GB > 0)
                 rc = PGMR3PhysRegisterRam(pVM, _4G, cbRam - offRamHole, "Above 4GB Base RAM");
-            }
-        }
-        else
-        {
-            pVM->mm.s.cbRamBelow4GB = cbRam;
-            pVM->mm.s.cbRamAbove4GB = 0;
-            if (cbRam > _1M)
-                rc = PGMR3PhysRegisterRam(pVM, _1M, cbRam - _1M, "Extended RAM");
         }
     }
 
