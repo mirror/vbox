@@ -1782,25 +1782,16 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     {
         /*
          * The PGMRAMRANGE structures for the high memory can get very big.
-         * In order to avoid SUPR3PageAllocEx allocation failures due to the
-         * allocation size limit there and also to avoid being unable to find
-         * guest mapping space for them, we split this memory up into 4MB in
-         * (potential) raw-mode configs and 16MB chunks in forced AMD-V/VT-x
-         * mode.
-         *
-         * The first and last page of each mapping are guard pages and marked
-         * not-present. So, we've got 4186112 and 16769024 bytes available for
-         * the PGMRAMRANGE structure.
+         * There used to be some limitations on SUPR3PageAllocEx allocation
+         * sizes, so traditionally we limited this to 16MB chunks. These days
+         * we do ~64 MB chunks each covering 16GB of guest RAM, making sure
+         * each range is a multiple of 1GB to enable eager hosts to use 1GB
+         * pages in NEM mode.
          *
          * See also pgmR3PhysMmio2CalcChunkCount.
-         *
-         * Note! The sizes used here will influence the saved state.
          */
-        uint32_t cbChunk = _16M;
-        uint32_t cPagesPerChunk = 1047552; /* max ~1048059 */
-        Assert(cPagesPerChunk / 512 * 512 == cPagesPerChunk); /* NEM large page requirement */
-        AssertCompile(sizeof(PGMRAMRANGE) + sizeof(PGMPAGE) * 1047552 < _16M - PAGE_SIZE * 2);
-        AssertRelease(RT_UOFFSETOF_DYN(PGMRAMRANGE, aPages[cPagesPerChunk]) + PAGE_SIZE * 2 <= cbChunk);
+        uint32_t const cPagesPerChunk = _4M;
+        Assert(RT_ALIGN_32(cPagesPerChunk, X86_PD_PAE_SHIFT - X86_PAGE_SHIFT)); /* NEM large page requirement: 1GB pages. */
 
         RTGCPHYS cPagesLeft  = cPages;
         RTGCPHYS GCPhysChunk = GCPhys;
@@ -2709,16 +2700,12 @@ static uint16_t pgmR3PhysMmio2CalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pcP
      *
      * Note! In additions, we've got a 24 bit sub-page range for MMIO2 ranges, leaving
      *       us with an absolute maximum of 16777215 pages per chunk (close to 64 GB).
-     *
-     * P.S. If we want to include a dirty bitmap, we'd have to drop down to 1040384 pages.
      */
-    uint32_t cbChunk = _16M;
-    uint32_t cPagesPerChunk = 1047552; /* max ~1048059 */
-    Assert(cPagesPerChunk / 64 * 64   == cPagesPerChunk); /* (NEM requirement) */
-    Assert(cPagesPerChunk / 512 * 512 == cPagesPerChunk); /* (NEM large page requirement) */
-    AssertCompile(sizeof(PGMREGMMIO2RANGE) + sizeof(PGMPAGE) * 1047552 < _16M - PAGE_SIZE * 2);
-    AssertRelease(cPagesPerChunk <= PGM_MMIO2_MAX_PAGE_COUNT); /* See above note. */
-    AssertRelease(RT_UOFFSETOF_DYN(PGMREGMMIO2RANGE, RamRange.aPages[cPagesPerChunk]) + PAGE_SIZE * 2 <= cbChunk);
+    uint32_t const cPagesPerChunk = _4M;
+    Assert(RT_ALIGN_32(cPagesPerChunk, X86_PD_PAE_SHIFT - X86_PAGE_SHIFT)); /* NEM large page requirement: 1GB pages. */
+    uint32_t const cbChunk       = RT_UOFFSETOF_DYN(PGMREGMMIO2RANGE, RamRange.aPages[cPagesPerChunk]);
+    AssertRelease(cPagesPerChunk < _16M);
+
     if (pcbChunk)
         *pcbChunk = cbChunk;
     if (pcPagesPerChunk)
