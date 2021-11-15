@@ -49,6 +49,7 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #ifndef IN_SUP_HARDENED_R3
+# include <iprt/env.h>
 # include <iprt/x86.h>
 # include <iprt/ldr.h>
 #endif
@@ -644,8 +645,8 @@ static int suplibOsStartService(void)
 
     return rc;
 }
-#endif /* !IN_SUP_HARDENED_R3 */
 
+#endif /* !IN_SUP_HARDENED_R3 */
 
 DECLHIDDEN(int) suplibOsTerm(PSUPLIBDATA pThis)
 {
@@ -661,7 +662,6 @@ DECLHIDDEN(int) suplibOsTerm(PSUPLIBDATA pThis)
 
     return VINF_SUCCESS;
 }
-
 
 #ifndef IN_SUP_HARDENED_R3
 
@@ -727,6 +727,77 @@ DECLHIDDEN(int) suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintpt
 DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
 {
     NOREF(pThis);
+
+    /*
+     * Do some one-time init here wrt large pages.
+     *
+     * Large pages requires the SeLockMemoryPrivilege, which by default (Win10,
+     * Win11) isn't even enabled and must be gpedit'ed to be adjustable here.
+     */
+    if (!(cPages & 511))
+    {
+        static int volatile s_fCanDoLargePages = -1;
+        int fCanDoLargePages = s_fCanDoLargePages;
+        if (s_fCanDoLargePages != -1)
+        { /* likely */ }
+        else if (RTEnvExistsUtf8("VBOX_DO_NOT_USE_LARGE_PAGES")) /** @todo add flag for this instead? */
+            s_fCanDoLargePages = fCanDoLargePages = 0;
+        else
+        {
+            HANDLE hToken = NULL;
+            if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &hToken))
+            {
+                union
+                {
+                    TOKEN_PRIVILEGES s;
+                    uint8_t abPadding[RT_UOFFSETOF(TOKEN_PRIVILEGES, Privileges) + sizeof(LUID_AND_ATTRIBUTES)];
+                } Privileges;
+                RT_ZERO(Privileges);
+                Privileges.s.PrivilegeCount = 1;
+                Privileges.s.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+                if (LookupPrivilegeValueW(NULL, L"SeLockMemoryPrivilege", &Privileges.s.Privileges[0].Luid))
+                    AdjustTokenPrivileges(hToken, FALSE, &Privileges.s, 0, NULL, NULL);
+                else
+                    AssertFailed();
+                CloseHandle(hToken);
+            }
+            else
+                AssertFailed();
+            s_fCanDoLargePages = fCanDoLargePages = -2;
+        }
+
+        /*
+         * Try allocate with large pages.
+         */
+        if (fCanDoLargePages != 0)
+        {
+            *ppvPages = VirtualAlloc(NULL, (size_t)cPages << PAGE_SHIFT, MEM_COMMIT | MEM_LARGE_PAGES, PAGE_EXECUTE_READWRITE);
+            if (*ppvPages)
+            {
+                if (fCanDoLargePages == -2)
+                {
+                    s_fCanDoLargePages = 1;
+                    LogRel(("SUPLib: MEM_LARGE_PAGES works!\n"));
+                }
+                LogRel2(("SUPLib: MEM_LARGE_PAGES for %p LB %p\n", *ppvPages, (size_t)cPages << PAGE_SHIFT));
+                return VINF_SUCCESS;
+            }
+
+            /* This can happen if the above AdjustTokenPrivileges failed (non-admin
+               user), or if the privilege isn't present in the token (need gpedit). */
+            if (GetLastError() == ERROR_PRIVILEGE_NOT_HELD)
+            {
+                LogRel(("SUPLib: MEM_LARGE_PAGES privilege not held.\n"));
+                s_fCanDoLargePages = 0;
+            }
+            else
+                LogRel2(("SUPLib: MEM_LARGE_PAGES allocation failed with odd status: %u\n", GetLastError()));
+        }
+    }
+
+    /*
+     * Do a regular allocation w/o large pages.
+     */
     *ppvPages = VirtualAlloc(NULL, (size_t)cPages << PAGE_SHIFT, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
     if (*ppvPages)
         return VINF_SUCCESS;

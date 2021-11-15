@@ -2424,7 +2424,7 @@ VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * do the actual stopping).  While there is certainly a race between cancelation
  * and the CPU causing a natural VMEXIT, it is not known whether this still
  * causes extra work on subsequent WHvRunVirtualProcessor calls (it did in and
- * earlier 17134).
+ * earlier than 17134).
  *
  * Registers are retrieved and set via WHvGetVirtualProcessorRegisters and
  * WHvSetVirtualProcessorRegisters.  In addition, several VMEXITs include
@@ -2759,6 +2759,23 @@ VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled)
  *
  *   Update: All concerns have been addressed in build 17110.
  *
+ *
+ * @section sec_nem_win_large_pages     Large Pages
+ *
+ * We've got a standalone memory allocation and access testcase bs3-memalloc-1
+ * which was run with 48GiB of guest RAM configured on a NUC 11 box running
+ * Windows 11 GA.  In the simplified NEM memory mode no exits should be
+ * generated while the access tests are running.
+ *
+ * The bs3-memalloc-1 results kind of hints at some tiny speed-up if the guest
+ * RAM is allocated using the MEM_LARGE_PAGES flag, but only in the 3rd access
+ * check (typical 350 000 MiB/s w/o and around 400 000 MiB/s).  The result for
+ * the 2nd access varies a lot, perhaps hinting at some table optimizations
+ * going on.
+ *
+ * The initial access where the memory is locked/whatever has absolutely horrid
+ * results regardless of whether large pages are enabled or not. Typically
+ * bobbing close to 500 MiB/s, non-large pages a little faster.
  *
  *
  * @section sec_nem_win_impl    Our implementation.
