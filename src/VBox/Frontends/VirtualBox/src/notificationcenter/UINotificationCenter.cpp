@@ -150,9 +150,9 @@ UINotificationCenter::UINotificationCenter(QWidget *pParent)
     , m_enmOrder(Qt::AscendingOrder)
     , m_pLayoutMain(0)
     , m_pLayoutButtons(0)
-    , m_pOpenButton(0)
-    , m_pKeepButton(0)
-    , m_pRemoveFinishedButton(0)
+    , m_pButtonOpen(0)
+    , m_pButtonKeepFinished(0)
+    , m_pButtonRemoveFinished(0)
     , m_pLayoutItems(0)
     , m_pStateMachineSliding(0)
     , m_iAnimatedValue(0)
@@ -191,8 +191,8 @@ void UINotificationCenter::setParent(QWidget *pParent)
 void UINotificationCenter::invoke()
 {
     /* Open if center isn't opened yet: */
-    if (!m_pOpenButton->isChecked())
-        m_pOpenButton->animateClick();
+    if (!m_pButtonOpen->isChecked())
+        m_pButtonOpen->animateClick();
 }
 
 QUuid UINotificationCenter::append(UINotificationObject *pObject)
@@ -211,7 +211,7 @@ QUuid UINotificationCenter::append(UINotificationObject *pObject)
     const QUuid uId = m_pModel->appendObject(pObject);
 
     /* If object is critical and center isn't opened yet: */
-    if (!m_pOpenButton->isChecked() && fCritical)
+    if (!m_pButtonOpen->isChecked() && fCritical)
     {
         /* We should delay progresses for a bit: */
         const int iDelay = fProgress ? 2000 : 0;
@@ -276,12 +276,12 @@ bool UINotificationCenter::handleNow(UINotificationProgress *pProgress)
 
 void UINotificationCenter::retranslateUi()
 {
-    if (m_pOpenButton)
-        m_pOpenButton->setToolTip(tr("Open notification center"));
-    if (m_pKeepButton)
-        m_pKeepButton->setToolTip(tr("Keep finished progresses"));
-    if (m_pRemoveFinishedButton)
-        m_pRemoveFinishedButton->setToolTip(tr("Delete finished notifications"));
+    if (m_pButtonOpen)
+        m_pButtonOpen->setToolTip(tr("Open notification center"));
+    if (m_pButtonKeepFinished)
+        m_pButtonKeepFinished->setToolTip(tr("Keep finished progresses"));
+    if (m_pButtonRemoveFinished)
+        m_pButtonRemoveFinished->setToolTip(tr("Delete finished notifications"));
 }
 
 bool UINotificationCenter::eventFilter(QObject *pObject, QEvent *pEvent)
@@ -387,15 +387,15 @@ void UINotificationCenter::sltHandleOpenTimerTimeout()
     m_pTimerOpen->stop();
 
     /* Check whether we really closed: */
-    if (m_pOpenButton->isChecked())
+    if (m_pButtonOpen->isChecked())
         return;
 
     /* Check whether message with particular ID exists: */
     if (!m_pModel->hasObject(m_uOpenObjectId))
         return;
 
-    /* Toggle open-button: */
-    m_pOpenButton->animateClick();
+    /* Toggle open button: */
+    m_pButtonOpen->animateClick();
 }
 
 void UINotificationCenter::sltModelChanged()
@@ -422,8 +422,8 @@ void UINotificationCenter::sltModelChanged()
 
     /* Hide and slide away if there are no notifications to show: */
     setHidden(m_pModel->ids().isEmpty());
-    if (m_pModel->ids().isEmpty() && m_pOpenButton->isChecked())
-        m_pOpenButton->toggle();
+    if (m_pModel->ids().isEmpty() && m_pButtonOpen->isChecked())
+        m_pButtonOpen->toggle();
 }
 
 void UINotificationCenter::sltHandleProgressFinished()
@@ -484,37 +484,37 @@ void UINotificationCenter::prepareWidgets()
         {
             m_pLayoutButtons->setContentsMargins(0, 0, 0, 0);
 
-            /* Prepare open-button: */
-            m_pOpenButton = new QIToolButton(this);
-            if (m_pOpenButton)
+            /* Prepare open button: */
+            m_pButtonOpen = new QIToolButton(this);
+            if (m_pButtonOpen)
             {
-                m_pOpenButton->setIcon(UIIconPool::iconSet(":/reset_warnings_16px.png"));
-                m_pOpenButton->setCheckable(true);
-                connect(m_pOpenButton, &QIToolButton::toggled, this, &UINotificationCenter::sltHandleOpenButtonToggled);
-                m_pLayoutButtons->addWidget(m_pOpenButton);
+                m_pButtonOpen->setIcon(UIIconPool::iconSet(":/reset_warnings_16px.png"));
+                m_pButtonOpen->setCheckable(true);
+                connect(m_pButtonOpen, &QIToolButton::toggled, this, &UINotificationCenter::sltHandleOpenButtonToggled);
+                m_pLayoutButtons->addWidget(m_pButtonOpen);
             }
 
             /* Add stretch: */
             m_pLayoutButtons->addStretch(1);
 
-            /* Prepare keep-button: */
-            m_pKeepButton = new QIToolButton(this);
-            if (m_pKeepButton)
+            /* Prepare keep-finished button: */
+            m_pButtonKeepFinished = new QIToolButton(this);
+            if (m_pButtonKeepFinished)
             {
-                m_pKeepButton->setIcon(UIIconPool::iconSet(":/pin_16px.png"));
-                m_pKeepButton->setCheckable(true);
-                m_pKeepButton->setChecked(gEDataManager->keepSuccessfullNotificationProgresses());
-                connect(m_pKeepButton, &QIToolButton::toggled, this, &UINotificationCenter::sltHandleKeepButtonToggled);
-                m_pLayoutButtons->addWidget(m_pKeepButton);
+                m_pButtonKeepFinished->setIcon(UIIconPool::iconSet(":/pin_16px.png"));
+                m_pButtonKeepFinished->setCheckable(true);
+                m_pButtonKeepFinished->setChecked(gEDataManager->keepSuccessfullNotificationProgresses());
+                connect(m_pButtonKeepFinished, &QIToolButton::toggled, this, &UINotificationCenter::sltHandleKeepButtonToggled);
+                m_pLayoutButtons->addWidget(m_pButtonKeepFinished);
             }
 
-            /* Prepare remove-finished-button: */
-            m_pRemoveFinishedButton = new QIToolButton(this);
-            if (m_pRemoveFinishedButton)
+            /* Prepare remove-finished button: */
+            m_pButtonRemoveFinished = new QIToolButton(this);
+            if (m_pButtonRemoveFinished)
             {
-                m_pRemoveFinishedButton->setIcon(UIIconPool::iconSet(":/edata_remove_16px_x3.png"));
-                connect(m_pRemoveFinishedButton, &QIToolButton::clicked, this, &UINotificationCenter::sltHandleRemoveFinishedButtonClicked);
-                m_pLayoutButtons->addWidget(m_pRemoveFinishedButton);
+                m_pButtonRemoveFinished->setIcon(UIIconPool::iconSet(":/edata_remove_16px_x3.png"));
+                connect(m_pButtonRemoveFinished, &QIToolButton::clicked, this, &UINotificationCenter::sltHandleRemoveFinishedButtonClicked);
+                m_pLayoutButtons->addWidget(m_pButtonRemoveFinished);
             }
 
             /* Add to layout: */
@@ -728,7 +728,7 @@ void UINotificationCenter::adjustGeometry()
     /* Acquire minimum button width (including margins manually): */
     int iL, iT, iR, iB;
     m_pLayoutMain->getContentsMargins(&iL, &iT, &iR, &iB);
-    const int iMinimumButtonWidth = m_pOpenButton->minimumSizeHint().width() + iL + iR;
+    const int iMinimumButtonWidth = m_pButtonOpen->minimumSizeHint().width() + iL + iR;
 
     /* Make sure we have some default width if there is no contents: */
     iMinimumWidth = qMax(iMinimumWidth, 200);
@@ -743,7 +743,7 @@ void UINotificationCenter::adjustMask()
     /* We do include open-button mask only if center is opened or animated to be: */
     QRegion region;
     if (!m_iAnimatedValue)
-        region += QRect(m_pOpenButton->mapToParent(QPoint(0, 0)), m_pOpenButton->size());
+        region += QRect(m_pButtonOpen->mapToParent(QPoint(0, 0)), m_pButtonOpen->size());
     setMask(region);
 }
 

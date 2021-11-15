@@ -161,12 +161,12 @@ private:
     QVBoxLayout  *m_pLayoutMain;
     /** Holds the buttons layout instance. */
     QHBoxLayout  *m_pLayoutButtons;
-    /** Holds the open-button instance. */
-    QIToolButton *m_pOpenButton;
-    /** Holds the keep-button instance. */
-    QIToolButton *m_pKeepButton;
-    /** Holds the remove-finished-button instance. */
-    QIToolButton *m_pRemoveFinishedButton;
+    /** Holds the open button instance. */
+    QIToolButton *m_pButtonOpen;
+    /** Holds the keep-finished button instance. */
+    QIToolButton *m_pButtonKeepFinished;
+    /** Holds the remove-finished button instance. */
+    QIToolButton *m_pButtonRemoveFinished;
     /** Holds the items layout instance. */
     QVBoxLayout  *m_pLayoutItems;
 
