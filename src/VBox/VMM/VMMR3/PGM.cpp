@@ -1220,6 +1220,7 @@ static int pgmR3InitStats(PVM pVM)
 #endif
 
     PGM_REG_PROFILE_NS(&pPGM->StatLargePageAlloc,               "/PGM/LargePage/Alloc",               "Time spent by the host OS for large page allocation.");
+    PGM_REG_COUNTER(&pPGM->StatLargePageAllocFailed,            "/PGM/LargePage/AllocFailed",         "Number of allocation failures.");
     PGM_REG_COUNTER(&pPGM->StatLargePageOverflow,               "/PGM/LargePage/Overflow",            "The number of times allocating a large page took too long.");
     PGM_REG_COUNTER(&pPGM->StatLargePageTlbFlush,               "/PGM/LargePage/TlbFlush",            "The number of times a full VCPU TLB flush was required after a large allocation.");
     PGM_REG_COUNTER(&pPGM->StatLargePageZeroEvict,              "/PGM/LargePage/ZeroEvict",           "The number of zero page mappings we had to evict when allocating a large page.");
