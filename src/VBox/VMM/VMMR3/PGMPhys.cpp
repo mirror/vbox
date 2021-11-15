@@ -1792,11 +1792,14 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
          * not-present. So, we've got 4186112 and 16769024 bytes available for
          * the PGMRAMRANGE structure.
          *
+         * See also pgmR3PhysMmio2CalcChunkCount.
+         *
          * Note! The sizes used here will influence the saved state.
          */
         uint32_t cbChunk = 16U*_1M;
-        uint32_t cPagesPerChunk = 1048048; /* max ~1048059 */
-        AssertCompile(sizeof(PGMRAMRANGE) + sizeof(PGMPAGE) * 1048048 < 16U*_1M - PAGE_SIZE * 2);
+        uint32_t cPagesPerChunk = 1047552; /* max ~1048059 */
+        Assert(cPagesPerChunk / 512 * 512 == cPagesPerChunk); /* NEM large page requirement */
+        AssertCompile(sizeof(PGMRAMRANGE) + sizeof(PGMPAGE) * 1047552 < 16U*_1M - PAGE_SIZE * 2);
         AssertRelease(RT_UOFFSETOF_DYN(PGMRAMRANGE, aPages[cPagesPerChunk]) + PAGE_SIZE * 2 <= cbChunk);
 
         RTGCPHYS cPagesLeft  = cPages;
@@ -2709,10 +2712,11 @@ static uint16_t pgmR3PhysMmio2CalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pcP
      *
      * P.S. If we want to include a dirty bitmap, we'd have to drop down to 1040384 pages.
      */
-    uint32_t cbChunk = 16U*_1M;
-    uint32_t cPagesPerChunk = 1048000; /* max ~1048059 */
-    Assert(cPagesPerChunk / 64 * 64 == cPagesPerChunk); /* (NEM requirement) */
-    AssertCompile(sizeof(PGMREGMMIO2RANGE) + sizeof(PGMPAGE) * 1048000 < 16U*_1M - PAGE_SIZE * 2);
+    uint32_t cbChunk = _16M;
+    uint32_t cPagesPerChunk = 1047552; /* max ~1048059 */
+    Assert(cPagesPerChunk / 64 * 64   == cPagesPerChunk); /* (NEM requirement) */
+    Assert(cPagesPerChunk / 512 * 512 == cPagesPerChunk); /* (NEM large page requirement) */
+    AssertCompile(sizeof(PGMREGMMIO2RANGE) + sizeof(PGMPAGE) * 1047552 < _16M - PAGE_SIZE * 2);
     AssertRelease(cPagesPerChunk <= PGM_MMIO2_MAX_PAGE_COUNT); /* See above note. */
     AssertRelease(RT_UOFFSETOF_DYN(PGMREGMMIO2RANGE, RamRange.aPages[cPagesPerChunk]) + PAGE_SIZE * 2 <= cbChunk);
     if (pcbChunk)
