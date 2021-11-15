@@ -68,8 +68,7 @@ typedef struct SELFTESTCTX
 {
     /** Common tag for guest and host side. */
     char             szTag[AUDIOTEST_TAG_MAX];
-    /** Whether to use DrvAudio in the driver stack or not. */
-    bool             fWithDrvAudio;
+    /** The driver stack in use. */
     AUDIOTESTDRVSTACK DrvStack;
     /** Audio driver to use.
      *  Defaults to the platform's default driver. */
@@ -331,6 +330,7 @@ static const RTGETOPTDEF s_aCmdSelftestOptions[] =
     { "--exclude-all",      'a',                                RTGETOPT_REQ_NOTHING },
     { "--backend",          'b',                                RTGETOPT_REQ_STRING  },
     { "--with-drv-audio",   'd',                                RTGETOPT_REQ_NOTHING },
+    { "--with-mixer",       'm',                                RTGETOPT_REQ_NOTHING },
     { "--exclude",          'e',                                RTGETOPT_REQ_UINT32  },
     { "--include",          'i',                                RTGETOPT_REQ_UINT32  }
 };
@@ -345,6 +345,7 @@ static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
         case 'd': return "Go via DrvAudio instead of directly interfacing with the backend";
         case 'e': return "Exclude the given test id from the list";
         case 'i': return "Include the given test id in the list";
+        case 'm': return "Use the internal mixing engine explicitly";
         default:  return NULL;
     }
 }
@@ -358,6 +359,12 @@ static DECLCALLBACK(const char *) audioTestCmdSelftestHelp(PCRTGETOPTDEF pOpt)
 DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
 {
     RT_ZERO(g_Ctx);
+
+    audioTestEnvInit(&g_Ctx.Guest.TstEnv);
+    audioTestEnvInit(&g_Ctx.Host.TstEnv);
+
+    AUDIOTESTIOOPTS IoOpts;
+    audioTestIoOptsInitDefaults(&IoOpts);
 
     /* Argument processing loop: */
     int           rc;
@@ -378,7 +385,7 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
                 break;
 
             case 'd':
-                g_Ctx.fWithDrvAudio = true;
+                IoOpts.fWithDrvAudio = true;
                 break;
 
             case 'e':
@@ -393,12 +400,21 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
                 g_aTests[ValueUnion.u32].fExcluded = false;
                 break;
 
+            case 'm':
+                IoOpts.fWithMixer = true;
+                break;
+
             AUDIO_TEST_COMMON_OPTION_CASES(ValueUnion);
 
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
         }
     }
+
+    /* For simplicity both test environments, guest and host, will have the same I/O options.
+     ** @todo Make this indepedent by a prefix, "--[guest|host]-<option>" -> e.g. "--guest-with-drv-audio". */
+    memcpy(&g_Ctx.Guest.TstEnv.IoOpts, &IoOpts, sizeof(AUDIOTESTIOOPTS));
+    memcpy(&g_Ctx.Host.TstEnv.IoOpts,  &IoOpts, sizeof(AUDIOTESTIOOPTS));
 
     rc = AudioTestDriverStackPerformSelftest();
     if (RT_FAILURE(rc))
@@ -418,7 +434,7 @@ DECLCALLBACK(RTEXITCODE) audioTestCmdSelftestHandler(PRTGETOPTSTATE pGetState)
      * Choosing any other backend than the Validation Kit above *will* break this self-test!
      */
     rc = audioTestDriverStackInitEx(&g_Ctx.DrvStack, g_Ctx.pDrvReg,
-                                    true /* fEnabledIn */, true /* fEnabledOut */, g_Ctx.fWithDrvAudio);
+                                    true /* fEnabledIn */, true /* fEnabledOut */, g_Ctx.Host.TstEnv.IoOpts.fWithDrvAudio);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unable to init driver stack: %Rrc\n", rc);
 
