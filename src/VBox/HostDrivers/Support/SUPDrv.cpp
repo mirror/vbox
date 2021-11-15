@@ -207,7 +207,7 @@ CountFunctionArguments(RetType(RTCALL *)(Types ...))
  * @{ */
 #define SUPEXP_CUSTOM(a_cArgs, a_Name, a_Value) { #a_Name,       a_cArgs,                            (void *)(uintptr_t)(a_Value) }
 #define SUPEXP_STK_OKAY(a_cArgs, a_Name)        { #a_Name,       SUPEXP_CHECK_ARGS(a_cArgs, a_Name), (void *)(uintptr_t)a_Name }
-#ifdef RT_OS_DARWIN
+#if 0
 # define SUPEXP_STK_BACK(a_cArgs, a_Name)  { "StkBack_" #a_Name, SUPEXP_CHECK_ARGS(a_cArgs, a_Name), (void *)(uintptr_t)a_Name }
 # define SUPEXP_STK_BACKF(a_cArgs, a_Name) { "StkBack_" #a_Name, SUPEXP_CHECK_ARGS(a_cArgs, a_Name), (void *)(uintptr_t)a_Name }
 #else
