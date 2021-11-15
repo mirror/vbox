@@ -2487,6 +2487,271 @@ protected:
     }
 };
 
+/** Menu action extension, used as 'Menu Selector' menu class. */
+class UIActionMenuMediumSelector : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuMediumSelector(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("MediumSelector");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Medium Selector"));
+    }
+};
+
+/** Simple action extension, used as 'Add' action class. */
+class UIActionMenuMediumSelectorAddHD  : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuMediumSelectorAddHD(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/hd_add_32px.png",  ":/hd_add_16px.png",
+                         ":/hd_add_disabled_32px.png", ":/hd_add_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Add");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Add..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
+        setStatusTip(QApplication::translate("UIActionPool", "Add existing disk image file"));
+        setToolTip(  QApplication::translate("UIActionPool", "Add Existing Disk Image File")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Add' action class. */
+class UIActionMenuMediumSelectorAddCD  : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuMediumSelectorAddCD(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/cd_add_32px.png",  ":/cd_add_16px.png",
+                         ":/cd_add_disabled_32px.png", ":/cd_add_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Add");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Add..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
+        setStatusTip(QApplication::translate("UIActionPool", "Add existing disk image file"));
+        setToolTip(  QApplication::translate("UIActionPool", "Add Existing Disk Image File")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Add' action class. */
+class UIActionMenuMediumSelectorAddFD  : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuMediumSelectorAddFD(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/fd_add_32px.png",  ":/fd_add_16px.png",
+                         ":/fd_add_disabled_32px.png", ":/fd_add_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Add");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Add..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
+        setStatusTip(QApplication::translate("UIActionPool", "Add existing disk image file"));
+        setToolTip(  QApplication::translate("UIActionPool", "Add Existing Disk Image File")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Create' action class. */
+class UIActionMenuMediumSelectorCreateHD  : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuMediumSelectorCreateHD(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/hd_create_32px.png",  ":/hd_create_16px.png",
+                         ":/hd_create_disabled_32px.png", ":/hd_create_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Create");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Create..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create a new disk image file"));
+        setToolTip(  QApplication::translate("UIActionPool", "Create a New Disk Image File")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Create' action class. */
+class UIActionMenuMediumSelectorCreateCD  : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuMediumSelectorCreateCD(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/cd_create_32px.png",  ":/cd_create_16px.png",
+                         ":/cd_create_disabled_32px.png", ":/cd_create_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Create");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Create..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create a new disk image file"));
+        setToolTip(  QApplication::translate("UIActionPool", "Create a New Disk Image File")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Create' action class. */
+class UIActionMenuMediumSelectorCreateFD  : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuMediumSelectorCreateFD(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/fd_create_32px.png",  ":/fd_create_16px.png",
+                         ":/fd_create_disabled_32px.png", ":/fd_create_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Create");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Create..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create a new disk image file"));
+        setToolTip(  QApplication::translate("UIActionPool", "Create a New Disk Image File")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
+/** Simple action extension, used as 'Create' action class. */
+class UIActionMenuMediumSelectorRefresh  : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuMediumSelectorRefresh(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/refresh_32px.png",  ":/refresh_16px.png",
+                         ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("Create");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Create..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create a new disk image file"));
+        setToolTip(  QApplication::translate("UIActionPool", "Create a New Disk Image File")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
+
 /** Menu action extension, used as 'Activity' menu class. */
 class UIActionMenuSelectorActivity : public UIActionMenu
 {
@@ -2875,6 +3140,16 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_VISOCreator_CreateNewDirectory] = new UIActionMenuVISOCreatorCreateNewDirectory(this);
     m_pool[UIActionIndex_M_VISOCreator_Rename] = new UIActionMenuVISOCreatorRename(this);
     m_pool[UIActionIndex_M_VISOCreator_Reset] = new UIActionMenuVISOCreatorReset(this);
+
+    /* Medium Selector actions: */
+    m_pool[UIActionIndex_M_MediumSelector] = new UIActionMenuMediumSelector(this);
+    m_pool[UIActionIndex_M_MediumSelector_AddHD] = new UIActionMenuMediumSelectorAddHD(this);
+    m_pool[UIActionIndex_M_MediumSelector_AddCD] = new UIActionMenuMediumSelectorAddCD(this);
+    m_pool[UIActionIndex_M_MediumSelector_AddFD] = new UIActionMenuMediumSelectorAddFD(this);
+    m_pool[UIActionIndex_M_MediumSelector_CreateHD] = new UIActionMenuMediumSelectorCreateHD(this);
+    m_pool[UIActionIndex_M_MediumSelector_CreateCD] = new UIActionMenuMediumSelectorCreateCD(this);
+    m_pool[UIActionIndex_M_MediumSelector_CreateFD] = new UIActionMenuMediumSelectorCreateFD(this);
+    m_pool[UIActionIndex_M_MediumSelector_Refresh] = new UIActionMenuMediumSelectorRefresh(this);
 
     /* Prepare update-handlers for known menus: */
 #ifdef VBOX_WS_MAC

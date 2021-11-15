@@ -147,6 +147,16 @@ enum UIActionIndex
     UIActionIndex_M_VISOCreator_Rename,
     UIActionIndex_M_VISOCreator_Reset,
 
+    /* Medium selector actions : */
+    UIActionIndex_M_MediumSelector,
+    UIActionIndex_M_MediumSelector_AddHD,
+    UIActionIndex_M_MediumSelector_AddFD,
+    UIActionIndex_M_MediumSelector_AddCD,
+    UIActionIndex_M_MediumSelector_CreateHD,
+    UIActionIndex_M_MediumSelector_CreateCD,
+    UIActionIndex_M_MediumSelector_CreateFD,
+    UIActionIndex_M_MediumSelector_Refresh,
+
     /* Maximum index: */
     UIActionIndex_Max
 };
