@@ -2777,6 +2777,104 @@ VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled)
  * results regardless of whether large pages are enabled or not. Typically
  * bobbing close to 500 MiB/s, non-large pages a little faster.
  *
+ * NEM w/ simplified memory and MEM_LARGE_PAGES:
+ * @verbatim
+bs3-memalloc-1: TESTING...
+bs3-memalloc-1: #0/0x0: 0x0000000000000000 LB 0x000000000009fc00 USABLE (1)
+bs3-memalloc-1: #1/0x1: 0x000000000009fc00 LB 0x0000000000000400 RESERVED (2)
+bs3-memalloc-1: #2/0x2: 0x00000000000f0000 LB 0x0000000000010000 RESERVED (2)
+bs3-memalloc-1: #3/0x3: 0x0000000000100000 LB 0x00000000dfef0000 USABLE (1)
+bs3-memalloc-1: #4/0x4: 0x00000000dfff0000 LB 0x0000000000010000 ACPI_RECLAIMABLE (3)
+bs3-memalloc-1: #5/0x5: 0x00000000fec00000 LB 0x0000000000001000 RESERVED (2)
+bs3-memalloc-1: #6/0x6: 0x00000000fee00000 LB 0x0000000000001000 RESERVED (2)
+bs3-memalloc-1: #7/0x7: 0x00000000fffc0000 LB 0x0000000000040000 RESERVED (2)
+bs3-memalloc-1: #8/0x9: 0x0000000100000000 LB 0x0000000b20000000 USABLE (1)
+bs3-memalloc-1: Found 1 interesting entries covering 0xb20000000 bytes (44 GB).
+bs3-memalloc-1: From 0x100000000 to 0xc20000000
+bs3-memalloc-1: INT15h/E820                                                 : PASSED
+bs3-memalloc-1: Mapping memory above 4GB                                    : PASSED
+bs3-memalloc-1:   Pages                                                     :       11 665 408 pages
+bs3-memalloc-1:   MiBs                                                      :           45 568 MB
+bs3-memalloc-1:   Alloc elapsed                                             :   90 925 263 996 ns
+bs3-memalloc-1:   Alloc elapsed in ticks                                    :  272 340 387 336 ticks
+bs3-memalloc-1:   Page alloc time                                           :            7 794 ns/page
+bs3-memalloc-1:   Page alloc time in ticks                                  :           23 345 ticks/page
+bs3-memalloc-1:   Alloc thruput                                             :          128 296 pages/s
+bs3-memalloc-1:   Alloc thruput in MiBs                                     :              501 MB/s
+bs3-memalloc-1: Allocation speed                                            : PASSED
+bs3-memalloc-1:   Access elapsed                                            :   85 074 483 467 ns
+bs3-memalloc-1:   Access elapsed in ticks                                   :  254 816 088 412 ticks
+bs3-memalloc-1:   Page access time                                          :            7 292 ns/page
+bs3-memalloc-1:   Page access time in ticks                                 :           21 843 ticks/page
+bs3-memalloc-1:   Access thruput                                            :          137 119 pages/s
+bs3-memalloc-1:   Access thruput in MiBs                                    :              535 MB/s
+bs3-memalloc-1: 2nd access                                                  : PASSED
+bs3-memalloc-1:   Access elapsed                                            :      112 963 925 ns
+bs3-memalloc-1:   Access elapsed in ticks                                   :      338 284 436 ticks
+bs3-memalloc-1:   Page access time                                          :                9 ns/page
+bs3-memalloc-1:   Page access time in ticks                                 :               28 ticks/page
+bs3-memalloc-1:   Access thruput                                            :      103 266 666 pages/s
+bs3-memalloc-1:   Access thruput in MiBs                                    :          403 385 MB/s
+bs3-memalloc-1: 3rd access                                                  : PASSED
+bs3-memalloc-1: SUCCESS
+ * @endverbatim
+ *
+ * Same everything but native VT-x and VBox (stripped output a little):
+ * @verbatim
+bs3-memalloc-1: From 0x100000000 to 0xc20000000
+bs3-memalloc-1:   Pages                                                     :       11 665 408 pages
+bs3-memalloc-1:   MiBs                                                      :           45 568 MB
+bs3-memalloc-1:   Alloc elapsed                                             :      776 111 427 ns
+bs3-memalloc-1:   Alloc elapsed in ticks                                    :    2 323 267 035 ticks
+bs3-memalloc-1:   Page alloc time                                           :               66 ns/page
+bs3-memalloc-1:   Page alloc time in ticks                                  :              199 ticks/page
+bs3-memalloc-1:   Alloc thruput                                             :       15 030 584 pages/s
+bs3-memalloc-1:   Alloc thruput in MiBs                                     :           58 713 MB/s
+bs3-memalloc-1: Allocation speed                                            : PASSED
+bs3-memalloc-1:   Access elapsed                                            :      112 141 904 ns
+bs3-memalloc-1:   Access elapsed in ticks                                   :      335 751 077 ticks
+bs3-memalloc-1:   Page access time                                          :                9 ns/page
+bs3-memalloc-1:   Page access time in ticks                                 :               28 ticks/page
+bs3-memalloc-1:   Access thruput                                            :      104 023 630 pages/s
+bs3-memalloc-1:   Access thruput in MiBs                                    :          406 342 MB/s
+bs3-memalloc-1: 2nd access                                                  : PASSED
+bs3-memalloc-1:   Access elapsed                                            :      112 023 049 ns
+bs3-memalloc-1:   Access elapsed in ticks                                   :      335 418 343 ticks
+bs3-memalloc-1:   Page access time                                          :                9 ns/page
+bs3-memalloc-1:   Page access time in ticks                                 :               28 ticks/page
+bs3-memalloc-1:   Access thruput                                            :      104 133 998 pages/s
+bs3-memalloc-1:   Access thruput in MiBs                                    :          406 773 MB/s
+bs3-memalloc-1: 3rd access                                                  : PASSED
+ * @endverbatim
+ *
+ * VBox with large pages disabled:
+ * @verbatim
+bs3-memalloc-1: From 0x100000000 to 0xc20000000
+bs3-memalloc-1:   Pages                                                     :       11 665 408 pages
+bs3-memalloc-1:   MiBs                                                      :           45 568 MB
+bs3-memalloc-1:   Alloc elapsed                                             :   50 986 588 028 ns
+bs3-memalloc-1:   Alloc elapsed in ticks                                    :  152 714 862 044 ticks
+bs3-memalloc-1:   Page alloc time                                           :            4 370 ns/page
+bs3-memalloc-1:   Page alloc time in ticks                                  :           13 091 ticks/page
+bs3-memalloc-1:   Alloc thruput                                             :          228 793 pages/s
+bs3-memalloc-1:   Alloc thruput in MiBs                                     :              893 MB/s
+bs3-memalloc-1: Allocation speed                                            : PASSED
+bs3-memalloc-1:   Access elapsed                                            :    2 849 641 741 ns
+bs3-memalloc-1:   Access elapsed in ticks                                   :    8 535 372 249 ticks
+bs3-memalloc-1:   Page access time                                          :              244 ns/page
+bs3-memalloc-1:   Page access time in ticks                                 :              731 ticks/page
+bs3-memalloc-1:   Access thruput                                            :        4 093 640 pages/s
+bs3-memalloc-1:   Access thruput in MiBs                                    :           15 990 MB/s
+bs3-memalloc-1: 2nd access                                                  : PASSED
+bs3-memalloc-1:   Access elapsed                                            :    2 866 960 770 ns
+bs3-memalloc-1:   Access elapsed in ticks                                   :    8 587 097 799 ticks
+bs3-memalloc-1:   Page access time                                          :              245 ns/page
+bs3-memalloc-1:   Page access time in ticks                                 :              736 ticks/page
+bs3-memalloc-1:   Access thruput                                            :        4 068 910 pages/s
+bs3-memalloc-1:   Access thruput in MiBs                                    :           15 894 MB/s
+bs3-memalloc-1: 3rd access                                                  : PASSED
+ * @endverbatim
+ *
  *
  * @section sec_nem_win_impl    Our implementation.
  *
