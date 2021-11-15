@@ -868,36 +868,36 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
     uint32_t        cYieldCountDown         = cYieldCountDownReload;
     RTGCPHYS        GCPhysPrev              = NIL_RTGCPHYS;
     bool            fFullWalk               = true;
-    PGMPTWALKGST    Walk;
-    RT_ZERO(Walk);
+    PGMPTWALK       Walk;
+    PGMPTWALKGST    WalkGst;
 
     PGM_LOCK_VOID(pVM);
     for (;; offPage = 0)
     {
         int rc;
         if (fFullWalk)
-            rc = pgmGstPtWalk(pVCpu, GCPtr, &Walk);
+            rc = pgmGstPtWalk(pVCpu, GCPtr, &Walk, &WalkGst);
         else
-            rc = pgmGstPtWalkNext(pVCpu, GCPtr, &Walk);
-        if (RT_SUCCESS(rc) && Walk.u.Core.fSucceeded)
+            rc = pgmGstPtWalkNext(pVCpu, GCPtr, &Walk, &WalkGst);
+        if (RT_SUCCESS(rc) && Walk.fSucceeded)
         {
             fFullWalk = false;
 
             /* Skip if same page as previous one (W10 optimization). */
-            if (   Walk.u.Core.GCPhys != GCPhysPrev
+            if (   Walk.GCPhys != GCPhysPrev
                 || cbPrev != 0)
             {
-                PPGMPAGE pPage = pgmPhysGetPage(pVM, Walk.u.Core.GCPhys);
+                PPGMPAGE pPage = pgmPhysGetPage(pVM, Walk.GCPhys);
                 if (   pPage
                     && (   !PGM_PAGE_IS_ZERO(pPage)
                         || fAllZero)
                     && !PGM_PAGE_IS_MMIO_OR_ALIAS(pPage)
                     && !PGM_PAGE_IS_BALLOONED(pPage))
                 {
-                    GCPhysPrev = Walk.u.Core.GCPhys;
+                    GCPhysPrev = Walk.GCPhys;
                     void const *pvPage;
                     PGMPAGEMAPLOCK Lock;
-                    rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, Walk.u.Core.GCPhys, &pvPage, &Lock);
+                    rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, Walk.GCPhys, &pvPage, &Lock);
                     if (RT_SUCCESS(rc))
                     {
                         int32_t offHit = offPage;
@@ -932,8 +932,8 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
         }
         else
         {
-            Assert(Walk.enmType != PGMPTWALKGSTTYPE_INVALID);
-            Assert(!Walk.u.Core.fSucceeded);
+            Assert(WalkGst.enmType != PGMPTWALKGSTTYPE_INVALID);
+            Assert(!Walk.fSucceeded);
             cbPrev = 0; /* ignore error. */
 
             /*
@@ -941,14 +941,14 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
              * is not present 512 times!
              */
             uint64_t cPagesCanSkip;
-            switch (Walk.u.Core.uLevel)
+            switch (Walk.uLevel)
             {
                 case 1:
                     /* page level, use cIncPages */
                     cPagesCanSkip = 1;
                     break;
                 case 2:
-                    if (Walk.enmType == PGMPTWALKGSTTYPE_32BIT)
+                    if (WalkGst.enmType == PGMPTWALKGSTTYPE_32BIT)
                     {
                         cPagesCanSkip = X86_PG_ENTRIES     - ((GCPtr >> X86_PT_SHIFT)     & X86_PT_MASK);
                         Assert(!((GCPtr + ((RTGCPTR)cPagesCanSkip << X86_PT_PAE_SHIFT)) & (RT_BIT_64(X86_PD_SHIFT) - 1)));
@@ -976,7 +976,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
                     cPagesCanSkip = cPages;
                     break;
                 default:
-                    AssertMsgFailed(("%d\n", Walk.u.Core.uLevel));
+                    AssertMsgFailed(("%d\n", Walk.uLevel));
                     cPagesCanSkip = 0;
                     break;
             }

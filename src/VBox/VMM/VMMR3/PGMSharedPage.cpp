@@ -287,21 +287,20 @@ VMMR3DECL(int) PGMR3SharedModuleCheckAll(PVM pVM)
 VMMR3DECL(int) PGMR3SharedModuleGetPageState(PVM pVM, RTGCPTR GCPtrPage, bool *pfShared, uint64_t *pfPageFlags)
 {
     /* Debug only API for the page fusion testcase. */
-    RTGCPHYS GCPhys;
-    uint64_t fFlags;
+    PGMPTWALK Walk;
 
     PGM_LOCK_VOID(pVM);
 
-    int rc = PGMGstGetPage(VMMGetCpu(pVM), GCPtrPage, &fFlags, &GCPhys);
+    int rc = PGMGstGetPage(VMMGetCpu(pVM), GCPtrPage, &Walk);
     switch (rc)
     {
         case VINF_SUCCESS:
         {
-            PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
+            PPGMPAGE pPage = pgmPhysGetPage(pVM, Walk.GCPhys);
             if (pPage)
             {
                 *pfShared    = PGM_PAGE_IS_SHARED(pPage);
-                *pfPageFlags = fFlags;
+                *pfPageFlags = Walk.fEffective;
             }
             else
                 rc = VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS;

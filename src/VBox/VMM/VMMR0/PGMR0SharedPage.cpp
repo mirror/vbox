@@ -73,13 +73,12 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMS
         while (cbLeft)
         {
             /** @todo inefficient to fetch each guest page like this... */
-            RTGCPHYS GCPhys;
-            uint64_t fFlags;
-            rc = PGMGstGetPage(pVCpu, GCPtrPage, &fFlags, &GCPhys);
+            PGMPTWALK Walk;
+            rc = PGMGstGetPage(pVCpu, GCPtrPage, &Walk);
             if (    rc == VINF_SUCCESS
-                &&  !(fFlags & X86_PTE_RW)) /* important as we make assumptions about this below! */
+                &&  !(Walk.fEffective & X86_PTE_RW)) /* important as we make assumptions about this below! */
             {
-                PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
+                PPGMPAGE pPage = pgmPhysGetPage(pVM, Walk.GCPhys);
                 Assert(!pPage || !PGM_PAGE_IS_BALLOONED(pPage));
                 if (    pPage
                     &&  PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED
@@ -88,7 +87,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMS
                 {
                     PageDesc.idPage = PGM_PAGE_GET_PAGEID(pPage);
                     PageDesc.HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
-                    PageDesc.GCPhys = GCPhys;
+                    PageDesc.GCPhys = Walk.GCPhys;
 
                     rc = GMMR0SharedModuleCheckPage(pGVM, pModule, idxRegion, idxPage, &PageDesc);
                     if (RT_FAILURE(rc))

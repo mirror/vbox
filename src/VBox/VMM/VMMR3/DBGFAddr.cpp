@@ -230,7 +230,10 @@ static DECLCALLBACK(int) dbgfR3AddrToPhysOnVCpu(PVMCPU pVCpu, PCDBGFADDRESS pAdd
 {
     VMCPU_ASSERT_EMT(pVCpu);
     /* This is just a wrapper because we cannot pass FlatPtr thru VMR3ReqCall directly. */
-    return PGMGstGetPage(pVCpu, pAddress->FlatPtr, NULL, pGCPhys);
+    PGMPTWALK Walk;
+    int const rc = PGMGstGetPage(pVCpu, pAddress->FlatPtr, &Walk);
+    *pGCPhys = Walk.GCPhys;
+    return rc;
 }
 
 

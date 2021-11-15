@@ -50,7 +50,8 @@
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALKGST pWalk);
+static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk,
+                          PPGMPTWALKGST pGstWalk);
 #endif
 static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
 static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
@@ -1722,17 +1723,17 @@ int pgmShwSyncNestedPageLocked(PVMCPUCC pVCpu, RTGCPHYS GCPhys, uint32_t cPages,
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   GCPtr       Guest Context virtual address of the page.
- * @param   pfFlags     Where to store the flags. These are X86_PTE_*, even for big pages.
- * @param   pGCPhys     Where to store the GC physical address of the page.
- *                      This is page aligned. The fact that the
+ * @param   pWalk       Where to store the page walk information.
  */
-VMMDECL(int) PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGCPHYS pGCPhys)
+VMMDECL(int) PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
 {
     VMCPU_ASSERT_EMT(pVCpu);
+    Assert(pWalk);
+    RT_BZERO(pWalk, sizeof(*pWalk));
     uintptr_t idx = pVCpu->pgm.s.idxGuestModeData;
     AssertReturn(idx < RT_ELEMENTS(g_aPgmGuestModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmGuestModeData[idx].pfnGetPage, VERR_PGM_MODE_IPE);
-    return g_aPgmGuestModeData[idx].pfnGetPage(pVCpu, GCPtr, pfFlags, pGCPhys);
+    return g_aPgmGuestModeData[idx].pfnGetPage(pVCpu, GCPtr, pWalk);
 }
 
 
@@ -1752,29 +1753,30 @@ VMMDECL(int) PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRT
  * @param   GCPtr       The guest virtual address to walk by.
  * @param   pWalk       Where to return the walk result. This is valid for some
  *                      error codes as well.
+ * @param   pGstWalk    The guest mode specific page walk information.
  */
-int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
+int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     switch (pVCpu->pgm.s.enmGuestMode)
     {
         case PGMMODE_32_BIT:
-            pWalk->enmType = PGMPTWALKGSTTYPE_32BIT;
-            return PGM_GST_NAME_32BIT(Walk)(pVCpu, GCPtr, &pWalk->u.Legacy);
+            pGstWalk->enmType = PGMPTWALKGSTTYPE_32BIT;
+            return PGM_GST_NAME_32BIT(Walk)(pVCpu, GCPtr, pWalk, &pGstWalk->u.Legacy);
 
         case PGMMODE_PAE:
         case PGMMODE_PAE_NX:
-            pWalk->enmType = PGMPTWALKGSTTYPE_PAE;
-            return PGM_GST_NAME_PAE(Walk)(pVCpu, GCPtr, &pWalk->u.Pae);
+            pGstWalk->enmType = PGMPTWALKGSTTYPE_PAE;
+            return PGM_GST_NAME_PAE(Walk)(pVCpu, GCPtr, pWalk, &pGstWalk->u.Pae);
 
         case PGMMODE_AMD64:
         case PGMMODE_AMD64_NX:
-            pWalk->enmType = PGMPTWALKGSTTYPE_AMD64;
-            return PGM_GST_NAME_AMD64(Walk)(pVCpu, GCPtr, &pWalk->u.Amd64);
+            pGstWalk->enmType = PGMPTWALKGSTTYPE_AMD64;
+            return PGM_GST_NAME_AMD64(Walk)(pVCpu, GCPtr, pWalk, &pGstWalk->u.Amd64);
 
         case PGMMODE_REAL:
         case PGMMODE_PROTECTED:
-            pWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
+            pGstWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
             return VERR_PGM_NOT_USED_IN_MODE;
 
         case PGMMODE_EPT:
@@ -1783,7 +1785,7 @@ int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
         case PGMMODE_NESTED_AMD64:
         default:
             AssertFailed();
-            pWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
+            pGstWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
             return VERR_PGM_NOT_USED_IN_MODE;
     }
 }
@@ -1812,20 +1814,23 @@ int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
  *                              SLAT. If none, pass NIL_RTGCPTR.
  * @param   pWalk               Where to return the walk result. This is valid for
  *                              some error codes as well.
+ * @param   pGstWalk            The second-level paging-mode specific walk
+ *                              information.
  */
 static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested,
-                          PPGMPTWALKGST pWalk)
+                          PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk)
 {
-    Assert(pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_DIRECT);
+    Assert(   pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_DIRECT
+           && pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_INVALID);
     switch (pVCpu->pgm.s.enmGuestSlatMode)
     {
         case PGMSLAT_EPT:
-            pWalk->enmType = PGMPTWALKGSTTYPE_EPT;
-            return PGM_GST_SLAT_NAME_EPT(Walk)(pVCpu, GCPhysNested, fIsLinearAddrValid, GCPtrNested, &pWalk->u.Ept);
+            pGstWalk->enmType = PGMPTWALKGSTTYPE_EPT;
+            return PGM_GST_SLAT_NAME_EPT(Walk)(pVCpu, GCPhysNested, fIsLinearAddrValid, GCPtrNested, pWalk, &pGstWalk->u.Ept);
 
         default:
             AssertFailed();
-            pWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
+            pGstWalk->enmType = PGMPTWALKGSTTYPE_INVALID;
             return VERR_PGM_NOT_USED_IN_MODE;
     }
 }
@@ -1850,23 +1855,24 @@ static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearA
  * @param   pWalk       Pointer to the previous walk result and where to return
  *                      the result of this walk.  This is valid for some error
  *                      codes as well.
+ * @param   pGstWalk    The guest-mode specific walk information.
  */
-int pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
+int pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk)
 {
     /*
      * We can only handle successfully walks.
      * We also limit ourselves to the next page.
      */
-    if (   pWalk->u.Core.fSucceeded
-        && GCPtr - pWalk->u.Core.GCPtr == PAGE_SIZE)
+    if (   pWalk->fSucceeded
+        && GCPtr - pWalk->GCPtr == PAGE_SIZE)
     {
-        Assert(pWalk->u.Core.uLevel == 0);
-        if (pWalk->enmType == PGMPTWALKGSTTYPE_AMD64)
+        Assert(pWalk->uLevel == 0);
+        if (pGstWalk->enmType == PGMPTWALKGSTTYPE_AMD64)
         {
             /*
              * AMD64
              */
-            if (!pWalk->u.Core.fGigantPage && !pWalk->u.Core.fBigPage)
+            if (!pWalk->fGigantPage && !pWalk->fBigPage)
             {
                 /*
                  * We fall back to full walk if the PDE table changes, if any
@@ -1877,50 +1883,49 @@ int pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
                 const uint64_t fPdeSame = X86_PDE_P   | X86_PDE_RW | X86_PDE_US     | X86_PDE_PWT
                                         | X86_PDE_PCD | X86_PDE_A  | X86_PDE_PAE_NX | X86_PDE_PS;
 
-                if ((GCPtr >> X86_PD_PAE_SHIFT) == (pWalk->u.Core.GCPtr >> X86_PD_PAE_SHIFT))
+                if ((GCPtr >> X86_PD_PAE_SHIFT) == (pWalk->GCPtr >> X86_PD_PAE_SHIFT))
                 {
-                    if (pWalk->u.Amd64.pPte)
+                    if (pGstWalk->u.Amd64.pPte)
                     {
                         X86PTEPAE Pte;
-                        Pte.u = pWalk->u.Amd64.pPte[1].u;
-                        if (   (Pte.u & fPteSame) == (pWalk->u.Amd64.Pte.u & fPteSame)
+                        Pte.u = pGstWalk->u.Amd64.pPte[1].u;
+                        if (   (Pte.u & fPteSame) == (pGstWalk->u.Amd64.Pte.u & fPteSame)
                             && !(Pte.u & (pVCpu)->pgm.s.fGstAmd64MbzPteMask))
                         {
-
-                            pWalk->u.Core.GCPtr  = GCPtr;
-                            pWalk->u.Core.GCPhys = Pte.u & X86_PTE_PAE_PG_MASK;
-                            pWalk->u.Amd64.Pte.u = Pte.u;
-                            pWalk->u.Amd64.pPte++;
+                            pWalk->GCPtr  = GCPtr;
+                            pWalk->GCPhys = Pte.u & X86_PTE_PAE_PG_MASK;
+                            pGstWalk->u.Amd64.Pte.u = Pte.u;
+                            pGstWalk->u.Amd64.pPte++;
                             return VINF_SUCCESS;
                         }
                     }
                 }
-                else if ((GCPtr >> X86_PDPT_SHIFT) == (pWalk->u.Core.GCPtr >> X86_PDPT_SHIFT))
+                else if ((GCPtr >> X86_PDPT_SHIFT) == (pWalk->GCPtr >> X86_PDPT_SHIFT))
                 {
                     Assert(!((GCPtr >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK)); /* Must be first PT entry. */
-                    if (pWalk->u.Amd64.pPde)
+                    if (pGstWalk->u.Amd64.pPde)
                     {
                         X86PDEPAE Pde;
-                        Pde.u = pWalk->u.Amd64.pPde[1].u;
-                        if (   (Pde.u & fPdeSame) == (pWalk->u.Amd64.Pde.u & fPdeSame)
+                        Pde.u = pGstWalk->u.Amd64.pPde[1].u;
+                        if (   (Pde.u & fPdeSame) == (pGstWalk->u.Amd64.Pde.u & fPdeSame)
                             && !(Pde.u & (pVCpu)->pgm.s.fGstAmd64MbzPdeMask))
                         {
                             /* Get the new PTE and check out the first entry. */
                             int rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, PGM_A20_APPLY(pVCpu, (Pde.u & X86_PDE_PAE_PG_MASK)),
-                                                               &pWalk->u.Amd64.pPt);
+                                                               &pGstWalk->u.Amd64.pPt);
                             if (RT_SUCCESS(rc))
                             {
-                                pWalk->u.Amd64.pPte = &pWalk->u.Amd64.pPt->a[0];
+                                pGstWalk->u.Amd64.pPte = &pGstWalk->u.Amd64.pPt->a[0];
                                 X86PTEPAE Pte;
-                                Pte.u = pWalk->u.Amd64.pPte->u;
-                                if (   (Pte.u & fPteSame) == (pWalk->u.Amd64.Pte.u & fPteSame)
+                                Pte.u = pGstWalk->u.Amd64.pPte->u;
+                                if (   (Pte.u & fPteSame) == (pGstWalk->u.Amd64.Pte.u & fPteSame)
                                     && !(Pte.u & (pVCpu)->pgm.s.fGstAmd64MbzPteMask))
                                 {
-                                    pWalk->u.Core.GCPtr  = GCPtr;
-                                    pWalk->u.Core.GCPhys = Pte.u & X86_PTE_PAE_PG_MASK;
-                                    pWalk->u.Amd64.Pte.u = Pte.u;
-                                    pWalk->u.Amd64.Pde.u = Pde.u;
-                                    pWalk->u.Amd64.pPde++;
+                                    pWalk->GCPtr  = GCPtr;
+                                    pWalk->GCPhys = Pte.u & X86_PTE_PAE_PG_MASK;
+                                    pGstWalk->u.Amd64.Pte.u = Pte.u;
+                                    pGstWalk->u.Amd64.Pde.u = Pde.u;
+                                    pGstWalk->u.Amd64.pPde++;
                                     return VINF_SUCCESS;
                                 }
                             }
@@ -1928,44 +1933,28 @@ int pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk)
                     }
                 }
             }
-            else if (!pWalk->u.Core.fGigantPage)
+            else if (!pWalk->fGigantPage)
             {
-                if ((GCPtr & X86_PAGE_2M_BASE_MASK) == (pWalk->u.Core.GCPtr & X86_PAGE_2M_BASE_MASK))
+                if ((GCPtr & X86_PAGE_2M_BASE_MASK) == (pWalk->GCPtr & X86_PAGE_2M_BASE_MASK))
                 {
-                    pWalk->u.Core.GCPtr   = GCPtr;
-                    pWalk->u.Core.GCPhys += PAGE_SIZE;
+                    pWalk->GCPtr   = GCPtr;
+                    pWalk->GCPhys += PAGE_SIZE;
                     return VINF_SUCCESS;
                 }
             }
             else
             {
-                if ((GCPtr & X86_PAGE_1G_BASE_MASK) == (pWalk->u.Core.GCPtr & X86_PAGE_1G_BASE_MASK))
+                if ((GCPtr & X86_PAGE_1G_BASE_MASK) == (pWalk->GCPtr & X86_PAGE_1G_BASE_MASK))
                 {
-                    pWalk->u.Core.GCPtr   = GCPtr;
-                    pWalk->u.Core.GCPhys += PAGE_SIZE;
+                    pWalk->GCPtr   = GCPtr;
+                    pWalk->GCPhys += PAGE_SIZE;
                     return VINF_SUCCESS;
                 }
             }
         }
     }
     /* Case we don't handle.  Do full walk. */
-    return pgmGstPtWalk(pVCpu, GCPtr, pWalk);
-}
-
-
-/**
- * Checks if the page is present.
- *
- * @returns true if the page is present.
- * @returns false if the page is not present.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   GCPtr       Address within the page.
- */
-VMMDECL(bool) PGMGstIsPagePresent(PVMCPUCC pVCpu, RTGCPTR GCPtr)
-{
-    VMCPU_ASSERT_EMT(pVCpu);
-    int rc = PGMGstGetPage(pVCpu, GCPtr, NULL, NULL);
-    return RT_SUCCESS(rc);
+    return pgmGstPtWalk(pVCpu, GCPtr, pWalk, pGstWalk);
 }
 
 
@@ -3178,15 +3167,11 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
     /* Update the guest SLAT mode if it's a nested-guest. */
-    if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
-    {
-        if (PGMMODE_WITH_PAGING(enmGuestMode))
-            pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_EPT;
-        else
-            pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_DIRECT;
-    }
+    if (   CPUMIsGuestVmxEptPagingEnabled(pVCpu)
+        && PGMMODE_WITH_PAGING(enmGuestMode))
+        pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_EPT;
     else
-        Assert(pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_DIRECT);
+        pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_DIRECT;
 #endif
 
     /* Enter the new guest mode.  */

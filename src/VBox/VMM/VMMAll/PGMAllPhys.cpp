@@ -2307,9 +2307,10 @@ int pgmPhysGCPhys2R3Ptr(PVMCC pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
  */
 VMMDECL(int) PGMPhysGCPtr2GCPhys(PVMCPUCC pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
-    int rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtr, NULL, pGCPhys);
+    PGMPTWALK Walk;
+    int rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtr, &Walk);
     if (pGCPhys && RT_SUCCESS(rc))
-        *pGCPhys |= (RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK;
+        *pGCPhys = Walk.GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK);
     return rc;
 }
 
@@ -2326,11 +2327,11 @@ VMMDECL(int) PGMPhysGCPtr2GCPhys(PVMCPUCC pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhy
  */
 VMM_INT_DECL(int) PGMPhysGCPtr2HCPhys(PVMCPUCC pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
 {
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    RTGCPHYS GCPhys;
-    int rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtr, NULL, &GCPhys);
+    PVMCC     pVM = pVCpu->CTX_SUFF(pVM);
+    PGMPTWALK Walk;
+    int rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtr, &Walk);
     if (RT_SUCCESS(rc))
-        rc = PGMPhysGCPhys2HCPhys(pVM, GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), pHCPhys);
+        rc = PGMPhysGCPhys2HCPhys(pVM, Walk.GCPhys | ((RTGCUINTPTR)GCPtr & PAGE_OFFSET_MASK), pHCPhys);
     return rc;
 }
 
@@ -3428,8 +3429,6 @@ VMMDECL(int) PGMPhysSimpleDirtyWriteGCPtr(PVMCPUCC pVCpu, RTGCPTR GCPtrDst, cons
  */
 VMMDECL(VBOXSTRICTRC) PGMPhysReadGCPtr(PVMCPUCC pVCpu, void *pvDst, RTGCPTR GCPtrSrc, size_t cb, PGMACCESSORIGIN enmOrigin)
 {
-    RTGCPHYS    GCPhys;
-    uint64_t    fFlags;
     int         rc;
     PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
     VMCPU_ASSERT_EMT(pVCpu);
@@ -3448,12 +3447,13 @@ VMMDECL(VBOXSTRICTRC) PGMPhysReadGCPtr(PVMCPUCC pVCpu, void *pvDst, RTGCPTR GCPt
     if (((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrSrc, &fFlags, &GCPhys);
+        PGMPTWALK Walk;
+        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrSrc, &Walk);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrSrc), rc);
-        GCPhys |= (RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK;
+        RTGCPHYS const GCPhys = Walk.GCPhys | ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
 
         /* mark the guest page as accessed. */
-        if (!(fFlags & X86_PTE_A))
+        if (!(Walk.fEffective & X86_PTE_A))
         {
             rc = PGMGstModifyPage(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)(X86_PTE_A));
             AssertRC(rc);
@@ -3468,12 +3468,13 @@ VMMDECL(VBOXSTRICTRC) PGMPhysReadGCPtr(PVMCPUCC pVCpu, void *pvDst, RTGCPTR GCPt
     for (;;)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrSrc, &fFlags, &GCPhys);
+        PGMPTWALK Walk;
+        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrSrc, &Walk);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrSrc), rc);
-        GCPhys |= (RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK;
+        RTGCPHYS const GCPhys = Walk.GCPhys | ((RTGCUINTPTR)GCPtrSrc & PAGE_OFFSET_MASK);
 
         /* mark the guest page as accessed. */
-        if (!(fFlags & X86_PTE_A))
+        if (!(Walk.fEffective & X86_PTE_A))
         {
             rc = PGMGstModifyPage(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)(X86_PTE_A));
             AssertRC(rc);
@@ -3519,8 +3520,6 @@ VMMDECL(VBOXSTRICTRC) PGMPhysReadGCPtr(PVMCPUCC pVCpu, void *pvDst, RTGCPTR GCPt
  */
 VMMDECL(VBOXSTRICTRC) PGMPhysWriteGCPtr(PVMCPUCC pVCpu, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb, PGMACCESSORIGIN enmOrigin)
 {
-    RTGCPHYS    GCPhys;
-    uint64_t    fFlags;
     int         rc;
     PVMCC       pVM = pVCpu->CTX_SUFF(pVM);
     VMCPU_ASSERT_EMT(pVCpu);
@@ -3539,16 +3538,17 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWriteGCPtr(PVMCPUCC pVCpu, RTGCPTR GCPtrDst, const 
     if (((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK) + cb <= PAGE_SIZE)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrDst, &fFlags, &GCPhys);
+        PGMPTWALK Walk;
+        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrDst, &Walk);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrDst), rc);
-        GCPhys |= (RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK;
+        RTGCPHYS const GCPhys = Walk.GCPhys | ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
 
         /* Mention when we ignore X86_PTE_RW... */
-        if (!(fFlags & X86_PTE_RW))
+        if (!(Walk.fEffective & X86_PTE_RW))
             Log(("PGMPhysWriteGCPtr: Writing to RO page %RGv %#x\n", GCPtrDst, cb));
 
         /* Mark the guest page as accessed and dirty if necessary. */
-        if ((fFlags & (X86_PTE_A | X86_PTE_D)) != (X86_PTE_A | X86_PTE_D))
+        if ((Walk.fEffective & (X86_PTE_A | X86_PTE_D)) != (X86_PTE_A | X86_PTE_D))
         {
             rc = PGMGstModifyPage(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
             AssertRC(rc);
@@ -3563,16 +3563,17 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWriteGCPtr(PVMCPUCC pVCpu, RTGCPTR GCPtrDst, const 
     for (;;)
     {
         /* Convert virtual to physical address + flags */
-        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrDst, &fFlags, &GCPhys);
+        PGMPTWALK Walk;
+        rc = PGMGstGetPage(pVCpu, (RTGCUINTPTR)GCPtrDst, &Walk);
         AssertMsgRCReturn(rc, ("GetPage failed with %Rrc for %RGv\n", rc, GCPtrDst), rc);
-        GCPhys |= (RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK;
+        RTGCPHYS const GCPhys = Walk.GCPhys | ((RTGCUINTPTR)GCPtrDst & PAGE_OFFSET_MASK);
 
         /* Mention when we ignore X86_PTE_RW... */
-        if (!(fFlags & X86_PTE_RW))
+        if (!(Walk.fEffective & X86_PTE_RW))
             Log(("PGMPhysWriteGCPtr: Writing to RO page %RGv %#x\n", GCPtrDst, cb));
 
         /* Mark the guest page as accessed and dirty if necessary. */
-        if ((fFlags & (X86_PTE_A | X86_PTE_D)) != (X86_PTE_A | X86_PTE_D))
+        if ((Walk.fEffective & (X86_PTE_A | X86_PTE_D)) != (X86_PTE_A | X86_PTE_D))
         {
             rc = PGMGstModifyPage(pVCpu, GCPtrDst, 1, X86_PTE_A | X86_PTE_D, ~(uint64_t)(X86_PTE_A | X86_PTE_D));
             AssertRC(rc);

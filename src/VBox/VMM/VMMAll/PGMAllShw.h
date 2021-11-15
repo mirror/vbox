@@ -568,20 +568,19 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
                      *        then use this when PGM_MK_PG_IS_WRITE_FAULT is
                      *        set instead of resolving the guest physical
                      *        address yet again. */
-                    RTGCPHYS GCPhys;
-                    uint64_t fGstPte;
-                    rc = PGMGstGetPage(pVCpu, GCPtr, &fGstPte, &GCPhys);
+                    PGMPTWALK GstWalk;
+                    rc = PGMGstGetPage(pVCpu, GCPtr, &GstWalk);
                     AssertRC(rc);
                     if (RT_SUCCESS(rc))
                     {
-                        Assert((fGstPte & X86_PTE_RW) || !(CPUMGetGuestCR0(pVCpu) & X86_CR0_WP /* allow netware hack */));
-                        PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
+                        Assert((GstWalk.fEffective & X86_PTE_RW) || !(CPUMGetGuestCR0(pVCpu) & X86_CR0_WP /* allow netware hack */));
+                        PPGMPAGE pPage = pgmPhysGetPage(pVM, GstWalk.GCPhys);
                         Assert(pPage);
                         if (pPage)
                         {
-                            rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
+                            rc = pgmPhysPageMakeWritable(pVM, pPage, GstWalk.GCPhys);
                             AssertRCReturn(rc, rc);
-                            Log(("%s: pgmPhysPageMakeWritable on %RGv / %RGp %R[pgmpage]\n", __PRETTY_FUNCTION__, GCPtr, GCPhys, pPage));
+                            Log(("%s: pgmPhysPageMakeWritable on %RGv / %RGp %R[pgmpage]\n", __PRETTY_FUNCTION__, GCPtr, GstWalk.GCPhys, pPage));
                         }
                     }
                 }

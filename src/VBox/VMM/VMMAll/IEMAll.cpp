@@ -1425,28 +1425,28 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, bool fB
         Assert(GCPtrPC <= UINT32_MAX);
     }
 
-    RTGCPHYS    GCPhys;
-    uint64_t    fFlags;
-    int rc = PGMGstGetPage(pVCpu, GCPtrPC, &fFlags, &GCPhys);
-    if (RT_SUCCESS(rc)) { /* probable */ }
+    PGMPTWALK Walk;
+    int rc = PGMGstGetPage(pVCpu, GCPtrPC, &Walk);
+    if (RT_SUCCESS(rc))
+        Assert(Walk.fSucceeded); /* probable. */
     else
     {
         Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - rc=%Rrc\n", GCPtrPC, rc));
         return iemRaisePageFault(pVCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, rc);
     }
-    if ((fFlags & X86_PTE_US) || pVCpu->iem.s.uCpl != 3) { /* likely */ }
+    if ((Walk.fEffective & X86_PTE_US) || pVCpu->iem.s.uCpl != 3) { /* likely */ }
     else
     {
         Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - supervisor page\n", GCPtrPC));
         return iemRaisePageFault(pVCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
-    if (!(fFlags & X86_PTE_PAE_NX) || !(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_NXE)) { /* likely */ }
+    if (!(Walk.fEffective & X86_PTE_PAE_NX) || !(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_NXE)) { /* likely */ }
     else
     {
         Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - NX\n", GCPtrPC));
         return iemRaisePageFault(pVCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
-    GCPhys |= GCPtrPC & PAGE_OFFSET_MASK;
+    RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrPC & PAGE_OFFSET_MASK);
     /** @todo Check reserved bits and such stuff. PGM is better at doing
      *        that, so do it when implementing the guest virtual address
      *        TLB... */
@@ -1743,9 +1743,8 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst
         else
         {
             pVCpu->iem.s.CodeTlb.cTlbMisses++;
-            RTGCPHYS    GCPhys;
-            uint64_t    fFlags;
-            int rc = PGMGstGetPage(pVCpu, GCPtrFirst, &fFlags, &GCPhys);
+            PGMPTWALK Walk;
+            int rc = PGMGstGetPage(pVCpu, GCPtrFirst, &Walk);
             if (RT_FAILURE(rc))
             {
                 Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrFirst, rc));
@@ -1753,9 +1752,11 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst
             }
 
             AssertCompile(IEMTLBE_F_PT_NO_EXEC == 1);
+            Assert(Walk.fSucceeded);
             pTlbe->uTag             = uTag;
-            pTlbe->fFlagsAndPhysRev = (~fFlags & (X86_PTE_US | X86_PTE_RW | X86_PTE_D)) | (fFlags >> X86_PTE_PAE_BIT_NX);
-            pTlbe->GCPhys           = GCPhys;
+            pTlbe->fFlagsAndPhysRev = (~Walk.fEffective & (X86_PTE_US | X86_PTE_RW | X86_PTE_D))
+                                    | (Walk.fEffective >> X86_PTE_PAE_BIT_NX);
+            pTlbe->GCPhys           = Walk.GCPhys;
             pTlbe->pbMappingR3      = NULL;
         }
 
@@ -1960,25 +1961,24 @@ IEM_STATIC VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin)
 /** @todo r=bird: Convert assertion into undefined opcode exception? */
     Assert(cbToTryRead >= cbMin - cbLeft); /* ASSUMPTION based on iemInitDecoderAndPrefetchOpcodes. */
 
-    RTGCPHYS    GCPhys;
-    uint64_t    fFlags;
-    int rc = PGMGstGetPage(pVCpu, GCPtrNext, &fFlags, &GCPhys);
+    PGMPTWALK Walk;
+    int rc = PGMGstGetPage(pVCpu, GCPtrNext, &Walk);
     if (RT_FAILURE(rc))
     {
         Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrNext, rc));
         return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, rc);
     }
-    if (!(fFlags & X86_PTE_US) && pVCpu->iem.s.uCpl == 3)
+    if (!(Walk.fEffective & X86_PTE_US) && pVCpu->iem.s.uCpl == 3)
     {
         Log(("iemOpcodeFetchMoreBytes: %RGv - supervisor page\n", GCPtrNext));
         return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
-    if ((fFlags & X86_PTE_PAE_NX) && (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_NXE))
+    if ((Walk.fEffective & X86_PTE_PAE_NX) && (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_NXE))
     {
         Log(("iemOpcodeFetchMoreBytes: %RGv - NX\n", GCPtrNext));
         return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
-    GCPhys |= GCPtrNext & PAGE_OFFSET_MASK;
+    RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrNext & PAGE_OFFSET_MASK);
     Log5(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys,  pVCpu->iem.s.cbOpcode));
     /** @todo Check reserved bits and such stuff. PGM is better at doing
      *        that, so do it when implementing the guest virtual address
@@ -8136,9 +8136,8 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
     /** @todo If/when PGM handles paged real-mode, we can remove the hack in
      *        iemSvmWorldSwitch/iemVmxWorldSwitch to work around raising a page-fault
      *        here. */
-    RTGCPHYS    GCPhys;
-    uint64_t    fFlags;
-    int rc = PGMGstGetPage(pVCpu, GCPtrMem, &fFlags, &GCPhys);
+    PGMPTWALK Walk;
+    int rc = PGMGstGetPage(pVCpu, GCPtrMem, &Walk);
     if (RT_FAILURE(rc))
     {
         Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - failed to fetch page -> #PF\n", GCPtrMem));
@@ -8150,11 +8149,11 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
 
     /* If the page is writable and does not have the no-exec bit set, all
        access is allowed.  Otherwise we'll have to check more carefully... */
-    if ((fFlags & (X86_PTE_RW | X86_PTE_US | X86_PTE_PAE_NX)) != (X86_PTE_RW | X86_PTE_US))
+    if ((Walk.fEffective & (X86_PTE_RW | X86_PTE_US | X86_PTE_PAE_NX)) != (X86_PTE_RW | X86_PTE_US))
     {
         /* Write to read only memory? */
         if (   (fAccess & IEM_ACCESS_TYPE_WRITE)
-            && !(fFlags & X86_PTE_RW)
+            && !(Walk.fEffective & X86_PTE_RW)
             && (   (    pVCpu->iem.s.uCpl == 3
                     && !(fAccess & IEM_ACCESS_WHAT_SYS))
                 || (pVCpu->cpum.GstCtx.cr0 & X86_CR0_WP)))
@@ -8165,7 +8164,7 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
         }
 
         /* Kernel memory accessed by userland? */
-        if (   !(fFlags & X86_PTE_US)
+        if (   !(Walk.fEffective & X86_PTE_US)
             && pVCpu->iem.s.uCpl == 3
             && !(fAccess & IEM_ACCESS_WHAT_SYS))
         {
@@ -8176,7 +8175,7 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
 
         /* Executing non-executable memory? */
         if (   (fAccess & IEM_ACCESS_TYPE_EXEC)
-            && (fFlags & X86_PTE_PAE_NX)
+            && (Walk.fEffective & X86_PTE_PAE_NX)
             && (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_NXE) )
         {
             Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - NX -> #PF\n", GCPtrMem));
@@ -8192,13 +8191,13 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
      */
     /** @todo testcase: check when A and D bits are actually set by the CPU.  */
     uint32_t fAccessedDirty = fAccess & IEM_ACCESS_TYPE_WRITE ? X86_PTE_D | X86_PTE_A : X86_PTE_A;
-    if ((fFlags & fAccessedDirty) != fAccessedDirty)
+    if ((Walk.fEffective & fAccessedDirty) != fAccessedDirty)
     {
         int rc2 = PGMGstModifyPage(pVCpu, GCPtrMem, 1, fAccessedDirty, ~(uint64_t)fAccessedDirty);
         AssertRC(rc2);
     }
 
-    GCPhys |= GCPtrMem & PAGE_OFFSET_MASK;
+    RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrMem & PAGE_OFFSET_MASK);
     *pGCPhysMem = GCPhys;
     return VINF_SUCCESS;
 }
