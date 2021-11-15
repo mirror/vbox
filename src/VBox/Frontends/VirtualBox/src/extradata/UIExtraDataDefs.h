@@ -458,6 +458,11 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_VMActivityOverview_ShowAllMachines;
     /** @} */
 
+    /** @name Medium Selector stuff
+      * @{ */
+        SHARED_LIBRARY_STUFF extern const char *GUI_MediumSelector_DialogGeometry;
+    /** @} */
+
     /** @name Old key support stuff.
       * @{ */
         /** Prepares obsolete keys map. */

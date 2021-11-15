@@ -56,7 +56,7 @@
 UIMediumSelector::UIMediumSelector(const QUuid &uCurrentMediumId, UIMediumDeviceType enmMediumType, const QString &machineName,
                                    const QString &machineSettingsFilePath, const QString &strMachineGuestOSTypeId,
                                    const QUuid &uMachineID, QWidget *pParent, UIActionPool *pActionPool)
-    :QIWithRetranslateUI<QIMainDialog>(pParent)
+    :QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >(pParent)
     , m_pCentralWidget(0)
     , m_pMainLayout(0)
     , m_pTreeWidget(0)

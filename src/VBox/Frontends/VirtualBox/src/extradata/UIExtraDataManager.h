@@ -830,6 +830,13 @@ public:
         void setVMActivityOverviewShowAllMachines(bool fShow);
     /** @} */
 
+    /** @name Medium Selector
+      * @{ */
+        QRect mediumSelectorDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry);
+        void setMediumSelectorDialogGeometry(const QRect &geometry, bool fMaximized);
+        bool mediumSelectorDialogShouldBeMaximized();
+    /** @} */
+
 private slots:
 
     /** Handles 'extra-data change' event: */

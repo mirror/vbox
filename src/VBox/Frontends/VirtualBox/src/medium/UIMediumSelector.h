@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
+#include "QIWithRestorableGeometry.h"
 #include "UIMedium.h"
 #include "UIMediumDefs.h"
 
@@ -40,9 +41,8 @@ class UIActionPool;
 class UIMediumItem;
 class UIMediumSearchWidget;
 
-
 /** QIDialog extension providing GUI with a dialog to select an existing medium. */
-class SHARED_LIBRARY_STUFF UIMediumSelector : public QIWithRetranslateUI<QIMainDialog>
+class SHARED_LIBRARY_STUFF UIMediumSelector : public QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >
 {
 
     Q_OBJECT;
