@@ -55,6 +55,8 @@ typedef enum RTR0MEMOBJTYPE
     /** RTR0MemObjAllocPage.
      * This memory is page aligned and fixed. */
     RTR0MEMOBJTYPE_PAGE,
+    /** RTR0MemObjAllocLarge. */
+    RTR0MEMOBJTYPE_LARGE_PAGE,
     /** RTR0MemObjAllocLow.
      * This memory is page aligned, fixed and is backed by physical memory below 4GB. */
     RTR0MEMOBJTYPE_LOW,

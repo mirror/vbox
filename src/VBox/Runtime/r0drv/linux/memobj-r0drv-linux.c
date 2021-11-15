@@ -122,6 +122,8 @@ typedef struct RTR0MEMOBJLNX
     bool                fExecutable;
     /** Set if we've vmap'ed the memory into ring-0. */
     bool                fMappedToRing0;
+    /** This is non-zero if large page allocation. */
+    uint8_t             cLargePageOrder;
 #ifdef IPRT_USE_ALLOC_VM_AREA_FOR_EXEC
     /** Return from alloc_vm_area() that we now need to use for executable
      *  memory. */
@@ -355,8 +357,8 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
     pMemLnx->Core.fFlags |= RTR0MEMOBJ_FLAGS_UNINITIALIZED_AT_ALLOC;
     pMemLnx->cPages = cPages;
 
-     if (cPages > 255)
-     {
+    if (cPages > 255)
+    {
 # ifdef __GFP_REPEAT
         /* Try hard to allocate the memory, but the allocation attempt might fail. */
         fFlagsLnx |= __GFP_REPEAT;
@@ -365,7 +367,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
         /* Introduced with Linux 2.6.12: Don't use emergency reserves */
         fFlagsLnx |= __GFP_NOMEMALLOC;
 # endif
-     }
+    }
 
     /*
      * Allocate the pages.
@@ -720,14 +722,29 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
      */
     switch (pMemLnx->Core.enmType)
     {
-        case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_PAGE:
+        case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_CONT:
         case RTR0MEMOBJTYPE_PHYS:
         case RTR0MEMOBJTYPE_PHYS_NC:
             rtR0MemObjLinuxVUnmap(pMemLnx);
             rtR0MemObjLinuxFreePages(pMemLnx);
             break;
+
+        case RTR0MEMOBJTYPE_LARGE_PAGE:
+        {
+            uint32_t const cLargePages = pMemLnx->Core.cb >> (pMemLnx->cLargePageOrder + PAGE_SHIFT);
+            uint32_t       iLargePage;
+            for (iLargePage = 0; iLargePage < cLargePages; iLargePage++)
+                __free_pages(pMemLnx->apPages[iLargePage << pMemLnx->cLargePageOrder], pMemLnx->cLargePageOrder);
+            pMemLnx->cPages = 0;
+
+#ifdef IPRT_USE_ALLOC_VM_AREA_FOR_EXEC
+            Assert(!pMemLnx->pArea);
+            Assert(!pMemLnx->papPtesForArea);
+#endif
+            break;
+        }
 
         case RTR0MEMOBJTYPE_LOCK:
             if (pMemLnx->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
@@ -835,7 +852,69 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 DECLHIDDEN(int) rtR0MemObjNativeAllocLarge(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, size_t cbLargePage, uint32_t fFlags,
                                            const char *pszTag)
 {
-    return rtR0MemObjFallbackAllocLarge(ppMem, cb, cbLargePage, fFlags, pszTag);
+#ifdef GFP_TRANSHUGE
+    /*
+     * Allocate a memory object structure that's large enough to contain
+     * the page pointer array.
+     */
+# ifdef __GFP_MOVABLE
+    unsigned const  fGfp            = (GFP_TRANSHUGE | __GFP_ZERO) & ~__GFP_MOVABLE;
+# else
+    unsigned const  fGfp            = (GFP_TRANSHUGE | __GFP_ZERO);
+# endif
+    size_t const    cPagesPerLarge  = cbLargePage >> PAGE_SHIFT;
+    unsigned const  cLargePageOrder = rtR0MemObjLinuxOrder(cPagesPerLarge);
+    size_t const    cLargePages     = cb >> (cLargePageOrder + PAGE_SHIFT);
+    size_t const    cPages          = cb >> PAGE_SHIFT;
+    PRTR0MEMOBJLNX  pMemLnx;
+
+    Assert(RT_BIT_64(cLargePageOrder + PAGE_SHIFT) == cbLargePage);
+    pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(RT_UOFFSETOF_DYN(RTR0MEMOBJLNX, apPages[cPages]),
+                                            RTR0MEMOBJTYPE_LARGE_PAGE, NULL, cb, pszTag);
+    if (pMemLnx)
+    {
+        size_t iLargePage;
+
+        pMemLnx->Core.fFlags    |= RTR0MEMOBJ_FLAGS_ZERO_AT_ALLOC;
+        pMemLnx->cLargePageOrder = cLargePageOrder;
+        pMemLnx->cPages          = cPages;
+
+        /*
+         * Allocate the requested number of large pages.
+         */
+        for (iLargePage = 0; iLargePage < cLargePages; iLargePage++)
+        {
+            struct page *paPages = alloc_pages(fGfp, cLargePageOrder);
+            if (paPages)
+            {
+                size_t const iPageBase = iLargePage << cLargePageOrder;
+                size_t       iPage     = cPagesPerLarge;
+                while (iPage-- > 0)
+                    pMemLnx->apPages[iPageBase + iPage] = &paPages[iPage];
+            }
+            else
+            {
+                /*Log(("rtR0MemObjNativeAllocLarge: cb=%#zx cPages=%#zx cLargePages=%#zx cLargePageOrder=%u cPagesPerLarge=%#zx iLargePage=%#zx -> failed!\n",
+                     cb, cPages, cLargePages, cLargePageOrder, cPagesPerLarge, iLargePage, paPages));*/
+                while (iLargePage-- > 0)
+                    __free_pages(pMemLnx->apPages[iLargePage << (cLargePageOrder - PAGE_SHIFT)], cLargePageOrder);
+                rtR0MemObjDelete(&pMemLnx->Core);
+                return VERR_NO_MEMORY;
+            }
+        }
+        *ppMem = &pMemLnx->Core;
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_MEMORY;
+
+#else
+    /*
+     * We don't call rtR0MemObjFallbackAllocLarge here as it can be a really
+     * bad idea to trigger the swap daemon and whatnot.  So, just fail.
+     */
+    RT_NOREF(ppMem, cb, cbLargePage, fFlags, pszTag);
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
@@ -1975,6 +2054,7 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
         case RTR0MEMOBJTYPE_LOCK:
         case RTR0MEMOBJTYPE_PHYS_NC:
         case RTR0MEMOBJTYPE_PAGE:
+        case RTR0MEMOBJTYPE_LARGE_PAGE:
         default:
             AssertMsgFailed(("%d\n", pMemLnx->Core.enmType));
             RT_FALL_THROUGH();
