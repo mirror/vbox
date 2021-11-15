@@ -234,84 +234,84 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
     /*                0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 */
     if (~fAnonSubCmds & fSubcommandScope)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("%s guestcontrol %s    <uuid|vmname> [--verbose|-v] [--quiet|-q]\n"
-                                   "                              [--user[name] <name>] [--domain <domain>]\n"
-                                   "                              [--passwordfile <file> | --password <password>]\n%s"),
+                             "%s guestcontrol %s    <uuid|vmname> [--verbose|-v] [--quiet|-q]\n"
+                     "                              [--user[name] <name>] [--domain <domain>]\n"
+                     "                              [--passwordfile <file> | --password <password>]\n%s",
                      pcszSep1, pcszSep2, (fSubcommandScope & RTMSGREFENTRYSTR_SCOPE_MASK) == RTMSGREFENTRYSTR_SCOPE_GLOBAL ? "\n" : "");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_RUN)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("                              run [common-options]\n"
-                                   "                              [--exe <path to executable>] [--timeout <msec>]\n"
-                                   "                              [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
-                                   "                              [--ignore-operhaned-processes] [--profile]\n"
-                                   "                              [--no-wait-stdout|--wait-stdout]\n"
-                                   "                              [--no-wait-stderr|--wait-stderr]\n"
-                                   "                              [--dos2unix] [--unix2dos]\n"
-                                   "                              -- <program/arg0> [argument1] ... [argumentN]]\n"
-                                   "\n"));
+                     "                              run [common-options]\n"
+                     "                              [--exe <path to executable>] [--timeout <msec>]\n"
+                     "                              [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
+                     "                              [--ignore-operhaned-processes] [--profile]\n"
+                     "                              [--no-wait-stdout|--wait-stdout]\n"
+                     "                              [--no-wait-stderr|--wait-stderr]\n"
+                     "                              [--dos2unix] [--unix2dos]\n"
+                     "                              -- <program/arg0> [argument1] ... [argumentN]]\n"
+                     "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_START)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("                              start [common-options]\n"
-                                   "                              [--exe <path to executable>] [--timeout <msec>]\n"
-                                   "                              [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
-                                   "                              [--ignore-operhaned-processes] [--profile]\n"
-                                   "                              -- <program/arg0> [argument1] ... [argumentN]]\n"
-                                   "\n"));
+                     "                              start [common-options]\n"
+                     "                              [--exe <path to executable>] [--timeout <msec>]\n"
+                     "                              [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
+                     "                              [--ignore-operhaned-processes] [--profile]\n"
+                     "                              -- <program/arg0> [argument1] ... [argumentN]]\n"
+                     "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_COPYFROM)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("                              copyfrom [common-options]\n"
-                                   "                              [--follow] [-R|--recursive]\n"
-                                   "                              <guest-src0> [guest-src1 [...]] <host-dst>\n"
-                                   "\n"
-                                   "                              copyfrom [common-options]\n"
-                                   "                              [--follow] [-R|--recursive]\n"
-                                   "                              [--target-directory <host-dst-dir>]\n"
-                                   "                              <guest-src0> [guest-src1 [...]]\n"
-                                   "\n"));
+                     "                              copyfrom [common-options]\n"
+                     "                              [--follow] [-R|--recursive]\n"
+                     "                              <guest-src0> [guest-src1 [...]] <host-dst>\n"
+                     "\n"
+                     "                              copyfrom [common-options]\n"
+                     "                              [--follow] [-R|--recursive]\n"
+                     "                              [--target-directory <host-dst-dir>]\n"
+                     "                              <guest-src0> [guest-src1 [...]]\n"
+                     "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_COPYTO)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("                              copyto [common-options]\n"
-                                   "                              [--follow] [-R|--recursive]\n"
-                                   "                              <host-src0> [host-src1 [...]] <guest-dst>\n"
-                                   "\n"
-                                   "                              copyto [common-options]\n"
-                                   "                              [--follow] [-R|--recursive]\n"
-                                   "                              [--target-directory <guest-dst>]\n"
-                                   "                              <host-src0> [host-src1 [...]]\n"
-                                   "\n"));
+                     "                              copyto [common-options]\n"
+                     "                              [--follow] [-R|--recursive]\n"
+                     "                              <host-src0> [host-src1 [...]] <guest-dst>\n"
+                     "\n"
+                     "                              copyto [common-options]\n"
+                     "                              [--follow] [-R|--recursive]\n"
+                     "                              [--target-directory <guest-dst>]\n"
+                     "                              <host-src0> [host-src1 [...]]\n"
+                     "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_MKDIR)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("                              mkdir|createdir[ectory] [common-options]\n"
-                                   "                              [--parents] [--mode <mode>]\n"
-                                   "                              <guest directory> [...]\n"
-                                   "\n"));
+                     "                              mkdir|createdir[ectory] [common-options]\n"
+                     "                              [--parents] [--mode <mode>]\n"
+                     "                              <guest directory> [...]\n"
+                     "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_RMDIR)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("                              rmdir|removedir[ectory] [common-options]\n"
-                                   "                              [-R|--recursive]\n"
-                                   "                              <guest directory> [...]\n"
-                                   "\n"));
+                     "                              rmdir|removedir[ectory] [common-options]\n"
+                     "                              [-R|--recursive]\n"
+                     "                              <guest directory> [...]\n"
+                     "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_RM)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("                              removefile|rm [common-options] [-f|--force]\n"
-                                   "                              <guest file> [...]\n"
-                                   "\n"));
+                     "                              removefile|rm [common-options] [-f|--force]\n"
+                     "                              <guest file> [...]\n"
+                     "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_MV)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("                              mv|move|ren[ame] [common-options]\n"
-                                   "                              <source> [source1 [...]] <dest>\n"
-                                   "\n"));
+                     "                              mv|move|ren[ame] [common-options]\n"
+                     "                              <source> [source1 [...]] <dest>\n"
+                     "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_MKTEMP)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("                              mktemp|createtemp[orary] [common-options]\n"
-                                   "                              [--secure] [--mode <mode>] [--tmpdir <directory>]\n"
-                                   "                              <template>\n"
-                                   "\n"));
+                     "                              mktemp|createtemp[orary] [common-options]\n"
+                     "                              [--secure] [--mode <mode>] [--tmpdir <directory>]\n"
+                     "                              <template>\n"
+                     "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_STAT)
         RTStrmPrintf(pStrm,
-                     GuestCtrl::tr("                              stat [common-options]\n"
-                                   "                              <file> [...]\n"
-                                   "\n"));
+                     "                              stat [common-options]\n"
+                     "                              <file> [...]\n"
+                     "\n");
 
     /*
      * Command not requiring authentication.
@@ -325,37 +325,37 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                      pcszSep1, pcszSep2, (fSubcommandScope & RTMSGREFENTRYSTR_SCOPE_MASK) == RTMSGREFENTRYSTR_SCOPE_GLOBAL ? "\n" : "");
         if (fSubcommandScope & HELP_SCOPE_GSTCTRL_LIST)
             RTStrmPrintf(pStrm,
-                         GuestCtrl::tr("                              list <all|sessions|processes|files> [common-opts]\n"
-                                       "\n"));
+                         "                              list <all|sessions|processes|files> [common-opts]\n"
+                         "\n");
         if (fSubcommandScope & HELP_SCOPE_GSTCTRL_CLOSEPROCESS)
             RTStrmPrintf(pStrm,
-                         GuestCtrl::tr("                              closeprocess [common-options]\n"
-                                       "                              <   --session-id <ID>\n"
-                                       "                                | --session-name <name or pattern>\n"
-                                       "                              <PID1> [PID1 [...]]\n"
-                                       "\n"));
+                         "                              closeprocess [common-options]\n"
+                         "                              <   --session-id <ID>\n"
+                         "                                | --session-name <name or pattern>\n"
+                         "                              <PID1> [PID1 [...]]\n"
+                         "\n");
         if (fSubcommandScope & HELP_SCOPE_GSTCTRL_CLOSESESSION)
             RTStrmPrintf(pStrm,
-                         GuestCtrl::tr("                              closesession [common-options]\n"
-                                       "                              <  --all | --session-id <ID>\n"
-                                       "                                | --session-name <name or pattern> >\n"
-                                       "\n"));
+                         "                              closesession [common-options]\n"
+                         "                              <  --all | --session-id <ID>\n"
+                         "                                | --session-name <name or pattern> >\n"
+                         "\n");
         if (fSubcommandScope & HELP_SCOPE_GSTCTRL_UPDATEGA)
             RTStrmPrintf(pStrm,
-                         GuestCtrl::tr("                              updatega|updateguestadditions|updateadditions\n"
-                                       "                              [--source <guest additions .ISO>]\n"
-                                       "                              [--wait-start] [common-options]\n"
-                                       "                              [-- [<argument1>] ... [<argumentN>]]\n"
-                                       "\n"));
+                         "                              updatega|updateguestadditions|updateadditions\n"
+                         "                              [--source <guest additions .ISO>]\n"
+                         "                              [--wait-start] [common-options]\n"
+                         "                              [-- [<argument1>] ... [<argumentN>]]\n"
+                         "\n");
         if (fSubcommandScope & HELP_SCOPE_GSTCTRL_WATCH)
             RTStrmPrintf(pStrm,
-                         GuestCtrl::tr("                              watch [--timeout <msec>] [common-options]\n"
-                                       "\n"));
+                         "                              watch [--timeout <msec>] [common-options]\n"
+                         "\n");
         if (fSubcommandScope & HELP_SCOPE_GSTCTRL_WAITRUNLEVEL)
             RTStrmPrintf(pStrm,
-                         GuestCtrl::tr("                              waitrunlevel [--timeout <msec>] [common-options]\n"
-                                       "                              <system|userland|desktop>\n"
-                                       "\n"));
+                         "                              waitrunlevel [--timeout <msec>] [common-options]\n"
+                         "                              <system|userland|desktop>\n"
+                         "\n");
     }
 }
 

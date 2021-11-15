@@ -453,22 +453,21 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
 
     if (enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       "  VBoxManage [<general option>] <command>\n"
-                       "\n"
-                       "\n"
-                       "General Options:\n"
-                       "\n"
-                       "  [-V|--version]            print version number and exit\n"
-                       "  [--dump-build-type]       print build type and exit\n"
-                       "  [-q|--nologo]             suppress the logo\n"
-                       "  [--settingspw <pw>]       provide the settings password\n"
-                       "  [--settingspwfile <file>] provide a file containing the settings password\n"
-                       "  [@<response-file>]        load arguments from the given response file (bourne style)\n"
-                       "\n"
-                       "\n"
-                       "Commands:\n"
-                       "\n"));
+                     "  VBoxManage [<general option>] <command>\n"
+                     "\n"
+                     "\n"
+                     "General Options:\n"
+                     "\n"
+                     "  [-V|--version]            print version number and exit\n"
+                     "  [--dump-build-type]       print build type and exit\n"
+                     "  [-q|--nologo]             suppress the logo\n"
+                     "  [--settingspw <pw>]       provide the settings password\n"
+                     "  [--settingspwfile <file>] provide a file containing the settings password\n"
+                     "  [@<response-file>]        load arguments from the given response file (bourne style)\n"
+                     "\n"
+                     "\n"
+                     "Commands:\n"
+                     "\n");
 
     const char *pcszSep1 = " ";
     const char *pcszSep2 = "         ";
@@ -483,377 +482,346 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
     if (enmCommand == USAGE_STARTVM || enmCommand == USAGE_S_ALL)
     {
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s startvm %s         <uuid|vmname>...\n"
-                       "                            [--type gui"), SEP);
+                           "%s startvm %s         <uuid|vmname>...\n"
+                     "                            [--type gui", SEP);
         if (fVBoxSDL)
             RTStrmPrintf(pStrm, "|sdl");
         RTStrmPrintf(pStrm, "|headless|separate]\n");
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       "                            [-E|--putenv <NAME>[=<VALUE>]]\n"
-                       "\n"));
+                     "                            [-E|--putenv <NAME>[=<VALUE>]]\n"
+                     "\n");
     }
 
     if (enmCommand == USAGE_CONTROLVM || enmCommand == USAGE_S_ALL)
     {
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s controlvm %s       <uuid|vmname>\n"
-                       "                            pause|resume|reset|poweroff|savestate|\n"), SEP);
+                           "%s controlvm %s       <uuid|vmname>\n"
+                     "                            pause|resume|reset|poweroff|savestate|\n", SEP);
 #ifdef VBOX_WITH_GUEST_CONTROL
         RTStrmPrintf(pStrm,
                        "                            reboot|shutdown [--force]|\n");
 #endif
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       "                            acpipowerbutton|acpisleepbutton|\n"
-                       "                            keyboardputscancode <hex> [<hex> ...]|\n"
-                       "                            keyboardputstring <string1> [<string2> ...]|\n"
-                       "                            keyboardputfile <filename>|\n"
-                       "                            setlinkstate<1-N> on|off |\n"));
+                     "                            acpipowerbutton|acpisleepbutton|\n"
+                     "                            keyboardputscancode <hex> [<hex> ...]|\n"
+                     "                            keyboardputstring <string1> [<string2> ...]|\n"
+                     "                            keyboardputfile <filename>|\n"
+                     "                            setlinkstate<1-N> on|off |\n");
 #if defined(VBOX_WITH_NETFLT)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       "                            nic<1-N> null|nat|bridged|intnet|hostonly|generic|\n"
-                       "                                     natnetwork [<devicename>] |\n"));
+                     "                            nic<1-N> null|nat|bridged|intnet|hostonly|generic|\n"
+                     "                                     natnetwork [<devicename>] |\n");
 #else /* !VBOX_WITH_NETFLT */
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       "                            nic<1-N> null|nat|bridged|intnet|generic|natnetwork\n"
-                       "                                     [<devicename>] |\n"));
+                     "                            nic<1-N> null|nat|bridged|intnet|generic|natnetwork\n"
+                     "                                     [<devicename>] |\n");
 #endif /* !VBOX_WITH_NETFLT */
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       "                            nictrace<1-N> on|off |\n"
-                       "                            nictracefile<1-N> <filename> |\n"
-                       "                            nicproperty<1-N> name=[value] |\n"
-                       "                            nicpromisc<1-N> deny|allow-vms|allow-all |\n"
-                       "                            natpf<1-N> [<rulename>],tcp|udp,[<hostip>],\n"
-                       "                                        <hostport>,[<guestip>],<guestport> |\n"
-                       "                            natpf<1-N> delete <rulename> |\n"
-                       "                            guestmemoryballoon <balloonsize in MB> |\n"
-                       "                            usbattach <uuid>|<address>\n"
-                       "                                      [--capturefile <filename>] |\n"
-                       "                            usbdetach <uuid>|<address> |\n"
-                       "                            audioin on|off |\n"
-                       "                            audioout on|off |\n"));
+                     "                            nictrace<1-N> on|off |\n"
+                     "                            nictracefile<1-N> <filename> |\n"
+                     "                            nicproperty<1-N> name=[value] |\n"
+                     "                            nicpromisc<1-N> deny|allow-vms|allow-all |\n"
+                     "                            natpf<1-N> [<rulename>],tcp|udp,[<hostip>],\n"
+                     "                                        <hostport>,[<guestip>],<guestport> |\n"
+                     "                            natpf<1-N> delete <rulename> |\n"
+                     "                            guestmemoryballoon <balloonsize in MB> |\n"
+                     "                            usbattach <uuid>|<address>\n"
+                     "                                      [--capturefile <filename>] |\n"
+                     "                            usbdetach <uuid>|<address> |\n"
+                     "                            audioin on|off |\n"
+                     "                            audioout on|off |\n");
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
         RTStrmPrintf(pStrm,
-                       "                            clipboard mode disabled|hosttoguest|guesttohost|\n"
-                       "                                           bidirectional |\n");
+                     "                            clipboard mode disabled|hosttoguest|guesttohost|\n"
+                     "                                           bidirectional |\n");
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
         RTStrmPrintf(pStrm,
                        "                            clipboard filetransfers enabled|disabled |\n");
 # endif
 #endif
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       "                            draganddrop disabled|hosttoguest|guesttohost|\n"
-                       "                                        bidirectional |\n"
-                       "                            vrde on|off |\n"
-                       "                            vrdeport <port> |\n"
-                       "                            vrdeproperty <name=[value]> |\n"
-                       "                            vrdevideochannelquality <percent> |\n"
-                       "                            setvideomodehint <xres> <yres> <bpp>\n"
-                       "                                            [[<display>] [<enabled:yes|no> |\n"
-                       "                                              [<xorigin> <yorigin>]]] |\n"
-                       "                            setscreenlayout <display> on|primary <xorigin> <yorigin> <xres> <yres> <bpp> | off\n"
-                       "                            screenshotpng <file> [display] |\n"));
+                     "                            draganddrop disabled|hosttoguest|guesttohost|\n"
+                     "                                        bidirectional |\n"
+                     "                            vrde on|off |\n"
+                     "                            vrdeport <port> |\n"
+                     "                            vrdeproperty <name=[value]> |\n"
+                     "                            vrdevideochannelquality <percent> |\n"
+                     "                            setvideomodehint <xres> <yres> <bpp>\n"
+                     "                                            [[<display>] [<enabled:yes|no> |\n"
+                     "                                              [<xorigin> <yorigin>]]] |\n"
+                     "                            setscreenlayout <display> on|primary <xorigin> <yorigin> <xres> <yres> <bpp> | off\n"
+                     "                            screenshotpng <file> [display] |\n");
 #ifdef VBOX_WITH_RECORDING
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       "                            recording on|off |\n"
-                       "                            recording screens all|none|<screen>,[<screen>...] |\n"
-                       "                            recording filename <file> |\n"
-                       "                            recording videores <width>x<height> |\n"
-                       "                            recording videorate <rate> |\n"
-                       "                            recording videofps <fps> |\n"
-                       "                            recording maxtime <s> |\n"
-                       "                            recording maxfilesize <MB> |\n"));
+                     "                            recording on|off |\n"
+                     "                            recording screens all|none|<screen>,[<screen>...] |\n"
+                     "                            recording filename <file> |\n"
+                     "                            recording videores <width>x<height> |\n"
+                     "                            recording videorate <rate> |\n"
+                     "                            recording videofps <fps> |\n"
+                     "                            recording maxtime <s> |\n"
+                     "                            recording maxfilesize <MB> |\n");
 #endif /* VBOX_WITH_RECORDING */
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       "                            setcredentials <username>\n"
-                       "                                           --passwordfile <file> | <password>\n"
-                       "                                           <domain>\n"
-                       "                                           [--allowlocallogon <yes|no>] |\n"
-                       "                            teleport --host <name> --port <port>\n"
-                       "                                     [--maxdowntime <msec>]\n"
-                       "                                     [--passwordfile <file> |\n"
-                       "                                      --password <password>] |\n"
-                       "                            plugcpu <id> |\n"
-                       "                            unplugcpu <id> |\n"
-                       "                            cpuexecutioncap <1-100>\n"
-                       "                            webcam <attach [path [settings]]> | <detach [path]> | <list>\n"
-                       "                            addencpassword <id>\n"
-                       "                                           <password file>|-\n"
-                       "                                           [--removeonsuspend <yes|no>]\n"
-                       "                            removeencpassword <id>\n"
-                       "                            removeallencpasswords\n"
-                       "                            changeuartmode<1-N> disconnected|\n"
-                       "                                                server <pipe>|\n"
-                       "                                                client <pipe>|\n"
-                       "                                                tcpserver <port>|\n"
-                       "                                                tcpclient <hostname:port>|\n"
-                       "                                                file <file>|\n"
-                       "                                                <devicename>\n"
-                       "                            vm-process-priority default|flat|low|normal|high\n"
-                       "                            autostart-enabled on|off\n"
-                       "                            autostart-delay <seconds>\n"
-                       "\n"));
+                     "                            setcredentials <username>\n"
+                     "                                           --passwordfile <file> | <password>\n"
+                     "                                           <domain>\n"
+                     "                                           [--allowlocallogon <yes|no>] |\n"
+                     "                            teleport --host <name> --port <port>\n"
+                     "                                     [--maxdowntime <msec>]\n"
+                     "                                     [--passwordfile <file> |\n"
+                     "                                      --password <password>] |\n"
+                     "                            plugcpu <id> |\n"
+                     "                            unplugcpu <id> |\n"
+                     "                            cpuexecutioncap <1-100>\n"
+                     "                            webcam <attach [path [settings]]> | <detach [path]> | <list>\n"
+                     "                            addencpassword <id>\n"
+                     "                                           <password file>|-\n"
+                     "                                           [--removeonsuspend <yes|no>]\n"
+                     "                            removeencpassword <id>\n"
+                     "                            removeallencpasswords\n"
+                     "                            changeuartmode<1-N> disconnected|\n"
+                     "                                                server <pipe>|\n"
+                     "                                                client <pipe>|\n"
+                     "                                                tcpserver <port>|\n"
+                     "                                                tcpclient <hostname:port>|\n"
+                     "                                                file <file>|\n"
+                     "                                                <devicename>\n"
+                     "                            vm-process-priority default|flat|low|normal|high\n"
+                     "                            autostart-enabled on|off\n"
+                     "                            autostart-delay <seconds>\n"
+                     "\n");
     }
 
     if (enmCommand == USAGE_DISCARDSTATE || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s discardstate %s    <uuid|vmname>\n"
-                       "\n"), SEP);
+                           "%s discardstate %s    <uuid|vmname>\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_ADOPTSTATE || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s adoptstate %s      <uuid|vmname> <state_file>\n"
-                       "\n"), SEP);
+                           "%s adoptstate %s      <uuid|vmname> <state_file>\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_CLOSEMEDIUM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s closemedium %s     [disk|dvd|floppy] <uuid|filename>\n"
-                       "                            [--delete]\n"
-                       "\n"), SEP);
+                           "%s closemedium %s     [disk|dvd|floppy] <uuid|filename>\n"
+                     "                            [--delete]\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_STORAGEATTACH || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s storageattach %s   <uuid|vmname>\n"
-                       "                            --storagectl <name>\n"
-                       "                            [--port <number>]\n"
-                       "                            [--device <number>]\n"
-                       "                            [--type dvddrive|hdd|fdd]\n"
-                       "                            [--medium none|emptydrive|additions|\n"
-                       "                                      <uuid|filename>|host:<drive>|iscsi]\n"
-                       "                            [--mtype normal|writethrough|immutable|shareable|\n"
-                       "                                     readonly|multiattach]\n"
-                       "                            [--comment <text>]\n"
-                       "                            [--setuuid <uuid>]\n"
-                       "                            [--setparentuuid <uuid>]\n"
-                       "                            [--passthrough on|off]\n"
-                       "                            [--tempeject on|off]\n"
-                       "                            [--nonrotational on|off]\n"
-                       "                            [--discard on|off]\n"
-                       "                            [--hotpluggable on|off]\n"
-                       "                            [--bandwidthgroup <name>]\n"
-                       "                            [--forceunmount]\n"
-                       "                            [--server <name>|<ip>]\n"
-                       "                            [--target <target>]\n"
-                       "                            [--tport <port>]\n"
-                       "                            [--lun <lun>]\n"
-                       "                            [--encodedlun <lun>]\n"
-                       "                            [--username <username>]\n"
-                       "                            [--password <password>]\n"
-                       "                            [--passwordfile <file>]\n"
-                       "                            [--initiator <initiator>]\n"
-                       "                            [--intnet]\n"
-                       "\n"), SEP);
+                           "%s storageattach %s   <uuid|vmname>\n"
+                     "                            --storagectl <name>\n"
+                     "                            [--port <number>]\n"
+                     "                            [--device <number>]\n"
+                     "                            [--type dvddrive|hdd|fdd]\n"
+                     "                            [--medium none|emptydrive|additions|\n"
+                     "                                      <uuid|filename>|host:<drive>|iscsi]\n"
+                     "                            [--mtype normal|writethrough|immutable|shareable|\n"
+                     "                                     readonly|multiattach]\n"
+                     "                            [--comment <text>]\n"
+                     "                            [--setuuid <uuid>]\n"
+                     "                            [--setparentuuid <uuid>]\n"
+                     "                            [--passthrough on|off]\n"
+                     "                            [--tempeject on|off]\n"
+                     "                            [--nonrotational on|off]\n"
+                     "                            [--discard on|off]\n"
+                     "                            [--hotpluggable on|off]\n"
+                     "                            [--bandwidthgroup <name>]\n"
+                     "                            [--forceunmount]\n"
+                     "                            [--server <name>|<ip>]\n"
+                     "                            [--target <target>]\n"
+                     "                            [--tport <port>]\n"
+                     "                            [--lun <lun>]\n"
+                     "                            [--encodedlun <lun>]\n"
+                     "                            [--username <username>]\n"
+                     "                            [--password <password>]\n"
+                     "                            [--passwordfile <file>]\n"
+                     "                            [--initiator <initiator>]\n"
+                     "                            [--intnet]\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_STORAGECONTROLLER || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s storagectl %s      <uuid|vmname>\n"
-                       "                            --name <name>\n"
-                       "                            [--add ide|sata|scsi|floppy|sas|usb|pcie|virtio]\n"
-                       "                            [--controller LSILogic|LSILogicSAS|BusLogic|\n"
-                       "                                          IntelAHCI|PIIX3|PIIX4|ICH6|I82078|\n"
-                       "                            [             USB|NVMe|VirtIO]\n"
-                       "                            [--portcount <1-n>]\n"
-                       "                            [--hostiocache on|off]\n"
-                       "                            [--bootable on|off]\n"
-                       "                            [--rename <name>]\n"
-                       "                            [--remove]\n"
-                       "\n"), SEP);
+                           "%s storagectl %s      <uuid|vmname>\n"
+                     "                            --name <name>\n"
+                     "                            [--add ide|sata|scsi|floppy|sas|usb|pcie|virtio]\n"
+                     "                            [--controller LSILogic|LSILogicSAS|BusLogic|\n"
+                     "                                          IntelAHCI|PIIX3|PIIX4|ICH6|I82078|\n"
+                     "                            [             USB|NVMe|VirtIO]\n"
+                     "                            [--portcount <1-n>]\n"
+                     "                            [--hostiocache on|off]\n"
+                     "                            [--bootable on|off]\n"
+                     "                            [--rename <name>]\n"
+                     "                            [--remove]\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_BANDWIDTHCONTROL || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s bandwidthctl %s    <uuid|vmname>\n"
-                       "                            add <name> --type disk|network\n"
-                       "                                --limit <megabytes per second>[k|m|g|K|M|G] |\n"
-                       "                            set <name>\n"
-                       "                                --limit <megabytes per second>[k|m|g|K|M|G] |\n"
-                       "                            remove <name> |\n"
-                       "                            list [--machinereadable]\n"
-                       "                            (limit units: k=kilobit, m=megabit, g=gigabit,\n"
-                       "                                          K=kilobyte, M=megabyte, G=gigabyte)\n"
-                       "\n"), SEP);
+                           "%s bandwidthctl %s    <uuid|vmname>\n"
+                     "                            add <name> --type disk|network\n"
+                     "                                --limit <megabytes per second>[k|m|g|K|M|G] |\n"
+                     "                            set <name>\n"
+                     "                                --limit <megabytes per second>[k|m|g|K|M|G] |\n"
+                     "                            remove <name> |\n"
+                     "                            list [--machinereadable]\n"
+                     "                            (limit units: k=kilobit, m=megabit, g=gigabit,\n"
+                     "                                          K=kilobyte, M=megabyte, G=gigabyte)\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_SHOWMEDIUMINFO || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s showmediuminfo %s  [disk|dvd|floppy] <uuid|filename>\n"
-                       "\n"), SEP);
+                           "%s showmediuminfo %s  [disk|dvd|floppy] <uuid|filename>\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_CREATEMEDIUM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s createmedium %s    [disk|dvd|floppy] --filename <filename>\n"
-                       "                            [--size <megabytes>|--sizebyte <bytes>]\n"
-                       "                            [--diffparent <uuid>|<filename>]\n"
-                       "                            [--format VDI|VMDK|VHD] (default: VDI)]\n"
-                       "                            [--variant Standard,Fixed,Split2G,Stream,ESX,\n"
-                       "                                       Formatted,RawDisk]\n"
-                       "                            [[--property <name>=<value>] --property <name>=<value>\n"
-                       "                              --property-file <name>=</path/to/file/with/value>]...\n"
-                       "\n"), SEP);
+                           "%s createmedium %s    [disk|dvd|floppy] --filename <filename>\n"
+                     "                            [--size <megabytes>|--sizebyte <bytes>]\n"
+                     "                            [--diffparent <uuid>|<filename>]\n"
+                     "                            [--format VDI|VMDK|VHD] (default: VDI)]\n"
+                     "                            [--variant Standard,Fixed,Split2G,Stream,ESX,\n"
+                     "                                       Formatted,RawDisk]\n"
+                     "                            [[--property <name>=<value>] --property <name>=<value>\n"
+                     "                              --property-file <name>=</path/to/file/with/value>]...\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_MODIFYMEDIUM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s modifymedium %s    [disk|dvd|floppy] <uuid|filename>\n"
-                       "                            [--type normal|writethrough|immutable|shareable|\n"
-                       "                                    readonly|multiattach]\n"
-                       "                            [--autoreset on|off]\n"
-                       "                            [--property <name=[value]>]\n"
-                       "                            [--compact]\n"
-                       "                            [--resize <megabytes>|--resizebyte <bytes>]\n"
-                       "                            [--move <path>]\n"
-                       "                            [--setlocation <path>]\n"
-                       "                            [--description <description string>]"
-                       "\n"), SEP);
+                           "%s modifymedium %s    [disk|dvd|floppy] <uuid|filename>\n"
+                     "                            [--type normal|writethrough|immutable|shareable|\n"
+                     "                                    readonly|multiattach]\n"
+                     "                            [--autoreset on|off]\n"
+                     "                            [--property <name=[value]>]\n"
+                     "                            [--compact]\n"
+                     "                            [--resize <megabytes>|--resizebyte <bytes>]\n"
+                     "                            [--move <path>]\n"
+                     "                            [--setlocation <path>]\n"
+                     "                            [--description <description string>]"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_CLONEMEDIUM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s clonemedium %s     [disk|dvd|floppy] <uuid|inputfile> <uuid|outputfile>\n"
-                       "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
-                       "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
-                       "                            [--existing]\n"
-                       "\n"), SEP);
+                           "%s clonemedium %s     [disk|dvd|floppy] <uuid|inputfile> <uuid|outputfile>\n"
+                     "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
+                     "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
+                     "                            [--existing]\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_MEDIUMPROPERTY || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s mediumproperty %s  [disk|dvd|floppy] set <uuid|filename>\n"
-                       "                            <property> <value>\n"
-                       "\n"
-                       "                            [disk|dvd|floppy] get <uuid|filename>\n"
-                       "                            <property>\n"
-                       "\n"
-                       "                            [disk|dvd|floppy] delete <uuid|filename>\n"
-                       "                            <property>\n"
-                       "\n"), SEP);
+                           "%s mediumproperty %s  [disk|dvd|floppy] set <uuid|filename>\n"
+                     "                            <property> <value>\n"
+                     "\n"
+                     "                            [disk|dvd|floppy] get <uuid|filename>\n"
+                     "                            <property>\n"
+                     "\n"
+                     "                            [disk|dvd|floppy] delete <uuid|filename>\n"
+                     "                            <property>\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_ENCRYPTMEDIUM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s encryptmedium %s   <uuid|filename>\n"
-                       "                            [--newpassword <file>|-]\n"
-                       "                            [--oldpassword <file>|-]\n"
-                       "                            [--cipher <cipher identifier>]\n"
-                       "                            [--newpasswordid <password identifier>]\n"
-                       "\n"), SEP);
+                           "%s encryptmedium %s   <uuid|filename>\n"
+                     "                            [--newpassword <file>|-]\n"
+                     "                            [--oldpassword <file>|-]\n"
+                     "                            [--cipher <cipher identifier>]\n"
+                     "                            [--newpasswordid <password identifier>]\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_MEDIUMENCCHKPWD || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s checkmediumpwd %s  <uuid|filename>\n"
-                       "                            <pwd file>|-\n"
-                       "\n"), SEP);
+                           "%s checkmediumpwd %s  <uuid|filename>\n"
+                     "                            <pwd file>|-\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_CONVERTFROMRAW || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s convertfromraw %s  <filename> <outputfile>\n"
-                       "                            [--format VDI|VMDK|VHD]\n"
-                       "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
-                       "                            [--uuid <uuid>]\n"
-                             "%s convertfromraw %s  stdin <outputfile> <bytes>\n"
-                       "                            [--format VDI|VMDK|VHD]\n"
-                       "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
-                       "                            [--uuid <uuid>]\n"
-                       "\n"), SEP, SEP);
+                           "%s convertfromraw %s  <filename> <outputfile>\n"
+                     "                            [--format VDI|VMDK|VHD]\n"
+                     "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
+                     "                            [--uuid <uuid>]\n"
+                           "%s convertfromraw %s  stdin <outputfile> <bytes>\n"
+                     "                            [--format VDI|VMDK|VHD]\n"
+                     "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
+                     "                            [--uuid <uuid>]\n"
+                     "\n", SEP, SEP);
 
     if (enmCommand == USAGE_GETEXTRADATA || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s getextradata %s    global|<uuid|vmname>\n"
-                       "                            <key>|[enumerate]\n"
-                       "\n"), SEP);
+                           "%s getextradata %s    global|<uuid|vmname>\n"
+                     "                            <key>|[enumerate]\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_SETEXTRADATA || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s setextradata %s    global|<uuid|vmname>\n"
-                       "                            <key>\n"
-                       "                            [<value>] (no value deletes key)\n"
-                       "\n"), SEP);
+                           "%s setextradata %s    global|<uuid|vmname>\n"
+                     "                            <key>\n"
+                     "                            [<value>] (no value deletes key)\n"
+                     "\n", SEP);
 
     if (enmCommand == USAGE_SETPROPERTY || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s setproperty %s     machinefolder default|<folder> |\n"
-                       "                            hwvirtexclusive on|off |\n"
-                       "                            vrdeauthlibrary default|<library> |\n"
-                       "                            websrvauthlibrary default|null|<library> |\n"
-                       "                            vrdeextpack null|<library> |\n"
-                       "                            autostartdbpath null|<folder> |\n"
-                       "                            loghistorycount <value>\n"
-                       "                            defaultfrontend default|<name>\n"
-                       "                            logginglevel <log setting>\n"
-                       "                            proxymode system|noproxy|manual\n"
-                       "                            proxyurl <url>\n"), SEP);
+                           "%s setproperty %s     machinefolder default|<folder> |\n"
+                     "                            hwvirtexclusive on|off |\n"
+                     "                            vrdeauthlibrary default|<library> |\n"
+                     "                            websrvauthlibrary default|null|<library> |\n"
+                     "                            vrdeextpack null|<library> |\n"
+                     "                            autostartdbpath null|<folder> |\n"
+                     "                            loghistorycount <value>\n"
+                     "                            defaultfrontend default|<name>\n"
+                     "                            logginglevel <log setting>\n"
+                     "                            proxymode system|noproxy|manual\n"
+                     "                            proxyurl <url>\n", SEP);
 #ifdef VBOX_WITH_MAIN_NLS
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       "                            language <language id>\n"));
+                     "                            language <language id>\n");
 #endif
         RTStrmPrintf(pStrm,
-                       "\n");
+                     "\n");
 
     if (enmCommand == USAGE_USBFILTER || enmCommand == USAGE_S_ALL)
     {
         if (fSubcommandScope & HELP_SCOPE_USBFILTER_ADD)
             RTStrmPrintf(pStrm,
-                         Help::tr(
-                                 "%s usbfilter %s       add <index,0-N>\n"
-                           "                            --target <uuid|vmname>|global\n"
-                           "                            --name <string>\n"
-                           "                            --action ignore|hold (global filters only)\n"
-                           "                            [--active yes|no] (yes)\n"
-                           "                            [--vendorid <XXXX>] (null)\n"
-                           "                            [--productid <XXXX>] (null)\n"
-                           "                            [--revision <IIFF>] (null)\n"
-                           "                            [--manufacturer <string>] (null)\n"
-                           "                            [--product <string>] (null)\n"
-                           "                            [--remote yes|no] (null, VM filters only)\n"
-                           "                            [--serialnumber <string>] (null)\n"
-                           "                            [--maskedinterfaces <XXXXXXXX>]\n"
-                           "\n"), SEP);
+                               "%s usbfilter %s       add <index,0-N>\n"
+                         "                            --target <uuid|vmname>|global\n"
+                         "                            --name <string>\n"
+                         "                            --action ignore|hold (global filters only)\n"
+                         "                            [--active yes|no] (yes)\n"
+                         "                            [--vendorid <XXXX>] (null)\n"
+                         "                            [--productid <XXXX>] (null)\n"
+                         "                            [--revision <IIFF>] (null)\n"
+                         "                            [--manufacturer <string>] (null)\n"
+                         "                            [--product <string>] (null)\n"
+                         "                            [--remote yes|no] (null, VM filters only)\n"
+                         "                            [--serialnumber <string>] (null)\n"
+                         "                            [--maskedinterfaces <XXXXXXXX>]\n"
+                         "\n", SEP);
 
         if (fSubcommandScope & HELP_SCOPE_USBFILTER_MODIFY)
             RTStrmPrintf(pStrm,
-                         Help::tr(
-                                 "%s usbfilter %s       modify <index,0-N>\n"
-                           "                            --target <uuid|vmname>|global\n"
-                           "                            [--name <string>]\n"
-                           "                            [--action ignore|hold] (global filters only)\n"
-                           "                            [--active yes|no]\n"
-                           "                            [--vendorid <XXXX>|\"\"]\n"
-                           "                            [--productid <XXXX>|\"\"]\n"
-                           "                            [--revision <IIFF>|\"\"]\n"
-                           "                            [--manufacturer <string>|\"\"]\n"
-                           "                            [--product <string>|\"\"]\n"
-                           "                            [--remote yes|no] (null, VM filters only)\n"
-                           "                            [--serialnumber <string>|\"\"]\n"
-                           "                            [--maskedinterfaces <XXXXXXXX>]\n"
-                           "\n"), SEP);
+                               "%s usbfilter %s       modify <index,0-N>\n"
+                         "                            --target <uuid|vmname>|global\n"
+                         "                            [--name <string>]\n"
+                         "                            [--action ignore|hold] (global filters only)\n"
+                         "                            [--active yes|no]\n"
+                         "                            [--vendorid <XXXX>|\"\"]\n"
+                         "                            [--productid <XXXX>|\"\"]\n"
+                         "                            [--revision <IIFF>|\"\"]\n"
+                         "                            [--manufacturer <string>|\"\"]\n"
+                         "                            [--product <string>|\"\"]\n"
+                         "                            [--remote yes|no] (null, VM filters only)\n"
+                         "                            [--serialnumber <string>|\"\"]\n"
+                         "                            [--maskedinterfaces <XXXXXXXX>]\n"
+                         "\n", SEP);
 
         if (fSubcommandScope & HELP_SCOPE_USBFILTER_REMOVE)
             RTStrmPrintf(pStrm,
-                         Help::tr(
-                                 "%s usbfilter %s       remove <index,0-N>\n"
-                           "                            --target <uuid|vmname>|global\n"
-                           "\n"), SEP);
+                               "%s usbfilter %s       remove <index,0-N>\n"
+                         "                            --target <uuid|vmname>|global\n"
+                         "\n", SEP);
     }
 
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -868,57 +836,55 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
 
     if (enmCommand == USAGE_METRICS || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s metrics %s         list [*|host|<vmname> [<metric_list>]]\n"
-                       "                                                 (comma-separated)\n\n"
-                             "%s metrics %s         setup\n"
-                       "                            [--period <seconds>] (default: 1)\n"
-                       "                            [--samples <count>] (default: 1)\n"
-                       "                            [--list]\n"
-                       "                            [*|host|<vmname> [<metric_list>]]\n\n"
-                             "%s metrics %s         query [*|host|<vmname> [<metric_list>]]\n\n"
-                             "%s metrics %s         enable\n"
-                       "                            [--list]\n"
-                       "                            [*|host|<vmname> [<metric_list>]]\n\n"
-                             "%s metrics %s         disable\n"
-                       "                            [--list]\n"
-                       "                            [*|host|<vmname> [<metric_list>]]\n\n"
-                             "%s metrics %s         collect\n"
-                       "                            [--period <seconds>] (default: 1)\n"
-                       "                            [--samples <count>] (default: 1)\n"
-                       "                            [--list]\n"
-                       "                            [--detach]\n"
-                       "                            [*|host|<vmname> [<metric_list>]]\n"
-                       "\n"), SEP, SEP, SEP, SEP, SEP, SEP);
+                           "%s metrics %s         list [*|host|<vmname> [<metric_list>]]\n"
+                     "                                                 (comma-separated)\n\n"
+                           "%s metrics %s         setup\n"
+                     "                            [--period <seconds>] (default: 1)\n"
+                     "                            [--samples <count>] (default: 1)\n"
+                     "                            [--list]\n"
+                     "                            [*|host|<vmname> [<metric_list>]]\n\n"
+                           "%s metrics %s         query [*|host|<vmname> [<metric_list>]]\n\n"
+                           "%s metrics %s         enable\n"
+                     "                            [--list]\n"
+                     "                            [*|host|<vmname> [<metric_list>]]\n\n"
+                           "%s metrics %s         disable\n"
+                     "                            [--list]\n"
+                     "                            [*|host|<vmname> [<metric_list>]]\n\n"
+                           "%s metrics %s         collect\n"
+                     "                            [--period <seconds>] (default: 1)\n"
+                     "                            [--samples <count>] (default: 1)\n"
+                     "                            [--list]\n"
+                     "                            [--detach]\n"
+                     "                            [*|host|<vmname> [<metric_list>]]\n"
+                     "\n", SEP, SEP, SEP, SEP, SEP, SEP);
 
 #if defined(VBOX_WITH_NAT_SERVICE)
     if (enmCommand == USAGE_NATNETWORK || enmCommand == USAGE_S_ALL)
     {
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s natnetwork %s      add --netname <name>\n"
-                       "                            --network <network>\n"
-                       "                            [--enable|--disable]\n"
-                       "                            [--dhcp on|off]\n"
-                       "                            [--port-forward-4 <rule>]\n"
-                       "                            [--loopback-4 <rule>]\n"
-                       "                            [--ipv6 on|off]\n"
-                       "                            [--port-forward-6 <rule>]\n"
-                       "                            [--loopback-6 <rule>]\n\n"
-                             "%s natnetwork %s      remove --netname <name>\n\n"
-                             "%s natnetwork %s      modify --netname <name>\n"
-                       "                            [--network <network>]\n"
-                       "                            [--enable|--disable]\n"
-                       "                            [--dhcp on|off]\n"
-                       "                            [--port-forward-4 <rule>]\n"
-                       "                            [--loopback-4 <rule>]\n"
-                       "                            [--ipv6 on|off]\n"
-                       "                            [--port-forward-6 <rule>]\n"
-                       "                            [--loopback-6 <rule>]\n\n"
-                             "%s natnetwork %s      start --netname <name>\n\n"
-                             "%s natnetwork %s      stop --netname <name>\n\n"
-                             "%s natnetwork %s      list [<pattern>]\n"
-                       "\n"), SEP, SEP, SEP, SEP, SEP, SEP);
+                           "%s natnetwork %s      add --netname <name>\n"
+                     "                            --network <network>\n"
+                     "                            [--enable|--disable]\n"
+                     "                            [--dhcp on|off]\n"
+                     "                            [--port-forward-4 <rule>]\n"
+                     "                            [--loopback-4 <rule>]\n"
+                     "                            [--ipv6 on|off]\n"
+                     "                            [--port-forward-6 <rule>]\n"
+                     "                            [--loopback-6 <rule>]\n\n"
+                           "%s natnetwork %s      remove --netname <name>\n\n"
+                           "%s natnetwork %s      modify --netname <name>\n"
+                     "                            [--network <network>]\n"
+                     "                            [--enable|--disable]\n"
+                     "                            [--dhcp on|off]\n"
+                     "                            [--port-forward-4 <rule>]\n"
+                     "                            [--loopback-4 <rule>]\n"
+                     "                            [--ipv6 on|off]\n"
+                     "                            [--port-forward-6 <rule>]\n"
+                     "                            [--loopback-6 <rule>]\n\n"
+                           "%s natnetwork %s      start --netname <name>\n\n"
+                           "%s natnetwork %s      stop --netname <name>\n\n"
+                           "%s natnetwork %s      list [<pattern>]\n"
+                     "\n", SEP, SEP, SEP, SEP, SEP, SEP);
 
 
     }
@@ -928,35 +894,32 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
     if (enmCommand == USAGE_HOSTONLYIFS || enmCommand == USAGE_S_ALL)
     {
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s hostonlyif %s      ipconfig <name>\n"
-                       "                            [--dhcp |\n"
-                       "                            --ip <ipv4> [--netmask <ipv4> (def:255.255.255.0)]|\n"
-                       "                            --ipv6 <ipv6> [--netmasklengthv6 <N> (def:64)]]"), SEP);
+                           "%s hostonlyif %s      ipconfig <name>\n"
+                     "                            [--dhcp |\n"
+                     "                            --ip <ipv4> [--netmask <ipv4> (def:255.255.255.0)]|\n"
+                     "                            --ipv6 <ipv6> [--netmasklengthv6 <N> (def:64)]]", SEP);
 # if !defined(RT_OS_SOLARIS) || defined(VBOX_ONLY_DOCS)
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                       " |\n"
-                       "                            create |\n"
-                       "                            remove <name>\n"));
+                     " |\n"
+                     "                            create |\n"
+                     "                            remove <name>\n");
 # else
         RTStrmPrintf(pStrm,
-                       "\n");
+                     "\n");
 # endif
         RTStrmPrintf(pStrm,
-                       "\n");
+                     "\n");
     }
 #endif
 
     if (enmCommand == USAGE_USBDEVSOURCE || enmCommand == USAGE_S_ALL)
     {
         RTStrmPrintf(pStrm,
-                     Help::tr(
-                             "%s usbdevsource %s    add <source name>\n"
-                       "                            --backend <backend>\n"
-                       "                            --address <address>\n"
-                             "%s usbdevsource %s    remove <source name>\n"
-                       "\n"), SEP, SEP);
+                           "%s usbdevsource %s    add <source name>\n"
+                     "                            --backend <backend>\n"
+                     "                            --address <address>\n"
+                           "%s usbdevsource %s    remove <source name>\n"
+                     "\n", SEP, SEP);
     }
 
 #ifndef VBOX_ONLY_DOCS /* Converted to man page, not needed. */

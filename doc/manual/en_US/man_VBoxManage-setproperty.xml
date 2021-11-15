@@ -96,6 +96,17 @@
           </itemizedlist></listitem>
       </varlistentry>
       <varlistentry>
+        <term><literal>language</literal></term>
+        <listitem><para>
+            Specifies the user language used to translate API messages.
+            Valid values are <literal>C</literal>, which means no
+            translation or language code in form either <literal>ll</literal>
+            or <literal>ll_CC</literal>, where <literal>ll</literal> is
+            language 2 letters code in lower case and
+            <literal>CC</literal> is country 2 letter code in upper case.
+          </para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><literal>logginglevel</literal></term>
         <listitem><para>
             Specifies the VBoxSVC release logging details. See
