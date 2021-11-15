@@ -802,6 +802,42 @@ typedef const STAMPROFILE *PCSTAMPROFILE;
 #endif
 
 
+/** @def STAM_REL_PROFILE_STOP_START
+ * Stops one profile counter (if running) and starts another one.
+ *
+ * @param   pProfile1   Pointer to the STAMPROFILE structure to stop.
+ * @param   pProfile2   Pointer to the STAMPROFILE structure to start.
+ * @param   Prefix      Identifier prefix used to internal variables.
+ */
+#ifndef VBOX_WITHOUT_RELEASE_STATISTICS
+# define STAM_REL_PROFILE_STOP_START(pProfile1, pProfile2, Prefix) \
+    do { \
+        uint64_t Prefix##_tsStop; \
+        STAM_GET_TS(Prefix##_tsStop); \
+        STAM_REL_PROFILE_ADD_PERIOD(pProfile1, Prefix##_tsStop - Prefix##_tsStart); \
+        Prefix##_tsStart = Prefix##_tsStop; \
+    } while (0)
+#else
+# define STAM_REL_PROFILE_STOP_START(pProfile1, pProfile2, Prefix) \
+    do { } while (0)
+#endif
+/** @def STAM_PROFILE_STOP_START
+ * Samples the stop time of a profiling period (if running) and updates the
+ * sample.
+ *
+ * @param   pProfile1   Pointer to the STAMPROFILE structure to stop.
+ * @param   pProfile2   Pointer to the STAMPROFILE structure to start.
+ * @param   Prefix      Identifier prefix used to internal variables.
+ */
+#ifdef VBOX_WITH_STATISTICS
+# define STAM_PROFILE_STOP_START(pProfile1, pProfile2, Prefix) \
+    STAM_REL_PROFILE_STOP_START(pProfile1, pProfile2, Prefix)
+#else
+# define STAM_PROFILE_STOP_START(pProfile1, pProfile2, Prefix) \
+    do { } while (0)
+#endif
+
+
 /** @def STAM_REL_PROFILE_START_NS
  * Samples the start time of a profiling period, using RTTimeNanoTS().
  *
