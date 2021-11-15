@@ -68,8 +68,13 @@ public:
 
 protected:
 
-    void showEvent(QShowEvent *pEvent);
-
+    /** @name Event-handling stuff.
+      * @{ */
+        /** Handles translation event. */
+        virtual void retranslateUi() final override;
+        void showEvent(QShowEvent *pEvent) final override;
+        bool event(QEvent *pEvent) final override;
+    /** @} */
 
 private slots:
 
@@ -91,13 +96,6 @@ private slots:
     void sltHandleTreeCollapseAllSignal();
 
 private:
-
-
-    /** @name Event-handling stuff.
-      * @{ */
-        /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
-    /** @} */
 
     /** @name Prepare/cleanup cascade.
       * @{ */
@@ -123,6 +121,8 @@ private:
     void          saveDefaultForeground();
     void          selectMedium(const QUuid &uMediumID);
     void          setTitle();
+    void          saveDialogGeometry();
+    void          loadSettings();
     QWidget              *m_pCentralWidget;
     QVBoxLayout          *m_pMainLayout;
     QITreeWidget         *m_pTreeWidget;
@@ -155,6 +155,7 @@ private:
     QUuid                 m_uMachineID;
     QUuid                 m_uCurrentMediumId;
     UIActionPool         *m_pActionPool;
+    int                   m_iGeometrySaveTimerId;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumSelector_h */

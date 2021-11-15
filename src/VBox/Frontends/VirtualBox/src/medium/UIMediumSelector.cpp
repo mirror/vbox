@@ -35,6 +35,7 @@
 #include "UIMediumSearchWidget.h"
 #include "UIMediumSelector.h"
 #include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
 #include "UIMediumItem.h"
@@ -80,6 +81,7 @@ UIMediumSelector::UIMediumSelector(const QUuid &uCurrentMediumId, UIMediumDevice
     , m_strMachineGuestOSTypeId(strMachineGuestOSTypeId)
     , m_uMachineID(uMachineID)
     , m_pActionPool(pActionPool)
+    , m_iGeometrySaveTimerId(-1)
 {
     /* Start full medium-enumeration (if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
@@ -87,6 +89,7 @@ UIMediumSelector::UIMediumSelector(const QUuid &uCurrentMediumId, UIMediumDevice
     configure();
     finalize();
     selectMedium(uCurrentMediumId);
+    loadSettings();
 }
 
 void UIMediumSelector::setEnableCreateAction(bool fEnable)
@@ -127,6 +130,27 @@ void UIMediumSelector::retranslateUi()
         m_pTreeWidget->headerItem()->setText(1, tr("Virtual Size"));
         m_pTreeWidget->headerItem()->setText(2, tr("Actual Size"));
     }
+}
+
+bool UIMediumSelector::event(QEvent *pEvent)
+{
+    if (pEvent->type() == QEvent::Resize || pEvent->type() == QEvent::Move)
+    {
+        if (m_iGeometrySaveTimerId != -1)
+            killTimer(m_iGeometrySaveTimerId);
+        m_iGeometrySaveTimerId = startTimer(300);
+    }
+    else if (pEvent->type() == QEvent::Timer)
+    {
+        QTimerEvent *pTimerEvent = static_cast<QTimerEvent*>(pEvent);
+        if (pTimerEvent->timerId() == m_iGeometrySaveTimerId)
+        {
+            killTimer(m_iGeometrySaveTimerId);
+            m_iGeometrySaveTimerId = -1;
+            saveDialogGeometry();
+        }
+    }
+    return QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >::event(pEvent);
 }
 
 void UIMediumSelector::configure()
@@ -560,29 +584,6 @@ void UIMediumSelector::showEvent(QShowEvent *pEvent)
 {
     Q_UNUSED(pEvent);
 
-    /* Try to determine the initial size: */
-    QSize proposedSize;
-    int iHostScreen = 0;
-    if (m_pParent)
-        iHostScreen = gpDesktop->screenNumber(m_pParent);
-    else
-        iHostScreen = gpDesktop->screenNumber(this);
-    if (iHostScreen >= 0 && iHostScreen < gpDesktop->screenCount())
-    {
-        /* On the basis of current host-screen geometry if possible: */
-        const QRect screenGeometry = gpDesktop->screenGeometry(iHostScreen);
-        if (screenGeometry.isValid())
-            proposedSize = screenGeometry.size() / 2.5;
-    }
-    /* Fallback to default size if we failed: */
-    if (proposedSize.isNull())
-        proposedSize = QSize(800, 600);
-    /* Resize to initial size: */
-    resize(proposedSize);
-
-    if (m_pParent)
-        UIDesktopWidgetWatchdog::centerWidget(this, m_pParent, false);
-
     if (m_pTreeWidget)
         m_pTreeWidget->setFocus();
 }
@@ -720,4 +721,28 @@ void UIMediumSelector::setTitle()
                 setWindowTitle(QString("%1").arg(tr("Virtual Medium Selector")));
             break;
     }
+}
+
+void UIMediumSelector::saveDialogGeometry()
+{
+    const QRect geo = currentGeometry();
+    LogRel2(("GUI: UIMediumSelector: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
+             geo.x(), geo.y(), geo.width(), geo.height()));
+    gEDataManager->setMediumSelectorDialogGeometry(geo, isCurrentlyMaximized());
+}
+
+void UIMediumSelector::loadSettings()
+{
+    const QRect availableGeo = gpDesktop->availableGeometry(this);
+    int iDefaultWidth = availableGeo.width() / 2;
+    int iDefaultHeight = availableGeo.height() * 3 / 4;
+    QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);
+
+    QWidget *pParent = windowManager().realParentWindow(m_pParent ? m_pParent : windowManager().mainWindowShown());
+    /* Load geometry from extradata: */
+    const QRect geo = gEDataManager->mediumSelectorDialogGeometry(this, pParent, defaultGeo);
+    LogRel2(("GUI: UISoftKeyboard: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+             geo.x(), geo.y(), geo.width(), geo.height()));
+
+    restoreGeometry(geo);
 }
