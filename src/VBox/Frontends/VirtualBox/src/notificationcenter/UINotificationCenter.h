@@ -100,6 +100,8 @@ protected:
 
 private slots:
 
+    /** Issues order changes. */
+    void sltIssueOrderChange();
     /** Handles order changes. */
     void sltHandleOrderChange();
 
@@ -163,6 +165,8 @@ private:
     QHBoxLayout  *m_pLayoutButtons;
     /** Holds the open button instance. */
     QIToolButton *m_pButtonOpen;
+    /** Holds the toggle-sorting button instance. */
+    QIToolButton *m_pButtonToggleSorting;
     /** Holds the keep-finished button instance. */
     QIToolButton *m_pButtonKeepFinished;
     /** Holds the remove-finished button instance. */

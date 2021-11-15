@@ -151,6 +151,7 @@ UINotificationCenter::UINotificationCenter(QWidget *pParent)
     , m_pLayoutMain(0)
     , m_pLayoutButtons(0)
     , m_pButtonOpen(0)
+    , m_pButtonToggleSorting(0)
     , m_pButtonKeepFinished(0)
     , m_pButtonRemoveFinished(0)
     , m_pLayoutItems(0)
@@ -278,6 +279,8 @@ void UINotificationCenter::retranslateUi()
 {
     if (m_pButtonOpen)
         m_pButtonOpen->setToolTip(tr("Open notification center"));
+    if (m_pButtonToggleSorting)
+        m_pButtonToggleSorting->setToolTip(tr("Toggle ascending/descending order"));
     if (m_pButtonKeepFinished)
         m_pButtonKeepFinished->setToolTip(tr("Keep finished progresses"));
     if (m_pButtonRemoveFinished)
@@ -350,6 +353,14 @@ void UINotificationCenter::paintEvent(QPaintEvent *pEvent)
     /* Paint background: */
     paintBackground(&painter);
     paintFrame(&painter);
+}
+
+void UINotificationCenter::sltIssueOrderChange()
+{
+    const Qt::SortOrder enmSortOrder = m_pButtonToggleSorting->isChecked()
+                                     ? Qt::AscendingOrder
+                                     : Qt::DescendingOrder;
+    gEDataManager->setNotificationCenterOrder(enmSortOrder);
 }
 
 void UINotificationCenter::sltHandleOrderChange()
@@ -496,6 +507,17 @@ void UINotificationCenter::prepareWidgets()
 
             /* Add stretch: */
             m_pLayoutButtons->addStretch(1);
+
+            /* Prepare toggle-sorting button: */
+            m_pButtonToggleSorting = new QIToolButton(this);
+            if (m_pButtonToggleSorting)
+            {
+                m_pButtonToggleSorting->setIcon(UIIconPool::iconSet(":/sort_16px.png"));
+                m_pButtonToggleSorting->setCheckable(true);
+                m_pButtonToggleSorting->setChecked(gEDataManager->notificationCenterOrder() == Qt::AscendingOrder);
+                connect(m_pButtonToggleSorting, &QIToolButton::toggled, this, &UINotificationCenter::sltIssueOrderChange);
+                m_pLayoutButtons->addWidget(m_pButtonToggleSorting);
+            }
 
             /* Prepare keep-finished button: */
             m_pButtonKeepFinished = new QIToolButton(this);
