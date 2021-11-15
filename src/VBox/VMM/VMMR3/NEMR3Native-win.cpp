@@ -2819,6 +2819,34 @@ bs3-memalloc-1: 3rd access                                                  : PA
 bs3-memalloc-1: SUCCESS
  * @endverbatim
  *
+ * NEM w/ simplified memory and but no MEM_LARGE_PAGES:
+ * @verbatim
+bs3-memalloc-1: From 0x100000000 to 0xc20000000
+bs3-memalloc-1:   Pages                                                     :       11 665 408 pages
+bs3-memalloc-1:   MiBs                                                      :           45 568 MB
+bs3-memalloc-1:   Alloc elapsed                                             :   90 062 027 900 ns
+bs3-memalloc-1:   Alloc elapsed in ticks                                    :  269 754 826 466 ticks
+bs3-memalloc-1:   Page alloc time                                           :            7 720 ns/page
+bs3-memalloc-1:   Page alloc time in ticks                                  :           23 124 ticks/page
+bs3-memalloc-1:   Alloc thruput                                             :          129 526 pages/s
+bs3-memalloc-1:   Alloc thruput in MiBs                                     :              505 MB/s
+bs3-memalloc-1: Allocation speed                                            : PASSED
+bs3-memalloc-1:   Access elapsed                                            :    3 596 017 220 ns
+bs3-memalloc-1:   Access elapsed in ticks                                   :   10 770 732 620 ticks
+bs3-memalloc-1:   Page access time                                          :              308 ns/page
+bs3-memalloc-1:   Page access time in ticks                                 :              923 ticks/page
+bs3-memalloc-1:   Access thruput                                            :        3 243 980 pages/s
+bs3-memalloc-1:   Access thruput in MiBs                                    :           12 671 MB/s
+bs3-memalloc-1: 2nd access                                                  : PASSED
+bs3-memalloc-1:   Access elapsed                                            :      133 060 160 ns
+bs3-memalloc-1:   Access elapsed in ticks                                   :      398 459 884 ticks
+bs3-memalloc-1:   Page access time                                          :               11 ns/page
+bs3-memalloc-1:   Page access time in ticks                                 :               34 ticks/page
+bs3-memalloc-1:   Access thruput                                            :       87 670 178 pages/s
+bs3-memalloc-1:   Access thruput in MiBs                                    :          342 461 MB/s
+bs3-memalloc-1: 3rd access                                                  : PASSED
+ * @endverbatim
+ *
  * Same everything but native VT-x and VBox (stripped output a little):
  * @verbatim
 bs3-memalloc-1: From 0x100000000 to 0xc20000000
@@ -2874,6 +2902,15 @@ bs3-memalloc-1:   Access thruput                                            :   
 bs3-memalloc-1:   Access thruput in MiBs                                    :           15 894 MB/s
 bs3-memalloc-1: 3rd access                                                  : PASSED
  * @endverbatim
+ *
+ * Comparing large pages, therer is an allocation speed difference of two order
+ * of magnitude.  When disabling large pages in VBox the allocation numbers are
+ * closer, and the is clear from the 2nd and 3rd access tests that VBox doesn't
+ * spend enough memory on nested page tables as Hyper-V does.  The similar 2nd
+ * and 3rd access numbers the two large page testruns seems to hint strongly at
+ * Hyper-V eventually getting the large pages in place too, only that it sucks
+ * hundredfold in the setting up phase.
+ *
  *
  *
  * @section sec_nem_win_impl    Our implementation.
