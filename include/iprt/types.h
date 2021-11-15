@@ -131,7 +131,6 @@ RT_C_DECLS_END
      *   3. Starting with 2.6.24, linux/types.h typedefs uintptr_t.
      * We work around these issues here and nowhere else.
      */
-#  include <stddef.h>
 #  if defined(__cplusplus)
     typedef bool _Bool;
 #  endif
