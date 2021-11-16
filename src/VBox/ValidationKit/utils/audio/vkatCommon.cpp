@@ -478,6 +478,8 @@ DECLINLINE(uint32_t) audioTestEnvGetRandomSchedulingHint(void)
  */
 int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
 {
+    uint32_t const idxTest = (uint8_t)pParms->Hdr.idxTest;
+
     AUDIOTESTTONE TstTone;
     AudioTestToneInit(&TstTone, &pStream->Cfg.Props, pParms->dbFreqHz);
 
@@ -485,11 +487,12 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
     if (pTstEnv)
         pcszPathOut = pTstEnv->Set.szPathAbs;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing test tone (tone frequency is %RU16Hz, %RU32ms, %RU8%% volume)\n",
-                 (uint16_t)pParms->dbFreqHz, pParms->msDuration, pParms->uVolumePercent);
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Using %RU32ms stream scheduling hint\n", pStream->Cfg.Device.cMsSchedulingHint);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Playing test tone (tone frequency is %RU16Hz, %RU32ms, %RU8%% volume)\n",
+                 idxTest, (uint16_t)pParms->dbFreqHz, pParms->msDuration, pParms->uVolumePercent);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Using %RU32ms stream scheduling hint\n",
+                 idxTest, pStream->Cfg.Device.cMsSchedulingHint);
     if (pcszPathOut)
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Writing to '%s'\n", pcszPathOut);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Writing to '%s'\n", idxTest, pcszPathOut);
 
     int rc;
 
@@ -518,11 +521,9 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
     if (   RT_SUCCESS(rc)
         && AudioTestMixStreamIsOkay(&pStream->Mix))
     {
-        uint8_t  abBuf[_4K];
-
-        uint32_t cbToPlayTotal  = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
-        AssertStmt(cbToPlayTotal, rc = VERR_INVALID_PARAMETER);
-        uint32_t cbPlayedTotal  = 0;
+        uint32_t cbToWriteTotal = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
+        AssertStmt(cbToWriteTotal, rc = VERR_INVALID_PARAMETER);
+        uint32_t cbWrittenTotal = 0;
 
         /* We play a pre + post beacon before + after the actual test tone.
          * We always start with the pre beacon. */
@@ -532,23 +533,27 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
         uint32_t const cbBeacon = AudioTestBeaconGetSize(&Beacon);
         if (cbBeacon)
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing 2 x %RU32 bytes pre/post beacons\n", cbBeacon);
-            cbToPlayTotal += cbBeacon * 2 /* Pre + post beacon */;
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Playing 2 x %RU32 bytes pre/post beacons\n",
+                        idxTest, cbBeacon);
+
+            if (g_uVerbosity >= 2)
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Playing %s beacon ...\n",
+                             idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
         }
+
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Playing %RU32 bytes total\n", idxTest, cbToWriteTotal);
 
         AudioTestObjAddMetadataStr(Obj, "test_id=%04RU32\n", pParms->Hdr.idxTest);
         AudioTestObjAddMetadataStr(Obj, "beacon_type=%RU32\n", (uint32_t)AudioTestBeaconGetType(&Beacon));
         AudioTestObjAddMetadataStr(Obj, "beacon_pre_bytes=%RU32\n", cbBeacon);
         AudioTestObjAddMetadataStr(Obj, "beacon_post_bytes=%RU32\n", cbBeacon);
-        AudioTestObjAddMetadataStr(Obj, "stream_to_play_bytes=%RU32\n",      cbToPlayTotal);
+        AudioTestObjAddMetadataStr(Obj, "stream_to_write_total_bytes=%RU32\n",  cbToWriteTotal);
         AudioTestObjAddMetadataStr(Obj, "stream_period_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPeriod);
         AudioTestObjAddMetadataStr(Obj, "stream_buffer_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesBufferSize);
         AudioTestObjAddMetadataStr(Obj, "stream_prebuf_size_frames=%RU32\n", pStream->Cfg.Backend.cFramesPreBuffering);
         /* Note: This mostly is provided by backend (e.g. PulseAudio / ALSA / ++) and
          *       has nothing to do with the device emulation scheduling hint. */
         AudioTestObjAddMetadataStr(Obj, "device_scheduling_hint_ms=%RU32\n", pStream->Cfg.Device.cMsSchedulingHint);
-
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Playing %RU32 bytes total\n", cbToPlayTotal);
 
         PAUDIOTESTDRVMIXSTREAM pMix = &pStream->Mix;
 
@@ -561,7 +566,10 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
         uint64_t        nsLastMsgCantWrite = 0; /* Timestamp (in ns) when the last message of an unwritable stream was shown. */
         uint64_t        nsLastWrite        = 0;
 
-        while (cbPlayedTotal < cbToPlayTotal)
+        AUDIOTESTSTATE  enmState           = AUDIOTESTSTATE_PRE;
+        uint8_t         abBuf[_16K];
+
+        for (;;)
         {
             uint64_t const nsNow = RTTimeNanoTS();
             if (!nsLastWrite)
@@ -578,80 +586,147 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                     RTThreadSleep((cNsWritten - cNsElapsed - RT_NS_10MS / 2) / RT_NS_1MS);
             }
 
-            uint32_t       cbPlayed   = 0;
+            uint32_t       cbWritten  = 0;
             uint32_t const cbCanWrite = AudioTestMixStreamGetWritable(&pStream->Mix);
             if (cbCanWrite)
             {
-                if (g_uVerbosity >= 3)
-                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Stream is writable with %RU64ms (%RU32 bytes)\n",
-                                 PDMAudioPropsBytesToMilli(pMix->pProps, cbCanWrite), cbCanWrite);
+                if (g_uVerbosity >= 4)
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Stream is writable with %RU64ms (%RU32 bytes)\n",
+                                 idxTest, PDMAudioPropsBytesToMilli(pMix->pProps, cbCanWrite), cbCanWrite);
 
-                uint32_t cbToPlay;
-
-                /* Any beacon to play? */
-                uint32_t const cbBeaconRemaining = AudioTestBeaconGetRemaining(&Beacon);
-                if (cbBeaconRemaining)
+                switch (enmState)
                 {
-                    /* Limit to exactly one beacon (pre or post). */
-                    cbToPlay = RT_MIN(sizeof(abBuf), RT_MIN(cbCanWrite, cbBeaconRemaining));
-                    rc = AudioTestBeaconWrite(&Beacon, abBuf, cbToPlay);
-                    if (RT_SUCCESS(rc))
-                        rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToPlay, &cbPlayed);
-                    if (RT_FAILURE(rc))
-                        break;
-
-                    if (pTstEnv)
+                    case AUDIOTESTSTATE_PRE:
+                        RT_FALL_THROUGH();
+                    case AUDIOTESTSTATE_POST:
                     {
-                        /* Also write the beacon data to the test object.
-                         * Note: We use cbPlayed here instead of cbToPlay to know if the data actually was
-                         *       reported as being played by the audio stack. */
-                        rc = AudioTestObjWrite(Obj, abBuf, cbPlayed);
-                    }
-                }
-                else /* Play test tone */
-                {
-                    uint32_t const cbTestToneToPlay = cbToPlayTotal - cbPlayedTotal - (cbBeacon /* Pre / post beacon */);
-                    if (cbTestToneToPlay == 0) /* Done playing the test tone? */
-                    {
-                        if (AudioTestBeaconGetSize(&Beacon)) /* Play the post beacon, if any. */
-                        {
-                            AudioTestBeaconInit(&Beacon, (uint8_t)pParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
-                                                &pStream->Cfg.Props);
-                            continue;
-                        }
+                        if (g_uVerbosity >= 4)
+                            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: %RU32 bytes (%RU64ms) beacon data remaining\n",
+                                         idxTest, AudioTestBeaconGetRemaining(&Beacon),
+                                         PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, AudioTestBeaconGetRemaining(&Beacon)));
 
-                        break;
-                    }
+                        bool fGoToNextStage = false;
 
-                    uint32_t const cbToGenerate = RT_MIN(RT_MIN(cbTestToneToPlay, sizeof(abBuf)), cbCanWrite);
-                    rc = AudioTestToneGenerate(&TstTone, abBuf, cbToGenerate, &cbToPlay);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (pTstEnv)
+                        if (    AudioTestBeaconGetSize(&Beacon)
+                            && !AudioTestBeaconIsComplete(&Beacon))
                         {
-                            /* Write stuff to disk before trying to play it. Help analysis later. */
-                            rc = AudioTestObjWrite(Obj, abBuf, cbToPlay);
-                        }
-                        if (RT_SUCCESS(rc))
-                        {
-                            rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToPlay, &cbPlayed);
+                            bool const fStarted = AudioTestBeaconGetRemaining(&Beacon) == AudioTestBeaconGetSize(&Beacon);
+
+                            uint32_t const cbBeaconRemaining = AudioTestBeaconGetRemaining(&Beacon);
+                            AssertBreakStmt(cbBeaconRemaining, VERR_WRONG_ORDER);
+
+                            /* Limit to exactly one beacon (pre or post). */
+                            uint32_t const cbToWrite = RT_MIN(sizeof(abBuf), RT_MIN(cbCanWrite, cbBeaconRemaining));
+
+                            rc = AudioTestBeaconWrite(&Beacon, abBuf, cbToWrite);
                             if (RT_SUCCESS(rc))
                             {
-                                AssertBreakStmt(cbPlayed <= cbToPlay, rc = VERR_TOO_MUCH_DATA);
+                                rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToWrite, &cbWritten);
+                                if (   RT_SUCCESS(rc)
+                                    && pTstEnv)
+                                {
+                                    /* Also write the beacon data to the test object.
+                                     * Note: We use cbPlayed here instead of cbToPlay to know if the data actually was
+                                     *       reported as being played by the audio stack. */
+                                    rc = AudioTestObjWrite(Obj, abBuf, cbWritten);
+                                }
+                            }
 
-                                offStream += cbPlayed;
-
-                                if (cbPlayed != cbToPlay)
-                                    RTTestFailed(g_hTest, "Only played %RU32/%RU32 bytes", cbPlayed, cbToPlay);
-
-                                if (cbPlayed)
-                                    nsLastWrite = nsNow;
+                            if (   fStarted
+                                && g_uVerbosity >= 2)
+                                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Writing %s beacon begin\n",
+                                             idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
+                            if (AudioTestBeaconIsComplete(&Beacon))
+                            {
+                                if (g_uVerbosity >= 2)
+                                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Writing %s beacon end\n",
+                                                 idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
+                                fGoToNextStage = true;
                             }
                         }
+                        else
+                            fGoToNextStage = true;
+
+                        if (fGoToNextStage)
+                        {
+                            if (enmState == AUDIOTESTSTATE_PRE)
+                                enmState = AUDIOTESTSTATE_RUN;
+                            else if (enmState == AUDIOTESTSTATE_POST)
+                                enmState = AUDIOTESTSTATE_DONE;
+                        }
+                        break;
                     }
+
+                    case AUDIOTESTSTATE_RUN:
+                    {
+                        uint32_t cbToWrite = RT_MIN(sizeof(abBuf), cbCanWrite);
+                                 cbToWrite = RT_MIN(cbToWrite, cbToWriteTotal - cbWrittenTotal);
+                        if (cbToWrite)
+                        {
+                            rc = AudioTestToneGenerate(&TstTone, abBuf, cbToWrite, &cbToWrite);
+                            if (RT_SUCCESS(rc))
+                            {
+                                if (pTstEnv)
+                                {
+                                    /* Write stuff to disk before trying to play it. Help analysis later. */
+                                    rc = AudioTestObjWrite(Obj, abBuf, cbToWrite);
+                                }
+
+                                if (RT_SUCCESS(rc))
+                                {
+                                    rc = AudioTestMixStreamPlay(&pStream->Mix, abBuf, cbToWrite, &cbWritten);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        AssertBreakStmt(cbWritten <= cbToWrite, rc = VERR_TOO_MUCH_DATA);
+
+                                        offStream += cbWritten;
+
+                                        if (cbWritten != cbToWrite)
+                                            RTTestFailed(g_hTest, "Test #%RU32: Only played %RU32/%RU32 bytes",
+                                                         idxTest, cbWritten, cbToWrite);
+
+                                        if (cbWritten)
+                                            nsLastWrite = nsNow;
+
+                                        if (g_uVerbosity >= 4)
+                                            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                                                         "Test #%RU32: Played back %RU32 bytes\n", idxTest, cbWritten);
+
+                                        cbWrittenTotal += cbWritten;
+                                    }
+                                }
+                            }
+                        }
+
+                        const bool fComplete = cbWrittenTotal >= cbToWriteTotal;
+                        if (fComplete)
+                        {
+                            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Playing back audio data ended\n", idxTest);
+
+                            enmState = AUDIOTESTSTATE_POST;
+
+                            /* Re-use the beacon object, but this time it's the post beacon. */
+                            AudioTestBeaconInit(&Beacon, (uint8_t)idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
+                                                &pStream->Cfg.Props);
+                        }
+                        break;
+                    }
+
+                    case AUDIOTESTSTATE_DONE:
+                    {
+                        /* Handled below. */
+                        break;
+                    }
+
+                    default:
+                        AssertFailed();
+                        break;
                 }
 
                 if (RT_FAILURE(rc))
+                    break;
+
+                if (enmState == AUDIOTESTSTATE_DONE)
                     break;
 
                 nsLastMsgCantWrite = 0;
@@ -664,8 +739,8 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
                     && (   !nsLastMsgCantWrite
                         || (nsNow - nsLastMsgCantWrite) > RT_NS_10SEC)) /* Don't spam the output too much. */
                 {
-                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting %RU32ms for stream to be writable again (last write %RU64ns ago) ...\n",
-                                 msSleep, nsNow - nsLastWrite);
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Waiting %RU32ms for stream to be writable again (last write %RU64ns ago) ...\n",
+                                 idxTest, msSleep, nsNow - nsLastWrite);
                     nsLastMsgCantWrite = nsNow;
                 }
 
@@ -674,27 +749,26 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
             else
                 AssertFailedBreakStmt(rc = VERR_AUDIO_STREAM_NOT_READY);
 
-            cbPlayedTotal += cbPlayed;
-            AssertBreakStmt(cbPlayedTotal <= cbToPlayTotal, VERR_BUFFER_OVERFLOW);
-
             /* Fail-safe in case something screwed up while playing back. */
             uint64_t const cNsElapsed = nsNow - nsStarted;
             if (cNsElapsed > nsTimeout)
             {
-                RTTestFailed(g_hTest, "Playback took too long (running %RU64 vs. timeout %RU64), aborting\n", cNsElapsed, nsTimeout);
+                RTTestFailed(g_hTest, "Test #%RU32: Playback took too long (running %RU64 vs. timeout %RU64), aborting\n",
+                             idxTest, cNsElapsed, nsTimeout);
                 rc = VERR_TIMEOUT;
             }
 
             if (RT_FAILURE(rc))
                 break;
-        }
+        } /* for */
 
-        if (cbPlayedTotal != cbToPlayTotal)
-            RTTestFailed(g_hTest, "Playback ended unexpectedly (%RU32/%RU32 played)\n", cbPlayedTotal, cbToPlayTotal);
+        if (cbWrittenTotal != cbToWriteTotal)
+            RTTestFailed(g_hTest, "Test #%RU32: Playback ended unexpectedly (%RU32/%RU32 played)\n",
+                         idxTest, cbWrittenTotal, cbToWriteTotal);
 
         if (RT_SUCCESS(rc))
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Draining stream ...\n");
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Draining stream ...\n", idxTest);
             rc = AudioTestMixStreamDrain(&pStream->Mix, true /*fSync*/);
         }
     }
@@ -709,7 +783,7 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
     }
 
     if (RT_FAILURE(rc))
-        RTTestFailed(g_hTest, "Playing tone failed with %Rrc\n", rc);
+        RTTestFailed(g_hTest, "Test #%RU32: Playing tone failed with %Rrc\n", idxTest, rc);
 
     return rc;
 }
