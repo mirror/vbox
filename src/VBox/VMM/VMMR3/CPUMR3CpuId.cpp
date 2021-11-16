@@ -4323,7 +4323,9 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
 
     bool const fMayHaveXSave = fNestedPagingAndFullGuestExec
                             && pVM->cpum.s.HostFeatures.fXSaveRstor
-                            && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor;
+                            && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor
+                            && (   !VM_IS_NEM_ENABLED(pVM)
+                                || (NEMHCGetFeatures(pVM) & NEM_FEAT_F_XSAVE_XRSTOR));
     uint64_t const fXStateHostMask = pVM->cpum.s.fXStateHostMask;
 
     /** @cfgm{/CPUM/IsaExts/XSAVE, boolean, depends}
@@ -4524,7 +4526,11 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
     CPUMCPUIDCONFIG Config;
     RT_ZERO(Config);
 
-    int rc = cpumR3CpuIdReadConfig(pVM, &Config, pCpumCfg, HMAreNestedPagingAndFullGuestExecEnabled(pVM));
+    bool const fNestedPagingAndFullGuestExec =   VM_IS_NEM_ENABLED(pVM)
+                                               ?     ((NEMHCGetFeatures(pVM) & (NEM_FEAT_F_NESTED_PAGING | NEM_FEAT_F_FULL_GST_EXEC))
+                                                  == (NEM_FEAT_F_NESTED_PAGING | NEM_FEAT_F_FULL_GST_EXEC))
+                                               : HMAreNestedPagingAndFullGuestExecEnabled(pVM);
+    int rc = cpumR3CpuIdReadConfig(pVM, &Config, pCpumCfg, fNestedPagingAndFullGuestExec);
     AssertRCReturn(rc, rc);
 
     /*

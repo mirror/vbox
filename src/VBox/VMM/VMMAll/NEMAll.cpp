@@ -88,6 +88,15 @@ VMM_INT_DECL(int)  NEMHCNotifyPhysPageAllocated(PVMCC pVM, RTGCPHYS GCPhys, RTHC
 
 
 #ifndef VBOX_WITH_NATIVE_NEM
+VMM_INT_DECL(uint32_t) NEMHCGetFeatures(PVMCC pVM)
+{
+    RT_NOREF(pVM);
+    return 0;
+}
+#endif
+
+
+#ifndef VBOX_WITH_NATIVE_NEM
 VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 {
     RT_NOREF(pVCpu, fWhat);

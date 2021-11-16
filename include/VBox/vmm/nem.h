@@ -186,7 +186,18 @@ VMMR0_INT_DECL(int)  NEMR0WinGetPartitionId(PGVM pGVM, uintptr_t uHandle);
  * @{
  */
 VMM_INT_DECL(bool) NEMHCIsLongModeAllowed(PVMCC pVM);
+VMM_INT_DECL(uint32_t) NEMHCGetFeatures(PVMCC pVM);
 VMM_INT_DECL(int)  NEMImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat);
+
+/** @name NEM_FEAT_F_XXX - Features supported by the NEM backend
+ * @{ */
+/** NEM backend uses nested paging for the guest. */
+#define NEM_FEAT_F_NESTED_PAGING    RT_BIT(0)
+/** NEM backend uses full (unrestricted) guest execution. */
+#define NEM_FEAT_F_FULL_GST_EXEC    RT_BIT(1)
+/** NEM backend offers an xsave/xrstor interface. */
+#define NEM_FEAT_F_XSAVE_XRSTOR     RT_BIT(2)
+/** @} */
 
 VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalRegister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);
 VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
