@@ -2997,6 +2997,8 @@
 #define VERR_NEM_MISSING_KERNEL_API_5               (-6815)
 /** NEM failed to query dirty page bitmap. */
 #define VERR_NEM_QUERY_DIRTY_BITMAP_FAILED          (-6816)
+/** NEM is missing a require feature in the host API. */
+#define VERR_NEM_MISSING_FEATURE                    (-6817)
 
 /** NEM internal processing error \#0. */
 #define VERR_NEM_IPE_0                              (-6890)

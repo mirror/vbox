@@ -181,7 +181,21 @@ typedef struct NEM
     bool                        fEnabled;
     /** Set if long mode guests are allowed. */
     bool                        fAllow64BitGuests;
-#ifdef RT_OS_WINDOWS
+
+#if defined(RT_OS_LINUX)
+    /** The '/dev/kvm' file descriptor.   */
+    int32_t                     fdKvm;
+    /** The KVM_CREATE_VM file descriptor. */
+    int32_t                     fdVm;
+
+    /** KVM_CAP_NR_MEMSLOTS. */
+    uint32_t                    cMaxMemSlots;
+    /** KVM_CAP_X86_ROBUST_SINGLESTEP. */
+    bool                        fRobustSingleStep;
+    /** KVM_GET_VCPU_MMAP_SIZE. */
+    uint32_t                    cbVCpuMmap;
+
+#elif defined(RT_OS_WINDOWS)
     /** Set if we've created the EMTs. */
     bool                        fCreatedEmts : 1;
     /** WHvRunVpExitReasonX64Cpuid is supported. */
@@ -272,6 +286,7 @@ typedef struct NEM
         uint64_t                cPagesAvailable;
         uint64_t                cPagesInUse;
     } R0Stats;
+
 #elif defined(RT_OS_DARWIN)
     /** Set if we've created the EMTs. */
     bool                        fCreatedEmts : 1;
@@ -307,7 +322,52 @@ typedef struct NEMCPU
     bool                        fGIMTrapXcptUD : 1;
     /** Whether \#GP needs to be intercept for mesa driver workaround. */
     bool                        fTrapXcptGpForLovelyMesaDrv: 1;
-#ifdef RT_OS_WINDOWS
+
+#if defined(RT_OS_LINUX)
+    uint8_t                     abPadding[3];
+    /** The KVM VCpu file descriptor. */
+    int32_t                     fdVCpu;
+    /** Pointer to the KVM_RUN data exchange region. */
+    R3PTRTYPE(struct kvm_run *) pRun;
+
+    /** @name Statistics
+     * @{ */
+# if 0
+    STAMCOUNTER                 StatExitPortIo;
+    STAMCOUNTER                 StatExitMemUnmapped;
+    STAMCOUNTER                 StatExitMemIntercept;
+    STAMCOUNTER                 StatExitHalt;
+    STAMCOUNTER                 StatExitInterruptWindow;
+    STAMCOUNTER                 StatExitCpuId;
+    STAMCOUNTER                 StatExitMsr;
+    STAMCOUNTER                 StatExitException;
+    STAMCOUNTER                 StatExitExceptionBp;
+    STAMCOUNTER                 StatExitExceptionDb;
+    STAMCOUNTER                 StatExitExceptionGp;
+    STAMCOUNTER                 StatExitExceptionGpMesa;
+    STAMCOUNTER                 StatExitExceptionUd;
+    STAMCOUNTER                 StatExitExceptionUdHandled;
+    STAMCOUNTER                 StatExitUnrecoverable;
+    STAMCOUNTER                 StatGetMsgTimeout;
+    STAMCOUNTER                 StatStopCpuSuccess;
+    STAMCOUNTER                 StatStopCpuPending;
+    STAMCOUNTER                 StatStopCpuPendingAlerts;
+    STAMCOUNTER                 StatStopCpuPendingOdd;
+    STAMCOUNTER                 StatCancelChangedState;
+    STAMCOUNTER                 StatCancelAlertedThread;
+    STAMCOUNTER                 StatBreakOnCancel;
+    STAMCOUNTER                 StatBreakOnFFPre;
+    STAMCOUNTER                 StatBreakOnFFPost;
+    STAMCOUNTER                 StatBreakOnStatus;
+# endif
+    STAMCOUNTER                 StatImportOnDemand;
+    STAMCOUNTER                 StatImportOnReturn;
+    STAMCOUNTER                 StatImportOnReturnSkipped;
+    STAMCOUNTER                 StatQueryCpuTick;
+    /** @} */
+
+
+#elif defined(RT_OS_WINDOWS)
     /** The current state of the interrupt windows (NEM_WIN_INTW_F_XXX). */
     uint8_t                     fCurrentInterruptWindows;
     /** The desired state of the interrupt windows (NEM_WIN_INTW_F_XXX). */
@@ -410,6 +470,7 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatImportOnReturnSkipped;
     STAMCOUNTER                 StatQueryCpuTick;
     /** @} */
+
 #elif defined(RT_OS_DARWIN)
     /** The vCPU handle associated with the EMT executing this vCPU. */
     hv_vcpuid_t                 hVCpuId;
