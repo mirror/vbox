@@ -5234,7 +5234,11 @@ static int vmxHCImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_
             if (fWhat & CPUMCTX_EXTRN_SREG_MASK)
             {
                 PVMXVMCSINFOSHARED pVmcsInfoShared = pVmcsInfo->pShared;
+#ifndef IN_NEM_DARWIN
                 bool const fRealOnV86Active = pVmcsInfoShared->RealMode.fRealOnV86Active;
+#else
+                bool const fRealOnV86Active = false; /* HV supports only unrestricted guest execution. */
+#endif
                 if (fWhat & CPUMCTX_EXTRN_CS)
                 {
                     vmxHCImportGuestSegReg(pVCpu, X86_SREG_CS);
@@ -5530,7 +5534,11 @@ static int vmxHCImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_
             /* If everything has been imported, clear the HM keeper bit. */
             if (!(pCtx->fExtrn & HMVMX_CPUMCTX_EXTRN_ALL))
             {
+#ifndef IN_NEM_DARWIN
                 pCtx->fExtrn &= ~CPUMCTX_EXTRN_KEEPER_HM;
+#else
+                pCtx->fExtrn &= ~CPUMCTX_EXTRN_KEEPER_NEM;
+#endif
                 Assert(!pCtx->fExtrn);
             }
         }
@@ -6251,7 +6259,7 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
     Assert(pfIntrState);
 
 #ifndef IN_RING0
-    RT_NOREF(fIsNestedGuest, fStepping);
+    RT_NOREF(fIsNestedGuest, fStepping, pfIntrState);
 #endif
 
     PCPUMCTX          pCtx       = &pVCpu->cpum.GstCtx;
@@ -6294,6 +6302,7 @@ static VBOXSTRICTRC vmxHCInjectEventVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo,
            || !(*pfIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS));
 #endif
 
+    RT_NOREF(uVector);
     if (   uIntType == VMX_EXIT_INT_INFO_TYPE_HW_XCPT
         || uIntType == VMX_EXIT_INT_INFO_TYPE_NMI
         || uIntType == VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT
@@ -11691,7 +11700,6 @@ HMVMX_EXIT_DECL vmxHCExitXsetbv(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-#ifdef IN_RING0
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
     int rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_CR4);
@@ -11701,6 +11709,7 @@ HMVMX_EXIT_DECL vmxHCExitXsetbv(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, rcStrict != VINF_IEM_RAISED_XCPT ? HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
                                                                                 : HM_CHANGED_RAISED_XCPT_MASK);
 
+#ifdef IN_RING0
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     bool const fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
     if (fLoadSaveGuestXcr0 != pVCpu->hmr0.s.fLoadSaveGuestXcr0)
@@ -11708,11 +11717,9 @@ HMVMX_EXIT_DECL vmxHCExitXsetbv(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         pVCpu->hmr0.s.fLoadSaveGuestXcr0 = fLoadSaveGuestXcr0;
         vmxHCUpdateStartVmFunction(pVCpu);
     }
+#endif
 
     return rcStrict;
-#else
-    return VERR_EM_INTERPRETER;
-#endif
 }
 
 
@@ -13066,16 +13073,15 @@ HMVMX_EXIT_DECL vmxHCExitEptViolation(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
                                             ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_WRITE)
                                             : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_READ),
                                             pVCpu->cpum.GstCtx.cs.u64Base + pVCpu->cpum.GstCtx.rip, uHostTsc);
-#if 0
-    rc = nemR3DarwinCopyStateFromHv(pVM, pVCpu,   CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS
-                                                | NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM | CPUMCTX_EXTRN_DS | CPUMCTX_EXTRN_ES);
+
+    rc = vmxHCImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
     AssertRCReturn(rc, rc);
-#endif
+
     VBOXSTRICTRC rcStrict;
     if (!pExitRec)
     {
         rcStrict = IEMExecOne(pVCpu);
-        /** @todo do we need to do anything wrt debugging here?   */
+        ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_ALL_GUEST);
     }
     else
     {
