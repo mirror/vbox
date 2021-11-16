@@ -1838,6 +1838,26 @@ HRESULT Medium::setType(AutoCaller &autoCaller, MediumType_T aType)
 
     AutoWriteLock mlock(this COMMA_LOCKVAL_SRC_POS);
 
+    /* Wait for a concurrently running Medium::i_queryInfo to complete. */
+    while (m->queryInfoRunning)
+    {
+        mlock.release();
+        autoCaller.release();
+        treeLock.release();
+        /* Must not hold the media tree lock, as Medium::i_queryInfo needs
+         * this lock and thus we would run into a deadlock here. */
+        Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+        /* must not hold the object lock now */
+        Assert(!isWriteLockOnCurrentThread());
+        {
+            AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+        }
+        treeLock.acquire();
+        autoCaller.add();
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();
+        mlock.acquire();
+    }
+
     switch (m->state)
     {
         case MediumState_Created:
@@ -2109,6 +2129,24 @@ HRESULT Medium::setIds(AutoCaller &autoCaller,
                        const com::Guid &aParentId)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Wait for a concurrently running Medium::i_queryInfo to complete. */
+    if (m->queryInfoRunning)
+    {
+        /* Must not hold the media tree lock, as Medium::i_queryInfo needs this
+         * lock and thus we would run into a deadlock here. */
+        Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+        while (m->queryInfoRunning)
+        {
+            alock.release();
+            /* must not hold the object lock now */
+            Assert(!isWriteLockOnCurrentThread());
+            {
+                AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+            }
+            alock.acquire();
+        }
+    }
 
     switch (m->state)
     {
@@ -2497,6 +2535,24 @@ HRESULT Medium::setProperty(const com::Utf8Str &aName,
                             const com::Utf8Str &aValue)
 {
     AutoWriteLock mlock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Wait for a concurrently running Medium::i_queryInfo to complete. */
+    if (m->queryInfoRunning)
+    {
+        /* Must not hold the media tree lock, as Medium::i_queryInfo needs this
+         * lock and thus we would run into a deadlock here. */
+        Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+        while (m->queryInfoRunning)
+        {
+            mlock.release();
+            /* must not hold the object lock now */
+            Assert(!isWriteLockOnCurrentThread());
+            {
+                AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+            }
+            mlock.acquire();
+        }
+    }
 
     switch (m->state)
     {
@@ -5229,6 +5285,24 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
     autoCaller.add();
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    /* Wait for a concurrently running Medium::i_queryInfo to complete. */
+    while (m->queryInfoRunning)
+    {
+        autoCaller.release();
+        multilock.release();
+        /* Must not hold the media tree lock, as Medium::i_queryInfo needs
+         * this lock and thus we would run into a deadlock here. */
+        Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+        /* must not hold the object lock now */
+        Assert(!isWriteLockOnCurrentThread());
+        {
+            AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+        }
+        multilock.acquire();
+        autoCaller.add();
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    }
+
     LogFlowFunc(("ENTER for %s\n", i_getLocationFull().c_str()));
 
     bool wasCreated = true;
@@ -5317,7 +5391,7 @@ HRESULT Medium::i_close(AutoCaller &autoCaller)
  *       writing.
  */
 HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
-                              bool aWait, bool aNotify)
+                                bool aWait, bool aNotify)
 {
     AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
 
@@ -5346,26 +5420,23 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
         /* Wait for a concurrently running Medium::i_queryInfo to complete. */
         /** @todo r=klaus would be great if this could be moved to the async
          * part of the operation as it can take quite a while */
-        if (m->queryInfoRunning)
+        while (m->queryInfoRunning)
         {
-            while (m->queryInfoRunning)
+            alock.release();
+            autoCaller.release();
+            treelock.release();
+            /* Must not hold the media tree lock or the object lock, as
+             * Medium::i_queryInfo needs this lock and thus we would run
+             * into a deadlock here. */
+            Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+            Assert(!isWriteLockOnCurrentThread());
             {
-                alock.release();
-                autoCaller.release();
-                treelock.release();
-                /* Must not hold the media tree lock or the object lock, as
-                 * Medium::i_queryInfo needs this lock and thus we would run
-                 * into a deadlock here. */
-                Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
-                Assert(!isWriteLockOnCurrentThread());
-                {
-                    AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
-                }
-                treelock.acquire();
-                autoCaller.add();
-                AssertComRCThrowRC(autoCaller.rc());
-                alock.acquire();
+                AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
             }
+            treelock.acquire();
+            autoCaller.add();
+            AssertComRCThrowRC(autoCaller.rc());
+            alock.acquire();
         }
 
         /* Note that we are fine with Inaccessible state too: a) for symmetry
