@@ -42,9 +42,19 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#if  defined(CONFIG_PREEMPT_COUNT) /* since 3.1 */ \
+  || defined(CONFIG_PREEMPTION)    /* since 5.3 */ \
+  || defined(CONFIG_PREEMPT)       /* since 2.6.13 - preemption model choice; before that arch specific choice back to 2.5.45. */
+# define IPRT_LNX_HAVE_PREEMPTION
+#endif
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#ifndef CONFIG_PREEMPT
+#ifndef IPRT_LNX_HAVE_PREEMPTION
 /** Per-cpu preemption counters. */
 static int32_t volatile g_acPreemptDisabled[NR_CPUS];
 #endif
@@ -103,7 +113,7 @@ RT_EXPORT_SYMBOL(RTThreadYield);
 
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
-#ifdef CONFIG_PREEMPT
+#ifdef IPRT_LNX_HAVE_PREEMPTION
     Assert(hThread == NIL_RTTHREAD); RT_NOREF_PV(hThread);
 # ifdef preemptible
     return preemptible();
@@ -164,10 +174,10 @@ RT_EXPORT_SYMBOL(RTThreadPreemptIsPendingTrusty);
 
 RTDECL(bool) RTThreadPreemptIsPossible(void)
 {
-#ifdef CONFIG_PREEMPT
+#ifdef IPRT_LNX_HAVE_PREEMPTION
     return true;    /* Yes, kernel preemption is possible. */
 #else
-    return false;   /* No kernel preemption (or CONFIG_PREEMPT_VOLUNTARY). */
+    return false;   /* No kernel preemption (or just CONFIG_PREEMPT_VOLUNTARY). */
 #endif
 }
 RT_EXPORT_SYMBOL(RTThreadPreemptIsPossible);
@@ -175,15 +185,14 @@ RT_EXPORT_SYMBOL(RTThreadPreemptIsPossible);
 
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
-#ifdef CONFIG_PREEMPT
+#ifdef IPRT_LNX_HAVE_PREEMPTION
     AssertPtr(pState);
     Assert(pState->u32Reserved == 0);
     pState->u32Reserved = 42;
-    /* This ASSUMES that CONFIG_PREEMPT_COUNT is always defined with CONFIG_PREEMPT. */
     preempt_disable();
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 
-#else /* !CONFIG_PREEMPT */
+#else /* !IPRT_LNX_HAVE_PREEMPTION */
     int32_t c;
     AssertPtr(pState);
     Assert(pState->u32Reserved == 0);
@@ -200,7 +209,7 @@ RT_EXPORT_SYMBOL(RTThreadPreemptDisable);
 
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
-#ifdef CONFIG_PREEMPT
+#ifdef IPRT_LNX_HAVE_PREEMPTION
     IPRT_LINUX_SAVE_EFL_AC(); /* paranoia */
     AssertPtr(pState);
     Assert(pState->u32Reserved == 42);
