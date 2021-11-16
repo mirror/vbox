@@ -4950,6 +4950,7 @@ void UIMachineSettingsStorage::prepareAttachmentWidget()
             if (m_pFieldHDFormat)
             {
                 m_pFieldHDFormat->setFullSizeSelection(true);
+                m_pFieldHDFormat->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldHDFormat, 4, 2);
             }
 
@@ -4965,6 +4966,7 @@ void UIMachineSettingsStorage::prepareAttachmentWidget()
             if (m_pFieldCDFDType)
             {
                 m_pFieldCDFDType->setFullSizeSelection(true);
+                m_pFieldCDFDType->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldCDFDType, 5, 2);
             }
 
@@ -4980,6 +4982,7 @@ void UIMachineSettingsStorage::prepareAttachmentWidget()
             if (m_pFieldHDVirtualSize)
             {
                 m_pFieldHDVirtualSize->setFullSizeSelection(true);
+                m_pFieldHDVirtualSize->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldHDVirtualSize, 6, 2);
             }
 
@@ -4995,6 +4998,7 @@ void UIMachineSettingsStorage::prepareAttachmentWidget()
             if (m_pFieldHDActualSize)
             {
                 m_pFieldHDActualSize->setFullSizeSelection(true);
+                m_pFieldHDActualSize->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldHDActualSize, 7, 2);
             }
 
@@ -5010,6 +5014,7 @@ void UIMachineSettingsStorage::prepareAttachmentWidget()
             if (m_pFieldCDFDSize)
             {
                 m_pFieldCDFDSize->setFullSizeSelection(true);
+                m_pFieldCDFDSize->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldCDFDSize, 8, 2);
             }
 
@@ -5025,6 +5030,7 @@ void UIMachineSettingsStorage::prepareAttachmentWidget()
             if (m_pFieldHDDetails)
             {
                 m_pFieldHDDetails->setFullSizeSelection(true);
+                m_pFieldHDDetails->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldHDDetails, 9, 2);
             }
 
@@ -5040,6 +5046,7 @@ void UIMachineSettingsStorage::prepareAttachmentWidget()
             if (m_pFieldLocation)
             {
                 m_pFieldLocation->setFullSizeSelection(true);
+                m_pFieldLocation->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldLocation, 10, 2);
             }
 
@@ -5055,6 +5062,7 @@ void UIMachineSettingsStorage::prepareAttachmentWidget()
             if (m_pFieldUsage)
             {
                 m_pFieldUsage->setFullSizeSelection(true);
+                m_pFieldUsage->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldUsage, 11, 2);
             }
 
@@ -5070,6 +5078,7 @@ void UIMachineSettingsStorage::prepareAttachmentWidget()
             if (m_pFieldEncryption)
             {
                 m_pFieldEncryption->setFullSizeSelection(true);
+                m_pFieldEncryption->setSizePolicy(QSizePolicy(QSizePolicy::Ignored, QSizePolicy::Minimum));
                 m_pLayoutAttachment->addWidget(m_pFieldEncryption, 12, 2);
             }
 
