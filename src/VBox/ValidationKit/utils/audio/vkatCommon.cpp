@@ -813,6 +813,8 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                             RT_FALL_THROUGH();
                         case AUDIOTESTSTATE_POST:
                         {
+                            bool fGoToNextStage = false;
+
                             if (    AudioTestBeaconGetSize(&Beacon)
                                 && !AudioTestBeaconIsComplete(&Beacon))
                             {
@@ -843,12 +845,18 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                                     if (g_uVerbosity >= 2)
                                         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Detected %s beacon\n",
                                                      AudioTestBeaconTypeGetName(Beacon.enmType));
-
-                                    if (enmState == AUDIOTESTSTATE_PRE)
-                                        enmState = AUDIOTESTSTATE_RUN;
-                                    else if (enmState == AUDIOTESTSTATE_POST)
-                                        enmState = AUDIOTESTSTATE_DONE;
+                                    fGoToNextStage = true;
                                 }
+                            }
+                            else
+                                fGoToNextStage = true;
+
+                            if (fGoToNextStage)
+                            {
+                                if (enmState == AUDIOTESTSTATE_PRE)
+                                    enmState = AUDIOTESTSTATE_RUN;
+                                else if (enmState == AUDIOTESTSTATE_POST)
+                                    enmState = AUDIOTESTSTATE_DONE;
                             }
                             break;
                         }

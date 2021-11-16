@@ -1152,6 +1152,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                          AudioTestBeaconGetRemaining(pBeacon),
                          PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, AudioTestBeaconGetRemaining(pBeacon))));
 
+                bool fGoToNextStage = false;
+
                 if (    AudioTestBeaconGetSize(pBeacon)
                     && !AudioTestBeaconIsComplete(pBeacon))
                 {
@@ -1181,14 +1183,19 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamPlay(PPDMIHOSTAUDIO pInterfa
                         LogRel2(("ValKit: Test #%RU32: Detection of %s beacon ended\n",
                                  pTst->idxTest, AudioTestBeaconTypeGetName(pBeacon->enmType)));
 
-                        if (pTst->enmState == AUDIOTESTSTATE_PRE)
-                            pTst->enmState = AUDIOTESTSTATE_RUN;
-                        else if (pTst->enmState == AUDIOTESTSTATE_POST)
-                            pTst->enmState = AUDIOTESTSTATE_DONE;
+                        fGoToNextStage = true;
                     }
                 }
-                else /* Go to the next state. */
-                    pTst->enmState = AUDIOTESTSTATE_RUN;
+                else
+                    fGoToNextStage = true;
+
+                if (fGoToNextStage)
+                {
+                    if (pTst->enmState == AUDIOTESTSTATE_PRE)
+                        pTst->enmState = AUDIOTESTSTATE_RUN;
+                    else if (pTst->enmState == AUDIOTESTSTATE_POST)
+                        pTst->enmState = AUDIOTESTSTATE_DONE;
+                }
                 break;
             }
 
@@ -1379,6 +1386,8 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
             RT_FALL_THROUGH();
         case AUDIOTESTSTATE_POST:
         {
+            bool fGoToNextStage = false;
+
             PAUDIOTESTTONEBEACON pBeacon = &pTst->t.TestTone.Beacon;
             if (    AudioTestBeaconGetSize(pBeacon)
                 && !AudioTestBeaconIsComplete(pBeacon))
@@ -1403,14 +1412,19 @@ static DECLCALLBACK(int) drvHostValKitAudioHA_StreamCapture(PPDMIHOSTAUDIO pInte
                     LogRel2(("ValKit: Test #%RU32: Writing %s beacon end\n",
                              pTst->idxTest, AudioTestBeaconTypeGetName(pBeacon->enmType)));
 
-                    if (pTst->enmState == AUDIOTESTSTATE_PRE)
-                        pTst->enmState = AUDIOTESTSTATE_RUN;
-                    else if (pTst->enmState == AUDIOTESTSTATE_POST)
-                        pTst->enmState = AUDIOTESTSTATE_DONE;
+                    fGoToNextStage = true;
                 }
             }
-            else /* Go to the next state. */
-                pTst->enmState = AUDIOTESTSTATE_RUN;
+            else
+                fGoToNextStage = true;
+
+            if (fGoToNextStage)
+            {
+                if (pTst->enmState == AUDIOTESTSTATE_PRE)
+                    pTst->enmState = AUDIOTESTSTATE_RUN;
+                else if (pTst->enmState == AUDIOTESTSTATE_POST)
+                    pTst->enmState = AUDIOTESTSTATE_DONE;
+            }
             break;
         }
 
