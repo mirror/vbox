@@ -123,7 +123,8 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
 /** @def PGM_GST_SLAT_WALK
  * Macro to perform guest second-level address translation (EPT or Nested).
  *
- * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   a_pVCpu         The cross context virtual CPU structure of the calling
+ *                          EMT.
  * @param   a_GCPtrNested   The nested-guest linear address that caused the
  *                          second-level translation.
  * @param   a_GCPhysNested  The nested-guest physical address to translate.
