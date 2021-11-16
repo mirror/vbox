@@ -755,7 +755,12 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
 
         uint32_t const cbBeacon = AudioTestBeaconGetSize(&Beacon);
         if (cbBeacon)
+        {
             RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Expecting 2 x %RU32 bytes pre/post beacons\n", cbBeacon);
+            if (g_uVerbosity >= 2)
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting for %s beacon ...\n",
+                             AudioTestBeaconTypeGetName(Beacon.enmType));
+        }
 
         AudioTestObjAddMetadataStr(Obj, "test_id=%04RU32\n", pParms->Hdr.idxTest);
         AudioTestObjAddMetadataStr(Obj, "beacon_type=%RU32\n", (uint32_t)AudioTestBeaconGetType(&Beacon));
@@ -827,7 +832,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                                 }
 
                                 if (   fStarted
-                                    && g_uVerbosity >= 2)
+                                    && g_uVerbosity >= 3)
                                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
                                                  "Detection of %s beacon started (%RU32ms recorded so far)\n",
                                                  AudioTestBeaconTypeGetName(Beacon.enmType),
@@ -836,7 +841,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                                 if (AudioTestBeaconIsComplete(&Beacon))
                                 {
                                     if (g_uVerbosity >= 2)
-                                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Detection of %s beacon ended\n",
+                                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Detected %s beacon\n",
                                                      AudioTestBeaconTypeGetName(Beacon.enmType));
 
                                     if (enmState == AUDIOTESTSTATE_PRE)
@@ -868,9 +873,19 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                             if (cbTestToRec - cbTestRec == 0) /* Done recording the test tone? */
                             {
                                 enmState = AUDIOTESTSTATE_POST;
-                                /* Re-use the beacon object, but this time it's the post beacon. */
-                                AudioTestBeaconInit(&Beacon, (uint8_t)pParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
-                                                    &pStream->Cfg.Props);
+
+                                if (g_uVerbosity >= 2)
+                                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording tone data done");
+
+                                if (AudioTestBeaconGetSize(&Beacon))
+                                {
+                                    /* Re-use the beacon object, but this time it's the post beacon. */
+                                    AudioTestBeaconInit(&Beacon, (uint8_t)pParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
+                                                        &pStream->Cfg.Props);
+                                    if (g_uVerbosity >= 2)
+                                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
+                                                     "Waiting for %s beacon ...", AudioTestBeaconTypeGetName(Beacon.enmType));
+                                }
                             }
                             break;
                         }
