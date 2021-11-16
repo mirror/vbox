@@ -52,6 +52,7 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPA
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk,
                           PPGMPTWALKGST pGstWalk);
+static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPhysNested, PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk);
 #endif
 static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
 static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
@@ -1834,7 +1835,40 @@ static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearA
             return VERR_PGM_NOT_USED_IN_MODE;
     }
 }
-#endif
+
+
+/**
+ * Performs a guest second-level address translation (SLAT) for a nested-guest
+ * physical address.
+ *
+ * This version requires the SLAT mode to be provided by the caller because we could
+ * be in the process of switching paging modes (MOV CRX) and cannot presume control
+ * register values.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   enmSlatMode     The second-level paging mode to use.
+ * @param   GCPhysNested    The nested-guest physical address to translate.
+ * @param   pWalk           Where to store the walk result.
+ * @param   pGstWalk        Where to store the second-level paging-mode specific
+ *                          walk information.
+ */
+static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPhysNested, PPGMPTWALK pWalk,
+                              PPGMPTWALKGST pGstWalk)
+{
+    switch (enmSlatMode)
+    {
+        case PGMSLAT_EPT:
+            pGstWalk->enmType = PGMPTWALKGSTTYPE_EPT;
+            return PGM_GST_SLAT_NAME_EPT(Walk)(pVCpu, GCPhysNested, false /* fIsLinearaddrValid */, NIL_RTGCPTR, pWalk,
+                                               &pGstWalk->u.Ept);
+
+        default:
+            AssertFailed();
+            return VERR_PGM_NOT_USED_IN_MODE;
+    }
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 
 /**
@@ -2670,6 +2704,23 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     RTGCPHYS GCPhysCR3 = (cr3 & X86_CR3_PAE_PAGE_MASK);
     PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    if (   CPUMIsGuestVmxEptPagingEnabled(pVCpu)
+        && CPUMIsGuestInPAEMode(pVCpu))
+    {
+        PGMPTWALK    Walk;
+        PGMPTWALKGST GstWalk;
+        int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysCR3, &Walk, &GstWalk);
+        if (RT_SUCCESS(rc))
+            GCPhysCR3 = Walk.GCPhys;
+        else
+        {
+            /** @todo Raise EPT violation VM-exit. */
+            return VERR_NOT_IMPLEMENTED;
+        }
+    }
+#endif
 
     PGM_LOCK_VOID(pVM);
     PPGMPAGE pPageCR3  = pgmPhysGetPage(pVM, GCPhysCR3);
