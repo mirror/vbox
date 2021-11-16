@@ -801,10 +801,13 @@ int audioTestPlayTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTES
  */
 static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, PAUDIOTESTSTREAM pStream, PAUDIOTESTTONEPARMS pParms)
 {
+    uint32_t const idxTest = (uint8_t)pParms->Hdr.idxTest;
+
     const char *pcszPathOut = pTstEnv->Set.szPathAbs;
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording test tone (tone frequency is %RU16Hz, %RU32ms)\n", (uint16_t)pParms->dbFreqHz, pParms->msDuration);
-    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Writing to '%s'\n", pcszPathOut);
+    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording test tone (tone frequency is %RU16Hz, %RU32ms)\n",
+                 idxTest, (uint16_t)pParms->dbFreqHz, pParms->msDuration);
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG,  "Test #%RU32: Writing to '%s'\n", idxTest, pcszPathOut);
 
     /** @todo Use .WAV here? */
     AUDIOTESTOBJ Obj;
@@ -820,7 +823,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         uint32_t cbTestToRec = PDMAudioPropsMilliToBytes(&pStream->Cfg.Props, pParms->msDuration);
         uint32_t cbTestRec   = 0;
 
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording %RU32 bytes total\n", cbTestToRec);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording %RU32 bytes total\n", idxTest, cbTestToRec);
 
         /* We expect a pre + post beacon before + after the actual test tone.
          * We always start with the pre beacon. */
@@ -830,10 +833,11 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         uint32_t const cbBeacon = AudioTestBeaconGetSize(&Beacon);
         if (cbBeacon)
         {
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Expecting 2 x %RU32 bytes pre/post beacons\n", cbBeacon);
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Expecting 2 x %RU32 bytes pre/post beacons\n",
+                         idxTest, cbBeacon);
             if (g_uVerbosity >= 2)
-                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting for %s beacon ...\n",
-                             AudioTestBeaconTypeGetName(Beacon.enmType));
+                RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Waiting for %s beacon ...\n",
+                             idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
         }
 
         AudioTestObjAddMetadataStr(Obj, "test_id=%04RU32\n", pParms->Hdr.idxTest);
@@ -868,8 +872,8 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
             if (cbCanRead)
             {
                 if (g_uVerbosity >= 3)
-                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Stream is readable with %RU64ms (%RU32 bytes)\n",
-                                 PDMAudioPropsBytesToMilli(pMix->pProps, cbCanRead), cbCanRead);
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Stream is readable with %RU64ms (%RU32 bytes)\n",
+                                 idxTest, PDMAudioPropsBytesToMilli(pMix->pProps, cbCanRead), cbCanRead);
 
                 uint32_t const cbToRead   = RT_MIN(cbCanRead, cbSamplesAligned);
                 uint32_t       cbRecorded = 0;
@@ -910,15 +914,15 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                                 if (   fStarted
                                     && g_uVerbosity >= 3)
                                     RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
-                                                 "Detection of %s beacon started (%RU32ms recorded so far)\n",
-                                                 AudioTestBeaconTypeGetName(Beacon.enmType),
+                                                 "Test #%RU32: Detection of %s beacon started (%RU32ms recorded so far)\n",
+                                                 idxTest, AudioTestBeaconTypeGetName(Beacon.enmType),
                                                  PDMAudioPropsBytesToMilli(&pStream->pStream->Cfg.Props, cbRecTotal));
 
                                 if (AudioTestBeaconIsComplete(&Beacon))
                                 {
                                     if (g_uVerbosity >= 2)
-                                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Detected %s beacon\n",
-                                                     AudioTestBeaconTypeGetName(Beacon.enmType));
+                                        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Detected %s beacon\n",
+                                                     idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
                                     fGoToNextStage = true;
                                 }
                             }
@@ -957,7 +961,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                                 enmState = AUDIOTESTSTATE_POST;
 
                                 if (g_uVerbosity >= 2)
-                                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recording tone data done");
+                                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recording tone data done", idxTest);
 
                                 if (AudioTestBeaconGetSize(&Beacon))
                                 {
@@ -966,7 +970,8 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                                                         &pStream->Cfg.Props);
                                     if (g_uVerbosity >= 2)
                                         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
-                                                     "Waiting for %s beacon ...", AudioTestBeaconTypeGetName(Beacon.enmType));
+                                                     "Test #%RU32: Waiting for %s beacon ...",
+                                                     idxTest, AudioTestBeaconTypeGetName(Beacon.enmType));
                                 }
                             }
                             break;
@@ -1003,7 +1008,8 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                     && (   !nsLastMsgCantRead
                         || (nsNow - nsLastMsgCantRead) > RT_NS_10SEC)) /* Don't spam the output too much. */
                 {
-                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Waiting %RU32ms for stream to be readable again ...\n", msSleep);
+                    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Waiting %RU32ms for stream to be readable again ...\n",
+                                 idxTest, msSleep);
                     nsLastMsgCantRead = nsNow;
                 }
 
@@ -1014,7 +1020,8 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
             uint64_t const cNsElapsed = nsNow - nsStarted;
             if (cNsElapsed > nsTimeout)
             {
-                RTTestFailed(g_hTest, "Recording took too long (running %RU64 vs. timeout %RU64), aborting\n", cNsElapsed, nsTimeout);
+                RTTestFailed(g_hTest, "Test #%RU32: Recording took too long (running %RU64 vs. timeout %RU64), aborting\n",
+                             idxTest, cNsElapsed, nsTimeout);
                 rc = VERR_TIMEOUT;
             }
 
@@ -1023,15 +1030,16 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         }
 
         if (g_uVerbosity >= 2)
-            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Recorded %RU32 bytes total\n", cbRecTotal);
+            RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Test #%RU32: Recorded %RU32 bytes total\n", idxTest, cbRecTotal);
         if (cbTestRec != cbTestToRec)
         {
-            RTTestFailed(g_hTest, "Recording ended unexpectedly (%RU32/%RU32 recorded)\n", cbTestRec, cbTestToRec);
+            RTTestFailed(g_hTest, "Test #%RU32: Recording ended unexpectedly (%RU32/%RU32 recorded)\n",
+                         idxTest, cbTestRec, cbTestToRec);
             rc = VERR_WRONG_ORDER; /** @todo Find a better rc. */
         }
 
         if (RT_FAILURE(rc))
-            RTTestFailed(g_hTest, "Recording failed (state is '%s')\n", AudioTestStateToStr(enmState));
+            RTTestFailed(g_hTest, "Test #%RU32: Recording failed (state is '%s')\n", idxTest, AudioTestStateToStr(enmState));
 
         int rc2 = AudioTestMixStreamDisable(pMix);
         if (RT_SUCCESS(rc))
@@ -1043,7 +1051,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
         rc = rc2;
 
     if (RT_FAILURE(rc))
-        RTTestFailed(g_hTest, "Recording tone done failed with %Rrc\n", rc);
+        RTTestFailed(g_hTest, "Test #%RU32: Recording tone done failed with %Rrc\n", idxTest, rc);
 
     return rc;
 }
