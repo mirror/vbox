@@ -2432,7 +2432,10 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
  */
 static DECLCALLBACK(int) nemR3DarwinNativeTermVCpuOnEmt(PVMCPU pVCpu)
 {
-    hv_return_t hrc = hv_vcpu_destroy(pVCpu->nem.s.hVCpuId);
+    hv_return_t hrc = hv_vcpu_set_space(pVCpu->nem.s.hVCpuId, 0 /*asid*/);
+    Assert(hrc == HV_SUCCESS);
+
+    hrc = hv_vcpu_destroy(pVCpu->nem.s.hVCpuId);
     Assert(hrc == HV_SUCCESS); RT_NOREF(hrc);
     return VINF_SUCCESS;
 }
@@ -2493,6 +2496,16 @@ int nemR3NativeTerm(PVM pVM)
         PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
         /*
+         * Need to do this or hv_vm_space_destroy() fails later on (on 10.15 at least). Could've been documented in
+         * API reference so I wouldn't have to decompile the kext to find this out but we are talking
+         * about Apple here unfortunately, API documentation is not their strong suit...
+         * Would have been of course even better to just automatically drop the address space reference when the vCPU
+         * gets destroyed.
+         */
+        hv_return_t hrc = hv_vcpu_set_space(pVCpu->nem.s.hVCpuId, 0 /*asid*/);
+        Assert(hrc == HV_SUCCESS);
+
+        /*
          * Apple's documentation states that the vCPU should be destroyed
          * on the thread running the vCPU but as all the other EMTs are gone
          * at this point, destroying the VM would hang.
@@ -2500,7 +2513,7 @@ int nemR3NativeTerm(PVM pVM)
          * We seem to be at luck here though as destroying apparently works
          * from EMT(0) as well.
          */
-        hv_return_t hrc = hv_vcpu_destroy(pVCpu->nem.s.hVCpuId);
+        hrc = hv_vcpu_destroy(pVCpu->nem.s.hVCpuId);
         Assert(hrc == HV_SUCCESS); RT_NOREF(hrc);
 
         if (pVCpu->nem.s.pVmxStats)
