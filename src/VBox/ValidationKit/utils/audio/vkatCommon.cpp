@@ -872,6 +872,7 @@ static int audioTestRecordTone(PAUDIOTESTIOOPTS pIoOpts, PAUDIOTESTENV pTstEnv, 
                                 AudioTestBeaconInit(&Beacon, (uint8_t)pParms->Hdr.idxTest, AUDIOTESTTONEBEACONTYPE_PLAY_POST,
                                                     &pStream->Cfg.Props);
                             }
+                            break;
                         }
 
                         case AUDIOTESTSTATE_DONE:
