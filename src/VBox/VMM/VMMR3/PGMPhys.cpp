@@ -2497,7 +2497,8 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
 #ifdef VBOX_WITH_NATIVE_NEM
                     if (VM_IS_NEM_ENABLED(pVM)) /* Notify REM before we unlink the range. */
                     {
-                        rc = NEMR3NotifyPhysMmioExUnmap(pVM, GCPhys, GCPhysLast - GCPhys + 1, 0 /*fFlags*/, NULL, NULL, NULL);
+                        rc = NEMR3NotifyPhysMmioExUnmap(pVM, GCPhys, GCPhysLast - GCPhys + 1, 0 /*fFlags*/,
+                                                        NULL, NULL, NULL, &pRam->uNemRange);
                         AssertLogRelRCReturn(rc, rc);
                     }
 #endif
@@ -2545,7 +2546,7 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                     uint8_t u2State = UINT8_MAX;
                     rc = NEMR3NotifyPhysMmioExUnmap(pVM, GCPhys, GCPhysLast - GCPhys + 1, NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE,
                                                     pRam->pvR3 ? (uint8_t *)pRam->pvR3 + GCPhys - pRam->GCPhys : NULL,
-                                                    NULL, &u2State);
+                                                    NULL, &u2State, &pRam->uNemRange);
                     AssertLogRelRCReturn(rc, rc);
                     if (u2State != UINT8_MAX)
                         pgmPhysSetNemStateForPages(&pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT],
@@ -3687,7 +3688,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Unmap(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HAN
                                             fNemFlags | NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE,
                                             pRam->pvR3
                                             ? (uint8_t *)pRam->pvR3 + pFirstMmio->RamRange.GCPhys - pRam->GCPhys : NULL,
-                                            pFirstMmio->pvR3, &u2State);
+                                            pFirstMmio->pvR3, &u2State, &pRam->uNemRange);
             AssertRCStmt(rc, rcRet = rc);
             if (u2State != UINT8_MAX)
                 pgmPhysSetNemStateForPages(pPageDst, cPagesLeft, u2State);
@@ -3720,7 +3721,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Unmap(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HAN
             {
                 uint8_t u2State = UINT8_MAX;
                 rc = NEMR3NotifyPhysMmioExUnmap(pVM, pCurMmio->RamRange.GCPhys, pCurMmio->RamRange.cb, fNemFlags,
-                                                NULL, pCurMmio->pvR3, &u2State);
+                                                NULL, pCurMmio->pvR3, &u2State, &pCurMmio->RamRange.uNemRange);
                 AssertRCStmt(rc, rcRet = rc);
                 if (u2State != UINT8_MAX)
                     pgmPhysSetNemStateForPages(pCurMmio->RamRange.aPages, pCurMmio->RamRange.cb >> PAGE_SHIFT, u2State);
@@ -4348,11 +4349,12 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
     uint32_t const fNemNotify = (fRamExists ? NEM_NOTIFY_PHYS_ROM_F_REPLACE : 0)
                               | (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED ? NEM_NOTIFY_PHYS_ROM_F_SHADOW : 0);
     uint8_t        u2NemState = UINT8_MAX;
+    uint32_t       uNemRange  = 0;
     if (VM_IS_NEM_ENABLED(pVM))
     {
         int rc = NEMR3NotifyPhysRomRegisterEarly(pVM, GCPhys, cPages << PAGE_SHIFT,
                                                 fRamExists ? PGM_RAMRANGE_CALC_PAGE_R3PTR(pRam, GCPhys) : NULL,
-                                                fNemNotify, &u2NemState);
+                                                fNemNotify, &u2NemState, fRamExists ? &pRam->uNemRange : &uNemRange);
         AssertLogRelRCReturn(rc, rc);
     }
 #endif
@@ -4434,6 +4436,9 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
                 pRamNew->fFlags        = PGM_RAM_RANGE_FLAGS_AD_HOC_ROM;
                 pRamNew->pvR3          = NULL;
                 pRamNew->paLSPages     = NULL;
+#ifdef VBOX_WITH_NATIVE_NEM
+                pRamNew->uNemRange     = uNemRange;
+#endif
 
                 PPGMPAGE pRamPage = &pRamNew->aPages[idxFirstRamPage];
 #ifdef VBOX_WITH_PGM_NEM_MODE
@@ -4630,7 +4635,8 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
                         {
                             u2NemState = UINT8_MAX;
                             rc = NEMR3NotifyPhysRomRegisterLate(pVM, GCPhys, cb, PGM_RAMRANGE_CALC_PAGE_R3PTR(pRamNew, GCPhys),
-                                                                fNemNotify, &u2NemState);
+                                                                fNemNotify, &u2NemState,
+                                                                fRamExists ? &pRam->uNemRange : &pRamNew->uNemRange);
                             if (u2NemState != UINT8_MAX)
                                 pgmPhysSetNemStateForPages(&pRamNew->aPages[idxFirstRamPage], cPages, u2NemState);
                             if (RT_SUCCESS(rc))

@@ -1345,7 +1345,7 @@ typedef struct VM
 #ifdef VMM_INCLUDED_SRC_include_NEMInternal_h
         struct NEM  s;
 #endif
-        uint8_t     padding[512];       /* multiple of 64 */
+        uint8_t     padding[4608];       /* multiple of 64 */
     } nem;
 
     /** TM part. */

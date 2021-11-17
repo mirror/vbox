@@ -148,7 +148,7 @@ struc VM
     alignb 64
     .em                     resb 256
     alignb 64
-    .nem                    resb 512
+    .nem                    resb 4608
     alignb 64
     .tm                     resb 10112
     alignb 64

@@ -188,12 +188,17 @@ typedef struct NEM
     /** The KVM_CREATE_VM file descriptor. */
     int32_t                     fdVm;
 
+    /** KVM_GET_VCPU_MMAP_SIZE. */
+    uint32_t                    cbVCpuMmap;
     /** KVM_CAP_NR_MEMSLOTS. */
     uint32_t                    cMaxMemSlots;
     /** KVM_CAP_X86_ROBUST_SINGLESTEP. */
     bool                        fRobustSingleStep;
-    /** KVM_GET_VCPU_MMAP_SIZE. */
-    uint32_t                    cbVCpuMmap;
+
+    /** Hint where there might be a free slot. */
+    uint16_t                    idPrevSlot;
+    /** Memory slot ID allocation bitmap. */
+    uint64_t                    bmSlotIds[_32K / 8 / sizeof(uint64_t)];
 
 #elif defined(RT_OS_WINDOWS)
     /** Set if we've created the EMTs. */
@@ -355,11 +360,11 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatStopCpuPendingOdd;
     STAMCOUNTER                 StatCancelChangedState;
     STAMCOUNTER                 StatCancelAlertedThread;
+# endif
     STAMCOUNTER                 StatBreakOnCancel;
     STAMCOUNTER                 StatBreakOnFFPre;
     STAMCOUNTER                 StatBreakOnFFPost;
     STAMCOUNTER                 StatBreakOnStatus;
-# endif
     STAMCOUNTER                 StatImportOnDemand;
     STAMCOUNTER                 StatImportOnReturn;
     STAMCOUNTER                 StatImportOnReturnSkipped;

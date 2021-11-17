@@ -99,7 +99,7 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTG
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMapLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
                                                   void *pvRam, void *pvMmio2, uint32_t *puNemRange);
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
-                                                void *pvRam, void *pvMmio2, uint8_t *pu2State);
+                                                void *pvRam, void *pvMmio2, uint8_t *pu2State, uint32_t *puNemRange);
 /** @name Flags for NEMR3NotifyPhysMmioExMap and NEMR3NotifyPhysMmioExUnmap.
  * @{ */
 /** Set if the range is replacing RAM rather that unused space. */
@@ -126,9 +126,10 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPH
  *                          NULL.
  * @param   fFlags          NEM_NOTIFY_PHYS_ROM_F_XXX.
  * @param   pu2State        New page state or UINT8_MAX to leave as-is.
+ * @param   puNemRange      Access to the relevant PGMRAMRANGE::uNemRange field.
  */
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvPages,
-                                                     uint32_t fFlags, uint8_t *pu2State);
+                                                     uint32_t fFlags, uint8_t *pu2State, uint32_t *puNemRange);
 
 /**
  * Called after the ROM range has been fully completed.
@@ -144,9 +145,10 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, R
  * @param   fFlags          NEM_NOTIFY_PHYS_ROM_F_XXX.
  * @param   pu2State        Where to return the new NEM page state, UINT8_MAX
  *                          for unchanged.
+ * @param   puNemRange      Access to the relevant PGMRAMRANGE::uNemRange field.
  */
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvPages,
-                                                    uint32_t fFlags, uint8_t *pu2State);
+                                                    uint32_t fFlags, uint8_t *pu2State, uint32_t *puNemRange);
 
 /** @name Flags for NEMR3NotifyPhysRomRegisterEarly and NEMR3NotifyPhysRomRegisterLate.
  * @{ */

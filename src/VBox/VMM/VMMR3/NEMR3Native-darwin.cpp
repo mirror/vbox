@@ -2919,12 +2919,12 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapLate(PVM pVM, RTGCPHYS GCPhys, RTGCP
 
 
 VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvRam,
-                                               void *pvMmio2, uint8_t *pu2State)
+                                               void *pvMmio2, uint8_t *pu2State, uint32_t *puNemRange)
 {
     RT_NOREF(pVM);
 
-    Log5(("NEMR3NotifyPhysMmioExUnmap: %RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p pu2State=%p\n",
-          GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State));
+    Log5(("NEMR3NotifyPhysMmioExUnmap: %RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p pu2State=%p uNemRange=%#x (%#x)\n",
+          GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, puNemRange, *puNemRange));
 
     int rc = VINF_SUCCESS;
 #if defined(VBOX_WITH_PGM_NEM_MODE)
@@ -2986,21 +2986,22 @@ VMMR3_INT_DECL(int) NEMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, RTGCPHYS GCP
 
 
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvPages, uint32_t fFlags,
-                                                     uint8_t *pu2State)
+                                                     uint8_t *pu2State, uint32_t *puNemRange)
 {
-    RT_NOREF(pVM, GCPhys, cb, pvPages, fFlags);
+    RT_NOREF(pVM, GCPhys, cb, pvPages, fFlags, puNemRange);
 
     Log5(("nemR3NativeNotifyPhysRomRegisterEarly: %RGp LB %RGp pvPages=%p fFlags=%#x\n", GCPhys, cb, pvPages, fFlags));
-    *pu2State = UINT8_MAX;
+    *pu2State   = UINT8_MAX;
+    *puNemRange = 0;
     return VINF_SUCCESS;
 }
 
 
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvPages,
-                                                    uint32_t fFlags, uint8_t *pu2State)
+                                                    uint32_t fFlags, uint8_t *pu2State, uint32_t *puNemRange)
 {
-    Log5(("nemR3NativeNotifyPhysRomRegisterLate: %RGp LB %RGp pvPages=%p fFlags=%#x pu2State=%p\n",
-          GCPhys, cb, pvPages, fFlags, pu2State));
+    Log5(("nemR3NativeNotifyPhysRomRegisterLate: %RGp LB %RGp pvPages=%p fFlags=%#x pu2State=%p (%d) puNemRange=%p (%#x)\n",
+          GCPhys, cb, pvPages, fFlags, pu2State, *pu2State, puNemRange, *puNemRange));
     *pu2State = UINT8_MAX;
 
 #if defined(VBOX_WITH_PGM_NEM_MODE)
@@ -3017,10 +3018,10 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RT
                 GCPhys, cb, pvPages, fFlags, rc));
         return VERR_NEM_MAP_PAGES_FAILED;
     }
-    RT_NOREF(pVM, fFlags);
+    RT_NOREF(pVM, fFlags, puNemRange);
     return VINF_SUCCESS;
 #else
-    RT_NOREF(pVM, GCPhys, cb, pvPages, fFlags);
+    RT_NOREF(pVM, GCPhys, cb, pvPages, fFlags, puNemRange);
     return VERR_NEM_MAP_PAGES_FAILED;
 #endif
 }

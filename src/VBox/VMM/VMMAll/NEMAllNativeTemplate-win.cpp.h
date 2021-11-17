@@ -371,6 +371,8 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVMCC pVM, PVMCPUCC pVCpu)
         ADD_REG64(WHvX64RegisterCstar, pVCpu->cpum.GstCtx.msrCSTAR);
         ADD_REG64(WHvX64RegisterSfmask, pVCpu->cpum.GstCtx.msrSFMASK);
     }
+    if (fWhat & CPUMCTX_EXTRN_TSC_AUX)
+        ADD_REG64(WHvX64RegisterTscAux, pCtxMsrs->msr.TscAux);
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         ADD_REG64(WHvX64RegisterApicBase, APICGetBaseMsrNoCheck(pVCpu));
@@ -391,7 +393,6 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVMCC pVM, PVMCPUCC pVCpu)
         ADD_REG64(WHvX64RegisterMsrMtrrFix4kE8000,  pCtxMsrs->msr.MtrrFix4K_E8000);
         ADD_REG64(WHvX64RegisterMsrMtrrFix4kF0000,  pCtxMsrs->msr.MtrrFix4K_F0000);
         ADD_REG64(WHvX64RegisterMsrMtrrFix4kF8000,  pCtxMsrs->msr.MtrrFix4K_F8000);
-        ADD_REG64(WHvX64RegisterTscAux, pCtxMsrs->msr.TscAux);
 #if 0 /** @todo these registers aren't available? Might explain something.. .*/
         const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pVM);
         if (enmCpuVendor != CPUMCPUVENDOR_AMD)
@@ -666,6 +667,8 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
 //#ifdef LOG_ENABLED
 //    const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pVM);
 //#endif
+    if (fWhat & CPUMCTX_EXTRN_TSC_AUX)
+        aenmNames[iReg++] = WHvX64RegisterTscAux;
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         aenmNames[iReg++] = WHvX64RegisterApicBase; /// @todo APIC BASE
@@ -685,7 +688,6 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
         aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kE8000;
         aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kF0000;
         aenmNames[iReg++] = WHvX64RegisterMsrMtrrFix4kF8000;
-        aenmNames[iReg++] = WHvX64RegisterTscAux;
         /** @todo look for HvX64RegisterIa32MiscEnable and HvX64RegisterIa32FeatureControl? */
 //#ifdef LOG_ENABLED
 //        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
@@ -1010,38 +1012,42 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
         GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrCSTAR,  WHvX64RegisterCstar,  "MSR CSTAR");
         GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrSFMASK, WHvX64RegisterSfmask, "MSR SFMASK");
     }
-    if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
+    if (fWhat & (CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS))
     {
-        Assert(aenmNames[iReg] == WHvX64RegisterApicBase);
-        const uint64_t uOldBase = APICGetBaseMsrNoCheck(pVCpu);
-        if (aValues[iReg].Reg64 != uOldBase)
+        PCPUMCTXMSRS const pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
+        if (fWhat & CPUMCTX_EXTRN_TSC_AUX)
+            GET_REG64_LOG7(pCtxMsrs->msr.TscAux, WHvX64RegisterTscAux, "MSR TSC_AUX");
+        if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
         {
-            Log7(("NEM/%u: MSR APICBase changed %RX64 -> %RX64 (%RX64)\n",
-                  pVCpu->idCpu, uOldBase, aValues[iReg].Reg64, aValues[iReg].Reg64 ^ uOldBase));
-            int rc2 = APICSetBaseMsr(pVCpu, aValues[iReg].Reg64);
-            AssertLogRelMsg(rc2 == VINF_SUCCESS, ("%Rrc %RX64\n", rc2, aValues[iReg].Reg64));
-        }
-        iReg++;
+            Assert(aenmNames[iReg] == WHvX64RegisterApicBase);
+            const uint64_t uOldBase = APICGetBaseMsrNoCheck(pVCpu);
+            if (aValues[iReg].Reg64 != uOldBase)
+            {
+                Log7(("NEM/%u: MSR APICBase changed %RX64 -> %RX64 (%RX64)\n",
+                      pVCpu->idCpu, uOldBase, aValues[iReg].Reg64, aValues[iReg].Reg64 ^ uOldBase));
+                int rc2 = APICSetBaseMsr(pVCpu, aValues[iReg].Reg64);
+                AssertLogRelMsg(rc2 == VINF_SUCCESS, ("%Rrc %RX64\n", rc2, aValues[iReg].Reg64));
+            }
+            iReg++;
 
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrPAT, WHvX64RegisterPat, "MSR PAT");
+            GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrPAT, WHvX64RegisterPat, "MSR PAT");
 #if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrPAT, WHvX64RegisterMsrMtrrCap);
+            GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrPAT, WHvX64RegisterMsrMtrrCap);
 #endif
-        PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrDefType,      WHvX64RegisterMsrMtrrDefType,     "MSR MTRR_DEF_TYPE");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix64K_00000, WHvX64RegisterMsrMtrrFix64k00000, "MSR MTRR_FIX_64K_00000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix16K_80000, WHvX64RegisterMsrMtrrFix16k80000, "MSR MTRR_FIX_16K_80000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix16K_A0000, WHvX64RegisterMsrMtrrFix16kA0000, "MSR MTRR_FIX_16K_A0000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_C0000,  WHvX64RegisterMsrMtrrFix4kC0000,  "MSR MTRR_FIX_4K_C0000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_C8000,  WHvX64RegisterMsrMtrrFix4kC8000,  "MSR MTRR_FIX_4K_C8000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_D0000,  WHvX64RegisterMsrMtrrFix4kD0000,  "MSR MTRR_FIX_4K_D0000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_D8000,  WHvX64RegisterMsrMtrrFix4kD8000,  "MSR MTRR_FIX_4K_D8000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_E0000,  WHvX64RegisterMsrMtrrFix4kE0000,  "MSR MTRR_FIX_4K_E0000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_E8000,  WHvX64RegisterMsrMtrrFix4kE8000,  "MSR MTRR_FIX_4K_E8000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_F0000,  WHvX64RegisterMsrMtrrFix4kF0000,  "MSR MTRR_FIX_4K_F0000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_F8000,  WHvX64RegisterMsrMtrrFix4kF8000,  "MSR MTRR_FIX_4K_F8000");
-        GET_REG64_LOG7(pCtxMsrs->msr.TscAux,           WHvX64RegisterTscAux,             "MSR TSC_AUX");
-        /** @todo look for HvX64RegisterIa32MiscEnable and HvX64RegisterIa32FeatureControl? */
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrDefType,      WHvX64RegisterMsrMtrrDefType,     "MSR MTRR_DEF_TYPE");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix64K_00000, WHvX64RegisterMsrMtrrFix64k00000, "MSR MTRR_FIX_64K_00000");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix16K_80000, WHvX64RegisterMsrMtrrFix16k80000, "MSR MTRR_FIX_16K_80000");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix16K_A0000, WHvX64RegisterMsrMtrrFix16kA0000, "MSR MTRR_FIX_16K_A0000");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_C0000,  WHvX64RegisterMsrMtrrFix4kC0000,  "MSR MTRR_FIX_4K_C0000");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_C8000,  WHvX64RegisterMsrMtrrFix4kC8000,  "MSR MTRR_FIX_4K_C8000");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_D0000,  WHvX64RegisterMsrMtrrFix4kD0000,  "MSR MTRR_FIX_4K_D0000");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_D8000,  WHvX64RegisterMsrMtrrFix4kD8000,  "MSR MTRR_FIX_4K_D8000");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_E0000,  WHvX64RegisterMsrMtrrFix4kE0000,  "MSR MTRR_FIX_4K_E0000");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_E8000,  WHvX64RegisterMsrMtrrFix4kE8000,  "MSR MTRR_FIX_4K_E8000");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_F0000,  WHvX64RegisterMsrMtrrFix4kF0000,  "MSR MTRR_FIX_4K_F0000");
+            GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_F8000,  WHvX64RegisterMsrMtrrFix4kF8000,  "MSR MTRR_FIX_4K_F8000");
+            /** @todo look for HvX64RegisterIa32MiscEnable and HvX64RegisterIa32FeatureControl? */
+        }
     }
 
     /* Interruptibility. */

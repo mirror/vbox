@@ -125,7 +125,9 @@ static int nemR3LnxInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
         CAP_ENTRY_ML(KVM_CAP_ADJUST_CLOCK),
         CAP_ENTRY__L(KVM_CAP_INTERNAL_ERROR_DATA),           /* 40 */
 #ifdef __KVM_HAVE_VCPU_EVENTS
-        CAP_ENTRY__L(KVM_CAP_VCPU_EVENTS),
+        CAP_ENTRY_ML(KVM_CAP_VCPU_EVENTS),
+#else
+        CAP_ENTRY_MU(41),
 #endif
         CAP_ENTRY__L(KVM_CAP_S390_PSW),
         CAP_ENTRY__L(KVM_CAP_PPC_SEGSTATE),
@@ -143,10 +145,14 @@ static int nemR3LnxInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
         CAP_ENTRY__L(KVM_CAP_PPC_UNSET_IRQ),
         CAP_ENTRY__L(KVM_CAP_ENABLE_CAP),
 #ifdef __KVM_HAVE_XSAVE
-        CAP_ENTRY__L(KVM_CAP_XSAVE),
+        CAP_ENTRY_ML(KVM_CAP_XSAVE),
+#else
+        CAP_ENTRY_MU(55),
 #endif
 #ifdef __KVM_HAVE_XCRS
-        CAP_ENTRY__L(KVM_CAP_XCRS),
+        CAP_ENTRY_ML(KVM_CAP_XCRS),
+#else
+        CAP_ENTRY_MU(56),
 #endif
         CAP_ENTRY__L(KVM_CAP_PPC_GET_PVINFO),
         CAP_ENTRY__L(KVM_CAP_PPC_IRQ_LEVEL),
@@ -279,8 +285,8 @@ static int nemR3LnxInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
         CAP_ENTRY__L(KVM_CAP_SMALLER_MAXPHYADDR),
         CAP_ENTRY__L(KVM_CAP_S390_DIAG318),
         CAP_ENTRY__L(KVM_CAP_STEAL_TIME),
-        CAP_ENTRY__L(KVM_CAP_X86_USER_SPACE_MSR),
-        CAP_ENTRY__L(KVM_CAP_X86_MSR_FILTER),
+        CAP_ENTRY_ML(KVM_CAP_X86_USER_SPACE_MSR),            /* (since 5.10) */
+        CAP_ENTRY_ML(KVM_CAP_X86_MSR_FILTER),
         CAP_ENTRY__L(KVM_CAP_ENFORCE_PV_FEATURE_CPUID),      /* 190 */
         CAP_ENTRY__L(KVM_CAP_SYS_HYPERV_CPUID),
         CAP_ENTRY__L(KVM_CAP_DIRTY_LOG_RING),
@@ -377,6 +383,14 @@ static int nemR3LnxInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     else
         rcRet = RTERRINFO_LOG_REL_ADD_F(pErrInfo, VERR_NEM_INIT_FAILED, "Odd KVM_GET_VCPU_MMAP_SIZE value: %#x (%d)", rc, rc);
 
+    /*
+     * Init the slot ID bitmap.
+     */
+    ASMBitSet(&pVM->nem.s.bmSlotIds[0], 0);         /* don't use slot 0 */
+    if (pVM->nem.s.cMaxMemSlots < _32K)
+        ASMBitSetRange(&pVM->nem.s.bmSlotIds[0], pVM->nem.s.cMaxMemSlots, _32K);
+    ASMBitSet(&pVM->nem.s.bmSlotIds[0], _32K - 1);  /* don't use the last slot */
+
     return rcRet;
 }
 
@@ -410,6 +424,9 @@ static int nemR3LnxInitSetupVm(PVM pVM, PRTERRINFO pErrInfo)
                                                    pVCpu->nem.s.fdVCpu, 0 /*offset*/);
         if ((void *)pVCpu->nem.s.pRun == MAP_FAILED)
             return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "mmap failed for VCpu #%u: %d", idCpu, errno);
+
+        /* We want all x86 registers and events on each exit. */
+        pVCpu->nem.s.pRun->kvm_valid_regs = KVM_SYNC_X86_REGS | KVM_SYNC_X86_SREGS | KVM_SYNC_X86_EVENTS;
     }
     return VINF_SUCCESS;
 }
@@ -552,7 +569,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
 
     /** @todo */
 
-    return VERR_NOT_IMPLEMENTED;
+    return VINF_SUCCESS;
 }
 
 
@@ -565,7 +582,39 @@ int nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 
 int nemR3NativeTerm(PVM pVM)
 {
-    RT_NOREF(pVM);
+    /*
+     * Per-cpu data
+     */
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+
+        if (pVCpu->nem.s.fdVCpu != -1)
+        {
+            close(pVCpu->nem.s.fdVCpu);
+            pVCpu->nem.s.fdVCpu = -1;
+        }
+        if (pVCpu->nem.s.pRun)
+        {
+            munmap(pVCpu->nem.s.pRun, pVM->nem.s.cbVCpuMmap);
+            pVCpu->nem.s.pRun = NULL;
+        }
+    }
+
+    /*
+     * Global data.
+     */
+    if (pVM->nem.s.fdVm != -1)
+    {
+        close(pVM->nem.s.fdVm);
+        pVM->nem.s.fdVm = -1;
+    }
+
+    if (pVM->nem.s.fdKvm != -1)
+    {
+        close(pVM->nem.s.fdKvm);
+        pVM->nem.s.fdKvm = -1;
+    }
     return VINF_SUCCESS;
 }
 
@@ -594,63 +643,88 @@ void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
 }
 
 
-VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
-{
-    RT_NOREF(pVM, pVCpu);
-    return VERR_NOT_IMPLEMENTED;
-}
+/*********************************************************************************************************************************
+*   Memory management                                                                                                            *
+*********************************************************************************************************************************/
 
 
-VMMR3_INT_DECL(bool) NEMR3CanExecuteGuest(PVM pVM, PVMCPU pVCpu)
+/**
+ * Allocates a memory slot ID.
+ *
+ * @returns Slot ID on success, UINT16_MAX on failure.
+ */
+static uint16_t nemR3LnxMemSlotIdAlloc(PVM pVM)
 {
+    /* Use the hint first. */
+    uint16_t idHint = pVM->nem.s.idPrevSlot;
+    if (idHint < _32K - 1)
+    {
+        int32_t idx = ASMBitNextClear(&pVM->nem.s.bmSlotIds, _32K, idHint);
+        Assert(idx < _32K);
+        if (idx > 0 && !ASMAtomicBitTestAndSet(&pVM->nem.s.bmSlotIds, idx))
+            return pVM->nem.s.idPrevSlot = (uint16_t)idx;
+    }
+
     /*
-     * Only execute when the A20 gate is enabled as I cannot immediately
-     * spot any A20 support in KVM.
+     * Search the whole map from the start.
      */
-    RT_NOREF(pVM);
-    Assert(VM_IS_NEM_ENABLED(pVM));
-    return PGMPhysIsA20Enabled(pVCpu);
-}
+    int32_t idx = ASMBitFirstClear(&pVM->nem.s.bmSlotIds, _32K);
+    Assert(idx < _32K);
+    if (idx > 0 && !ASMAtomicBitTestAndSet(&pVM->nem.s.bmSlotIds, idx))
+        return pVM->nem.s.idPrevSlot = (uint16_t)idx;
 
-
-bool nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
-{
-    NOREF(pVM); NOREF(pVCpu); NOREF(fEnable);
-    return false;
+    Assert(idx < 0 /*shouldn't trigger unless there is a race */);
+    return UINT16_MAX; /* caller is expected to assert. */
 }
 
 
 /**
- * Forced flag notification call from VMEmt.cpp.
- *
- * This is only called when pVCpu is in the VMCPUSTATE_STARTED_EXEC_NEM state.
- *
- * @param   pVM             The cross context VM structure.
- * @param   pVCpu           The cross context virtual CPU structure of the CPU
- *                          to be notified.
- * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_XXX.
+ * Frees a memory slot ID
  */
-void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
+static void nemR3LnxMemSlotIdFree(PVM pVM, uint16_t idSlot)
 {
-    RT_NOREF(pVM, pVCpu, fFlags);
+    if (RT_LIKELY(idSlot < _32K && ASMAtomicBitTestAndClear(&pVM->nem.s.bmSlotIds, idSlot)))
+    { /*likely*/ }
+    else
+        AssertMsgFailed(("idSlot=%u (%#x)\n", idSlot, idSlot));
 }
+
 
 
 VMMR3_INT_DECL(int) NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvR3,
                                                uint8_t *pu2State, uint32_t *puNemRange)
 {
-    Log5(("NEMR3NotifyPhysRamRegister: %RGp LB %RGp, pvR3=%p pu2State=%p (%d) puNemRange=%p (%d)\n",
-          GCPhys, cb, pvR3, pu2State, pu2State, puNemRange, *puNemRange));
-    *pu2State = UINT8_MAX;
-    RT_NOREF(pVM, GCPhys, cb, pvR3, puNemRange);
-    return VINF_SUCCESS;
+    uint16_t idSlot = nemR3LnxMemSlotIdAlloc(pVM);
+    AssertLogRelReturn(idSlot < _32K, VERR_NEM_MAP_PAGES_FAILED);
+
+    Log5(("NEMR3NotifyPhysRamRegister: %RGp LB %RGp, pvR3=%p pu2State=%p (%d) puNemRange=%p (%d) - idSlot=%#x\n",
+          GCPhys, cb, pvR3, pu2State, pu2State, puNemRange, *puNemRange, idSlot));
+
+    struct kvm_userspace_memory_region Region;
+    Region.slot             = idSlot;
+    Region.flags            = 0;
+    Region.guest_phys_addr  = GCPhys;
+    Region.memory_size      = cb;
+    Region.userspace_addr   = (uintptr_t)pvR3;
+
+    int rc = ioctl(pVM->nem.s.fdVm, KVM_SET_USER_MEMORY_REGION, &Region);
+    if (rc == 0)
+    {
+        *pu2State   = 0;
+        *puNemRange = idSlot;
+        return VINF_SUCCESS;
+    }
+
+    LogRel(("NEMR3NotifyPhysRamRegister: %RGp LB %RGp, pvR3=%p, idSlot=%#x failed: %u/%u\n", GCPhys, cb, pvR3, idSlot, rc, errno));
+    nemR3LnxMemSlotIdFree(pVM, idSlot);
+    return VERR_NEM_MAP_PAGES_FAILED;
 }
 
 
 VMMR3_INT_DECL(bool) NEMR3IsMmio2DirtyPageTrackingSupported(PVM pVM)
 {
     RT_NOREF(pVM);
-    return false;
+    return true;
 }
 
 
@@ -659,8 +733,53 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGC
 {
     Log5(("NEMR3NotifyPhysMmioExMapEarly: %RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p pu2State=%p (%d) puNemRange=%p (%#x)\n",
           GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, *pu2State, puNemRange, puNemRange ? *puNemRange : UINT32_MAX));
-    RT_NOREF(pVM, GCPhys, cb, fFlags, pvRam, pvMmio2, puNemRange);
-    *pu2State = UINT8_MAX;
+    RT_NOREF(pvRam);
+
+    if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE)
+    {
+        /** @todo implement splitting and whatnot of ranges if we want to be 100%
+         *        conforming (just modify RAM registrations in MM.cpp to test). */
+        AssertLogRelMsgFailedReturn(("%RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p\n", GCPhys, cb, fFlags, pvRam, pvMmio2),
+                                    VERR_NEM_MAP_PAGES_FAILED);
+    }
+
+    /*
+     * Register MMIO2.
+     */
+    if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2)
+    {
+        AssertReturn(pvMmio2, VERR_NEM_MAP_PAGES_FAILED);
+        AssertReturn(puNemRange, VERR_NEM_MAP_PAGES_FAILED);
+
+        uint16_t idSlot = nemR3LnxMemSlotIdAlloc(pVM);
+        AssertLogRelReturn(idSlot < _32K, VERR_NEM_MAP_PAGES_FAILED);
+
+        struct kvm_userspace_memory_region Region;
+        Region.slot             = idSlot;
+        Region.flags            = fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_TRACK_DIRTY_PAGES ? KVM_MEM_LOG_DIRTY_PAGES : 0;
+        Region.guest_phys_addr  = GCPhys;
+        Region.memory_size      = cb;
+        Region.userspace_addr   = (uintptr_t)pvMmio2;
+
+        int rc = ioctl(pVM->nem.s.fdVm, KVM_SET_USER_MEMORY_REGION, &Region);
+        if (rc == 0)
+        {
+            *pu2State   = 0;
+            *puNemRange = idSlot;
+            Log5(("NEMR3NotifyPhysMmioExMapEarly: %RGp LB %RGp fFlags=%#x pvMmio2=%p - idSlot=%#x\n",
+                  GCPhys, cb, fFlags, pvMmio2, idSlot));
+            return VINF_SUCCESS;
+        }
+
+        nemR3LnxMemSlotIdFree(pVM, idSlot);
+        AssertLogRelMsgFailedReturn(("%RGp LB %RGp fFlags=%#x, pvMmio2=%p, idSlot=%#x failed: %u/%u\n",
+                                     GCPhys, cb, fFlags, pvMmio2, idSlot, errno, rc),
+                                    VERR_NEM_MAP_PAGES_FAILED);
+    }
+
+    /* MMIO, don't care. */
+    *pu2State   = 0;
+    *puNemRange = UINT32_MAX;
     return VINF_SUCCESS;
 }
 
@@ -674,11 +793,48 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapLate(PVM pVM, RTGCPHYS GCPhys, RTGCP
 
 
 VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvRam,
-                                               void *pvMmio2, uint8_t *pu2State)
+                                               void *pvMmio2, uint8_t *pu2State, uint32_t *puNemRange)
 {
-    Log5(("NEMR3NotifyPhysMmioExUnmap: %RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p pu2State=%p\n",
-          GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State));
+    Log5(("NEMR3NotifyPhysMmioExUnmap: %RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p pu2State=%p puNemRange=%p (%#x)\n",
+          GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, puNemRange, *puNemRange));
     RT_NOREF(pVM, GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State);
+
+    if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE)
+    {
+        /** @todo implement splitting and whatnot of ranges if we want to be 100%
+         *        conforming (just modify RAM registrations in MM.cpp to test). */
+        AssertLogRelMsgFailedReturn(("%RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p\n", GCPhys, cb, fFlags, pvRam, pvMmio2),
+                                    VERR_NEM_UNMAP_PAGES_FAILED);
+    }
+
+    if (fFlags & NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2)
+    {
+        uint32_t const idSlot = *puNemRange;
+        AssertReturn(idSlot > 0 && idSlot < _32K, VERR_NEM_IPE_4);
+        AssertReturn(ASMBitTest(pVM->nem.s.bmSlotIds, idSlot), VERR_NEM_IPE_4);
+
+        struct kvm_userspace_memory_region Region;
+        Region.slot             = idSlot;
+        Region.flags            = 0;
+        Region.guest_phys_addr  = GCPhys;
+        Region.memory_size      = 0;    /* this deregisters it. */
+        Region.userspace_addr   = (uintptr_t)pvMmio2;
+
+        int rc = ioctl(pVM->nem.s.fdVm, KVM_SET_USER_MEMORY_REGION, &Region);
+        if (rc == 0)
+        {
+            if (pu2State)
+                *pu2State = 0;
+            *puNemRange = UINT32_MAX;
+            nemR3LnxMemSlotIdFree(pVM, idSlot);
+            return VINF_SUCCESS;
+        }
+
+        AssertLogRelMsgFailedReturn(("%RGp LB %RGp fFlags=%#x, pvMmio2=%p, idSlot=%#x failed: %u/%u\n",
+                                     GCPhys, cb, fFlags, pvMmio2, idSlot, errno, rc),
+                                    VERR_NEM_UNMAP_PAGES_FAILED);
+    }
+
     if (pu2State)
         *pu2State = UINT8_MAX;
     return VINF_SUCCESS;
@@ -688,30 +844,90 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
 VMMR3_INT_DECL(int) NEMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t uNemRange,
                                                            void *pvBitmap, size_t cbBitmap)
 {
-    RT_NOREF(pVM, GCPhys, cb, uNemRange, pvBitmap, cbBitmap);
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    AssertReturn(uNemRange > 0 && uNemRange < _32K, VERR_NEM_IPE_4);
+    AssertReturn(ASMBitTest(pVM->nem.s.bmSlotIds, uNemRange), VERR_NEM_IPE_4);
+
+    RT_NOREF(GCPhys, cbBitmap);
+
+    struct kvm_dirty_log DirtyLog;
+    DirtyLog.slot         = uNemRange;
+    DirtyLog.padding1     = 0;
+    DirtyLog.dirty_bitmap = pvBitmap;
+
+    int rc = ioctl(pVM->nem.s.fdVm, KVM_GET_DIRTY_LOG, &DirtyLog);
+    AssertLogRelMsgReturn(rc == 0, ("%RGp LB %RGp idSlot=%#x failed: %u/%u\n", GCPhys, cb, uNemRange, errno, rc),
+                          VERR_NEM_QUERY_DIRTY_BITMAP_FAILED);
+
+    return VINF_SUCCESS;
 }
 
 
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvPages, uint32_t fFlags,
-                                                     uint8_t *pu2State)
+                                                     uint8_t *pu2State, uint32_t *puNemRange)
 {
     Log5(("NEMR3NotifyPhysRomRegisterEarly: %RGp LB %RGp pvPages=%p fFlags=%#x\n", GCPhys, cb, pvPages, fFlags));
     *pu2State = UINT8_MAX;
-    RT_NOREF(pVM, GCPhys, cb, pvPages, fFlags);
+
+    /* Don't support puttint ROM where there is already RAM.  For
+       now just shuffle the registrations till it works... */
+    AssertLogRelMsgReturn(!(fFlags & NEM_NOTIFY_PHYS_ROM_F_REPLACE), ("%RGp LB %RGp fFlags=%#x\n", GCPhys, cb, fFlags),
+                          VERR_NEM_MAP_PAGES_FAILED);
+
+    /** @todo figure out how to do shadow ROMs.   */
+
+    /*
+     * We only allocate a slot number here in case we need to use it to
+     * fend of physical handler fun.
+     */
+    uint16_t idSlot = nemR3LnxMemSlotIdAlloc(pVM);
+    AssertLogRelReturn(idSlot < _32K, VERR_NEM_MAP_PAGES_FAILED);
+
+    *pu2State   = 0;
+    *puNemRange = idSlot;
+    Log5(("NEMR3NotifyPhysRomRegisterEarly: %RGp LB %RGp fFlags=%#x pvPages=%p - idSlot=%#x\n",
+          GCPhys, cb, fFlags, pvPages, idSlot));
+    RT_NOREF(GCPhys, cb, fFlags, pvPages);
     return VINF_SUCCESS;
 }
 
 
 VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, void *pvPages,
-                                                    uint32_t fFlags, uint8_t *pu2State)
+                                                    uint32_t fFlags, uint8_t *pu2State, uint32_t *puNemRange)
 {
-    Log5(("NEMR3NotifyPhysRomRegisterLate: %RGp LB %RGp pvPages=%p fFlags=%#x pu2State=%p\n",
-          GCPhys, cb, pvPages, fFlags, pu2State));
+    Log5(("NEMR3NotifyPhysRomRegisterLate: %RGp LB %RGp pvPages=%p fFlags=%#x pu2State=%p (%d) puNemRange=%p (%#x)\n",
+          GCPhys, cb, pvPages, fFlags, pu2State, *pu2State, puNemRange, *puNemRange));
+
+    AssertPtrReturn(pvPages, VERR_NEM_IPE_5);
+
+    uint32_t const idSlot = *puNemRange;
+    AssertReturn(idSlot > 0 && idSlot < _32K, VERR_NEM_IPE_4);
+    AssertReturn(ASMBitTest(pVM->nem.s.bmSlotIds, idSlot), VERR_NEM_IPE_4);
+
     *pu2State = UINT8_MAX;
-    RT_NOREF(pVM, GCPhys, cb, pvPages, fFlags);
-    return VINF_SUCCESS;
+
+    /*
+     * Do the actual setting of the user pages here now that we've
+     * got a valid pvPages (typically isn't available during the early
+     * notification, unless we're replacing RAM).
+     */
+    struct kvm_userspace_memory_region Region;
+    Region.slot             = idSlot;
+    Region.flags            = 0;
+    Region.guest_phys_addr  = GCPhys;
+    Region.memory_size      = cb;
+    Region.userspace_addr   = (uintptr_t)pvPages;
+
+    int rc = ioctl(pVM->nem.s.fdVm, KVM_SET_USER_MEMORY_REGION, &Region);
+    if (rc == 0)
+    {
+        *pu2State   = 0;
+        Log5(("NEMR3NotifyPhysRomRegisterEarly: %RGp LB %RGp fFlags=%#x pvPages=%p - idSlot=%#x\n",
+              GCPhys, cb, fFlags, pvPages, idSlot));
+        return VINF_SUCCESS;
+    }
+    AssertLogRelMsgFailedReturn(("%RGp LB %RGp fFlags=%#x, pvPages=%p, idSlot=%#x failed: %u/%u\n",
+                                 GCPhys, cb, fFlags, pvPages, idSlot, errno, rc),
+                                VERR_NEM_MAP_PAGES_FAILED);
 }
 
 
@@ -726,57 +942,6 @@ VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled)
     Log(("nemR3NativeNotifySetA20: fEnabled=%RTbool\n", fEnabled));
     Assert(VM_IS_NEM_ENABLED(pVCpu->CTX_SUFF(pVM)));
     RT_NOREF(pVCpu, fEnabled);
-}
-
-
-/**
- * Interface for importing state on demand (used by IEM).
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context CPU structure.
- * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX.
- */
-VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
-{
-    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnDemand);
-
-    RT_NOREF(pVCpu, fWhat);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-/**
- * Query the CPU tick counter and optionally the TSC_AUX MSR value.
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context CPU structure.
- * @param   pcTicks     Where to return the CPU tick count.
- * @param   puAux       Where to return the TSC_AUX register value.
- */
-VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t *puAux)
-{
-    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatQueryCpuTick);
-    // KVM_GET_CLOCK?
-    RT_NOREF(pVCpu, pcTicks, puAux);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-/**
- * Resumes CPU clock (TSC) on all virtual CPUs.
- *
- * This is called by TM when the VM is started, restored, resumed or similar.
- *
- * @returns VBox status code.
- * @param   pVM             The cross context VM structure.
- * @param   pVCpu           The cross context CPU structure of the calling EMT.
- * @param   uPausedTscValue The TSC value at the time of pausing.
- */
-VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uPausedTscValue)
-{
-    // KVM_SET_CLOCK?
-    RT_NOREF(pVM, pVCpu, uPausedTscValue);
-    return VERR_NOT_IMPLEMENTED;
 }
 
 
@@ -835,6 +1000,788 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPH
           GCPhys, HCPhysPrev, HCPhysNew, pvNewR3, fPageProt, enmType, *pu2State));
     Assert(VM_IS_NEM_ENABLED(pVM));
     RT_NOREF(pVM, GCPhys, HCPhysPrev, HCPhysNew, pvNewR3, fPageProt, enmType, pu2State);
+}
+
+
+/*********************************************************************************************************************************
+*   CPU State                                                                                                                    *
+*********************************************************************************************************************************/
+
+/**
+ * Worker that imports selected state from KVM.
+ */
+static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, struct kvm_run *pRun)
+{
+    RT_NOREF(pVCpu, fWhat, pRun);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Interface for importing state on demand (used by IEM).
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context CPU structure.
+ * @param   fWhat       What to import, CPUMCTX_EXTRN_XXX.
+ */
+VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
+{
+    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnDemand);
+
+    RT_NOREF(pVCpu, fWhat);
+    return nemHCLnxImportState(pVCpu, fWhat, pVCpu->nem.s.pRun);
+}
+
+
+/**
+ * Exports state to KVM.
+ */
+static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_run *pRun)
+{
+    uint64_t const fExtrn = pCtx->fExtrn;
+    Assert((fExtrn & CPUMCTX_EXTRN_ALL) != CPUMCTX_EXTRN_ALL);
+
+    /*
+     * Stuff that goes into kvm_run::s.regs.regs:
+     */
+    if (   (fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_GPRS_MASK))
+        !=           (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_GPRS_MASK))
+    {
+        if (!(fExtrn & CPUMCTX_EXTRN_RIP))
+            pRun->s.regs.regs.rip    = pCtx->rip;
+        if (!(fExtrn & CPUMCTX_EXTRN_RFLAGS))
+            pRun->s.regs.regs.rflags = pCtx->rflags.u;
+
+        if (!(fExtrn & CPUMCTX_EXTRN_RAX))
+            pRun->s.regs.regs.rax    = pCtx->rax;
+        if (!(fExtrn & CPUMCTX_EXTRN_RCX))
+            pRun->s.regs.regs.rcx    = pCtx->rcx;
+        if (!(fExtrn & CPUMCTX_EXTRN_RDX))
+            pRun->s.regs.regs.rdx    = pCtx->rdx;
+        if (!(fExtrn & CPUMCTX_EXTRN_RBX))
+            pRun->s.regs.regs.rbx    = pCtx->rbx;
+        if (!(fExtrn & CPUMCTX_EXTRN_RSP))
+            pRun->s.regs.regs.rsp    = pCtx->rsp;
+        if (!(fExtrn & CPUMCTX_EXTRN_RBP))
+            pRun->s.regs.regs.rbp    = pCtx->rbp;
+        if (!(fExtrn & CPUMCTX_EXTRN_RSI))
+            pRun->s.regs.regs.rsi    = pCtx->rsi;
+        if (!(fExtrn & CPUMCTX_EXTRN_RDI))
+            pRun->s.regs.regs.rdi    = pCtx->rdi;
+        if (!(fExtrn & CPUMCTX_EXTRN_R8_R15))
+        {
+            pRun->s.regs.regs.r8     = pCtx->r8;
+            pRun->s.regs.regs.r9     = pCtx->r9;
+            pRun->s.regs.regs.r10    = pCtx->r10;
+            pRun->s.regs.regs.r11    = pCtx->r11;
+            pRun->s.regs.regs.r12    = pCtx->r12;
+            pRun->s.regs.regs.r13    = pCtx->r13;
+            pRun->s.regs.regs.r14    = pCtx->r14;
+            pRun->s.regs.regs.r15    = pCtx->r15;
+        }
+        pRun->kvm_dirty_regs |= KVM_SYNC_X86_REGS;
+    }
+
+    /*
+     * Stuff that goes into kvm_run::s.regs.sregs:
+     */
+    /** @todo apic_base   */
+    if (   (fExtrn & (CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK | CPUMCTX_EXTRN_CR_MASK | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_APIC_TPR))
+        !=           (CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK | CPUMCTX_EXTRN_CR_MASK | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_APIC_TPR))
+    {
+#define NEM_LNX_EXPORT_SEG(a_KvmSeg, a_CtxSeg) do { \
+            (a_KvmSeg).base     = (a_CtxSeg).u64Base; \
+            (a_KvmSeg).limit    = (a_CtxSeg).u32Limit; \
+            (a_KvmSeg).selector = (a_CtxSeg).Sel; \
+            (a_KvmSeg).type     = (a_CtxSeg).Attr.n.u4Type; \
+            (a_KvmSeg).s        = (a_CtxSeg).Attr.n.u1DescType; \
+            (a_KvmSeg).dpl      = (a_CtxSeg).Attr.n.u2Dpl; \
+            (a_KvmSeg).present  = (a_CtxSeg).Attr.n.u1Present; \
+            (a_KvmSeg).avl      = (a_CtxSeg).Attr.n.u1Available; \
+            (a_KvmSeg).l        = (a_CtxSeg).Attr.n.u1Long; \
+            (a_KvmSeg).db       = (a_CtxSeg).Attr.n.u1DefBig; \
+            (a_KvmSeg).g        = (a_CtxSeg).Attr.n.u1Granularity; \
+            (a_KvmSeg).unusable = (a_CtxSeg).Attr.n.u1Unusable; \
+            (a_KvmSeg).padding  = 0; \
+        } while (0)
+
+        if ((fExtrn & CPUMCTX_EXTRN_SREG_MASK) != CPUMCTX_EXTRN_SREG_MASK)
+        {
+            if (!(fExtrn & CPUMCTX_EXTRN_ES))
+                NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.es, pCtx->es);
+            if (!(fExtrn & CPUMCTX_EXTRN_CS))
+                NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.cs, pCtx->cs);
+            if (!(fExtrn & CPUMCTX_EXTRN_SS))
+                NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.ss, pCtx->ss);
+            if (!(fExtrn & CPUMCTX_EXTRN_DS))
+                NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.ds, pCtx->ds);
+            if (!(fExtrn & CPUMCTX_EXTRN_FS))
+                NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.fs, pCtx->fs);
+            if (!(fExtrn & CPUMCTX_EXTRN_GS))
+                NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.gs, pCtx->gs);
+        }
+        if ((fExtrn & CPUMCTX_EXTRN_TABLE_MASK) != CPUMCTX_EXTRN_TABLE_MASK)
+        {
+            if (!(fExtrn & CPUMCTX_EXTRN_GDTR))
+            {
+                pRun->s.regs.sregs.gdt.base  = pCtx->gdtr.pGdt;
+                pRun->s.regs.sregs.gdt.limit = pCtx->gdtr.cbGdt;
+                pRun->s.regs.sregs.gdt.padding[0] = 0;
+                pRun->s.regs.sregs.gdt.padding[1] = 0;
+                pRun->s.regs.sregs.gdt.padding[2] = 0;
+            }
+            if (!(fExtrn & CPUMCTX_EXTRN_IDTR))
+            {
+                pRun->s.regs.sregs.idt.base  = pCtx->idtr.pIdt;
+                pRun->s.regs.sregs.idt.limit = pCtx->idtr.cbIdt;
+                pRun->s.regs.sregs.idt.padding[0] = 0;
+                pRun->s.regs.sregs.idt.padding[1] = 0;
+                pRun->s.regs.sregs.idt.padding[2] = 0;
+            }
+            if (!(fExtrn & CPUMCTX_EXTRN_LDTR))
+                NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.ldt, pCtx->ldtr);
+            if (!(fExtrn & CPUMCTX_EXTRN_TR))
+                NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.tr, pCtx->tr);
+        }
+        if ((fExtrn & CPUMCTX_EXTRN_CR_MASK) != CPUMCTX_EXTRN_CR_MASK)
+        {
+            if (!(fExtrn & CPUMCTX_EXTRN_CR0))
+                pRun->s.regs.sregs.cr0   = pCtx->cr0;
+            if (!(fExtrn & CPUMCTX_EXTRN_CR2))
+                pRun->s.regs.sregs.cr2   = pCtx->cr2;
+            if (!(fExtrn & CPUMCTX_EXTRN_CR3))
+                pRun->s.regs.sregs.cr3   = pCtx->cr3;
+            if (!(fExtrn & CPUMCTX_EXTRN_CR4))
+                pRun->s.regs.sregs.cr4   = pCtx->cr4;
+        }
+        if (!(fExtrn & CPUMCTX_EXTRN_APIC_TPR))
+            pRun->s.regs.sregs.cr8    = CPUMGetGuestCR8(pVCpu);
+        if (!(fExtrn & CPUMCTX_EXTRN_EFER))
+            pRun->s.regs.sregs.efer   = pCtx->msrEFER;
+
+        /** @todo apic_base   */
+        /** @todo interrupt_bitmap - IRQ injection?  */
+        pRun->kvm_dirty_regs |= KVM_SYNC_X86_SREGS;
+    }
+
+    /*
+     * Debug registers.
+     */
+    if ((fExtrn & CPUMCTX_EXTRN_DR_MASK) != CPUMCTX_EXTRN_DR_MASK)
+    {
+        struct kvm_debugregs DbgRegs = {{0}};
+
+        if (fExtrn & CPUMCTX_EXTRN_DR_MASK)
+        {
+            /* Partial debug state, we must get DbgRegs first so we can merge: */
+            int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_DEBUGREGS, &DbgRegs);
+            AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
+        }
+
+        if (!(fExtrn & CPUMCTX_EXTRN_DR0_DR3))
+        {
+            DbgRegs.db[0] = pCtx->dr[0];
+            DbgRegs.db[1] = pCtx->dr[1];
+            DbgRegs.db[2] = pCtx->dr[2];
+            DbgRegs.db[3] = pCtx->dr[3];
+        }
+        if (!(fExtrn & CPUMCTX_EXTRN_DR6))
+            DbgRegs.dr6 = pCtx->dr[6];
+        if (!(fExtrn & CPUMCTX_EXTRN_DR7))
+            DbgRegs.dr7 = pCtx->dr[7];
+
+        int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_DEBUGREGS, &DbgRegs);
+        AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
+    }
+
+    /*
+     * FPU, SSE, AVX, ++.
+     */
+    if (   (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE | CPUMCTX_EXTRN_XCRx))
+        !=           (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE | CPUMCTX_EXTRN_XCRx))
+    {
+        if (   (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
+            !=           (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
+        {
+            if (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
+            {
+                /* Partial state is annoying as we have to do merging - is this possible at all? */
+                struct kvm_xsave XSave;
+                int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_XSAVE, &XSave);
+                AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
+
+                if (!(fExtrn & CPUMCTX_EXTRN_X87))
+                    memcpy(&pCtx->XState.x87, &XSave, sizeof(pCtx->XState.x87));
+                if (!(fExtrn & CPUMCTX_EXTRN_SSE_AVX))
+                {
+                    /** @todo    */
+                }
+                if (!(fExtrn & CPUMCTX_EXTRN_OTHER_XSAVE))
+                {
+                    /** @todo   */
+                }
+            }
+
+            int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_XSAVE, &pCtx->XState);
+            AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
+        }
+
+        if (!(fExtrn & CPUMCTX_EXTRN_XCRx))
+        {
+            struct kvm_xcrs Xcrs =
+            {   /*.nr_xcrs = */ 2,
+                /*.flags = */   0,
+                /*.xcrs= */ {
+                    { /*.xcr =*/ 0, /*.reserved=*/ 0, /*.value=*/ pCtx->aXcr[0] },
+                    { /*.xcr =*/ 1, /*.reserved=*/ 0, /*.value=*/ pCtx->aXcr[1] },
+                }
+            };
+
+            int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_XCRS, &Xcrs);
+            AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
+        }
+    }
+
+    /*
+     * MSRs.
+     */
+    if (   (fExtrn & (CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_SYSENTER_MSRS | CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS))
+        !=           (CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_SYSENTER_MSRS | CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS))
+    {
+        union
+        {
+            struct kvm_msrs Core;
+            uint64_t padding[2 + sizeof(struct kvm_msr_entry) * 32];
+        }                   uBuf;
+        uint32_t            iMsr     = 0;
+        PCPUMCTXMSRS const  pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
+
+#define ADD_MSR(a_Msr, a_uValue) do { \
+            Assert(iMsr < 32); \
+            uBuf.Core.entries[iMsr].index    = (a_Msr); \
+            uBuf.Core.entries[iMsr].reserved = 0; \
+            uBuf.Core.entries[iMsr].data     = (a_uValue); \
+            iMsr += 1; \
+        } while (0)
+
+        if (!(fExtrn & CPUMCTX_EXTRN_KERNEL_GS_BASE))
+            ADD_MSR(MSR_K8_KERNEL_GS_BASE, pCtx->msrKERNELGSBASE);
+        if (!(fExtrn & CPUMCTX_EXTRN_SYSCALL_MSRS))
+        {
+            ADD_MSR(MSR_K6_STAR,    pCtx->msrSTAR);
+            ADD_MSR(MSR_K8_LSTAR,   pCtx->msrLSTAR);
+            ADD_MSR(MSR_K8_CSTAR,   pCtx->msrCSTAR);
+            ADD_MSR(MSR_K8_SF_MASK, pCtx->msrSFMASK);
+        }
+        if (!(fExtrn & CPUMCTX_EXTRN_SYSENTER_MSRS))
+        {
+            ADD_MSR(MSR_IA32_SYSENTER_CS,  pCtx->SysEnter.cs);
+            ADD_MSR(MSR_IA32_SYSENTER_EIP, pCtx->SysEnter.eip);
+            ADD_MSR(MSR_IA32_SYSENTER_ESP, pCtx->SysEnter.esp);
+        }
+        if (!(fExtrn & CPUMCTX_EXTRN_TSC_AUX))
+            ADD_MSR(MSR_K8_TSC_AUX, pCtxMsrs->msr.TscAux);
+        if (!(fExtrn & CPUMCTX_EXTRN_OTHER_MSRS))
+        {
+            ADD_MSR(MSR_IA32_CR_PAT, pCtx->msrPAT);
+            /** @todo What do we _have_ to add here?
+             * We also have: Mttr*, MiscEnable, FeatureControl. */
+        }
+
+        uBuf.Core.pad   = 0;
+        uBuf.Core.nmsrs = iMsr;
+        int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_MSRS, &uBuf);
+        AssertMsgReturn(rc == (int)iMsr,
+                        ("rc=%d iMsr=%d (->%#x) errno=%d\n",
+                         rc, iMsr, (uint32_t)rc < iMsr ? uBuf.Core.entries[rc].index : 0, errno),
+                        VERR_NEM_IPE_3);
+    }
+
+    /*
+     * KVM now owns all the state.
+     */
+    pCtx->fExtrn = (fExtrn & ~CPUMCTX_EXTRN_KEEPER_MASK) | CPUMCTX_EXTRN_KEEPER_NEM | CPUMCTX_EXTRN_ALL;
+
+    RT_NOREF(pVM);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Query the CPU tick counter and optionally the TSC_AUX MSR value.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context CPU structure.
+ * @param   pcTicks     Where to return the CPU tick count.
+ * @param   puAux       Where to return the TSC_AUX register value.
+ */
+VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t *puAux)
+{
+    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatQueryCpuTick);
+    // KVM_GET_CLOCK?
+    RT_NOREF(pVCpu, pcTicks, puAux);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Resumes CPU clock (TSC) on all virtual CPUs.
+ *
+ * This is called by TM when the VM is started, restored, resumed or similar.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context CPU structure of the calling EMT.
+ * @param   uPausedTscValue The TSC value at the time of pausing.
+ */
+VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uPausedTscValue)
+{
+    // KVM_SET_CLOCK?
+    RT_NOREF(pVM, pVCpu, uPausedTscValue);
+    return VINF_SUCCESS;
+}
+
+
+VMM_INT_DECL(uint32_t) NEMHCGetFeatures(PVMCC pVM)
+{
+    RT_NOREF(pVM);
+    return NEM_FEAT_F_NESTED_PAGING
+         | NEM_FEAT_F_FULL_GST_EXEC
+         | NEM_FEAT_F_XSAVE_XRSTOR;
+}
+
+
+
+/*********************************************************************************************************************************
+*   Execution                                                                                                                    *
+*********************************************************************************************************************************/
+
+
+VMMR3_INT_DECL(bool) NEMR3CanExecuteGuest(PVM pVM, PVMCPU pVCpu)
+{
+    /*
+     * Only execute when the A20 gate is enabled as I cannot immediately
+     * spot any A20 support in KVM.
+     */
+    RT_NOREF(pVM);
+    Assert(VM_IS_NEM_ENABLED(pVM));
+    return PGMPhysIsA20Enabled(pVCpu);
+}
+
+
+bool nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
+{
+    NOREF(pVM); NOREF(pVCpu); NOREF(fEnable);
+    return false;
+}
+
+
+/**
+ * Forced flag notification call from VMEmt.cpp.
+ *
+ * This is only called when pVCpu is in the VMCPUSTATE_STARTED_EXEC_NEM state.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the CPU
+ *                          to be notified.
+ * @param   fFlags          Notification flags, VMNOTIFYFF_FLAGS_XXX.
+ */
+void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
+{
+    RT_NOREF(pVM, pVCpu, fFlags);
+}
+
+
+static VBOXSTRICTRC nemHCLnxHandleInterruptFF(PVM pVM, PVMCPU pVCpu)
+{
+    RT_NOREF(pVM, pVCpu);
+    return VINF_SUCCESS;
+}
+
+
+static VBOXSTRICTRC nemHCLnxHandleExitIo(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run *pRun)
+{
+    /*
+     * Input validation.
+     */
+    Assert(pRun->io.count > 0);
+    Assert(pRun->io.size == 1 || pRun->io.size == 2 || pRun->io.size == 4);
+    Assert(pRun->io.direction == KVM_EXIT_IO_IN || pRun->io.direction == KVM_EXIT_IO_OUT);
+    Assert(pRun->io.data_offset < pVM->nem.s.cbVCpuMmap);
+    Assert(pRun->io.data_offset + pRun->io.size * pRun->io.count <= pVM->nem.s.cbVCpuMmap);
+
+    /*
+     * Do the requested job.
+     */
+    VBOXSTRICTRC    rcStrict;
+    RTPTRUNION      uPtrData;
+    uPtrData.pu8 = (uint8_t *)pRun + pRun->io.data_offset;
+    if (pRun->io.count == 1)
+    {
+        if (pRun->io.direction == KVM_EXIT_IO_IN)
+        {
+            uint32_t uValue = 0;
+            rcStrict = IOMIOPortRead(pVM, pVCpu, pRun->io.port, &uValue, pRun->io.size);
+            Log4(("IOExit/%u: %04x:%08RX64: IN %#x LB %u -> %#x, rcStrict=%Rrc\n",
+                  pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip,
+                  pRun->io.port, pRun->io.size, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
+            if (IOM_SUCCESS(rcStrict))
+            {
+                if (pRun->io.size == 4)
+                    *uPtrData.pu32 = uValue;
+                else if (pRun->io.size == 2)
+                    *uPtrData.pu16 = (uint16_t)uValue;
+                else
+                    *uPtrData.pu8  = (uint8_t)uValue;
+            }
+        }
+        else
+        {
+            uint32_t const uValue = pRun->io.size == 4 ? *uPtrData.pu32
+                                  : pRun->io.size == 2 ? *uPtrData.pu16
+                                  :                      *uPtrData.pu8;
+            rcStrict = IOMIOPortWrite(pVM, pVCpu, pRun->io.port, uValue, pRun->io.size);
+            Log4(("IOExit/%u: %04x:%08RX64: OUT %#x, %#x LB %u rcStrict=%Rrc\n",
+                  pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip,
+                  pRun->io.port, uValue, pRun->io.size, VBOXSTRICTRC_VAL(rcStrict) ));
+        }
+    }
+    else
+    {
+        uint32_t cTransfers = pRun->io.count;
+        if (pRun->io.direction == KVM_EXIT_IO_IN)
+        {
+            rcStrict = IOMIOPortReadString(pVM, pVCpu, pRun->io.port, uPtrData.pv, &cTransfers, pRun->io.size);
+            Log4(("IOExit/%u: %04x:%08RX64: REP INS %#x LB %u * %#x times -> rcStrict=%Rrc cTransfers=%d\n",
+                  pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip,
+                  pRun->io.port, pRun->io.size, pRun->io.count, VBOXSTRICTRC_VAL(rcStrict), cTransfers ));
+        }
+        else
+        {
+            rcStrict = IOMIOPortWriteString(pVM, pVCpu, pRun->io.port, uPtrData.pv, &cTransfers, pRun->io.size);
+            Log4(("IOExit/%u: %04x:%08RX64: REP OUTS %#x LB %u * %#x times -> rcStrict=%Rrc cTransfers=%d\n",
+                  pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip,
+                  pRun->io.port, pRun->io.size, pRun->io.count, VBOXSTRICTRC_VAL(rcStrict), cTransfers ));
+        }
+        Assert(cTransfers == 0);
+    }
+    return rcStrict;
+}
+
+
+static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run *pRun)
+{
+    switch (pRun->exit_reason)
+    {
+        case KVM_EXIT_EXCEPTION:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_IO:
+            return nemHCLnxHandleExitIo(pVM, pVCpu, pRun);
+
+        case KVM_EXIT_HYPERCALL:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_DEBUG:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_HLT:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_MMIO:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_IRQ_WINDOW_OPEN:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_X86_RDMSR:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_X86_WRMSR:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_INTR: /* EINTR */
+            return VINF_SUCCESS;
+
+        case KVM_EXIT_SET_TPR:
+            AssertFailed();
+            break;
+        case KVM_EXIT_TPR_ACCESS:
+            AssertFailed();
+            break;
+        case KVM_EXIT_NMI:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_SYSTEM_EVENT:
+            AssertFailed();
+            break;
+        case KVM_EXIT_IOAPIC_EOI:
+            AssertFailed();
+            break;
+        case KVM_EXIT_HYPERV:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_DIRTY_RING_FULL:
+            AssertFailed();
+            break;
+        case KVM_EXIT_AP_RESET_HOLD:
+            AssertFailed();
+            break;
+        case KVM_EXIT_X86_BUS_LOCK:
+            AssertFailed();
+            break;
+
+
+        case KVM_EXIT_SHUTDOWN:
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_FAIL_ENTRY:
+            AssertFailed();
+            break;
+        case KVM_EXIT_INTERNAL_ERROR:
+            AssertFailed();
+            break;
+
+        /*
+         * Foreign and unknowns.
+         */
+        case KVM_EXIT_EPR:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_EPR on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_WATCHDOG:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_WATCHDOG on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_ARM_NISV:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_ARM_NISV on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_S390_STSI:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_S390_STSI on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_S390_TSCH:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_S390_TSCH on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_OSI:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_OSI on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_PAPR_HCALL:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_PAPR_HCALL on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_S390_UCONTROL:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_S390_UCONTROL on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_DCR:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_DCR on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_S390_SIEIC:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_S390_SIEIC on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_S390_RESET:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_S390_RESET on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_UNKNOWN:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_UNKNOWN on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        case KVM_EXIT_XEN:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_XEN on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+        default:
+            AssertLogRelMsgFailedReturn(("Unknown exit reason %u on VCpu #%u at %04x:%RX64!\n", pRun->exit_reason, pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
+    }
+
+    RT_NOREF(pVM, pVCpu, pRun);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
+{
+    /*
+     * Try switch to NEM runloop state.
+     */
+    if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED))
+    { /* likely */ }
+    else
+    {
+        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED);
+        LogFlow(("NEM/%u: returning immediately because canceled\n", pVCpu->idCpu));
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * The run loop.
+     */
+    struct kvm_run * const  pRun                = pVCpu->nem.s.pRun;
+    const bool              fSingleStepping     = DBGFIsStepping(pVCpu);
+    VBOXSTRICTRC            rcStrict            = VINF_SUCCESS;
+    for (unsigned iLoop = 0;; iLoop++)
+    {
+        /*
+         * Pending interrupts or such?  Need to check and deal with this prior
+         * to the state syncing.
+         */
+        if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC
+                                     | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI))
+        {
+            /* Try inject interrupt. */
+            rcStrict = nemHCLnxHandleInterruptFF(pVM, pVCpu);
+            if (rcStrict == VINF_SUCCESS)
+            { /* likely */ }
+            else
+            {
+                LogFlow(("NEM/%u: breaking: nemHCLnxHandleInterruptFF -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
+                break;
+            }
+        }
+
+        /*
+         * Do not execute in KVM if the A20 isn't enabled.
+         */
+        if (PGMPhysIsA20Enabled(pVCpu))
+        { /* likely */ }
+        else
+        {
+            rcStrict = VINF_EM_RESCHEDULE_REM;
+            LogFlow(("NEM/%u: breaking: A20 disabled\n", pVCpu->idCpu));
+            break;
+        }
+
+        /*
+         * Ensure KVM has the whole state.
+         */
+        if (   (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL)
+            !=                              CPUMCTX_EXTRN_ALL)
+        {
+            int rc2 = nemHCLnxExportState(pVM, pVCpu, &pVCpu->cpum.GstCtx, pRun);
+            AssertRCReturn(rc2, rc2);
+        }
+
+        /*
+         * Poll timers and run for a bit.
+         *
+         * With the VID approach (ring-0 or ring-3) we can specify a timeout here,
+         * so we take the time of the next timer event and uses that as a deadline.
+         * The rounding heuristics are "tuned" so that rhel5 (1K timer) will boot fine.
+         */
+        /** @todo See if we cannot optimize this TMTimerPollGIP by only redoing
+         *        the whole polling job when timers have changed... */
+        uint64_t       offDeltaIgnored;
+        uint64_t const nsNextTimerEvt = TMTimerPollGIP(pVM, pVCpu, &offDeltaIgnored); NOREF(nsNextTimerEvt);
+        if (   !VM_FF_IS_ANY_SET(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
+            && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+        {
+            if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_WAIT, VMCPUSTATE_STARTED_EXEC_NEM))
+            {
+                LogFlow(("NEM/%u: Entry @ %04x:%08RX64 IF=%d EFL=%#RX64 SS:RSP=%04x:%08RX64 cr0=%RX64\n",
+                         pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip,
+                         !!(pRun->s.regs.regs.rflags & X86_EFL_IF), pRun->s.regs.regs.rflags,
+                         pRun->s.regs.sregs.ss.selector, pRun->s.regs.regs.rsp, pRun->s.regs.sregs.cr0));
+                TMNotifyStartOfExecution(pVM, pVCpu);
+
+                int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_RUN, 0UL);
+
+                VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
+                TMNotifyEndOfExecution(pVM, pVCpu, ASMReadTSC());
+
+                LogFlow(("NEM/%u: Exit  @ %04x:%08RX64 IF=%d EFL=%#RX64 CR8=%#x Reason=%#x IrqReady=%d Flags=%#x\n", pVCpu->idCpu,
+                         pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip, pRun->if_flag,
+                         pRun->s.regs.regs.rflags, pRun->s.regs.sregs.cr8, pRun->exit_reason,
+                         pRun->ready_for_interrupt_injection, pRun->flags));
+                if (RT_LIKELY(rcLnx == 0 || errno == EINTR))
+                {
+                    /*
+                     * Deal with the message.
+                     */
+                    rcStrict = nemHCLnxHandleExit(pVM, pVCpu, pRun);
+                    if (rcStrict == VINF_SUCCESS)
+                    { /* hopefully likely */ }
+                    else
+                    {
+                        LogFlow(("NEM/%u: breaking: nemHCLnxHandleExit -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+                        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
+                        break;
+                    }
+                }
+                else
+                {
+                    int rc2 = RTErrConvertFromErrno(errno);
+                    AssertLogRelMsgFailedReturn(("KVM_RUN failed: rcLnx=%d errno=%u rc=%Rrc\n", rcLnx, errno, rc2), rc2);
+                }
+
+                /*
+                 * If no relevant FFs are pending, loop.
+                 */
+                if (   !VM_FF_IS_ANY_SET(   pVM,   !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK    : VM_FF_HP_R0_PRE_HM_STEP_MASK)
+                    && !VMCPU_FF_IS_ANY_SET(pVCpu, !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
+                    continue;
+
+                /** @todo Try handle pending flags, not just return to EM loops.  Take care
+                 *        not to set important RCs here unless we've handled an exit. */
+                LogFlow(("NEM/%u: breaking: pending FF (%#x / %#RX64)\n",
+                         pVCpu->idCpu, pVM->fGlobalForcedActions, (uint64_t)pVCpu->fLocalForcedActions));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPost);
+            }
+            else
+            {
+                LogFlow(("NEM/%u: breaking: canceled %d (pre exec)\n", pVCpu->idCpu, VMCPU_GET_STATE(pVCpu) ));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnCancel);
+            }
+        }
+        else
+        {
+            LogFlow(("NEM/%u: breaking: pending FF (pre exec)\n", pVCpu->idCpu));
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPre);
+        }
+        break;
+    } /* the run loop */
+
+
+    /*
+     * If the CPU is running, make sure to stop it before we try sync back the
+     * state and return to EM.  We don't sync back the whole state if we can help it.
+     */
+    if (!VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM))
+        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED);
+
+    if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL)
+    {
+        /* Try anticipate what we might need. */
+        uint64_t fImport = IEM_CPUMCTX_EXTRN_MUST_MASK;
+        if (   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
+            || RT_FAILURE(rcStrict))
+            fImport = CPUMCTX_EXTRN_ALL;
+# ifdef IN_RING0 /* Ring-3 I/O port access optimizations: */
+        else if (   rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE
+                 || rcStrict == VINF_EM_PENDING_R3_IOPORT_WRITE)
+            fImport = CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS;
+        else if (rcStrict == VINF_EM_PENDING_R3_IOPORT_READ)
+            fImport = CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS;
+# endif
+        else if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_APIC
+                                          | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI))
+            fImport |= IEM_CPUMCTX_EXTRN_XCPT_MASK;
+
+        if (pVCpu->cpum.GstCtx.fExtrn & fImport)
+        {
+            int rc2 = nemHCLnxImportState(pVCpu, fImport, pRun);
+            if (RT_SUCCESS(rc2))
+                pVCpu->cpum.GstCtx.fExtrn &= ~fImport;
+            else if (RT_SUCCESS(rcStrict))
+                rcStrict = rc2;
+            if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL))
+                pVCpu->cpum.GstCtx.fExtrn = 0;
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnReturn);
+        }
+        else
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnReturnSkipped);
+    }
+    else
+    {
+        pVCpu->cpum.GstCtx.fExtrn = 0;
+        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnReturnSkipped);
+    }
+
+    LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 => %Rrc\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
+             pVCpu->cpum.GstCtx.rflags, VBOXSTRICTRC_VAL(rcStrict) ));
+    return rcStrict;
 }
 
 

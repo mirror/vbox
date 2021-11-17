@@ -1701,6 +1701,13 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         pInput->Elements[iReg].Value.Reg64          = pCtx->msrSFMASK;
         iReg++;
     }
+    if (fWhat & CPUMCTX_EXTRN_TSC_AUX)
+    {
+        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
+        pInput->Elements[iReg].Name                 = HvX64RegisterTscAux;
+        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.TscAux;
+        iReg++;
+    }
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
@@ -1770,10 +1777,6 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvX64RegisterMtrrFix4kF8000;
         pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.MtrrFix4K_F8000;
-        iReg++;
-        HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
-        pInput->Elements[iReg].Name                 = HvX64RegisterTscAux;
-        pInput->Elements[iReg].Value.Reg64          = pCtxMsrs->msr.TscAux;
         iReg++;
 
 # if 0 /** @todo Why can't we write these on Intel systems? Not that we really care... */
