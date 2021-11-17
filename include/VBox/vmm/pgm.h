@@ -275,7 +275,7 @@ typedef enum PGMMODE
 } PGMMODE;
 
 /**
- * Second level address translation mode.
+ * Second level address translation (SLAT) mode.
  */
 typedef enum PGMSLAT
 {
@@ -295,6 +295,22 @@ typedef enum PGMSLAT
     PGMSLAT_32BIT_HACK = 0x7fffffff
 } PGMSLAT;
 
+/**
+ * SLAT page walk failure type.
+ */
+typedef enum PGMSLATFAIL
+{
+    /** Invalid value. */
+    PGMSLATFAIL_INVALID = 0,
+    /** EPT violation. */
+    PGMSLATFAIL_EPT_VIOLATION,
+    /** EPT violation convertible to \#VE exception. */
+    PGMSLATFAIL_EPT_VIOLATION_CONVERTIBLE,
+    /** EPT misconfiguration. */
+    PGMSLATFAIL_EPT_MISCONFIG,
+    /** 32bit hackishness. */
+    PGMSLATFAIL_32BIT_HACK = 0x7fffffff
+} PGMSLATFAIL;
 
 /** @name PGMPTATTRS - PGM page-table attributes.
  *
@@ -506,9 +522,9 @@ typedef struct PGMPTWALK
     bool            fBigPage;
     /** Set if it involves a gigantic page (1 GB). */
     bool            fGigantPage;
-    /** Set if the second-level fault was caused by an EPT misconfiguration. */
-    bool            fEptMisconfig;
-    bool            afPadding[6];
+    bool            afPadding[3];
+    /** The type of SLAT failure. */
+    PGMSLATFAIL     enmSlatFail;
 
     /** The effective attributes, PGM_PTATTRS_XXX. */
     PGMPTATTRS      fEffective;
