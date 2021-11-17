@@ -281,9 +281,6 @@ public:
         /** Notifies about inability to acquire ISnapshot parameter.
           * @param  comSnapshot  Brings the object parameter get acquired from. */
         static void cannotAcquireSnapshotParameter(const CSnapshot &comSnapshot);
-        /** Notifies about inability to acquire IMediumAttachment parameter.
-          * @param  comAttachment  Brings the object parameter get acquired from. */
-        static void cannotAcquireAttachmentParameter(const CMediumAttachment &comAttachment);
         /** Notifies about inability to acquire IDHCPServer parameter.
           * @param  comServer  Brings the object parameter get acquired from. */
         static void cannotAcquireDHCPServerParameter(const CDHCPServer &comServer);
@@ -397,10 +394,6 @@ public:
         static void cannotCreateMediumStorage(const CVirtualBox &comVBox,
                                               const QString &strPath,
                                               UINotificationCenter *pParent = 0);
-        /** Notifies about inability to open known medium.
-          * @param  comVBox    Brings common VBox object trying to open medium.
-          * @param  uMediumId  Brings the medium ID. */
-        static void cannotOpenKnownMedium(const CVirtualBox &comVBox, const QUuid &uMediumId);
         /** Notifies about inability to get ext pack manager.
           * @param  comVBox      Brings common VBox object trying to open machine. */
         static void cannotGetExtensionPackManager(const CVirtualBox &comVBox);

@@ -334,10 +334,8 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
             CVirtualBox comVBox = uiCommon().virtualBox();
             /* Open existing medium, this API can be used to open known medium as well, using ID as location for that: */
             CMedium comMedium = comVBox.OpenMedium(uMediumId.toString(), enmMediumType, KAccessMode_ReadWrite, false);
-
-            /* Show error message if necessary: */
             if (!comVBox.isOk())
-                UINotificationMessage::cannotOpenKnownMedium(comVBox, uMediumId);
+                LogRel(("GUI: UIMediumEnumerator:  Unable to open registered medium!\n"));
             else
             {
                 /* Create new UIMedium: */
@@ -526,10 +524,7 @@ void UIMediumEnumerator::parseAttachment(CMediumAttachment comAttachment, QList<
         /* Acquire attachment medium: */
         CMedium comMedium = comAttachment.GetMedium();
         if (!comAttachment.isOk())
-        {
-            LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire attachment medium!\n"));
-            UINotificationMessage::cannotAcquireAttachmentParameter(comAttachment);
-        }
+            LogRel(("GUI: UIMediumEnumerator:  Unable to acquire attachment medium!\n"));
         else
         {
             /* Parse medium: */
@@ -543,19 +538,13 @@ void UIMediumEnumerator::parseAttachment(CMediumAttachment comAttachment, QList<
             /* Acquire parent VM: */
             CMachine comMachine = comAttachment.GetMachine();
             if (!comAttachment.isOk())
-            {
-                LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire attachment parent machine!\n"));
-                UINotificationMessage::cannotAcquireAttachmentParameter(comAttachment);
-            }
+                LogRel(("GUI: UIMediumEnumerator:  Unable to acquire attachment parent machine!\n"));
             else
             {
                 /* Acquire machine ID: */
                 const QUuid uMachineId = comMachine.GetId();
                 if (!comMachine.isOk())
-                {
-                    LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire machine ID!\n"));
-                    UINotificationMessage::cannotAcquireMachineParameter(comMachine);
-                }
+                    LogRel(("GUI: UIMediumEnumerator:  Unable to acquire machine ID!\n"));
                 else
                 {
                     /* Enumerate all the media of machine with this ID: */
@@ -580,10 +569,7 @@ void UIMediumEnumerator::parseMedium(CMedium comMedium, QList<QUuid> &result)
         /* Acquire medium ID: */
         const QUuid uMediumId = comMedium.GetId();
         if (!comMedium.isOk())
-        {
-            LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire medium ID!\n"));
-            UINotificationMessage::cannotAcquireMediumParameter(comMedium);
-        }
+            LogRel(("GUI: UIMediumEnumerator:  Unable to acquire medium ID!\n"));
         else
         {
             //printf(" Medium to recache: %s\n", uMediumId.toString().toUtf8().constData());
