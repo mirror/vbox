@@ -2307,7 +2307,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "Configuration"));
+        setName(QApplication::translate("UIActionPool", "Options"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Open panel for VISO Creator options"));
         setToolTip(QApplication::translate("UIActionPool", "Open Options Panel")

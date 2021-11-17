@@ -3043,6 +3043,10 @@ void UIVirtualBoxManager::updateActionsVisibility()
     const bool fPerformanceMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
                                        m_pWidget->currentMachineTool() == UIToolType_VMActivity;
     actionPool()->action(UIActionIndex_M_Activity)->setVisible(fPerformanceMenuShown);
+    /* Determine whether VISO Creator menu should be visible: */
+    const bool fVISOCreatorShown = (fMachineMenuShown || fGroupMenuShown) &&
+                                   m_pWidget->currentMachineTool() == UIToolType_VISOCreator;
+    actionPool()->action(UIActionIndex_M_VISOCreator)->setVisible(fVISOCreatorShown);
 
     /* Hide action shortcuts: */
     if (!fGlobalMenuShown)
@@ -3218,6 +3222,12 @@ void UIVirtualBoxManager::updateActionsAppearance()
             {
                 actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_Activity)->setChecked(true);
                 actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_Activity)->setChecked(true);
+                break;
+            }
+            case UIToolType_VISOCreator:
+            {
+                actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_VISOCreator)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_VISOCreator)->setChecked(true);
                 break;
             }
             default:

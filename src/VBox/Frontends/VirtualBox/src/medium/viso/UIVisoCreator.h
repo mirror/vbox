@@ -45,7 +45,7 @@ class UIVisoConfigurationPanel;
 /** A QIMainDialog extension. It hosts two UIVisoBrowserBase extensions, one for host and one
   * for VISO file system. It has the main menu, main toolbar, and a vertical toolbar and corresponding
   * actions. */
-class UIVisoCreatorWidget : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIVisoCreatorWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -167,7 +167,7 @@ private:
 };
 
 
-class UIVisoCreatorDialog : public QIWithRetranslateUI<QIMainDialog>
+class SHARED_LIBRARY_STUFF UIVisoCreatorDialog : public QIWithRetranslateUI<QIMainDialog>
 {
     Q_OBJECT;
 

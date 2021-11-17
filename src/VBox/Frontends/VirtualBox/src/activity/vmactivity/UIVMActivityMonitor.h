@@ -111,7 +111,7 @@ private:
     bool m_fAutoUpdateMaximum;
 };
 
-/** UIVMActivityMonitor class displays some high level performance metric of the guest system.
+/** UIVMActivityMonitor class displays some high level performance metrics of the guest system.
   * The values are read in certain periods and cached in the GUI side. Currently we draw some line charts
   * and pie charts (where applicable) alongside with some text. IPerformanceCollector and IMachineDebugger are
   * two sources of the performance metrics. Unfortunately these two have very distinct APIs resulting a bit too much

@@ -933,6 +933,7 @@ enum UIToolType
     UIToolType_Snapshots,
     UIToolType_Logs,
     UIToolType_VMActivity,
+    UIToolType_VISOCreator
 };
 Q_DECLARE_METATYPE(UIToolType);
 

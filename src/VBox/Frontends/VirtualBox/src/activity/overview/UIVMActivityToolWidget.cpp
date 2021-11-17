@@ -112,10 +112,10 @@ void UIVMActivityToolWidget::setMachines(const QVector<QUuid> &machineIds)
     }
     m_machineIds = machineIds;
 
-    hide();
+    //hide();
     removeTabs(unselectedMachines);
     addTabs(newSelections);
-    show();
+    //show();
 }
 
 void UIVMActivityToolWidget::prepareActions()
@@ -163,22 +163,19 @@ void UIVMActivityToolWidget::loadSettings()
 void UIVMActivityToolWidget::removeTabs(const QVector<QUuid> &machineIdsToRemove)
 {
     QVector<UIVMActivityMonitor*> removeList;
-    QVector<UIVMActivityMonitor*> keepList;
-    for (int i = 0; i < count(); ++i)
+
+    for (int i = count() - 1; i >= 0; --i)
     {
         UIVMActivityMonitor *pMonitor = qobject_cast<UIVMActivityMonitor*>(widget(i));
         if (!pMonitor)
             continue;
         if (machineIdsToRemove.contains(pMonitor->machineId()))
+        {
             removeList << pMonitor;
-        else
-            keepList << pMonitor;
+            removeTab(i);
+        }
     }
-    clear();
     qDeleteAll(removeList.begin(), removeList.end());
-
-    foreach (UIVMActivityMonitor *pMonitor, keepList)
-        addTab(pMonitor, pMonitor->machineName());
 }
 
 void UIVMActivityToolWidget::addTabs(const QVector<QUuid> &machineIdsToAdd)
