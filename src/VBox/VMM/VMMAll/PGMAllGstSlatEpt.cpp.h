@@ -16,23 +16,25 @@
  */
 
 #if PGM_GST_TYPE == PGM_TYPE_EPT
-DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint64_t uEntry, uint8_t uLevel)
+DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(PCVMCPUCC pVCpu, PPGMPTWALK pWalk, uint64_t uEntry, uint8_t uLevel)
 {
-    pWalk->fNotPresent = true;
-    pWalk->uLevel      = uLevel;
     static PGMSLATFAIL const s_aEptViolation[] = { PGMSLATFAIL_EPT_VIOLATION, PGMSLATFAIL_EPT_VIOLATION_CONVERTIBLE };
     uint8_t const fEptVeSupported  = pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxEptXcptVe;
     uint8_t const idxViolationType = fEptVeSupported & !RT_BF_GET(uEntry, VMX_BF_EPT_PT_SUPPRESS_VE);
+
+    pWalk->fNotPresent = true;
+    pWalk->uLevel      = uLevel;
     pWalk->enmSlatFail = s_aEptViolation[idxViolationType];
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
 
-DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint8_t uLevel, int rc)
+DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(PCVMCPUCC pVCpu, PPGMPTWALK pWalk, uint8_t uLevel, int rc)
 {
     AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc); NOREF(pVCpu);
     pWalk->fBadPhysAddr = true;
     pWalk->uLevel       = uLevel;
+    pWalk->enmSlatFail  = PGMSLATFAIL_EPT_VIOLATION;
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
