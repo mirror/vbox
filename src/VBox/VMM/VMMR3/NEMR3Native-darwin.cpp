@@ -988,7 +988,7 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
         READ_GREG(HV_X86_DR1, u64DrTmp);
         if (pVCpu->cpum.GstCtx.dr[1] != u64DrTmp)
             CPUMSetGuestDR1(pVCpu, u64DrTmp);
-        READ_GREG(HV_X86_DR3, u64DrTmp);
+        READ_GREG(HV_X86_DR2, u64DrTmp);
         if (pVCpu->cpum.GstCtx.dr[2] != u64DrTmp)
             CPUMSetGuestDR2(pVCpu, u64DrTmp);
         READ_GREG(HV_X86_DR3, u64DrTmp);
@@ -998,7 +998,7 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
     if (fWhat & CPUMCTX_EXTRN_DR6)
     {
         uint64_t u64Dr6;
-        READ_GREG(HV_X86_DR7, u64Dr6);
+        READ_GREG(HV_X86_DR6, u64Dr6);
         if (pVCpu->cpum.GstCtx.dr[6] != u64Dr6)
             CPUMSetGuestDR6(pVCpu, u64Dr6);
     }
@@ -2662,6 +2662,8 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                 LogFlowFunc(("Running vCPU\n"));
                 pVCpu->nem.s.Event.fPending = false;
 
+                TMNotifyStartOfExecution(pVM, pVCpu);
+
                 Assert(!pVCpu->nem.s.fCtxChanged);
                 hv_return_t hrc;
                 if (hv_vcpu_run_until)
@@ -2670,6 +2672,8 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                     hrc = hv_vcpu_run(pVCpu->nem.s.hVCpuId);
 
                 VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
+                TMNotifyEndOfExecution(pVM, pVCpu, ASMReadTSC());
+
                 if (hrc == HV_SUCCESS)
                 {
                     /*
