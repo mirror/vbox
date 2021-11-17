@@ -2165,9 +2165,9 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
     else if (pu2State)
         *pu2State = NEM_WIN_PAGE_STATE_UNMAPPED;
 
-    RT_NOREF(pvMmio2);
+    RT_NOREF(pvMmio2, puNemRange);
 #else
-    RT_NOREF(pVM, GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State);
+    RT_NOREF(pVM, GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, puNemRange);
     if (pu2State)
         *pu2State = UINT8_MAX;
 #endif
