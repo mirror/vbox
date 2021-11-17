@@ -1482,7 +1482,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         uint64_t const uHostMsr = fIsNstGstHwExecAllowed ? pHostVmxMsrs->u64EptVpidCaps : UINT64_MAX;
         uint8_t const  fVpid    = pGuestFeatures->fVmxVpid;
 
-        uint8_t const  fExecOnly         = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_RWX_X_ONLY);
+        uint8_t const  fExecOnly         = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_EXEC_ONLY);
         uint8_t const  fPml4             = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4);
         uint8_t const  fMemTypeUc        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_MEMTYPE_UC);
         uint8_t const  fMemTypeWb        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_MEMTYPE_WB);
@@ -1496,7 +1496,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         uint8_t const  fVpidSingle       = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX);
         uint8_t const  fVpidAll          = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX);
         uint8_t const  fVpidSingleGlobal = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS);
-        pGuestVmxMsrs->u64EptVpidCaps = RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_RWX_X_ONLY,                        fExecOnly)
+        pGuestVmxMsrs->u64EptVpidCaps = RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_EXEC_ONLY,                         fExecOnly)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4,                fPml4)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_MEMTYPE_UC,                        fMemTypeUc)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_MEMTYPE_WB,                        fMemTypeWb)
