@@ -19,7 +19,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#undef GSTUINT
 #undef GST_ATOMIC_OR
 #undef GSTPT
 #undef PGSTPT
@@ -72,7 +71,6 @@
  || PGM_GST_TYPE == PGM_TYPE_PROT
 
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
-#  define GSTUINT                               uint64_t
 #  define GST_ATOMIC_OR(a_pu, a_fFlags)         ASMAtomicOrU64((a_pu), (a_fFlags))
 #  define GSTPT                                 X86PTPAE
 #  define PGSTPT                                PX86PTPAE
@@ -87,7 +85,6 @@
 #  define BTH_IS_NP_ACTIVE(pVM)                 (true)
 # else
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT /* Same as shadow paging, but no PGMSHWPTEPAE. */
-#   define GSTUINT                              uint32_t
 #   define GST_ATOMIC_OR(a_pu, a_fFlags)        ASMAtomicOrU32((a_pu), (a_fFlags))
 #   define GSTPT                                X86PT
 #   define PGSTPT                               PX86PT
@@ -99,7 +96,6 @@
 #   define PGSTPDE                              PX86PDE
 #   define GST_PTE_PG_MASK                      X86_PTE_PG_MASK
 #  else
-#   define GSTUINT                              uint64_t
 #   define GST_ATOMIC_OR(a_pu, a_fFlags)        ASMAtomicOrU64((a_pu), (a_fFlags))
 #   define GSTPT                                X86PTPAE
 #   define PGSTPT                               PX86PTPAE
@@ -135,7 +131,6 @@
 # define GST_IS_PSE_ACTIVE(pVCpu)               (false && This_should_not_be_used_in_this_context)
 
 #elif PGM_GST_TYPE == PGM_TYPE_32BIT
-# define GSTUINT                                uint32_t
 # define GST_ATOMIC_OR(a_pu, a_fFlags)          ASMAtomicOrU32((a_pu), (a_fFlags))
 # define GSTPT                                  X86PT
 # define PGSTPT                                 PX86PT
@@ -180,7 +175,6 @@
 
 #elif   PGM_GST_TYPE == PGM_TYPE_PAE \
      || PGM_GST_TYPE == PGM_TYPE_AMD64
-# define GSTUINT                                uint64_t
 # define GST_ATOMIC_OR(a_pu, a_fFlags)          ASMAtomicOrU64((a_pu), (a_fFlags))
 # define GSTPT                                  X86PTPAE
 # define PGSTPT                                 PX86PTPAE
@@ -245,7 +239,6 @@
 # define BTH_IS_NP_ACTIVE(pVM)                  (false)
 
 #elif PGM_GST_TYPE == PGM_TYPE_EPT
-# define GSTUINT                                uint64_t
 # define GST_ATOMIC_OR(a_pu, a_fFlags)          ASMAtomicOrU64((a_pu), (a_fFlags))
 # define GSTPT                                  EPTPT
 # define PGSTPT                                 PEPTPT
