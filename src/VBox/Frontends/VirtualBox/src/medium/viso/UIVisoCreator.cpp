@@ -46,7 +46,8 @@
 *   UIVisoCreatorWidget implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent, const QString& strMachineName /* = QString() */)
+UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
+                                         bool fShowToolBar,const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pActionConfiguration(0)
     , m_pActionOptions(0)
@@ -65,6 +66,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pCreatorOptionsPanel(0)
     , m_pConfigurationPanel(0)
     , m_pActionPool(pActionPool)
+    , m_fShowToolBar(fShowToolBar)
 {
     m_visoOptions.m_strVisoName = !strMachineName.isEmpty() ? strMachineName : "ad-hoc";
     prepareWidgets();
@@ -233,45 +235,46 @@ void UIVisoCreatorWidget::prepareWidgets()
 
     if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_VISOCreator))
         m_pMainMenu = m_pActionPool->action(UIActionIndex_M_VISOCreator)->menu();
-
-    m_pToolBar = new QIToolBar(parentWidget());
-    if (m_pToolBar)
+    int iLayoutRow = 0;
+    if (m_fShowToolBar)
     {
-        /* Configure toolbar: */
-        const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
-        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
-        m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-        m_pMainLayout->addWidget(m_pToolBar, 0, 0, 1, 5);
+        m_pToolBar = new QIToolBar(parentWidget());
+        if (m_pToolBar)
+        {
+            /* Configure toolbar: */
+            const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
+            m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
+            m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+            m_pMainLayout->addWidget(m_pToolBar, iLayoutRow++, 0, 1, 5);
+        }
     }
 
     m_pHostBrowser = new UIVisoHostBrowser;
     if (m_pHostBrowser)
     {
-        m_pMainLayout->addWidget(m_pHostBrowser, 1, 0, 1, 2);
-        m_pHostBrowser->setAlignment(Qt::AlignLeft);
-
-        m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pHostBrowser), 2);
+        m_pMainLayout->addWidget(m_pHostBrowser, iLayoutRow, 0, 1, 4);
+        //m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pHostBrowser), 2);
     }
 
     prepareVerticalToolBar();
     if (m_pVerticalToolBar)
     {
-        m_pMainLayout->addWidget(m_pVerticalToolBar, 1, 2, 1, 1);
-        m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVerticalToolBar), 1);
+        m_pMainLayout->addWidget(m_pVerticalToolBar, iLayoutRow, 4, 1, 1);
+        //m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVerticalToolBar), 1);
     }
 
     m_pVISOContentBrowser = new UIVisoContentBrowser;
     if (m_pVISOContentBrowser)
     {
-        m_pMainLayout->addWidget(m_pVISOContentBrowser, 1, 3, 1, 2);
+        m_pMainLayout->addWidget(m_pVISOContentBrowser, iLayoutRow, 5, 1, 4);
         m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
-        m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVISOContentBrowser), 2);
+        //m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVISOContentBrowser), 2);
     }
-
+    ++iLayoutRow;
     m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
     if (m_pConfigurationPanel)
     {
-        m_pMainLayout->addWidget(m_pConfigurationPanel, 2, 0, 1, 5);
+        m_pMainLayout->addWidget(m_pConfigurationPanel, iLayoutRow++, 0, 1, 9);
         m_pConfigurationPanel->hide();
         m_pConfigurationPanel->setVisoName(m_visoOptions.m_strVisoName);
         m_pConfigurationPanel->setVisoCustomOptions(m_visoOptions.m_customOptions);
@@ -281,7 +284,7 @@ void UIVisoCreatorWidget::prepareWidgets()
     if (m_pCreatorOptionsPanel)
     {
         m_pCreatorOptionsPanel->setShowHiddenbjects(m_browserOptions.m_fShowHiddenObjects);
-        m_pMainLayout->addWidget(m_pCreatorOptionsPanel, 3, 0, 1, 5);
+        m_pMainLayout->addWidget(m_pCreatorOptionsPanel, iLayoutRow++, 0, 1, 9);
         m_pCreatorOptionsPanel->hide();
     }
 }
@@ -560,7 +563,7 @@ void UIVisoCreatorDialog::prepareWidgets()
     pCentralWidget->setLayout(pMainLayout);
 
 
-    m_pVisoCreatorWidget = new UIVisoCreatorWidget(m_pActionPool, this, m_strMachineName);
+    m_pVisoCreatorWidget = new UIVisoCreatorWidget(m_pActionPool, this, true /* show toolbar */, m_strMachineName);
     if (m_pVisoCreatorWidget)
     {
         menuBar()->addMenu(m_pVisoCreatorWidget->menu());

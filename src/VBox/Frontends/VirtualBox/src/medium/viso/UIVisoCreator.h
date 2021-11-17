@@ -51,7 +51,8 @@ class SHARED_LIBRARY_STUFF UIVisoCreatorWidget : public QIWithRetranslateUI<QWid
 
 public:
 
-    UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent, const QString& strMachineName = QString());
+    UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
+                        bool fShowToolBar, const QString& strMachineName = QString());
     /** Returns the content of the .viso file. Each element of the list corresponds to a line in the .viso file. */
     QStringList       entryList() const;
     const QString     &visoName() const;
@@ -164,6 +165,7 @@ private:
     QMap<UIDialogPanel*, QAction*> m_panelActionMap;
     QList<UIDialogPanel*>          m_visiblePanelsList;
     QPointer<UIActionPool> m_pActionPool;
+    bool                   m_fShowToolBar;
 };
 
 

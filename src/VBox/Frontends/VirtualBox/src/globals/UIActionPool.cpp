@@ -3161,6 +3161,7 @@ void UIActionPool::preparePool()
     m_menuUpdateHandlers[UIActionIndex_M_Log].ptf = &UIActionPool::updateMenuLogViewer;
     m_menuUpdateHandlers[UIActionIndex_M_Activity].ptf = &UIActionPool::updateMenuVMActivityMonitor;
     m_menuUpdateHandlers[UIActionIndex_M_FileManager].ptf = &UIActionPool::updateMenuFileManager;
+    m_menuUpdateHandlers[UIActionIndex_M_VISOCreator].ptf = &UIActionPool::updateMenuVISOCreator;
 
     /* Invalidate all known menus: */
     m_invalidations.unite(m_menuUpdateHandlers.keys().toSet());
@@ -3538,7 +3539,7 @@ void UIActionPool::updateMenuVMActivityMonitor()
     /* Clear contents: */
     pMenu->clear();
 
-    /* 'Export' action: */
+    /* 'Export' and 'Switch to VM Activity Overview" actions: */
     pMenu->addAction(action(UIActionIndex_M_Activity_S_Export));
     pMenu->addAction(action(UIActionIndex_M_Activity_S_ToVMActivityOverview));
 
@@ -3552,6 +3553,21 @@ void UIActionPool::updateMenuFileManager()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndex_M_FileManager);
+}
+
+void UIActionPool::updateMenuVISOCreator()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndex_M_VISOCreator)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    pMenu->addAction(action(UIActionIndex_M_VISOCreator_ToggleConfigPanel));
+    pMenu->addAction(action(UIActionIndex_M_VISOCreator_ToggleOptionsPanel));
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndex_M_Activity);
 }
 
 void UIActionPool::updateMenuFileManagerWrapper(UIMenu *pMenu)

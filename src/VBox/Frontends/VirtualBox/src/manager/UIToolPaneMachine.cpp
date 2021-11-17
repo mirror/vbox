@@ -215,7 +215,8 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
             }
             case UIToolType_VISOCreator:
             {
-                m_pPaneVISOCreator = new UIVisoCreatorWidget(m_pActionPool, 0 /* Parent */, QString() /* Machine Name */);
+                m_pPaneVISOCreator = new UIVisoCreatorWidget(m_pActionPool, 0 /* Parent */,
+                                                             false /* don't show toolbar*/, QString() /* Machine Name */);
                 AssertPtrReturnVoid(m_pPaneVISOCreator);
 #ifndef VBOX_WS_MAC
                 const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;

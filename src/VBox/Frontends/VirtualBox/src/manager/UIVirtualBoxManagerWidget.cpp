@@ -965,6 +965,16 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
                     break;
                 }
+                case UIToolType_VISOCreator:
+                {
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_VISOCreator_ToggleConfigPanel));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndex_M_VISOCreator_ToggleOptionsPanel));
+                    m_pToolBar->addSeparator();
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
+                    break;
+                }
                 case UIToolType_Error:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_New));
