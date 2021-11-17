@@ -1620,6 +1620,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         pVCpu->pgm.s.fGstAmd64ShadowedPml4eMask = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A;
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        pVCpu->pgm.s.uEptVpidCapMsr           = fEptVpidCap;
         pVCpu->pgm.s.fGstEptMbzPteMask        = fMbzPageFrameMask | EPT_PTE_MBZ_MASK;
         pVCpu->pgm.s.fGstEptMbzPdeMask        = fMbzPageFrameMask | EPT_PDE_MBZ_MASK;
         pVCpu->pgm.s.fGstEptMbzBigPdeMask     = fMbzPageFrameMask | fGstEptMbzBigPdeMask;
@@ -1631,13 +1632,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         Assert(   !pVM->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt
                && !pVM->cpum.ro.GuestFeatures.fVmxSppEpt
                && !pVM->cpum.ro.GuestFeatures.fVmxEptXcptVe);
-        pVCpu->pgm.s.fGstEptPresentMask         = EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE;
-        pVCpu->pgm.s.fGstEptShadowedPml4eMask   = EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_ACCESSED;
-        pVCpu->pgm.s.fGstEptShadowedPdpeMask    = EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_ACCESSED;
-        pVCpu->pgm.s.fGstEptShadowedBigPdpeMask = EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_ACCESSED | EPT_E_DIRTY;
-        pVCpu->pgm.s.fGstEptShadowedPdeMask     = EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_ACCESSED;
-        pVCpu->pgm.s.fGstEptShadowedBigPdeMask  = EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_ACCESSED | EPT_E_DIRTY;
-        pVCpu->pgm.s.fGstEptShadowedPteMask     = EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE | EPT_E_ACCESSED | EPT_E_DIRTY;
+        pVCpu->pgm.s.fGstEptPresentMask       = EPT_E_READ | EPT_E_WRITE | EPT_E_EXECUTE;
 #endif
     }
 

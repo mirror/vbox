@@ -3435,6 +3435,9 @@ typedef struct PGMCPU
     R0PTRTYPE(PEPTPML4)             pGstEptPml4R0;
     /** The guest's EPT pointer (copy of virtual VMCS). */
     uint64_t                        uEptPtr;
+    /** Copy of the VM's IA32_VMX_EPT_VPID_CAP VPID MSR for faster access. Doesn't
+     *  change through the lifetime of the VM. */
+    uint64_t                        uEptVpidCapMsr;
     /** Mask containing the MBZ PTE bits. */
     uint64_t                        fGstEptMbzPteMask;
     /** Mask containing the MBZ PDE bits. */
@@ -3449,18 +3452,6 @@ typedef struct PGMCPU
     uint64_t                        fGstEptMbzPml4eMask;
     /** Mask to determine whether an entry is present. */
     uint64_t                        fGstEptPresentMask;
-    /** Mask containing the PML4E bits that we shadow. */
-    uint64_t                        fGstEptShadowedPml4eMask;
-    /** Mask containing the PDPE bits that we shadow. */
-    uint64_t                        fGstEptShadowedPdpeMask;
-    /** Mask containing the big page PDPE bits that we shadow. */
-    uint64_t                        fGstEptShadowedBigPdpeMask;
-    /** Mask containing the PDE bits that we shadow. */
-    uint64_t                        fGstEptShadowedPdeMask;
-    /** Mask containing the big page PDE bits that we shadow. */
-    uint64_t                        fGstEptShadowedBigPdeMask;
-    /** Mask containing the PTE bits that we shadow. */
-    uint64_t                        fGstEptShadowedPteMask;
     /** @} */
 
     /** Pointer to the page of the current active CR3 - R3 Ptr. */

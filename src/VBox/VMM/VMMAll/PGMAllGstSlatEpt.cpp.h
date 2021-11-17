@@ -16,6 +16,34 @@
  */
 
 #if PGM_GST_TYPE == PGM_TYPE_EPT
+DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsPermValid)(PCVMCPUCC pVCpu, uint64_t uEntry)
+{
+    if (!(uEntry & VMX_BF_EPT_PT_READ_MASK))
+    {
+        if (uEntry & VMX_BF_EPT_PT_WRITE_MASK)
+            return false;
+
+        Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
+        if (   !RT_BF_GET(pVCpu->pgm.s.uEptVpidCapMsr, VMX_BF_EPT_VPID_CAP_EXEC_ONLY)
+            && (uEntry & VMX_BF_EPT_PT_EXECUTE_MASK))
+            return false;
+    }
+    return true;
+}
+
+
+DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsMemTypeValid)(uint64_t uEntry, uint8_t uLevel)
+{
+    Assert(uLevel >= 3 && uLevel <= 1); NOREF(uLevel);
+    uint64_t const fEptMemTypeMask = uEntry & VMX_BF_EPT_PT_MEMTYPE_MASK;
+    if (   fEptMemTypeMask == EPT_E_MEMTYPE_INVALID_2
+        || fEptMemTypeMask == EPT_E_MEMTYPE_INVALID_3
+        || fEptMemTypeMask == EPT_E_MEMTYPE_INVALID_7)
+        return false;
+    return true;
+}
+
+
 DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(PCVMCPUCC pVCpu, PPGMPTWALK pWalk, uint64_t uEntry, uint8_t uLevel)
 {
     static PGMSLATFAIL const s_aEptViolation[] = { PGMSLATFAIL_EPT_VIOLATION, PGMSLATFAIL_EPT_VIOLATION_CONVERTIBLE };
@@ -42,8 +70,9 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(PCVMCPUCC pVCpu, PP
 DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint8_t uLevel)
 {
     NOREF(pVCpu);
-    pWalk->fRsvdError = true;
-    pWalk->uLevel     = uLevel;
+    pWalk->fRsvdError  = true;
+    pWalk->uLevel      = uLevel;
+    pWalk->enmSlatFail = PGMSLATFAIL_EPT_MISCONFIG;
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
@@ -51,7 +80,6 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMP
 DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested,
                                             PPGMPTWALK pWalk, PGSTPTWALK pGstWalk)
 {
-    /** @todo implement figuring out fEptMisconfig. */
     /*
      * Init walk structures.
      */
@@ -86,12 +114,17 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
     /*
      * Do the walk.
      */
+    int const rc2 = pgmGstGetEptPML4PtrEx(pVCpu, &pGstWalk->pPml4);
+    if (RT_SUCCESS(rc2))
+    { /* likely */ }
+    else
+        return PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(pVCpu, pWalk, 4, rc2);
+
     uint64_t fEffective;
     {
-        int rc = pgmGstGetEptPML4PtrEx(pVCpu, &pGstWalk->pPml4);
-        if (RT_SUCCESS(rc)) { /* probable */ }
-        else return PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(pVCpu, pWalk, 4, rc);
-
+        /*
+         * PML4E.
+         */
         PEPTPML4E pPml4e;
         pGstWalk->pPml4e = pPml4e = &pGstWalk->pPml4->a[(GCPhysNested >> EPT_PML4_SHIFT) & EPT_PML4_MASK];
         EPTPML4E  Pml4e;
@@ -115,11 +148,14 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
                    | fEffectiveEpt;
         pWalk->fEffective = fEffective;
 
-        rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, Pml4e.u & EPT_PML4E_PG_MASK, &pGstWalk->pPdpt);
+        int const rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, Pml4e.u & EPT_PML4E_PG_MASK, &pGstWalk->pPdpt);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(pVCpu, pWalk, 3, rc);
     }
     {
+        /*
+         * PDPTE.
+         */
         PEPTPDPTE pPdpte;
         pGstWalk->pPdpte = pPdpte = &pGstWalk->pPdpt->a[(GCPhysNested >> GST_PDPT_SHIFT) & GST_PDPT_MASK];
         EPTPDPTE  Pdpte;
@@ -142,7 +178,8 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
                         | (fEffectiveEpt & fCumulativeEpt);
             pWalk->fEffective = fEffective;
         }
-        else if (GST_IS_BIG_PDPE_VALID(pVCpu, Pdpte))
+        else if (   GST_IS_BIG_PDPE_VALID(pVCpu, Pdpte)
+                 && PGM_GST_SLAT_NAME_EPT(WalkIsMemTypeValid)(Pdpte.u, 3))
         {
             uint64_t const fEptAttrs     = Pdpte.u & EPT_PDPTE1G_ATTR_MASK;
             uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
@@ -167,8 +204,15 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             return VINF_SUCCESS;
         }
         else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 3);
+
+        int const rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, Pdpte.u & EPT_PDPTE_PG_MASK, &pGstWalk->pPd);
+        if (RT_SUCCESS(rc)) { /* probable */ }
+        else return PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(pVCpu, pWalk, 3, rc);
     }
     {
+        /*
+         * PDE.
+         */
         PGSTPDE pPde;
         pGstWalk->pPde  = pPde  = &pGstWalk->pPd->a[(GCPhysNested >> GST_PD_SHIFT) & GST_PD_MASK];
         GSTPDE  Pde;
@@ -177,11 +221,24 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         if (GST_IS_PGENTRY_PRESENT(pVCpu, Pde)) { /* probable */ }
         else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, Pde.u, 2);
 
-        if ((Pde.u & X86_PDE_PS) && GST_IS_PSE_ACTIVE(pVCpu))
+        /* The order of the following 2 "if" statements matter. */
+        if (GST_IS_PDE_VALID(pVCpu, Pde))
         {
-            if (RT_LIKELY(GST_IS_BIG_PDE_VALID(pVCpu, Pde))) { /* likely */ }
-            else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 2);
+            uint64_t const fEptAttrs     = Pde.u & EPT_PDE_ATTR_MASK;
+            uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
+            uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
+            uint8_t const fAccessed      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
+            uint64_t const fEffectiveEpt = (fEptAttrs << PGM_PTATTRS_EPT_SHIFT) & PGM_PTATTRS_EPT_MASK;
+            fEffective &= RT_BF_MAKE(PGM_PTATTRS_R, fRead)
+                        | RT_BF_MAKE(PGM_PTATTRS_W, fWrite)
+                        | RT_BF_MAKE(PGM_PTATTRS_A, fAccessed)
+                        | (fEffectiveEpt & fCumulativeEpt);
+            pWalk->fEffective = fEffective;
 
+        }
+        else if (   GST_IS_BIG_PDE_VALID(pVCpu, Pde)
+                 && PGM_GST_SLAT_NAME_EPT(WalkIsMemTypeValid)(Pde.u, 2))
+        {
             uint64_t const fEptAttrs     = Pde.u & EPT_PDE2M_ATTR_MASK;
             uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
             uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
@@ -204,26 +261,16 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->GCPhys);
             return VINF_SUCCESS;
         }
-
-        if (RT_UNLIKELY(!GST_IS_PDE_VALID(pVCpu, Pde)))
-            return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 2);
-
-        uint64_t const fEptAttrs     = Pde.u & EPT_PDE_ATTR_MASK;
-        uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
-        uint8_t const fWrite         = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_WRITE);
-        uint8_t const fAccessed      = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_ACCESSED);
-        uint64_t const fEffectiveEpt = (fEptAttrs << PGM_PTATTRS_EPT_SHIFT) & PGM_PTATTRS_EPT_MASK;
-        fEffective &= RT_BF_MAKE(PGM_PTATTRS_R, fRead)
-                    | RT_BF_MAKE(PGM_PTATTRS_W, fWrite)
-                    | RT_BF_MAKE(PGM_PTATTRS_A, fAccessed)
-                    | (fEffectiveEpt & fCumulativeEpt);
-        pWalk->fEffective = fEffective;
+        else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 2);
 
         int const rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GST_GET_PDE_GCPHYS(Pde), &pGstWalk->pPt);
         if (RT_SUCCESS(rc)) { /* probable */ }
         else return PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(pVCpu, pWalk, 1, rc);
     }
     {
+        /*
+         * PTE.
+         */
         PGSTPTE pPte;
         pGstWalk->pPte  = pPte  = &pGstWalk->pPt->a[(GCPhysNested >> GST_PT_SHIFT) & GST_PT_MASK];
         GSTPTE  Pte;
@@ -232,8 +279,11 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         if (GST_IS_PGENTRY_PRESENT(pVCpu, Pte)) { /* probable */ }
         else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, Pte.u, 1);
 
-        if (RT_LIKELY(GST_IS_PTE_VALID(pVCpu, Pte))) { /* likely */ }
-        else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 1);
+        if (   GST_IS_PTE_VALID(pVCpu, Pte)
+            && PGM_GST_SLAT_NAME_EPT(WalkIsMemTypeValid)(Pte.u, 1))
+        { /* likely*/  }
+        else
+            return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 1);
 
         uint64_t const fEptAttrs     = Pte.u & EPT_PTE_ATTR_MASK;
         uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);
