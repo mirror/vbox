@@ -114,13 +114,21 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
     /*
      * Do the walk.
      */
-    int const rc2 = pgmGstGetEptPML4PtrEx(pVCpu, &pGstWalk->pPml4);
-    if (RT_SUCCESS(rc2))
-    { /* likely */ }
-    else
-        return PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(pVCpu, pWalk, 4, rc2);
-
     uint64_t fEffective;
+    {
+        /*
+         * Start with reading the EPT PML4E pointer.
+         *
+         * We currently only support 4 level EPT paging.
+         * EPT 5 level paging was documented at some point (bit 7 of MSR_IA32_VMX_EPT_VPID_CAP)
+         * but for some reason seems to have been removed from subsequent specs.
+         */
+        int const rc = pgmGstGetEptPML4PtrEx(pVCpu, &pGstWalk->pPml4);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            return PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(pVCpu, pWalk, 4, rc);
+    }
     {
         /*
          * PML4E.
