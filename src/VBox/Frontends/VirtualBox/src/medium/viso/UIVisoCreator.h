@@ -151,7 +151,7 @@ private:
 
     QGridLayout          *m_pMainLayout;
     UIVisoHostBrowser    *m_pHostBrowser;
-    UIVisoContentBrowser *m_pVisoBrowser;
+    UIVisoContentBrowser *m_pVISOContentBrowser;
 
     QIToolBar            *m_pToolBar;
     QIToolBar            *m_pVerticalToolBar;

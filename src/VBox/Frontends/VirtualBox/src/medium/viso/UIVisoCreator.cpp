@@ -57,7 +57,7 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
     , m_pResetAction(0)
     , m_pMainLayout(0)
     , m_pHostBrowser(0)
-    , m_pVisoBrowser(0)
+    , m_pVISOContentBrowser(0)
     , m_pToolBar(0)
     , m_pVerticalToolBar(0)
     , m_pMainMenu(0)
@@ -76,9 +76,9 @@ UIVisoCreatorWidget::UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pPa
 
 QStringList UIVisoCreatorWidget::entryList() const
 {
-    if (!m_pVisoBrowser)
+    if (!m_pVISOContentBrowser)
         return QStringList();
-    return m_pVisoBrowser->entryList();
+    return m_pVISOContentBrowser->entryList();
 }
 
 const QString &UIVisoCreatorWidget::visoName() const
@@ -112,12 +112,16 @@ QMenu *UIVisoCreatorWidget::menu() const
 
 void UIVisoCreatorWidget::retranslateUi()
 {
+    if (m_pHostBrowser)
+        m_pHostBrowser->setTitle(UIVisoCreatorWidget::tr("Host File System"));
+    if (m_pVISOContentBrowser)
+        m_pVISOContentBrowser->setTitle(UIVisoCreatorWidget::tr("VISO Content"));
 }
 
 void UIVisoCreatorWidget::sltHandleAddObjectsToViso(QStringList pathList)
 {
-    if (m_pVisoBrowser)
-        m_pVisoBrowser->addObjectsToViso(pathList);
+    if (m_pVISOContentBrowser)
+        m_pVISOContentBrowser->addObjectsToViso(pathList);
 }
 
 void UIVisoCreatorWidget::sltPanelActionToggled(bool fChecked)
@@ -146,8 +150,8 @@ void UIVisoCreatorWidget::sltHandleVisoNameChanged(const QString &strVisoName)
     if (m_visoOptions.m_strVisoName == strVisoName)
         return;
     m_visoOptions.m_strVisoName = strVisoName;
-    if(m_pVisoBrowser)
-        m_pVisoBrowser->setVisoName(m_visoOptions.m_strVisoName);
+    if(m_pVISOContentBrowser)
+        m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
 }
 
 void UIVisoCreatorWidget::sltHandleCustomVisoOptionsChanged(const QStringList &customVisoOptions)
@@ -199,7 +203,7 @@ void UIVisoCreatorWidget::sltHandleShowContextMenu(const QWidget *pContextMenuRe
     {
         menu.addAction(m_pAddAction);
     }
-    else if (sender() == m_pVisoBrowser)
+    else if (sender() == m_pVISOContentBrowser)
     {
         menu.addAction(m_pRemoveAction);
         menu.addAction(m_pCreateNewDirectoryAction);
@@ -244,6 +248,8 @@ void UIVisoCreatorWidget::prepareWidgets()
     if (m_pHostBrowser)
     {
         m_pMainLayout->addWidget(m_pHostBrowser, 1, 0, 1, 2);
+        m_pHostBrowser->setAlignment(Qt::AlignLeft);
+
         m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pHostBrowser), 2);
     }
 
@@ -254,12 +260,12 @@ void UIVisoCreatorWidget::prepareWidgets()
         m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVerticalToolBar), 1);
     }
 
-    m_pVisoBrowser = new UIVisoContentBrowser;
-    if (m_pVisoBrowser)
+    m_pVISOContentBrowser = new UIVisoContentBrowser;
+    if (m_pVISOContentBrowser)
     {
-        m_pMainLayout->addWidget(m_pVisoBrowser, 1, 3, 1, 2);
-        m_pVisoBrowser->setVisoName(m_visoOptions.m_strVisoName);
-        m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVisoBrowser), 2);
+        m_pMainLayout->addWidget(m_pVISOContentBrowser, 1, 3, 1, 2);
+        m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
+        m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVISOContentBrowser), 2);
     }
 
     m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
@@ -294,11 +300,11 @@ void UIVisoCreatorWidget::prepareConnections()
                 this, &UIVisoCreatorWidget::sltHandleShowContextMenu);
     }
 
-    if (m_pVisoBrowser)
+    if (m_pVISOContentBrowser)
     {
-        connect(m_pVisoBrowser, &UIVisoContentBrowser::sigTableSelectionChanged,
+        connect(m_pVISOContentBrowser, &UIVisoContentBrowser::sigTableSelectionChanged,
                 this, &UIVisoCreatorWidget::sltHandleContentBrowserTableSelectionChanged);
-        connect(m_pVisoBrowser, &UIVisoContentBrowser::sigCreateFileTableViewContextMenu,
+        connect(m_pVISOContentBrowser, &UIVisoContentBrowser::sigCreateFileTableViewContextMenu,
                 this, &UIVisoCreatorWidget::sltHandleShowContextMenu);
     }
 
@@ -333,16 +339,16 @@ void UIVisoCreatorWidget::prepareConnections()
 
     if (m_pCreateNewDirectoryAction)
         connect(m_pCreateNewDirectoryAction, &QAction::triggered,
-                m_pVisoBrowser, &UIVisoContentBrowser::sltHandleCreateNewDirectory);
+                m_pVISOContentBrowser, &UIVisoContentBrowser::sltHandleCreateNewDirectory);
     if (m_pRemoveAction)
         connect(m_pRemoveAction, &QAction::triggered,
-                m_pVisoBrowser, &UIVisoContentBrowser::sltHandleRemoveItems);
+                m_pVISOContentBrowser, &UIVisoContentBrowser::sltHandleRemoveItems);
     if (m_pResetAction)
         connect(m_pResetAction, &QAction::triggered,
-                m_pVisoBrowser, &UIVisoContentBrowser::sltHandleResetAction);
+                m_pVISOContentBrowser, &UIVisoContentBrowser::sltHandleResetAction);
     if (m_pRenameAction)
         connect(m_pRenameAction, &QAction::triggered,
-                m_pVisoBrowser,&UIVisoContentBrowser::sltHandleItemRenameAction);
+                m_pVISOContentBrowser,&UIVisoContentBrowser::sltHandleItemRenameAction);
 }
 
 void UIVisoCreatorWidget::prepareActions()
@@ -439,7 +445,7 @@ void UIVisoCreatorWidget::manageEscapeShortCut()
     // /* Take the escape key from m_pButtonBox and from the panels in case treeview(s) in
     //    host and/or content browser is open. We use the escape key to close those first: */
     // if ((m_pHostBrowser && m_pHostBrowser->isTreeViewVisible()) ||
-    //     (m_pVisoBrowser && m_pVisoBrowser->isTreeViewVisible()))
+    //     (m_pVISOContentBrowser && m_pVISOContentBrowser->isTreeViewVisible()))
     // {
     //     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
     //         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence());
@@ -589,14 +595,14 @@ void UIVisoCreatorDialog::prepareConnections()
 void UIVisoCreatorDialog::retranslateUi()
 {
     if (!m_strMachineName.isEmpty())
-        setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("VISO Creator")));
+        setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(UIVisoCreatorWidget::tr("VISO Creator")));
     else
-        setWindowTitle(QString("%1").arg(tr("VISO Creator")));
+        setWindowTitle(QString("%1").arg(UIVisoCreatorWidget::tr("VISO Creator")));
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Ok))
     {
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(QApplication::translate("UIVisoCreator", "C&reate"));
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setToolTip(QApplication::translate("UIVisoCreator", "Creates VISO file with the selected content"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(UIVisoCreatorWidget::tr("C&reate"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setToolTip(UIVisoCreatorWidget::tr("Creates VISO file with the selected content"));
     }
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Help))
-        m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(QApplication::translate("UIVisoCreator", "Opens the help browser and navigates to the related section"));
+        m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(UIVisoCreatorWidget::tr("Opens the help browser and navigates to the related section"));
 }
