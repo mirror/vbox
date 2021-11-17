@@ -272,10 +272,10 @@
 # define GST_GET_PDE_GCPHYS(Pde)                PGM_A20_APPLY(pVCpu, ((Pde).u & GST_PDE_PG_MASK))
 # define GST_GET_BIG_PDE_GCPHYS(pVM, Pde)       PGM_A20_APPLY(pVCpu, ((Pde).u & GST_PDE_BIG_PG_MASK))
 # define GST_GET_BIG_PDPE_GCPHYS(pVM, Pde)      PGM_A20_APPLY(pVCpu, ((Pde).u & GST_PDPE_BIG_PG_MASK))
-# define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)      ((Pte).u & (pVCpu)->pgm.s.fGst64ShadowedPteMask )                                // TODO
-# define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)      ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedPdeMask )                                // TODO
-# define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde)  ( ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedBigPdeMask ) | PGM_PDFLAGS_BIG_PAGE)   // TODO
-# define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde)  ((Pde).u & (pVCpu)->pgm.s.fGst64ShadowedBigPde4PteMask )                   // TODO
+# define GST_GET_PTE_SHW_FLAGS(pVCpu, Pte)            (true && This_should_perhaps_not_be_used_in_this_context)
+# define GST_GET_PDE_SHW_FLAGS(pVCpu, Pde)            (true && This_should_perhaps_not_be_used_in_this_context)
+# define GST_GET_BIG_PDE_SHW_FLAGS(pVCpu, Pde)        (true && This_should_perhaps_not_be_used_in_this_context)
+# define GST_GET_BIG_PDE_SHW_FLAGS_4_PTE(pVCpu, Pde)  (true && This_should_perhaps_not_be_used_in_this_context)
 # define GST_IS_PTE_VALID(pVCpu, Pte)           (!( (Pte).u   & (pVCpu)->pgm.s.fGstEptMbzPteMask ))
 # define GST_IS_PDE_VALID(pVCpu, Pde)           (!( (Pde).u   & (pVCpu)->pgm.s.fGstEptMbzPdeMask ))
 # define GST_IS_BIG_PDE_VALID(pVCpu, Pde)       (!( (Pde).u   & (pVCpu)->pgm.s.fGstEptMbzBigPdeMask ))
