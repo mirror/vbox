@@ -135,6 +135,19 @@ QString UIErrorString::formatErrorInfo(const COMResult &comRc)
 }
 
 /* static */
+QString UIErrorString::simplifiedErrorInfo(const COMErrorInfo &comInfo, HRESULT wrapperRC /* = S_OK */)
+{
+    return UIErrorString::errorInfoToSimpleString(comInfo, wrapperRC);
+}
+
+/* static */
+QString UIErrorString::simplifiedErrorInfo(const COMBaseWithEI &comWrapper)
+{
+    Assert(comWrapper.lastRC() != S_OK);
+    return simplifiedErrorInfo(comWrapper.errorInfo(), comWrapper.lastRC());
+}
+
+/* static */
 QString UIErrorString::errorInfoToString(const COMErrorInfo &comInfo, HRESULT wrapperRC)
 {
     /* Compose complex details string with internal <!--EOM--> delimiter to
@@ -217,3 +230,39 @@ QString UIErrorString::errorInfoToString(const COMErrorInfo &comInfo, HRESULT wr
     return strFormatted;
 }
 
+/* static */
+QString UIErrorString::errorInfoToSimpleString(const COMErrorInfo &comInfo, HRESULT wrapperRC /* = S_OK */)
+{
+    /* Compose complex details string with text and status code: */
+    QString strFormatted;
+
+    /* Check if details text is NOT empty: */
+    const QString strDetailsInfo = comInfo.text();
+    if (!strDetailsInfo.isEmpty())
+        strFormatted += strDetailsInfo;
+
+    /* Check if we have result code: */
+    bool fHaveResultCode = false;
+
+    if (comInfo.isBasicAvailable())
+    {
+#ifdef VBOX_WS_WIN
+        fHaveResultCode = comInfo.isFullAvailable();
+#else
+        fHaveResultCode = true;
+#endif
+
+        if (fHaveResultCode)
+            strFormatted += "; " + QString("Result Code: ") + formatRCFull(comInfo.resultCode());
+    }
+
+    if (   FAILED(wrapperRC)
+        && (!fHaveResultCode || wrapperRC != comInfo.resultCode()))
+        strFormatted += "; " + QString("Callee RC: ") + formatRCFull(wrapperRC);
+
+    /* Check if we have next error queued: */
+    if (comInfo.next())
+        strFormatted += "; " + errorInfoToSimpleString(*comInfo.next());
+
+    return strFormatted;
+}

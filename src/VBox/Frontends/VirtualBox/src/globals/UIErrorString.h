@@ -57,10 +57,18 @@ public:
     /** Returns formatted error information for passed @a comRc. */
     static QString formatErrorInfo(const COMResult &comRc);
 
+    /** Returns simplified error information for passed @a comInfo and @a wrapperRC. */
+    static QString simplifiedErrorInfo(const COMErrorInfo &comInfo, HRESULT wrapperRC = S_OK);
+    /** Returns simplified error information for passed @a comWrapper. */
+    static QString simplifiedErrorInfo(const COMBaseWithEI &comWrapper);
+
 private:
 
     /** Converts passed @a comInfo and @a wrapperRC to string. */
     static QString errorInfoToString(const COMErrorInfo &comInfo, HRESULT wrapperRC = S_OK);
+
+    /** Converts passed @a comInfo and @a wrapperRC to simplified string. */
+    static QString errorInfoToSimpleString(const COMErrorInfo &comInfo, HRESULT wrapperRC = S_OK);
 };
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIErrorString_h */
