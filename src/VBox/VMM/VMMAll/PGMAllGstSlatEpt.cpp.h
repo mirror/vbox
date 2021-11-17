@@ -16,29 +16,32 @@
  */
 
 #if PGM_GST_TYPE == PGM_TYPE_EPT
-DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, int iLevel)
+DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint64_t uEntry, uint8_t uLevel)
 {
-    NOREF(pVCpu);
-    pWalk->fNotPresent     = true;
-    pWalk->uLevel          = (uint8_t)iLevel;
+    pWalk->fNotPresent = true;
+    pWalk->uLevel      = uLevel;
+    static PGMSLATFAIL const s_aEptViolation[] = { PGMSLATFAIL_EPT_VIOLATION, PGMSLATFAIL_EPT_VIOLATION_CONVERTIBLE };
+    uint8_t const fEptVeSupported  = pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxEptXcptVe;
+    uint8_t const idxViolationType = fEptVeSupported & !RT_BF_GET(uEntry, VMX_BF_EPT_PT_SUPPRESS_VE);
+    pWalk->enmSlatFail = s_aEptViolation[idxViolationType];
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
 
-DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, int iLevel, int rc)
+DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint8_t uLevel, int rc)
 {
     AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc); NOREF(pVCpu);
-    pWalk->fBadPhysAddr    = true;
-    pWalk->uLevel          = (uint8_t)iLevel;
+    pWalk->fBadPhysAddr = true;
+    pWalk->uLevel       = uLevel;
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
 
-DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, int iLevel)
+DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint8_t uLevel)
 {
     NOREF(pVCpu);
-    pWalk->fRsvdError      = true;
-    pWalk->uLevel          = (uint8_t)iLevel;
+    pWalk->fRsvdError = true;
+    pWalk->uLevel     = uLevel;
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
@@ -93,7 +96,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         pGstWalk->Pml4e.u = Pml4e.u = pPml4e->u;
 
         if (GST_IS_PGENTRY_PRESENT(pVCpu, Pml4e)) { /* probable */ }
-        else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, 4);
+        else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, Pml4e.u, 4);
 
         if (RT_LIKELY(GST_IS_PML4E_VALID(pVCpu, Pml4e))) { /* likely */ }
         else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 4);
@@ -121,7 +124,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         pGstWalk->Pdpte.u = Pdpte.u = pPdpte->u;
 
         if (GST_IS_PGENTRY_PRESENT(pVCpu, Pdpte)) { /* probable */ }
-        else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, 3);
+        else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, Pdpte.u, 3);
 
         /* The order of the following 2 "if" statements matter. */
         if (GST_IS_PDPE_VALID(pVCpu, Pdpte))
@@ -170,7 +173,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         pGstWalk->Pde.u = Pde.u = pPde->u;
 
         if (GST_IS_PGENTRY_PRESENT(pVCpu, Pde)) { /* probable */ }
-        else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, 2);
+        else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, Pde.u, 2);
 
         if ((Pde.u & X86_PDE_PS) && GST_IS_PSE_ACTIVE(pVCpu))
         {
@@ -225,7 +228,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         pGstWalk->Pte.u = Pte.u = pPte->u;
 
         if (GST_IS_PGENTRY_PRESENT(pVCpu, Pte)) { /* probable */ }
-        else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, 1);
+        else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, Pte.u, 1);
 
         if (RT_LIKELY(GST_IS_PTE_VALID(pVCpu, Pte))) { /* likely */ }
         else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 1);
