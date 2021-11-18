@@ -82,6 +82,7 @@ const char *UIExtraDataDefs::GUI_RestrictedNetworkAttachmentTypes = "GUI/Restric
 
 /* VISO Creator: */
 const char *UIExtraDataDefs::GUI_VISOCreator_RecentFolder   = "GUI/VISOCreator/RecentFolder";
+const char *UIExtraDataDefs::GUI_VISOCreator_DialogGeometry   = "GUI/VISOCreator/DialogGeometry";
 
 /* VirtualBox Manager: */
 const char *UIExtraDataDefs::GUI_LastSelectorWindowPosition = "GUI/LastWindowPosition";

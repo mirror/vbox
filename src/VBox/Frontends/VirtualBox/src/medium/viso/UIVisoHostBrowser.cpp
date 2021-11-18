@@ -21,9 +21,9 @@
 #include <QMimeData>
 #include <QTextEdit>
 #include <QTreeView>
+#include <QTableView>
 
 /* GUI includes: */
-#include "QITableView.h"
 #include "UIVisoHostBrowser.h"
 
 /*********************************************************************************************************************************
@@ -149,7 +149,7 @@ void UIVisoHostBrowser::prepareObjects()
         m_pTreeView->hideColumn(3);
     }
 
-    m_pTableView = new QITableView;
+    m_pTableView = new QTableView;
     if (m_pTableView)
     {
         m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);

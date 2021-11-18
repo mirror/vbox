@@ -28,6 +28,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
 #include "QIToolBar.h"
 #include "UIVisoHostBrowser.h"
 #include "UIVisoCreator.h"
@@ -508,17 +509,19 @@ int UIVisoCreatorWidget::visoWriteQuotedString(PRTSTREAM pStrmDst, const char *p
 *   UIVisoCreatorDialog implementation.                                                                                          *
 *********************************************************************************************************************************/
 UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pParent, const QString& strMachineName /* = QString() */)
-    : QIWithRetranslateUI<QIMainDialog>(pParent)
+    : QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >(pParent)
     , m_strMachineName(strMachineName)
     , m_pVisoCreatorWidget(0)
     , m_pButtonBox(0)
     , m_pActionPool(pActionPool)
+    , m_iGeometrySaveTimerId(-1)
 {
     /* Make sure that the base class does not close this dialog upon pressing escape.
        we manage escape key here with special casing: */
     setRejectByEscape(false);
     prepareWidgets();
     prepareConnections();
+    loadSettings();
 }
 
 QStringList  UIVisoCreatorDialog::entryList() const
@@ -612,8 +615,53 @@ void UIVisoCreatorDialog::retranslateUi()
         m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(UIVisoCreatorWidget::tr("Opens the help browser and navigates to the related section"));
 }
 
+bool UIVisoCreatorDialog::event(QEvent *pEvent)
+{
+    if (pEvent->type() == QEvent::Resize || pEvent->type() == QEvent::Move)
+    {
+        if (m_iGeometrySaveTimerId != -1)
+            killTimer(m_iGeometrySaveTimerId);
+        m_iGeometrySaveTimerId = startTimer(300);
+    }
+    else if (pEvent->type() == QEvent::Timer)
+    {
+        QTimerEvent *pTimerEvent = static_cast<QTimerEvent*>(pEvent);
+        if (pTimerEvent->timerId() == m_iGeometrySaveTimerId)
+        {
+            killTimer(m_iGeometrySaveTimerId);
+            m_iGeometrySaveTimerId = -1;
+            saveDialogGeometry();
+        }
+    }
+    return QIWithRetranslateUI<QIWithRestorableGeometry<QIMainDialog> >::event(pEvent);
+}
+
 void UIVisoCreatorDialog::sltSetCancelButtonShortCut(QKeySequence keySequence)
 {
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(keySequence);
+}
+
+void UIVisoCreatorDialog::loadSettings()
+{
+    const QRect availableGeo = gpDesktop->availableGeometry(this);
+    int iDefaultWidth = availableGeo.width() / 2;
+    int iDefaultHeight = availableGeo.height() * 3 / 4;
+    QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);
+
+    QWidget *pParent = windowManager().realParentWindow(parentWidget() ? parentWidget() : windowManager().mainWindowShown());
+    /* Load geometry from extradata: */
+    const QRect geo = gEDataManager->visoCreatorDialogGeometry(this, pParent, defaultGeo);
+    LogRel2(("GUI: UISoftKeyboard: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+             geo.x(), geo.y(), geo.width(), geo.height()));
+
+    restoreGeometry(geo);
+}
+
+void UIVisoCreatorDialog::saveDialogGeometry()
+{
+    const QRect geo = currentGeometry();
+    LogRel2(("GUI: UIMediumSelector: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
+             geo.x(), geo.y(), geo.width(), geo.height()));
+    gEDataManager->setVisoCreatorDialogGeometry(geo, isCurrentlyMaximized());
 }

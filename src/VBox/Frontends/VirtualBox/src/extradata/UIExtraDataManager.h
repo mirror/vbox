@@ -334,6 +334,12 @@ public:
         QString visoCreatorRecentFolder();
         /** Defines recent folder for VISO creation content as @a strValue. */
         void setVISOCreatorRecentFolder(const QString &strValue);
+        /** Returns viso creator geometry using @a pWidget as the hint. */
+        QRect visoCreatorDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry);
+        /** Set viso creator geometry. */
+        void setVisoCreatorDialogGeometry(const QRect &geometry, bool fMaximized);
+        /** Returns whether viso creator dialog should be maximized. */
+        bool visoCreatorDialogShouldBeMaximized();
     /** @} */
 
     /** @name VirtualBox Manager
