@@ -673,11 +673,26 @@ install_drivers()
         return 1
     fi
 
+    # Figure out group to use for /etc/devlink.tab (before Solaris 11 SRU6
+    # it was always using group sys)
+    group=sys
+    if [ -f "$PKG_INSTALL_ROOT/etc/dev/reserved_devnames" ]; then
+        # Solaris 11 SRU6 and later use group root (check a file which isn't
+        # tainted by VirtualBox install scripts and allow no other group)
+        refgroup=$(LC_ALL=C /usr/bin/ls -lL "$PKG_INSTALL_ROOT/etc/dev/reserved_devnames" | awk '{ print $4 }' 2>/dev/null)
+        if [ $? -eq 0 -a "x$refgroup" = "xroot" ]; then
+            group=root
+        fi
+        unset refgroup
+    fi
+
     ## Add vboxdrv to devlink.tab (KEEP TABS!)
     if test -f "$PKG_INSTALL_ROOT/etc/devlink.tab"; then
         sed -e '/name=vboxdrv/d' -e '/name=vboxdrvu/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
         echo "type=ddi_pseudo;name=vboxdrv;minor=vboxdrv	\D"  >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
         echo "type=ddi_pseudo;name=vboxdrv;minor=vboxdrvu	\M0" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        chmod 0644 "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        chown root:$group "$PKG_INSTALL_ROOT/etc/devlink.vbox"
         mv -f "$PKG_INSTALL_ROOT/etc/devlink.vbox" "$PKG_INSTALL_ROOT/etc/devlink.tab"
     else
         errorprint "Missing $PKG_INSTALL_ROOT/etc/devlink.tab, aborting install"
@@ -754,6 +769,8 @@ install_drivers()
         # Add vboxusbmon to devlink.tab
         sed -e '/name=vboxusbmon/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
         echo "type=ddi_pseudo;name=vboxusbmon	\D" >> "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        chmod 0644 "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+        chown root:$group "$PKG_INSTALL_ROOT/etc/devlink.vbox"
         mv -f "$PKG_INSTALL_ROOT/etc/devlink.vbox" "$PKG_INSTALL_ROOT/etc/devlink.tab"
 
         # Create the device link for non-remote installs
@@ -784,11 +801,26 @@ remove_drivers()
 {
     fatal=$1
 
+    # Figure out group to use for /etc/devlink.tab (before Solaris 11 SRU6
+    # it was always using group sys)
+    group=sys
+    if [ -f "$PKG_INSTALL_ROOT/etc/dev/reserved_devnames" ]; then
+        # Solaris 11 SRU6 and later use group root (check a file which isn't
+        # tainted by VirtualBox install scripts and allow no other group)
+        refgroup=$(LC_ALL=C /usr/bin/ls -lL "$PKG_INSTALL_ROOT/etc/dev/reserved_devnames" | awk '{ print $4 }' 2>/dev/null)
+        if [ $? -eq 0 -a "x$refgroup" = "xroot" ]; then
+            group=root
+        fi
+        unset refgroup
+    fi
+
     # Remove vboxdrv[u] from devlink.tab
     if test -f "$PKG_INSTALL_ROOT/etc/devlink.tab"; then
         devlinkfound=`cat "$PKG_INSTALL_ROOT/etc/devlink.tab" | grep vboxdrv`
         if test -n "$devlinkfound"; then
             sed -e '/name=vboxdrv/d' -e '/name=vboxdrvu/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+            chmod 0644 "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+            chown root:$group "$PKG_INSTALL_ROOT/etc/devlink.vbox"
             mv -f "$PKG_INSTALL_ROOT/etc/devlink.vbox" "$PKG_INSTALL_ROOT/etc/devlink.tab"
         fi
 
@@ -796,6 +828,8 @@ remove_drivers()
         devlinkfound=`cat "$PKG_INSTALL_ROOT/etc/devlink.tab" | grep vboxusbmon`
         if test -n "$devlinkfound"; then
             sed -e '/name=vboxusbmon/d' "$PKG_INSTALL_ROOT/etc/devlink.tab" > "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+            chmod 0644 "$PKG_INSTALL_ROOT/etc/devlink.vbox"
+            chown root:$group "$PKG_INSTALL_ROOT/etc/devlink.vbox"
             mv -f "$PKG_INSTALL_ROOT/etc/devlink.vbox" "$PKG_INSTALL_ROOT/etc/devlink.tab"
         fi
     fi

@@ -47,9 +47,23 @@ echo "Removing VirtualBox kernel modules..."
 # vboxguest.sh would've been installed, we just need to call it.
 /opt/VirtualBoxAdditions/vboxguest.sh stopall silentunload
 
+# Figure out group to use for /etc/devlink.tab (before Solaris 11 SRU6
+# it was always using group sys)
+group=sys
+if [ -f /etc/dev/reserved_devnames ]; then
+    # Solaris 11 SRU6 and later use group root (check a file which isn't
+    # tainted by VirtualBox install scripts and allow no other group)
+    refgroup=$(LC_ALL=C /usr/bin/ls -lL /etc/dev/reserved_devnames | awk '{ print $4 }' 2>/dev/null)
+    if [ $? -eq 0 -a "x$refgroup" = "xroot" ]; then
+        group=root
+    fi
+    unset refgroup
+fi
+
 # remove devlink.tab entry for vboxguest
-sed -e '
-/name=vboxguest/d' /etc/devlink.tab > /etc/devlink.vbox
+sed -e '/name=vboxguest/d' /etc/devlink.tab > /etc/devlink.vbox
+chmod 0644 /etc/devlink.vbox
+chown root:$group /etc/devlink.vbox
 mv -f /etc/devlink.vbox /etc/devlink.tab
 
 # remove the link
