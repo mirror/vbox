@@ -1904,39 +1904,6 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Show VISO Creator' action class. */
-class UIActionToggleManagerToolsMachineShowVISOCreator : public UIActionToggle
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionToggleManagerToolsMachineShowVISOCreator(UIActionPool *pParent)
-        : UIActionToggle(pParent)
-    {
-        setProperty("UIToolType", QVariant::fromValue(UIToolType_VISOCreator));
-        /// @todo use icons with check-boxes
-        setIcon(UIIconPool::iconSetFull(":/performance_monitor_32px.png", ":/performance_monitor_16px.png",
-                                        ":/performance_monitor_disabled_32px.png", ":/performance_monitor_disabled_16px.png"));
-    }
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToolsMachineVMVISOCreator");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&VISO"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the VISO Creator pane"));
-    }
-};
-
 /** Menu action extension, used as 'Snapshot' menu class. */
 class UIActionMenuManagerSnapshot : public UIActionMenu
 {
@@ -3573,7 +3540,6 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Group_M_Tools_T_Snapshots] = new UIActionToggleManagerToolsMachineShowSnapshots(this);
     m_pool[UIActionIndexMN_M_Group_M_Tools_T_Logs] = new UIActionToggleManagerToolsMachineShowLogs(this);
     m_pool[UIActionIndexMN_M_Group_M_Tools_T_Activity] = new UIActionToggleManagerToolsMachineShowActivity(this);
-    m_pool[UIActionIndexMN_M_Group_M_Tools_T_VISOCreator] = new UIActionToggleManagerToolsMachineShowVISOCreator(this);
     m_pool[UIActionIndexMN_M_Group_S_Discard] = new UIActionSimpleManagerCommonPerformDiscard(this);
     m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
     m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
@@ -3619,7 +3585,6 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Snapshots] = new UIActionToggleManagerToolsMachineShowSnapshots(this);
     m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Logs] = new UIActionToggleManagerToolsMachineShowLogs(this);
     m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Activity] = new UIActionToggleManagerToolsMachineShowActivity(this);
-    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_VISOCreator] = new UIActionToggleManagerToolsMachineShowVISOCreator(this);
     m_pool[UIActionIndexMN_M_Machine_S_Discard] = new UIActionSimpleManagerCommonPerformDiscard(this);
     m_pool[UIActionIndexMN_M_Machine_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
     m_pool[UIActionIndexMN_M_Machine_S_Refresh] = new UIActionSimpleManagerCommonPerformRefresh(this);

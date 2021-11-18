@@ -41,7 +41,6 @@ class UIErrorPane;
 class UIVMActivityToolWidget;
 class UISnapshotPane;
 class UIVirtualMachineItem;
-class UIVisoCreatorWidget;
 class UIVMLogViewerWidget;
 
 
@@ -134,8 +133,6 @@ private:
     UIVMLogViewerWidget *m_pPaneLogViewer;
     /** Holds the Performance Monitor pane instance. */
     UIVMActivityToolWidget *m_pPaneVMActivityMonitor;
-    /** Holds the VISO Creator pane instance. */
-    UIVisoCreatorWidget *m_pPaneVISOCreator;
 
     /** Holds whether this pane is active. */
     bool  m_fActive;

@@ -612,8 +612,6 @@ protected:
     void updateMenuFileManager();
     /** Updates 'File Manager' @a pMenu. */
     void updateMenuFileManagerWrapper(UIMenu *pMenu);
-    /** Updates 'VISO Creator' pMenu. */
-    void updateMenuVISOCreator();
 
     /** Holds the map of actions. */
     QMap<int, UIAction*>          m_pool;

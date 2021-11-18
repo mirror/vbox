@@ -31,7 +31,6 @@
 #include "UISnapshotPane.h"
 #include "UIToolPaneMachine.h"
 #include "UIVirtualMachineItem.h"
-#include "UIVisoCreator.h"
 #include "UIVMLogViewerWidget.h"
 
 /* Other VBox includes: */
@@ -48,7 +47,6 @@ UIToolPaneMachine::UIToolPaneMachine(UIActionPool *pActionPool, QWidget *pParent
     , m_pPaneSnapshots(0)
     , m_pPaneLogViewer(0)
     , m_pPaneVMActivityMonitor(0)
-    , m_pPaneVISOCreator(0)
     , m_fActive(false)
 {
     /* Prepare: */
@@ -213,24 +211,6 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
                         this, &UIToolPaneMachine::sigSwitchToActivityOverviewPane);
                 break;
             }
-            case UIToolType_VISOCreator:
-            {
-                m_pPaneVISOCreator = new UIVisoCreatorWidget(m_pActionPool, 0 /* Parent */,
-                                                             false /* don't show toolbar*/, QString() /* Machine Name */);
-                AssertPtrReturnVoid(m_pPaneVISOCreator);
-#ifndef VBOX_WS_MAC
-                const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
-                m_pPaneVISOCreator->setContentsMargins(iMargin, 0, iMargin, 0);
-#endif
-
-                /* Configure pane: */
-                m_pPaneVISOCreator->setProperty("ToolType", QVariant::fromValue(UIToolType_VISOCreator));
-
-                /* Add into layout: */
-                m_pLayout->addWidget(m_pPaneVISOCreator);
-                m_pLayout->setCurrentWidget(m_pPaneVISOCreator);
-                break;
-            }
             default:
                 AssertFailedReturnVoid();
         }
@@ -259,7 +239,6 @@ void UIToolPaneMachine::closeTool(UIToolType enmType)
             case UIToolType_Snapshots:   m_pPaneSnapshots = 0; break;
             case UIToolType_Logs:        m_pPaneLogViewer = 0; break;
             case UIToolType_VMActivity:  m_pPaneVMActivityMonitor = 0; break;
-            case UIToolType_VISOCreator:  m_pPaneVISOCreator = 0; break;
             default: break;
         }
         /* Delete corresponding widget: */
@@ -352,9 +331,6 @@ QString UIToolPaneMachine::currentHelpKeyword() const
             break;
         case UIToolType_VMActivity:
             pCurrentToolWidget = m_pPaneVMActivityMonitor;
-            break;
-        case UIToolType_VISOCreator:
-            pCurrentToolWidget = m_pPaneVISOCreator;
             break;
         default:
             break;

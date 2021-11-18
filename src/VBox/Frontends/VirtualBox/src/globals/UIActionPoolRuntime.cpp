@@ -3529,9 +3529,6 @@ void UIActionPoolRuntime::updateMenus()
 
     /* 'File Manager' menu: */
     updateMenuFileManager();
-
-    /* 'VISO Creator' menu: */
-    updateMenuVISOCreator();
 }
 
 QString UIActionPoolRuntime::shortcutsExtraDataID() const
