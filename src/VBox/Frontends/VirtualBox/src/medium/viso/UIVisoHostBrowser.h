@@ -43,7 +43,7 @@ public:
 
     UIVisoHostBrowser(QWidget *pParent = 0);
     ~UIVisoHostBrowser();
-    virtual void showHideHiddenObjects(bool bShow) /* override */;
+    virtual void showHideHiddenObjects(bool bShow) final override;
     QString      currentPath() const;
     void         setCurrentPath(const QString &strPath);
     virtual bool tableViewHasSelection() const final override;
@@ -54,11 +54,11 @@ public slots:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
-    virtual void tableViewItemDoubleClick(const QModelIndex &index) /* override */;
-    virtual void setTableRootIndex(QModelIndex index = QModelIndex()) /* override */;
-    virtual void setTreeCurrentIndex(QModelIndex index = QModelIndex()) /* override */;
-    virtual void treeSelectionChanged(const QModelIndex &selectedTreeIndex) /* override */;
+    virtual void retranslateUi() final override;
+    virtual void tableViewItemDoubleClick(const QModelIndex &index) final override;
+    virtual void setTableRootIndex(QModelIndex index = QModelIndex()) final override;
+    virtual void setTreeCurrentIndex(QModelIndex index = QModelIndex()) final override;
+    virtual void treeSelectionChanged(const QModelIndex &selectedTreeIndex) final override;
 
 private slots:
 
