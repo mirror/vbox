@@ -2096,6 +2096,8 @@ int pgmGstLazyMap32BitPD(PVMCPUCC pVCpu, PX86PD *ppPd)
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAGE_MASK;
     PPGMPAGE    pPage;
+    /** @todo Nested VMX: convert GCPhysCR3 from nested-guest physical to
+     *        guest-physical address here. */
     int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
@@ -2137,6 +2139,8 @@ int pgmGstLazyMapPaePDPT(PVMCPUCC pVCpu, PX86PDPT *ppPdpt)
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAE_PAGE_MASK;
     PPGMPAGE    pPage;
+    /** @todo Nested VMX: convert GCPhysCR3 from nested-guest physical to
+     *        guest-physical address here. */
     int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
@@ -2231,6 +2235,8 @@ int pgmGstLazyMapPml4(PVMCPUCC pVCpu, PX86PML4 *ppPml4)
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_AMD64_PAGE_MASK;
     PPGMPAGE    pPage;
+    /** @todo Nested VMX: convert GCPhysCR3 from nested-guest physical to
+     *        guest-physical address here. */
     int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
