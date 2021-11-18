@@ -14,7 +14,7 @@
 -->
 <installer-gui-script minSpecVersion="1.0">
     <title>VirtualBox_title</title>
-    <options customize="allow" allow-external-scripts="yes" rootVolumeOnly="true" hostArchitectures="i386"/>
+    <options customize="allow" allow-external-scripts="yes" rootVolumeOnly="true" hostArchitectures="i386 arm64"/>
     <installation-check script="checkPrerequisite()"></installation-check>
     <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
     <script>
