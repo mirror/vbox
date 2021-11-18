@@ -58,6 +58,7 @@ public:
     QStringList entryList();
     virtual void showHideHiddenObjects(bool bShow) /* override */;
     void setVisoName(const QString &strName);
+    virtual bool tableViewHasSelection() const final override;
 
 public slots:
 

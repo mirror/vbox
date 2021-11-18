@@ -53,6 +53,7 @@ class SHARED_LIBRARY_STUFF UIVisoCreatorWidget : public QIWithRetranslateUI<QWid
 signals:
 
     void sigSetCancelButtonShortCut(QKeySequence keySequence);
+    void sigVisoNameChanged(const QString &strVisoName);
 
 public:
 
@@ -195,6 +196,7 @@ protected:
 private slots:
 
     void sltSetCancelButtonShortCut(QKeySequence keySequence);
+    void sltsigVisoNameChanged(const QString &strName);
 
 private:
     void prepareWidgets();
@@ -202,6 +204,7 @@ private:
     virtual void retranslateUi() final override;
     void loadSettings();
     void saveDialogGeometry();
+    void updateWindowTitle();
 
     QString m_strMachineName;
     UIVisoCreatorWidget *m_pVisoCreatorWidget;

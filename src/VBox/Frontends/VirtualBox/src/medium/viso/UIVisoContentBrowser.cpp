@@ -569,6 +569,16 @@ void UIVisoContentBrowser::setVisoName(const QString &strName)
     updateStartItemName();
 }
 
+bool UIVisoContentBrowser::tableViewHasSelection() const
+{
+    if (!m_pTableView)
+        return false;
+    QItemSelectionModel *pSelectionModel = m_pTableView->selectionModel();
+    if (!pSelectionModel)
+        return false;
+    return pSelectionModel->hasSelection();
+}
+
 QModelIndex UIVisoContentBrowser::convertIndexToTableIndex(const QModelIndex &index)
 {
     if (!index.isValid())
@@ -652,7 +662,7 @@ void UIVisoContentBrowser::updateStartItemName()
 {
     if (!rootItem() || !rootItem()->child(0))
         return;
-    const QString strName = QString("%1%2").arg(QDir::toNativeSeparators("/")).arg(m_strVisoName);
+    const QString strName(QDir::toNativeSeparators("/"));
 
     rootItem()->child(0)->setData(strName, UICustomFileSystemModelColumn_Name);
     /* If the table root index is the start item then we have to update the location selector text here: */

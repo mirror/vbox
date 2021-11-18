@@ -155,6 +155,7 @@ void UIVisoCreatorWidget::sltHandleVisoNameChanged(const QString &strVisoName)
     m_visoOptions.m_strVisoName = strVisoName;
     if(m_pVISOContentBrowser)
         m_pVISOContentBrowser->setVisoName(m_visoOptions.m_strVisoName);
+    emit sigVisoNameChanged(strVisoName);
 }
 
 void UIVisoCreatorWidget::sltHandleCustomVisoOptionsChanged(const QStringList &customVisoOptions)
@@ -364,7 +365,11 @@ void UIVisoCreatorWidget::prepareActions()
     m_pActionOptions = m_pActionPool->action(UIActionIndex_M_VISOCreator_ToggleOptionsPanel);
 
     m_pAddAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Add);
+    if (m_pAddAction && m_pHostBrowser)
+        m_pAddAction->setEnabled(m_pHostBrowser->tableViewHasSelection());
     m_pRemoveAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Remove);
+    if (m_pRemoveAction && m_pVISOContentBrowser)
+        m_pRemoveAction->setEnabled(m_pVISOContentBrowser->tableViewHasSelection());
     m_pCreateNewDirectoryAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_CreateNewDirectory);
     m_pRenameAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Rename);
     m_pResetAction = m_pActionPool->action(UIActionIndex_M_VISOCreator_Reset);
@@ -573,6 +578,8 @@ void UIVisoCreatorDialog::prepareWidgets()
         pMainLayout->addWidget(m_pVisoCreatorWidget);
         connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigSetCancelButtonShortCut,
                 this, &UIVisoCreatorDialog::sltSetCancelButtonShortCut);
+        connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigVisoNameChanged,
+                this, &UIVisoCreatorDialog::sltsigVisoNameChanged);
     }
 
     m_pButtonBox = new QIDialogButtonBox;
@@ -602,10 +609,7 @@ void UIVisoCreatorDialog::prepareConnections()
 
 void UIVisoCreatorDialog::retranslateUi()
 {
-    if (!m_strMachineName.isEmpty())
-        setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(UIVisoCreatorWidget::tr("VISO Creator")));
-    else
-        setWindowTitle(QString("%1").arg(UIVisoCreatorWidget::tr("VISO Creator")));
+    updateWindowTitle();
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Ok))
     {
         m_pButtonBox->button(QDialogButtonBox::Ok)->setText(UIVisoCreatorWidget::tr("C&reate"));
@@ -642,6 +646,12 @@ void UIVisoCreatorDialog::sltSetCancelButtonShortCut(QKeySequence keySequence)
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(keySequence);
 }
 
+void UIVisoCreatorDialog::sltsigVisoNameChanged(const QString &strName)
+{
+    Q_UNUSED(strName);
+    updateWindowTitle();
+}
+
 void UIVisoCreatorDialog::loadSettings()
 {
     const QRect availableGeo = gpDesktop->availableGeometry(this);
@@ -664,4 +674,9 @@ void UIVisoCreatorDialog::saveDialogGeometry()
     LogRel2(("GUI: UIMediumSelector: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
              geo.x(), geo.y(), geo.width(), geo.height()));
     gEDataManager->setVisoCreatorDialogGeometry(geo, isCurrentlyMaximized());
+}
+
+void UIVisoCreatorDialog::updateWindowTitle()
+{
+    setWindowTitle(QString("%1 - %2.%3").arg(tr("VISO Creator")).arg(visoName()).arg("viso"));
 }

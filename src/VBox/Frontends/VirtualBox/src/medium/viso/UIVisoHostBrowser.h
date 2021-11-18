@@ -46,6 +46,7 @@ public:
     virtual void showHideHiddenObjects(bool bShow) /* override */;
     QString      currentPath() const;
     void         setCurrentPath(const QString &strPath);
+    virtual bool tableViewHasSelection() const final override;
 
 public slots:
 
@@ -71,7 +72,7 @@ private:
     /** We have two file system models (one for each item view) since we set different filters on each of these models. */
     UIVisoHostBrowserModel *m_pTreeModel;
     UIVisoHostBrowserModel *m_pTableModel;
-    QTableView            *m_pTableView;
+    QTableView             *m_pTableView;
 };
 
 

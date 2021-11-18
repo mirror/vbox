@@ -261,6 +261,16 @@ void UIVisoHostBrowser::setCurrentPath(const QString &strPath)
     setTreeCurrentIndex(index);
 }
 
+bool UIVisoHostBrowser::tableViewHasSelection() const
+{
+    if (!m_pTableView)
+        return false;
+    QItemSelectionModel *pSelectionModel = m_pTableView->selectionModel();
+    if (!pSelectionModel)
+        return false;
+    return pSelectionModel->hasSelection();
+}
+
 void UIVisoHostBrowser::sltHandleAddAction()
 {
     if (!m_pTableView || !m_pTableModel)

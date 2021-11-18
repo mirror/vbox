@@ -52,6 +52,7 @@ public:
     /* Returns true if tree view is currently visible: */
     bool isTreeViewVisible() const;
     void hideTreeView();
+    virtual bool tableViewHasSelection() const = 0;
 
 public slots:
 
