@@ -817,6 +817,8 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
             AssertFailedReturn(VERR_INTERNAL_ERROR); \
     } while(0)
 
+    STAM_PROFILE_ADV_START(&pVCpu->nem.s.StatProfGstStateImport, x);
+
     RT_NOREF(pVM);
     fWhat &= pVCpu->cpum.GstCtx.fExtrn;
 
@@ -959,6 +961,8 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
             }
         }
     }
+
+#if 0 /* Always done. */
     if (fWhat & CPUMCTX_EXTRN_APIC_TPR)
     {
         uint64_t u64Cr8 = 0;
@@ -966,6 +970,8 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
         READ_GREG(HV_X86_TPR, u64Cr8);
         APICSetTpr(pVCpu, u64Cr8 << 4);
     }
+#endif
+
     if (fWhat & CPUMCTX_EXTRN_XCRx)
         READ_GREG(HV_X86_XCR0, pVCpu->cpum.GstCtx.aXcr[0]);
 
@@ -1009,7 +1015,10 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
         if (hrc == HV_SUCCESS)
         { /* likely */ }
         else
+        {
+            STAM_PROFILE_ADV_STOP(&pVCpu->nem.s.StatProfGstStateImport, x);
             return nemR3DarwinHvSts2Rc(hrc);
+        }
     }
 
     /* MSRs */
@@ -1094,7 +1103,10 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
 
     /* Typical. */
     if (!fMaybeChangedMode && !fUpdateCr3)
+    {
+        STAM_PROFILE_ADV_STOP(&pVCpu->nem.s.StatProfGstStateImport, x);
         return VINF_SUCCESS;
+    }
 
     /*
      * Slow.
@@ -1113,6 +1125,8 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
         else
             AssertMsgFailedReturn(("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_2);
     }
+
+    STAM_PROFILE_ADV_STOP(&pVCpu->nem.s.StatProfGstStateImport, x);
 
     return VINF_SUCCESS;
 #undef READ_GREG
@@ -1550,6 +1564,8 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
     nemR3DarwinLogState(pVM, pVCpu);
 #endif
 
+    STAM_PROFILE_ADV_START(&pVCpu->nem.s.StatProfGstStateExport, x);
+
     uint64_t const fWhat = ~pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL;
     if (!fWhat)
         return VINF_SUCCESS;
@@ -1590,7 +1606,13 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
 
     if (fWhat & CPUMCTX_EXTRN_APIC_TPR)
     {
-        WRITE_GREG(HV_X86_TPR, CPUMGetGuestCR8(pVCpu));
+        Assert(pVCpu->nem.s.fCtxChanged & HM_CHANGED_GUEST_APIC_TPR);
+        vmxHCExportGuestApicTpr(pVCpu, pVmxTransient);
+
+        rc = APICGetTpr(pVCpu, &pVmxTransient->u8GuestTpr, NULL /*pfPending*/, NULL /*pu8PendingIntr*/);
+        AssertRC(rc);
+
+        WRITE_GREG(HV_X86_TPR, pVmxTransient->u8GuestTpr);
         ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_APIC_TPR);
     }
 
@@ -1653,9 +1675,11 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
     }
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
+#if 0
         hv_return_t hrc = hv_vmx_vcpu_set_apic_address(pVCpu->nem.s.hVCpuId, APICGetBaseMsrNoCheck(pVCpu) & PAGE_BASE_GC_MASK);
         if (RT_UNLIKELY(hrc != HV_SUCCESS))
             return nemR3DarwinHvSts2Rc(hrc);
+#endif
 
         ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_OTHER_MSRS);
 
@@ -1704,6 +1728,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
                                                    | HM_CHANGED_VMX_GUEST_LAZY_MSRS
                                                    | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_VMX_MASK)));
 
+    STAM_PROFILE_ADV_STOP(&pVCpu->nem.s.StatProfGstStateExport, x);
     return VINF_SUCCESS;
 #undef WRITE_GREG
 #undef WRITE_VMCS_FIELD
@@ -1738,6 +1763,9 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT p
      * when handling exits). */
     rc = nemR3DarwinCopyStateFromHv(pVM, pVCpu, CPUMCTX_EXTRN_ALL);
     AssertRCReturn(rc, rc);
+
+    STAM_COUNTER_INC(&pVCpu->nem.s.pVmxStats->aStatExitReason[pVmxTransient->uExitReason & MASK_EXITREASON_STAT]);
+    STAM_REL_COUNTER_INC(&pVCpu->nem.s.pVmxStats->StatExitAll);
 
 #ifndef HMVMX_USE_FUNCTION_TABLE
     return vmxHCHandleExit(pVCpu, pVmxTransient);
@@ -2140,21 +2168,6 @@ static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
-    /* Use TPR shadowing if supported by the CPU. */
-    if (   PDMHasApic(pVM)
-        && (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW))
-    {
-        fVal |= VMX_PROC_CTLS_USE_TPR_SHADOW;                /* CR8 reads from the Virtual-APIC page. */
-                                                             /* CR8 writes cause a VM-exit based on TPR threshold. */
-        Assert(!(fVal & VMX_PROC_CTLS_CR8_STORE_EXIT));
-        Assert(!(fVal & VMX_PROC_CTLS_CR8_LOAD_EXIT));
-    }
-    else
-    {
-        fVal |= VMX_PROC_CTLS_CR8_STORE_EXIT             /* CR8 reads cause a VM-exit. */
-             |  VMX_PROC_CTLS_CR8_LOAD_EXIT;             /* CR8 writes cause a VM-exit. */
-    }
-
     /* Use the secondary processor-based VM-execution controls if supported by the CPU. */
     if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
         fVal |= VMX_PROC_CTLS_USE_SECONDARY_CTLS;
@@ -2302,6 +2315,61 @@ static int nemR3DarwinInitVmcs(PVMCPU pVCpu)
 
 
 /**
+ * Registers statistics for the given vCPU.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   idCpu           The CPU ID.
+ * @param   pNemCpu         The NEM CPU structure.
+ */
+static int nemR3DarwinStatisticsRegister(PVM pVM, VMCPUID idCpu, PNEMCPU pNemCpu)
+{
+#define NEM_REG_STAT(a_pVar, a_enmType, s_enmVisibility, a_enmUnit, a_szNmFmt, a_szDesc) do { \
+                int rc = STAMR3RegisterF(pVM, a_pVar, a_enmType, s_enmVisibility, a_enmUnit, a_szDesc, a_szNmFmt, idCpu); \
+                AssertRC(rc); \
+            } while (0)
+#define NEM_REG_PROFILE(a_pVar, a_szNmFmt, a_szDesc) \
+           NEM_REG_STAT(a_pVar, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, a_szNmFmt, a_szDesc)
+#define NEM_REG_COUNTER(a, b, desc) NEM_REG_STAT(a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, b, desc)
+
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR0Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR0", "CR0 read.");
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR2Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR2", "CR2 read.");
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR3Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR3", "CR3 read.");
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR4Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR4", "CR4 read.");
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR8Read,  "/NEM/CPU%u/Exit/Instr/CR-Read/CR8", "CR8 read.");
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR0Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR0", "CR0 write.");
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR2Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR2", "CR2 write.");
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR3Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR3", "CR3 write.");
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR4Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR4", "CR4 write.");
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitCR8Write, "/NEM/CPU%u/Exit/Instr/CR-Write/CR8", "CR8 write.");
+
+    NEM_REG_COUNTER(&pNemCpu->pVmxStats->StatExitAll, "/NEM/CPU%u/Exit/All",         "Total exits (including nested-guest exits).");
+
+#ifdef VBOX_WITH_STATISTICS
+    NEM_REG_PROFILE(&pNemCpu->StatProfGstStateImport, "/NEM/CPU%u/ImportGuestState", "Profiling of importing guest state from hardware after VM-exit.");
+    NEM_REG_PROFILE(&pNemCpu->StatProfGstStateExport, "/NEM/CPU%u/ExportGuestState", "Profiling of exporting guest state from hardware after VM-exit.");
+
+    for (int j = 0; j < MAX_EXITREASON_STAT; j++)
+    {
+        const char *pszExitName = HMGetVmxExitName(j);
+        if (pszExitName)
+        {
+            int rc = STAMR3RegisterF(pVM, &pNemCpu->pVmxStats->aStatExitReason[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED,
+                                     STAMUNIT_OCCURENCES, pszExitName, "/NEM/CPU%u/Exit/Reason/%02x", idCpu, j);
+            AssertRCReturn(rc, rc);
+        }
+    }
+#endif
+
+    return VINF_SUCCESS;
+
+#undef NEM_REG_COUNTER
+#undef NEM_REG_PROFILE
+#undef NEM_REG_STAT
+}
+
+
+/**
  * Try initialize the native API.
  *
  * This may only do part of the job, more can be done in
@@ -2353,7 +2421,11 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                 PNEMCPU pNemCpu = &pVM->apCpusR3[idCpu]->nem.s;
                 PVMXSTATISTICS pVmxStats = (PVMXSTATISTICS)RTMemAllocZ(sizeof(*pVmxStats));
                 if (RT_LIKELY(pVmxStats))
+                {
                         pNemCpu->pVmxStats = pVmxStats;
+                        rc = nemR3DarwinStatisticsRegister(pVM, idCpu, pNemCpu);
+                        AssertRC(rc);
+                }
                 else
                 {
                     rc = VERR_NO_MEMORY;
@@ -2442,6 +2514,43 @@ static DECLCALLBACK(int) nemR3DarwinNativeTermVCpuOnEmt(PVMCPU pVCpu)
 
 
 /**
+ * Worker to setup the TPR shadowing feature if available on the CPU and the VM has an APIC enabled.
+ *
+ * @returns VBox status code
+ * @param   pVM                 The VM handle.
+ * @param   pVCpu               The vCPU handle.
+ * @param   idCpu               ID of the CPU to create.
+ */
+static DECLCALLBACK(int) nemR3DarwinNativeInitTprShadowing(PVM pVM, PVMCPU pVCpu, VMCPUID idCpu)
+{
+    PVMXVMCSINFO pVmcsInfo = &pVCpu->nem.s.VmcsInfo;
+    uint32_t fVal = pVmcsInfo->u32ProcCtls;
+
+    /* Use TPR shadowing if supported by the CPU. */
+    if (   PDMHasApic(pVM)
+        && (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW))
+    {
+        fVal |= VMX_PROC_CTLS_USE_TPR_SHADOW;                /* CR8 reads from the Virtual-APIC page. */
+                                                             /* CR8 writes cause a VM-exit based on TPR threshold. */
+        Assert(!(fVal & VMX_PROC_CTLS_CR8_STORE_EXIT));
+        Assert(!(fVal & VMX_PROC_CTLS_CR8_LOAD_EXIT));
+    }
+    else
+    {
+        fVal |= VMX_PROC_CTLS_CR8_STORE_EXIT             /* CR8 reads cause a VM-exit. */
+             |  VMX_PROC_CTLS_CR8_LOAD_EXIT;             /* CR8 writes cause a VM-exit. */
+    }
+
+    /* Commit it to the VMCS and update our cache. */
+    int rc = nemR3DarwinWriteVmcs32(pVCpu, VMX_VMCS32_CTRL_PROC_EXEC, fVal);
+    AssertRC(rc);
+    pVmcsInfo->u32ProcCtls = fVal;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * This is called after CPUMR3Init is done.
  *
  * @returns VBox status code.
@@ -2480,7 +2589,18 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
 
 int nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
-    NOREF(pVM); NOREF(enmWhat);
+    if (enmWhat == VMINITCOMPLETED_RING3)
+    {
+        /* Now that PDM is initialized the APIC state is known in order to enable the TPR shadowing feature on all EMTs. */
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        {
+            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+
+            int rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)nemR3DarwinNativeInitTprShadowing, 3, pVM, pVCpu, idCpu);
+            if (RT_FAILURE(rc))
+                return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to hv_vcpu_create failed: %Rrc", rc);
+        }
+    }
     return VINF_SUCCESS;
 }
 
@@ -2657,64 +2777,73 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         if (   !VM_FF_IS_ANY_SET(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
             && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         {
-            if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM_WAIT, VMCPUSTATE_STARTED_EXEC_NEM))
+            LogFlowFunc(("Running vCPU\n"));
+            pVCpu->nem.s.Event.fPending = false;
+
+            TMNotifyStartOfExecution(pVM, pVCpu);
+
+            Assert(!pVCpu->nem.s.fCtxChanged);
+            hv_return_t hrc;
+            if (hv_vcpu_run_until)
+                hrc = hv_vcpu_run_until(pVCpu->nem.s.hVCpuId, HV_DEADLINE_FOREVER);
+            else
+                hrc = hv_vcpu_run(pVCpu->nem.s.hVCpuId);
+
+            TMNotifyEndOfExecution(pVM, pVCpu, ASMReadTSC());
+
+            /*
+             * Sync the TPR shadow with our APIC state.
+             */
+            if (   !VmxTransient.fIsNestedGuest
+                && (pVCpu->nem.s.VmcsInfo.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
             {
-                LogFlowFunc(("Running vCPU\n"));
-                pVCpu->nem.s.Event.fPending = false;
+                uint64_t u64Tpr;
+                hrc = hv_vcpu_read_register(pVCpu->nem.s.hVCpuId, HV_X86_TPR, &u64Tpr);
+                Assert(hrc == HV_SUCCESS);
 
-                TMNotifyStartOfExecution(pVM, pVCpu);
-
-                Assert(!pVCpu->nem.s.fCtxChanged);
-                hv_return_t hrc;
-                if (hv_vcpu_run_until)
-                    hrc = hv_vcpu_run_until(pVCpu->nem.s.hVCpuId, HV_DEADLINE_FOREVER);
-                else
-                    hrc = hv_vcpu_run(pVCpu->nem.s.hVCpuId);
-
-                VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
-                TMNotifyEndOfExecution(pVM, pVCpu, ASMReadTSC());
-
-                if (hrc == HV_SUCCESS)
+                if (VmxTransient.u8GuestTpr != (uint8_t)u64Tpr)
                 {
-                    /*
-                     * Deal with the message.
-                     */
-                    rcStrict = nemR3DarwinHandleExit(pVM, pVCpu, &VmxTransient);
-                    if (rcStrict == VINF_SUCCESS)
-                    { /* hopefully likely */ }
-                    else
-                    {
-                        LogFlow(("NEM/%u: breaking: nemR3DarwinHandleExit -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
-                        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
-                        break;
-                    }
-                    //Assert(!pVCpu->cpum.GstCtx.fExtrn);
+                    rc = APICSetTpr(pVCpu, (uint8_t)u64Tpr);
+                    AssertRC(rc);
+                    ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
                 }
-                else
-                {
-                    AssertLogRelMsgFailedReturn(("hv_vcpu_run()) failed for CPU #%u: %#x %u\n",
-                                                pVCpu->idCpu, hrc, vmxHCCheckGuestState(pVCpu, &pVCpu->nem.s.VmcsInfo)),
-                                                VERR_NEM_IPE_0);
-                }
+            }
 
+            if (hrc == HV_SUCCESS)
+            {
                 /*
-                 * If no relevant FFs are pending, loop.
+                 * Deal with the message.
                  */
-                if (   !VM_FF_IS_ANY_SET(   pVM,   !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK    : VM_FF_HP_R0_PRE_HM_STEP_MASK)
-                    && !VMCPU_FF_IS_ANY_SET(pVCpu, !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
-                    continue;
-
-                /** @todo Try handle pending flags, not just return to EM loops.  Take care
-                 *        not to set important RCs here unless we've handled a message. */
-                LogFlow(("NEM/%u: breaking: pending FF (%#x / %#RX64)\n",
-                         pVCpu->idCpu, pVM->fGlobalForcedActions, (uint64_t)pVCpu->fLocalForcedActions));
-                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPost);
+                rcStrict = nemR3DarwinHandleExit(pVM, pVCpu, &VmxTransient);
+                if (rcStrict == VINF_SUCCESS)
+                { /* hopefully likely */ }
+                else
+                {
+                    LogFlow(("NEM/%u: breaking: nemR3DarwinHandleExit -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+                    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
+                    break;
+                }
+                //Assert(!pVCpu->cpum.GstCtx.fExtrn);
             }
             else
             {
-                LogFlow(("NEM/%u: breaking: canceled %d (pre exec)\n", pVCpu->idCpu, VMCPU_GET_STATE(pVCpu) ));
-                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnCancel);
+                AssertLogRelMsgFailedReturn(("hv_vcpu_run()) failed for CPU #%u: %#x %u\n",
+                                            pVCpu->idCpu, hrc, vmxHCCheckGuestState(pVCpu, &pVCpu->nem.s.VmcsInfo)),
+                                            VERR_NEM_IPE_0);
             }
+
+            /*
+             * If no relevant FFs are pending, loop.
+             */
+            if (   !VM_FF_IS_ANY_SET(   pVM,   !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK    : VM_FF_HP_R0_PRE_HM_STEP_MASK)
+                && !VMCPU_FF_IS_ANY_SET(pVCpu, !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
+                continue;
+
+            /** @todo Try handle pending flags, not just return to EM loops.  Take care
+             *        not to set important RCs here unless we've handled a message. */
+            LogFlow(("NEM/%u: breaking: pending FF (%#x / %#RX64)\n",
+                     pVCpu->idCpu, pVM->fGlobalForcedActions, (uint64_t)pVCpu->fLocalForcedActions));
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPost);
         }
         else
         {
@@ -2925,7 +3054,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapLate(PVM pVM, RTGCPHYS GCPhys, RTGCP
 VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags, void *pvRam,
                                                void *pvMmio2, uint8_t *pu2State, uint32_t *puNemRange)
 {
-    RT_NOREF(pVM);
+    RT_NOREF(pVM, puNemRange);
 
     Log5(("NEMR3NotifyPhysMmioExUnmap: %RGp LB %RGp fFlags=%#x pvRam=%p pvMmio2=%p pu2State=%p uNemRange=%#x (%#x)\n",
           GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, puNemRange, *puNemRange));

@@ -558,6 +558,7 @@ typedef struct NEMCPU
 
     /** @name Statistics
      * @{ */
+    STAMCOUNTER                 StatExitAll;
     STAMCOUNTER                 StatBreakOnCancel;
     STAMCOUNTER                 StatBreakOnFFPre;
     STAMCOUNTER                 StatBreakOnFFPost;
@@ -566,6 +567,10 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatImportOnReturn;
     STAMCOUNTER                 StatImportOnReturnSkipped;
     STAMCOUNTER                 StatQueryCpuTick;
+#ifdef VBOX_WITH_STATISTICS
+    STAMPROFILEADV              StatProfGstStateImport;
+    STAMPROFILEADV              StatProfGstStateExport;
+#endif
     /** @} */
 
     /** @} */
