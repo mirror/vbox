@@ -15,7 +15,7 @@
 set -e
 
 # Check environment.
-if [ "${INSTALLER_TEMP}x" == "x" ]; then
+if [ "x${INSTALLER_TEMP}" = "x" ]; then
     echo "Required environment variable INSTALLER_TEMP is missing. Aborting installation."
     exit 1;
 fi
