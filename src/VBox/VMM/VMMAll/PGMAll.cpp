@@ -2780,8 +2780,6 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
  * @returns VBox status code, with the following informational code for
  *          VM scheduling.
  * @retval  VINF_SUCCESS if the was no change, or it was successfully dealt with.
- * @retval  VINF_PGM_CHANGE_MODE if we're in RC the mode changes.  This will
- *          NOT be returned in ring-3 or ring-0.
  * @retval  VINF_EM_SUSPEND or VINF_EM_OFF on a fatal runtime error. (R3 only)
  *
  * @param   pVCpu       The cross context virtual CPU structure.

@@ -1297,9 +1297,6 @@ static void vmmR0RecordRC(PVMCC pVM, PVMCPUCC pVCpu, int rc)
         case VINF_PATM_DUPLICATE_FUNCTION:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPATMDuplicateFn);
             break;
-        case VINF_PGM_CHANGE_MODE:
-            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPGMChangeMode);
-            break;
         case VINF_PGM_POOL_FLUSH_PENDING:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPGMFlushPending);
             break;

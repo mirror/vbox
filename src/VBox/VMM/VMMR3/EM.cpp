@@ -1503,8 +1503,7 @@ static int emR3VmxNstGstIntrIntercept(PVMCPU pVCpu)
     if (CPUMIsGuestVmxPinCtlsSet(&pVCpu->cpum.GstCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
     {
         VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
-        AssertMsg(   rcStrict != VINF_PGM_CHANGE_MODE
-                  && rcStrict != VINF_VMX_VMEXIT
+        AssertMsg(   rcStrict != VINF_VMX_VMEXIT
                   && rcStrict != VINF_NO_CHANGE, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return VBOXSTRICTRC_TODO(rcStrict);
@@ -1533,8 +1532,7 @@ static int emR3SvmNstGstIntrIntercept(PVMCPU pVCpu)
         VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
         if (RT_SUCCESS(rcStrict))
         {
-            AssertMsg(   rcStrict != VINF_PGM_CHANGE_MODE
-                      && rcStrict != VINF_SVM_VMEXIT
+            AssertMsg(   rcStrict != VINF_SVM_VMEXIT
                       && rcStrict != VINF_NO_CHANGE, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             return VBOXSTRICTRC_VAL(rcStrict);
         }
@@ -1565,7 +1563,6 @@ static int emR3SvmNstGstVirtIntrIntercept(PVMCPU pVCpu)
         VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_VINTR, 0, 0);
         if (RT_SUCCESS(rcStrict))
         {
-            Assert(rcStrict != VINF_PGM_CHANGE_MODE);
             Assert(rcStrict != VINF_SVM_VMEXIT);
             return VBOXSTRICTRC_VAL(rcStrict);
         }
@@ -1944,7 +1941,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
                     rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* uExitQual */));
                     AssertMsg(   rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE
-                              && rc2 != VINF_PGM_CHANGE_MODE
                               && rc2 != VINF_VMX_VMEXIT
                               && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
                     UPDATE_RC();
@@ -1972,8 +1968,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         && CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_NMI))
                     {
                         rc2 = VBOXSTRICTRC_VAL(IEMExecSvmVmexit(pVCpu, SVM_EXIT_NMI, 0 /* uExitInfo1 */,  0 /* uExitInfo2 */));
-                        AssertMsg(   rc2 != VINF_PGM_CHANGE_MODE
-                                  && rc2 != VINF_SVM_VMEXIT
+                        AssertMsg(   rc2 != VINF_SVM_VMEXIT
                                   && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
                         UPDATE_RC();
                     }
@@ -2009,7 +2004,6 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
                     rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* uExitQual */));
                     AssertMsg(   rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE
-                              && rc2 != VINF_PGM_CHANGE_MODE
                               && rc2 != VINF_VMX_VMEXIT
                               && rc2 != VINF_NO_CHANGE, ("%Rrc\n", rc2));
                     UPDATE_RC();

@@ -511,10 +511,6 @@
  * when the shadow PTs could be updated because the guest page
  * aliased or/and mapped by multiple PTs. */
 #define VINF_PGM_GCPHYS_ALIASED             1623
-/** Reason for leaving RC: Paging mode changed.
- * PGMChangeMode() uses this to force a switch to R3 so it can safely deal with
- * a mode switch. */
-#define VINF_PGM_CHANGE_MODE                1624
 /** SyncPage modified the PDE.
  * This is an internal status code used to communicate back to the \#PF handler
  * that the PDE was (probably) marked not-present and it should restart the instruction. */
