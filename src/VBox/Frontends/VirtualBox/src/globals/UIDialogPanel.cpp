@@ -91,7 +91,7 @@ void UIDialogPanel::prepareConnections()
 void UIDialogPanel::retranslateUi()
 {
     if (m_pCloseButton)
-        m_pCloseButton->setToolTip(QApplication::translate("UIVisoCreator", "Close the pane"));
+        m_pCloseButton->setToolTip(tr("Close the pane"));
 }
 
 void UIDialogPanel::showEvent(QShowEvent *pEvent)
