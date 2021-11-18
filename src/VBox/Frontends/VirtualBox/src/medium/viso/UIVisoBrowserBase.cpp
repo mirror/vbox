@@ -93,9 +93,9 @@ void UILocationSelector::paintEvent(QPaintEvent *pEvent)
 void UILocationSelector::retranslateUi()
 {
     if (m_pExpandButton)
-        m_pExpandButton->setToolTip(QApplication::translate("UIVisoCreator", "Click to show/hide the tree view."));
+        m_pExpandButton->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Click to show/hide the tree view."));
     if (m_pLineEdit)
-        m_pLineEdit->setToolTip(QApplication::translate("UIVisoCreator", "Shows the current location."));
+        m_pLineEdit->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Shows the current location."));
 }
 
 bool UILocationSelector::eventFilter(QObject *pObj, QEvent *pEvent)

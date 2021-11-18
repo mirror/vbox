@@ -70,7 +70,7 @@ void UIVisoConfigurationPanel::prepareObjects()
         return;
 
     /* Name edit and and label: */
-    m_pVisoNameLabel = new QILabel(QApplication::translate("UIVisoCreator", "VISO Name:"));
+    m_pVisoNameLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "VISO Name:"));
     m_pVisoNameLineEdit = new QILineEdit;
     if (m_pVisoNameLabel && m_pVisoNameLineEdit)
     {
@@ -82,7 +82,7 @@ void UIVisoConfigurationPanel::prepareObjects()
     addVerticalSeparator();
 
     /* Cutom Viso options stuff: */
-    m_pCustomOptionsLabel = new QILabel(QApplication::translate("UIVisoCreator", "Custom VISO options:"));
+    m_pCustomOptionsLabel = new QILabel(QApplication::translate("UIVisoCreatorWidget", "Custom VISO options:"));
     m_pCustomOptionsComboBox = new QComboBox;
     m_pDeleteButton = new QIToolButton;
 
@@ -111,11 +111,11 @@ void UIVisoConfigurationPanel::prepareConnections()
 void UIVisoConfigurationPanel::retranslateUi()
 {
     if (m_pVisoNameLabel)
-        m_pVisoNameLabel->setText(QApplication::translate("UIVisoCreator", "VISO Name:"));
+        m_pVisoNameLabel->setText(QApplication::translate("UIVisoCreatorWidget", "VISO Name:"));
     if (m_pCustomOptionsLabel)
-        m_pCustomOptionsLabel->setText(QApplication::translate("UIVisoCreator", "Custom VISO options:"));
+        m_pCustomOptionsLabel->setText(QApplication::translate("UIVisoCreatorWidget", "Custom VISO options:"));
     if (m_pDeleteButton)
-        m_pDeleteButton->setToolTip(QApplication::translate("UIVisoCreator", "Remove current option."));
+        m_pDeleteButton->setToolTip(QApplication::translate("UIVisoCreatorWidget", "Remove current option."));
 }
 
 void UIVisoConfigurationPanel::addCustomVisoOption()

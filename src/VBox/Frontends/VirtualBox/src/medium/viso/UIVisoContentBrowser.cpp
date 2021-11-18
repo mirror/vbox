@@ -234,13 +234,13 @@ void UIVisoContentBrowser::retranslateUi()
     UICustomFileSystemItem *pRootItem = rootItem();
     if (pRootItem)
     {
-        pRootItem->setData(QApplication::translate("UIVisoCreator", "Name"), UICustomFileSystemModelColumn_Name);
-        pRootItem->setData(QApplication::translate("UIVisoCreator", "Size"), UICustomFileSystemModelColumn_Size);
-        pRootItem->setData(QApplication::translate("UIVisoCreator", "Change Time"), UICustomFileSystemModelColumn_ChangeTime);
-        pRootItem->setData(QApplication::translate("UIVisoCreator", "Owner"), UICustomFileSystemModelColumn_Owner);
-        pRootItem->setData(QApplication::translate("UIVisoCreator", "Permissions"), UICustomFileSystemModelColumn_Permissions);
-        pRootItem->setData(QApplication::translate("UIVisoCreator", "Local Path"), UICustomFileSystemModelColumn_LocalPath);
-        pRootItem->setData(QApplication::translate("UIVisoCreator", "ISO Path"), UICustomFileSystemModelColumn_Path);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Name"), UICustomFileSystemModelColumn_Name);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Size"), UICustomFileSystemModelColumn_Size);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Change Time"), UICustomFileSystemModelColumn_ChangeTime);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Owner"), UICustomFileSystemModelColumn_Owner);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Permissions"), UICustomFileSystemModelColumn_Permissions);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "Local Path"), UICustomFileSystemModelColumn_LocalPath);
+        pRootItem->setData(QApplication::translate("UIVisoCreatorWidget", "ISO Path"), UICustomFileSystemModelColumn_Path);
     }
 }
 
