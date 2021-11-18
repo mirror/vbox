@@ -412,8 +412,8 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVMCC pVM, PVMCPUCC pVCpu)
 
     /* Interruptibility state.  This can get a little complicated since we get
        half of the state via HV_X64_VP_EXECUTION_STATE. */
-    if (   (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
-        ==          (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI) )
+    if (   (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
+        ==          (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI) )
     {
         ADD_REG64(WHvRegisterInterruptState, 0);
         if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
@@ -422,7 +422,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVMCC pVM, PVMCPUCC pVCpu)
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
             aValues[iReg - 1].InterruptState.NmiMasked = 1;
     }
-    else if (fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT)
+    else if (fWhat & CPUMCTX_EXTRN_INHIBIT_INT)
     {
         if (   pVCpu->nem.s.fLastInterruptShadow
             || (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
@@ -438,7 +438,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateToHyperV(PVMCC pVM, PVMCPUCC pVCpu)
         }
     }
     else
-        Assert(!(fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI));
+        Assert(!(fWhat & CPUMCTX_EXTRN_INHIBIT_NMI));
 
     /* Interrupt windows. Always set if active as Hyper-V seems to be forgetful. */
     uint8_t const fDesiredIntWin = pVCpu->nem.s.fDesiredInterruptWindows;
@@ -699,7 +699,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
     }
 
     /* Interruptibility. */
-    if (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+    if (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
     {
         aenmNames[iReg++] = WHvRegisterInterruptState;
         aenmNames[iReg++] = WHvX64RegisterRip;
@@ -1054,12 +1054,12 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
     }
 
     /* Interruptibility. */
-    if (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+    if (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
     {
         Assert(aenmNames[iReg] == WHvRegisterInterruptState);
         Assert(aenmNames[iReg + 1] == WHvX64RegisterRip);
 
-        if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT))
+        if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_INHIBIT_INT))
         {
             pVCpu->nem.s.fLastInterruptShadow = aValues[iReg].InterruptState.InterruptShadow;
             if (aValues[iReg].InterruptState.InterruptShadow)
@@ -1068,7 +1068,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
         }
 
-        if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+        if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_INHIBIT_NMI))
         {
             if (aValues[iReg].InterruptState.NmiMasked)
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
@@ -1076,7 +1076,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
         }
 
-        fWhat |= CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI;
+        fWhat |= CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI;
         iReg += 2;
     }
 
@@ -1916,8 +1916,8 @@ DECLINLINE(VBOXSTRICTRC) nemHCWinImportStateIfNeededStrict(PVMCPUCC pVCpu, uint6
  */
 DECLINLINE(void) nemHCWinCopyStateFromX64Header(PVMCPUCC pVCpu, HV_X64_INTERCEPT_MESSAGE_HEADER const *pHdr)
 {
-    Assert(   (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT))
-           ==                              (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT));
+    Assert(   (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT))
+           ==                              (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT));
     NEM_WIN_COPY_BACK_SEG(pVCpu->cpum.GstCtx.cs, pHdr->CsSegment);
     pVCpu->cpum.GstCtx.rip      = pHdr->Rip;
     pVCpu->cpum.GstCtx.rflags.u = pHdr->Rflags;
@@ -1935,7 +1935,7 @@ DECLINLINE(void) nemHCWinCopyStateFromX64Header(PVMCPUCC pVCpu, HV_X64_INTERCEPT
 
     APICSetTpr(pVCpu, pHdr->Cr8 << 4);
 
-    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_APIC_TPR);
+    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_APIC_TPR);
 }
 #elif defined(IN_RING3)
 /**
@@ -1949,8 +1949,8 @@ DECLINLINE(void) nemHCWinCopyStateFromX64Header(PVMCPUCC pVCpu, HV_X64_INTERCEPT
  */
 DECLINLINE(void) nemR3WinCopyStateFromX64Header(PVMCPUCC pVCpu, WHV_VP_EXIT_CONTEXT const *pExitCtx)
 {
-    Assert(   (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT))
-           ==                              (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT));
+    Assert(   (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT))
+           ==                              (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT));
     NEM_WIN_COPY_BACK_SEG(pVCpu->cpum.GstCtx.cs, pExitCtx->Cs);
     pVCpu->cpum.GstCtx.rip      = pExitCtx->Rip;
     pVCpu->cpum.GstCtx.rflags.u = pExitCtx->Rflags;
@@ -1968,7 +1968,7 @@ DECLINLINE(void) nemR3WinCopyStateFromX64Header(PVMCPUCC pVCpu, WHV_VP_EXIT_CONT
 
     APICSetTpr(pVCpu, pExitCtx->Cr8 << 4);
 
-    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_APIC_TPR);
+    pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_APIC_TPR);
 }
 #endif /* IN_RING3 && !NEM_WIN_TEMPLATE_MODE_OWN_RUN_API */
 
@@ -4106,8 +4106,8 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinHandleInterruptFF(PVMCC pVM, PVMCPUCC pVCpu
      * for injection via IEM.
      */
     bool const fPendingNmi = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-    uint64_t   fNeedExtrn  = CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS
-                           | (fPendingNmi ? CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI : 0);
+    uint64_t   fNeedExtrn  = CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS
+                           | (fPendingNmi ? CPUMCTX_EXTRN_INHIBIT_NMI : 0);
     if (pVCpu->cpum.GstCtx.fExtrn & fNeedExtrn)
     {
         VBOXSTRICTRC rcStrict = nemHCWinImportStateIfNeededStrict(pVCpu, NEM_WIN_CPUMCTX_EXTRN_MASK_FOR_IEM_XCPT, "IntFF");
@@ -4521,16 +4521,16 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
     if (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT)))
     {
         /* Try anticipate what we might need. */
-        uint64_t fImport = IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI;
+        uint64_t fImport = IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI;
         if (   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
             || RT_FAILURE(rcStrict))
             fImport = CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
 # ifdef IN_RING0 /* Ring-3 I/O port access optimizations: */
         else if (   rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE
                  || rcStrict == VINF_EM_PENDING_R3_IOPORT_WRITE)
-            fImport = CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT;
+            fImport = CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_INHIBIT_INT;
         else if (rcStrict == VINF_EM_PENDING_R3_IOPORT_READ)
-            fImport = CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT;
+            fImport = CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_INHIBIT_INT;
 # endif
         else if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_APIC
                                           | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI))

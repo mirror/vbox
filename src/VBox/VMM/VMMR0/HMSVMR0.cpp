@@ -103,6 +103,7 @@
                                          | CPUMCTX_EXTRN_SYSCALL_MSRS   \
                                          | CPUMCTX_EXTRN_SYSENTER_MSRS  \
                                          | CPUMCTX_EXTRN_HWVIRT         \
+                                         | CPUMCTX_EXTRN_INHIBIT_INT    \
                                          | CPUMCTX_EXTRN_HM_SVM_MASK)
 
 /**
@@ -2708,7 +2709,7 @@ static void hmR0SvmImportGuestState(PVMCPUCC pVCpu, uint64_t fWhat)
         }
 #endif
 
-        if (fWhat & CPUMCTX_EXTRN_HM_SVM_INT_SHADOW)
+        if (fWhat & CPUMCTX_EXTRN_INHIBIT_INT)
         {
             if (pVmcbCtrl->IntShadow.n.u1IntShadow)
                 EMSetInhibitInterruptsPC(pVCpu, pVmcbGuest->u64RIP);
@@ -3571,7 +3572,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEvent(PVMCPUCC pVCpu, PCSVMTRANSIENT p
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     HMSVM_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT
                               | CPUMCTX_EXTRN_RFLAGS
-                              | CPUMCTX_EXTRN_HM_SVM_INT_SHADOW
+                              | CPUMCTX_EXTRN_INHIBIT_INT
                               | CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ);
 
     Assert(!pVCpu->hm.s.Event.fPending);
@@ -4403,7 +4404,7 @@ static void hmR0SvmPostRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, VBO
                                  | CPUMCTX_EXTRN_RSP
                                  | CPUMCTX_EXTRN_CS
                                  | CPUMCTX_EXTRN_HWVIRT
-                                 | CPUMCTX_EXTRN_HM_SVM_INT_SHADOW
+                                 | CPUMCTX_EXTRN_INHIBIT_INT
                                  | CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ
                                  | HMSVM_CPUMCTX_SHARED_STATE);
 #endif

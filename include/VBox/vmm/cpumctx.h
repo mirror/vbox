@@ -990,33 +990,26 @@ AssertCompile(CPUMCTX_EXTRN_SREG_FROM_IDX(X86_SREG_GS) == CPUMCTX_EXTRN_GS);
 /** Hardware-virtualization (SVM or VMX) state is kept externally. */
 #define CPUMCTX_EXTRN_HWVIRT                    UINT64_C(0x0000020000000000)
 
+/** Inhibit maskable interrupts (VMCPU_FF_INHIBIT_INTERRUPTS) */
+#define CPUMCTX_EXTRN_INHIBIT_INT               UINT64_C(0x0000040000000000)
+/** Inhibit non-maskable interrupts (VMCPU_FF_BLOCK_NMIS). */
+#define CPUMCTX_EXTRN_INHIBIT_NMI               UINT64_C(0x0000080000000000)
+
 /** Mask of bits the keepers can use for state tracking. */
 #define CPUMCTX_EXTRN_KEEPER_STATE_MASK         UINT64_C(0xffff000000000000)
 
 /** NEM/Win: Event injection (known was interruption) pending state. */
 #define CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT      UINT64_C(0x0001000000000000)
-/** NEM/Win: Inhibit maskable interrupts (VMCPU_FF_INHIBIT_INTERRUPTS). */
-#define CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT       UINT64_C(0x0002000000000000)
-/** NEM/Win: Inhibit non-maskable interrupts (VMCPU_FF_BLOCK_NMIS). */
-#define CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI       UINT64_C(0x0004000000000000)
 /** NEM/Win: Mask. */
-#define CPUMCTX_EXTRN_NEM_WIN_MASK              UINT64_C(0x0007000000000000)
+#define CPUMCTX_EXTRN_NEM_WIN_MASK              UINT64_C(0x0001000000000000)
 
-/** HM/SVM: Inhibit maskable interrupts (VMCPU_FF_INHIBIT_INTERRUPTS). */
-#define CPUMCTX_EXTRN_HM_SVM_INT_SHADOW         UINT64_C(0x0001000000000000)
 /** HM/SVM: Nested-guest interrupt pending (VMCPU_FF_INTERRUPT_NESTED_GUEST). */
-#define CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ        UINT64_C(0x0002000000000000)
+#define CPUMCTX_EXTRN_HM_SVM_HWVIRT_VIRQ        UINT64_C(0x0001000000000000)
 /** HM/SVM: Mask. */
-#define CPUMCTX_EXTRN_HM_SVM_MASK               UINT64_C(0x0003000000000000)
-
-/** HM/VMX: Guest-interruptibility state (VMCPU_FF_INHIBIT_INTERRUPTS,
- *  VMCPU_FF_BLOCK_NMIS). */
-#define CPUMCTX_EXTRN_HM_VMX_INT_STATE          UINT64_C(0x0001000000000000)
-/** HM/VMX: Mask. */
-#define CPUMCTX_EXTRN_HM_VMX_MASK               UINT64_C(0x0001000000000000)
+#define CPUMCTX_EXTRN_HM_SVM_MASK               UINT64_C(0x0001000000000000)
 
 /** All CPUM state bits, not including keeper specific ones. */
-#define CPUMCTX_EXTRN_ALL                       UINT64_C(0x000003fffffffffc)
+#define CPUMCTX_EXTRN_ALL                       UINT64_C(0x00000ffffffffffc)
 /** All CPUM state bits, including keeper specific ones. */
 #define CPUMCTX_EXTRN_ABSOLUTELY_ALL            UINT64_C(0xfffffffffffffffc)
 /** @} */

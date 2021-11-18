@@ -1806,8 +1806,8 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
 
     /* Interruptibility state.  This can get a little complicated since we get
        half of the state via HV_X64_VP_EXECUTION_STATE. */
-    if (   (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
-        ==          (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI) )
+    if (   (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
+        ==          (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI) )
     {
         HV_REGISTER_ASSOC_ZERO_PADDING_AND_HI64(&pInput->Elements[iReg]);
         pInput->Elements[iReg].Name                 = HvRegisterInterruptState;
@@ -1819,7 +1819,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
             pInput->Elements[iReg].Value.InterruptState.NmiMasked = 1;
         iReg++;
     }
-    else if (fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT)
+    else if (fWhat & CPUMCTX_EXTRN_INHIBIT_INT)
     {
         if (   pGVCpu->nem.s.fLastInterruptShadow
             || (   VMCPU_FF_IS_SET(pGVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
@@ -1838,7 +1838,7 @@ NEM_TMPL_STATIC int nemR0WinExportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         }
     }
     else
-        Assert(!(fWhat & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI));
+        Assert(!(fWhat & CPUMCTX_EXTRN_INHIBIT_NMI));
 
     /* Interrupt windows. Always set if active as Hyper-V seems to be forgetful. */
     uint8_t const fDesiredIntWin = pGVCpu->nem.s.fDesiredInterruptWindows;
@@ -2131,7 +2131,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     }
 
     /* Interruptibility. */
-    if (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+    if (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
     {
         pInput->Names[iReg++] = HvRegisterInterruptState;
         pInput->Names[iReg++] = HvX64RegisterRip;
@@ -2714,12 +2714,12 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
     }
 
     /* Interruptibility. */
-    if (fWhat & (CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+    if (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
     {
         Assert(pInput->Names[iReg] == HvRegisterInterruptState);
         Assert(pInput->Names[iReg + 1] == HvX64RegisterRip);
 
-        if (!(pCtx->fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT))
+        if (!(pCtx->fExtrn & CPUMCTX_EXTRN_INHIBIT_INT))
         {
             pGVCpu->nem.s.fLastInterruptShadow = paValues[iReg].InterruptState.InterruptShadow;
             if (paValues[iReg].InterruptState.InterruptShadow)
@@ -2728,7 +2728,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
                 VMCPU_FF_CLEAR(pGVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
         }
 
-        if (!(pCtx->fExtrn & CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI))
+        if (!(pCtx->fExtrn & CPUMCTX_EXTRN_INHIBIT_NMI))
         {
             if (paValues[iReg].InterruptState.NmiMasked)
                 VMCPU_FF_SET(pGVCpu, VMCPU_FF_BLOCK_NMIS);
@@ -2736,7 +2736,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
                 VMCPU_FF_CLEAR(pGVCpu, VMCPU_FF_BLOCK_NMIS);
         }
 
-        fWhat |= CPUMCTX_EXTRN_NEM_WIN_INHIBIT_INT | CPUMCTX_EXTRN_NEM_WIN_INHIBIT_NMI;
+        fWhat |= CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI;
         iReg += 2;
     }
 

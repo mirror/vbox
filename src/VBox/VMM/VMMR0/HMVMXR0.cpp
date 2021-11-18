@@ -123,7 +123,8 @@
                                       | CPUMCTX_EXTRN_CR4             \
                                       | CPUMCTX_EXTRN_DR7             \
                                       | CPUMCTX_EXTRN_HWVIRT          \
-                                      | CPUMCTX_EXTRN_HM_VMX_MASK)
+                                      | CPUMCTX_EXTRN_INHIBIT_INT     \
+                                      | CPUMCTX_EXTRN_INHIBIT_NMI)
 
 /**
  * Exception bitmap mask for real-mode guests (real-on-v86).
@@ -7718,7 +7719,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
             if (fWhat & CPUMCTX_EXTRN_RFLAGS)
                 hmR0VmxImportGuestRFlags(pVCpu, pVmcsInfo);
 
-            if (fWhat & CPUMCTX_EXTRN_HM_VMX_INT_STATE)
+            if (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
                 hmR0VmxImportGuestIntrState(pVCpu, pVmcsInfo);
 
             if (fWhat & CPUMCTX_EXTRN_RSP)
@@ -11256,14 +11257,15 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
 #endif
 
             /*
-             * Import the guest-interruptibility state always as we need it while evaluating
+             * Always import the guest-interruptibility state as we need it while evaluating
              * injecting events on re-entry.
              *
              * We don't import CR0 (when unrestricted guest execution is unavailable) despite
              * checking for real-mode while exporting the state because all bits that cause
              * mode changes wrt CR0 are intercepted.
              */
-            uint64_t const fImportMask = CPUMCTX_EXTRN_HM_VMX_INT_STATE
+            uint64_t const fImportMask = CPUMCTX_EXTRN_INHIBIT_INT
+                                       | CPUMCTX_EXTRN_INHIBIT_NMI
 #if defined(HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE) || defined(HMVMX_ALWAYS_SAVE_FULL_GUEST_STATE)
                                        | HMVMX_CPUMCTX_EXTRN_ALL
 #elif defined(HMVMX_ALWAYS_SAVE_GUEST_RFLAGS)
