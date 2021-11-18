@@ -2731,11 +2731,7 @@ void UIExtraDataManager::setVisoCreatorDialogGeometry(const QRect &geometry, boo
 
 bool UIExtraDataManager::visoCreatorDialogShouldBeMaximized()
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_VISOCreator_DialogGeometry);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+    return dialogShouldBeMaximized(GUI_VISOCreator_DialogGeometry);
 }
 
 QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
@@ -2745,11 +2741,7 @@ QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
 
 bool UIExtraDataManager::selectorWindowShouldBeMaximized()
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_LastSelectorWindowPosition);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+    return dialogShouldBeMaximized(GUI_LastSelectorWindowPosition);
 }
 
 void UIExtraDataManager::setSelectorWindowGeometry(const QRect &geometry, bool fMaximized)
@@ -4198,11 +4190,7 @@ QRect UIExtraDataManager::sessionInformationDialogGeometry(QWidget *pWidget, QWi
 
 bool UIExtraDataManager::sessionInformationDialogShouldBeMaximized()
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_SessionInformationDialogGeometry);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+    return dialogShouldBeMaximized(GUI_SessionInformationDialogGeometry);
 }
 
 void UIExtraDataManager::setSessionInformationDialogGeometry(const QRect &geometry, bool fMaximized)
@@ -4252,11 +4240,7 @@ QRect UIExtraDataManager::fileManagerDialogGeometry(QWidget *pWidget, QWidget *p
 
 bool UIExtraDataManager::fileManagerDialogShouldBeMaximized()
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_GuestControl_FileManagerDialogGeometry);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+    return dialogShouldBeMaximized(GUI_GuestControl_FileManagerDialogGeometry);
 }
 
 void UIExtraDataManager::setFileManagerDialogGeometry(const QRect &geometry, bool fMaximized)
@@ -4286,11 +4270,7 @@ void UIExtraDataManager::setSoftKeyboardDialogGeometry(const QRect &geometry, bo
 
 bool UIExtraDataManager::softKeyboardDialogShouldBeMaximized()
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_SoftKeyboard_DialogGeometry);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+    return dialogShouldBeMaximized(GUI_SoftKeyboard_DialogGeometry);
 }
 
 void UIExtraDataManager::setSoftKeyboardOptions(bool fHideNumPad, bool fHideOSMenuKeys, bool fMultimediaKeys)
@@ -4425,11 +4405,7 @@ QRect UIExtraDataManager::guestProcessControlDialogGeometry(QWidget *pWidget, QW
 
 bool UIExtraDataManager::guestProcessControlDialogShouldBeMaximized()
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_GuestControl_ProcessControlDialogGeometry);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+    return dialogShouldBeMaximized(GUI_GuestControl_ProcessControlDialogGeometry);
 }
 
 void UIExtraDataManager::setGuestProcessControlDialogGeometry(const QRect &geometry, bool fMaximized)
@@ -4493,11 +4469,7 @@ QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget, QWidget *pP
 
 bool UIExtraDataManager::extraDataManagerShouldBeMaximized()
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_ExtraDataManager_Geometry);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+    return dialogShouldBeMaximized(GUI_ExtraDataManager_Geometry);
 }
 
 void UIExtraDataManager::setExtraDataManagerGeometry(const QRect &geometry, bool fMaximized)
@@ -4568,11 +4540,7 @@ QRect UIExtraDataManager::logWindowGeometry(QWidget *pWidget, QWidget *pParentWi
 
 bool UIExtraDataManager::logWindowShouldBeMaximized()
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_LogWindowGeometry);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+    return dialogShouldBeMaximized(GUI_LogWindowGeometry);
 }
 
 void UIExtraDataManager::setLogWindowGeometry(const QRect &geometry, bool fMaximized)
@@ -4703,11 +4671,7 @@ void UIExtraDataManager::setHelpBrowserDialogGeometry(const QRect &geometry, boo
 
 bool UIExtraDataManager::helpBrowserDialogShouldBeMaximized()
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_HelpBrowser_DialogGeometry);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+    return dialogShouldBeMaximized(GUI_HelpBrowser_DialogGeometry);
 }
 
 void UIExtraDataManager::setHelpBrowserBookmarks(const QStringList &bookmarks)
@@ -4752,10 +4716,7 @@ void UIExtraDataManager::setMediumSelectorDialogGeometry(const QRect &geometry, 
 
 bool UIExtraDataManager::mediumSelectorDialogShouldBeMaximized()
 {
-    const QStringList data = extraDataStringList(GUI_MediumSelector_DialogGeometry);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
+    return dialogShouldBeMaximized(GUI_MediumSelector_DialogGeometry);
 }
 
 void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QString &strKey, const QString &strValue)
@@ -5105,6 +5066,15 @@ QRect UIExtraDataManager::dialogGeometry(const QString &strKey,
 
     /* Return result: */
     return geometry;
+}
+
+bool UIExtraDataManager::dialogShouldBeMaximized(const QString &strKey)
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(strKey);
+
+    /* Make sure 5th item has required value: */
+    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
 /* static */
