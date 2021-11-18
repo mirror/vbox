@@ -90,6 +90,9 @@ protected:
     /** Searches for dialog's default button. */
     QPushButton *searchDefaultButton() const;
 
+    /** Sets reject-by-escape-key flag. */
+    void setRejectByEscape(bool fRejectByEscape);
+
 protected slots:
 
     /** Sets the modal dialog's result code to @a iResult. */
@@ -120,6 +123,8 @@ private:
     QPointer<QPushButton>  m_pDefaultButton;
     /** Holds dialog's size-grip. */
     QPointer<QSizeGrip>    m_pSizeGrip;
+    /** Holds reject by escape flag. When true pressing escape rejects the dialog. Default is true.*/
+    bool m_fRejectByEscape;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QIMainDialog_h */

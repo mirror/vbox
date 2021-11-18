@@ -445,33 +445,30 @@ void UIVisoCreatorWidget::showPanel(UIDialogPanel* panel)
 
 void UIVisoCreatorWidget::manageEscapeShortCut()
 {
-    // /* Take the escape key from m_pButtonBox and from the panels in case treeview(s) in
-    //    host and/or content browser is open. We use the escape key to close those first: */
-    // if ((m_pHostBrowser && m_pHostBrowser->isTreeViewVisible()) ||
-    //     (m_pVISOContentBrowser && m_pVISOContentBrowser->isTreeViewVisible()))
-    // {
-    //     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
-    //         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence());
-    //     for (int i = 0; i < m_visiblePanelsList.size(); ++i)
-    //         m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
-    //     return;
-    // }
+    /* Take the escape key from m_pButtonBox and from the panels in case treeview(s) in
+       host and/or content browser is open. We use the escape key to close those first: */
+    if ((m_pHostBrowser && m_pHostBrowser->isTreeViewVisible()) ||
+        (m_pVISOContentBrowser && m_pVISOContentBrowser->isTreeViewVisible()))
+    {
+        emit sigSetCancelButtonShortCut(QKeySequence());
+        for (int i = 0; i < m_visiblePanelsList.size(); ++i)
+            m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
+        return;
+    }
 
-    // /* if there are no visible panels then assign esc. key to cancel button of the button box: */
-    // if (m_visiblePanelsList.isEmpty())
-    // {
-    //     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
-    //         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence(Qt::Key_Escape));
-    //     return;
-    // }
-    // if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
-    //     m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence());
+    /* if there are no visible panels then assign esc. key to cancel button of the button box: */
+    if (m_visiblePanelsList.isEmpty())
+    {
+        emit sigSetCancelButtonShortCut(QKeySequence(Qt::Key_Escape));
+        return;
+    }
+    emit sigSetCancelButtonShortCut(QKeySequence());
 
     /* Just loop thru the visible panel list and set the esc key to the
        panel which made visible latest */
-    // for (int i = 0; i < m_visiblePanelsList.size() - 1; ++i)
-    //     m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
-    // m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
+    for (int i = 0; i < m_visiblePanelsList.size() - 1; ++i)
+        m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
+    m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
 }
 
 void UIVisoCreatorWidget::prepareVerticalToolBar()
@@ -517,6 +514,9 @@ UIVisoCreatorDialog::UIVisoCreatorDialog(UIActionPool *pActionPool, QWidget *pPa
     , m_pButtonBox(0)
     , m_pActionPool(pActionPool)
 {
+    /* Make sure that the base class does not close this dialog upon pressing escape.
+       we manage escape key here with special casing: */
+    setRejectByEscape(false);
     prepareWidgets();
     prepareConnections();
 }
@@ -568,13 +568,15 @@ void UIVisoCreatorDialog::prepareWidgets()
     {
         menuBar()->addMenu(m_pVisoCreatorWidget->menu());
         pMainLayout->addWidget(m_pVisoCreatorWidget);
+        connect(m_pVisoCreatorWidget, &UIVisoCreatorWidget::sigSetCancelButtonShortCut,
+                this, &UIVisoCreatorDialog::sltSetCancelButtonShortCut);
     }
 
     m_pButtonBox = new QIDialogButtonBox;
     if (m_pButtonBox)
     {
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence(Qt::Key_Escape));
         pMainLayout->addWidget(m_pButtonBox);
 
         connect(m_pButtonBox->button(QIDialogButtonBox::Help), &QPushButton::pressed,
@@ -608,4 +610,10 @@ void UIVisoCreatorDialog::retranslateUi()
     }
     if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Help))
         m_pButtonBox->button(QDialogButtonBox::Help)->setToolTip(UIVisoCreatorWidget::tr("Opens the help browser and navigates to the related section"));
+}
+
+void UIVisoCreatorDialog::sltSetCancelButtonShortCut(QKeySequence keySequence)
+{
+    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(keySequence);
 }

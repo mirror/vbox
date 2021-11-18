@@ -43,6 +43,7 @@ QIMainDialog::QIMainDialog(QWidget *pParent /* = 0 */,
     , m_fIsAutoCentering(fIsAutoCentering)
     , m_fPolished(false)
     , m_iResult(QDialog::Rejected)
+    , m_fRejectByEscape(true)
 {
     /* Install event-filter: */
     qApp->installEventFilter(this);
@@ -268,7 +269,7 @@ void QIMainDialog::keyPressEvent(QKeyEvent *pEvent)
         /* Special handling for Escape key: */
         case Qt::Key_Escape:
         {
-            if (pEvent->modifiers() == Qt::NoModifier)
+            if (pEvent->modifiers() == Qt::NoModifier && m_fRejectByEscape)
             {
                 reject();
                 return;
@@ -328,4 +329,9 @@ void QIMainDialog::done(int iResult)
     setResult(iResult);
     /* Hide: */
     hide();
+}
+
+void QIMainDialog::setRejectByEscape(bool fRejectByEscape)
+{
+    m_fRejectByEscape = fRejectByEscape;
 }

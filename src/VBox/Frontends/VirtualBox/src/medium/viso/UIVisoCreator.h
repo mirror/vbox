@@ -49,6 +49,10 @@ class SHARED_LIBRARY_STUFF UIVisoCreatorWidget : public QIWithRetranslateUI<QWid
 {
     Q_OBJECT;
 
+signals:
+
+    void sigSetCancelButtonShortCut(QKeySequence keySequence);
+
 public:
 
     UIVisoCreatorWidget(UIActionPool *pActionPool, QWidget *pParent,
@@ -182,6 +186,10 @@ public:
     QStringList customOptions() const;
     QString currentPath() const;
     void    setCurrentPath(const QString &strPath);
+
+private slots:
+
+    void sltSetCancelButtonShortCut(QKeySequence keySequence);
 
 private:
     void prepareWidgets();
