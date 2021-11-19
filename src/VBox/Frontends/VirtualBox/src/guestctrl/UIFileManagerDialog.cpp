@@ -76,18 +76,23 @@ void UIFileManagerDialog::retranslateUi()
 {
     /* Translate window title: */
     setWindowTitle(UIFileManager::tr("%1 - File Manager").arg(m_strMachineName));
-    /* Translate buttons: */
-    button(ButtonType_Close)->setText(UIFileManager::tr("Close"));
 
     /* Retranslate button box buttons: */
-    button(ButtonType_Close)->setText(UIFileManager::tr("Close"));
-    button(ButtonType_Help)->setText(UIFileManager::tr("Help"));
-    button(ButtonType_Close)->setStatusTip(UIFileManager::tr("Close dialog without saving"));
-    button(ButtonType_Help)->setStatusTip(UIFileManager::tr("Show dialog help"));
-    button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
-    button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
-    button(ButtonType_Close)->setToolTip(UIFileManager::tr("Reset Changes (%1)").arg(button(ButtonType_Close)->shortcut().toString()));
-    button(ButtonType_Help)->setToolTip(UIFileManager::tr("Show Help (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
+    if (button(ButtonType_Close))
+    {
+        button(ButtonType_Close)->setText(UIFileManager::tr("Close"));
+        button(ButtonType_Close)->setStatusTip(UIFileManager::tr("Close dialog without saving"));
+        button(ButtonType_Close)->setShortcut(Qt::Key_Escape);
+        button(ButtonType_Close)->setToolTip(UIFileManager::tr("Reset Changes (%1)").arg(button(ButtonType_Close)->shortcut().toString()));
+    }
+
+    if (button(ButtonType_Help))
+    {
+        button(ButtonType_Help)->setText(UIFileManager::tr("Help"));
+        button(ButtonType_Help)->setStatusTip(UIFileManager::tr("Show dialog help"));
+        button(ButtonType_Help)->setShortcut(QKeySequence::HelpContents);
+        button(ButtonType_Help)->setToolTip(UIFileManager::tr("Show Help (%1)").arg(button(ButtonType_Help)->shortcut().toString()));
+    }
 }
 
 void UIFileManagerDialog::configure()
