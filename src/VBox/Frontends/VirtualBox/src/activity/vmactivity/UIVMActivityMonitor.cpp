@@ -162,6 +162,8 @@ private:
     QString m_strPieChartToggleActionLabel;
     QString m_strAreaChartToggleActionLabel;
     bool    m_fDrawCurenValueIndicators;
+    /** The width of the right margin in characters. */
+    int m_iRightMarginCharWidth;
 };
 
 /*********************************************************************************************************************************
@@ -182,6 +184,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     , m_fIsAvailable(true)
     , m_fIsAreaChartAllowed(false)
     , m_fDrawCurenValueIndicators(true)
+    , m_iRightMarginCharWidth(10)
 {
     m_axisFont = font();
     m_axisFont.setPixelSize(14);
@@ -193,8 +196,8 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     m_dataSeriesColor[0] = QColor(200, 0, 0, 255);
     m_dataSeriesColor[1] = QColor(0, 0, 200, 255);
 
-    m_iMarginLeft = 3 * QFontMetrics(m_axisFont).averageCharWidth();
-    m_iMarginRight = 9 * QFontMetrics(m_axisFont).averageCharWidth();
+    m_iMarginLeft = 3 * QFontMetricsF(m_axisFont).averageCharWidth();
+    m_iMarginRight = m_iRightMarginCharWidth * QFontMetricsF(m_axisFont).averageCharWidth();
     m_iMarginTop = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iMarginBottom = QFontMetrics(m_axisFont).height();
 
@@ -509,7 +512,8 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         int iTextY = 0.5 * iFontHeight + m_iMarginTop + i * m_lineChartRect.height() / (float) (iYSubAxisCount + 1);
         quint64 iValue = (iYSubAxisCount + 1 - i) * (iMaximum / (float) (iYSubAxisCount + 1));
         QString strValue = YAxisValueLabel(iValue);
-        painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
+        /* Leave space of one character  between the text and chart rectangle: */
+        painter.drawText(width() - (m_iRightMarginCharWidth - 1) * QFontMetricsF(m_axisFont).averageCharWidth(), iTextY, strValue);
     }
 
     if (iMaximum != 0 && m_fIsPieChartAllowed && m_fShowPieChart)
