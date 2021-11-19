@@ -419,6 +419,10 @@ void UIWizardNewVMExpertPage::initializePage()
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     updateDiskWidgetsAfterMediumFormatChange();
     retranslateUi();
+
+    /* Focus on the name field (rather than the help button): */
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->setFocus();
 }
 
 void UIWizardNewVMExpertPage::markWidgets() const
