@@ -640,6 +640,7 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 
 
 #ifdef RTTHREAD_POSIX_WITH_POKE
+
 RTDECL(int) RTThreadPoke(RTTHREAD hThread)
 {
     AssertReturn(hThread != RTThreadSelf(), VERR_INVALID_PARAMETER);
@@ -658,6 +659,33 @@ RTDECL(int) RTThreadPoke(RTTHREAD hThread)
     rtThreadRelease(pThread);
     return rc;
 }
+
+
+RTDECL(int) RTThreadControlPokeSignal(RTTHREAD hThread, bool fEnable)
+{
+    AssertReturn(hThread == RTThreadSelf() && hThread != NIL_RTTHREAD, VERR_INVALID_PARAMETER);
+    int rc;
+    if (g_iSigPokeThread != -1)
+    {
+        sigset_t SigSet;
+        sigemptyset(&SigSet);
+        sigaddset(&SigSet, g_iSigPokeThread);
+
+        int rc2 = sigprocmask(fEnable ? SIG_UNBLOCK : SIG_BLOCK, &SigSet, NULL);
+        if (rc2 == 0)
+            rc = VINF_SUCCESS;
+        else
+        {
+            rc = RTErrConvertFromErrno(errno);
+            AssertMsgFailed(("rc=%Rrc errno=%d (rc2=%d)\n", rc, errno, rc2));
+        }
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
+    return rc;
+}
+
+
 #endif
 
 /** @todo move this into platform specific files. */

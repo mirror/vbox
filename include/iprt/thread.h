@@ -530,6 +530,20 @@ RTDECL(int) RTThreadUserReset(RTTHREAD Thread);
  */
 RTDECL(int) RTThreadPoke(RTTHREAD hThread);
 
+/**
+ * Controls the masking of the signal used by RTThreadPoke on posix systems.
+ *
+ * This function is not available on non-posix systems.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hThread     The current thread.
+ * @param   fEnable     Whether to enable poking (unblock) or to disable it
+ *                      (block the signal).
+ */
+RTDECL(int) RTThreadControlPokeSignal(RTTHREAD hThread, bool fEnable);
+
+
 # ifdef IN_RING0
 
 /**
