@@ -432,6 +432,16 @@ static int nemR3LnxInitSetupVm(PVM pVM, PRTERRINFO pErrInfo)
 }
 
 
+/** @callback_method_impl{FNVMMEMTRENDEZVOUS}   */
+static DECLCALLBACK(VBOXSTRICTRC) nemR3LnxFixThreadPoke(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    RT_NOREF(pVM, pvUser);
+    int rc = RTThreadControlPokeSignal(pVCpu->hThread, true /*fEnable*/);
+    AssertLogRelRC(rc);
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Try initialize the native API.
  *
@@ -513,7 +523,26 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                         STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturn,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of state imports on loop return", "/NEM/CPU%u/ImportOnReturn", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturnSkipped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of skipped state imports on loop return", "/NEM/CPU%u/ImportOnReturnSkipped", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatQueryCpuTick,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of TSC queries",                  "/NEM/CPU%u/QueryCpuTick", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitTotal,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "All exits",                  "/NEM/CPU%u/Exit", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitIo,              STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_IO",                "/NEM/CPU%u/Exit/Io", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitMmio,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_MMIO",              "/NEM/CPU%u/Exit/Mmio", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitSetTpr,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_SET_TRP",           "/NEM/CPU%u/Exit/SetTpr", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitTprAccess,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_TPR_ACCESS",        "/NEM/CPU%u/Exit/TprAccess", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitRdMsr,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_RDMSR",             "/NEM/CPU%u/Exit/RdMsr", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitWrMsr,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_WRMSR",             "/NEM/CPU%u/Exit/WrMsr", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitIrqWindowOpen,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_IRQ_WINDOWS_OPEN",  "/NEM/CPU%u/Exit/IrqWindowOpen", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitHalt,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_HLT",               "/NEM/CPU%u/Exit/Hlt", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitIntr,            STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_INTR",              "/NEM/CPU%u/Exit/Intr", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitHypercall,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_HYPERCALL",         "/NEM/CPU%u/Exit/Hypercall", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitDebug,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_DEBUG",             "/NEM/CPU%u/Exit/Debug", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitBusLock,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_BUS_LOCK",          "/NEM/CPU%u/Exit/BusLock", idCpu);
                     }
+
+                    /*
+                     * Make RTThreadPoke work again (disabled for avoiding unnecessary
+                     * critical section issues in ring-0).
+                     */
+                    VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, nemR3LnxFixThreadPoke, NULL);
 
                     /*
                      * Success.
@@ -1010,10 +1039,392 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPH
 /**
  * Worker that imports selected state from KVM.
  */
-static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, struct kvm_run *pRun)
+static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx, struct kvm_run *pRun)
 {
-    RT_NOREF(pVCpu, fWhat, pRun);
-    return VERR_NOT_IMPLEMENTED;
+    fWhat &= pVCpu->cpum.GstCtx.fExtrn;
+    if (!fWhat)
+        return VINF_SUCCESS;
+
+    /*
+     * Stuff that goes into kvm_run::s.regs.regs:
+     */
+    if (fWhat & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_GPRS_MASK))
+    {
+        if (fWhat & CPUMCTX_EXTRN_RIP)
+            pCtx->rip       = pRun->s.regs.regs.rip;
+        if (fWhat & CPUMCTX_EXTRN_RFLAGS)
+            pCtx->rflags.u  = pRun->s.regs.regs.rflags;
+
+        if (fWhat & CPUMCTX_EXTRN_RAX)
+            pCtx->rax       = pRun->s.regs.regs.rax;
+        if (fWhat & CPUMCTX_EXTRN_RCX)
+            pCtx->rcx       = pRun->s.regs.regs.rcx;
+        if (fWhat & CPUMCTX_EXTRN_RDX)
+            pCtx->rdx       = pRun->s.regs.regs.rdx;
+        if (fWhat & CPUMCTX_EXTRN_RBX)
+            pCtx->rbx       = pRun->s.regs.regs.rbx;
+        if (fWhat & CPUMCTX_EXTRN_RSP)
+            pCtx->rsp       = pRun->s.regs.regs.rsp;
+        if (fWhat & CPUMCTX_EXTRN_RBP)
+            pCtx->rbp       = pRun->s.regs.regs.rbp;
+        if (fWhat & CPUMCTX_EXTRN_RSI)
+            pCtx->rsi       = pRun->s.regs.regs.rsi;
+        if (fWhat & CPUMCTX_EXTRN_RDI)
+            pCtx->rdi       = pRun->s.regs.regs.rdi;
+        if (fWhat & CPUMCTX_EXTRN_R8_R15)
+        {
+            pCtx->r8        = pRun->s.regs.regs.r8;
+            pCtx->r9        = pRun->s.regs.regs.r9;
+            pCtx->r10       = pRun->s.regs.regs.r10;
+            pCtx->r11       = pRun->s.regs.regs.r11;
+            pCtx->r12       = pRun->s.regs.regs.r12;
+            pCtx->r13       = pRun->s.regs.regs.r13;
+            pCtx->r14       = pRun->s.regs.regs.r14;
+            pCtx->r15       = pRun->s.regs.regs.r15;
+        }
+    }
+
+    /*
+     * Stuff that goes into kvm_run::s.regs.sregs:
+     */
+    /** @todo apic_base   */
+
+    bool fMaybeChangedMode = false;
+    bool fUpdateCr3        = false;
+    if (fWhat & (  CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK | CPUMCTX_EXTRN_CR_MASK
+                 | CPUMCTX_EXTRN_EFER      | CPUMCTX_EXTRN_APIC_TPR))
+    {
+        /** @todo what about Attr.n.u4LimitHigh?   */
+#define NEM_LNX_IMPORT_SEG(a_CtxSeg, a_KvmSeg) do { \
+            (a_CtxSeg).u64Base              = (a_KvmSeg).base; \
+            (a_CtxSeg).u32Limit             = (a_KvmSeg).limit; \
+            (a_CtxSeg).ValidSel = (a_CtxSeg).Sel = (a_KvmSeg).selector; \
+            (a_CtxSeg).Attr.n.u4Type        = (a_KvmSeg).type; \
+            (a_CtxSeg).Attr.n.u1DescType    = (a_KvmSeg).s; \
+            (a_CtxSeg).Attr.n.u2Dpl         = (a_KvmSeg).dpl; \
+            (a_CtxSeg).Attr.n.u1Present     = (a_KvmSeg).present; \
+            (a_CtxSeg).Attr.n.u1Available   = (a_KvmSeg).avl; \
+            (a_CtxSeg).Attr.n.u1Long        = (a_KvmSeg).l; \
+            (a_CtxSeg).Attr.n.u1DefBig      = (a_KvmSeg).db; \
+            (a_CtxSeg).Attr.n.u1Granularity = (a_KvmSeg).g; \
+            (a_CtxSeg).Attr.n.u1Unusable    = (a_KvmSeg).unusable; \
+            (a_CtxSeg).fFlags               = CPUMSELREG_FLAGS_VALID; \
+            CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &(a_CtxSeg)); \
+        } while (0)
+
+        if (fWhat & CPUMCTX_EXTRN_SREG_MASK)
+        {
+            if (fWhat & CPUMCTX_EXTRN_ES)
+                NEM_LNX_IMPORT_SEG(pCtx->es, pRun->s.regs.sregs.es);
+            if (fWhat & CPUMCTX_EXTRN_CS)
+                NEM_LNX_IMPORT_SEG(pCtx->cs, pRun->s.regs.sregs.cs);
+            if (fWhat & CPUMCTX_EXTRN_SS)
+                NEM_LNX_IMPORT_SEG(pCtx->ss, pRun->s.regs.sregs.ss);
+            if (fWhat & CPUMCTX_EXTRN_DS)
+                NEM_LNX_IMPORT_SEG(pCtx->ds, pRun->s.regs.sregs.ds);
+            if (fWhat & CPUMCTX_EXTRN_FS)
+                NEM_LNX_IMPORT_SEG(pCtx->fs, pRun->s.regs.sregs.fs);
+            if (fWhat & CPUMCTX_EXTRN_GS)
+                NEM_LNX_IMPORT_SEG(pCtx->gs, pRun->s.regs.sregs.gs);
+        }
+        if (fWhat & CPUMCTX_EXTRN_TABLE_MASK)
+        {
+            if (fWhat & CPUMCTX_EXTRN_GDTR)
+            {
+                pCtx->gdtr.pGdt     = pRun->s.regs.sregs.gdt.base;
+                pCtx->gdtr.cbGdt    = pRun->s.regs.sregs.gdt.limit;
+            }
+            if (fWhat & CPUMCTX_EXTRN_IDTR)
+            {
+                pCtx->idtr.pIdt     = pRun->s.regs.sregs.idt.base;
+                pCtx->idtr.cbIdt    = pRun->s.regs.sregs.idt.limit;
+            }
+            if (fWhat & CPUMCTX_EXTRN_LDTR)
+                NEM_LNX_IMPORT_SEG(pCtx->ldtr, pRun->s.regs.sregs.ldt);
+            if (fWhat & CPUMCTX_EXTRN_TR)
+                NEM_LNX_IMPORT_SEG(pCtx->tr, pRun->s.regs.sregs.tr);
+        }
+        if (fWhat & CPUMCTX_EXTRN_CR_MASK)
+        {
+            if (fWhat & CPUMCTX_EXTRN_CR0)
+            {
+                if (pVCpu->cpum.GstCtx.cr0 != pRun->s.regs.sregs.cr0)
+                {
+                    CPUMSetGuestCR0(pVCpu, pRun->s.regs.sregs.cr0);
+                    fMaybeChangedMode = true;
+                }
+            }
+            if (fWhat & CPUMCTX_EXTRN_CR2)
+                pCtx->cr2              = pRun->s.regs.sregs.cr2;
+            if (fWhat & CPUMCTX_EXTRN_CR3)
+            {
+                if (pCtx->cr3 != pRun->s.regs.sregs.cr3)
+                {
+                    CPUMSetGuestCR3(pVCpu, pRun->s.regs.sregs.cr3);
+                    fUpdateCr3 = true;
+                }
+            }
+            if (fWhat & CPUMCTX_EXTRN_CR4)
+            {
+                if (pCtx->cr4 != pRun->s.regs.sregs.cr4)
+                {
+                    CPUMSetGuestCR4(pVCpu, pRun->s.regs.sregs.cr4);
+                    fMaybeChangedMode = true;
+                }
+            }
+        }
+        if (fWhat & CPUMCTX_EXTRN_APIC_TPR)
+            APICSetTpr(pVCpu, (uint8_t)pRun->s.regs.sregs.cr8 << 4);
+        if (fWhat & CPUMCTX_EXTRN_EFER)
+        {
+            if (pCtx->msrEFER != pRun->s.regs.sregs.efer)
+            {
+                Log7(("NEM/%u: MSR EFER changed %RX64 -> %RX64\n", pVCpu->idCpu,  pVCpu->cpum.GstCtx.msrEFER, pRun->s.regs.sregs.efer));
+                if ((pRun->s.regs.sregs.efer ^ pVCpu->cpum.GstCtx.msrEFER) & MSR_K6_EFER_NXE)
+                    PGMNotifyNxeChanged(pVCpu, RT_BOOL(pRun->s.regs.sregs.efer & MSR_K6_EFER_NXE));
+                pCtx->msrEFER = pRun->s.regs.sregs.efer;
+                fMaybeChangedMode = true;
+            }
+        }
+
+        /** @todo apic_base   */
+#undef NEM_LNX_IMPORT_SEG
+    }
+
+    /*
+     * Debug registers.
+     */
+    if (fWhat & CPUMCTX_EXTRN_DR_MASK)
+    {
+        struct kvm_debugregs DbgRegs = {{0}};
+        int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_DEBUGREGS, &DbgRegs);
+        AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
+
+        if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+        {
+            pCtx->dr[0] = DbgRegs.db[0];
+            pCtx->dr[1] = DbgRegs.db[1];
+            pCtx->dr[2] = DbgRegs.db[2];
+            pCtx->dr[3] = DbgRegs.db[3];
+        }
+        if (fWhat & CPUMCTX_EXTRN_DR6)
+            pCtx->dr[6] = DbgRegs.dr6;
+        if (fWhat & CPUMCTX_EXTRN_DR7)
+            pCtx->dr[7] = DbgRegs.dr7;
+    }
+
+    /*
+     * FPU, SSE, AVX, ++.
+     */
+    if (fWhat & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE | CPUMCTX_EXTRN_XCRx))
+    {
+        if (fWhat & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
+        {
+            /* Partial state is annoying as we have to do merging - is this possible at all? */
+            struct kvm_xsave XSave;
+            int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_XSAVE, &XSave);
+            AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
+
+            if (fWhat & CPUMCTX_EXTRN_X87)
+                memcpy(&pCtx->XState.x87, &XSave, sizeof(pCtx->XState.x87));
+            if (fWhat & CPUMCTX_EXTRN_SSE_AVX)
+            {
+                /** @todo    */
+            }
+            if (fWhat & CPUMCTX_EXTRN_OTHER_XSAVE)
+            {
+                /** @todo   */
+            }
+        }
+
+        if (fWhat & CPUMCTX_EXTRN_XCRx)
+        {
+            struct kvm_xcrs Xcrs =
+            {   /*.nr_xcrs = */ 2,
+                /*.flags = */   0,
+                /*.xcrs= */ {
+                    { /*.xcr =*/ 0, /*.reserved=*/ 0, /*.value=*/ pCtx->aXcr[0] },
+                    { /*.xcr =*/ 1, /*.reserved=*/ 0, /*.value=*/ pCtx->aXcr[1] },
+                }
+            };
+
+            int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_XCRS, &Xcrs);
+            AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
+
+            pCtx->aXcr[0] = Xcrs.xcrs[0].value;
+            pCtx->aXcr[1] = Xcrs.xcrs[1].value;
+        }
+    }
+
+    /*
+     * MSRs.
+     */
+    if (fWhat & (  CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_SYSENTER_MSRS
+                 | CPUMCTX_EXTRN_TSC_AUX        | CPUMCTX_EXTRN_OTHER_MSRS))
+    {
+        union
+        {
+            struct kvm_msrs Core;
+            uint64_t padding[2 + sizeof(struct kvm_msr_entry) * 32];
+        }                   uBuf;
+        uint64_t           *pauDsts[32];
+        uint32_t            iMsr        = 0;
+        PCPUMCTXMSRS const  pCtxMsrs    = CPUMQueryGuestCtxMsrsPtr(pVCpu);
+
+#define ADD_MSR(a_Msr, a_uValue) do { \
+            Assert(iMsr < 32); \
+            uBuf.Core.entries[iMsr].index    = (a_Msr); \
+            uBuf.Core.entries[iMsr].reserved = 0; \
+            uBuf.Core.entries[iMsr].data     = UINT64_MAX; \
+            pauDsts[iMsr] = &(a_uValue); \
+            iMsr += 1; \
+        } while (0)
+
+        if (fWhat & CPUMCTX_EXTRN_KERNEL_GS_BASE)
+            ADD_MSR(MSR_K8_KERNEL_GS_BASE, pCtx->msrKERNELGSBASE);
+        if (fWhat & CPUMCTX_EXTRN_SYSCALL_MSRS)
+        {
+            ADD_MSR(MSR_K6_STAR,    pCtx->msrSTAR);
+            ADD_MSR(MSR_K8_LSTAR,   pCtx->msrLSTAR);
+            ADD_MSR(MSR_K8_CSTAR,   pCtx->msrCSTAR);
+            ADD_MSR(MSR_K8_SF_MASK, pCtx->msrSFMASK);
+        }
+        if (fWhat & CPUMCTX_EXTRN_SYSENTER_MSRS)
+        {
+            ADD_MSR(MSR_IA32_SYSENTER_CS,  pCtx->SysEnter.cs);
+            ADD_MSR(MSR_IA32_SYSENTER_EIP, pCtx->SysEnter.eip);
+            ADD_MSR(MSR_IA32_SYSENTER_ESP, pCtx->SysEnter.esp);
+        }
+        if (fWhat & CPUMCTX_EXTRN_TSC_AUX)
+            ADD_MSR(MSR_K8_TSC_AUX, pCtxMsrs->msr.TscAux);
+        if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
+        {
+            ADD_MSR(MSR_IA32_CR_PAT, pCtx->msrPAT);
+            /** @todo What do we _have_ to add here?
+             * We also have: Mttr*, MiscEnable, FeatureControl. */
+        }
+
+        uBuf.Core.pad   = 0;
+        uBuf.Core.nmsrs = iMsr;
+        int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_MSRS, &uBuf);
+        AssertMsgReturn(rc == (int)iMsr,
+                        ("rc=%d iMsr=%d (->%#x) errno=%d\n",
+                         rc, iMsr, (uint32_t)rc < iMsr ? uBuf.Core.entries[rc].index : 0, errno),
+                        VERR_NEM_IPE_3);
+
+        while (iMsr-- > 0)
+            *pauDsts[iMsr] = uBuf.Core.entries[iMsr].data;
+#undef ADD_MSR
+    }
+
+    /*
+     * Interruptibility state.
+     */
+    if (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
+    {
+        fWhat |= CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI; /* always do both, see export and interrupt FF handling */
+
+        struct kvm_vcpu_events KvmEvents = {0};
+        int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_VCPU_EVENTS, &KvmEvents);
+        AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_3);
+
+        if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_RIP)
+            pVCpu->cpum.GstCtx.rip = pRun->s.regs.regs.rip;
+
+        if (KvmEvents.interrupt.shadow)
+            EMSetInhibitInterruptsPC(pVCpu, pVCpu->cpum.GstCtx.rip);
+        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+
+        if (KvmEvents.nmi.masked)
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+    }
+
+    /*
+     * Update the external mask.
+     */
+    pCtx->fExtrn &= ~fWhat;
+    pVCpu->cpum.GstCtx.fExtrn &= ~fWhat;
+    if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL))
+        pVCpu->cpum.GstCtx.fExtrn = 0;
+
+    /*
+     * We sometimes need to update PGM on the guest status.
+     */
+    if (!fMaybeChangedMode && !fUpdateCr3)
+    { /* likely */ }
+    else
+    {
+        /*
+         * Make sure we got all the state PGM might need.
+         */
+        Log7(("nemHCLnxImportState: fMaybeChangedMode=%d fUpdateCr3=%d fExtrnNeeded=%#RX64\n", fMaybeChangedMode, fUpdateCr3,
+              pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_EFER) ));
+        if (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_EFER))
+        {
+            if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_CR0)
+            {
+                if (pVCpu->cpum.GstCtx.cr0 != pRun->s.regs.sregs.cr0)
+                {
+                    CPUMSetGuestCR0(pVCpu, pRun->s.regs.sregs.cr0);
+                    fMaybeChangedMode = true;
+                }
+            }
+            if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_CR3)
+            {
+                if (pCtx->cr3 != pRun->s.regs.sregs.cr3)
+                {
+                    CPUMSetGuestCR3(pVCpu, pRun->s.regs.sregs.cr3);
+                    fUpdateCr3 = true;
+                }
+            }
+            if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_CR4)
+            {
+                if (pCtx->cr4 != pRun->s.regs.sregs.cr4)
+                {
+                    CPUMSetGuestCR4(pVCpu, pRun->s.regs.sregs.cr4);
+                    fMaybeChangedMode = true;
+                }
+            }
+            if (fWhat & CPUMCTX_EXTRN_EFER)
+            {
+                if (pCtx->msrEFER != pRun->s.regs.sregs.efer)
+                {
+                    Log7(("NEM/%u: MSR EFER changed %RX64 -> %RX64\n", pVCpu->idCpu,  pVCpu->cpum.GstCtx.msrEFER, pRun->s.regs.sregs.efer));
+                    if ((pRun->s.regs.sregs.efer ^ pVCpu->cpum.GstCtx.msrEFER) & MSR_K6_EFER_NXE)
+                        PGMNotifyNxeChanged(pVCpu, RT_BOOL(pRun->s.regs.sregs.efer & MSR_K6_EFER_NXE));
+                    pCtx->msrEFER = pRun->s.regs.sregs.efer;
+                    fMaybeChangedMode = true;
+                }
+            }
+
+            pVCpu->cpum.GstCtx.fExtrn &= ~(CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_EFER);
+            if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL))
+                pVCpu->cpum.GstCtx.fExtrn = 0;
+        }
+
+        /*
+         * Notify PGM about the changes.
+         */
+        if (fMaybeChangedMode)
+        {
+            int rc = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
+            AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_1);
+        }
+
+        if (fUpdateCr3)
+        {
+            int rc = PGMUpdateCR3(pVCpu, pVCpu->cpum.GstCtx.cr3, false /*fPdpesMapped*/);
+            if (rc == VINF_SUCCESS)
+            { /* likely */ }
+            else
+                AssertMsgFailedReturn(("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_NEM_IPE_2);
+        }
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -1027,9 +1438,7 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, struct kvm_run *p
 VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 {
     STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportOnDemand);
-
-    RT_NOREF(pVCpu, fWhat);
-    return nemHCLnxImportState(pVCpu, fWhat, pVCpu->nem.s.pRun);
+    return nemHCLnxImportState(pVCpu, fWhat, &pVCpu->cpum.GstCtx, pVCpu->nem.s.pRun);
 }
 
 
@@ -1038,37 +1447,36 @@ VMM_INT_DECL(int) NEMImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
  */
 static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_run *pRun)
 {
-    uint64_t const fExtrn = pCtx->fExtrn;
-    Assert((fExtrn & CPUMCTX_EXTRN_ALL) != CPUMCTX_EXTRN_ALL);
+    uint64_t const fExtrn = ~pCtx->fExtrn & CPUMCTX_EXTRN_ALL;
+    Assert((~fExtrn & CPUMCTX_EXTRN_ALL) != CPUMCTX_EXTRN_ALL);
 
     /*
      * Stuff that goes into kvm_run::s.regs.regs:
      */
-    if (   (fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_GPRS_MASK))
-        !=           (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_GPRS_MASK))
+    if (fExtrn & (CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_GPRS_MASK))
     {
-        if (!(fExtrn & CPUMCTX_EXTRN_RIP))
+        if (fExtrn & CPUMCTX_EXTRN_RIP)
             pRun->s.regs.regs.rip    = pCtx->rip;
-        if (!(fExtrn & CPUMCTX_EXTRN_RFLAGS))
+        if (fExtrn & CPUMCTX_EXTRN_RFLAGS)
             pRun->s.regs.regs.rflags = pCtx->rflags.u;
 
-        if (!(fExtrn & CPUMCTX_EXTRN_RAX))
+        if (fExtrn & CPUMCTX_EXTRN_RAX)
             pRun->s.regs.regs.rax    = pCtx->rax;
-        if (!(fExtrn & CPUMCTX_EXTRN_RCX))
+        if (fExtrn & CPUMCTX_EXTRN_RCX)
             pRun->s.regs.regs.rcx    = pCtx->rcx;
-        if (!(fExtrn & CPUMCTX_EXTRN_RDX))
+        if (fExtrn & CPUMCTX_EXTRN_RDX)
             pRun->s.regs.regs.rdx    = pCtx->rdx;
-        if (!(fExtrn & CPUMCTX_EXTRN_RBX))
+        if (fExtrn & CPUMCTX_EXTRN_RBX)
             pRun->s.regs.regs.rbx    = pCtx->rbx;
-        if (!(fExtrn & CPUMCTX_EXTRN_RSP))
+        if (fExtrn & CPUMCTX_EXTRN_RSP)
             pRun->s.regs.regs.rsp    = pCtx->rsp;
-        if (!(fExtrn & CPUMCTX_EXTRN_RBP))
+        if (fExtrn & CPUMCTX_EXTRN_RBP)
             pRun->s.regs.regs.rbp    = pCtx->rbp;
-        if (!(fExtrn & CPUMCTX_EXTRN_RSI))
+        if (fExtrn & CPUMCTX_EXTRN_RSI)
             pRun->s.regs.regs.rsi    = pCtx->rsi;
-        if (!(fExtrn & CPUMCTX_EXTRN_RDI))
+        if (fExtrn & CPUMCTX_EXTRN_RDI)
             pRun->s.regs.regs.rdi    = pCtx->rdi;
-        if (!(fExtrn & CPUMCTX_EXTRN_R8_R15))
+        if (fExtrn & CPUMCTX_EXTRN_R8_R15)
         {
             pRun->s.regs.regs.r8     = pCtx->r8;
             pRun->s.regs.regs.r9     = pCtx->r9;
@@ -1086,8 +1494,8 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
      * Stuff that goes into kvm_run::s.regs.sregs:
      */
     /** @todo apic_base   */
-    if (   (fExtrn & (CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK | CPUMCTX_EXTRN_CR_MASK | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_APIC_TPR))
-        !=           (CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK | CPUMCTX_EXTRN_CR_MASK | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_APIC_TPR))
+    if (fExtrn & (  CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK | CPUMCTX_EXTRN_CR_MASK
+                  | CPUMCTX_EXTRN_EFER      | CPUMCTX_EXTRN_APIC_TPR))
     {
 #define NEM_LNX_EXPORT_SEG(a_KvmSeg, a_CtxSeg) do { \
             (a_KvmSeg).base     = (a_CtxSeg).u64Base; \
@@ -1105,24 +1513,24 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
             (a_KvmSeg).padding  = 0; \
         } while (0)
 
-        if ((fExtrn & CPUMCTX_EXTRN_SREG_MASK) != CPUMCTX_EXTRN_SREG_MASK)
+        if (fExtrn & CPUMCTX_EXTRN_SREG_MASK)
         {
-            if (!(fExtrn & CPUMCTX_EXTRN_ES))
+            if (fExtrn & CPUMCTX_EXTRN_ES)
                 NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.es, pCtx->es);
-            if (!(fExtrn & CPUMCTX_EXTRN_CS))
+            if (fExtrn & CPUMCTX_EXTRN_CS)
                 NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.cs, pCtx->cs);
-            if (!(fExtrn & CPUMCTX_EXTRN_SS))
+            if (fExtrn & CPUMCTX_EXTRN_SS)
                 NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.ss, pCtx->ss);
-            if (!(fExtrn & CPUMCTX_EXTRN_DS))
+            if (fExtrn & CPUMCTX_EXTRN_DS)
                 NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.ds, pCtx->ds);
-            if (!(fExtrn & CPUMCTX_EXTRN_FS))
+            if (fExtrn & CPUMCTX_EXTRN_FS)
                 NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.fs, pCtx->fs);
-            if (!(fExtrn & CPUMCTX_EXTRN_GS))
+            if (fExtrn & CPUMCTX_EXTRN_GS)
                 NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.gs, pCtx->gs);
         }
-        if ((fExtrn & CPUMCTX_EXTRN_TABLE_MASK) != CPUMCTX_EXTRN_TABLE_MASK)
+        if (fExtrn & CPUMCTX_EXTRN_TABLE_MASK)
         {
-            if (!(fExtrn & CPUMCTX_EXTRN_GDTR))
+            if (fExtrn & CPUMCTX_EXTRN_GDTR)
             {
                 pRun->s.regs.sregs.gdt.base  = pCtx->gdtr.pGdt;
                 pRun->s.regs.sregs.gdt.limit = pCtx->gdtr.cbGdt;
@@ -1130,7 +1538,7 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
                 pRun->s.regs.sregs.gdt.padding[1] = 0;
                 pRun->s.regs.sregs.gdt.padding[2] = 0;
             }
-            if (!(fExtrn & CPUMCTX_EXTRN_IDTR))
+            if (fExtrn & CPUMCTX_EXTRN_IDTR)
             {
                 pRun->s.regs.sregs.idt.base  = pCtx->idtr.pIdt;
                 pRun->s.regs.sregs.idt.limit = pCtx->idtr.cbIdt;
@@ -1138,56 +1546,58 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
                 pRun->s.regs.sregs.idt.padding[1] = 0;
                 pRun->s.regs.sregs.idt.padding[2] = 0;
             }
-            if (!(fExtrn & CPUMCTX_EXTRN_LDTR))
+            if (fExtrn & CPUMCTX_EXTRN_LDTR)
                 NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.ldt, pCtx->ldtr);
-            if (!(fExtrn & CPUMCTX_EXTRN_TR))
+            if (fExtrn & CPUMCTX_EXTRN_TR)
                 NEM_LNX_EXPORT_SEG(pRun->s.regs.sregs.tr, pCtx->tr);
         }
-        if ((fExtrn & CPUMCTX_EXTRN_CR_MASK) != CPUMCTX_EXTRN_CR_MASK)
+        if (fExtrn & CPUMCTX_EXTRN_CR_MASK)
         {
-            if (!(fExtrn & CPUMCTX_EXTRN_CR0))
+            if (fExtrn & CPUMCTX_EXTRN_CR0)
                 pRun->s.regs.sregs.cr0   = pCtx->cr0;
-            if (!(fExtrn & CPUMCTX_EXTRN_CR2))
+            if (fExtrn & CPUMCTX_EXTRN_CR2)
                 pRun->s.regs.sregs.cr2   = pCtx->cr2;
-            if (!(fExtrn & CPUMCTX_EXTRN_CR3))
+            if (fExtrn & CPUMCTX_EXTRN_CR3)
                 pRun->s.regs.sregs.cr3   = pCtx->cr3;
-            if (!(fExtrn & CPUMCTX_EXTRN_CR4))
+            if (fExtrn & CPUMCTX_EXTRN_CR4)
                 pRun->s.regs.sregs.cr4   = pCtx->cr4;
         }
-        if (!(fExtrn & CPUMCTX_EXTRN_APIC_TPR))
+        if (fExtrn & CPUMCTX_EXTRN_APIC_TPR)
             pRun->s.regs.sregs.cr8    = CPUMGetGuestCR8(pVCpu);
-        if (!(fExtrn & CPUMCTX_EXTRN_EFER))
+        if (fExtrn & CPUMCTX_EXTRN_EFER)
             pRun->s.regs.sregs.efer   = pCtx->msrEFER;
 
         /** @todo apic_base   */
-        /** @todo interrupt_bitmap - IRQ injection?  */
+
+        RT_ZERO(pRun->s.regs.sregs.interrupt_bitmap); /* this is an alternative interrupt injection interface */
+
         pRun->kvm_dirty_regs |= KVM_SYNC_X86_SREGS;
     }
 
     /*
      * Debug registers.
      */
-    if ((fExtrn & CPUMCTX_EXTRN_DR_MASK) != CPUMCTX_EXTRN_DR_MASK)
+    if (fExtrn & CPUMCTX_EXTRN_DR_MASK)
     {
         struct kvm_debugregs DbgRegs = {{0}};
 
-        if (fExtrn & CPUMCTX_EXTRN_DR_MASK)
+        if ((fExtrn & CPUMCTX_EXTRN_DR_MASK) != CPUMCTX_EXTRN_DR_MASK)
         {
             /* Partial debug state, we must get DbgRegs first so we can merge: */
             int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_DEBUGREGS, &DbgRegs);
             AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
         }
 
-        if (!(fExtrn & CPUMCTX_EXTRN_DR0_DR3))
+        if (fExtrn & CPUMCTX_EXTRN_DR0_DR3)
         {
             DbgRegs.db[0] = pCtx->dr[0];
             DbgRegs.db[1] = pCtx->dr[1];
             DbgRegs.db[2] = pCtx->dr[2];
             DbgRegs.db[3] = pCtx->dr[3];
         }
-        if (!(fExtrn & CPUMCTX_EXTRN_DR6))
+        if (fExtrn & CPUMCTX_EXTRN_DR6)
             DbgRegs.dr6 = pCtx->dr[6];
-        if (!(fExtrn & CPUMCTX_EXTRN_DR7))
+        if (fExtrn & CPUMCTX_EXTRN_DR7)
             DbgRegs.dr7 = pCtx->dr[7];
 
         int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_DEBUGREGS, &DbgRegs);
@@ -1197,26 +1607,25 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
     /*
      * FPU, SSE, AVX, ++.
      */
-    if (   (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE | CPUMCTX_EXTRN_XCRx))
-        !=           (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE | CPUMCTX_EXTRN_XCRx))
+    if (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE | CPUMCTX_EXTRN_XCRx))
     {
-        if (   (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
-            !=           (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
+        if (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
         {
-            if (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
+            if (   (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
+                !=           (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
             {
                 /* Partial state is annoying as we have to do merging - is this possible at all? */
                 struct kvm_xsave XSave;
                 int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_XSAVE, &XSave);
                 AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
 
-                if (!(fExtrn & CPUMCTX_EXTRN_X87))
+                if (fExtrn & CPUMCTX_EXTRN_X87)
                     memcpy(&pCtx->XState.x87, &XSave, sizeof(pCtx->XState.x87));
-                if (!(fExtrn & CPUMCTX_EXTRN_SSE_AVX))
+                if (fExtrn & CPUMCTX_EXTRN_SSE_AVX)
                 {
                     /** @todo    */
                 }
-                if (!(fExtrn & CPUMCTX_EXTRN_OTHER_XSAVE))
+                if (fExtrn & CPUMCTX_EXTRN_OTHER_XSAVE)
                 {
                     /** @todo   */
                 }
@@ -1226,7 +1635,7 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
             AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
         }
 
-        if (!(fExtrn & CPUMCTX_EXTRN_XCRx))
+        if (fExtrn & CPUMCTX_EXTRN_XCRx)
         {
             struct kvm_xcrs Xcrs =
             {   /*.nr_xcrs = */ 2,
@@ -1245,8 +1654,8 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
     /*
      * MSRs.
      */
-    if (   (fExtrn & (CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_SYSENTER_MSRS | CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS))
-        !=           (CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_SYSENTER_MSRS | CPUMCTX_EXTRN_TSC_AUX | CPUMCTX_EXTRN_OTHER_MSRS))
+    if (fExtrn & (  CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_SYSENTER_MSRS
+                  | CPUMCTX_EXTRN_TSC_AUX        | CPUMCTX_EXTRN_OTHER_MSRS))
     {
         union
         {
@@ -1264,24 +1673,24 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
             iMsr += 1; \
         } while (0)
 
-        if (!(fExtrn & CPUMCTX_EXTRN_KERNEL_GS_BASE))
+        if (fExtrn & CPUMCTX_EXTRN_KERNEL_GS_BASE)
             ADD_MSR(MSR_K8_KERNEL_GS_BASE, pCtx->msrKERNELGSBASE);
-        if (!(fExtrn & CPUMCTX_EXTRN_SYSCALL_MSRS))
+        if (fExtrn & CPUMCTX_EXTRN_SYSCALL_MSRS)
         {
             ADD_MSR(MSR_K6_STAR,    pCtx->msrSTAR);
             ADD_MSR(MSR_K8_LSTAR,   pCtx->msrLSTAR);
             ADD_MSR(MSR_K8_CSTAR,   pCtx->msrCSTAR);
             ADD_MSR(MSR_K8_SF_MASK, pCtx->msrSFMASK);
         }
-        if (!(fExtrn & CPUMCTX_EXTRN_SYSENTER_MSRS))
+        if (fExtrn & CPUMCTX_EXTRN_SYSENTER_MSRS)
         {
             ADD_MSR(MSR_IA32_SYSENTER_CS,  pCtx->SysEnter.cs);
             ADD_MSR(MSR_IA32_SYSENTER_EIP, pCtx->SysEnter.eip);
             ADD_MSR(MSR_IA32_SYSENTER_ESP, pCtx->SysEnter.esp);
         }
-        if (!(fExtrn & CPUMCTX_EXTRN_TSC_AUX))
+        if (fExtrn & CPUMCTX_EXTRN_TSC_AUX)
             ADD_MSR(MSR_K8_TSC_AUX, pCtxMsrs->msr.TscAux);
-        if (!(fExtrn & CPUMCTX_EXTRN_OTHER_MSRS))
+        if (fExtrn & CPUMCTX_EXTRN_OTHER_MSRS)
         {
             ADD_MSR(MSR_IA32_CR_PAT, pCtx->msrPAT);
             /** @todo What do we _have_ to add here?
@@ -1298,9 +1707,40 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
     }
 
     /*
+     * Interruptibility state.
+     *
+     * Note! This I/O control function sets most fields passed in, so when
+     *       raising an interrupt, NMI, SMI or exception, this must be done
+     *       by the code doing the rasing or we'll overwrite it here.
+     */
+    if (fExtrn & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
+    {
+        Assert(   (fExtrn & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
+               ==           (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI));
+
+        struct kvm_vcpu_events KvmEvents = {0};
+
+        KvmEvents.flags = KVM_VCPUEVENT_VALID_SHADOW;
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        {
+            if (pRun->s.regs.regs.rip == EMGetInhibitInterruptsPC(pVCpu))
+                KvmEvents.interrupt.shadow = KVM_X86_SHADOW_INT_MOV_SS | KVM_X86_SHADOW_INT_STI;
+            else
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+        }
+
+        /* No flag - this is updated unconditionally. */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            KvmEvents.nmi.masked = 1;
+
+        int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_VCPU_EVENTS, &KvmEvents);
+        AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_3);
+    }
+
+    /*
      * KVM now owns all the state.
      */
-    pCtx->fExtrn = (fExtrn & ~CPUMCTX_EXTRN_KEEPER_MASK) | CPUMCTX_EXTRN_KEEPER_NEM | CPUMCTX_EXTRN_ALL;
+    pCtx->fExtrn = CPUMCTX_EXTRN_KEEPER_NEM | CPUMCTX_EXTRN_ALL;
 
     RT_NOREF(pVM);
     return VINF_SUCCESS;
@@ -1388,17 +1828,159 @@ bool nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
  */
 void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 {
-    RT_NOREF(pVM, pVCpu, fFlags);
+    int rc = RTThreadPoke(pVCpu->hThread);
+    LogFlow(("nemR3NativeNotifyFF: #%u -> %Rrc\n", pVCpu->idCpu, rc));
+    AssertRC(rc);
+    RT_NOREF(pVM, fFlags);
 }
 
 
-static VBOXSTRICTRC nemHCLnxHandleInterruptFF(PVM pVM, PVMCPU pVCpu)
+/**
+ * Deals with pending interrupt FFs prior to executing guest code.
+ */
+static VBOXSTRICTRC nemHCLnxHandleInterruptFF(PVM pVM, PVMCPU pVCpu, struct kvm_run *pRun)
 {
-    RT_NOREF(pVM, pVCpu);
+    Assert(!TRPMHasTrap(pVCpu));
+    RT_NOREF_PV(pVM);
+
+    /*
+     * First update APIC.  We ASSUME this won't need TPR/CR8.
+     */
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
+    {
+        APICUpdatePendingInterrupts(pVCpu);
+        if (!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+                                      | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI))
+            return VINF_SUCCESS;
+    }
+
+    /*
+     * We don't currently implement SMIs.
+     */
+    AssertReturn(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI), VERR_NEM_IPE_0);
+
+    /*
+     * In KVM the CPUMCTX_EXTRN_INHIBIT_INT and CPUMCTX_EXTRN_INHIBIT_NMI states
+     * are tied together with interrupt and NMI delivery, so we must get and
+     * synchronize these all in one go and set both CPUMCTX_EXTRN_INHIBIT_XXX flags.
+     * If we don't we may lose the interrupt/NMI we marked pending here when the
+     * state is exported again before execution.
+     */
+    struct kvm_vcpu_events KvmEvents = {0};
+    int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_VCPU_EVENTS, &KvmEvents);
+    AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_5);
+
+    if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_RIP))
+        pRun->s.regs.regs.rip = pVCpu->cpum.GstCtx.rip;
+
+    KvmEvents.flags |= KVM_VCPUEVENT_VALID_SHADOW;
+    if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_INHIBIT_INT))
+    {
+        if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            KvmEvents.interrupt.shadow = 0;
+        else if (EMGetInhibitInterruptsPC(pVCpu) == pRun->s.regs.regs.rip)
+            KvmEvents.interrupt.shadow = KVM_X86_SHADOW_INT_MOV_SS | KVM_X86_SHADOW_INT_STI;
+        else
+        {
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+            KvmEvents.interrupt.shadow = 0;
+        }
+    }
+    else if (KvmEvents.interrupt.shadow)
+        EMSetInhibitInterruptsPC(pVCpu, pRun->s.regs.regs.rip);
+    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+
+    if (!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_INHIBIT_NMI))
+        KvmEvents.nmi.masked = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS) ? 1 : 0;
+    else if (KvmEvents.nmi.masked)
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+
+    /* KVM will own the INT + NMI inhibit state soon: */
+    pVCpu->cpum.GstCtx.fExtrn = (pVCpu->cpum.GstCtx.fExtrn & ~CPUMCTX_EXTRN_KEEPER_MASK)
+                              | CPUMCTX_EXTRN_KEEPER_NEM | CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI;
+
+    /*
+     * NMI? Try deliver it first.
+     */
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))
+    {
+#if 0
+        int rcLnx = ioctl(pVCpu->nem.s.fdVm, KVM_NMI, 0UL);
+        AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_5);
+#else
+        KvmEvents.flags      |= KVM_VCPUEVENT_VALID_NMI_PENDING;
+        KvmEvents.nmi.pending = 1;
+#endif
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+        Log8(("Queuing NMI on %u\n", pVCpu->idCpu));
+    }
+
+    /*
+     * APIC or PIC interrupt?
+     */
+    if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+    {
+        if (pRun->s.regs.regs.rflags & X86_EFL_IF)
+        {
+            if (KvmEvents.interrupt.shadow == 0)
+            {
+                /*
+                 * If CR8 is in KVM, update the VBox copy so PDMGetInterrupt will
+                 * work correctly.
+                 */
+                if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_APIC_TPR)
+                    APICSetTpr(pVCpu, (uint8_t)pRun->cr8 << 4);
+
+                uint8_t bInterrupt;
+                int rc = PDMGetInterrupt(pVCpu, &bInterrupt);
+                if (RT_SUCCESS(rc))
+                {
+#if 0
+                    int rcLnx = ioctl(pVCpu->nem.s.fdVm, KVM_INTERRUPT, (unsigned long)bInterrupt);
+                    AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_5);
+#else
+                    KvmEvents.interrupt.nr       = bInterrupt;
+                    KvmEvents.interrupt.soft     = false;
+                    KvmEvents.interrupt.injected = true;
+#endif
+                    Log8(("Queuing interrupt %#x on %u: %04x:%08RX64 efl=%#x\n", bInterrupt, pVCpu->idCpu,
+                          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.eflags));
+                }
+                else if (rc == VERR_APIC_INTR_MASKED_BY_TPR) /** @todo this isn't extremely efficient if we get a lot of exits... */
+                    Log8(("VERR_APIC_INTR_MASKED_BY_TPR\n")); /* We'll get a TRP exit - no interrupt window needed. */
+                else
+                    Log8(("PDMGetInterrupt failed -> %Rrc\n", rc));
+            }
+            else
+            {
+                pRun->request_interrupt_window = 1;
+                Log8(("Interrupt window pending on %u (#2)\n", pVCpu->idCpu));
+            }
+        }
+        else
+        {
+            pRun->request_interrupt_window = 1;
+            Log8(("Interrupt window pending on %u (#1)\n", pVCpu->idCpu));
+        }
+    }
+
+    /*
+     * Now, update the state.
+     */
+    /** @todo skip when possible...   */
+    rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_VCPU_EVENTS, &KvmEvents);
+    AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_5);
+
     return VINF_SUCCESS;
 }
 
 
+/**
+ * Handles KVM_EXIT_IO.
+ */
 static VBOXSTRICTRC nemHCLnxHandleExitIo(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run *pRun)
 {
     /*
@@ -1409,6 +1991,21 @@ static VBOXSTRICTRC nemHCLnxHandleExitIo(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_r
     Assert(pRun->io.direction == KVM_EXIT_IO_IN || pRun->io.direction == KVM_EXIT_IO_OUT);
     Assert(pRun->io.data_offset < pVM->nem.s.cbVCpuMmap);
     Assert(pRun->io.data_offset + pRun->io.size * pRun->io.count <= pVM->nem.s.cbVCpuMmap);
+
+    /*
+     * We cannot actually act on the exit history here, because the I/O port
+     * exit is stateful and the instruction will be completed in the next
+     * KVM_RUN call.  There seems no way to avoid this.
+     */
+    EMHistoryAddExit(pVCpu,
+                     pRun->io.count == 1
+                     ? (  pRun->io.direction == KVM_EXIT_IO_IN
+                        ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_READ)
+                        : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_WRITE))
+                     : (  pRun->io.direction == KVM_EXIT_IO_IN
+                        ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_READ)
+                        : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_IO_PORT_STR_WRITE)),
+                     pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
 
     /*
      * Do the requested job.
@@ -1469,8 +2066,53 @@ static VBOXSTRICTRC nemHCLnxHandleExitIo(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_r
 }
 
 
+/**
+ * Handles KVM_EXIT_MMIO.
+ */
+static VBOXSTRICTRC nemHCLnxHandleExitMmio(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run *pRun)
+{
+    /*
+     * Input validation.
+     */
+    Assert(pRun->mmio.len <= sizeof(pRun->mmio.data));
+    Assert(pRun->mmio.is_write <= 1);
+
+    /*
+     * We cannot actually act on the exit history here, because the MMIO port
+     * exit is stateful and the instruction will be completed in the next
+     * KVM_RUN call.  There seems no way to circumvent this.
+     */
+    EMHistoryAddExit(pVCpu,
+                     pRun->mmio.is_write
+                     ? EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_WRITE)
+                     : EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MMIO_READ),
+                     pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
+
+    /*
+     * Do the requested job.
+     */
+    VBOXSTRICTRC rcStrict;
+    if (pRun->mmio.is_write)
+    {
+        rcStrict = PGMPhysWrite(pVM, pRun->mmio.phys_addr, pRun->mmio.data, pRun->mmio.len, PGMACCESSORIGIN_HM);
+        Log4(("MmioExit/%u: %04x:%08RX64: WRITE %#x LB %u, %.*Rhxs -> rcStrict=%Rrc\n",
+              pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip,
+              pRun->mmio.phys_addr, pRun->mmio.len, pRun->mmio.len, pRun->mmio.data, VBOXSTRICTRC_VAL(rcStrict) ));
+    }
+    else
+    {
+        rcStrict = PGMPhysRead(pVM, pRun->mmio.phys_addr, pRun->mmio.data, pRun->mmio.len, PGMACCESSORIGIN_HM);
+        Log4(("MmioExit/%u: %04x:%08RX64: READ %#x LB %u -> %.*Rhxs rcStrict=%Rrc\n",
+              pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip,
+              pRun->mmio.phys_addr, pRun->mmio.len, pRun->mmio.len, pRun->mmio.data, VBOXSTRICTRC_VAL(rcStrict) ));
+    }
+    return rcStrict;
+}
+
+
 static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run *pRun)
 {
+    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitTotal);
     switch (pRun->exit_reason)
     {
         case KVM_EXIT_EXCEPTION:
@@ -1478,46 +2120,56 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
             break;
 
         case KVM_EXIT_IO:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitIo);
             return nemHCLnxHandleExitIo(pVM, pVCpu, pRun);
 
-        case KVM_EXIT_HYPERCALL:
-            AssertFailed();
-            break;
-
-        case KVM_EXIT_DEBUG:
-            AssertFailed();
-            break;
-
-        case KVM_EXIT_HLT:
-            AssertFailed();
-            break;
-
         case KVM_EXIT_MMIO:
-            AssertFailed();
-            break;
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMmio);
+            return nemHCLnxHandleExitMmio(pVM, pVCpu, pRun);
 
         case KVM_EXIT_IRQ_WINDOW_OPEN:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitIrqWindowOpen);
+            Log5(("IrqWinOpen/%u: %d\n", pVCpu->idCpu, pRun->request_interrupt_window));
+            pRun->request_interrupt_window = 0;
+            return VINF_SUCCESS;
+
+        case KVM_EXIT_SET_TPR:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitSetTpr);
+            AssertFailed();
+            break;
+
+        case KVM_EXIT_TPR_ACCESS:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitTprAccess);
             AssertFailed();
             break;
 
         case KVM_EXIT_X86_RDMSR:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitRdMsr);
             AssertFailed();
             break;
 
         case KVM_EXIT_X86_WRMSR:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitWrMsr);
             AssertFailed();
             break;
+
+        case KVM_EXIT_HLT:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHalt);
+            Log5(("Halt/%u\n", pVCpu->idCpu));
+            return VINF_EM_HALT;
 
         case KVM_EXIT_INTR: /* EINTR */
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitIntr);
+            Log5(("Intr/%u\n", pVCpu->idCpu));
             return VINF_SUCCESS;
 
-        case KVM_EXIT_SET_TPR:
+        case KVM_EXIT_HYPERCALL:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHypercall);
             AssertFailed();
             break;
-        case KVM_EXIT_TPR_ACCESS:
-            AssertFailed();
-            break;
-        case KVM_EXIT_NMI:
+
+        case KVM_EXIT_DEBUG:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitDebug);
             AssertFailed();
             break;
 
@@ -1538,6 +2190,7 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
             AssertFailed();
             break;
         case KVM_EXIT_X86_BUS_LOCK:
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitBusLock);
             AssertFailed();
             break;
 
@@ -1556,6 +2209,8 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
         /*
          * Foreign and unknowns.
          */
+        case KVM_EXIT_NMI:
+            AssertLogRelMsgFailedReturn(("KVM_EXIT_NMI on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
         case KVM_EXIT_EPR:
             AssertLogRelMsgFailedReturn(("KVM_EXIT_EPR on VCpu #%u at %04x:%RX64!\n", pVCpu->idCpu, pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip), VERR_NEM_IPE_1);
         case KVM_EXIT_WATCHDOG:
@@ -1621,7 +2276,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                                      | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI))
         {
             /* Try inject interrupt. */
-            rcStrict = nemHCLnxHandleInterruptFF(pVM, pVCpu);
+            rcStrict = nemHCLnxHandleInterruptFF(pVM, pVCpu, pRun);
             if (rcStrict == VINF_SUCCESS)
             { /* likely */ }
             else
@@ -1647,8 +2302,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         /*
          * Ensure KVM has the whole state.
          */
-        if (   (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL)
-            !=                              CPUMCTX_EXTRN_ALL)
+        if ((pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL) != CPUMCTX_EXTRN_ALL)
         {
             int rc2 = nemHCLnxExportState(pVM, pVCpu, &pVCpu->cpum.GstCtx, pRun);
             AssertRCReturn(rc2, rc2);
@@ -1681,10 +2335,17 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                 VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_WAIT);
                 TMNotifyEndOfExecution(pVM, pVCpu, ASMReadTSC());
 
-                LogFlow(("NEM/%u: Exit  @ %04x:%08RX64 IF=%d EFL=%#RX64 CR8=%#x Reason=%#x IrqReady=%d Flags=%#x\n", pVCpu->idCpu,
-                         pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip, pRun->if_flag,
-                         pRun->s.regs.regs.rflags, pRun->s.regs.sregs.cr8, pRun->exit_reason,
-                         pRun->ready_for_interrupt_injection, pRun->flags));
+#ifdef LOG_ENABLED
+                if (LogIsFlowEnabled())
+                {
+                    struct kvm_mp_state MpState = {UINT32_MAX};
+                    ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_MP_STATE, &MpState);
+                    LogFlow(("NEM/%u: Exit  @ %04x:%08RX64 IF=%d EFL=%#RX64 CR8=%#x Reason=%#x IrqReady=%d Flags=%#x %#lx\n", pVCpu->idCpu,
+                             pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip, pRun->if_flag,
+                             pRun->s.regs.regs.rflags, pRun->s.regs.sregs.cr8, pRun->exit_reason,
+                             pRun->ready_for_interrupt_injection, pRun->flags, MpState.mp_state));
+                }
+#endif
                 if (RT_LIKELY(rcLnx == 0 || errno == EINTR))
                 {
                     /*
@@ -1761,7 +2422,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 
         if (pVCpu->cpum.GstCtx.fExtrn & fImport)
         {
-            int rc2 = nemHCLnxImportState(pVCpu, fImport, pRun);
+            int rc2 = nemHCLnxImportState(pVCpu, fImport, &pVCpu->cpum.GstCtx, pRun);
             if (RT_SUCCESS(rc2))
                 pVCpu->cpum.GstCtx.fExtrn &= ~fImport;
             else if (RT_SUCCESS(rcStrict))

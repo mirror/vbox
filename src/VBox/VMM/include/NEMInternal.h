@@ -337,21 +337,21 @@ typedef struct NEMCPU
 
     /** @name Statistics
      * @{ */
-# if 0
-    STAMCOUNTER                 StatExitPortIo;
-    STAMCOUNTER                 StatExitMemUnmapped;
-    STAMCOUNTER                 StatExitMemIntercept;
+    STAMCOUNTER                 StatExitTotal;
+    STAMCOUNTER                 StatExitIo;
+    STAMCOUNTER                 StatExitMmio;
+    STAMCOUNTER                 StatExitSetTpr;
+    STAMCOUNTER                 StatExitTprAccess;
+    STAMCOUNTER                 StatExitRdMsr;
+    STAMCOUNTER                 StatExitWrMsr;
+    STAMCOUNTER                 StatExitIrqWindowOpen;
     STAMCOUNTER                 StatExitHalt;
-    STAMCOUNTER                 StatExitInterruptWindow;
+    STAMCOUNTER                 StatExitIntr;
+    STAMCOUNTER                 StatExitHypercall;
+    STAMCOUNTER                 StatExitDebug;
+    STAMCOUNTER                 StatExitBusLock;
+# if 0
     STAMCOUNTER                 StatExitCpuId;
-    STAMCOUNTER                 StatExitMsr;
-    STAMCOUNTER                 StatExitException;
-    STAMCOUNTER                 StatExitExceptionBp;
-    STAMCOUNTER                 StatExitExceptionDb;
-    STAMCOUNTER                 StatExitExceptionGp;
-    STAMCOUNTER                 StatExitExceptionGpMesa;
-    STAMCOUNTER                 StatExitExceptionUd;
-    STAMCOUNTER                 StatExitExceptionUdHandled;
     STAMCOUNTER                 StatExitUnrecoverable;
     STAMCOUNTER                 StatGetMsgTimeout;
     STAMCOUNTER                 StatStopCpuSuccess;
