@@ -362,7 +362,11 @@ RT_CONCAT(.seh64_op_label_,seh64_idxOps):
 ; names created using the name macros in this files.
 ; This is handy when you've got some kind of template code.
 %ifndef NAME_OVERLOAD
- %define NAME_OVERLOAD(name) name
+ %ifdef RT_MANGLER_PREFIX
+  %define NAME_OVERLOAD(name) RT_MANGLER_PREFIX %+ name
+ %else
+  %define NAME_OVERLOAD(name) name
+ %endif
 %endif
 
 ;;

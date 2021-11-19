@@ -5440,6 +5440,7 @@ ifn1of ($(KBUILD_TARGET), darwin os2 win solaris freebsd)
  # fortunately it isn't really necessary.
  TEMPLATE_VBOXR0DRV_CFLAGS    += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
  TEMPLATE_VBOXR0DRV_CXXFLAGS  += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
+ TEMPLATE_VBOXR0DRV_ASMDEFS   += RT_MANGLER_PREFIX=VBoxHost_
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
@@ -8110,6 +8111,7 @@ endif
 ifn1of (darwin os2 win, $(KBUILD_TARGET))
  TEMPLATE_VBOXGUESTR0_CFLAGS     = $(patsubst %/VBox/SUPDrvMangling.h,%/VBox/VBoxGuestMangling.h,$(TEMPLATE_VBOXR0DRV_CFLAGS))
  TEMPLATE_VBOXGUESTR0_CXXFLAGS   = $(patsubst %/VBox/SUPDrvMangling.h,%/VBox/VBoxGuestMangling.h,$(TEMPLATE_VBOXR0DRV_CXXFLAGS))
+ TEMPLATE_VBOXGUESTR0_ASMDEFS    = $(patsubst RT_MANGLER_PREFIX=%,RT_MANGLER_PREFIX=VBoxGuest_,$(TEMPLATE_VBOXR0DRV_ASMDEFS))
 endif
 if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120" # Do not use SSE so the binaries might works on NT4 and earlier.
  TEMPLATE_VBOXGUESTR0_CFLAGS.win.x86   = $(TEMPLATE_VBOXR0DRV_CFLAGS.win.x86) /arch:IA32
