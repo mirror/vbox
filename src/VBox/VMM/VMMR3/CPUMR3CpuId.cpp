@@ -4227,7 +4227,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
             /** @todo Think about enabling this later with NEM/KVM. */
             if (VM_IS_NEM_ENABLED(pVM))
             {
-                LogRel(("CPUM: WARNING! Can't turn on nested VT-x/AMD-V when NEM is used!\n"));
+                LogRel(("CPUM: WARNING! Can't turn on nested VT-x/AMD-V when NEM is used! (later)\n"));
                 pConfig->fNestedHWVirt = false;
             }
             else if (!fNestedPagingAndFullGuestExec)
@@ -4339,11 +4339,11 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = cpumR3CpuIdReadIsaExtCfgLegacy(pVM, pIsaExts, pCpumCfg, "SSE4.2", &pConfig->enmSse42, true);
     AssertLogRelRCReturn(rc, rc);
 
-    bool const fMayHaveXSave = fNestedPagingAndFullGuestExec
-                            && pVM->cpum.s.HostFeatures.fXSaveRstor
+    bool const fMayHaveXSave = pVM->cpum.s.HostFeatures.fXSaveRstor
                             && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor
-                            && (   !VM_IS_NEM_ENABLED(pVM)
-                                || (NEMHCGetFeatures(pVM) & NEM_FEAT_F_XSAVE_XRSTOR));
+                            && (  !VM_IS_NEM_ENABLED(pVM)
+                                ? fNestedPagingAndFullGuestExec
+                                : NEMHCGetFeatures(pVM) & NEM_FEAT_F_XSAVE_XRSTOR);
     uint64_t const fXStateHostMask = pVM->cpum.s.fXStateHostMask;
 
     /** @cfgm{/CPUM/IsaExts/XSAVE, boolean, depends}
@@ -4544,10 +4544,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM, PCCPUMMSRS pHostMsrs)
     CPUMCPUIDCONFIG Config;
     RT_ZERO(Config);
 
-    bool const fNestedPagingAndFullGuestExec =   VM_IS_NEM_ENABLED(pVM)
-                                               ?     ((NEMHCGetFeatures(pVM) & (NEM_FEAT_F_NESTED_PAGING | NEM_FEAT_F_FULL_GST_EXEC))
-                                                  == (NEM_FEAT_F_NESTED_PAGING | NEM_FEAT_F_FULL_GST_EXEC))
-                                               : HMAreNestedPagingAndFullGuestExecEnabled(pVM);
+    bool const fNestedPagingAndFullGuestExec = VM_IS_NEM_ENABLED(pVM) || HMAreNestedPagingAndFullGuestExecEnabled(pVM);
     int rc = cpumR3CpuIdReadConfig(pVM, &Config, pCpumCfg, fNestedPagingAndFullGuestExec);
     AssertRCReturn(rc, rc);
 
