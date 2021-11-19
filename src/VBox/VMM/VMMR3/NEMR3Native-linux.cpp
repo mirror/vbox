@@ -29,6 +29,7 @@
 #include "NEMInternal.h"
 #include <VBox/vmm/vmcc.h>
 
+#include <iprt/alloca.h>
 #include <iprt/string.h>
 #include <iprt/system.h>
 
@@ -602,9 +603,57 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
 }
 
 
+/**
+ * Update the CPUID leaves for a VCPU.
+ *
+ * The KVM_SET_CPUID2 call replaces any previous leaves, so we have to redo
+ * everything when there really just are single bit changes.
+ */
+static int nemR3LnxUpdateCpuIdsLeaves(PVM pVM, PVMCPU pVCpu)
+{
+    uint32_t              cLeaves  = 0;
+    PCCPUMCPUIDLEAF const paLeaves = CPUMR3CpuIdGetPtr(pVM, &cLeaves);
+    struct kvm_cpuid2    *pReq = (struct kvm_cpuid2 *)alloca(RT_UOFFSETOF_DYN(struct kvm_cpuid2, entries[cLeaves + 2]));
+
+    pReq->nent    = cLeaves;
+    pReq->padding = 0;
+
+    for (uint32_t i = 0; i < cLeaves; i++)
+    {
+        CPUMGetGuestCpuId(pVCpu, paLeaves[i].uLeaf, paLeaves[i].uSubLeaf,
+                          &pReq->entries[i].eax,
+                          &pReq->entries[i].ebx,
+                          &pReq->entries[i].ecx,
+                          &pReq->entries[i].edx);
+        pReq->entries[i].function   = paLeaves[i].uLeaf;
+        pReq->entries[i].index      = paLeaves[i].uSubLeaf;
+        pReq->entries[i].flags      = !paLeaves[i].fSubLeafMask ? 0 : KVM_CPUID_FLAG_SIGNIFCANT_INDEX;
+        pReq->entries[i].padding[0] = 0;
+        pReq->entries[i].padding[1] = 0;
+        pReq->entries[i].padding[2] = 0;
+    }
+
+    int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_CPUID2, pReq);
+    AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d cLeaves=%#x\n", rcLnx, errno, cLeaves), RTErrConvertFromErrno(errno));
+
+    return VINF_SUCCESS;
+}
+
+
 int nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
-    RT_NOREF(pVM, enmWhat);
+    /*
+     * Configure CPUIDs after ring-3 init has been done.
+     */
+    if (enmWhat == VMINITCOMPLETED_RING3)
+    {
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        {
+            int rc = nemR3LnxUpdateCpuIdsLeaves(pVM, pVM->apCpusR3[idCpu]);
+            AssertRCReturn(rc, rc);
+        }
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -1220,21 +1269,11 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx, st
     {
         if (fWhat & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
         {
-            /* Partial state is annoying as we have to do merging - is this possible at all? */
-            struct kvm_xsave XSave;
-            int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_XSAVE, &XSave);
-            AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
+            fWhat |= CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE; /* we do all or nothing at all */
 
-            if (fWhat & CPUMCTX_EXTRN_X87)
-                memcpy(&pCtx->XState.x87, &XSave, sizeof(pCtx->XState.x87));
-            if (fWhat & CPUMCTX_EXTRN_SSE_AVX)
-            {
-                /** @todo    */
-            }
-            if (fWhat & CPUMCTX_EXTRN_OTHER_XSAVE)
-            {
-                /** @todo   */
-            }
+            AssertCompile(sizeof(pCtx->XState) >= sizeof(struct kvm_xsave));
+            int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_XSAVE, &pCtx->XState);
+            AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
         }
 
         if (fWhat & CPUMCTX_EXTRN_XCRx)
@@ -1611,26 +1650,11 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
     {
         if (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
         {
-            if (   (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
-                !=           (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
-            {
-                /* Partial state is annoying as we have to do merging - is this possible at all? */
-                struct kvm_xsave XSave;
-                int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_XSAVE, &XSave);
-                AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
+            /** @todo could IEM just grab state partial control in some situations? */
+            Assert(   (fExtrn & (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE))
+                   ==           (CPUMCTX_EXTRN_X87 | CPUMCTX_EXTRN_SSE_AVX | CPUMCTX_EXTRN_OTHER_XSAVE)); /* no partial states */
 
-                if (fExtrn & CPUMCTX_EXTRN_X87)
-                    memcpy(&pCtx->XState.x87, &XSave, sizeof(pCtx->XState.x87));
-                if (fExtrn & CPUMCTX_EXTRN_SSE_AVX)
-                {
-                    /** @todo    */
-                }
-                if (fExtrn & CPUMCTX_EXTRN_OTHER_XSAVE)
-                {
-                    /** @todo   */
-                }
-            }
-
+            AssertCompile(sizeof(pCtx->XState) >= sizeof(struct kvm_xsave));
             int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_XSAVE, &pCtx->XState);
             AssertMsgReturn(rc == 0, ("rc=%d errno=%d\n", rc, errno), VERR_NEM_IPE_3);
         }
@@ -2128,6 +2152,8 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
             return nemHCLnxHandleExitMmio(pVM, pVCpu, pRun);
 
         case KVM_EXIT_IRQ_WINDOW_OPEN:
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, KVM_EXIT_IRQ_WINDOW_OPEN),
+                             pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitIrqWindowOpen);
             Log5(("IrqWinOpen/%u: %d\n", pVCpu->idCpu, pRun->request_interrupt_window));
             pRun->request_interrupt_window = 0;
@@ -2154,11 +2180,15 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
             break;
 
         case KVM_EXIT_HLT:
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, KVM_EXIT_HLT),
+                             pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHalt);
             Log5(("Halt/%u\n", pVCpu->idCpu));
             return VINF_EM_HALT;
 
         case KVM_EXIT_INTR: /* EINTR */
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, KVM_EXIT_INTR),
+                             pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitIntr);
             Log5(("Intr/%u\n", pVCpu->idCpu));
             return VINF_SUCCESS;

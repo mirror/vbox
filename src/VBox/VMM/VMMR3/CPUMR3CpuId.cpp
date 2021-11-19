@@ -1237,6 +1237,23 @@ VMMR3DECL(int) CPUMR3CpuIdGetLeaf(PVM pVM, PCPUMCPUIDLEAF pLeaf, uint32_t uLeaf,
 
 
 /**
+ * Gets all the leaves.
+ *
+ * This only works after the CPUID leaves have been initialized.  The interface
+ * is intended for NEM and configuring CPUID leaves for the native hypervisor.
+ *
+ * @returns Pointer to the array of leaves.  NULL on failure.
+ * @param   pVM         The cross context VM structure.
+ * @param   pcLeaves    Where to return the number of leaves.
+ */
+VMMR3_INT_DECL(PCCPUMCPUIDLEAF) CPUMR3CpuIdGetPtr(PVM pVM, uint32_t *pcLeaves)
+{
+    *pcLeaves = pVM->cpum.s.GuestInfo.cCpuIdLeaves;
+    return pVM->cpum.s.GuestInfo.paCpuIdLeavesR3;
+}
+
+
+/**
  * Inserts a CPU ID leaf, replacing any existing ones.
  *
  * @returns VBox status code.
@@ -1268,6 +1285,7 @@ VMMR3DECL(int) CPUMR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF pNewLeaf)
 
     return cpumR3CpuIdInsert(pVM, NULL /* ppaLeaves */, NULL /* pcLeaves */, pNewLeaf);
 }
+
 
 /**
  * Collects CPUID leaves and sub-leaves, returning a sorted array of them.
