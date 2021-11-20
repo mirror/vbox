@@ -533,6 +533,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                         STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturnSkipped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of skipped state imports on loop return", "/NEM/CPU%u/ImportOnReturnSkipped", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatImportPendingInterrupt, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of times an interrupt was pending when importing from KVM", "/NEM/CPU%u/ImportPendingInterrupt", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatExportPendingInterrupt, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of times an interrupt was pending when exporting to KVM", "/NEM/CPU%u/ExportPendingInterrupt", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatFlushExitOnReturn,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of times a KVM_EXIT_IO or KVM_EXIT_MMIO was flushed before returning to EM", "/NEM/CPU%u/FlushExitOnReturn", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatQueryCpuTick,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of TSC queries",                  "/NEM/CPU%u/QueryCpuTick", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatExitTotal,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "All exits",                  "/NEM/CPU%u/Exit", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatExitIo,              STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_IO",                "/NEM/CPU%u/Exit/Io", idCpu);
@@ -2246,7 +2247,7 @@ static VBOXSTRICTRC nemHCLnxHandleExitMmio(PVMCC pVM, PVMCPUCC pVCpu, struct kvm
 }
 
 
-static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run *pRun)
+static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run *pRun, bool *pfStatefulExit)
 {
     STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitTotal);
     switch (pRun->exit_reason)
@@ -2257,10 +2258,12 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
 
         case KVM_EXIT_IO:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitIo);
+            *pfStatefulExit = true;
             return nemHCLnxHandleExitIo(pVM, pVCpu, pRun);
 
         case KVM_EXIT_MMIO:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitMmio);
+            *pfStatefulExit = true;
             return nemHCLnxHandleExitMmio(pVM, pVCpu, pRun);
 
         case KVM_EXIT_IRQ_WINDOW_OPEN:
@@ -2410,6 +2413,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
     struct kvm_run * const  pRun                = pVCpu->nem.s.pRun;
     const bool              fSingleStepping     = DBGFIsStepping(pVCpu);
     VBOXSTRICTRC            rcStrict            = VINF_SUCCESS;
+    bool                    fStatefulExit       = false;  /* For MMIO and IO exits. */
     for (unsigned iLoop = 0;; iLoop++)
     {
         /*
@@ -2490,12 +2494,13 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                              pRun->ready_for_interrupt_injection, pRun->flags, MpState.mp_state));
                 }
 #endif
+                fStatefulExit = false;
                 if (RT_LIKELY(rcLnx == 0 || errno == EINTR))
                 {
                     /*
-                     * Deal with the message.
+                     * Deal with the exit.
                      */
-                    rcStrict = nemHCLnxHandleExit(pVM, pVCpu, pRun);
+                    rcStrict = nemHCLnxHandleExit(pVM, pVCpu, pRun, &fStatefulExit);
                     if (rcStrict == VINF_SUCCESS)
                     { /* hopefully likely */ }
                     else
@@ -2538,6 +2543,21 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         break;
     } /* the run loop */
 
+
+    /*
+     * If the last exit was stateful, commit the state we provided before
+     * returning to the EM loop so we have a consistent state and can safely
+     * be rescheduled and whatnot.  (There is no 'ing way to reset the kernel
+     * side completion callback for these stateful i/o exits.)
+     */
+    if (fStatefulExit)
+    {
+        pRun->immediate_exit = 1;
+        int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_RUN, 0UL);
+        pRun->immediate_exit = 0;
+        Log(("NEM/%u: Flushed stateful exit -> %d/%d exit_reason=%d\n", pVCpu->idCpu, rcLnx, errno, pRun->exit_reason));
+        STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatFlushExitOnReturn);
+    }
 
     /*
      * If the CPU is running, make sure to stop it before we try sync back the
