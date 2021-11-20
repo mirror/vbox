@@ -163,7 +163,7 @@ BEGINPROC TMPL_NM(TestA20_ScanMemory)
         mov     ax,  00000h
         mov     esi, 00000h
         mov     ds, ax
-        mov     ecx, 01000h             ; at 101000 there is a VMMDevTesting MMIO page.
+        mov     ecx, 01000h             ; at 101000 there was a VMMDevTesting MMIO page.
 %elifdef TMPL_16BIT
         ;; @todo need a selector we can modify.
         jmp     .done

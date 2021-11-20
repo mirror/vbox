@@ -164,9 +164,9 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
 
     /* Figure out which MMIO region we'll be using so we can correctly initialize FPUDS. */
 # if BS3_MODE_IS_RM_OR_V86(TMPL_MODE)
-    MmioReg.pv = BS3_FP_MAKE(0xffff, VMMDEV_TESTING_MMIO_BASE - _1M + 16);
+    MmioReg.pv = BS3_FP_MAKE(VMMDEV_TESTING_MMIO_RM_SEL, VMMDEV_TESTING_MMIO_RM_OFF2(0));
 # elif BS3_MODE_IS_16BIT_CODE(TMPL_MODE)
-    MmioReg.pv = BS3_FP_MAKE(BS3_SEL_VMMDEV_MMIO16, VMMDEV_TESTING_MMIO_BASE - _1M);
+    MmioReg.pv = BS3_FP_MAKE(BS3_SEL_VMMDEV_MMIO16, 0);
 # else
     MmioReg.pv = (uint8_t *)VMMDEV_TESTING_MMIO_BASE;
 # endif

@@ -39,9 +39,10 @@
  */
 
 /** The base address of the MMIO range used for testing.
- * This is intentionally put at the 2nd page above 1M so that it can be
- * accessed from both real (!A20) and protected mode. */
-#define VMMDEV_TESTING_MMIO_BASE        UINT32_C(0x00101000)
+ * @remarks This used to be at 0x101000 but moved to 0xdf000 so that it would
+ *          work better with prototype NEM code.  This also means enabling A20
+ *          is not a requirement. */
+#define VMMDEV_TESTING_MMIO_BASE        UINT32_C(0x000df000)
 /** The size of the MMIO range used for testing.  */
 #define VMMDEV_TESTING_MMIO_SIZE        UINT32_C(0x00001000)
 
@@ -65,13 +66,12 @@
 /** Default address of VMMDEV_TESTING_MMIO_OFF_READBACK_R3. */
 #define VMMDEV_TESTING_MMIO_READBACK_R3     (VMMDEV_TESTING_MMIO_BASE + VMMDEV_TESTING_MMIO_OFF_READBACK_R3)
 
-/** The real mode selector to use.
- * @remarks Requires that the A20 gate is enabled. */
-#define VMMDEV_TESTING_MMIO_RM_SEL       0xffff
+/** The real mode selector to use. */
+#define VMMDEV_TESTING_MMIO_RM_SEL          0xdf00
 /** Calculate the real mode offset of a MMIO register. */
-#define VMMDEV_TESTING_MMIO_RM_OFF(val)  ((val) - 0xffff0)
+#define VMMDEV_TESTING_MMIO_RM_OFF(val)     ((val) - VMMDEV_TESTING_MMIO_BASE)
 /** Calculate the real mode offset of a MMIO register offset. */
-#define VMMDEV_TESTING_MMIO_RM_OFF2(off) ((off) + 16 + 0x1000)
+#define VMMDEV_TESTING_MMIO_RM_OFF2(off)    (off)
 
 /** The base port of the I/O range used for testing. */
 #define VMMDEV_TESTING_IOPORT_BASE      0x0510
