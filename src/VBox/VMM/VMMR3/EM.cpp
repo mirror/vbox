@@ -1901,6 +1901,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Guest event injection.
          */
+        Assert(!(pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI)));
         bool fWakeupPending = false;
         if (   !VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)
             && (!rc || rc >= VINF_EM_RESCHEDULE_HM)

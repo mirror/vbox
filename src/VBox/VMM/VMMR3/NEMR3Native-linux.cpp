@@ -1904,8 +1904,21 @@ void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
  */
 static VBOXSTRICTRC nemHCLnxHandleInterruptFF(PVM pVM, PVMCPU pVCpu, struct kvm_run *pRun)
 {
-    Assert(!TRPMHasTrap(pVCpu));
     RT_NOREF_PV(pVM);
+
+    /*
+     * Do not doing anything if TRPM has something pending already as we can
+     * only inject one event per KVM_RUN call.  This can only happend if we
+     * can directly from the loop in EM, so the inhibit bits must be internal.
+     */
+    if (!TRPMHasTrap(pVCpu))
+    { /* semi likely */ }
+    else
+    {
+        Assert(!(pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI)));
+        Log8(("nemHCLnxHandleInterruptFF: TRPM has an pending event already\n"));
+        return VINF_SUCCESS;
+    }
 
     /*
      * First update APIC.  We ASSUME this won't need TPR/CR8.
@@ -2536,7 +2549,8 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
     if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL)
     {
         /* Try anticipate what we might need. */
-        uint64_t fImport = IEM_CPUMCTX_EXTRN_MUST_MASK;
+        uint64_t fImport = CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI /* Required for processing APIC,PIC,NMI & SMI FFs. */
+                         | IEM_CPUMCTX_EXTRN_MUST_MASK /*?*/;
         if (   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
             || RT_FAILURE(rcStrict))
             fImport = CPUMCTX_EXTRN_ALL;
