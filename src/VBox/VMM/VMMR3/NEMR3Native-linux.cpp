@@ -26,6 +26,7 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/apic.h>
 #include <VBox/vmm/pdm.h>
+#include <VBox/vmm/trpm.h>
 #include "NEMInternal.h"
 #include <VBox/vmm/vmcc.h>
 
@@ -39,6 +40,13 @@
 #include <sys/fcntl.h>
 #include <sys/mman.h>
 #include <linux/kvm.h>
+
+/*
+ * Supply stuff missing from the kvm.h on the build box.
+ */
+#ifndef KVM_INTERNAL_ERROR_UNEXPECTED_EXIT_REASON /* since 5.4 */
+# define KVM_INTERNAL_ERROR_UNEXPECTED_EXIT_REASON 4
+#endif
 
 
 
@@ -523,6 +531,8 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                         STAMR3RegisterF(pVM, &pNemCpu->StatImportOnDemand,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of on-demand state imports",      "/NEM/CPU%u/ImportOnDemand", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturn,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of state imports on loop return", "/NEM/CPU%u/ImportOnReturn", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatImportOnReturnSkipped, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of skipped state imports on loop return", "/NEM/CPU%u/ImportOnReturnSkipped", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatImportPendingInterrupt, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of times an interrupt was pending when importing from KVM", "/NEM/CPU%u/ImportPendingInterrupt", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExportPendingInterrupt, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of times an interrupt was pending when exporting to KVM", "/NEM/CPU%u/ExportPendingInterrupt", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatQueryCpuTick,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of TSC queries",                  "/NEM/CPU%u/QueryCpuTick", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatExitTotal,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "All exits",                  "/NEM/CPU%u/Exit", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatExitIo,              STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_IO",                "/NEM/CPU%u/Exit/Io", idCpu);
@@ -537,6 +547,8 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                         STAMR3RegisterF(pVM, &pNemCpu->StatExitHypercall,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_HYPERCALL",         "/NEM/CPU%u/Exit/Hypercall", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatExitDebug,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_DEBUG",             "/NEM/CPU%u/Exit/Debug", idCpu);
                         STAMR3RegisterF(pVM, &pNemCpu->StatExitBusLock,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_BUS_LOCK",          "/NEM/CPU%u/Exit/BusLock", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitInternalErrorEmulation, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_INTERNAL_ERROR/EMULATION", "/NEM/CPU%u/Exit/InternalErrorEmulation", idCpu);
+                        STAMR3RegisterF(pVM, &pNemCpu->StatExitInternalErrorFatal,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "KVM_EXIT_INTERNAL_ERROR/*", "/NEM/CPU%u/Exit/InternalErrorFatal", idCpu);
                     }
 
                     /*
@@ -1357,7 +1369,7 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx, st
     }
 
     /*
-     * Interruptibility state.
+     * Interruptibility state and pending interrupts.
      */
     if (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
     {
@@ -1379,6 +1391,15 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx, st
             VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
         else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
+
+        if (KvmEvents.interrupt.injected)
+        {
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatImportPendingInterrupt);
+            TRPMAssertTrap(pVCpu, KvmEvents.interrupt.nr, !KvmEvents.interrupt.soft ? TRPM_HARDWARE_INT : TRPM_SOFTWARE_INT);
+        }
+
+        Assert(KvmEvents.nmi.injected == 0);
+        Assert(KvmEvents.nmi.pending  == 0);
     }
 
     /*
@@ -1757,6 +1778,25 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
             KvmEvents.nmi.masked = 1;
 
+        if (TRPMHasTrap(pVCpu))
+        {
+            TRPMEVENT enmType = TRPM_32BIT_HACK;
+            uint8_t   bTrapNo = 0;
+            TRPMQueryTrap(pVCpu, &bTrapNo, &enmType);
+            Log(("nemHCLnxExportState: Pending trap: bTrapNo=%#x enmType=%d\n", bTrapNo, enmType));
+            if (   enmType == TRPM_HARDWARE_INT
+                || enmType == TRPM_SOFTWARE_INT)
+            {
+                KvmEvents.interrupt.soft     = enmType == TRPM_SOFTWARE_INT;
+                KvmEvents.interrupt.nr       = bTrapNo;
+                KvmEvents.interrupt.injected = 1;
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExportPendingInterrupt);
+                TRPMResetTrap(pVCpu);
+            }
+            else
+                AssertFailed();
+        }
+
         int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_VCPU_EVENTS, &KvmEvents);
         AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_3);
     }
@@ -1962,6 +2002,7 @@ static VBOXSTRICTRC nemHCLnxHandleInterruptFF(PVM pVM, PVMCPU pVCpu, struct kvm_
                 int rc = PDMGetInterrupt(pVCpu, &bInterrupt);
                 if (RT_SUCCESS(rc))
                 {
+                    Assert(KvmEvents.interrupt.injected == false);
 #if 0
                     int rcLnx = ioctl(pVCpu->nem.s.fdVm, KVM_INTERRUPT, (unsigned long)bInterrupt);
                     AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_5);
@@ -1999,6 +2040,64 @@ static VBOXSTRICTRC nemHCLnxHandleInterruptFF(PVM pVM, PVMCPU pVCpu, struct kvm_
     AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_5);
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles KVM_EXIT_INTERNAL_ERROR.
+ */
+static VBOXSTRICTRC nemR3LnxHandleInternalError(PVMCPU pVCpu, struct kvm_run *pRun)
+{
+    Log(("NEM: KVM_EXIT_INTERNAL_ERROR! suberror=%#x (%d) ndata=%u data=%.*Rhxs\n", pRun->internal.suberror,
+         pRun->internal.suberror, pRun->internal.ndata, sizeof(pRun->internal.data), &pRun->internal.data[0]));
+
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, KVM_EXIT_INTERNAL_ERROR),
+                     pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
+
+    /*
+     * Deal with each suberror, returning if we don't want IEM to handle it.
+     */
+    switch (pRun->internal.suberror)
+    {
+        case KVM_INTERNAL_ERROR_EMULATION:
+        {
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitInternalErrorEmulation);
+            break;
+        }
+
+        case KVM_INTERNAL_ERROR_SIMUL_EX:
+        case KVM_INTERNAL_ERROR_DELIVERY_EV:
+        case KVM_INTERNAL_ERROR_UNEXPECTED_EXIT_REASON:
+        default:
+        {
+            const char *pszName;
+            switch (pRun->internal.suberror)
+            {
+                case KVM_INTERNAL_ERROR_EMULATION:              pszName = "KVM_INTERNAL_ERROR_EMULATION"; break;
+                case KVM_INTERNAL_ERROR_SIMUL_EX:               pszName = "KVM_INTERNAL_ERROR_SIMUL_EX"; break;
+                case KVM_INTERNAL_ERROR_DELIVERY_EV:            pszName = "KVM_INTERNAL_ERROR_DELIVERY_EV"; break;
+                case KVM_INTERNAL_ERROR_UNEXPECTED_EXIT_REASON: pszName = "KVM_INTERNAL_ERROR_UNEXPECTED_EXIT_REASON"; break;
+                default:                                        pszName = "unknown"; break;
+            }
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitInternalErrorFatal);
+            LogRel(("NEM: KVM_EXIT_INTERNAL_ERROR! suberror=%#x (%s) ndata=%u data=%.*Rhxs\n", pRun->internal.suberror, pszName,
+                    pRun->internal.ndata, sizeof(pRun->internal.data), &pRun->internal.data[0]));
+            return VERR_NEM_IPE_0;
+        }
+    }
+
+    /*
+     * Execute instruction in IEM and try get on with it.
+     */
+    Log2(("nemR3LnxHandleInternalError: Executing instruction at %04x:%08RX64 in IEM\n",
+          pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip));
+    VBOXSTRICTRC rcStrict = nemHCLnxImportState(pVCpu,
+                                                IEM_CPUMCTX_EXTRN_MUST_MASK | CPUMCTX_EXTRN_INHIBIT_INT
+                                                 | CPUMCTX_EXTRN_INHIBIT_NMI,
+                                                &pVCpu->cpum.GstCtx, pRun);
+    if (RT_SUCCESS(rcStrict))
+        rcStrict = IEMExecOne(pVCpu);
+    return rcStrict;
 }
 
 
@@ -2230,11 +2329,13 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
             break;
 
         case KVM_EXIT_FAIL_ENTRY:
-            AssertFailed();
-            break;
+            LogRel(("NEM: KVM_EXIT_FAIL_ENTRY! hardware_entry_failure_reason=%#x cpu=%#x\n",
+                    pRun->fail_entry.hardware_entry_failure_reason, pRun->fail_entry.cpu));
+            return VERR_NEM_IPE_1;
+
         case KVM_EXIT_INTERNAL_ERROR:
-            AssertFailed();
-            break;
+            /* we're counting sub-reasons inside the function. */
+            return nemR3LnxHandleInternalError(pVCpu, pRun);
 
         /*
          * Foreign and unknowns.

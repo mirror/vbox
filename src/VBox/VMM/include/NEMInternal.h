@@ -350,6 +350,8 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatExitHypercall;
     STAMCOUNTER                 StatExitDebug;
     STAMCOUNTER                 StatExitBusLock;
+    STAMCOUNTER                 StatExitInternalErrorEmulation;
+    STAMCOUNTER                 StatExitInternalErrorFatal;
 # if 0
     STAMCOUNTER                 StatExitCpuId;
     STAMCOUNTER                 StatExitUnrecoverable;
@@ -368,6 +370,8 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatImportOnDemand;
     STAMCOUNTER                 StatImportOnReturn;
     STAMCOUNTER                 StatImportOnReturnSkipped;
+    STAMCOUNTER                 StatImportPendingInterrupt;
+    STAMCOUNTER                 StatExportPendingInterrupt;
     STAMCOUNTER                 StatQueryCpuTick;
     /** @} */
 

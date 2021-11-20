@@ -229,6 +229,21 @@ int emR3NemHandleRC(PVM pVM, PVMCPU pVCpu, int rc)
             break;
 #endif
 
+#ifdef EMHANDLERC_WITH_NEM
+        /* Fatal stuff, up a level. */
+        case VERR_NEM_IPE_0:
+        case VERR_NEM_IPE_1:
+        case VERR_NEM_IPE_2:
+        case VERR_NEM_IPE_3:
+        case VERR_NEM_IPE_4:
+        case VERR_NEM_IPE_5:
+        case VERR_NEM_IPE_6:
+        case VERR_NEM_IPE_7:
+        case VERR_NEM_IPE_8:
+        case VERR_NEM_IPE_9:
+            break;
+#endif
+
         /*
          * These two should be handled via the force flag already, but just in
          * case they end up here deal with it.
