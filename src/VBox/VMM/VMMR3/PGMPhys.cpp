@@ -2852,7 +2852,7 @@ static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, u
          */
         if (   (fFlags & PGMPHYS_MMIO2_FLAGS_TRACK_DIRTY_PAGES)
 #ifdef VBOX_WITH_PGM_NEM_MODE
-            && !NEMR3IsMmio2DirtyPageTrackingSupported(pVM)
+            && (!VM_IS_NEM_ENABLED(pVM) || !NEMR3IsMmio2DirtyPageTrackingSupported(pVM))
 #endif
             )
 
