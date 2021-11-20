@@ -60,7 +60,7 @@ BS3_CMN_DEF(void, Bs3PitSetupAndEnablePeriodTimer,(uint16_t cHzDesired))
      * Disable the PIT and make sure we've configured the IRQ handlers.
      */
     Bs3PitDisable();
-    Bs3PicSetup();
+    Bs3PicSetup(false /*fForcedReInit*/);
     Bs3TrapSetHandlerEx(0x70, bs3PitIrqHandler_c16, bs3PitIrqHandler_c32, bs3PitIrqHandler_c64);
 
     /*

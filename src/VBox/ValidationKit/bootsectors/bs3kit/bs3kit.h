@@ -2460,8 +2460,10 @@ BS3_CMN_PROTO_NOSB(void, Bs3KbdWrite,(uint8_t bCmd, uint8_t bData));
  * end-of-interrupt, and all IRQs masked.  The individual PIC users will have to
  * use #Bs3PicUpdateMask unmask their IRQ once they've got all the handlers
  * installed.
+ *
+ * @param   fForcedReInit   Force a reinitialization.
  */
-BS3_CMN_PROTO_STUB(void, Bs3PicSetup,(void));
+BS3_CMN_PROTO_STUB(void, Bs3PicSetup,(bool fForcedReInit));
 
 /**
  * Updates the PIC masks.

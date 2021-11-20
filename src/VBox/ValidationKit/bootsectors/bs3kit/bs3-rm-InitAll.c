@@ -68,7 +68,7 @@ BS3_DECL(void) Bs3InitAll_rm(void)
             ASMHalt();
     }
     ASMIntDisable();
-    Bs3PicSetup();
+    Bs3PicSetup(false /*fForcedReInit*/);
 
     /*
      * Initialize IDTs and such.
