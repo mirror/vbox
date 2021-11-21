@@ -568,6 +568,8 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
 {
     /** @todo SMP support! */
     PVMCPU      pVCpu = VMMGetCpu(pVM);
+    CPUMImportGuestStateOnDemand(pVCpu, CPUMCTX_EXTRN_CR0  | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4
+                                      | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_GDTR);
 
     VBOXGDTR    GDTR;
     CPUMGetGuestGDTR(pVCpu, &GDTR);
@@ -611,6 +613,8 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
 {
     /** @todo SMP support! */
     PVMCPU   pVCpu = VMMGetCpu(pVM);
+    CPUMImportGuestStateOnDemand(pVCpu, CPUMCTX_EXTRN_CR0  | CPUMCTX_EXTRN_CR3  | CPUMCTX_EXTRN_CR4
+                                      | CPUMCTX_EXTRN_EFER | CPUMCTX_EXTRN_GDTR | CPUMCTX_EXTRN_LDTR);
 
     uint64_t GCPtrLdt;
     uint32_t cbLdt;
