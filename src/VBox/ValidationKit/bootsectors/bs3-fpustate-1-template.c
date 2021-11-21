@@ -133,9 +133,13 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
     bool                fReadError = false;
     BS3PTRUNION         MmioReg;
     BS3CPUVENDOR const  enmCpuVendor = Bs3GetCpuVendor();
+    bool const          fSkipStorIdt = Bs3TestQueryCfgBool(VMMDEV_TESTING_CFG_IS_NEM_LINUX);
     bool const          fFastFxSaveRestore = RT_BOOL(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_FFXSR);
     //bool const          fFdpXcptOnly = (ASMCpuIdEx_EBX(7, 0) & X86_CPUID_STEXT_FEATURE_EBX_FDP_EXCPTN_ONLY)
     //                                && ASMCpuId_EAX(0) >= 7;
+
+    if (fSkipStorIdt)
+        Bs3TestPrintf("NEM/linux - skipping SIDT\n");
 
 # undef  CHECK_STATE
 # define CHECK_STATE(a_Instr) \
@@ -150,9 +154,6 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
             } \
         } while (0)
 
-    /*
-     * Setup the test.
-     */
 
     /* Make this code executable in raw-mode.  A bit tricky. */
     ASMSetCR0(ASMGetCR0() | X86_CR0_WP);
@@ -288,7 +289,8 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
             } while (0)
 
         /* The tests. */
-        CHECK_READBACK_WRITE_Z(SIDT,     ASMGetIDTR,                         RTIDTR);
+        if (!fSkipStorIdt) /* KVM doesn't advance RIP executing a SIDT [MMIO-memory], it seems. (Linux 5.13.1) */
+            CHECK_READBACK_WRITE_Z(SIDT, ASMGetIDTR,                         RTIDTR);
         CHECK_READBACK_WRITE_Z(FNSTENV,  TMPL_NM(bs3FpuState1_FNStEnv),      X86FSTENV32P); /** @todo x86.h is missing types */
         CHECK_READBACK_WRITE(  MOVDQU,   TMPL_NM(bs3FpuState1_MovDQU_Write), X86XMMREG);
         CHECK_READBACK_READ(   MOVDQU,   TMPL_NM(bs3FpuState1_MovDQU_Read),  X86XMMREG);
