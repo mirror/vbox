@@ -49,6 +49,194 @@ using namespace com;
 
 DECLARE_TRANSLATION_CONTEXT(Info);
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define SHOW_UTF8_STRING(a_pszMachine, a_pszHuman, a_szValue) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_pszMachine, a_szValue); \
+        else \
+            RTPrintf("%-28s %s\n", a_pszHuman, a_szValue); \
+    } while (0)
+
+#define SHOW_BSTR_STRING(a_pszMachine, a_pszHuman, a_bstrValue) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_pszMachine, &a_bstrValue); \
+        else \
+            RTPrintf("%-28s %ls\n", a_pszHuman, a_bstrValue.raw()); \
+    } while (0)
+
+#define SHOW_BOOL_VALUE_EX(a_pszMachine, a_pszHuman, a_fValue, a_szTrue, a_szFalse) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_pszMachine, a_fValue ? "on" : "off"); \
+        else \
+            RTPrintf("%-28s %s\n", a_pszHuman, a_fValue ? a_szTrue: a_szFalse); \
+    } while (0)
+
+#define SHOW_BOOL_VALUE(a_pszMachine, a_pszHuman, a_fValue) \
+    SHOW_BOOL_VALUE_EX(a_pszMachine, a_pszHuman, a_fValue, Info::tr("enabled"), Info::tr("disabled"))
+
+#define SHOW_ULONG_VALUE(a_pszMachine, a_pszHuman, a_uValue, a_pszUnit) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf("%s=%u\n", a_pszMachine, a_uValue); \
+        else \
+            RTPrintf("%-28s %u%s\n", a_pszHuman, a_uValue, a_pszUnit); \
+    } while (0)
+
+#define SHOW_LONG64_VALUE(a_pszMachine, a_pszHuman, a_llValue, a_pszUnit) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf("%s=%lld\n", a_pszMachine, a_llValue); \
+        else \
+            RTPrintf("%-28s %lld%s\n", a_pszHuman, a_llValue, a_pszUnit); \
+    } while (0)
+
+#define SHOW_BOOLEAN_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
+    SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_pszMachine, a_pszHuman, Info::tr("enabled"), Info::tr("disabled"))
+
+#define SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_szTrue, a_szFalse) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        BOOL f; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&f), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_pszMachine, f ? "on" : "off"); \
+        else \
+            RTPrintf("%-28s %s\n", a_pszHuman, f ? a_szTrue : a_szFalse); \
+    } while (0)
+
+#define SHOW_BOOLEAN_METHOD(a_pObj, a_Invocation, a_pszMachine, a_pszHuman) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        BOOL f; \
+        CHECK_ERROR2I_RET(a_pObj, a_Invocation, hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_pszMachine, f ? "on" : "off"); \
+        else \
+            RTPrintf("%-28s %s\n", a_pszHuman, f ? Info::tr("enabled") : Info::tr("disabled")); \
+    } while (0)
+
+#define SHOW_STRING_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        Bstr bstr; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_pszMachine, &bstr); \
+        else \
+            RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
+    } while (0)
+
+#define SHOW_STRING_PROP_NOT_EMPTY(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        Bstr bstr; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
+        if (bstr.isNotEmpty()) \
+        { \
+            if (details == VMINFO_MACHINEREADABLE) \
+                outputMachineReadableString(a_pszMachine, &bstr); \
+            else \
+                RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
+        } \
+    } while (0)
+
+    /** @def SHOW_STRING_PROP_MAJ
+     * For not breaking the output in a dot release we don't show default values. */
+#define SHOW_STRING_PROP_MAJ(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnless, a_uMajorVer) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        Bstr bstr; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
+        if ((a_uMajorVer) <= VBOX_VERSION_MAJOR || !bstr.equals(a_pszUnless)) \
+        { \
+            if (details == VMINFO_MACHINEREADABLE)\
+                outputMachineReadableString(a_pszMachine, &bstr); \
+            else \
+                RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
+        } \
+    } while (0)
+
+#define SHOW_STRINGARRAY_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        SafeArray<BSTR> array; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(ComSafeArrayAsOutParam(array)), hrcCheck); \
+        Utf8Str str; \
+        for (size_t i = 0; i < array.size(); i++) \
+        { \
+            if (i != 0) \
+                str.append(","); \
+            str.append(Utf8Str(array[i]).c_str()); \
+        } \
+        Bstr bstr(str); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_pszMachine, &bstr); \
+        else \
+            RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
+    } while (0)
+
+#define SHOW_UUID_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
+    SHOW_STRING_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman)
+
+#define SHOW_USHORT_PROP_EX2(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit, a_szFmtMachine, a_szFmtHuman) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        USHORT u16 = 0; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&u16), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf("%s=" a_szFmtMachine "\n", a_pszMachine, u16); \
+        else \
+            RTPrintf("%-28s " a_szFmtHuman "%s\n", a_pszHuman, u16, u16, a_pszUnit); \
+    } while (0)
+
+#define SHOW_ULONG_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        ULONG u32 = 0; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&u32), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf("%s=%u\n", a_pszMachine, u32); \
+        else \
+            RTPrintf("%-28s %u%s\n", a_pszHuman, u32, a_pszUnit); \
+    } while (0)
+
+#define SHOW_LONG64_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit) \
+    do \
+    { \
+        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
+        LONG64 i64 = 0; \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&i64), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf("%s=%lld\n", a_pszMachine, i64); \
+        else \
+            RTPrintf("%-28s %'lld%s\n", a_pszHuman, i64, a_pszUnit); \
+    } while (0)
+
+
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -451,6 +639,48 @@ static HRESULT showSharedFolder(ComPtr<ISharedFolder> &sf, VMINFO_DETAILS detail
     return S_OK;
 }
 
+/** Displays a list of IUSBDevices or IHostUSBDevices. */
+template <class IUSBDeviceType>
+static HRESULT showUsbDevices(SafeIfaceArray<IUSBDeviceType> &coll, const char *pszPfx,
+                              const char *pszName, VMINFO_DETAILS details)
+{
+    if (coll.size() > 0)
+    {
+        if (details != VMINFO_MACHINEREADABLE)
+            RTPrintf("%-28s\n\n", pszName);
+        for (size_t i = 0; i < coll.size(); ++i)
+        {
+            ComPtr<IUSBDeviceType> dev = coll[i];
+            char szValue[128];
+            char szNm[80];
+
+            SHOW_STRING_PROP(dev, Id, FmtNm(szNm, "%sActive%zu", pszPfx, i + 1), "UUID:");
+            SHOW_USHORT_PROP_EX2(dev, VendorId,  FmtNm(szNm, "%sVendorId%zu", pszPfx, i + 1),  Info::tr("VendorId:"),  "", "%#06x", "%#06x (%04X)");
+            SHOW_USHORT_PROP_EX2(dev, ProductId, FmtNm(szNm, "%sProductId%zu", pszPfx, i + 1), Info::tr("ProductId:"), "", "%#06x", "%#06x (%04X)");
+
+            USHORT bcdRevision;
+            CHECK_ERROR2I_RET(dev, COMGETTER(Revision)(&bcdRevision), hrcCheck);
+            if (details == VMINFO_MACHINEREADABLE)
+                RTStrPrintf(szValue, sizeof(szValue), "%#04x%02x", bcdRevision >> 8, bcdRevision & 0xff);
+            else
+                RTStrPrintf(szValue, sizeof(szValue), "%u.%u (%02u%02u)\n",
+                            bcdRevision >> 8, bcdRevision & 0xff, bcdRevision >> 8, bcdRevision & 0xff);
+            SHOW_UTF8_STRING(FmtNm(szNm, "%sRevision%zu", pszPfx, i + 1), Info::tr("Revision:"), szValue);
+
+            SHOW_STRING_PROP_NOT_EMPTY(dev, Manufacturer, FmtNm(szNm, "%sManufacturer%zu", pszPfx, i + 1), Info::tr("Manufacturer:"));
+            SHOW_STRING_PROP_NOT_EMPTY(dev, Product,      FmtNm(szNm, "%sProduct%zu", pszPfx, i + 1),      Info::tr("Product:"));
+            SHOW_STRING_PROP_NOT_EMPTY(dev, SerialNumber, FmtNm(szNm, "%sSerialNumber%zu", pszPfx, i + 1), Info::tr("SerialNumber:"));
+            SHOW_STRING_PROP_NOT_EMPTY(dev, Address,      FmtNm(szNm, "%sAddress%zu", pszPfx, i + 1),      Info::tr("Address:"));
+
+            if (details != VMINFO_MACHINEREADABLE)
+                RTPrintf("\n");
+        }
+    }
+    else if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf("%-28s %s\n", pszName, Info::tr("<none>"));
+    return S_OK;
+}
+
 #ifdef VBOX_WITH_IOMMU_AMD
 static const char *iommuTypeToString(IommuType_T iommuType, VMINFO_DETAILS details)
 {
@@ -550,189 +780,6 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
     char szNm[80];
     char szValue[256];
-
-#define SHOW_UTF8_STRING(a_pszMachine, a_pszHuman, a_szValue) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            outputMachineReadableString(a_pszMachine, a_szValue); \
-        else \
-            RTPrintf("%-28s %s\n", a_pszHuman, a_szValue); \
-    } while (0)
-
-#define SHOW_BSTR_STRING(a_pszMachine, a_pszHuman, a_bstrValue) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            outputMachineReadableString(a_pszMachine, &a_bstrValue); \
-        else \
-            RTPrintf("%-28s %ls\n", a_pszHuman, a_bstrValue.raw()); \
-    } while (0)
-
-#define SHOW_BOOL_VALUE_EX(a_pszMachine, a_pszHuman, a_fValue, a_szTrue, a_szFalse) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            outputMachineReadableString(a_pszMachine, a_fValue ? "on" : "off"); \
-        else \
-            RTPrintf("%-28s %s\n", a_pszHuman, a_fValue ? a_szTrue: a_szFalse); \
-    } while (0)
-
-#define SHOW_BOOL_VALUE(a_pszMachine, a_pszHuman, a_fValue) \
-    SHOW_BOOL_VALUE_EX(a_pszMachine, a_pszHuman, a_fValue, Info::tr("enabled"), Info::tr("disabled"))
-
-#define SHOW_ULONG_VALUE(a_pszMachine, a_pszHuman, a_uValue, a_pszUnit) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            RTPrintf("%s=%u\n", a_pszMachine, a_uValue); \
-        else \
-            RTPrintf("%-28s %u%s\n", a_pszHuman, a_uValue, a_pszUnit); \
-    } while (0)
-
-#define SHOW_LONG64_VALUE(a_pszMachine, a_pszHuman, a_llValue, a_pszUnit) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            RTPrintf("%s=%lld\n", a_pszMachine, a_llValue); \
-        else \
-            RTPrintf("%-28s %lld%s\n", a_pszHuman, a_llValue, a_pszUnit); \
-    } while (0)
-
-#define SHOW_BOOLEAN_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
-    SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_pszMachine, a_pszHuman, Info::tr("enabled"), Info::tr("disabled"))
-
-#define SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_szTrue, a_szFalse) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        BOOL f; \
-        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&f), hrcCheck); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            outputMachineReadableString(a_pszMachine, f ? "on" : "off"); \
-        else \
-            RTPrintf("%-28s %s\n", a_pszHuman, f ? a_szTrue : a_szFalse); \
-    } while (0)
-
-#define SHOW_BOOLEAN_METHOD(a_pObj, a_Invocation, a_pszMachine, a_pszHuman) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        BOOL f; \
-        CHECK_ERROR2I_RET(a_pObj, a_Invocation, hrcCheck); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            outputMachineReadableString(a_pszMachine, f ? "on" : "off"); \
-        else \
-            RTPrintf("%-28s %s\n", a_pszHuman, f ? Info::tr("enabled") : Info::tr("disabled")); \
-    } while (0)
-
-#define SHOW_STRING_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        Bstr bstr; \
-        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            outputMachineReadableString(a_pszMachine, &bstr); \
-        else \
-            RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
-    } while (0)
-
-#define SHOW_STRING_PROP_NOT_EMPTY(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        Bstr bstr; \
-        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
-        if (bstr.isNotEmpty()) \
-        { \
-            if (details == VMINFO_MACHINEREADABLE) \
-                outputMachineReadableString(a_pszMachine, &bstr); \
-            else \
-                RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
-        } \
-    } while (0)
-
-    /** @def SHOW_STRING_PROP_MAJ
-     * For not breaking the output in a dot release we don't show default values. */
-#define SHOW_STRING_PROP_MAJ(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnless, a_uMajorVer) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        Bstr bstr; \
-        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
-        if ((a_uMajorVer) <= VBOX_VERSION_MAJOR || !bstr.equals(a_pszUnless)) \
-        { \
-            if (details == VMINFO_MACHINEREADABLE)\
-                outputMachineReadableString(a_pszMachine, &bstr); \
-            else \
-                RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
-        } \
-    } while (0)
-
-#define SHOW_STRINGARRAY_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        SafeArray<BSTR> array; \
-        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(ComSafeArrayAsOutParam(array)), hrcCheck); \
-        Utf8Str str; \
-        for (size_t i = 0; i < array.size(); i++) \
-        { \
-            if (i != 0) \
-                str.append(","); \
-            str.append(Utf8Str(array[i]).c_str()); \
-        } \
-        Bstr bstr(str); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            outputMachineReadableString(a_pszMachine, &bstr); \
-        else \
-            RTPrintf("%-28s %ls\n", a_pszHuman, bstr.raw()); \
-    } while (0)
-
-#define SHOW_UUID_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman) \
-    SHOW_STRING_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman)
-
-#define SHOW_USHORT_PROP_EX2(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit, a_szFmtMachine, a_szFmtHuman) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        USHORT u16 = 0; \
-        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&u16), hrcCheck); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            RTPrintf("%s=" a_szFmtMachine "\n", a_pszMachine, u16); \
-        else \
-            RTPrintf("%-28s " a_szFmtHuman "%s\n", a_pszHuman, u16, u16, a_pszUnit); \
-    } while (0)
-
-#define SHOW_ULONG_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        ULONG u32 = 0; \
-        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&u32), hrcCheck); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            RTPrintf("%s=%u\n", a_pszMachine, u32); \
-        else \
-            RTPrintf("%-28s %u%s\n", a_pszHuman, u32, a_pszUnit); \
-    } while (0)
-
-#define SHOW_LONG64_PROP(a_pObj, a_Prop, a_pszMachine, a_pszHuman, a_pszUnit) \
-    do \
-    { \
-        Assert(a_pszHuman[strlen(a_pszHuman) - 1] == ':'); \
-        LONG64 i64 = 0; \
-        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&i64), hrcCheck); \
-        if (details == VMINFO_MACHINEREADABLE) \
-            RTPrintf("%s=%lld\n", a_pszMachine, i64); \
-        else \
-            RTPrintf("%-28s %'lld%s\n", a_pszHuman, i64, a_pszUnit); \
-    } while (0)
 
     /*
      * The rules for output in -argdump format:
@@ -2360,94 +2407,20 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
         if (pConsole)
         {
-            /* scope */
             {
-                if (details != VMINFO_MACHINEREADABLE)
-                    RTPrintf(Info::tr("Available remote USB devices:\n\n"));
-
-                SafeIfaceArray <IHostUSBDevice> coll;
+                SafeIfaceArray<IHostUSBDevice> coll;
                 CHECK_ERROR_RET(pConsole, COMGETTER(RemoteUSBDevices)(ComSafeArrayAsOutParam(coll)), rc);
-
-                if (coll.size() == 0)
-                {
-                    if (details != VMINFO_MACHINEREADABLE)
-                        RTPrintf(Info::tr("<none>\n\n"));
-                }
-                else
-                {
-                    /* This code is duplicated below, with USBAttach as prefix. */
-                    const char *pszPfx = "USBRemote";
-                    for (size_t i = 0; i < coll.size(); ++i)
-                    {
-                        ComPtr<IHostUSBDevice> dev = coll[i];
-
-                        SHOW_STRING_PROP(dev, Id, FmtNm(szNm, "%sActive%zu", pszPfx, i + 1), "UUID:");
-                        SHOW_USHORT_PROP_EX2(dev, VendorId,  FmtNm(szNm, "%sVendorId%zu", pszPfx, i + 1),  Info::tr("VendorId:"),  "", "%#06x", "%#06x (%04X)");
-                        SHOW_USHORT_PROP_EX2(dev, ProductId, FmtNm(szNm, "%sProductId%zu", pszPfx, i + 1), Info::tr("ProductId:"), "", "%#06x", "%#06x (%04X)");
-
-                        USHORT bcdRevision;
-                        CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), rc);
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTStrPrintf(szValue, sizeof(szValue), "%#04x%02x", bcdRevision >> 8, bcdRevision & 0xff);
-                        else
-                            RTStrPrintf(szValue, sizeof(szValue), "%u.%u (%02u%02u)\n",
-                                        bcdRevision >> 8, bcdRevision & 0xff, bcdRevision >> 8, bcdRevision & 0xff);
-                        SHOW_UTF8_STRING(FmtNm(szNm, "%sRevision%zu", pszPfx, i + 1), Info::tr("Revision:"), szValue);
-
-                        SHOW_STRING_PROP_NOT_EMPTY(dev, Manufacturer, FmtNm(szNm, "%sManufacturer%zu", pszPfx, i + 1), Info::tr("Manufacturer:"));
-                        SHOW_STRING_PROP_NOT_EMPTY(dev, Product,      FmtNm(szNm, "%sProduct%zu", pszPfx, i + 1),      Info::tr("Product:"));
-                        SHOW_STRING_PROP_NOT_EMPTY(dev, SerialNumber, FmtNm(szNm, "%sSerialNumber%zu", pszPfx, i + 1), Info::tr("SerialNumber:"));
-                        SHOW_STRING_PROP_NOT_EMPTY(dev, Address,      FmtNm(szNm, "%sAddress%zu", pszPfx, i + 1),      Info::tr("Address:"));
-
-                        if (details != VMINFO_MACHINEREADABLE)
-                            RTPrintf("\n");
-                    }
-                }
+                rc = showUsbDevices(coll, "USBRemote", Info::tr("Available remote USB devices:"), details);
+                if (FAILED(rc))
+                    return rc;
             }
 
-            /* scope */
             {
-                if (details != VMINFO_MACHINEREADABLE)
-                    RTPrintf(Info::tr("Currently Attached USB Devices:\n\n"));
-
-                SafeIfaceArray <IUSBDevice> coll;
+                SafeIfaceArray<IUSBDevice> coll;
                 CHECK_ERROR_RET(pConsole, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)), rc);
-
-                if (coll.size() == 0)
-                {
-                    if (details != VMINFO_MACHINEREADABLE)
-                        RTPrintf(Info::tr("<none>\n\n"));
-                }
-                else
-                {
-                    /* This code is duplicated below, with USBAttach as prefix. */
-                    const char *pszPfx = "USBAttach";
-                    for (size_t i = 0; i < coll.size(); ++i)
-                    {
-                        ComPtr<IUSBDevice> dev = coll[i];
-
-                        SHOW_STRING_PROP(dev, Id, FmtNm(szNm, "%sActive%zu", pszPfx, i + 1), "UUID:");
-                        SHOW_USHORT_PROP_EX2(dev, VendorId,  FmtNm(szNm, "%sVendorId%zu", pszPfx, i + 1),  Info::tr("VendorId:"),  "", "%#06x", "%#06x (%04X)");
-                        SHOW_USHORT_PROP_EX2(dev, ProductId, FmtNm(szNm, "%sProductId%zu", pszPfx, i + 1), Info::tr("ProductId:"), "", "%#06x", "%#06x (%04X)");
-
-                        USHORT bcdRevision;
-                        CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), rc);
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTStrPrintf(szValue, sizeof(szValue), "%#04x%02x", bcdRevision >> 8, bcdRevision & 0xff);
-                        else
-                            RTStrPrintf(szValue, sizeof(szValue), "%u.%u (%02u%02u)\n",
-                                        bcdRevision >> 8, bcdRevision & 0xff, bcdRevision >> 8, bcdRevision & 0xff);
-                        SHOW_UTF8_STRING(FmtNm(szNm, "%sRevision%zu", pszPfx, i + 1), Info::tr("Revision:"), szValue);
-
-                        SHOW_STRING_PROP_NOT_EMPTY(dev, Manufacturer, FmtNm(szNm, "%sManufacturer%zu", pszPfx, i + 1), Info::tr("Manufacturer:"));
-                        SHOW_STRING_PROP_NOT_EMPTY(dev, Product,      FmtNm(szNm, "%sProduct%zu", pszPfx, i + 1),      Info::tr("Product:"));
-                        SHOW_STRING_PROP_NOT_EMPTY(dev, SerialNumber, FmtNm(szNm, "%sSerialNumber%zu", pszPfx, i + 1), Info::tr("SerialNumber:"));
-                        SHOW_STRING_PROP_NOT_EMPTY(dev, Address,      FmtNm(szNm, "%sAddress%zu", pszPfx, i + 1),      Info::tr("Address:"));
-
-                        if (details != VMINFO_MACHINEREADABLE)
-                            RTPrintf("\n");
-                    }
-                }
+                showUsbDevices(coll, "USBAttach", Info::tr("Currently attached USB devices:"), details);
+                if (FAILED(rc))
+                    return rc;
             }
         }
     } /* USB */
@@ -2636,9 +2609,6 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 SHOW_UTF8_STRING("VRDEEncryption", Info::tr("Encryption:"), EncryptionStyle == 0 ? "RDP4" : "RDP5 (X.509)");
             }
         }
-
-        if (details != VMINFO_MACHINEREADABLE)
-            RTPrintf("\n");
     }
 
 #ifdef VBOX_WITH_RECORDING
@@ -2729,10 +2699,31 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         }
     }
 
-    if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf(Info::tr("Guest:\n\n"));
+    /*
+     * Snapshots.
+     */
+    ComPtr<ISnapshot> snapshot;
+    rc = machine->FindSnapshot(Bstr().raw(), snapshot.asOutParam());
+    if (SUCCEEDED(rc) && snapshot)
+    {
+        ComPtr<ISnapshot> currentSnapshot;
+        rc = machine->COMGETTER(CurrentSnapshot)(currentSnapshot.asOutParam());
+        if (SUCCEEDED(rc))
+        {
+            if (details != VMINFO_MACHINEREADABLE)
+                RTPrintf(Info::tr("Snapshots:\n\n"));
+            showSnapshots(snapshot, currentSnapshot, details);
+        }
+    }
 
-    SHOW_ULONG_PROP(machine, MemoryBalloonSize, "GuestMemoryBalloon", Info::tr("Configured memory balloon size:"), Info::tr("MB"));
+    /*
+     * Guest stuff (mainly interesting when running).
+     */
+    if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf(Info::tr("* Guest:\n"));
+
+    SHOW_ULONG_PROP(machine, MemoryBalloonSize, "GuestMemoryBalloon",
+                    Info::tr("Configured memory balloon:"), Info::tr("MB"));
 
     if (pConsole)
     {
@@ -2760,63 +2751,45 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 SHOW_UTF8_STRING("GuestAdditionsVersion", Info::tr("Additions version:"), szValue);
             }
 
-            if (details != VMINFO_MACHINEREADABLE)
-                RTPrintf(Info::tr("\nGuest Facilities:\n\n"));
-
             /* Print information about known Guest Additions facilities: */
             SafeIfaceArray <IAdditionsFacility> collFac;
             CHECK_ERROR_RET(guest, COMGETTER(Facilities)(ComSafeArrayAsOutParam(collFac)), rc);
-            LONG64 lLastUpdatedMS;
-            char szLastUpdated[32];
-            AdditionsFacilityStatus_T curStatus;
-            for (size_t index = 0; index < collFac.size(); ++index)
+            if (collFac.size() > 0)
             {
-                ComPtr<IAdditionsFacility> fac = collFac[index];
-                if (fac)
+                if (details != VMINFO_MACHINEREADABLE)
+                    RTPrintf("%s\n", Info::tr("Guest Facilities:"));
+                LONG64 lLastUpdatedMS;
+                char szLastUpdated[32];
+                AdditionsFacilityStatus_T curStatus;
+                for (size_t index = 0; index < collFac.size(); ++index)
                 {
-                    CHECK_ERROR_RET(fac, COMGETTER(Name)(guestString.asOutParam()), rc);
-                    if (!guestString.isEmpty())
+                    ComPtr<IAdditionsFacility> fac = collFac[index];
+                    if (fac)
                     {
-                        CHECK_ERROR_RET(fac, COMGETTER(Status)(&curStatus), rc);
-                        CHECK_ERROR_RET(fac, COMGETTER(LastUpdated)(&lLastUpdatedMS), rc);
-                        if (details == VMINFO_MACHINEREADABLE)
-                            RTPrintf("GuestAdditionsFacility_%ls=%u,%lld\n",
-                                     guestString.raw(), curStatus, lLastUpdatedMS);
-                        else
+                        CHECK_ERROR_RET(fac, COMGETTER(Name)(guestString.asOutParam()), rc);
+                        if (!guestString.isEmpty())
                         {
-                            makeTimeStr(szLastUpdated, sizeof(szLastUpdated), lLastUpdatedMS);
-                            RTPrintf(Info::tr("Facility \"%ls\": %s (last update: %s)\n"),
-                                     guestString.raw(), facilityStateToName(curStatus, false /* No short naming */), szLastUpdated);
+                            CHECK_ERROR_RET(fac, COMGETTER(Status)(&curStatus), rc);
+                            CHECK_ERROR_RET(fac, COMGETTER(LastUpdated)(&lLastUpdatedMS), rc);
+                            if (details == VMINFO_MACHINEREADABLE)
+                                RTPrintf("GuestAdditionsFacility_%ls=%u,%lld\n",
+                                         guestString.raw(), curStatus, lLastUpdatedMS);
+                            else
+                            {
+                                makeTimeStr(szLastUpdated, sizeof(szLastUpdated), lLastUpdatedMS);
+                                RTPrintf(Info::tr("Facility \"%ls\": %s (last update: %s)\n"),
+                                         guestString.raw(), facilityStateToName(curStatus, false /* No short naming */), szLastUpdated);
+                            }
                         }
+                        else
+                            AssertMsgFailed(("Facility with undefined name retrieved!\n"));
                     }
                     else
-                        AssertMsgFailed(("Facility with undefined name retrieved!\n"));
+                        AssertMsgFailed(("Invalid facility returned!\n"));
                 }
-                else
-                    AssertMsgFailed(("Invalid facility returned!\n"));
             }
-            if (!collFac.size() && details != VMINFO_MACHINEREADABLE)
-                RTPrintf(Info::tr("No active facilities.\n"));
-        }
-    }
-
-    if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf("\n");
-
-    /*
-     * snapshots
-     */
-    ComPtr<ISnapshot> snapshot;
-    rc = machine->FindSnapshot(Bstr().raw(), snapshot.asOutParam());
-    if (SUCCEEDED(rc) && snapshot)
-    {
-        ComPtr<ISnapshot> currentSnapshot;
-        rc = machine->COMGETTER(CurrentSnapshot)(currentSnapshot.asOutParam());
-        if (SUCCEEDED(rc))
-        {
-            if (details != VMINFO_MACHINEREADABLE)
-                RTPrintf(Info::tr("Snapshots:\n\n"));
-            showSnapshots(snapshot, currentSnapshot, details);
+            else if (details != VMINFO_MACHINEREADABLE)
+                RTPrintf("%-28s %s\n", Info::tr("Guest Facilities:"), Info::tr("<none>"));
         }
     }
 
