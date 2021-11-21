@@ -131,6 +131,9 @@
 #define VMMDEV_TESTING_CMD_VALUE_REG    UINT32_C(0xcab1e007)
 /** Print string, sending a string including newline. (RTTestPrintf) */
 #define VMMDEV_TESTING_CMD_PRINT        UINT32_C(0xcab1e008)
+/** Query a config value, sending a 16-bit word (VMMDEV_TESTING_CFG_XXX) to the
+ * DATA port and reading back the result. */
+#define VMMDEV_TESTING_CMD_QUERY_CFG    UINT32_C(0xcab1e009)
 
 /** The magic part of the command. */
 #define VMMDEV_TESTING_CMD_MAGIC        UINT32_C(0xcab1e000)
@@ -213,6 +216,37 @@
 #define VMMDEV_TESTING_LOCKED_HI_POKE           UINT32_C(0x40000000)
 /** High Locking Control: Thread enabled. */
 #define VMMDEV_TESTING_LOCKED_HI_ENABLED        UINT32_C(0x80000000)
+/** @} */
+
+/** @name VMMDEV_TESTING_CFG_XXX - Configuration values that can be queried.
+ * @{ */
+/** Generic 32-bit value \#0 - testcase defined meaning. */
+#define VMMDEV_TESTING_CFG_DWORD0            UINT16_C(0x0000)
+/** Generic 32-bit value \#1 - testcase defined meaning. */
+#define VMMDEV_TESTING_CFG_DWORD1            UINT16_C(0x0001)
+/** Generic 32-bit value \#2 - testcase defined meaning. */
+#define VMMDEV_TESTING_CFG_DWORD2            UINT16_C(0x0002)
+/** Generic 32-bit value \#3 - testcase defined meaning. */
+#define VMMDEV_TESTING_CFG_DWORD3            UINT16_C(0x0003)
+/** Generic 32-bit value \#4 - testcase defined meaning. */
+#define VMMDEV_TESTING_CFG_DWORD4            UINT16_C(0x0004)
+/** Generic 32-bit value \#5 - testcase defined meaning. */
+#define VMMDEV_TESTING_CFG_DWORD5            UINT16_C(0x0005)
+/** Generic 32-bit value \#6 - testcase defined meaning. */
+#define VMMDEV_TESTING_CFG_DWORD6            UINT16_C(0x0006)
+/** Generic 32-bit value \#7 - testcase defined meaning. */
+#define VMMDEV_TESTING_CFG_DWORD7            UINT16_C(0x0007)
+/** Generic 32-bit value \#8 - testcase defined meaning. */
+#define VMMDEV_TESTING_CFG_DWORD8            UINT16_C(0x0008)
+/** Generic 32-bit value \#9 - testcase defined meaning. */
+#define VMMDEV_TESTING_CFG_DWORD9            UINT16_C(0x0009)
+
+/** Boolean (8-bit): Running in NEM on Linux? */
+#define VMMDEV_TESTING_CFG_IS_NEM_LINUX      UINT16_C(0x0100)
+/** Boolean (8-bit): Running in NEM on Windows? */
+#define VMMDEV_TESTING_CFG_IS_NEM_WINDOWS    UINT16_C(0x0101)
+/** Boolean (8-bit): Running in NEM on Darwin? */
+#define VMMDEV_TESTING_CFG_IS_NEM_DARWIN     UINT16_C(0x0102)
 /** @} */
 
 /** @} */

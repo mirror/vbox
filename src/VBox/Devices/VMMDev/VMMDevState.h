@@ -291,9 +291,12 @@ typedef struct VMMDEV
     bool                fTestingEnabled;
     /** Set if testing the MMIO testing range is enabled. */
     bool                fTestingMMIO;
+#if defined(VBOX_WITHOUT_TESTING_FEATURES) && !defined(DOXYGEN_RUNNING)
     /** Alignment padding. */
     bool                afPadding9[2];
-#if !defined(VBOX_WITHOUT_TESTING_FEATURES) || defined(DOXYGEN_RUNNING)
+#else
+    /** The amount of readable testing data (for query response). */
+    uint16_t            cbReadableTestingData;
     /** The high timestamp value. */
     uint32_t            u32TestingHighTimestamp;
     /** The current testing command (VMMDEV_TESTING_CMD_XXX). */
@@ -303,7 +306,8 @@ typedef struct VMMDEV
     /** For buffering the what comes in over the testing data port. */
     union
     {
-        char            padding[1024];
+        /** Plain byte view. */
+        uint8_t         ab[1024];
 
         /** VMMDEV_TESTING_CMD_INIT, VMMDEV_TESTING_CMD_SUB_NEW,
          *  VMMDEV_TESTING_CMD_FAILED. */
@@ -325,6 +329,11 @@ typedef struct VMMDEV
             uint32_t    u32Unit;
             char        szName[1024 - 8 - 4];
         } Value;
+
+        /** A 8-bit VMMDEV_TESTING_QUERY_CFG response. */
+        uint8_t         b;
+        /** A 32-bit VMMDEV_TESTING_QUERY_CFG response. */
+        uint32_t        u32;
 
         /** The read back register (VMMDEV_TESTING_MMIO_OFF_READBACK,
          *  VMMDEV_TESTING_MMIO_OFF_READBACK_R3). */
@@ -370,6 +379,8 @@ typedef struct VMMDEV
     IOMIOPORTHANDLE     hIoPortTesting;
     /** Handle for the MMIO region used by the testing component. */
     IOMMMIOHANDLE       hMmioTesting;
+    /** User defined configuration dwords. */
+    uint32_t            au32TestingCfgDwords[10];
 #endif /* !VBOX_WITHOUT_TESTING_FEATURES || DOXYGEN_RUNNING */
     /** @} */
 

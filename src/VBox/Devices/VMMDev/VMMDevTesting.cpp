@@ -354,8 +354,9 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
             }
             if (cb == 4)
             {
-                pThis->u32TestingCmd  = u32;
-                pThis->offTestingData = 0;
+                pThis->u32TestingCmd         = u32;
+                pThis->offTestingData        = 0;
+                pThis->cbReadableTestingData = 0;
                 RT_ZERO(pThis->TestingData);
                 return VINF_SUCCESS;
             }
@@ -576,6 +577,50 @@ vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_
                             return VINF_IOM_R3_IOPORT_WRITE;
 #endif
                         return VINF_SUCCESS;
+                    }
+                    break;
+                }
+
+                /*
+                 * Query configuration.
+                 */
+                case VMMDEV_TESTING_CMD_QUERY_CFG:
+                {
+                    switch (u32)
+                    {
+                        case VMMDEV_TESTING_CFG_DWORD0:
+                        case VMMDEV_TESTING_CFG_DWORD1:
+                        case VMMDEV_TESTING_CFG_DWORD2:
+                        case VMMDEV_TESTING_CFG_DWORD3:
+                        case VMMDEV_TESTING_CFG_DWORD4:
+                        case VMMDEV_TESTING_CFG_DWORD5:
+                        case VMMDEV_TESTING_CFG_DWORD6:
+                        case VMMDEV_TESTING_CFG_DWORD7:
+                        case VMMDEV_TESTING_CFG_DWORD8:
+                        case VMMDEV_TESTING_CFG_DWORD9:
+                            pThis->cbReadableTestingData = sizeof(pThis->TestingData.u32);
+                            pThis->TestingData.u32       = pThis->au32TestingCfgDwords[u32 - VMMDEV_TESTING_CFG_DWORD0];
+                            break;
+
+                        case VMMDEV_TESTING_CFG_IS_NEM_LINUX:
+                        case VMMDEV_TESTING_CFG_IS_NEM_WINDOWS:
+                        case VMMDEV_TESTING_CFG_IS_NEM_DARWIN:
+                        {
+                            pThis->cbReadableTestingData = sizeof(pThis->TestingData.b);
+#if   defined(RT_OS_DARWIN)
+                            pThis->TestingData.b = u32 == VMMDEV_TESTING_CFG_IS_NEM_DARWIN
+                                                && PDMDevHlpGetMainExecutionEngine(pDevIns) == VM_EXEC_ENGINE_NATIVE_API;
+#elif defined(RT_OS_LINUX)
+                            pThis->TestingData.b = u32 == VMMDEV_TESTING_CFG_IS_NEM_LINUX
+                                                && PDMDevHlpGetMainExecutionEngine(pDevIns) == VM_EXEC_ENGINE_NATIVE_API;
+#elif defined(RT_OS_WINDOWS)
+                            pThis->TestingData.b = u32 == VMMDEV_TESTING_CFG_IS_NEM_WINDOWS
+                                                && PDMDevHlpGetMainExecutionEngine(pDevIns) == VM_EXEC_ENGINE_NATIVE_API;
+#else
+                            pThis->TestingData.b = false;
+#endif
+                            break;
+                        }
                     }
                     break;
                 }
@@ -808,10 +853,49 @@ vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
             }
 
         /*
-         * The command and data registers are write-only.
+         * The command registers is write-only.
          */
         case VMMDEV_TESTING_IOPORT_CMD  - VMMDEV_TESTING_IOPORT_BASE:
+            break;
+
+        /*
+         * The data register is only readable after a query command, otherwise it
+         * behaves as an undefined port.  Return zeros if the guest reads too much.
+         */
         case VMMDEV_TESTING_IOPORT_DATA - VMMDEV_TESTING_IOPORT_BASE:
+            if (pThis->cbReadableTestingData > 0)
+            {
+                if (pThis->offTestingData < pThis->cbReadableTestingData)
+                {
+                    switch (RT_MIN(cb, pThis->cbReadableTestingData - pThis->offTestingData))
+                    {
+                        case 1:
+                            *pu32 = pThis->TestingData.ab[pThis->offTestingData++];
+                            break;
+                        case 2:
+                            *pu32 =            pThis->TestingData.ab[pThis->offTestingData]
+                                  | ((uint32_t)pThis->TestingData.ab[pThis->offTestingData + 1] << 8);
+                            pThis->offTestingData += 2;
+                            break;
+                        case 3:
+                            *pu32 =            pThis->TestingData.ab[pThis->offTestingData]
+                                  | ((uint32_t)pThis->TestingData.ab[pThis->offTestingData + 1] << 8)
+                                  | ((uint32_t)pThis->TestingData.ab[pThis->offTestingData + 2] << 16);
+                            pThis->offTestingData += 3;
+                            break;
+                        case 4:
+                            *pu32 =            pThis->TestingData.ab[pThis->offTestingData]
+                                  | ((uint32_t)pThis->TestingData.ab[pThis->offTestingData + 1] << 8)
+                                  | ((uint32_t)pThis->TestingData.ab[pThis->offTestingData + 2] << 16)
+                                  | ((uint32_t)pThis->TestingData.ab[pThis->offTestingData + 3] << 24);
+                            pThis->offTestingData += 4;
+                            break;
+                    }
+                }
+                else
+                    *pu32 = 0;
+                return VINF_SUCCESS;
+            }
             break;
 
         default:
