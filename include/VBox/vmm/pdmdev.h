@@ -2424,7 +2424,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 62, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 63, 0)
 
 /**
  * PDM Device API.
@@ -4789,6 +4789,14 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnGetCpuId,(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx));
 
     /**
+     * Gets the main execution engine for the VM.
+     *
+     * @returns VM_EXEC_ENGINE_XXX
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(uint8_t, pfnGetMainExecutionEngine,(PPDMDEVINS pDevIns));
+
+    /**
      * Get the current virtual clock time in a VM. The clock frequency must be
      * queried separately.
      *
@@ -5279,6 +5287,14 @@ typedef struct PDMDEVHLPRC
     DECLRCCALLBACKMEMBER(VMCPUID, pfnGetCurrentCpuId,(PPDMDEVINS pDevIns));
 
     /**
+     * Gets the main execution engine for the VM.
+     *
+     * @returns VM_EXEC_ENGINE_XXX
+     * @param   pDevIns             The device instance.
+     */
+    DECLRCCALLBACKMEMBER(uint8_t, pfnGetMainExecutionEngine,(PPDMDEVINS pDevIns));
+
+    /**
      * Get the current virtual clock time in a VM. The clock frequency must be
      * queried separately.
      *
@@ -5475,7 +5491,7 @@ typedef RGPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RGPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 18, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 19, 0)
 
 
 /**
@@ -5687,6 +5703,14 @@ typedef struct PDMDEVHLPR0
      * @param   pDevIns             The device instance.
      */
     DECLR0CALLBACKMEMBER(VMCPUID, pfnGetCurrentCpuId,(PPDMDEVINS pDevIns));
+
+    /**
+     * Gets the main execution engine for the VM.
+     *
+     * @returns VM_EXEC_ENGINE_XXX
+     * @param   pDevIns             The device instance.
+     */
+    DECLR0CALLBACKMEMBER(uint8_t, pfnGetMainExecutionEngine,(PPDMDEVINS pDevIns));
 
     /** @name Timer handle method wrappers
      * @{ */
@@ -6036,7 +6060,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 25, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 26, 0)
 
 
 /**
@@ -9398,7 +9422,6 @@ DECLINLINE(bool) PDMDevHlpA20IsEnabled(PPDMDEVINS pDevIns)
 }
 
 #ifdef IN_RING3
-
 /**
  * @copydoc PDMDEVHLPR3::pfnGetCpuId
  */
@@ -9406,6 +9429,17 @@ DECLINLINE(void) PDMDevHlpGetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t 
 {
     pDevIns->pHlpR3->pfnGetCpuId(pDevIns, iLeaf, pEax, pEbx, pEcx, pEdx);
 }
+#endif
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnGetMainExecutionEngine
+ */
+DECLINLINE(uint8_t) PDMDevHlpGetMainExecutionEngine(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnGetMainExecutionEngine(pDevIns);
+}
+
+#ifdef IN_RING3
 
 /**
  * @copydoc PDMDEVHLPR3::pfnGetSupDrvSession
