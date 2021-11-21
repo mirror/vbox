@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; BS3Kit - bs3TestSendCmdWithU32.
+; BS3Kit - Bs3TestQueryCfgU8, Bs3TestQueryCfgBool.
 ;
 
 ;
