@@ -194,6 +194,8 @@ VBOX_BS3KIT_COMMON_SOURCES = \
 	bs3-cmn-TestSendCmdWithU32.asm \
 	bs3-cmn-TestIsVmmDevTestingPresent.asm \
 	bs3-cmn-TestCheckRegCtxEx.c \
+	bs3-cmn-TestQueryCfgU8.asm \
+	bs3-cmn-TestQueryCfgU32.asm \
 	bs3-cmn-TestHostPrintf.c \
 	bs3-cmn-TestPrintf.c \
 	bs3-cmn-TestValue.c \

@@ -3255,6 +3255,31 @@ BS3_CMN_PROTO_STUB(uint16_t, Bs3TestSubErrorCount,(void));
  */
 BS3_CMN_PROTO_STUB(uint64_t, Bs3TestNow,(void));
 
+
+/**
+ * Queries an unsigned 8-bit configuration value.
+ *
+ * @returns Value.
+ * @param   uCfg        A VMMDEV_TESTING_CFG_XXX value.
+ */
+BS3_CMN_PROTO_STUB(uint8_t, Bs3TestQueryCfgU8,(uint16_t uCfg));
+
+/**
+ * Queries an unsigned 8-bit configuration value.
+ *
+ * @returns Value.
+ * @param   uCfg        A VMMDEV_TESTING_CFG_XXX value.
+ */
+BS3_CMN_PROTO_STUB(bool, Bs3TestQueryCfgBool,(uint16_t uCfg));
+
+/**
+ * Queries an unsigned 32-bit configuration value.
+ *
+ * @returns Value.
+ * @param   uCfg        A VMMDEV_TESTING_CFG_XXX value.
+ */
+BS3_CMN_PROTO_STUB(uint32_t, Bs3TestQueryCfgU32,(uint16_t uCfg));
+
 /**
  * Equivalent to RTTestIPrintf with RTTESTLVL_ALWAYS.
  *

@@ -164,6 +164,9 @@
 #undef Bs3TestNow
 #undef Bs3TestPrintf
 #undef Bs3TestPrintfV
+#undef Bs3TestQueryCfgBool
+#undef Bs3TestQueryCfgU32
+#undef Bs3TestQueryCfgU8
 #undef Bs3TestSkipped
 #undef Bs3TestSkippedF
 #undef Bs3TestSkippedV
@@ -190,8 +193,8 @@
 #undef Bs3TrapSetDpl
 #undef Bs3TrapSetHandler
 #undef Bs3TrapSetHandlerEx
-#undef Bs3TrapSetJmp
 #undef Bs3TrapSetJmpAndRestore
+#undef Bs3TrapSetJmp
 #undef Bs3TrapUnsetJmp
 #undef Bs3UInt32Div
 #undef Bs3UInt64Div
