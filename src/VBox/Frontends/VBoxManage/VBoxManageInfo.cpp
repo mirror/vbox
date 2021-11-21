@@ -413,7 +413,7 @@ HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
         }
     }
     if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf(bwGroups.size() != 0 ? "\n" : Info::tr("<none>\n\n"));
+        RTPrintf(bwGroups.size() != 0 ? "\n" : Info::tr("<none>\n"));
 
     return rc;
 }
@@ -2325,16 +2325,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         rc = USBFlts->COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(Coll));
         if (SUCCEEDED(rc))
         {
-            if (details != VMINFO_MACHINEREADABLE)
-                RTPrintf(Info::tr("\nUSB Device Filters:\n\n"));
-
-            if (Coll.size() == 0)
+            if (Coll.size() > 0)
             {
                 if (details != VMINFO_MACHINEREADABLE)
-                    RTPrintf(Info::tr("<none>\n\n"));
-            }
-            else
-            {
+                    RTPrintf(Info::tr("USB Device Filters:\n"));
                 for (size_t index = 0; index < Coll.size(); ++index)
                 {
                     ComPtr<IUSBDeviceFilter> DevPtr = Coll[index];
@@ -2360,6 +2354,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                     }
                 }
             }
+            else if (details != VMINFO_MACHINEREADABLE)
+                RTPrintf("%-28s %s\n", Info::tr("USB Device Filters:"), Info::tr("<none>"));
         }
 
         if (pConsole)
@@ -2500,7 +2496,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
      * Bandwidth groups
      */
     if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf(Info::tr("Bandwidth groups:  "));
+        RTPrintf("%-28s ", Info::tr("Bandwidth groups:"));
     {
         ComPtr<IBandwidthControl> bwCtrl;
         CHECK_ERROR_RET(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()), rc);
@@ -2513,7 +2509,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
      * Shared folders
      */
     if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf(Info::tr("Shared folders:"));
+        RTPrintf("%-28s ", Info::tr("Shared folders:"));
     uint32_t numSharedFolders = 0;
 #if 0 // not yet implemented
     /* globally shared folders first */
@@ -2551,10 +2547,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             ++numSharedFolders;
         }
     }
-    if (!numSharedFolders && details != VMINFO_MACHINEREADABLE)
-        RTPrintf(Info::tr("<none>\n"));
     if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf("\n");
+    {
+        if (!numSharedFolders)
+            RTPrintf(Info::tr("<none>\n"));
+        else
+            RTPrintf("\n");
+    }
 
     if (pConsole)
     {
