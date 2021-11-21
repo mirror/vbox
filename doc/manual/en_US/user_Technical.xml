@@ -907,7 +907,7 @@
           also use <emphasis>large pages</emphasis> to reduce TLB usage
           and overhead. This can yield a performance improvement of up
           to 5%. To enable this feature for a VM, you use the
-          <command>VBoxManage modifyvm --largepages</command> command.
+          <command>VBoxManage modifyvm --large-pages</command> command.
           See <xref linkend="vboxmanage-modifyvm" />.
         </para>
 
@@ -928,8 +928,8 @@
 
         <para>
           To enable these features for a VM, you use the
-          <command>VBoxManage modifyvm --vtxvpid</command> and
-          <command>VBoxManage modifyvm --largepages</command> commands.
+          <command>VBoxManage modifyvm --vtx-vpid</command> and
+          <command>VBoxManage modifyvm --large-pages</command> commands.
           See <xref linkend="vboxmanage-modifyvm" />.
         </para>
       </listitem>

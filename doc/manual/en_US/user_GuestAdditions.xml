@@ -2192,10 +2192,10 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
 
           <listitem>
             <para>
-              Memory ballooning does not work with large pages enabled.
-              To turn off large pages support for a VM, run
+              Memory ballooning does not work well with large pages 
+              enabled. To turn off large pages support for a VM, run
               <command>VBoxManage modifyvm
-              <replaceable>vmname</replaceable> --largepages
+              <replaceable>vmname</replaceable> --large-pages
               off</command>
             </para>
           </listitem>
@@ -2260,7 +2260,7 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
         the following command:
       </para>
 
-<screen>VBoxManage modifyvm "VM name" --guestmemoryballoon n</screen>
+<screen>VBoxManage modifyvm "VM name" --guest-memory-balloon n</screen>
 
       <para>
         By default, no balloon memory is allocated. This is a VM
@@ -2367,7 +2367,7 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
         To enable Page Fusion for a VM, use the following command:
       </para>
 
-<screen>VBoxManage modifyvm "VM name" --pagefusion on</screen>
+<screen>VBoxManage modifyvm "VM name" --page-fusion on</screen>
 
       <para>
         You can observe Page Fusion operation using some metrics.

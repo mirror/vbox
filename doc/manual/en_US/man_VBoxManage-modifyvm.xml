@@ -45,10 +45,10 @@
       <arg>--name=<replaceable>name</replaceable></arg>
       <arg>--groups= <arg choice="plain"><replaceable>group</replaceable> [,<replaceable>group</replaceable>...]</arg></arg>
       <arg>--description=<replaceable>description</replaceable></arg>
-      <arg>--ostype=<replaceable>OS-type</replaceable></arg>
-      <arg>--iconfile=<replaceable>filename</replaceable></arg>
+      <arg>--os-type=<replaceable>OS-type</replaceable></arg>
+      <arg>--icon-file=<replaceable>filename</replaceable></arg>
       <arg>--memory=<replaceable>size-in-MB</replaceable></arg>
-      <arg>--pagefusion=<group choice="plain">
+      <arg>--page-fusion=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -61,20 +61,20 @@
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--hardwareuuid=<replaceable>UUID</replaceable></arg>
+      <arg>--hardware-uuid=<replaceable>UUID</replaceable></arg>
       <arg>--cpus=<replaceable>CPU-count</replaceable></arg>
-      <arg>--cpuhotplug=<group choice="plain">
+      <arg>--cpu-hotplug=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--plugcpu=<replaceable>CPU-ID</replaceable></arg>
-      <arg>--unplugcpu=<replaceable>CPU-ID</replaceable></arg>
-      <arg>--cpuexecutioncap=<replaceable>number</replaceable></arg>
+      <arg>--plug-cpu=<replaceable>CPU-ID</replaceable></arg>
+      <arg>--unplug-cpu=<replaceable>CPU-ID</replaceable></arg>
+      <arg>--cpu-execution-cap=<replaceable>number</replaceable></arg>
       <arg>--pae=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--longmode=<group choice="plain">
+      <arg>--long-mode=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -120,7 +120,7 @@
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--triplefaultreset=<group choice="plain">
+      <arg>--triple-fault-reset=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -132,7 +132,7 @@
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--paravirtprovider=<group choice="plain">
+      <arg>--paravirt-provider=<group choice="plain">
           <arg choice="plain">none</arg>
           <arg choice="plain">default</arg>
           <arg choice="plain">legacy</arg>
@@ -140,20 +140,20 @@
           <arg choice="plain">hyperv</arg>
           <arg choice="plain">kvm</arg>
         </group></arg>
-      <arg>--paravirtdebug= <arg choice="plain"><replaceable>key</replaceable>=<replaceable>value</replaceable> [,<replaceable>key</replaceable>=<replaceable>value</replaceable>...]</arg></arg>
-      <arg>--nestedpaging=<group choice="plain">
+      <arg>--paravirt-debug= <arg choice="plain"><replaceable>key</replaceable>=<replaceable>value</replaceable> [,<replaceable>key</replaceable>=<replaceable>value</replaceable>...]</arg></arg>
+      <arg>--nested-paging=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--largepages=<group choice="plain">
+      <arg>--large-pages=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--vtxvpid=<group choice="plain">
+      <arg>--vtx-vpid=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--vtxux=<group choice="plain">
+      <arg>--vtx-ux=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -165,11 +165,11 @@
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--accelerate3d=<group choice="plain">
+      <arg>--accelerate-3d=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--accelerate2dvideo=<group choice="plain">
+      <arg>--accelerate-2d-video=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -193,28 +193,28 @@
       <arg>--tpm-location=<group choice="plain">
           <arg choice="plain"><replaceable>location</replaceable></arg>
         </group></arg>
-      <arg>--bioslogofadein=<group choice="plain">
+      <arg>--bios-logo-fade-in=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--bioslogofadeout=<group choice="plain">
+      <arg>--bios-logo-fade-out=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--bioslogodisplaytime=<replaceable>msec</replaceable></arg>
-      <arg>--bioslogoimagepath=<replaceable>pathname</replaceable></arg>
-      <arg>--biosbootmenu=<group choice="plain">
+      <arg>--bios-logo-display-time=<replaceable>msec</replaceable></arg>
+      <arg>--bios-logo-image-path=<replaceable>pathname</replaceable></arg>
+      <arg>--bios-boot-menu=<group choice="plain">
           <arg choice="plain">disabled</arg>
           <arg choice="plain">menuonly</arg>
           <arg choice="plain">messageandmenu</arg>
         </group></arg>
-      <arg>--biosapic=<group choice="plain">
+      <arg>--bios-apic=<group choice="plain">
           <arg choice="plain">disabled</arg>
           <arg choice="plain">apic</arg>
           <arg choice="plain">x2apic</arg>
         </group></arg>
-      <arg>--biossystemtimeoffset=<replaceable>msec</replaceable></arg>
-      <arg>--biospxedebug=<group choice="plain">
+      <arg>--bios-system-time-offset=<replaceable>msec</replaceable></arg>
+      <arg>--bios-pxe-debug=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -229,7 +229,7 @@
           <arg choice="plain">disk</arg>
           <arg choice="plain">net</arg>
         </group></arg>
-      <arg>--rtcuseutc=<group choice="plain">
+      <arg>--rtc-use-utc=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -239,7 +239,7 @@
           <arg choice="plain">vmsvga</arg>
           <arg choice="plain">vboxsvga</arg>
         </group></arg>
-      <arg>--snapshotfolder=<group choice="plain">
+      <arg>--snapshot-folder=<group choice="plain">
           <arg choice="plain">default</arg>
           <arg choice="plain"><replaceable>pathname</replaceable></arg>
         </group></arg>
@@ -249,8 +249,8 @@
           <arg choice="plain">efi32</arg>
           <arg choice="plain">efi64</arg>
         </group></arg>
-      <arg>--guestmemoryballoon=<replaceable>size-in-MB</replaceable></arg>
-      <arg>--defaultfrontend=<group choice="plain">
+      <arg>--guest-memory-balloon=<replaceable>size-in-MB</replaceable></arg>
+      <arg>--default-frontend=<group choice="plain">
           <arg choice="plain">default</arg>
           <arg choice="plain"><replaceable>name</replaceable></arg>
         </group></arg>
@@ -283,7 +283,7 @@ time on documenting it. -->
           <arg choice="plain">generic</arg>
           <arg choice="plain">natnetwork</arg>
         </group></arg>
-      <arg>--nictype<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nic-type<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">Am79C970A</arg>
           <arg choice="plain">Am79C973</arg>
           <arg choice="plain">82540EM</arg>
@@ -291,40 +291,40 @@ time on documenting it. -->
           <arg choice="plain">82545EM</arg>
           <arg choice="plain">virtio</arg>
         </group></arg>
-      <arg>--cableconnected<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--cable-connected<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--nictrace<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nic-trace<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--nictracefile<replaceable>N</replaceable>=<replaceable>filename</replaceable></arg>
-      <arg>--nicproperty<replaceable>N</replaceable>=<replaceable>name</replaceable>= <arg><replaceable>value</replaceable></arg></arg>
-      <arg>--nicspeed<replaceable>N</replaceable>=<replaceable>kbps</replaceable></arg>
-      <arg>--nicbootprio<replaceable>N</replaceable>=<replaceable>priority</replaceable></arg>
-      <arg>--nicpromisc<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nic-trace-file<replaceable>N</replaceable>=<replaceable>filename</replaceable></arg>
+      <arg>--nic-property<replaceable>N</replaceable>=<replaceable>name</replaceable>= <arg><replaceable>value</replaceable></arg></arg>
+      <arg>--nic-speed<replaceable>N</replaceable>=<replaceable>kbps</replaceable></arg>
+      <arg>--nic-boot-prio<replaceable>N</replaceable>=<replaceable>priority</replaceable></arg>
+      <arg>--nic-promisc<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">deny</arg>
           <arg choice="plain">allow-vms</arg>
           <arg choice="plain">allow-all</arg>
         </group></arg>
-      <arg>--nicbandwidthgroup<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nic-bandwidth-group<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">none</arg>
           <arg choice="plain"><replaceable>name</replaceable></arg>
         </group></arg>
-      <arg>--bridgeadapter<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--bridge-adapter<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">none</arg>
           <arg choice="plain"><replaceable>device-name</replaceable></arg>
         </group></arg>
-      <arg>--hostonlyadapter<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--host-only-adapter<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">none</arg>
           <arg choice="plain"><replaceable>device-name</replaceable></arg>
         </group></arg>
-      <arg>--hostonlynet<replaceable>N</replaceable>=<replaceable>network-name</replaceable></arg>
+      <arg>--host-only-net<replaceable>N</replaceable>=<replaceable>network-name</replaceable></arg>
       <arg>--intnet<replaceable>N</replaceable>=<replaceable>network-name</replaceable></arg>
       <arg>--nat-network<replaceable>N</replaceable>=<replaceable>network-name</replaceable></arg>
-      <arg>--nicgenericdrv<replaceable>N</replaceable>=<replaceable>driver-name</replaceable></arg>
-      <arg>--macaddress<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nic-generic-drv<replaceable>N</replaceable>=<replaceable>driver-name</replaceable></arg>
+      <arg>--mac-address<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">auto</arg>
           <arg choice="plain"><replaceable>MAC-address</replaceable></arg>
         </group></arg>
@@ -336,37 +336,37 @@ time on documenting it. -->
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg>--natnet<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nat-net<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain"><replaceable>network</replaceable></arg>
           <arg choice="plain">default</arg>
         </group></arg>
-      <arg>--natpf<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nat-pf<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">[<replaceable>rule-name</replaceable>],tcp</arg>
           <arg choice="plain">udp,[<replaceable>host-IP</replaceable>],<replaceable>hostport</replaceable>,[<replaceable>guest-IP</replaceable>],<replaceable>guestport</replaceable></arg>
         </group></arg>
-      <arg>--natpf<replaceable>N</replaceable>=delete=<replaceable>rule-name</replaceable></arg>
-      <arg>--nattftpprefix<replaceable>N</replaceable>=<replaceable>prefix</replaceable></arg>
-      <arg>--nattftpfile<replaceable>N</replaceable>=<replaceable>filename</replaceable></arg>
-      <arg>--nattftpserver<replaceable>N</replaceable>=<replaceable>IP-address</replaceable></arg>
-      <arg>--natbindip<replaceable>N</replaceable>=<replaceable>IP-address</replaceable></arg>
-      <arg>--natdnspassdomain<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nat-pf<replaceable>N</replaceable>=delete=<replaceable>rule-name</replaceable></arg>
+      <arg>--nat-tftp-prefix<replaceable>N</replaceable>=<replaceable>prefix</replaceable></arg>
+      <arg>--nat-tftp-file<replaceable>N</replaceable>=<replaceable>filename</replaceable></arg>
+      <arg>--nat-tftp-server<replaceable>N</replaceable>=<replaceable>IP-address</replaceable></arg>
+      <arg>--nat-bind-ip<replaceable>N</replaceable>=<replaceable>IP-address</replaceable></arg>
+      <arg>--nat-dns-pass-domain<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--natdnsproxy<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nat-dns-proxy<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--natdnshostresolver<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nat-dns-host-resolver<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--natlocalhostreachable<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nat-localhostreachable<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--natsettings<replaceable>N</replaceable>=[<replaceable>mtu</replaceable>],[<replaceable>socksnd</replaceable>],[<replaceable>sockrcv</replaceable>],[<replaceable>tcpsnd</replaceable>],[<replaceable>tcprcv</replaceable>]</arg>
-      <arg>--nataliasmode<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--nat-settings<replaceable>N</replaceable>=[<replaceable>mtu</replaceable>],[<replaceable>socksnd</replaceable>],[<replaceable>sockrcv</replaceable>],[<replaceable>tcpsnd</replaceable>],[<replaceable>tcprcv</replaceable>]</arg>
+      <arg>--nat-alias-mode<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">default</arg>
           <arg choice="plain">[log],[proxyonly],[sameports]</arg>
         </group></arg>
@@ -392,7 +392,7 @@ time on documenting it. -->
           <arg choice="plain">off</arg>
           <arg choice="plain"><replaceable>IO-base</replaceable> <replaceable>IRQ</replaceable></arg>
         </group></arg>
-      <arg>--uartmode<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--uart-mode<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">disconnected</arg>
           <arg choice="plain">server <replaceable>pipe</replaceable></arg>
           <arg choice="plain">client <replaceable>pipe</replaceable></arg>
@@ -401,12 +401,12 @@ time on documenting it. -->
           <arg choice="plain">file <replaceable>filename</replaceable></arg>
           <arg choice="plain"><replaceable>device-name</replaceable></arg>
         </group></arg>
-      <arg>--uarttype<replaceable>N</replaceable>=<group choice="plain">
+      <arg>--uart-type<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">16450</arg>
           <arg choice="plain">16550A</arg>
           <arg choice="plain">16750</arg>
         </group></arg>
-      <arg>--lptmode<replaceable>N</replaceable>=<replaceable>device-name</replaceable></arg>
+      <arg>--lpt-mode<replaceable>N</replaceable>=<replaceable>device-name</replaceable></arg>
       <arg>--lpt<replaceable>N</replaceable>=<group choice="plain">
           <arg choice="plain">off</arg>
           <arg choice="plain"><replaceable>IO-base</replaceable> <replaceable>IRQ</replaceable></arg>
@@ -420,22 +420,22 @@ time on documenting it. -->
           <arg choice="plain">pulse</arg>
           <arg choice="plain">coreaudio</arg>
         </group></arg>
-      <arg>--audiocontroller=<group choice="plain">
+      <arg>--audio-controller=<group choice="plain">
           <arg choice="plain">ac97</arg>
           <arg choice="plain">hda</arg>
           <arg choice="plain">sb16</arg>
         </group></arg>
-      <arg>--audiocodec=<group choice="plain">
+      <arg>--audio-codec=<group choice="plain">
           <arg choice="plain">stac9700</arg>
           <arg choice="plain">ad1980</arg>
           <arg choice="plain">stac9221</arg>
           <arg choice="plain">sb16</arg>
         </group></arg>
-      <arg>--audioin=<group choice="plain">
+      <arg>--audio-in=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--audioout=<group choice="plain">
+      <arg>--audio-out=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -448,26 +448,26 @@ time on documenting it. -->
 <!-- There is a currently undocumented option &#45;&#45;clipboard-file-transfers.
 The implementation is not finished, so postpone documenting until it
 actually is ready for users. -->
-      <arg>--draganddrop=<group choice="plain">
+      <arg>--drag-and-drop=<group choice="plain">
           <arg choice="plain">disabled</arg>
           <arg choice="plain">hosttoguest</arg>
           <arg choice="plain">guesttohost</arg>
           <arg choice="plain">bidirectional</arg>
         </group></arg>
-      <arg>--monitorcount=<replaceable>number</replaceable></arg>
-      <arg>--usbehci=<group choice="plain">
+      <arg>--monitor-count=<replaceable>number</replaceable></arg>
+      <arg>--usb-ehci=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--usbohci=<group choice="plain">
+      <arg>--usb-ohci=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--usbxhci=<group choice="plain">
+      <arg>--usb-xhci=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--usbrename=<replaceable>old-name</replaceable> <replaceable>new-name</replaceable></arg>
+      <arg>--usb-rename=<replaceable>old-name</replaceable> <replaceable>new-name</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-recording">
@@ -480,17 +480,17 @@ actually is ready for users. -->
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--recordingscreens=<group choice="plain">
+      <arg>--recording-screens=<group choice="plain">
           <arg choice="plain">all</arg>
           <arg choice="plain"><replaceable>screen-ID</replaceable> [<replaceable>screen-ID</replaceable>...]</arg>
         </group></arg>
-      <arg>--recordingfile=<replaceable>filename</replaceable></arg>
-      <arg>--recordingmaxsize=<replaceable>MB</replaceable></arg>
-      <arg>--recordingmaxtime=<replaceable>msec</replaceable></arg>
-      <arg>--recordingopts= <arg choice="plain"><replaceable>key</replaceable>=<replaceable>value</replaceable> [,<replaceable>key</replaceable>=<replaceable>value</replaceable>...]</arg></arg>
-      <arg>--recordingvideofps=<replaceable>fps</replaceable></arg>
-      <arg>--recordingvideorate=<replaceable>rate</replaceable></arg>
-      <arg>--recordingvideores=<replaceable>width</replaceable> <replaceable>height</replaceable></arg>
+      <arg>--recording-file=<replaceable>filename</replaceable></arg>
+      <arg>--recording-max-size=<replaceable>MB</replaceable></arg>
+      <arg>--recording-max-time=<replaceable>msec</replaceable></arg>
+      <arg>--recording-opts= <arg choice="plain"><replaceable>key</replaceable>=<replaceable>value</replaceable> [,<replaceable>key</replaceable>=<replaceable>value</replaceable>...]</arg></arg>
+      <arg>--recording-video-fps=<replaceable>fps</replaceable></arg>
+      <arg>--recording-video-rate=<replaceable>rate</replaceable></arg>
+      <arg>--recording-video-res=<replaceable>width</replaceable> <replaceable>height</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-vrde">
@@ -503,35 +503,35 @@ actually is ready for users. -->
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--vrdeproperty=<replaceable>property-name</replaceable>= <arg><replaceable>property-value</replaceable></arg></arg>
-      <arg>--vrdeextpack=<group choice="plain">
+      <arg>--vrde-property=<replaceable>property-name</replaceable>= <arg><replaceable>property-value</replaceable></arg></arg>
+      <arg>--vrde-extpack=<group choice="plain">
           <arg choice="plain">default</arg>
           <arg choice="plain"><replaceable>name</replaceable></arg>
         </group></arg>
-      <arg>--vrdeport=<replaceable>port</replaceable></arg>
-      <arg>--vrdeaddress=<replaceable>hostip</replaceable></arg>
-      <arg>--vrdeauthtype=<group choice="plain">
+      <arg>--vrde-port=<replaceable>port</replaceable></arg>
+      <arg>--vrde-address=<replaceable>hostip</replaceable></arg>
+      <arg>--vrde-auth-type=<group choice="plain">
           <arg choice="plain">null</arg>
           <arg choice="plain">external</arg>
           <arg choice="plain">guest</arg>
         </group></arg>
-      <arg>--vrdeauthlibrary=<group choice="plain">
+      <arg>--vrde-auth-library=<group choice="plain">
           <arg choice="plain">default</arg>
           <arg choice="plain"><replaceable>name</replaceable></arg>
         </group></arg>
-      <arg>--vrdemulticon=<group choice="plain">
+      <arg>--vrde-multi-con=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--vrdereusecon=<group choice="plain">
+      <arg>--vrde-reuse-con=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--vrdevideochannel=<group choice="plain">
+      <arg>--vrde-video-channel=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--vrdevideochannelquality=<replaceable>percent</replaceable></arg>
+      <arg>--vrde-video-channel-quality=<replaceable>percent</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-teleport">
@@ -544,20 +544,20 @@ actually is ready for users. -->
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
-      <arg>--teleporterport=<replaceable>port</replaceable></arg>
-      <arg>--teleporteraddress=<group choice="plain">
+      <arg>--teleporter-port=<replaceable>port</replaceable></arg>
+      <arg>--teleporter-address=<group choice="plain">
           <arg choice="plain"><replaceable>address</replaceable></arg>
           <arg choice="plain">empty</arg>
         </group></arg>
-      <arg>--teleporterpassword=<replaceable>password</replaceable></arg>
-      <arg>--teleporterpasswordfile=<group choice="plain">
+      <arg>--teleporter-password=<replaceable>password</replaceable></arg>
+      <arg>--teleporter-password-file=<group choice="plain">
           <arg choice="plain"><replaceable>filename</replaceable></arg>
           <arg choice="plain">stdin</arg>
         </group></arg>
       <arg>--cpuid-portability-level=<replaceable>level</replaceable></arg>
       <arg>--cpuid-set=<replaceable>leaf</replaceable><arg>:<replaceable>subleaf</replaceable></arg> <replaceable>eax</replaceable>&nbsp;<replaceable>ebx</replaceable>&nbsp;<replaceable>ecx</replaceable>&nbsp;<replaceable>edx</replaceable></arg>
       <arg>--cpuid-remove=<replaceable>leaf</replaceable><arg>:<replaceable>subleaf</replaceable></arg></arg>
-      <arg>--cpuidremoveall</arg>
+      <arg>--cpuid-remove-all</arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-modifyvm-debugging">
@@ -583,7 +583,7 @@ actually is ready for users. -->
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg>--usbcardreader=<group choice="plain">
+      <arg>--usb-card-reader=<group choice="plain">
           <arg choice="plain">on</arg>
           <arg choice="plain">off</arg>
         </group></arg>
@@ -613,8 +613,8 @@ it unless this changes. -->
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg>--pciattach=<replaceable>host-PCI-address</replaceable><arg>@<replaceable>guest-PCI-bus-address</replaceable></arg></arg>
-      <arg>--pcidetach=<replaceable>host-PCI-address</replaceable></arg>
+      <arg>--pci-attach=<replaceable>host-PCI-address</replaceable><arg>@<replaceable>guest-PCI-bus-address</replaceable></arg></arg>
+      <arg>--pci-detach=<replaceable>host-PCI-address</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -684,7 +684,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--ostype=<replaceable>OS-type</replaceable></option></term>
+          <term><option>--os-type=<replaceable>OS-type</replaceable></option></term>
           <listitem><para>
               Specifies the guest operating system (OS) information for
               the VM. Use the <command>VBoxManage list ostypes</command>
@@ -692,7 +692,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--iconfile=<replaceable>filename</replaceable></option></term>
+          <term><option>--icon-file=<replaceable>filename</replaceable></option></term>
           <listitem><para>
               Specifies the path to the VM icon file in PNG format
               on the host system. The icon is shown in the VM manager
@@ -708,7 +708,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--pagefusion=on | off</option></term>
+          <term><option>--page-fusion=on | off</option></term>
           <listitem><para>
               Enables or disables the Page Fusion feature, which is
               disabled by default. Use the Page Fusion feature to
@@ -739,7 +739,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--hardwareuuid=<replaceable>uuid</replaceable></option></term>
+          <term><option>--hardware-uuid=<replaceable>uuid</replaceable></option></term>
           <listitem><para>
               Specifies the Universally Unique Identifier (UUID) to
               present to the guest VM in memory tables (DMI/SMBIOS),
@@ -762,7 +762,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--cpuhotplug=on | off</option></term>
+          <term><option>--cpu-hotplug=on | off</option></term>
           <listitem><para>
               Enables or disables CPU hot-plugging. When enabled, you
               can dynamically add virtual CPUs to a VM or remove virtual
@@ -770,7 +770,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--plugcpu=<replaceable>CPU-ID</replaceable></option></term>
+          <term><option>--plug-cpu=<replaceable>CPU-ID</replaceable></option></term>
           <listitem><para>
               Adds a virtual CPU to the VM.
               <replaceable>CPU-ID</replaceable> is the index of the
@@ -783,7 +783,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--unplugcpu=<replaceable>CPU-ID</replaceable></option></term>
+          <term><option>--unplug-cpu=<replaceable>CPU-ID</replaceable></option></term>
           <listitem><para>
               Removes a virtual CPU from the VM.
               <replaceable>CPU-ID</replaceable> is the index of the
@@ -814,7 +814,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--longmode=on | off</option></term>
+          <term><option>--long-mode=on | off</option></term>
           <listitem><para>
               Enables or disables long mode. See
               <xref linkend="settings-processor" />.
@@ -905,7 +905,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--triplefaultreset=on | off</option></term>
+          <term><option>--triple-fault-reset=on | off</option></term>
           <listitem><para>
               Enables or disables the resetting of the guest VM instead
               of triggering a Guru Meditation. Some guest VMs raise a
@@ -937,7 +937,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--paravirtprovider=none | default | legacy | minimal | hyperv | kvm</option></term>
+          <term><option>--paravirt-provider=none | default | legacy | minimal | hyperv | kvm</option></term>
           <listitem><para>
               Specifies one of the following paravirtualization
               interfaces to provide to the guest OS:
@@ -972,7 +972,7 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--paravirtdebug=<replaceable>property</replaceable>=<replaceable>value</replaceable></option></term>
+          <term><option>--paravirt-debug=<replaceable>property</replaceable>=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies debugging properties that are specific to the
               paravirtualization provider configured for the specified
@@ -980,7 +980,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nestedpaging=on | off</option></term>
+          <term><option>--nested-paging=on | off</option></term>
           <listitem><para>
               Enables or disables the nested paging feature in the
               processor of the host system. This option is available
@@ -990,7 +990,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--largepages=on | off</option></term>
+          <term><option>--large-pages=on | off</option></term>
           <listitem><para>
               Enables or disables the hypervisor's use of large pages,
               which can improve performance by up to 5%. The use of
@@ -1000,7 +1000,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vtxvpid=on | off</option></term>
+          <term><option>--vtx-vpid=on | off</option></term>
           <listitem><para>
               Enables or disables the use of the tagged TLB (VPID)
               feature in the processor of your host system. See
@@ -1009,7 +1009,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vtxux=on | off</option></term>
+          <term><option>--vtx-ux=on | off</option></term>
           <listitem><para>
               Enables or disables the use of unrestricted guest mode for
               executing the guest VM. This option is available only when
@@ -1127,27 +1127,27 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bioslogofadein=on | off</option></term>
+          <term><option>--bios-logo-fade-in=on | off</option></term>
           <listitem><para>
               Specifies whether the BIOS logo fades in on VM startup. By
               default, an &product-name; logo is shown.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bioslogofadeout=on | off</option></term>
+          <term><option>--bios-logo-fade-out=on | off</option></term>
           <listitem><para>
               Specifies whether the BIOS logo fades out on VM startup.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bioslogodisplaytime=<replaceable>msec</replaceable></option></term>
+          <term><option>--bios-logo-display-time=<replaceable>msec</replaceable></option></term>
           <listitem><para>
               Specifies the amount of time in milliseconds that the BIOS
               logo is visible.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bioslogoimagepath=<replaceable>pathname</replaceable></option></term>
+          <term><option>--bios-logo-image-path=<replaceable>pathname</replaceable></option></term>
           <listitem><para>
               Replaces the existing BIOS logo with a different image.
               The replacement image must be an uncompressed 16, 256 or 16M
@@ -1157,7 +1157,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--biosbootmenu=disabled | menuonly | messageandmenu</option></term>
+          <term><option>--bios-boot-menu=disabled | menuonly | messageandmenu</option></term>
           <listitem><para>
               Specifies whether the BIOS permits you to select a
               temporary boot device. Valid values are:
@@ -1180,7 +1180,7 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--biosapic=x2apic | apic | disabled</option></term>
+          <term><option>--bios-apic=x2apic | apic | disabled</option></term>
           <listitem><para>
               Specifies the APIC level of the firmware. Valid values
               are: <literal>x2apic</literal>, <literal>apic</literal>,
@@ -1200,7 +1200,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--biossystemtimeoffset=<replaceable>msec</replaceable></option></term>
+          <term><option>--bios-system-time-offset=<replaceable>msec</replaceable></option></term>
           <listitem><para>
               Specifies the time offset in milliseconds of the guest VM
               relative to the time on the host system. If the offset
@@ -1209,7 +1209,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--biospxedebug=on | off</option></term>
+          <term><option>--bios-pxe-debug=on | off</option></term>
           <listitem><para>
               Enables or disables additional debugging output when using
               the Intel PXE boot ROM. The debug output is written to the
@@ -1247,7 +1247,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--rtcuseutc=on | off</option></term>
+          <term><option>--rtc-use-utc=on | off</option></term>
           <listitem><para>
               Specifies whether the real-time clock (RTC) uses
               coordinated universal time (UTC). See
@@ -1262,7 +1262,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--snapshotfolder=default | <replaceable>pathname</replaceable></option></term>
+          <term><option>--snapshot-folder=default | <replaceable>pathname</replaceable></option></term>
           <listitem><para>
               Specifies the name of the VM's snapshot storage folder. If
               you specify <literal>default</literal>, the folder name is
@@ -1281,7 +1281,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--guestmemoryballoon=<replaceable>size</replaceable></option></term>
+          <term><option>--guest-memory-balloon=<replaceable>size</replaceable></option></term>
           <listitem><para>
               Specifies the size of the guest memory balloon. The guest
               memory balloon is the memory allocated by the Guest
@@ -1293,7 +1293,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--defaultfrontend=default | <replaceable>name</replaceable></option></term>
+          <term><option>--default-frontend=default | <replaceable>name</replaceable></option></term>
           <listitem><para>
               Specifies the default frontend to use when starting the
               specified VM. If you specify <literal>default</literal>,
@@ -1392,7 +1392,7 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nictype<replaceable>N</replaceable>=Am79C970A | Am79C973 | 82540EM | 82543GC | 82545EM | virtio</option></term>
+          <term><option>--nic-type<replaceable>N</replaceable>=Am79C970A | Am79C973 | 82540EM | 82543GC | 82545EM | virtio</option></term>
           <listitem><para>
               Identifies the type of networking hardware that
               &product-name; presents to the guest VM for the specified
@@ -1427,7 +1427,7 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--cableconnected<replaceable>N</replaceable>=on | off</option></term>
+          <term><option>--cable-connected<replaceable>N</replaceable>=on | off</option></term>
           <listitem><para>
               Temporarily disconnects a virtual network interface, as if
               you pull a network cable from a physical network card. You
@@ -1436,14 +1436,14 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nictrace<replaceable>N</replaceable>=on | off</option></term>
+          <term><option>--nic-trace<replaceable>N</replaceable>=on | off</option></term>
           <listitem><para>
               Enables or disables network tracing for the specified
               virtual network card.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nictracefile<replaceable>N</replaceable>=<replaceable>filename</replaceable></option></term>
+          <term><option>--nic-trace-file<replaceable>N</replaceable>=<replaceable>filename</replaceable></option></term>
           <listitem><para>
               Specifies the absolute path of the file in which to write
               trace log information. Use this option if network tracing
@@ -1451,11 +1451,11 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nicproperty<replaceable>N</replaceable>=<replaceable>name</replaceable>=<replaceable>value</replaceable></option></term>
+          <term><option>--nic-property<replaceable>N</replaceable>=<replaceable>name</replaceable>=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Enables you to set property values and pass them to rarely
               used network backends. To use this option, you must also
-              use the <option>--nicgenericdrv</option> option.
+              use the <option>--nic-generic-drv</option> option.
             </para><para>
               These properties are specific to the backend engine and
               differ between the UDP Tunnel and the VDE backend drivers.
@@ -1464,7 +1464,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nicspeed<replaceable>N</replaceable>=<replaceable>kbps</replaceable></option></term>
+          <term><option>--nic-speed<replaceable>N</replaceable>=<replaceable>kbps</replaceable></option></term>
           <listitem><para>
               Specifies the throughput rate in kilobits per second for
               rarely used networking sub-modes such as VDE network and
@@ -1474,7 +1474,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nicbootprio<replaceable>N</replaceable>=<replaceable>priority</replaceable></option></term>
+          <term><option>--nic-boot-prio<replaceable>N</replaceable>=<replaceable>priority</replaceable></option></term>
           <listitem><para>
               Assigns a priority to each NIC that determines the order
               in which that NIC is used to perform a PXE network boot.
@@ -1490,7 +1490,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nicpromisc<replaceable>N</replaceable>=deny | allow-vms | allow-all</option></term>
+          <term><option>--nic-promisc<replaceable>N</replaceable>=deny | allow-vms | allow-all</option></term>
           <listitem><para>
               Enables you to specify whether to deny or allow
               promiscuous mode for the specified VM virtual network
@@ -1513,7 +1513,7 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nicbandwidthgroup<replaceable>N</replaceable>=none | <replaceable>name</replaceable></option></term>
+          <term><option>--nic-bandwidth-group<replaceable>N</replaceable>=none | <replaceable>name</replaceable></option></term>
           <listitem><para>
               Adds or removes a bandwidth group assignment to the
               specified virtual network interface. Valid values are as
@@ -1533,7 +1533,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--bridgeadapter<replaceable>N</replaceable>=none | <replaceable>device-name</replaceable></option></term>
+          <term><option>--bridge-adapter<replaceable>N</replaceable>=none | <replaceable>device-name</replaceable></option></term>
           <listitem><para>
               Specifies the host interface to use for the specified
               virtual network interface. See
@@ -1543,7 +1543,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--hostonlyadapter<replaceable>N</replaceable>=none | <replaceable>device-name</replaceable></option></term>
+          <term><option>--host-only-adapter<replaceable>N</replaceable>=none | <replaceable>device-name</replaceable></option></term>
           <listitem><para>
               Specifies which host-only networking interface to use for
               the specified virtual network interface. See
@@ -1573,7 +1573,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nicgenericdrv<replaceable>N</replaceable>=<replaceable>backend-driver</replaceable></option></term>
+          <term><option>--nic-generic-drv<replaceable>N</replaceable>=<replaceable>backend-driver</replaceable></option></term>
           <listitem><para>
               Enables you to access rarely used networking sub-modes,
               such as VDE networks and UDP Tunnel. Use this option only
@@ -1582,7 +1582,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--macaddress<replaceable>N</replaceable>=auto | <replaceable>MAC-address</replaceable></option></term>
+          <term><option>--mac-address<replaceable>N</replaceable>=auto | <replaceable>MAC-address</replaceable></option></term>
           <listitem><para>
               Specifies the MAC address of the specified network adapter
               on the VM. By default, &product-name; assigns a random MAC
@@ -1600,7 +1600,7 @@ it unless this changes. -->
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--natnet<replaceable>N</replaceable>=default | <replaceable>network</replaceable></option></term>
+          <term><option>--nat-net<replaceable>N</replaceable>=default | <replaceable>network</replaceable></option></term>
           <listitem><para>
               Specifies the IP address range to use for this network.
               See <xref linkend="changenat" />. Use this option only if
@@ -1609,21 +1609,21 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--natpf<replaceable>N</replaceable>=[<replaceable>name</replaceable>],tcp | udp,[<replaceable>host-IP</replaceable>],<replaceable>hostport</replaceable>,[<replaceable>guest-IP</replaceable>],<replaceable>guestport</replaceable></option></term>
+          <term><option>--nat-pf<replaceable>N</replaceable>=[<replaceable>name</replaceable>],tcp | udp,[<replaceable>host-IP</replaceable>],<replaceable>hostport</replaceable>,[<replaceable>guest-IP</replaceable>],<replaceable>guestport</replaceable></option></term>
           <listitem><para>
               Specifies the NAT port-forwarding rule to use. See
               <xref linkend="natforward" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--natpf<replaceable>N</replaceable>=delete <replaceable>name</replaceable></option></term>
+          <term><option>--nat-pf<replaceable>N</replaceable>=delete <replaceable>name</replaceable></option></term>
           <listitem><para>
               Specifies the NAT port-forwarding rule to delete. See
               <xref linkend="natforward" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nattftpprefix<replaceable>N</replaceable>=<replaceable>prefix</replaceable></option></term>
+          <term><option>--nat-tftp-prefix<replaceable>N</replaceable>=<replaceable>prefix</replaceable></option></term>
           <listitem><para>
               Specifies a prefix to use for the built-in TFTP server.
               For example, you might use a prefix to indicate where the
@@ -1632,21 +1632,21 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nattftpfile<replaceable>N</replaceable>=<replaceable>boot-file</replaceable></option></term>
+          <term><option>--nat-tftp-file<replaceable>N</replaceable>=<replaceable>boot-file</replaceable></option></term>
           <listitem><para>
               Specifies the name of the TFT boot file. See
               <xref linkend="nat-adv-tftp" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nattftpserver<replaceable>N</replaceable>=<replaceable>tftp-server</replaceable></option></term>
+          <term><option>--nat-tftp-server<replaceable>N</replaceable>=<replaceable>tftp-server</replaceable></option></term>
           <listitem><para>
               Specifies the address of the TFTP server from which to
               boot. See <xref linkend="nat-adv-tftp" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--natbindip<replaceable>N</replaceable>=<replaceable>IP-address</replaceable></option></term>
+          <term><option>--nat-bind-ip<replaceable>N</replaceable>=<replaceable>IP-address</replaceable></option></term>
           <listitem><para>
               Specifies an alternate IP address to which the NAT engine
               binds. See <xref linkend="nat-adv-settings" />. By
@@ -1656,14 +1656,14 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--natdnspassdomain<replaceable>N</replaceable>=on | off</option></term>
+          <term><option>--nat-dns-pass-domain<replaceable>N</replaceable>=on | off</option></term>
           <listitem><para>
               Specifies whether the built-in DHCP server passes the
               domain name for network name resolution.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--natdnsproxy<replaceable>N</replaceable>=on | off</option></term>
+          <term><option>--nat-dns-proxy<replaceable>N</replaceable>=on | off</option></term>
           <listitem><para>
               Specifies whether the NAT engine is the proxy for all
               guest DNS requests to the host system's DNS servers. See
@@ -1671,7 +1671,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--natdnshostresolver<replaceable>N</replaceable>=on | off</option></term>
+          <term><option>--nat-dns-host-resolver<replaceable>N</replaceable>=on | off</option></term>
           <listitem><para>
               Specifies whether the NAT engine uses the host system's
               resolver mechanisms to handle DNS requests. See
@@ -1679,21 +1679,21 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--natlocalhostreachable<replaceable>N</replaceable>=on | off</option></term>
+          <term><option>--nat-localhostreachable<replaceable>N</replaceable>=on | off</option></term>
           <listitem><para>
               Specifies whether the NAT engine allows traffic from the guest directed to
               10.0.2.2 to pass to the host's loopback interface, i.e. localhost or 127.0.0.1.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--natsettings<replaceable>N</replaceable>=[<replaceable>mtu</replaceable>],[<replaceable>socksnd</replaceable>],[<replaceable>sockrcv</replaceable>],[<replaceable>tcpsnd</replaceable>],[<replaceable>tcprcv</replaceable>]</option></term>
+          <term><option>--nat-settings<replaceable>N</replaceable>=[<replaceable>mtu</replaceable>],[<replaceable>socksnd</replaceable>],[<replaceable>sockrcv</replaceable>],[<replaceable>tcpsnd</replaceable>],[<replaceable>tcprcv</replaceable>]</option></term>
           <listitem><para>
               Specifies values for tuning NAT performance. See
               <xref linkend="nat-adv-settings" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--nataliasmode<replaceable>N</replaceable>=default | [log],[proxyonly],[sameports]</option></term>
+          <term><option>--nat-alias-mode<replaceable>N</replaceable>=default | [log],[proxyonly],[sameports]</option></term>
           <listitem><para>
               Specifies the behavior of the NAT engine core as follows:
             </para><itemizedlist>
@@ -1757,7 +1757,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--uartmode<replaceable>N</replaceable>=<replaceable>mode</replaceable></option></term>
+          <term><option>--uart-mode<replaceable>N</replaceable>=<replaceable>mode</replaceable></option></term>
           <listitem><para>
               Specifies how &product-name; connects the specified
               virtual serial port to the host system that runs the VM.
@@ -1842,7 +1842,7 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--uarttype<replaceable>N</replaceable>=<replaceable>UART-type</replaceable></option></term>
+          <term><option>--uart-type<replaceable>N</replaceable>=<replaceable>UART-type</replaceable></option></term>
           <listitem><para>
               Configures the UART type for the specified virtual serial
               port (<replaceable>N</replaceable>). Valid values are
@@ -1852,7 +1852,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--lptmode<replaceable>N</replaceable>=<replaceable>device-name</replaceable></option></term>
+          <term><option>--lpt-mode<replaceable>N</replaceable>=<replaceable>device-name</replaceable></option></term>
           <listitem><para>
               Specifies the device name of the parallel port to use.
             </para><para>
@@ -1888,7 +1888,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--audiocontroller=<replaceable>controller-type</replaceable></option></term>
+          <term><option>--audio-controller=<replaceable>controller-type</replaceable></option></term>
           <listitem><para>
               Specifies the audio controller to be used with the VM.
               Valid audio controller type values are:
@@ -1897,7 +1897,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--audiocodec=<replaceable>codec-type</replaceable></option></term>
+          <term><option>--audio-codec=<replaceable>codec-type</replaceable></option></term>
           <listitem><para>
               Specifies the audio codec to be used with the VM. Valid
               audio codec type values are: <literal>stac9700</literal>,
@@ -1906,14 +1906,14 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--audioin=on|off</option></term>
+          <term><option>--audio-in=on|off</option></term>
           <listitem><para>
               Specifies whether to enable or disable audio capture from
               the host system.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--audioout=on|off</option></term>
+          <term><option>--audio-out=on|off</option></term>
           <listitem><para>
               Specifies whether to enable or disable audio playback from
               the guest VM.
@@ -1935,7 +1935,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--draganddrop=<replaceable>value</replaceable></option></term>
+          <term><option>--drag-and-drop=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies how to use the drag and drop feature between the
               host system and the VM. Valid values are:
@@ -1950,28 +1950,28 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--monitorcount=<replaceable>count</replaceable></option></term>
+          <term><option>--monitor-count=<replaceable>count</replaceable></option></term>
           <listitem><para>
               Enables you to configure multiple monitors. See
               <xref linkend="settings-display" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--usbohci=on | off</option></term>
+          <term><option>--usb-ohci=on | off</option></term>
           <listitem><para>
               Enables or disables the VM's virtual USB 1.1 controller.
               See <xref linkend="settings-usb" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--usbehci=on | off</option></term>
+          <term><option>--usb-ehci=on | off</option></term>
           <listitem><para>
               Enables or disables the VM's virtual USB 2.0 controller.
               See <xref linkend="settings-usb" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--usbxhci=on | off</option></term>
+          <term><option>--usb-xhci=on | off</option></term>
           <listitem><para>
               Enables or disables the VM's virtual USB 3.0 controller.
               This is the most efficient option if the VM supports it.
@@ -1979,7 +1979,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--usbrename=<replaceable>old-name</replaceable> <replaceable>new-name</replaceable></option></term>
+          <term><option>--usb-rename=<replaceable>old-name</replaceable> <replaceable>new-name</replaceable></option></term>
           <listitem><para>
               Rename's the VM's virtual USB controller from
               <replaceable>old-name</replaceable> to
@@ -2005,7 +2005,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--recordingscreens=all | <replaceable>screen-ID</replaceable></option></term>
+          <term><option>--recording-screens=all | <replaceable>screen-ID</replaceable></option></term>
           <listitem><para>
               Enables you to specify the VM screens to record. The
               recording for each screen is output to its own file. Valid
@@ -2014,14 +2014,14 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--recordingfile=<replaceable>filename</replaceable></option></term>
+          <term><option>--recording-file=<replaceable>filename</replaceable></option></term>
           <listitem><para>
               Specifies the name of the file in which to save the
               recording.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--recordingmaxsize=<replaceable>MB</replaceable></option></term>
+          <term><option>--recording-max-size=<replaceable>MB</replaceable></option></term>
           <listitem><para>
               Specifies the maximum size of the recorded video file in
               megabytes. When the file reaches the specified size,
@@ -2030,7 +2030,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--recordingmaxtime=<replaceable>seconds</replaceable></option></term>
+          <term><option>--recording-max-time=<replaceable>seconds</replaceable></option></term>
           <listitem><para>
               Specifies the maximum amount of time to record in seconds.
               When the specified time elapses, recording stops. If the
@@ -2039,7 +2039,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--recordingopts=<replaceable>keyword</replaceable>=<replaceable>value</replaceable></option></term>
+          <term><option>--recording-opts=<replaceable>keyword</replaceable>=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies additional video-recording properties as a
               comma-separated property keyword-value list. For example,
@@ -2051,7 +2051,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--recordingvideofps=<replaceable>fps</replaceable></option></term>
+          <term><option>--recording-video-fps=<replaceable>fps</replaceable></option></term>
           <listitem><para>
               Specifies the maximum number of video frames per second
               (FPS) to record. The recording ignores any frames that
@@ -2061,7 +2061,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--recordingvideorate=<replaceable>bit-rate</replaceable></option></term>
+          <term><option>--recording-video-rate=<replaceable>bit-rate</replaceable></option></term>
           <listitem><para>
               Specifies the bit rate of the video in kilobits per
               second. When you increase the bit rate, the recording
@@ -2070,7 +2070,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--recordingvideores=<replaceable>width</replaceable>x<replaceable>height</replaceable></option></term>
+          <term><option>--recording-video-res=<replaceable>width</replaceable>x<replaceable>height</replaceable></option></term>
           <listitem><para>
               Specifies the video resolution (width and height) of the
               recorded video in pixels.
@@ -2093,7 +2093,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=TCP/Ports=<replaceable>port</replaceable></option></term>
+          <term><option>--vrde-property=TCP/Ports=<replaceable>port</replaceable></option></term>
           <listitem><para>
               <replaceable>port</replaceable> is the port or port range
               to which the VRDE server binds. The
@@ -2101,24 +2101,24 @@ it unless this changes. -->
               uses port <literal>3389</literal>, which is the standard
               RDP port.
             </para><para>
-              Also see the <option>--vrdeport</option> option
+              Also see the <option>--vrde-port</option> option
               description.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=TCP/Address=<replaceable>IP-address</replaceable></option></term>
+          <term><option>--vrde-property=TCP/Address=<replaceable>IP-address</replaceable></option></term>
           <listitem><para>
               <replaceable>IP-address</replaceable> is the IP address of
               the host network interface to which the VRDE server binds.
               When specified, the server accepts connections only on the
               host network interface at that IP address.
             </para><para>
-              Also see the <option>--vrdeaddress</option> option
+              Also see the <option>--vrde-address</option> option
               description.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=VideoChannel/Enabled=<replaceable>value</replaceable></option></term>
+          <term><option>--vrde-property=VideoChannel/Enabled=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies whether the VRDP video channel is on or off.
               <literal>1</literal> means <literal>on</literal> and
@@ -2127,7 +2127,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=Quality=<replaceable>value</replaceable></option></term>
+          <term><option>--vrde-property=Quality=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies a value between 10% and 100%, inclusive, that
               represents the JPEG compression level on the VRDE server
@@ -2137,7 +2137,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=DownscaleProtection=<replaceable>value</replaceable></option></term>
+          <term><option>--vrde-property=DownscaleProtection=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Enables or disables the video downscale protection
               feature. Valid values are <literal>1</literal> to enable
@@ -2164,37 +2164,37 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=Client/DisableDisplay=1</option></term>
+          <term><option>--vrde-property=Client/DisableDisplay=1</option></term>
           <listitem><para>
               Disables the display VRDE server feature.
             </para><para>
               To reenable a feature, assign a null value. For example,
               to reenable the display feature, specify the
               <command>VBoxManage modifyvm
-              --vrdeproperty=Client/DisableDisplay=</command> command.
+              --vrde-property=Client/DisableDisplay=</command> command.
               See <xref linkend="vrde-customization" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=DisableInput=1</option></term>
+          <term><option>--vrde-property=DisableInput=1</option></term>
           <listitem><para>
               Disables the input VRDE server feature.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=DisableAudio=1</option></term>
+          <term><option>--vrde-property=DisableAudio=1</option></term>
           <listitem><para>
               Disables the audio VRDE server feature.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=DisableUSB=1</option></term>
+          <term><option>--vrde-property=DisableUSB=1</option></term>
           <listitem><para>
               Disables the USB VRDE server feature.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=Client/DisableClipboard=1</option></term>
+          <term><option>--vrde-property=Client/DisableClipboard=1</option></term>
           <listitem><para>
               Disables the clipboard VRDE server feature. To reenable
               the feature, assign a null value. See
@@ -2202,7 +2202,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=DisableUpstreamAudio=1</option></term>
+          <term><option>--vrde-property=DisableUpstreamAudio=1</option></term>
           <listitem><para>
               Disables the upstream audio VRDE server feature. To
               reenable the feature, assign a null value. See
@@ -2210,7 +2210,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=Client/DisableRDPDR=1</option></term>
+          <term><option>--vrde-property=Client/DisableRDPDR=1</option></term>
           <listitem><para>
               Disables the RDP device redirection for smart cards VRDE
               server feature. To reenable this feature, assign a null
@@ -2218,14 +2218,14 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=H3DRedirect/Enabled=1</option></term>
+          <term><option>--vrde-property=H3DRedirect/Enabled=1</option></term>
           <listitem><para>
               Enables the 3D redirection VRDE server feature. To disable
               this feature, assign a null value.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=Security/Method=<replaceable>value</replaceable></option></term>
+          <term><option>--vrde-property=Security/Method=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies the following information that is required for a
               connection:
@@ -2249,28 +2249,28 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=ServerCertificate=<replaceable>value</replaceable></option></term>
+          <term><option>--vrde-property=ServerCertificate=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies the absolute path to the server certificate. See
               <xref linkend="vrde-crypt" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=ServerPrivateKey=<replaceable>value</replaceable></option></term>
+          <term><option>--vrde-property=ServerPrivateKey=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies the absolute path to the server private key. See
               <xref linkend="vrde-crypt" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=CACertificate=<replaceable>value</replaceable></option></term>
+          <term><option>--vrde-property=CACertificate=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies the absolute path to the CA self-signed
               certificate. See <xref linkend="vrde-crypt" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty Audio/RateCorrectionMode=<replaceable>value</replaceable></option></term>
+          <term><option>--vrde-property Audio/RateCorrectionMode=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies the audio connection mode or the path to the
               audio log file. Valid values are as follows:
@@ -2295,13 +2295,13 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeproperty=LogPath=<replaceable>value</replaceable></option></term>
+          <term><option>--vrde-property=LogPath=<replaceable>value</replaceable></option></term>
           <listitem><para>
               Specifies the absolute path to the audio log file.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeextpack=default | <replaceable>name</replaceable></option></term>
+          <term><option>--vrde-extpack=default | <replaceable>name</replaceable></option></term>
           <listitem><para>
               Specifies the library to use to access the VM remotely.
               The <literal>default</literal> value uses the RDP code
@@ -2313,7 +2313,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeport=default | <replaceable>port</replaceable></option></term>
+          <term><option>--vrde-port=default | <replaceable>port</replaceable></option></term>
           <listitem><para>
               <replaceable>port</replaceable> is the port or port range
               to which the VRDE server binds. The
@@ -2326,14 +2326,14 @@ it unless this changes. -->
               specify a port range. The VRDE server binds to only one of
               the available ports from the list. Only one machine can
               use a given port at a time. For example, the
-              <option>--vrdeport=5000,5010-5012</option> option
+              <option>--vrde-port=5000,5010-5012</option> option
               specifies that server can bind to one of following ports:
               <literal>5000</literal>, <literal>5010</literal>,
               <literal>5011</literal>, or <literal>5012</literal>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeaddress=<replaceable>IP-address</replaceable></option></term>
+          <term><option>--vrde-address=<replaceable>IP-address</replaceable></option></term>
           <listitem><para>
               Specifies the IP address of the host network interface to
               which the VRDE server binds. If you specify an IP address,
@@ -2345,21 +2345,21 @@ it unless this changes. -->
             </para><itemizedlist>
               <listitem><para>
                   <emphasis role="bold">Only IPv4:</emphasis> Use the
-                  <option>--vrdeaddress="0.0.0.0"</option> option.
+                  <option>--vrde-address="0.0.0.0"</option> option.
                 </para></listitem>
               <listitem><para>
                   <emphasis role="bold">Only IPv6:</emphasis> Use the
-                  <option>--vrdeaddress="::"</option> option.
+                  <option>--vrde-address="::"</option> option.
                 </para></listitem>
               <listitem><para>
                   <emphasis role="bold">Both IPv6 and IPv4:</emphasis>
-                  Use the <option>--vrdeaddress=&ldquo;&rdquo;</option>
+                  Use the <option>--vrde-address=&ldquo;&rdquo;</option>
                   option. This is the default value.
                 </para></listitem>
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeauthtype=null | external | guest</option></term>
+          <term><option>--vrde-auth-type=null | external | guest</option></term>
           <listitem><para>
               Specify whether to use authorization and how to perform
               authorization. See <xref linkend="vbox-auth" />. Valid
@@ -2381,7 +2381,7 @@ it unless this changes. -->
             </itemizedlist></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdeauthlibrary=default | <replaceable>name</replaceable></option></term>
+          <term><option>--vrde-auth-library=default | <replaceable>name</replaceable></option></term>
           <listitem><para>
               Specifies the library to use for RDP authentication. The
               default library for external authentication is
@@ -2390,7 +2390,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdemulticon=on | off</option></term>
+          <term><option>--vrde-multi-con=on | off</option></term>
           <listitem><para>
               Enables or disables the multiple connections VRDE server
               feature, if supported. See
@@ -2398,7 +2398,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdereusecon=on | off</option></term>
+          <term><option>--vrde-reuse-con=on | off</option></term>
           <listitem><para>
               Specifies how the VRDE server behaves when multiple
               connections are disabled. When the value is
@@ -2410,14 +2410,14 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdevideochannel=on | off</option></term>
+          <term><option>--vrde-video-channel=on | off</option></term>
           <listitem><para>
               Enables video redirection if supported by the VRDE server.
               See <xref linkend="vrde-videochannel" />.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--vrdevideochannelquality=<replaceable>percent</replaceable></option></term>
+          <term><option>--vrde-video-channel-quality=<replaceable>percent</replaceable></option></term>
           <listitem><para>
               Specifies the image quality for video redirection as a
               value from 10 to 100 percent. The percentage represents
@@ -2448,7 +2448,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--teleporterport=<replaceable>port</replaceable></option></term>
+          <term><option>--teleporter-port=<replaceable>port</replaceable></option></term>
           <listitem><para>
               Specifies the port on which the VM listens to receive a
               teleporting request from another VM.
@@ -2458,7 +2458,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--teleporteraddress=<replaceable>IP-address</replaceable></option></term>
+          <term><option>--teleporter-address=<replaceable>IP-address</replaceable></option></term>
           <listitem><para>
               Specifies the IP address on which the VM listens to
               receive a teleporting request from another VM.
@@ -2471,7 +2471,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--teleporterpassword=<replaceable>password</replaceable></option></term>
+          <term><option>--teleporter-password=<replaceable>password</replaceable></option></term>
           <listitem><para>
               Specifies the password to use for authentication. When
               specified, the teleporting request only succeeds if the
@@ -2480,7 +2480,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--teleporterpasswordfile=<replaceable>filename</replaceable></option></term>
+          <term><option>--teleporter-password-file=<replaceable>filename</replaceable></option></term>
           <listitem><para>
               Specifies a file that contains the password to use for
               authentication. When specified, the teleporting request
@@ -2538,7 +2538,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--cpuidremoveall</option></term>
+          <term><option>--cpuid-remove-all</option></term>
           <listitem>
             <para>
               Removes all adjustments established with <option>--cpuid-set</option>.
@@ -2590,7 +2590,7 @@ it unless this changes. -->
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--usbcardreader=on | off</option></term>
+          <term><option>--usb-card-reader=on | off</option></term>
           <listitem><para>
               Enables or disables the USB card reader interface.
             </para></listitem>
@@ -2633,7 +2633,7 @@ it unless this changes. -->
       <remark role="help-copy-synopsis"/>
       <variablelist>
         <varlistentry>
-          <term><option>--pciattach=<replaceable>host-PCI-address</replaceable>[@<replaceable>guest-PCI-bus-address</replaceable>]</option></term>
+          <term><option>--pci-attach=<replaceable>host-PCI-address</replaceable>[@<replaceable>guest-PCI-bus-address</replaceable>]</option></term>
           <listitem><para>
               Attaches the specified PCI network controller on the host
               to the guest VM. You can optionally specify the PCI bus on
@@ -2642,7 +2642,7 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--pcidetach=<replaceable>host-PCI-address</replaceable></option></term>
+          <term><option>--pci-detach=<replaceable>host-PCI-address</replaceable></option></term>
           <listitem><para>
               Detaches the specified PCI network controller from the
               attached PCI bus on the guest VM.

@@ -92,9 +92,8 @@ enum
     MODIFYVM_PLUGCPU,
     MODIFYVM_UNPLUGCPU,
     MODIFYVM_SETCPUID,
-    MODIFYVM_SETCPUID_OLD,      // legacy (not yet deprecated)
     MODIFYVM_DELCPUID,
-    MODIFYVM_DELCPUID_OLD,      // legacy (not yet deprecated)
+    MODIFYVM_DELCPUID_OLD,      // legacy, different syntax from MODIFYVM_DELCPUID
     MODIFYVM_DELALLCPUID,
     MODIFYVM_GRAPHICSCONTROLLER,
     MODIFYVM_MONITORCOUNT,
@@ -254,209 +253,204 @@ enum
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
 {
-/** @todo Convert to dash separated names like --triple-fault-reset! Please
- *        do that for all new options as we don't need more character soups
- *        around VirtualBox - typedefs more than covers that demand! */
-    { "--name",                     MODIFYVM_NAME,                      RTGETOPT_REQ_STRING },
-    { "--groups",                   MODIFYVM_GROUPS,                    RTGETOPT_REQ_STRING },
-    { "--description",              MODIFYVM_DESCRIPTION,               RTGETOPT_REQ_STRING },
-    { "--ostype",                   MODIFYVM_OSTYPE,                    RTGETOPT_REQ_STRING },
-    { "--iconfile",                 MODIFYVM_ICONFILE,                  RTGETOPT_REQ_STRING },
-    { "--memory",                   MODIFYVM_MEMORY,                    RTGETOPT_REQ_UINT32 },
-    { "--pagefusion",               MODIFYVM_PAGEFUSION,                RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vram",                     MODIFYVM_VRAM,                      RTGETOPT_REQ_UINT32 },
-    { "--firmware",                 MODIFYVM_FIRMWARE,                  RTGETOPT_REQ_STRING },
-    { "--acpi",                     MODIFYVM_ACPI,                      RTGETOPT_REQ_BOOL_ONOFF },
-    { "--ioapic",                   MODIFYVM_IOAPIC,                    RTGETOPT_REQ_BOOL_ONOFF },
-    { "--pae",                      MODIFYVM_PAE,                       RTGETOPT_REQ_BOOL_ONOFF },
-    { "--longmode",                 MODIFYVM_LONGMODE,                  RTGETOPT_REQ_BOOL_ONOFF },
-    { "--cpuid-portability-level",  MODIFYVM_CPUID_PORTABILITY,         RTGETOPT_REQ_UINT32 },
-    { "--triplefaultreset",         MODIFYVM_TFRESET,                   RTGETOPT_REQ_BOOL_ONOFF },
-    { "--apic",                     MODIFYVM_APIC,                      RTGETOPT_REQ_BOOL_ONOFF },
-    { "--x2apic",                   MODIFYVM_X2APIC,                    RTGETOPT_REQ_BOOL_ONOFF },
-    { "--paravirtprovider",         MODIFYVM_PARAVIRTPROVIDER,          RTGETOPT_REQ_STRING },
-    { "--paravirtdebug",            MODIFYVM_PARAVIRTDEBUG,             RTGETOPT_REQ_STRING },
-    { "--hwvirtex",                 MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_BOOL_ONOFF },
-    { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF },
-    { "--largepages",               MODIFYVM_LARGEPAGES,                RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vtxvpid",                  MODIFYVM_VTXVPID,                   RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vtxux",                    MODIFYVM_VTXUX,                     RTGETOPT_REQ_BOOL_ONOFF },
-    { "--virt-vmsave-vmload",       MODIFYVM_VIRT_VMSAVE_VMLOAD,        RTGETOPT_REQ_BOOL_ONOFF },
-    { "--ibpb-on-vm-exit",          MODIFYVM_IBPB_ON_VM_EXIT,           RTGETOPT_REQ_BOOL_ONOFF },
-    { "--ibpb-on-vm-entry",         MODIFYVM_IBPB_ON_VM_ENTRY,          RTGETOPT_REQ_BOOL_ONOFF },
-    { "--spec-ctrl",                MODIFYVM_SPEC_CTRL,                 RTGETOPT_REQ_BOOL_ONOFF },
-    { "--l1d-flush-on-sched",       MODIFYVM_L1D_FLUSH_ON_SCHED,        RTGETOPT_REQ_BOOL_ONOFF },
-    { "--l1d-flush-on-vm-entry",    MODIFYVM_L1D_FLUSH_ON_VM_ENTRY,     RTGETOPT_REQ_BOOL_ONOFF },
-    { "--mds-clear-on-sched",       MODIFYVM_MDS_CLEAR_ON_SCHED,        RTGETOPT_REQ_BOOL_ONOFF },
-    { "--mds-clear-on-vm-entry",    MODIFYVM_MDS_CLEAR_ON_VM_ENTRY,     RTGETOPT_REQ_BOOL_ONOFF },
-    { "--nested-hw-virt",           MODIFYVM_NESTED_HW_VIRT,            RTGETOPT_REQ_BOOL_ONOFF },
-    { "--cpuid-set",                MODIFYVM_SETCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX },
-    { "--cpuid-remove",             MODIFYVM_DELCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX },
-    { "--cpuidset",                 MODIFYVM_SETCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX }, /* legacy */
-    { "--cpuidremove",              MODIFYVM_DELCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX }, /* legacy */
-    { "--cpuidremoveall",           MODIFYVM_DELALLCPUID,               RTGETOPT_REQ_NOTHING},
-    { "--cpus",                     MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32 },
-    { "--cpuhotplug",               MODIFYVM_CPUHOTPLUG,                RTGETOPT_REQ_BOOL_ONOFF },
-    { "--cpu-profile",              MODIFYVM_CPU_PROFILE,               RTGETOPT_REQ_STRING },
-    { "--plugcpu",                  MODIFYVM_PLUGCPU,                   RTGETOPT_REQ_UINT32 },
-    { "--unplugcpu",                MODIFYVM_UNPLUGCPU,                 RTGETOPT_REQ_UINT32 },
-    { "--cpuexecutioncap",          MODIFYVM_CPU_EXECTUION_CAP,         RTGETOPT_REQ_UINT32 },
-    { "--rtcuseutc",                MODIFYVM_RTCUSEUTC,                 RTGETOPT_REQ_BOOL_ONOFF },
-    { "--graphicscontroller",       MODIFYVM_GRAPHICSCONTROLLER,        RTGETOPT_REQ_STRING },
-    { "--monitorcount",             MODIFYVM_MONITORCOUNT,              RTGETOPT_REQ_UINT32 },
-    { "--accelerate3d",             MODIFYVM_ACCELERATE3D,              RTGETOPT_REQ_BOOL_ONOFF },
+    OPT1("--name",                                                      MODIFYVM_NAME,                      RTGETOPT_REQ_STRING),
+    OPT1("--groups",                                                    MODIFYVM_GROUPS,                    RTGETOPT_REQ_STRING),
+    OPT1("--description",                                               MODIFYVM_DESCRIPTION,               RTGETOPT_REQ_STRING),
+    OPT2("--os-type",                       "--ostype",                 MODIFYVM_OSTYPE,                    RTGETOPT_REQ_STRING),
+    OPT2("--icon-file",                     "--iconfile",               MODIFYVM_ICONFILE,                  RTGETOPT_REQ_STRING),
+    OPT1("--memory",                                                    MODIFYVM_MEMORY,                    RTGETOPT_REQ_UINT32),
+    OPT2("--page-fusion",                   "--pagefusion",             MODIFYVM_PAGEFUSION,                RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--vram",                                                      MODIFYVM_VRAM,                      RTGETOPT_REQ_UINT32),
+    OPT1("--firmware",                                                  MODIFYVM_FIRMWARE,                  RTGETOPT_REQ_STRING),
+    OPT1("--acpi",                                                      MODIFYVM_ACPI,                      RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--ioapic",                                                    MODIFYVM_IOAPIC,                    RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--pae",                                                       MODIFYVM_PAE,                       RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--long-mode",                     "--longmode",               MODIFYVM_LONGMODE,                  RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--cpuid-portability-level",                                   MODIFYVM_CPUID_PORTABILITY,         RTGETOPT_REQ_UINT32),
+    OPT2("--triple-fault-reset",            "--triplefaultreset",       MODIFYVM_TFRESET,                   RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--apic",                                                      MODIFYVM_APIC,                      RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--x2apic",                                                    MODIFYVM_X2APIC,                    RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--paravirt-provider",             "--paravirtprovider",       MODIFYVM_PARAVIRTPROVIDER,          RTGETOPT_REQ_STRING),
+    OPT2("--paravirt-debug",                "--paravirtdebug",          MODIFYVM_PARAVIRTDEBUG,             RTGETOPT_REQ_STRING),
+    OPT1("--hwvirtex",                                                  MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--nested-paging",                 "--nestedpaging",           MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--large-pages",                   "--largepages",             MODIFYVM_LARGEPAGES,                RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--vtx-vpid",                      "--vtxvpid",                MODIFYVM_VTXVPID,                   RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--vtx-ux",                        "--vtxux",                  MODIFYVM_VTXUX,                     RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--virt-vmsave-vmload",                                        MODIFYVM_VIRT_VMSAVE_VMLOAD,        RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--ibpb-on-vm-exit",                                           MODIFYVM_IBPB_ON_VM_EXIT,           RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--ibpb-on-vm-entry",                                          MODIFYVM_IBPB_ON_VM_ENTRY,          RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--spec-ctrl",                                                 MODIFYVM_SPEC_CTRL,                 RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--l1d-flush-on-sched",                                        MODIFYVM_L1D_FLUSH_ON_SCHED,        RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--l1d-flush-on-vm-entry",                                     MODIFYVM_L1D_FLUSH_ON_VM_ENTRY,     RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--mds-clear-on-sched",                                        MODIFYVM_MDS_CLEAR_ON_SCHED,        RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--mds-clear-on-vm-entry",                                     MODIFYVM_MDS_CLEAR_ON_VM_ENTRY,     RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--nested-hw-virt",                                            MODIFYVM_NESTED_HW_VIRT,            RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--cpuid-set",                     "--cpuidset",               MODIFYVM_SETCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX),
+    OPT1("--cpuid-remove",                                              MODIFYVM_DELCPUID,                  RTGETOPT_REQ_UINT32_OPTIONAL_PAIR | RTGETOPT_FLAG_HEX),
+    OPT1("--cpuidremove",                                               MODIFYVM_DELCPUID_OLD,              RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX), /* legacy - syntax differs */
+    OPT2("--cpuid-remove-all",              "--cpuidremoveall",         MODIFYVM_DELALLCPUID,               RTGETOPT_REQ_NOTHING),
+    OPT1("--cpus",                                                      MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32),
+    OPT2("--cpu-hotplug",                   "--cpuhotplug",             MODIFYVM_CPUHOTPLUG,                RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--cpu-profile",                                               MODIFYVM_CPU_PROFILE,               RTGETOPT_REQ_STRING),
+    OPT2("--plug-cpu",                      "--plugcpu",                MODIFYVM_PLUGCPU,                   RTGETOPT_REQ_UINT32),
+    OPT2("--unplug-cpu",                    "--unplugcpu",              MODIFYVM_UNPLUGCPU,                 RTGETOPT_REQ_UINT32),
+    OPT2("--cpu-execution-cap",             "--cpuexecutioncap",        MODIFYVM_CPU_EXECTUION_CAP,         RTGETOPT_REQ_UINT32),
+    OPT2("--rtc-use-utc",                   "--rtcuseutc",              MODIFYVM_RTCUSEUTC,                 RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--graphicscontroller",            "--graphicscontroller",     MODIFYVM_GRAPHICSCONTROLLER,        RTGETOPT_REQ_STRING),
+    OPT2("--monitor-count",                 "--monitorcount",           MODIFYVM_MONITORCOUNT,              RTGETOPT_REQ_UINT32),
+    OPT2("--accelerate-3d",                 "--accelerate3d",           MODIFYVM_ACCELERATE3D,              RTGETOPT_REQ_BOOL_ONOFF),
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    { "--accelerate2dvideo",        MODIFYVM_ACCELERATE2DVIDEO,         RTGETOPT_REQ_BOOL_ONOFF },
+    OPT2("--accelerate-2d-video",           "--accelerate2dvideo",      MODIFYVM_ACCELERATE2DVIDEO,         RTGETOPT_REQ_BOOL_ONOFF),
 #endif
-    { "--bioslogofadein",           MODIFYVM_BIOSLOGOFADEIN,            RTGETOPT_REQ_BOOL_ONOFF },
-    { "--bioslogofadeout",          MODIFYVM_BIOSLOGOFADEOUT,           RTGETOPT_REQ_BOOL_ONOFF },
-    { "--bioslogodisplaytime",      MODIFYVM_BIOSLOGODISPLAYTIME,       RTGETOPT_REQ_UINT32 },
-    { "--bioslogoimagepath",        MODIFYVM_BIOSLOGOIMAGEPATH,         RTGETOPT_REQ_STRING },
-    { "--biosbootmenu",             MODIFYVM_BIOSBOOTMENU,              RTGETOPT_REQ_STRING },
-    { "--biossystemtimeoffset",     MODIFYVM_BIOSSYSTEMTIMEOFFSET,      RTGETOPT_REQ_INT64 },
-    { "--biosapic",                 MODIFYVM_BIOSAPIC,                  RTGETOPT_REQ_STRING },
-    { "--biospxedebug",             MODIFYVM_BIOSPXEDEBUG,              RTGETOPT_REQ_BOOL_ONOFF },
-    { "--system-uuid-le",           MODIFYVM_SYSTEMUUIDLE,              RTGETOPT_REQ_BOOL_ONOFF },
-    { "--boot",                     MODIFYVM_BOOT,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--hda",                      MODIFYVM_HDA,                       RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--hdb",                      MODIFYVM_HDB,                       RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--hdd",                      MODIFYVM_HDD,                       RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--idecontroller",            MODIFYVM_IDECONTROLLER,             RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--sataportcount",            MODIFYVM_SATAPORTCOUNT,             RTGETOPT_REQ_UINT32 }, /* deprecated */
-    { "--sataport",                 MODIFYVM_SATAPORT,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX }, /* deprecated */
-    { "--sata",                     MODIFYVM_SATA,                      RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--scsiport",                 MODIFYVM_SCSIPORT,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX }, /* deprecated */
-    { "--scsitype",                 MODIFYVM_SCSITYPE,                  RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--scsi",                     MODIFYVM_SCSI,                      RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--dvdpassthrough",           MODIFYVM_DVDPASSTHROUGH,            RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--dvd",                      MODIFYVM_DVD,                       RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--floppy",                   MODIFYVM_FLOPPY,                    RTGETOPT_REQ_STRING }, /* deprecated */
-    { "--nictracefile",             MODIFYVM_NICTRACEFILE,              RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nictrace",                 MODIFYVM_NICTRACE,                  RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
-    { "--nicproperty",              MODIFYVM_NICPROPERTY,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nictype",                  MODIFYVM_NICTYPE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nicspeed",                 MODIFYVM_NICSPEED,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
-    { "--nicbootprio",              MODIFYVM_NICBOOTPRIO,               RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
-    { "--nicpromisc",               MODIFYVM_NICPROMISC,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nicbandwidthgroup",        MODIFYVM_NICBWGROUP,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nic",                      MODIFYVM_NIC,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--cableconnected",           MODIFYVM_CABLECONNECTED,            RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
-    { "--bridgeadapter",            MODIFYVM_BRIDGEADAPTER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--hostonlyadapter",          MODIFYVM_HOSTONLYADAPTER,           RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    OPT2("--bios-logo-fade-in",             "--bioslogofadein",         MODIFYVM_BIOSLOGOFADEIN,            RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--bios-logo-fade-out",            "--bioslogofadeout",        MODIFYVM_BIOSLOGOFADEOUT,           RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--bios-logo-display-time",        "--bioslogodisplaytime",    MODIFYVM_BIOSLOGODISPLAYTIME,       RTGETOPT_REQ_UINT32),
+    OPT2("--bios-logo-image-path",          "--bioslogoimagepath",      MODIFYVM_BIOSLOGOIMAGEPATH,         RTGETOPT_REQ_STRING),
+    OPT2("--bios-boot-menu",                "--biosbootmenu",           MODIFYVM_BIOSBOOTMENU,              RTGETOPT_REQ_STRING),
+    OPT2("--bios-system-time-offset",       "--biossystemtimeoffset",   MODIFYVM_BIOSSYSTEMTIMEOFFSET,      RTGETOPT_REQ_INT64),
+    OPT2("--bios-apic",                     "--biosapic",               MODIFYVM_BIOSAPIC,                  RTGETOPT_REQ_STRING),
+    OPT2("--bios-pxe-debug",                "--biospxedebug",           MODIFYVM_BIOSPXEDEBUG,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--system-uuid-le",                "--system-uuid-le",         MODIFYVM_SYSTEMUUIDLE,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--boot",                                                      MODIFYVM_BOOT,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT1("--hda",                                                       MODIFYVM_HDA,                       RTGETOPT_REQ_STRING), /* deprecated */
+    OPT1("--hdb",                                                       MODIFYVM_HDB,                       RTGETOPT_REQ_STRING), /* deprecated */
+    OPT1("--hdd",                                                       MODIFYVM_HDD,                       RTGETOPT_REQ_STRING), /* deprecated */
+    OPT2("--idec-ontroller",                "--idecontroller",          MODIFYVM_IDECONTROLLER,             RTGETOPT_REQ_STRING), /* deprecated */
+    OPT2("--sata-port-count",               "--sataportcount",          MODIFYVM_SATAPORTCOUNT,             RTGETOPT_REQ_UINT32), /* deprecated */
+    OPT2("--sata-port",                     "--sataport",               MODIFYVM_SATAPORT,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX), /* deprecated */
+    OPT1("--sata",                                                      MODIFYVM_SATA,                      RTGETOPT_REQ_STRING), /* deprecated */
+    OPT2("--scsi-port",                     "--scsiport",               MODIFYVM_SCSIPORT,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX), /* deprecated */
+    OPT2("--scsi-type",                     "--scsitype",               MODIFYVM_SCSITYPE,                  RTGETOPT_REQ_STRING), /* deprecated */
+    OPT1("--scsi",                                                      MODIFYVM_SCSI,                      RTGETOPT_REQ_STRING), /* deprecated */
+    OPT2("--dvd-pass-through",              "--dvdpassthrough",         MODIFYVM_DVDPASSTHROUGH,            RTGETOPT_REQ_STRING), /* deprecated */
+    OPT1("--dvd",                                                       MODIFYVM_DVD,                       RTGETOPT_REQ_STRING), /* deprecated */
+    OPT1("--floppy",                                                    MODIFYVM_FLOPPY,                    RTGETOPT_REQ_STRING), /* deprecated */
+    OPT2("--nic-trace-file",                "--nictracefile",           MODIFYVM_NICTRACEFILE,              RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nic-trace",                     "--nictrace",               MODIFYVM_NICTRACE,                  RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX),
+    OPT2("--nic-property",                  "--nicproperty",            MODIFYVM_NICPROPERTY,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nic-type",                      "--nictype",                MODIFYVM_NICTYPE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nic-speed",                     "--nicspeed",               MODIFYVM_NICSPEED,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX),
+    OPT2("--nic-boot-prio",                 "--nicbootprio",            MODIFYVM_NICBOOTPRIO,               RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX),
+    OPT2("--nic-promisc",                   "--nicpromisc",             MODIFYVM_NICPROMISC,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nic-bandwidth-group",           "--nicbandwidthgroup",      MODIFYVM_NICBWGROUP,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT1("--nic",                                                       MODIFYVM_NIC,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--cable-connected",               "--cableconnected",         MODIFYVM_CABLECONNECTED,            RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX),
+    OPT2("--bridge-adapter",                "--bridgeadapter",          MODIFYVM_BRIDGEADAPTER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--host-only-adapter",             "--hostonlyadapter",        MODIFYVM_HOSTONLYADAPTER,           RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
 #ifdef VBOX_WITH_VMNET
-    { "--hostonlynet",              MODIFYVM_HOSTONLYNET,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-#endif /* VBOX_WITH_VMNET */
-    { "--intnet",                   MODIFYVM_INTNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nicgenericdrv",            MODIFYVM_GENERICDRV,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nat-network",              MODIFYVM_NATNETWORKNAME,            RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--natnetwork",               MODIFYVM_NATNETWORKNAME,            RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX }, /* deprecated */
-    { "--natnet",                   MODIFYVM_NATNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--natbindip",                MODIFYVM_NATBINDIP,                 RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--natsettings",              MODIFYVM_NATSETTINGS,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--natpf",                    MODIFYVM_NATPF,                     RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nataliasmode",             MODIFYVM_NATALIASMODE,              RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nattftpprefix",            MODIFYVM_NATTFTPPREFIX,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nattftpfile",              MODIFYVM_NATTFTPFILE,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nattftpserver",            MODIFYVM_NATTFTPSERVER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--natdnspassdomain",         MODIFYVM_NATDNSPASSDOMAIN,          RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
-    { "--natdnsproxy",              MODIFYVM_NATDNSPROXY,               RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
-    { "--natdnshostresolver",       MODIFYVM_NATDNSHOSTRESOLVER,        RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
-    { "--natlocalhostreachable",    MODIFYVM_NATLOCALHOSTREACHABLE,     RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
-    { "--macaddress",               MODIFYVM_MACADDRESS,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--mouse",                    MODIFYVM_HIDPTR,                    RTGETOPT_REQ_STRING },
-    { "--keyboard",                 MODIFYVM_HIDKBD,                    RTGETOPT_REQ_STRING },
-    { "--uartmode",                 MODIFYVM_UARTMODE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--uarttype",                 MODIFYVM_UARTTYPE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--uart",                     MODIFYVM_UART,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
-    { "--lptmode",                  MODIFYVM_LPTMODE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--lpt",                      MODIFYVM_LPT,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    OPT2("--host-only-net",                 "--hostonlynet",            MODIFYVM_HOSTONLYNET,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
 #endif
-    { "--guestmemoryballoon",       MODIFYVM_GUESTMEMORYBALLOON,        RTGETOPT_REQ_UINT32 },
-    { "--audiocontroller",          MODIFYVM_AUDIOCONTROLLER,           RTGETOPT_REQ_STRING },
-    { "--audiocodec",               MODIFYVM_AUDIOCODEC,                RTGETOPT_REQ_STRING },
-    { "--audio",                    MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING },
-    { "--audioin",                  MODIFYVM_AUDIOIN,                   RTGETOPT_REQ_BOOL_ONOFF },
-    { "--audioout",                 MODIFYVM_AUDIOOUT,                  RTGETOPT_REQ_BOOL_ONOFF },
+    OPT1("--intnet",                                                    MODIFYVM_INTNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nic-generic-drv",               "--nicgenericdrv",          MODIFYVM_GENERICDRV,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-network",                   "--natnetwork",             MODIFYVM_NATNETWORKNAME,            RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-net",                       "--natnet",                 MODIFYVM_NATNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-bind-ip",                   "--natbindip",              MODIFYVM_NATBINDIP,                 RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-settings",                  "--natsettings",            MODIFYVM_NATSETTINGS,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-pf",                        "--natpf",                  MODIFYVM_NATPF,                     RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-alias-mode",                "--nataliasmode",           MODIFYVM_NATALIASMODE,              RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-tftp-prefix",               "--nattftpprefix",          MODIFYVM_NATTFTPPREFIX,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-tftp-file",                 "--nattftpfile",            MODIFYVM_NATTFTPFILE,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-tftp-server",               "--nattftpserver",          MODIFYVM_NATTFTPSERVER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-dns-pass-domain",           "--natdnspassdomain",       MODIFYVM_NATDNSPASSDOMAIN,          RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-dns-proxy",                 "--natdnsproxy",            MODIFYVM_NATDNSPROXY,               RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-dns-host-resolver",         "--natdnshostresolver",     MODIFYVM_NATDNSHOSTRESOLVER,        RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX),
+    OPT2("--nat-localhostreachable",        "--natlocalhostreachable",  MODIFYVM_NATLOCALHOSTREACHABLE,     RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX),
+    OPT2("--mac-address",                   "--macaddress",             MODIFYVM_MACADDRESS,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT1("--mouse",                                                     MODIFYVM_HIDPTR,                    RTGETOPT_REQ_STRING),
+    OPT1("--keyboard",                                                  MODIFYVM_HIDKBD,                    RTGETOPT_REQ_STRING),
+    OPT2("--uart-mode",                     "--uartmode",               MODIFYVM_UARTMODE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT2("--uart-type",                     "--uarttype",               MODIFYVM_UARTTYPE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT1("--uart",                                                      MODIFYVM_UART,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
+    OPT2("--lpt-mode",                      "--lptmode",                MODIFYVM_LPTMODE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+    OPT1("--lpt",                                                       MODIFYVM_LPT,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+#endif
+    OPT2("--guest-memory-balloon",          "--guestmemoryballoon",     MODIFYVM_GUESTMEMORYBALLOON,        RTGETOPT_REQ_UINT32),
+    OPT2("--audio-controller",              "--audiocontroller",        MODIFYVM_AUDIOCONTROLLER,           RTGETOPT_REQ_STRING),
+    OPT2("--audio-codec",                   "--audiocodec",             MODIFYVM_AUDIOCODEC,                RTGETOPT_REQ_STRING),
+    OPT1("--audio",                                                     MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING),
+    OPT2("--audio-in",                      "--audioin",                MODIFYVM_AUDIOIN,                   RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--audio-out",                     "--audioout",               MODIFYVM_AUDIOOUT,                  RTGETOPT_REQ_BOOL_ONOFF),
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
-    { "--clipboard-mode",           MODIFYVM_CLIPBOARD_MODE,            RTGETOPT_REQ_STRING },
-    { "--clipboard",                MODIFYVM_CLIPBOARD_MODE,            RTGETOPT_REQ_STRING },     /* deprecated */
+    OPT1("--clipboard-mode",                                            MODIFYVM_CLIPBOARD_MODE,            RTGETOPT_REQ_STRING),
+    OPT1("--clipboard",                                                 MODIFYVM_CLIPBOARD_MODE,            RTGETOPT_REQ_STRING),     /* deprecated */
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    { "--clipboard-file-transfers", MODIFYVM_CLIPBOARD_FILE_TRANSFERS,  RTGETOPT_REQ_STRING },
+    OPT1("--clipboard-file-transfers",                                  MODIFYVM_CLIPBOARD_FILE_TRANSFERS,  RTGETOPT_REQ_STRING),
 # endif
 #endif
-    { "--draganddrop",              MODIFYVM_DRAGANDDROP,               RTGETOPT_REQ_STRING },
-    { "--vrdpport",                 MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING },     /* deprecated */
-    { "--vrdpaddress",              MODIFYVM_VRDPADDRESS,               RTGETOPT_REQ_STRING },     /* deprecated */
-    { "--vrdpauthtype",             MODIFYVM_VRDPAUTHTYPE,              RTGETOPT_REQ_STRING },     /* deprecated */
-    { "--vrdpmulticon",             MODIFYVM_VRDPMULTICON,              RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
-    { "--vrdpreusecon",             MODIFYVM_VRDPREUSECON,              RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
-    { "--vrdpvideochannel",         MODIFYVM_VRDPVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
-    { "--vrdpvideochannelquality",  MODIFYVM_VRDPVIDEOCHANNELQUALITY,   RTGETOPT_REQ_STRING },     /* deprecated */
-    { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
-    { "--vrdeproperty",             MODIFYVM_VRDEPROPERTY,              RTGETOPT_REQ_STRING },
-    { "--vrdeport",                 MODIFYVM_VRDEPORT,                  RTGETOPT_REQ_STRING },
-    { "--vrdeaddress",              MODIFYVM_VRDEADDRESS,               RTGETOPT_REQ_STRING },
-    { "--vrdeauthtype",             MODIFYVM_VRDEAUTHTYPE,              RTGETOPT_REQ_STRING },
-    { "--vrdeauthlibrary",          MODIFYVM_VRDEAUTHLIBRARY,           RTGETOPT_REQ_STRING },
-    { "--vrdemulticon",             MODIFYVM_VRDEMULTICON,              RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vrdereusecon",             MODIFYVM_VRDEREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vrdevideochannel",         MODIFYVM_VRDEVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vrdevideochannelquality",  MODIFYVM_VRDEVIDEOCHANNELQUALITY,   RTGETOPT_REQ_STRING },
-    { "--vrdeextpack",              MODIFYVM_VRDE_EXTPACK,              RTGETOPT_REQ_STRING },
-    { "--vrde",                     MODIFYVM_VRDE,                      RTGETOPT_REQ_BOOL_ONOFF },
-    { "--usbrename",                MODIFYVM_USBRENAME,                 RTGETOPT_REQ_STRING },
-    { "--usbxhci",                  MODIFYVM_USBXHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
-    { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
-    { "--usbohci",                  MODIFYVM_USBOHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
-    { "--usb",                      MODIFYVM_USBOHCI,                   RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
-    { "--snapshotfolder",           MODIFYVM_SNAPSHOTFOLDER,            RTGETOPT_REQ_STRING },
-    { "--teleporter",               MODIFYVM_TELEPORTER_ENABLED,        RTGETOPT_REQ_BOOL_ONOFF },
-    { "--teleporterenabled",        MODIFYVM_TELEPORTER_ENABLED,        RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
-    { "--teleporterport",           MODIFYVM_TELEPORTER_PORT,           RTGETOPT_REQ_UINT32 },
-    { "--teleporteraddress",        MODIFYVM_TELEPORTER_ADDRESS,        RTGETOPT_REQ_STRING },
-    { "--teleporterpassword",       MODIFYVM_TELEPORTER_PASSWORD,       RTGETOPT_REQ_STRING },
-    { "--teleporterpasswordfile",   MODIFYVM_TELEPORTER_PASSWORD_FILE,  RTGETOPT_REQ_STRING },
-    { "--tracing-enabled",          MODIFYVM_TRACING_ENABLED,           RTGETOPT_REQ_BOOL_ONOFF },
-    { "--tracing-config",           MODIFYVM_TRACING_CONFIG,            RTGETOPT_REQ_STRING },
-    { "--tracing-allow-vm-access",  MODIFYVM_TRACING_ALLOW_VM_ACCESS,   RTGETOPT_REQ_BOOL_ONOFF },
-    { "--hardwareuuid",             MODIFYVM_HARDWARE_UUID,             RTGETOPT_REQ_STRING },
-    { "--hpet",                     MODIFYVM_HPET,                      RTGETOPT_REQ_BOOL_ONOFF },
-    { "--iocache",                  MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF },
-    { "--iocachesize",              MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32 },
-    { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
+    OPT2("--drag-and-drop",                 "--draganddrop",            MODIFYVM_DRAGANDDROP,               RTGETOPT_REQ_STRING),
+    OPT2("--vrdp-port",                     "--vrdpport",               MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING),     /* deprecated */
+    OPT2("--vrdp-address",                  "--vrdpaddress",            MODIFYVM_VRDPADDRESS,               RTGETOPT_REQ_STRING),     /* deprecated */
+    OPT2("--vrdp-auth-type",                "--vrdpauthtype",           MODIFYVM_VRDPAUTHTYPE,              RTGETOPT_REQ_STRING),     /* deprecated */
+    OPT2("--vrdp-multi-con",                "--vrdpmulticon",           MODIFYVM_VRDPMULTICON,              RTGETOPT_REQ_BOOL_ONOFF), /* deprecated */
+    OPT2("--vrdp-reuse-con",                "--vrdpreusecon",           MODIFYVM_VRDPREUSECON,              RTGETOPT_REQ_BOOL_ONOFF), /* deprecated */
+    OPT2("--vrdp-video-channel",            "--vrdpvideochannel",       MODIFYVM_VRDPVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF), /* deprecated */
+    OPT2("--vrdp-video-channel-quality",    "--vrdpvideochannelquality",MODIFYVM_VRDPVIDEOCHANNELQUALITY,   RTGETOPT_REQ_STRING),     /* deprecated */
+    OPT1("--vrdp",                                                      MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF), /* deprecated */
+    OPT2("--vrde-property",                 "--vrdeproperty",           MODIFYVM_VRDEPROPERTY,              RTGETOPT_REQ_STRING),
+    OPT2("--vrde-port",                     "--vrdeport",               MODIFYVM_VRDEPORT,                  RTGETOPT_REQ_STRING),
+    OPT2("--vrde-address",                  "--vrdeaddress",            MODIFYVM_VRDEADDRESS,               RTGETOPT_REQ_STRING),
+    OPT2("--vrde-auth-type",                "--vrdeauthtype",           MODIFYVM_VRDEAUTHTYPE,              RTGETOPT_REQ_STRING),
+    OPT2("--vrde-auth-library",             "--vrdeauthlibrary",        MODIFYVM_VRDEAUTHLIBRARY,           RTGETOPT_REQ_STRING),
+    OPT2("--vrde-multi-con",                "--vrdemulticon",           MODIFYVM_VRDEMULTICON,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--vrde-reuse-con",                "--vrdereusecon",           MODIFYVM_VRDEREUSECON,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--vrde-video-channel",            "--vrdevideochannel",       MODIFYVM_VRDEVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--vrde-video-channel-quality",    "--vrdevideochannelquality",MODIFYVM_VRDEVIDEOCHANNELQUALITY,   RTGETOPT_REQ_STRING),
+    OPT2("--vrde-extpack",                  "--vrdeextpack",            MODIFYVM_VRDE_EXTPACK,              RTGETOPT_REQ_STRING),
+    OPT1("--vrde",                                                      MODIFYVM_VRDE,                      RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--usb-rename",                    "--usbrename",              MODIFYVM_USBRENAME,                 RTGETOPT_REQ_STRING),
+    OPT2("--usb-xhci",                      "--usbxhci",                MODIFYVM_USBXHCI,                   RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--usb-ehci",                      "--usbehci",                MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--usb-ohci",                      "--usbohci",                MODIFYVM_USBOHCI,                   RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--usb",                                                       MODIFYVM_USBOHCI,                   RTGETOPT_REQ_BOOL_ONOFF), /* deprecated */
+    OPT2("--snapshot-folder",               "--snapshotfolder",         MODIFYVM_SNAPSHOTFOLDER,            RTGETOPT_REQ_STRING),
+    OPT1("--teleporter",                                                MODIFYVM_TELEPORTER_ENABLED,        RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--teleporter-enabled",            "--teleporterenabled",      MODIFYVM_TELEPORTER_ENABLED,        RTGETOPT_REQ_BOOL_ONOFF), /* deprecated */
+    OPT2("--teleporter-port",               "--teleporterport",         MODIFYVM_TELEPORTER_PORT,           RTGETOPT_REQ_UINT32),
+    OPT2("--teleporter-address",            "--teleporteraddress",      MODIFYVM_TELEPORTER_ADDRESS,        RTGETOPT_REQ_STRING),
+    OPT2("--teleporter-password",           "--teleporterpassword",     MODIFYVM_TELEPORTER_PASSWORD,       RTGETOPT_REQ_STRING),
+    OPT2("--teleporter-password-file",      "--teleporterpasswordfile", MODIFYVM_TELEPORTER_PASSWORD_FILE,  RTGETOPT_REQ_STRING),
+    OPT1("--tracing-enabled",                                           MODIFYVM_TRACING_ENABLED,           RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--tracing-config",                                            MODIFYVM_TRACING_CONFIG,            RTGETOPT_REQ_STRING),
+    OPT1("--tracing-allow-vm-access",                                   MODIFYVM_TRACING_ALLOW_VM_ACCESS,   RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--hardware-uuid",                 "--hardwareuuid",                            MODIFYVM_HARDWARE_UUID,             RTGETOPT_REQ_STRING),
+    OPT1("--hpet",                                                      MODIFYVM_HPET,                      RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--iocache",                                                   MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--iocache-size",                  "--iocachesize",            MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32),
+    OPT1("--chipset",                                                   MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING),
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
-    { "--iommu",                    MODIFYVM_IOMMU,                     RTGETOPT_REQ_STRING },
+    OPT1("--iommu",                                                     MODIFYVM_IOMMU,                     RTGETOPT_REQ_STRING),
 #endif
 #if defined(VBOX_WITH_TPM)
-    { "--tpm-type",                 MODIFYVM_TPM_TYPE,                  RTGETOPT_REQ_STRING },
-    { "--tpm-location",             MODIFYVM_TPM_LOCATION,              RTGETOPT_REQ_STRING },
+    OPT1("--tpm-type",                                                  MODIFYVM_TPM_TYPE,                  RTGETOPT_REQ_STRING),
+    OPT1("--tpm-location",                                              MODIFYVM_TPM_LOCATION,              RTGETOPT_REQ_STRING),
 #endif
 #ifdef VBOX_WITH_RECORDING
-    { "--recording",                MODIFYVM_RECORDING,                 RTGETOPT_REQ_BOOL_ONOFF },
-    { "--recordingscreens",         MODIFYVM_RECORDING_SCREENS,         RTGETOPT_REQ_STRING },
-    { "--recordingfile",            MODIFYVM_RECORDING_FILENAME,        RTGETOPT_REQ_STRING },
-    { "--recordingmaxtime",         MODIFYVM_RECORDING_MAXTIME,         RTGETOPT_REQ_INT32  },
-    { "--recordingmaxsize",         MODIFYVM_RECORDING_MAXSIZE,         RTGETOPT_REQ_INT32  },
-    { "--recordingopts",            MODIFYVM_RECORDING_OPTIONS,         RTGETOPT_REQ_STRING },
-    { "--recordingoptions",         MODIFYVM_RECORDING_OPTIONS,         RTGETOPT_REQ_STRING },
-    { "--recordingvideores",        MODIFYVM_RECORDING_VIDEO_RES,       RTGETOPT_REQ_STRING },
-    { "--recordingvideoresolution", MODIFYVM_RECORDING_VIDEO_RES,       RTGETOPT_REQ_STRING },
-    { "--recordingvideorate",       MODIFYVM_RECORDING_VIDEO_RATE,      RTGETOPT_REQ_UINT32 },
-    { "--recordingvideofps",        MODIFYVM_RECORDING_VIDEO_FPS,       RTGETOPT_REQ_UINT32 },
+    OPT1("--recording",                                                 MODIFYVM_RECORDING,                 RTGETOPT_REQ_BOOL_ONOFF),
+    OPT2("--recording-screens",             "--recordingscreens",       MODIFYVM_RECORDING_SCREENS,         RTGETOPT_REQ_STRING),
+    OPT2("--recording-file",                "--recordingfile",          MODIFYVM_RECORDING_FILENAME,        RTGETOPT_REQ_STRING),
+    OPT2("--recording-max-time",            "--recordingmaxtime",       MODIFYVM_RECORDING_MAXTIME,         RTGETOPT_REQ_INT32),
+    OPT2("--recording-max-size",            "--recordingmaxsize",       MODIFYVM_RECORDING_MAXSIZE,         RTGETOPT_REQ_INT32),
+    OPT2("--recording-opts",                "--recordingopts",          MODIFYVM_RECORDING_OPTIONS,         RTGETOPT_REQ_STRING),
+    OPT2("--recording-options",             "--recordingoptions",       MODIFYVM_RECORDING_OPTIONS,         RTGETOPT_REQ_STRING),
+    OPT2("--recording-video-res",           "--recordingvideores",      MODIFYVM_RECORDING_VIDEO_RES,       RTGETOPT_REQ_STRING),
+    OPT2("--recording-video-resolution",    "--recordingvideoresolution",MODIFYVM_RECORDING_VIDEO_RES,      RTGETOPT_REQ_STRING),
+    OPT2("--recording-video-rate",          "--recordingvideorate",     MODIFYVM_RECORDING_VIDEO_RATE,      RTGETOPT_REQ_UINT32),
+    OPT2("--recording-video-fps",           "--recordingvideofps",      MODIFYVM_RECORDING_VIDEO_FPS,       RTGETOPT_REQ_UINT32),
 #endif
-    { "--autostart-enabled",        MODIFYVM_AUTOSTART_ENABLED,         RTGETOPT_REQ_BOOL_ONOFF },
-    { "--autostart-delay",          MODIFYVM_AUTOSTART_DELAY,           RTGETOPT_REQ_UINT32 },
-    { "--autostop-type",            MODIFYVM_AUTOSTOP_TYPE,             RTGETOPT_REQ_STRING },
+    OPT1("--autostart-enabled",                                         MODIFYVM_AUTOSTART_ENABLED,         RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--autostart-delay",                                           MODIFYVM_AUTOSTART_DELAY,           RTGETOPT_REQ_UINT32),
+    OPT1("--autostop-type",                                             MODIFYVM_AUTOSTOP_TYPE,             RTGETOPT_REQ_STRING),
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-    { "--pciattach",                MODIFYVM_ATTACH_PCI,                RTGETOPT_REQ_STRING },
-    { "--pcidetach",                MODIFYVM_DETACH_PCI,                RTGETOPT_REQ_STRING },
+    OPT2("--pci-attach",                    "--pciattach",              MODIFYVM_ATTACH_PCI,                RTGETOPT_REQ_STRING),
+    OPT2("--pci-detach",                    "--pcidetach",              MODIFYVM_DETACH_PCI,                RTGETOPT_REQ_STRING),
 #endif
 #ifdef VBOX_WITH_USB_CARDREADER
-    { "--usbcardreader",            MODIFYVM_USBCARDREADER,             RTGETOPT_REQ_BOOL_ONOFF },
+    OPT2("--usb-card-reader",               "--usbcardreader",          MODIFYVM_USBCARDREADER,             RTGETOPT_REQ_BOOL_ONOFF),
 #endif
-    { "--defaultfrontend",          MODIFYVM_DEFAULTFRONTEND,           RTGETOPT_REQ_STRING },
-    { "--vm-process-priority",      MODIFYVM_VMPROC_PRIORITY,           RTGETOPT_REQ_STRING },
+    OPT2("--default-frontend",              "--defaultfrontend",        MODIFYVM_DEFAULTFRONTEND,           RTGETOPT_REQ_STRING),
+    OPT1("--vm-process-priority",                                       MODIFYVM_VMPROC_PRIORITY,           RTGETOPT_REQ_STRING),
 };
 
 static void vrdeWarningDeprecatedOption(const char *pszOption)
@@ -792,7 +786,6 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             }
 
             case MODIFYVM_SETCPUID:
-            case MODIFYVM_SETCPUID_OLD:
             {
                 uint32_t const idx    = c == MODIFYVM_SETCPUID ?  ValueUnion.PairU32.uFirst  : ValueUnion.u32;
                 uint32_t const idxSub = c == MODIFYVM_SETCPUID ?  ValueUnion.PairU32.uSecond : UINT32_MAX;

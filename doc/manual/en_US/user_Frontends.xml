@@ -66,13 +66,13 @@
     <para>
       The port can be changed either in the
       <emphasis role="bold">Display</emphasis> settings of the graphical
-      user interface or with the <option>--vrdeport</option> option of
+      user interface or with the <option>--vrde-port</option> option of
       the <command>VBoxManage modifyvm</command> command. You can
       specify a comma-separated list of ports or ranges of ports. Use a
       dash between two port numbers to specify a range. The VRDP server
       will bind to <emphasis>one</emphasis> of the available ports from
       the specified list. For example, <command>VBoxManage modifyvm
-      <replaceable>VM-name</replaceable> --vrdeport
+      <replaceable>VM-name</replaceable> --vrde-port
       5000,5010-5012</command> configures the server to bind to one of
       the ports 5000, 5010, 5011, or 5012. See
       <xref linkend="vboxmanage-modifyvm" />.
@@ -584,7 +584,7 @@
         you can individually determine if and how client connections are
         authenticated. For this, use the <command>VBoxManage
         modifyvm</command> command with the
-        <option>--vrdeauthtype</option> option. See
+        <option>--vrde-auth-type</option> option. See
         <xref linkend="vboxmanage-modifyvm" />. The following methods of
         authentication are available:
       </para>
@@ -683,7 +683,7 @@
                     switch authentication to external, as follows:
                   </para>
 
-<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeauthtype external</screen>
+<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-auth-type external</screen>
 
                   <para>
                     Replace <replaceable>VM-name</replaceable> with the
@@ -860,7 +860,7 @@
             either Standard or Enhanced RDP Security connection:
           </para>
 
-<screen>vboxmanage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty "Security/Method=negotiate"</screen>
+<screen>vboxmanage modifyvm <replaceable>VM-name</replaceable> --vrde-property "Security/Method=negotiate"</screen>
 
           <para>
             If the <literal>Security/Method</literal> property is set to
@@ -909,13 +909,13 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
           </para>
 
 <screen>vboxmanage modifyvm <replaceable>VM-name</replaceable> \
-  --vrdeproperty "Security/CACertificate=path/ca_cert.pem"</screen>
+  --vrde-property "Security/CACertificate=path/ca_cert.pem"</screen>
 
 <screen>vboxmanage modifyvm <replaceable>VM-name</replaceable> \
-  --vrdeproperty "Security/ServerCertificate=path/server_cert.pem"</screen>
+  --vrde-property "Security/ServerCertificate=path/server_cert.pem"</screen>
 
 <screen>vboxmanage modifyvm <replaceable>VM-name</replaceable> \
-  --vrdeproperty "Security/ServerPrivateKey=path/server_key_private.pem"</screen>
+  --vrde-property "Security/ServerPrivateKey=path/server_key_private.pem"</screen>
         </listitem>
 
       </itemizedlist>
@@ -946,7 +946,7 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
         The following command enables multiple connection mode:
       </para>
 
-<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdemulticon on</screen>
+<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-multi-con on</screen>
 
     </sect2>
 
@@ -1014,7 +1014,7 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
         The following command enables video redirection:
       </para>
 
-<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdevideochannel on</screen>
+<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-video-channel on</screen>
 
       <para>
         The quality of the video is defined as a value from 10 to 100
@@ -1023,7 +1023,7 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
         can be changed using the following command:
       </para>
 
-<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdevideochannelquality 75</screen>
+<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-video-channel-quality 75</screen>
 
     </sect2>
 
@@ -1040,19 +1040,19 @@ openssl req -new -key server_key_private.pem -out server_req.pem</screen>
         The following commands change the corresponding server settings:
       </para>
 
-<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableDisplay=1
-$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableInput=1
-$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableUSB=1
-$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableAudio=1
-$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableClipboard=1
-$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableUpstreamAudio=1</screen>
+<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-property Client/DisableDisplay=1
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-property Client/DisableInput=1
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-property Client/DisableUSB=1
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-property Client/DisableAudio=1
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-property Client/DisableClipboard=1
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-property Client/DisableUpstreamAudio=1</screen>
 
       <para>
         To reenable a feature, use a similar command without the
         trailing 1. For example:
       </para>
 
-<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/DisableDisplay=</screen>
+<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-property Client/DisableDisplay=</screen>
 
     </sect2>
 
@@ -1139,7 +1139,7 @@ $ VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty Client/D
           command:
         </para>
 
-<screen>VBoxManage modifyvm <replaceable>targetvmname</replaceable> --teleporter on --teleporterport <replaceable>port</replaceable></screen>
+<screen>VBoxManage modifyvm <replaceable>targetvmname</replaceable> --teleporter on --teleporter-port <replaceable>port</replaceable></screen>
 
         <para>
           <replaceable>targetvmname</replaceable> is the name of the

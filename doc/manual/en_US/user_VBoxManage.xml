@@ -743,9 +743,8 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
           <computeroutput>default</computeroutput> or
           <computeroutput>0</computeroutput> means port 3389, the
           standard port for RDP. See the description for the
-          <computeroutput>--vrdeport</computeroutput> option in
-          <xref
-        linkend="vboxmanage-modifyvm-vrde" />.
+          <computeroutput>--vrde-port</computeroutput> option in
+          <xref  linkend="vboxmanage-modifyvm-vrde" />.
         </para>
       </listitem>
 
@@ -766,9 +765,8 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
               <computeroutput>default</computeroutput> or
               <computeroutput>0</computeroutput> means port 3389, the
               standard port for RDP. See the description for the
-              <computeroutput>--vrdeport</computeroutput> option in
-              <xref
-            linkend="vboxmanage-modifyvm-vrde" />.
+              <computeroutput>--vrde-port</computeroutput> option in
+              <xref linkend="vboxmanage-modifyvm-vrde" />.
             </para>
           </listitem>
 
@@ -778,10 +776,8 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
               network interface that the VRDE server will bind to. If
               specified, the server will accept connections only on the
               specified host network interface. See the description for
-              the <computeroutput>--vrdeaddress</computeroutput> option
-              in
-              <xref
-            linkend="vboxmanage-modifyvm-vrde" />.
+              the <computeroutput>--vrde-address</computeroutput> option
+              in <xref linkend="vboxmanage-modifyvm-vrde" />.
             </para>
           </listitem>
 

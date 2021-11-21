@@ -275,7 +275,7 @@
         <varlistentry>
           <term>--interface=<replaceable>ifname</replaceable></term>
           <listitem><para>The host only interface name.  This would be same value
-            as you would use for the <command>VBoxManage modifyvm --hostonlyadapter</command>
+            as you would use for the <command>VBoxManage modifyvm --host-only-adapter</command>
             option when configuring a VM to use a host-only network.  The value
             can also be found in the Name row in <command>VBoxManage list hostonlyifs</command>.
           </para></listitem>

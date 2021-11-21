@@ -1325,7 +1325,7 @@
             paravirtualization interfaces to improve time-keeping
             accuracy and performance of guest OSes. The options
             available are documented under the
-            <option>--paravirtprovider</option> option in
+            <option>--paravirt-provider</option> option in
             <xref linkend="vboxmanage-modifyvm" />. For further details
             on the paravirtualization providers, see
             <xref linkend="gimproviders" />.
@@ -2022,7 +2022,7 @@
       <command>VBoxManage</command> command to set up virtual serial
       ports. For the latter, see <xref linkend="vboxmanage-modifyvm" />
       for information on the <option>--uart</option>,
-      <option>--uartmode</option> and <option>--uarttype</option>
+      <option>--uart-mode</option> and <option>--uart-type</option>
       options.
     </para>
 

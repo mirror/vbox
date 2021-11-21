@@ -818,7 +818,7 @@ EndSection</screen>
       for a virtual machine:
     </para>
 
-<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --cpuhotplug on</screen>
+<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --cpu-hotplug on</screen>
 
     <para>
       The <option>--cpus</option> option is used to specify the maximum
@@ -829,13 +829,13 @@ EndSection</screen>
 
     <para>
       When the VM is off, you can then add and remove virtual CPUs with
-      the <command>VBoxManage modifyvm --plugcpu</command> and
-      <command>VBoxManage modifyvm --unplugcpu</command> commands, which
+      the <command>VBoxManage modifyvm --plug-cpu</command> and
+      <command>VBoxManage modifyvm --unplug-cpu</command> commands, which
       take the number of the virtual CPU as a parameter, as follows:
     </para>
 
-<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --plugcpu 3
-$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --unplugcpu 3</screen>
+<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --plug-cpu 3
+$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --unplug-cpu 3</screen>
 
     <para>
       Note that CPU 0 can never be removed.
@@ -5933,7 +5933,7 @@ config/balloon_safetymargin=134217728</screen>
       configuration, which can be set with the following command:
     </para>
 
-<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrdeproperty VNCPassword=secret</screen>
+<screen>VBoxManage modifyvm <replaceable>VM-name</replaceable> --vrde-property VNCPassword=secret</screen>
 
     <para>
       The user is responsible for keeping this password secret, and it
@@ -6873,7 +6873,7 @@ VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</screen>
               <command>VBoxManage</command> command:
             </para>
 
-<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --paravirtdebug "enabled=1"</screen>
+<screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> --paravirt-debug "enabled=1"</screen>
 
             <para>
               The above command assumes your debugger will connect to
@@ -6883,7 +6883,7 @@ VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</screen>
             </para>
 
 <screen>$ VBoxManage modifyvm <replaceable>VM-name</replaceable> \
---paravirtdebug "enabled=1,address=192.168.32.1,port=55000"</screen>
+--paravirt-debug "enabled=1,address=192.168.32.1,port=55000"</screen>
 
             <para>
               See <xref linkend="gimdebughyperv" /> for the complete set

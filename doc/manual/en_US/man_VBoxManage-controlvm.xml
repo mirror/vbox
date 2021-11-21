@@ -971,7 +971,7 @@
         nictracefile<replaceable>N</replaceable></command> command at
         runtime to specify the name of the file in which to log the
         trace. Otherwise, use the <command>VBoxManage modifyvm
-        --nictracefile<replaceable>N</replaceable>=<replaceable>filename</replaceable></command>
+        --nic-trace-file<replaceable>N</replaceable>=<replaceable>filename</replaceable></command>
         command to specify the name of the file.
       </para>
       <para>
@@ -1299,7 +1299,7 @@
         <literal>3389</literal>.
       </para>
       <para>
-        Also see the <option>--vrdeport</option> option description in
+        Also see the <option>--vrde-port</option> option description in
         <xref linkend="vboxmanage-modifyvm" />.
       </para>
       <para>
@@ -1325,7 +1325,7 @@
             is <literal>default</literal> or <literal>0</literal>, which
             is the standard RDP port, <literal>3389</literal>.
           </para><para>
-            Also see the <option>--vrdeport</option> option description
+            Also see the <option>--vrde-port</option> option description
             in <xref linkend="vboxmanage-modifyvm" />.
           </para></listitem>
         <listitem><para>
@@ -1334,7 +1334,7 @@
             When specified, the server accepts to connect only on the
             specified host network interface.
           </para><para>
-            Also see the <option>--vrdeaddress</option> option
+            Also see the <option>--vrde-address</option> option
             description in <xref linkend="vboxmanage-modifyvm" />.
           </para></listitem>
         <listitem><para>

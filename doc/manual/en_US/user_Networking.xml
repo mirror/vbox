@@ -560,7 +560,7 @@
         <literal>udp</literal> could also be used. The name
         <literal>guestssh</literal> is purely descriptive and will be
         auto-generated if omitted. The number after
-        <option>--natpf</option> denotes the network card, as with other
+        <option>--nat-pf</option> denotes the network card, as with other
         <command>VBoxManage</command> commands.
       </para>
 
@@ -1271,16 +1271,16 @@
     </para>
 
 <screen>        VBoxManage modifyvm "VM 01 on host 1" --nic&lt;x&gt; generic
-        VBoxManage modifyvm "VM 01 on host 1" --nicgenericdrv&lt;x&gt; UDPTunnel
-        VBoxManage modifyvm "VM 01 on host 1" --nicproperty&lt;x&gt; dest=10.0.0.2
-        VBoxManage modifyvm "VM 01 on host 1" --nicproperty&lt;x&gt; sport=10001
-        VBoxManage modifyvm "VM 01 on host 1" --nicproperty&lt;x&gt; dport=10002</screen>
+        VBoxManage modifyvm "VM 01 on host 1" --nic-generic-drv&lt;x&gt; UDPTunnel
+        VBoxManage modifyvm "VM 01 on host 1" --nic-property&lt;x&gt; dest=10.0.0.2
+        VBoxManage modifyvm "VM 01 on host 1" --nic-property&lt;x&gt; sport=10001
+        VBoxManage modifyvm "VM 01 on host 1" --nic-property&lt;x&gt; dport=10002</screen>
 
 <screen>        VBoxManage modifyvm "VM 02 on host 2" --nic&lt;y&gt; generic
-        VBoxManage modifyvm "VM 02 on host 2" --nicgenericdrv&lt;y&gt; UDPTunnel
-        VBoxManage modifyvm "VM 02 on host 2" --nicproperty&lt;y&gt; dest=10.0.0.1
-        VBoxManage modifyvm "VM 02 on host 2" --nicproperty&lt;y&gt; sport=10002
-        VBoxManage modifyvm "VM 02 on host 2" --nicproperty&lt;y&gt; dport=10001</screen>
+        VBoxManage modifyvm "VM 02 on host 2" --nic-generic-drv&lt;y&gt; UDPTunnel
+        VBoxManage modifyvm "VM 02 on host 2" --nic-property&lt;y&gt; dest=10.0.0.1
+        VBoxManage modifyvm "VM 02 on host 2" --nic-property&lt;y&gt; sport=10002
+        VBoxManage modifyvm "VM 02 on host 2" --nic-property&lt;y&gt; dport=10001</screen>
 
     <para>
       Of course, you can always interconnect two virtual machines on the
@@ -1352,20 +1352,20 @@
 
 <screen>VBoxManage modifyvm "VM name" --nic&lt;x&gt; generic</screen>
 
-<screen>VBoxManage modifyvm "VM name" --nicgenericdrv&lt;x&gt; VDE</screen>
+<screen>VBoxManage modifyvm "VM name" --nic-generic-drv&lt;x&gt; VDE</screen>
 
         <para>
           To connect to an automatically allocated switch port:
         </para>
 
-<screen>VBoxManage modifyvm "VM name" --nicproperty&lt;x&gt; network=/tmp/switch1</screen>
+<screen>VBoxManage modifyvm "VM name" --nic-property&lt;x&gt; network=/tmp/switch1</screen>
 
         <para>
           To connect to a specific switch port
           <replaceable>n</replaceable>:
         </para>
 
-<screen>VBoxManage modifyvm "VM name" --nicproperty&lt;x&gt; network=/tmp/switch1[&lt;n&gt;]</screen>
+<screen>VBoxManage modifyvm "VM name" --nic-property&lt;x&gt; network=/tmp/switch1[&lt;n&gt;]</screen>
 
         <para>
           This command can be useful for VLANs.
