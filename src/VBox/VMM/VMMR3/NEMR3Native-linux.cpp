@@ -620,7 +620,9 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
  * Update the CPUID leaves for a VCPU.
  *
  * The KVM_SET_CPUID2 call replaces any previous leaves, so we have to redo
- * everything when there really just are single bit changes.
+ * everything when there really just are single bit changes.  That said, it
+ * looks like KVM update the XCR/XSAVE related stuff as well as the APIC enabled
+ * bit(s), so it should suffice if we do this at startup, I hope.
  */
 static int nemR3LnxUpdateCpuIdsLeaves(PVM pVM, PVMCPU pVCpu)
 {
@@ -2065,9 +2067,6 @@ static VBOXSTRICTRC nemR3LnxHandleInternalError(PVMCPU pVCpu, struct kvm_run *pR
     Log(("NEM: KVM_EXIT_INTERNAL_ERROR! suberror=%#x (%d) ndata=%u data=%.*Rhxs\n", pRun->internal.suberror,
          pRun->internal.suberror, pRun->internal.ndata, sizeof(pRun->internal.data), &pRun->internal.data[0]));
 
-    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, KVM_EXIT_INTERNAL_ERROR),
-                     pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
-
     /*
      * Deal with each suberror, returning if we don't want IEM to handle it.
      */
@@ -2075,6 +2074,8 @@ static VBOXSTRICTRC nemR3LnxHandleInternalError(PVMCPU pVCpu, struct kvm_run *pR
     {
         case KVM_INTERNAL_ERROR_EMULATION:
         {
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_INTERNAL_ERROR_EMULATION),
+                             pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitInternalErrorEmulation);
             break;
         }
@@ -2084,6 +2085,9 @@ static VBOXSTRICTRC nemR3LnxHandleInternalError(PVMCPU pVCpu, struct kvm_run *pR
         case KVM_INTERNAL_ERROR_UNEXPECTED_EXIT_REASON:
         default:
         {
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_INTERNAL_ERROR_FATAL),
+                             pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
+            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitInternalErrorFatal);
             const char *pszName;
             switch (pRun->internal.suberror)
             {
@@ -2093,7 +2097,6 @@ static VBOXSTRICTRC nemR3LnxHandleInternalError(PVMCPU pVCpu, struct kvm_run *pR
                 case KVM_INTERNAL_ERROR_UNEXPECTED_EXIT_REASON: pszName = "KVM_INTERNAL_ERROR_UNEXPECTED_EXIT_REASON"; break;
                 default:                                        pszName = "unknown"; break;
             }
-            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitInternalErrorFatal);
             LogRel(("NEM: KVM_EXIT_INTERNAL_ERROR! suberror=%#x (%s) ndata=%u data=%.*Rhxs\n", pRun->internal.suberror, pszName,
                     pRun->internal.ndata, sizeof(pRun->internal.data), &pRun->internal.data[0]));
             return VERR_NEM_IPE_0;
@@ -2267,7 +2270,7 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
             return nemHCLnxHandleExitMmio(pVM, pVCpu, pRun);
 
         case KVM_EXIT_IRQ_WINDOW_OPEN:
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, KVM_EXIT_IRQ_WINDOW_OPEN),
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_INTTERRUPT_WINDOW),
                              pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitIrqWindowOpen);
             Log5(("IrqWinOpen/%u: %d\n", pVCpu->idCpu, pRun->request_interrupt_window));
@@ -2295,14 +2298,14 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
             break;
 
         case KVM_EXIT_HLT:
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, KVM_EXIT_HLT),
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_HALT),
                              pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitHalt);
             Log5(("Halt/%u\n", pVCpu->idCpu));
             return VINF_EM_HALT;
 
         case KVM_EXIT_INTR: /* EINTR */
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, KVM_EXIT_INTR),
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_INTERRUPTED),
                              pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitIntr);
             Log5(("Intr/%u\n", pVCpu->idCpu));
@@ -2347,6 +2350,8 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
         case KVM_EXIT_FAIL_ENTRY:
             LogRel(("NEM: KVM_EXIT_FAIL_ENTRY! hardware_entry_failure_reason=%#x cpu=%#x\n",
                     pRun->fail_entry.hardware_entry_failure_reason, pRun->fail_entry.cpu));
+            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_FAILED_ENTRY),
+                             pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
             return VERR_NEM_IPE_1;
 
         case KVM_EXIT_INTERNAL_ERROR:
@@ -2555,7 +2560,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         pRun->immediate_exit = 1;
         int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_RUN, 0UL);
         pRun->immediate_exit = 0;
-        Log(("NEM/%u: Flushed stateful exit -> %d/%d exit_reason=%d\n", pVCpu->idCpu, rcLnx, errno, pRun->exit_reason));
+        Log(("NEM/%u: Flushed stateful exit -> %d/%d exit_reason=%d\n", pVCpu->idCpu, rcLnx, errno, pRun->exit_reason)); RT_NOREF(rcLnx);
         STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatFlushExitOnReturn);
     }
 

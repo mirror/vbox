@@ -392,15 +392,25 @@ VMMR3DECL(const char *) NEMR3GetExitName(uint32_t uExit)
 {
     switch ((NEMEXITTYPE)uExit)
     {
-        case NEMEXITTYPE_UNRECOVERABLE_EXCEPTION:       return "NEM unrecoverable exception";
-        case NEMEXITTYPE_INVALID_VP_REGISTER_VALUE:     return "NEM invalid vp register value";
         case NEMEXITTYPE_INTTERRUPT_WINDOW:             return "NEM interrupt window";
         case NEMEXITTYPE_HALT:                          return "NEM halt";
+
+        case NEMEXITTYPE_UNRECOVERABLE_EXCEPTION:       return "NEM unrecoverable exception";
+        case NEMEXITTYPE_INVALID_VP_REGISTER_VALUE:     return "NEM invalid vp register value";
         case NEMEXITTYPE_XCPT_UD:                       return "NEM #UD";
         case NEMEXITTYPE_XCPT_DB:                       return "NEM #DB";
         case NEMEXITTYPE_XCPT_BP:                       return "NEM #BP";
         case NEMEXITTYPE_CANCELED:                      return "NEM canceled";
         case NEMEXITTYPE_MEMORY_ACCESS:                 return "NEM memory access";
+
+        case NEMEXITTYPE_INTERNAL_ERROR_EMULATION:      return "NEM emulation IPE";
+        case NEMEXITTYPE_INTERNAL_ERROR_FATAL:          return "NEM fatal IPE";
+        case NEMEXITTYPE_INTERRUPTED:                   return "NEM interrupted";
+        case NEMEXITTYPE_FAILED_ENTRY:                  return "NEM failed VT-x/AMD-V entry";
+
+        case NEMEXITTYPE_INVALID:
+        case NEMEXITTYPE_END:
+            break;
     }
 
     return NULL;
