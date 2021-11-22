@@ -1857,6 +1857,8 @@ static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearA
 static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPhysNested, PPGMPTWALK pWalk,
                               PPGMPTWALKGST pGstWalk)
 {
+    AssertPtr(pWalk);
+    AssertPtr(pGstWalk);
     switch (enmSlatMode)
     {
         case PGMSLAT_EPT:
@@ -2399,9 +2401,25 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fPdpes
     /*
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
      */
-    int rc = VINF_SUCCESS;
     RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
-    RTGCPHYS const GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
+    RTGCPHYS       GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    if (   !fPdpesMapped
+        && CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+    {
+        PGMPTWALK    Walk;
+        PGMPTWALKGST GstWalk;
+        int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysCR3, &Walk, &GstWalk);
+        if (RT_SUCCESS(rc))
+            GCPhysCR3 = Walk.GCPhys;
+        else
+        {
+            AssertMsgFailed(("Failed to load CR3 at %#RX64. rc=%Rrc\n", GCPhysCR3, rc));
+            return rc;
+        }
+    }
+#endif
+    int rc = VINF_SUCCESS;
     if (GCPhysOldCR3 != GCPhysCR3)
     {
         uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
@@ -2483,8 +2501,24 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fPdpesMapped)
     /*
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
      */
+    RTGCPHYS GCPhysCR3 = pgmGetGuestMaskedCr3(pVCpu, cr3);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    if (   !fPdpesMapped
+        && CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+    {
+        PGMPTWALK    Walk;
+        PGMPTWALKGST GstWalk;
+        int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysCR3, &Walk, &GstWalk);
+        if (RT_SUCCESS(rc))
+            GCPhysCR3 = Walk.GCPhys;
+        else
+        {
+            AssertMsgFailed(("Failed to load CR3 at %#RX64. rc=%Rrc\n", GCPhysCR3, rc));
+            return VERR_PGM_PAE_PDPE_RSVD;
+        }
+    }
+#endif
     int rc = VINF_SUCCESS;
-    RTGCPHYS const GCPhysCR3 = pgmGetGuestMaskedCr3(pVCpu, cr3);
     if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
     {
         uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
@@ -2722,8 +2756,8 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
             GCPhysCR3 = Walk.GCPhys;
         else
         {
-            /** @todo Raise EPT violation VM-exit. */
-            return VERR_NOT_IMPLEMENTED;
+            AssertMsgFailed(("Failed to load CR3 at %#RX64. rc=%Rrc\n", GCPhysCR3, rc));
+            return rc;
         }
     }
 #endif
