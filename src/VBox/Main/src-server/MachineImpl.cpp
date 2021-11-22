@@ -1370,7 +1370,8 @@ HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvi
                 {
                     if (fOsXGuest)
                         *aParavirtProvider = ParavirtProvider_Minimal;
-                    else if (   mUserData->s.strOsType == "Windows10"
+                    else if (   mUserData->s.strOsType == "Windows11_64"
+                             || mUserData->s.strOsType == "Windows10"
                              || mUserData->s.strOsType == "Windows10_64"
                              || mUserData->s.strOsType == "Windows81"
                              || mUserData->s.strOsType == "Windows81_64"
