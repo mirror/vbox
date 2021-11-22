@@ -2526,26 +2526,31 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
                  */
                 if (   !VM_FF_IS_ANY_SET(   pVM,   !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK    : VM_FF_HP_R0_PRE_HM_STEP_MASK)
                     && !VMCPU_FF_IS_ANY_SET(pVCpu, !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
-                    continue;
+                { /* likely */ }
+                else
+                {
 
-                /** @todo Try handle pending flags, not just return to EM loops.  Take care
-                 *        not to set important RCs here unless we've handled an exit. */
-                LogFlow(("NEM/%u: breaking: pending FF (%#x / %#RX64)\n",
-                         pVCpu->idCpu, pVM->fGlobalForcedActions, (uint64_t)pVCpu->fLocalForcedActions));
-                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPost);
+                    /** @todo Try handle pending flags, not just return to EM loops.  Take care
+                     *        not to set important RCs here unless we've handled an exit. */
+                    LogFlow(("NEM/%u: breaking: pending FF (%#x / %#RX64)\n",
+                             pVCpu->idCpu, pVM->fGlobalForcedActions, (uint64_t)pVCpu->fLocalForcedActions));
+                    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPost);
+                    break;
+                }
             }
             else
             {
                 LogFlow(("NEM/%u: breaking: canceled %d (pre exec)\n", pVCpu->idCpu, VMCPU_GET_STATE(pVCpu) ));
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnCancel);
+                break;
             }
         }
         else
         {
             LogFlow(("NEM/%u: breaking: pending FF (pre exec)\n", pVCpu->idCpu));
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPre);
+            break;
         }
-        break;
     } /* the run loop */
 
 
