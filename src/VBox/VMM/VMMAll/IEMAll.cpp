@@ -7078,11 +7078,13 @@ DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorker(PVMCPUCC pVCpu, PX86FXSTATE pFpuC
         pFpuCtx->CS    = 0;
         pFpuCtx->FPUIP = pVCpu->cpum.GstCtx.eip | ((uint32_t)pVCpu->cpum.GstCtx.cs.Sel << 4);
     }
-    else
+    else if (!IEM_IS_LONG_MODE(pVCpu))
     {
         pFpuCtx->CS    = pVCpu->cpum.GstCtx.cs.Sel;
         pFpuCtx->FPUIP = pVCpu->cpum.GstCtx.rip;
     }
+    else
+        *(uint64_t *)&pFpuCtx->FPUIP = pVCpu->cpum.GstCtx.rip;
 }
 
 
@@ -7115,11 +7117,13 @@ DECLINLINE(void) iemFpuUpdateDP(PVMCPUCC pVCpu, PX86FXSTATE pFpuCtx, uint8_t iEf
         pFpuCtx->DS    = 0;
         pFpuCtx->FPUDP = (uint32_t)GCPtrEff + ((uint32_t)sel << 4);
     }
-    else
+    else if (!IEM_IS_LONG_MODE(pVCpu))
     {
         pFpuCtx->DS    = sel;
         pFpuCtx->FPUDP = GCPtrEff;
     }
+    else
+        *(uint64_t *)&pFpuCtx->FPUDP = GCPtrEff;
 }
 
 
