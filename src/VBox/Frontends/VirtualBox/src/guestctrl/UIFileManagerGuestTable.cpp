@@ -37,6 +37,8 @@
 #include "CGuestDirectory.h"
 #include "CProgress.h"
 
+#include <iprt/path.h>
+
 
 /*********************************************************************************************************************************
 *   UIGuestDirectoryDiskUsageComputer definition.                                                                                *
@@ -322,13 +324,13 @@ bool UIFileManagerGuestTable::createDirectory(const QString &path, const QString
 }
 
 void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathList,
-                                        const QString &strDestination /* = QString() */)
+                                              const QString &strDestination /* = QString() */)
 {
     if (!checkGuestSession())
         return;
     QVector<QString> sourcePaths = hostSourcePathList.toVector();
-    QVector<QString>  aFilters;
-    QVector<QString>  aFlags;
+    QVector<QString> aFilters;
+    QVector<QString> aFlags;
     QString strDestinationPath = strDestination;
     if (strDestinationPath.isEmpty())
         strDestinationPath = currentDirectoryPath();
@@ -344,6 +346,24 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
         return;
     }
 
+    foreach (const QString &strSource, sourcePaths)
+    {
+        RTFSOBJINFO ObjInfo;
+        int vrc = RTPathQueryInfo(strSource.toStdString().c_str(), &ObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(vrc))
+        {
+            /* If the source is an directory, make sure to add the appropriate flag to make copying work
+             * into existing directories on the guest. This otherwise would fail (default). */
+            if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+                aFlags.append("CopyIntoExisting");
+            else /* Make sure to keep the vector in sync with the number of source items by adding an empty entry. */
+                aFlags.append("");
+        }
+        else
+            emit sigLogOutput(QString("Querying information for host item \"%s\" failed with %Rrc").arg(strSource.toStdString().c_str(), vrc),
+                              FileManagerLogType_Error);
+    }
+
     CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, strDestinationPath);
     if (!checkGuestSession())
         return;
@@ -355,8 +375,8 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
     if (!checkGuestSession())
         return;
     QVector<QString> sourcePaths = selectedItemPathList().toVector();
-    QVector<QString>  aFilters;
-    QVector<QString>  aFlags;
+    QVector<QString> aFilters;
+    QVector<QString> aFlags;
 
     if (hostDestinationPath.isEmpty())
     {
@@ -367,6 +387,26 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
     {
         emit sigLogOutput("No source for copy operation", FileManagerLogType_Error);
         return;
+    }
+
+    foreach (const QString &strSource, sourcePaths)
+    {
+        /** @todo Cache this info and use the item directly, which has this info already? */
+
+        /* If the source is an directory, make sure to add the appropriate flag to make copying work
+         * into existing directories on the guest. This otherwise would fail (default). */
+        CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(strSource, true);
+        if (!m_comGuestSession.isOk())
+        {
+            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+            return;
+        }
+
+        KFsObjType eType = fileType(fileInfo);
+        if (eType == KFsObjType_Directory)
+            aFlags.append("CopyIntoExisting");
+        else /* Make sure to keep the vector in sync with the number of source items by adding an empty entry. */
+            aFlags.append("");
     }
 
     CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, hostDestinationPath);
