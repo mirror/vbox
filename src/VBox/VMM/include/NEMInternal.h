@@ -381,6 +381,10 @@ typedef struct NEMCPU
     STAMCOUNTER                 StatBreakOnFFPost;
     STAMCOUNTER                 StatBreakOnStatus;
     STAMCOUNTER                 StatFlushExitOnReturn;
+    STAMCOUNTER                 StatFlushExitOnReturn1Loop;
+    STAMCOUNTER                 StatFlushExitOnReturn2Loops;
+    STAMCOUNTER                 StatFlushExitOnReturn3Loops;
+    STAMCOUNTER                 StatFlushExitOnReturn4PlusLoops;
     STAMCOUNTER                 StatImportOnDemand;
     STAMCOUNTER                 StatImportOnReturn;
     STAMCOUNTER                 StatImportOnReturnSkipped;
