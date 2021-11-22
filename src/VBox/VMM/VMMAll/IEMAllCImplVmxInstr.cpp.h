@@ -5644,7 +5644,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, bool *pfPdpesMapped
 #endif
         {
             int const rc = PGMGstMapPaePdpesAtCr3(pVCpu, pVmcs->u64GuestCr3.u);
-            if (rc == VINF_SUCCESS)
+            if (RT_SUCCESS(rc))
                 *pfPdpesMapped = true;
             else
             {

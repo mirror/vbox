@@ -312,7 +312,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_
             bool const fHostInPaeMode = CPUMIsPaePagingEnabled(pHostState->uCr0, pHostState->uCr4, pHostState->uEferMsr);
             if (fHostInPaeMode)
                 rcStrict = PGMGstMapPaePdpesAtCr3(pVCpu, pHostState->uCr3);
-            if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+            if (RT_SUCCESS(rcStrict))
             {
                 /*
                  * Reload the host state.
