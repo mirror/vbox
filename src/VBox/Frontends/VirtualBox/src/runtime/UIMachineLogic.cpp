@@ -1803,22 +1803,9 @@ void UIMachineLogic::sltCloseFileManagerDialog()
     UIFileManagerDialogFactory().cleanup(pDialog);
 }
 
-void UIMachineLogic::sltReset(bool fShowConfirmation /* = true */)
+void UIMachineLogic::sltReset()
 {
-    if (fShowConfirmation)
-    {
-        /* Confirm/Reset current console: */
-        if (msgCenter().confirmResetMachine(machineName()))
-            console().Reset();
-    }
-    else
-        console().Reset();
-
-    /* TODO_NEW_CORE: On reset the additional screens didn't get a display
-       update. Emulate this for now until it get fixed. */
-    ulong uMonitorCount = machine().GetGraphicsAdapter().GetMonitorCount();
-    for (ulong uScreenId = 1; uScreenId < uMonitorCount; ++uScreenId)
-        machineWindows().at(uScreenId)->update();
+    reset(true);
 }
 
 void UIMachineLogic::sltPause(bool fOn)
@@ -3265,8 +3252,6 @@ void UIMachineLogic::showBootFailureDialog()
 {
     UIBootFailureDialog *pBootFailureDialog = new UIBootFailureDialog(activeMachineWindow(), machine());
     AssertPtrReturnVoid(pBootFailureDialog);
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset), &UIAction::triggered,
-            this, &UIMachineLogic::sltReset);
 
     int iResult = pBootFailureDialog->exec(false);
     QString strISOPath = pBootFailureDialog->bootMediumPath();
@@ -3278,7 +3263,7 @@ void UIMachineLogic::showBootFailureDialog()
         mountBootMedium(uiCommon().openMedium(UIMediumDeviceType_DVD, strISOPath));
 
     if (iResult == static_cast<int>(UIBootFailureDialog::ReturnCode_Reset))
-        sltReset(false);
+        reset(false);
 }
 
 bool UIMachineLogic::mountBootMedium(const QUuid &uMediumId)
@@ -3393,6 +3378,24 @@ void UIMachineLogic::dbgAdjustRelativePos()
         QRect rct = activeMachineWindow()->frameGeometry();
         m_pDbgGuiVT->pfnAdjustRelativePos(m_pDbgGui, rct.x(), rct.y(), rct.width(), rct.height());
     }
+}
+
+void UIMachineLogic::reset(bool fShowConfirmation)
+{
+    if (fShowConfirmation)
+    {
+        /* Confirm/Reset current console: */
+        if (msgCenter().confirmResetMachine(machineName()))
+            console().Reset();
+    }
+    else
+        console().Reset();
+
+    /* TODO_NEW_CORE: On reset the additional screens didn't get a display
+       update. Emulate this for now until it get fixed. */
+    ulong uMonitorCount = machine().GetGraphicsAdapter().GetMonitorCount();
+    for (ulong uScreenId = 1; uScreenId < uMonitorCount; ++uScreenId)
+        machineWindows().at(uScreenId)->update();
 }
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */

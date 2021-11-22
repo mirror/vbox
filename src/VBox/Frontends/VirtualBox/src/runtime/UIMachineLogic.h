@@ -271,7 +271,7 @@ private slots:
     void sltCloseVMInformationDialogDefault() { sltCloseVMInformationDialog(true); }
     void sltShowFileManagerDialog();
     void sltCloseFileManagerDialog();
-    void sltReset(bool fShowConfirmation = true);
+    void sltReset();
     void sltPause(bool fOn);
     void sltDetach();
     void sltSaveState();
@@ -389,6 +389,8 @@ private:
     void showBootFailureDialog();
     /** Attempts to mount medium with @p uMediumId to the machine if it can find an appropriate controller and port. */
     bool mountBootMedium(const QUuid &uMediumId);
+    /** Resets the machine. If @p fShowConfirmation is true then a confirmation messag box is shown first. */
+    void reset(bool fShowConfirmation);
 
     /* Private variables: */
     UISession *m_pSession;
