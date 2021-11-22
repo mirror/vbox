@@ -3044,3 +3044,17 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxEptPagingEnabled(PCVMCPUCC pVCpu)
     return CPUMIsGuestVmxEptPagingEnabledEx(&pVCpu->cpum.s.Guest);
 }
 
+
+/**
+ * Checks whether the guest is in VMX non-root mode and using EPT paging and the
+ * nested-guest is in PAE mode.
+ *
+ * @returns @c true if in VMX non-root operation with EPT, @c false otherwise.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(bool) CPUMIsGuestVmxEptPaePagingEnabled(PCVMCPUCC pVCpu)
+{
+    return    CPUMIsGuestVmxEptPagingEnabledEx(&pVCpu->cpum.s.Guest)
+           && CPUMIsGuestInPAEModeEx(&pVCpu->cpum.s.Guest);
+}
+

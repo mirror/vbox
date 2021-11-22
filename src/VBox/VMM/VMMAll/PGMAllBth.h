@@ -4151,6 +4151,9 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fPdpesMapped)
     NOREF(fPdpesMapped);
 #endif
     {
+        /** @todo Nested VMX: convert GCPhysCR3 from nested-guest physical to guest-physical
+         *        by calling SLAT phys walk. */
+
         /*
          * Map the page CR3 points at.
          */
@@ -4302,6 +4305,14 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu)
 
 #else /* prot/real mode stub */
     /* nothing to do */
+#endif
+
+    /*
+     * Update second-level address translation info.
+     */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    pVCpu->pgm.s.pGstEptPml4R3 = 0;
+    pVCpu->pgm.s.pGstEptPml4R0 = 0;
 #endif
 
     /*

@@ -1597,6 +1597,7 @@ VMM_INT_DECL(int)       CPUMStartGuestVmxPremptTimer(PVMCPUCC pVCpu, uint32_t uT
 VMM_INT_DECL(int)       CPUMStopGuestVmxPremptTimer(PVMCPUCC pVCpu);
 VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxEptPagingEnabled(PCVMCPUCC pVCpu);
+VMM_INT_DECL(bool)      CPUMIsGuestVmxEptPaePagingEnabled(PCVMCPUCC pVCpu);
 /** @} */
 
 /** @name Externalized State Helpers.

@@ -3921,7 +3921,8 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
         AssertRCReturn(rc, rc);
         /* ignore informational status codes */
     }
-    rcStrict = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
+    rcStrict = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER,
+                             false /* fForce */);
 
     /* TR selector is at offset 0x16. */
     pa16Mem = (uint16_t const *)(pbMem + 0x16);
@@ -5893,7 +5894,8 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             CPUMSetGuestCR0(pVCpu, uNewCrX);
             Assert(pVCpu->cpum.GstCtx.cr0 == uNewCrX);
 
-            rcStrict = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
+            rcStrict = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER,
+                                     false /* fForce */);
             break;
         }
 
@@ -6096,7 +6098,8 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             AssertRCSuccessReturn(rc, rc);
             Assert(pVCpu->cpum.GstCtx.cr4 == uNewCrX);
 
-            rcStrict = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER);
+            rcStrict = PGMChangeMode(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER,
+                                     false /* fForce */);
             break;
         }
 

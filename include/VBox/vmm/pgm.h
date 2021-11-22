@@ -602,7 +602,7 @@ VMMDECL(int)        PGMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage);
 VMMDECL(int)        PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fPdpesMapped);
 VMMDECL(int)        PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
 VMMDECL(int)        PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fPdpesMapped);
-VMMDECL(int)        PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer);
+VMMDECL(int)        PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer, bool fForce);
 VMM_INT_DECL(int)   PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMode);
 VMMDECL(void)       PGMCr0WpEnabled(PVMCPUCC pVCpu);
 VMMDECL(PGMMODE)    PGMGetGuestMode(PVMCPU pVCpu);

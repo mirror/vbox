@@ -1821,6 +1821,7 @@ int pgmGstPtWalk(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALKGST 
 static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested,
                           PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk)
 {
+    /* SLAT mode must be valid at this point as this should only be used -after- we have determined SLAT mode. */
     Assert(   pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_DIRECT
            && pVCpu->pgm.s.enmGuestSlatMode != PGMSLAT_INVALID);
     switch (pVCpu->pgm.s.enmGuestSlatMode)
@@ -2712,8 +2713,7 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
     PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    if (   CPUMIsGuestVmxEptPagingEnabled(pVCpu)
-        && CPUMIsGuestInPAEMode(pVCpu))
+    if (CPUMIsGuestVmxEptPaePagingEnabled(pVCpu))
     {
         PGMPTWALK    Walk;
         PGMPTWALKGST GstWalk;
@@ -2786,8 +2786,9 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
  * @param   cr0         The new cr0.
  * @param   cr4         The new cr4.
  * @param   efer        The new extended feature enable register.
+ * @param   fForce      Whether to force a mode change.
  */
-VMMDECL(int) PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer)
+VMMDECL(int) PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer, bool fForce)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -2831,7 +2832,8 @@ VMMDECL(int) PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t 
     /*
      * Did it change?
      */
-    if (pVCpu->pgm.s.enmGuestMode == enmGuestMode)
+    if (   !fForce
+        && pVCpu->pgm.s.enmGuestMode == enmGuestMode)
         return VINF_SUCCESS;
 
     /* Flush the TLB */
@@ -3752,12 +3754,7 @@ VMM_INT_DECL(void) PGMSetGuestEptPtr(PVMCPUCC pVCpu, uint64_t uEptPtr)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     PGM_LOCK_VOID(pVM);
-    if (pVCpu->pgm.s.uEptPtr != uEptPtr)
-    {
-        pVCpu->pgm.s.uEptPtr = uEptPtr;
-        pVCpu->pgm.s.pGstEptPml4R0 = NIL_RTR0PTR;
-        pVCpu->pgm.s.pGstEptPml4R3 = NIL_RTR3PTR;
-    }
+    pVCpu->pgm.s.uEptPtr = uEptPtr;
     PGM_UNLOCK(pVM);
 }
 

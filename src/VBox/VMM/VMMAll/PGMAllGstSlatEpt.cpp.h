@@ -96,7 +96,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
      *   - R, W, X_SUPER are unconditionally cumulative.
      *     See Intel spec. Table 26-7 "Exit Qualification for EPT Violations".
      *
-     *   - X_USER is Cumulative but relevant only when mode-based execute control for EPT
+     *   - X_USER is cumulative but relevant only when mode-based execute control for EPT
      *     which we currently don't support it (asserted below).
      *
      *   - MEMTYPE is not cumulative and only applicable to the final paging entry.
