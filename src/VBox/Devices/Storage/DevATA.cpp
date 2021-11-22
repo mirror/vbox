@@ -3143,9 +3143,13 @@ static bool atapiR3ModeSenseCDStatusSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, 
     uint8_t *pbBuf = s->abIOBuffer;
     RT_NOREF(pDevIns);
 
+    /* 28 bytes of total returned data corresponds to ATAPI 2.6. Note that at least some versions
+     * of NEC_IDE.SYS DOS driver (possibly other Oak Technology OTI-011 drivers) do not correctly
+     * handle cases where more than 28 bytes are returned due to bugs. See @bugref{5869}.
+     */
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
-    Assert(s->cbElementaryTransfer <= 40);
-    scsiH2BE_U16(&pbBuf[0], 38);
+    Assert(s->cbElementaryTransfer <= 28);
+    scsiH2BE_U16(&pbBuf[0], 26);
     pbBuf[2] = (uint8_t)s->MediaTrackType;
     pbBuf[3] = 0;
     pbBuf[4] = 0;
@@ -3154,7 +3158,7 @@ static bool atapiR3ModeSenseCDStatusSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, 
     pbBuf[7] = 0;
 
     pbBuf[8] = 0x2a;
-    pbBuf[9] = 30; /* page length */
+    pbBuf[9] = 18; /* page length */
     pbBuf[10] = 0x08; /* DVD-ROM read support */
     pbBuf[11] = 0x00; /* no write support */
     /* The following claims we support audio play. This is obviously false,
@@ -3172,15 +3176,8 @@ static bool atapiR3ModeSenseCDStatusSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, 
     scsiH2BE_U16(&pbBuf[22], 5632); /* (obsolete) current read speed 32x */
     pbBuf[24] = 0; /* reserved */
     pbBuf[25] = 0; /* reserved for digital audio (see idx 15) */
-    scsiH2BE_U16(&pbBuf[26], 0); /* (obsolete) maximum write speed */
-    scsiH2BE_U16(&pbBuf[28], 0); /* (obsolete) current write speed */
-    scsiH2BE_U16(&pbBuf[30], 0); /* copy management revision supported 0=no CSS */
-    pbBuf[32] = 0; /* reserved */
-    pbBuf[33] = 0; /* reserved */
-    pbBuf[34] = 0; /* reserved */
-    pbBuf[35] = 1; /* rotation control CAV */
-    scsiH2BE_U16(&pbBuf[36], 0); /* current write speed */
-    scsiH2BE_U16(&pbBuf[38], 0); /* number of write speed performance descriptors */
+    pbBuf[26] = 0; /* reserved */
+    pbBuf[27] = 0; /* reserved */
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(pCtl, s);
     return false;
@@ -3241,7 +3238,7 @@ static bool atapiR3ReadTOCNormalSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATA
     RT_NOREF(pDevIns);
 
     /* Track fields are 8-bit and 1-based, so cut the track count at 255,
-       avoiding any potentially buffer overflow issues below. */
+       avoiding any potential buffer overflow issues below. */
     uint32_t cTracks = pDevR3->pDrvMedia->pfnGetRegionCount(pDevR3->pDrvMedia);
     AssertStmt(cTracks <= UINT8_MAX, cTracks = UINT8_MAX);
     AssertCompile(sizeof(s->abIOBuffer) >= 2 + 256 + 8);
@@ -3507,7 +3504,7 @@ static void atapiR3ParseCmdVirtualATAPI(PPDMDEVINS pDevIns, PATACONTROLLER pCtl,
                             ataR3StartTransfer(pDevIns, pCtl, s, RT_MIN(cbMax, 16), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_MODE_SENSE_ERROR_RECOVERY, true);
                             break;
                         case SCSI_MODEPAGE_CD_STATUS:
-                            ataR3StartTransfer(pDevIns, pCtl, s, RT_MIN(cbMax, 40), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_MODE_SENSE_CD_STATUS, true);
+                            ataR3StartTransfer(pDevIns, pCtl, s, RT_MIN(cbMax, 28), PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_MODE_SENSE_CD_STATUS, true);
                             break;
                         default:
                             goto error_cmd;
