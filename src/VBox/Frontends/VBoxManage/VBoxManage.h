@@ -237,7 +237,6 @@ RTEXITCODE errorSyntax(USAGECATEGORY enmCommand, const char *pszFormat, ...);
 RTEXITCODE errorSyntaxEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, const char *pszFormat, ...);
 RTEXITCODE errorGetOpt(USAGECATEGORY enmCommand, int rc, union RTGETOPTUNION const *pValueUnion);
 RTEXITCODE errorGetOptEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, int rc, union RTGETOPTUNION const *pValueUnion);
-RTEXITCODE errorArgument(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
 void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm);
 
@@ -252,14 +251,17 @@ RTEXITCODE  errorUnknownSubcommand(const char *pszSubCmd);
 RTEXITCODE  errorTooManyParameters(char **papszArgs);
 RTEXITCODE  errorGetOpt(int rcGetOpt, union RTGETOPTUNION const *pValueUnion);
 RTEXITCODE  errorFetchValue(int iValueNo, const char *pszOption, int rcGetOptFetchValue, union RTGETOPTUNION const *pValueUnion);
-RTEXITCODE  errorSyntax(const char *pszFormat, ...);
+RTEXITCODE  errorSyntax(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+RTEXITCODE  errorSyntaxV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
+HRESULT     errorSyntaxHr(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+RTEXITCODE  errorArgument(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+HRESULT     errorArgumentHr(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
 
-
-#define SHOW_PROGRESS_NONE      0
-#define SHOW_PROGRESS_DESC      (1u << 0)
-#define SHOW_PROGRESS           (1u << 1)
-#define SHOW_PROGRESS_DETAILS   (1u << 2)
-HRESULT showProgress(ComPtr<IProgress> progress, unsigned int fFlags = SHOW_PROGRESS);
+# define SHOW_PROGRESS_NONE     0
+# define SHOW_PROGRESS_DESC     RT_BIT_32(0)
+# define SHOW_PROGRESS          RT_BIT_32(1)
+# define SHOW_PROGRESS_DETAILS  RT_BIT_32(2)
+HRESULT showProgress(ComPtr<IProgress> progress, uint32_t fFlags = SHOW_PROGRESS);
 #endif
 
 /* VBoxManage.cpp */
@@ -308,8 +310,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 const char *machineStateToName(MachineState_T machineState, bool fShort);
 HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
                             VMINFO_DETAILS details);
-void outputMachineReadableString(const char *pszName, const char *pszValue);
-void outputMachineReadableString(const char *pszName, com::Bstr const *pbstrValue);
+void outputMachineReadableString(const char *pszName, const char *pszValue, bool fQuoteName = false);
+void outputMachineReadableString(const char *pszName, com::Bstr const *pbstrValue, bool fQuoteName = false);
+void outputMachineReadableStringWithFmtName(const char *pszValue, bool fQuoteName, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+void outputMachineReadableStringWithFmtName(com::Bstr const *pbstrValue, bool fQuoteName, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 void outputMachineReadableBool(const char *pszName, BOOL const *pfValue);
 void outputMachineReadableBool(const char *pszName, bool const *pfValue);
 void outputMachineReadableULong(const char *pszName, ULONG *uValue);

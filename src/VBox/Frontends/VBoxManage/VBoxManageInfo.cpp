@@ -616,6 +616,63 @@ void outputMachineReadableLong64(const char *pszName, LONG64 *puValue)
 
 
 /**
+ * Helper for parsing extra data config.
+ * @returns true, false, or -1 if invalid.
+ */
+static int parseCfgmBool(Bstr const *pbstr)
+{
+    /* GetExtraData returns empty strings if the requested data wasn't
+       found, so fend that off first: */
+    size_t cwcLeft = pbstr->length();
+    if (!cwcLeft)
+        return false;
+    PCRTUTF16 pwch = pbstr->raw();
+
+    /* Skip type prefix: */
+    if (   cwcLeft >= 8
+        && pwch[0] == 'i'
+        && pwch[1] == 'n'
+        && pwch[2] == 't'
+        && pwch[3] == 'e'
+        && pwch[4] == 'g'
+        && pwch[5] == 'e'
+        && pwch[6] == 'r'
+        && pwch[7] == ':')
+    {
+        pwch    += 8;
+        cwcLeft -= 8;
+    }
+
+    /* Hex prefix? */
+    bool fHex = false;
+    if (   cwcLeft >= 2
+        && pwch[0] == '0'
+        && (pwch[1] == 'x' || pwch[1] == 'X'))
+    {
+        pwch    += 2;
+        cwcLeft -= 2;
+        fHex     = true;
+    }
+
+    /* Empty string is wrong: */
+    if (cwcLeft == 0)
+        return -1;
+
+    /* Check that it's all digits and return when we find a non-zero
+       one or reaches the end: */
+    do
+    {
+        RTUTF16 const wc = *pwch++;
+        if (!RT_C_IS_DIGIT(wc) && (!fHex || !RT_C_IS_XDIGIT(wc)))
+            return -1;
+        if (wc != '0')
+            return true;
+    } while (--cwcLeft > 0);
+    return false;
+}
+
+
+/**
  * Converts bandwidth group type to a string.
  * @returns String representation.
  * @param   enmType         Bandwidth control group type.
@@ -2769,6 +2826,34 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 outputMachineReadableString("description", &description);
             else
                 RTPrintf(Info::tr("Description:\n%ls\n"), description.raw());
+        }
+    }
+
+    /* VMMDev testing config (extra data) */
+    if (details != VMINFO_MACHINEREADABLE)
+    {
+        Bstr bstr;
+        CHECK_ERROR2I_RET(machine, GetExtraData(Bstr("VBoxInternal/Devices/VMMDev/0/Config/TestingEnabled").raw(),
+                                                bstr.asOutParam()), hrcCheck);
+        int const fEnabled = parseCfgmBool(&bstr);
+
+        CHECK_ERROR2I_RET(machine, GetExtraData(Bstr("VBoxInternal/Devices/VMMDev/0/Config/TestingMMIO").raw(),
+                                                bstr.asOutParam()), hrcCheck);
+        int const fMmio = parseCfgmBool(&bstr);
+        if (fEnabled || fMmio)
+        {
+            RTPrintf("%-28s %s, %s %s\n",
+                     Info::tr("VMMDev Testing"),
+                     fEnabled > 0 ? Info::tr("enabled") : fEnabled == 0 ? Info::tr("disabled") : Info::tr("misconfigured"),
+                     Info::tr("MMIO:"),
+                     fMmio    > 0 ? Info::tr("enabled") : fMmio    == 0 ? Info::tr("disabled") : Info::tr("misconfigured"));
+            for (uint32_t i = 0; i < 10; i++)
+            {
+                BstrFmt bstrName("VBoxInternal/Devices/VMMDev/0/Config/TestingCfgDword%u", i);
+                CHECK_ERROR2I_RET(machine, GetExtraData(bstrName.raw(), bstr.asOutParam()), hrcCheck);
+                if (bstr.isNotEmpty())
+                    RTPrintf("%-28s %ls\n", FmtNm(szNm, "VMMDev Testing Cfg Dword%u:", i), bstr.raw());
+            }
         }
     }
 

@@ -248,7 +248,10 @@ enum
     MODIFYVM_TPM_TYPE,
 #endif
     MODIFYVM_DEFAULTFRONTEND,
-    MODIFYVM_VMPROC_PRIORITY
+    MODIFYVM_VMPROC_PRIORITY,
+    MODIFYVM_TESTING_ENABLED,
+    MODIFYVM_TESTING_MMIO,
+    MODIFYVM_TESTING_CFG_DWORD,
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -451,12 +454,38 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
 #endif
     OPT2("--default-frontend",              "--defaultfrontend",        MODIFYVM_DEFAULTFRONTEND,           RTGETOPT_REQ_STRING),
     OPT1("--vm-process-priority",                                       MODIFYVM_VMPROC_PRIORITY,           RTGETOPT_REQ_STRING),
+    OPT1("--testing-enabled",                                           MODIFYVM_TESTING_ENABLED,           RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--testing-mmio",                                              MODIFYVM_TESTING_MMIO,              RTGETOPT_REQ_BOOL_ONOFF),
+    OPT1("--testing-cfg-dword",                                         MODIFYVM_TESTING_CFG_DWORD,         RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX),
 };
 
 static void vrdeWarningDeprecatedOption(const char *pszOption)
 {
     RTStrmPrintf(g_pStdErr, ModifyVM::tr("Warning: '--vrdp%s' is deprecated. Use '--vrde%s'.\n"), pszOption, pszOption);
 }
+
+
+/**
+ * Wrapper around IMachine::SetExtraData that does the error reporting.
+ *
+ * @returns COM result code.
+ * @param   rSessionMachine The IMachine.
+ * @param   pszVariable     The variable to set.
+ * @param   pszValue        The value to set.  To delete pass empty string, not
+ *                          NULL.
+ */
+static HRESULT setExtraData(ComPtr<IMachine> &rSessionMachine, const char *pszVariable, const char *pszValue)
+{
+    HRESULT hrc = rSessionMachine->SetExtraData(Bstr(pszVariable).raw(), Bstr(pszValue).raw());
+    if (FAILED(hrc))
+    {
+        char *pszContext = RTStrAPrintf2(ModifyVM::tr("IMachine::SetExtraData('%s', '%s')"), pszVariable, pszValue);
+        com::GlueHandleComError(rSessionMachine, pszContext, hrc, __FILE__, __LINE__);
+        RTStrFree(pszContext);
+    }
+    return hrc;
+}
+
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
 /** Parse PCI address in format 01:02.03 and convert it to the numeric representation. */
@@ -3412,12 +3441,33 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 
+            case MODIFYVM_TESTING_ENABLED:
+                rc = setExtraData(sessionMachine, "VBoxInternal/Devices/VMMDev/0/Config/TestingEnabled", ValueUnion.f ? "1" : "");
+                break;
+
+            case MODIFYVM_TESTING_MMIO:
+                rc = setExtraData(sessionMachine, "VBoxInternal/Devices/VMMDev/0/Config/TestingMMIO", ValueUnion.f ? "1" : "");
+                break;
+
+            case MODIFYVM_TESTING_CFG_DWORD:
+                if (GetOptState.uIndex <= 9)
+                {
+                    char szVar[128];
+                    RTStrPrintf(szVar, sizeof(szVar), "VBoxInternal/Devices/VMMDev/0/Config/TestingCfgDword%u",
+                                GetOptState.uIndex);
+                    char szValue[32];
+                    RTStrPrintf(szValue, sizeof(szValue), "%u", ValueUnion.u32);
+                    rc = setExtraData(sessionMachine, szVar, szValue);
+                }
+                else
+                    rc = errorArgumentHr(ModifyVM::tr("--testing-cfg-dword index %u is out of range: 0 thru 9"),
+                                         GetOptState.uIndex);
+                break;
+
             default:
-            {
                 errorGetOpt(USAGE_MODIFYVM, c, &ValueUnion);
                 rc = E_FAIL;
                 break;
-            }
         }
     }
 

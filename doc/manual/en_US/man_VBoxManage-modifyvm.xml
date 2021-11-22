@@ -616,6 +616,17 @@ it unless this changes. -->
       <arg>--pci-attach=<replaceable>host-PCI-address</replaceable><arg>@<replaceable>guest-PCI-bus-address</replaceable></arg></arg>
       <arg>--pci-detach=<replaceable>host-PCI-address</replaceable></arg>
     </cmdsynopsis>
+
+    <cmdsynopsis id="synopsis-vboxmanage-modifyvm-testing">
+      <command>VBoxManage modifyvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg>--testing-enabled=<group choice="plain"><arg choice="plain">on</arg><arg choice="plain">off</arg></group></arg>
+      <arg>--testing-mmio=<group choice="plain"><arg choice="plain">on</arg><arg choice="plain">off</arg></group></arg>
+      <arg>--testing-cfg-dword<replaceable>idx</replaceable>=<replaceable>value</replaceable></arg>
+    </cmdsynopsis>
   </refsynopsisdiv>
 
   <refsect1>
@@ -2651,6 +2662,34 @@ it unless this changes. -->
         </varlistentry>
       </variablelist>
     </refsect2>
+    <refsect2 id="vboxmanage-modifyvm-testing">
+      <title>Testing (ValidationKit / Bootsector)</title>
+      <para>
+        These options are for configuring the testing functionality of the VMM
+        device and almost exclusively used by the bootsector testcases in the
+        ValidationKit.
+      </para>
+      <remark role="help-copy-synopsis"/>
+      <variablelist>
+        <varlistentry>
+          <term><option>--testing-enabled=on | off</option></term>
+          <listitem><para>Enabled the testing functionality of the VMMDev. See VMMDevTesting.h for details. </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--testing-mmio=on | off</option></term>
+          <listitem><para>Enabled the MMIO region of the VMMDev testing feature.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--testing-cfg-dword<replaceable>idx</replaceable>=<replaceable>value</replaceable></option></term>
+          <listitem><para>
+                This sets one of the 10 dword configuration values. The
+                <replaceable>idx</replaceable> must be in the range 0 thru 9.
+                The <replaceable>value</replaceable> is limited to 32 bits (dword).
+            </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
   </refsect1>
 
   <refsect1>
@@ -2671,10 +2710,11 @@ it unless this changes. -->
   <refsect1>
     <title>See Also</title>
     <para>
+      <xref linkend="vboxmanage-showvminfo" />,
       <xref linkend="vboxmanage-controlvm" />,
       <xref linkend="vboxmanage-createvm" />,
-      <xref linkend="vboxmanage-list" />,
       <xref linkend="vboxmanage-startvm" />
+      <xref linkend="vboxmanage-list" />
     </para>
   </refsect1>
 </refentry>

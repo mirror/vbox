@@ -295,7 +295,7 @@ static void showProgressSignalHandler(int iSignal) RT_NOTHROW_DEF
  * unhandled things (which doesn't cause real problems, just makes things
  * react a little slower than in the ideal case).
  */
-HRESULT showProgress(ComPtr<IProgress> progress, unsigned int fFlags)
+HRESULT showProgress(ComPtr<IProgress> progress, uint32_t fFlags)
 {
     using namespace com;
     HRESULT hrc;

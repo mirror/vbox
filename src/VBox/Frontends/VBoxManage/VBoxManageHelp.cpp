@@ -246,18 +246,18 @@ RTEXITCODE errorTooManyParameters(char **papszArgs)
  *
  * @returns RTEXITCODE_SYNTAX.
  * @param   pszFormat           Custom error message format string.
- * @param   ...                 Format arguments.
+ * @param   va                  Format arguments.
  */
-RTEXITCODE errorSyntax(const char *pszFormat, ...)
+RTEXITCODE errorSyntaxV(const char *pszFormat, va_list va)
 {
     Assert(g_enmCurCommand != HELP_CMD_VBOXMANAGE_INVALID);
 
     showLogo(g_pStdErr);
 
-    va_list va;
-    va_start(va, pszFormat);
-    RTMsgErrorV(pszFormat, va);
-    va_end(va);
+    va_list vaCopy;
+    va_copy(vaCopy, va);
+    RTMsgErrorV(pszFormat, vaCopy);
+    va_end(vaCopy);
 
     RTStrmPutCh(g_pStdErr, '\n');
     if (   printBriefCommandOrSubcommandHelp(g_enmCurCommand, g_fCurSubcommandScope, g_pStdErr)
@@ -265,11 +265,73 @@ RTEXITCODE errorSyntax(const char *pszFormat, ...)
     {
         /* Usage was very long, repeat the error message. */
         RTStrmPutCh(g_pStdErr, '\n');
-        va_start(va, pszFormat);
         RTMsgErrorV(pszFormat, va);
-        va_end(va);
     }
     return RTEXITCODE_SYNTAX;
+}
+
+
+/**
+ * Display current (sub)command usage and the custom error message.
+ *
+ * @returns RTEXITCODE_SYNTAX.
+ * @param   pszFormat           Custom error message format string.
+ * @param   ...                 Format arguments.
+ */
+RTEXITCODE errorSyntax(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTEXITCODE rcExit = errorSyntaxV(pszFormat, va);
+    va_end(va);
+    return rcExit;
+}
+
+
+/**
+ * Display current (sub)command usage and the custom error message.
+ *
+ * @returns E_INVALIDARG
+ * @param   pszFormat           Custom error message format string.
+ * @param   ...                 Format arguments.
+ */
+HRESULT errorSyntaxHr(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    errorSyntaxV(pszFormat, va);
+    va_end(va);
+    return E_INVALIDARG;
+}
+
+
+/**
+ * Print an error message without the syntax stuff.
+ *
+ * @returns RTEXITCODE_SYNTAX.
+ */
+RTEXITCODE errorArgument(const char *pszFormat, ...)
+{
+    va_list args;
+    va_start(args, pszFormat);
+    RTMsgErrorV(pszFormat, args);
+    va_end(args);
+    return RTEXITCODE_SYNTAX;
+}
+
+
+/**
+ * Print an error message without the syntax stuff.
+ *
+ * @returns E_INVALIDARG.
+ */
+HRESULT errorArgumentHr(const char *pszFormat, ...)
+{
+    va_list args;
+    va_start(args, pszFormat);
+    RTMsgErrorV(pszFormat, args);
+    va_end(args);
+    return E_INVALIDARG;
 }
 
 
@@ -1059,6 +1121,7 @@ RTEXITCODE errorGetOptEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, in
     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%Rrs", rc);
 }
 
+
 /**
  * errorSyntax for RTGetOpt users.
  *
@@ -1073,16 +1136,3 @@ RTEXITCODE errorGetOpt(USAGECATEGORY enmCommand, int rc, union RTGETOPTUNION con
     return errorGetOptEx(enmCommand, RTMSGREFENTRYSTR_SCOPE_GLOBAL, rc, pValueUnion);
 }
 
-/**
- * Print an error message without the syntax stuff.
- *
- * @returns RTEXITCODE_SYNTAX.
- */
-RTEXITCODE errorArgument(const char *pszFormat, ...)
-{
-    va_list args;
-    va_start(args, pszFormat);
-    RTMsgErrorV(pszFormat, args);
-    va_end(args);
-    return RTEXITCODE_SYNTAX;
-}
