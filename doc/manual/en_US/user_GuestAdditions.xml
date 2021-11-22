@@ -2192,7 +2192,7 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
 
           <listitem>
             <para>
-              Memory ballooning does not work well with large pages 
+              Memory ballooning does not work well with large pages
               enabled. To turn off large pages support for a VM, run
               <command>VBoxManage modifyvm
               <replaceable>vmname</replaceable> --large-pages
