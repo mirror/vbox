@@ -109,6 +109,47 @@ BS3_DECL_NEAR(void) TMPL_NM(bs3FpuState1_FMul)(void BS3_FAR *pvMmioReg, void BS3
 
 
 /**
+ * Checks if we're seeing a problem with fnstenv saving zero selectors when
+ * running on the compare area.
+ *
+ * This triggers in NEM mode if the native hypervisor doesn't do a good enough
+ * job at save the FPU state for 16-bit and 32-bit guests.  We have heuristics
+ * in CPUMInternal.mac (SAVE_32_OR_64_FPU) for this.
+ *
+ * @returns true if this the zero selector issue.
+ * @param   pabReadback The MMIO read buffer containing the fnstenv result
+ *                      typically produced by IEM.
+ * @param   pabCompare  The buffer containing the fnstenv result typcially
+ *                      produced by the CPU itself.
+ */
+static bool TMPL_NM(bs3FpuState1_IsZeroFnStEnvSelectorsProblem)(const uint8_t BS3_FAR *pabReadback,
+                                                                const uint8_t BS3_FAR *pabCompare)
+{
+    unsigned const offCs = ARCH_BITS == 16 ?  8 : 16;
+    unsigned const offDs = ARCH_BITS == 16 ? 12 : 24;
+    if (   *(const uint16_t BS3_FAR *)&pabCompare[offCs] == 0
+        && *(const uint16_t BS3_FAR *)&pabCompare[offDs] == 0)
+    {
+        /* Check the stuff before the CS register: */
+        if (Bs3MemCmp(pabReadback, pabCompare, offCs) == 0)
+        {
+            /* Check the stuff between the DS and CS registers:*/
+            if (Bs3MemCmp(&pabReadback[offCs + 2], &pabCompare[offCs + 2], offDs - offCs - 2) == 0)
+            {
+#if ARCH_BITS != 16
+                /* Check the stuff after the DS register if 32-bit mode: */
+                if (   *(const uint16_t BS3_FAR *)&pabReadback[offDs + 2]
+                    == *(const uint16_t BS3_FAR *)&pabCompare[offDs + 2])
+#endif
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+/**
  * Tests for FPU state corruption.
  *
  * First we don't do anything to quit guest context for a while.
@@ -123,26 +164,29 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
     /* We don't need to test that many modes, probably.  */
 
     uint8_t             abBuf[sizeof(X86FXSTATE)*2 + 32];
-    uint8_t BS3_FAR    *pbTmp = &abBuf[0x10 - (((uintptr_t)abBuf) & 0x0f)];
-    X86FXSTATE BS3_FAR *pExpected = (X86FXSTATE BS3_FAR *)pbTmp;
-    X86FXSTATE BS3_FAR *pChecking = pExpected + 1;
+    uint8_t BS3_FAR    *pbTmp                   = &abBuf[0x10 - (((uintptr_t)abBuf) & 0x0f)];
+    X86FXSTATE BS3_FAR *pExpected               = (X86FXSTATE BS3_FAR *)pbTmp;
+    X86FXSTATE BS3_FAR *pChecking               = pExpected + 1;
     uint32_t            iLoop;
     uint32_t            uStartTick;
     bool                fMmioReadback;
-    bool                fReadBackError = false;
-    bool                fReadError = false;
+    bool                fReadBackError          = false;
+    bool                fReadError              = false;
+    uint32_t            cFnStEnvSelectorsZero   = 0;
     BS3PTRUNION         MmioReg;
-    BS3CPUVENDOR const  enmCpuVendor = Bs3GetCpuVendor();
-    bool const          fSkipStorIdt = Bs3TestQueryCfgBool(VMMDEV_TESTING_CFG_IS_NEM_LINUX);
-    bool const          fFastFxSaveRestore = RT_BOOL(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_FFXSR);
-    //bool const          fFdpXcptOnly = (ASMCpuIdEx_EBX(7, 0) & X86_CPUID_STEXT_FEATURE_EBX_FDP_EXCPTN_ONLY)
-    //                                && ASMCpuId_EAX(0) >= 7;
+    BS3CPUVENDOR const  enmCpuVendor            = Bs3GetCpuVendor();
+    bool const          fSkipStorIdt            = Bs3TestQueryCfgBool(VMMDEV_TESTING_CFG_IS_NEM_LINUX);
+    bool const          fMayHaveZeroStEnvSels   = Bs3TestQueryCfgBool(VMMDEV_TESTING_CFG_IS_NEM_LINUX);
+    bool const          fFastFxSaveRestore      = RT_BOOL(ASMCpuId_EDX(0x80000001) & X86_CPUID_AMD_FEATURE_EDX_FFXSR);
+    //bool const          fFdpXcptOnly       = (ASMCpuIdEx_EBX(7, 0) & X86_CPUID_STEXT_FEATURE_EBX_FDP_EXCPTN_ONLY)
+    //                                      && ASMCpuId_EAX(0) >= 7;
+    RT_NOREF(bMode);
 
     if (fSkipStorIdt)
         Bs3TestPrintf("NEM/linux - skipping SIDT\n");
 
 # undef  CHECK_STATE
-# define CHECK_STATE(a_Instr) \
+# define CHECK_STATE(a_Instr, a_fIsFnStEnv) \
         do { \
             TMPL_NM(bs3FpuState1_Save)(pChecking); \
             if (Bs3MemCmp(pExpected, pChecking, sizeof(*pExpected)) != 0) \
@@ -201,7 +245,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
     uStartTick = g_cBs3PitTicks;
     for (iLoop = 0; iLoop < _16M; iLoop++)
     {
-        CHECK_STATE(nop);
+        CHECK_STATE(nop, false);
         if (   (iLoop & 0xffff) == 0xffff
             && g_cBs3PitTicks - uStartTick >= 20 * 20) /* 20 seconds*/
             break;
@@ -223,7 +267,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
 
         /* Macros  */
 # undef  CHECK_READBACK_WRITE_RUN
-# define CHECK_READBACK_WRITE_RUN(a_Instr, a_Worker, a_Type) \
+# define CHECK_READBACK_WRITE_RUN(a_Instr, a_Worker, a_Type, a_fIsFnStEnv) \
             do { \
                 off = (unsigned)(iLoop & (VMMDEV_TESTING_READBACK_SIZE / 2 - 1)); \
                 if (off + sizeof(a_Type) > VMMDEV_TESTING_READBACK_SIZE) \
@@ -233,7 +277,13 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
                 { \
                     a_Worker((a_Type *)&abCompare[0]); \
                     Bs3MemCpy(abReadback, &MmioReg.pb[off], sizeof(a_Type)); \
-                    if (Bs3MemCmp(abReadback, abCompare, sizeof(a_Type)) != 0) \
+                    if (Bs3MemCmp(abReadback, abCompare, sizeof(a_Type)) == 0) \
+                    { /* likely */ } \
+                    else if (   (a_fIsFnStEnv) \
+                             && fMayHaveZeroStEnvSels \
+                             && TMPL_NM(bs3FpuState1_IsZeroFnStEnvSelectorsProblem)(abReadback, abCompare)) \
+                        cFnStEnvSelectorsZero += 1; \
+                    else \
                     { \
                         Bs3TestFailedF("Read back error for " #a_Instr " in loop #%RU32:\n%.*Rhxs expected:\n%.*Rhxs\n", \
                                        iLoop, sizeof(a_Type), abReadback, sizeof(a_Type), abCompare); \
@@ -243,11 +293,11 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
             } while (0)
 
 # undef  CHECK_READBACK_WRITE
-# define CHECK_READBACK_WRITE(a_Instr, a_Worker, a_Type) \
-            CHECK_READBACK_WRITE_RUN(a_Instr, a_Worker, a_Type); \
-            CHECK_STATE(a_Instr)
+# define CHECK_READBACK_WRITE(a_Instr, a_Worker, a_Type, a_fIsFnStEnv) \
+            CHECK_READBACK_WRITE_RUN(a_Instr, a_Worker, a_Type, a_fIsFnStEnv); \
+            CHECK_STATE(a_Instr, a_fIsFnStEnv)
 # undef  CHECK_READBACK_WRITE_Z
-# define CHECK_READBACK_WRITE_Z(a_Instr, a_Worker, a_Type) \
+# define CHECK_READBACK_WRITE_Z(a_Instr, a_Worker, a_Type, a_fIsFnStEnv) \
             do { \
                 if (fMmioReadback && (!fReadBackError || iLoop == 0)) \
                 { \
@@ -257,7 +307,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
                         off = VMMDEV_TESTING_READBACK_SIZE - sizeof(a_Type); \
                     Bs3MemZero(&MmioReg.pb[off], sizeof(a_Type)); \
                 } \
-                CHECK_READBACK_WRITE(a_Instr, a_Worker, a_Type); \
+                CHECK_READBACK_WRITE(a_Instr, a_Worker, a_Type, a_fIsFnStEnv); \
             } while (0)
 
 # undef  CHECK_READBACK_READ_RUN
@@ -274,7 +324,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
             do { \
                 Bs3MemSet(&abReadback[0], 0xcc, sizeof(abReadback)); \
                 CHECK_READBACK_READ_RUN(a_Instr, a_Worker, a_Type); \
-                CHECK_STATE(a_Instr); \
+                CHECK_STATE(a_Instr, false); \
                 if (!fReadError || iLoop == 0) \
                 { \
                     Bs3MemZero(&abCompare[0], sizeof(abCompare)); \
@@ -290,11 +340,11 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
 
         /* The tests. */
         if (!fSkipStorIdt) /* KVM doesn't advance RIP executing a SIDT [MMIO-memory], it seems. (Linux 5.13.1) */
-            CHECK_READBACK_WRITE_Z(SIDT, ASMGetIDTR,                         RTIDTR);
-        CHECK_READBACK_WRITE_Z(FNSTENV,  TMPL_NM(bs3FpuState1_FNStEnv),      X86FSTENV32P); /** @todo x86.h is missing types */
-        CHECK_READBACK_WRITE(  MOVDQU,   TMPL_NM(bs3FpuState1_MovDQU_Write), X86XMMREG);
+            CHECK_READBACK_WRITE_Z(SIDT, ASMGetIDTR,                         RTIDTR,       false);
+        CHECK_READBACK_WRITE_Z(FNSTENV,  TMPL_NM(bs3FpuState1_FNStEnv),      X86FSTENV32P, true); /** @todo x86.h is missing types */
+        CHECK_READBACK_WRITE(  MOVDQU,   TMPL_NM(bs3FpuState1_MovDQU_Write), X86XMMREG,    false);
         CHECK_READBACK_READ(   MOVDQU,   TMPL_NM(bs3FpuState1_MovDQU_Read),  X86XMMREG);
-        CHECK_READBACK_WRITE(  MOVUPS,   TMPL_NM(bs3FpuState1_MovUPS_Write), X86XMMREG);
+        CHECK_READBACK_WRITE(  MOVUPS,   TMPL_NM(bs3FpuState1_MovUPS_Write), X86XMMREG,    false);
         CHECK_READBACK_READ(   MOVUPS,   TMPL_NM(bs3FpuState1_MovUPS_Read),  X86XMMREG);
 
         /* Using the FPU is a little complicated, but we really need to check these things. */
@@ -320,7 +370,7 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
 # endif
         if (enmCpuVendor == BS3CPUVENDOR_AMD && fFastFxSaveRestore)
             pExpected->FPUDP = 0; // Zen2 (3990x)
-        CHECK_STATE(FMUL);
+        CHECK_STATE(FMUL, false);
 
         /* check for timeout every now an then. */
         if (   (iLoop & 0xfff) == 0xfff
@@ -329,6 +379,12 @@ BS3_DECL_FAR(uint8_t) TMPL_NM(bs3FpuState1_Corruption)(uint8_t bMode)
     }
 
     Bs3PitDisable();
+
+    /*
+     * Warn if selectors are borked (for real VBox we'll fail and not warn).
+     */
+    if (cFnStEnvSelectorsZero > 0)
+        Bs3TestPrintf("Warning! NEM borked the FPU selectors %u times.\n", cFnStEnvSelectorsZero);
     return 0;
 }
 # endif
