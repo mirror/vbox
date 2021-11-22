@@ -5708,13 +5708,8 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
         { /* likely */ } \
         else \
         { \
-            if (rcX == VERR_PGM_PAE_PDPE_RSVD) \
-            { \
-                Log(("iemCImpl_load_Cr%#x: Trying to load invalid PAE PDPEs\n", a_iCrReg)); \
-                return iemRaiseGeneralProtectionFault0(a_pVCpu); \
-            } \
-            Log(("iemCImpl_load_Cr%#x: PGMGstReadPaePdpesAtCr3 failed %Rrc\n", a_iCrReg, rcX)); \
-            return rcX; \
+            Log(("iemCImpl_load_Cr%#x: Trying to load invalid PAE PDPEs\n", a_iCrReg)); \
+            return iemRaiseGeneralProtectionFault0(a_pVCpu); \
         } \
     } while (0)
 
