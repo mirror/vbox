@@ -288,7 +288,9 @@ HRESULT showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
                  name.raw(),
                  Utf8Str(uuid).c_str(),
                  (fCurrent) ? " *" : "");
-        if (!description.isEmpty())
+        if (!description.isEmpty() && RTUtf16Chr(description.raw(), '\n') == NULL)
+            RTPrintf(Info::tr("   %sDescription: %ls\n"), prefix.c_str(), description.raw());
+        else if (!description.isEmpty())
             RTPrintf(Info::tr("   %sDescription:\n%ls\n"), prefix.c_str(), description.raw());
     }
 
@@ -416,39 +418,71 @@ const char *facilityStateToName(AdditionsFacilityStatus_T faStatus, bool fShort)
     return Info::tr("unknown");
 }
 
-/**
- * This takes care of escaping double quotes and slashes that the string might
- * contain.
- *
- * @param   pszName             The variable name.
- * @param   pszValue            The value.
- */
-void outputMachineReadableString(const char *pszName, const char *pszValue)
+static const char *storageControllerTypeToName(StorageControllerType_T enmCtlType, bool fMachineReadable = false)
 {
-    Assert(strpbrk(pszName, "\"\\") == NULL);
-
-    if (   !pszValue
-        || !*pszValue
-        || (   strchr(pszValue, '"') == NULL
-            && strchr(pszValue, '\\') == NULL) )
-        RTPrintf("%s=\"%s\"\n", pszName, pszValue);
-    else
+    switch (enmCtlType)
     {
-        /* The value needs escaping. */
-        RTPrintf("%s=\"", pszName);
-        const char *psz = pszValue;
-        for (;;)
+        case StorageControllerType_LsiLogic:
+            return "LsiLogic";
+        case StorageControllerType_LsiLogicSas:
+            return "LsiLogicSas";
+        case StorageControllerType_BusLogic:
+            return "BusLogic";
+        case StorageControllerType_IntelAhci:
+            return "IntelAhci";
+        case StorageControllerType_PIIX3:
+            return "PIIX3";
+        case StorageControllerType_PIIX4:
+            return "PIIX4";
+        case StorageControllerType_ICH6:
+            return "ICH6";
+        case StorageControllerType_I82078:
+            return "I82078";
+        case StorageControllerType_USB:
+            return "USB";
+        case StorageControllerType_NVMe:
+            return "NVMe";
+        case StorageControllerType_VirtioSCSI:
+            return "VirtioSCSI";
+        default:
+            return fMachineReadable ? "unknown" : Info::tr("unknown");
+    }
+}
+
+
+DECLINLINE(bool) doesMachineReadableStringNeedEscaping(const char *psz)
+{
+    return psz == NULL
+        || *psz == '\0'
+        || strchr(psz, '"') != NULL
+        || strchr(psz, '\\') != NULL;
+}
+
+
+/**
+ * This simply outputs the string adding necessary escaping and nothing else.
+ */
+void outputMachineReadableStringWorker(const char *psz)
+{
+    for (;;)
+    {
+        const char *pszDoubleQuote = strchr(psz, '"');
+        const char *pszSlash       = strchr(psz, '\\');
+        const char *pszNext;
+        if (pszSlash)
+            pszNext = !pszDoubleQuote || (uintptr_t)pszSlash < (uintptr_t)pszDoubleQuote ? pszSlash : pszDoubleQuote;
+        else if (pszDoubleQuote)
+            pszNext = pszDoubleQuote;
+        else
         {
-            const char *pszNext = strpbrk(psz, "\"\\");
-            if (!pszNext)
-            {
-                RTPrintf("%s", psz);
-                break;
-            }
-            RTPrintf("%.*s\\%c", pszNext - psz, psz, *pszNext);
-            psz = pszNext + 1;
+            RTStrmWrite(g_pStdOut, psz, strlen(psz));
+            break;
         }
-        RTPrintf("\"\n");
+        RTStrmWrite(g_pStdOut, psz, pszNext - psz);
+        char const szTmp[2] = { '\\', *pszNext };
+        RTStrmWrite(g_pStdOut, szTmp, sizeof(szTmp));
+
+        psz = pszNext + 1;
     }
 }
 
@@ -457,13 +491,91 @@ void outputMachineReadableString(const char *pszName, const char *pszValue)
  * This takes care of escaping double quotes and slashes that the string might
  * contain.
  *
- * @param   pszName             The variable name.
- * @param   pbstrValue          The value.
+ * @param   pszName     The variable name.
+ * @param   pszValue    The value.
+ * @param   fQuoteName  Whether to unconditionally quote the name or not.
  */
-void outputMachineReadableString(const char *pszName, Bstr const *pbstrValue)
+void outputMachineReadableString(const char *pszName, const char *pszValue, bool fQuoteName /*=false*/)
+{
+    if (!fQuoteName)
+        fQuoteName = strchr(pszName, '=') != NULL;
+    bool const fEscapeName  = doesMachineReadableStringNeedEscaping(pszName);
+    bool const fEscapeValue = doesMachineReadableStringNeedEscaping(pszValue);
+    if (!fEscapeName && !fEscapeValue)
+        RTPrintf(!fQuoteName ? "%s=\"%s\"\n" : "\"%s\"=\"%s\"\n", pszName, pszValue);
+    else
+    {
+        /* The name and string quotation: */
+        if (!fEscapeName)
+            RTPrintf(fQuoteName ? "\"%s\"=\"" : "%s=\"", pszName);
+        else
+        {
+            if (fQuoteName)
+                RTStrmWrite(g_pStdOut, RT_STR_TUPLE("\""));
+            outputMachineReadableStringWorker(pszName);
+            if (fQuoteName)
+                RTStrmWrite(g_pStdOut, RT_STR_TUPLE("\"=\""));
+            else
+                RTStrmWrite(g_pStdOut, RT_STR_TUPLE("=\""));
+        }
+
+        /* the value and the closing quotation */
+        outputMachineReadableStringWorker(pszValue);
+        RTStrmWrite(g_pStdOut, RT_STR_TUPLE("\"\n"));
+    }
+}
+
+
+/**
+ * This takes care of escaping double quotes and slashes that the string might
+ * contain.
+ *
+ * @param   pszName     The variable name.
+ * @param   pbstrValue  The value.
+ * @param   fQuoteName  Whether to unconditionally quote the name or not.
+ */
+void outputMachineReadableString(const char *pszName, Bstr const *pbstrValue, bool fQuoteName /*=false*/)
 {
     com::Utf8Str strValue(*pbstrValue);
-    outputMachineReadableString(pszName, strValue.c_str());
+    outputMachineReadableString(pszName, strValue.c_str(), fQuoteName);
+}
+
+
+/**
+ * Variant that allows formatting the name string, C string value.
+ *
+ * @param   pszValue    The value.
+ * @param   fQuoteName  Whether to unconditionally quote the name or not.
+ * @param   pszNameFmt  The variable name.
+ */
+void outputMachineReadableStringWithFmtName(const char *pszValue, bool fQuoteName, const char *pszNameFmt, ...)
+{
+    com::Utf8Str strName;
+    va_list va;
+    va_start(va, pszNameFmt);
+    strName.printfV(pszNameFmt, va);
+    va_end(va);
+
+    outputMachineReadableString(strName.c_str(), pszValue, fQuoteName);
+}
+
+
+/**
+ * Variant that allows formatting the name string, Bstr value.
+ *
+ * @param   pbstrValue  The value.
+ * @param   fQuoteName  Whether to unconditionally quote the name or not.
+ * @param   pszNameFmt  The variable name.
+ */
+void outputMachineReadableStringWithFmtName(com::Bstr const *pbstrValue, bool fQuoteName, const char *pszNameFmt, ...)
+{
+    com::Utf8Str strName;
+    va_list va;
+    va_start(va, pszNameFmt);
+    strName.printfV(pszNameFmt, va);
+    va_end(va);
+
+    outputMachineReadableString(strName.c_str(), pbstrValue, fQuoteName);
 }
 
 
@@ -680,6 +792,107 @@ static HRESULT showUsbDevices(SafeIfaceArray<IUSBDeviceType> &coll, const char *
         RTPrintf("%-28s %s\n", pszName, Info::tr("<none>"));
     return S_OK;
 }
+
+/** Displays the medium attachments of the given controller. */
+static HRESULT showMediumAttachments(ComPtr<IMachine> &machine, ComPtr<IStorageController> ptrStorageCtl, VMINFO_DETAILS details)
+{
+    Bstr bstrStorageCtlName;
+    CHECK_ERROR2I_RET(ptrStorageCtl, COMGETTER(Name)(bstrStorageCtlName.asOutParam()), hrcCheck);
+    ULONG cDevices;
+    CHECK_ERROR2I_RET(ptrStorageCtl, COMGETTER(MaxDevicesPerPortCount)(&cDevices), hrcCheck);
+    ULONG cPorts;
+    CHECK_ERROR2I_RET(ptrStorageCtl, COMGETTER(PortCount)(&cPorts), hrcCheck);
+
+    for (ULONG i = 0; i < cPorts; ++ i)
+    {
+        for (ULONG k = 0; k < cDevices; ++ k)
+        {
+            ComPtr<IMediumAttachment> mediumAttach;
+            HRESULT hrc = machine->GetMediumAttachment(bstrStorageCtlName.raw(), i, k, mediumAttach.asOutParam());
+            if (!SUCCEEDED(hrc) && hrc != VBOX_E_OBJECT_NOT_FOUND)
+            {
+                com::GlueHandleComError(machine, "GetMediumAttachment", hrc, __FILE__, __LINE__);
+                return hrc;
+            }
+
+            BOOL fIsEjected = FALSE;
+            BOOL fTempEject = FALSE;
+            DeviceType_T devType = DeviceType_Null;
+            if (mediumAttach)
+            {
+                CHECK_ERROR2I_RET(mediumAttach, COMGETTER(TemporaryEject)(&fTempEject), hrcCheck);
+                CHECK_ERROR2I_RET(mediumAttach, COMGETTER(IsEjected)(&fIsEjected), hrcCheck);
+                CHECK_ERROR2I_RET(mediumAttach, COMGETTER(Type)(&devType), hrcCheck);
+            }
+
+            ComPtr<IMedium> medium;
+            hrc = machine->GetMedium(bstrStorageCtlName.raw(), i, k, medium.asOutParam());
+            if (SUCCEEDED(hrc) && medium)
+            {
+                BOOL fPassthrough = FALSE;
+                if (mediumAttach)
+                {
+                    CHECK_ERROR2I_RET(mediumAttach, COMGETTER(Passthrough)(&fPassthrough), hrcCheck);
+                }
+
+                Bstr bstrFilePath;
+                CHECK_ERROR2I_RET(medium, COMGETTER(Location)(bstrFilePath.asOutParam()), hrcCheck);
+                Bstr bstrUuid;
+                CHECK_ERROR2I_RET(medium, COMGETTER(Id)(bstrUuid.asOutParam()), hrcCheck);
+
+                if (details != VMINFO_MACHINEREADABLE)
+                    RTPrintf(Info::tr("  Port %u, Unit %u: UUID: %ls%s%s%s\n    Location: \"%ls\"\n"),
+                             i, k, bstrUuid.raw(),
+                             fPassthrough ? Info::tr(", passthrough enabled") : "",
+                             fTempEject   ? Info::tr(", temp eject") : "",
+                             fIsEjected   ? Info::tr(", ejected") : "",
+                             bstrFilePath.raw());
+                else
+                {
+                    /* Note! dvdpassthough, tempeject and IsEjected was all missed the port
+                             and unit bits prior to VBox 7.0.  */
+                    /** @todo This would look better on the "%ls-%d-%d-{tag}" form! */
+                    outputMachineReadableStringWithFmtName(&bstrFilePath,
+                                                           true, "%ls-%d-%d", bstrStorageCtlName.raw(), i, k);
+                    outputMachineReadableStringWithFmtName(&bstrUuid,
+                                                           true,  "%ls-ImageUUID-%d-%d", bstrStorageCtlName.raw(), i, k);
+
+                    if (fPassthrough)
+                        outputMachineReadableStringWithFmtName("on",
+                                                               true, "%ls-dvdpassthrough-%d-%d", bstrStorageCtlName.raw(), i, k);
+                    if (devType == DeviceType_DVD)
+                    {
+                        outputMachineReadableStringWithFmtName(fTempEject ? "on" : "off",
+                                                               true, "%ls-tempeject-%d-%d", bstrStorageCtlName.raw(), i, k);
+                        outputMachineReadableStringWithFmtName(fIsEjected ? "on" : "off",
+                                                               true, "%ls-IsEjected-%d-%d", bstrStorageCtlName.raw(), i, k);
+                    }
+                }
+            }
+            else if (SUCCEEDED(hrc))
+            {
+                if (details != VMINFO_MACHINEREADABLE)
+                    RTPrintf(Info::tr("  Port %u, Unit %u: Empty%s%s\n"), i, k,
+                             fTempEject ? Info::tr(", temp eject") : "",
+                             fIsEjected ? Info::tr(", ejected") : "");
+                else
+                {
+                    outputMachineReadableStringWithFmtName("emptydrive", true, "%ls-%d-%d", bstrStorageCtlName.raw(), i, k);
+                    if (devType == DeviceType_DVD)
+                        outputMachineReadableStringWithFmtName(fIsEjected ? "on" : "off",
+                                                               true, "%ls-IsEjected-%d-%d", bstrStorageCtlName.raw(), i, k);
+                }
+            }
+            else if (details == VMINFO_MACHINEREADABLE)
+                outputMachineReadableStringWithFmtName("none", true, "%ls-%d-%d", bstrStorageCtlName.raw(), i, k);
+            else if (hrc != VBOX_E_OBJECT_NOT_FOUND)
+                RTPrintf(Info::tr("  Port %u, Unit %u: GetMedium failed: %Rhrc\n"), i, k, hrc);
+
+        }
+    }
+    return S_OK;
+}
+
 
 #ifdef VBOX_WITH_IOMMU_AMD
 static const char *iommuTypeToString(IommuType_T iommuType, VMINFO_DETAILS details)
@@ -1193,195 +1406,58 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
      */
     com::SafeIfaceArray<IStorageController> storageCtls;
     CHECK_ERROR(machine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(storageCtls)));
-    for (size_t i = 0; i < storageCtls.size(); ++ i)
+    if (storageCtls.size() > 0)
     {
-        ComPtr<IStorageController> storageCtl = storageCtls[i];
-        StorageControllerType_T    enmCtlType = StorageControllerType_Null;
-        const char *pszCtl = NULL;
-        ULONG ulValue = 0;
-        BOOL  fBootable = FALSE;
-        Bstr storageCtlName;
+        if (details != VMINFO_MACHINEREADABLE)
+            RTPrintf("%s\n", Info::tr("Storage Controllers:"));
 
-        storageCtl->COMGETTER(Name)(storageCtlName.asOutParam());
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollername%u=\"%ls\"\n", i, storageCtlName.raw());
-        else
-            RTPrintf(Info::tr("Storage Controller Name (%u):            %ls\n"), i, storageCtlName.raw());
-
-        storageCtl->COMGETTER(ControllerType)(&enmCtlType);
-        switch (enmCtlType)
+        for (size_t i = 0; i < storageCtls.size(); ++i)
         {
-            case StorageControllerType_LsiLogic:
-                pszCtl = "LsiLogic";
-                break;
-            case StorageControllerType_LsiLogicSas:
-                pszCtl = "LsiLogicSas";
-                break;
-            case StorageControllerType_BusLogic:
-                pszCtl = "BusLogic";
-                break;
-            case StorageControllerType_IntelAhci:
-                pszCtl = "IntelAhci";
-                break;
-            case StorageControllerType_PIIX3:
-                pszCtl = "PIIX3";
-                break;
-            case StorageControllerType_PIIX4:
-                pszCtl = "PIIX4";
-                break;
-            case StorageControllerType_ICH6:
-                pszCtl = "ICH6";
-                break;
-            case StorageControllerType_I82078:
-                pszCtl = "I82078";
-                break;
-            case StorageControllerType_USB:
-                pszCtl = "USB";
-                break;
-            case StorageControllerType_NVMe:
-                pszCtl = "NVMe";
-                break;
-            case StorageControllerType_VirtioSCSI:
-                pszCtl = "VirtioSCSI";
-                break;
+            ComPtr<IStorageController> storageCtl = storageCtls[i];
 
-            default:
-                if (details == VMINFO_MACHINEREADABLE)
-                    pszCtl = "unknown";
-                else
-                    pszCtl = Info::tr("unknown");
-        }
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollertype%u=\"%s\"\n", i, pszCtl);
-        else
-            RTPrintf(Info::tr("Storage Controller Type (%u):            %s\n"), i, pszCtl);
-
-        storageCtl->COMGETTER(Instance)(&ulValue);
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollerinstance%u=\"%lu\"\n", i, ulValue);
-        else
-            RTPrintf(Info::tr("Storage Controller Instance Number (%u): %lu\n"), i, ulValue);
-
-        storageCtl->COMGETTER(MaxPortCount)(&ulValue);
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollermaxportcount%u=\"%lu\"\n", i, ulValue);
-        else
-            RTPrintf(Info::tr("Storage Controller Max Port Count (%u):  %lu\n"), i, ulValue);
-
-        storageCtl->COMGETTER(PortCount)(&ulValue);
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollerportcount%u=\"%lu\"\n", i, ulValue);
-        else
-            RTPrintf(Info::tr("Storage Controller Port Count (%u):      %lu\n"), i, ulValue);
-
-        storageCtl->COMGETTER(Bootable)(&fBootable);
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("storagecontrollerbootable%u=\"%s\"\n", i, fBootable ? "on" : "off");
-        else
-            RTPrintf(Info::tr("Storage Controller Bootable (%u):        %s\n"), i, fBootable ? Info::tr("on") : Info::tr("off"));
-    }
-
-    for (size_t j = 0; j < storageCtls.size(); ++ j)
-    {
-        ComPtr<IStorageController> storageCtl = storageCtls[j];
-        ComPtr<IMedium> medium;
-        Bstr storageCtlName;
-        Bstr filePath;
-        ULONG cDevices;
-        ULONG cPorts;
-
-        storageCtl->COMGETTER(Name)(storageCtlName.asOutParam());
-        storageCtl->COMGETTER(MaxDevicesPerPortCount)(&cDevices);
-        storageCtl->COMGETTER(PortCount)(&cPorts);
-
-        for (ULONG i = 0; i < cPorts; ++ i)
-        {
-            for (ULONG k = 0; k < cDevices; ++ k)
+            Bstr bstrName;
+            CHECK_ERROR2I_RET(storageCtl, COMGETTER(Name)(bstrName.asOutParam()), hrcCheck);
+            StorageControllerType_T enmCtlType = StorageControllerType_Null;
+            CHECK_ERROR2I_RET(storageCtl, COMGETTER(ControllerType)(&enmCtlType), hrcCheck);
+            ULONG uInstance = 0;
+            CHECK_ERROR2I_RET(storageCtl, COMGETTER(Instance)(&uInstance), hrcCheck);
+            ULONG cMaxPorts = 0;
+            CHECK_ERROR2I_RET(storageCtl, COMGETTER(MaxPortCount)(&cMaxPorts), hrcCheck);
+            ULONG cPorts = 0;
+            CHECK_ERROR2I_RET(storageCtl, COMGETTER(PortCount)(&cPorts), hrcCheck);
+            BOOL fBootable = FALSE;
+            CHECK_ERROR2I_RET(storageCtl, COMGETTER(Bootable)(&fBootable), hrcCheck);
+            if (details == VMINFO_MACHINEREADABLE)
             {
-                ComPtr<IMediumAttachment> mediumAttach;
-                machine->GetMediumAttachment(storageCtlName.raw(),
-                                             i, k,
-                                             mediumAttach.asOutParam());
-                BOOL fIsEjected = FALSE;
-                BOOL fTempEject = FALSE;
-                DeviceType_T devType = DeviceType_Null;
-                if (mediumAttach)
-                {
-                    mediumAttach->COMGETTER(TemporaryEject)(&fTempEject);
-                    mediumAttach->COMGETTER(IsEjected)(&fIsEjected);
-                    mediumAttach->COMGETTER(Type)(&devType);
-                }
-                rc = machine->GetMedium(storageCtlName.raw(), i, k,
-                                        medium.asOutParam());
-                if (SUCCEEDED(rc) && medium)
-                {
-                    BOOL fPassthrough = FALSE;
-
-                    if (mediumAttach)
-                        mediumAttach->COMGETTER(Passthrough)(&fPassthrough);
-
-                    medium->COMGETTER(Location)(filePath.asOutParam());
-                    Bstr uuid;
-                    medium->COMGETTER(Id)(uuid.asOutParam());
-
-                    if (details == VMINFO_MACHINEREADABLE)
-                    {
-                        RTPrintf("\"%ls-%d-%d\"=\"%ls\"\n", storageCtlName.raw(),
-                                 i, k, filePath.raw());
-                        RTPrintf("\"%ls-ImageUUID-%d-%d\"=\"%s\"\n",
-                                 storageCtlName.raw(), i, k, Utf8Str(uuid).c_str());
-                        if (fPassthrough)
-                            RTPrintf("\"%ls-dvdpassthrough\"=\"%s\"\n", storageCtlName.raw(),
-                                     fPassthrough ? "on" : "off");
-                        if (devType == DeviceType_DVD)
-                        {
-                            RTPrintf("\"%ls-tempeject\"=\"%s\"\n", storageCtlName.raw(),
-                                     fTempEject ? "on" : "off");
-                            RTPrintf("\"%ls-IsEjected\"=\"%s\"\n", storageCtlName.raw(),
-                                     fIsEjected ? "on" : "off");
-                        }
-                    }
-                    else
-                    {
-                        RTPrintf("%ls (%d, %d): %ls (UUID: %s)",
-                                 storageCtlName.raw(), i, k, filePath.raw(),
-                                 Utf8Str(uuid).c_str());
-                        if (fPassthrough)
-                            RTPrintf(Info::tr(" (passthrough enabled)"));
-                        if (fTempEject)
-                            RTPrintf(Info::tr(" (temp eject)"));
-                        if (fIsEjected)
-                            RTPrintf(Info::tr(" (ejected)"));
-                        RTPrintf("\n");
-                    }
-                }
-                else if (SUCCEEDED(rc))
-                {
-                    if (details == VMINFO_MACHINEREADABLE)
-                    {
-                        RTPrintf("\"%ls-%d-%d\"=\"emptydrive\"\n", storageCtlName.raw(), i, k);
-                        if (devType == DeviceType_DVD)
-                            RTPrintf("\"%ls-IsEjected\"=\"%s\"\n", storageCtlName.raw(),
-                                     fIsEjected ? "on" : "off");
-                    }
-                    else
-                    {
-                        RTPrintf(Info::tr("%ls (%d, %d): Empty"), storageCtlName.raw(), i, k);
-                        if (fTempEject)
-                            RTPrintf(Info::tr(" (temp eject)"));
-                        if (fIsEjected)
-                            RTPrintf(Info::tr(" (ejected)"));
-                        RTPrintf("\n");
-                    }
-                }
-                else
-                {
-                    if (details == VMINFO_MACHINEREADABLE)
-                        RTPrintf("\"%ls-%d-%d\"=\"none\"\n", storageCtlName.raw(), i, k);
-                }
+                outputMachineReadableString(FmtNm(szNm, "storagecontrollername%u", i), &bstrName);
+                outputMachineReadableString(FmtNm(szNm, "storagecontrollertype%u", i),
+                                            storageControllerTypeToName(enmCtlType, true));
+                RTPrintf("storagecontrollerinstance%u=\"%u\"\n", i, uInstance);
+                RTPrintf("storagecontrollermaxportcount%u=\"%u\"\n", i, cMaxPorts);
+                RTPrintf("storagecontrollerportcount%u=\"%u\"\n", i, cPorts);
+                RTPrintf("storagecontrollerbootable%u=\"%s\"\n", i, fBootable ? "on" : "off");
+            }
+            else
+            {
+                RTPrintf(Info::tr("#%u: '%ls', Type: %s, Instance: %u, Ports: %u (max %u), %s\n"), i, bstrName.raw(),
+                         storageControllerTypeToName(enmCtlType, false), uInstance, cPorts, cMaxPorts,
+                         fBootable ? Info::tr("Bootable") : Info::tr("Not bootable"));
+                rc = showMediumAttachments(machine, storageCtl, details);
+                if (FAILED(rc))
+                    return rc;
             }
         }
     }
+    else if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf("%-28s %s\n", Info::tr("Storage Controllers:"), Info::tr("<none>"));
+
+    if (details == VMINFO_MACHINEREADABLE)
+        for (size_t j = 0; j < storageCtls.size(); ++ j)
+        {
+            rc = showMediumAttachments(machine, storageCtls[j], details);
+            if (FAILED(rc))
+                return rc;
+        }
 
     /* get the maximum amount of NICS */
     ULONG maxNICs = getMaxNics(pVirtualBox, machine);
@@ -2382,22 +2458,21 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
                     if (details != VMINFO_MACHINEREADABLE)
                         SHOW_UTF8_STRING("index", Info::tr("Index:"), FmtNm(szNm, "%zu", index));
-                    SHOW_BOOLEAN_PROP_EX(DevPtr, Active,   FmtNm(szNm, "USBFilterActive%zu", index + 1),       Info::tr("Active:"), Info::tr("yes"), Info::tr("no"));
-                    SHOW_STRING_PROP(DevPtr, Name,         FmtNm(szNm, "USBFilterName%zu", index + 1),         Info::tr("Name:"));
-                    SHOW_STRING_PROP(DevPtr, VendorId,     FmtNm(szNm, "USBFilterVendorId%zu", index + 1),     Info::tr("VendorId:"));
-                    SHOW_STRING_PROP(DevPtr, ProductId,    FmtNm(szNm, "USBFilterProductId%zu", index + 1),    Info::tr("ProductId:"));
-                    SHOW_STRING_PROP(DevPtr, Revision,     FmtNm(szNm, "USBFilterRevision%zu", index + 1),     Info::tr("Revision:"));
-                    SHOW_STRING_PROP(DevPtr, Manufacturer, FmtNm(szNm, "USBFilterManufacturer%zu", index + 1), Info::tr("Manufacturer:"));
-                    SHOW_STRING_PROP(DevPtr, Product,      FmtNm(szNm, "USBFilterProduct%zu", index + 1),      Info::tr("Product:"));
-                    SHOW_STRING_PROP(DevPtr, Remote,       FmtNm(szNm, "USBFilterRemote%zu", index + 1),       Info::tr("Remote:"));
-                    SHOW_STRING_PROP(DevPtr, SerialNumber, FmtNm(szNm, "USBFilterSerialNumber%zu", index + 1), Info::tr("Serial Number:"));
+                    SHOW_BOOLEAN_PROP_EX(DevPtr, Active,   FmtNm(szNm, "USBFilterActive%zu", index + 1),       Info::tr("  Active:"), Info::tr("yes"), Info::tr("no"));
+                    SHOW_STRING_PROP(DevPtr, Name,         FmtNm(szNm, "USBFilterName%zu", index + 1),         Info::tr("  Name:"));
+                    SHOW_STRING_PROP(DevPtr, VendorId,     FmtNm(szNm, "USBFilterVendorId%zu", index + 1),     Info::tr("  VendorId:"));
+                    SHOW_STRING_PROP(DevPtr, ProductId,    FmtNm(szNm, "USBFilterProductId%zu", index + 1),    Info::tr("  ProductId:"));
+                    SHOW_STRING_PROP(DevPtr, Revision,     FmtNm(szNm, "USBFilterRevision%zu", index + 1),     Info::tr("  Revision:"));
+                    SHOW_STRING_PROP(DevPtr, Manufacturer, FmtNm(szNm, "USBFilterManufacturer%zu", index + 1), Info::tr("  Manufacturer:"));
+                    SHOW_STRING_PROP(DevPtr, Product,      FmtNm(szNm, "USBFilterProduct%zu", index + 1),      Info::tr("  Product:"));
+                    SHOW_STRING_PROP(DevPtr, Remote,       FmtNm(szNm, "USBFilterRemote%zu", index + 1),       Info::tr("  Remote:"));
+                    SHOW_STRING_PROP(DevPtr, SerialNumber, FmtNm(szNm, "USBFilterSerialNumber%zu", index + 1), Info::tr("  Serial Number:"));
                     if (details != VMINFO_MACHINEREADABLE)
                     {
                         ULONG fMaskedIfs;
                         CHECK_ERROR_RET(DevPtr, COMGETTER(MaskedInterfaces)(&fMaskedIfs), rc);
                         if (fMaskedIfs)
                             RTPrintf("%-28s %#010x\n", Info::tr("Masked Interfaces:"), fMaskedIfs);
-                        RTPrintf("\n");
                     }
                 }
             }
@@ -2678,8 +2753,6 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         SHOW_ULONG_VALUE("capturevideofps", Info::tr("Capture FPS:"), Fps, Info::tr("kbps"));
         SHOW_BSTR_STRING("captureopts", Info::tr("Capture options:"), bstrOptions);
 
-        if (details != VMINFO_MACHINEREADABLE)
-            RTPrintf("\n");
         /** @todo Add more audio capturing profile / information here. */
     }
 #endif /* VBOX_WITH_RECORDING */
@@ -2711,7 +2784,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         if (SUCCEEDED(rc))
         {
             if (details != VMINFO_MACHINEREADABLE)
-                RTPrintf(Info::tr("Snapshots:\n\n"));
+                RTPrintf(Info::tr("* Snapshots:\n"));
             showSnapshots(snapshot, currentSnapshot, details);
         }
     }
