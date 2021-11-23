@@ -724,9 +724,9 @@ DECLHIDDEN(int) suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintpt
 }
 
 
-DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
+DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, uint32_t fFlags, void **ppvPages)
 {
-    NOREF(pThis);
+    RT_NOREF(pThis, fFlags);
 
     /*
      * Do some one-time init here wrt large pages.
@@ -734,7 +734,7 @@ DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPa
      * Large pages requires the SeLockMemoryPrivilege, which by default (Win10,
      * Win11) isn't even enabled and must be gpedit'ed to be adjustable here.
      */
-    if (!(cPages & 511))
+    if (!(cPages & 511) && (fFlags & SUP_PAGE_ALLOC_F_LARGE_PAGES))
     {
         static int volatile s_fCanDoLargePages = -1;
         int fCanDoLargePages = s_fCanDoLargePages;

@@ -1625,7 +1625,7 @@ static int pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GCP
 #ifdef VBOX_WITH_PGM_NEM_MODE
     else
     {
-        int rc = SUPR3PageAlloc(cPages, &pNew->pvR3);
+        int rc = SUPR3PageAlloc(cPages, pVM->pgm.s.fUseLargePages ? SUP_PAGE_ALLOC_F_LARGE_PAGES : 0, &pNew->pvR3);
         if (RT_FAILURE(rc))
             return rc;
 
@@ -3074,7 +3074,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
 #ifdef VBOX_WITH_PGM_NEM_MODE
             else
             {
-                rc = SUPR3PageAlloc(cPages, &pvPages);
+                rc = SUPR3PageAlloc(cPages, pVM->pgm.s.fUseLargePages ? SUP_PAGE_ALLOC_F_LARGE_PAGES : 0, &pvPages);
                 if (RT_SUCCESS(rc))
                     for (uint32_t i = 0; i < cPages; i++)
                         paPages[i].Phys = UINT64_C(0x0000fffffffff000);
@@ -4371,13 +4371,13 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
     {
         if (!fRamExists)
         {
-            int rc = SUPR3PageAlloc(cPages, &pvRam);
+            int rc = SUPR3PageAlloc(cPages, 0, &pvRam);
             if (RT_FAILURE(rc))
                 return rc;
         }
         if (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
         {
-            int rc = SUPR3PageAlloc(cPages, &pvAlt);
+            int rc = SUPR3PageAlloc(cPages, 0, &pvAlt);
             if (RT_FAILURE(rc))
             {
                 if (pvRam)

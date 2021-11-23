@@ -905,7 +905,7 @@ SUPR3DECL(int) SUPR3LoggerDestroy(SUPLOGGER enmWhich)
 }
 
 
-SUPR3DECL(int) SUPR3PageAlloc(size_t cPages, void **ppvPages)
+SUPR3DECL(int) SUPR3PageAlloc(size_t cPages, uint32_t fFlags, void **ppvPages)
 {
     /*
      * Validate.
@@ -913,11 +913,12 @@ SUPR3DECL(int) SUPR3PageAlloc(size_t cPages, void **ppvPages)
     AssertPtrReturn(ppvPages, VERR_INVALID_POINTER);
     *ppvPages = NULL;
     AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
+    AssertReturn(!(fFlags & ~SUP_PAGE_ALLOC_F_VALID_MASK), VERR_INVALID_FLAGS);
 
     /*
      * Call OS specific worker.
      */
-    return suplibOsPageAlloc(&g_supLibData, cPages, ppvPages);
+    return suplibOsPageAlloc(&g_supLibData, cPages, fFlags, ppvPages);
 }
 
 
@@ -1070,7 +1071,7 @@ SUPR3DECL(int) SUPR3LockDownLoader(PRTERRINFO pErrInfo)
  */
 static int supPagePageAllocNoKernelFallback(size_t cPages, void **ppvPages, PSUPPAGE paPages)
 {
-    int rc = suplibOsPageAlloc(&g_supLibData, cPages, ppvPages);
+    int rc = suplibOsPageAlloc(&g_supLibData, cPages, 0, ppvPages);
     if (RT_SUCCESS(rc))
     {
         if (!paPages)
@@ -1095,7 +1096,7 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
         *pR0Ptr = NIL_RTR0PTR;
     AssertPtrNullReturn(paPages, VERR_INVALID_POINTER);
     AssertMsgReturn(cPages > 0 && cPages <= VBOX_MAX_ALLOC_PAGE_COUNT, ("cPages=%zu\n", cPages), VERR_PAGE_COUNT_OUT_OF_RANGE);
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
 
     /* fake */
     if (RT_UNLIKELY(g_uSupFakeMode))

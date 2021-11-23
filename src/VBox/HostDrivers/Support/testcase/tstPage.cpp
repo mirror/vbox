@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     if (!rc)
     {
         void *pv;
-        rc = SUPR3PageAlloc(1, &pv);
+        rc = SUPR3PageAlloc(1, 0, &pv);
         cErrors += rc != 0;
         if (!rc)
         {
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
         /*
          * Big chunk.
          */
-        rc = SUPR3PageAlloc(1023, &pv);
+        rc = SUPR3PageAlloc(1023, 0, &pv);
         cErrors += rc != 0;
         if (!rc)
         {

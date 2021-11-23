@@ -1388,9 +1388,21 @@ SUPR3DECL(SUPPAGINGMODE) SUPR3GetPagingMode(void);
  *
  * @returns VBox status.
  * @param   cPages          Number of pages to allocate.
+ * @param   fFlags          SUP_PAGE_ALLOC_F_XXX
  * @param   ppvPages        Where to store the base pointer to the allocated pages.
  */
-SUPR3DECL(int) SUPR3PageAlloc(size_t cPages, void **ppvPages);
+SUPR3DECL(int) SUPR3PageAlloc(size_t cPages, uint32_t fFlags, void **ppvPages);
+
+/** @name SUP_PAGE_ALLOC_F_XXX - SUPR3PageAlloc flags.
+ * @{ */
+/** Use large pages if available. */
+#define SUP_PAGE_ALLOC_F_LARGE_PAGES    RT_BIT_32(0)
+/** Advice that the allocated pages will probably be locked by
+ * RTR0MemObjLockUser later, so play nice if needed. */
+#define SUP_PAGE_ALLOC_F_FOR_LOCKING    RT_BIT_32(1)
+/** Mask of valid flags. */
+#define SUP_PAGE_ALLOC_F_VALID_MASK     UINT32_C(0x00000003)
+/** @} */
 
 /**
  * Frees pages allocated with SUPR3PageAlloc().

@@ -611,7 +611,12 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                 ASMCompilerBarrier(); /* NEMR3Init may have changed bMainExecutionEngine. */
                 if (   RT_SUCCESS(rc2)
                     && pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NOT_SET)
+                {
                     rc = VINF_SUCCESS;
+
+                    /* For some reason, HM is in charge or large pages. Make sure to enable them: */
+                    PGMSetLargePageUsage(pVM, pVM->hm.s.fLargePages);
+                }
             }
             if (RT_FAILURE(rc))
                 return VM_SET_ERROR(pVM, rc, pszMsg);
@@ -628,6 +633,9 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             ASMCompilerBarrier(); /* NEMR3Init may have changed bMainExecutionEngine. */
             if (RT_FAILURE(rc))
                 return rc;
+
+            /* For some reason, HM is in charge or large pages. Make sure to enable them: */
+            PGMSetLargePageUsage(pVM, pVM->hm.s.fLargePages);
         }
         if (   pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NOT_SET
             || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_RAW_MODE

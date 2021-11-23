@@ -216,38 +216,79 @@ DECLHIDDEN(int) suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintpt
 }
 
 
-DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
+DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, uint32_t fFlags, void **ppvPages)
 {
-    size_t cbMmap = (pThis->fSysMadviseWorks ? cPages : cPages + 2) << PAGE_SHIFT;
-    char *pvPages = (char *)mmap(NULL, cbMmap, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (pvPages == MAP_FAILED)
-        return VERR_NO_MEMORY;
+    /*
+     * If large pages are requested, try use the MAP_HUGETBL flags.  This takes
+     * pages from the reserved huge page pool (see sysctl vm.nr_hugepages) and
+     * is typically not configured.  Also, when the pool is exhausted we get
+     * ENOMEM back at us.  So, when it fails try again w/o MAP_HUGETLB.
+     */
+    int fMmap = MAP_PRIVATE | MAP_ANONYMOUS;
+    if ((fFlags & SUP_PAGE_ALLOC_F_LARGE_PAGES) && !(cPages & 511))
+        fMmap |= MAP_HUGETLB;
 
-    if (pThis->fSysMadviseWorks)
+    size_t cbMmap = cPages << PAGE_SHIFT;
+    if (   !pThis->fSysMadviseWorks
+        && (fFlags & (SUP_PAGE_ALLOC_F_FOR_LOCKING | SUP_PAGE_ALLOC_F_LARGE_PAGES)) == SUP_PAGE_ALLOC_F_FOR_LOCKING)
+        cbMmap += PAGE_SIZE * 2;
+
+    uint8_t *pbPages = (uint8_t *)mmap(NULL, cbMmap, PROT_READ | PROT_WRITE, fMmap, -1, 0);
+    if (pbPages == MAP_FAILED && (fMmap & MAP_HUGETLB))
     {
-        /*
-         * It is not fatal if we fail here but a forked child (e.g. the ALSA sound server)
-         * could crash. Linux < 2.6.16 does not implement madvise(MADV_DONTFORK) but the
-         * kernel seems to split bigger VMAs and that is all that we want -- later we set the
-         * VM_DONTCOPY attribute in supdrvOSLockMemOne().
-         */
-        if (madvise (pvPages, cbMmap, MADV_DONTFORK))
-            LogRel(("SUPLib: madvise %p-%p failed\n", pvPages, cbMmap));
-        *ppvPages = pvPages;
+        /* Try again without MAP_HUGETLB if mmap fails: */
+        fMmap &= ~MAP_HUGETLB;
+        if (!pThis->fSysMadviseWorks && (fFlags & SUP_PAGE_ALLOC_F_FOR_LOCKING))
+            cbMmap = (cPages + 2) << PAGE_SHIFT;
+        pbPages = (uint8_t *)mmap(NULL, cbMmap, PROT_READ | PROT_WRITE, fMmap, -1, 0);
     }
-    else
+    if (pbPages != MAP_FAILED)
     {
-        /*
-         * madvise(MADV_DONTFORK) is not available (most probably Linux 2.4). Enclose any
-         * mmapped region by two unmapped pages to guarantee that there is exactly one VM
-         * area struct of the very same size as the mmap area.
-         */
-        mprotect(pvPages,                      PAGE_SIZE, PROT_NONE);
-        mprotect(pvPages + cbMmap - PAGE_SIZE, PAGE_SIZE, PROT_NONE);
-        *ppvPages = pvPages + PAGE_SIZE;
+        if (   !(fFlags & SUP_PAGE_ALLOC_F_FOR_LOCKING)
+            || pThis->fSysMadviseWorks
+            || (fMmap & MAP_HUGETLB))
+        {
+            /*
+             * It is not fatal if we fail here but a forked child (e.g. the ALSA sound server)
+             * could crash. Linux < 2.6.16 does not implement madvise(MADV_DONTFORK) but the
+             * kernel seems to split bigger VMAs and that is all that we want -- later we set the
+             * VM_DONTCOPY attribute in supdrvOSLockMemOne().
+             */
+            if (madvise(pbPages, cbMmap, MADV_DONTFORK) && !(fMmap & MAP_HUGETLB))
+                LogRel(("SUPLib: madvise %p-%p failed\n", pbPages, cbMmap));
+
+            /*
+             * Try enable transparent huge pages for the allocation if desired
+             * and we weren't able to use MAP_HUGETBL above.
+             * Note! KVM doesn't seem to benefit much from this.
+             */
+            if (   !(fMmap & MAP_HUGETLB)
+                && (fFlags & SUP_PAGE_ALLOC_F_LARGE_PAGES)
+                && !(cPages & 511)) /** @todo PORTME: x86 assumption */
+                madvise(pbPages, cbMmap, MADV_HUGEPAGE);
+        }
+        else
+        {
+            /*
+             * madvise(MADV_DONTFORK) is not available (most probably Linux 2.4). Enclose any
+             * mmapped region by two unmapped pages to guarantee that there is exactly one VM
+             * area struct of the very same size as the mmap area.
+             */
+            mprotect(pbPages,                      PAGE_SIZE, PROT_NONE);
+            mprotect(pbPages + cbMmap - PAGE_SIZE, PAGE_SIZE, PROT_NONE);
+            pbPages += PAGE_SHIFT;
+        }
+
+        /** @todo Dunno why we do this, really. It's a waste of time.  Maybe it was
+         * to try make sure the pages were allocated or something before we locked them,
+         * so I qualified it with SUP_PAGE_ALLOC_F_FOR_LOCKING (unused) for now... */
+        if (fFlags & SUP_PAGE_ALLOC_F_FOR_LOCKING)
+            memset(pbPages, 0, cPages << PAGE_SHIFT);
+
+        *ppvPages = pbPages;
+        return VINF_SUCCESS;
     }
-    memset(*ppvPages, 0, cPages << PAGE_SHIFT);
-    return VINF_SUCCESS;
+    return VERR_NO_MEMORY;
 }
 
 

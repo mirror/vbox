@@ -365,7 +365,7 @@ DECLHIDDEN(int)     suplibOsHardenedVerifyInit(void);
 DECLHIDDEN(int)     suplibOsHardenedVerifyTerm(void);
 DECLHIDDEN(int)     suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq);
 DECLHIDDEN(int)     suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCpu);
-DECLHIDDEN(int)     suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages);
+DECLHIDDEN(int)     suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, uint32_t fFlags, void **ppvPages);
 DECLHIDDEN(int)     suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t cPages);
 DECLHIDDEN(int)     suplibOsQueryVTxSupported(const char **ppszWhy);
 DECLHIDDEN(bool)    suplibOsIsNemSupportedWhenNoVtxOrAmdV(void);
