@@ -801,6 +801,11 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pPGM->pGst32BitPdR0     = NIL_RTR0PTR;
         pPGM->pGstPaePdptR0     = NIL_RTR0PTR;
         pPGM->pGstAmd64Pml4R0   = NIL_RTR0PTR;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        pPGM->pGstEptPml4R3     = NULL;
+        pPGM->pGstEptPml4R0     = NIL_RTR0PTR;
+        pPGM->uEptPtr           = 0;
+#endif
         for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->pgm.s.apGstPaePDsR3); i++)
         {
             pPGM->apGstPaePDsR3[i]             = NULL;
