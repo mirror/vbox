@@ -133,6 +133,7 @@ def _doUpgradeTestRun(sUpgradeDir):
     oThread.start();
     oThread.join(30);
 
+    oChild.wait(5);
     iStatus = oChild.poll();
     if iStatus is None:
         testboxcommons.log('Checking the new testboxscript timed out.');
@@ -144,7 +145,7 @@ def _doUpgradeTestRun(sUpgradeDir):
                            % (iStatus, TBS_EXITCODE_SYNTAX));
         return False;
 
-    sOutput = ''.join(asBuf);
+    sOutput = b''.join(asBuf)).decode('utf-8');
     sOutput = sOutput.strip();
     try:
         iNewVersion = int(sOutput);
