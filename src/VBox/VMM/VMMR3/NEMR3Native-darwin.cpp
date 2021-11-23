@@ -403,6 +403,7 @@ static const struct
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+static void vmxHCImportGuestIntrState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo);
 
 /**
  * Converts a HV return code to a VBox status code.
@@ -821,6 +822,9 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
 
     RT_NOREF(pVM);
     fWhat &= pVCpu->cpum.GstCtx.fExtrn;
+
+    if (fWhat & (CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI))
+        vmxHCImportGuestIntrState(pVCpu, &pVCpu->nem.s.VmcsInfo);
 
     /* GPRs */
     hv_return_t hrc;
@@ -2149,7 +2153,6 @@ static int nemR3DarwinSetupVmcsMsrPermissions(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
  */
 static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     uint32_t       fVal = g_HmMsrs.u.vmx.ProcCtls.n.allowed0;     /* Bits set here must be set in the VMCS. */
     uint32_t const fZap = g_HmMsrs.u.vmx.ProcCtls.n.allowed1;     /* Bits cleared here must be cleared in the VMCS. */
 
@@ -2520,9 +2523,8 @@ static DECLCALLBACK(int) nemR3DarwinNativeTermVCpuOnEmt(PVMCPU pVCpu)
  * @returns VBox status code
  * @param   pVM                 The VM handle.
  * @param   pVCpu               The vCPU handle.
- * @param   idCpu               ID of the CPU to create.
  */
-static DECLCALLBACK(int) nemR3DarwinNativeInitTprShadowing(PVM pVM, PVMCPU pVCpu, VMCPUID idCpu)
+static DECLCALLBACK(int) nemR3DarwinNativeInitTprShadowing(PVM pVM, PVMCPU pVCpu)
 {
     PVMXVMCSINFO pVmcsInfo = &pVCpu->nem.s.VmcsInfo;
     uint32_t fVal = pVmcsInfo->u32ProcCtls;
@@ -2597,9 +2599,9 @@ int nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
         {
             PVMCPU pVCpu = pVM->apCpusR3[idCpu];
 
-            int rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)nemR3DarwinNativeInitTprShadowing, 3, pVM, pVCpu, idCpu);
+            int rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)nemR3DarwinNativeInitTprShadowing, 2, pVM, pVCpu);
             if (RT_FAILURE(rc))
-                return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Call to hv_vcpu_create failed: %Rrc", rc);
+                return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "Setting up TPR shadowing failed: %Rrc", rc);
         }
     }
     return VINF_SUCCESS;
@@ -2878,7 +2880,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
     if (pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ALL))
     {
         /* Try anticipate what we might need. */
-        uint64_t fImport = IEM_CPUMCTX_EXTRN_MUST_MASK;
+        uint64_t fImport = NEM_DARWIN_CPUMCTX_EXTRN_MASK_FOR_IEM;
         if (   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
             || RT_FAILURE(rcStrict))
             fImport = CPUMCTX_EXTRN_ALL;
