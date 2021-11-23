@@ -2336,7 +2336,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Add");
+        return QString("VISOAddItem");
     }
 
     /** Handles translation event. */
@@ -2371,7 +2371,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Remove");
+        return QString("VISORemoveItem");
     }
 
     /** Handles translation event. */
@@ -2406,7 +2406,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("NewDirectory");
+        return QString("VISONewDirectory");
     }
 
     /** Handles translation event. */
@@ -2441,13 +2441,13 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Rename");
+        return QString("VISORenameItem");
     }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&New Directory"));
+        setName(QApplication::translate("UIActionPool", "&Rename"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Rename the selected object"));
         setToolTip(QApplication::translate("UIActionPool", "Rename the Selected Object")
@@ -2473,13 +2473,13 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Reset");
+        return QString("VISOReset");
     }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&New Directory"));
+        setName(QApplication::translate("UIActionPool", "R&eset"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
         setStatusTip(QApplication::translate("UIActionPool", "Reset the VISO content."));
         setToolTip(QApplication::translate("UIActionPool", "Reset the VISO content.")
@@ -2534,7 +2534,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Add");
+        return QString("MediumSelectorAddHD");
     }
 
     /** Handles translation event. */
@@ -2568,7 +2568,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Add");
+        return QString("MediumSelectorAddCD");
     }
 
     /** Handles translation event. */
@@ -2602,7 +2602,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Add");
+        return QString("MediumSelectorAddFD");
     }
 
     /** Handles translation event. */
@@ -2636,7 +2636,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Create");
+        return QString("MediumSelectorCreateHD");
     }
 
     /** Handles translation event. */
@@ -2670,7 +2670,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Create");
+        return QString("MediumSelectorCreateCD");
     }
 
     /** Handles translation event. */
@@ -2704,7 +2704,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Create");
+        return QString("MediumSelectorCreateFD");
     }
 
     /** Handles translation event. */
@@ -2738,7 +2738,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("Create");
+        return QString("MediumSelectorRefresh");
     }
 
     /** Handles translation event. */
@@ -2800,7 +2800,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ExportCharts");
+        return QString("VMActivityMonitorExportCharts");
     }
 
     /** Handles translation event. */
