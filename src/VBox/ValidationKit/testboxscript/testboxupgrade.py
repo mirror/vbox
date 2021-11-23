@@ -145,7 +145,7 @@ def _doUpgradeTestRun(sUpgradeDir):
                            % (iStatus, TBS_EXITCODE_SYNTAX));
         return False;
 
-    sOutput = b''.join(asBuf)).decode('utf-8');
+    sOutput = b''.join(asBuf).decode('utf-8');
     sOutput = sOutput.strip();
     try:
         iNewVersion = int(sOutput);
