@@ -5694,7 +5694,6 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPUCC pVCpu, const char *pszInstr
                     if (RT_SUCCESS(rc))
                         rc = iemVmxVmentryCheckGuestPdptes(pVCpu, pszInstr);
 #endif
-                    return rc;
                 }
             }
         }
