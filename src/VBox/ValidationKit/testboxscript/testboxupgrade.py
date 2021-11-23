@@ -136,9 +136,9 @@ def _doUpgradeTestRun(sUpgradeDir):
 
     # Give child up to 5 seconds to terminate after producing output.
     if sys.version_info[0] >= 3 and sys.version_info[1] >= 3:
-        oChild.wait(5);
+        oChild.wait(5); # pylint: disable=too-many-function-args
     else:
-        for i in range(50):
+        for _ in range(50):
             iStatus = oChild.poll();
             if iStatus is None:
                 break;
