@@ -225,8 +225,10 @@ DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, uint32_t fFl
      * ENOMEM back at us.  So, when it fails try again w/o MAP_HUGETLB.
      */
     int fMmap = MAP_PRIVATE | MAP_ANONYMOUS;
+#ifdef MAP_HUGETLB
     if ((fFlags & SUP_PAGE_ALLOC_F_LARGE_PAGES) && !(cPages & 511))
         fMmap |= MAP_HUGETLB;
+#endif
 
     size_t cbMmap = cPages << PAGE_SHIFT;
     if (   !pThis->fSysMadviseWorks
@@ -234,6 +236,7 @@ DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, uint32_t fFl
         cbMmap += PAGE_SIZE * 2;
 
     uint8_t *pbPages = (uint8_t *)mmap(NULL, cbMmap, PROT_READ | PROT_WRITE, fMmap, -1, 0);
+#ifdef MAP_HUGETLB
     if (pbPages == MAP_FAILED && (fMmap & MAP_HUGETLB))
     {
         /* Try again without MAP_HUGETLB if mmap fails: */
@@ -242,11 +245,15 @@ DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, uint32_t fFl
             cbMmap = (cPages + 2) << PAGE_SHIFT;
         pbPages = (uint8_t *)mmap(NULL, cbMmap, PROT_READ | PROT_WRITE, fMmap, -1, 0);
     }
+#endif
     if (pbPages != MAP_FAILED)
     {
         if (   !(fFlags & SUP_PAGE_ALLOC_F_FOR_LOCKING)
             || pThis->fSysMadviseWorks
-            || (fMmap & MAP_HUGETLB))
+#ifdef MAP_HUGETLB
+            || (fMmap & MAP_HUGETLB)
+#endif
+           )
         {
             /*
              * It is not fatal if we fail here but a forked child (e.g. the ALSA sound server)
@@ -254,9 +261,14 @@ DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, uint32_t fFl
              * kernel seems to split bigger VMAs and that is all that we want -- later we set the
              * VM_DONTCOPY attribute in supdrvOSLockMemOne().
              */
-            if (madvise(pbPages, cbMmap, MADV_DONTFORK) && !(fMmap & MAP_HUGETLB))
+            if (   madvise(pbPages, cbMmap, MADV_DONTFORK)
+#ifdef MAP_HUGETLB
+                && !(fMmap & MAP_HUGETLB)
+#endif
+               )
                 LogRel(("SUPLib: madvise %p-%p failed\n", pbPages, cbMmap));
 
+#ifdef MADV_HUGEPAGE
             /*
              * Try enable transparent huge pages for the allocation if desired
              * and we weren't able to use MAP_HUGETBL above.
@@ -266,6 +278,7 @@ DECLHIDDEN(int) suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, uint32_t fFl
                 && (fFlags & SUP_PAGE_ALLOC_F_LARGE_PAGES)
                 && !(cPages & 511)) /** @todo PORTME: x86 assumption */
                 madvise(pbPages, cbMmap, MADV_HUGEPAGE);
+#endif
         }
         else
         {
