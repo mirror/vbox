@@ -675,6 +675,20 @@ DECLINLINE(uint8_t) iemVmxGetEventType(uint32_t uVector, uint32_t fFlags)
 
 
 /**
+ * Determines whether the guest is using PAE paging given the VMCS.
+ *
+ * @returns @c true if PAE paging mode is used, @c false otherwise.
+ * @param   pVmcs       Pointer to the virtual VMCS.
+ */
+DECL_FORCE_INLINE(bool) iemVmxVmcsIsGuestPaePagingEnabled(PCVMXVVMCS pVmcs)
+{
+    return (   !(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST)
+            &&  (pVmcs->u64GuestCr4.u & X86_CR4_PAE)
+            &&  (pVmcs->u64GuestCr0.u & X86_CR0_PG));
+}
+
+
+/**
  * Sets the Exit qualification VMCS field.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -2582,6 +2596,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
      */
     VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_VMX_ALL_MASK);
 
+    /*
+     * We're no longer in nested-guest execution mode.
+     *
+     * It is important to do this prior to loading the host state because
+     * PGM looks at fInVmxNonRootMode to determine if it needs to perform
+     * second-level address translation while switching to host CR3.
+     */
+    pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = false;
+
     /* Restore the host (outer guest) state. */
     VBOXSTRICTRC rcStrict = iemVmxVmexitLoadHostState(pVCpu, uExitReason);
     if (RT_SUCCESS(rcStrict))
@@ -2591,9 +2614,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
     }
     else
         Log3(("vmexit: Loading host-state failed. uExitReason=%u rc=%Rrc\n", uExitReason, VBOXSTRICTRC_VAL(rcStrict)));
-
-    /* We're no longer in nested-guest execution mode. */
-    pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = false;
 
     /* Notify HM that the current VMCS fields have been modified. */
     HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
@@ -5602,11 +5622,9 @@ DECLINLINE(int) iemVmxVmentryCheckGuestNonRegState(PVMCPUCC pVCpu,  const char *
  * Checks guest PDPTEs as part of VM-entry.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pfPdpesMapped   Where to store whether PAE PDPTEs (and PDPT) have been
- *                          mapped as part of checking guest state.
  * @param   pszInstr        The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, bool *pfPdpesMapped, const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInstr)
 {
     /*
      * Guest PDPTEs.
@@ -5614,45 +5632,33 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, bool *pfPdpesMapped
      */
     PVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
     const char * const pszFailure = "VM-exit";
-    *pfPdpesMapped = false;
 
-    if (   !(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST)
-        &&  (pVmcs->u64GuestCr4.u & X86_CR4_PAE)
-        &&  (pVmcs->u64GuestCr0.u & X86_CR0_PG))
-    {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
-        {
-            /* Get PDPTEs from the VMCS. */
-            X86PDPE aPaePdptes[X86_PG_PAE_PDPE_ENTRIES];
-            aPaePdptes[0].u = pVmcs->u64GuestPdpte0.u;
-            aPaePdptes[1].u = pVmcs->u64GuestPdpte1.u;
-            aPaePdptes[2].u = pVmcs->u64GuestPdpte2.u;
-            aPaePdptes[3].u = pVmcs->u64GuestPdpte3.u;
+    /*
+     * When EPT is used, we only validate the PAE PDPTEs provided in the VMCS.
+     * Otherwise, we load any PAE PDPTEs referenced by CR3 at a later point.
+     */
+    if (   iemVmxVmcsIsGuestPaePagingEnabled(pVmcs)
+        && (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT))
+    {
+        /* Get PDPTEs from the VMCS. */
+        X86PDPE aPaePdptes[X86_PG_PAE_PDPE_ENTRIES];
+        aPaePdptes[0].u = pVmcs->u64GuestPdpte0.u;
+        aPaePdptes[1].u = pVmcs->u64GuestPdpte1.u;
+        aPaePdptes[2].u = pVmcs->u64GuestPdpte2.u;
+        aPaePdptes[3].u = pVmcs->u64GuestPdpte3.u;
 
-            /* Check validity of the PDPTEs. */
-            bool const fValid = PGMGstArePaePdpesValid(pVCpu, &aPaePdptes[0]);
-            if (fValid)
-            { /* likely */ }
-            else
-            {
-                iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte);
-            }
-        }
+        /* Check validity of the PDPTEs. */
+        bool const fValid = PGMGstArePaePdpesValid(pVCpu, &aPaePdptes[0]);
+        if (fValid)
+        { /* likely */ }
         else
-#endif
         {
-            int const rc = PGMGstMapPaePdpesAtCr3(pVCpu, pVmcs->u64GuestCr3.u);
-            if (RT_SUCCESS(rc))
-                *pfPdpesMapped = true;
-            else
-            {
-                iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte);
-            }
+            iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte);
         }
     }
+#endif
 
     NOREF(pszInstr);
     NOREF(pszFailure);
@@ -5669,7 +5675,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, bool *pfPdpesMapped
  *                          mapped as part of checking guest state.
  * @param   pszInstr        The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPUCC pVCpu, bool *pfPdpesMapped, const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPUCC pVCpu, const char *pszInstr)
 {
     int rc = iemVmxVmentryCheckGuestControlRegsMsrs(pVCpu, pszInstr);
     if (RT_SUCCESS(rc))
@@ -5685,7 +5691,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPUCC pVCpu, bool *pfPdpesMapped,
                 {
                     rc = iemVmxVmentryCheckGuestNonRegState(pVCpu, pszInstr);
                     if (RT_SUCCESS(rc))
-                        return iemVmxVmentryCheckGuestPdptes(pVCpu, pfPdpesMapped, pszInstr);
+                        return iemVmxVmentryCheckGuestPdptes(pVCpu, pszInstr);
                 }
             }
         }
@@ -6628,16 +6634,18 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPUCC pVCpu, const char *pszIns
  *
  * @returns VBox status code.
  * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
  *
  * @remarks This must be called only after loading the nested-guest register state
  *          (especially nested-guest RIP).
  */
-IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu)
+IEM_STATIC int iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu, const char *pszInstr)
 {
     /*
      * Load guest non-register state.
      * See Intel spec. 26.6 "Special Features of VM Entry"
      */
+    const char *const pszFailure  = "VM-exit";
     PCVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
 
     /*
@@ -6671,14 +6679,16 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu)
     /* SMI blocking is irrelevant. We don't support SMIs yet. */
 
     /*
-     * Load the PAE PDPTEs from the VMCS when using EPT with PAE paging.
+     * Load the guest's PAE PDPTEs.
      */
-    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
+    if (iemVmxVmcsIsGuestPaePagingEnabled(pVmcs))
     {
-        if (   !(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST)
-            &&  (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
-            &&  (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG))
+        if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
         {
+            /*
+             * With EPT, we've already validated these while checking the guest state.
+             * Just load them directly from the VMCS here.
+             */
             X86PDPE aPaePdptes[X86_PG_PAE_PDPE_ENTRIES];
             aPaePdptes[0].u = pVmcs->u64GuestPdpte0.u;
             aPaePdptes[1].u = pVmcs->u64GuestPdpte1.u;
@@ -6688,18 +6698,36 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu)
             for (unsigned i = 0; i < RT_ELEMENTS(pVCpu->cpum.GstCtx.aPaePdpes); i++)
                 pVCpu->cpum.GstCtx.aPaePdpes[i].u = aPaePdptes[i].u;
         }
-
-        /*
-         * Set PGM's copy of the EPT pointer.
-         * The EPTP has already been validated while checking guest state.
-         */
-        PGMSetGuestEptPtr(pVCpu, pVmcs->u64EptPtr.u);
+        else
+        {
+            /*
+             * Without EPT, we must load the PAE PDPTEs referenced by CR3.
+             * This involves loading (and mapping) CR3 and validating them now.
+             */
+            int const rc = PGMGstMapPaePdpesAtCr3(pVCpu, pVmcs->u64GuestCr3.u);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+            {
+                iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_PDPTE);
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte);
+            }
+        }
     }
+
+    /*
+     * Set PGM's copy of the EPT pointer.
+     * The EPTP has already been validated while checking guest state.
+     */
+    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
+        PGMSetGuestEptPtr(pVCpu, pVmcs->u64EptPtr.u);
 
     /* VPID is irrelevant. We don't support VPID yet. */
 
     /* Clear address-range monitoring. */
     EMMonitorWaitClear(pVCpu);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -6919,10 +6947,14 @@ IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPUCC pVCpu, const char *pszInstr)
     pVCpu->cpum.GstCtx.hwvirt.vmx.uPrevPauseTick      = 0;
 
     /* Load guest non-register state (such as interrupt shadows, NMI blocking etc). */
-    iemVmxVmentryLoadGuestNonRegState(pVCpu);
+    int rc = iemVmxVmentryLoadGuestNonRegState(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rc;
 
     /* Load VMX related structures and state referenced by the VMCS. */
-    int rc = iemVmxVmentryLoadGuestVmcsRefState(pVCpu, pszInstr);
+    rc = iemVmxVmentryLoadGuestVmcsRefState(pVCpu, pszInstr);
     if (rc == VINF_SUCCESS)
     { /* likely */ }
     else
@@ -7432,10 +7464,19 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
              */
             iemVmxVmentrySaveNmiBlockingFF(pVCpu);
 
-            bool fPdpesMapped;
-            rc = iemVmxVmentryCheckGuestState(pVCpu, &fPdpesMapped, pszInstr);
+            rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
             if (RT_SUCCESS(rc))
             {
+                /*
+                 * We've now entered nested-guest execution.
+                 *
+                 * It is important do this prior to loading the guest state because
+                 * as part of loading the guest state, PGM (and perhaps other components
+                 * in the future) relies on detecting whether VMX non-root mode has been
+                 * entered.
+                 */
+                pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = true;
+
                 rc = iemVmxVmentryLoadGuestState(pVCpu, pszInstr);
                 if (RT_SUCCESS(rc))
                 {
@@ -7447,6 +7488,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
                         /* VMLAUNCH instruction must update the VMCS launch state. */
                         if (uInstrId == VMXINSTRID_VMLAUNCH)
                             pVmcs->fVmcsState = VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;
+
+                        /* We would have mapped PAE PDPTEs when PAE paging is used without EPT. */
+                        bool const fPdpesMapped = !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
+                                               && iemVmxVmcsIsGuestPaePagingEnabled(pVmcs);
 
                         /* Perform the VMX transition (PGM updates). */
                         VBOXSTRICTRC rcStrict = iemVmxTransition(pVCpu, fPdpesMapped);
@@ -7466,9 +7511,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
 
                         /* Paranoia. */
                         Assert(rcStrict == VINF_SUCCESS);
-
-                        /* We've now entered nested-guest execution. */
-                        pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = true;
 
                         /*
                          * The priority of potential VM-exits during VM-entry is important.
