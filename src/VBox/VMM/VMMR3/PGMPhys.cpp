@@ -1441,7 +1441,9 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
     {
         if (pVM->pgm.s.aHandyPages[i].idPage == idPage)
         {
-            pVM->pgm.s.aHandyPages[i].idPage = NIL_GMM_PAGEID;
+            pVM->pgm.s.aHandyPages[i].HCPhysGCPhys = NIL_GMMPAGEDESC_PHYS;
+            pVM->pgm.s.aHandyPages[i].fZero        = false;
+            pVM->pgm.s.aHandyPages[i].idPage       = NIL_GMM_PAGEID;
             break;
         }
         if (pVM->pgm.s.aHandyPages[i].idSharedPage == idPage)
