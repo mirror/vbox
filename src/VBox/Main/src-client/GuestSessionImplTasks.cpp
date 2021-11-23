@@ -1612,7 +1612,11 @@ int GuestSessionTaskCopyFrom::Run(void)
                     break;
 
                 case RTFS_TYPE_FILE:
-                    LogFlowFunc(("File '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
+                    RT_FALL_THROUGH();
+                case RTFS_TYPE_SYMLINK:
+                    LogFlowFunc(("%s '%s': %s -> %s\n", pEntry->strPath.c_str(),
+                                 (pEntry->fMode & RTFS_TYPE_MASK) == RTFS_TYPE_SYMLINK ? "Symlink" : "File",
+                                  strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                         rc = fileCopyFromGuest(strSrcAbs, strDstAbs, FileCopyFlag_None);
                     break;
