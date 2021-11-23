@@ -1894,13 +1894,15 @@ int GuestSessionTaskCopyTo::Run(void)
                 }
 
                 case FsObjType_File:
+                    RT_FALL_THROUGH();
+                case FsObjType_Symlink:
                     /* Nothing to do. */
                     break;
 
                 default:
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                        Utf8StrFmt(tr("Unknown object type on guest for \"%s\""),
-                                                   strDstRootAbs.c_str()));
+                                        Utf8StrFmt(tr("Unknown object type (%#x) on guest for \"%s\""),
+                                                   dstObjData.mType, strDstRootAbs.c_str()));
                     rc = VERR_NOT_SUPPORTED;
                     break;
             }
