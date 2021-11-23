@@ -5618,6 +5618,7 @@ DECLINLINE(int) iemVmxVmentryCheckGuestNonRegState(PVMCPUCC pVCpu,  const char *
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 /**
  * Checks guest PDPTEs as part of VM-entry.
  *
@@ -5633,7 +5634,6 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInst
     PVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
     const char * const pszFailure = "VM-exit";
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
     /*
      * When EPT is used, we only validate the PAE PDPTEs provided in the VMCS.
      * Otherwise, we load any PAE PDPTEs referenced by CR3 at a later point.
@@ -5658,12 +5658,12 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInst
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPdpte);
         }
     }
-#endif
 
-    NOREF(pszInstr);
     NOREF(pszFailure);
+    NOREF(pszInstr);
     return VINF_SUCCESS;
 }
+#endif  /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 
 /**
@@ -5690,8 +5690,11 @@ IEM_STATIC int iemVmxVmentryCheckGuestState(PVMCPUCC pVCpu, const char *pszInstr
                 if (RT_SUCCESS(rc))
                 {
                     rc = iemVmxVmentryCheckGuestNonRegState(pVCpu, pszInstr);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
                     if (RT_SUCCESS(rc))
-                        return iemVmxVmentryCheckGuestPdptes(pVCpu, pszInstr);
+                        rc = iemVmxVmentryCheckGuestPdptes(pVCpu, pszInstr);
+#endif
+                    return rc;
                 }
             }
         }
