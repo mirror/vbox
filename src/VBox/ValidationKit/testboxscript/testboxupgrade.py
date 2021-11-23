@@ -34,6 +34,7 @@ import shutil
 import sys
 import subprocess
 import threading
+import time
 import uuid;
 import zipfile
 
@@ -133,7 +134,15 @@ def _doUpgradeTestRun(sUpgradeDir):
     oThread.start();
     oThread.join(30);
 
-    oChild.wait(5);
+    # Give child up to 5 seconds to terminate after producing output.
+    if sys.version_info[0] >= 3 and sys.version_info[1] >= 3:
+        oChild.wait(5);
+    else:
+        for i in range(50):
+            iStatus = oChild.poll();
+            if iStatus is None:
+                break;
+            time.sleep(0.1);
     iStatus = oChild.poll();
     if iStatus is None:
         testboxcommons.log('Checking the new testboxscript timed out.');
