@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.18: http://docutils.sourceforge.net/" />
-<title>Audio Testing via Validation Kit</title>
+<title>Audio Testing of VirtualBox</title>
 <style type="text/css">
 
 /*
@@ -360,64 +360,51 @@ ul.auto-toc {
 </style>
 </head>
 <body>
-<div class="document" id="audio-testing-via-validation-kit">
-<h1 class="title">Audio Testing via Validation Kit</h1>
+<div class="document" id="audio-testing-of-virtualbox">
+<h1 class="title">Audio Testing of VirtualBox</h1>
 
 <div class="section" id="overview-goal">
 <h1>Overview / Goal</h1>
-<p>The goal was to create a testing framework which utilizes the
-VirtualBox Validation Kit to test the VirtualBox audio stack.</p>
+<p>The goal is to create a flexible testing framework to test the
+VirtualBox audio stack.</p>
+<p>It should be runnable with an easy-to-use setup so that also regular users
+can perform tests on request, without having to install or set up additional
+dependencies.</p>
 <p>That framework must be runnable on all host/guest combinations together with all
 audio drivers (&quot;backends&quot;) and device emulations being offered. This makes it a
 rather big testing matrix which therefore has to be processed in an automated
 fashion.</p>
-<p>Additionally it should be flexible enough to add more (custom) tests lateron.</p>
-</div>
-<div class="section" id="current-status-limitations">
-<h1>Current status / limitations</h1>
-<ul class="simple">
-<li><dl class="first docutils">
-<dt>The following test types are currently implemented:</dt>
-<dd><ul class="first last">
-<li>Test tone (sine wave) playback from the guest</li>
-<li>Test tone (sine wave) recording by the guest (injected from the host)</li>
-</ul>
-</dd>
-</dl>
-</li>
-<li>Only the HDA device emulation has been verified so far.</li>
-<li>Only the ALSA audio stack on Debian 10 has been verified so far.
-Note: This is different from PulseAudio using the ALSA plugin!</li>
-</ul>
+<p>Additionally it should be flexible enough to add more (custom) tests later on.</p>
 </div>
 <div class="section" id="operation">
 <h1>Operation</h1>
 <p>The framework consists of several components which try to make use as much of
 the existing audio stack code as possible. This allows the following
 operation modes:</p>
-<ul class="simple">
-<li>Standalone: Playing back / recording audio data (test tones / .WAV files) in a
+<dl class="docutils">
+<dt>Standalone</dt>
+<dd>Playing back / recording audio data (test tones / .WAV files) in a
 standalone scenario, i.e. no VirtualBox / VMs required). This mode is using
-the audio (mixing) stack and available backend drivers without the need of
-VirtualBox being installed.</li>
-<li>Manual: Performing single / multiple tests manually on a local machine.
-Requires a running and set up test VM.</li>
-<li>Automated: Performs single / multiple tests via the Validation Kit audio test
-driver and can be triggered via the Validation Kit Test Manager. The test
-driver can be found at [1].</li>
-<li>(Re-)validation of previously ran tests: This takes two test sets and runs
-the validation / analysis on them. See VKAT's &quot;verify&quot; sub command for more.</li>
-<li>Self testing mode: Performs standalone self tests to verify / debug the
-involved components. See VKAT's &quot;selftest&quot; sub command for more.</li>
-</ul>
-<p>[1] src/VBox/ValidationKit/tests/audio/tdAudioTest.py</p>
+VirtualBox' audio (mixing) stack and available backend drivers without the
+need of VirtualBox being installed.</dd>
+<dt>Manual</dt>
+<dd>Performing single / multiple tests manually on a local machine.
+Requires a running and set up test VM.</dd>
+<dt>Automated</dt>
+<dd>Performs single / multiple tests via the Validation Kit audio test
+driver and can be triggered via the Validation Kit Test Manager.</dd>
+<dt>(Re-)validation of previously ran tests</dt>
+<dd>This takes two test sets and runs the validation / analysis on them.</dd>
+<dt>Self testing mode</dt>
+<dd>Performs standalone self tests to verify / debug the involved components.</dd>
+</dl>
 </div>
 <div class="section" id="components-and-terminology">
 <h1>Components and Terminology</h1>
 <p>The following components are in charge for performing the audio tests
 (depends on the operation mode, see above):</p>
 <ul>
-<li><p class="first">VKAT (&quot;Validation Kit Audio Test&quot;, also known as VBoxAudioTest):
+<li><p class="first">VBoxAudioTest (also known as VKAT, &quot;Validation Kit Audio Test&quot;):
 A binary which can perform the standalone audio tests mentioned above, as well
 as acting as the guest and host service(s) when performing manual or automated
 tests. It also includes the analysis / verification of audio test sets.
@@ -439,14 +426,14 @@ verify the audio stack.</p>
 </dl>
 <p>See the syntax help (&quot;--help&quot;) for more.</p>
 </li>
-<li><p class="first">ATS (&quot;Audio Testing Service&quot;): Component which is being used by VKAT and the
+<li><p class="first">ATS (&quot;Audio Testing Service&quot;): Component which is being used by 1 and the
 Validation Kit audio driver (backend) to communicate across guest and host
 boundaries. Currently using a TCP/IP transport layer. Also works with VMs
 which are configured with NAT networking (&quot;reverse connection&quot;).</p>
 </li>
 <li><p class="first">Validation Kit audio test driver (tdAudioTest.py): Used for integrating and
 invoking VKAT for manual and automated tests via the Validation Kit framework
-(Test Manager). Optional.</p>
+(Test Manager). Optional. The test driver can be found at <a class="footnote-reference" href="#footnote-1" id="footnote-reference-1">[1]</a>.</p>
 </li>
 <li><p class="first">Validation Kit audio driver (backend): A dedicated audio backend which
 communicates with VKAT running on the same host to perform the actual audio
@@ -473,9 +460,72 @@ identified.</p>
 </ul>
 <p>The above components are also included in VirtualBox release builds and can be
 optionally enabled (disabled by default).</p>
+<table class="docutils footnote" frame="void" id="footnote-1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-1">[1]</a></td><td>src/VBox/ValidationKit/tests/audio/tdAudioTest.py</td></tr>
+</tbody>
+</table>
 </div>
-<div class="section" id="workflow-for-a-single-test">
-<h1>Workflow for a single test</h1>
+<div class="section" id="setup-instructions">
+<h1>Setup instructions</h1>
+<ul>
+<li><p class="first">VM needs to be configured to have audio emulation and audio testing enabled
+(via extra-data, set &quot;VBoxInternal2/Audio/Debug/Enabled&quot; to &quot;true&quot;).</p>
+</li>
+<li><p class="first">Audio input / output for the VM needs to be enabled (depending on the test).</p>
+</li>
+<li><p class="first">Start VBoxAudioTest on the guest, for example:</p>
+<p>VBoxAudioTest test --mode guest --tcp-connect-address 10.0.2.2</p>
+<dl class="docutils">
+<dt>Note: VBoxAudioTest is included with the Guest Additions starting at</dt>
+<dd><p class="first last">VirtualBox 7.0.</p>
+</dd>
+<dt>Note: Depending on the VM's networking configuration there might be further</dt>
+<dd><p class="first last">steps necessary in order to be able to reach the host from the guest.
+See the VirtualBox manual for more information.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="performing-a-manual-test">
+<h1>Performing a manual test</h1>
+<ul>
+<li><p class="first">Follow &quot;Setup instructions&quot;.</p>
+</li>
+<li><p class="first">Start VBoxAudioTest on the host with selected test(s), for example:</p>
+<p>VBoxAudioTest test --mode host</p>
+<blockquote>
+<dl class="docutils">
+<dt>Note: VBoxAudioTest is included with the VirtualBox 7.0 host installers and</dt>
+<dd><p class="first last">will be installed by default.</p>
+</dd>
+</dl>
+</blockquote>
+</li>
+<li><p class="first">By default the test verification will be done automatically after running the
+tests.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="advanced-performing-manual-verification">
+<h1>Advanced: Performing manual verification</h1>
+<p>VBoxAudioTest can manually be used with the &quot;verify&quot; sub command in order to
+(re-)verify previously generated test sets. It then will return different exit
+codes based on the verification result.</p>
+</div>
+<div class="section" id="advanced-performing-an-automated-test">
+<h1>Advanced: Performing an automated test</h1>
+<ul class="simple">
+<li>TxS (Test E[x]ecution Service) has to be up and running (part of the
+Validation Kit) on the guest.</li>
+<li>Invoke the tdAudioTest.py test driver, either manually or fully automated
+via Test Manager.</li>
+</ul>
+</div>
+<div class="section" id="internals-workflow-for-a-single-test">
+<h1>Internals: Workflow for a single test</h1>
 <p>When a single test is being executed on a running VM, the following (simplified)
 workflow applies:</p>
 <ul class="simple">
@@ -504,49 +554,21 @@ remote machine in theory).</li>
 </li>
 </ul>
 </div>
-<div class="section" id="setup-instructions">
-<h1>Setup instructions</h1>
-<ul>
-<li><p class="first">VM needs to be configured to have audio emulation and audio testing enabled
-(via extra-data, set &quot;VBoxInternal2/Audio/Debug/Enabled&quot; to &quot;true&quot;).</p>
-</li>
-<li><p class="first">Audio input / output for the VM needs to be enabled (depending on the test).</p>
-</li>
-<li><p class="first">VKAT needs to be running on the guest and be able to connect to the host via
-TCP/IP.</p>
-<dl class="docutils">
-<dt>Note: Depending on the VM's networking configuration there might be further</dt>
-<dd><p class="first last">steps necessary in order to be able to reach the host from the guest.
-See the VirtualBox manual for more information.</p>
+<div class="section" id="current-status-limitations">
+<h1>Current status / limitations</h1>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt>The following test types are currently implemented:</dt>
+<dd><ul class="first last">
+<li>Test tone (sine wave) playback from the guest</li>
+<li>Test tone (sine wave) recording by the guest (injected from the host)</li>
+</ul>
 </dd>
 </dl>
 </li>
-</ul>
-</div>
-<div class="section" id="performing-a-manual-test">
-<h1>Performing a manual test</h1>
-<ul class="simple">
-<li>Follow &quot;Setup instructions&quot;.</li>
-<li>Start VKAT on the guest (in &quot;guest mode&quot;, e.g. &quot;test --mode guest&quot;).</li>
-<li>Start VKAT on the host (in &quot;host mode&quot;, e.g. &quot;test --mode host&quot;) with
-selected test(s).</li>
-<li>By default the test verification will be done automatically after running the
-tests.</li>
-</ul>
-</div>
-<div class="section" id="performing-manual-verification">
-<h1>Performing manual verification</h1>
-<p>VKAT can manually be used with the &quot;verify&quot; sub command in order to (re-)verify
-previously generated test sets. It then will return different exit codes based
-on the verification result.</p>
-</div>
-<div class="section" id="performing-an-automated-test">
-<h1>Performing an automated test</h1>
-<ul class="simple">
-<li>TxS (Test E[x]ecution Service) has to be up and running (part of the
-Validation Kit) on the guest.</li>
-<li>Invoke the tdAudioTest.py test driver, either manually or fully automated
-via Test Manager.</li>
+<li>Only the HDA device emulation has been verified so far.</li>
+<li>Only the ALSA audio stack on Debian 10 has been verified so far.
+Note: This is different from PulseAudio using the ALSA plugin!</li>
 </ul>
 </div>
 <div class="section" id="troubleshooting">
@@ -554,12 +576,13 @@ via Test Manager.</li>
 <ul class="simple">
 <li>Make sure that audio device emulation is enabled and can be used within the
 guest. Also, audio input / output has to be enabled, depending on the tests.</li>
-<li>Make sure that the guest's VKAT instance can reach the host via the selected
-transport lay (TCP/IP by default).</li>
+<li>Make sure that the guest's VBoxAudioTest's instance can reach the host via
+the selected transport layer (TCP/IP by default).</li>
 <li>Increase the hosts audio logging level
 (via extra-data, set &quot;VBoxInternal2/Audio/Debug/Level&quot; to &quot;5&quot;).</li>
-<li>Increase VKAT's verbosity level (add &quot;-v&quot;, can be specified multiple times).</li>
-<li>Check if the the VBox release log contains any warnings / errors with the
+<li>Increase VBoxAudioTest's verbosity level (add &quot;-v&quot;, can be specified
+multiple times).</li>
+<li>Check if the VBox release log contains any warnings / errors with the
 &quot;ValKit:&quot; prefix.</li>
 </ul>
 <table class="docutils field-list" frame="void" rules="none">
