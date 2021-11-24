@@ -3917,7 +3917,7 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
     /* Inform PGM if mode changed. */
     if ((uNewCr0 & X86_CR0_PE) != (uOldCr0 & X86_CR0_PE))
     {
-        int rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* global */, false /* fPdpesMapped */);
+        int rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* global */, false /* fCr3Mapped */);
         AssertRCReturn(rc, rc);
         /* ignore informational status codes */
     }
@@ -6749,7 +6749,7 @@ IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, u
                 }
 
                 /* Invalidate mappings for the linear address tagged with PCID except global translations. */
-                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */, false /* fPdpesMapped */);
+                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */, false /* fCr3Mapped */);
                 break;
             }
 
@@ -6762,19 +6762,19 @@ IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, u
                     return iemRaiseGeneralProtectionFault0(pVCpu);
                 }
                 /* Invalidate all mappings associated with PCID except global translations. */
-                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */, false /* fPdpesMapped */);
+                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */, false /* fCr3Mapped */);
                 break;
             }
 
             case X86_INVPCID_TYPE_ALL_CONTEXT_INCL_GLOBAL:
             {
-                PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */, false /* fPdpesMapped */);
+                PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */, false /* fCr3Mapped */);
                 break;
             }
 
             case X86_INVPCID_TYPE_ALL_CONTEXT_EXCL_GLOBAL:
             {
-                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */, false /* fPdpesMapped */);
+                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */, false /* fCr3Mapped */);
                 break;
             }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
