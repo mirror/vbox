@@ -33,6 +33,7 @@
 #include <iprt/alloca.h>
 #include <iprt/string.h>
 #include <iprt/system.h>
+#include <iprt/x86.h>
 
 #include <errno.h>
 #include <unistd.h>
@@ -416,6 +417,19 @@ static int nemR3LnxInitSetupVm(PVM pVM, PRTERRINFO pErrInfo)
     AssertReturn(pVM->nem.s.fdVm != -1, RTErrInfoSet(pErrInfo, VERR_WRONG_ORDER, "Wrong initalization order"));
 
     /*
+     * Enable user space MSRs and let us check everything KVM cannot handle.
+     * We will set up filtering later when ring-3 init has completed.
+     */
+    struct kvm_enable_cap CapEn =
+    {
+        KVM_CAP_X86_USER_SPACE_MSR, 0,
+        { KVM_MSR_EXIT_REASON_FILTER | KVM_MSR_EXIT_REASON_UNKNOWN | KVM_MSR_EXIT_REASON_INVAL, 0, 0, 0}
+    };
+    int rcLnx = ioctl(pVM->nem.s.fdVm, KVM_ENABLE_CAP, &CapEn);
+    if (rcLnx == -1)
+        return RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED, "Failed to enable KVM_CAP_X86_USER_SPACE_MSR failed: %u", errno);
+
+    /*
      * Create the VCpus.
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
@@ -425,14 +439,13 @@ static int nemR3LnxInitSetupVm(PVM pVM, PRTERRINFO pErrInfo)
         /* Create it. */
         pVCpu->nem.s.fdVCpu = ioctl(pVM->nem.s.fdVm, KVM_CREATE_VCPU, (unsigned long)idCpu);
         if (pVCpu->nem.s.fdVCpu < 0)
-            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
-                              "KVM_CREATE_VCPU failed for VCpu #%u: %d", idCpu, errno);
+            return RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED, "KVM_CREATE_VCPU failed for VCpu #%u: %d", idCpu, errno);
 
         /* Map the KVM_RUN area. */
         pVCpu->nem.s.pRun = (struct kvm_run *)mmap(NULL, pVM->nem.s.cbVCpuMmap, PROT_READ | PROT_WRITE, MAP_SHARED,
                                                    pVCpu->nem.s.fdVCpu, 0 /*offset*/);
         if ((void *)pVCpu->nem.s.pRun == MAP_FAILED)
-            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS, "mmap failed for VCpu #%u: %d", idCpu, errno);
+            return RTErrInfoSetF(pErrInfo, VERR_NEM_VM_CREATE_FAILED, "mmap failed for VCpu #%u: %d", idCpu, errno);
 
         /* We want all x86 registers and events on each exit. */
         pVCpu->nem.s.pRun->kvm_valid_regs = KVM_SYNC_X86_REGS | KVM_SYNC_X86_SREGS | KVM_SYNC_X86_EVENTS;
@@ -671,6 +684,75 @@ int nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             int rc = nemR3LnxUpdateCpuIdsLeaves(pVM, pVM->apCpusR3[idCpu]);
             AssertRCReturn(rc, rc);
         }
+    }
+
+    /*
+     * Configure MSRs after ring-3 init is done.
+     *
+     * We only need to tell KVM which MSRs it can handle, as we already
+     * requested KVM_MSR_EXIT_REASON_FILTER, KVM_MSR_EXIT_REASON_UNKNOWN
+     * and KVM_MSR_EXIT_REASON_INVAL in nemR3LnxInitSetupVm, and here we
+     * will use KVM_MSR_FILTER_DEFAULT_DENY.  So, all MSRs w/o a 1 in the
+     * bitmaps should be deferred to ring-3.
+     */
+    if (enmWhat == VMINITCOMPLETED_RING3)
+    {
+        struct kvm_msr_filter MsrFilters = {0}; /* Structure with a couple of implicit paddings on 64-bit systems. */
+        MsrFilters.flags = KVM_MSR_FILTER_DEFAULT_DENY;
+
+        unsigned iRange = 0;
+#define MSR_RANGE_BEGIN(a_uBase, a_uEnd, a_fFlags) \
+        AssertCompile(0x3000 <= KVM_MSR_FILTER_MAX_BITMAP_SIZE * 8); \
+        uint64_t RT_CONCAT(bm, a_uBase)[0x3000 / 64] = {0}; \
+        do { \
+            uint64_t * const pbm = RT_CONCAT(bm, a_uBase); \
+            uint32_t   const uBase = UINT32_C(a_uBase); \
+            uint32_t   const cMsrs = UINT32_C(a_uEnd) - UINT32_C(a_uBase); \
+            MsrFilters.ranges[iRange].base   = UINT32_C(a_uBase); \
+            MsrFilters.ranges[iRange].nmsrs  = cMsrs; \
+            MsrFilters.ranges[iRange].flags  = (a_fFlags); \
+            MsrFilters.ranges[iRange].bitmap = (uint8_t *)&RT_CONCAT(bm, a_uBase)[0]
+#define MSR_RANGE_ADD(a_Msr) \
+        do { Assert((uint32_t)(a_Msr) - uBase < cMsrs); ASMBitSet(pbm, (uint32_t)(a_Msr) - uBase); } while (0)
+#define MSR_RANGE_END(a_cMinMsrs) \
+            /* optimize the range size before closing: */ \
+            uint32_t cBitmap = cMsrs / 64; \
+            while (cBitmap > ((a_cMinMsrs) + 63 / 64) && pbm[cBitmap - 1] == 0) \
+                cBitmap -= 1; \
+            MsrFilters.ranges[iRange].nmsrs = cBitmap * 64; \
+            iRange++; \
+        } while (0)
+
+        /* 1st Intel range: 0000_0000 to 0000_3000. */
+        MSR_RANGE_BEGIN(0x00000000, 0x00003000, KVM_MSR_FILTER_READ | KVM_MSR_FILTER_WRITE);
+        MSR_RANGE_ADD(MSR_IA32_TSC);
+        MSR_RANGE_ADD(MSR_IA32_SYSENTER_CS);
+        MSR_RANGE_ADD(MSR_IA32_SYSENTER_ESP);
+        MSR_RANGE_ADD(MSR_IA32_SYSENTER_EIP);
+        MSR_RANGE_ADD(MSR_IA32_CR_PAT);
+        /** @todo more? */
+        MSR_RANGE_END(64);
+
+        /* 1st AMD range: c000_0000 to c000_3000 */
+        MSR_RANGE_BEGIN(0xc0000000, 0xc0003000, KVM_MSR_FILTER_READ | KVM_MSR_FILTER_WRITE);
+        MSR_RANGE_ADD(MSR_K6_EFER);
+        MSR_RANGE_ADD(MSR_K6_STAR);
+        MSR_RANGE_ADD(MSR_K8_GS_BASE);
+        MSR_RANGE_ADD(MSR_K8_KERNEL_GS_BASE);
+        MSR_RANGE_ADD(MSR_K8_LSTAR);
+        MSR_RANGE_ADD(MSR_K8_CSTAR);
+        MSR_RANGE_ADD(MSR_K8_SF_MASK);
+        MSR_RANGE_ADD(MSR_K8_TSC_AUX);
+        /** @todo add more? */
+        MSR_RANGE_END(64);
+
+        /** @todo Specify other ranges too? Like hyper-V and KVM to make sure we get
+         *        the MSR requests instead of KVM. */
+
+        int rcLnx = ioctl(pVM->nem.s.fdVm, KVM_X86_SET_MSR_FILTER, &MsrFilters);
+        if (rcLnx == -1)
+            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                              "Failed to enable KVM_X86_SET_MSR_FILTER failed: %u", errno);
     }
 
     return VINF_SUCCESS;
@@ -2138,7 +2220,7 @@ static VBOXSTRICTRC nemHCLnxHandleExitIo(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_r
     Assert(pRun->io.data_offset + pRun->io.size * pRun->io.count <= pVM->nem.s.cbVCpuMmap);
 
     /*
-     * We cannot actually act on the exit history here, because the I/O port
+     * We cannot easily act on the exit history here, because the I/O port
      * exit is stateful and the instruction will be completed in the next
      * KVM_RUN call.  There seems no way to avoid this.
      */
@@ -2223,7 +2305,7 @@ static VBOXSTRICTRC nemHCLnxHandleExitMmio(PVMCC pVM, PVMCPUCC pVCpu, struct kvm
     Assert(pRun->mmio.is_write <= 1);
 
     /*
-     * We cannot actually act on the exit history here, because the MMIO port
+     * We cannot easily act on the exit history here, because the MMIO port
      * exit is stateful and the instruction will be completed in the next
      * KVM_RUN call.  There seems no way to circumvent this.
      */
@@ -2253,6 +2335,91 @@ static VBOXSTRICTRC nemHCLnxHandleExitMmio(PVMCC pVM, PVMCPUCC pVCpu, struct kvm
     }
     return rcStrict;
 }
+
+
+/**
+ * Handles KVM_EXIT_RDMSR
+ */
+static VBOXSTRICTRC nemHCLnxHandleExitRdMsr(PVMCPUCC pVCpu, struct kvm_run *pRun)
+{
+    /*
+     * Input validation.
+     */
+    Assert(   pRun->msr.reason == KVM_MSR_EXIT_REASON_INVAL
+           || pRun->msr.reason == KVM_MSR_EXIT_REASON_UNKNOWN
+           || pRun->msr.reason == KVM_MSR_EXIT_REASON_FILTER);
+
+    /*
+     * We cannot easily act on the exit history here, because the MSR exit is
+     * stateful and the instruction will be completed in the next KVM_RUN call.
+     * There seems no way to circumvent this.
+     */
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_READ),
+                     pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
+
+    /*
+     * Do the requested job.
+     */
+    uint64_t uValue = 0;
+    VBOXSTRICTRC rcStrict = CPUMQueryGuestMsr(pVCpu, pRun->msr.index, &uValue);
+    pRun->msr.data = uValue;
+    if (rcStrict != VERR_CPUM_RAISE_GP_0)
+    {
+        Log3(("MsrRead/%u: %04x:%08RX64: msr=%#010x (reason=%#x) -> %#RX64 rcStrict=%Rrc\n", pVCpu->idCpu,
+              pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip, pRun->msr.index, pRun->msr.reason, uValue, VBOXSTRICTRC_VAL(rcStrict) ));
+        pRun->msr.error = 0;
+    }
+    else
+    {
+        Log3(("MsrRead/%u: %04x:%08RX64: msr=%#010x (reason%#x)-> %#RX64 rcStrict=#GP!\n", pVCpu->idCpu,
+              pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip, pRun->msr.index, pRun->msr.reason, uValue));
+        pRun->msr.error = 1;
+        rcStrict = VINF_SUCCESS;
+    }
+    return rcStrict;
+}
+
+
+/**
+ * Handles KVM_EXIT_WRMSR
+ */
+static VBOXSTRICTRC nemHCLnxHandleExitWrMsr(PVMCPUCC pVCpu, struct kvm_run *pRun)
+{
+    /*
+     * Input validation.
+     */
+    Assert(   pRun->msr.reason == KVM_MSR_EXIT_REASON_INVAL
+           || pRun->msr.reason == KVM_MSR_EXIT_REASON_UNKNOWN
+           || pRun->msr.reason == KVM_MSR_EXIT_REASON_FILTER);
+
+    /*
+     * We cannot easily act on the exit history here, because the MSR exit is
+     * stateful and the instruction will be completed in the next KVM_RUN call.
+     * There seems no way to circumvent this.
+     */
+    EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_EM, EMEXITTYPE_MSR_WRITE),
+                     pRun->s.regs.regs.rip + pRun->s.regs.sregs.cs.base, ASMReadTSC());
+
+    /*
+     * Do the requested job.
+     */
+    VBOXSTRICTRC rcStrict = CPUMSetGuestMsr(pVCpu, pRun->msr.index, pRun->msr.data);
+    if (rcStrict != VERR_CPUM_RAISE_GP_0)
+    {
+        Log3(("MsrWrite/%u: %04x:%08RX64: msr=%#010x := %#RX64 (reason=%#x) -> rcStrict=%Rrc\n", pVCpu->idCpu,
+              pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip, pRun->msr.index, pRun->msr.data, pRun->msr.reason, VBOXSTRICTRC_VAL(rcStrict) ));
+        pRun->msr.error = 0;
+    }
+    else
+    {
+        Log3(("MsrWrite/%u: %04x:%08RX64: msr=%#010x := %#RX64 (reason%#x)-> rcStrict=#GP!\n", pVCpu->idCpu,
+              pRun->s.regs.sregs.cs.selector, pRun->s.regs.regs.rip, pRun->msr.index, pRun->msr.data, pRun->msr.reason));
+        pRun->msr.error = 1;
+        rcStrict = VINF_SUCCESS;
+    }
+    return rcStrict;
+}
+
 
 
 static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run *pRun, bool *pfStatefulExit)
@@ -2294,13 +2461,13 @@ static VBOXSTRICTRC nemHCLnxHandleExit(PVMCC pVM, PVMCPUCC pVCpu, struct kvm_run
 
         case KVM_EXIT_X86_RDMSR:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitRdMsr);
-            AssertFailed();
-            break;
+            *pfStatefulExit = true;
+            return nemHCLnxHandleExitRdMsr(pVCpu, pRun);
 
         case KVM_EXIT_X86_WRMSR:
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitWrMsr);
-            AssertFailed();
-            break;
+            *pfStatefulExit = true;
+            return nemHCLnxHandleExitWrMsr(pVCpu, pRun);
 
         case KVM_EXIT_HLT:
             EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_HALT),
