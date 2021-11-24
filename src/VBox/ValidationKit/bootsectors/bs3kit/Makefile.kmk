@@ -237,6 +237,7 @@ VBOX_BS3KIT_COMMON_SOURCES = \
        ../../../Runtime/common/asm/ASMCpuIdExSlow.asm \
        ../../../Runtime/common/asm/ASMCpuId.asm \
        ../../../Runtime/common/asm/ASMCpuId_Idx_ECX.asm \
+       ../../../Runtime/common/asm/ASMWrMsr.asm \
        ../../../Runtime/common/asm/ASMGetXcr0.asm \
        ../../../Runtime/common/asm/ASMSetXcr0.asm \
        ../../../Runtime/common/asm/ASMSetFlags.asm \
@@ -280,6 +281,7 @@ $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMMemFirstMismatchingU8,8)
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMMemFirstNonZero,6)
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMCpuIdExSlow,32)
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMCpuId,20)
+$(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMWrMsr,12)
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMSetXcr0,8)
 $(call BS3KIT_FN_GEN_CMN_FARSTUB,bs3kit-common-16,ASMGetXcr0,0)
 -include $(PATH_SUB_CURRENT)/bs3kit-autostubs.kmk # manually generated from headers, see bottom of this file.

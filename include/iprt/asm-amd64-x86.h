@@ -2390,7 +2390,7 @@ DECLINLINE(uint64_t) ASMRdMsr(uint32_t uRegister)
  * @param   u64Val      Value to write.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMWrMsr(uint32_t uRegister, uint64_t u64Val);
+RT_ASM_DECL_PRAGMA_WATCOM_386(void) ASMWrMsr(uint32_t uRegister, uint64_t u64Val);
 #else
 DECLINLINE(void) ASMWrMsr(uint32_t uRegister, uint64_t u64Val)
 {
@@ -2427,7 +2427,7 @@ DECLINLINE(void) ASMWrMsr(uint32_t uRegister, uint64_t u64Val)
  * @param   uXDI        RDI/EDI value.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(uint64_t) ASMRdMsrEx(uint32_t uRegister, RTCCUINTXREG uXDI);
+RT_ASM_DECL_PRAGMA_WATCOM_386(uint64_t) ASMRdMsrEx(uint32_t uRegister, RTCCUINTXREG uXDI);
 #else
 DECLINLINE(uint64_t) ASMRdMsrEx(uint32_t uRegister, RTCCUINTXREG uXDI)
 {
@@ -2465,7 +2465,7 @@ DECLINLINE(uint64_t) ASMRdMsrEx(uint32_t uRegister, RTCCUINTXREG uXDI)
  * @param   u64Val      Value to write.
  */
 #if RT_INLINE_ASM_EXTERNAL
-RT_ASM_DECL_PRAGMA_WATCOM(void) ASMWrMsrEx(uint32_t uRegister, RTCCUINTXREG uXDI, uint64_t u64Val);
+RT_ASM_DECL_PRAGMA_WATCOM_386(void) ASMWrMsrEx(uint32_t uRegister, RTCCUINTXREG uXDI, uint64_t u64Val);
 #else
 DECLINLINE(void) ASMWrMsrEx(uint32_t uRegister, RTCCUINTXREG uXDI, uint64_t u64Val)
 {
