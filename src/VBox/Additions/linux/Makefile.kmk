@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2020 Oracle Corporation
+# Copyright (C) 2006-2021 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -118,7 +118,7 @@ VBOX_LNX_ADD_STRIP_BIN += \
 	VBoxClient
 ifdef VBOX_WITH_ADDITIONS_SHIPPING_AUDIO_TEST
  VBOX_LNX_ADD_STRIP_BIN += \
- 	VBoxAudioTest
+	VBoxAudioTest
 endif
 
 VBOX_LNX_ADD_STRIP_SBIN += \
@@ -437,4 +437,3 @@ $(PATH_STAGE_BIN)/additions/VBoxLinuxAdditions.run: \
 	$(QUIET)$(VBOX_MAKESELF) --nocomp $(VBOX_LNX_ADD_INST_STAGE_DIR) $@ \
 		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux" \
 		/bin/sh ./install.sh "\$$0"
-
