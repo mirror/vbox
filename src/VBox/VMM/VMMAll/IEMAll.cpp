@@ -4355,7 +4355,7 @@ iemTaskSwitch(PVMCPUCC        pVCpu,
 
         /* Inform PGM. */
         /** @todo Should we raise \#GP(0) here when PAE PDPEs are invalid? */
-        rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PGE), false /* fPdpesMapped */);
+        rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PGE), false /* fCr3Mapped */);
         AssertRCReturn(rc, rc);
         /* ignore informational status codes */
 

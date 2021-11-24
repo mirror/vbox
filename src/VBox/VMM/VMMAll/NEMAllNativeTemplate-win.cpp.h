@@ -1116,7 +1116,7 @@ NEM_TMPL_STATIC int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint6
 
     if (fUpdateCr3)
     {
-        int rc = PGMUpdateCR3(pVCpu, pVCpu->cpum.GstCtx.cr3, false /*fPdpesMapped*/);
+        int rc = PGMUpdateCR3(pVCpu, pVCpu->cpum.GstCtx.cr3, false /*fCr3Mapped*/);
         if (rc == VINF_SUCCESS)
         { /* likely */ }
         else

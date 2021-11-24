@@ -52,7 +52,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t 
 #ifdef VBOX_STRICT
 PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr = 0, RTGCPTR cb = ~(RTGCPTR)0);
 #endif
-PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fPdpesMapped);
+PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fCr3Mapped);
 PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu);
 
 #ifdef IN_RING3
@@ -4130,9 +4130,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   GCPhysCR3       The physical address in the CR3 register. (A20 mask
  *                          already applied.)
- * @param   fPdpesMapped    Whether the PAE PDPEs (and PDPT) have been mapped.
+ * @param   fCr3Mapped      Whether CR3 (and in case of PAE paging, whether PDPEs
+ *                          and PDPT) has been mapped.
  */
-PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fPdpesMapped)
+PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fCr3Mapped)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM); NOREF(pVM);
     int rc = VINF_SUCCESS;
@@ -4146,9 +4147,9 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fPdpesMapped)
     PGM_A20_ASSERT_MASKED(pVCpu, GCPhysCR3);
 
 # if PGM_GST_TYPE == PGM_TYPE_PAE
-    if (!fPdpesMapped)
+    if (!fCr3Mapped)
 # else
-    NOREF(fPdpesMapped);
+    NOREF(fCr3Mapped);
 #endif
     {
         /*
@@ -4203,7 +4204,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fPdpesMapped)
             AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
     }
 #else /* prot/real stub */
-    NOREF(fPdpesMapped);
+    NOREF(fCr3Mapped);
 #endif
 
     /*

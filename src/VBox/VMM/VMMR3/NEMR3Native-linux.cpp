@@ -1565,7 +1565,7 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx, st
 
         if (fUpdateCr3)
         {
-            int rc = PGMUpdateCR3(pVCpu, pVCpu->cpum.GstCtx.cr3, false /*fPdpesMapped*/);
+            int rc = PGMUpdateCR3(pVCpu, pVCpu->cpum.GstCtx.cr3, false /*fCr3Mapped*/);
             if (rc == VINF_SUCCESS)
             { /* likely */ }
             else

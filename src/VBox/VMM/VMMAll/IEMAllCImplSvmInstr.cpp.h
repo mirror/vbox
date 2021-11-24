@@ -81,10 +81,11 @@ IEM_STATIC uint8_t iemGetSvmEventType(uint32_t uVector, uint32_t fIemXcptFlags)
  * Performs an SVM world-switch (VMRUN, \#VMEXIT) updating PGM and IEM internals.
  *
  * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   fPdpesMapped    Whether the PAE PDPEs (and PDPT) have been mapped.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   fCr3Mapped  Whether CR3 (and in case of PAE paging, whether PDPEs
+ *                      and PDPT) have been mapped.
  */
-DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu, bool fPdpesMapped)
+DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu, bool fCr3Mapped)
 {
     /*
      * Inform PGM about paging mode changes.
@@ -104,7 +105,7 @@ DECLINLINE(VBOXSTRICTRC) iemSvmWorldSwitch(PVMCPUCC pVCpu, bool fPdpesMapped)
      */
     if (rc == VINF_SUCCESS)
     {
-        rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* fGlobal */, fPdpesMapped);
+        rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* fGlobal */, fCr3Mapped);
         AssertRCReturn(rc, rc);
     }
 
@@ -722,13 +723,13 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
          * Validate and map PAE PDPEs if the guest will be using PAE paging.
          * Invalid PAE PDPEs here causes a #VMEXIT.
          */
-        bool fPdpesMapped;
+        bool fCr3Mapped;
         if (   !pVmcbCtrl->NestedPagingCtrl.n.u1NestedPaging
             && CPUMIsPaePagingEnabled(pVmcbNstGst->u64CR0, pVmcbNstGst->u64CR4, uValidEfer))
         {
             rc = PGMGstMapPaePdpesAtCr3(pVCpu, pVmcbNstGst->u64CR3);
             if (RT_SUCCESS(rc))
-                fPdpesMapped = true;
+                fCr3Mapped = true;
             else
             {
                 Log(("iemSvmVmrun: PAE PDPEs invalid -> #VMEXIT\n"));
@@ -736,7 +737,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
             }
         }
         else
-            fPdpesMapped = false;
+            fCr3Mapped = false;
 
         /*
          * Copy the remaining guest state from the VMCB to the guest-CPU context.
@@ -776,7 +777,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
         /*
          * Update PGM, IEM and others of a world-switch.
          */
-        VBOXSTRICTRC rcStrict = iemSvmWorldSwitch(pVCpu, fPdpesMapped);
+        VBOXSTRICTRC rcStrict = iemSvmWorldSwitch(pVCpu, fCr3Mapped);
         if (rcStrict == VINF_SUCCESS)
         { /* likely */ }
         else if (RT_SUCCESS(rcStrict))

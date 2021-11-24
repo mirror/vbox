@@ -2691,7 +2691,7 @@ typedef struct PGMMODEDATABTH
     DECLCALLBACKMEMBER(int, pfnSyncCR3,(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
     DECLCALLBACKMEMBER(int, pfnPrefetchPage,(PVMCPUCC pVCpu, RTGCPTR GCPtrPage));
     DECLCALLBACKMEMBER(int, pfnVerifyAccessSyncPage,(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLCALLBACKMEMBER(int, pfnMapCR3,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fPdpesMapped));
+    DECLCALLBACKMEMBER(int, pfnMapCR3,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fCr3Mapped));
     DECLCALLBACKMEMBER(int, pfnUnmapCR3,(PVMCPUCC pVCpu));
     DECLCALLBACKMEMBER(int, pfnEnter,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3));
 #ifndef IN_RING3

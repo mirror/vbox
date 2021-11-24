@@ -2380,9 +2380,10 @@ DECLINLINE(RTGCPHYS) pgmGetGuestMaskedCr3(PVMCPUCC pVCpu, uint64_t uCr3)
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cr3             The new cr3.
  * @param   fGlobal         Indicates whether this is a global flush or not.
- * @param   fPdpesMapped    Whether the PAE PDPEs (and PDPT) have been mapped.
+ * @param   fCr3Mapped      Whether CR3 (and in case of PAE paging, whether PDPEs
+ *                          and PDPT) has been mapped.
  */
-VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fPdpesMapped)
+VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fCr3Mapped)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLB), a);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
@@ -2404,7 +2405,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fPdpes
     RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
     RTGCPHYS       GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    if (   !fPdpesMapped
+    if (   !fCr3Mapped
         && CPUMIsGuestVmxEptPagingEnabled(pVCpu))
     {
         PGMPTWALK    Walk;
@@ -2427,7 +2428,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fPdpes
         AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
 
         pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, fPdpesMapped);
+        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, fCr3Mapped);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         { }
         else
@@ -2488,9 +2489,10 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fPdpes
  *          FF will be set too then.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cr3             The new CR3.
- * @param   fPdpesMapped    Whether the PAE PDPEs (and PDPT) have been mapped.
+ * @param   fCr3Mapped      Whether CR3 (and in case of PAE paging, whether PDPEs
+ *                          and PDPT) has been mapped.
  */
-VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fPdpesMapped)
+VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fCr3Mapped)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     LogFlow(("PGMUpdateCR3: cr3=%RX64 OldCr3=%RX64\n", cr3, pVCpu->pgm.s.GCPhysCR3));
@@ -2503,7 +2505,7 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fPdpesMapped)
      */
     RTGCPHYS GCPhysCR3 = pgmGetGuestMaskedCr3(pVCpu, cr3);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    if (   !fPdpesMapped
+    if (   !fCr3Mapped
         && CPUMIsGuestVmxEptPagingEnabled(pVCpu))
     {
         PGMPTWALK    Walk;
@@ -2526,7 +2528,7 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fPdpesMapped)
         AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
 
         pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, fPdpesMapped);
+        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, fCr3Mapped);
 
         AssertRCSuccess(rc); /* Assumes VINF_PGM_SYNC_CR3 doesn't apply to nested paging. */ /** @todo this isn't true for the mac, but we need hw to test/fix this. */
     }
@@ -2609,7 +2611,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4
             AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
             AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
             pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-            rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, false /* fPdpesMapped */);
+            rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, false /* fCr3Mapped */);
         }
 
         /* Make sure we check for pending pgm pool syncs as we clear VMCPU_FF_PGM_SYNC_CR3 later on! */

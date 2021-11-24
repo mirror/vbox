@@ -1124,7 +1124,7 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
 
     if (fUpdateCr3)
     {
-        int rc = PGMUpdateCR3(pVCpu, pVCpu->cpum.GstCtx.cr3, false /*fPdpesMapped*/);
+        int rc = PGMUpdateCR3(pVCpu, pVCpu->cpum.GstCtx.cr3, false /*fCr3Mapped*/);
         if (rc == VINF_SUCCESS)
         { /* likely */ }
         else
