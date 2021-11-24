@@ -347,6 +347,8 @@ typedef struct NEMCPU
     int32_t                     fdVCpu;
     /** Pointer to the KVM_RUN data exchange region. */
     R3PTRTYPE(struct kvm_run *) pRun;
+    /** The MSR_IA32_APICBASE value known to KVM. */
+    uint64_t                    uKvmApicBase;
 
     /** @name Statistics
      * @{ */

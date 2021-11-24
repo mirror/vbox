@@ -1235,10 +1235,11 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx, st
     }
 
     /*
-     * Stuff that goes into kvm_run::s.regs.sregs:
+     * Stuff that goes into kvm_run::s.regs.sregs.
+     *
+     * Note! The apic_base can be ignored because we gets all MSR writes to it
+     *       and VBox always keeps the correct value.
      */
-    /** @todo apic_base   */
-
     bool fMaybeChangedMode = false;
     bool fUpdateCr3        = false;
     if (fWhat & (  CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK | CPUMCTX_EXTRN_CR_MASK
@@ -1336,8 +1337,6 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx, st
                 fMaybeChangedMode = true;
             }
         }
-
-        /** @todo apic_base   */
 #undef NEM_LNX_IMPORT_SEG
     }
 
@@ -1642,11 +1641,23 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
 
     /*
      * Stuff that goes into kvm_run::s.regs.sregs:
+     *
+     * The APIC base register updating is a little suboptimal... But at least
+     * VBox always has the right base register value, so it's one directional.
      */
-    /** @todo apic_base   */
-    if (fExtrn & (  CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK | CPUMCTX_EXTRN_CR_MASK
-                  | CPUMCTX_EXTRN_EFER      | CPUMCTX_EXTRN_APIC_TPR))
+    uint64_t const uApicBase = APICGetBaseMsrNoCheck(pVCpu);
+    if (   (fExtrn & (  CPUMCTX_EXTRN_SREG_MASK | CPUMCTX_EXTRN_TABLE_MASK | CPUMCTX_EXTRN_CR_MASK
+                      | CPUMCTX_EXTRN_EFER      | CPUMCTX_EXTRN_APIC_TPR))
+        || uApicBase != pVCpu->nem.s.uKvmApicBase)
     {
+        if ((pVCpu->nem.s.uKvmApicBase ^ uApicBase) & MSR_IA32_APICBASE_EN)
+            Log(("NEM/%u: APICBASE_EN changed %#010RX64 -> %#010RX64\n", pVCpu->idCpu, pVCpu->nem.s.uKvmApicBase, uApicBase));
+        pRun->s.regs.sregs.apic_base = uApicBase;
+        pVCpu->nem.s.uKvmApicBase    = uApicBase;
+
+        if (fExtrn & CPUMCTX_EXTRN_APIC_TPR)
+            pRun->s.regs.sregs.cr8   = CPUMGetGuestCR8(pVCpu);
+
 #define NEM_LNX_EXPORT_SEG(a_KvmSeg, a_CtxSeg) do { \
             (a_KvmSeg).base     = (a_CtxSeg).u64Base; \
             (a_KvmSeg).limit    = (a_CtxSeg).u32Limit; \
@@ -1712,12 +1723,8 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
             if (fExtrn & CPUMCTX_EXTRN_CR4)
                 pRun->s.regs.sregs.cr4   = pCtx->cr4;
         }
-        if (fExtrn & CPUMCTX_EXTRN_APIC_TPR)
-            pRun->s.regs.sregs.cr8    = CPUMGetGuestCR8(pVCpu);
         if (fExtrn & CPUMCTX_EXTRN_EFER)
             pRun->s.regs.sregs.efer   = pCtx->msrEFER;
-
-        /** @todo apic_base   */
 
         RT_ZERO(pRun->s.regs.sregs.interrupt_bitmap); /* this is an alternative interrupt injection interface */
 
