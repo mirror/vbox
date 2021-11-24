@@ -2725,6 +2725,7 @@ for option in "$@"; do
         if [ $ODIR_OVERRIDE -eq 0 ]; then
           # This variable has not *yet* been overridden.  That can still happen.
           ODIR=$OUT_BASE_PATH/
+          ODIR_OVERRIDE=1
         fi
       else
         echo "Error: invalid folder \"$out_base_dir\" in option \"$option\""
@@ -2807,7 +2808,7 @@ export PATH
 
 # if we will be writing to a different out directory then set this up now
 if [ $ODIR_OVERRIDE -eq 1 ]; then
-  echo "AUTOCFG=$CFG" >> $ENV
+  echo "AUTOCFG=$ODIR" >> $ENV
   echo "export AUTOCFG" >> $ENV
 fi
 if [ $OUT_BASE_PATH_OVERRIDE -eq 1 ]; then

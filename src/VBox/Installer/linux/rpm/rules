@@ -49,7 +49,7 @@ verpkg   := VirtualBox-6.1
 vboxroot := $(shell while ! test -r configure && ! test "$$PWD" = "/"; do cd ..; done; pwd)
 instlin  := $(vboxroot)/src/VBox/Installer/linux
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd $(vboxroot)/..; pwd))
-outdir   := $(if $(PATH_OUT_BASE),$(PATH_OUT_BASE),$(vboxroot))/out
+outdir   := $(if $(PATH_OUT_BASE),$(PATH_OUT_BASE),$(vboxroot)/out)
 bldbase  := $(outdir)/rpm
 builddir := $(bldbase)/builddir
 stagedir := $(bldbase)/rpmbuild
@@ -174,8 +174,7 @@ cfg_flags := $(if $(NOQT),--disable-qt,) \
     $(if $(PATH_OUT_BASE),--out-base-dir=$(PATH_OUT_BASE),) \
     --disable-extpack
 
-bld_flags := AUTOCFG=$(bldbase)/AutoConfig.kmk \
-    LOCALCFG=$(instlin)/rpm/LocalConfig.kmk \
+bld_flags := LOCALCFG=$(instlin)/rpm/LocalConfig.kmk \
     PATH_OUT=$(builddir) \
     VBOX_WITHOUT_EXTPACK_PUEL_PACKING=1 \
     VBOX_WITHOUT_EXTPACK_VNC_PACKING=1 \
