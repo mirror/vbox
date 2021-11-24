@@ -2808,7 +2808,7 @@ export PATH
 
 # if we will be writing to a different out directory then set this up now
 if [ $ODIR_OVERRIDE -eq 1 ]; then
-  echo "AUTOCFG=$ODIR" >> $ENV
+  echo "AUTOCFG=$ODIR$CNF" >> $ENV
   echo "export AUTOCFG" >> $ENV
 fi
 if [ $OUT_BASE_PATH_OVERRIDE -eq 1 ]; then
