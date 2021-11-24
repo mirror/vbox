@@ -66,6 +66,24 @@ public:
         ReturnCode_Max
     };
 
+    /** Creates and shows a UIMediumSelector dialog.
+      * @param  parent                   Passes the parent of the dialog,
+      * @param  enmMediumType            Passes the medium type,
+      * @param  uCurrentMediumId         Passes  the id of the currently selected medium,
+      * @param  uSelectedMediumUuid      Gets  the selected medium id from selection dialog,
+      * @param  strMachineFolder         Passes the machine folder,
+      * @param  strMachineName           Passes the name of the machine,
+      * @param  strMachineGuestOSTypeId  Passes the type ID of machine's guest os,
+      * @param  fEnableCreate            Passes whether to show/enable create action in the medium selector dialog,
+      * @param  uMachineID               Passes the machine UUID,
+      * @param  pActionPool              Passes the action pool instance pointer,
+      * returns the return code of the UIMediumSelector::ReturnCode as int. In case of a medium selection
+      *         UUID of the selected medium is returned in @param uSelectedMediumUuid.*/
+    static int openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType, const QUuid &uCurrentMediumId,
+                                        QUuid &uSelectedMediumUuid, const QString &strMachineFolder, const QString &strMachineName,
+                                        const QString &strMachineGuestOSTypeId, bool fEnableCreate, const QUuid &uMachineID,
+                                        UIActionPool *pActionPool);
+
 protected:
 
     /** @name Event-handling stuff.

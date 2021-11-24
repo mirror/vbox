@@ -406,24 +406,6 @@ public:
         QUuid openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent = 0,
                                            const QString &strDefaultFolder = QString(), bool fUseLastFolder = false);
 
-        /** Creates and shows a UIMediumSelector dialog.
-          * @param  parent                   Passes the parent of the dialog,
-          * @param  enmMediumType            Passes the medium type,
-          * @param  uCurrentMediumId         Passes  the id of the currently selected medium,
-          * @param  uSelectedMediumUuid      Gets  the selected medium id from selection dialog,
-          * @param  strMachineFolder         Passes the machine folder,
-          * @param  strMachineName           Passes the name of the machine,
-          * @param  strMachineGuestOSTypeId  Passes the type ID of machine's guest os,
-          * @param  fEnableCreate            Passes whether to show/enable create action in the medium selector dialog,
-          * @param  uMachineID               Passes the machine UUID,
-          * @param  pActionPool              Passes the action pool instance pointer,
-          * returns the return code of the UIMediumSelector::ReturnCode as int. In case of a medium selection
-          *         UUID of the selected medium is stored in @param inOutUuid.*/
-        int openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType, const QUuid &uCurrentMediumId,
-                                     QUuid &uSelectedMediumUuid, const QString &strMachineFolder, const QString &strMachineName,
-                                     const QString &strMachineGuestOSTypeId, bool fEnableCreate, const QUuid &uMachineID,
-                                     UIActionPool *pActionPool);
-
         /** Creates and shows a dialog (wizard) to create a medium of type @a enmMediumType.
           * @param  pParent                  Passes the parent of the dialog,
           * @param  enmMediumType            Passes the medium type,
@@ -606,36 +588,6 @@ private:
     void prepare();
     /** Cleanups all. */
     void cleanup();
-
-    /** @name COM: Virtual Media create functions.
-     * @{ */
-
-        /** Creates a VISO by using the VISO creator dialog.
-          * @param  pParent           Passes the dialog parent.
-          * @param  strDefaultFolder  Passes the folder to save the VISO file.
-          * @param  strMachineName    Passes the name of the machine, */
-        QUuid createVisoMediumWithVisoCreator(UIActionPool *pActionPool, QWidget *pParent,
-                                              const QString &strDefaultFolder = QString(), const QString &strMachineName = QString());
-
-        /** Creates and shows a dialog thru which user can create a new floppy disk a VISO using the file-open dialog.
-          * @param  parent            Passes the parent of the dialog,
-          * @param  strDefaultFolder  Passes the default folder,
-          * @param  strMachineName    Passes the name of the machine,
-          * returns the ID of the newly created medium if successful, a null QUuid otherwise.*/
-        QUuid showCreateFloppyDiskDialog(QWidget *pParent, const QString &strDefaultFolder = QString(),
-                                         const QString &strMachineName = QString());
-
-        /** Creates and shows a UIWizardNewVD wizard.
-          * @param  pParent                   Passes the parent of the wizard,
-          * @param  strMachineFolder          Passes the machine folder,
-          * @param  strMachineName            Passes the name of the machine,
-          * @param  strMachineGuestOSTypeId   Passes the string of machine's guest OS type ID,
-          * returns QUuid of the created medium. */
-        QUuid createVDWithWizard(QWidget *pParent,
-                                 const QString &strMachineFolder = QString(),
-                                 const QString &strMachineName = QString(),
-                                 const QString &strMachineGuestOSTypeId = QString());
-    /** @} */
 
     /** @name Process arguments stuff.
      * @{ */

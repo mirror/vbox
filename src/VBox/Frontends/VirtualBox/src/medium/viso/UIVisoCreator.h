@@ -69,6 +69,15 @@ public:
     void    setCurrentPath(const QString &strPath);
     QMenu *menu() const;
 
+    /** Creates a VISO by using the VISO creator dialog.
+      * @param  pParent           Passes the dialog parent.
+      * @param  strDefaultFolder  Passes the folder to save the VISO file.
+      * @param  strMachineName    Passes the name of the machine,
+      * returns the UUID of the created medium or a null QUuid. */
+    static QUuid createViso(UIActionPool *pActionPool, QWidget *pParent,
+                            const QString &strDefaultFolder = QString(),
+                            const QString &strMachineName  = QString());
+
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
     QIToolBar *toolbar() const { return m_pToolBar; }

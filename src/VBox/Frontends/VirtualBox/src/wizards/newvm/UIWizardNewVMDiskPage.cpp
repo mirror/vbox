@@ -44,7 +44,7 @@ QUuid UIWizardNewVMDiskCommon::getWithFileOpenDialog(const QString &strOSTypeID,
                                                      QWidget *pCaller, UIActionPool *pActionPool)
 {
     QUuid uMediumId;
-    int returnCode = uiCommon().openMediumSelectorDialog(pCaller, UIMediumDeviceType_HardDisk,
+    int returnCode = UIMediumSelector::openMediumSelectorDialog(pCaller, UIMediumDeviceType_HardDisk,
                                                          QUuid() /* current medium id */,
                                                          uMediumId,
                                                          strMachineFolder,

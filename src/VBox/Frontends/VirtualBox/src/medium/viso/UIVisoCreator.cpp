@@ -40,7 +40,9 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
+/* Other VBox includes: */
 #include <iprt/getopt.h>
+#include <iprt/path.h>
 
 
 /*********************************************************************************************************************************
@@ -509,6 +511,89 @@ int UIVisoCreatorWidget::visoWriteQuotedString(PRTSTREAM pStrmDst, const char *p
     return vrc;
 }
 
+/* static */
+QUuid UIVisoCreatorWidget::createViso(UIActionPool *pActionPool, QWidget *pParent,
+                                      const QString &strDefaultFolder /* = QString() */,
+                                      const QString &strMachineName /* = QString() */)
+{
+    QWidget *pDialogParent = windowManager().realParentWindow(pParent);
+    UIVisoCreatorDialog *pVisoCreator = new UIVisoCreatorDialog(pActionPool, pDialogParent, strMachineName);
+
+    if (!pVisoCreator)
+        return QString();
+    windowManager().registerNewParent(pVisoCreator, pDialogParent);
+    pVisoCreator->setCurrentPath(gEDataManager->visoCreatorRecentFolder());
+
+    if (pVisoCreator->exec(false /* not application modal */))
+    {
+        QStringList files = pVisoCreator->entryList();
+        QString strVisoName = pVisoCreator->visoName();
+        if (strVisoName.isEmpty())
+            strVisoName = strMachineName;
+
+        if (files.empty() || files[0].isEmpty())
+        {
+            delete pVisoCreator;
+            return QUuid();
+        }
+
+        gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
+
+        /* Produce the VISO. */
+        char szVisoPath[RTPATH_MAX];
+        QString strFileName = QString("%1%2").arg(strVisoName).arg(".viso");
+
+        QString strVisoSaveFolder(strDefaultFolder);
+        if (strVisoSaveFolder.isEmpty())
+            strVisoSaveFolder = uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD);
+
+        int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strVisoSaveFolder.toUtf8().constData(), strFileName.toUtf8().constData());
+        if (RT_SUCCESS(vrc))
+        {
+            PRTSTREAM pStrmViso;
+            vrc = RTStrmOpen(szVisoPath, "w", &pStrmViso);
+            if (RT_SUCCESS(vrc))
+            {
+                RTUUID Uuid;
+                vrc = RTUuidCreate(&Uuid);
+                if (RT_SUCCESS(vrc))
+                {
+                    RTStrmPrintf(pStrmViso, "--iprt-iso-maker-file-marker-bourne-sh %RTuuid\n", &Uuid);
+                    vrc = UIVisoCreatorWidget::visoWriteQuotedString(pStrmViso, "--volume-id=", strVisoName, "\n");
+
+                    for (int iFile = 0; iFile < files.size() && RT_SUCCESS(vrc); iFile++)
+                        vrc = UIVisoCreatorWidget::visoWriteQuotedString(pStrmViso, NULL, files[iFile], "\n");
+
+                    /* Append custom options if any to the file: */
+                    const QStringList &customOptions = pVisoCreator->customOptions();
+                    foreach (QString strLine, customOptions)
+                        RTStrmPrintf(pStrmViso, "%s\n", strLine.toUtf8().constData());
+
+                    RTStrmFlush(pStrmViso);
+                    if (RT_SUCCESS(vrc))
+                        vrc = RTStrmError(pStrmViso);
+                }
+
+                RTStrmClose(pStrmViso);
+            }
+        }
+
+        /* Done. */
+        if (RT_SUCCESS(vrc))
+        {
+            delete pVisoCreator;
+            return uiCommon().openMedium(UIMediumDeviceType_DVD, QString(szVisoPath), pParent);
+        }
+        /** @todo error message. */
+        else
+        {
+            delete pVisoCreator;
+            return QUuid();
+        }
+    }
+    delete pVisoCreator;
+    return QUuid();
+}
 
 /*********************************************************************************************************************************
 *   UIVisoCreatorDialog implementation.                                                                                          *

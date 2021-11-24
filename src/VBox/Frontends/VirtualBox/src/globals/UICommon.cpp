@@ -1689,13 +1689,13 @@ QUuid UICommon::openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pPar
     switch (enmMediumType)
     {
         case UIMediumDeviceType_HardDisk:
-            uMediumId = createVDWithWizard(pParent, strDefaultFolder, strMachineName, strMachineGuestOSTypeId);
+            uMediumId = UIWizardNewVD::createVDWithWizard(pParent, strDefaultFolder, strMachineName, strMachineGuestOSTypeId);
             break;
         case UIMediumDeviceType_DVD:
-            uMediumId = createVisoMediumWithVisoCreator(pActionPool, pParent, strDefaultFolder, strMachineName);
+            uMediumId = UIVisoCreatorWidget::createViso(pActionPool, pParent, strDefaultFolder, strMachineName);
             break;
         case UIMediumDeviceType_Floppy:
-            uMediumId = showCreateFloppyDiskDialog(pParent, strDefaultFolder, strMachineName);
+            uMediumId = UIFDCreationDialog::createFloppyDisk(pParent, strDefaultFolder, strMachineName);
             break;
         default:
             break;
@@ -1707,188 +1707,6 @@ QUuid UICommon::openMediumCreatorDialog(UIActionPool *pActionPool, QWidget *pPar
     if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy)
         updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
     return uMediumId;
-}
-
-QUuid UICommon::createVisoMediumWithVisoCreator(UIActionPool *pActionPool, QWidget *pParent, const QString &strDefaultFolder /* = QString */,
-                                                const QString &strMachineName /* = QString */)
-{
-    QWidget *pDialogParent = windowManager().realParentWindow(pParent);
-    UIVisoCreatorDialog *pVisoCreator = new UIVisoCreatorDialog(pActionPool, pDialogParent, strMachineName);
-
-    if (!pVisoCreator)
-        return QString();
-    windowManager().registerNewParent(pVisoCreator, pDialogParent);
-    pVisoCreator->setCurrentPath(gEDataManager->visoCreatorRecentFolder());
-
-    if (pVisoCreator->exec(false /* not application modal */))
-    {
-        QStringList files = pVisoCreator->entryList();
-        QString strVisoName = pVisoCreator->visoName();
-        if (strVisoName.isEmpty())
-            strVisoName = strMachineName;
-
-        if (files.empty() || files[0].isEmpty())
-        {
-            delete pVisoCreator;
-            return QUuid();
-        }
-
-        gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
-
-        /* Produce the VISO. */
-        char szVisoPath[RTPATH_MAX];
-        QString strFileName = QString("%1%2").arg(strVisoName).arg(".viso");
-
-        QString strVisoSaveFolder(strDefaultFolder);
-        if (strVisoSaveFolder.isEmpty())
-            strVisoSaveFolder = defaultFolderPathForType(UIMediumDeviceType_DVD);
-
-        int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strVisoSaveFolder.toUtf8().constData(), strFileName.toUtf8().constData());
-        if (RT_SUCCESS(vrc))
-        {
-            PRTSTREAM pStrmViso;
-            vrc = RTStrmOpen(szVisoPath, "w", &pStrmViso);
-            if (RT_SUCCESS(vrc))
-            {
-                RTUUID Uuid;
-                vrc = RTUuidCreate(&Uuid);
-                if (RT_SUCCESS(vrc))
-                {
-                    RTStrmPrintf(pStrmViso, "--iprt-iso-maker-file-marker-bourne-sh %RTuuid\n", &Uuid);
-                    vrc = UIVisoCreatorWidget::visoWriteQuotedString(pStrmViso, "--volume-id=", strVisoName, "\n");
-
-                    for (int iFile = 0; iFile < files.size() && RT_SUCCESS(vrc); iFile++)
-                        vrc = UIVisoCreatorWidget::visoWriteQuotedString(pStrmViso, NULL, files[iFile], "\n");
-
-                    /* Append custom options if any to the file: */
-                    const QStringList &customOptions = pVisoCreator->customOptions();
-                    foreach (QString strLine, customOptions)
-                        RTStrmPrintf(pStrmViso, "%s\n", strLine.toUtf8().constData());
-
-                    RTStrmFlush(pStrmViso);
-                    if (RT_SUCCESS(vrc))
-                        vrc = RTStrmError(pStrmViso);
-                }
-
-                RTStrmClose(pStrmViso);
-            }
-        }
-
-        /* Done. */
-        if (RT_SUCCESS(vrc))
-        {
-            delete pVisoCreator;
-            return openMedium(UIMediumDeviceType_DVD, QString(szVisoPath), pParent);
-        }
-        /** @todo error message. */
-        else
-        {
-            delete pVisoCreator;
-            return QUuid();
-        }
-    }
-    delete pVisoCreator;
-    return QUuid();
-}
-
-QUuid UICommon::showCreateFloppyDiskDialog(QWidget *pParent, const QString &strDefaultFolder /* QString() */,
-                                             const QString &strMachineName /* = QString() */ )
-{
-    QString strStartPath(strDefaultFolder);
-
-    if (strStartPath.isEmpty())
-        strStartPath = defaultFolderPathForType(UIMediumDeviceType_Floppy);
-
-    QWidget *pDialogParent = windowManager().realParentWindow(pParent);
-
-    UIFDCreationDialog *pDialog = new UIFDCreationDialog(pParent, strStartPath, strMachineName);
-    if (!pDialog)
-        return QUuid();
-    windowManager().registerNewParent(pDialog, pDialogParent);
-
-    if (pDialog->exec())
-    {
-        QUuid uMediumID = pDialog->mediumID();
-        delete pDialog;
-        return uMediumID;
-    }
-    delete pDialog;
-    return QUuid();
-}
-
-int UICommon::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType, const QUuid &uCurrentMediumId,
-                                       QUuid &uSelectedMediumUuid, const QString &strMachineFolder, const QString &strMachineName,
-                                       const QString &strMachineGuestOSTypeId, bool fEnableCreate, const QUuid &uMachineID,
-                                       UIActionPool *pActionPool)
-{
-    QUuid uMachineOrGlobalId = uMachineID == QUuid() ? gEDataManager->GlobalID : uMachineID;
-
-    QWidget *pDialogParent = windowManager().realParentWindow(pParent);
-    QPointer<UIMediumSelector> pSelector = new UIMediumSelector(uCurrentMediumId, enmMediumType, strMachineName,
-                                                                strMachineFolder, strMachineGuestOSTypeId,
-                                                                uMachineOrGlobalId, pDialogParent, pActionPool);
-
-    if (!pSelector)
-        return static_cast<int>(UIMediumSelector::ReturnCode_Rejected);
-    pSelector->setEnableCreateAction(fEnableCreate);
-    windowManager().registerNewParent(pSelector, pDialogParent);
-
-    int iResult = pSelector->exec(false);
-    UIMediumSelector::ReturnCode returnCode;
-
-    if (iResult >= static_cast<int>(UIMediumSelector::ReturnCode_Max) || iResult < 0)
-        returnCode = UIMediumSelector::ReturnCode_Rejected;
-    else
-        returnCode = static_cast<UIMediumSelector::ReturnCode>(iResult);
-
-    if (returnCode == UIMediumSelector::ReturnCode_Accepted)
-    {
-        QList<QUuid> selectedMediumIds = pSelector->selectedMediumIds();
-
-        /* Currently we only care about the 0th since we support single selection by intention: */
-        if (selectedMediumIds.isEmpty())
-            returnCode = UIMediumSelector::ReturnCode_Rejected;
-        else
-        {
-            uSelectedMediumUuid = selectedMediumIds[0];
-            updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uSelectedMediumUuid).location());
-        }
-    }
-    delete pSelector;
-    return static_cast<int>(returnCode);
-}
-
-QUuid UICommon::createVDWithWizard(QWidget *pParent,
-                                   const QString &strMachineFolder /* = QString() */,
-                                   const QString &strMachineName /* = QString() */,
-                                   const QString &strMachineGuestOSTypeId  /* = QString() */)
-{
-    /* Initialize variables: */
-    QString strDefaultFolder = strMachineFolder;
-    if (strDefaultFolder.isEmpty())
-        strDefaultFolder = defaultFolderPathForType(UIMediumDeviceType_HardDisk);
-
-    /* In case we dont have a 'guest os type id' default back to 'Other': */
-    const CGuestOSType comGuestOSType = virtualBox().GetGuestOSType(  !strMachineGuestOSTypeId.isEmpty()
-                                                                    ? strMachineGuestOSTypeId
-                                                                    : "Other");
-    const QString strDiskName = findUniqueFileName(strDefaultFolder,   !strMachineName.isEmpty()
-                                                                     ? strMachineName
-                                                                     : "NewVirtualDisk");
-
-    /* Show New VD wizard: */
-    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pParent,
-                                                         strDiskName,
-                                                         strDefaultFolder,
-                                                         comGuestOSType.GetRecommendedHDD());
-    if (!pWizard)
-        return QUuid();
-    QWidget *pDialogParent = windowManager().realParentWindow(pParent);
-    windowManager().registerNewParent(pWizard, pDialogParent);
-    QUuid mediumId = pWizard->mediumId();
-    pWizard->exec();
-    delete pWizard;
-    return mediumId;
 }
 
 void UICommon::prepareStorageMenu(QMenu &menu,
@@ -2090,11 +1908,11 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
                 QUuid uMediumID;
                 if (target.type == UIMediumTarget::UIMediumTargetType_WithID)
                 {
-                    int iDialogReturn = openMediumSelectorDialog(windowManager().mainWindowShown(), target.mediumType,
-                                                                 uCurrentID, uMediumID,
-                                                                 strMachineFolder, comConstMachine.GetName(),
-                                                                 comConstMachine.GetOSTypeId(), true /*fEnableCreate */,
-                                                                 comConstMachine.GetId(), pActionPool);
+                    int iDialogReturn = UIMediumSelector::openMediumSelectorDialog(windowManager().mainWindowShown(), target.mediumType,
+                                                                                   uCurrentID, uMediumID,
+                                                                                   strMachineFolder, comConstMachine.GetName(),
+                                                                                   comConstMachine.GetOSTypeId(), true /*fEnableCreate */,
+                                                                                   comConstMachine.GetId(), pActionPool);
                     if (iDialogReturn == UIMediumSelector::ReturnCode_LeftEmpty &&
                         (target.mediumType == UIMediumDeviceType_DVD || target.mediumType == UIMediumDeviceType_Floppy))
                         fMount = false;
@@ -2105,11 +1923,11 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
                                                              strMachineFolder, false /* fUseLastFolder */);
                 }
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)
-                    uMediumID = createVisoMediumWithVisoCreator(pActionPool, windowManager().mainWindowShown(), strMachineFolder,
-                                                                comConstMachine.GetName());
+                    uMediumID = UIVisoCreatorWidget::createViso(pActionPool, windowManager().mainWindowShown(),
+                                                                strMachineFolder, comConstMachine.GetName());
 
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)
-                    uMediumID = showCreateFloppyDiskDialog(windowManager().mainWindowShown(), strMachineFolder, comConstMachine.GetName());
+                    uMediumID = UIFDCreationDialog::createFloppyDisk(windowManager().mainWindowShown(), strMachineFolder, comConstMachine.GetName());
 
                 /* Return focus back: */
                 if (pLastFocusedWidget)

@@ -4007,10 +4007,10 @@ void UIMachineSettingsStorage::sltChooseExistingMedium()
     if (m_pMediumIdHolder)
         uCurrentMediumId = m_pMediumIdHolder->id();
     QUuid uSelectedMediumId;
-    int iResult = uiCommon().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uCurrentMediumId, uSelectedMediumId,
-                                                      strMachineFolder, m_strMachineName,
-                                                      m_strMachineGuestOSTypeId,
-                                                      true /* enable create action: */, m_uMachineId, m_pActionPool);
+    int iResult = UIMediumSelector::openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uCurrentMediumId, uSelectedMediumId,
+                                                             strMachineFolder, m_strMachineName,
+                                                             m_strMachineGuestOSTypeId,
+                                                             true /* enable create action: */, m_uMachineId, m_pActionPool);
 
     if (iResult == UIMediumSelector::ReturnCode_Rejected ||
         (iResult == UIMediumSelector::ReturnCode_Accepted && uSelectedMediumId.isNull()))
@@ -5227,15 +5227,14 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDeviceType)
     const QModelIndex index = m_pTreeViewStorage->currentIndex();
     Assert(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
     Assert(m_pModelStorage->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
-    // const QString strControllerName(m_pModelStorage->data(index, StorageModel::R_CtrName).toString());
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
     QUuid uMediumId;
-    int iResult = uiCommon().openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDeviceType),
-                                                      QUuid() /* current medium Id */, uMediumId,
-                                                      strMachineFolder, m_strMachineName,
-                                                      m_strMachineGuestOSTypeId,
-                                                      true /* enable cr1eate action: */, m_uMachineId, m_pActionPool);
+    int iResult = UIMediumSelector::openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDeviceType),
+                                                             QUuid() /* current medium Id */, uMediumId,
+                                                             strMachineFolder, m_strMachineName,
+                                                             m_strMachineGuestOSTypeId,
+                                                             true /* enable cr1eate action: */, m_uMachineId, m_pActionPool);
 
     /* Continue only if iResult is either UIMediumSelector::ReturnCode_Accepted or UIMediumSelector::ReturnCode_LeftEmpty: */
     /* If iResult is UIMediumSelector::ReturnCode_Accepted then we have to have a valid uMediumId: */

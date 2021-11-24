@@ -42,7 +42,18 @@ public:
 
     bool createVirtualDisk();
 
-    /** @name Setter/getters for vm parameters
+    /** Creates and shows a UIWizardNewVD wizard.
+      * @param  pParent                   Passes the parent of the wizard,
+      * @param  strMachineFolder          Passes the machine folder,
+      * @param  strMachineName            Passes the name of the machine,
+      * @param  strMachineGuestOSTypeId   Passes the string of machine's guest OS type ID,
+      * returns QUuid of the created medium. */
+    static QUuid createVDWithWizard(QWidget *pParent,
+                                    const QString &strMachineFolder = QString(),
+                                    const QString &strMachineName = QString(),
+                                    const QString &strMachineGuestOSTypeId = QString());
+
+    /** @name Setter/getters for virtual disk parameters
      * @{ */
        qulonglong mediumVariant() const;
        void setMediumVariant(qulonglong uMediumVariant);

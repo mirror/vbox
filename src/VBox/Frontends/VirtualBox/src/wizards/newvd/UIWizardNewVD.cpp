@@ -17,6 +17,7 @@
 
 /* GUI includes: */
 #include "UICommon.h"
+#include "UIModalWindowManager.h"
 #include "UINotificationCenter.h"
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVDFileTypePage.h"
@@ -153,6 +154,40 @@ bool UIWizardNewVD::createVirtualDisk()
 
     /* Positive: */
     return true;
+}
+
+/* static */
+QUuid UIWizardNewVD::createVDWithWizard(QWidget *pParent,
+                                        const QString &strMachineFolder /* = QString() */,
+                                        const QString &strMachineName /* = QString() */,
+                                        const QString &strMachineGuestOSTypeId  /* = QString() */)
+{
+    /* Initialize variables: */
+    QString strDefaultFolder = strMachineFolder;
+    if (strDefaultFolder.isEmpty())
+        strDefaultFolder = uiCommon().defaultFolderPathForType(UIMediumDeviceType_HardDisk);
+
+    /* In case we dont have a 'guest os type id' default back to 'Other': */
+    const CGuestOSType comGuestOSType = uiCommon().virtualBox().GetGuestOSType(  !strMachineGuestOSTypeId.isEmpty()
+                                                                                 ? strMachineGuestOSTypeId
+                                                                                 : "Other");
+    const QString strDiskName = uiCommon().findUniqueFileName(strDefaultFolder,   !strMachineName.isEmpty()
+                                                                     ? strMachineName
+                                                                     : "NewVirtualDisk");
+
+    /* Show New VD wizard: */
+    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pParent,
+                                                         strDiskName,
+                                                         strDefaultFolder,
+                                                         comGuestOSType.GetRecommendedHDD());
+    if (!pWizard)
+        return QUuid();
+    QWidget *pDialogParent = windowManager().realParentWindow(pParent);
+    windowManager().registerNewParent(pWizard, pDialogParent);
+    QUuid mediumId = pWizard->mediumId();
+    pWizard->exec();
+    delete pWizard;
+    return mediumId;
 }
 
 void UIWizardNewVD::retranslateUi()

@@ -30,6 +30,7 @@
 #include "UIMedium.h"
 #include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
+#include "UIModalWindowManager.h"
 
 /* COM includes: */
 #include "CSystemProperties.h"
@@ -56,6 +57,32 @@ UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent,
 QUuid UIFDCreationDialog::mediumID() const
 {
     return m_uMediumID;
+}
+
+/* static */
+QUuid UIFDCreationDialog::createFloppyDisk(QWidget *pParent, const QString &strDefaultFolder /* QString() */,
+                                           const QString &strMachineName /* = QString() */ )
+{
+    QString strStartPath(strDefaultFolder);
+
+    if (strStartPath.isEmpty())
+        strStartPath = uiCommon().defaultFolderPathForType(UIMediumDeviceType_Floppy);
+
+    QWidget *pDialogParent = windowManager().realParentWindow(pParent);
+
+    UIFDCreationDialog *pDialog = new UIFDCreationDialog(pParent, strStartPath, strMachineName);
+    if (!pDialog)
+        return QUuid();
+    windowManager().registerNewParent(pDialog, pDialogParent);
+
+    if (pDialog->exec())
+    {
+        QUuid uMediumID = pDialog->mediumID();
+        delete pDialog;
+        return uMediumID;
+    }
+    delete pDialog;
+    return QUuid();
 }
 
 void UIFDCreationDialog::accept()
