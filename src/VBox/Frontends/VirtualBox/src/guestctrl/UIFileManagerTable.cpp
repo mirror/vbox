@@ -385,7 +385,7 @@ UIFileManagerBreadCrumbs::UIFileManagerBreadCrumbs(QWidget *pParent /* = 0 */)
     :QLabel(pParent)
     , m_pathSeparator('/')
 {
-    float fFontMult = 1.2f;
+    float fFontMult = 1.f;
     QFont mFont = font();
     if (mFont.pixelSize() == -1)
         mFont.setPointSize(fFontMult * mFont.pointSize());
@@ -436,6 +436,7 @@ void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
     {
         QString strFolder = UIPathOperations::removeTrailingDelimiters(folderList.at(i)).replace('/', m_pathSeparator);
         QString strWord = QString("<a href=\"%1\" style=\"color:black;text-decoration:none;\">%2</a>").arg(strPathUpto[i]).arg(strFolder);
+
         if (i < folderList.size() - 1)
         {
             iWidth += fontMetrics().width(" > ");
@@ -445,7 +446,6 @@ void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
 
         if (iWidth < width())
             strLabelText.prepend(strWord);
-
     }
     setText(strLabelText);
 }
@@ -850,8 +850,7 @@ void UIFileManagerTable::changeLocation(const QModelIndex &index)
     }
     setSelectionDependentActionsEnabled(false);
 
-    /** @todo check if we really need this and if not remove it */
-    //m_pModel->signalUpdate();
+    m_pView->scrollToTop();
 }
 
 void UIFileManagerTable::initializeFileTree()

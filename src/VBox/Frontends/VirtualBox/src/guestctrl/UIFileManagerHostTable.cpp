@@ -166,13 +166,12 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
         fileObjects.insert(fileInfo.fileName(), item);
         item->setIsOpened(false);
     }
-
 }
 
 void UIFileManagerHostTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(UIFileManager::tr("Host File System"));
+        m_pLocationLabel->setText(UIFileManager::tr("Host File System:"));
     UIFileManagerTable::retranslateUi();
 }
 
@@ -206,9 +205,7 @@ void UIFileManagerHostTable::prepareToolbar()
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Copy)->setVisible(false);
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Cut)->setVisible(false);
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Paste)->setVisible(false);
-
     }
-
     setSelectionDependentActionsEnabled(false);
 }
 
@@ -266,8 +263,8 @@ void UIFileManagerHostTable::deleteByItem(UICustomFileSystemItem *item)
     /** @todo replace this recursive delete by a better implementation: */
     bool deleteSuccess = itemToDelete.removeRecursively();
 
-     if (!deleteSuccess)
-         emit sigLogOutput(QString(item->path()).append(" could not be deleted"), FileManagerLogType_Error);
+    if (!deleteSuccess)
+        emit sigLogOutput(QString(item->path()).append(" could not be deleted"), FileManagerLogType_Error);
 }
 
 void UIFileManagerHostTable::deleteByPath(const QStringList &pathList)

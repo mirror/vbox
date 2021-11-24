@@ -167,7 +167,7 @@ void UIFileManagerGuestTable::initGuestFileTable(const CGuestSession &session)
 void UIFileManagerGuestTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(UIFileManager::tr("Guest File System"));
+        m_pLocationLabel->setText(UIFileManager::tr("Guest File System:"));
     UIFileManagerTable::retranslateUi();
 }
 
@@ -262,7 +262,6 @@ void UIFileManagerGuestTable::deleteByPath(const QStringList &pathList)
             QVector<KDirectoryRemoveRecFlag> aFlags(1, KDirectoryRemoveRecFlag_ContentAndDir);
             m_comGuestSession.DirectoryRemoveRecursive(strPath, aFlags);
         }
-
     }
 }
 
@@ -301,7 +300,6 @@ bool UIFileManagerGuestTable::renameItem(UICustomFileSystemItem *item, QString n
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         return false;
     }
-
     item->setPath(newPath);
     return true;
 }
@@ -587,41 +585,13 @@ void UIFileManagerGuestTable::showProperties()
     QStringList selectedObjects = selectedItemPathList();
     if (selectedObjects.size() == 0)
         return;
-    //UIGuestDirectoryDiskUsageComputer *directoryThread = 0;
-
-    /* if the selection include a directory or it is a multiple selection the create a worker thread
-       to compute total size of the selection (recusively) */
-    // bool createWorkerThread = (selectedObjects.size() > 1);
-    // if (!createWorkerThread &&
-    //     fileType(m_comGuestSession.FsObjQueryInfo(selectedObjects[0], true)) == KFsObjType_Directory)
-    //     createWorkerThread = true;
-    // if (createWorkerThread)
-    // {
-    //     directoryThread = new UIGuestDirectoryDiskUsageComputer(this, selectedObjects, m_comGuestSession);
-    //     if (directoryThread)
-    //     {
-    //         connect(directoryThread, &UIGuestDirectoryDiskUsageComputer::sigResultUpdated,
-    //                 this, &UIFileManagerGuestTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
-    //         directoryThread->start();
-    //     }
-    // }
 
     m_pPropertiesDialog->setWindowTitle(UIFileManager::tr("Properties"));
     m_pPropertiesDialog->setPropertyText(fsPropertyString);
     m_pPropertiesDialog->execute();
 
-    // if (directoryThread)
-    // {
-    //     if (directoryThread->isRunning())
-    //         directoryThread->stopRecursion();
-    //     disconnect(directoryThread, &UIGuestDirectoryDiskUsageComputer::sigResultUpdated,
-    //                this, &UIFileManagerGuestTable::sltReceiveDirectoryStatistics/*, Qt::DirectConnection*/);
-    // }
-
-
     delete m_pPropertiesDialog;
     m_pPropertiesDialog = 0;
-
 }
 
 void UIFileManagerGuestTable::determineDriveLetters()
