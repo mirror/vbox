@@ -230,6 +230,16 @@ ifdef VBOX_WITH_BS3KIT
 # Bs3kit
 #
 
+#
+# APIC
+#
+MISCBINS += bs3-apic-1
+bs3-apic-1_TEMPLATE = VBoxBS3KitImg
+bs3-apic-1_SOURCES  = \
+	bs3kit/bs3-first-rm.asm \
+	bs3-apic-1.c \
+
+
 # CPU basics #2 (first being bootsector2-cpu-basic-1).
 MISCBINS += bs3-cpu-basic-2
 bs3-cpu-basic-2_TEMPLATE = VBoxBS3KitImg
