@@ -599,7 +599,7 @@ VMM_INT_DECL(int)   PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes);
 VMM_INT_DECL(int)   PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3);
 
 VMMDECL(int)        PGMInvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCPtrPage);
-VMMDECL(int)        PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fPdpesMapped);
+VMMDECL(int)        PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fCr3Mapped);
 VMMDECL(int)        PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
 VMMDECL(int)        PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fCr3Mapped);
 VMMDECL(int)        PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer, bool fForce);
