@@ -65,9 +65,9 @@ endproc_frame
         mov     ebp, esp
         push    edi
         mov     ecx, [ebp + 8]
-        mov     edi, [esp + 12]
-        mov     eax, [esp + 16]
-        mov     edx, [esp + 20]
+        mov     edi, [ebp + 12]
+        mov     eax, [ebp + 16]
+        mov     edx, [ebp + 20]
         wrmsr
         pop     edi
         leave

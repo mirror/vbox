@@ -72,7 +72,7 @@ endproc_frame
         xor     eax, eax
         xor     edx, edx
         mov     ecx, [ebp + 8]
-        mov     edi, [esp + 12]
+        mov     edi, [ebp + 12]
         rdmsr
         pop     edi
         leave
