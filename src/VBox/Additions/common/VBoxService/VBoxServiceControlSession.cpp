@@ -2402,12 +2402,12 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBGLR3GUESTCTRLSES
     /*
      * Flags.
      */
-    uint32_t const fProcCreate = RTPROC_FLAGS_PROFILE
+    uint32_t fProcCreate = RTPROC_FLAGS_PROFILE
 #ifdef RT_OS_WINDOWS
-                               | RTPROC_FLAGS_SERVICE
-                               | RTPROC_FLAGS_HIDDEN
+                         | RTPROC_FLAGS_SERVICE
+                         | RTPROC_FLAGS_HIDDEN
 #endif
-                               ;
+                         ;
 
     /*
      * Configure standard handles.
@@ -2447,15 +2447,38 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBGLR3GUESTCTRLSES
             if (RT_SUCCESS(rc))
 #endif
             {
+                RTENV hEnv = RTENV_DEFAULT;
+
+                /* If we start a guest session with RTPROC_FLAGS_PROFILE (the default), make sure
+                 * that we clone the initial session's environment and apply it as a change record to
+                 * the new session process.
+                 *
+                 * This is needed in order to make different locales on POSIX OSes work. See @bugref{10153}. */
+                if (fProcCreate & RTPROC_FLAGS_PROFILE)
+                {
+                    int rc2 = RTEnvClone(&hEnv, RTENV_DEFAULT);
+                    if (RT_SUCCESS(rc2))
+                        fProcCreate |= RTPROC_FLAGS_ENV_CHANGE_RECORD;
+                    else
+                        VGSvcError("Cloning environment block failed with %Rrc\n", rc2);
+                    /* Consider this as not being fatal. Just stay witht the default environment and hope for the best. */
+                }
+
                 /*
                  * Finally, create the process.
                  */
-                rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, fProcCreate,
+                rc = RTProcCreateEx(pszExeName, apszArgs, hEnv, fProcCreate,
                                     &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
                                     !fAnonymous ? pszUser : NULL,
                                     !fAnonymous ? pSessionThread->pStartupInfo->pszPassword : NULL,
                                     NULL /*pvExtraData*/,
                                     &pSessionThread->hProcess);
+
+                if (hEnv != RTENV_DEFAULT)
+                {
+                    RTEnvDestroy(hEnv);
+                    hEnv = NIL_RTENV;
+                }
             }
 #ifdef RT_OS_WINDOWS
             RTStrFree(pszUserUPN);
