@@ -392,18 +392,18 @@ terminate_proc() {
 maybe_run_python_bindings_installer() {
     VBOX_INSTALL_PATH="${1}"
 
-    # Check for python2 only, because the generic package does not provide
-    # any XPCOM bindings support for python3 since there is no standard ABI.
+    # Check for specific python2 versions only, because python3 is handled
+    # by a generic library which should work with 3.3 and later.
     PYTHON=""
-    for p in python python2 python2.6 python2.7; do
+    for p in python python2 python2.6 python2.7 python3; do
         if [ "`$p -c 'import sys
-if sys.version_info >= (2, 6) and sys.version_info < (3, 0):
-    print \"test\"' 2> /dev/null`" = "test" ]; then
+if sys.version_info >= (2, 6) and (sys.version_info < (3, 0) or sys.version_info >= (3, 3)):
+    print(\"test\")' 2> /dev/null`" = "test" ]; then
             PYTHON=$p
         fi
     done
     if [ -z "$PYTHON" ]; then
-        echo  1>&2 "Python 2 (2.6 or 2.7) not available, skipping bindings installation."
+        echo  1>&2 "Python (2.6, 2.7 or 3.3 and later) unavailable, skipping bindings installation."
         return 1
     fi
 
