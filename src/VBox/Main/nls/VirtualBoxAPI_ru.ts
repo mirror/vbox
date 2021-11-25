@@ -3088,7 +3088,7 @@
     <message>
         <location filename="../src-all/Global.cpp" line="603"/>
         <source>TeleportingIn</source>
-        <translation>Портирование (Входящее)</translation>
+        <translation>Портирование (Извне)</translation>
     </message>
     <message>
         <location filename="../src-all/Global.cpp" line="604"/>
@@ -3300,7 +3300,7 @@
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="545"/>
         <source>%s not supported by installed Guest Additions</source>
-        <translation>%s не поддерживается установленными Дополнениями гостевой ОС</translation>
+        <translation>%s не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="552"/>
@@ -3326,12 +3326,12 @@
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="655"/>
         <source>Updating Guest Additions</source>
-        <translation>Обновление Дополнений гостевой ОС</translation>
+        <translation>Обновление Дополнений Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="673"/>
         <source>Starting thread for updating Guest Additions on the guest failed</source>
-        <translation>Не удалось запустить поток для обновления Дополнений гостевой ОС</translation>
+        <translation>Не удалось запустить поток для обновления Дополнений Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestCtrlImpl.cpp" line="677"/>
@@ -3802,7 +3802,7 @@
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="332"/>
         <source>The base environment feature is not supported by installed Guest Additions</source>
-        <translation>Функция базового окружения не поддерживается установленными Дополнениями гостевой ОС</translation>
+        <translation>Функция базового окружения не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="507"/>
@@ -3889,7 +3889,7 @@
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="1824"/>
         <source>Terminating guest process &quot;%s&quot; (PID %RU32) not supported by installed Guest Additions</source>
-        <translation>Завершение гостевого процесса &quot;%s&quot; (PID %RU32) неподдерживаемого установленными Дополнениями гостевой ОС</translation>
+        <translation>Завершение гостевого процесса &quot;%s&quot; (PID %RU32) неподдерживаемого установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestProcessImpl.cpp" line="1829"/>
@@ -4007,7 +4007,7 @@
         <location filename="../src-client/GuestSessionImpl.cpp" line="3759"/>
         <location filename="../src-client/GuestSessionImpl.cpp" line="3780"/>
         <source>The base environment feature is not supported by the Guest Additions</source>
-        <translation>Функция базового окружения не поддерживается установленными Дополнениями гостевой ОС</translation>
+        <translation>Функция базового окружения не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="485"/>
@@ -4019,7 +4019,7 @@
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="546"/>
         <source>Getting the user&apos;s home path is not supported by installed Guest Additions</source>
-        <translation>Получение пути к домашней директории пользователя не поддерживается установленными Дополнениями гостевой ОС</translation>
+        <translation>Получение пути к домашней директории пользователя не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="551"/>
@@ -4034,7 +4034,7 @@
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="584"/>
         <source>Getting the user&apos;s documents path is not supported by installed Guest Additions</source>
-        <translation>Получение пути к директории пользователя, с документами не поддерживается установленными Дополнениями гостевой ОС</translation>
+        <translation>Получение пути к директории пользователя, с документами не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="589"/>
@@ -4310,7 +4310,7 @@
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="3596"/>
         <source>Handling removing guest directories not supported by installed Guest Additions</source>
-        <translation>Обработка удаления директорий гостевой системы не поддерживается установленными Дополнениями гостевой ОС</translation>
+        <translation>Обработка удаления директорий гостевой системы не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="3602"/>
@@ -4340,7 +4340,7 @@
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="3678"/>
         <source>Handling removing guest directories recursively not supported by installed Guest Additions</source>
-        <translation>Обработка рекурсивного удаления директорий гостевой системы не поддерживается установленными Дополнениями гостевой ОС</translation>
+        <translation>Обработка рекурсивного удаления директорий гостевой системы не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="3684"/>
@@ -4414,7 +4414,7 @@
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="3946"/>
         <source>Handling guest files not supported by installed Guest Additions</source>
-        <translation>Обработка файлов гостевой системы не поддерживается установленными Дополнениями гостевой ОС</translation>
+        <translation>Обработка файлов гостевой системы не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="3952"/>
@@ -4487,7 +4487,7 @@
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4156"/>
         <source>Handling renaming guest paths not supported by installed Guest Additions</source>
-        <translation>Обработка переименования путей гостевой системы не поддерживается установленными Дополнениями гостевой ОС</translation>
+        <translation>Обработка переименования путей гостевой системы не поддерживается установленными Дополнениями Гостевой ОС</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="4162"/>
@@ -4854,22 +4854,22 @@
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2197"/>
         <source>Guest Additions were not ready within time, giving up</source>
-        <translation>Дополнения гостевой ОС не стали готовы за отведенное время, сдаюсь</translation>
+        <translation>Дополнения Гостевой ОС не стали готовы за отведенное время, сдаюсь</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2210"/>
         <source>Guest Additions are installed but not fully loaded yet, aborting automatic update</source>
-        <translation>Дополнения гостевой ОС установлены, но еще не полностью загружены, прерывание автоматического обновления</translation>
+        <translation>Дополнения Гостевой ОС установлены, но еще не полностью загружены, прерывание автоматического обновления</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2213"/>
         <source>Guest Additions not installed or ready, aborting automatic update</source>
-        <translation>Дополнения гостевой ОС не установлены или не готовы, прерывание автоматического обновления</translation>
+        <translation>Дополнения Гостевой ОС не установлены или не готовы, прерывание автоматического обновления</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2230"/>
         <source>Guest has too old Guest Additions (%s) installed for automatic updating, please update manually</source>
-        <translation>В гостевой системе установлена слишком старая версия Дополнений гостевой ОС (%s). Автоматическое обновление невозможно. Пожалуйста, обновите вручную</translation>
+        <translation>В гостевой системе установлена слишком старая версия Дополнений Гостевой ОС (%s). Автоматическое обновление невозможно. Пожалуйста, обновите вручную</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2259"/>
@@ -4894,7 +4894,7 @@
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2322"/>
         <source>Unable to open Guest Additions .ISO file &quot;%s&quot;: %Rrc</source>
-        <translation>Невозможно открыть .ISO файл Дополнений гостевой ОС &quot;%s&quot;: %Rrc</translation>
+        <translation>Невозможно открыть .ISO файл Дополнений Гостевой ОС &quot;%s&quot;: %Rrc</translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImplTasks.cpp" line="2332"/>
@@ -8370,17 +8370,17 @@
     <message>
         <location filename="../src-server/SystemPropertiesImpl.cpp" line="2204"/>
         <source>Cannot determine default Guest Additions ISO location. Most likely they are not available</source>
-        <translation>Невозможно определить стандартное расположение Дополнений гостевой ОС. Наиболее вероятно, они недоступны</translation>
+        <translation>Невозможно определить стандартное расположение Дополнений Гостевой ОС. Наиболее вероятно, они недоступны</translation>
     </message>
     <message>
         <location filename="../src-server/SystemPropertiesImpl.cpp" line="2209"/>
         <source>Given default machine Guest Additions ISO file &apos;%s&apos; is not fully qualified</source>
-        <translation>Данный файл Дополнений гостевой ОС &apos;%s&apos; машины не полностью определен</translation>
+        <translation>Данный файл Дополнений Гостевой ОС &apos;%s&apos; машины не полностью определен</translation>
     </message>
     <message>
         <location filename="../src-server/SystemPropertiesImpl.cpp" line="2214"/>
         <source>Given default machine Guest Additions ISO file &apos;%s&apos; does not exist</source>
-        <translation>Данный файл Дополнений гостевой ОС &apos;%s&apos; машины не существует</translation>
+        <translation>Данный файл Дополнений Гостевой ОС &apos;%s&apos; машины не существует</translation>
     </message>
     <message>
         <location filename="../src-server/SystemPropertiesImpl.cpp" line="2382"/>
@@ -8411,7 +8411,7 @@
     <message>
         <location filename="../src-server/USBDeviceFilterImpl.cpp" line="67"/>
         <source>Vendor ID</source>
-        <translation>ID производителя</translation>
+        <translation>ID поставщика</translation>
     </message>
     <message>
         <location filename="../src-server/USBDeviceFilterImpl.cpp" line="68"/>
@@ -8684,7 +8684,7 @@
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="1263"/>
         <source>Could not locate the Guest Additions ISO file &apos;%s&apos;</source>
-        <translation>Невозможно определить местоположение ISO файла Дополнений гостевой ОС &apos;%s&apos;</translation>
+        <translation>Невозможно определить местоположение ISO файла Дополнений Гостевой ОС &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../src-server/UnattendedImpl.cpp" line="1266"/>
@@ -9273,14 +9273,14 @@
         <source>Assertion failed: [%s] at &apos;%s&apos; (%d) in %s.
 Please contact the product vendor!</source>
         <translation>Assertion failed: [%s] в &apos;%s&apos; (%d) в %s.
-Пожалуйста, обратитесь к производителю продукта!</translation>
+Пожалуйста, обратитесь к поставщику продукта!</translation>
     </message>
     <message>
         <location filename="../include/VirtualBoxBase.h" line="196"/>
         <source>Assertion failed: at &apos;%s&apos; (%d) in %s.
 Please contact the product vendor!</source>
         <translation>Assertion failed: в &apos;%s&apos; (%d) в %s.
-Пожалуйста, обратитесь к производителю продукта!</translation>
+Пожалуйста, обратитесь к поставщику продукта!</translation>
     </message>
     <message>
         <location filename="../include/VirtualBoxBase.h" line="218"/>
@@ -9289,7 +9289,7 @@ Please contact the product vendor!</source>
 Please contact the product vendor!</source>
         <translation>Assertion failed: [%s] в &apos;%s&apos; (%d) в %s.
 %s.
-Пожалуйста, обратитесь к производителю продукта!</translation>
+Пожалуйста, обратитесь к поставщику продукта!</translation>
     </message>
     <message>
         <location filename="../include/VirtualBoxBase.h" line="236"/>
@@ -9298,7 +9298,7 @@ Please contact the product vendor!</source>
 Please contact the product vendor!</source>
         <translation>Assertion failed: в &apos;%s&apos; (%d) в %s.
 %s.
-Пожалуйста, обратитесь к производителю продукта!</translation>
+Пожалуйста, обратитесь к поставщику продукта!</translation>
     </message>
     <message>
         <location filename="../include/VirtualBoxBase.h" line="366"/>
