@@ -215,7 +215,7 @@ DECL_FORCE_INLINE(bool) RTLocCIsGraph(int ch)
 
 
 /**
- * Converts the character to lower case if applictable.
+ * Converts the character to lower case if applicable.
  *
  * @returns lower cased character or ch.
  * @param   ch      The character to test.
@@ -226,7 +226,7 @@ DECL_FORCE_INLINE(int) RTLocCToLower(int ch)
 }
 
 /**
- * Converts the character to upper case if applictable.
+ * Converts the character to upper case if applicable.
  *
  * @returns upper cased character or ch.
  * @param   ch      The character to test.
@@ -240,4 +240,3 @@ DECL_FORCE_INLINE(int) RTLocCToUpper(int ch)
 /** @} */
 
 #endif /* !IPRT_INCLUDED_ctype_h */
-
