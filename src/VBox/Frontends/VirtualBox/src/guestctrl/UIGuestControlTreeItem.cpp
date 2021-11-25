@@ -217,7 +217,7 @@ QString UIGuestSessionTreeItem::propertyString() const
     QString strProperty;
     strProperty += QString("<b>%1: </b>%2<br/>").arg(tr("Session Name")).arg(m_comGuestSession.GetName());
     strProperty += QString("<b>%1: </b>%2<br/>").arg(tr("Session Id")).arg(m_comGuestSession.GetId());
-    strProperty += QString("<b>%1: </b>%2<br/>").arg(tr("Session Status")).arg(gpConverter->toInternalString(m_comGuestSession.GetStatus()));
+    strProperty += QString("<b>%1: </b>%2<br/>").arg(tr("Session Status")).arg(gpConverter->toString(m_comGuestSession.GetStatus()));
     return strProperty;
 }
 
@@ -242,7 +242,7 @@ void UIGuestSessionTreeItem::setColumnText()
         return;
     setText(0, QString("%1").arg(m_comGuestSession.GetId()));
     setText(1, QString("%1").arg(m_comGuestSession.GetName()));
-    setText(2, QString("%1").arg(gpConverter->toInternalString(m_comGuestSession.GetStatus())));
+    setText(2, QString("%1").arg(gpConverter->toString(m_comGuestSession.GetStatus())));
 }
 
 
@@ -289,7 +289,7 @@ QString UIGuestProcessTreeItem::propertyString() const
     QString strProperty;
     strProperty += QString("<b>%1: </b>%2<br/>").arg(tr("Process Name")).arg(m_comGuestProcess.GetName());
     strProperty += QString("<b>%1: </b>%2<br/>").arg(tr("Process Id")).arg(m_comGuestProcess.GetPID());
-    strProperty += QString("<b>%1: </b>%2<br/>").arg(tr("Process Status")).arg(gpConverter->toInternalString(m_comGuestProcess.GetStatus()));
+    strProperty += QString("<b>%1: </b>%2<br/>").arg(tr("Process Status")).arg(gpConverter->toString(m_comGuestProcess.GetStatus()));
     strProperty += QString("<b>%1: </b>%2<br/>").arg(tr("Executable Path")).arg(m_comGuestProcess.GetExecutablePath());
 
     strProperty += QString("<b>%1: </b>").arg(tr("Arguments"));
@@ -342,7 +342,7 @@ void UIGuestProcessTreeItem::sltGuestProcessUpdated(const CGuestProcessStateChan
         return;
     setText(0, QString("%1").arg(m_comGuestProcess.GetPID()));
     setText(1, QString("%1").arg(m_comGuestProcess.GetExecutablePath()));
-    setText(2, QString("%1").arg(gpConverter->toInternalString(m_comGuestProcess.GetStatus())));
+    setText(2, QString("%1").arg(gpConverter->toString(m_comGuestProcess.GetStatus())));
 }
 
 const CGuestProcess& UIGuestProcessTreeItem::guestProcess() const

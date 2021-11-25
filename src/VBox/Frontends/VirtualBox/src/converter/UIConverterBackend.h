@@ -154,6 +154,7 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<KStorageBus>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KStorageControllerType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KChipsetType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<KNATProtocol>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<KGuestSessionStatus>();
 
 
 /* Declare global conversion specializations: */
@@ -318,6 +319,8 @@ template<> SHARED_LIBRARY_STUFF QString toString(const KChipsetType &type);
 template<> SHARED_LIBRARY_STUFF QString toString(const KNATProtocol &protocol);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const KNATProtocol &protocol);
 template<> SHARED_LIBRARY_STUFF KNATProtocol fromInternalString<KNATProtocol>(const QString &strProtocol);
+template<> SHARED_LIBRARY_STUFF QString toString(const KGuestSessionStatus &status);
+template<> SHARED_LIBRARY_STUFF KGuestSessionStatus fromString<KGuestSessionStatus>(const QString &strStatus);
 
 
 #endif /* !FEQT_INCLUDED_SRC_converter_UIConverterBackend_h */

@@ -54,6 +54,7 @@ template<> bool canConvert<KStorageBus>() { return true; }
 template<> bool canConvert<KStorageControllerType>() { return true; }
 template<> bool canConvert<KChipsetType>() { return true; }
 template<> bool canConvert<KNATProtocol>() { return true; }
+template<> bool canConvert<KGuestSessionStatus>() { return true; }
 
 /* QIcon <= KCloudMachineState: */
 template<> QIcon toIcon(const KCloudMachineState &state)
@@ -743,4 +744,43 @@ template<> KNATProtocol fromInternalString<KNATProtocol>(const QString &strProto
     }
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strProtocol, Qt::CaseInsensitive)));
+}
+
+/* QString <= KGuestSessionStatus: */
+template<> QString toString(const KGuestSessionStatus &status)
+{
+    switch (status)
+    {
+        case KGuestSessionStatus_Undefined:          return QApplication::translate("UICommon", "Undefined", "GuestSessionStatus");
+        case KGuestSessionStatus_Starting:           return QApplication::translate("UICommon", "Starting", "GuestSessionStatus");
+        case KGuestSessionStatus_Started:            return QApplication::translate("UICommon", "Started", "GuestSessionStatus");
+        case KGuestSessionStatus_Terminating:        return QApplication::translate("UICommon", "Terminating", "GuestSessionStatus");
+        case KGuestSessionStatus_Terminated:         return QApplication::translate("UICommon", "Terminated", "GuestSessionStatus");
+        case KGuestSessionStatus_TimedOutKilled:     return QApplication::translate("UICommon", "Timed Out (Killed)", "GuestSessionStatus");
+        case KGuestSessionStatus_TimedOutAbnormally: return QApplication::translate("UICommon", "Timed Out (Abnormally)", "GuestSessionStatus");
+        case KGuestSessionStatus_Down:               return QApplication::translate("UICommon", "Down", "GuestSessionStatus");
+        case KGuestSessionStatus_Error:              return QApplication::translate("UICommon", "Error", "GuestSessionStatus");
+        default: AssertMsgFailed(("No text for %d", status)); break;
+    }
+    return QString();
+}
+
+/* KGuestSessionStatus <= QString: */
+template<> KGuestSessionStatus fromString<KGuestSessionStatus>(const QString &strStatus)
+{
+    QHash<QString, KGuestSessionStatus> list;
+    list.insert(QApplication::translate("UICommon", "Undefined", "GuestSessionStatus"),              KGuestSessionStatus_Undefined);
+    list.insert(QApplication::translate("UICommon", "Starting", "GuestSessionStatus"),               KGuestSessionStatus_Starting);
+    list.insert(QApplication::translate("UICommon", "Started", "GuestSessionStatus"),                KGuestSessionStatus_Started);
+    list.insert(QApplication::translate("UICommon", "Terminating", "GuestSessionStatus"),            KGuestSessionStatus_Terminating);
+    list.insert(QApplication::translate("UICommon", "Terminated", "GuestSessionStatus"),             KGuestSessionStatus_Terminated);
+    list.insert(QApplication::translate("UICommon", "Timed Out (Killed)", "GuestSessionStatus"),     KGuestSessionStatus_TimedOutKilled);
+    list.insert(QApplication::translate("UICommon", "Timed Out (Abnormally)", "GuestSessionStatus"), KGuestSessionStatus_TimedOutAbnormally);
+    list.insert(QApplication::translate("UICommon", "Down", "GuestSessionStatus"),                   KGuestSessionStatus_Down);
+    list.insert(QApplication::translate("UICommon", "Error", "GuestSessionStatus"),                  KGuestSessionStatus_Error);
+    if (!list.contains(strStatus))
+    {
+        AssertMsgFailed(("No value for '%s'", strStatus.toUtf8().constData()));
+    }
+    return list.value(strStatus, KGuestSessionStatus_Undefined);
 }
