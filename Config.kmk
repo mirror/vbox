@@ -276,6 +276,7 @@ VBOX_PRODUCT      = Oracle VM VirtualBox
 #	src/VBox/Additions/WINNT/Installer/ISO/ReadmeDrivers.txt
 #	src/VBox/Main/nls/*.ts
 #	src/VBox/ExtPacks/Puel/nls/*.ts
+# src/VBox/Frontends/VBoxManage/nls/*.ts
 #	*/*.inf, */*.rc
 
 # Maybe we want set this manually.
