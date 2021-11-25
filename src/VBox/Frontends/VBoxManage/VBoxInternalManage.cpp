@@ -686,7 +686,7 @@ static RTEXITCODE CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     vdInterfaceError.pfnError     = handleVDError;
     vdInterfaceError.pfnMessage   = handleVDMessage;
 
-    rc = VDInterfaceAdd(&vdInterfaceError.Core, Internal::tr("VBoxManage_IError"), VDINTERFACETYPE_ERROR,
+    rc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
                         NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(rc);
 
@@ -739,7 +739,7 @@ static RTEXITCODE CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirt
     vdInterfaceError.pfnError     = handleVDError;
     vdInterfaceError.pfnMessage   = handleVDMessage;
 
-    rc = VDInterfaceAdd(&vdInterfaceError.Core, Internal::tr("VBoxManage_IError"), VDINTERFACETYPE_ERROR,
+    rc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
                         NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
     AssertRC(rc);
 
@@ -2078,7 +2078,7 @@ static RTEXITCODE CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVi
     void *pvBuf = RTMemAlloc(cbBuf);
     if (pvBuf)
     {
-        RTStrmPrintf(g_pStdErr, Internal::tr("Converting image \"%s\" with size %RU64 bytes (%RU64MB) to raw...\n"),
+        RTStrmPrintf(g_pStdErr, Internal::tr("Converting image \"%s\" with size %RU64 bytes (%RU64MB) to raw...\n", "", cbSize),
                      src.c_str(), cbSize, (cbSize + _1M - 1) / _1M);
         while (offFile < cbSize)
         {
@@ -2228,7 +2228,7 @@ static RTEXITCODE CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> 
         }
 
         uint64_t cbSize = VDGetSize(pSrcDisk, VD_LAST_IMAGE);
-        RTStrmPrintf(g_pStdErr, Internal::tr("Converting image \"%s\" with size %RU64 bytes (%RU64MB)...\n"),
+        RTStrmPrintf(g_pStdErr, Internal::tr("Converting image \"%s\" with size %RU64 bytes (%RU64MB)...\n", "", cbSize),
                      src.c_str(), cbSize, (cbSize + _1M - 1) / _1M);
 
         /* Create the output image */

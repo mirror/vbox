@@ -107,7 +107,7 @@ static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet)
         RTPrintf(Nat::tr("DHCP Sever:   %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Enabled)(&fVal));
-        RTPrintf(Nat::tr("IPv6:         %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
+        RTPrintf("IPv6:         %s\n",  fVal ? Nat::tr("Yes") : Nat::tr("No"));
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Prefix)(strVal.asOutParam()));
         RTPrintf(Nat::tr("IPv6 Prefix:  %ls\n"), strVal.raw());
@@ -278,7 +278,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                                                  RTGETOPT_REQ_STRING);
                         if (RT_FAILURE(vrc))
                           return errorSyntax(USAGE_NATNETWORK,
-                                             Nat::tr("Not enough parmaters\n"));
+                                             Nat::tr("Not enough parаmeters\n"));
 
                         vLoopback2Delete.push_back(std::string(Addr2Delete.psz));
                     }
@@ -312,12 +312,12 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                     /* deletion */
                     if (enmCode != OP_MODIFY)
                         return errorSyntax(USAGE_NATNETWORK,
-                                           Nat::tr("Port-forward could be deleted on modify \n"));
+                                           Nat::tr("Port-forward could be deleted on modify\n"));
 
                     RTGETOPTUNION NamePf2DeleteUnion;
                     int vrc = RTGetOptFetchValue(&GetState, &NamePf2DeleteUnion, RTGETOPT_REQ_STRING);
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_NATNETWORK, Nat::tr("Not enough parmaters\n"));
+                        return errorSyntax(USAGE_NATNETWORK, Nat::tr("Not enough parаmeters\n"));
 
                     if (strlen(NamePf2DeleteUnion.psz) > PF_NAMELEN)
                         return errorSyntax(USAGE_NATNETWORK, Nat::tr("Port-forward rule name is too long\n"));

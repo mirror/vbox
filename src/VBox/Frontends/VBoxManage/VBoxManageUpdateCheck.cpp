@@ -300,7 +300,7 @@ static RTEXITCODE doVBoxUpdate(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
         if (ptrProgress.isNull())
             RTStrmPrintf(g_pStdErr, UpdateCheck::tr("Failed to create ptrProgress object: %Rhrc\n"), rc);
         else
-            com::GlueHandleComError(pHostUpdate, UpdateCheck::tr("VBoxUpdate(updateCheckType, ptrProgress.asOutParam())"),
+            com::GlueHandleComError(pHostUpdate, "VBoxUpdate(updateCheckType, ptrProgress.asOutParam())",
                                     rc, __FILE__, __LINE__);
         return RTEXITCODE_FAILURE;
     }

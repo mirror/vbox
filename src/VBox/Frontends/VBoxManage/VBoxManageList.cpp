@@ -353,11 +353,11 @@ static HRESULT listHostInfo(const ComPtr<IVirtualBox> pVirtualBox)
 
     ULONG memorySize = 0;
     CHECK_ERROR(Host, COMGETTER(MemorySize)(&memorySize));
-    RTPrintf(List::tr("Memory size: %lu MByte\n"), memorySize);
+    RTPrintf(List::tr("Memory size: %lu MByte\n", "", memorySize), memorySize);
 
     ULONG memoryAvailable = 0;
     CHECK_ERROR(Host, COMGETTER(MemoryAvailable)(&memoryAvailable));
-    RTPrintf(List::tr("Memory available: %lu MByte\n"), memoryAvailable);
+    RTPrintf(List::tr("Memory available: %lu MByte\n", "", memoryAvailable), memoryAvailable);
 
     Bstr operatingSystem;
     CHECK_ERROR(Host, COMGETTER(OperatingSystem)(operatingSystem.asOutParam()));
@@ -730,13 +730,13 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf(List::tr("API version:                     %ls\n"), str.raw());
 
     systemProperties->COMGETTER(MinGuestRAM)(&ulValue);
-    RTPrintf(List::tr("Minimum guest RAM size:          %u Megabytes\n"), ulValue);
+    RTPrintf(List::tr("Minimum guest RAM size:          %u Megabytes\n", "", ulValue), ulValue);
     systemProperties->COMGETTER(MaxGuestRAM)(&ulValue);
-    RTPrintf(List::tr("Maximum guest RAM size:          %u Megabytes\n"), ulValue);
+    RTPrintf(List::tr("Maximum guest RAM size:          %u Megabytes\n", "", ulValue), ulValue);
     systemProperties->COMGETTER(MinGuestVRAM)(&ulValue);
-    RTPrintf(List::tr("Minimum video RAM size:          %u Megabytes\n"), ulValue);
+    RTPrintf(List::tr("Minimum video RAM size:          %u Megabytes\n", "", ulValue), ulValue);
     systemProperties->COMGETTER(MaxGuestVRAM)(&ulValue);
-    RTPrintf(List::tr("Maximum video RAM size:          %u Megabytes\n"), ulValue);
+    RTPrintf(List::tr("Maximum video RAM size:          %u Megabytes\n", "", ulValue), ulValue);
     systemProperties->COMGETTER(MaxGuestMonitors)(&ulValue);
     RTPrintf(List::tr("Maximum guest monitor count:     %u\n"), ulValue);
     systemProperties->COMGETTER(MinGuestCPUCount)(&ulValue);
@@ -744,7 +744,7 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     systemProperties->COMGETTER(MaxGuestCPUCount)(&ulValue);
     RTPrintf(List::tr("Maximum guest CPU count:         %u\n"), ulValue);
     systemProperties->COMGETTER(InfoVDSize)(&i64Value);
-    RTPrintf(List::tr("Virtual disk limit (info):       %lld Bytes\n"), i64Value);
+    RTPrintf(List::tr("Virtual disk limit (info):       %lld Bytes\n", "" , i64Value), i64Value);
     systemProperties->COMGETTER(SerialPortCount)(&ulValue);
     RTPrintf(List::tr("Maximum Serial Port count:       %u\n"), ulValue);
     systemProperties->COMGETTER(ParallelPortCount)(&ulValue);
@@ -813,11 +813,11 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf(List::tr("Maximum Devices per Floppy Port: %u\n"), ulValue);
 #if 0
     systemProperties->GetFreeDiskSpaceWarning(&i64Value);
-    RTPrintf(List::tr("Free disk space warning at:      %u Bytes\n"), i64Value);
+    RTPrintf(List::tr("Free disk space warning at:      %u Bytes\n", "", i64Value), i64Value);
     systemProperties->GetFreeDiskSpacePercentWarning(&ulValue);
     RTPrintf(List::tr("Free disk space warning at:      %u %%\n"), ulValue);
     systemProperties->GetFreeDiskSpaceError(&i64Value);
-    RTPrintf(List::tr("Free disk space error at:        %u Bytes\n"), i64Value);
+    RTPrintf(List::tr("Free disk space error at:        %u Bytes\n", "", i64Value), i64Value);
     systemProperties->GetFreeDiskSpacePercentError(&ulValue);
     RTPrintf(List::tr("Free disk space error at:        %u %%\n"), ulValue);
 #endif
@@ -886,7 +886,7 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     else if (ulValue == 1)
         RTPrintf(List::tr("Update check frequency:          every day\n"));
     else
-        RTPrintf(List::tr("Update check frequency:          every %u days\n"), ulValue);
+        RTPrintf(List::tr("Update check frequency:          every %u days\n", "", ulValue), ulValue);
     VBoxUpdateTarget_T enmVBoxUpdateTarget;
     systemProperties->COMGETTER(VBoxUpdateTarget)(&enmVBoxUpdateTarget);
     switch (enmVBoxUpdateTarget)
@@ -995,10 +995,10 @@ static HRESULT showDhcpConfig(ComPtr<IDHCPConfig> ptrConfig)
                     RTPrintf(List::tr("      %3d/legacy: %ls\n"), Options[i], Values[i]);
                     break;
                 case DHCPOptionEncoding_Hex:
-                    RTPrintf(List::tr("      %3d/hex:    %ls\n"), Options[i], Values[i]);
+                    RTPrintf("      %3d/hex:    %ls\n", Options[i], Values[i]);
                     break;
                 default:
-                    RTPrintf(List::tr("      %3d/%u?: %ls\n"), Options[i], Encodings[i], Values[i]);
+                    RTPrintf("      %3d/%u?: %ls\n", Options[i], Encodings[i], Values[i]);
                     break;
             }
         }
@@ -1029,7 +1029,7 @@ static HRESULT listDhcpServers(const ComPtr<IVirtualBox> &pVirtualBox)
         RTPrintf(List::tr("NetworkName:    %ls\n"), bstr.raw());
 
         CHECK_ERROR2I_STMT(ptrDHCPServer, COMGETTER(IPAddress)(bstr.asOutParam()), hrcRet = hrcCheck);
-        RTPrintf(List::tr("Dhcpd IP:       %ls\n"), bstr.raw());
+        RTPrintf("Dhcpd IP:       %ls\n", bstr.raw());
 
         CHECK_ERROR2I_STMT(ptrDHCPServer, COMGETTER(LowerIP)(bstr.asOutParam()), hrcRet = hrcCheck);
         RTPrintf(List::tr("LowerIPAddress: %ls\n"), bstr.raw());
@@ -1278,7 +1278,7 @@ static HRESULT listScreenShotFormats(const ComPtr<IVirtualBox> &pVirtualBox)
     com::SafeArray<BitmapFormat_T> formats;
     CHECK_ERROR(systemProperties, COMGETTER(ScreenShotFormats)(ComSafeArrayAsOutParam(formats)));
 
-    RTPrintf(List::tr("Supported %d screen shot formats:\n"), formats.size());
+    RTPrintf(List::tr("Supported %d screen shot formats:\n", "", formats.size()), formats.size());
     for (size_t i = 0; i < formats.size(); ++i)
     {
         uint32_t u32Format = (uint32_t)formats[i];
@@ -1307,7 +1307,7 @@ static HRESULT listCloudProviders(const ComPtr<IVirtualBox> &pVirtualBox)
     com::SafeIfaceArray<ICloudProvider> apCloudProviders;
     CHECK_ERROR(pCloudProviderManager, COMGETTER(Providers)(ComSafeArrayAsOutParam(apCloudProviders)));
 
-    RTPrintf(List::tr("Supported %d cloud providers:\n"), apCloudProviders.size());
+    RTPrintf(List::tr("Supported %d cloud providers:\n", "", apCloudProviders.size()), apCloudProviders.size());
     for (size_t i = 0; i < apCloudProviders.size(); ++i)
     {
         ComPtr<ICloudProvider> pCloudProvider = apCloudProviders[i];
@@ -1696,7 +1696,7 @@ static HRESULT listHostDrives(const ComPtr<IVirtualBox> pVirtualBox, bool fOptLo
         LONG64 cbSize = 0;
         rc = pHostDrive->COMGETTER(Size)(&cbSize);
         if (SUCCEEDED(rc) && fOptLong)
-            RTPrintf(List::tr("Size:        %llu bytes (%Rhcb)\n"), cbSize, cbSize);
+            RTPrintf(List::tr("Size:        %llu bytes (%Rhcb)\n", "", cbSize), cbSize, cbSize);
         else if (SUCCEEDED(rc))
             RTPrintf(List::tr("Size:        %Rhcb\n"), cbSize);
         else
@@ -1708,7 +1708,7 @@ static HRESULT listHostDrives(const ComPtr<IVirtualBox> pVirtualBox, bool fOptLo
         ULONG cbSectorSize = 0;
         rc = pHostDrive->COMGETTER(SectorSize)(&cbSectorSize);
         if (SUCCEEDED(rc))
-            RTPrintf(List::tr("Sector Size: %u bytes\n"), cbSectorSize);
+            RTPrintf(List::tr("Sector Size: %u bytes\n", "", cbSectorSize), cbSectorSize);
         else
         {
             RTPrintf(List::tr("Sector Size: %Rhrc\n"), rc);

@@ -1308,8 +1308,8 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
         goto out;
     }
 
-    RTStrmPrintf(g_pStdErr, Disk::tr("Creating %s image with size %RU64 bytes (%RU64MB)...\n"),
-                 (uImageFlags & VD_IMAGE_FLAGS_FIXED) ? Disk::tr("fixed") : Disk::tr("dynamic"),
+    RTStrmPrintf(g_pStdErr, Disk::tr("Creating %s image with size %RU64 bytes (%RU64MB)...\n", "", cbFile),
+                 (uImageFlags & VD_IMAGE_FLAGS_FIXED) ? Disk::tr("fixed", "adjective") : Disk::tr("dynamic", "adjective"),
                  cbFile, (cbFile + _1M - 1) / _1M);
     char pszComment[256];
     RTStrPrintf(pszComment, sizeof(pszComment), Disk::tr("Converted image from %s"), srcfilename);

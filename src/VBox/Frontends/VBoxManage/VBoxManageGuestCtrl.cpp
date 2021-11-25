@@ -2024,7 +2024,8 @@ static DECLCALLBACK(RTEXITCODE) gctrlHandleMkDir(PGCTLCMDCTX pCtx, int argc, cha
                     if (rcExit != RTEXITCODE_SUCCESS)
                         return rcExit;
                     if (pCtx->cVerbose)
-                        RTPrintf(GuestCtrl::tr("Creating %RU32 directories...\n"), argc - GetState.iNext + 1);
+                        RTPrintf(GuestCtrl::tr("Creating %RU32 directories...\n", "", argc - GetState.iNext + 1),
+                                 argc - GetState.iNext + 1);
                 }
                 if (g_fGuestCtrlCanceled)
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, GuestCtrl::tr("mkdir was interrupted by Ctrl-C (%u left)\n"),
@@ -2229,7 +2230,8 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRm(PGCTLCMDCTX pCtx, int argc, char **
                     if (rcExit != RTEXITCODE_SUCCESS)
                         return rcExit;
                     if (pCtx->cVerbose)
-                        RTPrintf(GuestCtrl::tr("Removing %RU32 file(s)...\n"), argc - GetState.iNext + 1);
+                        RTPrintf(GuestCtrl::tr("Removing %RU32 file(s)...\n", "", argc - GetState.iNext + 1),
+                                 argc - GetState.iNext + 1);
                 }
                 if (g_fGuestCtrlCanceled)
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, GuestCtrl::tr("rm was interrupted by Ctrl-C (%u left)\n"),
@@ -2407,7 +2409,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
 
         if (pCtx->cVerbose)
             RTPrintf(GuestCtrl::tr("Renaming %s \"%s\" to \"%s\" ...\n"),
-                     enmObjType == FsObjType_Directory ? GuestCtrl::tr("directory") : GuestCtrl::tr("file"),
+                     enmObjType == FsObjType_Directory ? GuestCtrl::tr("directory", "object") : GuestCtrl::tr("file","object"),
                      strSrcCur.c_str(), pszDstCur);
 
         if (!fDryrun)

@@ -486,7 +486,7 @@ static RTEXITCODE handleDebugVM_SetRegisters(HandlerArg *pArgs, IMachineDebugger
     {
         CHECK_ERROR2I_RET(pDebugger, SetRegisters(idCpu, ComSafeArrayAsInParam(aBstrNames), ComSafeArrayAsInParam(aBstrValues)),
                           RTEXITCODE_FAILURE);
-        RTPrintf(DebugVM::tr("Successfully set %u registers\n"), aBstrNames.size());
+        RTPrintf(DebugVM::tr("Successfully set %u registers\n", "", aBstrNames.size()), aBstrNames.size());
     }
 
     return RTEXITCODE_SUCCESS;

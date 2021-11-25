@@ -254,7 +254,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
             RTEXITCODE_FAILURE);
 
-    RTPrintf(Cloud::tr("The list of the instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n"),
+    RTPrintf(Cloud::tr("The list of the instances for the cloud profile \'%ls\'\nand compartment \'%s\':\n"),
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cIds = arrayVMIds.size();
     size_t cNames = arrayVMNames.size();
@@ -415,7 +415,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
         pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
             RTEXITCODE_FAILURE);
 
-    RTPrintf(Cloud::tr("The list of the images for the cloud profile \'%ls\' \nand compartment \'%s\':\n"),
+    RTPrintf(Cloud::tr("The list of the images for the cloud profile \'%ls\'\nand compartment \'%s\':\n"),
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cNames = arrayVMNames.size();
     size_t cIds = arrayVMIds.size();
@@ -1761,7 +1761,7 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     CHECK_PROGRESS_ERROR_RET(progress, (Cloud::tr("Deleting cloud image failed")), RTEXITCODE_FAILURE);
 
     if (SUCCEEDED(hrc))
-        RTPrintf(Cloud::tr("Cloud image with was deleted successfully\n"));
+        RTPrintf(Cloud::tr("Cloud image was deleted successfully\n"));
 
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

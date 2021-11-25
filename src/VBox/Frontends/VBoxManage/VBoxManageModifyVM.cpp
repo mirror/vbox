@@ -479,7 +479,7 @@ static HRESULT setExtraData(ComPtr<IMachine> &rSessionMachine, const char *pszVa
     HRESULT hrc = rSessionMachine->SetExtraData(Bstr(pszVariable).raw(), Bstr(pszValue).raw());
     if (FAILED(hrc))
     {
-        char *pszContext = RTStrAPrintf2(ModifyVM::tr("IMachine::SetExtraData('%s', '%s')"), pszVariable, pszValue);
+        char *pszContext = RTStrAPrintf2("IMachine::SetExtraData('%s', '%s')", pszVariable, pszValue);
         com::GlueHandleComError(rSessionMachine, pszContext, hrc, __FILE__, __LINE__);
         RTStrFree(pszContext);
     }

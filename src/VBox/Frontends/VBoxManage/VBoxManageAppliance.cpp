@@ -533,7 +533,8 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 uint32_t ulVsys = it->first;
                 if (ulVsys >= cVirtualSystemDescriptions)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE,
-                                       Appliance::tr("Invalid index %RI32 with -vsys option; the OVF contains only %zu virtual system(s)."),
+                                       Appliance::tr("Invalid index %RI32 with -vsys option; the OVF contains only %zu virtual system(s).",
+                                                     "", cVirtualSystemDescriptions),
                                        ulVsys, cVirtualSystemDescriptions);
             }
         }
@@ -1630,7 +1631,8 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
             uint32_t ulVsys = it->first;
             if (ulVsys >= llMachines.size())
                 return errorSyntax(USAGE_EXPORTAPPLIANCE,
-                                   Appliance::tr("Invalid index %RI32 with -vsys option; you specified only %zu virtual system(s)."),
+                                   Appliance::tr("Invalid index %RI32 with -vsys option; you specified only %zu virtual system(s).",
+                                                 "", llMachines.size()),
                                    ulVsys, llMachines.size());
         }
 
@@ -1821,7 +1823,7 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
         CHECK_PROGRESS_ERROR_RET(progress, (Appliance::tr("Appliance write failed")), RTEXITCODE_FAILURE);
 
         if (SUCCEEDED(rc))
-            RTPrintf(Appliance::tr("Successfully exported %d machine(s).\n"), llMachines.size());
+            RTPrintf(Appliance::tr("Successfully exported %d machine(s).\n", "", llMachines.size()), llMachines.size());
 
         /*
          *  The second stage for the cloud case
@@ -2311,7 +2313,7 @@ static int doAddPkcs7Signature(PCRTCRX509CERTIFICATE pCertificate, RTCRKEY hPriv
                         if (RT_SUCCESS(rc))
                         {
                             if (iVerbosity > 1)
-                                RTMsgInfo(Appliance::tr("Created PKCS#7/CMS signature: %zu bytes, %s."),
+                                RTMsgInfo(Appliance::tr("Created PKCS#7/CMS signature: %zu bytes, %s.", "", cbResult),
                                           cbResult, RTCrDigestTypeToName(enmDigestType));
                             if (enmDigestType == RTDIGESTTYPE_SHA1)
                                 RTMsgWarning(Appliance::tr("Using SHA-1 instead of SHA-3 for the PKCS#7/CMS signature."));
@@ -2423,7 +2425,7 @@ static int doTheOvaSigning(PRTCRX509CERTIFICATE pCertificate, RTCRKEY hPrivateKe
                 if (RT_SUCCESS(rc))
                 {
                     if (iVerbosity > 1)
-                        RTMsgInfo(Appliance::tr("Created OVA signature: %zu bytes, %s"), cbSignature,
+                        RTMsgInfo(Appliance::tr("Created OVA signature: %zu bytes, %s", "", cbSignature), cbSignature,
                                   RTCrDigestTypeToName(enmDigestType));
 
                     /*
