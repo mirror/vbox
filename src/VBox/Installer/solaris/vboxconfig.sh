@@ -1354,12 +1354,17 @@ postinstall()
                     if test "$?" -eq 0; then
                         INSTALLEDIT=0
                     fi
+                    PYTHONBIN=`which python3 2>/dev/null`
+                    install_python_bindings "$PYTHONBIN" "Python 3.x"
+                    if test "$?" -eq 0; then
+                        INSTALLEDIT=0
+                    fi
 
                     # remove files installed by Python build
                     rm -rf $DIR_VBOXBASE/sdk/installer/build
 
                     if test "$INSTALLEDIT" -ne 0; then
-                        warnprint "No suitable Python version found. Required Python 2.4, 2.5, 2.6 or 2.7"
+                        warnprint "No suitable Python version found. Required Python 2.4, 2.5, 2.6, 2.7 or 3.x"
                         warnprint "Skipped installing the Python bindings."
                     fi
                 else
