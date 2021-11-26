@@ -152,7 +152,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      * Init runtime.
      */
     RTTEST hTest;
-    RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
+    RTR3InitExeNoArguments(RTR3INIT_FLAGS_TRY_SUPLIB);
     RTEXITCODE rcExit = RTTestInitAndCreate("tstCFGM", &hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;

@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 {
     int     cErrors = 0;                  /* error count. */
 
-    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_TRY_SUPLIB);
     RTPrintf(TESTCASE ": TESTING...\n");
 
     /*

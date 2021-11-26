@@ -75,7 +75,7 @@
 
 
 
-DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINITOP *penmWhat, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, uint32_t fFlags, SUPINITOP *penmWhat, PRTERRINFO pErrInfo)
 {
     RT_NOREF2(penmWhat, pErrInfo);
 
@@ -98,7 +98,7 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestric
     /*
      * Try open the device.
      */
-    const char *pszDeviceNm = fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR;
+    const char *pszDeviceNm = fFlags & SUPR3INIT_F_UNRESTRICTED ? DEVICE_NAME_SYS : DEVICE_NAME_USR;
     int hDevice = open(pszDeviceNm, O_RDWR, 0);
     if (hDevice < 0)
     {
@@ -140,7 +140,7 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestric
      * We're done.
      */
     pThis->hDevice       = hDevice;
-    pThis->fUnrestricted = fUnrestricted;
+    pThis->fUnrestricted = RT_BOOL(fFlags & SUPR3INIT_F_UNRESTRICTED);
     return VINF_SUCCESS;
 }
 

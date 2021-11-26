@@ -66,7 +66,7 @@ static DECLCALLBACK(int) tstVmmHmConfigConstructor(PUVM pUVM, PVM pVM, void *pvU
 
 int main(int argc, char **argv)
 {
-    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_TRY_SUPLIB);
 
     /*
      * Doesn't work and I'm sick of rebooting the machine to try figure out

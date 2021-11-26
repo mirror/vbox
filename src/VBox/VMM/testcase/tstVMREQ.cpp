@@ -221,7 +221,7 @@ tstVMREQConfigConstructor(PUVM pUVM, PVM pVM, void *pvUser)
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
     RT_NOREF1(envp);
-    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_TRY_SUPLIB);
     RTPrintf(TESTCASE ": TESTING...\n");
     RTStrmFlush(g_pStdOut);
 

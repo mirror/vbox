@@ -327,6 +327,22 @@ SUPDECL(int64_t) SUPGetTscDeltaSlow(PSUPGLOBALINFOPAGE pGip)
 
 
 /**
+ * SLow path in SUPGetGipCpuPtr, don't call directly.
+ *
+ * @returns Pointer to the CPU entry for the caller, NULL on failure.
+ * @param   pGip        The GIP.
+ */
+SUPDECL(PSUPGIPCPU) SUPGetGipCpuPtrForAsyncMode(PSUPGLOBALINFOPAGE pGip)
+{
+    uint16_t iGipCpu = supGetGipCpuIndex(pGip);
+    if (RT_LIKELY(iGipCpu < pGip->cCpus))
+        return &pGip->aCPUs[iGipCpu];
+    AssertFailed();
+    return NULL;
+}
+
+
+/**
  * Slow path in SUPGetCpuHzFromGip, don't call directly.
  *
  * @returns See SUPGetCpuHzFromGip.

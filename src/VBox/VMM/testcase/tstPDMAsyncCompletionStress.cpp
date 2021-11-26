@@ -577,7 +577,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     RT_NOREF1(envp);
     int rcRet = 0; /* error count */
 
-    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_TRY_SUPLIB);
 
     PVM pVM;
     PUVM pUVM;

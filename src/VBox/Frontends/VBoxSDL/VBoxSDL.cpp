@@ -3219,7 +3219,7 @@ int main(int argc, char **argv)
     /*
      * Before we do *anything*, we initialize the runtime.
      */
-    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_TRY_SUPLIB);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
     return TrustedMain(argc, argv, NULL);

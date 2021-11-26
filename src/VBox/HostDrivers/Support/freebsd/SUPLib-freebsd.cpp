@@ -67,7 +67,7 @@
 
 
 
-DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINITOP *penmWhat, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, uint32_t fFlags, SUPINITOP *penmWhat, PRTERRINFO pErrInfo)
 {
     /*
      * Nothing to do if pre-inited.
@@ -78,7 +78,8 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestric
     /*
      * Try open the BSD device.
      */
-    int hDevice = open(fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR, O_RDWR, 0);
+    const char * const *pszDeviceNm = fFlags & SUPR3INIT_F_UNRESTRICTED ? DEVICE_NAME_SYS : DEVICE_NAME_USR;
+    int hDevice = open(pszDeviceNm, O_RDWR, 0);
     if (hDevice < 0)
     {
         int rc;
@@ -90,7 +91,7 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestric
             case ENOENT:    rc = VERR_VM_DRIVER_NOT_INSTALLED; break;
             default:        rc = VERR_VM_DRIVER_OPEN_ERROR; break;
         }
-        LogRel(("Failed to open \"%s\", errno=%d, rc=%Rrc\n", fUnrestricted ? DEVICE_NAME_SYS : DEVICE_NAME_USR, errno, rc));
+        LogRel(("Failed to open \"%s\", errno=%d, rc=%Rrc\n", pszDeviceNm, errno, rc));
         return rc;
     }
 
@@ -114,7 +115,7 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestric
      * We're done.
      */
     pThis->hDevice       = hDevice;
-    pThis->fUnrestricted = fUnrestricted;
+    pThis->fUnrestricted = RT_BOOL(fFlags & SUPR3INIT_F_UNRESTRICTED);
     return VINF_SUCCESS;
 }
 

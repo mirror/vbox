@@ -38,9 +38,7 @@
 #include <iprt/stream.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
-#ifdef VBOX_WITH_HARDENING
-# include <VBox/sup.h>
-#endif
+#include <VBox/sup.h>
 #if !defined(VBOX_WITH_HARDENING) || !defined(VBOX_RUNTIME_UI)
 # include <iprt/initterm.h>
 # ifdef VBOX_WS_MAC
@@ -650,38 +648,60 @@ int main(int argc, char **argv, char **envp)
         return 1;
 # endif /* VBOX_WS_X11 */
 
-    /* Initialize VBox Runtime: */
+    /*
+     * Determin the IPRT/SUPLib initialization flags if runtime UI process.
+     * Only initialize SUPLib if about to start a VM in this process.
+     *
+     * Note! This must must match the corresponding parsing in hardenedmain.cpp
+     *       and UICommon.cpp exactly, otherwise there will be weird error messages.
+     */
+    /** @todo r=bird: We should consider just postponing this stuff till VM
+     *        creation, it shouldn't make too much of a difference GIP-wise. */
+    uint32_t fFlags = 0;
 # ifdef VBOX_RUNTIME_UI
-    /* Initialize the SUPLib as well only if we are really about to start a VM.
-     * Don't do this if we are only starting the selector window or a separate VM process. */
-    bool fStartVM = false;
-    bool fSeparateProcess = false;
-    for (int i = 1; i < argc && !(fStartVM && fSeparateProcess); ++i)
+    unsigned cOptionsLeft     = 3;
+    bool     fStartVM         = false;
+    bool     fSeparateProcess = false;
+    bool     fExecuteAllInIem = false;
+    for (int i = 1; i < argc && cOptionsLeft > 0; ++i)
     {
-        /* NOTE: the check here must match the corresponding check for the
-         * options to start a VM in hardenedmain.cpp and UICommon.cpp exactly,
-         * otherwise there will be weird error messages. */
-        if (   !::strcmp(argv[i], "--startvm")
-            || !::strcmp(argv[i], "-startvm"))
+        if (   !strcmp(argv[i], "--startvm")
+            || !strcmp(argv[i], "-startvm"))
+        {
+            cOptionsLeft -= fStartVM == false;
             fStartVM = true;
-        else if (   !::strcmp(argv[i], "--separate")
-                 || !::strcmp(argv[i], "-separate"))
+            i++;
+        }
+        else if (   !strcmp(argv[i], "--separate")
+                 || !strcmp(argv[i], "-separate"))
+        {
+            cOptionsLeft -= fSeparateProcess == false;
             fSeparateProcess = true;
+        }
+        else if (!strcmp(argv[i], "--execute-all-in-iem"))
+        {
+            cOptionsLeft -= fExecuteAllInIem == false;
+            fExecuteAllInIem = true;
+        }
     }
+    if (fStartVM && !fSeparateProcess)
+    {
+        fFlags |= RTR3INIT_FLAGS_TRY_SUPLIB;
+        if (fExecuteAllInIem)
+            fFlags |= SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED << RTR3INIT_FLAGS_SUPLIB_SHIFT;
+    }
+# endif
 
-    uint32_t fFlags = fStartVM && !fSeparateProcess ? RTR3INIT_FLAGS_SUPLIB : 0;
-# ifdef RT_OS_DARWIN
+    /* Initialize VBox Runtime: */
+# if defined(RT_OS_DARWIN) && defined(VBOX_RUNTIME_UI)
     int rc = initIprtForDarwinHelperApp(argc, &argv, fFlags);
 # else
     int rc = RTR3InitExe(argc, &argv, fFlags);
 # endif
-# else
-    int rc = RTR3InitExe(argc, &argv, 0 /*fFlags*/);
-# endif
-
-    /* Initialization failed: */
     if (RT_FAILURE(rc))
     {
+        /* Initialization failed: */
+
         /* We have to create QApplication anyway
          * just to show the only one error-message: */
         QApplication a(argc, &argv[0]);

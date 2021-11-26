@@ -216,9 +216,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 int main(int argc, char **argv, char **envp)
 {
     int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
-    return TrustedMain(argc, argv, envp);
+    if (RT_SUCCESS(rc))
+        return TrustedMain(argc, argv, envp);
+    return RTMsgInitFailure(rc);
 }
 #endif /* !VBOX_WITH_HARDENING */
 

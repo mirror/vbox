@@ -652,10 +652,36 @@ SUPDECL(PSUPGLOBALINFOPAGE)             SUPGetGIP(void);
 /** @} */
 
 /** @internal  */
+SUPDECL(PSUPGIPCPU) SUPGetGipCpuPtrForAsyncMode(PSUPGLOBALINFOPAGE pGip);
 SUPDECL(uint64_t) SUPGetCpuHzFromGipForAsyncMode(PSUPGLOBALINFOPAGE pGip);
 SUPDECL(bool)     SUPIsTscFreqCompatible(uint64_t uCpuHz, uint64_t *puGipCpuHz, bool fRelax);
 SUPDECL(bool)     SUPIsTscFreqCompatibleEx(uint64_t uBaseCpuHz, uint64_t uCpuHz, bool fRelax);
 
+
+/**
+ * Gets CPU entry of the calling CPU.
+ *
+ * @returns Pointer to the CPU entry on success, NULL on failure.
+ * @param   pGip        The GIP pointer.
+ */
+DECLINLINE(PSUPGIPCPU) SUPGetGipCpuPtr(PSUPGLOBALINFOPAGE pGip)
+{
+    if (RT_LIKELY(   pGip
+                  && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC))
+    {
+        switch (pGip->u32Mode)
+        {
+            case SUPGIPMODE_INVARIANT_TSC:
+            case SUPGIPMODE_SYNC_TSC:
+                return &pGip->aCPUs[0];
+            case SUPGIPMODE_ASYNC_TSC:
+                return SUPGetGipCpuPtrForAsyncMode(pGip);
+            default: break; /* shut up gcc */
+        }
+    }
+    AssertFailed();
+    return NULL;
+}
 
 /**
  * Gets the TSC frequency of the calling CPU.
@@ -1201,36 +1227,47 @@ typedef FNSUPTRUSTEDERROR *PFNSUPTRUSTEDERROR;
  *
  * @param   pszProgName     The program name. This will be used to figure out which
  *                          DLL/SO/DYLIB to load and execute.
- * @param   fFlags          Flags.
+ * @param   fFlags          SUPSECMAIN_FLAGS_XXX.
  * @param   argc            The argument count.
  * @param   argv            The argument vector.
  * @param   envp            The environment vector.
  */
 DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int argc, char **argv, char **envp);
 
-/** @name SUPR3HardenedMain flags.
+/** @name SUPSECMAIN_FLAGS_XXX - SUPR3HardenedMain flags.
  * @{ */
 /** Don't open the device. (Intended for VirtualBox without -startvm.) */
-#define SUPSECMAIN_FLAGS_DONT_OPEN_DEV      RT_BIT_32(0)
+#define SUPSECMAIN_FLAGS_DONT_OPEN_DEV              RT_BIT_32(0)
 /** The hardened DLL has a "TrustedError" function (see FNSUPTRUSTEDERROR). */
-#define SUPSECMAIN_FLAGS_TRUSTED_ERROR      RT_BIT_32(1)
+#define SUPSECMAIN_FLAGS_TRUSTED_ERROR              RT_BIT_32(1)
 /** Hack for making VirtualBoxVM use VirtualBox.dylib on Mac OS X.
  * @note Not used since 6.0  */
-#define SUPSECMAIN_FLAGS_OSX_VM_APP         RT_BIT_32(2)
-/** Program binary location mask. */
-#define SUPSECMAIN_FLAGS_LOC_MASK           UINT32_C(0x00000030)
-/** Default binary location is the application binary directory.  Does
- * not need to be given explicitly (it's 0).  */
-#define SUPSECMAIN_FLAGS_LOC_APP_BIN        UINT32_C(0x00000000)
-/** The binary is located in the testcase directory instead of the
- * default application binary directory. */
-#define SUPSECMAIN_FLAGS_LOC_TESTCASE       UINT32_C(0x00000010)
-/** The binary is located in a nested application bundle under Resources/ in the
- * main Mac OS X application (think Resources/VirtualBoxVM.app).  */
-#define SUPSECMAIN_FLAGS_LOC_OSX_HLP_APP    UINT32_C(0x00000020)
+#define SUPSECMAIN_FLAGS_OSX_VM_APP                 RT_BIT_32(2)
 /** The first process.
  * @internal  */
-#define SUPSECMAIN_FLAGS_FIRST_PROCESS      UINT32_C(0x00000100)
+#define SUPSECMAIN_FLAGS_FIRST_PROCESS              RT_BIT_32(3)
+/** Program binary location mask. */
+#define SUPSECMAIN_FLAGS_LOC_MASK                   UINT32_C(0x00000030)
+/** Default binary location is the application binary directory.  Does
+ * not need to be given explicitly (it's 0).  */
+#define SUPSECMAIN_FLAGS_LOC_APP_BIN                UINT32_C(0x00000000)
+/** The binary is located in the testcase directory instead of the
+ * default application binary directory. */
+#define SUPSECMAIN_FLAGS_LOC_TESTCASE               UINT32_C(0x00000010)
+/** The binary is located in a nested application bundle under Resources/ in the
+ * main Mac OS X application (think Resources/VirtualBoxVM.app).  */
+#define SUPSECMAIN_FLAGS_LOC_OSX_HLP_APP            UINT32_C(0x00000020)
+/** Driverless IEM-only mode is allowed, so don't fail fatally just because
+ * the VBox support driver is unavailable. */
+#define SUPSECMAIN_FLAGS_DRIVERLESS_IEM_ALLOWED     RT_BIT_32(8)
+#ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK
+/** Driverless NEM is a fallback posibility, so don't fail fatally just
+ * because the VBox support driver is unavailable.
+ * This may imply checking NEM requirements, depending on the host.
+ * @note Not supported on Windows. */
+# define SUPSECMAIN_FLAGS_DRIVERLESS_NEM_FALLBACK   RT_BIT_32(9)
+#endif
+
 /** @} */
 
 /**
@@ -1251,10 +1288,25 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession);
  * call to SUPR3Term(false).
  *
  * @returns VBox status code.
- * @param   fUnrestricted   The desired access.
+ * @param   fFlags          SUPR3INIT_F_XXX
  * @param   ppSession       Where to store the session handle. Defaults to NULL.
  */
-SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession);
+SUPR3DECL(int) SUPR3InitEx(uint32_t fFlags, PSUPDRVSESSION *ppSession);
+/** @name SUPR3INIT_F_XXX - Flags for SUPR3InitEx
+ * @{ */
+/** Unrestricted access. */
+#define SUPR3INIT_F_UNRESTRICTED                RT_BIT_32(0)
+/** Limited access (for Main). */
+#define SUPR3INIT_F_LIMITED                     RT_BIT_32(1)
+/** Allow driverless IEM mode if the VBox support driver is unavailable.
+ * @see SUPSECMAIN_FLAGS_DRIVERLESS_IEM_ALLOWED */
+#define SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED      RT_BIT_32(2)
+#ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK
+/** Allow driverless NEM mode as fallback if the VBox support driver is unavailable.
+ * @see SUPSECMAIN_FLAGS_DRIVERLESS_NEM_FALLBACK */
+# define SUPR3INIT_F_DRIVERLESS_NEM_FALLBACK    RT_BIT_32(3)
+#endif
+/** @} */
 
 /**
  * Terminates the support library.

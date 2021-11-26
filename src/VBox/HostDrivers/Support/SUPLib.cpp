@@ -209,7 +209,7 @@ DECL_NOTHROW(DECLEXPORT(int)) supR3PreInit(PSUPPREINITDATA pPreInitData, uint32_
 }
 
 
-SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession)
+SUPR3DECL(int) SUPR3InitEx(uint32_t fFlags, PSUPDRVSESSION *ppSession)
 {
     /*
      * Perform some sanity checks.
@@ -229,7 +229,7 @@ SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession)
         *ppSession = g_pSession;
     if (g_cInits++ > 0)
     {
-        if (fUnrestricted && !g_supLibData.fUnrestricted)
+        if ((fFlags & SUPR3INIT_F_UNRESTRICTED) && !g_supLibData.fUnrestricted)
         {
             g_cInits--;
             if (ppSession)
@@ -261,7 +261,7 @@ SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession)
      * Open the support driver.
      */
     SUPINITOP enmWhat = kSupInitOp_Driver;
-    int rc = suplibOsInit(&g_supLibData, g_fPreInited, fUnrestricted, &enmWhat, NULL);
+    int rc = suplibOsInit(&g_supLibData, g_fPreInited, fFlags, &enmWhat, NULL);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -397,7 +397,7 @@ SUPR3DECL(int) SUPR3InitEx(bool fUnrestricted, PSUPDRVSESSION *ppSession)
 
 SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
 {
-    return SUPR3InitEx(true, ppSession);
+    return SUPR3InitEx(SUPR3INIT_F_UNRESTRICTED, ppSession);
 }
 
 /**

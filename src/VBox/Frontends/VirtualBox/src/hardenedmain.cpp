@@ -41,34 +41,61 @@ static int MyStrCmp(const char *psz1, const char *psz2)
 
 int main(int argc, char **argv, char **envp)
 {
-    /* First check whether we're about to start a VM: */
-    bool fStartVM = false;
-    /* In separate process: */
-    bool fSeparateProcess = false;
-    for (int i = 1; i < argc && !(fStartVM && fSeparateProcess); ++i)
+    /*
+     * Do partial option parsing to see if we're starting a VM and how we're
+     * going about that.
+     *
+     * Note! This must must match the corresponding parsing in main.cpp and
+     *       UICommon.cpp exactly, otherwise there will be weird error messages.
+     *
+     * Note! ASSUMES that argv is in an ASCII compatible codeset.
+     */
+    unsigned cOptionsLeft     = 3;
+    bool     fStartVM         = false;
+    bool     fSeparateProcess = false;
+    bool     fExecuteAllInIem = false;
+    for (int i = 1; i < argc && cOptionsLeft > 0; ++i)
     {
-        /* NOTE: the check here must match the corresponding check for the
-         * options to start a VM in main.cpp and UICommon.cpp exactly,
-         * otherwise there will be weird error messages. */
         if (   !MyStrCmp(argv[i], "--startvm")
             || !MyStrCmp(argv[i], "-startvm"))
         {
+            cOptionsLeft -= fStartVM == false;
             fStartVM = true;
+            i++;
         }
         else if (   !MyStrCmp(argv[i], "--separate")
                  || !MyStrCmp(argv[i], "-separate"))
         {
+            cOptionsLeft -= fSeparateProcess == false;
             fSeparateProcess = true;
+        }
+        else if (!MyStrCmp(argv[i], "--execute-all-in-iem"))
+        {
+            cOptionsLeft -= fExecuteAllInIem == false;
+            fExecuteAllInIem = true;
         }
     }
 
-    uint32_t fFlags = (fStartVM && !fSeparateProcess) ? 0 : SUPSECMAIN_FLAGS_DONT_OPEN_DEV;
+    /*
+     * Convert the command line options to SUPSECMAIN_FLAGS_XXX flags
+     * and call the hardened main code.
+     */
+    uint32_t fFlags = SUPSECMAIN_FLAGS_TRUSTED_ERROR;
 #ifdef RT_OS_DARWIN
     fFlags |= SUPSECMAIN_FLAGS_LOC_OSX_HLP_APP;
 #endif
+    if (!fStartVM || fSeparateProcess)
+        fFlags |= SUPSECMAIN_FLAGS_DONT_OPEN_DEV;
+    else
+    {
+        if (fExecuteAllInIem)
+            fFlags |= SUPSECMAIN_FLAGS_DRIVERLESS_IEM_ALLOWED;
+#ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK
+        else
+            fFlags |= SUPSECMAIN_FLAGS_DRIVERLESS_NEM_FALLBACK;
+#endif
+    }
 
-    return SUPR3HardenedMain("VirtualBoxVM",
-                             fFlags | SUPSECMAIN_FLAGS_TRUSTED_ERROR,
-                             argc, argv, envp);
+    return SUPR3HardenedMain("VirtualBoxVM", fFlags, argc, argv, envp);
 }
 

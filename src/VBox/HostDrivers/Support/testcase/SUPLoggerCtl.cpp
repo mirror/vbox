@@ -58,7 +58,7 @@ static int usage(void)
 
 int main(int argc, char **argv)
 {
-    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_TRY_SUPLIB);
 
     /*
      * Options are mandatory.
@@ -150,28 +150,36 @@ int main(int argc, char **argv)
     }
 
     /*
-     * Do the requested job.
+     * Make sure the support library is initialized.
      */
-    int rc;
-    switch (enmWhat)
-    {
-        case kSupLoggerCtl_Set:
-            rc = SUPR3LoggerSettings(enmWhich, pszFlags, pszGroups, pszDest);
-            break;
-        case kSupLoggerCtl_Create:
-            rc = SUPR3LoggerCreate(enmWhich, pszFlags, pszGroups, pszDest);
-            break;
-        case kSupLoggerCtl_Destroy:
-            rc = SUPR3LoggerDestroy(enmWhich);
-            break;
-        default:
-            rc = VERR_INTERNAL_ERROR;
-            break;
-    }
+    int rc = SUPR3Init(NULL /*ppSession*/);
     if (RT_SUCCESS(rc))
-        RTPrintf("SUPLoggerCtl: Success\n");
+    {
+        /*
+         * Do the requested job.
+         */
+        switch (enmWhat)
+        {
+            case kSupLoggerCtl_Set:
+                rc = SUPR3LoggerSettings(enmWhich, pszFlags, pszGroups, pszDest);
+                break;
+            case kSupLoggerCtl_Create:
+                rc = SUPR3LoggerCreate(enmWhich, pszFlags, pszGroups, pszDest);
+                break;
+            case kSupLoggerCtl_Destroy:
+                rc = SUPR3LoggerDestroy(enmWhich);
+                break;
+            default:
+                rc = VERR_INTERNAL_ERROR;
+                break;
+        }
+        if (RT_SUCCESS(rc))
+            RTPrintf("SUPLoggerCtl: Success\n");
+        else
+            RTStrmPrintf(g_pStdErr, "SUPLoggerCtl: error: rc=%Rrc\n", rc);
+    }
     else
-        RTStrmPrintf(g_pStdErr, "SUPLoggerCtl: error: rc=%Rrc\n", rc);
+        RTStrmPrintf(g_pStdErr, "SUPR3Init: error: rc=%Rrc\n", rc);
 
     return RT_SUCCESS(rc) ? 0 : 1;
 }

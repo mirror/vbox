@@ -2198,17 +2198,12 @@ int VBoxNetLwipNAT::initLog()
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
-    int rc;
-
     LogFlowFuncEnter();
-
     NOREF(envp);
 
 #ifdef RT_OS_WINDOWS
-    WSADATA wsaData;
-    int err;
-
-    err = WSAStartup(MAKEWORD(2,2), &wsaData);
+    WSADATA WsaData = {0};
+    int err = WSAStartup(MAKEWORD(2,2), &WsaData);
     if (err)
     {
         fprintf(stderr, "wsastartup: failed (%d)\n", err);
@@ -2225,7 +2220,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return rcExit == RTEXITCODE_DONE ? RTEXITCODE_SUCCESS : rcExit;
     }
 
-    rc = NAT.init();
+    int rc = NAT.init();
     if (RT_FAILURE(rc))
         return RTEXITCODE_INIT;
 
@@ -2241,10 +2236,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 int main(int argc, char **argv, char **envp)
 {
     int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
-
-    return TrustedMain(argc, argv, envp);
+    if (RT_SUCCESS(rc))
+        return TrustedMain(argc, argv, envp);
+    return RTMsgInitFailure(rc);
 }
 
 # if defined(RT_OS_WINDOWS)

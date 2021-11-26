@@ -82,7 +82,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     int rcRet = 0; /* error count */
     PPDMASYNCCOMPLETIONENDPOINT pEndpointSrc, pEndpointDst;
 
-    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
+    RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_TRY_SUPLIB);
 
     if (argc != 3)
     {

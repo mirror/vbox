@@ -116,7 +116,7 @@ DECLHIDDEN(int) suplibOsHardenedVerifyTerm(void)
 }
 
 
-DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINITOP *penmWhat, PRTERRINFO pErrInfo)
+DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, uint32_t fFlags, SUPINITOP *penmWhat, PRTERRINFO pErrInfo)
 {
     /*
      * Make sure the image verifier is fully initialized.
@@ -155,7 +155,7 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestric
         static const WCHAR  s_wszName[] = L"\\Device\\VBoxDrvU";
         UNICODE_STRING      NtName;
         NtName.Buffer        = (PWSTR)s_wszName;
-        NtName.Length        = sizeof(s_wszName) - sizeof(WCHAR) * (fUnrestricted ? 2 : 1);
+        NtName.Length        = sizeof(s_wszName) - sizeof(WCHAR) * (fFlags & SUPR3INIT_F_UNRESTRICTED ? 2 : 1);
         NtName.MaximumLength = NtName.Length;
 
         OBJECT_ATTRIBUTES   ObjAttr;
@@ -182,7 +182,7 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestric
              * We're good.
              */
             pThis->hDevice       = hDevice;
-            pThis->fUnrestricted = fUnrestricted;
+            pThis->fUnrestricted = RT_BOOL(fFlags & SUPR3INIT_F_UNRESTRICTED);
             return VINF_SUCCESS;
         }
 

@@ -20,6 +20,10 @@
 
 int main(int argc, char **argv, char **envp)
 {
+#ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK
+    return SUPR3HardenedMain("VBoxHeadless", SUPSECMAIN_FLAGS_DRIVERLESS_NEM_FALLBACK, argc, argv, envp);
+#else
     return SUPR3HardenedMain("VBoxHeadless", 0, argc, argv, envp);
+#endif
 }
 

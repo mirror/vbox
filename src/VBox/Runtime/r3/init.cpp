@@ -436,10 +436,12 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***ppapszArgs, const ch
      * Initialize SUPLib here so the GIP can get going as early as possible
      * (improves accuracy for the first client).
      */
-    if (fFlags & RTR3INIT_FLAGS_SUPLIB)
+    if (fFlags & (RTR3INIT_FLAGS_SUPLIB | RTR3INIT_FLAGS_TRY_SUPLIB))
     {
-        rc = SUPR3Init(NULL);
-        AssertMsgRCReturn(rc, ("Failed to initialize the support library, rc=%Rrc!\n", rc), rc);
+        rc = SUPR3InitEx(  fFlags >> RTR3INIT_FLAGS_SUPLIB_SHIFT
+                         ? fFlags >> RTR3INIT_FLAGS_SUPLIB_SHIFT : SUPR3INIT_F_UNRESTRICTED, NULL /*ppSession*/);
+        AssertMsgReturn(RT_SUCCESS(rc) || (fFlags & RTR3INIT_FLAGS_TRY_SUPLIB),
+                        ("Failed to initialize the support library, rc=%Rrc!\n", rc), rc);
     }
 #endif
 
@@ -451,13 +453,24 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***ppapszArgs, const ch
 
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
     /*
-     * The threading is initialized we can safely sleep a bit if GIP
-     * needs some time to update itself updating.
+     * The threading is initialized, so we can safely sleep a bit if GIP
+     * needs some time to start updating itself.  Currently limited to
+     * the first mapping of GIP (u32TransactionId <= 4), quite possible we
+     * could just ditch this now.
      */
-    if ((fFlags & RTR3INIT_FLAGS_SUPLIB) && g_pSUPGlobalInfoPage)
+    /** @todo consider dropping this... */
+    PSUPGLOBALINFOPAGE pGip;
+    if (   (fFlags & (RTR3INIT_FLAGS_SUPLIB | RTR3INIT_FLAGS_TRY_SUPLIB))
+        && (pGip = g_pSUPGlobalInfoPage) != NULL
+        && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC)
     {
-        RTThreadSleep(20);
-        RTTimeNanoTS();
+        PSUPGIPCPU pGipCpu = SUPGetGipCpuPtr(pGip);
+        if (   pGipCpu
+            && pGipCpu->u32TransactionId <= 4)
+        {
+            RTThreadSleep(pGip->u32UpdateIntervalNS / RT_NS_1MS + 2);
+            RTTimeNanoTS();
+        }
     }
 #endif
 
@@ -549,11 +562,7 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***ppapszArgs, const ch
 static int rtR3Init(uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *pszProgramPath)
 {
     /* no entry log flow, because prefixes and thread may freak out. */
-    Assert(!(fFlags & ~(  RTR3INIT_FLAGS_DLL
-                        | RTR3INIT_FLAGS_SUPLIB
-                        | RTR3INIT_FLAGS_UNOBTRUSIVE
-                        | RTR3INIT_FLAGS_UTF8_ARGV
-                        | RTR3INIT_FLAGS_STANDALONE_APP)));
+    Assert(!(fFlags & ~RTR3INIT_FLAGS_VALID_MASK));
     Assert(!(fFlags & RTR3INIT_FLAGS_DLL) || cArgs == 0);
 
     /*
@@ -567,11 +576,15 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *
     {
         AssertMsg(cUsers > 1, ("%d\n", cUsers));
         Assert(!g_fInitializing);
+
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
-        if (fFlags & RTR3INIT_FLAGS_SUPLIB)
+        /* Initialize the support library if requested. We've always ignored the
+           status code here for some reason, making the two flags same. */
+        if (fFlags & (RTR3INIT_FLAGS_SUPLIB | RTR3INIT_FLAGS_TRY_SUPLIB))
         {
-            SUPR3Init(NULL);
-            g_fInitFlags |= RTR3INIT_FLAGS_SUPLIB;
+            SUPR3InitEx(  fFlags >> RTR3INIT_FLAGS_SUPLIB_SHIFT
+                        ? fFlags >> RTR3INIT_FLAGS_SUPLIB_SHIFT : SUPR3INIT_F_UNRESTRICTED, NULL /*ppSession*/);
+            g_fInitFlags |= fFlags & (RTR3INIT_FLAGS_SUPLIB | RTR3INIT_FLAGS_TRY_SUPLIB | RTR3INIT_FLAGS_SUPLIB_MASK);
         }
 #endif
         g_fInitFlags |= fFlags & RTR3INIT_FLAGS_UTF8_ARGV;
@@ -594,23 +607,22 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *
             rc = rtR3InitArgv(fFlags, cArgs, ppapszArgs);
         return rc;
     }
-    ASMAtomicWriteBool(&g_fInitializing, true);
 
     /*
      * Do the initialization.
      */
+    ASMAtomicWriteBool(&g_fInitializing, true);
     int rc = rtR3InitBody(fFlags, cArgs, ppapszArgs, pszProgramPath);
+    ASMAtomicWriteBool(&g_fInitializing, false);
     if (RT_FAILURE(rc))
     {
         /* failure */
-        ASMAtomicWriteBool(&g_fInitializing, false);
         ASMAtomicDecS32(&g_cUsers);
         return rc;
     }
 
     /* success */
     LogFlow(("rtR3Init: returns VINF_SUCCESS\n"));
-    ASMAtomicWriteBool(&g_fInitializing, false);
     return VINF_SUCCESS;
 }
 

@@ -1581,24 +1581,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
  */
 int main(int argc, char **argv, char **envp)
 {
-    // initialize VBox Runtime
-    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("VBoxHeadless: Runtime Error:\n"
-                 " %Rrc -- %Rrf\n", rc, rc);
-        switch (rc)
-        {
-            case VERR_VM_DRIVER_NOT_INSTALLED:
-                RTPrintf("Cannot access the kernel driver. Make sure the kernel module has been \n"
-                        "loaded successfully. Aborting ...\n");
-                break;
-            default:
-                break;
-        }
-        return 1;
-    }
-
-    return TrustedMain(argc, argv, envp);
+    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_TRY_SUPLIB);
+    if (RT_SUCCESS(rc))
+        return TrustedMain(argc, argv, envp);
+    RTPrintf("VBoxHeadless: Runtime initialization failed: %Rrc - %Rrf\n", rc, rc);
+    return RTEXITCODE_FAILURE;
 }
 #endif /* !VBOX_WITH_HARDENING */

@@ -50,34 +50,47 @@ RT_C_DECLS_BEGIN
 
 #ifdef IN_RING3
 
-/** @name RTR3Init flags (RTR3INIT_XXX).
+/** @name RTR3INIT_FLAGS_XXX - RTR3Init* flags.
+ * @see RTR3InitExeNoArguments, RTR3InitExe, RTR3InitDll, RTR3InitEx
  * @{ */
-/** Try initialize SUPLib. */
-# define RTR3INIT_FLAGS_SUPLIB       RT_BIT(0)
 /** Initializing IPRT from a DLL. */
-# define RTR3INIT_FLAGS_DLL          RT_BIT(1)
-/** We are sharing a process space, so we need to behave. */
-# define RTR3INIT_FLAGS_UNOBTRUSIVE  RT_BIT(2)
+# define RTR3INIT_FLAGS_DLL             RT_BIT(0)
 /** The caller ensures that the argument vector is UTF-8. */
-# define RTR3INIT_FLAGS_UTF8_ARGV    RT_BIT(3)
+# define RTR3INIT_FLAGS_UTF8_ARGV       RT_BIT(1)
 /** Indicates that this is a standalone application without any additional
  * shared libraries in the application directory. Mainly windows loader mess. */
-# define RTR3INIT_FLAGS_STANDALONE_APP RT_BIT(4)
+# define RTR3INIT_FLAGS_STANDALONE_APP  RT_BIT(2)
+/** We are sharing a process space, so we need to behave. */
+# define RTR3INIT_FLAGS_UNOBTRUSIVE     RT_BIT(3)
+
+/** Initialize SUPLib (must not fail). */
+# define RTR3INIT_FLAGS_SUPLIB          RT_BIT(16)
+/** Try initialize SUPLib and ignore failures. */
+# define RTR3INIT_FLAGS_TRY_SUPLIB      RT_BIT(17)
+/** Shift count for passing thru SUPR3INIT_F_XXX flags.   */
+# define RTR3INIT_FLAGS_SUPLIB_SHIFT    18
+/** The mask covering the passthru SUPR3INIT_F_XXX flags. */
+# define RTR3INIT_FLAGS_SUPLIB_MASK     UINT32_C(0xfffc0000)
+
+/** Valid flag mask. */
+# define RTR3INIT_FLAGS_VALID_MASK      UINT32_C(0xffff000f)
 /** @} */
 
 /** @name RTR3InitEx version
  * @{ */
 /** Version 1. */
-# define RTR3INIT_VER_1              UINT32_C(1)
+# define RTR3INIT_VER_1                 UINT32_C(1)
+/** Version 2 - new flags, rearranged a bit. */
+# define RTR3INIT_VER_2                 UINT32_C(2)
 /** The current version. */
-# define RTR3INIT_VER_CUR            RTR3INIT_VER_1
+# define RTR3INIT_VER_CUR               RTR3INIT_VER_2
 /** @} */
 
 /**
  * Initializes the runtime library.
  *
  * @returns iprt status code.
- * @param   fFlags          Flags, see RTR3INIT_XXX.
+ * @param   fFlags          Flags, see RTR3INIT_FLAGS_XXX.
  */
 RTR3DECL(int) RTR3InitExeNoArguments(uint32_t fFlags);
 
@@ -87,7 +100,7 @@ RTR3DECL(int) RTR3InitExeNoArguments(uint32_t fFlags);
  * @returns iprt status code.
  * @param   cArgs           Pointer to the argument count.
  * @param   ppapszArgs      Pointer to the argument vector pointer.
- * @param   fFlags          Flags, see RTR3INIT_XXX.
+ * @param   fFlags          Flags, see RTR3INIT_FLAGS_XXX.
  */
 RTR3DECL(int) RTR3InitExe(int cArgs, char ***ppapszArgs, uint32_t fFlags);
 
@@ -95,7 +108,7 @@ RTR3DECL(int) RTR3InitExe(int cArgs, char ***ppapszArgs, uint32_t fFlags);
  * Initializes the runtime library.
  *
  * @returns iprt status code.
- * @param   fFlags          Flags, see RTR3INIT_XXX.
+ * @param   fFlags          Flags, see RTR3INIT_FLAGS_XXX.
  */
 RTR3DECL(int) RTR3InitDll(uint32_t fFlags);
 
@@ -106,7 +119,7 @@ RTR3DECL(int) RTR3InitDll(uint32_t fFlags);
  *
  * @returns IPRT status code.
  * @param   iVersion        The interface version. Must be 0 atm.
- * @param   fFlags          Flags, see RTR3INIT_XXX.
+ * @param   fFlags          Flags, see RTR3INIT_FLAGS_XXX.
  * @param   cArgs           Pointer to the argument count.
  * @param   ppapszArgs      Pointer to the argument vector pointer. NULL
  *                          allowed if @a cArgs is 0.

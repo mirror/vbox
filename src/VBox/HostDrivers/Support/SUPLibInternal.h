@@ -359,7 +359,7 @@ extern DECL_HIDDEN_DATA(bool)                   g_fSupEarlyProcessInit;
 RT_C_DECLS_BEGIN
 DECLHIDDEN(int)     suplibOsInstall(void);
 DECLHIDDEN(int)     suplibOsUninstall(void);
-DECLHIDDEN(int)     suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, bool fUnrestricted, SUPINITOP *penmWhat, PRTERRINFO pErrInfo);
+DECLHIDDEN(int)     suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, uint32_t fFlags, SUPINITOP *penmWhat, PRTERRINFO pErrInfo);
 DECLHIDDEN(int)     suplibOsTerm(PSUPLIBDATA pThis);
 DECLHIDDEN(int)     suplibOsHardenedVerifyInit(void);
 DECLHIDDEN(int)     suplibOsHardenedVerifyTerm(void);

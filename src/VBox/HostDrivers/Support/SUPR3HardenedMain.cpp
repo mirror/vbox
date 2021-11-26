@@ -549,7 +549,7 @@ static size_t           g_cchSupLibHardenedExecName;
 
 /** The program name. */
 static const char      *g_pszSupLibHardenedProgName;
-/** The flags passed to SUPR3HardenedMain. */
+/** The flags passed to SUPR3HardenedMain - SUPSECMAIN_FLAGS_XXX. */
 static uint32_t         g_fSupHardenedMain;
 
 #ifdef SUP_HARDENED_SUID
@@ -1863,8 +1863,14 @@ DECLHIDDEN(void) supR3HardenedMainOpenDevice(void)
 {
     RTERRINFOSTATIC ErrInfo;
     SUPINITOP       enmWhat = kSupInitOp_Driver;
-    int rc = suplibOsInit(&g_SupPreInitData.Data, false /*fPreInit*/, true /*fUnrestricted*/,
-                          &enmWhat, RTErrInfoInitStatic(&ErrInfo));
+    uint32_t        fFlags  = SUPR3INIT_F_UNRESTRICTED;
+    if (g_fSupHardenedMain & SUPSECMAIN_FLAGS_DRIVERLESS_IEM_ALLOWED)
+        fFlags |= SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED;
+#ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK
+    if (g_fSupHardenedMain & SUPSECMAIN_FLAGS_DRIVERLESS_NEM_FALLBACK)
+        fFlags |= SUPR3INIT_F_DRIVERLESS_NEM_FALLBACK;
+#endif
+    int rc = suplibOsInit(&g_SupPreInitData.Data, false /*fPreInit*/, fFlags, &enmWhat, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
         return;
 
@@ -2333,17 +2339,35 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
     if (RT_FAILURE(rc))
         supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, rc,
                               "supR3PreInit failed with rc=%d", rc);
+
+    /* Get the executable path for the IPRT init on linux if /proc/self/exe isn't accessible. */
     const char *pszExePath = NULL;
 #ifdef RT_OS_LINUX
     if (!supR3HardenedMainIsProcSelfExeAccssible())
         pszExePath = g_szSupLibHardenedExePath;
 #endif
-    rc = pfnRTInitEx(RTR3INIT_VER_1,
-                     fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV ? 0 : RTR3INIT_FLAGS_SUPLIB,
+
+    /* Assemble the IPRT init flags. We could probably just pass RTR3INIT_FLAGS_TRY_SUPLIB
+       here and be done with it, but it's not too much hazzle to convert fFlags 1:1. */
+    uint32_t fRtInit = 0;
+    if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
+    {
+        if (fFlags & SUPSECMAIN_FLAGS_DRIVERLESS_IEM_ALLOWED)
+            fRtInit |= (SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED  << RTR3INIT_FLAGS_SUPLIB_SHIFT) | RTR3INIT_FLAGS_TRY_SUPLIB;
+#ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK
+        if (fFlags & SUPSECMAIN_FLAGS_DRIVERLESS_NEM_FALLBACK)
+            fRtInit |= (SUPR3INIT_F_DRIVERLESS_NEM_FALLBACK << RTR3INIT_FLAGS_SUPLIB_SHIFT) | RTR3INIT_FLAGS_TRY_SUPLIB;
+#endif
+        if (!(fRtInit & RTR3INIT_FLAGS_TRY_SUPLIB))
+            fRtInit |= RTR3INIT_FLAGS_SUPLIB;
+    }
+
+    /* Now do the IPRT init. */
+    rc = pfnRTInitEx(RTR3INIT_VER_CUR, fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV ? 0 : RTR3INIT_FLAGS_SUPLIB,
                      0 /*cArgs*/, NULL /*papszArgs*/, pszExePath);
     if (RT_FAILURE(rc))
         supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, rc,
-                              "RTR3InitEx failed with rc=%d", rc);
+                              "RTR3InitEx failed with rc=%d (fRtFlags=%#x)", rc, fRtInit);
 
 #if defined(RT_OS_WINDOWS)
     /*

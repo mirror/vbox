@@ -1180,7 +1180,7 @@ HRESULT Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
 void Host::i_updateProcessorFeatures()
 {
     /* Perhaps the driver is available now... */
-    int rc = SUPR3InitEx(false /*fUnrestricted*/, NULL);
+    int rc = SUPR3InitEx(SUPR3INIT_F_LIMITED, NULL);
     if (RT_SUCCESS(rc))
     {
         uint32_t fVTCaps;
