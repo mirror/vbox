@@ -2245,7 +2245,7 @@ and compartment &apos;%s&apos;:
         <location filename="../VBoxManageCloudMachine.cpp" line="654"/>
         <location filename="../VBoxManageCloudMachine.cpp" line="789"/>
         <source>Invalid sub-command: %s</source>
-        <translation>Недопустимая под-команда: %s</translation>
+        <translation>Недопустимая подкоманда: %s</translation>
     </message>
     <message>
         <location filename="../VBoxManageCloudMachine.cpp" line="700"/>
@@ -2963,27 +2963,27 @@ Try &apos;--help&apos; for more information.</source>
     <message>
         <location filename="../VBoxManageDHCPServer.cpp" line="555"/>
         <source>--del-opt does not apply to the &apos;add&apos; subcommand</source>
-        <translation>--del-opt не применима к под-команде &apos;add&apos;</translation>
+        <translation>--del-opt не применима к подкоманде &apos;add&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageDHCPServer.cpp" line="567"/>
         <source>--unforce-opt does not apply to the &apos;add&apos; subcommand</source>
-        <translation>--unforce-opt не применима к под-команде &apos;add&apos;</translation>
+        <translation>--unforce-opt не применима к подкоманде &apos;add&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageDHCPServer.cpp" line="571"/>
         <source>--unsuppress-opt does not apply to the &apos;add&apos; subcommand</source>
-        <translation>--unsuppress-opt не применима к под-команде &apos;add&apos;</translation>
+        <translation>--unsuppress-opt не применима к подкоманде &apos;add&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageDHCPServer.cpp" line="629"/>
         <source>--zap-options does not apply to the &apos;add&apos; subcommand</source>
-        <translation>--zap-options не применима к под-команде &apos;add&apos;</translation>
+        <translation>--zap-options не применима к подкоманде &apos;add&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageDHCPServer.cpp" line="671"/>
         <source>--remove-config does not apply to the &apos;add&apos; subcommand</source>
-        <translation>--remove-config не применима к под-команде &apos;add&apos;</translation>
+        <translation>--remove-config не применима к подкоманде &apos;add&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageDHCPServer.cpp" line="673"/>
@@ -3028,7 +3028,7 @@ Try &apos;--help&apos; for more information.</source>
     <message>
         <location filename="../VBoxManageDHCPServer.cpp" line="863"/>
         <source>--remove does not apply to the &apos;add&apos; subcommand</source>
-        <translation>--remove не применима к под-команде &apos;add&apos;</translation>
+        <translation>--remove не применима к подкоманде &apos;add&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageDHCPServer.cpp" line="865"/>
@@ -3133,7 +3133,7 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
     <message>
         <location filename="../VBoxManageDebugVM.cpp" line="115"/>
         <source>The getregisters sub-command takes at least one register name</source>
-        <translation>Под-команда getregisters принимает имя как минимум одного регистра</translation>
+        <translation>подкоманда getregisters принимает имя как минимум одного регистра</translation>
     </message>
     <message>
         <location filename="../VBoxManageDebugVM.cpp" line="156"/>
@@ -3196,7 +3196,7 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
     <message>
         <location filename="../VBoxManageDebugVM.cpp" line="474"/>
         <source>The setregisters sub-command takes at least one register name</source>
-        <translation>Под-команда setregisters принимает имя как минимум одного регистра</translation>
+        <translation>подкоманда setregisters принимает имя как минимум одного регистра</translation>
     </message>
     <message>
         <location filename="../VBoxManageDebugVM.cpp" line="483"/>
@@ -3249,7 +3249,7 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
     <message>
         <location filename="../VBoxManageDebugVM.cpp" line="631"/>
         <source>The show sub-command has no idea what &apos;%s&apos; might be</source>
-        <translation>У под-команды show нет идей что это может быть - &apos;%s&apos;</translation>
+        <translation>У подкоманды show нет идей что это может быть - &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageDebugVM.cpp" line="705"/>
@@ -5368,17 +5368,17 @@ Total guest sessions: %zu
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="3846"/>
         <source>Unknown sub-command: &apos;%s&apos;</source>
-        <translation>Неизвестная под-команда: &apos;%s&apos;</translation>
+        <translation>Неизвестная подкоманда: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="3855"/>
         <source>Missing sub-command</source>
-        <translation>Отсутствует под-команда</translation>
+        <translation>Отсутствует подкоманда</translation>
     </message>
     <message>
         <location filename="../VBoxManageGuestCtrl.cpp" line="3857"/>
         <source>Missing VM name and sub-command</source>
-        <translation>Отсутствует имя ВМ и под-команда</translation>
+        <translation>Отсутствует имя ВМ и подкоманда</translation>
     </message>
 </context>
 <context>
@@ -5564,12 +5564,12 @@ Total guest sessions: %zu
     <message>
         <location filename="../VBoxManageHelp.cpp" line="181"/>
         <source>No subcommand specified</source>
-        <translation>Не указана под-команда</translation>
+        <translation>Не указана подкоманда</translation>
     </message>
     <message>
         <location filename="../VBoxManageHelp.cpp" line="207"/>
         <source>Unknown subcommand: %s</source>
-        <translation>Неизвестная под-команда: %s</translation>
+        <translation>Неизвестная подкоманда: %s</translation>
     </message>
     <message>
         <location filename="../VBoxManageHelp.cpp" line="240"/>
@@ -5730,13 +5730,13 @@ Syntax error: %N
         <location filename="../VBoxManageHostonly.cpp" line="272"/>
         <location filename="../VBoxManageHostonly.cpp" line="509"/>
         <source>No sub-command specified</source>
-        <translation>Не указана под-команда</translation>
+        <translation>Не указана подкоманда</translation>
     </message>
     <message>
         <location filename="../VBoxManageHostonly.cpp" line="284"/>
         <location filename="../VBoxManageHostonly.cpp" line="528"/>
         <source>Unknown sub-command &apos;%s&apos;</source>
-        <translation>Неизвестная под-команда: &apos;%s&apos;</translation>
+        <translation>Неизвестная подкоманда: &apos;%s&apos;</translation>
     </message>
     <message>
         <location filename="../VBoxManageHostonly.cpp" line="405"/>
@@ -9996,13 +9996,13 @@ Leaf no.  EAX      EBX      ECX      EDX
     <message>
         <location filename="../VBoxManageList.cpp" line="2402"/>
         <source>Unknown subcommand &quot;%s&quot;.</source>
-        <translation>Неизвестная под-команда &quot;%s&quot;.</translation>
+        <translation>Неизвестная подкоманда &quot;%s&quot;.</translation>
     </message>
     <message>
         <location filename="../VBoxManageList.cpp" line="2413"/>
         <source>Missing subcommand for &quot;list&quot; command.
 </source>
-        <translation>Отсутствует под-команда для команды &quot;list&quot;.
+        <translation>Отсутствует подкоманда для команды &quot;list&quot;.
 </translation>
     </message>
 </context>
@@ -10097,12 +10097,12 @@ in few seconds, discarding all collected data and parameters.</source>
     <message>
         <location filename="../VBoxManageMetrics.cpp" line="628"/>
         <source>Subcommand missing</source>
-        <translation>Отсутствует под-команда</translation>
+        <translation>Отсутствует подкоманда</translation>
     </message>
     <message>
         <location filename="../VBoxManageMetrics.cpp" line="647"/>
         <source>Invalid subcommand &apos;%s&apos;</source>
-        <translation>Недопустимая под-команда &apos;%s&apos;</translation>
+        <translation>Недопустимая подкоманда &apos;%s&apos;</translation>
     </message>
 </context>
 <context>
