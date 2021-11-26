@@ -66,10 +66,10 @@ for m in _asVBoxPythons:
     try:
         _oVBoxPythonMod =  __import__(m)
         break
-    except Exception as x:
-        print('m=%s x=%s' % (m, x))
-    #except:
-    #    pass
+    except:
+        pass
+    #except Exception as x:
+    #    print('m=%s x=%s' % (m, x))
 
 if platform.system() == 'Darwin':
     sys.path.remove('/Applications/VirtualBox.app/Contents/MacOS')
