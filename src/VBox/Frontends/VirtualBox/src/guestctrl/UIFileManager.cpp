@@ -22,7 +22,10 @@
 
 /* GUI includes: */
 #include "QITreeWidget.h"
+#include "QIToolBar.h"
 #include "UIActionPool.h"
+#include "UICommon.h"
+#include "UIConverter.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
@@ -34,8 +37,6 @@
 #include "UIFileManagerGuestTable.h"
 #include "UIFileManagerHostTable.h"
 #include "UIGuestControlInterface.h"
-#include "QIToolBar.h"
-#include "UICommon.h"
 
 /* COM includes: */
 #include "CFsObjInfo.h"
@@ -447,21 +448,24 @@ void UIFileManager::sltCloseSession()
 
 void UIFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent)
 {
-    if (cEvent.isOk() /*&& m_comGuestSession.isOk()*/)
+    if (cEvent.isOk())
     {
         CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
-        if (cErrorInfo.isOk())
+        if (cErrorInfo.isOk() && !cErrorInfo.GetText().contains("success", Qt::CaseInsensitive))
             appendLog(cErrorInfo.GetText(), FileManagerLogType_Error);
     }
-    if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
+    if (m_comGuestSession.isOk())
     {
-        initFileTable();
-        postSessionCreated();
+        if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
+        {
+            initFileTable();
+            postSessionCreated();
+        }
+        appendLog(QString("%1: %2").arg("Session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
+                  FileManagerLogType_Info);
     }
     else
-    {
-        appendLog("Session status has changed", FileManagerLogType_Info);
-    }
+        appendLog("Guest session is not valid", FileManagerLogType_Error);
 }
 
 void UIFileManager::sltReceieveLogOutput(QString strOutput, FileManagerLogType eLogType)
@@ -623,7 +627,8 @@ bool UIFileManager::createSession(const QString& strUserName, const QString& str
 
     connect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
             this, &UIFileManager::sltGuestSessionStateChanged);
-     /* Wait session to start. For some reason we cannot get GuestSessionStatusChanged event
+#if 0
+    /* Wait session to start. For some reason we cannot get GuestSessionStatusChanged event
         consistently. So we wait: */
     appendLog("Waiting the session to start", FileManagerLogType_Info);
     const ULONG waitTimeout = 2000;
@@ -634,6 +639,7 @@ bool UIFileManager::createSession(const QString& strUserName, const QString& str
         sltCloseSession();
         return false;
     }
+#endif
     return true;
 }
 
