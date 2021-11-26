@@ -42,7 +42,7 @@ using namespace com;
 #include <iprt/ldr.h>
 #include <iprt/getopt.h>
 #include <iprt/env.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBoxVideo.h>
 
 #ifdef VBOX_WITH_RECORDING
