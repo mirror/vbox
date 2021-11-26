@@ -1065,23 +1065,27 @@ void Display::i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
 
     if (!mpDrv)
         return;
-    /* If VBVA is not in use then this flag will not be set and this
-     * will still work as it should. */
-    if (!maFramebuffers[0].fDisabled)
+
+    if (maFramebuffers[0].fVBVAEnabled && cxInputMapping && cyInputMapping)
     {
-        x1 = (int32_t)maFramebuffers[0].xOrigin;
-        y1 = (int32_t)maFramebuffers[0].yOrigin;
-        x2 = (int32_t)maFramebuffers[0].w + (int32_t)maFramebuffers[0].xOrigin;
-        y2 = (int32_t)maFramebuffers[0].h + (int32_t)maFramebuffers[0].yOrigin;
-    }
-    if (cxInputMapping && cyInputMapping)
-    {
+        /* Guest uses VBVA with explicit mouse mapping dimensions. */
         x1 = xInputMappingOrigin;
         y1 = yInputMappingOrigin;
         x2 = xInputMappingOrigin + cxInputMapping;
         y2 = yInputMappingOrigin + cyInputMapping;
     }
     else
+    {
+        /* If VBVA is not in use then this flag will not be set and this
+         * will still work as it should. */
+        if (!maFramebuffers[0].fDisabled)
+        {
+            x1 = (int32_t)maFramebuffers[0].xOrigin;
+            y1 = (int32_t)maFramebuffers[0].yOrigin;
+            x2 = (int32_t)maFramebuffers[0].w + (int32_t)maFramebuffers[0].xOrigin;
+            y2 = (int32_t)maFramebuffers[0].h + (int32_t)maFramebuffers[0].yOrigin;
+        }
+
         for (unsigned i = 1; i < mcMonitors; ++i)
         {
             if (!maFramebuffers[i].fDisabled)
@@ -1092,6 +1096,8 @@ void Display::i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
                 y2 = RT_MAX(y2, maFramebuffers[i].yOrigin + (int32_t)maFramebuffers[i].h);
             }
         }
+    }
+
     *px1 = x1;
     *py1 = y1;
     *px2 = x2;
