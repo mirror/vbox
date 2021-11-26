@@ -328,7 +328,9 @@ if [ "$ACTION" = "install" ]; then
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/vboxwebsrv
     ln -sf $INSTALLATION_DIR/vbox-img /usr/bin/vbox-img
     ln -sf $INSTALLATION_DIR/vboximg-mount /usr/bin/vboximg-mount
-    ln -sf $INSTALLATION_DIR/VBox.png /usr/share/pixmaps/VBox.png
+    if [ -d /usr/share/pixmaps/ ]; then
+        ln -sf $INSTALLATION_DIR/VBox.png /usr/share/pixmaps/VBox.png
+    fi
     if [ -f $INSTALLATION_DIR/VBoxDTrace ]; then
         ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxDTrace
     fi
@@ -336,10 +338,16 @@ if [ "$ACTION" = "install" ]; then
         ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxAudioTest
     fi
     # Unity and Nautilus seem to look here for their icons
-    ln -sf $INSTALLATION_DIR/icons/128x128/virtualbox.png /usr/share/pixmaps/virtualbox.png
-    ln -sf $INSTALLATION_DIR/virtualbox.desktop /usr/share/applications/virtualbox.desktop
-    ln -sf $INSTALLATION_DIR/virtualboxvm.desktop /usr/share/applications/virtualboxvm.desktop
-    ln -sf $INSTALLATION_DIR/virtualbox.xml /usr/share/mime/packages/virtualbox.xml
+    if [ -d /usr/share/pixmaps/ ]; then
+        ln -sf $INSTALLATION_DIR/icons/128x128/virtualbox.png /usr/share/pixmaps/virtualbox.png
+    fi
+    if [ -d /usr/share/applications/ ]; then
+        ln -sf $INSTALLATION_DIR/virtualbox.desktop /usr/share/applications/virtualbox.desktop
+        ln -sf $INSTALLATION_DIR/virtualboxvm.desktop /usr/share/applications/virtualboxvm.desktop
+    fi
+    if [ -d /usr/share/mime/packages/ ]; then
+        ln -sf $INSTALLATION_DIR/virtualbox.xml /usr/share/mime/packages/virtualbox.xml
+    fi
     ln -sf $INSTALLATION_DIR/rdesktop-vrdp /usr/bin/rdesktop-vrdp
     ln -sf $INSTALLATION_DIR/src/vboxhost /usr/src/vboxhost-_VERSION_
 
