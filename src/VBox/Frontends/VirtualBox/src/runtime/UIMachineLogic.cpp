@@ -1773,7 +1773,11 @@ void UIMachineLogic::sltShowFileManagerDialog()
 
     /* Create a file manager only if we don't have one already: */
     if (m_pFileManagerDialog)
+    {
+        m_pFileManagerDialog->activateWindow();
+        m_pFileManagerDialog->raise();
         return;
+    }
 
     QIManagerDialog *pFileManagerDialog;
     UIFileManagerDialogFactory dialogFactory(actionPool(), console().GetGuest(), machine().GetName());
@@ -1786,6 +1790,7 @@ void UIMachineLogic::sltShowFileManagerDialog()
         pFileManagerDialog->show();
         pFileManagerDialog->setWindowState(pFileManagerDialog->windowState() & ~Qt::WindowMinimized);
         pFileManagerDialog->activateWindow();
+        pFileManagerDialog->raise();
         connect(pFileManagerDialog, &QIManagerDialog::sigClose,
                 this, &UIMachineLogic::sltCloseFileManagerDialog);
     }
