@@ -2449,11 +2449,14 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBGLR3GUESTCTRLSES
             {
                 RTENV hEnvSession = RTENV_DEFAULT;
 
-                /* If we start a guest session with RTPROC_FLAGS_PROFILE (the default), make sure
-                 * that we clone the initial session's environment and apply it as a change record to
-                 * the new session process.
+                /*
+                 * If we start a new guest session with RTPROC_FLAGS_PROFILE (the default, means another user),
+                 * process the initial session's environment and search for important env vars we also need in
+                 * the new guest session and apply those to the new environment block we're going to use for that
+                 * new guest session then.
                  *
-                 * This is needed in order to make different locales on POSIX OSes work. See @bugref{10153}. */
+                 * This is needed in order to make different locales on POSIX OSes work. See @bugref{10153}.
+                 */
                 if (fProcCreate & RTPROC_FLAGS_PROFILE)
                 {
                     RTENV hEnv;
@@ -2463,26 +2466,61 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBGLR3GUESTCTRLSES
                         rc2 = RTEnvCreate(&hEnvSession);
                         if (RT_SUCCESS(rc2))
                         {
-
-                            for (uint32_t iVar = 0; iVar < RTEnvCountEx(hEnv); iVar++)
+                            size_t cbVar  = 128; /* Start with a conservative size, as we might grow this down below. */
+                            char  *pszVar = RTStrAlloc(cbVar);
+                            if (pszVar)
                             {
-                                char szVar  [_1K];
-                                char szValue[_16K];
-                                rc2 = RTEnvGetByIndexEx(hEnv, iVar, szVar, sizeof(szVar), szValue, sizeof(szValue));
-                                if (   RT_SUCCESS(rc2)
-                                    && (   RTStrSimplePatternMatch("LANG", szVar)
-                                        || RTStrSimplePatternMatch("LC_*", szVar)))
+                                size_t cbValue  = cbVar;
+                                char  *pszValue = RTStrAlloc(cbValue);
+                                if (pszValue)
                                 {
-#ifdef DEBUG
-                                    /* Don't log this in release mode -- might contain sensitive data! */
-                                    VGSvcVerbose(2, "Adding %s=%s to guest session environment\n", szVar, szValue);
-#endif
-                                    rc2 = RTEnvSetEx(hEnvSession, szVar, szValue);
-                                }
+                                    for (uint32_t iVar = 0; iVar < RTEnvCountEx(hEnv); iVar++)
+                                    {
+                                        for (unsigned cTries = 0; cTries < 10; cTries++)
+                                        {
+                                            rc2 = RTEnvGetByIndexEx(hEnv, iVar, pszVar, cbVar, pszValue, cbValue);
+                                            if (RT_SUCCESS(rc2))
+                                                break;
+                                            if (rc2 == VERR_BUFFER_OVERFLOW)
+                                            {
+                                                cbVar *= 2;
+                                                rc2 = RTStrRealloc(&pszVar, cbVar);
+                                                AssertRCBreak(rc2);
 
-                                if (RT_FAILURE(rc2))
-                                    break;
+                                                cbValue *= 2;
+                                                rc2 = RTStrRealloc(&pszValue, cbValue);
+                                                AssertRCBreak(rc2);
+                                            }
+                                            else
+                                                break;
+                                        }
+
+                                        if (RT_FAILURE(rc2))
+                                            break;
+
+                                        if (   RTStrSimplePatternMatch("LANG", pszVar)
+                                            || RTStrSimplePatternMatch("LC_*", pszVar))
+                                        {
+#ifdef DEBUG
+                                            /* Don't log this in release mode -- might contain sensitive data! */
+                                            VGSvcVerbose(2, "Adding %s=%s to guest session environment\n", pszVar, pszValue);
+#endif
+                                            rc2 = RTEnvSetEx(hEnvSession, pszVar, pszValue);
+                                        }
+
+                                        if (RT_FAILURE(rc2))
+                                            break;
+                                    }
+
+                                    RTStrFree(pszValue);
+                                }
+                                else
+                                    rc2 = VERR_NO_MEMORY;
+
+                                RTStrFree(pszVar);
                             }
+                            else
+                                rc2 = VERR_NO_MEMORY;
 
                             if (RT_SUCCESS(rc2))
                                 fProcCreate |= RTPROC_FLAGS_ENV_CHANGE_RECORD;
