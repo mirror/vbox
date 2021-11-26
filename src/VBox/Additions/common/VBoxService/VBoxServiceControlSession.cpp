@@ -2447,7 +2447,7 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBGLR3GUESTCTRLSES
             if (RT_SUCCESS(rc))
 #endif
             {
-                RTENV hEnv = RTENV_DEFAULT;
+                RTENV hEnvSession = RTENV_DEFAULT;
 
                 /* If we start a guest session with RTPROC_FLAGS_PROFILE (the default), make sure
                  * that we clone the initial session's environment and apply it as a change record to
@@ -2456,28 +2456,60 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBGLR3GUESTCTRLSES
                  * This is needed in order to make different locales on POSIX OSes work. See @bugref{10153}. */
                 if (fProcCreate & RTPROC_FLAGS_PROFILE)
                 {
+                    RTENV hEnv;
                     int rc2 = RTEnvClone(&hEnv, RTENV_DEFAULT);
                     if (RT_SUCCESS(rc2))
-                        fProcCreate |= RTPROC_FLAGS_ENV_CHANGE_RECORD;
-                    else
-                        VGSvcError("Cloning environment block failed with %Rrc\n", rc2);
+                    {
+                        rc2 = RTEnvCreate(&hEnvSession);
+                        if (RT_SUCCESS(rc2))
+                        {
+
+                            for (uint32_t iVar = 0; iVar < RTEnvCountEx(hEnv); iVar++)
+                            {
+                                char szVar  [_1K];
+                                char szValue[_16K];
+                                rc2 = RTEnvGetByIndexEx(hEnv, iVar, szVar, sizeof(szVar), szValue, sizeof(szValue));
+                                if (   RT_SUCCESS(rc2)
+                                    && (   RTStrSimplePatternMatch("LANG", szVar)
+                                        || RTStrSimplePatternMatch("LC_*", szVar)))
+                                {
+#ifdef DEBUG
+                                    /* Don't log this in release mode -- might contain sensitive data! */
+                                    VGSvcVerbose(2, "Adding %s=%s to guest session environment\n", szVar, szValue);
+#endif
+                                    rc2 = RTEnvSetEx(hEnvSession, szVar, szValue);
+                                }
+
+                                if (RT_FAILURE(rc2))
+                                    break;
+                            }
+
+                            if (RT_SUCCESS(rc2))
+                                fProcCreate |= RTPROC_FLAGS_ENV_CHANGE_RECORD;
+                        }
+
+                        RTEnvDestroy(hEnv);
+                    }
+
+                    if (RT_FAILURE(rc2))
+                        VGSvcError("Creating session environment block failed with %Rrc\n", rc2);
                     /* Consider this as not being fatal. Just stay witht the default environment and hope for the best. */
                 }
 
                 /*
                  * Finally, create the process.
                  */
-                rc = RTProcCreateEx(pszExeName, apszArgs, hEnv, fProcCreate,
+                rc = RTProcCreateEx(pszExeName, apszArgs, hEnvSession, fProcCreate,
                                     &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
                                     !fAnonymous ? pszUser : NULL,
                                     !fAnonymous ? pSessionThread->pStartupInfo->pszPassword : NULL,
                                     NULL /*pvExtraData*/,
                                     &pSessionThread->hProcess);
 
-                if (hEnv != RTENV_DEFAULT)
+                if (hEnvSession != RTENV_DEFAULT)
                 {
-                    RTEnvDestroy(hEnv);
-                    hEnv = NIL_RTENV;
+                    RTEnvDestroy(hEnvSession);
+                    hEnvSession = NIL_RTENV;
                 }
             }
 #ifdef RT_OS_WINDOWS
