@@ -30,7 +30,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIFileManager.h"
-#include "UIFileManagerSessionPanel.h"
+#include "UIFileManagerGuestSessionPanel.h"
 #include "UIFileManagerOptionsPanel.h"
 #include "UIFileManagerLogPanel.h"
 #include "UIFileManagerOperationsPanel.h"
@@ -125,7 +125,7 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     , m_fShowToolbar(fShowToolbar)
     , m_pOptionsPanel(0)
     , m_pLogPanel(0)
-    , m_pSessionPanel(0)
+    , m_pGuestSessionPanel(0)
     , m_pOperationsPanel(0)
     , m_fDialogBeingClosed(false)
 {
@@ -245,12 +245,12 @@ void UIFileManager::prepareObjects()
     }
 
     pTopLayout->addLayout(pFileTableContainerLayout);
-    m_pSessionPanel = new UIFileManagerSessionPanel;
-    if (m_pSessionPanel)
+    m_pGuestSessionPanel = new UIFileManagerGuestSessionPanel;
+    if (m_pGuestSessionPanel)
     {
-        m_pSessionPanel->hide();
-        m_panelActionMap.insert(m_pSessionPanel, m_pActionPool->action(UIActionIndex_M_FileManager_T_Session));
-        pTopLayout->addWidget(m_pSessionPanel);
+        m_pGuestSessionPanel->hide();
+        m_panelActionMap.insert(m_pGuestSessionPanel, m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession));
+        pTopLayout->addWidget(m_pGuestSessionPanel);
     }
 
     m_pOptionsPanel =
@@ -329,17 +329,16 @@ void UIFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
 void UIFileManager::prepareConnections()
 {
     if (m_pQtGuestListener)
-    {
         connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
                 this, &UIFileManager::sltGuestSessionUnregistered);
-    }
-    if (m_pSessionPanel)
+
+    if (m_pGuestSessionPanel)
     {
-        connect(m_pSessionPanel, &UIFileManagerSessionPanel::sigCreateSession,
-                this, &UIFileManager::sltCreateSession);
-        connect(m_pSessionPanel, &UIFileManagerSessionPanel::sigCloseSession,
-                this, &UIFileManager::sltCloseSession);
-        connect(m_pSessionPanel, &UIFileManagerSessionPanel::sigHidePanel,
+        connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCreateSession,
+                this, &UIFileManager::sltCreateGuestSession);
+        connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCloseSession,
+                this, &UIFileManager::sltCloseGuestSession);
+        connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigHidePanel,
                 this, &UIFileManager::sltHandleHidePanel);
     }
     if (m_pOptionsPanel)
@@ -366,7 +365,7 @@ void UIFileManager::prepareToolBar()
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Session));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Options));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Log));
@@ -375,7 +374,7 @@ void UIFileManager::prepareToolBar()
                 this, &UIFileManager::sltPanelActionToggled);
         connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Log), &QAction::toggled,
                 this, &UIFileManager::sltPanelActionToggled);
-        connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Session), &QAction::toggled,
+        connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession), &QAction::toggled,
                 this, &UIFileManager::sltPanelActionToggled);
         connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations), &QAction::toggled,
                 this, &UIFileManager::sltPanelActionToggled);
@@ -394,7 +393,6 @@ void UIFileManager::prepareToolBar()
     }
 }
 
-
 void UIFileManager::sltGuestSessionUnregistered(CGuestSession guestSession)
 {
     if (guestSession.isNull())
@@ -402,37 +400,37 @@ void UIFileManager::sltGuestSessionUnregistered(CGuestSession guestSession)
     if (guestSession == m_comGuestSession && !m_comGuestSession.isNull())
     {
         m_comGuestSession.detach();
-        postSessionClosed();
+        postGuestSessionClosed();
     }
 }
 
-void UIFileManager::sltCreateSession(QString strUserName, QString strPassword)
+void UIFileManager::sltCreateGuestSession(QString strUserName, QString strPassword)
 {
     if (!UIGuestControlInterface::isGuestAdditionsAvailable(m_comGuest))
     {
         appendLog("Could not find Guest Additions", FileManagerLogType_Error);
-        postSessionClosed();
-        if (m_pSessionPanel)
-            m_pSessionPanel->markForError(true);
+        postGuestSessionClosed();
+        if (m_pGuestSessionPanel)
+            m_pGuestSessionPanel->markForError(true);
         return;
     }
     if (strUserName.isEmpty())
     {
         appendLog("No user name is given", FileManagerLogType_Error);
-        if (m_pSessionPanel)
-            m_pSessionPanel->markForError(true);
+        if (m_pGuestSessionPanel)
+            m_pGuestSessionPanel->markForError(true);
         return;
     }
-    if (m_pSessionPanel)
-        m_pSessionPanel->markForError(!createSession(strUserName, strPassword));
+    if (m_pGuestSessionPanel)
+        m_pGuestSessionPanel->markForError(!createGuestSession(strUserName, strPassword));
 }
 
-void UIFileManager::sltCloseSession()
+void UIFileManager::sltCloseGuestSession()
 {
     if (!m_comGuestSession.isOk())
     {
         appendLog("Guest session is not valid", FileManagerLogType_Error);
-        postSessionClosed();
+        postGuestSessionClosed();
         return;
     }
     if (m_pGuestFileTable)
@@ -443,7 +441,7 @@ void UIFileManager::sltCloseSession()
 
     m_comGuestSession.Close();
     appendLog("Guest session is closed", FileManagerLogType_Info);
-    postSessionClosed();
+    postGuestSessionClosed();
 }
 
 void UIFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent)
@@ -459,7 +457,7 @@ void UIFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedE
         if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
         {
             initFileTable();
-            postSessionCreated();
+            postGuestSessionCreated();
         }
         appendLog(QString("%1: %2").arg("Session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
                   FileManagerLogType_Info);
@@ -577,28 +575,28 @@ void UIFileManager::initFileTable()
     m_pGuestFileTable->initGuestFileTable(m_comGuestSession);
 }
 
-void UIFileManager::postSessionCreated()
+void UIFileManager::postGuestSessionCreated()
 {
-    if (m_pSessionPanel)
-        m_pSessionPanel->switchSessionCloseMode();
+    if (m_pGuestSessionPanel)
+        m_pGuestSessionPanel->switchSessionCloseMode();
     if (m_pGuestFileTable)
         m_pGuestFileTable->setEnabled(true);
     if (m_pVerticalToolBar)
         m_pVerticalToolBar->setEnabled(true);
 }
 
-void UIFileManager::postSessionClosed()
+void UIFileManager::postGuestSessionClosed()
 {
-    if (m_pSessionPanel)
-        m_pSessionPanel->switchSessionCreateMode();
+    if (m_pGuestSessionPanel)
+        m_pGuestSessionPanel->switchSessionCreateMode();
     if (m_pGuestFileTable)
         m_pGuestFileTable->setEnabled(false);
     if (m_pVerticalToolBar)
         m_pVerticalToolBar->setEnabled(false);
 }
 
-bool UIFileManager::createSession(const QString& strUserName, const QString& strPassword,
-                                              const QString& strDomain /* not used currently */)
+bool UIFileManager::createGuestSession(const QString& strUserName, const QString& strPassword,
+                                  const QString& strDomain /* not used currently */)
 {
     if (!m_comGuest.isOk())
         return false;
@@ -611,8 +609,8 @@ bool UIFileManager::createSession(const QString& strUserName, const QString& str
         return false;
     }
     appendLog("Guest session has been created", FileManagerLogType_Info);
-    if (m_pSessionPanel)
-        m_pSessionPanel->switchSessionCloseMode();
+    if (m_pGuestSessionPanel)
+        m_pGuestSessionPanel->switchSessionCloseMode();
 
     /* Prepare session listener */
     QVector<KVBoxEventType> eventTypes;
@@ -624,19 +622,18 @@ bool UIFileManager::createSession(const QString& strUserName, const QString& str
     /* Connect to session listener */
     qRegisterMetaType<CGuestSessionStateChangedEvent>();
 
-
     connect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
             this, &UIFileManager::sltGuestSessionStateChanged);
 #if 0
     /* Wait session to start. For some reason we cannot get GuestSessionStatusChanged event
         consistently. So we wait: */
-    appendLog("Waiting the session to start", FileManagerLogType_Info);
+    appendLog("Waiting the guest session to start", FileManagerLogType_Info);
     const ULONG waitTimeout = 2000;
     KGuestSessionWaitResult waitResult = m_comGuestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
     if (waitResult != KGuestSessionWaitResult_Start)
     {
-        appendLog("The session did not start", FileManagerLogType_Error);
-        sltCloseSession();
+        appendLog("The guest session did not start", FileManagerLogType_Error);
+        sltCloseGuestSession();
         return false;
     }
 #endif
@@ -644,8 +641,8 @@ bool UIFileManager::createSession(const QString& strUserName, const QString& str
 }
 
 void UIFileManager::prepareListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
-                                                CEventListener &comEventListener,
-                                                CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes)
+                                    CEventListener &comEventListener,
+                                    CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes)
 {
     if (!comEventSource.isOk())
         return;
@@ -726,8 +723,8 @@ void UIFileManager::restorePanelVisibility()
         }
     }
     /* Make sure Session panel is visible: */
-    if (m_pSessionPanel && !m_pSessionPanel->isVisible())
-        showPanel(m_pSessionPanel);
+    if (m_pGuestSessionPanel && !m_pGuestSessionPanel->isVisible())
+        showPanel(m_pGuestSessionPanel);
 }
 
 void UIFileManager::loadOptions()

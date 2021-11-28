@@ -111,7 +111,7 @@ enum UIActionIndex
     UIActionIndex_M_FileManager_T_Options,
     UIActionIndex_M_FileManager_T_Log,
     UIActionIndex_M_FileManager_T_Operations,
-    UIActionIndex_M_FileManager_T_Session,
+    UIActionIndex_M_FileManager_T_GuestSession,
     UIActionIndex_M_FileManager_S_Host_GoUp,
     UIActionIndex_M_FileManager_S_Guest_GoUp,
     UIActionIndex_M_FileManager_S_Host_GoHome,

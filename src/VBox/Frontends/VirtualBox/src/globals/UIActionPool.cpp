@@ -1701,15 +1701,15 @@ protected:
     }
 };
 
-/** Toggle action extension, used to toggle 'File Manager Session' panel in file manager. */
-class UIActionMenuFileManagerSession : public UIActionToggle
+/** Toggle action extension, used to toggle 'File Manager Guest Session' panel in file manager. */
+class UIActionMenuFileManagerGuestSession : public UIActionToggle
 {
     Q_OBJECT;
 
 public:
 
     /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuFileManagerSession(UIActionPool *pParent)
+    UIActionMenuFileManagerGuestSession(UIActionPool *pParent)
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -1722,7 +1722,7 @@ protected:
     /** Returns shortcut extra-data ID. */
     virtual QString shortcutExtraDataID() const /* override */
     {
-        return QString("ToggleFileManagerSessionPanel");
+        return QString("ToggleFileManagerGuestSessionPanel");
     }
 
     /** Returns default shortcut. */
@@ -3105,7 +3105,7 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_FileManager_T_Options] = new UIActionMenuFileManagerOptions(this);
     m_pool[UIActionIndex_M_FileManager_T_Log] = new UIActionMenuFileManagerLog(this);
     m_pool[UIActionIndex_M_FileManager_T_Operations] = new UIActionMenuFileManagerOperations(this);
-    m_pool[UIActionIndex_M_FileManager_T_Session] = new UIActionMenuFileManagerSession(this);
+    m_pool[UIActionIndex_M_FileManager_T_GuestSession] = new UIActionMenuFileManagerGuestSession(this);
     m_pool[UIActionIndex_M_FileManager_S_Host_GoUp] = new UIActionMenuFileManagerGoUp(this);
     m_pool[UIActionIndex_M_FileManager_S_Guest_GoUp] = new UIActionMenuFileManagerGoUp(this);
     m_pool[UIActionIndex_M_FileManager_S_Host_GoHome] = new UIActionMenuFileManagerGoHome(this);
@@ -3556,7 +3556,7 @@ void UIActionPool::updateMenuFileManager()
 
 void UIActionPool::updateMenuFileManagerWrapper(UIMenu *pMenu)
 {
-    addAction(pMenu, action(UIActionIndex_M_FileManager_T_Session));
+    addAction(pMenu, action(UIActionIndex_M_FileManager_T_GuestSession));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Options));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Operations));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Log));

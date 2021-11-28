@@ -48,7 +48,7 @@ class UIActionPool;
 class UIDialogPanel;
 class UIFileManagerLogPanel;
 class UIFileManagerOperationsPanel;
-class UIFileManagerSessionPanel;
+class UIFileManagerGuestSessionPanel;
 class UIFileManagerOptionsPanel;
 class UIFileManagerGuestTable;
 class UIFileManagerHostTable;
@@ -109,8 +109,8 @@ protected:
 private slots:
 
     void sltGuestSessionUnregistered(CGuestSession guestSession);
-    void sltCreateSession(QString strUserName, QString strPassword);
-    void sltCloseSession();
+    void sltCreateGuestSession(QString strUserName, QString strPassword);
+    void sltCloseGuestSession();
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
     void sltReceieveLogOutput(QString strOutput, FileManagerLogType eLogType);
     void sltCopyGuestToHost();
@@ -130,7 +130,7 @@ private:
     void prepareConnections();
     void prepareVerticalToolBar(QHBoxLayout *layout);
     void prepareToolBar();
-    bool createSession(const QString& strUserName, const QString& strPassword,
+    bool createGuestSession(const QString& strUserName, const QString& strPassword,
                        const QString& strDomain = QString() /* not used currently */);
 
     void prepareListener(ComObjPtr<UIMainEventListenerImpl> &Qtistener,
@@ -144,8 +144,8 @@ private:
     void initFileTable();
     /** @name Perform operations needed after creating/ending a guest control session
       * @{ */
-        void postSessionCreated();
-        void postSessionClosed();
+        void postGuestSessionCreated();
+        void postGuestSessionClosed();
     /** @} */
 
     /** Saves list of panels and file manager options to the extra data. */
@@ -190,7 +190,7 @@ private:
     QList<UIDialogPanel*>          m_visiblePanelsList;
     UIFileManagerOptionsPanel          *m_pOptionsPanel;
     UIFileManagerLogPanel              *m_pLogPanel;
-    UIFileManagerSessionPanel          *m_pSessionPanel;
+    UIFileManagerGuestSessionPanel     *m_pGuestSessionPanel;
     UIFileManagerOperationsPanel       *m_pOperationsPanel;
     bool                                m_fDialogBeingClosed;
     friend class UIFileManagerOptionsPanel;

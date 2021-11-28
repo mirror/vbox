@@ -22,7 +22,7 @@
 
 /* GUI includes: */
 #include "QILineEdit.h"
-#include "UIFileManagerSessionPanel.h"
+#include "UIFileManagerGuestSessionPanel.h"
 
 /*********************************************************************************************************************************
 *   UIGuestSessionCreateWidget definition.                                                                                   *
@@ -260,40 +260,40 @@ void UIGuestSessionCreateWidget::markForError(bool fMarkForError)
 
 
 /*********************************************************************************************************************************
-*   UIFileManagerSessionPanel implementation.                                                                        *
+*   UIFileManagerGuestSessionPanel implementation.                                                                        *
 *********************************************************************************************************************************/
 
-UIFileManagerSessionPanel::UIFileManagerSessionPanel(QWidget *pParent /* = 0 */)
+UIFileManagerGuestSessionPanel::UIFileManagerGuestSessionPanel(QWidget *pParent /* = 0 */)
     : UIDialogPanel(pParent)
     , m_pSessionCreateWidget(0)
 {
     prepare();
 }
 
-void UIFileManagerSessionPanel::switchSessionCloseMode()
+void UIFileManagerGuestSessionPanel::switchSessionCloseMode()
 {
     if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCloseMode();
 }
 
-void UIFileManagerSessionPanel::switchSessionCreateMode()
+void UIFileManagerGuestSessionPanel::switchSessionCreateMode()
 {
     if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->switchSessionCreateMode();
 }
 
-QString UIFileManagerSessionPanel::panelName() const
+QString UIFileManagerGuestSessionPanel::panelName() const
 {
-    return "SessionPanel";
+    return "GuestSessionPanel";
 }
 
-void UIFileManagerSessionPanel::markForError(bool fMarkForError)
+void UIFileManagerGuestSessionPanel::markForError(bool fMarkForError)
 {
     if (m_pSessionCreateWidget)
         m_pSessionCreateWidget->markForError(fMarkForError);
 }
 
-void UIFileManagerSessionPanel::prepareWidgets()
+void UIFileManagerGuestSessionPanel::prepareWidgets()
 {
     if (!mainLayout())
         return;
@@ -302,27 +302,27 @@ void UIFileManagerSessionPanel::prepareWidgets()
         mainLayout()->addWidget(m_pSessionCreateWidget);
 }
 
-void UIFileManagerSessionPanel::prepareConnections()
+void UIFileManagerGuestSessionPanel::prepareConnections()
 {
     if (m_pSessionCreateWidget)
     {
         connect(m_pSessionCreateWidget, &UIGuestSessionCreateWidget::sigCreateSession,
-                this, &UIFileManagerSessionPanel::sigCreateSession);
+                this, &UIFileManagerGuestSessionPanel::sigCreateSession);
         connect(m_pSessionCreateWidget, &UIGuestSessionCreateWidget::sigCloseSession,
-                this, &UIFileManagerSessionPanel::sigCloseSession);
+                this, &UIFileManagerGuestSessionPanel::sigCloseSession);
     }
 }
 
-void UIFileManagerSessionPanel::retranslateUi()
+void UIFileManagerGuestSessionPanel::retranslateUi()
 {
     UIDialogPanel::retranslateUi();
 
 }
 
-void UIFileManagerSessionPanel::showEvent(QShowEvent *pEvent)
+void UIFileManagerGuestSessionPanel::showEvent(QShowEvent *pEvent)
 {
     markForError(false);
     UIDialogPanel::showEvent(pEvent);
 }
 
-#include "UIFileManagerSessionPanel.moc"
+#include "UIFileManagerGuestSessionPanel.moc"

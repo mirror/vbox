@@ -721,7 +721,7 @@ VirtualBoxVM_QT_MOCHDRS = \
 	src/guestctrl/UIFileManagerLogPanel.h \
 	src/guestctrl/UIFileManagerOperationsPanel.h \
 	src/guestctrl/UIFileManagerOptionsPanel.h \
-	src/guestctrl/UIFileManagerSessionPanel.h \
+	src/guestctrl/UIFileManagerGuestSessionPanel.h \
 	src/guestctrl/UIFileManagerTable.h \
 	src/guestctrl/UIGuestControlConsole.h \
 	src/guestctrl/UIGuestControlInterface.h \
@@ -989,7 +989,7 @@ VirtualBoxVM_QT_MOCSRCS = \
 	src/guestctrl/UIFileManager.cpp \
 	src/guestctrl/UIFileManagerLogPanel.cpp \
 	src/guestctrl/UIFileManagerOperationsPanel.cpp \
-	src/guestctrl/UIFileManagerSessionPanel.cpp \
+	src/guestctrl/UIFileManagerGuestSessionPanel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIFileManagerGuestTable.cpp \
 	src/guestctrl/UIFileManagerHostTable.cpp \
@@ -1242,7 +1242,7 @@ VirtualBoxVM_SOURCES = \
 	src/guestctrl/UIFileManagerLogPanel.cpp \
 	src/guestctrl/UIFileManagerOperationsPanel.cpp \
 	src/guestctrl/UIFileManagerOptionsPanel.cpp \
-	src/guestctrl/UIFileManagerSessionPanel.cpp \
+	src/guestctrl/UIFileManagerGuestSessionPanel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIGuestControlConsole.cpp \
 	src/guestctrl/UIGuestControlInterface.cpp \

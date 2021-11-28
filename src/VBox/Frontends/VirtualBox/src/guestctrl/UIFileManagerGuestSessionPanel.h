@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_guestctrl_UIFileManagerSessionPanel_h
-#define FEQT_INCLUDED_SRC_guestctrl_UIFileManagerSessionPanel_h
+#ifndef FEQT_INCLUDED_SRC_guestctrl_UIFileManagerGuestSessionPanel_h
+#define FEQT_INCLUDED_SRC_guestctrl_UIFileManagerGuestSessionPanel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -28,7 +28,7 @@
 class UIGuestSessionCreateWidget;
 
 /** UIDialogPanel extension providing GUI for creating/stopping a guest session. */
-class UIFileManagerSessionPanel : public UIDialogPanel
+class UIFileManagerGuestSessionPanel : public UIDialogPanel
 {
     Q_OBJECT;
 
@@ -39,7 +39,7 @@ signals:
 
 public:
 
-    UIFileManagerSessionPanel(QWidget *pParent = 0);
+    UIFileManagerGuestSessionPanel(QWidget *pParent = 0);
     /** @name Enable/disable member widget wrt. guest session status.
       * @{ */
         void switchSessionCloseMode();
@@ -60,4 +60,4 @@ private:
     UIGuestSessionCreateWidget *m_pSessionCreateWidget;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerSessionPanel_h */
+#endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerGuestSessionPanel_h */
