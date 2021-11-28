@@ -112,10 +112,8 @@ void UIVMActivityToolWidget::setMachines(const QVector<QUuid> &machineIds)
     }
     m_machineIds = machineIds;
 
-    //hide();
     removeTabs(unselectedMachines);
     addTabs(newSelections);
-    //show();
 }
 
 void UIVMActivityToolWidget::prepareActions()

@@ -42,7 +42,7 @@ class UIVMActivityToolWidget;
 class UISnapshotPane;
 class UIVirtualMachineItem;
 class UIVMLogViewerWidget;
-
+class UIFileManager;
 
 /** QWidget subclass representing container for tool panes. */
 class UIToolPaneMachine : public QWidget
@@ -133,6 +133,8 @@ private:
     UIVMLogViewerWidget *m_pPaneLogViewer;
     /** Holds the Performance Monitor pane instance. */
     UIVMActivityToolWidget *m_pPaneVMActivityMonitor;
+    /** Holds the File Manager pane instance. */
+    UIFileManager *m_pPaneFileManager;
 
     /** Holds whether this pane is active. */
     bool  m_fActive;

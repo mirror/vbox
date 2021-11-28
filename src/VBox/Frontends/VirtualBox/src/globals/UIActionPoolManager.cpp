@@ -1904,6 +1904,40 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Show File Manager' action class. */
+class UIActionToggleManagerToolsMachineShowFileManager : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionToggleManagerToolsMachineShowFileManager(UIActionPool *pParent)
+        : UIActionToggle(pParent)
+    {
+        setProperty("UIToolType", QVariant::fromValue(UIToolType_FileManager));
+        /// @todo use icons with check-boxes
+        setIcon(UIIconPool::iconSetFull(":/file_manager_24px.png", ":/file_manager_16px.png",
+                                        ":/file_manager_disabled_24px.png", ":/file_manager_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ToolsMachineFileManager");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Open the File Manager"));
+    }
+};
+
+
 /** Menu action extension, used as 'Snapshot' menu class. */
 class UIActionMenuManagerSnapshot : public UIActionMenu
 {
@@ -3540,6 +3574,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Group_M_Tools_T_Snapshots] = new UIActionToggleManagerToolsMachineShowSnapshots(this);
     m_pool[UIActionIndexMN_M_Group_M_Tools_T_Logs] = new UIActionToggleManagerToolsMachineShowLogs(this);
     m_pool[UIActionIndexMN_M_Group_M_Tools_T_Activity] = new UIActionToggleManagerToolsMachineShowActivity(this);
+    m_pool[UIActionIndexMN_M_Group_M_Tools_T_FileManager] = new UIActionToggleManagerToolsMachineShowFileManager(this);
     m_pool[UIActionIndexMN_M_Group_S_Discard] = new UIActionSimpleManagerCommonPerformDiscard(this);
     m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
     m_pool[UIActionIndexMN_M_Group_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
@@ -3585,6 +3620,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Snapshots] = new UIActionToggleManagerToolsMachineShowSnapshots(this);
     m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Logs] = new UIActionToggleManagerToolsMachineShowLogs(this);
     m_pool[UIActionIndexMN_M_Machine_M_Tools_T_Activity] = new UIActionToggleManagerToolsMachineShowActivity(this);
+    m_pool[UIActionIndexMN_M_Machine_M_Tools_T_FileManager] = new UIActionToggleManagerToolsMachineShowFileManager(this);
     m_pool[UIActionIndexMN_M_Machine_S_Discard] = new UIActionSimpleManagerCommonPerformDiscard(this);
     m_pool[UIActionIndexMN_M_Machine_S_ShowLogDialog] = new UIActionSimpleManagerCommonShowMachineLogs(this);
     m_pool[UIActionIndexMN_M_Machine_S_Refresh] = new UIActionSimpleManagerCommonPerformRefresh(this);

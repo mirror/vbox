@@ -24,14 +24,16 @@
 
 /* GUI includes */
 #include "UIActionPoolManager.h"
-#include "UIErrorPane.h"
 #include "UIDetails.h"
+#include "UIErrorPane.h"
+#include "UIFileManager.h"
 #include "UIIconPool.h"
-#include "UIVMActivityToolWidget.h"
 #include "UISnapshotPane.h"
 #include "UIToolPaneMachine.h"
 #include "UIVirtualMachineItem.h"
+#include "UIVMActivityToolWidget.h"
 #include "UIVMLogViewerWidget.h"
+
 
 /* Other VBox includes: */
 #include <iprt/assert.h>
@@ -47,6 +49,7 @@ UIToolPaneMachine::UIToolPaneMachine(UIActionPool *pActionPool, QWidget *pParent
     , m_pPaneSnapshots(0)
     , m_pPaneLogViewer(0)
     , m_pPaneVMActivityMonitor(0)
+    , m_pPaneFileManager(0)
     , m_fActive(false)
 {
     /* Prepare: */
@@ -209,6 +212,27 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
 
                 connect(m_pPaneVMActivityMonitor, &UIVMActivityToolWidget::sigSwitchToActivityOverviewPane,
                         this, &UIToolPaneMachine::sigSwitchToActivityOverviewPane);
+                break;
+            }
+            case UIToolType_FileManager:
+            {
+                m_pPaneFileManager = 0;
+
+                // UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
+                //                                      const CGuest &comGuest, QWidget *pParent, bool fShowToolbar /* = true */)
+
+                AssertPtrReturnVoid(m_pPaneFileManager);
+#ifndef VBOX_WS_MAC
+                const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
+                m_pPaneFileManager->setContentsMargins(iMargin, 0, iMargin, 0);
+#endif
+
+                /* Configure pane: */
+                m_pPaneFileManager->setProperty("ToolType", QVariant::fromValue(UIToolType_FileManager));
+                //m_pPaneFileManager->setSelectedVMListItems(m_items);
+                /* Add into layout: */
+                m_pLayout->addWidget(m_pPaneFileManager);
+                m_pLayout->setCurrentWidget(m_pPaneFileManager);
                 break;
             }
             default:

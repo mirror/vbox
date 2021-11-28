@@ -1618,6 +1618,7 @@ template<> QString toInternalString(const UIToolType &enmToolType)
         case UIToolType_Snapshots:          strResult = "Snapshots"; break;
         case UIToolType_Logs:               strResult = "Logs"; break;
         case UIToolType_VMActivity:         strResult = "Activity"; break;
+        case UIToolType_FileManager:        strResult = "FileManager"; break;
         default:
         {
             AssertMsgFailed(("No text for tool type=%d", enmToolType));
@@ -1644,6 +1645,7 @@ template<> UIToolType fromInternalString<UIToolType>(const QString &strToolType)
     keys << "Snapshots";     values << UIToolType_Snapshots;
     keys << "Logs";          values << UIToolType_Logs;
     keys << "Activity";      values << UIToolType_VMActivity;
+    keys << "FileManager";   values << UIToolType_FileManager;
     /* Invalid type for unknown words: */
     if (!keys.contains(strToolType, Qt::CaseInsensitive))
         return UIToolType_Invalid;
