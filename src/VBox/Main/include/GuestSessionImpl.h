@@ -386,7 +386,9 @@ private:
         GuestEnvironmentChanges     mEnvironmentChanges;
         /** Pointer to the immutable base environment for the session.
          * @note This is not allocated until the guest reports it to the host. It is
-         *       also shared with child processes. */
+         *       also shared with child processes.
+         * @todo This is actually not yet implemented, see
+         *       GuestSession::i_onSessionStatusChange. */
         GuestEnvironment const     *mpBaseEnvironment;
         /** Directory objects bound to this session. */
         SessionDirectories          mDirectories;
