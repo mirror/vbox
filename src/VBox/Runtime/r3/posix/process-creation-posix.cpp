@@ -562,7 +562,7 @@ static int rtProcPosixAdjustProfileEnvFromChild(RTENV hEnvToUse, uint32_t fFlags
     if (   RT_SUCCESS(rc)
         && (!(fFlags & RTPROC_FLAGS_ENV_CHANGE_RECORD) || RTEnvExistEx(hEnv, "TMPDIR")) )
     {
-        char szValue[_4K];
+        char szValue[RTPATH_MAX];
         size_t cbNeeded = confstr(_CS_DARWIN_USER_TEMP_DIR, szValue, sizeof(szValue));
         if (cbNeeded > 0 && cbNeeded < sizeof(szValue))
         {
@@ -689,6 +689,7 @@ static char *rtProcPosixProfileEnvUnquoteAndUnescapeString(char *pszString, bool
  *          profile doesn't use UTF-8.  This is unfortunately not something we
  *          can guess to accurately up front, so we don't do any guessing and
  *          hope everyone is sensible and use UTF-8.
+ *
  * @param   hEnvToUse       The basic environment to extend with what we manage
  *                          to parse here.
  * @param   pszEnvDump      The environment dump to parse.  Nominally in Bourne
@@ -809,12 +810,12 @@ static int rtProcPosixProfileEnvHarvest(RTENV hEnvToUse, char *pszEnvDump, bool 
  *
  * @returns IPRT status code.  Not all error statuses will be returned and the
  *          caller should just continue with whatever is in hEnvToUse.
+ *
  * @param   hEnvToUse   On input this is the basic user environment, on success
  *                      in is fleshed out with stuff from the login shell dump.
- * @param   pszAsUser   The user name for the profile.  NULL if the current
- *                      user.
- * @param   uid         The UID corrsponding to @a pszAsUser, ~0 if NULL.
- * @param   gid         The GID corrsponding to @a pszAsUser, ~0 if NULL.
+ * @param   pszAsUser   The user name for the profile.
+ * @param   uid         The UID corrsponding to @a pszAsUser, ~0 if current user.
+ * @param   gid         The GID corrsponding to @a pszAsUser, ~0 if current user.
  * @param   pszShell    The login shell.  This is a writable string to avoid
  *                      needing to make a copy of it when examining the path
  *                      part, instead we make a temporary change to it which is
@@ -1046,6 +1047,9 @@ static int rtProcPosixProfileEnvRunAndHarvest(RTENV hEnvToUse, const char *pszAs
  */
 static int rtProcPosixCreateProfileEnv(PRTENV phEnvToUse, const char *pszAsUser, uid_t uid, gid_t gid, uint32_t fFlags)
 {
+    /*
+     * Get the passwd entry for the user.
+     */
     struct passwd   Pwd;
     struct passwd  *pPwd = NULL;
     char            achBuf[_4K];
@@ -1057,6 +1061,9 @@ static int rtProcPosixCreateProfileEnv(PRTENV phEnvToUse, const char *pszAsUser,
         rc = getpwuid_r(getuid(), &Pwd, achBuf, sizeof(achBuf), &pPwd);
     if (rc == 0 && pPwd)
     {
+        /*
+         * Convert stuff to UTF-8 since the environment is UTF-8.
+         */
         char *pszDir;
         rc = RTStrCurrentCPToUtf8(&pszDir, pPwd->pw_dir);
         if (RT_SUCCESS(rc))
@@ -1077,11 +1084,13 @@ static int rtProcPosixCreateProfileEnv(PRTENV phEnvToUse, const char *pszAsUser,
                 }
                 if (RT_SUCCESS(rc))
                 {
+                    /*
+                     * Create and populate the environment.
+                     */
                     rc = RTEnvCreate(phEnvToUse);
                     if (RT_SUCCESS(rc))
                     {
                         RTENV hEnvToUse = *phEnvToUse;
-
                         rc = RTEnvSetEx(hEnvToUse, "HOME", pszDir);
                         if (RT_SUCCESS(rc))
                             rc = RTEnvSetEx(hEnvToUse, "SHELL", pszShell);
@@ -1089,24 +1098,27 @@ static int rtProcPosixCreateProfileEnv(PRTENV phEnvToUse, const char *pszAsUser,
                             rc = RTEnvSetEx(hEnvToUse, "USER", pszAsUser);
                         if (RT_SUCCESS(rc))
                             rc = RTEnvSetEx(hEnvToUse, "LOGNAME", pszAsUser);
-
                         if (RT_SUCCESS(rc))
                             rc = RTEnvSetEx(hEnvToUse, "PATH", pPwd->pw_uid == 0 ? _PATH_STDPATH : _PATH_DEFPATH);
-
+                        char szTmpPath[RTPATH_MAX];
                         if (RT_SUCCESS(rc))
                         {
-                            RTStrPrintf(achBuf, sizeof(achBuf), "%s/%s", _PATH_MAILDIR, pszAsUser);
-                            rc = RTEnvSetEx(hEnvToUse, "MAIL", achBuf);
+                            RTStrPrintf(szTmpPath, sizeof(szTmpPath), "%s/%s", _PATH_MAILDIR, pszAsUser);
+                            rc = RTEnvSetEx(hEnvToUse, "MAIL", szTmpPath);
                         }
-
 #ifdef RT_OS_DARWIN
+                        /** @todo r=bird: we should do this for pszAsUserFree == NULL too! */
                         if (RT_SUCCESS(rc) && !pszAsUserFree)
                         {
-                            size_t cbNeeded = confstr(_CS_DARWIN_USER_TEMP_DIR, achBuf, sizeof(achBuf));
-                            if (cbNeeded > 0 && cbNeeded < sizeof(achBuf))
+                            /* We put the "wrong" TMPDIR here now and then let
+                               rtProcPosixAdjustProfileEnvFromChild fix it later on. See
+                               https://opensource.apple.com/source/Libc/Libc-997.1.1/darwin/_dirhelper.c
+                               for the implemntation of this query. */
+                            size_t cbNeeded = confstr(_CS_DARWIN_USER_TEMP_DIR, szTmpPath, sizeof(szTmpPath));
+                            if (cbNeeded > 0 && cbNeeded < sizeof(szTmpPath))
                             {
                                 char *pszTmp;
-                                rc = RTStrCurrentCPToUtf8(&pszTmp, achBuf);
+                                rc = RTStrCurrentCPToUtf8(&pszTmp, szTmpPath);
                                 if (RT_SUCCESS(rc))
                                 {
                                     rc = RTEnvSetEx(hEnvToUse, "TMPDIR", pszTmp);
