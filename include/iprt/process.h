@@ -205,11 +205,8 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * the more frequently used case. */
 #define RTPROC_FLAGS_SAME_CONTRACT          RT_BIT(3)
 /** Load user profile data when executing a process.
- * This redefines the meaning of RTENV_DEFAULT to the profile environment.
- * @remarks On non-windows platforms, the resulting environment maybe very
- *          different from what you see in your shell.  Among other reasons,
- *          we cannot run shell profile scripts which typically sets up the
- *          environment. */
+ * This redefines the meaning of RTENV_DEFAULT to the profile environment.  See
+ * also RTPROC_FLAGS_ONLY_BASIC_PROFILE */
 #define RTPROC_FLAGS_PROFILE                RT_BIT(4)
 /** Create process without a console window.
  * This is a Windows (and OS/2) concept, do not use on other platforms. */
@@ -234,8 +231,11 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * (Windows only, ignored elsewhere).  The @a pvExtraData argument points to
  * a uint32_t containing the session ID, UINT32_MAX means any session. */
 #define RTPROC_FLAGS_DESIRED_SESSION_ID     RT_BIT(11)
+/** This is a modifier to RTPROC_FLAGS_PROFILE on unix systems that makes it
+ * skip trying to dump the environment of a login shell. */
+#define RTPROC_FLAGS_ONLY_BASIC_PROFILE     RT_BIT(12)
 /** Valid flag mask. */
-#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0xfff)
+#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x1fff)
 /** @}  */
 
 
