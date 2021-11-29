@@ -30,8 +30,9 @@
 #include "CEventListener.h"
 #include "CEventSource.h"
 #include "CGuest.h"
-#include "CMachine.h"
 #include "CGuestSession.h"
+#include "CMachine.h"
+#include "CSession.h"
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
