@@ -1107,13 +1107,14 @@ static int rtProcPosixCreateProfileEnv(PRTENV phEnvToUse, const char *pszAsUser,
                             rc = RTEnvSetEx(hEnvToUse, "MAIL", szTmpPath);
                         }
 #ifdef RT_OS_DARWIN
-                        /** @todo r=bird: we should do this for pszAsUserFree == NULL too! */
-                        if (RT_SUCCESS(rc) && !pszAsUserFree)
+                        if (RT_SUCCESS(rc))
                         {
-                            /* We put the "wrong" TMPDIR here now and then let
-                               rtProcPosixAdjustProfileEnvFromChild fix it later on. See
+                            /* TMPDIR is some unique per user directory under /var/folders on darwin,
+                               so get the one for the current user.  If we're launching the process as
+                               a different user, rtProcPosixAdjustProfileEnvFromChild will update it
+                               again for the actual child process user (provided we set it here). See
                                https://opensource.apple.com/source/Libc/Libc-997.1.1/darwin/_dirhelper.c
-                               for the implemntation of this query. */
+                               for the implementation of this query. */
                             size_t cbNeeded = confstr(_CS_DARWIN_USER_TEMP_DIR, szTmpPath, sizeof(szTmpPath));
                             if (cbNeeded > 0 && cbNeeded < sizeof(szTmpPath))
                             {
