@@ -30,6 +30,7 @@
 #include "CEventListener.h"
 #include "CEventSource.h"
 #include "CGuest.h"
+#include "CMachine.h"
 #include "CGuestSession.h"
 
 /* GUI includes: */
@@ -91,7 +92,7 @@ signals:
 public:
 
     UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                              const CGuest &comGuest, QWidget *pParent, bool fShowToolbar = true);
+                              const CMachine &comMachine, QWidget *pParent, bool fShowToolbar = true);
     ~UIFileManager();
     QMenu *menu() const;
 
@@ -109,6 +110,7 @@ protected:
 private slots:
 
     void sltGuestSessionUnregistered(CGuestSession guestSession);
+    void sltGuestSessionRegistered(CGuestSession guestSession);
     void sltCreateGuestSession(QString strUserName, QString strPassword);
     void sltCloseGuestSession();
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
@@ -126,12 +128,13 @@ private slots:
 private:
 
     void prepareObjects();
-    void prepareGuestListener();
     void prepareConnections();
     void prepareVerticalToolBar(QHBoxLayout *layout);
     void prepareToolBar();
-    bool createGuestSession(const QString& strUserName, const QString& strPassword,
-                       const QString& strDomain = QString() /* not used currently */);
+
+    /** Creates a shared machine session, opens a guest session and registers event listeners. */
+    bool openSession(const QString& strUserName, const QString& strPassword);
+    void closeSession();
 
     void prepareListener(ComObjPtr<UIMainEventListenerImpl> &Qtistener,
                          CEventListener &comEventListener,
@@ -171,12 +174,14 @@ private:
     void                      savePanelVisibility();
     CGuest                    m_comGuest;
     CGuestSession             m_comGuestSession;
+    CSession                  m_comSession;
+    CMachine                  m_comMachine;
     QVBoxLayout              *m_pMainLayout;
     QSplitter                *m_pVerticalSplitter;
     QIToolBar                *m_pToolBar;
     QIToolBar                *m_pVerticalToolBar;
 
-    UIFileManagerGuestTable         *m_pGuestFileTable;
+    UIFileManagerGuestTable  *m_pGuestFileTable;
     UIFileManagerHostTable   *m_pHostFileTable;
 
     ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;

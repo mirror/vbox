@@ -30,14 +30,14 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CGuest.h"
+#include "CMachine.h"
 
 /* Forward declarations: */
 class QDialogButtonBox;
 class QVBoxLayout;
 class UIActionPool;
 class UIFileManagerDialog;
-class CGuest;
+class CMachine;
 
 
 /** QIManagerDialogFactory extension used as a factory for the file manager dialog. */
@@ -45,7 +45,8 @@ class UIFileManagerDialogFactory : public QIManagerDialogFactory
 {
 public:
 
-    UIFileManagerDialogFactory(UIActionPool *pActionPool = 0, const CGuest &comGuest = CGuest(), const QString &strMachineName = QString());
+    UIFileManagerDialogFactory(UIActionPool *pActionPool, const CMachine &comMachine, const QString &strMachineName);
+    UIFileManagerDialogFactory();
 
 protected:
 
@@ -54,7 +55,7 @@ protected:
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
 
     UIActionPool *m_pActionPool;
-    CGuest        m_comGuest;
+    CMachine      m_comMachine;
     QString       m_strMachineName;
 };
 
@@ -68,8 +69,8 @@ public:
     /** Constructs File Manager dialog.
       * @param  pCenterWidget  Passes the widget reference to center according to.
       * @param  pActionPool    Passes the action-pool reference.
-      * @param  comGuest       Passes the com-guest reference. */
-    UIFileManagerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CGuest &comGuest, const QString &strMachineName = QString());
+      * @param  comMachine     Passes the machine reference. */
+    UIFileManagerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CMachine &comMachine, const QString &strMachineName);
     ~UIFileManagerDialog();
 
 protected:
@@ -109,7 +110,7 @@ private:
 
     void manageEscapeShortCut();
     UIActionPool *m_pActionPool;
-    CGuest      m_comGuest;
+    CMachine    m_comMachine;
     QString     m_strMachineName;
 };
 

@@ -39,6 +39,7 @@
 #include "UIGuestControlInterface.h"
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CFsObjInfo.h"
 #include "CGuestDirectory.h"
 #include "CGuestFsObjInfo.h"
@@ -111,9 +112,9 @@ UIFileOperationsList::UIFileOperationsList(QWidget *pParent)
 *********************************************************************************************************************************/
 
 UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                                                     const CGuest &comGuest, QWidget *pParent, bool fShowToolbar /* = true */)
+                                                     const CMachine &comMachine, QWidget *pParent, bool fShowToolbar /* = true */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_comGuest(comGuest)
+    , m_comMachine(comMachine)
     , m_pMainLayout(0)
     , m_pVerticalSplitter(0)
     , m_pToolBar(0)
@@ -130,7 +131,6 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     , m_fDialogBeingClosed(false)
 {
     loadOptions();
-    prepareGuestListener();
     prepareObjects();
     prepareConnections();
     retranslateUi();
@@ -159,18 +159,6 @@ QMenu *UIFileManager::menu() const
 
 void UIFileManager::retranslateUi()
 {
-}
-
-void UIFileManager::prepareGuestListener()
-{
-    if (m_comGuest.isOk())
-    {
-        QVector<KVBoxEventType> eventTypes;
-        eventTypes << KVBoxEventType_OnGuestSessionRegistered;
-
-        prepareListener(m_pQtGuestListener, m_comGuestListener,
-                        m_comGuest.GetEventSource(), eventTypes);
-    }
 }
 
 void UIFileManager::prepareObjects()
@@ -328,9 +316,6 @@ void UIFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
 
 void UIFileManager::prepareConnections()
 {
-    if (m_pQtGuestListener)
-        connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
-                this, &UIFileManager::sltGuestSessionUnregistered);
 
     if (m_pGuestSessionPanel)
     {
@@ -401,19 +386,19 @@ void UIFileManager::sltGuestSessionUnregistered(CGuestSession guestSession)
     {
         m_comGuestSession.detach();
         postGuestSessionClosed();
+        appendLog("Guest session unregistered", FileManagerLogType_Info);
     }
 }
 
+void UIFileManager::sltGuestSessionRegistered(CGuestSession guestSession)
+{
+    if (guestSession == m_comGuestSession && !m_comGuestSession.isNull())
+        appendLog("Guest session registered", FileManagerLogType_Info);
+}
+
+
 void UIFileManager::sltCreateGuestSession(QString strUserName, QString strPassword)
 {
-    if (!UIGuestControlInterface::isGuestAdditionsAvailable(m_comGuest))
-    {
-        appendLog("Could not find Guest Additions", FileManagerLogType_Error);
-        postGuestSessionClosed();
-        if (m_pGuestSessionPanel)
-            m_pGuestSessionPanel->markForError(true);
-        return;
-    }
     if (strUserName.isEmpty())
     {
         appendLog("No user name is given", FileManagerLogType_Error);
@@ -422,7 +407,7 @@ void UIFileManager::sltCreateGuestSession(QString strUserName, QString strPasswo
         return;
     }
     if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->markForError(!createGuestSession(strUserName, strPassword));
+        m_pGuestSessionPanel->markForError(!openSession(strUserName, strPassword));
 }
 
 void UIFileManager::sltCloseGuestSession()
@@ -459,7 +444,7 @@ void UIFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedE
             initFileTable();
             postGuestSessionCreated();
         }
-        appendLog(QString("%1: %2").arg("Session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
+        appendLog(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
                   FileManagerLogType_Info);
     }
     else
@@ -595,50 +580,67 @@ void UIFileManager::postGuestSessionClosed()
         m_pVerticalToolBar->setEnabled(false);
 }
 
-bool UIFileManager::createGuestSession(const QString& strUserName, const QString& strPassword,
-                                  const QString& strDomain /* not used currently */)
+bool UIFileManager::openSession(const QString& strUserName, const QString& strPassword)
 {
-    if (!m_comGuest.isOk())
+    m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
+    AssertReturn(!m_comSession.isNull(), false);
+
+    CConsole comConsole = m_comSession.GetConsole();
+    AssertReturn(!comConsole.isNull(), false);
+    m_comGuest = comConsole.GetGuest();
+    AssertReturn(!m_comGuest.isNull(), false);
+
+    if (!UIGuestControlInterface::isGuestAdditionsAvailable(m_comGuest))
+    {
+        appendLog("Could not find Guest Additions", FileManagerLogType_Error);
+        postGuestSessionClosed();
+        if (m_pGuestSessionPanel)
+            m_pGuestSessionPanel->markForError(true);
         return false;
+    }
+
+    QVector<KVBoxEventType> eventTypes;
+    eventTypes << KVBoxEventType_OnGuestSessionRegistered;
+
+    prepareListener(m_pQtGuestListener, m_comGuestListener,
+                    m_comGuest.GetEventSource(), eventTypes);
+    connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
+            this, &UIFileManager::sltGuestSessionUnregistered);
+
+    connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionRegistered,
+            this, &UIFileManager::sltGuestSessionRegistered);
+
     m_comGuestSession = m_comGuest.CreateSession(strUserName, strPassword,
-                                                               strDomain, "File Manager Session");
+                                                 QString() /* Domain */, "File Manager Session");
 
     if (!m_comGuestSession.isOk())
     {
         appendLog(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
         return false;
     }
-    appendLog("Guest session has been created", FileManagerLogType_Info);
+
     if (m_pGuestSessionPanel)
         m_pGuestSessionPanel->switchSessionCloseMode();
 
-    /* Prepare session listener */
-    QVector<KVBoxEventType> eventTypes;
+    /* Prepare guest session listener */
+    eventTypes.clear();
     eventTypes << KVBoxEventType_OnGuestSessionStateChanged;
-    //<< KVBoxEventType_OnGuestProcessRegistered;
+
     prepareListener(m_pQtSessionListener, m_comSessionListener,
                     m_comGuestSession.GetEventSource(), eventTypes);
 
-    /* Connect to session listener */
     qRegisterMetaType<CGuestSessionStateChangedEvent>();
-
     connect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
             this, &UIFileManager::sltGuestSessionStateChanged);
-#if 0
-    /* Wait session to start. For some reason we cannot get GuestSessionStatusChanged event
-        consistently. So we wait: */
-    appendLog("Waiting the guest session to start", FileManagerLogType_Info);
-    const ULONG waitTimeout = 2000;
-    KGuestSessionWaitResult waitResult = m_comGuestSession.WaitFor(KGuestSessionWaitForFlag_Start, waitTimeout);
-    if (waitResult != KGuestSessionWaitResult_Start)
-    {
-        appendLog("The guest session did not start", FileManagerLogType_Error);
-        sltCloseGuestSession();
-        return false;
-    }
-#endif
+
     return true;
 }
+
+
+void UIFileManager::closeSession()
+{
+}
+
 
 void UIFileManager::prepareListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
                                     CEventListener &comEventListener,
