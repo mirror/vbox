@@ -392,7 +392,7 @@ static int drmSendHints(RTFILE hDevice, struct DRMVMWRECT *paRects, uint32_t cRe
  * monitors layout representation.
  *
  * @return IPRT status code.
- * @param cDisplays     Number of displays (elements in @pDisplays).
+ * @param cDisplays     Number of displays (elements in pDisplays).
  * @param pDisplays     Displays parameters as it was sent to vmwgfx driver.
  */
 static int drmSendMonitorPositions(uint32_t cDisplays, struct DRMVMWRECT *pDisplays)
