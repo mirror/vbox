@@ -386,6 +386,35 @@ static int drmSendHints(RTFILE hDevice, struct DRMVMWRECT *paRects, uint32_t cRe
     return rc;
 }
 
+/**
+ * This function converts vmwgfx monitors layout data into an array of monitors offsets
+ * and sends it back to the host in order to ensure that host and guest have the same
+ * monitors layout representation.
+ *
+ * @return IPRT status code.
+ * @param cDisplays     Number of displays (elements in @pDisplays).
+ * @param pDisplays     Displays parameters as it was sent to vmwgfx driver.
+ */
+static int drmSendMonitorPositions(uint32_t cDisplays, struct DRMVMWRECT *pDisplays)
+{
+    static RTPOINT aPositions[VMW_MAX_HEADS];
+
+    if (!pDisplays || !cDisplays || cDisplays > VMW_MAX_HEADS)
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Prepare monitor offsets list to be sent to the host. */
+    for (uint32_t i = 0; i < cDisplays; i++)
+    {
+        aPositions[i].x = pDisplays[i].x;
+        aPositions[i].y = pDisplays[i].y;
+    }
+
+    return VbglR3SeamlessSendMonitorPositions(cDisplays, aPositions);
+}
+
+
 static void drmMainLoop(RTFILE hDevice)
 {
     int rc;
@@ -424,6 +453,15 @@ static void drmMainLoop(RTFILE hDevice)
                 rc = drmSendHints(hDevice, aDisplaysOut, cDisplaysOut);
                 VBClLogInfo("VBoxDRMClient: push screen layout data of %u display(s) to DRM stack has %s (%Rrc)\n",
                             cDisplaysOut, RT_SUCCESS(rc) ? "succeeded" : "failed", rc);
+                /* In addition, notify host that configuration was successfully applied to the guest vmwgfx driver. */
+                if (RT_SUCCESS(rc))
+                {
+                    rc = drmSendMonitorPositions(cDisplaysOut, aDisplaysOut);
+                    if (RT_FAILURE(rc))
+                    {
+                        VBClLogError("VBoxDRMClient: cannot send host notification: %Rrc\n", rc);
+                    }
+                }
             }
             else
             {
