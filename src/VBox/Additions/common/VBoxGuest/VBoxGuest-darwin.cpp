@@ -61,6 +61,9 @@
 #include <sys/malloc.h>
 #include <sys/proc.h>
 #include <sys/kauth.h>
+#define _OS_OSUNSERIALIZE_H /* HACK ALERT! Block importing OSUnserialized.h as it causes compilation trouble with
+                               newer clang versions and the 10.15 SDK, and we really don't need it. Sample error:
+                               libkern/c++/OSUnserialize.h:72:2: error: use of OSPtr outside of a return type [-Werror,-Wossharedptr-misuse] */
 #include <IOKit/IOService.h>
 #include <IOKit/IOUserClient.h>
 #include <IOKit/pwr_mgt/RootDomain.h>
@@ -85,6 +88,12 @@
 #define VBOX_RETRIEVE_CUR_PROC_NAME(a_Name) char a_Name[VBOX_PROC_SELFNAME_LEN + 1]; \
                                             proc_selfname(a_Name, VBOX_PROC_SELFNAME_LEN)
 /** @} */
+
+#ifndef minor
+/* The inlined C++ function version minor() takes the wrong parameter
+   type, uint32_t instead of dev_t.  This kludge works around that. */
+# define minor(x) minor((uint32_t)(x))
+#endif
 
 
 /*********************************************************************************************************************************
@@ -312,14 +321,14 @@ static int vgdrvDarwinCharDevInit(void)
         if (g_iMajorDeviceNo >= 0)
         {
             /** @todo limit /dev/vboxguest access. */
-            g_hDevFsDeviceSys = devfs_make_node(makedev(g_iMajorDeviceNo, 0), DEVFS_CHAR,
+            g_hDevFsDeviceSys = devfs_make_node(makedev((uint32_t)g_iMajorDeviceNo, 0), DEVFS_CHAR,
                                                 UID_ROOT, GID_WHEEL, 0666, DEVICE_NAME_SYS);
             if (g_hDevFsDeviceSys != NULL)
             {
                 /*
                  * And a all-user device.
                  */
-                g_hDevFsDeviceUsr = devfs_make_node(makedev(g_iMajorDeviceNo, 1), DEVFS_CHAR,
+                g_hDevFsDeviceUsr = devfs_make_node(makedev((uint32_t)g_iMajorDeviceNo, 1), DEVFS_CHAR,
                                                     UID_ROOT, GID_WHEEL, 0666, DEVICE_NAME_USR);
                 if (g_hDevFsDeviceUsr != NULL)
                 {
@@ -498,7 +507,7 @@ static int vgdrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, s
 {
     RT_NOREF(Dev, fFlags);
     const bool          fUnrestricted = minor(Dev) == 0;
-    const RTPROCESS     Process = proc_pid(pProcess);
+    const RTPROCESS     Process = (RTPROCESS)proc_pid(pProcess);
     const unsigned      iHash = SESSION_HASH(Process);
     PVBOXGUESTSESSION   pSession;
 
@@ -896,7 +905,7 @@ bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
                             if (m_pMap)
                             {
                                 pvMMIOBase = (void *)m_pMap->getVirtualAddress();
-                                cbMMIO     = m_pMap->getLength();
+                                cbMMIO     = (uint32_t)m_pMap->getLength();
                             }
 
                             /*

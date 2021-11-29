@@ -89,6 +89,9 @@
 #include <sys/fcntl.h>
 #include <IOKit/IOTypes.h>
 #include <IOKit/IOLib.h> /* Note! Has Assert down as a function. */
+#define _OS_OSUNSERIALIZE_H /* HACK ALERT! Block importing OSUnserialized.h as it causes compilation trouble with
+                               newer clang versions and the 10.15 SDK, and we really don't need it. Sample error:
+                               libkern/c++/OSUnserialize.h:72:2: error: use of OSPtr outside of a return type [-Werror,-Wossharedptr-misuse] */
 #include <IOKit/IOMemoryDescriptor.h>
 #include <IOKit/IOBufferMemoryDescriptor.h>
 #include <IOKit/IOMapper.h>

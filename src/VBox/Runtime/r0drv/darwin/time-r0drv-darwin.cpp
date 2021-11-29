@@ -93,6 +93,6 @@ RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
     clock_nsec_t    uNanosecs;
 #endif
     clock_get_calendar_nanotime(&uSecs, &uNanosecs);
-    return RTTimeSpecSetNano(pTime, (uint64_t)uSecs * RT_NS_1SEC + uNanosecs);
+    return RTTimeSpecSetNano(pTime, (int64_t)uSecs * RT_NS_1SEC + uNanosecs);
 }
 
