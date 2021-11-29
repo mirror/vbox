@@ -112,7 +112,7 @@ UIFileOperationsList::UIFileOperationsList(QWidget *pParent)
 *********************************************************************************************************************************/
 
 UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                                                     const CMachine &comMachine, QWidget *pParent, bool fShowToolbar /* = true */)
+                             const CMachine &comMachine, QWidget *pParent, bool fShowToolbar /* = true */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_comMachine(comMachine)
     , m_pMainLayout(0)

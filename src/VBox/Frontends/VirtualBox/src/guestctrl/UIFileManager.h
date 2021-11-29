@@ -82,7 +82,7 @@ private:
 /** A QWidget extension. it includes a QWidget extension for initiating a guest session
  *  one host and one guest file table views, a log viewer
  *  and some other file manager related widgets. */
-class UIFileManager : public QIWithRetranslateUI<QWidget>
+class SHARED_LIBRARY_STUFF UIFileManager : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 

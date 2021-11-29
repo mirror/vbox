@@ -714,15 +714,7 @@ VirtualBoxVM_QT_MOCHDRS = \
 	src/runtime/information/UIInformationConfiguration.h \
 	src/runtime/information/UIVMInformationDialog.h \
 	src/runtime/information/UIInformationRuntime.h \
-	src/guestctrl/UIFileManager.h \
 	src/guestctrl/UIFileManagerDialog.h \
-	src/guestctrl/UIFileManagerGuestTable.h \
-	src/guestctrl/UIFileManagerHostTable.h \
-	src/guestctrl/UIFileManagerLogPanel.h \
-	src/guestctrl/UIFileManagerOperationsPanel.h \
-	src/guestctrl/UIFileManagerOptionsPanel.h \
-	src/guestctrl/UIFileManagerGuestSessionPanel.h \
-	src/guestctrl/UIFileManagerTable.h \
 	src/guestctrl/UIGuestControlConsole.h \
 	src/guestctrl/UIGuestControlInterface.h \
 	src/guestctrl/UIGuestControlTreeItem.h \
@@ -821,6 +813,14 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UIVirtualBoxEventHandler.h \
 	src/globals/UIVirtualBoxClientEventHandler.h \
 	src/globals/VBoxUtils.h \
+	src/guestctrl/UIFileManager.h \
+	src/guestctrl/UIFileManagerGuestTable.h \
+	src/guestctrl/UIFileManagerHostTable.h \
+	src/guestctrl/UIFileManagerLogPanel.h \
+	src/guestctrl/UIFileManagerOperationsPanel.h \
+	src/guestctrl/UIFileManagerOptionsPanel.h \
+	src/guestctrl/UIFileManagerGuestSessionPanel.h \
+	src/guestctrl/UIFileManagerTable.h \
 	src/helpbrowser/UIHelpBrowserDialog.h \
 	src/logviewer/UIVMLogPage.h \
 	src/logviewer/UIVMLogViewerBookmarksPanel.h \
@@ -986,13 +986,6 @@ VirtualBoxVM_QT_MOCSRCS = \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/information/UIInformationRuntime.cpp \
-	src/guestctrl/UIFileManager.cpp \
-	src/guestctrl/UIFileManagerLogPanel.cpp \
-	src/guestctrl/UIFileManagerOperationsPanel.cpp \
-	src/guestctrl/UIFileManagerGuestSessionPanel.cpp \
-	src/guestctrl/UIFileManagerTable.cpp \
-	src/guestctrl/UIFileManagerGuestTable.cpp \
-	src/guestctrl/UIFileManagerHostTable.cpp \
 	src/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/softkeyboard/UISoftKeyboard.cpp \
 	src/widgets/UIMiniToolBar.cpp
@@ -1014,6 +1007,13 @@ UICommon_QT_MOCSRCS = \
 	src/globals/UIThreadPool.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/globals/UIVirtualBoxClientEventHandler.cpp \
+	src/guestctrl/UIFileManager.cpp \
+	src/guestctrl/UIFileManagerLogPanel.cpp \
+	src/guestctrl/UIFileManagerOperationsPanel.cpp \
+	src/guestctrl/UIFileManagerGuestSessionPanel.cpp \
+	src/guestctrl/UIFileManagerTable.cpp \
+	src/guestctrl/UIFileManagerGuestTable.cpp \
+	src/guestctrl/UIFileManagerHostTable.cpp \
 	src/logviewer/UIVMLogViewerFilterPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/logviewer/UIVMLogViewerWidget.cpp \
@@ -1235,15 +1235,7 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/information/UIInformationConfiguration.cpp \
 	src/runtime/information/UIVMInformationDialog.cpp \
 	src/runtime/information/UIInformationRuntime.cpp \
-	src/guestctrl/UIFileManager.cpp \
 	src/guestctrl/UIFileManagerDialog.cpp \
-	src/guestctrl/UIFileManagerGuestTable.cpp \
-	src/guestctrl/UIFileManagerHostTable.cpp \
-	src/guestctrl/UIFileManagerLogPanel.cpp \
-	src/guestctrl/UIFileManagerOperationsPanel.cpp \
-	src/guestctrl/UIFileManagerOptionsPanel.cpp \
-	src/guestctrl/UIFileManagerGuestSessionPanel.cpp \
-	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIGuestControlConsole.cpp \
 	src/guestctrl/UIGuestControlInterface.cpp \
 	src/guestctrl/UIGuestControlTreeItem.cpp \
@@ -1371,6 +1363,14 @@ UICommon_SOURCES = \
 	src/globals/UIVersion.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \
 	src/globals/UIVirtualBoxClientEventHandler.cpp \
+	src/guestctrl/UIFileManager.cpp \
+	src/guestctrl/UIFileManagerGuestTable.cpp \
+	src/guestctrl/UIFileManagerHostTable.cpp \
+	src/guestctrl/UIFileManagerLogPanel.cpp \
+	src/guestctrl/UIFileManagerOperationsPanel.cpp \
+	src/guestctrl/UIFileManagerOptionsPanel.cpp \
+	src/guestctrl/UIFileManagerGuestSessionPanel.cpp \
+	src/guestctrl/UIFileManagerTable.cpp \
 	src/helpbrowser/UIHelpBrowserDialog.cpp \
 	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
