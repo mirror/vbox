@@ -686,7 +686,8 @@ bool UIGuestControlInterface::createSession(const CommandData &commandData, CGue
     return true;
 }
 
-/* static */ bool UIGuestControlInterface::isGuestAdditionsAvailable(const CGuest &guest)
+/* static */
+bool UIGuestControlInterface::isGuestAdditionsAvailable(const CGuest &guest)
 {
     if (!guest.isOk())
         return false;

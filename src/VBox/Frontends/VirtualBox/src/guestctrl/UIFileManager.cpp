@@ -590,7 +590,7 @@ bool UIFileManager::openSession(const QString& strUserName, const QString& strPa
     m_comGuest = comConsole.GetGuest();
     AssertReturn(!m_comGuest.isNull(), false);
 
-    if (!UIGuestControlInterface::isGuestAdditionsAvailable(m_comGuest))
+    if (!isGuestAdditionsAvailable(m_comGuest))
     {
         appendLog("Could not find Guest Additions", FileManagerLogType_Error);
         postGuestSessionClosed();
@@ -810,6 +810,14 @@ void UIFileManager::savePanelVisibility()
     foreach(UIDialogPanel* pPanel, m_visiblePanelsList)
         strNameList.append(pPanel->panelName());
     gEDataManager->setFileManagerVisiblePanels(strNameList);
+}
+
+bool UIFileManager::isGuestAdditionsAvailable(const CGuest &guest)
+{
+    if (!guest.isOk())
+        return false;
+    CGuest guestNonConst = const_cast<CGuest&>(guest);
+    return guestNonConst.GetAdditionsStatus(guestNonConst.GetAdditionsRunLevel());
 }
 
 #include "UIFileManager.moc"

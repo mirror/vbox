@@ -173,6 +173,7 @@ private:
     QStringList               getFsObjInfoStringList(const T &fsObjectInfo) const;
     void                      appendLog(const QString &strLog, FileManagerLogType eLogType);
     void                      savePanelVisibility();
+    bool                      isGuestAdditionsAvailable(const CGuest &guest);
     CGuest                    m_comGuest;
     CGuestSession             m_comGuestSession;
     CSession                  m_comSession;
