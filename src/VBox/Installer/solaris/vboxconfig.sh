@@ -923,7 +923,7 @@ install_python_bindings()
     mkdir -p "$CONFIG_DIR"
     rm -f "$CONFIG_DIR/python-$CONFIG_FILES"
     $SHELL -c "cd \"$VBOX_INSTALL_PATH\"/sdk/installer && \"$pythonbin\" ./vboxapisetup.py install \
-        --record \"$CONFIG_DIR/python-$CONFIG_FILES\""
+        --record \"$CONFIG_DIR/python-$CONFIG_FILES\"" > /dev/null 2>&1
     if test "$?" -eq 0; then
         cat "$CONFIG_DIR/python-$CONFIG_FILES" >> "$CONFIG_DIR/$CONFIG_FILES"
     else
