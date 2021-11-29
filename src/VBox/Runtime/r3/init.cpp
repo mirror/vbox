@@ -61,6 +61,7 @@
 #include <iprt/string.h>
 #include <iprt/param.h>
 #ifdef RT_OS_WINDOWS
+# include <iprt/getopt.h>
 # include <iprt/utf16.h>
 #endif
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
@@ -239,6 +240,21 @@ static int rtR3InitProgramPath(const char *pszProgramPath)
 }
 
 
+#ifdef RT_OS_WINDOWS
+/**
+ * Checks the two argument vectors contains the same strings.
+ */
+DECLINLINE(bool) rtR3InitArgvEquals(int cArgs, char **papszArgs1, char **papszArgs2)
+{
+    if (papszArgs1 != papszArgs2)
+        while (cArgs-- > 0)
+            if (strcmp(papszArgs1[cArgs], papszArgs2[cArgs]) != 0)
+                return false;
+    return true;
+}
+#endif
+
+
 /**
  * Internal worker which initializes or re-initializes the
  * program path, name and directory globals.
@@ -275,42 +291,34 @@ static int rtR3InitArgv(uint32_t fFlags, int cArgs, char ***ppapszArgs)
             /*
              * Convert the arguments.
              */
-            char **papszArgs = (char **)RTMemAllocZ((cArgs + 1) * sizeof(char *));
-            if (!papszArgs)
-                return VERR_NO_MEMORY;
+            char **papszArgs;
 
 #ifdef RT_OS_WINDOWS
             /* HACK ALERT! Try convert from unicode versions if possible.
-               Unfortunately for us, __wargv is only initialized if we have a
-               unicode main function.  So, we have to use CommandLineToArgvW to get
-               something similar. It should do the same conversion... :-) */
-            /** @todo Replace this CommandLineToArgvW call with a call into
-             *        getoptargv.cpp so we don't depend on shell32 and an API not present
-             *        in NT 3.1.  */
-            int    cArgsW     = -1;
-            PWSTR *papwszArgs = NULL;
-            if (   papszOrgArgs == __argv
-                && cArgs        == __argc
-                && (papwszArgs = CommandLineToArgvW(GetCommandLineW(), &cArgsW)) != NULL )
+               Unfortunately for us, __wargv is only initialized if we have a unicode
+               main function.  So, use getoptarv.cpp code to do the conversions and
+               hope it gives us the same result. (CommandLineToArgvW was not in NT 3.1.) */
+            if (   cArgs == __argc
+                && rtR3InitArgvEquals(cArgs, papszOrgArgs, __argv))
             {
-                AssertMsg(cArgsW == cArgs, ("%d vs %d\n", cArgsW, cArgs));
-                for (int i = 0; i < cArgs; i++)
-                {
-                    int rc = RTUtf16ToUtf8Tag(papwszArgs[i], &papszArgs[i], "will-leak:rtR3InitArgv");
-                    if (RT_FAILURE(rc))
-                    {
-                        while (i--)
-                            RTStrFree(papszArgs[i]);
-                        RTMemFree(papszArgs);
-                        LocalFree(papwszArgs);
-                        return rc;
-                    }
-                }
-                LocalFree(papwszArgs);
+                char *pszCmdLine = NULL;
+                int rc = RTUtf16ToUtf8Tag(GetCommandLineW(), &pszCmdLine, "will-leak:rtR3InitArgv");
+                AssertRCReturn(rc, rc);
+
+                int cArgsFromCmdLine = -1;
+                rc = RTGetOptArgvFromString(&papszArgs, &cArgsFromCmdLine, pszCmdLine,
+                                            RTGETOPTARGV_CNV_QUOTE_MS_CRT | RTGETOPTARGV_CNV_MODIFY_INPUT, NULL);
+                AssertMsgRCReturn(rc, ("pszCmdLine='%s' rc=%Rrc\n", pszCmdLine, rc), rc);
+                AssertMsg(cArgsFromCmdLine == cArgs,
+                          ("cArgsFromCmdLine=%d cArgs=%d pszCmdLine='%s' rc=%Rrc\n", cArgsFromCmdLine, cArgs, pszCmdLine));
             }
             else
 #endif
             {
+                papszArgs = (char **)RTMemAllocZTag((cArgs + 1) * sizeof(char *), "will-leak:rtR3InitArgv");
+                if (!papszArgs)
+                    return VERR_NO_MEMORY;
+
                 for (int i = 0; i < cArgs; i++)
                 {
                     int rc = RTStrCurrentCPToUtf8(&papszArgs[i], papszOrgArgs[i]);
