@@ -51,7 +51,7 @@ PGM_GST_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
     uintptr_t idxBth = pVCpu->pgm.s.idxBothModeData;
     AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
-    return g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, false /* fCr3Mapped */);
+    return g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
 }
 
 

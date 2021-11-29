@@ -5584,7 +5584,7 @@ static int vmxHCImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_
         )
     {
         Assert(!(ASMAtomicUoReadU64(&pCtx->fExtrn) & CPUMCTX_EXTRN_CR3));
-        PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu), false /* fCr3Mapped */);
+        PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
         Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
     }
 

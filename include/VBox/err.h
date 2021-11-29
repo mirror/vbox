@@ -650,6 +650,8 @@
 #define VERR_PGM_PAE_PDPE_RSVD                  (-1688)
 /** Attemted illegal operation in simplified memory management mode. */
 #define VERR_PGM_NOT_SUPPORTED_FOR_NEM_MODE     (-1689)
+/** CR3 second-level address translation failed. */
+#define VERR_PGM_CR3_SLAT_FAILED                (-1690)
 /** @} */
 
 

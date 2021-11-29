@@ -5642,9 +5642,11 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
                     pPGM->pGst32BitPdR3    = NULL;
                     pPGM->pGstPaePdptR3    = NULL;
                     pPGM->pGstAmd64Pml4R3  = NULL;
+                    pPGM->pGstEptPml4R3    = NULL;
                     pPGM->pGst32BitPdR0    = NIL_RTR0PTR;
                     pPGM->pGstPaePdptR0    = NIL_RTR0PTR;
                     pPGM->pGstAmd64Pml4R0  = NIL_RTR0PTR;
+                    pPGM->pGstEptPml4R0    = NIL_RTR0PTR;
                     for (unsigned i = 0; i < RT_ELEMENTS(pPGM->apGstPaePDsR3); i++)
                     {
                         pPGM->apGstPaePDsR3[i] = NULL;

@@ -2691,7 +2691,7 @@ typedef struct PGMMODEDATABTH
     DECLCALLBACKMEMBER(int, pfnSyncCR3,(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal));
     DECLCALLBACKMEMBER(int, pfnPrefetchPage,(PVMCPUCC pVCpu, RTGCPTR GCPtrPage));
     DECLCALLBACKMEMBER(int, pfnVerifyAccessSyncPage,(PVMCPUCC pVCpu, RTGCPTR GCPtrPage, unsigned fFlags, unsigned uError));
-    DECLCALLBACKMEMBER(int, pfnMapCR3,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fCr3Mapped));
+    DECLCALLBACKMEMBER(int, pfnMapCR3,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3));
     DECLCALLBACKMEMBER(int, pfnUnmapCR3,(PVMCPUCC pVCpu));
     DECLCALLBACKMEMBER(int, pfnEnter,(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3));
 #ifndef IN_RING3
@@ -3323,8 +3323,10 @@ typedef struct PGMCPU
     bool                            fA20Enabled;
     /** Mirror of the EFER.NXE bit.  Managed by PGMNotifyNxeChanged. */
     bool                            fNoExecuteEnabled;
-    /** Unused bits. */
-    bool                            afUnused[2];
+    /** Whether the guest CR3 and PAE PDPEs have been mapped when guest PAE mode is
+     *  active. */
+    bool                            fPaePdpesAndCr3MappedR3;
+    bool                            fPaePdpesAndCr3MappedR0;
 
     /** What needs syncing (PGM_SYNC_*).
      * This is used to queue operations for PGMSyncCR3, PGMInvalidatePage,
@@ -3346,8 +3348,15 @@ typedef struct PGMCPU
     /** Alignment padding. */
     uint8_t                         abPadding[1];
 
-    /** The current physical address represented in the guest CR3 register. */
+    /** The guest CR3.
+     *  When SLAT is active, this is the translated physical address.
+     *  When SLAT is inactive, this is the physical address in CR3. */
     RTGCPHYS                        GCPhysCR3;
+
+    /** The nested-guest CR3.
+     *  When SLAT is active, this is CR3 prior to translation.
+     *  When SLAT is inactive, this is unused (and NIL_RTGCPHYS). */
+    RTGCPHYS                        GCPhysNstGstCR3;
 
     /** @name 32-bit Guest Paging.
      * @{ */

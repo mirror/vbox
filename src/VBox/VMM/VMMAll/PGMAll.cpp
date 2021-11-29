@@ -49,10 +49,12 @@
 *********************************************************************************************************************************/
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD);
 DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE *ppShwPde);
+DECLINLINE(int) pgmGstMapCr3(PVMCPUCC pVCpu, RTGCPHYS GCPhysCr3, PRTHCPTR pHCPtrGuestCr3);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 static int pgmGstSlatWalk(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk,
                           PPGMPTWALKGST pGstWalk);
 static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPhysNested, PPGMPTWALK pWalk, PPGMPTWALKGST pGstWalk);
+static int pgmGstSlatTranslateCr3(PVMCPUCC pVCpu, uint64_t uCr3, PRTGCPHYS pGCPhysCr3);
 #endif
 static int pgmShwSyncLongModePDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD);
 static int pgmShwGetEPTPDPtr(PVMCPUCC pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PEPTPD *ppPD);
@@ -1739,6 +1741,46 @@ VMMDECL(int) PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
 
 
 /**
+ * Maps the guest CR3.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   GCPhysCr3       The guest CR3 value.
+ * @param   pHCPtrGuestCr3  Where to store the mapped memory.
+ */
+DECLINLINE(int) pgmGstMapCr3(PVMCPUCC pVCpu, RTGCPHYS GCPhysCr3, PRTHCPTR pHCPtrGuestCr3)
+{
+    /** @todo this needs some reworking wrt. locking?  */
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    PGM_LOCK_VOID(pVM);
+    PPGMPAGE pPageCr3 = pgmPhysGetPage(pVM, GCPhysCr3);
+    AssertReturnStmt(pPageCr3, PGM_UNLOCK(pVM), VERR_PGM_INVALID_CR3_ADDR);
+
+    RTHCPTR HCPtrGuestCr3;
+    int rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPageCr3, GCPhysCr3, (void **)&HCPtrGuestCr3);
+    PGM_UNLOCK(pVM);
+
+    *pHCPtrGuestCr3 = HCPtrGuestCr3;
+    return rc;
+}
+
+
+/**
+ * Unmaps the guest CR3.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+DECLINLINE(int) pgmGstUnmapCr3(PVMCPUCC pVCpu)
+{
+    uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
+    AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
+    AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
+    return g_aPgmBothModeData[idxBth].pfnUnmapCR3(pVCpu);
+}
+
+
+/**
  * Performs a guest page table walk.
  *
  * The guest should be in paged protect mode or long mode when making a call to
@@ -2099,8 +2141,6 @@ int pgmGstLazyMap32BitPD(PVMCPUCC pVCpu, PX86PD *ppPd)
 
     RTGCPHYS    GCPhysCR3 = pVCpu->pgm.s.GCPhysCR3 & X86_CR3_PAGE_MASK;
     PPGMPAGE    pPage;
-    /** @todo Nested VMX: convert GCPhysCR3 from nested-guest physical to
-     *        guest-physical address here. */
     int rc = pgmPhysGetPageEx(pVM, GCPhysCR3, &pPage);
     if (RT_SUCCESS(rc))
     {
@@ -2336,37 +2376,93 @@ static void pgmGstFlushPaePdpes(PVMCPU pVCpu)
 
 
 /**
- * Gets the PGM CR3 value masked according to the current guest mode.
+ * Gets the CR3 mask corresponding to the given paging mode.
+ *
+ * @returns The CR3 mask.
+ * @param   enmMode     The paging mode.
+ */
+DECLINLINE(uint64_t) pgmGetCr3MaskForMode(PGMMODE enmMode)
+{
+    /** @todo This work can be optimized either by storing the masks in
+     *        pVCpu->pgm.s.afGstCr3Masks[] for all PGMMODEs -or- just do this once and
+     *        store the result when entering guest mode since we currently use it only
+     *        for enmGuestMode. */
+    switch (enmMode)
+    {
+        case PGMMODE_PAE:
+        case PGMMODE_PAE_NX:
+            return X86_CR3_PAE_PAGE_MASK;
+        case PGMMODE_AMD64:
+        case PGMMODE_AMD64_NX:
+            return X86_CR3_AMD64_PAGE_MASK;
+        case PGMMODE_EPT:
+            return X86_CR3_EPT_PAGE_MASK;
+        default:
+            return X86_CR3_PAGE_MASK;
+    }
+}
+
+
+/**
+ * Gets the masked CR3 value according to the current guest paging mode.
  *
  * @returns The masked PGM CR3 value.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu   The cross context virtual CPU structure.
  * @param   uCr3    The raw guest CR3 value.
  */
 DECLINLINE(RTGCPHYS) pgmGetGuestMaskedCr3(PVMCPUCC pVCpu, uint64_t uCr3)
 {
-    RTGCPHYS GCPhysCR3;
-    switch (pVCpu->pgm.s.enmGuestMode)
-    {
-        case PGMMODE_PAE:
-        case PGMMODE_PAE_NX:
-            GCPhysCR3 = (RTGCPHYS)(uCr3 & X86_CR3_PAE_PAGE_MASK);
-            break;
-        case PGMMODE_AMD64:
-        case PGMMODE_AMD64_NX:
-            GCPhysCR3 = (RTGCPHYS)(uCr3 & X86_CR3_AMD64_PAGE_MASK);
-            break;
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        case PGMMODE_EPT:
-            GCPhysCR3 = (RTGCPHYS)(uCr3 & X86_CR3_EPT_PAGE_MASK);
-            break;
-#endif
-        default:
-            GCPhysCR3 = (RTGCPHYS)(uCr3 & X86_CR3_PAGE_MASK);
-            break;
-    }
+    uint64_t const fCr3Mask = pgmGetCr3MaskForMode(pVCpu->pgm.s.enmGuestMode);
+    RTGCPHYS      GCPhysCR3 = (RTGCPHYS)(uCr3 & fCr3Mask);
     PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
     return GCPhysCR3;
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Performs second-level address translation for the given CR3 and updates the
+ * nested-guest CR3 when successful.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   uCr3        The masked nested-guest CR3 value.
+ * @param   pGCPhysCR3  Where to store the translated CR3.
+ *
+ * @warning This updates PGMCPU::GCPhysNstGstCR3 when the translation succeeds. Be
+ *          mindful of this in code that's hyper sensitive to the order of
+ *          operations.
+ */
+static int pgmGstSlatTranslateCr3(PVMCPUCC pVCpu, uint64_t uCr3, PRTGCPHYS pGCPhysCr3)
+{
+    if (uCr3 != pVCpu->pgm.s.GCPhysNstGstCR3)
+    {
+        PGMPTWALK    Walk;
+        PGMPTWALKGST GstWalk;
+        int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, uCr3, &Walk, &GstWalk);
+        if (RT_SUCCESS(rc))
+        {
+            /* Update nested-guest CR3. */
+            pVCpu->pgm.s.GCPhysNstGstCR3 = uCr3;
+
+            /* Pass back the translated result. */
+            *pGCPhysCr3 = Walk.GCPhys;
+            return VINF_SUCCESS;
+        }
+
+        /* Translation failed. */
+        *pGCPhysCr3 = NIL_RTGCPHYS;
+        return rc;
+    }
+
+    /*
+     * If the nested-guest CR3 has not changed, then the previously
+     * translated CR3 result (i.e. GCPhysCR3) is passed back.
+     */
+    *pGCPhysCr3 = pVCpu->pgm.s.GCPhysCR3;
+    return VINF_SUCCESS;
+}
+#endif
 
 
 /**
@@ -2380,10 +2476,8 @@ DECLINLINE(RTGCPHYS) pgmGetGuestMaskedCr3(PVMCPUCC pVCpu, uint64_t uCr3)
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cr3             The new cr3.
  * @param   fGlobal         Indicates whether this is a global flush or not.
- * @param   fCr3Mapped      Whether CR3 (and in case of PAE paging, whether PDPEs
- *                          and PDPT) has been mapped.
  */
-VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fCr3Mapped)
+VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
 {
     STAM_PROFILE_START(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,FlushTLB), a);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
@@ -2397,7 +2491,6 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fCr3Ma
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
     if (fGlobal)
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-    LogFlow(("PGMFlushTLB: cr3=%RX64 OldCr3=%RX64 fGlobal=%d\n", cr3, pVCpu->pgm.s.GCPhysCR3, fGlobal));
 
     /*
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
@@ -2405,21 +2498,34 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fCr3Ma
     RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
     RTGCPHYS       GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    if (   !fCr3Mapped
-        && CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+    if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
     {
-        PGMPTWALK    Walk;
-        PGMPTWALKGST GstWalk;
-        int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysCR3, &Walk, &GstWalk);
+        LogFlowFunc(("nested_cr3=%RX64 old=%RX64\n", GCPhysCR3, pVCpu->pgm.s.GCPhysNstGstCR3));
+        RTGCPHYS GCPhysOut;
+        int const rc = pgmGstSlatTranslateCr3(pVCpu, GCPhysCR3, &GCPhysOut);
         if (RT_SUCCESS(rc))
-            GCPhysCR3 = Walk.GCPhys;
+            GCPhysCR3 = GCPhysOut;
         else
         {
-            AssertMsgFailed(("Failed to load CR3 at %#RX64. rc=%Rrc\n", GCPhysCR3, rc));
-            return rc;
+            /*
+             * SLAT failed but we avoid reporting this to the caller because the caller
+             * is not supposed to fail. The only time the caller needs to indicate a
+             * failure to software is when PAE paging is used by the nested-guest, but
+             * we handle the PAE case separately (e.g., see VMX transition in IEM).
+             * In all other cases, the failure will be indicated when CR3 tries to be
+             * translated on the next linear-address memory access.
+             * See Intel spec. 27.2.1 "EPT Overview".
+             */
+            AssertMsgFailed(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", cr3, rc));
+            int const rc2 = pgmGstUnmapCr3(pVCpu);
+            pVCpu->pgm.s.GCPhysCR3       = NIL_RTGCPHYS;
+            pVCpu->pgm.s.GCPhysNstGstCR3 = NIL_RTGCPHYS;
+            return rc2;
         }
     }
 #endif
+
+    LogFlowFunc(("cr3=%RX64 old=%RX64 fGlobal=%d\n", cr3, GCPhysOldCR3, fGlobal));
     int rc = VINF_SUCCESS;
     if (GCPhysOldCR3 != GCPhysCR3)
     {
@@ -2428,13 +2534,14 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fCr3Ma
         AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
 
         pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, fCr3Mapped);
+        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         { }
         else
         {
             AssertMsg(rc == VINF_PGM_SYNC_CR3, ("%Rrc\n", rc));
             Assert(VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_PGM_SYNC_CR3));
+            pVCpu->pgm.s.CTX_SUFF(fPaePdpesAndCr3Mapped) = false;
             pVCpu->pgm.s.GCPhysCR3 = GCPhysOldCR3;
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_MAP_CR3;
         }
@@ -2489,13 +2596,10 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal, bool fCr3Ma
  *          FF will be set too then.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   cr3             The new CR3.
- * @param   fCr3Mapped      Whether CR3 (and in case of PAE paging, whether PDPEs
- *                          and PDPT) has been mapped.
  */
-VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fCr3Mapped)
+VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3)
 {
     VMCPU_ASSERT_EMT(pVCpu);
-    LogFlow(("PGMUpdateCR3: cr3=%RX64 OldCr3=%RX64\n", cr3, pVCpu->pgm.s.GCPhysCR3));
 
     /* We assume we're only called in nested paging mode. */
     Assert(pVCpu->CTX_SUFF(pVM)->pgm.s.fNestedPaging || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
@@ -2503,32 +2607,41 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3, bool fCr3Mapped)
     /*
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
      */
-    RTGCPHYS GCPhysCR3 = pgmGetGuestMaskedCr3(pVCpu, cr3);
+    RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
+    RTGCPHYS       GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    if (   !fCr3Mapped
-        && CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+    if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
     {
-        PGMPTWALK    Walk;
-        PGMPTWALKGST GstWalk;
-        int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysCR3, &Walk, &GstWalk);
+        LogFlowFunc(("nested_cr3=%RX64 old_nested_cr3=%RX64\n", cr3, pVCpu->pgm.s.GCPhysNstGstCR3));
+        RTGCPHYS GCPhysOut;
+        int const rc = pgmGstSlatTranslateCr3(pVCpu, GCPhysCR3, &GCPhysOut);
         if (RT_SUCCESS(rc))
-            GCPhysCR3 = Walk.GCPhys;
+            GCPhysCR3 = GCPhysOut;
         else
         {
-            AssertMsgFailed(("Failed to load CR3 at %#RX64. rc=%Rrc\n", GCPhysCR3, rc));
-            return VERR_PGM_PAE_PDPE_RSVD;
+            /*
+             * SLAT failed but we avoid reporting this to the caller for the same
+             * reasons mentioned in PGMFlushTLB().
+             */
+            AssertMsgFailed(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", cr3, rc));
+            int const rc2 = pgmGstUnmapCr3(pVCpu);
+            pVCpu->pgm.s.GCPhysCR3       = NIL_RTGCPHYS;
+            pVCpu->pgm.s.GCPhysNstGstCR3 = NIL_RTGCPHYS;
+            return rc2;
         }
     }
 #endif
+
+    LogFlowFunc(("cr3=%RX64 old=%RX64\n", cr3, GCPhysOldCR3));
     int rc = VINF_SUCCESS;
-    if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
+    if (GCPhysOldCR3 != GCPhysCR3)
     {
         uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
         AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
         AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
 
         pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, fCr3Mapped);
+        rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
 
         AssertRCSuccess(rc); /* Assumes VINF_PGM_SYNC_CR3 doesn't apply to nested paging. */ /** @todo this isn't true for the mac, but we need hw to test/fix this. */
     }
@@ -2603,15 +2716,33 @@ VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4
     {
         pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MAP_CR3;
 
-        RTGCPHYS const GCPhysCR3Old = pVCpu->pgm.s.GCPhysCR3; NOREF(GCPhysCR3Old);
-        RTGCPHYS const GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
-        if (pVCpu->pgm.s.GCPhysCR3 != GCPhysCR3)
+        RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
+        RTGCPHYS       GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
+        {
+            RTGCPHYS GCPhysOut;
+            int rc2 = pgmGstSlatTranslateCr3(pVCpu, GCPhysCR3, &GCPhysOut);
+            if (RT_SUCCESS(rc2))
+                GCPhysCR3 = GCPhysOut;
+            else
+            {
+                AssertMsgFailed(("Failed to translate CR3 %#RX64. rc=%Rrc\n", cr3, rc2));
+                rc2 = pgmGstUnmapCr3(pVCpu);
+                pVCpu->pgm.s.GCPhysCR3       = NIL_RTGCPHYS;
+                pVCpu->pgm.s.GCPhysNstGstCR3 = NIL_RTGCPHYS;
+                return rc2;
+            }
+        }
+#endif
+        Assert(!pVCpu->pgm.s.CTX_SUFF(fPaePdpesAndCr3Mapped));
+        if (GCPhysOldCR3 != GCPhysCR3)
         {
             uintptr_t const idxBth = pVCpu->pgm.s.idxBothModeData;
             AssertReturn(idxBth < RT_ELEMENTS(g_aPgmBothModeData), VERR_PGM_MODE_IPE);
             AssertReturn(g_aPgmBothModeData[idxBth].pfnMapCR3, VERR_PGM_MODE_IPE);
             pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
-            rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3, false /* fCr3Mapped */);
+            rc = g_aPgmBothModeData[idxBth].pfnMapCR3(pVCpu, GCPhysCR3);
         }
 
         /* Make sure we check for pending pgm pool syncs as we clear VMCPU_FF_PGM_SYNC_CR3 later on! */
@@ -2623,7 +2754,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4
             rc = pgmPoolSyncCR3(pVCpu);
 #else
             if (rc == VINF_PGM_SYNC_CR3)
-                pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3Old;
+                pVCpu->pgm.s.GCPhysCR3 = GCPhysOldCR3;
             return VINF_PGM_SYNC_CR3;
 #endif
         }
@@ -2707,13 +2838,13 @@ VMM_INT_DECL(int) PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes)
             PGM_UNLOCK(pVM);
             if (RT_SUCCESS(rc))
             {
-#  ifdef IN_RING3
+#ifdef IN_RING3
                 pVCpu->pgm.s.apGstPaePDsR3[i]    = (PX86PDPAE)HCPtr;
                 pVCpu->pgm.s.apGstPaePDsR0[i]    = NIL_RTR0PTR;
-#  else
+#else
                 pVCpu->pgm.s.apGstPaePDsR3[i]    = NIL_RTR3PTR;
                 pVCpu->pgm.s.apGstPaePDsR0[i]    = (PX86PDPAE)HCPtr;
-#  endif
+#endif
                 pVCpu->pgm.s.aGCPhysGstPaePDs[i] = GCPhys;
                 continue;
             }
@@ -2744,18 +2875,16 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
     /*
      * Read the page-directory-pointer table (PDPT) at CR3.
      */
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     RTGCPHYS GCPhysCR3 = (cr3 & X86_CR3_PAE_PAGE_MASK);
     PGM_A20_APPLY_TO_VAR(pVCpu, GCPhysCR3);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
     if (CPUMIsGuestVmxEptPaePagingEnabled(pVCpu))
     {
-        PGMPTWALK    Walk;
-        PGMPTWALKGST GstWalk;
-        int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysCR3, &Walk, &GstWalk);
+        RTGCPHYS GCPhysOut;
+        int const rc = pgmGstSlatTranslateCr3(pVCpu, GCPhysCR3, &GCPhysOut);
         if (RT_SUCCESS(rc))
-            GCPhysCR3 = Walk.GCPhys;
+            GCPhysCR3 = GCPhysOut;
         else
         {
             AssertMsgFailed(("Failed to load CR3 at %#RX64. rc=%Rrc\n", GCPhysCR3, rc));
@@ -2764,49 +2893,57 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
     }
 #endif
 
-    PGM_LOCK_VOID(pVM);
-    PPGMPAGE pPageCR3  = pgmPhysGetPage(pVM, GCPhysCR3);
-    AssertReturnStmt(pPageCR3, PGM_UNLOCK(pVM), VERR_PGM_INVALID_CR3_ADDR);
-
-    X86PDPE aPaePdpes[X86_PG_PAE_PDPE_ENTRIES];
     RTHCPTR HCPtrGuestCr3;
-    int rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPageCR3, GCPhysCR3, (void **)&HCPtrGuestCr3);
-    PGM_UNLOCK(pVM);
-    AssertRCReturn(rc, rc);
-    memcpy(&aPaePdpes[0], HCPtrGuestCr3, sizeof(aPaePdpes));
-
-    /*
-     * Validate the page-directory-pointer table entries (PDPE).
-     */
-    if (PGMGstArePaePdpesValid(pVCpu, &aPaePdpes[0]))
+    int rc = pgmGstMapCr3(pVCpu, GCPhysCR3, &HCPtrGuestCr3);
+    if (RT_SUCCESS(rc))
     {
         /*
-         * Map the PDPT.
-         * We deliberately don't update PGM's GCPhysCR3 here as it's expected
-         * that PGMFlushTLB will be called soon and only a change to CR3 then
-         * will cause the shadow page tables to be updated.
+         * Validate the page-directory-pointer table entries (PDPE).
          */
-#  ifdef IN_RING3
-        pVCpu->pgm.s.pGstPaePdptR3 = (PX86PDPT)HCPtrGuestCr3;
-        pVCpu->pgm.s.pGstPaePdptR0 = NIL_RTR0PTR;
-#  else
-        pVCpu->pgm.s.pGstPaePdptR3 = NIL_RTR3PTR;
-        pVCpu->pgm.s.pGstPaePdptR0 = (PX86PDPT)HCPtrGuestCr3;
-#  endif
+        X86PDPE aPaePdpes[X86_PG_PAE_PDPE_ENTRIES];
+        memcpy(&aPaePdpes[0], HCPtrGuestCr3, sizeof(aPaePdpes));
+        if (PGMGstArePaePdpesValid(pVCpu, &aPaePdpes[0]))
+        {
+            /*
+             * Map the PDPT.
+             * We deliberately don't update PGM's GCPhysCR3 here as it's expected
+             * that PGMFlushTLB will be called soon and only a change to CR3 then
+             * will cause the shadow page tables to be updated.
+             */
+#ifdef IN_RING3
+            pVCpu->pgm.s.pGstPaePdptR3 = (PX86PDPT)HCPtrGuestCr3;
+            pVCpu->pgm.s.pGstPaePdptR0 = NIL_RTR0PTR;
+#else
+            pVCpu->pgm.s.pGstPaePdptR3 = NIL_RTR3PTR;
+            pVCpu->pgm.s.pGstPaePdptR0 = (PX86PDPT)HCPtrGuestCr3;
+#endif
 
-        /*
-         * Update CPUM.
-         * We do this prior to mapping the PDPEs to keep the order consistent
-         * with what's used in HM. In practice, it doesn't really matter.
-         */
-        CPUMSetGuestPaePdpes(pVCpu, &aPaePdpes[0]);
+            /*
+             * Update CPUM.
+             * We do this prior to mapping the PDPEs to keep the order consistent
+             * with what's used in HM. In practice, it doesn't really matter.
+             */
+            CPUMSetGuestPaePdpes(pVCpu, &aPaePdpes[0]);
 
-        /*
-         * Map the PDPEs.
-         */
-        return PGMGstMapPaePdpes(pVCpu, &aPaePdpes[0]);
+            /*
+             * Map the PDPEs.
+             */
+            rc = PGMGstMapPaePdpes(pVCpu, &aPaePdpes[0]);
+            if (RT_SUCCESS(rc))
+            {
+#ifdef IN_RING3
+                pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = true;
+                pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = false;
+#else
+                pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = false;
+                pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = true;
+#endif
+            }
+        }
+        else
+            rc = VERR_PGM_PAE_PDPE_RSVD;
     }
-    return VERR_PGM_PAE_PDPE_RSVD;
+    return rc;
 }
 
 
@@ -3158,6 +3295,8 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
         AssertMsgReturn(RT_SUCCESS(rc), ("Exit failed for guest mode %d: %Rrc\n", pVCpu->pgm.s.enmGuestMode, rc), rc);
     }
     pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
+    pVCpu->pgm.s.GCPhysNstGstCR3 = NIL_RTGCPHYS;
+    Assert(!pVCpu->pgm.s.CTX_SUFF(fPaePdpesAndCr3Mapped));
 
     /*
      * Change the paging mode data indexes.
@@ -3259,20 +3398,51 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
     }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    /* Update the guest SLAT mode if it's a nested-guest. */
+    /*
+     * If a nested-guest is using EPT paging:
+     *   - Update the second-level address translation (SLAT) mode.
+     *   - Indicate that the CR3 is nested-guest physical address.
+     */
     if (   CPUMIsGuestVmxEptPagingEnabled(pVCpu)
         && PGMMODE_WITH_PAGING(enmGuestMode))
+    {
+        /*
+         * Translate CR3 to its guest-physical address.
+         * We don't use pgmGstSlatTranslateCr3() here as we want to update GCPhysNstGstCR3 -after-
+         * switching modes to keep it consistent with how GCPhysCR3 is updated.
+         */
+        PGMPTWALK    Walk;
+        PGMPTWALKGST GstWalk;
+        int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysCR3, &Walk, &GstWalk);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+        {
+            AssertMsgFailed(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", GCPhysCR3, rc));
+            Assert(pVCpu->pgm.s.GCPhysNstGstCR3 == NIL_RTGCPHYS);
+            pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_INVALID;
+            return VERR_PGM_CR3_SLAT_FAILED;
+        }
+
+        pVCpu->pgm.s.GCPhysNstGstCR3  = GCPhysCR3;
         pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_EPT;
+        GCPhysCR3 = Walk.GCPhys;
+    }
     else
+    {
+        Assert(pVCpu->pgm.s.GCPhysNstGstCR3 == NIL_RTGCPHYS);
         pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_DIRECT;
+    }
 #endif
 
-    /* Enter the new guest mode.  */
+    /*
+     * Enter the new guest mode.
+     */
     pVCpu->pgm.s.enmGuestMode = enmGuestMode;
     int rc = g_aPgmGuestModeData[idxNewGst].pfnEnter(pVCpu, GCPhysCR3);
     int rc2 = g_aPgmBothModeData[idxNewBth].pfnEnter(pVCpu, GCPhysCR3);
 
-    /* Set the new guest CR3. */
+    /* Set the new guest CR3 (and nested-guest CR3). */
     pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
 
     /* status codes. */

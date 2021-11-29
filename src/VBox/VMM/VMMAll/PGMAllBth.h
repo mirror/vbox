@@ -52,7 +52,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t 
 #ifdef VBOX_STRICT
 PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr = 0, RTGCPTR cb = ~(RTGCPTR)0);
 #endif
-PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fCr3Mapped);
+PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
 PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu);
 
 #ifdef IN_RING3
@@ -4130,10 +4130,8 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPUCC pVCpu, uint64_t cr3, uint64_t cr4, RT
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   GCPhysCR3       The physical address in the CR3 register. (A20 mask
  *                          already applied.)
- * @param   fCr3Mapped      Whether CR3 (and in case of PAE paging, whether PDPEs
- *                          and PDPT) has been mapped.
  */
-PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fCr3Mapped)
+PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM); NOREF(pVM);
     int rc = VINF_SUCCESS;
@@ -4147,21 +4145,14 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fCr3Mapped)
     PGM_A20_ASSERT_MASKED(pVCpu, GCPhysCR3);
 
 # if PGM_GST_TYPE == PGM_TYPE_PAE
-    if (!fCr3Mapped)
-# else
-    NOREF(fCr3Mapped);
-#endif
+    if (!pVCpu->pgm.s.CTX_SUFF(fPaePdpesAndCr3Mapped))
+# endif
     {
         /*
          * Map the page CR3 points at.
          */
-        RTHCPTR     HCPtrGuestCR3;
-        PGM_LOCK_VOID(pVM);
-        PPGMPAGE    pPageCR3 = pgmPhysGetPage(pVM, GCPhysCR3);
-        AssertReturnStmt(pPageCR3, PGM_UNLOCK(pVM), VERR_PGM_INVALID_CR3_ADDR);
-        /** @todo this needs some reworking wrt. locking?  */
-        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPageCR3, GCPhysCR3 & GST_CR3_PAGE_MASK, (void **)&HCPtrGuestCR3); /** @todo r=bird: This GCPhysCR3 masking isn't necessary. */
-        PGM_UNLOCK(pVM);
+        RTHCPTR HCPtrGuestCR3;
+        rc = pgmGstMapCr3(pVCpu, GCPhysCR3, &HCPtrGuestCR3);
         if (RT_SUCCESS(rc))
         {
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
@@ -4203,8 +4194,14 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3, bool fCr3Mapped)
         else
             AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
     }
-#else /* prot/real stub */
-    NOREF(fCr3Mapped);
+
+    /*
+     * Reset fPaePdpesAndCr3Mapped for all modes as there's no guarantee that
+     * we were called in the correct sequence of PAE followed by other modes
+     * without CR3 changing in between.
+     */
+    pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = false;
+    pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = false;
 #endif
 
     /*
@@ -4312,6 +4309,9 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu)
     pVCpu->pgm.s.pGstEptPml4R3 = 0;
     pVCpu->pgm.s.pGstEptPml4R0 = 0;
 #endif
+
+    pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = false;
+    pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = false;
 
     /*
      * Update shadow paging info.

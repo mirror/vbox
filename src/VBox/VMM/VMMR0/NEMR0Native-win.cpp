@@ -2780,7 +2780,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         if (fCanUpdateCr3)
         {
             LogFlow(("nemR0WinImportState: -> PGMUpdateCR3!\n"));
-            rc = PGMUpdateCR3(pGVCpu, pCtx->cr3, false /*fCr3Mapped*/);
+            rc = PGMUpdateCR3(pGVCpu, pCtx->cr3);
             if (rc == VINF_SUCCESS)
             { /* likely */ }
             else

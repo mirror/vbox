@@ -3917,7 +3917,7 @@ IEM_CIMPL_DEF_0(iemCImpl_loadall286)
     /* Inform PGM if mode changed. */
     if ((uNewCr0 & X86_CR0_PE) != (uOldCr0 & X86_CR0_PE))
     {
-        int rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* global */, false /* fCr3Mapped */);
+        int rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* global */);
         AssertRCReturn(rc, rc);
         /* ignore informational status codes */
     }
@@ -5869,17 +5869,13 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             if (    (uNewCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE | X86_CR0_CD | X86_CR0_NW))
                 !=  (uOldCrX & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE | X86_CR0_CD | X86_CR0_NW)) )
             {
-                bool fCr3Mapped;
                 if (    enmAccessCrX != IEMACCESSCRX_MOV_CRX
                     || !CPUMIsPaePagingEnabled(uNewCrX, pVCpu->cpum.GstCtx.cr4, NewEFER)
                     ||  CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
-                    fCr3Mapped = false;
+                { /* likely */ }
                 else
-                {
                     IEM_MAP_PAE_PDPES_AT_CR3_RET(pVCpu, iCrReg, pVCpu->cpum.GstCtx.cr3);
-                    fCr3Mapped = true;
-                }
-                rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* global */, fCr3Mapped);
+                rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* global */);
                 AssertRCReturn(rc, rc);
                 /* ignore informational status codes */
             }
@@ -5980,17 +5976,15 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
             /* Inform PGM. */
             if (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG)
             {
-                bool fCr3Mapped;
                 if (   !CPUMIsGuestInPAEModeEx(IEM_GET_CTX(pVCpu))
                     ||  CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
-                    fCr3Mapped = false;
+                { /* likely */ }
                 else
                 {
                     Assert(enmAccessCrX == IEMACCESSCRX_MOV_CRX);
                     IEM_MAP_PAE_PDPES_AT_CR3_RET(pVCpu, iCrReg, uNewCrX);
-                    fCr3Mapped = true;
                 }
-                rc = PGMFlushTLB(pVCpu, uNewCrX, !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PGE), fCr3Mapped);
+                rc = PGMFlushTLB(pVCpu, uNewCrX, !(pVCpu->cpum.GstCtx.cr4 & X86_CR4_PGE));
                 AssertRCReturn(rc, rc);
                 /* ignore informational status codes */
             }
@@ -6072,17 +6066,15 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
              */
             if ((uNewCrX ^ uOldCrX) & (X86_CR4_PSE | X86_CR4_PAE | X86_CR4_PGE | X86_CR4_PCIDE /* | X86_CR4_SMEP */))
             {
-                bool fCr3Mapped;
                 if (   !CPUMIsPaePagingEnabled(pVCpu->cpum.GstCtx.cr0, uNewCrX, pVCpu->cpum.GstCtx.msrEFER)
                     || CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
-                    fCr3Mapped = false;
+                { /* likely */ }
                 else
                 {
                     Assert(enmAccessCrX == IEMACCESSCRX_MOV_CRX);
                     IEM_MAP_PAE_PDPES_AT_CR3_RET(pVCpu, iCrReg, pVCpu->cpum.GstCtx.cr3);
-                    fCr3Mapped = true;
                 }
-                rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* global */, fCr3Mapped);
+                rc = PGMFlushTLB(pVCpu, pVCpu->cpum.GstCtx.cr3, true /* global */);
                 AssertRCReturn(rc, rc);
                 /* ignore informational status codes */
             }
@@ -6749,7 +6741,7 @@ IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, u
                 }
 
                 /* Invalidate mappings for the linear address tagged with PCID except global translations. */
-                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */, false /* fCr3Mapped */);
+                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */);
                 break;
             }
 
@@ -6762,19 +6754,19 @@ IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, u
                     return iemRaiseGeneralProtectionFault0(pVCpu);
                 }
                 /* Invalidate all mappings associated with PCID except global translations. */
-                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */, false /* fCr3Mapped */);
+                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */);
                 break;
             }
 
             case X86_INVPCID_TYPE_ALL_CONTEXT_INCL_GLOBAL:
             {
-                PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */, false /* fCr3Mapped */);
+                PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
                 break;
             }
 
             case X86_INVPCID_TYPE_ALL_CONTEXT_EXCL_GLOBAL:
             {
-                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */, false /* fCr3Mapped */);
+                PGMFlushTLB(pVCpu, uCr3, false /* fGlobal */);
                 break;
             }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
