@@ -893,7 +893,8 @@ static int rtProcPosixProfileEnvRunAndHarvest(RTENV hEnvToUse, const char *pszAs
                         if (   strcmp(pszShellNm, "bash") == 0
                             || strcmp(pszShellNm, "ksh") == 0
                             || strcmp(pszShellNm, "ksh93") == 0
-                            || strcmp(pszShellNm, "zsh") == 0)
+                            || strcmp(pszShellNm, "zsh") == 0
+                            || strcmp(pszShellNm, "fish") == 0)
                         {
                             pszExec      = pszShell;
                             apszArgs[0]  = szDashShell;
