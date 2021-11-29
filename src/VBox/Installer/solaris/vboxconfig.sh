@@ -921,7 +921,7 @@ install_python_bindings()
     # Pass install path via environment
     export VBOX_INSTALL_PATH
     mkdir -p "$CONFIG_DIR"
-    rm "$CONFIG_DIR/python-$CONFIG_FILES"
+    rm -f "$CONFIG_DIR/python-$CONFIG_FILES"
     $SHELL -c "cd \"$VBOX_INSTALL_PATH\"/sdk/installer && \"$pythonbin\" ./vboxapisetup.py install \
         --record \"$CONFIG_DIR/python-$CONFIG_FILES\""
     if test "$?" -eq 0; then
