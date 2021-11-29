@@ -335,7 +335,7 @@ bool UICloudNetworkingStuff::cloudProfileProperties(const CCloudProfile &comClou
 bool UICloudNetworkingStuff::listCloudImages(const CCloudClient &comCloudClient,
                                              CStringArray &comNames,
                                              CStringArray &comIDs,
-                                             UINotificationCenter *pParent /* = 0 */)
+                                             UINotificationCenter *pParent)
 {
     /* Currently we are interested in Available images only: */
     const QVector<KCloudImageState> cloudImageStates  = QVector<KCloudImageState>()
@@ -364,7 +364,7 @@ bool UICloudNetworkingStuff::listCloudImages(const CCloudClient &comCloudClient,
 bool UICloudNetworkingStuff::listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
                                                         CStringArray &comNames,
                                                         CStringArray &comIDs,
-                                                        UINotificationCenter *pParent /* = 0 */)
+                                                        UINotificationCenter *pParent)
 {
     /* List cloud source boot volumes: */
     UINotificationProgressCloudSourceBootVolumeList *pNotification =
@@ -389,7 +389,7 @@ bool UICloudNetworkingStuff::listCloudSourceBootVolumes(const CCloudClient &comC
 bool UICloudNetworkingStuff::listCloudInstances(const CCloudClient &comCloudClient,
                                                 CStringArray &comNames,
                                                 CStringArray &comIDs,
-                                                UINotificationCenter *pParent /* = 0 */)
+                                                UINotificationCenter *pParent)
 {
     /* List cloud instances: */
     UINotificationProgressCloudInstanceList *pNotification =
@@ -414,7 +414,7 @@ bool UICloudNetworkingStuff::listCloudInstances(const CCloudClient &comCloudClie
 bool UICloudNetworkingStuff::listCloudSourceInstances(const CCloudClient &comCloudClient,
                                                       CStringArray &comNames,
                                                       CStringArray &comIDs,
-                                                      UINotificationCenter *pParent /* = 0 */)
+                                                      UINotificationCenter *pParent)
 {
     /* List cloud source instances: */
     UINotificationProgressCloudSourceInstanceList *pNotification =
@@ -439,7 +439,7 @@ bool UICloudNetworkingStuff::listCloudSourceInstances(const CCloudClient &comClo
 bool UICloudNetworkingStuff::exportDescriptionForm(const CCloudClient &comCloudClient,
                                                    const CVirtualSystemDescription &comDescription,
                                                    CVirtualSystemDescriptionForm &comResult,
-                                                   UINotificationCenter *pParent /* = 0 */)
+                                                   UINotificationCenter *pParent)
 {
     /* Prepare export VSD form: */
     UINotificationProgressExportVSDFormCreate *pNotification =
@@ -460,7 +460,7 @@ bool UICloudNetworkingStuff::exportDescriptionForm(const CCloudClient &comCloudC
 bool UICloudNetworkingStuff::importDescriptionForm(const CCloudClient &comCloudClient,
                                                    const CVirtualSystemDescription &comDescription,
                                                    CVirtualSystemDescriptionForm &comResult,
-                                                   UINotificationCenter *pParent /* = 0 */)
+                                                   UINotificationCenter *pParent)
 {
     /* Prepare import VSD form: */
     UINotificationProgressImportVSDFormCreate *pNotification =
@@ -525,7 +525,7 @@ bool UICloudNetworkingStuff::cloudMachineConsoleConnectionFingerprint(const CClo
 
 bool UICloudNetworkingStuff::cloudMachineSettingsForm(const CCloudMachine &comCloudMachine,
                                                       CForm &comResult,
-                                                      UINotificationCenter *pParent /* = 0 */)
+                                                      UINotificationCenter *pParent)
 {
     /* Acquire machine name first: */
     QString strMachineName;
@@ -580,7 +580,7 @@ bool UICloudNetworkingStuff::cloudMachineSettingsForm(CCloudMachine comCloudMach
 
 bool UICloudNetworkingStuff::applyCloudMachineSettingsForm(const CCloudMachine &comCloudMachine,
                                                            const CForm &comForm,
-                                                           UINotificationCenter *pParent /* = 0 */)
+                                                           UINotificationCenter *pParent)
 {
     /* Acquire machine name first: */
     QString strMachineName;

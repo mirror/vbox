@@ -117,33 +117,33 @@ namespace UICloudNetworkingStuff
     SHARED_LIBRARY_STUFF bool listCloudImages(const CCloudClient &comCloudClient,
                                               CStringArray &comNames,
                                               CStringArray &comIDs,
-                                              UINotificationCenter *pParent = 0);
+                                              UINotificationCenter *pParent);
     /** Acquires cloud source boot volumes of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool listCloudSourceBootVolumes(const CCloudClient &comCloudClient,
                                                          CStringArray &comNames,
                                                          CStringArray &comIDs,
-                                                         UINotificationCenter *pParent = 0);
+                                                         UINotificationCenter *pParent);
     /** Acquires cloud instances of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool listCloudInstances(const CCloudClient &comCloudClient,
                                                  CStringArray &comNames,
                                                  CStringArray &comIDs,
-                                                 UINotificationCenter *pParent = 0);
+                                                 UINotificationCenter *pParent);
     /** Acquires cloud source instances of certain @a comCloudClient, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool listCloudSourceInstances(const CCloudClient &comCloudClient,
                                                        CStringArray &comNames,
                                                        CStringArray &comIDs,
-                                                       UINotificationCenter *pParent = 0);
+                                                       UINotificationCenter *pParent);
 
     /** Acquires @a comCloudClient export description form as a @a comResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool exportDescriptionForm(const CCloudClient &comCloudClient,
                                                     const CVirtualSystemDescription &comDescription,
                                                     CVirtualSystemDescriptionForm &comResult,
-                                                    UINotificationCenter *pParent = 0);
+                                                    UINotificationCenter *pParent);
     /** Acquires @a comCloudClient import description form as a @a comResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool importDescriptionForm(const CCloudClient &comCloudClient,
                                                     const CVirtualSystemDescription &comDescription,
                                                     CVirtualSystemDescriptionForm &comResult,
-                                                    UINotificationCenter *pParent = 0);
+                                                    UINotificationCenter *pParent);
 
     /** Acquires @a comCloudMachine ID as a @a uResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineId(const CCloudMachine &comCloudMachine,
@@ -162,7 +162,7 @@ namespace UICloudNetworkingStuff
     /** Acquires @a comCloudMachine settings form as a @a comResult, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(const CCloudMachine &comCloudMachine,
                                                        CForm &comResult,
-                                                       UINotificationCenter *pParent = 0);
+                                                       UINotificationCenter *pParent);
     /** Acquires @a comCloudMachine settings form as a @a comResult, using @a strErrorMessage to store messages to.
       * @note  Be aware, this is a blocking function, it will hang for a time of progress being executed. */
     SHARED_LIBRARY_STUFF bool cloudMachineSettingsForm(CCloudMachine comCloudMachine,
@@ -172,7 +172,7 @@ namespace UICloudNetworkingStuff
     /** Applies @a comCloudMachine @a comForm settings, using @a pParent to show messages according to. */
     SHARED_LIBRARY_STUFF bool applyCloudMachineSettingsForm(const CCloudMachine &comCloudMachine,
                                                             const CForm &comForm,
-                                                            UINotificationCenter *pParent = 0);
+                                                            UINotificationCenter *pParent);
 }
 
 /* Using across any module who included us: */

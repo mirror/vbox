@@ -665,7 +665,7 @@ void UIDetailsElement::sltHandleEditRequest()
 
             /* Apply form: */
             CForm comForm = pEditor->form();
-            applyCloudMachineSettingsForm(comCloudMachine, comForm);
+            applyCloudMachineSettingsForm(comCloudMachine, comForm, gpNotificationCenter);
         }
 
         /* Delete popup: */
