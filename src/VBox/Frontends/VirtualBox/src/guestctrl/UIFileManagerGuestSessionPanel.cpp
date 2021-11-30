@@ -56,16 +56,24 @@ protected:
 
 private slots:
 
-    void sltCreateButtonClick();
+    void sltButtonClick();
     void sltHandleTextChanged(const QString &strText);
 
 private:
 
+    enum ButtonMode
+    {
+        ButtonMode_Create,
+        ButtonMode_Close
+    };
+
     void          prepareWidgets();
+    void          updateButton();
+
+    ButtonMode    m_enmButtonMode;
     QILineEdit   *m_pUserNameEdit;
     UIPasswordLineEdit   *m_pPasswordEdit;
-    QPushButton  *m_pCreateButton;
-    QPushButton  *m_pCloseButton;
+    QPushButton  *m_pButton;
     QHBoxLayout  *m_pMainLayout;
     QColor        m_defaultBaseColor;
     QColor        m_errorBaseColor;
@@ -79,10 +87,10 @@ private:
 
 UIGuestSessionCreateWidget::UIGuestSessionCreateWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_enmButtonMode(ButtonMode_Create)
     , m_pUserNameEdit(0)
     , m_pPasswordEdit(0)
-    , m_pCreateButton(0)
-    , m_pCloseButton(0)
+    , m_pButton(0)
     , m_pMainLayout(0)
     , m_fMarkedForError(0)
 {
@@ -118,28 +126,25 @@ void UIGuestSessionCreateWidget::prepareWidgets()
                 this, &UIGuestSessionCreateWidget::sltHandleTextChanged);
     }
 
-    m_pCreateButton = new QPushButton;
-    if (m_pCreateButton)
+    m_pButton = new QPushButton;
+    if (m_pButton)
     {
-        m_pMainLayout->addWidget(m_pCreateButton);
-        connect(m_pCreateButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sltCreateButtonClick);
+        m_pMainLayout->addWidget(m_pButton);
+        connect(m_pButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sltButtonClick);
     }
 
-    m_pCloseButton = new QPushButton;
-    if (m_pCloseButton)
-    {
-        m_pMainLayout->addWidget(m_pCloseButton);
-        connect(m_pCloseButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sigCloseSession);
-    }
+
     m_pMainLayout->insertStretch(-1, 1);
     switchSessionCreateMode();
     retranslateUi();
 }
 
-void UIGuestSessionCreateWidget::sltCreateButtonClick()
+void UIGuestSessionCreateWidget::sltButtonClick()
 {
-    if (m_pUserNameEdit && m_pPasswordEdit)
+    if (m_enmButtonMode == ButtonMode_Create && m_pUserNameEdit && m_pPasswordEdit)
         emit sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
+    else if (m_enmButtonMode == ButtonMode_Close)
+        emit sigCloseSession();
 }
 
 void UIGuestSessionCreateWidget::sltHandleTextChanged(const QString &strText)
@@ -162,10 +167,13 @@ void UIGuestSessionCreateWidget::retranslateUi()
         m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIFileManager", "Password"));
     }
 
-    if (m_pCreateButton)
-        m_pCreateButton->setText(QApplication::translate("UIFileManager", "Create Session"));
-    if (m_pCloseButton)
-        m_pCloseButton->setText(QApplication::translate("UIFileManager", "Close Session"));
+    if (m_pButton)
+    {
+        if (m_enmButtonMode == ButtonMode_Create)
+            m_pButton->setText(QApplication::translate("UIFileManager", "Create Session"));
+        else
+            m_pButton->setText(QApplication::translate("UIFileManager", "Close Session"));
+    }
 }
 
 void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
@@ -193,10 +201,8 @@ void UIGuestSessionCreateWidget::switchSessionCreateMode()
         m_pUserNameEdit->setEnabled(true);
     if (m_pPasswordEdit)
         m_pPasswordEdit->setEnabled(true);
-    if (m_pCreateButton)
-        m_pCreateButton->setEnabled(true);
-    if (m_pCloseButton)
-        m_pCloseButton->setEnabled(false);
+    m_enmButtonMode = ButtonMode_Create;
+    retranslateUi();
 }
 
 void UIGuestSessionCreateWidget::switchSessionCloseMode()
@@ -205,10 +211,8 @@ void UIGuestSessionCreateWidget::switchSessionCloseMode()
         m_pUserNameEdit->setEnabled(false);
     if (m_pPasswordEdit)
         m_pPasswordEdit->setEnabled(false);
-    if (m_pCreateButton)
-        m_pCreateButton->setEnabled(false);
-    if (m_pCloseButton)
-        m_pCloseButton->setEnabled(true);
+    m_enmButtonMode = ButtonMode_Close;
+    retranslateUi();
 }
 
 void UIGuestSessionCreateWidget::markForError(bool fMarkForError)
