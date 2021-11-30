@@ -35,12 +35,9 @@
 *   Class UIFileManagerDialogFactory implementation.                                                                 *
 *********************************************************************************************************************************/
 
-UIFileManagerDialogFactory::UIFileManagerDialogFactory(UIActionPool *pActionPool,
-                                                       const CMachine &comMachine,
-                                                       const QString &strMachineName)
+UIFileManagerDialogFactory::UIFileManagerDialogFactory(UIActionPool *pActionPool, const CMachine &comMachine)
     : m_pActionPool(pActionPool)
     , m_comMachine(comMachine)
-    , m_strMachineName(strMachineName)
 {
 }
 
@@ -53,7 +50,7 @@ UIFileManagerDialogFactory::UIFileManagerDialogFactory()
 
 void UIFileManagerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIFileManagerDialog(pCenterWidget, m_pActionPool, m_comMachine, m_strMachineName);
+    pDialog = new UIFileManagerDialog(pCenterWidget, m_pActionPool, m_comMachine);
 }
 
 
@@ -62,13 +59,11 @@ void UIFileManagerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCen
 *********************************************************************************************************************************/
 
 UIFileManagerDialog::UIFileManagerDialog(QWidget *pCenterWidget,
-                                           UIActionPool *pActionPool,
-                                           const CMachine &comMachine,
-                                           const QString &strMachineName)
+                                         UIActionPool *pActionPool,
+                                         const CMachine &comMachine)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_pActionPool(pActionPool)
     , m_comMachine(comMachine)
-    , m_strMachineName(strMachineName)
 {
 }
 
@@ -81,8 +76,10 @@ UIFileManagerDialog::~UIFileManagerDialog()
 
 void UIFileManagerDialog::retranslateUi()
 {
-    /* Translate window title: */
-    setWindowTitle(UIFileManager::tr("%1 - File Manager").arg(m_strMachineName));
+    if (!m_comMachine.isNull())
+        setWindowTitle(UIFileManager::tr("%1 - File Manager").arg(m_comMachine.GetName()));
+    else
+        setWindowTitle(UIFileManager::tr("File Manager"));
 
     /* Retranslate button box buttons: */
     if (button(ButtonType_Close))
@@ -112,7 +109,7 @@ void UIFileManagerDialog::configureCentralWidget()
 {
     /* Create widget: */
     UIFileManager *pWidget = new UIFileManager(EmbedTo_Dialog, m_pActionPool,
-                                                                       m_comMachine, this);
+                                               m_comMachine, this, true);
 
     if (pWidget)
     {

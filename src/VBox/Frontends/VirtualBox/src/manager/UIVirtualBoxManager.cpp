@@ -741,7 +741,7 @@ void UIVirtualBoxManager::sltHandleToolTypeChange()
             sltCloseLogViewerWindow();
             break;
         case UIToolType_VMActivity:
-            break;
+        case UIToolType_FileManager:
         default:
             break;
     }
@@ -3043,6 +3043,10 @@ void UIVirtualBoxManager::updateActionsVisibility()
     const bool fPerformanceMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
                                        m_pWidget->currentMachineTool() == UIToolType_VMActivity;
     actionPool()->action(UIActionIndex_M_Activity)->setVisible(fPerformanceMenuShown);
+    /* Determine whether File Manager menu item should be visible: */
+    const bool fFileManagerMenuShown = (fMachineMenuShown || fGroupMenuShown) &&
+                                       m_pWidget->currentMachineTool() == UIToolType_FileManager;
+    actionPool()->action(UIActionIndex_M_FileManager)->setVisible(fFileManagerMenuShown);
 
     /* Hide action shortcuts: */
     if (!fGlobalMenuShown)
@@ -3218,6 +3222,12 @@ void UIVirtualBoxManager::updateActionsAppearance()
             {
                 actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_Activity)->setChecked(true);
                 actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_Activity)->setChecked(true);
+                break;
+            }
+            case UIToolType_FileManager:
+            {
+                actionPool()->action(UIActionIndexMN_M_Group_M_Tools_T_FileManager)->setChecked(true);
+                actionPool()->action(UIActionIndexMN_M_Machine_M_Tools_T_FileManager)->setChecked(true);
                 break;
             }
             default:

@@ -112,7 +112,7 @@ UIFileOperationsList::UIFileOperationsList(QWidget *pParent)
 *********************************************************************************************************************************/
 
 UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                             const CMachine &comMachine, QWidget *pParent, bool fShowToolbar /* = true */)
+                             const CMachine &comMachine, QWidget *pParent, bool fShowToolbar)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_comMachine(comMachine)
     , m_pMainLayout(0)
@@ -582,6 +582,7 @@ void UIFileManager::postGuestSessionClosed()
 
 bool UIFileManager::openSession(const QString& strUserName, const QString& strPassword)
 {
+    AssertReturn(!m_comMachine.isNull(), false);
     m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
     AssertReturn(!m_comSession.isNull(), false);
 

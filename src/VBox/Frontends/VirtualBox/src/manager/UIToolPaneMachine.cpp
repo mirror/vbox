@@ -217,22 +217,23 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
             case UIToolType_FileManager:
             {
                 if (!m_items.isEmpty())
-                {
                     m_pPaneFileManager = new UIFileManager(EmbedTo_Stack, m_pActionPool,
                                                            uiCommon().virtualBox().FindMachine(m_items[0]->id().toString()),
                                                            0, false /* fShowToolbar */);
-                    AssertPtrReturnVoid(m_pPaneFileManager);
+                else
+                    m_pPaneFileManager = new UIFileManager(EmbedTo_Stack, m_pActionPool, CMachine(),
+                                                           0, false /* fShowToolbar */);
+                AssertPtrReturnVoid(m_pPaneFileManager);
 #ifndef VBOX_WS_MAC
-                    const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
-                    m_pPaneFileManager->setContentsMargins(iMargin, 0, iMargin, 0);
+                const int iMargin = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 4;
+                m_pPaneFileManager->setContentsMargins(iMargin, 0, iMargin, 0);
 #endif
-                    /* Configure pane: */
-                    m_pPaneFileManager->setProperty("ToolType", QVariant::fromValue(UIToolType_FileManager));
-                    //m_pPaneFileManager->setSelectedVMListItems(m_items);
-                    /* Add into layout: */
-                    m_pLayout->addWidget(m_pPaneFileManager);
-                    m_pLayout->setCurrentWidget(m_pPaneFileManager);
-                }
+                /* Configure pane: */
+                m_pPaneFileManager->setProperty("ToolType", QVariant::fromValue(UIToolType_FileManager));
+                //m_pPaneFileManager->setSelectedVMListItems(m_items);
+                /* Add into layout: */
+                m_pLayout->addWidget(m_pPaneFileManager);
+                m_pLayout->setCurrentWidget(m_pPaneFileManager);
                 break;
             }
             default:

@@ -93,7 +93,7 @@ signals:
 public:
 
     UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                              const CMachine &comMachine, QWidget *pParent, bool fShowToolbar = true);
+                  const CMachine &comMachine, QWidget *pParent, bool fShowToolbar);
     ~UIFileManager();
     QMenu *menu() const;
 
