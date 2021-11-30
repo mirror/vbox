@@ -23,6 +23,7 @@
 /* GUI includes: */
 #include "QILineEdit.h"
 #include "UIFileManagerGuestSessionPanel.h"
+#include "UIUserNamePasswordEditor.h"
 
 /*********************************************************************************************************************************
 *   UIGuestSessionCreateWidget definition.                                                                                   *
@@ -56,18 +57,16 @@ protected:
 private slots:
 
     void sltCreateButtonClick();
-    void sltShowHidePassword(bool flag);
     void sltHandleTextChanged(const QString &strText);
 
 private:
 
     void          prepareWidgets();
     QILineEdit   *m_pUserNameEdit;
-    QILineEdit   *m_pPasswordEdit;
+    UIPasswordLineEdit   *m_pPasswordEdit;
     QPushButton  *m_pCreateButton;
     QPushButton  *m_pCloseButton;
     QHBoxLayout  *m_pMainLayout;
-    QCheckBox    *m_pShowPasswordCheckBox;
     QColor        m_defaultBaseColor;
     QColor        m_errorBaseColor;
     bool          m_fMarkedForError;
@@ -85,7 +84,6 @@ UIGuestSessionCreateWidget::UIGuestSessionCreateWidget(QWidget *pParent /* = 0 *
     , m_pCreateButton(0)
     , m_pCloseButton(0)
     , m_pMainLayout(0)
-    , m_pShowPasswordCheckBox(0)
     , m_fMarkedForError(0)
 {
     prepareWidgets();
@@ -110,23 +108,14 @@ void UIGuestSessionCreateWidget::prepareWidgets()
                 this, &UIGuestSessionCreateWidget::sltHandleTextChanged);
     }
 
-    m_pPasswordEdit = new QILineEdit;
+    m_pPasswordEdit = new UIPasswordLineEdit;
     if (m_pPasswordEdit)
     {
         m_pMainLayout->addWidget(m_pPasswordEdit, 2);
         m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIFileManager", "Password"));
         m_pPasswordEdit->setEchoMode(QLineEdit::Password);
-        connect(m_pPasswordEdit, &QILineEdit::textChanged,
+        connect(m_pPasswordEdit, &UIPasswordLineEdit::textChanged,
                 this, &UIGuestSessionCreateWidget::sltHandleTextChanged);
-    }
-
-    m_pShowPasswordCheckBox = new QCheckBox;
-    if (m_pShowPasswordCheckBox)
-    {
-        m_pShowPasswordCheckBox->setText(QApplication::translate("UIFileManager", "Show Password"));
-        m_pMainLayout->addWidget(m_pShowPasswordCheckBox);
-        connect(m_pShowPasswordCheckBox, &QCheckBox::toggled,
-                this, &UIGuestSessionCreateWidget::sltShowHidePassword);
     }
 
     m_pCreateButton = new QPushButton;
@@ -151,16 +140,6 @@ void UIGuestSessionCreateWidget::sltCreateButtonClick()
 {
     if (m_pUserNameEdit && m_pPasswordEdit)
         emit sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
-}
-
-void UIGuestSessionCreateWidget::sltShowHidePassword(bool flag)
-{
-    if (!m_pPasswordEdit)
-        return;
-    if (flag)
-        m_pPasswordEdit->setEchoMode(QLineEdit::Normal);
-    else
-        m_pPasswordEdit->setEchoMode(QLineEdit::Password);
 }
 
 void UIGuestSessionCreateWidget::sltHandleTextChanged(const QString &strText)
