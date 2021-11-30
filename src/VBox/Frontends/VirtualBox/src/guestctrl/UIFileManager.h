@@ -134,6 +134,9 @@ private:
     void prepareConnections();
     void prepareVerticalToolBar(QHBoxLayout *layout);
     void prepareToolBar();
+    /** Creates options and sessions panels and adds them to @p pLayout.  */
+    void prepareOptionsAndSessionPanels(QVBoxLayout *pLayout);
+    void prepareOperationsAndLogPanels(QSplitter *pSplitter);
 
     /** Creates a shared machine session, opens a guest session and registers event listeners. */
     bool openSession(const QString& strUserName, const QString& strPassword);
