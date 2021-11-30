@@ -389,33 +389,65 @@ terminate_proc() {
 }
 
 
-maybe_run_python_bindings_installer() {
-    VBOX_INSTALL_PATH="${1}"
+# install_python_bindings(pythonbin pythondesc)
+# failure: non fatal
+install_python_bindings()
+{
+    pythonbin="$1"
+    pythondesc="$2"
 
-    # Check for specific python2 versions only, because python3 is handled
-    # by a generic library which should work with 3.3 and later.
-    PYTHON=""
-    for p in python python2 python2.6 python2.7 python3; do
-        if [ "`$p -c 'import sys
-if sys.version_info >= (2, 6) and (sys.version_info < (3, 0) or sys.version_info >= (3, 3)):
-    print(\"test\")' 2> /dev/null`" = "test" ]; then
-            PYTHON=$p
-        fi
-    done
-    if [ -z "$PYTHON" ]; then
-        echo  1>&2 "Python (2.6, 2.7 or 3.3 and later) unavailable, skipping bindings installation."
+    # The python binary might not be there, so just exit silently
+    if test -z "$pythonbin"; then
+        return 0
+    fi
+
+    if test -z "$pythondesc"; then
+        errorprint "missing argument to install_python_bindings"
         return 1
     fi
 
-    echo  1>&2 "Python found: $PYTHON, installing bindings..."
+    echo 1>&2 "Python found: $PYTHON, installing bindings..."
+
     # Pass install path via environment
     export VBOX_INSTALL_PATH
     $SHELL -c "cd $VBOX_INSTALL_PATH/sdk/installer && $PYTHON vboxapisetup.py install \
         --record $CONFIG_DIR/python-$CONFIG_FILES"
     cat $CONFIG_DIR/python-$CONFIG_FILES >> $CONFIG_DIR/$CONFIG_FILES
     rm $CONFIG_DIR/python-$CONFIG_FILES
-    # remove files created during build
+
+    # Remove files created by Python API setup.
     rm -rf $VBOX_INSTALL_PATH/sdk/installer/build
+}
+
+maybe_run_python_bindings_installer() {
+    VBOX_INSTALL_PATH="${1}"
+
+    # Loop over all usual suspect Python executable names and try installing
+    # the VirtualBox API bindings. Needs to prevent double installs which waste
+    # quite a bit of time.
+    PYTHONS=""
+    for p in python2.6 python2.7 python2 python3.3 python3.4 python3.5 python3.6 python3.7 python3.8 python3.9 python3.10 python3 python; do
+        if [ "`$p -c 'import sys
+if sys.version_info >= (2, 6) and (sys.version_info < (3, 0) or sys.version_info >= (3, 3)):
+    print(\"test\")' 2> /dev/null`" != "test" ]; then
+            continue
+        fi
+        # Get python major/minor version, and skip if it was already covered.
+        # Uses grep -F to avoid trouble with '.' matching any char.
+        pyvers="`$p -c 'import sys
+print("%s.%s" % (sys.version_info[0], sys.version_info[1]))' 2> /dev/null`"
+        if echo "$PYTHONS" | grep -Fq ":$pyvers:"; then
+            continue
+        fi
+        # Record which version will be installed. If it fails there is no point
+        # trying with different executable/symlink reporting the same version.
+        PYTHONS="$PYTHONS:$pyvers:"
+        install_python_bindings "$p" "Python $pyvers"
+    done
+    if [ -z "$PYTHONS" ]; then
+        echo 1>&2 "Python (2.6, 2.7 or 3.3 and later) unavailable, skipping bindings installation."
+        return 1
+    fi
 
     return 0
 }
