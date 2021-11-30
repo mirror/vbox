@@ -47,9 +47,12 @@
 #include <iprt/string.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
+#include <iprt/thread.h>
+#include <iprt/asm.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
+#include <signal.h>
 
 #ifdef RT_OS_LINUX
 # include <sys/ioctl.h>
@@ -76,6 +79,12 @@
 /** @todo if this ever changes, dynamically allocate resizeable arrays in the
  *  context structure. */
 #define VMW_MAX_HEADS                   (32)
+
+/** Name of DRM resize thread. */
+#define DRM_RESIZE_THREAD_NAME          "DrmResizeThread"
+
+/* Time in milliseconds to wait for host events. */
+#define DRM_HOST_EVENT_RX_TIMEOUT_MS    (500)
 
 /** DRM version structure. */
 struct DRMVERSION
@@ -118,6 +127,9 @@ unsigned g_cVerbosity = 0;
 
 /** Path to the PID file. */
 static const char g_szPidFile[RTPATH_MAX] = "/var/run/VBoxDRMClient";
+
+/** Global flag which is triggered when service requested to shutdown. */
+static bool volatile g_fShutdown;
 
 /**
  * Attempts to open DRM device by given path and check if it is
@@ -414,10 +426,15 @@ static int drmSendMonitorPositions(uint32_t cDisplays, struct DRMVMWRECT *pDispl
     return VbglR3SeamlessSendMonitorPositions(cDisplays, aPositions);
 }
 
-
-static void drmMainLoop(RTFILE hDevice)
+/** Worker thread for resize task. */
+static DECLCALLBACK(int) drmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
     int rc;
+    RTFILE hDevice = (RTFILE)pvUser;
+
+    RT_NOREF1(ThreadSelf);
+
+    AssertReturn(hDevice, VERR_INVALID_PARAMETER);
 
     for (;;)
     {
@@ -471,17 +488,37 @@ static void drmMainLoop(RTFILE hDevice)
 
         do
         {
-            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, RT_INDEFINITE_WAIT, &events);
-        } while (rc == VERR_INTERRUPTED);
-        if (RT_FAILURE(rc))
+            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, DRM_HOST_EVENT_RX_TIMEOUT_MS, &events);
+        } while (rc == VERR_TIMEOUT && !ASMAtomicReadBool(&g_fShutdown));
+
+        if (ASMAtomicReadBool(&g_fShutdown))
+        {
+            VBClLogInfo("VBoxDRMClient: exitting resize thread: shutdown requested\n");
+            break;
+        }
+        else if (RT_FAILURE(rc))
+        {
             VBClLogFatalError("Failure waiting for event, rc=%Rrc\n", rc);
+        }
     }
+
+    return 0;
+}
+
+static void drmRequestShutdown(int sig)
+{
+    RT_NOREF1(sig);
+
+    ASMAtomicWriteBool(&g_fShutdown, true);
 }
 
 int main(int argc, char *argv[])
 {
     RTFILE hDevice = NIL_RTFILE;
     RTFILE hPidFile;
+
+    RTTHREAD drmResizeThread;
+    int rcDrmResizeThread = 0;
 
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
@@ -522,34 +559,47 @@ int main(int argc, char *argv[])
 
     hDevice = drmOpenVmwgfx();
     if (hDevice == NIL_RTFILE)
-        return VERR_OPEN_FAILED;
+        return RTEXITCODE_FAILURE;
 
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
     {
         VBClLogFatalError("Failed to request display change events, rc=%Rrc\n", rc);
-        return VERR_INVALID_HANDLE;
+        return RTEXITCODE_FAILURE;
     }
     rc = VbglR3AcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, false);
     if (rc == VERR_RESOURCE_BUSY)  /* Someone else has already acquired it. */
     {
-        return VERR_RESOURCE_BUSY;
+        return RTEXITCODE_FAILURE;
     }
     if (RT_FAILURE(rc))
     {
         VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
-        return VERR_INVALID_HANDLE;
+        return RTEXITCODE_FAILURE;
     }
 
-    drmMainLoop(hDevice);
+    /* Setup signals: gracefully terminate on SIGINT, SIGTERM. */
+    if (   signal(SIGINT, drmRequestShutdown) == SIG_ERR
+        || signal(SIGTERM, drmRequestShutdown) == SIG_ERR)
+    {
+        VBClLogError("VBoxDRMClient: unable to setup signals\n");
+        return RTEXITCODE_FAILURE;
+    }
 
-    /** @todo this code never executed since we do not have yet a clean way to exit
-     * main event loop above. */
+    /* Attempt to start DRM resize task. */
+    rc = RTThreadCreate(&drmResizeThread, drmResizeWorker, (void *)hDevice, 0,
+                        RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, DRM_RESIZE_THREAD_NAME);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTThreadWait(drmResizeThread, RT_INDEFINITE_WAIT, &rcDrmResizeThread);
+        VBClLogInfo("VBoxDRMClient: %s thread exitted with status %Rrc\n", DRM_RESIZE_THREAD_NAME, rcDrmResizeThread);
+        rc |= rcDrmResizeThread;
+    }
 
     RTFileClose(hDevice);
 
     VBClLogInfo("VBoxDRMClient: releasing PID file lock\n");
     VbglR3ClosePidFile(g_szPidFile, hPidFile);
 
-    return 0;
+    return rc == 0 ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
