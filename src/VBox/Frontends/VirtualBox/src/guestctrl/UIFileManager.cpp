@@ -192,6 +192,7 @@ void UIFileManager::prepareObjects()
     m_pVerticalSplitter->setOrientation(Qt::Vertical);
     m_pVerticalSplitter->setHandleWidth(4);
 
+
     QHBoxLayout *pFileTableContainerLayout = new QHBoxLayout;
     pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
 #ifdef VBOX_WS_MAC
@@ -204,13 +205,14 @@ void UIFileManager::prepareObjects()
     QVBoxLayout *pTopLayout = new QVBoxLayout;
     pTopLayout->setSpacing(0);
     pTopLayout->setContentsMargins(0, 0, 0, 0);
-
     pTopWidget->setLayout(pTopLayout);
 
-    if (pFileTableContainerLayout)
+    m_pFileTableSplitter = new QSplitter;
+
+    if (m_pFileTableSplitter)
     {
-        pFileTableContainerLayout->setSpacing(0);
-        pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
+        m_pFileTableSplitter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        m_pFileTableSplitter->setContentsMargins(0, 0, 0, 0);
         m_pGuestFileTable = new UIFileManagerGuestTable(m_pActionPool);
         m_pGuestFileTable->setEnabled(false);
 
@@ -229,7 +231,7 @@ void UIFileManager::prepareObjects()
                     this, &UIFileManager::sltHandleOptionsUpdated);
             pHostTableAndVerticalToolbarLayout->addWidget(m_pHostFileTable);
         }
-        pFileTableContainerLayout->addWidget(pHostTableAndVerticalToolbarWidget);
+        m_pFileTableSplitter->addWidget(pHostTableAndVerticalToolbarWidget);
         prepareVerticalToolBar(pHostTableAndVerticalToolbarLayout);
         if (m_pGuestFileTable)
         {
@@ -239,11 +241,14 @@ void UIFileManager::prepareObjects()
                     this, &UIFileManager::sltReceieveNewFileOperation);
             connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigDeleteConfirmationOptionChanged,
                     this, &UIFileManager::sltHandleOptionsUpdated);
-            pFileTableContainerLayout->addWidget(m_pGuestFileTable);
+            m_pFileTableSplitter->addWidget(m_pGuestFileTable);
         }
     }
 
-    pTopLayout->addLayout(pFileTableContainerLayout);
+    pTopLayout->addWidget(m_pFileTableSplitter);
+    for (int i = 0; i < m_pFileTableSplitter->count(); ++i)
+        m_pFileTableSplitter->setCollapsible(i, false);
+
     m_pGuestSessionPanel = new UIFileManagerGuestSessionPanel;
     if (m_pGuestSessionPanel)
     {
@@ -286,9 +291,8 @@ void UIFileManager::prepareObjects()
     m_pVerticalSplitter->addWidget(pTopWidget);
     m_pVerticalSplitter->addWidget(m_pOperationsPanel);
     m_pVerticalSplitter->addWidget(m_pLogPanel);
-    m_pVerticalSplitter->setCollapsible(m_pVerticalSplitter->indexOf(pTopWidget), false);
-    m_pVerticalSplitter->setCollapsible(m_pVerticalSplitter->indexOf(m_pOperationsPanel), false);
-    m_pVerticalSplitter->setCollapsible(m_pVerticalSplitter->indexOf(m_pLogPanel), false);
+    for (int i = 0; i < m_pVerticalSplitter->count(); ++i)
+        m_pVerticalSplitter->setCollapsible(i, false);
     m_pVerticalSplitter->setStretchFactor(0, 3);
     m_pVerticalSplitter->setStretchFactor(1, 1);
     m_pVerticalSplitter->setStretchFactor(2, 1);
