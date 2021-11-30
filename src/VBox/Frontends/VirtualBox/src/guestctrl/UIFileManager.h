@@ -182,6 +182,8 @@ private:
     CMachine                  m_comMachine;
     QVBoxLayout              *m_pMainLayout;
     QSplitter                *m_pVerticalSplitter;
+    /** Splitter hosting host and guest file system tables. */
+    QSplitter                *m_pFileTableSplitter;
     QIToolBar                *m_pToolBar;
     QIToolBar                *m_pVerticalToolBar;
 

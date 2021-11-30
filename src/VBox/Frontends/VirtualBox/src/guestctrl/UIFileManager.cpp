@@ -117,6 +117,7 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     , m_comMachine(comMachine)
     , m_pMainLayout(0)
     , m_pVerticalSplitter(0)
+    , m_pFileTableSplitter(0)
     , m_pToolBar(0)
     , m_pVerticalToolBar(0)
     , m_pGuestFileTable(0)
@@ -183,8 +184,6 @@ void UIFileManager::prepareObjects()
 
     if (m_fShowToolbar)
         prepareToolBar();
-    /* Two widgets are inserted into this splitter. Upper pWidget widget is a container with file tables and all the panels
-       except the log panel and lower widget is the log panel: */
     m_pVerticalSplitter = new QSplitter;
     if (!m_pVerticalSplitter)
         return;
@@ -215,6 +214,12 @@ void UIFileManager::prepareObjects()
         m_pGuestFileTable = new UIFileManagerGuestTable(m_pActionPool);
         m_pGuestFileTable->setEnabled(false);
 
+        /* This widget hosts host file table and vertical toolbar. */
+        QWidget *pHostTableAndVerticalToolbarWidget = new QWidget;
+        QHBoxLayout *pHostTableAndVerticalToolbarLayout = new QHBoxLayout(pHostTableAndVerticalToolbarWidget);
+        pHostTableAndVerticalToolbarLayout->setSpacing(0);
+        pHostTableAndVerticalToolbarLayout->setContentsMargins(0, 0, 0, 0);
+
         m_pHostFileTable = new UIFileManagerHostTable(m_pActionPool);
         if (m_pHostFileTable)
         {
@@ -222,9 +227,10 @@ void UIFileManager::prepareObjects()
                     this, &UIFileManager::sltReceieveLogOutput);
             connect(m_pHostFileTable, &UIFileManagerHostTable::sigDeleteConfirmationOptionChanged,
                     this, &UIFileManager::sltHandleOptionsUpdated);
-            pFileTableContainerLayout->addWidget(m_pHostFileTable);
+            pHostTableAndVerticalToolbarLayout->addWidget(m_pHostFileTable);
         }
-        prepareVerticalToolBar(pFileTableContainerLayout);
+        pFileTableContainerLayout->addWidget(pHostTableAndVerticalToolbarWidget);
+        prepareVerticalToolBar(pHostTableAndVerticalToolbarLayout);
         if (m_pGuestFileTable)
         {
             connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigLogOutput,
@@ -259,8 +265,7 @@ void UIFileManager::prepareObjects()
 
     m_pVerticalSplitter->addWidget(pTopWidget);
 
-    m_pOperationsPanel =
-        new UIFileManagerOperationsPanel;
+    m_pOperationsPanel = new UIFileManagerOperationsPanel;
     if (m_pOperationsPanel)
     {
         m_pOperationsPanel->hide();
@@ -337,7 +342,6 @@ void UIFileManager::prepareConnections()
             connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest), &QAction::triggered,
                     this, &UIFileManager::sltCopyHostToGuest);
     }
-
     if (m_pGuestSessionPanel)
     {
         connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCreateSession,
@@ -350,7 +354,6 @@ void UIFileManager::prepareConnections()
     if (m_pOptionsPanel)
         connect(m_pOptionsPanel, &UIFileManagerOptionsPanel::sigHidePanel,
                 this, &UIFileManager::sltHandleHidePanel);
-
     if (m_pLogPanel)
         connect(m_pLogPanel, &UIFileManagerLogPanel::sigHidePanel,
                 this, &UIFileManager::sltHandleHidePanel);
