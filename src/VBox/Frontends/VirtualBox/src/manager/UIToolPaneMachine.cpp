@@ -315,6 +315,12 @@ void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)
         AssertPtrReturnVoid(m_pPaneVMActivityMonitor);
         m_pPaneVMActivityMonitor->setSelectedVMListItems(m_items);
     }
+    if (isToolOpened(UIToolType_FileManager))
+    {
+        AssertPtrReturnVoid(m_pPaneFileManager);
+        if (!m_items.isEmpty() && m_items[0])
+            m_pPaneFileManager->setMachine(m_items[0]->id());
+    }
 }
 
 void UIToolPaneMachine::setMachine(const CMachine &comMachine)

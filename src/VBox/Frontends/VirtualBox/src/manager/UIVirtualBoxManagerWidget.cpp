@@ -965,6 +965,18 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
                     break;
                 }
+                case UIToolType_FileManager:
+                {
+                    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession));
+                    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Options));
+                    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations));
+                    m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Log));
+                    m_pToolBar->addSeparator();
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Settings));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_Discard));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_StartOrShow));
+                    break;
+                }
                 case UIToolType_Error:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexMN_M_Machine_S_New));

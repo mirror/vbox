@@ -145,6 +145,11 @@ UIFileManager::~UIFileManager()
     UIFileManagerOptions::destroy();
 }
 
+void UIFileManager::setMachine(const QUuid &machineId)
+{
+    m_comMachine = uiCommon().virtualBox().FindMachine(machineId.toString());
+}
+
 void UIFileManager::setDialogBeingClosed(bool fFlag)
 {
     m_fDialogBeingClosed = fFlag;
@@ -287,7 +292,7 @@ void UIFileManager::prepareObjects()
 void UIFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
 {
     m_pVerticalToolBar = new QIToolBar;
-    if (!m_pVerticalToolBar)
+    if (!m_pVerticalToolBar && !m_pActionPool)
         return;
 
     m_pVerticalToolBar->setOrientation(Qt::Vertical);
@@ -306,16 +311,32 @@ void UIFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
     m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest));
     m_pVerticalToolBar->addWidget(bottomSpacerWidget);
 
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost), &QAction::triggered,
-            this, &UIFileManager::sltCopyGuestToHost);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest), &QAction::triggered,
-             this, &UIFileManager::sltCopyHostToGuest);
-
     layout ->addWidget(m_pVerticalToolBar);
 }
 
 void UIFileManager::prepareConnections()
 {
+    if (m_pActionPool)
+    {
+        if (m_pActionPool->action(UIActionIndex_M_FileManager_T_Options))
+            connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Options), &QAction::toggled,
+                    this, &UIFileManager::sltPanelActionToggled);
+        if (m_pActionPool->action(UIActionIndex_M_FileManager_T_Log))
+            connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Log), &QAction::toggled,
+                    this, &UIFileManager::sltPanelActionToggled);
+        if (m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
+            connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession), &QAction::toggled,
+                    this, &UIFileManager::sltPanelActionToggled);
+        if (m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations))
+            connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations), &QAction::toggled,
+                    this, &UIFileManager::sltPanelActionToggled);
+        if (m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost))
+            connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost), &QAction::triggered,
+                    this, &UIFileManager::sltCopyGuestToHost);
+        if (m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest))
+            connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest), &QAction::triggered,
+                    this, &UIFileManager::sltCopyHostToGuest);
+    }
 
     if (m_pGuestSessionPanel)
     {
@@ -354,15 +375,6 @@ void UIFileManager::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Options));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_Log));
-
-        connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Options), &QAction::toggled,
-                this, &UIFileManager::sltPanelActionToggled);
-        connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Log), &QAction::toggled,
-                this, &UIFileManager::sltPanelActionToggled);
-        connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession), &QAction::toggled,
-                this, &UIFileManager::sltPanelActionToggled);
-        connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations), &QAction::toggled,
-                this, &UIFileManager::sltPanelActionToggled);
 
 #ifdef VBOX_WS_MAC
         /* Check whether we are embedded into a stack: */
@@ -582,9 +594,17 @@ void UIFileManager::postGuestSessionClosed()
 
 bool UIFileManager::openSession(const QString& strUserName, const QString& strPassword)
 {
-    AssertReturn(!m_comMachine.isNull(), false);
+    if (m_comMachine.isNull())
+    {
+        appendLog("Invalid machine reference", FileManagerLogType_Error);
+        return false;
+    }
     m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
-    AssertReturn(!m_comSession.isNull(), false);
+    if (!m_comSession.isNull())
+    {
+        appendLog("Could not open machine session", FileManagerLogType_Error);
+        return false;
+    }
 
     CConsole comConsole = m_comSession.GetConsole();
     AssertReturn(!comConsole.isNull(), false);

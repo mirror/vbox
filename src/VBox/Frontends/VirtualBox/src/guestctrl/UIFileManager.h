@@ -104,6 +104,8 @@ public:
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
+    void setMachine(const QUuid &machineId);
+
 protected:
 
     void retranslateUi();
