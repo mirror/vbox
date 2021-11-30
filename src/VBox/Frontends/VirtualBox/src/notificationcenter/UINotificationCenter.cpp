@@ -427,10 +427,6 @@ void UINotificationCenter::sltModelChanged()
                                      UINotificationItem::create(this, m_pModel->objectById(uId)));
     }
 
-    /* Since there is a scroll-area expanded up to whole
-     * height, we will have to align items added above up. */
-    m_pLayoutItems->addStretch();
-
     /* Hide and slide away if there are no notifications to show: */
     setHidden(m_pModel->ids().isEmpty());
     if (m_pModel->ids().isEmpty() && m_pButtonOpen->isChecked())
@@ -543,32 +539,41 @@ void UINotificationCenter::prepareWidgets()
             m_pLayoutMain->addLayout(m_pLayoutButtons);
         }
 
-        /* Create items scroll-area: */
-        UINotificationScrollArea *pScrollAreaItems = new UINotificationScrollArea(this);
-        if (pScrollAreaItems)
+        /* Create container scroll-area: */
+        UINotificationScrollArea *pScrollAreaContainer = new UINotificationScrollArea(this);
+        if (pScrollAreaContainer)
         {
-            /* Prepare items widget: */
-            QWidget *pWidgetItems = new QWidget(pScrollAreaItems);
-            if (pWidgetItems)
+            /* Prepare container widget: */
+            QWidget *pWidgetContainer = new QWidget(pScrollAreaContainer);
+            if (pWidgetContainer)
             {
-                /* Prepare items layout: */
-                m_pLayoutItems = new QVBoxLayout(pWidgetItems);
-                if (m_pLayoutItems)
-                    m_pLayoutItems->setContentsMargins(0, 0, 0, 0);
+                /* Prepare container layout: */
+                QVBoxLayout *pLayoutContainer = new QVBoxLayout(pWidgetContainer);
+                if (pLayoutContainer)
+                {
+                    pLayoutContainer->setContentsMargins(0, 0, 0, 0);
+
+                    /* Prepare items layout: */
+                    m_pLayoutItems = new QVBoxLayout;
+                    if (m_pLayoutItems)
+                        pLayoutContainer->addLayout(m_pLayoutItems);
+
+                    pLayoutContainer->addStretch();
+                }
 
                 /* Add to scroll-area: */
-                pScrollAreaItems->setWidget(pWidgetItems);
+                pScrollAreaContainer->setWidget(pWidgetContainer);
             }
 
-            /* Configure items scroll-area: */
-            pScrollAreaItems->setWidgetResizable(true);
-            pScrollAreaItems->setFrameShape(QFrame::NoFrame);
-            pScrollAreaItems->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-            pScrollAreaItems->viewport()->setAutoFillBackground(false);
-            pScrollAreaItems->widget()->setAutoFillBackground(false);
+            /* Configure container scroll-area: */
+            pScrollAreaContainer->setWidgetResizable(true);
+            pScrollAreaContainer->setFrameShape(QFrame::NoFrame);
+            pScrollAreaContainer->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+            pScrollAreaContainer->viewport()->setAutoFillBackground(false);
+            pScrollAreaContainer->widget()->setAutoFillBackground(false);
 
             /* Add to layout: */
-            m_pLayoutMain->addWidget(pScrollAreaItems);
+            m_pLayoutMain->addWidget(pScrollAreaContainer);
         }
     }
 }
