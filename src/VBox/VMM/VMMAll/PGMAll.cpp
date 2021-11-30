@@ -2507,15 +2507,8 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
             GCPhysCR3 = GCPhysOut;
         else
         {
-            /*
-             * SLAT failed but we avoid reporting this to the caller because the caller
-             * is not supposed to fail. The only time the caller needs to indicate a
-             * failure to software is when PAE paging is used by the nested-guest, but
-             * we handle the PAE case separately (e.g., see VMX transition in IEM).
-             * In all other cases, the failure will be indicated when CR3 tries to be
-             * translated on the next linear-address memory access.
-             * See Intel spec. 27.2.1 "EPT Overview".
-             */
+            /* CR3 SLAT translation failed but we try to pretend it
+               succeeded for the reasons mentioned in PGMHCChangeMode(). */
             AssertMsgFailed(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", cr3, rc));
             int const rc2 = pgmGstUnmapCr3(pVCpu);
             pVCpu->pgm.s.GCPhysCR3       = NIL_RTGCPHYS;
@@ -2619,10 +2612,8 @@ VMMDECL(int) PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3)
             GCPhysCR3 = GCPhysOut;
         else
         {
-            /*
-             * SLAT failed but we avoid reporting this to the caller for the same
-             * reasons mentioned in PGMFlushTLB().
-             */
+            /* CR3 SLAT translation failed but we try to pretend it
+               succeeded for the reasons mentioned in PGMHCChangeMode(). */
             AssertMsgFailed(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", cr3, rc));
             int const rc2 = pgmGstUnmapCr3(pVCpu);
             pVCpu->pgm.s.GCPhysCR3       = NIL_RTGCPHYS;
@@ -2727,6 +2718,8 @@ VMMDECL(int) PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4
                 GCPhysCR3 = GCPhysOut;
             else
             {
+                /* CR3 SLAT translation failed but we try to pretend it
+                   succeeded for the reasons mentioned in PGMHCChangeMode(). */
                 AssertMsgFailed(("Failed to translate CR3 %#RX64. rc=%Rrc\n", cr3, rc2));
                 rc2 = pgmGstUnmapCr3(pVCpu);
                 pVCpu->pgm.s.GCPhysCR3       = NIL_RTGCPHYS;
@@ -3418,10 +3411,24 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
         { /* likely */ }
         else
         {
+            /*
+             * SLAT failed but we avoid reporting this to the caller because the caller
+             * is not supposed to fail. The only time the caller needs to indicate a
+             * failure to software is when PAE paging is used by the nested-guest, but
+             * we handle the PAE case separately (e.g., see VMX transition in IEM).
+             * In all other cases, the failure will be indicated when CR3 tries to be
+             * translated on the next linear-address memory access.
+             * See Intel spec. 27.2.1 "EPT Overview".
+             */
             AssertMsgFailed(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", GCPhysCR3, rc));
-            Assert(pVCpu->pgm.s.GCPhysNstGstCR3 == NIL_RTGCPHYS);
-            pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_INVALID;
-            return VERR_PGM_CR3_SLAT_FAILED;
+
+            /* Trying to coax PGM to succeed for the time being... */
+            Assert(pVCpu->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
+            pVCpu->pgm.s.GCPhysNstGstCR3  = GCPhysCR3;
+            pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_EPT;
+            pVCpu->pgm.s.enmGuestMode     = enmGuestMode;
+            HMHCChangedPagingMode(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
+            return VINF_SUCCESS;
         }
 
         pVCpu->pgm.s.GCPhysNstGstCR3  = GCPhysCR3;
