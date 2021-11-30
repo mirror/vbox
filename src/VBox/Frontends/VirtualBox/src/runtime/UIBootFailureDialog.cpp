@@ -81,13 +81,13 @@ void UIBootFailureDialog::retranslateUi()
 {
     if (m_pCloseButton)
     {
-        m_pCloseButton->setText(tr("&Close"));
+        m_pCloseButton->setText(tr("&Cancel"));
         m_pCloseButton->setToolTip(tr("Closes this dialog without resetting the guest or mounting a medium"));
     }
     if (m_pResetButton)
     {
-        m_pResetButton->setText(tr("&Reset VM"));
-        m_pResetButton->setToolTip(tr("Mounts the selected ISO if any and restarts the vm"));
+        m_pResetButton->setText(tr("&Mount and Retry Boot"));
+        m_pResetButton->setToolTip(tr("Mounts the selected ISO if any and reboots the vm"));
     }
 
     if (m_pLabel)
