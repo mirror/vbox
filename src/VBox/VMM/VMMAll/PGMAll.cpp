@@ -1732,7 +1732,6 @@ VMMDECL(int) PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pWalk);
-    RT_BZERO(pWalk, sizeof(*pWalk));
     uintptr_t idx = pVCpu->pgm.s.idxGuestModeData;
     AssertReturn(idx < RT_ELEMENTS(g_aPgmGuestModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmGuestModeData[idx].pfnGetPage, VERR_PGM_MODE_IPE);

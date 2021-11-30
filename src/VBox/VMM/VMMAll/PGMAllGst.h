@@ -379,35 +379,33 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
    || PGM_GST_TYPE == PGM_TYPE_PAE \
    || PGM_GST_TYPE == PGM_TYPE_AMD64
 
-    PGMPTWALK Walk;
     GSTPTWALK GstWalk;
-    RT_ZERO(Walk);
-    RT_ZERO(GstWalk);
-    int rc = PGM_GST_NAME(Walk)(pVCpu, GCPtr, &Walk, &GstWalk);
+    int rc = PGM_GST_NAME(Walk)(pVCpu, GCPtr, pWalk, &GstWalk);
     if (RT_FAILURE(rc))
         return rc;
 
-    uint64_t fFlags;
-    if (!Walk.fBigPage)
+    Assert(pWalk->fSucceeded);
+    Assert(pWalk->GCPtr == GCPtr);
+
+    PGMPTATTRS fFlags;
+    if (!pWalk->fBigPage)
         fFlags = (GstWalk.Pte.u & ~(GST_PTE_PG_MASK | X86_PTE_RW | X86_PTE_US))                      /* NX not needed */
-               | (Walk.fEffective & (PGM_PTATTRS_W_MASK | PGM_PTATTRS_US_MASK))
+               | (pWalk->fEffective & (PGM_PTATTRS_W_MASK | PGM_PTATTRS_US_MASK))
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
-               | (Walk.fEffective & PGM_PTATTRS_NX_MASK)
+               | (pWalk->fEffective & PGM_PTATTRS_NX_MASK)
 # endif
                  ;
     else
     {
         fFlags = (GstWalk.Pde.u & ~(GST_PTE_PG_MASK | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_PS))   /* NX not needed */
-               | (Walk.fEffective & (PGM_PTATTRS_W_MASK | PGM_PTATTRS_US_MASK | PGM_PTATTRS_PAT_MASK))
+               | (pWalk->fEffective & (PGM_PTATTRS_W_MASK | PGM_PTATTRS_US_MASK | PGM_PTATTRS_PAT_MASK))
 # if PGM_WITH_NX(PGM_GST_TYPE, PGM_GST_TYPE)
-               | (Walk.fEffective & PGM_PTATTRS_NX_MASK)
+               | (pWalk->fEffective & PGM_PTATTRS_NX_MASK)
 # endif
                ;
     }
 
-    pWalk->fSucceeded = true;
-    pWalk->GCPtr      = GCPtr;
-    pWalk->GCPhys     = Walk.GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+    pWalk->GCPhys    &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
     pWalk->fEffective = fFlags;
     return VINF_SUCCESS;
 
