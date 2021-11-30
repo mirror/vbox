@@ -18,7 +18,6 @@
 /* Qt includes: */
 #include <QGridLayout>
 #include <QLabel>
-#include <QLineEdit>
 #include <QStyle>
 #include <QVBoxLayout>
 
@@ -31,49 +30,6 @@
 #include "UIUserNamePasswordEditor.h"
 #include "UIWizardNewVM.h"
 
-/*********************************************************************************************************************************
-*   UIPasswordLineEdit definition.                                                                                        *
-*********************************************************************************************************************************/
-
-class UIPasswordLineEdit : public QLineEdit
-{
-    Q_OBJECT;
-
-signals:
-
-    void sigTextVisibilityToggled(bool fTextVisible);
-
-public:
-
-    UIPasswordLineEdit(QWidget *pParent = 0);
-    void toggleTextVisibility(bool fTextVisible);
-    void mark(bool fError, const QString &strErrorToolTip);
-
-protected:
-
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-
-private slots:
-
-    void sltHandleTextVisibilityChange();
-
-private:
-
-    void prepare();
-    void adjustTextVisibilityButtonGeometry();
-
-    QIToolButton *m_pTextVisibilityButton;
-    QIcon m_markIcon;
-    QLabel *m_pErrorIconLabel;
-    QString m_strErrorToolTip;
-    /** When true the line edit is marked with some icon to indicate some error. */
-    bool m_fMarkForError;
-};
-
-
-/*********************************************************************************************************************************
-*   UIPasswordLineEdit implementation.                                                                                           *
-*********************************************************************************************************************************/
 
 UIPasswordLineEdit::UIPasswordLineEdit(QWidget *pParent /*= 0 */)
     : QLineEdit(pParent)
@@ -411,6 +367,3 @@ void UIUserNamePasswordEditor::sltPasswordChanged()
     isPasswordComplete();
     emit sigPasswordChanged(m_pPasswordLineEdit->text());
 }
-
-
-#include "UIUserNamePasswordEditor.moc"
