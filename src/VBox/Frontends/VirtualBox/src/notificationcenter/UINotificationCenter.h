@@ -115,8 +115,10 @@ private slots:
     /** Handles open-timer timeout. */
     void sltHandleOpenTimerTimeout();
 
-    /** Handles signal about model being updated. */
-    void sltModelChanged();
+    /** Handles signal about model item with specified @a uId was added. */
+    void sltHandleModelItemAdded(const QUuid &uId);
+    /** Handles signal about model item with specified @a uId was removed. */
+    void sltHandleModelItemRemoved(const QUuid &uId);
 
     /** Handles immediate progress being finished.
       * @note Breaks blocking handleNow() call. */
@@ -134,6 +136,8 @@ private:
     void prepareStateMachineSliding();
     /** Prepares open-timer. */
     void prepareOpenTimer();
+    /** Cleanups everything. */
+    void cleanup();
 
     /** Paints background using pre-configured @a pPainter. */
     void paintBackground(QPainter *pPainter);
@@ -173,6 +177,9 @@ private:
     QIToolButton *m_pButtonRemoveFinished;
     /** Holds the items layout instance. */
     QVBoxLayout  *m_pLayoutItems;
+
+    /** Holds the map of item instances. */
+    QMap<QUuid, QWidget*>  m_items;
 
     /** Holds the sliding state-machine instance. */
     QStateMachine *m_pStateMachineSliding;

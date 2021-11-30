@@ -165,6 +165,7 @@ UINotificationCenter::UINotificationCenter(QWidget *pParent)
 
 UINotificationCenter::~UINotificationCenter()
 {
+    cleanup();
 }
 
 void UINotificationCenter::setParent(QWidget *pParent)
@@ -365,8 +366,25 @@ void UINotificationCenter::sltIssueOrderChange()
 
 void UINotificationCenter::sltHandleOrderChange()
 {
+    /* Save new order: */
     m_enmOrder = gEDataManager->notificationCenterOrder();
-    sltModelChanged();
+
+    /* Cleanup items first: */
+    qDeleteAll(m_items);
+    m_items.clear();
+
+    /* Populate model contents again: */
+    foreach (const QUuid &uId, m_pModel->ids())
+    {
+        UINotificationObjectItem *pItem = UINotificationItem::create(this, m_pModel->objectById(uId));
+        m_items[uId] = pItem;
+        m_pLayoutItems->insertWidget(m_enmOrder == Qt::AscendingOrder ? -1 : 0, pItem);
+    }
+
+    /* Hide and slide away if there are no notifications to show: */
+    setHidden(m_pModel->ids().isEmpty());
+    if (m_pModel->ids().isEmpty() && m_pButtonOpen->isChecked())
+        m_pButtonOpen->toggle();
 }
 
 void UINotificationCenter::sltHandleOpenButtonToggled(bool fToggled)
@@ -409,23 +427,23 @@ void UINotificationCenter::sltHandleOpenTimerTimeout()
     m_pButtonOpen->animateClick();
 }
 
-void UINotificationCenter::sltModelChanged()
+void UINotificationCenter::sltHandleModelItemAdded(const QUuid &uId)
 {
-    /* Cleanup layout first: */
-    while (QLayoutItem *pChild = m_pLayoutItems->takeAt(0))
-    {
-        delete pChild->widget();
-        delete pChild;
-    }
+    /* Add corresponding model item representation: */
+    AssertReturnVoid(!m_items.contains(uId));
+    UINotificationObjectItem *pItem = UINotificationItem::create(this, m_pModel->objectById(uId));
+    m_items[uId] = pItem;
+    m_pLayoutItems->insertWidget(m_enmOrder == Qt::AscendingOrder ? -1 : 0, pItem);
 
-    /* Populate model contents again: */
-    const int iCount = m_pModel->ids().count();
-    for (int iIndex = 0; iIndex < iCount; ++iIndex)
-    {
-        const QUuid &uId = m_pModel->ids().at(iIndex);
-        m_pLayoutItems->insertWidget(m_enmOrder == Qt::AscendingOrder ? iCount : 0,
-                                     UINotificationItem::create(this, m_pModel->objectById(uId)));
-    }
+    /* Show if there are notifications to show: */
+    setHidden(m_pModel->ids().isEmpty());
+}
+
+void UINotificationCenter::sltHandleModelItemRemoved(const QUuid &uId)
+{
+    /* Remove corresponding model item representation: */
+    AssertReturnVoid(m_items.contains(uId));
+    delete m_items.take(uId);
 
     /* Hide and slide away if there are no notifications to show: */
     setHidden(m_pModel->ids().isEmpty());
@@ -475,8 +493,12 @@ void UINotificationCenter::prepareModel()
 {
     m_pModel = new UINotificationModel(this);
     if (m_pModel)
-        connect(m_pModel, &UINotificationModel::sigChanged,
-                this, &UINotificationCenter::sltModelChanged);
+    {
+        connect(m_pModel, &UINotificationModel::sigItemAdded,
+                this, &UINotificationCenter::sltHandleModelItemAdded);
+        connect(m_pModel, &UINotificationModel::sigItemRemoved,
+                this, &UINotificationCenter::sltHandleModelItemRemoved);
+    }
 }
 
 void UINotificationCenter::prepareWidgets()
@@ -652,6 +674,13 @@ void UINotificationCenter::prepareOpenTimer()
     if (m_pTimerOpen)
         connect(m_pTimerOpen, &QTimer::timeout,
                 this, &UINotificationCenter::sltHandleOpenTimerTimeout);
+}
+
+void UINotificationCenter::cleanup()
+{
+    /* Cleanup items: */
+    qDeleteAll(m_items);
+    m_items.clear();
 }
 
 void UINotificationCenter::paintBackground(QPainter *pPainter)

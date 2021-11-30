@@ -40,8 +40,10 @@ class SHARED_LIBRARY_STUFF UINotificationModel : public QObject
 
 signals:
 
-    /** Notifies listeners about model has changed. */
-    void sigChanged();
+    /** Notifies listeners about item with specified @a uId was added. */
+    void sigItemAdded(const QUuid &uId);
+    /** Notifies listeners about item with specified @a uId was removed. */
+    void sigItemRemoved(const QUuid &uId);
 
 public:
 

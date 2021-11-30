@@ -52,7 +52,7 @@ QUuid UINotificationModel::appendObject(UINotificationObject *pObject)
     connect(pObject, &UINotificationObject::sigAboutToClose,
             this, &UINotificationModel::sltHandleAboutToClose);
     /* Notify listeners: */
-    emit sigChanged();
+    emit sigItemAdded(uId);
     /* Handle object: */
     pObject->handle();
     /* Return ID: */
@@ -61,11 +61,12 @@ QUuid UINotificationModel::appendObject(UINotificationObject *pObject)
 
 void UINotificationModel::revokeObject(const QUuid &uId)
 {
-    /* Remove ID and object: */
-    delete m_objects.take(uId);
+    /* Remove id first of all: */
     m_ids.removeAll(uId);
-    /* Notify listeners: */
-    emit sigChanged();
+    /* Notify listeners before object is deleted: */
+    emit sigItemRemoved(uId);
+    /* Delete object itself finally: */
+    delete m_objects.take(uId);
 }
 
 bool UINotificationModel::hasObject(const QUuid &uId) const
@@ -76,22 +77,13 @@ bool UINotificationModel::hasObject(const QUuid &uId) const
 void UINotificationModel::revokeFinishedObjects()
 {
     /* Check whether there are done objects: */
-    bool fChanged = false;
     foreach (const QUuid &uId, m_ids)
     {
         UINotificationObject *pObject = m_objects.value(uId);
         AssertPtrReturnVoid(pObject);
         if (pObject->isDone())
-        {
-            /* Remove ID and object: */
-            delete m_objects.take(uId);
-            m_ids.removeAll(uId);
-            fChanged = true;
-        }
+            revokeObject(uId);
     }
-    /* Notify listeners: */
-    if (fChanged)
-        emit sigChanged();
 }
 
 QList<QUuid> UINotificationModel::ids() const
