@@ -1048,6 +1048,7 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
 
     AssertPtrReturn(pszArgv0,   VERR_INVALID_POINTER);
     AssertPtrReturn(ppapszArgv, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS), VERR_INVALID_FLAGS); /** @todo implement me */
 
 #ifndef VBOXSERVICE_ARG1_UTF8_ARGV
     fExecutingSelf = false;
@@ -1077,21 +1078,15 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
     }
 #endif
 
-    /* HACK ALERT! Older hosts (< VBox 6.1.x) did not allow the user to really specify the first
-                   argument separately from the executable image, so we have to fudge
-                   a little in the unquoted argument case to deal with executables
-                   containing spaces. */
-    /** @todo r=bird: WTF!?? This makes absolutely no sense on non-windows.  An
-     * on windows the first flag test must be inverted, as it's when RTProcCreateEx
-     * doesn't do any quoting that we have to do it here, isn't it?
-     * Aaaaaaaaaaaaaaaaaaarrrrrrrrrrrrrrrrrrrrrrrrrrgggggggggggggggggggggggg! */
-    if (   !(fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
-        || !strpbrk(pszArgv0, " \t\n\r")
-        || pszArgv0[0] == '"')
-    {
-        rc = RTStrDupEx(&papszNewArgv[0], pszArgv0);
-    }
-    else
+    /* HACK ALERT! Older hosts (< VBox 6.1.x) did not allow the user to really specify
+                   the first argument separately from the executable image, so we have
+                   to fudge a little in the unquoted argument case to deal with executables
+                   containing spaces.  Windows only, as RTPROC_FLAGS_UNQUOTED_ARGS is
+                   ignored on all other hosts. */
+#ifdef RT_OS_WINDOWS
+    if (   (fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
+        && strpbrk(pszArgv0, " \t\n\r")
+        && pszArgv0[0] == '"')
     {
         size_t cchArgv0 = strlen(pszArgv0);
         AssertReturn(cchArgv0, VERR_INVALID_PARAMETER); /* Paranoia. */
@@ -1106,7 +1101,9 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
             *pszDst   = '\0';
         }
     }
-
+    else
+#endif
+        rc = RTStrDupEx(&papszNewArgv[0], pszArgv0);
     if (RT_SUCCESS(rc))
     {
         size_t iDst = 1;
