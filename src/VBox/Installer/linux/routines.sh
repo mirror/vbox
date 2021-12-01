@@ -176,9 +176,12 @@ WantedBy=multi-user.target
 EOF
 }
 
+# Checks if systemd is the init system of choice
 use_systemd()
 {
-    test ! -f /sbin/init || test -L /sbin/init
+    # First condition is what halfway recent systemd uses itself, and the
+    # other two checks should cover everything back to v1.
+    test -e /run/systemd/system || test -e /sys/fs/cgroup/systemd || test -e /cgroup/systemd
 }
 
 ## Installs a file containing a shell script as an init script.  Call
