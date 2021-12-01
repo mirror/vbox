@@ -2405,12 +2405,12 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBGLR3GUESTCTRLSES
     /*
      * Flags.
      */
-    uint32_t fProcCreate = RTPROC_FLAGS_PROFILE
+    uint32_t const fProcCreate = RTPROC_FLAGS_PROFILE
 #ifdef RT_OS_WINDOWS
-                         | RTPROC_FLAGS_SERVICE
-                         | RTPROC_FLAGS_HIDDEN
+                               | RTPROC_FLAGS_SERVICE
+                               | RTPROC_FLAGS_HIDDEN
 #endif
-                         | VBOXSERVICE_PROC_F_UTF8_ARGV;
+                               | VBOXSERVICE_PROC_F_UTF8_ARGV;
 
     /*
      * Configure standard handles.
@@ -2450,108 +2450,15 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBGLR3GUESTCTRLSES
             if (RT_SUCCESS(rc))
 #endif
             {
-                RTENV hEnvSession = RTENV_DEFAULT;
-
-                /*
-                 * If we start a new guest session with RTPROC_FLAGS_PROFILE (the default, means another user),
-                 * process the initial session's environment and search for important env vars we also need in
-                 * the new guest session and apply those to the new environment block we're going to use for that
-                 * new guest session then.
-                 *
-                 * This is needed in order to make different locales on POSIX OSes work. See @bugref{10153}.
-                 */
-                if (fProcCreate & RTPROC_FLAGS_PROFILE)
-                {
-                    RTENV hEnv;
-                    int rc2 = RTEnvClone(&hEnv, RTENV_DEFAULT);
-                    if (RT_SUCCESS(rc2))
-                    {
-                        rc2 = RTEnvCreate(&hEnvSession);
-                        if (RT_SUCCESS(rc2))
-                        {
-                            size_t cbVar  = 128; /* Start with a conservative size, as we might grow this down below. */
-                            char  *pszVar = RTStrAlloc(cbVar);
-                            if (pszVar)
-                            {
-                                size_t cbValue  = cbVar;
-                                char  *pszValue = RTStrAlloc(cbValue);
-                                if (pszValue)
-                                {
-                                    for (uint32_t iVar = 0; iVar < RTEnvCountEx(hEnv); iVar++)
-                                    {
-                                        for (unsigned cTries = 0; cTries < 10; cTries++)
-                                        {
-                                            rc2 = RTEnvGetByIndexEx(hEnv, iVar, pszVar, cbVar, pszValue, cbValue);
-                                            if (RT_SUCCESS(rc2))
-                                                break;
-                                            if (rc2 == VERR_BUFFER_OVERFLOW)
-                                            {
-                                                cbVar *= 2;
-                                                rc2 = RTStrRealloc(&pszVar, cbVar);
-                                                AssertRCBreak(rc2);
-
-                                                cbValue *= 2;
-                                                rc2 = RTStrRealloc(&pszValue, cbValue);
-                                                AssertRCBreak(rc2);
-                                            }
-                                            else
-                                                break;
-                                        }
-
-                                        if (RT_FAILURE(rc2))
-                                            break;
-
-                                        if (   RTStrSimplePatternMatch("LANG", pszVar)
-                                            || RTStrSimplePatternMatch("LC_*", pszVar))
-                                        {
-#ifdef DEBUG
-                                            /* Don't log this in release mode -- might contain sensitive data! */
-                                            VGSvcVerbose(2, "Adding %s=%s to guest session environment\n", pszVar, pszValue);
-#endif
-                                            rc2 = RTEnvSetEx(hEnvSession, pszVar, pszValue);
-                                        }
-
-                                        if (RT_FAILURE(rc2))
-                                            break;
-                                    }
-
-                                    RTStrFree(pszValue);
-                                }
-                                else
-                                    rc2 = VERR_NO_MEMORY;
-
-                                RTStrFree(pszVar);
-                            }
-                            else
-                                rc2 = VERR_NO_MEMORY;
-
-                            if (RT_SUCCESS(rc2))
-                                fProcCreate |= RTPROC_FLAGS_ENV_CHANGE_RECORD;
-                        }
-
-                        RTEnvDestroy(hEnv);
-                    }
-
-                    if (RT_FAILURE(rc2))
-                        VGSvcError("Creating session environment block failed with %Rrc\n", rc2);
-                    /* Consider this as not being fatal. Just stay witht the default environment and hope for the best. */
-                }
-
                 /*
                  * Finally, create the process.
                  */
-                rc = RTProcCreateEx(pszExeName, apszArgs, hEnvSession, fProcCreate,
+                rc = RTProcCreateEx(pszExeName, apszArgs, RTENV_DEFAULT, fProcCreate,
                                     &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
                                     !fAnonymous ? pszUser : NULL,
                                     !fAnonymous ? pSessionThread->pStartupInfo->pszPassword : NULL,
                                     NULL /*pvExtraData*/,
                                     &pSessionThread->hProcess);
-
-                if (hEnvSession != RTENV_DEFAULT)
-                {
-                    RTEnvDestroy(hEnvSession);
-                    hEnvSession = NIL_RTENV;
-                }
             }
 #ifdef RT_OS_WINDOWS
             RTStrFree(pszUserUPN);
