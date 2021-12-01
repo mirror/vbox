@@ -1743,7 +1743,16 @@ HRESULT VirtualBox::createCloudNetwork(const com::Utf8Str &aNetworkName,
 
     m->allCloudNetworks.addChild(cloudNetwork);
 
-    cloudNetwork.queryInterfaceTo(aNetwork.asOutParam());
+    {
+        AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
+        rc = i_saveSettings();
+        vboxLock.release();
+
+        if (FAILED(rc))
+            m->allCloudNetworks.removeChild(cloudNetwork);
+        else
+            cloudNetwork.queryInterfaceTo(aNetwork.asOutParam());
+    }
 
     return rc;
 #else /* !VBOX_WITH_CLOUD_NET */
