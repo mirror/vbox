@@ -209,7 +209,7 @@ def progressBar(ctx, progress, wait=1000):
 
 def printErr(_ctx, e):
     oVBoxMgr = _ctx['global']
-    if oVBoxMgr.errIsOurXcptKind(e):
+    if oVBoxMgr.xcptIsOurXcptKind(e):
         print(colored('%s: %s' % (oVBoxMgr.xcptToString(e), oVBoxMgr.xcptGetMessage(e)), 'red'))
     else:
         print(colored(str(e), 'red'))
