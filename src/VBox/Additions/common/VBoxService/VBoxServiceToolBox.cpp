@@ -1713,7 +1713,7 @@ bool VGSvcToolboxMain(int argc, char **argv, RTEXITCODE *prcExit)
          */
         if (argc < 2 || strcmp(argv[1], "--use-toolbox"))
         {
-            /* We must match vgsvcGstCtrlProcessResolveExecutable here and claim
+            /* We must match vgsvcGstCtrlProcessCreateProcess here and claim
                everything starting with "vbox_". */
             if (!RTStrStartsWith(pszTool, "vbox_"))
                 return false;
