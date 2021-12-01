@@ -1066,17 +1066,34 @@ static int rtLocalIpcSessionQueryUcred(RTLOCALIPCSESSION hSession, PRTPROCESS pP
 #if defined(RT_OS_LINUX)
     struct ucred PeerCred   = { (pid_t)NIL_RTPROCESS, (uid_t)NIL_RTUID, (gid_t)NIL_RTGID };
     socklen_t    cbPeerCred = sizeof(PeerCred);
-    if (getsockopt(RTSocketToNative(pThis->hSocket), SOL_SOCKET, SO_PEERCRED, &PeerCred, &cbPeerCred) >= 0)
+
+    rtLocalIpcSessionRetain(pThis);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);;
+    if (RT_SUCCESS(rc))
     {
-        if (pProcess)
-            *pProcess = PeerCred.pid;
-        if (pUid)
-            *pUid = PeerCred.uid;
-        if (pGid)
-            *pGid = PeerCred.gid;
-        return VINF_SUCCESS;
+        if (getsockopt(RTSocketToNative(pThis->hSocket), SOL_SOCKET, SO_PEERCRED, &PeerCred, &cbPeerCred) >= 0)
+        {
+            if (pProcess)
+                *pProcess = PeerCred.pid;
+            if (pUid)
+                *pUid = PeerCred.uid;
+            if (pGid)
+                *pGid = PeerCred.gid;
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            rc = RTErrConvertFromErrno(errno);
+        }
+
+        int rc2 = RTCritSectLeave(&pThis->CritSect);
+        AssertStmt(RT_SUCCESS(rc2), rc = RT_SUCCESS(rc) ? rc2 : rc);
     }
-    return RTErrConvertFromErrno(errno);
+
+    rtLocalIpcSessionRelease(pThis);
+
+    return rc;
 
 #else
     /** @todo Implement on other platforms too (mostly platform specific this).
