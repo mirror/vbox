@@ -973,7 +973,6 @@ static int vgsvcGstCtrlProcessSetupPipe(const char *pszHowTo, int fd, PRTHANDLE 
  */
 static int vgsvcGstCtrlProcessMakeFullPath(const char *pszPath, char *pszExpanded, size_t cbExpanded)
 {
-    int rc = VINF_SUCCESS;
 /** @todo r=bird: This feature shall be made optional, i.e. require a
  *        flag to be passed down.  Further, it shall work on the environment
  *        block of the new process (i.e. include env changes passed down from
@@ -982,12 +981,13 @@ static int vgsvcGstCtrlProcessMakeFullPath(const char *pszPath, char *pszExpande
  *
  *        Since this currently not available on non-windows guests, I suggest
  *        we disable it until such a time as it is implemented correctly. */
-#ifdef RT_OS_WINDOWS
+#if 0 /*def RT_OS_WINDOWS - see above. Don't know why this wasn't disabled before 7.0, didn't see the @todo yet? */
+    int rc = VINF_SUCCESS;
     if (!ExpandEnvironmentStrings(pszPath, pszExpanded, (DWORD)cbExpanded))
         rc = RTErrConvertFromWin32(GetLastError());
 #else
-    /* No expansion for non-Windows yet. */
-    rc = RTStrCopy(pszExpanded, cbExpanded, pszPath);
+    /* There is no expansion anywhere yet, see above @todo. */
+    int rc = RTStrCopy(pszExpanded, cbExpanded, pszPath);
 #endif
 #ifdef DEBUG
     VGSvcVerbose(3, "vgsvcGstCtrlProcessMakeFullPath: %s -> %s\n", pszPath, pszExpanded);
