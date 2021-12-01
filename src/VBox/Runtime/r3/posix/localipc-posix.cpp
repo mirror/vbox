@@ -1047,45 +1047,45 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
     return rc;
 }
 
+
 /**
  * Get IPC session socket peer credentials.
  *
- * @return IPRT status code.
- * @param hSession      IPC session handle.
- * @param pProcess      Output buffer to store remote peer PID (can be NULL).
- * @param pUid          Output buffer to store remote peer UID (can be NULL).
- * @param pGid          Output buffer to store remote peer GID (can be NULL).
+ * @returns IPRT status code.
+ * @param   hSession    IPC session handle.
+ * @param   pProcess    Where to return the remote peer's PID (can be NULL).
+ * @param   pUid        Where to return the remote peer's UID (can be NULL).
+ * @param   pGid        Where to return the remote peer's GID (can be NULL).
  */
 static int rtLocalIpcSessionQueryUcred(RTLOCALIPCSESSION hSession, PRTPROCESS pProcess, PRTUID pUid, PRTGID pGid)
 {
-#if defined(RT_OS_LINUX)
     PRTLOCALIPCSESSIONINT pThis = hSession;
-
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_HANDLE);
 
-    struct ucred PeerCred;
-    socklen_t cbPeerCred = sizeof(PeerCred);
-    int iSock = RTSocketToNative(pThis->hSocket);
+#if defined(RT_OS_LINUX)
+    struct ucred PeerCred   = { (pid_t)NIL_RTPROCESS, (uid_t)NIL_RTUID, (gid_t)NIL_RTGID };
+    socklen_t    cbPeerCred = sizeof(PeerCred);
+    if (getsockopt(RTSocketToNative(pThis->hSocket), SOL_SOCKET, SO_PEERCRED, &PeerCred, &cbPeerCred) >= 0)
+    {
+        if (pProcess)
+            *pProcess = PeerCred.pid;
+        if (pUid)
+            *pUid = PeerCred.uid;
+        if (pGid)
+            *pGid = PeerCred.gid;
+        return VINF_SUCCESS;
+    }
+    return RTErrConvertFromErrno(errno);
 
-    RT_ZERO(PeerCred);
-
-    if (getsockopt(iSock, SOL_SOCKET, SO_PEERCRED, &PeerCred, &cbPeerCred) == -1)
-        return RTErrConvertFromErrno(errno);
-
-    if (pProcess)
-        *pProcess = PeerCred.pid;
-    if (pUid)
-        *pUid = PeerCred.uid;
-    if (pGid)
-        *pGid = PeerCred.gid;
-
-    return VINF_SUCCESS;
 #else
-    RT_NOREF4(hSession, pProcess, pUid, pGid);
+    /** @todo Implement on other platforms too (mostly platform specific this).
+     *        Solaris: getpeerucred?  Darwin: LOCALPEERCRED or getpeereid? */
+    RT_NOREF(pProcess, pUid, pGid);
     return VERR_NOT_SUPPORTED;
 #endif
 }
+
 
 RTDECL(int) RTLocalIpcSessionQueryProcess(RTLOCALIPCSESSION hSession, PRTPROCESS pProcess)
 {
