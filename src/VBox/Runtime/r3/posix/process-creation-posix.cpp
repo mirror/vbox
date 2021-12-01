@@ -79,17 +79,16 @@
 # include <spawn.h>
 #endif
 
-#if !defined(IPRT_USE_PAM) && ( defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD) )
+#if !defined(IPRT_USE_PAM) \
+ && ( defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD) )
 # define IPRT_USE_PAM
 #endif
 #ifdef IPRT_USE_PAM
 # ifdef RT_OS_DARWIN
 #  include <mach-o/dyld.h>
 #  define IPRT_LIBPAM_FILE      "libpam.dylib"
-#  define IPRT_PAM_SERVICE_NAME "login"     /** @todo we've been abusing 'login' here, probably not needed? */
 # else
 #  define IPRT_LIBPAM_FILE      "libpam.so"
-#  define IPRT_PAM_SERVICE_NAME "iprt-as-user"
 # endif
 # include <security/pam_appl.h>
 # include <stdlib.h>
@@ -213,10 +212,157 @@ static int rtPamConv(int cMessages, const struct pam_message **papMessages, stru
     *ppaResponses = paResponses;
     return PAM_SUCCESS;
 }
+
+
+/**
+ * Common PAM driver for rtCheckCredentials and the case where pszAsUser is NULL
+ * but RTPROC_FLAGS_PROFILE is set.
+ *
+ * @returns IPRT status code.
+ * @param   pszPamService   The PAM service to use for the run.
+ * @param   pszUser         The user.
+ * @param   pszPassword     The password.
+ * @param   ppapszEnv       Where to return PAM environment variables, NULL is
+ *                          fine if no variables to return. Call
+ *                          rtProcPosixFreePamEnv to free.  Optional, so NULL
+ *                          can be passed in.
+ * @param   pfMayFallBack   Where to return whether a fallback to crypt is
+ *                          acceptable or if the failure result is due to
+ *                          authentication failing.  Optional.
+ */
+static int rtProcPosixAuthenticateUsingPam(const char *pszPamService, const char *pszUser, const char *pszPassword,
+                                           char ***ppapszEnv, bool *pfMayFallBack)
+{
+    if (pfMayFallBack)
+        *pfMayFallBack = true;
+
+    /*
+     * Use PAM for the authentication.
+     * Note! libpam.2.dylib was introduced with 10.6.x (OpenPAM).
+     */
+    void *hModPam = dlopen(IPRT_LIBPAM_FILE, RTLD_LAZY | RTLD_GLOBAL);
+    if (hModPam)
+    {
+        int     (*pfnPamStart)(const char *, const char *, struct pam_conv *, pam_handle_t **);
+        int     (*pfnPamAuthenticate)(pam_handle_t *, int);
+        int     (*pfnPamAcctMgmt)(pam_handle_t *, int);
+        int     (*pfnPamSetItem)(pam_handle_t *, int, const void *);
+        int     (*pfnPamSetCred)(pam_handle_t *, int);
+        char ** (*pfnPamGetEnvList)(pam_handle_t *);
+        int     (*pfnPamOpenSession)(pam_handle_t *, int);
+        int     (*pfnPamCloseSession)(pam_handle_t *, int);
+        int     (*pfnPamEnd)(pam_handle_t *, int);
+        *(void **)&pfnPamStart        = dlsym(hModPam, "pam_start");
+        *(void **)&pfnPamAuthenticate = dlsym(hModPam, "pam_authenticate");
+        *(void **)&pfnPamAcctMgmt     = dlsym(hModPam, "pam_acct_mgmt");
+        *(void **)&pfnPamSetItem      = dlsym(hModPam, "pam_set_item");
+        *(void **)&pfnPamSetCred      = dlsym(hModPam, "pam_setcred");
+        *(void **)&pfnPamGetEnvList   = dlsym(hModPam, "pam_getenvlist");
+        *(void **)&pfnPamOpenSession  = dlsym(hModPam, "pam_open_session");
+        *(void **)&pfnPamCloseSession = dlsym(hModPam, "pam_close_session");
+        *(void **)&pfnPamEnd          = dlsym(hModPam, "pam_end");
+        ASMCompilerBarrier();
+        if (   pfnPamStart
+            && pfnPamAuthenticate
+            && pfnPamAcctMgmt
+            && pfnPamSetItem
+            && pfnPamEnd)
+        {
+# define pam_start           pfnPamStart
+# define pam_authenticate    pfnPamAuthenticate
+# define pam_acct_mgmt       pfnPamAcctMgmt
+# define pam_set_item        pfnPamSetItem
+# define pam_setcred         pfnPamSetCred
+# define pam_getenvlist      pfnPamGetEnvList
+# define pam_open_session    pfnPamOpenSession
+# define pam_close_session   pfnPamCloseSession
+# define pam_end             pfnPamEnd
+
+            /* Do the PAM stuff. */
+            pam_handle_t   *hPam        = NULL;
+            RTPROCPAMARGS   PamConvArgs = { pszUser, pszPassword };
+            struct pam_conv PamConversation;
+            RT_ZERO(PamConversation);
+            PamConversation.appdata_ptr = &PamConvArgs;
+            PamConversation.conv        = rtPamConv;
+            int rc = pam_start(pszPamService, pszUser, &PamConversation, &hPam);
+            if (rc == PAM_SUCCESS)
+            {
+                rc = pam_set_item(hPam, PAM_RUSER, pszUser);
+                if (rc == PAM_SUCCESS)
+                {
+                    if (pfMayFallBack)
+                        *pfMayFallBack = false;
+                    rc = pam_authenticate(hPam, 0);
+                    if (rc == PAM_SUCCESS)
+                    {
+                        rc = pam_acct_mgmt(hPam, 0);
+                        if (   rc == PAM_SUCCESS
+                            || rc == PAM_AUTHINFO_UNAVAIL /*??*/)
+                        {
+                            if (   ppapszEnv
+                                && pfnPamGetEnvList
+                                && pfnPamSetCred)
+                            {
+                                /* pam_env.so creates the environment when pam_setcred is called. */
+                                rc = pam_setcred(hPam, PAM_ESTABLISH_CRED | PAM_SILENT);
+                                /** @todo check pam_setcred status code. */
+                                *ppapszEnv = pam_getenvlist(hPam);
+                                pam_setcred(hPam, PAM_DELETE_CRED);
+                            }
+
+                            pam_end(hPam, PAM_SUCCESS);
+                            dlclose(hModPam);
+                            return VINF_SUCCESS;
+                        }
+                        LogFunc(("pam_acct_mgmt -> %d\n", rc));
+                    }
+                    else
+                        LogFunc(("pam_authenticate -> %d\n", rc));
+                }
+                else
+                    LogFunc(("pam_set_item/PAM_RUSER -> %d\n", rc));
+                pam_end(hPam, rc);
+            }
+            else
+                LogFunc(("pam_start -> %d\n", rc));
+        }
+        else
+            LogFunc(("failed to resolve symbols: %p %p %p %p %p\n",
+                     pfnPamStart, pfnPamAuthenticate, pfnPamAcctMgmt, pfnPamSetItem, pfnPamEnd));
+        dlclose(hModPam);
+    }
+    else
+        LogFunc(("Loading " IPRT_LIBPAM_FILE " failed\n"));
+    return VERR_AUTHENTICATION_FAILURE;
+}
+
+
+/**
+ * Checks if the given service file is present in any of the pam.d directories.
+ */
+static bool rtProcPosixPamServiceExists(const char *pszService)
+{
+    char szPath[256];
+
+    /* PAM_CONFIG_D: */
+    int rc = RTPathJoin(szPath, sizeof(szPath), "/etc/pam.d/", pszService); AssertRC(rc);
+    if (RTFileExists(szPath))
+        return true;
+
+    /* PAM_CONFIG_DIST_D: */
+    rc = RTPathJoin(szPath, sizeof(szPath), "/usr/lib/pam.d/", pszService); AssertRC(rc);
+    if (RTFileExists(szPath))
+        return true;
+
+    /* No support for PAM_CONFIG_DIST2_D. */
+    return false;
+}
+
 #endif /* IPRT_USE_PAM */
 
 
-#if defined(IPRT_WITH_DYNAMIC_CRYPT_R) && !defined(IPRT_USE_PAM)
+#if defined(IPRT_WITH_DYNAMIC_CRYPT_R)
 /** Pointer to crypt_r(). */
 typedef char *(*PFNCRYPTR)(const char *, const char *, struct crypt_data *);
 
@@ -249,27 +395,45 @@ static char *rtProcDynamicCryptR(const char *pszKey, const char *pszSalt, struct
 #endif /* IPRT_WITH_DYNAMIC_CRYPT_R */
 
 
+/** Free the environment list returned by rtCheckCredentials. */
+static void rtProcPosixFreePamEnv(char **papszEnv)
+{
+    if (papszEnv)
+    {
+        for (size_t i = 0; papszEnv[i] != NULL; i++)
+            free(papszEnv[i]);
+        free(papszEnv);
+    }
+}
+
+
 /**
  * Check the credentials and return the gid/uid of user.
  *
- * @param    pszUser     username
- * @param    pszPasswd   password
- * @param    gid         where to store the GID of the user
- * @param    uid         where to store the UID of the user
+ * @param    pszUser    The username.
+ * @param    pszPasswd  The password to authenticate with.
+ * @param    gid        Where to store the GID of the user.
+ * @param    uid        Where to store the UID of the user.
+ * @param    ppapszEnv  Where to return PAM environment variables, NULL is fine
+ *                      if no variables to return. Call rtProcPosixFreePamEnv to
+ *                      free. Optional, so NULL can be passed in.
  * @returns IPRT status code
  */
-static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t *pGid, uid_t *pUid)
+static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t *pGid, uid_t *pUid, char ***ppapszEnv)
 {
-#ifdef IPRT_USE_PAM
-    RTLogPrintf("rtCheckCredentials\n");
+    Log(("rtCheckCredentials: pszUser=%s\n", pszUser));
+    int rc;
+
+    if (ppapszEnv)
+        *ppapszEnv = NULL;
 
     /*
      * Resolve user to UID and GID.
      */
-    char            szBuf[_4K];
+    char            achBuf[_4K];
     struct passwd   Pw;
     struct passwd  *pPw;
-    if (getpwnam_r(pszUser, &Pw, szBuf, sizeof(szBuf), &pPw) != 0)
+    if (getpwnam_r(pszUser, &Pw, achBuf, sizeof(achBuf), &pPw) != 0)
         return VERR_AUTHENTICATION_FAILURE;
     if (!pPw)
         return VERR_AUTHENTICATION_FAILURE;
@@ -277,120 +441,56 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
     *pUid = pPw->pw_uid;
     *pGid = pPw->pw_gid;
 
+#ifdef IPRT_USE_PAM
     /*
-     * Use PAM for the authentication.
-     * Note! libpam.2.dylib was introduced with 10.6.x (OpenPAM).
+     * Try authenticate using PAM, and falling back on crypto if allowed.
      */
-    void *hModPam = dlopen(IPRT_LIBPAM_FILE, RTLD_LAZY | RTLD_GLOBAL);
-    if (hModPam)
+    const char *pszService = "iprt-as-user";
+    if (!rtProcPosixPamServiceExists("iprt-as-user"))
+# ifdef IPRT_PAM_NATIVE_SERVICE_NAME_AS_USER
+        pszService = IPRT_PAM_NATIVE_SERVICE_NAME_AS_USER;
+# else
+        pszService = "login";
+# endif
+    bool fMayFallBack = false;
+    rc = rtProcPosixAuthenticateUsingPam(pszService, pszUser, pszPasswd, ppapszEnv, &fMayFallBack);
+    if (RT_SUCCESS(rc) || !fMayFallBack)
     {
-        int (*pfnPamStart)(const char *, const char *, struct pam_conv *, pam_handle_t **);
-        int (*pfnPamAuthenticate)(pam_handle_t *, int);
-        int (*pfnPamAcctMgmt)(pam_handle_t *, int);
-        int (*pfnPamSetItem)(pam_handle_t *, int, const void *);
-        int (*pfnPamEnd)(pam_handle_t *, int);
-        *(void **)&pfnPamStart        = dlsym(hModPam, "pam_start");
-        *(void **)&pfnPamAuthenticate = dlsym(hModPam, "pam_authenticate");
-        *(void **)&pfnPamAcctMgmt     = dlsym(hModPam, "pam_acct_mgmt");
-        *(void **)&pfnPamSetItem      = dlsym(hModPam, "pam_set_item");
-        *(void **)&pfnPamEnd          = dlsym(hModPam, "pam_end");
-        ASMCompilerBarrier();
-        if (   pfnPamStart
-            && pfnPamAuthenticate
-            && pfnPamAcctMgmt
-            && pfnPamSetItem
-            && pfnPamEnd)
-        {
-# define pam_start           pfnPamStart
-# define pam_authenticate    pfnPamAuthenticate
-# define pam_acct_mgmt       pfnPamAcctMgmt
-# define pam_set_item        pfnPamSetItem
-# define pam_end             pfnPamEnd
-
-            /* Do the PAM stuff. */
-            pam_handle_t   *hPam        = NULL;
-            RTPROCPAMARGS   PamConvArgs = { pszUser, pszPasswd };
-            struct pam_conv PamConversation;
-            RT_ZERO(PamConversation);
-            PamConversation.appdata_ptr = &PamConvArgs;
-            PamConversation.conv        = rtPamConv;
-            int rc = pam_start(IPRT_PAM_SERVICE_NAME, pszUser, &PamConversation, &hPam);
-            if (rc == PAM_SUCCESS)
-            {
-                rc = pam_set_item(hPam, PAM_RUSER, pszUser);
-                if (rc == PAM_SUCCESS)
-                    rc = pam_authenticate(hPam, 0);
-                if (rc == PAM_SUCCESS)
-                {
-                    rc = pam_acct_mgmt(hPam, 0);
-                    if (   rc == PAM_SUCCESS
-                        || rc == PAM_AUTHINFO_UNAVAIL /*??*/)
-                    {
-                        pam_end(hPam, PAM_SUCCESS);
-                        dlclose(hModPam);
-                        return VINF_SUCCESS;
-                    }
-                    Log(("rtCheckCredentials: pam_acct_mgmt -> %d\n", rc));
-                }
-                else
-                    Log(("rtCheckCredentials: pam_authenticate -> %d\n", rc));
-                pam_end(hPam, rc);
-            }
-            else
-                Log(("rtCheckCredentials: pam_start -> %d\n", rc));
-        }
-        else
-            Log(("rtCheckCredentials: failed to resolve symbols: %p %p %p %p %p\n",
-                 pfnPamStart, pfnPamAuthenticate, pfnPamAcctMgmt, pfnPamSetItem, pfnPamEnd));
-        dlclose(hModPam);
+        RTMemWipeThoroughly(achBuf, sizeof(achBuf), 3);
+        return rc;
     }
-    else
-        Log(("rtCheckCredentials: Loading " IPRT_LIBPAM_FILE " failed\n"));
-    return VERR_AUTHENTICATION_FAILURE;
+#endif
 
-#else
-    /*
-     * Lookup the user in /etc/passwd first.
-     *
-     * Note! On FreeBSD and OS/2 the root user will open /etc/shadow here, so
-     *       the getspnam_r step is not necessary.
-     */
-    struct passwd  Pwd;
-    char           szBuf[_4K];
-    struct passwd *pPwd = NULL;
-    if (getpwnam_r(pszUser, &Pwd, szBuf, sizeof(szBuf), &pPwd) != 0)
-        return VERR_AUTHENTICATION_FAILURE;
-    if (pPwd == NULL)
-        return VERR_AUTHENTICATION_FAILURE;
-
+#if !defined(IPRT_USE_PAM) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_OS2)
 # if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
     /*
      * Ditto for /etc/shadow and replace pw_passwd from above if we can access it:
+     *
+     * Note! On FreeBSD and OS/2 the root user will open /etc/shadow above, so
+     *       this getspnam_r step is not necessary.
      */
     struct spwd  ShwPwd;
-    char         szBuf2[_4K];
+    char         achBuf2[_4K];
 #  if defined(RT_OS_LINUX)
     struct spwd *pShwPwd = NULL;
-    if (getspnam_r(pszUser, &ShwPwd, szBuf2, sizeof(szBuf2), &pShwPwd) != 0)
+    if (getspnam_r(pszUser, &ShwPwd, achBuf2, sizeof(achBuf2), &pShwPwd) != 0)
         pShwPwd = NULL;
 #  else
-    struct spwd *pShwPwd = getspnam_r(pszUser, &ShwPwd, szBuf2, sizeof(szBuf2));
+    struct spwd *pShwPwd = getspnam_r(pszUser, &ShwPwd, achBuf2, sizeof(achBuf2));
 #  endif
     if (pShwPwd != NULL)
-        pPwd->pw_passwd = pShwPwd->sp_pwdp;
+        pPw->pw_passwd = pShwPwd->sp_pwdp;
 # endif
 
     /*
      * Encrypt the passed in password and see if it matches.
      */
-# if !defined(RT_OS_LINUX)
-    int rc;
-# else
-    /* Default fCorrect=true if no password specified. In that case, pPwd->pw_passwd
+# if defined(RT_OS_LINUX)
+    /* Default fCorrect=true if no password specified. In that case, pPw->pw_passwd
        must be NULL (no password set for this user). Fail if a password is specified
        but the user does not have one assigned. */
-    int rc = !pszPasswd || !*pszPasswd ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
-    if (pPwd->pw_passwd && *pPwd->pw_passwd)
+    rc = !pszPasswd || !*pszPasswd ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
+    if (pPw->pw_passwd && *pPw->pw_passwd)
 # endif
     {
 # if defined(RT_OS_LINUX) || defined(RT_OS_OS2)
@@ -403,19 +503,19 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
         if (pCryptData)
         {
 #  ifdef IPRT_WITH_DYNAMIC_CRYPT_R
-            char *pszEncPasswd = rtProcDynamicCryptR(pszPasswd, pPwd->pw_passwd, pCryptData);
+            char *pszEncPasswd = rtProcDynamicCryptR(pszPasswd, pPw->pw_passwd, pCryptData);
 #  else
-            char *pszEncPasswd = crypt_r(pszPasswd, pPwd->pw_passwd, pCryptData);
+            char *pszEncPasswd = crypt_r(pszPasswd, pPw->pw_passwd, pCryptData);
 #  endif
-            rc = pszEncPasswd && !strcmp(pszEncPasswd, pPwd->pw_passwd) ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
+            rc = pszEncPasswd && !strcmp(pszEncPasswd, pPw->pw_passwd) ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
             RTMemWipeThoroughly(pCryptData, cbCryptData, 3);
             RTMemTmpFree(pCryptData);
         }
         else
             rc = VERR_NO_TMP_MEMORY;
 # else
-        char *pszEncPasswd = crypt(pszPasswd, pPwd->pw_passwd);
-        rc = strcmp(pszEncPasswd, pPwd->pw_passwd) == 0 ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
+        char *pszEncPasswd = crypt(pszPasswd, pPw->pw_passwd);
+        rc = strcmp(pszEncPasswd, pPw->pw_passwd) == 0 ? VINF_SUCCESS : VERR_AUTHENTICATION_FAILURE;
 # endif
     }
 
@@ -424,15 +524,15 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
      */
     if (RT_SUCCESS(rc))
     {
-        *pGid = pPwd->pw_gid;
-        *pUid = pPwd->pw_uid;
+        *pGid = pPw->pw_gid;
+        *pUid = pPw->pw_uid;
     }
-    RTMemWipeThoroughly(szBuf, sizeof(szBuf), 3);
 # if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-    RTMemWipeThoroughly(szBuf2, sizeof(szBuf2), 3);
+    RTMemWipeThoroughly(achBuf2, sizeof(achBuf2), 3);
 # endif
-    return rc;
 #endif
+    RTMemWipeThoroughly(achBuf, sizeof(achBuf), 3);
+    return rc;
 }
 
 #ifdef RT_OS_SOLARIS
@@ -1045,8 +1145,12 @@ static int rtProcPosixProfileEnvRunAndHarvest(RTENV hEnvToUse, const char *pszAs
  * @param   uid         The UID corrsponding to @a pszAsUser, ~0 if NULL.
  * @param   gid         The GID corrsponding to @a pszAsUser, ~0 if NULL.
  * @param   fFlags      RTPROC_FLAGS_XXX
+ * @param   papszPamEnv Array of environment variables returned by PAM, if
+ *                      it was used for authentication and produced anything.
+ *                      Otherwise NULL.
  */
-static int rtProcPosixCreateProfileEnv(PRTENV phEnvToUse, const char *pszAsUser, uid_t uid, gid_t gid, uint32_t fFlags)
+static int rtProcPosixCreateProfileEnv(PRTENV phEnvToUse, const char *pszAsUser, uid_t uid, gid_t gid,
+                                       uint32_t fFlags, char **papszPamEnv)
 {
     /*
      * Get the passwd entry for the user.
@@ -1131,6 +1235,29 @@ static int rtProcPosixCreateProfileEnv(PRTENV phEnvToUse, const char *pszAsUser,
                                 rc = VERR_BUFFER_OVERFLOW;
                         }
 #endif
+                        /*
+                         * Add everything from the PAM environment.
+                         */
+                        if (RT_SUCCESS(rc) && papszPamEnv != NULL)
+                            for (size_t i = 0; papszPamEnv[i] != NULL && RT_SUCCESS(rc); i++)
+                            {
+                                char *pszEnvVar;
+                                rc = RTStrCurrentCPToUtf8(&pszEnvVar, papszPamEnv[i]);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    char *pszValue = strchr(pszEnvVar, '=');
+                                    if (pszValue)
+                                        *pszValue++ = '\0';
+                                    rc = RTEnvSetEx(hEnvToUse, pszEnvVar, pszValue ? pszValue : "");
+                                    RTStrFree(pszEnvVar);
+                                }
+                                /* Ignore conversion issue, though LogRel them. */
+                                else if (rc != VERR_NO_STR_MEMORY && rc != VERR_NO_MEMORY)
+                                {
+                                    LogRelMax(256, ("RTStrCurrentCPToUtf8(,%.*Rhxs) -> %Rrc\n", strlen(pszEnvVar), pszEnvVar, rc));
+                                    rc = -rc;
+                                }
+                            }
                         if (RT_SUCCESS(rc))
                         {
                             /*
@@ -1251,16 +1378,51 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                         VERR_NOT_SUPPORTED);
 
     /*
-     * Resolve the user id if specified.
+     * Validate the credentials if a user is specified.
      */
-    uid_t uid = ~(uid_t)0;
-    gid_t gid = ~(gid_t)0;
+    bool const  fNeedLoginEnv = (fFlags & RTPROC_FLAGS_PROFILE)
+                             && ((fFlags & RTPROC_FLAGS_ENV_CHANGE_RECORD) || hEnv == RTENV_DEFAULT);
+    uid_t       uid           = ~(uid_t)0;
+    gid_t       gid           = ~(gid_t)0;
+    char      **papszPamEnv   = NULL;
     if (pszAsUser)
     {
-        rc = rtCheckCredentials(pszAsUser, pszPassword, &gid, &uid);
+        rc = rtCheckCredentials(pszAsUser, pszPassword, &gid, &uid, fNeedLoginEnv ? &papszPamEnv : NULL);
         if (RT_FAILURE(rc))
             return rc;
     }
+#ifdef IPRT_USE_PAM
+    /*
+     * User unchanged, but if PROFILE is request we must try get the PAM
+     * environmnet variables.
+     *
+     * For this to work, we'll need a special PAM service profile which doesn't
+     * actually do any authentication, only concerns itself with the enviornment
+     * setup.  gdm-launch-environment is such one, and we use it if we haven't
+     * got an IPRT specific one there.
+     */
+    else if (fNeedLoginEnv)
+    {
+        const char *pszService;
+        if (rtProcPosixPamServiceExists("iprt-environment"))
+            pszService = "iprt-environment";
+# ifdef IPRT_PAM_NATIVE_SERVICE_NAME_ENVIRONMENT
+        else if (rtProcPosixPamServiceExists(IPRT_PAM_NATIVE_SERVICE_NAME_ENVIRONMENT))
+            pszService = IPRT_PAM_NATIVE_SERVICE_NAME_ENVIRONMENT;
+# endif
+        else if (rtProcPosixPamServiceExists("gdm-launch-environment"))
+            pszService = "gdm-launch-environment";
+        else
+            pszService = NULL;
+        if (pszService)
+        {
+            char szLoginName[512];
+            rc = getlogin_r(szLoginName, sizeof(szLoginName));
+            if (rc == 0)
+                rc = rtProcPosixAuthenticateUsingPam(pszService, szLoginName, "xxx", &papszPamEnv, NULL);
+        }
+    }
+#endif
 
     /*
      * Create the child environment if either RTPROC_FLAGS_PROFILE or
@@ -1272,9 +1434,11 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             || hEnv == RTENV_DEFAULT) )
     {
         if (fFlags & RTPROC_FLAGS_PROFILE)
-            rc = rtProcPosixCreateProfileEnv(&hEnvToUse, pszAsUser, uid, gid, fFlags);
+            rc = rtProcPosixCreateProfileEnv(&hEnvToUse, pszAsUser, uid, gid, fFlags, papszPamEnv);
         else
             rc = RTEnvClone(&hEnvToUse, RTENV_DEFAULT);
+        rtProcPosixFreePamEnv(papszPamEnv);
+        papszPamEnv = NULL;
         if (RT_FAILURE(rc))
             return rc;
 
@@ -1288,6 +1452,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             }
         }
     }
+    Assert(papszPamEnv == NULL);
 
     /*
      * Check for execute access to the file.
