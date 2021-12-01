@@ -1412,7 +1412,7 @@ static int rtProcPosixConvertArgv(const char * const *papszArgs, RTENV hEnvToUse
                 RTStrFree(papszArgsConverted[i]);
             RTMemFree(papszArgsConverted);
             rtStrLocalCacheDelete(&pvConversionCache);
-            return rc == VWRN_NO_TRANSLATION ? VERR_NO_TRANSLATION : rc;
+            return rc == VWRN_NO_TRANSLATION || rc == VERR_NO_TRANSLATION ? VERR_PROC_NO_ARG_TRANSLATION : rc;
         }
     }
 

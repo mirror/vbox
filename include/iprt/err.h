@@ -386,6 +386,9 @@
 #define VINF_THREAD_IS_TERMINATING          (22424)
 /** The thread is terminating. */
 #define VERR_THREAD_IS_TERMINATING          (-22424)
+/** Unable to translate one or more of the arguments to the codeset the child
+ * process is expected to use. */
+#define VERR_PROC_NO_ARG_TRANSLATION        (-22425)
 /** @} */
 
 
