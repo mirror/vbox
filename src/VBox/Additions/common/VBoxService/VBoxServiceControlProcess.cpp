@@ -1424,36 +1424,34 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
 #endif
             VGSvcVerbose(3, "Starting process '%s' ...\n", szExecExp);
 
-            const char *pszUser = pszAsUser;
 #ifdef RT_OS_WINDOWS
             /* If a domain name is given, construct an UPN (User Principle Name) with
              * the domain name built-in, e.g. "joedoe@example.com". */
             char *pszUserUPN = NULL;
-            if (   pszDomain
-                && *pszDomain != '\0')
+            if (pszDomain && *pszDomain != '\0')
             {
-                int cbUserUPN = RTStrAPrintf(&pszUserUPN, "%s@%s", pszAsUser, pszDomain);
-                if (cbUserUPN > 0)
-                {
-                    pszUser = pszUserUPN;
-                    VGSvcVerbose(3, "Using UPN: %s\n", pszUserUPN);
-                }
+                pszUserUPN = pszAsUser = RTStrAPrintf2("%s@%s", pszAsUser, pszDomain);
+                if (pszAsUser)
+                    VGSvcVerbose(3, "Using UPN: %s\n", pszAsUser);
+                else
+                    rc = VERR_NO_STR_MEMORY;
             }
+            if (RT_SUCCESS(rc))
 #endif
+            {
+                /* Do normal execution. */
+                rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, fProcCreateFlags,
+                                    phStdIn, phStdOut, phStdErr,
+                                    pszAsUser,
+                                    pszPassword && *pszPassword ? pszPassword : NULL,
+                                    NULL /*pvExtraData*/,
+                                    phProcess);
 
-            /* Do normal execution. */
-            rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, fProcCreateFlags,
-                                phStdIn, phStdOut, phStdErr,
-                                pszUser,
-                                pszPassword && *pszPassword ? pszPassword : NULL,
-                                NULL /*pvExtraData*/,
-                                phProcess);
 #ifdef RT_OS_WINDOWS
-            if (pszUserUPN)
                 RTStrFree(pszUserUPN);
 #endif
-            VGSvcVerbose(3, "Starting process '%s' returned rc=%Rrc\n", szExecExp, rc);
-
+                VGSvcVerbose(3, "Starting process '%s' returned rc=%Rrc\n", szExecExp, rc);
+            }
             vgsvcGstCtrlProcessFreeArgv(papszArgsExp);
         }
     }
