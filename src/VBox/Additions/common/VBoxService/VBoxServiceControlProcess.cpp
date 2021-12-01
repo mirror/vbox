@@ -997,46 +997,30 @@ static int vgsvcGstCtrlProcessMakeFullPath(const char *pszPath, char *pszExpande
 
 
 /**
- * Resolves the full path of a specified executable name. This function also
- * resolves internal VBoxService tools to its appropriate executable path + name if
- * VBOXSERVICE_NAME is specified as pszFileName.
+ * Resolves the full path of a specified executable name.
+ *
+ * This function also resolves internal VBoxService tools to its appropriate
+ * executable path + name if VBOXSERVICE_NAME is specified as pszFilename.
  *
  * @return  IPRT status code.
- * @param   pszFileName                 File name to resolve.
+ * @param   pszFilename                 File name to resolve.
  * @param   pszResolved                 Pointer to a string where the resolved file name will be stored.
  * @param   cbResolved                  Size (in bytes) of resolved file name string.
  */
-static int vgsvcGstCtrlProcessResolveExecutable(const char *pszFileName, char *pszResolved, size_t cbResolved)
+static int vgsvcGstCtrlProcessResolveExecutable(const char *pszFilename, char *pszResolved, size_t cbResolved)
 {
-    AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertPtrReturn(pszResolved, VERR_INVALID_POINTER);
     AssertReturn(cbResolved, VERR_INVALID_PARAMETER);
 
-    int rc = VINF_SUCCESS;
+    const char * const pszOrgFilename = pszFilename;
+    if (   RTStrICmp(pszFilename, g_pszProgName) == 0
+        || RTStrICmp(pszFilename, VBOXSERVICE_NAME) == 0)
+        pszFilename = RTProcExecutablePath();
 
-    char szPathToResolve[RTPATH_MAX];
-    if (    (g_pszProgName && (RTStrICmp(pszFileName, g_pszProgName) == 0))
-        || !RTStrICmp(pszFileName, VBOXSERVICE_NAME))
-    {
-        /* Resolve executable name of this process. */
-        if (!RTProcGetExecutablePath(szPathToResolve, sizeof(szPathToResolve)))
-            rc = VERR_FILE_NOT_FOUND;
-    }
-    else
-    {
-        /* Take the raw argument to resolve. */
-        rc = RTStrCopy(szPathToResolve, sizeof(szPathToResolve), pszFileName);
-    }
-
+    int rc = vgsvcGstCtrlProcessMakeFullPath(pszFilename, pszResolved, cbResolved);
     if (RT_SUCCESS(rc))
-    {
-        rc = vgsvcGstCtrlProcessMakeFullPath(szPathToResolve, pszResolved, cbResolved);
-        if (RT_SUCCESS(rc))
-            VGSvcVerbose(3, "Looked up executable: %s -> %s\n", pszFileName, pszResolved);
-    }
-
-    if (RT_FAILURE(rc))
-        VGSvcError("Failed to lookup executable '%s' with rc=%Rrc\n", pszFileName, rc);
+        VGSvcVerbose(3, "Looked up executable: %s -> %s\n", pszOrgFilename, pszResolved);
     return rc;
 }
 
@@ -1340,7 +1324,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_VBOXSERVICE_TOOLBOX
-    if (RTStrStr(pszExec, "vbox_") == pszExec)
+    if (RTStrStr(pszExec, "vbox_") == pszExec) /** @todo WTF search the whole string for "vbox_" when all you want is to know if whether string starts with "vbox_" or not. geee^2 */
     {
         /* We want to use the internal toolbox (all internal
          * tools are starting with "vbox_" (e.g. "vbox_cat"). */
