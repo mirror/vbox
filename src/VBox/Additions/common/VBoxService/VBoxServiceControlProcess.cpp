@@ -1347,10 +1347,10 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
 
     bool fExecutingSelf = false;
 #ifdef VBOX_WITH_VBOXSERVICE_TOOLBOX
-    if (RTStrStr(pszExec, "vbox_") == pszExec) /** @todo WTF search the whole string for "vbox_" when all you want is to know if whether string starts with "vbox_" or not. geee^2 */
+    /* The "vbox_" prefix is reserved for the toolbox (vbox_cat, vbox_mkdir,
+       et al.) and we will replace pszExec with the full VBoxService path instead.  */
+    if (RTStrStartsWith(pszExec, "vbox_"))
     {
-        /* We want to use the internal toolbox (all internal
-         * tools are starting with "vbox_" (e.g. "vbox_cat"). */
         fExecutingSelf = true;
         rc = vgsvcGstCtrlProcessResolveExecutable(VBOXSERVICE_NAME, szExecExp, sizeof(szExecExp));
     }
