@@ -51,7 +51,7 @@
 #endif
 /** RTProcCreateEx flags corresponding to VBOXSERVICE_ARG1_UTF8_ARGV. */
 #ifdef VBOXSERVICE_ARG1_UTF8_ARGV
-# define VBOXSERVICE_PROC_F_UTF8_ARGV       0 /** @todo TBD */
+# define VBOXSERVICE_PROC_F_UTF8_ARGV       RTPROC_FLAGS_UTF8_ARGV
 #else
 # define VBOXSERVICE_PROC_F_UTF8_ARGV       0
 #endif
