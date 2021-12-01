@@ -1047,24 +1047,58 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
     return rc;
 }
 
+/**
+ * Get IPC session socket peer credentials.
+ *
+ * @return IPRT status code.
+ * @param hSession      IPC session handle.
+ * @param pProcess      Output buffer to store remote peer PID (can be NULL).
+ * @param pUid          Output buffer to store remote peer UID (can be NULL).
+ * @param pGid          Output buffer to store remote peer GID (can be NULL).
+ */
+static int rtLocalIpcSessionQueryUcred(RTLOCALIPCSESSION hSession, PRTPROCESS pProcess, PRTUID pUid, PRTGID pGid)
+{
+#if defined(RT_OS_LINUX)
+    PRTLOCALIPCSESSIONINT pThis = hSession;
+
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_HANDLE);
+
+    struct ucred PeerCred;
+    socklen_t cbPeerCred = sizeof(PeerCred);
+    int iSock = RTSocketToNative(pThis->hSocket);
+
+    RT_ZERO(PeerCred);
+
+    if (getsockopt(iSock, SOL_SOCKET, SO_PEERCRED, &PeerCred, &cbPeerCred) == -1)
+        return RTErrConvertFromErrno(errno);
+
+    if (pProcess)
+        *pProcess = PeerCred.pid;
+    if (pUid)
+        *pUid = PeerCred.uid;
+    if (pGid)
+        *pGid = PeerCred.gid;
+
+    return VINF_SUCCESS;
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
+}
 
 RTDECL(int) RTLocalIpcSessionQueryProcess(RTLOCALIPCSESSION hSession, PRTPROCESS pProcess)
 {
-    RT_NOREF_PV(hSession); RT_NOREF_PV(pProcess);
-    return VERR_NOT_SUPPORTED;
+    return rtLocalIpcSessionQueryUcred(hSession, pProcess, NULL, NULL);
 }
 
 
 RTDECL(int) RTLocalIpcSessionQueryUserId(RTLOCALIPCSESSION hSession, PRTUID pUid)
 {
-    RT_NOREF_PV(hSession); RT_NOREF_PV(pUid);
-    return VERR_NOT_SUPPORTED;
+    return rtLocalIpcSessionQueryUcred(hSession, NULL, pUid, NULL);
 }
-
 
 RTDECL(int) RTLocalIpcSessionQueryGroupId(RTLOCALIPCSESSION hSession, PRTGID pGid)
 {
-    RT_NOREF_PV(hSession); RT_NOREF_PV(pGid);
-    return VERR_NOT_SUPPORTED;
+    return rtLocalIpcSessionQueryUcred(hSession, NULL, NULL, pGid);
 }
 
