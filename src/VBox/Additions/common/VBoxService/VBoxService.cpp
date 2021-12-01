@@ -895,10 +895,24 @@ int main(int argc, char **argv)
 
     /*
      * Init globals and such.
+     *
+     * Note! The --utf8-argv stuff is an internal hack to avoid locale configuration
+     *       issues preventing us from passing non-ASCII string to child processes.
      */
-    int rc = RTR3InitExe(argc, &argv, 0);
+    uint32_t fIprtFlags = 0;
+#ifdef VBOXSERVICE_ARG1_UTF8_ARGV
+    if (argc > 1 && strcmp(argv[1], VBOXSERVICE_ARG1_UTF8_ARGV) == 0)
+    {
+        argv[1] = argv[0];
+        argv++;
+        argc--;
+        fIprtFlags |= RTR3INIT_FLAGS_UTF8_ARGV;
+    }
+#endif
+    int rc = RTR3InitExe(argc, &argv, fIprtFlags);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
+
     g_pszProgName = RTPathFilename(argv[0]);
 #ifdef RT_OS_WINDOWS
     VGSvcWinResolveApis();

@@ -1035,18 +1035,25 @@ static int vgsvcGstCtrlProcessResolveExecutable(const char *pszFilename, char *p
  * @param  pszArgv0         First argument (argv0), either original or modified version.
  * @param  papszArgs        Original argv command line from the host, starting at argv[1].
  * @param  fFlags           The process creation flags pass to us from the host.
+ * @param  fExecutingSelf   Set if we're executing the VBoxService executable
+ *                          and should inject the --utf8-argv trick.
  * @param  ppapszArgv       Pointer to a pointer with the new argv command line.
  *                          Needs to be freed with RTGetOptArgvFree.
  */
 static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * const *papszArgs, uint32_t fFlags,
-                                           char ***ppapszArgv)
+                                           bool fExecutingSelf, char ***ppapszArgv)
 {
-    VGSvcVerbose(3, "VGSvcGstCtrlProcessPrepareArgv: pszArgv0=%p, papszArgs=%p, fFlags=%#x, ppapszArgv=%p\n",
-                 pszArgv0, papszArgs, fFlags, ppapszArgv);
+    VGSvcVerbose(3, "VGSvcGstCtrlProcessPrepareArgv: pszArgv0=%p, papszArgs=%p, fFlags=%#x, fExecutingSelf=%d, ppapszArgv=%p\n",
+                 pszArgv0, papszArgs, fFlags, fExecutingSelf, ppapszArgv);
 
     AssertPtrReturn(pszArgv0,   VERR_INVALID_POINTER);
     AssertPtrReturn(ppapszArgv, VERR_INVALID_POINTER);
 
+#ifndef VBOXSERVICE_ARG1_UTF8_ARGV
+    fExecutingSelf = false;
+#endif
+
+    /* Count arguments: */
     int rc = VINF_SUCCESS;
     uint32_t cArgs;
     for (cArgs = 0; papszArgs[cArgs]; cArgs++)
@@ -1056,7 +1063,7 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
     }
 
     /* Allocate new argv vector (adding + 2 for argv0 + termination). */
-    size_t cbSize = (cArgs + 2) * sizeof(char *);
+    size_t cbSize = (fExecutingSelf + cArgs + 2) * sizeof(char *);
     char **papszNewArgv = (char **)RTMemAlloc(cbSize);
     if (!papszNewArgv)
         return VERR_NO_MEMORY;
@@ -1074,6 +1081,10 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
                    argument separately from the executable image, so we have to fudge
                    a little in the unquoted argument case to deal with executables
                    containing spaces. */
+    /** @todo r=bird: WTF!?? This makes absolutely no sense on non-windows.  An
+     * on windows the first flag test must be inverted, as it's when RTProcCreateEx
+     * doesn't do any quoting that we have to do it here, isn't it?
+     * Aaaaaaaaaaaaaaaaaaarrrrrrrrrrrrrrrrrrrrrrrrrrgggggggggggggggggggggggg! */
     if (   !(fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
         || !strpbrk(pszArgv0, " \t\n\r")
         || pszArgv0[0] == '"')
@@ -1098,50 +1109,61 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
 
     if (RT_SUCCESS(rc))
     {
-        size_t i;
-        for (i = 0; i < cArgs; i++)
+        size_t iDst = 1;
+
+#ifdef VBOXSERVICE_ARG1_UTF8_ARGV
+        /* Insert --utf8-argv as the first argument if executing the VBoxService binary. */
+        if (fExecutingSelf)
         {
-            char *pszArg;
-#if 0 /* Arguments expansion -- untested. */
-            if (fFlags & EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS)
+            rc = RTStrDupEx(&papszNewArgv[iDst], VBOXSERVICE_ARG1_UTF8_ARGV);
+            if (RT_SUCCESS(rc))
+                iDst++;
+        }
+#endif
+        /* Copy over the other arguments. */
+        if (RT_SUCCESS(rc))
+            for (size_t iSrc = 0; iSrc < cArgs; iSrc++)
             {
+#if 0 /* Arguments expansion -- untested. */
+                if (fFlags & EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS)
+                {
 /** @todo r=bird: If you want this, we need a generic implementation, preferably in RTEnv or somewhere like that.  The marking
  * up of the variables must be the same on all platforms.  */
-                /* According to MSDN the limit on older Windows version is 32K, whereas
-                 * Vista+ there are no limits anymore. We still stick to 4K. */
-                char szExpanded[_4K];
+                    /* According to MSDN the limit on older Windows version is 32K, whereas
+                     * Vista+ there are no limits anymore. We still stick to 4K. */
+                    char szExpanded[_4K];
 # ifdef RT_OS_WINDOWS
-                if (!ExpandEnvironmentStrings(papszArgs[i], szExpanded, sizeof(szExpanded)))
-                    rc = RTErrConvertFromWin32(GetLastError());
+                    if (!ExpandEnvironmentStrings(papszArgs[i], szExpanded, sizeof(szExpanded)))
+                        rc = RTErrConvertFromWin32(GetLastError());
 # else
-                /* No expansion for non-Windows yet. */
-                rc = RTStrCopy(papszArgs[i], sizeof(szExpanded), szExpanded);
+                    /* No expansion for non-Windows yet. */
+                    rc = RTStrCopy(papszArgs[i], sizeof(szExpanded), szExpanded);
 # endif
-                if (RT_SUCCESS(rc))
-                    rc = RTStrDupEx(&pszArg, szExpanded);
-            }
-            else
+                    if (RT_SUCCESS(rc))
+                        rc = RTStrDupEx(&pszArg, szExpanded);
+                }
+                else
 #endif
-                rc = RTStrDupEx(&pszArg, papszArgs[i]);
-
-            if (RT_FAILURE(rc))
-                break;
-
-            papszNewArgv[i + 1] = pszArg;
-        }
+                rc = RTStrDupEx(&papszNewArgv[iDst], papszArgs[iSrc]);
+                if (RT_SUCCESS(rc))
+                    iDst++;
+                else
+                    break;
+            }
 
         if (RT_SUCCESS(rc))
         {
             /* Terminate array. */
-            papszNewArgv[cArgs + 1] = NULL;
+            papszNewArgv[iDst] = NULL;
+            Assert(iDst < cArgs);
 
             *ppapszArgv = papszNewArgv;
             return VINF_SUCCESS;
         }
 
         /* Failed, bail out. */
-        for (; i > 0; i--)
-            RTStrFree(papszNewArgv[i]);
+        while (iDst-- > 0)
+            RTStrFree(papszNewArgv[iDst]);
     }
     RTMemFree(papszNewArgv);
     return rc;
@@ -1305,7 +1327,8 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
         if (RT_SUCCESS(rc))
         {
             char **papszArgsExp;
-            rc = vgsvcGstCtrlProcessAllocateArgv(szSysprepCmd /* argv0 */, papszArgs, fFlags, &papszArgsExp);
+            rc = vgsvcGstCtrlProcessAllocateArgv(szSysprepCmd /* argv0 */, papszArgs, fFlags,
+                                                 false /*fExecutingSelf*/, &papszArgsExp);
             if (RT_SUCCESS(rc))
             {
                 /* As we don't specify credentials for the sysprep process, it will
@@ -1325,11 +1348,13 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
     }
 #endif /* RT_OS_WINDOWS */
 
+    bool fExecutingSelf = false;
 #ifdef VBOX_WITH_VBOXSERVICE_TOOLBOX
     if (RTStrStr(pszExec, "vbox_") == pszExec) /** @todo WTF search the whole string for "vbox_" when all you want is to know if whether string starts with "vbox_" or not. geee^2 */
     {
         /* We want to use the internal toolbox (all internal
          * tools are starting with "vbox_" (e.g. "vbox_cat"). */
+        fExecutingSelf = true;
         rc = vgsvcGstCtrlProcessResolveExecutable(VBOXSERVICE_NAME, szExecExp, sizeof(szExecExp));
     }
     else
@@ -1366,7 +1391,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
                      fHasArgv0, pcszArgv0, uArgvIdx, g_fControlHostFeatures0);
 
         char **papszArgsExp;
-        rc = vgsvcGstCtrlProcessAllocateArgv(pcszArgv0, &papszArgs[uArgvIdx], fFlags, &papszArgsExp);
+        rc = vgsvcGstCtrlProcessAllocateArgv(pcszArgv0, &papszArgs[uArgvIdx], fFlags, fExecutingSelf, &papszArgsExp);
         if (RT_FAILURE(rc))
         {
             /* Don't print any arguments -- may contain passwords or other sensible data! */
@@ -1374,15 +1399,17 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
         }
         else
         {
-            uint32_t uProcFlags = 0;
+            uint32_t fProcCreateFlags = 0;
+            if (fExecutingSelf)
+                fProcCreateFlags |= VBOXSERVICE_PROC_F_UTF8_ARGV;
             if (fFlags)
             {
                 if (fFlags & EXECUTEPROCESSFLAG_HIDDEN)
-                    uProcFlags |= RTPROC_FLAGS_HIDDEN;
+                    fProcCreateFlags |= RTPROC_FLAGS_HIDDEN;
                 if (fFlags & EXECUTEPROCESSFLAG_PROFILE)
-                    uProcFlags |= RTPROC_FLAGS_PROFILE;
+                    fProcCreateFlags |= RTPROC_FLAGS_PROFILE;
                 if (fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
-                    uProcFlags |= RTPROC_FLAGS_UNQUOTED_ARGS;
+                    fProcCreateFlags |= RTPROC_FLAGS_UNQUOTED_ARGS;
             }
 
             /* If no user name specified run with current credentials (e.g.
@@ -1392,11 +1419,11 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
              * code (at least on Windows) for running processes as different users
              * started from our system service. */
             if (pszAsUser && *pszAsUser)
-                uProcFlags |= RTPROC_FLAGS_SERVICE;
+                fProcCreateFlags |= RTPROC_FLAGS_SERVICE;
 #ifdef DEBUG
             VGSvcVerbose(3, "Command: %s\n", szExecExp);
             for (size_t i = 0; papszArgsExp[i]; i++)
-                VGSvcVerbose(3, "\targv[%ld]: %s\n", i, papszArgsExp[i]);
+                VGSvcVerbose(3, "  argv[%zu]: %s\n", i, papszArgsExp[i]);
 #endif
             VGSvcVerbose(3, "Starting process '%s' ...\n", szExecExp);
 
@@ -1406,7 +1433,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
              * the domain name built-in, e.g. "joedoe@example.com". */
             char *pszUserUPN = NULL;
             if (   pszDomain
-                && strlen(pszDomain))
+                && *pszDomain != '\0')
             {
                 int cbUserUPN = RTStrAPrintf(&pszUserUPN, "%s@%s", pszAsUser, pszDomain);
                 if (cbUserUPN > 0)
@@ -1418,7 +1445,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
 #endif
 
             /* Do normal execution. */
-            rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, uProcFlags,
+            rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, fProcCreateFlags,
                                 phStdIn, phStdOut, phStdErr,
                                 pszUser,
                                 pszPassword && *pszPassword ? pszPassword : NULL,
