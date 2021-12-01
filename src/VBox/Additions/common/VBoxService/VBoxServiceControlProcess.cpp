@@ -1344,7 +1344,7 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
 #endif
     if (RT_SUCCESS(rc))
     {
-        /**
+        /*
          * This one is a bit tricky to also support older hosts:
          *
          * - If the host does not provide a dedicated argv[0] (< VBox 6.1.x), we use the
