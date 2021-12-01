@@ -962,9 +962,11 @@ static int vgsvcGstCtrlProcessSetupPipe(const char *pszHowTo, int fd, PRTHANDLE 
 
 
 /**
- * Expands a file name / path to its real content. This only works on Windows
- * for now (e.g. translating "%TEMP%\foo.exe" to "C:\Windows\Temp" when starting
- * with system / administrative rights).
+ * Expands a file name / path to its real content.
+ *
+ * ~~This only works on Windows for now (e.g. translating "%TEMP%\foo.exe" to
+ * "C:\Windows\Temp" when starting with system / administrative rights).~~ See
+ * todo in code.
  *
  * @return  IPRT status code.
  * @param   pszPath                     Path to resolve.
