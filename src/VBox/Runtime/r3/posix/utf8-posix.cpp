@@ -33,6 +33,7 @@
 
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
 
@@ -107,6 +108,66 @@ DECLHIDDEN(const char *) rtStrGetLocaleCodeset(void)
 {
     return nl_langinfo(CODESET);
 }
+
+
+/**
+ * Checks if the codeset specified by current locale (LC_CTYPE) is UTF-8.
+ *
+ * @returns true if UTF-8, false if not.
+ */
+DECLHIDDEN(bool) rtStrIsLocaleCodesetUtf8(void)
+{
+    return rtStrIsCodesetUtf8(rtStrGetLocaleCodeset());
+}
+
+
+/**
+ * Checks if @a pszCodeset specified UTF-8.
+ *
+ * @returns true if UTF-8, false if not.
+ * @param   pszCodeset      Codeset to test.
+ */
+DECLHIDDEN(bool) rtStrIsCodesetUtf8(const char *pszCodeset)
+{
+    if (pszCodeset)
+    {
+        /* Skip leading spaces just in case: */
+        while (RT_C_IS_SPACE(*pszCodeset))
+            pszCodeset++;
+
+        /* If prefixed by 'ISO-10646/' skip that (iconv access this, dunno about
+           LC_CTYPE et al., but play it safe): */
+        if (   strncmp(pszCodeset, RT_STR_TUPLE("ISO-10646/")) == 0
+            || strncmp(pszCodeset, RT_STR_TUPLE("iso-10646/")) == 0)
+            pszCodeset += sizeof("ISO-10646/") - 1;
+
+        /* Match 'utf': */
+        if (   (pszCodeset[0] == 'u' || pszCodeset[0] == 'U')
+            && (pszCodeset[1] == 't' || pszCodeset[1] == 'T')
+            && (pszCodeset[2] == 'f' || pszCodeset[2] == 'F'))
+        {
+            pszCodeset += 3;
+
+            /* Treat the dash as optional: */
+            if (*pszCodeset == '-')
+                pszCodeset++;
+
+            /* Match '8': */
+            if (*pszCodeset == '8')
+            {
+                do
+                    pszCodeset++;
+                while (RT_C_IS_SPACE(*pszCodeset));
+
+                /* We ignore modifiers here (e.g. "[be_BY.]utf8@latin"). */
+                if (!*pszCodeset || *pszCodeset == '@')
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
 
 
 #ifdef RT_WITH_ICONV_CACHE
@@ -471,6 +532,66 @@ DECLHIDDEN(int) rtStrConvert(const char *pchInput, size_t cchInput, const char *
     return rtStrConvertWrapper(pchInput, cchInput, pszInputCS,
                                ppszOutput, cbOutput, pszOutputCS,
                                cFactor, enmCacheIdx);
+}
+
+
+/**
+ * Initializes a local conversion cache for use with rtStrLocalCacheConvert.
+ *
+ * Call rtStrLocalCacheDelete when done.
+ */
+DECLHIDDEN(void) rtStrLocalCacheInit(void **ppvTmpCache)
+{
+    *ppvTmpCache = (iconv_t)-1;
+}
+
+
+/**
+ * Cleans up a local conversion cache.
+ */
+DECLHIDDEN(void) rtStrLocalCacheDelete(void **ppvTmpCache)
+{
+#ifdef RT_WITH_ICONV_CACHE
+    iconv_t icHandle = (iconv_t)*ppvTmpCache;
+    if (icHandle != (iconv_t)-1)
+        iconv_close(icHandle);
+#endif
+    *ppvTmpCache = (iconv_t)-1;
+}
+
+
+/**
+ * Internal API for use by the process creation conversion code.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pszInput        Pointer to intput string.
+ * @param   cchInput        Size (in bytes) of input string. Excludes any
+ *                          terminators.
+ * @param   pszInputCS      Codeset of the input string.
+ * @param   ppszOutput      Pointer to pointer to output buffer if cbOutput > 0.
+ *                          If cbOutput is 0 this is where the pointer to the
+ *                          allocated buffer is stored.
+ * @param   cbOutput        Size of the passed in buffer.
+ * @param   pszOutputCS     Codeset of the input string.
+ * @param   ppvTmpCache     Pointer to local temporary cache.  Must be
+ *                          initialized by calling rtStrLocalCacheInit and
+ *                          cleaned up afterwards by rtStrLocalCacheDelete.
+ *                          Optional.
+ */
+DECLHIDDEN(int) rtStrLocalCacheConvert(const char *pchInput, size_t cchInput, const char *pszInputCS,
+                                       char **ppszOutput, size_t cbOutput, const char *pszOutputCS,
+                                       void **ppvTmpCache)
+{
+#ifdef RT_WITH_ICONV_CACHE
+    if (ppvTmpCache)
+        return rtstrConvertCached(pchInput, cchInput, pszInputCS, (void **)ppszOutput, cbOutput, pszOutputCS,
+                                  1 /*cFactor*/, (iconv_t *)ppvTmpCache);
+#else
+    RT_NOREF(ppvTmpCache);
+#endif
+
+    return rtStrConvertUncached(pchInput, cchInput, pszInputCS, (void **)ppszOutput, cbOutput, pszOutputCS, 1 /*cFactor*/);
 }
 
 

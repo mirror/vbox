@@ -234,8 +234,11 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 /** This is a modifier to RTPROC_FLAGS_PROFILE on unix systems that makes it
  * skip trying to dump the environment of a login shell. */
 #define RTPROC_FLAGS_ONLY_BASIC_PROFILE     RT_BIT(12)
+/** Don't translate arguments to the (guessed) child process codeset.
+ * This is ignored on Windows as it is using UTF-16. */
+#define RTPROC_FLAGS_UTF8_ARGV              RT_BIT_32(13)
 /** Valid flag mask. */
-#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x1fff)
+#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x3fff)
 /** @}  */
 
 

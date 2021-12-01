@@ -96,7 +96,14 @@ typedef enum RTSTRICONV
 DECLHIDDEN(int) rtStrConvert(const char *pchInput, size_t cchInput, const char *pszInputCS,
                              char **ppszOutput, size_t cbOutput, const char *pszOutputCS,
                              unsigned cFactor, RTSTRICONV enmCacheIdx);
+DECLHIDDEN(void) rtStrLocalCacheInit(void **ppvTmpCache);
+DECLHIDDEN(int)  rtStrLocalCacheConvert(const char *pchInput, size_t cchInput, const char *pszInputCS,
+                                        char **ppszOutput, size_t cbOutput, const char *pszOutputCS,
+                                        void **ppvTmpCache);
+DECLHIDDEN(void) rtStrLocalCacheDelete(void **ppvTmpCache);
 DECLHIDDEN(const char *) rtStrGetLocaleCodeset(void);
+DECLHIDDEN(bool)         rtStrIsLocaleCodesetUtf8(void);
+DECLHIDDEN(bool)         rtStrIsCodesetUtf8(const char *pszCodeset);
 DECLHIDDEN(int) rtUtf8Length(const char *psz, size_t cch, size_t *pcuc, size_t *pcchActual);
 
 DECLHIDDEN(int) rtStrToIpAddr6Str(const char *psz, char *pszAddrOut, size_t addrOutSize, char *pszPortOut, size_t portOutSize, bool followRfc);

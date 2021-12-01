@@ -36,6 +36,9 @@
 #if (defined(RT_OS_LINUX) || defined(RT_OS_OS2)) && !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
+#if defined(RT_OS_LINUX) && !defined(_XOPEN_SOURCE)
+# define _XOPEN_SOURCE 700 /* for newlocale */
+#endif
 
 #ifdef RT_OS_OS2
 # define crypt   unistd_crypt
@@ -50,6 +53,8 @@
 #endif
 #include <stdlib.h>
 #include <errno.h>
+#include <langinfo.h>
+#include <locale.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -118,6 +123,7 @@
 #include <iprt/process.h>
 #include "internal/iprt.h"
 
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/env.h>
@@ -133,6 +139,8 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include "internal/process.h"
+#include "internal/path.h"
+#include "internal/string.h"
 
 
 /*********************************************************************************************************************************
@@ -1287,21 +1295,178 @@ static int rtProcPosixCreateProfileEnv(PRTENV phEnvToUse, const char *pszAsUser,
 
 
 /**
+ * Converts the arguments to the child's LC_CTYPE charset if necessary.
+ *
+ * @returns IPRT status code.
+ * @param   papszArgs   The arguments (UTF-8).
+ * @param   hEnvToUse   The child process environment.
+ * @param   ppapszArgs  Where to return the converted arguments.  The array
+ *                      entries must be freed by RTStrFree and the array itself
+ *                      by RTMemFree.
+ */
+static int rtProcPosixConvertArgv(const char * const *papszArgs, RTENV hEnvToUse, char ***ppapszArgs)
+{
+    *ppapszArgs = (char **)papszArgs;
+
+    /*
+     * The first thing we need to do here is to try guess the codeset of the
+     * child process and check if it's UTF-8 or not.
+     */
+    const char *pszEncoding;
+    char        szEncoding[512];
+    if (hEnvToUse == RTENV_DEFAULT)
+    {
+        /* Same environment as us, assume setlocale is up to date: */
+        pszEncoding = rtStrGetLocaleCodeset();
+    }
+    else
+    {
+        /* LC_ALL overrides everything else.*/
+        /** @todo I don't recall now if this can do LC_XXX= inside it's value, like
+         *        what setlocale returns on some systems.  It's been 15-16 years
+         *        since I last worked on an setlocale implementation... */
+        const char *pszVar;
+        int rc = RTEnvGetEx(hEnvToUse, pszVar = "LC_ALL", szEncoding, sizeof(szEncoding), NULL);
+        if (rc == VERR_ENV_VAR_NOT_FOUND)
+            rc = RTEnvGetEx(hEnvToUse, pszVar = "LC_CTYPE", szEncoding, sizeof(szEncoding), NULL);
+        if (rc == VERR_ENV_VAR_NOT_FOUND)
+            rc = RTEnvGetEx(hEnvToUse, pszVar = "LANG", szEncoding, sizeof(szEncoding), NULL);
+        if (RT_SUCCESS(rc))
+        {
+            const char *pszDot = strchr(szEncoding, '.');
+            if (pszDot)
+                pszDot = RTStrStripL(pszDot + 1);
+            if (pszDot && *pszDot)
+            {
+                pszEncoding = pszDot;
+                Log2Func(("%s=%s -> %s (simple)\n", pszVar, szEncoding, pszEncoding));
+            }
+            else
+            {
+                 /* No charset is given, so the default of the locale should be
+                    used.  To get at that we have to use newlocale and nl_langinfo_l,
+                    which is there since ancient days on linux but no necessarily else
+                    where. */
+#ifdef LC_CTYPE_MASK
+                locale_t hLocale = newlocale(LC_CTYPE_MASK, szEncoding, (locale_t)0);
+                if (hLocale != (locale_t)0)
+                {
+                    const char *pszCodeset = nl_langinfo_l(CODESET, hLocale);
+                    Log2Func(("nl_langinfo_l(CODESET, %s=%s) -> %s\n", pszVar, szEncoding, pszCodeset));
+                    Assert(pszCodeset && *pszCodeset != '\0');
+
+                    rc = RTStrCopy(szEncoding, sizeof(szEncoding), pszCodeset);
+                    AssertRC(rc); /* cannot possibly overflow */
+
+                    freelocale(hLocale);
+                    pszEncoding = szEncoding;
+                }
+                else
+#endif
+                {
+                    /* This is mostly wrong, but I cannot think of anything better now: */
+                    pszEncoding = rtStrGetLocaleCodeset();
+                    LogFunc(("No newlocale or it failed (on '%s=%s', errno=%d), falling back on %s that we're using...\n",
+                             pszVar, szEncoding, errno, pszEncoding));
+                }
+            }
+            RT_NOREF_PV(pszVar);
+        }
+        else
+            pszEncoding = "C";
+    }
+
+    /*
+     * Do nothing if it's UTF-8.
+     */
+    if (rtStrIsCodesetUtf8(pszEncoding))
+    {
+        LogFlowFunc(("No conversion needed (%s)\n", pszEncoding));
+        return VINF_SUCCESS;
+    }
+
+
+    /*
+     * Do the conversion.
+     */
+    size_t cArgs = 0;
+    while (papszArgs[cArgs] != NULL)
+        cArgs++;
+    LogFunc(("Converting #%u arguments to %s...\n", cArgs, pszEncoding));
+
+    char **papszArgsConverted = (char **)RTMemAllocZ(sizeof(papszArgsConverted[0]) * (cArgs + 2));
+    AssertReturn(papszArgsConverted, VERR_NO_MEMORY);
+
+    void *pvConversionCache = NULL;
+    rtStrLocalCacheInit(&pvConversionCache);
+    for (size_t i = 0; i < cArgs; i++)
+    {
+        int rc = rtStrLocalCacheConvert(papszArgs[i], strlen(papszArgs[i]), "UTF-8",
+                                        &papszArgsConverted[i], 0, pszEncoding, &pvConversionCache);
+        if (RT_SUCCESS(rc) && rc != VWRN_NO_TRANSLATION)
+        { /* likely */ }
+        else
+        {
+            Log(("Failed to convert argument #%u '%s' to '%s': %Rrc\n", i, papszArgs[i], pszEncoding, rc));
+            while (i-- > 0)
+                RTStrFree(papszArgsConverted[i]);
+            RTMemFree(papszArgsConverted);
+            rtStrLocalCacheDelete(&pvConversionCache);
+            return rc == VWRN_NO_TRANSLATION ? VERR_NO_TRANSLATION : rc;
+        }
+    }
+
+    rtStrLocalCacheDelete(&pvConversionCache);
+    *ppapszArgs = papszArgsConverted;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * The result structure for rtPathFindExec/RTPathTraverseList.
+ * @todo move to common path code?
+ */
+typedef struct RTPATHINTSEARCH
+{
+    /** For EACCES or EPERM errors that we continued on.
+     * @note Must be initialized to VINF_SUCCESS. */
+    int  rcSticky;
+    /** Buffer containing the filename. */
+    char szFound[RTPATH_MAX];
+} RTPATHINTSEARCH;
+/** Pointer to a rtPathFindExec/RTPathTraverseList result. */
+typedef RTPATHINTSEARCH *PRTPATHINTSEARCH;
+
+
+/**
  * RTPathTraverseList callback used by RTProcCreateEx to locate the executable.
  */
 static DECLCALLBACK(int) rtPathFindExec(char const *pchPath, size_t cchPath, void *pvUser1, void *pvUser2)
 {
-    const char *pszExec     = (const char *)pvUser1;
-    char       *pszRealExec = (char *)pvUser2;
-    int rc = RTPathJoinEx(pszRealExec, RTPATH_MAX, pchPath, cchPath, pszExec, RTSTR_MAX);
-    if (RT_FAILURE(rc))
-        return rc;
-    if (!access(pszRealExec, X_OK))
-        return VINF_SUCCESS;
-    if (   errno == EACCES
-        || errno == EPERM)
-        return RTErrConvertFromErrno(errno);
-    return VERR_TRY_AGAIN;
+    const char      *pszExec = (const char *)pvUser1;
+    PRTPATHINTSEARCH pResult = (PRTPATHINTSEARCH)pvUser2;
+    int rc = RTPathJoinEx(pResult->szFound, sizeof(pResult->szFound), pchPath, cchPath, pszExec, RTSTR_MAX);
+    if (RT_SUCCESS(rc))
+    {
+        const char *pszNativeExec = NULL;
+        rc = rtPathToNative(&pszNativeExec, pResult->szFound, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            if (!access(pszNativeExec, X_OK))
+                rc = VINF_SUCCESS;
+            else
+            {
+                if (   errno == EACCES
+                    || errno == EPERM)
+                    pResult->rcSticky = RTErrConvertFromErrno(errno);
+                rc = VERR_TRY_AGAIN;
+            }
+            rtPathFreeNative(pszNativeExec, pResult->szFound);
+        }
+        else
+            AssertRCStmt(rc, rc = VERR_TRY_AGAIN /* don't stop on this, whatever it is */);
+    }
+    return rc;
 }
 
 
@@ -1455,38 +1620,74 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     Assert(papszPamEnv == NULL);
 
     /*
-     * Check for execute access to the file.
+     * Check for execute access to the file, searching the PATH if needed.
      */
-    char szRealExec[RTPATH_MAX];
-    if (access(pszExec, X_OK) == 0)
-        rc = VINF_SUCCESS;
-    else
-    {
-        rc = errno;
-        if (   !(fFlags & RTPROC_FLAGS_SEARCH_PATH)
-            || rc != ENOENT
-            || RTPathHavePath(pszExec) )
-            rc = RTErrConvertFromErrno(rc);
-        else
-        {
-            /* search */
-            char *pszPath = RTEnvDupEx(hEnvToUse, "PATH");
-            rc = RTPathTraverseList(pszPath, ':', rtPathFindExec, (void *)pszExec, &szRealExec[0]);
-            RTStrFree(pszPath);
-            if (RT_SUCCESS(rc))
-                pszExec = szRealExec;
-            else
-                rc = rc == VERR_END_OF_STRING ? VERR_FILE_NOT_FOUND : rc;
-        }
-    }
+    const char *pszNativeExec = NULL;
+    rc = rtPathToNative(&pszNativeExec, pszExec, NULL);
     if (RT_SUCCESS(rc))
     {
-        /*
-         * The rest of the process creation is reused internally by
-         * rtProcPosixCreateProfileEnv.
-         */
-        rc = rtProcPosixCreateInner(pszExec, papszArgs, hEnv, hEnvToUse, fFlags, pszAsUser, uid, gid,
-                                    RT_ELEMENTS(aStdFds), aStdFds, phProcess);
+        if (access(pszNativeExec, X_OK) == 0)
+            rc = VINF_SUCCESS;
+        else
+        {
+            rc = errno;
+            rtPathFreeNative(pszNativeExec, pszExec);
+
+            if (   !(fFlags & RTPROC_FLAGS_SEARCH_PATH)
+                || rc != ENOENT
+                || RTPathHavePath(pszExec) )
+                rc = RTErrConvertFromErrno(rc);
+            else
+            {
+                /* Search the PATH for it: */
+                char *pszPath = RTEnvDupEx(hEnvToUse, "PATH");
+                if (pszPath)
+                {
+                    PRTPATHINTSEARCH pResult = (PRTPATHINTSEARCH)alloca(sizeof(*pResult));
+                    pResult->rcSticky = VINF_SUCCESS;
+                    rc = RTPathTraverseList(pszPath, ':', rtPathFindExec, (void *)pszExec, pResult);
+                    RTStrFree(pszPath);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Found it. Now, convert to native path: */
+                        pszExec = pResult->szFound;
+                        rc = rtPathToNative(&pszNativeExec, pszExec, NULL);
+                    }
+                    else
+                        rc = rc != VERR_END_OF_STRING ? rc
+                           : pResult->rcSticky == VINF_SUCCESS ? VERR_FILE_NOT_FOUND : pResult->rcSticky;
+                }
+                else
+                    rc = VERR_NO_STR_MEMORY;
+            }
+        }
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Convert arguments to child codeset if necessary.
+             */
+            char **papszArgsConverted = (char **)papszArgs;
+            if (!(fFlags & RTPROC_FLAGS_UTF8_ARGV))
+                rc = rtProcPosixConvertArgv(papszArgs, hEnvToUse, &papszArgsConverted);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * The rest of the process creation is reused internally by rtProcPosixCreateProfileEnv.
+                 */
+                rc = rtProcPosixCreateInner(pszNativeExec, papszArgsConverted, hEnv, hEnvToUse, fFlags, pszAsUser, uid, gid,
+                                            RT_ELEMENTS(aStdFds), aStdFds, phProcess);
+
+            }
+
+            /* Free the translated argv copy, if needed. */
+            if (papszArgsConverted != (char **)papszArgs)
+            {
+                for (size_t i = 0; papszArgsConverted[i] != NULL; i++)
+                    RTStrFree(papszArgsConverted[i]);
+                RTMemFree(papszArgsConverted);
+            }
+            rtPathFreeNative(pszNativeExec, pszExec);
+        }
     }
     if (hEnvToUse != hEnv)
         RTEnvDestroy(hEnvToUse);
@@ -1500,23 +1701,24 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * This is also used by rtProcPosixCreateProfileEnv().
  *
  * @returns IPRT status code.
- * @param   pszExec     The executable to run (absolute path, X_OK).
- * @param   papszArgs   The arguments.
- * @param   hEnv        The original enviornment request, needed for adjustments
- *                      if starting as different user.
- * @param   hEnvToUse   The environment we should use.
- * @param   fFlags      The process creation flags, RTPROC_FLAGS_XXX.
- * @param   pszAsUser   The user to start the process as, if requested.
- * @param   uid         The UID corrsponding to @a pszAsUser, ~0 if NULL.
- * @param   gid         The GID corrsponding to @a pszAsUser, ~0 if NULL.
- * @param   cRedirFds   Number of redirection file descriptors.
- * @param   paRedirFds  Pointer to redirection file descriptors.  Entries
- *                      containing -1 are not modified (inherit from parent),
- *                      -2 indicates that the descriptor should be closed in the
- *                      child.
- * @param   phProcess   Where to return the process ID on success.
+ * @param   pszNativeExec   The executable to run (absolute path, X_OK).
+ *                          Native path.
+ * @param   papszArgs       The arguments.  Caller has done codeset conversions.
+ * @param   hEnv            The original enviornment request, needed for
+ *                          adjustments if starting as different user.
+ * @param   hEnvToUse       The environment we should use.
+ * @param   fFlags          The process creation flags, RTPROC_FLAGS_XXX.
+ * @param   pszAsUser       The user to start the process as, if requested.
+ * @param   uid             The UID corrsponding to @a pszAsUser, ~0 if NULL.
+ * @param   gid             The GID corrsponding to @a pszAsUser, ~0 if NULL.
+ * @param   cRedirFds       Number of redirection file descriptors.
+ * @param   paRedirFds      Pointer to redirection file descriptors.  Entries
+ *                          containing -1 are not modified (inherit from parent),
+ *                          -2 indicates that the descriptor should be closed in the
+ *                          child.
+ * @param   phProcess       Where to return the process ID on success.
  */
-static int rtProcPosixCreateInner(const char *pszExec, const char * const *papszArgs, RTENV hEnv, RTENV hEnvToUse,
+static int rtProcPosixCreateInner(const char *pszNativeExec, const char * const *papszArgs, RTENV hEnv, RTENV hEnvToUse,
                                   uint32_t fFlags, const char *pszAsUser, uid_t uid, gid_t gid,
                                   unsigned cRedirFds, int *paRedirFds, PRTPROCESS phProcess)
 {
@@ -1678,7 +1880,7 @@ static int rtProcPosixCreateInner(const char *pszExec, const char * const *papsz
             }
 
             if (!rc)
-                rc = posix_spawn(&pid, pszExec, pFileActions, &Attr, (char * const *)papszArgs,
+                rc = posix_spawn(&pid, pszNativeExec, pFileActions, &Attr, (char * const *)papszArgs,
                                  (char * const *)papszEnv);
 
             /* cleanup */
@@ -1825,7 +2027,7 @@ static int rtProcPosixCreateInner(const char *pszExec, const char * const *papsz
             /*
              * Finally, execute the requested program.
              */
-            rc = execve(pszExec, (char * const *)papszArgs, (char * const *)papszEnv);
+            rc = execve(pszNativeExec, (char * const *)papszArgs, (char * const *)papszEnv);
             if (errno == ENOEXEC)
             {
                 /* This can happen when trying to start a shell script without the magic #!/bin/sh */
