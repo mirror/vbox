@@ -570,12 +570,6 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                     }
 
                     /*
-                     * Make RTThreadPoke work again (disabled for avoiding unnecessary
-                     * critical section issues in ring-0).
-                     */
-                    VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, nemR3LnxFixThreadPoke, NULL);
-
-                    /*
                      * Success.
                      */
                     return VINF_SUCCESS;
@@ -674,6 +668,13 @@ static int nemR3LnxUpdateCpuIdsLeaves(PVM pVM, PVMCPU pVCpu)
 
 int nemR3NativeInitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
+    /*
+     * Make RTThreadPoke work again (disabled for avoiding unnecessary
+     * critical section issues in ring-0).
+     */
+    if (enmWhat == VMINITCOMPLETED_RING3)
+        VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE, nemR3LnxFixThreadPoke, NULL);
+
     /*
      * Configure CPUIDs after ring-3 init has been done.
      */
