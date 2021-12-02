@@ -1152,7 +1152,6 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
         {
             /* Terminate array. */
             papszNewArgv[iDst] = NULL;
-            Assert(iDst < cArgs);
 
             *ppapszArgv = papszNewArgv;
             return VINF_SUCCESS;
