@@ -34,8 +34,12 @@
  * Driverless: VMMR0_DO_GVMM_CREATE_VM
  *
  * @returns VBox status code.
- * @param   pUVM    The user mode VM handle.
- * @param   pReq    The create VM request.
+ * @param   pUVM        The user mode VM handle.
+ * @param   cCpus       The number of CPUs to create the VM for.
+ * @param   pSession    The support driver session handle.
+ * @param   ppVM        Where to return the pointer to the VM structure.
+ * @param   ppVMR0      Where to return the ring-0 address of the VM structure
+ *                      for use in VMMR0 calls.
  */
 VMMR3_INT_DECL(int) GVMMR3CreateVM(PUVM pUVM, uint32_t cCpus, PSUPDRVSESSION pSession, PVM *ppVM, PRTR0PTR ppVMR0)
 {
