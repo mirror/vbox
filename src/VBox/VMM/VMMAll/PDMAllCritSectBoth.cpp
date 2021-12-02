@@ -31,7 +31,7 @@
 #include <iprt/asm.h>
 
 
-#if defined(IN_RING3) || defined(IN_RING0)
+#if defined(IN_RING3) /*|| defined(IN_RING0) - not called from ring-0 */
 /**
  * Process the critical sections (both types) queued for ring-3 'leave'.
  *
