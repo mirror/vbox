@@ -1213,7 +1213,8 @@ int main(int argc, char **argv)
     }
 
 #else  /* !RT_OS_WINDOWS */
-    /** @todo Add PID file creation here? */
+    /* On other OSes we have PID file support provided by the actual service definitions / service wrapper scripts,
+     * like vboxadd-service.sh on Linux or vboxservice.xml on Solaris. */
 #endif /* !RT_OS_WINDOWS */
 
     VGSvcVerbose(0, "%s r%s started. Verbose level = %d\n", RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity);
