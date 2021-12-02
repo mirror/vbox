@@ -1151,7 +1151,7 @@ int HGCMService::instanceCreate(const char *pszServiceLibrary, const char *pszSe
             m_pHgcmPort = pHgcmPort;
 
             /* Register statistics: */
-            STAMR3RegisterFU(pUVM, &m_StatHandleMsg, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+            STAMR3RegisterFU(pUVM, &m_StatHandleMsg, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE,
                              "Message handling", "/HGCM/%s/Msg", pszServiceName);
             STAMR3RegisterFU(pUVM, &m_StatTooManyCalls, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Too many calls (per client)", "/HGCM/%s/TooManyCalls", pszServiceName);
