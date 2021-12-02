@@ -33,6 +33,7 @@
 
 
 /* Forward declarations: */
+class CMachine;
 class QHBoxLayout;
 class QSplitter;
 class QTextEdit;
