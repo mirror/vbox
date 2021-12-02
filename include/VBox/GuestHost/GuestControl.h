@@ -61,17 +61,14 @@ enum eProcessStatus
     /** Something went wrong (error code in flags). */
     PROC_STS_ERROR = 8
 };
-
-/** @todo r=bird: Most defines in this file needs to be scoped a little
- *        better!  For instance INPUT_FLAG_NONE is very generic. */
-
+ 
 /**
  * Input flags, set by the host. This is needed for
  * handling flags on the guest side.
  * Note: Has to match Main's ProcessInputFlag_* flags!
  */
-#define INPUT_FLAG_NONE                     0x0
-#define INPUT_FLAG_EOF                      RT_BIT(0)
+#define GUEST_PROC_IN_FLAG_NONE                     0x0
+#define GUEST_PROC_IN_FLAG_EOF                      RT_BIT(0)
 
 /**
  * Guest session creation flags.
@@ -96,28 +93,28 @@ enum eProcessStatus
 #define DIRREMOVEREC_FLAG_VALID_MASK           UINT32_C(0x00000007)
 /** @}   */
 
-/** @name EXECUTEPROCESSFLAG_XXX - Guest process creation flags.
+/** @name GUEST_PROC_CREATE_FLAG_XXX - Guest process creation flags.
  * @note Has to match Main's ProcessCreateFlag_* flags!
  * @{
  */
-#define EXECUTEPROCESSFLAG_NONE             UINT32_C(0x0)
-#define EXECUTEPROCESSFLAG_WAIT_START       RT_BIT(0)
-#define EXECUTEPROCESSFLAG_IGNORE_ORPHANED  RT_BIT(1)
-#define EXECUTEPROCESSFLAG_HIDDEN           RT_BIT(2)
-#define EXECUTEPROCESSFLAG_PROFILE          RT_BIT(3)
-#define EXECUTEPROCESSFLAG_WAIT_STDOUT      RT_BIT(4)
-#define EXECUTEPROCESSFLAG_WAIT_STDERR      RT_BIT(5)
-#define EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS RT_BIT(6)
-#define EXECUTEPROCESSFLAG_UNQUOTED_ARGS    RT_BIT(7)
+#define GUEST_PROC_CREATE_FLAG_NONE             UINT32_C(0x0)
+#define GUEST_PROC_CREATE_FLAG_WAIT_START       RT_BIT(0)
+#define GUEST_PROC_CREATE_FLAG_IGNORE_ORPHANED  RT_BIT(1)
+#define GUEST_PROC_CREATE_FLAG_HIDDEN           RT_BIT(2)
+#define GUEST_PROC_CREATE_FLAG_PROFILE          RT_BIT(3)
+#define GUEST_PROC_CREATE_FLAG_WAIT_STDOUT      RT_BIT(4)
+#define GUEST_PROC_CREATE_FLAG_WAIT_STDERR      RT_BIT(5)
+#define GUEST_PROC_CREATE_FLAG_EXPAND_ARGUMENTS RT_BIT(6)
+#define GUEST_PROC_CREATE_FLAG_UNQUOTED_ARGS    RT_BIT(7)
 /** @} */
 
-/** @name OUTPUT_HANDLE_ID_XXX - Pipe handle IDs used internally for referencing
+/** @name GUEST_PROC_OUT_H_XXX - Pipe handle IDs used internally for referencing
  *        to a certain pipe buffer.
  * @{
  */
-#define OUTPUT_HANDLE_ID_STDOUT_DEPRECATED  0 /**< Needed for VBox hosts < 4.1.0. */
-#define OUTPUT_HANDLE_ID_STDOUT             1
-#define OUTPUT_HANDLE_ID_STDERR             2
+#define GUEST_PROC_OUT_H_STDOUT_DEPRECATED  0 /**< Needed for VBox hosts < 4.1.0. */
+#define GUEST_PROC_OUT_H_STDOUT             1
+#define GUEST_PROC_OUT_H_STDERR             2
 /** @} */
 
 /** @name PATHRENAME_FLAG_XXX - Guest path rename flags.
@@ -134,14 +131,14 @@ enum eProcessStatus
 #define PATHRENAME_FLAG_VALID_MASK          UINT32_C(0x00000003)
 /** @} */
 
-/** @name SHUTDOWN_FLAG_XXX - Guest shutdown flags.
+/** @name GUEST_SHUTDOWN_FLAG_XXX - Guest shutdown flags.
  * Must match Main's GuestShutdownFlag_ definitions.
  * @{
  */
-#define SHUTDOWN_FLAG_NONE                  UINT32_C(0)
-#define SHUTDOWN_FLAG_POWER_OFF             RT_BIT(0)
-#define SHUTDOWN_FLAG_REBOOT                RT_BIT(1)
-#define SHUTDOWN_FLAG_FORCE                 RT_BIT(2)
+#define GUEST_SHUTDOWN_FLAG_NONE            UINT32_C(0)
+#define GUEST_SHUTDOWN_FLAG_POWER_OFF       RT_BIT(0)
+#define GUEST_SHUTDOWN_FLAG_REBOOT          RT_BIT(1)
+#define GUEST_SHUTDOWN_FLAG_FORCE           RT_BIT(2)
 /** @} */
 
 /** @name Defines for default (initial) guest process buffer lengths.
@@ -149,23 +146,23 @@ enum eProcessStatus
  *       not break running with older Guest Additions.
  * @{
  */
-#define GUESTPROCESS_DEFAULT_CMD_LEN        _1K
-#define GUESTPROCESS_DEFAULT_ARGS_LEN       _1K
-#define GUESTPROCESS_DEFAULT_ENV_LEN        _1K
-#define GUESTPROCESS_DEFAULT_USER_LEN       128
-#define GUESTPROCESS_DEFAULT_PASSWORD_LEN   128
-#define GUESTPROCESS_DEFAULT_DOMAIN_LEN     256
+#define GUEST_PROC_DEF_CMD_LEN        _1K
+#define GUEST_PROC_DEF_ARGS_LEN       _1K
+#define GUEST_PROC_DEF_ENV_LEN        _1K
+#define GUEST_PROC_DEF_USER_LEN       128
+#define GUEST_PROC_DEF_PASSWORD_LEN   128
+#define GUEST_PROC_DEF_DOMAIN_LEN     256
 /** @} */
 
 /** @name Defines for maximum guest process buffer lengths.
  * @{
  */
-#define GUESTPROCESS_MAX_CMD_LEN            _1M
-#define GUESTPROCESS_MAX_ARGS_LEN           _2M
-#define GUESTPROCESS_MAX_ENV_LEN            _4M
-#define GUESTPROCESS_MAX_USER_LEN           _64K
-#define GUESTPROCESS_MAX_PASSWORD_LEN       _64K
-#define GUESTPROCESS_MAX_DOMAIN_LEN         _64K
+#define GUEST_PROC_MAX_CMD_LEN            _1M
+#define GUEST_PROC_MAX_ARGS_LEN           _2M
+#define GUEST_PROC_MAX_ENV_LEN            _4M
+#define GUEST_PROC_MAX_USER_LEN           _64K
+#define GUEST_PROC_MAX_PASSWORD_LEN       _64K
+#define GUEST_PROC_MAX_DOMAIN_LEN         _64K
 /** @} */
 
 /** @name Internal tools built into VBoxService which are used in order

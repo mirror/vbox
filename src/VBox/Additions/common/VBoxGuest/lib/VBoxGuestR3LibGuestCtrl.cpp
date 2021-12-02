@@ -791,8 +791,8 @@ VBGLR3DECL(int)  VbglR3GuestCtrlSessionStartupInfoInitEx(PVBGLR3GUESTCTRLSESSION
 VBGLR3DECL(int) VbglR3GuestCtrlSessionStartupInfoInit(PVBGLR3GUESTCTRLSESSIONSTARTUPINFO pStartupInfo)
 {
     return VbglR3GuestCtrlSessionStartupInfoInitEx(pStartupInfo,
-                                                   GUESTPROCESS_DEFAULT_USER_LEN, GUESTPROCESS_DEFAULT_PASSWORD_LEN,
-                                                   GUESTPROCESS_DEFAULT_DOMAIN_LEN);
+                                                   GUEST_PROC_DEF_USER_LEN, GUEST_PROC_DEF_PASSWORD_LEN,
+                                                   GUEST_PROC_DEF_DOMAIN_LEN);
 }
 
 /**
@@ -1142,11 +1142,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInitEx(PVBGLR3GUESTCTRLPROCSTARTUP
 VBGLR3DECL(int) VbglR3GuestCtrlProcStartupInfoInit(PVBGLR3GUESTCTRLPROCSTARTUPINFO pStartupInfo)
 {
     return VbglR3GuestCtrlProcStartupInfoInitEx(pStartupInfo,
-                                                GUESTPROCESS_DEFAULT_CMD_LEN,
-                                                GUESTPROCESS_DEFAULT_USER_LEN     /* Deprecated, now handled via session creation. */,
-                                                GUESTPROCESS_DEFAULT_PASSWORD_LEN /* Ditto. */,
-                                                GUESTPROCESS_DEFAULT_DOMAIN_LEN   /* Ditto. */,
-                                                GUESTPROCESS_DEFAULT_ARGS_LEN, GUESTPROCESS_DEFAULT_ENV_LEN);
+                                                GUEST_PROC_DEF_CMD_LEN,
+                                                GUEST_PROC_DEF_USER_LEN     /* Deprecated, now handled via session creation. */,
+                                                GUEST_PROC_DEF_PASSWORD_LEN /* Ditto. */,
+                                                GUEST_PROC_DEF_DOMAIN_LEN   /* Ditto. */,
+                                                GUEST_PROC_DEF_ARGS_LEN, GUEST_PROC_DEF_ENV_LEN);
 }
 
 /**
@@ -1318,9 +1318,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX pCtx, PVBGLR3
         pStartupInfo->cb##a_Str  = RT_MIN(pStartupInfo->cb##a_Str * cGrowthFactor, a_cbMax);
 
                 /* We can't tell which parameter doesn't fit, so we have to resize all. */
-                GROW_STR(Cmd , GUESTPROCESS_MAX_CMD_LEN);
-                GROW_STR(Args, GUESTPROCESS_MAX_ARGS_LEN);
-                GROW_STR(Env,  GUESTPROCESS_MAX_ENV_LEN);
+                GROW_STR(Cmd , GUEST_PROC_MAX_CMD_LEN);
+                GROW_STR(Args, GUEST_PROC_MAX_ARGS_LEN);
+                GROW_STR(Env,  GUEST_PROC_MAX_ENV_LEN);
 
 #undef GROW_STR
                 LogRel(("VbglR3GuestCtrlProcGetStart: 2 - %Rrc (retry %u, cbCmd=%RU32, cbArgs=%RU32, cbEnv=%RU32)\n",

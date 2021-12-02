@@ -1048,7 +1048,7 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
 
     AssertPtrReturn(pszArgv0,   VERR_INVALID_POINTER);
     AssertPtrReturn(ppapszArgv, VERR_INVALID_POINTER);
-    AssertReturn(!(fFlags & EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS), VERR_INVALID_FLAGS); /** @todo implement me */
+    AssertReturn(!(fFlags & GUEST_PROC_CREATE_FLAG_EXPAND_ARGUMENTS), VERR_INVALID_FLAGS); /** @todo implement me */
 
 #ifndef VBOXSERVICE_ARG1_UTF8_ARGV
     fExecutingSelf = false;
@@ -1084,7 +1084,7 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
                    containing spaces.  Windows only, as RTPROC_FLAGS_UNQUOTED_ARGS is
                    ignored on all other hosts. */
 #ifdef RT_OS_WINDOWS
-    if (   (fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
+    if (   (fFlags & GUEST_PROC_CREATE_FLAG_UNQUOTED_ARGS)
         && strpbrk(pszArgv0, " \t\n\r")
         && pszArgv0[0] == '"')
     {
@@ -1122,7 +1122,7 @@ static int vgsvcGstCtrlProcessAllocateArgv(const char *pszArgv0, const char * co
             for (size_t iSrc = 0; iSrc < cArgs; iSrc++)
             {
 #if 0 /* Arguments expansion -- untested. */
-                if (fFlags & EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS)
+                if (fFlags & GUEST_PROC_CREATE_FLAG_EXPAND_ARGUMENTS)
                 {
 /** @todo r=bird: If you want this, we need a generic implementation, preferably in RTEnv or somewhere like that.  The marking
  * up of the variables must be the same on all platforms.  */
@@ -1400,11 +1400,11 @@ static int vgsvcGstCtrlProcessCreateProcess(const char *pszExec, const char * co
                 fProcCreateFlags |= VBOXSERVICE_PROC_F_UTF8_ARGV;
             if (fFlags)
             {
-                if (fFlags & EXECUTEPROCESSFLAG_HIDDEN)
+                if (fFlags & GUEST_PROC_CREATE_FLAG_HIDDEN)
                     fProcCreateFlags |= RTPROC_FLAGS_HIDDEN;
-                if (fFlags & EXECUTEPROCESSFLAG_PROFILE)
+                if (fFlags & GUEST_PROC_CREATE_FLAG_PROFILE)
                     fProcCreateFlags |= RTPROC_FLAGS_PROFILE;
-                if (fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
+                if (fFlags & GUEST_PROC_CREATE_FLAG_UNQUOTED_ARGS)
                     fProcCreateFlags |= RTPROC_FLAGS_UNQUOTED_ARGS;
             }
 
@@ -1572,7 +1572,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
      */
     uint32_t const cbEnv = pProcess->pStartupInfo->cbEnv;
     if (RT_SUCCESS(rc))
-        AssertStmt(   cbEnv <= GUESTPROCESS_MAX_ENV_LEN
+        AssertStmt(   cbEnv <= GUEST_PROC_MAX_ENV_LEN
                    || pProcess->pStartupInfo->cEnvVars == 0,
                    rc = VERR_INVALID_PARAMETER);
     if (RT_SUCCESS(rc))
@@ -1619,7 +1619,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                 {
                     RTHANDLE    hStdOut;
                     PRTHANDLE   phStdOut;
-                    rc = vgsvcGstCtrlProcessSetupPipe(  (pProcess->pStartupInfo->fFlags & EXECUTEPROCESSFLAG_WAIT_STDOUT)
+                    rc = vgsvcGstCtrlProcessSetupPipe(  (pProcess->pStartupInfo->fFlags & GUEST_PROC_CREATE_FLAG_WAIT_STDOUT)
                                                  ? "|" : "/dev/null",
                                                  1 /*STDOUT_FILENO*/,
                                                  &hStdOut, &phStdOut, &pProcess->hPipeStdOutR);
@@ -1627,7 +1627,7 @@ static int vgsvcGstCtrlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                     {
                         RTHANDLE    hStdErr;
                         PRTHANDLE   phStdErr;
-                        rc = vgsvcGstCtrlProcessSetupPipe(  (pProcess->pStartupInfo->fFlags & EXECUTEPROCESSFLAG_WAIT_STDERR)
+                        rc = vgsvcGstCtrlProcessSetupPipe(  (pProcess->pStartupInfo->fFlags & GUEST_PROC_CREATE_FLAG_WAIT_STDERR)
                                                      ? "|" : "/dev/null",
                                                      2 /*STDERR_FILENO*/,
                                                      &hStdErr, &phStdErr, &pProcess->hPipeStdErrR);
@@ -1983,7 +1983,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlProcessOnOutput(PVBOXSERVICECTRLPROCESS pTh
     uint8_t *pvBuf = (uint8_t *)RTMemAlloc(cbBuf);
     if (pvBuf)
     {
-        PRTPIPE phPipe = uHandle == OUTPUT_HANDLE_ID_STDOUT
+        PRTPIPE phPipe = uHandle == GUEST_PROC_OUT_H_STDOUT
                        ? &pThis->hPipeStdOutR
                        : &pThis->hPipeStdErrR;
         AssertPtr(phPipe);
@@ -1994,7 +1994,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlProcessOnOutput(PVBOXSERVICECTRLPROCESS pTh
             rc = RTPipeRead(*phPipe, pvBuf, cbBuf, &cbRead);
             if (RT_FAILURE(rc))
             {
-                RTPollSetRemove(pThis->hPollSet,   uHandle == OUTPUT_HANDLE_ID_STDERR
+                RTPollSetRemove(pThis->hPollSet,   uHandle == GUEST_PROC_OUT_H_STDERR
                                                  ? VBOXSERVICECTRLPIPEID_STDERR : VBOXSERVICECTRLPIPEID_STDOUT);
                 RTPipeClose(*phPipe);
                 *phPipe = NIL_RTPIPE;
@@ -2009,8 +2009,8 @@ static DECLCALLBACK(int) vgsvcGstCtrlProcessOnOutput(PVBOXSERVICECTRLPROCESS pTh
         if (RT_SUCCESS(rc))
         {
             if (   pSession->fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT
-                && (   uHandle == OUTPUT_HANDLE_ID_STDOUT
-                    || uHandle == OUTPUT_HANDLE_ID_STDOUT_DEPRECATED)
+                && (   uHandle == GUEST_PROC_OUT_H_STDOUT
+                    || uHandle == GUEST_PROC_OUT_H_STDOUT_DEPRECATED)
                )
             {
                 rc = vgsvcGstCtrlProcessDbgDumpToFileF(pvBuf, cbRead, "VBoxService_Session%RU32_PID%RU32_StdOut.txt",
@@ -2018,7 +2018,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlProcessOnOutput(PVBOXSERVICECTRLPROCESS pTh
                 AssertRC(rc);
             }
             else if (   pSession->fFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR
-                     && uHandle == OUTPUT_HANDLE_ID_STDERR)
+                     && uHandle == GUEST_PROC_OUT_H_STDERR)
             {
                 rc = vgsvcGstCtrlProcessDbgDumpToFileF(pvBuf, cbRead, "VBoxService_Session%RU32_PID%RU32_StdErr.txt",
                                                 pSession->StartupInfo.uSessionID, pThis->uPID);

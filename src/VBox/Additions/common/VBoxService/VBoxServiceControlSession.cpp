@@ -1021,12 +1021,12 @@ static int vgsvcGstCtrlSessionHandleShutdown(PVBOXSERVICECTRLSESSION pSession, P
             int fSystemShutdown = RTSYSTEM_SHUTDOWN_PLANNED;
 
             /* Translate SHUTDOWN_FLAG_ into RTSYSTEM_SHUTDOWN_ flags. */
-            if (fAction & SHUTDOWN_FLAG_REBOOT)
+            if (fAction & GUEST_SHUTDOWN_FLAG_REBOOT)
                 fSystemShutdown |= RTSYSTEM_SHUTDOWN_REBOOT;
             else /* SHUTDOWN_FLAG_POWER_OFF */
                 fSystemShutdown |= RTSYSTEM_SHUTDOWN_POWER_OFF;
 
-            if (fAction & SHUTDOWN_FLAG_FORCE)
+            if (fAction & GUEST_SHUTDOWN_FLAG_FORCE)
                 fSystemShutdown |= RTSYSTEM_SHUTDOWN_FORCE;
 
             rc = RTSystemShutdown(0 /*cMsDelay*/, fSystemShutdown, "VBoxService");
@@ -1178,7 +1178,7 @@ static int vgsvcGstCtrlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession, 
         rc = VbglR3GuestCtrlProcGetInput(pHostCtx, &uPID, &fFlags, *ppvScratchBuf, *pcbScratchBuf, &cbInput);
     if (RT_SUCCESS(rc))
     {
-        if (fFlags & INPUT_FLAG_EOF)
+        if (fFlags & GUEST_PROC_IN_FLAG_EOF)
             VGSvcVerbose(4, "Got last process input block for PID=%RU32 (%RU32 bytes) ...\n", uPID, cbInput);
 
         /*
@@ -1187,7 +1187,7 @@ static int vgsvcGstCtrlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession, 
         PVBOXSERVICECTRLPROCESS pProcess = VGSvcGstCtrlSessionRetainProcess(pSession, uPID);
         if (pProcess)
         {
-            rc = VGSvcGstCtrlProcessHandleInput(pProcess, pHostCtx, RT_BOOL(fFlags & INPUT_FLAG_EOF),
+            rc = VGSvcGstCtrlProcessHandleInput(pProcess, pHostCtx, RT_BOOL(fFlags & GUEST_PROC_IN_FLAG_EOF),
                                                 *ppvScratchBuf, RT_MIN(cbInput, *pcbScratchBuf));
             if (RT_FAILURE(rc))
                 VGSvcError("Error handling input message for PID=%RU32, rc=%Rrc\n", uPID, rc);

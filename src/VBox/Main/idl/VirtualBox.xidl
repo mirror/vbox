@@ -13259,7 +13259,7 @@
     <desc>
       Guest process execution flags.
       <note>The values are passed to the Guest Additions, so its not possible
-            to change (move) or reuse values.here. See EXECUTEPROCESSFLAG_XXX
+            to change (move) or reuse values.here. See GUEST_PROC_CREATE_FLAG_XXX
             in GuestControlSvc.h.</note>
     </desc>
 

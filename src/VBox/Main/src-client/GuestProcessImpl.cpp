@@ -853,10 +853,10 @@ int GuestProcess::i_readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeout
     if (   mData.mStatus != ProcessStatus_Started
         /* Skip reading if the process wasn't started with the appropriate
          * flags. */
-        || (   (   uHandle == OUTPUT_HANDLE_ID_STDOUT
-                || uHandle == OUTPUT_HANDLE_ID_STDOUT_DEPRECATED)
+        || (   (   uHandle == GUEST_PROC_OUT_H_STDOUT
+                || uHandle == GUEST_PROC_OUT_H_STDOUT_DEPRECATED)
             && !(mData.mProcess.mFlags & ProcessCreateFlag_WaitForStdOut))
-        || (   uHandle == OUTPUT_HANDLE_ID_STDERR
+        || (   uHandle == GUEST_PROC_OUT_H_STDERR
             && !(mData.mProcess.mFlags & ProcessCreateFlag_WaitForStdErr))
        )
     {
@@ -2035,9 +2035,9 @@ void GuestProcessTool::uninit(void)
 int GuestProcessTool::getCurrentBlock(uint32_t uHandle, GuestProcessStreamBlock &strmBlock)
 {
     const GuestProcessStream *pStream = NULL;
-    if (uHandle == OUTPUT_HANDLE_ID_STDOUT)
+    if (uHandle == GUEST_PROC_OUT_H_STDOUT)
         pStream = &mStdOut;
-    else if (uHandle == OUTPUT_HANDLE_ID_STDERR)
+    else if (uHandle == GUEST_PROC_OUT_H_STDERR)
         pStream = &mStdErr;
 
     if (!pStream)
@@ -2311,7 +2311,7 @@ int GuestProcessTool::waitEx(uint32_t fToolWaitFlags, GuestProcessStreamBlock *p
     if (fToolWaitFlags & GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK)
     {
         AssertPtr(pStrmBlkOut);
-        vrc = getCurrentBlock(OUTPUT_HANDLE_ID_STDOUT, *pStrmBlkOut);
+        vrc = getCurrentBlock(GUEST_PROC_OUT_H_STDOUT, *pStrmBlkOut);
         if (RT_SUCCESS(vrc))
             return vrc;
         /* else do the waiting below. */
@@ -2421,7 +2421,7 @@ int GuestProcessTool::waitEx(uint32_t fToolWaitFlags, GuestProcessStreamBlock *p
             UPDATE_AND_CHECK_ELAPSED_TIME();
 
             cbRead = 0;
-            vrc = pProcess->i_readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
+            vrc = pProcess->i_readData(GUEST_PROC_OUT_H_STDOUT, sizeof(byBuf),
                                        GET_REMAINING_TIME,
                                        byBuf, sizeof(byBuf),
                                        &cbRead, &vrcGuest);
@@ -2438,7 +2438,7 @@ int GuestProcessTool::waitEx(uint32_t fToolWaitFlags, GuestProcessStreamBlock *p
                     && (fToolWaitFlags & GUESTPROCESSTOOL_WAIT_FLAG_STDOUT_BLOCK))
                 {
                     AssertPtr(pStrmBlkOut);
-                    vrc = getCurrentBlock(OUTPUT_HANDLE_ID_STDOUT, *pStrmBlkOut);
+                    vrc = getCurrentBlock(GUEST_PROC_OUT_H_STDOUT, *pStrmBlkOut);
 
                     /* When successful, break out of the loop because we're done
                      * with reading the first stream block. */
@@ -2455,7 +2455,7 @@ int GuestProcessTool::waitEx(uint32_t fToolWaitFlags, GuestProcessStreamBlock *p
             UPDATE_AND_CHECK_ELAPSED_TIME();
 
             cbRead = 0;
-            vrc = pProcess->i_readData(OUTPUT_HANDLE_ID_STDERR, sizeof(byBuf),
+            vrc = pProcess->i_readData(GUEST_PROC_OUT_H_STDERR, sizeof(byBuf),
                                        GET_REMAINING_TIME,
                                        byBuf, sizeof(byBuf),
                                        &cbRead, &vrcGuest);
