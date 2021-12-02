@@ -111,7 +111,7 @@ private slots:
     void sltCopyGuestToHost();
     void sltCopyHostToGuest();
     void sltPanelActionToggled(bool fChecked);
-    void sltReceieveNewFileOperation(const CProgress &comProgress);
+    //void sltReceieveNewFileOperation(const CProgress &comProgress);
     void sltFileOperationComplete(QUuid progressId);
     /** Performs whatever necessary when some signal about option change has been receieved. */
     void sltHandleOptionsUpdated();
@@ -148,7 +148,6 @@ private:
     QStringList               getFsObjInfoStringList(const T &fsObjectInfo) const;
     void                      appendLog(const QString &strLog, FileManagerLogType eLogType);
     void                      savePanelVisibility();
-    bool                      isGuestAdditionsAvailable(const CGuest &guest);
 
     void setMachines(const QVector<QUuid> &machineIDs);
     void removeTabs(const QVector<QUuid> &machineIdsToRemove);

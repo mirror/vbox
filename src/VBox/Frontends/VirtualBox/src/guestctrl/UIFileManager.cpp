@@ -390,11 +390,11 @@ void UIFileManager::sltPanelActionToggled(bool fChecked)
         hidePanel(pPanel);
 }
 
-void UIFileManager::sltReceieveNewFileOperation(const CProgress &comProgress)
-{
-    if (m_pOperationsPanel)
-        m_pOperationsPanel->addNewProgress(comProgress);
-}
+// void UIFileManager::sltReceieveNewFileOperation(const CProgress &comProgress)
+// {
+//     if (m_pOperationsPanel)
+//         m_pOperationsPanel->addNewProgress(comProgress);
+// }
 
 void UIFileManager::sltFileOperationComplete(QUuid progressId)
 {
