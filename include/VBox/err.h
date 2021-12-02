@@ -2807,6 +2807,10 @@
 /** Undesirable module. */
 #define VERR_SUP_VP_UNDESIRABLE_MODULE              (-5676)
 
+/** We are in driverless mode. */
+#define VERR_SUP_DRIVERLESS                         (-5699)
+/** We are in driverless mode. */
+#define VINF_SUP_DRIVERLESS                         5699
 /** @} */
 
 /** @name VBox Extension Pack Status Codes
