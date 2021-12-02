@@ -47,6 +47,7 @@ class QGridLayout;
 class QSortFilterProxyModel;
 class QStackedWidget;
 class QTextEdit;
+class QHBoxLayout;
 class QVBoxLayout;
 class UIActionPool;
 class UICustomFileSystemItem;
@@ -240,13 +241,13 @@ protected:
     UIPropertiesDialog      *m_pPropertiesDialog;
     UIActionPool            *m_pActionPool;
     QIToolBar               *m_pToolBar;
-
+    QGridLayout     *m_pMainLayout;
     /** Stores the drive letters the file system has (for windows system). For non-windows
      *  systems this is empty and for windows system it should at least contain C:/ */
     QStringList              m_driveLetterList;
     /** The set of actions which need some selection to work on. Like cut, copy etc. */
     QSet<QAction*>           m_selectionDependentActions;
-    /** The absolue path list of the file objects which user has chosen to cut/copy. this
+    /** The absolute path list of the file objects which user has chosen to cut/copy. this
      *  list will be cleaned after a paste operation or overwritten by a subsequent cut/copy.
      *  Currently only used by the guest side. */
     QStringList              m_copyCutBuffer;
@@ -295,7 +296,6 @@ private:
     /** Contains m_pBreadCrumbsWidget and m_pLocationComboBox. */
     UIFileManagerNavigationWidget *m_pNavigationWidget;
 
-    QGridLayout     *m_pMainLayout;
     QILineEdit      *m_pSearchLineEdit;
     QColor           m_searchLineUnmarkColor;
     QColor           m_searchLineMarkColor;

@@ -19,6 +19,7 @@
 #include <QAction>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QItemDelegate>
 #include <QGridLayout>
@@ -697,11 +698,11 @@ UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pPare
     , m_pPropertiesDialog(0)
     , m_pActionPool(pActionPool)
     , m_pToolBar(0)
+    , m_pMainLayout(0)
     , m_pModel(0)
     , m_pView(0)
     , m_pProxyModel(0)
     , m_pNavigationWidget(0)
-    , m_pMainLayout(0)
     , m_pWarningLabel(0)
     , m_pathSeparator('/')
 {

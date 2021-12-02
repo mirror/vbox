@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QDateTime>
 #include <QFileInfo>
+#include <QHBoxLayout>
 #include <QUuid>
 
 /* GUI includes: */
@@ -27,6 +28,7 @@
 #include "UICustomFileSystemModel.h"
 #include "UIFileManager.h"
 #include "UIFileManagerGuestTable.h"
+#include "UIFileManagerGuestSessionPanel.h"
 #include "UIMessageCenter.h"
 #include "UIPathOperations.h"
 #include "QIToolBar.h"
@@ -144,11 +146,14 @@ void UIGuestDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStri
     sigResultUpdated(statistics);
 }
 
+#include <QPushButton>
 UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, const CMachine &comMachine, QWidget *pParent /*= 0*/)
     :UIFileManagerTable(pActionPool, pParent)
     , m_comMachine(comMachine)
+    , m_pGuestSessionPanel(0)
 {
     prepareToolbar();
+    prepareGuestSessionPanel();
     prepareActionConnections();
     retranslateUi();
 }
@@ -728,6 +733,16 @@ void UIFileManagerGuestTable::prepareActionConnections()
             this, &UIFileManagerTable::sltShowProperties);
     connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_CreateNewDirectory), &QAction::triggered,
             this, &UIFileManagerTable::sltCreateNewDirectory);
+}
+
+void UIFileManagerGuestTable::prepareGuestSessionPanel()
+{
+    if (m_pMainLayout)
+    {
+        m_pGuestSessionPanel = new UIFileManagerGuestSessionPanel;
+        if (m_pGuestSessionPanel)
+            m_pMainLayout->addWidget(m_pGuestSessionPanel, m_pMainLayout->rowCount(), 0, 1, m_pMainLayout->columnCount());
+    }
 }
 
 bool UIFileManagerGuestTable::checkGuestSession()

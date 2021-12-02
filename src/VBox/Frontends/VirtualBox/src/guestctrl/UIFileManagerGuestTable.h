@@ -41,6 +41,7 @@
 /* Forward declarations: */
 class UIActionPool;
 class UICustomFileSystemItem;
+class UIFileManagerGuestSessionPanel;
 
 /** This class scans the guest file system by using the VBox Guest Control API
  *  and populates the UIGuestControlFileModel*/
@@ -100,7 +101,7 @@ private:
     void cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
                          CEventListener &comEventListener,
                          CEventSource comEventSource);
-
+    void prepareGuestSessionPanel();
 
     CGuest                    m_comGuest;
     CGuestSession             m_comGuestSession;
@@ -111,6 +112,7 @@ private:
     ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;
     CEventListener m_comSessionListener;
     CEventListener m_comGuestListener;
+    UIFileManagerGuestSessionPanel     *m_pGuestSessionPanel;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerGuestTable_h */
