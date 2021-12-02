@@ -793,12 +793,16 @@ SUPDECL(int64_t) SUPGetTscDeltaSlow(PSUPGLOBALINFOPAGE pGip);
  * Gets the TSC delta for the current CPU.
  *
  * @returns The TSC delta value (will not return the special INT64_MAX value).
- * @remarks Requires GIP to be initialized and valid.
+ * @param   pGip    The GIP, NULL is okay in ring-3.
+ * @remarks Requires GIP to be initialized and valid if pGip isn't NULL.
  */
-DECLINLINE(int64_t) SUPGetTscDelta(void)
+DECLINLINE(int64_t) SUPGetTscDelta(PSUPGLOBALINFOPAGE pGip)
 {
-    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+#ifdef IN_RING3
+    if (!pGip || pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
+#else
     if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
+#endif
         return 0;
     return SUPGetTscDeltaSlow(pGip);
 }

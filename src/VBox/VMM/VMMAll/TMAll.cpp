@@ -188,8 +188,9 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uTsc)
      * Calculate the elapsed tick count and convert it to nanoseconds.
      */
 # ifdef IN_RING3
-    uint64_t       cTicks = uTsc - pVCpu->tm.s.uTscStartExecuting - SUPGetTscDelta();
-    uint64_t const uCpuHz = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
+    PSUPGLOBALINFOPAGE const pGip = g_pSUPGlobalInfoPage;
+    uint64_t       cTicks = uTsc - pVCpu->tm.s.uTscStartExecuting - SUPGetTscDelta(pGip);
+    uint64_t const uCpuHz = pGip ? SUPGetCpuHzFromGip(pGip) : pVM->tm.s.cTSCTicksPerSecondHost;
 # else
     uint64_t       cTicks = uTsc - pVCpu->tm.s.uTscStartExecuting - SUPGetTscDeltaByCpuSetIndex(pVCpu->iHostCpuSet);
     uint64_t const uCpuHz = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);

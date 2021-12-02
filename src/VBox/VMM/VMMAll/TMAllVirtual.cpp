@@ -56,6 +56,20 @@ DECLCALLBACK(DECLEXPORT(void)) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint6
 }
 
 
+#ifdef IN_RING3
+/**
+ * @callback_method_impl{FNTIMENANOTSINTERNAL, For driverless mode.}
+ */
+static DECLCALLBACK(uint64_t) tmR3VirtualNanoTSDriverless(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra)
+{
+    RT_NOREF(pData);
+    if (pExtra)
+        pExtra->uTSCValue = ASMReadTSC();
+    return RTTimeSystemNanoTS();
+}
+#endif
+
+
 /**
  * @interface_method_impl{RTTIMENANOTSDATA,pfnRediscover}
  *
@@ -66,77 +80,87 @@ DECLCALLBACK(DECLEXPORT(void)) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint6
  */
 DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra)
 {
-    PVM pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
+    PVM                   pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
+    PFNTIMENANOTSINTERNAL pfnWorker;
 
     /*
-     * We require a valid GIP for the selection below.  Invalid GIP is fatal.
+     * We require a valid GIP for the selection below.
+     * Invalid GIP is fatal, though we have to allow no GIP in driverless mode (ring-3 only).
      */
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-    AssertFatalMsg(RT_VALID_PTR(pGip), ("pVM=%p pGip=%p\n", pVM, pGip));
-    AssertFatalMsg(pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC, ("pVM=%p pGip=%p u32Magic=%#x\n", pVM, pGip, pGip->u32Magic));
-    AssertFatalMsg(pGip->u32Mode > SUPGIPMODE_INVALID && pGip->u32Mode < SUPGIPMODE_END,
-                   ("pVM=%p pGip=%p u32Mode=%#x\n", pVM, pGip, pGip->u32Mode));
-
-    /*
-     * Determine the new worker.
-     */
-    PFNTIMENANOTSINTERNAL   pfnWorker;
-    bool const              fLFence = RT_BOOL(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2);
-    switch (pGip->u32Mode)
+#ifdef IN_RING3
+    if (pGip)
+#endif
     {
-        case SUPGIPMODE_SYNC_TSC:
-        case SUPGIPMODE_INVARIANT_TSC:
-#ifdef IN_RING0
-            if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
-                pfnWorker = fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta    : RTTimeNanoTSLegacySyncInvarNoDelta;
-            else
-                pfnWorker = fLFence ? RTTimeNanoTSLFenceSyncInvarWithDelta  : RTTimeNanoTSLegacySyncInvarWithDelta;
-#else
-            if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
-                pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
-                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta             : RTTimeNanoTSLegacySyncInvarNoDelta
-                          : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim : RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim;
-            else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
-                pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
-                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta            : RTTimeNanoTSLegacySyncInvarNoDelta
-                          : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp : RTTimeNanoTSLegacySyncInvarWithDeltaUseRdtscp;
-            else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B)
-                pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
-                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta                 : RTTimeNanoTSLegacySyncInvarNoDelta
-                          : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt0B : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt0B;
-            else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E)
-                pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
-                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta                       : RTTimeNanoTSLegacySyncInvarNoDelta
-                          : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt8000001E : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt8000001E;
-            else
-                pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
-                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta            : RTTimeNanoTSLegacySyncInvarNoDelta
-                          : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId;
-#endif
-            break;
+        AssertFatalMsg(RT_VALID_PTR(pGip), ("pVM=%p pGip=%p\n", pVM, pGip));
+        AssertFatalMsg(pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC, ("pVM=%p pGip=%p u32Magic=%#x\n", pVM, pGip, pGip->u32Magic));
+        AssertFatalMsg(pGip->u32Mode > SUPGIPMODE_INVALID && pGip->u32Mode < SUPGIPMODE_END,
+                       ("pVM=%p pGip=%p u32Mode=%#x\n", pVM, pGip, pGip->u32Mode));
 
-        case SUPGIPMODE_ASYNC_TSC:
+        /*
+         * Determine the new worker.
+         */
+        bool const fLFence = RT_BOOL(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2);
+        switch (pGip->u32Mode)
+        {
+            case SUPGIPMODE_SYNC_TSC:
+            case SUPGIPMODE_INVARIANT_TSC:
 #ifdef IN_RING0
-            pfnWorker = fLFence ? RTTimeNanoTSLFenceAsync : RTTimeNanoTSLegacyAsync;
+                if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
+                    pfnWorker = fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta    : RTTimeNanoTSLegacySyncInvarNoDelta;
+                else
+                    pfnWorker = fLFence ? RTTimeNanoTSLFenceSyncInvarWithDelta  : RTTimeNanoTSLegacySyncInvarWithDelta;
 #else
-            if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
-                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseIdtrLim     : RTTimeNanoTSLegacyAsyncUseIdtrLim;
-            else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
-                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseRdtscp      : RTTimeNanoTSLegacyAsyncUseRdtscp;
-            else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL)
-                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl : RTTimeNanoTSLegacyAsyncUseRdtscpGroupChNumCl;
-            else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B)
-                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicIdExt0B : RTTimeNanoTSLegacyAsyncUseApicIdExt0B;
-            else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E)
-                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicIdExt8000001E  : RTTimeNanoTSLegacyAsyncUseApicIdExt8000001E;
-            else
-                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicId      : RTTimeNanoTSLegacyAsyncUseApicId;
+                if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
+                    pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
+                              ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta             : RTTimeNanoTSLegacySyncInvarNoDelta
+                              : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim : RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
+                    pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
+                              ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta            : RTTimeNanoTSLegacySyncInvarNoDelta
+                              : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp : RTTimeNanoTSLegacySyncInvarWithDeltaUseRdtscp;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B)
+                    pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                              ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta                 : RTTimeNanoTSLegacySyncInvarNoDelta
+                              : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt0B : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt0B;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E)
+                    pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                              ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta                       : RTTimeNanoTSLegacySyncInvarNoDelta
+                              : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt8000001E : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt8000001E;
+                else
+                    pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                              ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta            : RTTimeNanoTSLegacySyncInvarNoDelta
+                              : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId;
 #endif
-            break;
+                break;
 
-        default:
-            AssertFatalMsgFailed(("pVM=%p pGip=%p u32Mode=%#x\n", pVM, pGip, pGip->u32Mode));
+            case SUPGIPMODE_ASYNC_TSC:
+#ifdef IN_RING0
+                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsync : RTTimeNanoTSLegacyAsync;
+#else
+                if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
+                    pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseIdtrLim     : RTTimeNanoTSLegacyAsyncUseIdtrLim;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
+                    pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseRdtscp      : RTTimeNanoTSLegacyAsyncUseRdtscp;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL)
+                    pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl : RTTimeNanoTSLegacyAsyncUseRdtscpGroupChNumCl;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B)
+                    pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicIdExt0B : RTTimeNanoTSLegacyAsyncUseApicIdExt0B;
+                else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E)
+                    pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicIdExt8000001E  : RTTimeNanoTSLegacyAsyncUseApicIdExt8000001E;
+                else
+                    pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicId      : RTTimeNanoTSLegacyAsyncUseApicId;
+#endif
+                break;
+
+            default:
+                AssertFatalMsgFailed(("pVM=%p pGip=%p u32Mode=%#x\n", pVM, pGip, pGip->u32Mode));
+        }
     }
+#ifdef IN_RING3
+    else
+        pfnWorker = tmR3VirtualNanoTSDriverless;
+#endif
 
     /*
      * Update the pfnVirtualGetRaw pointer and call the worker we selected.

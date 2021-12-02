@@ -445,6 +445,8 @@ typedef struct TM
     /** The ID of the virtual CPU that normally runs the timers. */
     VMCPUID                     idTimerCpu;
 
+    /** The number of CPU clock ticks per seconds of the host CPU.   */
+    uint64_t                    cTSCTicksPerSecondHost;
     /** The number of CPU clock ticks per second (TMCLOCK_TSC).
      * Config variable: TSCTicksPerSecond (64-bit unsigned int)
      * The config variable implies @c enmTSCMode would be

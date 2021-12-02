@@ -309,7 +309,7 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *p
         /** @todo We should negate both deltas!  It's soo weird that we do the
          *        exact opposite of what the hardware implements. */
 # ifdef IN_RING3
-        *poffRealTsc = (uint64_t)0 - pVCpu->tm.s.offTSCRawSrc - (uint64_t)SUPGetTscDelta();
+        *poffRealTsc = (uint64_t)0 - pVCpu->tm.s.offTSCRawSrc - (uint64_t)SUPGetTscDelta(g_pSUPGlobalInfoPage);
 # else
         *poffRealTsc = (uint64_t)0 - pVCpu->tm.s.offTSCRawSrc - (uint64_t)SUPGetTscDeltaByCpuSetIndex(pVCpu->iHostCpuSet);
 # endif
@@ -341,7 +341,7 @@ VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCC pVM, PVMCPUCC pVCpu, uint64_t *p
         if (u64Now >= pVCpu->tm.s.u64TSCLastSeen)
         {
 # ifdef IN_RING3
-            *poffRealTsc = u64Now - (uTscNow + (uint64_t)SUPGetTscDelta();
+            *poffRealTsc = u64Now - (uTscNow + (uint64_t)SUPGetTscDelta(g_pSUPGlobalInfoPage);
 # else
             *poffRealTsc = u64Now - (uTscNow + (uint64_t)SUPGetTscDeltaByCpuSetIndex(pVCpu->iHostCpuSet));
 # endif
@@ -372,7 +372,8 @@ DECLINLINE(uint64_t) tmCpuCalcTicksToDeadline(PVMCPUCC pVCpu, uint64_t cNsToDead
     AssertCompile(TMCLOCK_FREQ_VIRTUAL <= _4G);
 # ifdef IN_RING3
     RT_NOREF_PV(pVCpu);
-    uint64_t uCpuHz = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
+    PSUPGIP const pGip = g_pSUPGlobalInfoPage;
+    uint64_t uCpuHz = pGip ? SUPGetCpuHzFromGip(pGip) : pVCpu->pVMR3->tm.s.cTSCTicksPerSecondHost;
 # else
     uint64_t uCpuHz = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
 # endif
@@ -426,7 +427,7 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCC pVM, PVMCPUCC pVCp
         /** @todo We should negate both deltas!  It's soo weird that we do the
          *        exact opposite of what the hardware implements. */
 # ifdef IN_RING3
-        *poffRealTsc     = (uint64_t)0 - pVCpu->tm.s.offTSCRawSrc - (uint64_t)SUPGetTscDelta();
+        *poffRealTsc     = (uint64_t)0 - pVCpu->tm.s.offTSCRawSrc - (uint64_t)SUPGetTscDelta(g_pSUPGlobalInfoPage);
 # else
         *poffRealTsc     = (uint64_t)0 - pVCpu->tm.s.offTSCRawSrc - (uint64_t)SUPGetTscDeltaByCpuSetIndex(pVCpu->iHostCpuSet);
 # endif
@@ -449,7 +450,7 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetDeadlineAndTscOffset(PVMCC pVM, PVMCPUCC pVCp
         u64Now -= pVCpu->tm.s.offTSCRawSrc;
 
 # ifdef IN_RING3
-        *poffRealTsc     = u64Now - (*puTscNow + (uint64_t)SUPGetTscDelta()); /* undoing delta */
+        *poffRealTsc     = u64Now - (*puTscNow + (uint64_t)SUPGetTscDelta(g_pSUPGlobalInfoPage)); /* undoing delta */
 # else
         *poffRealTsc     = u64Now - (*puTscNow + (uint64_t)SUPGetTscDeltaByCpuSetIndex(pVCpu->iHostCpuSet)); /* undoing delta */
 # endif
@@ -617,18 +618,21 @@ VMM_INT_DECL(uint64_t) TMCpuTickGetLastSeen(PVMCPUCC pVCpu)
  */
 VMMDECL(uint64_t) TMCpuTicksPerSecond(PVMCC pVM)
 {
-    if (   pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET
-        && g_pSUPGlobalInfoPage->u32Mode != SUPGIPMODE_INVARIANT_TSC)
+    if (pVM->tm.s.enmTSCMode == TMTSCMODE_REAL_TSC_OFFSET)
     {
+        PSUPGLOBALINFOPAGE const pGip = g_pSUPGlobalInfoPage;
+        if (pGip && pGip->u32Mode != SUPGIPMODE_INVARIANT_TSC)
+        {
 #ifdef IN_RING3
-        uint64_t cTSCTicksPerSecond = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
+            uint64_t cTSCTicksPerSecond = SUPGetCpuHzFromGip(pGip);
 #elif defined(IN_RING0)
-        uint64_t cTSCTicksPerSecond = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, (uint32_t)RTMpCpuIdToSetIndex(RTMpCpuId()));
+            uint64_t cTSCTicksPerSecond = SUPGetCpuHzFromGipBySetIndex(pGip, (uint32_t)RTMpCpuIdToSetIndex(RTMpCpuId()));
 #else
-        uint64_t cTSCTicksPerSecond = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, VMMGetCpu(pVM)->iHostCpuSet);
+            uint64_t cTSCTicksPerSecond = SUPGetCpuHzFromGipBySetIndex(pGip, VMMGetCpu(pVM)->iHostCpuSet);
 #endif
-        if (RT_LIKELY(cTSCTicksPerSecond != ~(uint64_t)0))
-            return cTSCTicksPerSecond;
+            if (RT_LIKELY(cTSCTicksPerSecond != ~(uint64_t)0))
+                return cTSCTicksPerSecond;
+        }
     }
     return pVM->tm.s.cTSCTicksPerSecond;
 }

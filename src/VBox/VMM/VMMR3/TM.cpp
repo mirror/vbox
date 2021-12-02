@@ -250,36 +250,35 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
      * as well and save costly world switches.
      */
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-    pVM->tm.s.pvGIPR3 = (void *)pGip;
-    AssertMsgReturn(pVM->tm.s.pvGIPR3, ("GIP support is now required!\n"), VERR_TM_GIP_REQUIRED);
-    AssertMsgReturn((pGip->u32Version >> 16) == (SUPGLOBALINFOPAGE_VERSION >> 16),
-                    ("Unsupported GIP version %#x! (expected=%#x)\n", pGip->u32Version, SUPGLOBALINFOPAGE_VERSION),
-                    VERR_TM_GIP_VERSION);
-
-    RTHCPHYS HCPhysGIP;
-    rc = SUPR3GipGetPhys(&HCPhysGIP);
-    AssertMsgRCReturn(rc, ("Failed to get GIP physical address!\n"), rc);
-
-    /* Check assumptions made in TMAllVirtual.cpp about the GIP update interval. */
-    if (    pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
-        &&  pGip->u32UpdateIntervalNS >= 250000000 /* 0.25s */)
-        return VMSetError(pVM, VERR_TM_GIP_UPDATE_INTERVAL_TOO_BIG, RT_SRC_POS,
-                          N_("The GIP update interval is too big. u32UpdateIntervalNS=%RU32 (u32UpdateHz=%RU32)"),
-                          pGip->u32UpdateIntervalNS, pGip->u32UpdateHz);
-
-    /* Log GIP info that may come in handy. */
-    LogRel(("TM: GIP - u32Mode=%d (%s) u32UpdateHz=%u u32UpdateIntervalNS=%u enmUseTscDelta=%d (%s) fGetGipCpu=%#x cCpus=%d\n",
-            pGip->u32Mode, SUPGetGIPModeName(pGip), pGip->u32UpdateHz, pGip->u32UpdateIntervalNS,
-            pGip->enmUseTscDelta, SUPGetGIPTscDeltaModeName(pGip), pGip->fGetGipCpu, pGip->cCpus));
-    LogRel(("TM: GIP - u64CpuHz=%'RU64 (%#RX64)  SUPGetCpuHzFromGip => %'RU64\n",
-            pGip->u64CpuHz, pGip->u64CpuHz, SUPGetCpuHzFromGip(pGip)));
-    for (uint32_t iCpuSet = 0; iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); iCpuSet++)
+    if (pGip || !SUPR3IsDriverless())
     {
-        uint16_t iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
-        if (iGipCpu != UINT16_MAX)
-            LogRel(("TM: GIP - CPU: iCpuSet=%#x idCpu=%#x idApic=%#x iGipCpu=%#x i64TSCDelta=%RI64 enmState=%d u64CpuHz=%RU64(*) cErrors=%u\n",
-                    iCpuSet, pGip->aCPUs[iGipCpu].idCpu, pGip->aCPUs[iGipCpu].idApic, iGipCpu, pGip->aCPUs[iGipCpu].i64TSCDelta,
-                    pGip->aCPUs[iGipCpu].enmState, pGip->aCPUs[iGipCpu].u64CpuHz, pGip->aCPUs[iGipCpu].cErrors));
+        pVM->tm.s.pvGIPR3 = (void *)pGip;
+        AssertMsgReturn(pVM->tm.s.pvGIPR3, ("GIP support is now required!\n"), VERR_TM_GIP_REQUIRED);
+        AssertMsgReturn((pGip->u32Version >> 16) == (SUPGLOBALINFOPAGE_VERSION >> 16),
+                        ("Unsupported GIP version %#x! (expected=%#x)\n", pGip->u32Version, SUPGLOBALINFOPAGE_VERSION),
+                        VERR_TM_GIP_VERSION);
+
+        /* Check assumptions made in TMAllVirtual.cpp about the GIP update interval. */
+        if (    pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
+            &&  pGip->u32UpdateIntervalNS >= 250000000 /* 0.25s */)
+            return VMSetError(pVM, VERR_TM_GIP_UPDATE_INTERVAL_TOO_BIG, RT_SRC_POS,
+                              N_("The GIP update interval is too big. u32UpdateIntervalNS=%RU32 (u32UpdateHz=%RU32)"),
+                              pGip->u32UpdateIntervalNS, pGip->u32UpdateHz);
+
+        /* Log GIP info that may come in handy. */
+        LogRel(("TM: GIP - u32Mode=%d (%s) u32UpdateHz=%u u32UpdateIntervalNS=%u enmUseTscDelta=%d (%s) fGetGipCpu=%#x cCpus=%d\n",
+                pGip->u32Mode, SUPGetGIPModeName(pGip), pGip->u32UpdateHz, pGip->u32UpdateIntervalNS,
+                pGip->enmUseTscDelta, SUPGetGIPTscDeltaModeName(pGip), pGip->fGetGipCpu, pGip->cCpus));
+        LogRel(("TM: GIP - u64CpuHz=%'RU64 (%#RX64)  SUPGetCpuHzFromGip => %'RU64\n",
+                pGip->u64CpuHz, pGip->u64CpuHz, SUPGetCpuHzFromGip(pGip)));
+        for (uint32_t iCpuSet = 0; iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); iCpuSet++)
+        {
+            uint16_t iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+            if (iGipCpu != UINT16_MAX)
+                LogRel(("TM: GIP - CPU: iCpuSet=%#x idCpu=%#x idApic=%#x iGipCpu=%#x i64TSCDelta=%RI64 enmState=%d u64CpuHz=%RU64(*) cErrors=%u\n",
+                        iCpuSet, pGip->aCPUs[iGipCpu].idCpu, pGip->aCPUs[iGipCpu].idApic, iGipCpu, pGip->aCPUs[iGipCpu].i64TSCDelta,
+                        pGip->aCPUs[iGipCpu].enmState, pGip->aCPUs[iGipCpu].u64CpuHz, pGip->aCPUs[iGipCpu].cErrors));
+        }
     }
 
     /*
@@ -290,8 +289,11 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.VirtualGetRawDataR3.pfnBad         = tmVirtualNanoTSBad;
     pVM->tm.s.VirtualGetRawDataR3.pfnBadCpuIndex = tmVirtualNanoTSBadCpuIndex;
     pVM->tm.s.VirtualGetRawDataR3.pu64Prev       = &pVM->tm.s.u64VirtualRawPrev;
-    pVM->tm.s.VirtualGetRawDataR0.pu64Prev       = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
-    AssertRelease(pVM->tm.s.VirtualGetRawDataR0.pu64Prev);
+    if (!SUPR3IsDriverless())
+    {
+        pVM->tm.s.VirtualGetRawDataR0.pu64Prev   = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+        AssertRelease(pVM->tm.s.VirtualGetRawDataR0.pu64Prev);
+    }
     /* The rest is done in TMR3InitFinalize() since it's too early to call PDM. */
 
     /*
@@ -416,10 +418,11 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
      * The number of TSC ticks per second (i.e. the TSC frequency). This will
      * override enmTSCMode.
      */
+    pVM->tm.s.cTSCTicksPerSecondHost = tmR3CalibrateTSC();
     rc = CFGMR3QueryU64(pCfgHandle, "TSCTicksPerSecond", &pVM->tm.s.cTSCTicksPerSecond);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        pVM->tm.s.cTSCTicksPerSecond = tmR3CalibrateTSC();
+        pVM->tm.s.cTSCTicksPerSecond = pVM->tm.s.cTSCTicksPerSecondHost;
         if (   (   pVM->tm.s.enmTSCMode == TMTSCMODE_DYNAMIC
                 || pVM->tm.s.enmTSCMode == TMTSCMODE_VIRT_TSC_EMULATED)
             && pVM->tm.s.cTSCTicksPerSecond >= _4G)
@@ -441,7 +444,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     else
     {
         LogRel(("TM: NEM overrides the /TM/TSCTicksPerSecond=%RU64 setting.\n", pVM->tm.s.cTSCTicksPerSecond));
-        pVM->tm.s.cTSCTicksPerSecond = tmR3CalibrateTSC();
+        pVM->tm.s.cTSCTicksPerSecond = pVM->tm.s.cTSCTicksPerSecondHost;
     }
 
     /** @cfgm{/TM/TSCTiedToExecution, bool, false}
@@ -630,9 +633,11 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
      */
     pVM->tm.s.enmOriginalTSCMode = pVM->tm.s.enmTSCMode;
     CPUMR3SetCR4Feature(pVM, X86_CR4_TSD, ~X86_CR4_TSD);
-    LogRel(("TM: cTSCTicksPerSecond=%'RU64 (%#RX64) enmTSCMode=%d (%s)\n"
+    LogRel(("TM:     cTSCTicksPerSecond=%'RU64 (%#RX64) enmTSCMode=%d (%s)\n"
+            "TM: cTSCTicksPerSecondHost=%'RU64 (%#RX64)\n"
             "TM: TSCTiedToExecution=%RTbool TSCNotTiedToHalt=%RTbool\n",
             pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM),
+            pVM->tm.s.cTSCTicksPerSecondHost, pVM->tm.s.cTSCTicksPerSecondHost,
             pVM->tm.s.fTSCTiedToExecution, pVM->tm.s.fTSCNotTiedToHalt));
 
     /*
@@ -859,9 +864,13 @@ static bool tmR3HasFixedTSC(PVM pVM)
     /*
      * ASSUME that if the GIP is in invariant TSC mode, it's because the CPU
      * actually has invariant TSC.
+     *
+     * In driverless mode we just assume sync TSC for now regardless of what
+     * the case actually is.
      */
-    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-    if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
+    PSUPGLOBALINFOPAGE const pGip       = g_pSUPGlobalInfoPage;
+    SUPGIPMODE const         enmGipMode = pGip ? (SUPGIPMODE)pGip->u32Mode : SUPGIPMODE_INVARIANT_TSC;
+    if (enmGipMode == SUPGIPMODE_INVARIANT_TSC)
         return true;
 
     /*
@@ -879,7 +888,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
         {
             ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
             if (   (uEDX & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR) /* TscInvariant */
-                && pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)       /* No fixed tsc if the gip timer is in async mode. */
+                && enmGipMode != SUPGIPMODE_ASYNC_TSC)       /* No fixed tsc if the gip timer is in async mode. */
                 return true;
         }
 
@@ -901,8 +910,8 @@ static bool tmR3HasFixedTSC(PVM pVM)
             {
                 ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
                 if (   (uEDX & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR) /* TscInvariant */
-                    && (   pGip->u32Mode == SUPGIPMODE_SYNC_TSC     /* No fixed tsc if the gip timer is in async mode. */
-                        || pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC))
+                    && (   enmGipMode == SUPGIPMODE_SYNC_TSC     /* No fixed tsc if the gip timer is in async mode. */
+                        || enmGipMode == SUPGIPMODE_INVARIANT_TSC))
                     return true;
             }
 #endif
@@ -991,14 +1000,14 @@ static uint64_t tmR3CalibrateTSC(void)
 
         AssertFailed(); /* This shouldn't happen. */
     }
-    /* else: This should only happen in fake SUPLib mode, which we don't really support any more... */
+    else
+        Assert(SUPR3IsDriverless());
 
     /* Call this once first to make sure it's initialized. */
     RTTimeNanoTS();
 
     /*
-     * Yield the CPU to increase our chances of getting
-     * a correct value.
+     * Yield the CPU to increase our chances of getting a correct value.
      */
     RTThreadYield();                    /* Try avoid interruptions between TSC and NanoTS samplings. */
     static const unsigned   s_auSleep[5] = { 50, 30, 30, 40, 40 };
@@ -3767,8 +3776,10 @@ VMMR3_INT_DECL(bool) TMR3CpuTickIsFixedRateMonotonic(PVM pVM, bool fWithParavirt
 {
     /** @todo figure out what exactly we want here later. */
     NOREF(fWithParavirtEnabled);
-    return (   tmR3HasFixedTSC(pVM)                                        /* Host has fixed-rate TSC. */
-            && g_pSUPGlobalInfoPage->u32Mode != SUPGIPMODE_ASYNC_TSC);     /* GIP thinks it's monotonic. */
+    PSUPGLOBALINFOPAGE pGip;
+    return tmR3HasFixedTSC(pVM)                             /* Host has fixed-rate TSC. */
+        && (   (pGip = g_pSUPGlobalInfoPage) != NULL        /* Can be NULL in driverless mode. */
+            || (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC));    /* GIP thinks it's monotonic. */
 }
 
 
