@@ -46,13 +46,13 @@ DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsMemTypeValid)(uint64_t uEntry, uint
 
 DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(PCVMCPUCC pVCpu, PPGMPTWALK pWalk, uint64_t uEntry, uint8_t uLevel)
 {
-    static PGMSLATFAIL const s_aEptViolation[] = { PGMSLATFAIL_EPT_VIOLATION, PGMSLATFAIL_EPT_VIOLATION_CONVERTIBLE };
+    static PGMWALKFAIL const s_afEptViolations[] = { PGM_WALKFAIL_EPT_VIOLATION, PGM_WALKFAIL_EPT_VIOLATION_CONVERTIBLE };
     uint8_t const fEptVeSupported  = pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxEptXcptVe;
     uint8_t const idxViolationType = fEptVeSupported & !RT_BF_GET(uEntry, VMX_BF_EPT_PT_SUPPRESS_VE);
 
     pWalk->fNotPresent = true;
     pWalk->uLevel      = uLevel;
-    pWalk->enmSlatFail = s_aEptViolation[idxViolationType];
+    pWalk->fFailed    |= s_afEptViolations[idxViolationType];
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
@@ -62,24 +62,47 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnBadPhysAddr)(PCVMCPUCC pVCpu, PP
     AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc); NOREF(pVCpu);
     pWalk->fBadPhysAddr = true;
     pWalk->uLevel       = uLevel;
-    pWalk->enmSlatFail  = PGMSLATFAIL_EPT_VIOLATION;
+    pWalk->fFailed     |= PGM_WALKFAIL_EPT_VIOLATION;
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
 
-DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint8_t uLevel)
+DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint64_t uEntry, uint8_t uLevel)
 {
-    NOREF(pVCpu);
+    static PGMWALKFAIL const s_afEptViolations[] = { PGM_WALKFAIL_EPT_VIOLATION, PGM_WALKFAIL_EPT_VIOLATION_CONVERTIBLE };
+    uint8_t const fEptVeSupported  = pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxEptXcptVe;
+    uint8_t const fConvertible     = RT_BOOL(uLevel == 1 || (uEntry & EPT_E_BIT_LEAF));
+    uint8_t const idxViolationType = fEptVeSupported & fConvertible & !RT_BF_GET(uEntry, VMX_BF_EPT_PT_SUPPRESS_VE);
+
     pWalk->fRsvdError  = true;
     pWalk->uLevel      = uLevel;
-    pWalk->enmSlatFail = PGMSLATFAIL_EPT_MISCONFIG;
+    pWalk->fFailed    |= s_afEptViolations[idxViolationType];
     return VERR_PAGE_TABLE_NOT_PRESENT;
 }
 
 
+/**
+ * Performs an EPT walk (second-level address translation).
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PAGE_TABLE_NOT_PRESENT on failure. Check pWalk for details.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPhysNested        The nested-guest physical address to walk.
+ * @param   fIsLinearAddrValid  Whether the linear-address in @c GCPtrNested caused
+ *                              this page walk. If this is false, @c GCPtrNested
+ *                              must be 0.
+ * @param   GCPtrNested         The nested-guest linear address that caused this
+ *                              page walk.
+ * @param   pWalk               The page walk info.
+ * @param   pGstWalk            The guest mode specific page walk info.
+ */
 DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNested, bool fIsLinearAddrValid, RTGCPTR GCPtrNested,
                                             PPGMPTWALK pWalk, PGSTPTWALK pGstWalk)
 {
+    Assert(fIsLinearAddrValid || GCPtrNested == 0);
+
     /*
      * Init walk structures.
      */
@@ -142,7 +165,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         else return PGM_GST_SLAT_NAME_EPT(WalkReturnNotPresent)(pVCpu, pWalk, Pml4e.u, 4);
 
         if (RT_LIKELY(GST_IS_PML4E_VALID(pVCpu, Pml4e))) { /* likely */ }
-        else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 4);
+        else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, Pml4e.u, 4);
 
         Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
         uint64_t const fEptAttrs     = Pml4e.u & EPT_PML4E_ATTR_MASK;
@@ -211,7 +234,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->GCPhys);
             return VINF_SUCCESS;
         }
-        else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 3);
+        else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, Pdpte.u, 3);
 
         int const rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, Pdpte.u & EPT_PDPTE_PG_MASK, &pGstWalk->pPd);
         if (RT_SUCCESS(rc)) { /* probable */ }
@@ -269,7 +292,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->GCPhys);
             return VINF_SUCCESS;
         }
-        else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 2);
+        else return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, Pde.u, 2);
 
         int const rc = PGM_GCPHYS_2_PTR_BY_VMCPU(pVCpu, GST_GET_PDE_GCPHYS(Pde), &pGstWalk->pPt);
         if (RT_SUCCESS(rc)) { /* probable */ }
@@ -291,7 +314,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             && PGM_GST_SLAT_NAME_EPT(WalkIsMemTypeValid)(Pte.u, 1))
         { /* likely*/  }
         else
-            return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, 1);
+            return PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(pVCpu, pWalk, Pte.u, 1);
 
         uint64_t const fEptAttrs     = Pte.u & EPT_PTE_ATTR_MASK;
         uint8_t const fRead          = RT_BF_GET(fEptAttrs, VMX_BF_EPT_PT_READ);

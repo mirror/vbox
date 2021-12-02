@@ -3289,9 +3289,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_TASK_SWITCH_, UINT64_C(0), UINT64_M
 #define VMX_EXIT_QUAL_EPT_LINEAR_ADDR_VALID                     RT_BIT_64(7)
 /** If bit 7 is one: (reserved otherwise)
  *  1 - violation due to physical address access.
- *  0 - violation caused by page walk or access/dirty bit updates
+ *  0 - violation caused by page walk or access/dirty bit updates.
  */
-#define VMX_EXIT_QUAL_EPT_ACCESS_TRANSLATE                      RT_BIT_64(8)
+#define VMX_EXIT_QUAL_EPT_LINEAR_TO_PHYS_ADDR                   RT_BIT_64(8)
 /** If bit 7, 8 and advanced VM-exit info. for EPT is one: (reserved otherwise)
  *  1 - linear address is user-mode address.
  *  0 - linear address is supervisor-mode address.
@@ -3339,8 +3339,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_TASK_SWITCH_, UINT64_C(0), UINT64_M
 #define VMX_BF_EXIT_QUAL_EPT_ENTRY_EXECUTE_USER_MASK            UINT64_C(0x0000000000000040)
 #define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_VALID_SHIFT            7
 #define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_VALID_MASK             UINT64_C(0x0000000000000080)
-#define VMX_BF_EXIT_QUAL_EPT_ACCESS_TRANSLATE_SHIFT             8
-#define VMX_BF_EXIT_QUAL_EPT_ACCESS_TRANSLATE_MASK              UINT64_C(0x0000000000000100)
+#define VMX_BF_EXIT_QUAL_EPT_LINEAR_TO_PHYS_ADDR_SHIFT          8
+#define VMX_BF_EXIT_QUAL_EPT_LINEAR_TO_PHYS_ADDR_MASK           UINT64_C(0x0000000000000100)
 #define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_USER_SHIFT             9
 #define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_USER_MASK              UINT64_C(0x0000000000000200)
 #define VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_RO_SHIFT               10
@@ -3361,7 +3361,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_TASK_SWITCH_, UINT64_C(0), UINT64_M
 #define VMX_BF_EXIT_QUAL_EPT_RSVD_17_63_MASK                    UINT64_C(0xfffffffffffe0000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_EPT_, UINT64_C(0), UINT64_MAX,
                             (ACCESS_READ, ACCESS_WRITE, ACCESS_INSTR_FETCH, ENTRY_READ, ENTRY_WRITE, ENTRY_EXECUTE,
-                             ENTRY_EXECUTE_USER, LINEAR_ADDR_VALID, ACCESS_TRANSLATE, LINEAR_ADDR_USER, LINEAR_ADDR_RO,
+                             ENTRY_EXECUTE_USER, LINEAR_ADDR_VALID, LINEAR_TO_PHYS_ADDR, LINEAR_ADDR_USER, LINEAR_ADDR_RO,
                              LINEAR_ADDR_XD, NMI_UNBLOCK_IRET, ACCESS_SHW_STACK, ENTRY_SHW_STACK_SUPER, RSVD_15,
                              ACCESS_PT_TRACE, RSVD_17_63));
 /** @} */

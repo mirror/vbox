@@ -920,9 +920,24 @@ typedef enum IEMACCESSCRX
     IEMACCESSCRX_SMSW
 } IEMACCESSCRX;
 
-# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/** @name IEM_SLAT_FAIL_XXX - Second-level address translation failure information.
+ *
+ * These flags provide further context to SLAT page-walk failures that could not be
+ * determined by PGM (e.g, PGM is not privy to memory access permissions).
+ *
+ * @{
+ */
+/** Translating a nested-guest linear address failed accessing a nested-guest
+ *  physical address. */
+# define IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR          RT_BIT_32(0)
+/** Translating a nested-guest linear address failed accessing a
+ *  paging-structure entry. */
+# define IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE         RT_BIT_32(1)
+/** @} */
+
 PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) iemVmxApicAccessPageHandler;
-# endif
+#endif
 
 /**
  * Indicates to the verifier that the given flag set is undefined.

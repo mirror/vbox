@@ -295,22 +295,27 @@ typedef enum PGMSLAT
     PGMSLAT_32BIT_HACK = 0x7fffffff
 } PGMSLAT;
 
-/**
- * SLAT page walk failure type.
+
+/** @name PGMPTWALK::fFailed flags.
+ * These flags indicate the type of a page-walk failure.
+ * @{
  */
-typedef enum PGMSLATFAIL
-{
-    /** Invalid value. */
-    PGMSLATFAIL_INVALID = 0,
-    /** EPT violation. */
-    PGMSLATFAIL_EPT_VIOLATION,
-    /** EPT violation convertible to \#VE exception. */
-    PGMSLATFAIL_EPT_VIOLATION_CONVERTIBLE,
-    /** EPT misconfiguration. */
-    PGMSLATFAIL_EPT_MISCONFIG,
-    /** 32bit hackishness. */
-    PGMSLATFAIL_32BIT_HACK = 0x7fffffff
-} PGMSLATFAIL;
+typedef uint32_t PGMWALKFAIL;
+/** Regular page fault (MBZ since guest Walk code don't set these explicitly). */
+#define PGM_WALKFAIL_PAGE_FAULT                     UINT32_C(0)
+/** EPT violation - Intel. */
+#define PGM_WALKFAIL_EPT_VIOLATION                  RT_BIT_32(0)
+/** EPT violation, convertible to \#VE exception - Intel. */
+#define PGM_WALKFAIL_EPT_VIOLATION_CONVERTIBLE      RT_BIT_32(1)
+/** EPT misconfiguration - Intel. */
+#define PGM_WALKFAIL_EPT_MISCONFIG                  RT_BIT_32(2)
+
+/** Mask of all EPT induced page-walk failures - Intel. */
+#define PGM_WALKFAIL_EPT                            (  PGM_WALKFAIL_EPT_VIOLATION \
+                                                     | PGM_WALKFAIL_EPT_VIOLATION_CONVERTIBLE \
+                                                     | PGM_WALKFAIL_EPT_MISCONFIG)
+/** @} */
+
 
 /** @name PGMPTATTRS - PGM page-table attributes.
  *
@@ -523,10 +528,10 @@ typedef struct PGMPTWALK
     /** Set if it involves a gigantic page (1 GB). */
     bool            fGigantPage;
     bool            afPadding[3];
-    /** The type of SLAT failure. */
-    PGMSLATFAIL     enmSlatFail;
+    /** Page-walk failure type, PGM_WALKFAIL_XXX. */
+    PGMWALKFAIL     fFailed;
 
-    /** The effective attributes, PGM_PTATTRS_XXX. */
+    /** The effective page-table attributes, PGM_PTATTRS_XXX. */
     PGMPTATTRS      fEffective;
 } PGMPTWALK;
 /** Pointer to page walk information. */

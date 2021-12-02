@@ -3684,19 +3684,21 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPUCC pVCpu, uint8_t uVector, uint3
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
 /**
  * VMX VM-exit handler for EPT violation.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   fAccess     The access causing the EPT violation, IEM_ACCESS_XXX.
- * @param   fEptAccess  The EPT paging structure bits.
- * @param   GCPhysAddr  The physical address causing the EPT violation.
- * @param   GCPtrAddr   The linear address causing the EPT violation.
- * @param   cbInstr     The VM-exit instruction length.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   fAccess             The access causing the EPT violation, IEM_ACCESS_XXX.
+ * @param   fSlatFail           The SLAT failure info, IEM_SLAT_FAIL_XXX.
+ * @param   fEptAccess          The EPT paging structure bits.
+ * @param   GCPhysAddr          The physical address causing the EPT violation.
+ * @param   fIsLinearAddrValid  Whether translation of a linear address caused this
+ *                              EPT violation. If @c false, GCPtrAddr must be 0.
+ * @param   GCPtrAddr           The linear address causing the EPT violation.
+ * @param   cbInstr             The VM-exit instruction length.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAccess, uint64_t fEptAccess, RTGCPHYS GCPhysAddr,
-                                                 uint64_t GCPtrAddr, bool fLinearAddrValid, uint8_t cbInstr)
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAccess, uint32_t fSlatFail, uint64_t fEptAccess,
+                                                 RTGCPHYS GCPhysAddr, bool fLinearAddrValid, uint64_t GCPtrAddr, uint8_t cbInstr)
 {
     /*
      * If the linear address isn't valid (can happen when loading PDPTEs
@@ -3708,38 +3710,30 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAcces
     uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
     uint8_t const fSupportsAccessDirty = fCaps & MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY;
 
-    uint8_t const fDataRead    = ((fAccess & IEM_ACCESS_DATA_R)  == IEM_ACCESS_DATA_R)  | fSupportsAccessDirty;
-    uint8_t const fDataWrite   = ((fAccess & IEM_ACCESS_DATA_RW) == IEM_ACCESS_DATA_RW) | fSupportsAccessDirty;
-    uint8_t const fInstrFetch  = (fAccess & IEM_ACCESS_INSTRUCTION) == IEM_ACCESS_INSTRUCTION;
-    bool const fEptRead        = RT_BOOL(fEptAccess & EPT_E_READ);
-    bool const fEptWrite       = RT_BOOL(fEptAccess & EPT_E_WRITE);
-    bool const fEptExec        = RT_BOOL(fEptAccess & EPT_E_EXECUTE);
-    bool const fNmiUnblocking  = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
+    uint8_t const fDataRead      = ((fAccess & IEM_ACCESS_DATA_R)  == IEM_ACCESS_DATA_R)  | fSupportsAccessDirty;
+    uint8_t const fDataWrite     = ((fAccess & IEM_ACCESS_DATA_RW) == IEM_ACCESS_DATA_RW) | fSupportsAccessDirty;
+    uint8_t const fInstrFetch    = (fAccess & IEM_ACCESS_INSTRUCTION) == IEM_ACCESS_INSTRUCTION;
+    bool const fEptRead          = RT_BOOL(fEptAccess & EPT_E_READ);
+    bool const fEptWrite         = RT_BOOL(fEptAccess & EPT_E_WRITE);
+    bool const fEptExec          = RT_BOOL(fEptAccess & EPT_E_EXECUTE);
+    bool const fNmiUnblocking    = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
+    bool const fLinearToPhysAddr = fLinearAddrValid & RT_BOOL(fSlatFail & IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR);
 
-    uint64_t const u64ExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ACCESS_READ,        fDataRead)
-                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ACCESS_WRITE,       fDataWrite)
-                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH, fInstrFetch)
-                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ENTRY_READ,         fEptRead)
-                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ENTRY_WRITE,        fEptWrite)
-                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ENTRY_EXECUTE,      fEptExec)
-                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_VALID,  fLinearAddrValid)
-                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_NMI_UNBLOCK_IRET,   fNmiUnblocking);
-
-    /** @todo bit 8 of Exit Qualification!
-     *  If the access causing the EPT violation is to a guest-physical address that is
-     *  the translation of a linear address.
-     *   - OR -
-     *  if the access causing the EPT violation is to a paging-structure entry as part
-     *  of a page walk or the update of an accessed or dirty bit.
-     *
-     *  Caller needs to be able to distinguish this... */
+    uint64_t const u64ExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ACCESS_READ,         fDataRead)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ACCESS_WRITE,        fDataWrite)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH,  fInstrFetch)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ENTRY_READ,          fEptRead)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ENTRY_WRITE,         fEptWrite)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ENTRY_EXECUTE,       fEptExec)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_VALID,   fLinearAddrValid)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_LINEAR_TO_PHYS_ADDR, fLinearToPhysAddr)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_NMI_UNBLOCK_IRET,    fNmiUnblocking);
 
 #ifdef VBOX_STRICT
     uint64_t const fMiscCaps  = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Misc;
     uint32_t const fProcCtls2 = pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u32ProcCtls2;
     Assert(!(fCaps & MSR_IA32_VMX_EPT_VPID_CAP_ADVEXITINFO_EPT_VIOLATION));   /* Advanced VM-exit info. not supported */
     Assert(!(fCaps & MSR_IA32_VMX_EPT_VPID_CAP_SUPER_SHW_STACK));             /* Supervisor shadow stack control not supported. */
-    Assert(!(RT_BF_GET(fMiscCaps, VMX_BF_MISC_INTEL_PT)));                    /* Intel PT not supported. */
     Assert(!(RT_BF_GET(fMiscCaps, VMX_BF_MISC_INTEL_PT)));                    /* Intel PT not supported. */
     Assert(!(fProcCtls2 & VMX_PROC_CTLS2_MODE_BASED_EPT_PERM));               /* Mode-based execute control not supported. */
 #endif
@@ -3750,7 +3744,39 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAcces
 
     return iemVmxVmexit(pVCpu, VMX_EXIT_EPT_VIOLATION, u64ExitQual);
 }
-#endif
+
+
+/**
+ * VMX VM-exit handler for EPT-induced VM-exits.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pWalk       The page walk info.
+ * @param   fAccess     The access causing the EPT event, IEM_ACCESS_XXX.
+ * @param   fSlatFail   Additional SLAT info, IEM_SLAT_FAIL_XXX.
+ * @param   cbInstr     The VM-exit instruction length if applicable. Pass 0 if not
+ *                      applicable.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32_t fAccess, uint32_t fSlatFail,
+                                        uint8_t cbInstr)
+{
+    Assert(pWalk->fIsSlat);
+    Assert(pWalk->fFailed & PGM_WALKFAIL_EPT);
+    Assert(!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxEptXcptVe);          /* #VE exceptions not supported. */
+    Assert(!(pWalk->fFailed & PGM_WALKFAIL_EPT_VIOLATION_CONVERTIBLE)); /* Without #VE, convertible violations not possible. */
+
+    if (pWalk->fFailed & PGM_WALKFAIL_EPT_VIOLATION)
+    {
+        uint64_t const fEptAccess = (pWalk->fEffective & PGM_PTATTRS_EPT_MASK) >> PGM_PTATTRS_EPT_SHIFT;
+        return iemVmxVmexitEptViolation(pVCpu, fAccess, fSlatFail, fEptAccess, pWalk->GCPhysNested, pWalk->fIsLinearAddrValid,
+                                        pWalk->GCPtr, cbInstr);
+    }
+    else
+    {
+        Assert(pWalk->fFailed & PGM_WALKFAIL_EPT_MISCONFIG);
+        /** @todo Do EPT misconfig. */
+        return VERR_NOT_IMPLEMENTED;
+    }
+}
 
 
 /**

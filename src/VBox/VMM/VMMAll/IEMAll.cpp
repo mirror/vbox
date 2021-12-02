@@ -438,6 +438,12 @@ typedef enum IEMXCPTCLASS
     do { return iemVmxVmexitInstrMwait((a_pVCpu), (a_fMonitorArmed), (a_cbInstr)); } while (0)
 
 /**
+ * Invokes the VMX VM-exit handler for EPT faults.
+ */
+# define IEM_VMX_VMEXIT_EPT_RET(a_pVCpu, a_pPtWalk, a_fAccess, a_fSlatFail, a_cbInstr) \
+    do { return iemVmxVmexitEpt(a_pVCpu, a_pPtWalk, a_fAccess, a_fSlatFail, a_cbInstr); } while (0)
+
+/**
  * Invokes the VMX VM-exit handler.
  */
 # define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu, a_uExitReason, a_uExitQual) \
@@ -453,6 +459,7 @@ typedef enum IEMXCPTCLASS
 # define IEM_VMX_VMEXIT_INSTR_NEEDS_INFO_RET(a_pVCpu, a_uExitReason, a_uInstrId, a_cbInstr)  do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_TASK_SWITCH_RET(a_pVCpu, a_enmTaskSwitch, a_SelNewTss, a_cbInstr)    do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_MWAIT_RET(a_pVCpu, a_fMonitorArmed, a_cbInstr)          do { return VERR_VMX_IPE_1; } while (0)
+# define IEM_VMX_VMEXIT_EPT_RET(a_pVCpu, a_pPtWalk, a_fAccess, a_fSlatFail, a_cbInstr)       do { return VERR_VMX_IPE_1; } while (0)
 # define IEM_VMX_VMEXIT_TRIPLE_FAULT_RET(a_pVCpu, a_uExitReason, a_uExitQual)   do { return VERR_VMX_IPE_1; } while (0)
 
 #endif
@@ -979,6 +986,7 @@ IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEventDoubleFault(PVMCPUCC pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMem(PVMCPUCC pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData, uint32_t fAccess);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMsrRead(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t *pu64Value);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMsrWrite(PVMCPUCC pVCpu, uint32_t idMsr, uint64_t u64Value);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32_t fAccess, uint32_t fSlatFail, uint8_t cbInstr);
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
@@ -1432,6 +1440,13 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, bool fB
     else
     {
         Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - rc=%Rrc\n", GCPtrPC, rc));
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        if (Walk.fFailed & PGM_WALKFAIL_EPT)
+        {
+            Assert(IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
+            IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, IEM_ACCESS_INSTRUCTION, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
+        }
+#endif
         return iemRaisePageFault(pVCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, rc);
     }
     if ((Walk.fEffective & X86_PTE_US) || pVCpu->iem.s.uCpl != 3) { /* likely */ }
