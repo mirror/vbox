@@ -191,6 +191,7 @@ static DECLCALLBACK(void)   tmR3InfoCpuLoad(PVM pVM, PCDBGFINFOHLP pHlp, int cAr
 static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtDisable(PVM pVM, PVMCPU pVCpu, void *pvData);
 static const char          *tmR3GetTSCModeName(PVM pVM);
 static const char          *tmR3GetTSCModeNameEx(TMTSCMODE enmMode);
+static int                  tmR3TimerQueueGrow(PVM pVM, PTMTIMERQUEUE pQueue, uint32_t cNewTimers);
 
 
 /**
@@ -1071,15 +1072,18 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
     int rc;
 
     /*
-     * Resolve symbols.
+     * Resolve symbols, unless we're in driverless mode.
      */
-    rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBad",           &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
-    AssertRCReturn(rc, rc);
-    rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBadCpuIndex",   &pVM->tm.s.VirtualGetRawDataR0.pfnBadCpuIndex);
-    AssertRCReturn(rc, rc);
-    rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSRediscover",    &pVM->tm.s.VirtualGetRawDataR0.pfnRediscover);
-    AssertRCReturn(rc, rc);
-    pVM->tm.s.pfnVirtualGetRawR0 = pVM->tm.s.VirtualGetRawDataR0.pfnRediscover;
+    if (!SUPR3IsDriverless())
+    {
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBad",           &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
+        AssertRCReturn(rc, rc);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBadCpuIndex",   &pVM->tm.s.VirtualGetRawDataR0.pfnBadCpuIndex);
+        AssertRCReturn(rc, rc);
+        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSRediscover",    &pVM->tm.s.VirtualGetRawDataR0.pfnRediscover);
+        AssertRCReturn(rc, rc);
+        pVM->tm.s.pfnVirtualGetRawR0 = pVM->tm.s.VirtualGetRawDataR0.pfnRediscover;
+    }
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     /*
@@ -1106,15 +1110,14 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aExtra); i++)
     {
         PTMTIMERQUEUE pQueue = &pVM->tm.s.aTimerQueues[s_aExtra[i].idxQueue];
+        PDMCritSectRwEnterExcl(pVM, &pQueue->AllocLock, VERR_IGNORED);
         if (s_aExtra[i].cExtra > pQueue->cTimersFree)
         {
-            PDMCritSectRwEnterExcl(pVM, &pQueue->AllocLock, VERR_IGNORED);
             uint32_t cTimersAlloc = pQueue->cTimersAlloc + s_aExtra[i].cExtra - pQueue->cTimersFree;
-            rc = VMMR3CallR0Emt(pVM, VMMGetCpu(pVM), VMMR0_DO_TM_GROW_TIMER_QUEUE,
-                                RT_MAKE_U64(cTimersAlloc, s_aExtra[i].idxQueue), NULL);
+            rc = tmR3TimerQueueGrow(pVM, pQueue, cTimersAlloc);
             AssertLogRelMsgReturn(RT_SUCCESS(rc), ("rc=%Rrc cTimersAlloc=%u %s\n", rc, cTimersAlloc, pQueue->szName), rc);
-            PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock);
         }
+        PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock);
     }
 
 #ifdef VBOX_WITH_STATISTICS
@@ -1529,9 +1532,10 @@ static void tmR3TimerQueueRegisterStats(PVM pVM, PTMTIMERQUEUE pQueue, uint32_t 
  * @returns VBox status code (errors are LogRel'ed already).
  * @param   pVM         The cross context VM structure.
  * @param   pQueue      The timer queue to grow.
+ * @param   cNewTimers  The minimum number of timers after growing.
  * @note    Caller owns the queue's allocation lock.
  */
-static int tmR3TimerQueueGrow(PVM pVM, PTMTIMERQUEUE pQueue)
+static int tmR3TimerQueueGrow(PVM pVM, PTMTIMERQUEUE pQueue, uint32_t cNewTimers)
 {
     /*
      * Validate input and state.
@@ -1540,13 +1544,14 @@ static int tmR3TimerQueueGrow(PVM pVM, PTMTIMERQUEUE pQueue)
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE); /** @todo must do better than this! */
     AssertReturn(!pQueue->fCannotGrow, VERR_TM_TIMER_QUEUE_CANNOT_GROW);
 
+    uint32_t const cOldEntries = pQueue->cTimersAlloc;
+    AssertReturn(cNewTimers > cOldEntries, VERR_TM_IPE_1);
+    AssertReturn(cNewTimers < _32K, VERR_TM_IPE_1);
+
     /*
      * Do the growing.
      */
     int rc;
-    uint32_t const cOldEntries = pQueue->cTimersAlloc;
-    uint32_t       cNewTimers  = cOldEntries + 64;
-    Assert(cNewTimers < _32K);
     if (!SUPR3IsDriverless())
     {
         rc = VMMR3CallR0Emt(pVM, VMMGetCpu(pVM), VMMR0_DO_TM_GROW_TIMER_QUEUE,
@@ -1637,7 +1642,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
      */
     if (!pQueue->cTimersFree)
     {
-        rc = tmR3TimerQueueGrow(pVM, pQueue);
+        rc = tmR3TimerQueueGrow(pVM, pQueue, pQueue->cTimersAlloc + 64);
         AssertRCReturnStmt(rc, PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock), rc);
     }
 
@@ -3841,7 +3846,7 @@ VMMR3_INT_DECL(bool) TMR3CpuTickIsFixedRateMonotonic(PVM pVM, bool fWithParavirt
     NOREF(fWithParavirtEnabled);
     PSUPGLOBALINFOPAGE pGip;
     return tmR3HasFixedTSC(pVM)                             /* Host has fixed-rate TSC. */
-        && (   (pGip = g_pSUPGlobalInfoPage) != NULL        /* Can be NULL in driverless mode. */
+        && (   (pGip = g_pSUPGlobalInfoPage) == NULL        /* Can be NULL in driverless mode. */
             || (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC));    /* GIP thinks it's monotonic. */
 }
 
