@@ -1248,14 +1248,12 @@ int main(int argc, char **argv)
          *          and return immediately.
          */
 #ifdef RT_OS_WINDOWS
-# ifndef RT_OS_NT4 /** @todo r=bird: What's RT_OS_NT4??? */
         /* Install console control handler. */
         if (!SetConsoleCtrlHandler(vgsvcWinConsoleControlHandler, TRUE /* Add handler */))
         {
             VGSvcError("Unable to add console control handler, error=%ld\n", GetLastError());
             /* Just skip this error, not critical. */
         }
-# endif /* !RT_OS_NT4 */
 #endif /* RT_OS_WINDOWS */
         rc = VGSvcStartServices();
         RTFILE hPidFile = NIL_RTFILE;
@@ -1268,14 +1266,12 @@ int main(int argc, char **argv)
         if (g_szPidFile[0] && hPidFile != NIL_RTFILE)
             VbglR3ClosePidFile(g_szPidFile, hPidFile);
 #ifdef RT_OS_WINDOWS
-# ifndef RT_OS_NT4
         /* Uninstall console control handler. */
         if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)NULL, FALSE /* Remove handler */))
         {
             VGSvcError("Unable to remove console control handler, error=%ld\n", GetLastError());
             /* Just skip this error, not critical. */
         }
-# endif /* !RT_OS_NT4 */
 #else /* !RT_OS_WINDOWS */
         /* On Windows - since we're running as a console application - we already stopped all services
          * through the console control handler. So only do the stopping of services here on other platforms
