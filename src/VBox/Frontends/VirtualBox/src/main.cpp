@@ -285,6 +285,7 @@ static void ShowHelp()
         "  --recompile-all            recompiled execution of all code, with disabled\n"
         "                             code patching and scanning\n"
         "  --execute-all-in-iem       For debugging the interpreted execution mode.\n"
+        "  --driverless               Do not open the support driver (NEM or IEM mode).\n"
         "  --warp-pct <pct>           time warp factor, 100%% (= 1.0) = normal speed\n"
         "  (*) For AMD-V/VT-x setups the effect is --recompile-all.\n"
         "\n"
@@ -659,10 +660,11 @@ int main(int argc, char **argv, char **envp)
      *        creation, it shouldn't make too much of a difference GIP-wise. */
     uint32_t fFlags = 0;
 # ifdef VBOX_RUNTIME_UI
-    unsigned cOptionsLeft     = 3;
+    unsigned cOptionsLeft     = 4;
     bool     fStartVM         = false;
     bool     fSeparateProcess = false;
     bool     fExecuteAllInIem = false;
+    bool     fDriverless      = false;
     for (int i = 1; i < argc && cOptionsLeft > 0; ++i)
     {
         if (   !strcmp(argv[i], "--startvm")
@@ -683,12 +685,19 @@ int main(int argc, char **argv, char **envp)
             cOptionsLeft -= fExecuteAllInIem == false;
             fExecuteAllInIem = true;
         }
+        else if (!strcmp(argv[i], "--driverless"))
+        {
+            cOptionsLeft -= fDriverless == false;
+            fDriverless = true;
+        }
     }
     if (fStartVM && !fSeparateProcess)
     {
         fFlags |= RTR3INIT_FLAGS_TRY_SUPLIB;
         if (fExecuteAllInIem)
             fFlags |= SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED << RTR3INIT_FLAGS_SUPLIB_SHIFT;
+        if (fDriverless)
+            fFlags |= SUPR3INIT_F_DRIVERLESS << RTR3INIT_FLAGS_SUPLIB_SHIFT;
     }
 # endif
 

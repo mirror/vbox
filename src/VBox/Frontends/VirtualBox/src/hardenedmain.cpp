@@ -50,10 +50,11 @@ int main(int argc, char **argv, char **envp)
      *
      * Note! ASSUMES that argv is in an ASCII compatible codeset.
      */
-    unsigned cOptionsLeft     = 3;
+    unsigned cOptionsLeft     = 4;
     bool     fStartVM         = false;
     bool     fSeparateProcess = false;
     bool     fExecuteAllInIem = false;
+    bool     fDriverless      = false;
     for (int i = 1; i < argc && cOptionsLeft > 0; ++i)
     {
         if (   !MyStrCmp(argv[i], "--startvm")
@@ -73,6 +74,11 @@ int main(int argc, char **argv, char **envp)
         {
             cOptionsLeft -= fExecuteAllInIem == false;
             fExecuteAllInIem = true;
+        }
+        else if (!MyStrCmp(argv[i], "--driverless"))
+        {
+            cOptionsLeft -= fDriverless == false;
+            fDriverless = true;
         }
     }
 
@@ -94,6 +100,8 @@ int main(int argc, char **argv, char **envp)
         else
             fFlags |= SUPSECMAIN_FLAGS_DRIVERLESS_NEM_FALLBACK;
 #endif
+        if (fDriverless)
+            fFlags |= SUPSECMAIN_FLAGS_DRIVERLESS;
     }
 
     return SUPR3HardenedMain("VirtualBoxVM", fFlags, argc, argv, envp);

@@ -517,6 +517,8 @@ void UICommon::prepare()
             enmOptType = OptType_VMRunner;
             m_fDisablePatm = m_fDisableCsam = m_fExecuteAllInIem = true;
         }
+        else if (!::strcmp(arg, "--driverless"))
+            enmOptType = OptType_VMRunner;
         else if (!::strcmp(arg, "--warp-pct"))
         {
             enmOptType = OptType_VMRunner;
