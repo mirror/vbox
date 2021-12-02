@@ -1298,13 +1298,21 @@ SUPR3DECL(int) SUPR3InitEx(uint32_t fFlags, PSUPDRVSESSION *ppSession);
 #define SUPR3INIT_F_UNRESTRICTED                RT_BIT_32(0)
 /** Limited access (for Main). */
 #define SUPR3INIT_F_LIMITED                     RT_BIT_32(1)
+/** Force driverless mode. */
+#define SUPR3INIT_F_DRIVERLESS                  RT_BIT_32(2)
 /** Allow driverless IEM mode if the VBox support driver is unavailable.
  * @see SUPSECMAIN_FLAGS_DRIVERLESS_IEM_ALLOWED */
-#define SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED      RT_BIT_32(2)
+#define SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED      RT_BIT_32(3)
 #ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK
 /** Allow driverless NEM mode as fallback if the VBox support driver is unavailable.
  * @see SUPSECMAIN_FLAGS_DRIVERLESS_NEM_FALLBACK */
-# define SUPR3INIT_F_DRIVERLESS_NEM_FALLBACK    RT_BIT_32(3)
+# define SUPR3INIT_F_DRIVERLESS_NEM_FALLBACK    RT_BIT_32(4)
+#endif
+/** Mask with all the flags that may trigger driverless mode. */
+#ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK
+# define SUPR3INIT_F_DRIVERLESS_MASK            UINT32_C(0x0000001c)
+#else
+# define SUPR3INIT_F_DRIVERLESS_MASK            UINT32_C(0x0000000c)
 #endif
 /** @} */
 
@@ -1320,6 +1328,15 @@ SUPR3DECL(int) SUPR3Term(bool fForced = false);
 #else
 SUPR3DECL(int) SUPR3Term(int fForced);
 #endif
+
+/**
+ * Check if the support library is operating in driverless mode.
+ *
+ * @returns true/false accordingly.
+ * @see     SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED,
+ *          SUPR3INIT_F_DRIVERLESS_NEM_FALLBACK
+ */
+SUPR3DECL(bool) SUPR3IsDriverless(void);
 
 /**
  * Sets the ring-0 VM handle for use with fast IOCtls.

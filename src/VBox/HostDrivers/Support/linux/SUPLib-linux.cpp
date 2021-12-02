@@ -96,6 +96,15 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, uint32_t fFlags
     munmap(pv, PAGE_SIZE);
 
     /*
+     * Driverless?
+     */
+    if (fFlags & SUPR3INIT_F_DRIVERLESS)
+    {
+        pThis->fDriverless = true;
+        return VINF_SUCCESS;
+    }
+
+    /*
      * Try open the device.
      */
     const char *pszDeviceNm = fFlags & SUPR3INIT_F_UNRESTRICTED ? DEVICE_NAME_SYS : DEVICE_NAME_USR;
@@ -117,6 +126,12 @@ DECLHIDDEN(int) suplibOsInit(PSUPLIBDATA pThis, bool fPreInited, uint32_t fFlags
                 case EACCES:    rc = VERR_VM_DRIVER_NOT_ACCESSIBLE; break;
                 case ENOENT:    rc = VERR_VM_DRIVER_NOT_INSTALLED; break;
                 default:        rc = VERR_VM_DRIVER_OPEN_ERROR; break;
+            }
+            if (fFlags & SUPR3INIT_F_DRIVERLESS_MASK)
+            {
+                LogRel(("Failed to open \"%s\", errno=%d, rc=%Rrc - Switching to driverless mode.\n", pszDeviceNm, errno, rc));
+                pThis->fDriverless = true;
+                return VINF_SUCCESS;
             }
             LogRel(("Failed to open \"%s\", errno=%d, rc=%Rrc\n", pszDeviceNm, errno, rc));
             return rc;

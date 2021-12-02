@@ -255,6 +255,8 @@ typedef struct SUPLIBDATA
     /** Indicates whether we have unrestricted (true) or restricted access to the
      * support device. */
     bool                fUnrestricted;
+    /** Set if we're in driverless mode. */
+    bool                fDriverless;
 #if   defined(RT_OS_DARWIN)
     /** The connection to the VBoxSupDrv service. */
     uintptr_t           uConnection;

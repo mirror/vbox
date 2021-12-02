@@ -99,7 +99,8 @@ static bool                     g_fPreInited = false;
 DECL_HIDDEN_DATA(SUPLIBDATA)    g_supLibData =
 {
     /*.hDevice              = */    SUP_HDEVICE_NIL,
-    /*.fUnrestricted        = */    true
+    /*.fUnrestricted        = */    true,
+    /*.fDriverless          = */    false
 #if   defined(RT_OS_DARWIN)
     ,/* .uConnection        = */    0
 #elif defined(RT_OS_LINUX)
@@ -262,7 +263,7 @@ SUPR3DECL(int) SUPR3InitEx(uint32_t fFlags, PSUPDRVSESSION *ppSession)
      */
     SUPINITOP enmWhat = kSupInitOp_Driver;
     int rc = suplibOsInit(&g_supLibData, g_fPreInited, fFlags, &enmWhat, NULL);
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) && !g_supLibData.fDriverless)
     {
         /*
          * Negotiate the cookie.
@@ -389,6 +390,16 @@ SUPR3DECL(int) SUPR3InitEx(uint32_t fFlags, PSUPDRVSESSION *ppSession)
 
         suplibOsTerm(&g_supLibData);
     }
+    else if (RT_SUCCESS(rc))
+    {
+        /*
+         * Driverless initialization.
+         */
+        Assert(fFlags & SUPR3INIT_F_DRIVERLESS_MASK);
+        LogRel(("SUP: In driverless mode.\n"));
+        return VINF_SUCCESS;
+    }
+
     g_cInits--;
 
     return rc;
@@ -559,9 +570,12 @@ SUPR3DECL(int) SUPR3Term(bool fForced)
         if (rc)
             return rc;
 
-        g_u32Cookie         = 0;
-        g_u32SessionCookie  = 0;
-        g_cInits            = 0;
+        g_supLibData.hDevice       = SUP_HDEVICE_NIL;
+        g_supLibData.fUnrestricted = true;
+        g_supLibData.fDriverless   = false;
+        g_u32Cookie                = 0;
+        g_u32SessionCookie         = 0;
+        g_cInits                   = 0;
     }
     else
         g_cInits--;
@@ -570,14 +584,25 @@ SUPR3DECL(int) SUPR3Term(bool fForced)
 }
 
 
+SUPR3DECL(bool) SUPR3IsDriverless(void)
+{
+    Assert(g_cInits > 0);
+    return g_supLibData.fDriverless;
+}
+
+
 SUPR3DECL(SUPPAGINGMODE) SUPR3GetPagingMode(void)
 {
-    /* fake */
-    if (RT_UNLIKELY(g_uSupFakeMode))
-#ifdef RT_ARCH_AMD64
+    /*
+     * Deal with driverless first.
+     */
+    if (g_supLibData.fDriverless)
+#if defined(RT_ARCH_AMD64)
         return SUPPAGINGMODE_AMD64_GLOBAL_NX;
-#else
+#elif defined(RT_ARCH_X86)
         return SUPPAGINGMODE_32_BIT_GLOBAL;
+#else
+        return SUPPAGINGMODE_INVALID;
 #endif
 
     /*
@@ -1098,23 +1123,21 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
     AssertMsgReturn(cPages > 0 && cPages <= VBOX_MAX_ALLOC_PAGE_COUNT, ("cPages=%zu\n", cPages), VERR_PAGE_COUNT_OUT_OF_RANGE);
     AssertReturn(!fFlags, VERR_INVALID_FLAGS);
 
-    /* fake */
-    if (RT_UNLIKELY(g_uSupFakeMode))
+    /*
+     * Deal with driverless mode first.
+     */
+    if (g_supLibData.fDriverless)
     {
-        void *pv = RTMemPageAllocZ(cPages * PAGE_SIZE);
-        if (!pv)
-            return VERR_NO_MEMORY;
-        *ppvPages = pv;
+        int rc = SUPR3PageAlloc(cPages * PAGE_SIZE, 0 /*fFlags*/, ppvPages);
         if (pR0Ptr)
-            *pR0Ptr = (RTR0PTR)pv;
+            *pR0Ptr = NIL_RTR0PTR;
         if (paPages)
             for (size_t iPage = 0; iPage < cPages; iPage++)
             {
                 paPages[iPage].uReserved = 0;
-                paPages[iPage].Phys = (iPage + 4321) << PAGE_SHIFT;
-                Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
+                paPages[iPage].Phys      = NIL_RTHCPHYS;
             }
-        return VINF_SUCCESS;
+        return rc;
     }
 
     /* Check that we've got a kernel connection so rtMemSaferSupR3AllocPages
@@ -1681,28 +1704,33 @@ SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pfCaps)
 
     *pfCaps = 0;
 
-    /* fake */
-    if (RT_UNLIKELY(g_uSupFakeMode))
-        return VINF_SUCCESS;
-
-    /*
-     * Issue IOCtl to the SUPDRV kernel module.
-     */
-    SUPVTCAPS Req;
-    Req.Hdr.u32Cookie = g_u32Cookie;
-    Req.Hdr.u32SessionCookie = g_u32SessionCookie;
-    Req.Hdr.cbIn = SUP_IOCTL_VT_CAPS_SIZE_IN;
-    Req.Hdr.cbOut = SUP_IOCTL_VT_CAPS_SIZE_OUT;
-    Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
-    Req.Hdr.rc = VERR_INTERNAL_ERROR;
-    Req.u.Out.fCaps = 0;
-    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_VT_CAPS, &Req, SUP_IOCTL_VT_CAPS_SIZE);
-    if (RT_SUCCESS(rc))
+    int rc;
+    if (!g_supLibData.fDriverless)
     {
-        rc = Req.Hdr.rc;
+        /*
+         * Issue IOCtl to the SUPDRV kernel module.
+         */
+        SUPVTCAPS Req;
+        Req.Hdr.u32Cookie = g_u32Cookie;
+        Req.Hdr.u32SessionCookie = g_u32SessionCookie;
+        Req.Hdr.cbIn = SUP_IOCTL_VT_CAPS_SIZE_IN;
+        Req.Hdr.cbOut = SUP_IOCTL_VT_CAPS_SIZE_OUT;
+        Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
+        Req.Hdr.rc = VERR_INTERNAL_ERROR;
+        Req.u.Out.fCaps = 0;
+        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_VT_CAPS, &Req, SUP_IOCTL_VT_CAPS_SIZE);
         if (RT_SUCCESS(rc))
-            *pfCaps = Req.u.Out.fCaps;
+        {
+            rc = Req.Hdr.rc;
+            if (RT_SUCCESS(rc))
+                *pfCaps = Req.u.Out.fCaps;
+        }
     }
+    /*
+     * Fail this call in driverless mode.
+     */
+    else
+        rc = VERR_SUP_DRIVERLESS;
     return rc;
 }
 
@@ -1723,28 +1751,33 @@ SUPR3DECL(int) SUPR3QueryMicrocodeRev(uint32_t *uMicrocodeRev)
 
     *uMicrocodeRev = 0;
 
-    /* fake */
-    if (RT_UNLIKELY(g_uSupFakeMode))
-        return VINF_SUCCESS;
-
-    /*
-     * Issue IOCtl to the SUPDRV kernel module.
-     */
-    SUPUCODEREV Req;
-    Req.Hdr.u32Cookie = g_u32Cookie;
-    Req.Hdr.u32SessionCookie = g_u32SessionCookie;
-    Req.Hdr.cbIn = SUP_IOCTL_UCODE_REV_SIZE_IN;
-    Req.Hdr.cbOut = SUP_IOCTL_UCODE_REV_SIZE_OUT;
-    Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
-    Req.Hdr.rc = VERR_INTERNAL_ERROR;
-    Req.u.Out.MicrocodeRev = 0;
-    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_UCODE_REV, &Req, SUP_IOCTL_UCODE_REV_SIZE);
-    if (RT_SUCCESS(rc))
+    int rc;
+    if (!g_supLibData.fDriverless)
     {
-        rc = Req.Hdr.rc;
+        /*
+         * Issue IOCtl to the SUPDRV kernel module.
+         */
+        SUPUCODEREV Req;
+        Req.Hdr.u32Cookie = g_u32Cookie;
+        Req.Hdr.u32SessionCookie = g_u32SessionCookie;
+        Req.Hdr.cbIn = SUP_IOCTL_UCODE_REV_SIZE_IN;
+        Req.Hdr.cbOut = SUP_IOCTL_UCODE_REV_SIZE_OUT;
+        Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
+        Req.Hdr.rc = VERR_INTERNAL_ERROR;
+        Req.u.Out.MicrocodeRev = 0;
+        rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_UCODE_REV, &Req, SUP_IOCTL_UCODE_REV_SIZE);
         if (RT_SUCCESS(rc))
-            *uMicrocodeRev = Req.u.Out.MicrocodeRev;
+        {
+            rc = Req.Hdr.rc;
+            if (RT_SUCCESS(rc))
+                *uMicrocodeRev = Req.u.Out.MicrocodeRev;
+        }
     }
+    /*
+     * Just fail the call in driverless mode.
+     */
+    else
+        rc = VERR_SUP_DRIVERLESS;
     return rc;
 }
 
