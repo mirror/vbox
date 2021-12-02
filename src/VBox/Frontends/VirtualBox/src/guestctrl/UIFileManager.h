@@ -24,7 +24,7 @@
 /* Qt includes: */
 #include <QPointer>
 #include <QWidget>
-
+#include <QUuid>
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
