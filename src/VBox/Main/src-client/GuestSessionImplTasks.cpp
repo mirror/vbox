@@ -1056,6 +1056,8 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
 
     LogFlowFunc(("Entering '%s' (sub '%s')\n", strPathAbs.c_str(), strPathSub.c_str()));
 
+    LogRel2(("Guest Control: Handling directory '%s' on guest ...\n", strPathAbs.c_str()));
+
     GuestDirectoryOpenInfo dirOpenInfo;
     dirOpenInfo.mFilter = "";
     dirOpenInfo.mPath   = strPathAbs;
@@ -1118,6 +1120,8 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
                         break;
                     }
 
+                    LogRel2(("Guest Control: Directory '%s'\n", strEntry.c_str()));
+
                     if (!(mSourceSpec.Type.Dir.fRecursive))
                         break;
 
@@ -1129,9 +1133,9 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
                 {
                     if (mSourceSpec.Type.Dir.fFollowSymlinks)
                     {
-                        /** @todo Symlink handling from guest is not imlemented yet.
+                        /** @todo Symlink handling from guest is not implemented yet.
                          *        See IGuestSession::symlinkRead(). */
-                        LogRel2(("Guest Control: Warning: Symlink support on guest side not available, skipping \"%s\"",
+                        LogRel2(("Guest Control: Warning: Symlink support on guest side not available, skipping '%s'",
                                  strEntry.c_str()));
                     }
                     break;
@@ -1139,6 +1143,8 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
 
                 case FsObjType_File:
                 {
+                    LogRel2(("Guest Control: File '%s'\n", strEntry.c_str()));
+
                     rc = AddEntryFromGuest(strEntry, fsObjInfo->i_getData());
                     break;
                 }
@@ -1184,6 +1190,8 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
 
     LogFlowFunc(("Entering '%s' (sub '%s')\n", strPathAbs.c_str(), strPathSub.c_str()));
 
+    LogRel2(("Guest Control: Handling directory '%s' on host ...\n", strPathAbs.c_str()));
+
     RTFSOBJINFO objInfo;
     int rc = RTPathQueryInfo(strPathAbs.c_str(), &objInfo, RTFSOBJATTRADD_NOTHING);
     if (RT_SUCCESS(rc))
@@ -1223,6 +1231,8 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
                                 if (RTDirEntryExIsStdDotLink(&Entry))
                                     break;
 
+                                LogRel2(("Guest Control: Directory '%s'\n", strEntry.c_str()));
+
                                 if (!(mSourceSpec.Type.Dir.fRecursive))
                                     break;
 
@@ -1232,6 +1242,8 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
 
                             case RTFS_TYPE_FILE:
                             {
+                                LogRel2(("Guest Control: File '%s'\n", strEntry.c_str()));
+
                                 rc = AddEntryFromHost(strEntry, &Entry.Info);
                                 break;
                             }
@@ -1249,31 +1261,35 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
                                         rc = RTPathQueryInfo(szPathReal, &objInfo, RTFSOBJATTRADD_NOTHING);
                                         if (RT_SUCCESS(rc))
                                         {
-                                            LogFlowFunc(("Symlink '%s' -> '%s'\n", strEntryAbs.c_str(), szPathReal));
-
                                             if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
                                             {
-                                                LogFlowFunc(("Symlink to directory\n"));
+                                                LogRel2(("Guest Control: Symbolic link '%s' -> '%s' (directory)\n",
+                                                         strEntryAbs.c_str(), szPathReal));
                                                 rc = AddDirFromHost(strPath, strEntry);
                                             }
                                             else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                                             {
-                                                LogFlowFunc(("Symlink to file\n"));
+                                                LogRel2(("Guest Control: Symbolic link '%s' -> '%s' (file)\n",
+                                                         strEntryAbs.c_str(), szPathReal));
                                                 rc = AddEntryFromHost(strEntry, &objInfo);
                                             }
                                             else
                                                 rc = VERR_NOT_SUPPORTED;
                                         }
-                                        else
-                                            LogFlowFunc(("Unable to query symlink info for '%s', rc=%Rrc\n", szPathReal, rc));
+
+                                        if (RT_FAILURE(rc))
+                                            LogRel2(("Guest Control: Unable to query symbolic link info for '%s', rc=%Rrc\n",
+                                                     szPathReal, rc));
                                     }
                                     else
                                     {
-                                        LogFlowFunc(("Unable to resolve symlink for '%s', rc=%Rrc\n", strPathAbs.c_str(), rc));
+                                        LogRel2(("Guest Control: Unable to resolve symlink for '%s', rc=%Rrc\n", strPathAbs.c_str(), rc));
                                         if (rc == VERR_FILE_NOT_FOUND) /* Broken symlink, skip. */
                                             rc = VINF_SUCCESS;
                                     }
                                 }
+                                else
+                                    LogRel2(("Guest Control: Symbolic link '%s' (skipped)\n", strEntry.c_str()));
                                 break;
                             }
 
