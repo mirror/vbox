@@ -446,8 +446,9 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***ppapszArgs, const ch
      */
     if (fFlags & (RTR3INIT_FLAGS_SUPLIB | RTR3INIT_FLAGS_TRY_SUPLIB))
     {
-        rc = SUPR3InitEx(  fFlags >> RTR3INIT_FLAGS_SUPLIB_SHIFT
-                         ? fFlags >> RTR3INIT_FLAGS_SUPLIB_SHIFT : SUPR3INIT_F_UNRESTRICTED, NULL /*ppSession*/);
+        if (!(fFlags & ((SUPR3INIT_F_UNRESTRICTED | SUPR3INIT_F_LIMITED) << RTR3INIT_FLAGS_SUPLIB_SHIFT)))
+            g_fInitFlags |= fFlags |= SUPR3INIT_F_UNRESTRICTED << RTR3INIT_FLAGS_SUPLIB_SHIFT;
+        rc = SUPR3InitEx(fFlags >> RTR3INIT_FLAGS_SUPLIB_SHIFT, NULL /*ppSession*/);
         AssertMsgReturn(RT_SUCCESS(rc) || (fFlags & RTR3INIT_FLAGS_TRY_SUPLIB),
                         ("Failed to initialize the support library, rc=%Rrc!\n", rc), rc);
     }
@@ -590,8 +591,9 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***ppapszArgs, const char *
            status code here for some reason, making the two flags same. */
         if (fFlags & (RTR3INIT_FLAGS_SUPLIB | RTR3INIT_FLAGS_TRY_SUPLIB))
         {
-            SUPR3InitEx(  fFlags >> RTR3INIT_FLAGS_SUPLIB_SHIFT
-                        ? fFlags >> RTR3INIT_FLAGS_SUPLIB_SHIFT : SUPR3INIT_F_UNRESTRICTED, NULL /*ppSession*/);
+            if (!(fFlags & ((SUPR3INIT_F_UNRESTRICTED | SUPR3INIT_F_LIMITED) << RTR3INIT_FLAGS_SUPLIB_SHIFT)))
+                fFlags |= SUPR3INIT_F_UNRESTRICTED << RTR3INIT_FLAGS_SUPLIB_SHIFT;
+            SUPR3InitEx(fFlags >> RTR3INIT_FLAGS_SUPLIB_SHIFT, NULL /*ppSession*/);
             g_fInitFlags |= fFlags & (RTR3INIT_FLAGS_SUPLIB | RTR3INIT_FLAGS_TRY_SUPLIB | RTR3INIT_FLAGS_SUPLIB_MASK);
         }
 #endif
