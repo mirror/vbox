@@ -290,7 +290,7 @@ SUPDECL(int) SUPSemEventMultiWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENTMU
 {
     int rc;
     if (!g_supLibData.fDriverless)
-        supSemOp2(pSession, SUP_SEM_TYPE_EVENT_MULTI, (uintptr_t)hEventMulti, SUPSEMOP2_WAIT_MS_REL, cMillies);
+        rc = supSemOp2(pSession, SUP_SEM_TYPE_EVENT_MULTI, (uintptr_t)hEventMulti, SUPSEMOP2_WAIT_MS_REL, cMillies);
     else
         rc = RTSemEventMultiWaitNoResume((RTSEMEVENTMULTI)hEventMulti, cMillies);
     return rc;
