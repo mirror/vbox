@@ -179,6 +179,11 @@ class UIFileDelegate : public QItemDelegate
 
     Q_OBJECT;
 
+public:
+
+    UIFileDelegate(QObject *pParent)
+        : QItemDelegate(pParent){}
+
 protected:
 
     virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
@@ -400,7 +405,7 @@ UIFileManagerBreadCrumbs::UIFileManagerBreadCrumbs(QWidget *pParent /* = 0 */)
     QPalette pal = QApplication::palette();
     pal.setColor(QPalette::Active, QPalette::Window, pal.color(QPalette::Active, QPalette::Base));
     setPalette(pal);
-    /* Allow the labe become smaller than the current text. calling setpath in resizeEvent truncated the text anyway: */
+    /* Allow the label become smaller than the current text. calling setpath in resizeEvent truncated the text anyway: */
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 }
 
@@ -767,6 +772,7 @@ void UIFileManagerTable::prepareObjects()
     m_pView = new UIGuestControlFileView(this);
     if (m_pView)
     {
+        m_pView->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
         m_pMainLayout->addWidget(m_pView, 2, 0, 5, 7);
 
         QHeaderView *pHorizontalHeader = m_pView->horizontalHeader();
@@ -778,7 +784,7 @@ void UIFileManagerTable::prepareObjects()
         }
 
         m_pView->setModel(m_pProxyModel);
-        m_pView->setItemDelegate(new UIFileDelegate);
+        m_pView->setItemDelegate(new UIFileDelegate(this));
         m_pView->setSortingEnabled(true);
         m_pView->sortByColumn(0, Qt::AscendingOrder);
 

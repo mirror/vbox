@@ -1736,8 +1736,8 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Session"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager session"));
-        setToolTip(  QApplication::translate("UIActionPool", "Open Session Panel")
+        setStatusTip(QApplication::translate("UIActionPool", "Open guest session panel of the file manager"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Guest Session Panel")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
@@ -3556,7 +3556,6 @@ void UIActionPool::updateMenuFileManager()
 
 void UIActionPool::updateMenuFileManagerWrapper(UIMenu *pMenu)
 {
-    addAction(pMenu, action(UIActionIndex_M_FileManager_T_GuestSession));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Options));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Operations));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Log));
@@ -3584,6 +3583,7 @@ void UIActionPool::updateMenuFileManagerWrapper(UIMenu *pMenu)
     UIMenu *pGuestSubmenu = action(UIActionIndex_M_FileManager_M_GuestSubmenu)->menu();
     if (pGuestSubmenu)
     {
+        addAction(pMenu, action(UIActionIndex_M_FileManager_T_GuestSession));
         addAction(pGuestSubmenu, action(UIActionIndex_M_FileManager_S_Host_GoUp));
         addAction(pGuestSubmenu, action(UIActionIndex_M_FileManager_S_Guest_GoHome));
         addAction(pGuestSubmenu, action(UIActionIndex_M_FileManager_S_Guest_Refresh));

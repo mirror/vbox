@@ -84,6 +84,12 @@ protected:
         virtual void  pasteCutCopiedObjects() /* override */;
     /** @} */
 
+private slots:
+
+    void sltGuestSessionPanelToggled(bool fChecked);
+    void sltHandleGuestSessionPanelHidden();
+    void sltHandleGuestSessionPanelShown();
+
 private:
 
     KFsObjType  fileType(const CFsObjInfo &fsInfo);

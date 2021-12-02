@@ -102,7 +102,7 @@ void UIGuestSessionCreateWidget::prepareWidgets()
     m_pMainLayout = new QHBoxLayout(this);
     if (!m_pMainLayout)
         return;
-    m_pMainLayout->setSpacing(0);
+
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
 
     m_pUserNameEdit = new QILineEdit;

@@ -641,6 +641,8 @@ void UIFileManagerGuestTable::prepareToolbar()
 {
     if (m_pToolBar && m_pActionPool)
     {
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession));
+        m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoUp));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoHome));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Refresh));
@@ -709,6 +711,10 @@ void UIFileManagerGuestTable::pasteCutCopiedObjects()
 
 void UIFileManagerGuestTable::prepareActionConnections()
 {
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
+        connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession), &QAction::toggled,
+                this, &UIFileManagerGuestTable::sltGuestSessionPanelToggled);
+
     connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoUp), &QAction::triggered,
             this, &UIFileManagerTable::sltGoUp);
     connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoHome), &QAction::triggered,
@@ -741,7 +747,19 @@ void UIFileManagerGuestTable::prepareGuestSessionPanel()
     {
         m_pGuestSessionPanel = new UIFileManagerGuestSessionPanel;
         if (m_pGuestSessionPanel)
+        {
             m_pMainLayout->addWidget(m_pGuestSessionPanel, m_pMainLayout->rowCount(), 0, 1, m_pMainLayout->columnCount());
+            m_pGuestSessionPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+            sltHandleGuestSessionPanelShown();
+            // connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCreateSession,
+            //         this, &UIFileManagerGuestTable::sltCreateGuestSession);
+            // connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCloseSession,
+            //         this, &UIFileManagerGuestTable::sltCloseGuestSession);
+            connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigHidePanel,
+                    this, &UIFileManagerGuestTable::sltHandleGuestSessionPanelHidden);
+            connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigShowPanel,
+                    this, &UIFileManagerGuestTable::sltHandleGuestSessionPanelShown);
+        }
     }
 }
 
@@ -784,6 +802,24 @@ bool UIFileManagerGuestTable::isFileObjectHidden(const CFsObjInfo &fsInfo)
     if (strRight.indexOf('H', Qt::CaseSensitive) == -1)
         return false;
     return true;
+}
+
+void UIFileManagerGuestTable::sltGuestSessionPanelToggled(bool fChecked)
+{
+    if (m_pGuestSessionPanel)
+        m_pGuestSessionPanel->setVisible(fChecked);
+}
+
+void UIFileManagerGuestTable::sltHandleGuestSessionPanelHidden()
+{
+    if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
+        m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession)->setChecked(false);
+}
+
+void UIFileManagerGuestTable::sltHandleGuestSessionPanelShown()
+{
+    if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
+        m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession)->setChecked(true);
 }
 
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -1024,15 +1060,6 @@ void UIFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedE
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
     void sltCleanupListenerAndGuest();
 
-    if (m_pGuestSessionPanel)
-    {
-        connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCreateSession,
-                this, &UIFileManager::sltCreateGuestSession);
-        connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCloseSession,
-                this, &UIFileManager::sltCloseGuestSession);
-        connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigHidePanel,
-                this, &UIFileManager::sltHandleHidePanel);
-    }
 
 
 void UIFileManager::sltCleanupListenerAndGuest()
