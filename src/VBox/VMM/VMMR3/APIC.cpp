@@ -1284,8 +1284,9 @@ static int apicR3InitState(PVM pVM)
 
     if (pApic->pvApicPibR3)
     {
-        AssertLogRelReturn(pApic->pvApicPibR0   != NIL_RTR0PTR,  VERR_INTERNAL_ERROR);
-        AssertLogRelReturn(pApic->HCPhysApicPib != NIL_RTHCPHYS, VERR_INTERNAL_ERROR);
+        bool const fDriverless = SUPR3IsDriverless();
+        AssertLogRelReturn(pApic->pvApicPibR0   != NIL_RTR0PTR  || fDriverless,  VERR_INTERNAL_ERROR);
+        AssertLogRelReturn(pApic->HCPhysApicPib != NIL_RTHCPHYS || fDriverless, VERR_INTERNAL_ERROR);
 
         /* Initialize the PIB. */
         RT_BZERO(pApic->pvApicPibR3, pApic->cbApicPib);
@@ -1311,13 +1312,13 @@ static int apicR3InitState(PVM pVM)
                                       &SupApicPage);
             if (RT_SUCCESS(rc))
             {
-                AssertLogRelReturn(pApicCpu->pvApicPageR3   != NIL_RTR3PTR,  VERR_INTERNAL_ERROR);
-                AssertLogRelReturn(pApicCpu->HCPhysApicPage != NIL_RTHCPHYS, VERR_INTERNAL_ERROR);
+                AssertLogRelReturn(pApicCpu->pvApicPageR3   != NIL_RTR3PTR  || fDriverless, VERR_INTERNAL_ERROR);
                 pApicCpu->HCPhysApicPage = SupApicPage.Phys;
+                AssertLogRelReturn(pApicCpu->HCPhysApicPage != NIL_RTHCPHYS || fDriverless, VERR_INTERNAL_ERROR);
 
                 /* Associate the per-VCPU PIB pointers to the per-VM PIB mapping. */
                 uint32_t const offApicPib  = idCpu * sizeof(APICPIB);
-                pApicCpu->pvApicPibR0      = (RTR0PTR)((RTR0UINTPTR)pApic->pvApicPibR0 + offApicPib);
+                pApicCpu->pvApicPibR0      = !fDriverless ? (RTR0PTR)((RTR0UINTPTR)pApic->pvApicPibR0 + offApicPib) : NIL_RTR0PTR;
                 pApicCpu->pvApicPibR3      = (RTR3PTR)((RTR3UINTPTR)pApic->pvApicPibR3 + offApicPib);
 
                 /* Initialize the virtual-APIC state. */
@@ -1326,7 +1327,7 @@ static int apicR3InitState(PVM pVM)
 
 #ifdef DEBUG_ramshankar
                 Assert(pApicCpu->pvApicPibR3 != NIL_RTR3PTR);
-                Assert(pApicCpu->pvApicPibR0 != NIL_RTR0PTR);
+                Assert(pApicCpu->pvApicPibR0 != NIL_RTR0PTR || fDriverless);
                 Assert(pApicCpu->pvApicPageR3 != NIL_RTR3PTR);
 #endif
             }
@@ -1340,7 +1341,7 @@ static int apicR3InitState(PVM pVM)
 
 #ifdef DEBUG_ramshankar
         Assert(pApic->pvApicPibR3 != NIL_RTR3PTR);
-        Assert(pApic->pvApicPibR0 != NIL_RTR0PTR);
+        Assert(pApic->pvApicPibR0 != NIL_RTR0PTR || fDriverless);
 #endif
         return VINF_SUCCESS;
     }

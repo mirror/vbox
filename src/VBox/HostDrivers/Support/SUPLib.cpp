@@ -1128,7 +1128,7 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
      */
     if (g_supLibData.fDriverless)
     {
-        int rc = SUPR3PageAlloc(cPages * PAGE_SIZE, 0 /*fFlags*/, ppvPages);
+        int rc = SUPR3PageAlloc(cPages, 0 /*fFlags*/, ppvPages);
         if (pR0Ptr)
             *pR0Ptr = NIL_RTR0PTR;
         if (paPages)
@@ -1221,9 +1221,10 @@ SUPR3DECL(int) SUPR3PageMapKernel(void *pvR3, uint32_t off, uint32_t cb, uint32_
     Assert(!fFlags);
     *pR0Ptr = NIL_RTR0PTR;
 
-    /* fake */
-    if (RT_UNLIKELY(g_uSupFakeMode))
-        return VERR_NOT_SUPPORTED;
+    /*
+     * Not a valid operation in driverless mode.
+     */
+    AssertReturn(g_supLibData.fDriverless, VERR_SUP_DRIVERLESS);
 
     /*
      * Issue IOCtl to the SUPDRV kernel module.
@@ -1258,8 +1259,10 @@ SUPR3DECL(int) SUPR3PageProtect(void *pvR3, RTR0PTR R0Ptr, uint32_t off, uint32_
     Assert(!(cb & PAGE_OFFSET_MASK) && cb);
     AssertReturn(!(fProt & ~(RTMEM_PROT_NONE | RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC)), VERR_INVALID_PARAMETER);
 
-    /* fake */
-    if (RT_UNLIKELY(g_uSupFakeMode))
+    /*
+     * Deal with driverless mode first.
+     */
+    if (g_supLibData.fDriverless)
         return RTMemProtect((uint8_t *)pvR3 + off, cb, fProt);
 
     /*
@@ -1298,10 +1301,12 @@ SUPR3DECL(int) SUPR3PageFreeEx(void *pvPages, size_t cPages)
     AssertPtrReturn(pvPages, VERR_INVALID_POINTER);
     AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
 
-    /* fake */
-    if (RT_UNLIKELY(g_uSupFakeMode))
+    /*
+     * Deal with driverless mode first.
+     */
+    if (g_supLibData.fDriverless)
     {
-        RTMemPageFree(pvPages, cPages * PAGE_SIZE);
+        SUPR3PageFree(pvPages, cPages);
         return VINF_SUCCESS;
     }
 
@@ -1347,15 +1352,18 @@ SUPR3DECL(void *) SUPR3ContAlloc(size_t cPages, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPh
     AssertPtrNullReturn(pHCPhys, NULL);
     AssertMsgReturn(cPages > 0 && cPages < 256, ("cPages=%d must be > 0 and < 256\n", cPages), NULL);
 
-    /* fake */
-    if (RT_UNLIKELY(g_uSupFakeMode))
+    /*
+     * Deal with driverless mode first.
+     */
+    if (g_supLibData.fDriverless)
     {
-        void *pv = RTMemPageAllocZ(cPages * PAGE_SIZE);
+        void *pvPages = NULL;
+        int rc = SUPR3PageAlloc(cPages, 0 /*fFlags*/, &pvPages);
         if (pR0Ptr)
-            *pR0Ptr = (RTR0PTR)pv;
+            *pR0Ptr = NIL_RTR0PTR;
         if (pHCPhys)
-            *pHCPhys = (uintptr_t)pv + (PAGE_SHIFT * 1024);
-        return pv;
+            *pHCPhys = NIL_RTHCPHYS;
+        return RT_SUCCESS(rc) ? pvPages : NULL;
     }
 
     /*
@@ -1396,12 +1404,11 @@ SUPR3DECL(int) SUPR3ContFree(void *pv, size_t cPages)
     AssertPtrReturn(pv, VERR_INVALID_POINTER);
     AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
 
-    /* fake */
-    if (RT_UNLIKELY(g_uSupFakeMode))
-    {
-        RTMemPageFree(pv, cPages * PAGE_SIZE);
-        return VINF_SUCCESS;
-    }
+    /*
+     * Deal with driverless mode first.
+     */
+    if (g_supLibData.fDriverless)
+        return SUPR3PageFree(pv, cPages);
 
     /*
      * Issue IOCtl to the SUPDRV kernel module.
