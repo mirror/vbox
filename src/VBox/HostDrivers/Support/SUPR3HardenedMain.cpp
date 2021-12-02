@@ -1864,6 +1864,8 @@ DECLHIDDEN(void) supR3HardenedMainOpenDevice(void)
     RTERRINFOSTATIC ErrInfo;
     SUPINITOP       enmWhat = kSupInitOp_Driver;
     uint32_t        fFlags  = SUPR3INIT_F_UNRESTRICTED;
+    if (g_fSupHardenedMain & SUPSECMAIN_FLAGS_DRIVERLESS)
+        fFlags |= SUPR3INIT_F_DRIVERLESS;
     if (g_fSupHardenedMain & SUPSECMAIN_FLAGS_DRIVERLESS_IEM_ALLOWED)
         fFlags |= SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED;
 #ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK
@@ -2352,6 +2354,8 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
     uint32_t fRtInit = 0;
     if (!(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV))
     {
+        if (fFlags & SUPSECMAIN_FLAGS_DRIVERLESS)
+            fRtInit |= (SUPR3INIT_F_DRIVERLESS              << RTR3INIT_FLAGS_SUPLIB_SHIFT) | RTR3INIT_FLAGS_TRY_SUPLIB;
         if (fFlags & SUPSECMAIN_FLAGS_DRIVERLESS_IEM_ALLOWED)
             fRtInit |= (SUPR3INIT_F_DRIVERLESS_IEM_ALLOWED  << RTR3INIT_FLAGS_SUPLIB_SHIFT) | RTR3INIT_FLAGS_TRY_SUPLIB;
 #ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK

@@ -1257,15 +1257,17 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 /** The binary is located in a nested application bundle under Resources/ in the
  * main Mac OS X application (think Resources/VirtualBoxVM.app).  */
 #define SUPSECMAIN_FLAGS_LOC_OSX_HLP_APP            UINT32_C(0x00000020)
+/** Force driverless mode. */
+#define SUPSECMAIN_FLAGS_DRIVERLESS                 RT_BIT_32(8)
 /** Driverless IEM-only mode is allowed, so don't fail fatally just because
  * the VBox support driver is unavailable. */
-#define SUPSECMAIN_FLAGS_DRIVERLESS_IEM_ALLOWED     RT_BIT_32(8)
+#define SUPSECMAIN_FLAGS_DRIVERLESS_IEM_ALLOWED     RT_BIT_32(9)
 #ifdef VBOX_WITH_DRIVERLESS_NEM_FALLBACK
 /** Driverless NEM is a fallback posibility, so don't fail fatally just
  * because the VBox support driver is unavailable.
  * This may imply checking NEM requirements, depending on the host.
  * @note Not supported on Windows. */
-# define SUPSECMAIN_FLAGS_DRIVERLESS_NEM_FALLBACK   RT_BIT_32(9)
+# define SUPSECMAIN_FLAGS_DRIVERLESS_NEM_FALLBACK   RT_BIT_32(10)
 #endif
 
 /** @} */
