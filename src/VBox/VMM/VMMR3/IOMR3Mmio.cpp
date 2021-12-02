@@ -32,6 +32,7 @@
 
 #include <VBox/param.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -109,7 +110,146 @@ static void iomR3MmioDeregStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry, RTGCPHYS GCP
     STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
 }
 
+
+/**
+ * Grows the statistics table.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   cNewEntries     The minimum number of new entrie.
+ * @see     IOMR0IoPortGrowStatisticsTable
+ */
+static int iomR3MmioGrowStatisticsTable(PVM pVM, uint32_t cNewEntries)
+{
+    AssertReturn(cNewEntries <= _64K, VERR_IOM_TOO_MANY_MMIO_REGISTRATIONS);
+
+    int rc;
+    if (!SUPR3IsDriverless())
+    {
+        rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_IOM_GROW_MMIO_STATS, cNewEntries, NULL);
+        AssertLogRelRCReturn(rc, rc);
+        AssertReturn(cNewEntries <= pVM->iom.s.cMmioStatsAllocation, VERR_IOM_MMIO_IPE_2);
+    }
+    else
+    {
+        /*
+         * Validate input and state.
+         */
+        uint32_t const cOldEntries = pVM->iom.s.cMmioStatsAllocation;
+        AssertReturn(cNewEntries > cOldEntries, VERR_IOM_MMIO_IPE_1);
+        AssertReturn(pVM->iom.s.cMmioStats <= cOldEntries, VERR_IOM_MMIO_IPE_2);
+
+        /*
+         * Calc size and allocate a new table.
+         */
+        uint32_t const cbNew = RT_ALIGN_32(cNewEntries * sizeof(IOMMMIOSTATSENTRY), PAGE_SIZE);
+        cNewEntries = cbNew / sizeof(IOMMMIOSTATSENTRY);
+
+        PIOMMMIOSTATSENTRY const paMmioStats = (PIOMMMIOSTATSENTRY)RTMemPageAllocZ(cbNew);
+        if (paMmioStats)
+        {
+            /*
+             * Anything to copy over, update and free the old one.
+             */
+            PIOMMMIOSTATSENTRY const pOldMmioStats = pVM->iom.s.paMmioStats;
+            if (pOldMmioStats)
+                memcpy(paMmioStats, pOldMmioStats, cOldEntries * sizeof(IOMMMIOSTATSENTRY));
+
+            pVM->iom.s.paMmioStats             = paMmioStats;
+            pVM->iom.s.cMmioStatsAllocation    = cNewEntries;
+
+            RTMemPageFree(pOldMmioStats, RT_ALIGN_32(cOldEntries * sizeof(IOMMMIOSTATSENTRY), PAGE_SIZE));
+
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_NO_PAGE_MEMORY;
+    }
+
+    return rc;
+}
+
 #endif /* VBOX_WITH_STATISTICS */
+
+/**
+ * Grows the I/O port registration statistics table.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   cNewEntries     The minimum number of new entrie.
+ * @see     IOMR0MmioGrowRegistrationTables
+ */
+static int iomR3MmioGrowTable(PVM pVM, uint32_t cNewEntries)
+{
+    AssertReturn(cNewEntries <= _4K, VERR_IOM_TOO_MANY_MMIO_REGISTRATIONS);
+
+    int rc;
+    if (!SUPR3IsDriverless())
+    {
+        rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_IOM_GROW_MMIO_REGS, cNewEntries, NULL);
+        AssertLogRelRCReturn(rc, rc);
+        AssertReturn(cNewEntries <= pVM->iom.s.cMmioAlloc, VERR_IOM_MMIO_IPE_2);
+    }
+    else
+    {
+        /*
+         * Validate input and state.
+         */
+        uint32_t const cOldEntries = pVM->iom.s.cMmioAlloc;
+        AssertReturn(cNewEntries >= cOldEntries, VERR_IOM_MMIO_IPE_1);
+
+        /*
+         * Allocate the new tables.  We use a single allocation for the three tables (ring-0,
+         * ring-3, lookup) and does a partial mapping of the result to ring-3.
+         */
+        uint32_t const cbRing3  = RT_ALIGN_32(cNewEntries * sizeof(IOMMMIOENTRYR3),     PAGE_SIZE);
+        uint32_t const cbShared = RT_ALIGN_32(cNewEntries * sizeof(IOMMMIOLOOKUPENTRY), PAGE_SIZE);
+        uint32_t const cbNew    = cbRing3 + cbShared;
+
+        /* Use the rounded up space as best we can. */
+        cNewEntries = RT_MIN(cbRing3 / sizeof(IOMMMIOENTRYR3), cbShared / sizeof(IOMMMIOLOOKUPENTRY));
+
+        PIOMMMIOENTRYR3 const paRing3 = (PIOMMMIOENTRYR3)RTMemPageAllocZ(cbNew);
+        if (paRing3)
+        {
+            PIOMMMIOLOOKUPENTRY const paLookup = (PIOMMMIOLOOKUPENTRY)((uintptr_t)paRing3 + cbRing3);
+
+            /*
+             * Copy over the old info and initialize the idxSelf and idxStats members.
+             */
+            if (pVM->iom.s.paMmioRegs != NULL)
+            {
+                memcpy(paRing3,  pVM->iom.s.paMmioRegs,    sizeof(paRing3[0])  * cOldEntries);
+                memcpy(paLookup, pVM->iom.s.paMmioLookup,  sizeof(paLookup[0]) * cOldEntries);
+            }
+
+            size_t i = cbRing3 / sizeof(*paRing3);
+            while (i-- > cOldEntries)
+            {
+                paRing3[i].idxSelf  = (uint16_t)i;
+                paRing3[i].idxStats = UINT16_MAX;
+            }
+
+            /*
+             * Update the variables and free the old memory.
+             */
+            void * const pvFree = pVM->iom.s.paMmioRegs;
+
+            pVM->iom.s.paMmioRegs     = paRing3;
+            pVM->iom.s.paMmioLookup   = paLookup;
+            pVM->iom.s.cMmioAlloc     = cNewEntries;
+
+            RTMemPageFree(pvFree,
+                            RT_ALIGN_32(cOldEntries * sizeof(IOMMMIOENTRYR3),     PAGE_SIZE)
+                          + RT_ALIGN_32(cOldEntries * sizeof(IOMMMIOLOOKUPENTRY), PAGE_SIZE));
+
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_NO_PAGE_MEMORY;
+    }
+    return rc;
+}
 
 
 /**
@@ -159,20 +299,18 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
     AssertReturn(cNewMmioStats <= _64K, VERR_IOM_TOO_MANY_MMIO_REGISTRATIONS);
     if (cNewMmioStats > pVM->iom.s.cMmioStatsAllocation)
     {
-        int rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_IOM_GROW_MMIO_STATS, cNewMmioStats, NULL);
-        AssertLogRelRCReturn(rc, rc);
+        int rc = iomR3MmioGrowStatisticsTable(pVM, cNewMmioStats);
+        AssertRCReturn(rc, rc);
         AssertReturn(idxStats == pVM->iom.s.cMmioStats, VERR_IOM_MMIO_IPE_1);
-        AssertReturn(cNewMmioStats <= pVM->iom.s.cMmioStatsAllocation, VERR_IOM_MMIO_IPE_2);
     }
 #endif
 
     uint32_t idx = pVM->iom.s.cMmioRegs;
     if (idx >= pVM->iom.s.cMmioAlloc)
     {
-        int rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_IOM_GROW_MMIO_REGS, pVM->iom.s.cMmioAlloc + 1, NULL);
-        AssertLogRelRCReturn(rc, rc);
+        int rc = iomR3MmioGrowTable(pVM, pVM->iom.s.cMmioAlloc + 1);
+        AssertRCReturn(rc, rc);
         AssertReturn(idx == pVM->iom.s.cMmioRegs, VERR_IOM_MMIO_IPE_1);
-        AssertReturn(idx < pVM->iom.s.cMmioAlloc, VERR_IOM_MMIO_IPE_2);
     }
 
     /*
