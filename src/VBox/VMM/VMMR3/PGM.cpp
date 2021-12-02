@@ -749,7 +749,6 @@ VMMR3_INT_DECL(bool)    PGMR3IsNemModeEnabled(PVM pVM)
 VMMR3DECL(int) PGMR3Init(PVM pVM)
 {
     LogFlow(("PGMR3Init:\n"));
-    bool const fDriverless = SUPR3IsDriverless();
     PCFGMNODE pCfgPGM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/PGM");
     int rc;
 
@@ -759,6 +758,21 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     AssertCompile(sizeof(pVM->pgm.s) <= sizeof(pVM->pgm.padding));
     AssertCompile(sizeof(pVM->apCpusR3[0]->pgm.s) <= sizeof(pVM->apCpusR3[0]->pgm.padding));
     AssertCompileMemberAlignment(PGM, CritSectX, sizeof(uintptr_t));
+
+    /*
+     * If we're in driveless mode we have to use the simplified memory mode.
+     */
+    bool const fDriverless = SUPR3IsDriverless();
+    if (fDriverless)
+    {
+#ifdef VBOX_WITH_PGM_NEM_MODE
+        if (!pVM->pgm.s.fNemMode)
+            pVM->pgm.s.fNemMode = true;
+#else
+        return VMR3SetError(pVM->pUVM, VERR_SUP_DRIVERLESS, RT_SRC_POS,
+                            "Driverless requires that VBox is built with VBOX_WITH_PGM_NEM_MODE defined");
+#endif
+    }
 
     /*
      * Init the structure.
@@ -923,8 +937,9 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         if (RT_SUCCESS(rc))
         {
             pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
-            pVM->pgm.s.HCPhysZeroPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3);
-            AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS || fDriverless);
+            pVM->pgm.s.HCPhysZeroPg = !fDriverless ? MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3)
+                                    : _4G - PAGE_SIZE * 2 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
+            AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
         }
     }
 
@@ -938,8 +953,9 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         if (RT_SUCCESS(rc))
         {
             ASMMemFill32(pVM->pgm.s.pvMmioPgR3, PAGE_SIZE, 0xfeedface);
-            pVM->pgm.s.HCPhysMmioPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvMmioPgR3);
-            AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS || fDriverless);
+            pVM->pgm.s.HCPhysMmioPg = !fDriverless ? MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvMmioPgR3)
+                                    : _4G - PAGE_SIZE * 3 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
+            AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS);
             pVM->pgm.s.HCPhysInvMmioPg = pVM->pgm.s.HCPhysMmioPg;
         }
     }
