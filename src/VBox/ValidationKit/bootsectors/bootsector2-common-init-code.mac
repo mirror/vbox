@@ -678,8 +678,8 @@ bs2Gdt:
         dw  0ffffh, 00000h, 09300h, 000afh      ; 64-bit stack and data segment.
         dw  00000h, 00000h, 00000h, 00000h      ; Unused
 %define BS2_SEL_MMIO16                          50h
-%define BS2_SEL_MMIO16_BASE                     0100000h
-        dw  0ffffh, 00000h, 09310h, 00000h      ; 16-bit VMMDev MMIO segment with base 0100000h.
+%define BS2_SEL_MMIO16_BASE                     00df000h
+        dw  0ffffh, 0f000h, 0930dh, 00000h      ; 16-bit VMMDev MMIO segment with base 0df000h.
         dw  00000h, 00000h, 00000h, 00000h      ; Unused
 %define BS2_SEL_LDT                             60h ; LDT usage requires manual LLDT and setting up.
         dw  BS2_LDT_SIZE, BS2_LDT_BASE & 0xffff, 08200h | ((BS2_LDT_BASE >> 16) & 0xff), 00000h
