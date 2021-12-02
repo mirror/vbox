@@ -2887,7 +2887,7 @@ class TestDriver(base.TestDriver):                                              
             if fRcTmp:
                 reporter.log('Successfully prepared environment');
                 sReportDbgSym = oResolver.annotateReport(sProcessReport);
-                if sReportDbgSym is not None:
+                if sReportDbgSym and len(sReportDbgSym) > 8:
                     reporter.addLogString(sReportDbgSym, sFilename, sKind, sDesc);
                     fRc = True;
                 else:
