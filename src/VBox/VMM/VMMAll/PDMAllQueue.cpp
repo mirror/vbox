@@ -160,10 +160,12 @@ VMMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64
 VMMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
 {
     AssertPtr(pQueue);
-    Assert(pQueue->pVMR3 && pQueue->pVMR0);
+    Assert(pQueue->pVMR3);
 #ifdef IN_RING0
+    AssertPtr(pQueue->pVMR0);
     return pQueue;
 #else
+    Assert(pQueue->pVMR0 || SUPR3IsDriverless());
     return MMHyperCCToR0(pQueue->CTX_SUFF(pVM), pQueue);
 #endif
 }

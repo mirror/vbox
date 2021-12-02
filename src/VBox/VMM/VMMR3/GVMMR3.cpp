@@ -89,7 +89,7 @@ VMMR3_INT_DECL(int) GVMMR3CreateVM(PUVM pUVM, uint32_t cCpus, PSUPDRVSESSION pSe
 
         /* CPUs: */
         PVMCPU pVCpu = (PVMCPU)((uintptr_t)pVM + sizeof(VM) + PAGE_SIZE);
-        for (VMCPUID idxCpu = 0; idxCpu < cCpus; idxCpu++, pVCpu++)
+        for (VMCPUID idxCpu = 0; idxCpu < cCpus; idxCpu++)
         {
             pVM->apCpusR3[idxCpu] = pVCpu;
 

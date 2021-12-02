@@ -274,9 +274,13 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     /*
      * Register the Ring-0 VM handle with the session for fast ioctl calls.
      */
-    rc = SUPR3SetVMForFastIOCtl(VMCC_GET_VMR0_FOR_CALL(pVM));
-    if (RT_FAILURE(rc))
-        return rc;
+    bool const fDriverless = SUPR3IsDriverless();
+    if (!fDriverless)
+    {
+        rc = SUPR3SetVMForFastIOCtl(VMCC_GET_VMR0_FOR_CALL(pVM));
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
 #ifdef VBOX_WITH_NMI
     /*
@@ -290,8 +294,9 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
         /*
          * Start the log flusher thread.
          */
-        rc = RTThreadCreate(&pVM->vmm.s.hLogFlusherThread, vmmR3LogFlusher, pVM, 0 /*cbStack*/,
-                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "R0LogWrk");
+        if (!fDriverless)
+            rc = RTThreadCreate(&pVM->vmm.s.hLogFlusherThread, vmmR3LogFlusher, pVM, 0 /*cbStack*/,
+                                RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "R0LogWrk");
         if (RT_SUCCESS(rc))
         {
 
@@ -319,6 +324,10 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
 static void vmmR3InitRegisterStats(PVM pVM)
 {
     RT_NOREF_PV(pVM);
+
+    /* Nothing to do here in driverless mode. */
+    if (SUPR3IsDriverless())
+        return;
 
     /*
      * Statistics.
@@ -452,6 +461,12 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
     Assert(pVCpu && pVCpu->idCpu == 0);
 
     /*
+     * Nothing to do here in driverless mode.
+     */
+    if (SUPR3IsDriverless())
+        return VINF_SUCCESS;
+
+    /*
      * Make sure the ring-0 loggers are up to date.
      */
     rc = VMMR3UpdateLoggers(pVM);
@@ -557,6 +572,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
              * Last chance for GIM to update its CPUID leaves if it requires
              * knowledge/information from HM initialization.
              */
+/** @todo r=bird: This shouldn't be done from here, but rather from VM.cpp. There is no dependency on VMM here. */
             rc = GIMR3InitCompleted(pVM);
             AssertRCReturn(rc, rc);
 
@@ -589,12 +605,13 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
     /*
      * Call Ring-0 entry with termination code.
      */
-#ifdef NO_SUPCALLR0VMM
-    //rc = VERR_GENERAL_FAILURE;
     int rc = VINF_SUCCESS;
-#else
-    int rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), 0 /*idCpu*/, VMMR0_DO_VMMR0_TERM, 0, NULL);
+    if (!SUPR3IsDriverless())
+    {
+#ifndef NO_SUPCALLR0VMM
+        rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), 0 /*idCpu*/, VMMR0_DO_VMMR0_TERM, 0, NULL);
 #endif
+    }
 
     /*
      * Flush the logs & deal with assertions.
@@ -722,7 +739,10 @@ static int vmmR3UpdateLoggersWorker(PVM pVM, PVMCPU pVCpu, PRTLOGGER pSrcLogger,
  */
 VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 {
-    VM_ASSERT_EMT(pVM);
+    /* Nothing to do here if we're in driverless mode: */
+    if (SUPR3IsDriverless())
+        return VINF_SUCCESS;
+
     PVMCPU pVCpu = VMMGetCpu(pVM);
     AssertReturn(pVCpu, VERR_VM_THREAD_NOT_EMT);
 
