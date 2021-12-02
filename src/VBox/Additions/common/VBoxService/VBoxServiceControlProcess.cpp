@@ -1963,7 +1963,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlProcessOnInput(PVBOXSERVICECTRLPROCESS pThi
 #ifdef DEBUG
     VGSvcVerbose(3, "[PID %RU32]: vgsvcGstCtrlProcessOnInput returned with rc=%Rrc\n", pThis->uPID, rc);
 #endif
-    return VINF_SUCCESS; /** @todo Return rc here as soon as RTReqQueue todos are fixed. */
+    return rc;
 }
 
 
@@ -2054,7 +2054,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlProcessOnOutput(PVBOXSERVICECTRLPROCESS pTh
 #ifdef DEBUG
     VGSvcVerbose(3, "[PID %RU32]: Reading output returned with rc=%Rrc\n", pThis->uPID, rc);
 #endif
-    return VINF_SUCCESS; /** @todo Return rc here as soon as RTReqQueue todos are fixed. */
+    return rc;
 }
 
 
@@ -2065,7 +2065,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlProcessOnTerm(PVBOXSERVICECTRLPROCESS pThis
     if (!ASMAtomicXchgBool(&pThis->fShutdown, true))
         VGSvcVerbose(3, "[PID %RU32]: Setting shutdown flag ...\n", pThis->uPID);
 
-    return VINF_SUCCESS; /** @todo Return rc here as soon as RTReqQueue todos are fixed. */
+    return VINF_SUCCESS;
 }
 
 
