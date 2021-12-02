@@ -288,7 +288,8 @@ GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_
 
 
 /**
- * @see GMMR0QueryVMMMemoryStatsReq
+ * @note Caller does the driverless check.
+ * @see  GMMR0QueryVMMMemoryStatsReq
  */
 GMMR3DECL(int)  GMMR3QueryHypervisorMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, uint64_t *pcTotalFreePages, uint64_t *pcTotalBalloonPages, uint64_t *puTotalBalloonSize)
 {

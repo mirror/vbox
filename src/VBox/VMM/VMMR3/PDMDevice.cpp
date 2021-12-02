@@ -281,7 +281,7 @@ int pdmR3DevInit(PVM pVM)
 #ifdef VBOX_WITH_PGM_NEM_MODE
             && !PGMR3IsNemModeEnabled(pVM) /* No ring-0 in simplified memory mode. */
 #endif
-           )
+            && !SUPR3IsDriverless())
         {
             if (pReg->fFlags & PDM_DEVREG_FLAGS_R0)
             {

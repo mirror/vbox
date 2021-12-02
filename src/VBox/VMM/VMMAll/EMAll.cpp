@@ -325,8 +325,9 @@ VMM_INT_DECL(int) EMUnhaltAndWakeUp(PVMCC pVM, PVMCPUCC pVCpuDst)
     AssertRC(rc);
 
 #elif defined(IN_RING3)
-    int rc = SUPR3CallVMMR0(VMCC_GET_VMR0_FOR_CALL(pVM), pVCpuDst->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, NULL /* pvArg */);
-    AssertRC(rc);
+    VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, 0 /*fFlags*/);
+    int rc = VINF_SUCCESS;
+    RT_NOREF(pVM);
 
 #else
     /* Nothing to do for raw-mode, shouldn't really be used by raw-mode guests anyway. */

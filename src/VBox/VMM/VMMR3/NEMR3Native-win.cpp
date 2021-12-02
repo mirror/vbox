@@ -1431,13 +1431,16 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                             STAMR3RegisterF(pVM, &pNemCpu->StatQueryCpuTick,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Number of TSC queries",                  "/NEM/CPU%u/QueryCpuTick", idCpu);
                         }
 
-                        PUVM pUVM = pVM->pUVM;
-                        STAMR3RegisterRefresh(pUVM, &pVM->nem.s.R0Stats.cPagesAvailable, STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
-                                              STAMUNIT_PAGES, STAM_REFRESH_GRP_NEM, "Free pages available to the hypervisor",
-                                              "/NEM/R0Stats/cPagesAvailable");
-                        STAMR3RegisterRefresh(pUVM, &pVM->nem.s.R0Stats.cPagesInUse,     STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
-                                              STAMUNIT_PAGES, STAM_REFRESH_GRP_NEM, "Pages in use by hypervisor",
-                                              "/NEM/R0Stats/cPagesInUse");
+                        if (!SUPR3IsDriverless())
+                        {
+                            PUVM pUVM = pVM->pUVM;
+                            STAMR3RegisterRefresh(pUVM, &pVM->nem.s.R0Stats.cPagesAvailable, STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
+                                                  STAMUNIT_PAGES, STAM_REFRESH_GRP_NEM, "Free pages available to the hypervisor",
+                                                  "/NEM/R0Stats/cPagesAvailable");
+                            STAMR3RegisterRefresh(pUVM, &pVM->nem.s.R0Stats.cPagesInUse,     STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
+                                                  STAMUNIT_PAGES, STAM_REFRESH_GRP_NEM, "Pages in use by hypervisor",
+                                                  "/NEM/R0Stats/cPagesInUse");
+                        }
 
                     }
                 }

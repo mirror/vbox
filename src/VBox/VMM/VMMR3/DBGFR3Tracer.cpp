@@ -921,7 +921,7 @@ DECLHIDDEN(int) dbgfR3TracerCreate(PVM pVM, bool fR0Enabled, const char *pszTrac
     /*
      * Allocate the tracer instance.
      */
-    if (fR0Enabled /*|| fRCEnabled*/)
+    if ((fR0Enabled /*|| fRCEnabled*/) && !SUPR3IsDriverless())
     {
         AssertLogRel(fR0Enabled /* not possible to just enabled raw-mode atm. */);
 
