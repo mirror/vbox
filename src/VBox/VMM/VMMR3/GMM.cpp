@@ -265,13 +265,25 @@ GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAll
  */
 GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages)
 {
-    GMMBALLOONEDPAGESREQ Req;
-    Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.enmAction = enmAction;
-    Req.cBalloonedPages = cBalloonedPages;
+    int rc;
+    if (!SUPR3IsDriverless())
+    {
+        GMMBALLOONEDPAGESREQ Req;
+        Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        Req.Hdr.cbReq = sizeof(Req);
+        Req.enmAction = enmAction;
+        Req.cBalloonedPages = cBalloonedPages;
 
-    return VMMR3CallR0(pVM, VMMR0_DO_GMM_BALLOONED_PAGES, 0, &Req.Hdr);
+        rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_BALLOONED_PAGES, 0, &Req.Hdr);
+    }
+    /*
+     * Ignore reset and fail all other requests.
+     */
+    else if (enmAction == GMMBALLOONACTION_RESET && cBalloonedPages == 0)
+        rc = VINF_SUCCESS;
+    else
+        rc = VERR_SUP_DRIVERLESS;
+    return rc;
 }
 
 
@@ -394,7 +406,9 @@ GMMR3DECL(int) GMMR3UnregisterSharedModule(PVM pVM, PGMMUNREGISTERSHAREDMODULERE
  */
 GMMR3DECL(int) GMMR3ResetSharedModules(PVM pVM)
 {
-    return VMMR3CallR0(pVM, VMMR0_DO_GMM_RESET_SHARED_MODULES, 0, NULL);
+    if (!SUPR3IsDriverless())
+        return VMMR3CallR0(pVM, VMMR0_DO_GMM_RESET_SHARED_MODULES, 0, NULL);
+    return VINF_SUCCESS;
 }
 
 

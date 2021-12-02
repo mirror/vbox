@@ -23,6 +23,7 @@
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/gvmm.h>
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/tm.h>
@@ -284,14 +285,14 @@ int vmR3EmulationThreadWithId(RTTHREAD hThreadSelf, PUVMCPU pUVCpu, VMCPUID idCp
             pUVM->aCpus[iCpu].pVCpu = NULL;
         }
 
-        int rc2 = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), 0 /*idCpu*/, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
+        int rc2 = GVMMR3DestroyVM(pUVM, pVM);
         AssertLogRelRC(rc2);
     }
     /* Deregister the EMT with VMMR0. */
     else if (   idCpu != 0
              && (pVM = pUVM->pVM) != NULL)
     {
-        int rc2 = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), idCpu, VMMR0_DO_GVMM_DEREGISTER_VMCPU, 0, NULL);
+        int rc2 = GVMMR3DeregisterVCpu(pVM, idCpu);
         AssertLogRelRC(rc2);
     }
 
@@ -1346,7 +1347,20 @@ int vmR3SetHaltMethodU(PUVM pUVM, VMHALTMETHOD enmHaltMethod)
             //enmHaltMethod = VMHALTMETHOD_1;
             //enmHaltMethod = VMHALTMETHOD_OLD;
     }
-    LogRel(("VMEmt: Halt method %s (%d)\n", vmR3GetHaltMethodName(enmHaltMethod), enmHaltMethod));
+
+    /*
+     * The global halt method doesn't work in driverless mode, so fall back on
+     * method #1 instead.
+     */
+    if (!SUPR3IsDriverless() || enmHaltMethod != VMHALTMETHOD_GLOBAL_1)
+        LogRel(("VMEmt: Halt method %s (%d)\n", vmR3GetHaltMethodName(enmHaltMethod), enmHaltMethod));
+    else
+    {
+        LogRel(("VMEmt: Halt method %s (%d) not available in driverless mode, using %s (%d) instead\n",
+                vmR3GetHaltMethodName(enmHaltMethod), enmHaltMethod, vmR3GetHaltMethodName(VMHALTMETHOD_1), VMHALTMETHOD_1));
+        enmHaltMethod = VMHALTMETHOD_1;
+    }
+
 
     /*
      * Find the descriptor.

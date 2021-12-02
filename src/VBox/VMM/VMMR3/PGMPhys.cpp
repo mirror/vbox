@@ -2173,7 +2173,10 @@ int pgmR3PhysRamTerm(PVM pVM)
      * Flush the handy pages updates to make sure no shared pages are hiding
      * in there.  (Not unlikely if the VM shuts down, apparently.)
      */
-    rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_FLUSH_HANDY_PAGES, 0, NULL);
+# ifdef VBOX_WITH_PGM_NEM_MODE
+    if (!pVM->pgm.s.fNemMode)
+# endif
+        rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_FLUSH_HANDY_PAGES, 0, NULL);
 #endif
 
     /*

@@ -117,12 +117,13 @@ VMMR3_INT_DECL(int) GVMMR3CreateVM(PUVM pUVM, uint32_t cCpus, PSUPDRVSESSION pSe
  *
  * @returns VBox status code.
  * @param   pUVM    The user mode VM handle.
+ * @param   pVM     The cross context VM structure.
  */
-VMMR3_INT_DECL(int) GVMMR3DestroyVM(PUVM pUVM)
+VMMR3_INT_DECL(int) GVMMR3DestroyVM(PUVM pUVM, PVM pVM)
 {
-    PVM pVM = pUVM->pVM;
     AssertPtrReturn(pVM, VERR_INVALID_VM_HANDLE);
     Assert(pUVM->cCpus == pVM->cCpus);
+    RT_NOREF(pUVM);
 
     int rc;
     if (!SUPR3IsDriverless())
@@ -155,6 +156,27 @@ VMMR3_INT_DECL(int) GVMMR3RegisterVCpu(PVM pVM, VMCPUID idCpu)
         if (RT_FAILURE(rc))
             LogRel(("idCpu=%u rc=%Rrc\n", idCpu, rc));
     }
+    else
+        rc = VINF_SUCCESS;
+    return rc;
+}
+
+
+/**
+ * Deregister the calling EMT from GVM.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   idCpu       The Virtual CPU ID.
+ * @thread  EMT(idCpu)
+ * @see     GVMMR0DeregisterVCpu
+ */
+VMMR3_INT_DECL(int) GVMMR3DeregisterVCpu(PVM pVM, VMCPUID idCpu)
+{
+    Assert(VMMGetCpuId(pVM) == idCpu);
+    int rc;
+    if (!SUPR3IsDriverless())
+        rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), idCpu, VMMR0_DO_GVMM_DEREGISTER_VMCPU, 0, NULL);
     else
         rc = VINF_SUCCESS;
     return rc;

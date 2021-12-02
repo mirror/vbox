@@ -707,7 +707,7 @@ static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCT
             RTThreadSleep(RT_MIN(100 + 25 *(pUVM->cCpus - 1), 500)); /* very sophisticated */
         }
 
-        int rc2 = GVMMR3DestroyVM(pUVM);
+        int rc2 = GVMMR3DestroyVM(pUVM, pVM);
         AssertRC(rc2);
     }
     else
