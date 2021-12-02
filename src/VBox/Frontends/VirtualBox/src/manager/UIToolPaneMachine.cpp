@@ -230,7 +230,7 @@ void UIToolPaneMachine::openTool(UIToolType enmType)
 #endif
                 /* Configure pane: */
                 m_pPaneFileManager->setProperty("ToolType", QVariant::fromValue(UIToolType_FileManager));
-                //m_pPaneFileManager->setSelectedVMListItems(m_items);
+                m_pPaneFileManager->setSelectedVMListItems(m_items);
                 /* Add into layout: */
                 m_pLayout->addWidget(m_pPaneFileManager);
                 m_pLayout->setCurrentWidget(m_pPaneFileManager);
@@ -303,13 +303,13 @@ void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)
         AssertPtrReturnVoid(m_pPaneDetails);
         m_pPaneDetails->setItems(m_items);
     }
-    /* Update logs pane is open: */
+    /* Update logs pane if it is open: */
     if (isToolOpened(UIToolType_Logs))
     {
         AssertPtrReturnVoid(m_pPaneLogViewer);
         m_pPaneLogViewer->setSelectedVMListItems(m_items);
     }
-    /* Update performance monitor pane is it is open: */
+    /* Update performance monitor pane if it is open: */
     if (isToolOpened(UIToolType_VMActivity))
     {
         AssertPtrReturnVoid(m_pPaneVMActivityMonitor);
@@ -319,7 +319,7 @@ void UIToolPaneMachine::setItems(const QList<UIVirtualMachineItem*> &items)
     {
         AssertPtrReturnVoid(m_pPaneFileManager);
         if (!m_items.isEmpty() && m_items[0])
-            m_pPaneFileManager->setMachine(m_items[0]->id());
+            m_pPaneFileManager->setSelectedVMListItems(m_items);
     }
 }
 

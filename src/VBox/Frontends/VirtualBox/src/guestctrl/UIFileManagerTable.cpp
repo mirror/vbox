@@ -1295,12 +1295,8 @@ void UIFileManagerTable::retranslateUi()
         pRootItem->setData(UICustomFileSystemModel::tr("Owner"), UICustomFileSystemModelColumn_Owner);
         pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
     }
-    /// @todo Using \n breaks between words of the same sentence isn't allowed. This isn't easily translateable to other
-    ///       languages.  Moreover, using of \n isn't allowed at all.  This isn't exactly a cross-platform identifier.
-    ///       You can use only <br> between sentenses of the same paragraph. Most of Qt text is HTML by definition, so
-    ///       it does support <br> tags.
     if (m_pWarningLabel)
-        m_pWarningLabel->setText(UIFileManager::tr("No Guest Session found!<br>Please use the Session Panel to start a new guest session"));
+        m_pWarningLabel->setText(UIFileManager::tr("<p>No Guest Session found! Please use the Session Panel to start a new guest session</p>"));
 }
 
 bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */

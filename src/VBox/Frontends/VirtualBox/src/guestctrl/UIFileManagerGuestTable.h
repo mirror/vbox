@@ -26,10 +26,17 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CEventListener.h"
+#include "CEventSource.h"
+#include "CGuest.h"
 #include "CGuestSession.h"
+#include "CMachine.h"
+#include "CSession.h"
+
 
 /* GUI includes: */
 #include "UIFileManagerTable.h"
+#include "UIMainEventListener.h"
 
 /* Forward declarations: */
 class UIActionPool;
@@ -47,11 +54,12 @@ signals:
 
 public:
 
-    UIFileManagerGuestTable(UIActionPool *pActionPool, QWidget *pParent = 0);
+    UIFileManagerGuestTable(UIActionPool *pActionPool, const CMachine &comMachine, QWidget *pParent = 0);
     void initGuestFileTable(const CGuestSession &session);
     void copyGuestToHost(const QString& hostDestinationPath);
     void copyHostToGuest(const QStringList &hostSourcePathList,
                          const QString &strDestination = QString());
+    QUuid machineId();
 
 protected:
 
@@ -85,7 +93,24 @@ private:
     QString permissionString(const CFsObjInfo &fsInfo);
     bool isFileObjectHidden(const CFsObjInfo &fsInfo);
 
-    mutable CGuestSession     m_comGuestSession;
+    void prepareListener(ComObjPtr<UIMainEventListenerImpl> &Qtistener,
+                         CEventListener &comEventListener,
+                         CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes);
+
+    void cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
+                         CEventListener &comEventListener,
+                         CEventSource comEventSource);
+
+
+    CGuest                    m_comGuest;
+    CGuestSession             m_comGuestSession;
+    CSession                  m_comSession;
+    CMachine                  m_comMachine;
+
+    ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
+    ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;
+    CEventListener m_comSessionListener;
+    CEventListener m_comGuestListener;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerGuestTable_h */

@@ -21,6 +21,7 @@
 #include <QSplitter>
 
 /* GUI includes: */
+#include "QITabWidget.h"
 #include "QITreeWidget.h"
 #include "QIToolBar.h"
 #include "UIActionPool.h"
@@ -37,6 +38,7 @@
 #include "UIFileManagerGuestTable.h"
 #include "UIFileManagerHostTable.h"
 #include "UIGuestControlInterface.h"
+#include "UIVirtualMachineItem.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -114,14 +116,13 @@ UIFileOperationsList::UIFileOperationsList(QWidget *pParent)
 UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
                              const CMachine &comMachine, QWidget *pParent, bool fShowToolbar)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_comMachine(comMachine)
     , m_pMainLayout(0)
     , m_pVerticalSplitter(0)
     , m_pFileTableSplitter(0)
     , m_pToolBar(0)
-    , m_pVerticalToolBar(0)
-    , m_pGuestFileTable(0)
+    , m_pVerticalToolBar(0)\
     , m_pHostFileTable(0)
+    , m_pGuestTablesContainer(0)
     , m_enmEmbedding(enmEmbedding)
     , m_pActionPool(pActionPool)
     , m_fShowToolbar(fShowToolbar)
@@ -138,17 +139,13 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     restorePanelVisibility();
     UIFileManagerOptions::create();
     uiCommon().setHelpKeyword(this, "guestadd-gc-file-manager");
-    connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIFileManager::sltCleanupListenerAndGuest);
+    //connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIFileManager::sltCleanupListenerAndGuest);
+    Q_UNUSED(comMachine);
 }
 
 UIFileManager::~UIFileManager()
 {
     UIFileManagerOptions::destroy();
-}
-
-void UIFileManager::setMachine(const QUuid &machineId)
-{
-    m_comMachine = uiCommon().virtualBox().FindMachine(machineId.toString());
 }
 
 void UIFileManager::setDialogBeingClosed(bool fFlag)
@@ -205,8 +202,6 @@ void UIFileManager::prepareObjects()
     {
         m_pFileTableSplitter->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
         m_pFileTableSplitter->setContentsMargins(0, 0, 0, 0);
-        m_pGuestFileTable = new UIFileManagerGuestTable(m_pActionPool);
-        m_pGuestFileTable->setEnabled(false);
 
         /* This widget hosts host file table and vertical toolbar. */
         QWidget *pHostTableAndVerticalToolbarWidget = new QWidget;
@@ -220,8 +215,13 @@ void UIFileManager::prepareObjects()
 
         m_pFileTableSplitter->addWidget(pHostTableAndVerticalToolbarWidget);
         prepareVerticalToolBar(pHostTableAndVerticalToolbarLayout);
-        if (m_pGuestFileTable)
-            m_pFileTableSplitter->addWidget(m_pGuestFileTable);
+
+        m_pGuestTablesContainer = new QITabWidget;
+        if (m_pGuestTablesContainer)
+        {
+            m_pGuestTablesContainer->setTabBarAutoHide(true);
+            m_pFileTableSplitter->addWidget(m_pGuestTablesContainer);
+        }
     }
 
     pTopLayout->addWidget(m_pFileTableSplitter);
@@ -301,15 +301,6 @@ void UIFileManager::prepareConnections()
             connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest), &QAction::triggered,
                     this, &UIFileManager::sltCopyHostToGuest);
     }
-    if (m_pGuestSessionPanel)
-    {
-        connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCreateSession,
-                this, &UIFileManager::sltCreateGuestSession);
-        connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCloseSession,
-                this, &UIFileManager::sltCloseGuestSession);
-        connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigHidePanel,
-                this, &UIFileManager::sltHandleHidePanel);
-    }
     if (m_pOptionsPanel)
     {
         connect(m_pOptionsPanel, &UIFileManagerOptionsPanel::sigHidePanel,
@@ -329,15 +320,6 @@ void UIFileManager::prepareConnections()
         connect(m_pHostFileTable, &UIFileManagerHostTable::sigLogOutput,
                 this, &UIFileManager::sltReceieveLogOutput);
         connect(m_pHostFileTable, &UIFileManagerHostTable::sigDeleteConfirmationOptionChanged,
-                this, &UIFileManager::sltHandleOptionsUpdated);
-    }
-    if (m_pGuestFileTable)
-    {
-        connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigLogOutput,
-                this, &UIFileManager::sltReceieveLogOutput);
-        connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigNewFileOperation,
-                this, &UIFileManager::sltReceieveNewFileOperation);
-        connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigDeleteConfirmationOptionChanged,
                 this, &UIFileManager::sltHandleOptionsUpdated);
     }
 }
@@ -370,79 +352,6 @@ void UIFileManager::prepareToolBar()
         m_pMainLayout->addWidget(m_pToolBar);
 #endif
     }
-}
-
-void UIFileManager::sltGuestSessionUnregistered(CGuestSession guestSession)
-{
-    if (guestSession.isNull())
-        return;
-    if (guestSession == m_comGuestSession && !m_comGuestSession.isNull())
-    {
-        m_comGuestSession.detach();
-        postGuestSessionClosed();
-        appendLog("Guest session unregistered", FileManagerLogType_Info);
-    }
-}
-
-void UIFileManager::sltGuestSessionRegistered(CGuestSession guestSession)
-{
-    if (guestSession == m_comGuestSession && !m_comGuestSession.isNull())
-        appendLog("Guest session registered", FileManagerLogType_Info);
-}
-
-
-void UIFileManager::sltCreateGuestSession(QString strUserName, QString strPassword)
-{
-    if (strUserName.isEmpty())
-    {
-        appendLog("No user name is given", FileManagerLogType_Error);
-        if (m_pGuestSessionPanel)
-            m_pGuestSessionPanel->markForError(true);
-        return;
-    }
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->markForError(!openSession(strUserName, strPassword));
-}
-
-void UIFileManager::sltCloseGuestSession()
-{
-    if (!m_comGuestSession.isOk())
-    {
-        appendLog("Guest session is not valid", FileManagerLogType_Error);
-        postGuestSessionClosed();
-        return;
-    }
-    if (m_pGuestFileTable)
-        m_pGuestFileTable->reset();
-
-    if (m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
-        cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
-
-    m_comGuestSession.Close();
-    appendLog("Guest session is closed", FileManagerLogType_Info);
-    postGuestSessionClosed();
-}
-
-void UIFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent)
-{
-    if (cEvent.isOk())
-    {
-        CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
-        if (cErrorInfo.isOk() && !cErrorInfo.GetText().contains("success", Qt::CaseInsensitive))
-            appendLog(cErrorInfo.GetText(), FileManagerLogType_Error);
-    }
-    if (m_comGuestSession.isOk())
-    {
-        if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
-        {
-            initFileTable();
-            postGuestSessionCreated();
-        }
-        appendLog(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
-                  FileManagerLogType_Info);
-    }
-    else
-        appendLog("Guest session is not valid", FileManagerLogType_Error);
 }
 
 void UIFileManager::sltReceieveLogOutput(QString strOutput, FileManagerLogType eLogType)
@@ -490,11 +399,15 @@ void UIFileManager::sltReceieveNewFileOperation(const CProgress &comProgress)
 void UIFileManager::sltFileOperationComplete(QUuid progressId)
 {
     Q_UNUSED(progressId);
-    if (!m_pGuestFileTable || !m_pHostFileTable)
-        return;
-
-    m_pHostFileTable->refresh();
-    m_pGuestFileTable->refresh();
+    if (m_pHostFileTable)
+        m_pHostFileTable->refresh();
+    // @todo we need to refresh only the table from which the completed file operation has originated
+    for (int i = 0; i < m_pGuestTablesContainer->count(); ++i)
+    {
+        UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
+        if (pTable)
+            pTable->refresh();
+    }
 }
 
 void UIFileManager::sltHandleOptionsUpdated()
@@ -502,8 +415,12 @@ void UIFileManager::sltHandleOptionsUpdated()
     if (m_pOptionsPanel)
         m_pOptionsPanel->update();
 
-    if (m_pGuestFileTable)
-        m_pGuestFileTable->optionsUpdated();
+    for (int i = 0; i < m_pGuestTablesContainer->count(); ++i)
+    {
+        UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
+        if (pTable)
+            pTable->optionsUpdated();
+    }
     if (m_pHostFileTable)
         m_pHostFileTable->optionsUpdated();
     saveOptions();
@@ -514,149 +431,24 @@ void UIFileManager::sltHandleHidePanel(UIDialogPanel *pPanel)
     hidePanel(pPanel);
 }
 
-void UIFileManager::sltCleanupListenerAndGuest()
-{
-    if (m_comGuest.isOk() && m_pQtGuestListener && m_comGuestListener.isOk())
-        cleanupListener(m_pQtGuestListener, m_comGuestListener, m_comGuest.GetEventSource());
-    if (m_comGuestSession.isOk() && m_pQtSessionListener && m_comSessionListener.isOk())
-        cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
-
-    if (m_comGuestSession.isOk())
-        m_comGuestSession.Close();
-}
-
 void UIFileManager::copyToHost()
 {
-    if (!m_pGuestFileTable || !m_pHostFileTable)
-        return;
-    QString hostDestinationPath = m_pHostFileTable->currentDirectoryPath();
-    m_pGuestFileTable->copyGuestToHost(hostDestinationPath);
-    m_pHostFileTable->refresh();
+    if (m_pGuestTablesContainer && m_pHostFileTable)
+    {
+        UIFileManagerGuestTable *pGuestFileTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->currentWidget());
+        if (pGuestFileTable)
+            pGuestFileTable->copyGuestToHost(m_pHostFileTable->currentDirectoryPath());
+    }
 }
 
 void UIFileManager::copyToGuest()
 {
-    if (!m_pGuestFileTable || !m_pHostFileTable)
-        return;
-    QStringList hostSourcePathList = m_pHostFileTable->selectedItemPathList();
-    m_pGuestFileTable->copyHostToGuest(hostSourcePathList);
-    m_pGuestFileTable->refresh();
-}
-
-void UIFileManager::initFileTable()
-{
-    if (!m_comGuestSession.isOk() || m_comGuestSession.GetStatus() != KGuestSessionStatus_Started)
-        return;
-    if (!m_pGuestFileTable)
-        return;
-    m_pGuestFileTable->initGuestFileTable(m_comGuestSession);
-}
-
-void UIFileManager::postGuestSessionCreated()
-{
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->switchSessionCloseMode();
-    if (m_pGuestFileTable)
-        m_pGuestFileTable->setEnabled(true);
-    if (m_pVerticalToolBar)
-        m_pVerticalToolBar->setEnabled(true);
-}
-
-void UIFileManager::postGuestSessionClosed()
-{
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->switchSessionCreateMode();
-    if (m_pGuestFileTable)
-        m_pGuestFileTable->setEnabled(false);
-    if (m_pVerticalToolBar)
-        m_pVerticalToolBar->setEnabled(false);
-}
-
-bool UIFileManager::openSession(const QString& strUserName, const QString& strPassword)
-{
-    if (m_comMachine.isNull())
+    if (m_pGuestTablesContainer && m_pHostFileTable)
     {
-        appendLog("Invalid machine reference", FileManagerLogType_Error);
-        return false;
+        UIFileManagerGuestTable *pGuestFileTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->currentWidget());
+        if (pGuestFileTable)
+            pGuestFileTable->copyHostToGuest(m_pHostFileTable->selectedItemPathList());
     }
-    m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
-    if (!m_comSession.isNull())
-    {
-        appendLog("Could not open machine session", FileManagerLogType_Error);
-        return false;
-    }
-
-    CConsole comConsole = m_comSession.GetConsole();
-    AssertReturn(!comConsole.isNull(), false);
-    m_comGuest = comConsole.GetGuest();
-    AssertReturn(!m_comGuest.isNull(), false);
-
-    if (!isGuestAdditionsAvailable(m_comGuest))
-    {
-        appendLog("Could not find Guest Additions", FileManagerLogType_Error);
-        postGuestSessionClosed();
-        if (m_pGuestSessionPanel)
-            m_pGuestSessionPanel->markForError(true);
-        return false;
-    }
-
-    QVector<KVBoxEventType> eventTypes;
-    eventTypes << KVBoxEventType_OnGuestSessionRegistered;
-
-    prepareListener(m_pQtGuestListener, m_comGuestListener,
-                    m_comGuest.GetEventSource(), eventTypes);
-    connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
-            this, &UIFileManager::sltGuestSessionUnregistered);
-
-    connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionRegistered,
-            this, &UIFileManager::sltGuestSessionRegistered);
-
-    m_comGuestSession = m_comGuest.CreateSession(strUserName, strPassword,
-                                                 QString() /* Domain */, "File Manager Session");
-
-    if (!m_comGuestSession.isOk())
-    {
-        appendLog(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
-        return false;
-    }
-
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->switchSessionCloseMode();
-
-    /* Prepare guest session listener */
-    eventTypes.clear();
-    eventTypes << KVBoxEventType_OnGuestSessionStateChanged;
-
-    prepareListener(m_pQtSessionListener, m_comSessionListener,
-                    m_comGuestSession.GetEventSource(), eventTypes);
-
-    qRegisterMetaType<CGuestSessionStateChangedEvent>();
-    connect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
-            this, &UIFileManager::sltGuestSessionStateChanged);
-
-    return true;
-}
-
-void UIFileManager::closeSession()
-{
-}
-
-void UIFileManager::prepareListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
-                                    CEventListener &comEventListener,
-                                    CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes)
-{
-    if (!comEventSource.isOk())
-        return;
-    /* Create event listener instance: */
-    QtListener.createObject();
-    QtListener->init(new UIMainEventListener, this);
-    comEventListener = CEventListener(QtListener);
-
-    /* Register event listener for CProgress event source: */
-    comEventSource.RegisterListener(comEventListener, eventTypes, FALSE /* active? */);
-
-    /* Register event sources in their listeners as well: */
-    QtListener->getWrapped()->registerSource(comEventSource, comEventListener);
 }
 
 void UIFileManager::prepareOptionsAndSessionPanels(QVBoxLayout *pLayout)
@@ -704,22 +496,6 @@ void UIFileManager::prepareOperationsAndLogPanels(QSplitter *pSplitter)
     pSplitter->addWidget(m_pLogPanel);
 }
 
-void UIFileManager::cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
-                                                CEventListener &comEventListener,
-                                                CEventSource comEventSource)
-{
-    if (!comEventSource.isOk())
-        return;
-    /* Unregister everything: */
-    QtListener->getWrapped()->unregisterSources();
-
-    /* Make sure VBoxSVC is available: */
-    if (!uiCommon().isVBoxSVCAvailable())
-        return;
-
-    /* Unregister event listener for CProgress event source: */
-    comEventSource.UnregisterListener(comEventListener);
-}
 
 template<typename T>
 QStringList UIFileManager::getFsObjInfoStringList(const T &fsObjectInfo) const
@@ -855,12 +631,79 @@ void UIFileManager::savePanelVisibility()
     gEDataManager->setFileManagerVisiblePanels(strNameList);
 }
 
-bool UIFileManager::isGuestAdditionsAvailable(const CGuest &guest)
+void UIFileManager::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
 {
-    if (!guest.isOk())
-        return false;
-    CGuest guestNonConst = const_cast<CGuest&>(guest);
-    return guestNonConst.GetAdditionsStatus(guestNonConst.GetAdditionsRunLevel());
+    QVector<QUuid> selectedMachines;
+
+    foreach (const UIVirtualMachineItem *item, items)
+    {
+        if (!item)
+            continue;
+        selectedMachines << item->id();
+    }
+    setMachines(selectedMachines);
 }
+
+void UIFileManager::setMachines(const QVector<QUuid> &machineIds)
+{
+    /* List of machines that are newly added to selected machine list: */
+    QVector<QUuid> newSelections;
+    QVector<QUuid> unselectedMachines(m_machineIds);
+
+    foreach (const QUuid &id, machineIds)
+    {
+        unselectedMachines.removeAll(id);
+        if (!m_machineIds.contains(id))
+            newSelections << id;
+    }
+    m_machineIds = machineIds;
+
+    addTabs(newSelections);
+    removeTabs(unselectedMachines);
+}
+
+void UIFileManager::removeTabs(const QVector<QUuid> &machineIdsToRemove)
+{
+    if (!m_pGuestTablesContainer)
+        return;
+    QVector<UIFileManagerGuestTable*> removeList;
+
+    for (int i = m_pGuestTablesContainer->count() - 1; i >= 0; --i)
+    {
+        UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
+        if (!pTable)
+            continue;
+        if (machineIdsToRemove.contains(pTable->machineId()))
+        {
+            removeList << pTable;
+            m_pGuestTablesContainer->removeTab(i);
+        }
+    }
+    qDeleteAll(removeList.begin(), removeList.end());
+}
+
+void UIFileManager::addTabs(const QVector<QUuid> &machineIdsToAdd)
+{
+    if (!m_pGuestTablesContainer)
+        return;
+
+    foreach (const QUuid &id, machineIdsToAdd)
+    {
+        CMachine comMachine = uiCommon().virtualBox().FindMachine(id.toString());
+        if (comMachine.isNull())
+            continue;
+        m_pGuestTablesContainer->addTab(new UIFileManagerGuestTable(m_pActionPool, comMachine, m_pGuestTablesContainer), comMachine.GetName());
+        // if (m_pGuestFileTable)
+        // {
+        //     connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigLogOutput,
+        //             this, &UIFileManager::sltReceieveLogOutput);
+        //     connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigNewFileOperation,
+        //             this, &UIFileManager::sltReceieveNewFileOperation);
+        //     connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigDeleteConfirmationOptionChanged,
+        //             this, &UIFileManager::sltHandleOptionsUpdated);
+        // }
+    }
+}
+
 
 #include "UIFileManager.moc"

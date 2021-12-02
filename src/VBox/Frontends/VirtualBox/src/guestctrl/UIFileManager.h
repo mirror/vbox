@@ -25,20 +25,12 @@
 #include <QPointer>
 #include <QWidget>
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CEventListener.h"
-#include "CEventSource.h"
-#include "CGuest.h"
-#include "CGuestSession.h"
-#include "CMachine.h"
-#include "CSession.h"
 
 /* GUI includes: */
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UIGuestControlDefs.h"
-#include "UIMainEventListener.h"
+
 
 /* Forward declarations: */
 class QHBoxLayout;
@@ -54,6 +46,8 @@ class UIFileManagerGuestSessionPanel;
 class UIFileManagerOptionsPanel;
 class UIFileManagerGuestTable;
 class UIFileManagerHostTable;
+class UIVirtualMachineItem;
+class QITabWidget;
 class QIToolBar;
 
 /** A Utility class to manage file  manager options. */
@@ -104,7 +98,7 @@ public:
     QIToolBar *toolbar() const { return m_pToolBar; }
 #endif
 
-    void setMachine(const QUuid &machineId);
+    void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
 
 protected:
 
@@ -112,11 +106,6 @@ protected:
 
 private slots:
 
-    void sltGuestSessionUnregistered(CGuestSession guestSession);
-    void sltGuestSessionRegistered(CGuestSession guestSession);
-    void sltCreateGuestSession(QString strUserName, QString strPassword);
-    void sltCloseGuestSession();
-    void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
     void sltReceieveLogOutput(QString strOutput, FileManagerLogType eLogType);
     void sltCopyGuestToHost();
     void sltCopyHostToGuest();
@@ -126,7 +115,6 @@ private slots:
     /** Performs whatever necessary when some signal about option change has been receieved. */
     void sltHandleOptionsUpdated();
     void sltHandleHidePanel(UIDialogPanel *pPanel);
-    void sltCleanupListenerAndGuest();
 
 private:
 
@@ -137,25 +125,6 @@ private:
     /** Creates options and sessions panels and adds them to @p pLayout.  */
     void prepareOptionsAndSessionPanels(QVBoxLayout *pLayout);
     void prepareOperationsAndLogPanels(QSplitter *pSplitter);
-
-    /** Creates a shared machine session, opens a guest session and registers event listeners. */
-    bool openSession(const QString& strUserName, const QString& strPassword);
-    void closeSession();
-
-    void prepareListener(ComObjPtr<UIMainEventListenerImpl> &Qtistener,
-                         CEventListener &comEventListener,
-                         CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes);
-
-    void cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
-                         CEventListener &comEventListener,
-                         CEventSource comEventSource);
-
-    void initFileTable();
-    /** @name Perform operations needed after creating/ending a guest control session
-      * @{ */
-        void postGuestSessionCreated();
-        void postGuestSessionClosed();
-    /** @} */
 
     /** Saves list of panels and file manager options to the extra data. */
     void saveOptions();
@@ -179,10 +148,12 @@ private:
     void                      appendLog(const QString &strLog, FileManagerLogType eLogType);
     void                      savePanelVisibility();
     bool                      isGuestAdditionsAvailable(const CGuest &guest);
-    CGuest                    m_comGuest;
-    CGuestSession             m_comGuestSession;
-    CSession                  m_comSession;
-    CMachine                  m_comMachine;
+
+    void setMachines(const QVector<QUuid> &machineIDs);
+    void removeTabs(const QVector<QUuid> &machineIdsToRemove);
+    void addTabs(const QVector<QUuid> &machineIdsToAdd);
+
+
     QVBoxLayout              *m_pMainLayout;
     QSplitter                *m_pVerticalSplitter;
     /** Splitter hosting host and guest file system tables. */
@@ -190,13 +161,9 @@ private:
     QIToolBar                *m_pToolBar;
     QIToolBar                *m_pVerticalToolBar;
 
-    UIFileManagerGuestTable  *m_pGuestFileTable;
     UIFileManagerHostTable   *m_pHostFileTable;
 
-    ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
-    ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;
-    CEventListener m_comSessionListener;
-    CEventListener m_comGuestListener;
+    QITabWidget              *m_pGuestTablesContainer;
     const EmbedTo  m_enmEmbedding;
     QPointer<UIActionPool>  m_pActionPool;
     const bool     m_fShowToolbar;
@@ -207,6 +174,10 @@ private:
     UIFileManagerGuestSessionPanel     *m_pGuestSessionPanel;
     UIFileManagerOperationsPanel       *m_pOperationsPanel;
     bool                                m_fDialogBeingClosed;
+
+
+    QVector<QUuid> m_machineIds;
+
     friend class UIFileManagerOptionsPanel;
     friend class UIFileManagerDialog;
 };
