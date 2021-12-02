@@ -151,6 +151,7 @@
 #include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
+#include <iprt/mem.h>
 #include <iprt/rand.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
@@ -1523,6 +1524,73 @@ static void tmR3TimerQueueRegisterStats(PVM pVM, PTMTIMERQUEUE pQueue, uint32_t 
 
 
 /**
+ * Grows a timer queue.
+ *
+ * @returns VBox status code (errors are LogRel'ed already).
+ * @param   pVM         The cross context VM structure.
+ * @param   pQueue      The timer queue to grow.
+ * @note    Caller owns the queue's allocation lock.
+ */
+static int tmR3TimerQueueGrow(PVM pVM, PTMTIMERQUEUE pQueue)
+{
+    /*
+     * Validate input and state.
+     */
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE); /** @todo must do better than this! */
+    AssertReturn(!pQueue->fCannotGrow, VERR_TM_TIMER_QUEUE_CANNOT_GROW);
+
+    /*
+     * Do the growing.
+     */
+    int rc;
+    uint32_t const cOldEntries = pQueue->cTimersAlloc;
+    uint32_t       cNewTimers  = cOldEntries + 64;
+    Assert(cNewTimers < _32K);
+    if (!SUPR3IsDriverless())
+    {
+        rc = VMMR3CallR0Emt(pVM, VMMGetCpu(pVM), VMMR0_DO_TM_GROW_TIMER_QUEUE,
+                            RT_MAKE_U64(cNewTimers, (uint64_t)(pQueue - &pVM->tm.s.aTimerQueues[0])), NULL);
+        AssertLogRelRCReturn(rc, rc);
+        AssertReturn(pQueue->cTimersAlloc >= cNewTimers, VERR_TM_IPE_3);
+    }
+    else
+    {
+        AssertReturn(cNewTimers <= _32K && cOldEntries <= _32K, VERR_TM_TOO_MANY_TIMERS);
+        ASMCompilerBarrier();
+
+        /*
+         * Round up the request to the nearest page and do the allocation.
+         */
+        size_t cbNew = sizeof(TMTIMER) * cNewTimers;
+        cbNew = RT_ALIGN_Z(cbNew, PAGE_SIZE);
+        cNewTimers = (uint32_t)(cbNew / sizeof(TMTIMER));
+
+        PTMTIMER paTimers = (PTMTIMER)RTMemPageAllocZ(cbNew);
+        if (paTimers)
+        {
+            /*
+             * Copy over the old timer, init the new free ones, then switch over
+             * and free the old ones.
+             */
+            PTMTIMER const paOldTimers = pQueue->paTimers;
+            tmHCTimerQueueGrowInit(paTimers, paOldTimers, cNewTimers, cOldEntries);
+
+            pQueue->paTimers      = paTimers;
+            pQueue->cTimersAlloc  = cNewTimers;
+            pQueue->cTimersFree  += cNewTimers - (cOldEntries ? cOldEntries : 1);
+
+            RTMemPageFree(paOldTimers, RT_ALIGN_Z(sizeof(TMTIMER) * cOldEntries, PAGE_SIZE));
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_NO_PAGE_MEMORY;
+    }
+    return rc;
+}
+
+
+/**
  * Internal TMR3TimerCreate worker.
  *
  * @returns VBox status code.
@@ -1569,13 +1637,8 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, uint32_t fFlags, const cha
      */
     if (!pQueue->cTimersFree)
     {
-        AssertReturn(!pQueue->fCannotGrow, VERR_TM_TIMER_QUEUE_CANNOT_GROW);
-        uint32_t cTimersAlloc = pQueue->cTimersAlloc + 64;
-        Assert(cTimersAlloc < _32K);
-        rc = VMMR3CallR0Emt(pVM, VMMGetCpu(pVM), VMMR0_DO_TM_GROW_TIMER_QUEUE,
-                            RT_MAKE_U64(cTimersAlloc, (uint64_t)(pQueue - &pVM->tm.s.aTimerQueues[0])), NULL);
-        AssertLogRelRCReturnStmt(rc, PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock), rc);
-        AssertReturnStmt(pQueue->cTimersAlloc >= cTimersAlloc, PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock), VERR_TM_IPE_3);
+        rc = tmR3TimerQueueGrow(pVM, pQueue);
+        AssertRCReturnStmt(rc, PDMCritSectRwLeaveExcl(pVM, &pQueue->AllocLock), rc);
     }
 
     /* Scan the array for free timers. */

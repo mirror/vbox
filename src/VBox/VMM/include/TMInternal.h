@@ -853,6 +853,7 @@ void                    tmTimerQueueSchedule(PVMCC pVM, PTMTIMERQUEUECC pQueueCC
 #ifdef VBOX_STRICT
 void                    tmTimerQueuesSanityChecks(PVMCC pVM, const char *pszWhere);
 #endif
+void                    tmHCTimerQueueGrowInit(PTMTIMER paTimers, TMTIMER const *paOldTimers, uint32_t cNewTimers, uint32_t cOldTimers);
 
 uint64_t                tmR3CpuTickGetRawVirtualNoCheck(PVM pVM);
 int                     tmCpuTickPause(PVMCPUCC pVCpu);

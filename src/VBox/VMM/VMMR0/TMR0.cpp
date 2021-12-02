@@ -102,10 +102,10 @@ VMMR0_INT_DECL(int) TMR0TimerQueueGrow(PGVM pGVM, uint32_t idxQueue, uint32_t cM
 
     uint32_t cNewTimers = cMinTimers;
     AssertReturn(cNewTimers <= _32K, VERR_TM_TOO_MANY_TIMERS);
-    uint32_t const cOldEntries = pQueueR0->cTimersAlloc;
+    uint32_t const cOldTimers = pQueueR0->cTimersAlloc;
     ASMCompilerBarrier();
-    AssertReturn(cNewTimers >= cOldEntries, VERR_TM_IPE_1);
-    AssertReturn(cOldEntries == pQueueShared->cTimersAlloc, VERR_TM_IPE_2);
+    AssertReturn(cNewTimers >= cOldTimers, VERR_TM_IPE_1);
+    AssertReturn(cOldTimers == pQueueShared->cTimersAlloc, VERR_TM_IPE_2);
 
     /*
      * Round up the request to the nearest page and do the allocation.
@@ -128,35 +128,7 @@ VMMR0_INT_DECL(int) TMR0TimerQueueGrow(PGVM pGVM, uint32_t idxQueue, uint32_t cM
         rc = RTR0MemObjMapUser(&hMapObj, hMemObj, (RTR3PTR)-1, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, RTR0ProcHandleSelf());
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Copy over the old info and initialize the new handles.
-             */
-            if (cOldEntries > 0)
-                memcpy(paTimers, pQueueR0->paTimers, sizeof(TMTIMER) * cOldEntries);
-
-            size_t i = cNewTimers;
-            while (i-- > cOldEntries)
-            {
-                paTimers[i].u64Expire       = UINT64_MAX;
-                paTimers[i].enmType         = TMTIMERTYPE_INVALID;
-                paTimers[i].enmState        = TMTIMERSTATE_FREE;
-                paTimers[i].idxScheduleNext = UINT32_MAX;
-                paTimers[i].idxNext         = UINT32_MAX;
-                paTimers[i].idxPrev         = UINT32_MAX;
-                paTimers[i].hSelf           = NIL_TMTIMERHANDLE;
-            }
-
-            /*
-             * Mark the zero'th entry as allocated but invalid if we just allocated it.
-             */
-            if (cOldEntries == 0)
-            {
-                paTimers[0].enmState = TMTIMERSTATE_INVALID;
-                paTimers[0].szName[0] = 'n';
-                paTimers[0].szName[1] = 'i';
-                paTimers[0].szName[2] = 'l';
-                paTimers[0].szName[3] = '\0';
-            }
+            tmHCTimerQueueGrowInit(paTimers, pQueueR0->paTimers, cNewTimers, cOldTimers);
 
             /*
              * Switch the memory handles.
@@ -176,7 +148,7 @@ VMMR0_INT_DECL(int) TMR0TimerQueueGrow(PGVM pGVM, uint32_t idxQueue, uint32_t cM
             pQueueR0->cTimersAlloc     = cNewTimers;
             pQueueShared->paTimers     = RTR0MemObjAddressR3(pQueueR0->hMapObj);
             pQueueShared->cTimersAlloc = cNewTimers;
-            pQueueShared->cTimersFree += cNewTimers - (cOldEntries ? cOldEntries : 1);
+            pQueueShared->cTimersFree += cNewTimers - (cOldTimers ? cOldTimers : 1);
 
             /*
              * Free the old allocation.

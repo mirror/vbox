@@ -40,6 +40,7 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/asm-math.h>
+#include <iprt/string.h>
 #ifdef IN_RING3
 # include <iprt/thread.h>
 #endif
@@ -2589,6 +2590,54 @@ const char *tmTimerState(TMTIMERSTATE enmState)
 #undef CASE
     }
 }
+
+
+#if defined(IN_RING0) || defined(IN_RING3)
+/**
+ * Copies over old timers and initialized newly allocted ones.
+ *
+ * Helper for TMR0TimerQueueGrow an tmR3TimerQueueGrow.
+ *
+ * @param   paTimers            The new timer allocation.
+ * @param   paOldTimers         The old timers.
+ * @param   cNewTimers          Number of new timers.
+ * @param   cOldTimers          Number of old timers.
+ */
+void tmHCTimerQueueGrowInit(PTMTIMER paTimers, TMTIMER const *paOldTimers, uint32_t cNewTimers, uint32_t cOldTimers)
+{
+    Assert(cOldTimers < cNewTimers);
+
+    /*
+     * Copy over the old info and initialize the new handles.
+     */
+    if (cOldTimers > 0)
+        memcpy(paTimers, paOldTimers, sizeof(TMTIMER) * cOldTimers);
+
+    size_t i = cNewTimers;
+    while (i-- > cOldTimers)
+    {
+        paTimers[i].u64Expire       = UINT64_MAX;
+        paTimers[i].enmType         = TMTIMERTYPE_INVALID;
+        paTimers[i].enmState        = TMTIMERSTATE_FREE;
+        paTimers[i].idxScheduleNext = UINT32_MAX;
+        paTimers[i].idxNext         = UINT32_MAX;
+        paTimers[i].idxPrev         = UINT32_MAX;
+        paTimers[i].hSelf           = NIL_TMTIMERHANDLE;
+    }
+
+    /*
+     * Mark the zero'th entry as allocated but invalid if we just allocated it.
+     */
+    if (cOldTimers == 0)
+    {
+        paTimers[0].enmState = TMTIMERSTATE_INVALID;
+        paTimers[0].szName[0] = 'n';
+        paTimers[0].szName[1] = 'i';
+        paTimers[0].szName[2] = 'l';
+        paTimers[0].szName[3] = '\0';
+    }
+}
+#endif /* IN_RING0 || IN_RING3 */
 
 
 /**
