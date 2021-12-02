@@ -1745,6 +1745,9 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Create the interface.
      */
+    if (SUPR3IsDriverless()) /** @todo This is probably not good enough for doing fuzz testing, but later... */
+        return PDMDrvHlpVMSetError(pDrvIns, VERR_SUP_DRIVERLESS, RT_SRC_POS,
+                                   N_("Cannot attach to '%s' in driverless mode"), pThis->szNetwork);
     OpenReq.hIf = INTNET_HANDLE_INVALID;
     rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_OPEN, &OpenReq, sizeof(OpenReq));
     if (RT_FAILURE(rc))
