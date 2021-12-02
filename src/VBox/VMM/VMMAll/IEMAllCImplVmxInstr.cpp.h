@@ -763,6 +763,8 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetIdtVectoringErrCode(PVMCPUCC pVCpu, uint32_
  */
 DECL_FORCE_INLINE(void) iemVmxVmcsSetExitGuestLinearAddr(PVMCPUCC pVCpu, uint64_t uGuestLinearAddr)
 {
+    /* Bits 63:32 of guest-linear address MBZ if the guest isn't in long mode prior to the VM-exit. */
+    Assert(CPUMIsGuestInLongModeEx(IEM_GET_CTX(pVCpu)) || !(uGuestLinearAddr & UINT64_C(0xffffffff00000000)));
     pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64RoGuestLinearAddr.u = uGuestLinearAddr;
 }
 
@@ -3685,13 +3687,29 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPUCC pVCpu, uint8_t uVector, uint3
 
 
 /**
+ * VMX VM-exit handler for EPT misconfiguration.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   GCPhysAddr  The physical address causing the EPT misconfiguration. This
+ *                      must be page aligned.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptMisconfig(PVMCPUCC pVCpu, RTGCPHYS GCPhysAddr)
+{
+    Assert(!(GCPhysAddr & PAGE_OFFSET_MASK));
+    iemVmxVmcsSetExitGuestPhysAddr(pVCpu, GCPhysAddr);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_EPT_MISCONFIG, 0 /* u64ExitQual */);
+}
+
+
+/**
  * VMX VM-exit handler for EPT violation.
  *
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   fAccess             The access causing the EPT violation, IEM_ACCESS_XXX.
  * @param   fSlatFail           The SLAT failure info, IEM_SLAT_FAIL_XXX.
  * @param   fEptAccess          The EPT paging structure bits.
- * @param   GCPhysAddr          The physical address causing the EPT violation.
+ * @param   GCPhysAddr          The physical address causing the EPT violation. This
+ *                              must be page aligned.
  * @param   fIsLinearAddrValid  Whether translation of a linear address caused this
  *                              EPT violation. If @c false, GCPtrAddr must be 0.
  * @param   GCPtrAddr           The linear address causing the EPT violation.
@@ -3706,6 +3724,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAcces
      * While we can leave it this way, it's preferrable to zero it for consistency.
      */
     Assert(fLinearAddrValid || GCPtrAddr == 0);
+    Assert(!(GCPhysAddr & PAGE_OFFSET_MASK));
 
     uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
     uint8_t const fSupportsAccessDirty = fCaps & MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY;
@@ -3770,12 +3789,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32
         return iemVmxVmexitEptViolation(pVCpu, fAccess, fSlatFail, fEptAccess, pWalk->GCPhysNested, pWalk->fIsLinearAddrValid,
                                         pWalk->GCPtr, cbInstr);
     }
-    else
-    {
-        Assert(pWalk->fFailed & PGM_WALKFAIL_EPT_MISCONFIG);
-        /** @todo Do EPT misconfig. */
-        return VERR_NOT_IMPLEMENTED;
-    }
+
+    Assert(pWalk->fFailed & PGM_WALKFAIL_EPT_MISCONFIG);
+    return iemVmxVmexitEptMisconfig(pVCpu, pWalk->GCPhysNested);
 }
 
 
