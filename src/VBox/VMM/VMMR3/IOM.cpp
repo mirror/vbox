@@ -215,8 +215,11 @@ VMMR3_INT_DECL(int) IOMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
          * ring-0 tables to simplify ring-0 code.  This also make sure that any
          * later calls to grow the statistics tables will fail.
          */
-        int rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_IOM_SYNC_STATS_INDICES, 0, NULL);
-        AssertLogRelRCReturn(rc, rc);
+        if (!SUPR3IsDriverless())
+        {
+            int rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_IOM_SYNC_STATS_INDICES, 0, NULL);
+            AssertLogRelRCReturn(rc, rc);
+        }
 
         /*
          * Register I/O port and MMIO stats now that we're done registering MMIO
@@ -241,6 +244,12 @@ VMMR3_INT_DECL(int) IOMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 #else
     RT_NOREF(pVM, enmWhat);
 #endif
+
+    /*
+     * Freeze I/O port and MMIO registrations.
+     */
+    pVM->iom.s.fIoPortsFrozen = true;
+    pVM->iom.s.fMmioFrozen    = true;
     return VINF_SUCCESS;
 }
 

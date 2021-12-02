@@ -400,11 +400,13 @@ typedef struct IOM
     /** I/O port registration table for ring-3.
      * There is a parallel table in ring-0, IOMR0PERVM::paIoPortRegs. */
     R3PTRTYPE(PIOMIOPORTENTRYR3)    paIoPortRegs;
-    /** Number of entries in the lookup table. */
-    uint32_t                        cIoPortLookupEntries;
-    uint32_t                        u32Padding1;
     /** I/O port lookup table. */
     R3PTRTYPE(PIOMIOPORTLOOKUPENTRY) paIoPortLookup;
+    /** Number of entries in the lookup table. */
+    uint32_t                        cIoPortLookupEntries;
+    /** Set if I/O port registrations are frozen. */
+    bool                            fIoPortsFrozen;
+    bool                            afPadding1[3];
 
     /** The number of valid entries in paioPortStats. */
     uint32_t                        cIoPortStats;
@@ -428,11 +430,13 @@ typedef struct IOM
     /** MMIO registration table for ring-3.
      * There is a parallel table in ring-0, IOMR0PERVM::paMmioRegs. */
     R3PTRTYPE(PIOMMMIOENTRYR3)      paMmioRegs;
-    /** Number of entries in the lookup table. */
-    uint32_t                        cMmioLookupEntries;
-    uint32_t                        u32Padding2;
     /** MMIO lookup table. */
     R3PTRTYPE(PIOMMMIOLOOKUPENTRY)  paMmioLookup;
+    /** Number of entries in the lookup table. */
+    uint32_t                        cMmioLookupEntries;
+    /** Set if MMIO registrations are frozen. */
+    bool                            fMmioFrozen;
+    bool                            afPadding2[3];
 
     /** The number of valid entries in paioPortStats. */
     uint32_t                        cMmioStats;
