@@ -596,6 +596,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                 case VERR_VMX_MSR_LOCKING_FAILED:   pszMsg = "Failed to enable and lock VT-x features";                   break;
                 case VERR_SVM_NO_SVM:               pszMsg = "AMD-V is not available";                                    break;
                 case VERR_SVM_DISABLED:             pszMsg = "AMD-V is disabled in the BIOS (or by the host OS)";         break;
+                case VERR_SUP_DRIVERLESS:           pszMsg = "Driverless mode";                                           break;
                 default:
                     return VMSetError(pVM, rc, RT_SRC_POS, "SUPR3QueryVTCaps failed with %Rrc", rc);
             }

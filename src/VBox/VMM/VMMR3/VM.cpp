@@ -192,7 +192,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
 #if defined(VBOX_WITH_DTRACE_R3) && !defined(VBOX_WITH_NATIVE_DTRACE)
             /* Now that we've opened the device, we can register trace probes. */
             static bool s_fRegisteredProbes = false;
-            if (ASMAtomicCmpXchgBool(&s_fRegisteredProbes, true, false))
+            if (!SUPR3IsDriverless() && ASMAtomicCmpXchgBool(&s_fRegisteredProbes, true, false))
                 SUPR3TracerRegisterModule(~(uintptr_t)0, "VBoxVMM", &g_VTGObjHeader, (uintptr_t)&g_VTGObjHeader,
                                           SUP_TRACER_UMOD_FLAGS_SHARED);
 #endif
@@ -558,43 +558,40 @@ static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCT
     }
 #endif
 
+
     /*
      * Load the VMMR0.r0 module so that we can call GVMMR0CreateVM.
      */
-    int rc = PDMR3LdrLoadVMMR0U(pUVM);
-    if (RT_FAILURE(rc))
+    if (!SUPR3IsDriverless())
     {
-        /** @todo we need a cleaner solution for this (VERR_VMX_IN_VMX_ROOT_MODE).
-          * bird: what about moving the message down here? Main picks the first message, right? */
-        if (rc == VERR_VMX_IN_VMX_ROOT_MODE)
-            return rc;  /* proper error message set later on */
-        return vmR3SetErrorU(pUVM, rc, RT_SRC_POS, N_("Failed to load VMMR0.r0"));
+        int rc = PDMR3LdrLoadVMMR0U(pUVM);
+        if (RT_FAILURE(rc))
+        {
+            /** @todo we need a cleaner solution for this (VERR_VMX_IN_VMX_ROOT_MODE).
+              * bird: what about moving the message down here? Main picks the first message, right? */
+            if (rc == VERR_VMX_IN_VMX_ROOT_MODE)
+                return rc;  /* proper error message set later on */
+            return vmR3SetErrorU(pUVM, rc, RT_SRC_POS, N_("Failed to load VMMR0.r0"));
+        }
     }
 
     /*
      * Request GVMM to create a new VM for us.
      */
-    GVMMCREATEVMREQ CreateVMReq;
-    CreateVMReq.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
-    CreateVMReq.Hdr.cbReq       = sizeof(CreateVMReq);
-    CreateVMReq.pSession        = pUVM->vm.s.pSession;
-    CreateVMReq.pVMR0           = NIL_RTR0PTR;
-    CreateVMReq.pVMR3           = NULL;
-    CreateVMReq.cCpus           = cCpus;
-    rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_GVMM_CREATE_VM, 0, &CreateVMReq.Hdr);
+    RTR0PTR pVMR0;
+    int rc = GVMMR3CreateVM(pUVM, cCpus, pUVM->vm.s.pSession, &pUVM->pVM, &pVMR0);
     if (RT_SUCCESS(rc))
     {
-        PVM pVM = pUVM->pVM = CreateVMReq.pVMR3;
+        PVM pVM = pUVM->pVM;
         AssertRelease(RT_VALID_PTR(pVM));
-        AssertRelease(pVM->pVMR0ForCall == CreateVMReq.pVMR0);
+        AssertRelease(pVM->pVMR0ForCall == pVMR0);
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
         AssertRelease(pVM->cCpus == cCpus);
         AssertRelease(pVM->uCpuExecutionCap == 100);
         AssertCompileMemberAlignment(VM, cpum, 64);
         AssertCompileMemberAlignment(VM, tm, 64);
 
-        Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCpus=%RU32\n",
-             pUVM, pVM, CreateVMReq.pVMR0, pVM->hSelf, pVM->cCpus));
+        Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCpus=%RU32\n", pUVM, pVM, pVMR0, pVM->hSelf, pVM->cCpus));
 
         /*
          * Initialize the VM structure and our internal data (VMINT).
@@ -613,7 +610,6 @@ static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCT
             pUVM->aCpus[i].pVCpu     = pVCpu;
             pUVM->aCpus[i].pVM       = pVM;
         }
-
 
         /*
          * Init the configuration.
@@ -711,7 +707,7 @@ static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCT
             RTThreadSleep(RT_MIN(100 + 25 *(pUVM->cCpus - 1), 500)); /* very sophisticated */
         }
 
-        int rc2 = SUPR3CallVMMR0Ex(CreateVMReq.pVMR0, 0 /*idCpu*/, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
+        int rc2 = GVMMR3DestroyVM(pUVM);
         AssertRC(rc2);
     }
     else
@@ -776,23 +772,6 @@ static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
 
 
 /**
- * Register the calling EMT with GVM.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   idCpu       The Virtual CPU ID.
- */
-static DECLCALLBACK(int) vmR3RegisterEMT(PVM pVM, VMCPUID idCpu)
-{
-    Assert(VMMGetCpuId(pVM) == idCpu);
-    int rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), idCpu, VMMR0_DO_GVMM_REGISTER_VMCPU, 0, NULL);
-    if (RT_FAILURE(rc))
-        LogRel(("idCpu=%u rc=%Rrc\n", idCpu, rc));
-    return rc;
-}
-
-
-/**
  * Initializes all R3 components of the VM
  */
 static int vmR3InitRing3(PVM pVM, PUVM pUVM)
@@ -804,7 +783,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
      */
     for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
     {
-        rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)vmR3RegisterEMT, 2, pVM, idCpu);
+        rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)GVMMR3RegisterVCpu, 2, pVM, idCpu);
         if (RT_FAILURE(rc))
             return rc;
     }

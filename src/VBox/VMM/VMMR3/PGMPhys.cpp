@@ -5388,8 +5388,11 @@ VMMR3DECL(int) PGMR3QueryGlobalMemoryStats(PUVM pUVM, uint64_t *pcbAllocMem, uin
     uint64_t cFreePages    = 0;
     uint64_t cBalloonPages = 0;
     uint64_t cSharedPages  = 0;
-    int rc = GMMR3QueryHypervisorMemoryStats(pUVM->pVM, &cAllocPages, &cFreePages, &cBalloonPages, &cSharedPages);
-    AssertRCReturn(rc, rc);
+    if (!SUPR3IsDriverless())
+    {
+        int rc = GMMR3QueryHypervisorMemoryStats(pUVM->pVM, &cAllocPages, &cFreePages, &cBalloonPages, &cSharedPages);
+        AssertRCReturn(rc, rc);
+    }
 
     if (pcbAllocMem)
         *pcbAllocMem    = cAllocPages * _4K;

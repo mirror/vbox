@@ -749,6 +749,7 @@ VMMR3_INT_DECL(bool)    PGMR3IsNemModeEnabled(PVM pVM)
 VMMR3DECL(int) PGMR3Init(PVM pVM)
 {
     LogFlow(("PGMR3Init:\n"));
+    bool const fDriverless = SUPR3IsDriverless();
     PCFGMNODE pCfgPGM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/PGM");
     int rc;
 
@@ -923,7 +924,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         {
             pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
             pVM->pgm.s.HCPhysZeroPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3);
-            AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
+            AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS || fDriverless);
         }
     }
 
@@ -938,7 +939,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         {
             ASMMemFill32(pVM->pgm.s.pvMmioPgR3, PAGE_SIZE, 0xfeedface);
             pVM->pgm.s.HCPhysMmioPg = MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvMmioPgR3);
-            AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS);
+            AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS || fDriverless);
             pVM->pgm.s.HCPhysInvMmioPg = pVM->pgm.s.HCPhysMmioPg;
         }
     }
@@ -1757,7 +1758,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      * The Zero page.
      */
     pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
-    AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTR0PTR);
+    AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTR0PTR || SUPR3IsDriverless());
 
     /*
      * The page pool.

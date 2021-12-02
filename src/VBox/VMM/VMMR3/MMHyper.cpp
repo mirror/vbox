@@ -159,16 +159,22 @@ int mmR3HyperInit(PVM pVM)
         AssertCompileSizeAlignment(GVMCPU, PAGE_SIZE);
         AssertRelease(pVM->cbSelf == sizeof(VM));
         AssertRelease(pVM->cbVCpu == sizeof(VMCPU));
-/** @todo get rid of this   */
+/** @todo get rid of this (don't dare right now because of
+ *        possible MMHyperYYToXX use on the VM structure.) */
         RTGCPTR GCPtr;
-        rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0ForCall, sizeof(VM) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
-        uint32_t offPages = RT_UOFFSETOF_DYN(GVM, aCpus) >> PAGE_SHIFT; /* (Using the _DYN variant avoids -Winvalid-offset) */
-        for (uint32_t idCpu = 0; idCpu < pVM->cCpus && RT_SUCCESS(rc); idCpu++, offPages += sizeof(GVMCPU) >> PAGE_SHIFT)
+        if (SUPR3IsDriverless())
+            GCPtr = _1G;
+        else
         {
-            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
-            RTGCPTR GCPtrIgn;
-            rc = MMR3HyperMapPages(pVM, pVCpu, pVM->pVMR0ForCall + offPages * PAGE_SIZE,
-                                   sizeof(VMCPU) >> PAGE_SHIFT, &pVM->paVMPagesR3[offPages], "VMCPU", &GCPtrIgn);
+            rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0ForCall, sizeof(VM) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
+            uint32_t offPages = RT_UOFFSETOF_DYN(GVM, aCpus) >> PAGE_SHIFT; /* (Using the _DYN variant avoids -Winvalid-offset) */
+            for (uint32_t idCpu = 0; idCpu < pVM->cCpus && RT_SUCCESS(rc); idCpu++, offPages += sizeof(GVMCPU) >> PAGE_SHIFT)
+            {
+                PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+                RTGCPTR GCPtrIgn;
+                rc = MMR3HyperMapPages(pVM, pVCpu, pVM->pVMR0ForCall + offPages * PAGE_SIZE,
+                                       sizeof(VMCPU) >> PAGE_SHIFT, &pVM->paVMPagesR3[offPages], "VMCPU", &GCPtrIgn);
+            }
         }
         if (RT_SUCCESS(rc))
         {
@@ -288,11 +294,13 @@ static int MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, P
         PRTHCPHYS paHCPhysPages = (PRTHCPHYS)MMR3HeapAlloc(pVM, MM_TAG_MM, sizeof(RTHCPHYS) * cPages);
         if (paHCPhysPages)
         {
+            bool const fDriverless = SUPR3IsDriverless();
             for (size_t i = 0; i < cPages; i++)
             {
-                AssertReleaseMsgReturn(   paPages[i].Phys != 0
-                                       && paPages[i].Phys != NIL_RTHCPHYS
-                                       && !(paPages[i].Phys & PAGE_OFFSET_MASK),
+                AssertReleaseMsgReturn(   (   paPages[i].Phys != 0
+                                           && paPages[i].Phys != NIL_RTHCPHYS
+                                           && !(paPages[i].Phys & PAGE_OFFSET_MASK))
+                                       || fDriverless,
                                        ("i=%#zx Phys=%RHp %s\n", i, paPages[i].Phys, pszDesc),
                                        VERR_INTERNAL_ERROR);
                 paHCPhysPages[i] = paPages[i].Phys;
@@ -417,7 +425,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
                               paPages);
     if (RT_SUCCESS(rc))
     {
-        Assert(pvR0 != NIL_RTR0PTR && !(PAGE_OFFSET_MASK & pvR0));
+        Assert((pvR0 != NIL_RTR0PTR && !(PAGE_OFFSET_MASK & pvR0)) || SUPR3IsDriverless());
         memset(pv, 0, cbAligned);
 
         /*
@@ -601,7 +609,7 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
                               paPages);
     if (RT_SUCCESS(rc))
     {
-        Assert(pvR0 != NIL_RTR0PTR);
+        Assert(pvR0 != NIL_RTR0PTR || SUPR3IsDriverless());
         memset(pvPages, 0, cbAligned);
 
         RTGCPTR GCPtr;

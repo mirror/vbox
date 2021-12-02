@@ -256,13 +256,22 @@ DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
         case MMLOOKUPHYPERTYPE_LOCKED:
             if (pLookup->u.Locked.pvR0)
                 return (RTR0PTR)((RTR0UINTPTR)pLookup->u.Locked.pvR0 + off);
-            AssertMsgFailed(("%s\n", R3STRING(pLookup->pszDesc))); NOREF(pVM);
+#ifdef IN_RING3
+            AssertMsg(SUPR3IsDriverless(), ("%s\n", R3STRING(pLookup->pszDesc)));
+#else
+            AssertMsgFailed(("%s\n", R3STRING(pLookup->pszDesc)));
+#endif
+            NOREF(pVM);
             return NIL_RTR0PTR;
 
         case MMLOOKUPHYPERTYPE_HCPHYS:
             if (pLookup->u.HCPhys.pvR0)
                 return (RTR0PTR)((RTR0UINTPTR)pLookup->u.HCPhys.pvR0 + off);
+#ifdef IN_RING3
+            AssertMsg(SUPR3IsDriverless(), ("%s\n", R3STRING(pLookup->pszDesc)));
+#else
             AssertMsgFailed(("%s\n", R3STRING(pLookup->pszDesc)));
+#endif
             return NIL_RTR0PTR;
 
         default:

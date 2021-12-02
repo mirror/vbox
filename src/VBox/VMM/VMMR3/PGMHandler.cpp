@@ -81,8 +81,8 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
                                                        const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
 {
     AssertPtrReturn(pfnHandlerR3, VERR_INVALID_POINTER);
-    AssertReturn(pfnHandlerR0   != NIL_RTR0PTR, VERR_INVALID_POINTER);
-    AssertReturn(pfnPfHandlerR0 != NIL_RTR0PTR, VERR_INVALID_POINTER);
+    AssertReturn(pfnHandlerR0   != NIL_RTR0PTR || SUPR3IsDriverless(), VERR_INVALID_POINTER);
+    AssertReturn(pfnPfHandlerR0 != NIL_RTR0PTR || SUPR3IsDriverless(), VERR_INVALID_POINTER);
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     AssertReturn(   enmKind == PGMPHYSHANDLERKIND_WRITE
                  || enmKind == PGMPHYSHANDLERKIND_ALL
@@ -167,47 +167,50 @@ VMMR3DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmK
      * Resolve the R0 handlers.
      */
     R0PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR0 = NIL_RTR0PTR;
-    int rc = PDMR3LdrGetSymbolR0Lazy(pVM, pszHandlerR0 ? pszModR0 : NULL, NULL /*pszSearchPath*/,
-                                     pszHandlerR0 ? pszHandlerR0 : "pgmPhysHandlerRedirectToHC", &pfnHandlerR0);
-    if (RT_SUCCESS(rc))
+    R0PTRTYPE(PFNPGMR0PHYSPFHANDLER) pfnPfHandlerR0 = NIL_RTR0PTR;
+    int rc = VINF_SUCCESS;
+    if (!SUPR3IsDriverless())
     {
-        R0PTRTYPE(PFNPGMR0PHYSPFHANDLER) pfnPfHandlerR0 = NIL_RTR0PTR;
-        rc = PDMR3LdrGetSymbolR0Lazy(pVM, pszPfHandlerR0 ? pszModR0 : NULL, NULL /*pszSearchPath*/,
-                                     pszPfHandlerR0 ? pszPfHandlerR0 : "pgmPhysPfHandlerRedirectToHC", &pfnPfHandlerR0);
+        rc = PDMR3LdrGetSymbolR0Lazy(pVM, pszHandlerR0 ? pszModR0 : NULL, NULL /*pszSearchPath*/,
+                                         pszHandlerR0 ? pszHandlerR0 : "pgmPhysHandlerRedirectToHC", &pfnHandlerR0);
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Resolve the GC handler.
-             */
-            RTRCPTR pfnHandlerRC   = NIL_RTRCPTR;
-            RTRCPTR pfnPfHandlerRC = NIL_RTRCPTR;
-            if (VM_IS_RAW_MODE_ENABLED(pVM))
-            {
-                rc = PDMR3LdrGetSymbolRCLazy(pVM, pszHandlerRC ? pszModRC : NULL, NULL /*pszSearchPath*/,
-                                             pszHandlerRC ? pszHandlerRC : "pgmPhysHandlerRedirectToHC", &pfnHandlerRC);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = PDMR3LdrGetSymbolRCLazy(pVM, pszPfHandlerRC ? pszModRC : NULL, NULL /*pszSearchPath*/,
-                                                 pszPfHandlerRC ? pszPfHandlerRC : "pgmPhysPfHandlerRedirectToHC", &pfnPfHandlerRC);
-                    AssertMsgRC(rc, ("Failed to resolve %s.%s, rc=%Rrc.\n", pszPfHandlerRC ? pszModRC : VMMRC_MAIN_MODULE_NAME,
-                                     pszPfHandlerRC ? pszPfHandlerRC : "pgmPhysPfHandlerRedirectToHC", rc));
-                }
-                else
-                    AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszHandlerRC ? pszModRC : VMMRC_MAIN_MODULE_NAME,
-                                     pszHandlerRC ? pszHandlerRC : "pgmPhysHandlerRedirectToHC", rc));
-
-            }
-            if (RT_SUCCESS(rc))
-                return PGMR3HandlerPhysicalTypeRegisterEx(pVM, enmKind, fKeepPgmLock, pfnHandlerR3,
-                                                          pfnHandlerR0, pfnPfHandlerR0, pszDesc, phType);
+            rc = PDMR3LdrGetSymbolR0Lazy(pVM, pszPfHandlerR0 ? pszModR0 : NULL, NULL /*pszSearchPath*/,
+                                         pszPfHandlerR0 ? pszPfHandlerR0 : "pgmPhysPfHandlerRedirectToHC", &pfnPfHandlerR0);
+            AssertMsgRC(rc, ("Failed to resolve %s.%s, rc=%Rrc.\n", pszPfHandlerR0 ? pszModR0 : VMMR0_MAIN_MODULE_NAME,
+                             pszPfHandlerR0 ? pszPfHandlerR0 : "pgmPhysHandlerRedirectToHC", rc));
         }
         else
-            AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszPfHandlerR0 ? pszModR0 : VMMR0_MAIN_MODULE_NAME,
-                             pszPfHandlerR0 ? pszPfHandlerR0 : "pgmPhysHandlerRedirectToHC", rc));
+            AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszHandlerR0 ? pszModR0 : VMMR0_MAIN_MODULE_NAME,
+                             pszHandlerR0 ? pszHandlerR0 : "pgmPhysHandlerRedirectToHC", rc));
     }
-    else
-        AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszHandlerR0 ? pszModR0 : VMMR0_MAIN_MODULE_NAME,
-                         pszHandlerR0 ? pszHandlerR0 : "pgmPhysHandlerRedirectToHC", rc));
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Resolve the GC handler.
+         */
+        RTRCPTR pfnHandlerRC   = NIL_RTRCPTR;
+        RTRCPTR pfnPfHandlerRC = NIL_RTRCPTR;
+        if (VM_IS_RAW_MODE_ENABLED(pVM))
+        {
+            rc = PDMR3LdrGetSymbolRCLazy(pVM, pszHandlerRC ? pszModRC : NULL, NULL /*pszSearchPath*/,
+                                         pszHandlerRC ? pszHandlerRC : "pgmPhysHandlerRedirectToHC", &pfnHandlerRC);
+            if (RT_SUCCESS(rc))
+            {
+                rc = PDMR3LdrGetSymbolRCLazy(pVM, pszPfHandlerRC ? pszModRC : NULL, NULL /*pszSearchPath*/,
+                                             pszPfHandlerRC ? pszPfHandlerRC : "pgmPhysPfHandlerRedirectToHC", &pfnPfHandlerRC);
+                AssertMsgRC(rc, ("Failed to resolve %s.%s, rc=%Rrc.\n", pszPfHandlerRC ? pszModRC : VMMRC_MAIN_MODULE_NAME,
+                                 pszPfHandlerRC ? pszPfHandlerRC : "pgmPhysPfHandlerRedirectToHC", rc));
+            }
+            else
+                AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszHandlerRC ? pszModRC : VMMRC_MAIN_MODULE_NAME,
+                                 pszHandlerRC ? pszHandlerRC : "pgmPhysHandlerRedirectToHC", rc));
+
+        }
+        if (RT_SUCCESS(rc))
+            return PGMR3HandlerPhysicalTypeRegisterEx(pVM, enmKind, fKeepPgmLock, pfnHandlerR3,
+                                                      pfnHandlerR0, pfnPfHandlerR0, pszDesc, phType);
+    }
 
     return rc;
 }
