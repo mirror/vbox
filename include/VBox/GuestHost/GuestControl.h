@@ -61,7 +61,7 @@ enum eProcessStatus
     /** Something went wrong (error code in flags). */
     PROC_STS_ERROR = 8
 };
- 
+
 /**
  * Input flags, set by the host. This is needed for
  * handling flags on the guest side.
