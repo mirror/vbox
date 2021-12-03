@@ -137,8 +137,9 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     restorePanelVisibility();
     UIFileManagerOptions::create();
     uiCommon().setHelpKeyword(this, "guestadd-gc-file-manager");
-    //connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIFileManager::sltCleanupListenerAndGuest);
-    Q_UNUSED(comMachine);
+
+    if (!comMachine.isNull())
+        setMachines( QVector<QUuid>() << comMachine.GetId());
 }
 
 UIFileManager::~UIFileManager()

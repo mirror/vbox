@@ -25,6 +25,7 @@
 #include "QILabel.h"
 #include "UIActionPool.h"
 #include "UIConverter.h"
+#include "UICommon.h"
 #include "UICustomFileSystemModel.h"
 #include "UIErrorString.h"
 #include "UIFileManager.h"
@@ -753,8 +754,8 @@ void UIFileManagerGuestTable::prepareGuestSessionPanel()
             m_pMainLayout->addWidget(m_pGuestSessionPanel, m_pMainLayout->rowCount(), 0, 1, m_pMainLayout->columnCount());
             m_pGuestSessionPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
             sltHandleGuestSessionPanelShown();
-            // connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCreateSession,
-            //         this, &UIFileManagerGuestTable::sltCreateGuestSession);
+            connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCreateSession,
+                    this, &UIFileManagerGuestTable::sltCreateGuestSession);
             // connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCloseSession,
             //         this, &UIFileManagerGuestTable::sltCloseGuestSession);
             connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigHidePanel,
@@ -1000,6 +1001,19 @@ void UIFileManagerGuestTable::cleanupListener(ComObjPtr<UIMainEventListenerImpl>
     comEventSource.UnregisterListener(comEventListener);
 }
 
+void UIFileManagerGuestTable::sltCreateGuestSession(QString strUserName, QString strPassword)
+{
+    if (strUserName.isEmpty())
+    {
+        emit sigLogOutput("No user name is given", m_strTableName, FileManagerLogType_Error);
+        if (m_pGuestSessionPanel)
+            m_pGuestSessionPanel->markForError(true);
+        return;
+    }
+    if (m_pGuestSessionPanel)
+        m_pGuestSessionPanel->markForError(!openSession(strUserName, strPassword));
+}
+
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -1013,18 +1027,6 @@ void UIFileManager::closeSession()
 }
 
 
-void UIFileManagerGuestTable::sltCreateGuestSession(QString strUserName, QString strPassword)
-{
-    if (strUserName.isEmpty())
-    {
-        emit sigLogOutput("No user name is given", m_strTableName, FileManagerLogType_Error);
-        if (m_pGuestSessionPanel)
-            m_pGuestSessionPanel->markForError(true);
-        return;
-    }
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->markForError(!openSession(strUserName, strPassword));
-}
 
 void UIFileManager::sltCloseGuestSession()
 {

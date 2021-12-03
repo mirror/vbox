@@ -93,7 +93,7 @@ private slots:
     void sltGuestSessionUnregistered(CGuestSession guestSession);
     void sltGuestSessionRegistered(CGuestSession guestSession);
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
-
+    void sltCreateGuestSession(QString strUserName, QString strPassword);
 
 private:
 
