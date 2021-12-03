@@ -50,8 +50,9 @@ public:
 
     /** Constructs Log Viewer factory acquiring additional arguments.
       * @param  pActionPool  Brings the action-pool reference.
-      * @param  comMachine   Brings the machine for which VM Log-Viewer is requested. */
-    UIVMLogViewerDialogFactory(UIActionPool *pActionPool = 0, const CMachine &comMachine = CMachine());
+      * @param  uMachineId   Brings the machine id for which VM Log-Viewer is requested. */
+    UIVMLogViewerDialogFactory(UIActionPool *pActionPool = 0, const QUuid &uMachineId = QUuid(),
+                               const QString &strMachineName = QString());
 
 protected:
 
@@ -61,8 +62,9 @@ protected:
 
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
-    /** Holds the machine reference. */
-    CMachine      m_comMachine;
+    /** Holds the machine id. */
+    QUuid      m_uMachineId;
+    QString    m_strMachineName;
 };
 
 
@@ -76,8 +78,9 @@ public:
     /** Constructs Log Viewer dialog.
       * @param  pCenterWidget  Brings the widget reference to center according to.
       * @param  pActionPool    Brings the action-pool reference.
-      * @param  comMachine     Brings the machine reference. */
-    UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CMachine &comMachine);
+      * @param  machine id     Brings the machine id. */
+    UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool,
+                        const QUuid &uMachineId = QUuid(), const QString &strMachineName = QString());
     ~UIVMLogViewerDialog();
     void setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
     void addSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
@@ -122,9 +125,10 @@ private:
     void manageEscapeShortCut();
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
-    /** Holds the machine reference. */
-    CMachine      m_comMachine;
+    /** Holds the machine id. */
+    QUuid      m_uMachineId;
     int m_iGeometrySaveTimerId;
+    QString    m_strMachineName;
 };
 
 

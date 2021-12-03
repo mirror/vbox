@@ -1883,7 +1883,7 @@ void UIVirtualBoxManager::sltOpenLogViewerWindow()
         return;
     if (!m_pLogViewerDialog)
     {
-        UIVMLogViewerDialogFactory dialogFactory(actionPool(), CMachine());
+        UIVMLogViewerDialogFactory dialogFactory(actionPool(), QUuid());
         dialogFactory.prepare(m_pLogViewerDialog, this);
         if (m_pLogViewerDialog)
             connect(m_pLogViewerDialog, &QIManagerDialog::sigClose,

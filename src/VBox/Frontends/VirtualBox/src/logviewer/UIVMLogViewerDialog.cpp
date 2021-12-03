@@ -44,15 +44,17 @@
 *********************************************************************************************************************************/
 
 UIVMLogViewerDialogFactory::UIVMLogViewerDialogFactory(UIActionPool *pActionPool /* = 0 */,
-                                                       const CMachine &comMachine /* = CMachine() */)
+                                                       const QUuid &uMachineId /* = QUuid()*/,
+                                                       const QString &strMachineName /* = QString() */)
     : m_pActionPool(pActionPool)
-    , m_comMachine(comMachine)
+    , m_uMachineId(uMachineId)
+    , m_strMachineName(strMachineName)
 {
 }
 
 void UIVMLogViewerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIVMLogViewerDialog(pCenterWidget, m_pActionPool, m_comMachine);
+    pDialog = new UIVMLogViewerDialog(pCenterWidget, m_pActionPool, m_uMachineId, m_strMachineName);
 }
 
 
@@ -60,11 +62,14 @@ void UIVMLogViewerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCen
 *   Class UIVMLogViewerDialog implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CMachine &comMachine)
+UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool,
+                                         const QUuid &uMachineId /* = QUuid()*/,
+                                         const QString &strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_pActionPool(pActionPool)
-    , m_comMachine(comMachine)
+    , m_uMachineId(uMachineId)
     , m_iGeometrySaveTimerId(-1)
+    , m_strMachineName(strMachineName)
 {
 }
 
@@ -91,8 +96,8 @@ void UIVMLogViewerDialog::addSelectedVMListItems(const QList<UIVirtualMachineIte
 void UIVMLogViewerDialog::retranslateUi()
 {
     /* Translate window title: */
-    if (!m_comMachine.isNull())
-        setWindowTitle(tr("%1 - Log Viewer").arg(m_comMachine.GetName()));
+    if (!m_strMachineName.isEmpty())
+        setWindowTitle(tr("%1 - Log Viewer").arg(m_strMachineName));
     else
         setWindowTitle(UIVMLogViewerWidget::tr("Log Viewer"));
 
@@ -145,9 +150,7 @@ void UIVMLogViewerDialog::configure()
 void UIVMLogViewerDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, m_pActionPool, true /* show toolbar */, m_comMachine, this);
-    /* Release the CMachine reference as we don't need it anymore. Doing it during dtor causes problems since xcom might be gone already: */
-    m_comMachine.detach();
+    UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, m_pActionPool, true /* show toolbar */, m_uMachineId, this);
     if (pWidget)
     {
         /* Configure widget: */

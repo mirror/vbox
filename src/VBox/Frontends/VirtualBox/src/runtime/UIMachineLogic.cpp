@@ -2482,7 +2482,7 @@ void UIMachineLogic::sltShowLogDialog()
         return;
 
     QIManagerDialog *pLogViewerDialog;
-    UIVMLogViewerDialogFactory dialogFactory(actionPool(), machine());
+    UIVMLogViewerDialogFactory dialogFactory(actionPool(), machine().GetId(), machine().GetName());
     dialogFactory.prepare(pLogViewerDialog, activeMachineWindow());
     if (pLogViewerDialog)
     {
