@@ -6,7 +6,7 @@
 /*
  * Includes contributions from François Revol
  *
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,6 +37,9 @@
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
+static void shClEventSourceResetInternal(PSHCLEVENTSOURCE pSource);
+
+static void shClEventDestroy(PSHCLEVENT pEvent);
 DECLINLINE(PSHCLEVENT) shclEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
 
 
@@ -102,11 +105,167 @@ void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload)
 }
 
 /**
- * Destroys an event, but doesn't free the memory.
+ * Creates a new event source.
+ *
+ * @returns VBox status code.
+ * @param   pSource             Event source to create.
+ * @param   uID                 ID to use for event source.
+ */
+int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
+{
+    LogFlowFunc(("pSource=%p, uID=%RU16\n", pSource, uID));
+    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+
+    int rc = RTCritSectInit(&pSource->CritSect);
+    AssertRCReturn(rc, rc);
+
+    RTListInit(&pSource->lstEvents);
+
+    pSource->uID          = uID;
+    /* Choose a random event ID starting point. */
+    pSource->idNextEvent  = RTRandU32Ex(1, VBOX_SHCL_MAX_EVENTS - 1);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Destroys an event source.
+ *
+ * @returns VBox status code.
+ * @param   pSource             Event source to destroy.
+ */
+int ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource)
+{
+    if (!pSource)
+        return VINF_SUCCESS;
+
+    LogFlowFunc(("ID=%RU32\n", pSource->uID));
+
+    int rc = RTCritSectEnter(&pSource->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        shClEventSourceResetInternal(pSource);
+
+        rc = RTCritSectLeave(&pSource->CritSect);
+        AssertRC(rc);
+
+        RTCritSectDelete(&pSource->CritSect);
+
+        pSource->uID          = UINT16_MAX;
+        pSource->idNextEvent  = UINT32_MAX;
+    }
+
+    return rc;
+}
+
+/**
+ * Resets an event source, internal version.
+ *
+ * @param   pSource             Event source to reset.
+ */
+static void shClEventSourceResetInternal(PSHCLEVENTSOURCE pSource)
+{
+    LogFlowFunc(("ID=%RU32\n", pSource->uID));
+
+    PSHCLEVENT pEvIt;
+    PSHCLEVENT pEvItNext;
+    RTListForEachSafe(&pSource->lstEvents, pEvIt, pEvItNext, SHCLEVENT, Node)
+    {
+        RTListNodeRemove(&pEvIt->Node);
+
+        shClEventDestroy(pEvIt);
+
+        RTMemFree(pEvIt);
+        pEvIt = NULL;
+    }
+}
+
+/**
+ * Resets an event source.
+ *
+ * @param   pSource             Event source to reset.
+ */
+void ShClEventSourceReset(PSHCLEVENTSOURCE pSource)
+{
+    int rc2 = RTCritSectEnter(&pSource->CritSect);
+    if (RT_SUCCESS(rc2))
+    {
+        shClEventSourceResetInternal(pSource);
+
+        rc2 = RTCritSectLeave(&pSource->CritSect);
+        AssertRC(rc2);
+    }
+}
+
+/**
+ * Generates a new event ID for a specific event source and registers it.
+ *
+ * @returns VBox status code.
+ * @param   pSource             Event source to generate event for.
+ * @param   ppEvent             Where to return the new event generated on success.
+ */
+int ShClEventSourceGenerateAndRegisterEvent(PSHCLEVENTSOURCE pSource, PSHCLEVENT *ppEvent)
+{
+    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
+
+    PSHCLEVENT pEvent = (PSHCLEVENT)RTMemAllocZ(sizeof(SHCLEVENT));
+    AssertReturn(pEvent, VERR_NO_MEMORY);
+    int rc = RTSemEventMultiCreate(&pEvent->hEvtMulSem);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTCritSectEnter(&pSource->CritSect);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Allocate an unique event ID.
+             */
+            for (uint32_t cTries = 0;; cTries++)
+            {
+                SHCLEVENTID idEvent = ++pSource->idNextEvent;
+                if (idEvent < VBOX_SHCL_MAX_EVENTS)
+                { /* likely */ }
+                else
+                    pSource->idNextEvent = idEvent = 1; /* zero == error, remember! */
+
+                if (shclEventGet(pSource, idEvent) == NULL)
+                {
+                    pEvent->pParent = pSource;
+                    pEvent->idEvent = idEvent;
+                    RTListAppend(&pSource->lstEvents, &pEvent->Node);
+
+                    rc = RTCritSectLeave(&pSource->CritSect);
+                    AssertRC(rc);
+
+                    LogFlowFunc(("uSource=%RU16: New event: %#x\n", pSource->uID, idEvent));
+
+                    *ppEvent = pEvent;
+
+                    return VINF_SUCCESS;
+                }
+
+                AssertBreak(cTries < 4096);
+            }
+
+            rc = RTCritSectLeave(&pSource->CritSect);
+            AssertRC(rc);
+        }
+    }
+
+    AssertMsgFailed(("Unable to register a new event ID for event source %RU16\n", pSource->uID));
+
+    RTSemEventMultiDestroy(pEvent->hEvtMulSem);
+    pEvent->hEvtMulSem = NIL_RTSEMEVENTMULTI;
+    RTMemFree(pEvent);
+    return rc;
+}
+
+/**
+ * Destroys an event.
  *
  * @param   pEvent              Event to destroy.
  */
-static void shClEventTerm(PSHCLEVENT pEvent)
+static void shClEventDestroy(PSHCLEVENT pEvent)
 {
     if (!pEvent)
         return;
@@ -124,117 +283,38 @@ static void shClEventTerm(PSHCLEVENT pEvent)
 
     ShClPayloadFree(pEvent->pPayload);
 
-    pEvent->idEvent = 0;
+    pEvent->idEvent = NIL_SHCLEVENTID;
 }
 
 /**
- * Creates a new event source.
+ * Unregisters an event.
  *
  * @returns VBox status code.
- * @param   pSource             Event source to create.
- * @param   uID                 ID to use for event source.
+ * @param   pSource             Event source to unregister event for.
+ * @param   pEvent              Event to unregister. On success the pointer will be invalid.
  */
-int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
+static int shClEventSourceUnregisterEventInternal(PSHCLEVENTSOURCE pSource, PSHCLEVENT pEvent)
 {
-    LogFlowFunc(("pSource=%p, uID=%RU16\n", pSource, uID));
-    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+    LogFlowFunc(("idEvent=%RU32, cRefs=%RU32\n", pEvent->idEvent, pEvent->cRefs));
 
-    RTListInit(&pSource->lstEvents);
+    AssertReturn(pEvent->cRefs == 0, VERR_WRONG_ORDER);
 
-    pSource->uID          = uID;
-    /* Choose a random event ID starting point. */
-    pSource->idNextEvent  = RTRandU32Ex(1, VBOX_SHCL_MAX_EVENTS - 1);
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Destroys an event source.
- *
- * @param   pSource             Event source to destroy.
- */
-void ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource)
-{
-    if (!pSource)
-        return;
-
-    LogFlowFunc(("ID=%RU32\n", pSource->uID));
-
-    ShClEventSourceReset(pSource);
-
-    pSource->uID          = UINT16_MAX;
-    pSource->idNextEvent  = UINT32_MAX;
-}
-
-/**
- * Resets an event source.
- *
- * @param   pSource             Event source to reset.
- */
-void ShClEventSourceReset(PSHCLEVENTSOURCE pSource)
-{
-    LogFlowFunc(("ID=%RU32\n", pSource->uID));
-
-    PSHCLEVENT pEvIt;
-    PSHCLEVENT pEvItNext;
-    RTListForEachSafe(&pSource->lstEvents, pEvIt, pEvItNext, SHCLEVENT, Node)
+    int rc = RTCritSectEnter(&pSource->CritSect);
+    if (RT_SUCCESS(rc))
     {
-        RTListNodeRemove(&pEvIt->Node);
+        RTListNodeRemove(&pEvent->Node);
 
-        shClEventTerm(pEvIt);
+        shClEventDestroy(pEvent);
 
-        RTMemFree(pEvIt);
-        pEvIt = NULL;
-    }
-}
-
-/**
- * Generates a new event ID for a specific event source and registers it.
- *
- * @returns New event ID generated, or NIL_SHCLEVENTID on error.
- * @param   pSource             Event source to generate event for.
- */
-SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource)
-{
-    AssertPtrReturn(pSource, NIL_SHCLEVENTID);
-
-    /*
-     * Allocate an event.
-     */
-    PSHCLEVENT pEvent = (PSHCLEVENT)RTMemAllocZ(sizeof(SHCLEVENT));
-    AssertReturn(pEvent, NIL_SHCLEVENTID);
-    int rc = RTSemEventMultiCreate(&pEvent->hEvtMulSem);
-    AssertRCReturnStmt(rc, RTMemFree(pEvent), NIL_SHCLEVENTID);
-
-    /*
-     * Allocate an unique event ID.
-     */
-    for (uint32_t cTries = 0;; cTries++)
-    {
-        SHCLEVENTID idEvent = ++pSource->idNextEvent;
-        if (idEvent < VBOX_SHCL_MAX_EVENTS)
-        { /* likely */ }
-        else
-            pSource->idNextEvent = idEvent = 1; /* zero == error, remember! */
-
-        if (shclEventGet(pSource, idEvent) == NULL)
+        rc = RTCritSectLeave(&pSource->CritSect);
+        if (RT_SUCCESS(rc))
         {
-            pEvent->idEvent = idEvent;
-            RTListAppend(&pSource->lstEvents, &pEvent->Node);
-
-            LogFlowFunc(("uSource=%RU16: New event: %#x\n", pSource->uID, idEvent));
-            return idEvent;
+            RTMemFree(pEvent);
+            pEvent = NULL;
         }
-
-        AssertBreak(cTries < 4096);
     }
 
-    AssertMsgFailed(("Unable to register a new event ID for event source %RU16\n", pSource->uID));
-
-    RTSemEventMultiDestroy(pEvent->hEvtMulSem);
-    pEvent->hEvtMulSem = NIL_RTSEMEVENTMULTI;
-    RTMemFree(pEvent);
-    return NIL_SHCLEVENTID;
+    return rc;
 }
 
 /**
@@ -261,27 +341,48 @@ DECLINLINE(PSHCLEVENT) shclEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEven
  *
  * @returns Pointer to event if found, or NULL if not found.
  * @param   pSource             Event source to get event from.
- * @param   uID                 Event ID to get.
+ * @param   idEvent             ID of event to return.
  */
-PSHCLEVENT ShClEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
+PSHCLEVENT ShClEventSourceGetFromId(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
 {
-    return shclEventGet(pSource, idEvent);
+    AssertPtrReturn(pSource, NULL);
+
+    int rc = RTCritSectEnter(&pSource->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+         PSHCLEVENT pEvent = shclEventGet(pSource, idEvent);
+
+         rc = RTCritSectLeave(&pSource->CritSect);
+         AssertRC(rc);
+
+         return pEvent;
+    }
+
+    return NULL;
 }
 
 /**
  * Returns the last (newest) event ID which has been registered for an event source.
  *
- * @returns Last registered event ID, or 0 if not found.
+ * @returns Pointer to last registered event, or NULL if not found.
  * @param   pSource             Event source to get last registered event from.
  */
-SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource)
+PSHCLEVENT ShClEventSourceGetLast(PSHCLEVENTSOURCE pSource)
 {
-    AssertPtrReturn(pSource, 0);
-    PSHCLEVENT pEvent = RTListGetLast(&pSource->lstEvents, SHCLEVENT, Node);
-    if (pEvent)
-        return pEvent->idEvent;
+    AssertPtrReturn(pSource, NULL);
 
-    return 0;
+    int rc = RTCritSectEnter(&pSource->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        PSHCLEVENT pEvent = RTListGetLast(&pSource->lstEvents, SHCLEVENT, Node);
+
+        rc = RTCritSectLeave(&pSource->CritSect);
+        AssertRC(rc);
+
+        return pEvent;
+    }
+
+    return NULL;
 }
 
 /**
@@ -291,14 +392,11 @@ SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource)
  * @param   pSource             Event source the specific event is part of.
  * @param   idEvent             Event ID to return reference count for.
  */
-uint32_t ShClEventGetRefs(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
+uint32_t ShClEventGetRefs(PSHCLEVENT pEvent)
 {
-    PSHCLEVENT pEvent = shclEventGet(pSource, idEvent);
-    if (pEvent)
-        return pEvent->cRefs;
+    AssertPtrReturn(pEvent, 0);
 
-    AssertMsgFailed(("No event with %RU32\n", idEvent));
-    return 0;
+    return ASMAtomicReadU32(&pEvent->cRefs);
 }
 
 /**
@@ -321,93 +419,32 @@ static PSHCLEVENTPAYLOAD shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
 }
 
 /**
- * Unregisters an event.
- *
- * @returns VBox status code.
- * @param   pSource             Event source to unregister event for.
- * @param   uID                 Event ID to unregister.
- *
- * @todo    r=bird: The caller must enter crit sect protecting the event source
- *          here, must it?  See explanation in ShClEventWait.
- */
-int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
-{
-    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
-
-    int rc;
-
-    LogFlowFunc(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
-
-    PSHCLEVENT pEvent = shclEventGet(pSource, uID);
-    if (pEvent)
-    {
-        LogFlowFunc(("Event %RU32\n", pEvent->idEvent));
-
-        RTListNodeRemove(&pEvent->Node);
-
-        shClEventTerm(pEvent);
-
-        RTMemFree(pEvent);
-        pEvent = NULL;
-
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_NOT_FOUND;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
  * Waits for an event to get signalled.
  *
  * @returns VBox status code.
- * @param   pSource             Event source that contains the event to wait for.
- * @param   uID                 Event ID to wait for.
+ * @param   pEvent              Event to wait for.
  * @param   uTimeoutMs          Timeout (in ms) to wait.
  * @param   ppPayload           Where to store the (allocated) event payload on success. Needs to be free'd with
  *                              SharedClipboardPayloadFree(). Optional.
- *
- * @todo    r=bird: Locking protocol is totally buggered here, or at least not
- *          explained in any way whatsoever.  We cannot really do shclEventGet
- *          and shclEventPayloadDetachInternal w/o holding the critical section
- *          protecting that list, otherwise wtf is the point of the locking.
- *
- *          More to the point, ShClEventSignal is called on the HGCM service
- *          thread and would be racing the host clipboard worker thread/whomever
- *          sent the request and is making this call closely followed by
- *          ShClEventRelease and ShClEventUnregister.  The waiting here might be
- *          safe if there can only ever be one single thread making these kind
- *          of requests, but the unregistering is _not_ safe w/o holding the
- *          lock and that isn't explained anywhere that I can see.
  */
-int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload)
+int ShClEventWait(PSHCLEVENT pEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload)
 {
-    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
     AssertPtrNullReturn(ppPayload, VERR_INVALID_POINTER);
     LogFlowFuncEnter();
 
-    int rc;
-
-    PSHCLEVENT pEvent = shclEventGet(pSource, uID);
-    if (pEvent)
+    int rc = RTSemEventMultiWait(pEvent->hEvtMulSem, uTimeoutMs);
+    if (RT_SUCCESS(rc))
     {
-        rc = RTSemEventMultiWait(pEvent->hEvtMulSem, uTimeoutMs);
-        if (RT_SUCCESS(rc))
+        if (ppPayload)
         {
-            if (ppPayload)
-            {
-                /* Make sure to detach payload here, as the caller now owns the data. */
-                *ppPayload = shclEventPayloadDetachInternal(pEvent);
-            }
+            /* Make sure to detach payload here, as the caller now owns the data. */
+            *ppPayload = shclEventPayloadDetachInternal(pEvent);
         }
-
-        if (RT_FAILURE(rc))
-            LogRel2(("Shared Clipboard: Waiting for event %RU32 failed, rc=%Rrc\n", uID, rc));
     }
-    else
-        rc = VERR_NOT_FOUND;
+
+    if (RT_FAILURE(rc))
+        LogRel2(("Shared Clipboard: Waiting for event %RU32 failed, rc=%Rrc\n", pEvent->idEvent, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -417,20 +454,12 @@ int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeo
  * Retains an event by increasing its reference count.
  *
  * @returns New reference count, or UINT32_MAX if failed.
- * @param   pSource             Event source of event to retain.
- * @param   idEvent             ID of event to retain.
+ * @param   pEvent              Event to retain.
  */
-uint32_t ShClEventRetain(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
+uint32_t ShClEventRetain(PSHCLEVENT pEvent)
 {
-    PSHCLEVENT pEvent = shclEventGet(pSource, idEvent);
-    if (!pEvent)
-    {
-        AssertFailed();
-        return UINT32_MAX;
-    }
-
-    AssertReturn(pEvent->cRefs < 64, UINT32_MAX); /* Sanity. Yeah, not atomic. */
-
+    AssertPtrReturn(pEvent, UINT32_MAX);
+    AssertReturn(ASMAtomicReadU32(&pEvent->cRefs) < 64, UINT32_MAX);
     return ASMAtomicIncU32(&pEvent->cRefs);
 }
 
@@ -438,71 +467,49 @@ uint32_t ShClEventRetain(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
  * Releases an event by decreasing its reference count.
  *
  * @returns New reference count, or UINT32_MAX if failed.
- * @param   pSource             Event source of event to release.
- * @param   idEvent             ID of event to release.
- *
- * @todo    r=bird: The two places this is currently used make my head explode.
- *          First you release then you unregister it.  Unregister frees is
- *          unconditionally.
- *
- *          Any sane thinking person would assume that after we've release our
- *          reference to the @a idEvent, we cannot touch it any more because we
- *          don't have a valid reference any more.  So, when ShClEventUnregister
- *          is then called and unconditionally frees the event: Boooooom!
- *
- *          The locking interface here is generally not sane either, as the
- *          locking isn't done on the @a pSource but something the caller needs
- *          implements.  Since we don't have access to the lock we cannot verify
- *          the locking protocol nor can we implement it (like in
- *          ShClEventWait).
- *
- *          A better interface would return PSHCLEVENT instead of SHCLEVENTID,
- *          and then you could work directly on that as an object, rather via a
- *          slow object list.  It would eliminate shclEventGet and any though
- *          that someone might be updating the list while shclEventGet traverses
- *          it.
+ * @param   pEvent              Event to release.
+ *                              If the reference count reaches 0, the event will
+ *                              be destroyed and \a pEvent will be invalid.
  */
-uint32_t ShClEventRelease(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent)
+uint32_t ShClEventRelease(PSHCLEVENT pEvent)
 {
-    PSHCLEVENT pEvent = shclEventGet(pSource, idEvent);
-    AssertReturn(pEvent, UINT32_MAX);
-    AssertReturn(pEvent->cRefs, UINT32_MAX); /* Sanity. Yeah, not atomic. */
+    if (!pEvent)
+        return 0;
 
-    return ASMAtomicDecU32(&pEvent->cRefs);
+    AssertReturn(ASMAtomicReadU32(&pEvent->cRefs) > 0, UINT32_MAX);
+
+    uint32_t const cRefs = ASMAtomicDecU32(&pEvent->cRefs);
+    if (cRefs == 0)
+    {
+        AssertPtr(pEvent->pParent);
+        int rc2 = shClEventSourceUnregisterEventInternal(pEvent->pParent, pEvent);
+        AssertRC(rc2);
+
+        return RT_SUCCESS(rc2) ? 0 : UINT32_MAX;
+    }
+
+    return cRefs;
 }
 
 /**
  * Signals an event.
  *
  * @returns VBox status code.
- * @param   pSource             Event source of event to signal.
- * @param   uID                 Event ID to signal.
+ * @param   pEvent              Event to signal.
  * @param   pPayload            Event payload to associate. Takes ownership on
  *                              success. Optional.
- *
- * @note    Caller must enter crit sect protecting the event source!
  */
-int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, PSHCLEVENTPAYLOAD pPayload)
+int ShClEventSignal(PSHCLEVENT pEvent, PSHCLEVENTPAYLOAD pPayload)
 {
-    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    int rc;
+    Assert(pEvent->pPayload == NULL);
 
-    LogFlowFunc(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
+    pEvent->pPayload = pPayload;
 
-    PSHCLEVENT pEvent = shclEventGet(pSource, uID);
-    if (pEvent)
-    {
-        Assert(pEvent->pPayload == NULL);
-
-        pEvent->pPayload = pPayload;
-
-        rc = RTSemEventMultiSignal(pEvent->hEvtMulSem);
-        if (RT_FAILURE(rc))
-            pEvent->pPayload = NULL; /* (no race condition if consumer also enters the critical section) */
-    }
-    else
-        rc = VERR_NOT_FOUND;
+    int rc = RTSemEventMultiSignal(pEvent->hEvtMulSem);
+    if (RT_FAILURE(rc))
+        pEvent->pPayload = NULL; /* (no race condition if consumer also enters the critical section) */
 
     LogFlowFuncLeaveRC(rc);
     return rc;

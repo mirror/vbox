@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -206,7 +206,6 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT uFormat, void **p
         }
 
         ShClEventRelease(&pCtx->pClient->EventSrc, idEvent);
-        ShClEventUnregister(&pCtx->pClient->EventSrc, idEvent);
     }
 
     if (RT_FAILURE(rc))

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -159,14 +159,15 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     {
         /* The IDataObject *must* be created on the same thread as our (proxy) window, so post a message to it
          * to do the stuff for us. */
-        const SHCLEVENTID idEvent = ShClEventIdGenerateAndRegister(&pTransfer->Events);
-        if (idEvent != NIL_SHCLEVENTID)
+        PSHCLEVENT pEvent;
+        rc = ShClEventSourceGenerateAndRegisterEvent(&pTransfer->Events, &pEvent);
+        if (RT_SUCCESS(rc))
         {
             /* Don't want to rely on SendMessage (synchronous) here, so just post and wait the event getting signalled. */
-            ::PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_TRANSFER_START, (WPARAM)pTransfer, (LPARAM)idEvent);
+            ::PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_TRANSFER_START, (WPARAM)pTransfer, (LPARAM)pEvent->idEvent);
 
             PSHCLEVENTPAYLOAD pPayload;
-            rc = ShClEventWait(&pTransfer->Events, idEvent, 30 * 1000 /* Timeout in ms */, &pPayload);
+            rc = ShClEventWait(pEvent, 30 * 1000 /* Timeout in ms */, &pPayload);
             if (RT_SUCCESS(rc))
             {
                 Assert(pPayload->cbData == sizeof(int));
@@ -175,7 +176,7 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
                 ShClPayloadFree(pPayload);
             }
 
-            ShClEventUnregister(&pTransfer->Events, idEvent);
+            ShClEventRelease(pEvent);
         }
         else
             AssertFailedStmt(rc = VERR_SHCLPB_MAX_EVENTS_REACHED);

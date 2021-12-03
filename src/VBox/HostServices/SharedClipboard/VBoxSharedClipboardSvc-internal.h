@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -292,7 +292,7 @@ void shClSvcClientTransfersReset(PSHCLCLIENT pClient);
  * Locking is between the (host) service thread and the platform-dependent (window) thread.
  * @{
  */
-int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENTID pidEvent);
+int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent);
 int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData);
 int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
 uint32_t ShClSvcGetMode(void);

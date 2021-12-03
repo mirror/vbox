@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1200,21 +1200,16 @@ int shClSvcClientWakeup(PSHCLCLIENT pClient)
  * @returns VBox status code.
  * @param   pClient             Client to request to read data form.
  * @param   fFormats            The formats being requested, OR'ed together (VBOX_SHCL_FMT_XXX).
- * @param   pidEvent            Event ID for waiting for new data. Optional.
- *                              Must be released by the caller with ShClEventRelease() before unregistering then.
+ * @param   ppEvent             Where to return the event for waiting for new data on success. Optional.
+ *                              Must be released by the caller with ShClEventRelease().
  */
-int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENTID pidEvent)
+int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent)
 {
-    LogFlowFuncEnter();
-    if (pidEvent)
-        *pidEvent = NIL_SHCLEVENTID;
-    AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
 
     LogFlowFunc(("fFormats=%#x\n", fFormats));
 
     int rc = VERR_NOT_SUPPORTED;
-
-    SHCLEVENTID idEvent = NIL_SHCLEVENTID;
 
     /* Generate a separate message for every (valid) format we support. */
     while (fFormats)
@@ -1254,12 +1249,13 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
              */
             RTCritSectEnter(&pClient->CritSect);
 
-            idEvent = ShClEventIdGenerateAndRegister(&pClient->EventSrc);
-            if (idEvent != NIL_SHCLEVENTID)
+            PSHCLEVENT pEvent;
+            rc = ShClEventSourceGenerateAndRegisterEvent(&pClient->EventSrc, &pEvent);
+            if (RT_SUCCESS(rc))
             {
-                LogFlowFunc(("fFormats=%#x -> fFormat=%#x, idEvent=%#x\n", fFormats, fFormat, idEvent));
+                LogFlowFunc(("fFormats=%#x -> fFormat=%#x, idEvent=%#x\n", fFormats, fFormat, pEvent->idEvent));
 
-                const uint64_t uCID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID, idEvent);
+                const uint64_t uCID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pClient->EventSrc.uID, pEvent->idEvent);
 
                 rc = VINF_SUCCESS;
 
@@ -1295,6 +1291,16 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
                     HGCMSvcSetU32(&pMsg->aParms[1], fFormat);
 
                     shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+
+                    /* Retain the last event generated (in case there were multiple clipboard formats)
+                     * if we need to return the event to the caller. */
+                    if (ppEvent)
+                    {
+                        ShClEventRetain(pEvent);
+                        *ppEvent = pEvent;
+                    }
+
+                    shClSvcClientWakeup(pClient);
                 }
             }
             else
@@ -1310,23 +1316,6 @@ int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVEN
 
         if (RT_FAILURE(rc))
             break;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        RTCritSectEnter(&pClient->CritSect);
-
-        /* Retain the last event generated (in case there were multiple clipboard formats)
-         * if we need to return the event ID to the caller. */
-        if (pidEvent)
-        {
-            ShClEventRetain(&pClient->EventSrc, idEvent);
-            *pidEvent = idEvent;
-        }
-
-        shClSvcClientWakeup(pClient);
-
-        RTCritSectLeave(&pClient->CritSect);
     }
 
     if (RT_FAILURE(rc))
@@ -1354,7 +1343,7 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
     RT_NOREF(uFormat);
 
     /*
-     * Validate intput.
+     * Validate input.
      */
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
     AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
@@ -1363,7 +1352,9 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
 
     const SHCLEVENTID idEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(pCmdCtx->uContextID);
     AssertMsgReturn(idEvent != NIL_SHCLEVENTID, ("NIL event in context ID %#RX64\n", pCmdCtx->uContextID), VERR_WRONG_ORDER);
-    AssertMsg(ShClEventGet(&pClient->EventSrc, idEvent) != NULL, ("Event %#x not found\n", idEvent));
+
+    PSHCLEVENT pEvent = ShClEventSourceGetFromId(&pClient->EventSrc, idEvent);
+    AssertMsg(pEvent != NULL, ("Event %#x not found\n", idEvent));
 
     /*
      * Make a copy of the data so we can attach it to the signal.
@@ -1379,9 +1370,7 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
     /*
      * Signal the event.
      */
-    RTCritSectEnter(&pClient->CritSect);
-    int rc2 = ShClEventSignal(&pClient->EventSrc, idEvent, pPayload);
-    RTCritSectLeave(&pClient->CritSect);
+    int rc2 = ShClEventSignal(pEvent, pPayload);
     if (RT_FAILURE(rc2))
     {
         rc = rc2;
@@ -1390,16 +1379,9 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
     }
 
     /*
-     * No one holding a reference to the event anymore? Unregister it.
+     * Release reference (and free it if not used anymore).
      */
-    /** @todo r=bird: This isn't how reference counting is supposed to be
-     *        implemented, is it now? */
-    if (ShClEventGetRefs(&pClient->EventSrc, idEvent) == 0)
-    {
-        rc2 = ShClEventUnregister(&pClient->EventSrc, idEvent);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-    }
+    ShClEventRelease(pEvent);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

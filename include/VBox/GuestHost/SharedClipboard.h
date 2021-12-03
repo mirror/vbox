@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2020 Oracle Corporation
+ * Copyright (C) 2006-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,6 +29,7 @@
 # pragma once
 #endif
 
+#include <iprt/critsect.h>
 #include <iprt/types.h>
 #include <iprt/list.h>
 
@@ -135,6 +136,9 @@ typedef SHCLEVENTID    *PSHCLEVENTID;
 /** NIL shared clipboard event ID. */
 #define NIL_SHCLEVENTID                          UINT32_MAX
 
+/* Forward declaration, needed for SHCLEVENT. */
+struct SHCLEVENTSOURCE;
+
 /**
  * Shared Clipboard event.
  */
@@ -142,6 +146,8 @@ typedef struct SHCLEVENT
 {
     /** List node. */
     RTLISTNODE          Node;
+    /** Parent (source) this event belongs to. */
+    SHCLEVENTSOURCE    *pParent;
     /** The event's ID, for self-reference. */
     SHCLEVENTID         idEvent;
     /** Reference count to this event. */
@@ -164,6 +170,8 @@ typedef struct SHCLEVENTSOURCE
 {
     /** The event source ID. */
     SHCLEVENTSOURCEID uID;
+    /** Critical section for serializing access. */
+    RTCRITSECT        CritSect;
     /** Next upcoming event ID. */
     SHCLEVENTID       idNextEvent;
     /** List of events (PSHCLEVENT). */
@@ -183,22 +191,21 @@ void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload);
  *  @{
  */
 int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID idEvtSrc);
-void ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource);
+int ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource);
 void ShClEventSourceReset(PSHCLEVENTSOURCE pSource);
+int ShClEventSourceGenerateAndRegisterEvent(PSHCLEVENTSOURCE pSource, PSHCLEVENT *ppEvent);
+PSHCLEVENT ShClEventSourceGetFromId(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
+PSHCLEVENT ShClEventSourceGetLast(PSHCLEVENTSOURCE pSource);
 /** @} */
 
 /** @name Shared Clipboard event functions.
  *  @{
  */
-SHCLEVENTID ShClEventIdGenerateAndRegister(PSHCLEVENTSOURCE pSource);
-PSHCLEVENT ShClEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
-SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource);
-uint32_t ShClEventGetRefs(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
-uint32_t ShClEventRetain(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
-uint32_t ShClEventRelease(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
-int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, PSHCLEVENTPAYLOAD pPayload);
-int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent);
-int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID idEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload);
+uint32_t ShClEventGetRefs(PSHCLEVENT pEvent);
+uint32_t ShClEventRetain(PSHCLEVENT pEvent);
+uint32_t ShClEventRelease(PSHCLEVENT pEvent);
+int ShClEventSignal(PSHCLEVENT pEvent, PSHCLEVENTPAYLOAD pPayload);
+int ShClEventWait(PSHCLEVENT pEvent, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD *ppPayload);
 /** @} */
 
 /**

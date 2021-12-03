@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2019-2020 Oracle Corporation
+ * Copyright (C) 2019-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1078,7 +1078,7 @@ int ShClTransferObjWrite(PSHCLTRANSFER pTransfer,
 }
 
 /**
- * Duplicaates a transfer object data chunk.
+ * Duplicates a transfer object data chunk.
  *
  * @returns Duplicated object data chunk on success, or NULL on failure.
  * @param   pDataChunk          transfer object data chunk to duplicate.
@@ -1157,11 +1157,8 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 
     LogFlowFuncEnter();
 
-    PSHCLTRANSFER pTransfer = (PSHCLTRANSFER)RTMemAlloc(sizeof(SHCLTRANSFER));
-    if (!pTransfer)
-        return VERR_NO_MEMORY;
-
-    int rc = VINF_SUCCESS;
+    PSHCLTRANSFER pTransfer = (PSHCLTRANSFER)RTMemAllocZ(sizeof(SHCLTRANSFER));
+    AssertPtrReturn(pTransfer, VERR_NO_MEMORY);
 
     pTransfer->State.uID       = 0;
     pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_NONE;
@@ -1180,7 +1177,9 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 #else
     pTransfer->uTimeoutMs     = RT_MS_30SEC;
 #endif
-    pTransfer->cbMaxChunkSize = _64K; /** @todo Make this configurable. */
+    pTransfer->cbMaxChunkSize  = _64K; /** @todo Make this configurable. */
+    pTransfer->cMaxListHandles = _4K;  /** @todo Ditto. */
+    pTransfer->cMaxObjHandles  = _4K;  /** @todo Ditto. */
 
     pTransfer->pvUser = NULL;
     pTransfer->cbUser = 0;
@@ -1191,10 +1190,7 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
     pTransfer->cRoots = 0;
     RTListInit(&pTransfer->lstRoots);
 
-    RTListInit(&pTransfer->Events.lstEvents);
-    pTransfer->Events.uID          = 0;
-    pTransfer->Events.idNextEvent  = 1;
-
+    int rc = ShClEventSourceCreate(&pTransfer->Events, 0 /* uID */);
     if (RT_SUCCESS(rc))
     {
         *ppTransfer = pTransfer;
@@ -1247,29 +1243,24 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
  */
 int ShClTransferInit(PSHCLTRANSFER pTransfer, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource)
 {
-    pTransfer->State.uID       = 0;
     pTransfer->State.enmDir    = enmDir;
     pTransfer->State.enmSource = enmSource;
 
     LogFlowFunc(("uID=%RU32, enmDir=%RU32, enmSource=%RU32\n",
                  pTransfer->State.uID, pTransfer->State.enmDir, pTransfer->State.enmSource));
 
-    int rc = ShClEventSourceCreate(&pTransfer->Events, pTransfer->State.uID);
-    if (RT_SUCCESS(rc))
-    {
-        pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_INITIALIZED; /* Now we're ready to run. */
+    pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_INITIALIZED; /* Now we're ready to run. */
 
-        pTransfer->cListHandles    = 0;
-        pTransfer->cMaxListHandles = _4K; /** @todo Make this dynamic. */
-        pTransfer->uListHandleNext = 1;
+    pTransfer->cListHandles    = 0;
+    pTransfer->uListHandleNext = 1;
 
-        pTransfer->cObjHandles     = 0;
-        pTransfer->cMaxObjHandles  = _4K; /** @todo Ditto. */
-        pTransfer->uObjHandleNext  = 1;
+    pTransfer->cObjHandles     = 0;
+    pTransfer->uObjHandleNext  = 1;
 
-        if (pTransfer->Callbacks.pfnOnInitialize)
-            rc = pTransfer->Callbacks.pfnOnInitialize(&pTransfer->CallbackCtx);
-    }
+    int rc = VINF_SUCCESS;
+
+    if (pTransfer->Callbacks.pfnOnInitialize)
+        rc = pTransfer->Callbacks.pfnOnInitialize(&pTransfer->CallbackCtx);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -3047,17 +3038,17 @@ static int shClConvertFileCreateFlags(uint32_t fShClFlags, uint64_t *pfOpen)
         {
 #ifdef RT_OS_WINDOWS
             if ((fShClFlags & SHCL_OBJ_CF_ACCESS_MASK_ATTR) != SHCL_OBJ_CF_ACCESS_ATTR_NONE)
-                fOpen |= RTFILE_O_ATTR_ONLY;
+                fOpen |= RTFILE_O_OPEN | RTFILE_O_ATTR_ONLY;
             else
 #endif
-                fOpen |= RTFILE_O_READ;
+                fOpen |= RTFILE_O_OPEN | RTFILE_O_READ;
             LogFlowFunc(("SHCL_OBJ_CF_ACCESS_NONE\n"));
             break;
         }
 
         case SHCL_OBJ_CF_ACCESS_READ:
         {
-            fOpen |= RTFILE_O_READ;
+            fOpen |= RTFILE_O_OPEN | RTFILE_O_READ;
             LogFlowFunc(("SHCL_OBJ_CF_ACCESS_READ\n"));
             break;
         }
