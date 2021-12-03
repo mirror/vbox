@@ -42,6 +42,7 @@
 class UIActionPool;
 class UICustomFileSystemItem;
 class UIFileManagerGuestSessionPanel;
+class CGuestSessionStateChangedEvent;
 
 /** This class scans the guest file system by using the VBox Guest Control API
  *  and populates the UIGuestControlFileModel*/
@@ -56,7 +57,6 @@ signals:
 public:
 
     UIFileManagerGuestTable(UIActionPool *pActionPool, const CMachine &comMachine, QWidget *pParent = 0);
-    void initGuestFileTable(const CGuestSession &session);
     void copyGuestToHost(const QString& hostDestinationPath);
     void copyHostToGuest(const QStringList &hostSourcePathList,
                          const QString &strDestination = QString());
@@ -90,6 +90,11 @@ private slots:
     void sltHandleGuestSessionPanelHidden();
     void sltHandleGuestSessionPanelShown();
 
+    void sltGuestSessionUnregistered(CGuestSession guestSession);
+    void sltGuestSessionRegistered(CGuestSession guestSession);
+    void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
+
+
 private:
 
     KFsObjType  fileType(const CFsObjInfo &fsInfo);
@@ -107,7 +112,20 @@ private:
     void cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
                          CEventListener &comEventListener,
                          CEventSource comEventSource);
+    void cleanupGuestListener();
+
     void prepareGuestSessionPanel();
+    /** Creates a shared machine session, opens a guest session and registers event listeners. */
+    bool openSession(const QString& strUserName, const QString& strPassword);
+    bool isGuestAdditionsAvailable(const CGuest &guest);
+
+    /** @name Perform operations needed after creating/ending a guest control session
+      * @{ */
+        void postGuestSessionCreated();
+        void postGuestSessionClosed();
+    /** @} */
+
+    void initFileTable();
 
     CGuest                    m_comGuest;
     CGuestSession             m_comGuestSession;

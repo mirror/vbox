@@ -135,7 +135,7 @@ class UIFileManagerTable : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    void sigLogOutput(QString strLog, FileManagerLogType eLogType);
+    void sigLogOutput(QString strLog, const QString &strMachineName, FileManagerLogType eLogType);
     void sigDeleteConfirmationOptionChanged();
 
 public:
@@ -144,7 +144,6 @@ public:
     virtual ~UIFileManagerTable();
     /** Deletes all the tree nodes */
     void        reset();
-    void        emitLogOutput(const QString& strOutput, FileManagerLogType eLogType);
     /** Returns the path of the rootIndex */
     QString     currentDirectoryPath() const;
     /** Returns the paths of the selected items (if any) as a list */
@@ -251,6 +250,8 @@ protected:
      *  list will be cleaned after a paste operation or overwritten by a subsequent cut/copy.
      *  Currently only used by the guest side. */
     QStringList              m_copyCutBuffer;
+    /** This name is appended to the log messages which are shown in the log panel. */
+    QString          m_strTableName;
 
 private slots:
 
@@ -301,7 +302,6 @@ private:
     QColor           m_searchLineMarkColor;
     QILabel         *m_pWarningLabel;
     QChar            m_pathSeparator;
-
     friend class     UICustomFileSystemModel;
 };
 

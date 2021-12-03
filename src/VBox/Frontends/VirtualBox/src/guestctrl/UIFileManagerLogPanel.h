@@ -37,7 +37,7 @@ class UIFileManagerLogPanel : public UIDialogPanel
 public:
 
     UIFileManagerLogPanel(QWidget *pParent = 0);
-    void appendLog(const QString &str, FileManagerLogType);
+    void appendLog(const QString &str, const QString &strMachineName, FileManagerLogType eLogType);
     virtual QString panelName() const /* override */;
 
 protected:

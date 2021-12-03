@@ -727,11 +727,6 @@ void UIFileManagerTable::reset()
         m_pNavigationWidget->reset();
 }
 
-void UIFileManagerTable::emitLogOutput(const QString& strOutput, FileManagerLogType eLogType)
-{
-    emit sigLogOutput(strOutput, eLogType);
-}
-
 void UIFileManagerTable::prepareObjects()
 {
     m_pMainLayout = new QGridLayout();
@@ -1207,7 +1202,7 @@ void UIFileManagerTable::sltHandleItemRenameAttempt(UICustomFileSystemItem *pIte
         /* Restore the previous name. relist the view: */
         pItem->setData(strOldName, static_cast<int>(UICustomFileSystemModelColumn_Name));
         relist();
-        sigLogOutput(QString(pItem->path()).append(" could not be renamed"), FileManagerLogType_Error);
+        emit sigLogOutput(QString(pItem->path()).append(" could not be renamed"), QString(), FileManagerLogType_Error);
     }
 }
 
@@ -1296,14 +1291,15 @@ void UIFileManagerTable::retranslateUi()
     UICustomFileSystemItem *pRootItem = rootItem();
     if (pRootItem)
     {
-        pRootItem->setData(UICustomFileSystemModel::tr("Name"), UICustomFileSystemModelColumn_Name);
-        pRootItem->setData(UICustomFileSystemModel::tr("Size"), UICustomFileSystemModelColumn_Size);
-        pRootItem->setData(UICustomFileSystemModel::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
-        pRootItem->setData(UICustomFileSystemModel::tr("Owner"), UICustomFileSystemModelColumn_Owner);
-        pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
+        pRootItem->setData(UIFileManager::tr("Name"), UICustomFileSystemModelColumn_Name);
+        pRootItem->setData(UIFileManager::tr("Size"), UICustomFileSystemModelColumn_Size);
+        pRootItem->setData(UIFileManager::tr("Change Time"), UICustomFileSystemModelColumn_ChangeTime);
+        pRootItem->setData(UIFileManager::tr("Owner"), UICustomFileSystemModelColumn_Owner);
+        pRootItem->setData(UIFileManager::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
     }
     if (m_pWarningLabel)
         m_pWarningLabel->setText(UIFileManager::tr("<p>No Guest Session found! Please use the Session Panel to start a new guest session</p>"));
+    m_strTableName = UIFileManager::tr("Host");
 }
 
 bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
@@ -1432,9 +1428,7 @@ CGuestFsObjInfo UIFileManagerTable::guestFsObjectInfo(const QString& path, CGues
 void UIFileManagerTable::setSelectionDependentActionsEnabled(bool fIsEnabled)
 {
     foreach (QAction *pAction, m_selectionDependentActions)
-    {
         pAction->setEnabled(fIsEnabled);
-    }
 }
 
 UICustomFileSystemItem* UIFileManagerTable::rootItem()

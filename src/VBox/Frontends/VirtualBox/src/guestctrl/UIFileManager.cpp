@@ -217,6 +217,8 @@ void UIFileManager::prepareObjects()
         m_pGuestTablesContainer = new QITabWidget;
         if (m_pGuestTablesContainer)
         {
+            m_pGuestTablesContainer->setTabPosition(QTabWidget::East);
+
             m_pGuestTablesContainer->setTabBarAutoHide(true);
             m_pFileTableSplitter->addWidget(m_pGuestTablesContainer);
         }
@@ -348,9 +350,9 @@ void UIFileManager::prepareToolBar()
     }
 }
 
-void UIFileManager::sltReceieveLogOutput(QString strOutput, FileManagerLogType eLogType)
+void UIFileManager::sltReceieveLogOutput(QString strOutput, const QString &strMachineName, FileManagerLogType eLogType)
 {
-    appendLog(strOutput, eLogType);
+    appendLog(strOutput, strMachineName, eLogType);
 }
 
 void UIFileManager::sltCopyGuestToHost()
@@ -597,11 +599,11 @@ void UIFileManager::manageEscapeShortCut()
     m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
 }
 
-void UIFileManager::appendLog(const QString &strLog, FileManagerLogType eLogType)
+void UIFileManager::appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType)
 {
     if (!m_pLogPanel)
         return;
-    m_pLogPanel->appendLog(strLog, eLogType);
+    m_pLogPanel->appendLog(strLog, strMachineName, eLogType);
 }
 
 void UIFileManager::savePanelVisibility()

@@ -264,7 +264,7 @@ void UIFileManagerHostTable::deleteByItem(UICustomFileSystemItem *item)
     bool deleteSuccess = itemToDelete.removeRecursively();
 
     if (!deleteSuccess)
-        emit sigLogOutput(QString(item->path()).append(" could not be deleted"), FileManagerLogType_Error);
+        emit sigLogOutput(QString(item->path()).append(" could not be deleted"), m_strTableName, FileManagerLogType_Error);
 }
 
 void UIFileManagerHostTable::deleteByPath(const QStringList &pathList)
@@ -284,7 +284,7 @@ void UIFileManagerHostTable::deleteByPath(const QStringList &pathList)
             deleteSuccess = itemToDelete.removeRecursively();
         }
         if (!deleteSuccess)
-            emit sigLogOutput(QString(strPath).append(" could not be deleted"), FileManagerLogType_Error);
+            emit sigLogOutput(QString(strPath).append(" could not be deleted"), m_strTableName, FileManagerLogType_Error);
     }
 }
 
@@ -319,7 +319,7 @@ bool UIFileManagerHostTable::createDirectory(const QString &path, const QString 
     QDir parentDir(path);
     if (!parentDir.mkdir(directoryName))
     {
-        emit sigLogOutput(UIPathOperations::mergePaths(path, directoryName).append(" could not be created"), FileManagerLogType_Error);
+        emit sigLogOutput(UIPathOperations::mergePaths(path, directoryName).append(" could not be created"), m_strTableName, FileManagerLogType_Error);
         return false;
     }
 

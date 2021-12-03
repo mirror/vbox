@@ -51,13 +51,13 @@ class UIFileOperationProgressWidget : public QIWithRetranslateUI<QFrame>
 signals:
 
     void sigProgressComplete(QUuid progressId);
-    void sigProgressFail(QString strErrorString, FileManagerLogType eLogType);
+    void sigProgressFail(QString strErrorString, QString strSourceTableName, FileManagerLogType eLogType);
     void sigFocusIn(QWidget *pWidget);
     void sigFocusOut(QWidget *pWidget);
 
 public:
 
-    UIFileOperationProgressWidget(const CProgress &comProgress, QWidget *pParent = 0);
+    UIFileOperationProgressWidget(const CProgress &comProgress, const QString &strSourceTableName, QWidget *pParent = 0);
     ~UIFileOperationProgressWidget();
     bool isCompleted() const;
     bool isCanceled() const;
@@ -100,6 +100,8 @@ private:
     QIToolButton           *m_pCancelButton;
     QILabel                *m_pStatusLabel;
     QILabel                *m_pOperationDescriptionLabel;
+    /** Name of the table from which this operation has originated. */
+    QString                 m_strSourceTableName;
 };
 
 
@@ -107,7 +109,7 @@ private:
 *   UIFileOperationProgressWidget implementation.                                                                                *
 *********************************************************************************************************************************/
 
-UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &comProgress, QWidget *pParent /* = 0 */)
+UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &comProgress, const QString &strSourceTableName, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QFrame>(pParent)
     , m_eStatus(OperationStatus_NotStarted)
     , m_comProgress(comProgress)
@@ -117,6 +119,7 @@ UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &co
     , m_pCancelButton(0)
     , m_pStatusLabel(0)
     , m_pOperationDescriptionLabel(0)
+    , m_strSourceTableName(strSourceTableName)
 {
     prepare();
     setFocusPolicy(Qt::ClickFocus);
@@ -275,7 +278,7 @@ void UIFileOperationProgressWidget::sltHandleProgressComplete(const QUuid &uProg
 
     if (!m_comProgress.isOk() || m_comProgress.GetResultCode() != 0)
     {
-        emit sigProgressFail(UIErrorString::formatErrorInfo(m_comProgress), FileManagerLogType_Error);
+        emit sigProgressFail(UIErrorString::formatErrorInfo(m_comProgress), m_strSourceTableName, FileManagerLogType_Error);
         m_eStatus = OperationStatus_Failed;
     }
     else
@@ -318,12 +321,12 @@ UIFileManagerOperationsPanel::UIFileManagerOperationsPanel(QWidget *pParent /* =
     prepare();
 }
 
-void UIFileManagerOperationsPanel::addNewProgress(const CProgress &comProgress)
+void UIFileManagerOperationsPanel::addNewProgress(const CProgress &comProgress, const QString &strSourceTableName)
 {
     if (!m_pContainerLayout)
         return;
 
-    UIFileOperationProgressWidget *pOperationsWidget = new UIFileOperationProgressWidget(comProgress);
+    UIFileOperationProgressWidget *pOperationsWidget = new UIFileOperationProgressWidget(comProgress, strSourceTableName);
     if (!pOperationsWidget)
         return;
     m_widgetSet.insert(pOperationsWidget);

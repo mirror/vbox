@@ -106,7 +106,7 @@ protected:
 
 private slots:
 
-    void sltReceieveLogOutput(QString strOutput, FileManagerLogType eLogType);
+    void sltReceieveLogOutput(QString strOutput, const QString &strMachineName, FileManagerLogType eLogType);
     void sltCopyGuestToHost();
     void sltCopyHostToGuest();
     void sltPanelActionToggled(bool fChecked);
@@ -145,7 +145,7 @@ private:
     void copyToHost();
     template<typename T>
     QStringList               getFsObjInfoStringList(const T &fsObjectInfo) const;
-    void                      appendLog(const QString &strLog, FileManagerLogType eLogType);
+    void                      appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType);
     void                      savePanelVisibility();
 
     void setMachines(const QVector<QUuid> &machineIDs);

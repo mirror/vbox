@@ -24,8 +24,9 @@
 /* GUI includes: */
 #include "QILabel.h"
 #include "UIActionPool.h"
-#include "UIErrorString.h"
+#include "UIConverter.h"
 #include "UICustomFileSystemModel.h"
+#include "UIErrorString.h"
 #include "UIFileManager.h"
 #include "UIFileManagerGuestTable.h"
 #include "UIFileManagerGuestSessionPanel.h"
@@ -34,10 +35,12 @@
 #include "QIToolBar.h"
 
 /* COM includes: */
+#include "CConsole.h"
 #include "CFsObjInfo.h"
 #include "CGuestFsObjInfo.h"
 #include "CGuestDirectory.h"
 #include "CProgress.h"
+#include "CGuestSessionStateChangedEvent.h"
 
 #include <iprt/path.h>
 
@@ -152,19 +155,18 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
     , m_comMachine(comMachine)
     , m_pGuestSessionPanel(0)
 {
+    if (!m_comMachine.isNull())
+        m_strTableName = m_comMachine.GetName();
     prepareToolbar();
     prepareGuestSessionPanel();
     prepareActionConnections();
     retranslateUi();
 }
 
-void UIFileManagerGuestTable::initGuestFileTable(const CGuestSession &session)
+void UIFileManagerGuestTable::initFileTable()
 {
-    if (!session.isOk())
+    if (!m_comGuestSession.isOk() || m_comGuestSession.GetStatus() != KGuestSessionStatus_Started)
         return;
-    if (session.GetStatus() != KGuestSessionStatus_Started)
-        return;
-    m_comGuestSession = session;
     /* To determine the path separator we need to have a valid guest session: */
     determinePathSeparator();
     initializeFileTree();
@@ -190,7 +192,7 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
     directory = m_comGuestSession.DirectoryOpen(UIPathOperations::sanitize(strPath), /*aFilter*/ "", flag);
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
         return;
     }
 
@@ -248,8 +250,8 @@ void UIFileManagerGuestTable::deleteByItem(UICustomFileSystemItem *item)
         m_comGuestSession.FsObjRemove(item->path());
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(QString(item->path()).append(" could not be deleted"), FileManagerLogType_Error);
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+        emit sigLogOutput(QString(item->path()).append(" could not be deleted"), m_strTableName, FileManagerLogType_Error);
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
     }
 }
 
@@ -284,7 +286,7 @@ void UIFileManagerGuestTable::goToHomeDirectory()
     QString userHome = UIPathOperations::sanitize(m_comGuestSession.GetUserHome());
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
         return;
     }
     QStringList pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
@@ -303,7 +305,7 @@ bool UIFileManagerGuestTable::renameItem(UICustomFileSystemItem *item, QString n
 
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
         return false;
     }
     item->setPath(newPath);
@@ -319,11 +321,11 @@ bool UIFileManagerGuestTable::createDirectory(const QString &path, const QString
 
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(newDirectoryPath.append(" could not be created"), FileManagerLogType_Error);
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+        emit sigLogOutput(newDirectoryPath.append(" could not be created"), m_strTableName, FileManagerLogType_Error);
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
         return false;
     }
-    emit sigLogOutput(newDirectoryPath.append(" has been created"), FileManagerLogType_Info);
+    emit sigLogOutput(newDirectoryPath.append(" has been created"), m_strTableName, FileManagerLogType_Info);
     return true;
 }
 
@@ -341,12 +343,12 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
 
     if (strDestinationPath.isEmpty())
     {
-        emit sigLogOutput("No destination for copy operation", FileManagerLogType_Error);
+        emit sigLogOutput("No destination for copy operation", m_strTableName, FileManagerLogType_Error);
         return;
     }
     if (hostSourcePathList.empty())
     {
-        emit sigLogOutput("No source for copy operation", FileManagerLogType_Error);
+        emit sigLogOutput("No source for copy operation", m_strTableName, FileManagerLogType_Error);
         return;
     }
 
@@ -365,7 +367,7 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
         }
         else
             emit sigLogOutput(QString("Querying information for host item \"%s\" failed with %Rrc").arg(strSource.toStdString().c_str(), vrc),
-                              FileManagerLogType_Error);
+                              m_strTableName, FileManagerLogType_Error);
     }
 
     CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, strDestinationPath);
@@ -391,12 +393,12 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
 
     if (hostDestinationPath.isEmpty())
     {
-        emit sigLogOutput("No destination for copy operation", FileManagerLogType_Error);
+        emit sigLogOutput("No destination for copy operation", m_strTableName, FileManagerLogType_Error);
         return;
     }
     if (sourcePaths.empty())
     {
-        emit sigLogOutput("No source for copy operation", FileManagerLogType_Error);
+        emit sigLogOutput("No source for copy operation", m_strTableName, FileManagerLogType_Error);
         return;
     }
 
@@ -409,7 +411,7 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
         CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(strSource, true);
         if (!m_comGuestSession.isOk())
         {
-            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
             return;
         }
 
@@ -468,7 +470,7 @@ QString UIFileManagerGuestTable::fsObjectPropertyString()
         CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), false /*aFollowSymlinks*/);
         if (!m_comGuestSession.isOk())
         {
-            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
             return QString();
         }
 
@@ -561,7 +563,7 @@ QString UIFileManagerGuestTable::fsObjectPropertyString()
         CGuestFsObjInfo fileInfo = m_comGuestSession.FsObjQueryInfo(selectedObjects.at(0), true);
         if (!m_comGuestSession.isOk())
         {
-            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+            emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
             continue;
         }
 
@@ -767,7 +769,7 @@ bool UIFileManagerGuestTable::checkGuestSession()
 {
     if (!m_comGuestSession.isOk())
     {
-        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
         return false;
     }
     return true;
@@ -822,61 +824,17 @@ void UIFileManagerGuestTable::sltHandleGuestSessionPanelShown()
         m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession)->setChecked(true);
 }
 
-/*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
-/*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
-/*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
-#if 0
-    void initFileTable();
-void UIFileManager::initFileTable()
-{
-    if (!m_comGuestSession.isOk() || m_comGuestSession.GetStatus() != KGuestSessionStatus_Started)
-        return;
-    if (!m_pGuestFileTable)
-        return;
-    m_pGuestFileTable->initGuestFileTable(m_comGuestSession);
-}
-
-    /** @name Perform operations needed after creating/ending a guest control session
-      * @{ */
-        void postGuestSessionCreated();
-        void postGuestSessionClosed();
-    /** @} */
-
-void UIFileManager::postGuestSessionCreated()
-{
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->switchSessionCloseMode();
-    if (m_pGuestFileTable)
-        m_pGuestFileTable->setEnabled(true);
-    if (m_pVerticalToolBar)
-        m_pVerticalToolBar->setEnabled(true);
-}
-
-void UIFileManager::postGuestSessionClosed()
-{
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->switchSessionCreateMode();
-    if (m_pGuestFileTable)
-        m_pGuestFileTable->setEnabled(false);
-    if (m_pVerticalToolBar)
-        m_pVerticalToolBar->setEnabled(false);
-}
-
-    /** Creates a shared machine session, opens a guest session and registers event listeners. */
-    bool openSession(const QString& strUserName, const QString& strPassword);
-    void closeSession();
-
-bool UIFileManager::openSession(const QString& strUserName, const QString& strPassword)
+bool UIFileManagerGuestTable::openSession(const QString &strUserName, const QString &strPassword)
 {
     if (m_comMachine.isNull())
     {
-        appendLog("Invalid machine reference", FileManagerLogType_Error);
+        emit sigLogOutput("Invalid machine reference", m_strTableName, FileManagerLogType_Error);
         return false;
     }
     m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
     if (m_comSession.isNull())
     {
-        appendLog("Could not open machine session", FileManagerLogType_Error);
+        emit sigLogOutput("Could not open machine session", m_strTableName, FileManagerLogType_Error);
         return false;
     }
 
@@ -887,7 +845,7 @@ bool UIFileManager::openSession(const QString& strUserName, const QString& strPa
 
     if (!isGuestAdditionsAvailable(m_comGuest))
     {
-        appendLog("Could not find Guest Additions", FileManagerLogType_Error);
+        emit sigLogOutput("Could not find Guest Additions", m_strTableName, FileManagerLogType_Error);
         postGuestSessionClosed();
         if (m_pGuestSessionPanel)
             m_pGuestSessionPanel->markForError(true);
@@ -899,25 +857,22 @@ bool UIFileManager::openSession(const QString& strUserName, const QString& strPa
 
     prepareListener(m_pQtGuestListener, m_comGuestListener,
                     m_comGuest.GetEventSource(), eventTypes);
-    connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
-            this, &UIFileManager::sltGuestSessionUnregistered);
 
+    connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
+            this, &UIFileManagerGuestTable::sltGuestSessionUnregistered);
     connect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionRegistered,
-            this, &UIFileManager::sltGuestSessionRegistered);
+            this, &UIFileManagerGuestTable::sltGuestSessionRegistered);
 
     m_comGuestSession = m_comGuest.CreateSession(strUserName, strPassword,
                                                  QString() /* Domain */, "File Manager Session");
 
     if (!m_comGuestSession.isOk())
     {
-        appendLog(UIErrorString::formatErrorInfo(m_comGuestSession), FileManagerLogType_Error);
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
+        cleanupGuestListener();
         return false;
     }
 
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->switchSessionCloseMode();
-
-    /* Prepare guest session listener */
     eventTypes.clear();
     eventTypes << KVBoxEventType_OnGuestSessionStateChanged;
 
@@ -926,18 +881,53 @@ bool UIFileManager::openSession(const QString& strUserName, const QString& strPa
 
     qRegisterMetaType<CGuestSessionStateChangedEvent>();
     connect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
-            this, &UIFileManager::sltGuestSessionStateChanged);
+            this, &UIFileManagerGuestTable::sltGuestSessionStateChanged);
 
     return true;
 }
 
-void UIFileManager::closeSession()
+bool UIFileManagerGuestTable::isGuestAdditionsAvailable(const CGuest &guest)
 {
+    if (!guest.isOk())
+        return false;
+    CGuest guestNonConst = const_cast<CGuest&>(guest);
+    return guestNonConst.GetAdditionsStatus(guestNonConst.GetAdditionsRunLevel());
 }
 
-void UIFileManager::prepareListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
-                                    CEventListener &comEventListener,
-                                    CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes)
+
+void UIFileManagerGuestTable::cleanupGuestListener()
+{
+    disconnect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
+               this, &UIFileManagerGuestTable::sltGuestSessionUnregistered);
+    disconnect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionRegistered,
+               this, &UIFileManagerGuestTable::sltGuestSessionRegistered);
+    cleanupListener(m_pQtGuestListener, m_comGuestListener, m_comGuest.GetEventSource());
+}
+
+
+void UIFileManagerGuestTable::postGuestSessionCreated()
+{
+    if (m_pGuestSessionPanel)
+        m_pGuestSessionPanel->switchSessionCloseMode();
+    // if (m_pGuestFileTable)
+    //     m_pGuestFileTable->setEnabled(true);
+    // if (m_pVerticalToolBar)
+    //     m_pVerticalToolBar->setEnabled(true);
+}
+
+void UIFileManagerGuestTable::postGuestSessionClosed()
+{
+    if (m_pGuestSessionPanel)
+        m_pGuestSessionPanel->switchSessionCreateMode();
+    // if (m_pGuestFileTable)
+    //     m_pGuestFileTable->setEnabled(false);
+    // if (m_pVerticalToolBar)
+    //     m_pVerticalToolBar->setEnabled(false);
+}
+
+void UIFileManagerGuestTable::prepareListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
+                                              CEventListener &comEventListener,
+                                              CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes)
 {
     if (!comEventSource.isOk())
         return;
@@ -953,9 +943,49 @@ void UIFileManager::prepareListener(ComObjPtr<UIMainEventListenerImpl> &QtListen
     QtListener->getWrapped()->registerSource(comEventSource, comEventListener);
 }
 
-void UIFileManager::cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
-                                                CEventListener &comEventListener,
-                                                CEventSource comEventSource)
+void UIFileManagerGuestTable::sltGuestSessionUnregistered(CGuestSession guestSession)
+{
+    if (guestSession.isNull())
+        return;
+    if (guestSession == m_comGuestSession && !m_comGuestSession.isNull())
+    {
+        m_comGuestSession.detach();
+        postGuestSessionClosed();
+        emit sigLogOutput("Guest session unregistered", m_strTableName, FileManagerLogType_Info);
+    }
+}
+
+void UIFileManagerGuestTable::sltGuestSessionRegistered(CGuestSession guestSession)
+{
+    if (guestSession == m_comGuestSession && !m_comGuestSession.isNull())
+        emit sigLogOutput("Guest session registered", m_strTableName, FileManagerLogType_Info);
+}
+
+void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent)
+{
+    if (cEvent.isOk())
+    {
+        CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
+        if (cErrorInfo.isOk() && !cErrorInfo.GetText().contains("success", Qt::CaseInsensitive))
+            emit sigLogOutput(cErrorInfo.GetText(), m_strTableName, FileManagerLogType_Error);
+    }
+    if (m_comGuestSession.isOk())
+    {
+        if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
+        {
+            initFileTable();
+            postGuestSessionCreated();
+        }
+        emit sigLogOutput(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
+                  m_strTableName, FileManagerLogType_Info);
+    }
+    else
+        emit sigLogOutput("Guest session is not valid", m_strTableName, FileManagerLogType_Error);
+}
+
+void UIFileManagerGuestTable::cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
+                                              CEventListener &comEventListener,
+                                              CEventSource comEventSource)
 {
     if (!comEventSource.isOk())
         return;
@@ -970,38 +1000,24 @@ void UIFileManager::cleanupListener(ComObjPtr<UIMainEventListenerImpl> &QtListen
     comEventSource.UnregisterListener(comEventListener);
 }
 
-bool UIFileManager::isGuestAdditionsAvailable(const CGuest &guest)
-{
-    if (!guest.isOk())
-        return false;
-    CGuest guestNonConst = const_cast<CGuest&>(guest);
-    return guestNonConst.GetAdditionsStatus(guestNonConst.GetAdditionsRunLevel());
-}
+/*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+/*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+/*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+#if 0
 
-void UIFileManager::sltGuestSessionUnregistered(CGuestSession guestSession)
-{
-    if (guestSession.isNull())
-        return;
-    if (guestSession == m_comGuestSession && !m_comGuestSession.isNull())
-    {
-        m_comGuestSession.detach();
-        postGuestSessionClosed();
-        appendLog("Guest session unregistered", FileManagerLogType_Info);
-    }
-}
 
-void UIFileManager::sltGuestSessionRegistered(CGuestSession guestSession)
+
+
+void UIFileManager::closeSession()
 {
-    if (guestSession == m_comGuestSession && !m_comGuestSession.isNull())
-        appendLog("Guest session registered", FileManagerLogType_Info);
 }
 
 
-void UIFileManager::sltCreateGuestSession(QString strUserName, QString strPassword)
+void UIFileManagerGuestTable::sltCreateGuestSession(QString strUserName, QString strPassword)
 {
     if (strUserName.isEmpty())
     {
-        appendLog("No user name is given", FileManagerLogType_Error);
+        emit sigLogOutput("No user name is given", m_strTableName, FileManagerLogType_Error);
         if (m_pGuestSessionPanel)
             m_pGuestSessionPanel->markForError(true);
         return;
@@ -1014,7 +1030,7 @@ void UIFileManager::sltCloseGuestSession()
 {
     if (!m_comGuestSession.isOk())
     {
-        appendLog("Guest session is not valid", FileManagerLogType_Error);
+        emit sigLogOutput("Guest session is not valid", m_strTableName, FileManagerLogType_Error);
         postGuestSessionClosed();
         return;
     }
@@ -1025,40 +1041,14 @@ void UIFileManager::sltCloseGuestSession()
         cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
 
     m_comGuestSession.Close();
-    appendLog("Guest session is closed", FileManagerLogType_Info);
+    emit sigLogOutput("Guest session is closed", m_strTableName, FileManagerLogType_Info);
     postGuestSessionClosed();
 }
 
-void UIFileManager::sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent)
-{
-    if (cEvent.isOk())
-    {
-        CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
-        if (cErrorInfo.isOk() && !cErrorInfo.GetText().contains("success", Qt::CaseInsensitive))
-            appendLog(cErrorInfo.GetText(), FileManagerLogType_Error);
-    }
-    if (m_comGuestSession.isOk())
-    {
-        if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
-        {
-            initFileTable();
-            postGuestSessionCreated();
-        }
-        appendLog(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
-                  FileManagerLogType_Info);
-    }
-    else
-        appendLog("Guest session is not valid", FileManagerLogType_Error);
-}
 
 
-
-    void sltGuestSessionUnregistered(CGuestSession guestSession);
-    void sltGuestSessionRegistered(CGuestSession guestSession);
     void sltCreateGuestSession(QString strUserName, QString strPassword);
     void sltCloseGuestSession();
-    void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
-    void sltCleanupListenerAndGuest();
 
 
 

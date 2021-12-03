@@ -48,13 +48,13 @@ class UIFileManagerOperationsPanel : public UIDialogPanel
 signals:
 
     void sigFileOperationComplete(QUuid progressId);
-    void sigFileOperationFail(QString strErrorString, FileManagerLogType eLogType);
+    void sigFileOperationFail(QString strErrorString, QString strSourceTableName, FileManagerLogType eLogType);
 
 public:
 
     UIFileManagerOperationsPanel(QWidget *pParent = 0);
     virtual QString panelName() const /* override */;
-    void addNewProgress(const CProgress &comProgress);
+    void addNewProgress(const CProgress &comProgress, const QString &strSourceTableName);
 
 protected:
 
