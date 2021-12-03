@@ -304,13 +304,23 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpInitEmtWorker(PVM pVM, PVMCPU pVCpu, v
     if (   pVCpu->idCpu == 0
         && !pUVM->dbgf.s.paBpLocL1R3)
     {
-        DBGFBPINITREQ Req;
-        Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-        Req.Hdr.cbReq    = sizeof(Req);
-        Req.paBpLocL1R3  = NULL;
-        int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_INIT, 0 /*u64Arg*/, &Req.Hdr);
-        AssertLogRelMsgRCReturn(rc, ("VMMR0_DO_DBGF_BP_INIT failed: %Rrc\n", rc), rc);
-        pUVM->dbgf.s.paBpLocL1R3 = Req.paBpLocL1R3;
+        if (!SUPR3IsDriverless())
+        {
+            DBGFBPINITREQ Req;
+            Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+            Req.Hdr.cbReq    = sizeof(Req);
+            Req.paBpLocL1R3  = NULL;
+            int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_INIT, 0 /*u64Arg*/, &Req.Hdr);
+            AssertLogRelMsgRCReturn(rc, ("VMMR0_DO_DBGF_BP_INIT failed: %Rrc\n", rc), rc);
+            pUVM->dbgf.s.paBpLocL1R3 = Req.paBpLocL1R3;
+        }
+        else
+        {
+            /* Driverless: Do dbgfR0BpInitWorker here, ring-3 style. */
+            uint32_t const cbL1Loc = RT_ALIGN_32(UINT16_MAX * sizeof(uint32_t), PAGE_SIZE);
+            pUVM->dbgf.s.paBpLocL1R3 = (uint32_t *)RTMemPageAllocZ(cbL1Loc);
+            AssertLogRelMsgReturn(pUVM->dbgf.s.paBpLocL1R3, ("cbL1Loc=%#x\n", cbL1Loc), VERR_NO_PAGE_MEMORY);
+        }
     }
 
     return VINF_SUCCESS;
@@ -357,13 +367,23 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpPortIoInitEmtWorker(PVM pVM, PVMCPU pV
     if (   pVCpu->idCpu == 0
         && !pUVM->dbgf.s.paBpLocPortIoR3)
     {
-        DBGFBPINITREQ Req;
-        Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-        Req.Hdr.cbReq    = sizeof(Req);
-        Req.paBpLocL1R3  = NULL;
-        int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_PORTIO_INIT, 0 /*u64Arg*/, &Req.Hdr);
-        AssertLogRelMsgRCReturn(rc, ("VMMR0_DO_DBGF_BP_PORTIO_INIT failed: %Rrc\n", rc), rc);
-        pUVM->dbgf.s.paBpLocPortIoR3 = Req.paBpLocL1R3;
+        if (!SUPR3IsDriverless())
+        {
+            DBGFBPINITREQ Req;
+            Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+            Req.Hdr.cbReq    = sizeof(Req);
+            Req.paBpLocL1R3  = NULL;
+            int rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_PORTIO_INIT, 0 /*u64Arg*/, &Req.Hdr);
+            AssertLogRelMsgRCReturn(rc, ("VMMR0_DO_DBGF_BP_PORTIO_INIT failed: %Rrc\n", rc), rc);
+            pUVM->dbgf.s.paBpLocPortIoR3 = Req.paBpLocL1R3;
+        }
+        else
+        {
+            /* Driverless: Do dbgfR0BpPortIoInitWorker here, ring-3 style. */
+            uint32_t const cbPortIoLoc = RT_ALIGN_32(UINT16_MAX * sizeof(uint32_t), PAGE_SIZE);
+            pUVM->dbgf.s.paBpLocPortIoR3 = (uint32_t *)RTMemPageAllocZ(cbPortIoLoc);
+            AssertLogRelMsgReturn(pUVM->dbgf.s.paBpLocPortIoR3, ("cbPortIoLoc=%#x\n", cbPortIoLoc), VERR_NO_PAGE_MEMORY);
+        }
     }
 
     return VINF_SUCCESS;
@@ -420,16 +440,29 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpOwnerInitEmtWorker(PVM pVM, PVMCPU pVC
         pUVM->dbgf.s.pbmBpOwnersAllocR3 = RTMemAllocZ(DBGF_BP_OWNER_COUNT_MAX / 8);
         if (pUVM->dbgf.s.pbmBpOwnersAllocR3)
         {
-            DBGFBPOWNERINITREQ Req;
-            Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-            Req.Hdr.cbReq    = sizeof(Req);
-            Req.paBpOwnerR3  = NULL;
-            rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_OWNER_INIT, 0 /*u64Arg*/, &Req.Hdr);
-            AssertLogRelMsgRC(rc, ("VMMR0_DO_DBGF_BP_OWNER_INIT failed: %Rrc\n", rc));
-            if (RT_SUCCESS(rc))
+            if (!SUPR3IsDriverless())
             {
-                pUVM->dbgf.s.paBpOwnersR3 = (PDBGFBPOWNERINT)Req.paBpOwnerR3;
-                return VINF_SUCCESS;
+                DBGFBPOWNERINITREQ Req;
+                Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+                Req.Hdr.cbReq    = sizeof(Req);
+                Req.paBpOwnerR3  = NULL;
+                rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_OWNER_INIT, 0 /*u64Arg*/, &Req.Hdr);
+                if (RT_SUCCESS(rc))
+                {
+                    pUVM->dbgf.s.paBpOwnersR3 = (PDBGFBPOWNERINT)Req.paBpOwnerR3;
+                    return VINF_SUCCESS;
+                }
+                AssertLogRelMsgRC(rc, ("VMMR0_DO_DBGF_BP_OWNER_INIT failed: %Rrc\n", rc));
+            }
+            else
+            {
+                /* Driverless: Do dbgfR0BpOwnerInitWorker here, ring-3 style. */
+                uint32_t const cbBpOwnerR3 = RT_ALIGN_32(DBGF_BP_OWNER_COUNT_MAX * sizeof(DBGFBPOWNERINT), PAGE_SIZE);
+                pUVM->dbgf.s.paBpLocPortIoR3 = (uint32_t *)RTMemPageAllocZ(cbBpOwnerR3);
+                if (pUVM->dbgf.s.paBpLocPortIoR3)
+                    return VINF_SUCCESS;
+                AssertLogRelMsgFailed(("cbBpOwnerR3=%#x\n", cbBpOwnerR3));
+                rc = VERR_NO_PAGE_MEMORY;
             }
 
             RTMemFree((void *)pUVM->dbgf.s.pbmBpOwnersAllocR3);
@@ -576,16 +609,28 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpChunkAllocEmtWorker(PVM pVM, PVMCPU pV
         void *pbmAlloc = RTMemAllocZ(DBGF_BP_COUNT_PER_CHUNK / 8);
         if (RT_LIKELY(pbmAlloc))
         {
-            DBGFBPCHUNKALLOCREQ Req;
-            Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-            Req.Hdr.cbReq    = sizeof(Req);
-            Req.idChunk      = idChunk;
-            Req.pChunkBaseR3 = NULL;
-            rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_CHUNK_ALLOC, 0 /*u64Arg*/, &Req.Hdr);
-            AssertLogRelMsgRC(rc, ("VMMR0_DO_DBGF_BP_CHUNK_ALLOC failed: %Rrc\n", rc));
+            if (!SUPR3IsDriverless())
+            {
+                DBGFBPCHUNKALLOCREQ Req;
+                Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+                Req.Hdr.cbReq    = sizeof(Req);
+                Req.idChunk      = idChunk;
+                Req.pChunkBaseR3 = NULL;
+                rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_CHUNK_ALLOC, 0 /*u64Arg*/, &Req.Hdr);
+                if (RT_SUCCESS(rc))
+                    pBpChunk->pBpBaseR3 = (PDBGFBPINT)Req.pChunkBaseR3;
+                else
+                    AssertLogRelMsgRC(rc, ("VMMR0_DO_DBGF_BP_CHUNK_ALLOC failed: %Rrc\n", rc));
+            }
+            else
+            {
+                /* Driverless: Do dbgfR0BpChunkAllocWorker here, ring-3 style. */
+                uint32_t const cbShared = RT_ALIGN_32(DBGF_BP_COUNT_PER_CHUNK * sizeof(DBGFBPINT), PAGE_SIZE);
+                pBpChunk->pBpBaseR3 = (PDBGFBPINT)RTMemPageAllocZ(cbShared);
+                AssertLogRelMsgStmt(pBpChunk->pBpBaseR3, ("cbShared=%#x\n", cbShared), rc = VERR_NO_PAGE_MEMORY);
+            }
             if (RT_SUCCESS(rc))
             {
-                pBpChunk->pBpBaseR3 = (PDBGFBPINT)Req.pChunkBaseR3;
                 pBpChunk->pbmAlloc  = (void volatile *)pbmAlloc;
                 pBpChunk->cBpsFree  = DBGF_BP_COUNT_PER_CHUNK;
                 pBpChunk->idChunk   = idChunk;
@@ -786,16 +831,28 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpL2TblChunkAllocEmtWorker(PVM pVM, PVMC
         void *pbmAlloc = RTMemAllocZ(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK / 8);
         if (RT_LIKELY(pbmAlloc))
         {
-            DBGFBPL2TBLCHUNKALLOCREQ Req;
-            Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-            Req.Hdr.cbReq    = sizeof(Req);
-            Req.idChunk      = idChunk;
-            Req.pChunkBaseR3 = NULL;
-            rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC, 0 /*u64Arg*/, &Req.Hdr);
-            AssertLogRelMsgRC(rc, ("VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC failed: %Rrc\n", rc));
+            if (!SUPR3IsDriverless())
+            {
+                DBGFBPL2TBLCHUNKALLOCREQ Req;
+                Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+                Req.Hdr.cbReq    = sizeof(Req);
+                Req.idChunk      = idChunk;
+                Req.pChunkBaseR3 = NULL;
+                rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC, 0 /*u64Arg*/, &Req.Hdr);
+                if (RT_SUCCESS(rc))
+                    pL2Chunk->pL2BaseR3 = (PDBGFBPL2ENTRY)Req.pChunkBaseR3;
+                else
+                    AssertLogRelMsgRC(rc, ("VMMR0_DO_DBGF_BP_L2_TBL_CHUNK_ALLOC failed: %Rrc\n", rc));
+            }
+            else
+            {
+                /* Driverless: Do dbgfR0BpL2TblChunkAllocWorker here, ring-3 style. */
+                uint32_t const cbTotal = RT_ALIGN_32(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK * sizeof(DBGFBPL2ENTRY), PAGE_SIZE);
+                pL2Chunk->pL2BaseR3 = (PDBGFBPL2ENTRY)RTMemPageAllocZ(cbTotal);
+                AssertLogRelMsgStmt(pL2Chunk->pL2BaseR3, ("cbTotal=%#x\n", cbTotal), rc = VERR_NO_PAGE_MEMORY);
+            }
             if (RT_SUCCESS(rc))
             {
-                pL2Chunk->pL2BaseR3 = (PDBGFBPL2ENTRY)Req.pChunkBaseR3;
                 pL2Chunk->pbmAlloc  = (void volatile *)pbmAlloc;
                 pL2Chunk->cFree     = DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK;
                 pL2Chunk->idChunk   = idChunk;
