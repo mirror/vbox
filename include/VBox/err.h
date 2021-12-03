@@ -3062,10 +3062,12 @@
 #define VERR_SHCLPB_LIST_HANDLE_INVALID             (-7103)
 /** A Shared Clipboard objects handle is invalid. */
 #define VERR_SHCLPB_OBJ_HANDLE_INVALID              (-7104)
-/** A Shared Clipboard transfer ID is invalid. */
-#define VERR_SHCLPB_TRANSFER_ID_NOT_FOUND           (-7105)
+/** Shared Clipboard event ID not found. */
+#define VERR_SHCLPB_EVENT_ID_NOT_FOUND              (-7105)
 /** Maximum number of Shared Clipboard events for an event source has been reached. */
 #define VERR_SHCLPB_MAX_EVENTS_REACHED              (-7106)
+/** Shared Clipboard transfer ID not found. */
+#define VERR_SHCLPB_TRANSFER_ID_NOT_FOUND           (-7150)
 /** @} */
 
 /** @name Virtual IOMMU Status Codes
