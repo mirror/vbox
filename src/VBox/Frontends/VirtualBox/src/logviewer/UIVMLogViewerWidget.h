@@ -91,9 +91,6 @@ public:
     void addSelectedVMListItems(const QList<UIVirtualMachineItem*> &items);
     QFont currentFont() const;
 
-    /** Sets m_fDialogBeingClosed. */
-    void setDialogBeingClosed(bool fFlag);
-
 protected:
 
     /** Returns whether the window should be maximized when geometry being restored. */
@@ -143,6 +140,7 @@ private slots:
     /** @} */
     void sltCloseMachineLogs();
     void sltTabCloseButtonClick();
+    void sltCommitDataSignalReceived();
 
 private:
 
@@ -251,9 +249,10 @@ private:
     /** @} */
     QIToolButton *m_pCornerButton;
     UIMachineListMenu *m_pMachineSelectionMenu;
-    /** This is set to true by the parent dialog. This is necessary not to save
-      * visible panel list during destruction since they are hidden automatically during that. */
-    bool m_fDialogBeingClosed;
+    /** All extra data saves are done dynamically (as an option changes etc.). The this flag is true
+      * we should not try to save anything to extra data anymore. */
+    bool m_fCommitDataSignalReceived;
+
     friend class UIVMLogViewerFilterPanel;
     friend class UIVMLogViewerPanel;
     friend class UIVMLogViewerDialog;

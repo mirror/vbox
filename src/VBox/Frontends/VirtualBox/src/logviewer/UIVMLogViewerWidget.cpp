@@ -209,13 +209,15 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
     , m_font(QFontDatabase::systemFont(QFontDatabase::FixedFont))
     , m_pCornerButton(0)
     , m_pMachineSelectionMenu(0)
-    , m_fDialogBeingClosed(false)
+    , m_fCommitDataSignalReceived(false)
 {
     /* Prepare VM Log-Viewer: */
     prepare();
     restorePanelVisibility();
     if (!comMachine.isNull())
         setMachines(QVector<QUuid>(1, comMachine.GetId()));
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIVMLogViewerWidget::sltCommitDataSignalReceived);
 }
 
 UIVMLogViewerWidget::~UIVMLogViewerWidget()
@@ -362,11 +364,6 @@ QFont UIVMLogViewerWidget::currentFont() const
     return logPage->currentFont();
 }
 
-void UIVMLogViewerWidget::setDialogBeingClosed(bool fFlag)
-{
-    m_fDialogBeingClosed = fFlag;
-}
-
 bool UIVMLogViewerWidget::shouldBeMaximized() const
 {
     return gEDataManager->logWindowShouldBeMaximized();
@@ -374,12 +371,13 @@ bool UIVMLogViewerWidget::shouldBeMaximized() const
 
 void UIVMLogViewerWidget::saveOptions()
 {
-    gEDataManager->setLogViweverOptions(m_font, m_bWrapLines, m_bShowLineNumbers);
+    if (!m_fCommitDataSignalReceived)
+        gEDataManager->setLogViweverOptions(m_font, m_bWrapLines, m_bShowLineNumbers);
 }
 
 void UIVMLogViewerWidget::savePanelVisibility()
 {
-    if (m_fDialogBeingClosed)
+    if (m_fCommitDataSignalReceived)
         return;
     /* Save a list of currently visible panels: */
     QStringList strNameList;
@@ -678,6 +676,11 @@ void UIVMLogViewerWidget::sltTabCloseButtonClick()
     QVector<QUuid> list;
     list << pButton->machineId();
     removeLogViewerPages(list);
+}
+
+void UIVMLogViewerWidget::sltCommitDataSignalReceived()
+{
+    m_fCommitDataSignalReceived = true;
 }
 
 void UIVMLogViewerWidget::prepare()

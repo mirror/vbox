@@ -70,9 +70,6 @@ UIVMLogViewerDialog::UIVMLogViewerDialog(QWidget *pCenterWidget, UIActionPool *p
 
 UIVMLogViewerDialog::~UIVMLogViewerDialog()
 {
-    UIVMLogViewerWidget *pWidget = qobject_cast<UIVMLogViewerWidget*>(widget());
-    if (pWidget)
-        pWidget->setDialogBeingClosed(true);
 }
 
 void UIVMLogViewerDialog::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
@@ -149,6 +146,8 @@ void UIVMLogViewerDialog::configureCentralWidget()
 {
     /* Create widget: */
     UIVMLogViewerWidget *pWidget = new UIVMLogViewerWidget(EmbedTo_Dialog, m_pActionPool, true /* show toolbar */, m_comMachine, this);
+    /* Release the CMachine reference as we don't need it anymore. Doing it during dtor causes problems since xcom might be gone already: */
+    m_comMachine.detach();
     if (pWidget)
     {
         /* Configure widget: */
