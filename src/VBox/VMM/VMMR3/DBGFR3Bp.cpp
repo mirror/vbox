@@ -1135,8 +1135,8 @@ static int dbgfR3BpInt3L2BstCreate(PUVM pUVM, uint32_t idxL1, uint32_t u32EntryO
                 return VINF_SUCCESS;
 
             /* The L1 entry has changed due to another thread racing us during insertion, free nodes and try again. */
-            rc = VINF_TRY_AGAIN;
             dbgfR3BpL2TblEntryFree(pUVM, idxL2Leaf, pL2Leaf);
+            rc = VINF_TRY_AGAIN;
         }
 
         dbgfR3BpL2TblEntryFree(pUVM, idxL2Root, pL2Root);
@@ -1171,16 +1171,16 @@ static int dbgfR3BpInt2L2BstNodeInsert(PUVM pUVM, uint32_t idxL2Root, DBGFBP hBp
         {
             /* Make a copy of the entry. */
             DBGFBPL2ENTRY L2Entry;
-            L2Entry.u64GCPtrKeyAndBpHnd1       = ASMAtomicReadU64((volatile uint64_t *)&pL2Entry->u64GCPtrKeyAndBpHnd1);
-            L2Entry.u64LeftRightIdxDepthBpHnd2 = ASMAtomicReadU64((volatile uint64_t *)&pL2Entry->u64LeftRightIdxDepthBpHnd2);
+            L2Entry.u64GCPtrKeyAndBpHnd1       = ASMAtomicReadU64(&pL2Entry->u64GCPtrKeyAndBpHnd1);
+            L2Entry.u64LeftRightIdxDepthBpHnd2 = ASMAtomicReadU64(&pL2Entry->u64LeftRightIdxDepthBpHnd2);
 
             RTGCUINTPTR GCPtrL2Entry = DBGF_BP_L2_ENTRY_GET_GCPTR(L2Entry.u64GCPtrKeyAndBpHnd1);
             AssertBreak(GCPtr != GCPtrL2Entry);
 
             /* Not found, get to the next level. */
-            uint32_t idxL2Next =   (GCPtr < GCPtrL2Entry)
-                                 ? DBGF_BP_L2_ENTRY_GET_IDX_LEFT(L2Entry.u64LeftRightIdxDepthBpHnd2)
-                                 : DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(L2Entry.u64LeftRightIdxDepthBpHnd2);
+            uint32_t idxL2Next = GCPtr < GCPtrL2Entry
+                               ? DBGF_BP_L2_ENTRY_GET_IDX_LEFT(L2Entry.u64LeftRightIdxDepthBpHnd2)
+                               : DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(L2Entry.u64LeftRightIdxDepthBpHnd2);
             if (idxL2Next == DBGF_BP_L2_ENTRY_IDX_END)
             {
                 /* Insert the new node here. */
@@ -1195,8 +1195,8 @@ static int dbgfR3BpInt2L2BstNodeInsert(PUVM pUVM, uint32_t idxL2Root, DBGFBP hBp
             pL2Entry = dbgfR3BpL2GetByIdx(pUVM, idxL2Next);
         }
 
-        rc = VERR_DBGF_BP_L2_LOOKUP_FAILED;
         dbgfR3BpL2TblEntryFree(pUVM, idxL2Nd, pL2Nd);
+        rc = VERR_DBGF_BP_L2_LOOKUP_FAILED;
     }
 
     return rc;
@@ -1400,8 +1400,7 @@ static int dbgfR3BpInt3L2BstRemove(PUVM pUVM, uint32_t idxL1, uint32_t idxL2Root
         {
             Assert(DBGF_BP_L2_ENTRY_GET_BP_HND(pL2Entry->u64GCPtrKeyAndBpHnd1, pL2Entry->u64LeftRightIdxDepthBpHnd2) == hBp); RT_NOREF(hBp);
 
-            rc = dbgfR3BpInt3BstNodeRemove(pUVM, idxL1, idxL2Root, idxL2Cur, pL2Entry,
-                                           idxL2Parent, pL2EntryParent, fLeftChild);
+            rc = dbgfR3BpInt3BstNodeRemove(pUVM, idxL1, idxL2Root, idxL2Cur, pL2Entry, idxL2Parent, pL2EntryParent, fLeftChild);
             break;
         }
 
@@ -1540,7 +1539,6 @@ static DBGFBP dbgfR3BpGetByAddr(PUVM pUVM, DBGFBPTYPE enmType, RTGCUINTPTR GCPtr
                     break;
                 }
             }
-
             break;
         }
 
@@ -1571,9 +1569,9 @@ static DBGFBP dbgfR3BpGetByAddr(PUVM pUVM, DBGFBPTYPE enmType, RTGCUINTPTR GCPtr
                         }
 
                         /* Not found, get to the next level. */
-                        uint32_t idxL2Next =   (GCPtrKey < GCPtrL2Entry)
-                                             ? DBGF_BP_L2_ENTRY_GET_IDX_LEFT(pL2Nd->u64LeftRightIdxDepthBpHnd2)
-                                             : DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(pL2Nd->u64LeftRightIdxDepthBpHnd2);
+                        uint32_t idxL2Next = GCPtrKey < GCPtrL2Entry
+                                           ? DBGF_BP_L2_ENTRY_GET_IDX_LEFT(pL2Nd->u64LeftRightIdxDepthBpHnd2)
+                                           : DBGF_BP_L2_ENTRY_GET_IDX_RIGHT(pL2Nd->u64LeftRightIdxDepthBpHnd2);
                         /* Address not found if the entry denotes the end. */
                         if (idxL2Next == DBGF_BP_L2_ENTRY_IDX_END)
                             break;
@@ -1592,7 +1590,7 @@ static DBGFBP dbgfR3BpGetByAddr(PUVM pUVM, DBGFBPTYPE enmType, RTGCUINTPTR GCPtr
 
     if (   hBp != NIL_DBGFBP
         && ppBp)
-        *ppBp =  dbgfR3BpGetByHnd(pUVM, hBp);
+        *ppBp = dbgfR3BpGetByHnd(pUVM, hBp);
     return hBp;
 }
 
@@ -1800,7 +1798,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpRegRecalcOnCpu(PVM pVM, PVMCPU pVCpu, 
  */
 static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
     PVM pVM = pUVM->pVM;
 
     Assert(!DBGF_BP_PUB_IS_ENABLED(&pBp->Pub));
@@ -1854,6 +1852,7 @@ static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
             dbgfR3BpSetEnabled(pBp, true /*fEnabled*/);
             ASMAtomicIncU32(&pUVM->dbgf.s.cPortIoBps);
             IOMR3NotifyBreakpointCountChange(pVM, true /*fPortIo*/, false /*fMmio*/);
+            rc = VINF_SUCCESS;
             break;
         }
         case DBGFBPTYPE_MMIO:
@@ -1880,7 +1879,7 @@ static int dbgfR3BpArm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
  */
 static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
     PVM pVM = pUVM->pVM;
 
     Assert(DBGF_BP_PUB_IS_ENABLED(&pBp->Pub));
@@ -1929,6 +1928,7 @@ static int dbgfR3BpDisarm(PUVM pUVM, DBGFBP hBp, PDBGFBPINT pBp)
             uint32_t cPortIoBps = ASMAtomicDecU32(&pUVM->dbgf.s.cPortIoBps);
             if (!cPortIoBps) /** @todo Need to gather all EMTs to not have a stray EMT accessing BP data when it might go away. */
                 IOMR3NotifyBreakpointCountChange(pVM, false /*fPortIo*/, false /*fMmio*/);
+            rc = VINF_SUCCESS;
             break;
         }
         case DBGFBPTYPE_MMIO:
@@ -1976,14 +1976,16 @@ static VBOXSTRICTRC dbgfR3BpHit(PVM pVM, PVMCPU pVCpu, DBGFBP hBp, PDBGFBPINT pB
                 {
                     /* Replace the int3 with the original instruction byte. */
                     abInstr[0] = pBp->Pub.u.Int3.bOrg;
-                    rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr, &abInstr[0], sizeof(abInstr));
+                    rcStrict = IEMExecOneWithPrefetchedByPC(pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx), GCPtrInstr,
+                                                            &abInstr[0], sizeof(abInstr));
                     if (   rcStrict == VINF_SUCCESS
                         && DBGF_BP_PUB_IS_EXEC_AFTER(&pBp->Pub))
                     {
-                        VBOXSTRICTRC rcStrict2 = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub, DBGF_BP_F_HIT_EXEC_AFTER);
+                        VBOXSTRICTRC rcStrict2 = pBpOwner->pfnBpHitR3(pVM, pVCpu->idCpu, pBp->pvUserR3, hBp, &pBp->Pub,
+                                                                      DBGF_BP_F_HIT_EXEC_AFTER);
                         if (rcStrict2 == VINF_SUCCESS)
                             return VBOXSTRICTRC_VAL(rcStrict);
-                        else if (rcStrict2 != VINF_DBGF_BP_HALT)
+                        if (rcStrict2 != VINF_DBGF_BP_HALT)
                             return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
                     }
                     else
@@ -2751,7 +2753,7 @@ VMMR3_INT_DECL(int) DBGFR3BpHit(PVM pVM, PVMCPU pVCpu)
                     pVCpu->dbgf.s.hBpActive = NIL_DBGFBP;
                     return VINF_SUCCESS;
                 }
-                else if (VBOXSTRICTRC_VAL(rcStrict) != VINF_DBGF_BP_HALT) /* Guru meditation. */
+                if (VBOXSTRICTRC_VAL(rcStrict) != VINF_DBGF_BP_HALT) /* Guru meditation. */
                     return VERR_DBGF_BP_OWNER_CALLBACK_WRONG_STATUS;
                 /* else: Halt in the debugger. */
             }
