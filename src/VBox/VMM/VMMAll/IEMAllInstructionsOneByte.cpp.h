@@ -10617,7 +10617,10 @@ FNIEMOP_DEF(iemOp_lock)
 FNIEMOP_DEF(iemOp_int1)
 {
     IEMOP_MNEMONIC(int1, "int1"); /* icebp */
-    IEMOP_HLP_MIN_386(); /** @todo does not generate #UD on 286, or so they say... */
+    /** @todo Does not generate #UD on 286, or so they say...  Was allegedly a
+     * prefix byte on 8086 and/or/maybe 80286 without meaning according to the 286
+     * LOADALL memo.  Needs some testing. */
+    IEMOP_HLP_MIN_386();
     /** @todo testcase! */
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_int, X86_XCPT_DB, IEMINT_INT1);
 }
