@@ -416,7 +416,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpOwnerInitEmtWorker(PVM pVM, PVMCPU pVC
     if (   pVCpu->idCpu == 0
         && !pUVM->dbgf.s.pbmBpOwnersAllocR3)
     {
-        pUVM->dbgf.s.pbmBpOwnersAllocR3 = (volatile void *)RTMemAllocZ(DBGF_BP_OWNER_COUNT_MAX / 8);
+        AssertCompile(!(DBGF_BP_OWNER_COUNT_MAX % 64));
+        pUVM->dbgf.s.pbmBpOwnersAllocR3 = RTMemAllocZ(DBGF_BP_OWNER_COUNT_MAX / 8);
         if (pUVM->dbgf.s.pbmBpOwnersAllocR3)
         {
             DBGFBPOWNERINITREQ Req;
@@ -571,8 +572,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpChunkAllocEmtWorker(PVM pVM, PVMCPU pV
         && pBpChunk->idChunk == DBGF_BP_CHUNK_ID_INVALID)
     {
         /* Allocate the bitmap first so we can skip calling into VMMR0 if it fails. */
-        AssertCompile(!(DBGF_BP_COUNT_PER_CHUNK % 8));
-        volatile void *pbmAlloc = RTMemAllocZ(DBGF_BP_COUNT_PER_CHUNK / 8);
+        AssertCompile(!(DBGF_BP_COUNT_PER_CHUNK % 64));
+        void *pbmAlloc = RTMemAllocZ(DBGF_BP_COUNT_PER_CHUNK / 8);
         if (RT_LIKELY(pbmAlloc))
         {
             DBGFBPCHUNKALLOCREQ Req;
@@ -585,13 +586,13 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpChunkAllocEmtWorker(PVM pVM, PVMCPU pV
             if (RT_SUCCESS(rc))
             {
                 pBpChunk->pBpBaseR3 = (PDBGFBPINT)Req.pChunkBaseR3;
-                pBpChunk->pbmAlloc   = pbmAlloc;
+                pBpChunk->pbmAlloc  = (void volatile *)pbmAlloc;
                 pBpChunk->cBpsFree  = DBGF_BP_COUNT_PER_CHUNK;
                 pBpChunk->idChunk   = idChunk;
                 return VINF_SUCCESS;
             }
 
-            RTMemFree((void *)pbmAlloc);
+            RTMemFree(pbmAlloc);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -781,8 +782,8 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpL2TblChunkAllocEmtWorker(PVM pVM, PVMC
         && pL2Chunk->idChunk == DBGF_BP_L2_IDX_CHUNK_ID_INVALID)
     {
         /* Allocate the bitmap first so we can skip calling into VMMR0 if it fails. */
-        AssertCompile(!(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK % 8));
-        volatile void *pbmAlloc = RTMemAllocZ(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK / 8);
+        AssertCompile(!(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK % 64));
+        void *pbmAlloc = RTMemAllocZ(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK / 8);
         if (RT_LIKELY(pbmAlloc))
         {
             DBGFBPL2TBLCHUNKALLOCREQ Req;
@@ -795,13 +796,13 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3BpL2TblChunkAllocEmtWorker(PVM pVM, PVMC
             if (RT_SUCCESS(rc))
             {
                 pL2Chunk->pL2BaseR3 = (PDBGFBPL2ENTRY)Req.pChunkBaseR3;
-                pL2Chunk->pbmAlloc  = pbmAlloc;
+                pL2Chunk->pbmAlloc  = (void volatile *)pbmAlloc;
                 pL2Chunk->cFree     = DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK;
                 pL2Chunk->idChunk   = idChunk;
                 return VINF_SUCCESS;
             }
 
-            RTMemFree((void *)pbmAlloc);
+            RTMemFree(pbmAlloc);
         }
         else
             rc = VERR_NO_MEMORY;
