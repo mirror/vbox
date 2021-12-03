@@ -38,6 +38,7 @@
 #include "CAudioAdapter.h"
 #include "CBooleanFormValue.h"
 #include "CChoiceFormValue.h"
+#include "CCloudNetwork.h"
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
 #include "CCloudProviderManager.h"
@@ -668,6 +669,15 @@ void UINotificationMessage::cannotAcquireDHCPServerParameter(const CDHCPServer &
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireCloudNetworkParameter(const CCloudNetwork &comNetwork)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Cloud network failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire cloud network parameter.") +
+        UIErrorString::formatErrorInfo(comNetwork));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface)
 {
     createMessage(
@@ -803,6 +813,15 @@ void UINotificationMessage::cannotChangeDHCPServerParameter(const CDHCPServer &c
         QApplication::translate("UIMessageCenter", "DHCP server failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to change DHCP server parameter.") +
         UIErrorString::formatErrorInfo(comServer));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeCloudNetworkParameter(const CCloudNetwork &comNetwork)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Cloud network failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change cloud network parameter.") +
+        UIErrorString::formatErrorInfo(comNetwork));
 }
 
 /* static */
@@ -1049,6 +1068,16 @@ void UINotificationMessage::cannotOpenExtPackFile(const CExtPackFile &comExtPack
 }
 
 /* static */
+void UINotificationMessage::cannotFindCloudNetwork(const CVirtualBox &comVBox, const QString &strNetworkName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't find cloud network ..."),
+        QApplication::translate("UIMessageCenter", "Unable to find the cloud network <b>%1</b>.")
+                                                   .arg(strNetworkName) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
 void UINotificationMessage::cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName)
 {
     createMessage(
@@ -1085,6 +1114,25 @@ void UINotificationMessage::cannotRemoveDHCPServer(const CVirtualBox &comVBox, c
         QApplication::translate("UIMessageCenter", "Can't remove DHCP server ..."),
         QApplication::translate("UIMessageCenter", "Failed to remove the DHCP server for the network interface <b>%1</b>.")
                                                    .arg(strInterfaceName) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotCreateCloudNetwork(const CVirtualBox &comVBox)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create cloud network ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create a cloud network.") +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotRemoveCloudNetwork(const CVirtualBox &comVBox, const QString &strNetworkName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't remove cloud network ..."),
+        QApplication::translate("UIMessageCenter", "Failed to remove the cloud network <b>%1</b>.")
+                                                   .arg(strNetworkName) +
         UIErrorString::formatErrorInfo(comVBox));
 }
 

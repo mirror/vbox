@@ -284,6 +284,9 @@ public:
         /** Notifies about inability to acquire IDHCPServer parameter.
           * @param  comServer  Brings the object parameter get acquired from. */
         static void cannotAcquireDHCPServerParameter(const CDHCPServer &comServer);
+        /** Notifies about inability to acquire ICloudNetwork parameter.
+          * @param  comNetwork  Brings the object parameter get acquired from. */
+        static void cannotAcquireCloudNetworkParameter(const CCloudNetwork &comNetwork);
         /** Notifies about inability to acquire IHostNetworkInterface parameter.
           * @param  comInterface  Brings the object parameter get acquired from. */
         static void cannotAcquireHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface);
@@ -332,6 +335,9 @@ public:
         /** Notifies about inability to change IDHCPServer parameter.
           * @param  comServer  Brings the object parameter being changed for. */
         static void cannotChangeDHCPServerParameter(const CDHCPServer &comServer);
+        /** Notifies about inability to change ICloudNetwork parameter.
+          * @param  comNetwork  Brings the object parameter being changed for. */
+        static void cannotChangeCloudNetworkParameter(const CCloudNetwork &comNetwork);
         /** Notifies about inability to change IHostNetworkInterface parameter.
           * @param  comInterface  Brings the object parameter being changed for. */
         static void cannotChangeHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface);
@@ -420,6 +426,10 @@ public:
           * @param  strFilename     Brings extension pack file name. */
         static void cannotOpenExtPackFile(const CExtPackFile &comExtPackFile, const QString &strFilename);
 
+        /** Notifies about inability to find cloud network.
+          * @param  comVBox         Brings common VBox object being search through.
+          * @param  strNetworkName  Brings network name. */
+        static void cannotFindCloudNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
         /** Notifies about inability to find host network interface.
           * @param  comHost  Brings the host being search through.
           * @param  strInterfaceName  Brings interface name. */
@@ -436,6 +446,13 @@ public:
           * @param  comVBox           Brings common VBox object trying to remove DHCP server.
           * @param  strInterfaceName  Brings the interface name. */
         static void cannotRemoveDHCPServer(const CVirtualBox &comVBox, const QString &strInterfaceName);
+        /** Notifies about inability to create cloud network.
+          * @param  comVBox  Brings common VBox object trying to create cloud network. */
+        static void cannotCreateCloudNetwork(const CVirtualBox &comVBox);
+        /** Notifies about inability to remove cloud network.
+          * @param  comVBox         Brings common VBox object trying to remove cloud network.
+          * @param  strNetworkName  Brings the network name. */
+        static void cannotRemoveCloudNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
         /** Notifies about inability to create NAT network.
           * @param  comVBox  Brings common VBox object trying to create NAT network. */
         static void cannotCreateNATNetwork(const CVirtualBox &comVBox);

@@ -29,6 +29,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class CCloudNetwork;
 class CHostNetworkInterface;
 class CNATNetwork;
 class QAbstractButton;
@@ -38,11 +39,14 @@ class QIDialogButtonBox;
 class QITabWidget;
 class QITreeWidget;
 class UIActionPool;
+class UIDetailsWidgetCloudNetwork;
 class UIDetailsWidgetHostNetwork;
 class UIDetailsWidgetNATNetwork;
+class UIItemCloudNetwork;
 class UIItemHostNetwork;
 class UIItemNATNetwork;
 class QIToolBar;
+struct UIDataCloudNetwork;
 struct UIDataHostNetwork;
 struct UIDataNATNetwork;
 
@@ -61,6 +65,8 @@ signals:
     void sigDetailsDataChangedHostNetwork(bool fDiffers);
     /** Notifies listeners about NAT network details data @a fDiffers. */
     void sigDetailsDataChangedNATNetwork(bool fDiffers);
+    /** Notifies listeners about cloud network details data @a fDiffers. */
+    void sigDetailsDataChangedCloudNetwork(bool fDiffers);
 
 public:
 
@@ -121,6 +127,11 @@ private slots:
         /** Handles command to remove NAT network. */
         void sltRemoveNATNetwork();
 
+        /** Handles command to create cloud network. */
+        void sltCreateCloudNetwork();
+        /** Handles command to remove cloud network. */
+        void sltRemoveCloudNetwork();
+
         /** Handles command to make details @a fVisible. */
         void sltToggleDetailsVisibility(bool fVisible);
     /** @} */
@@ -150,6 +161,13 @@ private slots:
         void sltHandleContextMenuRequestNATNetwork(const QPoint &position);
         /** Handles command to apply NAT network details changes. */
         void sltApplyDetailsChangesNATNetwork();
+
+        /** Handles cloud network tree-widget current item change. */
+        void sltHandleCurrentItemChangeCloudNetwork();
+        /** Handles cloud network context-menu request for tree-widget @a position. */
+        void sltHandleContextMenuRequestCloudNetwork(const QPoint &position);
+        /** Handles command to apply cloud network details changes. */
+        void sltApplyDetailsChangesCloudNetwork();
     /** @} */
 
 private:
@@ -178,6 +196,12 @@ private:
         void prepareTreeWidgetNATNetwork();
         /** Prepares NAT network details-widget. */
         void prepareDetailsWidgetNATNetwork();
+        /** Prepares cloud network tab. */
+        void prepareTabCloudNetwork();
+        /** Prepares cloud network tree-widget. */
+        void prepareTreeWidgetCloudNetwork();
+        /** Prepares cloud network details-widget. */
+        void prepareDetailsWidgetCloudNetwork();
         /** Load settings: */
         void loadSettings();
     /** @} */
@@ -193,6 +217,11 @@ private:
         void loadNATNetworks();
         /** Loads NAT @a comNetwork data to passed @a data container. */
         void loadNATNetwork(const CNATNetwork &comNetwork, UIDataNATNetwork &data);
+
+        /** Loads cloud networks. */
+        void loadCloudNetworks();
+        /** Loads cloud @a comNetwork data to passed @a data container. */
+        void loadCloudNetwork(const CCloudNetwork &comNetwork, UIDataCloudNetwork &data);
     /** @} */
 
     /** @name Tree-widget stuff.
@@ -207,8 +236,15 @@ private:
         /** Updates passed NAT network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void updateItemForNATNetwork(const UIDataNATNetwork &data, bool fChooseItem, UIItemNATNetwork *pItem);
 
+        /** Creates a new cloud network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
+        void createItemForCloudNetwork(const UIDataCloudNetwork &data, bool fChooseItem);
+        /** Updates passed cloud network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
+        void updateItemForCloudNetwork(const UIDataCloudNetwork &data, bool fChooseItem, UIItemCloudNetwork *pItem);
+
         /** Returns a list of busy NAT network names. */
         QStringList busyNamesNAT() const;
+        /** Returns a list of busy cloud network names. */
+        QStringList busyNamesCloud() const;
     /** @} */
 
     /** @name General variables.
@@ -249,6 +285,15 @@ private:
         QITreeWidget              *m_pTreeWidgetNATNetwork;
         /** Holds the NAT network details-widget instance. */
         UIDetailsWidgetNATNetwork *m_pDetailsWidgetNATNetwork;
+
+        /** Holds the cloud network tab. */
+        QWidget                     *m_pTabCloudNetwork;
+        /** Holds the cloud network tab layout. */
+        QVBoxLayout                 *m_pLayoutCloudNetwork;
+        /** Holds the cloud network tree-widget instance. */
+        QITreeWidget                *m_pTreeWidgetCloudNetwork;
+        /** Holds the cloud network details-widget instance. */
+        UIDetailsWidgetCloudNetwork *m_pDetailsWidgetCloudNetwork;
     /** @} */
 };
 

@@ -27,6 +27,7 @@
 #include "QITreeWidget.h"
 #include "UIActionPoolManager.h"
 #include "UIConverter.h"
+#include "UIDetailsWidgetCloudNetwork.h"
 #include "UIDetailsWidgetHostNetwork.h"
 #include "UIDetailsWidgetNATNetwork.h"
 #include "UIExtraDataManager.h"
@@ -42,6 +43,7 @@
 #include "UICommon.h"
 
 /* COM includes: */
+#include "CCloudNetwork.h"
 #include "CDHCPServer.h"
 #include "CHost.h"
 #include "CHostNetworkInterface.h"
@@ -56,6 +58,7 @@ enum TabWidgetIndex
 {
     TabWidgetIndex_HostNetwork,
     TabWidgetIndex_NATNetwork,
+    TabWidgetIndex_CloudNetwork,
 };
 
 
@@ -81,6 +84,16 @@ enum NATNetworkColumn
 };
 
 
+/** Cloud network tree-widget column indexes. */
+enum CloudNetworkColumn
+{
+    CloudNetworkColumn_Name,
+    CloudNetworkColumn_Provider,
+    CloudNetworkColumn_Profile,
+    CloudNetworkColumn_Max,
+};
+
+
 /** Network Manager: Host Network tree-widget item. */
 class UIItemHostNetwork : public QITreeWidgetItem, public UIDataHostNetwork
 {
@@ -103,6 +116,26 @@ private:
 
 /** Network Manager: NAT Network tree-widget item. */
 class UIItemNATNetwork : public QITreeWidgetItem, public UIDataNATNetwork
+{
+    Q_OBJECT;
+
+public:
+
+    /** Updates item fields from data. */
+    void updateFields();
+
+    /** Returns item name. */
+    QString name() const { return m_strName; }
+
+protected:
+
+    /** Returns default text. */
+    virtual QString defaultText() const /* override */;
+};
+
+
+/** Network Manager: Cloud Network tree-widget item. */
+class UIItemCloudNetwork : public QITreeWidgetItem, public UIDataCloudNetwork
 {
     Q_OBJECT;
 
@@ -265,6 +298,37 @@ QString UIItemNATNetwork::defaultText() const
 
 
 /*********************************************************************************************************************************
+*   Class UIItemCloudNetwork implementation.                                                                                     *
+*********************************************************************************************************************************/
+
+void UIItemCloudNetwork::updateFields()
+{
+    /* Compose item fields: */
+    setText(CloudNetworkColumn_Name, m_strName);
+    setText(CloudNetworkColumn_Provider, m_strProvider);
+    setText(CloudNetworkColumn_Profile, m_strProfile);
+
+    /* Compose item tool-tip: */
+    const QString strTable("<table cellspacing=5>%1</table>");
+    const QString strHeader("<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
+    QString strToolTip;
+
+    /* Network information: */
+    strToolTip += strHeader.arg(tr("Network Name"), m_strName);
+    strToolTip += strHeader.arg(tr("Provider"), m_strProvider);
+    strToolTip += strHeader.arg(tr("Profile"), m_strProfile);
+
+    /* Assign tool-tip finally: */
+    setToolTip(CloudNetworkColumn_Name, strTable.arg(strToolTip));
+}
+
+QString UIItemCloudNetwork::defaultText() const
+{
+    return tr("%1, %2", "col.2 text, col.1 name").arg(text(1)).arg(parentTree()->headerItem()->text(0));
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINetworkManagerWidget implementation.                                                                                 *
 *********************************************************************************************************************************/
 
@@ -284,6 +348,10 @@ UINetworkManagerWidget::UINetworkManagerWidget(EmbedTo enmEmbedding, UIActionPoo
     , m_pLayoutNATNetwork(0)
     , m_pTreeWidgetNATNetwork(0)
     , m_pDetailsWidgetNATNetwork(0)
+    , m_pTabCloudNetwork(0)
+    , m_pLayoutCloudNetwork(0)
+    , m_pTreeWidgetCloudNetwork(0)
+    , m_pDetailsWidgetCloudNetwork(0)
 {
     prepare();
 }
@@ -312,6 +380,7 @@ void UINetworkManagerWidget::retranslateUi()
     {
         m_pTabWidget->setTabText(0, UINetworkManager::tr("Host-only Networks"));
         m_pTabWidget->setTabText(1, UINetworkManager::tr("NAT Networks"));
+        m_pTabWidget->setTabText(2, UINetworkManager::tr("Cloud Networks"));
     }
 
     /* Translate host network tree-widget: */
@@ -334,6 +403,16 @@ void UINetworkManagerWidget::retranslateUi()
                                    << UINetworkManager::tr("IPv6 Prefix")
                                    << UINetworkManager::tr("DHCP Server");
         m_pTreeWidgetNATNetwork->setHeaderLabels(fields);
+    }
+
+    /* Translate cloud network tree-widget: */
+    if (m_pTreeWidgetCloudNetwork)
+    {
+        const QStringList fields = QStringList()
+                                   << UINetworkManager::tr("Name")
+                                   << UINetworkManager::tr("Provider")
+                                   << UINetworkManager::tr("Profile");
+        m_pTreeWidgetCloudNetwork->setHeaderLabels(fields);
     }
 }
 
@@ -365,6 +444,7 @@ void UINetworkManagerWidget::sltResetDetailsChanges()
     {
         case TabWidgetIndex_HostNetwork: sltHandleCurrentItemChangeHostNetwork(); break;
         case TabWidgetIndex_NATNetwork: sltHandleCurrentItemChangeNATNetwork(); break;
+        case TabWidgetIndex_CloudNetwork: sltHandleCurrentItemChangeCloudNetwork(); break;
         default: break;
     }
 }
@@ -379,6 +459,7 @@ void UINetworkManagerWidget::sltApplyDetailsChanges()
     {
         case TabWidgetIndex_HostNetwork: sltApplyDetailsChangesHostNetwork(); break;
         case TabWidgetIndex_NATNetwork: sltApplyDetailsChangesNATNetwork(); break;
+        case TabWidgetIndex_CloudNetwork: sltApplyDetailsChangesCloudNetwork(); break;
         default: break;
     }
 }
@@ -667,6 +748,136 @@ void UINetworkManagerWidget::sltRemoveNATNetwork()
     }
 }
 
+void UINetworkManagerWidget::sltCreateCloudNetwork()
+{
+    /* For cloud networks only: */
+    if (m_pTabWidget->currentIndex() != TabWidgetIndex_CloudNetwork)
+        return;
+
+    /* Compose a set of busy names: */
+    QSet<QString> names;
+    for (int i = 0; i < m_pTreeWidgetCloudNetwork->topLevelItemCount(); ++i)
+        names << qobject_cast<UIItemCloudNetwork*>(m_pTreeWidgetCloudNetwork->childItem(i))->name();
+    /* Compose a map of busy indexes: */
+    QMap<int, bool> presence;
+    const QString strNameTemplate("CloudNetwork%1");
+    const QRegExp regExp(strNameTemplate.arg("([\\d]*)"));
+    foreach (const QString &strName, names)
+        if (regExp.indexIn(strName) != -1)
+            presence[regExp.cap(1).toInt()] = true;
+    /* Search for a minimum index: */
+    int iMinimumIndex = 0;
+    for (int i = 0; !presence.isEmpty() && i <= presence.lastKey() + 1; ++i)
+        if (!presence.contains(i))
+        {
+            iMinimumIndex = i;
+            break;
+        }
+    /* Compose resulting index and name: */
+    const QString strNetworkName = strNameTemplate.arg(iMinimumIndex == 0 ? QString() : QString::number(iMinimumIndex));
+
+    /* Compose new item data: */
+    UIDataCloudNetwork oldData;
+    oldData.m_fEnabled = true;
+    oldData.m_strName = strNetworkName;
+    oldData.m_strProvider = QString();
+    oldData.m_strProfile = QString();
+
+    /* Get VirtualBox for further activities: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Create network: */
+    CCloudNetwork comNetwork = comVBox.CreateCloudNetwork(oldData.m_strName);
+    CCloudNetwork comNetworkBase = comNetwork;
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        UINotificationMessage::cannotCreateCloudNetwork(comVBox);
+    else
+    {
+        /* Save whether network enabled: */
+        if (comNetwork.isOk())
+            comNetwork.SetEnabled(oldData.m_fEnabled);
+        /* Save cloud network name: */
+        if (comNetwork.isOk())
+            comNetwork.SetNetworkName(oldData.m_strName);
+        /* Save cloud provider: */
+        if (comNetwork.isOk())
+            comNetwork.SetProvider(oldData.m_strProvider);
+        /* Save cloud profile: */
+        if (comNetwork.isOk())
+            comNetwork.SetProfile(oldData.m_strProfile);
+
+        /* Show error message if necessary: */
+        if (!comNetwork.isOk())
+            UINotificationMessage::cannotChangeCloudNetworkParameter(comNetwork);
+
+        /* Add network to the tree: */
+        UIDataCloudNetwork newData;
+        loadCloudNetwork(comNetworkBase, newData);
+        createItemForCloudNetwork(newData, true);
+
+        /* Adjust tree-widgets: */
+        sltAdjustTreeWidgets();
+    }
+}
+
+void UINetworkManagerWidget::sltRemoveCloudNetwork()
+{
+    /* For cloud networks only: */
+    if (m_pTabWidget->currentIndex() != TabWidgetIndex_CloudNetwork)
+        return;
+
+    /* Check cloud network tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidgetCloudNetwork, ("Cloud network tree-widget isn't created!\n"));
+
+    /* Get network item: */
+    UIItemCloudNetwork *pItem = static_cast<UIItemCloudNetwork*>(m_pTreeWidgetCloudNetwork->currentItem());
+    AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
+
+    /* Get network name: */
+    const QString strNetworkName(pItem->name());
+
+    /* Confirm host network removal: */
+    if (!msgCenter().confirmCloudNetworkRemoval(strNetworkName, this))
+        return;
+
+    /* Get VirtualBox for further activities: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Find corresponding network: */
+    const CCloudNetwork &comNetwork = comVBox.FindCloudNetworkByName(strNetworkName);
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk() || comNetwork.isNull())
+        UINotificationMessage::cannotFindCloudNetwork(comVBox, strNetworkName);
+    else
+    {
+        /* Remove network finally: */
+        comVBox.RemoveCloudNetwork(comNetwork);
+
+        /* Show error message if necessary: */
+        if (!comVBox.isOk())
+            UINotificationMessage::cannotRemoveCloudNetwork(comVBox, strNetworkName);
+        else
+        {
+            /* Move selection to somewhere else: */
+            if (m_pTreeWidgetCloudNetwork->itemBelow(pItem))
+                m_pTreeWidgetCloudNetwork->setCurrentItem(m_pTreeWidgetCloudNetwork->itemBelow(pItem));
+            else if (m_pTreeWidgetCloudNetwork->itemAbove(pItem))
+                m_pTreeWidgetCloudNetwork->setCurrentItem(m_pTreeWidgetCloudNetwork->itemAbove(pItem));
+            else
+                m_pTreeWidgetCloudNetwork->setCurrentItem(0);
+
+            /* Remove interface from the tree: */
+            delete pItem;
+
+            /* Adjust tree-widgets: */
+            sltAdjustTreeWidgets();
+        }
+    }
+}
+
 void UINetworkManagerWidget::sltToggleDetailsVisibility(bool fVisible)
 {
     /* Save the setting: */
@@ -678,6 +889,8 @@ void UINetworkManagerWidget::sltToggleDetailsVisibility(bool fVisible)
         {
             if (m_pDetailsWidgetNATNetwork)
                 m_pDetailsWidgetNATNetwork->setVisible(false);
+            if (m_pDetailsWidgetCloudNetwork)
+                m_pDetailsWidgetCloudNetwork->setVisible(false);
             if (m_pDetailsWidgetHostNetwork)
                 m_pDetailsWidgetHostNetwork->setVisible(fVisible);
             break;
@@ -686,8 +899,20 @@ void UINetworkManagerWidget::sltToggleDetailsVisibility(bool fVisible)
         {
             if (m_pDetailsWidgetHostNetwork)
                 m_pDetailsWidgetHostNetwork->setVisible(false);
+            if (m_pDetailsWidgetCloudNetwork)
+                m_pDetailsWidgetCloudNetwork->setVisible(false);
             if (m_pDetailsWidgetNATNetwork)
                 m_pDetailsWidgetNATNetwork->setVisible(fVisible);
+            break;
+        }
+        case TabWidgetIndex_CloudNetwork:
+        {
+            if (m_pDetailsWidgetHostNetwork)
+                m_pDetailsWidgetHostNetwork->setVisible(false);
+            if (m_pDetailsWidgetNATNetwork)
+                m_pDetailsWidgetNATNetwork->setVisible(false);
+            if (m_pDetailsWidgetCloudNetwork)
+                m_pDetailsWidgetCloudNetwork->setVisible(fVisible);
             break;
         }
     }
@@ -708,6 +933,8 @@ void UINetworkManagerWidget::sltHandleCurrentTabWidgetIndexChange()
         {
             if (m_pDetailsWidgetNATNetwork)
                 m_pDetailsWidgetNATNetwork->setVisible(false);
+            if (m_pDetailsWidgetCloudNetwork)
+                m_pDetailsWidgetCloudNetwork->setVisible(false);
             if (m_pDetailsWidgetHostNetwork)
                 m_pDetailsWidgetHostNetwork->setVisible(fVisible);
             break;
@@ -716,8 +943,20 @@ void UINetworkManagerWidget::sltHandleCurrentTabWidgetIndexChange()
         {
             if (m_pDetailsWidgetHostNetwork)
                 m_pDetailsWidgetHostNetwork->setVisible(false);
+            if (m_pDetailsWidgetCloudNetwork)
+                m_pDetailsWidgetCloudNetwork->setVisible(false);
             if (m_pDetailsWidgetNATNetwork)
                 m_pDetailsWidgetNATNetwork->setVisible(fVisible);
+            break;
+        }
+        case TabWidgetIndex_CloudNetwork:
+        {
+            if (m_pDetailsWidgetHostNetwork)
+                m_pDetailsWidgetHostNetwork->setVisible(false);
+            if (m_pDetailsWidgetNATNetwork)
+                m_pDetailsWidgetNATNetwork->setVisible(false);
+            if (m_pDetailsWidgetCloudNetwork)
+                m_pDetailsWidgetCloudNetwork->setVisible(fVisible);
             break;
         }
     }
@@ -773,6 +1012,28 @@ void UINetworkManagerWidget::sltAdjustTreeWidgets()
         m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_IPv6, iWidth2);
         m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_DHCP, iWidth3);
         m_pTreeWidgetNATNetwork->setColumnWidth(NATNetworkColumn_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
+    }
+
+    /* Check cloud network tree-widget: */
+    if (m_pTreeWidgetCloudNetwork)
+    {
+        /* Get the tree-widget abstract interface: */
+        QAbstractItemView *pItemView = m_pTreeWidgetCloudNetwork;
+        /* Get the tree-widget header-view: */
+        QHeaderView *pItemHeader = m_pTreeWidgetCloudNetwork->header();
+
+        /* Calculate the total tree-widget width: */
+        const int iTotal = m_pTreeWidgetCloudNetwork->viewport()->width();
+        /* Look for a minimum width hints for non-important columns: */
+        const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(CloudNetworkColumn_Provider), pItemHeader->sectionSizeHint(CloudNetworkColumn_Provider));
+        const int iMinWidth2 = qMax(pItemView->sizeHintForColumn(CloudNetworkColumn_Profile), pItemHeader->sectionSizeHint(CloudNetworkColumn_Profile));
+        /* Propose suitable width hints for non-important columns: */
+        const int iWidth1 = iMinWidth1 < iTotal / CloudNetworkColumn_Max ? iMinWidth1 : iTotal / CloudNetworkColumn_Max;
+        const int iWidth2 = iMinWidth2 < iTotal / CloudNetworkColumn_Max ? iMinWidth2 : iTotal / CloudNetworkColumn_Max;
+        /* Apply the proposal: */
+        m_pTreeWidgetCloudNetwork->setColumnWidth(CloudNetworkColumn_Provider, iWidth1);
+        m_pTreeWidgetCloudNetwork->setColumnWidth(CloudNetworkColumn_Profile, iWidth2);
+        m_pTreeWidgetCloudNetwork->setColumnWidth(CloudNetworkColumn_Name, iTotal - iWidth1 - iWidth2);
     }
 }
 
@@ -1120,6 +1381,118 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
     m_pDetailsWidgetNATNetwork->updateButtonStates();
 }
 
+void UINetworkManagerWidget::sltHandleCurrentItemChangeCloudNetwork()
+{
+    /* Check cloud network tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidgetCloudNetwork, ("Cloud network tree-widget isn't created!\n"));
+
+    /* Get network item: */
+    UIItemCloudNetwork *pItem = static_cast<UIItemCloudNetwork*>(m_pTreeWidgetCloudNetwork->currentItem());
+
+    /* Update actions availability: */
+    m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
+
+    /* Check Cloud network details-widget: */
+    AssertMsgReturnVoid(m_pDetailsWidgetCloudNetwork, ("Cloud network details-widget isn't created!\n"));
+
+    /* If there is an item => update details data: */
+    if (pItem)
+    {
+        QStringList busyNamesForItem = busyNamesCloud();
+        busyNamesForItem.removeAll(pItem->name());
+        m_pDetailsWidgetCloudNetwork->setData(*pItem, busyNamesForItem);
+    }
+    /* Otherwise => clear details: */
+    else
+        m_pDetailsWidgetCloudNetwork->setData(UIDataCloudNetwork());
+}
+
+void UINetworkManagerWidget::sltHandleContextMenuRequestCloudNetwork(const QPoint &position)
+{
+    /* Check cloud network tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidgetCloudNetwork, ("Cloud network tree-widget isn't created!\n"));
+
+    /* Compose temporary context-menu: */
+    QMenu menu;
+    if (m_pTreeWidgetCloudNetwork->itemAt(position))
+    {
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove));
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details));
+    }
+    else
+    {
+        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create));
+//        menu.addAction(m_pActionPool->action(UIActionIndexMN_M_Network_S_Refresh));
+    }
+    /* And show it: */
+    menu.exec(m_pTreeWidgetCloudNetwork->mapToGlobal(position));
+}
+
+void UINetworkManagerWidget::sltApplyDetailsChangesCloudNetwork()
+{
+    /* Check cloud network tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidgetCloudNetwork, ("Cloud network tree-widget isn't created!\n"));
+
+    /* Get Cloud network item: */
+    UIItemCloudNetwork *pItem = static_cast<UIItemCloudNetwork*>(m_pTreeWidgetCloudNetwork->currentItem());
+    AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
+
+    /* Check Cloud network details-widget: */
+    AssertMsgReturnVoid(m_pDetailsWidgetCloudNetwork, ("Cloud network details-widget isn't created!\n"));
+
+    /* Revalidate Cloud network details: */
+    if (m_pDetailsWidgetCloudNetwork->revalidate())
+    {
+        /* Get item data: */
+        UIDataCloudNetwork oldData = *pItem;
+        UIDataCloudNetwork newData = m_pDetailsWidgetCloudNetwork->data();
+
+        /* Get VirtualBox for further activities: */
+        CVirtualBox comVBox = uiCommon().virtualBox();
+
+        /* Find corresponding network: */
+        CCloudNetwork comNetwork = comVBox.FindCloudNetworkByName(oldData.m_strName);
+        CCloudNetwork comNetworkBase = comNetwork;
+
+        /* Show error message if necessary: */
+        if (!comVBox.isOk() || comNetwork.isNull())
+            UINotificationMessage::cannotFindCloudNetwork(comVBox, oldData.m_strName);
+        else
+        {
+            /* Save whether cloud network enabled: */
+            if (comNetwork.isOk() && newData.m_fEnabled != oldData.m_fEnabled)
+                comNetwork.SetEnabled(newData.m_fEnabled);
+            /* Save cloud network name: */
+            if (comNetwork.isOk() && newData.m_strName != oldData.m_strName)
+                comNetwork.SetNetworkName(newData.m_strName);
+            /* Save cloud provider: */
+            if (comNetwork.isOk() && newData.m_strProvider != oldData.m_strProvider)
+                comNetwork.SetProvider(newData.m_strProvider);
+            /* Save cloud profile: */
+            if (comNetwork.isOk() && newData.m_strProfile != oldData.m_strProfile)
+                comNetwork.SetProfile(newData.m_strProfile);
+
+            /* Show error message if necessary: */
+            if (!comNetwork.isOk())
+                UINotificationMessage::cannotChangeCloudNetworkParameter(comNetwork);
+
+            /* Update network in the tree: */
+            UIDataCloudNetwork data;
+            loadCloudNetwork(comNetworkBase, data);
+            updateItemForCloudNetwork(data, true, pItem);
+
+            /* Make sure current item fetched: */
+            sltHandleCurrentItemChangeCloudNetwork();
+
+            /* Adjust tree-widgets: */
+            sltAdjustTreeWidgets();
+        }
+    }
+
+    /* Make sure button states updated: */
+    m_pDetailsWidgetNATNetwork->updateButtonStates();
+}
+
 void UINetworkManagerWidget::prepare()
 {
     /* Prepare self: */
@@ -1138,6 +1511,7 @@ void UINetworkManagerWidget::prepare()
     /* Load networks: */
     loadHostNetworks();
     loadNATNetworks();
+    loadCloudNetworks();
 }
 
 void UINetworkManagerWidget::prepareActions()
@@ -1153,10 +1527,14 @@ void UINetworkManagerWidget::prepareActions()
             this, &UINetworkManagerWidget::sltCreateHostNetwork);
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create), &QAction::triggered,
             this, &UINetworkManagerWidget::sltCreateNATNetwork);
+    connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Create), &QAction::triggered,
+            this, &UINetworkManagerWidget::sltCreateCloudNetwork);
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove), &QAction::triggered,
             this, &UINetworkManagerWidget::sltRemoveHostNetwork);
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove), &QAction::triggered,
             this, &UINetworkManagerWidget::sltRemoveNATNetwork);
+    connect(m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove), &QAction::triggered,
+            this, &UINetworkManagerWidget::sltRemoveCloudNetwork);
     connect(m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::toggled,
             this, &UINetworkManagerWidget::sltToggleDetailsVisibility);
 }
@@ -1185,6 +1563,7 @@ void UINetworkManagerWidget::prepareWidgets()
         /* Prepare details widgets: */
         prepareDetailsWidgetHostNetwork();
         prepareDetailsWidgetNATNetwork();
+        prepareDetailsWidgetCloudNetwork();
     }
 }
 
@@ -1227,6 +1606,7 @@ void UINetworkManagerWidget::prepareTabWidget()
 
         prepareTabHostNetwork();
         prepareTabNATNetwork();
+        prepareTabCloudNetwork();
 
         /* Add into layout: */
         layout()->addWidget(m_pTabWidget);
@@ -1354,6 +1734,68 @@ void UINetworkManagerWidget::prepareDetailsWidgetNATNetwork()
 
         /* Add into layout: */
         layout()->addWidget(m_pDetailsWidgetNATNetwork);
+    }
+}
+
+void UINetworkManagerWidget::prepareTabCloudNetwork()
+{
+    /* Prepare cloud network tab: */
+    m_pTabCloudNetwork = new QWidget(m_pTabWidget);
+    if (m_pTabCloudNetwork)
+    {
+        /* Prepare cloud network layout: */
+        m_pLayoutCloudNetwork = new QVBoxLayout(m_pTabCloudNetwork);
+        if (m_pLayoutCloudNetwork)
+            prepareTreeWidgetCloudNetwork();
+
+        /* Add into tab-widget: */
+        m_pTabWidget->insertTab(TabWidgetIndex_CloudNetwork, m_pTabCloudNetwork, QString());
+    }
+}
+
+void UINetworkManagerWidget::prepareTreeWidgetCloudNetwork()
+{
+    /* Prepare cloud network tree-widget: */
+    m_pTreeWidgetCloudNetwork = new QITreeWidget(m_pTabCloudNetwork);
+    if (m_pTreeWidgetCloudNetwork)
+    {
+        m_pTreeWidgetCloudNetwork->setRootIsDecorated(false);
+        m_pTreeWidgetCloudNetwork->setAlternatingRowColors(true);
+        m_pTreeWidgetCloudNetwork->setContextMenuPolicy(Qt::CustomContextMenu);
+        m_pTreeWidgetCloudNetwork->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_pTreeWidgetCloudNetwork->setColumnCount(CloudNetworkColumn_Max);
+        m_pTreeWidgetCloudNetwork->setSortingEnabled(true);
+        m_pTreeWidgetCloudNetwork->sortByColumn(CloudNetworkColumn_Name, Qt::AscendingOrder);
+        m_pTreeWidgetCloudNetwork->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
+        connect(m_pTreeWidgetCloudNetwork, &QITreeWidget::currentItemChanged,
+                this, &UINetworkManagerWidget::sltHandleCurrentItemChangeCloudNetwork);
+        connect(m_pTreeWidgetCloudNetwork, &QITreeWidget::customContextMenuRequested,
+                this, &UINetworkManagerWidget::sltHandleContextMenuRequestCloudNetwork);
+        connect(m_pTreeWidgetCloudNetwork, &QITreeWidget::itemDoubleClicked,
+                m_pActionPool->action(UIActionIndexMN_M_Network_T_Details), &QAction::setChecked);
+
+        /* Add into layout: */
+        m_pLayoutCloudNetwork->addWidget(m_pTreeWidgetCloudNetwork);
+    }
+}
+
+void UINetworkManagerWidget::prepareDetailsWidgetCloudNetwork()
+{
+    /* Prepare cloud network details-widget: */
+    m_pDetailsWidgetCloudNetwork = new UIDetailsWidgetCloudNetwork(m_enmEmbedding, this);
+    if (m_pDetailsWidgetCloudNetwork)
+    {
+        m_pDetailsWidgetCloudNetwork->setVisible(false);
+        m_pDetailsWidgetCloudNetwork->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        connect(m_pDetailsWidgetCloudNetwork, &UIDetailsWidgetCloudNetwork::sigDataChanged,
+                this, &UINetworkManagerWidget::sigDetailsDataChangedCloudNetwork);
+        connect(m_pDetailsWidgetCloudNetwork, &UIDetailsWidgetCloudNetwork::sigDataChangeRejected,
+                this, &UINetworkManagerWidget::sltHandleCurrentItemChangeCloudNetwork);
+        connect(m_pDetailsWidgetCloudNetwork, &UIDetailsWidgetCloudNetwork::sigDataChangeAccepted,
+                this, &UINetworkManagerWidget::sltApplyDetailsChangesCloudNetwork);
+
+        /* Add into layout: */
+        layout()->addWidget(m_pDetailsWidgetCloudNetwork);
     }
 }
 
@@ -1575,6 +2017,62 @@ void UINetworkManagerWidget::loadNATNetwork(const CNATNetwork &comNetwork, UIDat
         UINotificationMessage::cannotAcquireNATNetworkParameter(comNetwork);
 }
 
+void UINetworkManagerWidget::loadCloudNetworks()
+{
+    /* Check cloud network tree-widget: */
+    if (!m_pTreeWidgetCloudNetwork)
+        return;
+
+    /* Clear tree first of all: */
+    m_pTreeWidgetCloudNetwork->clear();
+
+    /* Get VirtualBox for further activities: */
+    const CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Get interfaces for further activities: */
+    const QVector<CCloudNetwork> networks = comVBox.GetCloudNetworks();
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        UINotificationMessage::cannotAcquireVirtualBoxParameter(comVBox);
+    else
+    {
+        /* For each cloud network => load it to the tree: */
+        foreach (const CCloudNetwork &comNetwork, networks)
+        {
+            UIDataCloudNetwork data;
+            loadCloudNetwork(comNetwork, data);
+            createItemForCloudNetwork(data, false);
+        }
+
+        /* Choose the 1st item as current initially: */
+        m_pTreeWidgetCloudNetwork->setCurrentItem(m_pTreeWidgetCloudNetwork->topLevelItem(0));
+        sltHandleCurrentItemChangeCloudNetwork();
+
+        /* Adjust tree-widgets: */
+        sltAdjustTreeWidgets();
+    }
+}
+
+void UINetworkManagerWidget::loadCloudNetwork(const CCloudNetwork &comNetwork, UIDataCloudNetwork &data)
+{
+    /* Gather network settings: */
+    if (comNetwork.isNotNull())
+        data.m_fExists = true;
+    if (comNetwork.isNotNull())
+        data.m_fEnabled = comNetwork.GetEnabled();
+    if (comNetwork.isOk())
+        data.m_strName = comNetwork.GetNetworkName();
+    if (comNetwork.isOk())
+        data.m_strProvider = comNetwork.GetProvider();
+    if (comNetwork.isOk())
+        data.m_strProfile = comNetwork.GetProfile();
+
+    /* Show error message if necessary: */
+    if (!comNetwork.isOk())
+        UINotificationMessage::cannotAcquireCloudNetworkParameter(comNetwork);
+}
+
 void UINetworkManagerWidget::createItemForHostNetwork(const UIDataHostNetwork &data, bool fChooseItem)
 {
     /* Prepare new item: */
@@ -1638,12 +2136,56 @@ void UINetworkManagerWidget::updateItemForNATNetwork(const UIDataNATNetwork &dat
     }
 }
 
+void UINetworkManagerWidget::createItemForCloudNetwork(const UIDataCloudNetwork &data, bool fChooseItem)
+{
+    /* Create new item: */
+    UIItemCloudNetwork *pItem = new UIItemCloudNetwork;
+    if (pItem)
+    {
+        /* Configure item: */
+        pItem->UIDataCloudNetwork::operator=(data);
+        pItem->updateFields();
+        /* Add item to the tree: */
+        m_pTreeWidgetCloudNetwork->addTopLevelItem(pItem);
+        /* And choose it as current if necessary: */
+        if (fChooseItem)
+            m_pTreeWidgetCloudNetwork->setCurrentItem(pItem);
+    }
+}
+
+void UINetworkManagerWidget::updateItemForCloudNetwork(const UIDataCloudNetwork &data, bool fChooseItem, UIItemCloudNetwork *pItem)
+{
+    /* Update passed item: */
+    if (pItem)
+    {
+        /* Configure item: */
+        pItem->UIDataCloudNetwork::operator=(data);
+        pItem->updateFields();
+        /* And choose it as current if necessary: */
+        if (fChooseItem)
+            m_pTreeWidgetCloudNetwork->setCurrentItem(pItem);
+    }
+}
+
 QStringList UINetworkManagerWidget::busyNamesNAT() const
 {
     QStringList names;
     for (int i = 0; i < m_pTreeWidgetNATNetwork->topLevelItemCount(); ++i)
     {
         UIItemNATNetwork *pItem = qobject_cast<UIItemNATNetwork*>(m_pTreeWidgetNATNetwork->childItem(i));
+        const QString strItemName(pItem->name());
+        if (!strItemName.isEmpty() && !names.contains(strItemName))
+            names << strItemName;
+    }
+    return names;
+}
+
+QStringList UINetworkManagerWidget::busyNamesCloud() const
+{
+    QStringList names;
+    for (int i = 0; i < m_pTreeWidgetCloudNetwork->topLevelItemCount(); ++i)
+    {
+        UIItemCloudNetwork *pItem = qobject_cast<UIItemCloudNetwork*>(m_pTreeWidgetCloudNetwork->childItem(i));
         const QString strItemName(pItem->name());
         if (!strItemName.isEmpty() && !names.contains(strItemName))
             names << strItemName;
@@ -1756,6 +2298,10 @@ void UINetworkManager::configureButtonBox()
     connect(widget(), &UINetworkManagerWidget::sigDetailsDataChangedNATNetwork,
             button(ButtonType_Apply), &QPushButton::setEnabled);
     connect(widget(), &UINetworkManagerWidget::sigDetailsDataChangedNATNetwork,
+            button(ButtonType_Reset), &QPushButton::setEnabled);
+    connect(widget(), &UINetworkManagerWidget::sigDetailsDataChangedCloudNetwork,
+            button(ButtonType_Apply), &QPushButton::setEnabled);
+    connect(widget(), &UINetworkManagerWidget::sigDetailsDataChangedCloudNetwork,
             button(ButtonType_Reset), &QPushButton::setEnabled);
     connect(buttonBox(), &QIDialogButtonBox::clicked,
             this, &UINetworkManager::sltHandleButtonBoxClick);

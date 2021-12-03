@@ -625,6 +625,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/medium/UIMediumManager.h \
 	src/activity/overview/UIVMActivityOverviewWidget.h \
 	src/activity/overview/UIVMActivityToolWidget.h \
+	src/networkmanager/UIDetailsWidgetCloudNetwork.h \
 	src/networkmanager/UIDetailsWidgetHostNetwork.h \
 	src/networkmanager/UIDetailsWidgetNATNetwork.h \
 	src/networkmanager/UINetworkManager.h \
@@ -1129,6 +1130,7 @@ VirtualBox_SOURCES = \
 	src/medium/UIMediumManager.cpp \
 	src/activity/overview/UIVMActivityOverviewWidget.cpp \
 	src/activity/overview/UIVMActivityToolWidget.cpp \
+	src/networkmanager/UIDetailsWidgetCloudNetwork.cpp \
 	src/networkmanager/UIDetailsWidgetHostNetwork.cpp \
 	src/networkmanager/UIDetailsWidgetNATNetwork.cpp \
 	src/networkmanager/UINetworkManager.cpp \

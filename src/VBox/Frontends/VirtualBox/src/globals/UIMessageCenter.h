@@ -355,6 +355,7 @@ public:
 
     /** @name VirtualBox Manager / Network Manager warnings.
       * @{ */
+        bool confirmCloudNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
         bool confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
         bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
     /** @} */

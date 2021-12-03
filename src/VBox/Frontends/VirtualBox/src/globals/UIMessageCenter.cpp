@@ -1306,6 +1306,22 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QW
                            tr("Keep", "hard disk storage"));
 }
 
+bool UIMessageCenter::confirmCloudNetworkRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to remove the cloud network <nobr><b>%1</b>?</nobr></p>"
+                             "<p>If this network is in use by one or more virtual "
+                             "machine network adapters these adapters will no longer be "
+                             "usable until you correct their settings by either choosing "
+                             "a different network name or a different adapter attachment "
+                             "type.</p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove") /* ok button text */,
+                          QString() /* cancel button text */,
+                          false /* ok button by default? */);
+}
+
 bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
 {
     return questionBinary(pParent, MessageType_Question,
