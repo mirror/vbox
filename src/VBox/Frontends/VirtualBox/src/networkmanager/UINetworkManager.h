@@ -59,7 +59,6 @@ signals:
 
     /** Notifies listeners about host network details data @a fDiffers. */
     void sigDetailsDataChangedHostNetwork(bool fDiffers);
-
     /** Notifies listeners about NAT network details data @a fDiffers. */
     void sigDetailsDataChangedNATNetwork(bool fDiffers);
 
@@ -209,7 +208,7 @@ private:
         void updateItemForNATNetwork(const UIDataNATNetwork &data, bool fChooseItem, UIItemNATNetwork *pItem);
 
         /** Returns a list of busy NAT network names. */
-        QStringList busyNames() const;
+        QStringList busyNamesNAT() const;
     /** @} */
 
     /** @name General variables.

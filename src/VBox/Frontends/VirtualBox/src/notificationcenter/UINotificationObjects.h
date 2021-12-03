@@ -440,7 +440,7 @@ public:
           * @param  comVBox  Brings common VBox object trying to create NAT network. */
         static void cannotCreateNATNetwork(const CVirtualBox &comVBox);
         /** Notifies about inability to remove NAT network.
-          * @param  comVBox         Brings common VBox object trying to remove DHCP server.
+          * @param  comVBox         Brings common VBox object trying to remove NAT network.
           * @param  strNetworkName  Brings the network name. */
         static void cannotRemoveNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
 
