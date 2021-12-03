@@ -2830,6 +2830,23 @@ IEM_CIMPL_DEF_1(iemCImpl_leave, IEMMODE, enmEffOpSize)
 IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, IEMINT, enmInt)
 {
     Assert(pVCpu->iem.s.cXcptRecursions == 0);
+
+    /*
+     * We must check if this INT3 might belong to DBGF before raising a #BP.
+     */
+    if (u8Int == 3)
+    {
+        PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+        if (pVM->dbgf.ro.cEnabledInt3Breakpoints == 0)
+        { /* likely: No vbox debugger breakpoints */ }
+        else
+        {
+            VBOXSTRICTRC rcStrict = DBGFTrap03Handler(pVM, pVCpu, CPUMCTX2CORE(&pVCpu->cpum.GstCtx));
+            Log(("iemCImpl_int: DBGFTrap03Handler -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
+            if (rcStrict != VINF_EM_RAW_GUEST_TRAP)
+                return iemSetPassUpStatus(pVCpu, rcStrict);
+        }
+    }
     return iemRaiseXcptOrInt(pVCpu,
                              cbInstr,
                              u8Int,

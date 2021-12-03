@@ -529,7 +529,7 @@ VMM_INT_DECL(int) DBGFTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pRegFrame   Pointer to the register frame for the trap.
  */
-VMM_INT_DECL(int) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame)
+VMM_INT_DECL(VBOXSTRICTRC) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pRegFrame)
 {
 #if defined(IN_RING0)
     uint32_t volatile *paBpLocL1 = pVM->dbgfr0.s.CTX_SUFF(paBpLocL1);
@@ -551,7 +551,6 @@ VMM_INT_DECL(int) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pReg
         const uint32_t u32L1Entry = ASMAtomicReadU32(&paBpLocL1[idxL1]);
 
         LogFlowFunc(("GCPtrBp=%RGv idxL1=%u u32L1Entry=%#x\n", GCPtrBp, idxL1, u32L1Entry));
-        rc = VINF_EM_RAW_GUEST_TRAP;
         if (u32L1Entry != DBGF_BP_INT3_L1_ENTRY_TYPE_NULL)
         {
             uint8_t u8Type = DBGF_BP_INT3_L1_ENTRY_GET_TYPE(u32L1Entry);
@@ -575,7 +574,8 @@ VMM_INT_DECL(int) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pReg
 #else
                         rc = dbgfBpHit(pVM, pVCpu, pRegFrame, hBp, pBp, pBpR0);
 #endif
-                    /* else: Genuine guest trap. */
+                    else
+                        rc = VINF_EM_RAW_GUEST_TRAP; /* Genuine guest trap. */
                 }
                 else /* Invalid breakpoint handle or not an int3 breakpoint. */
                     rc = VERR_DBGF_BP_L1_LOOKUP_FAILED;
@@ -586,7 +586,8 @@ VMM_INT_DECL(int) DBGFTrap03Handler(PVMCC pVM, PVMCPUCC pVCpu, PCPUMCTXCORE pReg
             else /* Some invalid type. */
                 rc = VERR_DBGF_BP_L1_LOOKUP_FAILED;
         }
-        /* else: Genuine guest trap. */
+        else
+            rc = VINF_EM_RAW_GUEST_TRAP; /* Genuine guest trap. */
 
         return rc;
     }

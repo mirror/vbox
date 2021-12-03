@@ -7510,7 +7510,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptBP(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    int rc = DBGFTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
+    VBOXSTRICTRC rc = DBGFTrap03Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         SVMEVENT Event;
