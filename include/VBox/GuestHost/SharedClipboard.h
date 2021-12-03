@@ -136,7 +136,8 @@ typedef SHCLEVENTID    *PSHCLEVENTID;
 /** NIL shared clipboard event ID. */
 #define NIL_SHCLEVENTID                          UINT32_MAX
 
-/** Forward declaration, needed for SHCLEVENT. */
+/** Pointer to a shared clipboard event source.
+ *  Forward declaration, needed for SHCLEVENT. */
 typedef struct SHCLEVENTSOURCE *PSHCLEVENTSOURCE;
 
 /**
@@ -177,8 +178,6 @@ typedef struct SHCLEVENTSOURCE
     /** List of events (PSHCLEVENT). */
     RTLISTANCHOR      lstEvents;
 } SHCLEVENTSOURCE;
-/** Pointer to a shared clipboard event source. */
-typedef SHCLEVENTSOURCE *PSHCLEVENTSOURCE;
 
 /** @name Shared Clipboard data payload functions.
  *  @{
