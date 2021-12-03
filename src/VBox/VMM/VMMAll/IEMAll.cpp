@@ -1767,6 +1767,10 @@ IEM_STATIC void iemOpcodeFetchBytesJmp(PVMCPUCC pVCpu, size_t cbDst, void *pvDst
             int rc = PGMGstGetPage(pVCpu, GCPtrFirst, &Walk);
             if (RT_FAILURE(rc))
             {
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+                /** @todo Nested VMX: Need to handle EPT violation/misconfig here?  */
+                Assert(!(Walk.fFailed & PGM_WALKFAIL_EPT));
+#endif
                 Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrFirst, rc));
                 iemRaisePageFaultJmp(pVCpu, GCPtrFirst, IEM_ACCESS_INSTRUCTION, rc);
             }
@@ -1986,16 +1990,28 @@ IEM_STATIC VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin)
     if (RT_FAILURE(rc))
     {
         Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrNext, rc));
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        if (Walk.fFailed & PGM_WALKFAIL_EPT)
+            IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, IEM_ACCESS_INSTRUCTION, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
+#endif
         return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, rc);
     }
     if (!(Walk.fEffective & X86_PTE_US) && pVCpu->iem.s.uCpl == 3)
     {
         Log(("iemOpcodeFetchMoreBytes: %RGv - supervisor page\n", GCPtrNext));
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        if (Walk.fFailed & PGM_WALKFAIL_EPT)
+            IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, IEM_ACCESS_INSTRUCTION, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
+#endif
         return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
     if ((Walk.fEffective & X86_PTE_PAE_NX) && (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_NXE))
     {
         Log(("iemOpcodeFetchMoreBytes: %RGv - NX\n", GCPtrNext));
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        if (Walk.fFailed & PGM_WALKFAIL_EPT)
+            IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, IEM_ACCESS_INSTRUCTION, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
+#endif
         return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
     RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrNext & PAGE_OFFSET_MASK);
@@ -8167,6 +8183,10 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
         Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - failed to fetch page -> #PF\n", GCPtrMem));
         /** @todo Check unassigned memory in unpaged mode. */
         /** @todo Reserved bits in page tables. Requires new PGM interface. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        if (Walk.fFailed & PGM_WALKFAIL_EPT)
+            IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR, 0 /* cbInstr */);
+#endif
         *pGCPhysMem = NIL_RTGCPHYS;
         return iemRaisePageFault(pVCpu, GCPtrMem, fAccess, rc);
     }
@@ -8184,6 +8204,10 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
         {
             Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+            if (Walk.fFailed & PGM_WALKFAIL_EPT)
+                IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
+#endif
             return iemRaisePageFault(pVCpu, GCPtrMem, fAccess & ~IEM_ACCESS_TYPE_READ, VERR_ACCESS_DENIED);
         }
 
@@ -8194,6 +8218,10 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
         {
             Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - user access to kernel page -> #PF\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+            if (Walk.fFailed & PGM_WALKFAIL_EPT)
+                IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
+#endif
             return iemRaisePageFault(pVCpu, GCPtrMem, fAccess, VERR_ACCESS_DENIED);
         }
 
@@ -8204,6 +8232,10 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
         {
             Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - NX -> #PF\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+            if (Walk.fFailed & PGM_WALKFAIL_EPT)
+                IEM_VMX_VMEXIT_EPT_RET(pVCpu, &Walk, fAccess, IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE, 0 /* cbInstr */);
+#endif
             return iemRaisePageFault(pVCpu, GCPtrMem, fAccess & ~(IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE),
                                      VERR_ACCESS_DENIED);
         }
@@ -8219,6 +8251,8 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
     {
         int rc2 = PGMGstModifyPage(pVCpu, GCPtrMem, 1, fAccessedDirty, ~(uint64_t)fAccessedDirty);
         AssertRC(rc2);
+        /** @todo Nested VMX: Accessed/dirty bit updates might fail and cause EPT
+         *        violations/EPT misconfigs. */
     }
 
     RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrMem & PAGE_OFFSET_MASK);
