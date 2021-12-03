@@ -136,8 +136,8 @@ typedef SHCLEVENTID    *PSHCLEVENTID;
 /** NIL shared clipboard event ID. */
 #define NIL_SHCLEVENTID                          UINT32_MAX
 
-/* Forward declaration, needed for SHCLEVENT. */
-struct SHCLEVENTSOURCE;
+/** Forward declaration, needed for SHCLEVENT. */
+typedef struct SHCLEVENTSOURCE *PSHCLEVENTSOURCE;
 
 /**
  * Shared Clipboard event.
@@ -147,7 +147,7 @@ typedef struct SHCLEVENT
     /** List node. */
     RTLISTNODE          Node;
     /** Parent (source) this event belongs to. */
-    SHCLEVENTSOURCE    *pParent;
+    PSHCLEVENTSOURCE    pParent;
     /** The event's ID, for self-reference. */
     SHCLEVENTID         idEvent;
     /** Reference count to this event. */
