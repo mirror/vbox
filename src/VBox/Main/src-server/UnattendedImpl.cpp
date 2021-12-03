@@ -1244,6 +1244,7 @@ HRESULT Unattended::prepare()
     mStrGuestOsTypeId = strGuestOsTypeId;
     mfGuestOs64Bit    = fIs64Bit;
     mfRtcUseUtc       = RT_BOOL(fRtcUseUtc);
+    menmFirmwareType  = enmFirmware;
 
     /*
      * Do some state checks.
