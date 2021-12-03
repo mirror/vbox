@@ -1699,7 +1699,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             }
             else
             {
-                LogRel(("    Host path '%ls', map name '%ls', %s, automount=%s, automntpnt=%s, create_symlinks=%s, missing=%s\n",
+                LogRel(("    Host path '%ls', map name '%ls', %s, automount=%s, automntpnt=%ls, create_symlinks=%s, missing=%s\n",
                         pHostPath->String.utf16, pMapName->String.utf16,
                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_WRITABLE) ? "writable" : "read-only",
                         RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_AUTOMOUNT) ? "true" : "false",
