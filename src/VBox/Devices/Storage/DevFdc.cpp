@@ -2413,6 +2413,7 @@ static DECLCALLBACK(void) fdcInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
         pHlp->pfnPrintf(pHlp, "Curr cmd: %02X (%s)\n",
                         pThis->cur_cmd,
                         handlers[command_to_handler[pThis->cur_cmd]].name);
+    if (pThis->prev_cmd)
         pHlp->pfnPrintf(pHlp, "Prev cmd: %02X (%s)\n",
                         pThis->prev_cmd,
                         handlers[command_to_handler[pThis->prev_cmd]].name);
