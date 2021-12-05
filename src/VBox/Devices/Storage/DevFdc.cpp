@@ -683,6 +683,9 @@ struct fdctrl_t {
     uint8_t data_state;
     uint8_t data_dir;
     uint8_t eot; /* last wanted sector */
+    /* Debugging only */
+    uint8_t cur_cmd;
+    uint8_t prev_cmd;
     /* States kept only to be returned back */
     /* Timers state */
     uint8_t timer0;
@@ -1067,6 +1070,8 @@ static void fdctrl_reset_fifo(fdctrl_t *fdctrl)
     fdctrl->data_dir = FD_DIR_WRITE;
     fdctrl->data_pos = 0;
     fdctrl->msr &= ~(FD_MSR_CMDBUSY | FD_MSR_DIO);
+    fdctrl->prev_cmd = fdctrl->cur_cmd;
+    fdctrl->cur_cmd = 0;
 }
 
 /* Set FIFO status for the host to read */
@@ -2188,6 +2193,7 @@ static void fdctrl_write_data(fdctrl_t *fdctrl, uint32_t value)
         FLOPPY_DPRINTF("%s command\n", handlers[pos].name);
         fdctrl->data_len = handlers[pos].parameters + 1;
         fdctrl->msr |= FD_MSR_CMDBUSY;
+        fdctrl->cur_cmd = value & 0xff;
     }
 
     FLOPPY_DPRINTF("%s: %02x\n", __FUNCTION__, value);
@@ -2364,6 +2370,66 @@ static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort2Read(PPDMDEVINS pDevIns, void *pvUse
         return VINF_SUCCESS;
     }
     return VERR_IOM_IOPORT_UNUSED;
+}
+
+
+/* -=-=-=-=-=-=-=-=- Debugger callback -=-=-=-=-=-=-=-=- */
+
+/**
+ * FDC debugger info callback.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pHlp        The output helpers.
+ * @param   pszArgs     The arguments.
+ */
+static DECLCALLBACK(void) fdcInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    fdctrl_t    *pThis = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
+    unsigned    i;
+    bool        fVerbose = false;
+
+    /* Parse arguments. */
+    if (pszArgs)
+        fVerbose = strstr(pszArgs, "verbose") != NULL;
+
+    /* Show basic information. */
+    pHlp->pfnPrintf(pHlp, "%s#%d: ",
+                    pDevIns->pReg->szName,
+                    pDevIns->iInstance);
+    pHlp->pfnPrintf(pHlp, "I/O=%X IRQ=%u DMA=%u ",
+                    pThis->io_base,
+                    pThis->irq_lvl,
+                    pThis->dma_chann);
+    pHlp->pfnPrintf(pHlp, "RC=%RTbool R0=%RTbool\n", pDevIns->fRCEnabled, pDevIns->fR0Enabled);
+
+    /* Print register contents. */
+    pHlp->pfnPrintf(pHlp, "Registers: MSR=%02X DSR=%02X DOR=%02X\n",
+                    pThis->msr, pThis->dsr, pThis->dor);
+    pHlp->pfnPrintf(pHlp, "           DIR=%02X\n",
+                    fdctrl_read_dir(pThis));
+
+    /* Print the current command, if any. */
+    if (pThis->cur_cmd)
+        pHlp->pfnPrintf(pHlp, "Curr cmd: %02X (%s)\n",
+                        pThis->cur_cmd,
+                        handlers[command_to_handler[pThis->cur_cmd]].name);
+        pHlp->pfnPrintf(pHlp, "Prev cmd: %02X (%s)\n",
+                        pThis->prev_cmd,
+                        handlers[command_to_handler[pThis->prev_cmd]].name);
+
+
+    for (i = 0; i < pThis->num_floppies; ++i)
+    {
+        fdrive_t  *drv = &pThis->drives[i];
+        pHlp->pfnPrintf(pHlp, "  Drive %u state:\n", i);
+        pHlp->pfnPrintf(pHlp, "    Medium : %u tracks, %u sectors\n",
+                        drv->max_track,
+                        drv->last_sect);
+        pHlp->pfnPrintf(pHlp, "    Current: track %u, head %u, sector %u\n",
+                        drv->track,
+                        drv->head,
+                        drv->sect);
+    }
 }
 
 
@@ -3001,6 +3067,11 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      */
     rc = PDMDevHlpSSMRegister(pDevIns, FDC_SAVESTATE_CURRENT, sizeof(*pThis), fdcSaveExec, fdcLoadExec);
     AssertRCReturn(rc, rc);
+
+    /*
+     * Register the debugger info callback.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "fdc", "FDC info", fdcInfo);
 
     /*
      * Attach the status port (optional).
