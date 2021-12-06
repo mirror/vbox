@@ -2020,7 +2020,6 @@ RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/serialport-posix.cpp \
 	r3/posix/localipc-posix.cpp \
-	r3/posix/ldrNative-posix.cpp \
 	r3/generic/allocex-r3-generic.cpp \
 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
