@@ -91,8 +91,6 @@ public:
     ~UIFileManager();
     QMenu *menu() const;
 
-    void setDialogBeingClosed(bool fFlag);
-
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
     QIToolBar *toolbar() const { return m_pToolBar; }

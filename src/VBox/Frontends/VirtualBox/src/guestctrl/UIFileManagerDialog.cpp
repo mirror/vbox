@@ -69,9 +69,6 @@ UIFileManagerDialog::UIFileManagerDialog(QWidget *pCenterWidget,
 
 UIFileManagerDialog::~UIFileManagerDialog()
 {
-    UIFileManager *pWidget = qobject_cast<UIFileManager*>(widget());
-    if (pWidget)
-        pWidget->setDialogBeingClosed(true);
 }
 
 void UIFileManagerDialog::retranslateUi()

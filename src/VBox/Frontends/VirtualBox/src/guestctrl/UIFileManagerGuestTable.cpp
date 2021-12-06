@@ -150,7 +150,6 @@ void UIGuestDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStri
     sigResultUpdated(statistics);
 }
 
-#include <QPushButton>
 UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, const CMachine &comMachine, QWidget *pParent /*= 0*/)
     :UIFileManagerTable(pActionPool, pParent)
     , m_comMachine(comMachine)
@@ -756,8 +755,8 @@ void UIFileManagerGuestTable::prepareGuestSessionPanel()
             sltHandleGuestSessionPanelShown();
             connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCreateSession,
                     this, &UIFileManagerGuestTable::sltCreateGuestSession);
-            // connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCloseSession,
-            //         this, &UIFileManagerGuestTable::sltCloseGuestSession);
+            connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigCloseSession,
+                    this, &UIFileManagerGuestTable::sltHandleCloseSessionRequest);
             connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigHidePanel,
                     this, &UIFileManagerGuestTable::sltHandleGuestSessionPanelHidden);
             connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigShowPanel,
@@ -905,6 +904,12 @@ void UIFileManagerGuestTable::cleanupGuestListener()
     cleanupListener(m_pQtGuestListener, m_comGuestListener, m_comGuest.GetEventSource());
 }
 
+void UIFileManagerGuestTable::cleanupSessionListener()
+{
+    disconnect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
+            this, &UIFileManagerGuestTable::sltGuestSessionStateChanged);
+    cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuest.GetEventSource());
+}
 
 void UIFileManagerGuestTable::postGuestSessionCreated()
 {
@@ -1013,6 +1018,22 @@ void UIFileManagerGuestTable::sltCreateGuestSession(QString strUserName, QString
     if (m_pGuestSessionPanel)
         m_pGuestSessionPanel->markForError(!openSession(strUserName, strPassword));
 }
+
+bool UIFileManagerGuestTable::isGuestSessionPossible()
+{
+    if (m_comMachine.isNull())
+        return false;
+    if (m_comMachine.GetState() != KMachineState_Running)
+        return false;
+    if (!checkGuestSession())
+        return false;
+    return true;
+}
+
+void UIFileManagerGuestTable::sltHandleCloseSessionRequest()
+{
+}
+
 
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/

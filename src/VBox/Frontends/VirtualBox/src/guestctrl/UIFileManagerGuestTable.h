@@ -89,11 +89,11 @@ private slots:
     void sltGuestSessionPanelToggled(bool fChecked);
     void sltHandleGuestSessionPanelHidden();
     void sltHandleGuestSessionPanelShown();
-
     void sltGuestSessionUnregistered(CGuestSession guestSession);
     void sltGuestSessionRegistered(CGuestSession guestSession);
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
     void sltCreateGuestSession(QString strUserName, QString strPassword);
+    void sltHandleCloseSessionRequest();
 
 private:
 
@@ -113,6 +113,7 @@ private:
                          CEventListener &comEventListener,
                          CEventSource comEventSource);
     void cleanupGuestListener();
+    void cleanupSessionListener();
 
     void prepareGuestSessionPanel();
     /** Creates a shared machine session, opens a guest session and registers event listeners. */
@@ -126,6 +127,9 @@ private:
     /** @} */
 
     void initFileTable();
+    /** Returns false if it is not possible to open a guest session on the machine.
+      * That is if machine is not running, or does not have guest additions etc. */
+    bool isGuestSessionPossible();
 
     CGuest                    m_comGuest;
     CGuestSession             m_comGuestSession;
