@@ -154,6 +154,7 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
     :UIFileManagerTable(pActionPool, pParent)
     , m_comMachine(comMachine)
     , m_pGuestSessionPanel(0)
+    , m_pSessionWidgetToggleToolBar(0)
 {
     if (!m_comMachine.isNull())
         m_strTableName = m_comMachine.GetName();
@@ -643,8 +644,6 @@ void UIFileManagerGuestTable::prepareToolbar()
 {
     if (m_pToolBar && m_pActionPool)
     {
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession));
-        m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoUp));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoHome));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Refresh));
@@ -672,8 +671,19 @@ void UIFileManagerGuestTable::prepareToolbar()
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Cut)->setVisible(false);
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Paste)->setVisible(false);
     }
+
     setSelectionDependentActionsEnabled(false);
     setPasteActionEnabled(false);
+
+    m_pSessionWidgetToggleToolBar = new QIToolBar;
+    if (m_pSessionWidgetToggleToolBar && toolBarLayout())
+    {
+        m_pSessionWidgetToggleToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession));
+        QWidget *pSpaceWidget = new QWidget;
+        pSpaceWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+        toolBarLayout()->addWidget(pSpaceWidget);
+        toolBarLayout()->addWidget(m_pSessionWidgetToggleToolBar);
+    }
 }
 
 void UIFileManagerGuestTable::createFileViewContextMenu(const QWidget *pWidget, const QPoint &point)

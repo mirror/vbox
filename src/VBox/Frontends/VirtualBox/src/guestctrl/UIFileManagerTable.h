@@ -235,6 +235,7 @@ protected:
     void             setSelectionDependentActionsEnabled(bool fIsEnabled);
     UICustomFileSystemItem*   rootItem();
     void             setPathSeparator(const QChar &separator);
+    QHBoxLayout*     toolBarLayout();
 
     QILabel                 *m_pLocationLabel;
     UIPropertiesDialog      *m_pPropertiesDialog;
@@ -302,6 +303,7 @@ private:
     QColor           m_searchLineMarkColor;
     QILabel         *m_pWarningLabel;
     QChar            m_pathSeparator;
+    QHBoxLayout     *m_pToolBarLayout;
     friend class     UICustomFileSystemModel;
 };
 

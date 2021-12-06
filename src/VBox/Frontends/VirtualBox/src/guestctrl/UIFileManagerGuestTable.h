@@ -141,6 +141,9 @@ private:
     CEventListener m_comSessionListener;
     CEventListener m_comGuestListener;
     UIFileManagerGuestSessionPanel     *m_pGuestSessionPanel;
+    /** Hosts only a single action. We seperate this action since others
+      * are contained in the main toolbar which is dynamically disabled/enabled. */
+    QIToolBar               *m_pSessionWidgetToggleToolBar;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerGuestTable_h */

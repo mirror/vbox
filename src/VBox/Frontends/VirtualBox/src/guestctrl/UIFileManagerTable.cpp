@@ -710,6 +710,7 @@ UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pPare
     , m_pNavigationWidget(0)
     , m_pWarningLabel(0)
     , m_pathSeparator('/')
+    , m_pToolBarLayout(0)
 {
     prepareObjects();
 }
@@ -736,9 +737,18 @@ void UIFileManagerTable::prepareObjects()
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
     setLayout(m_pMainLayout);
 
-    m_pToolBar = new QIToolBar;
-    if (m_pToolBar)
-        m_pMainLayout->addWidget(m_pToolBar, 0, 0, 1, 7);
+    m_pToolBarLayout = new QHBoxLayout;
+    if (m_pToolBarLayout)
+    {
+        m_pToolBarLayout->setSpacing(0);
+        m_pToolBarLayout->setContentsMargins(0, 0, 0, 0);
+
+        m_pToolBar = new QIToolBar;
+        if (m_pToolBar)
+            m_pToolBarLayout->addWidget(m_pToolBar);
+
+        m_pMainLayout->addLayout(m_pToolBarLayout, 0, 0, 1, 7);
+    }
 
     m_pLocationLabel = new QILabel;
     if (m_pLocationLabel)
@@ -1443,6 +1453,11 @@ void UIFileManagerTable::setPathSeparator(const QChar &separator)
     m_pathSeparator = separator;
     if (m_pNavigationWidget)
         m_pNavigationWidget->setPathSeparator(m_pathSeparator);
+}
+
+QHBoxLayout* UIFileManagerTable::toolBarLayout()
+{
+    return m_pToolBarLayout;
 }
 
 bool UIFileManagerTable::event(QEvent *pEvent)
