@@ -210,6 +210,8 @@ protected:
     virtual void     determineDriveLetters() = 0;
     virtual void     determinePathSeparator() = 0;
     virtual void     prepareToolbar() = 0;
+    /** Returns true if file system can be shown. */
+    virtual bool     isSessionPossible() = 0;
     virtual void     createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) = 0;
     virtual bool     event(QEvent *pEvent) /* override */;
 
@@ -236,6 +238,7 @@ protected:
     UICustomFileSystemItem*   rootItem();
     void             setPathSeparator(const QChar &separator);
     QHBoxLayout*     toolBarLayout();
+    virtual void     setSessionDependentWidgetsEnabled(bool fEnabled);
 
     QILabel                 *m_pLocationLabel;
     UIPropertiesDialog      *m_pPropertiesDialog;
@@ -253,6 +256,7 @@ protected:
     QStringList              m_copyCutBuffer;
     /** This name is appended to the log messages which are shown in the log panel. */
     QString          m_strTableName;
+    QILabel         *m_pWarningLabel;
 
 private slots:
 
@@ -301,7 +305,6 @@ private:
     QILineEdit      *m_pSearchLineEdit;
     QColor           m_searchLineUnmarkColor;
     QColor           m_searchLineMarkColor;
-    QILabel         *m_pWarningLabel;
     QChar            m_pathSeparator;
     QHBoxLayout     *m_pToolBarLayout;
     friend class     UICustomFileSystemModel;

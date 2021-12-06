@@ -45,19 +45,20 @@ protected:
      *  tree under the @p parent. */
     static void scanDirectory(const QString& strPath, UICustomFileSystemItem *parent,
                               QMap<QString, UICustomFileSystemItem*> &fileObjects);
-    void            retranslateUi() /* override */;
-    virtual void    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) /* override */;
-    virtual void    deleteByItem(UICustomFileSystemItem *item) /* override */;
-    virtual void    deleteByPath(const QStringList &pathList) /* override */;
-    virtual void    goToHomeDirectory() /* override */;
+    void            retranslateUi() override final;
+    virtual void    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) override final;
+    virtual void    deleteByItem(UICustomFileSystemItem *item) override final;
+    virtual void    deleteByPath(const QStringList &pathList) override final;
+    virtual void    goToHomeDirectory() override final;
     virtual bool    renameItem(UICustomFileSystemItem *item, QString newBaseName);
     virtual bool    createDirectory(const QString &path, const QString &directoryName);
-    virtual QString fsObjectPropertyString() /* override */;
-    virtual void    showProperties() /* override */;
-    virtual void    determineDriveLetters() /* override */;
-    virtual void    determinePathSeparator() /* override */;
-    virtual void    prepareToolbar() /* override */;
-    virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) /* override */;
+    virtual QString fsObjectPropertyString() override final;
+    virtual void    showProperties() override final;
+    virtual void    determineDriveLetters() override final;
+    virtual void    determinePathSeparator() override final;
+    virtual void    prepareToolbar() override final;
+    virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) override final;
+    virtual bool     isSessionPossible() override final;
     /** @name Copy/Cut host-to-host stuff. Currently not implemented.
      * @{ */
         /** Disable/enable paste action depending on the m_eFileOperationType. */

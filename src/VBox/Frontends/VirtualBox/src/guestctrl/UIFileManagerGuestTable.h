@@ -64,25 +64,29 @@ public:
 
 protected:
 
-    void            retranslateUi() /* override */;
-    virtual void    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) /* override */;
-    virtual void    deleteByItem(UICustomFileSystemItem *item) /* override */;
-    virtual void    deleteByPath(const QStringList &pathList) /* override */;
-    virtual void    goToHomeDirectory() /* override */;
+    void            retranslateUi() override final;
+    virtual void    readDirectory(const QString& strPath, UICustomFileSystemItem *parent, bool isStartDir = false) override final;
+    virtual void    deleteByItem(UICustomFileSystemItem *item) override final;
+    virtual void    deleteByPath(const QStringList &pathList) override final;
+    virtual void    goToHomeDirectory() override final;
     virtual bool    renameItem(UICustomFileSystemItem *item, QString newBaseName);
     virtual bool    createDirectory(const QString &path, const QString &directoryName);
-    virtual QString fsObjectPropertyString() /* override */;
-    virtual void    showProperties() /* override */;
-    virtual void    determineDriveLetters() /* override */;
-    virtual void    determinePathSeparator() /* override */;
-    virtual void    prepareToolbar() /* override */;
-    virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) /* override */;
+    virtual QString fsObjectPropertyString() override final;
+    virtual void    showProperties() override final;
+    virtual void    determineDriveLetters() override final;
+    virtual void    determinePathSeparator() override final;
+    virtual void    prepareToolbar() override final;
+    virtual void    createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) override final;
     /** @name Copy/Cut guest-to-guest stuff.
      * @{ */
         /** Disable/enable paste action depending on the m_eFileOperationType. */
-        virtual void  setPasteActionEnabled(bool fEnabled) /* override */;
-        virtual void  pasteCutCopiedObjects() /* override */;
+        virtual void  setPasteActionEnabled(bool fEnabled) override final;
+        virtual void  pasteCutCopiedObjects() override final;
     /** @} */
+    /** Returns false if it is not possible to open a guest session on the machine.
+      * That is if machine is not running etc. */
+    virtual bool isSessionPossible() override final;
+    virtual void  setSessionDependentWidgetsEnabled(bool fEnabled) override final;
 
 private slots:
 
@@ -94,8 +98,17 @@ private slots:
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
     void sltCreateGuestSession(QString strUserName, QString strPassword);
     void sltHandleCloseSessionRequest();
+    void sltMachineStateChange(const QUuid &uMachineId, const KMachineState state);
 
 private:
+
+    enum CheckMachine
+    {
+        CheckMachine_InvalidMachineReference,
+        CheckMachine_MachineNotRunning,
+        CheckMachine_NoGuestAdditions,
+        CheckMachine_SessionPossible
+    };
 
     KFsObjType  fileType(const CFsObjInfo &fsInfo);
     KFsObjType  fileType(const CGuestFsObjInfo &fsInfo);
@@ -118,7 +131,8 @@ private:
     void prepareGuestSessionPanel();
     /** Creates a shared machine session, opens a guest session and registers event listeners. */
     bool openSession(const QString& strUserName, const QString& strPassword);
-    bool isGuestAdditionsAvailable(const CGuest &guest);
+    bool isGuestAdditionsAvailable(CGuest &guest);
+    bool isGuestAdditionsAvailable();
 
     /** @name Perform operations needed after creating/ending a guest control session
       * @{ */
@@ -127,9 +141,7 @@ private:
     /** @} */
 
     void initFileTable();
-    /** Returns false if it is not possible to open a guest session on the machine.
-      * That is if machine is not running, or does not have guest additions etc. */
-    bool isGuestSessionPossible();
+
 
     CGuest                    m_comGuest;
     CGuestSession             m_comGuestSession;
@@ -141,9 +153,7 @@ private:
     CEventListener m_comSessionListener;
     CEventListener m_comGuestListener;
     UIFileManagerGuestSessionPanel     *m_pGuestSessionPanel;
-    /** Hosts only a single action. We seperate this action since others
-      * are contained in the main toolbar which is dynamically disabled/enabled. */
-    QIToolBar               *m_pSessionWidgetToggleToolBar;
+    CheckMachine m_enmCheckMachine;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerGuestTable_h */

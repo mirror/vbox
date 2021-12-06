@@ -704,11 +704,11 @@ UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pPare
     , m_pActionPool(pActionPool)
     , m_pToolBar(0)
     , m_pMainLayout(0)
+    , m_pWarningLabel(0)
     , m_pModel(0)
     , m_pView(0)
     , m_pProxyModel(0)
     , m_pNavigationWidget(0)
-    , m_pWarningLabel(0)
     , m_pathSeparator('/')
     , m_pToolBarLayout(0)
 {
@@ -819,8 +819,8 @@ void UIFileManagerTable::prepareObjects()
         m_pWarningLabel->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
         m_pWarningLabel->setWordWrap(true);
     }
-    m_pWarningLabel->setVisible(!isEnabled());
-    m_pView->setVisible(isEnabled());
+    m_pWarningLabel->setVisible(false);
+    // m_pView->setVisible(isSessionPossible());
 
     m_pSearchLineEdit = new QILineEdit;
     if (m_pSearchLineEdit)
@@ -1307,9 +1307,6 @@ void UIFileManagerTable::retranslateUi()
         pRootItem->setData(UIFileManager::tr("Owner"), UICustomFileSystemModelColumn_Owner);
         pRootItem->setData(UIFileManager::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
     }
-    if (m_pWarningLabel)
-        m_pWarningLabel->setText(UIFileManager::tr("<p>No Guest Session found! Please use the Session Panel to start a new guest session</p>"));
-    m_strTableName = UIFileManager::tr("Host");
 }
 
 bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
@@ -1613,6 +1610,20 @@ void UIFileManagerTable::markUnmarkSearchLineEdit(bool fMark)
     else
         palette.setColor(QPalette::Base, m_searchLineUnmarkColor);
     m_pSearchLineEdit->setPalette(palette);
+}
+
+void UIFileManagerTable::setSessionDependentWidgetsEnabled(bool fEnabled)
+{
+    if (m_pWarningLabel)
+        m_pWarningLabel->setVisible(!fEnabled);
+    if (m_pView)
+        m_pView->setEnabled(fEnabled);
+    if (m_pNavigationWidget)
+        m_pNavigationWidget->setEnabled(fEnabled);
+    if (m_pLocationLabel)
+        m_pLocationLabel->setEnabled(fEnabled);
+    if (m_pToolBar)
+        m_pToolBar->setEnabled(fEnabled);
 }
 
 #include "UIFileManagerTable.moc"

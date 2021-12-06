@@ -172,6 +172,7 @@ void UIFileManagerHostTable::retranslateUi()
 {
     if (m_pLocationLabel)
         m_pLocationLabel->setText(UIFileManager::tr("Host File System:"));
+    m_strTableName = UIFileManager::tr("Host");
     UIFileManagerTable::retranslateUi();
 }
 
@@ -529,6 +530,11 @@ void UIFileManagerHostTable::prepareActionConnections()
             this, &UIFileManagerTable::sltShowProperties);
     connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory), &QAction::triggered,
             this, &UIFileManagerTable::sltCreateNewDirectory);
+}
+
+bool UIFileManagerHostTable::isSessionPossible()
+{
+    return true;
 }
 
 #include "UIFileManagerHostTable.moc"

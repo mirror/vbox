@@ -33,6 +33,7 @@
 #include "UIFileManagerGuestSessionPanel.h"
 #include "UIMessageCenter.h"
 #include "UIPathOperations.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "QIToolBar.h"
 
 /* COM includes: */
@@ -154,13 +155,18 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
     :UIFileManagerTable(pActionPool, pParent)
     , m_comMachine(comMachine)
     , m_pGuestSessionPanel(0)
-    , m_pSessionWidgetToggleToolBar(0)
 {
     if (!m_comMachine.isNull())
         m_strTableName = m_comMachine.GetName();
     prepareToolbar();
     prepareGuestSessionPanel();
     prepareActionConnections();
+    setSessionDependentWidgetsEnabled(isSessionPossible());
+
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UIFileManagerGuestTable::sltMachineStateChange);
+    if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
+        m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession)->setChecked(true);
     retranslateUi();
 }
 
@@ -177,6 +183,28 @@ void UIFileManagerGuestTable::retranslateUi()
 {
     if (m_pLocationLabel)
         m_pLocationLabel->setText(UIFileManager::tr("Guest File System:"));
+
+    if (m_pWarningLabel)
+    {
+        QString strWarningText;
+        switch (m_enmCheckMachine)
+        {
+            case CheckMachine_InvalidMachineReference:
+                strWarningText = UIFileManager::tr("Machine reference is invalid.");
+                break;
+            case CheckMachine_MachineNotRunning:
+                strWarningText = UIFileManager::tr("Guest system is not running. File manager work only on running guests.");
+                break;
+            case CheckMachine_NoGuestAdditions:
+                strWarningText = UIFileManager::tr("No guest additions is found on the guest system. File manager needs guest additions to function correctly.");
+                break;
+            case CheckMachine_SessionPossible:
+            default:
+                break;
+        }
+        m_pWarningLabel->setText(QString("<p>%1</p>").arg(strWarningText));
+    }
+
     UIFileManagerTable::retranslateUi();
 }
 
@@ -670,20 +698,13 @@ void UIFileManagerGuestTable::prepareToolbar()
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Copy)->setVisible(false);
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Cut)->setVisible(false);
         m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Paste)->setVisible(false);
+
+        m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession));
     }
 
     setSelectionDependentActionsEnabled(false);
     setPasteActionEnabled(false);
-
-    m_pSessionWidgetToggleToolBar = new QIToolBar;
-    if (m_pSessionWidgetToggleToolBar && toolBarLayout())
-    {
-        m_pSessionWidgetToggleToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession));
-        QWidget *pSpaceWidget = new QWidget;
-        pSpaceWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-        toolBarLayout()->addWidget(pSpaceWidget);
-        toolBarLayout()->addWidget(m_pSessionWidgetToggleToolBar);
-    }
 }
 
 void UIFileManagerGuestTable::createFileViewContextMenu(const QWidget *pWidget, const QPoint &point)
@@ -834,6 +855,14 @@ void UIFileManagerGuestTable::sltHandleGuestSessionPanelShown()
         m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession)->setChecked(true);
 }
 
+void UIFileManagerGuestTable::sltMachineStateChange(const QUuid &uMachineId, const KMachineState )
+{
+    if (uMachineId.isNull() || m_comMachine.isNull() || uMachineId != m_comMachine.GetId())
+        return;
+    setSessionDependentWidgetsEnabled(isSessionPossible());
+    retranslateUi();
+}
+
 bool UIFileManagerGuestTable::openSession(const QString &strUserName, const QString &strPassword)
 {
     if (m_comMachine.isNull())
@@ -896,12 +925,28 @@ bool UIFileManagerGuestTable::openSession(const QString &strUserName, const QStr
     return true;
 }
 
-bool UIFileManagerGuestTable::isGuestAdditionsAvailable(const CGuest &guest)
+bool UIFileManagerGuestTable::isGuestAdditionsAvailable(CGuest &guest)
 {
-    if (!guest.isOk())
+    if (guest.isNull())
         return false;
-    CGuest guestNonConst = const_cast<CGuest&>(guest);
-    return guestNonConst.GetAdditionsStatus(guestNonConst.GetAdditionsRunLevel());
+
+    return guest.GetAdditionsStatus(guest.GetAdditionsRunLevel());
+}
+
+bool UIFileManagerGuestTable::isGuestAdditionsAvailable()
+{
+    if (m_comMachine.isNull())
+        return false;
+    CSession comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
+    if (comSession.isNull())
+        return false;
+    CConsole comConsole = comSession.GetConsole();
+    if (comConsole.isNull())
+        return false;
+    CGuest comGuest = comConsole.GetGuest();
+    if (comGuest.isNull())
+        return false;
+    return comGuest.GetAdditionsStatus(comGuest.GetAdditionsRunLevel());
 }
 
 
@@ -1029,14 +1074,24 @@ void UIFileManagerGuestTable::sltCreateGuestSession(QString strUserName, QString
         m_pGuestSessionPanel->markForError(!openSession(strUserName, strPassword));
 }
 
-bool UIFileManagerGuestTable::isGuestSessionPossible()
+bool UIFileManagerGuestTable::isSessionPossible()
 {
     if (m_comMachine.isNull())
+    {
+        m_enmCheckMachine = CheckMachine_InvalidMachineReference;
         return false;
+    }
     if (m_comMachine.GetState() != KMachineState_Running)
+    {
+        m_enmCheckMachine = CheckMachine_MachineNotRunning;
         return false;
-    if (!checkGuestSession())
+    }
+    if (!isGuestAdditionsAvailable())
+    {
+        m_enmCheckMachine = CheckMachine_NoGuestAdditions;
         return false;
+    }
+    m_enmCheckMachine = CheckMachine_SessionPossible;
     return true;
 }
 
@@ -1044,6 +1099,12 @@ void UIFileManagerGuestTable::sltHandleCloseSessionRequest()
 {
 }
 
+void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled(bool pEnabled)
+{
+    UIFileManagerTable::setSessionDependentWidgetsEnabled(pEnabled);
+    if (m_pGuestSessionPanel)
+        m_pGuestSessionPanel->setEnabled(pEnabled);
+}
 
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
