@@ -57,7 +57,7 @@ int vboxVdmaCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAINFO *pInfo
 int vboxVdmaDisable (PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo)
 {
     RT_NOREF(pDevExt);
-    Assert(pInfo->fEnabled);
+
     if (!pInfo->fEnabled)
         return VINF_ALREADY_INITIALIZED;
 
