@@ -807,7 +807,9 @@ static char *rtProcPosixProfileEnvUnquoteAndUnescapeString(char *pszString, bool
  */
 static int rtProcPosixProfileEnvHarvest(RTENV hEnvToUse, char *pszEnvDump, bool fWithMarkers)
 {
-    LogFunc(("**** pszEnvDump start ****\n%s**** pszEnvDump end ****\n", pszEnvDump));
+    LogRel3(("**** pszEnvDump start ****\n%s**** pszEnvDump end ****\n", pszEnvDump));
+    if (!LogIs3Enabled())
+        LogFunc(("**** pszEnvDump start ****\n%s**** pszEnvDump end ****\n", pszEnvDump));
 
     /*
      * Clip dump at markers if we're using them (C shell).
@@ -1407,7 +1409,7 @@ static int rtProcPosixConvertArgv(const char * const *papszArgs, RTENV hEnvToUse
         { /* likely */ }
         else
         {
-            Log(("Failed to convert argument #%u '%s' to '%s': %Rrc\n", i, papszArgs[i], pszEncoding, rc));
+            LogRelMax(100, ("Failed to convert argument #%u '%s' to '%s': %Rrc\n", i, papszArgs[i], pszEncoding, rc));
             while (i-- > 0)
                 RTStrFree(papszArgsConverted[i]);
             RTMemFree(papszArgsConverted);
