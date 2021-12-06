@@ -239,6 +239,7 @@ int ShClEventSourceGenerateAndRegisterEvent(PSHCLEVENTSOURCE pSource, PSHCLEVENT
 
                     LogFlowFunc(("uSource=%RU16: New event: %#x\n", pSource->uID, idEvent));
 
+                    ShClEventRetain(pEvent);
                     *ppEvent = pEvent;
 
                     return VINF_SUCCESS;
