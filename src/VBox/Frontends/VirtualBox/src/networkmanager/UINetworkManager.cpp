@@ -780,9 +780,6 @@ void UINetworkManagerWidget::sltCreateCloudNetwork()
     UIDataCloudNetwork oldData;
     oldData.m_fEnabled = true;
     oldData.m_strName = strNetworkName;
-    oldData.m_strProvider = QString();
-    oldData.m_strProfile = QString();
-    oldData.m_strId = QString();
 
     /* Get VirtualBox for further activities: */
     CVirtualBox comVBox = uiCommon().virtualBox();
@@ -802,15 +799,6 @@ void UINetworkManagerWidget::sltCreateCloudNetwork()
         /* Save cloud network name: */
         if (comNetwork.isOk())
             comNetwork.SetNetworkName(oldData.m_strName);
-        /* Save cloud provider: */
-        if (comNetwork.isOk())
-            comNetwork.SetProvider(oldData.m_strProvider);
-        /* Save cloud profile: */
-        if (comNetwork.isOk())
-            comNetwork.SetProfile(oldData.m_strProfile);
-        /* Save cloud network id: */
-        if (comNetwork.isOk())
-            comNetwork.SetNetworkId(oldData.m_strId);
 
         /* Show error message if necessary: */
         if (!comNetwork.isOk())
