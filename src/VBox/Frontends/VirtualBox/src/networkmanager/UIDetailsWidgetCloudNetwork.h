@@ -53,6 +53,7 @@ struct UIDataCloudNetwork
         , m_strName(QString())
         , m_strProvider(QString())
         , m_strProfile(QString())
+        , m_strId(QString())
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -64,6 +65,7 @@ struct UIDataCloudNetwork
                && (m_strName == other.m_strName)
                && (m_strProvider == other.m_strProvider)
                && (m_strProfile == other.m_strProfile)
+               && (m_strId == other.m_strId)
                ;
     }
 
@@ -82,6 +84,8 @@ struct UIDataCloudNetwork
     QString  m_strProvider;
     /** Holds cloud profile name. */
     QString  m_strProfile;
+    /** Holds network id. */
+    QString  m_strId;
 };
 
 
@@ -138,6 +142,8 @@ private slots:
         void sltCloudProviderNameChanged(int iIndex);
         /** Handles cloud profile name index change. */
         void sltCloudProfileNameChanged(int iIndex);
+        /** Handles network id text change. */
+        void sltNetworkIdChanged(const QString &strText);
 
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
@@ -188,6 +194,10 @@ private:
         QLabel     *m_pLabelProfileName;
         /** Holds the cloud profile name combo instance. */
         QIComboBox *m_pComboProfileName;
+        /** Holds the network id label instance. */
+        QLabel     *m_pLabelNetworkId;
+        /** Holds the network id editor instance. */
+        QLineEdit  *m_pEditorNetworkId;
 
         /** Holds the 'Options' button-box instance. */
         QIDialogButtonBox *m_pButtonBoxOptions;

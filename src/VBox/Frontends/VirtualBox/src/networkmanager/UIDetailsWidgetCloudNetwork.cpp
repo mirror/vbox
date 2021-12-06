@@ -48,6 +48,8 @@ UIDetailsWidgetCloudNetwork::UIDetailsWidgetCloudNetwork(EmbedTo enmEmbedding, Q
     , m_pComboProviderName(0)
     , m_pLabelProfileName(0)
     , m_pComboProfileName(0)
+    , m_pLabelNetworkId(0)
+    , m_pEditorNetworkId(0)
     , m_pButtonBoxOptions(0)
 {
     prepare();
@@ -125,6 +127,10 @@ void UIDetailsWidgetCloudNetwork::retranslateUi()
         m_pLabelProfileName->setText(tr("P&rofile:"));
     if (m_pComboProfileName)
         m_pComboProfileName->setToolTip(tr("Holds the cloud profile for this network."));
+    if (m_pLabelNetworkId)
+        m_pLabelNetworkId->setText(tr("&Id:"));
+    if (m_pEditorNetworkId)
+        m_pEditorNetworkId->setToolTip(tr("Holds the id for this network."));
     if (m_pButtonBoxOptions)
     {
         m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
@@ -166,6 +172,12 @@ void UIDetailsWidgetCloudNetwork::sltCloudProfileNameChanged(int iIndex)
     m_newData.m_strProfile = m_pComboProfileName->itemData(iIndex).toString();
 
     /* Update button states finally: */
+    updateButtonStates();
+}
+
+void UIDetailsWidgetCloudNetwork::sltNetworkIdChanged(const QString &strText)
+{
+    m_newData.m_strId = strText;
     updateButtonStates();
 }
 
@@ -271,6 +283,25 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
                         this, &UIDetailsWidgetCloudNetwork::sltCloudProfileNameChanged);
 
                 pLayoutOptions->addWidget(m_pComboProfileName, 2, 1);
+            }
+
+            /* Prepare network id label: */
+            m_pLabelNetworkId = new QLabel(this);
+            if (m_pLabelNetworkId)
+            {
+                m_pLabelNetworkId->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                pLayoutOptions->addWidget(m_pLabelNetworkId, 3, 0);
+            }
+            /* Prepare network id editor: */
+            m_pEditorNetworkId = new QLineEdit(this);
+            if (m_pEditorNetworkId)
+            {
+                if (m_pLabelNetworkId)
+                    m_pLabelNetworkId->setBuddy(m_pEditorNetworkId);
+                connect(m_pEditorNetworkId, &QLineEdit::textEdited,
+                        this, &UIDetailsWidgetCloudNetwork::sltNetworkIdChanged);
+
+                pLayoutOptions->addWidget(m_pEditorNetworkId, 3, 1);
             }
 
             pLayoutMain->addLayout(pLayoutOptions);
@@ -415,6 +446,8 @@ void UIDetailsWidgetCloudNetwork::loadData()
     m_pComboProviderName->setEnabled(fIsNetworkExists);
     m_pLabelProfileName->setEnabled(fIsNetworkExists);
     m_pComboProfileName->setEnabled(fIsNetworkExists);
+    m_pLabelNetworkId->setEnabled(fIsNetworkExists);
+    m_pEditorNetworkId->setEnabled(fIsNetworkExists);
 
     /* Load fields: */
     m_pEditorNetworkName->setText(m_newData.m_strName);
@@ -422,4 +455,5 @@ void UIDetailsWidgetCloudNetwork::loadData()
     m_pComboProviderName->setCurrentIndex(iProviderIndex == -1 ? 0 : iProviderIndex);
     const int iProfileIndex = m_pComboProfileName->findData(m_newData.m_strProfile);
     m_pComboProfileName->setCurrentIndex(iProfileIndex == -1 ? 0 : iProfileIndex);
+    m_pEditorNetworkId->setText(m_newData.m_strId);
 }
