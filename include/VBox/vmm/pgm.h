@@ -597,7 +597,6 @@ VMMDECL(int)            PGMShwMakePageNotPresent(PVMCPUCC pVCpu, RTGCPTR GCPtr, 
 #define PGM_MK_PG_IS_MMIO2           RT_BIT(1)
 /** @}*/
 VMMDECL(int)        PGMGstGetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk);
-VMMDECL(int)        PGMGstSetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
 VMMDECL(int)        PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 VMM_INT_DECL(bool)  PGMGstArePaePdpesValid(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes);
 VMM_INT_DECL(int)   PGMGstMapPaePdpes(PVMCPUCC pVCpu, PCX86PDPE paPaePdpes);

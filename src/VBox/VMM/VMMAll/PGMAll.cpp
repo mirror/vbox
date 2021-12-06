@@ -2037,22 +2037,6 @@ int pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALK
 
 
 /**
- * Sets (replaces) the page flags for a range of pages in the guest's tables.
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   GCPtr       The address of the first page.
- * @param   cb          The size of the range in bytes.
- * @param   fFlags      Page flags X86_PTE_*, excluding the page mask of course.
- */
-VMMDECL(int)  PGMGstSetPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags)
-{
-    VMCPU_ASSERT_EMT(pVCpu);
-    return PGMGstModifyPage(pVCpu, GCPtr, cb, fFlags, 0);
-}
-
-
-/**
  * Modify page flags for a range of pages in the guest's tables
  *
  * The existing flags are ANDed with the fMask and ORed with the fFlags.
