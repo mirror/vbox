@@ -89,9 +89,6 @@
 # define IPRT_USE_PAM
 #endif
 #ifdef IPRT_USE_PAM
-# ifdef RT_OS_DARWIN
-#  include <mach-o/dyld.h>
-# endif
 # include <security/pam_appl.h>
 # include <stdlib.h>
 # include <dlfcn.h>
@@ -126,7 +123,7 @@
 #include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
-#ifdef IPRT_WITH_DYNAMIC_CRYPT_R
+#if defined(IPRT_WITH_DYNAMIC_CRYPT_R) || defined(IPRT_USE_PAM)
 # include <iprt/ldr.h>
 #endif
 #include <iprt/log.h>
@@ -1551,7 +1548,8 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                const char *pszPassword, void *pvExtraData, PRTPROCESS phProcess)
 {
     int rc;
-    LogFlow(("RTProcCreateEx: pszExec=%s pszAsUser=%s\n", pszExec, pszAsUser));
+    LogFlow(("RTProcCreateEx: pszExec=%s pszAsUser=%s fFlags=%#x phStdIn=%p phStdOut=%p phStdErr=%p\n",
+             pszExec, pszAsUser, fFlags, phStdIn, phStdOut, phStdErr));
 
     /*
      * Input validation
@@ -1612,6 +1610,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     for (int i = 0; i < 3; i++)
         if (aStdFds[i] == i)
             aStdFds[i] = -1;
+    LogFlowFunc(("aStdFds={%d, %d, %d}\n", aStdFds[0], aStdFds[1], aStdFds[2]));
 
     for (int i = 0; i < 3; i++)
         AssertMsgReturn(aStdFds[i] < 0 || aStdFds[i] > i,
