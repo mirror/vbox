@@ -69,8 +69,8 @@ protected:
     virtual void    deleteByItem(UICustomFileSystemItem *item) override final;
     virtual void    deleteByPath(const QStringList &pathList) override final;
     virtual void    goToHomeDirectory() override final;
-    virtual bool    renameItem(UICustomFileSystemItem *item, QString newBaseName);
-    virtual bool    createDirectory(const QString &path, const QString &directoryName);
+    virtual bool    renameItem(UICustomFileSystemItem *item, QString newBaseName) override final;
+    virtual bool    createDirectory(const QString &path, const QString &directoryName) override final;
     virtual QString fsObjectPropertyString() override final;
     virtual void    showProperties() override final;
     virtual void    determineDriveLetters() override final;
