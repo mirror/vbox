@@ -8251,8 +8251,8 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
     {
         int rc2 = PGMGstModifyPage(pVCpu, GCPtrMem, 1, fAccessedDirty, ~(uint64_t)fAccessedDirty);
         AssertRC(rc2);
-        /** @todo Nested VMX: Accessed/dirty bit updates might fail and cause EPT
-         *        violations/EPT misconfigs. */
+        /** @todo Nested VMX: Accessed/dirty bit currently not supported, asserted below. */
+        Assert(!(CPUMGetGuestIa32VmxEptVpidCap(pVCpu) & VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY_MASK));
     }
 
     RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrMem & PAGE_OFFSET_MASK);
