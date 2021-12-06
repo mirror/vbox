@@ -622,7 +622,8 @@ $(VBOX_PATH_SI_SCRATCH)/dist-copy.ts: \
 	$(if-expr defined(VBOX_WITH_PYTHON) \
 	,$(SED) -e "s@^#!.*@#!/usr/bin/python2.7@" \
 		--output $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/vboxshell.py \
-		$(PATH_STAGE_BIN)/vboxshell.py,)
+		$(PATH_STAGE_BIN)/vboxshell.py
+	$(CHMOD) 0755 $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/vboxshell.py,)
 
 # VirtualBox: Arch specific files.
 	$(if-expr defined(VBOX_WITH_QTGUI) \
