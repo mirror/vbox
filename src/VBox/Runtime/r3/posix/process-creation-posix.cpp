@@ -91,9 +91,6 @@
 #ifdef IPRT_USE_PAM
 # ifdef RT_OS_DARWIN
 #  include <mach-o/dyld.h>
-#  define IPRT_LIBPAM_FILE      "libpam.dylib"
-# else
-#  define IPRT_LIBPAM_FILE      "libpam.so"
 # endif
 # include <security/pam_appl.h>
 # include <stdlib.h>
@@ -141,6 +138,41 @@
 #include "internal/process.h"
 #include "internal/path.h"
 #include "internal/string.h"
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#ifdef IPRT_USE_PAM
+/*
+ * The PAM library names and version ranges to try.
+ */
+# ifdef RT_OS_DARWIN
+#  include <mach-o/dyld.h>
+/** @node libpam.2.dylib was introduced with 10.6.x (OpenPAM); we use
+ *        libpam.dylib as that's a symlink to the latest and greatest. */
+#  define IPRT_LIBPAM_FILE_1            "libpam.dylib"
+#  define IPRT_LIBPAM_FILE_1_FIRST_VER 0
+#  define IPRT_LIBPAM_FILE_1_END_VER   0
+#  define IPRT_LIBPAM_FILE_2            "libpam.2.dylib"
+#  define IPRT_LIBPAM_FILE_2_FIRST_VER 0
+#  define IPRT_LIBPAM_FILE_2_END_VER   0
+#  define IPRT_LIBPAM_FILE_3            "libpam.1.dylib"
+#  define IPRT_LIBPAM_FILE_3_FIRST_VER 0
+#  define IPRT_LIBPAM_FILE_3_END_VER   0
+# elif RT_OS_LINUX
+#  define IPRT_LIBPAM_FILE_1           "libpam.so.0"
+#  define IPRT_LIBPAM_FILE_1_FIRST_VER 0
+#  define IPRT_LIBPAM_FILE_1_END_VER   0
+#  define IPRT_LIBPAM_FILE_2           "libpam.so"
+#  define IPRT_LIBPAM_FILE_2_FIRST_VER 16
+#  define IPRT_LIBPAM_FILE_2_END_VER   1
+# else
+#  define IPRT_LIBPAM_FILE_1           "libpam.so"
+#  define IPRT_LIBPAM_FILE_1_MIN_VER   16
+#  define IPRT_LIBPAM_FILE_1_MAX_VER   0
+# endif
+#endif
 
 
 /*********************************************************************************************************************************
@@ -245,103 +277,145 @@ static int rtProcPosixAuthenticateUsingPam(const char *pszPamService, const char
         *pfMayFallBack = true;
 
     /*
-     * Use PAM for the authentication.
-     * Note! libpam.2.dylib was introduced with 10.6.x (OpenPAM).
+     * Dynamically load pam the first time we go thru here.
      */
-    void *hModPam = dlopen(IPRT_LIBPAM_FILE, RTLD_LAZY | RTLD_GLOBAL);
-    if (hModPam)
+    static int     (*s_pfnPamStart)(const char *, const char *, struct pam_conv *, pam_handle_t **);
+    static int     (*s_pfnPamAuthenticate)(pam_handle_t *, int);
+    static int     (*s_pfnPamAcctMgmt)(pam_handle_t *, int);
+    static int     (*s_pfnPamSetItem)(pam_handle_t *, int, const void *);
+    static int     (*s_pfnPamSetCred)(pam_handle_t *, int);
+    static char ** (*s_pfnPamGetEnvList)(pam_handle_t *);
+    static int     (*s_pfnPamOpenSession)(pam_handle_t *, int);
+    static int     (*s_pfnPamCloseSession)(pam_handle_t *, int);
+    static int     (*s_pfnPamEnd)(pam_handle_t *, int);
+    if (   s_pfnPamStart == NULL
+        || s_pfnPamAuthenticate == NULL
+        || s_pfnPamAcctMgmt == NULL
+        || s_pfnPamSetItem == NULL
+        || s_pfnPamEnd == NULL)
     {
-        int     (*pfnPamStart)(const char *, const char *, struct pam_conv *, pam_handle_t **);
-        int     (*pfnPamAuthenticate)(pam_handle_t *, int);
-        int     (*pfnPamAcctMgmt)(pam_handle_t *, int);
-        int     (*pfnPamSetItem)(pam_handle_t *, int, const void *);
-        int     (*pfnPamSetCred)(pam_handle_t *, int);
-        char ** (*pfnPamGetEnvList)(pam_handle_t *);
-        int     (*pfnPamOpenSession)(pam_handle_t *, int);
-        int     (*pfnPamCloseSession)(pam_handle_t *, int);
-        int     (*pfnPamEnd)(pam_handle_t *, int);
-        *(void **)&pfnPamStart        = dlsym(hModPam, "pam_start");
-        *(void **)&pfnPamAuthenticate = dlsym(hModPam, "pam_authenticate");
-        *(void **)&pfnPamAcctMgmt     = dlsym(hModPam, "pam_acct_mgmt");
-        *(void **)&pfnPamSetItem      = dlsym(hModPam, "pam_set_item");
-        *(void **)&pfnPamSetCred      = dlsym(hModPam, "pam_setcred");
-        *(void **)&pfnPamGetEnvList   = dlsym(hModPam, "pam_getenvlist");
-        *(void **)&pfnPamOpenSession  = dlsym(hModPam, "pam_open_session");
-        *(void **)&pfnPamCloseSession = dlsym(hModPam, "pam_close_session");
-        *(void **)&pfnPamEnd          = dlsym(hModPam, "pam_end");
-        ASMCompilerBarrier();
-        if (   pfnPamStart
-            && pfnPamAuthenticate
-            && pfnPamAcctMgmt
-            && pfnPamSetItem
-            && pfnPamEnd)
+        RTLDRMOD hModPam = NIL_RTLDRMOD;
+        const char *pszLast;
+        int rc = RTLdrLoadSystemEx(pszLast = IPRT_LIBPAM_FILE_1, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD
+                                   | RTLDRLOAD_FLAGS_SO_VER_RANGE(IPRT_LIBPAM_FILE_1_FIRST_VER, IPRT_LIBPAM_FILE_1_END_VER),
+                                   &hModPam);
+# ifdef IPRT_LIBPAM_FILE_2
+        if (RT_FAILURE(rc))
+            rc = RTLdrLoadSystemEx(pszLast = IPRT_LIBPAM_FILE_2, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD
+                                   | RTLDRLOAD_FLAGS_SO_VER_RANGE(IPRT_LIBPAM_FILE_2_FIRST_VER, IPRT_LIBPAM_FILE_2_END_VER),
+                                   &hModPam);
+# endif
+# ifdef IPRT_LIBPAM_FILE_3
+        if (RT_FAILURE(rc))
+            rc = RTLdrLoadSystemEx(pszLast = IPRT_LIBPAM_FILE_3, RTLDRLOAD_FLAGS_GLOBAL | RTLDRLOAD_FLAGS_NO_UNLOAD
+                                   | RTLDRLOAD_FLAGS_SO_VER_RANGE(IPRT_LIBPAM_FILE_3_FIRST_VER, IPRT_LIBPAM_FILE_3_END_VER),
+                                   &hModPam);
+# endif
+        if (RT_FAILURE(rc))
         {
-# define pam_start           pfnPamStart
-# define pam_authenticate    pfnPamAuthenticate
-# define pam_acct_mgmt       pfnPamAcctMgmt
-# define pam_set_item        pfnPamSetItem
-# define pam_setcred         pfnPamSetCred
-# define pam_getenvlist      pfnPamGetEnvList
-# define pam_open_session    pfnPamOpenSession
-# define pam_close_session   pfnPamCloseSession
-# define pam_end             pfnPamEnd
+            LogRelMax(10, ("failed to load %s: %Rrc\n", pszLast, rc));
+            return VERR_AUTHENTICATION_FAILURE;
+        }
 
-            /* Do the PAM stuff. */
-            pam_handle_t   *hPam        = NULL;
-            RTPROCPAMARGS   PamConvArgs = { pszUser, pszPassword };
-            struct pam_conv PamConversation;
-            RT_ZERO(PamConversation);
-            PamConversation.appdata_ptr = &PamConvArgs;
-            PamConversation.conv        = rtPamConv;
-            int rc = pam_start(pszPamService, pszUser, &PamConversation, &hPam);
+        *(PFNRT *)&s_pfnPamStart        = RTLdrGetFunction(hModPam, "pam_start");
+        *(PFNRT *)&s_pfnPamAuthenticate = RTLdrGetFunction(hModPam, "pam_authenticate");
+        *(PFNRT *)&s_pfnPamAcctMgmt     = RTLdrGetFunction(hModPam, "pam_acct_mgmt");
+        *(PFNRT *)&s_pfnPamSetItem      = RTLdrGetFunction(hModPam, "pam_set_item");
+        *(PFNRT *)&s_pfnPamSetCred      = RTLdrGetFunction(hModPam, "pam_setcred");
+        *(PFNRT *)&s_pfnPamGetEnvList   = RTLdrGetFunction(hModPam, "pam_getenvlist");
+        *(PFNRT *)&s_pfnPamOpenSession  = RTLdrGetFunction(hModPam, "pam_open_session");
+        *(PFNRT *)&s_pfnPamCloseSession = RTLdrGetFunction(hModPam, "pam_close_session");
+        *(PFNRT *)&s_pfnPamEnd          = RTLdrGetFunction(hModPam, "pam_end");
+
+        RTLdrClose(hModPam);
+
+        ASMCompilerBarrier();
+        if (   s_pfnPamStart == NULL
+            || s_pfnPamAuthenticate == NULL
+            || s_pfnPamAcctMgmt == NULL
+            || s_pfnPamSetItem == NULL
+            || s_pfnPamEnd == NULL)
+        {
+            LogRelMax(10, ("failed to resolve symbols: %p %p %p %p %p\n",
+                           s_pfnPamStart, s_pfnPamAuthenticate, s_pfnPamAcctMgmt, s_pfnPamSetItem, s_pfnPamEnd));
+            return VERR_AUTHENTICATION_FAILURE;
+        }
+    }
+
+# define pam_start           s_pfnPamStart
+# define pam_authenticate    s_pfnPamAuthenticate
+# define pam_acct_mgmt       s_pfnPamAcctMgmt
+# define pam_set_item        s_pfnPamSetItem
+# define pam_setcred         s_pfnPamSetCred
+# define pam_getenvlist      s_pfnPamGetEnvList
+# define pam_open_session    s_pfnPamOpenSession
+# define pam_close_session   s_pfnPamCloseSession
+# define pam_end             s_pfnPamEnd
+
+    /*
+     * Do the PAM stuff.
+     */
+    pam_handle_t   *hPam        = NULL;
+    RTPROCPAMARGS   PamConvArgs = { pszUser, pszPassword };
+    struct pam_conv PamConversation;
+    RT_ZERO(PamConversation);
+    PamConversation.appdata_ptr = &PamConvArgs;
+    PamConversation.conv        = rtPamConv;
+    int rc = pam_start(pszPamService, pszUser, &PamConversation, &hPam);
+    if (rc == PAM_SUCCESS)
+    {
+        rc = pam_set_item(hPam, PAM_RUSER, pszUser);
+        if (rc == PAM_SUCCESS)
+        {
+            if (pfMayFallBack)
+                *pfMayFallBack = false;
+            rc = pam_authenticate(hPam, 0);
             if (rc == PAM_SUCCESS)
             {
-                rc = pam_set_item(hPam, PAM_RUSER, pszUser);
-                if (rc == PAM_SUCCESS)
+                rc = pam_acct_mgmt(hPam, 0);
+                if (   rc == PAM_SUCCESS
+                    || rc == PAM_AUTHINFO_UNAVAIL /*??*/)
                 {
-                    if (pfMayFallBack)
-                        *pfMayFallBack = false;
-                    rc = pam_authenticate(hPam, 0);
-                    if (rc == PAM_SUCCESS)
+                    if (   ppapszEnv
+                        && s_pfnPamGetEnvList
+                        && s_pfnPamSetCred)
                     {
-                        rc = pam_acct_mgmt(hPam, 0);
-                        if (   rc == PAM_SUCCESS
-                            || rc == PAM_AUTHINFO_UNAVAIL /*??*/)
-                        {
-                            if (   ppapszEnv
-                                && pfnPamGetEnvList
-                                && pfnPamSetCred)
-                            {
-                                /* pam_env.so creates the environment when pam_setcred is called. */
-                                rc = pam_setcred(hPam, PAM_ESTABLISH_CRED | PAM_SILENT);
-                                /** @todo check pam_setcred status code. */
-                                *ppapszEnv = pam_getenvlist(hPam);
-                                pam_setcred(hPam, PAM_DELETE_CRED);
-                            }
+                        /* pam_env.so creates the environment when pam_setcred is called,. */
+                        int rcSetCred = pam_setcred(hPam, PAM_ESTABLISH_CRED | PAM_SILENT);
+                        /** @todo check pam_setcred status code? */
 
-                            pam_end(hPam, PAM_SUCCESS);
-                            dlclose(hModPam);
-                            return VINF_SUCCESS;
-                        }
-                        LogFunc(("pam_acct_mgmt -> %d\n", rc));
+                        /* Unless it does it during session opening (Ubuntu 21.10).  This
+                           unfortunately means we might mount user dir and other crap: */
+                        /** @todo do session handling properly   */
+                        int rcOpenSession = PAM_ABORT;
+                        if (   s_pfnPamOpenSession
+                            && s_pfnPamCloseSession)
+                            rcOpenSession = pam_open_session(hPam, PAM_SILENT);
+
+                        *ppapszEnv = pam_getenvlist(hPam);
+                        LogFlowFunc(("pam_getenvlist -> %p ([0]=%p); rcSetCred=%d rcOpenSession=%d\n",
+                                     *ppapszEnv, *ppapszEnv ? **ppapszEnv : NULL, rcSetCred, rcOpenSession)); RT_NOREF(rcSetCred);
+
+                        if (rcOpenSession == PAM_SUCCESS)
+                            pam_close_session(hPam, PAM_SILENT);
+                        pam_setcred(hPam, PAM_DELETE_CRED);
                     }
-                    else
-                        LogFunc(("pam_authenticate -> %d\n", rc));
+
+                    pam_end(hPam, PAM_SUCCESS);
+                    LogFlowFunc(("pam auth (for %s) successful\n", pszPamService));
+                    return VINF_SUCCESS;
                 }
-                else
-                    LogFunc(("pam_set_item/PAM_RUSER -> %d\n", rc));
-                pam_end(hPam, rc);
+                LogFunc(("pam_acct_mgmt -> %d\n", rc));
             }
             else
-                LogFunc(("pam_start -> %d\n", rc));
+                LogFunc(("pam_authenticate -> %d\n", rc));
         }
         else
-            LogFunc(("failed to resolve symbols: %p %p %p %p %p\n",
-                     pfnPamStart, pfnPamAuthenticate, pfnPamAcctMgmt, pfnPamSetItem, pfnPamEnd));
-        dlclose(hModPam);
+            LogFunc(("pam_set_item/PAM_RUSER -> %d\n", rc));
+        pam_end(hPam, rc);
     }
     else
-        LogFunc(("Loading " IPRT_LIBPAM_FILE " failed\n"));
+        LogFunc(("pam_start(%s) -> %d\n", pszPamService, rc));
     return VERR_AUTHENTICATION_FAILURE;
 }
 
@@ -1375,7 +1449,7 @@ static int rtProcPosixConvertArgv(const char * const *papszArgs, RTENV hEnvToUse
             RT_NOREF_PV(pszVar);
         }
         else
-            pszEncoding = "C";
+            pszEncoding = "ASCII";
     }
 
     /*
