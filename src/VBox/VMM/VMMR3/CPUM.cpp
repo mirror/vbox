@@ -1489,7 +1489,8 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         uint8_t const  f2MPage           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PDE_2M);
         uint8_t const  f1GPage           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_PDPTE_1G);
         uint8_t const  fInvept           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVEPT);
-        uint8_t const  fAccessDirty      = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY);
+        /** @todo Nested VMX: Support accessed/dirty bits, see @bugref{10092#c25}. */
+        /* uint8_t const  fAccessDirty      = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY); */
         uint8_t const  fEptSingle        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX);
         uint8_t const  fEptAll           = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVEPT_ALL_CTX);
         uint8_t const  fVpidIndiv        = RT_BF_GET(uHostMsr, VMX_BF_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
@@ -1503,9 +1504,9 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PDE_2M,                            f2MPage)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_PDPTE_1G,                          f1GPage)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVEPT,                            fInvept)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY,                      fAccessDirty)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT_VIOLATION,         0)
-                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_SUPER_SHW_STACK,                   0)
+                                    //| RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY,                      0)
+                                    //| RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_ADVEXITINFO_EPT_VIOLATION,         0)
+                                    //| RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_SUPER_SHW_STACK,                   0)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX,                 fEptSingle)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVEPT_ALL_CTX,                    fEptAll)
                                       | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID,                           fVpid)
