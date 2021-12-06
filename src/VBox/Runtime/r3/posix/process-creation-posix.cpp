@@ -314,19 +314,19 @@ static int rtProcPosixAuthenticateUsingPam(const char *pszPamService, const char
             return VERR_AUTHENTICATION_FAILURE;
         }
 
-        *(PFNRT *)&s_pfnPamStart        = RTLdrGetFunction(hModPam, "pam_start");
-        *(PFNRT *)&s_pfnPamAuthenticate = RTLdrGetFunction(hModPam, "pam_authenticate");
-        *(PFNRT *)&s_pfnPamAcctMgmt     = RTLdrGetFunction(hModPam, "pam_acct_mgmt");
-        *(PFNRT *)&s_pfnPamSetItem      = RTLdrGetFunction(hModPam, "pam_set_item");
-        *(PFNRT *)&s_pfnPamSetCred      = RTLdrGetFunction(hModPam, "pam_setcred");
-        *(PFNRT *)&s_pfnPamGetEnvList   = RTLdrGetFunction(hModPam, "pam_getenvlist");
-        *(PFNRT *)&s_pfnPamOpenSession  = RTLdrGetFunction(hModPam, "pam_open_session");
-        *(PFNRT *)&s_pfnPamCloseSession = RTLdrGetFunction(hModPam, "pam_close_session");
-        *(PFNRT *)&s_pfnPamEnd          = RTLdrGetFunction(hModPam, "pam_end");
+        *(uintptr_t *)&s_pfnPamStart        = (uintptr_t)RTLdrGetFunction(hModPam, "pam_start");
+        *(uintptr_t *)&s_pfnPamAuthenticate = (uintptr_t)RTLdrGetFunction(hModPam, "pam_authenticate");
+        *(uintptr_t *)&s_pfnPamAcctMgmt     = (uintptr_t)RTLdrGetFunction(hModPam, "pam_acct_mgmt");
+        *(uintptr_t *)&s_pfnPamSetItem      = (uintptr_t)RTLdrGetFunction(hModPam, "pam_set_item");
+        *(uintptr_t *)&s_pfnPamSetCred      = (uintptr_t)RTLdrGetFunction(hModPam, "pam_setcred");
+        *(uintptr_t *)&s_pfnPamGetEnvList   = (uintptr_t)RTLdrGetFunction(hModPam, "pam_getenvlist");
+        *(uintptr_t *)&s_pfnPamOpenSession  = (uintptr_t)RTLdrGetFunction(hModPam, "pam_open_session");
+        *(uintptr_t *)&s_pfnPamCloseSession = (uintptr_t)RTLdrGetFunction(hModPam, "pam_close_session");
+        *(uintptr_t *)&s_pfnPamEnd          = (uintptr_t)RTLdrGetFunction(hModPam, "pam_end");
+        ASMCompilerBarrier();
 
         RTLdrClose(hModPam);
 
-        ASMCompilerBarrier();
         if (   s_pfnPamStart == NULL
             || s_pfnPamAuthenticate == NULL
             || s_pfnPamAcctMgmt == NULL
@@ -2109,7 +2109,7 @@ static int rtProcPosixCreateInner(const char *pszNativeExec, const char * const 
                 RTAssertMsg2Weak("Cannot execute this binary format!\n");
             }
             else
-                RTAssertMsg2Weak("execve returns %d errno=%d\n", rc, errno);
+                RTAssertMsg2Weak("execve returns %d errno=%d (%s)\n", rc, errno, pszNativeExec);
             RTAssertReleasePanic();
             if (fFlags & RTPROC_FLAGS_DETACHED)
                 _Exit(127);
