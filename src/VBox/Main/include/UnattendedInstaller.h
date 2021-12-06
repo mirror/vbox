@@ -405,7 +405,7 @@ public:
                               "win_nt6_unattended.xml", "win_postinstall.cmd",
                               "autounattend.xml",       "VBOXPOST.CMD")
     {
-        Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded() != isAuxiliaryIsoNeeded()); Assert(isAuxiliaryIsoIsVISO()); Assert(!bootFromAuxiliaryIso());
+        Assert(isOriginalIsoNeeded()); Assert(isAuxiliaryFloppyNeeded() || isAuxiliaryIsoNeeded()); Assert(isAuxiliaryIsoIsVISO()); Assert(!bootFromAuxiliaryIso());
         if (isAuxiliaryFloppyNeeded())
             mStrAuxiliaryInstallDir = "A:\\";
         else if (bootFromAuxiliaryIso())
@@ -416,7 +416,7 @@ public:
     ~UnattendedWindowsXmlInstaller()      {}
 
     bool isAuxiliaryFloppyNeeded() const    { return !mpParent->i_isFirmwareEFI(); }
-    bool isAuxiliaryIsoNeeded() const       { return mpParent->i_isFirmwareEFI(); }
+    bool isAuxiliaryIsoNeeded() const       { return UnattendedInstaller::isAuxiliaryIsoNeeded() || mpParent->i_isFirmwareEFI(); }
     bool isAuxiliaryIsoIsVISO() const       { return true; }
     bool bootFromAuxiliaryIso() const       { return false; }
 };
