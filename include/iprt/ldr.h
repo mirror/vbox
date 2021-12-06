@@ -295,10 +295,10 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
 #define RTLDRLOAD_FLAGS_NO_SUFFIX               RT_BIT_32(3)
 /** Shift for the first .so.MAJOR version number to try.
  * Only applicable to RTLdrLoadSystemEx() and RTLdrGetSystemSymbolEx(). */
-#define RTLDRLOAD_FLAGS_SO_VER_BEGIN_SHIFT        12
+#define RTLDRLOAD_FLAGS_SO_VER_BEGIN_SHIFT      12
 /** Mask for the first .so.MAJOR version number to try.
  * Only applicable to RTLdrLoadSystemEx() and RTLdrGetSystemSymbolEx(). */
-#define RTLDRLOAD_FLAGS_SO_VER_BEGIN_MASK         UINT32_C(0x003ff000)
+#define RTLDRLOAD_FLAGS_SO_VER_BEGIN_MASK       UINT32_C(0x003ff000)
 /** Shift for the end .so.MAJOR version number (exclusive).
  * Only applicable to RTLdrLoadSystemEx() and RTLdrGetSystemSymbolEx(). */
 #define RTLDRLOAD_FLAGS_SO_VER_END_SHIFT        22
