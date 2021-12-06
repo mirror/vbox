@@ -119,10 +119,7 @@ void UIDetailsWidgetCloudNetwork::retranslateUi()
     if (m_pLabelProviderName)
         m_pLabelProviderName->setText(tr("&Provider:"));
     if (m_pComboProviderName)
-    {
         m_pComboProviderName->setToolTip(tr("Holds the cloud provider for this network."));
-        m_pComboProviderName->setItemText(0, "--");
-    }
     if (m_pLabelProfileName)
         m_pLabelProfileName->setText(tr("P&rofile:"));
     if (m_pComboProfileName)
@@ -340,7 +337,7 @@ void UIDetailsWidgetCloudNetwork::prepareProviders()
     m_pComboProviderName->clear();
 
     /* Add empty item: */
-    m_pComboProviderName->addItem(QString());
+    m_pComboProviderName->addItem("--");
 
     /* Iterate through existing providers: */
     foreach (const CCloudProvider &comProvider, listCloudProviders())
@@ -392,6 +389,9 @@ void UIDetailsWidgetCloudNetwork::prepareProfiles()
 
     /* Clear combo initially: */
     m_pComboProfileName->clear();
+
+    /* Add empty item: */
+    m_pComboProfileName->addItem("--");
 
     /* Acquire provider short name: */
     const QString strProviderShortName = m_pComboProviderName->currentData().toString();
