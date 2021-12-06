@@ -36,7 +36,7 @@
 #include <VBox/HostServices/GuestControlSvc.h>
 
 
-#if 0 //!defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
+#if !defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
 /** Special argv[1] value that indicates that argv is UTF-8.
  * This causes RTR3Init to be called with RTR3INIT_FLAGS_UTF8_ARGV and helps
  * work around potential issues caused by a user's locale config not being
@@ -47,7 +47,7 @@
  *       not use the unicode command line to create a UTF-8 argv.  Since the
  *       original argv is ANSI, it may be missing codepoints not present in
  *       the ANSI code page of the process. */
-# define VBOXSERVICE_ARG1_UTF8_ARGV      "--utf8-argv"
+# define VBOXSERVICE_ARG1_UTF8_ARGV         "--utf8-argv"
 #endif
 /** RTProcCreateEx flags corresponding to VBOXSERVICE_ARG1_UTF8_ARGV. */
 #ifdef VBOXSERVICE_ARG1_UTF8_ARGV
