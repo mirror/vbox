@@ -45,23 +45,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-/** @def IPRT_HAVE_PTHREAD_CONDATTR_SETCLOCK
- * Set if the platform implements pthread_condattr_setclock().
- * Enables the use of the monotonic clock for waiting on condition variables. */
-#ifndef IPRT_HAVE_PTHREAD_CONDATTR_SETCLOCK
-/* Linux detection */
-# if defined(RT_OS_LINUX) && defined(__USE_XOPEN2K)
-#  include <features.h>
-#  if __GLIBC_PREREQ(2,6) /** @todo figure the exact version where this was added */
-#   define IPRT_HAVE_PTHREAD_CONDATTR_SETCLOCK
-#  endif
-# endif
-/** @todo check other platforms */
-#endif
+#include "semwait.h"
 
 
 /*********************************************************************************************************************************
@@ -146,8 +130,8 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
                 {
                     pthread_condattr_destroy(&CondAttr);
 
-                    ASMAtomicXchgU32(&pThis->u32State, EVENTMULTI_STATE_NOT_SIGNALED);
-                    ASMAtomicXchgU32(&pThis->cWaiters, 0);
+                    ASMAtomicWriteU32(&pThis->u32State, EVENTMULTI_STATE_NOT_SIGNALED);
+                    ASMAtomicWriteU32(&pThis->cWaiters, 0);
 #ifdef RTSEMEVENTMULTI_STRICT
                     if (!pszNameFmt)
                     {
@@ -178,7 +162,6 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
             }
             pthread_condattr_destroy(&CondAttr);
         }
-
         rc = RTErrConvertFromErrno(rc);
         RTMemFree(pThis);
     }
@@ -453,67 +436,15 @@ static int rtSemEventMultiPosixWaitTimed(struct RTSEMEVENTMULTIINTERNAL *pThis, 
                                          PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
-     * Convert uTimeout to a relative value in nano seconds.
+     * Convert the timeout specification to absolute and relative deadlines,
+     * divierting polling and infinite waits to the appropriate workers.
      */
-    if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
-        uTimeout = uTimeout < UINT64_MAX / UINT32_C(1000000)
-                 ? uTimeout * UINT32_C(1000000)
-                 : UINT64_MAX;
-    if (uTimeout == UINT64_MAX) /* unofficial way of indicating an indefinite wait */
-        return rtSemEventMultiPosixWaitIndefinite(pThis, fFlags, pSrcPos);
-
-    uint64_t uAbsTimeout = uTimeout;
-    if (fFlags & RTSEMWAIT_FLAGS_ABSOLUTE)
-    {
-        uint64_t u64Now = RTTimeSystemNanoTS();
-        uTimeout = uTimeout > u64Now ? uTimeout - u64Now : 0;
-    }
-
-    if (uTimeout == 0)
+    struct timespec AbsDeadline         = { 0, 0 };
+    uint64_t const  cNsRelativeDeadline = rtSemPosixCalcDeadline(fFlags, uTimeout, pThis->fMonotonicClock, &AbsDeadline);
+    if (cNsRelativeDeadline == 0)
         return rtSemEventMultiPosixWaitPoll(pThis);
-
-    /*
-     * Get current time and calc end of deadline relative to real time.
-     */
-    struct timespec     ts = {0,0};
-    if (!pThis->fMonotonicClock)
-    {
-#if defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU)
-        struct timeval  tv = {0,0};
-        gettimeofday(&tv, NULL);
-        ts.tv_sec = tv.tv_sec;
-        ts.tv_nsec = tv.tv_usec * 1000;
-#else
-        clock_gettime(CLOCK_REALTIME, &ts);
-#endif
-        struct timespec tsAdd;
-        tsAdd.tv_nsec = uTimeout % UINT32_C(1000000000);
-        tsAdd.tv_sec  = uTimeout / UINT32_C(1000000000);
-        if (   sizeof(ts.tv_sec) < sizeof(uint64_t)
-            && (   uTimeout > UINT64_C(1000000000) * UINT32_MAX
-                || (uint64_t)ts.tv_sec + tsAdd.tv_sec >= UINT32_MAX) )
-            return rtSemEventMultiPosixWaitIndefinite(pThis, fFlags, pSrcPos);
-
-        ts.tv_sec  += tsAdd.tv_sec;
-        ts.tv_nsec += tsAdd.tv_nsec;
-        if (ts.tv_nsec >= 1000000000)
-        {
-            ts.tv_nsec -= 1000000000;
-            ts.tv_sec++;
-        }
-        /* Note! No need to complete uAbsTimeout for RTSEMWAIT_FLAGS_RELATIVE in this path. */
-    }
-    else
-    {
-        /* ASSUMES RTTimeSystemNanoTS() == RTTimeNanoTS() == clock_gettime(CLOCK_MONOTONIC). */
-        if (fFlags & RTSEMWAIT_FLAGS_RELATIVE)
-            uAbsTimeout += RTTimeSystemNanoTS();
-        if (   sizeof(ts.tv_sec) < sizeof(uint64_t)
-            && uAbsTimeout > UINT64_C(1000000000) * UINT32_MAX)
-            return rtSemEventMultiPosixWaitIndefinite(pThis, fFlags, pSrcPos);
-        ts.tv_nsec = uAbsTimeout % UINT32_C(1000000000);
-        ts.tv_sec  = uAbsTimeout / UINT32_C(1000000000);
-    }
+    if (cNsRelativeDeadline == UINT64_MAX)
+        return rtSemEventMultiPosixWaitIndefinite(pThis, fFlags, pSrcPos);
 
     /*
      * To business!
@@ -543,7 +474,7 @@ static int rtSemEventMultiPosixWaitTimed(struct RTSEMEVENTMULTIINTERNAL *pThis, 
         if (pThis->fEverHadSignallers)
         {
             rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                       uTimeout / UINT32_C(1000000), RTTHREADSTATE_EVENT_MULTI, true);
+                                                       (uTimeout + RT_NS_1MS - 1)/ RT_NS_1MS, RTTHREADSTATE_EVENT_MULTI, true);
             if (RT_FAILURE(rc))
             {
                 ASMAtomicDecU32(&pThis->cWaiters);
@@ -555,10 +486,12 @@ static int rtSemEventMultiPosixWaitTimed(struct RTSEMEVENTMULTIINTERNAL *pThis, 
         RTTHREAD hThreadSelf = RTThreadSelf();
 #endif
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
-        rc = pthread_cond_timedwait(&pThis->Cond, &pThis->Mutex, &ts);
+        rc = pthread_cond_timedwait(&pThis->Cond, &pThis->Mutex, &AbsDeadline);
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
-        if (    rc
-            && (   rc != EINTR  /* according to SuS this function shall not return EINTR, but linux man page says differently. */
+
+        /* According to SuS this function shall not return EINTR, but linux man page might have said differently at some point... */
+        if (    rc != 0
+            && (   rc != EINTR
                 || (fFlags & RTSEMWAIT_FLAGS_NORESUME)) )
         {
             AssertMsg(rc == ETIMEDOUT, ("Failed to wait on event multi sem %p, rc=%d.\n", pThis, rc));
@@ -567,8 +500,6 @@ static int rtSemEventMultiPosixWaitTimed(struct RTSEMEVENTMULTIINTERNAL *pThis, 
             AssertMsg(!rc2, ("Failed to unlock event multi sem %p, rc=%d.\n", pThis, rc2)); NOREF(rc2);
             return RTErrConvertFromErrno(rc);
         }
-
-        /* check the absolute deadline. */
     }
 }
 

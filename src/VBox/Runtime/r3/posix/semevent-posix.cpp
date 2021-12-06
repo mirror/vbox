@@ -36,6 +36,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/lockvalidator.h>
+#include <iprt/time.h>
 
 #include "internal/mem.h"
 #include "internal/strict.h"
@@ -53,6 +54,8 @@
 # include <sched.h>
 # define pthread_yield() sched_yield()
 #endif
+
+#include "semwait.h"
 
 
 /*********************************************************************************************************************************
@@ -82,6 +85,8 @@ struct RTSEMEVENTINTERNAL
 #endif
     /** The creation flags. */
     uint32_t            fFlags;
+    /** Set if we're using the monotonic clock. */
+    bool                fMonotonicClock;
 };
 
 /** The values of the u32State variable in a RTSEMEVENTINTERNAL.
@@ -120,44 +125,59 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
         /*
          * Create the condition variable.
          */
-        rc = pthread_cond_init(&pThis->Cond, NULL);
+        pthread_condattr_t CondAttr;
+        rc = pthread_condattr_init(&CondAttr);
         if (!rc)
         {
-            /*
-             * Create the semaphore.
-             */
-            rc = pthread_mutex_init(&pThis->Mutex, NULL);
+#if defined(CLOCK_MONOTONIC) && defined(IPRT_HAVE_PTHREAD_CONDATTR_SETCLOCK)
+            /* ASSUMES RTTimeSystemNanoTS() == RTTimeNanoTS() == clock_gettime(CLOCK_MONOTONIC). */
+            rc = pthread_condattr_setclock(&CondAttr, CLOCK_MONOTONIC);
+            pThis->fMonotonicClock = rc == 0;
+#else
+            pThis->fMonotonicClock = false;
+#endif
+            rc = pthread_cond_init(&pThis->Cond, &CondAttr);
             if (!rc)
             {
-                ASMAtomicWriteU32(&pThis->u32State, EVENT_STATE_NOT_SIGNALED);
-                ASMAtomicWriteU32(&pThis->cWaiters, 0);
-                pThis->fFlags = fFlags;
+                /*
+                 * Create the semaphore.
+                 */
+                rc = pthread_mutex_init(&pThis->Mutex, NULL);
+                if (!rc)
+                {
+                    pthread_condattr_destroy(&CondAttr);
+
+                    ASMAtomicWriteU32(&pThis->u32State, EVENT_STATE_NOT_SIGNALED);
+                    ASMAtomicWriteU32(&pThis->cWaiters, 0);
+                    pThis->fFlags = fFlags;
 #ifdef RTSEMEVENT_STRICT
-                if (!pszNameFmt)
-                {
-                    static uint32_t volatile s_iSemEventAnon = 0;
-                    RTLockValidatorRecSharedInit(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
-                                                 true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
-                                                 "RTSemEvent-%u", ASMAtomicIncU32(&s_iSemEventAnon) - 1);
-                }
-                else
-                {
-                    va_list va;
-                    va_start(va, pszNameFmt);
-                    RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
-                                                  true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
-                                                  pszNameFmt, va);
-                    va_end(va);
-                }
-                pThis->fEverHadSignallers = false;
+                    if (!pszNameFmt)
+                    {
+                        static uint32_t volatile s_iSemEventAnon = 0;
+                        RTLockValidatorRecSharedInit(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                                     true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
+                                                     "RTSemEvent-%u", ASMAtomicIncU32(&s_iSemEventAnon) - 1);
+                    }
+                    else
+                    {
+                        va_list va;
+                        va_start(va, pszNameFmt);
+                        RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
+                                                      true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
+                                                      pszNameFmt, va);
+                        va_end(va);
+                    }
+                    pThis->fEverHadSignallers = false;
 #else
-                RT_NOREF_PV(hClass); RT_NOREF_PV(pszNameFmt);
+                    RT_NOREF_PV(hClass); RT_NOREF_PV(pszNameFmt);
 #endif
 
-                *phEventSem = pThis;
-                return VINF_SUCCESS;
+                    *phEventSem = pThis;
+                    return VINF_SUCCESS;
+                }
+                pthread_cond_destroy(&pThis->Cond);
             }
-            pthread_cond_destroy(&pThis->Cond);
+            pthread_condattr_destroy(&CondAttr);
         }
 
         rc = RTErrConvertFromErrno(rc);
@@ -295,12 +315,205 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 }
 
 
-DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAutoResume)
+/**
+ * Handle polling (timeout already expired at the time of the call).
+ *
+ * @returns VINF_SUCCESS, VERR_TIMEOUT, VERR_SEM_DESTROYED.
+ * @param   pThis               The semaphore.
+ */
+DECLINLINE(int) rtSemEventPosixWaitPoll(struct RTSEMEVENTINTERNAL *pThis)
 {
-#ifdef RTSEMEVENT_STRICT
-    PCRTLOCKVALSRCPOS  pSrcPos = NULL;
-#endif
+    int rc = pthread_mutex_lock(&pThis->Mutex);
+    AssertMsgReturn(!rc, ("Failed to lock event sem %p, rc=%d.\n", pThis, rc), RTErrConvertFromErrno(rc));
 
+    uint32_t u32OldState;
+    bool fSuccess = ASMAtomicCmpXchgExU32(&pThis->u32State, EVENT_STATE_NOT_SIGNALED, EVENT_STATE_SIGNALED, &u32OldState);
+
+    rc = pthread_mutex_unlock(&pThis->Mutex);
+    AssertMsg(!rc, ("Failed to unlock event sem %p, rc=%d.\n", pThis, rc)); NOREF(rc);
+
+    return fSuccess
+         ? VINF_SUCCESS
+         : u32OldState != EVENT_STATE_UNINITIALIZED
+         ? VERR_TIMEOUT
+         : VERR_SEM_DESTROYED;
+}
+
+
+/**
+ * Performs an indefinite wait on the event.
+ */
+static int rtSemEventPosixWaitIndefinite(struct RTSEMEVENTINTERNAL *pThis, uint32_t fFlags, PCRTLOCKVALSRCPOS pSrcPos)
+{
+    RT_NOREF_PV(pSrcPos);
+
+    /* for fairness, yield before going to sleep. */
+    if (    ASMAtomicIncU32(&pThis->cWaiters) > 1
+        &&  pThis->u32State == EVENT_STATE_SIGNALED)
+        pthread_yield();
+
+     /* take mutex */
+    int rc = pthread_mutex_lock(&pThis->Mutex);
+    if (rc)
+    {
+        ASMAtomicDecU32(&pThis->cWaiters);
+        AssertMsgFailed(("Failed to lock event sem %p, rc=%d.\n", pThis, rc));
+        return RTErrConvertFromErrno(rc);
+    }
+
+    for (;;)
+    {
+        /* check state. */
+        if (pThis->u32State == EVENT_STATE_SIGNALED)
+        {
+            ASMAtomicWriteU32(&pThis->u32State, EVENT_STATE_NOT_SIGNALED);
+            ASMAtomicDecU32(&pThis->cWaiters);
+            rc = pthread_mutex_unlock(&pThis->Mutex);
+            AssertMsg(!rc, ("Failed to unlock event sem %p, rc=%d.\n", pThis, rc)); NOREF(rc);
+            return VINF_SUCCESS;
+        }
+        if (pThis->u32State == EVENT_STATE_UNINITIALIZED)
+        {
+            rc = pthread_mutex_unlock(&pThis->Mutex);
+            AssertMsg(!rc, ("Failed to unlock event sem %p, rc=%d.\n", pThis, rc)); NOREF(rc);
+            return VERR_SEM_DESTROYED;
+        }
+
+        /* wait */
+#ifdef RTSEMEVENT_STRICT
+        RTTHREAD hThreadSelf = !(pThis->fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)
+                             ? RTThreadSelfAutoAdopt()
+                             : RTThreadSelf();
+        if (pThis->fEverHadSignallers)
+        {
+            rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
+                                                       RT_INDEFINITE_WAIT, RTTHREADSTATE_EVENT, true);
+            if (RT_FAILURE(rc))
+            {
+                ASMAtomicDecU32(&pThis->cWaiters);
+                pthread_mutex_unlock(&pThis->Mutex);
+                return rc;
+            }
+        }
+#else
+        RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT, true);
+        RT_NOREF_PV(fFlags); /** @todo interruptible wait is not implementable... */
+        rc = pthread_cond_wait(&pThis->Cond, &pThis->Mutex);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT);
+        if (rc)
+        {
+            AssertMsgFailed(("Failed to wait on event sem %p, rc=%d.\n", pThis, rc));
+            ASMAtomicDecU32(&pThis->cWaiters);
+            int rc2 = pthread_mutex_unlock(&pThis->Mutex);
+            AssertMsg(!rc2, ("Failed to unlock event sem %p, rc=%d.\n", pThis, rc2)); NOREF(rc2);
+            return RTErrConvertFromErrno(rc);
+        }
+    }
+}
+
+
+/**
+ * Performs an timed wait on the event.
+ */
+static int rtSemEventPosixWaitTimed(struct RTSEMEVENTINTERNAL *pThis, uint32_t fFlags, uint64_t uTimeout,
+                                    PCRTLOCKVALSRCPOS pSrcPos)
+{
+    /*
+     * Convert the timeout specification to absolute and relative deadlines,
+     * divierting polling and infinite waits to the appropriate workers.
+     */
+    struct timespec AbsDeadline         = { 0, 0 };
+    uint64_t const  cNsRelativeDeadline = rtSemPosixCalcDeadline(fFlags, uTimeout, pThis->fMonotonicClock, &AbsDeadline);
+    if (cNsRelativeDeadline == 0)
+        return rtSemEventPosixWaitPoll(pThis);
+    if (cNsRelativeDeadline == UINT64_MAX)
+        return rtSemEventPosixWaitIndefinite(pThis, fFlags, pSrcPos);
+
+    /*
+     * Now to the business of waiting...
+     */
+
+    /* for fairness, yield before going to sleep. */
+    if (ASMAtomicIncU32(&pThis->cWaiters) > 1)
+        pthread_yield();
+
+    /* take mutex */
+    int rc = pthread_mutex_lock(&pThis->Mutex);
+    if (rc)
+    {
+        ASMAtomicDecU32(&pThis->cWaiters);
+        AssertMsg(rc == ETIMEDOUT, ("Failed to lock event sem %p, rc=%d.\n", pThis, rc));
+        return RTErrConvertFromErrno(rc);
+    }
+
+    for (;;)
+    {
+        /* check state. */
+        uint32_t const u32State = pThis->u32State;
+        if (u32State != EVENT_STATE_NOT_SIGNALED)
+        {
+            if (u32State == EVENT_STATE_SIGNALED)
+            {
+                ASMAtomicWriteU32(&pThis->u32State, EVENT_STATE_NOT_SIGNALED);
+                ASMAtomicDecU32(&pThis->cWaiters);
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                Assert(u32State == EVENT_STATE_UNINITIALIZED);
+                rc = VERR_SEM_DESTROYED;
+            }
+            int rc2 = pthread_mutex_unlock(&pThis->Mutex);
+            AssertMsg(!rc2, ("Failed to unlock event sem %p, rc2=%d.\n", pThis, rc2)); RT_NOREF(rc2);
+            return rc;
+        }
+
+        /* wait */
+#ifdef RTSEMEVENT_STRICT
+        RTTHREAD hThreadSelf = !(pThis->fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)
+                             ? RTThreadSelfAutoAdopt()
+                             : RTThreadSelf();
+        if (pThis->fEverHadSignallers)
+        {
+            rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
+                                                       (cNsRelativeDeadline + RT_NS_1MS - 1) / RT_NS_1MS,
+                                                       RTTHREADSTATE_EVENT, true);
+            if (RT_FAILURE(rc))
+            {
+                ASMAtomicDecU32(&pThis->cWaiters);
+                pthread_mutex_unlock(&pThis->Mutex);
+                return rc;
+            }
+        }
+#else
+        RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT, true);
+        rc = pthread_cond_timedwait(&pThis->Cond, &pThis->Mutex, &AbsDeadline);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT);
+
+        /* According to SuS this function shall not return EINTR, but linux man page might have said differently at some point... */
+        if (   rc != 0
+            && (   rc != EINTR
+                || !(fFlags & RTSEMWAIT_FLAGS_NORESUME)))
+        {
+            AssertMsg(rc == ETIMEDOUT, ("Failed to wait on event sem %p, rc=%d.\n", pThis, rc));
+            ASMAtomicDecU32(&pThis->cWaiters);
+            int rc2 = pthread_mutex_unlock(&pThis->Mutex);
+            AssertMsg(!rc2, ("Failed to unlock event sem %p, rc2=%d.\n", pThis, rc2)); NOREF(rc2);
+            return RTErrConvertFromErrno(rc);
+        }
+    } /* for (;;) */
+}
+
+
+/**
+ * Internal wait worker function.
+ */
+DECLINLINE(int) rtSemEventPosixWait(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout, PCRTLOCKVALSRCPOS pSrcPos)
+{
     /*
      * Validate input.
      */
@@ -308,178 +521,34 @@ DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillie
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     uint32_t    u32 = pThis->u32State;
     AssertReturn(u32 == EVENT_STATE_NOT_SIGNALED || u32 == EVENT_STATE_SIGNALED, VERR_INVALID_HANDLE);
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
 
     /*
      * Timed or indefinite wait?
      */
-    if (cMillies == RT_INDEFINITE_WAIT)
-    {
-        /* for fairness, yield before going to sleep. */
-        if (    ASMAtomicIncU32(&pThis->cWaiters) > 1
-            &&  pThis->u32State == EVENT_STATE_SIGNALED)
-            pthread_yield();
-
-         /* take mutex */
-        int rc = pthread_mutex_lock(&pThis->Mutex);
-        if (rc)
-        {
-            ASMAtomicDecU32(&pThis->cWaiters);
-            AssertMsgFailed(("Failed to lock event sem %p, rc=%d.\n", hEventSem, rc));
-            return RTErrConvertFromErrno(rc);
-        }
-
-        for (;;)
-        {
-            /* check state. */
-            if (pThis->u32State == EVENT_STATE_SIGNALED)
-            {
-                ASMAtomicWriteU32(&pThis->u32State, EVENT_STATE_NOT_SIGNALED);
-                ASMAtomicDecU32(&pThis->cWaiters);
-                rc = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc, ("Failed to unlock event sem %p, rc=%d.\n", hEventSem, rc)); NOREF(rc);
-                return VINF_SUCCESS;
-            }
-            if (pThis->u32State == EVENT_STATE_UNINITIALIZED)
-            {
-                rc = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc, ("Failed to unlock event sem %p, rc=%d.\n", hEventSem, rc)); NOREF(rc);
-                return VERR_SEM_DESTROYED;
-            }
-
-            /* wait */
-#ifdef RTSEMEVENT_STRICT
-            RTTHREAD hThreadSelf = !(pThis->fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)
-                                 ? RTThreadSelfAutoAdopt()
-                                 : RTThreadSelf();
-            if (pThis->fEverHadSignallers)
-            {
-                rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                           cMillies, RTTHREADSTATE_EVENT, true);
-                if (RT_FAILURE(rc))
-                {
-                    ASMAtomicDecU32(&pThis->cWaiters);
-                    pthread_mutex_unlock(&pThis->Mutex);
-                    return rc;
-                }
-            }
-#else
-            RTTHREAD hThreadSelf = RTThreadSelf();
-#endif
-            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT, true);
-            rc = pthread_cond_wait(&pThis->Cond, &pThis->Mutex);
-            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT);
-            if (rc)
-            {
-                AssertMsgFailed(("Failed to wait on event sem %p, rc=%d.\n", hEventSem, rc));
-                ASMAtomicDecU32(&pThis->cWaiters);
-                int rc2 = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc2, ("Failed to unlock event sem %p, rc=%d.\n", hEventSem, rc2)); NOREF(rc2);
-                return RTErrConvertFromErrno(rc);
-            }
-        }
-    }
-    else
-    {
-        /*
-         * Get current time and calc end of wait time.
-         */
-        struct timespec     ts = {0,0};
-#if defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU)
-        struct timeval      tv = {0,0};
-        gettimeofday(&tv, NULL);
-        ts.tv_sec = tv.tv_sec;
-        ts.tv_nsec = tv.tv_usec * 1000;
-#else
-        clock_gettime(CLOCK_REALTIME, &ts);
-#endif
-        if (cMillies != 0)
-        {
-            ts.tv_nsec += (cMillies % 1000) * 1000000;
-            ts.tv_sec  += cMillies / 1000;
-            if (ts.tv_nsec >= 1000000000)
-            {
-                ts.tv_nsec -= 1000000000;
-                ts.tv_sec++;
-            }
-        }
-
-        /* for fairness, yield before going to sleep. */
-        if (ASMAtomicIncU32(&pThis->cWaiters) > 1 && cMillies)
-            pthread_yield();
-
-        /* take mutex */
-        int rc = pthread_mutex_lock(&pThis->Mutex);
-        if (rc)
-        {
-            ASMAtomicDecU32(&pThis->cWaiters);
-            AssertMsg(rc == ETIMEDOUT, ("Failed to lock event sem %p, rc=%d.\n", hEventSem, rc));
-            return RTErrConvertFromErrno(rc);
-        }
-
-        for (;;)
-        {
-            /* check state. */
-            if (pThis->u32State == EVENT_STATE_SIGNALED)
-            {
-                ASMAtomicWriteU32(&pThis->u32State, EVENT_STATE_NOT_SIGNALED);
-                ASMAtomicDecU32(&pThis->cWaiters);
-                rc = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc, ("Failed to unlock event sem %p, rc=%d.\n", hEventSem, rc)); NOREF(rc);
-                return VINF_SUCCESS;
-            }
-            if (pThis->u32State == EVENT_STATE_UNINITIALIZED)
-            {
-                rc = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc, ("Failed to unlock event sem %p, rc=%d.\n", hEventSem, rc)); NOREF(rc);
-                return VERR_SEM_DESTROYED;
-            }
-
-            /* we're done if the timeout is 0. */
-            if (!cMillies)
-            {
-                ASMAtomicDecU32(&pThis->cWaiters);
-                rc = pthread_mutex_unlock(&pThis->Mutex);
-                return VERR_TIMEOUT;
-            }
-
-            /* wait */
-#ifdef RTSEMEVENT_STRICT
-            RTTHREAD hThreadSelf = !(pThis->fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)
-                                 ? RTThreadSelfAutoAdopt()
-                                 : RTThreadSelf();
-            if (pThis->fEverHadSignallers)
-            {
-                rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                           cMillies, RTTHREADSTATE_EVENT, true);
-                if (RT_FAILURE(rc))
-                {
-                    ASMAtomicDecU32(&pThis->cWaiters);
-                    pthread_mutex_unlock(&pThis->Mutex);
-                    return rc;
-                }
-            }
-#else
-            RTTHREAD hThreadSelf = RTThreadSelf();
-#endif
-            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT, true);
-            rc = pthread_cond_timedwait(&pThis->Cond, &pThis->Mutex, &ts);
-            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT);
-            if (rc && (rc != EINTR || !fAutoResume)) /* according to SuS this function shall not return EINTR, but linux man page says differently. */
-            {
-                AssertMsg(rc == ETIMEDOUT, ("Failed to wait on event sem %p, rc=%d.\n", hEventSem, rc));
-                ASMAtomicDecU32(&pThis->cWaiters);
-                int rc2 = pthread_mutex_unlock(&pThis->Mutex);
-                AssertMsg(!rc2, ("Failed to unlock event sem %p, rc2=%d.\n", hEventSem, rc2)); NOREF(rc2);
-                return RTErrConvertFromErrno(rc);
-            }
-        } /* for (;;) */
-    }
+    if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
+        return rtSemEventPosixWaitIndefinite(pThis, fFlags, pSrcPos);
+    return rtSemEventPosixWaitTimed(hEventSem, fFlags, uTimeout, pSrcPos);
 }
 
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
+RTDECL(int) RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 {
-    int rc = rtSemEventWait(hEventSem, cMillies, true);
+    int rc;
+#ifndef RTSEMEVENT_STRICT
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rc = rtSemEventPosixWait(hEventSem, RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_INDEFINITE, 0, NULL);
+    else
+        rc = rtSemEventPosixWait(hEventSem, RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS,
+                                 cMillies, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rc = rtSemEventPosixWait(hEventSem, RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_INDEFINITE, 0, &SrcPos);
+    else
+        rc = rtSemEventPosixWait(hEventSem, RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS,
+                                 cMillies, &SrcPos);
+#endif
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
@@ -487,7 +556,51 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 
 RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 {
-    return rtSemEventWait(hEventSem, cMillies, false);
+    int rc;
+#ifndef RTSEMEVENT_STRICT
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rc = rtSemEventPosixWait(hEventSem, RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_INDEFINITE, 0, NULL);
+    else
+        rc = rtSemEventPosixWait(hEventSem, RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS,
+                                 cMillies, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rc = rtSemEventPosixWait(hEventSem, RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_INDEFINITE, 0, &SrcPos);
+    else
+        rc = rtSemEventPosixWait(hEventSem, RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS,
+                                 cMillies, &SrcPos);
+#endif
+    Assert(rc != VERR_INTERRUPTED);
+    return rc;
+}
+
+
+RTDECL(int)  RTSemEventWaitEx(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout)
+{
+#ifndef RTSEMEVENT_STRICT
+    return rtSemEventPosixWait(hEventSem, fFlags, uTimeout, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtSemEventPosixWait(hEventSem, fFlags, uTimeout, &SrcPos);
+#endif
+}
+
+
+RTDECL(int)  RTSemEventWaitExDebug(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout,
+                                   RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtSemEventPosixWait(hEventSem, fFlags, uTimeout, &SrcPos);
+}
+
+
+RTDECL(uint32_t) RTSemEventGetResolution(void)
+{
+    /** @todo we have 1ns parameter resolution, but we need to check each host
+     *        what the actual resolution might be once the parameter makes it to the
+     *        kernel and is processed there. */
+    return 1;
 }
 
 
