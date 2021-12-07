@@ -1384,11 +1384,6 @@ int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLF
         LogRel(("Shared Clipboard: Signalling of guest clipboard data to the host failed: %Rrc\n", rc));
     }
 
-    /*
-     * Release reference (and free it if not used anymore).
-     */
-    ShClEventRelease(pEvent);
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
