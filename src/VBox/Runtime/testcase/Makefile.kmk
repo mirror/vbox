@@ -111,6 +111,7 @@ PROGRAMS += \
 	tstPrfRT \
 	tstRand \
 	tstRTReqPool \
+	tstRTSemEvent \
 	tstRTSemEventMulti \
 	tstSemMutex \
 	tstSemPingPong \
@@ -612,6 +613,9 @@ tstRTS3_SOURCES = tstRTS3.cpp
 
 tstSemMutex_TEMPLATE = VBOXR3TSTEXE
 tstSemMutex_SOURCES = tstSemMutex.cpp
+
+tstRTSemEvent_TEMPLATE = VBOXR3TSTEXE
+tstRTSemEvent_SOURCES = tstRTSemEvent.cpp
 
 tstRTSemEventMulti_TEMPLATE = VBOXR3TSTEXE
 tstRTSemEventMulti_SOURCES = tstRTSemEventMulti.cpp

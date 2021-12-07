@@ -55,10 +55,10 @@ static volatile bool g_fStop = false;
 *   Benchmark #1: Two thread pinging each other on two event sempahores.                                                         *
 *********************************************************************************************************************************/
 /** Pair of event semphores for the first benchmark test. */
-static RTSEMEVENT   g_ahEvtBench1[2];
-static uint64_t     g_cBench1Iterations;
-static uint64_t     g_uTimeoutBench1;
-static uint64_t     g_fWaitBench1;
+static RTSEMEVENT           g_ahEvtBench1[2];
+static uint64_t             g_uTimeoutBench1;
+static uint64_t             g_fWaitBench1;
+static uint64_t volatile    g_cBench1Iterations;
 
 
 static DECLCALLBACK(int) bench1Thread(RTTHREAD hThreadSelf, void *pvUser)
@@ -134,9 +134,9 @@ static void bench1(const char *pszTest, uint32_t fFlags, uint64_t uTimeout)
     /*
      * Report the result.
      */
-    RTTestValue(g_hTest, "Throughput", g_cBench1Iterations * RT_NS_1SEC / cNsElapsed, RTTESTUNIT_OCCURRENCES_PER_SEC);
-    RTTestValue(g_hTest, "Roundtrip", cNsElapsed / g_cBench1Iterations, RTTESTUNIT_NS_PER_OCCURRENCE);
-
+    uint64_t cIterations = g_cBench1Iterations;
+    RTTestValue(g_hTest, "Throughput", cIterations * RT_NS_1SEC / cNsElapsed, RTTESTUNIT_OCCURRENCES_PER_SEC);
+    RTTestValue(g_hTest, "Roundtrip", cNsElapsed / RT_MAX(cIterations, 1), RTTESTUNIT_NS_PER_OCCURRENCE);
 }
 
 
@@ -189,6 +189,42 @@ static void test1(void)
 /*********************************************************************************************************************************
 *   Basic tests                                                                                                                  *
 *********************************************************************************************************************************/
+
+/**
+ * Just do a number of short waits and calculate min, max and average.
+ */
+static void resolution(void)
+{
+    RTTestISub("Timeout resolution");
+
+    RTSEMEVENT hSem;
+    RTTESTI_CHECK_RC_RETV(RTSemEventCreate(&hSem), VINF_SUCCESS);
+
+    uint64_t cNsMin   = UINT64_MAX;
+    uint64_t cNsMax   = 0;
+    uint64_t cNsTotal = 0;
+    uint32_t cLoops;
+    for (cLoops = 0; cLoops < 256; cLoops++)
+    {
+        uint64_t const nsStart    = RTTimeNanoTS();
+        int rc = RTSemEventWaitEx(hSem, RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_NANOSECS, RT_NS_1US);
+        uint64_t const cNsElapsed = RTTimeNanoTS() - nsStart;
+        RTTESTI_CHECK_RC(rc, VERR_TIMEOUT);
+        cNsTotal += cNsElapsed;
+        if (cNsElapsed < cNsMin)
+            cNsMin = cNsElapsed;
+        if (cNsElapsed > cNsMax)
+            cNsMax = cNsElapsed;
+    }
+
+    RTTestIValue("min", cNsMin, RTTESTUNIT_NS);
+    RTTestIValue("max", cNsMax, RTTESTUNIT_NS);
+    RTTestIValue("average", cNsTotal / cLoops, RTTESTUNIT_NS);
+    RTTestIValue("RTSemEventGetResolution", RTSemEventGetResolution(), RTTESTUNIT_NS);
+
+    RTTESTI_CHECK_RC_RETV(RTSemEventDestroy(hSem), VINF_SUCCESS);
+}
+
 
 
 static void testBasicsWaitTimeout(RTSEMEVENT hSem, unsigned i)
@@ -340,6 +376,7 @@ int main(int argc, char **argv)
     if (!RTTestErrorCount(g_hTest))
     {
         test1();
+        resolution();
     }
     if (!RTTestErrorCount(g_hTest))
     {

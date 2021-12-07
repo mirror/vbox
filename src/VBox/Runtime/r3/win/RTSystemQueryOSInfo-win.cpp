@@ -315,7 +315,6 @@ static int rtSystemWinQueryOSVersion(RTSYSOSINFO enmInfo, char *pszInfo, size_t 
 }
 
 
-
 RTDECL(int) RTSystemQueryOSInfo(RTSYSOSINFO enmInfo, char *pszInfo, size_t cchInfo)
 {
     /*
@@ -343,17 +342,5 @@ RTDECL(int) RTSystemQueryOSInfo(RTSYSOSINFO enmInfo, char *pszInfo, size_t cchIn
     }
 
     return VERR_NOT_SUPPORTED;
-}
-
-
-RTDECL(uint32_t) RTSystemGetNtBuildNo(void)
-{
-    return g_WinOsInfoEx.dwBuildNumber;
-}
-
-
-RTDECL(uint64_t) RTSystemGetNtVersion(void)
-{
-    return RTSYSTEM_MAKE_NT_VERSION(g_WinOsInfoEx.dwMajorVersion, g_WinOsInfoEx.dwMinorVersion, g_WinOsInfoEx.dwBuildNumber);
 }
 
