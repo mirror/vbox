@@ -47,79 +47,6 @@
 
 
 /**
- * Converts a extended wait timeout specification to timespec.
- *
- * This does _not_ cover indefinite waits!
- *
- * @returns Approximate number of milliseconds to wait.  This is only guaranteed
- *          to be correct in that it is zero for non-blocking polling calls and
- *          non-zero for the rest.
- * @param   pTsDeadline     Where to return the deadline.
- * @param   fFlags          RTSEMWAIT_FLAGS_XXX.
- * @param   uTimeout        The timeout.
- */
-DECLINLINE(uint32_t) rtSemPosixCalcDeadline(struct timespec *pTsDeadline, uint32_t fFlags, uint64_t uTimeout)
-{
-    uint64_t cApproxMillies;
-    if (fFlags & RTSEMWAIT_FLAGS_RELATIVE)
-    {
-        Assert(!(fFlags & RTSEMWAIT_FLAGS_RELATIVE));
-
-#if defined(RT_OS_DARWIN) || defined(RT_OS_HAIKU)
-        struct timeval tv = {0,0};
-        gettimeofday(&tv, NULL);
-        pTsDeadline->tv_sec  = tv.tv_sec;
-        pTsDeadline->tv_nsec = tv.tv_usec * RT_NS_1US;
-#else
-        clock_gettime(CLOCK_REALTIME, pTsDeadline);
-#endif
-        if (uTimeout == 0)
-            cApproxMillies = 0;
-        else
-        {
-            if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
-            {
-                Assert(!(fFlags & RTSEMWAIT_FLAGS_NANOSECS));
-                cApproxMillies = uTimeout;
-                pTsDeadline->tv_sec  += uTimeout / RT_MS_1SEC;
-                pTsDeadline->tv_nsec += (uTimeout % RT_MS_1SEC) * RT_NS_1MS;
-            }
-            else
-            {
-                Assert(fFlags & RTSEMWAIT_FLAGS_NANOSECS);
-                cApproxMillies = (uTimeout + RT_NS_1MS - 1) / RT_NS_1MS; Assert(cApproxMillies > 0);
-                pTsDeadline->tv_sec  += uTimeout / RT_NS_1SEC;
-                pTsDeadline->tv_nsec += uTimeout % RT_NS_1SEC;
-            }
-            if (pTsDeadline->tv_nsec >= RT_NS_1SEC)
-            {
-                pTsDeadline->tv_nsec -= RT_NS_1SEC;
-                pTsDeadline->tv_sec++;
-            }
-        }
-    }
-    /*
-     * Absolute time (ASSUMING we all use the same clock here).
-     */
-    else if (fFlags & RTSEMWAIT_FLAGS_NANOSECS)
-    {
-        Assert(!(fFlags & RTSEMWAIT_FLAGS_MILLISECS));
-        pTsDeadline->tv_sec  = uTimeout / RT_NS_1SEC;
-        pTsDeadline->tv_nsec = uTimeout % RT_NS_1SEC;
-        cApproxMillies = RT_MS_30SEC; /* whatever, we're not going to calculate it */
-    }
-    else
-    {
-        Assert(fFlags & RTSEMWAIT_FLAGS_MILLISECS);
-        pTsDeadline->tv_sec  = uTimeout / RT_MS_1SEC;
-        pTsDeadline->tv_nsec = (uTimeout % RT_MS_1SEC) * RT_NS_1MS;
-        cApproxMillies = RT_MS_30SEC; /* whatever, we're not going to calculate it */
-    }
-    return (uint32_t)RT_MIN(cApproxMillies, UINT32_MAX - 1);
-}
-
-
-/**
  * Converts a extended wait timeout specification to an absolute timespec and a
  * relative nanosecond count.
  *
@@ -129,6 +56,8 @@ DECLINLINE(uint32_t) rtSemPosixCalcDeadline(struct timespec *pTsDeadline, uint32
  * @returns The relative wait in nanoseconds.  0 for a poll call, UINT64_MAX for
  *          an effectively indefinite wait.
  * @param   fFlags          RTSEMWAIT_FLAGS_XXX.
+ * @param   fMonotonicClock Whether the timeout is in monotonic (true) or real
+ *                          (false) time.
  * @param   uTimeout        The timeout.
  * @param   pAbsDeadline    Where to return the absolute deadline.
  */
