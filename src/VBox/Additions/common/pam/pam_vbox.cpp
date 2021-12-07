@@ -872,7 +872,7 @@ DECLEXPORT(int) pam_sm_chauthtok(pam_handle_t *hPAM, int iFlags, int argc, const
 
 
 #ifdef DEBUG
-DECLEXPORT(void) RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
+RTDECL(void) RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
     pam_vbox_log(g_pam_handle,
                  "\n!!Assertion Failed!!\n"
