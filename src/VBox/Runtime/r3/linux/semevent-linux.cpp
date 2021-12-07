@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Event Semaphore, Linux (2.6.x+).
+ * IPRT - Event Semaphore, Linux (2.6.0 and later).
  */
 
 /*
@@ -36,7 +36,7 @@
  * The external reference to epoll_pwait is a hack which prevents that we link
  * against glibc < 2.6.
  */
-#include "../posix/semevent-posix.cpp"
+# include "../posix/semevent-posix.cpp"
 __asm__ (".global epoll_pwait");
 
 #else /* glibc < 2.6 */
@@ -69,6 +69,7 @@ __asm__ (".global epoll_pwait");
 #else
 # define FUTEX_WAIT 0
 # define FUTEX_WAKE 1
+# define FUTEX_WAIT_BITSET 9 /**< @since 2.6.25 - uses absolute timeout. */
 #endif
 
 
@@ -99,6 +100,12 @@ struct RTSEMEVENTINTERNAL
 };
 
 
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static int volatile g_fCanUseWaitBitSet = -1;
+
+
 /**
  * Wrapper for the futex syscall.
  */
@@ -115,6 +122,24 @@ static long sys_futex(uint32_t volatile *uaddr, int op, int val, struct timespec
 }
 
 
+DECLINLINE(void) rtSemLinuxCheckForFutexWaitBitSetSlow(int volatile *pfCanUseWaitBitSet)
+{
+    uint32_t uTestVar = UINT32_MAX;
+    long rc = sys_futex(&uTestVar, FUTEX_WAIT_BITSET, UINT32_C(0xf0f0f0f0), NULL, NULL, UINT32_MAX);
+    *pfCanUseWaitBitSet = rc == -EAGAIN;
+    AssertMsg(rc == -ENOSYS || rc == -EAGAIN, ("%d\n", rc));
+}
+
+
+DECLINLINE(void) rtSemLinuxCheckForFutexWaitBitSet(int volatile *pfCanUseWaitBitSet)
+{
+    if (*pfCanUseWaitBitSet != -1)
+    { /* likely */ }
+    else
+        rtSemLinuxCheckForFutexWaitBitSetSlow(pfCanUseWaitBitSet);
+}
+
+
 
 RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem)
 {
@@ -126,6 +151,14 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
 {
     AssertReturn(!(fFlags & ~(RTSEMEVENT_FLAGS_NO_LOCK_VAL | RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)), VERR_INVALID_PARAMETER);
     Assert(!(fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK) || (fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL));
+
+    /*
+     * Make sure we know whether FUTEX_WAIT_BITSET works.
+     */
+    rtSemLinuxCheckForFutexWaitBitSet(&g_fCanUseWaitBitSet);
+#if defined(DEBUG_bird) && !defined(IN_GUEST)
+    Assert(g_fCanUseWaitBitSet == true);
+#endif
 
     /*
      * Allocate semaphore handle.
@@ -239,45 +272,23 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 }
 
 
-static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAutoResume)
+/**
+ * Performs an indefinite wait on the event.
+ */
+static int rtSemEventLinuxWaitIndefinite(struct RTSEMEVENTINTERNAL *pThis, uint32_t fFlags, PCRTLOCKVALSRCPOS pSrcPos)
 {
-#ifdef RTSEMEVENT_STRICT
-    PCRTLOCKVALSRCPOS pSrcPos = NULL;
-#endif
+    RT_NOREF_PV(pSrcPos);
 
     /*
-     * Validate input.
+     * Quickly check whether it's signaled and there are no other waiters.
      */
-    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->iMagic == RTSEMEVENT_MAGIC, VERR_INVALID_HANDLE);
-
-    /*
-     * Quickly check whether it's signaled.
-     */
-    /** @todo this isn't fair if someone is already waiting on it.  They should
-     *        have the first go at it!
-     *  (ASMAtomicReadS32(&pThis->cWaiters) == 0 || !cMillies) && ... */
-    if (ASMAtomicCmpXchgU32(&pThis->fSignalled, 0, 1))
-        return VINF_SUCCESS;
-
-    /*
-     * Convert the timeout value.
-     */
-    struct timespec ts;
-    struct timespec *pTimeout = NULL;
-    uint64_t u64End = 0; /* shut up gcc */
-    if (cMillies != RT_INDEFINITE_WAIT)
+    uint32_t cWaiters = ASMAtomicIncS32(&pThis->cWaiters);
+    if (   cWaiters == 1
+        && ASMAtomicCmpXchgU32(&pThis->fSignalled, 0, 1))
     {
-        if (!cMillies)
-            return VERR_TIMEOUT;
-        ts.tv_sec  = cMillies / 1000;
-        ts.tv_nsec = (cMillies % 1000) * UINT32_C(1000000);
-        u64End = RTTimeSystemNanoTS() + cMillies * UINT64_C(1000000);
-        pTimeout = &ts;
+        ASMAtomicDecS32(&pThis->cWaiters);
+        return VINF_SUCCESS;
     }
-
-    ASMAtomicIncS32(&pThis->cWaiters);
 
     /*
      * The wait loop.
@@ -296,13 +307,13 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAut
         if (pThis->fEverHadSignallers)
         {
             rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                       cMillies, RTTHREADSTATE_EVENT, true);
+                                                       RT_INDEFINITE_WAIT, RTTHREADSTATE_EVENT, true);
             if (RT_FAILURE(rc))
                 break;
         }
 #endif
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT, true);
-        long lrc = sys_futex(&pThis->fSignalled, FUTEX_WAIT, 0, pTimeout, NULL, 0);
+        long lrc = sys_futex(&pThis->fSignalled, FUTEX_WAIT, 0, NULL /*pTimeout*/, NULL, 0);
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT);
         if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
         {
@@ -323,7 +334,7 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAut
         }
         else if (lrc == -EINTR)
         {
-            if (!fAutoResume)
+            if (fFlags & RTSEMWAIT_FLAGS_NORESUME)
             {
                 rc = VERR_INTERRUPTED;
                 break;
@@ -336,17 +347,219 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAut
             rc = RTErrConvertFromErrno(lrc);
             break;
         }
-        /* adjust the relative timeout */
-        if (pTimeout)
+    }
+
+    ASMAtomicDecS32(&pThis->cWaiters);
+    return rc;
+}
+
+
+static int rtSemEventLinuxWaitPoll(struct RTSEMEVENTINTERNAL *pThis)
+{
+    /*
+     * What we do here is isn't quite fair to anyone else waiting on it, however
+     * it might not be as bad as all that for callers making repeated poll calls
+     * because they cannot block, as that would be a virtual wait but without the
+     * chance of a permanept queue position.   So, I hope we can live with this.
+     */
+    if (ASMAtomicCmpXchgU32(&pThis->fSignalled, 0, 1))
+        return VINF_SUCCESS;
+    return VERR_TIMEOUT;
+}
+
+
+static int rtSemEventLinuxWaitTimed(struct RTSEMEVENTINTERNAL *pThis, uint32_t fFlags,
+                                    uint64_t uTimeout, PCRTLOCKVALSRCPOS pSrcPos)
+{
+    RT_NOREF_PV(pSrcPos);
+
+    /*
+     * Convert the timeout value.
+     */
+    int       iWaitOp;
+    uint32_t  uWaitVal3;
+    timespec  TsTimeout;
+    uint64_t  uAbsTimeout = uTimeout;  /* Note! only relevant for relative waits (FUTEX_WAIT). */
+    if (fFlags & RTSEMWAIT_FLAGS_RELATIVE)
+    {
+        if (!uTimeout)
+            return rtSemEventLinuxWaitPoll(pThis);
+
+        if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
         {
-            int64_t i64Diff = u64End - RTTimeSystemNanoTS();
+            if (   sizeof(TsTimeout.tv_sec) >= sizeof(uint64_t)
+                || uTimeout < (uint64_t)UINT32_MAX * RT_MS_1SEC)
+            {
+                TsTimeout.tv_sec  = uTimeout / RT_MS_1SEC;
+                TsTimeout.tv_nsec = (uTimeout % RT_MS_1SEC) & RT_NS_1MS;
+                uAbsTimeout      *= RT_NS_1MS;
+            }
+            else
+                return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
+        }
+        else
+        {
+            Assert(fFlags & RTSEMWAIT_FLAGS_NANOSECS);
+            if (   sizeof(TsTimeout.tv_sec) >= sizeof(uint64_t)
+                || uTimeout < (uint64_t)UINT32_MAX * RT_NS_1SEC)
+            {
+                TsTimeout.tv_sec  = uTimeout / RT_NS_1SEC;
+                TsTimeout.tv_nsec = uTimeout % RT_NS_1SEC;
+            }
+            else
+                return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
+        }
+
+        if (fFlags & RTSEMWAIT_FLAGS_RESUME)
+            uAbsTimeout += RTTimeNanoTS();
+
+        iWaitOp   = FUTEX_WAIT;
+        uWaitVal3 = 0;
+    }
+    else
+    {
+        /* Absolute deadline: */
+        Assert(fFlags & RTSEMWAIT_FLAGS_ABSOLUTE);
+        if (g_fCanUseWaitBitSet == true)
+        {
+            if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
+            {
+                if (   sizeof(TsTimeout.tv_sec) >= sizeof(uint64_t)
+                    || uTimeout < (uint64_t)UINT32_MAX * RT_MS_1SEC)
+                {
+                    TsTimeout.tv_sec  = uTimeout / RT_MS_1SEC;
+                    TsTimeout.tv_nsec = (uTimeout % RT_MS_1SEC) & RT_NS_1MS;
+                }
+                else
+                    return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
+            }
+            else
+            {
+                Assert(fFlags & RTSEMWAIT_FLAGS_NANOSECS);
+                if (   sizeof(TsTimeout.tv_sec) >= sizeof(uint64_t)
+                    || uTimeout < (uint64_t)UINT32_MAX * RT_NS_1SEC)
+                {
+                    TsTimeout.tv_sec  = uTimeout / RT_NS_1SEC;
+                    TsTimeout.tv_nsec = uTimeout % RT_NS_1SEC;
+                }
+                else
+                    return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
+            }
+            iWaitOp   = FUTEX_WAIT_BITSET;
+            uWaitVal3 = UINT32_MAX;
+        }
+        else
+        {
+            /* Recalculate it as an relative timeout: */
+            if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
+            {
+                if (uTimeout < UINT64_MAX / RT_NS_1MS)
+                    uAbsTimeout = uTimeout *= RT_NS_1MS;
+                else
+                    return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
+            }
+
+            uint64_t const u64Now = RTTimeNanoTS();
+            if (u64Now < uTimeout)
+                uTimeout -= u64Now;
+            else
+                return rtSemEventLinuxWaitPoll(pThis);
+
+            if (   sizeof(TsTimeout.tv_sec) >= sizeof(uint64_t)
+                || uTimeout < (uint64_t)UINT32_MAX * RT_NS_1SEC)
+            {
+                TsTimeout.tv_sec  = uTimeout / RT_NS_1SEC;
+                TsTimeout.tv_nsec = uTimeout % RT_NS_1SEC;
+            }
+            else
+                return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
+
+            iWaitOp   = FUTEX_WAIT;
+            uWaitVal3 = 0;
+        }
+    }
+
+    /*
+     * Quickly check whether it's signaled and there are no other waiters.
+     */
+    uint32_t cWaiters = ASMAtomicIncS32(&pThis->cWaiters);
+    if (   cWaiters == 1
+        && ASMAtomicCmpXchgU32(&pThis->fSignalled, 0, 1))
+    {
+        ASMAtomicDecS32(&pThis->cWaiters);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * The wait loop.
+     */
+#ifdef RTSEMEVENT_STRICT
+    RTTHREAD hThreadSelf = !(pThis->fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)
+                         ? RTThreadSelfAutoAdopt()
+                         : RTThreadSelf();
+#else
+    RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
+    int rc = VINF_SUCCESS;
+    for (;;)
+    {
+#ifdef RTSEMEVENT_STRICT
+        if (pThis->fEverHadSignallers)
+        {
+            rc = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
+                                                       iWaitOp == FUTEX_WAIT ? uTimeout / RT_NS_1MS : RT_MS_1HOUR /*whatever*/,
+                                                       RTTHREADSTATE_EVENT, true);
+            if (RT_FAILURE(rc))
+                break;
+        }
+#endif
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT, true);
+        long lrc = sys_futex(&pThis->fSignalled, iWaitOp, 0, &TsTimeout, NULL, uWaitVal3);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT);
+        if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
+        {
+            rc = VERR_SEM_DESTROYED;
+            break;
+        }
+
+        if (RT_LIKELY(lrc == 0 || lrc == -EWOULDBLOCK))
+        {
+            /* successful wakeup or fSignalled > 0 in the meantime */
+            if (ASMAtomicCmpXchgU32(&pThis->fSignalled, 0, 1))
+                break;
+        }
+        else if (lrc == -ETIMEDOUT)
+        {
+            rc = VERR_TIMEOUT;
+            break;
+        }
+        else if (lrc == -EINTR)
+        {
+            if (fFlags & RTSEMWAIT_FLAGS_NORESUME)
+            {
+                rc = VERR_INTERRUPTED;
+                break;
+            }
+        }
+        else
+        {
+            /* this shouldn't happen! */
+            AssertMsgFailed(("rc=%ld errno=%d\n", lrc, errno));
+            rc = RTErrConvertFromErrno(lrc);
+            break;
+        }
+
+        /* adjust the relative timeout */
+        if (iWaitOp == FUTEX_WAIT)
+        {
+            int64_t i64Diff = uAbsTimeout - RTTimeSystemNanoTS();
             if (i64Diff < 1000)
             {
                 rc = VERR_TIMEOUT;
                 break;
             }
-            ts.tv_sec  = (uint64_t)i64Diff / UINT32_C(1000000000);
-            ts.tv_nsec = (uint64_t)i64Diff % UINT32_C(1000000000);
+            TsTimeout.tv_sec  = (uint64_t)i64Diff / RT_NS_1SEC;
+            TsTimeout.tv_nsec = (uint64_t)i64Diff % RT_NS_1SEC;
         }
     }
 
@@ -355,18 +568,98 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAut
 }
 
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
+/**
+ * Internal wait worker function.
+ */
+DECLINLINE(int) rtSemEventLinuxWait(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout, PCRTLOCKVALSRCPOS pSrcPos)
 {
-    int rc = rtSemEventWait(hEventSem, cMillies, true);
+    /*
+     * Validate input.
+     */
+    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    uint32_t    fSignalled = pThis->fSignalled;
+    AssertReturn(fSignalled == false || fSignalled == true, VERR_INVALID_HANDLE);
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+
+    /*
+     * Timed or indefinite wait?
+     */
+    if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
+        return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
+    return rtSemEventLinuxWaitTimed(hEventSem, fFlags, uTimeout, pSrcPos);
+}
+
+
+RTDECL(int) RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
+{
+    int rc;
+#ifndef RTSEMEVENT_STRICT
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rc = rtSemEventLinuxWait(hEventSem, RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_INDEFINITE, 0, NULL);
+    else
+        rc = rtSemEventLinuxWait(hEventSem, RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS,
+                                 cMillies, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rc = rtSemEventLinuxWait(hEventSem, RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_INDEFINITE, 0, &SrcPos);
+    else
+        rc = rtSemEventLinuxWait(hEventSem, RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS,
+                                 cMillies, &SrcPos);
+#endif
     Assert(rc != VERR_INTERRUPTED);
-    Assert(rc != VERR_TIMEOUT || cMillies != RT_INDEFINITE_WAIT);
     return rc;
 }
 
 
 RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 {
-    return rtSemEventWait(hEventSem, cMillies, false);
+    int rc;
+#ifndef RTSEMEVENT_STRICT
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rc = rtSemEventLinuxWait(hEventSem, RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_INDEFINITE, 0, NULL);
+    else
+        rc = rtSemEventLinuxWait(hEventSem, RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS,
+                                 cMillies, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    if (cMillies == RT_INDEFINITE_WAIT)
+        rc = rtSemEventLinuxWait(hEventSem, RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_INDEFINITE, 0, &SrcPos);
+    else
+        rc = rtSemEventLinuxWait(hEventSem, RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS,
+                                 cMillies, &SrcPos);
+#endif
+    Assert(rc != VERR_INTERRUPTED);
+    return rc;
+}
+
+
+RTDECL(int)  RTSemEventWaitEx(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout)
+{
+#ifndef RTSEMEVENT_STRICT
+    return rtSemEventLinuxWait(hEventSem, fFlags, uTimeout, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtSemEventLinuxWait(hEventSem, fFlags, uTimeout, &SrcPos);
+#endif
+}
+
+
+RTDECL(int)  RTSemEventWaitExDebug(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout,
+                                   RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtSemEventLinuxWait(hEventSem, fFlags, uTimeout, &SrcPos);
+}
+
+
+RTDECL(uint32_t) RTSemEventGetResolution(void)
+{
+    /** @todo we have 1ns parameter resolution, but need to verify that this is what
+     *        the kernel actually will use when setting the timer.  Most likely
+     *        it's rounded a little, but hopefully not to a multiple of HZ. */
+    return 1;
 }
 
 
