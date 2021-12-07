@@ -45,7 +45,6 @@
 #include "CGuestDirectory.h"
 #include "CGuestFsObjInfo.h"
 #include "CGuestSession.h"
-#include "CGuestSessionStateChangedEvent.h"
 
 
 /*********************************************************************************************************************************
@@ -128,6 +127,7 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     , m_pOptionsPanel(0)
     , m_pLogPanel(0)
     , m_pOperationsPanel(0)
+    , m_fCommitDataSignalReceived(false)
 {
     loadOptions();
     prepareObjects();
@@ -306,6 +306,8 @@ void UIFileManager::prepareConnections()
         connect(m_pHostFileTable, &UIFileManagerHostTable::sigDeleteConfirmationOptionChanged,
                 this, &UIFileManager::sltHandleOptionsUpdated);
     }
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIFileManager::sltCommitDataSignalReceived);
 }
 
 void UIFileManager::prepareToolBar()
@@ -414,6 +416,11 @@ void UIFileManager::sltHandleHidePanel(UIDialogPanel *pPanel)
     hidePanel(pPanel);
 }
 
+void UIFileManager::sltCommitDataSignalReceived()
+{
+    m_fCommitDataSignalReceived = true;
+}
+
 void UIFileManager::copyToHost()
 {
     if (m_pGuestTablesContainer && m_pHostFileTable)
@@ -485,6 +492,8 @@ QStringList UIFileManager::getFsObjInfoStringList(const T &fsObjectInfo) const
 
 void UIFileManager::saveOptions()
 {
+    if (m_fCommitDataSignalReceived)
+        return;
     /* Save the options: */
     UIFileManagerOptions *pOptions = UIFileManagerOptions::instance();
     if (pOptions)
@@ -595,6 +604,8 @@ void UIFileManager::appendLog(const QString &strLog, const QString &strMachineNa
 
 void UIFileManager::savePanelVisibility()
 {
+    if (m_fCommitDataSignalReceived)
+        return;
     /* Save a list of currently visible panels: */
     QStringList strNameList;
     foreach(UIDialogPanel* pPanel, m_visiblePanelsList)
@@ -663,16 +674,17 @@ void UIFileManager::addTabs(const QVector<QUuid> &machineIdsToAdd)
         CMachine comMachine = uiCommon().virtualBox().FindMachine(id.toString());
         if (comMachine.isNull())
             continue;
-        m_pGuestTablesContainer->addTab(new UIFileManagerGuestTable(m_pActionPool, comMachine, m_pGuestTablesContainer), comMachine.GetName());
-        // if (m_pGuestFileTable)
-        // {
-        //     connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigLogOutput,
-        //             this, &UIFileManager::sltReceieveLogOutput);
+        UIFileManagerGuestTable *pGuestFileTable = new UIFileManagerGuestTable(m_pActionPool, comMachine, m_pGuestTablesContainer);
+        m_pGuestTablesContainer->addTab(pGuestFileTable, comMachine.GetName());
+        if (pGuestFileTable)
+        {
+            connect(pGuestFileTable, &UIFileManagerGuestTable::sigLogOutput,
+                    this, &UIFileManager::sltReceieveLogOutput);
         //     connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigNewFileOperation,
         //             this, &UIFileManager::sltReceieveNewFileOperation);
         //     connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigDeleteConfirmationOptionChanged,
         //             this, &UIFileManager::sltHandleOptionsUpdated);
-        // }
+        }
     }
 }
 

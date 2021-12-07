@@ -32,6 +32,7 @@
 #include "CGuestSession.h"
 #include "CMachine.h"
 #include "CSession.h"
+#include "CConsole.h"
 
 
 /* GUI includes: */
@@ -100,7 +101,7 @@ private slots:
     void sltHandleCloseSessionRequest();
     void sltMachineStateChange(const QUuid &uMachineId, const KMachineState state);
     void sltCommitDataSignalReceived();
-    void sltAdditionsChange();
+    void sltAdditionsStateChange();
 
 private:
 
@@ -128,13 +129,18 @@ private:
                          CEventListener &comEventListener,
                          CEventSource comEventSource);
     void cleanupGuestListener();
-    void cleanupSessionListener();
+    void cleanupGuestSessionListener();
+    void cleanupConsoleListener();
 
     void prepareGuestSessionPanel();
-    /** Creates a shared machine session, opens a guest session and registers event listeners. */
-    bool openSession(const QString& strUserName, const QString& strPassword);
-    void closeSession();
-    bool isGuestAdditionsAvailable(CGuest &guest);
+
+
+    bool openGuestSession(const QString& strUserName, const QString& strPassword);
+    void closeGuestSession();
+
+    bool openMachineSession();
+    bool closeMachineSession();
+
     bool isGuestAdditionsAvailable();
 
     /** @name Perform operations needed after creating/ending a guest control session
@@ -144,17 +150,20 @@ private:
     /** @} */
 
     void initFileTable();
+    void cleanAll();
 
-
-    CGuest                    m_comGuest;
-    CGuestSession             m_comGuestSession;
-    CSession                  m_comSession;
-    CMachine                  m_comMachine;
+    CGuest          m_comGuest;
+    CGuestSession   m_comGuestSession;
+    CSession        m_comSession;
+    CMachine        m_comMachine;
+    CConsole        m_comConsole;
 
     ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
     ComObjPtr<UIMainEventListenerImpl> m_pQtSessionListener;
+    ComObjPtr<UIMainEventListenerImpl> m_pQtConsoleListener;
     CEventListener m_comSessionListener;
     CEventListener m_comGuestListener;
+    CEventListener m_comConsoleListener;
     UIFileManagerGuestSessionPanel     *m_pGuestSessionPanel;
     CheckMachine m_enmCheckMachine;
 };
