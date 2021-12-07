@@ -2594,7 +2594,7 @@ HRESULT Appliance::i_readManifestFile(TaskOVF *pTask, RTVFSIOSTREAM hVfsIosMf, c
 
     /*
      * Copy the manifest into a memory backed file so we can later do signature
-     * validation indepentend of the algorithms used by the signature.
+     * validation independent of the algorithms used by the signature.
      */
     int vrc = RTVfsMemorizeIoStreamAsFile(hVfsIosMf, RTFILE_O_READ, &m->hMemFileTheirManifest);
     RTVfsIoStrmRelease(hVfsIosMf);     /* consumes stream handle.  */
