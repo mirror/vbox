@@ -63,12 +63,12 @@
 #define VBOX_PAM_FLAG_REFRESH_CRED          "PAM_REFRESH_CRED"
 
 RT_C_DECLS_BEGIN
-RTDECL(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
-RTDECL(int) pam_sm_setcred(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
-RTDECL(int) pam_sm_acct_mgmt(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
-RTDECL(int) pam_sm_open_session(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
-RTDECL(int) pam_sm_close_session(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
-RTDECL(int) pam_sm_chauthtok(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
+DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
+DECLEXPORT(int) pam_sm_setcred(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
+DECLEXPORT(int) pam_sm_acct_mgmt(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
+DECLEXPORT(int) pam_sm_open_session(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
+DECLEXPORT(int) pam_sm_close_session(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
+DECLEXPORT(int) pam_sm_chauthtok(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
 RT_C_DECLS_END
 
 /** For debugging. */
