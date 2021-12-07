@@ -119,7 +119,7 @@ DECLINLINE(uint64_t) rtSemPosixCalcDeadline(uint32_t fFlags, uint64_t uTimeout, 
 
         pAbsDeadline->tv_sec  += TsAdd.tv_sec;
         pAbsDeadline->tv_nsec += TsAdd.tv_nsec;
-        if (pAbsDeadline->tv_nsec >= RT_NS_1SEC)
+        if ((uint32_t)pAbsDeadline->tv_nsec >= RT_NS_1SEC)
         {
             pAbsDeadline->tv_nsec -= RT_NS_1SEC;
             pAbsDeadline->tv_sec++;
