@@ -963,6 +963,7 @@ RuntimeR3_SOURCES.win = \
 	r3/nt/RTPathSetMode-r3-nt.cpp \
 	r3/nt/RTProcQueryParent-r3-nt.cpp \
 	nt/semevent-nt.cpp \
+	nt/RTSemEventGetResolution-nt.cpp \
 	r3/win/env-win.cpp \
 	r3/win/RTCrStoreCreateSnapshotById-win.cpp \
 	r3/win/RTFileQuerySectorSize-win.cpp \
@@ -3217,6 +3218,7 @@ RuntimeR0Drv_SOURCES.win = \
 	nt/RTNtPathExpand8dot3PathA.cpp \
 	nt/RTNtPathFindPossible8dot3Name.cpp \
 	nt/semevent-nt.cpp \
+	nt/RTSemEventGetResolution-nt.cpp \
 	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/alloc-ef-r0drv.cpp \
 	r0drv/memobj-r0drv.cpp \

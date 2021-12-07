@@ -42,10 +42,6 @@
 #include <iprt/lockvalidator.h>
 #include <iprt/mem.h>
 #include <iprt/time.h>
-#include <iprt/timer.h>
-#ifdef IN_RING3
-# include <iprt/system.h>
-#endif
 #include "internal/magics.h"
 
 
@@ -425,47 +421,6 @@ RTDECL(int)  RTSemEventWaitExDebug(RTSEMEVENT hEventSem, uint32_t fFlags, uint64
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return rtR0SemEventNtWait(hEventSem, fFlags, uTimeout, &SrcPos);
-}
-
-
-RTDECL(uint32_t) RTSemEventGetResolution(void)
-{
-    /*
-     * We need to figure the KeWaitForSingleObject / NtWaitForSingleObject timeout
-     * resolution, i.e. if we wish to wait for 1000ns how long are we likely to
-     * actually wait before woken up.
-     *
-     * In older versions of NT, these timeout were implemented using KTIMERs and
-     * have the same resolution as what them.  This should be found using
-     * ExSetTimerResolution or NtQueryTimerResolution.
-     *
-     * Probably since windows 8.1 the value returned by NtQueryTimerResolution (and
-     * set NtSetTimerResolution) have been virtualized and no longer reflects the
-     * timer wheel resolution, at least from what I can tell. ExSetTimerResolution
-     * still works as before, but it accesses variable that I cannot find out how
-     * to access from user land.  So, kernel will get (and be able to set) the right
-     * granularity, while in user land we'll be forced to reporting the max value.
-     *
-     * (The reason why I suspect it's since 8.1 is because the high resolution
-     * ExSetTimer APIs were introduced back then.)
-     */
-#ifdef IN_RING0
-    return RTTimerGetSystemGranularity();
-#else
-    ULONG cNtTicksMin = 0;
-    ULONG cNtTicksMax = 0;
-    ULONG cNtTicksCur = 0;
-    NTSTATUS rcNt = NtQueryTimerResolution(&cNtTicksMin, &cNtTicksMax, &cNtTicksCur);
-    if (NT_SUCCESS(rcNt))
-    {
-        Assert(cNtTicksMin >= cNtTicksMax);
-        if (RTSystemGetNtVersion() >= RTSYSTEM_MAKE_NT_VERSION(6,3,9600)) /** @todo check when the switch happened, might be much later... */
-            return cNtTicksMin * 100;
-        return cNtTicksCur * 100;
-    }
-    AssertFailed();
-    return 16 * RT_NS_1MS; /* the default on 64-bit windows 10 */
-#endif
 }
 
 
