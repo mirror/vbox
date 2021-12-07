@@ -351,7 +351,7 @@ static int rtSemEventLinuxWaitTimed(struct RTSEMEVENTINTERNAL *pThis, uint32_t f
     struct timespec TsTimeout;
     int             iWaitOp;
     uint32_t        uWaitVal3;
-    uint64_t        nsAbsTimeout;
+    uint64_t        nsAbsTimeout = uTimeout; /* (older gcc maybe used uninitialized) */
     uTimeout = rtSemLinuxCalcDeadline(fFlags, uTimeout, g_fCanUseWaitBitSet, &TsTimeout, &iWaitOp, &uWaitVal3, &nsAbsTimeout);
     if (uTimeout == 0)
         return rtSemEventLinuxWaitPoll(pThis);
