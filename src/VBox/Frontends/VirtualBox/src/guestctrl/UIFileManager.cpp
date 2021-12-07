@@ -175,14 +175,6 @@ void UIFileManager::prepareObjects()
     if (m_fShowToolbar)
         prepareToolBar();
 
-    QHBoxLayout *pFileTableContainerLayout = new QHBoxLayout;
-    pFileTableContainerLayout->setContentsMargins(0, 0, 0, 0);
-#ifdef VBOX_WS_MAC
-    pFileTableContainerLayout->setSpacing(10);
-#else
-    pFileTableContainerLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
-#endif
-
     QWidget *pTopWidget = new QWidget;
     QVBoxLayout *pTopLayout = new QVBoxLayout;
     pTopLayout->setSpacing(0);

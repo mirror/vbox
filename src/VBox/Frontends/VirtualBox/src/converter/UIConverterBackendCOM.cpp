@@ -55,6 +55,7 @@ template<> bool canConvert<KStorageControllerType>() { return true; }
 template<> bool canConvert<KChipsetType>() { return true; }
 template<> bool canConvert<KNATProtocol>() { return true; }
 template<> bool canConvert<KGuestSessionStatus>() { return true; }
+template<> bool canConvert<KProcessStatus>() { return true; }
 
 /* QIcon <= KCloudMachineState: */
 template<> QIcon toIcon(const KCloudMachineState &state)
@@ -783,4 +784,49 @@ template<> KGuestSessionStatus fromString<KGuestSessionStatus>(const QString &st
         AssertMsgFailed(("No value for '%s'", strStatus.toUtf8().constData()));
     }
     return list.value(strStatus, KGuestSessionStatus_Undefined);
+}
+
+/* QString <= KProcessStatus: */
+template<> QString toString(const KProcessStatus &status)
+{
+    switch (status)
+    {
+        case KProcessStatus_Undefined:            return QApplication::translate("UICommon", "Undefined", "ProcessStatus");
+        case KProcessStatus_Starting:             return QApplication::translate("UICommon", "Starting", "ProcessStatus");
+        case KProcessStatus_Started:              return QApplication::translate("UICommon", "Started", "ProcessStatus");
+        case KProcessStatus_Paused:               return QApplication::translate("UICommon", "Paused", "ProcessStatus");
+        case KProcessStatus_Terminating:          return QApplication::translate("UICommon", "Terminating", "ProcessStatus");
+        case KProcessStatus_TerminatedNormally:   return QApplication::translate("UICommon", "Terminated (Normally)", "ProcessStatus");
+        case KProcessStatus_TerminatedSignal:     return QApplication::translate("UICommon", "Terminated (Signal)", "ProcessStatus");
+        case KProcessStatus_TerminatedAbnormally: return QApplication::translate("UICommon", "Terminated (Abnormally)", "ProcessStatus");
+        case KProcessStatus_TimedOutKilled:       return QApplication::translate("UICommon", "Timed Out (Killed)", "ProcessStatus");
+        case KProcessStatus_TimedOutAbnormally:   return QApplication::translate("UICommon", "Timed Out (Abnormally)", "ProcessStatus");
+        case KProcessStatus_Down:                 return QApplication::translate("UICommon", "Down", "ProcessStatus");
+        case KProcessStatus_Error:                return QApplication::translate("UICommon", "Error", "ProcessStatus");
+        default: AssertMsgFailed(("No text for %d", status)); break;
+    }
+    return QString();
+}
+
+/* KProcessStatus <= QString: */
+template<> KProcessStatus fromString<KProcessStatus>(const QString &strStatus)
+{
+    QHash<QString, KProcessStatus> list;
+    list.insert(QApplication::translate("UICommon", "Undefined", "ProcessStatus"),               KProcessStatus_Undefined);
+    list.insert(QApplication::translate("UICommon", "Starting", "ProcessStatus"),                KProcessStatus_Starting);
+    list.insert(QApplication::translate("UICommon", "Started", "ProcessStatus"),                 KProcessStatus_Started);
+    list.insert(QApplication::translate("UICommon", "Paused", "ProcessStatus"),                 KProcessStatus_Paused);
+    list.insert(QApplication::translate("UICommon", "Terminating", "ProcessStatus"),             KProcessStatus_Terminating);
+    list.insert(QApplication::translate("UICommon", "Terminated (Normally)", "ProcessStatus"),   KProcessStatus_TerminatedNormally);
+    list.insert(QApplication::translate("UICommon", "Terminated (Signal)", "ProcessStatus"),     KProcessStatus_TerminatedSignal);
+    list.insert(QApplication::translate("UICommon", "Terminated (Abnormally)", "ProcessStatus"), KProcessStatus_TerminatedAbnormally);
+    list.insert(QApplication::translate("UICommon", "Timed Out (Killed)", "ProcessStatus"),      KProcessStatus_TimedOutKilled);
+    list.insert(QApplication::translate("UICommon", "Timed Out (Abnormally)", "ProcessStatus"),  KProcessStatus_TimedOutAbnormally);
+    list.insert(QApplication::translate("UICommon", "Down", "ProcessStatus"),                    KProcessStatus_Down);
+    list.insert(QApplication::translate("UICommon", "Error", "ProcessStatus"),                   KProcessStatus_Error);
+    if (!list.contains(strStatus))
+    {
+        AssertMsgFailed(("No value for '%s'", strStatus.toUtf8().constData()));
+    }
+    return list.value(strStatus, KProcessStatus_Undefined);
 }

@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "QILabel.h"
 #include "UIActionPool.h"
+#include "UIConsoleEventHandler.h"
 #include "UIConverter.h"
 #include "UICommon.h"
 #include "UICustomFileSystemModel.h"
@@ -165,6 +166,11 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
 
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
             this, &UIFileManagerGuestTable::sltMachineStateChange);
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIFileManagerGuestTable::sltCommitDataSignalReceived);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigAdditionsChange,
+            this, &UIFileManagerGuestTable::sltAdditionsChange);
+
     if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
         m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession)->setChecked(true);
     retranslateUi();
@@ -1097,6 +1103,18 @@ bool UIFileManagerGuestTable::isSessionPossible()
 
 void UIFileManagerGuestTable::sltHandleCloseSessionRequest()
 {
+    closeSession();
+}
+
+void UIFileManagerGuestTable::sltCommitDataSignalReceived()
+{
+    m_comMachine.detach();
+}
+
+void UIFileManagerGuestTable::sltAdditionsChange()
+{
+    setSessionDependentWidgetsEnabled(isSessionPossible());
+
 }
 
 void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled(bool pEnabled)
@@ -1106,6 +1124,24 @@ void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled(bool pEnabled)
         m_pGuestSessionPanel->setEnabled(pEnabled);
 }
 
+void UIFileManagerGuestTable::closeSession()
+{
+    if (!m_comGuestSession.isNull())
+        m_comGuestSession.Close();
+
+    reset();
+
+    if (!m_comSession.isNull())
+        m_comSession.UnlockMachine();
+
+    cleanupGuestListener();
+    cleanupSessionListener();
+
+    emit sigLogOutput("Guest session is closed", m_strTableName, FileManagerLogType_Info);
+    postGuestSessionClosed();
+}
+
+
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -1113,10 +1149,6 @@ void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled(bool pEnabled)
 
 
 
-
-void UIFileManager::closeSession()
-{
-}
 
 
 

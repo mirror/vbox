@@ -99,6 +99,8 @@ private slots:
     void sltCreateGuestSession(QString strUserName, QString strPassword);
     void sltHandleCloseSessionRequest();
     void sltMachineStateChange(const QUuid &uMachineId, const KMachineState state);
+    void sltCommitDataSignalReceived();
+    void sltAdditionsChange();
 
 private:
 
@@ -131,6 +133,7 @@ private:
     void prepareGuestSessionPanel();
     /** Creates a shared machine session, opens a guest session and registers event listeners. */
     bool openSession(const QString& strUserName, const QString& strPassword);
+    void closeSession();
     bool isGuestAdditionsAvailable(CGuest &guest);
     bool isGuestAdditionsAvailable();
 
