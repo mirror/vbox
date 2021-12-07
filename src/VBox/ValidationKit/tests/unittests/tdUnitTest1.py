@@ -120,6 +120,7 @@ class tdUnitTest1(vbox.TestDriver):
     kdTestCasesBlackList = {
         'testcase/tstClipboardX11Smoke': '',            # (Old naming, deprecated) Needs X, not available on all test boxes.
         'testcase/tstClipboardGH-X11Smoke': '',         # (New name) Ditto.
+        'testcase/tstClipboardQt': '',                  # Is interactive and needs Qt, needed for Qt clipboard bugfixing.
         'testcase/tstFileLock': '',
         'testcase/tstDisasm-2': '',                     # without parameters it will disassembler 1GB starting from 0
         'testcase/tstFileAppendWin-1': '',

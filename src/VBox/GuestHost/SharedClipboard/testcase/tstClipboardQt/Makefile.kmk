@@ -22,10 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Targets and units.
 #
 USES += qt5
-#LIBRARIES += VBox-chmlib VBox-libchmfile
 PROGRAMS += tstClipboardQt
-
-
 
 #
 # tstClipboardQt
@@ -35,25 +32,6 @@ tstClipboardQt_NAME = tstClipboardQt
 tstClipboardQt_CXXFLAGS = \
 	$(VBOX_GCC_Wno-implicit-fallthrough) \
 	$(VBOX_GCC_Wno-deprecated-declarations)
-#kchmviewer4_LIBS = \
-#	$(VBox-libchmfile_1_TARGET) \
-#	$(VBox-chmlib_1_TARGET)
-#kchmviewer4_INCS = \
-#	./lib/libchmfile \
-#	./chmlib-0.39/src \
-#	.
-
-# Headers containing definitions of classes that use the Q_OBJECT macro.
-#kchmviewer4_QT_MOCHDRS = \
-#	src/kchmviewwindowmgr.h \
-#	src/kchmviewwindow_qtextbrowser.h \
-#	src/kchmdialogchooseurlfromlist.h \
-#	src/kchmbookmarkwindow.h \
-#	src/kchmsetupdialog.h \
-#	src/kchmmainwindow.h \
-#	src/kchmindexwindow.h \
-#	src/kchmcontentswindow.h \
-#	src/kchmsearchwindow.h
 
 tstClipboardQt_SOURCES = \
 	tstClipboardQt.cpp
@@ -62,4 +40,3 @@ tstClipboardQt_SOURCES = \
 tstClipboardQt_QT_MODULES = Core Gui Widgets PrintSupport
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
