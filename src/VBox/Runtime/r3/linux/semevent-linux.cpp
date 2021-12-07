@@ -64,13 +64,8 @@ __asm__ (".global epoll_pwait");
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/syscall.h>
-#if 0 /* With 2.6.17 futex.h has become C++ unfriendly. */
-# include <linux/futex.h>
-#else
-# define FUTEX_WAIT 0
-# define FUTEX_WAKE 1
-# define FUTEX_WAIT_BITSET 9 /**< @since 2.6.25 - uses absolute timeout. */
-#endif
+
+#include "semwait-linux.h"
 
 
 /*********************************************************************************************************************************
@@ -103,41 +98,9 @@ struct RTSEMEVENTINTERNAL
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/** Whether we can use FUTEX_WAIT_BITSET. */
 static int volatile g_fCanUseWaitBitSet = -1;
 
-
-/**
- * Wrapper for the futex syscall.
- */
-static long sys_futex(uint32_t volatile *uaddr, int op, int val, struct timespec *utime, int32_t *uaddr2, int val3)
-{
-    errno = 0;
-    long rc = syscall(__NR_futex, uaddr, op, val, utime, uaddr2, val3);
-    if (rc < 0)
-    {
-        Assert(rc == -1);
-        rc = -errno;
-    }
-    return rc;
-}
-
-
-DECLINLINE(void) rtSemLinuxCheckForFutexWaitBitSetSlow(int volatile *pfCanUseWaitBitSet)
-{
-    uint32_t uTestVar = UINT32_MAX;
-    long rc = sys_futex(&uTestVar, FUTEX_WAIT_BITSET, UINT32_C(0xf0f0f0f0), NULL, NULL, UINT32_MAX);
-    *pfCanUseWaitBitSet = rc == -EAGAIN;
-    AssertMsg(rc == -ENOSYS || rc == -EAGAIN, ("%d\n", rc));
-}
-
-
-DECLINLINE(void) rtSemLinuxCheckForFutexWaitBitSet(int volatile *pfCanUseWaitBitSet)
-{
-    if (*pfCanUseWaitBitSet != -1)
-    { /* likely */ }
-    else
-        rtSemLinuxCheckForFutexWaitBitSetSlow(pfCanUseWaitBitSet);
-}
 
 
 
