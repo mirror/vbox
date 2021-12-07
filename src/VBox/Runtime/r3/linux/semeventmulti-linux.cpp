@@ -267,18 +267,12 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 }
 
 
-
-DECLINLINE(int) rtSemEventLnxMultiWait(struct RTSEMEVENTMULTIINTERNAL *pThis, uint32_t fFlags, uint64_t uTimeout,
-                                       PCRTLOCKVALSRCPOS pSrcPos)
+/**
+ * Performs an indefinite wait on the event.
+ */
+static int rtSemEventMultiLinuxWaitIndefinite(struct RTSEMEVENTMULTIINTERNAL *pThis, uint32_t fFlags, PCRTLOCKVALSRCPOS pSrcPos)
 {
     RT_NOREF(pSrcPos);
-
-    /*
-     * Validate input.
-     */
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
 
     /*
      * Quickly check whether it's signaled.
@@ -287,45 +281,6 @@ DECLINLINE(int) rtSemEventLnxMultiWait(struct RTSEMEVENTMULTIINTERNAL *pThis, ui
     if (uState == RTSEMEVENTMULTI_LNX_SIGNALED)
         return VINF_SUCCESS;
     ASSERT_VALID_STATE(uState);
-
-    /*
-     * Check and convert the timeout value.
-     */
-    struct timespec ts;
-    struct timespec *pTimeout = NULL;
-    uint64_t u64Deadline = 0; /* shut up gcc */
-    if (!(fFlags & RTSEMWAIT_FLAGS_INDEFINITE))
-    {
-        /* If the timeout is zero, then we're done. */
-        if (!uTimeout)
-            return VERR_TIMEOUT;
-
-        /* Convert it to a deadline + interval timespec. */
-        if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
-            uTimeout = uTimeout < UINT64_MAX / UINT32_C(1000000) * UINT32_C(1000000)
-                     ? uTimeout * UINT32_C(1000000)
-                     : UINT64_MAX;
-        if (uTimeout != UINT64_MAX) /* unofficial way of indicating an indefinite wait */
-        {
-            if (fFlags & RTSEMWAIT_FLAGS_RELATIVE)
-                u64Deadline = RTTimeSystemNanoTS() + uTimeout;
-            else
-            {
-                uint64_t u64Now = RTTimeSystemNanoTS();
-                if (uTimeout <= u64Now)
-                    return VERR_TIMEOUT;
-                u64Deadline = uTimeout;
-                uTimeout   -= u64Now;
-            }
-            if (   sizeof(ts.tv_sec) >= sizeof(uint64_t)
-                || uTimeout <= UINT64_C(1000000000) * UINT32_MAX)
-            {
-                ts.tv_nsec = uTimeout % UINT32_C(1000000000);
-                ts.tv_sec  = uTimeout / UINT32_C(1000000000);
-                pTimeout = &ts;
-            }
-        }
-    }
 
     /*
      * The wait loop.
@@ -347,20 +302,11 @@ DECLINLINE(int) rtSemEventLnxMultiWait(struct RTSEMEVENTMULTIINTERNAL *pThis, ui
                 && ASMAtomicCmpXchgU32(&pThis->uState, RTSEMEVENTMULTI_LNX_NOT_SIGNALED_WAITERS,
                                        RTSEMEVENTMULTI_LNX_NOT_SIGNALED)))
         {
-            /* adjust the relative timeout */
-            if (pTimeout)
-            {
-                int64_t i64Diff = u64Deadline - RTTimeSystemNanoTS();
-                if (i64Diff < 1000)
-                    return VERR_TIMEOUT;
-                ts.tv_sec  = (uint64_t)i64Diff / UINT32_C(1000000000);
-                ts.tv_nsec = (uint64_t)i64Diff % UINT32_C(1000000000);
-            }
 #ifdef RTSEMEVENTMULTI_STRICT
             if (pThis->fEverHadSignallers)
             {
                 int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                                uTimeout / UINT32_C(1000000), RTTHREADSTATE_EVENT_MULTI, true);
+                                                                RT_INDEFINITE_WAIT, RTTHREADSTATE_EVENT_MULTI, true);
                 if (RT_FAILURE(rc9))
                     return rc9;
             }
@@ -369,10 +315,18 @@ DECLINLINE(int) rtSemEventLnxMultiWait(struct RTSEMEVENTMULTIINTERNAL *pThis, ui
             uint32_t const uPrevSignalSerialNo = ASMAtomicReadU32(&pThis->uSignalSerialNo);
 #endif
             RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
-            long rc = sys_futex(&pThis->uState, FUTEX_WAIT, 1, pTimeout, NULL, 0);
+            long rc = sys_futex(&pThis->uState, FUTEX_WAIT, 1, NULL /*pTimeout*/, NULL, 0);
             RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
-            if (RT_UNLIKELY(pThis->u32Magic != RTSEMEVENTMULTI_MAGIC))
+
+            /* Check that the structure is still alive before continuing. */
+            if (RT_LIKELY(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC))
+            { /*likely*/ }
+            else
                 return VERR_SEM_DESTROYED;
+
+            /*
+             * Return if success.
+             */
             if (rc == 0)
             {
                 Assert(uPrevSignalSerialNo != ASMAtomicReadU32(&pThis->uSignalSerialNo));
@@ -382,14 +336,6 @@ DECLINLINE(int) rtSemEventLnxMultiWait(struct RTSEMEVENTMULTIINTERNAL *pThis, ui
             /*
              * Act on the wakup code.
              */
-            if (rc == -ETIMEDOUT)
-            {
-/** @todo something is broken here. shows up every now and again in the ata
- *        code. Should try to run the timeout against RTTimeMilliTS to
- *        check that it's doing the right thing... */
-                Assert(pTimeout);
-                return VERR_TIMEOUT;
-            }
             if (rc == -EWOULDBLOCK)
                 /* retry, the value changed. */;
             else if (rc == -EINTR)
@@ -409,6 +355,171 @@ DECLINLINE(int) rtSemEventLnxMultiWait(struct RTSEMEVENTMULTIINTERNAL *pThis, ui
         else
             ASSERT_VALID_STATE(uState);
     }
+}
+
+
+/**
+ * Handle polling (timeout already expired at the time of the call).
+ *
+ * @returns VINF_SUCCESS, VERR_TIMEOUT, VERR_SEM_DESTROYED.
+ * @param   pThis               The semaphore.
+ */
+static int rtSemEventMultiLinuxWaitPoll(struct RTSEMEVENTMULTIINTERNAL *pThis)
+{
+    uint32_t uState = ASMAtomicUoReadU32(&pThis->uState);
+    if (uState == RTSEMEVENTMULTI_LNX_SIGNALED)
+        return VINF_SUCCESS;
+    return VERR_TIMEOUT;
+}
+
+
+/**
+ * Performs an indefinite wait on the event.
+ */
+static int rtSemEventMultiLinuxWaitTimed(struct RTSEMEVENTMULTIINTERNAL *pThis, uint32_t fFlags, uint64_t uTimeout,
+                                         PCRTLOCKVALSRCPOS pSrcPos)
+{
+    RT_NOREF(pSrcPos);
+
+    /*
+     * Quickly check whether it's signaled.
+     */
+    uint32_t uState = ASMAtomicUoReadU32(&pThis->uState);
+    if (uState == RTSEMEVENTMULTI_LNX_SIGNALED)
+        return VINF_SUCCESS;
+    ASSERT_VALID_STATE(uState);
+
+    /*
+     * Convert the timeout value.
+     */
+    struct timespec TsTimeout;
+    int             iWaitOp;
+    uint32_t        uWaitVal3;
+    uint64_t        nsAbsTimeout;
+    uTimeout = rtSemLinuxCalcDeadline(fFlags, uTimeout, g_fCanUseWaitBitSet, &TsTimeout, &iWaitOp, &uWaitVal3, &nsAbsTimeout);
+    if (uTimeout == 0)
+        return rtSemEventMultiLinuxWaitPoll(pThis);
+    if (uTimeout == UINT64_MAX)
+        return rtSemEventMultiLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
+
+    /*
+     * The wait loop.
+     */
+#ifdef RTSEMEVENTMULTI_STRICT
+    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+#else
+    RTTHREAD hThreadSelf = RTThreadSelf();
+#endif
+    for (unsigned i = 0;; i++)
+    {
+        /*
+         * Start waiting. We only account for there being or having been
+         * threads waiting on the semaphore to keep things simple.
+         */
+        uState = ASMAtomicUoReadU32(&pThis->uState);
+        if (   uState == RTSEMEVENTMULTI_LNX_NOT_SIGNALED_WAITERS
+            || (   uState == RTSEMEVENTMULTI_LNX_NOT_SIGNALED
+                && ASMAtomicCmpXchgU32(&pThis->uState, RTSEMEVENTMULTI_LNX_NOT_SIGNALED_WAITERS,
+                                       RTSEMEVENTMULTI_LNX_NOT_SIGNALED)))
+        {
+#ifdef RTSEMEVENTMULTI_STRICT
+            if (pThis->fEverHadSignallers)
+            {
+                int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
+                                                                uTimeout / UINT32_C(1000000), RTTHREADSTATE_EVENT_MULTI, true);
+                if (RT_FAILURE(rc9))
+                    return rc9;
+            }
+#endif
+#ifdef RT_STRICT
+            uint32_t const uPrevSignalSerialNo = ASMAtomicReadU32(&pThis->uSignalSerialNo);
+#endif
+            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
+            long rc = sys_futex(&pThis->uState, iWaitOp, 1, &TsTimeout, NULL, uWaitVal3);
+            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
+
+            /* Check that the structure is still alive before continuing. */
+            if (RT_LIKELY(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC))
+            { /*likely*/ }
+            else
+                return VERR_SEM_DESTROYED;
+
+            /*
+             * Return if success.
+             */
+            if (rc == 0)
+            {
+                Assert(uPrevSignalSerialNo != ASMAtomicReadU32(&pThis->uSignalSerialNo));
+                return VINF_SUCCESS;
+            }
+
+            /*
+             * Act on the wakup code.
+             */
+            if (rc == -ETIMEDOUT)
+            {
+                /** @todo something is broken here. shows up every now and again in the ata
+                 *        code. Should try to run the timeout against RTTimeMilliTS to
+                 *        check that it's doing the right thing... */
+#ifdef RT_STRICT
+                uint64_t const uNow = RTTimeNanoTS();
+                AssertMsg(uNow >= nsAbsTimeout || nsAbsTimeout - uNow < RT_NS_1MS,
+                          ("%#RX64 - %#RX64 => %#RX64 (%RI64)\n", nsAbsTimeout, uNow, nsAbsTimeout - uNow, nsAbsTimeout - uNow));
+#endif
+                return VERR_TIMEOUT;
+            }
+            if (rc == -EWOULDBLOCK)
+            {
+                /* retry, the value changed. */;
+            }
+            else if (rc == -EINTR)
+            {
+                if (fFlags & RTSEMWAIT_FLAGS_NORESUME)
+                    return VERR_INTERRUPTED;
+            }
+            else
+            {
+                /* this shouldn't happen! */
+                AssertMsgFailed(("rc=%ld errno=%d\n", rc, errno));
+                return RTErrConvertFromErrno(rc);
+            }
+        }
+        else if (uState == RTSEMEVENTMULTI_LNX_SIGNALED)
+            return VINF_SUCCESS;
+        else
+            ASSERT_VALID_STATE(uState);
+
+        /* adjust the relative timeout if relative */
+        if (iWaitOp == FUTEX_WAIT)
+        {
+            int64_t i64Diff = nsAbsTimeout - RTTimeSystemNanoTS();
+            if (i64Diff < 1000)
+                return VERR_TIMEOUT;
+            TsTimeout.tv_sec  = (uint64_t)i64Diff / RT_NS_1SEC;
+            TsTimeout.tv_nsec = (uint64_t)i64Diff % RT_NS_1SEC;
+        }
+    }
+}
+
+/**
+ * Internal wait worker function.
+ */
+DECLINLINE(int) rtSemEventLnxMultiWait(RTSEMEVENTMULTI hEventSem, uint32_t fFlags, uint64_t uTimeout, PCRTLOCKVALSRCPOS pSrcPos)
+{
+    /*
+     * Validate input.
+     */
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventSem;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+
+    /*
+     * Timed or indefinite wait?
+     */
+    if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
+        return rtSemEventMultiLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
+    return rtSemEventMultiLinuxWaitTimed(hEventSem, fFlags, uTimeout, pSrcPos);
 }
 
 

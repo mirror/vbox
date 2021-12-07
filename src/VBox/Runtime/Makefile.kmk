@@ -2269,6 +2269,7 @@ ifdef VBOX_WITH_DTRACE_R3
  endif
 endif
 VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeR3_DEFS.$(KBUILD_TYPE))
+VBoxRT_DEFS.$(KBUILD_TARGET)  := $(RuntimeR3_DEFS.$(KBUILD_TARGET))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
 	$(filter-out common/checksum/crc32.cpp, \

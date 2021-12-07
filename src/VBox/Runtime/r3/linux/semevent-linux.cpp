@@ -133,10 +133,10 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
         pThis = (struct RTSEMEVENTINTERNAL *)rtMemBaseAlloc(sizeof(struct RTSEMEVENTINTERNAL));
     if (pThis)
     {
-        pThis->iMagic = RTSEMEVENT_MAGIC;
-        pThis->cWaiters = 0;
+        pThis->iMagic     = RTSEMEVENT_MAGIC;
+        pThis->cWaiters   = 0;
         pThis->fSignalled = 0;
-        pThis->fFlags = fFlags;
+        pThis->fFlags     = fFlags;
 #ifdef RTSEMEVENT_STRICT
         if (!pszNameFmt)
         {
@@ -317,6 +317,12 @@ static int rtSemEventLinuxWaitIndefinite(struct RTSEMEVENTINTERNAL *pThis, uint3
 }
 
 
+/**
+ * Handle polling (timeout already expired at the time of the call).
+ *
+ * @returns VINF_SUCCESS, VERR_TIMEOUT, VERR_SEM_DESTROYED.
+ * @param   pThis               The semaphore.
+ */
 static int rtSemEventLinuxWaitPoll(struct RTSEMEVENTINTERNAL *pThis)
 {
     /*
@@ -331,6 +337,9 @@ static int rtSemEventLinuxWaitPoll(struct RTSEMEVENTINTERNAL *pThis)
 }
 
 
+/**
+ * Performs an timed wait on the event.
+ */
 static int rtSemEventLinuxWaitTimed(struct RTSEMEVENTINTERNAL *pThis, uint32_t fFlags,
                                     uint64_t uTimeout, PCRTLOCKVALSRCPOS pSrcPos)
 {
@@ -339,108 +348,15 @@ static int rtSemEventLinuxWaitTimed(struct RTSEMEVENTINTERNAL *pThis, uint32_t f
     /*
      * Convert the timeout value.
      */
-    int       iWaitOp;
-    uint32_t  uWaitVal3;
-    timespec  TsTimeout;
-    uint64_t  uAbsTimeout = uTimeout;  /* Note! only relevant for relative waits (FUTEX_WAIT). */
-    if (fFlags & RTSEMWAIT_FLAGS_RELATIVE)
-    {
-        if (!uTimeout)
-            return rtSemEventLinuxWaitPoll(pThis);
-
-        if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
-        {
-            if (   sizeof(TsTimeout.tv_sec) >= sizeof(uint64_t)
-                || uTimeout < (uint64_t)UINT32_MAX * RT_MS_1SEC)
-            {
-                TsTimeout.tv_sec  = uTimeout / RT_MS_1SEC;
-                TsTimeout.tv_nsec = (uTimeout % RT_MS_1SEC) & RT_NS_1MS;
-                uAbsTimeout      *= RT_NS_1MS;
-            }
-            else
-                return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
-        }
-        else
-        {
-            Assert(fFlags & RTSEMWAIT_FLAGS_NANOSECS);
-            if (   sizeof(TsTimeout.tv_sec) >= sizeof(uint64_t)
-                || uTimeout < (uint64_t)UINT32_MAX * RT_NS_1SEC)
-            {
-                TsTimeout.tv_sec  = uTimeout / RT_NS_1SEC;
-                TsTimeout.tv_nsec = uTimeout % RT_NS_1SEC;
-            }
-            else
-                return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
-        }
-
-        if (fFlags & RTSEMWAIT_FLAGS_RESUME)
-            uAbsTimeout += RTTimeNanoTS();
-
-        iWaitOp   = FUTEX_WAIT;
-        uWaitVal3 = 0;
-    }
-    else
-    {
-        /* Absolute deadline: */
-        Assert(fFlags & RTSEMWAIT_FLAGS_ABSOLUTE);
-        if (g_fCanUseWaitBitSet == true)
-        {
-            if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
-            {
-                if (   sizeof(TsTimeout.tv_sec) >= sizeof(uint64_t)
-                    || uTimeout < (uint64_t)UINT32_MAX * RT_MS_1SEC)
-                {
-                    TsTimeout.tv_sec  = uTimeout / RT_MS_1SEC;
-                    TsTimeout.tv_nsec = (uTimeout % RT_MS_1SEC) & RT_NS_1MS;
-                }
-                else
-                    return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
-            }
-            else
-            {
-                Assert(fFlags & RTSEMWAIT_FLAGS_NANOSECS);
-                if (   sizeof(TsTimeout.tv_sec) >= sizeof(uint64_t)
-                    || uTimeout < (uint64_t)UINT32_MAX * RT_NS_1SEC)
-                {
-                    TsTimeout.tv_sec  = uTimeout / RT_NS_1SEC;
-                    TsTimeout.tv_nsec = uTimeout % RT_NS_1SEC;
-                }
-                else
-                    return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
-            }
-            iWaitOp   = FUTEX_WAIT_BITSET;
-            uWaitVal3 = UINT32_MAX;
-        }
-        else
-        {
-            /* Recalculate it as an relative timeout: */
-            if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
-            {
-                if (uTimeout < UINT64_MAX / RT_NS_1MS)
-                    uAbsTimeout = uTimeout *= RT_NS_1MS;
-                else
-                    return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
-            }
-
-            uint64_t const u64Now = RTTimeNanoTS();
-            if (u64Now < uTimeout)
-                uTimeout -= u64Now;
-            else
-                return rtSemEventLinuxWaitPoll(pThis);
-
-            if (   sizeof(TsTimeout.tv_sec) >= sizeof(uint64_t)
-                || uTimeout < (uint64_t)UINT32_MAX * RT_NS_1SEC)
-            {
-                TsTimeout.tv_sec  = uTimeout / RT_NS_1SEC;
-                TsTimeout.tv_nsec = uTimeout % RT_NS_1SEC;
-            }
-            else
-                return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
-
-            iWaitOp   = FUTEX_WAIT;
-            uWaitVal3 = 0;
-        }
-    }
+    struct timespec TsTimeout;
+    int             iWaitOp;
+    uint32_t        uWaitVal3;
+    uint64_t        nsAbsTimeout;
+    uTimeout = rtSemLinuxCalcDeadline(fFlags, uTimeout, g_fCanUseWaitBitSet, &TsTimeout, &iWaitOp, &uWaitVal3, &nsAbsTimeout);
+    if (uTimeout == 0)
+        return rtSemEventLinuxWaitPoll(pThis);
+    if (uTimeout == UINT64_MAX)
+        return rtSemEventLinuxWaitIndefinite(pThis, fFlags, pSrcPos);
 
     /*
      * Quickly check whether it's signaled and there are no other waiters.
@@ -493,6 +409,11 @@ static int rtSemEventLinuxWaitTimed(struct RTSEMEVENTINTERNAL *pThis, uint32_t f
         }
         else if (lrc == -ETIMEDOUT)
         {
+#ifdef RT_STRICT
+            uint64_t const uNow = RTTimeNanoTS();
+            AssertMsg(uNow >= nsAbsTimeout || nsAbsTimeout - uNow < RT_NS_1MS,
+                      ("%#RX64 - %#RX64 => %#RX64 (%RI64)\n", nsAbsTimeout, uNow, nsAbsTimeout - uNow, nsAbsTimeout - uNow));
+#endif
             rc = VERR_TIMEOUT;
             break;
         }
@@ -515,7 +436,7 @@ static int rtSemEventLinuxWaitTimed(struct RTSEMEVENTINTERNAL *pThis, uint32_t f
         /* adjust the relative timeout */
         if (iWaitOp == FUTEX_WAIT)
         {
-            int64_t i64Diff = uAbsTimeout - RTTimeSystemNanoTS();
+            int64_t i64Diff = nsAbsTimeout - RTTimeSystemNanoTS();
             if (i64Diff < 1000)
             {
                 rc = VERR_TIMEOUT;
@@ -541,9 +462,12 @@ DECLINLINE(int) rtSemEventLinuxWait(RTSEMEVENT hEventSem, uint32_t fFlags, uint6
      */
     struct RTSEMEVENTINTERNAL *pThis = hEventSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    uint32_t    fSignalled = pThis->fSignalled;
-    AssertReturn(fSignalled == false || fSignalled == true, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->iMagic == RTSEMEVENT_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+#ifdef RT_STRICT
+    uint32_t const fSignalled = pThis->fSignalled;
+    Assert(fSignalled == false || fSignalled == true);
+#endif
 
     /*
      * Timed or indefinite wait?
