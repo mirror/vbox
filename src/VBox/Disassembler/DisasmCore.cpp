@@ -2732,8 +2732,8 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
     size_t offInstr = 0;
     for (;;)
     {
-        uint8_t codebyte = disReadByte(pDis, offInstr++);
-        uint8_t opcode   = paOneByteMap[codebyte].uOpcode;
+        uint8_t  const bCode  = disReadByte(pDis, offInstr++);
+        uint16_t const opcode = paOneByteMap[bCode].uOpcode;
 
         /* Hardcoded assumption about OP_* values!! */
         if (opcode <= OP_LAST_PREFIX)
@@ -2755,7 +2755,7 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
 
             // segment override prefix byte
             case OP_SEG:
-                pDis->idxSegPrefix = (DISSELREG)(paOneByteMap[codebyte].fParam1 - OP_PARM_REG_SEG_START);
+                pDis->idxSegPrefix = (DISSELREG)(paOneByteMap[bCode].fParam1 - OP_PARM_REG_SEG_START);
 #if 0  /* Try be accurate in our reporting, shouldn't break anything... :-) */
                 /* Segment prefixes for CS, DS, ES and SS are ignored in long mode. */
                 if (   pDis->uCpuMode != DISCPUMODE_64BIT
@@ -2805,7 +2805,7 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
                 Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
                 /* REX prefix byte */
                 pDis->fPrefix   |= DISPREFIX_REX;
-                pDis->fRexPrefix = DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[codebyte].fParam1);
+                pDis->fRexPrefix = DISPREFIX_REX_OP_2_FLAGS(paOneByteMap[bCode].fParam1);
                 if (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_W)
                     pDis->uOpMode = DISCPUMODE_64BIT;  /* overrides size prefix byte */
                 continue;   //fetch the next byte
@@ -2823,10 +2823,10 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
         }
 
         /* first opcode byte. */
-        pDis->bOpCode  = codebyte;
+        pDis->bOpCode  = bCode;
         pDis->cbPrefix = (uint8_t)offInstr - 1;
 
-        offInstr = disParseInstruction(offInstr, &paOneByteMap[pDis->bOpCode], pDis);
+        offInstr = disParseInstruction(offInstr, &paOneByteMap[bCode], pDis);
         break;
     }
 
