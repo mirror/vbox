@@ -266,7 +266,7 @@ static const VBMGCMD g_aCommands[] =
 static void setBuiltInHelpLanguage(const char *pszLang)
 {
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
-    if (pszLang == NULL || pszLang[0] == 0 || pszLang[0] == 'C' && pszLang[1] == 0)
+    if (pszLang == NULL || pszLang[0] == 0 || (pszLang[0] == 'C' && pszLang[1] == 0))
         pszLang = "en_US";
     void *pHelpLangEntry = NULL;
     /* find language entry matching exactly pszLang */
