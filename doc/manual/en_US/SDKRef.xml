@@ -4140,6 +4140,22 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
+      <title>Incompatible API changes with version 7.0</title>
+
+      <itemizedlist>
+
+        <listitem><para><link linkend="IGuestSession__directoryCopyFromGuest">IGuestSession::directoryCopyFromGuest()</link> and
+          <link linkend="IGuestSession__directoryCopyToGuest">IGuestSession::directoryCopyToGuest()</link> no longer implicitly
+          copy recursively and follow symbolic links -- for this to continue working, the newly introduced flags
+          <link linkend="DirectoryCopyFlag_Recursive">DirectoryCopyFlag_Recursive</link> and/or
+          <link linkend="DirectoryCopyFlag_FollowLinks">DirectoryCopyFlag_FollowLinks</link> have to be used.</para>
+        </listitem>
+
+      </itemizedlist>
+
+    </sect1>
+
+    <sect1>
       <title>Incompatible API changes with version 6.1</title>
 
       <itemizedlist>

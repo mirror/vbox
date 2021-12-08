@@ -868,6 +868,10 @@ HRESULT GuestSession::i_directoryCopyFlagFromStr(const com::Utf8Str &strFlags, D
                                     && memcmp(pszNext, a_szKeyword, sizeof(a_szKeyword) - 1U) == 0)
                 if (MATCH_KEYWORD("CopyIntoExisting"))
                     fFlags |= (unsigned)DirectoryCopyFlag_CopyIntoExisting;
+                else if (MATCH_KEYWORD("Recursive"))
+                    fFlags |= (unsigned)DirectoryCopyFlag_Recursive;
+                else if (MATCH_KEYWORD("FollowLinks"))
+                    fFlags |= (unsigned)DirectoryCopyFlag_FollowLinks;
                 else
                     return setError(E_INVALIDARG, tr("Invalid directory copy flag: %.*s"), (int)cchKeyword, pszNext);
 #undef MATCH_KEYWORD
@@ -3200,12 +3204,11 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
         if (source.enmType == FsObjType_Directory)
         {
             hrc = GuestSession::i_directoryCopyFlagFromStr(strFlags, &source.Type.Dir.fCopyFlags);
-            source.Type.Dir.fRecursive = true; /* Implicit. */
         }
         else if (source.enmType == FsObjType_File)
             hrc = GuestSession::i_fileCopyFlagFromStr(strFlags, &source.Type.File.fCopyFlags);
         else
-            return setError(E_INVALIDARG, tr("Source type %d invalid / not supported"), source.enmType);
+            return setError(E_INVALIDARG, tr("Source type %#x invalid / not supported"), source.enmType);
         if (FAILED(hrc))
             return hrc;
 
@@ -3271,13 +3274,11 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
         if (source.enmType == FsObjType_Directory)
         {
             hrc = GuestSession::i_directoryCopyFlagFromStr(strFlags, &source.Type.Dir.fCopyFlags);
-            source.Type.Dir.fFollowSymlinks = true; /** @todo Add a flag for that in DirectoryCopyFlag_T. Later. */
-            source.Type.Dir.fRecursive      = true; /* Implicit. */
         }
         else if (source.enmType == FsObjType_File)
             hrc = GuestSession::i_fileCopyFlagFromStr(strFlags, &source.Type.File.fCopyFlags);
         else
-            return setError(E_INVALIDARG, tr("Source type %d invalid / not supported"), source.enmType);
+            return setError(E_INVALIDARG, tr("Source type %#x invalid / not supported"), source.enmType);
         if (FAILED(hrc))
             return hrc;
 
@@ -3313,7 +3314,8 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
 
-        const uint32_t fValidFlags = DirectoryCopyFlag_None | DirectoryCopyFlag_CopyIntoExisting;
+        const uint32_t fValidFlags =   DirectoryCopyFlag_None | DirectoryCopyFlag_CopyIntoExisting | DirectoryCopyFlag_Recursive
+                                     | DirectoryCopyFlag_FollowLinks;
         if (fFlags & ~fValidFlags)
             return setError(E_INVALIDARG,tr("Unknown flags: flags value %#x, invalid: %#x"), fFlags, fFlags & ~fValidFlags);
     }
@@ -3326,7 +3328,6 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
     source.enmPathStyle         = i_getPathStyle();
     source.fDryRun              = false; /** @todo Implement support for a dry run. */
     source.Type.Dir.fCopyFlags  = (DirectoryCopyFlag_T)fFlags;
-    source.Type.Dir.fRecursive  = true; /* Implicit. */
 
     SourceSet.push_back(source);
 
@@ -3342,7 +3343,8 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
 
-        const uint32_t fValidFlags = DirectoryCopyFlag_None | DirectoryCopyFlag_CopyIntoExisting;
+        const uint32_t fValidFlags =   DirectoryCopyFlag_None | DirectoryCopyFlag_CopyIntoExisting | DirectoryCopyFlag_Recursive
+                                     | DirectoryCopyFlag_FollowLinks;
         if (fFlags & ~fValidFlags)
             return setError(E_INVALIDARG,tr("Unknown flags: flags value %#x, invalid: %#x"), fFlags, fFlags & ~fValidFlags);
     }
@@ -3355,8 +3357,6 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
     source.enmPathStyle        = i_getPathStyle();
     source.fDryRun             = false; /** @todo Implement support for a dry run. */
     source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)fFlags;
-    source.Type.Dir.fFollowSymlinks = true; /** @todo Add a flag for that in DirectoryCopyFlag_T. Later. */
-    source.Type.Dir.fRecursive      = true; /* Implicit. */
 
     SourceSet.push_back(source);
 

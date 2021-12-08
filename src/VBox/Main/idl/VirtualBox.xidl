@@ -13191,7 +13191,7 @@
 
   <enum
     name="DirectoryCopyFlag"
-    uuid="b5901856-d064-4fbc-ab06-2909ba106154"
+    uuid="20108C67-B1EB-4EF6-869B-25539A47A18E"
     >
     <desc>
       Directory copying flags.
@@ -13201,6 +13201,12 @@
     </const>
     <const name="CopyIntoExisting"      value="1">
       <desc>Allow copying into an existing destination directory.</desc>
+    </const>
+    <const name="Recursive"             value="2">
+      <desc>Copy directories recursively.</desc>
+    </const>
+    <const name="FollowLinks"           value="4">
+      <desc>Follow symbolic links.</desc>
     </const>
     <!-- Later, basically have to see what cp and xcopy offers. -->
   </enum>

@@ -66,10 +66,6 @@ struct GuestSessionFsSourceSpec
         {
             /** Directory copy flags. */
             DirectoryCopyFlag_T fCopyFlags;
-            /** Whether to follow symbolic links or not. */
-            bool                fFollowSymlinks; /** @todo Remove once we have that parameter in DirectoryCopyFlag_T. */
-            /** Whether to copy the directory recursively or not. */
-            bool                fRecursive;
         } Dir;
         /** File-specific data. */
         struct

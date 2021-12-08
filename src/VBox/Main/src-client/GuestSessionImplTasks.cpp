@@ -1003,9 +1003,8 @@ int FsList::Init(const Utf8Str &strSrcRootAbs, const Utf8Str &strDstRootAbs,
     /* Note: Leave the source and dest roots unmodified -- how paths will be treated
      *       will be done directly when working on those. See @bugref{10139}. */
 
-    LogFlowFunc(("mSrcRootAbs=%s, mDstRootAbs=%s, fCopyFlags=%#x, fFollowSymlinks=%RTbool, fRecursive=%RTbool\n",
-                 mSrcRootAbs.c_str(), mDstRootAbs.c_str(), mSourceSpec.Type.Dir.fCopyFlags,
-                 mSourceSpec.Type.Dir.fFollowSymlinks, mSourceSpec.Type.Dir.fRecursive));
+    LogFlowFunc(("mSrcRootAbs=%s, mDstRootAbs=%s, fCopyFlags=%#x\n",
+                 mSrcRootAbs.c_str(), mDstRootAbs.c_str(), mSourceSpec.Type.Dir.fCopyFlags));
 
     return VINF_SUCCESS;
 }
@@ -1122,7 +1121,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
 
                     LogRel2(("Guest Control: Directory '%s'\n", strEntry.c_str()));
 
-                    if (!(mSourceSpec.Type.Dir.fRecursive))
+                    if (!(mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_Recursive))
                         break;
 
                     rc = AddDirFromGuest(strPath, strEntry);
@@ -1131,7 +1130,7 @@ int FsList::AddDirFromGuest(const Utf8Str &strPath, const Utf8Str &strSubDir /* 
 
                 case FsObjType_Symlink:
                 {
-                    if (mSourceSpec.Type.Dir.fFollowSymlinks)
+                    if (mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_FollowLinks)
                     {
                         /** @todo Symlink handling from guest is not implemented yet.
                          *        See IGuestSession::symlinkRead(). */
@@ -1233,7 +1232,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
 
                                 LogRel2(("Guest Control: Directory '%s'\n", strEntry.c_str()));
 
-                                if (!(mSourceSpec.Type.Dir.fRecursive))
+                                if (!(mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_Recursive))
                                     break;
 
                                 rc = AddDirFromHost(strPath, strEntry);
@@ -1250,7 +1249,7 @@ int FsList::AddDirFromHost(const Utf8Str &strPath, const Utf8Str &strSubDir)
 
                             case RTFS_TYPE_SYMLINK:
                             {
-                                if (mSourceSpec.Type.Dir.fFollowSymlinks)
+                                if (mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_FollowLinks)
                                 {
                                     Utf8Str strEntryAbs = strPathAbs + Utf8Str(Entry.szName);
 
@@ -1442,7 +1441,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
                     strDst += Utf8Str(RTPathFilenameEx(strSrc.c_str(), mfPathStyle));
                 }
 
-                fFollowSymlinks = itSrc->Type.Dir.fFollowSymlinks;
+                fFollowSymlinks = itSrc->Type.Dir.fCopyFlags & DirectoryCopyFlag_FollowLinks;
             }
             else
             {
@@ -1837,7 +1836,8 @@ int GuestSessionTaskCopyTo::Run(void)
 
         GuestFsObjData dstObjData;
         int rcGuest;
-        rc = mSession->i_fsQueryInfo(strDstRootAbs, pList->mSourceSpec.Type.Dir.fFollowSymlinks, dstObjData, &rcGuest);
+        rc = mSession->i_fsQueryInfo(strDstRootAbs, pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_FollowLinks,
+                                     dstObjData, &rcGuest);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_GSTCTL_GUEST_ERROR)
@@ -1878,7 +1878,7 @@ int GuestSessionTaskCopyTo::Run(void)
         if (pList->mSourceSpec.enmType == FsObjType_Directory)
         {
             fCopyIntoExisting = RT_BOOL(pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting);
-            fFollowSymlinks   = pList->mSourceSpec.Type.Dir.fFollowSymlinks;
+            fFollowSymlinks   = RT_BOOL(pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_FollowLinks);
 
             LogFlowFunc(("Directory: fDirCopyFlags=%#x, fCopyIntoExisting=%RTbool, fFollowSymlinks=%RTbool\n",
                          pList->mSourceSpec.Type.Dir.fCopyFlags, fCopyIntoExisting, fFollowSymlinks));

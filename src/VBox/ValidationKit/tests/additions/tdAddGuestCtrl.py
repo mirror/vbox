@@ -1840,6 +1840,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         reporter.log2('Copying guest dir "%s" to host "%s"' % (limitString(oTest.sSrc), limitString(oTest.sDst)));
         try:
+            if self.oTstDrv.fpApiVer >= 7.0:
+                ## @todo Make the following new flags implicit for 7.0 for now. Develop dedicated tests for this later and remove.
+                if vboxcon.DirectoryCopyFlag_Recursive not in oTest.afFlags:
+                    oTest.afFlags.extend([ vboxcon.DirectoryCopyFlag_Recursive ]);
+                ## @todo Ditto.
+                if vboxcon.DirectoryCopyFlag_FollowLinks not in oTest.afFlags:
+                    oTest.afFlags.extend([ vboxcon.DirectoryCopyFlag_FollowLinks ]);
             oCurProgress = oGuestSession.directoryCopyFromGuest(oTest.sSrc, oTest.sDst, oTest.afFlags);
         except:
             reporter.maybeErrXcpt(fExpected, 'Copy dir from exception for sSrc="%s", sDst="%s":' % (oTest.sSrc, oTest.sDst,));
@@ -1897,10 +1904,17 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
     def gctrlCopyDirTo(self, oGuestSession, sSrc, sDst, afFlags, fIsError):
         """
-        Helper function to copy a directory tree from the host to the guest.
+        Helper function to copy a directory (tree) from the host to the guest.
         """
         reporter.log2('Copying host directory "%s" to guest "%s" (flags %s)' % (limitString(sSrc), limitString(sDst), afFlags));
         try:
+            if self.oTstDrv.fpApiVer >= 7.0:
+                ## @todo Make the following new flags implicit for 7.0 for now. Develop dedicated tests for this later and remove.
+                if vboxcon.DirectoryCopyFlag_Recursive not in afFlags:
+                    afFlags.extend([ vboxcon.DirectoryCopyFlag_Recursive ]);
+                ## @todo Ditto.
+                if vboxcon.DirectoryCopyFlag_FollowLinks not in afFlags:
+                    afFlags.extend([ vboxcon.DirectoryCopyFlag_FollowLinks ]);
             oCurProgress = oGuestSession.directoryCopyToGuest(sSrc, sDst, afFlags);
         except:
             reporter.maybeErrXcpt(fIsError, 'sSrc=%s sDst=%s' % (sSrc, sDst,));
