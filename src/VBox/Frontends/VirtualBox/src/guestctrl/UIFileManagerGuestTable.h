@@ -58,6 +58,7 @@ signals:
 public:
 
     UIFileManagerGuestTable(UIActionPool *pActionPool, const CMachine &comMachine, QWidget *pParent = 0);
+    ~UIFileManagerGuestTable();
     void copyGuestToHost(const QString& hostDestinationPath);
     void copyHostToGuest(const QStringList &hostSourcePathList,
                          const QString &strDestination = QString());

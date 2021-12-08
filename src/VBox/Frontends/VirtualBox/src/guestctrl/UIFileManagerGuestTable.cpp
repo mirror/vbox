@@ -177,6 +177,11 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
     retranslateUi();
 }
 
+UIFileManagerGuestTable::~UIFileManagerGuestTable()
+{
+    cleanAll();
+}
+
 void UIFileManagerGuestTable::initFileTable()
 {
     if (!m_comGuestSession.isOk() || m_comGuestSession.GetStatus() != KGuestSessionStatus_Started)
@@ -200,10 +205,10 @@ void UIFileManagerGuestTable::retranslateUi()
                 strWarningText = UIFileManager::tr("Machine reference is invalid.");
                 break;
             case CheckMachine_MachineNotRunning:
-                strWarningText = UIFileManager::tr("Guest system is not running. File manager work only on running guests.");
+                strWarningText = UIFileManager::tr("File manager cannot work since it works only with running guests.");
                 break;
             case CheckMachine_NoGuestAdditions:
-                strWarningText = UIFileManager::tr("No guest additions is found on the guest system. File manager needs guest additions to function correctly.");
+                strWarningText = UIFileManager::tr("File manager cannot work since it needs running guest additions in the guest system.");
                 break;
             case CheckMachine_SessionPossible:
             default:
@@ -852,6 +857,7 @@ void UIFileManagerGuestTable::sltGuestSessionPanelToggled(bool fChecked)
 
 void UIFileManagerGuestTable::sltHandleGuestSessionPanelHidden()
 {
+    return;
     if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
         m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession)->setChecked(false);
 }
@@ -869,10 +875,10 @@ void UIFileManagerGuestTable::sltMachineStateChange(const QUuid &uMachineId, con
 
     if (enmMachineState == KMachineState_Running)
         openMachineSession();
+    else if (enmMachineState == KMachineState_Paused)
+        return;
     else
-    {
         cleanAll();
-    }
 
     setSessionDependentWidgetsEnabled(isSessionPossible());
     retranslateUi();
@@ -880,17 +886,17 @@ void UIFileManagerGuestTable::sltMachineStateChange(const QUuid &uMachineId, con
 
 bool UIFileManagerGuestTable::closeMachineSession()
 {
-    if (!m_comSession.isNull())
-        m_comSession.UnlockMachine();
-
     if (!m_comGuest.isNull())
         m_comGuest.detach();
 
-    if (!m_comSession.isNull())
-        m_comSession.detach();
     if (!m_comConsole.isNull())
         m_comConsole.detach();
 
+    if (!m_comSession.isNull())
+    {
+        m_comSession.UnlockMachine();
+        m_comSession.detach();
+    }
     return true;
 }
 
@@ -956,10 +962,7 @@ void UIFileManagerGuestTable::cleanupGuestListener()
 {
     if (!m_pQtGuestListener.isNull())
     {
-        disconnect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionUnregistered,
-                   this, &UIFileManagerGuestTable::sltGuestSessionUnregistered);
-        disconnect(m_pQtGuestListener->getWrapped(), &UIMainEventListener::sigGuestSessionRegistered,
-                   this, &UIFileManagerGuestTable::sltGuestSessionRegistered);
+        m_pQtGuestListener->getWrapped()->disconnect();
         if (!m_comGuest.isNull())
             cleanupListener(m_pQtGuestListener, m_comGuestListener, m_comGuest.GetEventSource());
     }
@@ -969,8 +972,7 @@ void UIFileManagerGuestTable::cleanupGuestSessionListener()
 {
     if (!m_pQtSessionListener.isNull())
     {
-        disconnect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
-                   this, &UIFileManagerGuestTable::sltGuestSessionStateChanged);
+        m_pQtSessionListener->getWrapped()->disconnect();
         if (!m_comGuestSession.isNull())
             cleanupListener(m_pQtSessionListener, m_comSessionListener, m_comGuestSession.GetEventSource());
     }
@@ -980,8 +982,7 @@ void UIFileManagerGuestTable::cleanupConsoleListener()
 {
     if (!m_pQtConsoleListener.isNull())
     {
-        disconnect(m_pQtConsoleListener->getWrapped(), &UIMainEventListener::sigAdditionsChange,
-                   this, &UIFileManagerGuestTable::sltAdditionsStateChange);
+        m_pQtConsoleListener->getWrapped()->disconnect();
         if (!m_comConsole.isNull())
             cleanupListener(m_pQtConsoleListener, m_comConsoleListener, m_comConsole.GetEventSource());
     }
@@ -1177,14 +1178,13 @@ bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const
 
 void UIFileManagerGuestTable::closeGuestSession()
 {
-
     if (!m_comGuestSession.isNull())
     {
         m_comGuestSession.Close();
         m_comGuestSession.detach();
+        emit sigLogOutput("Guest session is closed", m_strTableName, FileManagerLogType_Info);
     }
     reset();
-    emit sigLogOutput("Guest session is closed", m_strTableName, FileManagerLogType_Info);
     postGuestSessionClosed();
 }
 

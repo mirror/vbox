@@ -1780,7 +1780,7 @@ void UIMachineLogic::sltShowFileManagerDialog()
     }
 
     QIManagerDialog *pFileManagerDialog;
-    UIFileManagerDialogFactory dialogFactory(actionPool(), machine());
+    UIFileManagerDialogFactory dialogFactory(actionPool(), machine().GetId(), machine().GetName());
     dialogFactory.prepare(pFileManagerDialog, activeMachineWindow());
     if (pFileManagerDialog)
     {

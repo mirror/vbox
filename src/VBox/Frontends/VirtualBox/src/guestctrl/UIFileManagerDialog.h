@@ -28,16 +28,13 @@
 #include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
+
 
 /* Forward declarations: */
 class QDialogButtonBox;
 class QVBoxLayout;
 class UIActionPool;
 class UIFileManagerDialog;
-class CMachine;
 
 
 /** QIManagerDialogFactory extension used as a factory for the file manager dialog. */
@@ -45,7 +42,7 @@ class UIFileManagerDialogFactory : public QIManagerDialogFactory
 {
 public:
 
-    UIFileManagerDialogFactory(UIActionPool *pActionPool, const CMachine &comMachine);
+    UIFileManagerDialogFactory(UIActionPool *pActionPool, const QUuid &uMachineId, const QString &strMachineName);
     UIFileManagerDialogFactory();
 
 protected:
@@ -55,7 +52,8 @@ protected:
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
 
     UIActionPool *m_pActionPool;
-    CMachine      m_comMachine;
+    QUuid      m_uMachineId;
+    QString    m_strMachineName;
 };
 
 /** QIManagerDialog extension providing GUI with the dialog displaying file manager releated logs. */
@@ -68,8 +66,8 @@ public:
     /** Constructs File Manager dialog.
       * @param  pCenterWidget  Passes the widget reference to center according to.
       * @param  pActionPool    Passes the action-pool reference.
-      * @param  comMachine     Passes the machine reference. */
-    UIFileManagerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const CMachine &comMachine);
+      * @param  uMachineId     Passes the machine id. */
+    UIFileManagerDialog(QWidget *pCenterWidget, UIActionPool *pActionPool, const QUuid &uMachineId, const QString &strMachineName);
     ~UIFileManagerDialog();
 
 protected:
@@ -109,7 +107,8 @@ private:
 
     void manageEscapeShortCut();
     UIActionPool *m_pActionPool;
-    CMachine    m_comMachine;
+    QUuid    m_uMachineId;
+    QString  m_strMachineName;
 };
 
 

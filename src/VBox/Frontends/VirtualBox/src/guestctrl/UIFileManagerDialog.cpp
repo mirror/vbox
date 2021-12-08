@@ -30,27 +30,31 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
 
 /*********************************************************************************************************************************
 *   Class UIFileManagerDialogFactory implementation.                                                                 *
 *********************************************************************************************************************************/
 
-UIFileManagerDialogFactory::UIFileManagerDialogFactory(UIActionPool *pActionPool, const CMachine &comMachine)
+UIFileManagerDialogFactory::UIFileManagerDialogFactory(UIActionPool *pActionPool, const QUuid &uMachineId, const QString &strMachineName)
     : m_pActionPool(pActionPool)
-    , m_comMachine(comMachine)
+    , m_uMachineId(uMachineId)
+    , m_strMachineName(strMachineName)
 {
 }
 
 
 UIFileManagerDialogFactory::UIFileManagerDialogFactory()
     : m_pActionPool(0)
-    , m_comMachine(CMachine())
+    , m_uMachineId(QUuid())
 {
 }
 
 void UIFileManagerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UIFileManagerDialog(pCenterWidget, m_pActionPool, m_comMachine);
+    pDialog = new UIFileManagerDialog(pCenterWidget, m_pActionPool, m_uMachineId, m_strMachineName);
 }
 
 
@@ -60,10 +64,12 @@ void UIFileManagerDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCen
 
 UIFileManagerDialog::UIFileManagerDialog(QWidget *pCenterWidget,
                                          UIActionPool *pActionPool,
-                                         const CMachine &comMachine)
+                                         const QUuid &uMachineId,
+                                         const QString &strMachineName)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
     , m_pActionPool(pActionPool)
-    , m_comMachine(comMachine)
+    , m_uMachineId(uMachineId)
+    , m_strMachineName(strMachineName)
 {
 }
 
@@ -73,8 +79,8 @@ UIFileManagerDialog::~UIFileManagerDialog()
 
 void UIFileManagerDialog::retranslateUi()
 {
-    if (!m_comMachine.isNull())
-        setWindowTitle(UIFileManager::tr("%1 - File Manager").arg(m_comMachine.GetName()));
+    if (!m_strMachineName.isEmpty())
+        setWindowTitle(UIFileManager::tr("%1 - File Manager").arg(m_strMachineName));
     else
         setWindowTitle(UIFileManager::tr("File Manager"));
 
@@ -104,9 +110,13 @@ void UIFileManagerDialog::configure()
 
 void UIFileManagerDialog::configureCentralWidget()
 {
+    CMachine comMachine;
+    CVirtualBox vbox = uiCommon().virtualBox();
+    if (!vbox.isNull() && !m_uMachineId.isNull())
+        comMachine = vbox.FindMachine(m_uMachineId.toString());
     /* Create widget: */
     UIFileManager *pWidget = new UIFileManager(EmbedTo_Dialog, m_pActionPool,
-                                               m_comMachine, this, true);
+                                               comMachine, this, true);
 
     if (pWidget)
     {

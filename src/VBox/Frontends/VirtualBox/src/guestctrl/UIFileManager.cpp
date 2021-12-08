@@ -144,6 +144,15 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
 UIFileManager::~UIFileManager()
 {
     UIFileManagerOptions::destroy();
+    if (m_pGuestTablesContainer)
+    {
+        for (int i = 0; i < m_pGuestTablesContainer->count(); ++i)
+        {
+            UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
+            if (pTable)
+                pTable->disconnect();
+        }
+    }
 }
 
 QMenu *UIFileManager::menu() const
