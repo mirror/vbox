@@ -1635,7 +1635,7 @@ class SessionWrapper(TdTaskBase):
         except:
             return reporter.errorXcpt('NIC enabled status (%s) failed for "%s"' % (iNic, self.sName,));
 
-        reporter.log('Setting "LocalhostReachable" for network adapter "%s" in slot %d to %s' % (sAdpName, iNic, fReachable));
+        reporter.log('Setting "LocalhostReachable" for network adapter in slot %d to %s' % (iNic, fReachable));
 
         try:
             oNatEngine = oNic.NATEngine;
