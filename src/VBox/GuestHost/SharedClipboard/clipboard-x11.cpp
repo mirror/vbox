@@ -120,6 +120,7 @@ SHCL_X11_DECL(SHCLX11FMTTABLE) g_aFormats[] =
 
     { "text/html",                          SHCLX11FMT_HTML,        VBOX_SHCL_FMT_HTML },
     { "text/html;charset=utf-8",            SHCLX11FMT_HTML,        VBOX_SHCL_FMT_HTML },
+    { "application/x-moz-nativehtml",       SHCLX11FMT_HTML,        VBOX_SHCL_FMT_HTML },
 
     { "image/bmp",                          SHCLX11FMT_BMP,         VBOX_SHCL_FMT_BITMAP },
     { "image/x-bmp",                        SHCLX11FMT_BMP,         VBOX_SHCL_FMT_BITMAP },
@@ -1720,10 +1721,15 @@ static int clipConvertToX11Data(PSHCLX11CTX pCtx, Atom *atomTarget,
     if (RT_FAILURE(rc))
     {
         char *pszFmts2 = ShClFormatsToStrA(pCtx->vboxFormats);
-        AssertPtrReturn(pszFmts2, VERR_NO_MEMORY);
-        LogRel(("Shared Clipboard: Converting VBox formats '%s' to '%s' for X11 (idxFmtX11=%u, fmtX11=%u) failed, rc=%Rrc\n",
-                pszFmts2, g_aFormats[idxFmtX11].pcszAtom, idxFmtX11, fmtX11, rc));
-        RTStrFree(pszFmts2);
+        char *pszAtomName = XGetAtomName(XtDisplay(pCtx->pWidget), *atomTarget);
+
+        LogRel(("Shared Clipboard: Converting VBox formats '%s' to '%s' for X11 (idxFmtX11=%u, fmtX11=%u, atomTarget='%s') failed, rc=%Rrc\n",
+                pszFmts2 ? pszFmts2 : "unknown", g_aFormats[idxFmtX11].pcszAtom, idxFmtX11, fmtX11, pszAtomName ? pszAtomName : "unknown", rc));
+
+        if (pszFmts2)
+            RTStrFree(pszFmts2);
+        if (pszAtomName)
+            XFree(pszAtomName);
     }
 
     LogFlowFuncLeaveRC(rc);
