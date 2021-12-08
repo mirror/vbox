@@ -356,7 +356,7 @@ $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.h.ts \
 		'typedef struct HELP_LANG_ENTRY' \
 		'{' \
 		'    const char      *pszLang;' \
-		'	 size_t           cbLang;' \
+		'    size_t           cbLang;' \
 		'    PCRTMSGREFENTRY *papHelpEntries;' \
 		'    const uint32_t   cHelpEntries;' \
 		'} HELP_LANG_ENTRY;' \
