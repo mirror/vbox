@@ -113,7 +113,8 @@ static uint32_t printBriefCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCo
     uint32_t cPendingBlankLines = 0;
     uint32_t cFound = 0;
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
-    PHELP_LANG_ENTRY pHelpLangEntry[2] = {ASMAtomicReadPtrT(&g_pHelpLangEntry, PHELP_LANG_ENTRY), &g_apHelpLangEntries[0] };
+    PHELP_LANG_ENTRY pHelpLangEntry[2] = {(PHELP_LANG_ENTRY)ASMAtomicReadPtrT(&g_pHelpLangEntry, PHELP_LANG_ENTRY),
+                                          &g_apHelpLangEntries[0] };
 #else
     PHELP_LANG_ENTRY pHelpLangEntry[1] = {(PHELP_LANG_ENTRY)g_pHelpLangEntry};
 #endif
@@ -175,7 +176,8 @@ static void printFullCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCommand
     uint32_t cPendingBlankLines = 0;
     uint32_t cFound = 0;
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
-    PHELP_LANG_ENTRY pHelpLangEntry[2] = {ASMAtomicReadPtrT(&g_pHelpLangEntry, PHELP_LANG_ENTRY), &g_apHelpLangEntries[0] };
+    PHELP_LANG_ENTRY pHelpLangEntry[2] = {(PHELP_LANG_ENTRY)ASMAtomicReadPtrT(&g_pHelpLangEntry, PHELP_LANG_ENTRY),
+                                          &g_apHelpLangEntries[0] };
 #else
     PHELP_LANG_ENTRY pHelpLangEntry[1] = {(PHELP_LANG_ENTRY)g_pHelpLangEntry};
 #endif
@@ -1035,7 +1037,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
     {
         uint32_t cPendingBlankLines = 0;
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
-        PHELP_LANG_ENTRY pHelpLangEntry = ASMAtomicReadPtrT(&g_pHelpLangEntry, PHELP_LANG_ENTRY);
+        PHELP_LANG_ENTRY pHelpLangEntry = (PHELP_LANG_ENTRY)ASMAtomicReadPtrT(&g_pHelpLangEntry, PHELP_LANG_ENTRY);
 #else
         PHELP_LANG_ENTRY pHelpLangEntry = (PHELP_LANG_ENTRY)g_pHelpLangEntry;
 #endif
