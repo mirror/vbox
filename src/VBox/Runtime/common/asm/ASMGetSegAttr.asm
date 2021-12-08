@@ -40,7 +40,7 @@ BEGINCODE
 ; @remarks Using ~0U for failure is chosen because valid access rights always
 ;          have bits 0:7 as 0 (on both Intel & AMD).
 ;
-BEGINPROC_EXPORTED ASMGetSegAttr
+RT_BEGINPROC ASMGetSegAttr
 %ifdef ASM_CALL64_MSC
     and     ecx, 0ffffh
     lar     eax, ecx

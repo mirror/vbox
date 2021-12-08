@@ -35,7 +35,7 @@ BEGINCODE
 ; Get the LDTR register.
 ; @returns LDTR.
 ;
-BEGINPROC_EXPORTED ASMGetLDTR
+RT_BEGINPROC ASMGetLDTR
         sldt    ax
         movzx   eax, ax
         ret

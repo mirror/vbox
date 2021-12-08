@@ -35,7 +35,7 @@ BEGINCODE
 ; Get the TR register.
 ; @returns TR.
 ;
-BEGINPROC_EXPORTED ASMGetTR
+RT_BEGINPROC ASMGetTR
         str     ax
         movzx   eax, ax
         ret

@@ -36,7 +36,7 @@ BEGINCODE
 ; @param   pGdtr    Where to load the GDTR contents from.
 ;                   msc=rcx, gcc=rdi, x86=[esp+4]
 ;
-BEGINPROC_EXPORTED ASMSetGDTR
+RT_BEGINPROC ASMSetGDTR
 %ifdef ASM_CALL64_MSC
         mov     rax, rcx
 %elifdef ASM_CALL64_GCC

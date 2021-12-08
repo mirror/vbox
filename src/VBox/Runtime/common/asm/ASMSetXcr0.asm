@@ -37,7 +37,7 @@ BEGINCODE
 ; @param   uXcr0    The new XCR0 content.
 ;                   msc=rcx, gcc=rdi, x86=[esp+4]
 ;
-BEGINPROC_EXPORTED ASMSetXcr0
+RT_BEGINPROC ASMSetXcr0
 SEH64_END_PROLOGUE
 %ifdef ASM_CALL64_MSC
         mov     rdx, rcx

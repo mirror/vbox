@@ -35,13 +35,13 @@ BEGINCODE
 ; Get the dr0 register value.
 ; @returns dr0.
 ;
-BEGINPROC_EXPORTED ASMGetDR0
+RT_BEGINPROC ASMGetDR0
         mov     rax, dr0
         ret
 ENDPROC ASMGetDR0
 
 
-BEGINPROC_EXPORTED ASMSetDR0
+RT_BEGINPROC ASMSetDR0
         mov     dr0, rcx
         ret
 ENDPROC ASMSetDR0

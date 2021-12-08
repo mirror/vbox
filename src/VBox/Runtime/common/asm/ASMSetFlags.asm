@@ -34,7 +34,7 @@ BEGINCODE
 
 ;;
 ; @param rcx  eflags
-BEGINPROC_EXPORTED ASMSetFlags
+RT_BEGINPROC ASMSetFlags
 %if    ARCH_BITS == 64
  %ifdef ASM_CALL64_GCC
         push    rdi

@@ -35,7 +35,7 @@ BEGINCODE
 ; Get the cs register.
 ; @returns cs.
 ;
-BEGINPROC_EXPORTED ASMGetCS
+RT_BEGINPROC ASMGetCS
         mov     eax, cs
         ret
 ENDPROC ASMGetCS

@@ -41,7 +41,7 @@ BEGINCODE
 ; @returns  bool result: true if successfully exchanged, false if not.
 ;           x86:al
 ;
-BEGINPROC_EXPORTED ASMAtomicCmpXchgU8
+RT_BEGINPROC ASMAtomicCmpXchgU8
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         mov     al, r8b

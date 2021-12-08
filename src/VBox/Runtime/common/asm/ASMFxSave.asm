@@ -37,7 +37,7 @@ BEGINCODE
 ; @param    pFxState    Pointer to the XSAVE state area.
 ;                       msc=rcx, gcc=rdi, x86=[esp+4]
 ;
-BEGINPROC_EXPORTED ASMFxSave
+RT_BEGINPROC ASMFxSave
 SEH64_END_PROLOGUE
 %ifdef ASM_CALL64_MSC
         o64 fxsave [rcx]

@@ -36,7 +36,7 @@ BEGINCODE
 ;
 ; @param   rcx  pvBitmap    Pointer to the bitmap.
 ; @param   edx  iBit        The bit to test and set.
-BEGINPROC_EXPORTED ASMAtomicBitToggle
+RT_BEGINPROC ASMAtomicBitToggle
         lock btc [rcx], edx
         ret
 ENDPROC ASMAtomicBitToggle

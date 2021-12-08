@@ -41,7 +41,7 @@ BEGINCODE
 ; to optimize the probing away.
 ;
 ; @param   rcx  pvByte      Pointer to the byte.
-BEGINPROC_EXPORTED ASMProbeReadByte
+RT_BEGINPROC ASMProbeReadByte
         mov     al, [rcx]
         ret
 ENDPROC ASMProbeReadByte

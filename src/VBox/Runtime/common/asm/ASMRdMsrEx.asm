@@ -38,7 +38,7 @@ BEGINCODE
 ; @param    uEdi    msc=rdx, gcc=rsi, x86=[ebp+12]  The EDI/RDI value.
 ; @returns  MSR value in rax on amd64 and edx:eax on x86.
 ;
-BEGINPROC_EXPORTED ASMRdMsrEx
+RT_BEGINPROC ASMRdMsrEx
 %ifdef ASM_CALL64_MSC
 proc_frame ASMRdMsrEx_DupWarningHack
         push    rdi

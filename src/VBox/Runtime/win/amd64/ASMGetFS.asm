@@ -34,7 +34,7 @@ BEGINCODE
 ; Get the fs register.
 ; @returns fs.
 ;
-BEGINPROC_EXPORTED ASMGetFS
+RT_BEGINPROC ASMGetFS
         mov     eax, fs
         ret
 ENDPROC ASMGetFS

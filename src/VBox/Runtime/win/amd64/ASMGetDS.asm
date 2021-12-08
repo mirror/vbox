@@ -34,7 +34,7 @@ BEGINCODE
 ; Get the ds register.
 ; @returns ds.
 ;
-BEGINPROC_EXPORTED ASMGetDS
+RT_BEGINPROC ASMGetDS
         mov     eax, DS
         ret
 ENDPROC ASMGetDS

@@ -34,7 +34,7 @@ BEGINCODE
 ; @returns al Current *pu8 value
 ; @param   rcx  pu8    Pointer to the 8-bit variable to update.
 ; @param   dl   u8     The 8-bit value to assign to *pu8.
-BEGINPROC_EXPORTED ASMAtomicXchgU8
+RT_BEGINPROC ASMAtomicXchgU8
         xchg    [rcx], dl
         movzx   eax, dl
         ret

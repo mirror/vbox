@@ -43,7 +43,7 @@ BEGINCODE
 ;
 ; @cproto DECLASM(unsigned) ASMBitLastSetU32(uint32_t u32);
 ;
-BEGINPROC_EXPORTED ASMBitLastSetU32
+RT_BEGINPROC ASMBitLastSetU32
 %if ARCH_BITS == 16
         CPU     8086
         push    bp

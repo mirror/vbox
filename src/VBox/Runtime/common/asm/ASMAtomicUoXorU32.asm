@@ -39,7 +39,7 @@ BEGINCODE
 ;
 ; @returns  void
 ;
-BEGINPROC_EXPORTED ASMAtomicUoXorU32
+RT_BEGINPROC ASMAtomicUoXorU32
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         xor     [rcx], edx

@@ -1034,6 +1034,19 @@ size NAME(%1 %+ _EndProc)   4 ; make it non-zero to shut up warnigns from Linux'
 %endif
 
 
+;; @def RT_BEGINPROC
+; Starts an IPRT procedure that should be exported unless IN_RT_STATIC is defined.
+;
+; @param    1       The function name.  Will apply NAME macro to it.
+%macro RT_BEGINPROC 1
+ %ifdef IN_RT_STATIC
+BEGINPROC          %1
+ %else
+BEGINPROC_EXPORTED %1
+ %endif
+%endmacro ; RT_BEGINPROC
+
+
 ;; @def RT_NOCRT
 ; Symbol name wrapper for the No-CRT bits.
 ;

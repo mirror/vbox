@@ -39,7 +39,7 @@ BEGINCODE
 ;
 ; @returns Current (i.e. old) *pu16 value (AX).
 ;
-BEGINPROC_EXPORTED ASMAtomicXchgU16
+RT_BEGINPROC ASMAtomicXchgU16
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         mov     ax, dx

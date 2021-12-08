@@ -38,7 +38,7 @@ BEGINCODE
 
 ; @returns  the new decremented value.
 ;
-BEGINPROC_EXPORTED ASMAtomicUoDecU32
+RT_BEGINPROC ASMAtomicUoDecU32
         mov     eax, -1
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC

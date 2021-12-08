@@ -34,7 +34,7 @@ BEGINCODE
 ; Get the ss register.
 ; @returns ss.
 ;
-BEGINPROC_EXPORTED ASMGetSS
+RT_BEGINPROC ASMGetSS
         mov     eax, ss
         ret
 ENDPROC ASMGetSS

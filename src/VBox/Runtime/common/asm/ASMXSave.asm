@@ -39,7 +39,7 @@ BEGINCODE
 ; @param    fComponents The 64-bit state component mask.
 ;                       msc=rdx, gcc=rsi, x86=[esp+8]
 ;
-BEGINPROC_EXPORTED ASMXSave
+RT_BEGINPROC ASMXSave
 SEH64_END_PROLOGUE
 %ifdef ASM_CALL64_MSC
         mov     eax, edx

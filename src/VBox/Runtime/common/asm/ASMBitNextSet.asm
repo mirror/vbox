@@ -44,7 +44,7 @@ BEGINCODE
 ; @remarks Not quite sure how much sense it makes to do this in assembly, but
 ;          it started out with the ASMBit* API, so that's why we still have it.
 ;
-BEGINPROC_EXPORTED ASMBitNextSet
+RT_BEGINPROC ASMBitNextSet
 %if ARCH_BITS == 16
         push    bp
         mov     bp, sp

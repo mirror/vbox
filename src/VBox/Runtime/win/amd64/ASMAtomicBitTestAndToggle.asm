@@ -38,7 +38,7 @@ BEGINCODE
 ; @returns al(rax)      false if the bit was clear.
 ; @param   rcx          pvBitmap    Pointer to the bitmap.
 ; @param   edx          iBit        The bit to test and toggle.
-BEGINPROC_EXPORTED ASMAtomicBitTestAndToggle
+RT_BEGINPROC ASMAtomicBitTestAndToggle
         lock btc [rcx], edx
         sbb     eax, eax
         ret

@@ -38,7 +38,7 @@ BEGINCODE
 ;
 ; @returns  the new incremented value.
 ;
-BEGINPROC_EXPORTED ASMAtomicUoIncU32
+RT_BEGINPROC ASMAtomicUoIncU32
         mov     eax, 1
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC

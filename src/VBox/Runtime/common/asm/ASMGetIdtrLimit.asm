@@ -36,7 +36,7 @@ BEGINCODE
 ; Gets the content of the IDTR CPU register.
 ; @returns  IDTR.LIMIT in ax
 ;
-BEGINPROC_EXPORTED ASMGetIdtrLimit
+RT_BEGINPROC ASMGetIdtrLimit
         sub     xSP, 18h
         SEH64_ALLOCATE_STACK 18h
 SEH64_END_PROLOGUE

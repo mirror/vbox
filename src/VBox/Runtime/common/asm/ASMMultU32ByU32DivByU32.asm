@@ -38,7 +38,7 @@
 ;
 ; @cproto  DECLASM(uint32_t) ASMMultU32ByU32DivByU32(uint32_t u32A, uint32_t u32B, uint32_t u32C);
 ;
-BEGINPROC_EXPORTED ASMMultU32ByU32DivByU32
+RT_BEGINPROC ASMMultU32ByU32DivByU32
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         mov     eax, ecx

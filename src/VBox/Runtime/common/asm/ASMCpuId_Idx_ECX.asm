@@ -43,7 +43,7 @@ BEGINCODE
 ;
 ; @returns  void
 ;
-BEGINPROC_EXPORTED ASMCpuId_Idx_ECX
+RT_BEGINPROC ASMCpuId_Idx_ECX
 %ifdef RT_ARCH_AMD64
         mov     r10, rbx
 

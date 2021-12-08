@@ -34,7 +34,7 @@ BEGINCODE
 ; Get the es register.
 ; @returns es.
 ;
-BEGINPROC_EXPORTED ASMGetES
+RT_BEGINPROC ASMGetES
         mov     eax, es
         ret
 ENDPROC ASMGetES

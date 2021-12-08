@@ -34,7 +34,7 @@ BEGINCODE
 
 ;;
 ; @param rcx/rdi  eflags to add
-BEGINPROC_EXPORTED ASMAddFlags
+RT_BEGINPROC ASMAddFlags
 %if    ARCH_BITS == 64
         pushfq
         mov     rax, [rsp]

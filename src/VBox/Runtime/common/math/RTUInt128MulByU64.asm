@@ -40,7 +40,7 @@ BEGINCODE
 ; @param    puValue1       x86:[ebp + 12]  gcc:rsi  msc:rdx
 ; @param    uValue2        x86:[ebp + 16]  gcc:rdx  msc:r8
 ;
-BEGINPROC_EXPORTED RTUInt128MulByU64
+RT_BEGINPROC RTUInt128MulByU64
 ;        SEH64_SET_FRAME_xSP 0
 SEH64_END_PROLOGUE
 

@@ -36,7 +36,7 @@ BEGINCODE
 ; Gets the content of the XCR0 CPU register.
 ; @returns XCR0 value in rax (amd64) / edx:eax (x86).
 ;
-BEGINPROC_EXPORTED ASMGetXcr0
+RT_BEGINPROC ASMGetXcr0
 SEH64_END_PROLOGUE
         xor     ecx, ecx                ; XCR0
         xgetbv

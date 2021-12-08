@@ -39,7 +39,7 @@ BEGINCODE
 ;
 ; @returns  void
 ;
-BEGINPROC_EXPORTED ASMAtomicUoAndU64
+RT_BEGINPROC ASMAtomicUoAndU64
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         and     [rcx], rdx

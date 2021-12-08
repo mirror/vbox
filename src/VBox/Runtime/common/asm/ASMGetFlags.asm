@@ -31,7 +31,7 @@
 
 BEGINCODE
 
-BEGINPROC_EXPORTED ASMGetFlags
+RT_BEGINPROC ASMGetFlags
 %if    ARCH_BITS == 32
         pushfd
 %else

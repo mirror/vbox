@@ -34,7 +34,7 @@ BEGINCODE
 ; Get the gs register.
 ; @returns gs.
 ;
-BEGINPROC_EXPORTED ASMGetGS
+RT_BEGINPROC ASMGetGS
         mov     eax, gs
         ret
 ENDPROC ASMGetGS

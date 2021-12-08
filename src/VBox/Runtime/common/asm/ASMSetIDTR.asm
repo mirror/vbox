@@ -36,7 +36,7 @@ BEGINCODE
 ; @param   pIdtr    Where to load the IDTR contents from.
 ;                   msc=rcx, gcc=rdi, x86=[esp+4]
 ;
-BEGINPROC_EXPORTED ASMSetIDTR
+RT_BEGINPROC ASMSetIDTR
 %ifdef ASM_CALL64_MSC
         mov     rax, rcx
 %elifdef ASM_CALL64_GCC

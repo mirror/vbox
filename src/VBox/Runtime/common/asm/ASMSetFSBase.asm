@@ -36,7 +36,7 @@ BEGINCODE
 ; Set the FS base register.
 ; @param    uNewBase    msc:rcx gcc:rdi     New FS base value.
 ;
-BEGINPROC_EXPORTED ASMSetFSBase
+RT_BEGINPROC ASMSetFSBase
         SEH64_END_PROLOGUE
 %ifdef ASM_CALL64_MSC
         wrfsbase rcx

@@ -36,7 +36,7 @@ BEGINCODE
 ; Set the GS base register.
 ; @param    uNewBase    msc:rcx gcc:rdi     New GS base value.
 ;
-BEGINPROC_EXPORTED ASMSetGSBase
+RT_BEGINPROC ASMSetGSBase
         SEH64_END_PROLOGUE
 %ifdef ASM_CALL64_MSC
         wrgsbase rcx

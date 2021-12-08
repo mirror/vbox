@@ -35,7 +35,7 @@ BEGINCODE
 ; @param    pvHaystack      gcc: rdi  msc: ecx  x86:[esp+4]   wcall: eax
 ; @param    uNeedle         gcc: esi  msc: edx  x86:[esp+8]   wcall: edx
 ; @param    cbHaystack      gcc: rdx  msc: r8   x86:[esp+0ch] wcall: ebx
-BEGINPROC_EXPORTED RTStrMemFind32
+RT_BEGINPROC RTStrMemFind32
         cld
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC

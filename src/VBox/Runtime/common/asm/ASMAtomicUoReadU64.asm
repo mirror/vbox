@@ -39,7 +39,7 @@ BEGINCODE
 ; @returns The current value. (x86:eax+edx)
 ;
 ;
-BEGINPROC_EXPORTED ASMAtomicUoReadU64
+RT_BEGINPROC ASMAtomicUoReadU64
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         mov     rax, [rcx]

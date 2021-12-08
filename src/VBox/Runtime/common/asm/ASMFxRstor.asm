@@ -37,7 +37,7 @@ BEGINCODE
 ; @param    pFxState    Pointer to the FXRSTOR state area.
 ;                       msc=rcx, gcc=rdi, x86=[esp+4]
 ;
-BEGINPROC_EXPORTED ASMFxRstor
+RT_BEGINPROC ASMFxRstor
 SEH64_END_PROLOGUE
 %ifdef ASM_CALL64_MSC
         o64 fxrstor [rcx]

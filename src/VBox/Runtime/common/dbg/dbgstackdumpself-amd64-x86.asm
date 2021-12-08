@@ -43,7 +43,7 @@ BEGINCODE
 ;;
 ; Collects register state and calls C worker.
 ;
-BEGINPROC_EXPORTED RTDbgStackDumpSelf
+RT_BEGINPROC RTDbgStackDumpSelf
         push    xBP
         SEH64_PUSH_xBP
         mov     xBP, xSP

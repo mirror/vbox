@@ -38,7 +38,7 @@ BEGINCODE
 ; @param   rcx  pu64    Pointer to the 64-bit variable to read.
 ;                  The memory pointed to must be writable.
 ;
-BEGINPROC_EXPORTED ASMAtomicReadU64
+RT_BEGINPROC ASMAtomicReadU64
         mov     rax, [rcx]
         ret
 ENDPROC ASMAtomicReadU64

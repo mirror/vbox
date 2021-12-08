@@ -34,12 +34,12 @@ BEGINCODE
 ; Get the dr7 register value.
 ; @returns dr7.
 ;
-BEGINPROC_EXPORTED ASMGetDR7
+RT_BEGINPROC ASMGetDR7
         mov     rax, dr7
         ret
 ENDPROC ASMGetDR7
 
-BEGINPROC_EXPORTED ASMSetDR7
+RT_BEGINPROC ASMSetDR7
         mov     dr7, rcx
         ret
 ENDPROC ASMSetDR7

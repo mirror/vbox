@@ -45,7 +45,7 @@ BEGINCODE
 ;
 ; @returns  EAX
 ;
-BEGINPROC_EXPORTED ASMCpuIdExSlow
+RT_BEGINPROC ASMCpuIdExSlow
         push    xBP
         mov     xBP, xSP
         push    xBX

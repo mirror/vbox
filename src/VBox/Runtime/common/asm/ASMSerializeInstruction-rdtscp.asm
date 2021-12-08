@@ -34,13 +34,13 @@ BEGINCODE
 
 
 ;;
-; Executes a seralizing instruction.
+; Executes a serializing instruction.
 ;
 ; The RDTSCP instruction is fast, though it may trigger a VM EXIT if the VMM
 ; is intercepting TSC reads for some timing reason or in general.
 ;
-BEGINPROC_EXPORTED ASMSerializeInstructionRdTscp
+RT_BEGINPROC    ASMSerializeInstructionRdTscp
         rdtscp
         ret
-ENDPROC            ASMSerializeInstructionRdTscp
+ENDPROC         ASMSerializeInstructionRdTscp
 

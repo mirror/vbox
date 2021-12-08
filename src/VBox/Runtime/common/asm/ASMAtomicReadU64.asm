@@ -39,7 +39,7 @@ BEGINCODE
 ; @returns The current value. (x86:eax+edx)
 ;
 ;
-BEGINPROC_EXPORTED ASMAtomicReadU64
+RT_BEGINPROC ASMAtomicReadU64
 %ifdef RT_ARCH_AMD64
         mfence                          ; ASSUME its present.
  %ifdef ASM_CALL64_MSC

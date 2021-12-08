@@ -37,7 +37,7 @@ BEGINCODE
 ; @param   edx  iBit        The bit to toggle set.
 ; @remark  No memory barrier, take care on smp.
 ;
-BEGINPROC_EXPORTED ASMAtomicBitClear
+RT_BEGINPROC ASMAtomicBitClear
         lock btr [rcx], edx
         ret
 ENDPROC ASMAtomicBitClear

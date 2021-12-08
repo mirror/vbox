@@ -38,7 +38,7 @@ BEGINCODE
 ; Variant of ASMMemFirstMismatchingU8 with a fixed @a u8 value.
 ; We repeat the prolog and join the generic function.
 ;
-BEGINPROC_EXPORTED  ASMMemFirstNonZero
+RT_BEGINPROC ASMMemFirstNonZero
         ;
         ; Prologue.
         ;
@@ -104,7 +104,7 @@ ENDPROC    ASMMemFirstNonZero
 ;
 ; @cproto DECLINLINE(void *) ASMMemFirstMismatchingU8(void const *pv, size_t cb, uint8_t u8)
 ;
-BEGINPROC_EXPORTED ASMMemFirstMismatchingU8
+RT_BEGINPROC ASMMemFirstMismatchingU8
         ;
         ; Prologue.
         ;

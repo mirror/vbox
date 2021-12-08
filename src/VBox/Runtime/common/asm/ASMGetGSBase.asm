@@ -36,7 +36,7 @@ BEGINCODE
 ; Get the GS base register.
 ; @returns GS base
 ;
-BEGINPROC_EXPORTED ASMGetGSBase
+RT_BEGINPROC ASMGetGSBase
         SEH64_END_PROLOGUE
         rdgsbase rax
         ret

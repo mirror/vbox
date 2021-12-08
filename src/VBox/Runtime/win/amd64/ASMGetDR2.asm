@@ -35,13 +35,13 @@ BEGINCODE
 ; Get the dr2 register value.
 ; @returns dr2.
 ;
-BEGINPROC_EXPORTED ASMGetDR2
+RT_BEGINPROC ASMGetDR2
         mov     rax, dr2
         ret
 ENDPROC ASMGetDR2
 
 
-BEGINPROC_EXPORTED ASMSetDR2
+RT_BEGINPROC ASMSetDR2
         mov     dr2, rcx
         ret
 ENDPROC ASMSetDR2

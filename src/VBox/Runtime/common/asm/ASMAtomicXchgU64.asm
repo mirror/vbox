@@ -39,7 +39,7 @@ BEGINCODE
 ;
 ; @returns Current (i.e. old) *pu64 value (x86:eax:edx, 64-bit: rax)
 ;
-BEGINPROC_EXPORTED ASMAtomicXchgU64
+RT_BEGINPROC ASMAtomicXchgU64
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
         xchg    [rcx], rdx

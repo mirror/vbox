@@ -34,16 +34,16 @@ BEGINCODE
 
 
 ;;
-; Executes a seralizing instruction.
+; Executes a serializing instruction.
 ;
 ; The CPUID instruction isn't fast or slow, but it always triggers a VM EXIT in
 ; a virtualized environment, which is prohibitively expensive.
 ;
-BEGINPROC_EXPORTED ASMSerializeInstructionCpuId
+RT_BEGINPROC    ASMSerializeInstructionCpuId
         push    xBX
         xor     eax, eax
         cpuid
         pop     xBX
         ret
-ENDPROC            ASMSerializeInstructionCpuId
+ENDPROC         ASMSerializeInstructionCpuId
 

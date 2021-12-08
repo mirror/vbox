@@ -43,7 +43,7 @@ BEGINCODE
 ;
 ; @cproto DECLASM(unsigned) ASMBitFirstSetU32(uint32_t u32);
 ;
-BEGINPROC_EXPORTED ASMBitFirstSetU32
+RT_BEGINPROC ASMBitFirstSetU32
 %if ARCH_BITS == 16
         CPU     8086
         push    bp

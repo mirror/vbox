@@ -36,7 +36,7 @@ BEGINCODE
 ; Get the FS base register.
 ; @returns FS base
 ;
-BEGINPROC_EXPORTED ASMGetFSBase
+RT_BEGINPROC ASMGetFSBase
         SEH64_END_PROLOGUE
         rdfsbase rax
         ret
