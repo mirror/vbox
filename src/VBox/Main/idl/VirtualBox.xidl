@@ -13128,20 +13128,17 @@
            only supports replacing as of writing, so we currently have no choice. -->
       <desc>
         Do not replace the destination file if it exists.
-        <note>This flag is not implemented yet.</note>
       </desc>
     </const>
     <const name="FollowLinks"           value="2">
       <desc>
         Follow symbolic links.
-        <note>This flag is not implemented yet.</note>
       </desc>
     </const>
     <const name="Update"                value="4">
       <desc>
         Only copy when the source file is newer than the destination file
         or when the destination file is missing.
-        <note>This flag is not implemented yet.</note>
       </desc>
     </const>
   </enum>
