@@ -3118,6 +3118,7 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_mtune-generic         ?= $(call VBOX_GCC_CHECK_CC,-mtune=generic,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_as_needed              ?= $(call VBOX_GCC_CHECK_LD,--as-needed,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_hash_style_sysv        ?= $(call VBOX_GCC_CHECK_LD,--hash-style=sysv,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_LD_gc_sections            ?= $(call VBOX_GCC_CHECK_LD,--gc-sections,)'
 # Set default attribute for ELF and MACH-O symbols to ``hidden'' to reduce the number
 # of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CC),)'
@@ -5894,14 +5895,16 @@ else
  else
   TEMPLATE_VBOXR3STATIC_LDFLAGS         = $(filter-out '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)' '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)',$(TEMPLATE_VBOXR3EXE_LDFLAGS))
  endif
- ifn1of ($(KBUILD_TARGET), darwin os2) # ELF only. Present in gcc 3.2.3 & binutils 2.15, possibly earlier.
-  ifndef TEMPLATE_VBOXR3STATIC_CXXFLAGS
-   TEMPLATE_VBOXR3STATIC_CXXFLAGS       = $(TEMPLATE_VBOXR3EXE_CXXFLAGS)
-   TEMPLATE_VBOXR3STATIC_CFLAGS         = $(TEMPLATE_VBOXR3EXE_CFLAGS)
+ ifn1of ($(KBUILD_TARGET), darwin os2)  # ELF only. Present in gcc 3.2.3 & binutils 2.15, possibly earlier.
+  ifdef VBOX_LD_gc_sections             # Older solaris linker versions doesn't grok --gc-sections (e.g. add build box).
+   ifndef TEMPLATE_VBOXR3STATIC_CXXFLAGS
+    TEMPLATE_VBOXR3STATIC_CXXFLAGS       = $(TEMPLATE_VBOXR3EXE_CXXFLAGS)
+    TEMPLATE_VBOXR3STATIC_CFLAGS         = $(TEMPLATE_VBOXR3EXE_CFLAGS)
+   endif
+   TEMPLATE_VBOXR3STATIC_CXXFLAGS       += -ffunction-sections -fdata-sections
+   TEMPLATE_VBOXR3STATIC_CFLAGS         += -ffunction-sections -fdata-sections
+   TEMPLATE_VBOXR3STATIC_LDFLAGS        += $(VBOX_LD_gc_sections)
   endif
-  TEMPLATE_VBOXR3STATIC_CXXFLAGS       += -ffunction-sections -fdata-sections
-  TEMPLATE_VBOXR3STATIC_CFLAGS         += -ffunction-sections -fdata-sections
-  TEMPLATE_VBOXR3STATIC_LDFLAGS        += -Wl,--gc-sections
  endif
 endif
 
@@ -7791,10 +7794,12 @@ else # the gcc guys
  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux = $(filter-out $(VBOX_GCC_ORIGIN_OPT),$(TEMPLATE_VBOXR3EXE_LDFLAGS.linux))
  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.debug = $(NO_SUCH_VARIABLE)
  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS  = $(filter-out '$(VBOX_GCC_RPATH_OPT)%,$(TEMPLATE_VBOXR3EXE_LDFLAGS))
- ifn1of ($(KBUILD_TARGET), darwin os2) # ELF only. Present in gcc 3.2.3 & binutils 2.15, possibly earlier.
-  TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS += -ffunction-sections -fdata-sections
-  TEMPLATE_VBOXGUESTR3EXE_CFLAGS   += -ffunction-sections -fdata-sections
-  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS  += -Wl,--gc-sections
+ ifn1of ($(KBUILD_TARGET), darwin os2)  # ELF only. Present in gcc 3.2.3 & binutils 2.15, possibly earlier.
+  ifdef VBOX_LD_gc_sections             # Older solaris linker versions doesn't grok --gc-sections (e.g. add build box).
+   TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS += -ffunction-sections -fdata-sections
+   TEMPLATE_VBOXGUESTR3EXE_CFLAGS   += -ffunction-sections -fdata-sections
+   TEMPLATE_VBOXGUESTR3EXE_LDFLAGS  += $(VBOX_LD_gc_sections)
+  endif
  endif
 endif
 TEMPLATE_VBOXGUESTR3EXE_INST      = $(INST_ADDITIONS)
@@ -8063,13 +8068,13 @@ TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TYPE)      = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LIBS.$(KBUILD_TARGET)    = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TARGET) = $(NO_SUCH_VARIABLE)
 # The GNU_HASH ELF tag is not supported by older glibc dynamic linkers.
-TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.linux = $(subst -Wl$(COMMA),,$(VBOX_LD_hash_style_sysv))
+TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.linux            = $(subst -Wl$(COMMA),,$(VBOX_LD_hash_style_sysv))
 TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.$(KBUILD_TYPE)   = $(NO_SUCH_VARIABLE)
-TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS          = -r
+TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS                  = -r
 if1of ($(KBUILD_TARGET), dragonfly freebsd linux netbsd openbsd) # the gnu ld guys.
- TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.release = -S
- TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.x86     = -m elf_i386
- TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.amd64   = -m elf_x86_64
+ TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.release         = -S
+ TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.x86             = -m elf_i386
+ TEMPLATE_VBOXGUESTR3XF86MOD_LDFLAGS.amd64           = -m elf_x86_64
 endif
 TEMPLATE_VBOXGUESTR3XF86MOD_CFLAGS  = $(filter-out $(VBOX_GCC_SANITIZER_FLAGS),$(TEMPLATE_VBOXGUESTR3EXE_CFLAGS)) \
 	-fno-pie -fno-merge-constants -std=c99 -ffreestanding
