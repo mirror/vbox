@@ -41,9 +41,10 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
     size_t const cbInstrs = uEndPtr - (uintptr_t)pabInstrs;
     for (size_t off = 0; off < cbInstrs;)
     {
-        uint32_t const  cErrBefore = RTTestIErrorCount();
-        uint32_t        cb = 1;
         DISSTATE        Dis;
+        uint32_t        cb = 1;
+#ifndef DIS_CORE_ONLY
+        uint32_t const  cErrBefore = RTTestIErrorCount();
         char            szOutput[256] = {0};
         int rc = DISInstrToStr(&pabInstrs[off], enmDisCpuMode, &Dis, &cb, szOutput, sizeof(szOutput));
 
@@ -82,6 +83,12 @@ static void testDisas(const char *pszSub, uint8_t const *pabInstrs, uintptr_t uE
         RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
         RTTESTI_CHECK(cbOnly == DisOnly.cbInstr);
         RTTESTI_CHECK_MSG(cbOnly == cb, ("%#x vs %#x\n", cbOnly, cb));
+
+#else  /* DIS_CORE_ONLY */
+        int rc = DISInstr(&pabInstrs[off], enmDisCpuMode,  &Dis, &cb);
+        RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+        RTTESTI_CHECK(cb == Dis.cbInstr);
+#endif /* DIS_CORE_ONLY */
 
         off += cb;
     }
@@ -144,8 +151,13 @@ void testTwo(void)
             uint32_t cb2;
             RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param1)) == s_gInstrs[i].cbParam1,
                               ("%u: %#x vs %#x\n", i , cb2, s_gInstrs[i].cbParam1));
+#ifndef DIS_CORE_ONLY
             RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param2)) == s_gInstrs[i].cbParam2,
                               ("%u: %#x vs %#x (%s)\n", i , cb2, s_gInstrs[i].cbParam2, Dis.pCurInstr->pszOpcode));
+#else
+            RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param2)) == s_gInstrs[i].cbParam2,
+                              ("%u: %#x vs %#x\n", i , cb2, s_gInstrs[i].cbParam2));
+#endif
             RTTESTI_CHECK_MSG((cb2 = DISGetParamSize(&Dis, &Dis.Param3)) == s_gInstrs[i].cbParam3,
                               ("%u: %#x vs %#x\n", i , cb2, s_gInstrs[i].cbParam3));
         }

@@ -484,17 +484,21 @@ typedef DISOPPARAM *PDISOPPARAM;
 typedef const DISOPPARAM *PCDISOPPARAM;
 
 
+#if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && defined(DIS_CORE_ONLY)
+# define DISOPCODE_BITFIELD(a_cBits) : a_cBits
+#else
+# define DISOPCODE_BITFIELD(a_cBits)
+#endif
+
 /**
  * Opcode descriptor.
  */
-#if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && defined(DIS_CORE_ONLY)
-# pragma pack(1)
-#endif
+#if !defined(DIS_CORE_ONLY) || defined(DOXYGEN_RUNNING)
 typedef struct DISOPCODE
 {
-#ifndef DIS_CORE_ONLY
+# define DISOPCODE_FORMAT  0
+    /** Mnemonic and operand formatting. */
     const char  *pszOpcode;
-#endif
     /** Parameter \#1 parser index. */
     uint8_t     idxParse1;
     /** Parameter \#2 parser index. */
@@ -514,15 +518,44 @@ typedef struct DISOPCODE
     uint16_t    fParam3;
     /** Parameter \#4 info, @see grp_dis_opparam. */
     uint16_t    fParam4;
-#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || !defined(DIS_CORE_ONLY)
     /** padding unused */
     uint16_t    uPadding;
-#endif
     /** Operand type flags, DISOPTYPE_XXX. */
     uint32_t    fOpType;
 } DISOPCODE;
-#if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && defined(DIS_CORE_ONLY)
+#else
+# pragma pack(1)
+typedef struct DISOPCODE
+{
+#if 1 /*!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64) - probably not worth it for ~4K, costs 2-3% speed. */
+    /* 16 bytes (trick is to make sure the bitfields doesn't cross dwords): */
+# define DISOPCODE_FORMAT  16
+    uint32_t    fOpType;
+    uint16_t    uOpcode;
+    uint8_t     idxParse1;
+    uint8_t     idxParse2;
+    uint32_t    fParam1   : 12; /* 1st dword: 12+12+8 = 0x20 (32) */
+    uint32_t    fParam2   : 12;
+    uint32_t    idxParse3 : 8;
+    uint32_t    fParam3   : 12; /* 2nd dword: 12+12+8 = 0x20 (32) */
+    uint32_t    fParam4   : 12;
+    uint32_t    idxParse4 : 8;
+#else /* 15 bytes: */
+# define DISOPCODE_FORMAT  15
+    uint64_t    uOpcode   : 10; /* 1st qword: 10+12+12+12+6+6+6 = 0x40 (64) */
+    uint64_t    idxParse1 : 6;
+    uint64_t    idxParse2 : 6;
+    uint64_t    idxParse3 : 6;
+    uint64_t    fParam1   : 12;
+    uint64_t    fParam2   : 12;
+    uint64_t    fParam3   : 12;
+    uint32_t    fOpType;
+    uint16_t    fParam4;
+    uint8_t     idxParse4;
+#endif
+} DISOPCODE;
 # pragma pack()
+AssertCompile(sizeof(DISOPCODE) == DISOPCODE_FORMAT);
 #endif
 /** Pointer to const opcode. */
 typedef const struct DISOPCODE *PCDISOPCODE;
