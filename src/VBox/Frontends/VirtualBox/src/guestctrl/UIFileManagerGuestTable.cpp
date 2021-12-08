@@ -857,7 +857,6 @@ void UIFileManagerGuestTable::sltGuestSessionPanelToggled(bool fChecked)
 
 void UIFileManagerGuestTable::sltHandleGuestSessionPanelHidden()
 {
-    return;
     if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
         m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession)->setChecked(false);
 }
