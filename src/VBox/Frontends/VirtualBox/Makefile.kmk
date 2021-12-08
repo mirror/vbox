@@ -414,6 +414,7 @@ endif
 
 UICommon_CXXFLAGS.linux += -Wno-class-memaccess
 UICommon_CXXFLAGS.win += -wd4868 # prevents std::stable_sort from using functor/function comparator
+UICommon_CXXFLAGS.win += -bigobj # COMWrappers.cpp fails with too many sections on win64-dep otherwise.
 
 ## @todo we're using a number of deprecated APIs, please fix and remove these!
 UICommon_CXXFLAGS.darwin    += -Wno-error=deprecated-declarations
