@@ -936,6 +936,8 @@ RuntimeR3_SOURCES.win = \
 	generic/RTMpGetMaxFrequency-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
+	generic/RTSemEventWait-2-ex-generic.cpp \
+	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSemMutexRequest-generic.cpp \
@@ -964,6 +966,8 @@ RuntimeR3_SOURCES.win = \
 	r3/nt/RTProcQueryParent-r3-nt.cpp \
 	nt/semevent-nt.cpp \
 	nt/RTSemEventGetResolution-nt.cpp \
+	nt/semeventmulti-nt.cpp \
+	nt/RTSemEventMultiGetResolution-nt.cpp \
 	r3/win/env-win.cpp \
 	r3/win/RTCrStoreCreateSnapshotById-win.cpp \
 	r3/win/RTFileQuerySectorSize-win.cpp \
@@ -995,9 +999,6 @@ RuntimeR3_SOURCES.win = \
 	r3/win/RTLogWriteDebugger-win.cpp \
 	r3/win/rtProcInitExePath-win.cpp \
 	r3/win/sched-win.cpp \
-	generic/RTSemEventWait-2-ex-generic.cpp \
-	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
-	r3/win/semeventmulti-win.cpp \
 	r3/win/semmutex-win.cpp \
 	r3/win/serialport-win.cpp \
 	r3/win/shmem-win.cpp \
@@ -2043,9 +2044,10 @@ RuntimeBldProg_SOURCES.win = \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
+	generic/RTSemEventWait-2-ex-generic.cpp \
+	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
-	generic/RTSemEventWait-generic.cpp \
 	generic/RTSemMutexRequest-generic.cpp \
 	generic/RTSemMutexRequestDebug-generic.cpp \
 	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
@@ -2053,6 +2055,7 @@ RuntimeBldProg_SOURCES.win = \
 	nt/fileioutils-nt.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	nt/semevent-nt.cpp \
+	nt/semeventmulti-nt.cpp \
 	r3/nt/direnum-r3-nt.cpp \
 	r3/nt/dirrel-r3-nt.cpp \
 	r3/nt/fs-nt.cpp \
@@ -2079,9 +2082,6 @@ RuntimeBldProg_SOURCES.win = \
 	r3/win/rtProcInitExePath-win.cpp \
 	r3/win/RTUuidCreate-win.cpp \
 	r3/win/sched-win.cpp \
-	generic/RTSemEventWait-2-ex-generic.cpp \
-	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
-	r3/win/semeventmulti-win.cpp \
 	r3/win/semmutex-win.cpp \
 	r3/win/symlink-win.cpp \
 	r3/win/system-get-nt-xxx-win.cpp \
@@ -3219,6 +3219,8 @@ RuntimeR0Drv_SOURCES.win = \
 	nt/RTNtPathFindPossible8dot3Name.cpp \
 	nt/semevent-nt.cpp \
 	nt/RTSemEventGetResolution-nt.cpp \
+	nt/semeventmulti-nt.cpp \
+	nt/RTSemEventMultiGetResolution-nt.cpp \
 	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/alloc-ef-r0drv.cpp \
 	r0drv/memobj-r0drv.cpp \
@@ -3233,7 +3235,6 @@ RuntimeR0Drv_SOURCES.win = \
 	r0drv/nt/mp-r0drv-nt.cpp \
 	r0drv/nt/process-r0drv-nt.cpp \
 	r0drv/nt/RTLogWriteDebugger-r0drv-nt.cpp \
-	r0drv/nt/semeventmulti-r0drv-nt.cpp \
 	r0drv/nt/semfastmutex-r0drv-nt.cpp \
 	r0drv/nt/semmutex-r0drv-nt.cpp \
 	r0drv/nt/spinlock-r0drv-nt.cpp \

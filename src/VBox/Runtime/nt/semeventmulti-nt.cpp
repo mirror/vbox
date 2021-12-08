@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT -  Single Release Event Semaphores, Ring-0 Driver & Ring-3 Userland, NT.
+ * IPRT -  Multiple Release Event Semaphores, Ring-0 Driver, NT.
  */
 
 /*
@@ -28,7 +28,7 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define RTSEMEVENT_WITHOUT_REMAPPING
+#define RTSEMEVENTMULTI_WITHOUT_REMAPPING
 #ifdef IN_RING0
 # include "../r0drv/nt/the-nt-kernel.h"
 #else
@@ -42,6 +42,7 @@
 #include <iprt/lockvalidator.h>
 #include <iprt/mem.h>
 #include <iprt/time.h>
+#include <iprt/timer.h>
 
 #include "internal/magics.h"
 
@@ -52,9 +53,9 @@
 /**
  * NT event semaphore.
  */
-typedef struct RTSEMEVENTINTERNAL
+typedef struct RTSEMEVENTMULTIINTERNAL
 {
-    /** Magic value (RTSEMEVENT_MAGIC). */
+    /** Magic value (RTSEMEVENTMULTI_MAGIC). */
     uint32_t volatile   u32Magic;
     /** Reference counter. */
     uint32_t volatile   cRefs;
@@ -64,8 +65,6 @@ typedef struct RTSEMEVENTINTERNAL
 #elif defined(IN_RING3)
     /** Handle to the NT event object. */
     HANDLE              hEvent;
-#else
-# error "Unknown context"
 #endif
 #if defined(RTSEMEVENT_STRICT) && defined(IN_RING3)
     /** Signallers. */
@@ -73,49 +72,49 @@ typedef struct RTSEMEVENTINTERNAL
     /** Indicates that lock validation should be performed. */
     bool volatile       fEverHadSignallers;
 #endif
+} RTSEMEVENTMULTIINTERNAL, *PRTSEMEVENTMULTIINTERNAL;
 
-} RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
 
-
-RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem)
+RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI phEventMultiSem)
 {
-    return RTSemEventCreateEx(phEventSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
+    return RTSemEventMultiCreateEx(phEventMultiSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, NULL);
 }
 
 
-RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKVALCLASS hClass, const char *pszNameFmt, ...)
+RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t fFlags, RTLOCKVALCLASS hClass,
+                                     const char *pszNameFmt, ...)
 {
-    AssertReturn(!(fFlags & ~(RTSEMEVENT_FLAGS_NO_LOCK_VAL | RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)), VERR_INVALID_PARAMETER);
-    Assert(!(fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK) || (fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL));
-    AssertCompile(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
+    AssertReturn(!(fFlags & ~RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+    RT_NOREF2(hClass, pszNameFmt);
 
-    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pThis));
+    AssertCompile(sizeof(RTSEMEVENTMULTIINTERNAL) > sizeof(void *));
+    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (pThis)
     {
-        pThis->u32Magic = RTSEMEVENT_MAGIC;
+        pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
         pThis->cRefs    = 1;
 #ifdef IN_RING0
-        KeInitializeEvent(&pThis->Event, SynchronizationEvent, FALSE /* not signalled */);
+        KeInitializeEvent(&pThis->Event, NotificationEvent, FALSE /* not signalled */);
 #else
         NTSTATUS rcNt = NtCreateEvent(&pThis->hEvent, EVENT_ALL_ACCESS, NULL /*pObjAttr*/,
-                                      SynchronizationEvent, FALSE /*not signalled*/);
+                                      NotificationEvent, FALSE /*not signalled*/);
         if (NT_SUCCESS(rcNt))
 #endif
         {
 #if defined(RTSEMEVENT_STRICT) && defined(IN_RING3)
             if (!pszNameFmt)
             {
-                static uint32_t volatile s_iSemEventAnon = 0;
+                static uint32_t volatile s_iSemEventMultiAnon = 0;
                 RTLockValidatorRecSharedInit(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
-                                             true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
-                                             "RTSemEvent-%u", ASMAtomicIncU32(&s_iSemEventAnon) - 1);
+                                             true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
+                                             "RTSemEventMulti-%u", ASMAtomicIncU32(&s_iSemEventMultiAnon) - 1);
             }
             else
             {
                 va_list va;
                 va_start(va, pszNameFmt);
                 RTLockValidatorRecSharedInitV(&pThis->Signallers, hClass, RTLOCKVAL_SUB_CLASS_ANY, pThis,
-                                              true /*fSignaller*/, !(fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL),
+                                              true /*fSignaller*/, !(fFlags & RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL),
                                               pszNameFmt, va);
                 va_end(va);
             }
@@ -123,7 +122,8 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
 #else
             RT_NOREF_PV(hClass); RT_NOREF_PV(pszNameFmt);
 #endif
-            *phEventSem = pThis;
+
+            *phEventMultiSem = pThis;
             return VINF_SUCCESS;
         }
 #ifdef IN_RING3
@@ -140,7 +140,7 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
  *
  * @param   pThis       The semaphore to retain.
  */
-DECLINLINE(void) rtR0SemEventNtRetain(PRTSEMEVENTINTERNAL pThis)
+DECLINLINE(void) rtR0SemEventMultiNtRetain(PRTSEMEVENTMULTIINTERNAL pThis)
 {
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
     Assert(cRefs < 100000); NOREF(cRefs);
@@ -152,7 +152,7 @@ DECLINLINE(void) rtR0SemEventNtRetain(PRTSEMEVENTINTERNAL pThis)
  *
  * @param   pThis       The semaphore to release
  */
-DECLINLINE(void) rtR0SemEventNtRelease(PRTSEMEVENTINTERNAL pThis)
+DECLINLINE(void) rtR0SemEventMultiNtRelease(PRTSEMEVENTMULTIINTERNAL pThis)
 {
     if (ASMAtomicDecU32(&pThis->cRefs) == 0)
     {
@@ -169,16 +169,16 @@ DECLINLINE(void) rtR0SemEventNtRelease(PRTSEMEVENTINTERNAL pThis)
 }
 
 
-RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
+RTDECL(int) RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Validate input.
      */
-    PRTSEMEVENTINTERNAL pThis = hEventSem;
-    if (pThis == NIL_RTSEMEVENT)
+    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
+    if (pThis == NIL_RTSEMEVENTMULTI)
         return VINF_SUCCESS;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
 
     /*
      * Invalidate it and signal the object just in case.
@@ -190,20 +190,22 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
     NtSetEvent(pThis->hEvent, NULL);
 #endif
 
-    rtR0SemEventNtRelease(pThis);
+    rtR0SemEventMultiNtRelease(pThis);
     return VINF_SUCCESS;
 }
 
 
-RTDECL(int) RTSemEventSignal(RTSEMEVENT hEventSem)
+RTDECL(int) RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
 {
     /*
      * Validate input.
      */
-    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
-    rtR0SemEventNtRetain(pThis);
+    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
+    if (!pThis)
+        return VERR_INVALID_PARAMETER;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    rtR0SemEventMultiNtRetain(pThis);
 
 #if defined(RTSEMEVENT_STRICT) && defined(IN_RING3)
     if (pThis->fEverHadSignallers)
@@ -223,44 +225,72 @@ RTDECL(int) RTSemEventSignal(RTSEMEVENT hEventSem)
     NTSTATUS rcNt = NtSetEvent(pThis->hEvent, NULL);
 #endif
 
-    rtR0SemEventNtRelease(pThis);
+    rtR0SemEventMultiNtRelease(pThis);
 #ifdef IN_RING3
-    AssertMsgReturn(NT_SUCCESS(rcNt), ("Signaling hEventSem %p failed: %#x\n", pThis, rcNt), RTErrConvertFromNtStatus(rcNt));
+    AssertMsgReturn(NT_SUCCESS(rcNt), ("Signaling hEventMultiSem %p failed: %#x\n", pThis, rcNt), RTErrConvertFromNtStatus(rcNt));
 #endif
     return VINF_SUCCESS;
 }
 
 
+RTDECL(int) RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
+{
+    /*
+     * Validate input.
+     */
+    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
+    if (!pThis)
+        return VERR_INVALID_PARAMETER;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    rtR0SemEventMultiNtRetain(pThis);
+
+    /*
+     * Reset the event object.
+     */
+#ifdef IN_RING0
+    KeResetEvent(&pThis->Event);
+#else
+    NTSTATUS rcNt = NtResetEvent(pThis->hEvent, NULL);
+#endif
+
+    rtR0SemEventMultiNtRelease(pThis);
+#ifdef IN_RING3
+    AssertMsgReturn(NT_SUCCESS(rcNt), ("Resetting hEventMultiSem %p failed: %#x\n", pThis, rcNt), RTErrConvertFromNtStatus(rcNt));
+#endif
+    return VINF_SUCCESS;
+}
+
 
 /**
- * Worker for RTSemEventWaitEx and RTSemEventWaitExDebug.
+ * Worker for RTSemEventMultiWaitEx and RTSemEventMultiWaitExDebug.
  *
  * @returns VBox status code.
  * @param   pThis           The event semaphore.
- * @param   fFlags          See RTSemEventWaitEx.
- * @param   uTimeout        See RTSemEventWaitEx.
+ * @param   fFlags          See RTSemEventMultiWaitEx.
+ * @param   uTimeout        See RTSemEventMultiWaitEx.
  * @param   pSrcPos         The source code position of the wait.
  */
-DECLINLINE(int) rtR0SemEventNtWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, uint64_t uTimeout,
-                                   PCRTLOCKVALSRCPOS pSrcPos)
+DECLINLINE(int) rtR0SemEventMultiNtWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t fFlags, uint64_t uTimeout,
+                                        PCRTLOCKVALSRCPOS pSrcPos)
 {
     /*
      * Validate input.
      */
     if (!pThis)
         return VERR_INVALID_PARAMETER;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
-    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_FLAGS);
-    NOREF(pSrcPos);
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+    RT_NOREF1(pSrcPos);
 
-    rtR0SemEventNtRetain(pThis);
+    rtR0SemEventMultiNtRetain(pThis);
 
     /*
      * Lock validation needs to be done only when not polling.
      */
 #if defined(RTSEMEVENT_STRICT) && defined(IN_RING3)
-    RTTHREAD const hThreadSelf = !(pThis->fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK) ? RTThreadSelfAutoAdopt() : RTThreadSelf();
+    RTTHREAD const hThreadSelf = RTThreadSelfAutoAdopt();
     if (   pThis->fEverHadSignallers
         && (   uTimeout != 0
             || (fFlags & (RTSEMWAIT_FLAGS_INDEFINITE | RTSEMWAIT_FLAGS_ABSOLUTE))) )
@@ -268,7 +298,7 @@ DECLINLINE(int) rtR0SemEventNtWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, u
         int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, NULL /*pSrcPos*/, false,
                                                         fFlags & RTSEMWAIT_FLAGS_INDEFINITE
                                                         ? RT_INDEFINITE_WAIT : RT_MS_30SEC /*whatever*/,
-                                                        RTTHREADSTATE_EVENT, true);
+                                                        RTTHREADSTATE_EVENT_MULTI, true);
         if (RT_FAILURE(rc9))
             return rc9;
     }
@@ -279,7 +309,7 @@ DECLINLINE(int) rtR0SemEventNtWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, u
     /*
      * Convert the timeout to a relative one because KeWaitForSingleObject
      * takes system time instead of interrupt time as input for absolute
-     * timeout specifications.  So, we're best off by giving it relative time.
+     * timeout specifications.  So, we're best of by giving it relative time.
      *
      * Lazy bird converts uTimeout to relative nanoseconds and then to Nt time.
      */
@@ -327,7 +357,7 @@ DECLINLINE(int) rtR0SemEventNtWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, u
 #endif
         NTSTATUS        rcNt;
 #ifdef IN_RING3
-        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT, true);
+        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
 #endif
         if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
 #ifdef IN_RING0
@@ -346,9 +376,9 @@ DECLINLINE(int) rtR0SemEventNtWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, u
 #endif
         }
 #ifdef IN_RING3
-        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT);
+        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
 #endif
-        if (pThis->u32Magic == RTSEMEVENT_MAGIC)
+        if (pThis->u32Magic == RTSEMEVENTMULTI_MAGIC)
         {
             switch (rcNt)
             {
@@ -401,32 +431,32 @@ DECLINLINE(int) rtR0SemEventNtWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, u
 #endif
     }
 
-    rtR0SemEventNtRelease(pThis);
+    rtR0SemEventMultiNtRelease(pThis);
     return rc;
 }
 
 
-RTDECL(int)  RTSemEventWaitEx(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout)
+RTDECL(int)  RTSemEventMultiWaitEx(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout)
 {
 #ifndef RTSEMEVENT_STRICT
-    return rtR0SemEventNtWait(hEventSem, fFlags, uTimeout, NULL);
+    return rtR0SemEventMultiNtWait(hEventMultiSem, fFlags, uTimeout, NULL);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return rtR0SemEventNtWait(hEventSem, fFlags, uTimeout, &SrcPos);
+    return rtR0SemEventMultiNtWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
 #endif
 }
 
 
-RTDECL(int)  RTSemEventWaitExDebug(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout,
-                                   RTHCUINTPTR uId, RT_SRC_POS_DECL)
+RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout,
+                                        RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return rtR0SemEventNtWait(hEventSem, fFlags, uTimeout, &SrcPos);
+    return rtR0SemEventMultiNtWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
 }
 
 
 #ifdef IN_RING0
-RTR0DECL(bool) RTSemEventIsSignalSafe(void)
+RTR0DECL(bool) RTSemEventMultiIsSignalSafe(void)
 {
     return KeGetCurrentIrql() <= DISPATCH_LEVEL;
 }
@@ -434,46 +464,46 @@ RTR0DECL(bool) RTSemEventIsSignalSafe(void)
 
 #ifdef IN_RING3
 
-RTDECL(void) RTSemEventSetSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
+RTDECL(void) RTSemEventMultiSetSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
 {
 # ifdef RTSEMEVENT_STRICT
-    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturnVoid(pThis);
-    AssertReturnVoid(pThis->u32Magic == RTSEMEVENT_MAGIC);
+    AssertReturnVoid(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC);
 
     ASMAtomicWriteBool(&pThis->fEverHadSignallers, true);
     RTLockValidatorRecSharedResetOwner(&pThis->Signallers, hThread, NULL);
 # else
-    RT_NOREF_PV(hEventSem); RT_NOREF_PV(hThread);
+    RT_NOREF_PV(hEventMultiSem); RT_NOREF_PV(hThread);
 # endif
 }
 
 
-RTDECL(void) RTSemEventAddSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
+RTDECL(void) RTSemEventMultiAddSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
 {
 # ifdef RTSEMEVENT_STRICT
-    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturnVoid(pThis);
-    AssertReturnVoid(pThis->u32Magic == RTSEMEVENT_MAGIC);
+    AssertReturnVoid(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC);
 
     ASMAtomicWriteBool(&pThis->fEverHadSignallers, true);
     RTLockValidatorRecSharedAddOwner(&pThis->Signallers, hThread, NULL);
 # else
-    RT_NOREF_PV(hEventSem); RT_NOREF_PV(hThread);
+    RT_NOREF_PV(hEventMultiSem); RT_NOREF_PV(hThread);
 # endif
 }
 
 
-RTDECL(void) RTSemEventRemoveSignaller(RTSEMEVENT hEventSem, RTTHREAD hThread)
+RTDECL(void) RTSemEventMultiRemoveSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)
 {
 # ifdef RTSEMEVENT_STRICT
-    struct RTSEMEVENTINTERNAL *pThis = hEventSem;
+    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturnVoid(pThis);
-    AssertReturnVoid(pThis->u32Magic == RTSEMEVENT_MAGIC);
+    AssertReturnVoid(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC);
 
     RTLockValidatorRecSharedRemoveOwner(&pThis->Signallers, hThread);
 # else
-    RT_NOREF_PV(hEventSem); RT_NOREF_PV(hThread);
+    RT_NOREF_PV(hEventMultiSem); RT_NOREF_PV(hThread);
 # endif
 }
 
