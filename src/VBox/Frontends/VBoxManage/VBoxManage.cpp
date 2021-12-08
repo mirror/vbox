@@ -90,7 +90,7 @@ typedef VBMGCMD const *PCVBMGCMD;
 
 DECLARE_TRANSLATION_CONTEXT(VBoxManage);
 
-static void setBuiltInHelpLanguage(const char *pszLang);
+void setBuiltInHelpLanguage(const char *pszLang);
 
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
 /* listener class for language updates */
