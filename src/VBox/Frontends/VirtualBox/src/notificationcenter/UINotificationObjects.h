@@ -431,7 +431,7 @@ public:
           * @param  strNetworkName  Brings network name. */
         static void cannotFindCloudNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
         /** Notifies about inability to find host network interface.
-          * @param  comHost  Brings the host being search through.
+          * @param  comHost           Brings the host being search through.
           * @param  strInterfaceName  Brings interface name. */
         static void cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName);
         /** Notifies about inability to find NAT network.

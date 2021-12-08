@@ -323,7 +323,7 @@ void UINotificationMessage::warnAboutDHCPServerIsNotEnabled(const QString &strNa
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "DHCP server isn't enabled ..."),
-        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> is set to obtain the address "
+        QApplication::translate("UIMessageCenter", "Network <nobr><b>%1</b></nobr> is set to obtain the address "
                                                    "automatically but the corresponding DHCP server is not enabled.")
                                                    .arg(strName));
 }
@@ -333,7 +333,7 @@ void UINotificationMessage::warnAboutInvalidIPv4Address(const QString &strName)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Invalid IPv4 address ..."),
-        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+        QApplication::translate("UIMessageCenter", "Network <nobr><b>%1</b></nobr> does not "
                                                    "currently have a valid IPv4 address.")
                                                    .arg(strName));
 }
@@ -343,8 +343,8 @@ void UINotificationMessage::warnAboutInvalidIPv4Mask(const QString &strName)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Invalid IPv4 mask ..."),
-        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
-                                                   "currently have a valid IPv4 network mask.")
+        QApplication::translate("UIMessageCenter", "Network <nobr><b>%1</b></nobr> does not "
+                                                   "currently have a valid IPv4 mask.")
                                                    .arg(strName));
 }
 
@@ -353,7 +353,7 @@ void UINotificationMessage::warnAboutInvalidIPv6Address(const QString &strName)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Invalid IPv6 address ..."),
-        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+        QApplication::translate("UIMessageCenter", "Network <nobr><b>%1</b></nobr> does not "
                                                    "currently have a valid IPv6 address.")
                                                    .arg(strName));
 }
@@ -363,7 +363,7 @@ void UINotificationMessage::warnAboutInvalidIPv6PrefixLength(const QString &strN
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Invalid IPv6 prefix length ..."),
-        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+        QApplication::translate("UIMessageCenter", "Network <nobr><b>%1</b></nobr> does not "
                                                    "currently have a valid IPv6 prefix length.")
                                                    .arg(strName));
 }
@@ -373,7 +373,7 @@ void UINotificationMessage::warnAboutInvalidDHCPServerAddress(const QString &str
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Invalid DHCP server address ..."),
-        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+        QApplication::translate("UIMessageCenter", "Network <nobr><b>%1</b></nobr> does not "
                                                    "currently have a valid DHCP server address.")
                                                    .arg(strName));
 }
@@ -383,7 +383,7 @@ void UINotificationMessage::warnAboutInvalidDHCPServerMask(const QString &strNam
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Invalid DHCP server mask ..."),
-        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+        QApplication::translate("UIMessageCenter", "Network <nobr><b>%1</b></nobr> does not "
                                                    "currently have a valid DHCP server mask.")
                                                    .arg(strName));
 }
@@ -393,7 +393,7 @@ void UINotificationMessage::warnAboutInvalidDHCPServerLowerAddress(const QString
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Invalid DHCP lower address ..."),
-        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+        QApplication::translate("UIMessageCenter", "Network <nobr><b>%1</b></nobr> does not "
                                                    "currently have a valid DHCP server lower address bound.")
                                                    .arg(strName));
 }
@@ -403,7 +403,7 @@ void UINotificationMessage::warnAboutInvalidDHCPServerUpperAddress(const QString
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Invalid DHCP upper address ..."),
-        QApplication::translate("UIMessageCenter", "Host interface <nobr><b>%1</b></nobr> does not "
+        QApplication::translate("UIMessageCenter", "Network <nobr><b>%1</b></nobr> does not "
                                                    "currently have a valid DHCP server upper address bound.")
                                                    .arg(strName));
 }
@@ -413,7 +413,7 @@ void UINotificationMessage::warnAboutNoNameSpecified(const QString &strName)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "No name specified ..."),
-        QApplication::translate("UIMessageCenter", "No new name specified for the NAT network previously called <b>%1</b>.")
+        QApplication::translate("UIMessageCenter", "No new name specified for the network previously called <b>%1</b>.")
                                                    .arg(strName));
 }
 
@@ -422,7 +422,7 @@ void UINotificationMessage::warnAboutNameAlreadyBusy(const QString &strName)
 {
     createMessage(
         QApplication::translate("UIMessageCenter", "Name already busy ..."),
-        QApplication::translate("UIMessageCenter", "The name <b>%1</b> is being used for several NAT networks.")
+        QApplication::translate("UIMessageCenter", "The name <b>%1</b> is being used for several networks.")
                                                    .arg(strName));
 }
 
