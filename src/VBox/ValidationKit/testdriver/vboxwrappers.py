@@ -1645,7 +1645,7 @@ class SessionWrapper(TdTaskBase):
         try:
             if hasattr(oNatEngine, "localhostReachable"):
                 oNatEngine.localhostReachable = fReachable;
-            else
+            else:
                 oNatEngine.LocalhostReachable = fReachable;
         except:
             return reporter.errorXcpt('LocalhostReachable (%s) failed for "%s"' % (iNic, self.sName,));
