@@ -127,6 +127,8 @@ static struct TSTRTR0TIMEROMNILATENCY
 } g_aOmniLatency[16];
 
 
+
+
 /**
  * Callback for the omni timer latency test, adds a sample to g_aOmniLatency.
  *
@@ -140,7 +142,7 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackLatencyOmni(PRTTIMER pTimer, void 
     uint32_t            iCpu     = RTMpCpuIdToSetIndex(idCpu);
     NOREF(pTimer); NOREF(pvUser); NOREF(iTick);
 
-    RTR0TESTR0_CHECK_MSG(iCpu < RT_ELEMENTS(g_aOmniLatency), ("iCpu=%d idCpu=%u\n", iCpu, idCpu));
+    //RTR0TESTR0_CHECK_MSG(iCpu < RT_ELEMENTS(g_aOmniLatency), ("iCpu=%d idCpu=%u\n", iCpu, idCpu));
     if (iCpu < RT_ELEMENTS(g_aOmniLatency))
     {
         uint32_t iSample = g_aOmniLatency[iCpu].cSamples;
@@ -152,7 +154,6 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackLatencyOmni(PRTTIMER pTimer, void 
         }
     }
 }
-
 
 
 /**
@@ -182,6 +183,22 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackOmni(PRTTIMER pTimer, void *pvUser
             RTR0TESTR0_CHECK_MSG(iCountedTick == 1, ("iCountedTick=%u iCpu=%d idCpu=%u\n", iCountedTick, iCpu, idCpu));
         }
     }
+}
+
+
+/**
+ * Callback for one-shot resolution detection.
+ *
+ * @param   pTimer      The timer.
+ * @param   iTick       The current tick.
+ * @param   pvUser      Points to variable with the start TS, update to time
+ *                      elapsed till this call.
+ */
+static DECLCALLBACK(void) tstRTR0TimerCallbackOneShotElapsed(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    RT_NOREF(pTimer, iTick);
+    uint64_t *puNanoTS = (uint64_t *)pvUser;
+    *puNanoTS = RTTimeSystemNanoTS() - *puNanoTS;
 }
 
 
@@ -616,11 +633,44 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             break;
         }
 
+        case TSTRTR0TIMER_ONE_SHOT_RESOLUTION:
+        case TSTRTR0TIMER_ONE_SHOT_RESOLUTION_HIRES:
+        {
+            /* Just create a timer and do a number of RTTimerStart with a small
+               interval and see how quickly it gets called. */
+            PRTTIMER  pTimer;
+            uint32_t  fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
+            uint64_t  volatile cNsElapsed = 0;
+            RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackOneShotElapsed, (void *)&cNsElapsed),
+                                      VINF_SUCCESS);
+
+            uint32_t cTotal   = 0;
+            uint32_t cNsTotal = 0;
+            uint32_t cNsMin   = UINT32_MAX;
+            uint32_t cNsMax   = 0;
+            for (uint32_t i = 0; i < 200; i++)
+            {
+                cNsElapsed = RTTimeSystemNanoTS();
+                RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, RT_NS_1US), VINF_SUCCESS);
+                RTThreadSleep(10);
+                cTotal   += 1;
+                cNsTotal += cNsElapsed;
+                if (cNsMin > cNsElapsed)
+                    cNsMin = cNsElapsed;
+                if (cNsMax < cNsElapsed)
+                    cNsMax = cNsElapsed;
+            }
+            RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+            pTimer = NULL;
+            RTR0TestR0Info("nsMin=%u nsAvg=%u nsMax=%u cTotal=%u\n", cNsMin, cNsTotal / cTotal, cNsMax, cTotal);
+            break;
+        }
+
         case TSTRTR0TIMER_PERIODIC_BASIC:
         case TSTRTR0TIMER_PERIODIC_BASIC_HIRES:
         {
             /* Create a periodic timer running at 10 HZ. */
-            uint32_t const  u10HzAsNs    = 100000000;
+            uint32_t const  u10HzAsNs    = RT_NS_1SEC / 10;
             uint32_t const  u10HzAsNsMin = u10HzAsNs - u10HzAsNs / 2;
             uint32_t const  u10HzAsNsMax = u10HzAsNs + u10HzAsNs / 2;
             PRTTIMER        pTimer;
@@ -875,17 +925,21 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             break;
         }
 
+
         case TSTRTR0TIMER_LATENCY_OMNI:
         case TSTRTR0TIMER_LATENCY_OMNI_HIRES:
         {
             /*
              * Create a periodic timer running at max host frequency, but no more than 1000 Hz.
+             * Unless it's a high resolution timer, which we try at double the rate.
+             * Windows seems to limit the highres stuff to around 500-600 us interval.
              */
             PRTTIMER        pTimer;
             uint32_t        fFlags = (TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0)
                                    | RTTIMER_FLAGS_CPU_ALL;
-            uint32_t        cNsInterval = cNsSysHz;
-            while (cNsInterval < UINT32_C(1000000))
+            uint32_t const  cNsMinInterval = TSTRTR0TIMER_IS_HIRES(uOperation) ? cNsMaxHighResHz : RT_NS_1MS;
+            uint32_t        cNsInterval    = TSTRTR0TIMER_IS_HIRES(uOperation) ? cNsSysHz / 2 : cNsSysHz;
+            while (cNsInterval < cNsMinInterval)
                 cNsInterval *= 2;
             int rc = RTTimerCreateEx(&pTimer, cNsInterval, fFlags, tstRTR0TimerCallbackLatencyOmni, NULL);
             if (rc == VERR_NOT_SUPPORTED)
@@ -925,8 +979,8 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     cTotal += cSamples - 1;
                     for (uint32_t iSample = 1; iSample < cSamples; iSample++)
                     {
-                        int64_t cNsDelta = g_aOmniLatency[iCpu].aSamples[iSample - 1].uNanoTs
-                                         - g_aOmniLatency[iCpu].aSamples[iSample].uNanoTs;
+                        int64_t cNsDelta = g_aOmniLatency[iCpu].aSamples[iSample].uNanoTs
+                                         - g_aOmniLatency[iCpu].aSamples[iSample - 1].uNanoTs;
                         if (cNsDelta < cNsLow)
                             cLow++;
                         else if (cNsDelta > cNsHigh)
@@ -936,6 +990,15 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             }
             RTR0TestR0Info("125%%: %u; 75%%: %u; total: %u", cHigh, cLow, cTotal);
             RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+#if 1
+            RTR0TestR0Info("cNsSysHz=%u cNsInterval=%RU32 cNsLow=%d cNsHigh=%d", cNsSysHz, cNsInterval, cNsLow, cNsHigh);
+            if (TSTRTR0TIMER_IS_HIRES(uOperation))
+                RTR0TestR0Info("RTTimerCanDoHighResolution -> %d", RTTimerCanDoHighResolution());
+            for (uint32_t iSample = 1; iSample < 6; iSample++)
+                RTR0TestR0Info("%RU64/%#RU64",
+                                g_aOmniLatency[0].aSamples[iSample].uNanoTs - g_aOmniLatency[0].aSamples[iSample - 1].uNanoTs,
+                                g_aOmniLatency[0].aSamples[iSample].uTsc - g_aOmniLatency[0].aSamples[iSample - 1].uTsc);
+#endif
             break;
         }
 

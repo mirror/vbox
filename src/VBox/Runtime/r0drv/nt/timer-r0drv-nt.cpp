@@ -42,8 +42,17 @@
 #include "internal-r0drv-nt.h"
 #include "internal/magics.h"
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** This seems to provide better accuracy. */
 #define RTR0TIMER_NT_MANUAL_RE_ARM 1
+
+#if !defined(IN_GUEST) || defined(DOXYGEN_RUNNING)
+/** This using high resolution timers introduced with windows 8.1. */
+# define RTR0TIMER_NT_HIGH_RES 1
+#endif
 
 
 /*********************************************************************************************************************************
@@ -98,8 +107,12 @@ typedef struct RTTIMER
     /** The desired NT time of the first tick. */
     uint64_t                uNtStartTime;
 #endif
-    /** The Nt timer object. */
+    /** The NT timer object. */
     KTIMER                  NtTimer;
+#ifdef RTR0TIMER_NT_HIGH_RES
+    /** High resolution timer.  If not NULL, this must be used instead of NtTimer. */
+    PEX_TIMER               pHighResTimer;
+#endif
     /** The number of sub-timers. */
     RTCPUID                 cSubTimers;
     /** Sub-timers.
@@ -144,13 +157,11 @@ static uint64_t rtTimerNtQueryInterruptTime(void)
  *
  * @param   pTimer              The timer.
  * @param   iTick               The current timer tick.
- * @param   pMasterDpc          The master DPC.
  */
-DECLINLINE(void) rtTimerNtRearmInternval(PRTTIMER pTimer, uint64_t iTick, PKDPC pMasterDpc)
+DECLINLINE(void) rtTimerNtRearmInternval(PRTTIMER pTimer, uint64_t iTick)
 {
 #ifdef RTR0TIMER_NT_MANUAL_RE_ARM
     Assert(pTimer->u64NanoInterval);
-    RT_NOREF1(pMasterDpc);
 
     uint64_t uNtNext = (iTick * pTimer->u64NanoInterval) / 100 - 10; /* 1us fudge */
     LARGE_INTEGER DueTime;
@@ -162,17 +173,49 @@ DECLINLINE(void) rtTimerNtRearmInternval(PRTTIMER pTimer, uint64_t iTick, PKDPC 
     else
         DueTime.QuadPart = -2500; /* 0.25ms */
 
-    KeSetTimerEx(&pTimer->NtTimer, DueTime, 0, &pTimer->aSubTimers[0].NtDpc);
+# ifdef RTR0TIMER_NT_HIGH_RES
+    if (pTimer->pHighResTimer)
+        g_pfnrtExSetTimer(pTimer->pHighResTimer, DueTime.QuadPart, 0, NULL);
+    else
+# endif
+        KeSetTimerEx(&pTimer->NtTimer, DueTime, 0, &pTimer->aSubTimers[0].NtDpc);
 #else
-    RT_NOREF3(pTimer, iTick, pMasterDpc);
+    RT_NOREF(pTimer, iTick);
 #endif
 }
 
 
 /**
- * Timer callback function for the non-omni timers.
+ * Common timer callback worker for the non-omni timers.
  *
  * @returns HRTIMER_NORESTART or HRTIMER_RESTART depending on whether it's a one-shot or interval timer.
+ * @param   pTimer          The timer.
+ */
+static void rtTimerNtSimpleCallbackWorker(PRTTIMER pTimer)
+{
+    /*
+     * Check that we haven't been suspended before doing the callout.
+     */
+    if (    !ASMAtomicUoReadBool(&pTimer->fSuspended)
+        &&  pTimer->u32Magic == RTTIMER_MAGIC)
+    {
+        ASMAtomicWriteHandle(&pTimer->aSubTimers[0].hActiveThread, RTThreadNativeSelf());
+
+        if (!pTimer->u64NanoInterval)
+            ASMAtomicWriteBool(&pTimer->fSuspended, true);
+        uint64_t iTick = ++pTimer->aSubTimers[0].iTick;
+        if (pTimer->u64NanoInterval)
+            rtTimerNtRearmInternval(pTimer, iTick);
+        pTimer->pfnTimer(pTimer, pTimer->pvUser, iTick);
+
+        ASMAtomicWriteHandle(&pTimer->aSubTimers[0].hActiveThread, NIL_RTNATIVETHREAD);
+    }
+}
+
+
+/**
+ * Timer callback function for the low-resolution non-omni timers.
+ *
  * @param   pDpc                Pointer to the DPC.
  * @param   pvUser              Pointer to our internal timer structure.
  * @param   SystemArgument1     Some system argument.
@@ -187,26 +230,40 @@ static void _stdcall rtTimerNtSimpleCallback(IN PKDPC pDpc, IN PVOID pvUser, IN 
         RTAssertMsg2Weak("rtTimerNtSimpleCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
 #endif
 
-    /*
-     * Check that we haven't been suspended before doing the callout.
-     */
-    if (    !ASMAtomicUoReadBool(&pTimer->fSuspended)
-        &&  pTimer->u32Magic == RTTIMER_MAGIC)
-    {
-        ASMAtomicWriteHandle(&pTimer->aSubTimers[0].hActiveThread, RTThreadNativeSelf());
+    rtTimerNtSimpleCallbackWorker(pTimer);
 
-        if (!pTimer->u64NanoInterval)
-            ASMAtomicWriteBool(&pTimer->fSuspended, true);
-        uint64_t iTick = ++pTimer->aSubTimers[0].iTick;
-        if (pTimer->u64NanoInterval)
-            rtTimerNtRearmInternval(pTimer, iTick, &pTimer->aSubTimers[0].NtDpc);
-        pTimer->pfnTimer(pTimer, pTimer->pvUser, iTick);
-
-        ASMAtomicWriteHandle(&pTimer->aSubTimers[0].hActiveThread, NIL_RTNATIVETHREAD);
-    }
-
-    NOREF(pDpc); NOREF(SystemArgument1); NOREF(SystemArgument2);
+    RT_NOREF(pDpc, SystemArgument1, SystemArgument2);
 }
+
+
+#ifdef RTR0TIMER_NT_HIGH_RES
+/**
+ * Timer callback function for the high-resolution non-omni timers.
+ *
+ * @param   pExTimer            The windows timer.
+ * @param   pvUser              Pointer to our internal timer structure.
+ */
+static void _stdcall rtTimerNtHighResSimpleCallback(PEX_TIMER pExTimer, void *pvUser)
+{
+    PRTTIMER pTimer = (PRTTIMER)pvUser;
+    AssertPtr(pTimer);
+    Assert(pTimer->pHighResTimer == pExTimer);
+# ifdef RT_STRICT
+    if (KeGetCurrentIrql() < DISPATCH_LEVEL)
+        RTAssertMsg2Weak("rtTimerNtHighResSimpleCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
+# endif
+
+    /* If we're not on the desired CPU, trigger the DPC.  That will rearm the
+       timer and such. */
+    if (   !pTimer->fSpecificCpu
+        || pTimer->idCpu == RTMpCpuId())
+        rtTimerNtSimpleCallbackWorker(pTimer);
+    else
+        KeInsertQueueDpc(&pTimer->aSubTimers[0].NtDpc, 0, 0);
+
+    RT_NOREF(pExTimer);
+}
+#endif /* RTR0TIMER_NT_HIGH_RES */
 
 
 /**
@@ -253,23 +310,17 @@ static void _stdcall rtTimerNtOmniSlaveCallback(IN PKDPC pDpc, IN PVOID pvUser, 
 
 
 /**
- * The timer callback for an omni-timer.
+ * Common timer callback worker for omni-timers.
  *
  * This is responsible for queueing the DPCs for the other CPUs and
  * perform the callback on the CPU on which it is called.
  *
- * @param   pDpc                The DPC object.
- * @param   pvUser              Pointer to the sub-timer.
- * @param   SystemArgument1     Some system stuff.
- * @param   SystemArgument2     Some system stuff.
+ * @param   pTimer          The timer.
+ * @param   pSubTimer       The sub-timer of the calling CPU.
+ * @param   iCpuSelf        The set index of the CPU we're running on.
  */
-static void _stdcall rtTimerNtOmniMasterCallback(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
+static void rtTimerNtOmniMasterCallbackWorker(PRTTIMER pTimer, PRTTIMERNTSUBTIMER pSubTimer, int iCpuSelf)
 {
-    PRTTIMERNTSUBTIMER pSubTimer = (PRTTIMERNTSUBTIMER)pvUser;
-    PRTTIMER pTimer = pSubTimer->pParent;
-    int iCpuSelf = RTMpCpuIdToSetIndex(RTMpCpuId());
-
-    AssertPtr(pTimer);
 #ifdef RT_STRICT
     if (KeGetCurrentIrql() < DISPATCH_LEVEL)
         RTAssertMsg2Weak("rtTimerNtOmniMasterCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
@@ -300,7 +351,7 @@ static void _stdcall rtTimerNtOmniMasterCallback(IN PKDPC pDpc, IN PVOID pvUser,
                     KeInsertQueueDpc(&pTimer->aSubTimers[iCpu].NtDpc, 0, 0);
 
             uint64_t iTick = ++pSubTimer->iTick;
-            rtTimerNtRearmInternval(pTimer, iTick, &pTimer->aSubTimers[RTMpCpuIdToSetIndex(pTimer->idCpu)].NtDpc);
+            rtTimerNtRearmInternval(pTimer, iTick);
             pTimer->pfnTimer(pTimer, pTimer->pvUser, iTick);
         }
         else
@@ -328,10 +379,62 @@ static void _stdcall rtTimerNtOmniMasterCallback(IN PKDPC pDpc, IN PVOID pvUser,
 
         ASMAtomicWriteHandle(&pSubTimer->hActiveThread, NIL_RTNATIVETHREAD);
     }
-
-    NOREF(pDpc); NOREF(SystemArgument1); NOREF(SystemArgument2);
 }
 
+
+/**
+ * The timer callback for an omni-timer, low-resolution.
+ *
+ * @param   pDpc                The DPC object.
+ * @param   pvUser              Pointer to the sub-timer.
+ * @param   SystemArgument1     Some system stuff.
+ * @param   SystemArgument2     Some system stuff.
+ */
+static void _stdcall rtTimerNtOmniMasterCallback(IN PKDPC pDpc, IN PVOID pvUser, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
+{
+    PRTTIMERNTSUBTIMER const pSubTimer = (PRTTIMERNTSUBTIMER)pvUser;
+    PRTTIMER const           pTimer    = pSubTimer->pParent;
+    int const                iCpuSelf  = RTMpCpuIdToSetIndex(RTMpCpuId());
+
+    AssertPtr(pTimer);
+#ifdef RT_STRICT
+    if (KeGetCurrentIrql() < DISPATCH_LEVEL)
+        RTAssertMsg2Weak("rtTimerNtOmniMasterCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
+    if (pSubTimer - &pTimer->aSubTimers[0] != iCpuSelf)
+        RTAssertMsg2Weak("rtTimerNtOmniMasterCallback: iCpuSelf=%d pSubTimer=%p / %d\n", iCpuSelf, pSubTimer, pSubTimer - &pTimer->aSubTimers[0]);
+#endif
+
+    rtTimerNtOmniMasterCallbackWorker(pTimer, pSubTimer, iCpuSelf);
+
+    RT_NOREF(pDpc, SystemArgument1, SystemArgument2);
+}
+
+
+#ifdef RTR0TIMER_NT_HIGH_RES
+/**
+ * The timer callback for an high-resolution omni-timer.
+ *
+ * @param   pExTimer            The windows timer.
+ * @param   pvUser              Pointer to our internal timer structure.
+ */
+static void __stdcall rtTimerNtHighResOmniCallback(PEX_TIMER pExTimer, void *pvUser)
+{
+    PRTTIMER const           pTimer    = (PRTTIMER)pvUser;
+    int const                iCpuSelf  = RTMpCpuIdToSetIndex(RTMpCpuId());
+    PRTTIMERNTSUBTIMER const pSubTimer = &pTimer->aSubTimers[iCpuSelf];
+
+    AssertPtr(pTimer);
+    Assert(pTimer->pHighResTimer == pExTimer);
+# ifdef RT_STRICT
+    if (KeGetCurrentIrql() < DISPATCH_LEVEL)
+        RTAssertMsg2Weak("rtTimerNtHighResOmniCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
+# endif
+
+    rtTimerNtOmniMasterCallbackWorker(pTimer, pSubTimer, iCpuSelf);
+
+    RT_NOREF(pExTimer);
+}
+#endif /* RTR0TIMER_NT_HIGH_RES */
 
 
 RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
@@ -372,14 +475,30 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     unsigned cSubTimers = pTimer->fOmniTimer ? pTimer->cSubTimers : 1;
     for (unsigned iCpu = 0; iCpu < cSubTimers; iCpu++)
         pTimer->aSubTimers[iCpu].iTick = 0;
-    ASMAtomicWriteS32(&pTimer->cOmniSuspendCountDown, 0);
-    ASMAtomicWriteBool(&pTimer->fSuspended, false);
 #ifdef RTR0TIMER_NT_MANUAL_RE_ARM
     pTimer->uNtStartTime = rtTimerNtQueryInterruptTime() + u64First / 100;
-    KeSetTimerEx(&pTimer->NtTimer, DueTime, 0, pMasterDpc);
-#else
-    KeSetTimerEx(&pTimer->NtTimer, DueTime, ulInterval, pMasterDpc);
 #endif
+    ASMAtomicWriteS32(&pTimer->cOmniSuspendCountDown, 0);
+    ASMAtomicWriteBool(&pTimer->fSuspended, false);
+
+#ifdef RTR0TIMER_NT_HIGH_RES
+    if (pTimer->pHighResTimer)
+    {
+# ifdef RTR0TIMER_NT_MANUAL_RE_ARM
+        g_pfnrtExSetTimer(pTimer->pHighResTimer, DueTime.QuadPart, 0, NULL);
+# else
+        g_pfnrtExSetTimer(pTimer->pHighResTimer, DueTime.QuadPart, RT_MIN(pTimer->u64NanoInterval / 100, MAXLONG), NULL);
+# endif
+    }
+    else
+#endif
+    {
+#ifdef RTR0TIMER_NT_MANUAL_RE_ARM
+        KeSetTimerEx(&pTimer->NtTimer, DueTime, 0, pMasterDpc);
+#else
+        KeSetTimerEx(&pTimer->NtTimer, DueTime, ulInterval, pMasterDpc);
+#endif
+    }
     return VINF_SUCCESS;
 }
 
@@ -398,7 +517,12 @@ static void rtTimerNtStopWorker(PRTTIMER pTimer)
      */
     ASMAtomicWriteBool(&pTimer->fSuspended, true);
 
-    KeCancelTimer(&pTimer->NtTimer);
+#ifdef RTR0TIMER_NT_HIGH_RES
+    if (pTimer->pHighResTimer)
+        g_pfnrtExCancelTimer(pTimer->pHighResTimer, NULL);
+    else
+#endif
+        KeCancelTimer(&pTimer->NtTimer);
 
     for (RTCPUID iCpu = 0; iCpu < pTimer->cSubTimers; iCpu++)
         KeRemoveQueueDpc(&pTimer->aSubTimers[iCpu].NtDpc);
@@ -456,6 +580,17 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
         rtTimerNtStopWorker(pTimer);
 
+#ifdef RTR0TIMER_NT_HIGH_RES
+    /*
+     * Destroy the high-resolution timer before flushing DPCs.
+     */
+    if (pTimer->pHighResTimer)
+    {
+        g_pfnrtExDeleteTimer(pTimer->pHighResTimer, TRUE /*fCancel*/, TRUE /*fWait*/, NULL);
+        pTimer->pHighResTimer = NULL;
+    }
+#endif
+
     /*
      * Flush DPCs to be on the safe side.
      */
@@ -498,6 +633,12 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
 
     /*
      * Initialize it.
+     *
+     * Note! The difference between a SynchronizationTimer and a NotificationTimer
+     *       (KeInitializeTimer) is, as far as I can gather, only that the former
+     *       will wake up exactly one waiting thread and the latter will wake up
+     *       everyone.  Since we don't do any waiting on the NtTimer, that is not
+     *       relevant to us.
      */
     pTimer->u32Magic = RTTIMER_MAGIC;
     pTimer->cOmniSuspendCountDown = 0;
@@ -509,57 +650,92 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     pTimer->pfnTimer = pfnTimer;
     pTimer->pvUser = pvUser;
     pTimer->u64NanoInterval = u64NanoInterval;
-    if (g_pfnrtKeInitializeTimerEx)
-        g_pfnrtKeInitializeTimerEx(&pTimer->NtTimer, SynchronizationTimer);
-    else
-        KeInitializeTimer(&pTimer->NtTimer);
-    int rc = VINF_SUCCESS;
-    if (pTimer->fOmniTimer)
-    {
-        /*
-         * Initialize the per-cpu "sub-timers", select the first online cpu
-         * to be the master.
-         * ASSUMES that no cpus will ever go offline.
-         */
-        pTimer->idCpu = NIL_RTCPUID;
-        for (unsigned iCpu = 0; iCpu < cSubTimers && RT_SUCCESS(rc); iCpu++)
-        {
-            pTimer->aSubTimers[iCpu].iTick = 0;
-            pTimer->aSubTimers[iCpu].pParent = pTimer;
 
-            if (    pTimer->idCpu == NIL_RTCPUID
-                &&  RTMpIsCpuOnline(RTMpCpuIdFromSetIndex(iCpu)))
-            {
-                pTimer->idCpu = RTMpCpuIdFromSetIndex(iCpu);
-                KeInitializeDpc(&pTimer->aSubTimers[iCpu].NtDpc, rtTimerNtOmniMasterCallback, &pTimer->aSubTimers[iCpu]);
-            }
-            else
-                KeInitializeDpc(&pTimer->aSubTimers[iCpu].NtDpc, rtTimerNtOmniSlaveCallback, &pTimer->aSubTimers[iCpu]);
-            if (g_pfnrtKeSetImportanceDpc)
-                g_pfnrtKeSetImportanceDpc(&pTimer->aSubTimers[iCpu].NtDpc, HighImportance);
-            rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[iCpu].NtDpc, iCpu);
-        }
-        Assert(pTimer->idCpu != NIL_RTCPUID);
+    int rc = VINF_SUCCESS;
+#ifdef RTR0TIMER_NT_HIGH_RES
+    if (   (fFlags & RTTIMER_FLAGS_HIGH_RES)
+        && RTTimerCanDoHighResolution())
+    {
+        pTimer->pHighResTimer = g_pfnrtExAllocateTimer(pTimer->fOmniTimer ? rtTimerNtHighResOmniCallback
+                                                       : rtTimerNtHighResSimpleCallback, pTimer,
+                                                       EX_TIMER_HIGH_RESOLUTION | EX_TIMER_NOTIFICATION);
+        if (!pTimer->pHighResTimer)
+            rc = VERR_OUT_OF_RESOURCES;
     }
     else
+#endif
     {
-        /*
-         * Initialize the first "sub-timer", target the DPC on a specific processor
-         * if requested to do so.
-         */
-        pTimer->aSubTimers[0].iTick = 0;
-        pTimer->aSubTimers[0].pParent = pTimer;
-
-        KeInitializeDpc(&pTimer->aSubTimers[0].NtDpc, rtTimerNtSimpleCallback, pTimer);
-        if (g_pfnrtKeSetImportanceDpc)
-            g_pfnrtKeSetImportanceDpc(&pTimer->aSubTimers[0].NtDpc, HighImportance);
-        if (pTimer->fSpecificCpu)
-            rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, (int)pTimer->idCpu);
+        if (g_pfnrtKeInitializeTimerEx) /** @todo just call KeInitializeTimer. */
+            g_pfnrtKeInitializeTimerEx(&pTimer->NtTimer, SynchronizationTimer);
+        else
+            KeInitializeTimer(&pTimer->NtTimer);
     }
     if (RT_SUCCESS(rc))
     {
-        *ppTimer = pTimer;
-        return VINF_SUCCESS;
+        if (pTimer->fOmniTimer)
+        {
+            /*
+             * Initialize the per-cpu "sub-timers", select the first online cpu to be
+             * the master.  This ASSUMES that no cpus will ever go offline.
+             *
+             * Note! For the high-resolution scenario, all DPC callbacks are slaves as
+             *       we have a dedicated timer callback, set above during allocation,
+             *       and don't control which CPU it (rtTimerNtHighResOmniCallback) is
+             *       called on.
+             */
+            pTimer->idCpu = NIL_RTCPUID;
+            for (unsigned iCpu = 0; iCpu < cSubTimers && RT_SUCCESS(rc); iCpu++)
+            {
+                pTimer->aSubTimers[iCpu].iTick = 0;
+                pTimer->aSubTimers[iCpu].pParent = pTimer;
+
+                if (    pTimer->idCpu == NIL_RTCPUID
+                    &&  RTMpIsCpuOnline(RTMpCpuIdFromSetIndex(iCpu)))
+                {
+                    pTimer->idCpu = RTMpCpuIdFromSetIndex(iCpu);
+#ifdef RTR0TIMER_NT_HIGH_RES
+                    if (pTimer->pHighResTimer)
+                        KeInitializeDpc(&pTimer->aSubTimers[iCpu].NtDpc, rtTimerNtOmniSlaveCallback, &pTimer->aSubTimers[iCpu]);
+                    else
+#endif
+                        KeInitializeDpc(&pTimer->aSubTimers[iCpu].NtDpc, rtTimerNtOmniMasterCallback, &pTimer->aSubTimers[iCpu]);
+                }
+                else
+                    KeInitializeDpc(&pTimer->aSubTimers[iCpu].NtDpc, rtTimerNtOmniSlaveCallback, &pTimer->aSubTimers[iCpu]);
+                if (g_pfnrtKeSetImportanceDpc)
+                    g_pfnrtKeSetImportanceDpc(&pTimer->aSubTimers[iCpu].NtDpc, HighImportance);
+                rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[iCpu].NtDpc, iCpu);
+            }
+            Assert(pTimer->idCpu != NIL_RTCPUID);
+        }
+        else
+        {
+            /*
+             * Initialize the first "sub-timer", target the DPC on a specific processor
+             * if requested to do so.
+             */
+            pTimer->aSubTimers[0].iTick = 0;
+            pTimer->aSubTimers[0].pParent = pTimer;
+
+            KeInitializeDpc(&pTimer->aSubTimers[0].NtDpc, rtTimerNtSimpleCallback, pTimer);
+            if (g_pfnrtKeSetImportanceDpc)
+                g_pfnrtKeSetImportanceDpc(&pTimer->aSubTimers[0].NtDpc, HighImportance);
+            if (pTimer->fSpecificCpu)
+                rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, (int)pTimer->idCpu);
+        }
+        if (RT_SUCCESS(rc))
+        {
+            *ppTimer = pTimer;
+            return VINF_SUCCESS;
+        }
+
+#ifdef RTR0TIMER_NT_HIGH_RES
+        if (pTimer->pHighResTimer)
+        {
+            g_pfnrtExDeleteTimer(pTimer->pHighResTimer, FALSE, FALSE, NULL);
+            pTimer->pHighResTimer = NULL;
+        }
+#endif
     }
 
     RTMemFree(pTimer);
@@ -592,6 +768,13 @@ RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
 
 RTDECL(bool) RTTimerCanDoHighResolution(void)
 {
+#ifdef RTR0TIMER_NT_HIGH_RES
+    return g_pfnrtExAllocateTimer != NULL
+        && g_pfnrtExDeleteTimer   != NULL
+        && g_pfnrtExSetTimer      != NULL
+        && g_pfnrtExCancelTimer   != NULL;
+#else
     return false;
+#endif
 }
 

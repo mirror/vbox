@@ -48,6 +48,14 @@ decltype(ExAllocatePoolWithTag)        *g_pfnrtExAllocatePoolWithTag;
 decltype(ExFreePoolWithTag)            *g_pfnrtExFreePoolWithTag;
 /** ExSetTimerResolution, introduced in W2K. */
 PFNMYEXSETTIMERRESOLUTION               g_pfnrtNtExSetTimerResolution;
+/** ExAllocateTimer, introduced in Windows 8.1 */
+PFNEXALLOCATETIMER                      g_pfnrtExAllocateTimer;
+/** ExDeleteTimer, introduced in Windows 8.1 */
+PFNEXDELETETIMER                        g_pfnrtExDeleteTimer;
+/** ExSetTimer, introduced in Windows 8.1 */
+PFNEXSETTIMER                           g_pfnrtExSetTimer;
+/** ExCancelTimer, introduced in Windows 8.1 */
+PFNEXCANCELTIMER                        g_pfnrtExCancelTimer;
 /** KeFlushQueuedDpcs, introduced in XP. */
 PFNMYKEFLUSHQUEUEDDPCS                  g_pfnrtNtKeFlushQueuedDpcs;
 /** HalRequestIpi, version introduced with windows 7. */
@@ -302,6 +310,10 @@ DECLHIDDEN(int) rtR0InitNative(void)
     GET_SYSTEM_ROUTINE(ExAllocatePoolWithTag);
     GET_SYSTEM_ROUTINE(ExFreePoolWithTag);
     GET_SYSTEM_ROUTINE_PRF(Nt,ExSetTimerResolution);
+    GET_SYSTEM_ROUTINE_TYPE(ExAllocateTimer, PFNEXALLOCATETIMER);
+    GET_SYSTEM_ROUTINE_TYPE(ExDeleteTimer, PFNEXDELETETIMER);
+    GET_SYSTEM_ROUTINE_TYPE(ExSetTimer, PFNEXSETTIMER);
+    GET_SYSTEM_ROUTINE_TYPE(ExCancelTimer, PFNEXCANCELTIMER);
     GET_SYSTEM_ROUTINE_PRF(Nt,KeFlushQueuedDpcs);
     GET_SYSTEM_ROUTINE(KeIpiGenericCall);
     GET_SYSTEM_ROUTINE(KeSetTargetProcessorDpcEx);
