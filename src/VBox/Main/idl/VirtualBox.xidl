@@ -13119,7 +13119,6 @@
     >
     <desc>
       File copying flags.
-      <note>Not flags are implemented yet.</note>
     </desc>
     <const name="None"                  value="0">
       <desc>No flag set.</desc>
@@ -13199,7 +13198,6 @@
     >
     <desc>
       Directory copying flags.
-      <note>Not flags are implemented yet.</note>
     </desc>
     <const name="None"                  value="0">
       <desc>No flag set.</desc>
@@ -13216,11 +13214,6 @@
     >
     <desc>
       Directory recursive removement flags.
-      <note>
-        WARNING!! THE FLAGS ARE CURRENTLY IGNORED. THE METHOD APPLIES
-                  <link to="DirectoryRemoveRecFlag_ContentAndDir"/> REGARDLESS
-                  OF THE INPUT.
-      </note>
     </desc>
 
     <const name="None"                  value="0">
