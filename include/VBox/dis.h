@@ -487,6 +487,9 @@ typedef const DISOPPARAM *PCDISOPPARAM;
 /**
  * Opcode descriptor.
  */
+#if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && defined(DIS_CORE_ONLY)
+# pragma pack(1)
+#endif
 typedef struct DISOPCODE
 {
 #ifndef DIS_CORE_ONLY
@@ -511,11 +514,16 @@ typedef struct DISOPCODE
     uint16_t    fParam3;
     /** Parameter \#4 info, @see grp_dis_opparam. */
     uint16_t    fParam4;
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || !defined(DIS_CORE_ONLY)
     /** padding unused */
     uint16_t    uPadding;
+#endif
     /** Operand type flags, DISOPTYPE_XXX. */
     uint32_t    fOpType;
 } DISOPCODE;
+#if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && defined(DIS_CORE_ONLY)
+# pragma pack()
+#endif
 /** Pointer to const opcode. */
 typedef const struct DISOPCODE *PCDISOPCODE;
 
