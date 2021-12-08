@@ -42,6 +42,17 @@
 UIDetailsWidgetHostNetwork::UIDetailsWidgetHostNetwork(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_enmEmbedding(enmEmbedding)
+#ifdef VBOX_WS_MAC
+    , m_pLabelName(0)
+    , m_pEditorName(0)
+    , m_pLabelMask(0)
+    , m_pEditorMask(0)
+    , m_pLabelLBnd(0)
+    , m_pEditorLBnd(0)
+    , m_pLabelUBnd(0)
+    , m_pEditorUBnd(0)
+    , m_pButtonBox(0)
+#else /* !VBOX_WS_MAC */
     , m_pTabWidget(0)
     , m_pButtonAutomatic(0)
     , m_pButtonManual(0)
@@ -56,24 +67,76 @@ UIDetailsWidgetHostNetwork::UIDetailsWidgetHostNetwork(EmbedTo enmEmbedding, QWi
     , m_pLabelDHCPLowerAddress(0), m_pEditorDHCPLowerAddress(0)
     , m_pLabelDHCPUpperAddress(0), m_pEditorDHCPUpperAddress(0)
     , m_pButtonBoxServer(0)
+#endif /* !VBOX_WS_MAC */
 {
     prepare();
 }
 
+#ifdef VBOX_WS_MAC
+void UIDetailsWidgetHostNetwork::setData(const UIDataHostNetwork &data,
+                                         const QStringList &busyNames /* = QStringList() */)
+#else /* !VBOX_WS_MAC */
 void UIDetailsWidgetHostNetwork::setData(const UIDataHostNetwork &data)
+#endif /* !VBOX_WS_MAC */
 {
     /* Cache old/new data: */
     m_oldData = data;
     m_newData = m_oldData;
+#ifdef VBOX_WS_MAC
+    m_busyNames = busyNames;
+#endif /* VBOX_WS_MAC */
 
+#ifdef VBOX_WS_MAC
+    /* Load data: */
+    loadData();
+#else /* !VBOX_WS_MAC */
     /* Load 'Interface' data: */
     loadDataForInterface();
     /* Load 'DHCP server' data: */
     loadDataForDHCPServer();
+#endif /* !VBOX_WS_MAC */
 }
 
 bool UIDetailsWidgetHostNetwork::revalidate() const
 {
+#ifdef VBOX_WS_MAC
+    /* Make sure network name isn't empty: */
+    if (m_newData.m_strName.isEmpty())
+    {
+        UINotificationMessage::warnAboutNoNameSpecified(m_oldData.m_strName);
+        return false;
+    }
+    else
+    {
+        /* Make sure item names are unique: */
+        if (m_busyNames.contains(m_newData.m_strName))
+        {
+            UINotificationMessage::warnAboutNameAlreadyBusy(m_newData.m_strName);
+            return false;
+        }
+    }
+
+    /* Make sure mask isn't empty: */
+    if (m_newData.m_strMask.isEmpty())
+    {
+        UINotificationMessage::warnAboutInvalidIPv4Mask(m_newData.m_strMask);
+        return false;
+    }
+    /* Make sure lower bound isn't empty: */
+    if (m_newData.m_strLBnd.isEmpty())
+    {
+        UINotificationMessage::warnAboutInvalidDHCPServerLowerAddress(m_newData.m_strLBnd);
+        return false;
+    }
+    /* Make sure upper bound isn't empty: */
+    if (m_newData.m_strUBnd.isEmpty())
+    {
+        UINotificationMessage::warnAboutInvalidDHCPServerUpperAddress(m_newData.m_strUBnd);
+        return false;
+    }
+
+#else /* !VBOX_WS_MAC */
+
     /* Validate 'Interface' tab content: */
     if (   m_newData.m_interface.m_fDHCPEnabled
         && !m_newData.m_dhcpserver.m_fEnabled)
@@ -147,6 +210,7 @@ bool UIDetailsWidgetHostNetwork::revalidate() const
         UINotificationMessage::warnAboutInvalidDHCPServerUpperAddress(m_newData.m_interface.m_strName);
         return false;
     }
+#endif /* !VBOX_WS_MAC */
 
     /* True by default: */
     return true;
@@ -166,6 +230,14 @@ void UIDetailsWidgetHostNetwork::updateButtonStates()
 //               m_newData.m_dhcpserver.m_strLowerAddress.toUtf8().constData(),
 //               m_newData.m_dhcpserver.m_strUpperAddress.toUtf8().constData());
 
+#ifdef VBOX_WS_MAC
+    /* Update 'Apply' / 'Reset' button states: */
+    if (m_pButtonBox)
+    {
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
+    }
+#else /* !VBOX_WS_MAC */
     /* Update 'Apply' / 'Reset' button states: */
     if (m_pButtonBoxInterface)
     {
@@ -177,6 +249,7 @@ void UIDetailsWidgetHostNetwork::updateButtonStates()
         m_pButtonBoxServer->button(QDialogButtonBox::Cancel)->setEnabled(m_oldData != m_newData);
         m_pButtonBoxServer->button(QDialogButtonBox::Ok)->setEnabled(m_oldData != m_newData);
     }
+#endif /* !VBOX_WS_MAC */
 
     /* Notify listeners as well: */
     emit sigDataChanged(m_oldData != m_newData);
@@ -184,6 +257,39 @@ void UIDetailsWidgetHostNetwork::updateButtonStates()
 
 void UIDetailsWidgetHostNetwork::retranslateUi()
 {
+#ifdef VBOX_WS_MAC
+    if (m_pLabelName)
+        m_pLabelName->setText(tr("&Name:"));
+    if (m_pEditorName)
+        m_pEditorName->setToolTip(tr("Holds the name for this network."));
+    if (m_pLabelMask)
+        m_pLabelMask->setText(tr("&Mask:"));
+    if (m_pEditorMask)
+        m_pEditorMask->setToolTip(tr("Holds the mask for this network."));
+    if (m_pLabelLBnd)
+        m_pLabelLBnd->setText(tr("&Lower Bound:"));
+    if (m_pEditorLBnd)
+        m_pEditorLBnd->setToolTip(tr("Holds the lower address bound for this network."));
+    if (m_pLabelUBnd)
+        m_pLabelUBnd->setText(tr("&Upper Bound:"));
+    if (m_pEditorUBnd)
+        m_pEditorUBnd->setToolTip(tr("Holds the upper address bound for this network."));
+    if (m_pButtonBox)
+    {
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Apply"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setShortcut(QString("Ctrl+Return"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(tr("Reset changes in current network details"));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->setStatusTip(tr("Apply changes in current network details"));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->
+            setToolTip(tr("Reset Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Cancel)->shortcut().toString()));
+        m_pButtonBox->button(QDialogButtonBox::Ok)->
+            setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBox->button(QDialogButtonBox::Ok)->shortcut().toString()));
+    }
+
+#else /* !VBOX_WS_MAC */
+
     /* Translate tab-widget: */
     if (m_pTabWidget)
     {
@@ -261,7 +367,35 @@ void UIDetailsWidgetHostNetwork::retranslateUi()
         m_pButtonBoxServer->button(QDialogButtonBox::Ok)->
             setToolTip(tr("Apply Changes (%1)").arg(m_pButtonBoxServer->button(QDialogButtonBox::Ok)->shortcut().toString()));
     }
+#endif /* !VBOX_WS_MAC */
 }
+
+#ifdef VBOX_WS_MAC
+void UIDetailsWidgetHostNetwork::sltTextChangedName(const QString &strText)
+{
+    m_newData.m_strName = strText;
+    updateButtonStates();
+}
+
+void UIDetailsWidgetHostNetwork::sltTextChangedMask(const QString &strText)
+{
+    m_newData.m_strMask = strText;
+    updateButtonStates();
+}
+
+void UIDetailsWidgetHostNetwork::sltTextChangedLBnd(const QString &strText)
+{
+    m_newData.m_strLBnd = strText;
+    updateButtonStates();
+}
+
+void UIDetailsWidgetHostNetwork::sltTextChangedUBnd(const QString &strText)
+{
+    m_newData.m_strUBnd = strText;
+    updateButtonStates();
+}
+
+#else /* !VBOX_WS_MAC */
 
 void UIDetailsWidgetHostNetwork::sltToggledButtonAutomatic(bool fChecked)
 {
@@ -331,9 +465,28 @@ void UIDetailsWidgetHostNetwork::sltTextChangedUpperAddress(const QString &strTe
     m_newData.m_dhcpserver.m_strUpperAddress = strText;
     updateButtonStates();
 }
+#endif /* !VBOX_WS_MAC */
 
 void UIDetailsWidgetHostNetwork::sltHandleButtonBoxClick(QAbstractButton *pButton)
 {
+#ifdef VBOX_WS_MAC
+    /* Make sure button-box exists: */
+    if (!m_pButtonBox)
+        return;
+
+    /* Disable buttons first of all: */
+    m_pButtonBox->button(QDialogButtonBox::Cancel)->setEnabled(false);
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+
+    /* Compare with known buttons: */
+    if (   pButton == m_pButtonBox->button(QDialogButtonBox::Cancel))
+        emit sigDataChangeRejected();
+    else
+    if (   pButton == m_pButtonBox->button(QDialogButtonBox::Ok))
+        emit sigDataChangeAccepted();
+
+#else /* !VBOX_WS_MAC */
+
     /* Make sure button-boxes exist: */
     if (!m_pButtonBoxInterface || !m_pButtonBoxServer)
         return;
@@ -352,6 +505,7 @@ void UIDetailsWidgetHostNetwork::sltHandleButtonBoxClick(QAbstractButton *pButto
     if (   pButton == m_pButtonBoxInterface->button(QDialogButtonBox::Ok)
         || pButton == m_pButtonBoxServer->button(QDialogButtonBox::Ok))
         emit sigDataChangeAccepted();
+#endif /* !VBOX_WS_MAC */
 }
 
 void UIDetailsWidgetHostNetwork::prepare()
@@ -368,6 +522,21 @@ void UIDetailsWidgetHostNetwork::prepare()
 
 void UIDetailsWidgetHostNetwork::prepareThis()
 {
+#ifdef VBOX_WS_MAC
+    /* Create layout: */
+    QGridLayout *pLayout = new QGridLayout(this);
+    if (pLayout)
+    {
+        // really macOS only:
+        pLayout->setSpacing(10);
+        pLayout->setContentsMargins(10, 10, 10, 10);
+
+        /* Prepare options: */
+        prepareOptions();
+    }
+
+#else /* !VBOX_WS_MAC */
+
     /* Create layout: */
     new QVBoxLayout(this);
     if (layout())
@@ -378,7 +547,105 @@ void UIDetailsWidgetHostNetwork::prepareThis()
         /* Prepare tab-widget: */
         prepareTabWidget();
     }
+#endif /* !VBOX_WS_MAC */
 }
+
+#ifdef VBOX_WS_MAC
+void UIDetailsWidgetHostNetwork::prepareOptions()
+{
+    /* Acquire layout: */
+    QGridLayout *pLayout = static_cast<QGridLayout*>(layout());
+    if (pLayout)
+    {
+        /* Prepare name label: */
+        m_pLabelName = new QLabel(this);
+        if (m_pLabelName)
+        {
+            m_pLabelName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayout->addWidget(m_pLabelName, 0, 0);
+        }
+        /* Prepare name editor: */
+        m_pEditorName = new QILineEdit(this);
+        if (m_pEditorName)
+        {
+            m_pLabelName->setBuddy(m_pEditorName);
+            connect(m_pEditorName, &QLineEdit::textChanged,
+                    this, &UIDetailsWidgetHostNetwork::sltTextChangedName);
+
+            pLayout->addWidget(m_pEditorName, 0, 1);
+        }
+
+        /* Prepare mask label: */
+        m_pLabelMask = new QLabel(this);
+        if (m_pLabelMask)
+        {
+            m_pLabelMask->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayout->addWidget(m_pLabelMask, 1, 0);
+        }
+        /* Prepare mask editor: */
+        m_pEditorMask = new QILineEdit(this);
+        if (m_pEditorMask)
+        {
+            m_pLabelMask->setBuddy(m_pEditorMask);
+            connect(m_pEditorMask, &QLineEdit::textChanged,
+                    this, &UIDetailsWidgetHostNetwork::sltTextChangedMask);
+
+            pLayout->addWidget(m_pEditorMask, 1, 1);
+        }
+
+        /* Prepare lower bound label: */
+        m_pLabelLBnd = new QLabel(this);
+        if (m_pLabelLBnd)
+        {
+            m_pLabelLBnd->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayout->addWidget(m_pLabelLBnd, 2, 0);
+        }
+        /* Prepare lower bound editor: */
+        m_pEditorLBnd = new QILineEdit(this);
+        if (m_pEditorLBnd)
+        {
+            m_pLabelLBnd->setBuddy(m_pEditorLBnd);
+            connect(m_pEditorLBnd, &QLineEdit::textChanged,
+                    this, &UIDetailsWidgetHostNetwork::sltTextChangedLBnd);
+
+            pLayout->addWidget(m_pEditorLBnd, 2, 1);
+        }
+
+        /* Prepare upper bound label: */
+        m_pLabelUBnd = new QLabel(this);
+        if (m_pLabelUBnd)
+        {
+            m_pLabelUBnd->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayout->addWidget(m_pLabelUBnd, 3, 0);
+        }
+        /* Prepare upper bound editor: */
+        m_pEditorUBnd = new QILineEdit(this);
+        if (m_pEditorUBnd)
+        {
+            m_pLabelUBnd->setBuddy(m_pEditorUBnd);
+            connect(m_pEditorUBnd, &QLineEdit::textChanged,
+                    this, &UIDetailsWidgetHostNetwork::sltTextChangedUBnd);
+
+            pLayout->addWidget(m_pEditorUBnd, 3, 1);
+        }
+
+        /* If parent embedded into stack: */
+        if (m_enmEmbedding == EmbedTo_Stack)
+        {
+            /* Prepare button-box: */
+            m_pButtonBox = new QIDialogButtonBox(this);
+            if (m_pButtonBox)
+            {
+                m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+                connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UIDetailsWidgetHostNetwork::sltHandleButtonBoxClick);
+
+                pLayout->addWidget(m_pButtonBox, 4, 0, 1, 2);
+            }
+        }
+    }
+}
+
+#else /* !VBOX_WS_MAC */
 
 void UIDetailsWidgetHostNetwork::prepareTabWidget()
 {
@@ -761,6 +1028,44 @@ void UIDetailsWidgetHostNetwork::prepareTabDHCPServer()
         m_pTabWidget->addTab(pTabDHCPServer, QString());
     }
 }
+#endif /* !VBOX_WS_MAC */
+
+#ifdef VBOX_WS_MAC
+void UIDetailsWidgetHostNetwork::loadData()
+{
+    /* Check whether network exists and configurable: */
+    const bool fIsNetworkExists = m_newData.m_fExists;
+
+    /* Toggle network fields availability: */
+    if (m_pLabelName)
+        m_pLabelName->setEnabled(fIsNetworkExists);
+    if (m_pEditorName)
+        m_pEditorName->setEnabled(fIsNetworkExists);
+    if (m_pLabelMask)
+        m_pLabelMask->setEnabled(fIsNetworkExists);
+    if (m_pEditorMask)
+        m_pEditorMask->setEnabled(fIsNetworkExists);
+    if (m_pLabelLBnd)
+        m_pLabelLBnd->setEnabled(fIsNetworkExists);
+    if (m_pEditorLBnd)
+        m_pEditorLBnd->setEnabled(fIsNetworkExists);
+    if (m_pLabelUBnd)
+        m_pLabelUBnd->setEnabled(fIsNetworkExists);
+    if (m_pEditorUBnd)
+        m_pEditorUBnd->setEnabled(fIsNetworkExists);
+
+    /* Load network fields: */
+    if (m_pEditorName)
+        m_pEditorName->setText(m_newData.m_strName);
+    if (m_pEditorMask)
+        m_pEditorMask->setText(m_newData.m_strMask);
+    if (m_pEditorLBnd)
+        m_pEditorLBnd->setText(m_newData.m_strLBnd);
+    if (m_pEditorUBnd)
+        m_pEditorUBnd->setText(m_newData.m_strUBnd);
+}
+
+#else /* !VBOX_WS_MAC */
 
 void UIDetailsWidgetHostNetwork::loadDataForInterface()
 {
@@ -875,3 +1180,4 @@ void UIDetailsWidgetHostNetwork::loadDataForDHCPServer()
         m_pEditorDHCPUpperAddress->setText(proposal.at(3));
     }
 }
+#endif /* !VBOX_WS_MAC */

@@ -49,6 +49,7 @@
 #include "CExtPack.h"
 #include "CGraphicsAdapter.h"
 #include "CHostNetworkInterface.h"
+#include "CHostOnlyNetwork.h"
 #include "CMediumAttachment.h"
 #include "CNATNetwork.h"
 #include "CNetworkAdapter.h"
@@ -687,6 +688,15 @@ void UINotificationMessage::cannotAcquireHostNetworkInterfaceParameter(const CHo
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireHostOnlyNetworkParameter(const CHostOnlyNetwork &comNetwork)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Host only network failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire host only network parameter.") +
+        UIErrorString::formatErrorInfo(comNetwork));
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork)
 {
     createMessage(
@@ -831,6 +841,15 @@ void UINotificationMessage::cannotChangeHostNetworkInterfaceParameter(const CHos
         QApplication::translate("UIMessageCenter", "Host network interface failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to change host network interface parameter.") +
         UIErrorString::formatErrorInfo(comInterface));
+}
+
+/* static */
+void UINotificationMessage::cannotChangeHostOnlyNetworkParameter(const CHostOnlyNetwork &comNetwork)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Host only network failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change host only network parameter.") +
+        UIErrorString::formatErrorInfo(comNetwork));
 }
 
 /* static */
@@ -1088,6 +1107,16 @@ void UINotificationMessage::cannotFindHostNetworkInterface(const CHost &comHost,
 }
 
 /* static */
+void UINotificationMessage::cannotFindHostOnlyNetwork(const CVirtualBox &comVBox, const QString &strNetworkName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't find host only network ..."),
+        QApplication::translate("UIMessageCenter", "Unable to find the host only network <b>%1</b>.")
+                                                   .arg(strNetworkName) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
 void UINotificationMessage::cannotFindNATNetwork(const CVirtualBox &comVBox, const QString &strNetworkName)
 {
     createMessage(
@@ -1132,6 +1161,25 @@ void UINotificationMessage::cannotRemoveCloudNetwork(const CVirtualBox &comVBox,
     createMessage(
         QApplication::translate("UIMessageCenter", "Can't remove cloud network ..."),
         QApplication::translate("UIMessageCenter", "Failed to remove the cloud network <b>%1</b>.")
+                                                   .arg(strNetworkName) +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotCreateHostOnlyNetwork(const CVirtualBox &comVBox)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't create host only network ..."),
+        QApplication::translate("UIMessageCenter", "Failed to create a host only network.") +
+        UIErrorString::formatErrorInfo(comVBox));
+}
+
+/* static */
+void UINotificationMessage::cannotRemoveHostOnlyNetwork(const CVirtualBox &comVBox, const QString &strNetworkName)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Can't remove host only network ..."),
+        QApplication::translate("UIMessageCenter", "Failed to remove the host only network <b>%1</b>.")
                                                    .arg(strNetworkName) +
         UIErrorString::formatErrorInfo(comVBox));
 }

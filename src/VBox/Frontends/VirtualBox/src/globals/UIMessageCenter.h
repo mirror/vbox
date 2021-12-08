@@ -357,6 +357,7 @@ public:
       * @{ */
         bool confirmCloudNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
         bool confirmHostNetworkInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
+        bool confirmHostOnlyNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
         bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
     /** @} */
 

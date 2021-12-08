@@ -38,6 +38,50 @@ class QILineEdit;
 class QITabWidget;
 
 
+#ifdef VBOX_WS_MAC
+/** Network Manager: Host network data structure. */
+struct UIDataHostNetwork
+{
+    /** Constructs data. */
+    UIDataHostNetwork()
+        : m_fExists(false)
+        , m_strName(QString())
+        , m_strMask(QString())
+        , m_strLBnd(QString())
+        , m_strUBnd(QString())
+    {}
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool equal(const UIDataHostNetwork &other) const
+    {
+        return true
+               && (m_fExists == other.m_fExists)
+               && (m_strName == other.m_strName)
+               && (m_strMask == other.m_strMask)
+               && (m_strLBnd == other.m_strLBnd)
+               && (m_strUBnd == other.m_strUBnd)
+               ;
+    }
+
+    /** Returns whether the @a other passed data is equal to this one. */
+    bool operator==(const UIDataHostNetwork &other) const { return equal(other); }
+    /** Returns whether the @a other passed data is different from this one. */
+    bool operator!=(const UIDataHostNetwork &other) const { return !equal(other); }
+
+    /** Holds this interface is not NULL. */
+    bool     m_fExists;
+    /** Holds network name. */
+    QString  m_strName;
+    /** Holds network mask. */
+    QString  m_strMask;
+    /** Holds lower bound. */
+    QString  m_strLBnd;
+    /** Holds upper bound. */
+    QString  m_strUBnd;
+};
+
+#else /* !VBOX_WS_MAC */
+
 /** Network Manager: Host Network Interface data structure. */
 struct UIDataHostNetworkInterface
 {
@@ -160,6 +204,7 @@ struct UIDataHostNetwork
     /** Holds the DHCP server data. */
     UIDataDHCPServer            m_dhcpserver;
 };
+#endif /* !VBOX_WS_MAC */
 
 
 /** Network Manager: Host network details-widget. */
@@ -185,8 +230,15 @@ public:
 
     /** Returns the host network data. */
     const UIDataHostNetwork &data() const { return m_newData; }
+#ifdef VBOX_WS_MAC
+    /** Defines the host network @a data.
+      * @param  busyNames  Holds the list of names busy by other networks. */
+    void setData(const UIDataHostNetwork &data,
+                 const QStringList &busyNames = QStringList());
+#else /* !VBOX_WS_MAC */
     /** Defines the host network @a data. */
     void setData(const UIDataHostNetwork &data);
+#endif /* !VBOX_WS_MAC */
 
     /** @name Change handling stuff.
       * @{ */
@@ -206,6 +258,18 @@ private slots:
 
     /** @name Change handling stuff.
       * @{ */
+#ifdef VBOX_WS_MAC
+        /** Handles network name text change. */
+        void sltTextChangedName(const QString &strText);
+        /** Handles network mask text change. */
+        void sltTextChangedMask(const QString &strText);
+        /** Handles network lower bound text change. */
+        void sltTextChangedLBnd(const QString &strText);
+        /** Handles network upper bound text change. */
+        void sltTextChangedUBnd(const QString &strText);
+
+#else /* !VBOX_WS_MAC */
+
         /** Handles interface automatic configuration choice change. */
         void sltToggledButtonAutomatic(bool fChecked);
         /** Handles interface manual configuration choice change. */
@@ -229,6 +293,7 @@ private slots:
         void sltTextChangedLowerAddress(const QString &strText);
         /** Handles DHCP server upper address text change. */
         void sltTextChangedUpperAddress(const QString &strText);
+#endif /* !VBOX_WS_MAC */
 
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
@@ -242,20 +307,30 @@ private:
         void prepare();
         /** Prepares this. */
         void prepareThis();
+#ifdef VBOX_WS_MAC
+        /** Prepares options. */
+        void prepareOptions();
+#else /* !VBOX_WS_MAC */
         /** Prepares tab-widget. */
         void prepareTabWidget();
         /** Prepares 'Interface' tab. */
         void prepareTabInterface();
         /** Prepares 'DHCP server' tab. */
         void prepareTabDHCPServer();
+#endif /* !VBOX_WS_MAC */
     /** @} */
 
     /** @name Loading stuff.
       * @{ */
+#ifdef VBOX_WS_MAC
+        /** Loads data. */
+        void loadData();
+#else /* !VBOX_WS_MAC */
         /** Loads interface data. */
         void loadDataForInterface();
         /** Loads server data. */
         void loadDataForDHCPServer();
+#endif /* !VBOX_WS_MAC */
     /** @} */
 
     /** @name General variables.
@@ -268,9 +343,43 @@ private:
         /** Holds the new data copy. */
         UIDataHostNetwork  m_newData;
 
+#ifndef VBOX_WS_MAC
         /** Holds the tab-widget. */
         QITabWidget *m_pTabWidget;
+#endif /* !VBOX_WS_MAC */
     /** @} */
+
+#ifdef VBOX_WS_MAC
+    /** @name Network variables.
+      * @{ */
+        /** Holds the name label. */
+        QLabel       *m_pLabelName;
+        /** Holds the name editor. */
+        QILineEdit   *m_pEditorName;
+
+        /** Holds the mask label. */
+        QLabel       *m_pLabelMask;
+        /** Holds the mask editor. */
+        QILineEdit   *m_pEditorMask;
+
+        /** Holds the lower bound label. */
+        QLabel       *m_pLabelLBnd;
+        /** Holds the lower bound editor. */
+        QILineEdit   *m_pEditorLBnd;
+
+        /** Holds the upper bound label. */
+        QLabel       *m_pLabelUBnd;
+        /** Holds the upper bound editor. */
+        QILineEdit   *m_pEditorUBnd;
+
+        /** Holds the button-box instance. */
+        QIDialogButtonBox *m_pButtonBox;
+
+        /** Holds the list of names busy by other networks. */
+        QStringList  m_busyNames;
+    /** @} */
+
+#else /* !VBOX_WS_MAC */
 
     /** @name Interface variables.
       * @{ */
@@ -332,6 +441,7 @@ private:
         /** Holds the server button-box instance. */
         QIDialogButtonBox *m_pButtonBoxServer;
     /** @} */
+#endif /* !VBOX_WS_MAC */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_networkmanager_UIDetailsWidgetHostNetwork_h */

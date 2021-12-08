@@ -30,7 +30,11 @@
 
 /* Forward declarations: */
 class CCloudNetwork;
+#ifdef VBOX_WS_MAC
+class CHostOnlyNetwork;
+#else
 class CHostNetworkInterface;
+#endif
 class CNATNetwork;
 class QAbstractButton;
 class QTreeWidgetItem;
@@ -115,12 +119,16 @@ private slots:
       * @{ */
         /** Handles command to create host network. */
         void sltCreateHostNetwork();
+#ifndef VBOX_WS_MAC
         /** Handles signal about host network @a comInterface created. */
         void sigHandleHostOnlyNetworkInterfaceCreated(const CHostNetworkInterface &comInterface);
+#endif
         /** Handles command to remove host network. */
         void sltRemoveHostNetwork();
+#ifndef VBOX_WS_MAC
         /** Handles signal about host network interface by the name of @a strInterfaceName was removed. */
         void sigHandleHostOnlyNetworkInterfaceRemoved(const QString &strInterfaceName);
+#endif
 
         /** Handles command to create NAT network. */
         void sltCreateNATNetwork();
@@ -210,8 +218,13 @@ private:
       * @{ */
         /** Loads host networks. */
         void loadHostNetworks();
+#ifdef VBOX_WS_MAC
+        /** Loads host @a comNetwork data to passed @a data container. */
+        void loadHostNetwork(const CHostOnlyNetwork &comNetwork, UIDataHostNetwork &data);
+#else
         /** Loads host @a comInterface data to passed @a data container. */
         void loadHostNetwork(const CHostNetworkInterface &comInterface, UIDataHostNetwork &data);
+#endif
 
         /** Loads NAT networks. */
         void loadNATNetworks();
@@ -247,6 +260,10 @@ private:
         /** Updates passed cloud network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
         void updateItemForCloudNetwork(const UIDataCloudNetwork &data, bool fChooseItem, UIItemCloudNetwork *pItem);
 
+#ifdef VBOX_WS_MAC
+        /** Returns a list of busy host network names. */
+        QStringList busyNamesHost() const;
+#endif
         /** Returns a list of busy NAT network names. */
         QStringList busyNamesNAT() const;
         /** Returns a list of busy cloud network names. */

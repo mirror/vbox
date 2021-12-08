@@ -290,6 +290,9 @@ public:
         /** Notifies about inability to acquire IHostNetworkInterface parameter.
           * @param  comInterface  Brings the object parameter get acquired from. */
         static void cannotAcquireHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface);
+        /** Notifies about inability to acquire IHostOnlyNetwork parameter.
+          * @param  comNetwork  Brings the object parameter get acquired from. */
+        static void cannotAcquireHostOnlyNetworkParameter(const CHostOnlyNetwork &comNetwork);
         /** Notifies about inability to acquire INATNetwork parameter.
           * @param  comNetwork  Brings the object parameter get acquired from. */
         static void cannotAcquireNATNetworkParameter(const CNATNetwork &comNetwork);
@@ -341,6 +344,9 @@ public:
         /** Notifies about inability to change IHostNetworkInterface parameter.
           * @param  comInterface  Brings the object parameter being changed for. */
         static void cannotChangeHostNetworkInterfaceParameter(const CHostNetworkInterface &comInterface);
+        /** Notifies about inability to change IHostOnlyNetwork parameter.
+          * @param  comNetwork  Brings the object parameter being changed for. */
+        static void cannotChangeHostOnlyNetworkParameter(const CHostOnlyNetwork &comNetwork);
         /** Notifies about inability to change INATNetwork parameter.
           * @param  comNetwork  Brings the object parameter being changed for. */
         static void cannotChangeNATNetworkParameter(const CNATNetwork &comNetwork);
@@ -434,6 +440,10 @@ public:
           * @param  comHost           Brings the host being search through.
           * @param  strInterfaceName  Brings interface name. */
         static void cannotFindHostNetworkInterface(const CHost &comHost, const QString &strInterfaceName);
+        /** Notifies about inability to find host only network.
+          * @param  comVBox         Brings the common VBox object being search through.
+          * @param  strNetworkName  Brings interface name. */
+        static void cannotFindHostOnlyNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
         /** Notifies about inability to find NAT network.
           * @param  comVBox         Brings common VBox object being search through.
           * @param  strNetworkName  Brings network name. */
@@ -453,6 +463,13 @@ public:
           * @param  comVBox         Brings common VBox object trying to remove cloud network.
           * @param  strNetworkName  Brings the network name. */
         static void cannotRemoveCloudNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
+        /** Notifies about inability to create host only network.
+          * @param  comVBox  Brings common VBox object trying to create host only network. */
+        static void cannotCreateHostOnlyNetwork(const CVirtualBox &comVBox);
+        /** Notifies about inability to remove host only network.
+          * @param  comVBox         Brings common VBox object trying to remove host only network.
+          * @param  strNetworkName  Brings the network name. */
+        static void cannotRemoveHostOnlyNetwork(const CVirtualBox &comVBox, const QString &strNetworkName);
         /** Notifies about inability to create NAT network.
           * @param  comVBox  Brings common VBox object trying to create NAT network. */
         static void cannotCreateNATNetwork(const CVirtualBox &comVBox);

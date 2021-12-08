@@ -46,7 +46,11 @@
 #include "CCloudNetwork.h"
 #include "CDHCPServer.h"
 #include "CHost.h"
-#include "CHostNetworkInterface.h"
+#ifdef VBOX_WS_MAC
+# include "CHostOnlyNetwork.h"
+#else
+# include "CHostNetworkInterface.h"
+#endif
 #include "CNATNetwork.h"
 
 /* Other VBox includes: */
@@ -62,6 +66,19 @@ enum TabWidgetIndex
 };
 
 
+#ifdef VBOX_WS_MAC
+/** Host network tree-widget column indexes. */
+enum HostNetworkColumn
+{
+    HostNetworkColumn_Name,
+    HostNetworkColumn_Mask,
+    HostNetworkColumn_LBnd,
+    HostNetworkColumn_UBnd,
+    HostNetworkColumn_Max,
+};
+
+#else /* !VBOX_WS_MAC */
+
 /** Host network tree-widget column indexes. */
 enum HostNetworkColumn
 {
@@ -71,6 +88,7 @@ enum HostNetworkColumn
     HostNetworkColumn_DHCP,
     HostNetworkColumn_Max,
 };
+#endif /* !VBOX_WS_MAC */
 
 
 /** NAT network tree-widget column indexes. */
@@ -104,13 +122,20 @@ public:
     /** Updates item fields from data. */
     void updateFields();
 
+#ifdef VBOX_WS_MAC
+    /** Returns item name. */
+    QString name() const { return m_strName; }
+#else
     /** Returns item name. */
     QString name() const { return m_interface.m_strName; }
+#endif
 
 private:
 
+#ifndef VBOX_WS_MAC
     /** Returns CIDR for a passed @a strMask. */
     static int maskToCidr(const QString &strMask);
+#endif
 };
 
 
@@ -160,6 +185,26 @@ protected:
 
 void UIItemHostNetwork::updateFields()
 {
+#ifdef VBOX_WS_MAC
+    /* Compose item fields: */
+    setText(HostNetworkColumn_Name, m_strName);
+    setText(HostNetworkColumn_Mask, m_strMask);
+    setText(HostNetworkColumn_LBnd, m_strLBnd);
+    setText(HostNetworkColumn_UBnd, m_strUBnd);
+
+    /* Compose item tool-tip: */
+    const QString strTable("<table cellspacing=5>%1</table>");
+    const QString strHeader("<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
+    QString strToolTip;
+
+    /* Network information: */
+    strToolTip += strHeader.arg(tr("Name"), m_strName);
+    strToolTip += strHeader.arg(tr("Mask"), m_strMask);
+    strToolTip += strHeader.arg(tr("Lower Bound"), m_strLBnd);
+    strToolTip += strHeader.arg(tr("Upper Bound"), m_strUBnd);
+
+#else /* !VBOX_WS_MAC */
+
     /* Compose item fields: */
     setText(HostNetworkColumn_Name, m_interface.m_strName);
     setText(HostNetworkColumn_IPv4, m_interface.m_strAddress.isEmpty() ? QString() :
@@ -223,11 +268,13 @@ void UIItemHostNetwork::updateFields()
                                        tr("Not set", "bound") :
                                        m_dhcpserver.m_strUpperAddress);
     }
+#endif /* !VBOX_WS_MAC */
 
     /* Assign tool-tip finally: */
     setToolTip(HostNetworkColumn_Name, strTable.arg(strToolTip));
 }
 
+#ifndef VBOX_WS_MAC
 /* static */
 int UIItemHostNetwork::maskToCidr(const QString &strMask)
 {
@@ -258,6 +305,7 @@ int UIItemHostNetwork::maskToCidr(const QString &strMask)
     /* Return CIDR: */
     return iCidr;
 }
+#endif /* !VBOX_WS_MAC */
 
 
 /*********************************************************************************************************************************
@@ -386,11 +434,19 @@ void UINetworkManagerWidget::retranslateUi()
     /* Translate host network tree-widget: */
     if (m_pTreeWidgetHostNetwork)
     {
+#ifdef VBOX_WS_MAC
+        const QStringList fields = QStringList()
+                                   << UINetworkManager::tr("Name")
+                                   << UINetworkManager::tr("Mask")
+                                   << UINetworkManager::tr("Lower Bound")
+                                   << UINetworkManager::tr("Upper Bound");
+#else /* !VBOX_WS_MAC */
         const QStringList fields = QStringList()
                                    << UINetworkManager::tr("Name")
                                    << UINetworkManager::tr("IPv4 Prefix")
                                    << UINetworkManager::tr("IPv6 Prefix")
                                    << UINetworkManager::tr("DHCP Server");
+#endif /* !VBOX_WS_MAC */
         m_pTreeWidgetHostNetwork->setHeaderLabels(fields);
     }
 
@@ -470,6 +526,68 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
     if (m_pTabWidget->currentIndex() != TabWidgetIndex_HostNetwork)
         return;
 
+    /* Check host network tree-widget: */
+    AssertMsgReturnVoid(m_pTreeWidgetHostNetwork, ("Host network tree-widget isn't created!\n"));
+
+#ifdef VBOX_WS_MAC
+    /* Compose a set of busy names: */
+    QSet<QString> names;
+    for (int i = 0; i < m_pTreeWidgetHostNetwork->topLevelItemCount(); ++i)
+        names << qobject_cast<UIItemHostNetwork*>(m_pTreeWidgetHostNetwork->childItem(i))->name();
+    /* Compose a map of busy indexes: */
+    QMap<int, bool> presence;
+    const QString strNameTemplate("HostNetwork%1");
+    const QRegExp regExp(strNameTemplate.arg("([\\d]*)"));
+    foreach (const QString &strName, names)
+        if (regExp.indexIn(strName) != -1)
+            presence[regExp.cap(1).toInt()] = true;
+    /* Search for a minimum index: */
+    int iMinimumIndex = 0;
+    for (int i = 0; !presence.isEmpty() && i <= presence.lastKey() + 1; ++i)
+        if (!presence.contains(i))
+        {
+            iMinimumIndex = i;
+            break;
+        }
+    /* Compose resulting index and name: */
+    const QString strNetworkName = strNameTemplate.arg(iMinimumIndex == 0 ? QString() : QString::number(iMinimumIndex));
+
+    /* Compose new item data: */
+    UIDataHostNetwork oldData;
+    oldData.m_fExists = true;
+    oldData.m_strName = strNetworkName;
+
+    /* Get VirtualBox for further activities: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Create network: */
+    CHostOnlyNetwork comNetwork = comVBox.CreateHostOnlyNetwork(oldData.m_strName);
+    CHostOnlyNetwork comNetworkBase = comNetwork;
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        UINotificationMessage::cannotCreateHostOnlyNetwork(comVBox);
+    else
+    {
+        /* Save host network name: */
+        if (comNetwork.isOk())
+            comNetwork.SetNetworkName(oldData.m_strName);
+
+        /* Show error message if necessary: */
+        if (!comNetwork.isOk())
+            UINotificationMessage::cannotChangeHostOnlyNetworkParameter(comNetwork);
+
+        /* Add network to the tree: */
+        UIDataHostNetwork newData;
+        loadHostNetwork(comNetworkBase, newData);
+        createItemForHostNetwork(newData, true);
+
+        /* Adjust tree-widgets: */
+        sltAdjustTreeWidgets();
+    }
+
+#else /* !VBOX_WS_MAC */
+
     /* Get host for further activities: */
     CHost comHost = uiCommon().host();
     CHostNetworkInterface comInterface;
@@ -480,8 +598,10 @@ void UINetworkManagerWidget::sltCreateHostNetwork()
     connect(pNotification, &UINotificationProgressHostOnlyNetworkInterfaceCreate::sigHostOnlyNetworkInterfaceCreated,
             this, &UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceCreated);
     gpNotificationCenter->append(pNotification);
+#endif /* !VBOX_WS_MAC */
 }
 
+#ifndef VBOX_WS_MAC
 void UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceCreated(const CHostNetworkInterface &comInterface)
 {
     /* Get network name for further activities: */
@@ -513,6 +633,7 @@ void UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceCreated(const CHos
         sltAdjustTreeWidgets();
     }
 }
+#endif  /* !VBOX_WS_MAC */
 
 void UINetworkManagerWidget::sltRemoveHostNetwork()
 {
@@ -526,6 +647,52 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
     /* Get network item: */
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidgetHostNetwork->currentItem());
     AssertMsgReturnVoid(pItem, ("Current item must not be null!\n"));
+
+#ifdef VBOX_WS_MAC
+
+    /* Get network name: */
+    const QString strNetworkName(pItem->name());
+
+    /* Confirm host network removal: */
+    if (!msgCenter().confirmHostOnlyNetworkRemoval(strNetworkName, this))
+        return;
+
+    /* Get VirtualBox for further activities: */
+    CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Find corresponding network: */
+    const CHostOnlyNetwork &comNetwork = comVBox.FindHostOnlyNetworkByName(strNetworkName);
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk() || comNetwork.isNull())
+        UINotificationMessage::cannotFindHostOnlyNetwork(comVBox, strNetworkName);
+    else
+    {
+        /* Remove network finally: */
+        comVBox.RemoveHostOnlyNetwork(comNetwork);
+
+        /* Show error message if necessary: */
+        if (!comVBox.isOk())
+            UINotificationMessage::cannotRemoveHostOnlyNetwork(comVBox, strNetworkName);
+        else
+        {
+            /* Move selection to somewhere else: */
+            if (m_pTreeWidgetHostNetwork->itemBelow(pItem))
+                m_pTreeWidgetHostNetwork->setCurrentItem(m_pTreeWidgetHostNetwork->itemBelow(pItem));
+            else if (m_pTreeWidgetHostNetwork->itemAbove(pItem))
+                m_pTreeWidgetHostNetwork->setCurrentItem(m_pTreeWidgetHostNetwork->itemAbove(pItem));
+            else
+                m_pTreeWidgetHostNetwork->setCurrentItem(0);
+
+            /* Remove interface from the tree: */
+            delete pItem;
+
+            /* Adjust tree-widgets: */
+            sltAdjustTreeWidgets();
+        }
+    }
+
+#else /* !VBOX_WS_MAC */
 
     /* Get interface name: */
     const QString strInterfaceName(pItem->name());
@@ -582,8 +749,10 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
             gpNotificationCenter->append(pNotification);
         }
     }
+#endif /* !VBOX_WS_MAC */
 }
 
+#ifndef VBOX_WS_MAC
 void UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceRemoved(const QString &strInterfaceName)
 {
     /* Check host network tree-widget: */
@@ -608,6 +777,7 @@ void UINetworkManagerWidget::sigHandleHostOnlyNetworkInterfaceRemoved(const QStr
     /* Adjust tree-widgets: */
     sltAdjustTreeWidgets();
 }
+#endif /* !VBOX_WS_MAC */
 
 void UINetworkManagerWidget::sltCreateNATNetwork()
 {
@@ -969,18 +1139,31 @@ void UINetworkManagerWidget::sltAdjustTreeWidgets()
 
         /* Calculate the total tree-widget width: */
         const int iTotal = m_pTreeWidgetHostNetwork->viewport()->width();
+#ifdef VBOX_WS_MAC
+        /* Look for a minimum width hints for non-important columns: */
+        const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(HostNetworkColumn_Mask), pItemHeader->sectionSizeHint(HostNetworkColumn_Mask));
+        const int iMinWidth2 = qMax(pItemView->sizeHintForColumn(HostNetworkColumn_LBnd), pItemHeader->sectionSizeHint(HostNetworkColumn_LBnd));
+        const int iMinWidth3 = qMax(pItemView->sizeHintForColumn(HostNetworkColumn_UBnd), pItemHeader->sectionSizeHint(HostNetworkColumn_UBnd));
+#else /* !VBOX_WS_MAC */
         /* Look for a minimum width hints for non-important columns: */
         const int iMinWidth1 = qMax(pItemView->sizeHintForColumn(HostNetworkColumn_IPv4), pItemHeader->sectionSizeHint(HostNetworkColumn_IPv4));
         const int iMinWidth2 = qMax(pItemView->sizeHintForColumn(HostNetworkColumn_IPv6), pItemHeader->sectionSizeHint(HostNetworkColumn_IPv6));
         const int iMinWidth3 = qMax(pItemView->sizeHintForColumn(HostNetworkColumn_DHCP), pItemHeader->sectionSizeHint(HostNetworkColumn_DHCP));
+#endif /* !VBOX_WS_MAC */
         /* Propose suitable width hints for non-important columns: */
         const int iWidth1 = iMinWidth1 < iTotal / HostNetworkColumn_Max ? iMinWidth1 : iTotal / HostNetworkColumn_Max;
         const int iWidth2 = iMinWidth2 < iTotal / HostNetworkColumn_Max ? iMinWidth2 : iTotal / HostNetworkColumn_Max;
         const int iWidth3 = iMinWidth3 < iTotal / HostNetworkColumn_Max ? iMinWidth3 : iTotal / HostNetworkColumn_Max;
         /* Apply the proposal: */
+#ifdef VBOX_WS_MAC
+        m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_Mask, iWidth1);
+        m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_LBnd, iWidth2);
+        m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_UBnd, iWidth3);
+#else /* !VBOX_WS_MAC */
         m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_IPv4, iWidth1);
         m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_IPv6, iWidth2);
         m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_DHCP, iWidth3);
+#endif /* !VBOX_WS_MAC */
         m_pTreeWidgetHostNetwork->setColumnWidth(HostNetworkColumn_Name, iTotal - iWidth1 - iWidth2 - iWidth3);
     }
 
@@ -1094,6 +1277,50 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
         UIDataHostNetwork oldData = *pItem;
         UIDataHostNetwork newData = m_pDetailsWidgetHostNetwork->data();
 
+#ifdef VBOX_WS_MAC
+        /* Get VirtualBox for further activities: */
+        CVirtualBox comVBox = uiCommon().virtualBox();
+
+        /* Find corresponding network: */
+        CHostOnlyNetwork comNetwork = comVBox.FindHostOnlyNetworkByName(oldData.m_strName);
+        CHostOnlyNetwork comNetworkBase = comNetwork;
+
+        /* Show error message if necessary: */
+        if (!comVBox.isOk() || comNetwork.isNull())
+            UINotificationMessage::cannotFindHostOnlyNetwork(comVBox, oldData.m_strName);
+        else
+        {
+            /* Save host network name: */
+            if (comNetwork.isOk() && newData.m_strName != oldData.m_strName)
+                comNetwork.SetNetworkName(newData.m_strName);
+            /* Save host network mask: */
+            if (comNetwork.isOk() && newData.m_strMask != oldData.m_strMask)
+                comNetwork.SetNetworkMask(newData.m_strMask);
+            /* Save host network lower bound: */
+            if (comNetwork.isOk() && newData.m_strLBnd != oldData.m_strLBnd)
+                comNetwork.SetLowerIP(newData.m_strLBnd);
+            /* Save host network upper bound: */
+            if (comNetwork.isOk() && newData.m_strUBnd != oldData.m_strUBnd)
+                comNetwork.SetUpperIP(newData.m_strUBnd);
+
+            /* Show error message if necessary: */
+            if (!comNetwork.isOk())
+                UINotificationMessage::cannotChangeHostOnlyNetworkParameter(comNetwork);
+
+            /* Update network in the tree: */
+            UIDataHostNetwork data;
+            loadHostNetwork(comNetworkBase, data);
+            updateItemForHostNetwork(data, true, pItem);
+
+            /* Make sure current item fetched: */
+            sltHandleCurrentItemChangeHostNetwork();
+
+            /* Adjust tree-widgets: */
+            sltAdjustTreeWidgets();
+        }
+
+#else /* !VBOX_WS_MAC */
+
         /* Get host for further activities: */
         CHost comHost = uiCommon().host();
 
@@ -1202,6 +1429,7 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
                 sltAdjustTreeWidgets();
             }
         }
+#endif /* !VBOX_WS_MAC */
     }
 
     /* Make sure button states updated: */
@@ -1816,6 +2044,36 @@ void UINetworkManagerWidget::loadHostNetworks()
     /* Clear tree first of all: */
     m_pTreeWidgetHostNetwork->clear();
 
+#ifdef VBOX_WS_MAC
+    /* Get VirtualBox for further activities: */
+    const CVirtualBox comVBox = uiCommon().virtualBox();
+
+    /* Get networks for further activities: */
+    const QVector<CHostOnlyNetwork> networks = comVBox.GetHostOnlyNetworks();
+
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        UINotificationMessage::cannotAcquireVirtualBoxParameter(comVBox);
+    else
+    {
+        /* For each host network => load it to the tree: */
+        foreach (const CHostOnlyNetwork &comNetwork, networks)
+        {
+            UIDataHostNetwork data;
+            loadHostNetwork(comNetwork, data);
+            createItemForHostNetwork(data, false);
+        }
+
+        /* Choose the 1st item as current initially: */
+        m_pTreeWidgetHostNetwork->setCurrentItem(m_pTreeWidgetHostNetwork->topLevelItem(0));
+        sltHandleCurrentItemChangeHostNetwork();
+
+        /* Adjust tree-widgets: */
+        sltAdjustTreeWidgets();
+    }
+
+#else /* !VBOX_WS_MAC */
+
     /* Get host for further activities: */
     const CHost comHost = uiCommon().host();
 
@@ -1843,7 +2101,30 @@ void UINetworkManagerWidget::loadHostNetworks()
         /* Adjust tree-widgets: */
         sltAdjustTreeWidgets();
     }
+#endif /* !VBOX_WS_MAC */
 }
+
+#ifdef VBOX_WS_MAC
+void UINetworkManagerWidget::loadHostNetwork(const CHostOnlyNetwork &comNetwork, UIDataHostNetwork &data)
+{
+    /* Gather network settings: */
+    if (comNetwork.isNotNull())
+        data.m_fExists = true;
+    if (comNetwork.isOk())
+        data.m_strName = comNetwork.GetNetworkName();
+    if (comNetwork.isOk())
+        data.m_strMask = comNetwork.GetNetworkMask();
+    if (comNetwork.isOk())
+        data.m_strLBnd = comNetwork.GetLowerIP();
+    if (comNetwork.isOk())
+        data.m_strUBnd = comNetwork.GetUpperIP();
+
+    /* Show error message if necessary: */
+    if (!comNetwork.isOk())
+        UINotificationMessage::cannotAcquireHostOnlyNetworkParameter(comNetwork);
+}
+
+#else /* !VBOX_WS_MAC */
 
 void UINetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInterface, UIDataHostNetwork &data)
 {
@@ -1904,6 +2185,7 @@ void UINetworkManagerWidget::loadHostNetwork(const CHostNetworkInterface &comInt
             return UINotificationMessage::cannotAcquireDHCPServerParameter(comServer);
     }
 }
+#endif /* !VBOX_WS_MAC */
 
 void UINetworkManagerWidget::loadNATNetworks()
 {
@@ -2197,6 +2479,21 @@ void UINetworkManagerWidget::updateItemForCloudNetwork(const UIDataCloudNetwork 
             m_pTreeWidgetCloudNetwork->setCurrentItem(pItem);
     }
 }
+
+#ifdef VBOX_WS_MAC
+QStringList UINetworkManagerWidget::busyNamesHost() const
+{
+    QStringList names;
+    for (int i = 0; i < m_pTreeWidgetHostNetwork->topLevelItemCount(); ++i)
+    {
+        UIItemHostNetwork *pItem = qobject_cast<UIItemHostNetwork*>(m_pTreeWidgetHostNetwork->childItem(i));
+        const QString strItemName(pItem->name());
+        if (!strItemName.isEmpty() && !names.contains(strItemName))
+            names << strItemName;
+    }
+    return names;
+}
+#endif /* VBOX_WS_MAC */
 
 QStringList UINetworkManagerWidget::busyNamesNAT() const
 {
