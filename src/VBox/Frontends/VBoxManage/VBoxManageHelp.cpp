@@ -113,9 +113,9 @@ static uint32_t printBriefCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCo
     uint32_t cPendingBlankLines = 0;
     uint32_t cFound = 0;
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
-    HELP_LANG_ENTRY *pHelpLangEntry[2] = {(HELP_LANG_ENTRY *)ASMAtomicReadPtr(&g_pHelpLangEntry), &g_apHelpLangEntries[0] };
+    PHELP_LANG_ENTRY pHelpLangEntry[2] = {ASMAtomicReadPtrT(&g_pHelpLangEntry, PHELP_LANG_ENTRY), &g_apHelpLangEntries[0] };
 #else
-    HELP_LANG_ENTRY *pHelpLangEntry[1] = {(HELP_LANG_ENTRY *)g_pHelpLangEntry};
+    PHELP_LANG_ENTRY pHelpLangEntry[1] = {(PHELP_LANG_ENTRY)g_pHelpLangEntry};
 #endif
     /* Try to find translated, then untranslated */
     for (uint32_t k = 0; k < RT_ELEMENTS(pHelpLangEntry) && cFound == 0; k++)
@@ -175,9 +175,9 @@ static void printFullCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCommand
     uint32_t cPendingBlankLines = 0;
     uint32_t cFound = 0;
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
-    HELP_LANG_ENTRY *pHelpLangEntry[2] = {(HELP_LANG_ENTRY *)ASMAtomicReadPtr(&g_pHelpLangEntry), &g_apHelpLangEntries[0] };
+    PHELP_LANG_ENTRY pHelpLangEntry[2] = {ASMAtomicReadPtrT(&g_pHelpLangEntry, PHELP_LANG_ENTRY), &g_apHelpLangEntries[0] };
 #else
-    HELP_LANG_ENTRY *pHelpLangEntry[1] = {(HELP_LANG_ENTRY *)g_pHelpLangEntry};
+    PHELP_LANG_ENTRY pHelpLangEntry[1] = {(PHELP_LANG_ENTRY)g_pHelpLangEntry};
 #endif
     /* Try to find translated, then untranslated */
     for (uint32_t k = 0; k < RT_ELEMENTS(pHelpLangEntry) && cFound == 0; k++)
@@ -1035,9 +1035,9 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
     {
         uint32_t cPendingBlankLines = 0;
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
-        HELP_LANG_ENTRY *pHelpLangEntry = (HELP_LANG_ENTRY *)ASMAtomicReadPtr(&g_pHelpLangEntry);
+        PHELP_LANG_ENTRY pHelpLangEntry = ASMAtomicReadPtrT(&g_pHelpLangEntry, PHELP_LANG_ENTRY);
 #else
-        HELP_LANG_ENTRY *pHelpLangEntry = (HELP_LANG_ENTRY *)g_pHelpLangEntry;
+        PHELP_LANG_ENTRY pHelpLangEntry = (PHELP_LANG_ENTRY)g_pHelpLangEntry;
 #endif
         for (uint32_t i = 0; i < pHelpLangEntry->cHelpEntries; i++)
         {

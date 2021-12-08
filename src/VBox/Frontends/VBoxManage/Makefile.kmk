@@ -359,7 +359,7 @@ $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.h.ts \
 		'	 size_t           cbLang;' \
 		'    PCRTMSGREFENTRY *papHelpEntries;' \
 		'    const uint32_t   cHelpEntries;' \
-		'} HELP_LANG_ENTRY;' \
+		'} HELP_LANG_ENTRY, *PHELP_LANG_ENTRY;' \
 		'' \
 		'extern HELP_LANG_ENTRY g_apHelpLangEntries[];' \
 		'extern const uint32_t  g_cHelpLangEntries;' \
