@@ -1635,20 +1635,6 @@ class SessionWrapper(TdTaskBase):
         except:
             return reporter.errorXcpt('NIC enabled status (%s) failed for "%s"' % (iNic, self.sName,));
 
-        try:
-            sAdpName = self.oTstDrv.getNetworkAdapterNameFromType(oNic);
-            ## @todo Remove this check once we have more attachment types that support this.
-            if oNic.attachmentType != vboxcon.NetworkAttachmentType_NAT:
-                # Other attachments will fail if 'LocalhostReachable' extra data override is present
-                ## @todo r=andy Is this still needed, as we now have the API (see above) in place?
-                sKey = 'VBoxInternal/Devices/%s/%d/LUN#0/Config/LocalhostReachable' % (sAdpName, iNic);
-                reporter.log2('Disabling "LocalhostReachable" (NAT) for network adapter "%s" in slot %d (key: %s)' % \
-                              (sAdpName, iNic, sKey));
-                self.setExtraData(sKey, '');
-                return True;
-        except:
-            return reporter.errorXcpt('NIC adapter type (%s) failed for "%s"' % (iNic, self.sName,));
-
         reporter.log('Setting "LocalhostReachable" for network adapter "%s" in slot %d to %s' % (sAdpName, iNic, fReachable));
 
         try:
@@ -1657,7 +1643,10 @@ class SessionWrapper(TdTaskBase):
             return reporter.errorXcpt('Getting NIC NAT engine (%s) failed for "%s"' % (iNic, self.sName,));
 
         try:
-            oNatEngine.LocalhostReachable = fReachable;
+            if hasattr(oNatEngine, "localhostReachable"):
+                oNatEngine.localhostReachable = fReachable;
+            else
+                oNatEngine.LocalhostReachable = fReachable;
         except:
             return reporter.errorXcpt('LocalhostReachable (%s) failed for "%s"' % (iNic, self.sName,));
 
@@ -2366,14 +2355,6 @@ class SessionWrapper(TdTaskBase):
                 fRc = False;
         if self.fpApiVer >= 4.0:
             if not self.setupAudio(eAudioCtlType):      fRc = False;
-
-        if self.fpApiVer >= 7.0:
-            # Needed to reach the host (localhost) from the guest. See xTracker #9896.
-            for iSlot in range(0, self.oVBox.systemProperties.getMaxNetworkAdapters(self.o.machine.chipsetType)):
-                try:
-                    self.setNicLocalhostReachable(True, iSlot);
-                except:
-                    reporter.logXcpt();
 
         return fRc;
 

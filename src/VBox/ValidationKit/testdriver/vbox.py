@@ -2461,6 +2461,9 @@ class TestDriver(base.TestDriver):                                              
                 if sNic0MacAddr == 'grouped':
                     sNic0MacAddr = '%02X' % (iGroup);
                 fRc = oSession.setNicMacAddress(sNic0MacAddr, 0);
+            # Needed to reach the host (localhost) from the guest. See xTracker #9896.
+            if fRc and self.fpApiVer >= 7.0 and eNic0AttachType == vboxcon.NetworkAttachmentType_NAT:
+                fRc = oSession.setNicLocalhostReachable(True, 0);
             if fRc and fNatForwardingForTxs is True:
                 fRc = oSession.setupNatForwardingForTxs();
             if fRc and fFastBootLogo is not None:
@@ -2561,6 +2564,9 @@ class TestDriver(base.TestDriver):                                              
                     if sNic0MacAddr == 'grouped':
                         sNic0MacAddr = '%02X' % (iGroup,);
                     fRc = oSession.setNicMacAddress(sNic0MacAddr, 0);
+                # Needed to reach the host (localhost) from the guest. See xTracker #9896.
+                if fRc and self.fpApiVer >= 7.0 and eNic0AttachType == vboxcon.NetworkAttachmentType_NAT:
+                    fRc = oSession.setNicLocalhostReachable(True, 0);
 
                 if fRc and fVmmDevTestingPart is not None:
                     fRc = oSession.enableVmmDevTestingPart(fVmmDevTestingPart, fVmmDevTestingMmio);
