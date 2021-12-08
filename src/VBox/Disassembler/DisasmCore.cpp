@@ -2732,21 +2732,21 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
     size_t offInstr = 0;
     for (;;)
     {
-        uint8_t  const bCode  = disReadByte(pDis, offInstr++);
-        uint16_t const opcode = paOneByteMap[bCode].uOpcode;
+        uint8_t  const     bCode     = disReadByte(pDis, offInstr++);
+        enum OPCODES const enmOpcode = (enum OPCODES)paOneByteMap[bCode].uOpcode;
 
         /* Hardcoded assumption about OP_* values!! */
-        if (opcode <= OP_LAST_PREFIX)
+        if (enmOpcode <= OP_LAST_PREFIX)
         {
             /* The REX prefix must precede the opcode byte(s). Any other placement is ignored. */
-            if (opcode != OP_REX)
+            if (enmOpcode != OP_REX)
             {
                 /* Last prefix byte (for SSE2 extension tables); don't include the REX prefix */
-                pDis->bLastPrefix = opcode;
-                pDis->fPrefix &= ~DISPREFIX_REX;
+                pDis->bLastPrefix = (uint8_t)enmOpcode;
+                pDis->fPrefix    &= ~DISPREFIX_REX;
             }
 
-            switch (opcode)
+            switch (enmOpcode)
             {
             case OP_INVALID:
                 if (pcbInstr)
@@ -2816,7 +2816,7 @@ static int disInstrWorker(PDISSTATE pDis, PCDISOPCODE paOneByteMap, uint32_t *pc
 
         /* Check if this is a VEX prefix. Not for 32-bit mode. */
         if (pDis->uCpuMode != DISCPUMODE_64BIT
-            && (opcode == OP_LES || opcode == OP_LDS)
+            && (enmOpcode == OP_LES || enmOpcode == OP_LDS)
             && (disReadByte(pDis, offInstr) & 0xc0) == 0xc0)
         {
             paOneByteMap = g_aOneByteMapX64;
