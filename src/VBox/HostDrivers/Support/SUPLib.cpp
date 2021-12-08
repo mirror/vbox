@@ -586,8 +586,9 @@ SUPR3DECL(int) SUPR3Term(bool fForced)
 
 SUPR3DECL(bool) SUPR3IsDriverless(void)
 {
-    Assert(g_cInits > 0);
-    return g_supLibData.fDriverless;
+    /* Assert(g_cInits > 0); - tstSSM does not initialize SUP, but SSM calls to
+       check status, so return driverless if not initialized. */
+    return g_supLibData.fDriverless || g_cInits == 0;
 }
 
 
