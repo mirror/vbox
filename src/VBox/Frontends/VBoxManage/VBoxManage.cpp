@@ -505,7 +505,7 @@ HRESULT showProgress(ComPtr<IProgress> progress, uint32_t fFlags)
 #endif /* !VBOX_ONLY_DOCS */
 
 
-static void setBuiltInHelpLanguage(const char *pszLang)
+void setBuiltInHelpLanguage(const char *pszLang)
 {
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
     if (pszLang == NULL || pszLang[0] == 0 || (pszLang[0] == 'C' && pszLang[1] == 0))
