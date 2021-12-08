@@ -262,45 +262,6 @@ static const VBMGCMD g_aCommands[] =
     { "modifynvram",        USAGE_S_NEWCMD,   HELP_CMD_MODIFYNVRAM, handleModifyNvram,          0 },
 };
 
-
-static void setBuiltInHelpLanguage(const char *pszLang)
-{
-#ifdef VBOX_WITH_VBOXMANAGE_NLS
-    if (pszLang == NULL || pszLang[0] == 0 || (pszLang[0] == 'C' && pszLang[1] == 0))
-        pszLang = "en_US";
-    void *pHelpLangEntry = NULL;
-    /* find language entry matching exactly pszLang */
-    for (uint32_t i = 0; i < g_cHelpLangEntries; i++)
-    {
-        if (strcmp(g_apHelpLangEntries[i].pszLang, pszLang) == 0)
-        {
-            pHelpLangEntry = (void *)&g_apHelpLangEntries[i];
-            break;
-        }
-    }
-    /* find first entry containing language specified if pszLang contains only language */
-    if (pHelpLangEntry == NULL)
-    {
-        size_t cbLang = strlen(pszLang);
-        for (uint32_t i = 0; i < g_cHelpLangEntries; i++)
-        {
-            if (   cbLang < g_apHelpLangEntries[i].cbLang
-                && memcmp(g_apHelpLangEntries[i].pszLang, pszLang, cbLang) == 0)
-            {
-                pHelpLangEntry = (void *)&g_apHelpLangEntries[i];
-                break;
-            }
-        }
-    }
-    /* set to en_US (i.e. untranslated) if not found */
-    if (pHelpLangEntry == NULL)
-        pHelpLangEntry = (void *)&g_apHelpLangEntries[0];
-
-     ASMAtomicWritePtrVoid(&g_pHelpLangEntry, pHelpLangEntry);
-#endif
-}
-
-
 /**
  * Looks up a command by name.
  *
@@ -542,6 +503,46 @@ HRESULT showProgress(ComPtr<IProgress> progress, uint32_t fFlags)
 }
 
 #endif /* !VBOX_ONLY_DOCS */
+
+
+static void setBuiltInHelpLanguage(const char *pszLang)
+{
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+    if (pszLang == NULL || pszLang[0] == 0 || (pszLang[0] == 'C' && pszLang[1] == 0))
+        pszLang = "en_US";
+    void *pHelpLangEntry = NULL;
+    /* find language entry matching exactly pszLang */
+    for (uint32_t i = 0; i < g_cHelpLangEntries; i++)
+    {
+        if (strcmp(g_apHelpLangEntries[i].pszLang, pszLang) == 0)
+        {
+            pHelpLangEntry = (void *)&g_apHelpLangEntries[i];
+            break;
+        }
+    }
+    /* find first entry containing language specified if pszLang contains only language */
+    if (pHelpLangEntry == NULL)
+    {
+        size_t cbLang = strlen(pszLang);
+        for (uint32_t i = 0; i < g_cHelpLangEntries; i++)
+        {
+            if (   cbLang < g_apHelpLangEntries[i].cbLang
+                && memcmp(g_apHelpLangEntries[i].pszLang, pszLang, cbLang) == 0)
+            {
+                pHelpLangEntry = (void *)&g_apHelpLangEntries[i];
+                break;
+            }
+        }
+    }
+    /* set to en_US (i.e. untranslated) if not found */
+    if (pHelpLangEntry == NULL)
+        pHelpLangEntry = (void *)&g_apHelpLangEntries[0];
+
+     ASMAtomicWritePtrVoid(&g_pHelpLangEntry, pHelpLangEntry);
+#else
+    NOREF(pszLang);
+#endif
+}
 
 
 int main(int argc, char *argv[])
