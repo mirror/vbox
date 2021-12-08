@@ -212,96 +212,89 @@ void UIDetailsWidgetCloudNetwork::prepare()
 
 void UIDetailsWidgetCloudNetwork::prepareThis()
 {
-    /* Prepare main layout: */
-    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
-    if (pLayoutMain)
+    /* Prepare options widget layout: */
+    QGridLayout *pLayout = new QGridLayout(this);
+    if (pLayout)
     {
 #ifdef VBOX_WS_MAC
-        pLayoutMain->setSpacing(10);
-        pLayoutMain->setContentsMargins(10, 10, 10, 10);
+        pLayout->setSpacing(10);
+        pLayout->setContentsMargins(10, 10, 10, 10);
 #endif
 
-        /* Prepare options widget layout: */
-        QGridLayout *pLayoutOptions = new QGridLayout;
-        if (pLayoutOptions)
+        /* Prepare network name label: */
+        m_pLabelNetworkName = new QLabel(this);
+        if (m_pLabelNetworkName)
         {
-            /* Prepare network name label: */
-            m_pLabelNetworkName = new QLabel(this);
+            m_pLabelNetworkName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayout->addWidget(m_pLabelNetworkName, 0, 0);
+        }
+        /* Prepare network name editor: */
+        m_pEditorNetworkName = new QLineEdit(this);
+        if (m_pEditorNetworkName)
+        {
             if (m_pLabelNetworkName)
-            {
-                m_pLabelNetworkName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutOptions->addWidget(m_pLabelNetworkName, 0, 0);
-            }
-            /* Prepare network name editor: */
-            m_pEditorNetworkName = new QLineEdit(this);
-            if (m_pEditorNetworkName)
-            {
-                if (m_pLabelNetworkName)
-                    m_pLabelNetworkName->setBuddy(m_pEditorNetworkName);
-                connect(m_pEditorNetworkName, &QLineEdit::textEdited,
-                        this, &UIDetailsWidgetCloudNetwork::sltNetworkNameChanged);
+                m_pLabelNetworkName->setBuddy(m_pEditorNetworkName);
+            connect(m_pEditorNetworkName, &QLineEdit::textEdited,
+                    this, &UIDetailsWidgetCloudNetwork::sltNetworkNameChanged);
 
-                pLayoutOptions->addWidget(m_pEditorNetworkName, 0, 1);
-            }
+            pLayout->addWidget(m_pEditorNetworkName, 0, 1);
+        }
 
-            /* Prepare cloud provider name label: */
-            m_pLabelProviderName = new QLabel(this);
+        /* Prepare cloud provider name label: */
+        m_pLabelProviderName = new QLabel(this);
+        if (m_pLabelProviderName)
+        {
+            m_pLabelProviderName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayout->addWidget(m_pLabelProviderName, 1, 0);
+        }
+        /* Prepare cloud provider name combo: */
+        m_pComboProviderName = new QIComboBox(this);
+        if (m_pComboProviderName)
+        {
             if (m_pLabelProviderName)
-            {
-                m_pLabelProviderName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutOptions->addWidget(m_pLabelProviderName, 1, 0);
-            }
-            /* Prepare cloud provider name combo: */
-            m_pComboProviderName = new QIComboBox(this);
-            if (m_pComboProviderName)
-            {
-                if (m_pLabelProviderName)
-                    m_pLabelProviderName->setBuddy(m_pComboProviderName);
-                connect(m_pComboProviderName, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-                        this, &UIDetailsWidgetCloudNetwork::sltCloudProviderNameChanged);
+                m_pLabelProviderName->setBuddy(m_pComboProviderName);
+            connect(m_pComboProviderName, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+                    this, &UIDetailsWidgetCloudNetwork::sltCloudProviderNameChanged);
 
-                pLayoutOptions->addWidget(m_pComboProviderName, 1, 1);
-            }
+            pLayout->addWidget(m_pComboProviderName, 1, 1);
+        }
 
-            /* Prepare cloud profile name label: */
-            m_pLabelProfileName = new QLabel(this);
+        /* Prepare cloud profile name label: */
+        m_pLabelProfileName = new QLabel(this);
+        if (m_pLabelProfileName)
+        {
+            m_pLabelProfileName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayout->addWidget(m_pLabelProfileName, 2, 0);
+        }
+        /* Prepare cloud profile name combo: */
+        m_pComboProfileName = new QIComboBox(this);
+        if (m_pComboProfileName)
+        {
             if (m_pLabelProfileName)
-            {
-                m_pLabelProfileName->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutOptions->addWidget(m_pLabelProfileName, 2, 0);
-            }
-            /* Prepare cloud profile name combo: */
-            m_pComboProfileName = new QIComboBox(this);
-            if (m_pComboProfileName)
-            {
-                if (m_pLabelProfileName)
-                    m_pLabelProfileName->setBuddy(m_pComboProfileName);
-                connect(m_pComboProfileName, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-                        this, &UIDetailsWidgetCloudNetwork::sltCloudProfileNameChanged);
+                m_pLabelProfileName->setBuddy(m_pComboProfileName);
+            connect(m_pComboProfileName, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+                    this, &UIDetailsWidgetCloudNetwork::sltCloudProfileNameChanged);
 
-                pLayoutOptions->addWidget(m_pComboProfileName, 2, 1);
-            }
+            pLayout->addWidget(m_pComboProfileName, 2, 1);
+        }
 
-            /* Prepare network id label: */
-            m_pLabelNetworkId = new QLabel(this);
+        /* Prepare network id label: */
+        m_pLabelNetworkId = new QLabel(this);
+        if (m_pLabelNetworkId)
+        {
+            m_pLabelNetworkId->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            pLayout->addWidget(m_pLabelNetworkId, 3, 0);
+        }
+        /* Prepare network id editor: */
+        m_pEditorNetworkId = new QLineEdit(this);
+        if (m_pEditorNetworkId)
+        {
             if (m_pLabelNetworkId)
-            {
-                m_pLabelNetworkId->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutOptions->addWidget(m_pLabelNetworkId, 3, 0);
-            }
-            /* Prepare network id editor: */
-            m_pEditorNetworkId = new QLineEdit(this);
-            if (m_pEditorNetworkId)
-            {
-                if (m_pLabelNetworkId)
-                    m_pLabelNetworkId->setBuddy(m_pEditorNetworkId);
-                connect(m_pEditorNetworkId, &QLineEdit::textEdited,
-                        this, &UIDetailsWidgetCloudNetwork::sltNetworkIdChanged);
+                m_pLabelNetworkId->setBuddy(m_pEditorNetworkId);
+            connect(m_pEditorNetworkId, &QLineEdit::textEdited,
+                    this, &UIDetailsWidgetCloudNetwork::sltNetworkIdChanged);
 
-                pLayoutOptions->addWidget(m_pEditorNetworkId, 3, 1);
-            }
-
-            pLayoutMain->addLayout(pLayoutOptions);
+            pLayout->addWidget(m_pEditorNetworkId, 3, 1);
         }
 
         /* If parent embedded into stack: */
@@ -314,7 +307,7 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
                 m_pButtonBoxOptions->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
                 connect(m_pButtonBoxOptions, &QIDialogButtonBox::clicked, this, &UIDetailsWidgetCloudNetwork::sltHandleButtonBoxClick);
 
-                pLayoutMain->addWidget(m_pButtonBoxOptions);
+                pLayout->addWidget(m_pButtonBoxOptions, 4, 0, 1, 2);
             }
         }
     }
