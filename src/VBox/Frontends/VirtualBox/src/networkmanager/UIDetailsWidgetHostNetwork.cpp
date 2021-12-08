@@ -457,7 +457,7 @@ void UIDetailsWidgetHostNetwork::prepareTabInterface()
             m_pLabelIPv4 = new QLabel(pTabInterface);
             if (m_pLabelIPv4)
             {
-                m_pLabelIPv4->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pLabelIPv4->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 pLayoutInterface->addWidget(m_pLabelIPv4, 2, 1);
             }
             /* Prepare IPv4 layout: */
@@ -484,7 +484,7 @@ void UIDetailsWidgetHostNetwork::prepareTabInterface()
             m_pLabelNMv4 = new QLabel(pTabInterface);
             if (m_pLabelNMv4)
             {
-                m_pLabelNMv4->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pLabelNMv4->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 pLayoutInterface->addWidget(m_pLabelNMv4, 3, 1);
             }
             /* Prepare NMv4 layout: */
@@ -511,7 +511,7 @@ void UIDetailsWidgetHostNetwork::prepareTabInterface()
             m_pLabelIPv6 = new QLabel(pTabInterface);
             if (m_pLabelIPv6)
             {
-                m_pLabelIPv6->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pLabelIPv6->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 pLayoutInterface->addWidget(m_pLabelIPv6, 4, 1);
             }
             /* Prepare IPv6 layout: */
@@ -538,7 +538,7 @@ void UIDetailsWidgetHostNetwork::prepareTabInterface()
             m_pLabelNMv6 = new QLabel(pTabInterface);
             if (m_pLabelNMv6)
             {
-                m_pLabelNMv6->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pLabelNMv6->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 pLayoutInterface->addWidget(m_pLabelNMv6, 5, 1);
             }
             /* Prepare NMv6 layout: */
@@ -625,7 +625,7 @@ void UIDetailsWidgetHostNetwork::prepareTabDHCPServer()
             m_pLabelDHCPAddress = new QLabel(pTabDHCPServer);
             if (m_pLabelDHCPAddress)
             {
-                m_pLabelDHCPAddress->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pLabelDHCPAddress->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPAddress, 1, 1);
             }
             /* Prepare DHCP address layout: */
@@ -652,7 +652,7 @@ void UIDetailsWidgetHostNetwork::prepareTabDHCPServer()
             m_pLabelDHCPMask = new QLabel(pTabDHCPServer);
             if (m_pLabelDHCPMask)
             {
-                m_pLabelDHCPMask->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pLabelDHCPMask->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPMask, 2, 1);
             }
             /* Prepare DHCP mask layout: */
@@ -679,7 +679,7 @@ void UIDetailsWidgetHostNetwork::prepareTabDHCPServer()
             m_pLabelDHCPLowerAddress = new QLabel(pTabDHCPServer);
             if (m_pLabelDHCPLowerAddress)
             {
-                m_pLabelDHCPLowerAddress->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pLabelDHCPLowerAddress->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPLowerAddress, 3, 1);
             }
             /* Prepare DHCP lower address layout: */
@@ -706,7 +706,7 @@ void UIDetailsWidgetHostNetwork::prepareTabDHCPServer()
             m_pLabelDHCPUpperAddress = new QLabel(pTabDHCPServer);
             if (m_pLabelDHCPUpperAddress)
             {
-                m_pLabelDHCPUpperAddress->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                m_pLabelDHCPUpperAddress->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
                 pLayoutDHCPServer->addWidget(m_pLabelDHCPUpperAddress, 4, 1);
             }
             /* Prepare DHCP upper address layout: */

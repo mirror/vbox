@@ -1322,7 +1322,7 @@ bool UIMessageCenter::confirmCloudNetworkRemoval(const QString &strName, QWidget
                           false /* ok button by default? */);
 }
 
-bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
+bool UIMessageCenter::confirmHostNetworkInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
 {
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>Deleting this host-only network will remove "

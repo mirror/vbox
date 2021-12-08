@@ -39,7 +39,7 @@
 #include "QIToolBar.h"
 #ifdef VBOX_WS_MAC
 # include "UIWindowMenuManager.h"
-#endif /* VBOX_WS_MAC */
+#endif
 #include "UICommon.h"
 
 /* COM includes: */
@@ -373,7 +373,7 @@ void UINetworkManagerWidget::retranslateUi()
     // after changing the text.
     if (m_pToolBar)
         m_pToolBar->updateLayout();
-#endif
+#endif /* VBOX_WS_MAC */
 
     /* Translate tab-widget: */
     if (m_pTabWidget)
@@ -531,7 +531,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
     const QString strInterfaceName(pItem->name());
 
     /* Confirm host network removal: */
-    if (!msgCenter().confirmHostOnlyInterfaceRemoval(strInterfaceName, this))
+    if (!msgCenter().confirmHostNetworkInterfaceRemoval(strInterfaceName, this))
         return;
 
     /* Get host for further activities: */
@@ -1586,10 +1586,10 @@ void UINetworkManagerWidget::prepareToolBar()
             /* Add into layout: */
             layout()->addWidget(m_pToolBar);
         }
-#else
+#else /* !VBOX_WS_MAC */
         /* Add into layout: */
         layout()->addWidget(m_pToolBar);
-#endif
+#endif /* !VBOX_WS_MAC */
     }
 }
 

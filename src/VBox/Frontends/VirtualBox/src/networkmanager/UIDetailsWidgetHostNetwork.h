@@ -91,7 +91,6 @@ struct UIDataHostNetworkInterface
     QString  m_strPrefixLength6;
 };
 
-
 /** Network Manager: DHCP Server data structure. */
 struct UIDataDHCPServer
 {
@@ -132,7 +131,6 @@ struct UIDataDHCPServer
     /** Holds DHCP server upper address. */
     QString  m_strUpperAddress;
 };
-
 
 /** Network Manager: Host network data structure. */
 struct UIDataHostNetwork
