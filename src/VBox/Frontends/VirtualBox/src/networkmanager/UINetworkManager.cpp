@@ -914,6 +914,9 @@ void UINetworkManagerWidget::sltToggleDetailsVisibility(bool fVisible)
 
 void UINetworkManagerWidget::sltHandleCurrentTabWidgetIndexChange()
 {
+    /* Update actions: */
+    updateActionAvailability();
+
     /* Adjust tree-widgets first of all: */
     sltAdjustTreeWidgets();
 
@@ -1031,14 +1034,14 @@ void UINetworkManagerWidget::sltAdjustTreeWidgets()
 
 void UINetworkManagerWidget::sltHandleCurrentItemChangeHostNetwork()
 {
+    /* Update actions: */
+    updateActionAvailability();
+
     /* Check host network tree-widget: */
     AssertMsgReturnVoid(m_pTreeWidgetHostNetwork, ("Host network tree-widget isn't created!\n"));
 
     /* Get network item: */
     UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidgetHostNetwork->currentItem());
-
-    /* Update actions availability: */
-    m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
 
     /* Check host network details-widget: */
     AssertMsgReturnVoid(m_pDetailsWidgetHostNetwork, ("Host network details-widget isn't created!\n"));
@@ -1207,14 +1210,14 @@ void UINetworkManagerWidget::sltApplyDetailsChangesHostNetwork()
 
 void UINetworkManagerWidget::sltHandleCurrentItemChangeNATNetworkHoldingPosition(bool fHoldPosition)
 {
+    /* Update actions: */
+    updateActionAvailability();
+
     /* Check NAT network tree-widget: */
     AssertMsgReturnVoid(m_pTreeWidgetNATNetwork, ("NAT network tree-widget isn't created!\n"));
 
     /* Get network item: */
     UIItemNATNetwork *pItem = static_cast<UIItemNATNetwork*>(m_pTreeWidgetNATNetwork->currentItem());
-
-    /* Update actions availability: */
-    m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
 
     /* Check NAT network details-widget: */
     AssertMsgReturnVoid(m_pDetailsWidgetNATNetwork, ("NAT network details-widget isn't created!\n"));
@@ -1375,14 +1378,14 @@ void UINetworkManagerWidget::sltApplyDetailsChangesNATNetwork()
 
 void UINetworkManagerWidget::sltHandleCurrentItemChangeCloudNetwork()
 {
+    /* Update actions: */
+    updateActionAvailability();
+
     /* Check cloud network tree-widget: */
     AssertMsgReturnVoid(m_pTreeWidgetCloudNetwork, ("Cloud network tree-widget isn't created!\n"));
 
     /* Get network item: */
     UIItemCloudNetwork *pItem = static_cast<UIItemCloudNetwork*>(m_pTreeWidgetCloudNetwork->currentItem());
-
-    /* Update actions availability: */
-    m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
 
     /* Check Cloud network details-widget: */
     AssertMsgReturnVoid(m_pDetailsWidgetCloudNetwork, ("Cloud network details-widget isn't created!\n"));
@@ -2068,6 +2071,37 @@ void UINetworkManagerWidget::loadCloudNetwork(const CCloudNetwork &comNetwork, U
     /* Show error message if necessary: */
     if (!comNetwork.isOk())
         UINotificationMessage::cannotAcquireCloudNetworkParameter(comNetwork);
+}
+
+void UINetworkManagerWidget::updateActionAvailability()
+{
+    /* Check which tab we have currently: */
+    switch (m_pTabWidget->currentIndex())
+    {
+        case TabWidgetIndex_HostNetwork:
+        {
+            AssertMsgReturnVoid(m_pTreeWidgetHostNetwork, ("Host network tree-widget isn't created!\n"));
+            UIItemHostNetwork *pItem = static_cast<UIItemHostNetwork*>(m_pTreeWidgetHostNetwork->currentItem());
+            m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
+            break;
+        }
+        case TabWidgetIndex_NATNetwork:
+        {
+            AssertMsgReturnVoid(m_pTreeWidgetNATNetwork, ("NAT network tree-widget isn't created!\n"));
+            UIItemNATNetwork *pItem = static_cast<UIItemNATNetwork*>(m_pTreeWidgetNATNetwork->currentItem());
+            m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
+            break;
+        }
+        case TabWidgetIndex_CloudNetwork:
+        {
+            AssertMsgReturnVoid(m_pTreeWidgetCloudNetwork, ("Cloud network tree-widget isn't created!\n"));
+            UIItemCloudNetwork *pItem = static_cast<UIItemCloudNetwork*>(m_pTreeWidgetCloudNetwork->currentItem());
+            m_pActionPool->action(UIActionIndexMN_M_Network_S_Remove)->setEnabled(pItem);
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void UINetworkManagerWidget::createItemForHostNetwork(const UIDataHostNetwork &data, bool fChooseItem)

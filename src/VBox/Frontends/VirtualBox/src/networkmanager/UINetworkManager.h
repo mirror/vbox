@@ -224,6 +224,12 @@ private:
         void loadCloudNetwork(const CCloudNetwork &comNetwork, UIDataCloudNetwork &data);
     /** @} */
 
+    /** @name Actions stuff.
+      * @{ */
+        /** Updates action availability. */
+        void updateActionAvailability();
+    /** @} */
+
     /** @name Tree-widget stuff.
       * @{ */
         /** Creates a new host network tree-widget item on the basis of passed @a data, @a fChooseItem if requested. */
