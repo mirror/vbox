@@ -153,13 +153,13 @@ endif
 #
 # The additions variant of the audio test utility.
 #
-# We name it VBoxAudioTest though, to not clutter up Guest Additions installations
-# (all VBox binaries have the VBox prefix).
+# We name it VBoxAudioTest though, to not clutter up Guest Additions
+# installations with cryptic binaries not sporting 'VBox' as prefix.
 #
+vkatadd_TEMPLATE       = VBoxGuestR3Exe
 vkatadd_EXTENDS        = vkat
 vkatadd_EXTENDS_BY     = appending
-vkatadd_NAME           = VBoxAudioTest$(HOSTSUFF_EXE)
-vkatadd_TEMPLATE       = VBoxGuestR3Exe
+vkatadd_NAME           = VBoxAudioTest
 vkatadd_SDKS           = VBOX_ZLIB_STATIC
 vkatadd_LDFLAGS.darwin = -framework IOKit
 vkatadd_LIBS.solaris   = m
@@ -167,7 +167,9 @@ vkatadd_LIBS.solaris   = m
 
 #
 # Copy the valkit vkat to bin so it can be shipped with the host installer too.
-# We name it VBoxAudioTest though, to not clutter up host installations.
+#
+# We use the same name as for the GAs, even if the binaries is the same as the
+# validation kit.
 #
 ifdef VBOX_WITH_HOST_SHIPPING_AUDIO_TEST
  ifn1of ($(KBUILD_TARGET), os2 freebsd netbsd openbsd)
