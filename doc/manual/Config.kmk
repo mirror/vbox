@@ -136,11 +136,12 @@ VBOX_XML_XREF_TO_TEXT      = $(VBOX_PATH_MANUAL_OUTBASE)/xref-to-text.xsl
 # @param    2   The XML file name (no path).
 # @param    3   The XML file with full path.
 # @param    4   Non-empty if xrefs to replace.
+# @param    5   Language code (optional)
 define def_vbox_refentry_preprocess_for_manpage
 $(1)/$(2): \
 		$(3) \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl \
-		$(if $(4),$$(VBOX_XML_XREF_TO_TEXT),) \
+		$(if $(4), $$(VBOX_PATH_MANUAL_OUTBASE)/$(5)/xref-to-text.xsl,) \
 		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
 		$$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
@@ -148,7 +149,8 @@ $(1)/$(2): \
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$@ \
 		"$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl" $$<
 ifneq ($(4),)
-	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$@.tmp $$(VBOX_XML_XREF_TO_TEXT) $$@
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$@.tmp \
+		$$(VBOX_PATH_MANUAL_OUTBASE)/$(5)/xref-to-text.xsl $$@
 	$$(QUIET)$$(MV) -f -- "$$@.tmp" "$$@"
 endif
 if defined(VBOX_HAVE_XMLLINT) && "$(USER)" == "bird" # Effing stuff happends on build servers, probably kmk related...
@@ -324,35 +326,43 @@ ifdef VBOX_XML_ENTITIES
 endif # VBOX_XML_ENTITIES
 
 
-## Produce stylesheet for translating cross references (xref) to user manual
-# chapters and sections in the man pages and --help output.
+## Emit rules to produce stylesheet for translating cross references (xref)
+# to user manual chapters and sections in the man pages and --help output.
 #
 # Note! This requires processing UserManual.xml as a single document in order
 #       to get the correct chapter and section numbering, so we use a catalog
 #       file to replace the generated XML documents it includes with a dummy
 #       one.  This reduces the dependencies and recipies we require to build
 #       VBoxManage and the RTIsoMaker (w/ derivatives).
-$(VBOX_XML_XREF_TO_TEXT) + $(VBOX_XML_XREF_TO_TEXT).cat: \
-		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-link-replacement-xsl-gen.xsl \
-		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_XML_FILES)) \
-		$(VBOX_MANUAL_XML_FILES_COMMON) \
-		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) $(VBOX_XML_ENTITIES) \
-               | $$(dir $$@)
-	$(call MSG_L1,Creating stylesheet $@)
-	$(QUIET)$(APPEND) -nt "$(VBOX_XML_XREF_TO_TEXT).cat" \
+# $(evalcall2 def_vbox_xref_to_text)
+# @param    1   Language code.
+define def_vbox_xref_to_text
+$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/xref-to-text.xsl \
++ $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/xref-to-text.xsl.cat: \
+		$$(VBOX_PATH_MANUAL_SRC)/$(1)/docbook-refentry-link-replacement-xsl-gen.xsl \
+		$$(addprefix $$(VBOX_PATH_MANUAL_SRC)/en_US/,$$(VBOX_MANUAL_XML_FILES)) \
+		$$(VBOX_MANUAL_XML_FILES_COMMON) \
+		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) $$(VBOX_XML_ENTITIES) \
+               | $$$$(dir $$$$@)
+	$$(call MSG_L1,Creating stylesheet $$@)
+	$$(QUIET)$$(APPEND) -nt "$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/xref-to-text.xsl.cat" \
 		'<?xml version="1.0"?>' \
 		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
 		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
-		$(foreach x,user_VBoxManage_CommandsOverview.xml user_isomakercmd-man.xml $(addprefix user_,$(VBOX_MANUAL_XML_REFENTRY_FILES))\
-		,'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/$(x)" uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/dummy-sect1.xml"/>') \
-		'  <nextCatalog catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG)"/>' \
+		$$(foreach x,user_VBoxManage_CommandsOverview.xml user_isomakercmd-man.xml $$(addprefix user_,$$(VBOX_MANUAL_XML_REFENTRY_FILES))\
+		,'  <system systemId="$$(VBOX_PATH_MANUAL_SRC)/en_US/$$(x)" uri="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_PATH_MANUAL_SRC)/dummy-sect1.xml"/>') \
+		'  <nextCatalog catalog="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_XML_CATALOG)"/>' \
 		'</catalog>'
-	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT, -E "XML_CATALOG_FILES=$(VBOX_XML_XREF_TO_TEXT).cat") \
-		--stringparam 'g_sMode' 'first' --output "$@" "$<" $(filter %UserManual.xml,$^)
-	$(foreach x, $(VBOX_MANUAL_XML_REFENTRY_FILES)\
-		,$(NLTAB)$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT, -ato "$@") --stringparam 'g_sMode' 'append' \
-			"$<" "$(VBOX_PATH_MANUAL_SRC)/en_US/$(x)")
-	$(QUIET)$(APPEND) -n "$@" '' '</xsl:stylesheet>'
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT, -E "XML_CATALOG_FILES=$$(VBOX_PATH_MANUAL_OUTBASE)/xref-to-text$(1).xsl.cat") \
+		--stringparam 'g_sMode' 'first' --output "$$@" "$$<" $$(filter %UserManual.xml,$$^)
+	# Using en-US version as section and chapter names until user manual is translated as well
+	$$(foreach x, $$(VBOX_MANUAL_XML_REFENTRY_FILES)\
+		,$$(NLTAB)$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT, -ato "$$@") --stringparam 'g_sMode' 'append' \
+			"$$<" "$$(VBOX_PATH_MANUAL_SRC)/en_US/$$(x)")
+	$$(QUIET)$$(APPEND) -n "$$@" '' '</xsl:stylesheet>'
+endef
+# generate rules for $(VBOX_XML_XREF_TO_TEXT)
+$(evalcall2 def_vbox_xref_to_text,)
 
 #
 # Generate rules for editing the refentry to C/H style sheets.

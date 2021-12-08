@@ -5549,9 +5549,9 @@ Total guest sessions: %zu
     <name>Help</name>
     <message>
         <location filename="../VBoxManageHelp.cpp" line="107"/>
-        <source>Usage - %c%s:
+        <source>Usage - %s%s:
 </source>
-        <translation>Использование - %c%s:
+        <translation>Использование - %s%s:
 </translation>
     </message>
     <message>

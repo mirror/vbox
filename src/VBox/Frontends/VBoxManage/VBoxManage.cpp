@@ -90,6 +90,8 @@ typedef VBMGCMD const *PCVBMGCMD;
 
 DECLARE_TRANSLATION_CONTEXT(VBoxManage);
 
+static void setBuiltInHelpLanguage(const char *pszLang);
+
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
 /* listener class for language updates */
 class VBoxEventListener
@@ -144,6 +146,7 @@ public:
                             com::Utf8Str strLanguageId(bstrLanguageId);
                             LogFunc(("New language ID: %s\n", strLanguageId.c_str()));
                             pTranslator->i_loadLanguage(strLanguageId.c_str());
+                            setBuiltInHelpLanguage(strLanguageId.c_str());
                         }
                         catch (std::bad_alloc &)
                         {
@@ -258,6 +261,45 @@ static const VBMGCMD g_aCommands[] =
     { "updatecheck",        USAGE_S_NEWCMD,   HELP_CMD_UPDATECHECK, handleUpdateCheck,         0 },
     { "modifynvram",        USAGE_S_NEWCMD,   HELP_CMD_MODIFYNVRAM, handleModifyNvram,          0 },
 };
+
+
+static void setBuiltInHelpLanguage(const char *pszLang)
+{
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+    if (pszLang == NULL || pszLang[0] == 0 || pszLang[0] == 'C' && pszLang[1] == 0)
+        pszLang = "en_US";
+    void *pHelpLangEntry = NULL;
+    /* find language entry matching exactly pszLang */
+    for (uint32_t i = 0; i < g_cHelpLangEntries; i++)
+    {
+        if (strcmp(g_apHelpLangEntries[i].pszLang, pszLang) == 0)
+        {
+            pHelpLangEntry = (void *)&g_apHelpLangEntries[i];
+            break;
+        }
+    }
+    /* find first entry containing language specified if pszLang contains only language */
+    if (pHelpLangEntry == NULL)
+    {
+        size_t cbLang = strlen(pszLang);
+        for (uint32_t i = 0; i < g_cHelpLangEntries; i++)
+        {
+            if (   cbLang < g_apHelpLangEntries[i].cbLang
+                && memcmp(g_apHelpLangEntries[i].pszLang, pszLang, cbLang) == 0)
+            {
+                pHelpLangEntry = (void *)&g_apHelpLangEntries[i];
+                break;
+            }
+        }
+    }
+    /* set to en_US (i.e. untranslated) if not found */
+    if (pHelpLangEntry == NULL)
+        pHelpLangEntry = (void *)&g_apHelpLangEntries[0];
+
+     ASMAtomicWritePtrVoid(&g_pHelpLangEntry, pHelpLangEntry);
+#endif
+}
+
 
 /**
  * Looks up a command by name.
@@ -548,7 +590,12 @@ int main(int argc, char *argv[])
             if (RT_SUCCESS(vrc))
             {
                 vrc = pTranslator->i_loadLanguage(NULL);
-                if (RT_FAILURE(vrc))
+                if (RT_SUCCESS(vrc))
+                {
+                    com::Utf8Str strLang = pTranslator->language();
+                    setBuiltInHelpLanguage(strLang.c_str());
+                }
+                else
                     LogRelFunc(("Load language failed: %Rrc\n", vrc));
             }
             else
@@ -764,7 +811,12 @@ int main(int argc, char *argv[])
             if (pTranslator != NULL)
             {
                 HRESULT hrc1 = pTranslator->loadLanguage(virtualBox);
-                if (FAILED(hrc1))
+                if (SUCCEEDED(hrc1))
+                {
+                    com::Utf8Str strLang = pTranslator->language();
+                    setBuiltInHelpLanguage(strLang.c_str());
+                }
+                else
                 {
                     /* Just log and ignore the language error */
                     LogRel(("Failed to load API language, %Rhrc", hrc1));

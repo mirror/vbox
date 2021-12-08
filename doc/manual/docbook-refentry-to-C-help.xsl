@@ -40,6 +40,11 @@
   <!-- Sub-command style command (true) or single command (false). -->
   <xsl:variable name="g_fSubCommands" select="not(not(//refsect2[@id]))" />
 
+  <!-- Translatable strings -->
+  <xsl:variable name="sUsage"           select="'Usage'"/>
+  <xsl:variable name="sUsageUnderscore" select="'====='"/>
+
+
   <!-- Default action, do nothing. -->
   <xsl:template match="node()|@*"/>
 
@@ -124,9 +129,9 @@ static const RTMSGREFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><
     <!-- The follows the usage (synopsis) section. -->
     <xsl:text>
     {   RTMSGREFENTRYSTR_SCOPE_GLOBAL,
-        "Usage" },
+        "</xsl:text><xsl:value-of select="$sUsage"/><xsl:text>" },
     {   RTMSGREFENTRYSTR_SCOPE_SAME,
-        "=====" },</xsl:text>
+        "</xsl:text><xsl:value-of select="$sUsageUnderscore"/><xsl:text>" },</xsl:text>
         <xsl:apply-templates select="./refsynopsisdiv/node()"/>
 
     <!-- Then comes the description and other refsect1 -->

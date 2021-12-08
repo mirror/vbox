@@ -107,6 +107,8 @@ public:
 
     static int32_t initCritSect();
 
+    com::Utf8Str language();
+
 private:
     static RTCRITSECTRW s_instanceRwLock;
     static VirtualBoxTranslator *s_pInstance;

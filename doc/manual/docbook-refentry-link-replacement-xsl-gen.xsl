@@ -25,6 +25,13 @@
 
 <xsl:param name="g_sMode" select="not-specified"/>
 
+  <!-- Translatable strings -->
+  <xsl:variable name="sChapter" select="'chapter'"/>
+  <xsl:variable name="sSection" select="'section'"/>
+  <xsl:variable name="sOfManual" select="'of the user manual'"/>
+  <xsl:variable name="sInManual" select="'in the user manual'"/>
+
+
 <!-- Default operation is to supress output -->
 <xsl:template match="node()|@*">
   <xsl:apply-templates/>
@@ -66,9 +73,10 @@ Produce the transformation templates:
   <xsl:text>
 &lt;xsl:template match="xref[@linkend='</xsl:text>
   <xsl:value-of select="../@id"/><xsl:text>']"&gt;
-  &lt;xsl:text&gt;chapter </xsl:text><xsl:value-of select="count(../preceding-sibling::chapter) + 1"/><xsl:text> &quot;</xsl:text>
+  &lt;xsl:text&gt;</xsl:text><xsl:value-of select="$sChapter"/><xsl:text> </xsl:text>
+  <xsl:value-of select="count(../preceding-sibling::chapter) + 1"/><xsl:text> &quot;</xsl:text>
   <xsl:value-of select="normalize-space()"/>
-  <xsl:text>&quot; in the user manual&lt;/xsl:text&gt;
+  <xsl:text>&quot; </xsl:text><xsl:value-of select="$sInManual"/><xsl:text>&lt;/xsl:text&gt;
 &lt;/xsl:template&gt;
 </xsl:text>
   <xsl:apply-templates/>
@@ -77,11 +85,12 @@ Produce the transformation templates:
 <xsl:template match="sect1[@id]/title">
   <xsl:text>&lt;xsl:template match="xref[@linkend='</xsl:text>
   <xsl:value-of select="../@id"/><xsl:text>']"&gt;
-  &lt;xsl:text&gt;section </xsl:text>
+  &lt;xsl:text&gt;</xsl:text><xsl:value-of select="$sSection"/><xsl:text> </xsl:text>
   <xsl:value-of select="count(../../preceding-sibling::chapter) + 1"/><xsl:text>.</xsl:text>
   <xsl:value-of select="count(../preceding-sibling::sect1) + 1"/>
   <xsl:text> &quot;</xsl:text>
-  <xsl:value-of select="normalize-space()"/><xsl:text>&quot; of the user manual&lt;/xsl:text&gt;
+  <xsl:value-of select="normalize-space()"/><xsl:text>&quot; </xsl:text>
+  <xsl:value-of select="$sOfManual"/><xsl:text>&lt;/xsl:text&gt;
 &lt;/xsl:template&gt;
 </xsl:text>
   <xsl:apply-templates/>
@@ -90,12 +99,13 @@ Produce the transformation templates:
 <xsl:template match="sect2[@id]/title">
   <xsl:text>&lt;xsl:template match="xref[@linkend='</xsl:text>
   <xsl:value-of select="../@id"/><xsl:text>']"&gt;
-  &lt;xsl:text&gt;section </xsl:text>
+  &lt;xsl:text&gt;</xsl:text><xsl:value-of select="$sSection"/><xsl:text> </xsl:text>
   <xsl:value-of select="count(../../../preceding-sibling::chapter) + 1"/><xsl:text>.</xsl:text>
   <xsl:value-of select="count(../../preceding-sibling::sect1) + 1"/><xsl:text>.</xsl:text>
   <xsl:value-of select="count(../preceding-sibling::sect2) + 1"/>
   <xsl:text> &quot;</xsl:text>
-  <xsl:value-of select="normalize-space()"/><xsl:text>&quot; of the user manual&lt;/xsl:text&gt;
+  <xsl:value-of select="normalize-space()"/><xsl:text>&quot; </xsl:text>
+  <xsl:value-of select="$sOfManual"/><xsl:text>&lt;/xsl:text&gt;
 &lt;/xsl:template&gt;
 </xsl:text>
   <xsl:apply-templates/>
@@ -104,13 +114,14 @@ Produce the transformation templates:
 <xsl:template match="sect3[@id]/title">
   <xsl:text>&lt;xsl:template match="xref[@linkend='</xsl:text>
   <xsl:value-of select="../@id"/><xsl:text>']"&gt;
-  &lt;xsl:text&gt;section </xsl:text>
+  &lt;xsl:text&gt;</xsl:text><xsl:value-of select="$sSection"/><xsl:text> </xsl:text>
   <xsl:value-of select="count(../../../../preceding-sibling::chapter) + 1"/><xsl:text>.</xsl:text>
   <xsl:value-of select="count(../../../preceding-sibling::sect1) + 1"/><xsl:text>.</xsl:text>
   <xsl:value-of select="count(../../preceding-sibling::sect2) + 1"/><xsl:text>.</xsl:text>
   <xsl:value-of select="count(../preceding-sibling::sect3) + 1"/>
   <xsl:text> &quot;</xsl:text>
-  <xsl:value-of select="normalize-space()"/><xsl:text>&quot; of the user manual&lt;/xsl:text&gt;
+  <xsl:value-of select="normalize-space()"/><xsl:text>&quot; </xsl:text>
+  <xsl:value-of select="$sOfManual"/><xsl:text>&lt;/xsl:text&gt;
 &lt;/xsl:template&gt;
 </xsl:text>
   <xsl:apply-templates/>
@@ -120,7 +131,8 @@ Produce the transformation templates:
   <xsl:text>&lt;xsl:template match="xref[@linkend='</xsl:text>
   <xsl:value-of select="../@id"/><xsl:text>']"&gt;
   &lt;xsl:text&gt;&quot;</xsl:text>
-  <xsl:value-of select="normalize-space()"/><xsl:text>&quot; of the user manual&lt;/xsl:text&gt;
+  <xsl:value-of select="normalize-space()"/><xsl:text>&quot; </xsl:text>
+  <xsl:value-of select="$sOfManual"/><xsl:text>&lt;/xsl:text&gt;
 &lt;/xsl:template&gt;
 </xsl:text>
   <xsl:apply-templates/>

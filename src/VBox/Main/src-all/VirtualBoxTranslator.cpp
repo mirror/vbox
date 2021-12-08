@@ -225,6 +225,14 @@ HRESULT VirtualBoxTranslator::loadLanguage(ComPtr<IVirtualBox> aVirtualBox)
 }
 
 
+com::Utf8Str VirtualBoxTranslator::language()
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    return m_strLanguage;
+}
+
+
 int VirtualBoxTranslator::i_loadLanguage(const char *pszLang)
 {
     LogFlowFunc(("pszLang=%s\n", pszLang));

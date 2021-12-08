@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #include <VBox/version.h>
 
+#include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/assert.h>
@@ -79,6 +80,22 @@ void setCurrentSubcommand(uint64_t fSubcommandScope)
 }
 
 
+/**
+ * Takes first char and make it uppercase.
+ *
+ * @returns pointer to string starting from next char.
+ * @param   pszSrc            Source string.
+ * @param   pszFirstCharBuffer Pointer to buffer to place first char uppercase
+ */
+static const char *firstCharUppercase(const char *pszSrc, char *pszFirstCharBuffer)
+{
+    RTUNICP Cp;
+    RTStrGetCpEx(&pszSrc, &Cp);
+    char *pszBuffer = RTStrPutCp(pszFirstCharBuffer, Cp);
+    RTStrToUpper(pszBuffer);
+    pszBuffer[0] = 0;
+    return pszSrc;
+}
 
 
 /**
@@ -95,22 +112,38 @@ static uint32_t printBriefCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCo
     uint32_t cLinesWritten = 0;
     uint32_t cPendingBlankLines = 0;
     uint32_t cFound = 0;
-    for (uint32_t i = 0; i < g_cHelpEntries; i++)
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+    HELP_LANG_ENTRY *pHelpLangEntry[2] = {ASMAtomicReadPtrT(&g_pHelpLangEntry, HELP_LANG_ENTRY *), &g_apHelpLangEntries[0] };
+#else
+    HELP_LANG_ENTRY *pHelpLangEntry[1] = {(HELP_LANG_ENTRY *)g_pHelpLangEntry};
+#endif
+    /* Try to find translated, then untranslated */
+    for (int k = 0; k < RT_ELEMENTS(pHelpLangEntry) && cFound == 0; k++)
     {
-        PCRTMSGREFENTRY pHelp = g_apHelpEntries[i];
-        if (pHelp->idInternal == (int64_t)enmCommand)
+        /* skip if english is used */
+        if (k > 0 && pHelpLangEntry[k] == pHelpLangEntry[0])
+            break;
+        for (uint32_t i = 0; i < pHelpLangEntry[k]->cHelpEntries; i++)
         {
-            cFound++;
-            if (cFound == 1)
+            PCRTMSGREFENTRY pHelp = pHelpLangEntry[k]->papHelpEntries[i];
+            if (pHelp->idInternal == (int64_t)enmCommand)
             {
-                if (fSubcommandScope == RTMSGREFENTRYSTR_SCOPE_GLOBAL)
-                    RTStrmPrintf(pStrm, Help::tr("Usage - %c%s:\n"), RT_C_TO_UPPER(pHelp->pszBrief[0]), pHelp->pszBrief + 1);
-                else
-                    RTStrmPrintf(pStrm, Help::tr("Usage:\n"));
+                cFound++;
+                if (cFound == 1)
+                {
+                    if (fSubcommandScope == RTMSGREFENTRYSTR_SCOPE_GLOBAL)
+                    {
+                        char szFirstChar[16] = {0};
+                        const char *pszNext = firstCharUppercase(pHelp->pszBrief, szFirstChar);
+                        RTStrmPrintf(pStrm, Help::tr("Usage - %s%s:\n"), szFirstChar, pszNext);
+                    }
+                    else
+                        RTStrmPrintf(pStrm, Help::tr("Usage:\n"));
+                }
+                RTMsgRefEntryPrintStringTable(pStrm, &pHelp->Synopsis, fSubcommandScope, &cPendingBlankLines, &cLinesWritten);
+                if (!cPendingBlankLines)
+                    cPendingBlankLines = 1;
             }
-            RTMsgRefEntryPrintStringTable(pStrm, &pHelp->Synopsis, fSubcommandScope, &cPendingBlankLines, &cLinesWritten);
-            if (!cPendingBlankLines)
-                cPendingBlankLines = 1;
         }
     }
     Assert(cFound > 0);
@@ -141,16 +174,29 @@ static void printFullCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCommand
 {
     uint32_t cPendingBlankLines = 0;
     uint32_t cFound = 0;
-    for (uint32_t i = 0; i < g_cHelpEntries; i++)
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+    HELP_LANG_ENTRY *pHelpLangEntry[2] = {ASMAtomicReadPtrT(&g_pHelpLangEntry, HELP_LANG_ENTRY *), &g_apHelpLangEntries[0] };
+#else
+    HELP_LANG_ENTRY *pHelpLangEntry[1] = {(HELP_LANG_ENTRY *)g_pHelpLangEntry};
+#endif
+    /* Try to find translated, then untranslated */
+    for (int k = 0; k < RT_ELEMENTS(pHelpLangEntry) && cFound == 0; k++)
     {
-        PCRTMSGREFENTRY pHelp = g_apHelpEntries[i];
-        if (   pHelp->idInternal == (int64_t)enmCommand
-            || enmCommand == HELP_CMD_VBOXMANAGE_INVALID)
+        /* skip if english is used */
+        if (k > 0 && pHelpLangEntry[k] == pHelpLangEntry[0])
+            break;
+        for (uint32_t i = 0; i < pHelpLangEntry[k]->cHelpEntries; i++)
         {
-            cFound++;
-            RTMsgRefEntryPrintStringTable(pStrm, &pHelp->Help, fSubcommandScope, &cPendingBlankLines, NULL /*pcLinesWritten*/);
-            if (cPendingBlankLines < 2)
-                cPendingBlankLines = 2;
+            PCRTMSGREFENTRY pHelp = pHelpLangEntry[k]->papHelpEntries[i];
+
+            if (   pHelp->idInternal == (int64_t)enmCommand
+                || enmCommand == HELP_CMD_VBOXMANAGE_INVALID)
+            {
+                cFound++;
+                RTMsgRefEntryPrintStringTable(pStrm, &pHelp->Help, fSubcommandScope, &cPendingBlankLines, NULL /*pcLinesWritten*/);
+                if (cPendingBlankLines < 2)
+                    cPendingBlankLines = 2;
+            }
         }
     }
     Assert(cFound > 0);
@@ -988,15 +1034,23 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
     if (enmCommand == USAGE_S_ALL)
     {
         uint32_t cPendingBlankLines = 0;
-        for (uint32_t i = 0; i < g_cHelpEntries; i++)
+#ifdef VBOX_WITH_VBOXMANAGE_NLS
+        HELP_LANG_ENTRY *pHelpLangEntry = ASMAtomicReadPtrT(&g_pHelpLangEntry, HELP_LANG_ENTRY *);
+#else
+        HELP_LANG_ENTRY *pHelpLangEntry = (HELP_LANG_ENTRY *)g_pHelpLangEntry;
+#endif
+        for (uint32_t i = 0; i < pHelpLangEntry->cHelpEntries; i++)
         {
-            PCRTMSGREFENTRY pHelp = g_apHelpEntries[i];
+            PCRTMSGREFENTRY pHelp = pHelpLangEntry->papHelpEntries[i];
+
             while (cPendingBlankLines-- > 0)
                 RTStrmPutCh(pStrm, '\n');
-            RTStrmPrintf(pStrm, " %c%s:\n", RT_C_TO_UPPER(pHelp->pszBrief[0]), pHelp->pszBrief + 1);
+            char szFirstChar[16] = {0};
+            const char *pszNext = firstCharUppercase(pHelp->pszBrief, szFirstChar);
+            RTStrmPrintf(pStrm, " %s%s:\n", szFirstChar, pszNext);
             cPendingBlankLines = 0;
             RTMsgRefEntryPrintStringTable(pStrm, &pHelp->Synopsis, RTMSGREFENTRYSTR_SCOPE_GLOBAL,
-                                          &cPendingBlankLines, NULL /*pcLinesWritten*/);
+                                        &cPendingBlankLines, NULL /*pcLinesWritten*/);
             cPendingBlankLines = RT_MAX(cPendingBlankLines, 1);
         }
     }
