@@ -6667,7 +6667,7 @@
       <desc>Object containing all BIOS settings.</desc>
     </attribute>
 
-    <attribute name="TrustedPlatformModule" type="ITrustedPlatformModule" readonly="yes">
+    <attribute name="trustedPlatformModule" type="ITrustedPlatformModule" readonly="yes">
       <desc>Object containing all TPM settings.</desc>
     </attribute>
 
@@ -24350,7 +24350,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Array of NAT port-forwarding rules in string representation, in the following
         format: "name,protocol id,host ip,host port,guest ip,guest port".</desc>
     </attribute>
-    <attribute name="LocalhostReachable" type="boolean">
+    <attribute name="localhostReachable" type="boolean">
       <desc>Whether traffic from the guest directed to 10.0.2.2 will reach the
         host's loopback interface, i.e. localhost or 127.0.0.1.</desc>
     </attribute>
