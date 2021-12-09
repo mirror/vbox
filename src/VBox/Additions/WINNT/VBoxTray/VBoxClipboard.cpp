@@ -632,7 +632,21 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                             LPVOID lp = GlobalLock(hClip);
                             if (lp != NULL)
                             {
-                                rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, lp, (uint32_t)GlobalSize(hClip));
+                                /* Unwrap clipboard content from CF_HTML format if needed. */
+                                if (SharedClipboardWinIsCFHTML((const char *)lp))
+                                {
+                                    char        *pszBuf = NULL;
+                                    uint32_t    cbBuf   = 0;
+
+                                    rc = SharedClipboardWinConvertCFHTMLToMIME((const char *)lp, (uint32_t)GlobalSize(hClip), &pszBuf, &cbBuf);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, pszBuf, cbBuf);
+                                        RTMemFree(pszBuf);
+                                    }
+                                }
+                                else
+                                    rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, lp, (uint32_t)GlobalSize(hClip));
 
                                 GlobalUnlock(hClip);
                             }
