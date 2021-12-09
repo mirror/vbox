@@ -330,6 +330,24 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
                     && pvData
                     && cbData)
                 {
+                    /* Wrap HTML clipboard content info CF_HTML format if needed. */
+                    if (fFormat == VBOX_SHCL_FMT_HTML
+                        && !SharedClipboardWinIsCFHTML((char *)pvData))
+                    {
+                        char *pszWrapped = NULL;
+                        uint32_t cbWrapped = 0;
+                        rc = SharedClipboardWinConvertMIMEToCFHTML((char *)pvData, cbData, &pszWrapped, &cbWrapped);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /* Replace buffer with wrapped data content. */
+                            RTMemFree(pvData);
+                            pvData = (void *)pszWrapped;
+                            cbData = cbWrapped;
+                        }
+                        else
+                            LogRel(("Shared Clipboard: cannot convert HTML clipboard into CF_HTML format, rc=%Rrc\n", rc));
+                    }
+
                     rc = vboxClipboardSvcWinDataSet(pCtx, uFormat, pvData, cbData);
 
                     RTMemFree(pvData);
