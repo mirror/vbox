@@ -2240,7 +2240,7 @@ class TestDriver(base.TestDriver):                                              
                     reporter.log("    nat-network:    %s" % (oNic.NATNetwork,));
                 if self.fpApiVer >= 7.0 and hasattr(oNic.NATEngine.localhostReachable):
                     reporter.log("    localhostReachable: %s" % (oNic.NATEngine.localhostReachable,));
-                    
+
             elif oNic.attachmentType == vboxcon.NetworkAttachmentType_Bridged:
                 reporter.log("    attachmentType: Bridged (%s)" % (oNic.attachmentType,));
                 if self.fpApiVer >= 4.1:
