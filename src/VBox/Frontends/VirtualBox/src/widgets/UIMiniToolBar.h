@@ -119,8 +119,8 @@ private slots:
     /** Handles unhovering. */
     void sltHoverLeave();
 
-    /** Notifies listeners about we stole window activation. */
-    void sltNotifyAboutWindowActivationStolen() { emit sigNotifyAboutWindowActivationStolen(); }
+    /** Check whether we still have window activation token. */
+    void sltCheckWindowActivationSanity();
 
     /** Hides window. */
     void sltHide();
