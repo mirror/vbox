@@ -893,19 +893,24 @@ typedef const EPTPT *PCEPTPT;
 typedef enum
 {
     /** Invalidate a specific page. */
-    VMXTLBFLUSHVPID_INDIV_ADDR                 = 0,
+    VMXTLBFLUSHVPID_INDIV_ADDR                    = 0,
     /** Invalidate one context (specific VPID). */
-    VMXTLBFLUSHVPID_SINGLE_CONTEXT             = 1,
+    VMXTLBFLUSHVPID_SINGLE_CONTEXT                = 1,
     /** Invalidate all contexts (all VPIDs). */
-    VMXTLBFLUSHVPID_ALL_CONTEXTS               = 2,
+    VMXTLBFLUSHVPID_ALL_CONTEXTS                  = 2,
     /** Invalidate a single VPID context retaining global mappings. */
     VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS = 3,
     /** Unsupported by VirtualBox. */
-    VMXTLBFLUSHVPID_NOT_SUPPORTED              = 0xbad0,
+    VMXTLBFLUSHVPID_NOT_SUPPORTED                 = 0xbad0,
     /** Unsupported by CPU. */
-    VMXTLBFLUSHVPID_NONE                       = 0xbad1
+    VMXTLBFLUSHVPID_NONE                          = 0xbad1
 } VMXTLBFLUSHVPID;
 AssertCompileSize(VMXTLBFLUSHVPID, 4);
+/** Mask of all valid INVVPID flush types.  */
+#define VMX_INVVPID_VALID_MASK                    (  VMXTLBFLUSHVPID_INDIV_ADDR \
+                                                   | VMXTLBFLUSHVPID_SINGLE_CONTEXT \
+                                                   | VMXTLBFLUSHVPID_ALL_CONTEXTS \
+                                                   | VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
 
 /**
  * VMX EPT flush types.
@@ -923,6 +928,9 @@ typedef enum
     VMXTLBFLUSHEPT_NONE                        = 0xbad1
 } VMXTLBFLUSHEPT;
 AssertCompileSize(VMXTLBFLUSHEPT, 4);
+/** Mask of all valid INVEPT flush types.  */
+#define VMX_INVEPT_VALID_MASK                     (  VMXTLBFLUSHEPT_SINGLE_CONTEXT \
+                                                   | VMXTLBFLUSHEPT_ALL_CONTEXTS)
 
 /**
  * VMX Posted Interrupt Descriptor.
@@ -4221,6 +4229,14 @@ typedef enum
     kVmxVDiag_Invvpid_Type1InvalidVpid,
     kVmxVDiag_Invvpid_Type3InvalidVpid,
     kVmxVDiag_Invvpid_VmxRoot,
+    /* INVEPT. */
+    kVmxVDiag_Invept_Cpl,
+    kVmxVDiag_Invept_DescRsvd,
+    kVmxVDiag_Invept_EptpInvalid,
+    kVmxVDiag_Invept_LongModeCS,
+    kVmxVDiag_Invept_RealOrV86Mode,
+    kVmxVDiag_Invept_TypeInvalid,
+    kVmxVDiag_Invept_VmxRoot,
     /* VMLAUNCH/VMRESUME. */
     kVmxVDiag_Vmentry_AddrApicAccess,
     kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic,
