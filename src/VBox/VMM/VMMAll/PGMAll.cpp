@@ -3362,11 +3362,6 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
             GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_AMD64_PAGE_MASK;
             break;
 #endif
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        case PGMMODE_EPT:
-            GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_EPT_PAGE_MASK;
-            break;
-#endif
         default:
             AssertLogRelMsgFailedReturn(("enmGuestMode=%d\n", enmGuestMode), VERR_PGM_MODE_IPE);
     }
