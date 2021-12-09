@@ -5559,7 +5559,7 @@
     >
     <desc>
         The ITrustedPlatformModule interface represents the settings of the virtual
-        machine's trusted platform module. This is used only in the <link to="IMachine::TrustedPlatformModule"/> attribute.
+        machine's trusted platform module. This is used only in the <link to="IMachine::trustedPlatformModule"/> attribute.
     </desc>
 
     <attribute name="type" type="TpmType">
