@@ -302,7 +302,48 @@ FNIEMOP_STUB(iemOp_phminposuw_Vdq_Wdq);
 /*  Opcode 0x66 0x0f 0x38 0x7f - invalid. */
 
 /** Opcode 0x66 0x0f 0x38 0x80. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+FNIEMOP_DEF(iemOp_invept_Gy_Mdq)
+{
+    IEMOP_MNEMONIC(invept, "invept Gy,Mdq");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_HLP_IN_VMX_OPERATION("invept", kVmxVDiag_Invept);
+    IEMOP_HLP_VMX_INSTR("invept", kVmxVDiag_Invept);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* Register, memory. */
+        if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
+        {
+            IEM_MC_BEGIN(3, 0);
+            IEM_MC_ARG(uint8_t,  iEffSeg,         0);
+            IEM_MC_ARG(RTGCPTR,  GCPtrInveptDesc, 1);
+            IEM_MC_ARG(uint64_t, uInveptType,     2);
+            IEM_MC_FETCH_GREG_U64(uInveptType, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrInveptDesc, bRm, 0);
+            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_CALL_CIMPL_3(iemCImpl_invept, iEffSeg, GCPtrInveptDesc, uInveptType);
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(3, 0);
+            IEM_MC_ARG(uint8_t,  iEffSeg,         0);
+            IEM_MC_ARG(RTGCPTR,  GCPtrInveptDesc, 1);
+            IEM_MC_ARG(uint32_t, uInveptType,     2);
+            IEM_MC_FETCH_GREG_U32(uInveptType, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrInveptDesc, bRm, 0);
+            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_CALL_CIMPL_3(iemCImpl_invept, iEffSeg, GCPtrInveptDesc, uInveptType);
+            IEM_MC_END();
+        }
+    }
+    Log(("iemOp_invept_Gy_Mdq: invalid encoding -> #UD\n"));
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+#else
 FNIEMOP_STUB(iemOp_invept_Gy_Mdq);
+#endif
 
 /** Opcode 0x66 0x0f 0x38 0x81. */
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX

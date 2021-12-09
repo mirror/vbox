@@ -180,8 +180,6 @@
  *  VMX_EXIT_RSM
  *  VMX_EXIT_MONITOR (APIC access VM-exit caused by MONITOR pending)
  *  VMX_EXIT_ERR_MACHINE_CHECK (we never need to raise this?)
- *  VMX_EXIT_EPT_VIOLATION
- *  VMX_EXIT_EPT_MISCONFIG
  *  VMX_EXIT_INVEPT
  *  VMX_EXIT_RDRAND
  *  VMX_EXIT_VMFUNC
@@ -5932,22 +5930,22 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPUCC pVCpu, const char *pszInstr)
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   uEptPtr         The EPT pointer to check.
  * @param   penmVmxDiag     Where to store the diagnostic reason on failure (not
  *                          updated on success). Optional, can be NULL.
  */
-IEM_STATIC int iemVmxVmentryCheckEptPtr(PVMCPUCC pVCpu, VMXVDIAG *penmVmxDiag)
+IEM_STATIC int iemVmxVmentryCheckEptPtr(PVMCPUCC pVCpu, uint64_t uEptPtr, VMXVDIAG *penmVmxDiag)
 {
     VMXVDIAG enmVmxDiag;
-    PCVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
 
     /* Reserved bits. */
     uint8_t const  cMaxPhysAddrWidth = IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cMaxPhysAddrWidth;
     uint64_t const fValidMask        = VMX_EPTP_VALID_MASK & ~(UINT64_MAX << cMaxPhysAddrWidth);
-    if (pVmcs->u64EptPtr.u & fValidMask)
+    if (uEptPtr & fValidMask)
     {
         /* Memory Type. */
         uint64_t const fCaps    = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
-        uint8_t const  fMemType = RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_MEMTYPE);
+        uint8_t const  fMemType = RT_BF_GET(uEptPtr, VMX_BF_EPTP_MEMTYPE);
         if (   (   fMemType == VMX_EPTP_MEMTYPE_WB
                 && RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_MEMTYPE_WB))
             || (   fMemType == VMX_EPTP_MEMTYPE_UC
@@ -5960,10 +5958,10 @@ IEM_STATIC int iemVmxVmentryCheckEptPtr(PVMCPUCC pVCpu, VMXVDIAG *penmVmxDiag)
              * as the maximum supported page-walk level hence we hardcode it as 3 (1 less than 4)
              */
             Assert(RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4));
-            if (RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_PAGE_WALK_LENGTH) == 3)
+            if (RT_BF_GET(uEptPtr, VMX_BF_EPTP_PAGE_WALK_LENGTH) == 3)
             {
                 /* Access and dirty bits support in EPT structures. */
-                if (   !RT_BF_GET(pVmcs->u64EptPtr.u, VMX_BF_EPTP_ACCESS_DIRTY)
+                if (   !RT_BF_GET(uEptPtr, VMX_BF_EPTP_ACCESS_DIRTY)
                     ||  RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY))
                     return VINF_SUCCESS;
 
@@ -6195,7 +6193,7 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
         if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT)
         {
             VMXVDIAG enmVmxDiag;
-            int const rc = iemVmxVmentryCheckEptPtr(pVCpu, &enmVmxDiag);
+            int const rc = iemVmxVmentryCheckEptPtr(pVCpu, pVmcs->u64EptPtr.u, &enmVmxDiag);
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else
@@ -7588,12 +7586,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
                               pVCpu->cpum.GstCtx.msrEFER));
                         return VINF_SUCCESS;
                     }
-                    return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED,
-                                        pVmcs->u64RoExitQual.u);
+                    return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED, pVmcs->u64RoExitQual.u);
                 }
             }
-            return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_INVALID_GUEST_STATE | VMX_EXIT_REASON_ENTRY_FAILED,
-                                pVmcs->u64RoExitQual.u);
+            return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_INVALID_GUEST_STATE | VMX_EXIT_REASON_ENTRY_FAILED, pVmcs->u64RoExitQual.u);
         }
 
         iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_HOST_STATE);
@@ -8461,14 +8457,21 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
      * shortcuts here by  assuming the types we currently expose to the guest.
      */
     uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
-    uint8_t const fTypeIndivAddr              = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
-    uint8_t const fTypeSingleCtx              = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX);
-    uint8_t const fTypeAllCtx                 = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX);
-    uint8_t const fTypeSingleCtxRetainGlobals = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS);
-    if (   (fTypeIndivAddr              && u64InvvpidType == VMXTLBFLUSHVPID_INDIV_ADDR)
-        || (fTypeSingleCtx              && u64InvvpidType == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
-        || (fTypeAllCtx                 && u64InvvpidType == VMXTLBFLUSHVPID_ALL_CONTEXTS)
-        || (fTypeSingleCtxRetainGlobals && u64InvvpidType == VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS))
+    bool const fInvvpidSupported           = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID);
+    bool const fTypeIndivAddr              = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
+    bool const fTypeSingleCtx              = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX);
+    bool const fTypeAllCtx                 = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX);
+    bool const fTypeSingleCtxRetainGlobals = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS);
+
+    bool afSupportedTypes[4];
+    afSupportedTypes[0] = fTypeIndivAddr;
+    afSupportedTypes[1] = fTypeSingleCtx;
+    afSupportedTypes[2] = fTypeAllCtx;
+    afSupportedTypes[3] = fTypeSingleCtxRetainGlobals;
+
+    if (   fInvvpidSupported
+        && !(u64InvvpidType & ~(uint64_t)VMX_INVVPID_VALID_MASK)
+        && afSupportedTypes[u64InvvpidType & 3])
     { /* likely */ }
     else
     {
@@ -8587,6 +8590,135 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
     }
     return rcStrict;
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * INVEPT instruction execution worker.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   cbInstr             The instruction length in bytes.
+ * @param   iEffSeg             The segment of the invept descriptor.
+ * @param   GCPtrInveptDesc     The address of invept descriptor.
+ * @param   u64InveptType       The invalidation type.
+ * @param   pExitInfo           Pointer to the VM-exit information. Optional, can be
+ *                              NULL.
+ *
+ * @remarks Common VMX instruction checks are already expected to by the caller,
+ *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrInveptDesc,
+                                     uint64_t u64InveptType, PCVMXVEXITINFO pExitInfo)
+{
+    /* Check if EPT is supported, otherwise raise #UD. */
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxEpt)
+        return iemRaiseUndefinedOpcode(pVCpu);
+
+    /* Nested-guest intercept. */
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        if (pExitInfo)
+            return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
+        return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_INVEPT, VMXINSTRID_NONE, cbInstr);
+    }
+
+    /* CPL. */
+    if (pVCpu->iem.s.uCpl != 0)
+    {
+        Log(("invept: CPL != 0 -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /*
+     * Validate INVEPT invalidation type.
+     *
+     * The instruction specifies exactly ONE of the supported invalidation types.
+     *
+     * Each of the types has a bit in IA32_VMX_EPT_VPID_CAP MSR specifying if it is
+     * supported. In theory, it's possible for a CPU to not support flushing individual
+     * addresses but all the other types or any other combination. We do not take any
+     * shortcuts here by  assuming the types we currently expose to the guest.
+     */
+    uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
+    bool const fInveptSupported = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVEPT);
+    bool const fTypeSingleCtx   = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX);
+    bool const fTypeAllCtx      = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVEPT_ALL_CTX);
+
+    bool afSupportedTypes[4];
+    afSupportedTypes[0] = false;
+    afSupportedTypes[1] = fTypeSingleCtx;
+    afSupportedTypes[2] = fTypeAllCtx;
+    afSupportedTypes[3] = false;
+
+    if (   fInveptSupported
+        && !(u64InveptType & ~(uint64_t)VMX_INVEPT_VALID_MASK)
+        && afSupportedTypes[u64InveptType & 3])
+    { /* likely */ }
+    else
+    {
+        Log(("invept: invalid/unsupported invvpid type %#x -> VMFail\n", u64InveptType));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invept_TypeInvalid;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = u64InveptType;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Fetch the invvpid descriptor from guest memory.
+     */
+    RTUINT128U uDesc;
+    VBOXSTRICTRC rcStrict = iemMemFetchDataU128(pVCpu, &uDesc, iEffSeg, GCPtrInveptDesc);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        /*
+         * Validate the descriptor.
+         *
+         * The Intel spec. does not explicit say the INVEPT instruction fails when reserved
+         * bits in the descriptor are set, but it -does- for INVVPID. Until we test on real
+         * hardware, it's assumed INVEPT behaves the same as INVVPID in this regard. It's
+         * better to be strict in our emulation until proven otherwise.
+         */
+        if (uDesc.s.Hi)
+        {
+            Log(("invept: reserved bits set in invept descriptor %#RX64 -> VMFail\n", uDesc.s.Hi));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invept_DescRsvd;
+            pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = uDesc.s.Hi;
+            iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Flush TLB mappings based on the EPT type.
+         */
+        if (u64InveptType == VMXTLBFLUSHEPT_SINGLE_CONTEXT)
+        {
+            uint64_t const GCPhysEptPtr = uDesc.s.Lo;
+            int const rc = iemVmxVmentryCheckEptPtr(pVCpu, GCPhysEptPtr, NULL /* enmDiag */);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+            {
+                Log(("invept: EPTP invalid %#RX64 -> VMFail\n", GCPhysEptPtr));
+                pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invept_EptpInvalid;
+                pVCpu->cpum.GstCtx.hwvirt.vmx.uDiagAux = GCPhysEptPtr;
+                iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
+                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+                return VINF_SUCCESS;
+            }
+        }
+
+        /** @todo PGM support for EPT tags? Currently just flush everything. */
+        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
+        uint64_t const uCr3 = pVCpu->cpum.GstCtx.cr3;
+        PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+    }
+
+    return rcStrict;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 
 /**
@@ -8984,6 +9116,17 @@ IEM_CIMPL_DEF_3(iemCImpl_invvpid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvvpidDesc, u
 {
     return iemVmxInvvpid(pVCpu, cbInstr, iEffSeg, GCPtrInvvpidDesc, uInvvpidType, NULL /* pExitInfo */);
 }
+
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Implements 'INVEPT'.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_invept, uint8_t, iEffSeg, RTGCPTR, GCPtrInveptDesc, uint64_t, uInveptType)
+{
+    return iemVmxInvept(pVCpu, cbInstr, iEffSeg, GCPtrInveptDesc, uInveptType, NULL /* pExitInfo */);
+}
+#endif
 
 
 /**
