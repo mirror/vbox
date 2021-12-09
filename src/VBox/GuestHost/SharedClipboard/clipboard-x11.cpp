@@ -2036,17 +2036,17 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
                 }
                 else /* Raw data. */
                 {
-                   pvDst = RTMemAlloc(cbSrc);
-                   if(pvDst)
-                   {
-                        memcpy(pvDst, pvSrc, cbSrc);
-                        cbDst = cbSrc;
-                   }
-                   else
-                   {
-                        rc = VERR_NO_MEMORY;
-                        break;
-                   }
+                    pvDst = RTMemAllocZ(cbSrc + 1 /* '\0' */);
+                    if(pvDst)
+                    {
+                         memcpy(pvDst, pvSrc, cbSrc);
+                         cbDst = cbSrc + 1 /* '\0' */;
+                    }
+                    else
+                    {
+                         rc = VERR_NO_MEMORY;
+                         break;
+                    }
                 }
 
                 rc = VINF_SUCCESS;
