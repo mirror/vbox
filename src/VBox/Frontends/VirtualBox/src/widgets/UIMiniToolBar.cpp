@@ -586,8 +586,9 @@ void UIMiniToolBar::sltHoverLeave()
 
 void UIMiniToolBar::sltCheckWindowActivationSanity()
 {
-    /* Do nothing if other window is already active: */
-    if (QGuiApplication::focusWindow() != windowHandle())
+    /* Do nothing if parent window is already active: */
+    if (   m_pParent
+        && QGuiApplication::focusWindow() == m_pParent->windowHandle())
         return;
 
     /* We can't touch window activation if have modal or popup
@@ -1021,26 +1022,12 @@ bool UIMiniToolBar::eventFilter(QObject *pWatched, QEvent *pEvent)
         /* Just call the method asynchronously, after possible popups opened: */
         QTimer::singleShot(0, this, SLOT(sltCheckWindowActivationSanity()));
 #elif defined(VBOX_WS_X11)
-        switch (uiCommon().typeOfWindowManager())
-        {
-            case X11WMType_GNOMEShell:
-            case X11WMType_Mutter:
-            {
-                // WORKAROUND:
-                // Under certain WMs we can receive stolen activation event too early,
-                // returning activation to initial source immediately makes no sense.
-                // In fact, Qt is not become aware of actual window activation later,
-                // so we are going to return window activation in let's say 100ms.
-                QTimer::singleShot(100, this, SLOT(sltCheckWindowActivationSanity()));
-                break;
-            }
-            default:
-            {
-                /* Just call the method asynchronously, after possible popups opened: */
-                QTimer::singleShot(0, this, SLOT(sltCheckWindowActivationSanity()));
-                break;
-            }
-        }
+        // WORKAROUND:
+        // Under certain WMs we can receive stolen activation event too early,
+        // returning activation to initial source immediately makes no sense.
+        // In fact, Qt is not become aware of actual window activation later,
+        // so we are going to check for window activation in let's say 100ms.
+        QTimer::singleShot(100, this, SLOT(sltCheckWindowActivationSanity()));
 #endif /* VBOX_WS_X11 */
     }
 
