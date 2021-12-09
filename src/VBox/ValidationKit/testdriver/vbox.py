@@ -2462,7 +2462,7 @@ class TestDriver(base.TestDriver):                                              
                     sNic0MacAddr = '%02X' % (iGroup);
                 fRc = oSession.setNicMacAddress(sNic0MacAddr, 0);
             # Needed to reach the host (localhost) from the guest. See xTracker #9896.
-            if fRc and self.fpApiVer >= 7.0 and eNic0AttachType == vboxcon.NetworkAttachmentType_NAT:
+            if fRc and self.fpApiVer >= 7.0:
                 fRc = oSession.setNicLocalhostReachable(True, 0);
             if fRc and fNatForwardingForTxs is True:
                 fRc = oSession.setupNatForwardingForTxs();
@@ -2565,8 +2565,11 @@ class TestDriver(base.TestDriver):                                              
                         sNic0MacAddr = '%02X' % (iGroup,);
                     fRc = oSession.setNicMacAddress(sNic0MacAddr, 0);
                 # Needed to reach the host (localhost) from the guest. See xTracker #9896.
-                if fRc and self.fpApiVer >= 7.0 and eNic0AttachType == vboxcon.NetworkAttachmentType_NAT:
+                if fRc and self.fpApiVer >= 7.0:
                     fRc = oSession.setNicLocalhostReachable(True, 0);
+
+                if fRc and self.fEnableVrdp:
+                    fRc = oSession.setupVrdp(True, self.uVrdpBasePort + iGroup);
 
                 if fRc and fVmmDevTestingPart is not None:
                     fRc = oSession.enableVmmDevTestingPart(fVmmDevTestingPart, fVmmDevTestingMmio);
