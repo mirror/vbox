@@ -40,10 +40,10 @@
 #include "UIMainEventListener.h"
 
 /* Forward declarations: */
+class CGuestSessionStateChangedEvent;
 class UIActionPool;
 class UICustomFileSystemItem;
-class UIFileManagerGuestSessionPanel;
-class CGuestSessionStateChangedEvent;
+class UIGuestSessionCreateWidget;
 
 /** This class scans the guest file system by using the VBox Guest Control API
  *  and populates the UIGuestControlFileModel*/
@@ -63,6 +63,7 @@ public:
     void copyHostToGuest(const QStringList &hostSourcePathList,
                          const QString &strDestination = QString());
     QUuid machineId();
+    bool isGuestSessionRunning() const;
 
 protected:
 
@@ -93,8 +94,8 @@ protected:
 private slots:
 
     void sltGuestSessionPanelToggled(bool fChecked);
-    void sltHandleGuestSessionPanelHidden();
-    void sltHandleGuestSessionPanelShown();
+    // void sltHandleGuestSessionPanelHidden();
+    // void sltHandleGuestSessionPanelShown();
     void sltGuestSessionUnregistered(CGuestSession guestSession);
     void sltGuestSessionRegistered(CGuestSession guestSession);
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
@@ -135,7 +136,6 @@ private:
 
     void prepareGuestSessionPanel();
 
-
     bool openGuestSession(const QString& strUserName, const QString& strPassword);
     void closeGuestSession();
 
@@ -165,7 +165,8 @@ private:
     CEventListener m_comSessionListener;
     CEventListener m_comGuestListener;
     CEventListener m_comConsoleListener;
-    UIFileManagerGuestSessionPanel     *m_pGuestSessionPanel;
+    UIGuestSessionCreateWidget *m_pGuestSessionPanel;
+;
     CheckMachine m_enmCheckMachine;
 };
 

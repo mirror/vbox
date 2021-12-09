@@ -118,7 +118,7 @@ UIFileManager::UIFileManager(EmbedTo enmEmbedding, UIActionPool *pActionPool,
     , m_pVerticalSplitter(0)
     , m_pFileTableSplitter(0)
     , m_pToolBar(0)
-    , m_pVerticalToolBar(0)\
+    , m_pVerticalToolBar(0)
     , m_pHostFileTable(0)
     , m_pGuestTablesContainer(0)
     , m_enmEmbedding(enmEmbedding)
@@ -662,7 +662,8 @@ void UIFileManager::removeTabs(const QVector<QUuid> &machineIdsToRemove)
     for (int i = m_pGuestTablesContainer->count() - 1; i >= 0; --i)
     {
         UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
-        if (!pTable)
+        /* Keep the tabs with running guest control session even if the corresponding vm has been de-selected. */
+        if (!pTable || pTable->isGuestSessionRunning())
             continue;
         if (machineIdsToRemove.contains(pTable->machineId()))
         {

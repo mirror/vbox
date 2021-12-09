@@ -1736,8 +1736,8 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Session"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open guest session panel of the file manager"));
-        setToolTip(  QApplication::translate("UIActionPool", "Open Guest Session Panel")
+        setStatusTip(QApplication::translate("UIActionPool", "Toggle guest session panel of the file manager"));
+        setToolTip(  QApplication::translate("UIActionPool", "Toggle Guest Session Panel")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
