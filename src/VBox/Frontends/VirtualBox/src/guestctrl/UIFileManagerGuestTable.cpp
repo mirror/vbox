@@ -52,7 +52,7 @@
 *   UIGuestSessionCreateWidget definition.                                                                                   *
 *********************************************************************************************************************************/
 /** A QWidget extension containing text entry fields for password and username and buttons to
- *  start/stop a guest session. */
+  *  start/stop a guest session. */
 class UIGuestSessionCreateWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -392,7 +392,7 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
 
     if (!m_comMachine.isNull() && m_comMachine.GetState() == KMachineState_Running)
         openMachineSession();
-    setSessionDependentWidgetsEnabled(isSessionPossible());
+    setStateAndEnableWidgets();
 
     retranslateUi();
 }
@@ -419,18 +419,18 @@ void UIFileManagerGuestTable::retranslateUi()
     if (m_pWarningLabel)
     {
         QString strWarningText;
-        switch (m_enmCheckMachine)
+        switch (m_enmState)
         {
-            case CheckMachine_InvalidMachineReference:
+            case State_InvalidMachineReference:
                 strWarningText = UIFileManager::tr("Machine reference is invalid.");
                 break;
-            case CheckMachine_MachineNotRunning:
+            case State_MachineNotRunning:
                 strWarningText = UIFileManager::tr("File manager cannot work since it works only with running guests.");
                 break;
-            case CheckMachine_NoGuestAdditions:
+            case State_NoGuestAdditions:
                 strWarningText = UIFileManager::tr("File manager cannot work since it needs running guest additions in the guest system.");
                 break;
-            case CheckMachine_SessionPossible:
+            case State_SessionPossible:
             default:
                 break;
         }
@@ -1085,18 +1085,6 @@ void UIFileManagerGuestTable::sltGuestSessionPanelToggled(bool fChecked)
         m_pGuestSessionPanel->setVisible(fChecked);
 }
 
-// void UIFileManagerGuestTable::sltHandleGuestSessionPanelHidden()
-// {
-//     if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
-//         m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession)->setChecked(false);
-// }
-
-// void UIFileManagerGuestTable::sltHandleGuestSessionPanelShown()
-// {
-//     if (m_pActionPool && m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
-//         m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession)->setChecked(true);
-// }
-
 void UIFileManagerGuestTable::sltMachineStateChange(const QUuid &uMachineId, const KMachineState enmMachineState)
 {
     if (uMachineId.isNull() || m_comMachine.isNull() || uMachineId != m_comMachine.GetId())
@@ -1108,9 +1096,7 @@ void UIFileManagerGuestTable::sltMachineStateChange(const QUuid &uMachineId, con
         return;
     else
         cleanAll();
-
-    setSessionDependentWidgetsEnabled(isSessionPossible());
-    retranslateUi();
+    setStateAndEnableWidgets();
 }
 
 bool UIFileManagerGuestTable::closeMachineSession()
@@ -1255,7 +1241,7 @@ void UIFileManagerGuestTable::cleanupListener(ComObjPtr<UIMainEventListenerImpl>
         return;
     /* Unregister everything: */
     QtListener->getWrapped()->unregisterSources();
-
+    QtListener.setNull();
     /* Make sure VBoxSVC is available: */
     if (!uiCommon().isVBoxSVCAvailable())
         return;
@@ -1293,15 +1279,14 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
     if (m_comGuestSession.isOk())
     {
         if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
-        {
             initFileTable();
-            postGuestSessionCreated();
-        }
         emit sigLogOutput(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
                   m_strTableName, FileManagerLogType_Info);
     }
     else
         emit sigLogOutput("Guest session is not valid", m_strTableName, FileManagerLogType_Error);
+    postGuestSessionCreated();
+    setStateAndEnableWidgets();
 }
 
 void UIFileManagerGuestTable::sltCreateGuestSession(QString strUserName, QString strPassword)
@@ -1317,31 +1302,40 @@ void UIFileManagerGuestTable::sltCreateGuestSession(QString strUserName, QString
         m_pGuestSessionPanel->markForError(!openGuestSession(strUserName, strPassword));
 }
 
-bool UIFileManagerGuestTable::isSessionPossible()
+void UIFileManagerGuestTable::setState()
 {
     if (m_comMachine.isNull())
     {
-        m_enmCheckMachine = CheckMachine_InvalidMachineReference;
-        return false;
+        m_enmState = State_InvalidMachineReference;
+        return;
     }
     if (m_comMachine.GetState() != KMachineState_Running)
     {
-        m_enmCheckMachine = CheckMachine_MachineNotRunning;
-        return false;
+        m_enmState = State_MachineNotRunning;
+        return;
     }
     if (!isGuestAdditionsAvailable())
     {
-        m_enmCheckMachine = CheckMachine_NoGuestAdditions;
-        return false;
+        m_enmState = State_NoGuestAdditions;
+        return;
     }
-    m_enmCheckMachine = CheckMachine_SessionPossible;
-    return true;
+    if (!m_comGuestSession.isNull() && m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
+    {
+        m_enmState = State_SessionRunning;
+        return;
+    }
+    m_enmState = State_SessionPossible;
+}
+
+void UIFileManagerGuestTable::setStateAndEnableWidgets()
+{
+    setState();
+    setSessionDependentWidgetsEnabled();
+    retranslateUi();
 }
 
 void UIFileManagerGuestTable::sltHandleCloseSessionRequest()
 {
-    cleanupGuestSessionListener();
-
     closeGuestSession();
 }
 
@@ -1354,15 +1348,33 @@ void UIFileManagerGuestTable::sltCommitDataSignalReceived()
 
 void UIFileManagerGuestTable::sltAdditionsStateChange()
 {
-    setSessionDependentWidgetsEnabled(isSessionPossible());
-
+    setStateAndEnableWidgets();
 }
 
-void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled(bool pEnabled)
+void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled()
 {
-    UIFileManagerTable::setSessionDependentWidgetsEnabled(pEnabled);
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->setEnabled(pEnabled);
+    switch (m_enmState)
+    {
+        case State_InvalidMachineReference:
+        case State_MachineNotRunning:
+        case State_NoGuestAdditions:
+            setSessionWidgetsEnabled(false);
+            m_pWarningLabel->setVisible(true);
+            m_pGuestSessionPanel->setEnabled(false);
+            break;
+        case State_SessionPossible:
+            setSessionWidgetsEnabled(false);
+            m_pWarningLabel->setVisible(true);
+            m_pGuestSessionPanel->setEnabled(true);
+            break;
+        case State_SessionRunning:
+            setSessionWidgetsEnabled(true);
+            m_pWarningLabel->setVisible(false);
+            m_pGuestSessionPanel->setEnabled(true);
+            break;
+        default:
+            break;
+    }
 }
 
 bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const QString &strPassword)
@@ -1407,18 +1419,23 @@ bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const
 
 void UIFileManagerGuestTable::closeGuestSession()
 {
+    cleanupGuestSessionListener();
     if (!m_comGuestSession.isNull())
-    {
         m_comGuestSession.Close();
-        m_comGuestSession.detach();
-        emit sigLogOutput("Guest session is closed", m_strTableName, FileManagerLogType_Info);
-    }
-    reset();
-    postGuestSessionClosed();
+    // if (!m_comGuestSession.isNull())
+    // {
+    //     m_comGuestSession.Close();
+    //     m_comGuestSession.detach();
+    //     emit sigLogOutput("Guest session is closed", m_strTableName, FileManagerLogType_Info);
+    // }
+    // reset();
+    // postGuestSessionClosed();
 }
 
 void UIFileManagerGuestTable::cleanAll()
 {
+    printf("UIFileManagerGuestTable::cleanAll()\n");
+
     cleanupConsoleListener();
     cleanupGuestListener();
     cleanupGuestSessionListener();

@@ -532,9 +532,4 @@ void UIFileManagerHostTable::prepareActionConnections()
             this, &UIFileManagerTable::sltCreateNewDirectory);
 }
 
-bool UIFileManagerHostTable::isSessionPossible()
-{
-    return true;
-}
-
 #include "UIFileManagerHostTable.moc"

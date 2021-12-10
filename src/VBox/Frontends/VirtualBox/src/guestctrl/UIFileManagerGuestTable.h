@@ -86,16 +86,12 @@ protected:
         virtual void  setPasteActionEnabled(bool fEnabled) override final;
         virtual void  pasteCutCopiedObjects() override final;
     /** @} */
-    /** Returns false if it is not possible to open a guest session on the machine.
-      * That is if machine is not running etc. */
-    virtual bool isSessionPossible() override final;
-    virtual void  setSessionDependentWidgetsEnabled(bool fEnabled) override final;
+    virtual void  setState();
+    virtual void  setSessionDependentWidgetsEnabled();
 
 private slots:
 
     void sltGuestSessionPanelToggled(bool fChecked);
-    // void sltHandleGuestSessionPanelHidden();
-    // void sltHandleGuestSessionPanelShown();
     void sltGuestSessionUnregistered(CGuestSession guestSession);
     void sltGuestSessionRegistered(CGuestSession guestSession);
     void sltGuestSessionStateChanged(const CGuestSessionStateChangedEvent &cEvent);
@@ -107,12 +103,14 @@ private slots:
 
 private:
 
-    enum CheckMachine
+    enum State
     {
-        CheckMachine_InvalidMachineReference,
-        CheckMachine_MachineNotRunning,
-        CheckMachine_NoGuestAdditions,
-        CheckMachine_SessionPossible
+        State_InvalidMachineReference,
+        State_MachineNotRunning,
+        State_NoGuestAdditions,
+        State_SessionPossible,
+        State_SessionRunning,
+        State_Max
     };
 
     KFsObjType  fileType(const CFsObjInfo &fsInfo);
@@ -133,16 +131,13 @@ private:
     void cleanupGuestListener();
     void cleanupGuestSessionListener();
     void cleanupConsoleListener();
-
     void prepareGuestSessionPanel();
-
     bool openGuestSession(const QString& strUserName, const QString& strPassword);
     void closeGuestSession();
-
     bool openMachineSession();
     bool closeMachineSession();
-
     bool isGuestAdditionsAvailable();
+    void setStateAndEnableWidgets();
 
     /** @name Perform operations needed after creating/ending a guest control session
       * @{ */
@@ -167,7 +162,7 @@ private:
     CEventListener m_comConsoleListener;
     UIGuestSessionCreateWidget *m_pGuestSessionPanel;
 ;
-    CheckMachine m_enmCheckMachine;
+    State m_enmState;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerGuestTable_h */

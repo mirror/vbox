@@ -745,14 +745,20 @@ void UIFileManagerTable::prepareObjects()
 
         m_pToolBar = new QIToolBar;
         if (m_pToolBar)
+        {
             m_pToolBarLayout->addWidget(m_pToolBar);
+            m_sessionWidgets << m_pToolBar;
+        }
 
         m_pMainLayout->addLayout(m_pToolBarLayout, 0, 0, 1, 7);
     }
 
     m_pLocationLabel = new QILabel;
     if (m_pLocationLabel)
+    {
         m_pMainLayout->addWidget(m_pLocationLabel, 1, 0, 1, 1);
+        m_sessionWidgets << m_pLocationLabel;
+    }
 
     m_pNavigationWidget = new UIFileManagerNavigationWidget;
     if (m_pNavigationWidget)
@@ -761,6 +767,7 @@ void UIFileManagerTable::prepareObjects()
         connect(m_pNavigationWidget, &UIFileManagerNavigationWidget::sigPathChanged,
                 this, &UIFileManagerTable::sltHandleNavigationWidgetPathChange);
         m_pMainLayout->addWidget(m_pNavigationWidget, 1, 1, 1, 6);
+        m_sessionWidgets << m_pNavigationWidget;
     }
 
     m_pModel = new UICustomFileSystemModel(this);
@@ -803,6 +810,7 @@ void UIFileManagerTable::prepareObjects()
                 this, &UIFileManagerTable::sltCreateFileViewContextMenu);
         m_pView->hideColumn(UICustomFileSystemModelColumn_Path);
         m_pView->hideColumn(UICustomFileSystemModelColumn_LocalPath);
+        m_sessionWidgets << m_pView;
     }
     m_pWarningLabel = new QILabel(this);
     if (m_pWarningLabel)
@@ -820,7 +828,6 @@ void UIFileManagerTable::prepareObjects()
         m_pWarningLabel->setWordWrap(true);
     }
     m_pWarningLabel->setVisible(false);
-    // m_pView->setVisible(isSessionPossible());
 
     m_pSearchLineEdit = new QILineEdit;
     if (m_pSearchLineEdit)
@@ -1612,18 +1619,12 @@ void UIFileManagerTable::markUnmarkSearchLineEdit(bool fMark)
     m_pSearchLineEdit->setPalette(palette);
 }
 
-void UIFileManagerTable::setSessionDependentWidgetsEnabled(bool fEnabled)
+void UIFileManagerTable::setSessionWidgetsEnabled(bool fEnabled)
 {
-    if (m_pWarningLabel)
-        m_pWarningLabel->setVisible(!fEnabled);
-    if (m_pView)
-        m_pView->setEnabled(fEnabled);
-    if (m_pNavigationWidget)
-        m_pNavigationWidget->setEnabled(fEnabled);
-    if (m_pLocationLabel)
-        m_pLocationLabel->setEnabled(fEnabled);
-    if (m_pToolBar)
-        m_pToolBar->setEnabled(fEnabled);
+    foreach (QWidget *pWidget, m_sessionWidgets)
+    {
+        if (pWidget)
+            pWidget->setEnabled(fEnabled);
+    }
 }
-
 #include "UIFileManagerTable.moc"
