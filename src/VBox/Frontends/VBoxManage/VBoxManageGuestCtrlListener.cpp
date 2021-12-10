@@ -206,7 +206,6 @@ void GuestSessionEventListener::uninit(void)
                 if (!pES.isNull())
                     CHECK_ERROR_BREAK(pES, UnregisterListener(itProc->second.mListener));
             } while (0);
-            itProc->first->Release();
         }
 
         ++itProc;
@@ -227,7 +226,6 @@ void GuestSessionEventListener::uninit(void)
                 if (!pES.isNull())
                     CHECK_ERROR_BREAK(pES, UnregisterListener(itFile->second.mListener));
             } while (0);
-            itFile->first->Release();
         }
 
         ++itFile;
@@ -293,7 +291,6 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
                             CHECK_ERROR(itFile->first, COMGETTER(EventSource)(pES.asOutParam()));
                             if (!pES.isNull())
                                 CHECK_ERROR(pES, UnregisterListener(itFile->second.mListener));
-                            itFile->first->Release();
                         }
 
                         mFiles.erase(itFile);
@@ -358,7 +355,6 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
                             CHECK_ERROR(itProc->first, COMGETTER(EventSource)(pES.asOutParam()));
                             if (!pES.isNull())
                                 CHECK_ERROR(pES, UnregisterListener(itProc->second.mListener));
-                            itProc->first->Release();
                         }
 
                         mProcs.erase(itProc);
@@ -433,7 +429,6 @@ void GuestEventListener::uninit(void)
                     CHECK_ERROR_BREAK(pES, UnregisterListener(itSession->second.mListener));
 
             } while (0);
-            itSession->first->Release();
         }
 
         ++itSession;
@@ -502,7 +497,6 @@ STDMETHODIMP GuestEventListener::HandleEvent(VBoxEventType_T aType, IEvent *aEve
                             CHECK_ERROR_BREAK(itSession->first, COMGETTER(EventSource)(pES.asOutParam()));
                             if (!pES.isNull())
                                 CHECK_ERROR_BREAK(pES, UnregisterListener(itSession->second.mListener));
-                            itSession->first->Release();
                         }
 
                         mSessions.erase(itSession);
