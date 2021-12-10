@@ -1877,6 +1877,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     def gctrlCopyFileTo(self, oGuestSession, sSrc, sDst, afFlags, fIsError):
         """
         Helper function to copy a single file from the host to the guest.
+
+        afFlags is either None or an array of vboxcon.DirectoryCopyFlag_Xxxx values.
         """
         reporter.log2('Copying host file "%s" to guest "%s" (flags %s)' % (limitString(sSrc), limitString(sDst), afFlags));
         try:
@@ -1905,16 +1907,22 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     def gctrlCopyDirTo(self, oGuestSession, sSrc, sDst, afFlags, fIsError):
         """
         Helper function to copy a directory (tree) from the host to the guest.
+
+        afFlags is either None or an array of vboxcon.DirectoryCopyFlag_Xxxx values.
         """
         reporter.log2('Copying host directory "%s" to guest "%s" (flags %s)' % (limitString(sSrc), limitString(sDst), afFlags));
         try:
             if self.oTstDrv.fpApiVer >= 7.0:
                 ## @todo Make the following new flags implicit for 7.0 for now. Develop dedicated tests for this later and remove.
-                if vboxcon.DirectoryCopyFlag_Recursive not in afFlags:
-                    afFlags.extend([ vboxcon.DirectoryCopyFlag_Recursive ]);
+                if not afFlags:
+                    afFlags = [ vboxcon.DirectoryCopyFlag_Recursive, ];
+                elif vboxcon.DirectoryCopyFlag_Recursive not in afFlags:
+                    afFlags.append(vboxcon.DirectoryCopyFlag_Recursive);
                 ## @todo Ditto.
-                if vboxcon.DirectoryCopyFlag_FollowLinks not in afFlags:
-                    afFlags.extend([ vboxcon.DirectoryCopyFlag_FollowLinks ]);
+                if not afFlags:
+                    afFlags = [vboxcon.DirectoryCopyFlag_FollowLinks,];
+                elif vboxcon.DirectoryCopyFlag_FollowLinks not in afFlags:
+                    afFlags.append(vboxcon.DirectoryCopyFlag_FollowLinks);
             oCurProgress = oGuestSession.directoryCopyToGuest(sSrc, sDst, afFlags);
         except:
             reporter.maybeErrXcpt(fIsError, 'sSrc=%s sDst=%s' % (sSrc, sDst,));
@@ -4650,8 +4658,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             [ tdTestCopyToFile(sDst = oTestVm.pathJoin(sScratchGst, 'dstfile')), tdTestResultFailure() ],
             [ tdTestCopyToDir( sDst = sScratchGst), tdTestResultFailure() ],
             # Both given, but invalid flags.
-            [ tdTestCopyToFile(sSrc = sBigFileHst, sDst = sScratchGst, afFlags = [ 0x40000000] ), tdTestResultFailure() ],
-            [ tdTestCopyToDir( sSrc = sScratchEmptyDirHst, sDst = sScratchGst, afFlags = [ 0x40000000] ),
+            [ tdTestCopyToFile(sSrc = sBigFileHst, sDst = sScratchGst, afFlags = [ 0x40000000, ] ), tdTestResultFailure() ],
+            [ tdTestCopyToDir( sSrc = sScratchEmptyDirHst, sDst = sScratchGst, afFlags = [ 0x40000000, ] ),
               tdTestResultFailure() ],
         ];
         atTests.extend([
@@ -4720,18 +4728,18 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if self.oTstDrv.fpApiVer > 5.2: # Copying directories via Main is supported only in versions > 5.2.
             atTests.extend([
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir1Gst,
-                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),  tdTestResultSuccess() ],
+                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]),  tdTestResultSuccess() ],
                 # Try again.
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir1Gst,
-                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),  tdTestResultSuccess() ],
+                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]),  tdTestResultSuccess() ],
                 # Should fail, as destination directory already exists.
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir1Gst),   tdTestResultFailure() ],
                 # Try again with trailing slash, should yield the same result:
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep(),
-                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),  tdTestResultSuccess() ],
+                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]),  tdTestResultSuccess() ],
                 # Try again.
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep(),
-                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),  tdTestResultSuccess() ],
+                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]),  tdTestResultSuccess() ],
                 # Should fail, as destination directory already exists.
                 [ tdTestCopyToDir(sSrc = sScratchEmptyDirHst, sDst = sScratchDstDir2Gst + oTestVm.pathSep()),
                   tdTestResultFailure() ],
@@ -4743,17 +4751,17 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             atTests.extend([
                 # Now the same using a directory with files in it:
                 [ tdTestCopyToDir(sSrc = sScratchNonEmptyDirHst, sDst = sScratchDstDir3Gst,
-                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),   tdTestResultSuccess() ],
+                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]),   tdTestResultSuccess() ],
                 # Again.
                 [ tdTestCopyToDir(sSrc = sScratchNonEmptyDirHst, sDst = sScratchDstDir3Gst,
-                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]),   tdTestResultSuccess() ],
+                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]),   tdTestResultSuccess() ],
                 # Should fail, as directory is existing already.
                 [ tdTestCopyToDir(sSrc = sScratchNonEmptyDirHst, sDst = sScratchDstDir3Gst), tdTestResultFailure() ],
             ]);
             atTests.extend([
                 # Copy the entire test tree:
                 [ tdTestCopyToDir(sSrc = sScratchTreeDirHst, sDst = sScratchDstDir4Gst,
-                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting]), tdTestResultSuccess() ],
+                                  afFlags = [vboxcon.DirectoryCopyFlag_CopyIntoExisting, ]), tdTestResultSuccess() ],
             ]);
 
         fRc = True;
