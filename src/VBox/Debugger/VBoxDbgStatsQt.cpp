@@ -2028,7 +2028,7 @@ VBoxDbgStatsModel::iterateStatsByPattern(QString const &a_rPatStr, VBoxDbgStatsM
 
     DBGGUISTATSSTACK Stack;
     Stack.a[0].pNode   = m_pRoot;
-    Stack.a[0].iChild  = -1;
+    Stack.a[0].iChild  = 0;
     Stack.a[0].cchName = 0;
     Stack.iTop         = 0;
 
@@ -2040,7 +2040,7 @@ VBoxDbgStatsModel::iterateStatsByPattern(QString const &a_rPatStr, VBoxDbgStatsM
         /* get top element */
         PDBGGUISTATSNODE const pNode   = Stack.a[Stack.iTop].pNode;
         uint16_t               cchName = Stack.a[Stack.iTop].cchName;
-        uint32_t const         iChild  = ++Stack.a[Stack.iTop].iChild;
+        uint32_t const         iChild  = Stack.a[Stack.iTop].iChild++;
         if (iChild < pNode->cChildren)
         {
             PDBGGUISTATSNODE pChild = pNode->papChildren[iChild];
