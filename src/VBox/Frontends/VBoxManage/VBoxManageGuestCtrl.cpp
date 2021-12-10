@@ -374,6 +374,7 @@ static BOOL WINAPI gctlSignalHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
         case CTRL_CLOSE_EVENT:
         case CTRL_C_EVENT:
             ASMAtomicWriteBool(&g_fGuestCtrlCanceled, true);
+            RTSemEventSignal(g_SemEventGuestCtrlCanceled);
             fEventHandled = TRUE;
             break;
         default:
@@ -393,8 +394,9 @@ static BOOL WINAPI gctlSignalHandler(DWORD dwCtrlType) RT_NOTHROW_DEF
  */
 static void gctlSignalHandler(int iSignal) RT_NOTHROW_DEF
 {
-    NOREF(iSignal);
+    RT_NOREF(iSignal);
     ASMAtomicWriteBool(&g_fGuestCtrlCanceled, true);
+    RTSemEventSignal(g_SemEventGuestCtrlCanceled);
 }
 #endif
 
@@ -3678,7 +3680,6 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
     }
 
     /** @todo Specify categories to watch for. */
-    /** @todo Specify a --timeout for waiting only for a certain amount of time? */
 
     RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
@@ -3793,7 +3794,7 @@ RTEXITCODE handleGuestControl(HandlerArg *pArg)
         { "closeprocess",       gctlHandleCloseProcess,     HELP_SCOPE_GSTCTRL_CLOSEPROCESS, GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
         { "closesession",       gctlHandleCloseSession,     HELP_SCOPE_GSTCTRL_CLOSESESSION, GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
         { "list",               gctlHandleList,             HELP_SCOPE_GSTCTRL_LIST,         GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
-        { "watch",              gctlHandleWatch,            HELP_SCOPE_GSTCTRL_WATCH,        GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
+        { "watch",              gctlHandleWatch,            HELP_SCOPE_GSTCTRL_WATCH,        GCTLCMDCTX_F_SESSION_ANONYMOUS },
 
         {"updateguestadditions",gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
         { "updateadditions",    gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
