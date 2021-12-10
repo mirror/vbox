@@ -260,23 +260,23 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_COPYFROM)
         RTStrmPrintf(pStrm,
                      "                              copyfrom [common-options]\n"
-                     "                              [--follow] [-R|--recursive]\n"
+                     "                              [-L|--dereference] [-R|--recursive]\n"
                      "                              <guest-src0> [guest-src1 [...]] <host-dst>\n"
                      "\n"
                      "                              copyfrom [common-options]\n"
-                     "                              [--follow] [-R|--recursive]\n"
-                     "                              [--target-directory <host-dst-dir>]\n"
+                     "                              [-L|--dereference] [-R|--recursive]\n"
+                     "                              [-t|--target-directory <host-dst-dir>]\n"
                      "                              <guest-src0> [guest-src1 [...]]\n"
                      "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_COPYTO)
         RTStrmPrintf(pStrm,
                      "                              copyto [common-options]\n"
-                     "                              [--follow] [-R|--recursive]\n"
+                     "                              [-L|--dereference] [-R|--recursive]\n"
                      "                              <host-src0> [host-src1 [...]] <guest-dst>\n"
                      "\n"
                      "                              copyto [common-options]\n"
-                     "                              [--follow] [-R|--recursive]\n"
-                     "                              [--target-directory <guest-dst>]\n"
+                     "                              [-L|--dereference] [-R|--recursive]\n"
+                     "                              [-t|--target-directory <guest-dst>]\n"
                      "                              <host-src0> [host-src1 [...]]\n"
                      "\n");
     if (fSubcommandScope & HELP_SCOPE_GSTCTRL_MKDIR)
@@ -1723,31 +1723,18 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
-    /** @todo r=bird: This command isn't very unix friendly in general. mkdir
-     * is much better (partly because it is much simpler of course).  The main
-     * arguments against this is that (1) all but two options conflicts with
-     * what 'man cp' tells me on a GNU/Linux system, (2) wildchar matching is
-     * done windows CMD style (though not in a 100% compatible way), and (3)
-     * that only one source is allowed - efficiently sabotaging default
-     * wildcard expansion by a unix shell.  The best solution here would be
-     * two different variant, one windowsy (xcopy) and one unixy (gnu cp). */
-
     /*
      * IGuest::CopyToGuest is kept as simple as possible to let the developer choose
      * what and how to implement the file enumeration/recursive lookup, like VBoxManage
      * does in here.
      */
-    enum GETOPTDEF_COPY
-    {
-        GETOPTDEF_COPY_FOLLOW = 1000,
-        GETOPTDEF_COPY_TARGETDIR
-    };
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
-        { "--follow",              GETOPTDEF_COPY_FOLLOW,           RTGETOPT_REQ_NOTHING },
-        { "--recursive",           'R',                             RTGETOPT_REQ_NOTHING },
-        { "--target-directory",    GETOPTDEF_COPY_TARGETDIR,        RTGETOPT_REQ_STRING  }
+        { "--follow",              'L',     RTGETOPT_REQ_NOTHING }, /* Kept for backwards-compatibility (VBox < 7.0). */
+        { "--dereference",         'L',     RTGETOPT_REQ_NOTHING },
+        { "--recursive",           'R',     RTGETOPT_REQ_NOTHING },
+        { "--target-directory",    't',     RTGETOPT_REQ_STRING  }
     };
 
     int ch;
@@ -1770,15 +1757,17 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
         {
             GCTLCMD_COMMON_OPTION_CASES(pCtx, ch, &ValueUnion);
 
-            case GETOPTDEF_COPY_FOLLOW:
+            case 'L':
+                if (!RTStrICmp(ValueUnion.pDef->pszLong, "--follow"))
+                    RTMsgWarning("--follow is deprecated; use --dereference instead.");
                 fFollow = true;
                 break;
 
-            case 'R': /* Recursive processing */
+            case 'R':
                 fRecursive = true;
                 break;
 
-            case GETOPTDEF_COPY_TARGETDIR:
+            case 't':
                 pszDst = ValueUnion.psz;
                 fDstMustBeDir = true;
                 break;
@@ -1827,42 +1816,50 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
             RTPrintf(GuestCtrl::tr("Copying from guest to host ...\n"));
     }
 
-    HRESULT           rc = S_OK;
-    ComPtr<IProgress> pProgress;
-/** @todo r=bird: This codes does nothing to handle the case where there are
- * multiple sources.  You need to do serveral thing before thats handled
- * correctly.  For starters the progress object handling needs to be moved
- * inside the loop.  Next you need to check what the destination is, because you
- * can only copy multiple source files/directories to another directory.  You
- * actually need to check whether the target exists and is a directory
- * regardless of you have 1 or 10 source files/dirs.
- *
- * Btw. the original approach to error handling here was APPALING.  If some file
- * couldn't be stat'ed or if it was a file/directory, you only spat out messages
- * in verbose mode and never set the status code.
- *
- * The handling of the wildcard filtering expressions in sources was also just
- * skipped.   I've corrected this, but you still need to make up your mind wrt
- * wildcards or not.
- *
- * Update: I've kicked out the whole SourceFileEntry/vecSources stuff as we can
- *         use argv directly without any unnecessary copying.  You just have to
- *         look for the wildcards inside this loop instead.
- */
-    NOREF(fDstMustBeDir);
-    if (cSources != 1)
-        return RTMsgErrorExitFailure(GuestCtrl::tr("Only one source file or directory at the moment."));
+    HRESULT rc = S_OK;
+
+    bool fDstIsDir = false;
+
+    if (!fHostToGuest)
+    {
+        RTFSOBJINFO ObjInfo;
+        vrc = RTPathQueryInfo(szAbsDst, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_FAILURE(vrc))
+            return RTMsgErrorExitFailure(GuestCtrl::tr("RTPathQueryInfo failed on '%s': %Rrc"), szAbsDst, vrc);
+        fDstIsDir = RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode);
+    }
+    else
+    {
+        BOOL fDirExists = FALSE;
+        rc = pCtx->pGuestSession->DirectoryExists(Bstr(pszDst).raw(), TRUE /* fFollowSymlinks */, &fDirExists);
+        if (SUCCEEDED(rc))
+            fDstIsDir = RT_BOOL(fDirExists);
+    }
+
+    /* If multiple sources are specified, the destination must be a directory. */
+    fDstMustBeDir = cSources > 1;
+
+    /* If destination must be a directory, check this first before everything else. */
+    if (    fDstMustBeDir
+        && !fDstIsDir)
+    {
+        return RTMsgErrorExitFailure(GuestCtrl::tr("Destination must be a directory!"));
+    }
+
     for (size_t iSrc = 0; iSrc < cSources; iSrc++)
     {
-        const char *pszSource = papszSources[iSrc];
+        /*
+         * Note: Having a dedicated progress object on every single source being copied can be very slow.
+         *       We implement IGuestSession::Copy[From|To]Guest() since quite a while which does most of the below
+         *       under the hood in Main using a multi-staged progress object. However, leave this like it is for now
+         *       to (also) have a different method of API testing.
+         */
+        ComPtr<IProgress> pProgress;
+        const char       *pszSource = papszSources[iSrc];
 
-        /* Check if the source contains any wilecards in the last component, if so we
-           don't know how to deal with it yet and refuse. */
-        const char *pszSrcFinalComp = RTPathFilename(pszSource);
-        if (pszSrcFinalComp && strpbrk(pszSrcFinalComp, "*?"))
-            rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("Skipping '%s' because wildcard expansion isn't implemented yet\n"),
-                                           pszSource);
-        else if (fHostToGuest)
+        /* Note: Wildcards have to be processed by the calling process (i.e. via globbing, if available). */
+
+        if (fHostToGuest)
         {
             /*
              * Source is host, destination guest.
@@ -1880,9 +1877,9 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                         if (pCtx->cVerbose)
                             RTPrintf(GuestCtrl::tr("File '%s' -> '%s'\n"), szAbsSrc, pszDst);
 
-                        SafeArray<FileCopyFlag_T> copyFlags;
+                        SafeArray<FileCopyFlag_T> aCopyFlags;
                         rc = pCtx->pGuestSession->FileCopyToGuest(Bstr(szAbsSrc).raw(), Bstr(pszDst).raw(),
-                                                                  ComSafeArrayAsInParam(copyFlags), pProgress.asOutParam());
+                                                                  ComSafeArrayAsInParam(aCopyFlags), pProgress.asOutParam());
                     }
                     else if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
                     {
@@ -1956,22 +1953,25 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
             else
                 rcExit = RTMsgErrorExitFailure(GuestCtrl::tr("FsObjQueryInfo failed on '%s': %Rhrc"), pszSource, rc);
         }
+
+        if (FAILED(rc))
+        {
+            vrc = gctlPrintError(pCtx->pGuestSession, COM_IIDOF(IGuestSession));
+        }
+        else if (pProgress.isNotNull())
+        {
+            if (pCtx->cVerbose)
+                rc = showProgress(pProgress);
+            else
+                rc = pProgress->WaitForCompletion(-1 /* No timeout */);
+            if (SUCCEEDED(rc))
+                CHECK_PROGRESS_ERROR(pProgress, (GuestCtrl::tr("File copy failed")));
+            vrc = gctlPrintProgressError(pProgress);
+        }
+
+        /* Keep going. */
     }
 
-    if (FAILED(rc))
-    {
-        vrc = gctlPrintError(pCtx->pGuestSession, COM_IIDOF(IGuestSession));
-    }
-    else if (pProgress.isNotNull())
-    {
-        if (pCtx->cVerbose)
-            rc = showProgress(pProgress);
-        else
-            rc = pProgress->WaitForCompletion(-1 /* No timeout */);
-        if (SUCCEEDED(rc))
-            CHECK_PROGRESS_ERROR(pProgress, (GuestCtrl::tr("File copy failed")));
-        vrc = gctlPrintProgressError(pProgress);
-    }
     if (RT_FAILURE(vrc))
         rcExit = RTEXITCODE_FAILURE;
 
