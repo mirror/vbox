@@ -1067,6 +1067,8 @@ typedef struct E1KSTATE
     bool        fIntRaised;
     /** EMT: false if the cable is disconnected by the GUI. */
     bool        fCableConnected;
+    /** true if the device is attached to a driver. */
+    bool        fIsAttached;
     /** EMT: Compute Ethernet CRC for RX packets. */
     bool        fEthernetCRC;
     /** All: throttle interrupts. */
@@ -2929,8 +2931,7 @@ static int e1kRegReadCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
 DECLINLINE(bool) e1kIsConnected(PPDMDEVINS pDevIns)
 {
     PE1KSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
-    return pThis->fCableConnected && pThisCC->CTX_SUFF(pDrv);
+    return pThis->fCableConnected && pThis->fIsAttached;
 }
 
 /**
@@ -2947,6 +2948,9 @@ void e1kPhyLinkResetCallback(PPDMDEVINS pDevIns)
     /* Make sure we have cable connected and MAC can talk to PHY */
     if (e1kIsConnected(pDevIns) && (CTRL & CTRL_SLU))
         e1kArmTimer(pDevIns, pThis, pThis->hLUTimer, E1K_INIT_LINKUP_DELAY_US);
+    else
+        Log(("%s PHY link reset callback ignored (cable %sconnected, driver %stached, CTRL_SLU=%u)\n", pThis->szPrf,
+             pThis->fCableConnected ? "" : "dis", pThis->fIsAttached ? "at" : "de", CTRL & CTRL_SLU ? 1 : 0));
 }
 
 /**
@@ -7619,6 +7623,8 @@ static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
 
     e1kR3CsEnterAsserted(pThis);
 
+    /* Mark device as detached. */
+    pThis->fIsAttached = false;
     /*
      * Zero some important members.
      */
@@ -7670,6 +7676,8 @@ static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
             pThisR0->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIBASER0), PDMINETWORKUP);
             pThisRC->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIBASERC), PDMINETWORKUP);
 #endif
+            /* Mark device as attached. */
+            pThis->fIsAttached = true;
         }
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
@@ -7890,6 +7898,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->u64AckedAt   = 0;
     pThis->led.u32Magic = PDMLED_MAGIC;
     pThis->u32PktNo     = 1;
+    pThis->fIsAttached  = false;
 
     pThisCC->pDevInsR3  = pDevIns;
     pThisCC->pShared    = pThis;
@@ -8159,6 +8168,8 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThisR0->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIBASER0), PDMINETWORKUP);
         pThisRC->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIBASERC), PDMINETWORKUP);
 #endif
+        /* Mark device as attached. */
+        pThis->fIsAttached = true;
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
