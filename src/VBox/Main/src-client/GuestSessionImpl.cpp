@@ -1314,15 +1314,22 @@ int GuestSession::i_dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTC
     return rc;
 }
 
-int GuestSession::i_dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
+/**
+ * Main handler for guest session messages from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCbCtx              Host callback context from HGCM service.
+ * @param   pSvcCbData          HGCM service callback data.
+ *
+ * @note    No locking!
+ */
+int GuestSession::i_dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
 
     LogFlowThisFunc(("sessionID=%RU32, CID=%RU32, uMessage=%RU32, pSvcCb=%p\n",
-                     mData.mSession.mID, pCbCtx->uContextID, pCbCtx->uMessage, pSvcCb));
+                     mData.mSession.mID, pCbCtx->uContextID, pCbCtx->uMessage, pSvcCbData));
     int rc;
     switch (pCbCtx->uMessage)
     {
@@ -1333,12 +1340,12 @@ int GuestSession::i_dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTR
 
         case GUEST_MSG_SESSION_NOTIFY: /* Guest Additions >= 4.3.0. */
         {
-            rc = i_onSessionStatusChange(pCbCtx, pSvcCb);
+            rc = i_onSessionStatusChange(pCbCtx, pSvcCbData);
             break;
         }
 
         default:
-            rc = dispatchGeneric(pCbCtx, pSvcCb);
+            rc = dispatchGeneric(pCbCtx, pSvcCbData);
             break;
     }
 
@@ -1833,7 +1840,15 @@ int GuestSession::i_onRemove(void)
     return vrc;
 }
 
-/** No locking! */
+/**
+ * Handles guest session status changes from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCbCtx              Host callback context from HGCM service.
+ * @param   pSvcCbData          HGCM service callback data.
+ *
+ * @note    Takes the read lock (for session ID lookup).
+ */
 int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
@@ -1849,6 +1864,8 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
     AssertRCReturn(vrc, vrc);
     vrc = HGCMSvcGetU32(&pSvcCbData->mpaParms[2], &dataCb.uResult);
     AssertRCReturn(vrc, vrc);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("ID=%RU32, uType=%RU32, rcGuest=%Rrc\n",
                      mData.mSession.mID, dataCb.uType, dataCb.uResult));
@@ -1914,6 +1931,10 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
             vrc = VERR_NOT_SUPPORTED;
             break;
     }
+
+    /* Leave the lock, as i_setSessionStatus() below will require a write lock for actually
+     * committing the session state. */
+    alock.release();
 
     if (RT_SUCCESS(vrc))
     {
@@ -2642,7 +2663,15 @@ int GuestSession::i_sendMessage(uint32_t uMessage, uint32_t uParms, PVBOXHGCMSVC
     return vrc;
 }
 
-/* Does not do locking; caller is responsible for that! */
+/**
+ * Sets the guest session's current status.
+ *
+ * @returns VBox status code.
+ * @param   sessionStatus       Session status to set.
+ * @param   sessionRc           Session result to set (for error handling).
+ *
+ * @note    Takes the write lock.
+ */
 int GuestSession::i_setSessionStatus(GuestSessionStatus_T sessionStatus, int sessionRc)
 {
     LogFlowThisFunc(("oldStatus=%RU32, newStatus=%RU32, sessionRc=%Rrc\n",
@@ -2657,6 +2686,8 @@ int GuestSession::i_setSessionStatus(GuestSessionStatus_T sessionStatus, int ses
     }
     else
         AssertMsg(RT_SUCCESS(sessionRc), ("Guest rc must not be an error (%Rrc)\n", sessionRc));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int vrc = VINF_SUCCESS;
 
@@ -2675,6 +2706,8 @@ int GuestSession::i_setSessionStatus(GuestSessionStatus_T sessionStatus, int ses
                                     COM_IIDOF(IGuestSession), getComponentName(),
                                     i_guestErrorToString(sessionRc));
         AssertRC(rc2);
+
+        alock.release(); /* Release lock before firing off event. */
 
         ::FireGuestSessionStateChangedEvent(mEventSource, this, mData.mSession.mID, sessionStatus, errorInfo);
     }
