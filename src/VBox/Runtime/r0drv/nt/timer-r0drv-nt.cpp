@@ -101,12 +101,25 @@ typedef struct RTTIMER
     PFNRTTIMER              pfnTimer;
     /** User argument. */
     void                   *pvUser;
+
+    /** @name Periodic scheduling / RTTimerChangeInterval.
+     *  @{  */
+    /** Spinlock protecting the u64NanoInterval, iMasterTick, uNtStartTime,
+     *  uNtDueTime and (at least for updating) fSuspended. */
+    KSPIN_LOCK              Spinlock;
     /** The timer interval. 0 if one-shot. */
-    uint64_t                u64NanoInterval;
+    uint64_t volatile       u64NanoInterval;
+    /** The the current master tick.  This does not necessarily follow that of
+     *  the subtimer, as RTTimerChangeInterval may cause it to reset. */
+    uint64_t volatile       iMasterTick;
 #ifdef RTR0TIMER_NT_MANUAL_RE_ARM
     /** The desired NT time of the first tick. */
-    uint64_t                uNtStartTime;
+    uint64_t volatile       uNtStartTime;
+    /** The current due time (absolute interrupt time). */
+    uint64_t volatile       uNtDueTime;
 #endif
+    /** @} */
+
     /** The NT timer object. */
     KTIMER                  NtTimer;
 #ifdef RTR0TIMER_NT_HIGH_RES
@@ -124,6 +137,7 @@ typedef struct RTTIMER
 
 
 #ifdef RTR0TIMER_NT_MANUAL_RE_ARM
+
 /**
  * Get current NT interrupt time.
  * @return NT interrupt time
@@ -146,41 +160,136 @@ static uint64_t rtTimerNtQueryInterruptTime(void)
     return InterruptTime.QuadPart;
 # endif
 }
+
+/**
+ * Get current NT interrupt time, high resolution variant.
+ * @return High resolution NT interrupt time
+ */
+static uint64_t rtTimerNtQueryInterruptTimeHighRes(void)
+{
+    if (g_pfnrtKeQueryInterruptTimePrecise)
+    {
+        ULONG64 uQpcIgnored;
+        return g_pfnrtKeQueryInterruptTimePrecise(&uQpcIgnored);
+    }
+    return rtTimerNtQueryInterruptTime();
+}
+
 #endif /* RTR0TIMER_NT_MANUAL_RE_ARM */
 
+
+/**
+ * Worker for rtTimerNtRearmInternval that calculates the next due time.
+ *
+ * @returns The next due time (relative, so always negative).
+ * @param   uNtNow                  The current time.
+ * @param   uNtStartTime            The start time of the timer.
+ * @param   iTick                   The next tick number (zero being @a uNtStartTime).
+ * @param   cNtInterval             The timer interval in NT ticks.
+ * @param   cNtNegDueSaftyMargin    The due time safety margin in negative NT
+ *                                  ticks.
+ * @param   cNtMinNegInterval       The minium interval to use when in catchup
+ *                                  mode, also negative NT ticks.
+ */
+DECLINLINE(int64_t) rtTimerNtCalcNextDueTime(uint64_t uNtNow, uint64_t uNtStartTime, uint64_t iTick, uint64_t cNtInterval,
+                                             int32_t const cNtNegDueSaftyMargin, int32_t const cNtMinNegInterval)
+{
+    /* Calculate the actual time elapsed since timer start: */
+    int64_t iDueTime = uNtNow - uNtStartTime;
+    if (iDueTime < 0)
+        iDueTime = 0;
+
+    /* Now calculate the nominal time since timer start for the next tick: */
+    uint64_t const uNtNextRelStart = iTick * cNtInterval;
+
+    /* Calulate now much time we have to the next tick: */
+    iDueTime -= uNtNextRelStart;
+
+    /* If we haven't already overshot the due time, including some safety margin, we're good: */
+    if (iDueTime < cNtNegDueSaftyMargin)
+        return iDueTime;
+
+    /* Okay, we've overshot it and are in catchup mode: */
+    if (iDueTime < (int64_t)cNtInterval)
+        iDueTime = -(int64_t)(cNtInterval / 2); /* double time */
+    else if (iDueTime < (int64_t)(cNtInterval * 4))
+        iDueTime = -(int64_t)(cNtInterval / 4); /* quadruple time */
+    else
+        return cNtMinNegInterval;
+
+    /* Make sure we don't try intervals smaller than the minimum specified by the caller: */
+    if (iDueTime > cNtMinNegInterval)
+        iDueTime = cNtMinNegInterval;
+    return iDueTime;
+}
 
 /**
  * Manually re-arms an internval timer.
  *
  * Turns out NT doesn't necessarily do a very good job at re-arming timers
- * accurately.
+ * accurately, this is in part due to KeSetTimerEx API taking the interval in
+ * milliseconds.
  *
  * @param   pTimer              The timer.
- * @param   iTick               The current timer tick.
+ * @param   pMasterDpc          The master timer DPC for passing to KeSetTimerEx
+ *                              in low-resolution mode.  Ignored for high-res.
  */
-DECLINLINE(void) rtTimerNtRearmInternval(PRTTIMER pTimer, uint64_t iTick)
+static void rtTimerNtRearmInternval(PRTTIMER pTimer, PKDPC pMasterDpc)
 {
 #ifdef RTR0TIMER_NT_MANUAL_RE_ARM
     Assert(pTimer->u64NanoInterval);
 
-    uint64_t uNtNext = (iTick * pTimer->u64NanoInterval) / 100 - 10; /* 1us fudge */
-    LARGE_INTEGER DueTime;
-    DueTime.QuadPart = rtTimerNtQueryInterruptTime() - pTimer->uNtStartTime;
-    if (DueTime.QuadPart < 0)
-        DueTime.QuadPart = 0;
-    if ((uint64_t)DueTime.QuadPart < uNtNext)
-        DueTime.QuadPart -= uNtNext;
-    else
-        DueTime.QuadPart = -2500; /* 0.25ms */
+    /*
+     * For simplicity we acquire the spinlock for the whole operation.
+     * This should be perfectly fine as it doesn't change the IRQL.
+     */
+    Assert(KeGetCurrentIrql() >= DISPATCH_LEVEL);
+    KeAcquireSpinLockAtDpcLevel(&pTimer->Spinlock);
 
+    /*
+     * Make sure it wasn't suspended
+     */
+    if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
+    {
+        uint64_t const cNtInterval  = ASMAtomicUoReadU64(&pTimer->u64NanoInterval) / 100;
+        uint64_t const uNtStartTime = ASMAtomicUoReadU64(&pTimer->uNtStartTime);
+        uint64_t const iTick        = ++pTimer->iMasterTick;
+
+        /*
+         * Calculate the deadline for the next timer tick and arm the timer.
+         * We always use a relative tick, i.e. negative DueTime value.  This is
+         * crucial for the the high resolution API as it will bugcheck otherwise.
+         */
+        int64_t  iDueTime;
+        uint64_t uNtNow;
 # ifdef RTR0TIMER_NT_HIGH_RES
-    if (pTimer->pHighResTimer)
-        g_pfnrtExSetTimer(pTimer->pHighResTimer, DueTime.QuadPart, 0, NULL);
-    else
+        if (pTimer->pHighResTimer)
+        {
+            /* Must use highres time here. */
+            uNtNow   = rtTimerNtQueryInterruptTimeHighRes();
+            iDueTime = rtTimerNtCalcNextDueTime(uNtNow, uNtStartTime, iTick, cNtInterval,
+                                                -100 /* 10us safety */, -2000 /* 200us min interval*/);
+            g_pfnrtExSetTimer(pTimer->pHighResTimer, iDueTime, 0, NULL);
+        }
+        else
 # endif
-        KeSetTimerEx(&pTimer->NtTimer, DueTime, 0, &pTimer->aSubTimers[0].NtDpc);
+        {
+            /* Expect interrupt time and timers to expire at the same time, so
+               don't use high res time api here. */
+            uNtNow   = rtTimerNtQueryInterruptTime();
+            iDueTime = rtTimerNtCalcNextDueTime(uNtNow, uNtStartTime, iTick, cNtInterval,
+                                                -100 /* 10us safety */, -2500 /* 250us min interval*/); /** @todo use max interval here */
+            LARGE_INTEGER DueTime;
+            DueTime.QuadPart = iDueTime;
+            KeSetTimerEx(&pTimer->NtTimer, DueTime, 0, pMasterDpc);
+        }
+
+        pTimer->uNtDueTime = uNtNow + -iDueTime;
+    }
+
+    KeReleaseSpinLockFromDpcLevel(&pTimer->Spinlock);
 #else
-    RT_NOREF(pTimer, iTick);
+    RT_NOREF(pTimer, iTick, pMasterDpc);
 #endif
 }
 
@@ -204,9 +313,13 @@ static void rtTimerNtSimpleCallbackWorker(PRTTIMER pTimer)
         if (!pTimer->u64NanoInterval)
             ASMAtomicWriteBool(&pTimer->fSuspended, true);
         uint64_t iTick = ++pTimer->aSubTimers[0].iTick;
-        if (pTimer->u64NanoInterval)
-            rtTimerNtRearmInternval(pTimer, iTick);
+
         pTimer->pfnTimer(pTimer, pTimer->pvUser, iTick);
+
+        /* We re-arm the timer after calling pfnTimer, as it may stop the timer
+           or change the interval, which would mean doing extra work. */
+        if (!pTimer->fSuspended && pTimer->u64NanoInterval)
+            rtTimerNtRearmInternval(pTimer, &pTimer->aSubTimers[0].NtDpc);
 
         ASMAtomicWriteHandle(&pTimer->aSubTimers[0].hActiveThread, NIL_RTNATIVETHREAD);
     }
@@ -321,21 +434,14 @@ static void _stdcall rtTimerNtOmniSlaveCallback(IN PKDPC pDpc, IN PVOID pvUser, 
  */
 static void rtTimerNtOmniMasterCallbackWorker(PRTTIMER pTimer, PRTTIMERNTSUBTIMER pSubTimer, int iCpuSelf)
 {
-#ifdef RT_STRICT
-    if (KeGetCurrentIrql() < DISPATCH_LEVEL)
-        RTAssertMsg2Weak("rtTimerNtOmniMasterCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
-    if (pSubTimer - &pTimer->aSubTimers[0] != iCpuSelf)
-        RTAssertMsg2Weak("rtTimerNtOmniMasterCallback: iCpuSelf=%d pSubTimer=%p / %d\n", iCpuSelf, pSubTimer, pSubTimer - &pTimer->aSubTimers[0]);
-#endif
-
     /*
      * Check that we haven't been suspended before scheduling the other DPCs
      * and doing the callout.
      */
-    if (    !ASMAtomicUoReadBool(&pTimer->fSuspended)
-        &&  pTimer->u32Magic == RTTIMER_MAGIC)
+    if (   !ASMAtomicUoReadBool(&pTimer->fSuspended)
+        && pTimer->u32Magic == RTTIMER_MAGIC)
     {
-        RTCPUSET    OnlineSet;
+        RTCPUSET OnlineSet;
         RTMpGetOnlineSet(&OnlineSet);
 
         ASMAtomicWriteHandle(&pSubTimer->hActiveThread, RTThreadNativeSelf());
@@ -346,13 +452,16 @@ static void rtTimerNtOmniMasterCallbackWorker(PRTTIMER pTimer, PRTTIMERNTSUBTIME
              * Recurring timer.
              */
             for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
-                if (    RTCpuSetIsMemberByIndex(&OnlineSet, iCpu)
-                    &&  iCpuSelf != iCpu)
+                if (   RTCpuSetIsMemberByIndex(&OnlineSet, iCpu)
+                    && iCpuSelf != iCpu)
                     KeInsertQueueDpc(&pTimer->aSubTimers[iCpu].NtDpc, 0, 0);
 
-            uint64_t iTick = ++pSubTimer->iTick;
-            rtTimerNtRearmInternval(pTimer, iTick);
-            pTimer->pfnTimer(pTimer, pTimer->pvUser, iTick);
+            pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pSubTimer->iTick);
+
+            /* We re-arm the timer after calling pfnTimer, as it may stop the timer
+               or change the interval, which would mean doing extra work. */
+            if (!pTimer->fSuspended && pTimer->u64NanoInterval)
+                rtTimerNtRearmInternval(pTimer, &pSubTimer->NtDpc);
         }
         else
         {
@@ -366,8 +475,8 @@ static void rtTimerNtOmniMasterCallbackWorker(PRTTIMER pTimer, PRTTIMERNTSUBTIME
             ASMAtomicAddS32(&pTimer->cOmniSuspendCountDown, cCpus);
 
             for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
-                if (    RTCpuSetIsMemberByIndex(&OnlineSet, iCpu)
-                    &&  iCpuSelf != iCpu)
+                if (   RTCpuSetIsMemberByIndex(&OnlineSet, iCpu)
+                    && iCpuSelf != iCpu)
                     if (!KeInsertQueueDpc(&pTimer->aSubTimers[iCpu].NtDpc, 0, 0))
                         ASMAtomicDecS32(&pTimer->cOmniSuspendCountDown); /* already queued and counted. */
 
@@ -394,14 +503,18 @@ static void _stdcall rtTimerNtOmniMasterCallback(IN PKDPC pDpc, IN PVOID pvUser,
 {
     PRTTIMERNTSUBTIMER const pSubTimer = (PRTTIMERNTSUBTIMER)pvUser;
     PRTTIMER const           pTimer    = pSubTimer->pParent;
-    int const                iCpuSelf  = RTMpCpuIdToSetIndex(RTMpCpuId());
+    RTCPUID                  idCpu     = RTMpCpuId();
+    int const                iCpuSelf  = RTMpCpuIdToSetIndex(idCpu);
 
     AssertPtr(pTimer);
 #ifdef RT_STRICT
     if (KeGetCurrentIrql() < DISPATCH_LEVEL)
         RTAssertMsg2Weak("rtTimerNtOmniMasterCallback: Irql=%d expected >=%d\n", KeGetCurrentIrql(), DISPATCH_LEVEL);
+    /* We must be called on the master CPU or the tick variable goes south. */
     if (pSubTimer - &pTimer->aSubTimers[0] != iCpuSelf)
         RTAssertMsg2Weak("rtTimerNtOmniMasterCallback: iCpuSelf=%d pSubTimer=%p / %d\n", iCpuSelf, pSubTimer, pSubTimer - &pTimer->aSubTimers[0]);
+    if (pTimer->idCpu != idCpu)
+        RTAssertMsg2Weak("rtTimerNtOmniMasterCallback: pTimer->idCpu=%d vs idCpu=%d\n", pTimer->idCpu, idCpu);
 #endif
 
     rtTimerNtOmniMasterCallbackWorker(pTimer, pSubTimer, iCpuSelf);
@@ -445,20 +558,36 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
 
-    if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
-        return VERR_TIMER_ACTIVE;
-    if (   pTimer->fSpecificCpu
-        && !RTMpIsCpuOnline(pTimer->idCpu))
-        return VERR_CPU_OFFLINE;
+    /*
+     * The operation is protected by the spinlock.
+     */
+    KIRQL bSavedIrql;
+    KeAcquireSpinLock(&pTimer->Spinlock, &bSavedIrql);
 
     /*
-     * Start the timer.
+     * Check the state.
      */
-    PKDPC pMasterDpc = pTimer->fOmniTimer
-                     ? &pTimer->aSubTimers[RTMpCpuIdToSetIndex(pTimer->idCpu)].NtDpc
-                     : &pTimer->aSubTimers[0].NtDpc;
+    if (ASMAtomicUoReadBool(&pTimer->fSuspended))
+    { /* likely */ }
+    else
+    {
+        KeReleaseSpinLock(&pTimer->Spinlock, bSavedIrql);
+        return VERR_TIMER_ACTIVE;
+    }
+    if (   !pTimer->fSpecificCpu
+        || RTMpIsCpuOnline(pTimer->idCpu))
+    { /* likely */ }
+    else
+    {
+        KeReleaseSpinLock(&pTimer->Spinlock, bSavedIrql);
+        return VERR_CPU_OFFLINE;
+    }
 
+    /*
+     * Do the starting.
+     */
 #ifndef RTR0TIMER_NT_MANUAL_RE_ARM
+    /* Calculate the interval time: */
     uint64_t u64Interval = pTimer->u64NanoInterval / 1000000; /* This is ms, believe it or not. */
     ULONG ulInterval = (ULONG)u64Interval;
     if (ulInterval != u64Interval)
@@ -467,19 +596,33 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         ulInterval = 1;
 #endif
 
+    /* Translate u64First to a DueTime: */
     LARGE_INTEGER DueTime;
     DueTime.QuadPart = -(int64_t)(u64First / 100); /* Relative, NT time. */
     if (!DueTime.QuadPart)
-        DueTime.QuadPart = -1;
+        DueTime.QuadPart = -10; /* 1us */
 
+    /* Reset tick counters: */
     unsigned cSubTimers = pTimer->fOmniTimer ? pTimer->cSubTimers : 1;
     for (unsigned iCpu = 0; iCpu < cSubTimers; iCpu++)
         pTimer->aSubTimers[iCpu].iTick = 0;
+    pTimer->iMasterTick = 0;
+
+    /* Update timer state: */
 #ifdef RTR0TIMER_NT_MANUAL_RE_ARM
-    pTimer->uNtStartTime = rtTimerNtQueryInterruptTime() + u64First / 100;
+    pTimer->uNtStartTime = rtTimerNtQueryInterruptTime() + -DueTime.QuadPart;
 #endif
     ASMAtomicWriteS32(&pTimer->cOmniSuspendCountDown, 0);
     ASMAtomicWriteBool(&pTimer->fSuspended, false);
+
+    /*
+     * Finally start the NT timer.
+     *
+     * We do this without holding the spinlock to err on the side of
+     * caution in case ExSetTimer or KeSetTimerEx ever should have the idea
+     * of running the callback before returning.
+     */
+    KeReleaseSpinLock(&pTimer->Spinlock, bSavedIrql);
 
 #ifdef RTR0TIMER_NT_HIGH_RES
     if (pTimer->pHighResTimer)
@@ -493,6 +636,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     else
 #endif
     {
+        PKDPC const pMasterDpc = &pTimer->aSubTimers[pTimer->fOmniTimer ? RTMpCpuIdToSetIndex(pTimer->idCpu) : 0].NtDpc;
 #ifdef RTR0TIMER_NT_MANUAL_RE_ARM
         KeSetTimerEx(&pTimer->NtTimer, DueTime, 0, pMasterDpc);
 #else
@@ -510,22 +654,34 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
  *
  * @param   pTimer      The active timer.
  */
-static void rtTimerNtStopWorker(PRTTIMER pTimer)
+static int rtTimerNtStopWorker(PRTTIMER pTimer)
 {
     /*
-     * Just cancel the timer, dequeue the DPCs and flush them (if this is supported).
+     * Update the state from with the spinlock context.
      */
-    ASMAtomicWriteBool(&pTimer->fSuspended, true);
+    KIRQL bSavedIrql;
+    KeAcquireSpinLock(&pTimer->Spinlock, &bSavedIrql);
 
+    bool const fWasSuspended = ASMAtomicXchgBool(&pTimer->fSuspended, true);
+
+    KeReleaseSpinLock(&pTimer->Spinlock, bSavedIrql);
+    if (!fWasSuspended)
+    {
+        /*
+         * We should cacnel the timer and dequeue DPCs.
+         */
 #ifdef RTR0TIMER_NT_HIGH_RES
-    if (pTimer->pHighResTimer)
-        g_pfnrtExCancelTimer(pTimer->pHighResTimer, NULL);
-    else
+        if (pTimer->pHighResTimer)
+            g_pfnrtExCancelTimer(pTimer->pHighResTimer, NULL);
+        else
 #endif
-        KeCancelTimer(&pTimer->NtTimer);
+            KeCancelTimer(&pTimer->NtTimer);
 
-    for (RTCPUID iCpu = 0; iCpu < pTimer->cSubTimers; iCpu++)
-        KeRemoveQueueDpc(&pTimer->aSubTimers[iCpu].NtDpc);
+        for (RTCPUID iCpu = 0; iCpu < pTimer->cSubTimers; iCpu++)
+            KeRemoveQueueDpc(&pTimer->aSubTimers[iCpu].NtDpc);
+        return VINF_SUCCESS;
+    }
+    return VERR_TIMER_SUSPENDED;
 }
 
 
@@ -537,14 +693,10 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
 
-    if (ASMAtomicUoReadBool(&pTimer->fSuspended))
-        return VERR_TIMER_SUSPENDED;
-
     /*
      * Call the worker we share with RTTimerDestroy.
      */
-    rtTimerNtStopWorker(pTimer);
-    return VINF_SUCCESS;
+    return rtTimerNtStopWorker(pTimer);
 }
 
 
@@ -552,9 +704,70 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
 {
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
-    RT_NOREF1(u64NanoInterval);
 
-    return VERR_NOT_SUPPORTED;
+    /*
+     * We do all the state changes while holding the spinlock.
+     */
+    int   rc = VINF_SUCCESS;
+    KIRQL bSavedIrql;
+    KeAcquireSpinLock(&pTimer->Spinlock, &bSavedIrql);
+
+    /*
+     * When the timer isn't running, this is an simple job:
+     */
+    if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
+        pTimer->u64NanoInterval = u64NanoInterval;
+    else
+    {
+        /*
+         * We only implement changing the interval in RTR0TIMER_NT_MANUAL_RE_ARM
+         * mode right now. We typically let the new interval take effect after
+         * the next timer callback, unless that's too far ahead.
+         */
+#ifdef RTR0TIMER_NT_MANUAL_RE_ARM
+        pTimer->u64NanoInterval  = u64NanoInterval;
+        pTimer->iMasterTick      = 0;
+# ifdef RTR0TIMER_NT_HIGH_RES
+        uint64_t const uNtNow = pTimer->pHighResTimer ? rtTimerNtQueryInterruptTimeHighRes() : rtTimerNtQueryInterruptTime();
+# else
+        uint64_t const uNtNow = rtTimerNtQueryInterruptTime();
+# endif
+        if (uNtNow >= pTimer->uNtDueTime)
+            pTimer->uNtStartTime = uNtNow;
+        else
+        {
+            pTimer->uNtStartTime = pTimer->uNtDueTime;
+
+            /*
+             * Re-arm the timer if the next DueTime is both more than 1.25 new
+             * intervals and at least 0.5 ms ahead.
+             */
+            uint64_t cNtToNext = pTimer->uNtDueTime - uNtNow;
+            if (   cNtToNext >= RT_NS_1MS / 2 / 100 /* 0.5 ms */
+                && cNtToNext * 100 > u64NanoInterval + u64NanoInterval / 4)
+            {
+                pTimer->uNtStartTime = pTimer->uNtDueTime = uNtNow + u64NanoInterval / 100;
+# ifdef RTR0TIMER_NT_HIGH_RES
+                if (pTimer->pHighResTimer)
+                    g_pfnrtExSetTimer(pTimer->pHighResTimer, -(int64_t)u64NanoInterval / 100, 0, NULL);
+                else
+# endif
+                {
+                    LARGE_INTEGER DueTime;
+                    DueTime.QuadPart = -(int64_t)u64NanoInterval / 100;
+                    KeSetTimerEx(&pTimer->NtTimer, DueTime, 0,
+                                 &pTimer->aSubTimers[pTimer->fOmniTimer ? RTMpCpuIdToSetIndex(pTimer->idCpu) : 0].NtDpc);
+                }
+            }
+        }
+#else
+        rc = VERR_NOT_SUPPORTED;
+#endif
+    }
+
+    KeReleaseSpinLock(&pTimer->Spinlock, bSavedIrql);
+
+    return rc;
 }
 
 
@@ -573,12 +786,10 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     AssertReturn(KeGetCurrentIrql() == PASSIVE_LEVEL, VERR_INVALID_CONTEXT);
 
     /*
-     * Invalidate the timer, stop it if it's running and finally
-     * free up the memory.
+     * Invalidate the timer, stop it if it's running and finally free up the memory.
      */
     ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
-    if (!ASMAtomicUoReadBool(&pTimer->fSuspended))
-        rtTimerNtStopWorker(pTimer);
+    rtTimerNtStopWorker(pTimer);
 
 #ifdef RTR0TIMER_NT_HIGH_RES
     /*
@@ -649,6 +860,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     pTimer->cSubTimers = cSubTimers;
     pTimer->pfnTimer = pfnTimer;
     pTimer->pvUser = pvUser;
+    KeInitializeSpinLock(&pTimer->Spinlock);
     pTimer->u64NanoInterval = u64NanoInterval;
 
     int rc = VINF_SUCCESS;
@@ -683,10 +895,11 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
              *       and don't control which CPU it (rtTimerNtHighResOmniCallback) is
              *       called on.
              */
-            pTimer->idCpu = NIL_RTCPUID;
+            pTimer->iMasterTick = 0;
+            pTimer->idCpu       = NIL_RTCPUID;
             for (unsigned iCpu = 0; iCpu < cSubTimers && RT_SUCCESS(rc); iCpu++)
             {
-                pTimer->aSubTimers[iCpu].iTick = 0;
+                pTimer->aSubTimers[iCpu].iTick   = 0;
                 pTimer->aSubTimers[iCpu].pParent = pTimer;
 
                 if (    pTimer->idCpu == NIL_RTCPUID
@@ -714,7 +927,8 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
              * Initialize the first "sub-timer", target the DPC on a specific processor
              * if requested to do so.
              */
-            pTimer->aSubTimers[0].iTick = 0;
+            pTimer->iMasterTick           = 0;
+            pTimer->aSubTimers[0].iTick   = 0;
             pTimer->aSubTimers[0].pParent = pTimer;
 
             KeInitializeDpc(&pTimer->aSubTimers[0].NtDpc, rtTimerNtSimpleCallback, pTimer);
