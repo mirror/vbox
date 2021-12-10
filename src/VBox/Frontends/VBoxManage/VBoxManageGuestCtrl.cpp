@@ -3712,15 +3712,25 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
         if (pCtx->cVerbose)
             RTPrintf(GuestCtrl::tr("Waiting for events ...\n"));
 
-        /* Wait for the global signal semaphore getting signalled. */
-        int vrc = RTSemEventWait(g_SemEventGuestCtrlCanceled, cMsTimeout);
-        if (vrc == VERR_TIMEOUT)
+        RTMSINTERVAL tsStart = RTTimeMilliTS();
+        while (RTTimeMilliTS() - tsStart < cMsTimeout)
         {
-            if (pCtx->cVerbose)
-                RTPrintf(GuestCtrl::tr("Waiting done\n"));
+            /* Wait for the global signal semaphore getting signalled. */
+            int vrc = RTSemEventWait(g_SemEventGuestCtrlCanceled, 100 /* ms */);
+            if (RT_FAILURE(vrc))
+            {
+                if (vrc != VERR_TIMEOUT)
+                {
+                    RTPrintf(GuestCtrl::tr("Waiting failed with %Rrc\n"), vrc);
+                    break;
+                }
+            }
+            else
+                break;
+
+            /* We need to process the event queue, otherwise our registered listeners won't get any events. */
+            NativeEventQueue::getMainEventQueue()->processEventQueue(0);
         }
-        else if (RT_FAILURE(vrc))
-            RTPrintf(GuestCtrl::tr("Waiting failed with %Rrc\n"), vrc);
 
         if (!pGuestListener.isNull())
         {
