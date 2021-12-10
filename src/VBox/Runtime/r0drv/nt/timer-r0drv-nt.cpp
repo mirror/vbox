@@ -610,7 +610,12 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 
     /* Update timer state: */
 #ifdef RTR0TIMER_NT_MANUAL_RE_ARM
-    pTimer->uNtStartTime = rtTimerNtQueryInterruptTime() + -DueTime.QuadPart;
+# ifdef RTR0TIMER_NT_HIGH_RES
+    uint64_t const uNtNow = pTimer->pHighResTimer ? rtTimerNtQueryInterruptTimeHighRes() : rtTimerNtQueryInterruptTime();
+# else
+    uint64_t const uNtNow = rtTimerNtQueryInterruptTime();
+# endif
+    pTimer->uNtStartTime = uNtNow + -DueTime.QuadPart;
 #endif
     ASMAtomicWriteS32(&pTimer->cOmniSuspendCountDown, 0);
     ASMAtomicWriteBool(&pTimer->fSuspended, false);
@@ -822,7 +827,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
      * Validate flags.
      */
     if (!RTTIMER_FLAGS_ARE_VALID(fFlags))
-        return VERR_INVALID_PARAMETER;
+        return VERR_INVALID_FLAGS;
     if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         &&  (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
         &&  !RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(fFlags & RTTIMER_FLAGS_CPU_MASK)))
