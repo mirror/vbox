@@ -113,9 +113,11 @@ typedef struct RTTIMER
      *  the subtimer, as RTTimerChangeInterval may cause it to reset. */
     uint64_t volatile       iMasterTick;
 #ifdef RTR0TIMER_NT_MANUAL_RE_ARM
-    /** The desired NT time of the first tick. */
+    /** The desired NT time of the first tick.
+     *  This is not set for one-shot timers, only periodic ones. */
     uint64_t volatile       uNtStartTime;
-    /** The current due time (absolute interrupt time). */
+    /** The current due time (absolute interrupt time).
+     *  This is not set for one-shot timers, only periodic ones.  */
     uint64_t volatile       uNtDueTime;
 #endif
     /** @} */
@@ -610,14 +612,18 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 
     /* Update timer state: */
 #ifdef RTR0TIMER_NT_MANUAL_RE_ARM
-# ifdef RTR0TIMER_NT_HIGH_RES
-    uint64_t const uNtNow = pTimer->pHighResTimer ? rtTimerNtQueryInterruptTimeHighRes() : rtTimerNtQueryInterruptTime();
+    if (pTimer->u64NanoInterval > 0)
+    {
+#ifdef RTR0TIMER_NT_HIGH_RES
+        uint64_t const uNtNow = pTimer->pHighResTimer ? rtTimerNtQueryInterruptTimeHighRes() : rtTimerNtQueryInterruptTime();
 # else
-    uint64_t const uNtNow = rtTimerNtQueryInterruptTime();
+        uint64_t const uNtNow = rtTimerNtQueryInterruptTime();
 # endif
-    pTimer->uNtStartTime = uNtNow + -DueTime.QuadPart;
+        pTimer->uNtStartTime  = uNtNow + -DueTime.QuadPart;
+        pTimer->uNtDueTime    = pTimer->uNtStartTime;
+    }
 #endif
-    ASMAtomicWriteS32(&pTimer->cOmniSuspendCountDown, 0);
+    pTimer->cOmniSuspendCountDown = 0;
     ASMAtomicWriteBool(&pTimer->fSuspended, false);
 
     /*
@@ -677,7 +683,13 @@ static int rtTimerNtStopWorker(PRTTIMER pTimer)
          */
 #ifdef RTR0TIMER_NT_HIGH_RES
         if (pTimer->pHighResTimer)
+        {
             g_pfnrtExCancelTimer(pTimer->pHighResTimer, NULL);
+
+            /* We can skip the DPC stuff, unless this is an omni timer or for a specific CPU. */
+            if (!pTimer->fSpecificCpu && !pTimer->fOmniTimer)
+                return VINF_SUCCESS;
+        }
         else
 #endif
             KeCancelTimer(&pTimer->NtTimer);
@@ -940,7 +952,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
             if (g_pfnrtKeSetImportanceDpc)
                 g_pfnrtKeSetImportanceDpc(&pTimer->aSubTimers[0].NtDpc, HighImportance);
             if (pTimer->fSpecificCpu)
-                rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, (int)pTimer->idCpu);
+                rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, fFlags & RTTIMER_FLAGS_CPU_MASK);
         }
         if (RT_SUCCESS(rc))
         {
