@@ -1842,11 +1842,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         try:
             if self.oTstDrv.fpApiVer >= 7.0:
                 ## @todo Make the following new flags implicit for 7.0 for now. Develop dedicated tests for this later and remove.
-                if vboxcon.DirectoryCopyFlag_Recursive not in oTest.afFlags:
-                    oTest.afFlags.extend([ vboxcon.DirectoryCopyFlag_Recursive ]);
+                if not oTest.afFlags:
+                    oTest.afFlags = [ vboxcon.DirectoryCopyFlag_Recursive, ];
+                elif vboxcon.DirectoryCopyFlag_Recursive not in oTest.afFlags:
+                    oTest.afFlags.append(vboxcon.DirectoryCopyFlag_Recursive);
                 ## @todo Ditto.
-                if vboxcon.DirectoryCopyFlag_FollowLinks not in oTest.afFlags:
-                    oTest.afFlags.extend([ vboxcon.DirectoryCopyFlag_FollowLinks ]);
+                if not oTest.afFlags:
+                    oTest.afFlags = [ vboxcon.DirectoryCopyFlag_FollowLinks, ];
+                elif vboxcon.DirectoryCopyFlag_FollowLinks not in oTest.afFlags:
+                    oTest.afFlags.append(vboxcon.DirectoryCopyFlag_FollowLinks);
             oCurProgress = oGuestSession.directoryCopyFromGuest(oTest.sSrc, oTest.sDst, oTest.afFlags);
         except:
             reporter.maybeErrXcpt(fExpected, 'Copy dir from exception for sSrc="%s", sDst="%s":' % (oTest.sSrc, oTest.sDst,));
