@@ -1360,14 +1360,13 @@ DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu)
            the reverse conversion internally). */
         PROCESSOR_NUMBER ProcNum;
         NTSTATUS rcNt = g_pfnrtKeGetProcessorNumberFromIndex(RTMpCpuIdToSetIndex(idCpu), &ProcNum);
-        AssertMsgReturn(NT_SUCCESS(rcNt),
-                        ("KeGetProcessorNumberFromIndex(%u) -> %#x\n", idCpu, rcNt),
-                        RTErrConvertFromNtStatus(rcNt));
+        AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("KeGetProcessorNumberFromIndex(%u) -> %#x\n", idCpu, rcNt),
+                              RTErrConvertFromNtStatus(rcNt));
 
         rcNt = g_pfnrtKeSetTargetProcessorDpcEx(pDpc, &ProcNum);
-        AssertMsgReturn(NT_SUCCESS(rcNt),
-                        ("KeSetTargetProcessorDpcEx(,%u(%u/%u)) -> %#x\n", idCpu, ProcNum.Group, ProcNum.Number, rcNt),
-                        RTErrConvertFromNtStatus(rcNt));
+        AssertLogRelMsgReturn(NT_SUCCESS(rcNt),
+                              ("KeSetTargetProcessorDpcEx(,%u(%u/%u)) -> %#x\n", idCpu, ProcNum.Group, ProcNum.Number, rcNt),
+                              RTErrConvertFromNtStatus(rcNt));
     }
     else if (g_pfnrtKeSetTargetProcessorDpc)
         g_pfnrtKeSetTargetProcessorDpc(pDpc, RTMpCpuIdToSetIndex(idCpu));
