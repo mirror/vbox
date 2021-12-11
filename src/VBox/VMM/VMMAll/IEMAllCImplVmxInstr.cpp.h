@@ -8454,7 +8454,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
      * Each of the types has a bit in IA32_VMX_EPT_VPID_CAP MSR specifying if it is
      * supported. In theory, it's possible for a CPU to not support flushing individual
      * addresses but all the other types or any other combination. We do not take any
-     * shortcuts here by  assuming the types we currently expose to the guest.
+     * shortcuts here by assuming the types we currently expose to the guest.
      */
     uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
     bool const fInvvpidSupported           = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID);
@@ -8638,7 +8638,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iE
      * Each of the types has a bit in IA32_VMX_EPT_VPID_CAP MSR specifying if it is
      * supported. In theory, it's possible for a CPU to not support flushing individual
      * addresses but all the other types or any other combination. We do not take any
-     * shortcuts here by  assuming the types we currently expose to the guest.
+     * shortcuts here by assuming the types we currently expose to the guest.
      */
     uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
     bool const fInveptSupported = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVEPT);
@@ -8666,7 +8666,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iE
     }
 
     /*
-     * Fetch the invvpid descriptor from guest memory.
+     * Fetch the invept descriptor from guest memory.
      */
     RTUINT128U uDesc;
     VBOXSTRICTRC rcStrict = iemMemFetchDataU128(pVCpu, &uDesc, iEffSeg, GCPtrInveptDesc);
