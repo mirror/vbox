@@ -73,6 +73,9 @@ typedef struct RTTIMERNTSUBTIMER
     RTNATIVETHREAD volatile hActiveThread;
     /** The NT DPC object. */
     KDPC                    NtDpc;
+    /** Whether we failed to set the target CPU for the DPC and that this needs
+     * to be done at RTTimerStart (simple timers) or during timer callback (omni). */
+    bool                    fDpcNeedTargetCpuSet;
 } RTTIMERNTSUBTIMER;
 /** Pointer to a NT sub-timer structure. */
 typedef RTTIMERNTSUBTIMER *PRTTIMERNTSUBTIMER;
@@ -425,6 +428,44 @@ static void _stdcall rtTimerNtOmniSlaveCallback(IN PKDPC pDpc, IN PVOID pvUser, 
 
 
 /**
+ * Called when we have an impcomplete DPC object.
+ *
+ * @returns KeInsertQueueDpc return value.
+ * @param   pSubTimer       The sub-timer to queue an DPC for.
+ * @param   iCpu            The CPU set index corresponding to that sub-timer.
+ */
+DECL_NO_INLINE(static, BOOLEAN) rtTimerNtOmniQueueDpcSlow(PRTTIMERNTSUBTIMER pSubTimer, int iCpu)
+{
+    int rc = rtMpNtSetTargetProcessorDpc(&pSubTimer->NtDpc, RTMpCpuIdFromSetIndex(iCpu));
+    if (RT_SUCCESS(rc))
+    {
+        pSubTimer->fDpcNeedTargetCpuSet = false;
+        return KeInsertQueueDpc(&pSubTimer->NtDpc, 0, 0);
+    }
+    return FALSE;
+}
+
+
+/**
+ * Wrapper around KeInsertQueueDpc that makes sure the target CPU has been set.
+ *
+ * This is for handling deferred rtMpNtSetTargetProcessorDpc failures during
+ * creation.  These errors happens for offline CPUs which probably never every
+ * will come online, as very few systems do CPU hotplugging.
+ *
+ * @returns KeInsertQueueDpc return value.
+ * @param   pSubTimer       The sub-timer to queue an DPC for.
+ * @param   iCpu            The CPU set index corresponding to that sub-timer.
+ */
+DECLINLINE(BOOLEAN) rtTimerNtOmniQueueDpc(PRTTIMERNTSUBTIMER pSubTimer, int iCpu)
+{
+    if (RT_LIKELY(!pSubTimer->fDpcNeedTargetCpuSet))
+        return KeInsertQueueDpc(&pSubTimer->NtDpc, 0, 0);
+    return rtTimerNtOmniQueueDpcSlow(pSubTimer, iCpu);
+}
+
+
+/**
  * Common timer callback worker for omni-timers.
  *
  * This is responsible for queueing the DPCs for the other CPUs and
@@ -456,7 +497,7 @@ static void rtTimerNtOmniMasterCallbackWorker(PRTTIMER pTimer, PRTTIMERNTSUBTIME
             for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
                 if (   RTCpuSetIsMemberByIndex(&OnlineSet, iCpu)
                     && iCpuSelf != iCpu)
-                    KeInsertQueueDpc(&pTimer->aSubTimers[iCpu].NtDpc, 0, 0);
+                    rtTimerNtOmniQueueDpc(&pTimer->aSubTimers[iCpu], iCpu);
 
             pTimer->pfnTimer(pTimer, pTimer->pvUser, ++pSubTimer->iTick);
 
@@ -474,12 +515,12 @@ static void rtTimerNtOmniMasterCallbackWorker(PRTTIMER pTimer, PRTTIMERNTSUBTIME
             for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
                 if (RTCpuSetIsMemberByIndex(&OnlineSet, iCpu))
                     cCpus++;
-            ASMAtomicAddS32(&pTimer->cOmniSuspendCountDown, cCpus);
+            ASMAtomicAddS32(&pTimer->cOmniSuspendCountDown, cCpus); /** @todo this is bogus bogus bogus. The counter is only used here. */
 
             for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
                 if (   RTCpuSetIsMemberByIndex(&OnlineSet, iCpu)
                     && iCpuSelf != iCpu)
-                    if (!KeInsertQueueDpc(&pTimer->aSubTimers[iCpu].NtDpc, 0, 0))
+                    if (!rtTimerNtOmniQueueDpc(&pTimer->aSubTimers[iCpu], iCpu))
                         ASMAtomicDecS32(&pTimer->cOmniSuspendCountDown); /* already queued and counted. */
 
             if (ASMAtomicDecS32(&pTimer->cOmniSuspendCountDown) <= 0)
@@ -583,6 +624,22 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     {
         KeReleaseSpinLock(&pTimer->Spinlock, bSavedIrql);
         return VERR_CPU_OFFLINE;
+    }
+
+    /*
+     * Lazy set the DPC target CPU if needed.
+     */
+    if (   !pTimer->fSpecificCpu
+        || !pTimer->aSubTimers[0].fDpcNeedTargetCpuSet)
+    { /* likely */ }
+    else
+    {
+        int rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, pTimer->idCpu);
+        if (RT_FAILURE(rc))
+        {
+            KeReleaseSpinLock(&pTimer->Spinlock, bSavedIrql);
+            return rc;
+        }
     }
 
     /*
@@ -901,6 +958,9 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     }
     if (RT_SUCCESS(rc))
     {
+        RTCPUSET OnlineSet;
+        RTMpGetOnlineSet(&OnlineSet);
+
         if (pTimer->fOmniTimer)
         {
             /*
@@ -914,13 +974,13 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
              */
             pTimer->iMasterTick = 0;
             pTimer->idCpu       = NIL_RTCPUID;
-            for (unsigned iCpu = 0; iCpu < cSubTimers && RT_SUCCESS(rc); iCpu++)
+            for (unsigned iCpu = 0; iCpu < cSubTimers; iCpu++)
             {
                 pTimer->aSubTimers[iCpu].iTick   = 0;
                 pTimer->aSubTimers[iCpu].pParent = pTimer;
 
-                if (    pTimer->idCpu == NIL_RTCPUID
-                    &&  RTMpIsCpuOnline(RTMpCpuIdFromSetIndex(iCpu)))
+                if (   pTimer->idCpu == NIL_RTCPUID
+                    && RTCpuSetIsMemberByIndex(&OnlineSet, iCpu))
                 {
                     pTimer->idCpu = RTMpCpuIdFromSetIndex(iCpu);
 #ifdef RTR0TIMER_NT_HIGH_RES
@@ -934,7 +994,19 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
                     KeInitializeDpc(&pTimer->aSubTimers[iCpu].NtDpc, rtTimerNtOmniSlaveCallback, &pTimer->aSubTimers[iCpu]);
                 if (g_pfnrtKeSetImportanceDpc)
                     g_pfnrtKeSetImportanceDpc(&pTimer->aSubTimers[iCpu].NtDpc, HighImportance);
-                rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[iCpu].NtDpc, iCpu);
+
+                /* This does not necessarily work for offline CPUs that could potentially be onlined
+                   at runtime, so postpone it. (See troubles on testboxmem1 after r148799.) */
+                int rc2 = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[iCpu].NtDpc, iCpu);
+                if (RT_SUCCESS(rc2))
+                    pTimer->aSubTimers[0].fDpcNeedTargetCpuSet = false;
+                else if (!RTCpuSetIsMemberByIndex(&OnlineSet, iCpu))
+                    pTimer->aSubTimers[0].fDpcNeedTargetCpuSet = true;
+                else
+                {
+                    rc = rc2;
+                    break;
+                }
             }
             Assert(pTimer->idCpu != NIL_RTCPUID);
         }
@@ -952,7 +1024,17 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
             if (g_pfnrtKeSetImportanceDpc)
                 g_pfnrtKeSetImportanceDpc(&pTimer->aSubTimers[0].NtDpc, HighImportance);
             if (pTimer->fSpecificCpu)
-                rc = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, fFlags & RTTIMER_FLAGS_CPU_MASK);
+            {
+                /* This does not necessarily work for offline CPUs that could potentially be onlined
+                   at runtime, so postpone it. (See troubles on testboxmem1 after r148799.) */
+                int rc2 = rtMpNtSetTargetProcessorDpc(&pTimer->aSubTimers[0].NtDpc, pTimer->idCpu);
+                if (RT_SUCCESS(rc2))
+                    pTimer->aSubTimers[0].fDpcNeedTargetCpuSet = false;
+                else if (!RTCpuSetIsMember(&OnlineSet, pTimer->idCpu))
+                    pTimer->aSubTimers[0].fDpcNeedTargetCpuSet = true;
+                else
+                    rc = rc2;
+            }
         }
         if (RT_SUCCESS(rc))
         {

@@ -1349,8 +1349,10 @@ static VOID rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID Sy
  * This is shared with the timer code.
  *
  * @returns IPRT status code (errors are asserted).
+ * @retval  VERR_CPU_NOT_FOUND if impossible CPU. Not asserted.
  * @param   pDpc                The DPC.
  * @param   idCpu               The ID of the new target CPU.
+ * @note    Callable at any IRQL.
  */
 DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu)
 {
@@ -1360,13 +1362,19 @@ DECLHIDDEN(int) rtMpNtSetTargetProcessorDpc(KDPC *pDpc, RTCPUID idCpu)
            the reverse conversion internally). */
         PROCESSOR_NUMBER ProcNum;
         NTSTATUS rcNt = g_pfnrtKeGetProcessorNumberFromIndex(RTMpCpuIdToSetIndex(idCpu), &ProcNum);
-        AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("KeGetProcessorNumberFromIndex(%u) -> %#x\n", idCpu, rcNt),
-                              RTErrConvertFromNtStatus(rcNt));
+        if (NT_SUCCESS(rcNt))
+        {
+            rcNt = g_pfnrtKeSetTargetProcessorDpcEx(pDpc, &ProcNum);
+            AssertLogRelMsgReturn(NT_SUCCESS(rcNt),
+                                  ("KeSetTargetProcessorDpcEx(,%u(%u/%u)) -> %#x\n", idCpu, ProcNum.Group, ProcNum.Number, rcNt),
+                                  RTErrConvertFromNtStatus(rcNt));
+        }
+        else if (rcNt == STATUS_INVALID_PARAMETER)
+            return VERR_CPU_NOT_FOUND;
+        else
+            AssertLogRelMsgReturn(NT_SUCCESS(rcNt), ("KeGetProcessorNumberFromIndex(%u) -> %#x\n", idCpu, rcNt),
+                                  RTErrConvertFromNtStatus(rcNt));
 
-        rcNt = g_pfnrtKeSetTargetProcessorDpcEx(pDpc, &ProcNum);
-        AssertLogRelMsgReturn(NT_SUCCESS(rcNt),
-                              ("KeSetTargetProcessorDpcEx(,%u(%u/%u)) -> %#x\n", idCpu, ProcNum.Group, ProcNum.Number, rcNt),
-                              RTErrConvertFromNtStatus(rcNt));
     }
     else if (g_pfnrtKeSetTargetProcessorDpc)
         g_pfnrtKeSetTargetProcessorDpc(pDpc, RTMpCpuIdToSetIndex(idCpu));
@@ -1935,7 +1943,7 @@ int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
             if (g_pfnrtKeSetImportanceDpc)
                 g_pfnrtKeSetImportanceDpc(&s_aPokeDpcs[i], HighImportance);
             int rc = rtMpNtSetTargetProcessorDpc(&s_aPokeDpcs[i], idCpu);
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(rc) && rc != VERR_CPU_NOT_FOUND)
                 return rc;
         }
 
