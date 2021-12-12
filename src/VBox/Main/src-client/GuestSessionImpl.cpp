@@ -1248,6 +1248,17 @@ int GuestSession::i_dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTC
         /* Set protocol version so that pSvcCb can be interpreted right. */
         pCtxCb->uProtocol = mData.mProtocolVersion;
 
+        /** @todo r=bird: What is the meaning of this secondary lookup?  You've got the
+         * object pointer (except for SESSION where it's NULL because GuestSession
+         * doesn't inherit from GuestObject), and can just use the type to upcast it to
+         * grab a reference then call i_callbackDispatcher.
+         *
+         * Also, SESSIONOBJECTTYPE_ANONYMOUS is not used to remove it till needed.
+         * Don't think too far ahead, and when you do, please express why you think it
+         * is needed (the documentation of SESSIONOBJECTTYPE_ANONYMOUS is only repeating
+         * the obvious and not enlightening as to why you though it might come in
+         * useful).
+         */
         switch (itObjs->second.enmType)
         {
             case SESSIONOBJECTTYPE_ANONYMOUS:

@@ -241,6 +241,15 @@ private:
     /** Guest session object type enumeration. */
     enum SESSIONOBJECTTYPE
     {
+        /** @todo r=bird: The tradition is to start at = 1, leaving 0 for invalid or
+         * unused to catch uninitialized data.  You do not number the other enum values.
+         * The 32BIT_HACK is only needed for externally visible stuff that might be used
+         * by with different compiler options.
+         *
+         * As noted elsewhere already, SESSIONOBJECTTYPE_ANONYMOUS isn't used
+         * anywhere can be removed till such time as it is needed.  Try to not think
+         * too far ahead but if you do, please leave some more useful clues that
+         * "Anonymous object" about the intent. */
         /** Anonymous object. */
         SESSIONOBJECTTYPE_ANONYMOUS  = 0,
         /** Session object. */
@@ -262,13 +271,15 @@ private:
         uint64_t          msBirth;
         /** The object type. */
         SESSIONOBJECTTYPE enmType;
-        /** Weak pointer to the object itself. */
+        /** Weak pointer to the object itself.
+         * Is NULL for SESSIONOBJECTTYPE_SESSION because GuestSession doesn't
+         * inherit from GuestObject. */
         GuestObject      *pObject;
     };
 
     /** Map containing all objects bound to a guest session.
      *  The key specifies the (global) context ID. */
-    typedef std::map <uint32_t, SessionObject> SessionObjects;
+    typedef std::map<uint32_t, SessionObject> SessionObjects;
 
 public:
     /** @name Public internal methods.
