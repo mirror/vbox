@@ -32,7 +32,7 @@ devdir="`printf "/dev/vboxusb/%.3d" $bus`"
 devpath="`printf "/dev/vboxusb/%.3d/%.3d" $bus $device`"
 case "$do_remove" in
   0)
-  if test -n "$class" -a "$class" -eq "$usb_class_hub"
+  if test -n "$class" -a "$class" = "$usb_class_hub"
   then
       exit 0
   fi
