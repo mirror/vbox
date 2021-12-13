@@ -1140,6 +1140,9 @@ class ProcessInfo(object):
         if sOs == 'linux':
             sProc = '/proc/%s/' % (self.iPid,);
             if self.sImage   is None: self.sImage = noxcptReadLink(sProc + 'exe', None);
+            if self.sImage   is None:
+                self.sImage = noxcptReadFile(sProc + 'comm', None);
+                if self.sImage: self.sImage = self.sImage.strip();
             if self.sCwd     is None: self.sCwd   = noxcptReadLink(sProc + 'cwd', None);
             if self.asArgs   is None: self.asArgs = noxcptReadFile(sProc + 'cmdline', '').split('\x00');
         #elif sOs == 'solaris': - doesn't work for root processes, suid proces, and other stuff.
