@@ -352,7 +352,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
                   and utils.processExists(oProcess.iPid):
                     # Many of the vbox processes are initially set-uid-to-root and associated debuggers are running
                     # via sudo, so we might not be able to kill them unless we sudo and use /bin/kill.
-                    utils.sudoProcessCall(['/bin/kill', '-9', '%s' % (oProcess.iPid,)]);
+                    try:    utils.sudoProcessCall(['/bin/kill', '-9', '%s' % (oProcess.iPid,)]);
+                    except: reporter.logXcpt();
 
             # Check if they're all dead like they should be.
             time.sleep(0.1);
