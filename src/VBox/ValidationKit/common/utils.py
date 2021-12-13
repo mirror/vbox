@@ -968,7 +968,8 @@ def processExists(uPid):
 
     Returns True if it positively exists, False otherwise.
     """
-    if sys.platform == 'win32':
+    sHostOs = getHostOs();
+    if sHostOs == 'win':
         fRc = False;
         # We try open the process for waiting since this is generally only forbidden in a very few cases.
         try:
@@ -982,6 +983,8 @@ def processExists(uPid):
         else:
             hProcess.Close();
             fRc = True;
+    elif sHostOs == 'linux':
+        fRc = os.path.exists('/proc/%s' % (uPid,);
     else:
         try:
             os.kill(uPid, 0);
