@@ -984,7 +984,7 @@ def processExists(uPid):
             hProcess.Close();
             fRc = True;
     elif sHostOs == 'linux':
-        fRc = os.path.exists('/proc/%s' % (uPid,);
+        fRc = os.path.exists('/proc/%s' % (uPid,));
     else:
         try:
             os.kill(uPid, 0);
