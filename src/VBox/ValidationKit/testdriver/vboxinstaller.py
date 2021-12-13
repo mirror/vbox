@@ -300,10 +300,13 @@ class VBoxInstallerTestDriver(TestDriverBase):
         """
         Kills all virtual box related processes we find in the system.
         """
+        sHostOs = utils.getHostOs();
+        asDebuggers = [ 'cdb', 'windbg', ] if sHostOs == 'windows' else [ 'gdb', 'gdb-i386-apple-darwin', 'lldb' ];
 
         for iIteration in range(22):
             # Gather processes to kill.
-            aoTodo = [];
+            aoTodo      = [];
+            aoDebuggers = [];
             for oProcess in utils.processListAll():
                 sBase = oProcess.getBaseImageNameNoExeSuff();
                 if sBase is None:
@@ -315,10 +318,29 @@ class VBoxInstallerTestDriver(TestDriverBase):
                     aoTodo.append(oProcess);
                 if sBase.startswith('virtualbox-') and sBase.endswith('-multiarch.exe'):
                     aoTodo.append(oProcess);
-                if iIteration in [0, 21]  and  sBase in [ 'windbg', 'gdb', 'gdb-i386-apple-darwin', ]:
-                    reporter.log('Warning: debugger running: %s (%s)' % (oProcess.iPid, sBase,));
+                if sBase in asDebuggers:
+                    aoDebuggers.append(oProcess);
+                    if iIteration in [0, 21]:
+                        reporter.log('Warning: debugger running: %s (%s %s)' % (oProcess.iPid, sBase, oProcess.asArgs));
             if not aoTodo:
                 return True;
+
+            # Are any of the debugger processes hooked up to a VBox process?
+            if sHostOs == 'windows':
+                # On demand debugging windows: windbg -p <decimal-pid> -e <decimal-event> -g
+                for oDebugger in aoDebuggers:
+                    for oProcess in aoTodo:
+                        # The whole command line is asArgs[0] here. Fix if that changes.
+                        if oDebugger.asArgs and oDebugger.asArgs[0].find('-p %s ' % (oProcess.iPid,)) >= 0:
+                            aoTodo.append(oDebugger);
+                            break;
+            else:
+                for oDebugger in aoDebuggers:
+                    for oProcess in aoTodo:
+                        # Simplistic approach: Just check for argument equaling our pid.
+                        if oDebugger.asArgs and ('%s' % oProcess.iPid) in oDebugger.asArgs:
+                            aoTodo.append(oDebugger);
+                            break;
 
             # Kill.
             for oProcess in aoTodo:
