@@ -1242,29 +1242,16 @@ int GuestSession::i_dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTC
      */
     int rc = VERR_NOT_FOUND;
     const uint32_t idObject = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCtxCb->uContextID);
-    SessionObjects::const_iterator itObjs = mData.mObjects.find(idObject);
-    if (itObjs != mData.mObjects.end())
+    SessionObjects::const_iterator itObj = mData.mObjects.find(idObject);
+    if (itObj != mData.mObjects.end())
     {
         /* Set protocol version so that pSvcCb can be interpreted right. */
         pCtxCb->uProtocol = mData.mProtocolVersion;
 
-        /** @todo r=bird: What is the meaning of this secondary lookup?  You've got the
-         * object pointer (except for SESSION where it's NULL because GuestSession
-         * doesn't inherit from GuestObject), and can just use the type to upcast it to
-         * grab a reference then call i_callbackDispatcher.
-         *
-         * Also, SESSIONOBJECTTYPE_ANONYMOUS is not used to remove it till needed.
-         * Don't think too far ahead, and when you do, please express why you think it
-         * is needed (the documentation of SESSIONOBJECTTYPE_ANONYMOUS is only repeating
-         * the obvious and not enlightening as to why you though it might come in
-         * useful).
-         */
-        switch (itObjs->second.enmType)
+        switch (itObj->second.enmType)
         {
-            case SESSIONOBJECTTYPE_ANONYMOUS:
-                rc = VERR_NOT_SUPPORTED;
-                break;
-
+            /* Note: The session object is special, as it does not inherit from GuestObject we could call
+             *       its dispatcher for -- so treat this separately and call it directly. */
             case SESSIONOBJECTTYPE_SESSION:
             {
                 alock.release();
@@ -1274,48 +1261,36 @@ int GuestSession::i_dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTC
             }
             case SESSIONOBJECTTYPE_DIRECTORY:
             {
-                SessionDirectories::const_iterator itDir = mData.mDirectories.find(idObject);
-                if (itDir != mData.mDirectories.end())
-                {
-                    ComObjPtr<GuestDirectory> pDirectory(itDir->second);
-                    Assert(!pDirectory.isNull());
+                ComObjPtr<GuestDirectory> pObj((GuestDirectory *)itObj->second.pObject);
+                AssertReturn(!pObj.isNull(), VERR_INVALID_POINTER);
 
-                    alock.release();
+                alock.release();
 
-                    rc = pDirectory->i_callbackDispatcher(pCtxCb, pSvcCb);
-                }
+                rc = pObj->i_callbackDispatcher(pCtxCb, pSvcCb);
                 break;
             }
             case SESSIONOBJECTTYPE_FILE:
             {
-                SessionFiles::const_iterator itFile = mData.mFiles.find(idObject);
-                if (itFile != mData.mFiles.end())
-                {
-                    ComObjPtr<GuestFile> pFile(itFile->second);
-                    Assert(!pFile.isNull());
+                ComObjPtr<GuestFile> pObj((GuestFile *)itObj->second.pObject);
+                AssertReturn(!pObj.isNull(), VERR_INVALID_POINTER);
 
-                    alock.release();
+                alock.release();
 
-                    rc = pFile->i_callbackDispatcher(pCtxCb, pSvcCb);
-                }
+                rc = pObj->i_callbackDispatcher(pCtxCb, pSvcCb);
                 break;
             }
             case SESSIONOBJECTTYPE_PROCESS:
             {
-                SessionProcesses::const_iterator itProc = mData.mProcesses.find(idObject);
-                if (itProc != mData.mProcesses.end())
-                {
-                    ComObjPtr<GuestProcess> pProcess(itProc->second);
-                    Assert(!pProcess.isNull());
+                ComObjPtr<GuestProcess> pObj((GuestProcess *)itObj->second.pObject);
+                AssertReturn(!pObj.isNull(), VERR_INVALID_POINTER);
 
-                    alock.release();
+                alock.release();
 
-                    rc = pProcess->i_callbackDispatcher(pCtxCb, pSvcCb);
-                }
+                rc = pObj->i_callbackDispatcher(pCtxCb, pSvcCb);
                 break;
             }
             default:
-                AssertMsgFailed(("%d\n", itObjs->second.enmType));
+                AssertMsgFailed(("%d\n", itObj->second.enmType));
                 rc = VERR_INTERNAL_ERROR_4;
                 break;
         }

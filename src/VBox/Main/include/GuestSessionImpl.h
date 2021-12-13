@@ -241,17 +241,8 @@ private:
     /** Guest session object type enumeration. */
     enum SESSIONOBJECTTYPE
     {
-        /** @todo r=bird: The tradition is to start at = 1, leaving 0 for invalid or
-         * unused to catch uninitialized data.  You do not number the other enum values.
-         * The 32BIT_HACK is only needed for externally visible stuff that might be used
-         * by with different compiler options.
-         *
-         * As noted elsewhere already, SESSIONOBJECTTYPE_ANONYMOUS isn't used
-         * anywhere can be removed till such time as it is needed.  Try to not think
-         * too far ahead but if you do, please leave some more useful clues that
-         * "Anonymous object" about the intent. */
-        /** Anonymous object. */
-        SESSIONOBJECTTYPE_ANONYMOUS  = 0,
+        /** Invalid session object type. */
+        SESSIONOBJECTTYPE_INVALID    = 0,
         /** Session object. */
         SESSIONOBJECTTYPE_SESSION    = 1,
         /** Directory object. */
@@ -259,9 +250,7 @@ private:
         /** File object. */
         SESSIONOBJECTTYPE_FILE       = 3,
         /** Process object. */
-        SESSIONOBJECTTYPE_PROCESS    = 4,
-        /** The usual 32-bit hack. */
-        SESSIONOBJECTTYPE_32BIT_HACK = 0x7fffffff
+        SESSIONOBJECTTYPE_PROCESS    = 4
     };
 
     struct SessionObject
