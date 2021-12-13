@@ -347,7 +347,12 @@ class VBoxInstallerTestDriver(TestDriverBase):
                 reporter.log('Loop #%d - Killing %s (%s, uid=%s)'
                              % ( iIteration, oProcess.iPid, oProcess.sImage if oProcess.sName is None else oProcess.sName,
                                  oProcess.iUid, ));
-                utils.processKill(oProcess.iPid); # No mercy.
+                if    not utils.processKill(oProcess.iPid) \
+                  and sHostOs != 'windows' \
+                  and utils.processExists(oProcess.iPid):
+                    # Many of the vbox processes are initially set-uid-to-root and associated debuggers are running
+                    # via sudo, so we might not be able to kill them unless we sudo and use /bin/kill.
+                    utils.sudoProcessCall(['/bin/kill', '-9', '%s' % (oProcess.iPid,)]);
 
             # Check if they're all dead like they should be.
             time.sleep(0.1);
