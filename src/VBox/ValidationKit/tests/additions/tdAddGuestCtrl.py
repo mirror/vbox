@@ -3541,9 +3541,52 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm)),
               tdTestResultFailure() ],
             [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm)),
-               tdTestResultFailure() ],
-            ## @todo test fSecure and pass weird fMode values once these parameters are implemented in the API.
+              tdTestResultFailure() ],
         ];
+
+        if self.oTstDrv.fpApiVer >= 7.0:
+            # Weird mode set.
+            atTests.extend([
+                [ tdTestDirCreateTemp(sTemplate = 'XXX', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fMode = 0o42333),
+                  tdTestResultFailure() ]
+            ]);
+            # Same as working stuff above, but with a different mode set.
+            atTests.extend([
+                [ tdTestDirCreateTemp(sTemplate = 'X', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fMode = 0o777),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'XX', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fMode = 0o777),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'XXX', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fMode = 0o777),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'XXXXXXX', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fMode = 0o777),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fMode = 0o777),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fMode = 0o777),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fMode = 0o777),
+                  tdTestResultFailure() ]
+            ]);
+            # Same as working stuff above, but with secure mode set.
+            atTests.extend([
+                [ tdTestDirCreateTemp(sTemplate = 'X', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fSecure = True),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'XX', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fSecure = True),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'XXX', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fSecure = True),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'XXXXXXX', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm), fSecure = True),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm),
+                                      fSecure = True),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm),
+                                      fSecure = True),
+                  tdTestResultFailure() ],
+                [ tdTestDirCreateTemp(sTemplate = 'tmpXXXtst', sDirectory = self.oTstDrv.getGuestTempDir(oTestVm),
+                                      fSecure = True),
+                  tdTestResultFailure() ]
+            ]);
 
         fRc = True;
         for (i, tTest) in enumerate(atTests):

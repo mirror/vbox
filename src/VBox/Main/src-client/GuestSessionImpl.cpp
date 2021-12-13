@@ -1081,13 +1081,27 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int
     return vrc;
 }
 
+/**
+ * Creates a temporary directory / file on the guest.
+ *
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @param   strTemplate         Name template to use.
+ *                              \sa RTDirCreateTemp / RTDirCreateTempSecure.
+ * @param   strPath             Path where to create the temporary directory / file.
+ * @param   fDirectory          Whether to create a temporary directory or file.
+ * @param   strName             Where to return the created temporary name on success.
+ * @param   fMode               File mode to use for creation (octal).
+ * @param   fSecure             Whether to perform a secure creation or not.
+ * @param   prcGuest            Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
+ */
 int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory, Utf8Str &strName,
-                                 int *prcGuest)
+                                 uint32_t fMode, bool fSecure, int *prcGuest)
 {
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
 
-    LogFlowThisFunc(("strTemplate=%s, strPath=%s, fDirectory=%RTbool\n",
-                     strTemplate.c_str(), strPath.c_str(), fDirectory));
+    LogFlowThisFunc(("strTemplate=%s, strPath=%s, fDirectory=%RTbool, fMode=%o, fSecure=%RTbool\n",
+                     strTemplate.c_str(), strPath.c_str(), fDirectory, fMode, fSecure));
 
     GuestProcessStartupInfo procInfo;
     procInfo.mFlags = ProcessCreateFlag_WaitForStdOut;
@@ -1102,6 +1116,16 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
         {
             procInfo.mArguments.push_back(Utf8Str("-t"));
             procInfo.mArguments.push_back(strPath);
+        }
+        /* Note: Secure flag and mode cannot be specified at the same time. */
+        if (fSecure)
+        {
+            procInfo.mArguments.push_back(Utf8Str("--secure"));
+        }
+        else
+        {
+            procInfo.mArguments.push_back(Utf8Str("--mode"));
+            procInfo.mArguments.push_back(Utf8Str("%o", fMode)); /* Octal mode. */
         }
         procInfo.mArguments.push_back("--"); /* strTemplate could be '--help'. */
         procInfo.mArguments.push_back(strTemplate);
@@ -3436,12 +3460,13 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
 HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath,
                                           BOOL aSecure, com::Utf8Str &aDirectory)
 {
-    RT_NOREF(aMode, aSecure); /** @todo r=bird: WTF? */
-
     if (RT_UNLIKELY((aTemplateName.c_str()) == NULL || *(aTemplateName.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No template specified"));
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory name specified"));
+    if (!aSecure) /* Ignore what mode is specified when a secure temp thing needs to be created. */
+        if (RT_UNLIKELY(!(aMode & ~07777)))
+            return setError(E_INVALIDARG, tr("Mode invalid (must be specified in octal mode)"));
 
     HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
@@ -3450,7 +3475,7 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
     LogFlowThisFuncEnter();
 
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
-    int vrc = i_fsCreateTemp(aTemplateName, aPath, true /* Directory */, aDirectory, &rcGuest);
+    int vrc = i_fsCreateTemp(aTemplateName, aPath, true /* Directory */, aDirectory, aMode, RT_BOOL(aSecure), &rcGuest);
     if (!RT_SUCCESS(vrc))
     {
         switch (vrc)

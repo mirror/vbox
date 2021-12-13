@@ -14368,7 +14368,7 @@
           realized is guest OS dependent.  The API does the best it can on each
           OS.
 
-          This parameter is ignore if the @a secure parameter is set to @c true.
+          This parameter is ignored if the @a secure parameter is set to @c true.
           <note>It is strongly recommended to use 0700.</note>
         </desc>
       </param>
