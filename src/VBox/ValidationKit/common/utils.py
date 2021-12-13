@@ -34,6 +34,7 @@ __version__ = "$Revision$"
 
 # Standard Python imports.
 import datetime;
+import errno;
 import os;
 import platform;
 import re;
@@ -983,14 +984,16 @@ def processExists(uPid):
         else:
             hProcess.Close();
             fRc = True;
-    elif sHostOs == 'linux':
-        fRc = os.path.exists('/proc/%s' % (uPid,));
     else:
+        fRc = False;
         try:
             os.kill(uPid, 0);
             fRc = True;
-        except: ## @todo check error code.
-            fRc = False;
+        except OSError as oXcpt:
+            if oXcpt.errno == errno.EPERM:
+                fRc = True;
+        except:
+            pass;
     return fRc;
 
 def processCheckPidAndName(uPid, sName):
