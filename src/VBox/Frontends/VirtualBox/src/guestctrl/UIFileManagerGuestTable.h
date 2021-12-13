@@ -139,12 +139,6 @@ private:
     bool isGuestAdditionsAvailable();
     void setStateAndEnableWidgets();
 
-    /** @name Perform operations needed after creating/ending a guest control session
-      * @{ */
-        void postGuestSessionCreated();
-        void postGuestSessionClosed();
-    /** @} */
-
     void initFileTable();
     void cleanAll();
 

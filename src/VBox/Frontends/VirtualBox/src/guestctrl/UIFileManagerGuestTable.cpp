@@ -246,24 +246,24 @@ void UIGuestSessionCreateWidget::markForError(bool fMarkForError)
         return;
     m_fMarkedForError = fMarkForError;
 
-        if (m_pUserNameEdit)
-        {
-            QPalette mPalette = m_pUserNameEdit->palette();
-            if (m_fMarkedForError)
-                mPalette.setColor(QPalette::Base, m_errorBaseColor);
-            else
-                mPalette.setColor(QPalette::Base, m_defaultBaseColor);
-            m_pUserNameEdit->setPalette(mPalette);
-        }
-        if (m_pPasswordEdit)
-        {
-            QPalette mPalette = m_pPasswordEdit->palette();
-            if (m_fMarkedForError)
-                mPalette.setColor(QPalette::Base, m_errorBaseColor);
-            else
-                mPalette.setColor(QPalette::Base, m_defaultBaseColor);
-            m_pPasswordEdit->setPalette(mPalette);
-        }
+    if (m_pUserNameEdit)
+    {
+        QPalette mPalette = m_pUserNameEdit->palette();
+        if (m_fMarkedForError)
+            mPalette.setColor(QPalette::Base, m_errorBaseColor);
+        else
+            mPalette.setColor(QPalette::Base, m_defaultBaseColor);
+        m_pUserNameEdit->setPalette(mPalette);
+    }
+    if (m_pPasswordEdit)
+    {
+        QPalette mPalette = m_pPasswordEdit->palette();
+        if (m_fMarkedForError)
+            mPalette.setColor(QPalette::Base, m_errorBaseColor);
+        else
+            mPalette.setColor(QPalette::Base, m_defaultBaseColor);
+        m_pPasswordEdit->setPalette(mPalette);
+    }
 }
 
 
@@ -1203,18 +1203,6 @@ void UIFileManagerGuestTable::cleanupConsoleListener()
     }
 }
 
-void UIFileManagerGuestTable::postGuestSessionCreated()
-{
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->switchSessionCloseMode();
-}
-
-void UIFileManagerGuestTable::postGuestSessionClosed()
-{
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->switchSessionCreateMode();
-}
-
 void UIFileManagerGuestTable::prepareListener(ComObjPtr<UIMainEventListenerImpl> &QtListener,
                                               CEventListener &comEventListener,
                                               CEventSource comEventSource, QVector<KVBoxEventType>& eventTypes)
@@ -1257,7 +1245,6 @@ void UIFileManagerGuestTable::sltGuestSessionUnregistered(CGuestSession guestSes
     if (guestSession == m_comGuestSession && !m_comGuestSession.isNull())
     {
         m_comGuestSession.detach();
-        postGuestSessionClosed();
         emit sigLogOutput("Guest session unregistered", m_strTableName, FileManagerLogType_Info);
     }
 }
@@ -1278,14 +1265,19 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
     }
     if (m_comGuestSession.isOk())
     {
-        if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
-            initFileTable();
         emit sigLogOutput(QString("%1: %2").arg("Guest session status has changed").arg(gpConverter->toString(m_comGuestSession.GetStatus())),
                   m_strTableName, FileManagerLogType_Info);
+
+        if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
+            initFileTable();
+        else
+        {
+            cleanupGuestSessionListener();
+            closeGuestSession();
+        }
     }
     else
         emit sigLogOutput("Guest session is not valid", m_strTableName, FileManagerLogType_Error);
-    postGuestSessionCreated();
     setStateAndEnableWidgets();
 }
 
@@ -1336,6 +1328,7 @@ void UIFileManagerGuestTable::setStateAndEnableWidgets()
 
 void UIFileManagerGuestTable::sltHandleCloseSessionRequest()
 {
+    cleanupGuestSessionListener();
     closeGuestSession();
 }
 
@@ -1361,16 +1354,22 @@ void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled()
             setSessionWidgetsEnabled(false);
             m_pWarningLabel->setVisible(true);
             m_pGuestSessionPanel->setEnabled(false);
+            if (m_pGuestSessionPanel)
+                m_pGuestSessionPanel->switchSessionCreateMode();
             break;
         case State_SessionPossible:
             setSessionWidgetsEnabled(false);
             m_pWarningLabel->setVisible(true);
             m_pGuestSessionPanel->setEnabled(true);
+            if (m_pGuestSessionPanel)
+                m_pGuestSessionPanel->switchSessionCreateMode();
             break;
         case State_SessionRunning:
             setSessionWidgetsEnabled(true);
             m_pWarningLabel->setVisible(false);
             m_pGuestSessionPanel->setEnabled(true);
+            if (m_pGuestSessionPanel)
+                m_pGuestSessionPanel->switchSessionCloseMode();
             break;
         default:
             break;
@@ -1388,7 +1387,6 @@ bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const
     if (!isGuestAdditionsAvailable())
     {
         emit sigLogOutput("Could not find Guest Additions", m_strTableName, FileManagerLogType_Error);
-        postGuestSessionClosed();
         if (m_pGuestSessionPanel)
             m_pGuestSessionPanel->markForError(true);
         return false;
@@ -1414,28 +1412,25 @@ bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const
     connect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
             this, &UIFileManagerGuestTable::sltGuestSessionStateChanged);
 
+    if (m_comGuestSession.GetStatus() != KGuestSessionStatus_Started ||
+        m_comGuestSession.GetStatus() != KGuestSessionStatus_Starting)
+        return false;
     return true;
 }
 
 void UIFileManagerGuestTable::closeGuestSession()
 {
-    cleanupGuestSessionListener();
     if (!m_comGuestSession.isNull())
+    {
         m_comGuestSession.Close();
-    // if (!m_comGuestSession.isNull())
-    // {
-    //     m_comGuestSession.Close();
-    //     m_comGuestSession.detach();
-    //     emit sigLogOutput("Guest session is closed", m_strTableName, FileManagerLogType_Info);
-    // }
-    // reset();
-    // postGuestSessionClosed();
+        m_comGuestSession.detach();
+        emit sigLogOutput("Guest session is closed", m_strTableName, FileManagerLogType_Info);
+    }
+    reset();
 }
 
 void UIFileManagerGuestTable::cleanAll()
 {
-    printf("UIFileManagerGuestTable::cleanAll()\n");
-
     cleanupConsoleListener();
     cleanupGuestListener();
     cleanupGuestSessionListener();
