@@ -1443,6 +1443,8 @@ void UIFileManagerTable::setSelectionDependentActionsEnabled(bool fIsEnabled)
 {
     foreach (QAction *pAction, m_selectionDependentActions)
         pAction->setEnabled(fIsEnabled);
+    if (m_pView)
+        emit sigSelectionChanged(m_pView->hasSelection());
 }
 
 UICustomFileSystemItem* UIFileManagerTable::rootItem()

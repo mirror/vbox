@@ -113,6 +113,7 @@ private slots:
     void sltHandleOptionsUpdated();
     void sltHandleHidePanel(UIDialogPanel *pPanel);
     void sltCommitDataSignalReceived();
+    void sltFileTableSelectionChanged(bool fHasSelection);
 
 private:
 

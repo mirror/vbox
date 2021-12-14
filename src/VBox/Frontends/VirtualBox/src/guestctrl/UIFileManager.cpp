@@ -256,7 +256,6 @@ void UIFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
         return;
 
     m_pVerticalToolBar->setOrientation(Qt::Vertical);
-    m_pVerticalToolBar->setEnabled(false);
 
     /* Add to dummy QWidget to toolbar to center the action icons vertically: */
     QWidget *topSpacerWidget = new QWidget(this);
@@ -267,8 +266,17 @@ void UIFileManager::prepareVerticalToolBar(QHBoxLayout *layout)
     bottomSpacerWidget->setVisible(true);
 
     m_pVerticalToolBar->addWidget(topSpacerWidget);
-    m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost));
-    m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest));
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost))
+    {
+        m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost));
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost)->setEnabled(false);
+    }
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest))
+    {
+        m_pVerticalToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest));
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest)->setEnabled(false);
+    }
+
     m_pVerticalToolBar->addWidget(bottomSpacerWidget);
 
     layout ->addWidget(m_pVerticalToolBar);
@@ -314,6 +322,8 @@ void UIFileManager::prepareConnections()
                 this, &UIFileManager::sltReceieveLogOutput);
         connect(m_pHostFileTable, &UIFileManagerHostTable::sigDeleteConfirmationOptionChanged,
                 this, &UIFileManager::sltHandleOptionsUpdated);
+        connect(m_pHostFileTable, &UIFileManagerGuestTable::sigSelectionChanged,
+                this, &UIFileManager::sltFileTableSelectionChanged);
     }
     connect(&uiCommon(), &UICommon::sigAskToCommitData,
             this, &UIFileManager::sltCommitDataSignalReceived);
@@ -428,6 +438,25 @@ void UIFileManager::sltHandleHidePanel(UIDialogPanel *pPanel)
 void UIFileManager::sltCommitDataSignalReceived()
 {
     m_fCommitDataSignalReceived = true;
+}
+
+void UIFileManager::sltFileTableSelectionChanged(bool fHasSelection)
+{
+    /* Enable/disable vertical toolbar actions: */
+    UIFileManagerGuestTable *pGuestTable = qobject_cast<UIFileManagerGuestTable*>(sender());
+
+    if (pGuestTable)
+    {
+        if (m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost))
+            m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost)->setEnabled(fHasSelection);
+        return;
+    }
+
+    if (sender() == m_pHostFileTable)
+    {
+        if (m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest))
+            m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest)->setEnabled(fHasSelection);
+    }
 }
 
 void UIFileManager::copyToHost()
@@ -690,6 +719,9 @@ void UIFileManager::addTabs(const QVector<QUuid> &machineIdsToAdd)
         {
             connect(pGuestFileTable, &UIFileManagerGuestTable::sigLogOutput,
                     this, &UIFileManager::sltReceieveLogOutput);
+            connect(pGuestFileTable, &UIFileManagerGuestTable::sigSelectionChanged,
+                    this, &UIFileManager::sltFileTableSelectionChanged);
+
         //     connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigNewFileOperation,
         //             this, &UIFileManager::sltReceieveNewFileOperation);
         //     connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigDeleteConfirmationOptionChanged,

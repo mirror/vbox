@@ -137,6 +137,7 @@ signals:
 
     void sigLogOutput(QString strLog, const QString &strMachineName, FileManagerLogType eLogType);
     void sigDeleteConfirmationOptionChanged();
+    void sigSelectionChanged(bool fHasSelection);
 
 public:
 
