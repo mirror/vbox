@@ -41,7 +41,7 @@
 /*
  * Include the string table code.
  */
-#define BLDPROG_STRTAB_MAX_STRLEN           512
+#define BLDPROG_STRTAB_MAX_STRLEN           1024
 #define BLDPROG_STRTAB_WITH_COMPRESSION
 #define BLDPROG_STRTAB_PURE_ASCII
 #define BLDPROG_STRTAB_WITH_CAMEL_WORDS
