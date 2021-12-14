@@ -64,7 +64,11 @@ Configuration macro:
 #define EMULATED_THREADS_TSS_DTOR_SLOTNUM 64  // see TLS_MINIMUM_AVAILABLE
 
 
+#ifdef VBOX
+# include <iprt/win/windows.h>
+#else
 #include <windows.h>
+#endif
 
 // check configuration
 #if defined(EMULATED_THREADS_USE_NATIVE_CALL_ONCE) && (_WIN32_WINNT < 0x0600)
