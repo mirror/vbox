@@ -1261,8 +1261,11 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
     if (cEvent.isOk())
     {
         CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
-        if (cErrorInfo.GetResultCode() == VERR_AUTHENTICATION_FAILURE)
+        if (cErrorInfo.GetResultDetail() < VINF_SUCCESS)
             emit sigLogOutput(cErrorInfo.GetText(), m_strTableName, FileManagerLogType_Error);
+
+        if (m_pGuestSessionPanel)
+            m_pGuestSessionPanel->markForError(cErrorInfo.GetResultDetail() == VERR_AUTHENTICATION_FAILURE);
     }
     if (m_comGuestSession.isOk())
     {
