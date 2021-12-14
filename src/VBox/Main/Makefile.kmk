@@ -1225,8 +1225,8 @@ endif
 	$(PATH_STAGE_LIB)/VBoxAPIWrap-x86$(VBOX_SUFF_LIB)
  VBoxClient-x86_LIBS.win = $(NO_SUCH_VARIABLE)
  VBoxClient-x86_LIBS.win.x86 += \
-    $(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib \
-	$(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/WbemUuid.Lib
+ 	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib \
+ 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/WbemUuid.Lib
  VBoxClient-x86_CLEAN.win += $(VBoxClient-x86_0_OUTDIR)/VBoxClient-x86.rgs
  $(call KB_FN_DO_PASS0_ON_TARGET,VBoxClient-x86) # Sets VBoxClient-x86_0_OUTDIR
 
@@ -1581,6 +1581,9 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
  define def_VBoxMainDisableMscWarnings
 	$(QUIET)$(MV) -f "$1" "$1.tmp"
 	$(QUIET)$(APPEND) -nt "$1" \
+		'#if _MSC_VER >= 1920 /* RT_MSC_VER_VS2019 */' \
+		'# pragma warning(disable:5031 5032) /* buggy winioctl.h in some w10 sdks */ ' \
+               '#endif' \
 		'#pragma warning(push) /* -Wall and windows.h */' \
 		'#pragma warning(disable:4668 4255)' \
 		'#if _MSC_VER >= 1800 /* RT_MSC_VER_VC120 */' \
@@ -1614,7 +1617,7 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 		/robust /protocol all /target $(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB),NT61,NT51) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM_0_OUTDIR)) \
 		/cpp_cmd $(VBOX_MIDL_CPP_CMD) \
-		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
+		$(foreachfile dir,$(SDK_$(VBOX_WINPSDK)_INCS),/I $(call VBOX_FN_MAKE_WIN_PATH,$(dir))) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$(VBOX_IDL_FILE.MSCOM))
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/VirtualBox.h)
@@ -1639,7 +1642,7 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 		,/env win32      /target NT51 /robust /protocol all ) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(dir $@)) \
 		/cpp_cmd $(VBOX_MIDL_CPP_CMD) \
-		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
+		$(foreachfile dir,$(SDK_$(VBOX_WINPSDK)_INCS),/I $(call VBOX_FN_MAKE_WIN_PATH,$(dir))) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$(VBOX_IDL_FILE.MSCOM))
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM_0_OUTDIR)/legacy/VirtualBox.h)
@@ -1661,7 +1664,7 @@ if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM-x86_0_OUTDIR)) \
 		/tlb $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox-x86.tlb) \
 		/cpp_cmd $(VBOX_MIDL_CPP_CMD_X86) \
-		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_$(VBOX_WINPSDK)_INC)) \
+		$(foreachfile dir,$(SDK_$(VBOX_WINPSDK)_INCS),/I $(call VBOX_FN_MAKE_WIN_PATH,$(dir))) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$(VBOX_IDL_FILE.MSCOM))
 	$(call def_VBoxMainDisableMscWarnings,$(VBoxCOM-x86_0_OUTDIR)/VirtualBox.h)

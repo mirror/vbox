@@ -105,7 +105,7 @@ ifeq ($(KBUILD_TARGET),win)
  endif
  VBoxNetAdp6_DEFS = IN_RT_R0 IN_SUP_STATIC
  VBoxNetAdp6_INCS := $(PATH_SUB_CURRENT)
- VBoxNetAdp6_SDKS = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK)INCS
+ VBoxNetAdp6_SDKS = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK_INCS)
  VBoxNetAdp6_SOURCES = \
  	win/VBoxNetAdp-win.cpp \
  	win/VBoxNetAdp-win.rc

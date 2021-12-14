@@ -215,7 +215,7 @@ SyntaxVBoxIncludeR0_CLEAN = $(SyntaxVBoxIncludeR0_SOURCES)
 if1of ($(KBUILD_TARGET), darwin os2 solaris win)
 LIBRARIES += SyntaxVBoxIncludeR0Drv
 SyntaxVBoxIncludeR0Drv_TEMPLATE = VBoxR0DrvLib
-SyntaxVBoxIncludeR0Drv_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
+SyntaxVBoxIncludeR0Drv_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK_INCS)
 SyntaxVBoxIncludeR0Drv_DEFS = VBOX_WITH_HGCM USING_VMM_COMMON_DEFS
 SyntaxVBoxIncludeR0Drv_CDEFS = IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS
 SyntaxVBoxIncludeR0Drv_SOURCES := \

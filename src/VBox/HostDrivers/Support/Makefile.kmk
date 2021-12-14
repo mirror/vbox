@@ -558,7 +558,7 @@ SUPRC_SOURCES  := SUPLibAll.cpp
 #
 SUPR0IdcClient_TEMPLATE = VBoxR0DrvLib
 SUPR0IdcClient_DEFS = IN_RT_R0 IN_SUP_R0 IN_SUP_STATIC
-SUPR0IdcClient_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
+SUPR0IdcClient_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK_INCS)
 SUPR0IdcClient_SOURCES.$(KBUILD_TARGET) = \
 	$(KBUILD_TARGET)/SUPR0IdcClient-$(KBUILD_TARGET).c
 SUPR0IdcClient_SOURCES = \
@@ -624,7 +624,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd solaris win)
  endif
  VBoxDrv_INST.darwin      = $(INST_VBOXDRV)Contents/MacOS/
  VBoxDrv_DEBUG_INST.darwin= $(patsubst %/,%,$(INST_VBOXDRV))
- VBoxDrv_SDKS.win         = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK)INCS
+ VBoxDrv_SDKS.win         = ReorderCompilerIncs $(VBOX_WINDDK) $(VBOX_WINPSDK_INCS)
 
  VBoxDrv_DEFS            := IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
  ifdef VBOX_WITH_DTRACE_R0DRV

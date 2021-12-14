@@ -44,7 +44,7 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
  VBoxNetFlt_INCS = .
  VBoxNetFlt_SOURCES.darwin = \
  	darwin/VBoxNetFlt-darwin.cpp
- VBoxNetFlt_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK)INCS
+ VBoxNetFlt_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK_INCS)
  VBoxNetFlt_SOURCES.win = \
  	win/drv/VBoxNetFltP-win.cpp \
  	win/drv/VBoxNetFltM-win.cpp \
@@ -164,7 +164,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  VBoxNetLwf_DEFS = IN_RT_R0 IN_SUP_STATIC
  VBoxNetLwf_INCS = .
  VBoxNetLwf_SOURCES = VBoxNetFlt.c VBoxNetFlt.rc
- VBoxNetLwf_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK)INCS
+ VBoxNetLwf_SDKS.win = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK_INCS)
  VBoxNetLwf_SOURCES.win = \
  	win/drv/VBoxNetLwf-win.cpp
  # with WINDDKWLH the WIN9X_COMPAT_SPINLOCK is needed to avoid inline declaration of KeInitializeSpinLock
@@ -426,7 +426,7 @@ endif
  endif
  VBoxNetAdp_DEFS = IN_RT_R0 IN_SUP_STATIC
  VBoxNetAdp_INCS := $(PATH_SUB_CURRENT)
- VBoxNetAdp_SDKS = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK)INCS
+ VBoxNetAdp_SDKS = ReorderCompilerIncs $(VBOX_WINDDK_WLH) $(VBOX_WINPSDK_INCS)
  VBoxNetAdp_SOURCES = \
  	VBoxNetFlt.c \
  	win/drv/VBoxNetFltM-win.cpp \

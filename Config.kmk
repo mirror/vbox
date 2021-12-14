@@ -1927,13 +1927,23 @@ endif
 #
 # Decide which Windows SDK to use by default.
 #
-if1of ($(VBOX_VCC_TOOL_STEM), VCC110)
- VBOX_WINPSDK ?= WINPSDK80
+ifdef VBOX_WITH_NEW_WINDOWS_SDK
+ VBOX_WINPSDK      ?= WINSDK10-UM
+ VBOX_WINPSDK_INCS ?= $(VBOX_WINPSDK)-INCS
+else if1of ($(VBOX_VCC_TOOL_STEM), VCC110)
+ VBOX_WINPSDK      ?= WINPSDK80
+ VBOX_WINPSDK_INCS ?= $(VBOX_WINPSDK)INCS
 else
- VBOX_WINPSDK ?= WINPSDK71
+ VBOX_WINPSDK      ?= WINPSDK71
+ VBOX_WINPSDK_INCS ?= $(VBOX_WINPSDK)INCS
 endif
 VBOX_WINPSDK_GST      ?= $(VBOX_WINPSDK)
-VBOX_WINPSDK_GST_W8   ?= WINPSDK80
+VBOX_WINPSDK_GST_INCS ?= $(VBOX_WINPSDK_INCS)
+ifneq ($(VBOX_WINPSDK_GST),WINPSDK71)
+ VBOX_WINPSDK_GST_W8  ?= $(VBOX_WINPSDK_GST)
+else
+ VBOX_WINPSDK_GST_W8  ?= WINPSDK80
+endif
 VBOX_WINPSDK_GST_W7   ?= $(VBOX_WINPSDK_GST)
 VBOX_WINPSDK_GST_WLH  ?= $(VBOX_WINPSDK_GST)
 VBOX_WINPSDK_GST_WXP  ?= $(VBOX_WINPSDK_GST)
@@ -2333,10 +2343,17 @@ VBOX_PATH_AUTOIT3 ?= $(KBUILD_DEVTOOLS)/win.x86/autoit/v3.2.10.0
 # Windows install tools...
 # Note! The scripts has been moved to Bin in v8.0.
 VBOX_PATH_WIX       ?= $(KBUILD_DEVTOOLS)/win.x86/wix/v3.8.1128.0
+ifdef VBOX_WITH_NEW_WINDOWS_SDK
+VBOX_PATH_MSITRAN   ?= $(PATH_SDK_WINSDK10_BIN)/MsiTran.Exe
+VBOX_PATH_MSIDB     ?= $(PATH_SDK_WINSDK10_BIN)/MsiDb.Exe
+VBOX_PATH_WISUBSTG  ?= $(PATH_SDK_WINSDK10_BIN)/WiSubStg.vbs
+VBOX_PATH_WISUMINFO ?= $(PATH_SDK_WINSDK10_BIN)/WiSumInf.vbs
+else
 VBOX_PATH_MSITRAN   ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiTran.Exe
 VBOX_PATH_MSIDB     ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiDb.Exe
 VBOX_PATH_WISUBSTG  ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSubStg.vbs
 VBOX_PATH_WISUMINFO ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSumInf.vbs
+endif
 VBOX_PATH_DIFX      ?= $(KBUILD_DEVTOOLS)/win.$(KBUILD_TARGET_ARCH)/DIFx/v2.1-r3
 
 ifdef VBOX_OSE ## @todo try get rid of this crap! People can use the latest and greatest Yasm release, no need to check in the binary for OSE.
@@ -2349,6 +2366,7 @@ endif
 
 # The Microsoft IDL compiler (the SDK build needs this on non-Windows).
 VBOX_WIN_MIDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wildcard $(addsuffix /[Mm][Ii][Dd][Ll].[Ee][Xx][Ee], \
+	$(PATH_SDK_$(VBOX_WINPSDK)_BIN) \
 	$(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Bin$(if-expr "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "win.amd64",/x64,) \
 	$(KBUILD_DEVTOOLS)/win.x86/ddk/7600.16385.1/bin/x86 \
 	$(KBUILD_DEVTOOLS)/win.x86/bin \
@@ -3389,6 +3407,13 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  VBOX_VCC_WARN_ALL += -wd5045 -wd4464 -wd4623 -wd4625 -wd4626 -wd5026 -wd5027 -wd4435
 endif
 VBOX_VCC_WARN_ALL += -wd4242 -wd4244
+#    -wd4548: socket.cpp(1931): warning C4548: expression before comma has no effect; expected expression with side-effect
+VBOX_VCC_WARN_ALL += -wd4548
+ifndef VBOX_WITH_NEW_WINDOWS_SDK
+ #    -wd5031: iprt/win/windows.h(55): warning C5031: #pragma warning(pop): likely mismatch, popping warning state pushed in different file
+ #    -wd5032: iprt/win/windows.h(37): warning C5032: detected #pragma warning(push) with no corresponding #pragma warning(pop)
+ VBOX_VCC_WARN_ALL += -wd5031 -wd5032
+endif
 ifndef VBOX_NEWER_VCC_WARN_ALL
  if "$(VBOX_VCC_TOOL_STEM)" < "VCC120"
   VBOX_NEWER_VCC_WARN_ALL := $(VBOX_VCC_WARN_ALL) -wd4350 -wd4435
@@ -8158,8 +8183,8 @@ TEMPLATE_VBOXGUESTR3XORGLIB_INST    = $(INST_ADDITIONS_LIB)
 TEMPLATE_VBOXGUESTR0             = VBox Guest Driver
 TEMPLATE_VBOXGUESTR0_EXTENDS     = VBOXR0DRV
 TEMPLATE_VBOXGUESTR0_INST        = $(INST_ADDITIONS)
-TEMPLATE_VBOXGUESTR0_SDKS.win.x86   = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST)INCS
-TEMPLATE_VBOXGUESTR0_SDKS.win.amd64 = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST)INCS
+TEMPLATE_VBOXGUESTR0_SDKS.win.x86   = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST_INCS)
+TEMPLATE_VBOXGUESTR0_SDKS.win.amd64 = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(VBOX_WINPSDK_GST_INCS)
 TEMPLATE_VBOXGUESTR0_LIBS.win.x86   = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/int64.lib
 TEMPLATE_VBOXGUESTR0_DEFS        = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
