@@ -43,7 +43,7 @@ struc GVMCPU
         .iHostCpuSet        resd 1
 
         alignb 64
-        .gvmm               resb 64
+        .gvmm               resb 256
         alignb 64
         .hmr0               resb 1024
 %ifdef VBOX_WITH_NEM_R0

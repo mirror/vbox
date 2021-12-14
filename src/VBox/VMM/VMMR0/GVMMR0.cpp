@@ -96,6 +96,11 @@
 # define GVMM_SCHED_WITH_PPT
 #endif
 
+#if /*defined(RT_OS_WINDOWS) ||*/ defined(DOXYGEN_RUNNING)
+/** Define this to enable the per-EMT high resolution wakeup timers. */
+# define GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+#endif
+
 
 /** Special value that GVMMR0DeregisterVCpu sets. */
 #define GVMM_RTNATIVETHREAD_DESTROYED       (~(RTNATIVETHREAD)1)
@@ -252,6 +257,13 @@ typedef struct GVMM
      * The minimum sleep time for when we've got company, in nano seconds.
      */
     uint32_t            nsMinSleepCompany;
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+    /** @gcfgm{/GVMM/MinSleepWithHrWakeUp,32-bit,0, 100000000, 5000, ns}
+     * The minimum sleep time for when we've got a high-resolution wake-up timer, in
+     * nano seconds.
+     */
+    uint32_t            nsMinSleepWithHrTimer;
+#endif
     /** @gcfgm{/GVMM/EarlyWakeUp1, 32-bit, 0, 100000000, 25000, ns}
      * The limit for the first round of early wake-ups, given in nano seconds.
      */
@@ -326,6 +338,9 @@ static int gvmmR0ByGVMandEMT(PGVM pGVM, VMCPUID idCpu, PGVMM *ppGVMM);
 #ifdef GVMM_SCHED_WITH_PPT
 static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 #endif
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+static DECLCALLBACK(void) gvmmR0EmtWakeUpTimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
+#endif
 
 
 /**
@@ -399,6 +414,9 @@ GVMMR0DECL(int) GVMMR0Init(void)
                 pGVMM->nsEarlyWakeUp1    = 0;
                 pGVMM->nsEarlyWakeUp2    = 0;
             }
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+            pGVMM->nsMinSleepWithHrTimer = 5000 /* ns (0.005 ms) */;
+#endif
             pGVMM->fDoEarlyWakeUps = pGVMM->nsEarlyWakeUp1 > 0 && pGVMM->nsEarlyWakeUp2 > 0;
 
             /* The host CPU data. */
@@ -596,6 +614,15 @@ GVMMR0DECL(int) GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, ui
         else
             rc = VERR_OUT_OF_RANGE;
     }
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+    else if (!strcmp(pszName, "MinSleepWithHrWakeUp"))
+    {
+        if (u64Value <= RT_NS_100MS)
+            pGVMM->nsMinSleepWithHrTimer = u64Value;
+        else
+            rc = VERR_OUT_OF_RANGE;
+    }
+#endif
     else if (!strcmp(pszName, "EarlyWakeUp1"))
     {
         if (u64Value <= RT_NS_100MS)
@@ -655,6 +682,10 @@ GVMMR0DECL(int) GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, 
         *pu64Value = pGVMM->nsMinSleepAlone;
     else if (!strcmp(pszName, "MinSleepCompany"))
         *pu64Value = pGVMM->nsMinSleepCompany;
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+    else if (!strcmp(pszName, "MinSleepWithHrWakeUp"))
+        *pu64Value = pGVMM->nsMinSleepWithHrTimer;
+#endif
     else if (!strcmp(pszName, "EarlyWakeUp1"))
         *pu64Value = pGVMM->nsEarlyWakeUp1;
     else if (!strcmp(pszName, "EarlyWakeUp2"))
@@ -937,6 +968,21 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                                     AssertMsg(RTR0MemUserIsValidAddr(pGVM->paVMPagesR3) && pGVM->paVMPagesR3 != NIL_RTR3PTR,
                                               ("%p\n", pGVM->paVMPagesR3));
 
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+                                    /*
+                                     * Create the high resolution wake-up timer for EMT 0, ignore failures.
+                                     */
+                                    if (RTTimerCanDoHighResolution())
+                                    {
+                                        int rc4 = RTTimerCreateEx(&pGVM->aCpus[0].gvmm.s.hHrWakeUpTimer,
+                                                                  0 /*one-shot, no interval*/,
+                                                                  RTTIMER_FLAGS_HIGH_RES, gvmmR0EmtWakeUpTimerCallback,
+                                                                  &pGVM->aCpus[0]);
+                                        if (RT_FAILURE(rc4))
+                                            pGVM->aCpus[0].gvmm.s.hHrWakeUpTimer = NULL;
+                                    }
+#endif
+
                                     /*
                                      * Complete the handle - take the UsedLock sem just to be careful.
                                      */
@@ -1105,6 +1151,7 @@ static void gvmmR0InitPerVMData(PGVM pGVM, int16_t hSelf, VMCPUID cCpus, PSUPDRV
         pGVM->aCpus[i].gvmm.s.HaltEventMulti = NIL_RTSEMEVENTMULTI;
         pGVM->aCpus[i].gvmm.s.VMCpuMapObj    = NIL_RTR0MEMOBJ;
         pGVM->aCpus[i].gvmm.s.idxEmtHash     = UINT16_MAX;
+        pGVM->aCpus[i].gvmm.s.hHrWakeUpTimer = NULL;
         pGVM->aCpus[i].hEMT                  = NIL_RTNATIVETHREAD;
         pGVM->aCpus[i].pGVM                  = pGVM;
         pGVM->aCpus[i].idHostCpu             = NIL_RTCPUID;
@@ -1439,6 +1486,13 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvUser1, 
                 rc = RTR0MemObjFree(pGVM->aCpus[i].gvmm.s.VMCpuMapObj, false /* fFreeMappings */); AssertRC(rc);
                 pGVM->aCpus[i].gvmm.s.VMCpuMapObj = NIL_RTR0MEMOBJ;
             }
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+            if (pGVM->aCpus[i].gvmm.s.hHrWakeUpTimer != NULL)
+            {
+                RTTimerDestroy(pGVM->aCpus[i].gvmm.s.hHrWakeUpTimer);
+                pGVM->aCpus[i].gvmm.s.hHrWakeUpTimer = NULL;
+            }
+#endif
         }
 
         /* the GVM structure itself. */
@@ -1492,14 +1546,15 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PGVM pGVM, VMCPUID idCpu)
     {
         if (idCpu < pGVM->cCpus)
         {
+            PGVMCPU const        pGVCpu      = &pGVM->aCpus[idCpu];
             RTNATIVETHREAD const hNativeSelf = RTThreadNativeSelf();
 
             gvmmR0CreateDestroyLock(pGVMM); /** @todo per-VM lock? */
 
             /* Check that the EMT isn't already assigned to a thread. */
-            if (pGVM->aCpus[idCpu].hEMT == NIL_RTNATIVETHREAD)
+            if (pGVCpu->hEMT == NIL_RTNATIVETHREAD)
             {
-                Assert(pGVM->aCpus[idCpu].hNativeThreadR0 == NIL_RTNATIVETHREAD);
+                Assert(pGVCpu->hNativeThreadR0 == NIL_RTNATIVETHREAD);
 
                 /* A thread may only be one EMT (this makes sure hNativeSelf isn't NIL). */
                 for (VMCPUID iCpu = 0; iCpu < pGVM->cCpus; iCpu++)
@@ -1523,21 +1578,37 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PGVM pGVM, VMCPUID idCpu)
                     }
                     pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt = hNativeSelf;
                     pGVM->gvmm.s.aEmtHash[idxHash].idVCpu     = idCpu;
-                    pGVM->aCpus[idCpu].hNativeThreadR0        = hNativeSelf;
-                    pGVM->aCpus[idCpu].hEMT                   = hNativeSelf;
-                    pGVM->aCpus[idCpu].cEmtHashCollisions     = (uint8_t)cCollisions;
-                    pGVM->aCpus[idCpu].gvmm.s.idxEmtHash      = (uint16_t)idxHash;
 
-                    rc = VMMR0ThreadCtxHookCreateForEmt(&pGVM->aCpus[idCpu]);
+                    pGVCpu->hNativeThreadR0        = hNativeSelf;
+                    pGVCpu->hEMT                   = hNativeSelf;
+                    pGVCpu->cEmtHashCollisions     = (uint8_t)cCollisions;
+                    pGVCpu->gvmm.s.idxEmtHash      = (uint16_t)idxHash;
+
+                    rc = VMMR0ThreadCtxHookCreateForEmt(pGVCpu);
                     if (RT_SUCCESS(rc))
-                        CPUMR0RegisterVCpuThread(&pGVM->aCpus[idCpu]);
+                    {
+                        CPUMR0RegisterVCpuThread(pGVCpu);
+
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+                        /*
+                         * Create the high resolution wake-up timer, ignore failures.
+                         */
+                        if (RTTimerCanDoHighResolution())
+                        {
+                            int rc2 = RTTimerCreateEx(&pGVCpu->gvmm.s.hHrWakeUpTimer, 0 /*one-shot, no interval*/,
+                                                      RTTIMER_FLAGS_HIGH_RES, gvmmR0EmtWakeUpTimerCallback, pGVCpu);
+                            if (RT_FAILURE(rc2))
+                                pGVCpu->gvmm.s.hHrWakeUpTimer = NULL;
+                        }
+#endif
+                    }
                     else
                     {
-                        pGVM->aCpus[idCpu].hNativeThreadR0        = NIL_RTNATIVETHREAD;
-                        pGVM->aCpus[idCpu].hEMT                   = NIL_RTNATIVETHREAD;
+                        pGVCpu->hNativeThreadR0                   = NIL_RTNATIVETHREAD;
+                        pGVCpu->hEMT                              = NIL_RTNATIVETHREAD;
                         pGVM->gvmm.s.aEmtHash[idxHash].hNativeEmt = NIL_RTNATIVETHREAD;
                         pGVM->gvmm.s.aEmtHash[idxHash].idVCpu     = NIL_VMCPUID;
-                        pGVM->aCpus[idCpu].gvmm.s.idxEmtHash      = UINT16_MAX;
+                        pGVCpu->gvmm.s.idxEmtHash                 = UINT16_MAX;
                     }
                 }
             }
@@ -2352,6 +2423,34 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
 }
 
 
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+/**
+ * Timer callback for the EMT high-resolution wake-up timer.
+ *
+ * @param   pTimer  The timer handle.
+ * @param   pvUser  The global (ring-0) CPU structure for the EMT to wake up.
+ * @param   iTick   The current tick.
+ */
+static DECLCALLBACK(void) gvmmR0EmtWakeUpTimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    PGVMCPU pGVCpu = (PGVMCPU)pvUser;
+    NOREF(pTimer); NOREF(iTick);
+
+    pGVCpu->gvmm.s.fHrWakeUptimerArmed = false;
+    if (pGVCpu->gvmm.s.u64HaltExpire != 0)
+    {
+        RTSemEventMultiSignal(pGVCpu->gvmm.s.HaltEventMulti);
+        pGVCpu->gvmm.s.Stats.cWakeUpTimerHits += 1;
+    }
+    else
+        pGVCpu->gvmm.s.Stats.cWakeUpTimerMisses += 1;
+
+    if (RTMpCpuId() == pGVCpu->gvmm.s.idHaltedOnCpu)
+        pGVCpu->gvmm.s.Stats.cWakeUpTimerSameCpu += 1;
+}
+#endif /* GVMM_SCHED_WITH_HR_WAKE_UP_TIMER */
+
+
 /**
  * Halt the EMT thread.
  *
@@ -2384,8 +2483,6 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PGVMCPU pGVCpu, uint64_t u64ExpireGip
         int rc2 = GVMMR0_USED_SHARED_LOCK(pGVMM); AssertRC(rc2);
     }
 
-    pGVCpu->gvmm.s.iCpuEmt = ASMGetApicId();
-
     /* GIP hack: We might are frequently sleeping for short intervals where the
        difference between GIP and system time matters on systems with high resolution
        system time. So, convert the input from GIP to System time in that case. */
@@ -2403,9 +2500,14 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PGVMCPU pGVCpu, uint64_t u64ExpireGip
     int rc;
     uint64_t cNsInterval = u64ExpireGipTime - u64NowGip;
     if (    u64NowGip < u64ExpireGipTime
-        &&  cNsInterval >= (pGVMM->cEMTs > pGVMM->cEMTsMeansCompany
-                            ? pGVMM->nsMinSleepCompany
-                            : pGVMM->nsMinSleepAlone))
+        &&  (    cNsInterval >= (pGVMM->cEMTs > pGVMM->cEMTsMeansCompany
+                                 ? pGVMM->nsMinSleepCompany
+                                 : pGVMM->nsMinSleepAlone)
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+             || (pGVCpu->gvmm.s.hHrWakeUpTimer != NULL && cNsInterval >= pGVMM->nsMinSleepWithHrTimer)
+#endif
+             )
+       )
     {
         pGVM->gvmm.s.StatsSched.cHaltBlocking++;
         if (cNsInterval > RT_NS_1SEC)
@@ -2419,12 +2521,37 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PGVM pGVM, PGVMCPU pGVCpu, uint64_t u64ExpireGip
             GVMMR0_USED_SHARED_UNLOCK(pGVMM);
         }
 
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+        if (   pGVCpu->gvmm.s.hHrWakeUpTimer != NULL
+            && cNsInterval >= RT_MIN(RT_NS_1US, pGVMM->nsMinSleepWithHrTimer))
+        {
+            STAM_REL_PROFILE_START(&pGVCpu->gvmm.s.Stats.Start, a);
+            RTTimerStart(pGVCpu->gvmm.s.hHrWakeUpTimer, cNsInterval);
+            pGVCpu->gvmm.s.fHrWakeUptimerArmed = true;
+            pGVCpu->gvmm.s.idHaltedOnCpu       = RTMpCpuId();
+            STAM_REL_PROFILE_STOP(&pGVCpu->gvmm.s.Stats.Start, a);
+        }
+#endif
+
         rc = RTSemEventMultiWaitEx(pGVCpu->gvmm.s.HaltEventMulti,
                                    RTSEMWAIT_FLAGS_ABSOLUTE | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_INTERRUPTIBLE,
                                    u64NowGip > u64NowSys ? u64ExpireGipTime : u64NowSys + cNsInterval);
 
         ASMAtomicWriteU64(&pGVCpu->gvmm.s.u64HaltExpire, 0);
         ASMAtomicDecU32(&pGVMM->cHaltedEMTs);
+
+#ifdef GVMM_SCHED_WITH_HR_WAKE_UP_TIMER
+        if (!pGVCpu->gvmm.s.fHrWakeUptimerArmed)
+        { /* likely */ }
+        else
+        {
+            STAM_REL_PROFILE_START(&pGVCpu->gvmm.s.Stats.Stop, a);
+            RTTimerStop(pGVCpu->gvmm.s.hHrWakeUpTimer);
+            pGVCpu->gvmm.s.fHrWakeUptimerArmed         = false;
+            pGVCpu->gvmm.s.Stats.cWakeUpTimerCanceled += 1;
+            STAM_REL_PROFILE_STOP(&pGVCpu->gvmm.s.Stats.Stop, a);
+        }
+#endif
 
         /* Reset the semaphore to try prevent a few false wake-ups. */
         if (rc == VINF_SUCCESS)
@@ -3070,11 +3197,18 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
         if (RT_FAILURE(rc))
             return rc;
         pStats->SchedVM = pGVM->gvmm.s.StatsSched;
+
+        uint32_t iCpu = RT_MIN(pGVM->cCpus, RT_ELEMENTS(pStats->aVCpus));
+        if (iCpu < RT_ELEMENTS(pStats->aVCpus))
+            RT_BZERO(&pStats->aVCpus[iCpu], (RT_ELEMENTS(pStats->aVCpus) - iCpu) * sizeof(pStats->aVCpus[0]));
+        while (iCpu-- > 0)
+            pStats->aVCpus[iCpu] = pGVM->aCpus[iCpu].gvmm.s.Stats;
     }
     else
     {
         GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
-        memset(&pStats->SchedVM, 0, sizeof(pStats->SchedVM));
+        RT_ZERO(pStats->SchedVM);
+        RT_ZERO(pStats->aVCpus);
 
         int rc = GVMMR0_USED_SHARED_LOCK(pGVMM);
         AssertRCReturn(rc, rc);

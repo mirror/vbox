@@ -91,7 +91,7 @@ typedef struct GVMCPU
 #ifdef VMM_INCLUDED_SRC_VMMR0_GVMMR0Internal_h
         struct GVMMPERVCPU  s;
 #endif
-        uint8_t             padding[64];
+        uint8_t             padding[256];
     } gvmm;
 
     /** The HM per vcpu data. */
@@ -132,9 +132,9 @@ typedef struct GVMCPU
 
     /** Padding the structure size to page boundrary. */
 #ifdef VBOX_WITH_NEM_R0
-    uint8_t                 abPadding3[4096 - 64*2 - 64 - 1024 - 64 - 896 - 64];
+    uint8_t                 abPadding3[4096 - 64*2 - 256 - 1024 - 64 - 896 - 64];
 #else
-    uint8_t                 abPadding3[4096 - 64*2 - 64 - 1024 - 896 - 64];
+    uint8_t                 abPadding3[4096 - 64*2 - 256 - 1024 - 896 - 64];
 #endif
 } GVMCPU;
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)

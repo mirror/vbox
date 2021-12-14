@@ -218,9 +218,9 @@ static const STAMR0SAMPLE g_aGVMMStats[] =
     { RT_UOFFSETOF(GVMMSTATS, SchedSum.cPollHalts),       STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollHalts", "The number of times the EMT has halted in a GVMMR0SchedPoll call." },
     { RT_UOFFSETOF(GVMMSTATS, SchedSum.cPollWakeUps),     STAMTYPE_U64_RESET, STAMUNIT_CALLS, "/GVMM/Sum/PollWakeUps", "The number of wake ups done during GVMMR0SchedPoll." },
 
-    { RT_UOFFSETOF(GVMMSTATS, cVMs),                      STAMTYPE_U32,       STAMUNIT_CALLS, "/GVMM/VMs", "The number of VMs accessible to the caller." },
-    { RT_UOFFSETOF(GVMMSTATS, cEMTs),                     STAMTYPE_U32,       STAMUNIT_CALLS, "/GVMM/EMTs", "The number of emulation threads." },
-    { RT_UOFFSETOF(GVMMSTATS, cHostCpus),                 STAMTYPE_U32,       STAMUNIT_CALLS, "/GVMM/HostCPUs", "The number of host CPUs." },
+    { RT_UOFFSETOF(GVMMSTATS, cVMs),                      STAMTYPE_U32,       STAMUNIT_COUNT, "/GVMM/VMs", "The number of VMs accessible to the caller." },
+    { RT_UOFFSETOF(GVMMSTATS, cEMTs),                     STAMTYPE_U32,       STAMUNIT_COUNT, "/GVMM/EMTs", "The number of emulation threads." },
+    { RT_UOFFSETOF(GVMMSTATS, cHostCpus),                 STAMTYPE_U32,       STAMUNIT_COUNT, "/GVMM/HostCPUs", "The number of host CPUs." },
 };
 
 
@@ -2978,6 +2978,36 @@ static void stamR3Ring0StatsRegisterU(PUVM pUVM)
         stamR3RegisterU(pUVM, (uint8_t *)&pUVM->stam.s.GVMMStats + g_aGVMMStats[i].offVar, NULL, NULL,
                         g_aGVMMStats[i].enmType, STAMVISIBILITY_ALWAYS, g_aGVMMStats[i].pszName,
                         g_aGVMMStats[i].enmUnit, g_aGVMMStats[i].pszDesc, STAM_REFRESH_GRP_GVMM);
+
+    for (unsigned i = 0; i < pUVM->cCpus; i++)
+    {
+        char   szName[120];
+        size_t cchBase = RTStrPrintf(szName, sizeof(szName), pUVM->cCpus < 10 ? "/GVMM/VCpus/%u/" : "/GVMM/VCpus/%02u/", i);
+
+        strcpy(&szName[cchBase], "cWakeUpTimerHits");
+        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aVCpus[i].cWakeUpTimerHits, NULL, NULL,
+                        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_OCCURENCES, "", STAM_REFRESH_GRP_GVMM);
+
+        strcpy(&szName[cchBase], "cWakeUpTimerMisses");
+        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aVCpus[i].cWakeUpTimerMisses, NULL, NULL,
+                        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_OCCURENCES, "", STAM_REFRESH_GRP_GVMM);
+
+        strcpy(&szName[cchBase], "cWakeUpTimerCanceled");
+        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aVCpus[i].cWakeUpTimerCanceled, NULL, NULL,
+                        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_OCCURENCES, "", STAM_REFRESH_GRP_GVMM);
+
+        strcpy(&szName[cchBase], "cWakeUpTimerSameCpu");
+        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aVCpus[i].cWakeUpTimerSameCpu, NULL, NULL,
+                        STAMTYPE_U32, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_OCCURENCES, "", STAM_REFRESH_GRP_GVMM);
+
+        strcpy(&szName[cchBase], "Start");
+        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aVCpus[i].Start, NULL, NULL,
+                        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_TICKS_PER_CALL, "", STAM_REFRESH_GRP_GVMM);
+
+        strcpy(&szName[cchBase], "Stop");
+        stamR3RegisterU(pUVM, &pUVM->stam.s.GVMMStats.aVCpus[i].Stop, NULL, NULL,
+                        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_TICKS_PER_CALL, "", STAM_REFRESH_GRP_GVMM);
+    }
     pUVM->stam.s.cRegisteredHostCpus = 0;
 
     /* GMM */

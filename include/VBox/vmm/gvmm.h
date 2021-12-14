@@ -31,7 +31,9 @@
 #endif
 
 #include <VBox/types.h>
+#include <VBox/vmm/stam.h>
 #include <VBox/sup.h>
+#include <VBox/param.h>
 #include <iprt/cpuset.h> /* RTCPUSET_MAX_CPUS */
 
 
@@ -130,6 +132,21 @@ typedef struct GVMMSTATSHOSTCPU
 typedef GVMMSTATSHOSTCPU *PGVMMSTATSHOSTCPU;
 
 /**
+ * Per VCpu statistics
+ */
+typedef struct GVMMSTATSVMCPU
+{
+    uint32_t            cWakeUpTimerHits;
+    uint32_t            cWakeUpTimerMisses;
+    uint32_t            cWakeUpTimerCanceled;
+    uint32_t            cWakeUpTimerSameCpu;
+    STAMPROFILE         Start;
+    STAMPROFILE         Stop;
+} GVMMSTATSVMCPU;
+/** Ptoiner to the GVMM per VCpu statistics. */
+typedef GVMMSTATSVMCPU *PGVMMSTATSVMCPU;
+
+/**
  * The GVMM statistics.
  */
 typedef struct GVMMSTATS
@@ -146,6 +163,8 @@ typedef struct GVMMSTATS
     uint32_t            u32Padding;
     /** The number of valid entries in aHostCpus. */
     uint32_t            cHostCpus;
+    /** Per EMT statistics for the specified VM, zero if non specified. */
+    GVMMSTATSVMCPU      aVCpus[VMM_MAX_CPU_COUNT];
     /** Per host CPU statistics. */
     GVMMSTATSHOSTCPU    aHostCpus[RTCPUSET_MAX_CPUS];
 } GVMMSTATS;
