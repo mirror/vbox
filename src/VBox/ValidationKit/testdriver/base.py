@@ -264,16 +264,7 @@ def processExists(uPid):
 
     Returns True if it positively exists, False otherwise.
     """
-    if sys.platform == 'win32':
-        fRc = winbase.processExists(uPid);
-    else:
-        try:
-            os.kill(uPid, 0);
-            fRc = True;
-        except:
-            reporter.logXcpt('uPid=%s' % (uPid,));
-            fRc = False;
-    return fRc;
+    return utils.processExists(uPid);
 
 def processCheckPidAndName(uPid, sName):
     """
