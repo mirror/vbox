@@ -303,10 +303,12 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
                     {
                         case VUSBSTATUS_OK:
                             if (cb)                     STAM_COUNTER_INC(&pRh->aStatIsocDetails[i].Ok);
-                            else                        STAM_COUNTER_INC(&pRh->aStatIsocDetails[i].Ok0); break;
+                            else                        STAM_COUNTER_INC(&pRh->aStatIsocDetails[i].Ok0);
+                            break;
                         case VUSBSTATUS_DATA_UNDERRUN:
                             if (cb)                     STAM_COUNTER_INC(&pRh->aStatIsocDetails[i].DataUnderrun);
-                            else                        STAM_COUNTER_INC(&pRh->aStatIsocDetails[i].DataUnderrun0); break;
+                            else                        STAM_COUNTER_INC(&pRh->aStatIsocDetails[i].DataUnderrun0);
+                            break;
                         case VUSBSTATUS_DATA_OVERRUN:   STAM_COUNTER_INC(&pRh->aStatIsocDetails[i].DataOverrun); break;
                         case VUSBSTATUS_NOT_ACCESSED:   STAM_COUNTER_INC(&pRh->aStatIsocDetails[i].NotAccessed); break;
                         default:                        STAM_COUNTER_INC(&pRh->aStatIsocDetails[i].Misc); break;
