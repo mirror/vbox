@@ -372,7 +372,7 @@ QString UIFileManagerHostTable::fsObjectPropertyString()
         /* Owner: */
         propertyStringList << UIFileManager::tr("<b>Owner:</b> %1").arg(fileInfo.owner());
 
-        return propertyStringList.join(QString());;
+        return propertyStringList.join(QString());
     }
 
     int fileCount = 0;

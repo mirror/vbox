@@ -623,7 +623,11 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
             /* If the source is an directory, make sure to add the appropriate flag to make copying work
              * into existing directories on the guest. This otherwise would fail (default). */
             if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+            {
                 aFlags.append("CopyIntoExisting");
+                aFlags.append("Recursive");
+                aFlags.append("FollowLinks");
+            }
             else /* Make sure to keep the vector in sync with the number of source items by adding an empty entry. */
                 aFlags.append("");
         }
@@ -689,7 +693,11 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
 
         KFsObjType eType = fileType(fileInfo);
         if (eType == KFsObjType_Directory)
+        {
             aFlags.append("CopyIntoExisting");
+            aFlags.append("Recursive");
+            aFlags.append("FollowLinks");
+        }
         else /* Make sure to keep the vector in sync with the number of source items by adding an empty entry. */
             aFlags.append("");
     }
