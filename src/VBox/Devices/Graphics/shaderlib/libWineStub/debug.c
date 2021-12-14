@@ -32,7 +32,11 @@
 
 #include "initguid.h"
 #ifdef VBOX
-# include <iprt/win/objbase.h>
+# ifdef _MSC_VER
+#  include <iprt/win/objbase.h>
+# else
+#  include <objbase.h>
+# endif
 # include <wine/wined3d.h>
 # ifdef _MSC_VER
 #  include <iprt/win/windows.h>
