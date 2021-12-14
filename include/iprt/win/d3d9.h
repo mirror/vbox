@@ -29,6 +29,10 @@
 # pragma once
 #endif
 
+/* d3d9.h includes windows.h (via objbase.h -> rpc.h), so do it up front using
+   our wrappers to avoid needing to duplicate warning workarounds for it. */
+#include <iprt/win/windows.h>
+
 #ifdef _MSC_VER
 # pragma warning(push)
 /*# pragma warning(disable:4163)*/

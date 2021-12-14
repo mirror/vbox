@@ -29,6 +29,45 @@
 # pragma once
 #endif
 
+
+/* winioctl.h in windows 10 SDKs up to 22000(?) has a warning(push/pop) bug in the
+   portion taken from ntddscm.h causing trouble when using _WIN32_WINNT or NTDDI_VERSION
+   older than NTDDI_WIN10_RS5.  In 18362 winioctl.h also tests against _WIN32_WINNT_WIN10_TH2
+   and other sdkddkver.h defines which only exist in NTDDI variants, not in _WIN32_WINNT_XXX,
+   so we fake up those too to keep the precompiler warning free.
+
+   Work around this by blocking out the buggy section on winioctl.h for now if the
+   NTDDI_VERSION target is too small.
+
+   WDK_NTDDI_VERSION is not present in the W7 SDK, not sure when exactly it was added.
+   NTDDI_WIN10_RS5 is W10 1809. NTDDI_WIN10_CO is Windows 11? */
+#include <sdkddkver.h>
+#ifdef _WIN32_WINNT_WIN10
+# ifndef _WIN32_WINNT_WIN10_TH2
+#  define _WIN32_WINNT_WIN10_TH2 _WIN32_WINNT_WIN10
+# endif
+# ifndef _WIN32_WINNT_WIN10_RS1
+#  define _WIN32_WINNT_WIN10_RS1 _WIN32_WINNT_WIN10
+# endif
+# ifndef _WIN32_WINNT_WIN10_RS2
+#  define _WIN32_WINNT_WIN10_RS2 _WIN32_WINNT_WIN10
+# endif
+# ifndef _WIN32_WINNT_WIN10_RS3
+#  define _WIN32_WINNT_WIN10_RS3 _WIN32_WINNT_WIN10
+# endif
+# ifndef _WIN32_WINNT_WIN10_RS4
+#  define _WIN32_WINNT_WIN10_RS4 _WIN32_WINNT_WIN10
+# endif
+# ifndef _WIN32_WINNT_WIN10_RS5
+#  define _WIN32_WINNT_WIN10_RS5 _WIN32_WINNT_WIN10
+# endif
+#endif
+#if defined(NTDDI_WIN10_RS5) && !defined(NTDDI_WIN10_CO) && defined(WDK_NTDDI_VERSION)
+# if NTDDI_VERSION < NTDDI_WIN10_RS5
+#  define _NTDDSCM_H_ buggy, hope nobody needs it.
+# endif
+#endif
+
 #ifdef _MSC_VER
 /*
  * Unfortunately, the Windows.h file in SDK 7.1 is not clean wrt warning C4668:

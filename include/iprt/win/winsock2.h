@@ -29,6 +29,11 @@
 # pragma once
 #endif
 
+/* winsock2.h includes windows.h, but without winsock.h, so we need to do it
+   up front using our wrapper header to avoid repeating tricks here. */
+#define _WINSOCKAPI_ /* do not include winsock.h via windows.h */
+#include <iprt/win/windows.h>
+
 #ifdef _MSC_VER
 /*
  * Unfortunately, the Windows.h file in SDK 7.1 is not clean wrt warning C4668:

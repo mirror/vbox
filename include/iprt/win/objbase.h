@@ -29,6 +29,10 @@
 # pragma once
 #endif
 
+/* objbase.h includes windows.h via rpc.h, so get ahead of it and include
+   it here via our cleanup wrapper. */
+#include <iprt/win/windows.h>
+
 #ifdef _MSC_VER
 # pragma warning(push)
 # pragma warning(disable:4668) /* '__midl' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */

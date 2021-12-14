@@ -29,6 +29,10 @@
 # pragma once
 #endif
 
+/* ws2tcpip.h includes winsock2.h, so get ahead of it and include our cleanly
+   wrapped version first to avoid duplicating stuff here. */
+#include <iprt/win/winsock2.h>
+
 #ifdef _MSC_VER
 # pragma warning(push)
 # pragma warning(disable:4668) /* 'NDIS_SUPPORT_NDIS6' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
