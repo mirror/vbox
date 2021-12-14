@@ -98,7 +98,7 @@ void UIFileManagerLogPanel::appendLog(const QString &strLog, const QString &strM
     {
         strColorTag = "<font color=\"Red\">";
     }
-    QString strColoredLog = QString("%1 %2: %3 %4 %5").arg(strColorTag).arg(QTime::currentTime().toString("hh:mm:ss")).arg(strMachineName).arg(strLog).arg("</font>");
+    QString strColoredLog = QString("%1 %2: %3 %4 %5").arg(strColorTag).arg(QTime::currentTime().toString("hh:mm:ss:z")).arg(strMachineName).arg(strLog).arg("</font>");
     m_pLogTextEdit->append(strColoredLog);
 }
 
