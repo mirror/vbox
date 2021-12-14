@@ -47,6 +47,7 @@
 #include "CGuestSessionStateChangedEvent.h"
 
 #include <iprt/path.h>
+#include <iprt/err.h>
 
 /*********************************************************************************************************************************
 *   UIGuestSessionCreateWidget definition.                                                                                   *
@@ -1262,6 +1263,8 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
         CVirtualBoxErrorInfo cErrorInfo = cEvent.GetError();
         if (cErrorInfo.isOk() && !cErrorInfo.GetText().contains("success", Qt::CaseInsensitive))
             emit sigLogOutput(cErrorInfo.GetText(), m_strTableName, FileManagerLogType_Error);
+        if (cErrorInfo.GetResultCode() == VERR_AUTHENTICATION_FAILURE)
+            printf("boooooooooooo %d\n", cErrorInfo.GetResultCode());
     }
     if (m_comGuestSession.isOk())
     {
@@ -1277,7 +1280,8 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
         }
     }
     else
-        emit sigLogOutput("Guest session is not valid", m_strTableName, FileManagerLogType_Error);
+        emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
+
     setStateAndEnableWidgets();
 }
 
@@ -1290,8 +1294,7 @@ void UIFileManagerGuestTable::sltCreateGuestSession(QString strUserName, QString
             m_pGuestSessionPanel->markForError(true);
         return;
     }
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->markForError(!openGuestSession(strUserName, strPassword));
+    openGuestSession(strUserName, strPassword);
 }
 
 void UIFileManagerGuestTable::setState()
@@ -1330,6 +1333,7 @@ void UIFileManagerGuestTable::sltHandleCloseSessionRequest()
 {
     cleanupGuestSessionListener();
     closeGuestSession();
+    setStateAndEnableWidgets();
 }
 
 void UIFileManagerGuestTable::sltCommitDataSignalReceived()
@@ -1412,9 +1416,6 @@ bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const
     connect(m_pQtSessionListener->getWrapped(), &UIMainEventListener::sigGuestSessionStatedChanged,
             this, &UIFileManagerGuestTable::sltGuestSessionStateChanged);
 
-    if (m_comGuestSession.GetStatus() != KGuestSessionStatus_Started ||
-        m_comGuestSession.GetStatus() != KGuestSessionStatus_Starting)
-        return false;
     return true;
 }
 
