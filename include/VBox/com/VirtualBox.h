@@ -45,6 +45,7 @@
 /* Generated VirtualBox COM library definition file. */
 #if !defined(VBOXCOM_NOINCLUDE)
 # if !defined(VBOX_WITH_XPCOM)
+#  include <iprt/win/windows.h> /* Included by VirtualBox.h via rpc.h, so include our wrapper with cleanups. */
 #  include <VirtualBox.h>
 # else
 #  define VBOX_WITH_XPCOM_CPP_ENUM_HACK
