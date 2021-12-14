@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -180,6 +180,13 @@ HRESULT GuestDirectory::getFilter(com::Utf8Str &aFilter)
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Entry point for guest side directory callbacks.
+ *
+ * @returns VBox status code.
+ * @param   pCbCtx              Host callback context.
+ * @param   pSvcCb              Host callback data.
+ */
 int GuestDirectory::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);

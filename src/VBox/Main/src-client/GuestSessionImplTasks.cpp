@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -90,6 +90,12 @@ GuestSessionTask::~GuestSessionTask(void)
 {
 }
 
+/**
+ * Creates (and initializes / sets) the progress objects of a guest session task.
+ *
+ * @returns VBox status code.
+ * @param   cOperations         Number of operation the task wants to perform.
+ */
 int GuestSessionTask::createAndSetProgressObject(ULONG cOperations /* = 1 */)
 {
     LogFlowThisFunc(("cOperations=%ld\n", cOperations));
@@ -127,6 +133,14 @@ int GuestSessionTask::RunAsync(const Utf8Str &strDesc, ComObjPtr<Progress> &pPro
 }
 #endif
 
+/**
+ * Gets a guest property from the VM.
+ *
+ * @returns VBox status code.
+ * @param   pGuest              Guest object of VM to get guest property from.
+ * @param   strPath             Guest property to path to get.
+ * @param   strValue            Where to store the guest property value on success.
+ */
 int GuestSessionTask::getGuestProperty(const ComObjPtr<Guest> &pGuest,
                                        const Utf8Str &strPath, Utf8Str &strValue)
 {
@@ -147,6 +161,12 @@ int GuestSessionTask::getGuestProperty(const ComObjPtr<Guest> &pGuest,
     return VERR_NOT_FOUND;
 }
 
+/**
+ * Sets the percentage of a guest session task progress.
+ *
+ * @returns VBox status code.
+ * @param   uPercent            Percentage (0-100) to set.
+ */
 int GuestSessionTask::setProgress(ULONG uPercent)
 {
     if (mProgress.isNull()) /* Progress is optional. */
@@ -170,6 +190,11 @@ int GuestSessionTask::setProgress(ULONG uPercent)
     return VINF_SUCCESS;
 }
 
+/**
+ * Sets the task's progress object to succeeded.
+ *
+ * @returns VBox status code.
+ */
 int GuestSessionTask::setProgressSuccess(void)
 {
     if (mProgress.isNull()) /* Progress is optional. */
@@ -1333,6 +1358,7 @@ GuestSessionTaskOpen::~GuestSessionTaskOpen(void)
 
 }
 
+/** @copydoc GuestSessionTask::Run */
 int GuestSessionTaskOpen::Run(void)
 {
     LogFlowThisFuncEnter();
@@ -1381,6 +1407,12 @@ GuestSessionTaskCopyFrom::~GuestSessionTaskCopyFrom(void)
 {
 }
 
+/**
+ * Initializes a copy-from-guest task.
+ *
+ * @returns HRESULT
+ * @param   strTaskDesc         Friendly task description.
+ */
 HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 {
     setTaskDesc(strTaskDesc);
@@ -1543,6 +1575,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
     return hrc;
 }
 
+/** @copydoc GuestSessionTask::Run */
 int GuestSessionTaskCopyFrom::Run(void)
 {
     LogFlowThisFuncEnter();
@@ -1675,6 +1708,12 @@ GuestSessionTaskCopyTo::~GuestSessionTaskCopyTo(void)
 {
 }
 
+/**
+ * Initializes a copy-to-guest task.
+ *
+ * @returns HRESULT
+ * @param   strTaskDesc         Friendly task description.
+ */
 HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
 {
     LogFlowFuncEnter();
@@ -1812,6 +1851,7 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
     return hr;
 }
 
+/** @copydoc GuestSessionTask::Run */
 int GuestSessionTaskCopyTo::Run(void)
 {
     LogFlowThisFuncEnter();
@@ -2063,6 +2103,14 @@ GuestSessionTaskUpdateAdditions::~GuestSessionTaskUpdateAdditions(void)
 
 }
 
+/**
+ * Adds arguments to existing process arguments.
+ * Identical / already existing arguments will be filtered out.
+ *
+ * @returns VBox status code.
+ * @param   aArgumentsDest      Destination to add arguments to.
+ * @param   aArgumentsSource    Arguments to add.
+ */
 int GuestSessionTaskUpdateAdditions::addProcessArguments(ProcessArguments &aArgumentsDest, const ProcessArguments &aArgumentsSource)
 {
     int rc = VINF_SUCCESS;
@@ -2101,6 +2149,17 @@ int GuestSessionTaskUpdateAdditions::addProcessArguments(ProcessArguments &aArgu
     return rc;
 }
 
+/**
+ * Helper function to copy a file from a VISO to the guest.
+ *
+ * @returns VBox status code.
+ * @param   pSession            Guest session to use.
+ * @param   hVfsIso             VISO handle to use.
+ * @param   strFileSrc          Source file path on VISO to copy.
+ * @param   strFileDst          Destination file path on guest.
+ * @param   fOptional           When set to \c true, the file is optional, i.e. can be skipped
+ *                              when not found, \c false if not.
+ */
 int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTVFS hVfsIso,
                                                      Utf8Str const &strFileSrc, const Utf8Str &strFileDst, bool fOptional)
 {
@@ -2159,6 +2218,13 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
     return rc;
 }
 
+/**
+ * Helper function to run (start) a file on the guest.
+ *
+ * @returns VBox status code.
+ * @param   pSession            Guest session to use.
+ * @param   procInfo            Guest process startup info to use.
+ */
 int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, GuestProcessStartupInfo &procInfo)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -2208,6 +2274,7 @@ int GuestSessionTaskUpdateAdditions::runFileOnGuest(GuestSession *pSession, Gues
     return vrc;
 }
 
+/** @copydoc GuestSessionTask::Run */
 int GuestSessionTaskUpdateAdditions::Run(void)
 {
     LogFlowThisFuncEnter();

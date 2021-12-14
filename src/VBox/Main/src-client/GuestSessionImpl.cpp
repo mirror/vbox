@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,13 +67,18 @@ public:
 
     virtual ~GuestSessionTaskInternal(void) { }
 
+    /** Returns the last set result code. */
     int rc(void) const { return mRC; }
+    /** Returns whether the last set result code indicates success or not. */
     bool isOk(void) const { return RT_SUCCESS(mRC); }
+    /** Returns the task's guest session object. */
     const ComObjPtr<GuestSession> &Session(void) const { return mSession; }
 
 protected:
 
+    /** Guest session the task belongs to. */
     const ComObjPtr<GuestSession>    mSession;
+    /** The last set result code. */
     int                              mRC;
 };
 
@@ -182,8 +187,11 @@ void GuestSession::FinalRelease(void)
  * Initializes a guest session but does *not* open in on the guest side
  * yet. This needs to be done via the openSession() / openSessionAsync calls.
  *
- * @return  IPRT status code.
- ** @todo Docs!
+ * @returns VBox status code.
+ * @param   pGuest              Guest object the guest session belongs to.
+ * @param   ssInfo              Guest session startup info to use.
+ * @param   guestCreds          Guest credentials to use for starting a guest session
+ *                              with a specific guest account.
  */
 int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
                        const GuestCredentials &guestCreds)
@@ -648,6 +656,17 @@ HRESULT GuestSession::getEventSource(ComPtr<IEventSource> &aEventSource)
 // private methods
 ///////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Closes a guest session on the guest.
+ *
+ * @returns VBox status code.
+ * @param   uFlags              Guest session close flags.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ *
+ * @note    Takes the write lock.
+ */
 int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcGuest)
 {
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
@@ -887,6 +906,16 @@ HRESULT GuestSession::i_directoryCopyFlagFromStr(const com::Utf8Str &strFlags, D
     return S_OK;
 }
 
+/**
+ * Creates a directory on the guest.
+ *
+ * @returns VBox status code.
+ * @param   strPath             Path on guest to directory to create.
+ * @param   uMode               Creation mode to use (octal, 0777 max).
+ * @param   uFlags              Directory creation flags to use.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ */
 int GuestSession::i_directoryCreate(const Utf8Str &strPath, uint32_t uMode,
                                     uint32_t uFlags, int *prcGuest)
 {
@@ -957,6 +986,13 @@ bool GuestSession::i_directoryExists(const Utf8Str &strPath)
     return RT_SUCCESS(rc);
 }
 
+/**
+ * Checks if a directory object exists and optionally returns its object.
+ *
+ * @returns \c true if directory object exists, or \c false if not.
+ * @param   uDirID              ID of directory object to check.
+ * @param   pDir                Where to return the found directory object on success.
+ */
 inline bool GuestSession::i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDirectory> *pDir)
 {
     SessionDirectories::const_iterator it = mData.mDirectories.find(uDirID);
@@ -997,7 +1033,7 @@ int GuestSession::i_directoryQueryInfo(const Utf8Str &strPath, bool fFollowSymli
 }
 
 /**
- * Unregisters a directory object from a session.
+ * Unregisters a directory object from a guest session.
  *
  * @return VBox status code. VERR_NOT_FOUND if the directory is not registered (anymore).
  * @param  pDirectory           Directory object to unregister from session.
@@ -1042,6 +1078,15 @@ int GuestSession::i_directoryUnregister(GuestDirectory *pDirectory)
     return rc;
 }
 
+/**
+ * Removes a directory on the guest.
+ *
+ * @returns VBox status code.
+ * @param   strPath             Path of directory on guest to remove.
+ * @param   fFlags              Directory remove flags to use.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ */
 int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int *prcGuest)
 {
     AssertReturn(!(fFlags & ~DIRREMOVEREC_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
@@ -1168,6 +1213,18 @@ int GuestSession::i_fsCreateTemp(const Utf8Str &strTemplate, const Utf8Str &strP
     return vrc;
 }
 
+/**
+ * Open a directory on the guest.
+ *
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @param   openInfo            Open information to use.
+ * @param   pDirectory          Where to return the guest directory object on success.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ *
+ * @note    Takes the write lock.
+ */
 int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
                                   ComObjPtr<GuestDirectory> &pDirectory, int *prcGuest)
 {
@@ -1414,6 +1471,13 @@ HRESULT GuestSession::i_fileCopyFlagFromStr(const com::Utf8Str &strFlags, FileCo
     return S_OK;
 }
 
+/**
+ * Checks if a file object exists and optionally returns its object.
+ *
+ * @returns \c true if file object exists, or \c false if not.
+ * @param   uDirID              ID of file object to check.
+ * @param   pDir                Where to return the found file object on success.
+ */
 inline bool GuestSession::i_fileExists(uint32_t uFileID, ComObjPtr<GuestFile> *pFile)
 {
     SessionFiles::const_iterator it = mData.mFiles.find(uFileID);
@@ -1427,7 +1491,7 @@ inline bool GuestSession::i_fileExists(uint32_t uFileID, ComObjPtr<GuestFile> *p
 }
 
 /**
- * Unregisters a file object from a session.
+ * Unregisters a file object from a guest session.
  *
  * @return VBox status code. VERR_NOT_FOUND if the file is not registered (anymore).
  * @param  pFile                File object to unregister from session.
@@ -1472,6 +1536,15 @@ int GuestSession::i_fileUnregister(GuestFile *pFile)
     return rc;
 }
 
+/**
+ * Removes a file from the guest.
+ *
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @param   strPath             Path of file on guest to remove.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ */
 int GuestSession::i_fileRemove(const Utf8Str &strPath, int *prcGuest)
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
@@ -1503,6 +1576,21 @@ int GuestSession::i_fileRemove(const Utf8Str &strPath, int *prcGuest)
     return vrc;
 }
 
+/**
+ * Opens a file on the guest.
+ *
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @param   aPath               File path on guest to open.
+ * @param   aAccessMode         Access mode to use.
+ * @param   aOpenAction         Open action to use.
+ * @param   aSharingMode        Sharing mode to use.
+ * @param   aCreationMode       Creation mode to use.
+ * @param   aFlags              Open flags to use.
+ * @param   pFile               Where to return the file object on success.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ */
 int GuestSession::i_fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAccessMode, FileOpenAction_T aOpenAction,
                                FileSharingMode_T aSharingMode, ULONG aCreationMode, const std::vector<FileOpenExFlag_T> &aFlags,
                                ComObjPtr<GuestFile> &pFile, int *prcGuest)
@@ -1522,6 +1610,16 @@ int GuestSession::i_fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAcce
     return i_fileOpen(openInfo, pFile, prcGuest);
 }
 
+/**
+ * Opens a file on the guest.
+ *
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @param   openInfo            Open information to use for opening the file.
+ * @param   pFile               Where to return the file object on success.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ */
 int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestFile> &pFile, int *prcGuest)
 {
     LogFlowThisFunc(("strFile=%s, enmAccessMode=0x%x, enmOpenAction=0x%x, uCreationMode=%RU32, mfOpenEx=%RU32\n",
@@ -1626,6 +1724,18 @@ int GuestSession::i_fileQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, 
     return vrc;
 }
 
+/**
+ * Queries the size of a file on the guest.
+ *
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @retval  VERR_
+ * @param   strPath             Path of file on guest to query size for.
+ * @param   fFollowSymlinks     \c true when wanting to follow symbolic links, \c false if not.
+ * @param   pllSize             Where to return the queried file size on success.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ */
 int GuestSession::i_fileQuerySize(const Utf8Str &strPath, bool fFollowSymlinks, int64_t *pllSize, int *prcGuest)
 {
     AssertPtrReturn(pllSize, VERR_INVALID_POINTER);
@@ -1699,16 +1809,31 @@ int GuestSession::i_fsQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, Gu
     return vrc;
 }
 
+/**
+ * Returns the guest credentials of a guest session.
+ *
+ * @returns Guest credentials.
+ */
 const GuestCredentials& GuestSession::i_getCredentials(void)
 {
     return mData.mCredentials;
 }
 
+/**
+ * Returns the guest session (friendly) name.
+ *
+ * @returns Guest session name.
+ */
 Utf8Str GuestSession::i_getName(void)
 {
     return mData.mSession.mName;
 }
 
+/**
+ * Returns a stringified error description for a given guest result code.
+ *
+ * @returns Stringified error description.
+ */
 /* static */
 Utf8Str GuestSession::i_guestErrorToString(int rcGuest)
 {
@@ -1785,7 +1910,7 @@ HRESULT GuestSession::i_isStartedExternal(void)
 }
 
 /**
- * Returns whether a session status implies a terminated state or not.
+ * Returns whether a guest session status implies a terminated state or not.
  *
  * @returns \c true if it's a terminated state, or \c false if not.
  */
@@ -1962,6 +2087,11 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
     return vrc;
 }
 
+/**
+ * Returns the path separation style used on the guest.
+ *
+ * @returns Separation style used on the guest.
+ */
 PathStyle_T GuestSession::i_getPathStyle(void)
 {
     PathStyle_T enmPathStyle;
@@ -1986,6 +2116,13 @@ PathStyle_T GuestSession::i_getPathStyle(void)
     return enmPathStyle;
 }
 
+/**
+ * Starts the guest session on the guest.
+ *
+ * @returns VBox status code.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ */
 int GuestSession::i_startSession(int *prcGuest)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -2072,7 +2209,7 @@ int GuestSession::i_startSession(int *prcGuest)
 }
 
 /**
- * Starts the guest session asynchronously in a separate thread.
+ * Starts the guest session asynchronously in a separate worker thread.
  *
  * @returns IPRT status code.
  */
@@ -2267,7 +2404,7 @@ int GuestSession::i_objectsUnregister(void)
 }
 
 /**
- * Notifies all registered objects about a session status change.
+ * Notifies all registered objects about a guest session status change.
  *
  * @returns VBox status code.
  * @param   enmSessionStatus    Session status to notify objects about.
@@ -2301,6 +2438,18 @@ int GuestSession::i_objectsNotifyAboutStatusChange(GuestSessionStatus_T enmSessi
     return vrc;
 }
 
+/**
+ * Renames a path on the guest.
+ *
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @param   strSource           Source path on guest to rename.
+ * @param   strDest             Destination path on guest to rename \a strSource to.
+ * @param   uFlags              Renaming flags.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ * @note    Takes the write lock.
+ */
 int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *prcGuest)
 {
     AssertReturn(!(uFlags & ~PATHRENAME_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
@@ -2443,7 +2592,7 @@ int GuestSession::i_pathUserHome(Utf8Str &strPath, int *prcGuest)
 }
 
 /**
- * Unregisters a process object from a session.
+ * Unregisters a process object from a guest session.
  *
  * @return VBox status code. VERR_NOT_FOUND if the process is not registered (anymore).
  * @param  pProcess             Process object to unregister from session.
@@ -2597,6 +2746,15 @@ int GuestSession::i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr
     return rc;
 }
 
+/**
+ * Checks if a process object exists and optionally returns its object.
+ *
+ * @returns \c true if process object exists, or \c false if not.
+ * @param   uDirID              ID of process object to check.
+ * @param   pDir                Where to return the found process object on success.
+ *
+ * @note    No locking done!
+ */
 inline bool GuestSession::i_processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess)
 {
     SessionProcesses::const_iterator it = mData.mProcesses.find(uProcessID);
@@ -2609,6 +2767,15 @@ inline bool GuestSession::i_processExists(uint32_t uProcessID, ComObjPtr<GuestPr
     return false;
 }
 
+/**
+ * Returns the process object from a guest PID.
+ *
+ * @returns VBox status code.
+ * @param   uPID                Guest PID to get process object for.
+ * @param   pProcess            Where to return the process object on success.
+ *
+ * @note    No locking done!
+ */
 inline int GuestSession::i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess)
 {
     AssertReturn(uPID, false);
@@ -2637,6 +2804,15 @@ inline int GuestSession::i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *
     return VERR_NOT_FOUND;
 }
 
+/**
+ * Sends a message to the HGCM host service.
+ *
+ * @returns VBox status code.
+ * @param   uMessage            Message ID to send.
+ * @param   uParms              Number of parameters in \a paParms to send.
+ * @param   paParms             Array of HGCM parameters to send.
+ * @param   fDst                Host message destination flags of type VBOX_GUESTCTRL_DST_XXX.
+ */
 int GuestSession::i_sendMessage(uint32_t uMessage, uint32_t uParms, PVBOXHGCMSVCPARM paParms,
                                 uint64_t fDst /*= VBOX_GUESTCTRL_DST_SESSION*/)
 {
@@ -2726,6 +2902,7 @@ int GuestSession::i_setSessionStatus(GuestSessionStatus_T sessionStatus, int ses
     return vrc;
 }
 
+/** @todo Unused --remove? */
 int GuestSession::i_signalWaiters(GuestSessionWaitResult_T enmWaitResult, int rc /*= VINF_SUCCESS */)
 {
     RT_NOREF(enmWaitResult, rc);
@@ -2809,7 +2986,7 @@ int GuestSession::i_shutdown(uint32_t fFlags, int *prcGuest)
  * This is called from the init method prior to to establishing a guest
  * session.
  *
- * @return  IPRT status code.
+ * @returns VBox status code.
  */
 int GuestSession::i_determineProtocolVersion(void)
 {
@@ -2844,6 +3021,19 @@ int GuestSession::i_determineProtocolVersion(void)
     return VINF_SUCCESS;
 }
 
+/**
+ * Waits for guest session events.
+ *
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @param   fWaitFlags          Wait flags to use.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   waitResult          Where to return the wait result on success.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ *
+ * @note    Takes the read lock.
+ */
 int GuestSession::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWaitResult_T &waitResult, int *prcGuest)
 {
     LogFlowThisFuncEnter();
@@ -3010,10 +3200,18 @@ int GuestSession::i_waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionW
 }
 
 /**
- * Undocumented, you guess what it does.
+ * Waits for guest session status changes.
  *
- * @note Similar code in GuestFile::i_waitForStatusChange() and
- *       GuestProcess::i_waitForStatusChange().
+ * @returns VBox status code.
+ * @returns VERR_GSTCTL_GUEST_ERROR on received guest error.
+ * @param   pEvent              Wait event to use for waiting.
+ * @param   fWaitFlags          Wait flags to use.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   pSessionStatus      Where to return the guest session status.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ *
+ * @note    Takes the read lock.
  */
 int GuestSession::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlags, uint32_t uTimeoutMS,
                                         GuestSessionStatus_T *pSessionStatus, int *prcGuest)

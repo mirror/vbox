@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2020 Oracle Corporation
+ * Copyright (C) 2012-2021 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -100,6 +100,7 @@ public:
 
 private:
 
+    /** Weak pointer to the guest file object to listen for. */
     GuestFile *mFile;
 };
 typedef ListenerImpl<GuestFileListener, GuestFile*> GuestFileListenerImpl;
@@ -333,6 +334,13 @@ HRESULT GuestFile::getStatus(FileStatus_T *aStatus)
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Entry point for guest side file callbacks.
+ *
+ * @returns VBox status code.
+ * @param   pCbCtx              Host callback context.
+ * @param   pSvcCbData          Host callback data.
+ */
 int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
@@ -364,6 +372,14 @@ int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
     return vrc;
 }
 
+/**
+ * Closes the file on the guest side.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned.
+ */
 int GuestFile::i_closeFile(int *prcGuest)
 {
     LogFlowThisFunc(("strFile=%s\n", mData.mOpenInfo.mFilename.c_str()));
@@ -433,6 +449,13 @@ Utf8Str GuestFile::i_guestErrorToString(int rcGuest, const char *pcszWhat)
     return strErr;
 }
 
+/**
+ * Called when the guest side notifies the host of a file event.
+ *
+ * @returns VBox status code.
+ * @param   pCbCtx              Host callback context.
+ * @param   pSvcCbData          Host callback data.
+ */
 int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
@@ -670,6 +693,13 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
     return rc;
 }
 
+/**
+ * Called when the guest side of the file has been disconnected (closed, terminated, +++).
+ *
+ * @returns VBox status code.
+ * @param   pCbCtx              Host callback context.
+ * @param   pSvcCbData          Host callback data.
+ */
 int GuestFile::i_onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
@@ -726,6 +756,15 @@ int GuestFile::i_onSessionStatusChange(GuestSessionStatus_T enmSessionStatus)
     return vrc;
 }
 
+/**
+ * Opens the file on the guest.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ */
 int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
 {
     AssertReturn(mData.mOpenInfo.mFilename.isNotEmpty(), VERR_INVALID_PARAMETER);
@@ -823,12 +862,34 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
     return vrc;
 }
 
+/**
+ * Queries file system information from a guest file.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   objData             Where to store the file system object data on success.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned. Optional.
+ */
 int GuestFile::i_queryInfo(GuestFsObjData &objData, int *prcGuest)
 {
     AssertPtr(mSession);
     return mSession->i_fsQueryInfo(mData.mOpenInfo.mFilename, FALSE /* fFollowSymlinks */, objData, prcGuest);
 }
 
+/**
+ * Reads data from a guest file.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   uOffset             Offset (in bytes) to start reading from.
+ * @param   uSize               Size (in bytes) to read.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   pvData              Where to store the read data on success.
+ * @param   cbData              Size (in bytes) of \a pvData on input.
+ * @param   pcbRead             Where to return to size (in bytes) read on success.
+ *                              Optional.
+ */
 int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
                           void* pvData, uint32_t cbData, uint32_t* pcbRead)
 {
@@ -891,6 +952,19 @@ int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
     return vrc;
 }
 
+/**
+ * Reads data from a specific position from a guest file.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   uOffset             Offset (in bytes) to start reading from.
+ * @param   uSize               Size (in bytes) to read.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   pvData              Where to store the read data on success.
+ * @param   cbData              Size (in bytes) of \a pvData on input.
+ * @param   pcbRead             Where to return to size (in bytes) read on success.
+ *                              Optional.
+ */
 int GuestFile::i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
                             void* pvData, size_t cbData, size_t* pcbRead)
 {
@@ -952,6 +1026,16 @@ int GuestFile::i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutM
     return vrc;
 }
 
+/**
+ * Seeks a guest file to a specific position.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   iOffset             Offset (in bytes) to seek.
+ * @param   eSeekType           Seek type to use.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   puOffset            Where to return the new current file position (in bytes) on success.
+ */
 int GuestFile::i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
                         uint32_t uTimeoutMS, uint64_t *puOffset)
 {
@@ -1014,6 +1098,15 @@ int GuestFile::i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
     return vrc;
 }
 
+/**
+ * Sets the current internal file object status.
+ *
+ * @returns VBox status code.
+ * @param   fileStatus          New file status to set.
+ * @param   fileRc              New result code to set.
+ *
+ * @note    Takes the write lock.
+ */
 int GuestFile::i_setFileStatus(FileStatus_T fileStatus, int fileRc)
 {
     LogFlowThisFuncEnter();
@@ -1056,6 +1149,16 @@ int GuestFile::i_setFileStatus(FileStatus_T fileStatus, int fileRc)
     return VINF_SUCCESS;
 }
 
+/**
+ * Waits for a guest file offset change.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   pEvent              Guest wait event to wait for.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   puOffset            Where to return the new offset (in bytes) on success.
+ *                              Optional and can be NULL.
+ */
 int GuestFile::i_waitForOffsetChange(GuestWaitEvent *pEvent,
                                      uint32_t uTimeoutMS, uint64_t *puOffset)
 {
@@ -1085,6 +1188,18 @@ int GuestFile::i_waitForOffsetChange(GuestWaitEvent *pEvent,
     return vrc;
 }
 
+/**
+ * Waits for reading from a guest file.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   pEvent              Guest wait event to wait for.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   pvData              Where to store read file data on success.
+ * @param   cbData              Size (in bytes) of \a pvData.
+ * @param   pcbRead             Where to return the actual bytes read on success.
+ *                              Optional and can be NULL.
+ */
 int GuestFile::i_waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
                              void *pvData, size_t cbData, uint32_t *pcbRead)
 {
@@ -1139,10 +1254,18 @@ int GuestFile::i_waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
 }
 
 /**
- * Undocumented, use with great care.
+ * Waits for a guest file status change.
  *
  * @note Similar code in GuestProcess::i_waitForStatusChange() and
  *       GuestSession::i_waitForStatusChange().
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   pEvent              Guest wait event to wait for.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   pFileStatus         Where to return the file status on success.
+ * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
+ *                              was returned.
  */
 int GuestFile::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
                                      FileStatus_T *pFileStatus, int *prcGuest)
@@ -1229,6 +1352,17 @@ int GuestFile::i_waitForWrite(GuestWaitEvent *pEvent,
     return vrc;
 }
 
+/**
+ * Writes data to a guest file.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   pvData              Data to write.
+ * @param   cbData              Size (in bytes) of \a pvData to write.
+ * @param   pcbWritten          Where to return to size (in bytes) written on success.
+ *                              Optional.
+ */
 int GuestFile::i_writeData(uint32_t uTimeoutMS, const void *pvData, uint32_t cbData,
                            uint32_t *pcbWritten)
 {
@@ -1292,6 +1426,19 @@ int GuestFile::i_writeData(uint32_t uTimeoutMS, const void *pvData, uint32_t cbD
     return vrc;
 }
 
+
+/**
+ * Writes data to a specific position to a guest file.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
+ * @param   uOffset             Offset (in bytes) to start writing at.
+ * @param   uTimeoutMS          Timeout (in ms) to wait.
+ * @param   pvData              Data to write.
+ * @param   cbData              Size (in bytes) of \a pvData to write.
+ * @param   pcbWritten          Where to return to size (in bytes) written on success.
+ *                              Optional.
+ */
 int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
                              const void *pvData, uint32_t cbData, uint32_t *pcbWritten)
 {
