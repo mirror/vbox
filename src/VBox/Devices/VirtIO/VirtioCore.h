@@ -1016,7 +1016,7 @@ DECLINLINE(void) virtioCoreR3VirqBufFill(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBu
     PVIRTIOSGBUF pSgPhysReturn = pVirtqBuf->pSgPhysReturn;
     while (cbRemain)
     {
-        uint32_t cbBounded = RT_MIN(pSgPhysReturn->cbSegLeft, cbRemain);
+        size_t cbBounded = RT_MIN(pSgPhysReturn->cbSegLeft, cbRemain);
         Assert(cbBounded > 0);
         virtioCoreGCPhysWrite(pVirtio, CTX_SUFF(pVirtio->pDevIns), (RTGCPHYS)pSgPhysReturn->GCPhysCur, pvBuf, cbBounded);
         virtioCoreGCPhysChainAdvance(pSgPhysReturn, cbBounded);
