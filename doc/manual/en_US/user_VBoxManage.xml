@@ -2467,7 +2467,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
           <para>
             Specifies any required file format variants for the output
             file. This is a comma-separated list of variant flags.
-            Options are Standard,Fixed,Split2G,Stream,ESX. Not all
+            Options are Standard,Fixed,Split2G,Stream,ESX,RawDisk. Not all
             combinations are supported, and specifying mutually
             incompatible flags results in an error message. Optional.
           </para>
