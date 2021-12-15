@@ -306,19 +306,19 @@ endif
 		'' \
 		'RT_C_DECLS_END' \
 		'' \
-		'HELP_LANG_ENTRY g_apHelpLangEntries[] = ' \
+		'HELP_LANG_ENTRY_T const g_aHelpLangEntries[] = ' \
 		'{' \
-		'    {"en_US", 5, &g_apHelpEntries_en_US[0], g_cHelpEntries_en_US},'
+		'    { "en_US", 5, &g_apHelpEntries_en_US[0], &g_cHelpEntries_en_US },'
 ifdef VBOX_WITH_VBOXMANAGE_NLS
 	$(foreach lang,$(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES) \
-	,$(NLTAB)$(QUIET)$(APPEND) "$@" '    {"$(lang)", $(length $(lang)), &g_apHelpEntries_$(lang)[0], g_cHelpEntries_$(lang)},' )
+	,$(NLTAB)$(QUIET)$(APPEND) "$@" '    { "$(lang)", $(length $(lang)), &g_apHelpEntries_$(lang)[0], &g_cHelpEntries_$(lang) },' )
 endif
 	$(QUIET)$(APPEND) -n "$@" \
 		'};' \
 		'' \
-		'const uint32_t g_cHelpLangEntries = RT_ELEMENTS(g_apHelpLangEntries);' \
+		'uint32_t const g_cHelpLangEntries = RT_ELEMENTS(g_aHelpLangEntries);' \
 		'' \
-		'PHELP_LANG_ENTRY volatile g_pHelpLangEntry = &g_apHelpLangEntries[0];'\
+		'PCHELP_LANG_ENTRY_T volatile g_pHelpLangEntry = &g_aHelpLangEntries[0];'\
 		''
 	$(QUIET)$(CP) --changed -- "$@" "$(patsubst %.ts,%,$@)"
 
@@ -353,19 +353,19 @@ $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.h.ts \
 		--stringparam 'g_sMode' 'subcmd' $< $(refentry))
 	$(QUIET)$(APPEND) -n "$@" \
 		'' \
-		'typedef struct HELP_LANG_ENTRY' \
+		'typedef struct HELP_LANG_ENTRY_T' \
 		'{' \
 		'    const char      *pszLang;' \
-		'    size_t           cbLang;' \
+		'    size_t           cchLang;' \
 		'    PCRTMSGREFENTRY *papHelpEntries;' \
-		'    const uint32_t   cHelpEntries;' \
-		'} HELP_LANG_ENTRY;' \
-		'typedef HELP_LANG_ENTRY *PHELP_LANG_ENTRY;' \
+		'    uint32_t const  *pcHelpEntries;' \
+		'} HELP_LANG_ENTRY_T;' \
+		'typedef HELP_LANG_ENTRY_T const *PCHELP_LANG_ENTRY_T;' \
 		'' \
-		'extern HELP_LANG_ENTRY g_apHelpLangEntries[];' \
-		'extern const uint32_t  g_cHelpLangEntries;' \
+		'extern HELP_LANG_ENTRY_T const g_aHelpLangEntries[];' \
+		'extern const uint32_t          g_cHelpLangEntries;' \
 		'' \
-		'extern PHELP_LANG_ENTRY volatile g_pHelpLangEntry;' \
+		'extern PCHELP_LANG_ENTRY_T volatile g_pHelpLangEntry;' \
 		'' \
 		'RT_C_DECLS_END' \
 		'' \

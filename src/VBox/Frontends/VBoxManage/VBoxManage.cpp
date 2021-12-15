@@ -508,35 +508,38 @@ HRESULT showProgress(ComPtr<IProgress> progress, uint32_t fFlags)
 void setBuiltInHelpLanguage(const char *pszLang)
 {
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
-    if (pszLang == NULL || pszLang[0] == 0 || (pszLang[0] == 'C' && pszLang[1] == 0))
+    if (pszLang == NULL || pszLang[0] == '\0' || (pszLang[0] == 'C' && pszLang[1] == '\0'))
         pszLang = "en_US";
-    PHELP_LANG_ENTRY pHelpLangEntry = NULL;
+
     /* find language entry matching exactly pszLang */
+    PCHELP_LANG_ENTRY_T pHelpLangEntry = NULL;
     for (uint32_t i = 0; i < g_cHelpLangEntries; i++)
     {
-        if (strcmp(g_apHelpLangEntries[i].pszLang, pszLang) == 0)
+        if (strcmp(g_aHelpLangEntries[i].pszLang, pszLang) == 0)
         {
-            pHelpLangEntry = &g_apHelpLangEntries[i];
+            pHelpLangEntry = &g_aHelpLangEntries[i];
             break;
         }
     }
+
     /* find first entry containing language specified if pszLang contains only language */
     if (pHelpLangEntry == NULL)
     {
-        size_t cbLang = strlen(pszLang);
+        size_t const cchLang = strlen(pszLang);
         for (uint32_t i = 0; i < g_cHelpLangEntries; i++)
         {
-            if (   cbLang < g_apHelpLangEntries[i].cbLang
-                && memcmp(g_apHelpLangEntries[i].pszLang, pszLang, cbLang) == 0)
+            if (   cchLang < g_aHelpLangEntries[i].cchLang
+                && memcmp(g_aHelpLangEntries[i].pszLang, pszLang, cchLang) == 0)
             {
-                pHelpLangEntry = &g_apHelpLangEntries[i];
+                pHelpLangEntry = &g_aHelpLangEntries[i];
                 break;
             }
         }
     }
+
     /* set to en_US (i.e. untranslated) if not found */
     if (pHelpLangEntry == NULL)
-        pHelpLangEntry = &g_apHelpLangEntries[0];
+        pHelpLangEntry = &g_aHelpLangEntries[0];
 
     ASMAtomicWritePtr(&g_pHelpLangEntry, pHelpLangEntry);
 #else
@@ -584,7 +587,6 @@ int main(int argc, char *argv[])
         vrc = RTPathAppPrivateNoArch(szNlsPath, sizeof(szNlsPath));
         if (RT_SUCCESS(vrc))
             vrc = RTPathAppend(szNlsPath, sizeof(szNlsPath), "nls" RTPATH_SLASH_STR "VBoxManageNls");
-
         if (RT_SUCCESS(vrc))
         {
             vrc = pTranslator->registerTranslation(szNlsPath, true, &pTrComponent);
