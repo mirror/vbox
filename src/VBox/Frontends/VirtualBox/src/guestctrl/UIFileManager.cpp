@@ -394,11 +394,11 @@ void UIFileManager::sltPanelActionToggled(bool fChecked)
         hidePanel(pPanel);
 }
 
-// void UIFileManager::sltReceieveNewFileOperation(const CProgress &comProgress)
-// {
-//     if (m_pOperationsPanel)
-//         m_pOperationsPanel->addNewProgress(comProgress);
-// }
+void UIFileManager::sltReceieveNewFileOperation(const CProgress &comProgress, const QString &strTableName)
+{
+    if (m_pOperationsPanel)
+        m_pOperationsPanel->addNewProgress(comProgress, strTableName);
+}
 
 void UIFileManager::sltFileOperationComplete(QUuid progressId)
 {
@@ -721,11 +721,10 @@ void UIFileManager::addTabs(const QVector<QUuid> &machineIdsToAdd)
                     this, &UIFileManager::sltReceieveLogOutput);
             connect(pGuestFileTable, &UIFileManagerGuestTable::sigSelectionChanged,
                     this, &UIFileManager::sltFileTableSelectionChanged);
-
-        //     connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigNewFileOperation,
-        //             this, &UIFileManager::sltReceieveNewFileOperation);
-        //     connect(m_pGuestFileTable, &UIFileManagerGuestTable::sigDeleteConfirmationOptionChanged,
-        //             this, &UIFileManager::sltHandleOptionsUpdated);
+            connect(pGuestFileTable, &UIFileManagerGuestTable::sigNewFileOperation,
+                    this, &UIFileManager::sltReceieveNewFileOperation);
+            connect(pGuestFileTable, &UIFileManagerGuestTable::sigDeleteConfirmationOptionChanged,
+                    this, &UIFileManager::sltHandleOptionsUpdated);
         }
     }
 }

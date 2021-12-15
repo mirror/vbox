@@ -53,7 +53,7 @@ class UIFileManagerGuestTable : public UIFileManagerTable
 
 signals:
 
-    void sigNewFileOperation(const CProgress &comProgress);
+    void sigNewFileOperation(const CProgress &comProgress, const QString &strTableName);
 
 public:
 

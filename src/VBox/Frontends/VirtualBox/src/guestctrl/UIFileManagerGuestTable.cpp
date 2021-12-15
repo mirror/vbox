@@ -632,7 +632,7 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
     CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, strDestinationPath);
     if (!checkGuestSession())
         return;
-    emit sigNewFileOperation(progress);
+    emit sigNewFileOperation(progress, m_strTableName);
 }
 
 QUuid UIFileManagerGuestTable::machineId()
@@ -695,7 +695,7 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
     CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, hostDestinationPath);
     if (!checkGuestSession())
         return;
-    emit sigNewFileOperation(progress);
+    emit sigNewFileOperation(progress, m_strTableName);
 }
 
 KFsObjType UIFileManagerGuestTable::fileType(const CFsObjInfo &fsInfo)

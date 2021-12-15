@@ -107,7 +107,7 @@ private slots:
     void sltCopyGuestToHost();
     void sltCopyHostToGuest();
     void sltPanelActionToggled(bool fChecked);
-    //void sltReceieveNewFileOperation(const CProgress &comProgress);
+    void sltReceieveNewFileOperation(const CProgress &comProgress, const QString &strTableName);
     void sltFileOperationComplete(QUuid progressId);
     /** Performs whatever necessary when some signal about option change has been receieved. */
     void sltHandleOptionsUpdated();
