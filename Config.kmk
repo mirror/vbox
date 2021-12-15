@@ -343,6 +343,8 @@ VBOX_WITH_NEW_XCODE := 1
 endif
 # Select new VC++ on Windows.
 VBOX_WITH_NEW_VCC = 1
+# Select Windows 11 SDK.
+VBOX_WITH_NEW_WINDOWS_SDK = 1
 
 ## @name Additions
 ## @{
