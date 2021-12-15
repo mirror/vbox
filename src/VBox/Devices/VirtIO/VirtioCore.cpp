@@ -2071,8 +2071,8 @@ int virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp,
 #ifdef LOG_ENABLED
     char szOut[80] = { 0 };
     virtioCoreFormatDeviceStatus(pVirtio->fDeviceStatus, szOut, sizeof(szOut));
-#endif
     Log(("Loaded legacy device status = (%s)\n", szOut));
+#endif
 
     rc = pHlp->pfnSSMGetU8(   pSSM, &pVirtio->uISR);
     AssertRCReturn(rc, rc);
