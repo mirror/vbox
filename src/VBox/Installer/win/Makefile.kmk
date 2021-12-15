@@ -1057,7 +1057,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(lang).mst \
 		-out $$(@D)/$(PACKAGE_NAME_LANG)_$(lang).msi \
 		$$(@D)/VirtualBox_$(lang).wixobj \
 		$(VBOX_PATH_WIX)/difxapp_$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",x86,x64).wixlib
-	$(REDIRECT) -C $$(@D) -- $(VBOX_PATH_MSITRAN) -g $$< $(PACKAGE_NAME_LANG)_$(lang).msi $(lang).mst
+	$(REDIRECT) -C $$(@D) -- $$(VBOX_PATH_MSITRAN) -g $$< $(PACKAGE_NAME_LANG)_$(lang).msi $(lang).mst
 	$(CP) -f -- "$(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(lang).mst" "$(VBOX_WIN_INST_REPACK_DIR)/$(lang).mst"
 	$(RM) -f -- $$(@D)/$(PACKAGE_NAME_LANG)_$(lang).msi \
 		$$(@D)/$(PACKAGE_NAME_LANG)_$(lang).wixpdb \
