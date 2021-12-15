@@ -3757,13 +3757,17 @@ ifdef VBOX_SIGNING_MODE
    endif
   endif
   ifndef VBOX_PATH_SIGN_TOOLS
-   VBOX_PATH_SIGN_TOOLS := $(firstword $(rsort $(wildcard \
-   	$(addprefix $(KBUILD_DEVTOOLS)/win.x86/sdk/v8.1*/Bin/, x86 $(if-expr $(KBUILD_HOST_ARCH)=="amd64",x64,) ) )))
-   ifeq ($(VBOX_PATH_SIGN_TOOLS),)
+   ifdef VBOX_WITH_NEW_WINDOWS_SDK
+    VBOX_PATH_SIGN_TOOLS = $(PATH_SDK_$(VBOX_WINPSDK)_BIN)
+   else
     VBOX_PATH_SIGN_TOOLS := $(firstword $(rsort $(wildcard \
-    	$(addprefix $(KBUILD_DEVTOOLS)/win.x86/sdk/v10*/Bin/, x86 $(if-expr $(KBUILD_HOST_ARCH)=="amd64",x64,) ) )))
+    	$(addprefix $(KBUILD_DEVTOOLS)/win.x86/sdk/v8.1*/Bin/, x86 $(if-expr $(KBUILD_HOST_ARCH)=="amd64",x64,) ) )))
     ifeq ($(VBOX_PATH_SIGN_TOOLS),)
-     VBOX_PATH_SIGN_TOOLS := $(VBOX_PATH_SELFSIGN)
+     VBOX_PATH_SIGN_TOOLS := $(firstword $(rsort $(wildcard \
+     	$(addprefix $(KBUILD_DEVTOOLS)/win.x86/sdk/v10*/Bin/, x86 $(if-expr $(KBUILD_HOST_ARCH)=="amd64",x64,) ) )))
+     ifeq ($(VBOX_PATH_SIGN_TOOLS),)
+      VBOX_PATH_SIGN_TOOLS := $(VBOX_PATH_SELFSIGN)
+     endif
     endif
    endif
   endif
