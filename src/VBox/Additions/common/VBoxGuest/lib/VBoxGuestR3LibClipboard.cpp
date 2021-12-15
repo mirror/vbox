@@ -636,7 +636,10 @@ static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTH
     {
         rc = Msg.ReqParms.fRoots.GetUInt32(&pRootListHdr->fRoots); AssertRC(rc);
         if (RT_SUCCESS(rc))
-            rc = Msg.cRoots.GetUInt32(&pRootListHdr->cRoots); AssertRC(rc);
+        {
+            rc = Msg.cRoots.GetUInt32(&pRootListHdr->cRoots);
+            AssertRC(rc);
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -779,13 +782,25 @@ VBGLR3DECL(int) VbglR3ClipboarTransferStatusRecv(PVBGLR3SHCLCMDCTX pCtx,
     {
         rc = Msg.uContext.GetUInt64(&pCtx->idContext); AssertRC(rc);
         if (RT_SUCCESS(rc))
-            rc = Msg.enmDir.GetUInt32((uint32_t *)pEnmDir); AssertRC(rc);
+        {
+            rc = Msg.enmDir.GetUInt32((uint32_t *)pEnmDir);
+            AssertRC(rc);
+        }
         if (RT_SUCCESS(rc))
-            rc = Msg.enmStatus.GetUInt32(&pReport->uStatus); AssertRC(rc);
+        {
+            rc = Msg.enmStatus.GetUInt32(&pReport->uStatus);
+            AssertRC(rc);
+        }
         if (RT_SUCCESS(rc))
-            rc = Msg.rc.GetUInt32((uint32_t *)&pReport->rc); AssertRC(rc);
+        {
+            rc = Msg.rc.GetUInt32((uint32_t *)&pReport->rc);
+            AssertRC(rc);
+        }
         if (RT_SUCCESS(rc))
-            rc = Msg.fFlags.GetUInt32(&pReport->fFlags); AssertRC(rc);
+        {
+            rc = Msg.fFlags.GetUInt32(&pReport->fFlags);
+            AssertRC(rc);
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -852,7 +867,10 @@ VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReq(PVBGLR3SHCLCMDCTX pCtx, uint32
     {
         rc = Msg.ReqParms.uContext.GetUInt64(&pCtx->idContext); AssertRC(rc);
         if (RT_SUCCESS(rc))
-            rc = Msg.ReqParms.fRoots.GetUInt32(pfRoots); AssertRC(rc);
+        {
+            rc = Msg.ReqParms.fRoots.GetUInt32(pfRoots);
+            AssertRC(rc);
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -913,9 +931,15 @@ VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReq(PVBGLR3SHCLCMDCTX pCtx, uint
     {
         rc = Msg.Parms.uContext.GetUInt64(&pCtx->idContext); AssertRC(rc);
         if (RT_SUCCESS(rc))
-            rc = Msg.Parms.fInfo.GetUInt32(pfInfo); AssertRC(rc);
+        {
+            rc = Msg.Parms.fInfo.GetUInt32(pfInfo);
+            AssertRC(rc);
+        }
         if (RT_SUCCESS(rc))
-            rc = Msg.Parms.uIndex.GetUInt32(puIndex); AssertRC(rc);
+        {
+            rc = Msg.Parms.uIndex.GetUInt32(puIndex);
+            AssertRC(rc);
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1075,7 +1099,10 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHA
     {
         rc = Msg.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
-            rc = Msg.uHandle.GetUInt64(phList); AssertRC(rc);
+        {
+            rc = Msg.uHandle.GetUInt64(phList);
+            AssertRC(rc);
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1309,9 +1336,15 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHC
     {
         rc = Msg.ReqParms.uContext.GetUInt64(&pCtx->idContext);
         if (RT_SUCCESS(rc))
-            rc = Msg.ReqParms.uHandle.GetUInt64(phList); AssertRC(rc);
+        {
+            rc = Msg.ReqParms.uHandle.GetUInt64(phList);
+            AssertRC(rc);
+        }
         if (RT_SUCCESS(rc))
-            rc = Msg.ReqParms.fInfo.GetUInt32(pfInfo); AssertRC(rc);
+        {
+            rc = Msg.ReqParms.fInfo.GetUInt32(pfInfo);
+            AssertRC(rc);
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
