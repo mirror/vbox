@@ -1520,6 +1520,13 @@ void UIFileManagerTable::optionsUpdated()
     relist();
 }
 
+bool UIFileManagerTable::hasSelection() const
+{
+    if (m_pView)
+        return m_pView->hasSelection();
+    return false;
+}
+
 void UIFileManagerTable::sltReceiveDirectoryStatistics(UIDirectoryStatistics statistics)
 {
     if (!m_pPropertiesDialog)

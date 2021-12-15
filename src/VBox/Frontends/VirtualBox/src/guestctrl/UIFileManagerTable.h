@@ -154,6 +154,7 @@ public:
     static QString humanReadableSize(ULONG64 size);
     /** Peroforms whatever is necessary after a UIFileManagerOptions change. */
     void optionsUpdated();
+    bool hasSelection() const;
 
 public slots:
 

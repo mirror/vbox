@@ -427,10 +427,10 @@ void UIFileManagerGuestTable::retranslateUi()
                 strWarningText = UIFileManager::tr("Machine reference is invalid.");
                 break;
             case State_MachineNotRunning:
-                strWarningText = UIFileManager::tr("File manager cannot work since it works only with running guests.");
+                strWarningText = UIFileManager::tr("File manager cannot work since the selected guest is not currenly running.");
                 break;
             case State_NoGuestAdditions:
-                strWarningText = UIFileManager::tr("File manager cannot work since it needs running guest additions in the guest system.");
+                strWarningText = UIFileManager::tr("File manager cannot work since the selected guest does not have the guest additions.");
                 break;
             case State_SessionPossible:
             default:

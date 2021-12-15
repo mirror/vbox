@@ -214,7 +214,6 @@ void UIFileManager::prepareObjects()
         if (m_pGuestTablesContainer)
         {
             m_pGuestTablesContainer->setTabPosition(QTabWidget::East);
-
             m_pGuestTablesContainer->setTabBarAutoHide(true);
             m_pFileTableSplitter->addWidget(m_pGuestTablesContainer);
         }
@@ -325,6 +324,10 @@ void UIFileManager::prepareConnections()
         connect(m_pHostFileTable, &UIFileManagerGuestTable::sigSelectionChanged,
                 this, &UIFileManager::sltFileTableSelectionChanged);
     }
+    if (m_pGuestTablesContainer)
+        connect(m_pGuestTablesContainer, &QITabWidget::currentChanged, this,
+                &UIFileManager::sltCurrentTabChanged);
+
     connect(&uiCommon(), &UICommon::sigAskToCommitData,
             this, &UIFileManager::sltCommitDataSignalReceived);
 }
@@ -442,8 +445,20 @@ void UIFileManager::sltCommitDataSignalReceived()
 
 void UIFileManager::sltFileTableSelectionChanged(bool fHasSelection)
 {
+    /* If we dont have a guest session running that actions should stay disabled: */
+    if (!currentGuestTable() || !currentGuestTable()->isGuestSessionRunning())
+    {
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest)->setEnabled(false);
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost)->setEnabled(false);
+        return;
+    }
+
     /* Enable/disable vertical toolbar actions: */
     UIFileManagerGuestTable *pGuestTable = qobject_cast<UIFileManagerGuestTable*>(sender());
+
+    /* If the signal is coming from a guest table which is not the current one just dont do anything: */
+    if (pGuestTable && pGuestTable != currentGuestTable())
+        return;
 
     if (pGuestTable)
     {
@@ -452,10 +467,32 @@ void UIFileManager::sltFileTableSelectionChanged(bool fHasSelection)
         return;
     }
 
-    if (sender() == m_pHostFileTable)
+    if (sender() == m_pHostFileTable && m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest))
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest)->setEnabled(fHasSelection);
+}
+
+void UIFileManager::sltCurrentTabChanged(int iIndex)
+{
+    Q_UNUSED(iIndex);
+    setVerticalToolBarActionsEnabled();
+}
+
+void UIFileManager::setVerticalToolBarActionsEnabled()
+{
+    if (!m_pGuestTablesContainer)
+        return;
+    UIFileManagerGuestTable *pTable = currentGuestTable();
+    if (!pTable)
+        return;
+
+    bool fRunning = pTable->isGuestSessionRunning();
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost))
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToHost)->setEnabled(fRunning && pTable->hasSelection());
+
+    if (m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest))
     {
-        if (m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest))
-            m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest)->setEnabled(fHasSelection);
+        bool fHostHasSelection = m_pHostFileTable ? m_pHostFileTable->hasSelection() : false;
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_CopyToGuest)->setEnabled(fRunning && fHostHasSelection);
     }
 }
 
@@ -463,7 +500,7 @@ void UIFileManager::copyToHost()
 {
     if (m_pGuestTablesContainer && m_pHostFileTable)
     {
-        UIFileManagerGuestTable *pGuestFileTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->currentWidget());
+        UIFileManagerGuestTable *pGuestFileTable = currentGuestTable();
         if (pGuestFileTable)
             pGuestFileTable->copyGuestToHost(m_pHostFileTable->currentDirectoryPath());
     }
@@ -473,7 +510,7 @@ void UIFileManager::copyToGuest()
 {
     if (m_pGuestTablesContainer && m_pHostFileTable)
     {
-        UIFileManagerGuestTable *pGuestFileTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->currentWidget());
+        UIFileManagerGuestTable *pGuestFileTable = currentGuestTable();
         if (pGuestFileTable)
             pGuestFileTable->copyHostToGuest(m_pHostFileTable->selectedItemPathList());
     }
@@ -653,6 +690,7 @@ void UIFileManager::savePanelVisibility()
 
 void UIFileManager::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &items)
 {
+    AssertReturnVoid(m_pGuestTablesContainer);
     QVector<QUuid> selectedMachines;
 
     foreach (const UIVirtualMachineItem *item, items)
@@ -661,11 +699,24 @@ void UIFileManager::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &i
             continue;
         selectedMachines << item->id();
     }
+    /** Iterate through the current tabs and add any machine id for which we have a running guest session to the
+      * list of machine ids we want to have a tab for: */
+    for (int i = 0; i < m_pGuestTablesContainer->count(); ++i)
+    {
+        UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
+        if (!pTable || !pTable->isGuestSessionRunning())
+            continue;
+        if (!selectedMachines.contains(pTable->machineId()))
+            selectedMachines << pTable->machineId();
+    }
+
     setMachines(selectedMachines);
 }
 
 void UIFileManager::setMachines(const QVector<QUuid> &machineIds)
 {
+    AssertReturnVoid(m_pGuestTablesContainer);
+
     /* List of machines that are newly added to selected machine list: */
     QVector<QUuid> newSelections;
     QVector<QUuid> unselectedMachines(m_machineIds);
@@ -680,6 +731,7 @@ void UIFileManager::setMachines(const QVector<QUuid> &machineIds)
 
     addTabs(newSelections);
     removeTabs(unselectedMachines);
+    m_pGuestTablesContainer->setCurrentIndex(m_pGuestTablesContainer->count()-1);
 }
 
 void UIFileManager::removeTabs(const QVector<QUuid> &machineIdsToRemove)
@@ -691,8 +743,7 @@ void UIFileManager::removeTabs(const QVector<QUuid> &machineIdsToRemove)
     for (int i = m_pGuestTablesContainer->count() - 1; i >= 0; --i)
     {
         UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
-        /* Keep the tabs with running guest control session even if the corresponding vm has been de-selected. */
-        if (!pTable || pTable->isGuestSessionRunning())
+        if (!pTable)
             continue;
         if (machineIdsToRemove.contains(pTable->machineId()))
         {
@@ -729,5 +780,10 @@ void UIFileManager::addTabs(const QVector<QUuid> &machineIdsToAdd)
     }
 }
 
-
+UIFileManagerGuestTable *UIFileManager::currentGuestTable()
+{
+    if (!m_pGuestTablesContainer)
+        return 0;
+    return qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->currentWidget());
+}
 #include "UIFileManager.moc"
