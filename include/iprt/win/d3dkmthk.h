@@ -34,6 +34,8 @@
 # if _MSC_VER >= 1900 /*RT_MSC_VER_VC140*/
 #  pragma warning(disable:4255) /* d3dkmthk.h(2061): warning C4255: 'PFND3DKMT_CHECKEXCLUSIVEOWNERSHIP': no function prototype given: converting '()' to '(void)' */
 # endif
+/* 10.0.22000.0 SDK: */
+# pragma warning(disable:4668) /* d3dkmdt.h(405): warning C4668: 'DXGKDDI_INTERFACE_VERSION_WDDM1_3_M1' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
 #endif
 
 #include <d3dkmthk.h>
