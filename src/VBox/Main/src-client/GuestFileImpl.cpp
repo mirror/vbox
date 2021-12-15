@@ -339,7 +339,7 @@ HRESULT GuestFile::getStatus(FileStatus_T *aStatus)
  *
  * @returns VBox status code.
  * @param   pCbCtx              Host callback context.
- * @param   pSvcCbData          Host callback data.
+ * @param   pSvcCb              Host callback data.
  */
 int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
 {
@@ -882,7 +882,6 @@ int GuestFile::i_queryInfo(GuestFsObjData &objData, int *prcGuest)
  *
  * @returns VBox status code.
  * @retval  VERR_GSTCTL_GUEST_ERROR when an error from the guest side has been received.
- * @param   uOffset             Offset (in bytes) to start reading from.
  * @param   uSize               Size (in bytes) to read.
  * @param   uTimeoutMS          Timeout (in ms) to wait.
  * @param   pvData              Where to store the read data on success.
