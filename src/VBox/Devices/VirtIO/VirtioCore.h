@@ -36,6 +36,9 @@
 # define VIRTIO_HEX_DUMP(logLevel, pv, cb, base, title) do { } while (0)
 #endif
 
+/** Marks the start of the virtio saved state (just for sanity). */
+#define VIRTIO_SAVEDSTATE_MARKER                        UINT64_C(0x1133557799bbddff)
+
 /** Pointer to the shared VirtIO state. */
 typedef struct VIRTIOCORE *PVIRTIOCORE;
 /** Pointer to the ring-3 VirtIO state. */
@@ -56,17 +59,14 @@ typedef CTX_SUFF(PVIRTIOCORE) PVIRTIOCORECC;
 #define VIRTIO_REGION_MSIX_CAP              0                    /**< Bar for MSI-X handling                   */
 #define VIRTIO_PAGE_SIZE                 4096                    /**< Page size used by VirtIO specification   */
 
-
-/* Note: The VirtIO specification, particularly rev. 0.95, and clarified in rev 1.0 for transitional devices,
-         says the page sized used for Queue Size calculations is usually 4096 bytes, but dependent on the
-         the transport. In an appendix of the 0.95 spec, the 'mmio device', which has not been
-         implemented by VBox legacy device in VirtualBox, says guest must report the page size. For now
-         will set page size to a static 4096 based on the original VBox legacy VirtIO implementation which
-         tied it to PAGE_SIZE which appears to work (or at least good enough for most practical purposes)      */
-
-
-/** The following virtioCoreGCPhysChain*() functions mimic the functionality of the related RT s/g functions,
- *  except they work with the data type GCPhys rather than void *
+/**
+ * @todo Move the following virtioCoreGCPhysChain*() functions mimic the functionality of the related
+ *       into some VirtualBox source tree common location and out of this code.
+ *
+ *       They behave identically to the S/G utilities in the RT library, except they work with that
+ *       GCPhys data type specifically instead of void *, to avoid potentially disastrous mismatch
+ *       between sizeof(void *) and sizeof(GCPhys).
+ *
  */
 typedef struct VIRTIOSGSEG                                      /**< An S/G entry                              */
 {
@@ -90,16 +90,22 @@ typedef VIRTIOSGBUF *PVIRTIOSGBUF, **PPVIRTIOSGBUF;
 typedef const VIRTIOSGBUF *PCVIRTIOSGBUF;
 
 /**
- * VirtIO buffers are descriptor chains (scatter-gather vectors). Each buffer is described
- * by the index of its head descriptor, which in optionally chains to another descriptor
- * and so on.
+ * VirtIO buffers are descriptor chains (e.g. scatter-gather vectors). A VirtIO buffer is referred to by the index
+ * of its head descriptor. Each descriptor optionally chains to another descriptor, and so on.
  *
- * Each descriptor, [len, GCPhys] pair in the chain represents either an OUT segment (e.g. guest-to-host)
- * or an IN segment (host-to-guest). A VIRTQBUF is created and retured from a call to
- * virtioCoreR3VirtqAvailBufPeek() or virtioCoreR3VirtqAvailBufGet(). That function consolodates
- * the VirtIO descriptor chain into a representation, where pSgPhysSend is a GCPhys s/g buffer containing
- * all of the OUT descriptors and pSgPhysReturn is a GCPhys s/g buffer containing all of IN descriptors
- * to be filled with data on the host to return to theguest.
+ * For any given descriptor, each length and GCPhys pair in the chain represents either an OUT segment (e.g. guest-to-host)
+ * or an IN segment (host-to-guest).
+ *
+ * A VIRTQBUF is created and retured from a call to to either virtioCoreR3VirtqAvailBufPeek() or virtioCoreR3VirtqAvailBufGet().
+ *
+ * Those functions consolidate the VirtIO descriptor chain into a single representation where:
+ *
+ *     pSgPhysSend    GCPhys s/g buffer containing all of the (VirtIO) OUT descriptors
+ *     pSgPhysReturn  GCPhys s/g buffer containing all of the (VirtIO)  IN descriptors
+ *
+ * The OUT descriptors are data sent from guest to host (dev-specific commands and/or data)
+ * The IN are to be filled with data (converted to physical) on host, to be returned to guest
+ *
  */
 typedef struct VIRTQBUF
 {
@@ -165,11 +171,10 @@ typedef struct VIRTIO_FEATURES_LIST
 
 static const VIRTIO_FEATURES_LIST s_aCoreFeatures[] =
 {
-    { VIRTIO_F_RING_INDIRECT_DESC,      "   RING_INDIRECT_DESC   Driver can use descriptors with VIRTQ_DESC_F_INDIRECT flag set\n" },
+    { VIRTIO_F_VERSION_1,               "   VERSION_1            Guest driver supports VirtIO specification V1.0+ (e.g. \"modern\")\n" },
     { VIRTIO_F_RING_EVENT_IDX,          "   RING_EVENT_IDX       Enables use_event and avail_event fields described in 2.4.7, 2.4.8\n" },
-    { VIRTIO_F_VERSION_1,               "   VERSION              Used to detect legacy drivers.\n" },
+    { VIRTIO_F_RING_INDIRECT_DESC,      "   RING_INDIRECT_DESC   Driver can use descriptors with VIRTQ_DESC_F_INDIRECT flag set\n" },
 };
-
 
 #define VIRTIO_DEV_INDEPENDENT_FEATURES_OFFERED ( 0 )            /**< TBD: Add VIRTIO_F_INDIRECT_DESC           */
 #define VIRTIO_DEV_INDEPENDENT_LEGACY_FEATURES_OFFERED ( 0 )     /**< Only offered to legacy drivers            */
@@ -201,8 +206,6 @@ typedef enum VIRTIOVMSTATECHANGED
     kvirtIoVmStateChangedResume,
     kvirtIoVmStateChangedFor32BitHack = 0x7fffffff
 } VIRTIOVMSTATECHANGED;
-
-
 
 /** @def Virtio Device PCI Capabilities type codes */
 #define VIRTIO_PCI_CAP_COMMON_CFG                       1        /**< Common configuration PCI capability ID    */
@@ -304,19 +307,19 @@ typedef struct VIRTIO_PCI_CAP_LOCATIONS_T
 
 typedef struct VIRTQUEUE
 {
-    RTGCPHYS                    GCPhysVirtqDesc;                  /**< (MMIO) PhysAdr per-Q desc structs   GUEST */
-    RTGCPHYS                    GCPhysVirtqAvail;                 /**< (MMIO) PhysAdr per-Q avail structs  GUEST */
-    RTGCPHYS                    GCPhysVirtqUsed;                  /**< (MMIO) PhysAdr per-Q used structs   GUEST */
-    uint16_t                    uMsixVector;                      /**< (MMIO) Per-queue vector for MSI-X   GUEST */
-    uint16_t                    uEnable;                          /**< (MMIO) Per-queue enable             GUEST */
-    uint16_t                    uNotifyOffset;                    /**< (MMIO) per-Q notify offset           HOST */
-    uint16_t                    uQueueSize;                       /**< (MMIO) Per-queue size          HOST/GUEST */
+    RTGCPHYS                    GCPhysVirtqDesc;                  /**< (MMIO) Addr of virtq's desc  ring   GUEST */
+    RTGCPHYS                    GCPhysVirtqAvail;                 /**< (MMIO) Addr of virtq's avail ring   GUEST */
+    RTGCPHYS                    GCPhysVirtqUsed;                  /**< (MMIO) Addr of virtq's used  ring   GUEST */
+    uint16_t                    uMsixVector;                      /**< (MMIO) MSI-X vector                 GUEST */
+    uint16_t                    uEnable;                          /**< (MMIO) Queue enable flag            GUEST */
+    uint16_t                    uNotifyOffset;                    /**< (MMIO) Notification offset for queue HOST */
+    uint16_t                    uQueueSize;                       /**< (MMIO) Size of queue           HOST/GUEST */
     uint16_t                    uAvailIdxShadow;                  /**< Consumer's position in avail ring         */
     uint16_t                    uUsedIdxShadow;                   /**< Consumer's position in used ring          */
     uint16_t                    uVirtq;                           /**< Index of this queue                       */
     char                        szName[32];                       /**< Dev-specific name of queue                */
     bool                        fUsedRingEvent;                   /**< Flags if used idx to notify guest reached */
-    uint8_t                     padding[3];
+    bool                        fAttached;                        /**< Flags if dev-specific client attached     */
 } VIRTQUEUE, *PVIRTQUEUE;
 
 /**
@@ -330,6 +333,7 @@ typedef struct VIRTIOCORE
     VIRTQUEUE                   aVirtqueues[VIRTQ_MAX_COUNT];     /**< (MMIO) VirtIO contexts for queues         */
     uint64_t                    uDeviceFeatures;                  /**< (MMIO) Host features offered         HOST */
     uint64_t                    uDriverFeatures;                  /**< (MMIO) Host features accepted       GUEST */
+    uint32_t                    fDriverFeaturesWritten;           /**< (MMIO) Host features complete tracking    */
     uint32_t                    uDeviceFeaturesSelect;            /**< (MMIO) hi/lo select uDeviceFeatures GUEST */
     uint32_t                    uDriverFeaturesSelect;            /**< (MMIO) hi/lo select uDriverFeatures GUEST */
     uint32_t                    uMsixConfig;                      /**< (MMIO) MSI-X vector                 GUEST */
@@ -342,7 +346,8 @@ typedef struct VIRTIOCORE
     uint8_t                     uISR;                             /**< Interrupt Status Register.                */
     uint8_t                     fMsiSupport;                      /**< Flag set if using MSI instead of ISR      */
     uint16_t                    uVirtqSelect;                     /**< (MMIO) queue selector               GUEST */
-    uint32_t                    fLegacyDriver;                    /**< Set if guest driver < VirtIO 1.0          */
+    uint32_t                    fLegacyDriver;                    /**< Set if guest drv < VirtIO 1.0 and allowed */
+    uint32_t                    fOfferLegacy;                     /**< Set at init call from dev-specific code   */
 
     /** @name The locations of the capability structures in PCI config space and the BAR.
      * @{ */
@@ -353,11 +358,8 @@ typedef struct VIRTIOCORE
     VIRTIO_PCI_CAP_LOCATIONS_T  LocDeviceCap;                     /**< VIRTIO_PCI_CAP_T + custom data.           */
     /** @} */
 
-
-
     IOMMMIOHANDLE               hMmioPciCap;                      /**< MMIO handle of PCI cap. region (\#2)      */
     IOMIOPORTHANDLE             hLegacyIoPorts;                   /**< Handle of legacy I/O port range.          */
-
 
 #ifdef VBOX_WITH_STATISTICS
     /** @name Statistics
@@ -373,9 +375,8 @@ typedef struct VIRTIOCORE
     STAMPROFILEADV              StatWriteR0;                       /** I/O port and MMIO R3 Write profiling      */
     STAMPROFILEADV              StatWriteRC;                       /** I/O port and MMIO R3 Write profiling      */
 #endif
-
-
     /** @} */
+
 } VIRTIOCORE;
 
 #define MAX_NAME 64
@@ -388,19 +389,15 @@ typedef struct VIRTIOCORER3
     /** @name Callbacks filled by the device before calling virtioCoreR3Init.
      * @{  */
     /**
-     * Implementation-specific client callback to report VirtIO version as modern or legacy.
-     * That's the only meaningful distinction in the VirtIO specification. Beyond that
-     * versioning is loosely discernable through feature negotiation. There will be two callbacks,
-     * the first indicates the guest driver is considered legacy VirtIO, as it is critical to
-     * assume that initially. A 2nd callback will occur during feature negotiation
-     * which will indicate the guest is modern, if the guest acknowledges VIRTIO_F_VERSION_1,
-     * feature, or legacy if the feature isn't negotiated. That 2nd callback allows
-     * the device-specific code to configure its behavior in terms of both guest version and features.
+     * Implementation-specific client callback to report VirtIO when feature negotiation is
+     * complete. It should be invoked by the VirtIO core only once.
      *
-     * @param   pVirtio    Pointer to the shared virtio state.
-     * @param   fModern    True if guest driver identified itself as modern (e.g. VirtIO 1.0 featured)
+     * @param   pVirtio           Pointer to the shared virtio state.
+     * @param   fDriverFeatures   Bitmask of features the guest driver has accepted/declined.
+     * @param   fLegacy           true if legacy mode offered and until guest driver identifies itself
+     *                            as modern(e.g. VirtIO 1.0 featured)
      */
-    DECLCALLBACKMEMBER(void, pfnGuestVersionHandler,(PVIRTIOCORE pVirtio, uint32_t fModern));
+    DECLCALLBACKMEMBER(void, pfnFeatureNegotiationComplete, (PVIRTIOCORE pVirtio, uint64_t fDriverFeatures, uint32_t fLegacy));
 
     /**
      * Implementation-specific client callback to notify client of significant device status
@@ -435,7 +432,6 @@ typedef struct VIRTIOCORER3
      */
     DECLCALLBACKMEMBER(int, pfnDevCapWrite,(PPDMDEVINS pDevIns, uint32_t offCap, const void *pvBuf, uint32_t cbWrite));
 
-
     /**
      * When guest-to-host queue notifications are enabled, the guest driver notifies the host
      * that the avail queue has buffers, and this callback informs the client.
@@ -468,8 +464,9 @@ typedef struct VIRTIOCORER3
 typedef struct VIRTIOCORER0
 {
     /**
-     * When guest-to-host queue notifications are enabled, the guest driver notifies the host
-     * that the avail queue has buffers, and this callback informs the client.
+     * This callback notifies the device-specific portion of this device implementation (if guest-to-host
+     * queue notifications are enabled), that the guest driver has notified the host (this device)
+     * that the VirtIO "avail" ring of a queue has some new s/g buffers added by the guest VirtIO driver.
      *
      * @param   pVirtio    Pointer to the shared virtio state.
      * @param   pVirtioCC  Pointer to the ring-3 virtio state.
@@ -487,11 +484,9 @@ typedef struct VIRTIOCORERC
     uint64_t                    uUnusedAtTheMoment;
 } VIRTIOCORERC;
 
-
 /** @typedef VIRTIOCORECC
  * The instance data for the current context. */
 typedef CTX_SUFF(VIRTIOCORE) VIRTIOCORECC;
-
 
 /** @name API for VirtIO parent device
  * @{ */
@@ -501,7 +496,7 @@ typedef CTX_SUFF(VIRTIOCORE) VIRTIOCORECC;
  *
  * This should be called from PDMDEVREGR3::pfnConstruct.
  *
- * @param   pDevIns                 The device instance.
+ * @param   pDevIns                 Device instance.
  * @param   pVirtio                 Pointer to the shared virtio state.  This
  *                                  must be the first member in the shared
  *                                  device instance data!
@@ -518,8 +513,7 @@ typedef CTX_SUFF(VIRTIOCORE) VIRTIOCORECC;
  */
 int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC,
                           PVIRTIOPCIPARAMS pPciParams, const char *pcszInstance,
-                          uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
-
+                          uint64_t fDevSpecificFeatures, uint32_t fOfferLegacy, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
 /**
  * Initiate orderly reset procedure. This is an exposed API for clients that might need it.
  * Invoked by client to reset the device and driver (see VirtIO 1.0 section 2.1.1/2.1.2)
@@ -531,11 +525,15 @@ void  virtioCoreResetAll(PVIRTIOCORE pVirtio);
 /**
  * 'Attaches' host device-specific implementation's queue state to host VirtIO core
  * virtqueue management infrastructure, informing the virtio core of the name of the
- * queue associated with the queue number. uVirtqNbr is used as the 'handle' for virt queues
- * in this API (and is opaquely the index into the VirtIO core's array of queue state).
+ * queue to associate with the queue number.
+
+ * Note: uVirtqNbr (ordinal index) is used as the 'handle' for virtqs in this VirtioCore
+ * implementation's API (as an opaque selector into the VirtIO core's array of queues' states).
  *
- * Virtqueue numbers are VirtIO specification defined (i.e. they are unique within each
- * VirtIO device type).
+ * Virtqueue numbers are actually VirtIO-specification defined device-specifically
+ * (i.e. they are unique within each VirtIO device type), but are in some cases scalable
+ * so only the pattern of queue numbers is defined by the spec and implementations may contain
+ * a self-determined plurality of queues.
  *
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   uVirtqNbr   Virtq number
@@ -546,25 +544,60 @@ void  virtioCoreResetAll(PVIRTIOCORE pVirtio);
 int  virtioCoreR3VirtqAttach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, const char *pcszName);
 
 /**
- * Enables or disables a virtq
+ * Detaches host device-specific implementation's queue state from the host VirtIO core
+ * virtqueue management infrastructure, informing the VirtIO core that the queue is
+ * not utilized by the device-specific code.
  *
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   uVirtqNbr   Virtq number
- * @param   fEnable     Flags whether to enable or disable the virtq
+ * @param   pcszName    Name to give queue
  *
+ * @returns VBox status code.
  */
-void  virtioCoreVirtqEnable(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, bool fEnable);
+int  virtioCoreR3VirtqDetach(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
+
+/**
+ * Checks to see whether queue is attached to core.
+ *
+ * @param   pVirtio     Pointer to the shared virtio state.
+ * @param   uVirtqNbr   Virtq number
+ *
+ * Returns boolean true or false indicating whether dev-specific reflection
+ * of queue is attached to core.
+ */
+bool  virtioCoreR3VirtqIsAttached(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
+
+/**
+ * Checks to see whether queue is enabled.
+ *
+ * @param   pVirtio     Pointer to the shared virtio state.
+ * @param   uVirtqNbr   Virtq number
+ *
+ * Returns boolean true or false indicating core queue enable state.
+ * There is no API function to enable the queue, because the actual enabling is handled
+ * by the guest via MMIO.
+ *
+ * NOTE: Guest VirtIO driver's claim over this state is overridden (which violates VirtIO 1.0 spec
+ * in a carefully controlled manner) in the case where the queue MUST be disabled, due to observed
+ * control queue corruption (e.g. null GCPhys virtq base addr) while restoring legacy-only device's
+ * (DevVirtioNet.cpp) as a way to flag that the queue is unusable-as-saved and must to be removed.
+ * That is all handled in the load/save exec logic. Device reset could potentially, depending on
+ * parameters passed from host VirtIO device to guest VirtIO driver, result in guest re-establishing
+ * queue, except, in that situation, the queue operational state would be valid.
+ */
+bool  virtioCoreR3VirtqIsEnabled(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
 
 /**
  * Enable or disable notification for the specified queue.
  *
- * With notification enabled, the guest driver notifies the host device (via MMIO
- * to the queue notification offset describe in VirtIO 1.0, 4.1.4.4 "Notification Structure Layout")
- * whenever the guest driver adds a new entry to the avail ring of the respective queue.
+ * When queue notifications are enabled, the guest VirtIO driver notifies host VirtIO device
+ * (via MMIO, see VirtIO 1.0, 4.1.4.4 "Notification Structure Layout") whenever guest driver adds
+ * a new s/g buffer to the "avail" ring of the queue.
  *
- * Note: In the VirtIO world, the device sets flags in the used ring to communicate to the driver how to
- * handle notifications for the avail ring and the drivers sets flags in the avail ring to communicate
- * to the device how to handle sending interrupts for the used ring.
+ * Note: VirtIO queue layout includes flags the device controls in "used" ring to inform guest
+ * driver if it should notify host of guest's buffer additions to the "avail" ring, and
+ * conversely, the guest driver sets flags in the "avail" ring to communicate to host device
+ * whether or not to interrupt guest when it adds buffers to used ring.
  *
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   uVirtqNbr   Virtq number
@@ -580,25 +613,26 @@ void  virtioCoreVirtqEnableNotify(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, bool 
 void  virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio);
 
 /**
- * Displays the VirtIO spec-related features offered and their accepted/declined status
- * by both the VirtIO core and dev-specific device code (which invokes this function).
- * The result is a comprehensive list of available features the VirtIO specification
- * defines, which ones were actually offered by the device, and which ones were accepted
- * by the guest driver, thus providing a legible summary view of the configuration
- * the device is operating with.
+ * Displays a well-formated human-readable translation of otherwise inscrutable bitmasks
+ * that embody features VirtIO specification definitions, indicating: Totality of features
+ * that can be implemented by host and guest, which features were offered by the host, and
+ * which were actually accepted by the guest. It displays it as a summary view of the device's
+ * finalized operational state (host-guest negotiated architecture) in such a way that shows
+ * which options are available for implementing or enabling.
  *
+ * The non-device-specific VirtIO features list are managed by core API (e.g. implied).
+ * Only dev-specific features must be passed as parameter.
+
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   pHlp        Pointer to the debug info hlp struct
- * @param   s_aDevSpecificFeatures
- *                      Features specification lists for device-specific implementation
- *                      (i.e: net controller, scsi controller ...)
+ * @param   s_aDevSpecificFeatures  Dev-specific features (virtio-net, virtio-scsi...)
  * @param   cFeatures   Number of features in aDevSpecificFeatures
  */
 void  virtioCorePrintDeviceFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp,
     const VIRTIO_FEATURES_LIST *aDevSpecificFeatures, int cFeatures);
 
 /*
- * Debuging assist feature displays the state of the VirtIO core code, which includes
+ * Debug-assist utility function to display state of the VirtIO core code, including
  * an overview of the state of all of the queues.
  *
  * This can be invoked when running the VirtualBox debugger, or from the command line
@@ -607,8 +641,10 @@ void  virtioCorePrintDeviceFeatures(VIRTIOCORE *pVirtio, PCDBGFINFOHLP pHlp,
  * Example:  VBoxManage debugvm myVnetVm info "virtio-net" help
  *
  * This is implemented currently to be invoked by the inheriting device-specific code
- * (see DevVirtioNet for an example, which receives the debugvm callback directly).
- * DevVirtioNet lists the available sub-options if no arguments are provided. In that
+ * (see the the VirtualBox virtio-net (VirtIO network controller device implementation)
+ * for an example of code that receive debugvm callback directly).
+ *
+ * DevVirtioNet lists available sub-options if no arguments are provided. In that
  * example this virtq info related function is invoked hierarchically when virtio-net
  * displays its device-specific queue info.
  *
@@ -628,12 +664,11 @@ void  virtioCoreR3VirtqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *
 uint16_t virtioCoreVirtqAvailBufCount(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
 
 /**
- * This function is identical to virtioCoreR3VirtqAvailBufGet(), except it doesn't 'consume'
- * the buffer from the avail ring of the virtq. The peek operation becomes identical to a get
- * operation if virtioCoreR3VirtqAvailRingNext() is called to consume the buffer from the avail ring,
- * at which point virtioCoreR3VirtqUsedBufPut() must be called to complete the roundtrip
- * transaction by putting the descriptor on the used ring.
- *
+ * This function is identical to virtioCoreR3VirtqAvailBufGet(), *except* it doesn't consume
+ * peeked buffer from avail ring of the virtq. The function *becomes* identical to the
+ * virtioCoreR3VirtqAvailBufGet() only if virtioCoreR3VirtqAvailRingNext() is invoked to
+ * consume buf from the queue's avail ring, followed by invocation of virtioCoreR3VirtqUsedBufPut(),
+ * to hand host-processed buffer back to guest, which completes guest-initiated virtq buffer circuit.
  *
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
@@ -651,13 +686,13 @@ int  virtioCoreR3VirtqAvailBufPeek(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint
 
 /**
  * This function fetches the next buffer (descriptor chain) from the VirtIO "avail" ring of
- * indicated queue, and converts the buf's s/g vectors into OUT (e.g. guest-to-host)
+ * indicated queue, separating the buf's s/g vectors into OUT (e.g. guest-to-host)
  * components and and IN (host-to-guest) components.
  *
- * The caller is responsible for GCPhys to host virtual memory conversions. If the
+ * Caller is responsible for GCPhys to host virtual memory conversions. If the
  * virtq buffer being peeked at is "consumed", virtioCoreR3VirtqAvailRingNext() must
- * be called and in that case virtioCoreR3VirtqUsedBufPut() must be called to
- * complete the roundtrip virtq transaction.
+ * be called, and after that virtioCoreR3VirtqUsedBufPut() must be called to
+ * complete the buffer transfer cycle with the guest.
  *
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
@@ -677,8 +712,8 @@ int  virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint1
                                   PPVIRTQBUF ppVirtqBuf, bool fRemove);
 
 /**
- * Fetches a specific descriptor chain using avail ring of indicated queue and converts the descriptor
- * chain into its OUT (to device) and IN (to guest) components.
+ * Fetches a specific descriptor chain using avail ring of indicated queue and converts the
+ * descriptor chain into its OUT (to device) and IN (to guest) components.
  *
  * The caller is responsible for GCPhys to host virtual memory conversions and *must*
  * return the virtq buffer using virtioCoreR3VirtqUsedBufPut() to complete the roundtrip
@@ -703,20 +738,19 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
 
 /**
  * Returns data to the guest to complete a transaction initiated by virtioCoreR3VirtqAvailBufGet(),
- * or virtioCoreR3VirtqAvailBufPeek()/virtioCoreR3VirtqBufSync() call pairs to complete each
- * intervening a roundtrip transaction, ultimately putting each descriptor chain pulled from the
- * avail ring of a queue onto the used ring of the queue. wherein I/O transactions are always
- * initiated by the guest and completed by the host. In other words, for the host to send any
- * data to the guest, the guest must provide buffers, for the host to fill, via the avail ring
- * of the virtq.
+ * (or virtioCoreR3VirtqAvailBufPeek()/virtioCoreR3VirtqBufSync() call pair), to complete each
+ * buffer transfer transaction (guest-host buffer cycle), ultimately moving each descriptor chain
+ * from the avail ring of a queue onto the used ring of the queue. Note that VirtIO buffer
+ * transactions are *always* initiated by the guest and completed by the host. In other words,
+ * for the host to send any I/O related data to the guest (and in some cases configuration data),
+ * the guest must provide buffers via the virtq's avail ring, for the host to fill.
  *
  * At some some point virtioCoreR3VirtqUsedRingSync() must be called to return data to the guest,
- * completing all pending virtioCoreR3VirtqAvailBufPut() transactions that have accumulated since
- * the last call to virtioCoreR3VirtqUsedRingSync()
+ * completing all pending virtioCoreR3VirtqAvailBufPut() operations that have accumulated since
+ * the last call to virtioCoreR3VirtqUsedRingSync().
 
- * @note This does a write-ahead to the used ring of the guest's queue. The data
- *       written won't be seen by the guest until the next call to virtioCoreVirtqUsedRingSync()
- *
+ * @note This function effectively performs write-ahead to the used ring of the virtq.
+ *       Data written won't be seen by the guest until the next call to virtioCoreVirtqUsedRingSync()
  *
  * @param   pDevIns         The device instance (for reading).
  * @param   pVirtio         Pointer to the shared virtio state.
@@ -728,7 +762,7 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
  * @param   pVirtqBuf       This contains the context of the scatter-gather
  *                          buffer originally pulled from the queue.
  *
- * @param   fFence          If true, put up copy fence (memory barrier) after
+ * @param   fFence          If true (default), put up copy-fence (memory barrier) after
  *                          copying to guest phys. mem.
  *
  * @returns VBox status code.
@@ -740,7 +774,35 @@ int virtioCoreR3VirtqAvailBufGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16
  *          caller must take care of that.
  */
 int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, PRTSGBUF pSgVirtReturn,
-                                 PVIRTQBUF pVirtqBuf, bool fFence);
+                                 PVIRTQBUF pVirtqBuf, bool fFence = true);
+
+
+/**
+ * Quicker variant of same-named function (directly above) that it overloads,
+ * Instead, this variant accepts as input a pointer to a buffer and count,
+ * instead of S/G buffer thus doesn't have to copy between two S/G buffers and avoids some overhead.
+ *
+ * @param   pDevIns         The device instance (for reading).
+ * @param   pVirtio         Pointer to the shared virtio state.
+ * @param   uVirtqNbr       Virtq number
+ * @param   cb              Number of bytes to add to copy to phys. buf.
+ * @param   pv              Virtual mem buf to copy to phys buf.
+ * @param   cbEnqueue       How many bytes in packet to enqueue (0 = don't enqueue)
+ * @param   fFence          If true (default), put up copy-fence (memory barrier) after
+ *                          copying to guest phys. mem.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS       Success
+ * @retval  VERR_INVALID_STATE VirtIO not in ready state
+ * @retval  VERR_NOT_AVAILABLE Virtq is empty
+ *
+ * @note    This function will not release any reference to pVirtqBuf.  The
+ *          caller must take care of that.
+ */
+int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq, size_t cb, const void *pv,
+                            PVIRTQBUF pVirtqBuf, uint32_t cbEnqueue, bool fFence = true);
+
+
 /**
  * Advance index of avail ring to next entry in specified virtq (see virtioCoreR3VirtqAvailBufPeek())
  *
@@ -750,16 +812,45 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
 int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
 
 /**
- * Checks to see if guest has acknowledged device's VIRTIO_F_VERSION_1 feature.
- * If not, it's presumed to be a VirtIO legacy guest driver. Note that legacy drivers
- * may start using the device prematurely, as opposed to the rigorously sane protocol
- * prescribed by the "modern" VirtIO spec. Early access implies a legacy driver.
- * Therefore legacy mode is the assumption until feature negotiation.
+ * Checks to see if guest has accepted host device's VIRTIO_F_VERSION_1 (i.e. "modern")
+ * behavioral modeling, indicating guest agreed to comply with the modern VirtIO 1.0+ specification.
+ * Otherwise unavoidable presumption is that the host device is dealing with legacy VirtIO
+ * guest drive, thus must be prepared to cope with less mature architecture and behaviors
+ * from  prototype era of VirtIO. (see comments in PDM-invoked device constructor for more information).
  *
  * @param   pVirtio      Pointer to the virtio state.
  */
 int virtioCoreIsLegacyMode(PVIRTIOCORE pVirtio);
 
+/**
+ * This VirtIO transitional device supports "modern" (rev 1.0+) as well as "legacy" (e.g. < 1.0) VirtIO drivers.
+ * Some legacy guest drivers are known to mishandle PCI bus mastering wherein the PCI flavor of GC phys
+ * access functions can't be used. The following wrappers select the memory access method based on whether the
+ * device is operating in legacy mode or not.
+ */
+DECLINLINE(int) virtioCoreGCPhysWrite(PVIRTIOCORE pVirtio, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbWrite)
+{
+    int rc;
+    if (virtioCoreIsLegacyMode(pVirtio))
+        rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+    else
+        rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+    return rc;
+}
+
+DECLINLINE(int) virtioCoreGCPhysRead(PVIRTIOCORE pVirtio, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+{
+    int rc;
+    if (virtioCoreIsLegacyMode(pVirtio))
+        rc = PDMDevHlpPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+    else
+        rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+    return rc;
+}
+
+/*
+ * (See comments for corresponding function in sg.h)
+ */
 DECLINLINE(void) virtioCoreGCPhysChainInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs)
 {
     AssertPtr(pGcSgBuf);
@@ -781,6 +872,9 @@ DECLINLINE(void) virtioCoreGCPhysChainInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG p
     }
 }
 
+/*
+ * (See comments for corresponding function in sg.h)
+ */
 DECLINLINE(RTGCPHYS) virtioCoreGCPhysChainGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcbData)
 {
     size_t cbData;
@@ -825,6 +919,9 @@ DECLINLINE(RTGCPHYS) virtioCoreGCPhysChainGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcb
     return pGcBuf;
 }
 
+/*
+ * (See comments for corresponding function in sg.h)
+ */
 DECLINLINE(void) virtioCoreGCPhysChainReset(PVIRTIOSGBUF pGcSgBuf)
 {
     AssertPtrReturnVoid(pGcSgBuf);
@@ -842,6 +939,9 @@ DECLINLINE(void) virtioCoreGCPhysChainReset(PVIRTIOSGBUF pGcSgBuf)
     }
 }
 
+/*
+ * (See comments for corresponding function in sg.h)
+ */
 DECLINLINE(RTGCPHYS) virtioCoreGCPhysChainAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance)
 {
     AssertReturn(pGcSgBuf, 0);
@@ -859,6 +959,9 @@ DECLINLINE(RTGCPHYS) virtioCoreGCPhysChainAdvance(PVIRTIOSGBUF pGcSgBuf, size_t 
     return cbAdvance - cbLeft;
 }
 
+/*
+ * (See comments for corresponding function in sg.h)
+ */
 DECLINLINE(RTGCPHYS) virtioCoreGCPhysChainGetNextSeg(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg)
 {
     AssertReturn(pGcSgBuf, 0);
@@ -870,51 +973,66 @@ DECLINLINE(RTGCPHYS) virtioCoreGCPhysChainGetNextSeg(PVIRTIOSGBUF pGcSgBuf, size
     return virtioCoreGCPhysChainGet(pGcSgBuf, pcbSeg);
 }
 
-DECLINLINE(size_t) virtioCoreGCPhysChainCalcBufSize(PVIRTIOSGBUF pGcSgBuf)
+/**
+ * Calculate the length of a GCPhys s/g buffer by tallying the size of each segment.
+ *
+ * @param   pGcSgBuf        Guest Context (GCPhys) S/G buffer to calculate length of
+ */
+DECLINLINE(size_t) virtioCoreGCPhysChainCalcBufSize(PCVIRTIOSGBUF pGcSgBuf)
 {
     size_t   cb = 0;
     unsigned i  = pGcSgBuf->cSegs;
-     while (i-- > 0)
-         cb += pGcSgBuf->paSegs[i].cbSeg;
-     return cb;
- }
+    while (i-- > 0)
+        cb += pGcSgBuf->paSegs[i].cbSeg;
+    return cb;
+}
 
+/*
+ * (See comments for corresponding function in sg.h)
+ */
+DECLINLINE(size_t) virtioCoreGCPhysChainCalcLengthLeft(PVIRTIOSGBUF pGcSgBuf)
+{
+    size_t   cb = pGcSgBuf->cbSegLeft;
+    unsigned i  = pGcSgBuf->cSegs;
+    while (i-- > pGcSgBuf->idxSeg + 1)
+        cb += pGcSgBuf->paSegs[i].cbSeg;
+    return cb;
+}
 #define VIRTQNAME(a_pVirtio, a_uVirtq) ((a_pVirtio)->aVirtqueues[(a_uVirtq)].szName)
 
 /**
- * Add some bytes to a virtq (s/g) buffer, converting them from virtual memory to GCPhys
- *
- * To be performant it is left to the caller to validate the size of the buffer with regard
- * to data being pulled from it to avoid overruns/underruns.
+ * Convert and append bytes from a virtual-memory simple buffer to VirtIO guest's
+ * physical memory described by a buffer pulled form the avail ring of a virtq.
  *
  * @param   pVirtio     Pointer to the shared virtio state.
- * @param   pVirtqBuf   output: virtq buffer
+ * @param   pVirtqBuf   VirtIO buffer to fill
  * @param   pv          input: virtual memory buffer to receive bytes
  * @param   cb          number of bytes to add to the s/g buffer.
  */
 DECLINLINE(void) virtioCoreR3VirqBufFill(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtqBuf, void *pv, size_t cb)
 {
-    uint8_t *pb = (uint8_t *)pv;
-    size_t cbLim = RT_MIN(pVirtqBuf->cbPhysReturn, cb);
-    while (cbLim)
+    uint8_t *pvBuf = (uint8_t *)pv;
+    size_t cbRemain = cb, cbTotal = 0;
+    PVIRTIOSGBUF pSgPhysReturn = pVirtqBuf->pSgPhysReturn;
+    while (cbRemain)
     {
-        size_t cbSeg = cbLim;
-        RTGCPHYS GCPhys = virtioCoreGCPhysChainGetNextSeg(pVirtqBuf->pSgPhysReturn, &cbSeg);
-        PDMDevHlpPCIPhysWrite(pVirtio->pDevInsR3, GCPhys, pb, cbSeg);
-        pb += cbSeg;
-        cbLim -= cbSeg;
-        pVirtqBuf->cbPhysSend -= cbSeg;
+        uint32_t cbBounded = RT_MIN(pSgPhysReturn->cbSegLeft, cbRemain);
+        Assert(cbBounded > 0);
+        virtioCoreGCPhysWrite(pVirtio, CTX_SUFF(pVirtio->pDevIns), (RTGCPHYS)pSgPhysReturn->GCPhysCur, pvBuf, cbBounded);
+        virtioCoreGCPhysChainAdvance(pSgPhysReturn, cbBounded);
+        pvBuf += cbBounded;
+        cbRemain -= cbBounded;
+        cbTotal += cbBounded;
     }
-    LogFunc(("Added %d/%d bytes to %s buffer, head idx: %u (%d bytes remain)\n",
-             cb - cbLim, cb, VIRTQNAME(pVirtio, pVirtqBuf->uVirtq),
-             pVirtqBuf->uHeadIdx, pVirtqBuf->cbPhysReturn));
+    LogFunc(("Appended %d bytes to guest phys buf [head: %u]. %d bytes unused in buf.)\n",
+             cbTotal, pVirtqBuf->uHeadIdx, virtioCoreGCPhysChainCalcLengthLeft(pSgPhysReturn)));
 }
 
 /**
- * Extract some bytes out of a virtq (s/g) buffer, converting them from GCPhys to virtual memory
+ * Extract some bytes from of a virtq s/g buffer, converting them from GCPhys space to
+ * to ordinary virtual memory (i.e. making data directly accessible to host device code)
  *
- * To be performant it is left to the caller to validate the size of the buffer with regard
- * to data being pulled from it to avoid overruns/underruns.
+ * As a performance optimization, it is left to the caller to validate buffer size.
  *
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   pVirtqBuf   input: virtq buffer
@@ -936,7 +1054,7 @@ DECLINLINE(void) virtioCoreR3VirtqBufDrain(PVIRTIOCORE pVirtio, PVIRTQBUF pVirtq
     }
     LogFunc(("Drained %d/%d bytes from %s buffer, head idx: %u (%d bytes left)\n",
              cb - cbLim, cb, VIRTQNAME(pVirtio, pVirtqBuf->uVirtq),
-             pVirtqBuf->uHeadIdx, pVirtqBuf->cbPhysSend));
+             pVirtqBuf->uHeadIdx, virtioCoreGCPhysChainCalcLengthLeft(pVirtqBuf->pSgPhysReturn)));
 }
 
 #undef VIRTQNAME
@@ -1015,7 +1133,7 @@ DECLINLINE(const char *) virtioCoreVirtqGetName(PVIRTIOCORE pVirtio, uint16_t uV
  * Get the bitmask of features VirtIO is running with. This is called by the device-specific
  * VirtIO implementation to identify this device's operational configuration after features
  * have been negotiated with guest VirtIO driver. Feature negotiation entails host indicating
- * to guest which features it supports, then guest accepting among those offered which features
+ * to guest which features it supports, then guest accepting from among the offered, which features
  * it will enable. That becomes the agreement between the host and guest. The bitmask containing
  * virtio core features plus device-specific features is provided as a parameter to virtioCoreR3Init()
  * by the host side device-specific virtio implementation.
@@ -1030,7 +1148,7 @@ DECLINLINE(uint64_t) virtioCoreGetNegotiatedFeatures(PVIRTIOCORE pVirtio)
 }
 
 /**
- * Get the the name of the VM state change associated with the enumeration variable
+ * Get name of the VM state change associated with the enumeration variable
  *
  * @param enmState       VM state (enumeration value)
  *
@@ -1077,7 +1195,6 @@ void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *psz
 
 /**
  * Debug assist for any consumer device code
-&
  * Do a hex dump of memory in guest physical context
  *
  * @param   GCPhys      pointer to buffer to dump contents of
@@ -1092,49 +1209,10 @@ void virtioCoreGCPhysHexDump(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint16_t cb, u
  * The following API is functions identically to the similarly-named calls pertaining to the RTSGBUF
  */
 
-/**
- * Calculate the length of a GCPhys s/g buffer by tallying the size of each segment.
- *
- * @param   pGcSgBuf        Guest Context (GCPhys) S/G buffer to calculate length of
- */
-DECLINLINE(size_t) virtioCoreGCPhysChainCalcBufSize(PCVIRTIOSGBUF pGcSgBuf)
-{
-    size_t   cb = 0;
-    unsigned i  = pGcSgBuf->cSegs;
-    while (i-- > 0)
-        cb += pGcSgBuf->paSegs[i].cbSeg;
-    return cb;
-}
-
-/**
- * This VirtIO transitional device supports "modern" (rev 1.0+) as well as "legacy" (e.g. < 1.0) VirtIO drivers.
- * Some legacy guest drivers are known to mishandle PCI bus mastering wherein the PCI flavor of GC phys
- * access functions can't be used. The following wrappers select the mem access method based on whether the
- * device is operating in legacy mode or not.
- */
-DECLINLINE(int) virtioCoreGCPhysWrite(PVIRTIOCORE pVirtio, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbWrite)
-{
-    int rc;
-    if (virtioCoreIsLegacyMode(pVirtio))
-        rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
-    else
-        rc = PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
-    return rc;
-}
-
-DECLINLINE(int) virtioCoreGCPhysRead(PVIRTIOCORE pVirtio, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
-{
-    int rc;
-    if (virtioCoreIsLegacyMode(pVirtio))
-        rc = PDMDevHlpPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
-    else
-        rc = PDMDevHlpPCIPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
-    return rc;
-}
-
 /** Misc VM and PDM boilerplate */
-int      virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
-int      virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
+int      virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t cQueues);
+int      virtioCoreR3ModernDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uTestVersion, uint32_t cQueues);
+int      virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uVirtioLegacy_3_1_Beta);
 void     virtioCoreR3VmStateChanged(PVIRTIOCORE pVirtio, VIRTIOVMSTATECHANGED enmState);
 void     virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
 int      virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio);
@@ -1146,7 +1224,6 @@ const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState);
  *
  * cb, pv and fWrite are implicit parameters and must be defined by the invoker.
  */
-
 #ifdef LOG_ENABLED
 
 # define VIRTIO_DEV_CONFIG_LOG_ACCESS(member, tCfgStruct, uOffsetOfAccess) \
@@ -1200,7 +1277,7 @@ DECLINLINE(bool) virtioCoreMatchMember(uint32_t uOffset, uint32_t cb, uint32_t u
  * Copy reads or copy writes specified member field of config struct (based on fWrite),
  * the memory described by cb and pv.
  *
- * cb, pv and fWrite are implicit parameters and must be defined by the invoker.
+ * cb, pv and fWrite are implicit parameters and must be defined by invoker.
  */
 #define VIRTIO_DEV_CONFIG_ACCESS(member, tCfgStruct, uOffsetOfAccess, pCfgStruct) \
     do \
@@ -1215,7 +1292,7 @@ DECLINLINE(bool) virtioCoreMatchMember(uint32_t uOffset, uint32_t cb, uint32_t u
 
 /**
  * Copies bytes into memory described by cb, pv from the specified member field of the config struct.
- * The operation is a nop and logs error if implied parameter fWrite is true.
+ * The operation is a NOP, logging an error if an implied parameter, fWrite, is boolean true.
  *
  * cb, pv and fWrite are implicit parameters and must be defined by the invoker.
  */
@@ -1236,7 +1313,7 @@ DECLINLINE(bool) virtioCoreMatchMember(uint32_t uOffset, uint32_t cb, uint32_t u
  * Copies into or out of specified member field of config struct (based on fWrite),
  * the memory described by cb and pv.
  *
- * cb, pv and fWrite are implicit parameters and must be defined by the invoker.
+ * cb, pv and fWrite are implicit parameters and must be defined by invoker.
  */
 #define VIRTIO_DEV_CONFIG_ACCESS_INDEXED(member, uIdx, tCfgStruct, uOffsetOfAccess, pCfgStruct) \
     do \
@@ -1253,7 +1330,7 @@ DECLINLINE(bool) virtioCoreMatchMember(uint32_t uOffset, uint32_t cb, uint32_t u
  * Copies bytes into memory described by cb, pv from the specified member field of the config struct.
  * The operation is a nop and logs error if implied parameter fWrite is true.
  *
- * cb, pv and fWrite are implicit parameters and must be defined by the invoker.
+ * cb, pv and fWrite are implicit parameters and must be defined by invoker.
  */
 #define VIRTIO_DEV_CONFIG_ACCESS_INDEXED_READONLY(member, uidx, tCfgStruct, uOffsetOfAccess, pCfgStruct) \
     do \

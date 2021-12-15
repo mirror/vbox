@@ -1995,7 +1995,8 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     /*
      * Call the virtio core to let it load its state.
      */
-    rc = virtioCoreR3LoadExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM);
+    rc = virtioCoreR3ModernDeviceLoadExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM,
+                                           uVersion, VIRTIOSCSI_SAVED_STATE_VERSION, pThis->virtioScsiConfig.uNumVirtqs);
 
     /*
      * Nudge request queue workers
@@ -2086,7 +2087,7 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     /*
      * Call the virtio core to let it save its state.
      */
-    return virtioCoreR3SaveExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM);
+    return virtioCoreR3SaveExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM, VIRTIOSCSI_SAVED_STATE_VERSION, VIRTIOSCSI_VIRTQ_CNT);
 }
 
 
@@ -2468,7 +2469,7 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     VirtioPciParams.uInterruptPin           = 0x01;
 
     rc = virtioCoreR3Init(pDevIns, &pThis->Virtio, &pThisCC->Virtio, &VirtioPciParams, pThis->szInstance,
-                          VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
+                          VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED, 0 /*fOfferLegacy*/,
                           &pThis->virtioScsiConfig /*pvDevSpecificCap*/, sizeof(pThis->virtioScsiConfig));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: failed to initialize VirtIO"));
