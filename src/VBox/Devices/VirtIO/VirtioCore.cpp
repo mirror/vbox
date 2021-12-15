@@ -1117,7 +1117,7 @@ static void virtioCoreVirtqNotified(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uin
     AssertReturnVoid(uVirtq < RT_ELEMENTS(pVirtio->aVirtqueues));
     PVIRTQUEUE pVirtq = &pVirtio->aVirtqueues[uVirtq];
 
-    Log6Func(("%s: (desc chains: %u)\n", pVirtq->szName ? pVirtq->szName : "?UNAMED QUEUE?",
+    Log6Func(("%s: (desc chains: %u)\n", *pVirtq->szName ? pVirtq->szName : "?UNAMED QUEUE?",
         virtioCoreVirtqAvailCnt(pDevIns, pVirtio, pVirtq)));
 
     /* Inform client */
@@ -2066,7 +2066,6 @@ int virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp,
     rc = pHlp->pfnSSMGetU8(   pSSM, &pVirtio->fDeviceStatus);
     AssertRCReturn(rc, rc);
 
-    char szOut[80] = { 0 };
 #ifdef LOG_ENABLED
     virtioCoreFormatDeviceStatus(pVirtio->fDeviceStatus, szOut, sizeof(szOut));
 #endif
