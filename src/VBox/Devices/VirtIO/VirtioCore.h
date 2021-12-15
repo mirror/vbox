@@ -618,7 +618,7 @@ void  virtioCoreVirtqEnableNotify(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr, bool 
 void  virtioCoreNotifyConfigChanged(PVIRTIOCORE pVirtio);
 
 /**
- * Displays a well-formated human-readable translation of otherwise inscrutable bitmasks
+ * Displays a well-formatted human-readable translation of otherwise inscrutable bitmasks
  * that embody features VirtIO specification definitions, indicating: Totality of features
  * that can be implemented by host and guest, which features were offered by the host, and
  * which were actually accepted by the guest. It displays it as a summary view of the device's
@@ -820,8 +820,9 @@ int virtioCoreR3VirtqAvailBufNext(PVIRTIOCORE pVirtio, uint16_t uVirtqNbr);
  * Checks to see if guest has accepted host device's VIRTIO_F_VERSION_1 (i.e. "modern")
  * behavioral modeling, indicating guest agreed to comply with the modern VirtIO 1.0+ specification.
  * Otherwise unavoidable presumption is that the host device is dealing with legacy VirtIO
- * guest drive, thus must be prepared to cope with less mature architecture and behaviors
- * from  prototype era of VirtIO. (see comments in PDM-invoked device constructor for more information).
+ * guest driver, thus must be prepared to cope with less mature architecture and behaviors
+ * from prototype era of VirtIO. (see comments in PDM-invoked device constructor for more
+ * information).
  *
  * @param   pVirtio      Pointer to the virtio state.
  */

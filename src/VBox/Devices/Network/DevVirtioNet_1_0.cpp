@@ -1967,7 +1967,6 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVI
                         VERR_INTERNAL_ERROR);
     /*
      * Try to do fast (e.g. single-buffer) copy to guest, even if MRG_RXBUF feature is enabled
-     * If
      */
     STAM_PROFILE_START(&pThis->StatReceiveStore, a);
     if (RT_LIKELY(FEATURE_DISABLED(MRG_RXBUF))
@@ -1976,11 +1975,11 @@ static int virtioNetR3CopyRxPktToGuest(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVI
         Log7Func(("Send Rx packet header and data to guest (single-buffer copy)...\n"));
         pRxPktHdr->uNumBuffers = 1;
         rc = virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, pRxVirtq->uIdx, cbPktHdr,  pRxPktHdr, pVirtqBuf, 0  /* cbEnqueue */);
-        AssertMsgReturn(rc == VINF_SUCCESS, ("%Rrc\n", rc), rc);
-        rc = virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, pRxVirtq->uIdx, cb, pvBuf, pVirtqBuf, cbPktHdr + cb /* cbEnqueue */);
-        AssertMsgReturn(rc == VINF_SUCCESS, ("%Rrc\n", rc), rc);
+        if (rc == VINF_SUCCESS)
+            rc = virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, pRxVirtq->uIdx, cb, pvBuf, pVirtqBuf, cbPktHdr + cb /* cbEnqueue */);
         virtioCoreR3VirtqBufRelease(&pThis->Virtio, pVirtqBuf);
         virtioCoreVirtqUsedRingSync(pDevIns, &pThis->Virtio, pRxVirtq->uIdx);
+        AssertMsgReturn(rc == VINF_SUCCESS, ("%Rrc\n", rc), rc);
     }
     else
     {
@@ -2372,7 +2371,7 @@ static uint8_t virtioNetR3CtrlVlan(PVIRTIONET pThis, PVIRTIONET_CTRL_HDR_T pCtrl
  *
  * This function handles all parts of the host-side of the ctrlq round-trip buffer processing.
  *
- * Invoked by worker for virtio-net defince control queue to process a queued control command buffer.
+ * Invoked by worker for virtio-net control queue to process a queued control command buffer.
  *
  * @param pDevIns       PDM device instance
  * @param pThis         virtio-net device instance
@@ -3326,9 +3325,9 @@ static DECLCALLBACK(int) virtioNetR3Destruct(PPDMDEVINS pDevIns)
  *
  * Case in point: According to VirtIO 0.95 ("legacy") specification, section 2.2.1, "historically"
  * drivers may start driving prior to feature negotiation and prior to drivers setting DRIVER_OK
- * status, "provided driver doesn't use features that alter early use of this device".  That
- * is Interpreted here to mean a virtio-net driver must respect default settings (such as implicit
- * pkt header default size, as determined per Note 1 below).
+ * status, "provided driver doesn't use features that alter early use of this device".  Interpreted
+ * here to mean a virtio-net driver must respect default settings (such as implicit pkt header default
+ * size, as determined per Note 1 below).
  *
  * ----------------------------------------------------------------------------------------------
  * Transitional device initialization Note 1:  Identifying default value for network Rx pkt hdr size.
