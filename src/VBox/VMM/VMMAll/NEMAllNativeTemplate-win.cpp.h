@@ -74,6 +74,10 @@
 
 
 #ifdef IN_RING3
+# ifndef NTDDI_WIN10_19H1
+#  define NTDDI_WIN10_19H1          0x0a000007
+# endif
+
 /** WHvRegisterPendingEvent0 was renamed to WHvRegisterPendingEvent between
  *  SDK 17134 and 18362. */
 # if WDK_NTDDI_VERSION < NTDDI_WIN10_19H1
