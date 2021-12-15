@@ -561,26 +561,14 @@ int main(int argc, char *argv[])
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
 #endif
 
-    /*
-     * Parse the global options
-     */
-    bool fShowLogo = false;
-    bool fShowHelp = false;
-    int  iCmd      = 1;
-    int  iCmdArg;
-    const char *pszSettingsPw = NULL;
-    const char *pszSettingsPwFile = NULL;
-#ifndef VBOX_ONLY_DOCS
-    int         cResponseFileArgs     = 0;
-    char      **papszResponseFileArgs = NULL;
-    char      **papszNewArgv          = NULL;
-#endif
-
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
-    ComPtr<IEventListener> pEventListener;
-    PTRCOMPONENT          pTrComponent = NULL;
+    /*
+     * Initialize the translator and associated fun.
+     */
     util::InitAutoLockSystem();
-    VirtualBoxTranslator *pTranslator = VirtualBoxTranslator::instance();
+    ComObjPtr<VBoxEventListenerImpl> ptrEventListner;
+    PTRCOMPONENT          pTrComponent = NULL;
+    VirtualBoxTranslator *pTranslator  = VirtualBoxTranslator::instance();
     if (pTranslator != NULL)
     {
         char szNlsPath[RTPATH_MAX];
@@ -599,17 +587,30 @@ int main(int argc, char *argv[])
                     setBuiltInHelpLanguage(strLang.c_str());
                 }
                 else
-                    LogRelFunc(("Load language failed: %Rrc\n", vrc));
+                    RTMsgWarning("Load language failed: %Rrc\n", vrc);
             }
             else
-                LogRelFunc(("Register translation failed: %Rrc\n", vrc));
+                RTMsgWarning("Register translation failed: %Rrc\n", vrc);
         }
         else
-            LogRelFunc(("Path constructing failed: %Rrc\n", vrc));
-
+            RTMsgWarning("Path constructing failed: %Rrc\n", vrc);
     }
 #endif
 
+    /*
+     * Parse the global options
+     */
+    bool fShowLogo = false;
+    bool fShowHelp = false;
+    int  iCmd      = 1;
+    int  iCmdArg;
+    const char *pszSettingsPw = NULL;
+    const char *pszSettingsPwFile = NULL;
+#ifndef VBOX_ONLY_DOCS
+    int         cResponseFileArgs     = 0;
+    char      **papszResponseFileArgs = NULL;
+    char      **papszNewArgv          = NULL;
+#endif
     for (int i = 1; i < argc || argc <= iCmd; i++)
     {
         if (    argc <= iCmd
@@ -811,6 +812,7 @@ int main(int argc, char *argv[])
         if (SUCCEEDED(hrc))
         {
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
+            /* Load language settings from IVirtualBox. */
             if (pTranslator != NULL)
             {
                 HRESULT hrc1 = pTranslator->loadLanguage(virtualBox);
@@ -820,26 +822,26 @@ int main(int argc, char *argv[])
                     setBuiltInHelpLanguage(strLang.c_str());
                 }
                 else
-                {
-                    /* Just log and ignore the language error */
-                    LogRel(("Failed to load API language, %Rhrc", hrc1));
-                }
+                    RTMsgWarning("Failed to load API language: %Rhrc", hrc1);
+
                 /* VirtualBox language events registration. */
                 ComPtr<IEventSource> pES;
                 hrc1 = virtualBox->COMGETTER(EventSource)(pES.asOutParam());
                 if (SUCCEEDED(hrc1))
                 {
-                    ComObjPtr<VBoxEventListenerImpl> listener;
-                    listener.createObject();
-                    listener->init(new VBoxEventListener());
-                    pEventListener = listener;
-                    com::SafeArray<VBoxEventType_T> eventTypes;
-                    eventTypes.push_back(VBoxEventType_OnLanguageChanged);
-                    hrc1 = pES->RegisterListener(pEventListener, ComSafeArrayAsInParam(eventTypes), true);
+                    hrc1 = ptrEventListner.createObject();
+                    if (SUCCEEDED(hrc1))
+                        hrc1 = ptrEventListner->init(new VBoxEventListener());
+                    if (SUCCEEDED(hrc1))
+                    {
+                        com::SafeArray<VBoxEventType_T> eventTypes;
+                        eventTypes.push_back(VBoxEventType_OnLanguageChanged);
+                        hrc1 = pES->RegisterListener(ptrEventListner, ComSafeArrayAsInParam(eventTypes), true);
+                    }
                     if (FAILED(hrc1))
                     {
-                        pEventListener.setNull();
-                        LogRel(("Failed to register event listener, %Rhrc", hrc1));
+                        ptrEventListner.setNull();
+                        RTMsgWarning("Failed to register event listener: %Rhrc", hrc1);
                     }
                 }
             }
@@ -899,17 +901,17 @@ int main(int argc, char *argv[])
 
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
         /* VirtualBox event callback unregistration. */
-        if (pEventListener.isNotNull())
+        if (ptrEventListner.isNotNull())
         {
             ComPtr<IEventSource> pES;
             HRESULT hrc1 = virtualBox->COMGETTER(EventSource)(pES.asOutParam());
             if (pES.isNotNull())
             {
-                hrc1 = pES->UnregisterListener(pEventListener);
+                hrc1 = pES->UnregisterListener(ptrEventListner);
                 if (FAILED(hrc1))
                     LogRel(("Failed to unregister listener, %Rhrc", hrc1));
             }
-            pEventListener.setNull();
+            ptrEventListner.setNull();
         }
 #endif
         /*
