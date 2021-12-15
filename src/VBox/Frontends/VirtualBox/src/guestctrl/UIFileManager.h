@@ -35,6 +35,7 @@
 
 /* Forward declarations: */
 class CMachine;
+class CProgress;
 class QHBoxLayout;
 class QSplitter;
 class QTextEdit;
