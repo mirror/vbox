@@ -914,7 +914,7 @@ static int rtFsFatClusterMap_FlushWorker(PRTFSFATVOL pThis, uint32_t const iFirs
     int      rc      = VINF_SUCCESS;
     uint64_t off     = UINT64_MAX;
     uint64_t offEdge = UINT64_MAX;
-    RTSGSEG  aSgSegs[8];
+    RTSGSEG  aSgSegs[8] = { 0 }; /* Initialization required for GCC >= 11. */
     RTSGBUF  SgBuf;
     RTSgBufInit(&SgBuf, aSgSegs, RT_ELEMENTS(aSgSegs));
     SgBuf.cSegs = 0; /** @todo RTSgBuf API is stupid, make it smarter. */
