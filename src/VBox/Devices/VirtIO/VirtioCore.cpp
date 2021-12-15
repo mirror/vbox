@@ -143,7 +143,8 @@ const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState)
 static void virtioCoreNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq);
 static int  virtioNudgeGuest(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, uint16_t uVec);
 
-#ifdef LOG_ENABLED
+#ifdef IN_RING3
+#  ifdef LOG_ENABLED
 DECLINLINE(uint16_t) virtioCoreR3CountPendingBufs(uint16_t uRingIdx, uint16_t uShadowIdx, uint16_t uQueueSize)
 {
     if (uShadowIdx == uRingIdx)
@@ -153,8 +154,8 @@ DECLINLINE(uint16_t) virtioCoreR3CountPendingBufs(uint16_t uRingIdx, uint16_t uS
         return uShadowIdx - uRingIdx;
     return uQueueSize - (uRingIdx - uShadowIdx);
 }
+#  endif
 #endif
-
 /** @name Internal queue operations
  * @{ */
 
@@ -1013,7 +1014,6 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
 
     Log6Func(("    Copying device data to %s, [desc chain head idx:%u]\n",
               VIRTQNAME(pVirtio, uVirtq), pVirtqBuf->uHeadIdx));
-
     /*
      * Convert virtual memory simple buffer to guest physical memory (VirtIO descriptor chain)
      */
@@ -2077,7 +2077,7 @@ int virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp,
     rc = pHlp->pfnSSMGetU8(   pSSM, &pVirtio->uISR);
     AssertRCReturn(rc, rc);
 
-    uint32_t cQueues = 3; /* Thes constant default value copied from earliest v0.9 code */
+    uint32_t cQueues = 3; /* This constant default value copied from earliest v0.9 code */
     if (uVersion > uVirtioLegacy_3_1_Beta)
     {
         rc = pHlp->pfnSSMGetU32(pSSM, &cQueues);
