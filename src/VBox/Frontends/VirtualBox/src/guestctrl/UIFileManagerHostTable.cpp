@@ -327,7 +327,8 @@ bool UIFileManagerHostTable::createDirectory(const QString &path, const QString 
     return true;
 }
 
-/* static */ KFsObjType UIFileManagerHostTable::fileType(const QFileInfo &fsInfo)
+/* static */
+KFsObjType UIFileManagerHostTable::fileType(const QFileInfo &fsInfo)
 {
     if (!fsInfo.exists())
         return KFsObjType_Unknown;
@@ -339,8 +340,13 @@ bool UIFileManagerHostTable::createDirectory(const QString &path, const QString 
         return KFsObjType_File;
     else if (fsInfo.isDir())
         return KFsObjType_Directory;
-
     return KFsObjType_Unknown;
+}
+
+/* static */
+KFsObjType  UIFileManagerHostTable::fileType(const QString &strPath)
+{
+    return fileType(QFileInfo(strPath));
 }
 
 QString UIFileManagerHostTable::fsObjectPropertyString()

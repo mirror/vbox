@@ -30,6 +30,7 @@
 #include "UICustomFileSystemModel.h"
 #include "UIErrorString.h"
 #include "UIFileManager.h"
+#include "UIFileManagerHostTable.h"
 #include "UIFileManagerGuestTable.h"
 #include "UIMessageCenter.h"
 #include "UIPathOperations.h"
@@ -617,20 +618,15 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
     QString strFileFlags;
     foreach (const QString &strSource, sourcePaths)
     {
-        RTFSOBJINFO ObjInfo;
-        int vrc = RTPathQueryInfo(strSource.toStdString().c_str(), &ObjInfo, RTFSOBJATTRADD_NOTHING);
-        if (RT_SUCCESS(vrc))
-        {
-            /* If the source is an directory, make sure to add the appropriate flag to make copying work
-             * into existing directories on the guest. This otherwise would fail (default): */
-            if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
-                aFlags << strDirectoryFlags;
-            else
-                aFlags << strFileFlags;
-        }
+        KFsObjType enmFileType = UIFileManagerHostTable::fileType(strSource);
+        if (enmFileType == KFsObjType_Unknown)
+            emit sigLogOutput(QString("Querying information for host item %1 failed.").arg(strSource), m_strTableName, FileManagerLogType_Error);
+        /* If the source is an directory, make sure to add the appropriate flag to make copying work
+         * into existing directories on the guest. This otherwise would fail (default): */
+        else if (enmFileType == KFsObjType_Directory)
+            aFlags << strDirectoryFlags;
         else
-            emit sigLogOutput(QString("Querying information for host item \"%s\" failed with %Rrc").arg(strSource.toStdString().c_str(), vrc),
-                              m_strTableName, FileManagerLogType_Error);
+            aFlags << strFileFlags;
     }
 
     CProgress progress = m_comGuestSession.CopyToGuest(sourcePaths, aFilters, aFlags, strDestinationPath);

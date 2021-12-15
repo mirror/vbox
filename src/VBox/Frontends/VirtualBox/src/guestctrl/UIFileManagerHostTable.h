@@ -38,6 +38,7 @@ public:
 
     UIFileManagerHostTable(UIActionPool *pActionPool, QWidget *pParent = 0);
     static KFsObjType  fileType(const QFileInfo &fsInfo);
+    static KFsObjType  fileType(const QString &strPath);
 
 protected:
 
