@@ -32,9 +32,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
-# include <sched.h>
-#endif
+#include <sched.h>
 
 #include <iprt/thread.h>
 #include <iprt/log.h>
@@ -57,14 +55,7 @@ RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
     LogFlow(("RTThreadSleep: cMillies=%d\n", cMillies));
     if (!cMillies)
     {
-        /* pthread_yield() isn't part of SuS, thus this fun. */
-#ifdef RT_OS_DARWIN
-        pthread_yield_np();
-#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
-        sched_yield();
-#else
-        if (!pthread_yield())
-#endif
+        if (!sched_yield())
         {
             LogFlow(("RTThreadSleep: returning %Rrc (cMillies=%d)\n", VINF_SUCCESS, cMillies));
             return VINF_SUCCESS;
@@ -94,14 +85,7 @@ RTDECL(int) RTThreadSleepNoLog(RTMSINTERVAL cMillies)
 {
     if (!cMillies)
     {
-        /* pthread_yield() isn't part of SuS, thus this fun. */
-#ifdef RT_OS_DARWIN
-        pthread_yield_np();
-#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
-        sched_yield();
-#else
-        if (!pthread_yield())
-#endif
+        if (!sched_yield())
             return VINF_SUCCESS;
     }
     else
@@ -124,13 +108,9 @@ RTDECL(bool) RTThreadYield(void)
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     uint64_t u64TS = ASMReadTSC();
 #endif
-#ifdef RT_OS_DARWIN
-    pthread_yield_np();
-#elif defined(RT_OS_SOLARIS) || defined(RT_OS_HAIKU) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD)
+
     sched_yield();
-#else
-    pthread_yield();
-#endif
+
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     u64TS = ASMReadTSC() - u64TS;
     bool fRc = u64TS > 1500;
