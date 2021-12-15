@@ -143,6 +143,7 @@ const char *virtioCoreGetStateChangeText(VIRTIOVMSTATECHANGED enmState)
 static void virtioCoreNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq);
 static int  virtioNudgeGuest(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, uint16_t uVec);
 
+#ifdef LOG_ENABLED
 DECLINLINE(uint16_t) virtioCoreR3CountPendingBufs(uint16_t uRingIdx, uint16_t uShadowIdx, uint16_t uQueueSize)
 {
     if (uShadowIdx == uRingIdx)
@@ -152,6 +153,7 @@ DECLINLINE(uint16_t) virtioCoreR3CountPendingBufs(uint16_t uRingIdx, uint16_t uS
         return uShadowIdx - uRingIdx;
     return uQueueSize - (uRingIdx - uShadowIdx);
 }
+#endif
 
 /** @name Internal queue operations
  * @{ */
@@ -2067,6 +2069,7 @@ int virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp,
     AssertRCReturn(rc, rc);
 
 #ifdef LOG_ENABLED
+    char szOut[80] = { 0 };
     virtioCoreFormatDeviceStatus(pVirtio->fDeviceStatus, szOut, sizeof(szOut));
 #endif
     Log(("Loaded legacy device status = (%s)\n", szOut));
