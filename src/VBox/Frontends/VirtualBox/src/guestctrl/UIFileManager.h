@@ -24,6 +24,7 @@
 /* Qt includes: */
 #include <QPointer>
 #include <QWidget>
+#include <QString>
 #include <QUuid>
 
 /* GUI includes: */
