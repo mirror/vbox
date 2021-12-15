@@ -459,8 +459,8 @@ typedef struct VIRTIOCORER3
     R3PTRTYPE(uint8_t *)                pbDevSpecificCfg;          /**< Pointer to client's struct                */
     R3PTRTYPE(uint8_t *)                pbPrevDevSpecificCfg;      /**< Previous read dev-specific cfg of client  */
     bool                                fGenUpdatePending;         /**< If set, update cfg gen after driver reads */
-    char                                pcszMmioName[MAX_NAME];    /**< MMIO mapping name                         */
-    char                                pcszPortIoName[MAX_NAME];  /**< PORT mapping name                         */
+    char                                szMmioName[MAX_NAME];      /**< MMIO mapping name                         */
+    char                                szPortIoName[MAX_NAME];    /**< PORT mapping name                         */
 } VIRTIOCORER3;
 
 /**

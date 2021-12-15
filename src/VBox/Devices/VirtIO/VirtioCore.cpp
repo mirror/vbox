@@ -2536,11 +2536,11 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
     PDMPciDevSetCapabilityList(pPciDev, 0x40);
     PDMPciDevSetStatus(pPciDev, VBOX_PCI_STATUS_CAP_LIST);
 
-    size_t cbSize = RTStrPrintf(pVirtioCC->pcszMmioName, sizeof(pVirtioCC->pcszMmioName), "%s (modern)", pcszInstance);
+    size_t cbSize = RTStrPrintf(pVirtioCC->szMmioName, sizeof(pVirtioCC->szMmioName), "%s (modern)", pcszInstance);
     if (cbSize <= 0)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: out of memory allocating string")); /* can we put params in this error? */
 
-    cbSize = RTStrPrintf(pVirtioCC->pcszPortIoName, sizeof(pVirtioCC->pcszPortIoName), "%s (legacy)", pcszInstance);
+    cbSize = RTStrPrintf(pVirtioCC->szPortIoName, sizeof(pVirtioCC->szPortIoName), "%s (legacy)", pcszInstance);
     if (cbSize <= 0)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: out of memory allocating string")); /* can we put params in this error? */
 
@@ -2553,7 +2553,7 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
          * (See VirtIO 1.1, Section 4.1.4.8).
          */
         rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, VIRTIO_REGION_LEGACY_IO, sizeof(VIRTIO_LEGACY_PCI_COMMON_CFG_T) + cbDevSpecificCfg,
-                                          virtioLegacyIOPortOut, virtioLegacyIOPortIn, NULL /*pvUser*/, pVirtioCC->pcszPortIoName,
+                                          virtioLegacyIOPortOut, virtioLegacyIOPortIn, NULL /*pvUser*/, pVirtioCC->szPortIoName,
                                           NULL /*paExtDescs*/, &pVirtio->hLegacyIoPorts);
         AssertLogRelRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: cannot register legacy config in I/O space at BAR0 */")));
     }
@@ -2564,7 +2564,7 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
     rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, VIRTIO_REGION_PCI_CAP, RT_ALIGN_32(cbRegion + VIRTIO_PAGE_SIZE, VIRTIO_PAGE_SIZE),
                                         PCI_ADDRESS_SPACE_MEM, virtioMmioWrite, virtioMmioRead, pVirtio,
                                         IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                        pVirtioCC->pcszMmioName,
+                                        pVirtioCC->szMmioName,
                                         &pVirtio->hMmioPciCap);
     AssertLogRelRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: cannot register PCI Capabilities address space")));
     /*

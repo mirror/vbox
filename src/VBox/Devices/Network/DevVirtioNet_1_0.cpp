@@ -895,7 +895,7 @@ static DECLCALLBACK(void) virtioNetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
         pHlp->pfnPrintf(pHlp, "    cVirtqPairs .,............. %d\n",   pThis->cVirtqPairs);
         pHlp->pfnPrintf(pHlp, "    cVirtqs .,................. %d\n",   pThis->cVirtqs);
         pHlp->pfnPrintf(pHlp, "    cWorkers .................. %d\n",   pThis->cWorkers);
-        pHlp->pfnPrintf(pHlp, "    MMIO mapping name ......... %d\n",   pThisCC->Virtio.pcszMmioName);
+        pHlp->pfnPrintf(pHlp, "    MMIO mapping name ......... %d\n",   pThisCC->Virtio.szMmioName);
         pHlp->pfnPrintf(pHlp, "\n");
     }
 
