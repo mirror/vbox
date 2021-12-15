@@ -516,7 +516,7 @@ DECLINLINE(void) virtioCoreFormatDeviceStatus(uint8_t bStatus, char *pszBuf, siz
 #   define ADJCURSOR(len) { cp += len; uSize -= len; sep = (char *)" | "; }
     memset(pszBuf, 0, uSize);
     char *cp = pszBuf, *sep = (char *)"";
-    int len;
+    size_t len;
     if (bStatus == 0)
         RTStrPrintf(cp, uSize, "RESET");
     else
@@ -1434,13 +1434,14 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIR
         {
             pVirtio->fDeviceStatus = *(uint8_t *)pv;
             bool fDeviceReset = pVirtio->fDeviceStatus == 0;
-
+#ifdef LOG_ENABLED
             if (LogIs7Enabled())
             {
                 char szOut[80] = { 0 };
                 virtioCoreFormatDeviceStatus(pVirtio->fDeviceStatus, szOut, sizeof(szOut));
                 Log(("%-23s: Guest wrote fDeviceStatus ................ (%s)\n", __FUNCTION__, szOut));
             }
+#endif
             bool const fStatusChanged = IS_DRIVER_OK(pVirtio) != WAS_DRIVER_OK(pVirtio);
 
             if (fDeviceReset || fStatusChanged)
@@ -1471,13 +1472,14 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIR
         else /* Guest READ pCommonCfg->fDeviceStatus */
         {
             *(uint8_t *)pv = pVirtio->fDeviceStatus;
-
+#ifdef LOG_ENABLED
             if (LogIs7Enabled())
             {
                 char szOut[80] = { 0 };
                 virtioCoreFormatDeviceStatus(pVirtio->fDeviceStatus, szOut, sizeof(szOut));
                 LogFunc(("Guest read  fDeviceStatus ................ (%s)\n", szOut));
             }
+#endif
         }
     }
     else
@@ -1566,12 +1568,14 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortIn(PPDMDEVINS pDevIns, void 
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(fDeviceStatus, VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort))
     {
         *(uint8_t *)pu32 = pVirtio->fDeviceStatus;
+#ifdef LOG_ENABLED
         if (LogIs7Enabled())
         {
             char szOut[80] = { 0 };
             virtioCoreFormatDeviceStatus(pVirtio->fDeviceStatus, szOut, sizeof(szOut));
             Log(("%-23s: Guest read  fDeviceStatus ................ (%s)\n", __FUNCTION__, szOut));
         }
+#endif
     }
     else
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(fIsrStatus, VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort))
@@ -1703,13 +1707,14 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortOut(PPDMDEVINS pDevIns, void
     {
         bool const fDriverInitiatedReset = (pVirtio->fDeviceStatus = (uint8_t)u32) == 0;
         bool const fDriverStateImproved = IS_DRIVER_OK(pVirtio) && !WAS_DRIVER_OK(pVirtio);
-
+#ifdef LOG_ENABLED
         if (LogIs7Enabled())
         {
             char szOut[80] = { 0 };
             virtioCoreFormatDeviceStatus(pVirtio->fDeviceStatus, szOut, sizeof(szOut));
             Log(("%-23s: Guest wrote fDeviceStatus ................ (%s)\n", __FUNCTION__, szOut));
         }
+#endif
         if (fDriverStateImproved  || fDriverInitiatedReset)
         {
 #ifdef IN_RING0
@@ -2062,7 +2067,9 @@ int virtioCoreR3LegacyDeviceLoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp,
     AssertRCReturn(rc, rc);
 
     char szOut[80] = { 0 };
+#ifdef LOG_ENABLED
     virtioCoreFormatDeviceStatus(pVirtio->fDeviceStatus, szOut, sizeof(szOut));
+#endif
     Log(("Loaded legacy device status = (%s)\n", szOut));
 
     rc = pHlp->pfnSSMGetU8(   pSSM, &pVirtio->uISR);
