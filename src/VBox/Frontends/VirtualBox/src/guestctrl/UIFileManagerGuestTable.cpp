@@ -613,7 +613,8 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
         emit sigLogOutput("No source for copy operation", m_strTableName, FileManagerLogType_Error);
         return;
     }
-
+    QString strDirectoryFlags("CopyIntoExisting,Recursive,FollowLinks");
+    QString strFileFlags;
     foreach (const QString &strSource, sourcePaths)
     {
         RTFSOBJINFO ObjInfo;
@@ -621,15 +622,11 @@ void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathL
         if (RT_SUCCESS(vrc))
         {
             /* If the source is an directory, make sure to add the appropriate flag to make copying work
-             * into existing directories on the guest. This otherwise would fail (default). */
+             * into existing directories on the guest. This otherwise would fail (default): */
             if (RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
-            {
-                aFlags.append("CopyIntoExisting");
-                aFlags.append("Recursive");
-                aFlags.append("FollowLinks");
-            }
-            else /* Make sure to keep the vector in sync with the number of source items by adding an empty entry. */
-                aFlags.append("");
+                aFlags << strDirectoryFlags;
+            else
+                aFlags << strFileFlags;
         }
         else
             emit sigLogOutput(QString("Querying information for host item \"%s\" failed with %Rrc").arg(strSource.toStdString().c_str(), vrc),
@@ -678,6 +675,8 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
         return;
     }
 
+    QString strDirectoryFlags("CopyIntoExisting,Recursive,FollowLinks");
+    QString strFileFlags;
     foreach (const QString &strSource, sourcePaths)
     {
         /** @todo Cache this info and use the item directly, which has this info already? */
@@ -691,15 +690,10 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
             return;
         }
 
-        KFsObjType eType = fileType(fileInfo);
-        if (eType == KFsObjType_Directory)
-        {
-            aFlags.append("CopyIntoExisting");
-            aFlags.append("Recursive");
-            aFlags.append("FollowLinks");
-        }
-        else /* Make sure to keep the vector in sync with the number of source items by adding an empty entry. */
-            aFlags.append("");
+        if (fileType(fileInfo) == KFsObjType_Directory)
+            aFlags << strDirectoryFlags;
+        else
+            aFlags << strFileFlags;
     }
 
     CProgress progress = m_comGuestSession.CopyFromGuest(sourcePaths, aFilters, aFlags, hostDestinationPath);
