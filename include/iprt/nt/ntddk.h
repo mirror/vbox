@@ -49,6 +49,12 @@
 # pragma warning(disable:4005) /* sdk/v7.1/include/sal_supp.h(57) : warning C4005: '__useHeader' : macro redefinition */
 # pragma warning(disable:4471) /* wdm.h(11057) : warning C4471: '_POOL_TYPE' : a forward declaration of an unscoped enumeration must have an underlying type (int assumed) */
 #endif
+
+/* Include the sdk/ddk version header so _WIN32_VER and the rest gets defined before ntdef.h is included,
+   otherwise we'll miss out on DECLARE_GLOBAL_CONST_UNICODE_STRING and friends in the W10 SDKs. */
+#define DECLSPEC_DEPRECATED_DDK
+#include <sdkddkver.h>
+
 /*RT_C_DECLS_BEGIN - no longer necessary it seems */
 #include <ntddk.h>
 /*RT_C_DECLS_END - no longer necessary it seems */
