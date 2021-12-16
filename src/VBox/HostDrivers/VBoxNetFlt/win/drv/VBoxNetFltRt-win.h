@@ -439,7 +439,7 @@ extern RTMAC g_vboxNetFltWinVerifyMACGuest;
 #define FINI_INTERLOCKED_SINGLE_LIST(_pList) \
     do { \
         Assert(vboxNetFltWinSListIsEmpty(&(_pList)->List)); \
-        NdisFreeSpinLock(&(_pList)->Lock) \
+        NdisFreeSpinLock(&(_pList)->Lock); \
     } while (0)
 
 
