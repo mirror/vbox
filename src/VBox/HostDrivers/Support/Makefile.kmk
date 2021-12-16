@@ -677,6 +677,10 @@ if1of ($(KBUILD_TARGET), darwin freebsd solaris win)
  	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB) \
  	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ntoskrnl.lib \
  	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/hal.lib
+ ifn1of ($(VBOX_WINDDK), WINDDK80 WINDDK71)
+  VBoxDrv_LIBS.win.x86    = \
+ 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/BufferOverflowK.lib
+ endif
 
  #VBoxDrv_LDFLAGS.darwin   = -Wl,-sectcreate,__TEXT,__info_plist,$(VBoxDrv.kext_0_OUTDIR)/Info.plist
  #VBoxDrv_LDFLAGS.darwin   = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
