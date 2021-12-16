@@ -345,6 +345,8 @@ endif
 VBOX_WITH_NEW_VCC = 1
 # Select Windows 11 SDK.
 VBOX_WITH_NEW_WINDOWS_SDK = 1
+# Select Windows 11 DDK.
+VBOX_WITH_NEW_WINDOWS_DDK = 1
 
 ## @name Additions
 ## @{
