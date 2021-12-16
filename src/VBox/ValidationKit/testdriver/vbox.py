@@ -2483,7 +2483,7 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.setExtraData('VBoxInternal/DBGC/Enabled', '1');
             if fRc and sChipsetType == 'piix3':
                 fRc = oSession.setChipsetType(vboxcon.ChipsetType_PIIX3);
-            elif sChipsetType == 'ich9':
+            elif fRc and sChipsetType == 'ich9':
                 fRc = oSession.setChipsetType(vboxcon.ChipsetType_ICH9);
             if fRc and sCom1RawFile:
                 fRc = oSession.setupSerialToRawFile(0, sCom1RawFile);
