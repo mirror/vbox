@@ -1624,7 +1624,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
     }
 
     uint32_t uSessionStatus = GUEST_SESSION_NOTIFYTYPE_UNDEFINED;
-    uint32_t uSessionRc = VINF_SUCCESS; /** uint32_t vs. int. */
+    int32_t  iSessionResult = VINF_SUCCESS;
 
     if (fProcessAlive)
     {
@@ -1649,14 +1649,17 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
         {
             case RTPROCEXITREASON_NORMAL:
                 uSessionStatus = GUEST_SESSION_NOTIFYTYPE_TEN;
+                iSessionResult = ProcessStatus.iStatus; /* Report back the session's exit code. */
                 break;
 
             case RTPROCEXITREASON_ABEND:
                 uSessionStatus = GUEST_SESSION_NOTIFYTYPE_TEA;
+                /* iSessionResult is undefined (0). */
                 break;
 
             case RTPROCEXITREASON_SIGNAL:
                 uSessionStatus = GUEST_SESSION_NOTIFYTYPE_TES;
+                iSessionResult = ProcessStatus.iStatus; /* Report back the signal number. */
                 break;
 
             default:
@@ -1675,17 +1678,17 @@ static DECLCALLBACK(int) vgsvcGstCtrlSessionThread(RTTHREAD hThreadSelf, void *p
     ASMAtomicWriteBool(&pThread->fStopped, true);
 
     /* Report final status, regardless if we failed to wait above, so that the host knows what's going on. */
-    VGSvcVerbose(3, "Reporting final status %RU32 of session ID=%RU32\n", uSessionStatus, idSession);
+    VGSvcVerbose(3, "Reporting final status %#x %RU32 of session ID=%RU32\n", uSessionStatus, idSession);
     Assert(uSessionStatus != GUEST_SESSION_NOTIFYTYPE_UNDEFINED);
 
     VBGLR3GUESTCTRLCMDCTX ctx = { idClient, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(idSession),
                                   0 /* uProtocol, unused */, 0 /* uNumParms, unused */ };
-    rc2 = VbglR3GuestCtrlSessionNotify(&ctx, uSessionStatus, uSessionRc);
+    rc2 = VbglR3GuestCtrlSessionNotify(&ctx, uSessionStatus, iSessionResult);
     if (RT_FAILURE(rc2))
         VGSvcError("Reporting final status of session ID=%RU32 failed with rc=%Rrc\n", idSession, rc2);
 
-    VGSvcVerbose(3, "Thread for session ID=%RU32 ended with sessionStatus=%RU32, sessionRc=%Rrc\n",
-                 idSession, uSessionStatus, uSessionRc);
+    VGSvcVerbose(3, "Thread for session ID=%RU32 ended with sessionStatus=%#x (%RU32), sessionRc=%#x (%Rrc)\n",
+                 idSession, uSessionStatus, uSessionStatus, iSessionResult, iSessionResult);
 
     return VINF_SUCCESS;
 }

@@ -2040,10 +2040,20 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TEN:
-        case GUEST_SESSION_NOTIFYTYPE_TES:
-        case GUEST_SESSION_NOTIFYTYPE_TEA:
+            LogRel(("Guest Control: Session #%RU32 was terminated normally with exit code %#x\n",
+                    mData.mSession.mID, dataCb.uResult));
             sessionStatus = GuestSessionStatus_Terminated;
-            LogRel(("Guest Control: Session #%RU32 was successfully terminated\n", mData.mSession.mID));
+            break;
+
+        case GUEST_SESSION_NOTIFYTYPE_TEA:
+            LogRel(("Guest Control: Session #%RU32 was terminated abnormally\n", mData.mSession.mID));
+            sessionStatus = GuestSessionStatus_Terminated;
+            /* dataCb.uResult is undefined. */
+            break;
+
+        case GUEST_SESSION_NOTIFYTYPE_TES:
+            LogRel(("Guest Control: Session #%RU32 was terminated via signal %#x\n", mData.mSession.mID, dataCb.uResult));
+            sessionStatus = GuestSessionStatus_Terminated;
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TOK:
