@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
 #define VMCPU_INCL_CPUM_GST_CTX
+#define IsEqualLocaleName(a, b) (0) /* W10 WDK hack, the header wants _wcsicmp  */
 #include <iprt/nt/nt.h>
 #include <iprt/nt/hyperv.h>
 #include <iprt/nt/vid.h>
