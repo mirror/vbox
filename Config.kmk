@@ -1903,7 +1903,13 @@ USES.win += vboximportchecker
 #
 # Decide which Windows DDK to use by default.
 #
-if1of ($(VBOX_VCC_TOOL_STEM), VCC110)
+ifdef VBOX_WITH_NEW_WINDOWS_DDK
+ VBOX_WINDDK         ?= WINSDK10-KM
+ VBOX_WINDDK_WLH     ?= $(VBOX_WINDDK)
+ VBOX_WINDDK_GST_W8  ?= WINSDK10-KM-W8
+ VBOX_WINDDK_GST_W7  ?= WINSDK10-KM-W7
+ VBOX_WINDDK_GST_WLH ?= WINDDK71WLH
+else if1of ($(VBOX_VCC_TOOL_STEM), VCC110)
  VBOX_WINDDK         ?= WINDDK80
 else
  VBOX_WINDDK         ?= WINDDK71
@@ -4585,6 +4591,19 @@ SDK_VBOX_NTDLL_LIBS.x86   ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-x86.lib
 SDK_VBOX_NTDLL_LIBS.amd64 ?= $(PATH_STAGE_LIB)/RuntimeR3NtDll-amd64.lib
 
 #
+# SDK for including newdev.lib.
+# It conceptually moved from the WDK to the PSDK with W10, as it's now in the um subdir.
+#
+SDK_VBOX_WIN_NEWDEV = Abstracts where to find newdev.lib.
+ifn1of ($(VBOX_WINPSDK), WINPSDK71 WINPSDK80)
+ SDK_VBOX_WIN_NEWDEV_LIBS.x86   = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/newdev.lib
+ SDK_VBOX_WIN_NEWDEV_LIBS.amd64 = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.amd64)/newdev.lib
+else
+ SDK_VBOX_WIN_NEWDEV_LIBS.x86   = $(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/newdev.lib
+ SDK_VBOX_WIN_NEWDEV_LIBS.amd64 = $(PATH_SDK_$(VBOX_WINDDK)_LIB.amd64)/newdev.lib
+endif
+
+#
 # Determine Solaris version.
 #
 ifeq ($(KBUILD_TARGET),solaris)
@@ -5005,11 +5024,13 @@ ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBOXR0DRV_SDKS              = WINSDK10-UCRT-INCS
  endif
  TEMPLATE_VBOXR0DRV_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
+ TEMPLATE_VBOXR0DRV_DEFS              += _KERNEL_MODE=1            # Needed with W10 to access things like KeQueryInterruptTime
  TEMPLATE_VBOXR0DRV_DEFS.x86           = _X86_
  TEMPLATE_VBOXR0DRV_DEFS.x86          += NO_INTERLOCKED_INTRINSICS # Avoids intrisic VC/WDK trouble
  TEMPLATE_VBOXR0DRV_DEFS.x86          += WIN9X_COMPAT_SPINLOCK     # Avoid multiply defined _KeInitializeSpinLock@4
  TEMPLATE_VBOXR0DRV_DEFS.amd64         = _AMD64_
  TEMPLATE_VBOXR0DRV_DEFS.amd64        += WIN9X_COMPAT_SPINLOCK     # For Windows 8+ WDKs where it is no longer inlined but imported from ntoskrnl.
+ TEMPLATE_VBOXR0DRV_DEFS.amd64        += NT_INLINE_IRQL NT_INLINE_GET_CURRENT_IRQL # Prevent W10 WDK from importing KeLowerIrql and KeGetCurrentIrql.
  TEMPLATE_VBOXR0DRV_DEFS.win           = IPRT_NT_MAP_TO_ZW
  TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -GS- -Zc:wchar_t- $(VBOX_VCC_FP) -Gs4096 $(VBOX_VCC_OPT) \
 	-Gy $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
