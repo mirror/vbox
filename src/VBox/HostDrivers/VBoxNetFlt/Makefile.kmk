@@ -324,12 +324,12 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
  # VBoxNetFltNobj
  #
  DLLS.win += VBoxNetFltNobj
- VBoxNetFltNobj_TEMPLATE   = VBOXR3STATIC
+ VBoxNetFltNobj_TEMPLATE   = VBoxR3Static
  if defined(VBOX_SIGNING_MODE)
   VBoxNetFltNobj_INSTTYPE  = none
   VBoxNetFltNobj_DEBUG_INSTTYPE = both
  endif
- VBoxNetFltNobj_SDKS       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
+ VBoxNetFltNobj_SDKS       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  VBoxNetFltNobj_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
  VBoxNetFltNobj_INCS       = \
  	$(VBoxNetFltNobj_0_OUTDIR)
@@ -337,8 +337,6 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
  	win/nobj/VBoxNetFltNobj.cpp \
  	win/nobj/VBoxNetFltNobj.def \
  	win/nobj/VBoxNetFltNobj.rc
- VBoxNetFltNobj_LIBS       = \
- 	$(VBOX_LIB_RUNTIME_STATIC)
  #VBoxNetFltNobj_INTERMEDIATES =
  VBoxNetFltNobj_DEPS       = \
  	$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
@@ -359,13 +357,13 @@ ifdef KMK_WITH_QUOTING
 	$(VBOX_MIDL_REDIRECT) $(VBOX_WIN_MIDL) /nologo \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxNetFltNobj_0_OUTDIR)) \
 		/cpp_cmd $(VBOX_MIDL_CPP_CMD) \
-		$(qforeachfile unq, incdir, $(SDK_$(VBOX_WINDDK)_INCS),/I $(quote-sh $(incdir))) \
+		$(qforeachfile unq, incdir, $(SDK_$(VBOX_WINDDK)_INCS) $(SDK_$(VBOX_WINPSDK)_INCS),/I $(quote-sh $(incdir))) \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 else
 	$(VBOX_MIDL_REDIRECT) $(VBOX_WIN_MIDL) /nologo \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxNetFltNobj_0_OUTDIR)) \
 		/cpp_cmd $(VBOX_MIDL_CPP_CMD) \
-		$(foreach incdir, $(SDK_$(VBOX_WINDDK)_INCS),/I $(call VBOX_FN_MAKE_WIN_PATH,$(incdir)) ) \
+		$(foreach incdir, $(SDK_$(VBOX_WINDDK)_INCS) $(SDK_$(VBOX_WINPSDK)_INCS),/I $(call VBOX_FN_MAKE_WIN_PATH,$(incdir)) ) \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
 endif
 
