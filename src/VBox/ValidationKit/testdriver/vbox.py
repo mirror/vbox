@@ -3002,6 +3002,8 @@ class TestDriver(base.TestDriver):                                              
             reporter.errorXcpt();
             return (None, None);
 
+        oSession = None; # Must be initialized, otherwise the log statement at the end of the function can fail.
+
         # Open a remote session, wait for this operation to complete.
         # (The loop is a kludge to deal with us racing the closing of the
         # direct session of a previous VM run. See waitOnDirectSessionClose.)
