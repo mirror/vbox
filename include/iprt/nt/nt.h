@@ -218,6 +218,10 @@
 # define FileFsMaximumInformation       OutdatedWdm_FileFsMaximumInformation
 # define NtQueryVolumeInformationFile   OutdatedWdm_NtQueryVolumeInformationFile
 # define NtSetVolumeInformationFile     OutdatedWdm_NtSetVolumeInformationFile
+# define _MEMORY_INFORMATION_CLASS      OutdatedWdm__MEMORY_INFORMATION_CLASS
+# define MEMORY_INFORMATION_CLASS       OutdatedWdm_MEMORY_INFORMATION_CLASS
+# define MemoryBasicInformation         OutdatedWdm_MemoryBasicInformation
+# define NtQueryVirtualMemory           OutdatedWdm_NtQueryVirtualMemory
 
 # pragma warning(push)
 # ifdef RT_ARCH_X86
@@ -264,6 +268,10 @@
 # undef FileFsMaximumInformation
 # undef NtQueryVolumeInformationFile
 # undef NtSetVolumeInformationFile
+# undef _MEMORY_INFORMATION_CLASS
+# undef MEMORY_INFORMATION_CLASS
+# undef MemoryBasicInformation
+# undef NtQueryVirtualMemory
 
 # define IPRT_NT_NEED_API_GROUP_NTIFS
 #endif
@@ -2706,7 +2714,11 @@ typedef enum _PROCESSINFOCLASS
     MaxProcessInfoClass
 } PROCESSINFOCLASS;
 AssertCompile(ProcessSequenceNumber == 0x5c);
+#endif
+#if defined(IPRT_NT_USE_WINTERNL) || defined(WDK_NTDDI_VERSION) /* Present in ntddk.h from 7600.16385.1, but not in W10. */
 RT_DECL_NTAPI(NTSTATUS) NtQueryInformationProcess(HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG);
+#endif
+#ifdef IPRT_NT_USE_WINTERNL
 #if ARCH_BITS == 32
 /** 64-bit API pass thru to WOW64 processes. */
 RT_DECL_NTAPI(NTSTATUS) NtWow64QueryInformationProcess64(HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG);
@@ -2943,21 +2955,28 @@ typedef enum _MEMORY_INFORMATION_CLASS
     MemorySectionName,
     MemoryBasicVlmInformation
 } MEMORY_INFORMATION_CLASS;
-#ifdef IN_RING0
+#ifndef IPRT_NT_USE_WINTERNL
+# ifndef WDK_NTDDI_VERSION /* W10 ntifs.h has it, 7600.16385.1 didn't. */
 typedef struct _MEMORY_BASIC_INFORMATION
 {
     PVOID BaseAddress;
     PVOID AllocationBase;
     ULONG AllocationProtect;
+#  if ARCH_BITS == 64
+    USHORT PartitionId;
+#  endif
     SIZE_T RegionSize;
     ULONG State;
     ULONG Protect;
     ULONG Type;
 } MEMORY_BASIC_INFORMATION;
 typedef MEMORY_BASIC_INFORMATION *PMEMORY_BASIC_INFORMATION;
+# endif
 # define NtQueryVirtualMemory ZwQueryVirtualMemory
 #endif
+#if defined(IPRT_NT_USE_WINTERNL) || !defined(WDK_NTDDI_VERSION) /* W10 ntifs.h has it, 7600.16385.1 didn't. */
 RT_DECL_NTAPI(NTSTATUS) NtQueryVirtualMemory(HANDLE, void const *, MEMORY_INFORMATION_CLASS, PVOID, SIZE_T, PSIZE_T);
+#endif
 #ifdef IPRT_NT_USE_WINTERNL
 RT_DECL_NTAPI(NTSTATUS) NtAllocateVirtualMemory(HANDLE, PVOID *, ULONG, PSIZE_T, ULONG, ULONG);
 #endif
