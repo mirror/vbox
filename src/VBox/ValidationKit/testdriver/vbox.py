@@ -2620,8 +2620,11 @@ class TestDriver(base.TestDriver):                                              
         """
         Adds an already existing (that is, configured) test VM to the
         test VM list.
+
+        Returns the VM object on success, None if failed.
         """
         # find + add the VM to the list.
+        oVM = None;
         try:
             if self.fpApiVer >= 4.0:
                 oVM = self.oVBox.findMachine(sNameOrId);
@@ -2629,12 +2632,12 @@ class TestDriver(base.TestDriver):                                              
                 reporter.error('fpApiVer=%s - did you remember to initialize the API' % (self.fpApiVer,));
         except:
             reporter.errorXcpt('could not find vm "%s"' % (sNameOrId,));
-            return None;
 
-        self.aoVMs.append(oVM);
-        if not fQuiet:
-            reporter.log('Added "%s" with name "%s"' % (oVM.id, sNameOrId));
-            self.logVmInfo(oVM);
+        if oVM:
+            self.aoVMs.append(oVM);
+            if not fQuiet:
+                reporter.log('Added "%s" with name "%s"' % (oVM.id, sNameOrId));
+                self.logVmInfo(oVM);
         return oVM;
 
     def openSession(self, oVM):
