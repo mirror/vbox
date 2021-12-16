@@ -878,8 +878,7 @@ endif
  ifeq ($(KBUILD_TARGET),win)
   VBoxDD_LIBS           += \
  	$(LIB_DDU) \
- 	$(PATH_STAGE_LIB)/VBoxDD2.lib \
- 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
+ 	$(PATH_STAGE_LIB)/VBoxDD2.lib
  else
   VBoxDD_LIBS           += \
  	$(VBoxDDU_1_STAGE_TARGET) \
