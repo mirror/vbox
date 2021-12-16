@@ -2363,9 +2363,8 @@ ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
  # SMBIOS not available on Solaris SPARC.
  VBoxRT_LIBS.solaris += smbios
 endif
-VBoxRT_LIBS.win                = \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/vccomsup.lib \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/wbemuuid.lib \
+VBoxRT_LIBS.win               += \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/wbemuuid.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 VBoxRT_LDFLAGS.darwin          = \
 	-framework IOKit \
@@ -2508,9 +2507,8 @@ ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
  # SMBIOS not available on Solaris SPARC.
  VBoxRT-x86_LIBS.solaris += smbios
 endif
-VBoxRT-x86_LIBS.win                = \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/vccomsup.lib \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/wbemuuid.lib \
+VBoxRT-x86_LIBS.win               += \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/wbemuuid.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_LIB)/delayimp.lib
 
 VBoxRT-x86_SOURCES.win = $(filter-out %.def %.rc,$(VBoxRT_SOURCES.win)) \
