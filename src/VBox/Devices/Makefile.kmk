@@ -105,11 +105,11 @@ if !defined(VBOX_ONLY_EXTPACKS)
  VBoxDDU_LIBS.solaris    += \
     efi
  if defined(VBOX_WITH_USB) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
+  VBoxDDU_SDKS.win       += VBOX_WIN_NEWDEV
   VBoxDDU_LIBS           += \
  	$(PATH_STAGE_LIB)/USBLib$(VBOX_SUFF_LIB)
   VBoxDDU_LIBS.win       += \
- 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
- 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib
+ 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
  endif
  VBoxDDU_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDDU.dylib
  if defined(VBOX_WITH_USB) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
