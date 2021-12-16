@@ -2477,7 +2477,7 @@ class TestDriver(base.TestDriver):                                              
                 fRc = oSession.enableVmmDevTestingPart(fVmmDevTestingPart, fVmmDevTestingMmio);
             if fRc and sFirmwareType == 'bios':
                 fRc = oSession.setFirmwareType(vboxcon.FirmwareType_BIOS);
-            elif sFirmwareType == 'efi':
+            elif fRc and sFirmwareType == 'efi':
                 fRc = oSession.setFirmwareType(vboxcon.FirmwareType_EFI);
             if fRc and self.fEnableDebugger:
                 fRc = oSession.setExtraData('VBoxInternal/DBGC/Enabled', '1');
