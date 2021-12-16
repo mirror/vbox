@@ -106,6 +106,10 @@
  RT_PROXY_STUB(dbus_message_iter_init, dbus_bool_t, \
                  (DBusMessage *message, DBusMessageIter *iter), \
                  (message, iter)) \
+ RT_PROXY_STUB(dbus_message_get_signature, char *, (DBusMessage *message), \
+                 (message)) \
+ RT_PROXY_STUB(dbus_message_iter_get_signature, char *, (DBusMessageIter *iter), \
+                 (iter)) \
  RT_PROXY_STUB(dbus_message_iter_get_arg_type, int, (DBusMessageIter *iter), \
                  (iter)) \
  RT_PROXY_STUB(dbus_message_iter_get_element_type, int, \
@@ -115,8 +119,12 @@
                  (iter1, iter2)) \
  RT_PROXY_STUB(dbus_message_iter_get_basic, void, \
                  (DBusMessageIter *iter, void *pvoid), (iter, pvoid)) \
+ RT_PROXY_STUB(dbus_message_iter_has_next, dbus_bool_t, \
+                 (DBusMessageIter *iter), (iter)) \
  RT_PROXY_STUB(dbus_message_iter_next, dbus_bool_t, (DBusMessageIter *iter), \
                  (iter)) \
+ RT_PROXY_STUB(dbus_message_iter_abandon_container_if_open, void, \
+                 (DBusMessageIter *iter, DBusMessageIter *sub), (iter, sub)) \
  RT_PROXY_STUB(dbus_connection_add_filter, dbus_bool_t, \
                  (DBusConnection *connection, \
                   DBusHandleMessageFunction function1, void *pvoid, \
@@ -137,7 +145,9 @@
  RT_PROXY_STUB(dbus_connection_pop_message, DBusMessage *, \
                  (DBusConnection *connection), (connection)) \
  RT_PROXY_STUB(dbus_set_error_from_message, dbus_bool_t, \
-                 (DBusError *error, DBusMessage *message), (error, message))
+                 (DBusError *error, DBusMessage *message), (error, message)) \
+ RT_PROXY_STUB(dbus_free, void, \
+                 (void *memory), (memory))
 
 #ifdef VBOX_DBUS_GENERATE_HEADER
 # define RT_RUNTIME_LOADER_GENERATE_HEADER
