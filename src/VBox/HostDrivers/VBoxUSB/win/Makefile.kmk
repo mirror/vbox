@@ -108,54 +108,36 @@ VBoxUSBMon_DEFS      += LOG_ENABLED VBOX_USB_WITH_VERBOSE_LOGGING
 endif
 
 #
-# USBInstall
+# Template for USBInstalls and friends.
 #
-USBInstall_TEMPLATE = VBOXR3EXE
-USBInstall_DEFS     = IN_RT_R3
-USBInstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
-USBInstall_CXXFLAGS = -Gz
-USBInstall_CFLAGS   = -Gz
-USBInstall_SOURCES  = \
-	Install/USBInstall.cpp
-USBInstall_LIBS = \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/newdev.lib \
-	$(LIB_RUNTIME) \
-	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB) \
+TEMPLATE_VBoxUsbR3 = Template for USBInstalls, USBUninstall and USBTest
+TEMPLATE_VBoxUsbR3_EXTENDS  = VBoxR3Static
+TEMPLATE_VBoxUsbR3_SDKS     = $(TEMPLATE_VBoxR3Static_SDKS) ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_WIN_NEWDEV
+TEMPLATE_VBoxUsbR3_CXXFLAGS = $(TEMPLATE_VBoxR3Static_CXXFLAGS) -Gz
+TEMPLATE_VBoxUsbR3_CFLAGS   = $(TEMPLATE_VBoxR3Static_CFLAGS) -Gz
+TEMPLATE_VBoxUsbR3_LIBS     = $(TEMPLATE_VBoxR3Static_LIBS) \
 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
 
+#
+# USBInstall
+#
+USBInstall_TEMPLATE = VBoxUsbR3
+USBInstall_SOURCES  = Install/USBInstall.cpp
 
 #
 # USBUninstall
 #
-USBUninstall_TEMPLATE = VBOXR3EXE
-USBUninstall_DEFS     = IN_RT_R3
-USBUninstall_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
-USBUninstall_CXXFLAGS = -Gz
-USBUninstall_CFLAGS   = -Gz
-USBUninstall_SOURCES  = \
-	Install/USBUninstall.cpp
-USBUninstall_LIBS = \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/newdev.lib \
-	$(LIB_RUNTIME) \
-	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
+USBUninstall_TEMPLATE = VBoxUsbR3
+USBUninstall_SOURCES  = Install/USBUninstall.cpp
 
 #
 # USBTest
 #
-USBTest_TEMPLATE = VBOXR3EXE
-USBTest_DEFS     = IN_RT_R3 IN_USBLIB
-USBTest_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
-USBTest_CXXFLAGS = -Gz
-USBTest_CFLAGS   = -Gz
+USBTest_TEMPLATE = VBoxUsbR3
+USBTest_DEFS     = IN_USBLIB
 USBTest_SOURCES  = \
 	testcase/USBTest.cpp \
 	../USBFilter.cpp
-USBTest_LIBS = \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/newdev.lib \
-	$(LIB_RUNTIME) \
-	$(PATH_STAGE_LIB)/SUPR3$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
 
 #
 # Install the INF files.
