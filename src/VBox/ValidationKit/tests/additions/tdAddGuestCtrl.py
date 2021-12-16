@@ -1560,7 +1560,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isWindows():
             sPathSC = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'sc.exe');
             if fStart is True:
-                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService with verbose logging', 30 * 1000, \
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService', 30 * 1000, \
                                               sPathSC, (sPathSC, 'start', 'VBoxService'));
             else:
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000, \
@@ -1568,7 +1568,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         elif oTestVm.isLinux():
             sPathService = "/sbin/rcvboxadd-service";
             if fStart is True:
-                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService with verbose logging', 30 * 1000, \
+                fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Starting VBoxService', 30 * 1000, \
                                               sPathService, (sPathService, 'start'));
             else:
                 fRc = self.oTstDrv.txsRunTest(oTxsSession, 'Stopping VBoxService', 30 * 1000, \
