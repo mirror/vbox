@@ -271,7 +271,7 @@
     <para>
       The following example shows how to use the <command>VBoxManage
       bandwidthctl</command> command to create the
-      <literal>Literal</literal> bandwidth group and set the limit to 20
+      <literal>Limit</literal> bandwidth group and set the limit to 20
       Mbps. Then use the <command>VBoxManage modifyvm</command> command
       to assign this bandwidth group to the first and second adapters of
       the <literal>vm1</literal> VM.

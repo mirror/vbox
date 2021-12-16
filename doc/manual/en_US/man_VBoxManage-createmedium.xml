@@ -160,7 +160,8 @@
               </para></listitem>
             <listitem><para>
                 <literal>RawDisk</literal> used for creating raw disks.
-                This value is for VMDK only.
+                This value is for VMDK only. For detailed information
+				about raw disks, see <xref linkend="adv-storage-config"/>
               </para><para>
               </para></listitem>
           </itemizedlist><para>
