@@ -1638,15 +1638,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 return reporter.error('Failed to create directory "%s"!' % (sDir,));
 
         # Query the TestExecService (TXS) version first to find out on what we run.
-        sTxsVer = self.oTstDrv.txsVer(oSession, oTxsSession, 30 * 100, fIgnoreErrors = True);
+        fGotTxsVer = self.oTstDrv.txsVer(oSession, oTxsSession, 30 * 100, fIgnoreErrors = True);
 
         # Whether to enable verbose logging for VBoxService.
         fEnableVerboseLogging = False;
-
-        # Old TXS versions had a bug which caused an infinite loop when executing stuff containing "$xxx",
-        # so check the version here first and skip enabling verbose logging if needed.
-        if sTxsVer:
-            fEnableVerboseLogging = True;
 
         # On Windows guests we always can enable verbose logging.
         if oTestVm.isWindows():
@@ -1655,6 +1650,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # If debugging mode is disabled, enable logging -- otherwise a manually set up logging could clash here.
         if not self.oDebug.sImgPath:
             fEnableVerboseLogging = True;
+
+        # Old TxS versions had a bug which caused an infinite loop when executing stuff containing "$xxx",
+        # so check if we got the version here first and skip enabling verbose logging nonetheless if needed.
+        if not fGotTxsVer:
+            fEnableVerboseLogging = False;
 
         #
         # Enable VBoxService verbose logging.
@@ -1702,6 +1702,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.testDone();
                 if not fRc:
                     return False;
+        else:
+            reporter.log('Skipping VBoxService enabling verbose logging (too old TxS service running)')
 
         #
         # Generate and upload some random files and dirs to the guest.
