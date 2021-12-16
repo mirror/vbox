@@ -21,9 +21,14 @@
 # pragma once
 #endif
 
-#include <D3dkmthk.h>
+#include <iprt/win/d3dkmthk.h>
 
 #include "../../../common/wddm/VBoxMPIf.h"
+
+#ifndef DXGKDDI_INTERFACE_VERSION_WIN8
+# define DXGKDDI_INTERFACE_VERSION_WIN8 0x300e
+#endif
+#if DXGKDDI_INTERFACE_VERSION < DXGKDDI_INTERFACE_VERSION_WIN8
 
 /* win8 release preview-specific stuff */
 typedef struct _D3DKMT_ADAPTERINFO
@@ -34,7 +39,7 @@ typedef struct _D3DKMT_ADAPTERINFO
   BOOL          bPresentMoveRegionsPreferred;
 } D3DKMT_ADAPTERINFO;
 
-#define MAX_ENUM_ADAPTERS 16
+# define MAX_ENUM_ADAPTERS 16
 
 typedef struct _D3DKMT_ENUMADAPTERS
 {
@@ -51,7 +56,8 @@ typedef struct _D3DKMT_OPENADAPTERFROMLUID
 } D3DKMT_OPENADAPTERFROMLUID;
 
 typedef DECLCALLBACKPTR_EX(NTSTATUS, APIENTRY, PFND3DKMT_OPENADAPTERFROMLUID,(IN OUT D3DKMT_OPENADAPTERFROMLUID *));
-/* END OF win8 release preview-specific stuff */
+
+#endif /* DXGKDDI_INTERFACE_VERSION < DXGKDDI_INTERFACE_VERSION_WIN8  */
 
 typedef enum
 {
