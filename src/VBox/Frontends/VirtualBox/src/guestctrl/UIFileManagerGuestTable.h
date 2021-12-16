@@ -64,6 +64,7 @@ public:
                          const QString &strDestination = QString());
     QUuid machineId();
     bool isGuestSessionRunning() const;
+    void setIsCurrent(bool fIsCurrent);
 
 protected:
 
@@ -141,7 +142,7 @@ private:
 
     void initFileTable();
     void cleanAll();
-
+    void manageConnection(bool fConnect, QAction *pAction, void (UIFileManagerGuestTable::*fptr)(void));
     CGuest          m_comGuest;
     CGuestSession   m_comGuestSession;
     CSession        m_comSession;
@@ -155,7 +156,8 @@ private:
     CEventListener m_comGuestListener;
     CEventListener m_comConsoleListener;
     UIGuestSessionCreateWidget *m_pGuestSessionPanel;
-;
+    /** True if this table is the current table in parents tab widget. */
+    bool m_fIsCurrent;
     State m_enmState;
 };
 

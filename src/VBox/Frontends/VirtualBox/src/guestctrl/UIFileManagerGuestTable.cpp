@@ -377,6 +377,7 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
     :UIFileManagerTable(pActionPool, pParent)
     , m_comMachine(comMachine)
     , m_pGuestSessionPanel(0)
+    , m_fIsCurrent(false)
 {
     if (!m_comMachine.isNull())
         m_strTableName = m_comMachine.GetName();
@@ -650,6 +651,14 @@ bool UIFileManagerGuestTable::isGuestSessionRunning() const
         m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
         return true;
     return false;
+}
+
+void UIFileManagerGuestTable::setIsCurrent(bool fIsCurrent)
+{
+    if (m_fIsCurrent == fIsCurrent)
+        return;
+    m_fIsCurrent = fIsCurrent;
+    prepareActionConnections();
 }
 
 void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath)
@@ -983,36 +992,39 @@ void UIFileManagerGuestTable::pasteCutCopiedObjects()
 {
 }
 
+void UIFileManagerGuestTable::manageConnection(bool fConnect, QAction *pAction, void (UIFileManagerGuestTable::*fptr)(void))
+{
+    if (!pAction || !fptr)
+        return;
+    if (fConnect)
+        connect(pAction, &QAction::triggered, this, fptr);
+    else
+        disconnect(pAction, 0, this, 0);
+}
+
 void UIFileManagerGuestTable::prepareActionConnections()
 {
     if (m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession))
-        connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession), &QAction::toggled,
-                this, &UIFileManagerGuestTable::sltGuestSessionPanelToggled);
+    {
+        if (m_fIsCurrent)
+            connect(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession), &QAction::toggled,
+                    this, &UIFileManagerGuestTable::sltGuestSessionPanelToggled);
+        else
+            disconnect(m_pActionPool->action(UIActionIndex_M_FileManager_T_GuestSession), 0, this, 0);
+    }
 
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoUp), &QAction::triggered,
-            this, &UIFileManagerTable::sltGoUp);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoHome), &QAction::triggered,
-            this, &UIFileManagerTable::sltGoHome);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Refresh), &QAction::triggered,
-            this, &UIFileManagerTable::sltRefresh);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Delete), &QAction::triggered,
-            this, &UIFileManagerTable::sltDelete);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Rename), &QAction::triggered,
-            this, &UIFileManagerTable::sltRename);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Copy), &QAction::triggered,
-            this, &UIFileManagerTable::sltCopy);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Cut), &QAction::triggered,
-            this, &UIFileManagerTable::sltCut);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Paste), &QAction::triggered,
-            this, &UIFileManagerTable::sltPaste);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_SelectAll), &QAction::triggered,
-            this, &UIFileManagerTable::sltSelectAll);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_InvertSelection), &QAction::triggered,
-            this, &UIFileManagerTable::sltInvertSelection);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_ShowProperties), &QAction::triggered,
-            this, &UIFileManagerTable::sltShowProperties);
-    connect(m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_CreateNewDirectory), &QAction::triggered,
-            this, &UIFileManagerTable::sltCreateNewDirectory);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoUp), &UIFileManagerTable::sltGoUp);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_GoHome), &UIFileManagerTable::sltGoHome);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Refresh), &UIFileManagerTable::sltRefresh);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Delete), &UIFileManagerTable::sltDelete);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Rename), &UIFileManagerTable::sltRename);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Copy), &UIFileManagerTable::sltCopy);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Cut), &UIFileManagerTable::sltCut);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_Paste), &UIFileManagerTable::sltPaste);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_SelectAll), &UIFileManagerTable::sltSelectAll);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_InvertSelection), &UIFileManagerTable::sltInvertSelection);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_ShowProperties), &UIFileManagerTable::sltShowProperties);
+    manageConnection(m_fIsCurrent, m_pActionPool->action(UIActionIndex_M_FileManager_S_Guest_CreateNewDirectory), &UIFileManagerTable::sltCreateNewDirectory);
 }
 
 void UIFileManagerGuestTable::prepareGuestSessionPanel()

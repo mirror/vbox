@@ -150,7 +150,7 @@ private:
     void                      appendLog(const QString &strLog, const QString &strMachineName, FileManagerLogType eLogType);
     void                      savePanelVisibility();
 
-    void setMachines(const QVector<QUuid> &machineIDs);
+    void setMachines(const QVector<QUuid> &machineIDs, const QUuid &lastSelectedMachineId = QUuid());
     void removeTabs(const QVector<QUuid> &machineIdsToRemove);
     void addTabs(const QVector<QUuid> &machineIdsToAdd);
     void setVerticalToolBarActionsEnabled();

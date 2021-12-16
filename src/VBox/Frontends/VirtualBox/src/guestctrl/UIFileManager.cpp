@@ -475,6 +475,16 @@ void UIFileManager::sltCurrentTabChanged(int iIndex)
 {
     Q_UNUSED(iIndex);
     setVerticalToolBarActionsEnabled();
+
+    /* Mark the current guest table: */
+    UIFileManagerGuestTable *pCurrentGuestTable = currentGuestTable();
+    for (int i = 0; i < m_pGuestTablesContainer->count(); ++i)
+    {
+        UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
+        if (!pTable)
+            continue;
+        pTable->setIsCurrent(pTable == pCurrentGuestTable);
+    }
 }
 
 void UIFileManager::setVerticalToolBarActionsEnabled()
@@ -699,6 +709,7 @@ void UIFileManager::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &i
             continue;
         selectedMachines << item->id();
     }
+    QUuid lastSelection = selectedMachines.isEmpty() ? QUuid() : selectedMachines.last();
     /** Iterate through the current tabs and add any machine id for which we have a running guest session to the
       * list of machine ids we want to have a tab for: */
     for (int i = 0; i < m_pGuestTablesContainer->count(); ++i)
@@ -710,10 +721,10 @@ void UIFileManager::setSelectedVMListItems(const QList<UIVirtualMachineItem*> &i
             selectedMachines << pTable->machineId();
     }
 
-    setMachines(selectedMachines);
+    setMachines(selectedMachines, lastSelection);
 }
 
-void UIFileManager::setMachines(const QVector<QUuid> &machineIds)
+void UIFileManager::setMachines(const QVector<QUuid> &machineIds, const QUuid &lastSelectedMachineId /* = QUuid() */)
 {
     AssertReturnVoid(m_pGuestTablesContainer);
 
@@ -731,7 +742,20 @@ void UIFileManager::setMachines(const QVector<QUuid> &machineIds)
 
     addTabs(newSelections);
     removeTabs(unselectedMachines);
-    m_pGuestTablesContainer->setCurrentIndex(m_pGuestTablesContainer->count()-1);
+    if (!lastSelectedMachineId.isNull())
+    {
+        int iIndexToSelect = -1;
+        for (int i = 0; i < m_pGuestTablesContainer->count() && iIndexToSelect == -1; ++i)
+        {
+            UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
+            if (!pTable)
+                continue;
+            if (lastSelectedMachineId == pTable->machineId())
+                iIndexToSelect = i;
+        }
+        if (iIndexToSelect != -1)
+            m_pGuestTablesContainer->setCurrentIndex(iIndexToSelect);
+    }
 }
 
 void UIFileManager::removeTabs(const QVector<QUuid> &machineIdsToRemove)
