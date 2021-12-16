@@ -33,12 +33,40 @@
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
 
-#include <X11/Xlibint.h>
-#include <X11/extensions/Xrandr.h>
-
 #ifndef __cplusplus
 # error "This header requires C++ to avoid name clashes."
 #endif
+
+/* Define missing X11/XRandr structures, types and macros. */
+
+#define Bool                        int
+#define RRScreenChangeNotifyMask    (1L << 0)
+#define RRScreenChangeNotify        0
+
+struct _XDisplay;
+typedef struct _XDisplay Display;
+
+typedef unsigned long Atom;
+typedef unsigned long XID;
+typedef XID RROutput;
+typedef XID Window;
+
+struct XRRMonitorInfo
+{
+    Atom name;
+    Bool primary;
+    Bool automatic;
+    int noutput;
+    int x;
+    int y;
+    int width;
+    int height;
+    int mwidth;
+    int mheight;
+    RROutput *outputs;
+};
+typedef struct XRRMonitorInfo XRRMonitorInfo;
+
 
 /* Declarations of the functions that we need from libXrandr */
 #define VBOX_XRANDR_GENERATE_HEADER
