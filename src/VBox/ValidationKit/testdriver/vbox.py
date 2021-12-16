@@ -2496,18 +2496,20 @@ class TestDriver(base.TestDriver):                                              
             if not fRc:   oSession.discardSettings(True);
             oSession.close();
         if not fRc:
-            try:    self.oVBox.unregisterMachine(oVM.id);
-            except: pass;
             if self.fpApiVer >= 4.0:
+                try:    oVM.unregister(vboxcon.CleanupMode_Full);
+                except: reporter.logXcpt();
                 try:
                     if self.fpApiVer >= 4.3:
                         oProgress = oVM.deleteConfig([]);
                     else:
-                        oProgress = oVM.delete(None);
+                        oProgress = oVM.delete([]);
                     self.waitOnProgress(oProgress);
                 except:
                     reporter.logXcpt();
             else:
+                try:    self.oVBox.unregisterMachine(oVM.id);
+                except: reporter.logXcpt();
                 try:    oVM.deleteSettings();
                 except: reporter.logXcpt();
             return None;
@@ -2596,19 +2598,20 @@ class TestDriver(base.TestDriver):                                              
                 return oVM;
 
             # Failed. Unregister the machine and delete it.
-            try:    self.oVBox.unregisterMachine(oVM.id);
-            except: pass;
-
             if self.fpApiVer >= 4.0:
+                try:    oVM.unregister(vboxcon.CleanupMode_Full);
+                except: reporter.logXcpt();
                 try:
                     if self.fpApiVer >= 4.3:
                         oProgress = oVM.deleteConfig([]);
                     else:
-                        oProgress = oVM.delete(None);
+                        oProgress = oVM.delete([]);
                     self.waitOnProgress(oProgress);
                 except:
                     reporter.logXcpt();
             else:
+                try:    self.oVBox.unregisterMachine(oVM.id);
+                except: reporter.logXcpt();
                 try:    oVM.deleteSettings();
                 except: reporter.logXcpt();
         return None;
