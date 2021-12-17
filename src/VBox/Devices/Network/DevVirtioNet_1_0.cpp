@@ -99,7 +99,7 @@
 #define VIRTIONET_F_CTRL_MAC_ADDR        RT_BIT_64(23)         /**< Set MAC address through control channel         */
 /** @} */
 
-#if LOG_ENABLED
+#ifdef IN_RING3
 static const VIRTIO_FEATURES_LIST s_aDevSpecificFeatures[] =
 {
     { VIRTIONET_F_STATUS,              "   STATUS               Configuration status field is available.\n" },
@@ -2540,7 +2540,7 @@ static int virtioNetR3ReadVirtioTxPktHdr(PVIRTIOCORE pVirtio, PVIRTIONET pThis, 
                     ("Header plus message exceeds packet size"), VERR_BUFFER_OVERFLOW);
     }
 
-    AssertMsgReturn(  !pPktHdr->uFlags & VIRTIONET_HDR_F_NEEDS_CSUM
+    AssertMsgReturn( !(pPktHdr->uFlags & VIRTIONET_HDR_F_NEEDS_CSUM)
                     || sizeof(uint16_t) + pPktHdr->uChksumStart + pPktHdr->uChksumOffset <= cbFrame,
                  ("Checksum (%d bytes) doesn't fit into pkt header (%d bytes)\n",
                  sizeof(uint16_t) + pPktHdr->uChksumStart + pPktHdr->uChksumOffset, cbFrame),
