@@ -4108,542 +4108,536 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
 <context>
     <name>GuestCtrl</name>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="417"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="419"/>
         <source>Unable to install console control handler, rc=%Rrc
 </source>
         <translation>Невозможно установить обработчик управления консоли, rc=%Rrc
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="444"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="446"/>
         <source>Unable to uninstall console control handler, rc=%Rrc
 </source>
         <translation>Невозможно удалить обработчик управления консоли, rc=%Rrc
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="471"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="537"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="473"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="539"/>
         <source>starting</source>
         <translation>запуск</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="473"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="506"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="539"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="475"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="508"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="541"/>
         <source>started</source>
         <translation>запущен</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="475"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="477"/>
         <source>paused</source>
         <translation>приостановлен</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="477"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="541"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="479"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="543"/>
         <source>terminating</source>
         <translation>завершение</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="479"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="481"/>
         <source>successfully terminated</source>
         <translation>успешно завершен</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="481"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="483"/>
         <source>terminated by signal</source>
         <translation>завершен по сигналу</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="483"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="485"/>
         <source>abnormally aborted</source>
         <translation>ненормально прерван</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="485"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="514"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="545"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="487"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="516"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="547"/>
         <source>timed out</source>
         <translation>превышено время ожидания</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="487"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="547"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="489"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="549"/>
         <source>timed out, hanging</source>
         <translation>превышено время ожидания, завис</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="489"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="549"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="574"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="491"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="551"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="576"/>
         <source>killed</source>
         <translation>убит</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="491"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="512"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="551"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="576"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="493"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="514"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="553"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="578"/>
         <source>error</source>
         <translation>ошибка</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="495"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="526"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="555"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="580"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="590"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="603"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="497"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="528"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="557"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="582"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="592"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="605"/>
         <source>unknown</source>
         <translation>неизвестно</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="508"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="543"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="510"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="545"/>
         <source>terminated</source>
         <translation>завершен</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="510"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="512"/>
         <source>status changed</source>
         <translation>статус изменен</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="516"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="518"/>
         <source>stdin ready</source>
         <translation>stdin готов</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="518"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="520"/>
         <source>data on stdout</source>
         <translation>данные в stdout</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="520"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="522"/>
         <source>data on stderr</source>
         <translation>данные в stderr</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="522"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="524"/>
         <source>waiting flag not supported</source>
         <translation>флаг ожидания не поддерживается</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="566"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="568"/>
         <source>opening</source>
         <translation>открывается</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="568"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="570"/>
         <source>open</source>
         <translation>открыт</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="570"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="572"/>
         <source>closing</source>
         <translation>закрывается</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="572"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="574"/>
         <source>closed</source>
         <translation>закрыт</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="591"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="593"/>
         <source>fifo</source>
         <translation>fifo</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="592"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="594"/>
         <source>char-device</source>
         <translation>символьное устройство</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="593"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="595"/>
         <source>directory</source>
         <translation>директория</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="594"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="596"/>
         <source>block-device</source>
         <translation>блочное устройство</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="595"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="597"/>
         <source>file</source>
         <translation>файл</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="596"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="598"/>
         <source>symlink</source>
         <translation>сиволическая ссылка</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="597"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="599"/>
         <source>socket</source>
         <translation>сокет</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="598"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="600"/>
         <source>white-out</source>
         <translation>white-out</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="617"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="619"/>
         <source>Error details:</source>
         <translation>Подробности ошибки:</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="622"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="624"/>
         <source>Object has indicated no error (%Rhrc)!?
 </source>
         <translation>Объект не показал ошибки (%Rhrc)!?
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="654"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="656"/>
         <source>Could not lookup progress information
 </source>
         <translation>Невозможно найти информацию о прогрессе
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="713"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3388"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="715"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3400"/>
         <source>Out of memory</source>
         <translation>Не хватает памяти</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="741"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="743"/>
         <source>The --username|-u option is ignored by &apos;%s&apos;</source>
         <translation>Опция --username|-u проигнорирована &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="748"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="750"/>
         <source>Password is given more than once.</source>
         <translation>Пароль указан несколько раз.</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="752"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="754"/>
         <source>The --password option is ignored by &apos;%s&apos;</source>
         <translation>Опция --password проигнорирована &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="759"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="761"/>
         <source>The --password-file|-p option is ignored by &apos;%s&apos;</source>
         <translation>Опция --password-file|-p проигнорирована &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="766"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="768"/>
         <source>The --domain option is ignored by &apos;%s&apos;</source>
         <translation>Опци --domain проигнорирована &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="831"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="833"/>
         <source>Failed to get a IConsole pointer for the machine. Is it still running?
 </source>
         <translation>Не удалось получить указатель на IConsole для машины. Она все еще работает?
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="836"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="838"/>
         <source>Machine &quot;%s&quot; is not running (currently %s)!
 </source>
         <translation>Машина &quot;%s&quot; не запущена (текущий: %s)!
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="865"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="867"/>
         <source>[%RU32] VBoxManage Guest Control [%s] - %s</source>
         <translation>[%RU32] VBoxManage Гостевое Управление [%s] - %s</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="867"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="869"/>
         <source>No enough memory for session name</source>
         <translation>Недостаточно памяти для имени сессии</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="873"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="875"/>
         <source>Creating guest session as user &apos;%s&apos;...
 </source>
         <translation>Создание гостевой сессии под пользователем &apos;%s&apos;...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="884"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="886"/>
         <source>Out of memory setting up IGuest::CreateSession call</source>
         <translation>Не хватает памяти для настройки вызова IGuest::CreateSession</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="893"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="895"/>
         <source>Waiting for guest session to start...
 </source>
         <translation>Ожидание старта гостевой сессии...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="905"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="907"/>
         <source>Out of memory setting up IGuestSession::WaitForArray call</source>
         <translation>Не хватает памяти для настройки вызова IGuestSession::WaitForArray</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="921"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="923"/>
         <source>Successfully started guest session (ID %RU32)
 </source>
         <translation>Успешно запущена гостевая сессия (ID %RU32)
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="930"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="932"/>
         <source>Error starting guest session (current status is: %s)
 </source>
         <translation>Ошибка во время старта гостевой сессии (текущий статус: %s)
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="931"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="933"/>
         <source>&lt;unknown&gt;</source>
         <translation>&lt;неизвестно&gt;</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="990"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="992"/>
         <source>No user name specified!</source>
         <translation>Не указано имя пользователя!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1030"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1032"/>
         <source>Closing guest session ...
 </source>
         <translation>Закрытие гостевой сессии ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1036"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1038"/>
         <source>Guest session detached
 </source>
         <translation>Гостевая сессия отсоединена
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1197"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1199"/>
         <source>Unable to write output, rc=%Rrc
 </source>
         <translation>Невозможно записать выходной поток, rc=%Rrc
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1227"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1229"/>
         <source>Unsupported %s line ending conversion</source>
         <translation>Неподдерживаемое преобразование %s завершения строки</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1232"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1234"/>
         <source>Error getting %s handle: %Rrc</source>
         <translation>Ошибка при получении %s обработчика: %Rrc</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1358"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1360"/>
         <source>Invalid argument variable[=value]: &apos;%s&apos;</source>
         <translation>Недопустимая переменная аргумента[=значение]: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1368"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1370"/>
         <source>Warning: Deprecated option &quot;--no-profile&quot; specified
 </source>
         <translation>Предупреждение: Указана устаревшая опция &quot;--no-profile&quot;
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1434"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1436"/>
         <source>No executable specified!</source>
         <translation>Не указан выполняемый файл!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1486"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1488"/>
         <source>Starting guest process ...
 </source>
         <translation>Старт гостевого процесса...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1488"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1490"/>
         <source>Starting guest process (within %ums)
 </source>
         <translation>Старт гостевого процесса (в течение %u мсек)
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1510"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1512"/>
         <source>Process &apos;%s&apos; (PID %RU32) started
 </source>
         <translation>Процесс &apos;%s&apos; (PID %RU32) запущен
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1515"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1517"/>
         <source>[%RU32 - Session %RU32]
 </source>
         <translation>[%RU32 - Сессия %RU32]
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1536"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1538"/>
         <source>waitResult: %d
 </source>
         <translation>результат ожидания: %d
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1552"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1554"/>
         <source>Process terminated
 </source>
         <translation>Процесс завершен
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1629"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1631"/>
         <source>Process execution aborted!
 </source>
         <translation>Выполнение процесса прервано!
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1635"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1637"/>
         <source>Process successfully started!
 </source>
         <translation>Процесс успешно запущен!
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1649"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1651"/>
         <source>Exit code=%u (Status=%u [%s])
 </source>
         <translation>Код выхода =%u (Статус =%u [%s])
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1658"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1660"/>
         <source>Process timed out (guest side) and %s
 </source>
         <translation>Превышено время ожидания процесса (гостевая сторона) и %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1660"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1662"/>
         <source>failed to terminate so far</source>
         <translation>не удалось до сих пор завершить</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1660"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1662"/>
         <source>was terminated</source>
         <translation>завершен</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1666"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1668"/>
         <source>Process now is in status [%s] (unexpected)
 </source>
         <translation>Сейчас процесс в статусе [%s] (неожиданно)
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1674"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1676"/>
         <source>Process monitor loop quit with vrc=%Rrc
 </source>
         <translation>Цикл наблюдения за процессом закончился с vrc=%Rrc
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1680"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1682"/>
         <source>Process monitor loop timed out
 </source>
         <translation>Превышено время ожидания в цикле наблюдения за процессом
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1795"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1786"/>
         <source>No sources specified!</source>
         <translation>Не указан источник!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1803"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2336"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1794"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2348"/>
         <source>No destination specified!</source>
         <translation>Не указано назначение!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1812"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1904"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1803"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1907"/>
         <source>RTPathAbs failed on &apos;%s&apos;: %Rrc</source>
         <translation>RTPathAbs завершился с ошибкой на &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1825"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1816"/>
         <source>Copying from host to guest ...
 </source>
         <translation>Копирование из хоста в гостевую систему...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1827"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1818"/>
         <source>Copying from guest to host ...
 </source>
         <translation>Копирование из гостевой системы в хост...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1854"/>
-        <source>Only one source file or directory at the moment.</source>
-        <translation>Только один исходный файл или директория за раз.</translation>
-    </message>
-    <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1863"/>
-        <source>Skipping &apos;%s&apos; because wildcard expansion isn&apos;t implemented yet
-</source>
-        <translation>Пропуск &apos;%s&apos;, потому что раскрытие подстановочных символов еще не реализовано
-</translation>
-    </message>
-    <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1881"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1934"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1880"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1941"/>
         <source>File &apos;%s&apos; -&gt; &apos;%s&apos;
 </source>
         <translation>Файл &apos;%s&apos; -&gt; &apos;%s&apos;
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1890"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1924"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1889"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1927"/>
         <source>Directory &apos;%s&apos; -&gt; &apos;%s&apos;
 </source>
         <translation>Директория &apos;%s&apos; -&gt; &apos;%s&apos;
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1898"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1941"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1901"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1950"/>
         <source>Not a file or directory: %s
 </source>
         <translation>Не файл и не директория: %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1901"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1830"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1904"/>
         <source>RTPathQueryInfo failed on &apos;%s&apos;: %Rrc</source>
         <translation>RTPathQueryInfo завершен с ошибкой на &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1947"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1848"/>
+        <source>Destination must be a directory!</source>
+        <translation>Назначение должно быть директорией!</translation>
+    </message>
+    <message>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1956"/>
         <source>FsObjQueryInfo failed on &apos;%s&apos;: %Rhrc</source>
         <translation>FsObjQueryInfo завершен с ошибкой на &apos;%s&apos;: %Rhrc</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="1962"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="1970"/>
         <source>File copy failed</source>
         <translation>Не удалось скопировать файл</translation>
     </message>
     <message numerus="yes">
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2027"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2039"/>
         <source>Creating %RU32 directories...
 </source>
         <translation>
@@ -4656,35 +4650,35 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
         </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2031"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2043"/>
         <source>mkdir was interrupted by Ctrl-C (%u left)
 </source>
         <translation>mkdir прерван через Ctrl-C (%u осталось)
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2044"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2056"/>
         <source>Creating directory &quot;%s&quot; ...
 </source>
         <translation>Создание директории &quot;%s&quot; ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2055"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2139"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2260"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2067"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2151"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2272"/>
         <source>Out of memory
 </source>
         <translation>Не хватает памяти
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2065"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2077"/>
         <source>No directory to create specified!</source>
         <translation>Не указана директория для создания!</translation>
     </message>
     <message numerus="yes">
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2113"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2125"/>
         <source>Removing %RU32 directory tree(s)...
 </source>
         <translation>
@@ -4697,7 +4691,7 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2116"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2128"/>
         <source>Removing %RU32 directorie(s)...
 </source>
         <translation>
@@ -4710,45 +4704,45 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
         </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2121"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2133"/>
         <source>rmdir was interrupted by Ctrl-C (%u left)
 </source>
         <translation>rmdir прерван через Ctrl-C (%u осталось)
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2132"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2144"/>
         <source>Removing directory &quot;%s&quot; ...
 </source>
         <translation>Удаление директории &quot;%s&quot; ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2151"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2163"/>
         <source>Recursively removing directory &quot;%s&quot; ...
 </source>
         <translation>Рекурсивное удаление директории &quot;%s&quot; ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2169"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2181"/>
         <source>Directory deletion failed</source>
         <translation>Не удалось удалить директорию</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2175"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2187"/>
         <source>Out of memory during recursive rmdir
 </source>
         <translation>Не хватает памяти для рекурсивного rmdir
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2193"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2205"/>
         <source>No directory to remove specified!</source>
         <translation>Не указана директория для удаления!</translation>
     </message>
     <message numerus="yes">
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2233"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2245"/>
         <source>Removing %RU32 file(s)...
 </source>
         <translation>
@@ -4761,66 +4755,66 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
         </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2237"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2249"/>
         <source>rm was interrupted by Ctrl-C (%u left)
 </source>
         <translation>rm прерван через Ctrl-C (%u осталось)
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2248"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2260"/>
         <source>Removing file &quot;%s&quot; ...
 </source>
         <translation>Удаление файла &quot;%s&quot; ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2270"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2282"/>
         <source>No file to remove specified!</source>
         <translation>Не указан файл для удаления!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2328"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2340"/>
         <source>Failed to initialize, rc=%Rrc
 </source>
         <translation>Не удалось проинициализировать, rc=%Rrc
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2333"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2345"/>
         <source>No source(s) to move specified!</source>
         <translation>Не указан источник(и) для перемещения!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2355"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2367"/>
         <source>Destination does not exist
 </source>
         <translation>Назначение не существует
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2365"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2377"/>
         <source>Destination must be a directory when specifying multiple sources
 </source>
         <translation>Назначение должно быть директорией когда указываются несколько источников
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2369"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2381"/>
         <source>Unable to determine destination type: %Rhrc
 </source>
         <translation>Невозможно определить тип назначения: %Rhrc
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2378"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2390"/>
         <source>Renaming %RU32 %s ...
 </source>
         <translation>Переименование %RU32 %s ...
 </translation>
     </message>
     <message numerus="yes">
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2379"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2391"/>
         <source>sources</source>
         <translation>
             <numerusform>источника</numerusform>
@@ -4829,343 +4823,343 @@ TTL:       %RU64 сек, сейчас %RU64 сек осталось
         </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2379"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2391"/>
         <source>source</source>
         <translation>источника</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2394"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2406"/>
         <source>Cannot stat &quot;%s&quot;: No such file or directory
 </source>
         <translation>Невозможно получить информацию &quot;%s&quot;: Нет такого файла или директории
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2411"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2423"/>
         <source>Renaming %s &quot;%s&quot; to &quot;%s&quot; ...
 </source>
         <translation>Переименование %s &quot;%s&quot; в &quot;%s&quot; ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2412"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2424"/>
         <source>directory</source>
         <comment>object</comment>
         <translation>директории</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2412"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2424"/>
         <source>file</source>
         <comment>object</comment>
         <translation>файла</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2431"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2443"/>
         <source>Warning: Not all sources were renamed
 </source>
         <translation>Предупреждение: Не все источники переименованы
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2491"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2503"/>
         <source>More than one template specified!
 </source>
         <translation>Указано более одного шаблона!
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2501"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2513"/>
         <source>No template specified!</source>
         <translation>Шаблоны не указаны!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2505"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2517"/>
         <source>Creating temporary files is currently not supported!</source>
         <translation>Создание временных файлов сейчас не поддерживается!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2517"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2529"/>
         <source>Creating temporary directory from template &apos;%s&apos; in directory &apos;%s&apos; ...
 </source>
         <translation>Создание временной директории из шаблона &apos;%s&apos; в директории &apos;%s&apos; ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2520"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2532"/>
         <source>Creating temporary directory from template &apos;%s&apos; in default temporary directory ...
 </source>
         <translation>Создание временной директории из шаблона &apos;%s&apos; во временной директории по умолчанию...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2523"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2535"/>
         <source>Creating temporary file from template &apos;%s&apos; in directory &apos;%s&apos; ...
 </source>
         <translation>Создание врменного файла из шаблона &apos;%s&apos; в директории &apos;%s&apos; ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2526"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2538"/>
         <source>Creating temporary file from template &apos;%s&apos; in default temporary directory ...
 </source>
         <translation>Создание временного файла из шаблона &apos;%s&apos; во временной директории по умолчанию...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2539"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2551"/>
         <source>Directory name: %ls
 </source>
         <translation>Имя директории: %ls
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2583"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2595"/>
         <source>Command &quot;%s&quot; not implemented yet!</source>
         <translation>Команда &quot;%s&quot; еще не реализована!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2591"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2603"/>
         <source>Nothing to stat!</source>
         <translation>Нет объекта для запроса информации!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2604"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2616"/>
         <source>Checking for element &quot;%s&quot; ...
 </source>
         <translation>Проверка элемента &quot;%s&quot; ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2614"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2626"/>
         <source>Failed to stat &apos;%s&apos;: No such file
 </source>
         <translation>Не удалось получить информацию для &apos;%s&apos;: Нет такого файла
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2619"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2631"/>
         <source>  File: &apos;%s&apos;
 </source>
         <translation>  Файл: &apos;%s&apos;
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2654"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2666"/>
         <source>  Size: %-17RU64 Alloc: %-19RU64 Type: %s
 </source>
         <translation>  Размер: %-17RU64 Выделено: %-19RU64 Тип: %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2656"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2668"/>
         <source>Device: %#-17RX32 INode: %-18RU64 Links: %u
 </source>
         <translation>Устройство: %#-17RX32 INode: %-18RU64 Ссылки: %u
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2667"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2679"/>
         <source>  Mode: %-16s Attrib: %-17s Dev ID: %#RX32
 </source>
         <translation>  Режим: %-16s Аттрибуты: %-17s ID устройства: %#RX32
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2669"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2681"/>
         <source>  Mode: %-16s Attrib: %s
 </source>
         <translation>  Режим: %-16s Аттрибуты: %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2671"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2683"/>
         <source> Owner: %4d/%-12ls Group: %4d/%ls
 </source>
         <translation> Владелец: %4d/%-12ls Группа: %4d/%ls
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2675"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2687"/>
         <source> Birth: %s
 </source>
         <translation> Создан: %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2677"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2689"/>
         <source>Change: %s
 </source>
         <translation>Изменен: %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2679"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2691"/>
         <source>Modify: %s
 </source>
         <translation>Модифицирован: %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2681"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2693"/>
         <source>Access: %s
 </source>
         <translation>Доступ: %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2734"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2746"/>
         <source>Current run level is %RU32
 </source>
         <translation>Текущий уровень выполнения %RU32
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2741"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2753"/>
         <source>Waiting for run level %RU32 ...
 </source>
         <translation>Ожидание уровня выполнения %RU32 ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2754"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3712"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2766"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3724"/>
         <source>Waiting failed with %Rrc
 </source>
         <translation>Ожидание завершено с ошибкой %Rrc
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2760"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2772"/>
         <source>Run level %RU32 reached
 </source>
         <translation>Уровень выполнения %RU32 достигнут
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2769"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2781"/>
         <source>Run level %RU32 not reached within time
 </source>
         <translation>Уровень выполнения %RU32 не достигнут за отведенное время
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2855"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2867"/>
         <source>RTPathAbsCxx failed on &apos;%s&apos;: %Rrc</source>
         <translation>RTPathAbsCxx завершился с ошибкой &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2884"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2896"/>
         <source>Updating Guest Additions ...
 </source>
         <translation>Обновление Дополнений Гостевой ОС...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2900"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2912"/>
         <source>No Guest Additions source found or specified, aborting
 </source>
         <translation>Не найден и не указан источник Дополнений Гостевой ОС, прерывание
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2905"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2917"/>
         <source>Source &quot;%s&quot; does not exist!
 </source>
         <translation>Источник &quot;%s&quot; не существует!
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2916"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2928"/>
         <source>OS type:</source>
         <translation>Тип ОС:</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2921"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2933"/>
         <source>Additions run level:</source>
         <translation>Уровень выполнения Дополнений:</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2933"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2945"/>
         <source>Additions version:</source>
         <translation>Версия Дополнений:</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2941"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2953"/>
         <source>Using source: %s
 </source>
         <translation>Используемый источник: %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2950"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2962"/>
         <source>Waiting for current Guest Additions inside VM getting ready for updating ...
 </source>
         <translation>Ожидание готовности текущих Дополнений Гостевой ОС внутри ВМ для обновления...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2971"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="2983"/>
         <source>Guest Additions %lsr%RU64 currently installed, waiting for Guest Additions installer to start ...
 </source>
         <translation>Сейчас установлены Дополнения Гостевой ОС %lsr%RU64, ожидание запуска инсталлятора Дополнений Гостевой ОС...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="2995"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3007"/>
         <source>Guest Additions update failed</source>
         <translation>Не удалось обновить Дополнения Гостевой ОС</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3000"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3012"/>
         <source>Guest Additions update successful.
 </source>
         <translation>Дополнения Гостевой ОС успешно обновлены.
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3005"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3017"/>
         <source>Rebooting guest ...
 </source>
         <translation>Перезагрузка гостевой системы...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3013"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3025"/>
         <source>Current installed Guest Additions don&apos;t support automatic rebooting. Please reboot manually.
 </source>
         <translation>Установленные сейчас Дополнения Гостевой ОС не поддерживают автоматичскую перезагрузку. Пожалуйста, перезагрузите вручную.
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3025"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3037"/>
         <source>Waiting for new Guest Additions inside VM getting ready ...
 </source>
         <translation>Ожидание готовности новых Дополнений Гостевой ОС внутри ВМ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3033"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3045"/>
         <source>Verifying Guest Additions update ...
 </source>
         <translation>Проверка обновления Дополнений Гостевой ОС...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3052"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3064"/>
         <source>Old Guest Additions: %ls%RU64
 </source>
         <translation>Старые Дополнения Гостевой ОС: %ls%RU64
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3054"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3066"/>
         <source>New Guest Additions: %ls%RU64
 </source>
         <translation>Новые Дополнения Гостевой ОС: %ls%RU64
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3059"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3071"/>
         <source>
 Error updating Guest Additions, please check guest installer log
 </source>
@@ -5174,7 +5168,7 @@ Error updating Guest Additions, please check guest installer log
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3064"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3076"/>
         <source>
 WARNING: Guest Additions were downgraded
 </source>
@@ -5183,62 +5177,62 @@ WARNING: Guest Additions were downgraded
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3071"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3083"/>
         <source>The guest needs to be restarted in order to make use of the updated Guest Additions.
 </source>
         <translation>Гостевую систему надо перезагрузить для использования новых Дополнений Гостевой ОС.
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3145"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3157"/>
         <source>Invalid run level specified. Valid values are: system, userland, desktop</source>
         <translation>Указан недопустимый уровень выполнения. Допустимые значения: system, userland, desktop</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3159"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3171"/>
         <source>Missing run level to wait for</source>
         <translation>Отсутствует уровень выполнения для ожидания</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3207"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3219"/>
         <source>Unknown list: &apos;%s&apos;</source>
         <translation>Неизвестный список: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3217"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3229"/>
         <source>Missing list name</source>
         <translation>Отсутствует имя списка</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3238"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3250"/>
         <source>Active guest sessions:
 </source>
         <translation>Активные гостевые сессии:
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3257"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3269"/>
         <source>
 	Session #%-3zu ID=%-3RU32 User=%-16ls Status=[%s] Name=%ls</source>
         <translation>
 	Сессия #%-3zu ID=%-3RU32 Пользователь=%-16ls Статус=[%s] Имя=%ls</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3280"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3292"/>
         <source>
 		Process #%-03zu PID=%-6RU32 Status=[%s] Command=%ls</source>
         <translation>
 		Процесс#%-03zu PID=%-6RU32 Статус=[%s] Команда=%ls</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3308"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3320"/>
         <source>
 		File #%-03zu ID=%-6RU32 Status=[%s] Name=%ls</source>
         <translation>
 		Файл #%-03zu ID=%-6RU32 Статус=[%s] Имя=%ls</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3319"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3331"/>
         <source>
 
 Total guest sessions: %zu
@@ -5249,76 +5243,76 @@ Total guest sessions: %zu
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3321"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3333"/>
         <source>Total guest processes: %zu
 </source>
         <translation>Всего гостевых процессов: %zu
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3323"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3335"/>
         <source>Total guest files: %zu
 </source>
         <translation>Всего гостевых файлов: %zu
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3326"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3338"/>
         <source>No active guest sessions found
 </source>
         <translation>Не найдено активных гостевых сессий
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3393"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3405"/>
         <source>Invalid PID value: 0</source>
         <translation>Недопустимое значение PID: 0</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3397"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3409"/>
         <source>Error parsing PID value: %Rrc</source>
         <translation>Ошибка при разборе значения PID: %Rrc</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3408"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3420"/>
         <source>At least one PID must be specified to kill!</source>
         <translation>Нужно указать хотя бы один PID, который надо убить!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3412"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3568"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3424"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3580"/>
         <source>No session ID specified!</source>
         <translation>Не указан ID сессии!</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3417"/>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3573"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3429"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3585"/>
         <source>Either session ID or name (pattern) must be specified</source>
         <translation>Нужно указать либо ID сессии либо имя (шаблон)</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3480"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3492"/>
         <source>Terminating process (PID %RU32) (session ID %RU32) ...
 </source>
         <translation>Завершение процесса (PID %RU32) (ID сессии %RU32) ...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3488"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3500"/>
         <source>No matching process(es) for session ID %RU32 found
 </source>
         <translation>Не найдено соответствующих процессов для ID сессии %RU32
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3500"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3512"/>
         <source>No matching session(s) found
 </source>
         <translation>Не найдено соответствующих сессий
 </translation>
     </message>
     <message numerus="yes">
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3503"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3515"/>
         <source>%RU32 process(es) terminated
 </source>
         <translation>
@@ -5331,52 +5325,45 @@ Total guest sessions: %zu
         </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3611"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3623"/>
         <source>Closing guest session ID=#%RU32 &quot;%s&quot; ...
 </source>
         <translation>Закрытие гостевой сессии ID=#%RU32 &quot;%s&quot;...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3615"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3627"/>
         <source>Guest session successfully closed
 </source>
         <translation>Гостевая сессия успешно закрыта
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3623"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3635"/>
         <source>No guest session(s) found
 </source>
         <translation>Не найдено гостевых сессий
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3702"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3713"/>
         <source>Waiting for events ...
 </source>
         <translation>Ожидание событий...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3709"/>
-        <source>Waiting done
-</source>
-        <translation>Ожидание закончено
-</translation>
-    </message>
-    <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3846"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3867"/>
         <source>Unknown sub-command: &apos;%s&apos;</source>
         <translation>Неизвестная подкоманда: &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3855"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3876"/>
         <source>Missing sub-command</source>
         <translation>Отсутствует подкоманда</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrl.cpp" line="3857"/>
+        <location filename="../VBoxManageGuestCtrl.cpp" line="3878"/>
         <source>Missing VM name and sub-command</source>
         <translation>Отсутствует имя ВМ и подкоманда</translation>
     </message>
@@ -5398,79 +5385,79 @@ Total guest sessions: %zu
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="258"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="256"/>
         <source>File &quot;%s&quot; %s
 </source>
         <translation>Файл &quot;%s&quot; %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="260"/>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="325"/>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="468"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="258"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="322"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="463"/>
         <source>registered</source>
         <translation>регистрация сделана</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="260"/>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="325"/>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="468"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="258"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="322"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="463"/>
         <source>unregistered</source>
         <translation>регистрация отменена</translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="264"/>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="329"/>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="472"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="262"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="326"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="467"/>
         <source>Registering ...
 </source>
         <translation>Регистрация...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="287"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="285"/>
         <source>Unregistering file ...
 </source>
         <translation>Отмена регистрации файла...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="323"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="320"/>
         <source>Process &quot;%s&quot; %s
 </source>
         <translation>Процесс &quot;%s&quot; %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="352"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="349"/>
         <source>Unregistering process ...
 </source>
         <translation>Отмена регистрации процесса...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="390"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="386"/>
         <source>Session ID=%RU32 &quot;%s&quot; changed status to [%s]
 </source>
         <translation>Сессия ID=%RU32 &quot;%s&quot; изменила статус на [%s]
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="466"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="461"/>
         <source>Session ID=%RU32 &quot;%s&quot; %s
 </source>
         <translation>Сессия ID=%RU32 &quot;%s&quot; %s
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="496"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="492"/>
         <source>Unregistering ...
 </source>
         <translation>Отмена регистрации...
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageGuestCtrlListener.cpp" line="559"/>
+        <location filename="../VBoxManageGuestCtrlListener.cpp" line="554"/>
         <source>Reached run level %RU32
 </source>
         <translation>Достигнут уровень выполнения %RU32
@@ -5548,91 +5535,91 @@ Total guest sessions: %zu
 <context>
     <name>Help</name>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="107"/>
+        <location filename="../VBoxManageHelp.cpp" line="139"/>
         <source>Usage - %s%s:
 </source>
         <translation>Использование - %s%s:
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="109"/>
+        <location filename="../VBoxManageHelp.cpp" line="142"/>
         <source>Usage:
 </source>
         <translation>Использование:
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="181"/>
+        <location filename="../VBoxManageHelp.cpp" line="231"/>
         <source>No subcommand specified</source>
         <translation>Не указана подкоманда</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="207"/>
+        <location filename="../VBoxManageHelp.cpp" line="257"/>
         <source>Unknown subcommand: %s</source>
         <translation>Неизвестная подкоманда: %s</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="240"/>
+        <location filename="../VBoxManageHelp.cpp" line="290"/>
         <source>Too many parameters</source>
         <translation>Слишком много параметров</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="347"/>
-        <location filename="../VBoxManageHelp.cpp" line="1108"/>
+        <location filename="../VBoxManageHelp.cpp" line="397"/>
+        <location filename="../VBoxManageHelp.cpp" line="1164"/>
         <source>Invalid parameter &apos;%s&apos;</source>
         <translation>Недопустимый параметр &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="351"/>
-        <location filename="../VBoxManageHelp.cpp" line="1112"/>
+        <location filename="../VBoxManageHelp.cpp" line="401"/>
+        <location filename="../VBoxManageHelp.cpp" line="1168"/>
         <source>Invalid option -%c</source>
         <translation>Недопустимая опция -%c</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="353"/>
-        <location filename="../VBoxManageHelp.cpp" line="1113"/>
+        <location filename="../VBoxManageHelp.cpp" line="403"/>
+        <location filename="../VBoxManageHelp.cpp" line="1169"/>
         <source>Invalid option case %i</source>
         <translation>Недопустимый вариант опции %i</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="356"/>
-        <location filename="../VBoxManageHelp.cpp" line="1116"/>
+        <location filename="../VBoxManageHelp.cpp" line="406"/>
+        <location filename="../VBoxManageHelp.cpp" line="1172"/>
         <source>Unknown option: %s</source>
         <translation>Неизвестная опция: %s</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="358"/>
-        <location filename="../VBoxManageHelp.cpp" line="1118"/>
+        <location filename="../VBoxManageHelp.cpp" line="408"/>
+        <location filename="../VBoxManageHelp.cpp" line="1174"/>
         <source>Invalid argument format: %s</source>
         <translation>Недопустимый формат аргумента: %s</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="382"/>
+        <location filename="../VBoxManageHelp.cpp" line="432"/>
         <source>Missing the %u%s value for option %s</source>
         <translation>Отсутствует %u%s значение для опции %s</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="384"/>
+        <location filename="../VBoxManageHelp.cpp" line="434"/>
         <source>st</source>
         <translation>ое</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="385"/>
+        <location filename="../VBoxManageHelp.cpp" line="435"/>
         <source>nd</source>
         <translation>ое</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="386"/>
+        <location filename="../VBoxManageHelp.cpp" line="436"/>
         <source>rd</source>
         <translation>ье</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="387"/>
+        <location filename="../VBoxManageHelp.cpp" line="437"/>
         <source>th</source>
         <translation>ое</translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="513"/>
+        <location filename="../VBoxManageHelp.cpp" line="563"/>
         <source>Usage:
 
 </source>
@@ -5641,8 +5628,8 @@ Total guest sessions: %zu
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="1025"/>
-        <location filename="../VBoxManageHelp.cpp" line="1049"/>
+        <location filename="../VBoxManageHelp.cpp" line="1081"/>
+        <location filename="../VBoxManageHelp.cpp" line="1105"/>
         <source>
 Syntax error: %N
 </source>
@@ -11767,110 +11754,110 @@ You can download this version here: %ls
 <context>
     <name>VBoxManage</name>
     <message>
-        <location filename="../VBoxManage.cpp" line="328"/>
-        <location filename="../VBoxManage.cpp" line="496"/>
+        <location filename="../VBoxManage.cpp" line="331"/>
+        <location filename="../VBoxManage.cpp" line="499"/>
         <source>Progress object failure: %Rhrc
 </source>
         <translation>Отказ объекта прогресса: %Rhrc
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="345"/>
+        <location filename="../VBoxManage.cpp" line="348"/>
         <source>Failed to get progress description: %Rhrc
 </source>
         <translation>Не удалось получить описание прогресса: %Rhrc
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="412"/>
+        <location filename="../VBoxManage.cpp" line="415"/>
         <source>(%u/%u) %ls %02u%% =&gt; %02u%% (%d s remaining)
 </source>
         <translation>(%u/%u) %ls %02u%% =&gt; %02u%% (%d сек осталось)
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="482"/>
+        <location filename="../VBoxManage.cpp" line="485"/>
         <source>CANCELED
 </source>
         <translation>ОТМЕНЕНО
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="486"/>
+        <location filename="../VBoxManage.cpp" line="489"/>
         <source>Progress state: %Rhrc
 </source>
         <translation>Состояние прогресса: %Rhrc
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="630"/>
+        <location filename="../VBoxManage.cpp" line="681"/>
         <source>Password expected</source>
         <translation>Ожидается пароль</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="638"/>
+        <location filename="../VBoxManage.cpp" line="689"/>
         <source>No password file specified</source>
         <translation>Не указан файл с паролем</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="646"/>
+        <location filename="../VBoxManage.cpp" line="697"/>
         <source>Only one response file allowed</source>
         <translation>Разрешается только один файл ответов</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="654"/>
+        <location filename="../VBoxManage.cpp" line="705"/>
         <source>Error reading response file &apos;%s&apos;: %Rrc</source>
         <translation>Ошибка чтения файла ответов &apos;%s&apos;: %Rrc</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="659"/>
+        <location filename="../VBoxManage.cpp" line="710"/>
         <source>Invalid response file (&apos;%s&apos;) encoding: %Rrc</source>
         <translation>Недопустимая кодировка файла ответов (&apos;%s&apos;): %Rrc</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="667"/>
+        <location filename="../VBoxManage.cpp" line="718"/>
         <source>Failed to parse response file &apos;%s&apos; (bourne shell style): %Rrc</source>
         <translation>Не удалось разобрать файл ответов &apos;%s&apos; (стиль bourne shell): %Rrc</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="673"/>
+        <location filename="../VBoxManage.cpp" line="724"/>
         <source>out of memory</source>
         <translation>не хватает памяти</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="717"/>
+        <location filename="../VBoxManage.cpp" line="768"/>
         <source>commands:
 </source>
         <translation>команды:
 </translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="726"/>
+        <location filename="../VBoxManage.cpp" line="777"/>
         <source>Invalid command &apos;%s&apos;</source>
         <translation>Недопустимая команда &apos;%s&apos;</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="745"/>
+        <location filename="../VBoxManage.cpp" line="796"/>
         <source>Failed to initialize COM because the global settings directory &apos;%s&apos; is not accessible!</source>
         <translation>Не удалось инициализировать COM, потому что директория глобальных настроек &apos;%s&apos; недоступна!</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="748"/>
+        <location filename="../VBoxManage.cpp" line="799"/>
         <source>Failed to initialize COM! (hrc=%Rhrc)</source>
         <translation>Не удалось инициализировать COM! (hrc=%Rhrc)</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="825"/>
+        <location filename="../VBoxManage.cpp" line="882"/>
         <source>Failed to create a session object!</source>
         <translation>Не удалось создать объект сессии!</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="835"/>
+        <location filename="../VBoxManage.cpp" line="892"/>
         <source>Failed to create the VirtualBox object!</source>
         <translation>Не удалось создать объект VirtualBox!</translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="839"/>
+        <location filename="../VBoxManage.cpp" line="896"/>
         <source>Most likely, the VirtualBox COM server is not running or failed to start.</source>
         <translation>Наиболее вероятно, что COM сервер VirtualBox не запущен или не смог запуститься.</translation>
     </message>

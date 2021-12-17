@@ -5090,97 +5090,97 @@ Total guest sessions: %zu
 <context>
     <name>Help</name>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="138"/>
+        <location filename="../VBoxManageHelp.cpp" line="139"/>
         <source>Usage - %s%s:
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="141"/>
+        <location filename="../VBoxManageHelp.cpp" line="142"/>
         <source>Usage:
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="227"/>
+        <location filename="../VBoxManageHelp.cpp" line="231"/>
         <source>No subcommand specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="253"/>
+        <location filename="../VBoxManageHelp.cpp" line="257"/>
         <source>Unknown subcommand: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="286"/>
+        <location filename="../VBoxManageHelp.cpp" line="290"/>
         <source>Too many parameters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="393"/>
-        <location filename="../VBoxManageHelp.cpp" line="1162"/>
+        <location filename="../VBoxManageHelp.cpp" line="397"/>
+        <location filename="../VBoxManageHelp.cpp" line="1164"/>
         <source>Invalid parameter &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="397"/>
-        <location filename="../VBoxManageHelp.cpp" line="1166"/>
+        <location filename="../VBoxManageHelp.cpp" line="401"/>
+        <location filename="../VBoxManageHelp.cpp" line="1168"/>
         <source>Invalid option -%c</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="399"/>
-        <location filename="../VBoxManageHelp.cpp" line="1167"/>
+        <location filename="../VBoxManageHelp.cpp" line="403"/>
+        <location filename="../VBoxManageHelp.cpp" line="1169"/>
         <source>Invalid option case %i</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="402"/>
-        <location filename="../VBoxManageHelp.cpp" line="1170"/>
+        <location filename="../VBoxManageHelp.cpp" line="406"/>
+        <location filename="../VBoxManageHelp.cpp" line="1172"/>
         <source>Unknown option: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="404"/>
-        <location filename="../VBoxManageHelp.cpp" line="1172"/>
+        <location filename="../VBoxManageHelp.cpp" line="408"/>
+        <location filename="../VBoxManageHelp.cpp" line="1174"/>
         <source>Invalid argument format: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="428"/>
+        <location filename="../VBoxManageHelp.cpp" line="432"/>
         <source>Missing the %u%s value for option %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="430"/>
+        <location filename="../VBoxManageHelp.cpp" line="434"/>
         <source>st</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="431"/>
+        <location filename="../VBoxManageHelp.cpp" line="435"/>
         <source>nd</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="432"/>
+        <location filename="../VBoxManageHelp.cpp" line="436"/>
         <source>rd</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="433"/>
+        <location filename="../VBoxManageHelp.cpp" line="437"/>
         <source>th</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="559"/>
+        <location filename="../VBoxManageHelp.cpp" line="563"/>
         <source>Usage:
 
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManageHelp.cpp" line="1079"/>
-        <location filename="../VBoxManageHelp.cpp" line="1103"/>
+        <location filename="../VBoxManageHelp.cpp" line="1081"/>
+        <location filename="../VBoxManageHelp.cpp" line="1105"/>
         <source>
 Syntax error: %N
 </source>
@@ -10808,73 +10808,73 @@ You can download this version here: %ls
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="678"/>
+        <location filename="../VBoxManage.cpp" line="681"/>
         <source>Password expected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="686"/>
+        <location filename="../VBoxManage.cpp" line="689"/>
         <source>No password file specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="694"/>
+        <location filename="../VBoxManage.cpp" line="697"/>
         <source>Only one response file allowed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="702"/>
+        <location filename="../VBoxManage.cpp" line="705"/>
         <source>Error reading response file &apos;%s&apos;: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="707"/>
+        <location filename="../VBoxManage.cpp" line="710"/>
         <source>Invalid response file (&apos;%s&apos;) encoding: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="715"/>
+        <location filename="../VBoxManage.cpp" line="718"/>
         <source>Failed to parse response file &apos;%s&apos; (bourne shell style): %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="721"/>
+        <location filename="../VBoxManage.cpp" line="724"/>
         <source>out of memory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="765"/>
+        <location filename="../VBoxManage.cpp" line="768"/>
         <source>commands:
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="774"/>
+        <location filename="../VBoxManage.cpp" line="777"/>
         <source>Invalid command &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="793"/>
+        <location filename="../VBoxManage.cpp" line="796"/>
         <source>Failed to initialize COM because the global settings directory &apos;%s&apos; is not accessible!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="796"/>
+        <location filename="../VBoxManage.cpp" line="799"/>
         <source>Failed to initialize COM! (hrc=%Rhrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="878"/>
+        <location filename="../VBoxManage.cpp" line="882"/>
         <source>Failed to create a session object!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="888"/>
+        <location filename="../VBoxManage.cpp" line="892"/>
         <source>Failed to create the VirtualBox object!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../VBoxManage.cpp" line="892"/>
+        <location filename="../VBoxManage.cpp" line="896"/>
         <source>Most likely, the VirtualBox COM server is not running or failed to start.</source>
         <translation type="unfinished"></translation>
     </message>
