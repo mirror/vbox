@@ -1553,12 +1553,6 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_Virtio));
                 }
 #endif /* VBOX_WITH_VIRTIO */
-#ifdef VBOX_WITH_VIRTIO_NET_1_0
-                else if (!RTStrICmp(ValueUnion.psz, "virtio_1.0"))
-                {
-                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_Virtio_1_0));
-                }
-#endif /* VBOX_WITH_VIRTIO_NET_1_0 */
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid NIC type '%s' specified for NIC %u"),

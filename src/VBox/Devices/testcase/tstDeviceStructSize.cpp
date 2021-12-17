@@ -64,10 +64,6 @@
 #endif
 #undef LOG_GROUP
 #include "../Network/DevPCNet.cpp"
-#ifdef VBOX_WITH_VIRTIO
-# undef LOG_GROUP
-# include "../Network/DevVirtioNet.cpp"
-#endif
 #undef LOG_GROUP
 #include "../PC/DevACPI.cpp"
 #undef LOG_GROUP
@@ -346,9 +342,6 @@ int main()
     CHECK_MEMBER_ALIGNMENT(E1KSTATE, csRx, 8);
     CHECK_MEMBER_ALIGNMENT(E1KSTATE, StatReceiveBytes, 8);
 #endif
-#ifdef VBOX_WITH_VIRTIO
-    CHECK_MEMBER_ALIGNMENT(VNETSTATE, StatReceiveBytes, 8);
-#endif
     //CHECK_MEMBER_ALIGNMENT(E1KSTATE, csTx, 8);
 #ifdef VBOX_WITH_USB
 # ifdef VBOX_WITH_EHCI_IMPL
@@ -406,11 +399,6 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VGASTATE, StatRZMemoryRead, 8);
     CHECK_MEMBER_ALIGNMENT(VGASTATE, CritSectIRQ, 8);
     CHECK_MEMBER_ALIGNMENT(VMMDEV, CritSect, 8);
-#ifdef VBOX_WITH_VIRTIO
-    CHECK_MEMBER_ALIGNMENT(VPCISTATE, cs, 8);
-    CHECK_MEMBER_ALIGNMENT(VPCISTATE, led, 4);
-    CHECK_MEMBER_ALIGNMENT(VPCISTATE, Queues, 8);
-#endif
 #ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
     CHECK_MEMBER_ALIGNMENT(PCIRAWSENDREQ, u.aGetRegionInfo.u64RegionSize, 8);
 #endif

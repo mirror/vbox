@@ -410,7 +410,6 @@ template<> QString toString(const KNetworkAdapterType &type)
         case KNetworkAdapterType_I82543GC:   return QApplication::translate("UICommon", "Intel PRO/1000 T Server (82543GC)", "NetworkAdapterType");
         case KNetworkAdapterType_I82545EM:   return QApplication::translate("UICommon", "Intel PRO/1000 MT Server (82545EM)", "NetworkAdapterType");
         case KNetworkAdapterType_Virtio:     return QApplication::translate("UICommon", "Paravirtualized Network (virtio-net)", "NetworkAdapterType");
-        case KNetworkAdapterType_Virtio_1_0: return QApplication::translate("UICommon", "Paravirtualized Network (virtio-net 1.0)", "NetworkAdapterType");
         case KNetworkAdapterType_Am79C960:   return QApplication::translate("UICommon", "PCnet-ISA (Am79C960)", "NetworkAdapterType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }

@@ -1917,8 +1917,6 @@ class TestDriver(base.TestDriver):                                              
             sAdpName = 'e1000';
         elif oNic.adapterType == vboxcon.NetworkAdapterType_Virtio:
             sAdpName = 'virtio-net';
-        elif oNic.adapterType == vboxcon.NetworkAdapterType_Virtio_1_0:
-            sAdpName = 'virtio-net-1-dot-0';
         return sAdpName;
 
     def getResourceSet(self):

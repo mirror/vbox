@@ -245,9 +245,6 @@ HRESULT NetworkAdapter::setAdapterType(NetworkAdapterType_T aAdapterType)
 #ifdef VBOX_WITH_VIRTIO
         case NetworkAdapterType_Virtio:
 #endif
-#ifdef VBOX_WITH_VIRTIO_NET_1_0
-        case NetworkAdapterType_Virtio_1_0:
-#endif /* VBOX_WITH_VIRTIO */
             break;
         default:
             return setError(E_FAIL,

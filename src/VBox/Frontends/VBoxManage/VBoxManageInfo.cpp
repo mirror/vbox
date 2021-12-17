@@ -1812,10 +1812,6 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #endif
 #ifdef VBOX_WITH_VIRTIO
                     case NetworkAdapterType_Virtio:     pszNICType = "virtio";      break;
-
-#endif
-#ifdef VBOX_WITH_VIRTIO_NET_1_0
-                    case NetworkAdapterType_Virtio_1_0: pszNICType = "virtio_1.0";  break;
 #endif
                     default:
                         AssertFailed();

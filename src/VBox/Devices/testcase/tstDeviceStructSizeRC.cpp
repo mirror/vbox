@@ -121,10 +121,6 @@
 # undef LOG_GROUP
 # include "../Network/DevE1000.cpp"
 #endif
-#ifdef VBOX_WITH_VIRTIO
-# undef LOG_GROUP
-# include "../Network/DevVirtioNet.cpp"
-#endif
 #ifdef VBOX_WITH_BUSLOGIC
 # undef LOG_GROUP
 # include "../Storage/DevBusLogic.cpp"
@@ -1560,50 +1556,6 @@ int main()
     GEN_CHECK_OFF(E1KSTATE, phy);
     GEN_CHECK_OFF(E1KSTATE, StatReceiveBytes);
 #endif /* VBOX_WITH_E1000 */
-
-#ifdef VBOX_WITH_VIRTIO
-    GEN_CHECK_OFF(VPCISTATE, cs);
-    GEN_CHECK_OFF(VPCISTATE, szInstance);
-    GEN_CHECK_OFF(VPCISTATE, IBase);
-    GEN_CHECK_OFF(VPCISTATE, ILeds);
-    GEN_CHECK_OFF(VPCISTATE, pLedsConnector);
-    GEN_CHECK_OFF(VPCISTATE, pDevInsR3);
-    GEN_CHECK_OFF(VPCISTATE, pDevInsR0);
-    GEN_CHECK_OFF(VPCISTATE, pDevInsRC);
-    GEN_CHECK_OFF(VPCISTATE, pciDevice);
-    GEN_CHECK_OFF(VPCISTATE, IOPortBase);
-    GEN_CHECK_OFF(VPCISTATE, led);
-    GEN_CHECK_OFF(VPCISTATE, uGuestFeatures);
-    GEN_CHECK_OFF(VPCISTATE, uQueueSelector);
-    GEN_CHECK_OFF(VPCISTATE, uStatus);
-    GEN_CHECK_OFF(VPCISTATE, uISR);
-    GEN_CHECK_OFF(VPCISTATE, Queues);
-    GEN_CHECK_OFF(VPCISTATE, Queues[VIRTIO_MAX_NQUEUES]);
-    GEN_CHECK_OFF(VNETSTATE, VPCI);
-    GEN_CHECK_OFF(VNETSTATE, INetworkDown);
-    GEN_CHECK_OFF(VNETSTATE, INetworkConfig);
-    GEN_CHECK_OFF(VNETSTATE, pDrvBase);
-    GEN_CHECK_OFF(VNETSTATE, pCanRxQueueR3);
-    GEN_CHECK_OFF(VNETSTATE, pCanRxQueueR0);
-    GEN_CHECK_OFF(VNETSTATE, pCanRxQueueRC);
-    GEN_CHECK_OFF(VNETSTATE, pLinkUpTimer);
-# ifdef VNET_TX_DELAY
-    GEN_CHECK_OFF(VNETSTATE, pTxTimerR3);
-    GEN_CHECK_OFF(VNETSTATE, pTxTimerR0);
-    GEN_CHECK_OFF(VNETSTATE, pTxTimerRC);
-# endif /* VNET_TX_DELAY */
-    GEN_CHECK_OFF(VNETSTATE, config);
-    GEN_CHECK_OFF(VNETSTATE, macConfigured);
-    GEN_CHECK_OFF(VNETSTATE, fCableConnected);
-    GEN_CHECK_OFF(VNETSTATE, u32PktNo);
-    GEN_CHECK_OFF(VNETSTATE, fPromiscuous);
-    GEN_CHECK_OFF(VNETSTATE, fAllMulti);
-    GEN_CHECK_OFF(VNETSTATE, pRxQueue);
-    GEN_CHECK_OFF(VNETSTATE, pTxQueue);
-    GEN_CHECK_OFF(VNETSTATE, pCtlQueue);
-    GEN_CHECK_OFF(VNETSTATE, fMaybeOutOfSpace);
-    GEN_CHECK_OFF(VNETSTATE, hEventMoreRxDescAvail);
-#endif /* VBOX_WITH_VIRTIO */
 
     /* VMMDev*.cpp/h */
     GEN_CHECK_SIZE(VMMDEV);
