@@ -816,7 +816,7 @@ VBOX_WITH_MEMBALLOON = 1
 # Enable cURL (required for the network part of the GUI)
 VBOX_WITH_LIBCURL = 1
 # Enable libssh (required for cloud network attachment)
-VBOX_WITH_LIBSSH =
+VBOX_WITH_LIBSSH = 1
 # Enable Host=>Guest Drag'n'Drop
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_DRAG_AND_DROP = 1
