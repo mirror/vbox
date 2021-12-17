@@ -534,12 +534,12 @@ static void vgsvcVMStatsReport(void)
                                    | VBOX_GUEST_STAT_PHYS_MEM_AVAIL
                                    | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE
                                    | VBOX_GUEST_STAT_PAGE_FILE_SIZE;
-#ifdef VBOX_WITH_MEMBALLOON
+# ifdef VBOX_WITH_MEMBALLOON
         req.guestStats.u32PhysMemBalloon  = VGSvcBalloonQueryPages(_4K);
         req.guestStats.u32StatCaps       |= VBOX_GUEST_STAT_PHYS_MEM_BALLOON;
-#else
+# else
         req.guestStats.u32PhysMemBalloon  = 0;
-#endif
+# endif
 
         /*
          * CPU statistics.

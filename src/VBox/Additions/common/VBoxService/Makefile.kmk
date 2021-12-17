@@ -132,10 +132,10 @@ VBoxService_SOURCES      += \
 endif
 
 ifdef VBOX_WITH_VBOXSERVICE_MANAGEMENT
-VBoxService_SOURCES      += \
-	VBoxServiceBalloon.cpp
  ifdef VBOX_WITH_MEMBALLOON
-VBoxService_DEFS         += VBOX_WITH_MEMBALLOON
+  VBoxService_SOURCES    += \
+	VBoxServiceBalloon.cpp
+  VBoxService_DEFS       += VBOX_WITH_MEMBALLOON
  endif
 endif
 

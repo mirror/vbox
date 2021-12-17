@@ -262,7 +262,7 @@ extern int                      VGSvcVMInfoWinGetComponentVersions(uint32_t uCli
 
 #endif /* RT_OS_WINDOWS */
 
-#ifdef VBOX_WITH_VBOXSERVICE_MANAGEMENT
+#ifdef VBOX_WITH_MEMBALLOON
 extern uint32_t                 VGSvcBalloonQueryPages(uint32_t cbPage);
 #endif
 #if defined(VBOX_WITH_VBOXSERVICE_PAGE_SHARING)
