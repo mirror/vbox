@@ -815,6 +815,8 @@ endif
 VBOX_WITH_MEMBALLOON = 1
 # Enable cURL (required for the network part of the GUI)
 VBOX_WITH_LIBCURL = 1
+# Enable libssh (required for cloud network attachment)
+VBOX_WITH_LIBSSH = 1
 # Enable Host=>Guest Drag'n'Drop
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_DRAG_AND_DROP = 1
@@ -4584,6 +4586,16 @@ ifdef VBOX_WITH_LIBTPMS
  SDK_VBOX_TPMS_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libtpms-0.9.0/include
  SDK_VBOX_TPMS_INCS         ?= $(SDK_VBOX_TPMS_DEFAULT_INCS)
  SDK_VBOX_TPMS_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libtpms$(VBOX_SUFF_LIB)
+endif
+
+ifdef VBOX_WITH_LIBSSH
+ SDK_VBOX_SSH               = .
+ SDK_VBOX_SSH_INCS         ?= $(PATH_ROOT)/src/libs/libssh-0.9.5/include
+ SDK_VBOX_SSH_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libssh$(VBOX_SUFF_LIB)
+
+ SDK_VBOX_SSH_STATIC         = .
+ SDK_VBOX_SSH_STATIC_EXTENDS ?= VBOX_SSH
+ SDK_VBOX_SSH_STATIC_LIBS    ?= $(PATH_STAGE_LIB)/VBox-libssh-static$(VBOX_SUFF_LIB)
 endif
 
 #

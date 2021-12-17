@@ -108,5 +108,7 @@ if  !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) \
  endif
 endif
 
+include $(PATH_SUB_CURRENT)/libssh-0.9.5/Makefile.kmk
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
