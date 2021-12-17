@@ -389,10 +389,8 @@ typedef struct VIRTIOCORER3
     /** @name Callbacks filled by the device before calling virtioCoreR3Init.
      * @{  */
     /**
-     * Implementation-specific client callback to report VirtIO when feature
-     * negotiation is complete, optional.
-     *
-     * It should be invoked by the VirtIO core only once.
+     * Implementation-specific client callback to report VirtIO when feature negotiation is
+     * complete. It should be invoked by the VirtIO core only once.
      *
      * @param   pVirtio           Pointer to the shared virtio state.
      * @param   fDriverFeatures   Bitmask of features the guest driver has accepted/declined.
@@ -413,9 +411,8 @@ typedef struct VIRTIOCORER3
     DECLCALLBACKMEMBER(void, pfnStatusChanged,(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint32_t fDriverOk));
 
     /**
-     * Implementation-specific client callback to access VirtIO Device-specific
-     * capabilities (other VirtIO capabilities and features are handled in VirtIO
-     * implementation).
+     * Implementation-specific client callback to access VirtIO Device-specific capabilities
+     * (other VirtIO capabilities and features are handled in VirtIO implementation)
      *
      * @param   pDevIns    The device instance.
      * @param   offCap     Offset within device specific capabilities struct.
@@ -425,9 +422,8 @@ typedef struct VIRTIOCORER3
     DECLCALLBACKMEMBER(int, pfnDevCapRead,(PPDMDEVINS pDevIns, uint32_t offCap, void *pvBuf, uint32_t cbToRead));
 
     /**
-     * Implementation-specific client callback to access VirtIO Device-specific
-     * capabilities (other VirtIO capabilities and features are handled in VirtIO
-     * implementation).
+     * Implementation-specific client callback to access VirtIO Device-specific capabilities
+     * (other VirtIO capabilities and features are handled in VirtIO implementation)
      *
      * @param   pDevIns    The device instance.
      * @param   offCap     Offset within device specific capabilities struct.
@@ -437,9 +433,8 @@ typedef struct VIRTIOCORER3
     DECLCALLBACKMEMBER(int, pfnDevCapWrite,(PPDMDEVINS pDevIns, uint32_t offCap, const void *pvBuf, uint32_t cbWrite));
 
     /**
-     * When guest-to-host queue notifications are enabled, the guest driver notifies
-     * the host that the avail queue has buffers, and this callback informs the
-     * client.
+     * When guest-to-host queue notifications are enabled, the guest driver notifies the host
+     * that the avail queue has buffers, and this callback informs the client.
      *
      * @param   pVirtio    Pointer to the shared virtio state.
      * @param   pVirtioCC  Pointer to the ring-3 virtio state.
@@ -459,8 +454,8 @@ typedef struct VIRTIOCORER3
     R3PTRTYPE(uint8_t *)                pbDevSpecificCfg;          /**< Pointer to client's struct                */
     R3PTRTYPE(uint8_t *)                pbPrevDevSpecificCfg;      /**< Previous read dev-specific cfg of client  */
     bool                                fGenUpdatePending;         /**< If set, update cfg gen after driver reads */
-    char                                szMmioName[MAX_NAME];      /**< MMIO mapping name                         */
-    char                                szPortIoName[MAX_NAME];    /**< PORT mapping name                         */
+    char                                pcszMmioName[MAX_NAME];    /**< MMIO mapping name                         */
+    char                                pcszPortIoName[MAX_NAME];  /**< PORT mapping name                         */
 } VIRTIOCORER3;
 
 /**
@@ -805,7 +800,7 @@ int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_
  *          caller must take care of that.
  */
 int virtioCoreR3VirtqUsedBufPut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t uVirtq, size_t cb, const void *pv,
-                            PVIRTQBUF pVirtqBuf, uint32_t cbEnqueue, bool fFence = true);
+                            PVIRTQBUF pVirtqBuf, size_t cbEnqueue, bool fFence = true);
 
 
 /**
