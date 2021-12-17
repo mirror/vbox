@@ -2289,7 +2289,7 @@ static uint8_t virtioNetR3CtrlMultiQueue(PVIRTIONET pThis, PVIRTIONETCC pThisCC,
             virtioCoreR3VirtqBufDrain(&pThis->Virtio, pVirtqBuf, &cVirtqPairs, sizeof(cVirtqPairs));
 
             AssertMsgReturn(cVirtqPairs > VIRTIONET_MAX_QPAIRS,
-                ("[%s] Guest CTRL MQ virtq pair count out of range)\n", pThis->szInst, cVirtqPairs), VIRTIONET_ERROR);
+                ("[%s] Guest CTRL MQ virtq pair count out of range [%d])\n", pThis->szInst, cVirtqPairs), VIRTIONET_ERROR);
 
             LogFunc(("[%s] Guest specifies %d VQ pairs in use\n", pThis->szInst, cVirtqPairs));
             pThis->cVirtqPairs = cVirtqPairs;
