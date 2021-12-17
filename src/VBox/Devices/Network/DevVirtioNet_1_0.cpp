@@ -26,7 +26,6 @@
 /*******************************************************************************************************************************
 *   Header Files                                                                                                               *
 ***************************************************************************************************************************** **/
-//#define LOG_GROUP LOG_GROUP_DRV_NET
 #define LOG_GROUP LOG_GROUP_DEV_VIRTIO
 #define VIRTIONET_WITH_GSO
 
@@ -2451,7 +2450,8 @@ static void virtioNetR3Ctrl(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVIRTIONETCC p
     }
 
     /* Currently CTRL pkt header just returns ack, but keeping segment logic generic/flexible
-     * in case that changes to make adapting more straightforward */
+     * in case that changes to make adapting more straightforward
+     */
     int cSegs = 1;
 
     /* Return CTRL packet Ack byte (result code) to guest driver */
