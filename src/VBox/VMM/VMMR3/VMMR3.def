@@ -40,6 +40,8 @@ EXPORTS
     CFGMR3InsertString
     CFGMR3InsertStringW
     CFGMR3InsertInteger
+    CFGMR3InsertPasswordN
+    CFGMR3InsertPassword
     CFGMR3QueryStringAllocDef
     CFGMR3RemoveValue
     CFGMR3QueryIntegerDef

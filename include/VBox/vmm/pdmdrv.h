@@ -1015,6 +1015,8 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(int,       pfnCFGMQueryIntegerDef,(  PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def));
     DECLR3CALLBACKMEMBER(int,       pfnCFGMQueryString,(      PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString));
     DECLR3CALLBACKMEMBER(int,       pfnCFGMQueryStringDef,(   PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef));
+    DECLR3CALLBACKMEMBER(int,       pfnCFGMQueryPassword,(    PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString));
+    DECLR3CALLBACKMEMBER(int,       pfnCFGMQueryPasswordDef,( PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef));
     DECLR3CALLBACKMEMBER(int,       pfnCFGMQueryBytes,(       PCFGMNODE pNode, const char *pszName, void *pvData, size_t cbData));
     DECLR3CALLBACKMEMBER(int,       pfnCFGMQueryU64,(         PCFGMNODE pNode, const char *pszName, uint64_t *pu64));
     DECLR3CALLBACKMEMBER(int,       pfnCFGMQueryU64Def,(      PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def));

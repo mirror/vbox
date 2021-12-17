@@ -2166,6 +2166,8 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     CFGMR3QueryIntegerDef,
     CFGMR3QueryString,
     CFGMR3QueryStringDef,
+    CFGMR3QueryPassword,
+    CFGMR3QueryPasswordDef,
     CFGMR3QueryBytes,
     CFGMR3QueryU64,
     CFGMR3QueryU64Def,

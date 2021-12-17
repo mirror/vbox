@@ -47,7 +47,9 @@ typedef enum CFGMVALUETYPE
     /** String value. */
     CFGMVALUETYPE_STRING,
     /** Bytestring value. */
-    CFGMVALUETYPE_BYTES
+    CFGMVALUETYPE_BYTES,
+    /** Password value, same as String but hides the content in dump. */
+    CFGMVALUETYPE_PASSWORD
 } CFGMVALUETYPE;
 /** Pointer to configuration manager property type. */
 typedef CFGMVALUETYPE *PCFGMVALUETYPE;
@@ -111,6 +113,8 @@ VMMR3DECL(int)          CFGMR3InsertStringFV(PCFGMNODE pNode, const char *pszNam
                                              const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
 VMMR3DECL(int)          CFGMR3InsertStringW(PCFGMNODE pNode, const char *pszName, PCRTUTF16 pwszValue);
 VMMR3DECL(int)          CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, const void *pvBytes, size_t cbBytes);
+VMMR3DECL(int)          CFGMR3InsertPassword(PCFGMNODE pNode, const char *pszName, const char *pszString);
+VMMR3DECL(int)          CFGMR3InsertPasswordN(PCFGMNODE pNode, const char *pszName, const char *pszString, size_t cchString);
 VMMR3DECL(int)          CFGMR3InsertValue(PCFGMNODE pNode, PCFGMLEAF pValue);
 VMMR3DECL(int)          CFGMR3RemoveValue(PCFGMNODE pNode, const char *pszName);
 
@@ -147,6 +151,8 @@ VMMR3DECL(int)          CFGMR3QueryInteger(     PCFGMNODE pNode, const char *psz
 VMMR3DECL(int)          CFGMR3QueryIntegerDef(  PCFGMNODE pNode, const char *pszName, uint64_t *pu64, uint64_t u64Def);
 VMMR3DECL(int)          CFGMR3QueryString(      PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString);
 VMMR3DECL(int)          CFGMR3QueryStringDef(   PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef);
+VMMR3DECL(int)          CFGMR3QueryPassword(    PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString);
+VMMR3DECL(int)          CFGMR3QueryPasswordDef( PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef);
 VMMR3DECL(int)          CFGMR3QueryBytes(       PCFGMNODE pNode, const char *pszName, void *pvData, size_t cbData);
 
 

@@ -992,6 +992,8 @@
 #define VERR_CFGM_NOT_BYTES                 (-2108)
 /** The specified string / bytes buffer was to small. Specify a larger one and retry. */
 #define VERR_CFGM_NOT_ENOUGH_SPACE          (-2109)
+/** The value is not a zero terminated password string. */
+#define VERR_CFGM_NOT_PASSWORD              (-2110)
 /** The path of a new node contained slashes or was empty. */
 #define VERR_CFGM_INVALID_NODE_PATH         (-2160)
 /** A new node couldn't be inserted because one with the same name exists. */
