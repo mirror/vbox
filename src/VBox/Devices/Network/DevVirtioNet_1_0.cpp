@@ -1890,7 +1890,7 @@ static int virtioNetR3RxPktMultibufXfer(PPDMDEVINS pDevIns, PVIRTIONET pThis, ui
     Log7Func(("  Sending packet header to guest...\n"));
 
     /* Copy packet header to rx buf provided by caller. */
-    uint32_t cbHdrEnqueued = pVirtqBuf->cbPhysReturn == cbPktHdr ? cbPktHdr : 0;
+    size_t cbHdrEnqueued = pVirtqBuf->cbPhysReturn == cbPktHdr ? cbPktHdr : 0;
     virtioCoreR3VirtqUsedBufPut(pDevIns, &pThis->Virtio, pRxVirtq->uIdx, cbPktHdr, pRxPktHdr, pVirtqBuf, cbHdrEnqueued);
 
     /* Cache address of uNumBuffers field of pkthdr to update ex post facto */
