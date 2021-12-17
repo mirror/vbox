@@ -99,6 +99,7 @@
 #define VIRTIONET_F_CTRL_MAC_ADDR        RT_BIT_64(23)         /**< Set MAC address through control channel         */
 /** @} */
 
+#if LOG_ENABLED
 static const VIRTIO_FEATURES_LIST s_aDevSpecificFeatures[] =
 {
     { VIRTIONET_F_STATUS,              "   STATUS               Configuration status field is available.\n" },
@@ -122,6 +123,7 @@ static const VIRTIO_FEATURES_LIST s_aDevSpecificFeatures[] =
     { VIRTIONET_F_CSUM,                "   CSUM                 Host handles packets with partial checksum.\n" },
     { VIRTIONET_F_MRG_RXBUF,           "   MRG_RXBUF            Guest can merge receive buffers.\n" },
 };
+#endif
 
 #ifdef VIRTIONET_WITH_GSO
 # define VIRTIONET_HOST_FEATURES_GSO    \
