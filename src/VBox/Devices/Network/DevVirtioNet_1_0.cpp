@@ -3586,11 +3586,11 @@ static DECLCALLBACK(int) virtioNetRZConstruct(PPDMDEVINS pDevIns)
 /**
  * The device registration structure.
  */
-const PDMDEVREG g_DeviceVirtioNet_1_0  =
+const PDMDEVREG g_DeviceVirtioNet_1_0 =
 {
     /* .uVersion = */               PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
-    /* .szName = */                 "virtio-net",
+    /* .szName = */                 "virtio-net-1-dot-0",
     /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE | PDM_DEVREG_FLAGS_RZ,
     /* .fClass = */                 PDM_DEVREG_CLASS_NETWORK,
     /* .cMaxInstances = */          ~0U,
