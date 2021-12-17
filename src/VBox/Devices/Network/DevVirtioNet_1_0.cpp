@@ -635,7 +635,7 @@ DECLINLINE(const char *) virtioNetThreadStateName(PPDMTHREAD pThread)
 /**
  * Wakeup PDM managed downstream (e.g. hierarchically inferior device's) RX thread
  */
-static void virtioNetWakeupRxBufWaiter(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) virtioNetWakeupRxBufWaiter(PPDMDEVINS pDevIns)
 {
     PVIRTIONET pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIONET);
 
