@@ -1548,13 +1548,13 @@ static int virtioNetR3CheckRxBufsAvail(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVI
     int rc = VERR_INVALID_STATE;
     Log8Func(("[%s] ", pThis->szInst));
     if (!virtioNetIsOperational(pThis, pDevIns))
-        Log8(("No Rx bufs available. (VirtIO core not ready)\n", pThis->szInst));
+        Log8(("No Rx bufs available. (VirtIO core not ready)\n"));
 
-    else if (!virtioCoreIsVirtqEnabled(&pThis->Virtio,      pRxVirtq->uIdx))
-        Log8(("[No Rx bufs available. (%s not enabled)\n",  pRxVirtq->szName));
+    else if (!virtioCoreIsVirtqEnabled(&pThis->Virtio, pRxVirtq->uIdx))
+        Log8(("[No Rx bufs available. (%s not enabled)\n"));
 
     else if (IS_VIRTQ_EMPTY(pDevIns, &pThis->Virtio,  pRxVirtq->uIdx))
-        Log8(("No Rx bufs available. (%s empty)\n",  pRxVirtq->szName));
+        Log8(("No Rx bufs available. (%s empty)\n"));
 
     else
     {
