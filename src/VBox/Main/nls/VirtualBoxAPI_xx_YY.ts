@@ -3945,15 +3945,15 @@
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="491"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3998"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4019"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4008"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4029"/>
         <source>The base environment feature is not supported by the Guest Additions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="493"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4000"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4021"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4010"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4031"/>
         <source>The base environment has not yet been reported by the guest</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3994,7 +3994,7 @@
     </message>
     <message>
         <location filename="../src-client/GuestSessionImpl.cpp" line="756"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3537"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3547"/>
         <source>No destination specified</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4094,409 +4094,409 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3312"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3322"/>
         <source>Closing guest session failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3315"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3325"/>
         <source>Closing guest session &quot;%s&quot; failed with %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3341"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3369"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3561"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3590"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3351"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3379"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3571"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3600"/>
         <source>Unknown flags: flags value %#x, invalid: %#x</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3394"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3472"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3404"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3482"/>
         <source>Parameter array sizes don&apos;t match to the number of sources specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3417"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3427"/>
         <source>Querying type for guest source failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3420"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3430"/>
         <source>Querying type for guest source &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3452"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3522"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3462"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3532"/>
         <source>Source type %#x invalid / not supported</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3490"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3500"/>
         <source>Unable to query type for source &apos;%s&apos; (%Rrc)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3533"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3543"/>
         <source>No sources specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3535"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3545"/>
         <source>First source entry is empty</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3611"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3621"/>
         <source>No directory to create specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3620"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3630"/>
         <source>Unknown flags (%#x)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3636"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3646"/>
         <source>Guest directory creation failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3642"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3652"/>
         <source>Guest directory creation failed: Invalid parameters given</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3646"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3656"/>
         <source>Guest directory creation failed: Unexpectedly aborted</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3650"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3660"/>
         <source>Guest directory creation failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3662"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3672"/>
         <source>No template specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3664"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3674"/>
         <source>No directory name specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3667"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3677"/>
         <source>Mode invalid (must be specified in octal mode)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3684"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3694"/>
         <source>Temporary guest directory creation failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3689"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3699"/>
         <source>Temporary guest directory creation &quot;%s&quot; with template &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3701"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3711"/>
         <source>Empty path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3729"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3739"/>
         <source>Querying directory existence failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3744"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3754"/>
         <source>Querying directory existence &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3757"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3767"/>
         <source>No directory to open specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3759"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3769"/>
         <source>Directory filters are not implemented yet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3768"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3778"/>
         <source>Open flags (%#x) not implemented yet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3794"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3804"/>
         <source>Opening guest directory &quot;%s&quot; failed; invalid parameters given</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3801"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3811"/>
         <source>Opening guest directory failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3806"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3816"/>
         <source>Opening guest directory &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3817"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3827"/>
         <source>No directory to remove specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3836"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3846"/>
         <source>Handling removing guest directories not supported by installed Guest Additions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3842"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3852"/>
         <source>Removing guest directory failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3847"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3857"/>
         <source>Removing guest directory &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3859"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3869"/>
         <source>No directory to remove recursively specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3881"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3891"/>
         <source>Invalid flags specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3896"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3906"/>
         <source>Removing guest directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3917"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3927"/>
         <source>Handling removing guest directories recursively not supported by installed Guest Additions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3923"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3933"/>
         <source>Recursively removing guest directory failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3928"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3938"/>
         <source>Recursively removing guest directory &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3953"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3973"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3993"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3963"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3983"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4003"/>
         <source>Invalid environment variable name &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3955"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3965"/>
         <source>Failed to schedule setting environment variable &apos;%s&apos; to &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="3975"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="3985"/>
         <source>Failed to schedule unsetting environment variable &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4070"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4080"/>
         <source>Querying guest file existence failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4083"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4315"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4093"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4325"/>
         <source>Querying guest file information for &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4105"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4115"/>
         <source>No file to open specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4125"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4135"/>
         <source>Append access modes are not yet implemented</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4127"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4137"/>
         <source>Unknown FileAccessMode value %u (%#x)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4146"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4163"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4156"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4173"/>
         <source>Unknown FileOpenAction value %u (%#x)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4160"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4170"/>
         <source>Only FileSharingMode_All is currently implemented</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4171"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4181"/>
         <source>Unsupported FileOpenExFlag value(s) in aFlags (%#x)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4185"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4195"/>
         <source>Handling guest files not supported by installed Guest Additions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4191"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4201"/>
         <source>Opening guest file failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4196"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4206"/>
         <source>Opening guest file &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4207"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4238"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4283"/>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4324"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4217"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4248"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4293"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4334"/>
         <source>No path specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4224"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4234"/>
         <source>Querying guest file size failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4228"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4238"/>
         <source>Querying guest file size of &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4269"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4279"/>
         <source>Querying guest file existence information failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4274"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4284"/>
         <source>Querying guest file existence information for &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4311"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4321"/>
         <source>Querying guest file information failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4339"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4349"/>
         <source>Removing guest file failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4343"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4353"/>
         <source>Removing guest file &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4360"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4370"/>
         <source>No source path specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4363"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4373"/>
         <source>No destination path specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4374"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4384"/>
         <source>Unknown rename flag: %#x</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4395"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4405"/>
         <source>Handling renaming guest paths not supported by installed Guest Additions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4401"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4411"/>
         <source>Renaming guest path failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4406"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4416"/>
         <source>Renaming guest path &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4479"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4489"/>
         <source>No command to execute specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4549"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4559"/>
         <source>Failed to start guest process: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4553"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4563"/>
         <source>Maximum number of concurrent guest processes per session (%u) reached</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4556"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4566"/>
         <source>Failed to create guest process object: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4560"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4570"/>
         <source>Failed to apply environment variable &apos;%s&apos;, index %u (%Rrc)&apos;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4564"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4574"/>
         <source>Failed to set up the environment: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4574"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4584"/>
         <source>No valid process ID (PID) specified</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4585"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4595"/>
         <source>No process with PID %RU32 found</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4638"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4648"/>
         <source>Waiting for guest process failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4650"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4660"/>
         <source>Waiting for guest session &quot;%s&quot; failed: %Rrc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src-client/GuestSessionImpl.cpp" line="4651"/>
+        <location filename="../src-client/GuestSessionImpl.cpp" line="4661"/>
         <source>Unnamed</source>
         <translation type="unfinished"></translation>
     </message>
