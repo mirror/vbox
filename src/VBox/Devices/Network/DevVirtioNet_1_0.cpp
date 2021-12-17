@@ -1554,7 +1554,7 @@ static int virtioNetR3CheckRxBufsAvail(PPDMDEVINS pDevIns, PVIRTIONET pThis, PVI
         Log8(("[No Rx bufs available. (%s not enabled)\n", pVirtq->szName));
 
     else if (IS_VIRTQ_EMPTY(pDevIns, &pThis->Virtio,  pRxVirtq->uIdx))
-        Log8(("No Rx bufs available. (%s empty)\n"), pVirtq->szName);
+        Log8(("No Rx bufs available. (%s empty)\n", pVirtq->szName));
 
     else
     {
