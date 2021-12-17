@@ -566,6 +566,13 @@ RTDECL(int) RTLocalIpcServerDestroy(RTLOCALIPCSERVER hServer)
 }
 
 
+RTDECL(int) RTLocalIpcServerGrantGroupAccess(RTLOCALIPCSERVER hServer, RTGID gid)
+{
+    RT_NOREF_PV(hServer); RT_NOREF(gid);
+    return VERR_NOT_SUPPORTED;
+}
+
+
 RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION phClientSession)
 {
     /*

@@ -1349,6 +1349,7 @@
 # define RTLinuxSysFsWriteU64FileV                      RT_MANGLER(RTLinuxSysFsWriteU64FileV)
 # define RTLocalIpcServerCreate                         RT_MANGLER(RTLocalIpcServerCreate)
 # define RTLocalIpcServerDestroy                        RT_MANGLER(RTLocalIpcServerDestroy)
+# define RTLocalIpcServerGrantGroupAccess               RT_MANGLER(RTLocalIpcServerGrantGroupAccess)
 # define RTLocalIpcServerCancel                         RT_MANGLER(RTLocalIpcServerCancel)
 # define RTLocalIpcServerListen                         RT_MANGLER(RTLocalIpcServerListen)
 # define RTLocalIpcSessionConnect                       RT_MANGLER(RTLocalIpcSessionConnect)

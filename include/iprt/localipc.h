@@ -95,6 +95,15 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
 RTDECL(int) RTLocalIpcServerDestroy(RTLOCALIPCSERVER hServer);
 
 /**
+ * Grant the specified group access to the local IPC server socket.
+ *
+ * @returns IPRT status code.
+ * @param   hServer     The server handle.
+ * @param   gid         Group ID.
+ */
+RTDECL(int) RTLocalIpcServerGrantGroupAccess(RTLOCALIPCSERVER hServer, RTGID gid);
+
+/**
  * Listen for clients.
  *
  * @returns IPRT status code.
