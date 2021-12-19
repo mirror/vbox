@@ -276,14 +276,15 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
 RTDECL(int) RTLocalIpcServerGrantGroupAccess(RTLOCALIPCSERVER hServer, RTGID gid)
 {
     PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)hServer;
-    AssertReturn(pThis,                VERR_INVALID_PARAMETER);
-    AssertReturn(pThis->Name.sun_path, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSERVER_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->Name.sun_path[0] != '\0', VERR_INVALID_STATE);
 
     if (chown(pThis->Name.sun_path, -1, gid) == 0)
     {
         if (chmod(pThis->Name.sun_path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) == 0)
         {
-            Log2Rel(("RTLocalIpcServerGrantGroupAccess: IPC socket %s access has been granted to group %RTgid\n",
+            LogRel2(("RTLocalIpcServerGrantGroupAccess: IPC socket %s access has been granted to group %RTgid\n",
                      pThis->Name.sun_path, gid));
             return VINF_SUCCESS;
         }
