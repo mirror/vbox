@@ -273,11 +273,9 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
 }
 
 
-
 RTDECL(int) RTLocalIpcServerGrantGroupAccess(RTLOCALIPCSERVER hServer, RTGID gid)
 {
     PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)hServer;
-
     AssertReturn(pThis,                VERR_INVALID_PARAMETER);
     AssertReturn(pThis->Name.sun_path, VERR_INVALID_PARAMETER);
 
@@ -285,20 +283,17 @@ RTDECL(int) RTLocalIpcServerGrantGroupAccess(RTLOCALIPCSERVER hServer, RTGID gid
     {
         if (chmod(pThis->Name.sun_path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) == 0)
         {
-            LogRel(("RTLocalIpcServerGrantGroupAccess: IPC socket %s access has been granted to group %RTgid\n",
-                    pThis->Name.sun_path, gid));
-
+            Log2Rel(("RTLocalIpcServerGrantGroupAccess: IPC socket %s access has been granted to group %RTgid\n",
+                     pThis->Name.sun_path, gid));
             return VINF_SUCCESS;
         }
-        else
-            LogRel(("RTLocalIpcServerGrantGroupAccess: cannot grant IPC socket %s write permission to group %RTgid, rc=%Rrc\n",
-                    pThis->Name.sun_path, gid, RTErrConvertFromErrno(errno)));
+        LogRel(("RTLocalIpcServerGrantGroupAccess: cannot grant IPC socket %s write permission to group %RTgid: errno=%d\n",
+                pThis->Name.sun_path, gid, errno));
     }
     else
-        LogRel(("RTLocalIpcServerGrantGroupAccess: cannot change IPC socket %s group ownership to %RTgid, rc=%Rrc\n",
-                pThis->Name.sun_path, gid, RTErrConvertFromErrno(errno)));
-
-    return VERR_ACCESS_DENIED;
+        LogRel(("RTLocalIpcServerGrantGroupAccess: cannot change IPC socket %s group ownership to %RTgid: errno=%d\n",
+                pThis->Name.sun_path, gid, errno));
+    return RTErrConvertFromErrno(errno);
 }
 
 
