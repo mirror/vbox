@@ -3914,7 +3914,7 @@ $(IPRT_OUT_DIR)/errmsgdata.h: \
 		$(PATH_ROOT)/include/VBox/err.h \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
-	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< $(filter %.h,$^)
+	$(QUIET)$(SED) -f $< --output "$@" $(filter %.h,$^)
 
 $(IPRT_OUT_DIR)/errmsgdata-all.h.ts +| $(IPRT_OUT_DIR)/errmsgdata-all.h: \
 		$$(bldRTErrMsgSorter_1_TARGET)
@@ -3939,8 +3939,8 @@ $(IPRT_OUT_DIR)/errmsgwindata.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/common/err/errmsgcom.sed \
 		$$(qwildcard ,$$(qaddsuffix ,/WinError.h,$$(SDK_$$(VBOX_WINPSDK)_INCS))) \
 		| $$(dir $$@)
-	$(call MSG_GENERATE,,$@,$(filter %.h,$^))
-	$(QUIET)$(REDIRECT) -wo $@ -- $(SED) -f $< "$(filter %.h,$^)"
+	$(call MSG_GENERATE,,$@,$(deps $@, 2))
+	$(QUIET)$(SED) -f "$<" --output "$@" $(qdeps sh,$@,2)
 
 $(IPRT_OUT_DIR)/errmsgvboxcomdata.h.ts +| $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
 		$(VBOX_PATH_RUNTIME_SRC)/VBox/errmsgvboxcom.xsl \
