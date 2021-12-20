@@ -2424,7 +2424,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 63, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 64, 0)
 
 /**
  * PDM Device API.

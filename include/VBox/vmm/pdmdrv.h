@@ -1516,7 +1516,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 13, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 14, 0)
 
 
 /**
