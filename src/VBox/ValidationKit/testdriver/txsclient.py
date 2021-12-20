@@ -1913,7 +1913,7 @@ class TransportTcp(TransportBase):
             self.oWakeupW = None;
             if oWakeupW is not None:
                 reporter.log2('TransportTcp::cancelConnect: wakeup call');
-                try:    oWakeupW.send('cancelled!\n');
+                try:    oWakeupW.send(b'cancelled!\n');
                 except: reporter.logXcpt();
                 try:    oWakeupW.shutdown(socket.SHUT_WR);
                 except: reporter.logXcpt();
