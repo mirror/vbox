@@ -1719,7 +1719,7 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
     }
 
     closedir(pDir);
-    return VINF_SUCCESS;
+    return rc;
 #endif
 }
 
