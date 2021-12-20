@@ -779,7 +779,7 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(PSUPGLOBALINFOPAGE pGip);
 DECLINLINE(uint64_t) SUPReadTsc(void)
 {
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-    if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
+    if (!pGip || pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
         return ASMReadTSC();
     return SUPReadTscWithDelta(pGip);
 }
