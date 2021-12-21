@@ -1047,14 +1047,6 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
     }
 
     /*
-     * Delete the client state.
-     */
-    pThis->m_ClientStateMap.erase(idClient);
-    if (pClient->m_idSession != UINT32_MAX)
-        pThis->m_SessionIdMap.erase(pClient->m_idSession);
-    pClient->~ClientState();
-
-    /*
      * If it's the master disconnecting, we need to reset related globals.
      */
     if (idClient == pThis->m_idMasterClient)
@@ -1069,9 +1061,41 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
             RTMemFree(pCur);
         }
         pThis->m_cPreparedSessions = 0;
+
+        /* Make sure that the host gets notified about still associated guest sessions going down.
+         *
+         * Some guest OSes (like OL8) do reboot / shut down quite abruptly so that
+         * VBoxService does not have the chance to do so instead.
+         *
+         * Note: We do this only when the master disconnects as a last meassure, as this otherwise
+         *       would overwrite formerly sent session statuses on the host.
+         */
+        ClientStateMap::const_iterator itClientState = pThis->m_SessionIdMap.begin();
+        while (itClientState != pThis->m_SessionIdMap.end())
+        {
+            VBOXHGCMSVCPARM aParms[4];
+            HGCMSvcSetU32(&aParms[0], VBOX_GUESTCTRL_CONTEXTID_MAKE(pCur->idSession, 0 /* uObject */, 0 /* uCount */));
+            HGCMSvcSetU32(&aParms[1], GUEST_SESSION_NOTIFYTYPE_DWN); /* type */
+            HGCMSvcSetU32(&aParms[2], VINF_SUCCESS);                 /* result */
+
+            int rc2 = pThis->hostCallback(GUEST_MSG_SESSION_NOTIFY, 3, aParms);
+            LogFlowFunc(("Notified host about session ID=%RU32 going down -> %Rrc\n", pClient->m_idSession, rc2));
+            RT_NOREF(rc2);
+
+            ++itClientState;
+            /* Note: Don't erase the client state -- this will be done when the actual client is disconnecting. */
+        }
     }
     else
         Assert(pClient != pThis->m_pMasterClient);
+
+    /*
+     * Delete the client state.
+     */
+    pThis->m_ClientStateMap.erase(idClient);
+    if (pClient->m_idSession != UINT32_MAX)
+        pThis->m_SessionIdMap.erase(pClient->m_idSession);
+    pClient->~ClientState();
 
     if (pThis->m_ClientStateMap.empty())
         pThis->m_fLegacyMode = true;
