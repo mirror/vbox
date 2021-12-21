@@ -1685,7 +1685,7 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
                                         4, "Path grew too long during recursion: '", pszDirPath, pEntry->d_name, "'");
             break;
         }
-        suplibHardenedMemCopy(&pszDirPath[cchName], pEntry->d_name, cchName + 1);
+        suplibHardenedMemCopy(&pszDirPath[cchDirPath], pEntry->d_name, cchName + 1);
 
         /*
          * Query the information about the entry and verify it.
