@@ -1351,8 +1351,8 @@ class tdDebugSettings(object):
     """
     Contains local test debug settings.
     """
-    def __init__(self, sImgPath = None):
-        self.sImgPath = sImgPath;
+    def __init__(self, sVBoxServiceExeHst = None):
+        self.sVBoxServiceExeHst = sVBoxServiceExeHst;
         self.sGstVBoxServiceLogPath = '';
         self.fNoExit = False;
 
@@ -1374,10 +1374,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             'copy_to', 'copy_from',
             'update_additions'
         ];
-        self.asTests        = self.asTestsDef;
-        self.fSkipKnownBugs = False;
-        self.oTestFiles     = None # type: vboxtestfileset.TestFileSet
-        self.oDebug         = tdDebugSettings();
+        self.asTests                = self.asTestsDef;
+        self.fSkipKnownBugs         = False;
+        self.oTestFiles             = None # type: vboxtestfileset.TestFileSet
+        self.oDebug                 = tdDebugSettings();
+        self.sPathVBoxServiceExeGst = '';
 
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=too-many-branches,too-many-statements
         if asArgs[iArg] == '--add-guest-ctrl-tests':
@@ -1401,7 +1402,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if asArgs[iArg] == '--add-guest-ctrl-debug-img':
             iArg += 1;
             iNext = self.oTstDrv.requireMoreArgs(1, asArgs, iArg);
-            self.oDebug.sImgPath = asArgs[iArg];
+            self.oDebug.sVBoxServiceExeHst = asArgs[iArg];
             return iNext;
         if asArgs[iArg] == '--add-guest-ctrl-debug-no-exit':
             self.oDebug.fNoExit = True;
@@ -1427,6 +1428,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         Returns fRc, oTxsSession.  The latter may have changed.
         """
+
+        self.sPathVBoxServiceExeGst =   oTestVm.pathJoin(self.oTstDrv.getGuestSystemAdminDir(oTestVm), 'VBoxService') \
+                                      + base.exeSuff();
+
         reporter.log("Active tests: %s" % (self.asTests,));
 
         # The tests. Must-succeed tests should be first.
@@ -1506,40 +1511,26 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         This involves copying over and invoking a the locally built VBoxService binary.
         """
 
-        if self.oDebug.sImgPath is None: # If no debugging enabled, bail out.
+        if self.oDebug.sVBoxServiceExeHst is None: # If no debugging enabled, bail out.
             reporter.log('Skipping debugging');
-            return True
+            return True;
 
         reporter.log('Preparing for debugging ...');
 
         try:
-
             self.vboxServiceControl(oTxsSession, oTestVm, fStart = False);
 
-            if oTestVm.isLinux():
-                reporter.log('Uploading %s ...' % self.oDebug.sImgPath);
-                sFileVBoxServiceHst = self.oDebug.sImgPath;
-                sFileVBoxServiceGst = "/tmp/VBoxService-txs";
-                oTxsSession.syncUploadFile(sFileVBoxServiceHst, sFileVBoxServiceGst);
-                oTxsSession.syncChMod(sFileVBoxServiceGst, 0o755);
-                reporter.log('Executing VBoxService (in background)...');
-                oTxsSession.syncExec(sFileVBoxServiceGst, (sFileVBoxServiceGst, "-vvvv", "--only-control", \
-                                                           "--control-dump-stdout", "--control-dump-stderr", \
-                                                           "--logfile", "/tmp/VBoxService-txs.log") );
-            elif oTestVm.isWindows():
-                reporter.log('Uploading %s ...' % self.oDebug.sImgPath);
-                sFileVBoxServiceHst = self.oDebug.sImgPath;
-                sFileVBoxServiceGst = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'VBoxService.exe');
-                oTxsSession.syncUploadFile(sFileVBoxServiceHst, sFileVBoxServiceGst);
-                sPathSC = os.path.join(self.oTstDrv.getGuestSystemDir(oTestVm), 'sc.exe');
-                oTxsSession.syncExec(sPathSC, (sPathSC, "stop", "VBoxService") );
-                time.sleep(5);
-                oTxsSession.syncExec(sPathSC, (sPathSC, "start", "VBoxService") );
+            self.oTstDrv.sleep(5); # Fudge factor -- wait until the service stopped.
 
-            else: ## @todo Implement others.
-                reporter.log('Debugging not available on this guest OS yet, skipping ...');
+            reporter.log('Uploading "%s" to "%s" ...' % (self.oDebug.sVBoxServiceExeHst, self.sPathVBoxServiceExeGst));
+            oTxsSession.syncUploadFile(self.oDebug.sVBoxServiceExeHst, self.sPathVBoxServiceExeGst);
+
+            if oTestVm.isLinux():
+                oTxsSession.syncChMod(self.sPathVBoxServiceExeGst, 0o755);
 
             self.vboxServiceControl(oTxsSession, oTestVm, fStart = True);
+
+            self.oTstDrv.sleep(5); # Fudge factor -- wait until the service is ready.
 
         except:
             return reporter.errorXcpt('Unable to prepare for debugging');
@@ -1647,18 +1638,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isWindows():
             fEnableVerboseLogging = True;
 
-        # If debugging mode is disabled, enable logging -- otherwise a manually set up logging could clash here.
-        if not self.oDebug.sImgPath:
-            fEnableVerboseLogging = True;
-
         # Old TxS versions had a bug which caused an infinite loop when executing stuff containing "$xxx",
         # so check if we got the version here first and skip enabling verbose logging nonetheless if needed.
         if not fGotTxsVer:
+            reporter.log('Too old TxS service running')
             fEnableVerboseLogging = False;
 
         #
         # Enable VBoxService verbose logging.
         #
+        reporter.log('Enabling verbose VBoxService logging: %s' % (fEnableVerboseLogging));
         if fEnableVerboseLogging:
             self.oDebug.sGstVBoxServiceLogPath = oTestVm.pathJoin(self.oTstDrv.getGuestTempDir(oTestVm), "VBoxService");
             if oTxsSession.syncMkDirPath(self.oDebug.sGstVBoxServiceLogPath, 0o777) is not True:
@@ -1670,8 +1659,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             fRestartVBoxService = False;
             if oTestVm.isWindows():
                 sPathRegExe         = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'reg.exe');
-                sPathVBoxServiceExe = oTestVm.pathJoin(self.oTstDrv.getGuestSystemDir(oTestVm), 'VBoxService.exe');
-                sImagePath          = '%s -vvvv --logfile %s' % (sPathVBoxServiceExe, sPathLogFile);
+                sImagePath          = '%s -vvvv --logfile %s' % (self.sPathVBoxServiceExeGst, sPathLogFile);
                 fRestartVBoxService = self.oTstDrv.txsRunTest(oTxsSession, 'Enabling VBoxService verbose logging (via registry)',
                                          30 * 1000,
                                          sPathRegExe,
@@ -1693,7 +1681,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
             if fRestartVBoxService:
                 self.vboxServiceControl(oTxsSession, oTestVm, fStart = False);
-                time.sleep(5);
+                self.oTstDrv.sleep(5);
                 self.vboxServiceControl(oTxsSession, oTestVm, fStart = True);
             else:
                 reporter.testStart('Waiting for VBoxService to get started');
@@ -1702,8 +1690,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.testDone();
                 if not fRc:
                     return False;
-        else:
-            reporter.log('Skipping VBoxService enabling verbose logging (too old TxS service running)')
 
         #
         # Generate and upload some random files and dirs to the guest.
@@ -5227,7 +5213,9 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
 
             # Cleanup.
             self.removeTask(oTxsSession);
-            if not self.aoSubTstDrvs[0].oDebug.fNoExit:
+            if self.aoSubTstDrvs[0].oDebug.fNoExit:
+                self.sleep(60 * 60 * 1000); # Leave the VM session open for manual inspection / debugging.
+            else:
                 self.terminateVmBySession(oSession);
         else:
             fRc = False;
