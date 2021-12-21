@@ -1320,6 +1320,8 @@ int GuestProcess::i_startProcessThreadTask(GuestProcessStartTask *pTask)
  * Terminates a guest process.
  *
  * @returns VBox status code.
+ * @retval  VWRN_INVALID_STATE if process not in running state (anymore).
+ * @retval  VERR_NOT_SUPPORTED if process termination is not supported on the guest.
  * @param   uTimeoutMS          Timeout (in ms) to wait for process termination.
  * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
  *                              was returned. Optional.
@@ -1339,6 +1341,7 @@ int GuestProcess::i_terminateProcess(uint32_t uTimeoutMS, int *prcGuest)
     {
         LogFlowThisFunc(("Process not in started state (state is %RU32), skipping termination\n",
                          mData.mStatus));
+        vrc = VWRN_INVALID_STATE;
     }
     else
     {
@@ -2044,12 +2047,15 @@ HRESULT GuestProcess::terminate()
         }
     }
 
-    /* Remove process from guest session list. Now only API clients
-     * still can hold references to it. */
-    AssertPtr(mSession);
-    int rc2 = mSession->i_processUnregister(this);
-    if (RT_SUCCESS(vrc))
-        vrc = rc2;
+    if (vrc == VINF_SUCCESS) /* Note: Also could be VWRN_INVALID_STATE from i_terminateProcess(). */
+    {
+        /* Remove process from guest session list. Now only API clients
+         * still can hold references to it. */
+        AssertPtr(mSession);
+        int rc2 = mSession->i_processUnregister(this);
+        if (RT_SUCCESS(vrc))
+            vrc = rc2;
+    }
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
