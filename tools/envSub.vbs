@@ -244,6 +244,7 @@ function Main()
    ' cleanup path before we start adding to it
    for each str1 in arrArchitectures
       EnvRemovePathItem "Path", DosSlashes(strPathkBuild & "\bin\win." & str1), ";"
+      EnvRemovePathItem "Path", DosSlashes(strPathkBuild & "\bin\win." & str1 & "\wrappers"), ";"
       EnvRemovePathItem "Path", DosSlashes(strPathDevTools & "\win." & str1) & "\bin", ";"
    next
 
@@ -252,6 +253,10 @@ function Main()
    ' there is a command to execute.
    '
    if ArraySize(arrCmdToExec) = 0 then
+      ' Add the kbuild wrapper directory to the end of the path, these take
+      ' precedence over the dated gnuwin32 stuff.
+      EnvAppendPathItem "Path", DosSlashes(strPathkBuild & "\bin\win." & strHostArch & "\wrappers"), ";"
+
       ' Add some gnuwin32 tools to the end of the path.
       EnvAppendPathItem "Path", DosSlashes(strPathDevTools & "\win.x86\gnuwin32\r1\bin"), ";"
 
