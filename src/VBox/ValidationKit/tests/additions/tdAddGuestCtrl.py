@@ -5207,12 +5207,9 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False);
         reporter.log("TxsSession: %s" % (oTxsSession,));
         if oSession is not None:
-            self.addTask(oTxsSession);
 
             fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
 
-            # Cleanup.
-            self.removeTask(oTxsSession);
             if self.aoSubTstDrvs[0].oDebug.fNoExit:
                 self.sleep(60 * 60 * 1000); # Leave the VM session open for manual inspection / debugging.
             else:
