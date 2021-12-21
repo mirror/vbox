@@ -899,7 +899,7 @@ DECL_FORCE_INLINE(bool) vmxHCIsSeparateExitMsrStoreAreaVmcs(PCVMXVMCSINFO pVmcsI
                    && pVmcsInfo->pvGuestMsrStore);
 }
 
-
+#ifdef IN_RING0
 /**
  * Sets the given Processor-based VM-execution controls.
  *
@@ -966,7 +966,7 @@ static void vmxHCSetTscOffsetVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint64
         pVmcsInfo->u64TscOffset = uTscOffset;
     }
 }
-
+#endif
 
 /**
  * Adds one or more exceptions to the exception bitmap and commits it to the current
@@ -1252,6 +1252,7 @@ static int vmxHCSwitchToGstOrNstGstVmcs(PVMCPUCC pVCpu, bool fSwitchToNstGstVmcs
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
+#ifdef IN_RING0
 /**
  * Updates the VM's last error record.
  *
@@ -1271,10 +1272,9 @@ static void vmxHCUpdateErrorRecord(PVMCPUCC pVCpu, int rc)
         AssertPtrReturnVoid(pVCpu);
         VMX_VMCS_READ_32(pVCpu, VMX_VMCS32_RO_VM_INSTR_ERROR, &VCPU_2_VMXSTATE(pVCpu).vmx.LastError.u32InstrError);
     }
-#ifdef IN_RING0
     pVCpu->CTX_SUFF(pVM)->hm.s.ForR3.rcInit = rc;
-#endif
 }
+#endif
 
 
 #ifdef VBOX_STRICT
@@ -1546,6 +1546,7 @@ DECLINLINE(bool) vmxHCIsMsrBitSet(uint8_t const *pbMsrBitmap, uint16_t offMsr, i
 }
 #endif
 
+#ifdef IN_RING0
 /**
  * Sets the permission bits for the specified MSR in the given MSR bitmap.
  *
@@ -1750,7 +1751,6 @@ static int vmxHCAddAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient
     Assert(pHostMsr != pVmcsInfo->pvGuestMsrStore);
     pHostMsr[i].u32Msr = idMsr;
 
-#ifdef IN_RING0
     /*
      * Only if the caller requests to update the host MSR value AND we've newly added the
      * MSR to the host MSR area do we actually update the value. Otherwise, it will be
@@ -1772,9 +1772,7 @@ static int vmxHCAddAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient
             pVCpu->hmr0.s.vmx.fUpdatedHostAutoMsrs = false;
         }
     }
-#else
-    RT_NOREF(fUpdateHostMsr);
-#endif
+
     return VINF_SUCCESS;
 }
 
@@ -1874,6 +1872,7 @@ static bool vmxHCIsAutoLoadGuestMsr(PCVMXVMCSINFO pVmcsInfo, uint32_t idMsr)
     }
     return false;
 }
+#endif
 
 
 /**
@@ -3039,6 +3038,7 @@ static void vmxHCExportGuestRip(PVMCPUCC pVCpu)
 }
 
 
+#ifdef IN_RING0
 /**
  * Exports the guest's RSP into the guest-state area in the VMCS.
  *
@@ -3059,6 +3059,7 @@ static void vmxHCExportGuestRsp(PVMCPUCC pVCpu)
         Log4Func(("rsp=%#RX64\n", pVCpu->cpum.GstCtx.rsp));
     }
 }
+#endif
 
 
 /**
@@ -3278,6 +3279,7 @@ static void vmxHCDisableVmcsShadowing(PVMXVMCSINFO pVmcsInfo)
 #endif
 
 
+#ifdef IN_RING0
 /**
  * Exports the guest hardware-virtualization state.
  *
@@ -3337,6 +3339,7 @@ static int vmxHCExportGuestHwvirtState(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransi
     }
     return VINF_SUCCESS;
 }
+#endif
 
 
 /**
@@ -3761,6 +3764,7 @@ static VBOXSTRICTRC vmxHCExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT pVm
 }
 
 
+#ifdef IN_RING0
 /**
  * Exports the guest debug registers into the guest-state area in the VMCS.
  * The guest debug bits are partially shared with the host (e.g. DR6, DR0-3).
@@ -3775,9 +3779,7 @@ static VBOXSTRICTRC vmxHCExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT pVm
  */
 static int vmxHCExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-#ifdef IN_RING0
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-#endif
 
     /** @todo NSTVMX: Figure out what we want to do with nested-guest instruction
      *        stepping. */
@@ -3815,7 +3817,6 @@ static int vmxHCExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
     }
 #endif
 
-#ifdef IN_RING0 /** @todo */
     bool     fSteppingDB      = false;
     bool     fInterceptMovDRx = false;
     uint32_t uProcCtls        = pVmcsInfo->u32ProcCtls;
@@ -3937,10 +3938,10 @@ static int vmxHCExportSharedDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
             AssertRC(rc);
         }
     }
-#endif /* !IN_RING0 */
 
     return VINF_SUCCESS;
 }
+#endif /* !IN_RING0 */
 
 
 #ifdef VBOX_STRICT
@@ -4444,6 +4445,7 @@ static int vmxHCExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransi
 }
 
 
+#ifdef IN_RING0
 /**
  * Exports certain guest MSRs into the VM-entry MSR-load and VM-exit MSR-store
  * areas.
@@ -4590,7 +4592,6 @@ static int vmxHCExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
             AssertRCReturn(rc, rc);
         }
 
-#ifdef IN_RING0 /** @todo */
         /* Last Branch Record. */
         if (VM_IS_VMX_LBR(pVM))
         {
@@ -4622,7 +4623,6 @@ static int vmxHCExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
                                                 false /* fUpdateHostMsr */);
             AssertRCReturn(rc, rc);
         }
-#endif /* !IN_RING0 */
 
         ASMAtomicUoAndU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, ~HM_CHANGED_GUEST_OTHER_MSRS);
     }
@@ -4631,7 +4631,6 @@ static int vmxHCExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 }
 
 
-#ifdef IN_RING0
 /**
  * Sets up the usage of TSC-offsetting and updates the VMCS.
  *
@@ -6795,6 +6794,7 @@ static VBOXSTRICTRC vmxHCInjectPendingEvent(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsIn
 }
 
 
+#ifdef IN_RING0
 /**
  * Exports the guest state into the VMCS guest-state area.
  *
@@ -6824,7 +6824,6 @@ static VBOXSTRICTRC vmxHCExportGuestState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
 
     STAM_PROFILE_ADV_START(&VCPU_2_VMXSTATS(pVCpu).StatExportGuestState, x);
 
-#ifdef IN_RING0
     /*
      * Determine real-on-v86 mode.
      * Used when the guest is in real-mode and unrestricted guest execution is not used.
@@ -6838,7 +6837,6 @@ static VBOXSTRICTRC vmxHCExportGuestState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
         Assert(!pVmxTransient->fIsNestedGuest);
         pVmcsInfoShared->RealMode.fRealOnV86Active = true;
     }
-#endif
 
     /*
      * Any ordering dependency among the sub-functions below must be explicitly stated using comments.
@@ -6903,10 +6901,8 @@ static VBOXSTRICTRC vmxHCExportGuestState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
  */
 static void vmxHCExportSharedState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-#ifdef IN_RING0
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-#endif
 
     if (VCPU_2_VMXSTATE(pVCpu).fCtxChanged & HM_CHANGED_GUEST_DR_MASK)
     {
@@ -6919,13 +6915,11 @@ static void vmxHCExportSharedState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             vmxHCExportGuestRflags(pVCpu, pVmxTransient);
     }
 
-#ifdef IN_RING0
     if (VCPU_2_VMXSTATE(pVCpu).fCtxChanged & HM_CHANGED_VMX_GUEST_LAZY_MSRS)
     {
         vmxHCLazyLoadGuestMsrs(pVCpu);
         VCPU_2_VMXSTATE(pVCpu).fCtxChanged &= ~HM_CHANGED_VMX_GUEST_LAZY_MSRS;
     }
-#endif
 
     AssertMsg(!(VCPU_2_VMXSTATE(pVCpu).fCtxChanged & HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE),
               ("fCtxChanged=%#RX64\n", VCPU_2_VMXSTATE(pVCpu).fCtxChanged));
@@ -6948,9 +6942,7 @@ static void vmxHCExportSharedState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 static VBOXSTRICTRC vmxHCExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
-#ifdef IN_RING0
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-#endif
 
 #ifdef HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
     ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_ALL_GUEST);
@@ -6985,9 +6977,7 @@ static VBOXSTRICTRC vmxHCExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT p
         {
             AssertMsg(rcStrict == VINF_EM_RESCHEDULE_REM, ("Failed to export guest state! rc=%Rrc\n",
                                                            VBOXSTRICTRC_VAL(rcStrict)));
-#ifdef IN_RING0
             Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-#endif
             return rcStrict;
         }
         STAM_COUNTER_INC(&VCPU_2_VMXSTATS(pVCpu).StatExportFull);
@@ -7003,6 +6993,7 @@ static VBOXSTRICTRC vmxHCExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT p
 #endif
     return rcStrict;
 }
+#endif
 
 
 /**
