@@ -577,8 +577,8 @@ DECLINLINE(int) HGCMSvcSSMR3Get(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
         }
 
         default:
-            AssertMsgFailed(("Paramter type %RU32 not implemented yet\n", pParm->type));
-            rc = VERR_NOT_IMPLEMENTED;
+            AssertMsgFailedReturn(("Paramter type %RU32 not implemented yet\n", pParm->type),
+                                  VERR_NOT_IMPLEMENTED);
             break;
     }
 
