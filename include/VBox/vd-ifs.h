@@ -210,7 +210,8 @@ DECLINLINE(int) VDInterfaceRemove(PVDINTERFACE pInterface, PVDINTERFACE *ppVDIfs
         }
         else if (pCurr)
         {
-            pPrev = pCurr->pNext;
+            Assert(pPrev->pNext == pCurr);
+            pPrev->pNext = pCurr->pNext;
             rc = VINF_SUCCESS;
         }
     }
