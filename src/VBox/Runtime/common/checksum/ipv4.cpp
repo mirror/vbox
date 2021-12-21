@@ -298,7 +298,6 @@ RT_EXPORT_SYMBOL(RTNetIPv4AddTCPChecksum);
  */
 DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData, uint32_t u32Sum, bool *pfOdd)
 {
-    uint16_t const *pw = (uint16_t const *)pvData;
     if (*pfOdd)
     {
 #ifdef RT_BIG_ENDIAN
@@ -316,6 +315,7 @@ DECLINLINE(uint32_t) rtNetIPv4AddDataChecksum(void const *pvData, size_t cbData,
     }
 
     /* iterate the data. */
+    uint16_t const *pw = (uint16_t const *)pvData;
     while (cbData > 1)
     {
         u32Sum += *pw;
