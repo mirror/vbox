@@ -2020,7 +2020,7 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
     {
         case GUEST_SESSION_NOTIFYTYPE_ERROR:
             sessionStatus = GuestSessionStatus_Error;
-            LogRel(("Guest Control: Error starting session #%RU32 (%Rrc) \n", mData.mSession.mID, rcGuest));
+            LogRel(("Guest Control: Error starting Session '%s' (%Rrc) \n", mData.mSession.mName.c_str(), rcGuest));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_STARTED:
@@ -2044,39 +2044,39 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
                 }
             }
 #endif
-            LogRel(("Guest Control: Session #%RU32 was successfully started\n", mData.mSession.mID));
+            LogRel(("Guest Control: Session '%s' was successfully started\n", mData.mSession.mName.c_str()));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TEN:
-            LogRel(("Guest Control: Session #%RU32 was terminated normally with exit code %#x\n",
-                    mData.mSession.mID, dataCb.uResult));
+            LogRel(("Guest Control: Session '%s' was terminated normally with exit code %#x\n",
+                    mData.mSession.mName.c_str(), dataCb.uResult));
             sessionStatus = GuestSessionStatus_Terminated;
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TEA:
-            LogRel(("Guest Control: Session #%RU32 was terminated abnormally\n", mData.mSession.mID));
+            LogRel(("Guest Control: Session '%s' was terminated abnormally\n", mData.mSession.mName.c_str()));
             sessionStatus = GuestSessionStatus_Terminated;
             /* dataCb.uResult is undefined. */
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TES:
-            LogRel(("Guest Control: Session #%RU32 was terminated via signal %#x\n", mData.mSession.mID, dataCb.uResult));
+            LogRel(("Guest Control: Session '%s' was terminated via signal %#x\n", mData.mSession.mName.c_str(), dataCb.uResult));
             sessionStatus = GuestSessionStatus_Terminated;
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TOK:
             sessionStatus = GuestSessionStatus_TimedOutKilled;
-            LogRel(("Guest Control: Session #%RU32 timed out and was killed\n", mData.mSession.mID));
+            LogRel(("Guest Control: Session '%s' timed out and was killed\n", mData.mSession.mName.c_str()));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TOA:
             sessionStatus = GuestSessionStatus_TimedOutAbnormally;
-            LogRel(("Guest Control: Session #%RU32 timed out and was not killed successfully\n", mData.mSession.mID));
+            LogRel(("Guest Control: Session '%s' timed out and was not killed successfully\n", mData.mSession.mName.c_str()));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_DWN:
             sessionStatus = GuestSessionStatus_Down;
-            LogRel(("Guest Control: Session #%RU32 got killed as guest service/OS is down\n", mData.mSession.mID));
+            LogRel(("Guest Control: Session '%s' got killed as guest service/OS is down\n", mData.mSession.mName.c_str()));
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_UNDEFINED:
@@ -3308,8 +3308,8 @@ HRESULT GuestSession::close()
     {
         if (i)
         {
-            LogRel(("Guest Control: Closing session #%RU32 timed out (%RU32s timeout, attempt %d/10), retrying ...\n",
-                    mData.mSession.mID, msTimeout / RT_MS_1SEC, i + 1));
+            LogRel(("Guest Control: Closing session '%s' timed out (%RU32s timeout, attempt %d/10), retrying ...\n",
+                    mData.mSession.mName.c_str(), msTimeout / RT_MS_1SEC, i + 1));
             msTimeout += RT_MS_10SEC; /* Slightly increase the timeout. */
         }
 
