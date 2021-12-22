@@ -2732,7 +2732,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     #    fRc = True;
     #    return (fRc, oTxsSession);
 
-    def testGuestCtrlSessionProcRefs(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
+    def testGuestCtrlSessionProcRefs(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals,too-many-statements
         """
         Tests the guest session process reference handling.
         """
