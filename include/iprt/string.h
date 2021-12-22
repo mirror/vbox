@@ -309,22 +309,22 @@ RTDECL(char *) RTStrDupTag(const char *pszString, const char *pszTag);
  * Allocates a new copy of the given UTF-8 string (default tag).
  *
  * @returns iprt status code.
- * @param   ppszString      Receives pointer of the allocated UTF-8 string.
+ * @param   ppszCopy        Receives pointer of the allocated UTF-8 string.
  *                          The returned pointer must be freed using RTStrFree().
  * @param   pszString       UTF-8 string to duplicate.
  */
-#define RTStrDupEx(ppszString, pszString)   RTStrDupExTag((ppszString), (pszString), RTSTR_TAG)
+#define RTStrDupEx(ppszCopy, pszString)     RTStrDupExTag((ppszCopy), (pszString), RTSTR_TAG)
 
 /**
  * Allocates a new copy of the given UTF-8 string (custom tag).
  *
  * @returns iprt status code.
- * @param   ppszString      Receives pointer of the allocated UTF-8 string.
+ * @param   ppszCopy        Receives pointer of the allocated UTF-8 string.
  *                          The returned pointer must be freed using RTStrFree().
  * @param   pszString       UTF-8 string to duplicate.
  * @param   pszTag          Allocation tag used for statistics and such.
  */
-RTDECL(int)  RTStrDupExTag(char **ppszString, const char *pszString, const char *pszTag);
+RTDECL(int)  RTStrDupExTag(char **ppszCopy, const char *pszString, const char *pszTag);
 
 /**
  * Allocates a new copy of the given UTF-8 substring (default tag).
@@ -346,6 +346,32 @@ RTDECL(int)  RTStrDupExTag(char **ppszString, const char *pszString, const char 
  * @param   pszTag          Allocation tag used for statistics and such.
  */
 RTDECL(char *) RTStrDupNTag(const char *pszString, size_t cchMax, const char *pszTag);
+
+/**
+ * Allocates a new copy of the given UTF-8 substring (default tag).
+ *
+ * @returns iprt status code (VINF_SUCCESS or VERR_NO_STR_MEMORY).
+ * @param   ppszCopy        Receives pointer of the allocated UTF-8 substring.
+ *                          The returned pointer must be freed using RTStrFree().
+ * @param   pszString       UTF-8 string to duplicate.
+ * @param   cchMax          The max number of chars to duplicate, not counting
+ *                          the terminator.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+#define RTStrDupNEx(ppszCopy, pszString, cchMax)    RTStrDupNExTag((ppszCopy), (pszString), (cchMax), RTSTR_TAG)
+
+/**
+ * Allocates a new copy of the given UTF-8 substring (custom tag).
+ *
+ * @returns iprt status code (VINF_SUCCESS or VERR_NO_STR_MEMORY).
+ * @param   ppszCopy        Receives pointer of the allocated UTF-8 substring.
+ *                          The returned pointer must be freed using RTStrFree().
+ * @param   pszString       UTF-8 string to duplicate.
+ * @param   cchMax          The max number of chars to duplicate, not counting
+ *                          the terminator.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTDECL(int) RTStrDupNExTag(char **ppszCopy, const char *pszString, size_t cchMax, const char *pszTag);
 
 /**
  * Appends a string onto an existing IPRT allocated string (default tag).

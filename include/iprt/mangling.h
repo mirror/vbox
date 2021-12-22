@@ -2227,6 +2227,7 @@
 # define RTStrCurrentCPToUtf8Tag                        RT_MANGLER(RTStrCurrentCPToUtf8Tag)
 # define RTStrDupExTag                                  RT_MANGLER(RTStrDupExTag)
 # define RTStrDupNTag                                   RT_MANGLER(RTStrDupNTag)
+# define RTStrDupNExTag                                 RT_MANGLER(RTStrDupNExTag)
 # define RTStrDupTag                                    RT_MANGLER(RTStrDupTag)
 # define RTStrEnd                                       RT_MANGLER(RTStrEnd)
 # define RTStrEnd_EndProc                               RT_MANGLER(RTStrEnd_EndProc)

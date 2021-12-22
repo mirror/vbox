@@ -115,22 +115,24 @@ RTDECL(char *) RTStrDupTag(const char *pszString, const char *pszTag)
 RT_EXPORT_SYMBOL(RTStrDupTag);
 
 
-RTDECL(int)  RTStrDupExTag(char **ppszString, const char *pszString, const char *pszTag)
+RTDECL(int)  RTStrDupExTag(char **ppszCopy, const char *pszString, const char *pszTag)
 {
 #if defined(__cplusplus)
-    AssertPtr(ppszString);
+    AssertPtr(ppszCopy);
     AssertPtr(pszString);
 #endif
 
-    size_t cch = strlen(pszString) + 1;
-    char *psz = (char *)RTMemAllocTag(cch, pszTag);
-    if (psz)
+    size_t cch = strlen(pszString);
+    char *pszDst = (char *)RTMemAllocTag(cch + 1, pszTag);
+    if (pszDst)
     {
-        memcpy(psz, pszString, cch);
-        *ppszString = psz;
+        memcpy(pszDst, pszString, cch);
+        pszDst[cch] = '\0';
+        *ppszCopy = pszDst;
         return VINF_SUCCESS;
     }
-    return VERR_NO_MEMORY;
+    *ppszCopy = NULL;
+    return VERR_NO_STR_MEMORY;
 }
 RT_EXPORT_SYMBOL(RTStrDupExTag);
 
@@ -151,6 +153,27 @@ RTDECL(char *) RTStrDupNTag(const char *pszString, size_t cchMax, const char *ps
     return pszDst;
 }
 RT_EXPORT_SYMBOL(RTStrDupNTag);
+
+
+RTDECL(int) RTStrDupNExTag(char **ppszCopy, const char *pszString, size_t cchMax, const char *pszTag)
+{
+#if defined(__cplusplus)
+    AssertPtr(pszString);
+#endif
+    char const *pszEnd = RTStrEnd(pszString, cchMax);
+    size_t      cch    = pszEnd ? (uintptr_t)pszEnd - (uintptr_t)pszString : cchMax;
+    char       *pszDst = (char *)RTMemAllocTag(cch + 1, pszTag);
+    if (pszDst)
+    {
+        memcpy(pszDst, pszString, cch);
+        pszDst[cch] = '\0';
+        *ppszCopy = pszDst;
+        return VINF_SUCCESS;
+    }
+    *ppszCopy = NULL;
+    return VERR_NO_STR_MEMORY;
+}
+RT_EXPORT_SYMBOL(RTStrDupNExTag);
 
 
 RTDECL(int) RTStrAAppendTag(char **ppsz, const char *pszAppend, const char *pszTag)
