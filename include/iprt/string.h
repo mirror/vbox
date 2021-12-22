@@ -356,7 +356,6 @@ RTDECL(char *) RTStrDupNTag(const char *pszString, size_t cchMax, const char *ps
  * @param   pszString       UTF-8 string to duplicate.
  * @param   cchMax          The max number of chars to duplicate, not counting
  *                          the terminator.
- * @param   pszTag          Allocation tag used for statistics and such.
  */
 #define RTStrDupNEx(ppszCopy, pszString, cchMax)    RTStrDupNExTag((ppszCopy), (pszString), (cchMax), RTSTR_TAG)
 
