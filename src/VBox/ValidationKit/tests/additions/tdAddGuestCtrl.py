@@ -2767,10 +2767,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Fire off forever-running processes and "forget" them (stale entries).
         # For them we don't have any references anymore intentionally.
         #
-        reporter.log2('Starting stale processes...');
+        reporter.log('Starting stale processes...');
         fRc = True;
         for i in xrange(0, cStaleProcs):
             try:
+                reporter.log2('Starting stale process #%d...' % (i));
                 oGuestSession.processCreate(sCmd,
                                             asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], [],
                                             [ vboxcon.ProcessCreateFlag_WaitForStdOut ], 30 * 1000);
@@ -2785,7 +2786,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         except: fRc = reporter.errorXcpt();
         else:
             if cProcesses != cStaleProcs:
-                fRc = reporter.error('Got %d stale processes, expected %d' % (cProcesses, cStaleProcs));
+                fRc = reporter.error('Got %d stale processes, expected %d (stale)' % (cProcesses, cStaleProcs));
 
         if fRc is True:
             #
@@ -2795,10 +2796,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 asArgs = [ sCmd, '/C', 'dir', '/S', self.oTstDrv.getGuestSystemDir(oTestVm), ];
             else:
                 asArgs = [ sCmd, '-c', 'ls -la ' + self.oTstDrv.getGuestSystemDir(oTestVm), ];
-            reporter.log2('Starting non-stale processes...');
+            reporter.log('Starting non-stale processes...');
             aoProcesses = [];
             for i in xrange(0, cStaleProcs):
                 try:
+                    reporter.log2('Starting non-stale process #%d...' % (i));
                     oCurProc = oGuestSession.processCreate(sCmd, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                            [], [], 0); # Infinite timeout.
                     aoProcesses.append(oCurProc);
@@ -2806,10 +2808,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     fRc = reporter.errorXcpt('Creating non-stale process #%d failed:' % (i,));
                     break;
 
-            reporter.log2('Waiting for non-stale processes to terminate...');
+            reporter.log('Waiting for non-stale processes to terminate...');
             for i, oProcess in enumerate(aoProcesses):
                 try:
-                    eWaitResult = oProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate, ], 120 * 1000);
+                    reporter.log('Waiting for non-stale process #%d...' % (i));
+                    eWaitResult = oProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate, ], 30 * 1000);
                     eProcessStatus = oProcess.status;
                 except:
                     fRc = reporter.errorXcpt('Waiting for non-stale process #%d failed:' % (i,));
@@ -2824,9 +2827,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Here we count the stale processes (that is, processes we don't have a reference
                 # anymore for) and the started + terminated non-stale processes (that we still keep
                 # a reference in aoProcesses[] for).
-                if cProcesses != (cStaleProcs * 2):
-                    fRc = reporter.error('Got %d total processes, expected %d' % (cProcesses, cStaleProcs));
-
+                cProcsExpected  = cStaleProcs * 2;
+                if cProcesses != cProcsExpected:
+                    fRc = reporter.error('Got %d total processes, expected %d (stale vs. non-stale)' \
+                                         % (cProcesses, cProcsExpected));
         if fRc is True:
             reporter.log2('All non-stale processes terminated');
 
@@ -2837,10 +2841,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 asArgs = [ sCmd, '/C', 'pause'];
             else:
                 asArgs = [ sCmd ];
-            reporter.log2('Starting blocking processes...');
+            reporter.log('Starting blocking processes...');
             aoProcesses = [];
             for i in xrange(0, cStaleProcs):
                 try:
+                    reporter.log2('Starting blocking process #%d...' % (i));
                     oCurProc = oGuestSession.processCreate(sCmd, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                            [],  [], 30 * 1000);
                     # Note: Use a timeout in the call above for not letting the stale processes
@@ -2854,22 +2859,32 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log2('Terminating blocking processes...');
             for i, oProcess in enumerate(aoProcesses):
                 try:
+                    reporter.log('Terminating blocking process #%d...' % (i));
                     oProcess.terminate();
                 except: # Termination might not be supported, just skip and log it.
                     reporter.logXcpt('Termination of blocking process #%d failed, skipped:' % (i,));
 
-            # There still should be 20 processes because we terminated the 10 newest ones.
+            # There still should be 20 processes because we just terminated the 10 blocking ones above.
             try:    cProcesses = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
-            except: fRc = reporter.errorXcpt();
+            except: fRc        = reporter.errorXcpt();
             else:
                 if cProcesses != (cStaleProcs * 2):
-                    fRc = reporter.error('Got %d total processes, expected %d' % (cProcesses, cStaleProcs));
+                    fRc = reporter.error('Got %d total processes, expected %d (final)' % (cProcesses, cStaleProcs));
                 reporter.log2('Final guest session processes count: %d' % (cProcesses,));
 
+        if not fRc:
+            aoProcs = self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes');
+            for i, oProc in enumerate(aoProcs):
+                try:
+                    aoArgs = self.oTstDrv.oVBoxMgr.getArray(oProc, 'arguments');
+                    reporter.log('Process %d (\'%s\') still around, status is %d' \
+                                 % (i, ' '.join([str(x) for x in aoArgs]), oProc.status));
+                except:
+                    reporter.logXcpt('Process lookup failed');
         #
         # Now try to close the session and see what happens.
         #
-        reporter.log2('Closing guest session ...');
+        reporter.log('Closing guest session ...');
         try:
             oGuestSession.close();
         except:
