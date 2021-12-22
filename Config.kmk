@@ -3741,6 +3741,38 @@ endif
 endef # VBOX_GENERATE_IMPORT_TARGET_DEF
 
 
+## VBOX_UTF8_MANIFEST_FN
+# Adds a manifest resource with ID 1 that tells windows 10 1903 and later to
+# use UTF-8 for the ANSI and OEM code pages.  We only do this when using UCRT
+# as the VCC100 CRT typically ends up with its internal code page not being
+# CP_UTF8 but the default codepage for the locale.
+#
+# @param 1 the output filename.
+#
+ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120)
+ VBOX_UTF8_MANIFEST_FN = \
+	$(QUIET)$(APPEND) -tn "$(1).manifest" \
+		'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' \
+		'<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">' \
+		' <assemblyIdentity type="win32" name="$(notdir $(1))" version="$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD).$(expr $(VBOX_SVN_REV) % 50000)"/>' \
+		' <application>' \
+		'  <windowsSettings>' \
+		'   <activeCodePage xmlns="http://schemas.microsoft.com/SMI/2019/WindowsSettings">UTF-8</activeCodePage>' \
+		'  </windowsSettings>' \
+		' </application>' \
+		'</assembly>' \
+	$(NLTAB)$(QUIET)$(REDIRECT) -- $(requote sh,$(PATH_SDK_$(VBOX_WINPSDK)_BIN)/mt.exe) \
+		-nologo -manifest '$(subst /,\,$(1).manifest)' '-outputresource:$(subst /,\,$(1));$(HASH)1' \
+	$(NLTAB)$(QUIET)$(RM) -f -- "$(1).manifest"
+ ## VBOX_UTF8_MANIFEST_CMDS
+ # Wrapper around VBOX_UTF8_MANIFEST_FN that makes sure it's an EXE link target,
+ # as this UTF-8 manifest doesn't make sense for non-executables.
+ VBOX_UTF8_MANIFEST_CMDS ?= $(if-expr "$(tool_do)" != "LINK_LIBRARY" && "$(EXT)" == "EXE",$(call VBOX_UTF8_MANIFEST_FN,$(out),),)
+else
+ VBOX_UTF8_MANIFEST_CMDS =
+endif
+
+
 #
 # Code Signing.
 #
@@ -5694,6 +5726,7 @@ ifeq ($(KBUILD_TARGET),win)
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib
  endif
 
+ TEMPLATE_VBOXR3EXE_POST_CMDS.win      = $(VBOX_UTF8_MANIFEST_CMDS)
  TEMPLATE_VBOXR3EXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
  if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86"
   TEMPLATE_VBOXR3EXE_POST_CMDS.win.x86 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_VBOXR3EXE_POST_CMDS))
@@ -6730,6 +6763,7 @@ ifeq ($(KBUILD_TARGET),win)
   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/oldnames.lib
  endif
+ TEMPLATE_VBOXMAINEXE_POST_CMDS.win      = $(VBOX_UTF8_MANIFEST_CMDS)
  TEMPLATE_VBOXMAINEXE_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
 
 else # the GCC guys:
@@ -7372,6 +7406,7 @@ ifdef VBOX_WITH_QTGUI
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
   endif
+  TEMPLATE_VBOXQTGUIEXE_POST_CMDS.win = $(VBOX_UTF8_MANIFEST_CMDS)
   TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(VBOX_SIGN_IMAGE_CMDS)
 
  else # the gcc guys:
