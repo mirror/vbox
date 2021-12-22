@@ -460,8 +460,7 @@ int VBoxNetLwipNAT::init()
 
     if (m_strHome.isNotEmpty())
     {
-        com::Utf8Str strTftpRoot(com::Utf8StrFmt("%s%c%s",
-                                     m_strHome.c_str(), RTPATH_DELIMITER, "TFTP"));
+        com::Utf8StrFmt strTftpRoot("%s%c%s", m_strHome.c_str(), RTPATH_DELIMITER, "TFTP");
         char *pszStrTemp;       // avoid const char ** vs char **
         rc = RTStrUtf8ToCurrentCP(&pszStrTemp, strTftpRoot.c_str());
         AssertRC(rc);
