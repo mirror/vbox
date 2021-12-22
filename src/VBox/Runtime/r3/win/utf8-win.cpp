@@ -49,19 +49,21 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCPExTag(char **ppszString, const char *pszStrin
 {
     Assert(ppszString);
     Assert(pszString);
+    *ppszString = NULL;
 
     /*
-     * Check for zero length input string.
+     * If the ANSI codepage (CP_ACP) is UTF-8, no translation is needed.
+     * Same goes for empty strings.
      */
-    if (cchString < 1 || !*pszString)
+    if (   cchString == 0
+        || *pszString == '\0')
+        return RTStrDupNExTag(ppszString, pszString, 0, pszTag);
+    if (GetACP() == CP_UTF8)
     {
-        *ppszString = (char *)RTMemTmpAllocZTag(sizeof(char), pszTag);
-        if (*ppszString)
-            return VINF_SUCCESS;
-        return VERR_NO_TMP_MEMORY;
+        int rc = RTStrValidateEncodingEx(pszString, cchString, 0);
+        AssertRCReturn(rc, rc);
+        return RTStrDupNExTag(ppszString, pszString, cchString, pszTag);
     }
-
-    *ppszString = NULL;
 
     /*
      * Convert to wide char first.
@@ -121,17 +123,20 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8Tag(char **ppszString, const char *pszString,
     Assert(pszString);
     *ppszString = NULL;
 
-    /** @todo is there a quicker way? Currently: ACP -> UTF-16 -> UTF-8 */
-
-    size_t cch = strlen(pszString);
-    if (cch <= 0)
+    /*
+     * If the ANSI codepage (CP_ACP) is UTF-8, no translation is needed.
+     * Same goes for empty strings.
+     */
+    if (*pszString == '\0')
+        return RTStrDupExTag(ppszString, pszString, pszTag);
+    if (GetACP() == CP_UTF8)
     {
-        /* zero length string passed. */
-        *ppszString = (char *)RTMemTmpAllocZTag(sizeof(char), pszTag);
-        if (*ppszString)
-            return VINF_SUCCESS;
-        return VERR_NO_TMP_MEMORY;
+        int rc = RTStrValidateEncoding(pszString);
+        AssertRCReturn(rc, rc);
+        return RTStrDupExTag(ppszString, pszString, pszTag);
     }
+
+    /** @todo is there a quicker way? Currently: ACP -> UTF-16 -> UTF-8 */
 
     /*
      * First calc result string length.
