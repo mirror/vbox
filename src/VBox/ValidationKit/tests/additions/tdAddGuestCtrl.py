@@ -3298,7 +3298,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                 enmProcSts = aoGuestProcs[0].status;
                                 if enmProcSts != vboxcon.ProcessStatus_Down:
                                     fRc = reporter.error('Old guest process (before reboot) has status %d, expected %s' \
-                                                         % enmProcSts, vboxcon.ProcessStatus_Down);
+                                                         % (enmProcSts, vboxcon.ProcessStatus_Down));
                             else:
                                 fRc = reporter.error('Old guest session (before reboot) has %d processes registered, expected 1' \
                                                      % (len(aoGuestProcs)));
