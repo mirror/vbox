@@ -47,6 +47,8 @@ typedef enum VBOXOSTYPE
 {
     VBOXOSTYPE_Unknown          = 0,
     VBOXOSTYPE_Unknown_x64      = 0x00100,
+    /** @name DOS and it's descendants
+     * @{ */
     VBOXOSTYPE_DOS              = 0x10000,
     VBOXOSTYPE_Win31            = 0x15000,
     VBOXOSTYPE_Win9x            = 0x20000,
@@ -83,7 +85,11 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_OS2Warp4         = 0x42000,
     VBOXOSTYPE_OS2Warp45        = 0x43000,
     VBOXOSTYPE_ECS              = 0x44000,
+    VBOXOSTYPE_ArcaOS           = 0x45000,
     VBOXOSTYPE_OS21x            = 0x48000,
+    /** @} */
+    /** @name Unixy related OSes
+     * @{ */
     VBOXOSTYPE_Linux            = 0x50000,
     VBOXOSTYPE_Linux_x64        = 0x50100,
     VBOXOSTYPE_Linux22          = 0x51000,
@@ -138,14 +144,20 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_MacOS1011_x64    = 0xB7100,
     VBOXOSTYPE_MacOS1012_x64    = 0xB8100,
     VBOXOSTYPE_MacOS1013_x64    = 0xB9100,
+    /** @} */
+    /** @name Other OSes and stuff
+     * @{ */
     VBOXOSTYPE_JRockitVE        = 0xC0000,
     VBOXOSTYPE_Haiku            = 0xD0000,
     VBOXOSTYPE_Haiku_x64        = 0xD0100,
     VBOXOSTYPE_VBoxBS_x64       = 0xE0100,
+    /** @} */
+
 /** The bit number which indicates 64-bit or 32-bit. */
 #define VBOXOSTYPE_x64_BIT       8
     /** The mask which indicates 64-bit. */
-    VBOXOSTYPE_x64            = 1 << VBOXOSTYPE_x64_BIT,
+    VBOXOSTYPE_x64              = 1 << VBOXOSTYPE_x64_BIT,
+
     /** The usual 32-bit hack. */
     VBOXOSTYPE_32BIT_HACK = 0x7fffffff
 } VBOXOSTYPE;

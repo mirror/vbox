@@ -404,6 +404,11 @@ const Global::OSType Global::sOSTypes[] =
       1, 1024,  16, 16 * _1G64, GraphicsControllerType_VMSVGA, NetworkAdapterType_I82540EM, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
+    { "OS2",     "IBM OS/2",          "OS21x",              "OS/2 1.x",
+      VBOXOSTYPE_OS21x,           VBOXOSHINT_FLOPPY | VBOXOSHINT_NOUSB | VBOXOSHINT_TFRESET,
+      1,    8,   4, 500 * _1M, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
+      StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
+
     { "OS2",     "IBM OS/2",          "OS2Warp3",           "OS/2 Warp 3",
       VBOXOSTYPE_OS2Warp3,        VBOXOSHINT_HWVIRTEX | VBOXOSHINT_FLOPPY,
       1,   48,   4,  1 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
@@ -424,10 +429,10 @@ const Global::OSType Global::sOSTypes[] =
       1,  256,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700  },
 
-    { "OS2",     "IBM OS/2",          "OS21x",              "OS/2 1.x",
-      VBOXOSTYPE_OS21x,           VBOXOSHINT_FLOPPY | VBOXOSHINT_NOUSB | VBOXOSHINT_TFRESET,
-      1,    8,   4, 500 * _1M, GraphicsControllerType_VBoxVGA, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
-      StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, IommuType_None, AudioControllerType_SB16, AudioCodecType_SB16  },
+    { "OS2",     "IBM OS/2",          "OS2ArcaOS",          "ArcaOS",
+      VBOXOSTYPE_ArcaOS,          VBOXOSHINT_HWVIRTEX | VBOXOSHINT_FLOPPY,
+      1, 1024,   4,  2 * _1G64, GraphicsControllerType_VBoxVGA, NetworkAdapterType_I82540EM, 1, StorageControllerType_IntelAhci, StorageBus_SATA,
+      StorageControllerType_IntelAhci, StorageBus_SATA, ChipsetType_PIIX3, IommuType_None, AudioControllerType_AC97, AudioCodecType_STAC9700 },
 
     { "OS2",     "IBM OS/2",          "OS2",                "Other OS/2",
       VBOXOSTYPE_OS2,             VBOXOSHINT_HWVIRTEX | VBOXOSHINT_FLOPPY | VBOXOSHINT_NOUSB,

@@ -194,6 +194,7 @@ static void vmmdevLogGuestOsInfo(VBoxGuestInfo *pGuestInfo)
         case VBOXOSTYPE_OS2Warp4:                         pszOs = "OS/2 Warp 4";    break;
         case VBOXOSTYPE_OS2Warp45:                        pszOs = "OS/2 Warp 4.5";  break;
         case VBOXOSTYPE_ECS:                              pszOs = "OS/2 ECS";       break;
+        case VBOXOSTYPE_ArcaOS:                           pszOs = "OS/2 ArcaOS";    break;
         case VBOXOSTYPE_OS21x:                            pszOs = "OS/2 2.1x";      break;
         case VBOXOSTYPE_Linux:                            pszOs = "Linux";          break;
         case VBOXOSTYPE_Linux22:                          pszOs = "Linux 2.2";      break;
@@ -227,6 +228,7 @@ static void vmmdevLogGuestOsInfo(VBoxGuestInfo *pGuestInfo)
         case VBOXOSTYPE_MacOS1012_x64 & ~VBOXOSTYPE_x64:  pszOs = "macOS 10.12";    break;
         case VBOXOSTYPE_MacOS1013_x64 & ~VBOXOSTYPE_x64:  pszOs = "macOS 10.13";    break;
         case VBOXOSTYPE_Haiku:                            pszOs = "Haiku";          break;
+        case VBOXOSTYPE_VBoxBS_x64 & ~VBOXOSTYPE_x64:     pszOs = "VBox Bootsector"; break;
         default:                                          pszOs = "unknown";        break;
     }
     LogRel(("VMMDev: Guest Additions information report: Interface = 0x%08X osType = 0x%08X (%s, %u-bit)\n",

@@ -89,12 +89,14 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Sol.*32",                                                  Qt::CaseInsensitive), "Solaris" },
 
     /* OS/2: */
-    { QRegExp( "OS[/|!-]{,1}2.*W.*4.?5",    Qt::CaseInsensitive), "OS2Warp45" },
-    { QRegExp( "OS[/|!-]{,1}2.*W.*4",       Qt::CaseInsensitive), "OS2Warp4" },
-    { QRegExp( "OS[/|!-]{,1}2.*W",          Qt::CaseInsensitive), "OS2Warp3" },
-    { QRegExp("(OS[/|!-]{,1}2.*e)|(eCS.*)", Qt::CaseInsensitive), "OS2eCS" },
-    { QRegExp( "OS[/|!-]{,1}2",             Qt::CaseInsensitive), "OS2" },
-    { QRegExp( "eComS.*",                   Qt::CaseInsensitive), "OS2eCS" },
+    { QRegExp("OS[/|!-]{,1}2.*W.*4.?5", Qt::CaseInsensitive), "OS2Warp45" },
+    { QRegExp("OS[/|!-]{,1}2.*W.*4",    Qt::CaseInsensitive), "OS2Warp4" },
+    { QRegExp("OS[/|!-]{,1}2.*W",       Qt::CaseInsensitive), "OS2Warp3" },
+    { QRegExp("OS[/|!-]{,1}2.*e",       Qt::CaseInsensitive), "OS2eCS" },
+    { QRegExp("OS[/|!-]{,1}2.*Ar.*",    Qt::CaseInsensitive), "OS2ArcaOS" },
+    { QRegExp("OS[/|!-]{,1}2",          Qt::CaseInsensitive), "OS2" },
+    { QRegExp("(eComS.*|eCS.*)",        Qt::CaseInsensitive), "OS2eCS" },
+    { QRegExp("Arca.*",                 Qt::CaseInsensitive), "OS2ArcaOS" },
 
     /* Other: Must come before Ubuntu/Maverick and before Linux??? */
     { QRegExp("QN", Qt::CaseInsensitive), "QNX" },
