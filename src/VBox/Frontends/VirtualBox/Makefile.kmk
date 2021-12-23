@@ -56,6 +56,7 @@ ifdef VBOX_WITH_HARDENING
 VirtualBoxHardenedVM_TEMPLATE = VBOXR3HARDENEDEXE
 VirtualBoxHardenedVM_INST.darwin = $(INST_VIRTUALBOX)Contents/Resources/VirtualBoxVM.app/Contents/MacOS/
 VirtualBoxHardenedVM_NAME = VirtualBoxVM
+VirtualBoxHardenedVM_DEFS += $(if $(VBOX_WITH_DRIVERLESS_NEM_FALLBACK),VBOX_WITH_DRIVERLESS_NEM_FALLBACK,)
 VirtualBoxHardenedVM_SOURCES = src/hardenedmain.cpp
 VirtualBoxHardenedVM_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
 $(call VBOX_SET_VER_INFO_EXE,VirtualBoxHardenedVM,VirtualBox Virtual Machine,$(VBOX_WINDOWS_ICON_FILE))
@@ -180,8 +181,7 @@ VirtualBoxVM_DEFS           += \
 	$(if $(VBOX_GUI_WITH_KEYS_RESET_HANDLER),VBOX_GUI_WITH_KEYS_RESET_HANDLER) \
 	$(if $(VBOX_GUI_WITH_CUSTOMIZATIONS1),VBOX_GUI_WITH_CUSTOMIZATIONS1) \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE) \
-	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,) \
-	$(if $(VBOX_WITH_DRIVERLESS_NEM_FALLBACK),VBOX_WITH_DRIVERLESS_NEM_FALLBACK,)
+	$(if $(VBOX_WITH_SDS),VBOX_WITH_SDS,)
 ifdef VBOX_WITH_DEBUGGER_GUI
  VirtualBoxVM_DEFS          += VBOX_WITH_DEBUGGER_GUI
  if "$(KBUILD_TYPE)" != "release"

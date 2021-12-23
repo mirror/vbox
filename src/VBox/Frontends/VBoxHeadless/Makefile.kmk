@@ -26,6 +26,7 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 ifdef VBOX_WITH_HARDENING
 PROGRAMS += VBoxHeadlessHardened
 VBoxHeadlessHardened_TEMPLATE = VBOXR3HARDENEDEXE
+VBoxHeadlessHardened_DEFS    += $(if $(VBOX_WITH_DRIVERLESS_NEM_FALLBACK),VBOX_WITH_DRIVERLESS_NEM_FALLBACK,)
 VBoxHeadlessHardened_SOURCES = VBoxHeadlessHardened.cpp
 VBoxHeadlessHardened_NAME = VBoxHeadless
 $(call VBOX_SET_VER_INFO_DLL,VBoxHeadlessHardened,VirtualBox Headless Frontend,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
@@ -41,9 +42,7 @@ else
 PROGRAMS += VBoxHeadless
 endif
 VBoxHeadless_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXMAINCLIENTDLL,VBOXMAINCLIENTEXE)
-VBoxHeadless_DEFS     += \
-	$(if $(VBOX_WITH_RECORDING),VBOX_WITH_RECORDING,) \
-	$(if $(VBOX_WITH_DRIVERLESS_NEM_FALLBACK),VBOX_WITH_DRIVERLESS_NEM_FALLBACK,)
+VBoxHeadless_DEFS     += $(if $(VBOX_WITH_RECORDING),VBOX_WITH_RECORDING,)
 VBoxHeadless_INCS      = \
 	$(VBOX_GRAPHICS_INCS) \
 	../Common
