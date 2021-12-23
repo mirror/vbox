@@ -72,6 +72,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         self._asBuildFiles  = [];   # The downloaded file names.
         self._fUnpackedBuildFiles = False;
         self._fAutoInstallPuelExtPack = True;
+        self._fKernelDrivers          = True;
 
     #
     # Base method we override
@@ -90,6 +91,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
         reporter.log('  --no-puel-extpack');
         reporter.log('      Indicates that the PUEL extension pack should not be installed if found.');
         reporter.log('      The default is to install it if found in the vbox-build.');
+        reporter.log('  --no-kernel-drivers');
+        reporter.log('      Indicates that the kernel drivers should not be installed on platforms where this is supported.');
+        reporter.log('      The default is to install them.');
         reporter.log('  --');
         reporter.log('      Indicates the end of our parameters and the start of the sub');
         reporter.log('      testdriver and its arguments.');
@@ -114,6 +118,10 @@ class VBoxInstallerTestDriver(TestDriverBase):
             self._fAutoInstallPuelExtPack = False;
         elif asArgs[iArg] == '--puel-extpack':
             self._fAutoInstallPuelExtPack = True;
+        elif asArgs[iArg] == '--no-kernel-drivers':
+            self._fKernelDrivers = False;
+        elif asArgs[iArg] == '--kernel-drivers':
+            self._fKernelDrivers = True;
         else:
             return TestDriverBase.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -660,6 +668,30 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
         return self._executeSync(['hdiutil', 'attach', '-readonly', '-mount', 'required', '-mountpoint', sMountPath, sDmg, ]);
 
+    def _generateWithoutKextsChoicesXmlOnDarwin(self):
+        """
+        Generates the choices XML when kernel drivers are disabled.
+        None is returned on failure.
+        """
+        sPath = os.path.join(self.sScratchPath, 'DarwinChoices.xml');
+        oFile = utils.openNoInherit(sPath, 'wt');
+        oFile.write('<?xml version="1.0" encoding="UTF-8"?>\n'
+                    '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
+                    '<plist version="1.0">\n'
+                    '<array>\n'
+                    '    <dict>\n'
+                    '        <key>attributeSetting</key>\n'
+                    '        <integer>0</integer>\n'
+                    '        <key>choiceAttribute</key>\n'
+                    '        <string>selected</string>\n'
+                    '        <key>choiceIdentifier</key>\n'
+                    '        <string>choiceVBoxKEXTs</string>\n'
+                    '    </dict>\n'
+                    '</array>\n'
+                    '</plist>\n');
+        oFile.close();
+        return sPath;
+
     def _installVBoxOnDarwin(self):
         """ Installs VBox on Mac OS X."""
         sDmg = self._findFile('^VirtualBox-.*\\.dmg$');
@@ -678,7 +710,15 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
             # Install the package.
             sPkg = os.path.join(self._darwinDmgPath(), 'VirtualBox.pkg');
-            fRc, _ = self._sudoExecuteSync(['installer', '-verbose', '-dumplog', '-pkg', sPkg, '-target', '/']);
+            if self._fKernelDrivers:
+                fRc, _ = self._sudoExecuteSync(['installer', '-verbose', '-dumplog', '-pkg', sPkg, '-target', '/']);
+            else:
+                sChoicesXml = self._generateWithoutKextsChoicesXmlOnDarwin();
+                if sChoicesXml is not None:
+                    fRc, _ = self._sudoExecuteSync(['installer', '-verbose', '-dumplog', '-pkg', sPkg, \
+                                                    '-applyChoiceChangesXML', sChoicesXml, '-target', '/']);
+                else:
+                    fRc = False;
 
         # Unmount the DMG and we're done.
         if not self._darwinUnmountDmg(fIgnoreError = False):
