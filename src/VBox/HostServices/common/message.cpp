@@ -106,7 +106,7 @@ int Message::GetData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]) c
  */
 int Message::GetParmU32(uint32_t uParm, uint32_t *pu32Info) const RT_NOEXCEPT
 {
-    AssertPtrNullReturn(pu32Info, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pu32Info, VERR_INVALID_PARAMETER);
     AssertReturn(uParm < m_cParms, VERR_INVALID_PARAMETER);
     AssertReturn(m_paParms[uParm].type == VBOX_HGCM_SVC_PARM_32BIT, VERR_INVALID_PARAMETER);
 
@@ -124,7 +124,7 @@ int Message::GetParmU32(uint32_t uParm, uint32_t *pu32Info) const RT_NOEXCEPT
  */
 int Message::GetParmU64(uint32_t uParm, uint64_t *pu64Info) const RT_NOEXCEPT
 {
-    AssertPtrNullReturn(pu64Info, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pu64Info, VERR_INVALID_PARAMETER);
     AssertReturn(uParm < m_cParms, VERR_INVALID_PARAMETER);
     AssertReturn(m_paParms[uParm].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_INVALID_PARAMETER);
 
@@ -145,8 +145,8 @@ int Message::GetParmU64(uint32_t uParm, uint64_t *pu64Info) const RT_NOEXCEPT
  */
 int Message::GetParmPtr(uint32_t uParm, void **ppvAddr, uint32_t *pcbSize) const RT_NOEXCEPT
 {
-    AssertPtrNullReturn(ppvAddr, VERR_INVALID_PARAMETER);
-    AssertPtrNullReturn(pcbSize, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppvAddr, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbSize, VERR_INVALID_PARAMETER);
     AssertReturn(uParm < m_cParms, VERR_INVALID_PARAMETER);
     AssertReturn(m_paParms[uParm].type == VBOX_HGCM_SVC_PARM_PTR, VERR_INVALID_PARAMETER);
 
@@ -260,7 +260,7 @@ int Message::initData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[]) 
     /** @todo r=bird: There is a define for the max number of HGCM parameters,
      *        it's way smaller than 256, something like 61 IIRC. */
     AssertReturn(cParms < 256, VERR_INVALID_PARAMETER);
-    AssertPtrNullReturn(aParms, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(aParms, VERR_INVALID_PARAMETER);
 
     /* Cleanup any eventual old stuff. */
     reset();
