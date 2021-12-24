@@ -824,6 +824,7 @@ if1of ($(KBUILD_TARGET), darwin linux win)
   endif
  else
   VBOX_WITH_LIBSSH = 1
+ endif
 endif
 # Enable Host=>Guest Drag'n'Drop
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
