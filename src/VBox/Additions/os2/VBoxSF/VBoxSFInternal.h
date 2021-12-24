@@ -248,7 +248,7 @@ APIRET      vboxSfOs2SetInfoCommonWorker(PVBOXSFFOLDER pFolder, SHFLHANDLE hHost
 
 APIRET      vboxSfOs2CheckEaOpForCreation(EAOP const *pEaOp);
 APIRET      vboxSfOs2MakeEmptyEaList(PEAOP pEaOp, ULONG uLevel);
-APIRET      vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, uint32_t *pcbWritten, ULONG *poffError);
+APIRET      vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, ULONG cbFullEasLeft, uint32_t *pcbWritten, ULONG *poffError);
 
 DECLASM(PVBOXSFVP)  Fsh32GetVolParams(USHORT hVbp, PVPFSI *ppVpFsi /*optional*/);
 DECLASM(APIRET)     SafeKernStrToUcs(PUconvObj, UniChar *, char *, LONG, LONG);

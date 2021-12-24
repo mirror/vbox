@@ -343,9 +343,15 @@ static APIRET vboxSfOs2ReadDirEntries(PVBOXSFFOLDER pFolder, PVBOXSFFS pFsFsd, P
                         cbData -= cbToCopy;
                         pbDst   = pbToCopy;
 
+                        /* Output empty EA list.  We don't try anticipate filename output length here,
+                           instead we'll just handle that when we come to it below. */
+                        /** @todo If this overflows, JFS will return ERROR_EAS_DIDNT_FIT and just the
+                         * EA size here (i.e. as if FI_LVL_STANDARD_EASIZE or _64 was requested).
+                         * I think, however, that ERROR_EAS_DIDNT_FIT should only be considered if
+                         * this is the first entry we're returning and we'll have to stop after it. */
                         uint32_t cbWritten = 0;
                         EaOp.fpFEAList = (PFEALIST)pbData;
-                        rc = vboxSfOs2MakeEmptyEaListEx(&EaOp, uLevel, &cbWritten, &pEaOpUser->oError);
+                        rc = vboxSfOs2MakeEmptyEaListEx(&EaOp, uLevel, cbData, &cbWritten, &pEaOpUser->oError);
                         if (rc == NO_ERROR)
                         {
                             cbData -= cbWritten;

@@ -1963,10 +1963,12 @@ FS32_FILEATTRIBUTE(ULONG fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, 
  * @returns OS/2 status code.
  * @param   pEaOp           Kernel copy of the EA request with flattened pointers.
  * @param   uLevel          The info level being queried.
+ * @param   cbFullEasLeft   The size of the full EA buffer, ~(ULONG)0 if it
+ *                          should be read in from pEaOp->fpFEAList->cbList.
  * @param   pcbWritten      Where to return the length of the resulting list.  Optional.
  * @param   poffError       User buffer address of EAOP.oError for reporting GEALIST issues.
  */
-APIRET vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, uint32_t *pcbWritten, ULONG *poffError)
+APIRET vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, ULONG cbFullEasLeft, uint32_t *pcbWritten, ULONG *poffError)
 {
     ULONG  cbDstList;
     APIRET rc;
@@ -1989,8 +1991,7 @@ APIRET vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, uint32_t *pcbWritte
     {
         ULONG cbGetEasLeft = 0;
         rc = KernCopyIn(&cbGetEasLeft, &pEaOp->fpGEAList->cbList, sizeof(pEaOp->fpGEAList->cbList));
-        ULONG cbFullEasLeft = 0;
-        if (rc == NO_ERROR)
+        if (rc == NO_ERROR && cbFullEasLeft == ~(ULONG)0)
             rc = KernCopyIn(&cbFullEasLeft, &pEaOp->fpFEAList->cbList, sizeof(cbFullEasLeft));
         if (   rc == NO_ERROR
             && cbGetEasLeft  >= sizeof(pEaOp->fpGEAList->cbList)
@@ -2012,15 +2013,16 @@ APIRET vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, uint32_t *pcbWritte
                 /*
                  * pbSrc: GEA: BYTE cbName; char szName[];
                  */
-                /* Get name length. */
-                uint8_t cbName = 0;
-                rc = KernCopyIn(&cbName, pbSrc, sizeof(cbName));
-                Log3(("vboxSfOs2MakeEmptyEaList: cbName=%#x rc=%u\n", cbName, rc));
+                /* Get name length (we call it cchName instead of cbName since
+                   it does not include the zero terminator). */
+                uint8_t cchName = 0;
+                rc = KernCopyIn(&cchName, pbSrc, sizeof(cchName));
+                Log3(("vboxSfOs2MakeEmptyEaList: cchName=%#x rc=%u\n", cchName, rc));
                 if (rc != NO_ERROR)
                     break;
                 pbSrc++;
                 cbGetEasLeft--;
-                if (cbName + 1U > cbGetEasLeft)
+                if (cchName + 1U > cbGetEasLeft)
                 {
                     cbDstList = pbSrc - 1 - (uint8_t *)pEaOp->fpGEAList;
                     rc = KernCopyOut(poffError, &cbDstList, sizeof(pEaOp->oError));
@@ -2031,11 +2033,11 @@ APIRET vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, uint32_t *pcbWritte
                 }
 
                 /* Copy in name. */
-                rc = KernCopyIn(pszNameBuf, pbSrc, cbName + 1);
+                rc = KernCopyIn(pszNameBuf, pbSrc, cchName + 1);
                 if (rc != NO_ERROR)
                     break;
-                Log3(("vboxSfOs2MakeEmptyEaList: szName: %.*Rhxs\n", cbName + 1, pszNameBuf));
-                if ((char *)memchr(pszNameBuf, '\0', cbName) != &pszNameBuf[cbName])
+                Log3(("vboxSfOs2MakeEmptyEaList: szName: %.*Rhxs\n", cchName + 1, pszNameBuf));
+                if ((char *)memchr(pszNameBuf, '\0', cchName + 1) != &pszNameBuf[cchName])
                 {
                     cbDstList = pbSrc - 1 - (uint8_t *)pEaOp->fpGEAList;
                     rc = KernCopyOut(poffError, &cbDstList, sizeof(pEaOp->oError));
@@ -2046,36 +2048,37 @@ APIRET vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, uint32_t *pcbWritte
                 }
 
                 /* Skip input. */
-                cbGetEasLeft -= cbName + 1;
-                pbSrc        += cbName + 1;
+                cbGetEasLeft -= cchName + 1;
+                pbSrc        += cchName + 1;
 
                 /*
                  * Construct and emit output.
                  * Note! We should technically skip duplicates here, but who cares...
                  */
-                if (cbName > 0)
+                if (cchName > 0)
                 {
                     FEA Result;
-                    if (sizeof(Result) + cbName + 1 > cbFullEasLeft)
+                    if (sizeof(Result) + cchName + 1 <= cbFullEasLeft)
+                        cbFullEasLeft -= sizeof(Result) + cchName + 1;
+                    else
                     {
-                        Log(("vboxSfOs2MakeEmptyEaList: ERROR_BUFFER_OVERFLOW (%#x vs %#x)\n", sizeof(Result) + cbName + 1, cbFullEasLeft));
+                        Log(("vboxSfOs2MakeEmptyEaList: ERROR_BUFFER_OVERFLOW (%#x vs %#x)\n", sizeof(Result) + cchName + 1, cbFullEasLeft));
                         rc = ERROR_BUFFER_OVERFLOW;
                         break;
                     }
-                    cbFullEasLeft -= sizeof(Result) + cbName + 1;
 
                     Result.fEA     = 0;
-                    Result.cbName  = cbName;
+                    Result.cbName  = cchName;
                     Result.cbValue = 0;
                     rc = KernCopyOut(pbDst, &Result, sizeof(Result));
                     if (rc != NO_ERROR)
                         break;
                     pbDst += sizeof(Result);
 
-                    rc = KernCopyOut(pbDst, pszNameBuf, cbName + 1);
+                    rc = KernCopyOut(pbDst, pszNameBuf, cchName + 1);
                     if (rc != NO_ERROR)
                         break;
-                    pbDst += cbName + 1;
+                    pbDst += cchName + 1;
                 }
             } /* (while more GEAs) */
 
@@ -2134,7 +2137,7 @@ vboxSfOs2MakeEmptyEaList(PEAOP pEaOp, ULONG uLevel)
             EaOp.fpGEAList = NULL;
         Log2(("vboxSfOs2MakeEmptyEaList: #0b: %p %p\n", EaOp.fpGEAList, EaOp.fpFEAList));
 
-        rc = vboxSfOs2MakeEmptyEaListEx(&EaOp, uLevel, NULL, &pEaOp->oError);
+        rc = vboxSfOs2MakeEmptyEaListEx(&EaOp, uLevel, ~(ULONG)0, NULL, &pEaOp->oError);
     }
     return rc;
 }
