@@ -816,7 +816,15 @@ VBOX_WITH_MEMBALLOON = 1
 # Enable cURL (required for the network part of the GUI)
 VBOX_WITH_LIBCURL = 1
 # Enable libssh (required for cloud network attachment)
-VBOX_WITH_LIBSSH =
+if1of ($(KBUILD_TARGET), darwin linux win)
+ ifneq ($(VBOX_GCC_VERSION_CC),)
+  if $(VBOX_GCC_VERSION_CC) >= 50000
+   # Build libssh with newer GCC only
+   VBOX_WITH_LIBSSH = 1
+  endif
+ else
+  VBOX_WITH_LIBSSH = 1
+endif
 # Enable Host=>Guest Drag'n'Drop
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_DRAG_AND_DROP = 1
@@ -873,8 +881,10 @@ if1of ($(KBUILD_TARGET), freebsd linux)
 endif
 # Use new VBoxNetDhcpd instead of old VBoxNetDHCP
 VBOX_WITH_DHCPD = 1
-# Experimental suport for cloud network integration
-VBOX_WITH_CLOUD_NET = 1
+# Experimental suport for cloud network integration (depends on libssh)
+ifdef VBOX_WITH_LIBSSH
+ VBOX_WITH_CLOUD_NET = 1
+endif
 # Use Mac OS X VMNET API instead of network kernel extensions
 VBOX_WITH_VMNET = 1
 ## @}
