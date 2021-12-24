@@ -1356,22 +1356,32 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
  * local #define  for better reading the code
  * uses only the previously locally declared variable names
  * set hrc as the result of operation
+ *
+ * What the above description fail to say is that this returns:
+ *      - retTypes
+ *      - aRefs
+ *      - aOvfValues
+ *      - aVBoxValues
+ *      - aExtraConfigValues
  */
-#define GET_VSD_DESCRIPTION_BY_TYPE(aParamType) \
-    retTypes.setNull(); \
-    aRefs.setNull(); \
-    aOvfValues.setNull(); \
-    aVBoxValues.setNull(); \
-    aExtraConfigValues.setNull(); \
-    vsd->GetDescriptionByType(aParamType, \
-        ComSafeArrayAsOutParam(retTypes), \
-        ComSafeArrayAsOutParam(aRefs), \
-        ComSafeArrayAsOutParam(aOvfValues), \
-        ComSafeArrayAsOutParam(aVBoxValues), \
-        ComSafeArrayAsOutParam(aExtraConfigValues)); \
+/** @todo r=bird: The setNull calls here are implicit in ComSafeArraySasOutParam,
+ * so we're doing twice here for no good reason!  Btw. very untidy to not wrap
+ * this in do { } while (0) and require ';' when used.  */
+#define GET_VSD_DESCRIPTION_BY_TYPE(aParamType) do { \
+        retTypes.setNull(); \
+        aRefs.setNull(); \
+        aOvfValues.setNull(); \
+        aVBoxValues.setNull(); \
+        aExtraConfigValues.setNull(); \
+        vsd->GetDescriptionByType(aParamType, \
+                                  ComSafeArrayAsOutParam(retTypes), \
+                                  ComSafeArrayAsOutParam(aRefs), \
+                                  ComSafeArrayAsOutParam(aOvfValues), \
+                                  ComSafeArrayAsOutParam(aVBoxValues), \
+                                  ComSafeArrayAsOutParam(aExtraConfigValues)); \
+    } while (0)
 
-
-    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudProfileName)
+    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudProfileName);
     if (aVBoxValues.size() == 0)
         return setErrorVrc(VERR_NOT_FOUND, tr("%s: Cloud user profile name wasn't found"), __FUNCTION__);
 
@@ -1397,7 +1407,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     ComPtr<IGuestOSType> pGuestOSType;
     {
         VBOXOSTYPE guestOsType = VBOXOSTYPE_Unknown;
-        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_OS)//aVBoxValues is set in this #define
+        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_OS); //aVBoxValues is set in this #define
         if (aVBoxValues.size() != 0)
         {
             strOsType = aVBoxValues[0];
@@ -1442,7 +1452,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             ComPtr<IVirtualBox> VBox(mVirtualBox);
 
             {
-                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Name)//aVBoxValues is set in this #define
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Name); //aVBoxValues is set in this #define
                 if (aVBoxValues.size() != 0)//paranoia but anyway...
                     strVMName = aVBoxValues[0];
                 LogRel(("%s: VM name is %s\n", __FUNCTION__, strVMName.c_str()));
@@ -1505,36 +1515,31 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                         return setErrorVrc(vrc, tr("Can't open folder %s"), strMachineFolder.c_str());
 
                     if (counter > 0)
-                    {
-                        return setErrorVrc(VERR_ALREADY_EXISTS, tr("The target folder %s has already contained some"
-                                          " files (%d items). Clear the folder from the files or choose another folder"),
-                                          strMachineFolder.c_str(), counter);
-                    }
+                        return setErrorVrc(VERR_ALREADY_EXISTS,
+                                           tr("The target folder %s has already contained some files (%d items). Clear the folder from the files or choose another folder"),
+                                           strMachineFolder.c_str(), counter);
                 }
             }
 
-            Utf8Str strInsId;
-            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
+            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId); //aVBoxValues is set in this #define
             if (aVBoxValues.size() == 0)
                 return setErrorVrc(VERR_NOT_FOUND, "%s: Cloud Instance Id wasn't found", __FUNCTION__);
 
-            strInsId = aVBoxValues[0];
+            Utf8Str strInsId = aVBoxValues[0];
 
-            LogRel(("%s: calling CloudClient::ImportInstance\n", __FUNCTION__));
+            LogRelFunc(("calling CloudClient::ImportInstance\n"));
 
             /* Here it's strongly supposed that cloud import produces ONE object on the disk.
              * Because it much easier to manage one object in any case.
              * In the case when cloud import creates several object on the disk all of them
              * must be combined together into one object by cloud client.
              * The most simple way is to create a TAR archive. */
-            hrc = cloudClient->ImportInstance(m->virtualSystemDescriptions.front(),
-                                              pProgress);
+            hrc = cloudClient->ImportInstance(m->virtualSystemDescriptions.front(), pProgress);
             if (FAILED(hrc))
             {
-                LogRel(("%s: Cloud import (cloud phase) failed. "
-                        "Used cloud instance is \'%s\'\n", __FUNCTION__, strInsId.c_str()));
-                hrc = setError(hrc, tr("%s: Cloud import (cloud phase) failed. "
-                               "Used cloud instance is \'%s\'\n"), __FUNCTION__, strInsId.c_str());
+                LogRelFunc(("Cloud import (cloud phase) failed. Used cloud instance is \'%s\'\n", strInsId.c_str()));
+                hrc = setError(hrc, tr("%s: Cloud import (cloud phase) failed. Used cloud instance is \'%s\'\n"),
+                               __FUNCTION__, strInsId.c_str());
                 break;
             }
 
@@ -1554,7 +1559,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         ErrorInfoKeeper eik;    /* save the error info */
         HRESULT const hrcSaved = hrc;
 
-        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
+        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId); //aVBoxValues is set in this #define
         if (aVBoxValues.size() == 0)
             hrc = setErrorVrc(VERR_NOT_FOUND, tr("%s: Cloud cleanup action - the instance wasn't found"), __FUNCTION__);
         else
@@ -1613,7 +1618,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
                 /* small explanation here, the image here points out to the whole downloaded object (not to the image only)
                  * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
-                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage); //aVBoxValues is set in this #define
                 if (aVBoxValues.size() == 0)
                     hrc = setErrorVrc(VERR_NOT_FOUND, pszGeneralRollBackErrorMessage);
                 else
@@ -1661,7 +1666,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         {
             /* Small explanation here, the image here points out to the whole downloaded object (not to the image only)
              * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
-            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
+            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage); //aVBoxValues is set in this #define
             if (aVBoxValues.size() == 0)
                 throw setErrorVrc(VERR_NOT_FOUND, "%s: The description of the downloaded object wasn't found", __FUNCTION__);
 
@@ -1691,12 +1696,10 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             /* Continue and create new VM using data from VSD and downloaded object.
              * The downloaded images should be converted to VDI/VMDK if they have another format */
             Utf8Str strInstId("default cloud instance id");
-            {
-                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
-                if (aVBoxValues.size() != 0)//paranoia but anyway...
-                    strInstId = aVBoxValues[0];
-                LogRel(("%s: Importing cloud instance %s\n", __FUNCTION__, strInstId.c_str()));
-            }
+            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId); //aVBoxValues is set in this #define
+            if (aVBoxValues.size() != 0)//paranoia but anyway...
+                strInstId = aVBoxValues[0];
+            LogRel(("%s: Importing cloud instance %s\n", __FUNCTION__, strInstId.c_str()));
 
             /* Processing the downloaded object (prepare for the local import) */
             RTVFSIOSTREAM hVfsIosSrc;
@@ -1718,7 +1721,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 vsys.strName = strVMName;
                 uint32_t cpus = 1;
                 {
-                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CPU)//aVBoxValues is set in this #define
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CPU); //aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                     {
                         vsdData = aVBoxValues[0];
@@ -1731,7 +1734,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 ULONG memory;//Mb
                 pGuestOSType->COMGETTER(RecommendedRAM)(&memory);
                 {
-                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Memory)//aVBoxValues is set in this #define
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Memory); //aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                     {
                         vsdData = aVBoxValues[0];
@@ -1743,7 +1746,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 }
 
                 {
-                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Description)//aVBoxValues is set in this #define
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Description); //aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                     {
                         vsdData = aVBoxValues[0];
@@ -1753,7 +1756,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 }
 
                 {
-                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_OS)//aVBoxValues is set in this #define
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_OS); //aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                         strOsType = aVBoxValues[0];
                     vsys.strTypeVBox = strOsType;
@@ -1762,7 +1765,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
                 ovf::EthernetAdapter ea;
                 {
-                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_NetworkAdapter)//aVBoxValues is set in this #define
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_NetworkAdapter); //aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                     {
                         ea.strAdapterType = (Utf8Str)(aVBoxValues[0]);
@@ -1787,7 +1790,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     hdc.system = ovf::HardDiskController::SATA;
                     hdc.strIdController = "0";
 
-                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskControllerSATA)//aVBoxValues is set in this #define
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskControllerSATA); //aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                         hdc.strControllerType = (Utf8Str)(aVBoxValues[0]);
                     else
@@ -1806,7 +1809,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                 }
 
                 {
-                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_SoundCard)//aVBoxValues is set in this #define
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_SoundCard); //aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                         vsys.strSoundCardType  = (Utf8Str)(aVBoxValues[0]);
                     else
@@ -2091,7 +2094,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
          * It's needed to go through this list to find the record about the downloaded object.
          * But it was the first record added into the list, so aVBoxValues[0] should be correct here.
          */
-        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
+        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage); //aVBoxValues is set in this #define
         if (!fKeepDownloadedObject)
         {
             if (aVBoxValues.size() != 0)
