@@ -817,14 +817,7 @@ VBOX_WITH_MEMBALLOON = 1
 VBOX_WITH_LIBCURL = 1
 # Enable libssh (required for cloud network attachment)
 if1of ($(KBUILD_TARGET), darwin linux win)
- ifneq ($(VBOX_GCC_VERSION_CC),)
-  if $(VBOX_GCC_VERSION_CC) >= 50000
-   # Build libssh with newer GCC only
-   VBOX_WITH_LIBSSH = 1
-  endif
- else
-  VBOX_WITH_LIBSSH = 1
- endif
+ VBOX_WITH_LIBSSH = 1
 endif
 # Enable Host=>Guest Drag'n'Drop
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
@@ -4652,6 +4645,15 @@ ifdef VBOX_WITH_LIBTPMS
  SDK_VBOX_TPMS_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libtpms-0.9.0/include
  SDK_VBOX_TPMS_INCS         ?= $(SDK_VBOX_TPMS_DEFAULT_INCS)
  SDK_VBOX_TPMS_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libtpms$(VBOX_SUFF_LIB)
+endif
+
+# Older versions of GCC cannot compile libssh
+ifneq ($(VBOX_GCC_VERSION_CC),)
+ if $(VBOX_GCC_VERSION_CC) < 50000
+   # Build libssh with newer GCC only
+   VBOX_WITH_LIBSSH =
+   VBOX_WITH_CLOUD_NET =
+ endif
 endif
 
 ifdef VBOX_WITH_LIBSSH
