@@ -1753,8 +1753,15 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         pDirEntry->Info.Attr.fMode |= 0111;
 #endif
         vbfsCopyFsObjInfoFromIprt(&pSFDEntry->Info, &pDirEntry->Info);
-        pSFDEntry->cucShortName = 0;
 
+        /* The shortname (only used by OS/2 atm): */
+        Assert(pDirEntry->cwcShortName < RT_ELEMENTS(pSFDEntry->uszShortName));
+        Assert(pDirEntry->wszShortName[pDirEntry->cwcShortName] == '\0');
+        pSFDEntry->cucShortName = pDirEntry->cwcShortName;
+        if (pDirEntry->cwcShortName)
+            memcpy(pSFDEntry->uszShortName, pDirEntry->wszShortName, sizeof(pSFDEntry->uszShortName));
+
+        /* The name: */
         if (fUtf8)
         {
             void *src, *dst;
@@ -1809,6 +1816,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
             cbNeeded = RT_OFFSETOF(SHFLDIRINFO, name.String) + pSFDEntry->name.u16Size;
         }
 
+        /* Advance */
         pSFDEntry   = (PSHFLDIRINFO)((uintptr_t)pSFDEntry + cbNeeded);
         *pcbBuffer += cbNeeded;
         cbBufferOrg-= cbNeeded;
