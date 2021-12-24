@@ -620,27 +620,42 @@ FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd,
                                 /*
                                  * Initialize the structures.
                                  */
-                                pFsFsd->hHostDir        = pReq->CreateParms.Handle;
-                                pFsFsd->u32Magic        = VBOXSFFS_MAGIC;
-                                pFsFsd->pFolder         = pFolder;
-                                pFsFsd->pBuf            = pDataBuf;
-                                pFsFsd->offLastFile     = 0;
-                                pDataBuf->u32Magic      = VBOXSFFSBUF_MAGIC;
-                                pDataBuf->cbValid       = 0;
-                                pDataBuf->cEntriesLeft  = 0;
-                                pDataBuf->pEntry        = NULL;
-                                pDataBuf->pFilter       = pFilter;
-                                pDataBuf->fMustHaveAttribs   = (uint8_t)(  (fAttribs >> 8)
-                                                                         & (FILE_READONLY | FILE_HIDDEN | FILE_SYSTEM | FILE_DIRECTORY | FILE_ARCHIVED));
-                                pDataBuf->fExcludedAttribs   = (uint8_t)(~fAttribs & (FILE_HIDDEN | FILE_SYSTEM | FILE_DIRECTORY));
-                                pDataBuf->fLongFilenames     = RT_BOOL(fAttribs & FF_ATTR_LONG_FILENAME);
+                                pFsFsd->hHostDir            = pReq->CreateParms.Handle;
+                                pFsFsd->u32Magic            = VBOXSFFS_MAGIC;
+                                pFsFsd->pFolder             = pFolder;
+                                pFsFsd->pBuf                = pDataBuf;
+                                pFsFsd->offLastFile         = 0;
+                                pDataBuf->u32Magic          = VBOXSFFSBUF_MAGIC;
+                                pDataBuf->cbValid           = 0;
+                                pDataBuf->cEntriesLeft      = 0;
+                                pDataBuf->pEntry            = NULL;
+                                pDataBuf->pFilter           = pFilter;
+                                pDataBuf->fMustHaveAttribs  = (uint8_t)(  (fAttribs >> 8)
+                                                                        & (FILE_READONLY | FILE_HIDDEN | FILE_SYSTEM | FILE_DIRECTORY | FILE_ARCHIVED));
+                                pDataBuf->fExcludedAttribs  = (uint8_t)(~fAttribs & (FILE_HIDDEN | FILE_SYSTEM | FILE_DIRECTORY));
+                                pDataBuf->fLongFilenames    = RT_BOOL(fAttribs & FF_ATTR_LONG_FILENAME);
                                 LogFlow(("FS32_FINDFIRST: fMustHaveAttribs=%#x fExcludedAttribs=%#x fLongFilenames=%d (fAttribs=%#x)\n",
                                          pDataBuf->fMustHaveAttribs, pDataBuf->fExcludedAttribs, pDataBuf->fLongFilenames, fAttribs));
                                 pDataBuf->cMinLocalTimeDelta = vboxSfOs2GetLocalTimeDelta();
 
                                 rc = vboxSfOs2ReadDirEntries(pFolder, pFsFsd, pDataBuf, uLevel, fFlags,
                                                              pbData, cbData, cMaxMatches ? cMaxMatches : UINT16_MAX, pcMatches);
-                                if (rc == NO_ERROR)
+                                if (rc != ERROR_BUFFER_OVERFLOW)
+                                { /* likely */ }
+                                else if (   uLevel == FI_LVL_EAS_FROM_LIST
+                                         || uLevel == FI_LVL_EAS_FROM_LIST_64)
+                                {
+                                    /* If we've got a buffer overflow asking for EAs from a LIST, we are allowed (indeed
+                                       expected) to fall back to level 2 (EA size) and return ERROR_EAS_DIDNT_FIT.
+                                       See http://www.edm2.com/index.php/DosFindFirst for somewhat dated details. */
+                                    rc = vboxSfOs2ReadDirEntries(pFolder, pFsFsd, pDataBuf,
+                                                                 uLevel == FI_LVL_EAS_FROM_LIST_64
+                                                                 ? FI_LVL_STANDARD_EASIZE_64 : FI_LVL_STANDARD_EASIZE,
+                                                                 fFlags, pbData, cbData, 1 /* no more than one! */, pcMatches);
+                                    if (rc == NO_ERROR)
+                                        rc = ERROR_EAS_DIDNT_FIT;
+                                }
+                                if (rc == NO_ERROR || rc == ERROR_EAS_DIDNT_FIT)
                                 {
                                     uint32_t cRefs = ASMAtomicIncU32(&pFolder->cOpenSearches);
                                     Assert(cRefs < _4K); RT_NOREF(cRefs);
@@ -752,6 +767,19 @@ FS32_FINDFROMNAME(PFSFSI pFsFsi, PVBOXSFFS pFsFsd, PBYTE pbData, ULONG cbData, P
         rc = vboxSfOs2ReadDirEntries(pFolder, pFsFsd, pDataBuf, uLevel, fFlags, pbData, cbData,
                                      cMaxMatches ? cMaxMatches : UINT16_MAX, pcMatches);
     }
+    if (rc != ERROR_BUFFER_OVERFLOW)
+    { /* likely */ }
+    else if (   uLevel == FI_LVL_EAS_FROM_LIST
+             || uLevel == FI_LVL_EAS_FROM_LIST_64)
+    {
+        /* If we've got a buffer overflow asking for EAs from a LIST, we are allowed (indeed
+           expected) to fall back to level 2 (EA size) and return ERROR_EAS_DIDNT_FIT. */
+        rc = vboxSfOs2ReadDirEntries(pFolder, pFsFsd, pDataBuf,
+                                     uLevel == FI_LVL_EAS_FROM_LIST_64 ? FI_LVL_STANDARD_EASIZE_64 : FI_LVL_STANDARD_EASIZE,
+                                     fFlags, pbData, cbData, 1 /* no more than one! */, pcMatches);
+        if (rc == NO_ERROR)
+            rc = ERROR_EAS_DIDNT_FIT;
+    }
 
     RT_NOREF(pFsFsi, pszName);
     LogFlow(("FS32_FINDFROMNAME: returns %u (*pcMatches=%#x)\n", rc, *pcMatches));
@@ -799,6 +827,20 @@ FS32_FINDNEXT(PFSFSI pFsFsi, PVBOXSFFS pFsFsd, PBYTE pbData, ULONG cbData, PUSHO
      */
     APIRET rc = vboxSfOs2ReadDirEntries(pFolder, pFsFsd, pDataBuf, uLevel, fFlags, pbData, cbData,
                                         cMaxMatches ? cMaxMatches : UINT16_MAX, pcMatches);
+    if (rc != ERROR_BUFFER_OVERFLOW)
+    { /* likely */ }
+    else if (   uLevel == FI_LVL_EAS_FROM_LIST
+             || uLevel == FI_LVL_EAS_FROM_LIST_64)
+    {
+        /* If we've got a buffer overflow asking for EAs from a LIST, we are allowed (indeed
+           expected) to fall back to level 2 (EA size) and return ERROR_EAS_DIDNT_FIT.
+           See http://www.edm2.com/index.php/DosFindNext for somewhat dated details. */
+        rc = vboxSfOs2ReadDirEntries(pFolder, pFsFsd, pDataBuf,
+                                     uLevel == FI_LVL_EAS_FROM_LIST_64 ? FI_LVL_STANDARD_EASIZE_64 : FI_LVL_STANDARD_EASIZE,
+                                     fFlags, pbData, cbData, 1 /* no more than one! */, pcMatches);
+        if (rc == NO_ERROR)
+            rc = ERROR_EAS_DIDNT_FIT;
+    }
 
     NOREF(pFsFsi);
     LogFlow(("FS32_FINDNEXT: returns %u (*pcMatches=%#x)\n", rc, *pcMatches));
