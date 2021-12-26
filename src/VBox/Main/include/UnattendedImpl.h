@@ -231,6 +231,7 @@ private:
     } DETECTBUFFER;
     HRESULT i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *puBuf, VBOXOSTYPE *penmOsType);
     HRESULT i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *puBuf, VBOXOSTYPE *penmOsType);
+    HRESULT i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *puBuf, VBOXOSTYPE *penmOsType);
 
     /**
      * Worker for reconfigureVM().

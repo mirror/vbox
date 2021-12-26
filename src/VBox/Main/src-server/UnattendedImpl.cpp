@@ -142,6 +142,45 @@ typedef struct UnattendedInstallationDisk
 } UnattendedInstallationDisk;
 
 
+/**
+ * OS/2 syslevel file header.
+ */
+#pragma pack(1)
+typedef struct OS2SYSLEVELHDR
+{
+    uint16_t    uMinusOne;          /**< 0x00: UINT16_MAX */
+    char        achSignature[8];    /**< 0x02: "SYSLEVEL" */
+    uint8_t     abReserved1[5];     /**< 0x0a: Usually zero. Ignore.  */
+    uint16_t    uSyslevelFileVer;   /**< 0x0f: The syslevel file version: 1. */
+    uint8_t     abReserved2[16];    /**< 0x11: Zero. Ignore.  */
+    uint32_t    offTable;           /**< 0x21: Offset of the syslevel table. */
+} OS2SYSLEVELHDR;
+#pragma pack()
+AssertCompileSize(OS2SYSLEVELHDR, 0x25);
+
+/**
+ * OS/2 syslevel table entry.
+ */
+#pragma pack(1)
+typedef struct OS2SYSLEVELENTRY
+{
+    uint16_t    id;                 /**< 0x00: ? */
+    uint8_t     bEdition;           /**< 0x02: The OS/2 edition: 0=standard, 1=extended, x=component defined */
+    uint8_t     bVersion;           /**< 0x03: 0x45 = 4.5 */
+    uint8_t     bModify;            /**< 0x04: Lower nibble is added to bVersion, so 0x45 0x02 => 4.52 */
+    uint8_t     abReserved1[2];     /**< 0x05: Zero. Ignore. */
+    char        achCsdLevel[8];     /**< 0x07: The current CSD level. */
+    char        achCsdPrior[8];     /**< 0x0f: The prior CSD level. */
+    char        szName[80];         /**< 0x5f: System/component name. */
+    char        achId[9];           /**< 0x67: System/component ID. */
+    uint8_t     bRefresh;           /**< 0x70: Single digit refresh version, ignored if zero. */
+    char        szType[9];          /**< 0x71: Some kind of type string. Optional */
+    uint8_t     abReserved2[6];     /**< 0x7a: Zero. Ignore. */
+} OS2SYSLEVELENTRY;
+#pragma pack()
+AssertCompileSize(OS2SYSLEVELENTRY, 0x80);
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
 *
@@ -348,6 +387,8 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
     HRESULT hrc = i_innerDetectIsoOSWindows(hVfsIso, &uBuf, &enmOsType);
     if (hrc == S_FALSE && enmOsType == VBOXOSTYPE_Unknown)
         hrc = i_innerDetectIsoOSLinux(hVfsIso, &uBuf, &enmOsType);
+    if (hrc == S_FALSE && enmOsType == VBOXOSTYPE_Unknown)
+        hrc = i_innerDetectIsoOSOs2(hVfsIso, &uBuf, &enmOsType);
     if (enmOsType != VBOXOSTYPE_Unknown)
     {
         try {  mStrDetectedOSTypeId = Global::OSTypeId(enmOsType); }
@@ -1176,6 +1217,292 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
             return S_FALSE;
     }
 
+    return S_FALSE;
+}
+
+
+/**
+ * Detect OS/2 installation ISOs.
+ *
+ * Mainly aiming at ACP2/MCP2 as that's what we currently use in our testing.
+ *
+ * @returns COM status code.
+ * @retval  S_OK if detected
+ * @retval  S_FALSE if not fully detected.
+ *
+ * @param   hVfsIso     The ISO file system.
+ * @param   pBuf        Read buffer.
+ * @param   penmOsType  Where to return the OS type.  This is initialized to
+ *                      VBOXOSTYPE_Unknown.
+ */
+HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBOXOSTYPE *penmOsType)
+{
+    /*
+     * The OS2SE20.SRC contains the location of the tree with the diskette
+     * images, typically "\OS2IMAGE".
+     */
+    RTVFSFILE hVfsFile;
+    int vrc = RTVfsFileOpen(hVfsIso, "OS2SE20.SRC", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        size_t cbRead = 0;
+        vrc = RTVfsFileRead(hVfsFile, pBuf->sz, sizeof(pBuf->sz) - 1, &cbRead);
+        RTVfsFileRelease(hVfsFile);
+        if (RT_SUCCESS(vrc))
+        {
+            pBuf->sz[cbRead] = '\0';
+            RTStrStrip(pBuf->sz);
+            vrc = RTStrValidateEncoding(pBuf->sz);
+            if (RT_SUCCESS(vrc))
+                LogRelFlow(("Unattended: OS2SE20.SRC=%s\n", pBuf->sz));
+            else
+                LogRel(("Unattended: OS2SE20.SRC invalid encoding: %Rrc, %.*Rhxs\n", vrc, cbRead, pBuf->sz));
+        }
+        else
+            LogRel(("Unattended: Error reading OS2SE20.SRC: %\n", vrc));
+    }
+    /*
+     * ArcaOS has dropped the file, assume it's \OS2IMAGE and see if it's there.
+     */
+    else if (vrc == VERR_FILE_NOT_FOUND)
+        RTStrCopy(pBuf->sz, sizeof(pBuf->sz), "\\OS2IMAGE");
+    else
+        return S_FALSE;
+
+    /*
+     * Check that the directory directory exists and has a DISK_0 under it
+     * with an OS2LDR on it.
+     */
+    size_t const cchOs2Image = strlen(pBuf->sz);
+    vrc = RTPathAppend(pBuf->sz, sizeof(pBuf->sz), "DISK_0/OS2LDR");
+    RTFSOBJINFO ObjInfo = {0};
+    vrc = RTVfsQueryPathInfo(hVfsIso, pBuf->sz, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+    if (vrc == VERR_FILE_NOT_FOUND)
+    {
+        RTStrCat(pBuf->sz, sizeof(pBuf->sz), "."); /* eCS 2.0 image includes the dot from the 8.3 name.  */
+        vrc = RTVfsQueryPathInfo(hVfsIso, pBuf->sz, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+    }
+    if (   RT_FAILURE(vrc)
+        || !RTFS_IS_FILE(ObjInfo.Attr.fMode))
+    {
+        LogRel(("Unattended: RTVfsQueryPathInfo(, '%s' (from OS2SE20.SRC),) -> %Rrc, fMode=%#x\n",
+                pBuf->sz, vrc, ObjInfo.Attr.fMode));
+        return S_FALSE;
+    }
+
+    /*
+     * So, it's some kind of OS/2 2.x or later ISO alright.
+     */
+    *penmOsType = VBOXOSTYPE_OS2;
+    mStrDetectedOSHints.printf("OS2SE20.SRC=%.*s", cchOs2Image, pBuf->sz);
+
+    /*
+     * ArcaOS ISOs seems to have a AOSBOOT dir on them.
+     * This contains a ARCANOAE.FLG file with content we can use for the version:
+     *      ArcaOS 5.0.7 EN
+     *      Built 2021-12-07 18:34:34
+     * We drop the "ArcaOS" bit, as it's covered by penmOsType.  Then we pull up
+     * the second line.
+     *
+     * Note! Yet to find a way to do unattended install of ArcaOS, as it comes
+     *       with no CD-boot floppy images, only simple .PF archive files for
+     *       unpacking onto the ram disk or whatever.  Modifying these is
+     *       possible (ibsen's aPLib v0.36 compression with some simple custom
+     *       headers), but it would probably be a royal pain.  Could perhaps
+     *       cook something from OS2IMAGE\DISK_0 thru 3...
+     */
+    vrc = RTVfsQueryPathInfo(hVfsIso, "AOSBOOT", &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+    if (   RT_SUCCESS(vrc)
+        && RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+    {
+        *penmOsType = VBOXOSTYPE_ArcaOS;
+
+        /* Read the version file:  */
+        vrc = RTVfsFileOpen(hVfsIso, "SYS/ARCANOAE.FLG", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+        if (RT_SUCCESS(vrc))
+        {
+            size_t cbRead = 0;
+            vrc = RTVfsFileRead(hVfsFile, pBuf->sz, sizeof(pBuf->sz) - 1, &cbRead);
+            RTVfsFileRelease(hVfsFile);
+            pBuf->sz[cbRead] = '\0';
+            if (RT_SUCCESS(vrc))
+            {
+                /* Strip the OS name: */
+                char *pszVersion = RTStrStrip(pBuf->sz);
+                static char s_szArcaOS[] = "ArcaOS";
+                if (RTStrStartsWith(pszVersion, s_szArcaOS))
+                    pszVersion = RTStrStripL(pszVersion + sizeof(s_szArcaOS) - 1);
+
+                /* Pull up the 2nd line if it, condensing the \r\n into a single space. */
+                char *pszNewLine = strchr(pszVersion, '\n');
+                if (pszNewLine && RTStrStartsWith(pszNewLine + 1, "Built 20"))
+                {
+                    size_t offRemove = 0;
+                    while (RT_C_IS_SPACE(pszNewLine[-1 - offRemove]))
+                        offRemove++;
+                    if (offRemove > 0)
+                    {
+                        pszNewLine -= offRemove;
+                        memmove(pszNewLine, pszNewLine + offRemove, strlen(pszNewLine + offRemove) - 1);
+                    }
+                    *pszNewLine = ' ';
+                }
+
+                /* Drop any additional lines: */
+                pszNewLine = strchr(pszVersion, '\n');
+                if (pszNewLine)
+                    *pszNewLine = '\0';
+                RTStrStripR(pszVersion);
+
+                /* Done (hope it makes some sense). */
+                mStrDetectedOSVersion = pszVersion;
+            }
+            else
+                LogRel(("Unattended: failed to read AOSBOOT/ARCANOAE.FLG: %Rrc\n", vrc));
+        }
+        else
+            LogRel(("Unattended: failed to open AOSBOOT/ARCANOAE.FLG for reading: %Rrc\n", vrc));
+    }
+    /*
+     * Similarly, eCS has an ECS directory and it typically contains a
+     * ECS_INST.FLG file with the version info.  Content differs a little:
+     *      eComStation 2.0 EN_US Thu May 13 10:27:54 pm 2010
+     *      Built on ECS60441318
+     * Here we drop the "eComStation" bit and leave the 2nd line as it.
+     *
+     * Note! At least 2.0 has a DISKIMGS folder with what looks like boot
+     *       disks, so we could probably get something going here without
+     *       needing to write an OS2 boot sector...
+     */
+    else
+    {
+        vrc = RTVfsQueryPathInfo(hVfsIso, "ECS", &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+        if (   RT_SUCCESS(vrc)
+            && RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+        {
+            *penmOsType = VBOXOSTYPE_ECS;
+
+            /* Read the version file:  */
+            vrc = RTVfsFileOpen(hVfsIso, "ECS/ECS_INST.FLG", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+            if (RT_SUCCESS(vrc))
+            {
+                size_t cbRead = 0;
+                vrc = RTVfsFileRead(hVfsFile, pBuf->sz, sizeof(pBuf->sz) - 1, &cbRead);
+                RTVfsFileRelease(hVfsFile);
+                pBuf->sz[cbRead] = '\0';
+                if (RT_SUCCESS(vrc))
+                {
+                    /* Strip the OS name: */
+                    char *pszVersion = RTStrStrip(pBuf->sz);
+                    static char s_szECS[] = "eComStation";
+                    if (RTStrStartsWith(pszVersion, s_szECS))
+                        pszVersion = RTStrStripL(pszVersion + sizeof(s_szECS) - 1);
+
+                    /* Drop any additional lines: */
+                    char *pszNewLine = strchr(pszVersion, '\n');
+                    if (pszNewLine)
+                        *pszNewLine = '\0';
+                    RTStrStripR(pszVersion);
+
+                    /* Done (hope it makes some sense). */
+                    mStrDetectedOSVersion = pszVersion;
+                }
+                else
+                    LogRel(("Unattended: failed to read ECS/ECS_INST.FLG: %Rrc\n", vrc));
+            }
+            else
+                LogRel(("Unattended: failed to open ECS/ECS_INST.FLG for reading: %Rrc\n", vrc));
+        }
+        else
+        {
+            /*
+             * Official IBM OS/2 builds doesn't have any .FLG file on them,
+             * so need to pry the information out in some other way.  Best way
+             * is to read the SYSLEVEL.OS2 file, which is typically on disk #2,
+             * though on earlier versions (warp3) it was disk #1.
+             */
+            vrc = RTPathJoin(pBuf->sz, sizeof(pBuf->sz), strchr(mStrDetectedOSHints.c_str(), '=') + 1,
+                             "/DISK_2/SYSLEVEL.OS2");
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTVfsFileOpen(hVfsIso, pBuf->sz, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+                if (vrc == VERR_FILE_NOT_FOUND)
+                {
+                    RTPathJoin(pBuf->sz, sizeof(pBuf->sz), strchr(mStrDetectedOSHints.c_str(), '=') + 1, "/DISK_1/SYSLEVEL.OS2");
+                    vrc = RTVfsFileOpen(hVfsIso, pBuf->sz, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+                }
+                if (RT_SUCCESS(vrc))
+                {
+                    RT_ZERO(pBuf->ab);
+                    size_t cbRead = 0;
+                    vrc = RTVfsFileRead(hVfsFile, pBuf->ab, sizeof(pBuf->ab), &cbRead);
+                    RTVfsFileRelease(hVfsFile);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        /* Check the header. */
+                        OS2SYSLEVELHDR   const *pHdr   = (OS2SYSLEVELHDR const *)&pBuf->ab[0];
+                        if (   pHdr->uMinusOne == UINT16_MAX
+                            && pHdr->uSyslevelFileVer == 1
+                            && memcmp(pHdr->achSignature, RT_STR_TUPLE("SYSLEVEL")) == 0
+                            && pHdr->offTable < cbRead
+                            && pHdr->offTable + sizeof(OS2SYSLEVELENTRY) <= cbRead)
+                        {
+                            OS2SYSLEVELENTRY *pEntry = (OS2SYSLEVELENTRY *)&pBuf->ab[pHdr->offTable];
+                            if (   RT_SUCCESS(RTStrValidateEncodingEx(pEntry->szName, sizeof(pEntry->szName),
+                                                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED))
+                                && RT_SUCCESS(RTStrValidateEncodingEx(pEntry->achCsdLevel, sizeof(pEntry->achCsdLevel), 0))
+                                && pEntry->bVersion != 0
+                                && ((pEntry->bVersion >> 4) & 0xf) < 10
+                                && (pEntry->bVersion & 0xf) < 10
+                                && pEntry->bModify  < 10
+                                && pEntry->bRefresh < 10)
+                            {
+                                /* Flavor: */
+                                char *pszName = RTStrStrip(pEntry->szName);
+                                if (pszName)
+                                    mStrDetectedOSFlavor = pszName;
+
+                                /* Version: */
+                                if (pEntry->bRefresh != 0)
+                                    mStrDetectedOSVersion.printf("%d.%d%d.%d", pEntry->bVersion >> 4, pEntry->bVersion & 0xf,
+                                                                 pEntry->bModify, pEntry->bRefresh);
+                                else
+                                    mStrDetectedOSVersion.printf("%d.%d%d", pEntry->bVersion >> 4, pEntry->bVersion & 0xf,
+                                                                 pEntry->bModify);
+                                pEntry->achCsdLevel[sizeof(pEntry->achCsdLevel) - 1] = '\0';
+                                char *pszCsd = RTStrStrip(pEntry->achCsdLevel);
+                                if (*pszCsd != '\0')
+                                {
+                                    mStrDetectedOSVersion.append(' ');
+                                    mStrDetectedOSVersion.append(pszCsd);
+                                }
+                                if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "4.50") >= 0)
+                                    *penmOsType = VBOXOSTYPE_OS2Warp45;
+                                else if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "4.00") >= 0)
+                                    *penmOsType = VBOXOSTYPE_OS2Warp4;
+                                else if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "3.00") >= 0)
+                                    *penmOsType = VBOXOSTYPE_OS2Warp3;
+                            }
+                            else
+                                LogRel(("Unattended: bogus SYSLEVEL.OS2 file entry: %.128Rhxd\n", pEntry));
+                        }
+                        else
+                            LogRel(("Unattended: bogus SYSLEVEL.OS2 file header: uMinusOne=%#x uSyslevelFileVer=%#x achSignature=%.8Rhxs offTable=%#x vs cbRead=%#zx\n",
+                                    pHdr->uMinusOne, pHdr->uSyslevelFileVer, pHdr->achSignature, pHdr->offTable, cbRead));
+                    }
+                    else
+                        LogRel(("Unattended: failed to read SYSLEVEL.OS2: %Rrc\n", vrc));
+                }
+                else
+                    LogRel(("Unattended: failed to open '%s' for reading: %Rrc\n", pBuf->sz, vrc));
+            }
+        }
+    }
+
+    /** @todo language detection? */
+
+    /** @todo Return true if we can actually do an unattended installation
+     *        using this ISO.  So far, we cannot from any OS/2 image. */
     return S_FALSE;
 }
 

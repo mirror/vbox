@@ -65,6 +65,10 @@ using namespace std;
         else
             pUinstaller = new UnattendedWindowsSifInstaller(pParent);
     }
+    else if (enmOsType >= VBOXOSTYPE_OS2 && enmOsType < VBOXOSTYPE_Linux)
+    {
+        /** @todo OS/2 */
+    }
     else
     {
         if (enmOsType == VBOXOSTYPE_Debian || enmOsType == VBOXOSTYPE_Debian_x64)
