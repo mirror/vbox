@@ -450,12 +450,6 @@ typedef struct RTFSISOVDSINFO
 typedef RTFSISOVDSINFO *PRTFSISOVDSINFO;
 
 
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-
-
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
@@ -2433,16 +2427,19 @@ DECL_FORCE_INLINE(bool) rtFsIsoDir_IsEntryEqualUtf16Big(PCISO9660DIRREC pDirRec,
  * @param   pszEntry            The uppercased ASCII string to compare with.
  * @param   cchEntry            The length of the compare string.
  * @param   puVersion           Where to return any file version number.
+ *
+ * @note    We're using RTStrNICmpAscii here because of non-conforming ISOs with
+ *          entirely lowercase name or mixed cased names.
  */
 DECL_FORCE_INLINE(bool) rtFsIsoDir_IsEntryEqualAscii(PCISO9660DIRREC pDirRec, const char *pszEntry, size_t cchEntry,
-                                                         uint32_t *puVersion)
+                                                     uint32_t *puVersion)
 {
     /* ASSUME directories cannot have any version tags. */
     if (pDirRec->fFileFlags & ISO9660_FILE_FLAGS_DIRECTORY)
     {
         if (RT_LIKELY(pDirRec->bFileIdLength != cchEntry))
             return false;
-        if (RT_LIKELY(memcmp(pDirRec->achFileId, pszEntry, cchEntry) != 0))
+        if (RT_LIKELY(RTStrNICmpAscii(pDirRec->achFileId, pszEntry, cchEntry) != 0))
             return false;
     }
     else
@@ -2452,7 +2449,7 @@ DECL_FORCE_INLINE(bool) rtFsIsoDir_IsEntryEqualAscii(PCISO9660DIRREC pDirRec, co
             return false;
         if (cchNameDelta == 0)
         {
-            if (RT_LIKELY(memcmp(pDirRec->achFileId, pszEntry, cchEntry) != 0))
+            if (RT_LIKELY(RTStrNICmpAscii(pDirRec->achFileId, pszEntry, cchEntry) != 0))
                 return false;
             *puVersion = 1;
         }
@@ -2460,7 +2457,7 @@ DECL_FORCE_INLINE(bool) rtFsIsoDir_IsEntryEqualAscii(PCISO9660DIRREC pDirRec, co
         {
             if (RT_LIKELY(pDirRec->achFileId[cchEntry] != ';'))
                 return false;
-            if (RT_LIKELY(memcmp(pDirRec->achFileId, pszEntry, cchEntry) != 0))
+            if (RT_LIKELY(RTStrNICmpAscii(pDirRec->achFileId, pszEntry, cchEntry) != 0))
                 return false;
             uint32_t uVersion;
             size_t  cchVersion = rtFsIso9660GetVersionLengthAscii(pDirRec->achFileId, pDirRec->bFileIdLength, &uVersion);
@@ -5786,8 +5783,19 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
                 return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_UNKNOWN_FORMAT,
                                            "Not ISO? Unable to recognize volume descriptor signature: %.5Rhxs", Buf.VolDescHdr.achStdId);
         else if (enmState == kStateCdSeq)
+        {
+#if 1
+            /* The warp server for ebusiness update ISOs knowns as ACP2 & MCP2 ends up here,
+               as they do in deed miss a terminator volume descriptor and we're now at the
+               root directory already. Just detect this, ignore it and get on with things. */
+            Log(("rtFsIsoVolTryInit: Ignoring missing ISO 9660 terminator volume descriptor (found %.5Rhxs).\n",
+                 Buf.VolDescHdr.achStdId));
+            break;
+#else
             return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                        "Missing ISO 9660 terminator volume descriptor? (Found %.5Rhxs)", Buf.VolDescHdr.achStdId);
+#endif
+        }
         else if (enmState == kStateUdfSeq)
             return RTERRINFO_LOG_SET_F(pErrInfo, VERR_VFS_BOGUS_FORMAT,
                                        "Missing UDF terminator volume descriptor? (Found %.5Rhxs)", Buf.VolDescHdr.achStdId);

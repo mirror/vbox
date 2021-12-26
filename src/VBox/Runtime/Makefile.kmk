@@ -1899,6 +1899,7 @@ RuntimeBldProg_SOURCES         = \
 	common/string/RTStrCopyP.cpp \
 	common/string/RTStrIStartsWith.cpp \
 	common/string/RTStrNCmp.cpp \
+	common/string/RTStrNICmpAscii.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrPrintHexBytes.cpp \
 	common/string/RTStrStr.cpp \
