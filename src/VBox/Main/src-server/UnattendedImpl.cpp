@@ -1338,7 +1338,7 @@ HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBO
                 if (pszNewLine && RTStrStartsWith(pszNewLine + 1, "Built 20"))
                 {
                     size_t offRemove = 0;
-                    while (RT_C_IS_SPACE(pszNewLine[-1 - offRemove]))
+                    while (RT_C_IS_SPACE(pszNewLine[-1 - (ssize_t)offRemove]))
                         offRemove++;
                     if (offRemove > 0)
                     {
