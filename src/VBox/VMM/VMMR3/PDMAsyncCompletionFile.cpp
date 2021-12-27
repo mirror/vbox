@@ -147,7 +147,7 @@ PPDMACTASKFILE pdmacFileTaskAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
         if (RT_FAILURE(rc))
             pTask = NULL;
 
-        LogFlow(("Allocated task %p\n", pTask));
+        LogFlow(("Allocated task %p -> %Rrc\n", pTask, rc));
     }
     else
     {
@@ -157,9 +157,8 @@ PPDMACTASKFILE pdmacFileTaskAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
         pTask = pEndpoint->pTasksFreeHead;
         pEndpoint->pTasksFreeHead = pTask->pNext;
         ASMAtomicDecU32(&pEndpoint->cTasksCached);
+        pTask->pNext = NULL;
     }
-
-    pTask->pNext = NULL;
 
     return pTask;
 }
