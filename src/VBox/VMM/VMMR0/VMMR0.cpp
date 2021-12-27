@@ -1796,6 +1796,8 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
          * Does EMT specific ring-0 init.
          */
         case VMMR0_DO_VMMR0_INIT_EMT:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
             rc = vmmR0InitVMEmt(pGVM, idCpu);
             break;
 
@@ -1824,7 +1826,7 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
         case VMMR0_DO_VMMR0_LOG_FLUSHER:
             if (idCpu != NIL_VMCPUID)
                 return VERR_INVALID_CPU_ID;
-            if (pReqHdr == NULL)
+            if (pReqHdr == NULL && pGVM != NULL)
                 rc = vmmR0LogFlusher(pGVM);
             else
                 return VERR_INVALID_PARAMETER;
