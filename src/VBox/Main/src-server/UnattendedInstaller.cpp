@@ -43,6 +43,7 @@
 # undef ES /* Workaround for someone dragging the namespace pollutor sys/regset.h. Sigh. */
 #endif
 #include <iprt/formats/iso9660.h>
+#include <iprt/formats/fat.h>
 #include <iprt/cpp/path.h>
 
 
@@ -66,9 +67,7 @@ using namespace std;
             pUinstaller = new UnattendedWindowsSifInstaller(pParent);
     }
     else if (enmOsType >= VBOXOSTYPE_OS2 && enmOsType < VBOXOSTYPE_Linux)
-    {
-        /** @todo OS/2 */
-    }
+        pUinstaller = new UnattendedOs2Installer(pParent, strDetectedOSHints);
     else
     {
         if (enmOsType == VBOXOSTYPE_Debian || enmOsType == VBOXOSTYPE_Debian_x64)
@@ -316,30 +315,47 @@ HRESULT UnattendedInstaller::prepareAuxFloppyImage(bool fOverwrite)
     Assert(isAuxiliaryFloppyNeeded());
 
     /*
-     * Create the image and get a VFS to it.
+     * Create the image.
      */
-    RTVFS   hVfs;
-    HRESULT hrc = newAuxFloppyImage(getAuxiliaryFloppyFilePath().c_str(), fOverwrite, &hVfs);
+    RTVFSFILE hVfsFile;
+    HRESULT hrc = newAuxFloppyImage(getAuxiliaryFloppyFilePath().c_str(), fOverwrite, &hVfsFile);
     if (SUCCEEDED(hrc))
     {
         /*
-         * Call overridable method to copies the files onto it.
+         * Open the FAT file system so we can copy files onto the floppy.
          */
-        hrc = copyFilesToAuxFloppyImage(hVfs);
+        RTERRINFOSTATIC ErrInfo;
+        RTVFS           hVfs;
+        int vrc = RTFsFatVolOpen(hVfsFile, false /*fReadOnly*/,  0 /*offBootSector*/, &hVfs, RTErrInfoInitStatic(&ErrInfo));
+        RTVfsFileRelease(hVfsFile);
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Call overridable method to copies the files onto it.
+             */
+            hrc = copyFilesToAuxFloppyImage(hVfs);
 
-        /*
-         * Relase the VFS.  On failure, delete the floppy image so the operation can
-         * be repeated in non-overwrite mode and we don't leave any mess behind.
-         */
-        RTVfsRelease(hVfs);
-
+            /*
+             * Release the VFS.  On failure, delete the floppy image so the operation can
+             * be repeated in non-overwrite mode and so that we don't leave any mess behind.
+             */
+            RTVfsRelease(hVfs);
+        }
+        else if (RTErrInfoIsSet(&ErrInfo.Core))
+            hrc = mpParent->setErrorBoth(E_FAIL, vrc,
+                                         tr("Failed to open FAT file system on newly created floppy image '%s': %Rrc: %s"),
+                                         getAuxiliaryFloppyFilePath().c_str(), vrc, ErrInfo.Core.pszMsg);
+        else
+            hrc = mpParent->setErrorBoth(E_FAIL, vrc,
+                                         tr("Failed to open FAT file system onnewly created floppy image '%s': %Rrc"),
+                                         getAuxiliaryFloppyFilePath().c_str(), vrc);
         if (FAILED(hrc))
             RTFileDelete(getAuxiliaryFloppyFilePath().c_str());
     }
     return hrc;
 }
 
-HRESULT UnattendedInstaller::newAuxFloppyImage(const char *pszFilename, bool fOverwrite, PRTVFS phVfs)
+HRESULT UnattendedInstaller::newAuxFloppyImage(const char *pszFilename, bool fOverwrite, PRTVFSFILE phVfsFile)
 {
     /*
      * Open the image file.
@@ -360,29 +376,12 @@ HRESULT UnattendedInstaller::newAuxFloppyImage(const char *pszFilename, bool fOv
         vrc = RTFsFatVolFormat144(hVfsFile, false /*fQuick*/);
         if (RT_SUCCESS(vrc))
         {
-            /*
-             * Open the FAT VFS.
-             */
-            RTERRINFOSTATIC ErrInfo;
-            RTVFS           hVfs;
-            vrc = RTFsFatVolOpen(hVfsFile, false /*fReadOnly*/,  0 /*offBootSector*/, &hVfs, RTErrInfoInitStatic(&ErrInfo));
-            if (RT_SUCCESS(vrc))
-            {
-                *phVfs = hVfs;
-                RTVfsFileRelease(hVfsFile);
-                LogRelFlow(("UnattendedInstaller::newAuxFloppyImage: created, formatted and opened '%s'\n", pszFilename));
-                return S_OK;
-            }
-
-            if (RTErrInfoIsSet(&ErrInfo.Core))
-                hrc = mpParent->setErrorBoth(E_FAIL, vrc, tr("Failed to open newly created floppy image '%s': %Rrc: %s"),
-                                             pszFilename, vrc, ErrInfo.Core.pszMsg);
-            else
-                hrc = mpParent->setErrorBoth(E_FAIL, vrc, tr("Failed to open newly created floppy image '%s': %Rrc"),
-                                             pszFilename, vrc);
+            *phVfsFile = hVfsFile;
+            LogRelFlow(("UnattendedInstaller::newAuxFloppyImage: created and formatted  '%s'\n", pszFilename));
+            return S_OK;
         }
-        else
-            hrc = mpParent->setErrorBoth(E_FAIL, vrc, tr("Failed to format floppy image '%s': %Rrc"), pszFilename, vrc);
+
+        hrc = mpParent->setErrorBoth(E_FAIL, vrc, tr("Failed to format floppy image '%s': %Rrc"), pszFilename, vrc);
         RTVfsFileRelease(hVfsFile);
         RTFileDelete(pszFilename);
     }
@@ -390,7 +389,6 @@ HRESULT UnattendedInstaller::newAuxFloppyImage(const char *pszFilename, bool fOv
         hrc = mpParent->setErrorBoth(E_FAIL, vrc, tr("Failed to create floppy image '%s': %Rrc"), pszFilename, vrc);
     return hrc;
 }
-
 
 HRESULT UnattendedInstaller::copyFilesToAuxFloppyImage(RTVFS hVfs)
 {
@@ -440,7 +438,51 @@ HRESULT UnattendedInstaller::addScriptToFloppyImage(BaseTextScript *pEditor, RTV
                                      tr("Error creating '%s' in floppy image '%s': %Rrc"),
                                      pEditor->getDefaultFilename(), getAuxiliaryFloppyFilePath().c_str());
     return hrc;
+}
 
+HRESULT UnattendedInstaller::addFileToFloppyImage(RTVFS hVfs, const char *pszSrc, const char *pszDst)
+{
+    HRESULT hrc;
+
+    /*
+     * Open the source file.
+     */
+    RTVFSIOSTREAM hVfsIosSrc;
+    int vrc = RTVfsIoStrmOpenNormal(pszSrc, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsIosSrc);
+    if (RT_SUCCESS(vrc))
+    {
+        /*
+         * Open the destination file.
+         */
+        RTVFSFILE hVfsFileDst;
+        vrc = RTVfsFileOpen(hVfs, pszDst,
+                            RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_ALL | (0660 << RTFILE_O_CREATE_MODE_SHIFT),
+                            &hVfsFileDst);
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Do the copying.
+             */
+            RTVFSIOSTREAM hVfsIosDst = RTVfsFileToIoStream(hVfsFileDst);
+            vrc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, 0);
+            if (RT_SUCCESS(vrc))
+                hrc = S_OK;
+            else
+                hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Error writing copying '%s' to floppy image '%s': %Rrc"),
+                                             pszSrc, getAuxiliaryFloppyFilePath().c_str(), vrc);
+            RTVfsIoStrmRelease(hVfsIosDst);
+            RTVfsFileRelease(hVfsFileDst);
+        }
+        else
+            hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Error opening '%s' on floppy image '%s' for writing: %Rrc"),
+                                         pszDst, getAuxiliaryFloppyFilePath().c_str(), vrc);
+
+        RTVfsIoStrmRelease(hVfsIosSrc);
+    }
+    else
+        hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Error opening '%s' for copying onto floppy image '%s': %Rrc"),
+                                     pszSrc, getAuxiliaryFloppyFilePath().c_str(), vrc);
+    return hrc;
 }
 
 HRESULT UnattendedInstaller::prepareAuxIsoImage(bool fOverwrite)
@@ -810,6 +852,628 @@ HRESULT UnattendedInstaller::loadAndParseFileFromIso(RTVFS hVfsOrgIso, const cha
                                      pszFilename, mpParent->i_getIsoPath().c_str(), vrc);
     return hrc;
 }
+
+
+
+/*********************************************************************************************************************************
+*   Implementation of UnattendedOs2Installer                                                                                     *
+*********************************************************************************************************************************/
+
+UnattendedOs2Installer::UnattendedOs2Installer(Unattended *pParent, Utf8Str const &rStrHints)
+    : UnattendedInstaller(pParent,
+                          "os2_response_files.rsp", "os2_postinstall.cmd",
+                          "OS2.RSP",                "VBOXPOST.CMD",
+                          DeviceType_Floppy)
+{
+    Assert(!isOriginalIsoNeeded());
+    Assert(isAuxiliaryFloppyNeeded());
+    Assert(isAuxiliaryIsoIsVISO());
+    Assert(bootFromAuxiliaryIso());
+    mStrAuxiliaryInstallDir = "S:\\";
+
+    /* Extract the info from the hints variable: */
+    RTCList<RTCString, RTCString *> Pairs = rStrHints.split(" ");
+    size_t i = Pairs.size();
+    Assert(i > 0);
+    while (i -- > 0)
+    {
+        RTCString const rStr = Pairs[i];
+        if (rStr.startsWith("OS2SE20.SRC="))
+            mStrOs2Images = rStr.substr(sizeof("OS2SE20.SRC=") - 1);
+        else
+            AssertMsgFailed(("Unknown hint: %s\n", rStr.c_str()));
+    }
+}
+
+
+HRESULT UnattendedOs2Installer::replaceAuxFloppyImageBootSector(RTVFSFILE hVfsFile) RT_NOEXCEPT
+{
+    /*
+     * Find the bootsector.  Because the ArcaOS ISOs doesn't contain any floppy
+     * images, we cannot just lift it off one of those.  Instead we'll locate it
+     * in the SYSINSTX.COM utility, i.e. the tool which installs it onto floppies
+     * and harddisks.  The SYSINSTX.COM utility is a NE executable and we don't
+     * have issues with compressed pages like with LX images.
+     *
+     * The utility seems always to be located on disk 0.
+     */
+    RTVFS   hVfsOrgIso;
+    HRESULT hrc = openInstallIsoImage(&hVfsOrgIso);
+    if (SUCCEEDED(hrc))
+    {
+        char szPath[256];
+        int vrc = RTPathJoin(szPath, sizeof(szPath), mStrOs2Images.c_str(), "DISK_0/SYSINSTX.COM");
+        if (RT_SUCCESS(vrc))
+        {
+            RTVFSFILE hVfsSysInstX;
+            vrc = RTVfsFileOpen(hVfsOrgIso, szPath, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, &hVfsSysInstX);
+            if (RT_SUCCESS(vrc))
+            {
+                /*
+                 * Scan the image looking for a 512 block ending with a DOS signature
+                 * and starting with a three byte jump followed by an OEM name string.
+                 */
+                uint8_t *pbBootSector = NULL;
+                uint64_t off          = 0;
+                bool     fEof         = false;
+                uint8_t  abBuf[_8K]   = {0};
+                do
+                {
+                    /* Read the next chunk. */
+                    memmove(abBuf, &abBuf[sizeof(abBuf) - 512], 512); /* Move up the last 512 (all zero the first time around). */
+                    size_t cbRead = 0;
+                    vrc = RTVfsFileReadAt(hVfsSysInstX, off, &abBuf[512], sizeof(abBuf) - 512, &cbRead);
+                    if (RT_FAILURE(vrc))
+                        break;
+                    fEof = cbRead != sizeof(abBuf) - 512;
+                    off += cbRead;
+
+                    /* Scan it. */
+                    size_t   cbLeft = sizeof(abBuf);
+                    uint8_t *pbCur  = abBuf;
+                    while (cbLeft >= 512)
+                    {
+                        /* Look for the DOS signature (0x55 0xaa) at the end of the sector: */
+                        uint8_t *pbHit = (uint8_t *)memchr(pbCur + 510, 0x55, cbLeft - 510 - 1);
+                        if (!pbHit)
+                            break;
+                        if (pbHit[1] == 0xaa)
+                        {
+                            uint8_t *pbStart = pbHit - 510;
+                            if (   pbStart[0] == 0xeb        /* JMP imm8 */
+                                && pbStart[1] >= 3 + 8 + sizeof(FATEBPB) - 2 /* must jump after the FATEBPB */
+                                && RT_C_IS_ALNUM(pbStart[3]) /* ASSUME OEM string starts with two letters (typically 'IBM x.y')*/
+                                && RT_C_IS_ALNUM(pbStart[4]))
+                            {
+                                FATEBPB *pBpb = (FATEBPB *)&pbStart[3 + 8];
+                                if (   pBpb->bExtSignature == FATEBPB_SIGNATURE
+                                    && (   memcmp(pBpb->achType, "FAT     ", sizeof(pBpb->achType)) == 0
+                                        || memcmp(pBpb->achType, FATEBPB_TYPE_FAT12, sizeof(pBpb->achType)) == 0))
+                                {
+                                    pbBootSector = pbStart;
+                                    break;
+                                }
+                            }
+                        }
+
+                        /* skip */
+                        pbCur  = pbHit - 510 + 1;
+                        cbLeft = &abBuf[sizeof(abBuf)] - pbCur;
+                    }
+                } while (!fEof);
+
+                if (pbBootSector)
+                {
+                    if (pbBootSector != abBuf)
+                        pbBootSector = (uint8_t *)memmove(abBuf, pbBootSector, 512);
+
+                    /*
+                     * We've now got a bootsector.  So, we need to copy the EBPB
+                     * from the destination image before replacing it.
+                     */
+                    vrc = RTVfsFileReadAt(hVfsFile, 0, &abBuf[512], 512, NULL);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        memcpy(&pbBootSector[3 + 8], &abBuf[512 + 3 + 8], sizeof(FATEBPB));
+
+                        /*
+                         * Write it.
+                         */
+                        vrc = RTVfsFileWriteAt(hVfsFile, 0, pbBootSector, 512, NULL);
+                        if (RT_SUCCESS(vrc))
+                        {
+                            LogFlowFunc(("Successfully installed new bootsector\n"));
+                            hrc = S_OK;
+                        }
+                        else
+                            hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to write bootsector: %Rrc"), vrc);
+                    }
+                    else
+                        hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to read bootsector: %Rrc"), vrc);
+                }
+                else if (RT_FAILURE(vrc))
+                    hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Error reading SYSINSTX.COM: %Rrc"), vrc);
+                else
+                    hrc = mpParent->setErrorBoth(E_FAIL, VERR_NOT_FOUND,
+                                                 tr("Unable to locate bootsector template in SYSINSTX.COM"));
+                RTVfsFileRelease(hVfsSysInstX);
+            }
+            else
+                hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to open SYSINSTX.COM: %Rrc"), vrc);
+        }
+        else
+            hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to construct SYSINSTX.COM path"));
+        RTVfsRelease(hVfsOrgIso);
+    }
+    return hrc;
+
+}
+
+HRESULT UnattendedOs2Installer::newAuxFloppyImage(const char *pszFilename, bool fOverwrite, PRTVFSFILE phVfsFile)
+{
+    /*
+     * Open the image file.
+     */
+    HRESULT     hrc;
+    RTVFSFILE   hVfsFile;
+    uint64_t    fOpen = RTFILE_O_READWRITE | RTFILE_O_DENY_ALL | (0660 << RTFILE_O_CREATE_MODE_SHIFT);
+    if (fOverwrite)
+        fOpen |= RTFILE_O_CREATE_REPLACE;
+    else
+        fOpen |= RTFILE_O_OPEN;
+    int vrc = RTVfsFileOpenNormal(pszFilename, fOpen, &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        /*
+         * Format it.
+         */
+        vrc = RTFsFatVolFormat288(hVfsFile, false /*fQuick*/);
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Now we install the OS/2 boot sector on it.
+             */
+            hrc = replaceAuxFloppyImageBootSector(hVfsFile);
+            if (SUCCEEDED(hrc))
+            {
+                *phVfsFile = hVfsFile;
+                LogRelFlow(("UnattendedInstaller::newAuxFloppyImage: created and formatted  '%s'\n", pszFilename));
+                return S_OK;
+            }
+        }
+        else
+            hrc = mpParent->setErrorBoth(E_FAIL, vrc, tr("Failed to format floppy image '%s': %Rrc"), pszFilename, vrc);
+        RTVfsFileRelease(hVfsFile);
+        RTFileDelete(pszFilename);
+    }
+    else
+        hrc = mpParent->setErrorBoth(E_FAIL, vrc, tr("Failed to create floppy image '%s': %Rrc"), pszFilename, vrc);
+    return hrc;
+}
+
+
+HRESULT UnattendedOs2Installer::splitResponseFile() RT_NOEXCEPT
+{
+    if (mVecSplitFiles.size() == 0)
+    {
+#if 0
+        Utf8Str strResponseFile;
+        int vrc = strResponseFile.assignNoThrow(mpParent->i_getAuxiliaryBasePath());
+        if (RT_SUCCESS(vrc))
+            vrc = strResponseFile.appendNoThrow(mMainScript.getDefaultFilename());
+        if (RT_SUCCESS(vrc))
+            return splitFile(strResponseFile.c_str(), mVecSplitFiles);
+        return mpParent->setErrorVrc(vrc);
+#else
+        return splitFile(&mMainScript, mVecSplitFiles);
+#endif
+    }
+    return S_OK;
+}
+
+HRESULT UnattendedOs2Installer::copyFilesToAuxFloppyImage(RTVFS hVfs)
+{
+    /*
+     * Make sure we've split the files already.
+     */
+    HRESULT hrc = splitResponseFile();
+    if (FAILED(hrc))
+        return hrc;
+
+    /*
+     * We need to copy over the files needed to boot OS/2.
+     */
+    static struct
+    {
+        bool        fMandatory;
+        const char *apszNames[2];
+        const char *apszDisks[3];
+        const char *pszMinVer;
+        const char *pszMaxVer;
+    } const s_aFiles[] =
+    {
+        { true, { "OS2BOOT",      NULL          }, { "DISK_0", NULL,     NULL }, "2.1",  NULL }, /* 2.0 did not have OS2BOOT */
+        { true, { "OS2LDR",       NULL          }, { "DISK_0", NULL,     NULL }, NULL,   NULL },
+        { true, { "OS2LDR.MSG",   NULL          }, { "DISK_0", NULL,     NULL }, NULL,   NULL },
+        { true, { "OS2KRNL",      "OS2KRNLI"    }, { "DISK_0", NULL,     NULL }, NULL,   NULL },
+        { true, { "OS2DUMP",      NULL          }, { "DISK_0", NULL,     NULL }, NULL,   NULL },
+        //
+        { true, { "ANSICALL.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "BKSCALLS.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "BMSCALLS.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "BVHINIT.DLL",  NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "BVSCALLS.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "CDFS.IFS",     NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "CLOCK01.SYS",  NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "COUNT437.SYS", "COUNTRY.SYS" }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "DOS.SYS",      NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "DOSCALL1.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "IBM1FLPY.ADD", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "IBM1S506.ADD", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "IBMIDECD.FLT", NULL          }, { "DISK_1", "DISK_2", NULL }, "4.0",  NULL }, /* not in 2.1 & Warp3  */
+        { true, { "IBMKBD.SYS", "KBD01.SYS"/*?*/}, { "DISK_1", "DISK_2", NULL }, NULL,   NULL},
+        { true, { "ISAPNP.SNP",   NULL          }, { "DISK_1", "DISK_2", NULL }, "4.0",  NULL }, /* not in 2.1 */
+        { true, { "KBDBASE.SYS",  NULL          }, { "DISK_1", "DISK_2", NULL }, "3.0",  NULL }, /* not in 2.1 */
+        { true, { "KBDCALLS.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "KEYBOARD.DCP", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "MOUCALLS.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "MSG.DLL",      NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "NAMPIPES.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "NLS.DLL",      NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "OS2CDROM.DMD", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "OS2CHAR.DLL",  NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "OS2DASD.DMD",  NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "OS2LVM.DMD",   NULL          }, { "DISK_1", "DISK_2", NULL }, "4.5",  NULL },
+        { true, { "OS2VER",       NULL          }, { "DISK_0", NULL,     NULL }, NULL,   NULL },
+        { true, { "PNP.SYS",      NULL          }, { "DISK_1", "DISK_2", NULL }, "4.0",  NULL },
+        { true, { "QUECALLS.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "RESOURCE.SYS", NULL          }, { "DISK_1", "DISK_2", NULL }, "3.0",  NULL }, /* not in 2.1*/
+        { true, { "SCREEN01.SYS", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "SESMGR.DLL",   NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "TESTCFG.SYS",  NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "VIO437.DCP",   "VTBL850.DCP" }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+        { true, { "VIOCALLS.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL },
+    };
+
+
+    RTVFS hVfsOrgIso;
+    hrc = openInstallIsoImage(&hVfsOrgIso);
+    if (SUCCEEDED(hrc))
+    {
+        for (size_t i = 0; i < RT_ELEMENTS(s_aFiles); i++)
+        {
+            bool fCopied = false;
+            for (size_t iDisk = 0; iDisk < RT_ELEMENTS(s_aFiles[i].apszDisks) && s_aFiles[i].apszDisks[iDisk] && !fCopied; iDisk++)
+            {
+                for (size_t iName = 0; iName < RT_ELEMENTS(s_aFiles[i].apszNames) && s_aFiles[i].apszNames[iName]; iName++)
+                {
+                    char szPath[256];
+                    int vrc = RTPathJoin(szPath, sizeof(szPath), mStrOs2Images.c_str(), s_aFiles[i].apszDisks[iDisk]);
+                    if (RT_SUCCESS(vrc))
+                        vrc = RTPathAppend(szPath, sizeof(szPath), s_aFiles[i].apszNames[iName]);
+                    AssertRCBreakStmt(vrc, hrc = mpParent->setErrorBoth(E_FAIL, vrc, tr("RTPathJoin/Append failed for %s: %Rrc"),
+                                                                        s_aFiles[i].apszNames[iName], vrc));
+                    RTVFSFILE hVfsSrc;
+                    vrc = RTVfsFileOpen(hVfsOrgIso, szPath, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, &hVfsSrc);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        RTVFSFILE hVfsDst;
+                        vrc = RTVfsFileOpen(hVfs, s_aFiles[i].apszNames[0],
+                                            RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE
+                                            | (0755 << RTFILE_O_CREATE_MODE_SHIFT), &hVfsDst);
+                        if (RT_SUCCESS(vrc))
+                        {
+                            RTVFSIOSTREAM hVfsIosSrc = RTVfsFileToIoStream(hVfsSrc);
+                            RTVFSIOSTREAM hVfsIosDst = RTVfsFileToIoStream(hVfsDst);
+                            vrc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, 0);
+                            RTVfsIoStrmRelease(hVfsIosDst);
+                            RTVfsFileRelease(hVfsDst);
+                            RTVfsIoStrmRelease(hVfsIosSrc);
+                            if (RT_FAILURE(vrc))
+                                hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to write %s to the floppy: %Rrc"),
+                                                             s_aFiles[i].apszNames, vrc);
+                        }
+                        else
+                            hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to open %s on floppy: %Rrc"),
+                                                         s_aFiles[i].apszNames, vrc);
+
+                        RTVfsFileRelease(hVfsSrc);
+                        fCopied = true;
+                        break;
+                    }
+                }
+            }
+            if (FAILED(hrc))
+                break;
+            if (!fCopied)
+            {
+                /** @todo do version filtering.   */
+                hrc = mpParent->setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND,
+                                             tr("Failed to locate '%s' needed for the install floppy"), s_aFiles[i].apszNames[0]);
+                break;
+            }
+        }
+        RTVfsRelease(hVfsOrgIso);
+    }
+
+    /*
+     * In addition, we need to add a CONFIG.SYS and the startup script.
+     */
+    if (SUCCEEDED(hrc))
+    {
+        Utf8Str strSrc;
+        try
+        {
+            strSrc = mpParent->i_getAuxiliaryBasePath();
+            strSrc.append("CONFIG.SYS");
+        }
+        catch (std::bad_alloc &)
+        {
+            return E_OUTOFMEMORY;
+        }
+        hrc = addFileToFloppyImage(hVfs, strSrc.c_str(), "CONFIG.SYS");
+    }
+
+    /*
+     * We also want a ALTF2ON.$$$ file so we can see which drivers are loaded
+     * and where it might get stuck.
+     */
+    if (SUCCEEDED(hrc))
+    {
+        RTVFSFILE hVfsFile;
+        int vrc = RTVfsFileOpen(hVfs, "ALTF2ON.$$$",
+                                RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE
+                                | (0755 << RTFILE_O_CREATE_MODE_SHIFT), &hVfsFile);
+        if (RT_SUCCESS(vrc))
+        {
+            /** @todo buggy fat vfs: cannot write empty files */
+            RTVfsFileWrite(hVfsFile, RT_STR_TUPLE("\r\n"), NULL);
+            RTVfsFileRelease(hVfsFile);
+        }
+        else
+            hrc = mpParent->setErrorBoth(E_FAIL, VERR_FILE_NOT_FOUND, tr("Failed to create 'ALTF2ON.$$$' on the install floppy"));
+    }
+
+    return hrc;
+}
+
+HRESULT UnattendedOs2Installer::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
+                                                         RTVFS hVfsOrgIso, bool fOverwrite)
+{
+    /*
+     * Make sure we've split the files already.
+     */
+    HRESULT hrc = splitResponseFile();
+    if (FAILED(hrc))
+        return hrc;
+
+    /*
+     * Add our stuff to the vectors.
+     */
+    try
+    {
+        /* Remaster ISO. */
+        rVecArgs.append() = "--no-file-mode";
+        rVecArgs.append() = "--no-dir-mode";
+
+        rVecArgs.append() = "--import-iso";
+        rVecArgs.append(mpParent->i_getIsoPath());
+
+        rVecArgs.append() = "--file-mode=0444";
+        rVecArgs.append() = "--dir-mode=0555";
+
+        /* Add the boot floppy to the ISO: */
+        rVecArgs.append() = "--eltorito-new-entry";
+        rVecArgs.append() = "--eltorito-add-image";
+        rVecArgs.append(mStrAuxiliaryFloppyFilePath);
+        rVecArgs.append() = "--eltorito-floppy-288";
+
+
+        /* Add the response files and postinstall files to the ISO: */
+        Utf8Str const &rStrAuxPrefix = mpParent->i_getAuxiliaryBasePath();
+        size_t i = mVecSplitFiles.size();
+        while (i-- > 0)
+        {
+            RTCString const &rStrFile = mVecSplitFiles[i];
+            rVecArgs.append().assign("VBoxCID/").append(rStrFile).append('=').append(rStrAuxPrefix).append(rStrFile);
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    /*
+     * Call parent.
+     */
+    return UnattendedInstaller::addFilesToAuxVisoVectors(rVecArgs, rVecFiles, hVfsOrgIso, fOverwrite);
+}
+
+/**
+ * Helper for splitFile.
+ */
+const char *splitFileLocateSubstring(const char *pszSrc, size_t cchSrc, const char *pszSubstring, size_t cchSubstring)
+{
+    char const ch0 = *pszSubstring;
+    while (cchSrc >= cchSubstring)
+    {
+        const char *pszHit0 = (const char *)memchr(pszSrc, ch0, cchSrc - cchSubstring + 1);
+        if (pszHit0)
+        {
+            if (memcmp(pszHit0, pszSubstring, cchSubstring) == 0)
+                return pszHit0;
+        }
+        else
+            break;
+        cchSrc -= pszHit0 - pszSrc + 1;
+        pszSrc  = pszHit0 + 1;
+    }
+    return NULL;
+}
+
+/**
+ * Worker for splitFile().
+ */
+HRESULT UnattendedOs2Installer::splitFileInner(const char *pszFileToSplit, RTCList<RTCString> &rVecSplitFiles,
+                                               const char *pszSrc, size_t cbLeft) RT_NOEXCEPT
+{
+    static const char  s_szPrefix[] = "@@VBOX_SPLITTER_";
+    const char * const pszStart     = pszSrc;
+    const char * const pszEnd       = &pszSrc[cbLeft];
+    while (cbLeft > 0)
+    {
+        /*
+         * Locate the next split start marker (everything before it is ignored).
+         */
+        const char *pszMarker = splitFileLocateSubstring(pszSrc, cbLeft, s_szPrefix, sizeof(s_szPrefix) - 1);
+        if (pszMarker)
+            pszMarker += sizeof(s_szPrefix) - 1;
+        else
+            break;
+        if (strncmp(pszMarker, RT_STR_TUPLE("START[")) != 0)
+            return mpParent->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
+                                          tr("Unexpected splitter tag in '%s' at offset %p: @@VBOX_SPLITTER_%.64s"),
+                                          pszFileToSplit, pszMarker - pszStart, pszMarker);
+        pszMarker += sizeof("START[") - 1;
+        const char *pszTail = splitFileLocateSubstring(pszMarker, pszEnd - pszMarker, RT_STR_TUPLE("]@@"));
+        if (   !pszTail
+            || pszTail - pszMarker > 64
+            || memchr(pszMarker, '\\', pszTail - pszMarker)
+            || memchr(pszMarker, '/', pszTail - pszMarker)
+            || memchr(pszMarker, ':', pszTail - pszMarker)
+           )
+            return mpParent->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
+                                          tr("Malformed splitter tag in '%s' at offset %p: @@VBOX_SPLITTER_START[%.64s"),
+                                          pszFileToSplit, pszMarker - pszStart, pszMarker);
+        int vrc = RTStrValidateEncodingEx(pszMarker, pszTail - pszMarker, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+        if (RT_FAILURE(vrc))
+            return mpParent->setErrorBoth(E_FAIL, vrc,
+                                          tr("Malformed splitter tag in '%s' at offset %p: @@VBOX_SPLITTER_START[%.*Rhxs"),
+                                          pszFileToSplit, pszMarker - pszStart, pszTail - pszMarker, pszMarker);
+        const char *pszFilename;
+        try
+        {
+            pszFilename = rVecSplitFiles.append().assign(pszMarker, pszTail - pszMarker).c_str();
+        }
+        catch (std::bad_alloc &)
+        {
+            return E_OUTOFMEMORY;
+        }
+        const char *pszDocStart = pszTail + sizeof("]@@") - 1;
+        while (RT_C_IS_SPACE(*pszDocStart))
+            if (*pszDocStart++ == '\n')
+                break;
+
+        /* Advance. */
+        pszSrc = pszDocStart;
+        cbLeft = pszEnd - pszDocStart;
+
+        /*
+         * Locate the matching end marker (there cannot be any other markers inbetween).
+         */
+        const char * const pszDocEnd = pszMarker = splitFileLocateSubstring(pszSrc, cbLeft, s_szPrefix, sizeof(s_szPrefix) - 1);
+        if (pszMarker)
+            pszMarker += sizeof(s_szPrefix) - 1;
+        else
+            return mpParent->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
+                                          tr("No END splitter tag for '%s' in '%s'"), pszFilename, pszFileToSplit);
+        if (strncmp(pszMarker, RT_STR_TUPLE("END[")) != 0)
+            return mpParent->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
+                                          tr("Unexpected splitter tag in '%s' at offset %p: @@VBOX_SPLITTER_%.64s"),
+                                          pszFileToSplit, pszMarker - pszStart, pszMarker);
+        pszMarker += sizeof("END[") - 1;
+        size_t const cchFilename = strlen(pszFilename);
+        if (   strncmp(pszMarker, pszFilename, cchFilename) != 0
+            || pszMarker[cchFilename] != ']'
+            || pszMarker[cchFilename + 1] != '@'
+            || pszMarker[cchFilename + 2] != '@')
+            return mpParent->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
+                                          tr("Mismatching splitter tag for '%s' in '%s' at offset %p: @@VBOX_SPLITTER_END[%.64Rhxs"),
+                                          pszFilename, pszFileToSplit, pszMarker - pszStart, pszMarker);
+
+        /* Advance. */
+        pszSrc = pszMarker + cchFilename + sizeof("]@@") - 1;
+        cbLeft = pszEnd - pszSrc;
+
+        /*
+         * Write out the file.
+         */
+        Utf8Str strDstFilename;
+        vrc = strDstFilename.assignNoThrow(mpParent->i_getAuxiliaryBasePath());
+        if (RT_SUCCESS(vrc))
+            vrc = strDstFilename.appendNoThrow(pszFilename);
+        if (RT_SUCCESS(vrc))
+        {
+            RTFILE hFile;
+            vrc = RTFileOpen(&hFile, strDstFilename.c_str(), RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTFileWrite(hFile, pszDocStart, pszDocEnd - pszDocStart, NULL);
+                if (RT_SUCCESS(vrc))
+                    vrc = RTFileClose(hFile);
+                else
+                    RTFileClose(hFile);
+                if (RT_FAILURE(vrc))
+                    return mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Error writing '%s' (split out from '%s'): %Rrc"),
+                                                  strDstFilename.c_str(), pszFileToSplit, vrc);
+            }
+            else
+                return mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                              tr("File splitter failed to open output file '%s' in '%s': %Rrc (%s)"),
+                                              pszFilename, pszFileToSplit, vrc, strDstFilename.c_str());
+        }
+        else
+            return mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc,
+                                          tr("File splitter failed to construct path for '%s' in '%s': %Rrc"),
+                                          pszFilename, pszFileToSplit, vrc);
+    }
+
+    return S_OK;
+}
+
+HRESULT UnattendedOs2Installer::splitFile(const char *pszFileToSplit, RTCList<RTCString> &rVecSplitFiles) RT_NOEXCEPT
+{
+    /*
+     * Read the whole source file into memory, making sure it's zero terminated.
+     */
+    HRESULT hrc;
+    void   *pvSrc;
+    size_t  cbSrc;
+    int vrc = RTFileReadAllEx(pszFileToSplit, 0 /*off*/, _16M /*cbMax*/,
+                              RTFILE_RDALL_F_TRAILING_ZERO_BYTE | RTFILE_RDALL_F_FAIL_ON_MAX_SIZE | RTFILE_RDALL_O_DENY_WRITE,
+                              &pvSrc, &cbSrc);
+    if (RT_SUCCESS(vrc))
+    {
+        /*
+         * Do the actual splitting in a worker function to avoid needing to
+         * thing about calling RTFileReadAllFree in error paths.
+         */
+        hrc = splitFileInner(pszFileToSplit, rVecSplitFiles, (const char *)pvSrc, cbSrc);
+        RTFileReadAllFree(pvSrc, cbSrc);
+    }
+    else
+        hrc = mpParent->setErrorBoth(VBOX_E_FILE_ERROR, vrc, tr("Failed to read '%s' for splitting up: %Rrc"),
+                                     pszFileToSplit, vrc);
+    return hrc;
+}
+
+HRESULT UnattendedOs2Installer::splitFile(BaseTextScript *pEditor, RTCList<RTCString> &rVecSplitFiles) RT_NOEXCEPT
+{
+    /*
+     * Get the output from the editor.
+     */
+    Utf8Str strSrc;
+    HRESULT hrc = pEditor->saveToString(strSrc);
+    if (SUCCEEDED(hrc))
+    {
+        /*
+         * Do the actual splitting.
+         */
+        hrc = splitFileInner(pEditor->getDefaultFilename(), rVecSplitFiles, strSrc.c_str(), strSrc.length());
+    }
+    return hrc;
+}
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

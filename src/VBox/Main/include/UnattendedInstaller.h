@@ -218,15 +218,18 @@ protected:
     HRESULT prepareAuxFloppyImage(bool fOverwrite);
 
     /**
-     * Creates and formats (FAT12) a floppy image, then opens a VFS for it.
+     * Creates and formats (FAT12) a floppy image.
+     *
+     * This can be overridden to do more preparation work or/and create a different
+     * sized floppy.
      *
      * @returns COM status code.
      * @param   pszFilename     The path to the image file.
      * @param   fOverwrite      Whether to overwrite the file.
-     * @param   phVfs           Where to return a writable VFS handle to the newly
+     * @param   phVfsFile       Where to return a read-writable handle to the newly
      *                          created image.
      */
-    HRESULT newAuxFloppyImage(const char *pszFilename, bool fOverwrite, PRTVFS phVfs);
+    virtual HRESULT newAuxFloppyImage(const char *pszFilename, bool fOverwrite, PRTVFSFILE phVfsFile);
 
     /**
      * Copies files to the auxiliary floppy image.
@@ -249,6 +252,16 @@ protected:
      * @param   hVfs            The VFS to add it to.
      */
     HRESULT addScriptToFloppyImage(BaseTextScript *pEditor, RTVFS hVfs);
+
+    /**
+     * Copy an arbritrary file onto the floopy image.
+     *
+     * @returns COM status code.
+     * @param   hVfs            The VFS to add it to.
+     * @param   pszSrc          The source filename.
+     * @param   pszDst          The destination filename (on @a hVfs).
+     */
+    HRESULT addFileToFloppyImage(RTVFS hVfs, const char *pszSrc, const char *pszDst);
 
     /**
      * Prepares (creates) the auxiliary ISO image.
@@ -420,6 +433,72 @@ public:
     bool isAuxiliaryIsoIsVISO() const       { return true; }
     bool bootFromAuxiliaryIso() const       { return false; }
 };
+
+
+/**
+ * OS/2 installer.
+ */
+class UnattendedOs2Installer : public UnattendedInstaller
+{
+public:
+    DECLARE_TRANSLATE_METHODS(UnattendedOs2Installer)
+
+    UnattendedOs2Installer(Unattended *pParent, Utf8Str const &rStrHints);
+    ~UnattendedOs2Installer()                           {}
+
+    /* Remaster original ISO with auxiliary floppy used for el torito floppy emulation: */
+    bool isOriginalIsoNeeded()     const RT_OVERRIDE    { return false; }
+    bool isAuxiliaryFloppyNeeded() const RT_OVERRIDE    { return true; }
+    bool isAuxiliaryIsoNeeded()    const RT_OVERRIDE    { return true; }
+
+protected:
+    HRESULT replaceAuxFloppyImageBootSector(RTVFSFILE hVfsFile) RT_NOEXCEPT;
+    HRESULT newAuxFloppyImage(const char *pszFilename, bool fOverwrite, PRTVFSFILE phVfsFile) RT_OVERRIDE;
+    HRESULT copyFilesToAuxFloppyImage(RTVFS hVfs) RT_OVERRIDE;
+    HRESULT addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
+                                     RTVFS hVfsOrgIso, bool fOverwrite) RT_OVERRIDE;
+
+    HRESULT splitResponseFile() RT_NOEXCEPT;
+
+    /**
+     * Splits up the given file into sub-files and writes them out with the auxilary
+     * path base as prefix.
+     *
+     * The source file contains @@VBOX_SPLITTER_START[filename]@@ and
+     * @@VBOX_SPLITTER_END[filename]@@  markup that is used to split it up.  Any
+     * text between END and START tags are ignored and can be used for comments.
+     *
+     * @returns COM status code (error info set).
+     * @param   pszFileToSplit      The name of the file to split.
+     * @param   rVecSplitFiles      Vector where names of the sub-files are appended
+     *                              (without any path or prefix).
+     */
+    HRESULT splitFile(const char *pszFileToSplit, RTCList<RTCString> &rVecSplitFiles) RT_NOEXCEPT;
+
+    /**
+     * Splits up the given editor output into sub-files and writes them out with the
+     * auxilary path base as prefix.
+     *
+     * The source file contains @@VBOX_SPLITTER_START[filename]@@ and
+     * @@VBOX_SPLITTER_END[filename]@@  markup that is used to split it up.  Any
+     * text between END and START tags are ignored and can be used for comments.
+     *
+     * @returns COM status code (error info set).
+     * @param   pEditor             The editor which output should be split.
+     * @param   rVecSplitFiles      Vector where names of the sub-files are appended
+     *                              (without any path or prefix).
+     */
+    HRESULT splitFile(BaseTextScript *pEditor, RTCList<RTCString> &rVecSplitFiles) RT_NOEXCEPT;
+
+    HRESULT splitFileInner(const char *pszFileToSplit, RTCList<RTCString> &rVecSplitFiles,
+                           const char *pszSrc, size_t cbLeft) RT_NOEXCEPT;
+
+    /** The OS2SE20.SRC path (\OS2IMAGES). */
+    Utf8Str mStrOs2Images;
+    /** Files split out from os2_response_files.rsp (bare filenames, no paths). */
+    RTCList<RTCString> mVecSplitFiles;
+};
+
 
 
 /**

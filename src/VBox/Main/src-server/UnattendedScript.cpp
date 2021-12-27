@@ -58,6 +58,7 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
     static const char s_szPrefixInsert[]   = "@@VBOX_INSERT_";
     static const char s_szPrefixCond[]     = "@@VBOX_COND_";
     static const char s_szPrefixCondEnd[]  = "@@VBOX_COND_END@@";
+    static const char s_szPrefixSplitter[] = "@@VBOX_SPLITTER";
 
     struct
     {
@@ -127,8 +128,9 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
 
             if (   pszPlaceholder[cchPlaceholder - 1] != '@'
                 || pszPlaceholder[cchPlaceholder - 2] != '@'
-                || (   strncmp(pszPlaceholder, s_szPrefixInsert, sizeof(s_szPrefixInsert) - 1) != 0
-                    && strncmp(pszPlaceholder, s_szPrefixCond,   sizeof(s_szPrefixCond)   - 1) != 0 ) )
+                || (   strncmp(pszPlaceholder, s_szPrefixInsert,   sizeof(s_szPrefixInsert)   - 1) != 0
+                    && strncmp(pszPlaceholder, s_szPrefixCond,     sizeof(s_szPrefixCond)     - 1) != 0
+                    && strncmp(pszPlaceholder, s_szPrefixSplitter, sizeof(s_szPrefixSplitter) - 1) != 0 ) )
             {
                 hrc = mpSetError->setError(E_FAIL, tr("Malformed template placeholder '%.*s'"),
                                            cchPlaceholder, pszPlaceholder);
@@ -187,7 +189,7 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
              * @@VBOX_COND_XXX@@: Push the previous outputting state and combine it with the
              *                    one from the condition.
              */
-            else
+            else if (strncmp(pszPlaceholder, s_szPrefixSplitter, sizeof(s_szPrefixSplitter) - 1) != 0)
             {
                 Assert(strncmp(pszPlaceholder, s_szPrefixCond, sizeof(s_szPrefixCond) - 1) == 0);
                 if (cConds + 1 < RT_ELEMENTS(aConds))
@@ -207,6 +209,24 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
                                                    tr("Too deep conditional nesting at offset %zu (%#zx)"),
                                                    offPlaceholder, offPlaceholder);
                     break;
+                }
+            }
+            /*
+             * @@VBOX_SPLITTER_START/END[filename]@@: Ignored in this pass.
+             */
+            else
+            {
+                if (fOutputting)
+                {
+                    try
+                    {
+                        rStrDst.append(pszPlaceholder, cchPlaceholder);
+                    }
+                    catch (std::bad_alloc &)
+                    {
+                        hrc = E_OUTOFMEMORY;
+                        break;
+                    }
                 }
             }
         }
