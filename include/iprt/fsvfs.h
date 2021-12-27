@@ -120,6 +120,15 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
  */
 RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick);
 
+/**
+ * Formats a 2.88MB floppy image.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFile            The image.  Will be grown to 1.44MB if
+ *                              necessary.
+ * @param   fQuick              Whether to quick format the floppy or not.
+ */
+RTDECL(int) RTFsFatVolFormat288(RTVFSFILE hVfsFile, bool fQuick);
 
 
 /**

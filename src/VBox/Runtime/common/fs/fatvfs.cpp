@@ -6238,6 +6238,20 @@ RTDECL(int) RTFsFatVolFormat144(RTVFSFILE hVfsFile, bool fQuick)
 
 
 /**
+ * Formats a 2.88MB floppy image.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsFile            The image.
+ */
+RTDECL(int) RTFsFatVolFormat288(RTVFSFILE hVfsFile, bool fQuick)
+{
+    return RTFsFatVolFormat(hVfsFile, 0 /*offVol*/, 2949120, fQuick ? RTFSFATVOL_FMT_F_QUICK : RTFSFATVOL_FMT_F_FULL,
+                            512 /*cbSector*/, 2 /*cSectorsPerCluster*/, RTFSFATTYPE_FAT12, 2 /*cHeads*/,  36 /*cSectors*/,
+                            0xf0 /*bMedia*/, 224 /*cRootDirEntries*/, 0 /*cHiddenSectors*/, NULL /*pErrInfo*/);
+}
+
+
+/**
  * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
  */
 static DECLCALLBACK(int) rtVfsChainFatVol_Validate(PCRTVFSCHAINELEMENTREG pProviderReg, PRTVFSCHAINSPEC pSpec,
