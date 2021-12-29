@@ -66,12 +66,14 @@ ifdef VBOX_WITH_UNATTENDED
  	rhel4_ks.cfg \
  	rhel5_ks.cfg \
  	redhat67_ks.cfg \
+       os2_response_files.rsp \
  	win_nt5_unattended.sif \
  	win_nt6_unattended.xml \
  	\
  	debian_postinstall.sh \
  	redhat_postinstall.sh \
  	ol_postinstall.sh \
+ 	os2_cid_install.cmd \
  	win_postinstall.cmd
  ifndef VBOX_OSE
   VBOX_UNATTENDED_TEMPLATES += \

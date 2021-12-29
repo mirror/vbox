@@ -35,12 +35,14 @@ ifdef VBOX_WITH_UNATTENDED
  	ol_ks.cfg \
  	fedora_ks.cfg \
  	suse_autoinstall.xml \
+ 	os2_response_files.rsp \
  	win_nt5_unattended.sif \
  	win_nt6_unattended.xml \
  	\
  	debian_postinstall.sh \
  	redhat_postinstall.sh \
  	ol_postinstall.sh \
+ 	os2_cid_install.cmd \
  	win_postinstall.cmd
 
  ifndef VBOX_OSE
