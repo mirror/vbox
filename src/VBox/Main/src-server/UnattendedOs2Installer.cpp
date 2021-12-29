@@ -848,14 +848,14 @@ HRESULT UnattendedOs2Installer::splitFileInner(const char *pszFileToSplit, RTCLi
         const char *pszTail = splitFileLocateSubstring(pszMarker, (size_t)(pszEnd - pszMarker), RT_STR_TUPLE("]@@"));
         if (   !pszTail
             || pszTail - pszMarker > 64
-            || memchr(pszMarker, '\\', pszTail - pszMarker)
-            || memchr(pszMarker, '/', pszTail - pszMarker)
-            || memchr(pszMarker, ':', pszTail - pszMarker)
+            || memchr(pszMarker, '\\', (size_t)(pszTail - pszMarker))
+            || memchr(pszMarker, '/',  (size_t)(pszTail - pszMarker))
+            || memchr(pszMarker, ':',  (size_t)(pszTail - pszMarker))
            )
             return mpParent->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
                                           tr("Malformed splitter tag in '%s' at offset %p: @@VBOX_SPLITTER_START[%.64s"),
                                           pszFileToSplit, (size_t)(pszEnd - pszMarker), pszMarker);
-        int vrc = RTStrValidateEncodingEx(pszMarker, pszTail - pszMarker, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+        int vrc = RTStrValidateEncodingEx(pszMarker, (size_t)(pszTail - pszMarker), RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
         if (RT_FAILURE(vrc))
             return mpParent->setErrorBoth(E_FAIL, vrc,
                                           tr("Malformed splitter tag in '%s' at offset %p: @@VBOX_SPLITTER_START[%.*Rhxs"),
@@ -876,7 +876,7 @@ HRESULT UnattendedOs2Installer::splitFileInner(const char *pszFileToSplit, RTCLi
 
         /* Advance. */
         pszSrc = pszDocStart;
-        cbLeft = pszEnd - pszDocStart;
+        cbLeft = (size_t)(pszEnd - pszDocStart);
 
         /*
          * Locate the matching end marker (there cannot be any other markers inbetween).
