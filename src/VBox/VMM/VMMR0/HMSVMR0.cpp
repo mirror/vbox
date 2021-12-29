@@ -5941,20 +5941,20 @@ static VBOXSTRICTRC hmR0SvmHandleExitDtraceEvents(PVMCPUCC pVCpu, PSVMTRANSIENT 
         case SVM_EXIT_XCPT_VE:      SET_XCPT(VE); break;
         case SVM_EXIT_XCPT_SX:      SET_XCPT(SX); uEventArg = pSvmTransient->pVmcb->ctrl.u64ExitInfo1; break;
 
-        case SVM_EXIT_XCPT_2:       enmEvent2 = DBGFEVENT_XCPT_02;
-        case SVM_EXIT_XCPT_9:       enmEvent2 = DBGFEVENT_XCPT_09;
-        case SVM_EXIT_XCPT_15:      enmEvent2 = DBGFEVENT_XCPT_0f;
-        case SVM_EXIT_XCPT_18:      enmEvent2 = DBGFEVENT_XCPT_MC;
-        case SVM_EXIT_XCPT_21:      enmEvent2 = DBGFEVENT_XCPT_15;
-        case SVM_EXIT_XCPT_22:      enmEvent2 = DBGFEVENT_XCPT_16;
-        case SVM_EXIT_XCPT_23:      enmEvent2 = DBGFEVENT_XCPT_17;
-        case SVM_EXIT_XCPT_24:      enmEvent2 = DBGFEVENT_XCPT_18;
-        case SVM_EXIT_XCPT_25:      enmEvent2 = DBGFEVENT_XCPT_19;
-        case SVM_EXIT_XCPT_26:      enmEvent2 = DBGFEVENT_XCPT_1a;
-        case SVM_EXIT_XCPT_27:      enmEvent2 = DBGFEVENT_XCPT_1b;
-        case SVM_EXIT_XCPT_28:      enmEvent2 = DBGFEVENT_XCPT_1c;
-        case SVM_EXIT_XCPT_29:      enmEvent2 = DBGFEVENT_XCPT_1d;
-        case SVM_EXIT_XCPT_31:      enmEvent2 = DBGFEVENT_XCPT_1f;
+        case SVM_EXIT_XCPT_2:       enmEvent2 = DBGFEVENT_XCPT_02; break;
+        case SVM_EXIT_XCPT_9:       enmEvent2 = DBGFEVENT_XCPT_09; break;
+        case SVM_EXIT_XCPT_15:      enmEvent2 = DBGFEVENT_XCPT_0f; break;
+        case SVM_EXIT_XCPT_18:      enmEvent2 = DBGFEVENT_XCPT_MC; break;
+        case SVM_EXIT_XCPT_21:      enmEvent2 = DBGFEVENT_XCPT_15; break;
+        case SVM_EXIT_XCPT_22:      enmEvent2 = DBGFEVENT_XCPT_16; break;
+        case SVM_EXIT_XCPT_23:      enmEvent2 = DBGFEVENT_XCPT_17; break;
+        case SVM_EXIT_XCPT_24:      enmEvent2 = DBGFEVENT_XCPT_18; break;
+        case SVM_EXIT_XCPT_25:      enmEvent2 = DBGFEVENT_XCPT_19; break;
+        case SVM_EXIT_XCPT_26:      enmEvent2 = DBGFEVENT_XCPT_1a; break;
+        case SVM_EXIT_XCPT_27:      enmEvent2 = DBGFEVENT_XCPT_1b; break;
+        case SVM_EXIT_XCPT_28:      enmEvent2 = DBGFEVENT_XCPT_1c; break;
+        case SVM_EXIT_XCPT_29:      enmEvent2 = DBGFEVENT_XCPT_1d; break;
+        case SVM_EXIT_XCPT_31:      enmEvent2 = DBGFEVENT_XCPT_1f; break;
 
         case SVM_EXIT_TASK_SWITCH:  SET_EXIT(TASK_SWITCH); break;
         case SVM_EXIT_VMMCALL:      SET_BOTH(VMM_CALL); break;
