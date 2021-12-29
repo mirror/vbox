@@ -656,6 +656,7 @@ VBoxSVC_SOURCES = \
 	$(if $(VBOX_WITH_UNATTENDED), \
 	src-server/UnattendedImpl.cpp \
 	src-server/UnattendedInstaller.cpp \
+	src-server/UnattendedOs2Installer.cpp \
 	src-server/UnattendedScript.cpp \
 	src-all/TextScript.cpp \
 	,) \
