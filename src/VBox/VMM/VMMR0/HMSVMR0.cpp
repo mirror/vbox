@@ -6181,6 +6181,7 @@ static VBOXSTRICTRC hmR0SvmHandleExitDtraceEvents(PVMCPUCC pVCpu, PSVMTRANSIENT 
  * @returns Strict VBox status code (informational status codes included).
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pSvmTransient   Pointer to the SVM transient structure.
+ * @param   pDbgState       The runtime debug state.
  */
 static VBOXSTRICTRC hmR0SvmDebugHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, PSVMRUNDBGSTATE pDbgState)
 {
