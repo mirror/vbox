@@ -846,24 +846,25 @@ HRESULT UnattendedOs2Installer::splitFileInner(const char *pszFileToSplit, RTCLi
                                           pszFileToSplit, pszMarker - pszStart, pszMarker);
         pszMarker += sizeof("START[") - 1;
         const char *pszTail = splitFileLocateSubstring(pszMarker, (size_t)(pszEnd - pszMarker), RT_STR_TUPLE("]@@"));
+        size_t const cchFilename = (size_t)(pszTail - pszMarker);
         if (   !pszTail
-            || pszTail - pszMarker > 64
-            || memchr(pszMarker, '\\', (size_t)(pszTail - pszMarker))
-            || memchr(pszMarker, '/',  (size_t)(pszTail - pszMarker))
-            || memchr(pszMarker, ':',  (size_t)(pszTail - pszMarker))
-           )
+            || cchFilename > 64
+            || memchr(pszMarker, '\\', cchFilename)
+            || memchr(pszMarker, '/',  cchFilename)
+            || memchr(pszMarker, ':',  cchFilename)
+            || memchr(pszMarker, '\0', cchFilename) )
             return mpParent->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
                                           tr("Malformed splitter tag in '%s' at offset %p: @@VBOX_SPLITTER_START[%.64s"),
-                                          pszFileToSplit, (size_t)(pszEnd - pszMarker), pszMarker);
-        int vrc = RTStrValidateEncodingEx(pszMarker, (size_t)(pszTail - pszMarker), RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
+                                          pszFileToSplit, cchFilename, pszMarker);
+        int vrc = RTStrValidateEncodingEx(pszMarker, cchFilename, RTSTR_VALIDATE_ENCODING_EXACT_LENGTH);
         if (RT_FAILURE(vrc))
             return mpParent->setErrorBoth(E_FAIL, vrc,
                                           tr("Malformed splitter tag in '%s' at offset %p: @@VBOX_SPLITTER_START[%.*Rhxs"),
-                                          pszFileToSplit, (size_t)(pszEnd - pszMarker), pszTail - pszMarker, pszMarker);
+                                          pszFileToSplit, cchFilename, pszTail - pszMarker, pszMarker);
         const char *pszFilename;
         try
         {
-            pszFilename = rVecSplitFiles.append().assign(pszMarker, pszTail - pszMarker).c_str();
+            pszFilename = rVecSplitFiles.append().assign(pszMarker, cchFilename).c_str();
         }
         catch (std::bad_alloc &)
         {
@@ -892,7 +893,6 @@ HRESULT UnattendedOs2Installer::splitFileInner(const char *pszFileToSplit, RTCLi
                                           tr("Unexpected splitter tag in '%s' at offset %p: @@VBOX_SPLITTER_%.64s"),
                                           pszFileToSplit, (size_t)(pszEnd - pszMarker), pszMarker);
         pszMarker += sizeof("END[") - 1;
-        size_t const cchFilename = strlen(pszFilename);
         if (   strncmp(pszMarker, pszFilename, cchFilename) != 0
             || pszMarker[cchFilename] != ']'
             || pszMarker[cchFilename + 1] != '@'
