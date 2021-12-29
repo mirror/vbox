@@ -40,10 +40,10 @@
 
 #ifdef DEBUG_ramshankar
 # define HMSVM_SYNC_FULL_GUEST_STATE
+#endif
 # define HMSVM_ALWAYS_TRAP_ALL_XCPTS
 # define HMSVM_ALWAYS_TRAP_PF
 # define HMSVM_ALWAYS_TRAP_TASK_SWITCH
-#endif
 
 
 /*********************************************************************************************************************************
@@ -409,9 +409,8 @@ static FNSVMEXITHANDLER hmR0SvmExitXcptDB;
 static FNSVMEXITHANDLER hmR0SvmExitXcptAC;
 static FNSVMEXITHANDLER hmR0SvmExitXcptBP;
 static FNSVMEXITHANDLER hmR0SvmExitXcptGP;
-#if defined(HMSVM_ALWAYS_TRAP_ALL_XCPTS) || defined(VBOX_WITH_NESTED_HWVIRT_SVM)
 static FNSVMEXITHANDLER hmR0SvmExitXcptGeneric;
-#endif
+static FNSVMEXITHANDLER hmR0SvmExitSwInt;
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 static FNSVMEXITHANDLER hmR0SvmExitClgi;
 static FNSVMEXITHANDLER hmR0SvmExitStgi;
@@ -428,6 +427,7 @@ static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransien
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 static VBOXSTRICTRC hmR0SvmHandleExitNested(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient);
 #endif
+static VBOXSTRICTRC hmR0SvmRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops);
 
 
 /*********************************************************************************************************************************
@@ -4520,108 +4520,6 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNormal(PVMCPUCC pVCpu, uint32_t *pcLoops)
 }
 
 
-/**
- * Runs the guest code using AMD-V in single step mode.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pcLoops     Pointer to the number of executed loops.
- */
-static VBOXSTRICTRC hmR0SvmRunGuestCodeStep(PVMCPUCC pVCpu, uint32_t *pcLoops)
-{
-    uint32_t const cMaxResumeLoops = pVCpu->CTX_SUFF(pVM)->hmr0.s.cMaxResumeLoops;
-    Assert(pcLoops);
-    Assert(*pcLoops <= cMaxResumeLoops);
-
-    SVMTRANSIENT SvmTransient;
-    RT_ZERO(SvmTransient);
-    SvmTransient.fUpdateTscOffsetting = true;
-    SvmTransient.pVmcb = pVCpu->hmr0.s.svm.pVmcb;
-
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    uint16_t const uCsStart  = pCtx->cs.Sel;
-    uint64_t const uRipStart = pCtx->rip;
-
-    VBOXSTRICTRC rc = VERR_INTERNAL_ERROR_5;
-    for (;;)
-    {
-        Assert(!HMR0SuspendPending());
-        AssertMsg(pVCpu->hmr0.s.idEnteredCpu == RTMpCpuId(),
-                  ("Illegal migration! Entered on CPU %u Current %u cLoops=%u\n", (unsigned)pVCpu->hmr0.s.idEnteredCpu,
-                  (unsigned)RTMpCpuId(), *pcLoops));
-
-        /* Preparatory work for running nested-guest code, this may force us to return to
-           ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
-        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
-        rc = hmR0SvmPreRunGuest(pVCpu, &SvmTransient);
-        if (rc != VINF_SUCCESS)
-            break;
-
-        /*
-         * No longjmps to ring-3 from this point on!!!
-         *
-         * Asserts() will still longjmp to ring-3 (but won't return), which is intentional,
-         * better than a kernel panic. This also disables flushing of the R0-logger instance.
-         */
-        hmR0SvmPreRunGuestCommitted(pVCpu, &SvmTransient);
-
-        rc = hmR0SvmRunGuest(pVCpu, pVCpu->hmr0.s.svm.HCPhysVmcb);
-
-        /* Restore any residual host-state and save any bits shared between host and guest
-           into the guest-CPU state.  Re-enables interrupts! */
-        hmR0SvmPostRunGuest(pVCpu, &SvmTransient, rc);
-
-        if (RT_UNLIKELY(   rc != VINF_SUCCESS                               /* Check for VMRUN errors. */
-                        || SvmTransient.u64ExitCode == SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
-        {
-            if (rc == VINF_SUCCESS)
-                rc = VERR_SVM_INVALID_GUEST_STATE;
-            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatPreExit, x);
-            hmR0SvmReportWorldSwitchError(pVCpu, VBOXSTRICTRC_VAL(rc));
-            return rc;
-        }
-
-        /* Handle the #VMEXIT. */
-        HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
-        STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatPreExit, &pVCpu->hm.s.StatExitHandling, x);
-        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pVCpu->hmr0.s.svm.pVmcb);
-        rc = hmR0SvmHandleExit(pVCpu, &SvmTransient);
-        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitHandling, x);
-        if (rc != VINF_SUCCESS)
-            break;
-        if (++(*pcLoops) >= cMaxResumeLoops)
-        {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
-            rc = VINF_EM_RAW_INTERRUPT;
-            break;
-        }
-
-        /*
-         * Did the RIP change, if so, consider it a single step.
-         * Otherwise, make sure one of the TFs gets set.
-         */
-        if (   pCtx->rip    != uRipStart
-            || pCtx->cs.Sel != uCsStart)
-        {
-            rc = VINF_EM_DBG_STEPPED;
-            break;
-        }
-        pVCpu->hm.s.fCtxChanged |= HM_CHANGED_GUEST_DR_MASK;
-    }
-
-    /*
-     * Clear the X86_EFL_TF if necessary.
-     */
-    if (pVCpu->hmr0.s.fClearTrapFlag)
-    {
-        pVCpu->hmr0.s.fClearTrapFlag = false;
-        pCtx->eflags.Bits.u1TF = 0;
-    }
-
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
-    return rc;
-}
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
  * Runs the nested-guest code using AMD-V.
@@ -4725,6 +4623,123 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
 
 
 /**
+ * Checks if any expensive dtrace probes are enabled and we should go to the
+ * debug loop.
+ *
+ * @returns true if we should use debug loop, false if not.
+ */
+static bool hmR0SvmAnyExpensiveProbesEnabled(void)
+{
+    /* It's probably faster to OR the raw 32-bit counter variables together.
+       Since the variables are in an array and the probes are next to one
+       another (more or less), we have good locality.  So, better read
+       eight-nine cache lines ever time and only have one conditional, than
+       128+ conditionals, right? */
+    return (  VBOXVMM_R0_HMSVM_VMEXIT_ENABLED_RAW() /* expensive too due to context */
+            | VBOXVMM_XCPT_DE_ENABLED_RAW()
+            | VBOXVMM_XCPT_DB_ENABLED_RAW()
+            | VBOXVMM_XCPT_BP_ENABLED_RAW()
+            | VBOXVMM_XCPT_OF_ENABLED_RAW()
+            | VBOXVMM_XCPT_BR_ENABLED_RAW()
+            | VBOXVMM_XCPT_UD_ENABLED_RAW()
+            | VBOXVMM_XCPT_NM_ENABLED_RAW()
+            | VBOXVMM_XCPT_DF_ENABLED_RAW()
+            | VBOXVMM_XCPT_TS_ENABLED_RAW()
+            | VBOXVMM_XCPT_NP_ENABLED_RAW()
+            | VBOXVMM_XCPT_SS_ENABLED_RAW()
+            | VBOXVMM_XCPT_GP_ENABLED_RAW()
+            | VBOXVMM_XCPT_PF_ENABLED_RAW()
+            | VBOXVMM_XCPT_MF_ENABLED_RAW()
+            | VBOXVMM_XCPT_AC_ENABLED_RAW()
+            | VBOXVMM_XCPT_XF_ENABLED_RAW()
+            | VBOXVMM_XCPT_VE_ENABLED_RAW()
+            | VBOXVMM_XCPT_SX_ENABLED_RAW()
+            | VBOXVMM_INT_SOFTWARE_ENABLED_RAW()
+            | VBOXVMM_INT_HARDWARE_ENABLED_RAW()
+           ) != 0
+        || (  VBOXVMM_INSTR_HALT_ENABLED_RAW()
+            | VBOXVMM_INSTR_MWAIT_ENABLED_RAW()
+            | VBOXVMM_INSTR_MONITOR_ENABLED_RAW()
+            | VBOXVMM_INSTR_CPUID_ENABLED_RAW()
+            | VBOXVMM_INSTR_INVD_ENABLED_RAW()
+            | VBOXVMM_INSTR_WBINVD_ENABLED_RAW()
+            | VBOXVMM_INSTR_INVLPG_ENABLED_RAW()
+            | VBOXVMM_INSTR_RDTSC_ENABLED_RAW()
+            | VBOXVMM_INSTR_RDTSCP_ENABLED_RAW()
+            | VBOXVMM_INSTR_RDPMC_ENABLED_RAW()
+            | VBOXVMM_INSTR_RDMSR_ENABLED_RAW()
+            | VBOXVMM_INSTR_WRMSR_ENABLED_RAW()
+            | VBOXVMM_INSTR_CRX_READ_ENABLED_RAW()
+            | VBOXVMM_INSTR_CRX_WRITE_ENABLED_RAW()
+            | VBOXVMM_INSTR_DRX_READ_ENABLED_RAW()
+            | VBOXVMM_INSTR_DRX_WRITE_ENABLED_RAW()
+            | VBOXVMM_INSTR_PAUSE_ENABLED_RAW()
+            | VBOXVMM_INSTR_XSETBV_ENABLED_RAW()
+            | VBOXVMM_INSTR_SIDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_LIDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_SGDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_LGDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_SLDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_LLDT_ENABLED_RAW()
+            | VBOXVMM_INSTR_STR_ENABLED_RAW()
+            | VBOXVMM_INSTR_LTR_ENABLED_RAW()
+            //| VBOXVMM_INSTR_GETSEC_ENABLED_RAW()
+            | VBOXVMM_INSTR_RSM_ENABLED_RAW()
+            //| VBOXVMM_INSTR_RDRAND_ENABLED_RAW()
+            //| VBOXVMM_INSTR_RDSEED_ENABLED_RAW()
+            //| VBOXVMM_INSTR_XSAVES_ENABLED_RAW()
+            //| VBOXVMM_INSTR_XRSTORS_ENABLED_RAW()
+            | VBOXVMM_INSTR_VMM_CALL_ENABLED_RAW()
+            | VBOXVMM_INSTR_SVM_VMRUN_ENABLED_RAW()
+            | VBOXVMM_INSTR_SVM_VMLOAD_ENABLED_RAW()
+            | VBOXVMM_INSTR_SVM_VMSAVE_ENABLED_RAW()
+            | VBOXVMM_INSTR_SVM_STGI_ENABLED_RAW()
+            | VBOXVMM_INSTR_SVM_CLGI_ENABLED_RAW()
+           ) != 0
+        || (  VBOXVMM_EXIT_TASK_SWITCH_ENABLED_RAW()
+            | VBOXVMM_EXIT_HALT_ENABLED_RAW()
+            | VBOXVMM_EXIT_MWAIT_ENABLED_RAW()
+            | VBOXVMM_EXIT_MONITOR_ENABLED_RAW()
+            | VBOXVMM_EXIT_CPUID_ENABLED_RAW()
+            | VBOXVMM_EXIT_INVD_ENABLED_RAW()
+            | VBOXVMM_EXIT_WBINVD_ENABLED_RAW()
+            | VBOXVMM_EXIT_INVLPG_ENABLED_RAW()
+            | VBOXVMM_EXIT_RDTSC_ENABLED_RAW()
+            | VBOXVMM_EXIT_RDTSCP_ENABLED_RAW()
+            | VBOXVMM_EXIT_RDPMC_ENABLED_RAW()
+            | VBOXVMM_EXIT_RDMSR_ENABLED_RAW()
+            | VBOXVMM_EXIT_WRMSR_ENABLED_RAW()
+            | VBOXVMM_EXIT_CRX_READ_ENABLED_RAW()
+            | VBOXVMM_EXIT_CRX_WRITE_ENABLED_RAW()
+            | VBOXVMM_EXIT_DRX_READ_ENABLED_RAW()
+            | VBOXVMM_EXIT_DRX_WRITE_ENABLED_RAW()
+            | VBOXVMM_EXIT_PAUSE_ENABLED_RAW()
+            | VBOXVMM_EXIT_XSETBV_ENABLED_RAW()
+            | VBOXVMM_EXIT_SIDT_ENABLED_RAW()
+            | VBOXVMM_EXIT_LIDT_ENABLED_RAW()
+            | VBOXVMM_EXIT_SGDT_ENABLED_RAW()
+            | VBOXVMM_EXIT_LGDT_ENABLED_RAW()
+            | VBOXVMM_EXIT_SLDT_ENABLED_RAW()
+            | VBOXVMM_EXIT_LLDT_ENABLED_RAW()
+            | VBOXVMM_EXIT_STR_ENABLED_RAW()
+            | VBOXVMM_EXIT_LTR_ENABLED_RAW()
+            //| VBOXVMM_EXIT_GETSEC_ENABLED_RAW()
+            | VBOXVMM_EXIT_RSM_ENABLED_RAW()
+            //| VBOXVMM_EXIT_RDRAND_ENABLED_RAW()
+            //| VBOXVMM_EXIT_RDSEED_ENABLED_RAW()
+            //| VBOXVMM_EXIT_XSAVES_ENABLED_RAW()
+            //| VBOXVMM_EXIT_XRSTORS_ENABLED_RAW()
+            | VBOXVMM_EXIT_VMM_CALL_ENABLED_RAW()
+            | VBOXVMM_EXIT_SVM_VMRUN_ENABLED_RAW()
+            | VBOXVMM_EXIT_SVM_VMLOAD_ENABLED_RAW()
+            | VBOXVMM_EXIT_SVM_VMSAVE_ENABLED_RAW()
+            | VBOXVMM_EXIT_SVM_STGI_ENABLED_RAW()
+            | VBOXVMM_EXIT_SVM_CLGI_ENABLED_RAW()
+           ) != 0;
+}
+
+
+/**
  * Runs the guest code using AMD-V.
  *
  * @returns Strict VBox status code.
@@ -4750,10 +4765,13 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPUCC pVCpu)
 #endif
         if (!fInNestedGuestMode)
         {
-            if (!pVCpu->hm.s.fSingleInstruction)
+            if (   !pVCpu->hm.s.fUseDebugLoop
+                && (!VBOXVMM_ANY_PROBES_ENABLED() || !hmR0SvmAnyExpensiveProbesEnabled())
+                && !DBGFIsStepping(pVCpu)
+                && !pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledInt3Breakpoints)
                 rc = hmR0SvmRunGuestCodeNormal(pVCpu, &cLoops);
             else
-                rc = hmR0SvmRunGuestCodeStep(pVCpu, &cLoops);
+                rc = hmR0SvmRunGuestCodeDebug(pVCpu, &cLoops);
         }
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         else
@@ -4786,8 +4804,8 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPUCC pVCpu)
     return rc;
 }
 
-
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+
 /**
  * Determines whether the given I/O access should cause a nested-guest \#VMEXIT.
  *
@@ -5262,23 +5280,14 @@ static VBOXSTRICTRC hmR0SvmHandleExitNested(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTr
     }
     /* not reached */
 
-#undef NST_GST_VMEXIT_CALL_RET
+# undef NST_GST_VMEXIT_CALL_RET
 }
-#endif
 
+#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
-/**
- * Handles a guest \#VMEXIT (for all EXITCODE values except SVM_EXIT_INVALID).
- *
- * @returns Strict VBox status code (informational status codes included).
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pSvmTransient   Pointer to the SVM transient structure.
+/** @def VMEXIT_CALL_RET
+ * Used by hmR0SvmHandleExit and hmR0SvmDebugHandleExit
  */
-static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
-{
-    Assert(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID);
-    Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
-
 #ifdef DEBUG_ramshankar
 # define VMEXIT_CALL_RET(a_fDbg, a_CallExpr) \
         do { \
@@ -5292,6 +5301,18 @@ static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransien
 #else
 # define VMEXIT_CALL_RET(a_fDbg, a_CallExpr) return a_CallExpr
 #endif
+
+/**
+ * Handles a guest \#VMEXIT (for all EXITCODE values except SVM_EXIT_INVALID).
+ *
+ * @returns Strict VBox status code (informational status codes included).
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
+ */
+static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
+{
+    Assert(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID);
+    Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
 
     /*
      * The ordering of the case labels is based on most-frequently-occurring #VMEXITs
@@ -5393,7 +5414,6 @@ static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransien
                     return VINF_SUCCESS;
                 }
 
-#ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
                 case SVM_EXIT_XCPT_DE:
                 /*   SVM_EXIT_XCPT_DB: */       /* Handled above. */
                 /*   SVM_EXIT_XCPT_NMI: */      /* Handled above. */
@@ -5418,7 +5438,9 @@ static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransien
                 case SVM_EXIT_XCPT_24: case SVM_EXIT_XCPT_25: case SVM_EXIT_XCPT_26: case SVM_EXIT_XCPT_27:
                 case SVM_EXIT_XCPT_28: case SVM_EXIT_XCPT_29: case SVM_EXIT_XCPT_30: case SVM_EXIT_XCPT_31:
                     VMEXIT_CALL_RET(0, hmR0SvmExitXcptGeneric(pVCpu, pSvmTransient));
-#endif  /* HMSVM_ALWAYS_TRAP_ALL_XCPTS */
+
+                case SVM_EXIT_SWINT:
+                    VMEXIT_CALL_RET(0, hmR0SvmExitSwInt(pVCpu, pSvmTransient));
 
                 default:
                 {
@@ -5430,8 +5452,1039 @@ static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransien
         }
     }
     /* not reached */
-#undef VMEXIT_CALL_RET
 }
+
+
+/** @name Execution loop for single stepping, DBGF events and expensive Dtrace probes.
+ *
+ * The following few functions and associated structure contains the bloat
+ * necessary for providing detailed debug events and dtrace probes as well as
+ * reliable host side single stepping.  This works on the principle of
+ * "subclassing" the normal execution loop and workers.  We replace the loop
+ * method completely and override selected helpers to add necessary adjustments
+ * to their core operation.
+ *
+ * The goal is to keep the "parent" code lean and mean, so as not to sacrifice
+ * any performance for debug and analysis features.
+ *
+ * @{
+ */
+
+/**
+ * Transient per-VCPU debug state of VMCS and related info. we save/restore in
+ * the debug run loop.
+ */
+typedef struct SVMRUNDBGSTATE
+{
+    /** The initial SVMVMCBCTRL::u64InterceptCtrl value (helps with restore). */
+    uint64_t    bmInterceptInitial;
+    /** The initial SVMVMCBCTRL::u32InterceptXcpt value (helps with restore). */
+    uint32_t    bmXcptInitial;
+    /** The initial SVMVMCBCTRL::u16InterceptRdCRx value (helps with restore). */
+    uint16_t    bmInterceptRdCRxInitial;
+    /** The initial SVMVMCBCTRL::u16InterceptWrCRx value (helps with restore). */
+    uint16_t    bmInterceptWrCRxInitial;
+    /** The initial SVMVMCBCTRL::u16InterceptRdDRx value (helps with restore). */
+    uint16_t    bmInterceptRdDRxInitial;
+    /** The initial SVMVMCBCTRL::u16InterceptWrDRx value (helps with restore). */
+    uint16_t    bmInterceptWrDRxInitial;
+
+    /** Whether we've actually modified the intercept control qword. */
+    bool        fModifiedInterceptCtrl : 1;
+    /** Whether we've actually modified the exception bitmap. */
+    bool        fModifiedXcptBitmap : 1;
+    /** Whether we've actually modified SVMVMCBCTRL::u16InterceptRdCRx. */
+    bool        fModifiedInterceptRdCRx : 1;
+    /** Whether we've actually modified SVMVMCBCTRL::u16InterceptWrCRx. */
+    bool        fModifiedInterceptWrCRx : 1;
+    /** Whether we've actually modified SVMVMCBCTRL::u16InterceptRdDRx. */
+    bool        fModifiedInterceptRdDRx : 1;
+    /** Whether we've actually modified SVMVMCBCTRL::u16InterceptWrDRx. */
+    bool        fModifiedInterceptWrDRx : 1;
+
+    /** The CS we started executing with.  */
+    uint16_t    uCsStart;
+    /** The RIP we started executing at.  This is for detecting that we stepped.  */
+    uint64_t    uRipStart;
+
+    /** The sequence number of the Dtrace provider settings the state was
+     *  configured against. */
+    uint32_t    uDtraceSettingsSeqNo;
+    /** Extra stuff we need in SVMVMCBCTRL::u32InterceptXcpt. */
+    uint32_t    bmXcptExtra;
+    /** Extra stuff we need in SVMVMCBCTRL::u64InterceptCtrl. */
+    uint64_t    bmInterceptExtra;
+    /** Extra stuff we need in SVMVMCBCTRL::u16InterceptRdCRx. */
+    uint16_t    bmInterceptRdCRxExtra;
+    /** Extra stuff we need in SVMVMCBCTRL::u16InterceptWrCRx. */
+    uint16_t    bmInterceptWrCRxExtra;
+    /** Extra stuff we need in SVMVMCBCTRL::u16InterceptRdDRx. */
+    uint16_t    bmInterceptRdDRxExtra;
+    /** Extra stuff we need in SVMVMCBCTRL::u16InterceptWrDRx. */
+    uint16_t    bmInterceptWrDRxExtra;
+    /** VM-exits to check (one bit per VM-exit). */
+    uint32_t    bmExitsToCheck[33];
+} SVMRUNDBGSTATE;
+AssertCompileMemberSize(SVMRUNDBGSTATE, bmExitsToCheck, (SVM_EXIT_MAX + 1 + 31) / 32 * 4);
+typedef SVMRUNDBGSTATE *PSVMRUNDBGSTATE;
+
+
+/**
+ * Initializes the SVMRUNDBGSTATE structure.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   pSvmTransient   The SVM-transient structure.
+ * @param   pDbgState       The debug state to initialize.
+ */
+static void hmR0SvmRunDebugStateInit(PVMCPUCC pVCpu, PCSVMTRANSIENT pSvmTransient, PSVMRUNDBGSTATE pDbgState)
+{
+    PSVMVMCB pVmcb = pSvmTransient->pVmcb;
+    pDbgState->bmInterceptInitial       = pVmcb->ctrl.u64InterceptCtrl;
+    pDbgState->bmXcptInitial            = pVmcb->ctrl.u32InterceptXcpt;
+    pDbgState->bmInterceptRdCRxInitial  = pVmcb->ctrl.u16InterceptRdCRx;
+    pDbgState->bmInterceptWrCRxInitial  = pVmcb->ctrl.u16InterceptWrCRx;
+    pDbgState->bmInterceptRdDRxInitial  = pVmcb->ctrl.u16InterceptRdDRx;
+    pDbgState->bmInterceptWrDRxInitial  = pVmcb->ctrl.u16InterceptWrDRx;
+
+    pDbgState->fModifiedInterceptCtrl   = false;
+    pDbgState->fModifiedXcptBitmap      = false;
+    pDbgState->fModifiedInterceptRdCRx  = false;
+    pDbgState->fModifiedInterceptWrCRx  = false;
+    pDbgState->fModifiedInterceptRdDRx  = false;
+    pDbgState->fModifiedInterceptWrDRx  = false;
+
+    pDbgState->uCsStart                 = pVCpu->cpum.GstCtx.cs.Sel;
+    pDbgState->uRipStart                = pVCpu->cpum.GstCtx.rip;
+
+    /* We don't really need to zero these. */
+    pDbgState->bmInterceptExtra         = 0;
+    pDbgState->bmXcptExtra              = 0;
+    pDbgState->bmInterceptRdCRxExtra    = 0;
+    pDbgState->bmInterceptWrCRxExtra    = 0;
+    pDbgState->bmInterceptRdDRxExtra    = 0;
+    pDbgState->bmInterceptWrDRxExtra    = 0;
+}
+
+
+/**
+ * Updates the VMCB fields with changes requested by @a pDbgState.
+ *
+ * This is performed after hmR0SvmPreRunGuestDebugStateUpdate as well
+ * immediately before executing guest code, i.e. when interrupts are disabled.
+ * We don't check status codes here as we cannot easily assert or return in the
+ * latter case.
+ *
+ * @param   pSvmTransient   The SVM-transient structure.
+ * @param   pDbgState       The debug state.
+ */
+static void hmR0SvmPreRunGuestDebugStateApply(PSVMTRANSIENT pSvmTransient, PSVMRUNDBGSTATE pDbgState)
+{
+    /*
+     * Ensure desired flags in VMCS control fields are set.
+     */
+    PSVMVMCB const pVmcb = pSvmTransient->pVmcb;
+#define ADD_EXTRA_INTERCEPTS(a_VmcbCtrlField, a_bmExtra, a_fModified) do { \
+        if ((pVmcb->ctrl. a_VmcbCtrlField & (a_bmExtra)) != (a_bmExtra)) \
+        { \
+            pVmcb->ctrl. a_VmcbCtrlField |= (a_bmExtra); \
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS; \
+            Log6Func((#a_VmcbCtrlField ": %#RX64\n", pVmcb->ctrl. a_VmcbCtrlField)); \
+            (a_fModified) = true; \
+        } \
+    } while (0)
+    ADD_EXTRA_INTERCEPTS(u64InterceptCtrl,  pDbgState->bmInterceptExtra,        pDbgState->fModifiedInterceptCtrl);
+    ADD_EXTRA_INTERCEPTS(u32InterceptXcpt,  pDbgState->bmXcptExtra,             pDbgState->fModifiedXcptBitmap);
+    ADD_EXTRA_INTERCEPTS(u16InterceptRdCRx, pDbgState->bmInterceptRdCRxExtra,   pDbgState->fModifiedInterceptRdCRx);
+    ADD_EXTRA_INTERCEPTS(u16InterceptWrCRx, pDbgState->bmInterceptWrCRxExtra,   pDbgState->fModifiedInterceptWrCRx);
+    ADD_EXTRA_INTERCEPTS(u16InterceptRdDRx, pDbgState->bmInterceptRdDRxExtra,   pDbgState->fModifiedInterceptRdDRx);
+    ADD_EXTRA_INTERCEPTS(u16InterceptWrDRx, pDbgState->bmInterceptWrDRxExtra,   pDbgState->fModifiedInterceptWrDRx);
+#undef ADD_EXTRA_INTERCEPTS
+}
+
+
+/**
+ * Restores VMCB fields that were changed by hmR0SvmPreRunGuestDebugStateApply
+ * for re-entry next time around.
+ *
+ * @returns Strict VBox status code (i.e. informational status codes too).
+ * @param   pSvmTransient   The SVM-transient structure.
+ * @param   pDbgState       The debug state.
+ */
+static void hmR0SvmRunDebugStateRevert(PSVMTRANSIENT pSvmTransient, PSVMRUNDBGSTATE pDbgState)
+{
+    /*
+     * Restore VM-exit control settings as we may not reenter this function the
+     * next time around.
+     */
+    PSVMVMCB const pVmcb = pSvmTransient->pVmcb;
+
+#define RESTORE_INTERCEPTS(a_VmcbCtrlField, a_bmInitial, a_fModified) do { \
+        if ((a_fModified)) \
+        { \
+            pVmcb->ctrl. a_VmcbCtrlField = (a_bmInitial); \
+            pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS; \
+        } \
+    } while (0)
+    RESTORE_INTERCEPTS(u64InterceptCtrl,  pDbgState->bmInterceptInitial,      pDbgState->fModifiedInterceptCtrl);
+    RESTORE_INTERCEPTS(u32InterceptXcpt,  pDbgState->bmXcptInitial,           pDbgState->fModifiedXcptBitmap);
+    RESTORE_INTERCEPTS(u16InterceptRdCRx, pDbgState->bmInterceptRdCRxInitial, pDbgState->fModifiedInterceptRdCRx);
+    RESTORE_INTERCEPTS(u16InterceptWrCRx, pDbgState->bmInterceptWrCRxInitial, pDbgState->fModifiedInterceptWrCRx);
+    RESTORE_INTERCEPTS(u16InterceptRdDRx, pDbgState->bmInterceptRdDRxInitial, pDbgState->fModifiedInterceptRdDRx);
+    RESTORE_INTERCEPTS(u16InterceptWrDRx, pDbgState->bmInterceptWrDRxInitial, pDbgState->fModifiedInterceptWrDRx);
+#undef RESTORE_INTERCEPTS
+}
+
+
+/**
+ * Configures VM-exit controls for current DBGF and DTrace settings.
+ *
+ * This updates @a pDbgState and the VMCB execution control fields (in the debug
+ * state) to reflect the necessary VM-exits demanded by DBGF and DTrace.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pSvmTransient   The SVM-transient structure. May update
+ *                          fUpdatedTscOffsettingAndPreemptTimer.
+ * @param   pDbgState       The debug state.
+ */
+static void hmR0SvmPreRunGuestDebugStateUpdate(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, PSVMRUNDBGSTATE pDbgState)
+{
+    /*
+     * Take down the dtrace serial number so we can spot changes.
+     */
+    pDbgState->uDtraceSettingsSeqNo = VBOXVMM_GET_SETTINGS_SEQ_NO();
+    ASMCompilerBarrier();
+
+    /*
+     * Clear data members that we'll be rebuilding here.
+     */
+    pDbgState->bmXcptExtra              = 0;
+    pDbgState->bmInterceptExtra         = 0;
+    pDbgState->bmInterceptRdCRxExtra    = 0;
+    pDbgState->bmInterceptWrCRxExtra    = 0;
+    pDbgState->bmInterceptRdDRxExtra    = 0;
+    pDbgState->bmInterceptWrDRxExtra    = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(pDbgState->bmExitsToCheck); i++)
+        pDbgState->bmExitsToCheck[i]    = 0;
+
+    /*
+     * Software interrupts (INT XXh)
+     */
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    if (   DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_INTERRUPT_SOFTWARE)
+        || VBOXVMM_INT_SOFTWARE_ENABLED())
+    {
+        pDbgState->bmInterceptExtra |= SVM_CTRL_INTERCEPT_INTN;
+        ASMBitSet(pDbgState->bmExitsToCheck, SVM_EXIT_SWINT);
+    }
+
+    /*
+     * INT3 breakpoints - triggered by #BP exceptions.
+     */
+    if (pVM->dbgf.ro.cEnabledInt3Breakpoints > 0)
+        pDbgState->bmXcptExtra |= RT_BIT_32(X86_XCPT_BP);
+
+    /*
+     * Exception bitmap and XCPT events+probes.
+     */
+#define SET_XCPT(a_iXcpt) do { \
+        pDbgState->bmXcptExtra |= RT_BIT_32(a_iXcpt); \
+        ASMBitSet(pDbgState->bmExitsToCheck, SVM_EXIT_XCPT_0 + (a_iXcpt)); \
+    } while (0)
+
+    for (int iXcpt = 0; iXcpt < (DBGFEVENT_XCPT_LAST - DBGFEVENT_XCPT_FIRST + 1); iXcpt++)
+        if (DBGF_IS_EVENT_ENABLED(pVM, (DBGFEVENTTYPE)(DBGFEVENT_XCPT_FIRST + iXcpt)))
+            SET_XCPT(iXcpt);
+
+    if (VBOXVMM_XCPT_DE_ENABLED())  SET_XCPT(X86_XCPT_DE);
+    if (VBOXVMM_XCPT_DB_ENABLED())  SET_XCPT(X86_XCPT_DB);
+    if (VBOXVMM_XCPT_BP_ENABLED())  SET_XCPT(X86_XCPT_BP);
+    if (VBOXVMM_XCPT_OF_ENABLED())  SET_XCPT(X86_XCPT_OF);
+    if (VBOXVMM_XCPT_BR_ENABLED())  SET_XCPT(X86_XCPT_BR);
+    if (VBOXVMM_XCPT_UD_ENABLED())  SET_XCPT(X86_XCPT_UD);
+    if (VBOXVMM_XCPT_NM_ENABLED())  SET_XCPT(X86_XCPT_NM);
+    if (VBOXVMM_XCPT_DF_ENABLED())  SET_XCPT(X86_XCPT_DF);
+    if (VBOXVMM_XCPT_TS_ENABLED())  SET_XCPT(X86_XCPT_TS);
+    if (VBOXVMM_XCPT_NP_ENABLED())  SET_XCPT(X86_XCPT_NP);
+    if (VBOXVMM_XCPT_SS_ENABLED())  SET_XCPT(X86_XCPT_SS);
+    if (VBOXVMM_XCPT_GP_ENABLED())  SET_XCPT(X86_XCPT_GP);
+    if (VBOXVMM_XCPT_PF_ENABLED())  SET_XCPT(X86_XCPT_PF);
+    if (VBOXVMM_XCPT_MF_ENABLED())  SET_XCPT(X86_XCPT_MF);
+    if (VBOXVMM_XCPT_AC_ENABLED())  SET_XCPT(X86_XCPT_AC);
+    if (VBOXVMM_XCPT_XF_ENABLED())  SET_XCPT(X86_XCPT_XF);
+    if (VBOXVMM_XCPT_VE_ENABLED())  SET_XCPT(X86_XCPT_VE);
+    if (VBOXVMM_XCPT_SX_ENABLED())  SET_XCPT(X86_XCPT_SX);
+
+#undef SET_XCPT
+
+    /*
+     * Process events and probes for VM-exits, making sure we get the wanted VM-exits.
+     *
+     * Note! This is the reverse of what hmR0SvmHandleExitDtraceEvents does.
+     *       So, when adding/changing/removing please don't forget to update it.
+     *
+     * Some of the macros are picking up local variables to save horizontal space,
+     * (being able to see it in a table is the lesser evil here).
+     */
+#define IS_EITHER_ENABLED(a_pVM, a_EventSubName) \
+        (    DBGF_IS_EVENT_ENABLED(a_pVM, RT_CONCAT(DBGFEVENT_, a_EventSubName)) \
+         ||  RT_CONCAT3(VBOXVMM_, a_EventSubName, _ENABLED)() )
+#define SET_ONLY_XBM_IF_EITHER_EN(a_EventSubName, a_uExit) \
+        if (IS_EITHER_ENABLED(pVM, a_EventSubName)) \
+        {   AssertCompile((unsigned)(a_uExit) < sizeof(pDbgState->bmExitsToCheck) * 8); \
+            ASMBitSet((pDbgState)->bmExitsToCheck, a_uExit); \
+        } else do { } while (0)
+#define SET_INCP_XBM_IF_EITHER_EN(a_EventSubName, a_uExit, a_fInterceptCtrl) \
+        if (IS_EITHER_ENABLED(pVM, a_EventSubName)) \
+        { \
+            (pDbgState)->bmInterceptExtra |= (a_fInterceptCtrl); \
+            AssertCompile((unsigned)(a_uExit) < sizeof(pDbgState->bmExitsToCheck) * 8); \
+            ASMBitSet((pDbgState)->bmExitsToCheck, a_uExit); \
+        } else do { } while (0)
+
+    /** @todo double check these */
+    /** @todo Check what more AMD-V specific we can intercept.   */
+    //SET_INCP_XBM_IF_EITHER_EN(EXIT_TASK_SWITCH,         SVM_EXIT_TASK_SWITCH,       SVM_CTRL_INTERCEPT_TASK_SWITCH);
+    SET_ONLY_XBM_IF_EITHER_EN(EXIT_TASK_SWITCH,         SVM_EXIT_TASK_SWITCH);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_VMM_CALL,           SVM_EXIT_VMMCALL,           SVM_CTRL_INTERCEPT_VMMCALL);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_VMM_CALL,           SVM_EXIT_VMMCALL);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_SVM_VMRUN,          SVM_EXIT_VMRUN,             SVM_CTRL_INTERCEPT_VMRUN);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SVM_VMRUN,          SVM_EXIT_VMRUN);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_SVM_VMLOAD,         SVM_EXIT_VMLOAD,            SVM_CTRL_INTERCEPT_VMLOAD);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SVM_VMLOAD,         SVM_EXIT_VMLOAD);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_SVM_VMSAVE,         SVM_EXIT_VMSAVE,            SVM_CTRL_INTERCEPT_VMSAVE);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SVM_VMSAVE,         SVM_EXIT_VMSAVE);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_SVM_STGI,           SVM_EXIT_STGI,              SVM_CTRL_INTERCEPT_STGI);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SVM_STGI,           SVM_EXIT_STGI);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_SVM_CLGI,           SVM_EXIT_CLGI,              SVM_CTRL_INTERCEPT_CLGI);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SVM_CLGI,           SVM_EXIT_CLGI);
+
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_CPUID,              SVM_EXIT_CPUID,             SVM_CTRL_INTERCEPT_CPUID);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_CPUID,              SVM_EXIT_CPUID);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_HALT,               SVM_EXIT_HLT,               SVM_CTRL_INTERCEPT_HLT);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_HALT,               SVM_EXIT_HLT);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_INVD,               SVM_EXIT_INVD,              SVM_CTRL_INTERCEPT_INVD);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_INVD,               SVM_EXIT_INVD);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_INVLPG,             SVM_EXIT_INVLPG,            SVM_CTRL_INTERCEPT_INVLPG);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_INVLPG,             SVM_EXIT_INVLPG);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_RDPMC,              SVM_EXIT_RDPMC,             SVM_CTRL_INTERCEPT_RDPMC);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDPMC,              SVM_EXIT_RDPMC);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_RDTSC,              SVM_EXIT_RDTSC,             SVM_CTRL_INTERCEPT_RDTSC);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDTSC,              SVM_EXIT_RDTSC);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_RDTSCP,             SVM_EXIT_RDTSCP,            SVM_CTRL_INTERCEPT_RDTSCP);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDTSCP,             SVM_EXIT_RDTSCP);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_RSM,                SVM_EXIT_RSM,               SVM_CTRL_INTERCEPT_RSM);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RSM,                SVM_EXIT_RSM);
+
+    if (IS_EITHER_ENABLED(pVM, INSTR_CRX_READ))
+        pDbgState->bmInterceptRdCRxExtra = 0xffff;
+    if (IS_EITHER_ENABLED(pVM, INSTR_CRX_READ) || IS_EITHER_ENABLED(pVM, EXIT_CRX_READ))
+        ASMBitSetRange(pDbgState->bmExitsToCheck, SVM_EXIT_READ_CR0, SVM_EXIT_READ_CR15 + 1);
+
+    if (IS_EITHER_ENABLED(pVM, INSTR_CRX_WRITE))
+        pDbgState->bmInterceptWrCRxExtra = 0xffff;
+    if (IS_EITHER_ENABLED(pVM, INSTR_CRX_WRITE) || IS_EITHER_ENABLED(pVM, EXIT_CRX_WRITE))
+    {
+        ASMBitSetRange(pDbgState->bmExitsToCheck, SVM_EXIT_WRITE_CR0, SVM_EXIT_WRITE_CR15 + 1);
+        ASMBitSet(pDbgState->bmExitsToCheck, SVM_EXIT_CR0_SEL_WRITE);
+    }
+
+    if (IS_EITHER_ENABLED(pVM, INSTR_DRX_READ))
+        pDbgState->bmInterceptRdDRxExtra = 0xffff;
+    if (IS_EITHER_ENABLED(pVM, INSTR_DRX_READ) || IS_EITHER_ENABLED(pVM, EXIT_DRX_READ))
+        ASMBitSetRange(pDbgState->bmExitsToCheck, SVM_EXIT_READ_DR0, SVM_EXIT_READ_DR15 + 1);
+
+    if (IS_EITHER_ENABLED(pVM, INSTR_DRX_WRITE))
+        pDbgState->bmInterceptWrDRxExtra = 0xffff;
+    if (IS_EITHER_ENABLED(pVM, INSTR_DRX_WRITE) || IS_EITHER_ENABLED(pVM, EXIT_DRX_WRITE))
+        ASMBitSetRange(pDbgState->bmExitsToCheck, SVM_EXIT_WRITE_DR0, SVM_EXIT_WRITE_DR15 + 1);
+
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_RDMSR,              SVM_EXIT_MSR); /** @todo modify bitmap to intercept almost everything? (Clearing MSR_PROT just means no intercepts.) */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_RDMSR,              SVM_EXIT_MSR);
+    SET_ONLY_XBM_IF_EITHER_EN(INSTR_WRMSR,              SVM_EXIT_MSR); /** @todo ditto */
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_WRMSR,              SVM_EXIT_MSR);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_MWAIT,              SVM_EXIT_MWAIT,         SVM_CTRL_INTERCEPT_MWAIT);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_MWAIT,              SVM_EXIT_MWAIT);
+    if (ASMBitTest(pDbgState->bmExitsToCheck, SVM_EXIT_MWAIT))
+        ASMBitSet(pDbgState->bmExitsToCheck, SVM_EXIT_MWAIT_ARMED);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_MONITOR,            SVM_EXIT_MONITOR,       SVM_CTRL_INTERCEPT_MONITOR);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_MONITOR,            SVM_EXIT_MONITOR);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_PAUSE,              SVM_EXIT_PAUSE,         SVM_CTRL_INTERCEPT_PAUSE);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_PAUSE,              SVM_EXIT_PAUSE);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_SIDT,               SVM_EXIT_IDTR_READ,     SVM_CTRL_INTERCEPT_IDTR_READS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SIDT,               SVM_EXIT_IDTR_READ);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_LIDT,               SVM_EXIT_IDTR_WRITE,    SVM_CTRL_INTERCEPT_IDTR_WRITES);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LIDT,               SVM_EXIT_IDTR_WRITE);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_SGDT,               SVM_EXIT_GDTR_READ,     SVM_CTRL_INTERCEPT_GDTR_READS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SGDT,               SVM_EXIT_GDTR_READ);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_LGDT,               SVM_EXIT_GDTR_WRITE,    SVM_CTRL_INTERCEPT_GDTR_WRITES);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LGDT,               SVM_EXIT_GDTR_WRITE);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_SLDT,               SVM_EXIT_LDTR_READ,     SVM_CTRL_INTERCEPT_LDTR_READS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_SLDT,               SVM_EXIT_LDTR_READ);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_LLDT,               SVM_EXIT_LDTR_WRITE,    SVM_CTRL_INTERCEPT_LDTR_WRITES);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LLDT,               SVM_EXIT_LDTR_WRITE);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_STR,                SVM_EXIT_TR_READ,       SVM_CTRL_INTERCEPT_TR_READS);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_STR,                SVM_EXIT_TR_READ);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_LTR,                SVM_EXIT_TR_WRITE,      SVM_CTRL_INTERCEPT_TR_WRITES);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_LTR,                SVM_EXIT_TR_WRITE);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_WBINVD,             SVM_EXIT_WBINVD,        SVM_CTRL_INTERCEPT_WBINVD);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_WBINVD,             SVM_EXIT_WBINVD);
+    SET_INCP_XBM_IF_EITHER_EN(INSTR_XSETBV,             SVM_EXIT_XSETBV,        SVM_CTRL_INTERCEPT_XSETBV);
+    SET_ONLY_XBM_IF_EITHER_EN( EXIT_XSETBV,             SVM_EXIT_XSETBV);
+
+    if (DBGF_IS_EVENT_ENABLED(pVM, DBGFEVENT_TRIPLE_FAULT))
+        ASMBitSet(pDbgState->bmExitsToCheck, SVM_EXIT_SHUTDOWN);
+
+#undef IS_EITHER_ENABLED
+#undef SET_ONLY_XBM_IF_EITHER_EN
+#undef SET_INCP_XBM_IF_EITHER_EN
+
+    /*
+     * Sanitize the control stuff.
+     */
+    /** @todo filter out unsupported stuff? */
+    if (   pVCpu->hmr0.s.fDebugWantRdTscExit
+        != RT_BOOL(pDbgState->bmInterceptExtra & (SVM_CTRL_INTERCEPT_RDTSC | SVM_CTRL_INTERCEPT_RDTSCP)))
+    {
+        pVCpu->hmr0.s.fDebugWantRdTscExit ^= true;
+        /// @todo pVmxTransient->fUpdatedTscOffsettingAndPreemptTimer = false;
+        RT_NOREF(pSvmTransient);
+    }
+
+    Log6(("HM: debug state: bmInterceptExtra=%#RX64 bmXcptExtra=%#RX32%s%s%s%s bmExitsToCheck=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
+          pDbgState->bmInterceptExtra, pDbgState->bmXcptExtra,
+          pDbgState->bmInterceptRdCRxExtra ? " rd-cr" : "",
+          pDbgState->bmInterceptWrCRxExtra ? " wr-cr" : "",
+          pDbgState->bmInterceptRdDRxExtra ? " rd-dr" : "",
+          pDbgState->bmInterceptWrDRxExtra ? " wr-dr" : "",
+          pDbgState->bmExitsToCheck[0],
+          pDbgState->bmExitsToCheck[1],
+          pDbgState->bmExitsToCheck[2],
+          pDbgState->bmExitsToCheck[3],
+          pDbgState->bmExitsToCheck[4]));
+}
+
+
+/**
+ * Fires off DBGF events and dtrace probes for a VM-exit, when it's
+ * appropriate.
+ *
+ * The caller has checked the VM-exit against the SVMRUNDBGSTATE::bmExitsToCheck
+ * bitmap.
+ *
+ * @returns Strict VBox status code (i.e. informational status codes too).
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pSvmTransient   The SVM-transient structure.
+ * @param   uExitCode       The VM-exit code.
+ *
+ * @remarks The name of this function is displayed by dtrace, so keep it short
+ *          and to the point. No longer than 33 chars long, please.
+ */
+static VBOXSTRICTRC hmR0SvmHandleExitDtraceEvents(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, uint64_t uExitCode)
+{
+    /*
+     * Translate the event into a DBGF event (enmEvent + uEventArg) and at the
+     * same time check whether any corresponding Dtrace event is enabled (fDtrace).
+     *
+     * Note! This is the reverse operation of what hmR0SvmPreRunGuestDebugStateUpdate
+     *       does.  Must add/change/remove both places.  Same ordering, please.
+     *
+     *       Added/removed events must also be reflected in the next section
+     *       where we dispatch dtrace events.
+     */
+    bool            fDtrace1   = false;
+    bool            fDtrace2   = false;
+    DBGFEVENTTYPE   enmEvent1  = DBGFEVENT_END;
+    DBGFEVENTTYPE   enmEvent2  = DBGFEVENT_END;
+    uint64_t        uEventArg  = 0;
+#define SET_XCPT(a_XcptName) \
+        do { \
+            enmEvent2 = RT_CONCAT(DBGFEVENT_XCPT_, a_XcptName); \
+            fDtrace2  = RT_CONCAT3(VBOXVMM_XCPT_, a_XcptName, _ENABLED)(); \
+        } while (0)
+#define SET_EXIT(a_EventSubName) \
+        do { \
+            enmEvent2 = RT_CONCAT(DBGFEVENT_EXIT_,  a_EventSubName); \
+            fDtrace2  = RT_CONCAT3(VBOXVMM_EXIT_,   a_EventSubName, _ENABLED)(); \
+        } while (0)
+#define SET_BOTH(a_EventSubName) \
+        do { \
+            enmEvent1 = RT_CONCAT(DBGFEVENT_INSTR_, a_EventSubName); \
+            enmEvent2 = RT_CONCAT(DBGFEVENT_EXIT_,  a_EventSubName); \
+            fDtrace1  = RT_CONCAT3(VBOXVMM_INSTR_,  a_EventSubName, _ENABLED)(); \
+            fDtrace2  = RT_CONCAT3(VBOXVMM_EXIT_,   a_EventSubName, _ENABLED)(); \
+        } while (0)
+    switch (uExitCode)
+    {
+        case SVM_EXIT_SWINT:
+            enmEvent2 = DBGFEVENT_INTERRUPT_SOFTWARE;
+            fDtrace2  = VBOXVMM_INT_SOFTWARE_ENABLED();
+            uEventArg = pSvmTransient->pVmcb->ctrl.u64ExitInfo1;
+            break;
+
+        case SVM_EXIT_XCPT_DE:      SET_XCPT(DE); break;
+        case SVM_EXIT_XCPT_DB:      SET_XCPT(DB); break;
+        case SVM_EXIT_XCPT_BP:      SET_XCPT(BP); break;
+        case SVM_EXIT_XCPT_OF:      SET_XCPT(OF); break;
+        case SVM_EXIT_XCPT_BR:      SET_XCPT(BR); break;
+        case SVM_EXIT_XCPT_UD:      SET_XCPT(UD); break;
+        case SVM_EXIT_XCPT_NM:      SET_XCPT(NM); break;
+        case SVM_EXIT_XCPT_DF:      SET_XCPT(DF); break;
+        case SVM_EXIT_XCPT_TS:      SET_XCPT(TS); uEventArg = pSvmTransient->pVmcb->ctrl.u64ExitInfo1; break;
+        case SVM_EXIT_XCPT_NP:      SET_XCPT(NP); uEventArg = pSvmTransient->pVmcb->ctrl.u64ExitInfo1; break;
+        case SVM_EXIT_XCPT_SS:      SET_XCPT(SS); uEventArg = pSvmTransient->pVmcb->ctrl.u64ExitInfo1; break;
+        case SVM_EXIT_XCPT_GP:      SET_XCPT(GP); uEventArg = pSvmTransient->pVmcb->ctrl.u64ExitInfo1; break;
+        case SVM_EXIT_XCPT_PF:      SET_XCPT(PF); uEventArg = pSvmTransient->pVmcb->ctrl.u64ExitInfo1; break;
+        case SVM_EXIT_XCPT_MF:      SET_XCPT(MF); break;
+        case SVM_EXIT_XCPT_AC:      SET_XCPT(AC); break;
+        case SVM_EXIT_XCPT_XF:      SET_XCPT(XF); break;
+        case SVM_EXIT_XCPT_VE:      SET_XCPT(VE); break;
+        case SVM_EXIT_XCPT_SX:      SET_XCPT(SX); uEventArg = pSvmTransient->pVmcb->ctrl.u64ExitInfo1; break;
+
+        case SVM_EXIT_XCPT_2:       enmEvent2 = DBGFEVENT_XCPT_02;
+        case SVM_EXIT_XCPT_9:       enmEvent2 = DBGFEVENT_XCPT_09;
+        case SVM_EXIT_XCPT_15:      enmEvent2 = DBGFEVENT_XCPT_0f;
+        case SVM_EXIT_XCPT_18:      enmEvent2 = DBGFEVENT_XCPT_MC;
+        case SVM_EXIT_XCPT_21:      enmEvent2 = DBGFEVENT_XCPT_15;
+        case SVM_EXIT_XCPT_22:      enmEvent2 = DBGFEVENT_XCPT_16;
+        case SVM_EXIT_XCPT_23:      enmEvent2 = DBGFEVENT_XCPT_17;
+        case SVM_EXIT_XCPT_24:      enmEvent2 = DBGFEVENT_XCPT_18;
+        case SVM_EXIT_XCPT_25:      enmEvent2 = DBGFEVENT_XCPT_19;
+        case SVM_EXIT_XCPT_26:      enmEvent2 = DBGFEVENT_XCPT_1a;
+        case SVM_EXIT_XCPT_27:      enmEvent2 = DBGFEVENT_XCPT_1b;
+        case SVM_EXIT_XCPT_28:      enmEvent2 = DBGFEVENT_XCPT_1c;
+        case SVM_EXIT_XCPT_29:      enmEvent2 = DBGFEVENT_XCPT_1d;
+        case SVM_EXIT_XCPT_31:      enmEvent2 = DBGFEVENT_XCPT_1f;
+
+        case SVM_EXIT_TASK_SWITCH:  SET_EXIT(TASK_SWITCH); break;
+        case SVM_EXIT_VMMCALL:      SET_BOTH(VMM_CALL); break;
+        case SVM_EXIT_VMRUN:        SET_BOTH(SVM_VMRUN); break;
+        case SVM_EXIT_VMLOAD:       SET_BOTH(SVM_VMLOAD); break;
+        case SVM_EXIT_VMSAVE:       SET_BOTH(SVM_VMSAVE); break;
+        case SVM_EXIT_STGI:         SET_BOTH(SVM_STGI); break;
+        case SVM_EXIT_CLGI:         SET_BOTH(SVM_CLGI); break;
+        case SVM_EXIT_CPUID:        SET_BOTH(CPUID); break;
+        case SVM_EXIT_HLT:          SET_BOTH(HALT); break;
+        case SVM_EXIT_INVD:         SET_BOTH(INVD); break;
+        case SVM_EXIT_INVLPG:       SET_BOTH(INVLPG); break;
+        case SVM_EXIT_RDPMC:        SET_BOTH(RDPMC); break;
+        case SVM_EXIT_RDTSC:        SET_BOTH(RDTSC); break;
+        case SVM_EXIT_RDTSCP:       SET_BOTH(RDTSCP); break;
+        case SVM_EXIT_RSM:          SET_BOTH(RSM); break;
+
+        case SVM_EXIT_READ_CR0:   case SVM_EXIT_READ_CR1:   case SVM_EXIT_READ_CR2:   case SVM_EXIT_READ_CR3:
+        case SVM_EXIT_READ_CR4:   case SVM_EXIT_READ_CR5:   case SVM_EXIT_READ_CR6:   case SVM_EXIT_READ_CR7:
+        case SVM_EXIT_READ_CR8:   case SVM_EXIT_READ_CR9:   case SVM_EXIT_READ_CR10:  case SVM_EXIT_READ_CR11:
+        case SVM_EXIT_READ_CR12:  case SVM_EXIT_READ_CR13:  case SVM_EXIT_READ_CR14:  case SVM_EXIT_READ_CR15:
+            SET_BOTH(CRX_READ);
+            uEventArg = uExitCode - SVM_EXIT_READ_CR0;
+            break;
+        case SVM_EXIT_WRITE_CR0:  case SVM_EXIT_WRITE_CR1:  case SVM_EXIT_WRITE_CR2:  case SVM_EXIT_WRITE_CR3:
+        case SVM_EXIT_WRITE_CR4:  case SVM_EXIT_WRITE_CR5:  case SVM_EXIT_WRITE_CR6:  case SVM_EXIT_WRITE_CR7:
+        case SVM_EXIT_WRITE_CR8:  case SVM_EXIT_WRITE_CR9:  case SVM_EXIT_WRITE_CR10: case SVM_EXIT_WRITE_CR11:
+        case SVM_EXIT_WRITE_CR12: case SVM_EXIT_WRITE_CR13: case SVM_EXIT_WRITE_CR14: case SVM_EXIT_WRITE_CR15:
+        case SVM_EXIT_CR0_SEL_WRITE:
+            SET_BOTH(CRX_WRITE);
+            uEventArg = uExitCode - SVM_EXIT_WRITE_CR0;
+            break;
+        case SVM_EXIT_READ_DR0:   case SVM_EXIT_READ_DR1:   case SVM_EXIT_READ_DR2:   case SVM_EXIT_READ_DR3:
+        case SVM_EXIT_READ_DR4:   case SVM_EXIT_READ_DR5:   case SVM_EXIT_READ_DR6:   case SVM_EXIT_READ_DR7:
+        case SVM_EXIT_READ_DR8:   case SVM_EXIT_READ_DR9:   case SVM_EXIT_READ_DR10:  case SVM_EXIT_READ_DR11:
+        case SVM_EXIT_READ_DR12:  case SVM_EXIT_READ_DR13:  case SVM_EXIT_READ_DR14:  case SVM_EXIT_READ_DR15:
+            SET_BOTH(DRX_READ);
+            uEventArg = uExitCode - SVM_EXIT_READ_DR0;
+            break;
+        case SVM_EXIT_WRITE_DR0:  case SVM_EXIT_WRITE_DR1:  case SVM_EXIT_WRITE_DR2:  case SVM_EXIT_WRITE_DR3:
+        case SVM_EXIT_WRITE_DR4:  case SVM_EXIT_WRITE_DR5:  case SVM_EXIT_WRITE_DR6:  case SVM_EXIT_WRITE_DR7:
+        case SVM_EXIT_WRITE_DR8:  case SVM_EXIT_WRITE_DR9:  case SVM_EXIT_WRITE_DR10: case SVM_EXIT_WRITE_DR11:
+        case SVM_EXIT_WRITE_DR12: case SVM_EXIT_WRITE_DR13: case SVM_EXIT_WRITE_DR14: case SVM_EXIT_WRITE_DR15:
+            SET_BOTH(DRX_WRITE);
+            uEventArg = uExitCode - SVM_EXIT_WRITE_DR0;
+            break;
+        case SVM_EXIT_MSR:
+            if (pSvmTransient->pVmcb->ctrl.u64ExitInfo1 == SVM_EXIT1_MSR_WRITE)
+                SET_BOTH(WRMSR);
+            else
+                SET_BOTH(RDMSR);
+            break;
+        case SVM_EXIT_MWAIT_ARMED:
+        case SVM_EXIT_MWAIT:          SET_BOTH(MWAIT); break;
+        case SVM_EXIT_MONITOR:        SET_BOTH(MONITOR); break;
+        case SVM_EXIT_PAUSE:          SET_BOTH(PAUSE); break;
+        case SVM_EXIT_IDTR_READ:      SET_BOTH(SIDT); break;
+        case SVM_EXIT_IDTR_WRITE:     SET_BOTH(LIDT); break;
+        case SVM_EXIT_GDTR_READ:      SET_BOTH(SGDT); break;
+        case SVM_EXIT_GDTR_WRITE:     SET_BOTH(LGDT); break;
+        case SVM_EXIT_LDTR_READ:      SET_BOTH(SLDT); break;
+        case SVM_EXIT_LDTR_WRITE:     SET_BOTH(LLDT); break;
+        case SVM_EXIT_TR_READ:        SET_BOTH(STR); break;
+        case SVM_EXIT_TR_WRITE:       SET_BOTH(LTR); break;
+        case SVM_EXIT_WBINVD:         SET_BOTH(WBINVD); break;
+        case SVM_EXIT_XSETBV:         SET_BOTH(XSETBV); break;
+
+        case SVM_EXIT_SHUTDOWN:
+            enmEvent1 = DBGFEVENT_TRIPLE_FAULT;
+            //fDtrace1  = VBOXVMM_EXIT_TRIPLE_FAULT_ENABLED();
+            break;
+
+        default:
+            AssertMsgFailed(("Unexpected VM-exit=%#x\n", uExitCode));
+            break;
+    }
+#undef SET_BOTH
+#undef SET_EXIT
+
+    /*
+     * Dtrace tracepoints go first.   We do them here at once so we don't
+     * have to copy the guest state saving and stuff a few dozen times.
+     * Down side is that we've got to repeat the switch, though this time
+     * we use enmEvent since the probes are a subset of what DBGF does.
+     */
+    if (fDtrace1 || fDtrace2)
+    {
+        hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
+        PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+        switch (enmEvent1)
+        {
+            /** @todo consider which extra parameters would be helpful for each probe.   */
+            case DBGFEVENT_END: break;
+            case DBGFEVENT_INTERRUPT_SOFTWARE:      VBOXVMM_INT_SOFTWARE(pVCpu, pCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_XCPT_DE:                 VBOXVMM_XCPT_DE(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_DB:                 VBOXVMM_XCPT_DB(pVCpu, pCtx, pCtx->dr[6]); break;
+            case DBGFEVENT_XCPT_BP:                 VBOXVMM_XCPT_BP(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_OF:                 VBOXVMM_XCPT_OF(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_BR:                 VBOXVMM_XCPT_BR(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_UD:                 VBOXVMM_XCPT_UD(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_NM:                 VBOXVMM_XCPT_NM(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_DF:                 VBOXVMM_XCPT_DF(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_TS:                 VBOXVMM_XCPT_TS(pVCpu, pCtx, (uint32_t)uEventArg); break;
+            case DBGFEVENT_XCPT_NP:                 VBOXVMM_XCPT_NP(pVCpu, pCtx, (uint32_t)uEventArg); break;
+            case DBGFEVENT_XCPT_SS:                 VBOXVMM_XCPT_SS(pVCpu, pCtx, (uint32_t)uEventArg); break;
+            case DBGFEVENT_XCPT_GP:                 VBOXVMM_XCPT_GP(pVCpu, pCtx, (uint32_t)uEventArg); break;
+            case DBGFEVENT_XCPT_PF:                 VBOXVMM_XCPT_PF(pVCpu, pCtx, (uint32_t)uEventArg, pCtx->cr2); break;
+            case DBGFEVENT_XCPT_MF:                 VBOXVMM_XCPT_MF(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_AC:                 VBOXVMM_XCPT_AC(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_XF:                 VBOXVMM_XCPT_XF(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_VE:                 VBOXVMM_XCPT_VE(pVCpu, pCtx); break;
+            case DBGFEVENT_XCPT_SX:                 VBOXVMM_XCPT_SX(pVCpu, pCtx, (uint32_t)uEventArg); break;
+            case DBGFEVENT_INSTR_CPUID:             VBOXVMM_INSTR_CPUID(pVCpu, pCtx, pCtx->eax, pCtx->ecx); break;
+            case DBGFEVENT_INSTR_HALT:              VBOXVMM_INSTR_HALT(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_INVD:              VBOXVMM_INSTR_INVD(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_INVLPG:            VBOXVMM_INSTR_INVLPG(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_RDPMC:             VBOXVMM_INSTR_RDPMC(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_RDTSC:             VBOXVMM_INSTR_RDTSC(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_RSM:               VBOXVMM_INSTR_RSM(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_CRX_READ:          VBOXVMM_INSTR_CRX_READ(pVCpu, pCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_INSTR_CRX_WRITE:         VBOXVMM_INSTR_CRX_WRITE(pVCpu, pCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_INSTR_DRX_READ:          VBOXVMM_INSTR_DRX_READ(pVCpu, pCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_INSTR_DRX_WRITE:         VBOXVMM_INSTR_DRX_WRITE(pVCpu, pCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_INSTR_RDMSR:             VBOXVMM_INSTR_RDMSR(pVCpu, pCtx, pCtx->ecx); break;
+            case DBGFEVENT_INSTR_WRMSR:             VBOXVMM_INSTR_WRMSR(pVCpu, pCtx, pCtx->ecx,
+                                                                        RT_MAKE_U64(pCtx->eax, pCtx->edx)); break;
+            case DBGFEVENT_INSTR_MWAIT:             VBOXVMM_INSTR_MWAIT(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_MONITOR:           VBOXVMM_INSTR_MONITOR(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_PAUSE:             VBOXVMM_INSTR_PAUSE(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_SGDT:              VBOXVMM_INSTR_SGDT(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_SIDT:              VBOXVMM_INSTR_SIDT(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_LGDT:              VBOXVMM_INSTR_LGDT(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_LIDT:              VBOXVMM_INSTR_LIDT(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_SLDT:              VBOXVMM_INSTR_SLDT(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_STR:               VBOXVMM_INSTR_STR(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_LLDT:              VBOXVMM_INSTR_LLDT(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_LTR:               VBOXVMM_INSTR_LTR(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_RDTSCP:            VBOXVMM_INSTR_RDTSCP(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_WBINVD:            VBOXVMM_INSTR_WBINVD(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_XSETBV:            VBOXVMM_INSTR_XSETBV(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_VMM_CALL:          VBOXVMM_INSTR_VMM_CALL(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_SVM_VMRUN:         VBOXVMM_INSTR_SVM_VMRUN(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_SVM_VMLOAD:        VBOXVMM_INSTR_SVM_VMLOAD(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_SVM_VMSAVE:        VBOXVMM_INSTR_SVM_VMSAVE(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_SVM_STGI:          VBOXVMM_INSTR_SVM_STGI(pVCpu, pCtx); break;
+            case DBGFEVENT_INSTR_SVM_CLGI:          VBOXVMM_INSTR_SVM_CLGI(pVCpu, pCtx); break;
+            default: AssertMsgFailed(("enmEvent1=%d uExitCode=%d\n", enmEvent1, uExitCode)); break;
+        }
+        switch (enmEvent2)
+        {
+            /** @todo consider which extra parameters would be helpful for each probe. */
+            case DBGFEVENT_END: break;
+            case DBGFEVENT_EXIT_TASK_SWITCH:        VBOXVMM_EXIT_TASK_SWITCH(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_CPUID:              VBOXVMM_EXIT_CPUID(pVCpu, pCtx, pCtx->eax, pCtx->ecx); break;
+            case DBGFEVENT_EXIT_HALT:               VBOXVMM_EXIT_HALT(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_INVD:               VBOXVMM_EXIT_INVD(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_INVLPG:             VBOXVMM_EXIT_INVLPG(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_RDPMC:              VBOXVMM_EXIT_RDPMC(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_RDTSC:              VBOXVMM_EXIT_RDTSC(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_RSM:                VBOXVMM_EXIT_RSM(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_CRX_READ:           VBOXVMM_EXIT_CRX_READ(pVCpu, pCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_EXIT_CRX_WRITE:          VBOXVMM_EXIT_CRX_WRITE(pVCpu, pCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_EXIT_DRX_READ:           VBOXVMM_EXIT_DRX_READ(pVCpu, pCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_EXIT_DRX_WRITE:          VBOXVMM_EXIT_DRX_WRITE(pVCpu, pCtx, (uint8_t)uEventArg); break;
+            case DBGFEVENT_EXIT_RDMSR:              VBOXVMM_EXIT_RDMSR(pVCpu, pCtx, pCtx->ecx); break;
+            case DBGFEVENT_EXIT_WRMSR:              VBOXVMM_EXIT_WRMSR(pVCpu, pCtx, pCtx->ecx,
+                                                                       RT_MAKE_U64(pCtx->eax, pCtx->edx)); break;
+            case DBGFEVENT_EXIT_MWAIT:              VBOXVMM_EXIT_MWAIT(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_MONITOR:            VBOXVMM_EXIT_MONITOR(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_PAUSE:              VBOXVMM_EXIT_PAUSE(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_SGDT:               VBOXVMM_EXIT_SGDT(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_SIDT:               VBOXVMM_EXIT_SIDT(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_LGDT:               VBOXVMM_EXIT_LGDT(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_LIDT:               VBOXVMM_EXIT_LIDT(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_SLDT:               VBOXVMM_EXIT_SLDT(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_STR:                VBOXVMM_EXIT_STR(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_LLDT:               VBOXVMM_EXIT_LLDT(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_LTR:                VBOXVMM_EXIT_LTR(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_RDTSCP:             VBOXVMM_EXIT_RDTSCP(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_WBINVD:             VBOXVMM_EXIT_WBINVD(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_XSETBV:             VBOXVMM_EXIT_XSETBV(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_VMM_CALL:           VBOXVMM_EXIT_VMM_CALL(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_SVM_VMRUN:          VBOXVMM_EXIT_SVM_VMRUN(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_SVM_VMLOAD:         VBOXVMM_EXIT_SVM_VMLOAD(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_SVM_VMSAVE:         VBOXVMM_EXIT_SVM_VMSAVE(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_SVM_STGI:           VBOXVMM_EXIT_SVM_STGI(pVCpu, pCtx); break;
+            case DBGFEVENT_EXIT_SVM_CLGI:           VBOXVMM_EXIT_SVM_CLGI(pVCpu, pCtx); break;
+            default: AssertMsgFailed(("enmEvent2=%d uExitCode=%d\n", enmEvent2, uExitCode)); break;
+        }
+    }
+
+    /*
+     * Fire of the DBGF event, if enabled (our check here is just a quick one,
+     * the DBGF call will do a full check).
+     *
+     * Note! DBGF sets DBGFEVENT_INTERRUPT_SOFTWARE in the bitmap.
+     * Note! If we have to events, we prioritize the first, i.e. the instruction
+     *       one, in order to avoid event nesting.
+     */
+    PVMCC        pVM = pVCpu->CTX_SUFF(pVM);
+    VBOXSTRICTRC rcStrict;
+    if (   enmEvent1 != DBGFEVENT_END
+        && DBGF_IS_EVENT_ENABLED(pVM, enmEvent1))
+    {
+        hmR0SvmImportGuestState(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
+        rcStrict = DBGFEventGenericWithArgs(pVM, pVCpu, enmEvent1, DBGFEVENTCTX_HM, 1, uEventArg);
+    }
+    else if (   enmEvent2 != DBGFEVENT_END
+             && DBGF_IS_EVENT_ENABLED(pVM, enmEvent2))
+    {
+        hmR0SvmImportGuestState(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
+        rcStrict = DBGFEventGenericWithArgs(pVM, pVCpu, enmEvent2, DBGFEVENTCTX_HM, 1, uEventArg);
+    }
+    else
+        rcStrict = VINF_SUCCESS;
+    return rcStrict;
+}
+
+
+/**
+ * Handles a guest \#VMEXIT (for all EXITCODE values except SVM_EXIT_INVALID),
+ * debug variant.
+ *
+ * @returns Strict VBox status code (informational status codes included).
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
+ */
+static VBOXSTRICTRC hmR0SvmDebugHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient, PSVMRUNDBGSTATE pDbgState)
+{
+    Assert(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID);
+    Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
+
+    /*
+     * Expensive (saves context) generic dtrace VM-exit probe.
+     */
+    uint64_t const uExitCode = pSvmTransient->u64ExitCode;
+    if (!VBOXVMM_R0_HMSVM_VMEXIT_ENABLED())
+    { /* more likely */ }
+    else
+    {
+        hmR0SvmImportGuestState(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
+        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, &pVCpu->cpum.GstCtx, uExitCode, pSvmTransient->pVmcb);
+    }
+
+    /*
+     * Check for single stepping event if we're stepping.
+     */
+    if (pVCpu->hm.s.fSingleInstruction)
+    {
+        switch (uExitCode)
+        {
+            /* Various events: */
+            case SVM_EXIT_XCPT_0:  case SVM_EXIT_XCPT_1:  case SVM_EXIT_XCPT_2:  case SVM_EXIT_XCPT_3:
+            case SVM_EXIT_XCPT_4:  case SVM_EXIT_XCPT_5:  case SVM_EXIT_XCPT_6:  case SVM_EXIT_XCPT_7:
+            case SVM_EXIT_XCPT_8:  case SVM_EXIT_XCPT_9:  case SVM_EXIT_XCPT_10: case SVM_EXIT_XCPT_11:
+            case SVM_EXIT_XCPT_12: case SVM_EXIT_XCPT_13: case SVM_EXIT_XCPT_14: case SVM_EXIT_XCPT_15:
+            case SVM_EXIT_XCPT_16: case SVM_EXIT_XCPT_17: case SVM_EXIT_XCPT_18: case SVM_EXIT_XCPT_19:
+            case SVM_EXIT_XCPT_20: case SVM_EXIT_XCPT_21: case SVM_EXIT_XCPT_22: case SVM_EXIT_XCPT_23:
+            case SVM_EXIT_XCPT_24: case SVM_EXIT_XCPT_25: case SVM_EXIT_XCPT_26: case SVM_EXIT_XCPT_27:
+            case SVM_EXIT_XCPT_28: case SVM_EXIT_XCPT_29: case SVM_EXIT_XCPT_30: case SVM_EXIT_XCPT_31:
+            case SVM_EXIT_INTR:
+            case SVM_EXIT_NMI:
+            case SVM_EXIT_VINTR:
+            case SVM_EXIT_NPF:
+            case SVM_EXIT_AVIC_NOACCEL:
+
+            /* Instruction specific VM-exits: */
+            case SVM_EXIT_READ_CR0:   case SVM_EXIT_READ_CR1:   case SVM_EXIT_READ_CR2:   case SVM_EXIT_READ_CR3:
+            case SVM_EXIT_READ_CR4:   case SVM_EXIT_READ_CR5:   case SVM_EXIT_READ_CR6:   case SVM_EXIT_READ_CR7:
+            case SVM_EXIT_READ_CR8:   case SVM_EXIT_READ_CR9:   case SVM_EXIT_READ_CR10:  case SVM_EXIT_READ_CR11:
+            case SVM_EXIT_READ_CR12:  case SVM_EXIT_READ_CR13:  case SVM_EXIT_READ_CR14:  case SVM_EXIT_READ_CR15:
+            case SVM_EXIT_WRITE_CR0:  case SVM_EXIT_WRITE_CR1:  case SVM_EXIT_WRITE_CR2:  case SVM_EXIT_WRITE_CR3:
+            case SVM_EXIT_WRITE_CR4:  case SVM_EXIT_WRITE_CR5:  case SVM_EXIT_WRITE_CR6:  case SVM_EXIT_WRITE_CR7:
+            case SVM_EXIT_WRITE_CR8:  case SVM_EXIT_WRITE_CR9:  case SVM_EXIT_WRITE_CR10: case SVM_EXIT_WRITE_CR11:
+            case SVM_EXIT_WRITE_CR12: case SVM_EXIT_WRITE_CR13: case SVM_EXIT_WRITE_CR14: case SVM_EXIT_WRITE_CR15:
+            case SVM_EXIT_READ_DR0:   case SVM_EXIT_READ_DR1:   case SVM_EXIT_READ_DR2:   case SVM_EXIT_READ_DR3:
+            case SVM_EXIT_READ_DR4:   case SVM_EXIT_READ_DR5:   case SVM_EXIT_READ_DR6:   case SVM_EXIT_READ_DR7:
+            case SVM_EXIT_READ_DR8:   case SVM_EXIT_READ_DR9:   case SVM_EXIT_READ_DR10:  case SVM_EXIT_READ_DR11:
+            case SVM_EXIT_READ_DR12:  case SVM_EXIT_READ_DR13:  case SVM_EXIT_READ_DR14:  case SVM_EXIT_READ_DR15:
+            case SVM_EXIT_WRITE_DR0:  case SVM_EXIT_WRITE_DR1:  case SVM_EXIT_WRITE_DR2:  case SVM_EXIT_WRITE_DR3:
+            case SVM_EXIT_WRITE_DR4:  case SVM_EXIT_WRITE_DR5:  case SVM_EXIT_WRITE_DR6:  case SVM_EXIT_WRITE_DR7:
+            case SVM_EXIT_WRITE_DR8:  case SVM_EXIT_WRITE_DR9:  case SVM_EXIT_WRITE_DR10: case SVM_EXIT_WRITE_DR11:
+            case SVM_EXIT_WRITE_DR12: case SVM_EXIT_WRITE_DR13: case SVM_EXIT_WRITE_DR14: case SVM_EXIT_WRITE_DR15:
+            case SVM_EXIT_CR0_SEL_WRITE:
+            case SVM_EXIT_IDTR_READ:
+            case SVM_EXIT_GDTR_READ:
+            case SVM_EXIT_LDTR_READ:
+            case SVM_EXIT_TR_READ:
+            case SVM_EXIT_IDTR_WRITE:
+            case SVM_EXIT_GDTR_WRITE:
+            case SVM_EXIT_LDTR_WRITE:
+            case SVM_EXIT_TR_WRITE:
+            case SVM_EXIT_RDTSC:
+            case SVM_EXIT_RDPMC:
+            case SVM_EXIT_PUSHF:
+            case SVM_EXIT_POPF:
+            case SVM_EXIT_CPUID:
+            case SVM_EXIT_RSM:
+            case SVM_EXIT_IRET:
+            case SVM_EXIT_SWINT:
+            case SVM_EXIT_INVD:
+            case SVM_EXIT_PAUSE:
+            case SVM_EXIT_HLT:
+            case SVM_EXIT_INVLPG:
+            case SVM_EXIT_INVLPGA:
+            case SVM_EXIT_IOIO:
+            case SVM_EXIT_MSR:
+            case SVM_EXIT_TASK_SWITCH:
+            case SVM_EXIT_VMRUN:
+            case SVM_EXIT_VMMCALL:
+            case SVM_EXIT_VMLOAD:
+            case SVM_EXIT_VMSAVE:
+            case SVM_EXIT_STGI:
+            case SVM_EXIT_CLGI:
+            case SVM_EXIT_SKINIT:
+            case SVM_EXIT_RDTSCP:
+            case SVM_EXIT_ICEBP:
+            case SVM_EXIT_WBINVD:
+            case SVM_EXIT_MONITOR:
+            case SVM_EXIT_MWAIT:
+            case SVM_EXIT_MWAIT_ARMED:
+            case SVM_EXIT_XSETBV:
+            case SVM_EXIT_RDPRU:
+            case SVM_EXIT_WRITE_EFER_TRAP:
+            case SVM_EXIT_WRITE_CR0_TRAP:  case SVM_EXIT_WRITE_CR1_TRAP:  case SVM_EXIT_WRITE_CR2_TRAP:  case SVM_EXIT_WRITE_CR3_TRAP:
+            case SVM_EXIT_WRITE_CR4_TRAP:  case SVM_EXIT_WRITE_CR5_TRAP:  case SVM_EXIT_WRITE_CR6_TRAP:  case SVM_EXIT_WRITE_CR7_TRAP:
+            case SVM_EXIT_WRITE_CR8_TRAP:  case SVM_EXIT_WRITE_CR9_TRAP:  case SVM_EXIT_WRITE_CR10_TRAP: case SVM_EXIT_WRITE_CR11_TRAP:
+            case SVM_EXIT_WRITE_CR12_TRAP: case SVM_EXIT_WRITE_CR13_TRAP: case SVM_EXIT_WRITE_CR14_TRAP: case SVM_EXIT_WRITE_CR15_TRAP:
+            case SVM_EXIT_MCOMMIT:
+            {
+                hmR0SvmImportGuestState(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
+                if (   pVCpu->cpum.GstCtx.rip    != pDbgState->uRipStart
+                    || pVCpu->cpum.GstCtx.cs.Sel != pDbgState->uCsStart)
+                {
+                    Log6Func(("VINF_EM_DBG_STEPPED: %04x:%08RX64 (exit %u)\n",
+                              pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uExitCode));
+                    return VINF_EM_DBG_STEPPED;
+                }
+                break;
+            }
+
+            /* Errors and unexpected events: */
+            case SVM_EXIT_FERR_FREEZE:
+            case SVM_EXIT_SHUTDOWN:
+            case SVM_EXIT_AVIC_INCOMPLETE_IPI:
+                break;
+
+            case SVM_EXIT_SMI:
+            case SVM_EXIT_INIT:
+            default:
+                AssertMsgFailed(("Unexpected VM-exit=%#x\n", uExitCode));
+                break;
+        }
+    }
+
+    /*
+     * Check for debugger event breakpoints and dtrace probes.
+     */
+    if (   uExitCode < sizeof(pDbgState->bmExitsToCheck) * 8U
+        && ASMBitTest(pDbgState->bmExitsToCheck, uExitCode) )
+    {
+        VBOXSTRICTRC rcStrict = hmR0SvmHandleExitDtraceEvents(pVCpu, pSvmTransient, uExitCode);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log6Func(("%04x:%08RX64 (exit %u) -> %Rrc\n",
+                      pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, uExitCode, VBOXSTRICTRC_VAL(rcStrict) ));
+            return rcStrict;
+        }
+    }
+
+    /*
+     * Normal processing.
+     */
+    return hmR0SvmHandleExit(pVCpu, pSvmTransient);
+}
+
+
+/**
+ * Runs the guest code using AMD-V in single step mode.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pcLoops     Pointer to the number of executed loops.
+ */
+static VBOXSTRICTRC hmR0SvmRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
+{
+    uint32_t const cMaxResumeLoops = pVCpu->CTX_SUFF(pVM)->hmr0.s.cMaxResumeLoops;
+    Assert(pcLoops);
+    Assert(*pcLoops <= cMaxResumeLoops);
+
+    SVMTRANSIENT SvmTransient;
+    RT_ZERO(SvmTransient);
+    SvmTransient.fUpdateTscOffsetting = true;
+    SvmTransient.pVmcb = pVCpu->hmr0.s.svm.pVmcb;
+
+    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+
+    /* Set HMCPU indicators.  */
+    bool const fSavedSingleInstruction = pVCpu->hm.s.fSingleInstruction;
+    pVCpu->hm.s.fSingleInstruction     = pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu);
+    pVCpu->hmr0.s.fDebugWantRdTscExit  = false;
+    pVCpu->hmr0.s.fUsingDebugLoop      = true;
+
+    /* State we keep to help modify and later restore the VMCS fields we alter, and for detecting steps.  */
+    SVMRUNDBGSTATE DbgState;
+    hmR0SvmRunDebugStateInit(pVCpu, &SvmTransient, &DbgState);
+    hmR0SvmPreRunGuestDebugStateUpdate(pVCpu, &SvmTransient, &DbgState);
+
+    /*
+     * The loop.
+     */
+    VBOXSTRICTRC rc = VERR_INTERNAL_ERROR_5;
+    for (;;)
+    {
+        Assert(!HMR0SuspendPending());
+        AssertMsg(pVCpu->hmr0.s.idEnteredCpu == RTMpCpuId(),
+                  ("Illegal migration! Entered on CPU %u Current %u cLoops=%u\n", (unsigned)pVCpu->hmr0.s.idEnteredCpu,
+                  (unsigned)RTMpCpuId(), *pcLoops));
+        bool fStepping = pVCpu->hm.s.fSingleInstruction;
+
+        /* Set up VM-execution controls the next two can respond to. */
+        hmR0SvmPreRunGuestDebugStateApply(&SvmTransient, &DbgState);
+
+        /* Preparatory work for running nested-guest code, this may force us to return to
+           ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
+        rc = hmR0SvmPreRunGuest(pVCpu, &SvmTransient);
+        if (rc != VINF_SUCCESS)
+            break;
+
+        /*
+         * No longjmps to ring-3 from this point on!!!
+         *
+         * Asserts() will still longjmp to ring-3 (but won't return), which is intentional,
+         * better than a kernel panic. This also disables flushing of the R0-logger instance.
+         */
+        hmR0SvmPreRunGuestCommitted(pVCpu, &SvmTransient);
+
+        /* Override any obnoxious code in the above two calls. */
+        hmR0SvmPreRunGuestDebugStateApply(&SvmTransient, &DbgState);
+
+        /*
+         * Finally execute guest code.
+         */
+        rc = hmR0SvmRunGuest(pVCpu, pVCpu->hmr0.s.svm.HCPhysVmcb);
+
+        /* Restore any residual host-state and save any bits shared between host and guest
+           into the guest-CPU state.  Re-enables interrupts! */
+        hmR0SvmPostRunGuest(pVCpu, &SvmTransient, rc);
+
+        if (RT_LIKELY(   rc == VINF_SUCCESS                               /* Check for VMRUN errors. */
+                      && SvmTransient.u64ExitCode != SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
+        { /* very likely*/ }
+        else
+        {
+            if (rc == VINF_SUCCESS)
+                rc = VERR_SVM_INVALID_GUEST_STATE;
+            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatPreExit, x);
+            hmR0SvmReportWorldSwitchError(pVCpu, VBOXSTRICTRC_VAL(rc));
+            return rc;
+        }
+
+        /* Handle the #VMEXIT. */
+        HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
+        STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatPreExit, &pVCpu->hm.s.StatExitHandling, x);
+        VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pVCpu->hmr0.s.svm.pVmcb);
+        rc = hmR0SvmDebugHandleExit(pVCpu, &SvmTransient, &DbgState);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitHandling, x);
+        if (rc != VINF_SUCCESS)
+            break;
+        if (++(*pcLoops) >= cMaxResumeLoops)
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
+            rc = VINF_EM_RAW_INTERRUPT;
+            break;
+        }
+
+        /*
+         * Stepping: Did the RIP change, if so, consider it a single step.
+         * Otherwise, make sure one of the TFs gets set.
+         */
+        if (fStepping)
+        {
+            hmR0SvmImportGuestState(pVCpu, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
+            if (   pVCpu->cpum.GstCtx.rip    != DbgState.uRipStart
+                || pVCpu->cpum.GstCtx.cs.Sel != DbgState.uCsStart)
+            {
+                Log6Func(("VINF_EM_DBG_STEPPED: %04x:%08RX64 (exit %u)\n",
+                          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, SvmTransient.u64ExitCode));
+                rc = VINF_EM_DBG_STEPPED;
+                break;
+            }
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_DR7);
+        }
+
+        /*
+         * Update when dtrace settings changes (DBGF kicks us, so no need to check).
+         * Revert the state changes afterware so we can drop intercepts no longer needed.
+         */
+        if (VBOXVMM_GET_SETTINGS_SEQ_NO() != DbgState.uDtraceSettingsSeqNo)
+        {
+            hmR0SvmPreRunGuestDebugStateUpdate(pVCpu, &SvmTransient, &DbgState);
+            hmR0SvmRunDebugStateRevert(&SvmTransient, &DbgState);
+        }
+    }
+
+    /*
+     * Clear the X86_EFL_TF if necessary.
+     */
+    if (pVCpu->hmr0.s.fClearTrapFlag)
+    {
+        pVCpu->hmr0.s.fClearTrapFlag = false;
+        pCtx->eflags.Bits.u1TF = 0;
+    }
+
+    /* Restore HMCPU indicators. */
+    pVCpu->hmr0.s.fUsingDebugLoop     = false;
+    pVCpu->hmr0.s.fDebugWantRdTscExit = false;
+    pVCpu->hm.s.fSingleInstruction    = fSavedSingleInstruction;
+
+    /* Restore all controls applied by hmR0SvmPreRunGuestDebugStateApply above. */
+    hmR0SvmRunDebugStateRevert(&SvmTransient, &DbgState);
+
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
+    return rc;
+}
+
+/** @}  */
+
+#undef VMEXIT_CALL_RET
 
 
 #ifdef VBOX_STRICT
@@ -7697,6 +8750,26 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransie
     return VINF_SUCCESS;
 }
 #endif
+
+/**
+ * \#VMEXIT handler for software interrupt (INTn). Conditional \#VMEXIT (debug).
+ */
+HMSVM_EXIT_DECL hmR0SvmExitSwInt(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY(pVCpu, pSvmTransient);
+
+    PCSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
+    SVMEVENT  Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_SOFTWARE_INT;
+    Event.n.u8Vector = pVmcb->ctrl.u64ExitInfo1 & 0xff;
+    Log4Func(("uVector=%#x\n", Event.n.u8Vector));
+    hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+    return VINF_SUCCESS;
+}
+
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
