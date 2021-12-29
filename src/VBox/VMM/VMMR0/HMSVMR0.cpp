@@ -40,10 +40,10 @@
 
 #ifdef DEBUG_ramshankar
 # define HMSVM_SYNC_FULL_GUEST_STATE
-#endif
 # define HMSVM_ALWAYS_TRAP_ALL_XCPTS
 # define HMSVM_ALWAYS_TRAP_PF
 # define HMSVM_ALWAYS_TRAP_TASK_SWITCH
+#endif
 
 
 /*********************************************************************************************************************************
