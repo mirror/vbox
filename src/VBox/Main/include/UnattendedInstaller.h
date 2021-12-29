@@ -495,7 +495,7 @@ protected:
 
     static int patchOs2Ldr(uint8_t *pbFile, size_t cbFile, const char *pszFilename, UnattendedOs2Installer *pThis);
 
-    /** The OS2SE20.SRC path (\OS2IMAGES). */
+    /** The OS2SE20.SRC path ("\\OS2IMAGES"). */
     Utf8Str mStrOs2Images;
     /** Files split out from os2_response_files.rsp (bare filenames, no paths). */
     RTCList<RTCString> mVecSplitFiles;
