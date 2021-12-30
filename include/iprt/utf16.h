@@ -1169,6 +1169,22 @@ RTDECL(RTUNICP) RTUtf16GetCpInternal(PCRTUTF16 pwsz);
 RTDECL(int) RTUtf16GetCpExInternal(PCRTUTF16 *ppwsz, PRTUNICP pCp);
 
 /**
+ * Get the unicode code point at the given string position with length
+ * restriction.
+ *
+ * @returns iprt status code.
+ * @param   ppwsz       Pointer to the string pointer. This will be updated to
+ *                      point to the char following the current code point.
+ * @param   pcwc        Pointer to the max string length. This will be
+ *                      decremented corrsponding to the advancement of @a ppwsz.
+ * @param   pCp         Where to store the code point.
+ *                      RTUNICP_INVALID is stored here on failure.
+ *
+ * @remark  This is an internal worker for RTUtf16GetCpNEx().
+ */
+RTDECL(int) RTUtf16GetCpNExInternal(PCRTUTF16 *ppwsz, size_t *pcwc, PRTUNICP pCp);
+
+/**
  * Get the unicode code point at the given string position, big endian.
  *
  * @returns iprt status code.
@@ -1239,6 +1255,38 @@ DECLINLINE(int) RTUtf16GetCpEx(PCRTUTF16 *ppwsz, PRTUNICP pCp)
         return VINF_SUCCESS;
     }
     return RTUtf16GetCpExInternal(ppwsz, pCp);
+}
+
+/**
+ * Get the unicode code point at the given string position.
+ *
+ * @returns iprt status code.
+ * @param   ppwsz       Pointer to the string pointer. This will be updated to
+ *                      point to the char following the current code point.
+ * @param   pcwc        Pointer to the max string length. This will be
+ *                      decremented corrsponding to the advancement of @a ppwsz.
+ * @param   pCp         Where to store the code point. RTUNICP_INVALID is stored
+ *                      here on failure.
+ *
+ * @remark  We optimize this operation by using an inline function for
+ *          everything which isn't a surrogate pair or and endian indicator.
+ */
+DECLINLINE(int) RTUtf16GetCpNEx(PCRTUTF16 *ppwsz, size_t *pcwc, PRTUNICP pCp)
+{
+    const size_t cwc = *pcwc;
+    if (cwc > 0)
+    {
+        const PCRTUTF16 pwsz = *ppwsz;
+        const RTUTF16   wc   = *pwsz;
+        if (wc < 0xd800 || (wc > 0xdfff && wc < 0xfffe))
+        {
+            *pCp   = wc;
+            *pcwc  = cwc  - 1;
+            *ppwsz = pwsz + 1;
+            return VINF_SUCCESS;
+        }
+    }
+    return RTUtf16GetCpNExInternal(ppwsz, pcwc, pCp);
 }
 
 /**
