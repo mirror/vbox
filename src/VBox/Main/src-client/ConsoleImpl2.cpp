@@ -1294,6 +1294,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_UseNativeApi, &fUseNativeApi); H();
         InsertConfigInteger(pHM, "UseNEMInstead", fUseNativeApi);
 
+        /* Enable workaround for missing TLB flush for OS/2 guests, see ticketref:20625. */
+        if (RTUtf16NCmpAscii(osTypeId.raw(), RT_STR_TUPLE("OS2")) == 0)
+            InsertConfigInteger(pHM, "MissingOS2TlbFlushWorkaround", 1);
+
         /*
          * NEM
          */

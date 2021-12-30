@@ -411,6 +411,8 @@ static FNSVMEXITHANDLER hmR0SvmExitXcptBP;
 static FNSVMEXITHANDLER hmR0SvmExitXcptGP;
 static FNSVMEXITHANDLER hmR0SvmExitXcptGeneric;
 static FNSVMEXITHANDLER hmR0SvmExitSwInt;
+static FNSVMEXITHANDLER hmR0SvmExitTrRead;
+static FNSVMEXITHANDLER hmR0SvmExitTrWrite;
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 static FNSVMEXITHANDLER hmR0SvmExitClgi;
 static FNSVMEXITHANDLER hmR0SvmExitStgi;
@@ -1132,6 +1134,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
         /* Page faults must be intercepted to implement shadow paging. */
         pVmcbCtrl0->u32InterceptXcpt |= RT_BIT(X86_XCPT_PF);
     }
+
+    /* Workaround for missing OS/2 TLB flush, see ticketref:20625. */
+    if (pVM->hm.s.fMissingOS2TlbFlushWorkaround)
+        pVmcbCtrl0->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_TR_WRITES;
 
     /* Setup Pause Filter for guest pause-loop (spinlock) exiting. */
     if (fUsePauseFilter)
@@ -5414,6 +5420,9 @@ static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransien
                     return VINF_SUCCESS;
                 }
 
+                /*
+                 * The remaining should only be possible when debugging or dtracing.
+                 */
                 case SVM_EXIT_XCPT_DE:
                 /*   SVM_EXIT_XCPT_DB: */       /* Handled above. */
                 /*   SVM_EXIT_XCPT_NMI: */      /* Handled above. */
@@ -5439,8 +5448,9 @@ static VBOXSTRICTRC hmR0SvmHandleExit(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransien
                 case SVM_EXIT_XCPT_28: case SVM_EXIT_XCPT_29: case SVM_EXIT_XCPT_30: case SVM_EXIT_XCPT_31:
                     VMEXIT_CALL_RET(0, hmR0SvmExitXcptGeneric(pVCpu, pSvmTransient));
 
-                case SVM_EXIT_SWINT:
-                    VMEXIT_CALL_RET(0, hmR0SvmExitSwInt(pVCpu, pSvmTransient));
+                case SVM_EXIT_SWINT:    VMEXIT_CALL_RET(0, hmR0SvmExitSwInt(pVCpu, pSvmTransient));
+                case SVM_EXIT_TR_READ:  VMEXIT_CALL_RET(0, hmR0SvmExitTrRead(pVCpu, pSvmTransient));
+                case SVM_EXIT_TR_WRITE: VMEXIT_CALL_RET(0, hmR0SvmExitTrWrite(pVCpu, pSvmTransient)); /* Also OS/2 TLB workaround. */
 
                 default:
                 {
@@ -6396,6 +6406,11 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
 
         /* Override any obnoxious code in the above two calls. */
         hmR0SvmPreRunGuestDebugStateApply(&SvmTransient, &DbgState);
+#if 0
+        Log(("%04x:%08RX64 ds=%04x %04x:%08RX64 i=%#RX64\n",
+             SvmTransient.pVmcb->guest.CS.u16Sel, SvmTransient.pVmcb->guest.u64RIP, SvmTransient.pVmcb->guest.DS.u16Sel,
+             SvmTransient.pVmcb->guest.SS.u16Sel, SvmTransient.pVmcb->guest.u64RSP, SvmTransient.pVmcb->ctrl.EventInject.u));
+#endif
 
         /*
          * Finally execute guest code.
@@ -6405,6 +6420,11 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
         /* Restore any residual host-state and save any bits shared between host and guest
            into the guest-CPU state.  Re-enables interrupts! */
         hmR0SvmPostRunGuest(pVCpu, &SvmTransient, rc);
+#if 0
+        Log(("%04x:%08RX64 ds=%04x %04x:%08RX64 i=%#RX64 exit=%d\n",
+             SvmTransient.pVmcb->guest.CS.u16Sel, SvmTransient.pVmcb->guest.u64RIP, SvmTransient.pVmcb->guest.DS.u16Sel,
+             SvmTransient.pVmcb->guest.SS.u16Sel, SvmTransient.pVmcb->guest.u64RSP, SvmTransient.pVmcb->ctrl.EventInject.u, SvmTransient.u64ExitCode));
+#endif
 
         if (RT_LIKELY(   rc == VINF_SUCCESS                               /* Check for VMRUN errors. */
                       && SvmTransient.u64ExitCode != SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
@@ -6592,6 +6612,14 @@ static uint32_t hmR0SvmGetIemXcptFlags(PCSVMEVENT pEvent)
  */
 static int hmR0SvmCheckExitDueToEventDelivery(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 {
+    /** @todo r=bird: Looks like this is called on many exits and we start by
+     * loading CR2 on the offchance that we actually have work to do here.
+     *
+     * HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY can surely check
+     * pVmcb->ctrl.ExitIntInfo.n.u1Valid, can't it?
+     *
+     * Also, what's the deal with hmR0SvmGetCurrentVmcb() vs pSvmTransient->pVmcb?
+     */
     int rc = VINF_SUCCESS;
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
     HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CR2);
@@ -7183,7 +7211,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    Log4Func(("CS:RIP=%04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
+    Log4Func(("CS:RIP=%04x:%RX64\n", pCtx->cs.Sel, pCtx->rip));
 #ifdef VBOX_WITH_STATISTICS
     switch (pSvmTransient->u64ExitCode)
     {
@@ -7631,7 +7659,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     PCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
     PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
 
-    Log4Func(("CS:RIP=%04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
+    Log4Func(("CS:RIP=%04x:%RX64\n", pCtx->cs.Sel, pCtx->rip));
 
     /* Refer AMD spec. 15.10.2 "IN and OUT Behaviour" and Figure 15-2. "EXITINFO1 for IOIO Intercept" for the format. */
     SVMIOIOEXITINFO IoExitInfo;
@@ -7873,7 +7901,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     uint32_t u32ErrCode      = pVmcb->ctrl.u64ExitInfo1;    /* Note! High bits in EXITINFO1 may contain additional info and are
                                                                thus intentionally not copied into u32ErrCode. */
 
-    Log4Func(("#NPF at CS:RIP=%04x:%#RX64 GCPhysFaultAddr=%RGp ErrCode=%#x cbInstrFetched=%u %.15Rhxs\n", pCtx->cs.Sel, pCtx->rip, GCPhysFaultAddr,
+    Log4Func(("#NPF at CS:RIP=%04x:%RX64 GCPhysFaultAddr=%RGp ErrCode=%#x cbInstrFetched=%u %.15Rhxs\n", pCtx->cs.Sel, pCtx->rip, GCPhysFaultAddr,
               u32ErrCode, pVmcb->ctrl.cbInstrFetched, pVmcb->ctrl.abInstr));
 
     /*
@@ -7979,7 +8007,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     int rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmNestedPagingMode, u32ErrCode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr);
     TRPMResetTrap(pVCpu);
 
-    Log4Func(("#NPF: PGMR0Trap0eHandlerNestedPaging returns %Rrc CS:RIP=%04x:%#RX64\n", rc, pCtx->cs.Sel, pCtx->rip));
+    Log4Func(("#NPF: PGMR0Trap0eHandlerNestedPaging returns %Rrc CS:RIP=%04x:%RX64\n", rc, pCtx->cs.Sel, pCtx->rip));
 
     /*
      * Same case as PGMR0Trap0eHandlerNPMisconfig(). See comment above, @bugref{6043}.
@@ -8684,7 +8712,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGP(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 }
 
 
-#if defined(HMSVM_ALWAYS_TRAP_ALL_XCPTS) || defined(VBOX_WITH_NESTED_HWVIRT_SVM)
 /**
  * \#VMEXIT handler for generic exceptions. Conditional \#VMEXIT.
  */
@@ -8750,7 +8777,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptGeneric(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransie
     hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
     return VINF_SUCCESS;
 }
-#endif
+
 
 /**
  * \#VMEXIT handler for software interrupt (INTn). Conditional \#VMEXIT (debug).
@@ -8769,6 +8796,74 @@ HMSVM_EXIT_DECL hmR0SvmExitSwInt(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     Log4Func(("uVector=%#x\n", Event.n.u8Vector));
     hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Generic exit handler that interprets the current instruction
+ *
+ * Useful exit that only gets triggered by dtrace and the debugger.  Caller does
+ * the exit logging, and this function does the rest.
+ */
+static VBOXSTRICTRC hmR0SvmExitInterpretInstruction(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient,
+                                                    uint64_t fExtraImport, uint64_t fHmChanged)
+{
+#if 1
+    RT_NOREF(pSvmTransient);
+    HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_MUST_MASK | fExtraImport);
+    VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
+    if (rcStrict == VINF_SUCCESS)
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, fHmChanged | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_RIP);
+    else
+    {
+        Log4Func(("IEMExecOne -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
+        if (rcStrict == VINF_IEM_RAISED_XCPT)
+        {
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK | fHmChanged);
+            rcStrict = VINF_SUCCESS;
+        }
+        else
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, fHmChanged);
+    }
+    return rcStrict;
+#else
+    RT_NOREF(pVCpu, pSvmTransient, fExtraImport, fHmChanged);
+    return VINF_EM_RAW_EMULATE_INSTR;
+#endif
+}
+
+
+/**
+ * \#VMEXIT handler for STR. Conditional \#VMEXIT (debug).
+ */
+HMSVM_EXIT_DECL hmR0SvmExitTrRead(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
+    Log4Func(("%04x:%08RX64\n", pSvmTransient->pVmcb->guest.CS.u16Sel, pSvmTransient->pVmcb->guest.u64RIP));
+    return hmR0SvmExitInterpretInstruction(pVCpu, pSvmTransient, CPUMCTX_EXTRN_TR, 0);
+}
+
+
+/**
+ * \#VMEXIT handler for LTR. Conditional \#VMEXIT (OS/2 TLB workaround, debug).
+ */
+HMSVM_EXIT_DECL hmR0SvmExitTrWrite(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pSvmTransient);
+
+    /* Workaround for lack of TLB flushing in OS/2 when returning to protected
+       mode after a real mode call (like a BIOS call).  See ticketref:20625
+       comment 14. */
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->hm.s.fMissingOS2TlbFlushWorkaround)
+    {
+        Log4Func(("%04x:%08RX64 TLB flush\n", pSvmTransient->pVmcb->guest.CS.u16Sel, pSvmTransient->pVmcb->guest.u64RIP));
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+    }
+    else
+        Log4Func(("%04x:%08RX64\n", pSvmTransient->pVmcb->guest.CS.u16Sel, pSvmTransient->pVmcb->guest.u64RIP));
+
+    return hmR0SvmExitInterpretInstruction(pVCpu, pSvmTransient, CPUMCTX_EXTRN_TR | CPUMCTX_EXTRN_GDTR, HM_CHANGED_GUEST_TR);
 }
 
 

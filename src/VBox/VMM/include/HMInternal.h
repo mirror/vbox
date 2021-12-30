@@ -421,6 +421,9 @@ typedef struct HM
     /** Set if posted interrupt processing is enabled.
      * @todo Not really used by HM, move to APIC where it's actually used.  */
     bool                        fPostedIntrs;
+    /** VM needs workaround for missing TLB flush in OS/2, see ticketref:20625.
+     * @note Currently only heeded by AMD-V.  */
+    bool                        fMissingOS2TlbFlushWorkaround;
     /** @} */
 
     /** @name Processed into HMR0PERVCPU::fWorldSwitcher by ring-0 on VM init.
@@ -446,7 +449,7 @@ typedef struct HM
      * (hmR3InitFinalizeR0Intel / hmR3InitFinalizeR0Amd). */
     bool                        fInitialized;
 
-    bool                        afAlignment2[6];
+    bool                        afAlignment2[5];
 
     STAMCOUNTER                 StatTprPatchSuccess;
     STAMCOUNTER                 StatTprPatchFailure;
