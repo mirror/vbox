@@ -2754,6 +2754,7 @@
 # define RTUtf16DupTag                                  RT_MANGLER(RTUtf16DupTag)
 # define RTUtf16Free                                    RT_MANGLER(RTUtf16Free)
 # define RTUtf16GetCpExInternal                         RT_MANGLER(RTUtf16GetCpExInternal)
+# define RTUtf16GetCpNExInternal                        RT_MANGLER(RTUtf16GetCpNExInternal)
 # define RTUtf16BigGetCpExInternal                      RT_MANGLER(RTUtf16BigGetCpExInternal)
 # define RTUtf16GetCpInternal                           RT_MANGLER(RTUtf16GetCpInternal)
 # define RTUtf16BigGetCpInternal                        RT_MANGLER(RTUtf16BigGetCpInternal)
