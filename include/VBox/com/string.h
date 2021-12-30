@@ -356,6 +356,19 @@ public:
     bool equalsIgnoreCase(BSTR a_pThat) const           { return compare(a_pThat, CaseInsensitive) == 0; }
 
     /**
+     * Checks if the string starts with @a a_rStart.
+     */
+    bool startsWith(Bstr const &a_rStart) const;
+    /**
+     * Checks if the string starts with @a a_rStart.
+     */
+    bool startsWith(RTCString const &a_rStart) const;
+    /**
+     * Checks if the string starts with @a a_pszStart.
+     */
+    bool startsWith(const char *a_pszStart) const;
+
+    /**
      * Returns true if the member string has no length.
      * This is true for instances created from both NULL and "" input strings.
      *

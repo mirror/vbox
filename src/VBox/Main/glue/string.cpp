@@ -274,6 +274,24 @@ int Bstr::compareUtf8(const char *a_pszRight, CaseSensitivity a_enmCase /*= Case
 }
 
 
+bool Bstr::startsWith(Bstr const &a_rStart) const
+{
+    return RTUtf16NCmp(m_bstr, a_rStart.m_bstr, a_rStart.length()) == 0;
+}
+
+
+bool Bstr::startsWith(RTCString const &a_rStart) const
+{
+    return RTUtf16NCmpUtf8(m_bstr, a_rStart.c_str(), RTSTR_MAX, a_rStart.length()) == 0;
+}
+
+
+bool Bstr::startsWith(const char *a_pszStart) const
+{
+    return RTUtf16NCmpUtf8(m_bstr, a_pszStart, RTSTR_MAX, strlen(a_pszStart)) == 0;
+}
+
+
 #ifndef VBOX_WITH_XPCOM
 
 HRESULT Bstr::joltNoThrow(ssize_t cwcNew /* = -1*/) RT_NOEXCEPT
