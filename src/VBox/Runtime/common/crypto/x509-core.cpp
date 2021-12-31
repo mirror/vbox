@@ -495,7 +495,7 @@ static const char *rtCrX509CanNameStripLeft(const char *psz, size_t *pcch)
         else if (!rtCrX509CanNameIsSpace(uc) && !rtCrX509CanNameIsNothing(uc))
             break;
     }
-    *pcch -= pszPrev - pszStart;
+    *pcch -= (size_t)(pszPrev - pszStart);
     return pszPrev;
 }
 
@@ -531,7 +531,7 @@ static RTUNICP rtCrX509CanNameGetNextCpWithMappingSlowSpace(const char **ppsz, s
     }
 
     *ppsz  = pszPrev;
-    *pcch -= pszPrev - pszStart;
+    *pcch -= (size_t)(pszPrev - pszStart);
     return uc;
 }
 
@@ -541,7 +541,7 @@ DECLINLINE(RTUNICP) rtCrX509CanNameGetNextCpIgnoreNul(const char **ppsz, size_t 
     while (*pcch > 0)
     {
         const char *psz = *ppsz;
-        RTUNICP uc = *psz;
+        RTUNICP     uc = (RTUNICP)*psz;
         if (uc < 0x80)
         {
             *pcch -= 1;
@@ -551,7 +551,7 @@ DECLINLINE(RTUNICP) rtCrX509CanNameGetNextCpIgnoreNul(const char **ppsz, size_t 
         {
             int rc = RTStrGetCpEx(ppsz, &uc);
             AssertRCReturn(rc, uc);
-            size_t cchCp = *ppsz - psz;
+            size_t cchCp = (size_t)(*ppsz - psz);
             AssertReturn(cchCp <= *pcch, 0);
             *pcch -= cchCp;
         }
@@ -765,6 +765,7 @@ static struct
     const char *pszLongNm;
 } const g_aRdnMap[] =
 {
+    {   "0.9.2342.19200300.100.1.1",  RT_STR_TUPLE("uid"),                  "userid" },
     {   "0.9.2342.19200300.100.1.3",  RT_STR_TUPLE("Mail"),                 "Rfc822Mailbox" },
     {   "0.9.2342.19200300.100.1.25", RT_STR_TUPLE("DC"),                   "DomainComponent" },
     {   "1.2.840.113549.1.9.1",       RT_STR_TUPLE("Email") /*nonstandard*/,"EmailAddress" },
@@ -1133,7 +1134,7 @@ static bool rtCrX509GeneralName_ExtractHostName(const char *pszUri,  const char 
         const char *pszEnd = strchr(pszStart, '/');
         if (!pszEnd)
             pszEnd = strchr(pszStart, '\0');
-        if (memchr(pszStart, ':', pszEnd - pszStart))
+        if (memchr(pszStart, ':', (size_t)(pszEnd - pszStart)))
             do
                 pszEnd--;
             while (*pszEnd != ':');
@@ -1142,7 +1143,7 @@ static bool rtCrX509GeneralName_ExtractHostName(const char *pszUri,  const char 
             /*
              * Drop access credentials at the front of the string if present.
              */
-            const char *pszAt = (const char *)memchr(pszStart, '@', pszEnd - pszStart);
+            const char *pszAt = (const char *)memchr(pszStart, '@', (size_t)(pszEnd - pszStart));
             if (pszAt)
                 pszStart = pszAt + 1;
 
@@ -1151,7 +1152,7 @@ static bool rtCrX509GeneralName_ExtractHostName(const char *pszUri,  const char 
              */
             if (pszEnd != pszStart)
             {
-                *pcchHostName = pszEnd - pszStart;
+                *pcchHostName = (size_t)(pszEnd - pszStart);
                 *pchHostName  = pszStart;
                 return true;
             }
