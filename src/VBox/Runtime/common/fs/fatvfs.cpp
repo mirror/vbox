@@ -1215,11 +1215,11 @@ static int rtFsFatClusterMap_Fat12_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
     for (;;)
     {
         /* Validate the cluster, checking for end of file. */
-        if (   idxCluster >= pFatCache->cClusters
-            || idxCluster <  FAT_FIRST_DATA_CLUSTER)
+        if ((uint32_t)(idxCluster - FAT_FIRST_DATA_CLUSTER) >= pFatCache->cClusters)
         {
             if (idxCluster >= FAT_FIRST_FAT12_EOC)
                 return VINF_SUCCESS;
+            Log(("Fat/ReadChain12: bogus cluster %#x vs %#x total\n", idxCluster, pFatCache->cClusters));
             return VERR_VFS_BOGUS_OFFSET;
         }
 
@@ -1264,11 +1264,11 @@ static int rtFsFatClusterMap_Fat16_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
     for (;;)
     {
         /* Validate the cluster, checking for end of file. */
-        if (   idxCluster >= pFatCache->cClusters
-            || idxCluster <  FAT_FIRST_DATA_CLUSTER)
+        if ((uint32_t)(idxCluster - FAT_FIRST_DATA_CLUSTER) >= pFatCache->cClusters)
         {
             if (idxCluster >= FAT_FIRST_FAT16_EOC)
                 return VINF_SUCCESS;
+            Log(("Fat/ReadChain16: bogus cluster %#x vs %#x total\n", idxCluster, pFatCache->cClusters));
             return VERR_VFS_BOGUS_OFFSET;
         }
 
@@ -1296,11 +1296,11 @@ static int rtFsFatClusterMap_Fat32_ReadClusterChain(PRTFSFATCLUSTERMAPCACHE pFat
     for (;;)
     {
         /* Validate the cluster, checking for end of file. */
-        if (   idxCluster >= pFatCache->cClusters
-            || idxCluster <  FAT_FIRST_DATA_CLUSTER)
+        if ((uint32_t)(idxCluster - FAT_FIRST_DATA_CLUSTER) >= pFatCache->cClusters)
         {
             if (idxCluster >= FAT_FIRST_FAT32_EOC)
                 return VINF_SUCCESS;
+            Log(("Fat/ReadChain32: bogus cluster %#x vs %#x total\n", idxCluster, pFatCache->cClusters));
             return VERR_VFS_BOGUS_OFFSET;
         }
 
@@ -2597,7 +2597,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsFatFileOps =
 
 
 /**
- * Instantiates a new directory.
+ * Instantiates a new file.
  *
  * @returns IPRT status code.
  * @param   pThis           The FAT volume instance.
