@@ -57,6 +57,7 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
     static const char s_szPrefix[]         = "@@VBOX_";
     static const char s_szPrefixInsert[]   = "@@VBOX_INSERT_";
     static const char s_szPrefixCond[]     = "@@VBOX_COND_";
+    static const char s_szPrefixCondElse[] = "@@VBOX_COND_ELSE@@";
     static const char s_szPrefixCondEnd[]  = "@@VBOX_COND_END@@";
     static const char s_szPrefixSplitter[] = "@@VBOX_SPLITTER";
 
@@ -182,6 +183,21 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
                     hrc = mpSetError->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
                                                    tr("%s without @@VBOX_COND_XXX@@ at offset %zu (%#zx)"),
                                                    s_szPrefixCondEnd, offPlaceholder, offPlaceholder);
+                    break;
+                }
+            }
+            /*
+             * @@VBOX_COND_ELSE@@: Flip the output setting of the current condition.
+             */
+            else if ( strncmp(pszPlaceholder, s_szPrefixCondElse, sizeof(s_szPrefixCondElse) - 1U) == 0 )
+            {
+                if (cConds > 0)
+                    fOutputting = !fOutputting;
+                else
+                {
+                    hrc = mpSetError->setErrorBoth(E_FAIL, VERR_PARSE_ERROR,
+                                                   tr("%s without @@VBOX_COND_XXX@@ at offset %zu (%#zx)"),
+                                                   s_szPrefixCondElse, offPlaceholder, offPlaceholder);
                     break;
                 }
             }
