@@ -1126,36 +1126,9 @@ static void rtCrX509NameDump(PCRTCRX509NAME pName, PFNRTDUMPPRINTFV pfnPrintfV, 
         {
             PRTCRX509ATTRIBUTETYPEANDVALUE pAttrib = pRdn->papItems[j];
 
-            const char *pszType = pAttrib->Type.szObjId;
-            if (   !strncmp(pAttrib->Type.szObjId, "2.5.4.", 6)
-                && (pAttrib->Type.szObjId[8] == '\0' || pAttrib->Type.szObjId[9] == '\0'))
-            {
-                switch (RTStrToUInt8(&pAttrib->Type.szObjId[6]))
-                {
-                    case  3: pszType = "cn"; break;
-                    case  4: pszType = "sn"; break;
-                    case  5: pszType = "serialNumber"; break;
-                    case  6: pszType = "c"; break;
-                    case  7: pszType = "l"; break;
-                    case  8: pszType = "st"; break;
-                    case  9: pszType = "street"; break;
-                    case 10: pszType = "o"; break;
-                    case 11: pszType = "ou"; break;
-                    case 13: pszType = "description"; break;
-                    case 15: pszType = "businessCategory"; break;
-                    case 16: pszType = "postalAddress"; break;
-                    case 17: pszType = "postalCode"; break;
-                    case 18: pszType = "postOfficeBox"; break;
-                    case 20: pszType = "telephoneNumber"; break;
-                    case 26: pszType = "registeredAddress"; break;
-                    case 31: pszType = "member"; break;
-                    case 41: pszType = "name"; break;
-                    case 42: pszType = "givenName"; break;
-                    case 43: pszType = "initials"; break;
-                    case 45: pszType = "x500UniqueIdentifier"; break;
-                    case 50: pszType = "uniqueMember"; break;
-                }
-            }
+            const char *pszType = RTCrX509Name_GetShortRdn(&pAttrib->Type);
+            if (!pszType)
+                pszType = pAttrib->Type.szObjId;
             rtDumpPrintf(pfnPrintfV, pvUser, "/%s=", pszType);
             if (pAttrib->Value.enmType == RTASN1TYPE_STRING)
             {
