@@ -52,7 +52,7 @@ using namespace std;
 UnattendedOs2Installer::UnattendedOs2Installer(Unattended *pParent, Utf8Str const &rStrHints)
     : UnattendedInstaller(pParent,
                           "os2_response_files.rsp", "os2_cid_install.cmd",
-                          "OS2.RSP",                "VBOXCID.CMD",
+                          "os2_response_files.rsp", "VBOXCID.CMD",
                           DeviceType_Floppy)
 {
     Assert(!isOriginalIsoNeeded());
@@ -327,6 +327,221 @@ static uint8_t *findCodePattern(PCOS2CODEPATTERN paPatterns, size_t cPatterns, u
     return NULL;
 }
 
+#if 0
+/**
+ * Patcher callback for TESTCFG.SYS.
+ *
+ * This is for debugging a mysterious DS corruption issue happening on an AMD
+ * 3990x host.
+ *
+ * @verbatim
+dbgf event/0: xcpt_gp - #GP (general protection fault)! arg=0x1d8
+VBoxDbg> r
+eax=00000001 ebx=00dc0000 ecx=56d80000 edx=178b0000 esi=ffde0100 edi=feff44e4
+eip=00000124 esp=00000f76 ebp=0000dbf3 iopl=3 nv up ei pl nz na po nc
+cs=0763 ds=01db es=0130 fs=0000 gs=0000 ss=001f               eflags=00003206
+0763:00000124 cb                      retf
+VBoxDbg> dw ss:sp
+001f:00000f76: 0549 075b 03e4 0000-0fb8 04b9 44e4 0130
+VBoxDbg> u cs:fc
+0763:000000fc 55                      push bp
+0763:000000fd 8b ec                   mov bp, sp
+0763:000000ff 53                      push bx
+0763:00000100 51                      push cx
+0763:00000101 52                      push dx
+0763:00000102 1e                      push DS
+0763:00000103 33 c9                   xor cx, cx
+0763:00000105 b0 10                   mov AL, 010h
+0763:00000107 b2 24                   mov DL, 024h
+0763:00000109 ff 1e 22 00             call far [00022h]
+0763:0000010d 72 0e                   jc +00eh (0011dh)
+0763:0000010f 50                      push ax
+0763:00000110 1f                      pop DS
+0763:00000111 f7 47 06 03 00          test word [bx+006h], 00003h
+0763:00000116 74 05                   je +005h (0011dh)
+0763:00000118 b8 01 00                mov ax, 00001h
+0763:0000011b eb 02                   jmp +002h (0011fh)
+0763:0000011d 33 c0                   xor ax, ax
+0763:0000011f 1f                      pop DS
+0763:00000120 5a                      pop dx
+0763:00000121 59                      pop cx
+0763:00000122 5b                      pop bx
+0763:00000123 5d                      pop bp
+0763:00000124 cb                      retf
+VBoxDbg> dw ss:sp - 5*2 L8
+001f:00000f6c: 0750 082a 220e 44e4-0f7e 0549 075b 03e4
+ * @endverbatim
+ *
+ * We end up with a \#GP on the RETF, but the stack frame is a valid 075b:0549
+ * return address (in TESTCFG's first code segment).  The error code is 0x1d8,
+ * which makes no sense. DS contains 0x1db, which could be related, however it
+ * is the *wrong* value as seen by the stack restore frame above, it was just
+ * restored as 0750 (TESTCFG data segment).
+ *
+ * The patching here aim at modifying to code to try figure out what might
+ * trigger the bogus DS and \#GP(0x1d8).
+ *
+ * P.S. There are no exits or event injections taking place when DS gets
+ * corrupt, the last exit was a CR0 read in OS2KRNL's DOSSEG (0120:1798)
+ * probably related to we comming back to protected mode from real mode as we
+ * just made an APM BIOS call.
+ *
+ * Update: The values loaded off the stack aren't the ones ending up the
+ * registers, so that might explain why this goes south.
+ *  
+ * @sa ticketref:20625
+ */
+/*static*/
+int UnattendedOs2Installer::patchTestCfg(uint8_t *pbFile, size_t cbFile, const char *pszFilename, UnattendedOs2Installer *pThis)
+{
+    RT_NOREF(pThis, pszFilename);
+
+    static uint8_t const s_abVariant1[] =
+    {
+        /*0763:00fc*/ 0x55,                          /* push bp                        */
+        /*0763:00fd*/ 0x8b, 0xec,                    /* mov bp, sp                     */
+        /*0763:00ff*/ 0x53,                          /* push bx                        */
+        /*0763:0100*/ 0x51,                          /* push cx                        */
+        /*0763:0101*/ 0x52,                          /* push dx                        */
+        /*0763:0102*/ 0x1e,                          /* push DS                        */
+        /*0763:0103*/ 0x33, 0xc9,                    /* xor cx, cx                     */
+        /*0763:0105*/ 0xb0, 0x10,                    /* mov AL, 010h                   */
+        /*0763:0107*/ 0xb2, 0x24,                    /* mov DL, 024h                   */
+        /*0763:0109*/ 0xff, 0x1e, 0x22, 0x00,        /* call far [00022h]              */
+        /*0763:010d*/ 0x72, 0x0e,                    /* jc +00eh (0011dh)              */
+        /*0763:010f*/ 0x50,                          /* push ax                        */
+        /*0763:0110*/ 0x1f,                          /* pop DS                         */
+        /*0763:0111*/ 0xf7, 0x47, 0x06, 0x03, 0x00,  /* test word [bx+006h], 00003h    */
+        /*0763:0116*/ 0x74, 0x05,                    /* je +005h (0011dh)              */
+        /*0763:0118*/ 0xb8, 0x01, 0x00,              /* mov ax, 00001h                 */
+        /*0763:011b*/ 0xeb, 0x02,                    /* jmp +002h (0011fh)             */
+        /*0763:011d*/ 0x33, 0xc0,                    /* xor ax, ax                     */
+        /*0763:011f*/ 0x1f,                          /* pop DS                         */
+        /*0763:0120*/ 0x5a,                          /* pop dx                         */
+        /*0763:0121*/ 0x59,                          /* pop cx                         */
+        /*0763:0122*/ 0x5b,                          /* pop bx                         */
+        /*0763:0123*/ 0x5d,                          /* pop bp                         */
+        /*0763:0124*/ 0xcb,                          /* retf                           */
+    };
+    static uint8_t const s_abVariant1Mask[] =
+    {
+        /*0763:00fc*/ 0xff,                          /* push bp                        */
+        /*0763:00fd*/ 0xff, 0xec,                    /* mov bp, sp                     */
+        /*0763:00ff*/ 0xff,                          /* push bx                        */
+        /*0763:0100*/ 0xff,                          /* push cx                        */
+        /*0763:0101*/ 0xff,                          /* push dx                        */
+        /*0763:0102*/ 0xff,                          /* push DS                        */
+        /*0763:0103*/ 0xff, 0xff,                    /* xor cx, cx                     */
+        /*0763:0105*/ 0xff, 0xff,                    /* mov AL, 010h                   */
+        /*0763:0107*/ 0xff, 0xff,                    /* mov DL, 024h                   */
+        /*0763:0109*/ 0xff, 0xff, 0x00, 0x00,        /* call far [00022h]              */
+        /*0763:010d*/ 0xff, 0xff,                    /* jc +00eh (0011dh)              */
+        /*0763:010f*/ 0xff,                          /* push ax                        */
+        /*0763:0110*/ 0xff,                          /* pop DS                         */
+        /*0763:0111*/ 0xff, 0xff, 0xff, 0xff, 0xff,  /* test word [bx+006h], 00003h    */
+        /*0763:0116*/ 0xff, 0xff,                    /* je +005h (0011dh)              */
+        /*0763:0118*/ 0xff, 0xff, 0xff,              /* mov ax, 00001h                 */
+        /*0763:011b*/ 0xff, 0xff,                    /* jmp +002h (0011fh)             */
+        /*0763:011d*/ 0xff, 0xff,                    /* xor ax, ax                     */
+        /*0763:011f*/ 0xff,                          /* pop DS                         */
+        /*0763:0120*/ 0xff,                          /* pop dx                         */
+        /*0763:0121*/ 0xff,                          /* pop cx                         */
+        /*0763:0122*/ 0xff,                          /* pop bx                         */
+        /*0763:0123*/ 0xff,                          /* pop bp                         */
+        /*0763:0124*/ 0xff,                          /* retf                           */
+    };
+    AssertCompile(sizeof(s_abVariant1Mask) == sizeof(s_abVariant1));
+
+    /* uUser1 = off to start modifying the code;  */
+    static const OS2CODEPATTERN s_aPatterns[] =
+    {
+        {  s_abVariant1, s_abVariant1Mask, sizeof(s_abVariant1Mask), 0x010d - 0x00fc, 0, 0, 0, 0 },
+    };
+
+    PCOS2CODEPATTERN pPattern;
+    uint8_t *pbHit = findCodePattern(&s_aPatterns[0], RT_ELEMENTS(s_aPatterns), pbFile, cbFile, &pPattern);
+    if (pPattern)
+    {
+        /* We've got */
+        uint8_t *pbPatch = &pbHit[pPattern->uUser1];
+#if 0 /* this seems to fix the issue */
+        *pbPatch++ = 0xe6;  /* out 78h, al - triggers an exit */
+        *pbPatch++ = 0x78;
+#elif 0 /* this seems to fix it too */
+        *pbPatch++ = 0xf3; /* pause */
+        *pbPatch++ = 0x90;
+#elif 0 /* still reproducible with normal nops. */
+        *pbPatch++ = 0x90;
+        *pbPatch++ = 0x90;
+#else
+# if 0
+        /*0763:010d*/ 0x72, 0x0e,                    /* jc +00eh (0011dh)              */
+        /*0763:010f*/ 0x50,                          /* push ax                        */
+        /*0763:0110*/ 0x1f,                          /* pop DS                         */
+        /*0763:0111*/ 0xf7, 0x47, 0x06, 0x03, 0x00,  /* test word [bx+006h], 00003h    */
+        /*0763:0116*/ 0x74, 0x05,                    /* je +005h (0011dh)              */
+        /*0763:0118*/ 0xb8, 0x01, 0x00,              /* mov ax, 00001h                 */
+        /*0763:011b*/ 0xeb, 0x02,                    /* jmp +002h (0011fh)             */
+        /*0763:011d*/ 0x33, 0xc0,                    /* xor ax, ax                     */
+        /*0763:011f*/ 0x1f,                          /* pop DS                         */
+        /*0763:0120*/ 0x5a,                          /* pop dx                         */
+        /*0763:0121*/ 0x59,                          /* pop cx                         */
+        /*0763:0122*/ 0x5b,                          /* pop bx                         */
+        /*0763:0123*/ 0x5d,                          /* pop bp                         */
+        /*0763:0124*/ 0xcb,                          /* retf                           */
+# endif
+        /* Try straigthen out the code and mabye load DS into AX (we don't care about the return value) */
+        *pbPatch++ = 0x50;  /* push ax                        */
+        *pbPatch++ = 0x1f;  /* pop DS                         */
+
+        *pbPatch++ = 0xf7;  /* test word [bx+006h], 00003h    */
+        *pbPatch++ = 0x47;
+        *pbPatch++ = 0x06;
+        *pbPatch++ = 0x03;
+        *pbPatch++ = 0x00;
+        /* not je */
+        *pbPatch++ = 0xb8;  /* mov ax, 00001h                 */
+        *pbPatch++ = 0x01;
+        *pbPatch++ = 0x00;
+
+# if 0 /* try reload SS */
+        *pbPatch++ = 0x8c; /* mov ax, ss */
+        *pbPatch++ = 0xd0;
+        *pbPatch++ = 0x8e; /* mov ss, ax */
+        *pbPatch++ = 0xd0;
+# endif
+# if 0 /* try reload CR3 to flush everything - not possible, we're in ring-3 */
+        *pbPatch++ = 0x0f; /* mov eax, cr3 */
+        *pbPatch++ = 0x20;
+        *pbPatch++ = 0xd8;
+        *pbPatch++ = 0x0f; /* mov cr3, eax */
+        *pbPatch++ = 0x22;
+        *pbPatch++ = 0xd8;
+# endif
+
+        *pbPatch++ = 0x1f;  /* pop DS                         */
+# if 0
+        *pbPatch++ = 0x8c;  /* mov ax, ds */
+        *pbPatch++ = 0xd8;
+# endif
+        *pbPatch++ = 0x5a;  /* pop dx                         */
+        *pbPatch++ = 0x59;  /* pop cx                         */
+        *pbPatch++ = 0x5b;  /* pop bx                         */
+        *pbPatch++ = 0x5d;  /* pop bp                         */
+        *pbPatch++ = 0xcb;  /* retf                           */
+
+#endif
+    }
+    else
+    {
+        LogRelFunc(("No patch pattern match!\n"));
+        return VERR_NOT_FOUND;
+    }
+
+    return VINF_SUCCESS;
+}
+#endif
+
 
 /**
  * Patcher callback for OS2LDR.
@@ -586,7 +801,7 @@ HRESULT UnattendedOs2Installer::copyFilesToAuxFloppyImage(RTVFS hVfs)
         { true, { "RESOURCE.SYS", NULL          }, { "DISK_1", "DISK_2", NULL }, "3.0",  NULL, NULL }, /* not in 2.1*/
         { true, { "SCREEN01.SYS", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL, NULL },
         { true, { "SESMGR.DLL",   NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL, NULL },
-        { true, { "TESTCFG.SYS",  NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL, NULL },
+        { true, { "TESTCFG.SYS",  NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL, NULL, /*patchTestCfg*/ },
         { true, { "VIO437.DCP",   "VTBL850.DCP" }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL, NULL },
         { true, { "VIOCALLS.DLL", NULL          }, { "DISK_1", "DISK_2", NULL }, NULL,   NULL, NULL },
     };

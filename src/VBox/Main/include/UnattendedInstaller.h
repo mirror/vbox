@@ -493,6 +493,7 @@ protected:
     HRESULT splitFileInner(const char *pszFileToSplit, RTCList<RTCString> &rVecSplitFiles,
                            const char *pszSrc, size_t cbLeft) RT_NOEXCEPT;
 
+    static int patchTestCfg(uint8_t *pbFile, size_t cbFile, const char *pszFilename, UnattendedOs2Installer *pThis);
     static int patchOs2Ldr(uint8_t *pbFile, size_t cbFile, const char *pszFilename, UnattendedOs2Installer *pThis);
 
     /** The OS2SE20.SRC path ("\\OS2IMAGES"). */
