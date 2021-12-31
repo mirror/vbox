@@ -331,6 +331,15 @@ static DECLCALLBACK(VMCPUID) pdmR0DevHlp_GetCurrentCpuId(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnGetMainExecutionEngine} */
+static DECLCALLBACK(uint8_t) pdmR0DevHlp_GetMainExecutionEngine(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_GetMainExecutionEngine: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    return VM_EXEC_ENGINE_NOT_SET;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR0,pfnTimerFromMicro} */
 static DECLCALLBACK(uint64_t) pdmR0DevHlp_TimerFromMicro(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMicroSecs)
 {
@@ -1412,6 +1421,7 @@ const PDMDEVHLPR0 g_tstDevPdmDevHlpR0 =
     pdmR0DevHlp_GetVM,
     pdmR0DevHlp_GetVMCPU,
     pdmR0DevHlp_GetCurrentCpuId,
+    pdmR0DevHlp_GetMainExecutionEngine,
     pdmR0DevHlp_TimerFromMicro,
     pdmR0DevHlp_TimerFromMilli,
     pdmR0DevHlp_TimerFromNano,

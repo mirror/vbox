@@ -406,6 +406,37 @@ static DECLCALLBACK(RTGCPHYS) pdmR3DevHlp_Mmio2GetMappingAddress(PPDMDEVINS pDev
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnMmio2QueryAndResetDirtyBitmap} */
+static DECLCALLBACK(int) pdmR3DevHlp_Mmio2QueryAndResetDirtyBitmap(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion,
+                                                                   void *pvBitmap, size_t cbBitmap)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    //PVM pVM = pDevIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DevHlp_Mmio2QueryAndResetDirtyBitmap: caller='%s'/%d: hRegion=%#RX64 pvBitmap=%p cbBitmap=%#zx\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, hRegion, pvBitmap, cbBitmap));
+
+    int rc = VERR_NOT_IMPLEMENTED;
+
+    LogFlow(("pdmR3DevHlp_Mmio2QueryAndResetDirtyBitmap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnMmio2ControlDirtyPageTracking} */
+static DECLCALLBACK(int) pdmR3DevHlp_Mmio2ControlDirtyPageTracking(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, bool fEnabled)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    //PVM pVM = pDevIns->Internal.s.pVMR3;
+    LogFlow(("pdmR3DevHlp_Mmio2ControlDirtyPageTracking: caller='%s'/%d: hRegion=%#RX64 fEnabled=%RTbool\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, hRegion, fEnabled));
+
+    int rc = VERR_NOT_IMPLEMENTED;
+
+    LogFlow(("pdmR3DevHlp_Mmio2ControlDirtyPageTracking: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /**
  * @copydoc PDMDEVHLPR3::pfnMmio2ChangeRegionNo
  */
@@ -2134,6 +2165,18 @@ static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryStringDef(PCFGMNODE pNode, const c
     }
 
     return rc;
+}
+
+
+static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryPassword(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString)
+{
+    return pdmR3DevHlp_CFGMQueryString(pNode, pszName, pszString, cchString);
+}
+
+
+static DECLCALLBACK(int) pdmR3DevHlp_CFGMQueryPasswordDef(PCFGMNODE pNode, const char *pszName, char *pszString, size_t cchString, const char *pszDef)
+{
+    return pdmR3DevHlp_CFGMQueryStringDef(pNode, pszName, pszString, cchString, pszDef);
 }
 
 
@@ -5572,6 +5615,17 @@ static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLea
              pDevIns->pReg->szName, pDevIns->iInstance, *pEax, *pEbx, *pEcx, *pEdx));
 }
 
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetMainExecutionEngine} */
+static DECLCALLBACK(uint8_t) pdmR3DevHlp_GetMainExecutionEngine(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    //VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_GetMainExecutionEngine: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
+    return VM_EXEC_ENGINE_NOT_SET;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
                                                                 PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
@@ -5747,6 +5801,8 @@ const PDMDEVHLPR3 g_tstDevPdmDevHlpR3 =
     pdmR3DevHlp_Mmio2Unmap,
     pdmR3DevHlp_Mmio2Reduce,
     pdmR3DevHlp_Mmio2GetMappingAddress,
+    pdmR3DevHlp_Mmio2QueryAndResetDirtyBitmap,
+    pdmR3DevHlp_Mmio2ControlDirtyPageTracking,
     pdmR3DevHlp_Mmio2ChangeRegionNo,
     pdmR3DevHlp_MmioMapMmio2Page,
     pdmR3DevHlp_MmioResetRegion,
@@ -5870,6 +5926,8 @@ const PDMDEVHLPR3 g_tstDevPdmDevHlpR3 =
     pdmR3DevHlp_CFGMQueryIntegerDef,
     pdmR3DevHlp_CFGMQueryString,
     pdmR3DevHlp_CFGMQueryStringDef,
+    pdmR3DevHlp_CFGMQueryPassword,
+    pdmR3DevHlp_CFGMQueryPasswordDef,
     pdmR3DevHlp_CFGMQueryBytes,
     pdmR3DevHlp_CFGMQueryU64,
     pdmR3DevHlp_CFGMQueryU64Def,
@@ -6093,6 +6151,7 @@ const PDMDEVHLPR3 g_tstDevPdmDevHlpR3 =
     pdmR3DevHlp_A20IsEnabled,
     pdmR3DevHlp_A20Set,
     pdmR3DevHlp_GetCpuId,
+    pdmR3DevHlp_GetMainExecutionEngine,
     pdmR3DevHlp_TMTimeVirtGet,
     pdmR3DevHlp_TMTimeVirtGetFreq,
     pdmR3DevHlp_TMTimeVirtGetNano,
