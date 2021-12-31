@@ -15111,7 +15111,14 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPUCC pVCpu, uint8_t cbValue, 
         }
     }
 
-    Assert(pVCpu->iem.s.cActiveMappings == 0 || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM));
+    if (   pVCpu->iem.s.cActiveMappings == 0
+        || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_IEM))
+    { /* likely */ }
+    else
+    {
+        AssertMsg(!IOM_SUCCESS(rcStrict), ("%#x\n", VBOXSTRICTRC_VAL(rcStrict)));
+        iemMemRollback(pVCpu);
+    }
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
