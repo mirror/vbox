@@ -11,7 +11,7 @@ to the host for later audio comparison / verification.
 
 __copyright__ = \
 """
-Copyright (C) 2021 Oracle Corporation
+Copyright (C) 2021-2022 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;

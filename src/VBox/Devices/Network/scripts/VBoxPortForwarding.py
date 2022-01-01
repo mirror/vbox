@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-Copyright (C) 2009-2020 Oracle Corporation
+Copyright (C) 2009-2022 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;

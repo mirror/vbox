@@ -4,7 +4,7 @@
 
 @REM
 REM
-REM Copyright (C) 2006-2020 Oracle Corporation
+REM Copyright (C) 2006-2022 Oracle Corporation
 REM
 REM This file is part of VirtualBox Open Source Edition (OSE), as
 REM available from http://www.virtualbox.org. This file is free software;
