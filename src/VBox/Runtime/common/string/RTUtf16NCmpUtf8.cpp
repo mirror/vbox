@@ -62,4 +62,3 @@ RTDECL(int) RTUtf16NCmpUtf8(PCRTUTF16 pwsz1, const char *psz2, size_t cwcMax1, s
 }
 RT_EXPORT_SYMBOL(RTUtf16NCmpUtf8);
 
-

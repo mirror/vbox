@@ -388,7 +388,7 @@ VBoxDbg> dw ss:sp - 5*2 L8
  *
  * Update: The values loaded off the stack aren't the ones ending up the
  * registers, so that might explain why this goes south.
- *  
+ *
  * @sa ticketref:20625
  */
 /*static*/
