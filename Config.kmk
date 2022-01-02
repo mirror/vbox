@@ -1821,7 +1821,7 @@ DEFS.haiku       = RT_OS_HAIKU
 DEFS.linux       = RT_OS_LINUX _FILE_OFFSET_BITS=64
 DEFS.netbsd      = RT_OS_NETBSD
 DEFS.openbsd     = RT_OS_OPENBSD
-DEFS.os2         = RT_OS_OS2 __OS2__
+DEFS.os2         = RT_OS_OS2
 DEFS.os-agnostic = RT_OS_AGNOSTIC
 DEFS.solaris     = RT_OS_SOLARIS _FILE_OFFSET_BITS=64
 DEFS.win         = RT_OS_WINDOWS __WIN__
