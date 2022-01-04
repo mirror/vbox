@@ -270,7 +270,8 @@ typedef struct RTFSISOMAKERNAMESPACE
     PRTFSISOMAKERNAME       pRoot;
     /** Total number of name nodes in the namespace. */
     uint32_t                cNames;
-    /** Total number of directories in the namespace. */
+    /** Total number of directories in the namespace.
+     * @note Appears to be unused.  */
     uint32_t                cDirs;
     /** The namespace selector (RTFSISOMAKER_NAMESPACE_XXX). */
     uint32_t                fNamespace;
@@ -1275,6 +1276,36 @@ RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t 
 
     pThis->Joliet.uRockRidgeLevel = uLevel;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets the rock ridge support level (on the primary ISO-9660 namespace).
+ *
+ * @returns 0 if disabled, 1 just enabled, 2 if enabled with ER tag, and
+ *          UINT8_MAX if the handle is invalid.
+ * @param   hIsoMaker           The ISO maker handle.
+ */
+RTDECL(uint8_t) RTFsIsoMakerGetRockRidgeLevel(RTFSISOMAKER hIsoMaker)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET_EX(pThis, UINT8_MAX);
+    return pThis->PrimaryIso.uRockRidgeLevel;
+}
+
+
+/**
+ * Gets the rock ridge support level on the joliet namespace (experimental).
+ *
+ * @returns 0 if disabled, 1 just enabled, 2 if enabled with ER tag, and
+ *          UINT8_MAX if the handle is invalid.
+ * @param   hIsoMaker           The ISO maker handle.
+ */
+RTDECL(uint8_t) RTFsIsoMakerGetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET_EX(pThis, UINT8_MAX);
+    return pThis->Joliet.uRockRidgeLevel;
 }
 
 
@@ -2625,6 +2656,29 @@ static int rtFsIsoMakerObjUnsetName(PRTFSISOMAKERINT pThis, PRTFSISOMAKERNAMESPA
 }
 
 
+/**
+ * Gets currently populated namespaces.
+ *
+ * @returns Set of namespaces (RTFSISOMAKER_NAMESPACE_XXX), UINT32_MAX on error.
+ * @param   hIsoMaker           The ISO maker handle.
+ */
+RTDECL(uint32_t) RTFsIsoMakerGetPopulatedNamespaces(RTFSISOMAKER hIsoMaker)
+{
+    PRTFSISOMAKERINT pThis = hIsoMaker;
+    RTFSISOMAKER_ASSERT_VALID_HANDLE_RET_EX(pThis, UINT32_MAX);
+
+    uint32_t fRet = 0;
+    if (pThis->PrimaryIso.cNames > 0)
+        fRet |= RTFSISOMAKER_NAMESPACE_ISO_9660;
+    if (pThis->Joliet.cNames     > 0)
+        fRet |= RTFSISOMAKER_NAMESPACE_JOLIET;
+    if (pThis->Udf.cNames        > 0)
+        fRet |= RTFSISOMAKER_NAMESPACE_UDF;
+    if (pThis->Hfs.cNames        > 0)
+        fRet |= RTFSISOMAKER_NAMESPACE_HFS;
+
+    return fRet;
+}
 
 
 
@@ -5485,8 +5539,17 @@ RTDECL(int) RTFsIsoMakerFinalize(RTFSISOMAKER hIsoMaker)
     if (RT_FAILURE(rc))
         return rc;
     AssertReturn(pThis->cObjects > 0, VERR_NO_DATA);
+
+    /* The primary ISO-9660 namespace must be explicitly disabled (for now),
+       so we return VERR_NO_DATA if no root dir. */
     AssertReturn(pThis->PrimaryIso.pRoot || pThis->PrimaryIso.uLevel == 0, VERR_NO_DATA);
-    AssertReturn(pThis->Joliet.pRoot     || pThis->Joliet.uLevel     == 0, VERR_NO_DATA);
+
+    /* Automatically disable the joliet namespace if it is empty (no root dir). */
+    if (!pThis->Joliet.pRoot && pThis->Joliet.uLevel > 0)
+    {
+        pThis->Joliet.uLevel = 0;
+        pThis->cVolumeDescriptors--;
+    }
 
     rc = rtFsIsoMakerFinalizePrepVolumeDescriptors(pThis);
     if (RT_FAILURE(rc))

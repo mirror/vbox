@@ -130,6 +130,24 @@ RTDECL(int) RTFsIsoMakerSetRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel
 RTDECL(int) RTFsIsoMakerSetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker, uint8_t uLevel);
 
 /**
+ * Gets the rock ridge support level (on the primary ISO-9660 namespace).
+ *
+ * @returns 0 if disabled, 1 just enabled, 2 if enabled with ER tag, and
+ *          UINT8_MAX if the handle is invalid.
+ * @param   hIsoMaker           The ISO maker handle.
+ */
+RTDECL(uint8_t) RTFsIsoMakerGetRockRidgeLevel(RTFSISOMAKER hIsoMaker);
+
+/**
+ * Gets the rock ridge support level on the joliet namespace (experimental).
+ *
+ * @returns 0 if disabled, 1 just enabled, 2 if enabled with ER tag, and
+ *          UINT8_MAX if the handle is invalid.
+ * @param   hIsoMaker           The ISO maker handle.
+ */
+RTDECL(uint8_t) RTFsIsoMakerGetJolietRockRidgeLevel(RTFSISOMAKER hIsoMaker);
+
+/**
  * Changes the file attribute (mode, owner, group) inherit style (from source).
  *
  * The strict style will use the exact attributes from the source, where as the
@@ -254,6 +272,14 @@ RTDECL(int) RTFsIsoMakerSetStringProp(RTFSISOMAKER hIsoMaker, RTFSISOMAKERSTRING
  * @param   cSectors            Number of sectors to pad the image with.
  */
 RTDECL(int) RTFsIsoMakerSetImagePadding(RTFSISOMAKER hIsoMaker, uint32_t cSectors);
+
+/**
+ * Gets currently populated namespaces.
+ *
+ * @returns Set of namespaces (RTFSISOMAKER_NAMESPACE_XXX), UINT32_MAX on error.
+ * @param   hIsoMaker           The ISO maker handle.
+ */
+RTDECL(uint32_t) RTFsIsoMakerGetPopulatedNamespaces(RTFSISOMAKER hIsoMaker);
 
 /**
  * Resolves a path into a object ID.

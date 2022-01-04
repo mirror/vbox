@@ -99,6 +99,7 @@ typedef enum RTFSISOMAKERCMDOPT
     RTFSISOMAKERCMD_OPT_RANDOM_OUTPUT_BUFFER_SIZE,
     RTFSISOMAKERCMD_OPT_RANDOM_ORDER_VERIFICATION,
     RTFSISOMAKERCMD_OPT_NAME_SETUP,
+    RTFSISOMAKERCMD_OPT_NAME_SETUP_FROM_IMPORT,
 
     RTFSISOMAKERCMD_OPT_ROCK_RIDGE,
     RTFSISOMAKERCMD_OPT_LIMITED_ROCK_RIDGE,
@@ -462,6 +463,7 @@ static const RTGETOPTDEF g_aRtFsIsoMakerOptions[] =
      * Unique IPRT ISO maker options.
      */
     { "--name-setup",                   RTFSISOMAKERCMD_OPT_NAME_SETUP,                     RTGETOPT_REQ_STRING  },
+    { "--name-setup-from-import",       RTFSISOMAKERCMD_OPT_NAME_SETUP_FROM_IMPORT,         RTGETOPT_REQ_NOTHING },
     { "--import-iso",                   RTFSISOMAKERCMD_OPT_IMPORT_ISO,                     RTGETOPT_REQ_STRING  },
     { "--push-iso",                     RTFSISOMAKERCMD_OPT_PUSH_ISO,                       RTGETOPT_REQ_STRING  },
     { "--push-iso-no-joliet",           RTFSISOMAKERCMD_OPT_PUSH_ISO_NO_JOLIET,             RTGETOPT_REQ_STRING  },
@@ -1414,6 +1416,63 @@ static int rtFsIsoMakerCmdOptNameSetup(PRTFSISOMAKERCMDOPTS pOpts, const char *p
     pOpts->fDstNamespaces  = fNamespaces;
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles the --name-setup-from-import option.
+ *
+ * @returns IPRT status code.
+ * @param   pOpts               The ISO maker command instance.
+ */
+static int rtFsIsoMakerCmdOptNameSetupFromImport(PRTFSISOMAKERCMDOPTS pOpts)
+{
+    /*
+     * Figure out what's on the ISO.
+     */
+    uint32_t fNamespaces = RTFsIsoMakerGetPopulatedNamespaces(pOpts->hIsoMaker);
+    AssertReturn(fNamespaces != UINT32_MAX, VERR_INVALID_HANDLE);
+    if (fNamespaces != 0)
+    {
+        if (   (fNamespaces & RTFSISOMAKER_NAMESPACE_ISO_9660)
+            && RTFsIsoMakerGetRockRidgeLevel(pOpts->hIsoMaker) > 0)
+            fNamespaces |= RTFSISOMAKERCMDNAME_PRIMARY_ISO_ROCK_RIDGE;
+
+        if (   (fNamespaces & RTFSISOMAKER_NAMESPACE_JOLIET)
+            && RTFsIsoMakerGetJolietRockRidgeLevel(pOpts->hIsoMaker) > 0)
+            fNamespaces |= RTFSISOMAKERCMDNAME_JOLIET_ROCK_RIDGE;
+
+        /*
+         * The TRANS.TBL files cannot be disabled at present and the importer
+         * doesn't check whether they are there or not, so carry them on from
+         * the previous setup.
+         */
+        uint32_t fOld = 0;
+        uint32_t i    = pOpts->cNameSpecifiers;
+        while (i-- > 0)
+            fOld |= pOpts->afNameSpecifiers[0];
+        if (fNamespaces & RTFSISOMAKER_NAMESPACE_ISO_9660)
+            fNamespaces |= fOld & RTFSISOMAKERCMDNAME_PRIMARY_ISO_TRANS_TBL;
+        if (fNamespaces & RTFSISOMAKER_NAMESPACE_JOLIET)
+            fNamespaces |= fOld & RTFSISOMAKERCMDNAME_PRIMARY_ISO_TRANS_TBL;
+        if (fNamespaces & RTFSISOMAKER_NAMESPACE_UDF)
+            fNamespaces |= fOld & RTFSISOMAKERCMDNAME_UDF_TRANS_TBL;
+        if (fNamespaces & RTFSISOMAKER_NAMESPACE_HFS)
+            fNamespaces |= fOld & RTFSISOMAKERCMDNAME_HFS_TRANS_TBL;
+
+        /*
+         * Apply the new configuration.
+         */
+        pOpts->cNameSpecifiers     = 1;
+        pOpts->afNameSpecifiers[0] = fNamespaces;
+        pOpts->fDstNamespaces      = fNamespaces & RTFSISOMAKERCMDNAME_MAJOR_MASK;
+
+        char szTmp[128];
+        rtFsIsoMakerPrintf(pOpts, "info: --name-setup-from-import determined: --name-setup=%s\n",
+                           rtFsIsoMakerCmdNameSpecifiersToString(fNamespaces, szTmp, sizeof(szTmp)));
+        return VINF_SUCCESS;
+    }
+    return rtFsIsoMakerCmdErrorRc(pOpts, VERR_DRIVE_IS_EMPTY, "--name-setup-from-import used on an empty ISO");
 }
 
 
@@ -3184,6 +3243,10 @@ static int rtFsIsoMakerCmdParse(PRTFSISOMAKERCMDOPTS pOpts, unsigned cArgs, char
 
             case RTFSISOMAKERCMD_OPT_NAME_SETUP:
                 rc = rtFsIsoMakerCmdOptNameSetup(pOpts, ValueUnion.psz);
+                break;
+
+            case RTFSISOMAKERCMD_OPT_NAME_SETUP_FROM_IMPORT:
+                rc = rtFsIsoMakerCmdOptNameSetupFromImport(pOpts);
                 break;
 
             case RTFSISOMAKERCMD_OPT_PUSH_ISO:

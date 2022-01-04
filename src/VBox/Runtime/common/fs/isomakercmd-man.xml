@@ -145,7 +145,7 @@
         </varlistentry>
 
         <varlistentry>
-          <term><option>--name-setup <replaceable>spec</replaceable></option></term>
+          <term><option>--name-setup=<replaceable>spec</replaceable></option></term>
           <listitem><para>Configures active namespaces and how file specifications are to be
               interpreted.  The specification is a comma separated list.  Each element in the list is
               a sub-list separated by space, <computeroutput>'+'</computeroutput> or
@@ -171,6 +171,16 @@
               <listitem><para>hfs-trans-tbl</para></listitem>
            </itemizedlist>
           </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term><option>--name-setup-from-import</option></term>
+          <listitem><para>This is for use following one or more <option>--import-iso</option>
+              operations and will pick a configuration matching the imported content as best we can.
+              If the imported ISOs only had a iso9660 namespace, the joliet, udf and hfs namespaces
+              will be removed.  This is useful when adding additional files to the ISO and will
+              prevent guest from picking a namespace without the imported ISO content when mounting it.
+          </para></listitem>
         </varlistentry>
 
         <varlistentry>
