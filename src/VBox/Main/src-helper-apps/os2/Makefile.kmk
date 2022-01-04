@@ -25,11 +25,13 @@ include $(KBUILD_PATH)/subheader.kmk
 ifdef VBOX_WITH_OPEN_WATCOM
  PROGRAMS += os2_util
 endif
+os2_util_TEMPLATE       = DUMMY
 os2_util_TOOL           = OPENWATCOM-16
 os2_util_ASTOOL         = OPENWATCOM-16
 os2_util_LDTOOL         = OPENWATCOM-WL
 os2_util_BLD_TRG        = os2
 os2_util_BLD_TRG_ARCH   = x86
+os2_util_EXESUFF        = .exe
 os2_util_INST           = $(INST_UNATTENDED_TEMPLATES)
 os2_util_MODE           = a+r,u+w
 os2_util_DEFS           = IN_RING3
