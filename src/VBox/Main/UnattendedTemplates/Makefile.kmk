@@ -46,7 +46,7 @@ ifdef VBOX_WITH_UNATTENDED
  	win_postinstall.cmd
 
  ifndef VBOX_WITH_OPEN_WATCOM
-  VBoxUnattendedTemplates_SOURCES = \
+  VBoxUnattendedTemplates_SOURCES += \
   	os2_util.exe
  endif
 
