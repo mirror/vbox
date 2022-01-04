@@ -974,6 +974,14 @@ HRESULT UnattendedOs2Installer::addFilesToAuxVisoVectors(RTCList<RTCString> &rVe
 
     /*
      * Add our stuff to the vectors.
+     *
+     * Note! Typcially OS/2 ISOs are without joliet or UDF namespaces, given
+     *       their age and tools used to produce them, but more recent ones
+     *       like ArcaOS have joliet present.  So, to avoid ending up with an
+     *       almost empty CDROM in Phase2 because UDF.IFS is loaded and
+     *       presenting the joliet namespace, the --name-setup-from-import
+     *       option was added to the ISO maker.  It will look at the files that
+     *       were imported and adjust the --name-setup accordingly (logged).
      */
     try
     {
@@ -983,16 +991,17 @@ HRESULT UnattendedOs2Installer::addFilesToAuxVisoVectors(RTCList<RTCString> &rVe
 
         rVecArgs.append() = "--import-iso";
         rVecArgs.append(mpParent->i_getIsoPath());
+        rVecArgs.append() = "--name-setup-from-import"; /* */
 
+        /** @todo these enables rock-ridge...   */
         rVecArgs.append() = "--file-mode=0444";
         rVecArgs.append() = "--dir-mode=0555";
 
         /* Add the boot floppy to the ISO: */
         rVecArgs.append() = "--eltorito-new-entry";
         rVecArgs.append() = "--eltorito-add-image";
-        rVecArgs.append(mStrAuxiliaryFloppyFilePath);
+        rVecArgs.append().assign("VBoxBootFloppy.img=").append(mStrAuxiliaryFloppyFilePath);
         rVecArgs.append() = "--eltorito-floppy-288";
-
 
         /* Add the response files and postinstall files to the ISO: */
         Utf8Str const &rStrAuxPrefix = mpParent->i_getAuxiliaryBasePath();
@@ -1002,6 +1011,14 @@ HRESULT UnattendedOs2Installer::addFilesToAuxVisoVectors(RTCList<RTCString> &rVe
             RTCString const &rStrFile = mVecSplitFiles[i];
             rVecArgs.append().assign("VBoxCID/").append(rStrFile).append('=').append(rStrAuxPrefix).append(rStrFile);
         }
+
+        /* Add the os2_util.exe to the ISO: */
+        Utf8Str strUnattendedTemplates;
+        int vrc = RTPathAppPrivateNoArchCxx(strUnattendedTemplates);
+        AssertRCReturn(vrc, mpParent->setErrorVrc(vrc));
+        vrc = RTPathAppendCxx(strUnattendedTemplates, "UnattendedTemplates");
+        AssertRCReturn(vrc, mpParent->setErrorVrc(vrc));
+        rVecArgs.append().assign("VBoxCID/os2_util.exe=").append(strUnattendedTemplates).append("/os2_util.exe");
     }
     catch (std::bad_alloc &)
     {

@@ -45,6 +45,11 @@ ifdef VBOX_WITH_UNATTENDED
  	os2_cid_install.cmd \
  	win_postinstall.cmd
 
+ ifndef VBOX_WITH_OPEN_WATCOM
+  VBoxUnattendedTemplates_SOURCES = \
+  	os2_util.exe
+ endif
+
  ifndef VBOX_OSE
   VBoxUnattendedTemplates_SOURCES += \
  	lgw_ks.cfg \
