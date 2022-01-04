@@ -538,7 +538,12 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
     else if (IS_PLACEHOLDER_PARTIALLY_MATCH("GUEST_VERSION"))
     {
         //parse the placeholder and extract the OS version from there
-        RTCString strPlaceHolder(pachPlaceholder);
+        RTCString strPlaceHolder(pachPlaceholder); /** @todo r=bird: What's the meaning of duplicating the rest of the script here
+                                                    * when you could just add cchPlaceholder to the parameter list and limit it to
+                                                    * what is actually needed.  OTOH it's really not needed to make copies here,
+                                                    * validating the "[" can be done in the partial match above and "]@@" by using
+                                                    * cchPlaceholder, what you wnat to get at is inbetween and does not need
+                                                    * two copies (only one for RTStrVersionCompare). */
         size_t startPos = sizeof("@@VBOX_COND_GUEST_VERSION") - 1;//-1 is for '\n'
         size_t endPos = strPlaceHolder.find("@@", startPos + 2);
         //next part should look like [>8.0.0] for example where:
@@ -547,6 +552,9 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
         // - 8.0.0 is required guest OS version.
         //The end of placeholder is "@@" like for others.
 
+        /** @todo r=bird: What kind of syntax checking is this? Ignore any kind of
+         *        mistyped stuff and let the user figure out what he did wrong
+         *        without clues?  Lazy. */
         if ( strPlaceHolder[endPos] == '@'
              && strPlaceHolder[endPos+1] == '@' )
         {
