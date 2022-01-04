@@ -22,26 +22,32 @@ include $(KBUILD_PATH)/subheader.kmk
 # OS/2 Unattended installation helper utility.
 # This is checked in as a binary, this is just the makefile for re-builting it.
 #
-override DEFS.os2 = RT_OS_OS2 # HACK ALERT!
-PROGRAMS += os2_util
-os2_util_TOOL         = OPENWATCOM-16
-os2_util_ASTOOL       = OPENWATCOM-16
-os2_util_LDTOOL       = OPENWATCOM-WL
-os2_util_BLD_TRG      = os2
-os2_util_BLD_TRG_ARCH = x86
-os2_util_INST         = $(INST_UNATTENDED_TEMPLATES)
-os2_util_MODE         = a+r,u+w
-os2_util_DEFS         = IN_RING3
-os2_util_CFLAGS       = -zl -s -ml
-os2_util_LDFLAGS      = \
+ifdef VBOX_WITH_OPEN_WATCOM
+ PROGRAMS += os2_util
+endif
+os2_util_TOOL           = OPENWATCOM-16
+os2_util_ASTOOL         = OPENWATCOM-16
+os2_util_LDTOOL         = OPENWATCOM-WL
+os2_util_BLD_TRG        = os2
+os2_util_BLD_TRG_ARCH   = x86
+os2_util_INST           = $(INST_UNATTENDED_TEMPLATES)
+os2_util_MODE           = a+r,u+w
+os2_util_DEFS           = IN_RING3
+os2_util_CFLAGS         = -zl -s -ml -os
+os2_util_LDFLAGS        = \
 	SYSTEM os2 \
 	OPTION START=_Os2UtilMain \
 	OPTION STACK=8192 \
 	OPTION HEAPSize=4096 \
 	OPTION MANYAUTODATA \
 	SEGMENT IOPL IOPL EXECUTEREAD
-os2_util_INCS         = $(PATH_TOOL_OPENWATCOM)/h/os21x
-os2_util_SOURCES      = os2_util.c os2_utilA.asm
+if 0
+os2_util_LDFLAGS       += Debug Watcom All
+os2_util_CFLAGS        += -d2 -hw
+endif
+
+os2_util_INCS           = $(PATH_TOOL_OPENWATCOM)/h/os21x
+os2_util_SOURCES        = os2_util.c os2_utilA.asm
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

@@ -27,6 +27,8 @@
 #include <iprt/asm-amd64-x86.h>
 #include <VBox/log.h>
 
+#include "VBox/version.h"
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -75,6 +77,20 @@ static unsigned MyStrLen(PSZ psz)
     while (psz[cch] != '\0')
         cch++;
     return cch;
+}
+
+
+/** strchr-like function. */
+static char __far *MyStrChr(const char __far *psz, char chNeedle)
+{
+    char ch;
+    while ((ch = *psz) != '\0')
+    {
+        if (ch == chNeedle)
+            return (char __far *)psz;
+        psz++;
+    }
+    return NULL;
 }
 
 
@@ -133,7 +149,29 @@ static void MyApiErrorAndQuit(PSZ pszOperation, USHORT rc)
     MyOutStr(" failed: ");
     MyOutNum(rc);
     MyOutStr("\r\n");
-    DosExit(EXIT_PROCESS, 0);
+    DosExit(EXIT_PROCESS, 1);
+}
+
+
+static void MyApiError3AndQuit(PSZ pszOperation, PSZ psz2, PSZ psz3, USHORT rc)
+{
+    MyOutStr("Os2Util: error: ");
+    MyOutStr(pszOperation);
+    MyOutStr(psz2);
+    MyOutStr(psz3);
+    MyOutStr(" failed: ");
+    MyOutNum(rc);
+    MyOutStr("\r\n");
+    DosExit(EXIT_PROCESS, 1);
+}
+
+
+static void MySyntaxErrorAndQuit(PSZ pszMsg)
+{
+    MyOutStr("Os2Util: syntax error: ");
+    MyOutStr(pszMsg);
+    MyOutStr("\r\n");
+    DosExit(EXIT_PROCESS, 1);
 }
 
 
@@ -159,6 +197,7 @@ static HFILE OpenTeeFile(PSZ pszTeeToFile, BOOL fAppend, PSZ pszToWrite, USHORT 
         /*
          * Write out buffered data
          */
+        /** @todo this does not seem to work. */
         pBuf = g_pBufferHead;
         while (pBuf)
         {
@@ -233,18 +272,115 @@ static HFILE OpenTeeFile(PSZ pszTeeToFile, BOOL fAppend, PSZ pszToWrite, USHORT 
 }
 
 
+/**
+ * Waits for the child progress to complete, returning it's status code.
+ */
+static void DoWait(PID pidChild, USHORT idSession, HQUEUE hQueue, PRESULTCODES pResultCodes)
+{
+    /*
+     * Can we use DosCwait?
+     */
+    if (idSession == 0 && hQueue == NULL)
+    {
+        for (;;)
+        {
+            PID pidIgnored;
+            USHORT rc = DosCwait(DCWA_PROCESS, DCWW_WAIT, pResultCodes, &pidIgnored, pidChild);
+            if (rc == NO_ERROR)
+                break;
+            if (rc != ERROR_INTERRUPT)
+            {
+                MyOutStr("Os2Util: error: DosCwait(DCWA_PROCESS,DCWW_WAIT,,,");
+                MyOutNum(pidChild);
+                MyOutStr(") failed: ");
+                MyOutNum(rc);
+                MyOutStr("\r\n");
+            }
+        }
+    }
+    else
+    {
+        /*
+         * No we have to use the queue interface to the session manager.
+         */
+        for (;;)
+        {
+            ULONG   ulAdderPidAndEvent = 0;
+            PUSHORT pausData           = NULL;
+            USHORT  cbData             = 0;
+            BYTE    bPriority          = 0;
+            HSEM    hSem               = NULL;
+            USHORT rc = DosReadQueue(hQueue, &ulAdderPidAndEvent, &cbData, (PULONG)&pausData,
+                                     0 /*uElementCode*/, 0 /* fNoWait */, &bPriority, &hSem);
+            if (rc == NO_ERROR)
+            {
+                if (cbData >= sizeof(USHORT) * 2)
+                {
+                    USHORT idTermSession = pausData[0];
+                    USHORT uExitCode     = pausData[1];
+                    if (idTermSession == idSession)
+                    {
+                        pResultCodes->codeTerminate = 0;
+                        pResultCodes->codeResult    = uExitCode;
+                        break;
+                    }
+                    if (1)
+                    {
+                        MyOutStr("OutUtil: info: idTermSession=");
+                        MyOutNum(idTermSession);
+                        MyOutStr(" uExitCode=");
+                        MyOutNum(uExitCode);
+                        MyOutStr("\r\n");
+                    }
+                }
+                else
+                {
+                    MyOutStr("OutUtil: warning: bogus queue element size: cbData=");
+                    MyOutNum(cbData);
+                    MyOutStr("\r\n");
+                }
+                DosFreeSeg((__segment)pausData);
+            }
+            else if (rc != ERROR_INTERRUPT)
+            {
+                DosCloseQueue(hQueue);
+                MyApiErrorAndQuit("DosReadQueue", rc);
+            }
+        }
+    }
+}
+
+
+/** Displays version string and quits.   */
+static void ShowVersionAndQuit(void)
+{
+    CHAR szVer[] = "$Rev$\r\n";
+    USHORT usIgnored;
+    DosWrite(g_hStdOut, szVer, sizeof(szVer) - 1, &usIgnored);
+    DosExit(EXIT_PROCESS, 0);
+}
+
+
+/** Displays usage info and quits.   */
 static void ShowUsageAndQuit(void)
 {
     static char s_szHelp[] =
-        "Os2Util.exe is tiny helper utility that implements TEE'ing to the VBox release log,\r\n"
-        "files and shows the actual exit code of a program.  Standard error and output will\r\n"
-        "be merged into one for simplicity reasons.\r\n"
+        VBOX_PRODUCT " OS/2 Unattended Helper Version " VBOX_VERSION_STRING "\r\n"
+        "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\r\n"
         "\r\n"
-        "usage: Os2Util.exe [-a|--append] [-f<filename>|--tee-to-file <filename>] \\\r\n"
-        "                   [-b|--tee-to-backdoor] -- <prog> [args]\r\n"
-        "   or  Os2Util.exe <-w<msg>|--write-backdoor <msg>> \r\n";
+        "Os2Util.exe is tiny helper utility that implements TEE'ing to the VBox release\r\n"
+        "log, files and shows the actual exit code of a program.  Standard error and\r\n"
+        "output will be merged into one for simplicity reasons.\r\n"
+        "\r\n"
+        "Usage: Os2Util.exe [-a|--append] [-f<filename>|--tee-to-file <filename>] \\\r\n"
+        "                   [-b|--tee-to-backdoor] [-z<exit>|--as-zero <exit> [..]] \\\r\n"
+        "                   -- <prog> [args]\r\n"
+        "   or  Os2Util.exe <-w<msg>|--write-backdoor <msg>>\r\n"
+        "\r\n"
+        "Note! Does not supported any kind of quoting before the child arguments.\r\n"
+        ;
     USHORT usIgnored;
-    DosWrite(g_hStdErr, s_szHelp, sizeof(s_szHelp) - 1, &usIgnored);
+    DosWrite(g_hStdOut, s_szHelp, sizeof(s_szHelp) - 1, &usIgnored);
     DosExit(EXIT_PROCESS, 0);
 }
 
@@ -261,10 +397,9 @@ static PSZ MyGetOptValue(PSZ psz, PSZ pszOption, PSZ *ppszValue)
         psz++;
     if (*psz == '\0')
     {
-        USHORT usIgnored;
-        DosWrite(g_hStdErr, RT_STR_TUPLE("Os2Util: syntax error: Option '"), &usIgnored);
-        DosWrite(g_hStdErr, pszOption, MyStrLen(pszOption), &usIgnored);
-        DosWrite(g_hStdErr, RT_STR_TUPLE("' takes a value\r\n"), &usIgnored);
+        MyOutStr("Os2Util: syntax error: Option '");
+        MyOutStr(pszOption);
+        MyOutStr("' takes a value\r\n");
         DosExit(EXIT_PROCESS, 2);
     }
 
@@ -274,6 +409,83 @@ static PSZ MyGetOptValue(PSZ psz, PSZ pszOption, PSZ *ppszValue)
         psz++;
     if (ch != '\0')
         *psz++ = '\0';
+    return psz;
+}
+
+
+/**
+ * Gets the an numeric option value.
+ */
+static PSZ MyGetOptNum(PSZ psz, PSZ pszOption, PUSHORT puValue)
+{
+    PSZ    pszError = NULL;
+    PSZ    pszValueStart = NULL;
+    PSZ    pszValue;
+    CHAR   ch;
+    USHORT uValue;
+    psz = MyGetOptValue(psz, pszOption, &pszValueStart);
+
+    pszValue = pszValueStart;
+    uValue   = 0;
+    if (pszValue[0] == '0' && ((ch = pszValue[1]) == 'x' || ch == 'X'))
+    {
+        pszValue += 2;
+        while ((ch = *pszValue++) != '\0')
+        {
+            BYTE bDigit;
+            if (ch <= '9' && ch >= '0')
+                bDigit = ch - '0';
+            else if (ch <= 'f' && ch >= 'a')
+                bDigit = ch - 'a' + 10;
+            else if (ch <= 'F' && ch >= 'A')
+                bDigit = ch - 'A' + 10;
+            else
+            {
+                pszError = "': invalid hex value\r\n";
+                break;
+            }
+            if (uValue >> 12)
+            {
+                pszError = "': hex value out of range\r\n";
+                break;
+            }
+            uValue <<= 4;
+            uValue |= bDigit;
+        }
+    }
+    else
+    {
+        while ((ch = *pszValue++) != '\0')
+        {
+            BYTE bDigit;
+            if (ch <= '9' && ch >= '0')
+                bDigit = ch - '0';
+            else
+            {
+                pszError = "': invalid decimal value\r\n";
+                break;
+            }
+            if (uValue * 10 / 10 != uValue)
+            {
+                pszError = "': decimal value out of range\r\n";
+                break;
+            }
+            uValue *= 10;
+            uValue += bDigit;
+        }
+    }
+
+    if (pszError)
+    {
+        MyOutStr("Os2Util: syntax error: Option '");
+        MyOutStr(pszOption);
+        MyOutStr("' with value '");
+        MyOutStr(pszValueStart);
+        MyOutStr(pszError);
+        DosExit(EXIT_PROCESS, 2);
+    }
+
+    *puValue = uValue;
     return psz;
 }
 
@@ -325,6 +537,15 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
     USHORT      rc;
     RESULTCODES ResultCodes    = { 0xffff, 0xffff };
     CHAR        szBuf[512];
+    CHAR        szExeFull[CCHMAXPATH];
+    PSZ         pszExe;
+    USHORT      uExeType;
+    USHORT      idSession      = 0;
+    PID         pidChild       = 0;
+    HQUEUE      hQueue         = ~(HQUEUE)0;
+    CHAR        szQueueName[64];
+    unsigned    cAsZero;
+    USHORT      auAsZero[16];
 
     /*
      * Parse the command line.
@@ -358,12 +579,21 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
                 }
                 if (ch == 'a' && MyMatchLongOption(&psz, RT_STR_TUPLE("append")))
                     fAppend = TRUE;
+                else if (ch == 'a' && MyMatchLongOption(&psz, RT_STR_TUPLE("as-zero")))
+                {
+                    if (cAsZero > RT_ELEMENTS(auAsZero))
+                        MySyntaxErrorAndQuit("Too many --as-zero/-z options");
+                    psz = MyGetOptNum(psz + 1, "--as-zero", &auAsZero[cAsZero]);
+                    cAsZero++;
+                }
                 else if (ch == 'h' && MyMatchLongOption(&psz, RT_STR_TUPLE("help")))
                     ShowUsageAndQuit();
                 else if (ch == 't' && MyMatchLongOption(&psz, RT_STR_TUPLE("tee-to-backdoor")))
                     g_fOutputToBackdoor = fTeeToBackdoor = TRUE;
                 else if (ch == 't' && MyMatchLongOption(&psz, RT_STR_TUPLE("tee-to-file")))
                     psz = MyGetOptValue(psz, "--tee-to-file", &pszTeeToFile);
+                else if (ch == 'v' && MyMatchLongOption(&psz, RT_STR_TUPLE("version")))
+                    ShowVersionAndQuit();
                 else if (ch == 'w' && MyMatchLongOption(&psz, RT_STR_TUPLE("write-backdoor")))
                 {
                     VBoxBackdoorPrint(psz, MyStrLen(psz));
@@ -372,9 +602,9 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
                 }
                 else
                 {
-                    DosWrite(g_hStdErr, RT_STR_TUPLE("Os2util: syntax error: "), &usIgnored);
-                    DosWrite(g_hStdErr, pszOptStart, MyStrLen(pszOptStart), &usIgnored);
-                    DosWrite(g_hStdErr, RT_STR_TUPLE("\r\n"), &usIgnored);
+                    MyOutStr("Os2util: syntax error: ");
+                    MyOutStr(pszOptStart);
+                    MyOutStr("\r\n");
                     DosExit(EXIT_PROCESS, 2);
                 }
             }
@@ -398,18 +628,27 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
                         VBoxBackdoorPrint("\n", 1);
                         DosExit(EXIT_PROCESS, 0);
                     }
+                    else if (ch == 'z')
+                    {
+                        if (cAsZero > RT_ELEMENTS(auAsZero))
+                            MySyntaxErrorAndQuit("Too many --as-zero/-z options");
+                        psz = MyGetOptNum(psz + 1, "-z", &auAsZero[cAsZero]);
+                        cAsZero++;
+                    }
                     else if (ch == '?' || ch == 'h' || ch == 'H')
                         ShowUsageAndQuit();
+                    else if (ch == 'V')
+                        ShowVersionAndQuit();
                     else
                     {
-                        DosWrite(g_hStdErr, RT_STR_TUPLE("Os2util: syntax error: "), &usIgnored);
+                        MyOutStr("Os2util: syntax error: ");
                         if (ch)
                             DosWrite(g_hStdErr, &ch, 1, &usIgnored);
                         else
-                            DosWrite(g_hStdErr, RT_STR_TUPLE("lone dash"), &usIgnored);
-                        DosWrite(g_hStdErr, RT_STR_TUPLE(" ("), &usIgnored);
-                        DosWrite(g_hStdErr, pszOptStart, MyStrLen(pszOptStart), &usIgnored);
-                        DosWrite(g_hStdErr, RT_STR_TUPLE(")\r\n"), &usIgnored);
+                            MyOutStr("lone dash");
+                        MyOutStr(" (");
+                        MyOutStr(pszOptStart);
+                        MyOutStr(")\r\n");
                         DosExit(EXIT_PROCESS, 2);
                     }
                     ch = *++psz;
@@ -424,13 +663,38 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
     pszzNewCmdLine = psz;
     if (ch == '\0')
     {
-        DosWrite(g_hStdErr, RT_STR_TUPLE("Os2Util: syntax error: No program specified\r\n"), &usIgnored);
+        MyOutStr("Os2Util: syntax error: No program specified\r\n");
         DosExit(EXIT_PROCESS, 2);
     }
     psz++;
     while ((ch = *psz) != '\0' && !IS_BLANK(ch))
         psz++;
     *psz++ = '\0';
+
+    /*
+     * Find the executable and check its type.
+     */
+    if (   pszzNewCmdLine[1] == ':'
+        || MyStrChr(pszzNewCmdLine, '\\')
+        || MyStrChr(pszzNewCmdLine, '/'))
+        pszExe = pszzNewCmdLine;
+    else
+    {
+        rc = DosSearchPath(SEARCH_CUR_DIRECTORY | SEARCH_ENVIRONMENT | SEARCH_IGNORENETERRS, "PATH",
+                           pszzNewCmdLine, szExeFull, sizeof(szExeFull));
+        if (rc != NO_ERROR)
+            MyApiError3AndQuit("DosSearchPath(7, \"PATH\", \"", pszzNewCmdLine, "\",,)", rc);
+        pszExe = &szExeFull[0];
+    }
+
+    /* Perhapse we should use WinQueryProgramType here instead? */
+    rc = DosQAppType(pszExe, &uExeType);
+    if (rc != NO_ERROR)
+        MyApiErrorAndQuit("DosQAppType(pszExe, &uExeType)", rc);
+#ifdef DEBUG
+    MyOutStr("Os2Util: debug: uExeType="); MyOutNum(uExeType); MyOutStr("\r\n");
+#endif
+    /** @todo deal with launching winos2 programs too...   */
 
     /*
      * Prepare redirection.
@@ -444,14 +708,14 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
         hDup = 0xffff;
         rc = DosDupHandle(g_hStdErr, &hDup);
         if (rc != NO_ERROR)
-            MyApiErrorAndQuit("DosDupHandle(g_hStdErr, &hDup);", rc);
+            MyApiErrorAndQuit("DosDupHandle(g_hStdErr, &hDup)", rc);
         g_hStdErr = hDup;
         DosSetFHandState(hDup, OPEN_FLAGS_NOINHERIT); /* not strictly necessary, so ignore errors */
 
         hDup = 0xffff;
         rc = DosDupHandle(g_hStdOut, &hDup);
         if (rc != NO_ERROR)
-            MyApiErrorAndQuit("DosDupHandle(g_hStdOut, &hDup);", rc);
+            MyApiErrorAndQuit("DosDupHandle(g_hStdOut, &hDup)", rc);
         g_hStdOut = hDup;
         DosSetFHandState(hDup, OPEN_FLAGS_NOINHERIT); /* not strictly necessary, so ignore errors */
 
@@ -468,12 +732,12 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
         hDup = 1;
         rc = DosDupHandle(hPipeWrite, &hDup);
         if (rc != NO_ERROR)
-            MyApiErrorAndQuit("DosDupHandle(hPipeWrite, &hDup[=1]);", rc);
+            MyApiErrorAndQuit("DosDupHandle(hPipeWrite, &hDup[=1])", rc);
 
         hDup = 2;
         rc = DosDupHandle(hPipeWrite, &hDup);
         if (rc != NO_ERROR)
-            MyApiErrorAndQuit("DosDupHandle(hPipeWrite, &hDup[=2]);", rc);
+            MyApiErrorAndQuit("DosDupHandle(hPipeWrite, &hDup[=2])", rc);
 
         /* We can close the write end of the pipe as we don't need the original handle any more. */
         DosClose(hPipeWrite);
@@ -483,22 +747,89 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
      * Execute the program.
      */
     szBuf[0] = '\0';
-    rc = DosExecPgm(szBuf, sizeof(szBuf), hPipeRead == -1 ? EXEC_SYNC : EXEC_ASYNCRESULT,
-                    pszzNewCmdLine, pszzEnv, &ResultCodes, pszzNewCmdLine);
-    if (rc != NO_ERROR)
+#define FAPPTYP_TYPE_MASK 7
+    if ((uExeType & FAPPTYP_TYPE_MASK) == PT_WINDOWABLEVIO) /** @todo what if we're in fullscreen ourselves? */
     {
-        MyOutStr("Os2Util: error: DosExecPgm failed for \"");
-        MyOutStr(pszzNewCmdLine);
-        MyOutStr("\": ");
-        MyOutNum(rc);
-        if (szBuf[0])
+        /* For same type programs we can use DosExecPgm: */
+        rc = DosExecPgm(szBuf, sizeof(szBuf), hPipeRead == -1 ? EXEC_SYNC : EXEC_ASYNCRESULT,
+                        pszzNewCmdLine, pszzEnv, &ResultCodes, pszExe);
+        if (rc != NO_ERROR)
         {
-            MyOutStr(" ErrObj=");
-            szBuf[sizeof(szBuf) - 1] = '\0';
-            MyOutStr(szBuf);
+            MyOutStr("Os2Util: error: DosExecPgm failed for \"");
+            MyOutStr(pszzNewCmdLine);
+            MyOutStr("\": ");
+            MyOutNum(rc);
+            if (szBuf[0])
+            {
+                MyOutStr(" ErrObj=");
+                szBuf[sizeof(szBuf) - 1] = '\0';
+                MyOutStr(szBuf);
+            }
+            MyOutStr("\r\n");
+            DosExit(EXIT_PROCESS, 1);
         }
-        MyOutStr("\r\n");
-        DosExit(EXIT_PROCESS, 1);
+        if (hPipeRead != -1)
+            pidChild = ResultCodes.codeTerminate;
+    }
+    else
+    {
+        /* For different typed programs we have to use DosStartSession, which
+           is a lot more tedious to use. */
+        static const char   s_szQueueBase[] = "\\QUEUES\\OS2_UTIL-";
+        union
+        {
+            STARTDATA       StartData;
+            BYTE            abPadding[sizeof(STARTDATA) + 64];
+            struct
+            {
+                STARTDATA   Core;
+                ULONG       ulReserved;
+                PSZ         pszBuf;
+                USHORT      cbBuf;
+            } s;
+        } u;
+        PIDINFO             PidInfo         = {0, 0, 0};
+
+        /* Create the wait queue first. */
+        DosGetPID(&PidInfo);
+        MyMemCopy(szQueueName, s_szQueueBase, sizeof(s_szQueueBase));
+        MyNumToString(&szQueueName[sizeof(s_szQueueBase) - 1], PidInfo.pid);
+
+        rc = DosCreateQueue(&hQueue, 0 /*FIFO*/, szQueueName);
+        if (rc != NO_ERROR)
+            MyApiError3AndQuit("DosCreateQueue(&hQueue, 0, \"", szQueueName, "\")", rc);
+
+        u.StartData.Length        = sizeof(u.StartData);
+        u.StartData.Related       = 1 /* SSF_RELATED_CHILD */;
+        u.StartData.FgBg          = 0 /* SSF_FGBG_FORE */;
+        u.StartData.TraceOpt      = 0 /* SSF_TRACEOPT_NONE */;
+        u.StartData.PgmTitle      = NULL;
+        u.StartData.PgmName       = pszExe;
+        u.StartData.PgmInputs     = psz; /* just arguments, not exec apparently.*/
+        u.StartData.TermQ         = szQueueName;
+        u.StartData.Environment   = NULL; /* Inherit our env. Note! Using pszzEnv causes it to be freed
+                                                                    and we'll crash reporting the error. */
+        u.StartData.InheritOpt    = 1 /* SSF_INHERTOPT_PARENT */;
+        u.StartData.SessionType   = uExeType & FAPPTYP_TYPE_MASK;
+        if (uExeType & 0x20 /*FAPPTYP_DOS*/)
+            u.StartData.SessionType = 4 /* SSF_TYPE_VDM */;
+        u.StartData.IconFile      = NULL;
+        u.StartData.PgmHandle     = 0;
+        u.StartData.PgmControl    = 0 /* SSF_CONTROL_VISIBLE */;
+        u.StartData.InitXPos      = 0;
+        u.StartData.InitYPos      = 0;
+        u.StartData.InitXSize     = 0;
+        u.StartData.InitYSize     = 0;
+        u.s.ulReserved            = 0;
+        u.s.pszBuf                = NULL;
+        u.s.cbBuf                 = 0;
+
+        rc = DosStartSession(&u.StartData, &idSession, &pidChild);
+        if (rc != NO_ERROR)
+        {
+            DosCloseQueue(hQueue);
+            MyApiError3AndQuit("DosStartSession for \"", pszExe, "\"", rc);
+        }
     }
 
     /*
@@ -506,9 +837,6 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
      */
     if (hPipeRead != -1)
     {
-        /* Save the child pid. */
-        PID const pidChild = ResultCodes.codeTerminate;
-        PID       pidIgnored;
 
         /* Close the write handles or we'll hang in the read loop. */
         DosClose(1);
@@ -516,7 +844,6 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
 
         /* Disable hard error popups (file output to unformatted disks). */
         DosError(2 /* only exceptions */);
-
 
         /*
          * Read the pipe and tee it to the desired outputs
@@ -537,7 +864,7 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
 
                 /* Backdoor: */
                 if (fTeeToBackdoor)
-                    VBoxBackdoorPrint(psz, cbRead);
+                    VBoxBackdoorPrint(szBuf, cbRead);
 
                 /* File: */
                 if (hTeeToFile != -1)
@@ -559,16 +886,17 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
         }
 
         DosClose(hPipeRead);
-        rc = DosCwait(DCWA_PROCESS, DCWW_WAIT, &ResultCodes, &pidIgnored, pidChild);
-        if (rc != NO_ERROR)
-        {
-            MyOutStr("Os2Util: error: DosCwait(DCWA_PROCESS,DCWW_WAIT,,,");
-            MyOutNum(pidChild);
-            MyOutStr(") failed: ");
-            MyOutNum(rc);
-            MyOutStr("\r\n");
-        }
+
+        /*
+         * Wait for the process to complete.
+         */
+        DoWait(pidChild, idSession, hQueue, &ResultCodes);
     }
+    /*
+     * Must wait for the session completion too.
+     */
+    else if (idSession != 0)
+        DoWait(pidChild, idSession, hQueue, &ResultCodes);
 
     /*
      * Report the status code and quit.
@@ -584,6 +912,21 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
     MyOutNum(ResultCodes.codeResult);
     MyOutStr("\r\n");
 
+    /* Treat it as zero? */
+    if (ResultCodes.codeTerminate == 0)
+    {
+        unsigned i = cAsZero;
+        while (i-- > 0)
+            if (auAsZero[i] == ResultCodes.codeResult)
+            {
+                MyOutStr("Os2Util: info: treating status as zero\r\n");
+                ResultCodes.codeResult = 0;
+                break;
+            }
+    }
+
+    if (idSession != 0)
+        DosCloseQueue(hQueue);
     for (;;)
         DosExit(EXIT_PROCESS, ResultCodes.codeTerminate == 0 ? ResultCodes.codeResult : 127);
 }
