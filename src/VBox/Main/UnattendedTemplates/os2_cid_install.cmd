@@ -19,7 +19,8 @@ REM
 REM Check the phase argument and jump to the right section of the file.
 if "%1" == "PHASE1" goto phase1
 if "%1" == "PHASE2" goto phase2
-@echo ** error: invalid or missing parameter. Expected PHASE1 or PHASE2 as the first parameter to the script.
+if "%1" == "PHASE3" goto phase3
+@echo ** error: invalid or missing parameter. Expected PHASE1, PHASE2 or PHASE3 as the first parameter to the script.
 pause
 cmd.exe
 exit /b 1
@@ -134,18 +135,18 @@ pause
 SET REMOTE_INSTALL_STATE=CAS_WARP4
 cd C:\OS2
 C:
-C:\VBoxCID\OS2_UTIL.EXE -- C:\VBoxCID\SEMAINT.EXE /S:%CDROM%\os2image /B:C: /L1:C:\VBoxCID\1.4.1-Maint.log /T:C:\OS2
-REM does not exit with status 0 on success.
-goto semaint_ok
+@REM Treat 0xfe00 as a success status. It seems to mean that a reboot is required.
+C:\VBoxCID\OS2_UTIL.EXE --as-zero 0xfe00 -- C:\VBoxCID\SEMAINT.EXE /S:%CDROM%\os2image /B:C: /L1:C:\VBoxCID\1.4.1-Maint.log /T:C:\OS2 && goto semaint_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\VBoxCID\1.4.1-Maint.log
 pause
 :semaint_ok
 REM CMD.EXE
 
 cd C:\VBoxCID
 C:
-C:\VBoxCID\OS2_UTIL.EXE -- C:\VBoxCID\SEINST.EXE /S:%CDROM%\os2image /B:C: /L1:C:\VBoxCID\1.4.2-CIDInst.log /R:C:\VBoxCID\OS2.RSP /T:A:\
-REM does not exit with status 0 on success.
-goto seinst_ok
+@REM Treat 0xff02 as a success status. It seems to mean that a reboot is required.
+C:\VBoxCID\OS2_UTIL.EXE --as-zero 0xff02 -- C:\VBoxCID\SEINST.EXE /S:%CDROM%\os2image /B:C: /L1:C:\VBoxCID\1.4.2-CIDInst.log /R:C:\VBoxCID\OS2.RSP /T:A:\ && goto seinst_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\VBoxCID\1.4.2-CIDInst.log
 pause
 :seinst_ok
 REM CMD.EXE
@@ -188,7 +189,7 @@ goto reboot
 
 
 REM
-REM Phase 2 - The rest of the installation running of the base install.
+REM Phase 2 - Install GRADD drivers (VGA is horribly slow).
 REM
 :phase2
 SET CDROM=E:
@@ -217,70 +218,90 @@ C:
 @echo .
 @echo Step 2.1 - Install the video driver.
 @echo .
-C:\VBoxCID\OS2_UTIL.EXE -- C:\OS2\INSTALL\DspInstl.EXE /PD:C:\OS2\INSTALL\GENGRADD.DSC /S:%CDROM%\OS2IMAGE /T:C: /RES:1024X768X16777216 /U
-@REM does not exit with status 0 on success.
-goto dspinstl_ok
+@REM Treat 0xfe00 as a success status. It seems to mean that a reboot is required.
+C:\VBoxCID\OS2_UTIL.EXE --as-zero 0xfe00 -- C:\OS2\INSTALL\DspInstl.EXE /PD:C:\OS2\INSTALL\GENGRADD.DSC /S:%CDROM%\OS2IMAGE /T:C: /RES:1024X768X16777216 /U && goto dspinstl_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\OS2\INSTALL\DSPINSTL.LOG
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\OS2\INSTALL\GRADD.LOG
 pause
 :dspinstl_ok
 
-call VCfgCID.CMD /L1:C:\VBoxCID\2.1-Video.log /L2:C:\VBoxCID\2.1-Video-2.log /RES:1024X768X16777216
 @REM TODO: Error: 1 Error getting current desktop mode
+@REM UPDATE: This is probably not working because SVGA.EXE doesn't want to play along with our graphics adapter,
+@REM         so it looks like there is no simple way of changing the resolution or select a better monitor.
+call VCfgCID.CMD /L1:C:\VBoxCID\2.1-Video.log /L2:C:\VBoxCID\2.1-Video-2.log /RES:1024X768X16777216 /MON:548
 goto vcfgcid_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\VBoxCID\2.1-Video.log
 pause
 :vcfgcid_ok
 cd C:\VBoxCID
 C:
 
 :step2_2
+@echo Install startup.cmd for phase3.
+ren C:\STARTUP.CMD C:\VBoxCID\Phase2-end-startup.cmd
+@echo C:\VBoxCID\OS2_UTIL.EXE --tee-to-backdoor --tee-to-file C:\VBoxCID\Phase3.log --append -- C:\OS2\CMD.EXE /C C:\VBoxCID\VBoxCID.CMD PHASE3> C:\STARTUP.CMD && goto phase3_startup_ok
+pause
+:phase3_startup_ok
+
+REM now reboot.
+goto reboot
+
+
+REM
+REM Phase 2 - The rest of the installation running of the base install with fast GRADD drivers.
+REM
+:phase3
+SET CDROM=E:
+IF EXIST "%CDROM%\VBoxCID.CMD" goto phase3_found_cdrom
+SET CDROM=D:
+IF EXIST "%CDROM%\VBoxCID.CMD" goto phase3_found_cdrom
+SET CDROM=F:
+IF EXIST "%CDROM%\VBoxCID.CMD" goto phase3_found_cdrom
+SET CDROM=G:
+IF EXIST "%CDROM%\VBoxCID.CMD" goto phase3_found_cdrom
+SET CDROM=H:
+IF EXIST "%CDROM%\VBoxCID.CMD" goto phase3_found_cdrom
+SET CDROM=S:
+IF EXIST "%CDROM%\VBoxCID.CMD" goto phase3_found_cdrom
+@echo ** error: Unable to find the CDROM drive
+pause
+CMD
+SET CDROM=E:
+:phase3_found_cdrom
+cd C:\VBoxCID
+C:
+
+@echo on
+
+:step3_1
 @echo .
-@echo Step 2.2 - Install multimedia.
+@echo Step 3.1 - Install multimedia.
 @echo .
 cd C:\mmtemp
 C:
-DIR
-C:\VBoxCID\OS2_UTIL.EXE -- MInstall.EXE /M /R:C:\VBoxCID\MMOS2.RSP && goto mmos2_ok
-@REM TODO: crashes
+@REM Does not have any /L, /L1, or /L2 options.  Fixed log file: C:\MINSTALL.LOG.
+@REM Treat 0xfe00 as a success status. It seems to mean that a reboot is required.
+C:\VBoxCID\OS2_UTIL.EXE --as-zero 0xfe00 -- MInstall.EXE /M /R:C:\VBoxCID\MMOS2.RSP && goto mmos2_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\MINSTALL.LOG
 pause
 :mmos2_ok
-DIR
 cd C:\VBoxCID
 
-:step2_3
+:step3_2
 @echo .
-@echo Step 2.3 - Install features.
+@echo Step 3.2 - Install features.
 @echo .
-C:\VBoxCID\OS2_UTIL.EXE -- CLIFI.EXE /A:C /B:C: /S:%CDROM%\os2image\fi /R:C:\OS2\INSTALL\FIBASE.RSP /L1:C:\VBoxCID\2.2-FeatureInstaller.log /R2:C:\VBoxCID\OS2.RSP
+@REM Treat 0xfe00 as a success status. It seems to mean that a reboot is required.
+C:\VBoxCID\OS2_UTIL.EXE --as-zero 0xfe00 -- CLIFI.EXE /A:C /B:C: /S:%CDROM%\os2image\fi /R:C:\OS2\INSTALL\FIBASE.RSP /L1:C:\VBoxCID\3.2-FeatureInstaller.log /R2:C:\VBoxCID\OS2.RSP
 @REM does not exit with status 0 on success.
 goto features_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\VBoxCID\3.2-FeatureInstaller.log
 pause
 :features_ok
 
-:step2_4
+:step3_3
 @echo .
-@echo Step 2.4 - Install Netscape.
-@echo .
-CD C:\VBoxCID
-C:
-%CDROM%
-SET DPATH=%DPATH%;C:\NETSCAPE\SIUTIL;
-C:\VBoxCID\OS2_UTIL.EXE -- %CDROM%\CID\SERVER\NETSCAPE\INSTALL.EXE /X /A:I /TU:C: /C:%CDROM%\CID\SERVER\NETSCAPE\NS46.ICF /S:%CDROM%\CID\SERVER\NETSCAPE /R:C:\VBoxCID\Netscape.RSP /L1:C:\VBoxCID\2.8-Netscape.log /L2:C:\VBoxCID\2.8-Netscape-2.log && goto netscape_ok
-:netscape_ok
-CD %CDROM%\
-C:
-
-:step2_5
-@echo .
-@echo Step 2.5 - Install feature installer.
-@echo .
-@REM No /L2: support.
-@REM The /NN option is to make it not fail if netscape is missing.
-C:\VBoxCID\OS2_UTIL.EXE -- C:\OS2\INSTALL\WSFI\FiSetup.EXE /B:C: /S:C:\OS2\INSTALL\WSFI\FISETUP /NN /L1:C:\VBoxCID\2.5-FiSetup.log && goto fisetup_ok
-pause
-:fisetup_ok
-
-:step2_6
-@echo .
-@echo Step 2.6 - Install MPTS.
+@echo Step 3.3 - Install MPTS.
 @echo .
 @REM If we want to use non-standard drivers like the intel ones, copy the .NIF- and
 @REM .OS2-files to C:\IBMCOM\MACS before launching the installer (needs creating first).
@@ -288,21 +309,23 @@ pause
 @REM Note! Omitting /TU:C in hope that it solves the lan install failure (no netbeui configured in mpts).
 CD %CDROM%\CID\SERVER\MPTS
 %CDROM%
-C:\VBoxCID\OS2_UTIL.EXE -- %CDROM%\CID\SERVER\MPTS\MPTS.EXE /R:C:\VBoxCID\MPTS.RSP /S:%CDROM%\CID\SERVER\MPTS /T:C: /L1:C:\VBoxCID\2.6-Mpts.log && goto mpts_ok
+@REM Treat 0xfe00 as a success status. It seems to mean that a reboot is required.
+C:\VBoxCID\OS2_UTIL.EXE --as-zero 0xfe00 -- %CDROM%\CID\SERVER\MPTS\MPTS.EXE /R:C:\VBoxCID\MPTS.RSP /S:%CDROM%\CID\SERVER\MPTS /T:C: /L1:C:\VBoxCID\3.3-Mpts.log && goto mpts_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\VBoxCID\3.3-Mpts.log
 pause
 :mpts_ok
 CD %CDROM%\
 C:
 
-:step2_7
+:step3_4
 @echo .
-@echo Step 2.7 - Install TCP/IP.
+@echo Step 3.4 - Install TCP/IP.
 @echo .
 CD %CDROM%\CID\SERVER\TCPAPPS
 %CDROM%
-C:\VBoxCID\OS2_UTIL.EXE -- CLIFI.EXE /A:C /B:C: /S:%CDROM%\CID\SERVER\TCPAPPS\INSTALL /R:%CDROM%\CID\SERVER\TCPAPPS\INSTALL\TCPINST.RSP /L1:C:\VBoxCID\2.7-tcp.log /L2:C:\VBoxCID\2.7-tcp-2.log
-@REM does not exit with status 0 on success.
-goto tcp_ok
+@REM Treat 0xfe00 as a success status. It seems to mean that a reboot is required.
+C:\VBoxCID\OS2_UTIL.EXE --as-zero 0xfe00 -- CLIFI.EXE /A:C /B:C: /S:%CDROM%\CID\SERVER\TCPAPPS\INSTALL /R:%CDROM%\CID\SERVER\TCPAPPS\INSTALL\TCPINST.RSP /L1:C:\VBoxCID\3.4-tcp.log /L2:C:\VBoxCID\3.4-tcp-2.log && goto tcp_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\VBoxCID\3.4-tcp.log
 pause
 :tcp_ok
 CD %CDROM%\
@@ -315,21 +338,51 @@ pause
 :makecmd_ok
 cd %CDROM%\
 
-:step2_8
+:step3_5
 @echo .
-@echo Step 2.8 - Install IBM LAN Requestor/Peer.
+@echo Step 3.5 - Install IBM LAN Requestor/Peer.
 @echo .
 SET REMOTE_INSTALL_STATE=CAS_OS/2 Peer
 CD %CDROM%\CID\SERVER\IBMLS
 %CDROM%
-C:\VBoxCID\OS2_UTIL.EXE -- %CDROM%\CID\SERVER\IBMLS\LANINSTR.EXE /REQ /R:C:\VBoxCID\IBMLan.rsp /L1:C:\VBoxCID\2.8-IBMLan.log /L2:C:\VBoxCID\2.8-IBMLan-2.log && goto ibmlan_ok
+C:\VBoxCID\OS2_UTIL.EXE -- %CDROM%\CID\SERVER\IBMLS\LANINSTR.EXE /REQ /R:C:\VBoxCID\IBMLan.rsp /L1:C:\VBoxCID\3.5-IBMLan.log /L2:C:\VBoxCID\3.5-IBMLan-2.log && goto ibmlan_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\VBoxCID\3.5-IBMLan.log
 :ibmlan_ok
 CD %CDROM%\
 C:
 
-:step2_9
+:step3_6
 @echo .
-@echo Step 2.9 - Install guest additions.
+@echo Step 3.6 - Install Netscape.
+@echo .
+CD C:\VBoxCID
+C:
+%CDROM%
+@REM Skipping as it hangs after a "Message file not found." error. (The DPATH amendment doesn't help.)  Logs give no clue.
+@REM Maybe we're installing it too early?  Needs TCPIP or smth.
+goto netscape_ok
+SET DPATH=%DPATH%;C:\NETSCAPE\SIUTIL;
+C:\VBoxCID\OS2_UTIL.EXE -- %CDROM%\CID\SERVER\NETSCAPE\INSTALL.EXE /X /A:I /TU:C: /C:%CDROM%\CID\SERVER\NETSCAPE\NS46.ICF /S:%CDROM%\CID\SERVER\NETSCAPE /R:C:\VBoxCID\Netscape.RSP /L1:C:\VBoxCID\3.6-Netscape.log /L2:C:\VBoxCID\3.6-Netscape-2.log && goto netscape_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\VBoxCID\3.6-Netscape.log
+pause
+:netscape_ok
+CD %CDROM%\
+C:
+
+:step3_7
+@echo .
+@echo Step 3.7 - Install feature installer.
+@echo .
+@REM No /L2: support.
+@REM The /NN option is to make it not fail if netscape is missing.
+C:\VBoxCID\OS2_UTIL.EXE -- C:\OS2\INSTALL\WSFI\FiSetup.EXE /B:C: /S:C:\OS2\INSTALL\WSFI\FISETUP /NN /L1:C:\VBoxCID\3.7-FiSetup.log && goto fisetup_ok
+C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\VBoxCID\3.7-FiSetup.log
+pause
+:fisetup_ok
+
+:step3_8
+@echo .
+@echo Step 3.8 - Install guest additions.
 @echo .
 @@VBOX_COND_IS_INSTALLING_ADDITIONS@@
 mkdir C:\VBoxAdd
@@ -341,9 +394,9 @@ pause
 @echo Not requested. Skipping.
 @@VBOX_COND_END@@
 
-:step2_10
+:step3_9
 @echo .
-@echo Step 2.10 - Install the test execution service (TXS).
+@echo Step 3.9 - Install the test execution service (TXS).
 @echo .
 @@VBOX_COND_IS_INSTALLING_TEST_EXEC_SERVICE@@
 mkdir C:\ValKit
@@ -359,9 +412,9 @@ pause
 @@VBOX_COND_END@@
 
 
-:step2_11
+:step3_10
 @echo .
-@echo Step 2.11 - Install final startup.cmd and copy over OS2LDR again.
+@echo Step 3.9 - Install final startup.cmd and copy over OS2LDR again.
 @echo .
 attrib -r -h -s C:\STARTUP.CMD
 copy C:\VBoxCID\STARTUP.CMD C:\ && goto final_startup_ok
@@ -378,9 +431,9 @@ pause
 :final_os2ldr_ok
 attrib +r +h +s C:\OS2LDR
 
-:step2_12
+:step3_11
 @echo .
-@echo Step 2.12 - Cleanup
+@echo Step 3.11 - Cleanup
 @echo .
 del /N C:\*.bio
 del /N C:\*.i13
@@ -399,10 +452,10 @@ del /N C:\*.SYS
 copy C:\VBoxCID\CONFIG.SYS C:\
 :skip_sys_cleanup
 
-:step2_13
+:step3_12
 @@VBOX_COND_HAS_POST_INSTALL_COMMAND@@
 @echo .
-@echo Step 2.13 - Custom actions: "@@VBOX_INSERT_POST_INSTALL_COMMAND@@"
+@echo Step 3.12 - Custom actions: "@@VBOX_INSERT_POST_INSTALL_COMMAND@@"
 @echo .
 cd C:\VBoxCID
 C:

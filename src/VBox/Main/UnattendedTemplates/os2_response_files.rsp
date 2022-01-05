@@ -20,9 +20,10 @@ BREAK=OFF
 
 REM Just to be on the safe side, all paths include disk #0 thru #6.
 REM as it doesn't contain much interesting.
-  LIBPATH=.;A:\;S:\OS2IMAGE\DISK_0;S:\OS2IMAGE\DISK_1;S:\OS2IMAGE\DISK_2;S:\OS2IMAGE\DISK_3;S:\OS2IMAGE\DISK_4;S:\OS2IMAGE\DISK_5;S:\OS2IMAGE\DISK_6;S:\OS2IMAGE\DISK_7;
-SET  PATH=.;A:\;S:\OS2IMAGE\DISK_0;S:\OS2IMAGE\DISK_1;S:\OS2IMAGE\DISK_2;S:\OS2IMAGE\DISK_3;S:\OS2IMAGE\DISK_4;S:\OS2IMAGE\DISK_5;S:\OS2IMAGE\DISK_6;S:\OS2IMAGE\DISK_7;
-SET DPATH=.;A:\;S:\OS2IMAGE\DISK_0;S:\OS2IMAGE\DISK_1;S:\OS2IMAGE\DISK_2;S:\OS2IMAGE\DISK_3;S:\OS2IMAGE\DISK_4;S:\OS2IMAGE\DISK_5;S:\OS2IMAGE\DISK_6;S:\OS2IMAGE\DISK_7;
+REM Also adding typical C:\ locations for good measure...
+  LIBPATH=.;A:\;S:\OS2IMAGE\DISK_0;S:\OS2IMAGE\DISK_1;S:\OS2IMAGE\DISK_2;S:\OS2IMAGE\DISK_3;S:\OS2IMAGE\DISK_4;S:\OS2IMAGE\DISK_5;S:\OS2IMAGE\DISK_6;S:\OS2IMAGE\DISK_7;C:\OS2\DLL;C:\MPTN\DLL;C:\TCPIP\DLL;C:\IBMCOM\DLL;
+SET  PATH=.;A:\;S:\OS2IMAGE\DISK_0;S:\OS2IMAGE\DISK_1;S:\OS2IMAGE\DISK_2;S:\OS2IMAGE\DISK_3;S:\OS2IMAGE\DISK_4;S:\OS2IMAGE\DISK_5;S:\OS2IMAGE\DISK_6;S:\OS2IMAGE\DISK_7;C:\OS2;C:\OS2\SYSTEM;
+SET DPATH=.;A:\;S:\OS2IMAGE\DISK_0;S:\OS2IMAGE\DISK_1;S:\OS2IMAGE\DISK_2;S:\OS2IMAGE\DISK_3;S:\OS2IMAGE\DISK_4;S:\OS2IMAGE\DISK_5;S:\OS2IMAGE\DISK_6;S:\OS2IMAGE\DISK_7;C:\OS2;C:\OS2\SYSTEM;
 
 COUNTRY=001,COUNT437.SYS
 CODEPAGE=850,437
@@ -155,7 +156,7 @@ MPTS = (
   [CONTROL]
     Local_IPC = YES
     INET_Access = YES
-    NETBIOS_Access = NO
+    NETBIOS_Access = YES
 )
 
 PROTOCOL = (
@@ -167,8 +168,8 @@ PROTOCOL = (
 
    netbeui_nif = netbeui.nif
    tcpbeui_nif = tcpbeui.nif
-   tcpip_nif = tcpip.nif
-   nonetadp_nif = nonetadp.nif
+   tcpip_nif   = tcpip.nif
+   IBMEAN_nif  = IBMEAN.nif
 
 [NETBIOS]
 
@@ -179,7 +180,7 @@ PROTOCOL = (
 [netbeui_nif]
 
    DriverName = netbeui$
-   Bindings = NONETADP_nif
+   Bindings = IBMEAN_nif
    ETHERAND_TYPE = "I"
    USEADDRREV = "YES"
    OS2TRACEMASK = 0x0
@@ -214,7 +215,7 @@ PROTOCOL = (
 [tcpbeui_nif]
 
    DriverName = tcpbeui$
-   Bindings = nonetadp_nif
+   Bindings = ,IBMEAN_nif
    NODETYPE = "B-Node"
    OS2TRACEMASK = 0x0
    SESSIONS = 130
@@ -236,11 +237,11 @@ PROTOCOL = (
 [tcpip_nif]
 
    DriverName = TCPIP$
-   Bindings = nonetadp_nif
+   Bindings = IBMEAN_nif
 
-[nonetadp_nif]
+[IBMEAN_nif]
 
-   DriverName = NULLNDS$
+   DriverName = IBMEAN$
 )
 @@VBOX_SPLITTER_END[MPTS.RSP]@@
 
@@ -287,7 +288,7 @@ InstallDesktopIcons = YES
 #
 # Multimedia Presentation Manager/2 response file - Setting up SB16.
 #
-@@VBOX_SPLITTER_START[MMPM2.RSP]@@
+@@VBOX_SPLITTER_START[MMOS2.RSP]@@
 MMINSTSOURCE = "C:\\mmtemp"
 MMINSTTARGET = "C:"
 CHANGECONFIG = "Y"
@@ -303,7 +304,7 @@ MMINSTGROUPS =
   GROUP.20 = " "
   GROUP.43 = "Sound Blaster 16=NUM=1,V1=1,V1=5,V1=5,V1=220,V1=330,"
   )
-@@VBOX_SPLITTER_END[MMPM2.RSP]@@
+@@VBOX_SPLITTER_END[MMOS2.RSP]@@
 
 #
 # Good old netscape communicator.
