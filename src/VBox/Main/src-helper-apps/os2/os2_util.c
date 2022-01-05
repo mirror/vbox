@@ -56,6 +56,7 @@ typedef struct MYBUFFER
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 void __far VBoxBackdoorPrint(PSZ psz, unsigned cch);
+static PSZ MyGetOptValue(PSZ psz, PSZ pszOption, PSZ *ppszValue);
 
 
 /*********************************************************************************************************************************
@@ -142,7 +143,7 @@ static void MyOutNum(unsigned uNum)
 }
 
 
-static void MyApiErrorAndQuit(PSZ pszOperation, USHORT rc)
+static DECL_NO_RETURN(void) MyApiErrorAndQuit(PSZ pszOperation, USHORT rc)
 {
     MyOutStr("Os2Util: error: ");
     MyOutStr(pszOperation);
@@ -153,7 +154,7 @@ static void MyApiErrorAndQuit(PSZ pszOperation, USHORT rc)
 }
 
 
-static void MyApiError3AndQuit(PSZ pszOperation, PSZ psz2, PSZ psz3, USHORT rc)
+static DECL_NO_RETURN(void) MyApiError3AndQuit(PSZ pszOperation, PSZ psz2, PSZ psz3, USHORT rc)
 {
     MyOutStr("Os2Util: error: ");
     MyOutStr(pszOperation);
@@ -166,7 +167,7 @@ static void MyApiError3AndQuit(PSZ pszOperation, PSZ psz2, PSZ psz3, USHORT rc)
 }
 
 
-static void MySyntaxErrorAndQuit(PSZ pszMsg)
+static DECL_NO_RETURN(void) MySyntaxErrorAndQuit(PSZ pszMsg)
 {
     MyOutStr("Os2Util: syntax error: ");
     MyOutStr(pszMsg);
@@ -183,8 +184,8 @@ static HFILE OpenTeeFile(PSZ pszTeeToFile, BOOL fAppend, PSZ pszToWrite, USHORT 
     HFILE     hFile    = -1;
     USHORT    rc;
     rc = DosOpen(pszTeeToFile, &hFile, &usAction, 0 /*cbInitial*/, 0 /*fFileAttribs*/,
-                  OPEN_ACTION_CREATE_IF_NEW | OPEN_ACTION_OPEN_IF_EXISTS,
-                  OPEN_ACCESS_WRITEONLY | OPEN_SHARE_DENYNONE | OPEN_FLAGS_NOINHERIT | OPEN_FLAGS_SEQUENTIAL, 0 /*Reserved*/);
+                 OPEN_ACTION_CREATE_IF_NEW | OPEN_ACTION_OPEN_IF_EXISTS,
+                 OPEN_ACCESS_WRITEONLY | OPEN_SHARE_DENYNONE | OPEN_FLAGS_NOINHERIT | OPEN_FLAGS_SEQUENTIAL, 0 /*Reserved*/);
     if (rc == NO_ERROR)
     {
 
@@ -351,8 +352,64 @@ static void DoWait(PID pidChild, USHORT idSession, HQUEUE hQueue, PRESULTCODES p
 }
 
 
+/**
+ * Handles --file-to-backdoor / -c.
+ */
+static void CopyFileToBackdoorAndQuit(PSZ psz, BOOL fLongOpt, PSZ pszBuf, USHORT cbBuf)
+{
+    HFILE  hFile    = 0;
+    USHORT usAction = 0;
+    USHORT rc;
+
+    /*
+     * Get the filename and check that it is the last thing on the commandline.
+     */
+    PSZ  pszFilename = NULL;
+    CHAR ch;
+    psz = MyGetOptValue(psz, fLongOpt ? "--file-to-backdoor" : "-c", &pszFilename);
+    while ((ch = *psz) != '\0' && IS_BLANK(ch))
+        psz++;
+    if (ch != '\0')
+        MySyntaxErrorAndQuit("No options allowed after -c/--file-to-backdoor");
+
+    /*
+     * Open the file
+     */
+    rc = DosOpen(pszFilename, &hFile, &usAction, 0 /*cbInitial*/, 0 /*fFileAttribs*/,
+                 OPEN_ACTION_FAIL_IF_NEW | OPEN_ACTION_OPEN_IF_EXISTS,
+                 OPEN_ACCESS_READONLY | OPEN_SHARE_DENYNONE | OPEN_FLAGS_NOINHERIT | OPEN_FLAGS_SEQUENTIAL, 0 /*Reserved*/);
+    if (rc != NO_ERROR)
+        MyApiError3AndQuit("Failed to open \"", pszFilename, "\" for reading", rc);
+
+    VBoxBackdoorPrint(RT_STR_TUPLE("--- BEGIN OF \""));
+    VBoxBackdoorPrint(pszFilename, MyStrLen(pszFilename));
+    VBoxBackdoorPrint(RT_STR_TUPLE("\" ---\n"));
+
+    for (;;)
+    {
+        USHORT cbRead = 0;
+        rc = DosRead(hFile, pszBuf, cbBuf, &cbRead);
+        if (rc == NO_ERROR)
+        {
+            if (cbRead == 0)
+                break;
+            VBoxBackdoorPrint(pszBuf, cbRead);
+        }
+        else if (rc != ERROR_INTERRUPT)
+            MyApiError3AndQuit("Reading \"", pszFilename, "\"", rc);
+    }
+
+    VBoxBackdoorPrint(RT_STR_TUPLE("--- END OF \""));
+    VBoxBackdoorPrint(pszFilename, MyStrLen(pszFilename));
+    VBoxBackdoorPrint(RT_STR_TUPLE("\" ---\n"));
+
+    DosClose(hFile);
+    DosExit(EXIT_PROCESS, 1);
+}
+
+
 /** Displays version string and quits.   */
-static void ShowVersionAndQuit(void)
+static DECL_NO_RETURN(void) ShowVersionAndQuit(void)
 {
     CHAR szVer[] = "$Rev$\r\n";
     USHORT usIgnored;
@@ -362,7 +419,7 @@ static void ShowVersionAndQuit(void)
 
 
 /** Displays usage info and quits.   */
-static void ShowUsageAndQuit(void)
+static DECL_NO_RETURN(void) ShowUsageAndQuit(void)
 {
     static char s_szHelp[] =
         VBOX_PRODUCT " OS/2 Unattended Helper Version " VBOX_VERSION_STRING "\r\n"
@@ -376,6 +433,7 @@ static void ShowUsageAndQuit(void)
         "                   [-b|--tee-to-backdoor] [-z<exit>|--as-zero <exit> [..]] \\\r\n"
         "                   -- <prog> [args]\r\n"
         "   or  Os2Util.exe <-w<msg>|--write-backdoor <msg>>\r\n"
+        "   or  Os2Util.exe <-c<file>|--file-to-backdoor <file>>\r\n"
         "\r\n"
         "Note! Does not supported any kind of quoting before the child arguments.\r\n"
         ;
@@ -418,15 +476,12 @@ static PSZ MyGetOptValue(PSZ psz, PSZ pszOption, PSZ *ppszValue)
  */
 static PSZ MyGetOptNum(PSZ psz, PSZ pszOption, PUSHORT puValue)
 {
-    PSZ    pszError = NULL;
-    PSZ    pszValueStart = NULL;
-    PSZ    pszValue;
-    CHAR   ch;
-    USHORT uValue;
-    psz = MyGetOptValue(psz, pszOption, &pszValueStart);
-
-    pszValue = pszValueStart;
-    uValue   = 0;
+    PSZ         pszError      = NULL;
+    PSZ         pszValue      = NULL;
+    PSZ const   pszRet        = MyGetOptValue(psz, pszOption, &pszValue);
+    PSZ const   pszValueStart = pszValue;
+    USHORT      uValue        = 0;
+    CHAR        ch;
     if (pszValue[0] == '0' && ((ch = pszValue[1]) == 'x' || ch == 'X'))
     {
         pszValue += 2;
@@ -486,7 +541,7 @@ static PSZ MyGetOptNum(PSZ psz, PSZ pszOption, PUSHORT puValue)
     }
 
     *puValue = uValue;
-    return psz;
+    return pszRet;
 }
 
 
@@ -544,7 +599,7 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
     PID         pidChild       = 0;
     HQUEUE      hQueue         = ~(HQUEUE)0;
     CHAR        szQueueName[64];
-    unsigned    cAsZero;
+    unsigned    cAsZero        = 0;
     USHORT      auAsZero[16];
 
     /*
@@ -583,9 +638,11 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
                 {
                     if (cAsZero > RT_ELEMENTS(auAsZero))
                         MySyntaxErrorAndQuit("Too many --as-zero/-z options");
-                    psz = MyGetOptNum(psz + 1, "--as-zero", &auAsZero[cAsZero]);
+                    psz = MyGetOptNum(psz, "--as-zero", &auAsZero[cAsZero]);
                     cAsZero++;
                 }
+                else if (ch == 'f' && MyMatchLongOption(&psz, RT_STR_TUPLE("file-to-backdoor")))
+                    CopyFileToBackdoorAndQuit(psz, TRUE /*fLongOpt*/, szBuf, sizeof(szBuf));
                 else if (ch == 'h' && MyMatchLongOption(&psz, RT_STR_TUPLE("help")))
                     ShowUsageAndQuit();
                 else if (ch == 't' && MyMatchLongOption(&psz, RT_STR_TUPLE("tee-to-backdoor")))
@@ -616,6 +673,8 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
                         fAppend = TRUE;
                     else if (ch == 'b')
                         g_fOutputToBackdoor = fTeeToBackdoor = TRUE;
+                    else if (ch == 'c')
+                        CopyFileToBackdoorAndQuit(psz + 1, FALSE /*fLongOpt*/, szBuf, sizeof(szBuf));
                     else if (ch == 'f')
                     {
                         psz = MyGetOptValue(psz + 1, "-f", &pszTeeToFile);
