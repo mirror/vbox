@@ -1258,13 +1258,6 @@ nemR3DarwinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGC
 }
 
 
-DECL_FORCE_INLINE(bool) vmxHCShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
-{
-    RT_NOREF(pVCpu, pVmxTransient);
-    return true;
-}
-
-
 DECL_FORCE_INLINE(bool) nemR3DarwinIsUnrestrictedGuest(PCVMCC pVM)
 {
     RT_NOREF(pVM);
