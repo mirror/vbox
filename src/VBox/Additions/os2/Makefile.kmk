@@ -43,6 +43,58 @@ VBoxReplaceDll_TEMPLATE = NewVBoxGuestR3Exe
 VBoxReplaceDll_SOURCES = VBoxReplaceDll.cpp
 
 
+#
+# A barebone installer.
+#
+if 0
+PROGRAMS += VBoxOs2AdditionsInstall
+endif
+VBoxOs2AdditionsInstall_TEMPLATE         = DUMMY
+VBoxOs2AdditionsInstall_TOOL             = OPENWATCOM
+VBoxOs2AdditionsInstall_ASTOOL           = OPENWATCOM
+VBoxOs2AdditionsInstall_BLD_TRG          = os2
+VBoxOs2AdditionsInstall_BLD_TRG_ARCH     = x86
+VBoxOs2AdditionsInstall_EXESUFF          = .exe
+VBoxOs2AdditionsInstall_INST             = $(INST_ADDITIONS)
+VBoxOs2AdditionsInstall_DEFS             = IN_RING3 IN_RT_R3 IN_RT_STATIC RT_NO_STRICT
+VBoxOs2AdditionsInstall_CFLAGS           = -w3
+VBoxOs2AdditionsInstall_CFLAGS.release   = -os
+VBoxOs2AdditionsInstall_CXXFLAGS         = -w3
+VBoxOs2AdditionsInstall_CXXFLAGS.release = -os
+VBoxOs2AdditionsInstall_INCS             = \
+	$(PATH_TOOL_OPENWATCOM)/h/os2
+VBoxOs2AdditionsInstall_SOURCES          = \
+	VBoxOs2AdditionsInstall.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathStripFilename.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathEnsureTrailingSeparator.cpp
+if 1
+ VBOX_PATH_RUNTIME_SRC ?= $(PATH_ROOT)/src/VBox/Runtime
+ VBoxOs2AdditionsInstall_LDTOOL          = OPENWATCOM-WL
+ VBoxOs2AdditionsInstall_CFLAGS         += -zl -s -zc -xd -xds
+ VBoxOs2AdditionsInstall_CXXFLAGS       += -zl -s -zc -xd -xds
+ VBoxOs2AdditionsInstall_LDFLAGS         = \
+ 	SYSTEM os2v2 \
+ 	OPTION START=_VBoxOs2AdditionsInstallMain \
+ 	OPTION STACK=16384 \
+ 	OPTION ELiminate \
+ 	OPTION DOSSeg
+ VBoxOs2AdditionsInstall_DEFS           += IPRT_NO_CRT RT_WITH_NOCRT_ALIASES
+ VBoxOs2AdditionsInstall_INCS           <= \
+ 	$(PATH_ROOT)/include/iprt/nocrt \
+	$(VBOX_PATH_RUNTIME_SRC)/include
+ VBoxOs2AdditionsInstall_SOURCES        += \
+ 	VBoxOs2AdditionsInstallA.asm \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strlen.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strncmp.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memcpy.cpp
+ VBoxOs2AdditionsInstall_LIBS             = \
+ 	$(PATH_TOOL_OPENWATCOM)/lib386/os2/os2386.lib
+else
+ VBoxOs2AdditionsInstall_CFLAGS         +=
+ VBoxOs2AdditionsInstall_CXXFLAGS       +=
+ VBoxOs2AdditionsInstall_LDFLAGS         = -bcl=os2v2 -k16384 -'OPTION START=_VBoxOs2AdditionsInstallMain'
+endif
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
