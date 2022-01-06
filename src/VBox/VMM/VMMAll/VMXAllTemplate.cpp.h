@@ -1985,11 +1985,12 @@ static int vmxHCCopyShadowToNstGstVmcs(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 /**
  * Enables VMCS shadowing for the given VMCS info. object.
  *
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  *
  * @remarks No-long-jump zone!!!
  */
-static void vmxHCEnableVmcsShadowing(PVMXVMCSINFO pVmcsInfo)
+static void vmxHCEnableVmcsShadowing(PCVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     uint32_t uProcCtls2 = pVmcsInfo->u32ProcCtls2;
     if (!(uProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING))
@@ -2008,11 +2009,12 @@ static void vmxHCEnableVmcsShadowing(PVMXVMCSINFO pVmcsInfo)
 /**
  * Disables VMCS shadowing for the given VMCS info. object.
  *
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  *
  * @remarks No-long-jump zone!!!
  */
-static void vmxHCDisableVmcsShadowing(PVMXVMCSINFO pVmcsInfo)
+static void vmxHCDisableVmcsShadowing(PCVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     /*
      * We want all VMREAD and VMWRITE instructions to cause VM-exits, so we clear the

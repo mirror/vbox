@@ -520,6 +520,72 @@ static VBOXSTRICTRC hmR0VmxRealModeGuestStackPush(PVMCPUCC pVCpu, uint16_t uValu
 }
 
 
+/**
+ * Wrapper around VMXWriteVmcs16 taking a pVCpu parameter so VCC doesn't complain about
+ * unreferenced local parameters in the template code...
+ */
+DECL_FORCE_INLINE(int) hmR0VmxWriteVmcs16(PCVMCPUCC pVCpu, uint32_t uFieldEnc, uint16_t u16Val)
+{
+    RT_NOREF(pVCpu);
+    return VMXWriteVmcs16(uFieldEnc, u16Val);
+}
+
+
+/**
+ * Wrapper around VMXWriteVmcs32 taking a pVCpu parameter so VCC doesn't complain about
+ * unreferenced local parameters in the template code...
+ */
+DECL_FORCE_INLINE(int) hmR0VmxWriteVmcs32(PCVMCPUCC pVCpu, uint32_t uFieldEnc, uint32_t u32Val)
+{
+    RT_NOREF(pVCpu);
+    return VMXWriteVmcs32(uFieldEnc, u32Val);
+}
+
+
+/**
+ * Wrapper around VMXWriteVmcs64 taking a pVCpu parameter so VCC doesn't complain about
+ * unreferenced local parameters in the template code...
+ */
+DECL_FORCE_INLINE(int) hmR0VmxWriteVmcs64(PCVMCPUCC pVCpu, uint32_t uFieldEnc, uint64_t u64Val)
+{
+    RT_NOREF(pVCpu);
+    return VMXWriteVmcs64(uFieldEnc, u64Val);
+}
+
+
+/**
+ * Wrapper around VMXReadVmcs16 taking a pVCpu parameter so VCC doesn't complain about
+ * unreferenced local parameters in the template code...
+ */
+DECL_FORCE_INLINE(int) hmR0VmxReadVmcs16(PCVMCPUCC pVCpu, uint32_t uFieldEnc, uint16_t *pu16Val)
+{
+    RT_NOREF(pVCpu);
+    return VMXReadVmcs16(uFieldEnc, pu16Val);
+}
+
+
+/**
+ * Wrapper around VMXReadVmcs32 taking a pVCpu parameter so VCC doesn't complain about
+ * unreferenced local parameters in the template code...
+ */
+DECL_FORCE_INLINE(int) hmR0VmxReadVmcs32(PCVMCPUCC pVCpu, uint32_t uFieldEnc, uint32_t *pu32Val)
+{
+    RT_NOREF(pVCpu);
+    return VMXReadVmcs32(uFieldEnc, pu32Val);
+}
+
+
+/**
+ * Wrapper around VMXReadVmcs64 taking a pVCpu parameter so VCC doesn't complain about
+ * unreferenced local parameters in the template code...
+ */
+DECL_FORCE_INLINE(int) hmR0VmxReadVmcs64(PCVMCPUCC pVCpu, uint32_t uFieldEnc, uint64_t *pu64Val)
+{
+    RT_NOREF(pVCpu);
+    return VMXReadVmcs64(uFieldEnc, pu64Val);
+}
+
+
 /*
  * Instantiate the code we share with the NEM darwin backend.
  */
@@ -531,15 +597,15 @@ static VBOXSTRICTRC hmR0VmxRealModeGuestStackPush(PVMCPUCC pVCpu, uint16_t uValu
 #define VM_IS_VMX_PREEMPT_TIMER_USED(a_pVM) (a_pVM)->hmr0.s.vmx.fUsePreemptTimer
 #define VM_IS_VMX_LBR(a_pVM)                (a_pVM)->hmr0.s.vmx.fLbr
 
-#define VMX_VMCS_WRITE_16(a_pVCpu, a_FieldEnc, a_Val) VMXWriteVmcs16((a_FieldEnc), (a_Val))
-#define VMX_VMCS_WRITE_32(a_pVCpu, a_FieldEnc, a_Val) VMXWriteVmcs32((a_FieldEnc), (a_Val))
-#define VMX_VMCS_WRITE_64(a_pVCpu, a_FieldEnc, a_Val) VMXWriteVmcs64((a_FieldEnc), (a_Val))
-#define VMX_VMCS_WRITE_NW(a_pVCpu, a_FieldEnc, a_Val) VMXWriteVmcsNw((a_FieldEnc), (a_Val))
+#define VMX_VMCS_WRITE_16(a_pVCpu, a_FieldEnc, a_Val) hmR0VmxWriteVmcs16((a_pVCpu), (a_FieldEnc), (a_Val))
+#define VMX_VMCS_WRITE_32(a_pVCpu, a_FieldEnc, a_Val) hmR0VmxWriteVmcs32((a_pVCpu), (a_FieldEnc), (a_Val))
+#define VMX_VMCS_WRITE_64(a_pVCpu, a_FieldEnc, a_Val) hmR0VmxWriteVmcs64((a_pVCpu), (a_FieldEnc), (a_Val))
+#define VMX_VMCS_WRITE_NW(a_pVCpu, a_FieldEnc, a_Val) hmR0VmxWriteVmcs64((a_pVCpu), (a_FieldEnc), (a_Val))
 
-#define VMX_VMCS_READ_16(a_pVCpu, a_FieldEnc, a_pVal) VMXReadVmcs16((a_FieldEnc), (a_pVal))
-#define VMX_VMCS_READ_32(a_pVCpu, a_FieldEnc, a_pVal) VMXReadVmcs32((a_FieldEnc), (a_pVal))
-#define VMX_VMCS_READ_64(a_pVCpu, a_FieldEnc, a_pVal) VMXReadVmcs64((a_FieldEnc), (a_pVal))
-#define VMX_VMCS_READ_NW(a_pVCpu, a_FieldEnc, a_pVal) VMXReadVmcsNw((a_FieldEnc), (a_pVal))
+#define VMX_VMCS_READ_16(a_pVCpu, a_FieldEnc, a_pVal) hmR0VmxReadVmcs16((a_pVCpu), (a_FieldEnc), (a_pVal))
+#define VMX_VMCS_READ_32(a_pVCpu, a_FieldEnc, a_pVal) hmR0VmxReadVmcs32((a_pVCpu), (a_FieldEnc), (a_pVal))
+#define VMX_VMCS_READ_64(a_pVCpu, a_FieldEnc, a_pVal) hmR0VmxReadVmcs64((a_pVCpu), (a_FieldEnc), (a_pVal))
+#define VMX_VMCS_READ_NW(a_pVCpu, a_FieldEnc, a_pVal) hmR0VmxReadVmcs64((a_pVCpu), (a_FieldEnc), (a_pVal))
 
 #include "../VMMAll/VMXAllTemplate.cpp.h"
 
@@ -3664,10 +3730,10 @@ static int hmR0VmxExportGuestHwvirtState(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
                     AssertRCReturn(rc, rc);
                     pVCpu->hm.s.vmx.fCopiedNstGstToShadowVmcs = true;
                 }
-                vmxHCEnableVmcsShadowing(pVmcsInfo);
+                vmxHCEnableVmcsShadowing(pVCpu, pVmcsInfo);
             }
             else
-                vmxHCDisableVmcsShadowing(pVmcsInfo);
+                vmxHCDisableVmcsShadowing(pVCpu, pVmcsInfo);
         }
 #else
         NOREF(pVmxTransient);
@@ -6020,7 +6086,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
     /*
      * Check and process force flag actions, some of which might require us to go back to ring-3.
      */
-    VBOXSTRICTRC rcStrict = vmxHCCheckForceFlags(pVCpu, pVmxTransient, fStepping);
+    VBOXSTRICTRC rcStrict = vmxHCCheckForceFlags(pVCpu, pVmxTransient->fIsNestedGuest, fStepping);
     if (rcStrict == VINF_SUCCESS)
     {
         /* FFs don't get set all the time. */
