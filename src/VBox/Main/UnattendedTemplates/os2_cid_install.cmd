@@ -184,6 +184,8 @@ attrib +r C:\VBoxCID\OS2LDR
 pause
 :phase2_startup_ok
 
+copy C:\CONFIG.SYS C:\VBoxCID\Phase1-end-config.sys
+
 REM now reboot.
 goto reboot
 
@@ -239,6 +241,7 @@ C:
 :step2_2
 @echo Install startup.cmd for phase3.
 ren C:\STARTUP.CMD C:\VBoxCID\Phase2-end-startup.cmd
+copy C:\CONFIG.SYS C:\VBoxCID\Phase2-end-config.sys
 @echo C:\VBoxCID\OS2_UTIL.EXE --tee-to-backdoor --tee-to-file C:\VBoxCID\Phase3.log --append -- C:\OS2\CMD.EXE /C C:\VBoxCID\VBoxCID.CMD PHASE3> C:\STARTUP.CMD && goto phase3_startup_ok
 pause
 :phase3_startup_ok
@@ -359,9 +362,11 @@ CD C:\VBoxCID
 C:
 %CDROM%
 @REM Skipping as it hangs after a "Message file not found." error. (The DPATH amendment doesn't help.)  Logs give no clue.
-@REM Maybe we're installing it too early?  Needs TCPIP or smth.
+@REM The install works fine after the phase3 reboot. Next log message then is "NS46EXIT QLTOBMCONVERT en_US, rc=0x0000",
+@REM so maybe it is related to the LANG environment variable or Locale? Hmm. LANG seems to be set...
 goto netscape_ok
-SET DPATH=%DPATH%;C:\NETSCAPE\SIUTIL;
+SET DPATH=%DPATH%;C:\NETSCAPE\SIUTIL;C:\NETSCAPE\PROGRAM;
+IF "x%LANG%x" == "xx" THEN SET LANG=en_US
 C:\VBoxCID\OS2_UTIL.EXE -- %CDROM%\CID\SERVER\NETSCAPE\INSTALL.EXE /X /A:I /TU:C: /C:%CDROM%\CID\SERVER\NETSCAPE\NS46.ICF /S:%CDROM%\CID\SERVER\NETSCAPE /R:C:\VBoxCID\Netscape.RSP /L1:C:\VBoxCID\3.6-Netscape.log /L2:C:\VBoxCID\3.6-Netscape-2.log && goto netscape_ok
 C:\VBoxCID\OS2_UTIL.EXE --file-to-backdoor C:\VBoxCID\3.6-Netscape.log
 pause
@@ -462,6 +467,8 @@ C:
 @@VBOX_INSERT_POST_INSTALL_COMMAND@@
 @@VBOX_COND_END@@
 
+copy C:\CONFIG.SYS C:\VBoxCID\Phase3-end-config.sys
+
 
 REM
 REM Reboot (common to both phases).
@@ -473,8 +480,8 @@ REM
 cd C:\OS2
 C:
 
-@echo debug
-CMD.EXE
+@REM @echo debug
+@REM CMD.EXE
 
 SETBOOT /IBD:C
 pause
