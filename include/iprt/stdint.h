@@ -192,7 +192,7 @@ typedef uint64_t            uintmax_t;
 # endif /* !linux kernel or stuff */
 
     /* pointer <-> integer types */
-# if !defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
+# if (!defined(_MSC_VER) && !defined(__WATCOMC__)) || defined(DOXYGEN_RUNNING)
 #  if ARCH_BITS == 32 \
    || defined(RT_OS_LINUX) \
    || defined(RT_OS_FREEBSD)

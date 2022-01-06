@@ -1,9 +1,9 @@
 /** @file
- * IPRT / No-CRT - compiler specifics.
+ * IPRT / No-CRT - Open Watcom specifics.
  */
 
 /*
- * Copyright (C) 2006-2022 Oracle Corporation
+ * Copyright (C) 2022 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,20 +23,22 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_nocrt_compiler_compiler_h
-#define IPRT_INCLUDED_nocrt_compiler_compiler_h
+#ifndef IPRT_INCLUDED_nocrt_compiler_watcom_h
+#define IPRT_INCLUDED_nocrt_compiler_watcom_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
 
-#ifdef __GNUC__
-# include <iprt/nocrt/compiler/gcc.h>
-#elif defined(_MSC_VER)
-# include <iprt/nocrt/compiler/msc.h>
-#elif defined(__WATCOMC__)
-# include <iprt/nocrt/compiler/watcom.h>
-#else
-# error "Unsupported compiler."
+/* stddef.h for size_t and such */
+#include <../h/stddef.h>
+
+/* stdarg.h */
+#include <../h/stdarg.h>
+
+#ifndef _SSIZE_T_DEFINED_
+#define _SSIZE_T_DEFINED_
+typedef signed ssize_t;
 #endif
 
-#endif /* !IPRT_INCLUDED_nocrt_compiler_compiler_h */
+#endif /* !IPRT_INCLUDED_nocrt_compiler_watcom_h */
+
