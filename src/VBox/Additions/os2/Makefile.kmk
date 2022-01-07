@@ -46,7 +46,7 @@ VBoxReplaceDll_SOURCES = VBoxReplaceDll.cpp
 #
 # A barebone installer.
 #
-if 0
+if 1
 PROGRAMS += VBoxOs2AdditionsInstall
 endif
 VBoxOs2AdditionsInstall_TEMPLATE         = DUMMY
@@ -84,9 +84,15 @@ if 1
 	$(VBOX_PATH_RUNTIME_SRC)/include
  VBoxOs2AdditionsInstall_SOURCES        += \
  	VBoxOs2AdditionsInstallA.asm \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strcpy.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/string/strchr.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/string/strlen.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/common/string/strncmp.cpp \
- 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memcpy.cpp
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memchr.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memcmp.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memcpy.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memrchr.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memset.cpp
  VBoxOs2AdditionsInstall_LIBS             = \
  	$(PATH_TOOL_OPENWATCOM)/lib386/os2/os2386.lib
 else
