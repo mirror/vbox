@@ -399,17 +399,21 @@ static PRTHTTPSERVERREQ rtHttpServerReqAlloc(void)
  * Frees a formerly allocated client request.
  *
  * @param   pReq                Pointer to client request to free.
+ *                              The pointer will be invalid on return.
  */
 static void rtHttpServerReqFree(PRTHTTPSERVERREQ pReq)
 {
     if (!pReq)
         return;
 
+    RTStrFree(pReq->pszUrl);
+
     RTHttpHeaderListDestroy(pReq->hHdrLst);
 
     rtHttpServerBodyDestroy(&pReq->Body);
 
     RTMemFree(pReq);
+    pReq = NULL;
 }
 
 /**
