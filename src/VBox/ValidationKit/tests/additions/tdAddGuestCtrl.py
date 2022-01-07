@@ -2744,8 +2744,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         oCreds = tdCtxCreds();
         oCreds.applyDefaultsIfNotSet(oTestVm);
 
-        # Number of stale guest processes to create.
-        cStaleProcs = 10;
+        # Number of guest processes per group to create.
+        cProcsPerGroup = 10;
 
         #
         # Start a session.
@@ -2769,12 +2769,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         reporter.log('Starting stale processes...');
         fRc = True;
-        for i in xrange(0, cStaleProcs):
+        for i in xrange(0, cProcsPerGroup):
             try:
                 reporter.log2('Starting stale process #%d...' % (i));
                 oGuestSession.processCreate(sCmd,
                                             asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], [],
                                             [ vboxcon.ProcessCreateFlag_WaitForStdOut ], 30 * 1000);
+                # Note: Not keeping a process reference from the created process above is intentional and part of the test!
+
                 # Note: Use a timeout in the call above for not letting the stale processes
                 #       hanging around forever.  This can happen if the installed Guest Additions
                 #       do not support terminating guest processes.
@@ -2784,12 +2786,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         if fRc:
             reporter.log2('Starting stale processes successful');
-            try:    cProcesses = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
-            except: fRc        = reporter.errorXcpt();
+            try:    cProcs = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
+            except: fRc    = reporter.errorXcpt();
             else:
-                reporter.log2('Proccess count is: %d' % (cProcesses));
-                if cProcesses != cStaleProcs:
-                    fRc = reporter.error('Got %d stale processes, expected %d (stale)' % (cProcesses, cStaleProcs));
+                reporter.log2('Proccess count is: %d' % (cProcs));
+                if cProcs != cProcsPerGroup:
+                    fRc = reporter.error('Got %d stale processes, expected %d (stale)' % (cProcs, cProcsPerGroup));
 
         if fRc:
             #
@@ -2800,24 +2802,24 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             else:
                 asArgs = [ sCmd, '-c', 'ls -la ' + self.oTstDrv.getGuestSystemDir(oTestVm), ];
             reporter.log('Starting non-stale processes...');
-            aoProcesses = [];
-            for i in xrange(0, cStaleProcs):
+            aoProcs = [];
+            for i in xrange(0, cProcsPerGroup):
                 try:
                     reporter.log2('Starting non-stale process #%d...' % (i));
                     oCurProc = oGuestSession.processCreate(sCmd, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                            [], [], 0); # Infinite timeout.
-                    aoProcesses.append(oCurProc);
+                    aoProcs.append(oCurProc);
                 except:
                     fRc = reporter.errorXcpt('Creating non-stale process #%d failed:' % (i,));
                     break;
 
-            try:    cProcesses = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
-            except: fRc        = reporter.errorXcpt();
+            try:    cProcs = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
+            except: fRc    = reporter.errorXcpt();
             else:
-                reporter.log2('Proccess count is: %d' % (cProcesses));
+                reporter.log2('Proccess count is: %d' % (cProcs));
 
             reporter.log('Waiting for non-stale processes to terminate...');
-            for i, oProcess in enumerate(aoProcesses):
+            for i, oProcess in enumerate(aoProcs):
                 try:
                     reporter.log('Waiting for non-stale process #%d...' % (i));
                     eWaitResult = oProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate, ], 30 * 1000);
@@ -2831,18 +2833,18 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if fRc:
                 reporter.log('All non-stale processes ended successfully');
 
-            try:    cProcesses = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
-            except: fRc        = reporter.errorXcpt();
+            try:    cProcs = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
+            except: fRc    = reporter.errorXcpt();
             else:
-                reporter.log2('Proccess count is: %d' % (cProcesses));
+                reporter.log2('Proccess count is: %d' % (cProcs));
 
                 # Here we count the stale processes (that is, processes we don't have a reference
-                # anymore for) and the started + terminated non-stale processes (that we still keep
+                # anymore for) and the started + ended non-stale processes (that we still keep
                 # a reference in aoProcesses[] for).
-                cProcsExpected = cStaleProcs * 2;
-                if cProcesses != cProcsExpected:
+                cProcsExpected = cProcsPerGroup * 2;
+                if cProcs != cProcsExpected:
                     fRc = reporter.error('Got %d total processes, expected %d (stale vs. non-stale)' \
-                                         % (cProcesses, cProcsExpected));
+                                         % (cProcs, cProcsExpected));
             #
             # Fire off non-stale blocking processes which are terminated via terminate().
             #
@@ -2851,8 +2853,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             else:
                 asArgs = [ sCmd ];
             reporter.log('Starting blocking processes...');
-            aoProcesses = [];
-            for i in xrange(0, cStaleProcs):
+            aoProcs = [];
+            for i in xrange(0, cProcsPerGroup):
                 try:
                     reporter.log2('Starting blocking process #%d...' % (i));
                     oCurProc = oGuestSession.processCreate(sCmd, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
@@ -2860,7 +2862,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     # Note: Use a timeout in the call above for not letting the stale processes
                     #       hanging around forever.  This can happen if the installed Guest Additions
                     #       do not support terminating guest processes.
-                    aoProcesses.append(oCurProc);
+                    aoProcs.append(oCurProc);
                 except:
                     fRc = reporter.errorXcpt('Creating non-stale blocking process #%d failed:' % (i,));
                     break;
@@ -2869,7 +2871,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.log2('Starting blocking processes successful');
 
             reporter.log2('Terminating blocking processes...');
-            for i, oProcess in enumerate(aoProcesses):
+            for i, oProcess in enumerate(aoProcs):
                 try:
                     reporter.log('Terminating blocking process #%d...' % (i));
                     oProcess.terminate();
@@ -2881,12 +2883,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.log('All blocking processes were terminated successfully');
 
             # There still should be 20 processes because we just terminated the 10 blocking ones above.
-            try:    cProcesses = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
-            except: fRc        = reporter.errorXcpt();
+            try:    cProcs = len(self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes'));
+            except: fRc    = reporter.errorXcpt();
             else:
-                if cProcesses != (cStaleProcs * 2):
-                    fRc = reporter.error('Got %d total processes, expected %d (final)' % (cProcesses, cStaleProcs));
-                reporter.log2('Final guest session processes count: %d' % (cProcesses,));
+                if cProcs != cProcsPerGroup * 2:
+                    fRc = reporter.error('Got %d total processes, expected %d (final)' % (cProcs, cProcsPerGroup));
+                reporter.log2('Final guest session processes count: %d' % (cProcs,));
 
         if not fRc:
             aoProcs = self.oTstDrv.oVBoxMgr.getArray(oGuestSession, 'processes');
