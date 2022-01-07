@@ -3237,6 +3237,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         oCreds = tdCtxCreds();
         oCreds.applyDefaultsIfNotSet(oTestVm);
 
+        fRebooted = False;
         fRc = True;
 
         #
@@ -3300,7 +3301,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         reporter.log('Rebooting guest and reconnecting TXS ...');
                         (oSession, oTxsSession) = self.oTstDrv.txsRebootAndReconnectViaTcp(oSession, oTxsSession,
                                                                                            cMsTimeout = 3 * 60000);
-                        if not oSession or not oTxsSession:
+                        if  oSession \
+                        and oTxsSession:
+                            # Set reboot flag (needed later for session closing).
+                            fRebooted = True;
+                        else:
+                            reporter.error('Rebooting via TXS failed');
                             try:    oGuestProcess.terminate();
                             except: reporter.logXcpt();
                             fRc = False;
@@ -3335,7 +3341,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         try:
             oGuestSession.close();
         except:
-            fRc = reporter.errorXcpt();
+            # Closing the guest session will fail when the guest reboot has been triggered,
+            # as the session object will be cleared on a guest reboot.
+            if fRebooted:
+                reporter.logXcpt('Closing guest session failed, good (guest rebooted)');
+            else: # ... otherwise this (still) should succeed. Report so if it doesn't.
+                reporter.errorXcpt('Closing guest session failed');
 
         return (fRc, oTxsSession);
 
