@@ -723,10 +723,10 @@ static RTEXITCODE PrepareConfigSys(void)
     bool        fPendingMouse  = false;
     bool        fInsertedIfs   = RT_BOOL(g_fSkipMask & SKIP_SHARED_FOLDERS);
     unsigned    cPathsFound    = 0;
-    const char *pchGraddChains = NULL;
-    size_t      cchGraddChains = 0;
-    char        ch0GraddUpper  = 0;
-    char        ch0GraddLower  = 0;
+    const char *pchGraddChains = "C1";
+    size_t      cchGraddChains = sizeof("C1") - 1;
+    char        ch0GraddUpper  = 'C';
+    char        ch0GraddLower  = 'c';
     const char *pchGraddChain1 = NULL;
     size_t      cchGraddChain1 = NULL;
     unsigned    iLine  = 0;
@@ -794,8 +794,10 @@ static RTEXITCODE PrepareConfigSys(void)
             /*
              * Look for the GRADD_CHAINS variable.
              *
-             * It is a comma separated list of chains (other env.vars.),
-             * however we can only deal with a single element.
+             * It is a comma separated list of chains (other env.vars.), however
+             * we can only deal with a single element.  This shouldn't be an issue
+             * as GRADD_CHAINS is standardized by COMGRADD.DSP to the value C1, so
+             * other values can only be done by users or special drivers.
              */
             else if (   cchLine - off >= sizeof("GRADD_CHAINS=C") - 1
                      && (pchLine[off +  0] == 'G' || pchLine[off + 0] == 'g')
@@ -807,21 +809,31 @@ static RTEXITCODE PrepareConfigSys(void)
                 if (cchLine > off && pchLine[off] == '=')
                 {
                     off++;
-                    pchGraddChains = &pchLine[off];
-                    cchGraddChains = StripGraddList(&pchGraddChains, cchLine - off);
 
-                    ch0GraddUpper = RT_C_TO_UPPER(*pchGraddChains);
-                    ch0GraddLower = RT_C_TO_LOWER(*pchGraddChains);
+                    const char *pchNew   = &pchLine[off];
+                    size_t      cchNew   = StripGraddList(&pchNew, cchLine - off);
 
-                    pchGraddChain1 = NULL;
-                    cchGraddChain1 = 0;
-
-                    const char *pszComma = (const char *)memchr(pchGraddChains, ',', cchGraddChains);
+                    const char *pszComma = (const char *)memchr(pchNew, ',', cchNew);
                     if (pszComma)
                     {
-                        cchGraddChains = StripGraddList(&pchGraddChains, pchGraddChains - pszComma);
+                        cchNew = StripGraddList(&pchNew, pchNew - pszComma);
                         WriteStrings(g_hStdOut, "warning: Config.sys line ", MyNumToString(szLineNo, iLine),
                                      "GRADD_CHAINS contains more than one element.  Ignoring all but the first.\r\n", NULL);
+                    }
+
+                    /* If it differs from the default "C1" / previous value, we must
+                       restart the search for the primary chain environment variable.
+                       This means that chains values other than "C1" must come after
+                       the GRADD_CHAINS statement, since we're not doing an extra pass. */
+                    if (   cchGraddChains != cchNew
+                        || MyMemICmp(pchNew, pchGraddChains, cchNew) == 0)
+                    {
+                        pchGraddChains = pchNew;
+                        cchGraddChains = cchNew;
+                        ch0GraddUpper  = RT_C_TO_UPPER(*pchGraddChains);
+                        ch0GraddLower  = RT_C_TO_LOWER(*pchGraddChains);
+                        pchGraddChain1 = NULL;
+                        cchGraddChain1 = 0;
                     }
 
                     if (g_fVerbose)
@@ -832,10 +844,6 @@ static RTEXITCODE PrepareConfigSys(void)
             }
             /*
              * Look for the chains listed by GRADD_CHAINS.
-             *
-             * We ASSUME this is defined after the GRADD_CHAINS variable since
-             * this is normally the case.  We'd need to do two passes otherwise,
-             * and I'm way to lazy to do that now.
              */
             else if (   (ch0GraddUpper == pchLine[off] || ch0GraddLower == pchLine[off])
                      && cchLine - off >= cchGraddChains + 2
@@ -994,7 +1002,7 @@ static RTEXITCODE PrepareConfigSys(void)
      */
     if (!(g_fSkipMask & SKIP_GRAPHICS))
     {
-        if (cchGraddChain1 > 0)
+        if (cchGraddChain1 > 0 && cchGraddChains > 0)
         {
             int idxGenGradd = -1;
             for (size_t off = 0, idx = 0; off < cchGraddChain1;)
@@ -1029,7 +1037,7 @@ static RTEXITCODE PrepareConfigSys(void)
                 return ErrorNStrings(RT_STR_TUPLE("GENGRADD is not the first entry in the primary GRADD chain \""),
                                      pchGraddChains, cchGraddChains, RT_STR_TUPLE("="), pchGraddChain1, cchGraddChain1, NULL, 0);
         }
-        else if (cchGraddChains != 0)
+        else if (cchGraddChains > 0)
             return ErrorNStrings(RT_STR_TUPLE("Primary GRADD chain \""), pchGraddChains, cchGraddChains,
                                  RT_STR_TUPLE("\" not found (only searched after SET GRADD_CHAINS)."), NULL, 0);
         else
@@ -1037,6 +1045,16 @@ static RTEXITCODE PrepareConfigSys(void)
     }
 
     return RTEXITCODE_SUCCESS;
+}
+
+
+/** Puts the line starting VBoxService to Startup.cmd. */
+static void StartupCmdPutLine(const char *pszLineNo)
+{
+    if (g_fVerbose)
+        WriteStrings(g_hStdOut, "info: Starting VBoxService at line ", pszLineNo, " in Startup.cmd\r\n", NULL);
+    EditorPutStringN(&g_StartupCmd, g_szDstPath, g_cchDstPath);
+    EditorPutLine(&g_StartupCmd, RT_STR_TUPLE("VBoxService.exe"));
 }
 
 
@@ -1052,6 +1070,118 @@ static RTEXITCODE PrepareStartupCmd(void)
     RTEXITCODE rcExit = EditorReadInFile(&g_StartupCmd, g_szBootDrivePath, 1024, false /*fMustExist*/);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
+
+    /*
+     * Scan startup.cmd and see if there is an [@]ECHO OFF without anything other
+     * than REM statements preceding it.  If there is we'll insert ourselves after
+     * that, otherwise we'll just jump in at the top.
+     */
+    unsigned    iInsertBeforeLine = 0;
+    unsigned    iLine             = 0;
+    size_t      offSrc            = 0;
+    const char *pchLine;
+    size_t      cchLine;
+    while ((offSrc = EditorGetLine(&g_StartupCmd, offSrc, &pchLine, &cchLine)) != 0)
+    {
+        iLine++;
+
+        size_t off = 0;
+#define SKIP_BLANKS() \
+        while (off < cchLine && RT_C_IS_BLANK(pchLine[off])) \
+            off++
+        SKIP_BLANKS();
+        if (off < cchLine && pchLine[off] == '@')
+        {
+            off++;
+            SKIP_BLANKS();
+        }
+        if (   cchLine - off < sizeof("ECHO OFF") - 1
+            && MyMemICmp(&pchLine[off], RT_STR_TUPLE("ECHO")) == 0
+            && RT_C_IS_BLANK(pchLine[off + 4]) )
+        {
+            off += 4;
+            SKIP_BLANKS();
+
+            if (   cchLine - off < sizeof("OFF") - 1
+                && MyMemICmp(&pchLine[off], RT_STR_TUPLE("OFF")) == 0
+                && RT_C_IS_BLANK(pchLine[off + 3]) )
+            {
+                iInsertBeforeLine = iLine + 1;
+                break;
+            }
+        }
+        else if (   cchLine - off < sizeof("REM") - 1
+                && MyMemICmp(&pchLine[off], RT_STR_TUPLE("REM")) == 0
+                && (cchLine - off == 3 || RT_C_IS_BLANK(pchLine[off + 3])) )
+        { /* skip */ }
+        else
+            break;
+    }
+
+    /*
+     * Make the modifications.
+     */
+    if (iInsertBeforeLine == 0) /* Necessary to do this outside the loop in case startup.cmd is empty or non-existing. */
+        StartupCmdPutLine("1");
+
+    offSrc = iLine = 0;
+    while ((offSrc = EditorGetLine(&g_StartupCmd, offSrc, &pchLine, &cchLine)) != 0)
+    {
+        char szLineNo[32];
+        iLine++;
+        if (iLine == iInsertBeforeLine)
+            StartupCmdPutLine(MyNumToString(szLineNo, iLine));
+
+        /*
+         * Filter out old VBoxService lines.  To be on the safe side we skip
+         * past DETACH, CALL, and START before checking for VBoxService.
+         */
+        size_t off = 0;
+        SKIP_BLANKS();
+        if (off < cchLine && pchLine[off] == '@')
+        {
+            off++;
+            SKIP_BLANKS();
+        }
+
+        if (   cchLine - off < sizeof("DETACH ") - 1
+            && MyMemICmp(&pchLine[off], RT_STR_TUPLE("DETACH")) == 0
+            && RT_C_IS_BLANK(pchLine[off + 6]))
+        {
+            off += 6;
+            SKIP_BLANKS();
+        }
+
+        if (   cchLine - off < sizeof("CALL ") - 1
+            && MyMemICmp(&pchLine[off], RT_STR_TUPLE("CALL")) == 0
+            && RT_C_IS_BLANK(pchLine[off + 4]))
+        {
+            off += 4;
+            SKIP_BLANKS();
+        }
+
+        if (   cchLine - off < sizeof("START ") - 1
+            && MyMemICmp(&pchLine[off], RT_STR_TUPLE("START")) == 0
+            && RT_C_IS_BLANK(pchLine[off + 5]))
+        {
+            off += 5;
+            SKIP_BLANKS();
+        }
+
+        if (   cchLine - off < sizeof("VBOXSERVICE") - 1 /* (Should be harmless to go past end of buffer due to missing .EXE) */
+            && (   MatchOnlyFilename(&pchLine[off], cchLine - off, RT_STR_TUPLE("VBOXSERVICE.EXE")) == 0
+                || MatchOnlyFilename(&pchLine[off], cchLine - off, RT_STR_TUPLE("VBOXSERVICE")) == 0))
+        {
+            if (g_fVerbose)
+                WriteStrings(g_hStdOut, "info: Removing old VBoxService statement on line ",
+                             MyNumToString(szLineNo, iLine), "\r\n", NULL);
+        }
+        else
+            EditorPutLine(&g_StartupCmd, pchLine, cchLine);
+
+#undef SKIP_BLANKS
+    }
+
 
     return RTEXITCODE_SUCCESS;
 }
