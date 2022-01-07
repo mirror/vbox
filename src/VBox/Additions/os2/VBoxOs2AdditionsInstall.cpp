@@ -124,6 +124,50 @@ static void WriteStrings(HFILE hFile, ...)
 }
 
 
+/** Writes a variable number of length/strings pairs to @a hFile, stopping at
+ *  0/NULL. */
+static void WriteNStrings(HFILE hFile, ...)
+{
+    va_list va;
+    va_start(va, hFile);
+    for (;;)
+    {
+        const char *psz = va_arg(va, const char *);
+        int         cch = va_arg(va, int);
+        if (psz)
+        {
+            if (cch < 0)
+                DoWriteStr(hFile, psz);
+            else
+                DoWriteNStr(hFile, psz, cch);
+        }
+        else
+            break;
+    }
+    va_end(va);
+}
+
+
+static RTEXITCODE ErrorNStrings(const char *pszMsg, ssize_t cchMsg, ...)
+{
+    DoWriteNStr(g_hStdErr, RT_STR_TUPLE("VBoxOs2AdditionsInstall: error: "));
+    va_list va;
+    va_start(va, cchMsg);
+    do
+    {
+        if (cchMsg < 0)
+            DoWriteStr(g_hStdErr, pszMsg);
+        else
+            DoWriteNStr(g_hStdErr, pszMsg, cchMsg);
+        pszMsg = va_arg(va, const char *);
+        cchMsg = va_arg(va, int);
+    } while (pszMsg != NULL);
+    va_end(va);
+    DoWriteNStr(g_hStdErr, RT_STR_TUPLE("\r\n"));
+    return RTEXITCODE_FAILURE;
+}
+
+
 static char *MyNumToString(char *pszBuf, unsigned uNum)
 {
     /* Convert to decimal and inverted digit order:  */
@@ -149,6 +193,7 @@ static void DoWriteNumber(HFILE hFile, unsigned uNum)
     MyNumToString(szTmp, uNum);
     DoWriteStr(hFile, szTmp);
 }
+
 
 static RTEXITCODE ApiErrorN(APIRET rc, unsigned cMsgs, ...)
 {
@@ -461,6 +506,25 @@ static bool EditorPutStringN(FILEEDITOR *pEditor, const char *pchString, size_t 
 }
 
 
+/**
+ * Simplistic case-insensitive memory compare function.
+ */
+static int MyMemICmp(void const *pv1, void const *pv2, size_t cb)
+{
+    char const *pch1 = (const char *)pv1;
+    char const *pch2 = (const char *)pv2;
+    while (cb-- > 0)
+    {
+        char ch1 = *pch1++;
+        char ch2 = *pch2++;
+        if (   ch1 != ch2
+            && RT_C_TO_UPPER(ch1) != RT_C_TO_UPPER(ch2))
+            return (int)ch1 - (int)ch2;
+    }
+    return 0;
+}
+
+
 /*********************************************************************************************************************************
 *   Installation Steps.                                                                                                          *
 *********************************************************************************************************************************/
@@ -475,6 +539,8 @@ static RTEXITCODE CheckForGradd(void)
     APIRET rc = DosQueryPathInfo(g_szBootDrivePath, FIL_STANDARD, &FileSts, sizeof(FileSts));
     if (rc != NO_ERROR)
         return ApiErrorN(rc, 3, "DosQueryPathInfo(\"", g_szBootDrivePath, "\",,,) - installed gengradd?");
+
+    /* Note! GRADD precense in Config.sys is checked below while modifying it. */
     return RTEXITCODE_SUCCESS;
 }
 
@@ -563,6 +629,28 @@ static bool ConfigSysAddVBoxMouse(void)
 
 
 /**
+ * Strips leading and trailing spaces and commas from the given substring.
+ *
+ * This is for GRADD_CHAINS and friends.
+ */
+static size_t StripGraddList(const char **ppch, size_t cch)
+{
+    const char *pch = *ppch;
+    while (   cch > 0
+           && (   RT_C_IS_BLANK(pch[0])
+               || pch[0] == ',') )
+        cch--, pch++;
+    *ppch = pch;
+
+    while (   cch > 0
+           && (   RT_C_IS_BLANK(pch[cch - 1])
+               || pch[cch - 1] == ',') )
+        cch--;
+    return cch;
+}
+
+
+/**
  * Prepares the config.sys modifications.
  */
 static RTEXITCODE PrepareConfigSys(void)
@@ -635,6 +723,12 @@ static RTEXITCODE PrepareConfigSys(void)
     bool        fPendingMouse  = false;
     bool        fInsertedIfs   = RT_BOOL(g_fSkipMask & SKIP_SHARED_FOLDERS);
     unsigned    cPathsFound    = 0;
+    const char *pchGraddChains = NULL;
+    size_t      cchGraddChains = 0;
+    char        ch0GraddUpper  = 0;
+    char        ch0GraddLower  = 0;
+    const char *pchGraddChain1 = NULL;
+    size_t      cchGraddChain1 = NULL;
     unsigned    iLine  = 0;
     size_t      offSrc = 0;
     const char *pchLine;
@@ -695,6 +789,75 @@ static RTEXITCODE PrepareConfigSys(void)
                         fDone = true;
                     }
                     cPathsFound += 1;
+                }
+            }
+            /*
+             * Look for the GRADD_CHAINS variable.
+             *
+             * It is a comma separated list of chains (other env.vars.),
+             * however we can only deal with a single element.
+             */
+            else if (   cchLine - off >= sizeof("GRADD_CHAINS=C") - 1
+                     && (pchLine[off +  0] == 'G' || pchLine[off + 0] == 'g')
+                     && (pchLine[off + 12] == '=' || RT_C_IS_BLANK(pchLine[off + 12]))
+                     && MyMemICmp(&pchLine[off], RT_STR_TUPLE("GRADD_CHAINS")) == 0)
+            {
+                off += 12;
+                SKIP_BLANKS();
+                if (cchLine > off && pchLine[off] == '=')
+                {
+                    off++;
+                    pchGraddChains = &pchLine[off];
+                    cchGraddChains = StripGraddList(&pchGraddChains, cchLine - off);
+
+                    ch0GraddUpper = RT_C_TO_UPPER(*pchGraddChains);
+                    ch0GraddLower = RT_C_TO_LOWER(*pchGraddChains);
+
+                    pchGraddChain1 = NULL;
+                    cchGraddChain1 = 0;
+
+                    const char *pszComma = (const char *)memchr(pchGraddChains, ',', cchGraddChains);
+                    if (pszComma)
+                    {
+                        cchGraddChains = StripGraddList(&pchGraddChains, pchGraddChains - pszComma);
+                        WriteStrings(g_hStdOut, "warning: Config.sys line ", MyNumToString(szLineNo, iLine),
+                                     "GRADD_CHAINS contains more than one element.  Ignoring all but the first.\r\n", NULL);
+                    }
+
+                    if (g_fVerbose)
+                        WriteNStrings(g_hStdOut, RT_STR_TUPLE("info: Config.sys line "), MyNumToString(szLineNo, iLine), - 1,
+                                      RT_STR_TUPLE(": SET GRADD_CHAINS="), &pchLine[off], cchLine - off,
+                                      RT_STR_TUPLE("\r\n"), NULL, 0);
+                }
+            }
+            /*
+             * Look for the chains listed by GRADD_CHAINS.
+             *
+             * We ASSUME this is defined after the GRADD_CHAINS variable since
+             * this is normally the case.  We'd need to do two passes otherwise,
+             * and I'm way to lazy to do that now.
+             */
+            else if (   (ch0GraddUpper == pchLine[off] || ch0GraddLower == pchLine[off])
+                     && cchLine - off >= cchGraddChains + 2
+                     && (pchLine[off + cchGraddChains] == '=' || RT_C_IS_SPACE(pchLine[off + cchGraddChains]))
+                     && MyMemICmp(&pchLine[off], pchGraddChains, cchGraddChains) == 0)
+            {
+                off += cchGraddChains;
+                SKIP_BLANKS();
+                if (cchLine > off && pchLine[off] == '=')
+                {
+                    off++;
+                    SKIP_BLANKS();
+
+                    /* Just save it, we'll validate it after processing everything. */
+                    pchGraddChain1 = &pchLine[off];
+                    cchGraddChain1 = StripGraddList(&pchGraddChain1, cchLine - off);
+
+                    if (g_fVerbose)
+                        WriteNStrings(g_hStdOut, RT_STR_TUPLE("info: Config.sys line "), MyNumToString(szLineNo, iLine), - 1,
+                                      RT_STR_TUPLE(": Found GRADD chain "), pchGraddChains, cchGraddChains,
+                                      RT_STR_TUPLE(" with value: "), pchGraddChain1, cchGraddChain1,
+                                      RT_STR_TUPLE("\r\n"), NULL, 0);
                 }
             }
         }
@@ -824,6 +987,54 @@ static RTEXITCODE PrepareConfigSys(void)
 
     if (!cPathsFound)
         WriteStrings(g_hStdErr, "warning: Found no SET PATH statement in Config.sys.\r\n", NULL);
+
+    /*
+     * If we're installing the graphics driver, check that GENGRADD is in the
+     * primary GRADD chain.
+     */
+    if (!(g_fSkipMask & SKIP_GRAPHICS))
+    {
+        if (cchGraddChain1 > 0)
+        {
+            int idxGenGradd = -1;
+            for (size_t off = 0, idx = 0; off < cchGraddChain1;)
+            {
+                const char *psz = &pchGraddChain1[off];
+                size_t      cch = cchGraddChain1 - off;
+                const char *pszComma = (const char *)memchr(psz, ',', cchGraddChain1 - off);
+                if (!pszComma)
+                    off += cch;
+                else
+                {
+                    cch = pszComma - psz;
+                    off += cch + 1;
+                }
+                while (cch > 0 && RT_C_IS_BLANK(*psz))
+                    cch--, psz++;
+                while (cch > 0 && RT_C_IS_BLANK(psz[cch - 1]))
+                    cch--;
+                if (   cch == sizeof("GENGRADD") - 1
+                    && MyMemICmp(psz, RT_STR_TUPLE("GENGRADD")) == 0)
+                {
+                    idxGenGradd = idx;
+                    break;
+                }
+                idx += cch != 0;
+            }
+            if (idxGenGradd < 0)
+                return ErrorNStrings(RT_STR_TUPLE("Primary GRADD chain \""), pchGraddChains, cchGraddChains,
+                                     RT_STR_TUPLE("="), pchGraddChain1, cchGraddChain1,
+                                     RT_STR_TUPLE("\" does not contain a GENGRADD entry."), NULL, 0);
+            if (idxGenGradd != 0)
+                return ErrorNStrings(RT_STR_TUPLE("GENGRADD is not the first entry in the primary GRADD chain \""),
+                                     pchGraddChains, cchGraddChains, RT_STR_TUPLE("="), pchGraddChain1, cchGraddChain1, NULL, 0);
+        }
+        else if (cchGraddChains != 0)
+            return ErrorNStrings(RT_STR_TUPLE("Primary GRADD chain \""), pchGraddChains, cchGraddChains,
+                                 RT_STR_TUPLE("\" not found (only searched after SET GRADD_CHAINS)."), NULL, 0);
+        else
+            return ErrorNStrings(RT_STR_TUPLE("No SET GRADD_CHAINS statement found in Config.sys"), NULL, 0);
+    }
 
     return RTEXITCODE_SUCCESS;
 }
