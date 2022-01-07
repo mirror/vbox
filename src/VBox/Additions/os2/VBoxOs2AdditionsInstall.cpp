@@ -525,23 +525,28 @@ static int MyMemICmp(void const *pv1, void const *pv2, size_t cb)
 }
 
 
-/*********************************************************************************************************************************
-*   Installation Steps.                                                                                                          *
-*********************************************************************************************************************************/
-
 /**
- * Checks that the necessary GRADD components are present.
+ * Matches a word deliminated by space of @a chAltSep.
+ *
+ * @returns true if matched, false if not.
+ * @param   pchLine     The line we're working on.
+ * @param   off         The current line offset.
+ * @param   cchLine     The current line length.
+ * @param   pszWord     The word to match with.
+ * @param   cchWord     The length of the word to match.
+ * @param   chAltSep    Alternative word separator, optional.
  */
-static RTEXITCODE CheckForGradd(void)
+static bool MatchWord(const char *pchLine, size_t off, size_t cchLine, const char *pszWord, size_t cchWord, char chAltSep = ' ')
 {
-    strcpy(&g_szBootDrivePath[g_cchBootDrivePath], "OS2\\DLL\\GENGRADD.DLL");
-    FILESTATUS3 FileSts;
-    APIRET rc = DosQueryPathInfo(g_szBootDrivePath, FIL_STANDARD, &FileSts, sizeof(FileSts));
-    if (rc != NO_ERROR)
-        return ApiErrorN(rc, 3, "DosQueryPathInfo(\"", g_szBootDrivePath, "\",,,) - installed gengradd?");
-
-    /* Note! GRADD precense in Config.sys is checked below while modifying it. */
-    return RTEXITCODE_SUCCESS;
+    pchLine += off;
+    cchLine -= off;
+    if (cchWord <= cchLine)
+        if (MyMemICmp(pchLine, pszWord, cchWord) == 0)
+            if (   cchWord == cchLine
+                || RT_C_IS_BLANK(pchLine[cchWord])
+                || pchLine[cchWord] == chAltSep)
+                return true;
+    return false;
 }
 
 
@@ -595,6 +600,26 @@ static bool MatchOnlyFilename(const char *pchString, size_t cchString, const cha
         pszFilename++;
     }
     return true;
+}
+
+
+/*********************************************************************************************************************************
+*   Installation Steps.                                                                                                          *
+*********************************************************************************************************************************/
+
+/**
+ * Checks that the necessary GRADD components are present.
+ */
+static RTEXITCODE CheckForGradd(void)
+{
+    strcpy(&g_szBootDrivePath[g_cchBootDrivePath], "OS2\\DLL\\GENGRADD.DLL");
+    FILESTATUS3 FileSts;
+    APIRET rc = DosQueryPathInfo(g_szBootDrivePath, FIL_STANDARD, &FileSts, sizeof(FileSts));
+    if (rc != NO_ERROR)
+        return ApiErrorN(rc, 3, "DosQueryPathInfo(\"", g_szBootDrivePath, "\",,,) - installed gengradd?");
+
+    /* Note! GRADD precense in Config.sys is checked below while modifying it. */
+    return RTEXITCODE_SUCCESS;
 }
 
 
@@ -725,8 +750,6 @@ static RTEXITCODE PrepareConfigSys(void)
     unsigned    cPathsFound    = 0;
     const char *pchGraddChains = "C1";
     size_t      cchGraddChains = sizeof("C1") - 1;
-    char        ch0GraddUpper  = 'C';
-    char        ch0GraddLower  = 'c';
     const char *pchGraddChain1 = NULL;
     size_t      cchGraddChain1 = NULL;
     unsigned    iLine  = 0;
@@ -749,21 +772,13 @@ static RTEXITCODE PrepareConfigSys(void)
          * Add the destination directory to the PATH.
          * If there are multiple SET PATH statements, we add ourselves to all of them.
          */
-        if (   cchLine - off >= sizeof("SET PATH=") - 1
-            && (pchLine[off + 0] == 'S' || pchLine[off + 0] == 's')
-            && (pchLine[off + 1] == 'E' || pchLine[off + 1] == 'e')
-            && (pchLine[off + 2] == 'T' || pchLine[off + 2] == 't')
-            && RT_C_IS_BLANK(pchLine[off + 3]))
+        if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("SET")))
         {
-            off += 4;
+            off += sizeof("SET") - 1;
             SKIP_BLANKS();
-            if (   cchLine - off >= sizeof("PATH=") - 1
-                && (pchLine[off + 0] == 'P' || pchLine[off + 0] == 'p')
-                && (pchLine[off + 1] == 'A' || pchLine[off + 1] == 'a')
-                && (pchLine[off + 2] == 'T' || pchLine[off + 2] == 't')
-                && (pchLine[off + 3] == 'H' || pchLine[off + 3] == 'h'))
+            if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("PATH"), '='))
             {
-                off += 4;
+                off += sizeof("PATH") - 1;
                 SKIP_BLANKS();
                 if (cchLine > off && pchLine[off] == '=')
                 {
@@ -799,12 +814,9 @@ static RTEXITCODE PrepareConfigSys(void)
              * as GRADD_CHAINS is standardized by COMGRADD.DSP to the value C1, so
              * other values can only be done by users or special drivers.
              */
-            else if (   cchLine - off >= sizeof("GRADD_CHAINS=C") - 1
-                     && (pchLine[off +  0] == 'G' || pchLine[off + 0] == 'g')
-                     && (pchLine[off + 12] == '=' || RT_C_IS_BLANK(pchLine[off + 12]))
-                     && MyMemICmp(&pchLine[off], RT_STR_TUPLE("GRADD_CHAINS")) == 0)
+            else if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("GRADD_CHAINS"), '='))
             {
-                off += 12;
+                off += sizeof("GRADD_CHAINS") - 1;
                 SKIP_BLANKS();
                 if (cchLine > off && pchLine[off] == '=')
                 {
@@ -830,8 +842,6 @@ static RTEXITCODE PrepareConfigSys(void)
                     {
                         pchGraddChains = pchNew;
                         cchGraddChains = cchNew;
-                        ch0GraddUpper  = RT_C_TO_UPPER(*pchGraddChains);
-                        ch0GraddLower  = RT_C_TO_LOWER(*pchGraddChains);
                         pchGraddChain1 = NULL;
                         cchGraddChain1 = 0;
                     }
@@ -845,10 +855,7 @@ static RTEXITCODE PrepareConfigSys(void)
             /*
              * Look for the chains listed by GRADD_CHAINS.
              */
-            else if (   (ch0GraddUpper == pchLine[off] || ch0GraddLower == pchLine[off])
-                     && cchLine - off >= cchGraddChains + 2
-                     && (pchLine[off + cchGraddChains] == '=' || RT_C_IS_SPACE(pchLine[off + cchGraddChains]))
-                     && MyMemICmp(&pchLine[off], pchGraddChains, cchGraddChains) == 0)
+            else if (MatchWord(pchLine, off, cchLine, pchGraddChains, cchGraddChains, '='))
             {
                 off += cchGraddChains;
                 SKIP_BLANKS();
@@ -872,13 +879,9 @@ static RTEXITCODE PrepareConfigSys(void)
         /*
          * Look for that IFS that should be loaded before we can load our drivers.
          */
-        else if (   cchLine - off >= sizeof("IFS=XX.IFS") - 1
-                 && (pchLine[off + 0] == 'I' || pchLine[off + 0] == 'i')
-                 && (pchLine[off + 1] == 'F' || pchLine[off + 1] == 'f')
-                 && (pchLine[off + 2] == 'S' || pchLine[off + 2] == 's')
-                 && (pchLine[off + 3] == '=' || RT_C_IS_BLANK(pchLine[off + 3])) )
+        else if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("IFS"), '='))
         {
-            off += 3;
+            off += sizeof("IFS") - 1;
             SKIP_BLANKS();
             if (cchLine > off && pchLine[off] == '=')
             {
@@ -914,16 +917,9 @@ static RTEXITCODE PrepareConfigSys(void)
          * Look for the mouse driver we need to comment out / existing VBoxMouse.sys,
          * as well as older VBoxGuest.sys statements we should remove.
          */
-        else if (   cchLine - off >= sizeof("DEVICE=XX.SYS") - 1
-                 && (pchLine[off + 0] == 'D' || pchLine[off + 0] == 'd')
-                 && (pchLine[off + 1] == 'E' || pchLine[off + 1] == 'e')
-                 && (pchLine[off + 2] == 'V' || pchLine[off + 2] == 'v')
-                 && (pchLine[off + 3] == 'I' || pchLine[off + 3] == 'i')
-                 && (pchLine[off + 4] == 'C' || pchLine[off + 4] == 'c')
-                 && (pchLine[off + 5] == 'E' || pchLine[off + 5] == 'e')
-                 && (pchLine[off + 6] == '=' || RT_C_IS_BLANK(pchLine[off + 6])) )
+        else if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("DEVICE"), '='))
         {
-            off += 6;
+            off += sizeof("DEVICE") - 1;
             SKIP_BLANKS();
             if (cchLine > off && pchLine[off] == '=')
             {
@@ -1095,24 +1091,18 @@ static RTEXITCODE PrepareStartupCmd(void)
             off++;
             SKIP_BLANKS();
         }
-        if (   cchLine - off < sizeof("ECHO OFF") - 1
-            && MyMemICmp(&pchLine[off], RT_STR_TUPLE("ECHO")) == 0
-            && RT_C_IS_BLANK(pchLine[off + 4]) )
+        if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("ECHO")))
         {
-            off += 4;
+            off += sizeof("ECHO") - 1;
             SKIP_BLANKS();
 
-            if (   cchLine - off < sizeof("OFF") - 1
-                && MyMemICmp(&pchLine[off], RT_STR_TUPLE("OFF")) == 0
-                && RT_C_IS_BLANK(pchLine[off + 3]) )
+            if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("OFF")))
             {
                 iInsertBeforeLine = iLine + 1;
                 break;
             }
         }
-        else if (   cchLine - off < sizeof("REM") - 1
-                && MyMemICmp(&pchLine[off], RT_STR_TUPLE("REM")) == 0
-                && (cchLine - off == 3 || RT_C_IS_BLANK(pchLine[off + 3])) )
+        else if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("REM")))
         { /* skip */ }
         else
             break;
@@ -1144,27 +1134,21 @@ static RTEXITCODE PrepareStartupCmd(void)
             SKIP_BLANKS();
         }
 
-        if (   cchLine - off < sizeof("DETACH ") - 1
-            && MyMemICmp(&pchLine[off], RT_STR_TUPLE("DETACH")) == 0
-            && RT_C_IS_BLANK(pchLine[off + 6]))
+        if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("DETACH")))
         {
-            off += 6;
+            off += sizeof("DEATCH") - 1;
             SKIP_BLANKS();
         }
 
-        if (   cchLine - off < sizeof("CALL ") - 1
-            && MyMemICmp(&pchLine[off], RT_STR_TUPLE("CALL")) == 0
-            && RT_C_IS_BLANK(pchLine[off + 4]))
+        if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("CALL")))
         {
-            off += 4;
+            off += sizeof("CALL") - 1;
             SKIP_BLANKS();
         }
 
-        if (   cchLine - off < sizeof("START ") - 1
-            && MyMemICmp(&pchLine[off], RT_STR_TUPLE("START")) == 0
-            && RT_C_IS_BLANK(pchLine[off + 5]))
+        if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("START")))
         {
-            off += 5;
+            off += sizeof("START") - 1;
             SKIP_BLANKS();
         }
 
