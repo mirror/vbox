@@ -42,6 +42,11 @@
 /** NIL HFILE value. */
 #define MY_NIL_HFILE        (~(HFILE)0)
 
+#if defined(DOXYGEN_RUNNING)
+/** Enabled extra debug output in the matching functions. */
+# define DEBUG_MATCHING
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -53,7 +58,9 @@ typedef struct FILEEDITOR
     size_t          cbNew;
     size_t          cbNewAlloc;
     char           *pszNew;
+    bool            fAppendEof;
     bool            fOverflowed;
+    size_t          cBogusChars;
 } FILEEDITOR;
 
 
@@ -69,9 +76,9 @@ static CHAR         g_szBootDrivePath[CCHMAXPATH]   = "C:\\";
 /** The size of the bootdrive path, including a trailing slash. */
 static size_t       g_cchBootDrivePath              = sizeof("C:\\") - 1;
 /** Where to install the guest additions files.  */
-static CHAR         g_szDstPath[CCHMAXPATH]         = "C:\\VBoxGA\\";
+static CHAR         g_szDstPath[CCHMAXPATH]         = "C:\\VBoxAdd\\";
 /** The length of g_szDstPath, including a trailing slash. */
-static size_t       g_cchDstPath                    = sizeof("C:\\VBoxGA\\") - 1;
+static size_t       g_cchDstPath                    = sizeof("C:\\VBoxAdd\\") - 1;
 /** Mask of SKIP_XXX flags of components/tasks to skip. */
 static uint8_t      g_fSkipMask                     = 0;
 /** Verbose or quiet. */
@@ -170,6 +177,8 @@ static RTEXITCODE ErrorNStrings(const char *pszMsg, ssize_t cchMsg, ...)
 
 static char *MyNumToString(char *pszBuf, unsigned uNum)
 {
+    char *pszRet = pszBuf;
+
     /* Convert to decimal and inverted digit order:  */
     char     szTmp[32];
     unsigned off = 0;
@@ -183,7 +192,8 @@ static char *MyNumToString(char *pszBuf, unsigned uNum)
     while (off-- > 0)
         *pszBuf++ = szTmp[off];
     *pszBuf = '\0';
-    return pszBuf;
+
+    return pszRet;
 }
 
 
@@ -237,6 +247,8 @@ static RTEXITCODE SyntaxError(const char *pszMsg, const char *pszArg)
  */
 static RTEXITCODE EditorReadInFile(FILEEDITOR *pEditor, const char *pszFilename, size_t cbExtraEdit, bool fMustExist)
 {
+    FILESTATUS3 FileSts;
+
     if (g_fVerbose)
         WriteStrings(g_hStdOut, "info: Preparing \"", pszFilename, "\" modifications...\r\n", NULL);
 
@@ -249,6 +261,8 @@ static RTEXITCODE EditorReadInFile(FILEEDITOR *pEditor, const char *pszFilename,
                         OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW,
                         OPEN_ACCESS_READONLY | OPEN_SHARE_DENYWRITE | OPEN_FLAGS_SEQUENTIAL | OPEN_FLAGS_NOINHERIT,
                         NULL /*pEaOp2*/);
+    if (rc == ERROR_OPEN_FAILED)
+        rc = DosQueryPathInfo(pszFilename, FIL_STANDARD, &FileSts, sizeof(FileSts));
     if (rc == ERROR_FILE_NOT_FOUND)
         hFile = MY_NIL_HFILE;
     else if (rc != NO_ERROR)
@@ -257,7 +271,6 @@ static RTEXITCODE EditorReadInFile(FILEEDITOR *pEditor, const char *pszFilename,
     /*
      * Get it's size and check that it's sane.
      */
-    FILESTATUS3 FileSts;
     if (hFile != MY_NIL_HFILE)
     {
         rc = DosQueryFileInfo(hFile, FIL_STANDARD, &FileSts, sizeof(FileSts));
@@ -276,15 +289,18 @@ static RTEXITCODE EditorReadInFile(FILEEDITOR *pEditor, const char *pszFilename,
     PVOID  pvAlloc = NULL;
     size_t cbAlloc = FileSts.cbFile * 2 + cbExtraEdit + 16;
     rc = DosAllocMem(&pvAlloc, cbAlloc, PAG_COMMIT | PAG_WRITE | PAG_READ);
-    if (rc == NO_ERROR)
+    if (rc != NO_ERROR)
         return ApiError("DosAllocMem", rc);
 
     memset(pvAlloc, 0, cbAlloc);
-    pEditor->cbOrg      = FileSts.cbFile;
-    pEditor->pszOrg     = (char *)pvAlloc;
-    pEditor->pszNew     = (char *)pvAlloc + FileSts.cbFile + 1;
-    pEditor->cbNew      = 0;
-    pEditor->cbNewAlloc = cbAlloc - FileSts.cbFile - 2;
+    pEditor->cbOrg          = FileSts.cbFile;
+    pEditor->pszOrg         = (char *)pvAlloc;
+    pEditor->pszNew         = (char *)pvAlloc + FileSts.cbFile + 1;
+    pEditor->cbNew          = 0;
+    pEditor->cbNewAlloc     = cbAlloc - FileSts.cbFile - 2;
+    pEditor->fAppendEof     = false;
+    pEditor->fOverflowed    = false;
+    pEditor->cBogusChars    = 0;
 
     /*
      * Read in the file content.
@@ -299,6 +315,21 @@ static RTEXITCODE EditorReadInFile(FILEEDITOR *pEditor, const char *pszFilename,
             return ApiErrorN(cbRead < FileSts.cbFile ? ERROR_MORE_DATA : ERROR_BUFFER_OVERFLOW,
                              3, "DosRead(\"", pszFilename, "\")");
         DosClose(hFile);
+
+        /*
+         * Check for EOF/SUB character.
+         */
+        char *pchEof = (char *)memchr(pEditor->pszOrg, 0x1a, FileSts.cbFile);
+        if (pchEof)
+        {
+            size_t offEof = pchEof - pEditor->pszOrg;
+            for (size_t off = offEof + 1; off < FileSts.cbFile; off++)
+                if (!RT_C_IS_SPACE(pEditor->pszOrg[off]))
+                    return ErrorNStrings(RT_STR_TUPLE("Refusing to modify \""), pszFilename, -1,
+                                         RT_STR_TUPLE("\" because of EOF character followed by text!"));
+            pEditor->cbOrg      = offEof;
+            pEditor->fAppendEof = true;
+        }
     }
 
     return RTEXITCODE_SUCCESS;
@@ -349,7 +380,7 @@ static RTEXITCODE EditorWriteOutFile(FILEEDITOR *pEditor, const char *pszFilenam
             {
                 ULONG cbWritten = 0;
                 do
-                    rc = DosWrite(hFile, pEditor->pszOrg, pEditor->cbOrg, &cbWritten);
+                    rc = DosWrite(hFile, pEditor->pszOrg, pEditor->cbOrg + (pEditor->fAppendEof ? 1 : 0), &cbWritten);
                 while (rc == ERROR_INTERRUPT);
                 DosClose(hFile);
                 if (rc != NO_ERROR)
@@ -380,20 +411,33 @@ static RTEXITCODE EditorWriteOutFile(FILEEDITOR *pEditor, const char *pszFilenam
     if (rc != NO_ERROR)
         return ApiErrorN(rc, 3, "Opening \"", pszFilename, "\" for writing");
 
+    ULONG cbToWrite = pEditor->cbNew;
+    if (pEditor->fAppendEof)
+    {
+        pEditor->pszNew[cbToWrite] = 0x1a; /* replacing terminator */
+        cbToWrite++;
+    }
+
     ULONG cbWritten = 0;
     do
-        rc = DosWrite(hFile, pEditor->pszNew, pEditor->cbNew, &cbWritten);
+        rc = DosWrite(hFile, pEditor->pszNew, cbToWrite, &cbWritten);
     while (rc == ERROR_INTERRUPT);
-
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     if (rc != NO_ERROR)
         rcExit = ApiErrorN(rc, 3, "Failed writing \"", pszFilename, "\"");
-    else if (cbWritten != pEditor->cbNew)
-        rcExit = ApiErrorN(ERROR_MORE_DATA, 3, "Failed writing \"", pszFilename, "\" - incomplete write");
+    else if (cbWritten != cbToWrite)
+    {
+        char szNum1[32], szNum2[32];
+        rcExit = ErrorNStrings(RT_STR_TUPLE("Failed writing \""), pszFilename, -1, RT_STR_TUPLE("\" - incomplete write: "),
+                               MyNumToString(szNum1, cbWritten), -1, RT_STR_TUPLE(" written, requested "),
+                               MyNumToString(szNum2, cbToWrite), NULL, 0);
+    }
 
     rc = DosClose(hFile);
     if (rc != NO_ERROR)
         rcExit = ApiErrorN(rc, 3, "Failed closing \"", pszFilename, "\"");
+
+    pEditor->pszNew[pEditor->cbNew - 1] = '\0'; /* replacing EOF */
 
     return rcExit;
 }
@@ -449,6 +493,29 @@ static size_t EditorGetLine(FILEEDITOR *pEditor, size_t offSrc, const char **ppc
 
 
 /**
+ * Checks that a string doesn't contain any funny control characters.
+ *
+ * These bogus characters are counted and EditorCheckState should be called to
+ * check these after editing has completed.
+ */
+static void EditorCheckString(FILEEDITOR *pEditor, const char *pchString, size_t cchString, const char *pszCaller)
+{
+    for (size_t off = 0; off < cchString; off++)
+    {
+        if (   RT_C_IS_CNTRL(pchString[off])
+            && pchString[off] != '\t')
+        {
+            static char s_szHex[] = "0123456789abcdef";
+            char szDigits[3] = { s_szHex[pchString[off] >> 4],  s_szHex[pchString[off] & 0xf], '\0' };
+            ErrorNStrings(pszCaller, -1, RT_STR_TUPLE(": Bogus control character in "),
+                          pEditor == &g_ConfigSys ? "Config.sys: " : "Startup.cmd: ", -1, szDigits, 2, NULL, 0);
+            pEditor->cBogusChars++;
+        }
+    }
+}
+
+
+/**
  * Adds a line to the output buffer.
  *
  * A CRLF is appended automatically.
@@ -462,6 +529,8 @@ static size_t EditorGetLine(FILEEDITOR *pEditor, size_t offSrc, const char **ppc
  */
 static bool EditorPutLine(FILEEDITOR *pEditor, const char *pchLine, size_t cchLine)
 {
+    EditorCheckString(pEditor, pchLine, cchLine, "EditorPutLine");
+
     size_t offNew = pEditor->cbNew;
     if (offNew + cchLine + 2 < pEditor->cbNewAlloc)
     {
@@ -491,6 +560,8 @@ static bool EditorPutLine(FILEEDITOR *pEditor, const char *pchLine, size_t cchLi
  */
 static bool EditorPutStringN(FILEEDITOR *pEditor, const char *pchString, size_t cchString)
 {
+    EditorCheckString(pEditor, pchString, cchString, "EditorPutStringN");
+
     size_t offNew = pEditor->cbNew;
     if (offNew + cchString < pEditor->cbNewAlloc)
     {
@@ -503,6 +574,20 @@ static bool EditorPutStringN(FILEEDITOR *pEditor, const char *pchString, size_t 
     }
     pEditor->fOverflowed = true;
     return false;
+}
+
+
+/**
+ * Checks the editor state and makes the editing was successful.
+ */
+static RTEXITCODE EditorCheckState(FILEEDITOR *pEditor, const char *pszFilename)
+{
+    if (pEditor->fOverflowed)
+        return ErrorNStrings(RT_STR_TUPLE("Editor overflowed while modifying \""), pszFilename, -1, RT_STR_TUPLE("\""));
+    if (pEditor->cBogusChars > 0)
+        return ErrorNStrings(RT_STR_TUPLE("Editing failed because \""), pszFilename, -1,
+                             RT_STR_TUPLE("\" contains bogus control characters (see above)"));
+    return RTEXITCODE_SUCCESS;
 }
 
 
@@ -530,14 +615,15 @@ static int MyMemICmp(void const *pv1, void const *pv2, size_t cb)
  *
  * @returns true if matched, false if not.
  * @param   pchLine     The line we're working on.
- * @param   off         The current line offset.
+ * @param   poff        The current line offset.  Updated on match.
  * @param   cchLine     The current line length.
  * @param   pszWord     The word to match with.
  * @param   cchWord     The length of the word to match.
  * @param   chAltSep    Alternative word separator, optional.
  */
-static bool MatchWord(const char *pchLine, size_t off, size_t cchLine, const char *pszWord, size_t cchWord, char chAltSep = ' ')
+static bool MatchWord(const char *pchLine, size_t *poff, size_t cchLine, const char *pszWord, size_t cchWord, char chAltSep = ' ')
 {
+    size_t off = *poff;
     pchLine += off;
     cchLine -= off;
     if (cchWord <= cchLine)
@@ -545,42 +631,54 @@ static bool MatchWord(const char *pchLine, size_t off, size_t cchLine, const cha
             if (   cchWord == cchLine
                 || RT_C_IS_BLANK(pchLine[cchWord])
                 || pchLine[cchWord] == chAltSep)
+            {
+                *poff += cchWord;
                 return true;
+            }
     return false;
 }
 
 
 /**
- * Checks if the path @a pchString ends with @a pszFilename, ignoring case.
+ * Checks if the path @a pchLine[@a off] ends with @a pszFilename, ignoring case.
  *
  * @returns true if filename found, false if not.
- * @param   pchString           The image PATH of a DEVICE or IFS statement.
- * @param   cchString           The length of valid string.
+ * @param   pchLine             The line we're working on.
+ * @param   off                 The current line offset where the image path of
+ *                              a DEVICE or IFS statement starts.
+ * @param   cchLine             The current line length.
  * @param   pszFilename         The filename (no path) to match with, all upper
  *                              cased.
  * @param   cchFilename         The length of the filename to match with.
  */
-static bool MatchOnlyFilename(const char *pchString, size_t cchString, const char *pszFilename, size_t cchFilename)
+static bool MatchOnlyFilename(const char *pchLine, size_t off, size_t cchLine, const char *pszFilename, size_t cchFilename)
 {
+    pchLine += off;
+    cchLine -= off;
+
     /*
      * Skip ahead in pchString till we get to the filename.
      */
     size_t offFilename = 0;
     size_t offCur      = 0;
-    if (   cchString > 2
-        && pchString[1] == ':'
-        && RT_C_IS_ALPHA(pchString[0]))
+    if (   cchLine > 2
+        && pchLine[1] == ':'
+        && RT_C_IS_ALPHA(pchLine[0]))
         offCur += 2;
-    while (offCur < cchString)
+    while (offCur < cchLine)
     {
-        char ch = pchString[offCur];
-        if (RTPATH_IS_SLASH(pchString[offCur]))
+        char ch = pchLine[offCur];
+        if (RTPATH_IS_SLASH(pchLine[offCur]))
             offFilename = offCur + 1;
         else if (RT_C_IS_BLANK(ch))
             break;
         offCur++;
     }
     size_t const cchLeftFilename = offCur - offFilename;
+#ifdef DEBUG_MATCHING
+    WriteNStrings(g_hStdOut, RT_STR_TUPLE("debug: MatchOnlyFilename: '"), &pchLine[offFilename], cchLeftFilename,
+                  RT_STR_TUPLE("' vs '"), pszFilename, cchFilename, RT_STR_TUPLE("'\r\n"), NULL, 0);
+#endif
 
     /*
      * Check if the length matches.
@@ -591,15 +689,62 @@ static bool MatchOnlyFilename(const char *pchString, size_t cchString, const cha
     /*
      * Check if the filenames matches (ASSUMES right side is uppercased).
      */
-    pchString += offFilename;
+    pchLine += offFilename;
     while (cchFilename-- > 0)
     {
-        if (RT_C_TO_UPPER(*pchString) != *pszFilename)
+        if (RT_C_TO_UPPER(*pchLine) != *pszFilename)
             return false;
-        pchString++;
+        pchLine++;
         pszFilename++;
     }
+#ifdef DEBUG_MATCHING
+    WriteStrings(g_hStdOut, "debug: MatchOnlyFilename: -> true\r\n", NULL);
+#endif
     return true;
+}
+
+
+static bool MatchPath(const char *pchPath1, size_t cchPath1, const char *pchPath2, size_t cchPath2)
+{
+#ifdef DEBUG_MATCHING
+    WriteNStrings(g_hStdOut, RT_STR_TUPLE("debug: MatchPath: '"), pchPath1, cchPath1,
+                  RT_STR_TUPLE("' vs '"), pchPath2, cchPath2, RT_STR_TUPLE("'\r\n"), NULL, 0);
+#endif
+
+    while (cchPath1 > 0 && cchPath2 > 0)
+    {
+        char const ch1 = *pchPath1++;
+        cchPath1--;
+        char const ch2 = *pchPath2++;
+        cchPath2--;
+
+        /* Slashes are special as it generally doesn't matter how many are in
+           a row, at least no on decent systems. */
+        if (RTPATH_IS_SLASH(ch1))
+        {
+            if (!RTPATH_IS_SLASH(ch2))
+                return false;
+            while (cchPath1 > 0 && RTPATH_IS_SLASH(*pchPath1))
+                pchPath1++, cchPath1--;
+            while (cchPath2 > 0 && RTPATH_IS_SLASH(*pchPath2))
+                pchPath2++, cchPath2--;
+        }
+        /* Just uppercase before comparing to save space. */
+        else if (RT_C_TO_UPPER(ch1) != RT_C_TO_UPPER(ch2))
+            return false;
+    }
+
+    /* Ignore trailing slashes before reaching a conclusion. */
+    while (cchPath1 > 0 && RTPATH_IS_SLASH(*pchPath1))
+        pchPath1++, cchPath1--;
+    while (cchPath2 > 0 && RTPATH_IS_SLASH(*pchPath2))
+        pchPath2++, cchPath2--;
+
+#ifdef DEBUG_MATCHING
+    if (cchPath1 == 0 && cchPath2 == 0)
+        WriteStrings(g_hStdOut, "debug: MatchPath: -> true\r\n", NULL);
+#endif
+    return cchPath1 == 0 && cchPath2 == 0;
 }
 
 
@@ -616,7 +761,7 @@ static RTEXITCODE CheckForGradd(void)
     FILESTATUS3 FileSts;
     APIRET rc = DosQueryPathInfo(g_szBootDrivePath, FIL_STANDARD, &FileSts, sizeof(FileSts));
     if (rc != NO_ERROR)
-        return ApiErrorN(rc, 3, "DosQueryPathInfo(\"", g_szBootDrivePath, "\",,,) - installed gengradd?");
+        return ApiErrorN(rc, 3, "DosQueryPathInfo(\"", g_szBootDrivePath, "\",,,) [installed gengradd?] ");
 
     /* Note! GRADD precense in Config.sys is checked below while modifying it. */
     return RTEXITCODE_SUCCESS;
@@ -684,7 +829,7 @@ static RTEXITCODE PrepareConfigSys(void)
         return RTEXITCODE_SUCCESS;
 
     strcpy(&g_szBootDrivePath[g_cchBootDrivePath], "CONFIG.SYS");
-    RTEXITCODE rcExit = EditorReadInFile(&g_ConfigSys, g_szBootDrivePath, 2048, true /*fMustExist*/);
+    RTEXITCODE rcExit = EditorReadInFile(&g_ConfigSys, g_szBootDrivePath, 4096, true /*fMustExist*/);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -743,6 +888,7 @@ static RTEXITCODE PrepareConfigSys(void)
      * Do a scan to locate where to insert ourselves and such.
      */
     char        szLineNo[32];
+    char        szNumBuf[32];
     bool        fInsertedGuest = false;
     bool        fInsertedMouse = RT_BOOL(g_fSkipMask & SKIP_MOUSE);
     bool        fPendingMouse  = false;
@@ -772,13 +918,11 @@ static RTEXITCODE PrepareConfigSys(void)
          * Add the destination directory to the PATH.
          * If there are multiple SET PATH statements, we add ourselves to all of them.
          */
-        if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("SET")))
+        if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("SET")))
         {
-            off += sizeof("SET") - 1;
             SKIP_BLANKS();
-            if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("PATH"), '='))
+            if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("PATH"), '='))
             {
-                off += sizeof("PATH") - 1;
                 SKIP_BLANKS();
                 if (cchLine > off && pchLine[off] == '=')
                 {
@@ -788,21 +932,46 @@ static RTEXITCODE PrepareConfigSys(void)
                     if (g_fVerbose)
                         WriteStrings(g_hStdOut, "info: Config.sys line ", MyNumToString(szLineNo, iLine), ": SET PATH\r\n", NULL);
 
-                    /* check if already part of the string */
-                    bool fNeeded = true;
-                    /** @todo look for destination directory in PATH. */
+                    /* Strip trailing spaces and semicolons. */
+                    while (cchLine > off && (RT_C_IS_BLANK(pchLine[cchLine - 1]) || pchLine[cchLine - 1] == ';'))
+                        cchLine--;
 
-                    if (fNeeded)
+                    /* Remove any previous entries of the destination directory. */
+                    unsigned iElement   = 0;
+                    char     chLast     = 0;
+                    uint32_t cchWritten = 0;
+                    while (off < cchLine)
                     {
-                        while (cchLine > off && RT_C_IS_BLANK(pchLine[cchLine - 1]))
-                            cchLine--;
-                        EditorPutStringN(&g_ConfigSys, pchLine, cchLine);
-                        if (pchLine[cchLine - 1] != ';')
-                            EditorPutStringN(&g_ConfigSys, RT_STR_TUPLE(";"));
-                        EditorPutStringN(&g_ConfigSys, g_szDstPath, g_cchDstPath - (g_cchDstPath > 3 ? 1 : 0));
-                        EditorPutLine(&g_ConfigSys, RT_STR_TUPLE(";"));
-                        fDone = true;
+                        iElement++;
+                        const char *pszElement   = &pchLine[off];
+                        const char *pszSemiColon = (const char *)memchr(&pchLine[off], ';', cchLine - off);
+                        size_t      cchElement   = (pszSemiColon ? pszSemiColon : &pchLine[cchLine]) - pszElement;
+                        if (MatchPath(pszElement, cchElement, g_szDstPath, g_cchDstPath - (g_cchDstPath > 3 ? 1 : 0)))
+                        {
+                            if (g_fVerbose)
+                                WriteNStrings(g_hStdOut, RT_STR_TUPLE("info: Config.sys line "),
+                                              MyNumToString(szLineNo, iLine), -1, RT_STR_TUPLE(": Removing PATH element #"),
+                                              MyNumToString(szNumBuf, iElement), -1, RT_STR_TUPLE(" \""), pszElement, cchElement,
+                                              RT_STR_TUPLE("\"\r\n"), NULL, 0);
+                            EditorPutStringN(&g_ConfigSys, &pchLine[cchWritten], off - cchWritten);
+                            chLast = pchLine[off - 1];
+                            cchWritten = off + cchElement + (chLast == ';');
+                        }
+                        off += cchElement + 1;
                     }
+
+                    /* Write out the rest of the line and append the destination directory to it. */
+                    if (cchLine > cchWritten)
+                    {
+                        EditorPutStringN(&g_ConfigSys, &pchLine[cchWritten], cchLine - cchWritten);
+                        chLast = pchLine[cchLine - 1];
+                    }
+                    if (chLast != ';')
+                        EditorPutStringN(&g_ConfigSys, RT_STR_TUPLE(";"));
+                    EditorPutStringN(&g_ConfigSys, g_szDstPath, g_cchDstPath - (g_cchDstPath > 3 ? 1 : 0));
+                    EditorPutLine(&g_ConfigSys, RT_STR_TUPLE(";"));
+                    fDone = true;
+
                     cPathsFound += 1;
                 }
             }
@@ -814,9 +983,8 @@ static RTEXITCODE PrepareConfigSys(void)
              * as GRADD_CHAINS is standardized by COMGRADD.DSP to the value C1, so
              * other values can only be done by users or special drivers.
              */
-            else if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("GRADD_CHAINS"), '='))
+            else if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("GRADD_CHAINS"), '='))
             {
-                off += sizeof("GRADD_CHAINS") - 1;
                 SKIP_BLANKS();
                 if (cchLine > off && pchLine[off] == '=')
                 {
@@ -855,9 +1023,8 @@ static RTEXITCODE PrepareConfigSys(void)
             /*
              * Look for the chains listed by GRADD_CHAINS.
              */
-            else if (MatchWord(pchLine, off, cchLine, pchGraddChains, cchGraddChains, '='))
+            else if (MatchWord(pchLine, &off, cchLine, pchGraddChains, cchGraddChains, '='))
             {
-                off += cchGraddChains;
                 SKIP_BLANKS();
                 if (cchLine > off && pchLine[off] == '=')
                 {
@@ -879,15 +1046,14 @@ static RTEXITCODE PrepareConfigSys(void)
         /*
          * Look for that IFS that should be loaded before we can load our drivers.
          */
-        else if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("IFS"), '='))
+        else if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("IFS"), '='))
         {
-            off += sizeof("IFS") - 1;
             SKIP_BLANKS();
             if (cchLine > off && pchLine[off] == '=')
             {
                 off++;
                 SKIP_BLANKS();
-                if (MatchOnlyFilename(&pchLine[off], cchLine - off, pszAfterIfs, cchAfterIfs))
+                if (MatchOnlyFilename(pchLine, off, cchLine, pszAfterIfs, cchAfterIfs))
                 {
                     if (g_fVerbose)
                         WriteStrings(g_hStdOut, "info: Config.sys line ", MyNumToString(szLineNo, iLine),
@@ -904,7 +1070,8 @@ static RTEXITCODE PrepareConfigSys(void)
                 }
                 /* Remove old VBoxSF.IFS lines */
                 else if (   !(g_fSkipMask & SKIP_SHARED_FOLDERS)
-                         && MatchOnlyFilename(&pchLine[off], cchLine, RT_STR_TUPLE("VBOXSF.IFS")))
+                         && (   MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("VBOXFS.IFS"))
+                             || MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("VBOXSF.IFS")) ) )
                 {
                     if (g_fVerbose)
                         WriteStrings(g_hStdOut, "info: Config.sys line ", MyNumToString(szLineNo, iLine),
@@ -917,16 +1084,15 @@ static RTEXITCODE PrepareConfigSys(void)
          * Look for the mouse driver we need to comment out / existing VBoxMouse.sys,
          * as well as older VBoxGuest.sys statements we should remove.
          */
-        else if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("DEVICE"), '='))
+        else if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("DEVICE"), '='))
         {
-            off += sizeof("DEVICE") - 1;
             SKIP_BLANKS();
             if (cchLine > off && pchLine[off] == '=')
             {
                 off++;
                 SKIP_BLANKS();
                 if (   !(g_fSkipMask & SKIP_MOUSE)
-                    && MatchOnlyFilename(&pchLine[off], cchLine - off, RT_STR_TUPLE("MOUSE.SYS")))
+                    && MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("MOUSE.SYS")))
                 {
                     if (g_fVerbose)
                         WriteStrings(g_hStdOut, "info: Config.sys line ", MyNumToString(szLineNo, iLine),
@@ -945,7 +1111,7 @@ static RTEXITCODE PrepareConfigSys(void)
                 }
                 /* Remove or replace old VBoxMouse.IFS lines */
                 else if (   !(g_fSkipMask & SKIP_MOUSE)
-                         && MatchOnlyFilename(&pchLine[off], cchLine, RT_STR_TUPLE("VBOXMOUSE.SYS")))
+                         && MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("VBOXMOUSE.SYS")))
                 {
                     if (g_fVerbose)
                         WriteStrings(g_hStdOut, "info: Config.sys line ", MyNumToString(szLineNo, iLine), ": ",
@@ -961,7 +1127,7 @@ static RTEXITCODE PrepareConfigSys(void)
                     fDone = true;
                 }
                 /* Remove old VBoxGuest.sys lines. */
-                else if (MatchOnlyFilename(&pchLine[off], cchLine, RT_STR_TUPLE("VBOXGUEST.SYS")))
+                else if (MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("VBOXGUEST.SYS")))
                 {
                     if (g_fVerbose)
                         WriteStrings(g_hStdOut, "info: Config.sys line ", MyNumToString(szLineNo, iLine),
@@ -1040,7 +1206,7 @@ static RTEXITCODE PrepareConfigSys(void)
             return ErrorNStrings(RT_STR_TUPLE("No SET GRADD_CHAINS statement found in Config.sys"), NULL, 0);
     }
 
-    return RTEXITCODE_SUCCESS;
+    return EditorCheckState(&g_ConfigSys, g_szBootDrivePath);
 }
 
 
@@ -1048,7 +1214,7 @@ static RTEXITCODE PrepareConfigSys(void)
 static void StartupCmdPutLine(const char *pszLineNo)
 {
     if (g_fVerbose)
-        WriteStrings(g_hStdOut, "info: Starting VBoxService at line ", pszLineNo, " in Startup.cmd\r\n", NULL);
+        WriteStrings(g_hStdOut, "info: Starting VBoxService at line ", pszLineNo, " of Startup.cmd\r\n", NULL);
     EditorPutStringN(&g_StartupCmd, g_szDstPath, g_cchDstPath);
     EditorPutLine(&g_StartupCmd, RT_STR_TUPLE("VBoxService.exe"));
 }
@@ -1091,18 +1257,17 @@ static RTEXITCODE PrepareStartupCmd(void)
             off++;
             SKIP_BLANKS();
         }
-        if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("ECHO")))
+        if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("ECHO")))
         {
-            off += sizeof("ECHO") - 1;
             SKIP_BLANKS();
 
-            if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("OFF")))
+            if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("OFF")))
             {
                 iInsertBeforeLine = iLine + 1;
                 break;
             }
         }
-        else if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("REM")))
+        else if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("REM")))
         { /* skip */ }
         else
             break;
@@ -1134,27 +1299,17 @@ static RTEXITCODE PrepareStartupCmd(void)
             SKIP_BLANKS();
         }
 
-        if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("DETACH")))
-        {
-            off += sizeof("DEATCH") - 1;
+        if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("DETACH")))
             SKIP_BLANKS();
-        }
 
-        if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("CALL")))
-        {
-            off += sizeof("CALL") - 1;
+        if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("CALL")))
             SKIP_BLANKS();
-        }
 
-        if (MatchWord(pchLine, off, cchLine, RT_STR_TUPLE("START")))
-        {
-            off += sizeof("START") - 1;
+        if (MatchWord(pchLine, &off, cchLine, RT_STR_TUPLE("START")))
             SKIP_BLANKS();
-        }
 
-        if (   cchLine - off < sizeof("VBOXSERVICE") - 1 /* (Should be harmless to go past end of buffer due to missing .EXE) */
-            && (   MatchOnlyFilename(&pchLine[off], cchLine - off, RT_STR_TUPLE("VBOXSERVICE.EXE")) == 0
-                || MatchOnlyFilename(&pchLine[off], cchLine - off, RT_STR_TUPLE("VBOXSERVICE")) == 0))
+        if (   MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("VBOXSERVICE.EXE"))
+            || MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("VBOXSERVICE")) )
         {
             if (g_fVerbose)
                 WriteStrings(g_hStdOut, "info: Removing old VBoxService statement on line ",
@@ -1166,8 +1321,7 @@ static RTEXITCODE PrepareStartupCmd(void)
 #undef SKIP_BLANKS
     }
 
-
-    return RTEXITCODE_SUCCESS;
+    return EditorCheckState(&g_StartupCmd, g_szBootDrivePath);
 }
 
 
@@ -1182,10 +1336,8 @@ static RTEXITCODE CopyOneFile(const char *pszSrc, const char *pszDst)
     /* Make sure the destination file isn't read-only before attempting to copying it. */
     FILESTATUS3 FileSts;
     APIRET rc = DosQueryPathInfo(pszDst, FIL_STANDARD, &FileSts, sizeof(FileSts));
-    if (rc != NO_ERROR && (FileSts.attrFile & FILE_READONLY))
+    if (rc == NO_ERROR && (FileSts.attrFile & FILE_READONLY))
     {
-        rc = DosQueryPathInfo(pszDst, FIL_STANDARD, &FileSts, sizeof(FileSts));
-
         FileSts.attrFile &= ~FILE_READONLY;
 
         /* Don't update the timestamps: */
@@ -1246,7 +1398,7 @@ static RTEXITCODE CopyFiles(void)
         if (ch != '\0')
             *psz = '\0';
         APIRET rc = DosMkDir(g_szDstPath, 0);
-        if (rc != NO_ERROR && rc != ERROR_ALREADY_EXISTS)
+        if (rc != NO_ERROR && rc != ERROR_ACCESS_DENIED /*HPFS*/ && rc != ERROR_ALREADY_EXISTS /*what one would expect*/)
             return ApiErrorN(rc, 3, "DosMkDir(\"", g_szDstPath, "\")");
         if (ch == '\0')
             break;
@@ -1271,14 +1423,14 @@ static RTEXITCODE CopyFiles(void)
         { "VBoxService.exe",    NULL, 0 }, /* first as likely to be running */
         { "VBoxControl.exe",    NULL, 0 },
         { "VBoxReplaceDll.exe", NULL, 0 },
-        { "gengradd.dll",       "\\OS2\\DLL\\gengradd.dll", SKIP_GRAPHICS },
-        { "libc06.dll",         "\\OS2\\DLL\\libc06.dll",  SKIP_LIBC_DLLS },
-        { "libc061.dll",        "\\OS2\\DLL\\libc061.dll", SKIP_LIBC_DLLS },
-        { "libc062.dll",        "\\OS2\\DLL\\libc062.dll", SKIP_LIBC_DLLS },
-        { "libc063.dll",        "\\OS2\\DLL\\libc063.dll", SKIP_LIBC_DLLS },
-        { "libc064.dll",        "\\OS2\\DLL\\libc064.dll", SKIP_LIBC_DLLS },
-        { "libc065.dll",        "\\OS2\\DLL\\libc065.dll", SKIP_LIBC_DLLS },
-        { "libc066.dll",        "\\OS2\\DLL\\libc066.dll", SKIP_LIBC_DLLS },
+        { "gengradd.dll",       "OS2\\DLL\\gengradd.dll", SKIP_GRAPHICS },
+        { "libc06.dll",         "OS2\\DLL\\libc06.dll",  SKIP_LIBC_DLLS },
+        { "libc061.dll",        "OS2\\DLL\\libc061.dll", SKIP_LIBC_DLLS },
+        { "libc062.dll",        "OS2\\DLL\\libc062.dll", SKIP_LIBC_DLLS },
+        { "libc063.dll",        "OS2\\DLL\\libc063.dll", SKIP_LIBC_DLLS },
+        { "libc064.dll",        "OS2\\DLL\\libc064.dll", SKIP_LIBC_DLLS },
+        { "libc065.dll",        "OS2\\DLL\\libc065.dll", SKIP_LIBC_DLLS },
+        { "libc066.dll",        "OS2\\DLL\\libc066.dll", SKIP_LIBC_DLLS },
         { "VBoxGuest.sys",      NULL, 0 },
         { "VBoxSF.ifs",         NULL, 0 },
         { "vboxmouse.sys",      NULL, 0 },
@@ -1299,7 +1451,7 @@ static RTEXITCODE CopyFiles(void)
         if (   s_aFiles[i].pszAltDst
             && !(s_aFiles[i].fSkipMask & g_fSkipMask) /* ASSUMES one skip bit per file */)
         {
-            strcpy(&g_szBootDrivePath[g_cchBootDrivePath], s_aFiles[i].pszFile);
+            strcpy(&g_szBootDrivePath[g_cchBootDrivePath], s_aFiles[i].pszAltDst);
 
             rcExit2 = CopyOneFile(g_szSrcPath, g_szBootDrivePath);
             if (rcExit2 != RTEXITCODE_SUCCESS)
@@ -1331,7 +1483,7 @@ static RTEXITCODE WriteStartupCmd(void)
     if (g_fSkipMask & SKIP_CONFIG_SYS)
         return RTEXITCODE_SUCCESS;
     strcpy(&g_szBootDrivePath[g_cchBootDrivePath], "STARTUP.CMD");
-    return EditorWriteOutFile(&g_ConfigSys, g_szBootDrivePath);
+    return EditorWriteOutFile(&g_StartupCmd, g_szBootDrivePath);
 }
 
 
@@ -1354,12 +1506,12 @@ static RTEXITCODE ShowUsage(void)
         "   or  VBoxIs2AdditionsInstall.exe <-h|-?|--help>\r\n"
         "   or  VBoxIs2AdditionsInstall.exe <-v|--version>\r\n"
         "\r\n"
-        "Options\r\n:"
+        "Options:\r\n"
         "  -s<path>, --source[=]<path>\r\n"
         "      Specifies where the files to install are.  Default: Same as installer\r\n"
         "  -d<path>, --destination[=]<path>\r\n"
         "      Specifies where to install all the VBox OS/2 additions files.\r\n"
-        "      Default: C:\VBoxGA  (C is replaced by actual boot drive)\r\n"
+        "      Default: C:\VBoxAdd  (C is replaced by actual boot drive)\r\n"
         "  -b<path>, --boot-drive[=]<path>\r\n"
         "      Specifies the boot drive.  Default: C: (C is replaced by the actual one)\r\n"
         "  -F, --no-shared-folders  /  -f, --shared-folders (default)\r\n"
@@ -1501,7 +1653,7 @@ extern "C" int __cdecl VBoxOs2AdditionsInstallMain(HMODULE hmodExe, ULONG ulRese
      */
     ULONG ulBootDrv = 0x80;
     DosQuerySysInfo(QSV_BOOT_DRIVE, QSV_BOOT_DRIVE, &ulBootDrv, sizeof(ulBootDrv));
-    g_szBootDrivePath[0] = g_szDstPath[0] = 'A' + ulBootDrv;
+    g_szBootDrivePath[0] = g_szDstPath[0] = 'A' + ulBootDrv - 1;
 
     /*
      * Parse parameters, skipping the first argv[0] one.
@@ -1642,7 +1794,7 @@ extern "C" int __cdecl VBoxOs2AdditionsInstallMain(HMODULE hmodExe, ULONG ulRese
             return ApiError("DosQueryModuleName", rc);
         RTPathStripFilename(g_szSrcPath);
         g_cchSrcPath = RTPathEnsureTrailingSeparator(g_szSrcPath, sizeof(g_szSrcPath));
-        if (g_cchSrcPath)
+        if (g_cchSrcPath == 0)
             return ApiError("RTPathEnsureTrailingSeparator", ERROR_BUFFER_OVERFLOW);
     }
 
