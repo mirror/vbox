@@ -46,9 +46,7 @@ VBoxReplaceDll_SOURCES = VBoxReplaceDll.cpp
 #
 # A barebone installer.
 #
-if 1
 PROGRAMS += VBoxOs2AdditionsInstall
-endif
 VBoxOs2AdditionsInstall_TEMPLATE         = DUMMY
 VBoxOs2AdditionsInstall_TOOL             = OPENWATCOM
 VBoxOs2AdditionsInstall_ASTOOL           = OPENWATCOM

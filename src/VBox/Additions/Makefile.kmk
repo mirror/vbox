@@ -214,6 +214,7 @@ ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
 	OS2/VBoxService.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxService.exe \
 	OS2/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxControl.exe \
 	OS2/VBoxReplaceDll.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxReplaceDll.exe \
+	OS2/VBoxOs2AdditionsInstall.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxOs2AdditionsInstall.exe \
 	OS2/libc06.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/libc06.dll \
 	OS2/libc061.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/libc061.dll \
 	OS2/libc062.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/libc062.dll \
@@ -224,7 +225,7 @@ ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
 	OS2/readme.txt=$(VBOX_PATH_ADDITIONS.os2.x86)/readme.txt \
        \
 	OS2/gengradd.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/gengradd.dll \
-	OS2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/vboxmouse.sys
+	OS2/VBoxMouse.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/vboxmouse.sys
 endif
 
 # Oracle Solaris.
