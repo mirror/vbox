@@ -83,6 +83,8 @@ static size_t       g_cchDstPath                    = sizeof("C:\\VBoxAdd\\") - 
 static uint8_t      g_fSkipMask                     = 0;
 /** Verbose or quiet. */
 static bool         g_fVerbose                      = true;
+/** Whether this is a real run (true) or just a trial. */
+static bool         g_fRealRun                      = false;
 
 /** The standard output handle. */
 static HFILE const  g_hStdOut = (HFILE)1;
@@ -1326,50 +1328,79 @@ static RTEXITCODE PrepareStartupCmd(void)
 
 
 /**
+ * Tells the loader to cache all the pages in @a pszFile and close it, so that
+ * we can modify or replace it.
+ */
+static void CacheLdrFile(const char *pszFile)
+{
+    if (g_fVerbose)
+        DoWriteNStr(g_hStdOut, RT_STR_TUPLE("info: Sharing violation - applying DosReplaceModule...\r\n"));
+
+    APIRET rc = DosReplaceModule(pszFile, NULL, NULL);
+    if (rc != NO_ERROR)
+        ApiErrorN(rc, 3, "DosReplaceModule(\"", pszFile, "\",,)");
+}
+
+
+/**
  * Worker for CopyFiles that handles one copying operation.
  */
 static RTEXITCODE CopyOneFile(const char *pszSrc, const char *pszDst)
 {
+    FILESTATUS3 FileSts;
     if (g_fVerbose)
         WriteStrings(g_hStdOut, "info: Copying \"", pszSrc, "\" to \"", pszDst, "\"...\r\n", NULL);
 
-    /* Make sure the destination file isn't read-only before attempting to copying it. */
-    FILESTATUS3 FileSts;
-    APIRET rc = DosQueryPathInfo(pszDst, FIL_STANDARD, &FileSts, sizeof(FileSts));
-    if (rc == NO_ERROR && (FileSts.attrFile & FILE_READONLY))
+    if (g_fRealRun)
     {
-        FileSts.attrFile &= ~FILE_READONLY;
+        /* Make sure the destination file isn't read-only before attempting to copying it. */
+        APIRET rc = DosQueryPathInfo(pszDst, FIL_STANDARD, &FileSts, sizeof(FileSts));
+        if (rc == NO_ERROR && (FileSts.attrFile & FILE_READONLY))
+        {
+            FileSts.attrFile &= ~FILE_READONLY;
 
-        /* Don't update the timestamps: */
-        *(USHORT *)&FileSts.fdateCreation   = 0;
-        *(USHORT *)&FileSts.ftimeCreation   = 0;
-        *(USHORT *)&FileSts.fdateLastAccess = 0;
-        *(USHORT *)&FileSts.ftimeLastAccess = 0;
-        *(USHORT *)&FileSts.fdateLastWrite  = 0;
-        *(USHORT *)&FileSts.ftimeLastWrite  = 0;
+            /* Don't update the timestamps: */
+            *(USHORT *)&FileSts.fdateCreation   = 0;
+            *(USHORT *)&FileSts.ftimeCreation   = 0;
+            *(USHORT *)&FileSts.fdateLastAccess = 0;
+            *(USHORT *)&FileSts.ftimeLastAccess = 0;
+            *(USHORT *)&FileSts.fdateLastWrite  = 0;
+            *(USHORT *)&FileSts.ftimeLastWrite  = 0;
 
-        rc = DosSetPathInfo(pszDst, FIL_STANDARD, &FileSts, sizeof(FileSts), 0 /*fOptions*/);
-        if (rc != NO_ERROR)
-            ApiErrorN(rc, 3, "DosSetPathInfo(\"", pszDst, "\",~READONLY,)");
-    }
+            rc = DosSetPathInfo(pszDst, FIL_STANDARD, &FileSts, sizeof(FileSts), 0 /*fOptions*/);
+            if (rc == ERROR_SHARING_VIOLATION)
+            {
+                CacheLdrFile(pszDst);
+                rc = DosSetPathInfo(pszDst, FIL_STANDARD, &FileSts, sizeof(FileSts), 0 /*fOptions*/);
+            }
 
-    /* Do the copying. */
-    rc = DosCopy(pszSrc, pszDst, DCPY_EXISTING);
-    if (rc == NO_ERROR)
-        return RTEXITCODE_SUCCESS;
-    if (rc != ERROR_SHARING_VIOLATION)
+            if (rc != NO_ERROR)
+                ApiErrorN(rc, 3, "DosSetPathInfo(\"", pszDst, "\",~READONLY,)");
+        }
+
+        /* Do the copying. */
+        rc = DosCopy(pszSrc, pszDst, DCPY_EXISTING);
+        if (rc == NO_ERROR)
+            return RTEXITCODE_SUCCESS;
+        if (rc != ERROR_SHARING_VIOLATION)
+            return ApiErrorN(rc, 3, "Failed copying to \"", pszDst, "\"");
+
+        CacheLdrFile(pszDst);
+        rc = DosCopy(pszSrc, pszDst, DCPY_EXISTING);
+        if (rc == NO_ERROR)
+            return RTEXITCODE_SUCCESS;
         return ApiErrorN(rc, 3, "Failed copying to \"", pszDst, "\"");
-
-    if (g_fVerbose)
-        DoWriteNStr(g_hStdOut, RT_STR_TUPLE("info: Sharing violation - applying DosReplaceModule...\r\n"));
-    rc = DosReplaceModule(pszDst, NULL, NULL);
-    if (rc != NO_ERROR)
-        ApiErrorN(rc, 3, "DosReplaceModule(\"", pszDst, "\",,)");
-
-    rc = DosCopy(pszSrc, pszDst, DCPY_EXISTING);
-    if (rc == NO_ERROR)
-        return RTEXITCODE_SUCCESS;
-    return ApiErrorN(rc, 3, "Failed copying to \"", pszDst, "\"");
+    }
+    /*
+     * Dry run: just check that the source file exists.
+     */
+    else
+    {
+        APIRET rc = DosQueryPathInfo(pszSrc, FIL_STANDARD, &FileSts, sizeof(FileSts));
+        if (rc == NO_ERROR)
+            return RTEXITCODE_SUCCESS;
+        return ApiErrorN(rc, 3, "DosQueryPathInfo failed on \"", pszSrc, "\"");
+    }
 }
 
 
@@ -1378,35 +1409,38 @@ static RTEXITCODE CopyOneFile(const char *pszSrc, const char *pszDst)
  */
 static RTEXITCODE CopyFiles(void)
 {
-    /*
-     * Create the install directory.  We do this from the root up as that is
-     * a nice feature and saves us dealing with trailing slash troubles.
-     */
-    char *psz = g_szDstPath;
-    if (psz[1] == ':' && RTPATH_IS_SLASH(psz[2]))
-        psz += 3;
-    else if (psz[1] == ':')
-        psz += 2;
-    else
-        return ApiError("Unexpected condition", __LINE__);
-
-    for (;;)
+    if (g_fRealRun)
     {
-        char ch;
-        while ((ch = *psz) != '\0' && !RTPATH_IS_SLASH(ch))
-            psz++;
-        if (ch != '\0')
-            *psz = '\0';
-        APIRET rc = DosMkDir(g_szDstPath, 0);
-        if (rc != NO_ERROR && rc != ERROR_ACCESS_DENIED /*HPFS*/ && rc != ERROR_ALREADY_EXISTS /*what one would expect*/)
-            return ApiErrorN(rc, 3, "DosMkDir(\"", g_szDstPath, "\")");
-        if (ch == '\0')
-            break;
-        *psz++ = ch;
-        while ((ch = *psz) != '\0' && RTPATH_IS_SLASH(ch))
-            psz++;
-        if (ch == '\0')
-            break;
+        /*
+         * Create the install directory.  We do this from the root up as that is
+         * a nice feature and saves us dealing with trailing slash troubles.
+         */
+        char *psz = g_szDstPath;
+        if (psz[1] == ':' && RTPATH_IS_SLASH(psz[2]))
+            psz += 3;
+        else if (psz[1] == ':')
+            psz += 2;
+        else
+            return ApiError("Unexpected condition", __LINE__);
+
+        for (;;)
+        {
+            char ch;
+            while ((ch = *psz) != '\0' && !RTPATH_IS_SLASH(ch))
+                psz++;
+            if (ch != '\0')
+                *psz = '\0';
+            APIRET rc = DosMkDir(g_szDstPath, 0);
+            if (rc != NO_ERROR && rc != ERROR_ACCESS_DENIED /*HPFS*/ && rc != ERROR_ALREADY_EXISTS /*what one would expect*/)
+                return ApiErrorN(rc, 3, "DosMkDir(\"", g_szDstPath, "\")");
+            if (ch == '\0')
+                break;
+            *psz++ = ch;
+            while ((ch = *psz) != '\0' && RTPATH_IS_SLASH(ch))
+                psz++;
+            if (ch == '\0')
+                break;
+        }
     }
 
     /*
@@ -1507,6 +1541,8 @@ static RTEXITCODE ShowUsage(void)
         "   or  VBoxIs2AdditionsInstall.exe <-v|--version>\r\n"
         "\r\n"
         "Options:\r\n"
+        "  -i, --do-install         / -z, --dry-run\r\n"
+        "      Controls whether to do a real install or not.  Default: --dry-run\r\n"
         "  -s<path>, --source[=]<path>\r\n"
         "      Specifies where the files to install are.  Default: Same as installer\r\n"
         "  -d<path>, --destination[=]<path>\r\n"
@@ -1680,6 +1716,10 @@ extern "C" int __cdecl VBoxOs2AdditionsInstallMain(HMODULE hmodExe, ULONG ulRese
             else if (   MatchOptWord(&pszArgs, RT_STR_TUPLE("src"), true)
                      || MatchOptWord(&pszArgs, RT_STR_TUPLE("source"), true))
                 ch = 's';
+            else if (MatchOptWord(&pszArgs, RT_STR_TUPLE("do-install")))
+                ch = 'i';
+            else if (MatchOptWord(&pszArgs, RT_STR_TUPLE("dry-run")))
+                ch = 'z';
             else if (MatchOptWord(&pszArgs, RT_STR_TUPLE("shared-folders")))
                 ch = 'f';
             else if (MatchOptWord(&pszArgs, RT_STR_TUPLE("no-shared-folders")))
@@ -1750,6 +1790,14 @@ extern "C" int __cdecl VBoxOs2AdditionsInstallMain(HMODULE hmodExe, ULONG ulRese
                         return RTEXITCODE_SYNTAX;
                     break;
 
+                case 'i':
+                    g_fRealRun = true;
+                    break;
+
+                case 'z':
+                    g_fRealRun = false;
+                    break;
+
 #define SKIP_OPT_CASES(a_chSkip, a_chDontSkip, a_fFlag) \
                 case a_chDontSkip: g_fSkipMask &= ~(a_fFlag); break; \
                 case a_chSkip:     g_fSkipMask |=  (a_fFlag); break
@@ -1808,11 +1856,25 @@ extern "C" int __cdecl VBoxOs2AdditionsInstallMain(HMODULE hmodExe, ULONG ulRese
         rcExit = PrepareStartupCmd();
     if (rcExit == RTEXITCODE_SUCCESS)
         rcExit = CopyFiles();
-    if (rcExit == RTEXITCODE_SUCCESS)
-        rcExit = WriteConfigSys();
-    if (rcExit == RTEXITCODE_SUCCESS)
-        rcExit = WriteStartupCmd();
+    if (g_fRealRun)
+    {
+        if (rcExit == RTEXITCODE_SUCCESS)
+            rcExit = WriteConfigSys();
+        if (rcExit == RTEXITCODE_SUCCESS)
+            rcExit = WriteStartupCmd();
 
+        /*
+         * Status summary.
+         */
+        if (rcExit == RTEXITCODE_SUCCESS)
+            WriteStrings(g_hStdOut, "info: Installation successful\r\n", NULL);
+        else
+            WriteStrings(g_hStdErr, "info: Installation failed!\r\n", NULL);
+    }
+    else if (rcExit == RTEXITCODE_SUCCESS)
+        WriteStrings(g_hStdOut, "info: Trial run successful\r\n", NULL);
+    else
+        WriteStrings(g_hStdErr, "info: Trial run failed!\r\n", NULL);
     return rcExit;
 }
 
