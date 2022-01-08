@@ -387,24 +387,10 @@ pause
 
 :step3_8
 @echo .
-@echo Step 3.8 - Install guest additions.
-@echo .
-@@VBOX_COND_IS_INSTALLING_ADDITIONS@@
-mkdir C:\VBoxAdd
-copy %CDROM%\VBoxAdditions\OS2\*.*  C:\VBoxAdd && goto ga_copy_ok
-pause
-:ga_copy_ok
-@echo TODO: Write script editing Config.sys for GAs
-@@VBOX_COND_ELSE@@
-@echo Not requested. Skipping.
-@@VBOX_COND_END@@
-
-:step3_9
-@echo .
-@echo Step 3.9 - Install the test execution service (TXS).
+@echo Step 3.8 - Install the test execution service (TXS).
 @echo .
 @@VBOX_COND_IS_INSTALLING_TEST_EXEC_SERVICE@@
-mkdir C:\ValKit
+mkdir C:\VBoxValKit
 mkdir D:\TestArea
 copy %CDROM%\VBoxValidationKit\*.* C:\VBoxValKit && goto valkit_copy_1_ok
 pause
@@ -416,8 +402,7 @@ pause
 @echo Not requested. Skipping.
 @@VBOX_COND_END@@
 
-
-:step3_10
+:step3_9
 @echo .
 @echo Step 3.9 - Install final startup.cmd and copy over OS2LDR again.
 @echo .
@@ -435,6 +420,20 @@ copy C:\VBoxCID\OS2LDR C:\OS2LDR && goto final_os2ldr_ok
 pause
 :final_os2ldr_ok
 attrib +r +h +s C:\OS2LDR
+
+:step3_10
+@REM Putting this after placing the final Startup.cmd so we can test the
+@REM installer's ability to parse and modify it.
+@echo .
+@echo Step 3.10 - Install guest additions.
+@echo .
+@@VBOX_COND_IS_INSTALLING_ADDITIONS@@
+%CDROM%\VBoxAdditions\OS2\VBoxOs2AdditionsInstall.exe --do-install && goto addition_install_ok
+pause
+:addition_install_ok
+@@VBOX_COND_ELSE@@
+@echo Not requested. Skipping.
+@@VBOX_COND_END@@
 
 :step3_11
 @echo .
