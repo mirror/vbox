@@ -828,7 +828,12 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
             DosExit(EXIT_PROCESS, 1);
         }
         if (hPipeRead != -1)
+        {
             pidChild = ResultCodes.codeTerminate;
+            MyOutStr("info: started pid ");
+            MyOutNum(pidChild);
+            MyOutStr("\r\n");
+        }
     }
     else
     {
@@ -860,7 +865,9 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
 
         u.StartData.Length        = sizeof(u.StartData);
         u.StartData.Related       = 1 /* SSF_RELATED_CHILD */;
-        u.StartData.FgBg          = 0 /* SSF_FGBG_FORE */;
+        u.StartData.FgBg          = (uExeType & FAPPTYP_TYPE_MASK) == PT_PM
+                                  ? 1 /* SSF_FGBG_BACK - try avoid ERROR_SMG_START_IN_BACKGROUND */
+                                  : 0 /* SSF_FGBG_FORE */;
         u.StartData.TraceOpt      = 0 /* SSF_TRACEOPT_NONE */;
         u.StartData.PgmTitle      = NULL;
         u.StartData.PgmName       = pszExe;
@@ -884,10 +891,19 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
         u.s.cbBuf                 = 0;
 
         rc = DosStartSession(&u.StartData, &idSession, &pidChild);
-        if (rc != NO_ERROR)
+        if (rc != NO_ERROR && rc != ERROR_SMG_START_IN_BACKGROUND)
         {
             DosCloseQueue(hQueue);
             MyApiError3AndQuit("DosStartSession for \"", pszExe, "\"", rc);
+        }
+
+        if (1)
+        {
+            MyOutStr("info: started session ");
+            MyOutNum(idSession);
+            MyOutStr(", pid ");
+            MyOutNum(pidChild);
+            MyOutStr("\r\n");
         }
     }
 
