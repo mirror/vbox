@@ -2070,6 +2070,8 @@ EXPORTS
     RTUtf16ICmp
     RTUtf16Len
     RTUtf16NLen
+    RTUtf16NCmp
+    RTUtf16NCmpUtf8
     RTUtf16LocaleICmp
     RTUtf16PutCpInternal
     RTUtf16ToLatin1ExTag
