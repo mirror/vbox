@@ -73,6 +73,7 @@ C:\VBoxAdd\VBoxService.exe
 @@VBOX_COND_END@@
 dhcpstrt -i lan0
 @@VBOX_COND_IS_INSTALLING_TEST_EXEC_SERVICE@@
+SET ENDLIBPATH=C:\VBoxValKit
 C:\VBoxValKit\TestExecService.exe --scratch=D:\TestArea --cdrom=E:\ --foreground
 pause
 @@VBOX_COND_END@@
