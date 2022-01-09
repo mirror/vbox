@@ -770,7 +770,7 @@ static RTEXITCODE CheckForGradd(void)
 }
 
 
-/** Adds DEVICE=[path]\VBoxGuest.sys to the modified Config.sys. */
+/** Adds DEVICE=[path]\\VBoxGuest.sys to the modified Config.sys. */
 static bool ConfigSysAddVBoxGuest(void)
 {
     EditorPutStringN(&g_ConfigSys, RT_STR_TUPLE("DEVICE="));
@@ -780,7 +780,7 @@ static bool ConfigSysAddVBoxGuest(void)
 }
 
 
-/** Adds IFS=[path]\VBoxFS.IFS to the modified Config.sys. */
+/** Adds IFS=[path]\\VBoxSF.IFS to the modified Config.sys. */
 static bool ConfigSysAddVBoxSF(void)
 {
     EditorPutStringN(&g_ConfigSys, RT_STR_TUPLE("IFS="));
@@ -790,7 +790,7 @@ static bool ConfigSysAddVBoxSF(void)
 }
 
 
-/** Adds DEVICE=[path]\VBoxMouse.sys to the modified Config.sys. */
+/** Adds DEVICE=[path]\\VBoxMouse.sys to the modified Config.sys. */
 static bool ConfigSysAddVBoxMouse(void)
 {
     EditorPutStringN(&g_ConfigSys, RT_STR_TUPLE("DEVICE="));
@@ -1072,8 +1072,8 @@ static RTEXITCODE PrepareConfigSys(void)
                 }
                 /* Remove old VBoxSF.IFS lines */
                 else if (   !(g_fSkipMask & SKIP_SHARED_FOLDERS)
-                         && (   MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("VBOXFS.IFS"))
-                             || MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("VBOXSF.IFS")) ) )
+                         && (   MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("VBOXSF.IFS"))
+                             || MatchOnlyFilename(pchLine, off, cchLine, RT_STR_TUPLE("VBOXFS.IFS")) ) )
                 {
                     if (g_fVerbose)
                         WriteStrings(g_hStdOut, "info: Config.sys line ", MyNumToString(szLineNo, iLine),
