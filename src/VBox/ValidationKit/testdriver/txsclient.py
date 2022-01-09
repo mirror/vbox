@@ -932,7 +932,7 @@ class Session(TdTaskBase):
                         reporter.log('taskExecEx: PROC DOO[FUS]: %s' % (abPayload,));
                     elif sOpcode.startswith('PROC NOK'):
                         reporter.log('taskExecEx: PROC NOK: rcExit=%s' % (abPayload,));
-                    elif len(abPayload) > 0 and sOpcode.startswith('PROC '):
+                    elif abPayload and sOpcode.startswith('PROC '):
                         reporter.log('taskExecEx: %s payload=%s' % (sOpcode, abPayload,));
 
             else:
