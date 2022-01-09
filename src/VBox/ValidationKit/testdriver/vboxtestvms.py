@@ -122,6 +122,7 @@ g_aaNameToDetails = \
     [ 'Linux_64',       'Ubuntu_64',             g_k64,    1, 256, ['ubuntu[0-9]*-64', ]],
     [ 'Linux',          'ArchLinux',             g_k32,    1, 256, ['arch[0-9]*', ]],
     [ 'Linux_64',       'ArchLinux_64',          g_k64,    1, 256, ['arch[0-9]*-64', ]],
+    [ 'OS2Warp45',      'OS2Warp45',    g_k32 | g_kiNoRaw, 1, 1,   ['os2.*', 'acp.*','mcp.*', ]], # smp does busy spinning and unattended installer only does UNI at the momen.
     [ 'Solaris',        'Solaris',               g_k32,    1, 256, ['sol10',  'sol10u[0-9]']],
     [ 'Solaris_64',     'Solaris_64',            g_k64,    1, 256, ['sol10-64', 'sol10u-64[0-9]']],
     [ 'Solaris_64',     'Solaris11_64',          g_k64,    1, 256, ['sol11u1']],
@@ -330,7 +331,7 @@ class BaseTestVm(object):
             if _intersects(asSplit, ['uni']):
                 self.acCpusSup = [1];
             elif self.aInfo is not None:
-                self.acCpusSup = list(range(self.aInfo[g_iMinCpu], self.aInfo[g_iMaxCpu]));
+                self.acCpusSup = list(range(self.aInfo[g_iMinCpu], self.aInfo[g_iMaxCpu] + 1));
             else:
                 self.acCpusSup = [1];
 
@@ -1077,7 +1078,7 @@ class TestVm(object):
             if _intersects(asSplit, ['uni']):
                 self.acCpusSup = [1];
             elif self.aInfo is not None:
-                self.acCpusSup = list(range(self.aInfo[g_iMinCpu], self.aInfo[g_iMaxCpu]));
+                self.acCpusSup = list(range(self.aInfo[g_iMinCpu], self.aInfo[g_iMaxCpu] + 1));
             else:
                 self.acCpusSup = [1];
 
