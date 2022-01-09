@@ -245,9 +245,9 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         #
         # Use host-only networks instead of host-only adapters for trunk builds on Mac OS.
         #
-        if eNic0AttachType == vboxcon.NetworkAttachmentType_HostOnly \
-            and utils.getHostOs() == 'darwin' \
-            and oTestDrv.fpApiVer >= 7.0:
+        if     eNic0AttachType   == vboxcon.NetworkAttachmentType_HostOnly \
+           and utils.getHostOs() == 'darwin' \
+           and oTestDrv.fpApiVer >= 7.0:
             eNic0AttachType = vboxcon.NetworkAttachmentType_HostOnlyNetwork;
 
         return vboxtestvms.BaseTestVm._createVmDoIt(self, oTestDrv, eNic0AttachType, sDvdImage);
@@ -257,7 +257,6 @@ class UnattendedVm(vboxtestvms.BaseTestVm):
         #
         # Adjust the ram, I/O APIC and stuff.
         #
-
         oSession = oTestDrv.openSession(oVM);
         if oSession is None:
             return None;
@@ -518,6 +517,11 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             #             UnattendedVm.kfNoGAs),
             UnattendedVm(oSet, 'tst-ubuntu-19.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso',    # >=6GiB
                          UnattendedVm.kfNoGAs),
+            #
+            # OS/2.
+            #
+            UnattendedVm(oSet, 'tst-acp2',              'OS2Warp45', '7.0/uaisos/acp2_us_cd2.iso'),                  # ~400MiB
+            ## @todo mcp2 too?
         ]);
         # pylint: enable=line-too-long
         self.oTestVmSet = oSet;
