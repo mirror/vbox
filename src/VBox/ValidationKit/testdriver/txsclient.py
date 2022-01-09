@@ -929,7 +929,11 @@ class Session(TdTaskBase):
                     #   PROC TOK, PROC TOA, PROC DWN, PROC DOO,
                     #   PROC NOK + rc, PROC SIG + sig, PROC ABD, FAILED.
                     if sOpcode == 'PROC DOO':
-                        reporter.log('taskExecEx: PROC DOO[fus]: %s' % (abPayload,));
+                        reporter.log('taskExecEx: PROC DOO[FUS]: %s' % (abPayload,));
+                    elif sOpcode.startswith('PROC NOK'):
+                        reporter.log('taskExecEx: PROC NOK: rcExit=%s' % (abPayload,));
+                    elif len(abPayload) > 0 and sOpcode.startswith('PROC '):
+                        reporter.log('taskExecEx: %s payload=%s' % (sOpcode, abPayload,));
 
             else:
                 if rc is None:
