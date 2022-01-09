@@ -921,11 +921,16 @@ class Session(TdTaskBase):
 
             # Parse the exit status (True), abort (None) or do nothing (False).
             if rc is True:
-                if sOpcode != 'PROC OK':
+                if sOpcode == 'PROC OK':
+                    pass;
+                else:
+                    rc = False;
                     # Do proper parsing some other day if needed:
                     #   PROC TOK, PROC TOA, PROC DWN, PROC DOO,
                     #   PROC NOK + rc, PROC SIG + sig, PROC ABD, FAILED.
-                    rc = False;
+                    if sOpcode == 'PROC DOO':
+                        reporter.log('taskExecEx: PROC DOO[fus]: %s' % (abPayload,));
+
             else:
                 if rc is None:
                     # Abort it.
