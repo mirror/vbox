@@ -239,45 +239,6 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
 }
 
 /**
- * Removes a guest control session from the internal list and destroys the session.
- *
- * @returns VBox status code.
- * @param   uSessionID          ID of the guest control session to remove.
- */
-int Guest::i_sessionRemove(uint32_t uSessionID)
-{
-    LogFlowThisFuncEnter();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    int rc = VERR_NOT_FOUND;
-
-    LogFlowThisFunc(("Removing session (ID=%RU32) ...\n", uSessionID));
-
-    GuestSessions::iterator itSessions = mData.mGuestSessions.find(uSessionID);
-    if (itSessions == mData.mGuestSessions.end())
-        return VERR_NOT_FOUND;
-
-    /* Make sure to consume the pointer before the one of the
-     * iterator gets released. */
-    ComObjPtr<GuestSession> pSession = itSessions->second;
-
-    LogFlowThisFunc(("Removing session %RU32 (now total %ld sessions)\n",
-                     uSessionID, mData.mGuestSessions.size() ? mData.mGuestSessions.size() - 1 : 0));
-
-    rc = pSession->i_onRemove();
-    mData.mGuestSessions.erase(itSessions);
-
-    alock.release(); /* Release lock before firing off event. */
-
-    ::FireGuestSessionRegisteredEvent(mEventSource, pSession, false /* Unregistered */);
-    pSession.setNull();
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
  * Creates a new guest session.
  * This will invoke VBoxService running on the guest creating a new (dedicated) guest session
  * On older Guest Additions this call has no effect on the guest, and only the credentials will be
@@ -288,6 +249,8 @@ int Guest::i_sessionRemove(uint32_t uSessionID)
  * @param   guestCreds          Guest OS (user) credentials to use on the guest for creating the session.
  *                              The specified user must be able to logon to the guest and able to start new processes.
  * @param   pGuestSession       Where to store the created guest session on success.
+ *
+ * @note    Takes the write lock.
  */
 int Guest::i_sessionCreate(const GuestSessionStartupInfo &ssInfo,
                            const GuestCredentials &guestCreds, ComObjPtr<GuestSession> &pGuestSession)
@@ -370,10 +333,53 @@ int Guest::i_sessionCreate(const GuestSessionStartupInfo &ssInfo,
 }
 
 /**
+ * Destroys a given guest session and removes it from the internal list.
+ *
+ * @returns VBox status code.
+ * @param   uSessionID          ID of the guest control session to destroy.
+ *
+ * @note    Takes the write lock.
+ */
+int Guest::i_sessionDestroy(uint32_t uSessionID)
+{
+    LogFlowThisFuncEnter();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int rc = VERR_NOT_FOUND;
+
+    LogFlowThisFunc(("Destroying session (ID=%RU32) ...\n", uSessionID));
+
+    GuestSessions::iterator itSessions = mData.mGuestSessions.find(uSessionID);
+    if (itSessions == mData.mGuestSessions.end())
+        return VERR_NOT_FOUND;
+
+    /* Make sure to consume the pointer before the one of the
+     * iterator gets released. */
+    ComObjPtr<GuestSession> pSession = itSessions->second;
+
+    LogFlowThisFunc(("Removing session %RU32 (now total %ld sessions)\n",
+                     uSessionID, mData.mGuestSessions.size() ? mData.mGuestSessions.size() - 1 : 0));
+
+    rc = pSession->i_onRemove();
+    mData.mGuestSessions.erase(itSessions);
+
+    alock.release(); /* Release lock before firing off event. */
+
+    ::FireGuestSessionRegisteredEvent(mEventSource, pSession, false /* Unregistered */);
+    pSession.setNull();
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Returns whether a guest control session with a specific ID exists or not.
  *
  * @returns Returns \c true if the session exists, \c false if not.
  * @param   uSessionID          ID to check for.
+ *
+ * @note    No locking done, as inline function!
  */
 inline bool Guest::i_sessionExists(uint32_t uSessionID)
 {
