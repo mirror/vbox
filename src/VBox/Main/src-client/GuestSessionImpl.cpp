@@ -3303,14 +3303,14 @@ HRESULT GuestSession::close()
     int vrc     = VINF_SUCCESS; /* Shut up MSVC. */
     int rcGuest = VINF_SUCCESS;
 
-    uint32_t msTimeout = 30 * 1000; /* 30s timeout by default */
-    for (int i = 0; i < 10; i++)
+    uint32_t msTimeout = RT_MS_10SEC; /* 10s timeout by default */
+    for (int i = 0; i < 3; i++)
     {
         if (i)
         {
             LogRel(("Guest Control: Closing session '%s' timed out (%RU32s timeout, attempt %d/10), retrying ...\n",
                     mData.mSession.mName.c_str(), msTimeout / RT_MS_1SEC, i + 1));
-            msTimeout += RT_MS_10SEC; /* Slightly increase the timeout. */
+            msTimeout += RT_MS_5SEC; /* Slightly increase the timeout. */
         }
 
         /* Close session on guest. */
