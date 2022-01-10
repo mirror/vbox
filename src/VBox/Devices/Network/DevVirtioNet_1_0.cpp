@@ -1103,81 +1103,82 @@ static DECLCALLBACK(int) virtioNetR3LegacyDeviceLoadExec(PPDMDEVINS pDevIns, PSS
 
     Log7Func(("[%s] LOAD EXEC (LEGACY)!!\n", pThis->szInst));
 
-    if (memcmp(&uMacLoaded.au8, &pThis->macConfigured.au8, sizeof(uMacLoaded))
-        && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)))
+    if (   memcmp(&uMacLoaded.au8, &pThis->macConfigured.au8, sizeof(uMacLoaded))
+        && (   uPass == 0
+            || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)))
         LogRelFunc(("[%s]: The mac address differs: config=%RTmac saved=%RTmac\n",
             pThis->szInst, &pThis->macConfigured, &uMacLoaded));
 
-        if (uPass == SSM_PASS_FINAL)
+    if (uPass == SSM_PASS_FINAL)
+    {
+        /* Call the virtio core to have it load legacy device state */
+        rc = virtioCoreR3LegacyDeviceLoadExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM, uVersion, VIRTIONET_SAVEDSTATE_VERSION_3_1_BETA1_LEGACY);
+        AssertRCReturn(rc, rc);
+        /*
+         * Scan constructor-determined virtqs to determine if they are all valid-as-restored.
+         * If so, nudge them with a signal, otherwise destroy the unusable queue(s)
+         * to avoid tripping up the other queue processing logic.
+         */
+        int cVirtqsToRemove = 0;
+        for (int uVirtqNbr = 0; uVirtqNbr < pThis->cVirtqs; uVirtqNbr++)
         {
-            /* Call the virtio core to have it load legacy device state */
-            rc = virtioCoreR3LegacyDeviceLoadExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM, uVersion, VIRTIONET_SAVEDSTATE_VERSION_3_1_BETA1_LEGACY);
-            AssertRCReturn(rc, rc);
-            /*
-             * Scan constructor-determined virtqs to determine if they are all valid-as-restored.
-             * If so, nudge them with a signal, otherwise destroy the unusable queue(s)
-             * to avoid tripping up the other queue processing logic.
-             */
-            int cVirtqsToRemove = 0;
-            for (int uVirtqNbr = 0; uVirtqNbr < pThis->cVirtqs; uVirtqNbr++)
+            PVIRTIONETVIRTQ pVirtq = &pThis->aVirtqs[uVirtqNbr];
+            if (pVirtq->fHasWorker)
             {
-                PVIRTIONETVIRTQ pVirtq = &pThis->aVirtqs[uVirtqNbr];
-                if (pVirtq->fHasWorker)
+                if (!virtioCoreR3VirtqIsEnabled(&pThis->Virtio, uVirtqNbr))
                 {
-                    if (!virtioCoreR3VirtqIsEnabled(&pThis->Virtio, uVirtqNbr))
+                    virtioNetR3VirtqDestroy(&pThis->Virtio, pVirtq);
+                    ++cVirtqsToRemove;
+                }
+                else
+                {
+                    if (virtioCoreR3VirtqIsAttached(&pThis->Virtio, uVirtqNbr))
                     {
-                        virtioNetR3VirtqDestroy(&pThis->Virtio, pVirtq);
-                        ++cVirtqsToRemove;
-                    }
-                    else
-                    {
-                        if (virtioCoreR3VirtqIsAttached(&pThis->Virtio, uVirtqNbr))
-                        {
-                            Log7Func(("[%s] Waking %s worker.\n", pThis->szInst, pVirtq->szName));
-                            rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->aWorkers[pVirtq->uIdx].hEvtProcess);
-                            AssertRCReturn(rc, rc);
-                        }
+                        Log7Func(("[%s] Waking %s worker.\n", pThis->szInst, pVirtq->szName));
+                        rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->aWorkers[pVirtq->uIdx].hEvtProcess);
+                        AssertRCReturn(rc, rc);
                     }
                 }
             }
-            AssertMsg(cVirtqsToRemove < 2, ("Multiple unusable queues in saved state unexpected\n"));
-            pThis->cVirtqs -= cVirtqsToRemove;
+        }
+        AssertMsg(cVirtqsToRemove < 2, ("Multiple unusable queues in saved state unexpected\n"));
+        pThis->cVirtqs -= cVirtqsToRemove;
 
-            pThis->virtioNetConfig.uStatus = pThis->Virtio.fDeviceStatus;
-            pThis->fVirtioReady = pThis->Virtio.fDeviceStatus & VIRTIO_STATUS_DRIVER_OK;
+        pThis->virtioNetConfig.uStatus = pThis->Virtio.fDeviceStatus;
+        pThis->fVirtioReady = pThis->Virtio.fDeviceStatus & VIRTIO_STATUS_DRIVER_OK;
 
-            rc = pHlp->pfnSSMGetMem(pSSM, pThis->virtioNetConfig.uMacAddress.au8, sizeof(pThis->virtioNetConfig.uMacAddress));
+        rc = pHlp->pfnSSMGetMem(pSSM, pThis->virtioNetConfig.uMacAddress.au8, sizeof(pThis->virtioNetConfig.uMacAddress));
+        AssertRCReturn(rc, rc);
+
+        if (uVersion > VIRTIONET_SAVEDSTATE_VERSION_3_1_BETA1_LEGACY)
+        {
+            rc = pHlp->pfnSSMGetU8( pSSM, &pThis->fPromiscuous);
             AssertRCReturn(rc, rc);
-
-            if (uVersion > VIRTIONET_SAVEDSTATE_VERSION_3_1_BETA1_LEGACY)
-            {
-                rc = pHlp->pfnSSMGetU8( pSSM, &pThis->fPromiscuous);
-                AssertRCReturn(rc, rc);
-                rc = pHlp->pfnSSMGetU8( pSSM, &pThis->fAllMulticast);
-                AssertRCReturn(rc, rc);
-                /*
-                 * The 0.95 legacy virtio spec defines a control queue command VIRTIO_NET_CTRL_MAC_TABLE_SET,
-                 * wherein guest driver configures two variable length mac filter tables: A unicast filter,
-                 * and a multicast filter. However original VBox virtio-net saved both sets of filter entries
-                 * in a single table, abandoning the distinction between unicast and multicast filters. It preserved
-                 * only *one* filter's table length, leaving no way to separate table back out into respective unicast
-                 * and multicast tables this device implementation preserves. Deduced from legacy code, the original
-                 * assumption was that the both MAC filters are whitelists that can be processed identically
-                 * (from the standpoint of a *single* host receiver), such that the distinction between unicast and
-                 * multicast doesn't matter in any one VM's context. Little choice here but to save the undifferentiated
-                 * unicast & multicast MACs to the unicast filter table and leave multicast table empty/unused.
-                 */
-                uint32_t cCombinedUnicastMulticastEntries;
-                rc = pHlp->pfnSSMGetU32(pSSM, &cCombinedUnicastMulticastEntries);
-                AssertRCReturn(rc, rc);
-                AssertReturn(cCombinedUnicastMulticastEntries <= VIRTIONET_MAC_FILTER_LEN, VERR_OUT_OF_RANGE);
-                pThis->cUnicastFilterMacs = cCombinedUnicastMulticastEntries;
-                rc = pHlp->pfnSSMGetMem(pSSM, pThis->aMacUnicastFilter, cCombinedUnicastMulticastEntries * sizeof(RTMAC));
-                AssertRCReturn(rc, rc);
-                /* Zero-out the remainder of the Unicast/Multicast filter table */
-                memset(&pThis->aMacUnicastFilter[pThis->cUnicastFilterMacs], 0, VIRTIONET_MAC_FILTER_LEN * sizeof(RTMAC));
-                rc = pHlp->pfnSSMGetMem(pSSM, pThis->aVlanFilter, sizeof(pThis->aVlanFilter));
-                AssertRCReturn(rc, rc);
+            rc = pHlp->pfnSSMGetU8( pSSM, &pThis->fAllMulticast);
+            AssertRCReturn(rc, rc);
+            /*
+             * The 0.95 legacy virtio spec defines a control queue command VIRTIO_NET_CTRL_MAC_TABLE_SET,
+             * wherein guest driver configures two variable length mac filter tables: A unicast filter,
+             * and a multicast filter. However original VBox virtio-net saved both sets of filter entries
+             * in a single table, abandoning the distinction between unicast and multicast filters. It preserved
+             * only *one* filter's table length, leaving no way to separate table back out into respective unicast
+             * and multicast tables this device implementation preserves. Deduced from legacy code, the original
+             * assumption was that the both MAC filters are whitelists that can be processed identically
+             * (from the standpoint of a *single* host receiver), such that the distinction between unicast and
+             * multicast doesn't matter in any one VM's context. Little choice here but to save the undifferentiated
+             * unicast & multicast MACs to the unicast filter table and leave multicast table empty/unused.
+             */
+            uint32_t cCombinedUnicastMulticastEntries;
+            rc = pHlp->pfnSSMGetU32(pSSM, &cCombinedUnicastMulticastEntries);
+            AssertRCReturn(rc, rc);
+            AssertReturn(cCombinedUnicastMulticastEntries <= VIRTIONET_MAC_FILTER_LEN, VERR_OUT_OF_RANGE);
+            pThis->cUnicastFilterMacs = cCombinedUnicastMulticastEntries;
+            rc = pHlp->pfnSSMGetMem(pSSM, pThis->aMacUnicastFilter, cCombinedUnicastMulticastEntries * sizeof(RTMAC));
+            AssertRCReturn(rc, rc);
+            /* Zero-out the remainder of the Unicast/Multicast filter table */
+            memset(&pThis->aMacUnicastFilter[pThis->cUnicastFilterMacs], 0, VIRTIONET_MAC_FILTER_LEN * sizeof(RTMAC));
+            rc = pHlp->pfnSSMGetMem(pSSM, pThis->aVlanFilter, sizeof(pThis->aVlanFilter));
+            AssertRCReturn(rc, rc);
         }
         else
         {
@@ -1211,7 +1212,6 @@ static DECLCALLBACK(int) virtioNetR3LegacyDeviceLoadExec(PPDMDEVINS pDevIns, PSS
         /* Zero out the multicast table and count, all MAC filters, if any, are in the unicast filter table */
         pThis->cMulticastFilterMacs = 0;
         memset(&pThis->aMacMulticastFilter, 0, VIRTIONET_MAC_FILTER_LEN * sizeof(RTMAC));
-
     }
     return VINF_SUCCESS;
 }
