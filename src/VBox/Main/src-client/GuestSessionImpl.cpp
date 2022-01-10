@@ -665,7 +665,7 @@ HRESULT GuestSession::getEventSource(ComPtr<IEventSource> &aEventSource)
  * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
  *                              was returned. Optional.
  *
- * @note    Takes the write lock.
+ * @note    Takes the read lock.
  */
 int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcGuest)
 {
@@ -673,7 +673,7 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcG
 
     LogFlowThisFunc(("uFlags=%x, uTimeoutMS=%RU32\n", uFlags, uTimeoutMS));
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Guest Additions < 4.3 don't support closing dedicated
        guest sessions, skip. */
@@ -713,12 +713,12 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcG
     LogFlowThisFunc(("Sending closing request to guest session ID=%RU32, uFlags=%x\n",
                      mData.mSession.mID, uFlags));
 
+    alock.release();
+
     VBOXHGCMSVCPARM paParms[4];
     int i = 0;
     HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
     HGCMSvcSetU32(&paParms[i++], uFlags);
-
-    alock.release(); /* Drop the write lock before waiting. */
 
     vrc = i_sendMessage(HOST_MSG_SESSION_CLOSE, i, paParms, VBOX_GUESTCTRL_DST_BOTH);
     if (RT_SUCCESS(vrc))
@@ -1088,6 +1088,8 @@ int GuestSession::i_directoryUnregister(GuestDirectory *pDirectory)
  * @param   fFlags              Directory remove flags to use.
  * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
  *                              was returned. Optional.
+ *
+ * @note    Takes the read lock.
  */
 int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int *prcGuest)
 {
@@ -1096,7 +1098,7 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int
 
     LogFlowThisFunc(("strPath=%s, uFlags=0x%x\n", strPath.c_str(), fFlags));
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     GuestWaitEvent *pEvent = NULL;
     int vrc = registerWaitEvent(mData.mSession.mID, mData.mObjectID, &pEvent);
@@ -1111,7 +1113,7 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int
                             (ULONG)strPath.length() + 1);
     HGCMSvcSetU32(&paParms[i++], fFlags);
 
-    alock.release(); /* Drop write lock before sending. */
+    alock.release(); /* Drop lock before sending. */
 
     vrc = i_sendMessage(HOST_MSG_DIR_REMOVE, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -1310,6 +1312,8 @@ int GuestSession::i_directoryOpen(const GuestDirectoryOpenInfo &openInfo,
  * @return VBox status code. VERR_NOT_FOUND if no corresponding object was found.
  * @param  pCtxCb               Host callback context.
  * @param  pSvcCb               Service callback data.
+ *
+ * @note   Takes the read lock.
  */
 int GuestSession::i_dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
 {
@@ -1958,6 +1962,8 @@ bool GuestSession::i_isTerminated(void) const
 /**
  * Called by IGuest right before this session gets removed from
  * the public session list.
+ *
+ * @note    Takes the write lock.
  */
 int GuestSession::i_onRemove(void)
 {
@@ -2140,6 +2146,8 @@ PathStyle_T GuestSession::i_getPathStyle(void)
  * @returns VBox status code.
  * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
  *                              was returned. Optional.
+ *
+ * @note    Takes the write lock.
  */
 int GuestSession::i_startSession(int *prcGuest)
 {
@@ -2166,7 +2174,7 @@ int GuestSession::i_startSession(int *prcGuest)
 
     /* Set current session status. */
     mData.mStatus = GuestSessionStatus_Starting;
-    mData.mRC = VINF_SUCCESS; /* Clear previous error, if any. */
+    mData.mRC     = VINF_SUCCESS; /* Clear previous error, if any. */
 
     int vrc;
 
@@ -2199,7 +2207,7 @@ int GuestSession::i_startSession(int *prcGuest)
                             (ULONG)mData.mCredentials.mDomain.length() + 1);
     HGCMSvcSetU32(&paParms[i++], mData.mSession.mOpenFlags);
 
-    alock.release(); /* Drop write lock before sending. */
+    alock.release(); /* Drop lock before sending. */
 
     vrc = i_sendMessage(HOST_MSG_SESSION_CREATE, i, paParms, VBOX_GUESTCTRL_DST_ROOT_SVC);
     if (RT_SUCCESS(vrc))
@@ -2210,6 +2218,8 @@ int GuestSession::i_startSession(int *prcGuest)
     }
     else
     {
+        alock.acquire(); /* Re-aquire lock before changing status. */
+
         /*
          * Unable to start guest session - update its current state.
          * Since there is no (official API) way to recover a failed guest session
@@ -2355,6 +2365,8 @@ int GuestSession::i_objectRegister(GuestObject *pObject, SESSIONOBJECTTYPE enmTy
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_NOT_FOUND if the object ID was not found.
  * @param   idObject        Object ID to unregister.
+ *
+ * @note    Takes the write lock.
  */
 int GuestSession::i_objectUnregister(uint32_t idObject)
 {
@@ -2468,7 +2480,7 @@ int GuestSession::i_objectsNotifyAboutStatusChange(GuestSessionStatus_T enmSessi
  * @param   uFlags              Renaming flags.
  * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
  *                              was returned. Optional.
- * @note    Takes the write lock.
+ * @note    Takes the read lock.
  */
 int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *prcGuest)
 {
@@ -2477,7 +2489,7 @@ int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest,
     LogFlowThisFunc(("strSource=%s, strDest=%s, uFlags=0x%x\n",
                      strSource.c_str(), strDest.c_str(), uFlags));
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     GuestWaitEvent *pEvent = NULL;
     int vrc = registerWaitEvent(mData.mSession.mID, mData.mObjectID, &pEvent);
@@ -2494,7 +2506,7 @@ int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest,
                             (ULONG)strDest.length() + 1);
     HGCMSvcSetU32(&paParms[i++], uFlags);
 
-    alock.release(); /* Drop write lock before sending. */
+    alock.release(); /* Drop lock before sending. */
 
     vrc = i_sendMessage(HOST_MSG_PATH_RENAME, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -2519,11 +2531,11 @@ int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest,
  * @param   prcGuest            Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
  *                              Any other return code indicates some host side error.
  *
- * @note    Takes the write lock.
+ * @note    Takes the read lock.
  */
 int GuestSession::i_pathUserDocuments(Utf8Str &strPath, int *prcGuest)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /** @todo Cache the user's document path? */
 
@@ -2537,7 +2549,7 @@ int GuestSession::i_pathUserDocuments(Utf8Str &strPath, int *prcGuest)
     int i = 0;
     HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
 
-    alock.release(); /* Drop write lock before sending. */
+    alock.release(); /* Drop lock before sending. */
 
     vrc = i_sendMessage(HOST_MSG_PATH_USER_DOCUMENTS, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -2571,11 +2583,11 @@ int GuestSession::i_pathUserDocuments(Utf8Str &strPath, int *prcGuest)
  * @param   prcGuest            Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
  *                              Any other return code indicates some host side error.
  *
- * @note    Takes the write lock.
+ * @note    Takes the read lock.
  */
 int GuestSession::i_pathUserHome(Utf8Str &strPath, int *prcGuest)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /** @todo Cache the user's home path? */
 
@@ -2589,7 +2601,7 @@ int GuestSession::i_pathUserHome(Utf8Str &strPath, int *prcGuest)
     int i = 0;
     HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
 
-    alock.release(); /* Drop write lock before sending. */
+    alock.release(); /* Drop lock before sending. */
 
     vrc = i_sendMessage(HOST_MSG_PATH_USER_HOME, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -2956,11 +2968,11 @@ int GuestSession::i_signalWaiters(GuestSessionWaitResult_T enmWaitResult, int rc
  * @param   prcGuest            Guest rc, when returning VERR_GSTCTL_GUEST_ERROR.
  *                              Any other return code indicates some host side error.
  *
- * @note    Takes the write lock.
+ * @note    Takes the read lock.
  */
 int GuestSession::i_shutdown(uint32_t fFlags, int *prcGuest)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertPtrReturn(mParent, VERR_INVALID_POINTER);
     if (!(mParent->i_getGuestControlFeatures0() & VBOX_GUESTCTRL_GF_0_SHUTDOWN))
@@ -2979,7 +2991,7 @@ int GuestSession::i_shutdown(uint32_t fFlags, int *prcGuest)
     HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
     HGCMSvcSetU32(&paParms[i++], fFlags);
 
-    alock.release(); /* Drop write lock before sending. */
+    alock.release(); /* Drop lock before sending. */
 
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
 
