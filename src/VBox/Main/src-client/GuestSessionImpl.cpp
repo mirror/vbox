@@ -2147,11 +2147,11 @@ PathStyle_T GuestSession::i_getPathStyle(void)
  * @param   prcGuest            Where to return the guest error when VERR_GSTCTL_GUEST_ERROR
  *                              was returned. Optional.
  *
- * @note    Takes the write lock.
+ * @note    Takes the read and write locks.
  */
 int GuestSession::i_startSession(int *prcGuest)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("mID=%RU32, mName=%s, uProtocolVersion=%RU32, openFlags=%x, openTimeoutMS=%RU32\n",
                      mData.mSession.mID, mData.mSession.mName.c_str(), mData.mProtocolVersion,
@@ -2161,8 +2161,9 @@ int GuestSession::i_startSession(int *prcGuest)
        guest sessions. Simply return success here. */
     if (mData.mProtocolVersion < 2)
     {
-        mData.mStatus = GuestSessionStatus_Started;
+        alock.release(); /* Release lock before changing status. */
 
+        /* ignore rc */ i_setSessionStatus(GuestSessionStatus_Started, VINF_SUCCESS);
         LogFlowThisFunc(("Installed Guest Additions don't support opening dedicated sessions, skipping\n"));
         return VINF_SUCCESS;
     }
@@ -2172,11 +2173,12 @@ int GuestSession::i_startSession(int *prcGuest)
 
     /** @todo mData.mSession.uFlags validation. */
 
-    /* Set current session status. */
-    mData.mStatus = GuestSessionStatus_Starting;
-    mData.mRC     = VINF_SUCCESS; /* Clear previous error, if any. */
+    alock.release(); /* Release lock before changing status. */
 
-    int vrc;
+    /* Set current session status. */
+    int vrc = i_setSessionStatus(GuestSessionStatus_Starting, VINF_SUCCESS);
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     GuestWaitEvent *pEvent = NULL;
     GuestEventTypes eventTypes;
@@ -2193,6 +2195,8 @@ int GuestSession::i_startSession(int *prcGuest)
 
     if (RT_FAILURE(vrc))
         return vrc;
+
+    alock.acquire(); /* Re-acquire lock before accessing session attributes below. */
 
     VBOXHGCMSVCPARM paParms[8];
 
@@ -2218,16 +2222,13 @@ int GuestSession::i_startSession(int *prcGuest)
     }
     else
     {
-        alock.acquire(); /* Re-aquire lock before changing status. */
-
         /*
          * Unable to start guest session - update its current state.
          * Since there is no (official API) way to recover a failed guest session
          * this also marks the end state. Internally just calling this
          * same function again will work though.
          */
-        mData.mStatus = GuestSessionStatus_Error;
-        mData.mRC = vrc;
+        /* ignore rc */ i_setSessionStatus(GuestSessionStatus_Error, vrc);
     }
 
     unregisterWaitEvent(pEvent);
