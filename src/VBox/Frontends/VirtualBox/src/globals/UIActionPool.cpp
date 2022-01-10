@@ -2744,10 +2744,10 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Create..."));
+        setName(QApplication::translate("UIActionPool", "&Refresh..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
-        setStatusTip(QApplication::translate("UIActionPool", "Create a new disk image file"));
-        setToolTip(  QApplication::translate("UIActionPool", "Create a New Disk Image File")
+        setStatusTip(QApplication::translate("UIActionPool", "Refresh disk images"));
+        setToolTip(  QApplication::translate("UIActionPool", "Refresh Disk Images")
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
