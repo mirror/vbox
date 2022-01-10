@@ -1455,9 +1455,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             ( False, self.testGuestCtrlFileRead,            'file_read',        'File read',),
             ( False, self.testGuestCtrlFileWrite,           'file_write',       'File write',),
             ( False, self.testGuestCtrlFileRemove,          'file_remove',      'Removing files',), # Destroys prepped files.
-            ( False, self.testGuestCtrlSessionReboot,       'session_reboot',   'Session w/ Guest Reboot',), # May zap /tmp.
             ( False, self.testGuestCtrlUpdateAdditions,     'update_additions', 'Updating Guest Additions',),
         ];
+
+        if not self.fSkipKnownBugs:
+            atTests.extend([
+                ## @todo Seems to (mainly?) fail on Linux guests, primarily running with systemd as service supervisor.
+                #        Needs to be investigated and fixed.
+                ( False, self.testGuestCtrlSessionReboot,   'session_reboot',   'Session w/ Guest Reboot',), # May zap /tmp.
+            ]);
 
         fRc = True;
         for fMustSucceed, fnHandler, sShortNm, sTestNm in atTests:
