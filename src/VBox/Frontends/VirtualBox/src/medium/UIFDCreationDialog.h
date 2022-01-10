@@ -83,7 +83,7 @@ private:
     /** Floppy disc sizes. */
     enum FDSize
     {
-        //FDSize_2_88M,
+        FDSize_2_88M,
         FDSize_1_44M,
         FDSize_1_2M,
         FDSize_720K,

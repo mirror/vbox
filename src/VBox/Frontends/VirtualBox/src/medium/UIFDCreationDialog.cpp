@@ -147,7 +147,7 @@ void UIFDCreationDialog::retranslateUi()
     }
     if (m_pSizeCombo)
     {
-        //m_pSizeCombo->setItemText(FDSize_2_88M, tr("2.88M"));
+        m_pSizeCombo->setItemText(FDSize_2_88M, tr("2.88M"));
         m_pSizeCombo->setItemText(FDSize_1_44M, tr("1.44M"));
         m_pSizeCombo->setItemText(FDSize_1_2M, tr("1.2M"));
         m_pSizeCombo->setItemText(FDSize_720K, tr("720K"));
@@ -225,7 +225,7 @@ void UIFDCreationDialog::prepare()
         m_pSizeCombo = new QComboBox(this);
         if (m_pSizeCombo)
         {
-            //m_pSizeCombo->insertItem(FDSize_2_88M, "2.88M", 2949120);
+            m_pSizeCombo->insertItem(FDSize_2_88M, "2.88M", 2949120);
             m_pSizeCombo->insertItem(FDSize_1_44M, "1.44M", 1474560);
             m_pSizeCombo->insertItem(FDSize_1_2M, "1.2M", 1228800);
             m_pSizeCombo->insertItem(FDSize_720K, "720K", 737280);
