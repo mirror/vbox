@@ -2178,7 +2178,7 @@ static int txsDoExecHlp2(PTXSEXEC pTxsExec)
     bool                fProcessTimedOut    = false;
     uint64_t            MsProcessKilled     = UINT64_MAX;
     RTMSINTERVAL const  cMsPollBase         = g_pTransport->pfnPollSetAdd || pTxsExec->hStdInW == NIL_RTPIPE
-                                            ? 5000 : 100;
+                                            ? RT_MS_5SEC : 100;
     RTMSINTERVAL        cMsPollCur          = 0;
 
     /*
@@ -2276,9 +2276,10 @@ static int txsDoExecHlp2(PTXSEXEC pTxsExec)
             {
                 fProcessTimedOut = true;
                 if (    MsProcessKilled == UINT64_MAX
-                    ||  u64Now - MsProcessKilled > 1000)
+                    ||  u64Now - MsProcessKilled > RT_MS_1SEC)
                 {
-                    if (u64Now - MsProcessKilled > 20*60*1000)
+                    if (   MsProcessKilled != UINT64_MAX
+                        && u64Now - MsProcessKilled > 20*RT_MS_1MIN)
                         break; /* give up after 20 mins */
                     RTCritSectEnter(&pTxsExec->CritSect);
                     if (pTxsExec->fProcessAlive)
@@ -2287,7 +2288,7 @@ static int txsDoExecHlp2(PTXSEXEC pTxsExec)
                     MsProcessKilled = u64Now;
                     continue;
                 }
-                cMilliesLeft = 10000;
+                cMilliesLeft = RT_MS_10SEC;
             }
             else
                 cMilliesLeft = pTxsExec->cMsTimeout - (uint32_t)cMsElapsed;
@@ -2304,7 +2305,7 @@ static int txsDoExecHlp2(PTXSEXEC pTxsExec)
      */
     for (size_t i = 0; i < 22; i++)
     {
-        rc2 = RTThreadWait(pTxsExec->hThreadWaiter, 500, NULL);
+        rc2 = RTThreadWait(pTxsExec->hThreadWaiter, RT_MS_1SEC / 2, NULL);
         if (RT_SUCCESS(rc))
         {
             pTxsExec->hThreadWaiter = NIL_RTTHREAD;
