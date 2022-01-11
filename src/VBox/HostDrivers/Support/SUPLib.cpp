@@ -189,7 +189,8 @@ DECL_NOTHROW(DECLEXPORT(int)) supR3PreInit(PSUPPREINITDATA pPreInitData, uint32_
         &&  pPreInitData->Data.hDevice == SUP_HDEVICE_NIL
         &&  !pPreInitData->Data.fDriverless)
         return VERR_INVALID_HANDLE;
-    if (    (fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
+    if (    (   (fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
+             || pPreInitData->Data.fDriverless)
         &&  pPreInitData->Data.hDevice != SUP_HDEVICE_NIL)
         return VERR_INVALID_PARAMETER;
 
