@@ -470,6 +470,10 @@ endif
 if1of ($(KBUILD_TARGET), win darwin)
  VBOX_WITH_NATIVE_NEM = 1
 endif
+# Enable NEM fallback if the driver is not available.
+if1of ($(KBUILD_TARGET), darwin)
+ VBOX_WITH_DRIVERLESS_NEM_FALLBACK = 1
+endif
 # Enables the new breakpoint handling code, see @bugref{8650}
 VBOX_WITH_DBGF_FLOW_TRACING = 1
 ## @}
