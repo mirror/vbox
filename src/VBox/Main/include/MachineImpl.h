@@ -45,8 +45,8 @@
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "Performance.h"
 # include "PerformanceImpl.h"
-# include "ThreadTask.h"
 #endif
+#include "ThreadTask.h"
 
 // generated header
 #include "SchemaDefs.h"

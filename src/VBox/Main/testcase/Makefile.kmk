@@ -36,7 +36,8 @@ ifndef VBOX_ONLY_SDK
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,) \
   	tstMediumLock \
 	tstBstr \
-  	tstGuid
+  	tstGuid \
+  	tstUnattendedScript
   PROGRAMS.linux += \
   	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
  endif # !VBOX_WITH_TESTCASES
@@ -265,6 +266,37 @@ tstBstr_SOURCES  = tstBstr.cpp
 #
 tstGuid_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstGuid_SOURCES  = tstGuid.cpp
+
+
+#
+# tstUnattendedScript
+#
+tstUnattendedScript_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstUnattendedScript_DEFS     = VBOX_WITH_UNATTENDED IN_VBOXSVC IN_TST_UNATTENDED_SCRIPT
+tstUnattendedScript_INTERMEDIATES = \
+	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS) \
+       $(VBOX_XML_SCHEMADEFS_H)
+tstUnattendedScript_INCS     = \
+	../include \
+     $(VBOX_MAIN_APIWRAPPER_INCS) \
+     $(dir $(VBOX_XML_SCHEMADEFS_H))
+tstUnattendedScript_SOURCES  = \
+	tstUnattendedScript.cpp \
+       ../src-server/UnattendedScript.cpp \
+       ../src-all/TextScript.cpp \
+       ../src-all/VirtualBoxBase.cpp \
+       ../src-all/VirtualBoxErrorInfoImpl.cpp \
+       ../src-all/AutoCaller.cpp \
+       ../src-all/GlobalStatusConversion.cpp
+tstUnattendedScript_LIBS     = \
+	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB)
+
+INSTALLS += tstUnattendedScriptFiles
+tstUnattendedScriptFiles_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstUnattendedScriptFiles_SOURCES = \
+	tstUnattendedScript-1.template \
+	tstUnattendedScript-1.expected
+
 
 
 # generate rules.
