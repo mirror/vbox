@@ -102,7 +102,7 @@ protected:
     HRESULT resolveConditionalExpr(RTEXPREVAL hEvaluator, const char *pachPlaceholder, size_t cchPlaceholder,
                                    bool *pfOutputting) RT_NOEXCEPT;
 
-    /** @impl_callback_method{FNRTEXPREVALQUERYVARIABLE}  */
+    /** @callback_method_impl{FNRTEXPREVALQUERYVARIABLE}  */
     static DECLCALLBACK(int) queryVariableForExpr(const char *pchName, size_t cchName, void *pvUser,
                                                   char **ppszValue) RT_NOEXCEPT;
 
