@@ -2367,8 +2367,7 @@ static void supR3HardenedMainInitRuntime(uint32_t fFlags)
     }
 
     /* Now do the IPRT init. */
-    rc = pfnRTInitEx(RTR3INIT_VER_CUR, fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV ? 0 : RTR3INIT_FLAGS_SUPLIB,
-                     0 /*cArgs*/, NULL /*papszArgs*/, pszExePath);
+    rc = pfnRTInitEx(RTR3INIT_VER_CUR, fRtInit, 0 /*cArgs*/, NULL /*papszArgs*/, pszExePath);
     if (RT_FAILURE(rc))
         supR3HardenedFatalMsg("supR3HardenedMainInitRuntime", kSupInitOp_IPRT, rc,
                               "RTR3InitEx failed with rc=%d (fRtFlags=%#x)", rc, fRtInit);
