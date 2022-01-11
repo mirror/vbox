@@ -664,6 +664,8 @@ static bool loadFileAsString(const char *pszFilename, Utf8Str &rstrContent)
 
 static void doTest1()
 {
+    RTTestISub("tstUnattendedScript-1.template");
+
     /* Create the parent class instance: */
     ComObjPtr<Unattended> ptrParent;
     HRESULT hrc = ptrParent.createObject();
