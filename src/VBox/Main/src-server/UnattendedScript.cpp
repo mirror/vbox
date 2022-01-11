@@ -118,7 +118,7 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
             const char  *pszPlaceholder    = mStrScriptFullContent.c_str() + offPlaceholder;
             size_t       cchPlaceholder    = sizeof(g_szPrefix) - 1;
             char         ch;
-            while (   offPlaceholder + cchPlaceholder < cchMaxPlaceholder
+            while (   cchPlaceholder < cchMaxPlaceholder
                    && (ch = pszPlaceholder[cchPlaceholder]) != '\0'
                    && (RT_C_IS_PRINT(ch) || RT_C_IS_SPACE(ch))
                    && ch != '@')
