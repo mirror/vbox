@@ -562,7 +562,7 @@ static void expr_var_assign_string(PEXPRVAR pVar, const char *psz, EXPRVARTYPE e
 
 
 /**
- * Finds the end of the current variable expansion, taking nested expansoins
+ * Finds the end of the current variable expansion, taking nested expansion
  * into account.
  *
  * This is somewhat similar to the code down in expr_get_unary_or_operand.
@@ -574,25 +574,18 @@ static void expr_var_assign_string(PEXPRVAR pVar, const char *psz, EXPRVARTYPE e
  * @param   pcchVarRef  Where to return the length of the variable expansion.
  * @param   pfNested    Where to return whether it's a nested (@c true) or plain
  *                      one.
- *
- * @note    This code would be somewhat simpler if we only used one style of
- *          wrappers (either parentheses or curly brackets).
  */
-DECL_NO_INLINE(static, EXPRRET) expr_expand_find_end(PEXPR pThis, const char *pchSrc, size_t cchSrc,
-                                                     size_t *pcchVarRef, bool *pfNested)
+static EXPRRET expr_expand_find_end(PEXPR pThis, const char *pchSrc, size_t cchSrc, size_t *pcchVarRef, bool *pfNested)
 {
     const char * const  pchStart = pchSrc;
-    char                achPars[EXPR_MAX_VAR_RECURSION];
 
     /*
      * Push the initial expression.
      */
     Assert(cchSrc >= 2);
     Assert(pchSrc[0] == '$');
-    Assert(pchSrc[1] == '(' || pchSrc[1] == '}');
-    unsigned            cPars    = 1;
-    char                chEndPar = pchSrc[1] == '(' ? ')' : '}';
-    achPars[0] = chEndPar;
+    Assert(pchSrc[1] == '{');
+    unsigned            cPars = 1;
     pchSrc += 2;
     cchSrc -= 2;
 
@@ -602,15 +595,13 @@ DECL_NO_INLINE(static, EXPRRET) expr_expand_find_end(PEXPR pThis, const char *pc
     *pfNested = false;
     while (cchSrc > 0)
     {
-        char       ch2;
         char const ch = *pchSrc;
         if (   ch == '$'
             && cchSrc >= 2
-            && (   (ch2 = pchSrc[1]) == '('
-                || ch2 == '{'))
+            && pchSrc[1] == '{')
         {
-            if (cPars < RT_ELEMENTS(achPars))
-                achPars[cPars++] = chEndPar = ch2 == '(' ? ')' : '}';
+            if (cPars < EXPR_MAX_VAR_RECURSION)
+                cPars++;
             else
             {
                 *pcchVarRef = 0;
@@ -624,16 +615,12 @@ DECL_NO_INLINE(static, EXPRRET) expr_expand_find_end(PEXPR pThis, const char *pc
         {
             pchSrc += 1;
             cchSrc -= 1;
-            if (ch == chEndPar)
-            {
+            if (ch == '}')
                 if (--cPars == 0)
                 {
                     *pcchVarRef = pchSrc - pchStart;
                     return kExprRet_Ok;
                 }
-                chEndPar = achPars[cPars];
-            }
-            Assert(chEndPar != '\0');
         }
     }
     *pcchVarRef = 0;
@@ -650,9 +637,6 @@ DECL_NO_INLINE(static, EXPRRET) expr_expand_find_end(PEXPR pThis, const char *pc
  * @param   pchSrc      The string to expand.
  * @param   cchSrc      The length of the string to expand.
  * @param   cDepth      The recursion depth, starting at zero.
- *
- * @note    This code would be somewhat simpler if we only used one style of
- *          wrappers (either parentheses or curly brackets).
  */
 static char *expr_expand_string(PEXPR pThis, const char *pchSrc, size_t cchSrc, unsigned cDepth)
 {
@@ -674,11 +658,11 @@ static char *expr_expand_string(PEXPR pThis, const char *pchSrc, size_t cchSrc, 
 
                 if (pchDollar)
                 {
-                    /* Treat lone $ w/o a following ( or { as plain text. */
+                    /* Treat lone $ w/o a following { as plain text. */
                     if (   cchPlain + 1 >= cchSrc
                         && pchDollar[0] == '$'
                         && (   cchPlain + 1 == cchSrc
-                            || (pchDollar[1] != '{' && pchDollar[1] != '(')) )
+                            || pchDollar[1] != '{') )
                     {
                         cchPlain  += 1;
                         cchNext   += 1;
@@ -722,10 +706,10 @@ static char *expr_expand_string(PEXPR pThis, const char *pchSrc, size_t cchSrc, 
                     if (!cchSrc)
                         break;
 
-                    /* If we don't have ${ or $( loop, just loop. */
+                    /* If we don't have ${, just loop. */
                     if (   cchSrc < 2
                         || pchSrc[0] != '$'
-                        || (pchSrc[1] != '{' && pchSrc[1] != '('))
+                        || pchSrc[1] != '{')
                         continue;
                 }
 
@@ -733,7 +717,7 @@ static char *expr_expand_string(PEXPR pThis, const char *pchSrc, size_t cchSrc, 
                  * If we get down here we have a ${ or $( at pchSrc.  The fun part now is
                  * finding the end of it and recursively dealing with any sub-expansions first.
                  */
-                Assert(pchSrc[0] == '$' && (pchSrc[1] == '{' || pchSrc[1] == '('));
+                Assert(pchSrc[0] == '$' && pchSrc[1] == '{');
                 size_t cchVarRef;
                 bool   fNested;
                 if (expr_expand_find_end(pThis, pchSrc, cchSrc, &cchVarRef, &fNested) == kExprRet_Ok)
@@ -2378,34 +2362,29 @@ static EXPRRET expr_get_unary_or_operand(PEXPR pThis)
         }
         else
         {
-            char    achPars[EXPR_MAX_VAR_RECURSION];
-            int     iPar = -1;
-            char    chEndPar = '\0';
-
+            unsigned cPars = 0;
             pszStart = psz;
             while ((ch = *psz) != '\0')
             {
-                char ch2;
-
-                /* $(adsf) or ${asdf} needs special handling. */
-                if (    ch == '$'
-                    &&  (   (ch2 = psz[1]) == '('
-                         || ch2 == '{'))
+                /* ${asdf} needs special handling. */
+                if (   ch == '$'
+                    && psz[1] == '{')
                 {
                     psz++;
-                    if (iPar > (int)(sizeof(achPars) / sizeof(achPars[0])))
+                    if (cPars < EXPR_MAX_VAR_RECURSION)
+                        ++cPars;
+                    else
                     {
                         rc = expr_error(pThis, "Too deep nesting of variable expansions");
                         break;
                     }
-                    achPars[++iPar] = chEndPar = ch2 == '(' ? ')' : '}';
                 }
-                else if (ch == chEndPar)
+                else if (ch == '}')
                 {
-                    iPar--;
-                    chEndPar = iPar >= 0 ? achPars[iPar] : '\0';
+                    if (cPars > 0)
+                        cPars--;
                 }
-                else if (!chEndPar)
+                else if (cPars == 0)
                 {
                     uchVal = expr_map_get(ch);
                     if (uchVal == 0)
