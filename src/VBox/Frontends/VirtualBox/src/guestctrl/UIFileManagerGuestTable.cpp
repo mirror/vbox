@@ -377,11 +377,15 @@ UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, cons
     :UIFileManagerTable(pActionPool, pParent)
     , m_comMachine(comMachine)
     , m_pGuestSessionPanel(0)
+    , m_pWarningLabelContainer(0)
+    , m_pWarningLabel(0)
+    , m_pWarningIconLabel(0)
     , m_fIsCurrent(false)
 {
     if (!m_comMachine.isNull())
         m_strTableName = m_comMachine.GetName();
     prepareToolbar();
+    prepareWarningLabels();
     prepareGuestSessionPanel();
     prepareActionConnections();
 
@@ -419,27 +423,36 @@ void UIFileManagerGuestTable::retranslateUi()
     if (m_pLocationLabel)
         m_pLocationLabel->setText(UIFileManager::tr("Guest File System:"));
 
-    if (m_pWarningLabel)
+    if (m_pWarningLabel && m_pWarningIconLabel)
     {
         QString strWarningText;
         switch (m_enmState)
         {
             case State_InvalidMachineReference:
                 strWarningText = UIFileManager::tr("Machine reference is invalid.");
+                m_pWarningIconLabel->setPixmap(QApplication::style()->standardIcon(QStyle::SP_MessageBoxCritical).pixmap(QSize(16, 16)));
                 break;
             case State_MachineNotRunning:
                 strWarningText = UIFileManager::tr("File manager cannot work since the selected guest is not currenly running.");
+                m_pWarningIconLabel->setPixmap(QApplication::style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(QSize(16, 16)));
                 break;
             case State_NoGuestAdditions:
                 strWarningText = UIFileManager::tr("File manager cannot work since the selected guest does not have the guest additions.");
+                m_pWarningIconLabel->setPixmap(QApplication::style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(QSize(16, 16)));
                 break;
             case State_SessionPossible:
+                strWarningText = UIFileManager::tr("Enter a valid user name and password to initiate the file manager.");
+                m_pWarningIconLabel->setPixmap(QApplication::style()->standardIcon(QStyle::SP_FileDialogInfoView).pixmap(QSize(16, 16)));
+                break;
             default:
                 break;
         }
         m_pWarningLabel->setText(QString("<p>%1</p>").arg(strWarningText));
     }
+    if (m_pWarningIconLabel)
+    {
 
+    }
     UIFileManagerTable::retranslateUi();
 }
 
@@ -1031,15 +1044,35 @@ void UIFileManagerGuestTable::prepareGuestSessionPanel()
         {
             m_pMainLayout->addWidget(m_pGuestSessionPanel, m_pMainLayout->rowCount(), 0, 1, m_pMainLayout->columnCount());
             m_pGuestSessionPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-            //sltHandleGuestSessionPanelShown();
             connect(m_pGuestSessionPanel, &UIGuestSessionCreateWidget::sigCreateSession,
                     this, &UIFileManagerGuestTable::sltCreateGuestSession);
             connect(m_pGuestSessionPanel, &UIGuestSessionCreateWidget::sigCloseSession,
                     this, &UIFileManagerGuestTable::sltHandleCloseSessionRequest);
-            // connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigHidePanel,
-            //         this, &UIFileManagerGuestTable::sltHandleGuestSessionPanelHidden);
-            // connect(m_pGuestSessionPanel, &UIFileManagerGuestSessionPanel::sigShowPanel,
-            //         this, &UIFileManagerGuestTable::sltHandleGuestSessionPanelShown);
+        }
+    }
+}
+
+void UIFileManagerGuestTable::prepareWarningLabels()
+{
+    if (m_pMainLayout)
+    {
+        m_pWarningLabelContainer = new QWidget(this);
+        QHBoxLayout *pContainerLayout = new QHBoxLayout(m_pWarningLabelContainer);
+        m_pWarningLabelContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+        m_pMainLayout->addWidget(m_pWarningLabelContainer, m_pMainLayout->rowCount(), 0, 1, m_pMainLayout->columnCount());
+
+        m_pWarningIconLabel = new QILabel(this);
+        if (m_pWarningIconLabel)
+        {
+            pContainerLayout->addWidget(m_pWarningIconLabel);
+            m_pWarningIconLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+        }
+        m_pWarningLabel = new QILabel(this);
+        if (m_pWarningLabel)
+        {
+            pContainerLayout->addWidget(m_pWarningLabel);
+            m_pWarningLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Maximum);
+            m_pWarningLabel->setVisible(false);
         }
     }
 }

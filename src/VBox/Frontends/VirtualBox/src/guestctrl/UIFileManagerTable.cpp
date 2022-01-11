@@ -704,7 +704,6 @@ UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pPare
     , m_pActionPool(pActionPool)
     , m_pToolBar(0)
     , m_pMainLayout(0)
-    , m_pWarningLabel(0)
     , m_pModel(0)
     , m_pView(0)
     , m_pProxyModel(0)
@@ -812,22 +811,6 @@ void UIFileManagerTable::prepareObjects()
         m_pView->hideColumn(UICustomFileSystemModelColumn_LocalPath);
         m_sessionWidgets << m_pView;
     }
-    m_pWarningLabel = new QILabel(this);
-    if (m_pWarningLabel)
-    {
-        m_pMainLayout->addWidget(m_pWarningLabel, 2, 0, 5, 7);
-        QFont labelFont = m_pWarningLabel->font();
-        float fSizeMultiplier = 1.f;
-        if (labelFont.pointSize() != -1)
-            labelFont.setPointSize(fSizeMultiplier * labelFont.pointSize());
-        else
-            labelFont.setPixelSize(fSizeMultiplier * labelFont.pixelSize());
-        labelFont.setBold(false);
-        m_pWarningLabel->setFont(labelFont);
-        m_pWarningLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-        m_pWarningLabel->setWordWrap(true);
-    }
-    m_pWarningLabel->setVisible(false);
 
     m_pSearchLineEdit = new QILineEdit;
     if (m_pSearchLineEdit)
@@ -1470,7 +1453,6 @@ bool UIFileManagerTable::event(QEvent *pEvent)
 {
     if (pEvent->type() == QEvent::EnabledChange)
     {
-        m_pWarningLabel->setVisible(!isEnabled());
         m_pView->setVisible(isEnabled());
         retranslateUi();
     }

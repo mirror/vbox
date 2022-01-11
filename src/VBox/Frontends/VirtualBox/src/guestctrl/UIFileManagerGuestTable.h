@@ -134,6 +134,7 @@ private:
     void cleanupGuestSessionListener();
     void cleanupConsoleListener();
     void prepareGuestSessionPanel();
+    void prepareWarningLabels();
     bool openGuestSession(const QString& strUserName, const QString& strPassword);
     void closeGuestSession();
     bool openMachineSession();
@@ -157,6 +158,9 @@ private:
     CEventListener m_comGuestListener;
     CEventListener m_comConsoleListener;
     UIGuestSessionCreateWidget *m_pGuestSessionPanel;
+    QWidget         *m_pWarningLabelContainer;
+    QILabel         *m_pWarningLabel;
+    QILabel         *m_pWarningIconLabel;
     /** True if this table is the current table in parents tab widget. */
     bool m_fIsCurrent;
     State m_enmState;

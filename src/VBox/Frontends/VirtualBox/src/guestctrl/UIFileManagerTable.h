@@ -256,7 +256,6 @@ protected:
     QStringList              m_copyCutBuffer;
     /** This name is appended to the log messages which are shown in the log panel. */
     QString          m_strTableName;
-    QILabel         *m_pWarningLabel;
 
 private slots:
 
