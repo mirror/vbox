@@ -73,6 +73,7 @@ PROGRAMS += \
 	tstFork \
 	tstRTFsQueries \
 	tstRTFilesystem \
+	tstRTExprEval\
 	tstRTGetOpt \
 	tstRTGetOptArgv \
 	tstHandleTable \
@@ -387,6 +388,9 @@ tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
 
 tstRTFilesystem_TEMPLATE = VBOXR3TSTEXE
 tstRTFilesystem_SOURCES = tstRTFilesystem.cpp
+
+tstRTExprEval_TEMPLATE = VBOXR3TSTEXE
+tstRTExprEval_SOURCES = tstRTExprEval.cpp
 
 tstRTGetOpt_TEMPLATE = VBOXR3TSTEXE
 tstRTGetOpt_SOURCES = tstRTGetOpt.cpp
