@@ -32,6 +32,7 @@
 #include "UIFileManager.h"
 #include "UIFileManagerHostTable.h"
 #include "UIFileManagerGuestTable.h"
+#include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIPathOperations.h"
 #include "UIUserNamePasswordEditor.h"
@@ -425,24 +426,25 @@ void UIFileManagerGuestTable::retranslateUi()
 
     if (m_pWarningLabel && m_pWarningIconLabel)
     {
+        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         QString strWarningText;
         switch (m_enmState)
         {
             case State_InvalidMachineReference:
                 strWarningText = UIFileManager::tr("Machine reference is invalid.");
-                m_pWarningIconLabel->setPixmap(QApplication::style()->standardIcon(QStyle::SP_MessageBoxCritical).pixmap(QSize(16, 16)));
+                m_pWarningIconLabel->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(iIconMetric, iIconMetric)));
                 break;
             case State_MachineNotRunning:
                 strWarningText = UIFileManager::tr("File manager cannot work since the selected guest is not currenly running.");
-                m_pWarningIconLabel->setPixmap(QApplication::style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(QSize(16, 16)));
+                m_pWarningIconLabel->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(iIconMetric, iIconMetric)));
                 break;
             case State_NoGuestAdditions:
                 strWarningText = UIFileManager::tr("File manager cannot work since the selected guest does not have the guest additions.");
-                m_pWarningIconLabel->setPixmap(QApplication::style()->standardIcon(QStyle::SP_MessageBoxWarning).pixmap(QSize(16, 16)));
+                m_pWarningIconLabel->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(iIconMetric, iIconMetric)));
                 break;
             case State_SessionPossible:
                 strWarningText = UIFileManager::tr("Enter a valid user name and password to initiate the file manager.");
-                m_pWarningIconLabel->setPixmap(QApplication::style()->standardIcon(QStyle::SP_FileDialogInfoView).pixmap(QSize(16, 16)));
+                m_pWarningIconLabel->setPixmap(UIIconPool::iconSet(":/session_info_16px.png").pixmap(QSize(iIconMetric, iIconMetric)));
                 break;
             default:
                 break;
