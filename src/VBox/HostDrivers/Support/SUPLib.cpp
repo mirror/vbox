@@ -189,7 +189,8 @@ DECL_NOTHROW(DECLEXPORT(int)) supR3PreInit(PSUPPREINITDATA pPreInitData, uint32_
         &&  pPreInitData->Data.hDevice == SUP_HDEVICE_NIL)
         return VERR_INVALID_HANDLE;
     if (    (fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
-        &&  pPreInitData->Data.hDevice != SUP_HDEVICE_NIL)
+        &&  pPreInitData->Data.hDevice != SUP_HDEVICE_NIL
+        &&  !pPreInitData->Data.fDriverless)
         return VERR_INVALID_PARAMETER;
 
     /*
@@ -230,7 +231,9 @@ SUPR3DECL(int) SUPR3InitEx(uint32_t fFlags, PSUPDRVSESSION *ppSession)
         *ppSession = g_pSession;
     if (g_cInits++ > 0)
     {
-        if ((fFlags & SUPR3INIT_F_UNRESTRICTED) && !g_supLibData.fUnrestricted)
+        if (   (fFlags & SUPR3INIT_F_UNRESTRICTED)
+            && !g_supLibData.fUnrestricted
+            && !g_supLibData.fDriverless)
         {
             g_cInits--;
             if (ppSession)
