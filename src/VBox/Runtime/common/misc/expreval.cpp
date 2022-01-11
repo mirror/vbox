@@ -34,7 +34,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
@@ -269,7 +269,7 @@ static char *expr_num_to_string(char *pszDst, EXPRINT64 iSrc)
  *
  * @returns status code.
  * @param   pThis   The evaluator instance.
- * @param   piSrc   Where to store the numeric value on success.
+ * @param   piDst   Where to store the numeric value on success.
  * @param   pszSrc  The string to try convert.
  * @param   fQuiet  Whether we should be quiet or grumpy on failure.
  */
@@ -1138,6 +1138,7 @@ static void expr_pop_and_delete_var(PEXPR pThis)
  * @param   pThis   The evaluator instance.
  * @param   pVar1   The first variable.
  * @param   pVar2   The second variable.
+ * @param   pszOp   The operator requesting this (for errors).
  */
 static EXPRRET expr_var_unify_types(PEXPR pThis, PEXPRVAR pVar1, PEXPRVAR pVar2, const char *pszOp)
 {
@@ -2309,7 +2310,7 @@ static EXPRRET expr_get_binary_or_eoe_or_rparen(PEXPR pThis)
  * @retval  kExprRet_Operand if we encountered an operand operator.
  *          It's on the operand stack.
  *
- * @param   This        The evaluator instance.
+ * @param   pThis       The evaluator instance.
  */
 static EXPRRET expr_get_unary_or_operand(PEXPR pThis)
 {
@@ -2557,7 +2558,7 @@ static PEXPR expr_create(RTEXPREVALINT *pThis, const char *pch, size_t cch, PRTE
 *   API                                                                                                                          *
 *********************************************************************************************************************************/
 
-/** @callback_method_impl{FNRTEXPREVALQUERYVARIABLE, Stub}   */
+/** @callback_method_impl{PFNRTEXPREVALQUERYVARIABLE, Stub}   */
 static DECLCALLBACK(int) rtExprEvalDummyQueryVariable(const char *pchName, size_t cchName, void *pvUser, char **ppszValue)
 {
     RT_NOREF(pchName, cchName, pvUser);
