@@ -118,7 +118,7 @@ HRESULT UnattendedScriptTemplate::saveToString(Utf8Str &rStrDst)
             const char  *pszPlaceholder    = mStrScriptFullContent.c_str() + offPlaceholder;
             size_t       cchPlaceholder    = sizeof(g_szPrefix) - 1;
             char         ch;
-            while (   offPlaceholder + cchPlaceholder < cchTemplate
+            while (   offPlaceholder + cchPlaceholder < cchMaxPlaceholder
                    && (ch = pszPlaceholder[cchPlaceholder]) != '\0'
                    && (RT_C_IS_PRINT(ch) || RT_C_IS_SPACE(ch))
                    && ch != '@')
@@ -337,7 +337,6 @@ HRESULT UnattendedScriptTemplate::getReplacement(const char *pachPlaceholder, si
     /*
      * Check for an escaping suffix.  Drop the '@@'.
      */
-    size_t const    cchFullPlaceholder = cchPlaceholder;
     kEvalEscaping_T enmEscaping;
 #define PLACEHOLDER_ENDS_WITH(a_szSuffix) \
         (   cchPlaceholder > sizeof(a_szSuffix) - 1U \
@@ -466,7 +465,6 @@ HRESULT UnattendedScriptTemplate::getReplacementForExpr(RTEXPREVAL hEvaluator, c
      * @@VBOX_INSERT[expr]ELEMENT@@:
      * @@VBOX_INSERT[expr]ATTRIB_DQ@@:
      */
-    size_t const    cchFullPlaceholder = cchPlaceholder;
     kEvalEscaping_T enmEscaping;
 #define PLACEHOLDER_ENDS_WITH(a_szSuffix) \
         (   cchPlaceholder > sizeof(a_szSuffix) - 1U \
@@ -590,7 +588,7 @@ HRESULT UnattendedScriptTemplate::resolveConditionalExpr(RTEXPREVAL hEvaluator, 
 }
 
 /*static */ DECLCALLBACK(int)
-UnattendedScriptTemplate::queryVariableForExpr(const char *pchName, size_t cchName, void *pvUser, char **ppszValue)
+UnattendedScriptTemplate::queryVariableForExpr(const char *pchName, size_t cchName, void *pvUser, char **ppszValue) RT_NOEXCEPT
 {
     UnattendedScriptTemplate *pThis = (UnattendedScriptTemplate *)pvUser;
     int vrc;
