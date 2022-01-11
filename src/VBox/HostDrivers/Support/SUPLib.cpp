@@ -186,11 +186,11 @@ DECL_NOTHROW(DECLEXPORT(int)) supR3PreInit(PSUPPREINITDATA pPreInitData, uint32_
         ||  pPreInitData->u32EndMagic != SUPPREINITDATA_MAGIC)
         return VERR_INVALID_MAGIC;
     if (    !(fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
-        &&  pPreInitData->Data.hDevice == SUP_HDEVICE_NIL)
+        &&  pPreInitData->Data.hDevice == SUP_HDEVICE_NIL
+        &&  !pPreInitData->Data.fDriverless)
         return VERR_INVALID_HANDLE;
     if (    (fFlags & SUPSECMAIN_FLAGS_DONT_OPEN_DEV)
-        &&  pPreInitData->Data.hDevice != SUP_HDEVICE_NIL
-        &&  !pPreInitData->Data.fDriverless)
+        &&  pPreInitData->Data.hDevice != SUP_HDEVICE_NIL)
         return VERR_INVALID_PARAMETER;
 
     /*
