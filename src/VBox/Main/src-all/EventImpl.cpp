@@ -228,6 +228,15 @@ HRESULT VBoxEvent::waitProcessed(LONG aTimeout, BOOL *aResult)
     else
     {
         *aResult = FALSE;
+        /*
+         * If we timed out then one or more passive listeners didn't process this event
+         * within the time limit most likely due to the listener no longer being alive (e.g.
+         * the VirtualBox GUI crashed) so we flag this to our caller so it can remove this
+         * event from the list of events the passive listener is interested in.  This avoids
+         * incurring this timeout every time the event is fired.
+         */
+        if (vrc == VERR_TIMEOUT)
+            return E_ABORT;
     }
 
     return S_OK;
@@ -1175,7 +1184,38 @@ HRESULT EventSource::fireEvent(const ComPtr<IEvent> &aEvent,
     /* We leave the lock here */
 
     if (fWaitable)
+    {
         hrc = aEvent->WaitProcessed(aTimeout, aResult);
+
+        /*
+         * If a passive listener times out without processing a vetoable event then we
+         * remove that event from the list of events this listener is interested in.
+         */
+        if (!*aResult && hrc == E_ABORT && implies(VBoxEventType_Vetoable, evType))
+        {
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+            EventMapList &listeners = m->mEvMap[(int)evType - FirstEvent];
+            for (EventMapList::iterator it = listeners.begin();
+                 it != listeners.end();
+                 ++it)
+            {
+                RecordHolder<ListenerRecord> record(*it);
+                if (record.obj()->mQueue.size() != 0 && record.obj()->mQueue.back() == aEvent)
+                    m->mEvMap[(int)evType - FirstEvent].remove(record.obj());
+            }
+
+            PendingEventsMap::iterator pit = m->mPendingMap.find(aEvent);
+            if (pit != m->mPendingMap.end())
+                m->mPendingMap.erase(pit);
+
+            /*
+             * VBoxEventDesc::fire() requires TRUE to be returned so it can handle
+             * vetoable events.
+             */
+            return S_OK;
+        }
+    }
     else
         *aResult = TRUE;
 
