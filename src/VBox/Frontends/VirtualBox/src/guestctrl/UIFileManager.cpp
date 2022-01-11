@@ -478,6 +478,8 @@ void UIFileManager::sltCurrentTabChanged(int iIndex)
 
     /* Mark the current guest table: */
     UIFileManagerGuestTable *pCurrentGuestTable = currentGuestTable();
+    if (!pCurrentGuestTable)
+        return;
     for (int i = 0; i < m_pGuestTablesContainer->count(); ++i)
     {
         UIFileManagerGuestTable *pTable = qobject_cast<UIFileManagerGuestTable*>(m_pGuestTablesContainer->widget(i));
@@ -485,6 +487,14 @@ void UIFileManager::sltCurrentTabChanged(int iIndex)
             continue;
         pTable->setIsCurrent(pTable == pCurrentGuestTable);
     }
+    if (m_pHostFileTable)
+        m_pHostFileTable->setEnabled(pCurrentGuestTable->isGuestSessionRunning());
+}
+
+void UIFileManager::sltGuestFileTableStateChanged(bool fIsRunning)
+{
+    if (m_pHostFileTable)
+        m_pHostFileTable->setEnabled(fIsRunning);
 }
 
 void UIFileManager::setVerticalToolBarActionsEnabled()
@@ -800,6 +810,8 @@ void UIFileManager::addTabs(const QVector<QUuid> &machineIdsToAdd)
                     this, &UIFileManager::sltReceieveNewFileOperation);
             connect(pGuestFileTable, &UIFileManagerGuestTable::sigDeleteConfirmationOptionChanged,
                     this, &UIFileManager::sltHandleOptionsUpdated);
+            connect(pGuestFileTable, &UIFileManagerGuestTable::sigStateChanged,
+                    this, &UIFileManager::sltGuestFileTableStateChanged);
         }
     }
 }

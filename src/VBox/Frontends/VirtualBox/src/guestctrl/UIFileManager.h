@@ -117,6 +117,7 @@ private slots:
     void sltCommitDataSignalReceived();
     void sltFileTableSelectionChanged(bool fHasSelection);
     void sltCurrentTabChanged(int iIndex);
+    void sltGuestFileTableStateChanged(bool fIsRunning);
 
 private:
 

@@ -817,14 +817,14 @@ void UIFileManagerTable::prepareObjects()
     {
         m_pMainLayout->addWidget(m_pWarningLabel, 2, 0, 5, 7);
         QFont labelFont = m_pWarningLabel->font();
-        float fSizeMultiplier = 1.5f;
+        float fSizeMultiplier = 1.f;
         if (labelFont.pointSize() != -1)
             labelFont.setPointSize(fSizeMultiplier * labelFont.pointSize());
         else
             labelFont.setPixelSize(fSizeMultiplier * labelFont.pixelSize());
-        labelFont.setBold(true);
+        labelFont.setBold(false);
         m_pWarningLabel->setFont(labelFont);
-        m_pWarningLabel->setAlignment(Qt::AlignCenter | Qt::AlignVCenter);
+        m_pWarningLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         m_pWarningLabel->setWordWrap(true);
     }
     m_pWarningLabel->setVisible(false);

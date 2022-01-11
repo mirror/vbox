@@ -645,12 +645,7 @@ QUuid UIFileManagerGuestTable::machineId()
 
 bool UIFileManagerGuestTable::isGuestSessionRunning() const
 {
-    if (m_comGuestSession.isNull())
-        return false;
-    if (m_comGuestSession.GetStatus() == KGuestSessionStatus_Starting ||
-        m_comGuestSession.GetStatus() == KGuestSessionStatus_Started)
-        return true;
-    return false;
+    return m_enmState == State_SessionRunning;
 }
 
 void UIFileManagerGuestTable::setIsCurrent(bool fIsCurrent)
@@ -1389,6 +1384,7 @@ void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled()
         default:
             break;
     }
+    emit sigStateChanged(m_enmState == State_SessionRunning);
 }
 
 bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const QString &strPassword)
