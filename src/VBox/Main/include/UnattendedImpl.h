@@ -121,6 +121,7 @@ private:
     Utf8Str         mStrPostInstallScriptTemplatePath;
     Utf8Str         mStrPostInstallCommand;
     Utf8Str         mStrExtraInstallKernelParameters;
+    Utf8Str         mStrProxy;
 
     bool            mfDoneDetectIsoOS;         /**< Set by detectIsoOS(), cleared by setIsoPath(). */
     Utf8Str         mStrDetectedOSTypeId;
@@ -128,7 +129,6 @@ private:
     Utf8Str         mStrDetectedOSFlavor;
     RTCList<RTCString, RTCString *> mDetectedOSLanguages; /**< (only relevant for windows at the moment) */
     Utf8Str         mStrDetectedOSHints;
-    Utf8Str         mStrProxy;
     /** @} */
 
     // wrapped IUnattended functions:
