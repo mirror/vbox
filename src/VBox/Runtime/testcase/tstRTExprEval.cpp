@@ -100,6 +100,13 @@ static void tstBasic(void)
     CHECK_fResult(false);
     g_fQueryVariableExpected = false;
 
+    RTTESTI_CHECK_RC(RTExprEvalToBool(hExprEval, RT_STR_TUPLE("1.0.1 vle 2.0"), &fResult, NULL), VINF_SUCCESS);
+    CHECK_fResult(true);
+    RTTESTI_CHECK_RC(RTExprEvalToBool(hExprEval, RT_STR_TUPLE("1.0.1 vle 1.0"), &fResult, NULL), VINF_SUCCESS);
+    CHECK_fResult(false);
+    RTTESTI_CHECK_RC(RTExprEvalToBool(hExprEval, RT_STR_TUPLE("1.0.1 vle 1.0.1"), &fResult, NULL), VINF_SUCCESS);
+    CHECK_fResult(true);
+
     int64_t iResult;
 #define CHECK_iResult(a_iExpect) do { \
         if (iResult != (a_iExpect)) RTTestIFailed("line %u: iResult=%#RX64, expected %#RX64", __LINE__, iResult, (a_iExpect)); \
