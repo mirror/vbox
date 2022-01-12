@@ -239,6 +239,9 @@ class tdUnitTest1(vbox.TestDriver):
         '.pdb',
         '.dSYM',
         '.sym',
+        '.template',
+        '.expected',
+        '.expect',
     ];
 
     ## The exclude list.
