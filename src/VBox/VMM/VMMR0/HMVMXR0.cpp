@@ -8040,6 +8040,9 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
      *        flag is pending without being used. Seen early in bios init when
      *        accessing APIC page in protected mode. */
 
+/** @todo we need to do hmR0VmxRunDebugStateRevert here too, in case we broke
+ *        out of the above loop. */
+
     /* Restore HMCPU indicators. */
     pVCpu->hmr0.s.fUsingDebugLoop     = false;
     pVCpu->hmr0.s.fDebugWantRdTscExit = false;
