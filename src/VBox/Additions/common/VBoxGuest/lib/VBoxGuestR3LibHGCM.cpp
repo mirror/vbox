@@ -44,13 +44,17 @@
  */
 VBGLR3DECL(int) VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidClient)
 {
+    AssertPtrReturn(pszServiceName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pidClient,      VERR_INVALID_POINTER);
+
     VBGLIOCHGCMCONNECT Info;
     RT_ZERO(Info);
     VBGLREQHDR_INIT(&Info.Hdr, HGCM_CONNECT);
     Info.u.In.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    strcpy(Info.u.In.Loc.u.host.achName, pszServiceName);
-
-    int rc = vbglR3DoIOCtl(VBGL_IOCTL_HGCM_CONNECT, &Info.Hdr, sizeof(Info));
+    int rc = RTStrCopy(Info.u.In.Loc.u.host.achName, sizeof(Info.u.In.Loc.u.host.achName), pszServiceName);
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = vbglR3DoIOCtl(VBGL_IOCTL_HGCM_CONNECT, &Info.Hdr, sizeof(Info));
     if (RT_SUCCESS(rc))
         *pidClient = Info.u.Out.idClient;
     return rc;
