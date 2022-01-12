@@ -1328,6 +1328,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
              * Discover the VID I/O control function numbers we need.
              */
             rc = nemR3WinInitDiscoverIoControlProperties(pVM, pErrInfo);
+#ifndef VBOX_WITH_PGM_NEM_MODE
             if (rc == VERR_NEM_RING3_ONLY)
             {
                 if (pVM->nem.s.fUseRing0Runloop)
@@ -1337,12 +1338,15 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                 }
                 rc = VINF_SUCCESS;
             }
+#endif
             if (RT_SUCCESS(rc))
             {
+#ifndef VBOX_WITH_PGM_NEM_MODE
                 /*
                  * Check out our ring-0 capabilities.
                  */
                 rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), 0 /*idCpu*/, VMMR0_DO_NEM_INIT_VM, 0, NULL);
+#endif
                 if (RT_SUCCESS(rc))
                 {
                     /*
@@ -1564,17 +1568,23 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         hrc = GetExceptionCode();
         hPartitionDevice = NULL;
     }
+#ifndef VBOX_WITH_PGM_NEM_MODE
     if (   hPartitionDevice == NULL
         || hPartitionDevice == (HANDLE)(intptr_t)-1)
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to get device handle for partition %p: %Rhrc", hPartition, hrc);
+#endif
 
     /* Test the handle. */
     HV_PARTITION_PROPERTY uValue;
     if (!g_pfnVidGetPartitionProperty(hPartitionDevice, HvPartitionPropertyProcessorVendor, &uValue))
+#ifndef VBOX_WITH_PGM_NEM_MODE
         return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                           "Failed to get device handle and/or partition ID for %p (hPartitionDevice=%p, Last=%#x/%u)",
                           hPartition, hPartitionDevice, RTNtLastStatusValue(), RTNtLastErrorValue());
+#else
+        hPartitionDevice = INVALID_HANDLE_VALUE;
+#endif
     LogRel(("NEM: HvPartitionPropertyProcessorVendor=%#llx (%lld)\n", uValue, uValue));
 
     /*
@@ -1589,11 +1599,13 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     HV_PARTITION_ID idHvPartition = HV_PARTITION_ID_INVALID;
     if (!g_pfnVidGetHvPartitionId(hPartitionDevice, &idHvPartition))
     {
+#ifndef VBOX_WITH_PGM_NEM_MODE
         if (RTNtLastErrorValue() != ERROR_INVALID_FUNCTION) /* Will try get it later in VMMR0_DO_NEM_INIT_VM_PART_2. */
             return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
                               "Failed to get device handle and/or partition ID for %p (hPartitionDevice=%p, Last=%#x/%u)",
                               hPartition, hPartitionDevice, RTNtLastStatusValue(), RTNtLastErrorValue());
         LogRel(("NEM: VidGetHvPartitionId failed with ERROR_NOT_SUPPORTED, will try again later from ring-0...\n"));
+#endif
         idHvPartition = HV_PARTITION_ID_INVALID;
     }
     pVM->nem.s.hPartitionDevice = hPartitionDevice;
@@ -1658,13 +1670,17 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
     /*
      * Do some more ring-0 initialization now that we've got the partition handle.
      */
+#ifndef VBOX_WITH_PGM_NEM_MODE
     int rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_NEM_INIT_VM_PART_2, 0, NULL);
+#else
+    int rc = VINF_SUCCESS;
+#endif
     if (RT_SUCCESS(rc))
     {
         LogRel(("NEM: Successfully set up partition (device handle %p, partition ID %#llx)\n",
                 hPartitionDevice, pVM->nem.s.idHvPartition));
 
-#if 1
+#ifndef VBOX_WITH_PGM_NEM_MODE
         VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_NEM_UPDATE_STATISTICS, 0, NULL);
         LogRel(("NEM: Memory balance: %#RX64 out of %#RX64 pages in use\n",
                 pVM->nem.s.R0Stats.cPagesInUse, pVM->nem.s.R0Stats.cPagesAvailable));

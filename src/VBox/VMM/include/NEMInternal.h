@@ -222,8 +222,10 @@ typedef struct NEM
     bool                        fExtendedCpuIdExit : 1;
     /** WHvRunVpExitReasonException is supported. */
     bool                        fExtendedXcptExit : 1;
+# ifndef VBOX_WITH_PGM_NEM_MODE
     /** Set if we're using the ring-0 API to do the work. */
     bool                        fUseRing0Runloop : 1;
+# endif
 # ifdef NEM_WIN_WITH_A20
     /** Set if we've started more than one CPU and cannot mess with A20. */
     bool                        fA20Fixed : 1;
