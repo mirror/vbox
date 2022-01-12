@@ -796,7 +796,8 @@ UIActivityOverviewItem::UIActivityOverviewItem(const QUuid &uid, const QString &
     , m_uVMExitRate(0)
     , m_uVMExitTotal(0)
 {
-    resetDebugger();
+    if (m_enmMachineState == KMachineState_Running)
+        resetDebugger();
 }
 
 UIActivityOverviewItem::UIActivityOverviewItem()
