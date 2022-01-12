@@ -62,6 +62,10 @@
         <file alias="movie_reel_16px.png">images/movie_reel_16px.png</file>
         <file alias="name_16px.png">images/name_16px.png</file>
         <file alias="next_16px.png">images/next_16px.png</file>
+        <file alias="notification_center_16px.png">images/notification_center_16px.png</file>
+        <file alias="notification_center_delete_progress_16px.png">images/notification_center_delete_progress_16px.png</file>
+        <file alias="notification_center_hold_progress_16px.png">images/notification_center_hold_progress_16px.png</file>
+        <file alias="notification_center_sort_16px.png">images/notification_center_sort_16px.png</file>
         <file alias="nw_16px.png">images/nw_16px.png</file>
         <file alias="nw_24px.png">images/nw_24px.png</file>
         <file alias="nw_32px.png">images/nw_32px.png</file>

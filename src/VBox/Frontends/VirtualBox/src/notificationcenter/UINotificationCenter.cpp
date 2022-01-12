@@ -517,7 +517,7 @@ void UINotificationCenter::prepareWidgets()
             m_pButtonOpen = new QIToolButton(this);
             if (m_pButtonOpen)
             {
-                m_pButtonOpen->setIcon(UIIconPool::iconSet(":/reset_warnings_16px.png"));
+                m_pButtonOpen->setIcon(UIIconPool::iconSet(":/notification_center_16px.png"));
                 m_pButtonOpen->setCheckable(true);
                 connect(m_pButtonOpen, &QIToolButton::toggled, this, &UINotificationCenter::sltHandleOpenButtonToggled);
                 m_pLayoutButtons->addWidget(m_pButtonOpen);
@@ -530,7 +530,7 @@ void UINotificationCenter::prepareWidgets()
             m_pButtonToggleSorting = new QIToolButton(this);
             if (m_pButtonToggleSorting)
             {
-                m_pButtonToggleSorting->setIcon(UIIconPool::iconSet(":/sort_16px.png"));
+                m_pButtonToggleSorting->setIcon(UIIconPool::iconSet(":/notification_center_sort_16px.png"));
                 m_pButtonToggleSorting->setCheckable(true);
                 m_pButtonToggleSorting->setChecked(gEDataManager->notificationCenterOrder() == Qt::AscendingOrder);
                 connect(m_pButtonToggleSorting, &QIToolButton::toggled, this, &UINotificationCenter::sltIssueOrderChange);
@@ -541,7 +541,7 @@ void UINotificationCenter::prepareWidgets()
             m_pButtonKeepFinished = new QIToolButton(this);
             if (m_pButtonKeepFinished)
             {
-                m_pButtonKeepFinished->setIcon(UIIconPool::iconSet(":/pin_16px.png"));
+                m_pButtonKeepFinished->setIcon(UIIconPool::iconSet(":/notification_center_hold_progress_16px.png"));
                 m_pButtonKeepFinished->setCheckable(true);
                 m_pButtonKeepFinished->setChecked(gEDataManager->keepSuccessfullNotificationProgresses());
                 connect(m_pButtonKeepFinished, &QIToolButton::toggled, this, &UINotificationCenter::sltHandleKeepButtonToggled);
@@ -552,7 +552,7 @@ void UINotificationCenter::prepareWidgets()
             m_pButtonRemoveFinished = new QIToolButton(this);
             if (m_pButtonRemoveFinished)
             {
-                m_pButtonRemoveFinished->setIcon(UIIconPool::iconSet(":/edata_remove_16px_x3.png"));
+                m_pButtonRemoveFinished->setIcon(UIIconPool::iconSet(":/notification_center_delete_progress_16px.png"));
                 connect(m_pButtonRemoveFinished, &QIToolButton::clicked, this, &UINotificationCenter::sltHandleRemoveFinishedButtonClicked);
                 m_pLayoutButtons->addWidget(m_pButtonRemoveFinished);
             }
