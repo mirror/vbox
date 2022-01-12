@@ -249,6 +249,9 @@ static FNVMXEXITHANDLER            vmxHCExitVmwrite;
 static FNVMXEXITHANDLER            vmxHCExitVmxoff;
 static FNVMXEXITHANDLER            vmxHCExitVmxon;
 static FNVMXEXITHANDLER            vmxHCExitInvvpid;
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+static FNVMXEXITHANDLER            vmxHCExitInvept;
+# endif
 #endif
 static FNVMXEXITHANDLER            vmxHCExitRdtsc;
 static FNVMXEXITHANDLER            vmxHCExitMovCRx;
@@ -679,7 +682,11 @@ static const struct CLANG11NOTHROWWEIRDNESS { PFNVMXEXITHANDLER pfn; } g_aVMExit
     /* 47  VMX_EXIT_LDTR_TR_ACCESS          */  { vmxHCExitErrUnexpected },
     /* 48  VMX_EXIT_EPT_VIOLATION           */  { vmxHCExitEptViolation },
     /* 49  VMX_EXIT_EPT_MISCONFIG           */  { vmxHCExitEptMisconfig },
+#if defined(VBOX_WITH_NESTED_HWVIRT_VMX) && defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT)
+    /* 50  VMX_EXIT_INVEPT                  */  { vmxHCExitInvept },
+#else
     /* 50  VMX_EXIT_INVEPT                  */  { vmxHCExitSetPendingXcptUD },
+#endif
     /* 51  VMX_EXIT_RDTSCP                  */  { vmxHCExitRdtscp },
     /* 52  VMX_EXIT_PREEMPT_TIMER           */  { vmxHCExitPreemptTimer },
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
@@ -5336,7 +5343,6 @@ DECLINLINE(VBOXSTRICTRC) vmxHCHandleExit(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
         case VMX_EXIT_VMXOFF:                  VMEXIT_CALL_RET(0, vmxHCExitVmxoff(pVCpu, pVmxTransient));
         case VMX_EXIT_VMXON:                   VMEXIT_CALL_RET(0, vmxHCExitVmxon(pVCpu, pVmxTransient));
         case VMX_EXIT_INVVPID:                 VMEXIT_CALL_RET(0, vmxHCExitInvvpid(pVCpu, pVmxTransient));
-        case VMX_EXIT_INVEPT:                  VMEXIT_CALL_RET(0, vmxHCExitSetPendingXcptUD(pVCpu, pVmxTransient));
 #else
         case VMX_EXIT_VMCLEAR:
         case VMX_EXIT_VMLAUNCH:
@@ -5348,8 +5354,12 @@ DECLINLINE(VBOXSTRICTRC) vmxHCHandleExit(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
         case VMX_EXIT_VMXOFF:
         case VMX_EXIT_VMXON:
         case VMX_EXIT_INVVPID:
-        case VMX_EXIT_INVEPT:
             return vmxHCExitSetPendingXcptUD(pVCpu, pVmxTransient);
+#endif
+#if defined(VBOX_WITH_NESTED_HWVIRT_VMX) && defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT)
+        case VMX_EXIT_INVEPT:                  VMEXIT_CALL_RET(0, vmxHCExitInvept(pVCpu, pVmxTransient));
+#else
+        case VMX_EXIT_INVEPT:                  return vmxHCExitSetPendingXcptUD(pVCpu, pVmxTransient);
 #endif
 
         case VMX_EXIT_TRIPLE_FAULT:            return vmxHCExitTripleFault(pVCpu, pVmxTransient);
@@ -9251,6 +9261,44 @@ HMVMX_EXIT_DECL vmxHCExitInvvpid(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     }
     return rcStrict;
 }
+
+
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * VM-exit handler for INVEPT (VMX_EXIT_INVEPT). Unconditional VM-exit.
+ */
+HMVMX_EXIT_DECL vmxHCExitInvept(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
+    vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+    vmxHCReadExitInstrInfoVmcs(pVCpu, pVmxTransient);
+    vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
+    int rc = vmxHCImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                                                    | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
+    AssertRCReturn(rc, rc);
+
+    HMVMX_CHECK_EXIT_DUE_TO_VMX_INSTR(pVCpu, pVmxTransient->uExitReason);
+
+    VMXVEXITINFO ExitInfo;
+    RT_ZERO(ExitInfo);
+    ExitInfo.uReason     = pVmxTransient->uExitReason;
+    ExitInfo.u64Qual     = pVmxTransient->uExitQual;
+    ExitInfo.InstrInfo.u = pVmxTransient->ExitInstrInfo.u;
+    ExitInfo.cbInstr     = pVmxTransient->cbExitInstr;
+    HMVMX_DECODE_MEM_OPERAND(pVCpu, ExitInfo.InstrInfo.u, ExitInfo.u64Qual, VMXMEMACCESS_READ, &ExitInfo.GCPtrEffAddr);
+
+    VBOXSTRICTRC rcStrict = IEMExecDecodedInvept(pVCpu, &ExitInfo);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
+    return rcStrict;
+}
+# endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 /** @} */
 
