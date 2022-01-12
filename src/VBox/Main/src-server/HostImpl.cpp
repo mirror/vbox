@@ -1159,15 +1159,17 @@ HRESULT Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
 {
     // no locking required
 
-    char szCPUModel[80];
-    szCPUModel[0] = 0;
-    int vrc = RTMpGetDescription(aCpuId, szCPUModel, sizeof(szCPUModel));
-    if (RT_FAILURE(vrc))
-        return E_FAIL; /** @todo error reporting? */
-
-    aDescription = Utf8Str(szCPUModel);
-
-    return S_OK;
+    int vrc = aDescription.reserveNoThrow(80);
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = RTMpGetDescription(aCpuId, aDescription.mutableRaw(), aDescription.capacity());
+        if (RT_SUCCESS(vrc))
+        {
+            aDescription.jolt();
+            return S_OK;
+        }
+    }
+    return setErrorVrc(vrc);
 }
 
 /**
