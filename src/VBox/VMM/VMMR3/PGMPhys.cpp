@@ -3051,23 +3051,27 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
      * Try reserve and allocate the backing memory first as this is what is
      * most likely to fail.
      */
-    int rc = VINF_SUCCESS;
-#ifdef VBOX_WITH_PGM_NEM_MODE
-    if (!pVM->pgm.s.fNemMode)
-#endif
-        rc = MMR3AdjustFixedReservation(pVM, cPages, pszDesc);
+    int rc = MMR3AdjustFixedReservation(pVM, cPages, pszDesc);
     if (RT_SUCCESS(rc))
     {
         PSUPPAGE paPages = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(SUPPAGE));
         if (RT_SUCCESS(rc))
         {
-            void *pvPages;
+            void   *pvPages   = NULL;
 #ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
             RTR0PTR pvPagesR0 = NIL_RTR0PTR;
 #endif
-
 #ifdef VBOX_WITH_PGM_NEM_MODE
-            if (!pVM->pgm.s.fNemMode)
+            if (PGM_IS_IN_NEM_MODE(pVM))
+            {
+                for (uint32_t i = 0; i < cPages; i++)
+                {
+                    paPages[i].Phys       = UINT64_C(0x0000fffffffff000);
+                    paPages[i].uReserved = 0;
+                }
+                rc = SUPR3PageAlloc(cPages, pVM->pgm.s.fUseLargePages ? SUP_PAGE_ALLOC_F_LARGE_PAGES : 0, &pvPages);
+            }
+            else
 #endif
             {
 #ifndef VBOX_WITH_LINEAR_HOST_PHYS_MEM
@@ -3076,15 +3080,6 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
                 rc = SUPR3PageAllocEx(cPages, 0 /*fFlags*/, &pvPages, NULL /*pR0Ptr*/, paPages);
 #endif
             }
-#ifdef VBOX_WITH_PGM_NEM_MODE
-            else
-            {
-                rc = SUPR3PageAlloc(cPages, pVM->pgm.s.fUseLargePages ? SUP_PAGE_ALLOC_F_LARGE_PAGES : 0, &pvPages);
-                if (RT_SUCCESS(rc))
-                    for (uint32_t i = 0; i < cPages; i++)
-                        paPages[i].Phys = UINT64_C(0x0000fffffffff000);
-            }
-#endif
             if (RT_SUCCESS(rc))
             {
                 memset(pvPages, 0, cPages * PAGE_SIZE);
