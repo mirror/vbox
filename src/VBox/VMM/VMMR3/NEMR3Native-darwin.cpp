@@ -2716,6 +2716,14 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
     RT_ZERO(VmxTransient);
     VmxTransient.pVmcsInfo = &pVCpu->nem.s.VmcsInfo;
 
+    /*
+     * Poll timers and run for a bit.
+     */
+    /** @todo See if we cannot optimize this TMTimerPollGIP by only redoing
+     *        the whole polling job when timers have changed... */
+    uint64_t       offDeltaIgnored;
+    uint64_t const nsNextTimerEvt = TMTimerPollGIP(pVM, pVCpu, &offDeltaIgnored); NOREF(nsNextTimerEvt);
+
     const bool      fSingleStepping = DBGFIsStepping(pVCpu);
     VBOXSTRICTRC    rcStrict        = VINF_SUCCESS;
     for (unsigned iLoop = 0;; iLoop++)
@@ -2727,7 +2735,11 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         if (rcStrict == VINF_SUCCESS)
         { /*likely */ }
         else
+        {
+            if (rcStrict == VINF_EM_RAW_TO_R3)
+                rcStrict = VINF_SUCCESS;
             break;
+        }
 
         /*
          * Evaluate events to be injected into the guest.
@@ -2763,90 +2775,60 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         int rc = nemR3DarwinExportGuestState(pVM, pVCpu, &VmxTransient);
         AssertRCReturn(rc, rc);
 
+        LogFlowFunc(("Running vCPU\n"));
+        pVCpu->nem.s.Event.fPending = false;
+
+        TMNotifyStartOfExecution(pVM, pVCpu);
+
+        Assert(!pVCpu->nem.s.fCtxChanged);
+        hv_return_t hrc;
+        if (hv_vcpu_run_until)
+            hrc = hv_vcpu_run_until(pVCpu->nem.s.hVCpuId, HV_DEADLINE_FOREVER);
+        else
+            hrc = hv_vcpu_run(pVCpu->nem.s.hVCpuId);
+
+        TMNotifyEndOfExecution(pVM, pVCpu, ASMReadTSC());
+
         /*
-         * Poll timers and run for a bit.
+         * Sync the TPR shadow with our APIC state.
          */
-        /** @todo See if we cannot optimize this TMTimerPollGIP by only redoing
-         *        the whole polling job when timers have changed... */
-        uint64_t       offDeltaIgnored;
-        uint64_t const nsNextTimerEvt = TMTimerPollGIP(pVM, pVCpu, &offDeltaIgnored); NOREF(nsNextTimerEvt);
-        if (   !VM_FF_IS_ANY_SET(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
-            && !VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+        if (   !VmxTransient.fIsNestedGuest
+            && (pVCpu->nem.s.VmcsInfo.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
         {
-            LogFlowFunc(("Running vCPU\n"));
-            pVCpu->nem.s.Event.fPending = false;
+            uint64_t u64Tpr;
+            hrc = hv_vcpu_read_register(pVCpu->nem.s.hVCpuId, HV_X86_TPR, &u64Tpr);
+            Assert(hrc == HV_SUCCESS);
 
-            TMNotifyStartOfExecution(pVM, pVCpu);
+            if (VmxTransient.u8GuestTpr != (uint8_t)u64Tpr)
+            {
+                rc = APICSetTpr(pVCpu, (uint8_t)u64Tpr);
+                AssertRC(rc);
+                ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
+            }
+        }
 
-            Assert(!pVCpu->nem.s.fCtxChanged);
-            hv_return_t hrc;
-            if (hv_vcpu_run_until)
-                hrc = hv_vcpu_run_until(pVCpu->nem.s.hVCpuId, HV_DEADLINE_FOREVER);
-            else
-                hrc = hv_vcpu_run(pVCpu->nem.s.hVCpuId);
-
-            TMNotifyEndOfExecution(pVM, pVCpu, ASMReadTSC());
-
+        if (hrc == HV_SUCCESS)
+        {
             /*
-             * Sync the TPR shadow with our APIC state.
+             * Deal with the message.
              */
-            if (   !VmxTransient.fIsNestedGuest
-                && (pVCpu->nem.s.VmcsInfo.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
-            {
-                uint64_t u64Tpr;
-                hrc = hv_vcpu_read_register(pVCpu->nem.s.hVCpuId, HV_X86_TPR, &u64Tpr);
-                Assert(hrc == HV_SUCCESS);
-
-                if (VmxTransient.u8GuestTpr != (uint8_t)u64Tpr)
-                {
-                    rc = APICSetTpr(pVCpu, (uint8_t)u64Tpr);
-                    AssertRC(rc);
-                    ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
-                }
-            }
-
-            if (hrc == HV_SUCCESS)
-            {
-                /*
-                 * Deal with the message.
-                 */
-                rcStrict = nemR3DarwinHandleExit(pVM, pVCpu, &VmxTransient);
-                if (rcStrict == VINF_SUCCESS)
-                { /* hopefully likely */ }
-                else
-                {
-                    LogFlow(("NEM/%u: breaking: nemR3DarwinHandleExit -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
-                    STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
-                    break;
-                }
-                //Assert(!pVCpu->cpum.GstCtx.fExtrn);
-            }
+            rcStrict = nemR3DarwinHandleExit(pVM, pVCpu, &VmxTransient);
+            if (rcStrict == VINF_SUCCESS)
+            { /* hopefully likely */ }
             else
             {
-                AssertLogRelMsgFailedReturn(("hv_vcpu_run()) failed for CPU #%u: %#x %u\n",
-                                            pVCpu->idCpu, hrc, vmxHCCheckGuestState(pVCpu, &pVCpu->nem.s.VmcsInfo)),
-                                            VERR_NEM_IPE_0);
+                LogFlow(("NEM/%u: breaking: nemR3DarwinHandleExit -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
+                break;
             }
-
-            /*
-             * If no relevant FFs are pending, loop.
-             */
-            if (   !VM_FF_IS_ANY_SET(   pVM,   !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK    : VM_FF_HP_R0_PRE_HM_STEP_MASK)
-                && !VMCPU_FF_IS_ANY_SET(pVCpu, !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
-                continue;
-
-            /** @todo Try handle pending flags, not just return to EM loops.  Take care
-             *        not to set important RCs here unless we've handled a message. */
-            LogFlow(("NEM/%u: breaking: pending FF (%#x / %#RX64)\n",
-                     pVCpu->idCpu, pVM->fGlobalForcedActions, (uint64_t)pVCpu->fLocalForcedActions));
-            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPost);
+            //Assert(!pVCpu->cpum.GstCtx.fExtrn);
         }
         else
         {
-            LogFlow(("NEM/%u: breaking: pending FF (pre exec)\n", pVCpu->idCpu));
-            STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnFFPre);
+            AssertLogRelMsgFailedReturn(("hv_vcpu_run()) failed for CPU #%u: %#x %u\n",
+                                        pVCpu->idCpu, hrc, vmxHCCheckGuestState(pVCpu, &pVCpu->nem.s.VmcsInfo)),
+                                        VERR_NEM_IPE_0);
         }
-        break;
     } /* the run loop */
 
 
