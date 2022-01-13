@@ -163,6 +163,7 @@ static void * supR3HardenedDarwinDlopenInterpose(const char *path, int mode)
  */
 static int supR3HardenedDarwinIssetugidInterpose(void)
 {
+#ifdef DEBUG
     Dl_info Info = {0};
     char szMsg[512];
     size_t cchMsg;
@@ -173,6 +174,7 @@ static int supR3HardenedDarwinIssetugidInterpose(void)
     else
         cchMsg = snprintf(szMsg, sizeof(szMsg), "DEBUG: issetugid_for_AppKit was called by %p (via %p)\n", uCaller, __builtin_return_address(1));
     write(2, szMsg, cchMsg);
+#endif
     return 0;
 }
 
