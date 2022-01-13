@@ -34,6 +34,9 @@ static uint32_t      g_cHistory = 10;                   /* Enable log rotation, 
 static uint32_t      g_uHistoryFileTime = RT_SEC_1DAY;  /* Max 1 day per file. */
 static uint64_t      g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. */
 
+/** Custom log prefix (to be set externally). */
+static char          *g_pszCustomLogPrefix;
+
 extern unsigned      g_cRespawn;
 extern unsigned      g_cVerbosity;
 
@@ -243,6 +246,22 @@ static DECLCALLBACK(void) vbClLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHA
     }
 }
 
+static DECLCALLBACK(size_t) vbClLogPrefixCb(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser)
+{
+    size_t cbPrefix = 0;
+
+    RT_NOREF(pLogger);
+    RT_NOREF(pvUser);
+
+    if (g_pszCustomLogPrefix)
+    {
+        cbPrefix = RT_MIN(strlen(g_pszCustomLogPrefix), cchBuf);
+        memcpy(pchBuf, g_pszCustomLogPrefix, cbPrefix);
+    }
+
+    return cbPrefix;
+}
+
 /**
  * Creates the default release logger outputting to the specified file.
  *
@@ -258,7 +277,7 @@ int VBClLogCreate(const char *pszLogFile)
 
     /* Create release logger (stdout + file). */
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME;
+    RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME | RTLOGFLAGS_PREFIX_CUSTOM;
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     fFlags |= RTLOGFLAGS_USECRLF;
 #endif
@@ -272,11 +291,25 @@ int VBClLogCreate(const char *pszLogFile)
         /* register this logger as the release logger */
         RTLogRelSetDefaultInstance(g_pLoggerRelease);
 
+        rc = RTLogSetCustomPrefixCallback(g_pLoggerRelease, vbClLogPrefixCb, NULL);
+        if (RT_FAILURE(rc))
+            VBClLogError("unable to register custom log prefix callback\n");
+
         /* Explicitly flush the log in case of VBOXSERVICE_RELEASE_LOG=buffered. */
         RTLogFlush(g_pLoggerRelease);
     }
 
     return rc;
+}
+
+/**
+ * Set custom log prefix.
+ *
+ * @param pszPrefix     Custom log prefix string.
+ */
+void VBClLogSetLogPrefix(const char *pszPrefix)
+{
+    g_pszCustomLogPrefix = (char *)pszPrefix;
 }
 
 /**
