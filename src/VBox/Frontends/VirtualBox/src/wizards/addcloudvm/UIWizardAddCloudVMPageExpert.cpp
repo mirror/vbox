@@ -126,7 +126,7 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
                         m_pSourceInstanceList->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
                         /* Add into layout: */
-                        pLayoutSource->addWidget(m_pSourceInstanceList, 1, 0);
+                        pLayoutSource->addWidget(m_pSourceInstanceList);
                     }
                 }
 
