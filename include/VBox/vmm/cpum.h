@@ -2210,7 +2210,7 @@ DECLINLINE(bool) CPUMIsGuestVmxEntryCtlsSet(PCCPUMCTX pCtx, uint32_t uEntryCtls)
  */
 DECLINLINE(bool) CPUMIsGuestVmxInterceptEvents(PCCPUMCTX pCtx)
 {
-    /* We can be called during VM-entry failures, so avoid asserting we're in VMX non-root mode here. */
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     return pCtx->hwvirt.vmx.fInterceptEvents;
 }
 
