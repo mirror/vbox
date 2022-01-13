@@ -22,13 +22,6 @@
             <key>BundleIsVersionChecked</key>               <false/>
             <key>BundleHasStrictIdentifier</key>            <false/>
             <key>BundleOverwriteAction</key>                <string>upgrade</string>
-       </dict>
-       <dict>
-            <key>RootRelativeBundlePath</key>               <string>VBoxUSB.kext</string>
-            <key>BundleIsRelocatable</key>                  <false/>
-            <key>BundleIsVersionChecked</key>               <false/>
-            <key>BundleHasStrictIdentifier</key>            <false/>
-            <key>BundleOverwriteAction</key>                <string>upgrade</string>
             <key>BundlePostInstallScriptPath</key>          <string>postflight</string>
        </dict>
 </array>

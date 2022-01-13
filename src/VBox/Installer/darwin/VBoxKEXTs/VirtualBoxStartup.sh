@@ -69,7 +69,6 @@ StartService()
 {
     VBOX_RC=0
     VBOXDRV="VBoxDrv"
-    VBOXUSB="VBoxUSB"
     MACOS_VERSION_MAJOR=$(sw_vers -productVersion | /usr/bin/sed -e 's/^\([0-9]*\).*$/\1/')
 
     #
@@ -77,10 +76,6 @@ StartService()
     #
     if [ ! -d "/Library/Application Support/VirtualBox/${VBOXDRV}.kext" ]; then
         ConsoleMessage "Error: /Library/Application Support/VirtualBox/${VBOXDRV}.kext is missing"
-        VBOX_RC=1
-    fi
-    if [ ! -d "/Library/Application Support/VirtualBox/${VBOXUSB}.kext" ]; then
-        ConsoleMessage "Error: /Library/Application Support/VirtualBox/${VBOXUSB}.kext is missing"
         VBOX_RC=1
     fi
     if [ ! -d "/Library/Application Support/VirtualBox/VBoxNetFlt.kext" ]; then
@@ -102,10 +97,6 @@ StartService()
                 ConsoleMessage "Error: ${VBOXDRV}.kext is already loaded"
                 VBOX_RC=1
             fi
-            if kextstat -lb org.virtualbox.kext.VBoxUSB 2>&1 | grep -q org.virtualbox.kext.VBoxUSB; then
-                ConsoleMessage "Error: ${VBOXUSB}.kext is already loaded"
-                VBOX_RC=1
-            fi
             if kextstat -lb org.virtualbox.kext.VBoxNetFlt 2>&1 | grep -q org.virtualbox.kext.VBoxNetFlt; then
                 ConsoleMessage "Error: VBoxNetFlt.kext is already loaded"
                 VBOX_RC=1
@@ -121,10 +112,6 @@ StartService()
             #
             if kmutil showloaded --list-only -b org.virtualbox.kext.VBoxDrv 2>&1 | grep -q org.virtualbox.kext.VBoxDrv; then
                 ConsoleMessage "Error: ${VBOXDRV}.kext is already loaded"
-                VBOX_RC=1
-            fi
-            if kmutil showloaded --list-only -b org.virtualbox.kext.VBoxUSB 2>&1 | grep -q org.virtualbox.kext.VBoxUSB; then
-                ConsoleMessage "Error: ${VBOXUSB}.kext is already loaded"
                 VBOX_RC=1
             fi
             if kmutil showloaded --list-only -b org.virtualbox.kext.VBoxNetFlt 2>&1 | grep -q org.virtualbox.kext.VBoxNetFlt; then
@@ -146,12 +133,6 @@ StartService()
             ConsoleMessage "Loading ${VBOXDRV}.kext"
             if ! kextload "/Library/Application Support/VirtualBox/${VBOXDRV}.kext"; then
                 ConsoleMessage "Error: Failed to load /Library/Application Support/VirtualBox/${VBOXDRV}.kext"
-                VBOX_RC=1
-            fi
-
-            ConsoleMessage "Loading ${VBOXUSB}.kext"
-            if ! kextload -d "/Library/Application Support/VirtualBox/${VBOXDRV}.kext" "/Library/Application Support/VirtualBox/${VBOXUSB}.kext"; then
-                ConsoleMessage "Error: Failed to load /Library/Application Support/VirtualBox/${VBOXUSB}.kext"
                 VBOX_RC=1
             fi
 
@@ -177,12 +158,6 @@ StartService()
                 VBOX_RC=1
             fi
 
-            ConsoleMessage "Loading ${VBOXUSB}.kext"
-            if ! kmutil load -b org.virtualbox.kext.VBoxUSB; then
-                ConsoleMessage "Error: Failed to load org.virtualbox.kext.VBoxUSB"
-                VBOX_RC=1
-            fi
-
             ConsoleMessage "Loading VBoxNetFlt.kext"
             if ! kmutil load -b org.virtualbox.kext.VBoxNetFlt; then
                 ConsoleMessage "Error: Failed to load org.virtualbox.kext.VBoxNetFlt"
@@ -200,7 +175,6 @@ StartService()
             # unload the drivers (ignoring failures)
             kextunload -b org.virtualbox.kext.VBoxNetAdp
             kextunload -b org.virtualbox.kext.VBoxNetFlt
-            kextunload -b org.virtualbox.kext.VBoxUSB
             kextunload -b org.virtualbox.kext.VBoxDrv
         fi
     fi
@@ -223,14 +197,6 @@ StopService()
     MACOS_VERSION_MAJOR=$(sw_vers -productVersion | /usr/bin/sed -e 's/^\([0-9]*\).*$/\1/')
 
     if [[ ${MACOS_VERSION_MAJOR} -lt 11 ]]; then
-        if kextstat -lb org.virtualbox.kext.VBoxUSB 2>&1 | grep -q org.virtualbox.kext.VBoxUSB; then
-            ConsoleMessage "Unloading ${VBOXUSB}.kext"
-            if ! kextunload -m org.virtualbox.kext.VBoxUSB; then
-                ConsoleMessage "Error: Failed to unload VBoxUSB.kext"
-                VBOX_RC=1
-            fi
-        fi
-
         if kextstat -lb org.virtualbox.kext.VBoxNetFlt 2>&1 | grep -q org.virtualbox.kext.VBoxNetFlt; then
             ConsoleMessage "Unloading VBoxNetFlt.kext"
             if ! kextunload -m org.virtualbox.kext.VBoxNetFlt; then
@@ -256,14 +222,6 @@ StopService()
             fi
         fi
     else
-        if kmutil showloaded --list-only -b org.virtualbox.kext.VBoxUSB 2>&1 | grep -q org.virtualbox.kext.VBoxUSB; then
-            ConsoleMessage "Unloading ${VBOXUSB}.kext"
-            if ! kmutil unload -b org.virtualbox.kext.VBoxUSB; then
-                ConsoleMessage "Error: Failed to unload VBoxUSB.kext"
-                VBOX_RC=1
-            fi
-        fi
-
         if kmutil showloaded --list-only -b org.virtualbox.kext.VBoxNetFlt 2>&1 | grep -q org.virtualbox.kext.VBoxNetFlt; then
             ConsoleMessage "Unloading VBoxNetFlt.kext"
             if ! kmutil unload -b org.virtualbox.kext.VBoxNetFlt; then

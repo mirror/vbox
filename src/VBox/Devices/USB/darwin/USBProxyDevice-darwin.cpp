@@ -1207,14 +1207,6 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
     }
 
     /*
-     * Call the USBLib init to make sure we're a valid VBoxUSB client.
-     * For now we'll ignore failures here and just plunge on, it might still work...
-     */
-    vrc = USBLibInit();
-    if (RT_FAILURE(vrc))
-        LogRel(("USB: USBLibInit failed - %Rrc\n", vrc));
-
-    /*
      * Create a plugin interface for the device and query its IOUSBDeviceInterface.
      */
     SInt32 Score = 0;
@@ -1353,7 +1345,6 @@ static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *
         vrc = RTErrConvertFromDarwin(irc);
     }
 
-    USBLibTerm();
     return vrc;
 }
 
@@ -1429,7 +1420,6 @@ static DECLCALLBACK(void) usbProxyDarwinClose(PUSBPROXYDEV pProxyDev)
         RTMemFree(pUrbOsX);
     }
 
-    USBLibTerm();
     LogFlow(("usbProxyDarwinClose: returns\n"));
 }
 

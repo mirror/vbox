@@ -85,16 +85,11 @@ sync
 if [[ ${MACOS_VERSION_MAJOR} -lt 11 ]]; then
     set -e
     kextload    '/Library/Application Support/VirtualBox/VBoxDrv.kext'
-    kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxUSB.kext'
     kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxNetFlt.kext'
     kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxNetAdp.kext'
 else
     VBOX_RC=0
     if ! kmutil load -p '/Library/Application Support/VirtualBox/VBoxDrv.kext'; then
-        VBOX_RC=1
-    fi
-
-    if ! kmutil load -p '/Library/Application Support/VirtualBox/VBoxUSB.kext'; then
         VBOX_RC=1
     fi
 
