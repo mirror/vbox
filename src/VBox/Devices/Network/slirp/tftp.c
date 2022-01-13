@@ -155,12 +155,20 @@ DECLINLINE(int) tftpSecurityFilenameCheck(PNATState pData, PTFTPSESSION pTftpSes
     while ((s = strchr(s, '\\')) != NULL)
         *s++ = '/';
 
-    /* deny attempts to break out of tftp dir */
-    if (RTStrStartsWith(pTftpSession->szFilename, "../"))
+    /* deny dot-dot by itself or at the beginning */
+    if (   pTftpSession->szFilename[0] == '.'
+        && pTftpSession->szFilename[1] == '.'
+        && (   pTftpSession->szFilename[2] == '\0'
+            || pTftpSession->szFilename[2] == '/'))
         goto done;
 
+    /* deny dot-dot in the middle */
+    if (RTStrStr(pTftpSession->szFilename, "/../") != NULL)
+        goto done;
+
+    /* deny dot-dot at the end (there's no RTStrEndsWith) */
     const char *dotdot = RTStrStr(pTftpSession->szFilename, "/..");
-    if (dotdot != NULL && (dotdot[3] == '/' || dotdot[3] == '\0'))
+    if (dotdot != NULL && dotdot[3] == '\0')
         goto done;
 
     char *pszPathHostAbs;
