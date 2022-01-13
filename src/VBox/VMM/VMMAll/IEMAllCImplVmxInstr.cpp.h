@@ -5405,12 +5405,12 @@ DECLINLINE(int) iemVmxVmentryCheckGuestRipRFlags(PVMCPUCC pVCpu, const char *psz
     else
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsRsvd);
 
-    if (   fGstInLongMode
-        || !(pVmcs->u64GuestCr0.u & X86_CR0_PE))
+    if (!(uGuestRFlags & X86_EFL_VM))
+    { /* likely */ }
+    else
     {
-        if (!(uGuestRFlags & X86_EFL_VM))
-        { /* likely */ }
-        else
+        if (   fGstInLongMode
+            || !(pVmcs->u64GuestCr0.u & X86_CR0_PE))
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestRFlagsVm);
     }
 
