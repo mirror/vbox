@@ -35,9 +35,10 @@
 #include <iprt/process.h>
 
 /** Defines the DRM client executable (image). */
-#define VBOX_DRMCLIENT_EXECUTABLE        "VBoxDRMClient"
+#define VBOX_DRMCLIENT_EXECUTABLE           "/usr/bin/VBoxDRMClient"
+#define VBOX_DRMCLIENT_LEGACY_EXECUTABLE    "/usr/bin/VBoxClient"
 /** Defines the guest property that defines if the DRM resizing client needs to be active or not. */
-#define VBOX_DRMCLIENT_GUEST_PROP_RESIZE "/VirtualBox/GuestAdd/DRMResize"
+#define VBOX_DRMCLIENT_GUEST_PROP_RESIZE    "/VirtualBox/GuestAdd/DRMResize"
 
 /**
  * Returns if the DRM resizing client is needed.
@@ -73,6 +74,12 @@ VBGLR3DECL(bool) VbglR3DrmClientIsRunning(void)
     return VbglR3DrmClientIsNeeded();
 }
 
+static int VbglR3DrmStart(const char *pszCmd, const char **apszArgs)
+{
+    return RTProcCreate(pszCmd, apszArgs, RTENV_DEFAULT,
+                        RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SEARCH_PATH, NULL);
+}
+
 /**
  * Starts (executes) the DRM resizing client process ("VBoxDRMClient").
  *
@@ -80,20 +87,18 @@ VBGLR3DECL(bool) VbglR3DrmClientIsRunning(void)
  */
 VBGLR3DECL(int) VbglR3DrmClientStart(void)
 {
-    char szDRMClientPath[RTPATH_MAX];
-    int rc = RTPathExecDir(szDRMClientPath, RTPATH_MAX);
-    if (RT_SUCCESS(rc))
-    {
-        RTPathStripSuffix(szDRMClientPath);
-        rc = RTPathAppend(szDRMClientPath, RTPATH_MAX, VBOX_DRMCLIENT_EXECUTABLE);
-        if (RT_SUCCESS(rc))
-        {
-            const char *apszArgs[1] = { NULL }; /** @todo r=andy Pass path + process name as argv0? */
-            rc = RTProcCreate(VBOX_DRMCLIENT_EXECUTABLE, apszArgs, RTENV_DEFAULT,
-                              RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SEARCH_PATH, NULL);
-        }
-   }
+    const char *apszArgs[1] = { NULL }; /** @todo r=andy Pass path + process name as argv0? */
+    return VbglR3DrmStart(VBOX_DRMCLIENT_EXECUTABLE, apszArgs);
+}
 
-   return rc;
+/**
+ * Starts (executes) the legacy DRM resizing client process ("VBoxClient --vmsvga").
+ *
+ * @returns VBox status code.
+ */
+VBGLR3DECL(int) VbglR3DrmLegacyClientStart(void)
+{
+    const char *apszArgs[2] = { "--vmsvga", NULL };
+    return VbglR3DrmStart(VBOX_DRMCLIENT_LEGACY_EXECUTABLE, apszArgs);
 }
 

@@ -828,6 +828,7 @@ VBGLR3DECL(int)     VbglR3WriteCoreDump(void);
 VBGLR3DECL(bool)    VbglR3DrmClientIsNeeded(void);
 VBGLR3DECL(bool)    VbglR3DrmClientIsRunning(void);
 VBGLR3DECL(int)     VbglR3DrmClientStart(void);
+VBGLR3DECL(int)     VbglR3DrmLegacyClientStart(void);
 /** @}  */
 
 # ifdef VBOX_WITH_GUEST_PROPS
