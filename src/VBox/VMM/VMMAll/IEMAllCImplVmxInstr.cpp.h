@@ -2499,16 +2499,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
     Assert(pVmcs->u64RoIoRdi.u == 0);
     Assert(pVmcs->u64RoIoRip.u == 0);
 
-    /* We should not cause an NMI-window/interrupt-window VM-exit when injecting events as part of VM-entry. */
-    if (!CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx))
-    {
-        Assert(uExitReason != VMX_EXIT_NMI_WINDOW);
-        Assert(uExitReason != VMX_EXIT_INT_WINDOW);
-    }
-
-    /* For exception or NMI VM-exits the VM-exit interruption info. field must be valid. */
-    Assert(uExitReason != VMX_EXIT_XCPT_OR_NMI || VMX_EXIT_INT_INFO_IS_VALID(pVmcs->u32RoExitIntInfo));
-
     /*
      * Save the guest state back into the VMCS.
      * We only need to save the state when the VM-entry was successful.
@@ -2516,6 +2506,16 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
     bool const fVmentryFailed = VMX_EXIT_REASON_HAS_ENTRY_FAILED(uExitReason);
     if (!fVmentryFailed)
     {
+        /* We should not cause an NMI-window/interrupt-window VM-exit when injecting events as part of VM-entry. */
+        if (!CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx))
+        {
+            Assert(uExitReason != VMX_EXIT_NMI_WINDOW);
+            Assert(uExitReason != VMX_EXIT_INT_WINDOW);
+        }
+
+        /* For exception or NMI VM-exits the VM-exit interruption info. field must be valid. */
+        Assert(uExitReason != VMX_EXIT_XCPT_OR_NMI || VMX_EXIT_INT_INFO_IS_VALID(pVmcs->u32RoExitIntInfo));
+
         /*
          * If we support storing EFER.LMA into IA32e-mode guest field on VM-exit, we need to do that now.
          * See Intel spec. 27.2 "Recording VM-exit Information And Updating VM-entry Control".
