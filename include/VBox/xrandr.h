@@ -50,6 +50,11 @@ typedef unsigned long Atom;
 typedef unsigned long XID;
 typedef XID RROutput;
 typedef XID Window;
+typedef XID RROutput;
+typedef XID RRCrtc;
+typedef XID RRMode;
+typedef unsigned long XRRModeFlags;
+typedef unsigned long int Time;
 
 struct XRRMonitorInfo
 {
@@ -67,6 +72,37 @@ struct XRRMonitorInfo
 };
 typedef struct XRRMonitorInfo XRRMonitorInfo;
 
+struct XRRModeInfo
+{
+    RRMode id;
+    unsigned int width;
+    unsigned int height;
+    unsigned long dotClock;
+    unsigned int hSyncStart;
+    unsigned int hSyncEnd;
+    unsigned int hTotal;
+    unsigned int hSkew;
+    unsigned int vSyncStart;
+    unsigned int vSyncEnd;
+    unsigned int vTotal;
+    char *name;
+    unsigned int nameLength;
+    XRRModeFlags modeFlags;
+};
+typedef struct XRRModeInfo XRRModeInfo;
+
+struct XRRScreenResources
+{
+    Time timestamp;
+    Time configTimestamp;
+    int ncrtc;
+    RRCrtc *crtcs;
+    int noutput;
+    RROutput *outputs;
+    int nmode;
+    XRRModeInfo *modes;
+};
+typedef struct XRRScreenResources XRRScreenResources;
 
 /* Declarations of the functions that we need from libXrandr */
 #define VBOX_XRANDR_GENERATE_HEADER

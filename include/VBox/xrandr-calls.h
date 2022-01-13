@@ -41,7 +41,13 @@
  RT_PROXY_STUB(XRRGetMonitors, XRRMonitorInfo *, (Display *dpy, Window window, Bool get_active, int *nmonitors), \
                  (dpy, window, get_active, nmonitors)) \
  RT_PROXY_STUB(XRRFreeMonitors, void, (XRRMonitorInfo *monitors), \
-                 (monitors))
+                 (monitors)) \
+ RT_PROXY_STUB(XRRGetScreenResources, XRRScreenResources *, (Display *dpy, Window window), \
+                 (dpy, window)) \
+ RT_PROXY_STUB(XRRFreeScreenResources, void, (XRRScreenResources *resources), \
+                 (resources)) \
+ RT_PROXY_STUB(XRRSetOutputPrimary, void, (Display *dpy, Window window, RROutput output), \
+                 (dpy, window, output))
 
 #ifdef VBOX_XRANDR_GENERATE_HEADER
 # define RT_RUNTIME_LOADER_GENERATE_HEADER
