@@ -8714,6 +8714,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iE
         IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
         uint64_t const uCr3 = pVCpu->cpum.GstCtx.cr3;
         PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     }
 
     return rcStrict;
