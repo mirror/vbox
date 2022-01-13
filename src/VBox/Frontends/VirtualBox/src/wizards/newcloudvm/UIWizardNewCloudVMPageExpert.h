@@ -26,7 +26,7 @@
 #include "UIWizardNewCloudVMPageProperties.h"
 
 /* Forward declarations: */
-class QGroupBox;
+class UIToolBox;
 class UIWizardNewCloudVM;
 
 /** UINativeWizardPage extension for Expert page of the New Cloud VM wizard,
@@ -83,8 +83,9 @@ private:
     /** Holds the image ID. */
     QString  m_strSourceImageId;
 
-    /** Holds the location container instance. */
-    QGroupBox    *m_pCntLocation;
+    /** Holds the tool-box instance. */
+    UIToolBox *m_pToolBox;
+
     /** Holds the location type combo-box instance. */
     QIComboBox   *m_pProviderComboBox;
     /** Holds the profile combo-box instance. */
@@ -92,15 +93,11 @@ private:
     /** Holds the profile management tool-button instance. */
     QIToolButton *m_pProfileToolButton;
 
-    /** Holds the source container instance. */
-    QGroupBox    *m_pCntSource;
     /** Holds the source tab-bar instance. */
     QTabBar      *m_pSourceTabBar;
     /** Holds the source image list instance. */
     QListWidget  *m_pSourceImageList;
 
-    /** Holds the settings container instance. */
-    QGroupBox          *m_pSettingsCnt;
     /** Holds the Form Editor widget instance. */
     UIFormEditorWidget *m_pFormEditor;
 };
