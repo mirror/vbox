@@ -28036,8 +28036,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="5fa3a8db-1c4f-4cda-b8d4-7982ef60fefb"
-    wsmap="managed" reservedMethods="14" reservedAttributes="8"
+    uuid="c2db178a-7485-11ec-aec4-2fbf90681a84"
+    wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
     <method name="getExportDescriptionForm">
@@ -28548,6 +28548,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </desc>
       </param>
     </method>
+
+    <method name="getSubnetSelectionForm">
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>
+          Virtual system description to be edited.
+        </desc>
+      </param>
+      <param name="form" type="IVirtualSystemDescriptionForm" dir="out">
+        <desc>
+          An IForm instance for editing the virtual system description.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
 
   </interface>
 
