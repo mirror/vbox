@@ -16,17 +16,18 @@
  */
 
 /* Qt includes: */
-#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QListWidget>
 #include <QTableWidget>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIComboBox.h"
 #include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
 #include "UIIconPool.h"
+#include "UIToolBox.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
 #include "UIWizardAddCloudVM.h"
@@ -37,11 +38,9 @@ using namespace UIWizardAddCloudVMSource;
 
 
 UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
-    : m_pCntProvider(0)
-    , m_pProviderLayout(0)
+    : m_pToolBox(0)
     , m_pProviderLabel(0)
     , m_pProviderComboBox(0)
-    , m_pOptionsLayout(0)
     , m_pProfileLabel(0)
     , m_pProfileComboBox(0)
     , m_pProfileToolButton(0)
@@ -49,56 +48,70 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
     , m_pSourceInstanceList(0)
 {
     /* Prepare main layout: */
-    QHBoxLayout *pLayoutMain = new QHBoxLayout(this);
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
     if (pLayoutMain)
     {
-        /* Prepare provider container: */
-        m_pCntProvider = new QGroupBox(this);
-        if (m_pCntProvider)
+        /* Prepare tool-box: */
+        m_pToolBox = new UIToolBox(this);
+        if (m_pToolBox)
         {
-            /* Prepare provider layout: */
-            m_pProviderLayout = new QGridLayout(m_pCntProvider);
-            if (m_pProviderLayout)
+            /* Prepare location widget: */
+            QWidget *pWidgetLocation = new QWidget(m_pToolBox);
+            if (pWidgetLocation)
             {
-                /* Prepare provider selector: */
-                m_pProviderComboBox = new QIComboBox(m_pCntProvider);
-                if (m_pProviderComboBox)
-                    m_pProviderLayout->addWidget(m_pProviderComboBox, 0, 0);
-
-                /* Prepare options layout: */
-                m_pOptionsLayout = new QGridLayout;
-                if (m_pOptionsLayout)
+                /* Prepare location layout: */
+                QVBoxLayout *pLayoutLocation = new QVBoxLayout(pWidgetLocation);
+                if (pLayoutLocation)
                 {
-                    m_pOptionsLayout->setContentsMargins(0, 0, 0, 0);
-                    m_pOptionsLayout->setRowStretch(1, 1);
+                    pLayoutLocation->setContentsMargins(0, 0, 0, 0);
 
-                    /* Prepare sub-layout: */
-                    QHBoxLayout *pSubLayout = new QHBoxLayout;
-                    if (pSubLayout)
+                    /* Prepare provider combo-box: */
+                    m_pProviderComboBox = new QIComboBox(pWidgetLocation);
+                    if (m_pProviderComboBox)
+                        pLayoutLocation->addWidget(m_pProviderComboBox);
+
+                    /* Prepare profile layout: */
+                    QHBoxLayout *pLayoutProfile = new QHBoxLayout;
+                    if (pLayoutProfile)
                     {
-                        pSubLayout->setContentsMargins(0, 0, 0, 0);
-                        pSubLayout->setSpacing(1);
+                        pLayoutProfile->setContentsMargins(0, 0, 0, 0);
+                        pLayoutProfile->setSpacing(1);
 
                         /* Prepare profile combo-box: */
-                        m_pProfileComboBox = new QIComboBox(m_pCntProvider);
+                        m_pProfileComboBox = new QIComboBox(pWidgetLocation);
                         if (m_pProfileComboBox)
-                            pSubLayout->addWidget(m_pProfileComboBox);
+                            pLayoutProfile->addWidget(m_pProfileComboBox);
 
                         /* Prepare profile tool-button: */
-                        m_pProfileToolButton = new QIToolButton(m_pCntProvider);
+                        m_pProfileToolButton = new QIToolButton(pWidgetLocation);
                         if (m_pProfileToolButton)
                         {
                             m_pProfileToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
                                                                               ":/cloud_profile_manager_disabled_16px.png"));
-                            pSubLayout->addWidget(m_pProfileToolButton);
+                            pLayoutProfile->addWidget(m_pProfileToolButton);
                         }
 
                         /* Add into layout: */
-                        m_pOptionsLayout->addLayout(pSubLayout, 0, 0);
+                        pLayoutLocation->addLayout(pLayoutProfile);
                     }
+                }
+
+                /* Add into tool-box: */
+                m_pToolBox->insertPage(0, pWidgetLocation, QString());
+            }
+
+            /* Prepare source widget: */
+            QWidget *pWidgetSource = new QWidget(m_pToolBox);
+            if (pWidgetSource)
+            {
+                /* Prepare source layout: */
+                QVBoxLayout *pLayoutSource = new QVBoxLayout(pWidgetSource);
+                if (pLayoutSource)
+                {
+                    pLayoutSource->setContentsMargins(0, 0, 0, 0);
 
                     /* Prepare source instances table: */
-                    m_pSourceInstanceList = new QListWidget(m_pCntProvider);
+                    m_pSourceInstanceList = new QListWidget(pWidgetSource);
                     if (m_pSourceInstanceList)
                     {
                         /* Make source image list fit 50 symbols
@@ -113,16 +126,16 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
                         m_pSourceInstanceList->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
                         /* Add into layout: */
-                        m_pOptionsLayout->addWidget(m_pSourceInstanceList, 1, 0);
+                        pLayoutSource->addWidget(m_pSourceInstanceList, 1, 0);
                     }
-
-                    /* Add into layout: */
-                    m_pProviderLayout->addLayout(m_pOptionsLayout, 1, 0);
                 }
+
+                /* Add into tool-box: */
+                m_pToolBox->insertPage(1, pWidgetSource, QString());
             }
 
             /* Add into layout: */
-            pLayoutMain->addWidget(m_pCntProvider);
+            pLayoutMain->addWidget(m_pToolBox);
         }
     }
 
@@ -148,19 +161,25 @@ UIWizardAddCloudVM *UIWizardAddCloudVMPageExpert::wizard() const
 
 void UIWizardAddCloudVMPageExpert::retranslateUi()
 {
-    /* Translate source container: */
-    m_pCntProvider->setTitle(UIWizardAddCloudVM::tr("Source"));
+    /* Translate tool-box: */
+    if (m_pToolBox)
+    {
+        m_pToolBox->setPageTitle(0, UIWizardAddCloudVM::tr("Location"));
+        m_pToolBox->setPageTitle(1, UIWizardAddCloudVM::tr("Source"));
+    }
 
     /* Translate profile stuff: */
-    m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Open Cloud Profile Manager..."));
+    if (m_pProfileToolButton)
+        m_pProfileToolButton->setToolTip(UIWizardAddCloudVM::tr("Open Cloud Profile Manager..."));
 
     /* Translate received values of Source combo-box.
      * We are enumerating starting from 0 for simplicity: */
-    for (int i = 0; i < m_pProviderComboBox->count(); ++i)
-    {
-        m_pProviderComboBox->setItemText(i, m_pProviderComboBox->itemData(i, ProviderData_Name).toString());
-        m_pProviderComboBox->setItemData(i, UIWizardAddCloudVM::tr("Add VM from cloud service provider."), Qt::ToolTipRole);
-    }
+    if (m_pProviderComboBox)
+        for (int i = 0; i < m_pProviderComboBox->count(); ++i)
+        {
+            m_pProviderComboBox->setItemText(i, m_pProviderComboBox->itemData(i, ProviderData_Name).toString());
+            m_pProviderComboBox->setItemData(i, UIWizardAddCloudVM::tr("Add VM from cloud service provider."), Qt::ToolTipRole);
+        }
 
     /* Update tool-tips: */
     updateComboToolTip(m_pProviderComboBox);
@@ -168,6 +187,8 @@ void UIWizardAddCloudVMPageExpert::retranslateUi()
 
 void UIWizardAddCloudVMPageExpert::initializePage()
 {
+    /* Choose 1st tool to be chosen initially: */
+    m_pToolBox->setCurrentPage(0);
     /* Populate providers: */
     populateProviders(m_pProviderComboBox, wizard()->notificationCenter());
     /* Translate providers: */

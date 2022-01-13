@@ -25,7 +25,7 @@
 #include "UIWizardAddCloudVMPageSource.h"
 
 /* Forward declarations: */
-class QGroupBox;
+class UIToolBox;
 class UIWizardAddCloudVM;
 
 /** UINativeWizardPage extension for Expert page of the Add Cloud VM wizard,
@@ -71,24 +71,21 @@ private slots:
 
 private:
 
-    /** Holds the provider container instance. */
-    QGroupBox *m_pCntProvider;
+    /** Holds the tool-box instance. */
+    UIToolBox *m_pToolBox;
 
-    /** Holds the provider layout instance. */
-    QGridLayout *m_pProviderLayout;
     /** Holds the provider type label instance. */
     QLabel      *m_pProviderLabel;
     /** Holds the provider type combo-box instance. */
     QIComboBox  *m_pProviderComboBox;
 
-    /** Holds the options layout instance. */
-    QGridLayout  *m_pOptionsLayout;
     /** Holds the profile label instance. */
     QLabel       *m_pProfileLabel;
     /** Holds the profile combo-box instance. */
     QIComboBox   *m_pProfileComboBox;
     /** Holds the profile management tool-button instance. */
     QIToolButton *m_pProfileToolButton;
+
     /** Holds the source instance label instance. */
     QLabel       *m_pSourceInstanceLabel;
     /** Holds the source instance list instance. */
