@@ -4656,11 +4656,13 @@ ifdef VBOX_WITH_LIBTPMS
 endif
 
 # Older versions of GCC cannot compile libssh
-ifneq ($(VBOX_GCC_VERSION_CC),)
- if $(VBOX_GCC_VERSION_CC) < 50000
-   # Build libssh with newer GCC only
-   VBOX_WITH_LIBSSH =
-   VBOX_WITH_CLOUD_NET =
+ifneq ($(KBUILD_TARGET),win)
+ ifneq ($(VBOX_GCC_VERSION_CC),)
+  if $(VBOX_GCC_VERSION_CC) < 50000
+    # Build libssh with newer GCC only
+    VBOX_WITH_LIBSSH =
+    VBOX_WITH_CLOUD_NET =
+  endif
  endif
 endif
 
