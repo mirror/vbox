@@ -191,10 +191,7 @@ RTDECL(int) RTAsn1DynType_DecodeAsn1(PRTASN1CURSOR pCursor, uint32_t fFlags, PRT
                                                pDynType->u.Core.uTag, pDynType->u.Core.uTag);
             }
         else
-        {
-            RTAsn1CursorSkip(pCursor, pDynType->u.Core.cb);
-            return VINF_SUCCESS;
-        }
+            Assert(pDynType->enmType == RTASN1TYPE_CORE);
 
         /*
          * Restore the cursor and redo with specific type.
