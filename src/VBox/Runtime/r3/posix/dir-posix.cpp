@@ -161,13 +161,17 @@ RTDECL(int) RTDirRemove(const char *pszPath)
                 char       *pszFree = NULL;
                 const char *pszStat = pszNativePath;
                 size_t      cch     = strlen(pszNativePath);
-                if (cch > 2 && pszNativePath[cch - 1] == '/')
+                if (cch > 2 && RTPATH_IS_SLASH(pszNativePath[cch - 1]))
                 {
-                    pszStat = pszFree = (char *)RTMemTmpAlloc(cch);
-                    memcpy(pszFree, pszNativePath, cch);
-                    do
-                        pszFree[--cch] = '\0';
-                    while (cch > 2 && pszFree[cch - 1] == '/');
+                    pszFree = (char *)RTMemTmpAlloc(cch);
+                    if (pszFree)
+                    {
+                        memcpy(pszFree, pszNativePath, cch);
+                        do
+                            pszFree[--cch] = '\0';
+                        while (cch > 2 && RTPATH_IS_SLASH(pszFree[cch - 1]));
+                        pszStat = pszFree;
+                    }
                 }
 
                 struct stat st;
