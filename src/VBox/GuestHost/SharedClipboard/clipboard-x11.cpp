@@ -655,6 +655,34 @@ static void clipGetFormatsFromTargets(PSHCLX11CTX pCtx,
 #endif
 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
+DECLINLINE(bool) clipGetXtBusy(PSHCLX11CTX pCtx)
+{
+    LogFlowFunc(("fXtBusy=%RTbool, fXtNeedsUpdate=%RTbool\n", pCtx->fXtBusy, pCtx->fXtNeedsUpdate));
+    return pCtx->fXtBusy;
+}
+
+DECLINLINE(bool) clipGetXtNeedsUpdate(PSHCLX11CTX pCtx)
+{
+    LogFlowFunc(("fXtBusy=%RTbool, fXtNeedsUpdate=%RTbool\n", pCtx->fXtBusy, pCtx->fXtNeedsUpdate));
+    return pCtx->fXtNeedsUpdate;
+}
+
+DECLINLINE(bool) clipSetXtBusy(PSHCLX11CTX pCtx, bool fBusy)
+{
+    pCtx->fXtBusy = fBusy;
+    LogFlowFunc(("fXtBusy=%RTbool, fXtNeedsUpdate=%RTbool\n", pCtx->fXtBusy, pCtx->fXtNeedsUpdate));
+    return pCtx->fXtBusy;
+}
+
+DECLINLINE(bool) clipSetXtNeedsUpdate(PSHCLX11CTX pCtx, bool fNeedsUpdate)
+{
+    pCtx->fXtNeedsUpdate = fNeedsUpdate;
+    LogFlowFunc(("fXtBusy=%RTbool, fXtNeedsUpdate=%RTbool\n", pCtx->fXtBusy, pCtx->fXtNeedsUpdate));
+    return pCtx->fXtNeedsUpdate;
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY */
+
 /**
  * Updates the context's information about targets currently supported by X11,
  * based on an array of X11 atoms.
@@ -668,11 +696,11 @@ SHCL_X11_DECL(void) clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *paIdxF
     LogFlowFuncEnter();
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
-    pCtx->fXtBusy = false;
-    if (pCtx->fXtNeedsUpdate)
+    clipSetXtBusy(pCtx, false);
+    if (clipGetXtNeedsUpdate(pCtx))
     {
         /* We may already be out of date. */
-        pCtx->fXtNeedsUpdate = false;
+        clipSetXtNeedsUpdate(pCtx, false);
         clipQueryX11Formats(pCtx);
         return;
     }
@@ -777,14 +805,12 @@ SHCL_X11_DECL(void) clipQueryX11Formats(PSHCLX11CTX pCtx)
 #ifndef TESTCASE
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
-    LogFlowFunc(("fXtBusy=%RTbool\n", pCtx->fXtBusy));
-    if (pCtx->fXtBusy)
+    if (clipGetXtBusy(pCtx))
     {
-        pCtx->fXtNeedsUpdate = true;
+        clipSetXtNeedsUpdate(pCtx, true);
         return;
     }
-
-    pCtx->fXtBusy = true;
+    clipSetXtBusy(pCtx, true);
 # endif
 
     XtGetSelectionValue(pCtx->pWidget,
@@ -1920,9 +1946,8 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
     PSHCLX11CTX pCtx = pReq->pCtx;
     AssertPtr(pReq->pCtx);
-
-    pCtx->fXtBusy = false;
-    if (pCtx->fXtNeedsUpdate)
+    clipSetXtBusy(pCtx, false);
+    if (clipGetXtNeedsUpdate(pCtx))
         clipQueryX11Formats(pCtx);
 #endif
 
@@ -2189,8 +2214,8 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     int rc = VERR_NO_DATA; /* VBox thinks we have data and we don't. */
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
-    const bool fXtBusy = pCtx->fXtBusy;
-    pCtx->fXtBusy = true;
+    const bool fXtBusy = clipGetXtBusy(pCtx);
+    clipSetXtBusy(pCtx, true);
     if (fXtBusy)
     {
         /* If the clipboard is busy just fend off the request. */
@@ -2239,7 +2264,7 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     else
     {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_XT_BUSY
-        pCtx->fXtBusy = false;
+        clipSetXtBusy(pCtx, false);
 #endif
         rc = VERR_NOT_IMPLEMENTED;
     }
