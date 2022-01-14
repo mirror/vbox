@@ -35,6 +35,9 @@
 *********************************************************************************************************************************/
 #define IS_BLANK(ch)  ((ch) == ' ' || (ch) == '\t' || (ch) == '\r' || (ch) == '\n')
 
+/** NIL HQUEUE value. */
+#define NIL_HQUEUE  (~(HQUEUE)0)
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -281,7 +284,7 @@ static void DoWait(PID pidChild, USHORT idSession, HQUEUE hQueue, PRESULTCODES p
     /*
      * Can we use DosCwait?
      */
-    if (idSession == 0 && hQueue == NULL)
+    if (hQueue == NIL_HQUEUE)
     {
         for (;;)
         {
@@ -597,7 +600,7 @@ void Os2UtilMain(USHORT uSelEnv, USHORT offCmdLine)
     USHORT      uExeType;
     USHORT      idSession      = 0;
     PID         pidChild       = 0;
-    HQUEUE      hQueue         = ~(HQUEUE)0;
+    HQUEUE      hQueue         = NIL_HQUEUE;
     CHAR        szQueueName[64];
     unsigned    cAsZero        = 0;
     USHORT      auAsZero[16];
