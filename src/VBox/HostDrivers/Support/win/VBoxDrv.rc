@@ -43,8 +43,8 @@ BEGIN
     BLOCK "040904b0" // Lang=US English, CharSet=Unicode
     BEGIN
       VALUE "FileDescription",  "VirtualBox Support Driver\0"
-      VALUE "InternalName",     "VBoxDrv\0"
-      VALUE "OriginalFilename", "VBoxDrv.sys\0"
+      VALUE "InternalName",     "VBoxSup\0"
+      VALUE "OriginalFilename", "VBoxSup.sys\0"
       VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
       VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT

@@ -50,7 +50,7 @@ if not exist "%MY_ALTDIR%" mkdir "%MY_ALTDIR%"
 rem
 rem Display device states.
 rem
-for %%i in (VBoxNetAdp VBoxNetAdp6 VBoxNetFlt VBoxNetLwf VBoxUSBMon VBoxUSB VBoxDrv) do (
+for %%i in (VBoxNetAdp VBoxNetAdp6 VBoxNetFlt VBoxNetLwf VBoxUSBMon VBoxUSB VBoxSup) do (
     set type=
     for /f "usebackq tokens=*" %%f in (`sc query %%i`) do (set xxx=%%f&&if "!xxx:~0,5!" =="STATE" set type=!xxx!)
     for /f "usebackq tokens=2 delims=:" %%f in ('!type!') do set type=%%f
@@ -88,7 +88,7 @@ echo ** Copying drivers into %MY_ALTDIR%...
 echo **
 set MY_FAILED=no
 for %%i in (^
-    VBoxDrv.sys     VBoxDrv.inf      VBoxDrv.cat     VBoxDrv-PreW10.cat ^
+    VBoxSup.sys     VBoxSup.inf      VBoxSup.cat     VBoxSup-PreW10.cat ^
     VBoxNetAdp.sys  VBoxNetAdp.inf   VBoxNetAdp.cat ^
     VBoxNetAdp6.sys VBoxNetAdp6.inf  VBoxNetAdp6.cat VBoxNetAdp6-PreW10.cat ^
     VBoxNetFlt.sys  VBoxNetFlt.inf   VBoxNetFlt.cat                         VBoxNetFltNobj.dll ^

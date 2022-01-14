@@ -490,10 +490,10 @@
         <ComponentRef Id="cp_UnattendedTemplates" />
     <?endif ?>
     <?if $(env.VBOX_SIGNING_MODE) != none ?>
-        <ComponentRef Id="cp_VBoxDrvCat_PreW10" />
-        <ComponentRef Id="cp_VBoxDrvCat_W10" />
+        <ComponentRef Id="cp_VBoxSupCat_PreW10" />
+        <ComponentRef Id="cp_VBoxSupCat_W10" />
     <?endif ?>
-    <ComponentRef Id="cp_VBoxDrv" />
+    <ComponentRef Id="cp_VBoxSup" />
 <?endif ?>
 
 <?if $(env.VBOX_WITH_USB) = "yes" ?>

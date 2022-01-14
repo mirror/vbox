@@ -66,7 +66,7 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** The support service name. */
-#define SERVICE_NAME    "VBoxDrv"
+#define SERVICE_NAME    "VBoxSup"
 
 
 /*********************************************************************************************************************************
@@ -313,10 +313,10 @@ static int suplibOsCreateService(void)
     if (hSMgrCreate != NULL)
     {
         char szDriver[RTPATH_MAX];
-        rc = RTPathExecDir(szDriver, sizeof(szDriver) - sizeof("\\VBoxDrv.sys"));
+        rc = RTPathExecDir(szDriver, sizeof(szDriver) - sizeof("\\VBoxSup.sys"));
         if (RT_SUCCESS(rc))
         {
-            strcat(szDriver, "\\VBoxDrv.sys");
+            strcat(szDriver, "\\VBoxSup.sys");
             SC_HANDLE hService = CreateService(hSMgrCreate,
                                                SERVICE_NAME,
                                                "VBox Support Driver",
@@ -430,47 +430,64 @@ static int suplibOsStopService(void)
  */
 int suplibOsDeleteService(void)
 {
-    /*
-     * Assume it didn't exist, so we'll create the service.
-     */
-    int         rc;
+    int         rcRet = VINF_SUCCESS;
     SC_HANDLE   hSMgr = OpenSCManager(NULL, NULL, SERVICE_CHANGE_CONFIG);
     DWORD       dwErr = GetLastError();
     AssertMsg(hSMgr, ("OpenSCManager(,,delete) failed rc=%d\n", dwErr));
     if (hSMgr)
     {
-        SC_HANDLE hService = OpenService(hSMgr, SERVICE_NAME, DELETE);
+        /*
+         * Old service name.
+         */
+        SC_HANDLE hService = OpenService(hSMgr, "VBoxDrv", DELETE);
         if (hService)
         {
-            /*
-             * Delete the service.
-             */
-            if (DeleteService(hService))
-                rc = VINF_SUCCESS;
-            else
+            if (!DeleteService(hService))
             {
                 dwErr = GetLastError();
-                AssertMsgFailed(("DeleteService failed dwErr=%Rwa\n", dwErr));
-                rc = RTErrConvertFromWin32(dwErr);
+                AssertMsgFailed(("DeleteService failed for VBoxDrv dwErr=%Rwa\n", dwErr));
+                rcRet = RTErrConvertFromWin32(dwErr);
             }
             CloseServiceHandle(hService);
         }
         else
         {
             dwErr = GetLastError();
-            if (dwErr == ERROR_SERVICE_DOES_NOT_EXIST)
-                rc = VINF_SUCCESS;
-            else
+            if (dwErr != ERROR_SERVICE_DOES_NOT_EXIST)
             {
-                AssertMsgFailed(("OpenService failed dwErr=%Rwa\n", dwErr));
-                rc = RTErrConvertFromWin32(dwErr);
+                AssertMsgFailed(("OpenService failed for VBoxDrv dwErr=%Rwa\n", dwErr));
+                rcRet = RTErrConvertFromWin32(dwErr);
+            }
+        }
+
+        /*
+         * The new service.
+         */
+        hService = OpenService(hSMgr, SERVICE_NAME, DELETE);
+        if (hService)
+        {
+            if (!DeleteService(hService))
+            {
+                dwErr = GetLastError();
+                AssertMsgFailed(("DeleteService for " SERVICE_NAME " failed dwErr=%Rwa\n", dwErr));
+                rcRet = RTErrConvertFromWin32(dwErr);
+            }
+            CloseServiceHandle(hService);
+        }
+        else
+        {
+            dwErr = GetLastError();
+            if (dwErr != ERROR_SERVICE_DOES_NOT_EXIST)
+            {
+                AssertMsgFailed(("OpenService failed for " SERVICE_NAME " dwErr=%Rwa\n", dwErr));
+                rcRet = RTErrConvertFromWin32(dwErr);
             }
         }
         CloseServiceHandle(hSMgr);
     }
     else
-        rc = RTErrConvertFromWin32(dwErr);
-    return rc;
+        rcRet = RTErrConvertFromWin32(dwErr);
+    return rcRet;
 }
 
 #if 0
@@ -494,10 +511,10 @@ static int suplibOsUpdateService(void)
         if (hService)
         {
             char szDriver[RTPATH_MAX];
-            int rc = RTPathExecDir(szDriver, sizeof(szDriver) - sizeof("\\VBoxDrv.sys"));
+            int rc = RTPathExecDir(szDriver, sizeof(szDriver) - sizeof("\\VBoxSup.sys"));
             if (RT_SUCCESS(rc))
             {
-                strcat(szDriver, "\\VBoxDrv.sys");
+                strcat(szDriver, "\\VBoxSup.sys");
 
                 SC_LOCK hLock = LockServiceDatabase(hSMgr);
                 if (ChangeServiceConfig(hService,

@@ -620,6 +620,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd solaris win)
  VBoxDrv_TEMPLATE         = VBOXR0DRV
  VBoxDrv_NAME.freebsd     = vboxdrv
  VBoxDrv_NAME.solaris     = vboxdrv
+ VBoxDrv_NAME.win         = VBoxSup
  ifdef VBOX_SIGNING_MODE
   VBoxDrv_INSTTYPE.win    = none
   VBoxDrv_DEBUG_INSTTYPE.win = both
@@ -828,30 +829,30 @@ endif # linux freebsd
 
 
 ifeq ($(KBUILD_TARGET), win)
- INSTALLS.win += VBoxDrv-inf
- VBoxDrv-inf_TEMPLATE = VBoxR0DrvInfCat
- VBoxDrv-inf_SOURCES = \
- 	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf
- VBoxDrv-inf_CLEAN = $(VBoxDrv-inf_SOURCES)
- VBoxDrv-inf_BLDDIRS = $(PATH_TARGET)/VBoxDrvCat.dir
+ INSTALLS.win += VBoxSup-inf
+ VBoxSup-inf_TEMPLATE = VBoxR0DrvInfCat
+ VBoxSup-inf_SOURCES = \
+ 	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf
+ VBoxSup-inf_CLEAN = $(VBoxSup-inf_SOURCES)
+ VBoxSup-inf_BLDDIRS = $(PATH_TARGET)/VBoxSupCat.dir
 
- $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf: $(PATH_SUB_CURRENT)/win/VBoxDrv.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,VBoxDrv-inf,$@,$<)
+ $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf: $(PATH_SUB_CURRENT)/win/VBoxSup.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,VBoxSup-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
 
  ifdef VBOX_SIGNING_MODE
-  VBoxDrv-inf_SOURCES += \
-  	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys \
-  	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat \
-  	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat=>VBoxDrv-PreW10.cat
+  VBoxSup-inf_SOURCES += \
+  	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys \
+  	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat \
+  	$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat=>VBoxSup-PreW10.cat
 
-  $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(VBoxDrv_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
+  $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys: $$(VBoxDrv_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 -- "$<" "$(@D)"
 
-  $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: \
-		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf \
-		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys
-	$(call MSG_TOOL,Inf2Cat,VBoxDrv-inf,$@,$<)
+  $(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.cat: \
+		$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.inf \
+		$(PATH_TARGET)/VBoxSupCat.dir/VBoxSup.sys
+	$(call MSG_TOOL,Inf2Cat,VBoxSup-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
  endif # signing
 endif # win

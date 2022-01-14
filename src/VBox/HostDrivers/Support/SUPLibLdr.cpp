@@ -151,7 +151,8 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
      */
     if (   pszModule
         && *pszModule
-        && strcmp(pszModule, "VBoxDrv.sys")
+        && strcmp(pszModule, "VBoxSup.sys")
+        && strcmp(pszModule, "VBoxDrv.sys") /* old name */
         && strcmp(pszModule, "VMMR0.r0"))
     {
 #if defined(RT_OS_WINDOWS) && 0 /* Useful for VMMR0 hacking, not for production use.  See also SUPDrv-win.cpp */
