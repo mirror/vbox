@@ -151,12 +151,8 @@ int UINativeWizard::addPage(UINativeWizardPage *pPage)
     AssertPtrReturn(pPage->layout(), -1);
 
     /* Adjust page layout: */
-    const int iL = m_enmMode == WizardMode_Expert
-                 ? qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin)
-                 : 0;
-    const int iT = m_enmMode == WizardMode_Expert
-                 ? qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin)
-                 : 0;
+    const int iL = 0;
+    const int iT = 0;
     const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin);
     const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin);
     pPage->layout()->setContentsMargins(iL, iT, iR, iB);
@@ -567,16 +563,14 @@ void UINativeWizard::retranslatePages()
 
 void UINativeWizard::resizeToGoldenRatio()
 {
-    /* Standard top margin for Basic mode case: */
-    const int iT = m_enmMode == WizardMode_Basic
-                 ? qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin)
-                 : 0;
+    /* Standard top margin: */
+    const int iT = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_pLayoutRight->setContentsMargins(0, iT, 0, 0);
     /* Show title label for Basic mode case: */
     m_pLabelPageTitle->setVisible(m_enmMode == WizardMode_Basic);
 #ifndef VBOX_WS_MAC
     /* Hide/show pixmap label on Windows/X11 only, on macOS it's in the background: */
-    m_pLabelPixmap->setVisible(!m_strPixmapName.isEmpty() && m_enmMode == WizardMode_Basic);
+    m_pLabelPixmap->setVisible(!m_strPixmapName.isEmpty());
 #endif /* !VBOX_WS_MAC */
 
     /* For wizard in Basic mode: */
@@ -635,8 +629,7 @@ void UINativeWizard::resizeToGoldenRatio()
         assignBackground();
 #else
     /* Assign watermark finally: */
-    if (   !m_strPixmapName.isEmpty()
-        && m_enmMode == WizardMode_Basic)
+    if (!m_strPixmapName.isEmpty())
         assignWatermark();
 #endif /* !VBOX_WS_MAC */
 
