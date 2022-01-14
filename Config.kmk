@@ -3977,6 +3977,32 @@ ifdef VBOX_SIGNING_MODE
    endif
   endif
 
+  ## Local SHA-1 and SHA-256 signatures with EV SHA-256 signature from corp code signing.
+  #
+  # This builds on Plan B, since the corp code signing always replaces existing signatures.
+  # So, here is what we do.
+  #   1. Sign $1 using local SHA-1 certificate.
+  #   2. Make temporary copy of $1 as $1.ccs
+  #   3. Do SHA-256 corp code signing of $1.ccs
+  #   4. Add the SHA-256 signature from $1.ccs to $1 using bldRTSignTool.
+  #   5. Delete $1.ccs.
+  #
+  # @param 1  The file to sign.
+  # @param 2  File description. Optional.
+  # @param 3  Additional parameters. Optional.
+  # @param 4  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
+  # @param 5  Disables dual signing if non-empty.
+  #
+  # @remarks The parameters are the same as VBOX_SIGN_FILE_FN.
+  VBOX_SIGN_IMAGE_WITH_EV_FN = $(call VBOX_SIGN_FILE_FN,$1,$2,$3,$4,$5)$(if-expr "$5" == "",\
+	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.ccs" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(CP) -- "$1" "$1.ccs" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,microsoftev,$1.ccs,,-digest_algo SHA2) \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(VBOX_RTSIGNTOOL) add-nested-$(if-expr "$(suffix $1)" == ".cat",cat,exe)-signature -v "$1" "$1.ccs" \
+  	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.ccs" \
+  	,)
+
+
   ## Corp code signing for drivers and catalogs, plan B.
   #
   # Since the corp code signing cannot dual signing and doesn't even have a
@@ -4016,7 +4042,11 @@ ifdef VBOX_SIGNING_MODE
   # @param 1  The file to sign.
   # @param 2  File description. Optional.
   # @param 3  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
-  VBOX_SIGN_IMAGE_FN     ?= $(call VBOX_SIGN_FILE_FN,$(1),$(2),/ph,$(3))
+  if1of (win_with_ev,$(VBOX_WITH_CORP_CODE_SIGNING))
+   VBOX_SIGN_IMAGE_FN    ?= $(call VBOX_SIGN_IMAGE_WITH_EV_FN,$(1),$(2),/ph,$(3))
+  else
+   VBOX_SIGN_IMAGE_FN    ?= $(call VBOX_SIGN_FILE_FN,$(1),$(2),/ph,$(3))
+  endif
 
   ## Commands for signing a driver image after link.
   if $(intersects win_planb,$(VBOX_WITH_CORP_CODE_SIGNING))
