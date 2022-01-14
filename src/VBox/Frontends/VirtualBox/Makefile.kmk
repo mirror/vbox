@@ -1219,7 +1219,7 @@ endif
 VirtualBox_SOURCES.win += \
 	src/platform/win/UIDesktopServices_win.cpp
 
-$(call VBOX_SET_VER_INFO_EXE,VirtualBox,VirtualBox Manager,$(VBOX_WINDOWS_ICON_FILE))
+$(call VBOX_SET_VER_INFO_EXE,VirtualBox,VirtualBox Manager,$(VBOX_WINDOWS_ICON_FILE),VirtualBoxGUI)
 
 
 #

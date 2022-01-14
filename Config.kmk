@@ -4405,13 +4405,14 @@ endif
 # @param 3     Optional icon file.
 # @param 4     The template base name.
 # @param 5     Additional RC options.
+# @param 6     Original filename to use.
 #
 # @remarks     ASSUMES RCFLAGS isn't a simple variable (var := value).
 define VBOX_SET_VER_INFO_INTERNAL
 ifeq ($(KBUILD_TARGET),win)
 $(1)_SOURCES.win += $(PATH_ROOT)/src/VBox/Artwork/win/$(4)
 $(1)_RCFLAGS += /nologo /dIN_INTERNAL_NAME="\"$(1)\"" /dIN_FILE_DESCRIPTION="\"$(2)\"" \
-	/dIN_ORIGINAL_NAME="\"$$(notdir $$($(1)_1_INST_TARGET))\"" \
+	/dIN_ORIGINAL_NAME="\"$(if $(6),$6,$$(notdir $$($(1)_1_INST_TARGET)))\"" \
 	$(if $(3), /dIN_ICON_FILE="\"$(subst \\,/,$(strip $(3)))\"") $(5)
 $$$$($(1)_0_OUTDIR)/src/VBox/Artwork/win/$(basename $(4)).res: \
 	$(PATH_ROOT)/include/VBox/version.h $$$$(VBOX_VERSION_HEADER)
@@ -4437,7 +4438,8 @@ VBOX_SET_VER_INFO_DLL = $(evalcall2 VBOX_SET_VER_INFO_INTERNAL,$1,$2,$3,Template
 # @param 1     The target name.
 # @param 2     The description
 # @param 3     Optional icon file.
-VBOX_SET_VER_INFO_EXE = $(evalcall2 VBOX_SET_VER_INFO_INTERNAL,$1,$2,$3,TemplateExe.rc,)
+# @param 4     Optional OriginalFilename value to use. Defaults to target name w/o dir.
+VBOX_SET_VER_INFO_EXE = $(evalcall2 VBOX_SET_VER_INFO_INTERNAL,$1,$2,$3,TemplateExe.rc,,$4)
 
 ##
 # Macro for setting driver version information and description.
