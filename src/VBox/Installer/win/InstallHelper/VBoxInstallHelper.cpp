@@ -1947,4 +1947,3 @@ UINT __stdcall UninstallVBoxDrv(MSIHANDLE hModule)
     return ERROR_SUCCESS;
 }
 
-
