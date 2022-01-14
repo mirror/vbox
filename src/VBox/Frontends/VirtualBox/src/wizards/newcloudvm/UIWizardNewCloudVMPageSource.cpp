@@ -391,8 +391,10 @@ UIWizardNewCloudVMPageSource::UIWizardNewCloudVMPageSource()
                     const int iFontHeight = fm.height();
                     const int iTotalHeight = 8 * iFontHeight;
                     m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-                    m_pSourceImageList->setAlternatingRowColors(true);
+                    /* We want to have sorting enabled: */
                     m_pSourceImageList->setSortingEnabled(true);
+                    /* A bit of look&feel: */
+                    m_pSourceImageList->setAlternatingRowColors(true);
 
                     /* Add into layout: */
                     pSourceImageLayout->addWidget(m_pSourceImageList);

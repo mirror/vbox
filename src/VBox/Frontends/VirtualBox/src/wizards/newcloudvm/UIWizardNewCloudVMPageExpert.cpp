@@ -127,19 +127,9 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
                     m_pSourceImageList = new QListWidget(pWidgetSource);
                     if (m_pSourceImageList)
                     {
+                        /* We want to have sorting enabled: */
                         m_pSourceImageList->setSortingEnabled(true);
-                        /* Make source image list fit 40/50 symbols
-                         * horizontally and 8 lines vertically: */
-                        const QFontMetrics fm(m_pSourceImageList->font());
-                        const int iFontWidth = fm.width('x');
-#ifdef VBOX_WS_MAC
-                        const int iTotalWidth = 40 * iFontWidth;
-#else
-                        const int iTotalWidth = 50 * iFontWidth;
-#endif
-                        const int iFontHeight = fm.height();
-                        const int iTotalHeight = 8 * iFontHeight;
-                        m_pSourceImageList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+                        /* A bit of look&feel: */
                         m_pSourceImageList->setAlternatingRowColors(true);
 
                         /* Add into layout: */
@@ -165,21 +155,6 @@ UIWizardNewCloudVMPageExpert::UIWizardNewCloudVMPageExpert()
                     m_pFormEditor = new UIFormEditorWidget(pWidgetSettings);
                     if (m_pFormEditor)
                     {
-                        /* Make form editor fit fit 40/50 symbols
-                         * horizontally and 8 sections vertically: */
-                        const QFontMetrics fm(m_pSourceImageList->font());
-                        const int iFontWidth = fm.width('x');
-#ifdef VBOX_WS_MAC
-                        const int iTotalWidth = 40 * iFontWidth;
-#else
-                        const int iTotalWidth = 50 * iFontWidth;
-#endif
-                        const int iSectionHeight = m_pFormEditor->verticalHeader()
-                                                 ? m_pFormEditor->verticalHeader()->defaultSectionSize()
-                                                 : fm.height();
-                        const int iTotalHeight = 8 * iSectionHeight;
-                        m_pFormEditor->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
-
                         /* Add into layout: */
                         pLayoutSettings->addWidget(m_pFormEditor);
                     }
