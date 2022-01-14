@@ -34,9 +34,9 @@ BEGIN
    BEGIN
       BLOCK "040904b0"
       BEGIN
-         VALUE "FileDescription",  "VirtualBox\0"
-         VALUE "InternalName",     "VirtualBox\0"
-         VALUE "OriginalFilename", "VirtualBox.exe\0"
+         VALUE "FileDescription",  "VirtualBox Installer\0"
+         VALUE "InternalName",     "VirtualBox-" RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "." RT_XSTR(VBOX_VERSION_BUILD) "-r" RT_XSTR(VBOX_SVN_REV) "-Win\0"
+         VALUE "OriginalFilename", "VirtualBox-" RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "." RT_XSTR(VBOX_VERSION_BUILD) "-r" RT_XSTR(VBOX_SVN_REV) "-Win.exe\0"
          VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
          VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
