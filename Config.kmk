@@ -3981,7 +3981,8 @@ ifdef VBOX_SIGNING_MODE
   #
   # This builds on Plan B, since the corp code signing always replaces existing
   # signatures. Since we're signing more, though, we do things slightly differently
-  # so we can apply this to VBOX_RTSIGNTOOL as well.
+  # so we can apply this to VBOX_RTSIGNTOOL as well - only that didn't work because
+  # kmk tries to help windows caching images it executes.  So HACK ALERT on that.
   #
   # So, here is what we do.
   #   1. Sign $1 using the regular signing, probably dual signing it using local certs.
@@ -3998,7 +3999,7 @@ ifdef VBOX_SIGNING_MODE
   # @param 6  Disables tripple signing if non-empty.
   #
   # @remarks The parameters are the same as VBOX_SIGN_FILE_FN.
-  VBOX_SIGN_IMAGE_WITH_EV_FN = $(call VBOX_SIGN_FILE_FN,$1,$2,$3,$4,$5)$(if-expr "$5" == "",\
+  VBOX_SIGN_IMAGE_WITH_EV_FN = $(call VBOX_SIGN_FILE_FN,$1,$2,$3,$4,$5)$(if-expr "$5" == "" && "$(target)" != "bldRTSignTool",\
 	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(RM) -f -- "$1.dual" \
   	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(CP) -- "$1" "$1.dual" \
   	$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB))$(call VBOX_CCS_SIGN_CMD,microsoftev,$1,,-digest_algo SHA2) \
