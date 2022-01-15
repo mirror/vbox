@@ -38,3 +38,13 @@ extern "C" void __cdecl NtProcessStartup(void *pvIgnored)
     NOREF(pvIgnored);
 }
 
+
+#ifdef IN_RING0
+extern "C" long DriverEntry(void *pvDrvObjIgn, void *pvRegPathIgn)
+{
+    ASMBreakpoint();
+    RT_NOREF(pvDrvObjIgn, pvRegPathIgn);
+    return UINT32_C(0xc0000022);
+}
+#endif
+
