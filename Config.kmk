@@ -4388,7 +4388,7 @@ if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
  $(1)_VBOX_RE_SIGNED_$(n) := 1
  $(eval $(1)_CLEAN += $$($(1)_0_OUTDIR)/$(n))
 
- $$($(1)_0_OUTDIR)/$(n): $(2) $(VBOX_VERSION_STAMP) | $$(dir $$@)
+ $$($(1)_0_OUTDIR)/$(n): $(2) $(VBOX_VERSION_STAMP) | $$(dir $$@) $(VBOX_SIGN_IMAGE_ORDERDEPS)
 	$(call MSG_TOOL,SIGNTOOL,,$<,$@)
 	$(RM) -f -- "$@"
 	$(CP) -- "$(quote-sh-dq $<)" "$@"
@@ -4410,7 +4410,7 @@ ifndef $(1)_VBOX_RE_SIGNED_$(n)
  $(1)_VBOX_RE_SIGNED_$(n) := 1
  $(eval $(1)_CLEAN += $$($(1)_0_OUTDIR)/$(n))
 
- $$($(1)_0_OUTDIR)/$(n): $(2) $(VBOX_VERSION_STAMP) | $$(dir $$@)
+ $$($(1)_0_OUTDIR)/$(n): $(2) $(VBOX_VERSION_STAMP) | $$(dir $$@) $(VBOX_SIGN_IMAGE_ORDERDEPS)
 	$(call MSG_TOOL,SIGNTOOL,,$<,$@)
 	$(RM) -f -- "$@"
 	$(CP) -- "$<" "$@"
