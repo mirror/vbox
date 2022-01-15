@@ -4043,17 +4043,20 @@ ifdef VBOX_SIGNING_MODE
   # @param 2  File description. Optional.
   # @param 3  Set to 2 if the expression will be expanded twice before chopped into commands (for _CMDS).
   if1of (win_with_ev,$(VBOX_WITH_CORP_CODE_SIGNING))
-   VBOX_SIGN_IMAGE_FN    ?= $(call VBOX_SIGN_IMAGE_WITH_EV_FN,$(1),$(2),/ph,$(3))
+   VBOX_SIGN_IMAGE_FN        ?= $(call VBOX_SIGN_IMAGE_WITH_EV_FN,$(1),$(2),/ph,$(3))
+   VBOX_SIGN_IMAGE_ORDERDEPS ?= $(VBOX_RTSIGNTOOL)
   else
-   VBOX_SIGN_IMAGE_FN    ?= $(call VBOX_SIGN_FILE_FN,$(1),$(2),/ph,$(3))
+   VBOX_SIGN_IMAGE_FN        ?= $(call VBOX_SIGN_FILE_FN,$(1),$(2),/ph,$(3))
+   VBOX_SIGN_IMAGE_ORDERDEPS ?=
   endif
 
   ## Commands for signing a driver image after link.
   if $(intersects win_planb,$(VBOX_WITH_CORP_CODE_SIGNING))
-   VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_PLAN_B_FN,$(out),,/ph,2))
+   VBOX_SIGN_DRIVER_CMDS      ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_PLAN_B_FN,$(out),,/ph,2))
    VBOX_SIGN_DRIVER_ORDERDEPS ?= $(VBOX_RTSIGNTOOL)
   else
-   VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
+   VBOX_SIGN_DRIVER_CMDS      ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
+   VBOX_SIGN_DRIVER_ORDERDEPS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_SIGN_IMAGE_ORDERDEPS))
   endif
 
   ## Create a security catalog file.
@@ -4082,7 +4085,8 @@ ifdef VBOX_SIGNING_MODE
   # Go nuts, sign everything.
   if "$(VBOX_SIGNING_MODE)" == "release" || defined(VBOX_WITH_HARDENING)
    ## Commands for signing an executable or a dll image after link.
-   VBOX_SIGN_IMAGE_CMDS  ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
+   VBOX_SIGN_IMAGE_CMDS      ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out),,2))
+   VBOX_SIGN_IMAGE_ORDERDEPS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_SIGN_IMAGE_ORDERDEPS))
   endif
   ## Enable signing of the additions.
   VBOX_SIGN_ADDITIONS   ?= 1
@@ -4865,6 +4869,7 @@ ifdef VBOX_WITH_RAW_MODE
   TEMPLATE_VBoxRc_LIBS              += \
   	$(PATH_STAGE_LIB)/RuntimeRCStub$(VBOX_SUFF_LIB)
   TEMPLATE_VBoxRc_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
+  TEMPLATE_VBoxRc_ORDERDEPS          = $(VBOX_SIGN_IMAGE_ORDERDEPS)
  endif # pe
 
  ifeq ($(VBOX_LDR_FMT32),elf)
@@ -5782,6 +5787,7 @@ ifeq ($(KBUILD_TARGET),win)
  endif
 
  TEMPLATE_VBOXR3EXE_POST_CMDS          = $(VBOX_UTF8_MANIFEST_CMDS)$(NLTAB)$(VBOX_SIGN_IMAGE_CMDS)
+ TEMPLATE_VBOXR3EXE_ORDERDEPS          = $(VBOX_SIGN_IMAGE_ORDERDEPS)
  if defined(VBOX_WITH_MORE_NT4_COMPAT_BINARIES) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "win.x86"
   TEMPLATE_VBOXR3EXE_POST_CMDS.win.x86 = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION) $(out)$$(NLTAB)$(TEMPLATE_VBOXR3EXE_POST_CMDS))
   TEMPLATE_VBOXR3EXE_LNK_DEPS.win.x86  = $(if $(eq $(tool_do),LINK_LIBRARY),,$(VBOX_PE_SET_VERSION))
@@ -6818,6 +6824,7 @@ ifeq ($(KBUILD_TARGET),win)
   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/oldnames.lib
  endif
  TEMPLATE_VBOXMAINEXE_POST_CMDS          = $(VBOX_UTF8_MANIFEST_CMDS)$(NLTAB)$(VBOX_SIGN_IMAGE_CMDS)
+ TEMPLATE_VBOXMAINEXE_ORDERDEPS          = $(VBOX_SIGN_IMAGE_ORDERDEPS)
 
 else # the GCC guys:
 
@@ -7460,6 +7467,7 @@ ifdef VBOX_WITH_QTGUI
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
   endif
   TEMPLATE_VBOXQTGUIEXE_POST_CMDS     = $(VBOX_UTF8_MANIFEST_CMDS)$(NLTAB)$(VBOX_SIGN_IMAGE_CMDS)
+  TEMPLATE_VBOXQTGUIEXE_ORDERDEPS     = $(VBOX_SIGN_IMAGE_ORDERDEPS)
 
  else # the gcc guys:
   TEMPLATE_VBOXQTGUIEXE_TOOL = $(VBOX_GCC_TOOL)
