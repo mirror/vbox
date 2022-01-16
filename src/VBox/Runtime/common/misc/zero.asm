@@ -29,8 +29,24 @@
 ;*******************************************************************************
 %include "iprt/asmdefs.mac"
 
-; Putting it in the code segment/section for now.
+;
+; Section to put this in.
+;
+;       - PE/COFF: Unless we put this in an BSS like section, the linker will
+;         write out 64KB of zeros.  (Tried using .rdata$zz and put it at the end
+;         of that section, but the linker did not reduce the RawDataSize.)  The
+;         assmebler does not let us control the write flag directly, so we emit
+;         a linker directive that switches of the write flag for the section.
+;
+;       - Fallback: Code section.
+;
+%ifdef ASM_FORMAT_PE
+section .drectve info
+        db '-section:.zero,!W '
+section .zero bss align=4096
+%else
 BEGINCODE
+%endif
 
 ;;
 ; 64KB of zero memory with various sized labels.
@@ -41,7 +57,11 @@ EXPORTEDNAME_EX g_abRTZero8K, object
 EXPORTEDNAME_EX g_abRTZero16K, object
 EXPORTEDNAME_EX g_abRTZero32K, object
 EXPORTEDNAME_EX g_abRTZero64K, object
+%ifdef ASM_FORMAT_PE
+        resb  0x10000
+%else
         times 0x10000/(16*4) dd 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0
+%endif
 %ifdef ASM_FORMAT_ELF
 size g_abRTZeroPage     _4K
 size g_abRTZero4K       _4K
@@ -50,3 +70,4 @@ size g_abRTZero16K     _16K
 size g_abRTZero32K     _32K
 size g_abRTZero64K     _64K
 %endif
+
