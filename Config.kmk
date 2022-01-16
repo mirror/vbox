@@ -343,8 +343,8 @@ VBOX_WITH_NEW_XCODE := 1
 endif
 # Select new VC++ on Windows.
 VBOX_WITH_NEW_VCC = 1
-# disable control flow guards for now, issues with hardening.
-VBOX_WITHOUT_CONTROL_FLOW_GUARD = 1
+# Use this to disable control flow.
+#VBOX_WITHOUT_CONTROL_FLOW_GUARD = 1
 # Select Windows 11 SDK.
 VBOX_WITH_NEW_WINDOWS_SDK = 1
 # Select Windows 11 DDK.
