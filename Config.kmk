@@ -3499,6 +3499,34 @@ else
 endif
 
 #
+# Version dependent Visual C++ stuff.
+#
+if1of (win, $(KBUILD_TARGET) $(KBUILD_HOST))
+ ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120)
+  ifndef VBOX_WITHOUT_CONTROL_FLOW_GUARD
+   VBOX_VCC_CC_GUARD_CF        = -guard:cf
+   VBOX_VCC_LD_GUARD_CF        = -Guard:CF
+  else
+   VBOX_VCC_CC_GUARD_CF        =
+   VBOX_VCC_LD_GUARD_CF        =
+  endif
+  VBOX_VCC_LD_HIGH_ENTRYOPY_VA = /HighEntropyVA
+ else
+  VBOX_VCC_CC_GUARD_CF         =
+  VBOX_VCC_LD_GUARD_CF         =
+  VBOX_VCC_LD_HIGH_ENTRYOPY_VA =
+ endif
+ ifn1of ((VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120 VCC140 VCC141)
+  # 16.7 and later, so not in our linker yet.
+  ## @todo BUGBUG! Update VCC before 7.0 is released.
+  #VBOX_VCC_LD_CET_COMPAT       = /CetCompat
+  VBOX_VCC_LD_CET_COMPAT       =
+ else
+  VBOX_VCC_LD_CET_COMPAT       =
+ endif
+endif
+
+#
 # Compiler optimization flags.
 #
 ifeq ($(KBUILD_TYPE),debug)
@@ -5006,19 +5034,17 @@ ifeq ($(VBOX_LDR_FMT),pe)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_VCC_TOOL)
 TEMPLATE_VBoxR0_RCDEFS              = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
 TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
-  	-Gy $(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
+  	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_WARN_ALL) -wd4505 $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
 TEMPLATE_VBoxR0_CXXFLAGS           += -Gw
- endif
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-TEMPLATE_VBoxR0_CXXFLAGS           += -guard:cf
  endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
 TEMPLATE_VBoxR0_CXXFLAGS           += /analyze
  endif
 TEMPLATE_VBoxR0_CFLAGS              = $(TEMPLATE_VBoxR0_CXXFLAGS)
 TEMPLATE_VBoxR0_LDFLAGS             = -Ignore:4197 \
-	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) -Release -Debug -Opt:Ref -Opt:Icf \
+	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR) \
+	-Release -Debug -Opt:Ref -Opt:Icf $(VBOX_VCC_LD_GUARD_CF) \
 	-Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-Stub:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com
  ifdef VBOX_WITH_DTRACE_R0
@@ -5027,9 +5053,7 @@ TEMPLATE_VBoxR0_LDFLAGS            += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:V
  ifdef VBOX_SIGNING_MODE
   TEMPLATE_VBoxR0_LDFLAGS          += -IntegrityCheck
  endif
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-TEMPLATE_VBoxR0_LDFLAGS            += -Guard:CF
- endif
+TEMPLATE_VBoxR0_LDFLAGS.win.amd64   = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
 TEMPLATE_VBoxR0_LIBS                = \
 	$(PATH_STAGE_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
@@ -5190,12 +5214,9 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR0DRV_DEFS.amd64        += NT_INLINE_IRQL NT_INLINE_GET_CURRENT_IRQL # Prevent W10 WDK from importing KeLowerIrql and KeGetCurrentIrql.
  TEMPLATE_VBOXR0DRV_DEFS.win           = IPRT_NT_MAP_TO_ZW
  TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -Gz -GS- -Zc:wchar_t- $(VBOX_VCC_FP) -Gs4096 $(VBOX_VCC_OPT) \
-	-Gy $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBOXR0DRV_CXXFLAGS         += -Gw
- endif
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-  TEMPLATE_VBOXR0DRV_CXXFLAGS         += -guard:cf
  endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBOXR0DRV_CXXFLAGS         += /analyze
@@ -5203,6 +5224,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR0DRV_CFLAGS             = $(TEMPLATE_VBOXR0DRV_CXXFLAGS)
  TEMPLATE_VBOXR0DRV_LDFLAGS            = -Ignore:4197 \
  	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD -Release -Debug -Opt:Ref -Opt:Icf \
+ 	$(VBOX_VCC_LD_GUARD_CF) \
 	-Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-Stub:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com
  ifdef VBOX_WITH_DTRACE_R0DRV
@@ -5211,9 +5233,7 @@ ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_SIGNING_MODE
   TEMPLATE_VBOXR0DRV_LDFLAGS          += -IntegrityCheck
  endif
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-  TEMPLATE_VBOXR0DRV_LDFLAGS          += -Guard:CF
- endif
+ TEMPLATE_VBOXR0DRV_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
  TEMPLATE_VBOXR0DRV_ORDERDEPS          = $(VBOX_SIGN_DRIVER_ORDERDEPS)
  TEMPLATE_VBOXR0DRV_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
 endif
@@ -5753,12 +5773,9 @@ ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBOXR3EXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK)
  endif
  TEMPLATE_VBOXR3EXE_CXXFLAGS           = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
- 	-Gy $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ 	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBOXR3EXE_CXXFLAGS         += -Gw
- endif
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-  TEMPLATE_VBOXR3EXE_CXXFLAGS         += -guard:cf
  endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBOXR3EXE_CXXFLAGS         += /analyze
@@ -5776,6 +5793,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR3EXE_PCHFLAGS.kprofile  = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile)
  TEMPLATE_VBOXR3EXE_LDFLAGS            = -Ignore:4197 \
 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
+	$(VBOX_VCC_LD_GUARD_CF) \
 	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	/STUB:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com \
 	/DISALLOWLIB:libc.lib \
@@ -5790,9 +5808,7 @@ ifeq ($(KBUILD_TARGET),win)
  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
    TEMPLATE_VBOXR3EXE_LDFLAGS         += -IntegrityCheck
  endif
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-  TEMPLATE_VBOXR3EXE_LDFLAGS          += -Guard:CF
- endif
+ TEMPLATE_VBOXR3EXE_LDFLAGS.win.amd64	= $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
 
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBOXR3EXE_LIBS.x86           = \
@@ -6784,7 +6800,8 @@ ifeq ($(KBUILD_TARGET),win)
  else
   TEMPLATE_VBOXMAINEXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  endif
- TEMPLATE_VBOXMAINEXE_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP)
+ TEMPLATE_VBOXMAINEXE_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- \
+ 	$(VBOX_VCC_OPT) $(VBOX_VCC_FP) $(VBOX_VCC_CC_GUARD_CF)
  #    -wd4625: 'DisplaySourceBitmap' : copy constructor could not be generated because a base class copy constructor is inaccessible
  #    -wd4626: 'DisplaySourceBitmap' : assignment operator could not be generated because a base class assignment operator is inaccessible
  #             The two above can be cured by adding private: DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(xxxx); but too much work.
@@ -6793,9 +6810,6 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXMAINEXE_CXXFLAGS          += -Gy
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBOXMAINEXE_CXXFLAGS         += -Gw
- endif
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-  TEMPLATE_VBOXMAINEXE_CXXFLAGS         += -guard:cf
  endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBOXMAINEXE_CXXFLAGS         += /analyze
@@ -6813,6 +6827,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXMAINEXE_PCHFLAGS.kprofile  = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
  TEMPLATE_VBOXMAINEXE_LDFLAGS            = -Ignore:4197 \
 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
+	$(VBOX_VCC_LD_GUARD_CF) \
 	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	/STUB:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com \
 	/DISALLOWLIB:libc.lib \
@@ -6830,12 +6845,10 @@ ifeq ($(KBUILD_TARGET),win)
  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
   TEMPLATE_VBOXMAINEXE_LDFLAGS          += -IntegrityCheck
  endif
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-  TEMPLATE_VBOXMAINEXE_LDFLAGS          += -Guard:CF
- endif
  ifdef VBOX_WITH_DTRACE_R3_MAIN
   TEMPLATE_VBOXMAINEXE_LDFLAGS          += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:VTGPrLc.End=VTGPrLc.Begin -Merge:VTGPrLc.Begin=VTGObj
  endif
+ TEMPLATE_VBOXMAINEXE_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
  TEMPLATE_VBOXMAINEXE_LIBS               = \
 	$(LIB_RUNTIME)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
@@ -7437,7 +7450,7 @@ ifdef VBOX_WITH_QTGUI
      _WIN32_WINNT=0x0500 UNICODE _UNICODE \
      QT_DLL _CRT_SECURE_NO_DEPRECATE \
      $(QMAKE_PRL_DEFINES)
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t-
+  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t- $(VBOX_VCC_CC_GUARD_CF)
   #    -wd4481: nonstandard extension used: override specifier 'override'
   #    -wd4625: 'QRubberBand' : copy constructor could not be generated because a base class copy constructor is inaccessible
   #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
@@ -7463,9 +7476,6 @@ ifdef VBOX_WITH_QTGUI
   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -Gw
   endif
-  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-   TEMPLATE_VBOXR0DRV_CXXFLAGS += -guard:cf
-  endif
   ifdef VBOX_WITH_MSC_ANALYZE_THIS
    TEMPLATE_VBOXR0DRV_CXXFLAGS += /analyze
   endif
@@ -7478,14 +7488,13 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.dbgopt = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS = -Ignore:4197 \
 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
+	$(VBOX_VCC_LD_GUARD_CF) \
 	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	/STUB:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com
   if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
    TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -IntegrityCheck
   endif
-  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-   TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -Guard:CF
-  endif
+  TEMPLATE_VBOXQTGUIEXE_LDFLAGS.win.amd64 = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
 
   TEMPLATE_VBOXQTGUIEXE_SDKS += $(VBOX_WINPSDK)
   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
@@ -7746,13 +7755,10 @@ ifeq ($(KBUILD_HOST),win)
  else
   TEMPLATE_VBoxBldProg_SDKS             := ReorderCompilerIncs $(VBOX_WINPSDK)
  endif
- TEMPLATE_VBoxBldProg_CXXFLAGS          := -Zi -Zl -GR- -EHsc -GF -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) -MT$(VBOX_VCC_CRT_TYPE) \
-	-Gy $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxBldProg_CXXFLAGS          := -Zi -Zl -GR- -EHsc -GF -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
+ 	-MT$(VBOX_VCC_CRT_TYPE) -Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBoxBldProg_CXXFLAGS         += -Gw
- endif
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-  TEMPLATE_VBoxBldProg_CXXFLAGS         += -guard:cf
  endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   TEMPLATE_VBoxBldProg_CXXFLAGS         += /analyze
@@ -7775,6 +7781,7 @@ ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxBldProg_PCHFLAGS.kprofile  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.kprofile)
  TEMPLATE_VBoxBldProg_LDFLAGS            = -Ignore:4197 \
  	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
+ 	$(VBOX_VCC_LD_GUARD_CF) \
  	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
  	/DISALLOWLIB:libc$(VBOX_VCC_CRT_TYPE_N).lib \
  	/DISALLOWLIB:libcmt$(VBOX_VCC_CRT_TYPE_N).lib \
@@ -7788,9 +7795,7 @@ ifeq ($(KBUILD_HOST),win)
 	/DISALLOWLIB:vcruntimed.lib \
 	/DISALLOWLIB:ucrt.lib \
 	/DISALLOWLIB:ucrtd.lib
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
-  TEMPLATE_VBoxBldProg_LDFLAGS           += -Guard:CF
- endif
+ TEMPLATE_VBoxBldProg_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
   TEMPLATE_VBoxBldProg_LIBS               = \
   	$(PATH_TOOL_$(TEMPLATE_VBoxBldProg_TOOL)_LIB)/libvcruntime$(VBOX_VCC_CRT_TYPE).lib \
