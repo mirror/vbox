@@ -5593,6 +5593,127 @@ DECLINLINE(void) ASMProbeReadBuffer(const void RT_FAR *pvBuf, size_t cbBuf) RT_N
 }
 
 
+/**
+ * Reverse the byte order of the given 16-bit integer.
+ *
+ * @returns Revert
+ * @param   u16     16-bit integer value.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMByteSwapU16(uint16_t u16) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16) RT_NOTHROW_DEF
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    return _byteswap_ushort(u16);
+
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
+    __asm__ ("rorw $8, %0" : "=r" (u16) : "0" (u16) : "cc");
+#  else
+    _asm
+    {
+        mov     ax, [u16]
+        ror     ax, 8
+        mov     [u16], ax
+    }
+#  endif
+    return u16;
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    uint32_t u32Ret;
+    __asm__ __volatile__(
+#  if defined(RT_ARCH_ARM64)
+                         "rev16     %w[uRet], %w[uVal]\n\t"
+#  else
+                         "rev16     %[uRet], %[uVal]\n\t"
+#  endif
+                         : [uRet] "=r" (u32Ret)
+                         : [uVal] "r" (u16));
+    return (uint16_t)u32Ret;
+
+# else
+#  error "Port me"
+# endif
+}
+#endif
+
+
+/**
+ * Reverse the byte order of the given 32-bit integer.
+ *
+ * @returns Revert
+ * @param   u32     32-bit integer value.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMByteSwapU32(uint32_t u32) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32) RT_NOTHROW_DEF
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    return _byteswap_ulong(u32);
+
+# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
+    __asm__ ("bswapl %0" : "=r" (u32) : "0" (u32));
+#  else
+    _asm
+    {
+        mov     eax, [u32]
+        bswap   eax
+        mov     [u32], eax
+    }
+#  endif
+    return u32;
+
+# elif defined(RT_ARCH_ARM64)
+    uint64_t u64Ret;
+    __asm__ __volatile__("rev32     %[uRet], %[uVal]\n\t"
+                         : [uRet] "=r" (u64Ret)
+                         : [uVal] "r" ((uint64_t)u32));
+    return (uint32_t)u64Ret;
+
+# elif defined(RT_ARCH_ARM32)
+    __asm__ __volatile__("rev       %[uRet], %[uVal]\n\t"
+                         : [uRet] "=r" (u32)
+                         : [uVal] "[uRet]" (u32));
+    return u32;
+
+# else
+#  error "Port me"
+# endif
+}
+#endif
+
+
+/**
+ * Reverse the byte order of the given 64-bit integer.
+ *
+ * @returns Revert
+ * @param   u64     64-bit integer value.
+ */
+DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64) RT_NOTHROW_DEF
+{
+#if defined(RT_ARCH_AMD64) && RT_INLINE_ASM_USES_INTRIN
+    return _byteswap_uint64(u64);
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    __asm__ ("bswapq %0" : "=r" (u64) : "0" (u64));
+    return u64;
+
+# elif defined(RT_ARCH_ARM64)
+    __asm__ __volatile__("rev       %[uRet], %[uVal]\n\t"
+                         : [uRet] "=r" (u64)
+                         : [uVal] "[uRet]" (u64));
+    return u64;
+
+#else
+    return (uint64_t)ASMByteSwapU32((uint32_t)u64) << 32
+         | (uint64_t)ASMByteSwapU32((uint32_t)(u64 >> 32));
+#endif
+}
+
+
 
 /** @defgroup grp_inline_bits   Bit Operations
  * @{
@@ -6341,7 +6462,7 @@ DECLINLINE(void) ASMBitClearRange(volatile void RT_FAR *pvBitmap, int32_t iBitSt
             /* bits in last dword. */
             if (iBitEnd & 31)
             {
-                pu32 = (volatile uint32_t *)pvBitmap + (iBitEnd >> 5);
+                pu32 = (volatile uint32_t RT_FAR *)pvBitmap + (iBitEnd >> 5);
                 *pu32 &= RT_H2LE_U32(~((UINT32_C(1) << (iBitEnd & 31)) - 1));
             }
         }
@@ -6382,8 +6503,8 @@ DECLINLINE(void) ASMBitSetRange(volatile void RT_FAR *pvBitmap, int32_t iBitStar
             /* bits in last dword. */
             if (iBitEnd & 31)
             {
-                pu32 = RT_H2LE_U32((volatile uint32_t RT_FAR *)pvBitmap + (iBitEnd >> 5));
-                *pu32 |= (UINT32_C(1) << (iBitEnd & 31)) - 1;
+                pu32 = (volatile uint32_t RT_FAR *)pvBitmap + (iBitEnd >> 5);
+                *pu32 |= RT_H2LE_U32((UINT32_C(1) << (iBitEnd & 31)) - 1);
             }
         }
     }
@@ -7054,127 +7175,6 @@ DECLINLINE(unsigned) ASMBitLastSetU16(uint16_t u16) RT_NOTHROW_DEF
     return ASMBitLastSetU32((uint32_t)u16);
 }
 #endif
-
-
-/**
- * Reverse the byte order of the given 16-bit integer.
- *
- * @returns Revert
- * @param   u16     16-bit integer value.
- */
-#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(uint16_t) ASMByteSwapU16(uint16_t u16) RT_NOTHROW_PROTO;
-#else
-DECLINLINE(uint16_t) ASMByteSwapU16(uint16_t u16) RT_NOTHROW_DEF
-{
-# if RT_INLINE_ASM_USES_INTRIN
-    return _byteswap_ushort(u16);
-
-# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-#  if RT_INLINE_ASM_GNU_STYLE
-    __asm__ ("rorw $8, %0" : "=r" (u16) : "0" (u16) : "cc");
-#  else
-    _asm
-    {
-        mov     ax, [u16]
-        ror     ax, 8
-        mov     [u16], ax
-    }
-#  endif
-    return u16;
-
-# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
-    uint32_t u32Ret;
-    __asm__ __volatile__(
-#  if defined(RT_ARCH_ARM64)
-                         "rev16     %w[uRet], %w[uVal]\n\t"
-#  else
-                         "rev16     %[uRet], %[uVal]\n\t"
-#  endif
-                         : [uRet] "=r" (u32Ret)
-                         : [uVal] "r" (u16));
-    return (uint16_t)u32Ret;
-
-# else
-#  error "Port me"
-# endif
-}
-#endif
-
-
-/**
- * Reverse the byte order of the given 32-bit integer.
- *
- * @returns Revert
- * @param   u32     32-bit integer value.
- */
-#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
-RT_ASM_DECL_PRAGMA_WATCOM(uint32_t) ASMByteSwapU32(uint32_t u32) RT_NOTHROW_PROTO;
-#else
-DECLINLINE(uint32_t) ASMByteSwapU32(uint32_t u32) RT_NOTHROW_DEF
-{
-# if RT_INLINE_ASM_USES_INTRIN
-    return _byteswap_ulong(u32);
-
-# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-#  if RT_INLINE_ASM_GNU_STYLE
-    __asm__ ("bswapl %0" : "=r" (u32) : "0" (u32));
-#  else
-    _asm
-    {
-        mov     eax, [u32]
-        bswap   eax
-        mov     [u32], eax
-    }
-#  endif
-    return u32;
-
-# elif defined(RT_ARCH_ARM64)
-    uint64_t u64Ret;
-    __asm__ __volatile__("rev32     %[uRet], %[uVal]\n\t"
-                         : [uRet] "=r" (u64Ret)
-                         : [uVal] "r" ((uint64_t)u32));
-    return (uint32_t)u64Ret;
-
-# elif defined(RT_ARCH_ARM32)
-    __asm__ __volatile__("rev       %[uRet], %[uVal]\n\t"
-                         : [uRet] "=r" (u32)
-                         : [uVal] "[uRet]" (u32));
-    return u32;
-
-# else
-#  error "Port me"
-# endif
-}
-#endif
-
-
-/**
- * Reverse the byte order of the given 64-bit integer.
- *
- * @returns Revert
- * @param   u64     64-bit integer value.
- */
-DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64) RT_NOTHROW_DEF
-{
-#if defined(RT_ARCH_AMD64) && RT_INLINE_ASM_USES_INTRIN
-    return _byteswap_uint64(u64);
-
-# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
-    __asm__ ("bswapq %0" : "=r" (u64) : "0" (u64));
-    return u64;
-
-# elif defined(RT_ARCH_ARM64)
-    __asm__ __volatile__("rev       %[uRet], %[uVal]\n\t"
-                         : [uRet] "=r" (u64)
-                         : [uVal] "[uRet]" (u64));
-    return u64;
-
-#else
-    return (uint64_t)ASMByteSwapU32((uint32_t)u64) << 32
-         | (uint64_t)ASMByteSwapU32((uint32_t)(u64 >> 32));
-#endif
-}
 
 
 /**
