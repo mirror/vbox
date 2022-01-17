@@ -2181,60 +2181,8 @@ static HRESULT produceList(enum ListType_T enmCommand, bool fOptLong, bool fOptS
             break;
 
         case kListNatNetworks:
-        {
-            com::SafeIfaceArray<INATNetwork> nets;
-            CHECK_ERROR(pVirtualBox, COMGETTER(NATNetworks)(ComSafeArrayAsOutParam(nets)));
-            for (size_t i = 0; i < nets.size(); ++i)
-            {
-                ComPtr<INATNetwork> net = nets[i];
-                Bstr netName;
-                net->COMGETTER(NetworkName)(netName.asOutParam());
-                RTPrintf(List::tr("NetworkName:    %ls\n"), netName.raw());
-                Bstr gateway;
-                net->COMGETTER(Gateway)(gateway.asOutParam());
-                RTPrintf("IP:             %ls\n", gateway.raw());
-                Bstr network;
-                net->COMGETTER(Network)(network.asOutParam());
-                RTPrintf(List::tr("Network:        %ls\n"), network.raw());
-                BOOL fEnabled;
-                net->COMGETTER(IPv6Enabled)(&fEnabled);
-                RTPrintf(List::tr("IPv6 Enabled:   %s\n"), fEnabled ? List::tr("Yes") : List::tr("No"));
-                Bstr ipv6prefix;
-                net->COMGETTER(IPv6Prefix)(ipv6prefix.asOutParam());
-                RTPrintf(List::tr("IPv6 Prefix:    %ls\n"), ipv6prefix.raw());
-                net->COMGETTER(NeedDhcpServer)(&fEnabled);
-                RTPrintf(List::tr("DHCP Enabled:   %s\n"), fEnabled ? List::tr("Yes") : List::tr("No"));
-                net->COMGETTER(Enabled)(&fEnabled);
-                RTPrintf(List::tr("Enabled:        %s\n"), fEnabled ? List::tr("Yes") : List::tr("No"));
-
-#define PRINT_STRING_ARRAY(title) \
-                if (strs.size() > 0)    \
-                { \
-                    RTPrintf(title); \
-                    size_t j = 0; \
-                    for (;j < strs.size(); ++j) \
-                        RTPrintf("        %s\n", Utf8Str(strs[j]).c_str()); \
-                }
-
-                com::SafeArray<BSTR> strs;
-
-                CHECK_ERROR(nets[i], COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(strs)));
-                PRINT_STRING_ARRAY(List::tr("Port-forwarding (ipv4)\n"));
-                strs.setNull();
-
-                CHECK_ERROR(nets[i], COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(strs)));
-                PRINT_STRING_ARRAY(List::tr("Port-forwarding (ipv6)\n"));
-                strs.setNull();
-
-                CHECK_ERROR(nets[i], COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs)));
-                PRINT_STRING_ARRAY(List::tr("loopback mappings (ipv4)\n"));
-                strs.setNull();
-
-#undef PRINT_STRING_ARRAY
-                RTPrintf("\n");
-            }
+            rc = listNATNetworks(fOptLong, fOptSorted, pVirtualBox);
             break;
-        }
 
         case kListVideoInputDevices:
             rc = listVideoInputDevices(pVirtualBox);

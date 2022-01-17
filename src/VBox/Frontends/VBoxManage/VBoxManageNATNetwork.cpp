@@ -565,6 +565,9 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
 }
 
 
+/*
+ * VBoxManage natnetwork ...
+ */
 RTEXITCODE handleNATNetwork(HandlerArg *a)
 {
     if (a->argc < 1)
@@ -586,6 +589,74 @@ RTEXITCODE handleNATNetwork(HandlerArg *a)
     else
         rcExit = errorSyntax(USAGE_NATNETWORK, Nat::tr("Invalid parameter '%s'"), Utf8Str(a->argv[0]).c_str());
     return rcExit;
+}
+
+
+/*
+ * VBoxManage list natnetworks ...
+ */
+RTEXITCODE listNATNetworks(bool fLong, bool fSorted,
+                           const ComPtr<IVirtualBox> &pVirtualBox)
+{
+    int rc;
+
+    RT_NOREF(fLong);
+    RT_NOREF(fSorted);
+
+    com::SafeIfaceArray<INATNetwork> nets;
+    CHECK_ERROR(pVirtualBox, COMGETTER(NATNetworks)(ComSafeArrayAsOutParam(nets)));
+    for (size_t i = 0; i < nets.size(); ++i)
+    {
+        ComPtr<INATNetwork> net = nets[i];
+        Bstr netName;
+        net->COMGETTER(NetworkName)(netName.asOutParam());
+        RTPrintf(Nat::tr("NetworkName:    %ls\n"), netName.raw());
+        Bstr gateway;
+        net->COMGETTER(Gateway)(gateway.asOutParam());
+        RTPrintf("IP:             %ls\n", gateway.raw());
+        Bstr network;
+        net->COMGETTER(Network)(network.asOutParam());
+        RTPrintf(Nat::tr("Network:        %ls\n"), network.raw());
+        BOOL fEnabled;
+        net->COMGETTER(IPv6Enabled)(&fEnabled);
+        RTPrintf(Nat::tr("IPv6 Enabled:   %s\n"), fEnabled ? Nat::tr("Yes") : Nat::tr("No"));
+        Bstr ipv6prefix;
+        net->COMGETTER(IPv6Prefix)(ipv6prefix.asOutParam());
+        RTPrintf(Nat::tr("IPv6 Prefix:    %ls\n"), ipv6prefix.raw());
+        net->COMGETTER(NeedDhcpServer)(&fEnabled);
+        RTPrintf(Nat::tr("DHCP Enabled:   %s\n"), fEnabled ? Nat::tr("Yes") : Nat::tr("No"));
+        net->COMGETTER(Enabled)(&fEnabled);
+        RTPrintf(Nat::tr("Enabled:        %s\n"), fEnabled ? Nat::tr("Yes") : Nat::tr("No"));
+
+#define PRINT_STRING_ARRAY(title)                                       \
+            if (strs.size() > 0)                                        \
+            {                                                           \
+                RTPrintf(title);                                        \
+                size_t j = 0;                                           \
+                for (;j < strs.size(); ++j)                             \
+                    RTPrintf("        %s\n", Utf8Str(strs[j]).c_str()); \
+            }
+
+        com::SafeArray<BSTR> strs;
+
+        CHECK_ERROR(nets[i], COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(strs)));
+        PRINT_STRING_ARRAY(Nat::tr("Port-forwarding (ipv4)\n"));
+        strs.setNull();
+
+        CHECK_ERROR(nets[i], COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(strs)));
+        PRINT_STRING_ARRAY(Nat::tr("Port-forwarding (ipv6)\n"));
+        strs.setNull();
+
+        CHECK_ERROR(nets[i], COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs)));
+        PRINT_STRING_ARRAY(Nat::tr("loopback mappings (ipv4)\n"));
+        strs.setNull();
+
+#undef PRINT_STRING_ARRAY
+
+        RTPrintf("\n");
+    }
+
+    return RTEXITCODE_SUCCESS;
 }
 
 #endif /* !VBOX_ONLY_DOCS */

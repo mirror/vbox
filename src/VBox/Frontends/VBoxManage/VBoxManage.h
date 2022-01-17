@@ -391,7 +391,8 @@ RTEXITCODE handleDHCPServer(HandlerArg *a);
 
 /* VBoxManageNATNetwork.cpp */
 RTEXITCODE handleNATNetwork(HandlerArg *a);
-
+RTEXITCODE listNATNetworks(bool fLong, bool fSorted,
+                           const ComPtr<IVirtualBox> &pVirtualBox);
 
 /* VBoxManageBandwidthControl.cpp */
 RTEXITCODE handleBandwidthControl(HandlerArg *a);
