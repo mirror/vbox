@@ -5055,9 +5055,13 @@ TEMPLATE_VBoxR0_LDFLAGS            += -Merge:VTGPrLc.Data=VTGPrLc.Begin -Merge:V
   TEMPLATE_VBoxR0_LDFLAGS          += -IntegrityCheck
  endif
 TEMPLATE_VBoxR0_LDFLAGS.win.amd64   = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA)
+ ifneq ($(VBOX_VCC_CC_GUARD_CF),)
+TEMPLATE_VBoxR0_LDFLAGS.win.amd64  += -Include:__security_init_cookie  -Export:ModuleInitSecurityCookie=__security_init_cookie
+TEMPLATE_VBoxR0_LDFLAGS.win.x86    += -Include:___security_init_cookie -Export:ModuleInitSecurityCookie=___security_init_cookie
+ endif
 TEMPLATE_VBoxR0_LIBS                = \
 	$(PATH_STAGE_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
- if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD)
+ ifneq ($(VBOX_VCC_CC_GUARD_CF),)
 TEMPLATE_VBoxR0_LIBS               += \
  	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/BufferOverflowK.lib
   include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
