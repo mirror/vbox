@@ -49,6 +49,7 @@
 
 #include <VBox/log.h>
 
+#include <algorithm>
 #include <vector>
 #include <iprt/sanitized/string>
 
@@ -634,13 +635,46 @@ RTEXITCODE listNATNetworks(bool fLong, bool fSorted,
 {
     HRESULT rc;
 
-    RT_NOREF(fSorted);
+    com::SafeIfaceArray<INATNetwork> aNets;
+    CHECK_ERROR_RET(pVirtualBox,
+        COMGETTER(NATNetworks)(ComSafeArrayAsOutParam(aNets)),
+            RTEXITCODE_FAILURE);
 
-    com::SafeIfaceArray<INATNetwork> nets;
-    CHECK_ERROR(pVirtualBox, COMGETTER(NATNetworks)(ComSafeArrayAsOutParam(nets)));
-    for (size_t i = 0; i < nets.size(); ++i)
+    const size_t cNets = aNets.size();
+    if (cNets == 0)
+        return RTEXITCODE_SUCCESS;
+
+    /*
+     * Sort the list if necessary.  The sort is indirect via an
+     * intermediate array of indexes.
+     */
+    std::vector<size_t> vIndexes(cNets);
+    for (size_t i = 0; i < cNets; ++i)
+        vIndexes[i] = i;
+
+    if (fSorted)
     {
-        printNATNetwork(nets[i], fLong);
+        std::vector<com::Bstr> vBstrNames(cNets);
+        for (size_t i = 0; i < cNets; ++i)
+        {
+            CHECK_ERROR_RET(aNets[i],
+                COMGETTER(NetworkName)(vBstrNames[i].asOutParam()),
+                    RTEXITCODE_FAILURE);
+        }
+
+        struct SortBy {
+            const std::vector<com::Bstr> &ks;
+            SortBy(const std::vector<com::Bstr> &aKeys) : ks(aKeys) {}
+            bool operator() (size_t l, size_t r) { return ks[l] < ks[r]; }
+        };
+
+        std::sort(vIndexes.begin(), vIndexes.end(),
+                  SortBy(vBstrNames));
+    }
+
+    for (size_t i = 0; i < cNets; ++i)
+    {
+        printNATNetwork(aNets[vIndexes[i]], fLong);
     }
 
     return RTEXITCODE_SUCCESS;
