@@ -598,7 +598,7 @@ RTEXITCODE handleNATNetwork(HandlerArg *a)
 RTEXITCODE listNATNetworks(bool fLong, bool fSorted,
                            const ComPtr<IVirtualBox> &pVirtualBox)
 {
-    int rc;
+    HRESULT rc;
 
     RT_NOREF(fLong);
     RT_NOREF(fSorted);
