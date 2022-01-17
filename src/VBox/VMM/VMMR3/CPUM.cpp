@@ -1294,6 +1294,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
      */
 
     /* Basic information. */
+    uint8_t const fTrueVmxMsrs = 1;
     {
         uint64_t const u64Basic = RT_BF_MAKE(VMX_BF_BASIC_VMCS_ID,         VMX_V_VMCS_REVISION_ID        )
                                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_SIZE,       VMX_V_VMCS_SIZE               )
@@ -1301,7 +1302,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
                                 | RT_BF_MAKE(VMX_BF_BASIC_DUAL_MON,        0                             )
                                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_MEM_TYPE,   VMX_BASIC_MEM_TYPE_WB         )
                                 | RT_BF_MAKE(VMX_BF_BASIC_VMCS_INS_OUTS,   pGuestFeatures->fVmxInsOutInfo)
-                                | RT_BF_MAKE(VMX_BF_BASIC_TRUE_CTLS,       0                             );
+                                | RT_BF_MAKE(VMX_BF_BASIC_TRUE_CTLS,       fTrueVmxMsrs                  );
         pGuestVmxMsrs->u64Basic = u64Basic;
     }
 
@@ -1317,6 +1318,13 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed1=%#RX32 fFeatures=%#RX32\n",
                                                          fAllowed0, fAllowed1, fFeatures));
         pGuestVmxMsrs->PinCtls.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+
+        /* True pin-based VM-execution controls. */
+        if (fTrueVmxMsrs)
+        {
+            /* VMX_PIN_CTLS_DEFAULT1 contains MB1 reserved bits and must be reserved MB1 in true pin-based controls as well. */
+            pGuestVmxMsrs->TruePinCtls.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+        }
     }
 
     /* Processor-based VM-execution controls. */
@@ -1348,6 +1356,16 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed1=%#RX32 fFeatures=%#RX32\n", fAllowed0,
                                                          fAllowed1, fFeatures));
         pGuestVmxMsrs->ProcCtls.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+
+        /* True processor-based VM-execution controls. */
+        if (fTrueVmxMsrs)
+        {
+            /* VMX_PROC_CTLS_DEFAULT1 contains MB1 reserved bits but the following are not really reserved. */
+            uint32_t const fTrueAllowed0 = VMX_PROC_CTLS_DEFAULT1 & ~(  VMX_BF_PROC_CTLS_CR3_LOAD_EXIT_MASK
+                                                                      | VMX_BF_PROC_CTLS_CR3_STORE_EXIT_MASK);
+            uint32_t const fTrueAllowed1 = fFeatures | fTrueAllowed0;
+            pGuestVmxMsrs->TruePinCtls.u = RT_MAKE_U64(fTrueAllowed0, fTrueAllowed1);
+        }
     }
 
     /* Secondary processor-based VM-execution controls. */
@@ -1406,6 +1424,15 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed1=%#RX32 fFeatures=%#RX32\n", fAllowed0,
                                                          fAllowed1, fFeatures));
         pGuestVmxMsrs->ExitCtls.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+
+        /* True VM-exit controls. */
+        if (fTrueVmxMsrs)
+        {
+            /* VMX_EXIT_CTLS_DEFAULT1 contains MB1 reserved bits but the following are not really reserved */
+            uint32_t const fTrueAllowed0 = VMX_EXIT_CTLS_DEFAULT1 & ~VMX_BF_EXIT_CTLS_SAVE_DEBUG_MASK;
+            uint32_t const fTrueAllowed1 = fFeatures | fTrueAllowed0;
+            pGuestVmxMsrs->TrueEntryCtls.u = RT_MAKE_U64(fTrueAllowed0, fTrueAllowed1);
+        }
     }
 
     /* VM-entry controls. */
@@ -1419,6 +1446,18 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         AssertMsg((fAllowed0 & fAllowed1) == fAllowed0, ("fAllowed0=%#RX32 fAllowed0=%#RX32 fFeatures=%#RX32\n", fAllowed0,
                                                          fAllowed1, fFeatures));
         pGuestVmxMsrs->EntryCtls.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+
+        /* True VM-entry controls. */
+        if (fTrueVmxMsrs)
+        {
+            /* VMX_ENTRY_CTLS_DEFAULT1 contains MB1 reserved bits but the following are not really reserved */
+            uint32_t const fTrueAllowed0 = VMX_ENTRY_CTLS_DEFAULT1 & ~(  VMX_BF_ENTRY_CTLS_LOAD_DEBUG_MASK
+                                                                       | VMX_BF_ENTRY_CTLS_IA32E_MODE_GUEST_MASK
+                                                                       | VMX_BF_ENTRY_CTLS_ENTRY_SMM_MASK
+                                                                       | VMX_BF_ENTRY_CTLS_DEACTIVATE_DUAL_MON_MASK);
+            uint32_t const fTrueAllowed1 = fFeatures | fTrueAllowed0;
+            pGuestVmxMsrs->TrueEntryCtls.u = RT_MAKE_U64(fTrueAllowed0, fTrueAllowed1);
+        }
     }
 
     /* Miscellaneous data. */
