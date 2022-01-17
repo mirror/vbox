@@ -1699,9 +1699,14 @@ VBOX_ASTOOL =# No tool, just use the compiler one.
 VBOX_LDR_FMT_2_FLAGS.elf   := -DASM_FORMAT_ELF
 VBOX_LDR_FMT_2_FLAGS.macho := -DASM_FORMAT_MACHO
 VBOX_LDR_FMT_2_FLAGS.pe    := -DASM_FORMAT_PE
-VBOX_ASFLAGS   := -g $(VBOX_LDR_FMT_2_FLAGS.$(VBOX_LDR_FMT))
-VBOX_ASFLAGS32 := -g $(VBOX_LDR_FMT_2_FLAGS.$(VBOX_LDR_FMT32))
-VBOX_ASFLAGS64 := -g $(VBOX_LDR_FMT_2_FLAGS.$(VBOX_LDR_FMT64))
+ if1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
+VBOX_ASFLAGS_BITS := -m$(VBOX_HC_ARCH_BITS)
+VBOX_ASFLAGS_BITS32 := -m32
+VBOX_ASFLAGS_BITS64 := -m64
+ endif
+VBOX_ASFLAGS   := -g $(VBOX_ASFLAGS_BITS) $(VBOX_LDR_FMT_2_FLAGS.$(VBOX_LDR_FMT))
+VBOX_ASFLAGS32 := -g $(VBOX_ASFLAGS_BITS32) $(VBOX_LDR_FMT_2_FLAGS.$(VBOX_LDR_FMT32))
+VBOX_ASFLAGS64 := -g $(VBOX_ASFLAGS_BITS64) $(VBOX_LDR_FMT_2_FLAGS.$(VBOX_LDR_FMT64))
 endif # ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 
 #
@@ -3254,11 +3259,13 @@ endif
 ifeq ($(KBUILD_HOST),darwin)
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_no_compact_linkedit    ?= $(call VBOX_GCC_CHECK_LD,-no_compact_linkedit,)'
 endif
+ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
 # YASM
 	$(QUIET)$(APPEND) '$@' '# debug: TOOL_YASM_AS="$(TOOL_YASM_AS)"'
 	$(QUIET)$(APPEND) '$@' 'VBOX_YASM_Wno-segreg-in-64bit  ?= $(call VBOX_YASM_CHECK,-Wno-segreg-in-64bit,)'
 # NASM (--allow-64-bit: 2.12rc2)
 	$(QUIET)$(APPEND) '$@' 'VBOX_NASM_allow_64_bit         ?= $(call VBOX_NASM_CHECK,--allow-64-bit,)'
+endif
 if1of ($(KBUILD_TARGET), linux)
  ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
 	$(QUIET)$(RM) -f -- "$@.sanitizer.so" "$@.sanitizer32.so" '$@.sanitizer.c'
