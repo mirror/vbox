@@ -2517,6 +2517,10 @@ static int supR3HardNtViCallWinVerifyTrust(HANDLE hFile, PCRTUTF16 pwszName, uin
     TrustData.pFile = &FileInfo;
 
     HRESULT hrc = pfnWinVerifyTrust(NULL /*hwnd*/, &PolicyActionGuid, &TrustData);
+# ifdef DEBUG_bird /* TEMP HACK */
+    if (hrc == CERT_E_EXPIRED)
+        hrc = S_OK;
+# endif
     if (hrc == S_OK)
         rc = VINF_SUCCESS;
     else
