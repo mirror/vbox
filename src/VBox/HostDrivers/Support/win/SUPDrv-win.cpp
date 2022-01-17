@@ -2528,7 +2528,7 @@ typedef struct SUPDRVNTEXCLREGIONS
     {
         uint32_t    uRva;
         uint32_t    cb;
-    }               aRegions[16];
+    }               aRegions[20];
 } SUPDRVNTEXCLREGIONS;
 
 /**
@@ -2667,6 +2667,26 @@ int  VBOXCALL   supdrvOSLdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, c
             if (   pCfg->Size >= RT_UOFFSET_AFTER(IMAGE_LOAD_CONFIG_DIRECTORY, SecurityCookie)
                 && pCfg->SecurityCookie != NULL)
                 supdrvNtAddExclRegion(&ExcludeRegions, (uintptr_t)pCfg->SecurityCookie - (uintptr_t)pImage->pvImage, sizeof(void *));
+
+            /* Also exclude the GuardCFCheckFunctionPointer and GuardCFDispatchFunctionPointer pointer variables. */
+            if (   pCfg->Size >= RT_UOFFSET_AFTER(IMAGE_LOAD_CONFIG_DIRECTORY, GuardCFCheckFunctionPointer)
+                && pCfg->GuardCFCheckFunctionPointer != NULL)
+                supdrvNtAddExclRegion(&ExcludeRegions, (uintptr_t)pCfg->GuardCFCheckFunctionPointer - (uintptr_t)pImage->pvImage, sizeof(void *));
+            if (   pCfg->Size >= RT_UOFFSET_AFTER(IMAGE_LOAD_CONFIG_DIRECTORY, GuardCFDispatchFunctionPointer)
+                && pCfg->GuardCFDispatchFunctionPointer != NULL)
+                supdrvNtAddExclRegion(&ExcludeRegions, (uintptr_t)pCfg->GuardCFDispatchFunctionPointer - (uintptr_t)pImage->pvImage, sizeof(void *));
+
+            /* Ditto for the XFG variants: */
+            if (   pCfg->Size >= RT_UOFFSET_AFTER(IMAGE_LOAD_CONFIG_DIRECTORY, GuardXFGCheckFunctionPointer)
+                && pCfg->GuardXFGCheckFunctionPointer != NULL)
+                supdrvNtAddExclRegion(&ExcludeRegions, (uintptr_t)pCfg->GuardXFGCheckFunctionPointer - (uintptr_t)pImage->pvImage, sizeof(void *));
+            if (   pCfg->Size >= RT_UOFFSET_AFTER(IMAGE_LOAD_CONFIG_DIRECTORY, GuardXFGDispatchFunctionPointer)
+                && pCfg->GuardXFGDispatchFunctionPointer != NULL)
+                supdrvNtAddExclRegion(&ExcludeRegions, (uintptr_t)pCfg->GuardXFGDispatchFunctionPointer - (uintptr_t)pImage->pvImage, sizeof(void *));
+
+            /** @todo What about GuardRFVerifyStackPointerFunctionPointer and
+             * GuardRFFailureRoutineFunctionPointer? Ignore for now as the compiler we're
+             * using (19.26.28805) sets them to zero from what I can tell. */
 
             /*
              * Ok, do the comparison.
