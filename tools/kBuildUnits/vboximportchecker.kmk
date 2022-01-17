@@ -26,7 +26,7 @@ PROPS_SYSMODS_SINGLE  += VBOX_IMPORT_CHECKER
 
 # Helper for expanding certain variables while assigning.
 define def_unit_vboximportchecker_internal_expand_twice
-$(target)_POST_CMDS += $$(NLTAB)$$(VBOX_RTLDRCHECKIMPORTS) -q -p "$$(KBUILD_DEVTOOLS)/$(bld_trg).$(bld_trg_arch)/exports/$$($(target)_2_VBOX_IMPORT_CHECKER)" $$(out)
+$(target)_POST_CMDS += $$(if-expr "$$(tool_do)" != "LINK_LIBRARY",$$(NLTAB)$$(VBOX_RTLDRCHECKIMPORTS) -q -p "$$(KBUILD_DEVTOOLS)/$(bld_trg).$(bld_trg_arch)/exports/$$($(target)_2_VBOX_IMPORT_CHECKER)" $$(out),)
 endef
 
 define def_unit_vboximportchecker_target_pre
