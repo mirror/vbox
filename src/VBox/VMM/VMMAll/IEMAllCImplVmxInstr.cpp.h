@@ -5997,6 +5997,7 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
 {
     PCVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
     const char * const pszFailure = "VMFail";
+    bool const fVmxTrueMsrs       = RT_BOOL(pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Basic & VMX_BF_BASIC_TRUE_CTLS_MASK);
 
     /*
      * VM-execution controls.
@@ -6005,7 +6006,8 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
     {
         /* Pin-based VM-execution controls. */
         {
-            VMXCTLSMSR const PinCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.PinCtls;
+            VMXCTLSMSR const PinCtls = fVmxTrueMsrs ? pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.TruePinCtls
+                                                    : pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.PinCtls;
             if (!(~pVmcs->u32PinCtls & PinCtls.n.allowed0))
             { /* likely */ }
             else
@@ -6019,7 +6021,8 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
 
         /* Processor-based VM-execution controls. */
         {
-            VMXCTLSMSR const ProcCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ProcCtls;
+            VMXCTLSMSR const ProcCtls = fVmxTrueMsrs ? pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.TrueProcCtls
+                                                     : pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ProcCtls;
             if (!(~pVmcs->u32ProcCtls & ProcCtls.n.allowed0))
             { /* likely */ }
             else
@@ -6205,7 +6208,9 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
 
         Assert(!(pVmcs->u32PinCtls & VMX_PIN_CTLS_POSTED_INT));             /* We don't support posted interrupts yet. */
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PML));                /* We don't support PML yet. */
-        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)); /* We don't support Unrestricted-guests yet. */
+#ifndef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)); /* Support for Unrestricted-guests is conditional. */
+#endif
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMFUNC));             /* We don't support VM functions yet. */
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT_XCPT_VE));        /* We don't support EPT-violation #VE yet. */
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT));    /* We don't support Pause-loop exiting yet. */
@@ -6239,7 +6244,8 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
      * See Intel spec. 26.2.1.2 "VM-Exit Control Fields".
      */
     {
-        VMXCTLSMSR const ExitCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ExitCtls;
+        VMXCTLSMSR const ExitCtls = fVmxTrueMsrs ? pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.TrueExitCtls
+                                                 : pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ExitCtls;
         if (!(~pVmcs->u32ExitCtls & ExitCtls.n.allowed0))
         { /* likely */ }
         else
@@ -6285,7 +6291,8 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
      * See Intel spec. 26.2.1.3 "VM-Entry Control Fields".
      */
     {
-        VMXCTLSMSR const EntryCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.EntryCtls;
+        VMXCTLSMSR const EntryCtls = fVmxTrueMsrs ? pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.TrueEntryCtls
+                                                  : pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.EntryCtls;
         if (!(~pVmcs->u32EntryCtls & EntryCtls.n.allowed0))
         { /* likely */ }
         else
