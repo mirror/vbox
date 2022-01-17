@@ -40,7 +40,10 @@ ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxDisp_DEFS        += VBOX_WITH_VIDEOHWACCEL
 endif
 #VBoxDisp_DEFS         += VBOX_VBVA_ADJUST_RECT
-VBoxDisp_INCS          = ../../../include .. $(VBOX_GRAPHICS_INCS)
+VBoxDisp_INCS          = \
+	../../../include \
+	.. \
+	$(VBOX_GRAPHICS_INCS)
 VBoxDisp_LDFLAGS.x86   = /Entry:DrvEnableDriver@12
 VBoxDisp_LDFLAGS.amd64 = /Entry:DrvEnableDriver
 VBoxDisp_SOURCES     = \
@@ -67,13 +70,15 @@ ifdef VBOX_WITH_VIDEOHWACCEL
  	xpdm/VBoxDispVHWA.cpp \
  	xpdm/VBoxDispDDrawVHWA.cpp
 endif
+
+
 VBoxDisp_LIBS = \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/win32k.lib \
 	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
-	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
-if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD) # Use the GDI variant here, see /Entry above.
+	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB) \
+	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/win32k.lib # Linker needs newer win32k.lib (for x86 at least); incompatible loadcfg.obj in the WDK 7.1 one.
+ifneq ($(VBOX_VCC_CC_GUARD_CF),)
  VBoxDisp_LIBS += \
- 	$(PATH_SDK_$(VBOX_WINDDK)_LIB.$(KBUILD_TARGET_ARCH))/BufferOverflowGDI.lib
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/BufferOverflowGDI.lib # for ___security_cookie
 endif
 VBoxDisp_USES.win += vboximportchecker
 VBoxDisp_VBOX_IMPORT_CHECKER.win.x86 = nt4/r0

@@ -20,6 +20,9 @@ include $(KBUILD_PATH)/subheader.kmk
 
 #
 # VBoxSF
+# Note! On X86 this is only used for windows 8 and later.
+# Note! On X86 we must link against ntoskrnl.lib from the default WDK when /guard:cf is enabled,
+#       or the linker barfs at loadcfg.obj not containing a large enough load config structure.
 #
 SYSMODS += VBoxSF
 VBoxSF_TEMPLATE    = VBOXGUESTR0
@@ -46,37 +49,58 @@ VBoxSF_LIBS = \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/rxce.lib \
 	$(VBoxSF_0_OUTDIR)/rdbsslib.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/copysup.lib \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/ntoskrnl.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/hal.lib \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/ksecdd.lib \
-	$(PATH_SDK_$($(if-expr "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD),VBOX_WINDDK,VBOX_WINDDK_GST_WLH))_LIB.$(KBUILD_TARGET_ARCH))/BufferOverflowK.lib \
-	\
+	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/ksecdd.lib
+ifneq ($(VBOX_VCC_CC_GUARD_CF),)
+ VBoxSF_LIBS += \
+	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.$(KBUILD_TARGET_ARCH))/ntoskrnl.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.$(KBUILD_TARGET_ARCH))/BufferOverflowK.lib
+else
+ VBoxSF_LIBS += \
+	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/ntoskrnl.lib \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/BufferOverflowK.lib
+endif
+VBoxSF_LIBS += \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
 VBoxSF_CLEAN = \
 	$(VBoxSF_0_OUTDIR)/rdbsslib.lib
 
+VBoxSF_USES.win += vboximportchecker
+VBoxSF_VBOX_IMPORT_CHECKER.win.x86 = w8/r0
+VBoxSF_VBOX_IMPORT_CHECKER.win.amd64 = xp64/r0
+
 
 ifeq ($(KBUILD_TARGET_ARCH),x86)
+ #
+ # This driver version is used for Windows 2000, XP, W2K3, Vista and 7.
+ #
  SYSMODS += VBoxSFW2K
-
  VBoxSFW2K_EXTENDS      := VBoxSF
  VBoxSFW2K_SDKS         = ReorderCompilerIncs $(VBOX_WINDDK_GST_W2K3)
  VBoxSFW2K_LIBS         = \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/rxce.lib \
  	$(VBoxSFW2K_0_OUTDIR)/rdbsslib.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/copysup.lib \
- 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/ntoskrnl.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/hal.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/ksecdd.lib \
- 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/BufferOverflowK.lib \
-	$(PATH_SDK_$($(if-expr "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" && !defined(VBOX_WITHOUT_CONTROL_FLOW_GUARD),VBOX_WINDDK,VBOX_WINDDK_GST_W2K3))_LIB.x86)/BufferOverflowK.lib \
 	\
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
+ ifneq ($(VBOX_VCC_CC_GUARD_CF),)
+  VBoxSFW2K_LIBS += \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.x86)/ntoskrnl.lib \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.x86)/BufferOverflowK.lib
+ else
+  VBoxSFW2K_LIBS += \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/ntoskrnl.lib \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/BufferOverflowK.lib
+ endif
  VBoxSFW2K_CLEAN = \
  	$(VBoxSFW2K_0_OUTDIR)/rdbsslib.lib
+ VBoxSFW2K_USES.win += vboximportchecker
+ VBoxSFW2K_VBOX_IMPORT_CHECKER.win.x86 = w2k/r0
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

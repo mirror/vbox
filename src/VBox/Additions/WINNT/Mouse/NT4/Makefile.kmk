@@ -39,6 +39,10 @@ VBoxMouseNT_LIBS        = \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib
+ifneq ($(VBOX_VCC_CC_GUARD_CF),)
+ VBoxMouseNT_LIBS.x86 += \
+  	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/BufferOverflowK.lib
+endif
 VBoxMouseNT_CLEAN       = \
 	$(VBoxMouseNT_0_OUTDIR)/VBoxMouseNT.pdb
 VBoxMouseNT_USES.win += vboximportchecker

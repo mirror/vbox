@@ -35,14 +35,21 @@ VBoxMouse_SOURCES       = \
 	VBoxMFInternal.cpp \
 	VBoxMF.rc
 VBoxMouse_LIBS.x86      = \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K)_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K)_LIB)/hal.lib
+	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/hal.lib
+ifneq ($(VBOX_VCC_CC_GUARD_CF),)
+ VBoxMouse_LIBS.x86    += \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/BufferOverflowK.lib
+endif
 VBoxMouse_LIBS.amd64    = \
 	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/hal.lib
 VBoxMouse_LIBS          = \
 	$(VBOX_LIB_IPRT_GUEST_R0) \
 	$(VBOX_LIB_VBGL_R0)
+VBoxMouse_USES.win += vboximportchecker
+VBoxMouse_VBOX_IMPORT_CHECKER.win.x86 = w2k/r0
+VBoxMouse_VBOX_IMPORT_CHECKER.win.amd64 = xp64/r0
 
 #
 # Install the inf & cat.

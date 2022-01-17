@@ -88,10 +88,14 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
     	$(VBOX_LIB_IPRT_GUEST_R0) \
     	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/exsup.lib \
     	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/int64.lib \
-    	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/ntoskrnl.lib \
-    	$(PATH_SDK_$(VBOX_WINDDK_GST_NT4)_LIB)/hal.lib
+    	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/ntoskrnl.lib \
+    	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/hal.lib
+    ifneq ($(VBOX_VCC_CC_GUARD_CF),)
+     VBoxGuest_LIBS     += \
+     	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/BufferOverflowK.lib
+    endif
    else
-    VBoxGuest_LIBS        = \
+    VBoxGuest_LIBS       = \
     	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/ntoskrnl.lib \
     	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB)/hal.lib
    endif
