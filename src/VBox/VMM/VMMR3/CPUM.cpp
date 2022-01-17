@@ -1323,7 +1323,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
         if (fTrueVmxMsrs)
         {
             /* VMX_PIN_CTLS_DEFAULT1 contains MB1 reserved bits and must be reserved MB1 in true pin-based controls as well. */
-            pGuestVmxMsrs->TruePinCtls.u = RT_MAKE_U64(fAllowed0, fAllowed1);
+            pGuestVmxMsrs->TruePinCtls.u = pGuestVmxMsrs->PinCtls.u;
         }
     }
 
@@ -1364,7 +1364,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
             uint32_t const fTrueAllowed0 = VMX_PROC_CTLS_DEFAULT1 & ~(  VMX_BF_PROC_CTLS_CR3_LOAD_EXIT_MASK
                                                                       | VMX_BF_PROC_CTLS_CR3_STORE_EXIT_MASK);
             uint32_t const fTrueAllowed1 = fFeatures | fTrueAllowed0;
-            pGuestVmxMsrs->TruePinCtls.u = RT_MAKE_U64(fTrueAllowed0, fTrueAllowed1);
+            pGuestVmxMsrs->TrueProcCtls.u = RT_MAKE_U64(fTrueAllowed0, fTrueAllowed1);
         }
     }
 
