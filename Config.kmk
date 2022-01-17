@@ -4774,6 +4774,7 @@ endif
 SDK_VBOX_WIN_INT64 = Abstracts where to find int64.lib for x86 builds.
 ifn1of ($(VBOX_WINPSDK), WINPSDK71 WINPSDK80)
  SDK_VBOX_WIN_INT64_LIBS.x86 = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/int64.lib
+ include $(KBUILD_PATH)/sdks/$(VBOX_WINPSDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
 else
  SDK_VBOX_WIN_INT64_LIBS.x86 = $(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
  include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
@@ -6239,10 +6240,11 @@ TEMPLATE_VBoxR3StaticNoCrt_LIBS.win        = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBoxR3StaticNoCrt_LIBS.win.x86    = \
 	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticNoCrt_TOOL.win.x86)_LIB)/chkstk.obj
 TEMPLATE_VBoxR3StaticNoCrt_SDKS.win.x86   += VBOX_WIN_INT64
+TEMPLATE_VBoxR3StaticNoCrt_LDFLAGS         = $(filter-out $(VBOX_VCC_LD_GUARD_CF), $(TEMPLATE_VBoxR3Static_LDFLAGS))
 TEMPLATE_VBoxR3StaticNoCrt_LDFLAGS.win.x86 = $(filter-out -Include%, $(TEMPLATE_VBoxR3Static_LDFLAGS.win.x86))
-TEMPLATE_VBoxR3StaticNoCrt_CFLAGS          = $(filter-out -EH%,$(TEMPLATE_VBoxR3Static_CFLAGS)) /GS- -EHs-
-TEMPLATE_VBoxR3StaticNoCrt_CXXFLAGS        = $(filter-out -EH%,$(TEMPLATE_VBoxR3Static_CXXFLAGS)) /GS- -EHs-
-TEMPLATE_VBoxR3StaticNoCrt_PCHFLAGS        = $(filter-out -EH%,$(TEMPLATE_VBoxR3Static_PCHFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxR3StaticNoCrt_CFLAGS          = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxR3Static_CFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxR3StaticNoCrt_CXXFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxR3Static_CXXFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxR3StaticNoCrt_PCHFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxR3Static_PCHFLAGS)) /GS- -EHs-
 TEMPLATE_VBoxR3StaticNoCrt_CXXFLAGS.debug  = $(filter-out /RTC% -RTC%, $(TEMPLATE_VBoxR3Static_CXXFLAGS.debug))
 else
 TEMPLATE_VBoxR3StaticNoCrt_CXXFLAGS        = $(TEMPLATE_VBoxR3Static_CXXFLAGS) -fno-exceptions
@@ -8291,11 +8293,12 @@ TEMPLATE_VBoxGuestR3NoCrtExe_LIBS.win        = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBoxGuestR3NoCrtExe_LIBS.win.x86    = \
 	$(PATH_TOOL_$(TEMPLATE_VBoxGuestR3NoCrtExe_TOOL.win.x86)_LIB)/chkstk.obj
 TEMPLATE_VBoxGuestR3NoCrtExe_SDKS.win.x86    = VBOX_WIN_INT64
+TEMPLATE_VBoxGuestR3NoCrtExe_LDFLAGS         = $(filter-out $(VBOX_VCC_LD_GUARD_CF), $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS))
 TEMPLATE_VBoxGuestR3NoCrtExe_LDFLAGS.win.x86 = $(filter-out -Include%, $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS.win.x86))
 TEMPLATE_VBoxGuestR3NoCrtExe_LDFLAGS.win     = $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS.win) /entry:CustomMainEntrypoint /subsystem:console
-TEMPLATE_VBoxGuestR3NoCrtExe_CFLAGS          = $(filter-out -EH%,$(TEMPLATE_VBoxGuestR3Exe_CFLAGS)) /GS- -EHs-
-TEMPLATE_VBoxGuestR3NoCrtExe_CXXFLAGS        = $(filter-out -EH%,$(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS)) /GS- -EHs-
-TEMPLATE_VBoxGuestR3NoCrtExe_PCHFLAGS        = $(filter-out -EH%,$(TEMPLATE_VBoxGuestR3Exe_PCHFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxGuestR3NoCrtExe_CFLAGS          = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxGuestR3Exe_CFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxGuestR3NoCrtExe_CXXFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxGuestR3NoCrtExe_PCHFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxGuestR3Exe_PCHFLAGS)) /GS- -EHs-
 TEMPLATE_VBoxGuestR3NoCrtExe_CXXFLAGS.debug  = $(filter-out /RTC% -RTC%, $(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS.debug))
 else
 TEMPLATE_VBoxGuestR3NoCrtExe_CXXFLAGS        = $(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS) -fno-exceptions
