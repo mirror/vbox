@@ -1628,6 +1628,7 @@ DECLHIDDEN(void) supR3HardenedWinVerifyCachePreload(PCRTUTF16 pwszName)
  * @param   fAttribs            The section attributes.
  * @param   hFile               The file to create a section from (optional).
  */
+__declspec(guard(ignore)) /* don't barf when calling g_pfnNtCreateSectionReal */
 static NTSTATUS NTAPI
 supR3HardenedMonitor_NtCreateSection(PHANDLE phSection, ACCESS_MASK fAccess, POBJECT_ATTRIBUTES pObjAttribs,
                                      PLARGE_INTEGER pcbSection, ULONG fProtect, ULONG fAttribs, HANDLE hFile)
@@ -1946,6 +1947,7 @@ static bool supR3HardenedIsFilenameMatchDll(PUNICODE_STRING pPath, const char *p
  * @param   phMod               Where the handle of the loaded DLL is to be
  *                              returned to the caller.
  */
+__declspec(guard(ignore)) /* don't barf when calling g_pfnLdrLoadDllReal */
 static NTSTATUS NTAPI
 supR3HardenedMonitor_LdrLoadDll(PWSTR pwszSearchPath, PULONG pfFlags, PUNICODE_STRING pName, PHANDLE phMod)
 {
