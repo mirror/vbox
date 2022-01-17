@@ -32,6 +32,7 @@
 #include <iprt/efi.h>
 
 #include <iprt/cdefs.h>
+#include <iprt/asm.h>
 #include <iprt/string.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
