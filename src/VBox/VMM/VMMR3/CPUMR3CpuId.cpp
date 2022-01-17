@@ -1761,6 +1761,7 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
     Assert(pFeatures->fVmx);
 
     /* Basic information. */
+    bool const fVmxTrueMsrs = RT_BOOL(pVmxMsrs->u64Basic & VMX_BF_BASIC_TRUE_CTLS_MASK);
     {
         uint64_t const u64Basic = pVmxMsrs->u64Basic;
         pFeatures->fVmxInsOutInfo            = RT_BF_GET(u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS);
@@ -1768,7 +1769,7 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
 
     /* Pin-based VM-execution controls. */
     {
-        uint32_t const fPinCtls = pVmxMsrs->PinCtls.n.allowed1;
+        uint32_t const fPinCtls = fVmxTrueMsrs ? pVmxMsrs->TruePinCtls.n.allowed1 : pVmxMsrs->PinCtls.n.allowed1;
         pFeatures->fVmxExtIntExit            = RT_BOOL(fPinCtls & VMX_PIN_CTLS_EXT_INT_EXIT);
         pFeatures->fVmxNmiExit               = RT_BOOL(fPinCtls & VMX_PIN_CTLS_NMI_EXIT);
         pFeatures->fVmxVirtNmi               = RT_BOOL(fPinCtls & VMX_PIN_CTLS_VIRT_NMI);
@@ -1778,7 +1779,7 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
 
     /* Processor-based VM-execution controls. */
     {
-        uint32_t const fProcCtls = pVmxMsrs->ProcCtls.n.allowed1;
+        uint32_t const fProcCtls = fVmxTrueMsrs ? pVmxMsrs->TrueProcCtls.n.allowed1 : pVmxMsrs->ProcCtls.n.allowed1;
         pFeatures->fVmxIntWindowExit         = RT_BOOL(fProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT);
         pFeatures->fVmxTscOffsetting         = RT_BOOL(fProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING);
         pFeatures->fVmxHltExit               = RT_BOOL(fProcCtls & VMX_PROC_CTLS_HLT_EXIT);
@@ -1842,7 +1843,7 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
 
     /* VM-exit controls. */
     {
-        uint32_t const fExitCtls = pVmxMsrs->ExitCtls.n.allowed1;
+        uint32_t const fExitCtls = fVmxTrueMsrs ? pVmxMsrs->TrueExitCtls.n.allowed1 : pVmxMsrs->ExitCtls.n.allowed1;
         pFeatures->fVmxExitSaveDebugCtls     = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_SAVE_DEBUG);
         pFeatures->fVmxHostAddrSpaceSize     = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE);
         pFeatures->fVmxExitAckExtInt         = RT_BOOL(fExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT);
@@ -1855,7 +1856,7 @@ static void cpumR3ExplodeVmxFeatures(PCVMXMSRS pVmxMsrs, PCPUMFEATURES pFeatures
 
     /* VM-entry controls. */
     {
-        uint32_t const fEntryCtls = pVmxMsrs->EntryCtls.n.allowed1;
+        uint32_t const fEntryCtls = fVmxTrueMsrs ? pVmxMsrs->TrueEntryCtls.n.allowed1 : pVmxMsrs->EntryCtls.n.allowed1;
         pFeatures->fVmxEntryLoadDebugCtls    = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG);
         pFeatures->fVmxIa32eModeGuest        = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
         pFeatures->fVmxEntryLoadEferMsr      = RT_BOOL(fEntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR);
