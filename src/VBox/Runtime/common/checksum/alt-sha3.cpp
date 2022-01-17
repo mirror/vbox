@@ -96,7 +96,7 @@ static void rtSha3Keccak(RTSHA3ALTPRIVATECTX *pState)
 #ifdef RT_BIG_ENDIAN
     /* This sucks a performance wise on big endian systems, sorry.  We just
        needed something simple that works on AMD64 and x86. */
-    for (size_t i = 0; i < RT_ELEMENTS(pState->aState); i++)
+    for (size_t i = 0; i < RT_ELEMENTS(pState->au64); i++)
         pState->au64[i] = RT_LE2H_U64(pState->au64[i]);
 #endif
 
@@ -276,8 +276,8 @@ static void rtSha3Keccak(RTSHA3ALTPRIVATECTX *pState)
     }
 
 #ifdef RT_BIG_ENDIAN
-    for (size_t i = 0; i < RT_ELEMENTS(pState->au64State); i++)
-        pState->au64State[i] = RT_H2LE_U64(pState->au64State[i]);
+    for (size_t i = 0; i < RT_ELEMENTS(pState->au64); i++)
+        pState->au64[i] = RT_H2LE_U64(pState->au64[i]);
 #endif
 }
 
