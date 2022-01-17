@@ -85,7 +85,8 @@ typedef VPF2ADD::const_iterator VPF2ADDITERATOR;
 typedef std::vector<std::string>  LOOPBACK2DELETEADD;
 typedef LOOPBACK2DELETEADD::iterator LOOPBACK2DELETEADDITERATOR;
 
-static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet)
+static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet,
+                               bool fLong = true)
 {
     HRESULT rc;
 
@@ -96,6 +97,17 @@ static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet)
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(NetworkName)(strVal.asOutParam()));
         RTPrintf(Nat::tr("Name:         %ls\n"), strVal.raw());
+
+        if (fLong)
+        {
+            /*
+             * What does it even mean for a natnet to be disabled?
+             * (rhetorical question).  Anyway, don't print it unless
+             * asked for a complete dump.
+             */
+            CHECK_ERROR_BREAK(pNATNet, COMGETTER(Enabled)(&fVal));
+            RTPrintf(Nat::tr("Enabled:      %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
+        }
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(Network)(strVal.asOutParam()));
         RTPrintf(Nat::tr("Network:      %ls\n"), strVal.raw());
@@ -116,11 +128,35 @@ static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet)
         RTPrintf(Nat::tr("IPv6 Default: %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
 
 
-        CHECK_ERROR_BREAK(pNATNet, COMGETTER(Enabled)(&fVal));
-        RTPrintf(Nat::tr("Enabled:      %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
-        /** @todo Add more information here. */
-        RTPrintf("\n");
+        if (fLong)
+        {
+            com::SafeArray<BSTR> strs;
 
+#define PRINT_STRING_ARRAY(title) do {                                  \
+                if (strs.size() > 0)                                    \
+                {                                                       \
+                    RTPrintf(title);                                    \
+                    for (size_t j = 0; j < strs.size(); ++j)            \
+                        RTPrintf("        %s\n", Utf8Str(strs[j]).c_str()); \
+                }                                                       \
+            } while (0)
+
+        CHECK_ERROR_BREAK(pNATNet, COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(strs)));
+        PRINT_STRING_ARRAY(Nat::tr("Port-forwarding (ipv4)\n"));
+        strs.setNull();
+
+        CHECK_ERROR(pNATNet, COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(strs)));
+        PRINT_STRING_ARRAY(Nat::tr("Port-forwarding (ipv6)\n"));
+        strs.setNull();
+
+        CHECK_ERROR(pNATNet, COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs)));
+        PRINT_STRING_ARRAY(Nat::tr("loopback mappings (ipv4)\n"));
+        strs.setNull();
+
+#undef PRINT_STRING_ARRAY
+        }
+
+        RTPrintf("\n");
     } while (0);
 
     return rc;
@@ -154,8 +190,6 @@ static RTEXITCODE handleNATList(HandlerArg *a)
                 continue;
         }
 
-        if (i > 0)
-            RTPrintf("\n");
         rc = printNATNetwork(pNATNet);
         if (FAILED(rc))
             break;
@@ -600,60 +634,13 @@ RTEXITCODE listNATNetworks(bool fLong, bool fSorted,
 {
     HRESULT rc;
 
-    RT_NOREF(fLong);
     RT_NOREF(fSorted);
 
     com::SafeIfaceArray<INATNetwork> nets;
     CHECK_ERROR(pVirtualBox, COMGETTER(NATNetworks)(ComSafeArrayAsOutParam(nets)));
     for (size_t i = 0; i < nets.size(); ++i)
     {
-        ComPtr<INATNetwork> net = nets[i];
-        Bstr netName;
-        net->COMGETTER(NetworkName)(netName.asOutParam());
-        RTPrintf(Nat::tr("NetworkName:    %ls\n"), netName.raw());
-        Bstr gateway;
-        net->COMGETTER(Gateway)(gateway.asOutParam());
-        RTPrintf("IP:             %ls\n", gateway.raw());
-        Bstr network;
-        net->COMGETTER(Network)(network.asOutParam());
-        RTPrintf(Nat::tr("Network:        %ls\n"), network.raw());
-        BOOL fEnabled;
-        net->COMGETTER(IPv6Enabled)(&fEnabled);
-        RTPrintf(Nat::tr("IPv6 Enabled:   %s\n"), fEnabled ? Nat::tr("Yes") : Nat::tr("No"));
-        Bstr ipv6prefix;
-        net->COMGETTER(IPv6Prefix)(ipv6prefix.asOutParam());
-        RTPrintf(Nat::tr("IPv6 Prefix:    %ls\n"), ipv6prefix.raw());
-        net->COMGETTER(NeedDhcpServer)(&fEnabled);
-        RTPrintf(Nat::tr("DHCP Enabled:   %s\n"), fEnabled ? Nat::tr("Yes") : Nat::tr("No"));
-        net->COMGETTER(Enabled)(&fEnabled);
-        RTPrintf(Nat::tr("Enabled:        %s\n"), fEnabled ? Nat::tr("Yes") : Nat::tr("No"));
-
-#define PRINT_STRING_ARRAY(title)                                       \
-            if (strs.size() > 0)                                        \
-            {                                                           \
-                RTPrintf(title);                                        \
-                size_t j = 0;                                           \
-                for (;j < strs.size(); ++j)                             \
-                    RTPrintf("        %s\n", Utf8Str(strs[j]).c_str()); \
-            }
-
-        com::SafeArray<BSTR> strs;
-
-        CHECK_ERROR(nets[i], COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(strs)));
-        PRINT_STRING_ARRAY(Nat::tr("Port-forwarding (ipv4)\n"));
-        strs.setNull();
-
-        CHECK_ERROR(nets[i], COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(strs)));
-        PRINT_STRING_ARRAY(Nat::tr("Port-forwarding (ipv6)\n"));
-        strs.setNull();
-
-        CHECK_ERROR(nets[i], COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs)));
-        PRINT_STRING_ARRAY(Nat::tr("loopback mappings (ipv4)\n"));
-        strs.setNull();
-
-#undef PRINT_STRING_ARRAY
-
-        RTPrintf("\n");
+        printNATNetwork(nets[i], fLong);
     }
 
     return RTEXITCODE_SUCCESS;
