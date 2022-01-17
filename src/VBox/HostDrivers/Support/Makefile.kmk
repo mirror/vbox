@@ -437,17 +437,28 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
   # mostly tiny bits of code. Needs not initialization that I can spot.
   ifneq ($(VBOX_VCC_LD_GUARD_CF),)
    SUPR3HardenedStatic_SOURCES.win += \
+   	$(SUPR3HardenedStatic_0_OUTDIR)/loadcfg.obj
+   # These are for the /guard option.
+   SUPR3HardenedStatic_SOURCES.win += \
    	$(SUPR3HardenedStatic_0_OUTDIR)/loadcfg.obj \
    	$(SUPR3HardenedStatic_0_OUTDIR)/gs_cookie.obj \
    	$(SUPR3HardenedStatic_0_OUTDIR)/guard_support.obj \
    	$(SUPR3HardenedStatic_0_OUTDIR)/guard_dispatch.obj \
    	$(SUPR3HardenedStatic_0_OUTDIR)/guard_xfg_dispatch.obj
+   # These next ones are for supporting the /GS option.  We skip gs_report.obj as it
+   # import lots from kernel32 and we're better of reporting the problem ourselves.
+   SUPR3HardenedStatic_SOURCES.win += \
+   	$(SUPR3HardenedStatic_0_OUTDIR)/amdsecgs.obj \
+   	$(SUPR3HardenedStatic_0_OUTDIR)/gshandler.obj
 
 $$(SUPR3HardenedStatic_0_OUTDIR)/loadcfg.obj \
 $$(SUPR3HardenedStatic_0_OUTDIR)/gs_cookie.obj \
 $$(SUPR3HardenedStatic_0_OUTDIR)/guard_support.obj \
 $$(SUPR3HardenedStatic_0_OUTDIR)/guard_dispatch.obj \
 $$(SUPR3HardenedStatic_0_OUTDIR)/guard_xfg_dispatch.obj \
+$$(SUPR3HardenedStatic_0_OUTDIR)/amdsecgs.obj \
+$$(SUPR3HardenedStatic_0_OUTDIR)/gs_report.obj \
+$$(SUPR3HardenedStatic_0_OUTDIR)/gshandler.obj \
 	: \
 		$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/libcmt.lib | $$(dir $$@)
 	set -x; $(TOOL_$(VBOX_VCC_TOOL)_AR) "/EXTRACT:$$($(TOOL_$(VBOX_VCC_TOOL)_AR) /LIST "$<" | $(SED_EXT) -e '/$(notdir $@)/!d' )" "/OUT:$@" "$<"

@@ -485,6 +485,39 @@ static uint64_t supR3HardenedWinGetMilliTS(void)
 }
 
 
+/**
+ * Called when there is some /GS (or maybe /RTCsu) related stack problem.
+ *
+ * We don't want the CRT version living in gshandle.obj, as it uses a lot of
+ * kernel32 imports, we want to report this error ourselves.
+ */
+extern "C" __declspec(noreturn guard(nosspro) guard(nossepi))
+void __cdecl __report_rangecheckfailure(void)
+{
+    supR3HardenedFatal("__report_rangecheckfailure called from %p", ASMReturnAddress());
+}
+
+
+/**
+ * Called when there is some /GS problem has been detected.
+ *
+ * We don't want the CRT version living in gshandle.obj, as it uses a lot of
+ * kernel32 imports, we want to report this error ourselves.
+ */
+extern "C" __declspec(noreturn guard(nosspro) guard(nossepi))
+#ifdef RT_ARCH_X86
+void __cdecl __report_gsfailure(void)
+#else
+void __report_gsfailure(uintptr_t uCookie)
+#endif
+{
+#ifdef RT_ARCH_X86
+    supR3HardenedFatal("__report_gsfailure called from %p", ASMReturnAddress());
+#else
+    supR3HardenedFatal("__report_gsfailure called from %p, cookie=%p", ASMReturnAddress(), uCookie);
+#endif
+}
+
 
 /**
  * Wrapper around LoadLibraryEx that deals with the UTF-8 to UTF-16 conversion
