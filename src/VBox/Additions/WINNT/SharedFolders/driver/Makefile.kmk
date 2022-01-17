@@ -81,7 +81,6 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
  VBoxSFW2K_EXTENDS      := VBoxSF
  VBoxSFW2K_SDKS         = ReorderCompilerIncs $(VBOX_WINDDK_GST_W2K3)
  VBoxSFW2K_LIBS         = \
- 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB)/int64.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/rxce.lib \
  	$(VBoxSFW2K_0_OUTDIR)/rdbsslib.lib \
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/copysup.lib \
@@ -89,7 +88,8 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
  	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/ksecdd.lib \
 	\
 	$(VBOX_LIB_VBGL_R0) \
-	$(VBOX_LIB_IPRT_GUEST_R0)
+	$(VBOX_LIB_IPRT_GUEST_R0) \
+ 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB)/int64.lib
  ifneq ($(VBOX_VCC_CC_GUARD_CF),)
   VBoxSFW2K_LIBS += \
  	$(PATH_SDK_$(VBOX_WINDDK_GST)_LIB.x86)/ntoskrnl.lib \
