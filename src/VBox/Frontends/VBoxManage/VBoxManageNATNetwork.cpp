@@ -180,6 +180,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
     int enable = -1;
     int dhcp = -1;
     int ipv6 = -1;
+    int ipv6_default = -1;
 
     VPF2DELETE vPfName2Delete;
     VPF2ADD vPf2Add;
@@ -189,7 +190,13 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
 
     LONG loopback6Offset = 0; /* ignore me */
 
-#define NATNET_CMD_OPT_IPV6_PREFIX    (256 + '6')
+    enum
+    {
+        kNATNetworkIota = 1000,
+        kNATNetwork_IPv6Default,
+        kNATNetwork_IPv6Prefix,
+    };
+
     static const RTGETOPTDEF g_aNATNetworkIPOptions[] =
     {
         { "--netname",          't',                            RTGETOPT_REQ_STRING  },
@@ -197,8 +204,9 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
         { "--ipv4-prefix",      'n',                            RTGETOPT_REQ_STRING  }, /* new name */
         { "--dhcp",             'h',                            RTGETOPT_REQ_BOOL    },
         { "--ipv6",             '6',                            RTGETOPT_REQ_BOOL    }, /* old name */
+        { "--ipv6-default",     kNATNetwork_IPv6Default,        RTGETOPT_REQ_BOOL    },
         { "--ipv6-enable",      '6',                            RTGETOPT_REQ_BOOL    }, /* new name */
-        { "--ipv6-prefix",      NATNET_CMD_OPT_IPV6_PREFIX,     RTGETOPT_REQ_STRING  },
+        { "--ipv6-prefix",      kNATNetwork_IPv6Prefix,         RTGETOPT_REQ_STRING  },
         { "--enable",           'e',                            RTGETOPT_REQ_NOTHING },
         { "--disable",          'd',                            RTGETOPT_REQ_NOTHING },
         { "--port-forward-4",   'p',                            RTGETOPT_REQ_STRING  },
@@ -253,10 +261,16 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
                 ipv6 = ValueUnion.f;
                 break;
 
-            case NATNET_CMD_OPT_IPV6_PREFIX:
+            case kNATNetwork_IPv6Prefix:
                 if (pPrefixIPv6)
                     return errorSyntax(USAGE_NATNETWORK, Nat::tr("You can specify --ipv6-prefix only once."));
                 pPrefixIPv6 = ValueUnion.psz;
+                break;
+
+            case kNATNetwork_IPv6Default: // XXX: uwe
+                if (ipv6_default != -1)
+                    return errorSyntax(USAGE_NATNETWORK, Nat::tr("You can specify --ipv6-default only once."));
+                ipv6_default = ValueUnion.f;
                 break;
 
             case 'L': /* ipv6 loopback */
@@ -416,6 +430,14 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
             if (ipv6 > 0)
             {
                 CHECK_ERROR(net, COMSETTER(IPv6Enabled)(TRUE));
+                if (FAILED(rc))
+                    return errorArgument(Nat::tr("Failed to set configuration"));
+            }
+
+            if (ipv6_default != -1)
+            {
+                BOOL fIPv6Default = RT_BOOL(ipv6_default);
+                CHECK_ERROR(net, COMSETTER(AdvertiseDefaultIPv6RouteEnabled)(fIPv6Default));
                 if (FAILED(rc))
                     return errorArgument(Nat::tr("Failed to set configuration"));
             }
