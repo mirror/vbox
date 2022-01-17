@@ -2065,7 +2065,7 @@ static int rtEfiVarStoreFvHdr_Validate(PRTEFIVARSTORE pThis, PCEFI_FIRMWARE_VOLU
 
     /* Read in the block map and verify it as well. */
     uint64_t cbFvVol = 0;
-    uint16_t cbFvHdr = sizeof(*pFvHdr);
+    uint64_t cbFvHdr = sizeof(*pFvHdr);
     uint64_t offBlockMap = sizeof(*pFvHdr);
     for (;;)
     {
@@ -2512,7 +2512,7 @@ RTDECL(int) RTEfiVarStoreCreate(RTVFSFILE hVfsFile, uint64_t offStore, uint64_t 
 
         memcpy(&FtwHdr.GuidSignature, &GuidFtwArea, sizeof(GuidFtwArea));
         FtwHdr.fWorkingBlockValid = RT_H2LE_U32(0xfffffffe); /** @todo */
-        FtwHdr.cbWriteQueue       = RT_H2LE_U64(0xfe0); /* This comes from the default OVMF variable volume. */
+        FtwHdr.cbWriteQueue       = RT_H2LE_U64(0xfe0ULL); /* This comes from the default OVMF variable volume. */
         FtwHdr.u32Chksum          = RTCrc32(&FtwHdr, sizeof(FtwHdr));
 
         /* The area starts with the event log which defaults to 0xff. */
