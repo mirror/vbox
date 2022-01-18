@@ -151,7 +151,7 @@ static DECLCALLBACK(int) VBoxDisplayInit(const PVBOXSERVICEENV pEnv, void **ppIn
 
     if (RT_SUCCESS(rc))
     {
-        VBOXDISPIFESCAPE_ISANYX IsAnyX = { 0 };
+        VBOXDISPIFESCAPE_ISANYX IsAnyX = { {0} };
         IsAnyX.EscapeHdr.escapeCode = VBOXESC_ISANYX;
         DWORD err = VBoxDispIfEscapeInOut(&pEnv->dispIf, &IsAnyX.EscapeHdr, sizeof(uint32_t));
         if (err == NO_ERROR)

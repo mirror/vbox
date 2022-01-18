@@ -271,12 +271,12 @@ static HRESULT vboxDispKmtOpenAdapterViaLuid(const VBOXDISPKMT_CALLBACKS *pCallb
         {
             if (f || EnumAdapters.Adapters[i].NumOfSources)
             {
-                D3DKMT_OPENADAPTERFROMLUID OpenAdapterData = {0};
+                D3DKMT_OPENADAPTERFROMLUID OpenAdapterData = {{0}};
                 OpenAdapterData.AdapterLuid = EnumAdapters.Adapters[i].AdapterLuid;
                 Status = pCallbacks->pfnD3DKMTOpenAdapterFromLuid(&OpenAdapterData);
-    #ifdef DEBUG_misha
+#ifdef DEBUG_misha
                 Assert(!Status);
-    #endif
+#endif
                 if (NT_SUCCESS(Status))
                 {
                     pAdapter->hAdapter = OpenAdapterData.hAdapter;

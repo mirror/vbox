@@ -596,21 +596,21 @@ static HRESULT vboxDxvaUpdateVertexBuffer(VBOXWDDMVIDEOPROCESSDEVICE *pVideoProc
     AssertReturn(pSrcRect->right > pSrcRect->left, S_OK);
     AssertReturn(pSrcRect->bottom > pSrcRect->top, S_OK);
 
-    float const cSrcWidth = pVideoProcessDevice->VideoDesc.SampleWidth;
+    float const cSrcWidth  = pVideoProcessDevice->VideoDesc.SampleWidth;
     float const cSrcHeight = pVideoProcessDevice->VideoDesc.SampleHeight;
 
-    float const uSrcLeft   = pSrcRect->left/cSrcWidth;
-    float const uSrcRight  = pSrcRect->right/cSrcWidth;
-    float const vSrcTop    = pSrcRect->top/cSrcHeight;
-    float const vSrcBottom = pSrcRect->bottom/cSrcHeight;
+    float const uSrcLeft   = (float)pSrcRect->left   / cSrcWidth;
+    float const uSrcRight  = (float)pSrcRect->right  / cSrcWidth;
+    float const vSrcTop    = (float)pSrcRect->top    / cSrcHeight;
+    float const vSrcBottom = (float)pSrcRect->bottom / cSrcHeight;
 
     /* Subtract 0.5 to line up the pixel centers with texels
      * https://docs.microsoft.com/en-us/windows/win32/direct3d9/directly-mapping-texels-to-pixels
      */
-    float const xDstLeft   = pDstRect->left - 0.5f;
-    float const xDstRight  = pDstRect->right - 0.5f;
-    float const yDstTop    = pDstRect->top - 0.5f;
-    float const yDstBottom = pDstRect->bottom - 0.5f;
+    float const xDstLeft   = (float)pDstRect->left   - 0.5f;
+    float const xDstRight  = (float)pDstRect->right  - 0.5f;
+    float const yDstTop    = (float)pDstRect->top    - 0.5f;
+    float const yDstBottom = (float)pDstRect->bottom - 0.5f;
 
     Vertex const aVertices[] =
     {

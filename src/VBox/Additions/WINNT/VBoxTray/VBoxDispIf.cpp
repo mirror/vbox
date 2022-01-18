@@ -1422,7 +1422,7 @@ static DWORD vboxDispIfWaitDisplayDataInited(VBOXDISPIF_OP *pOp)
 static DWORD vboxDispIfUpdateModesWDDM(VBOXDISPIF_OP *pOp, uint32_t u32TargetId, const RTRECTSIZE *pSize)
 {
     DWORD winEr = ERROR_SUCCESS;
-    VBOXDISPIFESCAPE_UPDATEMODES EscData = {0};
+    VBOXDISPIFESCAPE_UPDATEMODES EscData = {{0}};
     EscData.EscapeHdr.escapeCode = VBOXESC_UPDATEMODES;
     EscData.u32TargetId = u32TargetId;
     EscData.Size = *pSize;
