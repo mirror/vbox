@@ -34,11 +34,15 @@
 #include <iprt/path.h>
 #include <iprt/process.h>
 
+#if defined(RT_OS_LINUX)
+
 /** Defines the DRM client executable (image). */
-#define VBOX_DRMCLIENT_EXECUTABLE           "/usr/bin/VBoxDRMClient"
-#define VBOX_DRMCLIENT_LEGACY_EXECUTABLE    "/usr/bin/VBoxClient"
+# define VBOX_DRMCLIENT_EXECUTABLE           "/usr/bin/VBoxDRMClient"
+# define VBOX_DRMCLIENT_LEGACY_EXECUTABLE    "/usr/bin/VBoxClient"
 /** Defines the guest property that defines if the DRM resizing client needs to be active or not. */
-#define VBOX_DRMCLIENT_GUEST_PROP_RESIZE    "/VirtualBox/GuestAdd/DRMResize"
+# define VBOX_DRMCLIENT_GUEST_PROP_RESIZE    "/VirtualBox/GuestAdd/DRMResize"
+
+#endif /* RT_OS_LINUX */
 
 /**
  * Returns if the DRM resizing client is needed.
@@ -48,9 +52,10 @@
  */
 VBGLR3DECL(bool) VbglR3DrmClientIsNeeded(void)
 {
+#if defined(RT_OS_LINUX)
     bool fStartClient = false;
 
-#ifdef VBOX_WITH_GUEST_PROPS
+# ifdef VBOX_WITH_GUEST_PROPS
     uint32_t idClient;
     int rc = VbglR3GuestPropConnect(&idClient);
     if (RT_SUCCESS(rc))
@@ -58,9 +63,12 @@ VBGLR3DECL(bool) VbglR3DrmClientIsNeeded(void)
         fStartClient = VbglR3GuestPropExist(idClient, VBOX_DRMCLIENT_GUEST_PROP_RESIZE /*pszPropName*/);
         VbglR3GuestPropDisconnect(idClient);
     }
-#endif
-
+# endif
     return fStartClient;
+
+#else /* !RT_OS_LINUX */
+    return false;
+#endif
 }
 
 /**
@@ -76,8 +84,12 @@ VBGLR3DECL(bool) VbglR3DrmClientIsRunning(void)
 
 static int VbglR3DrmStart(const char *pszCmd, const char **apszArgs)
 {
+#if defined(RT_OS_LINUX)
     return RTProcCreate(pszCmd, apszArgs, RTENV_DEFAULT,
                         RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SEARCH_PATH, NULL);
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 /**
@@ -87,8 +99,12 @@ static int VbglR3DrmStart(const char *pszCmd, const char **apszArgs)
  */
 VBGLR3DECL(int) VbglR3DrmClientStart(void)
 {
+#if defined(RT_OS_LINUX)
     const char *apszArgs[1] = { NULL }; /** @todo r=andy Pass path + process name as argv0? */
     return VbglR3DrmStart(VBOX_DRMCLIENT_EXECUTABLE, apszArgs);
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 /**
@@ -98,7 +114,11 @@ VBGLR3DECL(int) VbglR3DrmClientStart(void)
  */
 VBGLR3DECL(int) VbglR3DrmLegacyClientStart(void)
 {
+#if defined(RT_OS_LINUX)
     const char *apszArgs[3] = { VBOX_DRMCLIENT_LEGACY_EXECUTABLE, "--vmsvga", NULL };
     return VbglR3DrmStart(VBOX_DRMCLIENT_LEGACY_EXECUTABLE, apszArgs);
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
