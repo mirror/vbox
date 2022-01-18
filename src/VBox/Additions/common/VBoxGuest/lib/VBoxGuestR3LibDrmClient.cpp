@@ -82,15 +82,13 @@ VBGLR3DECL(bool) VbglR3DrmClientIsRunning(void)
     return VbglR3DrmClientIsNeeded();
 }
 
+#if defined(RT_OS_LINUX)
 static int VbglR3DrmStart(const char *pszCmd, const char **apszArgs)
 {
-#if defined(RT_OS_LINUX)
     return RTProcCreate(pszCmd, apszArgs, RTENV_DEFAULT,
                         RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SEARCH_PATH, NULL);
-#else
-    return VERR_NOT_SUPPORTED;
-#endif
 }
+#endif
 
 /**
  * Starts (executes) the DRM resizing client process ("VBoxDRMClient").
