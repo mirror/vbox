@@ -222,6 +222,13 @@ static int procRun(MSIHANDLE hModule, const char *pszImage, const char * const *
  * @param   hKeyRoot            Registry root key to use, e.g. HKEY_LOCAL_MACHINE.
  * @param   ppszPath            Where to store the allocated Python path on success.
  *                              Must be free'd by the caller using RTStrFree().
+ * @remarks r=bird: This may return VINF_SUCCESS and *ppszPath = NULL if there
+ *          are no keys under "SOFTWARE\\Python\\PythonCore" or none of them
+ *          has an "InstallPath" key.  It seems to work out fine, though, as
+ *          we'll just use python.exe w/o a full path.
+ *
+ * @todo    r=bird: On a more serious note, caller ASSUMES the returned path
+ *          ends with a slash as it just appends the "python.exe" string to it.
  */
 static int getPythonPathEx(MSIHANDLE hModule, HKEY hKeyRoot, char **ppszPath)
 {
@@ -232,38 +239,40 @@ static int getPythonPathEx(MSIHANDLE hModule, HKEY hKeyRoot, char **ppszPath)
 
     char *pszPythonPath = NULL;
 
-    RTUTF16 wszKey [RTPATH_MAX] = { 0 };
-    RTUTF16 wszKey2[RTPATH_MAX] = { 0 };
-    RTUTF16 wszVal [RTPATH_MAX] = { 0 };
-
     int rc = VINF_SUCCESS;
 
     /* Note: The loop ASSUMES that later found versions are higher, e.g. newer Python versions.
      *       For now we always go by the newest version. */
     for (int i = 0;; ++i)
     {
-        DWORD dwKey     = sizeof(wszKey);
-        DWORD dwKeyType = REG_SZ;
+        RTUTF16 wszKey[RTPATH_MAX];
+        DWORD   dwKey     = sizeof(wszKey);
+        DWORD   dwKeyType = REG_SZ;
 
+        /** @todo r=bird: Break on ERROR_NO_MORE_ITEMS, skip to the next one on
+         *        errors. */
         dwErr = RegEnumKeyExW(hkPythonCore, i, wszKey, &dwKey, NULL, NULL, NULL, NULL);
         if (dwErr != ERROR_SUCCESS || dwKey <= 0)
             break;
         AssertBreakStmt(dwKey <= sizeof(wszKey), VERR_BUFFER_OVERFLOW);
 
+        /** @todo r=bird: Waste of space + effort, just append "\\InstallPath" to
+         *        wszKey, reserving sufficent room for it above. */
+        RTUTF16 wszKey2[RTPATH_MAX];
         if (RTUtf16Printf(wszKey2, sizeof(wszKey2), "%ls\\InstallPath", wszKey) <= 0)
         {
             rc = VERR_BUFFER_OVERFLOW;
             break;
         }
 
-        dwKey = sizeof(wszKey2); /* Re-initialize length. */
-
         HKEY hkPythonInstPath = NULL;
         dwErr = RegOpenKeyExW(hkPythonCore, wszKey2, 0, KEY_READ,  &hkPythonInstPath);
         if (dwErr != ERROR_SUCCESS)
             continue;
 
-        dwErr = RegQueryValueExW(hkPythonInstPath, L"", NULL, &dwKeyType, (LPBYTE)wszVal, &dwKey);
+        RTUTF16 wszVal[RTPATH_MAX] = { 0 };
+        DWORD   cbValue = sizeof(wszVal) - sizeof(RTUTF16);
+        dwErr = RegQueryValueExW(hkPythonInstPath, L"", NULL, &dwKeyType, (LPBYTE)wszVal, &cbValue);
         if (dwErr == ERROR_SUCCESS)
             logStringF(hModule, "getPythonPath: Path \"%ls\" found.", wszVal);
 
