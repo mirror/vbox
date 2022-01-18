@@ -74,7 +74,8 @@
 /** @def FLOAT_FMT_ARGS
  * Format arguments for a float value, corresponding to FLOAT_FMT_STR.
  * @param   r       The floating point value to format.  */
-#define FLOAT_FMT_ARGS(r)              (r) >= 0.0f ? "" : "-", (unsigned)RT_ABS(r), (unsigned)(RT_ABS((r) - (unsigned)(r)) * 1000000.0f)
+#define FLOAT_FMT_ARGS(r)              (r) >= 0.0f ? "" : "-", (unsigned)RT_ABS(r) \
+                                       , (unsigned)(RT_ABS((r) - (float)(unsigned)(r)) * 1000000.0f)
 
 /* Deprecated commands. They are not included in the VMSVGA headers anymore. */
 #define SVGA_CMD_RECT_FILL             2

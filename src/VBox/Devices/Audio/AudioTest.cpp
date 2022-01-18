@@ -295,7 +295,7 @@ int AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uin
                 int8_t *piSample = (int8_t *)pvBuf;
                 while (cFrames-- > 0)
                 {
-                    *piSample = (int8_t)(126 /*Amplitude*/ * sin(rdFixed * iSrcFrame));
+                    *piSample = (int8_t)(126 /*Amplitude*/ * sin(rdFixed * (double)iSrcFrame));
                     iSrcFrame++;
                     piSample += cbFrame;
                 }
@@ -306,7 +306,7 @@ int AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uin
                 uint8_t *pbSample = (uint8_t *)pvBuf;
                 while (cFrames-- > 0)
                 {
-                    *pbSample = (uint8_t)(126 /*Amplitude*/ * sin(rdFixed * iSrcFrame) + 0x80);
+                    *pbSample = (uint8_t)(126 /*Amplitude*/ * sin(rdFixed * (double)iSrcFrame) + 0x80);
                     iSrcFrame++;
                     pbSample += cbFrame;
                 }
@@ -319,7 +319,7 @@ int AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uin
                 int16_t *piSample = (int16_t *)pvBuf;
                 while (cFrames-- > 0)
                 {
-                    *piSample = (int16_t)(32760 /*Amplitude*/ * sin(rdFixed * iSrcFrame));
+                    *piSample = (int16_t)(32760 /*Amplitude*/ * sin(rdFixed * (double)iSrcFrame));
                     iSrcFrame++;
                     piSample = (int16_t *)((uint8_t *)piSample + cbFrame);
                 }
@@ -330,7 +330,7 @@ int AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uin
                 uint16_t *puSample = (uint16_t *)pvBuf;
                 while (cFrames-- > 0)
                 {
-                    *puSample = (uint16_t)(32760 /*Amplitude*/ * sin(rdFixed * iSrcFrame) + 0x8000);
+                    *puSample = (uint16_t)(32760 /*Amplitude*/ * sin(rdFixed * (double)iSrcFrame) + 0x8000);
                     iSrcFrame++;
                     puSample = (uint16_t *)((uint8_t *)puSample + cbFrame);
                 }
@@ -344,7 +344,7 @@ int AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uin
                 int32_t *piSample = (int32_t *)pvBuf;
                 while (cFrames-- > 0)
                 {
-                    *piSample = (int32_t)((32760 << 16) /*Amplitude*/ * sin(rdFixed * iSrcFrame));
+                    *piSample = (int32_t)((32760 << 16) /*Amplitude*/ * sin(rdFixed * (double)iSrcFrame));
                     iSrcFrame++;
                     piSample = (int32_t *)((uint8_t *)piSample + cbFrame);
                 }
@@ -354,7 +354,7 @@ int AudioTestToneGenerate(PAUDIOTESTTONE pTone, void *pvBuf, uint32_t cbBuf, uin
                 uint32_t *puSample = (uint32_t *)pvBuf;
                 while (cFrames-- > 0)
                 {
-                    *puSample = (uint32_t)((32760 << 16) /*Amplitude*/ * sin(rdFixed * iSrcFrame) + UINT32_C(0x80000000));
+                    *puSample = (uint32_t)((32760 << 16) /*Amplitude*/ * sin(rdFixed * (double)iSrcFrame) + UINT32_C(0x80000000));
                     iSrcFrame++;
                     puSample = (uint32_t *)((uint8_t *)puSample + cbFrame);
                 }

@@ -324,8 +324,8 @@ static DECLCALLBACK(int) ReceiveThread(RTTHREAD hThreadSelf, void *pvArg)
                              "receiver thread %.6Rhxs terminating.\n"
                              "  iFrame=%u  cb=%'u  c=%'u  %'uKB/s  %'ufps  cLost=%'u \n",
                              &pArgs->Mac, iFrame, cbReceived, iFrame - cLostFrames,
-                             (unsigned)(cbReceived * 1000000000.0 / 1024 / (pArgs->u64End - pArgs->u64Start)),
-                             (unsigned)((iFrame - cLostFrames) * 1000000000.0 / (pArgs->u64End - pArgs->u64Start)),
+                             (unsigned)((double)cbReceived * 1000000000.0 / 1024 / (double)(pArgs->u64End - pArgs->u64Start)),
+                             (unsigned)((double)(iFrame - cLostFrames) * 1000000000.0 / (double)(pArgs->u64End - pArgs->u64Start)),
                              cLostFrames);
                 return VINF_SUCCESS;
             }
@@ -513,7 +513,7 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
             RTThreadYield();
 
         uint64_t u64Elapsed = RT_MAX(Args0.u64End, Args1.u64End) - RT_MIN(Args0.u64Start, Args1.u64Start);
-        uint64_t u64Speed = (uint64_t)((2 * g_cbTransfer / 1024) / (u64Elapsed / 1000000000.0));
+        uint64_t u64Speed = (uint64_t)((double)(2 * g_cbTransfer / 1024) / ((double)u64Elapsed / 1000000000.0));
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
                      "transferred %u bytes in %'RU64 ns (%'RU64 KB/s)\n",
                      2 * g_cbTransfer, u64Elapsed, u64Speed);

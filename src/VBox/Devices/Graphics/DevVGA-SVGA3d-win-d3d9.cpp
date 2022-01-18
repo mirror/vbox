@@ -925,9 +925,9 @@ HRESULT D3D9Conversion::setConversionState(IDirect3DTexture9 *pSourceTexture,
      * https://docs.microsoft.com/en-us/windows/win32/direct3d9/directly-mapping-texels-to-pixels
      */
     float const xLeft   = -0.5f;
-    float const xRight  = (cWidth - 1) - 0.5f;
+    float const xRight  = (float)(cWidth - 1) - 0.5f;
     float const yTop    = -0.5f;
-    float const yBottom = (cHeight - 1) - 0.5f;
+    float const yBottom = (float)(cHeight - 1) - 0.5f;
 
     Vertex const aVertices[] =
     {
