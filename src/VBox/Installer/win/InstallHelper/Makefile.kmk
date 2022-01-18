@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxInstallHelper
-VBoxInstallHelper_TEMPLATE = VBoxR3Static
+VBoxInstallHelper_TEMPLATE = VBoxR3StaticDll
 VBoxInstallHelper_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
 VBoxInstallHelper_DEFS    += VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxInstallHelper_DEPS     = $(VBOX_SVN_REV_KMK)

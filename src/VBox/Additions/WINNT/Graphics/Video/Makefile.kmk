@@ -127,13 +127,13 @@ ifdef VBOX_WITH_WDDM
 
  ifdef VBOX_WITH_MESA3D
   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll: $$(VBoxNine_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
+	$(INSTALL) -m 644 "$<" "$(@D)"
   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll: $$(VBoxSVGA_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
+	$(INSTALL) -m 644 "$<" "$(@D)"
   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD.dll: $$(VBoxICD_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
+	$(INSTALL) -m 644 "$<" "$(@D)"
   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll: $$(VBoxGL_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
+	$(INSTALL) -m 644 "$<" "$(@D)"
 
   ifeq ($(KBUILD_TARGET_ARCH),amd64)
    $(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll: $$(VBoxNine-x86_1_TARGET) | $$(dir $$@)

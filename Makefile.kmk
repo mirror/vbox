@@ -143,6 +143,34 @@ InstallExternalLibs_SOURCES += \
 	,$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(redistdll),x86)=>x86/$(qnotdir ,$(redistdll)))
    endif
   endif
+  ifeq ($(KBUILD_TYPE),asan)
+   ifeq ($(KBUILD_TARGET_ARCH),amd64)
+InstallExternalLibs_SOURCES += \
+    	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_BIN)/clang_rt.asan_dynamic-x86_64.dll) \
+    	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_BIN)/clang_rt.asan_dynamic-x86_64.dll)=>testcase/clang_rt.asan_dynamic-x86_64.dll
+    ifeq ($(VBOX_VCC_CRT_TYPE),d)
+InstallExternalLibs_SOURCES += \
+    	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_BIN)/clang_rt.asan_dbg_dynamic-x86_64.dll) \
+    	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)AMD64_BIN)/clang_rt.asan_dbg_dynamic-x86_64.dll)=>testcase/clang_rt.asan_dbg_dynamic-x86_64.dll
+    endif
+   endif
+   ifeq ($(KBUILD_TARGET_ARCH),x86)
+InstallExternalLibs_SOURCES += \
+    	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN)/clang_rt.asan_dynamic-i386.dll) \
+    	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN)/clang_rt.asan_dynamic-i386.dll)=>testcase/clang_rt.asan_dynamic-i386.dll
+    ifeq ($(VBOX_VCC_CRT_TYPE),d)
+InstallExternalLibs_SOURCES += \
+    	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN)/clang_rt.asan_dbg_dynamic-i386.dll) \
+    	$(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN)/clang_rt.asan_dbg_dynamic-i386.dll)=>testcase/clang_rt.asan_dbg_dynamic-i386.dll
+    endif
+   endif
+   ifdef VBOX_WITH_32_ON_64_MAIN_API
+InstallExternalLibs_SOURCES += $(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN)/clang_rt.asan_dynamic-i386.dll,x86)=>x86/clang_rt.asan_dynamic-i386.dll
+    ifeq ($(VBOX_VCC_CRT_TYPE),d)
+InstallExternalLibs_SOURCES += $(call VBOX_RE_SIGN_DLL_FN,InstallExternalLibs,$(PATH_TOOL_$(VBOX_VCC_TOOL_STEM)X86_BIN)/clang_rt.asan_dbg_dynamic-i386.dll,x86)=>x86/clang_rt.asan_dbg_dynamic-i386.dll
+    endif
+   endif
+  endif
  else
 VBOX_VCC_REDIR_BASE             := Microsoft.VC$(substr $(VBOX_VCC_TOOL),4,3)
 VBOX_PATH_VCC_REDIST             = $(PATH_TOOL_$(VBOX_VCC_TOOL))/redist/

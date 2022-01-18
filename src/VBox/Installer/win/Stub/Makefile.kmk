@@ -49,6 +49,9 @@ endif
 VBoxStub_LDFLAGS = \
 	-DelayLoad:comctl32.dll
 VBoxStub_POST_CMDS = $(VBOX_CHECK_IMPORTS) --image $(out) ntdll.dll kernel32.dll
+ifeq ($(KBUILD_TYPE),asan)
+ VBoxStub_POST_CMDS += advapi32.dll
+endif
 VBoxStub_LNK_DEPS  = $(VBOX_CHECK_IMPORTS)
 
 VBoxStub.cpp_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)

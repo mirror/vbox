@@ -2843,6 +2843,8 @@ endif
 ifeq ($(KBUILD_TYPE),asan)
  if "$(KBUILD_TARGET)" == "linux"
 VBOX_WITH_GCC_SANITIZER := 1
+ else if "$(KBUILD_TARGET)" == "win"
+VBOX_WITH_VCC_SANITIZER := 1
  else
 VBOX_WITH_EF_WRAPS := 1
  endif
@@ -2886,6 +2888,16 @@ ifdef VBOX_WITH_GCC_SANITIZER
  else
   VBOX_GCC_SANITIZER_LDFLAGS += -lasan
  endif
+endif
+
+# The config for Visual C++ 2019 update 9 and later.
+ifdef VBOX_WITH_VCC_SANITIZER
+ VBOX_VCC_SANITIZER_FLAGS      := -fsanitize=address -fno-sanitize-address-vcasan-lib
+ # experimental: VBOX_VCC_SANITIZER_FLAGS += /fsanitize-address-use-after-return
+ VBOX_VCC_SANITIZER_LDFLAGS    :=
+else
+ VBOX_VCC_SANITIZER_FLAGS      :=
+ VBOX_VCC_SANITIZER_LDFLAGS    :=
 endif
 
 
@@ -5792,7 +5804,7 @@ ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBOXR3EXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK)
  endif
  TEMPLATE_VBOXR3EXE_CXXFLAGS           = -Zi -Zl -GR- -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) \
- 	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
+ 	-Gy $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS) $(VBOX_VCC_WARN_ALL) $(VBOX_VCC_WERR)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
   TEMPLATE_VBOXR3EXE_CXXFLAGS         += -Gw
  endif
@@ -5812,7 +5824,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR3EXE_PCHFLAGS.kprofile  = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile)
  TEMPLATE_VBOXR3EXE_LDFLAGS            = -Ignore:4197 \
 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
-	$(VBOX_VCC_LD_GUARD_CF) \
+	$(VBOX_VCC_LD_GUARD_CF) $(VBOX_VCC_SANITIZER_LDFLAGS) \
 	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	/STUB:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com \
 	/DISALLOWLIB:libc.lib \
@@ -5840,6 +5852,14 @@ ifeq ($(KBUILD_TARGET),win)
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib
+  ifeq ($(KBUILD_TYPE),asan)
+   TEMPLATE_VBOXR3EXE_LIBS.x86         += \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/clang_rt.asan_dynamic-i386.lib \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/clang_rt.asan_dynamic_runtime_thunk-i386.lib
+   TEMPLATE_VBOXR3EXE_LIBS.amd64       += \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/clang_rt.asan_dynamic-x86_64.lib \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.amd64)_LIB)/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib
+  endif
  else
   TEMPLATE_VBOXR3EXE_LIBS.x86           = \
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3EXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
@@ -6140,6 +6160,14 @@ ifeq ($(KBUILD_TARGET),win)
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/oldnames.lib
+  ifeq ($(KBUILD_TYPE),asan)
+   TEMPLATE_VBOXR3STATIC_LIBS.x86         += \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/clang_rt.asan-i386.lib \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/clang_rt.asan_cxx-i386.lib
+   TEMPLATE_VBOXR3STATIC_LIBS.amd64       += \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/clang_rt.asan-x86_64.lib \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/clang_rt.asan_cxx-x86_64.lib
+  endif
  else
   TEMPLATE_VBOXR3STATIC_LIBS.x86           = \
   	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/oldnames.lib \
@@ -6219,6 +6247,16 @@ else
 endif
 
 #
+# A DLL capable version of VBoxR3Static
+#
+TEMPLATE_VBoxR3StaticDll             = VBox Static Ring-3 DLL
+TEMPLATE_VBoxR3StaticDll_EXTENDS     = VBoxR3Static
+if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_TYPE)" == "asan"
+ TEMPLATE_VBoxR3StaticDll_LIBS.x86   = $(patsubst %clang_rt.asan-i386.lib, %clang_rt.asan_dll_thunk-i386.lib, $(filter-out %clang_rt.asan_cxx-i386.lib,$(TEMPLATE_VBoxR3Static_LIBS.x86)))
+ TEMPLATE_VBoxR3StaticDll_LIBS.amd64 = $(patsubst %clang_rt.asan-x86_64.lib, %clang_rt.asan_dll_thunk-x86_64.lib, $(filter-out %clang_rt.asan_cxx-x86_64.lib,$(TEMPLATE_VBoxR3Static_LIBS.amd64)))
+endif
+
+#
 # Non-pedantic variation of VBoxR3Static
 #
 TEMPLATE_VBoxR3StaticNonPedantic           = VBox Static Ring-3 EXE, non-pedantic.
@@ -6258,11 +6296,11 @@ TEMPLATE_VBoxR3StaticNoCrt_LIBS.win        = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBoxR3StaticNoCrt_LIBS.win.x86    = \
 	$(PATH_TOOL_$(TEMPLATE_VBoxR3StaticNoCrt_TOOL.win.x86)_LIB)/chkstk.obj
 TEMPLATE_VBoxR3StaticNoCrt_SDKS.win.x86   += VBOX_WIN_INT64
-TEMPLATE_VBoxR3StaticNoCrt_LDFLAGS         = $(filter-out $(VBOX_VCC_LD_GUARD_CF), $(TEMPLATE_VBoxR3Static_LDFLAGS))
+TEMPLATE_VBoxR3StaticNoCrt_LDFLAGS         = $(filter-out $(VBOX_VCC_LD_GUARD_CF) $(VBOX_VCC_SANITIZER_LDFLAGS), $(TEMPLATE_VBoxR3Static_LDFLAGS))
 TEMPLATE_VBoxR3StaticNoCrt_LDFLAGS.win.x86 = $(filter-out -Include%, $(TEMPLATE_VBoxR3Static_LDFLAGS.win.x86))
-TEMPLATE_VBoxR3StaticNoCrt_CFLAGS          = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxR3Static_CFLAGS)) /GS- -EHs-
-TEMPLATE_VBoxR3StaticNoCrt_CXXFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxR3Static_CXXFLAGS)) /GS- -EHs-
-TEMPLATE_VBoxR3StaticNoCrt_PCHFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxR3Static_PCHFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxR3StaticNoCrt_CFLAGS          = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxR3Static_CFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxR3StaticNoCrt_CXXFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxR3Static_CXXFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxR3StaticNoCrt_PCHFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxR3Static_PCHFLAGS)) /GS- -EHs-
 TEMPLATE_VBoxR3StaticNoCrt_CXXFLAGS.debug  = $(filter-out /RTC% -RTC%, $(TEMPLATE_VBoxR3Static_CXXFLAGS.debug))
 else
 TEMPLATE_VBoxR3StaticNoCrt_CXXFLAGS        = $(TEMPLATE_VBoxR3Static_CXXFLAGS) -fno-exceptions
@@ -6830,7 +6868,7 @@ ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBOXMAINEXE_SDKS              = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  endif
  TEMPLATE_VBOXMAINEXE_CXXFLAGS           = -Zi -Zl -GR -EHsc -GF -MD$(VBOX_VCC_CRT_TYPE) -Zc:wchar_t- \
- 	$(VBOX_VCC_OPT) $(VBOX_VCC_FP) $(VBOX_VCC_CC_GUARD_CF)
+ 	$(VBOX_VCC_OPT) $(VBOX_VCC_FP) $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS)
  #    -wd4625: 'DisplaySourceBitmap' : copy constructor could not be generated because a base class copy constructor is inaccessible
  #    -wd4626: 'DisplaySourceBitmap' : assignment operator could not be generated because a base class assignment operator is inaccessible
  #             The two above can be cured by adding private: DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(xxxx); but too much work.
@@ -6856,7 +6894,7 @@ ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXMAINEXE_PCHFLAGS.kprofile  = $(TEMPLATE_VBOXMAINEXE_CXXFLAGS.kprofile)
  TEMPLATE_VBOXMAINEXE_LDFLAGS            = -Ignore:4197 \
 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
-	$(VBOX_VCC_LD_GUARD_CF) \
+	$(VBOX_VCC_LD_GUARD_CF) $(VBOX_VCC_SANITIZER_LDFLAGS) \
 	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	/STUB:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com \
 	/DISALLOWLIB:libc.lib \
@@ -6891,6 +6929,14 @@ ifeq ($(KBUILD_TARGET),win)
   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/msvcprt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/oldnames.lib
+  ifeq ($(KBUILD_TYPE),asan)
+   TEMPLATE_VBOXMAINEXE_LIBS.x86         += \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/clang_rt.asan_dynamic-i386.lib \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/clang_rt.asan_dynamic_runtime_thunk-i386.lib
+   TEMPLATE_VBOXMAINEXE_LIBS.amd64       += \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/clang_rt.asan_dynamic-x86_64.lib \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.amd64)_LIB)/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib
+  endif
  else
   TEMPLATE_VBOXMAINEXE_LIBS.x86           = \
   	$(PATH_TOOL_$(TEMPLATE_VBOXMAINEXE_TOOL.win.x86)_LIB)/msvcrt$(VBOX_VCC_CRT_TYPE).lib \
@@ -7479,7 +7525,7 @@ ifdef VBOX_WITH_QTGUI
      _WIN32_WINNT=0x0500 UNICODE _UNICODE \
      QT_DLL _CRT_SECURE_NO_DEPRECATE \
      $(QMAKE_PRL_DEFINES)
-  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t- $(VBOX_VCC_CC_GUARD_CF)
+  TEMPLATE_VBOXQTGUIEXE_CXXFLAGS = -nologo -Zm200 -MD -Zi -EHsc -Zc:wchar_t- $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS)
   #    -wd4481: nonstandard extension used: override specifier 'override'
   #    -wd4625: 'QRubberBand' : copy constructor could not be generated because a base class copy constructor is inaccessible
   #    -wd4626: 'QRubberBand' : assignment operator could not be generated because a base class assignment operator is inaccessible
@@ -7522,7 +7568,7 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_PCHFLAGS.dbgopt = $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.dbgopt)
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS = -Ignore:4197 \
 	/NOD /INCREMENTAL:NO /MAPINFO:EXPORTS /LargeAddressAware /DynamicBase /NxCompat /Release /Debug /Opt:Ref /Opt:Icf \
-	$(VBOX_VCC_LD_GUARD_CF) \
+	$(VBOX_VCC_LD_GUARD_CF)  $(VBOX_VCC_SANITIZER_LDFLAGS) \
 	/Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	/STUB:$(PATH_ROOT)/src/VBox/HostDrivers/Support/win/winstub.com
   if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_HARDENING)
@@ -7541,6 +7587,11 @@ ifdef VBOX_WITH_QTGUI
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
+  ifeq ($(KBUILD_TYPE),asan)
+   TEMPLATE_VBOXQTGUIEXE_LIBS += \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/clang_rt.asan_dynamic-x86_64.lib \
+   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib
+  endif
   else
    TEMPLATE_VBOXQTGUIEXE_LIBS = \
    	$(VBOX_LIBS_QT) \
@@ -8066,6 +8117,14 @@ ifeq ($(KBUILD_TARGET),win)
   	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcmt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/libcpmt$(VBOX_VCC_CRT_TYPE).lib \
   	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/oldnames.lib
+  ifeq ($(KBUILD_TYPE),asan)
+   TEMPLATE_VBOXGUESTR3EXE_LIBS.x86         += \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/clang_rt.asan-i386.lib \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/clang_rt.asan_cxx-i386.lib
+   TEMPLATE_VBOXGUESTR3EXE_LIBS.amd64       += \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/clang_rt.asan-x86_64.lib \
+   	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.amd64)_LIB)/clang_rt.asan_cxx-x86_64.lib
+  endif
  else
   TEMPLATE_VBOXGUESTR3EXE_LIBS.x86           = \
   	$(PATH_TOOL_$(TEMPLATE_VBOXGUESTR3EXE_TOOL.win.x86)_LIB)/oldnames.lib \
@@ -8174,7 +8233,12 @@ endif
 TEMPLATE_VBOXGUESTR3DLL           = VBox Guest User Dynamic Libraries
 TEMPLATE_VBOXGUESTR3DLL_EXTENDS   = VBOXGUESTR3EXE
 ## @todo add a INSTFUN that separates dlls and libs.
-ifn1of ($(KBUILD_TARGET), darwin os2 win)
+ifeq ($(KBUILD_TARGET),win)
+ ifeq ($(KBUILD_TYPE),asan)
+  TEMPLATE_VBOXGUESTR3DLL_LIBS.x86   = $(patsubst %clang_rt.asan-i386.lib, %clang_rt.asan_dll_thunk-i386.lib, $(filter-out %clang_rt.asan_cxx-i386.lib,$(TEMPLATE_VBOXGUESTR3EXE_LIBS.x86)))
+  TEMPLATE_VBOXGUESTR3DLL_LIBS.amd64 = $(patsubst %clang_rt.asan-x86_64.lib, %clang_rt.asan_dll_thunk-x86_64.lib, $(filter-out %clang_rt.asan_cxx-x86_64.lib,$(TEMPLATE_VBOXGUESTR3EXE_LIBS.amd64)))
+ endif
+else ifn1of ($(KBUILD_TARGET), darwin os2 win)
  TEMPLATE_VBOXGUESTR3DLL_DEFS     = $(TEMPLATE_VBOXGUESTR3EXE_DEFS) PIC
  TEMPLATE_VBOXGUESTR3DLL_CFLAGS   = $(TEMPLATE_VBOXGUESTR3EXE_CFLAGS) -fPIC
  TEMPLATE_VBOXGUESTR3DLL_CXXFLAGS = $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS) -fPIC -fno-exceptions
@@ -8318,12 +8382,12 @@ TEMPLATE_VBoxGuestR3NoCrtExe_LIBS.win        = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBoxGuestR3NoCrtExe_LIBS.win.x86    = \
 	$(PATH_TOOL_$(TEMPLATE_VBoxGuestR3NoCrtExe_TOOL.win.x86)_LIB)/chkstk.obj
 TEMPLATE_VBoxGuestR3NoCrtExe_SDKS.win.x86    = VBOX_WIN_INT64
-TEMPLATE_VBoxGuestR3NoCrtExe_LDFLAGS         = $(filter-out $(VBOX_VCC_LD_GUARD_CF), $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS))
+TEMPLATE_VBoxGuestR3NoCrtExe_LDFLAGS         = $(filter-out $(VBOX_VCC_LD_GUARD_CF) $(VBOX_VCC_SANITIZER_LDFLAGS), $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS))
 TEMPLATE_VBoxGuestR3NoCrtExe_LDFLAGS.win.x86 = $(filter-out -Include%, $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS.win.x86))
 TEMPLATE_VBoxGuestR3NoCrtExe_LDFLAGS.win     = $(TEMPLATE_VBoxGuestR3Exe_LDFLAGS.win) /entry:CustomMainEntrypoint /subsystem:console
-TEMPLATE_VBoxGuestR3NoCrtExe_CFLAGS          = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxGuestR3Exe_CFLAGS)) /GS- -EHs-
-TEMPLATE_VBoxGuestR3NoCrtExe_CXXFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS)) /GS- -EHs-
-TEMPLATE_VBoxGuestR3NoCrtExe_PCHFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF),$(TEMPLATE_VBoxGuestR3Exe_PCHFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxGuestR3NoCrtExe_CFLAGS          = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxGuestR3Exe_CFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxGuestR3NoCrtExe_CXXFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS)) /GS- -EHs-
+TEMPLATE_VBoxGuestR3NoCrtExe_PCHFLAGS        = $(filter-out -EH% -GS $(VBOX_VCC_CC_GUARD_CF) $(VBOX_VCC_SANITIZER_FLAGS),$(TEMPLATE_VBoxGuestR3Exe_PCHFLAGS)) /GS- -EHs-
 TEMPLATE_VBoxGuestR3NoCrtExe_CXXFLAGS.debug  = $(filter-out /RTC% -RTC%, $(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS.debug))
 else
 TEMPLATE_VBoxGuestR3NoCrtExe_CXXFLAGS        = $(TEMPLATE_VBoxGuestR3Exe_CXXFLAGS) -fno-exceptions

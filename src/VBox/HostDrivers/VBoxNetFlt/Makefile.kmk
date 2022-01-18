@@ -324,7 +324,7 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
  # VBoxNetFltNobj
  #
  DLLS.win += VBoxNetFltNobj
- VBoxNetFltNobj_TEMPLATE   = VBoxR3Static
+ VBoxNetFltNobj_TEMPLATE   = VBoxR3StaticDll
  if defined(VBOX_SIGNING_MODE)
   VBoxNetFltNobj_INSTTYPE  = none
   VBoxNetFltNobj_DEBUG_INSTTYPE = both
