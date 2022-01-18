@@ -142,7 +142,7 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
         /* Process RAM usage */
         N_CALLS(cVMs, getProcessMemoryUsage(processes[call], &tmp));
     }
-    RTPrintf("\n%d VMs -- %.2f%% of CPU time\n", cVMs, (RTTimeNanoTS() - start) / 10000000. / times);
+    RTPrintf("\n%d VMs -- %u%% of CPU time\n", cVMs, (unsigned)((double)(RTTimeNanoTS() - start) / 10000000.0 / times));
 
     /* Shut down fake VMs */
     shutdownProcessList(processes);
