@@ -986,7 +986,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls.wxi: | $$(dir $$@)
 		  ,$(if-expr "$(VBOX_VCC_TOOL_STEM)"=="VCC110",msvcr110.dll msvcp110.dll \
                    ,$(TOOL_$(VBOX_VCC_TOOL)_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL)_REDIST_CPP_DLLS))) \
         	 $(if-expr "$(KBUILD_TYPE)"=="asan",clang_rt.asan_dynamic-x86_64.dll,) \
-               ,'  <File Id="file_$(dll)" Name="$(dll)" Source="$$(env.PATH_OUT)\bin\$(dll)" />') \
+               ,'  <File Id="file_$(translate $(dll),-,_)" Name="$(dll)" Source="$$(env.PATH_OUT)\bin\$(dll)" />') \
 		'</Include>'
 
 #
@@ -1005,7 +1005,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxCrtDlls32.wxi: | $$(dir $$@)
 		  ,$(if-expr "$(VBOX_VCC_TOOL_STEM)"=="VCC110",msvcr110.dll msvcp110.dll \
                    ,$(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CRT_DLLS) $(TOOL_$(VBOX_VCC_TOOL_STEM)X86_REDIST_CPP_DLLS))) \
         	 $(if-expr "$(KBUILD_TYPE)"=="asan",clang_rt.asan_dynamic-i386.dll,) \
-               ,'  <File Id="file_$(dll)_x86" Name="$(dll)" Source="$$(env.PATH_OUT)\bin\x86\$(dll)" DiskId="$$(var.Property_DiskIdCommon)" />') \
+               ,'  <File Id="file_$(translate $(dll),-,_)_x86" Name="$(dll)" Source="$$(env.PATH_OUT)\bin\x86\$(dll)" DiskId="$$(var.Property_DiskIdCommon)" />') \
 		'</Include>'
 #
 # Generate the list of unattended template script files.
