@@ -1431,7 +1431,7 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
             /* VMX_EXIT_CTLS_DEFAULT1 contains MB1 reserved bits but the following are not really reserved */
             uint32_t const fTrueAllowed0 = VMX_EXIT_CTLS_DEFAULT1 & ~VMX_BF_EXIT_CTLS_SAVE_DEBUG_MASK;
             uint32_t const fTrueAllowed1 = fFeatures | fTrueAllowed0;
-            pGuestVmxMsrs->TrueEntryCtls.u = RT_MAKE_U64(fTrueAllowed0, fTrueAllowed1);
+            pGuestVmxMsrs->TrueExitCtls.u = RT_MAKE_U64(fTrueAllowed0, fTrueAllowed1);
         }
     }
 
