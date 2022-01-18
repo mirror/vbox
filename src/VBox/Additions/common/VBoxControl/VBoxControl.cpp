@@ -945,7 +945,7 @@ struct
     DWORD xres;
     DWORD yres;
     DWORD bpp;
-} customModes[MAX_CUSTOM_MODES] = {0};
+} customModes[MAX_CUSTOM_MODES] = {{0}};
 
 void getCustomModes(HKEY hkeyVideo)
 {

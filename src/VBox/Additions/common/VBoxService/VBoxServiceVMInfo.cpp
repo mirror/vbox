@@ -995,7 +995,7 @@ static int vgsvcVMInfoWriteNetwork(void)
         return RTErrConvertFromWin32(wsaErr);
     }
 
-    INTERFACE_INFO  aInterfaces[20] = {0};
+    INTERFACE_INFO  aInterfaces[20] = {{0}};
     DWORD           cbReturned      = 0;
 # ifdef RT_ARCH_X86
     /* Workaround for uninitialized variable used in memcpy in GetTcpipInterfaceList
