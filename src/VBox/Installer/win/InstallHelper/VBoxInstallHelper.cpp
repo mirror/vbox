@@ -183,20 +183,15 @@ static int procWait(RTPROCESS Process, RTMSINTERVAL msTimeout, PRTPROCSTATUS pPr
  * @param   hModule             Windows installer module handle.
  * @param   pszImage            Absolute path of executable to run.
  * @param   papszArgs           Pointer to command line arguments to use for calling the executable.
- * @param   cArgs               Number of command line arguments in \a papszArgs.
  */
-static int procRun(MSIHANDLE hModule, const char *pszImage, const char * const *papszArgs, size_t cArgs)
+static int procRun(MSIHANDLE hModule, const char *pszImage, const char * const *papszArgs)
 {
-    RT_NOREF(cArgs);
-
-    RTPROCESS Process;
-    RT_ZERO(Process);
-
-    uint32_t fProcess = 0;
-#ifndef DEBUG
-    fProcess |= RTPROC_FLAGS_HIDDEN;
+#ifdef DEBUG
+    uint32_t  const fProcess = 0;
+#else
+    uint32_t  const fProcess = RTPROC_FLAGS_HIDDEN;
 #endif
-
+    RTPROCESS       Process  = NIL_RTPROCESS;
     int rc = RTProcCreate(pszImage, papszArgs, RTENV_DEFAULT, fProcess, &Process);
     if (RT_SUCCESS(rc))
     {
@@ -351,7 +346,7 @@ static int checkPythonDependencies(MSIHANDLE hModule, const char *pcszPythonExe)
 
     const char *papszArgs[] = { pcszPythonExe, "-c", "import win32api", NULL};
 
-    int rc = procRun(hModule, pcszPythonExe, papszArgs, RT_ELEMENTS(papszArgs));
+    int rc = procRun(hModule, pcszPythonExe, papszArgs);
     if (RT_SUCCESS(rc))
         logStringF(hModule, "checkPythonDependencies: win32api found\n");
     else
@@ -476,7 +471,7 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
 
                 const char *papszArgs[] = { pszPythonExe, "vboxapisetup.py", "install", NULL};
 
-                rc = procRun(hModule, pszPythonExe, papszArgs, RT_ELEMENTS(papszArgs));
+                rc = procRun(hModule, pszPythonExe, papszArgs);
                 if (RT_SUCCESS(rc))
                     logStringF(hModule, "InstallPythonAPI: Installation of vboxapisetup.py successful\n");
                 else
@@ -502,7 +497,7 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
 
         const char *papszArgs[] = { pszPythonExe, "-c", "from vboxapi import VirtualBoxManager", NULL};
 
-        rc = procRun(hModule, pszPythonExe, papszArgs, RT_ELEMENTS(papszArgs));
+        rc = procRun(hModule, pszPythonExe, papszArgs);
         if (RT_SUCCESS(rc))
             logStringF(hModule, "InstallPythonAPI: VBox API looks good.\n");
         else
