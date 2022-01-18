@@ -100,27 +100,27 @@ static void tstBenchmarkCRCsAllInOne(uint8_t const *pabSrc, size_t cbSrc)
     uint64_t NanoTS = RTTimeNanoTS();
     uint32_t u32Crc = RTCrc32(pabSrc, cbSrc);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    unsigned uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    unsigned uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("CRC-32    %'9u KB/s  %'15llu ns - %08x\n", uSpeed, NanoTS, u32Crc);
 
 
     NanoTS = RTTimeNanoTS();
     uint64_t u64Crc = RTCrc64(pabSrc, cbSrc);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("CRC-64    %'9u KB/s  %'15llu ns - %016llx\n", uSpeed, NanoTS, u64Crc);
 
     NanoTS = RTTimeNanoTS();
     u32Crc = RTCrcAdler32(pabSrc, cbSrc);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("Adler-32  %'9u KB/s  %'15llu ns - %08x\n", uSpeed, NanoTS, u32Crc);
 
     NanoTS = RTTimeNanoTS();
     uint8_t abMd5Hash[RTMD5HASHSIZE];
     RTMd5(pabSrc, cbSrc, abMd5Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     char szDigest[257];
     RTMd5ToString(abMd5Hash, szDigest, sizeof(szDigest));
     RTPrintf("MD5       %'9u KB/s  %'15llu ns - %s\n", uSpeed, NanoTS, szDigest);
@@ -129,7 +129,7 @@ static void tstBenchmarkCRCsAllInOne(uint8_t const *pabSrc, size_t cbSrc)
     uint8_t abSha1Hash[RTSHA1_HASH_SIZE];
     RTSha1(pabSrc, cbSrc, abSha1Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTSha1ToString(abSha1Hash, szDigest, sizeof(szDigest));
     RTPrintf("SHA-1     %'9u KB/s  %'15llu ns - %s\n", uSpeed, NanoTS, szDigest);
 
@@ -137,7 +137,7 @@ static void tstBenchmarkCRCsAllInOne(uint8_t const *pabSrc, size_t cbSrc)
     uint8_t abSha256Hash[RTSHA256_HASH_SIZE];
     RTSha256(pabSrc, cbSrc, abSha256Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTSha256ToString(abSha256Hash, szDigest, sizeof(szDigest));
     RTPrintf("SHA-256   %'9u KB/s  %'15llu ns - %s\n", uSpeed, NanoTS, szDigest);
 
@@ -145,7 +145,7 @@ static void tstBenchmarkCRCsAllInOne(uint8_t const *pabSrc, size_t cbSrc)
     uint8_t abSha512Hash[RTSHA512_HASH_SIZE];
     RTSha512(pabSrc, cbSrc, abSha512Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTSha512ToString(abSha512Hash, szDigest, sizeof(szDigest));
     RTPrintf("SHA-512   %'9u KB/s  %'15llu ns - %s\n", uSpeed, NanoTS, szDigest);
 }
@@ -168,7 +168,7 @@ static void tstBenchmarkCRCsPageByPage(uint8_t const *pabSrc, size_t cbSrc)
     for (uint32_t iPage = 0; iPage < cPages; iPage++)
         RTCrc32(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    unsigned uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    unsigned uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("CRC-32    %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
 
@@ -176,14 +176,14 @@ static void tstBenchmarkCRCsPageByPage(uint8_t const *pabSrc, size_t cbSrc)
     for (uint32_t iPage = 0; iPage < cPages; iPage++)
         RTCrc64(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("CRC-64    %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
     NanoTS = RTTimeNanoTS();
     for (uint32_t iPage = 0; iPage < cPages; iPage++)
         RTCrcAdler32(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("Adler-32  %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
     NanoTS = RTTimeNanoTS();
@@ -191,7 +191,7 @@ static void tstBenchmarkCRCsPageByPage(uint8_t const *pabSrc, size_t cbSrc)
     for (uint32_t iPage = 0; iPage < cPages; iPage++)
         RTMd5(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abMd5Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("MD5       %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
     NanoTS = RTTimeNanoTS();
@@ -199,7 +199,7 @@ static void tstBenchmarkCRCsPageByPage(uint8_t const *pabSrc, size_t cbSrc)
     for (uint32_t iPage = 0; iPage < cPages; iPage++)
         RTSha1(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abSha1Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("SHA-1     %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
     NanoTS = RTTimeNanoTS();
@@ -207,7 +207,7 @@ static void tstBenchmarkCRCsPageByPage(uint8_t const *pabSrc, size_t cbSrc)
     for (uint32_t iPage = 0; iPage < cPages; iPage++)
         RTSha256(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abSha256Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("SHA-256   %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
     NanoTS = RTTimeNanoTS();
@@ -215,7 +215,7 @@ static void tstBenchmarkCRCsPageByPage(uint8_t const *pabSrc, size_t cbSrc)
     for (uint32_t iPage = 0; iPage < cPages; iPage++)
         RTSha512(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abSha512Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("SHA-512   %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 }
 
@@ -572,11 +572,11 @@ int main(int argc, char **argv)
     {
         if (RT_SUCCESS(aTests[j].rc))
         {
-            unsigned uComprSpeedIn    = (unsigned)(cbTotalKB         / (long double)aTests[j].cNanoCompr   * 1000000000.0);
-            unsigned uComprSpeedOut   = (unsigned)(aTests[j].cbCompr / (long double)aTests[j].cNanoCompr   * 1000000000.0 / 1024);
+            unsigned uComprSpeedIn    = (unsigned)((long double)cbTotalKB         / (long double)aTests[j].cNanoCompr   * 1000000000.0);
+            unsigned uComprSpeedOut   = (unsigned)((long double)aTests[j].cbCompr / (long double)aTests[j].cNanoCompr   * 1000000000.0 / 1024);
+            unsigned uDecomprSpeedIn  = (unsigned)((long double)aTests[j].cbCompr / (long double)aTests[j].cNanoDecompr * 1000000000.0 / 1024);
+            unsigned uDecomprSpeedOut = (unsigned)((long double)cbTotalKB         / (long double)aTests[j].cNanoDecompr * 1000000000.0);
             unsigned uRatio           = (unsigned)(aTests[j].cbCompr / cIterations * 100 / g_cbPages);
-            unsigned uDecomprSpeedIn  = (unsigned)(aTests[j].cbCompr / (long double)aTests[j].cNanoDecompr * 1000000000.0 / 1024);
-            unsigned uDecomprSpeedOut = (unsigned)(cbTotalKB         / (long double)aTests[j].cNanoDecompr * 1000000000.0);
             RTPrintf("%-20s %'9u KB/s  %'9u KB/s  %3u%%  %'11llu bytes   %'9u KB/s  %'9u KB/s",
                      aTests[j].pszName,
                      uComprSpeedIn,   uComprSpeedOut, uRatio, aTests[j].cbCompr / cIterations,

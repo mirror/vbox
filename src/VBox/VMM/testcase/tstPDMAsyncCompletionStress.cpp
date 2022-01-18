@@ -373,7 +373,7 @@ static DECLCALLBACK(int) tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)
          * Recalc write chance. The bigger the file the lower the chance to have a write.
          * The minimum chance is 33 percent.
          */
-        iWriteChance = 100 - (int)(((float)100.0 / pTestFile->cbFileMax) * (float)pTestFile->cbFileCurr);
+        iWriteChance = 100 - (int)((100.0 / (double)pTestFile->cbFileMax) * (double)pTestFile->cbFileCurr);
         iWriteChance = RT_MAX(33, iWriteChance);
 
         /* Wait a random amount of time. (1ms - 100ms) */
