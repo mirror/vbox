@@ -5513,9 +5513,9 @@ static NTSTATUS supdrvNtProtectInit(void)
                     {
                         /* .Version                     = */ OB_FLT_REGISTRATION_VERSION,
                         /* .OperationRegistrationCount  = */ RT_ELEMENTS(s_aObOperations),
-                        /* .Altitude.Length             = */ 0,
-                        /* .Altitude.MaximumLength      = */ 0,
-                        /* .Altitude.Buffer             = */ NULL,
+                        /* .Altitude.Length             = */ { 0,
+                        /* .Altitude.MaximumLength      = */   0,
+                        /* .Altitude.Buffer             = */   NULL },
                         /* .RegistrationContext         = */ NULL,
                         /* .OperationRegistration       = */ &s_aObOperations[0]
                     };
