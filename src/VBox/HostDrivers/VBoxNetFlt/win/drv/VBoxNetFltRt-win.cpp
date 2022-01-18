@@ -130,7 +130,7 @@ INIT_IDC_INFO g_VBoxInitIdcInfo;
  */
 static VBOXNETFLTGLOBALS g_VBoxNetFltGlobals;
 /* win-specific global data */
-VBOXNETFLTGLOBALS_WIN g_VBoxNetFltGlobalsWin = {0};
+VBOXNETFLTGLOBALS_WIN g_VBoxNetFltGlobalsWin = {{{0}}};
 
 
 /*********************************************************************************************************************************

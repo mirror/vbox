@@ -1190,8 +1190,8 @@ DECLHIDDEN(NDIS_STATUS) vboxNetAdpWinInitializeEx(IN NDIS_HANDLE NdisMiniportHan
 
     do
     {
-        NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES RAttrs = {0};
-        NDIS_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES GAttrs = {0};
+        NDIS_MINIPORT_ADAPTER_REGISTRATION_ATTRIBUTES RAttrs = {{0}};
+        NDIS_MINIPORT_ADAPTER_GENERAL_ATTRIBUTES GAttrs = {{0}};
 
         Status = vboxNetAdpWinAllocAdapter(NdisMiniportHandle, &pAdapter, MiniportInitParameters->IfIndex);
         if (Status != NDIS_STATUS_SUCCESS)
