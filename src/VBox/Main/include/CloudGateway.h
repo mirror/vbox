@@ -24,9 +24,9 @@
 struct GatewayInfo
 {
     Bstr    mTargetVM;
-    Utf8Str mGatewayVM;
     Utf8Str mGatewayInstanceId;
     Utf8Str mPublicSshKey;
+    Utf8Str mPrivateSshKey;
     Bstr    mCloudProvider;
     Bstr    mCloudProfile;
     Utf8Str mCloudPublicIp;
@@ -38,16 +38,12 @@ struct GatewayInfo
     HRESULT setCloudMacAddress(const Utf8Str& mac);
     HRESULT setLocalMacAddress(const Utf8Str& mac);
 
-    Utf8Str getCloudMacAddressWithoutColons() const;
-    Utf8Str getLocalMacAddressWithoutColons() const;
-    Utf8Str getLocalMacAddressWithColons() const;
-
     GatewayInfo() {}
 
     GatewayInfo(const GatewayInfo& other)
-        : mGatewayVM(other.mGatewayVM),
-          mGatewayInstanceId(other.mGatewayInstanceId),
+        : mGatewayInstanceId(other.mGatewayInstanceId),
           mPublicSshKey(other.mPublicSshKey),
+          mPrivateSshKey(other.mPrivateSshKey),
           mCloudProvider(other.mCloudProvider),
           mCloudProfile(other.mCloudProfile),
           mCloudPublicIp(other.mCloudPublicIp),
@@ -59,9 +55,9 @@ struct GatewayInfo
 
     GatewayInfo& operator=(const GatewayInfo& other)
     {
-        mGatewayVM = other.mGatewayVM;
         mGatewayInstanceId = other.mGatewayInstanceId;
         mPublicSshKey = other.mPublicSshKey;
+        mPrivateSshKey = other.mPrivateSshKey;
         mCloudProvider = other.mCloudProvider;
         mCloudProfile = other.mCloudProfile;
         mCloudPublicIp = other.mCloudPublicIp;
@@ -74,9 +70,9 @@ struct GatewayInfo
 
     void setNull()
     {
-        mGatewayVM.setNull();
         mGatewayInstanceId.setNull();
         mPublicSshKey.setNull();
+        mPrivateSshKey.setNull();
         mCloudProvider.setNull();
         mCloudProfile.setNull();
         mCloudPublicIp.setNull();
@@ -89,8 +85,9 @@ struct GatewayInfo
 
 class CloudNetwork;
 
-HRESULT startGateways(ComPtr<IVirtualBox> virtualBox, ComPtr<ICloudNetwork> network, GatewayInfo& pGateways);
-HRESULT stopGateways(ComPtr<IVirtualBox> virtualBox, const GatewayInfo& gateways);
+HRESULT startCloudGateway(ComPtr<IVirtualBox> virtualBox, ComPtr<ICloudNetwork> network, GatewayInfo& pGateways);
+HRESULT stopCloudGateway(ComPtr<IVirtualBox> virtualBox, GatewayInfo& gateways);
+HRESULT generateKeys(GatewayInfo& gateways);
 
 #endif /* !MAIN_INCLUDED_CloudGateway_h */
 

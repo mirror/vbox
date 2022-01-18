@@ -337,6 +337,25 @@ static void InsertConfigString(PCFGMNODE pNode,
 }
 
 /**
+ * Helper that calls CFGMR3InsertPassword and throws an RTCError if that
+ * fails (Utf8Str variant).
+ * @param   pNode           See CFGMR3InsertPasswordN.
+ * @param   pcszName        See CFGMR3InsertPasswordN.
+ * @param   rStrValue       The string value.
+ */
+static void InsertConfigPassword(PCFGMNODE pNode,
+                               const char *pcszName,
+                               const Utf8Str &rStrValue)
+{
+    int vrc = CFGMR3InsertPasswordN(pNode,
+                                    pcszName,
+                                    rStrValue.c_str(),
+                                    rStrValue.length());
+    if (RT_FAILURE(vrc))
+        throw ConfigError("CFGMR3InsertPasswordLengthKnown", vrc, pcszName);
+}
+
+/**
  * Helper that calls CFGMR3InsertBytes and throws an RTCError if that fails.
  *
  * @param   pNode           See CFGMR3InsertBytes.
@@ -2757,7 +2776,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             hrc = networkAdapter->COMGETTER(AttachmentType)(&eAttachmentType);                 H();
             if (eAttachmentType == NetworkAttachmentType_Cloud)
             {
-                mGateways.setLocalMacAddress(macAddrUtf8);
+                mGateway.setLocalMacAddress(macAddrUtf8);
                 /* We'll insert cloud MAC later, when it becomes known. */
             }
             else
@@ -6380,17 +6399,31 @@ int Console::i_configNetwork(const char *pszDevice,
 
                 ComPtr<ICloudNetwork> network;
                 hrc = aNetworkAdapter->COMGETTER(CloudNetwork)(bstr.asOutParam());            H();
-                hrc = pMachine->COMGETTER(Name)(mGateways.mTargetVM.asOutParam());            H();
+                hrc = pMachine->COMGETTER(Name)(mGateway.mTargetVM.asOutParam());            H();
                 hrc = virtualBox->FindCloudNetworkByName(bstr.raw(), network.asOutParam());   H();
-                hrc = startGateways(virtualBox, network, mGateways);                          H();
-                InsertConfigBytes(pDevCfg, "MAC", &mGateways.mCloudMacAddress, sizeof(mGateways.mCloudMacAddress));
+                hrc = generateKeys(mGateway);
+                if (FAILED(hrc))
+                {
+                    if (hrc == E_NOTIMPL)
+                        return VMSetError(VMR3GetVM(mpUVM), VERR_NOT_FOUND, RT_SRC_POS,
+                                N_("Failed to generate a key pair due to missing libssh\n"
+                                    "To fix this problem, either build VirtualBox with libssh "
+                                    "support or switch to another network attachment type in "
+                                    "the VM settings.\n"));
+                    else
+                        return VMSetError(VMR3GetVM(mpUVM), VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                N_("Failed to generate a key pair due to libssh error!\n"));
+                }
+                hrc = startCloudGateway(virtualBox, network, mGateway);                      H();
+                InsertConfigBytes(pDevCfg, "MAC", &mGateway.mCloudMacAddress, sizeof(mGateway.mCloudMacAddress));
                 if (!bstr.isEmpty())
                 {
-                    InsertConfigString(pLunL0, "Driver", "IntNet");
+                    InsertConfigString(pLunL0, "Driver", "CloudTunnel");
                     InsertConfigNode(pLunL0, "Config", &pCfg);
-                    InsertConfigString(pCfg, "Network", BstrFmt("cloud-%ls", bstr.raw()));
-                    InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone);
-                    InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
+                    InsertConfigPassword(pCfg, "SshKey", mGateway.mPrivateSshKey);
+                    InsertConfigString(pCfg, "PrimaryIP", mGateway.mCloudPublicIp);
+                    InsertConfigString(pCfg, "SecondaryIP", mGateway.mCloudSecondaryPublicIp);
+                    InsertConfigBytes(pCfg, "TargetMAC", &mGateway.mLocalMacAddress, sizeof(mGateway.mLocalMacAddress));
                     networkName = bstr;
                     trunkType = Bstr(TRUNKTYPE_WHATEVER);
                 }

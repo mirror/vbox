@@ -1095,8 +1095,11 @@ VBoxC_SOURCES += \
 endif
 
 # Experimental cloud support
-ifdef VBOX_WITH_CLOUD_NET
- VBoxC_DEFS += VBOX_WITH_CLOUD_NET
+if defined(VBOX_WITH_CLOUD_NET)
+ if defined(VBOX_WITH_LIBSSH)
+  VBoxC_SDKS += VBOX_SSH VBOX_OPENSSL
+  VBoxC_DEFS += LIBSSH_STATIC VBOX_WITH_LIBSSH
+ endif
  VBoxC_SOURCES += src-client/CloudGateway.cpp
 endif
 

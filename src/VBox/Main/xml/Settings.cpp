@@ -8011,6 +8011,23 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 return;
             }
         }
+
+#ifdef VBOX_WITH_CLOUD_NET
+        NetworkAdaptersList::const_iterator netit;
+        for (netit = hardwareMachine.llNetworkAdapters.begin();
+             netit != hardwareMachine.llNetworkAdapters.end();
+             ++netit)
+        {
+            // VirtualBox 6.1 adds support for cloud networks.
+            if (   netit->fEnabled
+                && netit->mode == NetworkAttachmentType_Cloud)
+            {
+                m->sv = SettingsVersion_v1_18;
+                break;
+            }
+
+        }
+#endif /* VBOX_WITH_CLOUD_NET */
     }
 
     if (m->sv < SettingsVersion_v1_17)

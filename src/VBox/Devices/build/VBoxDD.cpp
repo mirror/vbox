@@ -427,6 +427,12 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 # endif
+
+# ifdef VBOX_WITH_CLOUD_NET
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvCloudTunnel);
+    if (RT_FAILURE(rc))
+        return rc;
+# endif
 #endif
 
     return VINF_SUCCESS;

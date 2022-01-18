@@ -192,6 +192,8 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_DRV_BLOCK,
     /** Char driver group. */
     LOG_GROUP_DRV_CHAR,
+    /** Cloud tunnel driver group. */
+    LOG_GROUP_DRV_CTUN,
     /** Disk integrity driver group. */
     LOG_GROUP_DRV_DISK_INTEGRITY,
     /** Video Display driver group. */
@@ -872,6 +874,7 @@ typedef enum VBOXLOGGROUP
     "DRV_AUDIO", \
     "DRV_BLOCK", \
     "DRV_CHAR", \
+    "DRV_CTUN", \
     "DRV_DISK_INTEGRITY", \
     "DRV_DISPLAY", \
     "DRV_FLOPPY", \

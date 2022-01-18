@@ -1085,7 +1085,7 @@ private:
 #endif /* VBOX_WITH_RECORDING */
 
 #ifdef VBOX_WITH_CLOUD_NET
-    GatewayInfo mGateways;
+    GatewayInfo mGateway;
 #endif /* VBOX_WITH_CLOUD_NET */
 
     friend class VMTask;

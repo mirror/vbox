@@ -553,6 +553,14 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   VBoxDD_LDFLAGS += -framework vmnet
  endif
 
+ if defined(VBOX_WITH_CLOUD_NET) && defined(VBOX_WITH_LIBSSH)
+  VBoxDD_SDKS           += VBOX_SSH VBOX_ZLIB VBOX_OPENSSL
+  VBoxDD_DEFS           += LIBSSH_STATIC
+  VBoxDD_DEFS           += VBOX_WITH_CLOUD_NET
+  VBoxDD_SOURCES        += \
+ 	Network/DrvCloudTunnel.cpp
+ endif
+
  # --- Storage bits. ---
 
  ifdef VBOX_WITH_AHCI

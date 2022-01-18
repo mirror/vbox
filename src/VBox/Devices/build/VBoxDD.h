@@ -204,6 +204,9 @@ extern const PDMDRVREG g_DrvTpmHost;
 # ifdef VBOX_WITH_LIBTPMS
 extern const PDMDRVREG g_DrvTpmEmuTpms;
 # endif
+# ifdef VBOX_WITH_CLOUD_NET
+extern const PDMDRVREG g_DrvCloudTunnel;
+# endif
 #endif
 
 #ifdef VBOX_WITH_IOMMU_AMD
