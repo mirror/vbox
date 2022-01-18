@@ -3462,7 +3462,14 @@ if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
  #    -wd4435: 'xml::Input': Object layout under /vd2 will change due to virtual base 'xml::Stream'
  VBOX_VCC_WARN_ALL += -wd5045 -wd4464 -wd4623 -wd4625 -wd4626 -wd5026 -wd5027 -wd4435
 endif
-VBOX_VCC_WARN_ALL += -wd4242 -wd4244
+if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142"  # With v16.11.9, not with v16.6.0 4242
+ #    -wd5220: 'RTDBGMODINT::cRefs': a non-static data member with a volatile qualified type no longer implies that compiler generated copy/move constructors and copy/move assignment operators are not trivial
+ VBOX_VCC_WARN_ALL += -wd5220
+ # Temporarily:
+ #    -wd4242: asn1-ut-string.cpp(729): warning C4242: 'argument': conversion from 'uint32_t' to 'uint16_t', possibl loss of data
+ #    -wd4244: asn1-ut-objid.cpp(124): warning C4244: '=': conversion from 'uint32_t' to 'uint8_t', possible loss of data
+ VBOX_VCC_WARN_ALL += -wd4242 -wd4244
+endif
 #    -wd4548: socket.cpp(1931): warning C4548: expression before comma has no effect; expected expression with side-effect
 VBOX_VCC_WARN_ALL += -wd4548
 ifndef VBOX_WITH_NEW_WINDOWS_SDK
@@ -7493,6 +7500,11 @@ ifdef VBOX_WITH_QTGUI
    #            qwidget.h(730): note: see declaration of 'QWidget::data'
    #   -wd4946: qmap.h(213): warning C4946: reinterpret_cast used between related classes: 'QMapNodeBase' and 'QMapNode<Key,T>'
    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd4774 -wd4456 -wd4458 -wd4946
+  endif
+  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # With v16.11.9, not with v16.6.0 4242
+   #   -wd5219: qpoint.h(187): warning C5219: implicit conversion from 'const int' to 'float', possible loss of data
+   #   -wd5240: qcolor.h(235): warning C5240: 'nodiscard': attribute is ignored in this syntactic position
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -wd5219 -wd5240
   endif
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -Gy
   if "$(VBOX_VCC_TOOL_STEM)" >= "VCC120"
