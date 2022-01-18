@@ -158,17 +158,19 @@ static int procWait(RTPROCESS Process, RTMSINTERVAL msTimeout, PRTPROCSTATUS pPr
     {
         int rc = RTProcWait(Process, RTPROCWAIT_FLAGS_NOBLOCK, pProcSts);
         if (rc == VERR_PROCESS_RUNNING)
-            continue;
+            Sleep(1); /* Don't spin uncontrolled. duh. */
         else if (RT_FAILURE(rc))
             return rc;
-
-        if (   pProcSts->iStatus   != 0
-            || pProcSts->enmReason != RTPROCEXITREASON_NORMAL)
+        else
         {
-            rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
+            if (   pProcSts->iStatus   != 0
+                || pProcSts->enmReason != RTPROCEXITREASON_NORMAL)
+            {
+                /** @todo r=bird: This isn't returned, so what's the point here?  */
+                rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
+            }
+            return VINF_SUCCESS;
         }
-
-        return VINF_SUCCESS;
     }
 
     return VERR_TIMEOUT;
@@ -179,23 +181,23 @@ static int procWait(RTPROCESS Process, RTMSINTERVAL msTimeout, PRTPROCSTATUS pPr
  *
  * @returns VBox status code.
  * @param   hModule             Windows installer module handle.
- * @param   pcsExe              Absolute path of executable to run.
- * @param   papcszArgs          Pointer to command line arguments to use for calling the executable.
- * @param   cArgs               Number of command line arguments in \a papcszArgs.
+ * @param   pszImage            Absolute path of executable to run.
+ * @param   papszArgs           Pointer to command line arguments to use for calling the executable.
+ * @param   cArgs               Number of command line arguments in \a papszArgs.
  */
-static int procRun(MSIHANDLE hModule, const char *pcszImage, const char **papcszArgs, size_t cArgs)
+static int procRun(MSIHANDLE hModule, const char *pszImage, const char * const *papszArgs, size_t cArgs)
 {
     RT_NOREF(cArgs);
 
     RTPROCESS Process;
     RT_ZERO(Process);
 
-    uint32_t fProcess  = 0;
+    uint32_t fProcess = 0;
 #ifndef DEBUG
-             fProcess |= RTPROC_FLAGS_HIDDEN;
+    fProcess |= RTPROC_FLAGS_HIDDEN;
 #endif
 
-    int rc = RTProcCreate(pcszImage, papcszArgs, RTENV_DEFAULT, fProcess, &Process);
+    int rc = RTProcCreate(pszImage, papszArgs, RTENV_DEFAULT, fProcess, &Process);
     if (RT_SUCCESS(rc))
     {
         RTPROCSTATUS ProcSts;
@@ -204,11 +206,15 @@ static int procRun(MSIHANDLE hModule, const char *pcszImage, const char **papcsz
         rc = procWait(Process, RT_MS_30SEC, &ProcSts);
 
         if (RT_FAILURE(rc))
-            logStringF(hModule, "procRun: Waiting for process \"%s\" failed with %Rrc (process status: %d, reason: %d)\n",
-                       pcszImage, rc, ProcSts.iStatus, ProcSts.enmReason);
+            logStringF(hModule, "procRun: Waiting for process \"%s\" failed with %Rrc (process status: %d (%#x), reason: %d)\n",
+                       pszImage, rc, ProcSts.iStatus, ProcSts.iStatus, ProcSts.enmReason);
+        else if (   ProcSts.iStatus   != 0
+                 || ProcSts.enmReason != RTPROCEXITREASON_NORMAL)
+            logStringF(hModule, "procRun: Process \"%s\" terminated with iStatus=%d (%#x) and enmReason=%d\n",
+                       pszImage, ProcSts.iStatus, ProcSts.iStatus, ProcSts.enmReason);
     }
     else
-        logStringF(hModule, "procRun: Creating process for \"%s\" failed with %Rrc\n", pcszImage, rc);
+        logStringF(hModule, "procRun: Creating process for \"%s\" failed with %Rrc\n", pszImage, rc);
 
     return rc;
 }
@@ -287,9 +293,7 @@ static int getPythonPathEx(MSIHANDLE hModule, HKEY hKeyRoot, char **ppszPath)
     RegCloseKey(hkPythonCore);
 
     if (RT_FAILURE(rc))
-    {
         RTStrFree(pszPythonPath);
-    }
     else
         *ppszPath = pszPythonPath;
 
@@ -345,13 +349,11 @@ static int checkPythonDependencies(MSIHANDLE hModule, const char *pcszPythonExe)
      */
     logStringF(hModule, "checkPythonDependencies: Checking for win32api extensions ...");
 
-    const char *papszArgs[4] = { pcszPythonExe, "-c", "import win32api", NULL};
+    const char *papszArgs[] = { pcszPythonExe, "-c", "import win32api", NULL};
 
     int rc = procRun(hModule, pcszPythonExe, papszArgs, RT_ELEMENTS(papszArgs));
     if (RT_SUCCESS(rc))
-    {
         logStringF(hModule, "checkPythonDependencies: win32api found\n");
-    }
     else
         logStringF(hModule, "checkPythonDependencies: Importing win32api failed with %Rrc\n", rc);
 
@@ -472,13 +474,12 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
             {
                 logStringF(hModule, "InstallPythonAPI: Invoking vboxapisetup.py in \"%s\" ...\n", pszVBoxSDKPath);
 
-                const char *papszArgs[4] = { pszPythonExe, "vboxapisetup.py", "install", NULL};
+                const char *papszArgs[] = { pszPythonExe, "vboxapisetup.py", "install", NULL};
 
                 rc = procRun(hModule, pszPythonExe, papszArgs, RT_ELEMENTS(papszArgs));
                 if (RT_SUCCESS(rc))
                     logStringF(hModule, "InstallPythonAPI: Installation of vboxapisetup.py successful\n");
-
-                if (RT_FAILURE(rc))
+                else
                     logStringF(hModule, "InstallPythonAPI: Calling vboxapisetup.py failed with %Rrc\n", rc);
             }
             else
@@ -499,13 +500,12 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
     {
         logStringF(hModule, "InstallPythonAPI: Validating VBox API ...\n");
 
-        const char *papszArgs[4] = { pszPythonExe, "-c", "from vboxapi import VirtualBoxManager", NULL};
+        const char *papszArgs[] = { pszPythonExe, "-c", "from vboxapi import VirtualBoxManager", NULL};
 
         rc = procRun(hModule, pszPythonExe, papszArgs, RT_ELEMENTS(papszArgs));
         if (RT_SUCCESS(rc))
             logStringF(hModule, "InstallPythonAPI: VBox API looks good.\n");
-
-        if (RT_FAILURE(rc))
+        else
             logStringF(hModule, "InstallPythonAPI: Validating VBox API failed with %Rrc\n", rc);
     }
 
