@@ -40,7 +40,7 @@ extern void clipConvertDataFromX11Worker(void *pClient, void *pvSrc, unsigned cb
 extern SHCLX11FMTIDX clipGetTextFormatFromTargets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *pTargets, size_t cTargets);
 extern SHCLX11FMT clipRealFormatForX11Format(SHCLX11FMTIDX uFmtIdx);
 extern Atom clipGetAtom(PSHCLX11CTX pCtx, const char *pcszName);
-extern void clipQueryX11Formats(PSHCLX11CTX pCtx);
+extern void clipQueryX11Targets(PSHCLX11CTX pCtx);
 extern size_t clipReportMaxX11Formats(void);
 
 
@@ -61,10 +61,10 @@ void tstThreadScheduleCall(void (*proc)(void *, void *), void *client_data);
 /*********************************************************************************************************************************
 *   Own callback implementations                                                                                                 *
 *********************************************************************************************************************************/
-extern DECLCALLBACK(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
-                                                        Atom * /* selection */, Atom *atomType,
-                                                        XtPointer pValue, long unsigned int *pcLen,
-                                                        int *piFormat);
+extern DECLCALLBACK(void) clipQueryX11TargetsCallback(Widget widget, XtPointer pClient,
+                                                      Atom * /* selection */, Atom *atomType,
+                                                      XtPointer pValue, long unsigned int *pcLen,
+                                                      int *piFormat);
 
 
 /*********************************************************************************************************************************
@@ -337,7 +337,7 @@ static void tstClipSetSelectionValues(const char *pcszTarget, Atom type,
 
 static void tstClipSendTargetUpdate(PSHCLX11CTX pCtx)
 {
-    clipQueryX11Formats(pCtx);
+    clipQueryX11Targets(pCtx);
 }
 
 /* Configure if and how the X11 TARGETS clipboard target will fail. */
@@ -799,8 +799,8 @@ int main()
     Atom atom = XA_STRING;
     long unsigned int cLen = 0;
     int format = 8;
-    clipConvertX11TargetsCallback(NULL, (XtPointer) &X11Ctx, NULL, &atom, NULL, &cLen,
-                                  &format);
+    clipQueryX11TargetsCallback(NULL, (XtPointer) &X11Ctx, NULL, &atom, NULL, &cLen,
+                                &format);
     RTTEST_CHECK_MSG(hTest, tstClipQueryFormats() == 0,
                      (hTest, "Wrong targets reported: %02X\n",
                       tstClipQueryFormats()));
