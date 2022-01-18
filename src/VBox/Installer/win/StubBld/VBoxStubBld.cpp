@@ -134,8 +134,8 @@ int main(int argc, char* argv[])
         if (argc < 2)
             printf("WARNING: No parameters given! Using default values!\n");
 
-        VBOXSTUBBUILDPKG stbBuildPkg[VBOXSTUB_MAX_PACKAGES] = {0};
-        VBOXSTUBPKG stbPkg[VBOXSTUB_MAX_PACKAGES] = {0};
+        VBOXSTUBBUILDPKG stbBuildPkg[VBOXSTUB_MAX_PACKAGES] = {{{0}}};
+        VBOXSTUBPKG stbPkg[VBOXSTUB_MAX_PACKAGES] = {{0}};
         VBOXSTUBPKGHEADER stbHeader =
         {
             "vbox$tub",    /* File magic. */
