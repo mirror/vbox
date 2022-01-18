@@ -454,6 +454,10 @@ class SHARED_LIBRARY_STUFF UIActionPool : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
+#if RT_MSC_PREREQ(RT_MSC_VER_VS2019_U11)
+# pragma warning(push)
+# pragma warning(disable: 5243) /* warning C5243: 'UIActionPool::PTFActionPoolManager': using incomplete class 'UIActionPoolManager' can cause potential one definition rule violation due to ABI limitation */
+#endif
     /** Pointer to menu update-handler for this class. */
     typedef void (UIActionPool::*PTFActionPool)();
     /** Pointer to menu update-handler for Manager sub-class. */
@@ -467,6 +471,9 @@ class SHARED_LIBRARY_STUFF UIActionPool : public QIWithRetranslateUI3<QObject>
         PTFActionPoolManager ptfm;
         PTFActionPoolRuntime ptfr;
     };
+#if RT_MSC_PREREQ(RT_MSC_VER_VS2019_U11)
+# pragma warning(pop)
+#endif
 
 signals:
 
