@@ -407,7 +407,8 @@ static int rtCheckImportsForImage(PCRTCHECKIMPORTSOPTS pOpts, const char *pszIma
     uint32_t        offError;
     RTERRINFOSTATIC ErrInfo;
     RTLDRMOD        hLdrMod;
-    int rc = RTLdrOpenVfsChain(pszImage, 0 /*fFlags*/, RTLDRARCH_WHATEVER, &hLdrMod, &offError, RTErrInfoInitStatic(&ErrInfo));
+    int rc = RTLdrOpenVfsChain(pszImage, RTLDR_O_FOR_DEBUG, RTLDRARCH_WHATEVER,
+                               &hLdrMod, &offError, RTErrInfoInitStatic(&ErrInfo));
     if (RT_FAILURE(rc))
     {
         if (RT_FAILURE(rc) && RTErrInfoIsSet(&ErrInfo.Core))
