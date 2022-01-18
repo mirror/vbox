@@ -31,12 +31,139 @@
 #include "QIDialogButtonBox.h"
 #include "QILineEdit.h"
 #include "QITabWidget.h"
-#include "UIIconPool.h"
+#include "QIToolButton.h"
 #include "UICloudNetworkingStuff.h"
 #include "UIDetailsWidgetCloudNetwork.h"
+#include "UIFormEditorWidget.h"
+#include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UINetworkManagerUtils.h"
 #include "UINotificationCenter.h"
+
+
+UISubnetSelectionDialog::UISubnetSelectionDialog(QWidget *pParent,
+                                                 const QString &strShortProviderName,
+                                                 const QString &strProfileName,
+                                                 const QString &strSubnetId)
+    : QIWithRetranslateUI<QDialog>(pParent)
+    , m_strProviderShortName(strShortProviderName)
+    , m_strProfileName(strProfileName)
+    , m_strSubnetId(strSubnetId)
+    , m_pFormEditor(0)
+    , m_pButtonBox(0)
+    , m_pNotificationCenter(0)
+{
+    prepare();
+}
+
+UISubnetSelectionDialog::~UISubnetSelectionDialog()
+{
+    cleanup();
+}
+
+void UISubnetSelectionDialog::accept()
+{
+    /* Get altered description back: */
+    m_comForm.GetVirtualSystemDescription();
+    QVector<KVirtualSystemDescriptionType> aTypes;
+    QVector<QString> aRefs, aOVFValues, aVBoxValues, aExtraConfigValues;
+    m_comDescription.GetDescriptionByType(KVirtualSystemDescriptionType_CloudOCISubnet,
+                                          aTypes, aRefs, aOVFValues, aVBoxValues, aExtraConfigValues);
+    if (!m_comDescription.isOk())
+    {
+        UINotificationMessage::cannotAcquireVirtualSystemDescriptionParameter(m_comDescription,
+                                                                              m_pNotificationCenter);
+        return;
+    }
+    AssertReturnVoid(!aVBoxValues.isEmpty());
+    m_strSubnetId = aVBoxValues.first();
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QDialog>::accept();
+}
+
+int UISubnetSelectionDialog::exec()
+{
+    /* Request to init dialog _after_ being executed: */
+    QMetaObject::invokeMethod(this, "sltInit", Qt::QueuedConnection);
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QDialog>::exec();
+}
+
+void UISubnetSelectionDialog::retranslateUi()
+{
+    setWindowTitle(tr("Select Subnet"));
+}
+
+void UISubnetSelectionDialog::sltInit()
+{
+    /* Create description: */
+    m_comDescription = createVirtualSystemDescription(m_pNotificationCenter);
+    if (m_comDescription.isNull())
+        return;
+    /* Update it with current subnet value: */
+    m_comDescription.AddDescription(KVirtualSystemDescriptionType_CloudOCISubnet, m_strSubnetId, QString());
+
+    /* Create cloud client: */
+    CCloudClient comCloudClient = cloudClientByName(m_strProviderShortName, m_strProfileName, m_pNotificationCenter);
+    if (comCloudClient.isNull())
+        return;
+
+    /* Create subnet selection VSD form: */
+    UINotificationProgressSubnetSelectionVSDFormCreate *pNotification = new UINotificationProgressSubnetSelectionVSDFormCreate(comCloudClient,
+                                                                                                                               m_comDescription,
+                                                                                                                               m_strProviderShortName,
+                                                                                                                               m_strProfileName);
+    connect(pNotification, &UINotificationProgressSubnetSelectionVSDFormCreate::sigVSDFormCreated,
+            this, &UISubnetSelectionDialog::sltHandleVSDFormCreated);
+    m_pNotificationCenter->append(pNotification);
+}
+
+void UISubnetSelectionDialog::sltHandleVSDFormCreated(const CVirtualSystemDescriptionForm &comForm)
+{
+    m_comForm = comForm;
+    m_pFormEditor->setVirtualSystemDescriptionForm(m_comForm);
+}
+
+void UISubnetSelectionDialog::prepare()
+{
+    /* Prepare main layout: */
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
+    if (pLayoutMain)
+    {
+        /* Prepare form editor: */
+        m_pFormEditor = new UIFormEditorWidget(this);
+        if (m_pFormEditor)
+            pLayoutMain->addWidget(m_pFormEditor);
+
+        /* Prepare button-box: */
+        m_pButtonBox = new QIDialogButtonBox(this);
+        if (m_pButtonBox)
+        {
+            m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
+            connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &QDialog::accept);
+            connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &QDialog::reject);
+
+            pLayoutMain->addWidget(m_pButtonBox);
+        }
+    }
+
+    /* Prepare local notification-center: */
+    m_pNotificationCenter = new UINotificationCenter(this);
+    if (m_pNotificationCenter && m_pFormEditor)
+        m_pFormEditor->setNotificationCenter(m_pNotificationCenter);
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UISubnetSelectionDialog::cleanup()
+{
+    /* Cleanup local notification-center: */
+    delete m_pNotificationCenter;
+    m_pNotificationCenter = 0;
+}
 
 
 UIDetailsWidgetCloudNetwork::UIDetailsWidgetCloudNetwork(EmbedTo enmEmbedding, QWidget *pParent /* = 0 */)
@@ -50,6 +177,7 @@ UIDetailsWidgetCloudNetwork::UIDetailsWidgetCloudNetwork(EmbedTo enmEmbedding, Q
     , m_pComboProfileName(0)
     , m_pLabelNetworkId(0)
     , m_pEditorNetworkId(0)
+    , m_pButtonNetworkId(0)
     , m_pButtonBoxOptions(0)
 {
     prepare();
@@ -128,6 +256,8 @@ void UIDetailsWidgetCloudNetwork::retranslateUi()
         m_pLabelNetworkId->setText(tr("&Id:"));
     if (m_pEditorNetworkId)
         m_pEditorNetworkId->setToolTip(tr("Holds the id for this network."));
+    if (m_pButtonNetworkId)
+        m_pButtonNetworkId->setToolTip(tr("Selects the id for this network."));
     if (m_pButtonBoxOptions)
     {
         m_pButtonBoxOptions->button(QDialogButtonBox::Cancel)->setText(tr("Reset"));
@@ -176,6 +306,22 @@ void UIDetailsWidgetCloudNetwork::sltNetworkIdChanged(const QString &strText)
 {
     m_newData.m_strId = strText;
     updateButtonStates();
+}
+
+void UIDetailsWidgetCloudNetwork::sltNetworkIdListRequested()
+{
+    /* Create subnet selection dialog: */
+    QPointer<UISubnetSelectionDialog> pDialog = new UISubnetSelectionDialog(this,
+                                                                            m_pComboProviderName->currentData().toString(),
+                                                                            m_pComboProfileName->currentData().toString(),
+                                                                            m_pEditorNetworkId->text());
+
+    /* Execute dialog to ask user for subnet: */
+    if (pDialog->exec() == QDialog::Accepted)
+        m_pEditorNetworkId->setText(pDialog->subnetId());
+
+    /* Cleanup subnet dialog finally: */
+    delete pDialog;
 }
 
 void UIDetailsWidgetCloudNetwork::sltHandleButtonBoxClick(QAbstractButton *pButton)
@@ -237,7 +383,7 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
             connect(m_pEditorNetworkName, &QLineEdit::textEdited,
                     this, &UIDetailsWidgetCloudNetwork::sltNetworkNameChanged);
 
-            pLayout->addWidget(m_pEditorNetworkName, 0, 1);
+            pLayout->addWidget(m_pEditorNetworkName, 0, 1, 1, 2);
         }
 
         /* Prepare cloud provider name label: */
@@ -256,7 +402,7 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
             connect(m_pComboProviderName, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
                     this, &UIDetailsWidgetCloudNetwork::sltCloudProviderNameChanged);
 
-            pLayout->addWidget(m_pComboProviderName, 1, 1);
+            pLayout->addWidget(m_pComboProviderName, 1, 1, 1, 2);
         }
 
         /* Prepare cloud profile name label: */
@@ -275,7 +421,7 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
             connect(m_pComboProfileName, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
                     this, &UIDetailsWidgetCloudNetwork::sltCloudProfileNameChanged);
 
-            pLayout->addWidget(m_pComboProfileName, 2, 1);
+            pLayout->addWidget(m_pComboProfileName, 2, 1, 1, 2);
         }
 
         /* Prepare network id label: */
@@ -291,10 +437,20 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
         {
             if (m_pLabelNetworkId)
                 m_pLabelNetworkId->setBuddy(m_pEditorNetworkId);
-            connect(m_pEditorNetworkId, &QLineEdit::textEdited,
+            connect(m_pEditorNetworkId, &QLineEdit::textChanged,
                     this, &UIDetailsWidgetCloudNetwork::sltNetworkIdChanged);
 
             pLayout->addWidget(m_pEditorNetworkId, 3, 1);
+        }
+        /* Prepare network id button: */
+        m_pButtonNetworkId = new QIToolButton(this);
+        if (m_pButtonNetworkId)
+        {
+            m_pButtonNetworkId->setIcon(UIIconPool::iconSet(":/subnet_16px.png"));
+            connect(m_pButtonNetworkId, &QIToolButton::clicked,
+                    this, &UIDetailsWidgetCloudNetwork::sltNetworkIdListRequested);
+
+            pLayout->addWidget(m_pButtonNetworkId, 3, 2);
         }
 
         /* If parent embedded into stack: */
@@ -441,6 +597,7 @@ void UIDetailsWidgetCloudNetwork::loadData()
     m_pComboProfileName->setEnabled(fIsNetworkExists);
     m_pLabelNetworkId->setEnabled(fIsNetworkExists);
     m_pEditorNetworkId->setEnabled(fIsNetworkExists);
+    m_pButtonNetworkId->setEnabled(fIsNetworkExists);
 
     /* Load fields: */
     m_pEditorNetworkName->setText(m_newData.m_strName);

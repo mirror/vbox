@@ -715,6 +715,17 @@ void UINotificationMessage::cannotAcquireDispayParameter(const CDisplay &comDisp
 }
 
 /* static */
+void UINotificationMessage::cannotAcquireVirtualSystemDescriptionParameter(const CVirtualSystemDescription &comVsd,
+                                                                           UINotificationCenter *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "VSD failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to acquire virtual system description parameter.") +
+        UIErrorString::formatErrorInfo(comVsd),
+        QString(), QString(), pParent);
+}
+
+/* static */
 void UINotificationMessage::cannotAcquireVirtualSystemDescriptionFormParameter(const CVirtualSystemDescriptionForm &comVsdForm,
                                                                                UINotificationCenter *pParent /* = 0 */)
 {
@@ -2433,6 +2444,51 @@ CProgress UINotificationProgressVFSExplorerFilesRemove::createProgress(COMResult
     comResult = m_comExplorer;
     /* Return progress-wrapper: */
     return comProgress;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UINotificationProgressSubnetSelectionVSDFormCreate implementation.                                                     *
+*********************************************************************************************************************************/
+
+UINotificationProgressSubnetSelectionVSDFormCreate::UINotificationProgressSubnetSelectionVSDFormCreate(const CCloudClient &comClient,
+                                                                                                       const CVirtualSystemDescription &comVSD,
+                                                                                                       const QString &strProviderShortName,
+                                                                                                       const QString &strProfileName)
+    : m_comClient(comClient)
+    , m_comVSD(comVSD)
+    , m_strProviderShortName(strProviderShortName)
+    , m_strProfileName(strProfileName)
+{
+    connect(this, &UINotificationProgress::sigProgressFinished,
+            this, &UINotificationProgressSubnetSelectionVSDFormCreate::sltHandleProgressFinished);
+}
+
+QString UINotificationProgressSubnetSelectionVSDFormCreate::name() const
+{
+    return UINotificationProgress::tr("Creating subnet selection VSD form ...");
+}
+
+QString UINotificationProgressSubnetSelectionVSDFormCreate::details() const
+{
+    return UINotificationProgress::tr("<b>Provider:</b> %1<br><b>Profile:</b> %2")
+                                      .arg(m_strProviderShortName, m_strProfileName);
+}
+
+CProgress UINotificationProgressSubnetSelectionVSDFormCreate::createProgress(COMResult &comResult)
+{
+    /* Initialize progress-wrapper: */
+    CProgress comProgress = m_comClient.GetSubnetSelectionForm(m_comVSD, m_comVSDForm);
+    /* Store COM result: */
+    comResult = m_comClient;
+    /* Return progress-wrapper: */
+    return comProgress;
+}
+
+void UINotificationProgressSubnetSelectionVSDFormCreate::sltHandleProgressFinished()
+{
+    if (m_comVSDForm.isNotNull())
+        emit sigVSDFormCreated(m_comVSDForm);
 }
 
 

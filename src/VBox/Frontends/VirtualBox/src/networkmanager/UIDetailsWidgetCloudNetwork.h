@@ -29,6 +29,10 @@
 #include "QIWithRetranslateUI.h"
 #include "UIPortForwardingTable.h"
 
+/* COM includes: */
+#include "CVirtualSystemDescription.h"
+#include "CVirtualSystemDescriptionForm.h"
+
 /* Forward declarations: */
 class QAbstractButton;
 class QCheckBox;
@@ -41,6 +45,80 @@ class QIComboBox;
 class QIDialogButtonBox;
 class QILineEdit;
 class QITabWidget;
+class QIToolButton;
+class UIFormEditorWidget;
+class UINotificationCenter;
+
+
+/** QDialog subclass for subnet selection functionality. */
+class UISubnetSelectionDialog : public QIWithRetranslateUI<QDialog>
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs dialog passing @a pParent to the base-class.
+      * @param  strProviderShortName  Brings the short provider name for cloud client being created.
+      * @param  strProfileName        Brings the profile name for cloud client being created.
+      * @param  strSubnetId           Brings the initial subnet ID to be cached. */
+    UISubnetSelectionDialog(QWidget *pParent,
+                            const QString &strProviderShortName,
+                            const QString &strProfileName,
+                            const QString &strSubnetId);
+    /** Destructs dialog. */
+    virtual ~UISubnetSelectionDialog() override final;
+
+    /** Returns cached subnet ID. */
+    QString subnetId() const { return m_strSubnetId; }
+
+public slots:
+
+    /** Accepts dialog. */
+    virtual void accept() override final;
+
+    /** Executes dialog. */
+    virtual int exec() override final;
+
+protected:
+
+    /** Handles translation event. */
+    virtual void retranslateUi() override final;
+
+private slots:
+
+    /** Performs dialog initialization. */
+    void sltInit();
+
+    /** Handles notification about subnet selection @a comForm being created. */
+    void sltHandleVSDFormCreated(const CVirtualSystemDescriptionForm &comForm);
+
+private:
+
+    /** Prepares all. */
+    void prepare();
+    /** Cleanups all. */
+    void cleanup();
+
+    /** Holds the short provider name for cloud client being created. */
+    QString  m_strProviderShortName;
+    /** Holds the profile name for cloud client being created. */
+    QString  m_strProfileName;
+    /** Holds the cached subnet ID. */
+    QString  m_strSubnetId;
+
+    /** Holds the virtual system description container. */
+    CVirtualSystemDescription      m_comDescription;
+    /** Holds the virtual system description form. */
+    CVirtualSystemDescriptionForm  m_comForm;
+
+    /** Holds the form editor instance. */
+    UIFormEditorWidget *m_pFormEditor;
+    /** Holds the button-box instance. */
+    QIDialogButtonBox  *m_pButtonBox;
+
+    /** Holds the notification-center instance. */
+    UINotificationCenter *m_pNotificationCenter;
+};
 
 
 /** Network Manager: Cloud network data structure. */
@@ -144,6 +222,8 @@ private slots:
         void sltCloudProfileNameChanged(int iIndex);
         /** Handles network id text change. */
         void sltNetworkIdChanged(const QString &strText);
+        /** Handles request to list possible network ids. */
+        void sltNetworkIdListRequested();
 
         /** Handles button-box button click. */
         void sltHandleButtonBoxClick(QAbstractButton *pButton);
@@ -183,21 +263,23 @@ private:
     /** @name Network variables.
       * @{ */
         /** Holds the network name label instance. */
-        QLabel     *m_pLabelNetworkName;
+        QLabel       *m_pLabelNetworkName;
         /** Holds the network name editor instance. */
-        QLineEdit  *m_pEditorNetworkName;
+        QLineEdit    *m_pEditorNetworkName;
         /** Holds the cloud provider name label instance. */
-        QLabel     *m_pLabelProviderName;
+        QLabel       *m_pLabelProviderName;
         /** Holds the cloud provider name combo instance. */
-        QIComboBox *m_pComboProviderName;
+        QIComboBox   *m_pComboProviderName;
         /** Holds the cloud profile name label instance. */
-        QLabel     *m_pLabelProfileName;
+        QLabel       *m_pLabelProfileName;
         /** Holds the cloud profile name combo instance. */
-        QIComboBox *m_pComboProfileName;
+        QIComboBox   *m_pComboProfileName;
         /** Holds the network id label instance. */
-        QLabel     *m_pLabelNetworkId;
+        QLabel       *m_pLabelNetworkId;
         /** Holds the network id editor instance. */
-        QLineEdit  *m_pEditorNetworkId;
+        QLineEdit    *m_pEditorNetworkId;
+        /** Holds the network id list button instance. */
+        QIToolButton *m_pButtonNetworkId;
 
         /** Holds the 'Options' button-box instance. */
         QIDialogButtonBox *m_pButtonBoxOptions;
