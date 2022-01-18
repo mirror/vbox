@@ -6203,14 +6203,12 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmVmxDiag);
         }
 #else
-        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));                /* We don't support EPT yet. */
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));                /* Support for EPT is conditional. */
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)); /* Support for Unrestricted-guests is conditional. */
 #endif
 
         Assert(!(pVmcs->u32PinCtls & VMX_PIN_CTLS_POSTED_INT));             /* We don't support posted interrupts yet. */
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PML));                /* We don't support PML yet. */
-#ifndef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)); /* Support for Unrestricted-guests is conditional. */
-#endif
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMFUNC));             /* We don't support VM functions yet. */
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT_XCPT_VE));        /* We don't support EPT-violation #VE yet. */
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT));    /* We don't support Pause-loop exiting yet. */
