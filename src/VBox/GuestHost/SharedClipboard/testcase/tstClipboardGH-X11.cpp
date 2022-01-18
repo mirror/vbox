@@ -118,7 +118,8 @@ static int tstClipSetVBoxUtf16(PSHCLX11CTX pCtx, int retval,
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) ShClX11RequestDataForX11Callback(PSHCLCONTEXT pCtx, uint32_t uFmt, void **ppv, uint32_t *pcb)
+/** @copydoc ShClX11RequestDataCallback */
+DECLCALLBACK(int) ShClX11RequestDataCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
 {
     RT_NOREF(pCtx, uFmt);
     *pcb = g_tst_cbDataVBox;
@@ -397,8 +398,8 @@ static int g_tst_cbCompleted = 0;
 static CLIPREADCBREQ *g_tst_pCompletedReq = NULL;
 static char g_tst_abCompletedBuf[TESTCASE_MAX_BUF_SIZE];
 
-DECLCALLBACK(void) ShClX11RequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
-                                                         CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ShClX11ReportDataCallback(PSHCLCONTEXT pCtx, int rcCompletion,
+                                             CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(pCtx);
     if (cb <= TESTCASE_MAX_BUF_SIZE)

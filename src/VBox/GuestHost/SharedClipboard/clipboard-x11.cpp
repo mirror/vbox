@@ -1452,9 +1452,9 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
     if (uFmt == VBOX_SHCL_FMT_UNICODETEXT)
     {
         if (pCtx->pvUnicodeCache == NULL) /** @todo r=andy Using string cache here? */
-            rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, uFmt,
-                                                  &pCtx->pvUnicodeCache,
-                                                  &pCtx->cbUnicodeCache);
+            rc = ShClX11RequestDataCallback(pCtx->pFrontend, uFmt,
+                                            &pCtx->pvUnicodeCache,
+                                            &pCtx->cbUnicodeCache);
         if (RT_SUCCESS(rc))
         {
             pv = RTMemDup(pCtx->pvUnicodeCache, pCtx->cbUnicodeCache);
@@ -1465,7 +1465,7 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
         }
     }
     else
-        rc = ShClX11RequestDataForX11Callback(pCtx->pFrontend, uFmt, &pv, &cb);
+        rc = ShClX11RequestDataCallback(pCtx->pFrontend, uFmt, &pv, &cb);
 
 
     /* Safey net in case the callbacks above misbehave
@@ -2150,8 +2150,8 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
         LogRel(("Shared Clipboard: Converting X11 format '%s' (idxFmtX11=%u) to VBox format %#x failed, rc=%Rrc\n",
                 g_aFormats[pReq->idxFmtX11].pcszAtom, pReq->idxFmtX11, pReq->uFmtVBox, rc));
 
-    ShClX11RequestFromX11CompleteCallback(pReq->pCtx->pFrontend, rc, pReq->pReq,
-                                          pvDst, cbDst);
+    ShClX11ReportDataCallback(pReq->pCtx->pFrontend, rc, pReq->pReq, pvDst, cbDst);
+
     RTMemFree(pvDst);
     RTMemFree(pReq);
 
@@ -2273,8 +2273,8 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     {
         /* The clipboard callback was never scheduled, so we must signal
          * that the request processing is finished and clean up ourselves. */
-        ShClX11RequestFromX11CompleteCallback(pReq->pCtx->pFrontend, rc, pReq->pReq,
-                                              NULL /* pv */ ,0 /* cb */);
+        ShClX11ReportDataCallback(pReq->pCtx->pFrontend, rc, pReq->pReq,
+                                  NULL /* pv */ ,0 /* cb */);
         RTMemFree(pReq);
     }
 
