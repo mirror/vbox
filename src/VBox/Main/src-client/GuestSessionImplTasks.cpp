@@ -443,7 +443,7 @@ int GuestSessionTask::fileCopyFromGuestInner(const Utf8Str &strSrcFile, ComObjPt
             && fCanceled)
             break;
 
-        rc = setProgress((ULONG)(cbWrittenTotal / ((uint64_t)cbSize / 100.0)));
+        rc = setProgress((ULONG)((double)cbWrittenTotal / (double)cbSize / 100.0));
         if (RT_FAILURE(rc))
             break;
     }
@@ -763,7 +763,7 @@ int GuestSessionTask::fileCopyToGuestInner(const Utf8Str &strSrcFile, RTVFSFILE 
             && fCanceled)
             break;
 
-        rc = setProgress((ULONG)(cbWrittenTotal / ((uint64_t)cbSize / 100.0)));
+        rc = setProgress((ULONG)((double)cbWrittenTotal / (double)cbSize / 100.0));
         if (RT_FAILURE(rc))
             break;
     }
