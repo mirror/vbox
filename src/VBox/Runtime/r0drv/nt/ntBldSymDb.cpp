@@ -966,10 +966,10 @@ static bool isInterestingName(const char *pszName, size_t cchName)
 {
     static struct { const char *psz; size_t cch; } const s_aNames[] =
     {
-        RT_STR_TUPLE("ntoskrnl.pdb"),
-        RT_STR_TUPLE("ntkrnlmp.pdb"),
-        RT_STR_TUPLE("ntkrnlpa.pdb"),
-        RT_STR_TUPLE("ntkrpamp.pdb"),
+        { RT_STR_TUPLE("ntoskrnl.pdb") },
+        { RT_STR_TUPLE("ntkrnlmp.pdb") },
+        { RT_STR_TUPLE("ntkrnlpa.pdb") },
+        { RT_STR_TUPLE("ntkrpamp.pdb") },
     };
 
     if (   cchName == s_aNames[0].cch

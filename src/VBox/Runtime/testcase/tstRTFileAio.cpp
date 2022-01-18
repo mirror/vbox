@@ -156,7 +156,7 @@ void tstFileAioTestReadWriteBasic(RTFILE File, bool fWrite, void *pvTestBuf,
     }
 
     NanoTS = RTTimeNanoTS() - NanoTS;
-    uint64_t SpeedKBs = (uint64_t)(cbTestFile / (NanoTS / 1000000000.0) / 1024);
+    uint64_t SpeedKBs = (uint64_t)((double)cbTestFile / ((double)NanoTS / 1000000000.0) / 1024);
     RTTestValue(g_hTest, "Throughput", SpeedKBs, RTTESTUNIT_KILOBYTES_PER_SEC);
 
     /* cleanup */

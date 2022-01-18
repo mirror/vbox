@@ -1932,7 +1932,7 @@ int rtMpPokeCpuUsingDpc(RTCPUID idCpu)
     /*
      * APC fallback.
      */
-    static KDPC s_aPokeDpcs[RTCPUSET_MAX_CPUS] = {0};
+    static KDPC s_aPokeDpcs[RTCPUSET_MAX_CPUS] = {{0}};
     static bool s_fPokeDPCsInitialized = false;
 
     if (!s_fPokeDPCsInitialized)

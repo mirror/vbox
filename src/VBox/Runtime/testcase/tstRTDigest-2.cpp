@@ -185,8 +185,8 @@ static void testGeneric(const char *pszDigestObjId, TESTRTDIGEST const *paTests,
     uint64_t cNsElapsed = RTTimeNanoTS() - uStartTS;
     RTTESTI_CHECK(rc == VINF_SUCCESS);
 
-    RTTestIValueF((uint64_t)cChunks * sizeof(g_abRandom72KB) / _1K / (0.000000001 * cNsElapsed), RTTESTUNIT_KILOBYTES_PER_SEC,
-                  "%s throughput", pszDigestName);
+    RTTestIValueF((uint64_t)((long double)(cChunks * sizeof(g_abRandom72KB)) / _1K / (0.000000001 * (long double)cNsElapsed)),
+                  RTTESTUNIT_KILOBYTES_PER_SEC, "%s throughput", pszDigestName);
     RTTESTI_CHECK_RC(RTCrDigestRelease(hDigest), 0);
 }
 
