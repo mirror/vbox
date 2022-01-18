@@ -93,7 +93,7 @@ extern void tstRequestTargets(SHCLX11CTX* pCtx);
 *********************************************************************************************************************************/
 class formats;
 SHCL_X11_DECL(Atom) clipGetAtom(PSHCLX11CTX pCtx, const char *pszName);
-SHCL_X11_DECL(void) clipQueryX11Formats(PSHCLX11CTX pCtx);
+SHCL_X11_DECL(void) clipQueryX11Targets(PSHCLX11CTX pCtx);
 
 static int          clipInitInternal(PSHCLX11CTX pCtx);
 static void         clipUninitInternal(PSHCLX11CTX pCtx);
@@ -701,7 +701,7 @@ SHCL_X11_DECL(void) clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *paIdxF
     {
         /* We may already be out of date. */
         clipSetXtNeedsUpdate(pCtx, false);
-        clipQueryX11Formats(pCtx);
+        clipQueryX11Targets(pCtx);
         return;
     }
 #endif
@@ -718,17 +718,17 @@ SHCL_X11_DECL(void) clipUpdateX11Targets(PSHCLX11CTX pCtx, SHCLX11FMTIDX *paIdxF
 }
 
 /**
- * Notifies the VBox clipboard about available data formats, based on the
- * "targets" information obtained from the X11 clipboard.
+ * Notifies the VBox clipboard about available data formats ("targets" on X11),
+ * based on the information obtained from the X11 clipboard.
  *
- * @note  Callback for XtGetSelectionValue().
+ * @note  Callback installed by clipQueryX11Targets() for XtGetSelectionValue().
  * @note  This function is treated as API glue, and as such is not part of any
  *        unit test.  So keep it simple, be paranoid and log everything.
  */
-SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
-                                                  Atom * /* selection */, Atom *atomType,
-                                                  XtPointer pValue, long unsigned int *pcLen,
-                                                  int *piFormat)
+SHCL_X11_DECL(void) clipQueryX11TargetsCallback(Widget widget, XtPointer pClient,
+                                                Atom * /* selection */, Atom *atomType,
+                                                XtPointer pValue, long unsigned int *pcLen,
+                                                int *piFormat)
 {
     RT_NOREF(piFormat);
 
@@ -796,11 +796,11 @@ SHCL_X11_DECL(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClie
 }
 
 /**
- * Callback to notify us when the contents of the X11 clipboard change.
+ * Queries the current formats ("targets") of the X11 clipboard ("CLIPBOARD").
  *
  * @param   pCtx                The X11 clipboard context to use.
  */
-SHCL_X11_DECL(void) clipQueryX11Formats(PSHCLX11CTX pCtx)
+SHCL_X11_DECL(void) clipQueryX11Targets(PSHCLX11CTX pCtx)
 {
 #ifndef TESTCASE
 
@@ -816,7 +816,7 @@ SHCL_X11_DECL(void) clipQueryX11Formats(PSHCLX11CTX pCtx)
     XtGetSelectionValue(pCtx->pWidget,
                         clipGetAtom(pCtx, "CLIPBOARD"),
                         clipGetAtom(pCtx, "TARGETS"),
-                        clipConvertX11TargetsCallback, pCtx,
+                        clipQueryX11TargetsCallback, pCtx,
                         CurrentTime);
 #else
     tstRequestTargets(pCtx);
@@ -859,7 +859,7 @@ static void clipPeekEventAndDoXFixesHandling(PSHCLX11CTX pCtx)
         {
             if (   (event.fixes.subtype == 0  /* XFixesSetSelectionOwnerNotify */)
                 && (event.fixes.owner != 0))
-                clipQueryX11Formats(pCtx);
+                clipQueryX11Targets(pCtx);
             else
                 clipReportEmpty(pCtx);
         }
@@ -889,7 +889,7 @@ static DECLCALLBACK(int) clipThreadMain(RTTHREAD hThreadSelf, void *pvUser)
         if (RT_SUCCESS(rc))
         {
             if (pCtx->fGrabClipboardOnStart)
-                clipQueryX11Formats(pCtx);
+                clipQueryX11Targets(pCtx);
 
             pCtx->fThreadStarted = true;
 
@@ -1948,7 +1948,7 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
     AssertPtr(pReq->pCtx);
     clipSetXtBusy(pCtx, false);
     if (clipGetXtNeedsUpdate(pCtx))
-        clipQueryX11Formats(pCtx);
+        clipQueryX11Targets(pCtx);
 #endif
 
     /* If X11 clipboard buffer has no data, libXt can pass to XtGetSelectionValue()
