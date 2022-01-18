@@ -118,7 +118,6 @@ static int tstClipSetVBoxUtf16(PSHCLX11CTX pCtx, int retval,
     return VINF_SUCCESS;
 }
 
-/** @copydoc ShClX11RequestDataCallback */
 DECLCALLBACK(int) ShClX11RequestDataCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
 {
     RT_NOREF(pCtx, uFmt);

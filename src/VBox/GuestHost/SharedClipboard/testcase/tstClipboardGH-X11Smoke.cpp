@@ -30,20 +30,17 @@
 #include <VBox/GuestHost/clipboard-helper.h>
 
 
-/** @copydoc ShClX11RequestDataCallback */
 DECLCALLBACK(int) ShClX11RequestDataCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
 {
     RT_NOREF(pCtx, uFmt, ppv, pcb);
     return VERR_NO_DATA;
 }
 
-/** @copydoc ShClX11ReportFormatsCallback */
 DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS fFormats)
 {
     RT_NOREF(pCtx, fFormats);
 }
 
-/** @copydoc ShClX11ReportDataCallback */
 DECLCALLBACK(void) ShClX11ReportDataCallback(PSHCLCONTEXT pCtx, int rcCompletion,
                                              CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {

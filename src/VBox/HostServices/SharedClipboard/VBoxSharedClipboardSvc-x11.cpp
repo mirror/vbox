@@ -306,7 +306,6 @@ DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFor
     LogFlowFuncLeaveRC(rc);
 }
 
-/** @copydoc ShClX11ReportDataCallback */
 DECLCALLBACK(void) ShClX11ReportDataCallback(PSHCLCONTEXT pCtx, int rcCompletion,
                                              CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
@@ -351,7 +350,6 @@ DECLCALLBACK(void) ShClX11ReportDataCallback(PSHCLCONTEXT pCtx, int rcCompletion
     LogRel2(("Shared Clipboard: Reading X11 clipboard data from host completed with %Rrc\n", rcCompletion));
 }
 
-/** @copydoc ShClX11RequestDataCallback */
 DECLCALLBACK(int) ShClX11RequestDataCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
 {
     LogFlowFunc(("pCtx=%p, uFmt=0x%x\n", pCtx, uFmt));
