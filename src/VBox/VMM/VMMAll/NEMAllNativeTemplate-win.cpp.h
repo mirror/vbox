@@ -1202,7 +1202,7 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t 
 # ifndef NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS
     /* Call the offical API. */
     WHV_REGISTER_NAME  aenmNames[2] = { WHvX64RegisterTsc, WHvX64RegisterTscAux };
-    WHV_REGISTER_VALUE aValues[2]   = { {0, 0}, {0, 0} };
+    WHV_REGISTER_VALUE aValues[2]   = { { {0, 0} }, { {0, 0} } };
     Assert(RT_ELEMENTS(aenmNames) == RT_ELEMENTS(aValues));
     HRESULT hrc = WHvGetVirtualProcessorRegisters(pVM->nem.s.hPartition, pVCpu->idCpu, aenmNames, 2, aValues);
     AssertLogRelMsgReturn(SUCCEEDED(hrc),
@@ -1269,7 +1269,7 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uP
 
     /* Start with the first CPU. */
     WHV_REGISTER_NAME  enmName   = WHvX64RegisterTsc;
-    WHV_REGISTER_VALUE Value     = {0, 0};
+    WHV_REGISTER_VALUE Value     = { {0, 0} };
     Value.Reg64 = uPausedTscValue;
     uint64_t const     uFirstTsc = ASMReadTSC();
     HRESULT hrc = WHvSetVirtualProcessorRegisters(pVM->nem.s.hPartition, 0 /*iCpu*/, &enmName, 1, &Value);
@@ -4422,7 +4422,7 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
                 {
                     static const WHV_REGISTER_NAME s_aNames[6] = { WHvX64RegisterCs, WHvX64RegisterRip, WHvX64RegisterRflags,
                                                                    WHvX64RegisterSs, WHvX64RegisterRsp, WHvX64RegisterCr0 };
-                    WHV_REGISTER_VALUE aRegs[RT_ELEMENTS(s_aNames)] = {0};
+                    WHV_REGISTER_VALUE aRegs[RT_ELEMENTS(s_aNames)] = { {{0, 0} } };
                     WHvGetVirtualProcessorRegisters(pVM->nem.s.hPartition, pVCpu->idCpu, s_aNames, RT_ELEMENTS(s_aNames), aRegs);
                     LogFlow(("NEM/%u: Entry @ %04x:%08RX64 IF=%d EFL=%#RX64 SS:RSP=%04x:%08RX64 cr0=%RX64\n",
                              pVCpu->idCpu, aRegs[0].Segment.Selector, aRegs[1].Reg64, RT_BOOL(aRegs[2].Reg64 & X86_EFL_IF),
