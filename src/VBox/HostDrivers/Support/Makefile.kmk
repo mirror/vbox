@@ -525,7 +525,7 @@ SUPR3HardenedMain.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 #
 # VBoxSupLib - Windows DLL for catching thread creation and termination.
 #
-VBoxSupLib_TEMPLATE = $(if-expr "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING),VBOXR3HARDENEDLIB,VBOXR3)
+VBoxSupLib_TEMPLATE = $(if-expr "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING),VBOXR3HARDENEDLIB,VBoxR3StaticNoCrt)
 VBoxSupLib_SDKS.win = VBOX_NTDLL
 VBoxSupLib_LDFLAGS.win.amd64 = -Entry:DllMainEntrypoint
 VBoxSupLib_LDFLAGS.win.x86   = -Entry:DllMainEntrypoint
@@ -536,9 +536,9 @@ VBoxSupLib_SOURCES = \
 VBoxSupLib_SOURCES.win = \
 	win/VBoxSupLib.rc
 VBoxSupLib_LIBS.win.x86 = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcmt.lib   # for __chkstk
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/chkstk.obj
 VBoxSupLib_LIBS.win.amd64 = \
- 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcmt.lib # for __chkstk
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/chkstk.obj
 VBoxSupLib_VBOX_IMPORT_CHECKER.win.x86   = xp
 VBoxSupLib_VBOX_IMPORT_CHECKER.win.amd64 = xp64
 
