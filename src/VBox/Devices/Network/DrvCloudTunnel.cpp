@@ -583,16 +583,16 @@ struct ssh_buffer_struct {
  * outgoing (client) channel request
  */
 enum ssh_channel_request_state_e {
-	/** No request has been made */
-	SSH_CHANNEL_REQ_STATE_NONE = 0,
-	/** A request has been made and answer is pending */
-	SSH_CHANNEL_REQ_STATE_PENDING,
-	/** A request has been replied and accepted */
-	SSH_CHANNEL_REQ_STATE_ACCEPTED,
-	/** A request has been replied and refused */
-	SSH_CHANNEL_REQ_STATE_DENIED,
-	/** A request has been replied and an error happend */
-	SSH_CHANNEL_REQ_STATE_ERROR
+    /** No request has been made */
+    SSH_CHANNEL_REQ_STATE_NONE = 0,
+    /** A request has been made and answer is pending */
+    SSH_CHANNEL_REQ_STATE_PENDING,
+    /** A request has been replied and accepted */
+    SSH_CHANNEL_REQ_STATE_ACCEPTED,
+    /** A request has been replied and refused */
+    SSH_CHANNEL_REQ_STATE_DENIED,
+    /** A request has been replied and an error happend */
+    SSH_CHANNEL_REQ_STATE_ERROR
 };
 
 enum ssh_channel_state_e {
@@ -701,7 +701,7 @@ static int drvCloudTunnelReceiveCallback(ssh_session session, ssh_channel channe
     if (pThis->iSshVerbosity >= SSH_LOG_PACKET)
         Log2(("%.*Rhxd\n", len, data));
 
-    /* TODO: Validate len! */
+    /** @todo Validate len! */
     void *pvPacket = RTMemDup(data, len);
     if (!pvPacket)
     {
@@ -1236,16 +1236,16 @@ DECL_NOTHROW(void) drvCloudTunnelSshLogCallback(int priority, const char *functi
     const char *pcszVerbosity;
     switch (priority)
     {
-	    case SSH_LOG_WARNING:
+        case SSH_LOG_WARNING:
             pcszVerbosity = "WARNING";
             break;
-	    case SSH_LOG_PROTOCOL:
+        case SSH_LOG_PROTOCOL:
             pcszVerbosity = "PROTOCOL";
             break;
-	    case SSH_LOG_PACKET:
+        case SSH_LOG_PACKET:
             pcszVerbosity = "PACKET";
             break;
-	    case SSH_LOG_FUNCTIONS:
+        case SSH_LOG_FUNCTIONS:
             pcszVerbosity = "FUNCTIONS";
             break;
         default:

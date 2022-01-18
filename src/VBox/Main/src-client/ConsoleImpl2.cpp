@@ -336,6 +336,7 @@ static void InsertConfigString(PCFGMNODE pNode,
     InsertConfigString(pNode, pcszName, Utf8Str(rBstrValue));
 }
 
+#ifdef VBOX_WITH_CLOUD_NET
 /**
  * Helper that calls CFGMR3InsertPassword and throws an RTCError if that
  * fails (Utf8Str variant).
@@ -354,6 +355,7 @@ static void InsertConfigPassword(PCFGMNODE pNode,
     if (RT_FAILURE(vrc))
         throw ConfigError("CFGMR3InsertPasswordLengthKnown", vrc, pcszName);
 }
+#endif /* VBOX_WITH_CLOUD_NET */
 
 /**
  * Helper that calls CFGMR3InsertBytes and throws an RTCError if that fails.
