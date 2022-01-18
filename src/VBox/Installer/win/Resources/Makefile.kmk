@@ -19,8 +19,9 @@ SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxRes
-VBoxRes_TEMPLATE = VBOXR3STATIC
+VBoxRes_TEMPLATE = VBoxR3StaticNoCrt
 VBoxRes_DEPS     = $(VBOX_SVN_REV_KMK)
+VBoxRes_LDFLAGS  = -NoEntry
 VBoxRes_SOURCES  = \
 	dummy.cpp \
 	VBoxRes.rc
