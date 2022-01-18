@@ -311,7 +311,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32BiosUpdateTrigger(PVMCPUCC pVCpu
  * @returns The MSR_IA32_SMM_MONITOR_CTL value.
  * @param   pVCpu           The cross context per CPU structure.
  */
-VMM_INT_DECL(uint64_t) CPUMGetGuestIa32SmmMonitorCtl(PCVMCPU pVCpu)
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32SmmMonitorCtl(PCVMCPUCC pVCpu)
 {
     /* We do not support dual-monitor treatment for SMI and SMM. */
     /** @todo SMM. */
@@ -1335,7 +1335,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32DebugInterface(PVMCPUCC pVCpu, u
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBasic(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64Basic;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64Basic;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1344,7 +1347,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxBasic(PVMCPUCC pVCpu, uint32_
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxPinbasedCtls(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.PinCtls.u;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.PinCtls.u;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1352,7 +1358,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxPinbasedCtls(PVMCPUCC pVCpu, 
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcbasedCtls(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.ProcCtls.u;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.ProcCtls.u;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1361,7 +1370,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcbasedCtls(PVMCPUCC pVCpu,
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxExitCtls(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.ExitCtls.u;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.ExitCtls.u;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1370,7 +1382,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxExitCtls(PVMCPUCC pVCpu, uint
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.EntryCtls.u;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.EntryCtls.u;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1380,7 +1395,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEntryCtls(PVMCPUCC pVCpu, uin
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxMisc(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64Misc;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64Misc;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1398,7 +1416,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed0(PVMCPUCC pVCpu, uin
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed1(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64Cr0Fixed1;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64Cr0Fixed1;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1407,7 +1428,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr0Fixed1(PVMCPUCC pVCpu, uin
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed0(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64Cr4Fixed0;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64Cr4Fixed0;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1416,7 +1440,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed0(PVMCPUCC pVCpu, uin
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed1(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64Cr4Fixed1;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64Cr4Fixed1;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1425,7 +1452,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxCr4Fixed1(PVMCPUCC pVCpu, uin
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmcsEnum(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64VmcsEnum;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64VmcsEnum;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1434,7 +1464,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmcsEnum(PVMCPUCC pVCpu, uint
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.ProcCtls2.u;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.ProcCtls2.u;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1445,17 +1478,18 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxProcBasedCtls2(PVMCPUCC pVCpu
  * @returns Fixed IA32_VMX_EPT_VPID_CAP value.
  * @param   pVCpu           The cross context per CPU structure.
  */
-VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxEptVpidCap(PCVMCPU pVCpu)
+VMM_INT_DECL(uint64_t) CPUMGetGuestIa32VmxEptVpidCap(PCVMCPUCC pVCpu)
 {
-    RT_NOREF_PV(pVCpu);
-    return pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64EptVpidCaps;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        return pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64EptVpidCaps;
+    return 0;
 }
 
 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEptVpidCap(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
     *puValue = CPUMGetGuestIa32VmxEptVpidCap(pVCpu);
     return VINF_SUCCESS;
 }
@@ -1464,8 +1498,11 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxEptVpidCap(PVMCPUCC pVCpu, ui
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTruePinbasedCtls(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.TruePinCtls.u;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1473,8 +1510,11 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTruePinbasedCtls(PVMCPUCC pVC
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueProcbasedCtls(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.TrueProcCtls.u;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1482,8 +1522,11 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueProcbasedCtls(PVMCPUCC pV
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueExitCtls(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.TrueExitCtls.u;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1491,8 +1534,11 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueExitCtls(PVMCPUCC pVCpu, 
 /** @callback_method_impl{FNCPUMRDMSR} */
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueEntryCtls(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
-    RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = 0;
+    RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.TrueEntryCtls.u;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
@@ -1501,7 +1547,10 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxTrueEntryCtls(PVMCPUCC pVCpu,
 static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32VmxVmFunc(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     RT_NOREF_PV(pVCpu); RT_NOREF_PV(idMsr); RT_NOREF_PV(pRange);
-    *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64VmFunc;
+    if (pVCpu->CTX_SUFF(pVM)->cpum.s.GuestFeatures.fVmx)
+        *puValue = pVCpu->cpum.s.Guest.hwvirt.vmx.Msrs.u64VmFunc;
+    else
+        *puValue = 0;
     return VINF_SUCCESS;
 }
 
