@@ -243,28 +243,34 @@
  * @remarks The VCxxx values are derived from the CRT DLLs shipping with the
  *          compilers.
  * @{ */
-#define RT_MSC_VER_VC50     (1100)              /**< Visual C++ 5.0. */
-#define RT_MSC_VER_VC60     (1200)              /**< Visual C++ 6.0. */
-#define RT_MSC_VER_VC70     (1300)              /**< Visual C++ 7.0. */
-#define RT_MSC_VER_VC70     (1300)              /**< Visual C++ 7.0. */
-#define RT_MSC_VER_VS2003   (1310)              /**< Visual Studio 2003, aka Visual C++ 7.1. */
-#define RT_MSC_VER_VC71     RT_MSC_VER_VS2003   /**< Visual C++ 7.1, aka Visual Studio 2003. */
-#define RT_MSC_VER_VS2005   (1400)              /**< Visual Studio 2005. */
-#define RT_MSC_VER_VC80     RT_MSC_VER_VS2005   /**< Visual C++ 8.0, aka Visual Studio 2008. */
-#define RT_MSC_VER_VS2008   (1500)              /**< Visual Studio 2008. */
-#define RT_MSC_VER_VC90     RT_MSC_VER_VS2008   /**< Visual C++ 9.0, aka Visual Studio 2008. */
-#define RT_MSC_VER_VS2010   (1600)              /**< Visual Studio 2010. */
-#define RT_MSC_VER_VC100    RT_MSC_VER_VS2010   /**< Visual C++ 10.0, aka Visual Studio 2010. */
-#define RT_MSC_VER_VS2012   (1700)              /**< Visual Studio 2012. */
-#define RT_MSC_VER_VC110    RT_MSC_VER_VS2012   /**< Visual C++ 11.0, aka Visual Studio 2012. */
-#define RT_MSC_VER_VS2013   (1800)              /**< Visual Studio 2013. */
-#define RT_MSC_VER_VC120    RT_MSC_VER_VS2013   /**< Visual C++ 12.0, aka Visual Studio 2013. */
-#define RT_MSC_VER_VS2015   (1900)              /**< Visual Studio 2015. */
-#define RT_MSC_VER_VC140    RT_MSC_VER_VS2015   /**< Visual C++ 14.0, aka Visual Studio 2015. */
-#define RT_MSC_VER_VS2017   (1910)              /**< Visual Studio 2017. */
-#define RT_MSC_VER_VC141    RT_MSC_VER_VS2017   /**< Visual C++ 14.1, aka Visual Studio 2017. */
-#define RT_MSC_VER_VS2019   (1920)              /**< Visual Studio 2017. */
-#define RT_MSC_VER_VC142    RT_MSC_VER_VS2019   /**< Visual C++ 14.2, aka Visual Studio 2019. */
+#define RT_MSC_VER_VC50         (1100)                  /**< Visual C++ 5.0. */
+#define RT_MSC_VER_VC60         (1200)                  /**< Visual C++ 6.0. */
+#define RT_MSC_VER_VC70         (1300)                  /**< Visual C++ 7.0. */
+#define RT_MSC_VER_VC70         (1300)                  /**< Visual C++ 7.0. */
+#define RT_MSC_VER_VS2003       (1310)                  /**< Visual Studio 2003, aka Visual C++ 7.1. */
+#define RT_MSC_VER_VC71         RT_MSC_VER_VS2003       /**< Visual C++ 7.1, aka Visual Studio 2003. */
+#define RT_MSC_VER_VS2005       (1400)                  /**< Visual Studio 2005. */
+#define RT_MSC_VER_VC80         RT_MSC_VER_VS2005       /**< Visual C++ 8.0, aka Visual Studio 2008. */
+#define RT_MSC_VER_VS2008       (1500)                  /**< Visual Studio 2008. */
+#define RT_MSC_VER_VC90         RT_MSC_VER_VS2008       /**< Visual C++ 9.0, aka Visual Studio 2008. */
+#define RT_MSC_VER_VS2010       (1600)                  /**< Visual Studio 2010. */
+#define RT_MSC_VER_VC100        RT_MSC_VER_VS2010       /**< Visual C++ 10.0, aka Visual Studio 2010. */
+#define RT_MSC_VER_VS2012       (1700)                  /**< Visual Studio 2012. */
+#define RT_MSC_VER_VC110        RT_MSC_VER_VS2012       /**< Visual C++ 11.0, aka Visual Studio 2012. */
+#define RT_MSC_VER_VS2013       (1800)                  /**< Visual Studio 2013. */
+#define RT_MSC_VER_VC120        RT_MSC_VER_VS2013       /**< Visual C++ 12.0, aka Visual Studio 2013. */
+#define RT_MSC_VER_VS2015       (1900)                  /**< Visual Studio 2015. */
+#define RT_MSC_VER_VC140        RT_MSC_VER_VS2015       /**< Visual C++ 14.0, aka Visual Studio 2015. */
+#define RT_MSC_VER_VS2017       (1910)                  /**< Visual Studio 2017. */
+#define RT_MSC_VER_VC141        RT_MSC_VER_VS2017       /**< Visual C++ 14.1, aka Visual Studio 2017. */
+#define RT_MSC_VER_VS2019       (1920)                  /**< Visual Studio 2019. */
+#define RT_MSC_VER_VC142        RT_MSC_VER_VS2019       /**< Visual C++ 14.2, aka Visual Studio 2019. */
+#define RT_MSC_VER_VS2019_U6    (1926)                  /**< Visual Studio 2019, update 6. */
+#define RT_MSC_VER_VC142_U6     RT_MSC_VER_VS2019_U6    /**< Visual C++ 14.2 update 6. */
+#define RT_MSC_VER_VS2019_U8    (1928)                  /**< Visual Studio 2019, update 8. */
+#define RT_MSC_VER_VC142_U8     RT_MSC_VER_VS2019_U8    /**< Visual C++ 14.2 update 8. */
+#define RT_MSC_VER_VS2019_U11   (1929)                  /**< Visual Studio 2019, update 11. */
+#define RT_MSC_VER_VC142_U11    RT_MSC_VER_VS2019_U11   /**< Visual C++ 14.2 update 11. */
 /** @} */
 
 /** @def RT_CLANG_PREREQ
