@@ -1319,9 +1319,65 @@ AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY32_V12, 0xb8);
 typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V12 *PIMAGE_LOAD_CONFIG_DIRECTORY32_V12;
 typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V12 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32_V12;
 
-typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V12   IMAGE_LOAD_CONFIG_DIRECTORY32;
-typedef PIMAGE_LOAD_CONFIG_DIRECTORY32_V12  PIMAGE_LOAD_CONFIG_DIRECTORY32;
-typedef PCIMAGE_LOAD_CONFIG_DIRECTORY32_V12 PCIMAGE_LOAD_CONFIG_DIRECTORY32;
+/** @since  Visual C++ 2019 16.x (found in 16.11.9) / RS5_IMAGE_LOAD_CONFIG_DIRECTORY32. */
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32_V13
+{
+    uint32_t  Size;                                 /**< 0x00 - virtual address */
+    uint32_t  TimeDateStamp;                        /**< 0x04 */
+    uint16_t  MajorVersion;                         /**< 0x08 */
+    uint16_t  MinorVersion;                         /**< 0x0a */
+    uint32_t  GlobalFlagsClear;                     /**< 0x0c */
+    uint32_t  GlobalFlagsSet;                       /**< 0x10 */
+    uint32_t  CriticalSectionDefaultTimeout;        /**< 0x14 */
+    uint32_t  DeCommitFreeBlockThreshold;           /**< 0x18 - virtual address */
+    uint32_t  DeCommitTotalFreeThreshold;           /**< 0x1c - virtual address */
+    uint32_t  LockPrefixTable;                      /**< 0x20 */
+    uint32_t  MaximumAllocationSize;                /**< 0x24 */
+    uint32_t  VirtualMemoryThreshold;               /**< 0x28 - virtual address of pointer variable */
+    uint32_t  ProcessHeapFlags;                     /**< 0x2c - virtual address of pointer variable */
+    uint32_t  ProcessAffinityMask;                  /**< 0x30 - virtual address */
+    uint16_t  CSDVersion;                           /**< 0x34 */
+    uint16_t  DependentLoadFlags;                   /**< 0x36 */
+    uint32_t  EditList;                             /**< 0x38 */
+    uint32_t  SecurityCookie;                       /**< 0x3c - virtual address */
+    uint32_t  SEHandlerTable;                       /**< 0x40 */
+    uint32_t  SEHandlerCount;                       /**< 0x44 - virtual address */
+    uint32_t  GuardCFCCheckFunctionPointer;         /**< 0x48 */
+    uint32_t  GuardCFDispatchFunctionPointer;       /**< 0x4c - virtual address */
+    uint32_t  GuardCFFunctionTable;                 /**< 0x50 */
+    uint32_t  GuardCFFunctionCount;                 /**< 0x54 - virtual address */
+    uint32_t  GuardFlags;                           /**< 0x58 - virtual address of pointer variable */
+    IMAGE_LOAD_CONFIG_CODE_INTEGRITY CodeIntegrity; /**< 0x5c */
+    uint32_t  GuardAddressTakenIatEntryTable;       /**< 0x68 - virtual address */
+    uint32_t  GuardAddressTakenIatEntryCount;       /**< 0x6c */
+    uint32_t  GuardLongJumpTargetTable;             /**< 0x70 - virtual address */
+    uint32_t  GuardLongJumpTargetCount;             /**< 0x74 */
+    uint32_t  DynamicValueRelocTable;               /**< 0x78 - virtual address */
+    uint32_t  CHPEMetadataPointer;                  /**< 0x7c Not sure when this was renamed from HybridMetadataPointer. */
+    uint32_t  GuardRFFailureRoutine;                /**< 0x80 - virtual address */
+    uint32_t  GuardRFFailureRoutineFunctionPointer; /**< 0x84 - virtual address of pointer variable */
+    uint32_t  DynamicValueRelocTableOffset;         /**< 0x88 */
+    uint16_t  DynamicValueRelocTableSection;        /**< 0x8c */
+    uint16_t  Reserved2;                            /**< 0x8e */
+    uint32_t  GuardRFVerifyStackPointerFunctionPointer; /**< 0x90 - virtual address of pointer variable */
+    uint32_t  HotPatchTableOffset;                  /**< 0x94 */
+    uint32_t  Reserved3;                            /**< 0x98 */
+    uint32_t  EnclaveConfigurationPointer;          /**< 0x9c - virtual address of pointer variable */
+    uint32_t  VolatileMetadataPointer;              /**< 0xa0 - virtual address of pointer variable */
+    uint32_t  GuardEHContinuationTable;             /**< 0xa4 - virtual address */
+    uint32_t  GuardEHContinuationCount;             /**< 0xa8 */
+    uint32_t  GuardXFGCheckFunctionPointer;         /**< 0xac - virtual address of pointer variable */
+    uint32_t  GuardXFGDispatchFunctionPointer;      /**< 0xb0 - virtual address of pointer variable */
+    uint32_t  GuardXFGTableDispatchFunctionPointer; /**< 0xb4 - virtual address of pointer variable */
+    uint32_t  CastGuardOsDeterminedFailureMode;     /**< 0xb8 - virtual address */
+} IMAGE_LOAD_CONFIG_DIRECTORY32_V13;
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY32_V13, 0xbc);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V13 *PIMAGE_LOAD_CONFIG_DIRECTORY32_V13;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V13 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32_V13;
+
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32_V13   IMAGE_LOAD_CONFIG_DIRECTORY32;
+typedef PIMAGE_LOAD_CONFIG_DIRECTORY32_V13  PIMAGE_LOAD_CONFIG_DIRECTORY32;
+typedef PCIMAGE_LOAD_CONFIG_DIRECTORY32_V13 PCIMAGE_LOAD_CONFIG_DIRECTORY32;
 
 
 /* No _IMAGE_LOAD_CONFIG_DIRECTORY64_V1 exists. */
@@ -1799,9 +1855,65 @@ AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY64_V12, 0x130);
 typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V12 *PIMAGE_LOAD_CONFIG_DIRECTORY64_V12;
 typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V12 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64_V12;
 
-typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V12   IMAGE_LOAD_CONFIG_DIRECTORY64;
-typedef PIMAGE_LOAD_CONFIG_DIRECTORY64_V12  PIMAGE_LOAD_CONFIG_DIRECTORY64;
-typedef PCIMAGE_LOAD_CONFIG_DIRECTORY64_V12 PCIMAGE_LOAD_CONFIG_DIRECTORY64;
+/** @since  Visual C++ 2019 16.x (found in 16.11.9) / RS5_IMAGE_LOAD_CONFIG_DIRECTORY32. */
+typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY64_V13
+{
+    uint32_t  Size;                                 /**< 0x00 */
+    uint32_t  TimeDateStamp;                        /**< 0x04 */
+    uint16_t  MajorVersion;                         /**< 0x08 */
+    uint16_t  MinorVersion;                         /**< 0x0a */
+    uint32_t  GlobalFlagsClear;                     /**< 0x0c */
+    uint32_t  GlobalFlagsSet;                       /**< 0x10 */
+    uint32_t  CriticalSectionDefaultTimeout;        /**< 0x14 */
+    uint64_t  DeCommitFreeBlockThreshold;           /**< 0x18 */
+    uint64_t  DeCommitTotalFreeThreshold;           /**< 0x20 */
+    uint64_t  LockPrefixTable;                      /**< 0x28 - virtual address */
+    uint64_t  MaximumAllocationSize;                /**< 0x30 */
+    uint64_t  VirtualMemoryThreshold;               /**< 0x38 */
+    uint64_t  ProcessAffinityMask;                  /**< 0x40 */
+    uint32_t  ProcessHeapFlags;                     /**< 0x48 */
+    uint16_t  CSDVersion;                           /**< 0x4c */
+    uint16_t  DependentLoadFlags;                   /**< 0x4e */
+    uint64_t  EditList;                             /**< 0x50 - virtual address */
+    uint64_t  SecurityCookie;                       /**< 0x58 - virtual address */
+    uint64_t  SEHandlerTable;                       /**< 0x60 */
+    uint64_t  SEHandlerCount;                       /**< 0x68 */
+    uint64_t  GuardCFCCheckFunctionPointer;         /**< 0x70 - virtual address of pointer variable */
+    uint64_t  GuardCFDispatchFunctionPointer;       /**< 0x78 - virtual address of pointer variable */
+    uint64_t  GuardCFFunctionTable;                 /**< 0x80 - virtual address */
+    uint64_t  GuardCFFunctionCount;                 /**< 0x88 */
+    uint32_t  GuardFlags;                           /**< 0x90 */
+    IMAGE_LOAD_CONFIG_CODE_INTEGRITY CodeIntegrity; /**< 0x94 */
+    uint64_t  GuardAddressTakenIatEntryTable;       /**< 0xa0 - virtual address */
+    uint64_t  GuardAddressTakenIatEntryCount;       /**< 0xa8 */
+    uint64_t  GuardLongJumpTargetTable;             /**< 0xb0 - virtual address */
+    uint64_t  GuardLongJumpTargetCount;             /**< 0xb8 */
+    uint64_t  DynamicValueRelocTable;               /**< 0xc0 - virtual address */
+    uint64_t  CHPEMetadataPointer;                  /**< 0xc8 */
+    uint64_t  GuardRFFailureRoutine;                /**< 0xd0 - virtual address */
+    uint64_t  GuardRFFailureRoutineFunctionPointer; /**< 0xd8 - virtual address of pointer variable */
+    uint32_t  DynamicValueRelocTableOffset;         /**< 0xe0 */
+    uint16_t  DynamicValueRelocTableSection;        /**< 0xe4 */
+    uint16_t  Reserved2;                            /**< 0xe6 */
+    uint64_t  GuardRFVerifyStackPointerFunctionPointer; /**< 0xe8 - virtual address of pointer variable */
+    uint32_t  HotPatchTableOffset;                  /**< 0xf0 */
+    uint32_t  Reserved3;                            /**< 0xf4 */
+    uint64_t  EnclaveConfigurationPointer;          /**< 0xf8 - seen in bcrypt and bcryptprimitives pointing to the string "L". */
+    uint64_t  VolatileMetadataPointer;              /**< 0x100 - virtual address of pointer variable */
+    uint64_t  GuardEHContinuationTable;             /**< 0x108 - virtual address */
+    uint64_t  GuardEHContinuationCount;             /**< 0x110 */
+    uint64_t  GuardXFGCheckFunctionPointer;         /**< 0x118 - virtual address of pointer variable */
+    uint64_t  GuardXFGDispatchFunctionPointer;      /**< 0x120 - virtual address of pointer variable */
+    uint64_t  GuardXFGTableDispatchFunctionPointer; /**< 0x128 - virtual address of pointer variable */
+    uint64_t  CastGuardOsDeterminedFailureMode;     /**< 0x130 - virtual address */
+} IMAGE_LOAD_CONFIG_DIRECTORY64_V13;
+AssertCompileSize(IMAGE_LOAD_CONFIG_DIRECTORY64_V13, 0x138);
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V13 *PIMAGE_LOAD_CONFIG_DIRECTORY64_V13;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V13 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64_V13;
+
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64_V13   IMAGE_LOAD_CONFIG_DIRECTORY64;
+typedef PIMAGE_LOAD_CONFIG_DIRECTORY64_V13  PIMAGE_LOAD_CONFIG_DIRECTORY64;
+typedef PCIMAGE_LOAD_CONFIG_DIRECTORY64_V13 PCIMAGE_LOAD_CONFIG_DIRECTORY64;
 
 /** @} */
 

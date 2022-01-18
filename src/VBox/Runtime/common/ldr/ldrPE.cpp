@@ -3824,53 +3824,54 @@ static void rtldrPEConvert32BitLoadConfigTo64Bit(PIMAGE_LOAD_CONFIG_DIRECTORY64 
     /*
      * volatile everywhere! Trying to prevent the compiler being a smarta$$ and reorder stuff.
      */
-    IMAGE_LOAD_CONFIG_DIRECTORY32_V12 volatile *pLoadCfg32 = (IMAGE_LOAD_CONFIG_DIRECTORY32_V12 volatile *)pLoadCfg;
-    IMAGE_LOAD_CONFIG_DIRECTORY64_V12 volatile *pLoadCfg64 = pLoadCfg;
+    IMAGE_LOAD_CONFIG_DIRECTORY32_V13 volatile *pLoadCfg32 = (IMAGE_LOAD_CONFIG_DIRECTORY32_V13 volatile *)pLoadCfg;
+    IMAGE_LOAD_CONFIG_DIRECTORY64_V13 volatile *pLoadCfg64 = pLoadCfg;
 
-    pLoadCfg64->GuardXFGTableDispatchFunctionPointer = pLoadCfg32->GuardXFGTableDispatchFunctionPointer;
-    pLoadCfg64->GuardXFGDispatchFunctionPointer = pLoadCfg32->GuardXFGDispatchFunctionPointer;
-    pLoadCfg64->GuardXFGCheckFunctionPointer    = pLoadCfg32->GuardXFGCheckFunctionPointer;
-    pLoadCfg64->GuardEHContinuationCount        = pLoadCfg32->GuardEHContinuationCount;
-    pLoadCfg64->GuardEHContinuationTable        = pLoadCfg32->GuardEHContinuationTable;
-    pLoadCfg64->VolatileMetadataPointer         = pLoadCfg32->VolatileMetadataPointer;
-    pLoadCfg64->EnclaveConfigurationPointer     = pLoadCfg32->EnclaveConfigurationPointer;
-    pLoadCfg64->Reserved3                       = pLoadCfg32->Reserved3;
-    pLoadCfg64->HotPatchTableOffset             = pLoadCfg32->HotPatchTableOffset;
+    pLoadCfg64->CastGuardOsDeterminedFailureMode         = pLoadCfg32->CastGuardOsDeterminedFailureMode;
+    pLoadCfg64->GuardXFGTableDispatchFunctionPointer     = pLoadCfg32->GuardXFGTableDispatchFunctionPointer;
+    pLoadCfg64->GuardXFGDispatchFunctionPointer          = pLoadCfg32->GuardXFGDispatchFunctionPointer;
+    pLoadCfg64->GuardXFGCheckFunctionPointer             = pLoadCfg32->GuardXFGCheckFunctionPointer;
+    pLoadCfg64->GuardEHContinuationCount                 = pLoadCfg32->GuardEHContinuationCount;
+    pLoadCfg64->GuardEHContinuationTable                 = pLoadCfg32->GuardEHContinuationTable;
+    pLoadCfg64->VolatileMetadataPointer                  = pLoadCfg32->VolatileMetadataPointer;
+    pLoadCfg64->EnclaveConfigurationPointer              = pLoadCfg32->EnclaveConfigurationPointer;
+    pLoadCfg64->Reserved3                                = pLoadCfg32->Reserved3;
+    pLoadCfg64->HotPatchTableOffset                      = pLoadCfg32->HotPatchTableOffset;
     pLoadCfg64->GuardRFVerifyStackPointerFunctionPointer = pLoadCfg32->GuardRFVerifyStackPointerFunctionPointer;
-    pLoadCfg64->Reserved2                       = pLoadCfg32->Reserved2;
-    pLoadCfg64->DynamicValueRelocTableSection   = pLoadCfg32->DynamicValueRelocTableSection;
-    pLoadCfg64->DynamicValueRelocTableOffset    = pLoadCfg32->DynamicValueRelocTableOffset;
-    pLoadCfg64->GuardRFFailureRoutineFunctionPointer = pLoadCfg32->GuardRFFailureRoutineFunctionPointer;
-    pLoadCfg64->GuardRFFailureRoutine           = pLoadCfg32->GuardRFFailureRoutine;
-    pLoadCfg64->CHPEMetadataPointer             = pLoadCfg32->CHPEMetadataPointer;
-    pLoadCfg64->DynamicValueRelocTable          = pLoadCfg32->DynamicValueRelocTable;
-    pLoadCfg64->GuardLongJumpTargetCount        = pLoadCfg32->GuardLongJumpTargetCount;
-    pLoadCfg64->GuardLongJumpTargetTable        = pLoadCfg32->GuardLongJumpTargetTable;
-    pLoadCfg64->GuardAddressTakenIatEntryCount  = pLoadCfg32->GuardAddressTakenIatEntryCount;
-    pLoadCfg64->GuardAddressTakenIatEntryTable  = pLoadCfg32->GuardAddressTakenIatEntryTable;
-    pLoadCfg64->CodeIntegrity.Reserved          = pLoadCfg32->CodeIntegrity.Reserved;
-    pLoadCfg64->CodeIntegrity.CatalogOffset     = pLoadCfg32->CodeIntegrity.CatalogOffset;
-    pLoadCfg64->CodeIntegrity.Catalog           = pLoadCfg32->CodeIntegrity.Catalog;
-    pLoadCfg64->CodeIntegrity.Flags             = pLoadCfg32->CodeIntegrity.Flags;
-    pLoadCfg64->GuardFlags                      = pLoadCfg32->GuardFlags;
-    pLoadCfg64->GuardCFFunctionCount            = pLoadCfg32->GuardCFFunctionCount;
-    pLoadCfg64->GuardCFFunctionTable            = pLoadCfg32->GuardCFFunctionTable;
-    pLoadCfg64->GuardCFDispatchFunctionPointer  = pLoadCfg32->GuardCFDispatchFunctionPointer;
-    pLoadCfg64->GuardCFCCheckFunctionPointer    = pLoadCfg32->GuardCFCCheckFunctionPointer;
-    pLoadCfg64->SEHandlerCount                  = pLoadCfg32->SEHandlerCount;
-    pLoadCfg64->SEHandlerTable                  = pLoadCfg32->SEHandlerTable;
-    pLoadCfg64->SecurityCookie                  = pLoadCfg32->SecurityCookie;
-    pLoadCfg64->EditList                        = pLoadCfg32->EditList;
-    pLoadCfg64->DependentLoadFlags              = pLoadCfg32->DependentLoadFlags;
-    pLoadCfg64->CSDVersion                      = pLoadCfg32->CSDVersion;
-    pLoadCfg64->ProcessHeapFlags                = pLoadCfg32->ProcessHeapFlags; /* switched place with ProcessAffinityMask, but we're more than 16 byte off by now so it doesn't matter. */
-    pLoadCfg64->ProcessAffinityMask             = pLoadCfg32->ProcessAffinityMask;
-    pLoadCfg64->VirtualMemoryThreshold          = pLoadCfg32->VirtualMemoryThreshold;
-    pLoadCfg64->MaximumAllocationSize           = pLoadCfg32->MaximumAllocationSize;
-    pLoadCfg64->LockPrefixTable                 = pLoadCfg32->LockPrefixTable;
-    pLoadCfg64->DeCommitTotalFreeThreshold      = pLoadCfg32->DeCommitTotalFreeThreshold;
-    uint32_t u32DeCommitFreeBlockThreshold      = pLoadCfg32->DeCommitFreeBlockThreshold;
-    pLoadCfg64->DeCommitFreeBlockThreshold      = u32DeCommitFreeBlockThreshold;
+    pLoadCfg64->Reserved2                                = pLoadCfg32->Reserved2;
+    pLoadCfg64->DynamicValueRelocTableSection            = pLoadCfg32->DynamicValueRelocTableSection;
+    pLoadCfg64->DynamicValueRelocTableOffset             = pLoadCfg32->DynamicValueRelocTableOffset;
+    pLoadCfg64->GuardRFFailureRoutineFunctionPointer     = pLoadCfg32->GuardRFFailureRoutineFunctionPointer;
+    pLoadCfg64->GuardRFFailureRoutine                    = pLoadCfg32->GuardRFFailureRoutine;
+    pLoadCfg64->CHPEMetadataPointer                      = pLoadCfg32->CHPEMetadataPointer;
+    pLoadCfg64->DynamicValueRelocTable                   = pLoadCfg32->DynamicValueRelocTable;
+    pLoadCfg64->GuardLongJumpTargetCount                 = pLoadCfg32->GuardLongJumpTargetCount;
+    pLoadCfg64->GuardLongJumpTargetTable                 = pLoadCfg32->GuardLongJumpTargetTable;
+    pLoadCfg64->GuardAddressTakenIatEntryCount           = pLoadCfg32->GuardAddressTakenIatEntryCount;
+    pLoadCfg64->GuardAddressTakenIatEntryTable           = pLoadCfg32->GuardAddressTakenIatEntryTable;
+    pLoadCfg64->CodeIntegrity.Reserved                   = pLoadCfg32->CodeIntegrity.Reserved;
+    pLoadCfg64->CodeIntegrity.CatalogOffset              = pLoadCfg32->CodeIntegrity.CatalogOffset;
+    pLoadCfg64->CodeIntegrity.Catalog                    = pLoadCfg32->CodeIntegrity.Catalog;
+    pLoadCfg64->CodeIntegrity.Flags                      = pLoadCfg32->CodeIntegrity.Flags;
+    pLoadCfg64->GuardFlags                               = pLoadCfg32->GuardFlags;
+    pLoadCfg64->GuardCFFunctionCount                     = pLoadCfg32->GuardCFFunctionCount;
+    pLoadCfg64->GuardCFFunctionTable                     = pLoadCfg32->GuardCFFunctionTable;
+    pLoadCfg64->GuardCFDispatchFunctionPointer           = pLoadCfg32->GuardCFDispatchFunctionPointer;
+    pLoadCfg64->GuardCFCCheckFunctionPointer             = pLoadCfg32->GuardCFCCheckFunctionPointer;
+    pLoadCfg64->SEHandlerCount                           = pLoadCfg32->SEHandlerCount;
+    pLoadCfg64->SEHandlerTable                           = pLoadCfg32->SEHandlerTable;
+    pLoadCfg64->SecurityCookie                           = pLoadCfg32->SecurityCookie;
+    pLoadCfg64->EditList                                 = pLoadCfg32->EditList;
+    pLoadCfg64->DependentLoadFlags                       = pLoadCfg32->DependentLoadFlags;
+    pLoadCfg64->CSDVersion                               = pLoadCfg32->CSDVersion;
+    pLoadCfg64->ProcessHeapFlags                         = pLoadCfg32->ProcessHeapFlags; /* switched place with ProcessAffinityMask, but we're more than 16 byte off by now so it doesn't matter. */
+    pLoadCfg64->ProcessAffinityMask                      = pLoadCfg32->ProcessAffinityMask;
+    pLoadCfg64->VirtualMemoryThreshold                   = pLoadCfg32->VirtualMemoryThreshold;
+    pLoadCfg64->MaximumAllocationSize                    = pLoadCfg32->MaximumAllocationSize;
+    pLoadCfg64->LockPrefixTable                          = pLoadCfg32->LockPrefixTable;
+    pLoadCfg64->DeCommitTotalFreeThreshold               = pLoadCfg32->DeCommitTotalFreeThreshold;
+    uint32_t u32DeCommitFreeBlockThreshold               = pLoadCfg32->DeCommitFreeBlockThreshold;
+    pLoadCfg64->DeCommitFreeBlockThreshold               = u32DeCommitFreeBlockThreshold;
     /* the rest is equal. */
     Assert(     RT_UOFFSETOF(IMAGE_LOAD_CONFIG_DIRECTORY32, DeCommitFreeBlockThreshold)
            ==   RT_UOFFSETOF(IMAGE_LOAD_CONFIG_DIRECTORY64, DeCommitFreeBlockThreshold));
@@ -4454,6 +4455,9 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
     IMAGE_DATA_DIRECTORY Dir = pOptHdr->DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG];
     if (Dir.Size)
     {
+        const size_t cbExpectV13 = !pModPe->f64Bit
+                                 ? sizeof(IMAGE_LOAD_CONFIG_DIRECTORY32_V13)
+                                 : sizeof(IMAGE_LOAD_CONFIG_DIRECTORY64_V13);
         const size_t cbExpectV12 = !pModPe->f64Bit
                                  ? sizeof(IMAGE_LOAD_CONFIG_DIRECTORY32_V12)
                                  : sizeof(IMAGE_LOAD_CONFIG_DIRECTORY64_V12);
@@ -4494,7 +4498,8 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
         const size_t cbMaxKnown = cbExpectV12;
 
         bool fNewerStructureHack = false;
-        if (   Dir.Size != cbExpectV12
+        if (   Dir.Size != cbExpectV13
+            && Dir.Size != cbExpectV12
             && Dir.Size != cbExpectV11
             && Dir.Size != cbExpectV10
             && Dir.Size != cbExpectV9
@@ -4509,13 +4514,13 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
         {
             fNewerStructureHack = Dir.Size > cbNewHack /* These structure changes are slowly getting to us! More futher down. */
                                && Dir.Size <= sizeof(u);
-            Log(("rtldrPEOpen: %s: load cfg dir: unexpected dir size of %u bytes, expected %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, or %zu.%s\n",
-                 pszLogName, Dir.Size, cbExpectV12, cbExpectV11, cbExpectV10, cbExpectV9, cbExpectV8, cbExpectV7, cbExpectV6, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1,
+            Log(("rtldrPEOpen: %s: load cfg dir: unexpected dir size of %u bytes, expected %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, or %zu.%s\n",
+                 pszLogName, Dir.Size, cbExpectV13, cbExpectV12, cbExpectV11, cbExpectV10, cbExpectV9, cbExpectV8, cbExpectV7, cbExpectV6, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1,
                  fNewerStructureHack ? " Will try ignore extra bytes if all zero." : ""));
             if (!fNewerStructureHack)
                 return RTErrInfoSetF(pErrInfo, VERR_LDRPE_LOAD_CONFIG_SIZE,
-                                     "Unexpected load config dir size of %u bytes; supported sized: %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, or %zu",
-                                     Dir.Size, cbExpectV12, cbExpectV11, cbExpectV10, cbExpectV9, cbExpectV8, cbExpectV7, cbExpectV6, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1);
+                                     "Unexpected load config dir size of %u bytes; supported sized: %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, %zu, or %zu",
+                                     Dir.Size, cbExpectV13, cbExpectV12, cbExpectV11, cbExpectV10, cbExpectV9, cbExpectV8, cbExpectV7, cbExpectV6, cbExpectV5, cbExpectV4, cbExpectV3, cbExpectV2, cbExpectV1);
         }
 
         /*
@@ -4554,7 +4559,8 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
             }
             /* Kludge #2: This happens a lot. Structure changes, but the linker doesn't get
                updated and stores some old size in the directory.  Use the header size. */
-            else if (   u.Cfg64.Size == cbExpectV12
+            else if (   u.Cfg64.Size == cbExpectV13
+                     || u.Cfg64.Size == cbExpectV12
                      || u.Cfg64.Size == cbExpectV11
                      || u.Cfg64.Size == cbExpectV10
                      || u.Cfg64.Size == cbExpectV9
