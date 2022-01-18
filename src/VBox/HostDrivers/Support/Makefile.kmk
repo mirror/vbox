@@ -538,8 +538,11 @@ VBoxSupLib_LIBS.win.x86 = \
 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/chkstk.obj
 VBoxSupLib_LIBS.win.amd64 = \
 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/chkstk.obj
-ifdef VBOX_WITH_HARDENING
- VBoxSupLib_LIBS.win = $(SUPR3HardenedStatic_1_TARGET) # includes the rest of the /guard:cf support stuff.
+ifdef VBOX_WITH_HARDENING # for /guard:cf stuff
+ VBoxSupLib_LIBS.win.x86 = \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.x86)_LIB)/libcmt.lib
+ VBoxSupLib_LIBS.win.amd64 = \
+ 	$(PATH_TOOL_$(TEMPLATE_VBOXR3STATIC_TOOL.win.amd64)_LIB)/libcmt.lib
 endif
 VBoxSupLib_VBOX_IMPORT_CHECKER.win.x86   = xp
 VBoxSupLib_VBOX_IMPORT_CHECKER.win.amd64 = xp64
