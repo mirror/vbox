@@ -842,6 +842,40 @@ static bool detectLinuxArch(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOST
     return false;
 }
 
+/**
+ * Detects linux architecture by searching for the architecture substring in @p pszArch.
+ *
+ * @returns true if detected, false if not.
+ * @param   pszArch             The architecture string.
+ * @param   penmOsType          Where to return the arch and type on success.
+ * @param   enmBaseOsType       The base (x86) OS type to return.
+ */
+static bool detectLinuxArchII(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOSTYPE enmBaseOsType)
+{
+    if (   RTStrIStr(pszArch, "amd64")  != NULL
+        || RTStrIStr(pszArch, "x86_64") != NULL
+        || RTStrIStr(pszArch, "x86-64") != NULL /* just in case */
+        || RTStrIStr(pszArch, "x64")    != NULL /* ditto */ )
+    {
+        *penmOsType = (VBOXOSTYPE)(enmBaseOsType | VBOXOSTYPE_x64);
+        return true;
+    }
+
+    if (   RTStrIStr(pszArch, "x86") != NULL
+        || RTStrIStr(pszArch, "i386") != NULL
+        || RTStrIStr(pszArch, "i486") != NULL
+        || RTStrIStr(pszArch, "i586") != NULL
+        || RTStrIStr(pszArch, "i686") != NULL
+        || RTStrIStr(pszArch, "i786") != NULL
+        || RTStrIStr(pszArch, "i886") != NULL
+        || RTStrIStr(pszArch, "i986") != NULL)
+    {
+        *penmOsType = enmBaseOsType;
+        return true;
+    }
+    return false;
+}
+
 static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmOsType, const char **ppszNext)
 {
     bool fRet = true;
@@ -890,6 +924,12 @@ static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmO
     {
         *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 7);
+    }
+    else if (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Debian")) == 0
+             && !RT_C_IS_ALNUM(pszOsAndVersion[6]))
+    {
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Debian);
+        pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
     }
     else
         fRet = false;
@@ -999,10 +1039,9 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
     vrc = RTVfsFileOpen(hVfsIso, ".discinfo", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))
     {
-        RT_ZERO(*pBuf);
         size_t cchIgn;
-        RTVfsFileRead(hVfsFile, pBuf->sz, sizeof(*pBuf) - 1, &cchIgn);
-        pBuf->sz[sizeof(*pBuf) - 1] = '\0';
+        vrc = RTVfsFileRead(hVfsFile, pBuf->sz, sizeof(*pBuf) - 1, &cchIgn);
+        pBuf->sz[RT_SUCCESS(vrc) ? cchIgn : 0] = '\0';
         RTVfsFileRelease(hVfsFile);
 
         /* Parse and strip the first 5 lines. */
@@ -1134,10 +1173,9 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
     vrc = RTVfsFileOpen(hVfsIso, "README.diskdefines", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))
     {
-        RT_ZERO(*pBuf);
         size_t cchIgn;
-        RTVfsFileRead(hVfsFile, pBuf->sz, sizeof(*pBuf) - 1, &cchIgn);
-        pBuf->sz[sizeof(*pBuf) - 1] = '\0';
+        vrc = RTVfsFileRead(hVfsFile, pBuf->sz, sizeof(*pBuf) - 1, &cchIgn);
+        pBuf->sz[RT_SUCCESS(vrc) ? cchIgn : 0] = '\0';
         RTVfsFileRelease(hVfsFile);
 
         /* Find the DISKNAME and ARCH defines. */
@@ -1207,6 +1245,66 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
         if (pszDiskName && pszArch)
         {
             if (!detectLinuxArch(pszArch, penmOsType, VBOXOSTYPE_Ubuntu))
+                LogRel(("Unattended: README.diskdefines: Unknown: arch='%s'\n", pszArch));
+
+            const char *pszVersion = NULL;
+            if (detectLinuxDistroName(pszDiskName, penmOsType, &pszVersion))
+            {
+                LogRelFlow(("Unattended: README.diskdefines: version=%s\n", pszVersion));
+                try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
+                catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+            }
+            else
+                LogRel(("Unattended: README.diskdefines: Unknown: diskname='%s'\n", pszDiskName));
+        }
+        else
+            LogRel(("Unattended: README.diskdefines: Did not find both DISKNAME and ARCH. :-/\n"));
+
+        if (*penmOsType != VBOXOSTYPE_Unknown)
+            return S_FALSE;
+    }
+
+    /*
+     * All of the debian based distro versions I checked have a single line ./disk/info file.
+     * Only info I could find related to .disk folder is: https://lists.debian.org/debian-cd/2004/01/msg00069.html
+     * Some example content from several install ISOs is as follows:
+     * Ubuntu 4.10 "Warty Warthog" - Preview amd64 Binary-1 (20041020)
+     * Linux Mint 20.3 "Una" - Release amd64 20220104
+     * Debian GNU/Linux 11.2.0 "Bullseye" - Official amd64 NETINST 20211218-11:12
+     * Debian GNU/Linux 9.13.0 "Stretch" - Official amd64 DVD Binary-1 20200718-11:07
+     * Xubuntu 20.04.2.0 LTS "Focal Fossa" - Release amd64 (20210209.1)
+     * Ubuntu 17.10 "Artful Aardvark" - Release amd64 (20180105.1)
+     * Ubuntu 16.04.6 LTS "Xenial Xerus" - Release i386 (20190227.1)
+     * Debian GNU/Linux 8.11.1 "Jessie" - Official amd64 CD Binary-1 20190211-02:10
+     * Kali GNU/Linux 2021.3a "Kali-last-snapshot" - Official amd64 BD Binary-1 with firmware 20211015-16:55
+     */
+    vrc = RTVfsFileOpen(hVfsIso, ".disk/info", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        size_t cchIgn;
+        vrc = RTVfsFileRead(hVfsFile, pBuf->sz, sizeof(*pBuf) - 1, &cchIgn);
+        pBuf->sz[RT_SUCCESS(vrc) ? cchIgn : 0] = '\0';
+
+        pBuf->sz[sizeof(*pBuf) - 1] = '\0';
+        RTVfsFileRelease(hVfsFile);
+
+        char *psz         = pBuf->sz;
+        char *pszDiskName = psz;
+        char *pszArch     = NULL;
+
+        /* Only care about the first line of the file even if it is multi line and assume disk name ended with ' - '.*/
+        psz = RTStrStr(pBuf->sz, " - ");
+        if (psz && memchr(pBuf->sz, '\n', (size_t)(psz - pBuf->sz)) == NULL)
+        {
+            *psz = '\0';
+            psz += 3;
+            if (*psz)
+                pszArch = psz;
+        }
+
+        if (pszDiskName && pszArch)
+        {
+            if (!detectLinuxArchII(pszArch, penmOsType, VBOXOSTYPE_Ubuntu))
                 LogRel(("Unattended: README.diskdefines: Unknown: arch='%s'\n", pszArch));
 
             const char *pszVersion = NULL;
@@ -3115,4 +3213,3 @@ bool Unattended::i_isGuestOSArchX64(Utf8Str const &rStrGuestOsTypeId)
     }
     return false;
 }
-

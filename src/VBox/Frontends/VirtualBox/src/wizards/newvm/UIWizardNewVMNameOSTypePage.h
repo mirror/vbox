@@ -34,6 +34,7 @@ class UIWizardNewVM;
 namespace UIWizardNewVMNameOSTypeCommon
 {
     bool guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName);
+    bool guessOSTypeDetectedOSTypeString(UINameAndSystemEditor *pNameAndSystemEditor, QString strDetectedOSType);
     bool createMachineFolder(UINameAndSystemEditor *pNameAndSystemEditor, UIWizardNewVM *pWizard);
 
     /** Removes a previously created folder (if exists) before creating a new one.

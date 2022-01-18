@@ -116,7 +116,9 @@ void UIWizardNewVMExpertPage::sltPathChanged(const QString &strNewPath)
 void UIWizardNewVMExpertPage::sltOsTypeChanged()
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
-    m_userModifiedParameters << "GuestOSType";
+    /* Don't add GuestOSType to the set since we want to adjust os type when installation ISO changes. No matter if user
+     * has already set the os type explicitly or not: */
+    //m_userModifiedParameters << "GuestOSType";
     if (m_pNameAndSystemEditor)
         wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
     setOSTypeDependedValues();
@@ -146,7 +148,7 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
     UIWizardNewVMNameOSTypeCommon::determineOSType(strISOPath, pWizard);
 
     if (!pWizard->detectedOSTypeId().isEmpty() && !m_userModifiedParameters.contains("GuestOSType"))
-        UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
+        UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
     pWizard->setISOFilePath(strISOPath);
 
     /* Update the global recent ISO path: */
