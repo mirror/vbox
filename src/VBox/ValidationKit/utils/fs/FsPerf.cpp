@@ -4507,7 +4507,7 @@ static void fsPerfSpliceToFile(RTFILE hFile1, uint64_t cbFile)
         } \
         RTTestIValueF(ns / iIteration, \
                       RTTESTUNIT_NS_PER_OCCURRENCE, a_szOperation "/seq/%RU32 latency", cbBlock); \
-        RTTestIValueF((uint64_t)((uint64_t)iIteration * cbBlock / ((double)ns / RT_NS_1SEC)), \
+        RTTestIValueF((uint64_t)((double)(iIteration * cbBlock) / ((double)ns / RT_NS_1SEC)), \
                       RTTESTUNIT_BYTES_PER_SEC,     a_szOperation "/seq/%RU32 throughput", cbBlock); \
         RTTestIValueF(iIteration, \
                       RTTESTUNIT_CALLS,             a_szOperation "/seq/%RU32 calls", cbBlock); \
@@ -6105,7 +6105,7 @@ static void fsPerfCopy(void)
                 } \
                 RTTestIValueF(ns / iIteration, \
                               RTTESTUNIT_NS_PER_OCCURRENCE, a_szOperation " latency"); \
-                RTTestIValueF((uint64_t)((uint64_t)iIteration * cbFile / ((double)ns / RT_NS_1SEC)), \
+                RTTestIValueF((uint64_t)((double)(iIteration * cbFile) / ((double)ns / RT_NS_1SEC)), \
                               RTTESTUNIT_BYTES_PER_SEC,     a_szOperation " throughput"); \
                 RTTestIValueF((uint64_t)iIteration * cbFile, \
                               RTTESTUNIT_BYTES,             a_szOperation " bytes"); \

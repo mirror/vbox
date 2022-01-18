@@ -152,7 +152,7 @@ static void doTest(RTTEST hTest)
                 cbPrint  = cbTotal;
                 uPrintTS = uEndTS;
 
-                uint32_t cMBPerSec = (uint32_t)(cbTotal / ((double)cNsElapsed / RT_NS_1SEC) / _1M);
+                uint32_t cMBPerSec = (uint32_t)((long double)cbTotal / ((long double)cNsElapsed / RT_NS_1SEC) / _1M);
                 RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "%'zu bytes in %'llu ns - %'u MB/s\n",
                              cbTotal, cNsElapsed, cMBPerSec);
                 RTTESTI_CHECK_RETV(checkList(&AllocHead));
@@ -188,7 +188,7 @@ static void doTest(RTTEST hTest)
 
     RTTestValue(hTest, "amount", cbTotal, RTTESTUNIT_BYTES);
     RTTestValue(hTest, "time",   cNsElapsed, RTTESTUNIT_NS);
-    uint32_t cMBPerSec = (uint32_t)(cbTotal / ((double)cNsElapsed / RT_NS_1SEC) / _1M);
+    uint32_t cMBPerSec = (uint32_t)((long double)cbTotal / ((long double)cNsElapsed / RT_NS_1SEC) / _1M);
     RTTestValue(hTest, "speed",  cMBPerSec, RTTESTUNIT_MEGABYTES_PER_SEC);
     RTTestSubDone(hTest);
 }

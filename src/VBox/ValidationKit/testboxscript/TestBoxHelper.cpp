@@ -145,7 +145,8 @@ static RTEXITCODE doOneFreeSpaceWipe(const char *pszFilename, void const *pvFill
                         uint64_t const nsNow = RTTimeNanoTS();
                         uint64_t cNsInterval = nsNow - nsStat;
                         uint64_t cbInterval  = cbWritten - cbStatWritten;
-                        uint64_t cbIntervalPerSec = cbInterval ? (uint64_t)(cbInterval / (cNsInterval / (double)RT_NS_1SEC)) : 0;
+                        uint64_t cbIntervalPerSec = !cbInterval ? 0
+                                                  : (uint64_t)((double)cbInterval / ((double)cNsInterval / (double)RT_NS_1SEC));
 
                         RTPrintf("%s: %'9RTfoff MiB out of %'9RTfoff are free after writing %'9RU64 MiB (%'5RU64 MiB/s)\n",
                                  pszFilename, cbFree / _1M, cbTotal  / _1M, cbWritten  / _1M, cbIntervalPerSec / _1M);
@@ -172,7 +173,7 @@ static RTEXITCODE doOneFreeSpaceWipe(const char *pszFilename, void const *pvFill
 
             /* Issue a summary statements. */
             uint64_t cNsElapsed = RTTimeNanoTS() - nsStart;
-            uint64_t cbPerSec   = cbWritten ? (uint64_t)(cbWritten / (cNsElapsed / (double)RT_NS_1SEC)) : 0;
+            uint64_t cbPerSec   = cbWritten ? (uint64_t)((double)cbWritten / ((double)cNsElapsed / (double)RT_NS_1SEC)) : 0;
             RTPrintf("%s: Wrote %'RU64 MiB in %'RU64 s, avg %'RU64 MiB/s.\n",
                      pszFilename, cbWritten / _1M, cNsElapsed / RT_NS_1SEC, cbPerSec / _1M);
         }

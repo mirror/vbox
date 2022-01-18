@@ -815,7 +815,7 @@ static void ioPerfJobStats(PIOPERFJOB pJob)
         }
 
         /* Get average bandwidth for the job. */
-        RTTestIValueF((uint64_t)(pJob->cbTestSet / ((double)nsJobRuntime / RT_NS_1SEC)),
+        RTTestIValueF((uint64_t)((double)pJob->cbTestSet / ((double)nsJobRuntime / RT_NS_1SEC)),
                        RTTESTUNIT_BYTES_PER_SEC, "%s/Job/%RU32/AvgBandwidth", pszTest, pJob->idJob);
 
         RTTestIValueF((uint64_t)(pJob->cReqStats / ((double)nsJobRuntime / RT_NS_1SEC)),
