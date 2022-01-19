@@ -874,6 +874,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "\n", SEP);
 
     if (enmCommand == USAGE_SETPROPERTY || enmCommand == USAGE_S_ALL)
+    {
         RTStrmPrintf(pStrm,
                            "%s setproperty %s     machinefolder default|<folder> |\n"
                      "                            hwvirtexclusive on|off |\n"
@@ -892,7 +893,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
 #endif
         RTStrmPrintf(pStrm,
                      "\n");
-
+    }
     if (enmCommand == USAGE_USBFILTER || enmCommand == USAGE_S_ALL)
     {
         if (fSubcommandScope & HELP_SCOPE_USBFILTER_ADD)
