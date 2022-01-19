@@ -460,6 +460,30 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
 
 
 /**
+ * Gets CR0 fixed-0 bits in VMX non-root mode.
+ *
+ * We do this rather than fetching what we report to the guest (in
+ * IA32_VMX_CR0_FIXED0 MSR) because real hardware (and so do we) report the same
+ * values regardless of whether unrestricted-guest feature is available on the CPU.
+ *
+ * @returns CR0 fixed-0 bits.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+DECLINLINE(uint64_t) iemVmxGetCr0Fixed0(PCVMCPUCC pVCpu)
+{
+    Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
+    Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
+
+    static uint64_t const s_auCr0Fixed0[2] = { VMX_V_CR0_FIXED0, VMX_V_CR0_FIXED0_UX };
+    PCVMXVVMCS const pVmcs              = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
+    uint8_t    const fUnrestrictedGuest = !!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST);
+    uint64_t   const uCr0Fixed0         = s_auCr0Fixed0[fUnrestrictedGuest];
+    Assert(!(uCr0Fixed0 & (X86_CR0_NW | X86_CR0_CD)));
+    return uCr0Fixed0;
+}
+
+
+/**
  * Gets a host selector from the VMCS.
  *
  * @param   pVmcs       Pointer to the virtual VMCS.
@@ -863,8 +887,8 @@ DECL_FORCE_INLINE(void) iemVmxVmFail(PVMCPUCC pVCpu, VMXINSTRERR enmInsErr)
  */
 DECL_FORCE_INLINE(bool) iemVmxIsAutoMsrCountValid(PCVMCPU pVCpu, uint32_t uMsrCount)
 {
-    uint64_t const u64VmxMiscMsr      = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Misc;
-    uint32_t const cMaxSupportedMsrs  = VMX_MISC_MAX_MSRS(u64VmxMiscMsr);
+    uint64_t const u64VmxMiscMsr     = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Misc;
+    uint32_t const cMaxSupportedMsrs = VMX_MISC_MAX_MSRS(u64VmxMiscMsr);
     Assert(cMaxSupportedMsrs <= VMX_V_AUTOMSR_AREA_SIZE / sizeof(VMXAUTOMSR));
     if (uMsrCount <= cMaxSupportedMsrs)
         return true;
@@ -1707,8 +1731,8 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPUCC pVCpu)
     /* CR0. */
     {
         /* Bits 63:32, 28:19, 17, 15:6, ET, CD, NW and CR0 fixed bits are not modified. */
-        uint64_t const uCr0Mb1       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
-        uint64_t const uCr0Mb0       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed1;
+        uint64_t const uCr0Mb1       = iemVmxGetCr0Fixed0(pVCpu);
+        uint64_t const uCr0Mb0       = VMX_V_CR0_FIXED1;
         uint64_t const fCr0IgnMask   = VMX_EXIT_HOST_CR0_IGNORE_MASK | uCr0Mb1 | ~uCr0Mb0;
         uint64_t const uHostCr0      = pVmcs->u64HostCr0.u;
         uint64_t const uGuestCr0     = pVCpu->cpum.GstCtx.cr0;
@@ -2596,11 +2620,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
     else
         Log3(("vmexit: Loading host-state failed. uExitReason=%u rc=%Rrc\n", uExitReason, VBOXSTRICTRC_VAL(rcStrict)));
 
-    /* Notify HM that the current VMCS fields have been modified. */
-    HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
+    if (VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
+    {
+        /* Notify HM that the current VMCS fields have been modified. */
+        HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
 
-    /* Notify HM that we've completed the VM-exit. */
-    HMNotifyVmxNstGstVmexit(pVCpu);
+        /* Notify HM that we've completed the VM-exit. */
+        HMNotifyVmxNstGstVmexit(pVCpu);
+    }
 
 #  if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
     /* Revert any IEM-only nested-guest execution policy, otherwise return rcStrict. */
@@ -4792,10 +4819,7 @@ DECLINLINE(int) iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPUCC pVCpu, const cha
     /* CR0 reserved bits. */
     {
         /* CR0 MB1 bits. */
-        uint64_t u64Cr0Fixed0 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
-        Assert(!(u64Cr0Fixed0 & (X86_CR0_NW | X86_CR0_CD)));
-        if (fUnrestrictedGuest)
-            u64Cr0Fixed0 &= ~(X86_CR0_PE | X86_CR0_PG);
+        uint64_t const u64Cr0Fixed0 = iemVmxGetCr0Fixed0(pVCpu);
         if ((pVmcs->u64GuestCr0.u & u64Cr0Fixed0) == u64Cr0Fixed0)
         { /* likely */ }
         else
@@ -5740,7 +5764,7 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPUCC pVCpu, const char *pszInstr)
     /* CR0 reserved bits. */
     {
         /* CR0 MB1 bits. */
-        uint64_t const u64Cr0Fixed0 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
+        uint64_t const u64Cr0Fixed0 = iemVmxGetCr0Fixed0(pVCpu);
         if ((pVmcs->u64HostCr0.u & u64Cr0Fixed0) == u64Cr0Fixed0)
         { /* likely */ }
         else
@@ -6203,10 +6227,9 @@ IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, enmVmxDiag);
         }
 #else
-        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));                /* Support for EPT is conditional. */
-        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)); /* Support for Unrestricted-guests is conditional. */
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST));
 #endif
-
         Assert(!(pVmcs->u32PinCtls & VMX_PIN_CTLS_POSTED_INT));             /* We don't support posted interrupts yet. */
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PML));                /* We don't support PML yet. */
         Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMFUNC));             /* We don't support VM functions yet. */
@@ -8040,9 +8063,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
                     : &pVCpu->cpum.GstCtx.hwvirt.vmx.ShadowVmcs;
     iemVmxVmwriteNoCheck(pVmcs, u64Val, u64VmcsField);
 
-    /* Notify HM that the VMCS content might have changed. */
-    if (!fInVmxNonRootMode)
+    if (   VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM))
+        && !fInVmxNonRootMode)
+    {
+        /* Notify HM that the VMCS content might have changed. */
         HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
+    }
 
     iemVmxVmSucceed(pVCpu);
     iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -8396,7 +8422,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
         if (RT_SUCCESS(rc))
         {
             /* Notify HM that a new, current VMCS is loaded. */
-            HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
+            if (VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
+                HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
         }
         else
         {
@@ -8769,8 +8796,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEf
 
         /* CR0. */
         {
-            /* CR0 MB1 bits. */
-            uint64_t const uCr0Fixed0 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
+            /*
+             * CR0 MB1 bits.
+             *
+             * We use VMX_V_CR0_FIXED0 below to ensure CR0.PE and CR0.PG are always set
+             * while executing VMXON. CR0.PE and CR0.PG are only allowed to be clear
+             * when the guest running in VMX non-root mode with unrestricted-guest control
+             * enabled in the VMCS.
+             */
+            uint64_t const uCr0Fixed0 = VMX_V_CR0_FIXED0;
             if ((pVCpu->cpum.GstCtx.cr0 & uCr0Fixed0) == uCr0Fixed0)
             { /* likely */ }
             else
