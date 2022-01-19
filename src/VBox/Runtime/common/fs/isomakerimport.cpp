@@ -2017,9 +2017,23 @@ static int rtFsIsoImportProcessSupplementaryDesc(PRTFSISOMKIMPORTER pThis, PISO9
                                ISO9660_GET_ENDIAN(&pVolDesc->VolumeSeqNo), pThis->idPrimaryVol);
 
     if (ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize) != pThis->cBlocksInPrimaryVolumeSpace)
-        return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_INVALID_VOLUMNE_SEQ_NO,
-                               "Volume space size differs between primary and supplementary descriptors: %#x, primary %#x",
-                               ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize), pThis->cBlocksInPrimaryVolumeSpace);
+    {
+        /* ubuntu-21.10-desktop-amd64.iso has 0x172f4e blocks (3 111 809 024 bytes) here
+           and 0x173838 blocks (3 116 482 560 bytes) in the primary, a difference of
+           -2282 blocks (-4 673 536 bytes).  Guess something was omitted from the joliet
+           edition, not immediately obvious what though.
+
+           For now we'll just let it pass as long as the primary size is the larger.
+           (Not quite sure how the code will handle a supplementary volume spanning
+           more space, as I suspect it only uses the primary volume size for
+           validating block addresses and such.) */
+        LogRel(("rtFsIsoImportProcessSupplementaryDesc: Volume space size differs between primary and supplementary descriptors: %#x, primary %#x",
+                ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize), pThis->cBlocksInPrimaryVolumeSpace));
+        if (ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize) > pThis->cBlocksInPrimaryVolumeSpace)
+            return rtFsIsoImpError(pThis, VERR_ISOMK_IMPORT_VOLUME_SPACE_SIZE_MISMATCH,
+                                   "Volume space given in the supplementary descriptor is larger than in the primary: %#x, primary %#x",
+                                   ISO9660_GET_ENDIAN(&pVolDesc->VolumeSpaceSize), pThis->cBlocksInPrimaryVolumeSpace);
+    }
 
     /*
      * Validate the root directory record.
