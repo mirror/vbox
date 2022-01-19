@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * VBoxCommon - Misc helper routines for install helper.
+ *
+ * This is used by internal/serial.cpp and VBoxInstallHelper.cpp.
  */
 
 /*
@@ -59,6 +61,7 @@ UINT VBoxGetMsiProp(MSIHANDLE hMsi, WCHAR *pwszName, WCHAR *pwszValue, DWORD dwS
     return uiRet;
 }
 
+#if 0 /* unused */
 /**
  * Retrieves a MSI property (in UTF-8).
  *
@@ -89,6 +92,7 @@ int VBoxGetMsiPropUtf8(MSIHANDLE hMsi, const char *pcszName, char **ppszValue)
 
     return rc;
 }
+#endif
 
 UINT VBoxSetMsiProp(MSIHANDLE hMsi, WCHAR *pwszName, WCHAR *pwszValue)
 {
