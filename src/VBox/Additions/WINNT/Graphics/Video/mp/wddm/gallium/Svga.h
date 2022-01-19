@@ -30,8 +30,11 @@
 #include <VBoxGaTypes.h>
 #include <VBoxGaHWSVGA.h>
 
+ /* VMSVGA headers. */
+#pragma pack(1) /* VMSVGA structures are '__packed'. */
 #include <svga_reg.h>
 #include <svga3d_reg.h>
+#pragma pack()
 
 #define SVGA_SYNC_GENERIC         1
 #define SVGA_SYNC_FIFOFULL        2
