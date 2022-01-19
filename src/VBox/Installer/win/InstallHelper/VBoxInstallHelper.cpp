@@ -156,9 +156,9 @@ static UINT procRun(MSIHANDLE hModule, const wchar_t *pwszImage, wchar_t const *
     STARTUPINFOW StartupInfo;
     RT_ZERO(StartupInfo);
     StartupInfo.cb          = sizeof(StartupInfo);
-    StartupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
-    StartupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-    StartupInfo.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
+    StartupInfo.hStdInput   = GetStdHandle(STD_INPUT_HANDLE);
+    StartupInfo.hStdOutput  = GetStdHandle(STD_OUTPUT_HANDLE);
+    StartupInfo.hStdError   = GetStdHandle(STD_ERROR_HANDLE);
     StartupInfo.dwFlags     = STARTF_USESTDHANDLES;
 #ifndef DEBUG
     StartupInfo.dwFlags    |= STARTF_USESHOWWINDOW;
@@ -519,17 +519,15 @@ static LONG installBrandingValue(MSIHANDLE hModule,
 {
     LONG rc;
     WCHAR wszValue[_MAX_PATH];
-    if (GetPrivateProfileStringW(pwszSection, pwszValue, NULL,
-                                 wszValue, sizeof(wszValue), pwszFileName) > 0)
+    if (GetPrivateProfileStringW(pwszSection, pwszValue, NULL, wszValue, sizeof(wszValue), pwszFileName) > 0)
     {
-        HKEY hkBranding;
-        WCHAR wszKey[_MAX_PATH];
-
+        WCHAR wszKey[_MAX_PATH + 64];
         if (wcsicmp(L"General", pwszSection) != 0)
             swprintf_s(wszKey, RT_ELEMENTS(wszKey), L"SOFTWARE\\%S\\VirtualBox\\Branding\\%s", VBOX_VENDOR_SHORT, pwszSection);
         else
             swprintf_s(wszKey, RT_ELEMENTS(wszKey), L"SOFTWARE\\%S\\VirtualBox\\Branding", VBOX_VENDOR_SHORT);
 
+        HKEY hkBranding = NULL;
         rc = RegOpenKeyExW(HKEY_LOCAL_MACHINE, wszKey, 0, KEY_WRITE, &hkBranding);
         if (rc == ERROR_SUCCESS)
         {
@@ -549,122 +547,132 @@ static LONG installBrandingValue(MSIHANDLE hModule,
     return rc;
 }
 
-UINT CopyDir(MSIHANDLE hModule, const WCHAR *pwszDestDir, const WCHAR *pwszSourceDir)
+/**
+ * @note Both paths strings must have an extra terminator.
+ */
+static UINT CopyDir(MSIHANDLE hModule, const WCHAR *pwszzDstDir, const WCHAR *pwszzSrcDir)
 {
-    UINT rc;
-    WCHAR wszDest[_MAX_PATH + 1];
-    WCHAR wszSource[_MAX_PATH + 1];
-
-    swprintf_s(wszDest, RT_ELEMENTS(wszDest), L"%s%c", pwszDestDir, L'\0');
-    swprintf_s(wszSource, RT_ELEMENTS(wszSource), L"%s%c", pwszSourceDir, L'\0');
+    NonStandardAssert(pwszzDstDir[wcslen(pwszzDstDir) + 1] == '\0');
+    NonStandardAssert(pwszzSrcDir[wcslen(pwszzSrcDir) + 1] == '\0');
 
     SHFILEOPSTRUCTW s = {0};
     s.hwnd = NULL;
     s.wFunc = FO_COPY;
-    s.pTo = wszDest;
-    s.pFrom = wszSource;
+    s.pTo = pwszzDstDir;
+    s.pFrom = pwszzSrcDir;
     s.fFlags = FOF_SILENT
              | FOF_NOCONFIRMATION
              | FOF_NOCONFIRMMKDIR
              | FOF_NOERRORUI;
 
-    logStringF(hModule, L"CopyDir: DestDir=%s, SourceDir=%s", wszDest, wszSource);
+    logStringF(hModule, L"CopyDir: pwszzDstDir=%s, pwszzSrcDir=%s", pwszzDstDir, pwszzSrcDir);
     int r = SHFileOperationW(&s);
     if (r == 0)
-        rc = ERROR_SUCCESS;
-    else
-    {
-        logStringF(hModule, L"CopyDir: Copy operation returned status %#x", r);
-        rc = ERROR_GEN_FAILURE;
-    }
-    return rc;
+        return ERROR_SUCCESS;
+    logStringF(hModule, L"CopyDir: Copy operation returned status %#x", r);
+    return ERROR_GEN_FAILURE;
 }
 
-UINT RemoveDir(MSIHANDLE hModule, const WCHAR *pwszDestDir)
+/**
+ * @note The directory string must have two zero terminators!
+ */
+static UINT RemoveDir(MSIHANDLE hModule, const WCHAR *pwszzDstDir)
 {
-    UINT rc;
-    WCHAR wszDest[_MAX_PATH + 1];
-
-    swprintf_s(wszDest, RT_ELEMENTS(wszDest), L"%s%c", pwszDestDir, L'\0');
+    NonStandardAssert(pwszzDstDir[wcslen(pwszzDstDir) + 1] == '\0');
 
     SHFILEOPSTRUCTW s = {0};
     s.hwnd = NULL;
     s.wFunc = FO_DELETE;
-    s.pFrom = wszDest;
+    s.pFrom = pwszzDstDir;
     s.fFlags = FOF_SILENT
              | FOF_NOCONFIRMATION
              | FOF_NOCONFIRMMKDIR
              | FOF_NOERRORUI;
 
-    logStringF(hModule, L"RemoveDir: DestDir=%s", wszDest);
+    logStringF(hModule, L"RemoveDir: pwszzDstDir=%s", pwszzDstDir);
     int r = SHFileOperationW(&s);
     if (r == 0)
-        rc = ERROR_SUCCESS;
-    else
-    {
-        logStringF(hModule, L"RemoveDir: Remove operation returned status %#x", r);
-        rc = ERROR_GEN_FAILURE;
-    }
-    return rc;
+        return ERROR_SUCCESS;
+    logStringF(hModule, L"RemoveDir: Remove operation returned status %#x", r);
+    return ERROR_GEN_FAILURE;
 }
 
-UINT RenameDir(MSIHANDLE hModule, const WCHAR *pwszDestDir, const WCHAR *pwszSourceDir)
+/**
+ * @note Both paths strings must have an extra terminator.
+ */
+static UINT RenameDir(MSIHANDLE hModule, const WCHAR *pwszzDstDir, const WCHAR *pwszzSrcDir)
 {
-    UINT rc;
-    WCHAR wszDest[_MAX_PATH + 1];
-    WCHAR wszSource[_MAX_PATH + 1];
-
-    swprintf_s(wszDest, RT_ELEMENTS(wszDest), L"%s%c", pwszDestDir, L'\0');
-    swprintf_s(wszSource, RT_ELEMENTS(wszSource), L"%s%c", pwszSourceDir, L'\0');
+    NonStandardAssert(pwszzDstDir[wcslen(pwszzDstDir) + 1] == '\0');
+    NonStandardAssert(pwszzSrcDir[wcslen(pwszzSrcDir) + 1] == '\0');
 
     SHFILEOPSTRUCTW s = {0};
     s.hwnd = NULL;
     s.wFunc = FO_RENAME;
-    s.pTo = wszDest;
-    s.pFrom = wszSource;
+    s.pTo = pwszzDstDir;
+    s.pFrom = pwszzSrcDir;
     s.fFlags = FOF_SILENT
              | FOF_NOCONFIRMATION
              | FOF_NOCONFIRMMKDIR
              | FOF_NOERRORUI;
 
-    logStringF(hModule, L"RenameDir: DestDir=%s, SourceDir=%s", wszDest, wszSource);
+    logStringF(hModule, L"RenameDir: pwszzDstDir=%s, pwszzSrcDir=%s", pwszzDstDir, pwszzSrcDir);
     int r = SHFileOperationW(&s);
     if (r == 0)
-        rc = ERROR_SUCCESS;
-    else
+        return ERROR_SUCCESS;
+    logStringF(hModule, L"RenameDir: Rename operation returned status %#x", r);
+    return ERROR_GEN_FAILURE;
+}
+
+/** RTPathAppend-like function. */
+static UINT AppendToPath(wchar_t *pwszPath, size_t cwcPath, wchar_t *pwszAppend, bool fDoubleTerm = false)
+{
+    size_t cwcCurPath = wcslen(pwszPath);
+    size_t cwcSlash   = cwcCurPath > 1 && RTPATH_IS_SLASH(pwszPath[cwcCurPath - 1]) ? 0 : 1;
+    while (RTPATH_IS_SLASH(*pwszAppend))
+        pwszAppend++;
+    size_t cwcAppend  = wcslen(pwszAppend);
+    if (cwcCurPath + cwcCurPath + cwcAppend + fDoubleTerm < cwcPath)
     {
-        logStringF(hModule, L"RenameDir: Rename operation returned status %#x", r);
-        rc = ERROR_GEN_FAILURE;
+        if (cwcSlash)
+            pwszPath[cwcCurPath++] = '\\';
+        memcpy(&pwszPath[cwcCurPath], pwszAppend, (cwcAppend + 1) * sizeof(wchar_t));
+        if (fDoubleTerm)
+            pwszPath[cwcCurPath + cwcAppend + 1] = '\0';
+        return ERROR_SUCCESS;
     }
-    return rc;
+    return ERROR_BUFFER_OVERFLOW;
+}
+
+/** RTPathJoin-like function. */
+static UINT JoinPaths(wchar_t *pwszPath, size_t cwcPath, wchar_t *pwszPath1, wchar_t *pwszAppend, bool fDoubleTerm = false)
+{
+    size_t cwcCurPath = wcslen(pwszPath1);
+    if (cwcCurPath < cwcPath)
+    {
+        memcpy(pwszPath, pwszPath1, (cwcCurPath + 1) * sizeof(wchar_t));
+        return AppendToPath(pwszPath, cwcPath, pwszAppend, fDoubleTerm);
+    }
+    return ERROR_BUFFER_OVERFLOW;
 }
 
 UINT __stdcall UninstallBranding(MSIHANDLE hModule)
 {
-    UINT rc;
     logStringF(hModule, L"UninstallBranding: Handling branding file ...");
 
-    WCHAR wszPathTargetDir[_MAX_PATH];
-
-    rc = VBoxGetMsiProp(hModule, L"CustomActionData", wszPathTargetDir, sizeof(wszPathTargetDir));
+    WCHAR wszPath[RTPATH_MAX];
+    UINT rc = VBoxGetMsiProp(hModule, L"CustomActionData", wszPath, sizeof(wszPath));
     if (rc == ERROR_SUCCESS)
     {
-        /** @todo Check trailing slash after %s. */
-/** @todo r=bird: using swprintf_s for formatting paths without checking for
- * overflow not good.  You're dodging the buffer overflow issue only to end up
- * with incorrect behavior!  (Truncated file/dir names)
- *
- * This applies almost to all swprintf_s calls in this file!!
- */
-        WCHAR wszPathDest[_MAX_PATH];
-        swprintf_s(wszPathDest, RT_ELEMENTS(wszPathDest), L"%scustom", wszPathTargetDir);
-        rc = RemoveDir(hModule, wszPathDest);
-        if (rc != ERROR_SUCCESS)
-        {
-            /* Check for hidden .custom directory and remove it. */
-            swprintf_s(wszPathDest, RT_ELEMENTS(wszPathDest), L"%s.custom", wszPathTargetDir);
-            rc = RemoveDir(hModule, wszPathDest);
-        }
+        size_t const cwcPath = wcslen(wszPath);
+        rc = AppendToPath(wszPath, RTPATH_MAX, L"custom", true /*fDoubleTerm*/);
+        if (rc == ERROR_SUCCESS)
+            rc = RemoveDir(hModule, wszPath);
+
+        /* Check for .custom directory from a failed install and remove it. */
+        wszPath[cwcPath] = '\0';
+        rc = AppendToPath(wszPath, RTPATH_MAX, L".custom", true /*fDoubleTerm*/);
+        if (rc == ERROR_SUCCESS)
+            rc = RemoveDir(hModule, wszPath);
     }
 
     logStringF(hModule, L"UninstallBranding: Handling done. (rc=%u (ignored))", rc);
@@ -673,29 +681,39 @@ UINT __stdcall UninstallBranding(MSIHANDLE hModule)
 
 UINT __stdcall InstallBranding(MSIHANDLE hModule)
 {
-    UINT rc;
     logStringF(hModule, L"InstallBranding: Handling branding file ...");
 
-    WCHAR wszPathMSI[_MAX_PATH];
-    rc = VBoxGetMsiProp(hModule, L"SOURCEDIR", wszPathMSI, sizeof(wszPathMSI));
+    /*
+     * Get the paths.
+     */
+    wchar_t wszSrcPath[RTPATH_MAX];
+    UINT rc = VBoxGetMsiProp(hModule, L"SOURCEDIR", wszSrcPath, RT_ELEMENTS(wszSrcPath));
     if (rc == ERROR_SUCCESS)
     {
-        WCHAR wszPathTargetDir[_MAX_PATH];
-        rc = VBoxGetMsiProp(hModule, L"CustomActionData", wszPathTargetDir, sizeof(wszPathTargetDir));
+        wchar_t wszDstPath[RTPATH_MAX];
+        rc = VBoxGetMsiProp(hModule, L"CustomActionData", wszDstPath, RT_ELEMENTS(wszDstPath) - 1);
         if (rc == ERROR_SUCCESS)
         {
-            /** @todo Check for trailing slash after %s. */
-            WCHAR wszPathDest[_MAX_PATH];
-            swprintf_s(wszPathDest, RT_ELEMENTS(wszPathDest), L"%s", wszPathTargetDir);
-
-            WCHAR wszPathSource[_MAX_PATH];
-            swprintf_s(wszPathSource, RT_ELEMENTS(wszPathSource), L"%s.custom", wszPathMSI);
-            rc = CopyDir(hModule, wszPathDest, wszPathSource);
+            /*
+             * First we copy the src\.custom dir to the target.
+             */
+            rc = AppendToPath(wszSrcPath, RT_ELEMENTS(wszSrcPath) - 1, L".custom", true /*fDoubleTerm*/);
             if (rc == ERROR_SUCCESS)
             {
-                swprintf_s(wszPathDest, RT_ELEMENTS(wszPathDest), L"%scustom", wszPathTargetDir);
-                swprintf_s(wszPathSource, RT_ELEMENTS(wszPathSource), L"%s.custom", wszPathTargetDir);
-                rc = RenameDir(hModule, wszPathDest, wszPathSource);
+                rc = CopyDir(hModule, wszDstPath, wszSrcPath);
+                if (rc == ERROR_SUCCESS)
+                {
+                    /*
+                     * The rename the '.custom' directory we now got in the target area to 'custom'.
+                     */
+                    rc = JoinPaths(wszSrcPath, RT_ELEMENTS(wszSrcPath), wszDstPath, L".custom", true /*fDoubleTerm*/);
+                    if (rc == ERROR_SUCCESS)
+                    {
+                        rc = AppendToPath(wszDstPath, RT_ELEMENTS(wszDstPath), L"custom", true /*fDoubleTerm*/);
+                        if (rc == ERROR_SUCCESS)
+                            rc = RenameDir(hModule, wszDstPath, wszSrcPath);
+                    }
+                }
             }
         }
     }
@@ -1627,24 +1645,22 @@ int removeNetworkInterface(MSIHANDLE hModule, const WCHAR *pwszGUID)
         do /* break-loop */
         {
             WCHAR wszRegLocation[256];
-            swprintf(wszRegLocation,
-                     L"SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}\\%s",
-                     pwszGUID);
+            swprintf_s(wszRegLocation, RT_ELEMENTS(wszRegLocation),
+                       L"SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}\\%s", pwszGUID);
             LONG lStatus = RegOpenKeyExW(HKEY_LOCAL_MACHINE, wszRegLocation, 0, KEY_READ, &hkeyNetwork);
-            if ((lStatus != ERROR_SUCCESS) || !hkeyNetwork)
+            if (lStatus != ERROR_SUCCESS || !hkeyNetwork)
                 SetErrBreak((hModule, L"VBox HostInterfaces: Host interface network was not found in registry (%s)! [1]",
                              wszRegLocation));
 
             lStatus = RegOpenKeyExW(hkeyNetwork, L"Connection", 0, KEY_READ, &hkeyConnection);
-            if ((lStatus != ERROR_SUCCESS) || !hkeyConnection)
+            if (lStatus != ERROR_SUCCESS || !hkeyConnection)
                 SetErrBreak((hModule, L"VBox HostInterfaces: Host interface network was not found in registry (%s)! [2]",
                              wszRegLocation));
 
             DWORD len = sizeof(wszPnPInstanceId);
             DWORD dwKeyType;
-            lStatus = RegQueryValueExW(hkeyConnection, L"PnPInstanceID", NULL,
-                                       &dwKeyType, (LPBYTE)&wszPnPInstanceId[0], &len);
-            if ((lStatus != ERROR_SUCCESS) || (dwKeyType != REG_SZ))
+            lStatus = RegQueryValueExW(hkeyConnection, L"PnPInstanceID", NULL, &dwKeyType, (LPBYTE)&wszPnPInstanceId[0], &len);
+            if (lStatus != ERROR_SUCCESS || (dwKeyType != REG_SZ))
                 SetErrBreak((hModule, L"VBox HostInterfaces: Host interface network was not found in registry (%s)! [3]",
                              wszRegLocation));
         }
