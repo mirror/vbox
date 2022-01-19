@@ -3691,6 +3691,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_PENDING_DBG_XCPT_, UINT64_C(0), UINT64_M
 
 /** CR0 bits set here must always be set when in VMX operation. */
 #define VMX_V_CR0_FIXED0                                        (X86_CR0_PE | X86_CR0_NE | X86_CR0_PG)
+/** CR0 bits set here must always be set when in VMX non-root operation with
+ *  unrestricted-guest control enabled. */
+#define VMX_V_CR0_FIXED0_UX                                     (X86_CR0_NE)
+/** CR0 bits cleared here must always be cleared when in VMX operation. */
+#define VMX_V_CR0_FIXED1                                        UINT32_C(0xffffffff)
 /** CR4 bits set here must always be set when in VMX operation. */
 #define VMX_V_CR4_FIXED0                                        (X86_CR4_VMXE)
 
