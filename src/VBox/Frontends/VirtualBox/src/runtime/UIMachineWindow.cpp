@@ -179,6 +179,26 @@ void UIMachineWindow::sltMachineStateChanged()
     updateAppearanceOf(UIVisualElement_WindowTitle);
 }
 
+void UIMachineWindow::sltHandleNotificationCenterAnimationStep()
+{
+    /* For certain machine states: */
+    const KMachineState enmState = uisession()->machineState();
+    switch (enmState)
+    {
+        /* Like those related to paused VM: */
+        case KMachineState_Paused:
+        case KMachineState_TeleportingPausedVM:
+        {
+            /* Update view's viewport, cause we have pause screenshot
+             * distorted with animation artifacts. */
+            machineView()->updateView();
+            break;
+        }
+        default:
+            break;
+    }
+}
+
 UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : QIWithRetranslateUI2<QMainWindow>(0, pMachineLogic->windowFlags(uScreenId))
     , m_pMachineLogic(pMachineLogic)

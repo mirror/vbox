@@ -762,6 +762,7 @@ void UINotificationCenter::setAnimatedValue(int iValue)
 {
     m_iAnimatedValue = iValue;
     adjustGeometry();
+    emit sigAnimationStep();
 }
 
 int UINotificationCenter::animatedValue() const
@@ -798,7 +799,7 @@ void UINotificationCenter::adjustMask()
 {
     /* We do include open-button mask only if center is opened or animated to be: */
     QRegion region;
-    if (!m_iAnimatedValue)
+    if (!animatedValue())
         region += QRect(m_pButtonOpen->mapToParent(QPoint(0, 0)), m_pButtonOpen->size());
     setMask(region);
 }
