@@ -6257,6 +6257,20 @@ if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_TYPE)" == "asan"
 endif
 
 #
+# A no-ASAN version of VBoxR3StaticDll for the installer helper DLL.
+# Note! No IPRT here as we do not build a non-ASAN static IPRT library.
+#
+TEMPLATE_VBoxR3StaticDllNoAsan = VBoxR3StaticDll but w/o ASAN
+TEMPLATE_VBoxR3StaticDllNoAsan_EXTENDS     = VBoxR3StaticDll
+TEMPLATE_VBoxR3StaticDllNoAsan_CFLAGS      = $(filter-out $(VBOX_VCC_SANITIZER_FLAGS)  , $(TEMPLATE_VBoxR3StaticDll_CFLAGS))
+TEMPLATE_VBoxR3StaticDllNoAsan_CXXFLAGS    = $(filter-out $(VBOX_VCC_SANITIZER_FLAGS)  , $(TEMPLATE_VBoxR3StaticDll_CXXFLAGS))
+TEMPLATE_VBoxR3StaticDllNoAsan_PCHFLAGS    = $(filter-out $(VBOX_VCC_SANITIZER_FLAGS)  , $(TEMPLATE_VBoxR3StaticDll_PCHFLAGS))
+TEMPLATE_VBoxR3StaticDllNoAsan_LDFLAGS     = $(filter-out $(VBOX_VCC_SANITIZER_LDFLAGS), $(TEMPLATE_VBoxR3StaticDll_LDFLAGS))
+TEMPLATE_VBoxR3StaticDllNoAsan_LIBS        = $(filter-out $(VBOX_LIB_RUNTIME_STATIC)   , $(TEMPLATE_VBoxR3StaticDll_LIBS))
+TEMPLATE_VBoxR3StaticDllNoAsan_LIBS.x86    = $(filter-out %clang_rt.asan_dll_thunk-i386.lib, $(TEMPLATE_VBoxR3StaticDll_LIBS.x86))
+TEMPLATE_VBoxR3StaticDllNoAsan_LIBS.amd64  = $(filter-out %clang_rt.asan_dll_thunk-x86_64.lib, $(TEMPLATE_VBoxR3StaticDll_LIBS.amd64))
+
+#
 # Non-pedantic variation of VBoxR3Static
 #
 TEMPLATE_VBoxR3StaticNonPedantic           = VBox Static Ring-3 EXE, non-pedantic.

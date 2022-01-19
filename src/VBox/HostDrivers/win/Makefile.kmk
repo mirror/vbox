@@ -27,8 +27,9 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+# For the installer helpers
 LIBRARIES += VBoxDrvCfg
-VBoxDrvCfg_TEMPLATE       = VBOXR3STATIC
+VBoxDrvCfg_TEMPLATE       = VBoxR3StaticDllNoAsan
 VBoxDrvCfg_SDKS           = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VBoxDrvCfg_DEFS           = _WIN32_WINNT=0x0501 _UNICODE UNICODE
 VBoxDrvCfg_SOURCES        = cfg/VBoxDrvCfg.cpp

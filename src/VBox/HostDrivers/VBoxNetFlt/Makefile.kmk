@@ -228,10 +228,10 @@ $(PATH_TARGET)/VBoxNetLwfCat.dir/VBoxNetLwf.cat: \
 
 
  #
- # WinNetConfig - static library with host network interface config API
+ # WinNetConfig - static library with host network interface config API (for the installer)
  #
  LIBRARIES.win += WinNetConfig
- WinNetConfig_TEMPLATE = VBOXR3STATIC
+ WinNetConfig_TEMPLATE = VBoxR3StaticDllNoAsan
  WinNetConfig_SDKS     = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  WinNetConfig_DEFS     = _WIN32_WINNT=0x0501 _UNICODE UNICODE
  WinNetConfig_INCS.win = $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
