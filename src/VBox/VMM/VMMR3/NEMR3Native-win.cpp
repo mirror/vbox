@@ -180,21 +180,17 @@ static const struct
 static decltype(NtDeviceIoControlFile) *g_pfnNtDeviceIoControlFile;
 /** Pointer to the NtDeviceIoControlFile import table entry. */
 static decltype(NtDeviceIoControlFile) **g_ppfnVidNtDeviceIoControlFile;
-#if defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) || defined(LOG_ENABLED)
+#ifdef LOG_ENABLED
 /** Info about the VidGetHvPartitionId I/O control interface. */
 static NEMWINIOCTL g_IoCtlGetHvPartitionId;
 /** Info about the VidGetPartitionProperty I/O control interface. */
 static NEMWINIOCTL g_IoCtlGetPartitionProperty;
-#endif
-#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED)
 /** Info about the VidStartVirtualProcessor I/O control interface. */
 static NEMWINIOCTL g_IoCtlStartVirtualProcessor;
 /** Info about the VidStopVirtualProcessor I/O control interface. */
 static NEMWINIOCTL g_IoCtlStopVirtualProcessor;
 /** Info about the VidMessageSlotHandleAndGetNext I/O control interface. */
 static NEMWINIOCTL g_IoCtlMessageSlotHandleAndGetNext;
-#endif
-#ifdef LOG_ENABLED
 /** Info about the VidMessageSlotMap I/O control interface - for logging. */
 static NEMWINIOCTL g_IoCtlMessageSlotMap;
 /** Info about the VidGetVirtualProcessorState I/O control interface - for logging. */
@@ -808,7 +804,7 @@ static int nemR3WinInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
     return VINF_SUCCESS;
 }
 
-#if defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) || defined(LOG_ENABLED)
+#ifdef LOG_ENABLED
 
 /**
  * Used to fill in g_IoCtlGetHvPartitionId.
@@ -863,8 +859,6 @@ nemR3WinIoctlDetector_GetPartitionProperty(HANDLE hFile, HANDLE hEvt, PIO_APC_RO
     return STATUS_SUCCESS;
 }
 
-#endif /* defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) || defined(LOG_ENABLED) */
-#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED)
 
 /**
  * Used to fill in g_IoCtlStartVirtualProcessor.
@@ -966,7 +960,7 @@ nemR3WinIoctlDetector_MessageSlotHandleAndGetNext(HANDLE hFile, HANDLE hEvt, PIO
     return STATUS_SUCCESS;
 }
 
-#endif /* defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED) */
+#endif /* LOG_ENABLED */
 
 #ifdef LOG_ENABLED
 /**
@@ -1011,7 +1005,7 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
      * them directly from ring-0 and better log them.
      *
      */
-#if defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) || defined(LOG_ENABLED)
+#ifdef LOG_ENABLED
     decltype(NtDeviceIoControlFile) * const pfnOrg = *g_ppfnVidNtDeviceIoControlFile;
 
     /* VidGetHvPartitionId - must work due to our memory management. */
@@ -1041,18 +1035,13 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
     LogRel(("NEM: VidGetPartitionProperty        -> fun:%#x in:%#x out:%#x\n",
             g_IoCtlGetPartitionProperty.uFunction, g_IoCtlGetPartitionProperty.cbInput, g_IoCtlGetPartitionProperty.cbOutput));
 
-#endif
-    int rcRet = VINF_SUCCESS;
-#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED)
-
     /* VidStartVirtualProcessor */
     *g_ppfnVidNtDeviceIoControlFile = nemR3WinIoctlDetector_StartVirtualProcessor;
     fRet = g_pfnVidStartVirtualProcessor(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX);
     *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
     AssertStmt(fRet && g_IoCtlStartVirtualProcessor.uFunction != 0,
-               rcRet = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_NEM_RING3_ONLY,
-                                               "Problem figuring out VidStartVirtualProcessor: fRet=%u dwErr=%u",
-                                               fRet, GetLastError()) );
+               RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_NEM_RING3_ONLY,
+                                       "Problem figuring out VidStartVirtualProcessor: fRet=%u dwErr=%u", fRet, GetLastError()) );
     LogRel(("NEM: VidStartVirtualProcessor       -> fun:%#x in:%#x out:%#x\n", g_IoCtlStartVirtualProcessor.uFunction,
             g_IoCtlStartVirtualProcessor.cbInput, g_IoCtlStartVirtualProcessor.cbOutput));
 
@@ -1061,9 +1050,8 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
     fRet = g_pfnVidStopVirtualProcessor(NEM_WIN_IOCTL_DETECTOR_FAKE_HANDLE, NEM_WIN_IOCTL_DETECTOR_FAKE_VP_INDEX);
     *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
     AssertStmt(fRet && g_IoCtlStopVirtualProcessor.uFunction != 0,
-               rcRet = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_NEM_RING3_ONLY,
-                                               "Problem figuring out VidStopVirtualProcessor: fRet=%u dwErr=%u",
-                                               fRet, GetLastError()) );
+               RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_NEM_RING3_ONLY,
+                                       "Problem figuring out VidStopVirtualProcessor: fRet=%u dwErr=%u", fRet, GetLastError()) );
     LogRel(("NEM: VidStopVirtualProcessor        -> fun:%#x in:%#x out:%#x\n", g_IoCtlStopVirtualProcessor.uFunction,
             g_IoCtlStopVirtualProcessor.cbInput, g_IoCtlStopVirtualProcessor.cbOutput));
 
@@ -1074,15 +1062,13 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
                                                NEM_WIN_IOCTL_DETECTOR_FAKE_TIMEOUT);
     *g_ppfnVidNtDeviceIoControlFile = pfnOrg;
     AssertStmt(fRet && g_IoCtlMessageSlotHandleAndGetNext.uFunction != 0,
-               rcRet = RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_NEM_RING3_ONLY,
-                                               "Problem figuring out VidMessageSlotHandleAndGetNext: fRet=%u dwErr=%u",
-                                               fRet, GetLastError()) );
+               RTERRINFO_LOG_REL_SET_F(pErrInfo, VERR_NEM_RING3_ONLY,
+                                       "Problem figuring out VidMessageSlotHandleAndGetNext: fRet=%u dwErr=%u",
+                                       fRet, GetLastError()) );
     LogRel(("NEM: VidMessageSlotHandleAndGetNext -> fun:%#x in:%#x out:%#x\n",
             g_IoCtlMessageSlotHandleAndGetNext.uFunction, g_IoCtlMessageSlotHandleAndGetNext.cbInput,
             g_IoCtlMessageSlotHandleAndGetNext.cbOutput));
 
-#endif /* defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(LOG_ENABLED) */
-#ifdef LOG_ENABLED
     /* The following are only for logging: */
     union
     {
@@ -1123,19 +1109,9 @@ static int nemR3WinInitDiscoverIoControlProperties(PVM pVM, PRTERRINFO pErrInfo)
             g_pIoCtlDetectForLogging->cbInput, g_pIoCtlDetectForLogging->cbOutput));
 
     g_pIoCtlDetectForLogging = NULL;
-#endif
+#endif /* LOG_ENABLED */
 
-    /* Done. */
-#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-    pVM->nem.s.IoCtlGetHvPartitionId            = g_IoCtlGetHvPartitionId;
-    pVM->nem.s.IoCtlGetPartitionProperty        = g_IoCtlGetPartitionProperty;
-#endif
-#ifdef NEM_WIN_WITH_RING0_RUNLOOP
-    pVM->nem.s.IoCtlStartVirtualProcessor       = g_IoCtlStartVirtualProcessor;
-    pVM->nem.s.IoCtlStopVirtualProcessor        = g_IoCtlStopVirtualProcessor;
-    pVM->nem.s.IoCtlMessageSlotHandleAndGetNext = g_IoCtlMessageSlotHandleAndGetNext;
-#endif
-    return rcRet;
+    return VINF_SUCCESS;
 }
 
 
@@ -1302,12 +1278,11 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     }
 #endif
 
-#ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-    /** Some guess working here. */
+    /** @todo Ditch for VBOX_WITH_PGM_NEM_MODE   */
+    /* Some guess working here. */
     pVM->nem.s.cMaxMappedPages = 4000;
     if (g_uBuildNo >= 22000)
         pVM->nem.s.cMaxMappedPages = _64K; /* seems it can do lots more even */
-#endif
 
     /*
      * Error state.
@@ -1361,7 +1336,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                         VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_NATIVE_API);
                         Log(("NEM: Marked active!\n"));
                         nemR3WinDisableX2Apic(pVM);
-#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+#ifdef VBOX_WITH_PGM_NEM_MODE
                         PGMR3EnableNemMode(pVM);
 #endif
 
@@ -1378,12 +1353,7 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                                        "/NEM/PagesUnmapCalls", STAMUNIT_PAGES, "Calls to WHvUnmapGpaRange/HvCallUnmapGpaPages");
                         STAMR3Register(pVM, (void *)&pVM->nem.s.StatUnmapPageFailed, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                                        "/NEM/PagesUnmapFails", STAMUNIT_PAGES, "Calls to WHvUnmapGpaRange/HvCallUnmapGpaPages that failed");
-#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-                        STAMR3Register(pVM, (void *)&pVM->nem.s.StatRemapPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                                       "/NEM/PagesRemapCalls", STAMUNIT_PAGES, "Calls to HvCallMapGpaPages for changing page protection");
-                        STAMR3Register(pVM, (void *)&pVM->nem.s.StatRemapPage, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
-                                       "/NEM/PagesRemapFails", STAMUNIT_PAGES, "Calls to HvCallMapGpaPages for changing page protection failed");
-#elif !defined(VBOX_WITH_PGM_NEM_MODE)
+#ifndef VBOX_WITH_PGM_NEM_MODE
                         STAMR3Register(pVM, (void *)&pVM->nem.s.StatUnmapAllPages, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                                        "/NEM/PagesUnmapAll", STAMUNIT_PAGES, "Times we had to unmap all the pages");
 #endif
@@ -1392,13 +1362,11 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                                        "/NEM/PagesMapGpaRange", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvMapGpaRange for bigger stuff");
                         STAMR3Register(pVM, &pVM->nem.s.StatProfUnmapGpaRange, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
                                        "/NEM/PagesUnmapGpaRange", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvUnmapGpaRange for bigger stuff");
-#  endif
-#  ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
+#endif
                         STAMR3Register(pVM, &pVM->nem.s.StatProfMapGpaRangePage, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
                                        "/NEM/PagesMapGpaRangePage", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvMapGpaRange for single pages");
                         STAMR3Register(pVM, &pVM->nem.s.StatProfUnmapGpaRangePage, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS,
                                        "/NEM/PagesUnmapGpaRangePage", STAMUNIT_TICKS_PER_CALL, "Profiling calls to WHvUnmapGpaRange for single pages");
-#  endif
 
                         for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                         {
@@ -1622,48 +1590,37 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
         Assert((HANDLE)pVCpu->nem.s.hNativeThreadHandle != INVALID_HANDLE_VALUE);
 
 #ifndef NEM_WIN_USE_OUR_OWN_RUN_API
-# ifdef NEM_WIN_WITH_RING0_RUNLOOP
-        if (!pVM->nem.s.fUseRing0Runloop)
-# endif
+        hrc = WHvCreateVirtualProcessor(hPartition, idCpu, 0 /*fFlags*/);
+        if (FAILED(hrc))
         {
-            hrc = WHvCreateVirtualProcessor(hPartition, idCpu, 0 /*fFlags*/);
-            if (FAILED(hrc))
+            NTSTATUS const rcNtLast  = RTNtLastStatusValue();
+            DWORD const    dwErrLast = RTNtLastErrorValue();
+            while (idCpu-- > 0)
             {
-                NTSTATUS const rcNtLast  = RTNtLastStatusValue();
-                DWORD const    dwErrLast = RTNtLastErrorValue();
-                while (idCpu-- > 0)
-                {
-                    HRESULT hrc2 = WHvDeleteVirtualProcessor(hPartition, idCpu);
-                    AssertLogRelMsg(SUCCEEDED(hrc2), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
-                                                      hPartition, idCpu, hrc2, RTNtLastStatusValue(),
-                                                      RTNtLastErrorValue()));
-                }
-                return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
-                                  "Call to WHvCreateVirtualProcessor failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
+                HRESULT hrc2 = WHvDeleteVirtualProcessor(hPartition, idCpu);
+                AssertLogRelMsg(SUCCEEDED(hrc2), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
+                                                  hPartition, idCpu, hrc2, RTNtLastStatusValue(),
+                                                  RTNtLastErrorValue()));
             }
+            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                              "Call to WHvCreateVirtualProcessor failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
         }
-# ifdef NEM_WIN_WITH_RING0_RUNLOOP
+#else  /* NEM_WIN_USE_OUR_OWN_RUN_API */
+        VID_MAPPED_MESSAGE_SLOT MappedMsgSlot = { NULL, UINT32_MAX, UINT32_MAX };
+        if (g_pfnVidMessageSlotMap(hPartitionDevice, &MappedMsgSlot, idCpu))
+        {
+            AssertLogRelMsg(MappedMsgSlot.iCpu == idCpu && MappedMsgSlot.uParentAdvisory == UINT32_MAX,
+                            ("%#x %#x (iCpu=%#x)\n", MappedMsgSlot.iCpu, MappedMsgSlot.uParentAdvisory, idCpu));
+            pVCpu->nem.s.pvMsgSlotMapping = MappedMsgSlot.pMsgBlock;
+        }
         else
-# endif
-#endif /* !NEM_WIN_USE_OUR_OWN_RUN_API */
-#if defined(NEM_WIN_WITH_RING0_RUNLOOP) || defined(NEM_WIN_USE_OUR_OWN_RUN_API)
         {
-            VID_MAPPED_MESSAGE_SLOT MappedMsgSlot = { NULL, UINT32_MAX, UINT32_MAX };
-            if (g_pfnVidMessageSlotMap(hPartitionDevice, &MappedMsgSlot, idCpu))
-            {
-                AssertLogRelMsg(MappedMsgSlot.iCpu == idCpu && MappedMsgSlot.uParentAdvisory == UINT32_MAX,
-                                ("%#x %#x (iCpu=%#x)\n", MappedMsgSlot.iCpu, MappedMsgSlot.uParentAdvisory, idCpu));
-                pVCpu->nem.s.pvMsgSlotMapping = MappedMsgSlot.pMsgBlock;
-            }
-            else
-            {
-                NTSTATUS const rcNtLast  = RTNtLastStatusValue();
-                DWORD const    dwErrLast = RTNtLastErrorValue();
-                return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
-                                  "Call to VidMessageSlotMap failed: Last=%#x/%u", rcNtLast, dwErrLast);
-            }
+            NTSTATUS const rcNtLast  = RTNtLastStatusValue();
+            DWORD const    dwErrLast = RTNtLastErrorValue();
+            return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
+                              "Call to VidMessageSlotMap failed: Last=%#x/%u", rcNtLast, dwErrLast);
         }
-#endif
+#endif /* NEM_WIN_USE_OUR_OWN_RUN_API */
     }
     pVM->nem.s.fCreatedEmts = true;
 
@@ -1835,15 +1792,10 @@ int nemR3NativeTerm(PVM pVM)
             PVMCPU pVCpu = pVM->apCpusR3[idCpu];
             pVCpu->nem.s.pvMsgSlotMapping = NULL;
 #ifndef NEM_WIN_USE_OUR_OWN_RUN_API
-# ifdef NEM_WIN_WITH_RING0_RUNLOOP
-            if (!pVM->nem.s.fUseRing0Runloop)
-# endif
-            {
-                HRESULT hrc = WHvDeleteVirtualProcessor(hPartition, idCpu);
-                AssertLogRelMsg(SUCCEEDED(hrc), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
-                                                 hPartition, idCpu, hrc, RTNtLastStatusValue(),
-                                                 RTNtLastErrorValue()));
-            }
+            HRESULT hrc = WHvDeleteVirtualProcessor(hPartition, idCpu);
+            AssertLogRelMsg(SUCCEEDED(hrc), ("WHvDeleteVirtualProcessor(%p, %u) -> %Rhrc (Last=%#x/%u)\n",
+                                             hPartition, idCpu, hrc, RTNtLastStatusValue(),
+                                             RTNtLastErrorValue()));
 #endif
         }
         WHvDeletePartition(hPartition);
@@ -1896,46 +1848,6 @@ void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
 
 VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 {
-#ifdef NEM_WIN_WITH_RING0_RUNLOOP
-    if (pVM->nem.s.fUseRing0Runloop)
-    {
-        for (;;)
-        {
-            VBOXSTRICTRC rcStrict = VMMR3CallR0EmtFast(pVM, pVCpu, VMMR0_DO_NEM_RUN);
-            if (RT_SUCCESS(rcStrict))
-            {
-                /*
-                 * We deal with VINF_NEM_FLUSH_TLB here, since we're running the risk of
-                 * getting these while we already got another RC (I/O ports).
-                 */
-                /* Status codes: */
-                VBOXSTRICTRC rcPending = pVCpu->nem.s.rcPending;
-                pVCpu->nem.s.rcPending = VINF_SUCCESS;
-                if (rcStrict == VINF_NEM_FLUSH_TLB || rcPending == VINF_NEM_FLUSH_TLB)
-                {
-                    LogFlow(("nemR3NativeRunGC: calling PGMFlushTLB...\n"));
-                    int rc = PGMFlushTLB(pVCpu, CPUMGetGuestCR3(pVCpu), true /*fGlobal*/);
-                    AssertRCReturn(rc, rc);
-                    if (rcStrict == VINF_NEM_FLUSH_TLB)
-                    {
-                        if (   !VM_FF_IS_ANY_SET(pVM, VM_FF_HIGH_PRIORITY_POST_MASK | VM_FF_HP_R0_PRE_HM_MASK)
-                            && !VMCPU_FF_IS_ANY_SET(pVCpu,   (VMCPU_FF_HIGH_PRIORITY_POST_MASK | VMCPU_FF_HP_R0_PRE_HM_MASK)
-                                                           & ~VMCPU_FF_RESUME_GUEST_MASK))
-                        {
-                            VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
-                            continue;
-                        }
-                        rcStrict = VINF_SUCCESS;
-                    }
-                }
-                else
-                    AssertMsg(rcPending == VINF_SUCCESS, ("rcPending=%Rrc\n", VBOXSTRICTRC_VAL(rcPending) ));
-            }
-            LogFlow(("nemR3NativeRunGC: returns %Rrc\n", VBOXSTRICTRC_VAL(rcStrict) ));
-            return rcStrict;
-        }
-    }
-#endif
     return nemHCWinRunGC(pVM, pVCpu);
 }
 
@@ -1980,17 +1892,10 @@ void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 #ifdef NEM_WIN_USE_OUR_OWN_RUN_API
     nemHCWinCancelRunVirtualProcessor(pVM, pVCpu);
 #else
-# ifdef NEM_WIN_WITH_RING0_RUNLOOP
-    if (pVM->nem.s.fUseRing0Runloop)
-        nemHCWinCancelRunVirtualProcessor(pVM, pVCpu);
-    else
-# endif
-    {
-        Log8(("nemR3NativeNotifyFF: canceling %u\n", pVCpu->idCpu));
-        HRESULT hrc = WHvCancelRunVirtualProcessor(pVM->nem.s.hPartition, pVCpu->idCpu, 0);
-        AssertMsg(SUCCEEDED(hrc), ("WHvCancelRunVirtualProcessor -> hrc=%Rhrc\n", hrc));
-        RT_NOREF_PV(hrc);
-    }
+    Log8(("nemR3NativeNotifyFF: canceling %u\n", pVCpu->idCpu));
+    HRESULT hrc = WHvCancelRunVirtualProcessor(pVM->nem.s.hPartition, pVCpu->idCpu, 0);
+    AssertMsg(SUCCEEDED(hrc), ("WHvCancelRunVirtualProcessor -> hrc=%Rhrc\n", hrc));
+    RT_NOREF_PV(hrc);
 #endif
     RT_NOREF_PV(fFlags);
 }
@@ -2025,7 +1930,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysRamRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
     *pu2State = UINT8_MAX;
     RT_NOREF(puNemRange);
 
-#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+#ifdef VBOX_WITH_PGM_NEM_MODE
     if (pvR3)
     {
         STAM_REL_PROFILE_START(&pVM->nem.s.StatProfMapGpaRange, a);
@@ -2063,7 +1968,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGC
           GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, *pu2State, puNemRange, puNemRange ? *puNemRange : UINT32_MAX));
     RT_NOREF(puNemRange);
 
-#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+#ifdef VBOX_WITH_PGM_NEM_MODE
     /*
      * Unmap the RAM we're replacing.
      */
@@ -2138,7 +2043,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
           GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, puNemRange, *puNemRange));
 
     int rc = VINF_SUCCESS;
-#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+#ifdef VBOX_WITH_PGM_NEM_MODE
     /*
      * Unmap the MMIO2 pages.
      */
@@ -2197,7 +2102,7 @@ VMMR3_INT_DECL(int) NEMR3NotifyPhysMmioExUnmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHY
 VMMR3_INT_DECL(int) NEMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t uNemRange,
                                                            void *pvBitmap, size_t cbBitmap)
 {
-#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+#ifdef VBOX_WITH_PGM_NEM_MODE
     Assert(VM_IS_NEM_ENABLED(pVM));
     AssertReturn(g_pfnWHvQueryGpaRangeDirtyBitmap, VERR_INTERNAL_ERROR_2);
     Assert(cbBitmap == (uint32_t)cbBitmap);
@@ -2267,7 +2172,7 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RT
           GCPhys, cb, pvPages, fFlags, pu2State, *pu2State, puNemRange, *puNemRange));
     *pu2State = UINT8_MAX;
 
-#if !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES) && defined(VBOX_WITH_PGM_NEM_MODE)
+#ifdef VBOX_WITH_PGM_NEM_MODE
     /*
      * (Re-)map readonly.
      */
@@ -2302,14 +2207,8 @@ static DECLCALLBACK(int) nemR3WinUnsetForA20CheckerCallback(PVM pVM, PVMCPU pVCp
     /* We'll just unmap the memory. */
     if (pInfo->u2NemState > NEM_WIN_PAGE_STATE_UNMAPPED)
     {
-#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-        int rc = nemHCWinHypercallUnmapPage(pVM, pVCpu, GCPhys);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
-#else
         HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, X86_PAGE_SIZE);
         if (SUCCEEDED(hrc))
-#endif
         {
             STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPage);
             uint32_t cMappedPages = ASMAtomicDecU32(&pVM->nem.s.cMappedPages); NOREF(cMappedPages);
@@ -2319,14 +2218,9 @@ static DECLCALLBACK(int) nemR3WinUnsetForA20CheckerCallback(PVM pVM, PVMCPU pVCp
         else
         {
             STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPageFailed);
-#ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-            LogRel(("nemR3WinUnsetForA20CheckerCallback/unmap: GCPhys=%RGp rc=%Rrc\n", GCPhys, rc));
-            return rc;
-#else
             LogRel(("nemR3WinUnsetForA20CheckerCallback/unmap: GCPhys=%RGp hrc=%Rhrc (%#x) Last=%#x/%u\n",
                     GCPhys, hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue()));
             return VERR_INTERNAL_ERROR_2;
-#endif
         }
     }
     RT_NOREF(pVCpu, pvUser);

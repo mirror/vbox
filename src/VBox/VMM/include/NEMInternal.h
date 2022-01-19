@@ -52,24 +52,10 @@ RT_C_DECLS_BEGIN
 /*
  * Windows: Code configuration.
  */
-# ifndef VBOX_WITH_PGM_NEM_MODE
-#  define NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-#endif
 //# define NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS   /**< Applies to ring-3 code only. Useful for testing VID API. */
 //# define NEM_WIN_USE_OUR_OWN_RUN_API            /**< Applies to ring-3 code only. Useful for testing VID API. */
-//# define NEM_WIN_WITH_RING0_RUNLOOP             /**< Enables the ring-0 runloop. */
-//# define NEM_WIN_USE_RING0_RUNLOOP_BY_DEFAULT   /**< For quickly testing ring-3 API without messing with CFGM. */
 # if defined(NEM_WIN_USE_OUR_OWN_RUN_API) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
 #  error "NEM_WIN_USE_OUR_OWN_RUN_API requires NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS"
-# endif
-# if defined(NEM_WIN_USE_OUR_OWN_RUN_API) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES)
-#  error "NEM_WIN_USE_OUR_OWN_RUN_API requires NEM_WIN_USE_HYPERCALLS_FOR_PAGES"
-# endif
-# if defined(NEM_WIN_WITH_RING0_RUNLOOP) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES)
-#  error "NEM_WIN_WITH_RING0_RUNLOOP requires NEM_WIN_USE_HYPERCALLS_FOR_PAGES"
-# endif
-# if defined(VBOX_WITH_PGM_NEM_MODE) && defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES)
-#  error "VBOX_WITH_PGM_NEM_MODE cannot be used together with NEM_WIN_USE_HYPERCALLS_FOR_PAGES"
 # endif
 
 /**
@@ -262,16 +248,14 @@ typedef struct NEM
 
     /** Number of currently mapped pages. */
     uint32_t volatile           cMappedPages;
-#  ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     /** Max number of pages we dare map at once. */
+#ifdef VBOX_WITH_PGM_NEM_MODE
+    /** @todo consider removing this.   */
+#endif
     uint32_t                    cMaxMappedPages;
-#  endif
     STAMCOUNTER                 StatMapPage;
     STAMCOUNTER                 StatUnmapPage;
-#  ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-    STAMCOUNTER                 StatRemapPage;
-    STAMCOUNTER                 StatRemapPageFailed;
-#  elif !defined(VBOX_WITH_PGM_NEM_MODE)
+#  if !defined(VBOX_WITH_PGM_NEM_MODE)
     STAMCOUNTER                 StatUnmapAllPages;
 #  endif
     STAMCOUNTER                 StatMapPageFailed;
@@ -280,25 +264,8 @@ typedef struct NEM
     STAMPROFILE                 StatProfMapGpaRange;
     STAMPROFILE                 StatProfUnmapGpaRange;
 #  endif
-#  ifndef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
     STAMPROFILE                 StatProfMapGpaRangePage;
     STAMPROFILE                 StatProfUnmapGpaRangePage;
-#  endif
-
-#  ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-    /** Info about the VidGetHvPartitionId I/O control interface. */
-    NEMWINIOCTL                 IoCtlGetHvPartitionId;
-    /** Info about the VidGetPartitionProperty I/O control interface. */
-    NEMWINIOCTL                 IoCtlGetPartitionProperty;
-#  endif
-#  ifdef NEM_WIN_WITH_RING0_RUNLOOP
-    /** Info about the VidStartVirtualProcessor I/O control interface. */
-    NEMWINIOCTL                 IoCtlStartVirtualProcessor;
-    /** Info about the VidStopVirtualProcessor I/O control interface. */
-    NEMWINIOCTL                 IoCtlStopVirtualProcessor;
-    /** Info about the VidStopVirtualProcessor I/O control interface. */
-    NEMWINIOCTL                 IoCtlMessageSlotHandleAndGetNext;
-#  endif
 
     /** Statistics updated by NEMR0UpdateStatistics. */
     struct
@@ -405,12 +372,7 @@ typedef struct NEMCPU
     uint8_t                     fDesiredInterruptWindows;
     /** Last copy of HV_X64_VP_EXECUTION_STATE::InterruptShadow. */
     bool                        fLastInterruptShadow : 1;
-# ifdef NEM_WIN_WITH_RING0_RUNLOOP
-    /** Pending VINF_NEM_FLUSH_TLB. */
-    int32_t                     rcPending;
-# else
     uint32_t                    uPadding;
-# endif
     /** The VID_MSHAGN_F_XXX flags.
      * Either VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE or zero. */
     uint32_t                    fHandleAndGetFlags;
@@ -634,14 +596,7 @@ typedef NEMR0HYPERCALLDATA *PNEMR0HYPERCALLDATA;
  */
 typedef struct NEMR0PERVCPU
 {
-# if defined(RT_OS_WINDOWS) && defined(NEM_WIN_USE_HYPERCALLS_FOR_PAGES)
-    /** Hypercall input/ouput page. */
-    NEMR0HYPERCALLDATA          HypercallData;
-    /** Delta to add to convert a ring-0 pointer to a ring-3 one.   */
-    uintptr_t                   offRing3ConversionDelta;
-# else
     uint32_t                    uDummy;
-# endif
 } NEMR0PERVCPU;
 
 /**
@@ -649,38 +604,7 @@ typedef struct NEMR0PERVCPU
  */
 typedef struct NEMR0PERVM
 {
-# ifdef RT_OS_WINDOWS
-#  ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-    /** The partition ID. */
-    uint64_t                    idHvPartition;
-    /** I/O control context. */
-    PSUPR0IOCTLCTX              pIoCtlCtx;
-    /** Info about the VidGetHvPartitionId I/O control interface. */
-    NEMWINIOCTL                 IoCtlGetHvPartitionId;
-    /** Info about the VidGetPartitionProperty I/O control interface. */
-    NEMWINIOCTL                 IoCtlGetPartitionProperty;
-#  endif
-#  ifdef NEM_WIN_WITH_RING0_RUNLOOP
-    /** Info about the VidStartVirtualProcessor I/O control interface. */
-    NEMWINIOCTL                 IoCtlStartVirtualProcessor;
-    /** Info about the VidStopVirtualProcessor I/O control interface. */
-    NEMWINIOCTL                 IoCtlStopVirtualProcessor;
-    /** Info about the VidStopVirtualProcessor I/O control interface. */
-    NEMWINIOCTL                 IoCtlMessageSlotHandleAndGetNext;
-    /** Whether we may use the ring-0 runloop or not. */
-    bool                        fMayUseRing0Runloop;
-#  endif
-
-#  ifdef NEM_WIN_USE_HYPERCALLS_FOR_PAGES
-    /** Hypercall input/ouput page for non-EMT. */
-    NEMR0HYPERCALLDATA          HypercallData;
-    /** Critical section protecting use of HypercallData. */
-    RTCRITSECT                  HypercallDataCritSect;
-#  endif
-
-# else
     uint32_t                    uDummy;
-# endif
 } NEMR0PERVM;
 
 #endif /* IN_RING*/
