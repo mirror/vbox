@@ -43,7 +43,9 @@ if   defined(VBOX_WITH_HARDENING) \
  && !defined(VBOX_ONLY_VALIDATIONKIT)
  LIBRARIES += SUPR3HardenedStatic
 endif
-DLLS.win += VBoxSupLib
+ifndef VBOX_ONLY_BUILD
+ DLLS.win += VBoxSupLib
+endif
 ifdef VBOX_WITH_32_ON_64_MAIN_API
  LIBRARIES += SUPR3-x86
 endif
