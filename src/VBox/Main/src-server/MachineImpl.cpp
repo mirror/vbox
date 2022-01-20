@@ -5558,7 +5558,7 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
 
                 RTTIMESPEC time;
                 HWData::GuestProperty prop;
-                prop.strValue   = Bstr(aValue).raw();
+                prop.strValue   = aValue;
                 prop.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
                 prop.mFlags     = fFlags;
                 mHWData->mGuestProperties[aName] = prop;
