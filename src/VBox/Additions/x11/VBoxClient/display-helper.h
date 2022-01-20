@@ -81,9 +81,9 @@ typedef struct
     /**
      * Register notification callback for display offsets change event.
      *
-     * @param   pfnNotificationCallback     Notification callback.
+     * @param   pfnCb   Notification callback.
      */
-    DECLCALLBACKMEMBER(void, pfnSubscribeDisplayOffsetChangeNotification, (FNDISPLAYOFFSETCHANGE *pfnNotificationCallback));
+    DECLCALLBACKMEMBER(void, pfnSubscribeDisplayOffsetChangeNotification, (FNDISPLAYOFFSETCHANGE *pfnCb));
 
     /**
      * Unregister notification callback for display offsets change event.
