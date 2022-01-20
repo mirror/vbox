@@ -816,11 +816,10 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
  */
 static bool detectLinuxArch(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOSTYPE enmBaseOsType)
 {
-    if (   RTStrNICmp(pszArch, RT_STR_TUPLE("amd64"))   == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("x86_64"))  == 0
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("x86-64"))  == 0 /* just in case */
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("x64"))     == 0 /* ditto */
-        || RTStrNICmp(pszArch, RT_STR_TUPLE("aarch64")) == 0 /* as seen in OL 7.8 Server */)
+    if (   RTStrNICmp(pszArch, RT_STR_TUPLE("amd64"))  == 0
+        || RTStrNICmp(pszArch, RT_STR_TUPLE("x86_64")) == 0
+        || RTStrNICmp(pszArch, RT_STR_TUPLE("x86-64")) == 0 /* just in case */
+        || RTStrNICmp(pszArch, RT_STR_TUPLE("x64"))    == 0 /* ditto */ )
     {
         *penmOsType = (VBOXOSTYPE)(enmBaseOsType | VBOXOSTYPE_x64);
         return true;
@@ -853,11 +852,10 @@ static bool detectLinuxArch(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOST
  */
 static bool detectLinuxArchII(const char *pszArch, VBOXOSTYPE *penmOsType, VBOXOSTYPE enmBaseOsType)
 {
-    if (   RTStrIStr(pszArch, "amd64")   != NULL
-        || RTStrIStr(pszArch, "x86_64")  != NULL
-        || RTStrIStr(pszArch, "x86-64")  != NULL /* just in case */
-        || RTStrIStr(pszArch, "x64")     != NULL /* ditto */
-        || RTStrIStr(pszArch, "aarch64") != NULL /* as seen in OL 7.8 Server */)
+    if (   RTStrIStr(pszArch, "amd64")  != NULL
+        || RTStrIStr(pszArch, "x86_64") != NULL
+        || RTStrIStr(pszArch, "x86-64") != NULL /* just in case */
+        || RTStrIStr(pszArch, "x64")    != NULL /* ditto */ )
     {
         *penmOsType = (VBOXOSTYPE)(enmBaseOsType | VBOXOSTYPE_x64);
         return true;
