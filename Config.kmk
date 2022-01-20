@@ -4752,6 +4752,16 @@ ifdef VBOX_WITH_LIBTPMS
  SDK_VBOX_TPMS_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libtpms$(VBOX_SUFF_LIB)
 endif
 
+ifdef VBOX_WITH_DXVK
+ SDK_VBOX_DXVK               = .
+ SDK_VBOX_DXVK_DEFAULT_INCS := \
+  $(PATH_ROOT)/src/libs/dxvk-native-1.9.2a/include/native/directx \
+  $(PATH_ROOT)/src/libs/dxvk-native-1.9.2a/include/native/windows
+ SDK_VBOX_DXVK_INCS         ?= $(SDK_VBOX_DXVK_DEFAULT_INCS)
+ # Loaded dynamically
+ SDK_VBOX_DXVK_LIBS         ?=
+endif
+
 # Older versions of GCC cannot compile libssh
 ifneq ($(KBUILD_TARGET),win)
  ifneq ($(VBOX_GCC_VERSION_CC),)
