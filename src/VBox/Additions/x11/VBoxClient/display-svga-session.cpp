@@ -53,7 +53,7 @@
 
 #include <iprt/localipc.h>
 #include <iprt/asm.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/path.h>
 #include <iprt/linux/sysfs.h>
 

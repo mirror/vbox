@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef GA_INCLUDED_SRC_x11_VBoxClient_Display_Ipc_h
-#define GA_INCLUDED_SRC_x11_VBoxClient_Display_Ipc_h
+#ifndef GA_INCLUDED_SRC_x11_VBoxClient_display_ipc_h
+#define GA_INCLUDED_SRC_x11_VBoxClient_display_ipc_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -229,4 +229,4 @@ RTDECL(int) vbDrmIpcSetPrimaryDisplay(PVBOX_DRMIPC_CLIENT pClient, uint32_t idDi
  */
 RTDECL(int) vbDrmIpcReportDisplayOffsets(PVBOX_DRMIPC_CLIENT pClient, uint32_t cOffsets, RTPOINT *paOffsets);
 
-#endif /* !GA_INCLUDED_SRC_x11_VBoxClient_Display_Ipc_h */
+#endif /* !GA_INCLUDED_SRC_x11_VBoxClient_display_ipc_h */

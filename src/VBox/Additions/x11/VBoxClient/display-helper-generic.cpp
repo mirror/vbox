@@ -25,7 +25,7 @@
 #include <VBox/log.h>
 #include <VBox/xrandr.h>
 
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/asm.h>
 #include <iprt/thread.h>
 #include <iprt/mem.h>

@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef GA_INCLUDED_SRC_x11_VBoxClient_Display_Helper_h
-#define GA_INCLUDED_SRC_x11_VBoxClient_Display_Helper_h
+#ifndef GA_INCLUDED_SRC_x11_VBoxClient_display_helper_h
+#define GA_INCLUDED_SRC_x11_VBoxClient_display_helper_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -128,4 +128,4 @@ extern const VBCLDISPLAYHELPER g_DisplayHelperGnome3;
 /** Generic helper private data. */
 extern const VBCLDISPLAYHELPER g_DisplayHelperGeneric;
 
-#endif /* !GA_INCLUDED_SRC_x11_VBoxClient_Display_Helper_h */
+#endif /* !GA_INCLUDED_SRC_x11_VBoxClient_display_helper_h */
