@@ -1696,17 +1696,19 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     /* Use pause-image if exists: */
     if (!pausePixmap().isNull())
     {
-        /* We have a snapshot for the paused state: */
-        QRect rect = pPaintEvent->rect().intersected(viewport()->rect());
+        /* Create viewport painter: */
         QPainter painter(viewport());
+        /* Avoid painting more than necessary: */
+        painter.setClipRect(pPaintEvent->rect());
+        /* Can be NULL when the event arrive during COM cleanup: */
+        UIFrameBuffer *pFramebuffer = frameBuffer(); 
         /* Take the scale-factor into account: */
-        UIFrameBuffer * const pFramebuffer = frameBuffer(); /* Can be NULL when the event arrive during COM cleanup. */
         if (  pFramebuffer
             ? pFramebuffer->scaleFactor() == 1.0 && !pFramebuffer->scaledSize().isValid()
             : pausePixmapScaled().isNull())
-            painter.drawPixmap(rect.topLeft(), pausePixmap());
+            painter.drawPixmap(viewport()->rect().topLeft(), pausePixmap());
         else
-            painter.drawPixmap(rect.topLeft(), pausePixmapScaled());
+            painter.drawPixmap(viewport()->rect().topLeft(), pausePixmapScaled());
 #ifdef VBOX_WS_MAC
         /* Update the dock icon: */
         updateDockIcon();
