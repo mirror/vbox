@@ -68,7 +68,7 @@ static FNDISPLAYOFFSETCHANGE *g_pfnDisplayOffsetChangeCb;
  *
  * @return  TRUE if first name should go first in a list, FALSE otherwise.
  * @param   pszName1    First monitor name.
- * @param   pszName1    Second monitor name.
+ * @param   pszName2    Second monitor name.
  */
 static bool vbcl_hlp_generic_order_names(char *pszName1, char *pszName2)
 {

@@ -702,7 +702,7 @@ static int vbDrmIpcConnectionProc(PVBOX_DRMIPC_CLIENT pClient)
  * (from vbDrmIpcClientWorker() in particular).
  *
  * @return  IPRT status code.
- * @param   pClient     Client connection information to add to the list.
+ * @param   pClientNode     Client connection information to add to the list.
  */
 static int vbDrmIpcClientsListAdd(PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE pClientNode)
 {
@@ -732,7 +732,7 @@ static int vbDrmIpcClientsListAdd(PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE pClie
  * (from vbDrmIpcClientWorker() in particular).
  *
  * @return  IPRT status code.
- * @param   pClient     Client connection information to remove from the list.
+ * @param   pClientNode     Client connection information to remove from the list.
  */
 static int vbDrmIpcClientsListRemove(PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE pClientNode)
 {

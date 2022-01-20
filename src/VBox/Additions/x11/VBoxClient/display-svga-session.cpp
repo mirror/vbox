@@ -87,7 +87,7 @@ static RTLOCALIPCSESSION g_hSession = 0;
  *
  * @returns IPRT status code.
  * @param   cDisplays   Number of displays which have changed offset.
- * @param   pDisplays   Display data.
+ * @param   paDisplays  Display data.
  */
 static DECLCALLBACK(int) vbclSVGASessionDisplayOffsetChanged(uint32_t cOffsets, RTPOINT *paOffsets)
 {
