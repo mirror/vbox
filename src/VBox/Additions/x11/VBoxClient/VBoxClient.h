@@ -107,7 +107,9 @@ RT_C_DECLS_BEGIN
 extern VBCLSERVICE g_SvcClipboard;
 extern VBCLSERVICE g_SvcDisplayDRM;
 extern VBCLSERVICE g_SvcDisplaySVGA;
+# ifdef RT_OS_LINUX
 extern VBCLSERVICE g_SvcDisplaySVGASession;
+# endif
 extern VBCLSERVICE g_SvcDragAndDrop;
 extern VBCLSERVICE g_SvcHostVersion;
 extern VBCLSERVICE g_SvcSeamless;

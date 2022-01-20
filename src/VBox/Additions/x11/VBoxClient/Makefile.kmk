@@ -33,7 +33,7 @@ PROGRAMS += VBoxClient
 # Please make sure that you grep the source tree and modify all occurences accordingly
 # if you rename the following program name.
 #
-PROGRAMS += VBoxDRMClient
+PROGRAMS.linux += VBoxDRMClient
 
 VBoxClient_TEMPLATE = NewVBoxGuestR3Exe
 VBoxClient_DEFS += VBOX_X11_CLIPBOARD VBOX_WITH_HGCM
@@ -125,7 +125,8 @@ endif
 ifdef VBOX_WITH_VMSVGA
  VBoxClient_DEFS    += VBOX_WITH_VMSVGA
  VBoxClient_SOURCES += \
-	display-svga-x11.cpp \
+	display-svga-x11.cpp
+ VBoxClient_SOURCES.linux += \
 	display-svga-session.cpp \
 	display-ipc.cpp \
 	display-helper-gnome3.cpp \
