@@ -89,8 +89,7 @@ struct vbcl_hlp_gnome3_physical_display_state
  * @param   iter    D-bus message iteration.
  * @param   type    D-bus data type.
  */
-static dbus_bool_t
-vbcl_hlp_gnome3_verify_data_type(DBusMessageIter *iter, int type)
+static dbus_bool_t vbcl_hlp_gnome3_verify_data_type(DBusMessageIter *iter, int type)
 {
     if (!iter)
         return false;
@@ -108,8 +107,7 @@ vbcl_hlp_gnome3_verify_data_type(DBusMessageIter *iter, int type)
  * @param   iter        D-bus iterator to check.
  * @param   signature   Expected iterator signature.
  */
-static dbus_bool_t
-vbcl_hlp_gnome3_check_iter_signature(DBusMessageIter *iter, const char *signature)
+static dbus_bool_t vbcl_hlp_gnome3_check_iter_signature(DBusMessageIter *iter, const char *signature)
 {
     char        *iter_signature;
     dbus_bool_t match;
@@ -140,8 +138,7 @@ vbcl_hlp_gnome3_check_iter_signature(DBusMessageIter *iter, const char *signatur
  * @param   iter        D-bus message to check.
  * @param   signature   Expected message signature.
  */
-static dbus_bool_t
-vbcl_hlp_gnome3_check_message_signature(DBusMessage *message, const char *signature)
+static dbus_bool_t vbcl_hlp_gnome3_check_message_signature(DBusMessage *message, const char *signature)
 {
     char *message_signature;
     dbus_bool_t match;
@@ -170,8 +167,7 @@ vbcl_hlp_gnome3_check_message_signature(DBusMessage *message, const char *signat
  * @param   iter    D-bus iter of type DBUS_TYPE_ARRAY.
  * @param   array   Returned sub-iterator.
  */
-static dbus_bool_t
-vbcl_hlp_gnome3_iter_get_array(DBusMessageIter *iter, DBusMessageIter *array)
+static dbus_bool_t vbcl_hlp_gnome3_iter_get_array(DBusMessageIter *iter, DBusMessageIter *array)
 {
     if (!iter || !array)
         return false;
@@ -201,8 +197,7 @@ vbcl_hlp_gnome3_iter_get_array(DBusMessageIter *iter, DBusMessageIter *array)
  * @param   type    D-bus data type.
  * @param   value   Returned value.
  */
-static dbus_bool_t
-vbcl_hlp_gnome3_iter_get_basic(DBusMessageIter *iter, int type, void *value)
+static dbus_bool_t vbcl_hlp_gnome3_iter_get_basic(DBusMessageIter *iter, int type, void *value)
 {
     if (!iter || !value)
         return false;
@@ -234,8 +229,7 @@ vbcl_hlp_gnome3_iter_get_basic(DBusMessageIter *iter, int type, void *value)
  * @param   type        Type of value.
  * @param   value       Returning value.
  */
-static dbus_bool_t
-vbcl_hlp_gnome3_lookup_dict(DBusMessageIter *dict, const char *key_match, int type, void *value)
+static dbus_bool_t vbcl_hlp_gnome3_lookup_dict(DBusMessageIter *dict, const char *key_match, int type, void *value)
 {
     dbus_bool_t found = false;
 
@@ -292,8 +286,7 @@ vbcl_hlp_gnome3_lookup_dict(DBusMessageIter *dict, const char *key_match, int ty
  * @return  Mode name as a string if found, NULL otherwise.
  * @param   modes   List of monitor modes.
  */
-static char *
-vbcl_hlp_gnome3_lookup_monitor_current_mode(DBusMessageIter *modes)
+static char *vbcl_hlp_gnome3_lookup_monitor_current_mode(DBusMessageIter *modes)
 {
     char            *szCurrentMode = NULL;
     DBusMessageIter modes_iter;
@@ -356,8 +349,7 @@ vbcl_hlp_gnome3_lookup_monitor_current_mode(DBusMessageIter *modes)
  * @param   modes                           List of monitor modes (out).
  * @param   physical_monitor_properties     A D-bus dictionary containing monitor properties (out).
  */
-static dbus_bool_t
-vbcl_hlp_gnome3_parse_physical_monitor_record(
+static dbus_bool_t vbcl_hlp_gnome3_parse_physical_monitor_record(
     DBusMessageIter *physical_monitors_in,
     char **connector,
     char **vendor,
@@ -427,8 +419,7 @@ vbcl_hlp_gnome3_parse_physical_monitor_record(
  * @param   monitors                List of physical monitors which are displaying this logical monitor (out).
  * @param   properties              List of monitor properties (out).
  */
-static dbus_bool_t
-vbcl_hlp_gnome3_parse_logical_monitor_record(
+static dbus_bool_t vbcl_hlp_gnome3_parse_logical_monitor_record(
     DBusMessageIter *logical_monitors_in,
     int32_t *x,
     int32_t *y,
@@ -485,8 +476,7 @@ vbcl_hlp_gnome3_parse_logical_monitor_record(
  * @param   state_records_max       Size of state storage.
  * @param   cPhysicalMonitors       Actual number of physical displays parsed.
  */
-static dbus_bool_t
-vbcl_hlp_gnome3_get_physical_monitors_state(
+static dbus_bool_t vbcl_hlp_gnome3_get_physical_monitors_state(
     DBusMessageIter *physical_monitors_in,
     vbcl_hlp_gnome3_physical_display_state *state,
     uint32_t state_records_max,
@@ -553,8 +543,7 @@ vbcl_hlp_gnome3_get_physical_monitors_state(
  * @param   state               Array of monitor states.
  * @param   cPhysicalMonitors   Number of elements in array.
  */
-static void
-vbcl_hlp_gnome3_free_physical_monitors_state(
+static void vbcl_hlp_gnome3_free_physical_monitors_state(
     vbcl_hlp_gnome3_physical_display_state *state,
     uint32_t cPhysicalMonitors)
 {
@@ -583,8 +572,7 @@ vbcl_hlp_gnome3_free_physical_monitors_state(
  * @param   logical_monitors_in     List of logical monitors (see GetCurrentState).
  * @param   idPrimaryDisplay        ID (number) of display which is requested to be set as primary.
  */
-static int
-vbcl_hlp_gnome3_convert_and_apply_display_settings(
+static int vbcl_hlp_gnome3_convert_and_apply_display_settings(
     DBusConnection *connection,
     uint32_t serial,
     DBusMessageIter *physical_monitors_in,
@@ -781,8 +769,7 @@ vbcl_hlp_gnome3_convert_and_apply_display_settings(
  * @param   idPrimaryDisplay    ID (number) of display which is requested to be set as primary.
  * @param   reply               Reply message of GetCurrentState call.
  */
-static int
-vbcl_hlp_gnome3_process_current_display_layout(
+static int vbcl_hlp_gnome3_process_current_display_layout(
     DBusConnection *connection, uint32_t idPrimaryDisplay, DBusMessage *reply)
 {
     static const char *expected_signature = "ua((ssss)a(siiddada{sv})a{sv})a(iiduba(ssss)a{sv})a{sv}";
@@ -852,8 +839,7 @@ vbcl_hlp_gnome3_process_current_display_layout(
  * @return  IPRT status code.
  * @param   idPrimaryDisplay    A display ID which is requested to be set as primary.
  */
-static int
-vbcl_hlp_gnome3_set_primary_display(uint32_t idPrimaryDisplay)
+static DECLCALLBACK(int) vbcl_hlp_gnome3_set_primary_display(uint32_t idPrimaryDisplay)
 {
     int rc = VERR_GENERAL_FAILURE;
 
@@ -918,8 +904,7 @@ vbcl_hlp_gnome3_set_primary_display(uint32_t idPrimaryDisplay)
 /**
  * @interface_method_impl{VBCLDISPLAYHELPER,pfnProbe}
  */
-static int
-vbcl_hlp_gnome3_probe(void)
+static DECLCALLBACK(int) vbcl_hlp_gnome3_probe(void)
 {
     const char *pszCurrentDesktop = RTEnvGet(VBCL_HLP_ENV_XDG_CURRENT_DESKTOP);
 
@@ -937,8 +922,7 @@ vbcl_hlp_gnome3_probe(void)
  *
  * @returns True if Wayland has been detected, False otherwise.
  */
-static bool
-vbcl_hlp_gnome3_has_wayland(void)
+static bool vbcl_hlp_gnome3_has_wayland(void)
 {
     return RTEnvGet(VBCL_HLP_ENV_WAYLAND_DISPLAY) != NULL;
 }
@@ -946,8 +930,7 @@ vbcl_hlp_gnome3_has_wayland(void)
 /**
  * @interface_method_impl{VBCLDISPLAYHELPER,pfnInit}
  */
-static int
-vbcl_hlp_gnome3_init(void)
+static DECLCALLBACK(int) vbcl_hlp_gnome3_init(void)
 {
     int rc;
 
@@ -963,8 +946,7 @@ vbcl_hlp_gnome3_init(void)
 /**
  * @interface_method_impl{VBCLDISPLAYHELPER,pfnTerm}
  */
-static int
-vbcl_hlp_gnome3_term(void)
+static DECLCALLBACK(int) vbcl_hlp_gnome3_term(void)
 {
     int rc;
 

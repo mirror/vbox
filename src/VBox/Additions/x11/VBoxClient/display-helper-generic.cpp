@@ -314,7 +314,7 @@ RTDECL(int) vbcl_hlp_generic_start_display_change_monitor()
 /**
  * @interface_method_impl{VBCLDISPLAYHELPER,pfnSetPrimaryDisplay}
  */
-static int vbcl_hlp_generic_set_primary_display(uint32_t idDisplay)
+static DECLCALLBACK(int) vbcl_hlp_generic_set_primary_display(uint32_t idDisplay)
 {
     XRRScreenResources *pScreenResources;
     Display *pDisplay;
@@ -352,7 +352,7 @@ static int vbcl_hlp_generic_set_primary_display(uint32_t idDisplay)
 /**
  * @interface_method_impl{VBCLDISPLAYHELPER,pfnProbe}
  */
-static int vbcl_hlp_generic_probe(void)
+static DECLCALLBACK(int) vbcl_hlp_generic_probe(void)
 {
     /* Generic helper always supposed to return positive status on probe(). This
      * helper is a fallback one in case all the other helpers were failed to detect

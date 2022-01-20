@@ -772,7 +772,7 @@ static int vbDrmIpcClientsListRemove(PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE pC
 /**
  * @interface_method_impl{VBOX_DRMIPC_CLIENT,pfnRxCb}
  */
-static int vbDrmIpcClientRxCallBack(uint8_t idCmd, void *pvData, uint32_t cbData)
+static DECLCALLBACK(int) vbDrmIpcClientRxCallBack(uint8_t idCmd, void *pvData, uint32_t cbData)
 {
     int rc = VERR_INVALID_PARAMETER;
 
