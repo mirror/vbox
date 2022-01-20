@@ -8942,6 +8942,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
              * configure it, or establish a tunnel. We definitely do not want an orphaned
              * instance running in the cloud.
              */
+            if (!that->mGateway.mGatewayInstanceId.isEmpty())
             {
                 ComPtr<IVirtualBox> pVirtualBox;
                 HRESULT rc = that->mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
