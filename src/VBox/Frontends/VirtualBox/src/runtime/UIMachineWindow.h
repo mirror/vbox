@@ -124,9 +124,6 @@ protected slots:
     /* Session event-handlers: */
     virtual void sltMachineStateChanged();
 
-    /** Handles notification-center animation steps. */
-    void sltHandleNotificationCenterAnimationStep();
-
 protected:
 
     /* Constructor: */

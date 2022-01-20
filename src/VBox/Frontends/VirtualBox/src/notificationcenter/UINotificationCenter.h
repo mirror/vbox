@@ -54,8 +54,6 @@ signals:
     void sigOpen();
     /** Requests sliding state-machine to close overlay. */
     void sigClose();
-    /** Notifies listeners about animation step. */
-    void sigAnimationStep();
 
 public:
 

@@ -762,7 +762,6 @@ void UINotificationCenter::setAnimatedValue(int iValue)
 {
     m_iAnimatedValue = iValue;
     adjustGeometry();
-    emit sigAnimationStep();
 }
 
 int UINotificationCenter::animatedValue() const

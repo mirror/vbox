@@ -61,12 +61,7 @@ void UIMachineWindowScale::prepareMainLayout()
 void UIMachineWindowScale::prepareNotificationCenter()
 {
     if (gpNotificationCenter && (m_uScreenId == 0))
-    {
         gpNotificationCenter->setParent(centralWidget());
-        disconnect(gpNotificationCenter, &UINotificationCenter::sigAnimationStep, 0, 0);
-        connect(gpNotificationCenter, &UINotificationCenter::sigAnimationStep,
-                this, &UIMachineWindowScale::sltHandleNotificationCenterAnimationStep);
-    }
 }
 
 #ifdef VBOX_WS_MAC

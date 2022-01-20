@@ -248,11 +248,6 @@ double UIMachineView::aspectRatio() const
     return frameBuffer() ? (double)(frameBuffer()->width()) / frameBuffer()->height() : 0;
 }
 
-void UIMachineView::updateView()
-{
-    viewport()->update();
-}
-
 void UIMachineView::updateViewport()
 {
     display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
