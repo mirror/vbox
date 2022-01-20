@@ -86,8 +86,8 @@ static RTLOCALIPCSESSION g_hSession = 0;
  * Callback for display offsets change events provided by Desktop Environment specific display helper.
  *
  * @returns IPRT status code.
- * @param   cDisplays   Number of displays which have changed offset.
- * @param   paDisplays  Display data.
+ * @param   cOffsets    Number of displays which have changed offset.
+ * @param   paOffsets   Display data.
  */
 static DECLCALLBACK(int) vbclSVGASessionDisplayOffsetChanged(uint32_t cOffsets, RTPOINT *paOffsets)
 {

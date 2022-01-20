@@ -65,7 +65,7 @@
 
 /**
  * Initialize IPC client private data.
- *.
+ *
  * @return  IPRT status code.
  * @param   pClient             IPC client private data to be initialized.
  * @param   hThread             A thread which server IPC client connection.
