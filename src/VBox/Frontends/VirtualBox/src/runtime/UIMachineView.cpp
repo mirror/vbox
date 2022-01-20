@@ -1701,7 +1701,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         /* Avoid painting more than necessary: */
         painter.setClipRect(pPaintEvent->rect());
         /* Can be NULL when the event arrive during COM cleanup: */
-        UIFrameBuffer *pFramebuffer = frameBuffer(); 
+        UIFrameBuffer *pFramebuffer = frameBuffer();
         /* Take the scale-factor into account: */
         if (  pFramebuffer
             ? pFramebuffer->scaleFactor() == 1.0 && !pFramebuffer->scaledSize().isValid()
