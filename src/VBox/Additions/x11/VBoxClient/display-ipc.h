@@ -64,7 +64,7 @@ typedef enum VBOXDRMIPCSRVCMD
     /** Client reports list of current display offsets. */
     VBOXDRMIPCSRVCMD_REPORT_DISPLAY_OFFSETS,
     /** Termination of commands list. */
-    VBOXDRMIPCSRVCMD_MAX,
+    VBOXDRMIPCSRVCMD_MAX
 } VBOXDRMIPCSRVCMD;
 
 /** List of IPC commands issued by server to client. */
@@ -75,7 +75,7 @@ typedef enum VBOXDRMIPCCLTCMD
     /** Server requests client to set primary screen. */
     VBOXDRMIPCCLTCMD_SET_PRIMARY_DISPLAY,
     /** Termination of commands list. */
-    VBOXDRMIPCCLTCMD_MAX,
+    VBOXDRMIPCCLTCMD_MAX
 } VBOXDRMIPCCLTCMD;
 
 /** IPC command header. */
