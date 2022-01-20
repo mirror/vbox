@@ -987,42 +987,44 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
             vrc = RTIniFileQueryValue(hIniFile, "tree", "arch", pBuf->sz, sizeof(*pBuf), NULL);
             if (RT_FAILURE(vrc) || !pBuf->sz[0])
                 vrc = RTIniFileQueryValue(hIniFile, "general", "arch", pBuf->sz, sizeof(*pBuf), NULL);
-            if (RT_SUCCESS(vrc))
+            if (RT_FAILURE(vrc))
+                LogRel(("Unattended: .treeinfo: No 'arch' property.\n"));
+            else
             {
                 LogRelFlow(("Unattended: .treeinfo: arch=%s\n", pBuf->sz));
-                if (!detectLinuxArch(pBuf->sz, penmOsType, VBOXOSTYPE_RedHat))
-                    LogRel(("Unattended: .treeinfo: Unknown: arch='%s'\n", pBuf->sz));
-            }
-            else
-                LogRel(("Unattended: .treeinfo: No 'arch' property.\n"));
-
-            /* Try figure the release name, it doesn't have to be redhat. */
-            vrc = RTIniFileQueryValue(hIniFile, "release", "name", pBuf->sz, sizeof(*pBuf), NULL);
-            if (RT_FAILURE(vrc) || !pBuf->sz[0])
-                vrc = RTIniFileQueryValue(hIniFile, "product", "name", pBuf->sz, sizeof(*pBuf), NULL);
-            if (RT_FAILURE(vrc) || !pBuf->sz[0])
-                vrc = RTIniFileQueryValue(hIniFile, "general", "family", pBuf->sz, sizeof(*pBuf), NULL);
-            if (RT_SUCCESS(vrc))
-            {
-                LogRelFlow(("Unattended: .treeinfo: name/family=%s\n", pBuf->sz));
-                if (!detectLinuxDistroName(pBuf->sz, penmOsType, NULL))
+                if (detectLinuxArch(pBuf->sz, penmOsType, VBOXOSTYPE_RedHat))
                 {
-                    LogRel(("Unattended: .treeinfo: Unknown: name/family='%s', assuming Red Hat\n", pBuf->sz));
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
-                }
-            }
+                    /* Try figure the release name, it doesn't have to be redhat. */
+                    vrc = RTIniFileQueryValue(hIniFile, "release", "name", pBuf->sz, sizeof(*pBuf), NULL);
+                    if (RT_FAILURE(vrc) || !pBuf->sz[0])
+                        vrc = RTIniFileQueryValue(hIniFile, "product", "name", pBuf->sz, sizeof(*pBuf), NULL);
+                    if (RT_FAILURE(vrc) || !pBuf->sz[0])
+                        vrc = RTIniFileQueryValue(hIniFile, "general", "family", pBuf->sz, sizeof(*pBuf), NULL);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        LogRelFlow(("Unattended: .treeinfo: name/family=%s\n", pBuf->sz));
+                        if (!detectLinuxDistroName(pBuf->sz, penmOsType, NULL))
+                        {
+                            LogRel(("Unattended: .treeinfo: Unknown: name/family='%s', assuming Red Hat\n", pBuf->sz));
+                            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+                        }
+                    }
 
-            /* Try figure the version. */
-            vrc = RTIniFileQueryValue(hIniFile, "release", "version", pBuf->sz, sizeof(*pBuf), NULL);
-            if (RT_FAILURE(vrc) || !pBuf->sz[0])
-                vrc = RTIniFileQueryValue(hIniFile, "product", "version", pBuf->sz, sizeof(*pBuf), NULL);
-            if (RT_FAILURE(vrc) || !pBuf->sz[0])
-                vrc = RTIniFileQueryValue(hIniFile, "general", "version", pBuf->sz, sizeof(*pBuf), NULL);
-            if (RT_SUCCESS(vrc))
-            {
-                LogRelFlow(("Unattended: .treeinfo: version=%s\n", pBuf->sz));
-                try { mStrDetectedOSVersion = RTStrStrip(pBuf->sz); }
-                catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+                    /* Try figure the version. */
+                    vrc = RTIniFileQueryValue(hIniFile, "release", "version", pBuf->sz, sizeof(*pBuf), NULL);
+                    if (RT_FAILURE(vrc) || !pBuf->sz[0])
+                        vrc = RTIniFileQueryValue(hIniFile, "product", "version", pBuf->sz, sizeof(*pBuf), NULL);
+                    if (RT_FAILURE(vrc) || !pBuf->sz[0])
+                        vrc = RTIniFileQueryValue(hIniFile, "general", "version", pBuf->sz, sizeof(*pBuf), NULL);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        LogRelFlow(("Unattended: .treeinfo: version=%s\n", pBuf->sz));
+                        try { mStrDetectedOSVersion = RTStrStrip(pBuf->sz); }
+                        catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+                    }
+                }
+                else
+                    LogRel(("Unattended: .treeinfo: Unknown: arch='%s'\n", pBuf->sz));
             }
 
             RTIniFileRelease(hIniFile);
@@ -1066,92 +1068,94 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
 
         /* Do we recognize the architecture? */
         LogRelFlow(("Unattended: .discinfo: arch=%s\n", apszLines[2]));
-        if (!detectLinuxArch(apszLines[2], penmOsType, VBOXOSTYPE_RedHat))
-            LogRel(("Unattended: .discinfo: Unknown: arch='%s'\n", apszLines[2]));
-
-        /* Do we recognize the release string? */
-        LogRelFlow(("Unattended: .discinfo: product+version=%s\n", apszLines[1]));
-        const char *pszVersion = NULL;
-        if (!detectLinuxDistroName(apszLines[1], penmOsType, &pszVersion))
-            LogRel(("Unattended: .discinfo: Unknown: release='%s'\n", apszLines[1]));
-
-        if (*pszVersion)
+        if (detectLinuxArch(apszLines[2], penmOsType, VBOXOSTYPE_RedHat))
         {
-            LogRelFlow(("Unattended: .discinfo: version=%s\n", pszVersion));
-            try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
-            catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+            /* Do we recognize the release string? */
+            LogRelFlow(("Unattended: .discinfo: product+version=%s\n", apszLines[1]));
+            const char *pszVersion = NULL;
+            if (!detectLinuxDistroName(apszLines[1], penmOsType, &pszVersion))
+                LogRel(("Unattended: .discinfo: Unknown: release='%s'\n", apszLines[1]));
 
-            /* CentOS likes to call their release 'Final' without mentioning the actual version
-               number (e.g. CentOS-4.7-x86_64-binDVD.iso), so we need to go look elsewhere.
-               This is only important for centos 4.x and 3.x releases. */
-            if (RTStrNICmp(pszVersion, RT_STR_TUPLE("Final")) == 0)
+            if (*pszVersion)
             {
-                static const char * const s_apszDirs[] = { "CentOS/RPMS/", "RedHat/RPMS", "Server", "Workstation" };
-                for (unsigned iDir = 0; iDir < RT_ELEMENTS(s_apszDirs); iDir++)
+                LogRelFlow(("Unattended: .discinfo: version=%s\n", pszVersion));
+                try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
+                catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+
+                /* CentOS likes to call their release 'Final' without mentioning the actual version
+                   number (e.g. CentOS-4.7-x86_64-binDVD.iso), so we need to go look elsewhere.
+                   This is only important for centos 4.x and 3.x releases. */
+                if (RTStrNICmp(pszVersion, RT_STR_TUPLE("Final")) == 0)
                 {
-                    RTVFSDIR hVfsDir;
-                    vrc = RTVfsDirOpen(hVfsIso, s_apszDirs[iDir], 0, &hVfsDir);
-                    if (RT_FAILURE(vrc))
-                        continue;
-                    char szRpmDb[128];
-                    char szReleaseRpm[128];
-                    szRpmDb[0] = '\0';
-                    szReleaseRpm[0] = '\0';
-                    for (;;)
+                    static const char * const s_apszDirs[] = { "CentOS/RPMS/", "RedHat/RPMS", "Server", "Workstation" };
+                    for (unsigned iDir = 0; iDir < RT_ELEMENTS(s_apszDirs); iDir++)
                     {
-                        RTDIRENTRYEX DirEntry;
-                        size_t       cbDirEntry = sizeof(DirEntry);
-                        vrc = RTVfsDirReadEx(hVfsDir, &DirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING);
+                        RTVFSDIR hVfsDir;
+                        vrc = RTVfsDirOpen(hVfsIso, s_apszDirs[iDir], 0, &hVfsDir);
                         if (RT_FAILURE(vrc))
-                            break;
-
-                        /* redhat-release-4WS-2.4.i386.rpm
-                           centos-release-4-7.x86_64.rpm, centos-release-4-4.3.i386.rpm
-                           centos-release-5-3.el5.centos.1.x86_64.rpm */
-                        if (   (psz = strstr(DirEntry.szName, "-release-")) != NULL
-                            || (psz = strstr(DirEntry.szName, "-RELEASE-")) != NULL)
+                            continue;
+                        char szRpmDb[128];
+                        char szReleaseRpm[128];
+                        szRpmDb[0] = '\0';
+                        szReleaseRpm[0] = '\0';
+                        for (;;)
                         {
-                            psz += 9;
-                            if (RT_C_IS_DIGIT(*psz))
-                                RTStrCopy(szReleaseRpm, sizeof(szReleaseRpm), psz);
-                        }
-                        /* rpmdb-redhat-4WS-2.4.i386.rpm,
-                           rpmdb-CentOS-4.5-0.20070506.i386.rpm,
-                           rpmdb-redhat-3.9-0.20070703.i386.rpm. */
-                        else if (   (   RTStrStartsWith(DirEntry.szName, "rpmdb-")
-                                     || RTStrStartsWith(DirEntry.szName, "RPMDB-"))
-                                 && RT_C_IS_DIGIT(DirEntry.szName[6]) )
-                            RTStrCopy(szRpmDb, sizeof(szRpmDb), &DirEntry.szName[6]);
-                    }
-                    RTVfsDirRelease(hVfsDir);
-
-                    /* Did we find anything relvant? */
-                    psz = szRpmDb;
-                    if (!RT_C_IS_DIGIT(*psz))
-                        psz = szReleaseRpm;
-                    if (RT_C_IS_DIGIT(*psz))
-                    {
-                        /* Convert '-' to '.' and strip stuff which doesn't look like a version string. */
-                        char *pszCur = psz + 1;
-                        for (char ch = *pszCur; ch != '\0'; ch = *++pszCur)
-                            if (ch == '-')
-                                *pszCur = '.';
-                            else if (ch != '.' && !RT_C_IS_DIGIT(ch))
-                            {
-                                *pszCur = '\0';
+                            RTDIRENTRYEX DirEntry;
+                            size_t       cbDirEntry = sizeof(DirEntry);
+                            vrc = RTVfsDirReadEx(hVfsDir, &DirEntry, &cbDirEntry, RTFSOBJATTRADD_NOTHING);
+                            if (RT_FAILURE(vrc))
                                 break;
-                            }
-                        while (&pszCur[-1] != psz && pszCur[-1] == '.')
-                            *--pszCur = '\0';
 
-                        /* Set it and stop looking. */
-                        try { mStrDetectedOSVersion = psz; }
-                        catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
-                        break;
+                            /* redhat-release-4WS-2.4.i386.rpm
+                               centos-release-4-7.x86_64.rpm, centos-release-4-4.3.i386.rpm
+                               centos-release-5-3.el5.centos.1.x86_64.rpm */
+                            if (   (psz = strstr(DirEntry.szName, "-release-")) != NULL
+                                   || (psz = strstr(DirEntry.szName, "-RELEASE-")) != NULL)
+                            {
+                                psz += 9;
+                                if (RT_C_IS_DIGIT(*psz))
+                                    RTStrCopy(szReleaseRpm, sizeof(szReleaseRpm), psz);
+                            }
+                            /* rpmdb-redhat-4WS-2.4.i386.rpm,
+                               rpmdb-CentOS-4.5-0.20070506.i386.rpm,
+                               rpmdb-redhat-3.9-0.20070703.i386.rpm. */
+                            else if (   (   RTStrStartsWith(DirEntry.szName, "rpmdb-")
+                                            || RTStrStartsWith(DirEntry.szName, "RPMDB-"))
+                                        && RT_C_IS_DIGIT(DirEntry.szName[6]) )
+                                RTStrCopy(szRpmDb, sizeof(szRpmDb), &DirEntry.szName[6]);
+                        }
+                        RTVfsDirRelease(hVfsDir);
+
+                        /* Did we find anything relvant? */
+                        psz = szRpmDb;
+                        if (!RT_C_IS_DIGIT(*psz))
+                            psz = szReleaseRpm;
+                        if (RT_C_IS_DIGIT(*psz))
+                        {
+                            /* Convert '-' to '.' and strip stuff which doesn't look like a version string. */
+                            char *pszCur = psz + 1;
+                            for (char ch = *pszCur; ch != '\0'; ch = *++pszCur)
+                                if (ch == '-')
+                                    *pszCur = '.';
+                                else if (ch != '.' && !RT_C_IS_DIGIT(ch))
+                                {
+                                    *pszCur = '\0';
+                                    break;
+                                }
+                            while (&pszCur[-1] != psz && pszCur[-1] == '.')
+                                *--pszCur = '\0';
+
+                            /* Set it and stop looking. */
+                            try { mStrDetectedOSVersion = psz; }
+                            catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+                            break;
+                        }
                     }
                 }
             }
         }
+        else
+            LogRel(("Unattended: .discinfo: Unknown: arch='%s'\n", apszLines[2]));
 
         if (*penmOsType != VBOXOSTYPE_Unknown)
             return S_FALSE;
@@ -1244,18 +1248,20 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
         /* Did we find both of them? */
         if (pszDiskName && pszArch)
         {
-            if (!detectLinuxArch(pszArch, penmOsType, VBOXOSTYPE_Ubuntu))
-                LogRel(("Unattended: README.diskdefines: Unknown: arch='%s'\n", pszArch));
-
-            const char *pszVersion = NULL;
-            if (detectLinuxDistroName(pszDiskName, penmOsType, &pszVersion))
+            if (detectLinuxArch(pszArch, penmOsType, VBOXOSTYPE_Ubuntu))
             {
-                LogRelFlow(("Unattended: README.diskdefines: version=%s\n", pszVersion));
-                try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
-                catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+                const char *pszVersion = NULL;
+                if (detectLinuxDistroName(pszDiskName, penmOsType, &pszVersion))
+                {
+                    LogRelFlow(("Unattended: README.diskdefines: version=%s\n", pszVersion));
+                    try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
+                    catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
+                }
+                else
+                    LogRel(("Unattended: README.diskdefines: Unknown: diskname='%s'\n", pszDiskName));
             }
             else
-                LogRel(("Unattended: README.diskdefines: Unknown: diskname='%s'\n", pszDiskName));
+                LogRel(("Unattended: README.diskdefines: Unknown: arch='%s'\n", pszArch));
         }
         else
             LogRel(("Unattended: README.diskdefines: Did not find both DISKNAME and ARCH. :-/\n"));
