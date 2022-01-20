@@ -31,7 +31,7 @@
 #include <iprt/mem.h>
 #include <iprt/list.h>
 
-/** Load  */
+/** Load libxrandr symbols needed for us. */
 #include <VBox/xrandr.h>
 /* Declarations of the functions that we need from libXrandr. */
 #define VBOX_XRANDR_GENERATE_BODY
