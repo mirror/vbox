@@ -1,7 +1,8 @@
 /* $Id$ */
 /** @file
- * X11 guest client - VMSVGA emulation resize event pass-through to drm guest
- * driver.
+ * A user space daemon which communicates with VirtualBox host interface
+ * and performs VMSVGA-specific guest screen resize and communicates with
+ * Desktop Environment helper daemon over IPC.
  */
 
 /*
@@ -17,30 +18,64 @@
  */
 
 /*
- * Known things to test when changing this code.  All assume a guest with VMSVGA
- * active and controlled by X11 or Wayland, and Guest Additions installed and
- * running, unless otherwise stated.
- *  - On Linux 4.6 and later guests, VBoxClient --vmsvga should be running as
- *    root and not as the logged-in user.  Dynamic resizing should work for all
- *    screens in any environment which handles kernel resize notifications,
- *    including at log-in screens.  Test GNOME Shell Wayland and GNOME Shell
- *    under X.Org or Unity or KDE at the log-in screen and after log-in.
- *  - Linux 4.10 changed the user-kernel-ABI introduced in 4.6: test both.
- *  - On other guests (than Linux 4.6 or later) running X.Org Server 1.3 or
- *    later, VBoxClient --vmsvga should never be running as root, and should run
- *    (and dynamic resizing and screen enable/disable should work for all
- *    screens) whenever a user is logged in to a supported desktop environment.
- *  - On guests running X.Org Server 1.2 or older, VBoxClient --vmsvga should
- *    never run as root and should run whenever a user is logged in to a
- *    supported desktop environment.  Dynamic resizing should work for the first
- *    screen, and enabling others should not be possible.
- *  - When VMSVGA is not enabled, VBoxClient --vmsvga should never stay running.
+ * General notes
+ *
+ * This service supposed to be started on early boot. On start it will try to find
+ * compatible VMSVGA graphics card and terminate immediately if not found.
+ * VMSVGA functionality implemented here is only supported starting from vmgfx
+ * driver version 2.10 which was introduced in vanilla Linux kernel 4.6. When compatible
+ * graphics card is found, service will start a worker loop in order to receive screen
+ * update data from host and apply it to local DRM stack.
+ *
+ * In addition, it will start a local IPC server in order to communicate with Desktop
+ * Environment specific service(s). Currently, it will propagate to IPC client information
+ * which display should be set as primary on Desktop Environment level. As well as
+ * receive screen layout change events obtained on Desktop Environment level and send it
+ * back to host, so host and guest will have the same screen layout representation.
+ *
+ * Logging is implemented in a way that errors are always printed out, VBClLogVerbose(1) and
+ * VBClLogVerbose(2) are used for debugging purposes. Verbosity level 1 is for messages related
+ * to daemon itself (excluding IPC), level 2 is for IPC communication debugging. In order to see
+ * logging on a host side it is enough to do:
+ *
+ *     echo 1 > /sys/module/vboxguest/parameters/r3_log_to_host.
+ *
+ *
+ * Threads
+ *
+ * DrmResizeThread - this thread listens for display layout update events from host.
+ *     Once event is received, it either injects new screen layout data into DRM stack,
+ *     and/or asks IPC client(s) to set primary display. This thread is accessing IPC
+ *     client connection list when it needs to sent new primary display data to all the
+ *     connected clients.
+ *
+ * DrmIpcSRV - this thread is a main loop for IPC server. It accepts new connection(s),
+ *     authenticates it and starts new client thread IpcCLT-XXX for processing client
+ *     requests. This thread is accessing IPC client connection list by adding a new
+ *     connection data into it.
+ *
+ * IpcCLT-%u - this thread processes all the client data. Suffix '-%u' in thread name is PID
+ *     of a remote client process. Typical name for client thread would be IpcCLT-1234. This
+ *     thread is accessing IPC client connection list when it removes connection data from it
+ *     when actual IPC connection is closed. Due to IPRT thread name limitation, actual thread
+ *     name will be cropped by 15 characters.
+ *
+ *
+ * Locking
+ *
+ * g_ipcClientConnectionsListCritSect - protects access to list of IPC client connections.
+ *     It is used by each thread - DrmResizeThread, DrmIpcSRV and IpcCLT-XXX.
+ *
+ * g_monitorPositionsCritSect - serializes access to host interface when guest Desktop
+ *     Environment reports display layout changes.
  */
 
 #include "VBoxClient.h"
+#include "display-ipc.h"
 
 #include <VBox/VBoxGuestLib.h>
 
+#include <iprt/getopt.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
@@ -49,10 +84,14 @@
 #include <iprt/message.h>
 #include <iprt/thread.h>
 #include <iprt/asm.h>
+#include <iprt/localipc.h>
+
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
 #include <signal.h>
+#include <grp.h>
+#include <errno.h>
 
 #ifdef RT_OS_LINUX
 # include <sys/ioctl.h>
@@ -75,16 +114,20 @@
 #define VMW_RENDER_DEVICE_MINOR_START   (128)
 #define VMW_RENDER_DEVICE_MINOR_END     (192)
 
-/** Maximum number of supported screens.  DRM and X11 both limit this to 32. */
-/** @todo if this ever changes, dynamically allocate resizeable arrays in the
- *  context structure. */
-#define VMW_MAX_HEADS                   (32)
-
 /** Name of DRM resize thread. */
 #define DRM_RESIZE_THREAD_NAME          "DrmResizeThread"
 
-/* Time in milliseconds to wait for host events. */
-#define DRM_HOST_EVENT_RX_TIMEOUT_MS    (500)
+/** Name of DRM IPC server thread. */
+#define DRM_IPC_SERVER_THREAD_NAME      "DrmIpcSRV"
+/** Maximum length of thread name. */
+#define DRM_IPC_THREAD_NAME_MAX         (16)
+/** Name pattern of DRM IPC client thread. */
+#define DRM_IPC_CLIENT_THREAD_NAME_PTR  "IpcCLT-%u"
+/** Maximum number of simultaneous IPC client connections. */
+#define DRM_IPC_SERVER_CONNECTIONS_MAX  (16)
+
+/** IPC client connections counter. */
+static volatile uint32_t g_cDrmIpcConnections = 0;
 
 /** DRM version structure. */
 struct DRMVERSION
@@ -101,16 +144,6 @@ struct DRMVERSION
 };
 AssertCompileSize(struct DRMVERSION, 8 + 7 * sizeof(void *));
 
-/** Rectangle structure for geometry of a single screen. */
-struct DRMVMWRECT
-{
-    int32_t x;
-    int32_t y;
-    uint32_t w;
-    uint32_t h;
-};
-AssertCompileSize(struct DRMVMWRECT, 16);
-
 /** Preferred screen layout information for DRM_VMW_UPDATE_LAYOUT IoCtl.  The
  *  rects argument is a cast pointer to an array of drm_vmw_rect. */
 struct DRMVMWUPDATELAYOUT
@@ -121,8 +154,30 @@ struct DRMVMWUPDATELAYOUT
 };
 AssertCompileSize(struct DRMVMWUPDATELAYOUT, 16);
 
-/** These two parameters are mostly unused. Defined here in order to satisfy linking requirements. */
+/** A node of IPC client connections list. */
+typedef struct VBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE
+{
+    /** The list node. */
+    RTLISTNODE      Node;
+    /** List node payload. */
+    PVBOX_DRMIPC_CLIENT   pClient;
+} VBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE;
+
+/* Pointer to VBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE. */
+typedef VBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE *PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE;
+
+/** IPC client connections list.  */
+static VBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE g_ipcClientConnectionsList;
+
+/** IPC client connections list critical section. */
+static RTCRITSECT g_ipcClientConnectionsListCritSect;
+
+/** Critical section used for reporting monitors position back to host. */
+static RTCRITSECT g_monitorPositionsCritSect;
+
+/** Counter of how often our daemon has been re-spawned. */
 unsigned g_cRespawn = 0;
+/** Logging verbosity level. */
 unsigned g_cVerbosity = 0;
 
 /** Path to the PID file. */
@@ -132,14 +187,23 @@ static const char *g_pszPidFile = "/var/run/VBoxDRMClient";
 static bool volatile g_fShutdown;
 
 /**
- * Attempts to open DRM device by given path and check if it is
- * compatible for screen resize.
+ * Go over all existing IPC client connection and put set-primary-screen request
+ * data into TX queue of each of them .
  *
- * @return  DRM device handle on success or NIL_RTFILE otherwise.
+ * @return  IPRT status code.
+ * @param   u32PrimaryDisplay   Primary display ID.
+ */
+static int vbDrmIpcBroadcastPrimaryDisplay(uint32_t u32PrimaryDisplay);
+
+/**
+ * Attempts to open DRM device by given path and check if it is
+ * capable for screen resize.
+ *
+ * @return  DRM device handle on success, NIL_RTFILE otherwise.
  * @param   szPathPattern       Path name pattern to the DRM device.
  * @param   uInstance           Driver / device instance.
  */
-static RTFILE drmTryDevice(const char *szPathPattern, uint8_t uInstance)
+static RTFILE vbDrmTryDevice(const char *szPathPattern, uint8_t uInstance)
 {
     int rc = VERR_NOT_FOUND;
     char szPath[PATH_MAX];
@@ -169,7 +233,7 @@ static RTFILE drmTryDevice(const char *szPathPattern, uint8_t uInstance)
                     || (   vmwgfxVersion.cMajor == DRM_DRIVER_VERSION_MAJOR_MIN
                         && vmwgfxVersion.cMinor >= DRM_DRIVER_VERSION_MINOR_MIN)))
             {
-                VBClLogInfo("VBoxDRMClient: found compatible device: %s\n", szPath);
+                VBClLogInfo("found compatible device: %s\n", szPath);
             }
             else
             {
@@ -181,7 +245,7 @@ static RTFILE drmTryDevice(const char *szPathPattern, uint8_t uInstance)
     }
     else
     {
-        VBClLogError("VBoxDRMClient: unable to construct path to DRM device: %Rrc\n", rc);
+        VBClLogError("unable to construct path to DRM device: %Rrc\n", rc);
     }
 
     return RT_SUCCESS(rc) ? hDevice : NIL_RTFILE;
@@ -190,9 +254,9 @@ static RTFILE drmTryDevice(const char *szPathPattern, uint8_t uInstance)
 /**
  * Attempts to find and open DRM device to be used for screen resize.
  *
- * @return  DRM device handle on success or NIL_RTFILE otherwise.
+ * @return  DRM device handle on success, NIL_RTFILE otherwise.
  */
-static RTFILE drmOpenVmwgfx(void)
+static RTFILE vbDrmOpenVmwgfx(void)
 {
     /* Control devices for drm graphics driver control devices go from
      * controlD64 to controlD127.  Render node devices go from renderD128
@@ -206,7 +270,7 @@ static RTFILE drmOpenVmwgfx(void)
     /* Lookup control device. */
     for (i = VMW_CONTROL_DEVICE_MINOR_START; i < VMW_RENDER_DEVICE_MINOR_START; i++)
     {
-        hDevice = drmTryDevice("/dev/dri/controlD%u", i);
+        hDevice = vbDrmTryDevice("/dev/dri/controlD%u", i);
         if (hDevice != NIL_RTFILE)
             return hDevice;
     }
@@ -214,12 +278,12 @@ static RTFILE drmOpenVmwgfx(void)
     /* Lookup render device. */
     for (i = VMW_RENDER_DEVICE_MINOR_START; i <= VMW_RENDER_DEVICE_MINOR_END; i++)
     {
-        hDevice = drmTryDevice("/dev/dri/renderD%u", i);
+        hDevice = vbDrmTryDevice("/dev/dri/renderD%u", i);
         if (hDevice != NIL_RTFILE)
             return hDevice;
     }
 
-    VBClLogError("VBoxDRMClient: unable to find DRM device\n");
+    VBClLogError("unable to find DRM device\n");
 
     return hDevice;
 }
@@ -228,46 +292,48 @@ static RTFILE drmOpenVmwgfx(void)
  * This function converts input monitors layout array passed from DevVMM
  * into monitors layout array to be passed to DRM stack.
  *
- * @return  VINF_SUCCESS on success, IPRT error code otherwise.
+ * @return  VINF_SUCCESS on success, VERR_DUPLICATE if monitors layout was not changed, IPRT error code otherwise.
  * @param   aDisplaysIn         Input displays array.
  * @param   cDisplaysIn         Number of elements in input displays array.
  * @param   aDisplaysOut        Output displays array.
  * @param   cDisplaysOutMax     Number of elements in output displays array.
+ * @param   pu32PrimaryDisplay  ID of a display which marked as primary.
  * @param   pcActualDisplays    Number of displays to report to DRM stack (number of enabled displays).
  */
-static int drmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn,
-                             struct DRMVMWRECT *aDisplaysOut, uint32_t cDisplaysOutMax, uint32_t *pcActualDisplays)
+static int vbDrmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn,
+                             struct VBOX_DRMIPC_VMWRECT *aDisplaysOut, uint32_t *pu32PrimaryDisplay,
+                             uint32_t cDisplaysOutMax, uint32_t *pcActualDisplays)
 {
     /* This array is a cache of what was received from DevVMM so far.
      * DevVMM may send to us partial information bout scree layout. This
      * cache remembers entire picture. */
-    static struct VMMDevDisplayDef aVmMonitorsCache[VMW_MAX_HEADS];
+    static struct VMMDevDisplayDef aVmMonitorsCache[VBOX_DRMIPC_MONITORS_MAX];
     /* Number of valid (enabled) displays in output array. */
     uint32_t cDisplaysOut = 0;
     /* Flag indicates that current layout cache is consistent and can be passed to DRM stack. */
     bool fValid = true;
 
     /* Make sure input array fits cache size. */
-    if (cDisplaysIn > VMW_MAX_HEADS)
+    if (cDisplaysIn > VBOX_DRMIPC_MONITORS_MAX)
     {
-        VBClLogError("VBoxDRMClient: unable to validate screen layout: input (%u) array does not fit to cache size (%u)\n",
-                     cDisplaysIn, VMW_MAX_HEADS);
+        VBClLogError("unable to validate screen layout: input (%u) array does not fit to cache size (%u)\n",
+                         cDisplaysIn, VBOX_DRMIPC_MONITORS_MAX);
         return VERR_INVALID_PARAMETER;
     }
 
     /* Make sure there is enough space in output array. */
     if (cDisplaysIn > cDisplaysOutMax)
     {
-        VBClLogError("VBoxDRMClient: unable to validate screen layout: input array (%u) is bigger than output one (%u)\n",
-                     cDisplaysIn, cDisplaysOut);
+        VBClLogError("unable to validate screen layout: input array (%u) is bigger than output one (%u)\n",
+                         cDisplaysIn, cDisplaysOut);
         return VERR_INVALID_PARAMETER;
     }
 
     /* Make sure input and output arrays are of non-zero size. */
     if (!(cDisplaysIn > 0 && cDisplaysOutMax > 0))
     {
-        VBClLogError("VBoxDRMClient: unable to validate screen layout: invalid size of either input (%u) or output display array\n",
-                     cDisplaysIn, cDisplaysOutMax);
+        VBClLogError("unable to validate screen layout: invalid size of either input (%u) or output display array\n",
+                         cDisplaysIn, cDisplaysOutMax);
         return VERR_INVALID_PARAMETER;
     }
 
@@ -275,7 +341,7 @@ static int drmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn
     for (uint32_t i = 0; i < cDisplaysIn; i++)
     {
         uint32_t idDisplay = aDisplaysIn[i].idDisplay;
-        if (idDisplay < VMW_MAX_HEADS)
+        if (idDisplay < VBOX_DRMIPC_MONITORS_MAX)
         {
             aVmMonitorsCache[idDisplay].idDisplay = idDisplay;
             aVmMonitorsCache[idDisplay].fDisplayFlags = aDisplaysIn[i].fDisplayFlags;
@@ -287,20 +353,20 @@ static int drmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn
         }
         else
         {
-            VBClLogError("VBoxDRMClient: received display ID (0x%x, position %u) is invalid\n", idDisplay, i);
+            VBClLogError("received display ID (0x%x, position %u) is invalid\n", idDisplay, i);
             /* If monitor configuration cannot be placed into cache, consider entire cache is invalid. */
             fValid = false;
         }
     }
 
     /* Now, go though complete cache and check if it is valid. */
-    for (uint32_t i = 0; i < VMW_MAX_HEADS; i++)
+    for (uint32_t i = 0; i < VBOX_DRMIPC_MONITORS_MAX; i++)
     {
         if (i == 0)
         {
             if (aVmMonitorsCache[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED)
             {
-                VBClLogError("VBoxDRMClient: unable to validate screen layout: first monitor is not allowed to be disabled");
+                VBClLogError("unable to validate screen layout: first monitor is not allowed to be disabled\n");
                 fValid = false;
             }
             else
@@ -308,22 +374,19 @@ static int drmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn
         }
         else
         {
-            /* Check if there is no hole in between monitors (i.e., if current monitor is enabled, but privious one does not). */
+            /* Check if there is no hole in between monitors (i.e., if current monitor is enabled, but previous one does not). */
             if (   !(aVmMonitorsCache[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED)
                 && aVmMonitorsCache[i - 1].fDisplayFlags & VMMDEV_DISPLAY_DISABLED)
             {
-                VBClLogError("VBoxDRMClient: unable to validate screen layout: there is a hole in displays layout config, "
-                             "monitor (%u) is ENABLED while (%u) does not\n", i, i - 1);
+                VBClLogError("unable to validate screen layout: there is a hole in displays layout config, "
+                                 "monitor (%u) is ENABLED while (%u) does not\n", i, i - 1);
                 fValid = false;
             }
             else
             {
-                /* Align displays next to each other (if needed) and check if there is no holes in between monitors. */
-                if (!(aVmMonitorsCache[i].fDisplayFlags & VMMDEV_DISPLAY_ORIGIN))
-                {
-                    aVmMonitorsCache[i].xOrigin = aVmMonitorsCache[i - 1].xOrigin + aVmMonitorsCache[i - 1].cx;
-                    aVmMonitorsCache[i].yOrigin = aVmMonitorsCache[i - 1].yOrigin;
-                }
+                /* Always align screens since unaligned layout will result in disaster. */
+                aVmMonitorsCache[i].xOrigin = aVmMonitorsCache[i - 1].xOrigin + aVmMonitorsCache[i - 1].cx;
+                aVmMonitorsCache[i].yOrigin = aVmMonitorsCache[i - 1].yOrigin;
 
                 /* Only count enabled monitors. */
                 if (!(aVmMonitorsCache[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
@@ -335,6 +398,9 @@ static int drmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn
     /* Copy out layout data. */
     if (fValid)
     {
+        /* Start with invalid display ID. */
+        uint32_t u32PrimaryDisplay = VBOX_DRMIPC_MONITORS_MAX;
+
         for (uint32_t i = 0; i < cDisplaysOut; i++)
         {
             aDisplaysOut[i].x = aVmMonitorsCache[i].xOrigin;
@@ -342,13 +408,19 @@ static int drmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn
             aDisplaysOut[i].w = aVmMonitorsCache[i].cx;
             aDisplaysOut[i].h = aVmMonitorsCache[i].cy;
 
-            VBClLogInfo("VBoxDRMClient: update monitor %u parameters: %dx%d, (%d, %d)\n",
-                        i,
-                        aDisplaysOut[i].w, aDisplaysOut[i].h,
-                        aDisplaysOut[i].x, aDisplaysOut[i].y);
+            if (aVmMonitorsCache[i].fDisplayFlags & VMMDEV_DISPLAY_PRIMARY)
+            {
+                /* Make sure display layout has only one primary display
+                 * set (for display 0, host side sets primary flag, so exclude it). */
+                Assert(u32PrimaryDisplay == 0 || u32PrimaryDisplay == VBOX_DRMIPC_MONITORS_MAX);
+                u32PrimaryDisplay = i;
+            }
 
+            VBClLogVerbose(1, "update monitor %u parameters: %dx%d, (%d, %d)\n",
+                               i, aDisplaysOut[i].w, aDisplaysOut[i].h, aDisplaysOut[i].x, aDisplaysOut[i].y);
         }
 
+        *pu32PrimaryDisplay = u32PrimaryDisplay;
         *pcActualDisplays = cDisplaysOut;
     }
 
@@ -359,11 +431,11 @@ static int drmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn
  * This function sends screen layout data to DRM stack.
  *
  * @return  VINF_SUCCESS on success, IPRT error code otherwise.
- * @param   hDevice             Handle to opened DRM device.
- * @param   paRects             Array of screen configuration data.
- * @param   cRects              Number of elements in screen configuration array.
+ * @param   hDevice     Handle to opened DRM device.
+ * @param   paRects     Array of screen configuration data.
+ * @param   cRects      Number of elements in screen configuration array.
  */
-static int drmSendHints(RTFILE hDevice, struct DRMVMWRECT *paRects, uint32_t cRects)
+static int vbDrmSendHints(RTFILE hDevice, struct VBOX_DRMIPC_VMWRECT *paRects, uint32_t cRects)
 {
     int rc = 0;
     uid_t curuid;
@@ -371,7 +443,7 @@ static int drmSendHints(RTFILE hDevice, struct DRMVMWRECT *paRects, uint32_t cRe
     /* Store real user id. */
     curuid = getuid();
 
-    /* Chenge effective user id. */
+    /* Change effective user id. */
     if (setreuid(0, 0) == 0)
     {
         struct DRMVMWUPDATELAYOUT ioctlLayout;
@@ -385,13 +457,13 @@ static int drmSendHints(RTFILE hDevice, struct DRMVMWRECT *paRects, uint32_t cRe
 
         if (setreuid(curuid, 0) != 0)
         {
-            VBClLogError("VBoxDRMClient: reset of setreuid failed after drm ioctl");
+            VBClLogError("reset of setreuid failed after drm ioctl");
             rc = VERR_ACCESS_DENIED;
         }
     }
     else
     {
-        VBClLogError("VBoxDRMClient: setreuid failed during drm ioctl\n");
+        VBClLogError("setreuid failed during drm ioctl\n");
         rc = VERR_ACCESS_DENIED;
     }
 
@@ -399,19 +471,46 @@ static int drmSendHints(RTFILE hDevice, struct DRMVMWRECT *paRects, uint32_t cRe
 }
 
 /**
- * This function converts vmwgfx monitors layout data into an array of monitors offsets
+ * Send monitor positions to host (thread safe).
+ *
+ * This function is accessed from DRMResize thread and from IPC Client thread.
+ *
+ * @return  IPRT status code.
+ * @param   cDisplays   Number of displays (elements in pDisplays).
+ * @param   pDisplays   Displays parameters as it was sent to vmwgfx driver.
+ */
+static int vbDrmSendMonitorPositionsSync(uint32_t cDisplays, struct RTPOINT *pDisplays)
+{
+    int rc;
+
+    rc = RTCritSectEnter(&g_monitorPositionsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VbglR3SeamlessSendMonitorPositions(cDisplays, pDisplays);
+        int rc2 = RTCritSectLeave(&g_monitorPositionsCritSect);
+        if (RT_FAILURE(rc2))
+            VBClLogError("vbDrmSendMonitorPositionsSync: unable to leave critical section, rc=%Rrc\n", rc);
+    }
+    else
+        VBClLogError("vbDrmSendMonitorPositionsSync: unable to enter critical section, rc=%Rrc\n", rc);
+
+    return rc;
+}
+
+/**
+ * This function converts vmwgfx monitors layout data into an array of monitor offsets
  * and sends it back to the host in order to ensure that host and guest have the same
  * monitors layout representation.
  *
- * @return IPRT status code.
- * @param cDisplays     Number of displays (elements in pDisplays).
- * @param pDisplays     Displays parameters as it was sent to vmwgfx driver.
+ * @return  IPRT status code.
+ * @param   cDisplays   Number of displays (elements in pDisplays).
+ * @param   pDisplays   Displays parameters as it was sent to vmwgfx driver.
  */
-static int drmSendMonitorPositions(uint32_t cDisplays, struct DRMVMWRECT *pDisplays)
+static int drmSendMonitorPositions(uint32_t cDisplays, struct VBOX_DRMIPC_VMWRECT *pDisplays)
 {
-    static RTPOINT aPositions[VMW_MAX_HEADS];
+    static RTPOINT aPositions[VBOX_DRMIPC_MONITORS_MAX];
 
-    if (!pDisplays || !cDisplays || cDisplays > VMW_MAX_HEADS)
+    if (!pDisplays || !cDisplays || cDisplays > VBOX_DRMIPC_MONITORS_MAX)
     {
         return VERR_INVALID_PARAMETER;
     }
@@ -423,13 +522,13 @@ static int drmSendMonitorPositions(uint32_t cDisplays, struct DRMVMWRECT *pDispl
         aPositions[i].y = pDisplays[i].y;
     }
 
-    return VbglR3SeamlessSendMonitorPositions(cDisplays, aPositions);
+    return vbDrmSendMonitorPositionsSync(cDisplays, aPositions);
 }
 
 /** Worker thread for resize task. */
-static DECLCALLBACK(int) drmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) vbDrmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
-    int rc;
+    int rc = VERR_GENERAL_FAILURE;
     RTFILE hDevice = (RTFILE)pvUser;
 
     RT_NOREF1(ThreadSelf);
@@ -444,10 +543,10 @@ static DECLCALLBACK(int) drmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
 
         uint32_t events;
 
-        VMMDevDisplayDef aDisplaysIn[VMW_MAX_HEADS];
+        VMMDevDisplayDef aDisplaysIn[VBOX_DRMIPC_MONITORS_MAX];
         uint32_t cDisplaysIn = 0;
 
-        struct DRMVMWRECT aDisplaysOut[VMW_MAX_HEADS];
+        struct VBOX_DRMIPC_VMWRECT aDisplaysOut[VBOX_DRMIPC_MONITORS_MAX];
         uint32_t cDisplaysOut = 0;
 
         RT_ZERO(aDisplaysIn);
@@ -455,72 +554,439 @@ static DECLCALLBACK(int) drmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
 
         /* Query the first size without waiting.  This lets us e.g. pick up
          * the last event before a guest reboot when we start again after. */
-        rc = VbglR3GetDisplayChangeRequestMulti(VMW_MAX_HEADS, &cDisplaysIn, aDisplaysIn, fAck);
+        rc = VbglR3GetDisplayChangeRequestMulti(VBOX_DRMIPC_MONITORS_MAX, &cDisplaysIn, aDisplaysIn, fAck);
         fAck = true;
-        if (RT_FAILURE(rc))
+        if (RT_SUCCESS(rc))
         {
-            VBClLogError("Failed to get display change request, rc=%Rrc\n", rc);
-        }
-        else
-        {
+            uint32_t u32PrimaryDisplay = VBOX_DRMIPC_MONITORS_MAX;
+            static uint32_t u32PrimaryDisplayLast = VBOX_DRMIPC_MONITORS_MAX;
+
             /* Validate displays layout and push it to DRM stack if valid. */
-            rc = drmValidateLayout(aDisplaysIn, cDisplaysIn, aDisplaysOut, sizeof(aDisplaysOut), &cDisplaysOut);
+            rc = vbDrmValidateLayout(aDisplaysIn, cDisplaysIn, aDisplaysOut, &u32PrimaryDisplay, sizeof(aDisplaysOut), &cDisplaysOut);
             if (RT_SUCCESS(rc))
             {
-                rc = drmSendHints(hDevice, aDisplaysOut, cDisplaysOut);
-                VBClLogInfo("VBoxDRMClient: push screen layout data of %u display(s) to DRM stack has %s (%Rrc)\n",
-                            cDisplaysOut, RT_SUCCESS(rc) ? "succeeded" : "failed", rc);
+                rc = vbDrmSendHints(hDevice, aDisplaysOut, cDisplaysOut);
+                VBClLogInfo("push screen layout data of %u display(s) to DRM stack has %s (%Rrc)\n",
+                                cDisplaysOut, RT_SUCCESS(rc) ? "succeeded" : "failed", rc);
                 /* In addition, notify host that configuration was successfully applied to the guest vmwgfx driver. */
                 if (RT_SUCCESS(rc))
                 {
                     rc = drmSendMonitorPositions(cDisplaysOut, aDisplaysOut);
                     if (RT_FAILURE(rc))
+                        VBClLogError("cannot send host notification: %Rrc\n", rc);
+
+                    /* If information about primary display is present in display layout, send it to DE over IPC. */
+                    if (u32PrimaryDisplay != VBOX_DRMIPC_MONITORS_MAX
+                        && u32PrimaryDisplayLast != u32PrimaryDisplay)
                     {
-                        VBClLogError("VBoxDRMClient: cannot send host notification: %Rrc\n", rc);
+                        rc = vbDrmIpcBroadcastPrimaryDisplay(u32PrimaryDisplay);
+
+                        /* Cache last value in order to avoid sending duplicate data over IPC. */
+                        u32PrimaryDisplayLast = u32PrimaryDisplay;
+
+                        VBClLogVerbose(2, "DE was notified that display %u is now primary, rc=%Rrc\n", u32PrimaryDisplay, rc);
                     }
+                    else
+                        VBClLogVerbose(2, "do not notify DE that display %u is now primary, rc=%Rrc\n", u32PrimaryDisplay, rc);
                 }
             }
+            else if (rc == VERR_DUPLICATE)
+                VBClLogVerbose(2, "do not notify DRM stack about monitors layout change, rc=%Rrc\n", rc);
             else
-            {
-                VBClLogError("VBoxDRMClient: displays layout is invalid, will not notify guest driver, rc=%Rrc\n", rc);
-            }
+                VBClLogError("displays layout is invalid, will not notify guest driver, rc=%Rrc\n", rc);
         }
+        else
+            VBClLogError("Failed to get display change request, rc=%Rrc\n", rc);
 
         do
         {
-            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, DRM_HOST_EVENT_RX_TIMEOUT_MS, &events);
+            rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, VBOX_DRMIPC_RX_TIMEOUT_MS, &events);
         } while (rc == VERR_TIMEOUT && !ASMAtomicReadBool(&g_fShutdown));
 
         if (ASMAtomicReadBool(&g_fShutdown))
         {
-            VBClLogInfo("VBoxDRMClient: exitting resize thread: shutdown requested\n");
+            VBClLogInfo("exiting resize thread: shutdown requested\n");
+            /* This is a case when we should return positive status. */
+            rc = (rc == VERR_TIMEOUT) ? VINF_SUCCESS : rc;
             break;
         }
         else if (RT_FAILURE(rc))
+            VBClLogFatalError("VBoxDRMClient: resize thread: failure waiting for event, rc=%Rrc\n", rc);
+    }
+
+    return rc;
+}
+
+/**
+ * Go over all existing IPC client connection and put set-primary-screen request
+ * data into TX queue of each of them .
+ *
+ * @return  IPRT status code.
+ * @param   u32PrimaryDisplay   Primary display ID.
+ */
+static int vbDrmIpcBroadcastPrimaryDisplay(uint32_t u32PrimaryDisplay)
+{
+    int rc;
+
+    rc = RTCritSectEnter(&g_ipcClientConnectionsListCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        if (!RTListIsEmpty(&g_ipcClientConnectionsList.Node))
         {
-            VBClLogFatalError("Failure waiting for event, rc=%Rrc\n", rc);
+            PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE pEntry;
+            RTListForEach(&g_ipcClientConnectionsList.Node, pEntry, VBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE, Node)
+            {
+                AssertReturn(pEntry, VERR_INVALID_PARAMETER);
+                AssertReturn(pEntry->pClient, VERR_INVALID_PARAMETER);
+                AssertReturn(pEntry->pClient->hThread, VERR_INVALID_PARAMETER);
+
+                rc = vbDrmIpcSetPrimaryDisplay(pEntry->pClient, u32PrimaryDisplay);
+
+                VBClLogInfo("thread %s notified IPC Client that display %u is now primary, rc=%Rrc\n",
+                                RTThreadGetName(pEntry->pClient->hThread), u32PrimaryDisplay, rc);
+            }
+        }
+
+        int rc2 = RTCritSectLeave(&g_ipcClientConnectionsListCritSect);
+        if (RT_FAILURE(rc2))
+            VBClLogError("notify DE: unable to leave critical section, rc=%Rrc\n", rc2);
+    }
+    else
+        VBClLogError("notify DE: unable to enter critical section, rc=%Rrc\n", rc);
+
+    return rc;
+}
+
+/**
+ * Main loop for IPC client connection handling.
+ *
+ * @return  IPRT status code.
+ * @param   pClient     Pointer to IPC client data.
+ */
+static int vbDrmIpcConnectionProc(PVBOX_DRMIPC_CLIENT pClient)
+{
+    int rc = VERR_GENERAL_FAILURE;
+
+    AssertReturn(pClient, VERR_INVALID_PARAMETER);
+
+    /* This loop handles incoming messages. */
+    for (;;)
+    {
+        rc = vbDrmIpcConnectionHandler(pClient);
+
+        /* Try to detect if we should shutdown as early as we can. */
+        if (ASMAtomicReadBool(&g_fShutdown))
+            break;
+
+        /* Normal case. No data received within short interval. */
+        if (rc == VERR_TIMEOUT)
+        {
+            continue;
+        }
+        else if (RT_FAILURE(rc))
+        {
+            /* Terminate connection handling in case of error. */
+            VBClLogError("unable to handle IPC session, rc=%Rrc\n", rc);
+            break;
         }
     }
 
-    return 0;
+    return rc;
 }
 
-static void drmRequestShutdown(int sig)
+/**
+ * Add IPC client connection data into list of connections.
+ *
+ * List size is limited indirectly by DRM_IPC_SERVER_CONNECTIONS_MAX value.
+ * This function should only be invoked from client thread context
+ * (from vbDrmIpcClientWorker() in particular).
+ *
+ * @return  IPRT status code.
+ * @param   pClient     Client connection information to add to the list.
+ */
+static int vbDrmIpcClientsListAdd(PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE pClientNode)
 {
-    RT_NOREF1(sig);
+    int rc;
 
+    AssertReturn(pClientNode, VERR_INVALID_PARAMETER);
+
+    rc = RTCritSectEnter(&g_ipcClientConnectionsListCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        RTListAppend(&g_ipcClientConnectionsList.Node, &pClientNode->Node);
+
+        int rc2 = RTCritSectLeave(&g_ipcClientConnectionsListCritSect);
+        if (RT_FAILURE(rc2))
+            VBClLogError("add client connection: unable to leave critical section, rc=%Rrc\n", rc2);
+    }
+    else
+        VBClLogError("add client connection: unable to enter critical section, rc=%Rrc\n", rc);
+
+    return rc;
+}
+
+/**
+ * Remove IPC client connection data from list of connections.
+ *
+ * This function should only be invoked from client thread context
+ * (from vbDrmIpcClientWorker() in particular).
+ *
+ * @return  IPRT status code.
+ * @param   pClient     Client connection information to remove from the list.
+ */
+static int vbDrmIpcClientsListRemove(PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE pClientNode)
+{
+    int rc;
+    PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE pEntry, pNextEntry, pFound = NULL;
+
+    AssertReturn(pClientNode, VERR_INVALID_PARAMETER);
+
+    rc = RTCritSectEnter(&g_ipcClientConnectionsListCritSect);
+    if (RT_SUCCESS(rc))
+    {
+
+        if (!RTListIsEmpty(&g_ipcClientConnectionsList.Node))
+        {
+            RTListForEachSafe(&g_ipcClientConnectionsList.Node, pEntry, pNextEntry, VBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE, Node)
+            {
+                if (pEntry == pClientNode)
+                    pFound = (PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE)RTListNodeRemoveRet(&pEntry->Node);
+            }
+        }
+        else
+            VBClLogError("remove client connection: connections list empty, node %p not there\n", pClientNode);
+
+        int rc2 = RTCritSectLeave(&g_ipcClientConnectionsListCritSect);
+        if (RT_FAILURE(rc2))
+            VBClLogError("remove client connection: unable to leave critical section, rc=%Rrc\n", rc2);
+    }
+    else
+        VBClLogError("remove client connection: unable to enter critical section, rc=%Rrc\n", rc);
+
+    if (!pFound)
+        VBClLogError("remove client connection: node not found\n");
+
+    return !rc && pFound ? VINF_SUCCESS : VERR_INVALID_PARAMETER;
+}
+
+/**
+ * @interface_method_impl{VBOX_DRMIPC_CLIENT,pfnRxCb}
+ */
+static int vbDrmIpcClientRxCallBack(uint8_t idCmd, void *pvData, uint32_t cbData)
+{
+    int rc = VERR_INVALID_PARAMETER;
+
+    AssertReturn(pvData, VERR_INVALID_PARAMETER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    switch (idCmd)
+    {
+        case VBOXDRMIPCSRVCMD_REPORT_DISPLAY_OFFSETS:
+        {
+            PVBOX_DRMIPC_COMMAND_REPORT_DISPLAY_OFFSETS pCmd = (PVBOX_DRMIPC_COMMAND_REPORT_DISPLAY_OFFSETS)pvData;
+            AssertReturn(cbData == sizeof(VBOX_DRMIPC_COMMAND_REPORT_DISPLAY_OFFSETS), VERR_INVALID_PARAMETER);
+            rc = vbDrmSendMonitorPositionsSync(pCmd->cOffsets, pCmd->paOffsets);
+            break;
+        }
+
+        default:
+        {
+            VBClLogError("received unknown IPC command 0x%x\n", idCmd);
+            break;
+        }
+    }
+
+    return rc;
+}
+
+/** Worker thread for IPC client task. */
+static DECLCALLBACK(int) vbDrmIpcClientWorker(RTTHREAD ThreadSelf, void *pvUser)
+{
+    VBOX_DRMIPC_CLIENT        hClient  = VBOX_DRMIPC_CLIENT_INITIALIZER;
+    RTLOCALIPCSESSION   hSession = (RTLOCALIPCSESSION)pvUser;
+    int                 rc;
+
+    AssertReturn(RT_VALID_PTR(hSession), VERR_INVALID_PARAMETER);
+
+    /* Initialize client session resources. */
+    rc = vbDrmIpcClientInit(&hClient, ThreadSelf, hSession, VBOX_DRMIPC_TX_QUEUE_SIZE, vbDrmIpcClientRxCallBack);
+    if (RT_SUCCESS(rc))
+    {
+        /* Add IPC client connection data into clients list. */
+        VBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE hClientNode = { { 0, 0 } , &hClient };
+
+        rc = vbDrmIpcClientsListAdd(&hClientNode);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTThreadUserSignal(ThreadSelf);
+            if (RT_SUCCESS(rc))
+            {
+                /* Start spinning the connection. */
+                VBClLogInfo("IPC client connection started\n", rc);
+                rc = vbDrmIpcConnectionProc(&hClient);
+                VBClLogInfo("IPC client connection ended, rc=%Rrc\n", rc);
+            }
+            else
+                VBClLogError("unable to report IPC client connection handler start, rc=%Rrc\n", rc);
+
+            /* Remove IPC client connection data from clients list. */
+            rc = vbDrmIpcClientsListRemove(&hClientNode);
+            if (RT_FAILURE(rc))
+                VBClLogError("unable to remove IPC client session from list of connections, rc=%Rrc\n", rc);
+        }
+        else
+            VBClLogError("unable to add IPC client connection to the list, rc=%Rrc\n");
+
+        /* Disconnect remote peer if still connected. */
+        if (RT_VALID_PTR(hSession))
+        {
+            rc = RTLocalIpcSessionClose(hSession);
+            VBClLogInfo("IPC session closed, rc=%Rrc\n", rc);
+        }
+
+        /* Connection handler loop has ended, release session resources. */
+        rc = vbDrmIpcClientReleaseResources(&hClient);
+        if (RT_FAILURE(rc))
+            VBClLogError("unable to release IPC client session, rc=%Rrc\n", rc);
+
+        ASMAtomicDecU32(&g_cDrmIpcConnections);
+    }
+    else
+        VBClLogError("unable to initialize IPC client session, rc=%Rrc\n", rc);
+
+    VBClLogInfo("closing IPC client session, rc=%Rrc\n", rc);
+
+    return rc;
+}
+
+/**
+ * Start processing thread for IPC client requests handling.
+ *
+ * @returns IPRT status code.
+ * @param   hSession    IPC client connection handle.
+ */
+static int vbDrmIpcClientStart(RTLOCALIPCSESSION hSession)
+{
+    int         rc;
+    RTTHREAD    hThread = 0;
+    RTPROCESS   hProcess = 0;
+
+    rc = RTLocalIpcSessionQueryProcess(hSession, &hProcess);
+    if (RT_SUCCESS(rc))
+    {
+        char pszThreadName[DRM_IPC_THREAD_NAME_MAX];
+        RT_ZERO(pszThreadName);
+
+        RTStrPrintf2(pszThreadName, DRM_IPC_THREAD_NAME_MAX, DRM_IPC_CLIENT_THREAD_NAME_PTR, hProcess);
+
+        /* Attempt to start IPC client connection handler task. */
+        rc = RTThreadCreate(&hThread, vbDrmIpcClientWorker, (void *)hSession, 0,
+                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, pszThreadName);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTThreadUserWait(hThread, RT_MS_5SEC);
+        }
+    }
+
+    return rc;
+}
+
+/** Worker thread for IPC server task. */
+static DECLCALLBACK(int) vbDrmIpcServerWorker(RTTHREAD ThreadSelf, void *pvUser)
+{
+    int rc = VERR_GENERAL_FAILURE;
+    RTLOCALIPCSERVER hIpcServer = (RTLOCALIPCSERVER)pvUser;
+
+    RT_NOREF1(ThreadSelf);
+
+    AssertReturn(hIpcServer, VERR_INVALID_PARAMETER);
+
+    /* This loop accepts incoming connections. */
+    for (;;)
+    {
+        RTLOCALIPCSESSION hClientSession;
+
+        /* Wait for incoming connection. */
+        rc = RTLocalIpcServerListen(hIpcServer, &hClientSession);
+        if (RT_SUCCESS(rc))
+        {
+            VBClLogVerbose(2, "new IPC session\n");
+
+            if (ASMAtomicIncU32(&g_cDrmIpcConnections) <= DRM_IPC_SERVER_CONNECTIONS_MAX)
+            {
+                /* Authenticate remote peer. */
+                rc = vbDrmIpcAuth(hClientSession);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Start incoming connection handler thread. */
+                    rc = vbDrmIpcClientStart(hClientSession);
+                    VBClLogVerbose(2, "connection processing ended, rc=%Rrc\n", rc);
+                }
+                else
+                    VBClLogError("IPC authentication failed, rc=%Rrc\n", rc);
+            }
+            else
+                rc = VERR_RESOURCE_BUSY;
+
+            /* Release resources in case of error. */
+            if (RT_FAILURE(rc))
+            {
+                VBClLogError("maximum amount of IPC client connections reached, dropping connection\n");
+
+                int rc2 = RTLocalIpcSessionClose(hClientSession);
+                if (RT_FAILURE(rc2))
+                    VBClLogError("unable to close IPC session, rc=%Rrc\n", rc2);
+
+                ASMAtomicDecU32(&g_cDrmIpcConnections);
+            }
+        }
+        else
+            VBClLogError("IPC authentication failed, rc=%Rrc\n", rc);
+
+        /* Check shutdown was requested. */
+        if (ASMAtomicReadBool(&g_fShutdown))
+        {
+            VBClLogInfo("exiting IPC thread: shutdown requested\n");
+            break;
+        }
+
+        /* Wait a bit before spinning a loop if something went wrong. */
+        if (RT_FAILURE(rc))
+            RTThreadSleep(VBOX_DRMIPC_RX_RELAX_MS);
+    }
+
+    return rc;
+}
+
+/** A signal handler. */
+static void vbDrmRequestShutdown(int sig)
+{
+    RT_NOREF(sig);
     ASMAtomicWriteBool(&g_fShutdown, true);
 }
 
 int main(int argc, char *argv[])
 {
+    /** Custom log prefix to be used for logger instance of this process. */
+    static const char *pszLogPrefix = "VBoxDRMClient:";
+
+    static const RTGETOPTDEF s_aOptions[] = { { "--verbose", 'v', RTGETOPT_REQ_NOTHING }, };
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    int ch;
+
     RTFILE hDevice = NIL_RTFILE;
     RTFILE hPidFile;
 
+    RTLOCALIPCSERVER hIpcServer;
+    RTTHREAD vbDrmIpcThread;
+    int rcDrmIpcThread = 0;
+
     RTTHREAD drmResizeThread;
     int rcDrmResizeThread = 0;
+    int rc, rc2 = 0;
 
-    int rc = RTR3InitExe(argc, &argv, 0);
+    rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
@@ -528,36 +994,51 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         VBClLogFatalError("VBoxDRMClient: VbglR3InitUser failed: %Rrc", rc);
 
+    /* Process command line options. */
+    rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /* fFlags */);
+    if (RT_FAILURE(rc))
+        VBClLogFatalError("VBoxDRMClient: unable to process command line options, rc=%Rrc\n", rc);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (ch)
+        {
+            case 'v':
+            {
+                g_cVerbosity++;
+                break;
+            }
+
+            case VERR_GETOPT_UNKNOWN_OPTION:
+            {
+                VBClLogFatalError("unknown command line option '%s'\n", ValueUnion.psz);
+                return RTEXITCODE_SYNTAX;
+
+            }
+
+            default:
+                break;
+        }
+    }
+
     rc = VBClLogCreate("");
     if (RT_FAILURE(rc))
         VBClLogFatalError("VBoxDRMClient: failed to setup logging, rc=%Rrc\n", rc);
-
-    PRTLOGGER pReleaseLog = RTLogRelGetDefaultInstance();
-    if (pReleaseLog)
-    {
-        rc = RTLogDestinations(pReleaseLog, "stdout");
-        if (RT_FAILURE(rc))
-            VBClLogFatalError("VBoxDRMClient: failed to redirert error output, rc=%Rrc", rc);
-    }
-    else
-    {
-        VBClLogFatalError("VBoxDRMClient: failed to get logger instance");
-    }
+    VBClLogSetLogPrefix(pszLogPrefix);
 
     /* Check PID file before attempting to initialize anything. */
     rc = VbglR3PidFile(g_pszPidFile, &hPidFile);
     if (rc == VERR_FILE_LOCK_VIOLATION)
     {
-        VBClLogInfo("VBoxDRMClient: already running, exiting\n");
+        VBClLogInfo("already running, exiting\n");
         return RTEXITCODE_SUCCESS;
     }
     if (RT_FAILURE(rc))
     {
-        VBClLogError("VBoxDRMClient: unable to lock PID file (%Rrc), exiting\n", rc);
+        VBClLogError("unable to lock PID file (%Rrc), exiting\n", rc);
         return RTEXITCODE_FAILURE;
     }
 
-    hDevice = drmOpenVmwgfx();
+    hDevice = vbDrmOpenVmwgfx();
     if (hDevice == NIL_RTFILE)
         return RTEXITCODE_FAILURE;
 
@@ -568,10 +1049,6 @@ int main(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
     rc = VbglR3AcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, false);
-    if (rc == VERR_RESOURCE_BUSY)  /* Someone else has already acquired it. */
-    {
-        return RTEXITCODE_FAILURE;
-    }
     if (RT_FAILURE(rc))
     {
         VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
@@ -579,27 +1056,101 @@ int main(int argc, char *argv[])
     }
 
     /* Setup signals: gracefully terminate on SIGINT, SIGTERM. */
-    if (   signal(SIGINT, drmRequestShutdown) == SIG_ERR
-        || signal(SIGTERM, drmRequestShutdown) == SIG_ERR)
+    if (   signal(SIGINT, vbDrmRequestShutdown) == SIG_ERR
+        || signal(SIGTERM, vbDrmRequestShutdown) == SIG_ERR)
     {
-        VBClLogError("VBoxDRMClient: unable to setup signals\n");
+        VBClLogError("unable to setup signals\n");
         return RTEXITCODE_FAILURE;
     }
 
+    /* Init IPC client connection list. */
+    RTListInit(&g_ipcClientConnectionsList.Node);
+    rc = RTCritSectInit(&g_ipcClientConnectionsListCritSect);
+    if (RT_FAILURE(rc))
+    {
+        VBClLogError("unable to initialize IPC client connection list critical section\n");
+        return RTEXITCODE_FAILURE;
+    }
+
+    /* Init critical section which is used for reporting monitors offset back to host. */
+    rc = RTCritSectInit(&g_monitorPositionsCritSect);
+    if (RT_FAILURE(rc))
+    {
+        VBClLogError("unable to initialize monitors position critical section\n");
+        return RTEXITCODE_FAILURE;
+    }
+
+    /* Instantiate IPC server for VBoxClient service communication. */
+    rc = RTLocalIpcServerCreate(&hIpcServer, VBOX_DRMIPC_SERVER_NAME, 0);
+    if (RT_FAILURE(rc))
+    {
+        VBClLogError("unable to setup IPC server, rc=%Rrc\n", rc);
+        return RTEXITCODE_FAILURE;
+    }
+
+    struct group *pGrp;
+    pGrp = getgrnam(VBOX_DRMIPC_USER_GROUP);
+    if (pGrp)
+    {
+        rc = RTLocalIpcServerGrantGroupAccess(hIpcServer, pGrp->gr_gid);
+        if (RT_FAILURE(rc))
+            VBClLogError("unable to grant IPC server socket access to '" VBOX_DRMIPC_USER_GROUP "', rc=%Rrc\n", rc);
+    }
+    else
+        VBClLogError("unable to grant IPC server socket access to '" VBOX_DRMIPC_USER_GROUP "', group does not exist\n");
+
     /* Attempt to start DRM resize task. */
-    rc = RTThreadCreate(&drmResizeThread, drmResizeWorker, (void *)hDevice, 0,
+    rc = RTThreadCreate(&drmResizeThread, vbDrmResizeWorker, (void *)hDevice, 0,
                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, DRM_RESIZE_THREAD_NAME);
     if (RT_SUCCESS(rc))
     {
-        rc = RTThreadWait(drmResizeThread, RT_INDEFINITE_WAIT, &rcDrmResizeThread);
-        VBClLogInfo("VBoxDRMClient: %s thread exitted with status %Rrc\n", DRM_RESIZE_THREAD_NAME, rcDrmResizeThread);
-        rc |= rcDrmResizeThread;
+        /* Attempt to start IPC task. */
+        rc = RTThreadCreate(&vbDrmIpcThread, vbDrmIpcServerWorker, (void *)hIpcServer, 0,
+                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, DRM_IPC_SERVER_THREAD_NAME);
+        if (RT_SUCCESS(rc))
+        {
+            /* HACK ALERT!
+             * The sequence of RTThreadWait(drmResizeThread) -> RTLocalIpcServerDestroy() -> RTThreadWait(vbDrmIpcThread)
+             * is intentional! Once process received a signal, it will pull g_fShutdown flag, which in turn will cause
+             * drmResizeThread to quit. The vbDrmIpcThread might hang on accept() call, so we terminate IPC server to
+             * release it and then wait for its termination. */
+
+            rc = RTThreadWait(drmResizeThread, RT_INDEFINITE_WAIT, &rcDrmResizeThread);
+            VBClLogInfo("%s thread exited with status, rc=%Rrc\n", DRM_RESIZE_THREAD_NAME, rcDrmResizeThread);
+
+            rc = RTLocalIpcServerCancel(hIpcServer);
+            if (RT_FAILURE(rc))
+                VBClLogError("unable to notify IPC server about shutdown, rc=%Rrc\n", rc);
+
+            /* Wait for threads to terminate gracefully. */
+            rc = RTThreadWait(vbDrmIpcThread, RT_INDEFINITE_WAIT, &rcDrmIpcThread);
+            VBClLogInfo("%s thread exited with status, rc=%Rrc\n", DRM_IPC_SERVER_THREAD_NAME, rcDrmResizeThread);
+
+        }
+        else
+            VBClLogError("unable to start IPC thread, rc=%Rrc\n", rc);
     }
+    else
+        VBClLogError("unable to start resize thread, rc=%Rrc\n", rc);
+
+    rc = RTLocalIpcServerDestroy(hIpcServer);
+    if (RT_FAILURE(rc))
+        VBClLogError("unable to stop IPC server,  rc=%Rrc\n", rc);
+
+    rc2 = RTCritSectDelete(&g_monitorPositionsCritSect);
+    if (RT_FAILURE(rc2))
+        VBClLogError("unable to destroy g_monitorPositionsCritSect critsect, rc=%Rrc\n", rc2);
+
+    rc2 = RTCritSectDelete(&g_ipcClientConnectionsListCritSect);
+    if (RT_FAILURE(rc2))
+        VBClLogError("unable to destroy g_ipcClientConnectionsListCritSect critsect, rc=%Rrc\n", rc2);
 
     RTFileClose(hDevice);
 
-    VBClLogInfo("VBoxDRMClient: releasing PID file lock\n");
+    VBClLogInfo("releasing PID file lock\n");
     VbglR3ClosePidFile(g_pszPidFile, hPidFile);
+
+    VBClLogDestroy();
 
     return rc == 0 ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

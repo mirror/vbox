@@ -48,6 +48,7 @@
 #define VBOXCLIENT_OPT_DRAGANDDROP          VBOXCLIENT_OPT_SERVICES + 2
 #define VBOXCLIENT_OPT_SEAMLESS             VBOXCLIENT_OPT_SERVICES + 3
 #define VBOXCLIENT_OPT_VMSVGA               VBOXCLIENT_OPT_SERVICES + 4
+#define VBOXCLIENT_OPT_VMSVGA_SESSION       VBOXCLIENT_OPT_SERVICES + 5
 
 
 /*********************************************************************************************************************************
@@ -255,7 +256,8 @@ static void vboxClientUsage(const char *pcszFileName)
              "--seamless|"
 #endif
 #ifdef VBOX_WITH_VMSVGA
-             "--vmsvga"
+             "--vmsvga|"
+             "--vmsvga-session"
 #endif
              "\n[-d|--nodaemon]\n", pcszFileName);
     RTPrintf("\n");
@@ -274,6 +276,8 @@ static void vboxClientUsage(const char *pcszFileName)
 #endif
 #ifdef VBOX_WITH_VMSVGA
     RTPrintf("  --vmsvga             starts VMSVGA dynamic resizing for X11/Wayland guests\n");
+    RTPrintf("  --vmsvga-session     starts Desktop Environment specific screen assistant for X11/Wayland guests\n"
+             "                       (VMSVGA graphics adapter only)\n");
 #endif
     RTPrintf("  -f, --foreground     run in the foreground (no daemonizing)\n");
     RTPrintf("  -d, --nodaemon       continues running as a system service\n");
@@ -373,6 +377,7 @@ int main(int argc, char *argv[])
 #endif
 #ifdef VBOX_WITH_VMSVGA
         { "--vmsvga",                       VBOXCLIENT_OPT_VMSVGA,                    RTGETOPT_REQ_NOTHING },
+        { "--vmsvga-session",               VBOXCLIENT_OPT_VMSVGA_SESSION,            RTGETOPT_REQ_NOTHING },
 #endif
     };
 
@@ -483,6 +488,13 @@ int main(int argc, char *argv[])
                 g_Service.pDesc = &g_SvcDisplaySVGA;
                 break;
             }
+            case VBOXCLIENT_OPT_VMSVGA_SESSION:
+            {
+                if (g_Service.pDesc)
+                    return vbclSyntaxOnlyOneService();
+                g_Service.pDesc = &g_SvcDisplaySVGASession;
+                break;
+            }
 #endif
             case VINF_GETOPT_NOT_OPTION:
                 break;
@@ -519,7 +531,7 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("VbglR3InitUser failed: %Rrc", rc);
 
-    rc = VBClLogCreate(g_szLogFile[0] ? g_szLogFile : NULL);
+    rc = VBClLogCreate(g_szLogFile[0] ? g_szLogFile : "");
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("Failed to create release log '%s', rc=%Rrc\n",
                               g_szLogFile[0] ? g_szLogFile : "<None>", rc);
@@ -550,12 +562,16 @@ int main(int argc, char *argv[])
         rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile), g_Service.pDesc->pszPidFilePath);
         if (RT_FAILURE(rc))
             VBClLogFatalError("Creating PID file path failed: %Rrc\n", rc);
-        if (fDaemonise)
-            rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, &g_cRespawn);
-        if (RT_FAILURE(rc))
-            VBClLogFatalError("Daemonizing service failed: %Rrc\n", rc);
-        if (g_szPidFile[0])
-            rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
+    }
+
+    if (fDaemonise)
+        rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, &g_cRespawn);
+    if (RT_FAILURE(rc))
+        VBClLogFatalError("Daemonizing service failed: %Rrc\n", rc);
+
+    if (g_szPidFile[0])
+    {
+        rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
         if (rc == VERR_FILE_LOCK_VIOLATION)  /* Already running. */
             return RTEXITCODE_SUCCESS;
         if (RT_FAILURE(rc))
