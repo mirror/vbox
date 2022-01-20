@@ -44,6 +44,17 @@
 #include <d3d11.h>
 
 
+#ifdef RT_OS_WINDOWS
+# define VBOX_D3D11_LIBRARY_NAME "d3d11"
+#else
+# define VBOX_D3D11_LIBRARY_NAME "VBoxDxVk"
+#endif
+
+/* This is not available on non Windows hosts. */
+#ifndef D3D_RELEASE
+# define D3D_RELEASE(a_Ptr) do { if ((a_Ptr)) (a_Ptr)->Release(); (a_Ptr) = NULL; } while (0)
+#endif
+
 /** Fake ID for the backend DX context. The context creates all shared textures. */
 #define DX_CID_BACKEND UINT32_C(0xfffffffe)
 
@@ -216,6 +227,19 @@ typedef struct VMSVGA3DBACKEND
 
 static int dxDeviceFlush(DXDEVICE *pDevice);
 static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface);
+
+
+/* This is not available with the DXVK headers for some reason. */
+#ifndef RT_OS_WINDOWS
+typedef enum D3D11_TEXTURECUBE_FACE {
+  D3D11_TEXTURECUBE_FACE_POSITIVE_X,
+  D3D11_TEXTURECUBE_FACE_NEGATIVE_X,
+  D3D11_TEXTURECUBE_FACE_POSITIVE_Y,
+  D3D11_TEXTURECUBE_FACE_NEGATIVE_Y,
+  D3D11_TEXTURECUBE_FACE_POSITIVE_Z,
+  D3D11_TEXTURECUBE_FACE_NEGATIVE_Z
+} D3D11_TEXTURECUBE_FACE;
+#endif
 
 
 DECLINLINE(D3D11_TEXTURECUBE_FACE) vmsvga3dCubemapFaceFromIndex(uint32_t iFace)
@@ -999,7 +1023,7 @@ static int dxTrackRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXConte
     PVMSVGA3DSTATE pState = pThisCC->svga.p3dState;
     AssertReturn(pState, VERR_INVALID_STATE);
 
-    for (int i = 0; i < RT_ELEMENTS(pDXContext->svgaDXContext.renderState.renderTargetViewIds); ++i)
+    for (unsigned long i = 0; i < RT_ELEMENTS(pDXContext->svgaDXContext.renderState.renderTargetViewIds); ++i)
     {
         uint32_t const renderTargetViewId = pDXContext->svgaDXContext.renderState.renderTargetViewIds[i];
         if (renderTargetViewId == SVGA_ID_INVALID)
@@ -2315,6 +2339,7 @@ static int vmsvga3dBackSurfaceCreateSoBuffer(PVGASTATECC pThisCC, PVMSVGA3DDXCON
     return VERR_NO_MEMORY;
 }
 
+#if 0 /*unused*/
 /** @todo Not needed */
 static int vmsvga3dBackSurfaceCreateConstantBuffer(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSURFACE pSurface)
 {
@@ -2480,6 +2505,7 @@ static int vmsvga3dBackSurfaceCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDX
     RTMemFree(pBackendSurface);
     return VERR_NO_MEMORY;
 }
+#endif
 
 
 static int dxStagingBufferRealloc(DXDEVICE *pDXDevice, uint32_t cbRequiredSize)
@@ -2523,6 +2549,16 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
 {
     RT_NOREF(pDevIns, pThis);
 
+    int rc;
+#ifdef RT_OS_LINUX /** @todo Remove, this is currently needed for loading the X11 library in order to call XInitThreads(). */
+    rc = glLdrInit(pDevIns);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("VMSVGA3d: Error loading OpenGL library and resolving necessary functions: %Rrc\n", rc));
+        return rc;
+    }
+#endif
+
     PVMSVGA3DSTATE pState = (PVMSVGA3DSTATE)RTMemAllocZ(sizeof(VMSVGA3DSTATE));
     AssertReturn(pState, VERR_NO_MEMORY);
     pThisCC->svga.p3dState = pState;
@@ -2531,7 +2567,7 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
     AssertReturn(pBackend, VERR_NO_MEMORY);
     pState->pBackend = pBackend;
 
-    int rc = RTLdrLoadSystem("d3d11", /* fNoUnload = */ true, &pBackend->hD3D11);
+    rc = RTLdrLoadSystem(VBOX_D3D11_LIBRARY_NAME, /* fNoUnload = */ true, &pBackend->hD3D11);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
@@ -2601,20 +2637,21 @@ static DECLCALLBACK(int) vmsvga3dBackReset(PVGASTATECC pThisCC)
 }
 
 
+/** @todo Such structures must be in VBoxVideo3D.h */
+typedef struct VBOX3DNOTIFYDEFINESCREEN
+{
+    VBOX3DNOTIFY Core;
+    uint32_t cWidth;
+    uint32_t cHeight;
+    int32_t  xRoot;
+    int32_t  yRoot;
+    uint32_t fPrimary;
+    uint32_t cDpi;
+} VBOX3DNOTIFYDEFINESCREEN;
+
+
 static int vmsvga3dDrvNotifyDefineScreen(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen)
 {
-    /** @todo Such structures must be in VBoxVideo3D.h */
-    typedef struct VBOX3DNOTIFYDEFINESCREEN
-    {
-        VBOX3DNOTIFY Core;
-        uint32_t cWidth;
-        uint32_t cHeight;
-        int32_t  xRoot;
-        int32_t  yRoot;
-        uint32_t fPrimary;
-        uint32_t cDpi;
-    } VBOX3DNOTIFYDEFINESCREEN;
-
     VBOX3DNOTIFYDEFINESCREEN n;
     n.Core.enmNotification = VBOX3D_NOTIFY_TYPE_HW_SCREEN_CREATED;
     n.Core.iDisplay        = pScreen->idScreen;
@@ -2658,18 +2695,19 @@ static int vmsvga3dDrvNotifyBindSurface(PVGASTATECC pThisCC, VMSVGASCREENOBJECT 
 }
 
 
+typedef struct VBOX3DNOTIFYUPDATE
+{
+    VBOX3DNOTIFY Core;
+    uint32_t x;
+    uint32_t y;
+    uint32_t w;
+    uint32_t h;
+} VBOX3DNOTIFYUPDATE;
+
+
 static int vmsvga3dDrvNotifyUpdate(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen,
                                    uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 {
-    typedef struct VBOX3DNOTIFYUPDATE
-    {
-        VBOX3DNOTIFY Core;
-        uint32_t x;
-        uint32_t y;
-        uint32_t w;
-        uint32_t h;
-    } VBOX3DNOTIFYUPDATE;
-
     VBOX3DNOTIFYUPDATE n;
     n.Core.enmNotification = VBOX3D_NOTIFY_TYPE_HW_SCREEN_UPDATE_END;
     n.Core.iDisplay        = pScreen->idScreen;
@@ -3309,7 +3347,7 @@ static DECLCALLBACK(int) vmsvga3dScreenTargetUpdate(PVGASTATECC pThisCC, VMSVGAS
 
     /* Copy the screen texture to the shared surface. */
     DWORD result = pHwScreen->pDXGIKeyedMutex->AcquireSync(0, 10000);
-    if (result == WAIT_OBJECT_0)
+    if (result == S_OK)
     {
         pBackend->device.pImmediateContext->CopyResource(pHwScreen->pTexture, pBackendSurface->u.pTexture2D);
 
@@ -4019,6 +4057,7 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceUpdateHeapBuffers(PVGASTATECC pThisC
 }
 
 
+#if 0 /*unused*/
 /**
  * Create a new 3d context
  *
@@ -4284,6 +4323,7 @@ static DECLCALLBACK(int) vmsvga3dBackShaderSetConst(PVGASTATECC pThisCC, uint32_
     AssertFailed();
     return VINF_SUCCESS;
 }
+#endif
 
 
 /**
@@ -4582,6 +4622,7 @@ static DECLCALLBACK(int) vmsvga3dBackCreateTexture(PVGASTATECC pThisCC, PVMSVGA3
 }
 
 
+#if 0 /*unused*/
 static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryCreate(PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext)
 {
     RT_NOREF(pThisCC, pContext);
@@ -4621,6 +4662,7 @@ static DECLCALLBACK(int) vmsvga3dBackOcclusionQueryDelete(PVGASTATECC pThisCC, P
     AssertFailed();
     return VINF_SUCCESS;
 }
+#endif
 
 
 /*
@@ -5571,7 +5613,10 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetBlendState(PVGASTATECC pThisCC, PVMSVG
     pDevice->pImmediateContext->OMSetBlendState(pBlendState, blendFactor, sampleMask);
 
     pDXContext->svgaDXContext.renderState.blendStateId = blendId;
-    memcpy(pDXContext->svgaDXContext.renderState.blendFactor, blendFactor, sizeof(blendFactor));
+    pDXContext->svgaDXContext.renderState.blendFactor[0] = blendFactor[0];
+    pDXContext->svgaDXContext.renderState.blendFactor[1] = blendFactor[1];
+    pDXContext->svgaDXContext.renderState.blendFactor[2] = blendFactor[2];
+    pDXContext->svgaDXContext.renderState.blendFactor[3] = blendFactor[3];
     pDXContext->svgaDXContext.renderState.sampleMask = sampleMask;
 
     return VINF_SUCCESS;
