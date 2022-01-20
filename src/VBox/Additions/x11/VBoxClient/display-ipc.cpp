@@ -49,6 +49,9 @@
 #include <limits.h>
 #include <unistd.h>
 
+/** Maximum length of login name in system database. */
+#define VBOX_LOGIN_NAME_MAX                     (256)
+
 /**
  * Calculate size of TX list entry.
  *
@@ -236,7 +239,7 @@ RTDECL(int) vbDrmIpcAuth(RTLOCALIPCSESSION hClientSession)
         {
             while (*pAllowedGroup->gr_mem)
             {
-                if (RTStrNCmp(*pAllowedGroup->gr_mem, UserRecord->pw_name, LOGIN_NAME_MAX) == 0)
+                if (RTStrNCmp(*pAllowedGroup->gr_mem, UserRecord->pw_name, VBOX_LOGIN_NAME_MAX) == 0)
                     return VINF_SUCCESS;
 
                 pAllowedGroup->gr_mem++;
