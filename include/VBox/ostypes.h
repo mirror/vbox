@@ -40,13 +40,12 @@ RT_C_DECLS_BEGIN
  * mod 0x10000 == 0. New entries can be added, however other components
  * depend on the values (e.g. the Qt GUI and guest additions) so the
  * existing values MUST stay the same.
- *
- * Note: distinguish between 32 & 64 bits guest OSes by checking bit 8 (mod 0x100)
  */
 typedef enum VBOXOSTYPE
 {
     VBOXOSTYPE_Unknown          = 0,
     VBOXOSTYPE_Unknown_x64      = 0x00100,
+
     /** @name DOS and it's descendants
      * @{ */
     VBOXOSTYPE_DOS              = 0x10000,
@@ -153,13 +152,27 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_VBoxBS_x64       = 0xE0100,
     /** @} */
 
-/** The bit number which indicates 64-bit or 32-bit. */
-#define VBOXOSTYPE_x64_BIT       8
-    /** The mask which indicates 64-bit. */
-    VBOXOSTYPE_x64              = 1 << VBOXOSTYPE_x64_BIT,
+    /** OS type mask.   */
+    VBOXOSTYPE_OsTypeMask    = 0x00fff000,
+
+    /** @name Architecture Type
+     * @{ */
+    /** Mask containing the architecture value. */
+    VBOXOSTYPE_ArchitectureMask = 0x00f00,
+    /** Architecture value for 16-bit and 32-bit x86. */
+    VBOXOSTYPE_x86              = 0x00000,
+    /** Architecture value for 64-bit x86 (AMD64). */
+    VBOXOSTYPE_x64              = 0x00100,
+    /** Architecture value for 32-bit ARM. */
+    VBOXOSTYPE_arm32            = 0x00200,
+    /** Architecture value for 64-bit ARM. */
+    VBOXOSTYPE_arm64            = 0x00300,
+    /** Architecture value for unknown or unsupported architectures. */
+    VBOXOSTYPE_UnknownArch      = 0x00f00,
+    /** @} */
 
     /** The usual 32-bit hack. */
-    VBOXOSTYPE_32BIT_HACK = 0x7fffffff
+    VBOXOSTYPE_32BIT_HACK    = 0x7fffffff
 } VBOXOSTYPE;
 
 
