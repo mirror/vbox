@@ -807,5 +807,5 @@ IEMAllCImplSvmInstr.cpp.o          IEMAllCImplSvmInstr.cpp.obj \
 IEMAllCImplVmxInstr.cpp.o          IEMAllCImplVmxInstr.cpp.obj: IEMAll.o
 
 # Alias the NEM template to the objects where it is used:
-NEMAllNativeTemplate-win.cpp.o:    NEMR3Native-win.o NEMR0Native-win.o
+NEMAllNativeTemplate-win.cpp.o:    NEMR3Native-win.o
 

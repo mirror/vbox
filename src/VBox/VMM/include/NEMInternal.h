@@ -52,11 +52,7 @@ RT_C_DECLS_BEGIN
 /*
  * Windows: Code configuration.
  */
-//# define NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS   /**< Applies to ring-3 code only. Useful for testing VID API. */
-//# define NEM_WIN_USE_OUR_OWN_RUN_API            /**< Applies to ring-3 code only. Useful for testing VID API. */
-# if defined(NEM_WIN_USE_OUR_OWN_RUN_API) && !defined(NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS)
-#  error "NEM_WIN_USE_OUR_OWN_RUN_API requires NEM_WIN_USE_HYPERCALLS_FOR_REGISTERS"
-# endif
+/* nothing at the moment */
 
 /**
  * Windows VID I/O control information.
@@ -208,10 +204,6 @@ typedef struct NEM
     bool                        fExtendedCpuIdExit : 1;
     /** WHvRunVpExitReasonException is supported. */
     bool                        fExtendedXcptExit : 1;
-# ifndef VBOX_WITH_PGM_NEM_MODE
-    /** Set if we're using the ring-0 API to do the work. */
-    bool                        fUseRing0Runloop : 1;
-# endif
 # ifdef NEM_WIN_WITH_A20
     /** Set if we've started more than one CPU and cannot mess with A20. */
     bool                        fA20Fixed : 1;
@@ -243,8 +235,6 @@ typedef struct NEM
     /** The device handle for the partition, for use with Vid APIs or direct I/O
      * controls. */
     RTR3PTR                     hPartitionDevice;
-    /** The Hyper-V partition ID.   */
-    uint64_t                    idHvPartition;
 
     /** Number of currently mapped pages. */
     uint32_t volatile           cMappedPages;
@@ -380,55 +370,6 @@ typedef struct NEMCPU
     RTR3PTR                     pvMsgSlotMapping;
     /** The windows thread handle. */
     RTR3PTR                     hNativeThreadHandle;
-    /** Parameters for making Hyper-V hypercalls. */
-    union
-    {
-        uint8_t                 ab[64];
-        /** Arguments for NEMR0MapPages (HvCallMapGpaPages). */
-        struct
-        {
-            RTGCPHYS            GCPhysSrc;
-            RTGCPHYS            GCPhysDst; /**< Same as GCPhysSrc except maybe when the A20 gate is disabled. */
-            uint32_t            cPages;
-            HV_MAP_GPA_FLAGS    fFlags;
-        }                       MapPages;
-        /** Arguments for NEMR0UnmapPages (HvCallUnmapGpaPages). */
-        struct
-        {
-            RTGCPHYS            GCPhys;
-            uint32_t            cPages;
-        }                       UnmapPages;
-        /** Result from NEMR0QueryCpuTick. */
-        struct
-        {
-            uint64_t            cTicks;
-            uint32_t            uAux;
-        }                       QueryCpuTick;
-        /** Input and output for NEMR0DoExperiment. */
-        struct
-        {
-            uint32_t            uItem;
-            bool                fSuccess;
-            uint64_t            uStatus;
-            uint64_t            uLoValue;
-            uint64_t            uHiValue;
-        }                       Experiment;
-    } Hypercall;
-    /** I/O control buffer, we always use this for I/O controls. */
-    union
-    {
-        uint8_t                 ab[64];
-        HV_PARTITION_ID         idPartition;
-        HV_VP_INDEX             idCpu;
-        struct
-        {
-            uint64_t            enmProperty;
-            uint64_t            uValue;
-        } GetProp;
-# ifdef VID_MSHAGN_F_GET_NEXT_MESSAGE
-        VID_IOCTL_INPUT_MESSAGE_SLOT_HANDLE_AND_GET_NEXT MsgSlotHandleAndGetNext;
-# endif
-    } uIoCtlBuf;
 
     /** @name Statistics
      * @{ */
