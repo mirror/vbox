@@ -117,5 +117,16 @@ if defined(VBOX_WITH_LIBSSH) \
  include $(PATH_SUB_CURRENT)/libssh-0.9.5/Makefile.kmk
 endif
 
+# dxvk-native for supporting DirectX over Vulkan on platforms other than Windows.
+if defined(VBOX_WITH_DXVK) \
+ && !defined(VBOX_ONLY_DOCS) \
+ && !defined(VBOX_ONLY_ADDITIONS) \
+ && !defined(VBOX_ONLY_SDK) \
+ && !defined(VBOX_ONLY_VALIDATIONKIT) \
+ && !defined(VBOX_ONLY_EXTPACKS) \
+ && ("$(SDK_VBOX_DXVK_INCS)" == "$(SDK_VBOX_DXVK_DEFAULT_INCS)")
+  include $(PATH_SUB_CURRENT)/dxvk-native-1.9.2a/Makefile.kmk
+endif
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
