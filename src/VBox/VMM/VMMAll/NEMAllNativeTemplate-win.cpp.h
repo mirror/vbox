@@ -1142,8 +1142,8 @@ VMM_INT_DECL(int) NEMHCResumeCpuTickOnAll(PVMCC pVM, PVMCPUCC pVCpu, uint64_t uP
     return VINF_SUCCESS;
 }
 
-
 #ifdef LOG_ENABLED
+
 /**
  * Get the virtual processor running status.
  */
@@ -1163,10 +1163,8 @@ DECLINLINE(VID_PROCESSOR_STATUS) nemHCWinCpuGetRunningStatus(PVMCPUCC pVCpu)
     RTErrVarsRestore(&Saved);
     return enmCpuStatus;
 }
-#endif /* LOG_ENABLED */
 
 
-#ifdef LOG_ENABLED
 /**
  * Logs the current CPU state.
  */
@@ -1214,8 +1212,8 @@ NEM_TMPL_STATIC void nemHCWinLogState(PVMCC pVM, PVMCPUCC pVCpu)
 # endif
     }
 }
-#endif /* LOG_ENABLED */
 
+#endif /* LOG_ENABLED */
 
 /**
  * Translates the execution stat bitfield into a short log string, WinHv version.
@@ -1276,33 +1274,6 @@ DECLINLINE(void) nemR3WinAdvanceGuestRipAndClearRF(PVMCPUCC pVCpu, WHV_VP_EXIT_C
     { /* likely */ }
     else if (pVCpu->cpum.GstCtx.rip != EMGetInhibitInterruptsPC(pVCpu))
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-}
-
-
-NEM_TMPL_STATIC DECLCALLBACK(int)
-nemHCWinUnmapOnePageCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, uint8_t *pu2NemState, void *pvUser)
-{
-    RT_NOREF(pvUser, pVCpu);
-    STAM_REL_PROFILE_START(&pVM->nem.s.StatProfUnmapGpaRangePage, a);
-    HRESULT hrc = WHvUnmapGpaRange(pVM->nem.s.hPartition, GCPhys, X86_PAGE_SIZE);
-    STAM_REL_PROFILE_STOP(&pVM->nem.s.StatProfUnmapGpaRangePage, a);
-    if (SUCCEEDED(hrc))
-    {
-        Log5(("NEM GPA unmap all: %RGp (cMappedPages=%u)\n", GCPhys, pVM->nem.s.cMappedPages - 1));
-        *pu2NemState = NEM_WIN_PAGE_STATE_UNMAPPED;
-        STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPage);
-    }
-    else
-    {
-        LogRel(("nemHCWinUnmapOnePageCallback: GCPhys=%RGp %s hrc=%Rhrc (%#x) Last=%#x/%u (cMappedPages=%u)\n",
-                GCPhys, g_apszPageStates[*pu2NemState], hrc, hrc, RTNtLastStatusValue(),
-                RTNtLastErrorValue(), pVM->nem.s.cMappedPages));
-        *pu2NemState = NEM_WIN_PAGE_STATE_NOT_SET;
-        STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPageFailed);
-    }
-    if (pVM->nem.s.cMappedPages > 0)
-        ASMAtomicDecU32(&pVM->nem.s.cMappedPages);
-    return VINF_SUCCESS;
 }
 
 
@@ -1448,24 +1419,9 @@ nemHCWinHandleMemoryAccessPageCheckerCallback(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHY
         return VINF_SUCCESS;
     }
     STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapPageFailed);
-#if defined(VBOX_WITH_PGM_NEM_MODE)
     LogRel(("nemHCWinHandleMemoryAccessPageCheckerCallback/unmap: GCPhysDst=%RGp %s hrc=%Rhrc (%#x)\n",
             GCPhys, g_apszPageStates[u2State], hrc, hrc));
     return VERR_NEM_UNMAP_PAGES_FAILED;
-#else
-    LogRel(("nemHCWinHandleMemoryAccessPageCheckerCallback/unmap: GCPhysDst=%RGp %s hrc=%Rhrc (%#x) Last=%#x/%u (cMappedPages=%u)\n",
-            GCPhys, g_apszPageStates[u2State], hrc, hrc, RTNtLastStatusValue(), RTNtLastErrorValue(),
-            pVM->nem.s.cMappedPages));
-
-    PGMPhysNemEnumPagesByState(pVM, pVCpu, NEM_WIN_PAGE_STATE_READABLE, nemHCWinUnmapOnePageCallback, NULL);
-    Log(("nemHCWinHandleMemoryAccessPageCheckerCallback: Unmapped all (cMappedPages=%u)\n", pVM->nem.s.cMappedPages));
-    STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapAllPages);
-
-    pState->fDidSomething = true;
-    pState->fCanResume    = true;
-    pInfo->u2NemState = NEM_WIN_PAGE_STATE_UNMAPPED;
-    return VINF_SUCCESS;
-#endif
 }
 
 
@@ -2603,21 +2559,6 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
     VBOXSTRICTRC    rcStrict            = VINF_SUCCESS;
     for (unsigned iLoop = 0;; iLoop++)
     {
-#ifndef VBOX_WITH_PGM_NEM_MODE
-        /*
-         * Hack alert!
-         */
-        uint32_t const cMappedPages = pVM->nem.s.cMappedPages;
-        if (cMappedPages < pVM->nem.s.cMaxMappedPages)
-        { /* likely*/ }
-        else
-        {
-            PGMPhysNemEnumPagesByState(pVM, pVCpu, NEM_WIN_PAGE_STATE_READABLE, nemHCWinUnmapOnePageCallback, NULL);
-            Log(("nemHCWinRunGC: Unmapped all; cMappedPages=%u -> %u\n", cMappedPages, pVM->nem.s.cMappedPages));
-            STAM_REL_COUNTER_INC(&pVM->nem.s.StatUnmapAllPages);
-        }
-#endif
-
         /*
          * Pending interrupts or such?  Need to check and deal with this prior
          * to the state syncing.
@@ -2768,40 +2709,15 @@ NEM_TMPL_STATIC VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
         if (   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
             || RT_FAILURE(rcStrict))
             fImport = CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
-#ifdef IN_RING0 /* Ring-3 I/O port access optimizations: */
-        else if (   rcStrict == VINF_IOM_R3_IOPORT_COMMIT_WRITE
-                 || rcStrict == VINF_EM_PENDING_R3_IOPORT_WRITE)
-            fImport = CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_INHIBIT_INT;
-        else if (rcStrict == VINF_EM_PENDING_R3_IOPORT_READ)
-            fImport = CPUMCTX_EXTRN_RAX | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_INHIBIT_INT;
-#endif
         else if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_INTERRUPT_APIC
                                           | VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI))
             fImport |= IEM_CPUMCTX_EXTRN_XCPT_MASK;
 
         if (pVCpu->cpum.GstCtx.fExtrn & fImport)
         {
-#ifdef IN_RING0
-            int rc2 = nemR0WinImportState(pVM, pVCpu, &pVCpu->cpum.GstCtx, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT,
-                                          true /*fCanUpdateCr3*/);
-            if (RT_SUCCESS(rc2))
-                pVCpu->cpum.GstCtx.fExtrn &= ~fImport;
-            else if (rc2 == VERR_NEM_FLUSH_TLB)
-            {
-                pVCpu->cpum.GstCtx.fExtrn &= ~fImport;
-                if (rcStrict == VINF_SUCCESS || rcStrict == -rc2)
-                    rcStrict = -rc2;
-                else
-                {
-                    pVCpu->nem.s.rcPending = -rc2;
-                    LogFlow(("NEM/%u: rcPending=%Rrc (rcStrict=%Rrc)\n", pVCpu->idCpu, rc2, VBOXSTRICTRC_VAL(rcStrict) ));
-                }
-            }
-#else
             int rc2 = nemHCWinCopyStateFromHyperV(pVM, pVCpu, fImport | CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT);
             if (RT_SUCCESS(rc2))
                 pVCpu->cpum.GstCtx.fExtrn &= ~fImport;
-#endif
             else if (RT_SUCCESS(rcStrict))
                 rcStrict = rc2;
             if (!(pVCpu->cpum.GstCtx.fExtrn & (CPUMCTX_EXTRN_ALL | (CPUMCTX_EXTRN_NEM_WIN_MASK & ~CPUMCTX_EXTRN_NEM_WIN_EVENT_INJECT))))
@@ -2886,7 +2802,6 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLE
           GCPhys, cb, enmKind, pvMemR3, pu2State, *pu2State));
 
     *pu2State = UINT8_MAX;
-#if defined(VBOX_WITH_PGM_NEM_MODE)
     if (pvMemR3)
     {
         STAM_REL_PROFILE_START(&pVM->nem.s.StatProfMapGpaRange, a);
@@ -2900,9 +2815,6 @@ VMM_INT_DECL(void) NEMHCNotifyHandlerPhysicalDeregister(PVMCC pVM, PGMPHYSHANDLE
                                    pvMemR3, GCPhys, cb, hrc));
     }
     RT_NOREF(enmKind);
-#else
-    RT_NOREF(pVM, enmKind, GCPhys, cb, pvMemR3);
-#endif
 }
 
 

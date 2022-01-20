@@ -46,6 +46,9 @@ RT_C_DECLS_BEGIN
 #if defined(VBOX_WITH_PGM_NEM_MODE) && !defined(VBOX_WITH_NATIVE_NEM)
 # error "VBOX_WITH_PGM_NEM_MODE requires VBOX_WITH_NATIVE_NEM to be defined"
 #endif
+#if defined(VBOX_WITH_NATIVE_NEM) && !defined(VBOX_WITH_PGM_NEM_MODE)
+# error "VBOX_WITH_NATIVE_NEM requires VBOX_WITH_PGM_NEM_MODE to be defined"
+#endif
 
 
 #ifdef RT_OS_WINDOWS
@@ -238,22 +241,13 @@ typedef struct NEM
 
     /** Number of currently mapped pages. */
     uint32_t volatile           cMappedPages;
-    /** Max number of pages we dare map at once. */
-#ifdef VBOX_WITH_PGM_NEM_MODE
-    /** @todo consider removing this.   */
-#endif
-    uint32_t                    cMaxMappedPages;
+    uint32_t                    u32Padding;
     STAMCOUNTER                 StatMapPage;
     STAMCOUNTER                 StatUnmapPage;
-#  if !defined(VBOX_WITH_PGM_NEM_MODE)
-    STAMCOUNTER                 StatUnmapAllPages;
-#  endif
     STAMCOUNTER                 StatMapPageFailed;
     STAMCOUNTER                 StatUnmapPageFailed;
-#  ifdef VBOX_WITH_PGM_NEM_MODE
     STAMPROFILE                 StatProfMapGpaRange;
     STAMPROFILE                 StatProfUnmapGpaRange;
-#  endif
     STAMPROFILE                 StatProfMapGpaRangePage;
     STAMPROFILE                 StatProfUnmapGpaRangePage;
 
