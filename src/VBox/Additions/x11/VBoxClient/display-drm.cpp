@@ -126,7 +126,7 @@ unsigned g_cRespawn = 0;
 unsigned g_cVerbosity = 0;
 
 /** Path to the PID file. */
-static const char g_szPidFile[RTPATH_MAX] = "/var/run/VBoxDRMClient";
+static const char *g_pszPidFile = "/var/run/VBoxDRMClient";
 
 /** Global flag which is triggered when service requested to shutdown. */
 static bool volatile g_fShutdown;
@@ -545,13 +545,13 @@ int main(int argc, char *argv[])
     }
 
     /* Check PID file before attempting to initialize anything. */
-    rc = VbglR3PidFile(g_szPidFile, &hPidFile);
+    rc = VbglR3PidFile(g_pszPidFile, &hPidFile);
     if (rc == VERR_FILE_LOCK_VIOLATION)
     {
         VBClLogInfo("VBoxDRMClient: already running, exiting\n");
         return RTEXITCODE_SUCCESS;
     }
-    else if (RT_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         VBClLogError("VBoxDRMClient: unable to lock PID file (%Rrc), exiting\n", rc);
         return RTEXITCODE_FAILURE;
@@ -599,7 +599,7 @@ int main(int argc, char *argv[])
     RTFileClose(hDevice);
 
     VBClLogInfo("VBoxDRMClient: releasing PID file lock\n");
-    VbglR3ClosePidFile(g_szPidFile, hPidFile);
+    VbglR3ClosePidFile(g_pszPidFile, hPidFile);
 
     return rc == 0 ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
