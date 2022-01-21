@@ -576,7 +576,7 @@ int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t 
  * For more format details, check out:
  * https://docs.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/aa767917(v=vs.85)
  *
- * @returns VBox status code. 
+ * @returns VBox status code.
  * @param   pszSource   Source buffer that contains utf-16 string in mime html format
  * @param   cb          Size of source buffer in bytes
  * @param   ppszOutput  Where to return the allocated output buffer to put converted UTF-8
