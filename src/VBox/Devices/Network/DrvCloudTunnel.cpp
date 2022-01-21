@@ -1508,6 +1508,7 @@ static DECLCALLBACK(int) drvCloudTunnelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("DrvCloudTunnel: Configuration error: Querying \"SshKey\" as password failed"));
     rc = ssh_pki_import_privkey_base64(szVal, NULL, NULL, NULL, &pThis->SshKey);
+    RTMemWipeThoroughly(szVal, sizeof(szVal), 10);
     if (rc != SSH_OK)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_INVALID_BASE64_ENCODING,
                                 N_("DrvCloudTunnel: Configuration error: Converting \"SshKey\" from base64 failed"));
