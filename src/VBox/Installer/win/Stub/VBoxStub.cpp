@@ -148,6 +148,19 @@ static RTEXITCODE ShowError(const char *pszFmt, ...)
 
 
 /**
+ * Same as ShowError, only it returns RTEXITCODE_SYNTAX.
+ */
+static RTEXITCODE ShowSyntaxError(const char *pszFmt, ...)
+{
+    va_list va;
+    va_start(va, pszFmt);
+    ShowError("%N", pszFmt, &va);
+    va_end(va);
+    return RTEXITCODE_SYNTAX;
+}
+
+
+/**
  * Shows a message box with a printf() style formatted string.
  *
  * @param   uType               Type of the message box (see MSDN).
@@ -907,6 +920,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         { "/path",              'p', RTGETOPT_REQ_STRING  },
         { "--msiparams",        'm', RTGETOPT_REQ_STRING  },
         { "-msiparams",         'm', RTGETOPT_REQ_STRING  },
+        { "--msi-prop",         'P', RTGETOPT_REQ_STRING  },
         { "--reinstall",        'f', RTGETOPT_REQ_NOTHING },
         { "-reinstall",         'f', RTGETOPT_REQ_NOTHING },
         { "/reinstall",         'f', RTGETOPT_REQ_NOTHING },
@@ -917,7 +931,6 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         { "--version",          'V', RTGETOPT_REQ_NOTHING },
         { "-version",           'V', RTGETOPT_REQ_NOTHING },
         { "/version",           'V', RTGETOPT_REQ_NOTHING },
-        { "-v",                 'V', RTGETOPT_REQ_NOTHING },
         { "--help",             'h', RTGETOPT_REQ_NOTHING },
         { "-help",              'h', RTGETOPT_REQ_NOTHING },
         { "/help",              'h', RTGETOPT_REQ_NOTHING },
@@ -945,7 +958,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                     vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs),
                                    "REINSTALLMODE=vomus REINSTALL=ALL");
                 if (RT_FAILURE(vrc))
-                    rcExit = ShowError("MSI parameters are too long.");
+                    rcExit = ShowSyntaxError("Out of space for MSI parameters and properties");
                 break;
 
             case 'x':
@@ -968,7 +981,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
             case 'p':
                 vrc = RTStrCopy(szExtractPath, sizeof(szExtractPath), ValueUnion.psz);
                 if (RT_FAILURE(vrc))
-                    rcExit = ShowError("Extraction path is too long.");
+                    rcExit = ShowSyntaxError("Extraction path is too long.");
                 break;
 
             case 'm':
@@ -977,17 +990,39 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 if (RT_SUCCESS(vrc))
                     vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), ValueUnion.psz);
                 if (RT_FAILURE(vrc))
-                    rcExit = ShowError("MSI parameters are too long.");
+                    rcExit = ShowSyntaxError("Out of space for MSI parameters and properties");
                 break;
+
+            case 'P':
+            {
+                const char *pszProp = ValueUnion.psz;
+                if (strpbrk(pszProp, " \t\n\r") == NULL)
+                {
+                    vrc = RTGetOptFetchValue(&GetState, &ValueUnion, RTGETOPT_REQ_STRING);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        size_t cchMsiArgs = strlen(szMSIArgs);
+                        if (RTStrPrintf2(&szMSIArgs[cchMsiArgs], sizeof(szMSIArgs) - cchMsiArgs,
+                                         strpbrk(ValueUnion.psz, " \t\n\r") == NULL ? "%s%s=%s" : "%s%s=\"%s\"",
+                                         cchMsiArgs ? " " : "", pszProp, ValueUnion.psz) <= 1)
+                            rcExit = ShowSyntaxError("Out of space for MSI parameters and properties");
+                    }
+                    else if (vrc == VERR_GETOPT_REQUIRED_ARGUMENT_MISSING)
+                        rcExit = ShowSyntaxError("--msi-prop takes two arguments, the 2nd is missing");
+                    else
+                        rcExit = ShowSyntaxError("Failed to get 2nd --msi-prop argument: %Rrc", vrc);
+                }
+                else
+                    rcExit = ShowSyntaxError("The first argument to --msi-prop must not contain spaces: %s", pszProp);
+                break;
+            }
 
             case 'r':
                 fIgnoreReboot = true;
                 break;
 
             case 'V':
-                ShowInfo("Version: %d.%d.%d.%d",
-                         VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD,
-                         VBOX_SVN_REV);
+                ShowInfo("Version: %u.%u.%ur%u", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
                 fExitEarly = true;
                 break;
 
@@ -996,23 +1031,39 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 break;
 
             case 'h':
-                ShowInfo("-- %s v%d.%d.%d.%d --\n"
+                ShowInfo("-- %s v%u.%u.%ur%u --\n"
                          "\n"
                          "Command Line Parameters:\n\n"
-                         "--extract                - Extract file contents to temporary directory\n"
-                         "--help                   - Print this help and exit\n"
-                         "--logging                - Enables installer logging\n"
-                         "--msiparams <parameters> - Specifies extra parameters for the MSI installers\n"
-                         "--no-silent-cert         - Do not install VirtualBox Certificate automatically when --silent option is specified\n"
-                         "--path                   - Sets the path of the extraction directory\n"
-                         "--reinstall              - Forces VirtualBox to get re-installed\n"
-                         "--ignore-reboot          - Don't set exit code to 3010 if a reboot is required\n"
-                         "--silent                 - Enables silent mode installation\n"
-                         "--version                - Print version number and exit\n"
+                         "--extract\n"
+                         "    Extract file contents to temporary directory\n"
+                         "--logging\n"
+                         "    Enables installer logging\n"
+                         "--msiparams <parameters>\n"
+                         "    Specifies extra parameters for the MSI installers\n"
+                         "    double quoted arguments must be doubled and put\n"
+                         "    in quotes: --msiparams \"PROP=\"\"a b c\"\"\"\n"
+                         "--msi-prop <prop> <value>\n"
+                         "    Adds <prop>=<value> to the MSI parameters,\n"
+                         "    quoting the property value if necessary\n"
+                         "--no-silent-cert\n"
+                         "    Do not install VirtualBox Certificate automatically\n"
+                         "    when --silent option is specified\n"
+                         "--path\n"
+                         "    Sets the path of the extraction directory\n"
+                         "--reinstall\n"
+                         "    Forces VirtualBox to get re-installed\n"
+                         "--ignore-reboot\n"
+                         "   Do not set exit code to 3010 if a reboot is required\n"
+                         "--silent\n"
+                         "   Enables silent mode installation\n"
+                         "--version\n"
+                         "   Displays version number and exit\n"
+                         "-?, -h, --help\n"
+                         "   Displays this help text and exit\n"
                          "\n"
                          "Examples:\n"
-                         "%s --msiparams INSTALLDIR=C:\\VBox\n"
-                         "%s --extract -path C:\\VBox",
+                         "  %s --msiparams \"INSTALLDIR=\"\"C:\\Program Files\\VirtualBox\"\"\"\n"
+                         "  %s --extract -path C:\\VBox",
                          VBOX_STUB_TITLE, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
                          argv[0], argv[0]);
                 fExitEarly = true;
@@ -1021,13 +1072,14 @@ int WINAPI WinMain(HINSTANCE  hInstance,
             case VINF_GETOPT_NOT_OPTION:
                 /* Are (optional) MSI parameters specified and this is the last
                  * parameter? Append everything to the MSI parameter list then. */
+                /** @todo r=bird: this makes zero sense */
                 if (szMSIArgs[0])
                 {
                     vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), " ");
                     if (RT_SUCCESS(vrc))
                         vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), ValueUnion.psz);
                     if (RT_FAILURE(vrc))
-                        rcExit = ShowError("MSI parameters are too long.");
+                        rcExit = ShowSyntaxError("Out of space for MSI parameters and properties");
                     continue;
                 }
                 /* Fall through is intentional. */
@@ -1036,13 +1088,13 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 if (g_fSilent)
                     rcExit = RTGetOptPrintError(ch, &ValueUnion);
                 if (ch == VERR_GETOPT_UNKNOWN_OPTION)
-                    rcExit = ShowError("Unknown option \"%s\"\n"
-                                       "Please refer to the command line help by specifying \"/?\"\n"
-                                       "to get more information.", ValueUnion.psz);
+                    rcExit = ShowSyntaxError("Unknown option \"%s\"\n"
+                                             "Please refer to the command line help by specifying \"-?\"\n"
+                                             "to get more information.", ValueUnion.psz);
                 else
-                    rcExit = ShowError("Parameter parsing error: %Rrc\n"
-                                       "Please refer to the command line help by specifying \"/?\"\n"
-                                       "to get more information.", ch);
+                    rcExit = ShowSyntaxError("Parameter parsing error: %Rrc\n"
+                                             "Please refer to the command line help by specifying \"-?\"\n"
+                                             "to get more information.", ch);
                 break;
         }
     }
