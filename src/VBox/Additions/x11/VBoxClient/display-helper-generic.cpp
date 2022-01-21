@@ -39,14 +39,11 @@
 
 #include <X11/Xlibint.h>
 
-/* A log prefix which is specific for this source file. */
-#define VBCL_HLP_LOG_PREFIX         "display-helper-generic "
-
 /** Name of Display Change Monitor thread. */
 #define VBCL_HLP_DCM_THREAD_NAME    "dcm-task"
 
 /** Display Change Monitor thread. */
-static RTTHREAD vbclHlpGenericDcmThread = NIL_RTTHREAD;
+static RTTHREAD g_vbclHlpGenericDcmThread = NIL_RTTHREAD;
 
 /** Global flag which is triggered when service requested to shutdown. */
 static bool volatile g_fShutdown;
@@ -165,9 +162,10 @@ static void vbcl_hlp_generic_free_monitor_list(vbcl_hlp_generic_monitor_list_t *
  */
 static void vbcl_hlp_generic_process_display_change_event(Display *pDisplay)
 {
-    int iCount, idxDisplay = 0;
+    int iCount;
+    uint32_t idxDisplay = 0;
     XRRMonitorInfo *pMonitorsInfo = XRRGetMonitors(pDisplay, DefaultRootWindow(pDisplay), true, &iCount);
-    if (pMonitorsInfo && iCount && iCount < VBOX_DRMIPC_MONITORS_MAX)
+    if (pMonitorsInfo && iCount > 0 && iCount < VBOX_DRMIPC_MONITORS_MAX)
     {
         int rc;
         vbcl_hlp_generic_monitor_list_t pMonitorsInfoList, *pIter;
@@ -181,7 +179,7 @@ static void vbcl_hlp_generic_process_display_change_event(Display *pDisplay)
             rc = vbcl_hlp_generic_monitor_list_insert_sorted(pDisplay, &pMonitorsInfoList, &pMonitorsInfo[i]);
             if (RT_FAILURE(rc))
             {
-                VBClLogError(VBCL_HLP_LOG_PREFIX "unable to fill monitors info list, rc=%Rrc\n", rc);
+                VBClLogError("unable to fill monitors info list, rc=%Rrc\n", rc);
                 break;
             }
         }
@@ -191,7 +189,7 @@ static void vbcl_hlp_generic_process_display_change_event(Display *pDisplay)
         {
             char *pszMonitorName = XGetAtomName(pDisplay, pIter->pMonitorInfo->name);
 
-            VBClLogVerbose(1, VBCL_HLP_LOG_PREFIX "reporting monitor %s offset: (%d, %d)\n",
+            VBClLogVerbose(1, "reporting monitor %s offset: (%d, %d)\n",
                         pszMonitorName, pIter->pMonitorInfo->x, pIter->pMonitorInfo->y);
 
             XFree((void *)pszMonitorName);
@@ -207,13 +205,13 @@ static void vbcl_hlp_generic_process_display_change_event(Display *pDisplay)
 
         if (g_pfnDisplayOffsetChangeCb)
         {
-            rc = g_pfnDisplayOffsetChangeCb(iCount, aDisplayOffsets);
+            rc = g_pfnDisplayOffsetChangeCb(idxDisplay, aDisplayOffsets);
             if (RT_FAILURE(rc))
-                VBClLogError(VBCL_HLP_LOG_PREFIX "unable to notify subscriber about monitors info change, rc=%Rrc\n", rc);
+                VBClLogError("unable to notify subscriber about monitors info change, rc=%Rrc\n", rc);
         }
     }
     else
-        VBClLogError(VBCL_HLP_LOG_PREFIX "cannot get monitors info\n");
+        VBClLogError("cannot get monitors info\n");
 }
 
 /** Worker thread for display change events monitoring. */
@@ -268,7 +266,7 @@ static DECLCALLBACK(int) vbcl_hlp_generic_display_change_event_monitor_worker(RT
         }
         else
         {
-            VBClLogError(VBCL_HLP_LOG_PREFIX "dcm monitor cannot find XRandr 1.3+ extension\n");
+            VBClLogError("dcm monitor cannot find XRandr 1.3+ extension\n");
             rc = VERR_NOT_AVAILABLE;
         }
 
@@ -276,7 +274,7 @@ static DECLCALLBACK(int) vbcl_hlp_generic_display_change_event_monitor_worker(RT
     }
     else
     {
-        VBClLogError(VBCL_HLP_LOG_PREFIX "dcm monitor cannot open X Display\n");
+        VBClLogError("dcm monitor cannot open X Display\n");
         rc = VERR_NOT_AVAILABLE;
     }
 
@@ -285,7 +283,7 @@ static DECLCALLBACK(int) vbcl_hlp_generic_display_change_event_monitor_worker(RT
     return rc;
 }
 
-RTDECL(int) vbcl_hlp_generic_start_display_change_monitor()
+static void vbcl_hlp_generic_start_display_change_monitor()
 {
     int rc;
 
@@ -293,22 +291,20 @@ RTDECL(int) vbcl_hlp_generic_start_display_change_monitor()
     if (RT_SUCCESS(rc))
     {
         /* Start thread which will monitor display change events. */
-        rc = RTThreadCreate(&vbclHlpGenericDcmThread, vbcl_hlp_generic_display_change_event_monitor_worker, (void *)NULL, 0,
+        rc = RTThreadCreate(&g_vbclHlpGenericDcmThread, vbcl_hlp_generic_display_change_event_monitor_worker, (void *)NULL, 0,
                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, VBCL_HLP_DCM_THREAD_NAME);
         if (RT_SUCCESS(rc))
         {
-            rc = RTThreadUserWait(vbclHlpGenericDcmThread, RT_MS_5SEC);
+            rc = RTThreadUserWait(g_vbclHlpGenericDcmThread, RT_MS_5SEC);
         }
         else
-            vbclHlpGenericDcmThread = NIL_RTTHREAD;
+            g_vbclHlpGenericDcmThread = NIL_RTTHREAD;
 
-        VBClLogInfo(VBCL_HLP_LOG_PREFIX "attempt to start display change monitor thread, rc=%Rrc\n", rc);
+        VBClLogInfo("attempt to start display change monitor thread, rc=%Rrc\n", rc);
 
     }
     else
-        VBClLogInfo(VBCL_HLP_LOG_PREFIX "libXrandr not available, will not monitor display change events, rc=%Rrc\n", rc);
-
-    return rc;
+        VBClLogInfo("libXrandr not available, will not monitor display change events, rc=%Rrc\n", rc);
 }
 
 /**
@@ -330,21 +326,21 @@ static DECLCALLBACK(int) vbcl_hlp_generic_set_primary_display(uint32_t idDisplay
             if ((int)idDisplay < pScreenResources->noutput)
             {
                 XRRSetOutputPrimary(pDisplay, DefaultRootWindow(pDisplay), pScreenResources->outputs[idDisplay]);
-                VBClLogInfo(VBCL_HLP_LOG_PREFIX "display %u has been set as primary\n", idDisplay);
+                VBClLogInfo("display %u has been set as primary\n", idDisplay);
                 rc = VINF_SUCCESS;
             }
             else
-                VBClLogError(VBCL_HLP_LOG_PREFIX "cannot set display %u as primary: index out of range\n", idDisplay);
+                VBClLogError("cannot set display %u as primary: index out of range\n", idDisplay);
 
             XRRFreeScreenResources(pScreenResources);
         }
         else
-            VBClLogError(VBCL_HLP_LOG_PREFIX "cannot set display %u as primary: libXrandr can not get screen resources\n", idDisplay);
+            VBClLogError("cannot set display %u as primary: libXrandr can not get screen resources\n", idDisplay);
 
         XCloseDisplay(pDisplay);
     }
     else
-        VBClLogError(VBCL_HLP_LOG_PREFIX "cannot set display %u as primary: cannot connect to X11\n", idDisplay);
+        VBClLogError("cannot set display %u as primary: cannot connect to X11\n", idDisplay);
 
     return rc;
 }
@@ -367,9 +363,8 @@ RTDECL(int) vbcl_hlp_generic_init(void)
 {
     ASMAtomicWriteBool(&g_fShutdown, false);
 
-    /* Attempt to start display change events monitor. Ignore rc,
-     * error will be printed inside function anyway. */
-    (void)vbcl_hlp_generic_start_display_change_monitor();
+    /* Attempt to start display change events monitor. */
+    vbcl_hlp_generic_start_display_change_monitor();
 
     /* Always return positive status for generic (fallback, last resort) helper. */
     return VINF_SUCCESS;
@@ -382,13 +377,13 @@ RTDECL(int) vbcl_hlp_generic_term(void)
 {
     int rc = VINF_SUCCESS;
 
-    if (vbclHlpGenericDcmThread != NIL_RTTHREAD)
+    if (g_vbclHlpGenericDcmThread != NIL_RTTHREAD)
     {
         /* Signal thread we are going to shutdown. */
         ASMAtomicWriteBool(&g_fShutdown, true);
 
         /* Wait for thread to terminate gracefully. */
-        rc = RTThreadWait(vbclHlpGenericDcmThread, RT_MS_5SEC, NULL);
+        rc = RTThreadWait(g_vbclHlpGenericDcmThread, RT_MS_5SEC, NULL);
     }
 
     return rc;
