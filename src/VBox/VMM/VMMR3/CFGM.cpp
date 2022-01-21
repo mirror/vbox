@@ -2114,8 +2114,10 @@ static void cfgmR3FreeValue(PVM pVM, PCFGMLEAF pLeaf)
                 pLeaf->Value.Bytes.cb = 0;
                 break;
 
-            case CFGMVALUETYPE_STRING:
             case CFGMVALUETYPE_PASSWORD:
+                RTMemWipeThoroughly(pLeaf->Value.String.psz, pLeaf->Value.String.cb, 10);
+                RT_FALL_THROUGH();
+            case CFGMVALUETYPE_STRING:
                 cfgmR3StrFree(pVM, pLeaf->Value.String.psz);
                 pLeaf->Value.String.psz = NULL;
                 pLeaf->Value.String.cb = 0;
@@ -2413,7 +2415,10 @@ VMMR3DECL(int) CFGMR3InsertPasswordN(PCFGMNODE pNode, const char *pszName, const
                 pLeaf->Value.String.cb  = cchString + 1;
             }
             else
+            {
+                RTMemWipeThoroughly(pszStringCopy, cchString, 10);
                 cfgmR3StrFree(pNode->pVM, pszStringCopy);
+            }
         }
         else
             rc = VERR_NO_MEMORY;

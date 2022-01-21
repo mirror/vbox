@@ -43,7 +43,7 @@ typedef union CFGMVALUE
         uint64_t        u64;
     } Integer;
 
-    /** String value. (UTF-8 of course) */
+    /** String or password value. (UTF-8 of course) */
     struct CFGMVALUE_STRING
     {
         /** Length of string. (In bytes, including the terminator.) */
