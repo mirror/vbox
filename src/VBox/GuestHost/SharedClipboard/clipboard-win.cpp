@@ -512,7 +512,7 @@ int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t 
         {
             if (   offStart > 0
                 && offEnd > 0
-                && offEnd > offStart
+                && offEnd >= offStart
                 && offEnd <= cch)
             {
                 uint32_t cchSubStr = offEnd - offStart;
@@ -593,31 +593,36 @@ int SharedClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char
     Assert(pszSource);
     Assert(cb);
 
-    /* construct CF_HTML formatted string */
-
-    /* Check that input is zero terminated. */
-    /** @todo r=bird: Check that it's valid UTF-8 encoded too. */
-    size_t cchFragment;
-    int rc = RTStrNLenEx(pszSource, cb, &cchFragment);
-    if (!RT_SUCCESS(rc))
+    /*
+     * Check that input UTF-8 and properly zero terminated.
+     * Note! The zero termination may come earlier than 'cb' - 1, that's fine.
+     */
+    int rc = RTStrValidateEncodingEx(pszSource, cb, RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else
     {
         LogRelFlowFunc(("Error: invalid source fragment. rc = %Rrc\n", rc));
-        return VERR_INVALID_PARAMETER;
+        return rc;
     }
+    size_t const cchFragment = strlen(pszSource); /* Unfortunately the validator doesn't return the length. */
 
     /*
-    @StartHtml - pos before <html>
-    @EndHtml - whole size of text excluding ending zero char
-    @StartFragment - pos after <!--StartFragment-->
-    @EndFragment - pos before <!--EndFragment-->
-    @note: all values includes CR\LF inserted into text
-    Calculations:
-    Header length = format Length + (3*6('digits')) - 2('%s') = format length + 16 (control value - 183)
-    EndHtml  = Header length + fragment length
-    StartHtml = 105(constant)
-    StartFragment = 143(constant)
-    EndFragment  = Header length + fragment length - 40(ending length)
-    */
+     * @StartHtml     - Absolute offset of <html>
+     * @EndHtml       - Size of the whole resulting text (excluding ending zero char)
+     * @StartFragment - Absolute position after <!--StartFragment-->
+     * @EndFragment   - Absolute position of <!--EndFragment-->
+     *
+     * Note! The offset are zero padded to max width so we don't have any variations due to those.
+     * Note! All values includes CRLFs inserted into text.
+     *
+     * Calculations:
+     *   Header length = Format sample length - 2 ('%s')
+     *   EndHtml       = Header length + fragment length
+     *   StartHtml     = 101(constant)
+     *   StartFragment = 137(constant)
+     *   EndFragment   = Header length + fragment length - 38 (ending length)
+     */
     static const char s_szFormatSample[] =
     /*   0:   */ "Version:1.0\r\n"
     /*  13:   */ "StartHTML:000000101\r\n"
@@ -630,36 +635,33 @@ int SharedClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char
     /* 137:   */ "%s"
     /* 137+2: */ "<!--EndFragment-->\r\n"
     /* 157+2: */ "</body>\r\n"
-    /* 166+2: */ "</html>\r\n";
-    /* 175+2: */
+    /* 166+2: */ "</html>\r\n"
+    /* 175+2: */ ;
     AssertCompile(sizeof(s_szFormatSample) == 175 + 2 + 1);
 
-    /* calculate parameters of CF_HTML header */
-    size_t cchHeader      = sizeof(s_szFormatSample) - 1;
-    size_t offEndHtml     = cchHeader + cchFragment;
-    size_t offEndFragment = cchHeader + cchFragment - 38; /* 175-137 = 38 */
+    /* Calculate parameters of the CF_HTML header */
+    size_t const cchHeader      = sizeof(s_szFormatSample) - 2 /*%s*/ - 1 /*'\0'*/;
+    size_t const offEndHtml     = cchHeader + cchFragment;
+    size_t const offEndFragment = cchHeader + cchFragment - 38; /* 175-137 = 38 */
     char *pszResult = (char *)RTMemAlloc(offEndHtml + 1);
-    if (pszResult == NULL)
-    {
-        LogRelFlowFunc(("Error: Cannot allocate memory for result buffer. rc = %Rrc\n"));
-        return VERR_NO_MEMORY;
-    }
+    AssertLogRelReturn(pszResult, VERR_NO_MEMORY);
 
-    /* format result CF_HTML string */
-    size_t cchFormatted = RTStrPrintf(pszResult, offEndHtml + 1,
-                                      s_szFormatSample, offEndHtml, offEndFragment, pszSource);
+    /* Format resulting CF_HTML string: */
+    size_t cchFormatted = RTStrPrintf(pszResult, offEndHtml + 1, s_szFormatSample, offEndHtml, offEndFragment, pszSource);
     Assert(offEndHtml == cchFormatted);
 
 #ifdef VBOX_STRICT
-    /* Control calculations. check consistency.*/
-    static const char s_szStartFragment[] = "<!--StartFragment-->";
-    static const char s_szEndFragment[] = "<!--EndFragment-->";
+    /*
+     * Check the calculations.
+     */
 
     /* check 'StartFragment:' value */
+    static const char s_szStartFragment[] = "<!--StartFragment-->";
     const char *pszRealStartFragment = RTStrStr(pszResult, s_szStartFragment);
     Assert(&pszRealStartFragment[sizeof(s_szStartFragment) - 1] - pszResult == 137);
 
     /* check 'EndFragment:' value */
+    static const char s_szEndFragment[] = "<!--EndFragment-->";
     const char *pszRealEndFragment = RTStrStr(pszResult, s_szEndFragment);
     Assert((size_t)(pszRealEndFragment - pszResult) == offEndFragment);
 #endif

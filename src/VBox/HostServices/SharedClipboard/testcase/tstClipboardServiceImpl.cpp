@@ -18,6 +18,9 @@
 #include "../VBoxSharedClipboardSvc-internal.h"
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
+#ifdef RT_OS_WINDOWS
+# include <VBox/GuestHost/SharedClipboard-win.h>
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -67,6 +70,8 @@ static void testAnnounceAndReadData(void)
     int rc;
 
     RTTestISub("Setting up client ...");
+    RTTestIDisableAssertions();
+
     rc = setupTable(&table);
     RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));
     /* Unless we are bidirectional the host message requests will be dropped. */
@@ -75,7 +80,89 @@ static void testAnnounceAndReadData(void)
     RTTESTI_CHECK_RC_OK(rc);
     rc = shClSvcClientInit(&g_Client, 1 /* clientId */);
     RTTESTI_CHECK_RC_OK(rc);
+
+    RTTestIRestoreAssertions();
 }
+
+#ifdef RT_OS_WINDOWS
+# include "VBoxOrgCfHtml1.h"    /* From chrome 97.0.4692.71 */
+# include "VBoxOrgMimeHtml1.h"
+
+static void testHtmlCf(void)
+{
+    RTTestISub("CF_HTML");
+
+    char    *pszOutput = NULL;
+    uint32_t cbOutput  = UINT32_MAX/2;
+    RTTestIDisableAssertions();
+    RTTESTI_CHECK_RC(SharedClipboardWinConvertCFHTMLToMIME("", 0, &pszOutput, &cbOutput), VERR_INVALID_PARAMETER);
+    RTTestIRestoreAssertions();
+
+    pszOutput = NULL;
+    cbOutput  = UINT32_MAX/2;
+    RTTESTI_CHECK_RC(SharedClipboardWinConvertCFHTMLToMIME((char *)&g_abVBoxOrgCfHtml1[0], g_cbVBoxOrgCfHtml1,
+                                                           &pszOutput, &cbOutput), VINF_SUCCESS);
+    RTTESTI_CHECK(cbOutput == g_cbVBoxOrgMimeHtml1);
+    RTTESTI_CHECK(memcmp(pszOutput, g_abVBoxOrgMimeHtml1, cbOutput) == 0);
+    RTMemFree(pszOutput);
+
+
+    static RTSTRTUPLE const s_aRoundTrips[] =
+    {
+        { RT_STR_TUPLE("") },
+        { RT_STR_TUPLE("1") },
+        { RT_STR_TUPLE("12") },
+        { RT_STR_TUPLE("123") },
+        { RT_STR_TUPLE("1234") },
+        { RT_STR_TUPLE("12345") },
+        { RT_STR_TUPLE("123456") },
+        { RT_STR_TUPLE("1234567") },
+        { RT_STR_TUPLE("12345678") },
+        { RT_STR_TUPLE("123456789") },
+        { RT_STR_TUPLE("1234567890") },
+        { RT_STR_TUPLE("<h2>asdfkjhasdflhj</h2>") },
+        { RT_STR_TUPLE("<h2>asdfkjhasdflhj</h2>\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0") },
+        { (const char *)g_abVBoxOrgMimeHtml1, sizeof(g_abVBoxOrgMimeHtml1) },
+    };
+
+    for (size_t i = 0; i < RT_ELEMENTS(s_aRoundTrips); i++)
+    {
+        int      rc;
+        char    *pszCfHtml = NULL;
+        uint32_t cbCfHtml  = UINT32_MAX/2;
+        rc = SharedClipboardWinConvertMIMEToCFHTML(s_aRoundTrips[i].psz, s_aRoundTrips[i].cch + 1, &pszCfHtml, &cbCfHtml);
+        if (rc == VINF_SUCCESS)
+        {
+            if (strlen(pszCfHtml) + 1 != cbCfHtml)
+                RTTestIFailed("#%u: SharedClipboardWinConvertMIMEToCFHTML(%s, %#zx,,) returned incorrect length: %#x, actual %#zx",
+                              i, s_aRoundTrips[i].psz, s_aRoundTrips[i].cch, cbCfHtml, strlen(pszCfHtml) + 1);
+
+            char     *pszHtml = NULL;
+            uint32_t  cbHtml  = UINT32_MAX/4;
+            rc = SharedClipboardWinConvertCFHTMLToMIME(pszCfHtml, (uint32_t)strlen(pszCfHtml), &pszHtml, &cbHtml);
+            if (rc == VINF_SUCCESS)
+            {
+                if (strlen(pszHtml) + 1 != cbHtml)
+                    RTTestIFailed("#%u: SharedClipboardWinConvertCFHTMLToMIME(%s, %#zx,,) returned incorrect length: %#x, actual %#zx",
+                                  i, pszHtml, strlen(pszHtml), cbHtml, strlen(pszHtml) + 1);
+                if (strcmp(pszHtml, s_aRoundTrips[i].psz) != 0)
+                    RTTestIFailed("#%u: roundtrip for '%s' LB %#zx failed, ended up with '%s'",
+                                  i, s_aRoundTrips[i].psz, s_aRoundTrips[i].cch, pszHtml);
+                RTMemFree(pszHtml);
+            }
+            else
+                RTTestIFailed("#%u: SharedClipboardWinConvertCFHTMLToMIME(%s, %#zx,,) returned %Rrc, expected VINF_SUCCESS",
+                              i, pszCfHtml, strlen(pszCfHtml), rc);
+            RTMemFree(pszCfHtml);
+        }
+        else
+            RTTestIFailed("#%u: SharedClipboardWinConvertMIMEToCFHTML(%s, %#zx,,) returned %Rrc, expected VINF_SUCCESS",
+                          i, s_aRoundTrips[i].psz, s_aRoundTrips[i].cch, rc);
+    }
+}
+
+#endif /* RT_OS_WINDOWS */
+
 
 int main(int argc, char *argv[])
 {
@@ -92,13 +179,13 @@ int main(int argc, char *argv[])
         return rcExit;
     RTTestBanner(hTest);
 
-    /* Don't let assertions in the host service panic (core dump) the test cases. */
-    RTAssertSetMayPanic(false);
-
     /*
      * Run the tests.
      */
     testAnnounceAndReadData();
+#ifdef RT_OS_WINDOWS
+    testHtmlCf();
+#endif
 
     /*
      * Summary
