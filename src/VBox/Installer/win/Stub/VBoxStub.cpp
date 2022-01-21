@@ -19,11 +19,6 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#if defined(_WIN32_WINNT) && _WIN32_WINNT < 0x0501
-# undef  _WIN32_WINNT
-# define _WIN32_WINNT 0x0501 /* AttachConsole() / FreeConsole(). */
-#endif
-
 #include <iprt/win/windows.h>
 #include <iprt/win/commctrl.h>
 #include <fcntl.h>
@@ -65,17 +60,15 @@
 # include "VBoxStubPublicCert.h"
 #endif
 
-#ifndef TARGET_NT4
-/* Use an own console window if run in verbose mode. */
-# define VBOX_STUB_WITH_OWN_CONSOLE
-#endif
-
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 #define MY_UNICODE_SUB(str) L ##str
 #define MY_UNICODE(str)     MY_UNICODE_SUB(str)
+
+/* Use an own console window if run in verbose mode. */
+#define VBOX_STUB_WITH_OWN_CONSOLE
 
 
 /*********************************************************************************************************************************
@@ -867,22 +860,6 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         return RTMsgInitFailure(vrc);
 
     /*
-     * Check if we're already running and jump out if so.
-     *
-     * Note! Do not use a global namespace ("Global\\") for mutex name here,
-     *       will blow up NT4 compatibility!
-     */
-    HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, "VBoxStubInstaller");
-    if (   hMutexAppRunning != NULL
-        && GetLastError() == ERROR_ALREADY_EXISTS)
-    {
-        /* Close the mutex for this application instance. */
-        CloseHandle(hMutexAppRunning);
-        hMutexAppRunning = NULL;
-        return RTEXITCODE_FAILURE;
-    }
-
-    /*
      * Parse arguments.
      */
 
@@ -937,17 +914,14 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         { "/?",                 'h', RTGETOPT_REQ_NOTHING },
     };
 
-    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-
-    /* Parse the parameters. */
-    int ch;
-    bool fExitEarly = false;
-    RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
-    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-           && rcExit == RTEXITCODE_SUCCESS
-           && !fExitEarly)
+    vrc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    AssertRCReturn(vrc, ShowError("RTGetOptInit failed: %Rrc", vrc));
+
+    /* Loop over the arguments. */
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (ch)
         {
@@ -955,10 +929,9 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 if (szMSIArgs[0])
                     vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), " ");
                 if (RT_SUCCESS(vrc))
-                    vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs),
-                                   "REINSTALLMODE=vomus REINSTALL=ALL");
+                    vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), "REINSTALLMODE=vomus REINSTALL=ALL");
                 if (RT_FAILURE(vrc))
-                    rcExit = ShowSyntaxError("Out of space for MSI parameters and properties");
+                    return ShowSyntaxError("Out of space for MSI parameters and properties");
                 break;
 
             case 'x':
@@ -981,7 +954,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
             case 'p':
                 vrc = RTStrCopy(szExtractPath, sizeof(szExtractPath), ValueUnion.psz);
                 if (RT_FAILURE(vrc))
-                    rcExit = ShowSyntaxError("Extraction path is too long.");
+                    return ShowSyntaxError("Extraction path is too long.");
                 break;
 
             case 'm':
@@ -990,7 +963,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                 if (RT_SUCCESS(vrc))
                     vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), ValueUnion.psz);
                 if (RT_FAILURE(vrc))
-                    rcExit = ShowSyntaxError("Out of space for MSI parameters and properties");
+                    return ShowSyntaxError("Out of space for MSI parameters and properties");
                 break;
 
             case 'P':
@@ -1005,15 +978,15 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                         if (RTStrPrintf2(&szMSIArgs[cchMsiArgs], sizeof(szMSIArgs) - cchMsiArgs,
                                          strpbrk(ValueUnion.psz, " \t\n\r") == NULL ? "%s%s=%s" : "%s%s=\"%s\"",
                                          cchMsiArgs ? " " : "", pszProp, ValueUnion.psz) <= 1)
-                            rcExit = ShowSyntaxError("Out of space for MSI parameters and properties");
+                            return ShowSyntaxError("Out of space for MSI parameters and properties");
                     }
                     else if (vrc == VERR_GETOPT_REQUIRED_ARGUMENT_MISSING)
-                        rcExit = ShowSyntaxError("--msi-prop takes two arguments, the 2nd is missing");
+                        return ShowSyntaxError("--msi-prop takes two arguments, the 2nd is missing");
                     else
-                        rcExit = ShowSyntaxError("Failed to get 2nd --msi-prop argument: %Rrc", vrc);
+                        return ShowSyntaxError("Failed to get 2nd --msi-prop argument: %Rrc", vrc);
                 }
                 else
-                    rcExit = ShowSyntaxError("The first argument to --msi-prop must not contain spaces: %s", pszProp);
+                    return ShowSyntaxError("The first argument to --msi-prop must not contain spaces: %s", pszProp);
                 break;
             }
 
@@ -1023,8 +996,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
             case 'V':
                 ShowInfo("Version: %u.%u.%ur%u", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
-                fExitEarly = true;
-                break;
+                return RTEXITCODE_SUCCESS;
 
             case 'v':
                 g_iVerbosity++;
@@ -1066,8 +1038,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                          "  %s --extract -path C:\\VBox",
                          VBOX_STUB_TITLE, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
                          argv[0], argv[0]);
-                fExitEarly = true;
-                break;
+                return RTEXITCODE_SUCCESS;
 
             case VINF_GETOPT_NOT_OPTION:
                 /* Are (optional) MSI parameters specified and this is the last
@@ -1079,74 +1050,79 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                     if (RT_SUCCESS(vrc))
                         vrc = RTStrCat(szMSIArgs, sizeof(szMSIArgs), ValueUnion.psz);
                     if (RT_FAILURE(vrc))
-                        rcExit = ShowSyntaxError("Out of space for MSI parameters and properties");
+                        return ShowSyntaxError("Out of space for MSI parameters and properties");
                     continue;
                 }
                 /* Fall through is intentional. */
 
             default:
                 if (g_fSilent)
-                    rcExit = RTGetOptPrintError(ch, &ValueUnion);
+                    return RTGetOptPrintError(ch, &ValueUnion);
                 if (ch == VERR_GETOPT_UNKNOWN_OPTION)
-                    rcExit = ShowSyntaxError("Unknown option \"%s\"\n"
-                                             "Please refer to the command line help by specifying \"-?\"\n"
-                                             "to get more information.", ValueUnion.psz);
-                else
-                    rcExit = ShowSyntaxError("Parameter parsing error: %Rrc\n"
-                                             "Please refer to the command line help by specifying \"-?\"\n"
-                                             "to get more information.", ch);
-                break;
+                    return ShowSyntaxError("Unknown option \"%s\"\n"
+                                           "Please refer to the command line help by specifying \"-?\"\n"
+                                           "to get more information.", ValueUnion.psz);
+                return ShowSyntaxError("Parameter parsing error: %Rrc\n"
+                                       "Please refer to the command line help by specifying \"-?\"\n"
+                                       "to get more information.", ch);
         }
     }
 
-    /* Check if we can bail out early. */
-    if (fExitEarly)
-        return rcExit;
+    /* Set the default extraction path if not given the the user. */
+    if (szExtractPath[0] == '\0')
+    {
+        vrc = RTPathTemp(szExtractPath, sizeof(szExtractPath));
+        if (RT_SUCCESS(vrc))
+            vrc = RTPathAppend(szExtractPath, sizeof(szExtractPath), "VirtualBox");
+        if (RT_FAILURE(vrc))
+            return ShowError("Failed to construct extraction path: %Rrc", vrc);
+    }
+    RTPathChangeToDosSlashes(szExtractPath, true /* Force conversion. */); /* MSI requirement. */
 
-    if (rcExit != RTEXITCODE_SUCCESS)
-        vrc = VERR_PARSE_ERROR;
+    /*
+     * Check if we're already running and jump out if so (this is mainly to
+     * protect the TEMP directory usage, right?).
+     */
+    SetLastError(0);
+    HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, "VBoxStubInstaller");
+    if (   hMutexAppRunning != NULL
+        && GetLastError() == ERROR_ALREADY_EXISTS)
+    {
+        CloseHandle(hMutexAppRunning); /* close it so we don't keep it open while showing the error message. */
+        return ShowError("Another installer is already running");
+    }
 
 /** @todo
  *
  *  Split the remainder up in functions and simplify the code flow!!
  *
  *   */
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
 
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0501
-# ifdef VBOX_STUB_WITH_OWN_CONSOLE /* Use an own console window if run in debug mode. */
-    if (   RT_SUCCESS(vrc)
-        && g_iVerbosity)
+    /*
+     * Create a console for output if we're in verbose mode.
+     */
+#ifdef VBOX_STUB_WITH_OWN_CONSOLE
+    if (g_iVerbosity)
     {
         if (!AllocConsole())
-        {
-            DWORD dwErr = GetLastError();
-            ShowError("Unable to allocate console, error = %ld\n",
-                      dwErr);
-
-            /* Close the mutex for this application instance. */
-            CloseHandle(hMutexAppRunning);
-            hMutexAppRunning = NULL;
-            return RTEXITCODE_FAILURE;
-        }
+            return ShowError("Unable to allocate console: LastError=%u\n", GetLastError());
 
         freopen("CONOUT$", "w", stdout);
         setvbuf(stdout, NULL, _IONBF, 0);
 
         freopen("CONOUT$", "w", stderr);
     }
-# endif /* VBOX_STUB_WITH_OWN_CONSOLE */
-#endif
+#endif /* VBOX_STUB_WITH_OWN_CONSOLE */
 
-    if (   RT_SUCCESS(vrc)
-        && g_iVerbosity)
+    if (g_iVerbosity)
     {
         RTPrintf("Silent installation      : %RTbool\n", g_fSilent);
         RTPrintf("Logging enabled          : %RTbool\n", fEnableLogging);
 #ifdef VBOX_WITH_CODE_SIGNING
         RTPrintf("Certificate installation : %RTbool\n", fEnableSilentCert);
 #endif
-        RTPrintf("Additional MSI parameters: %s\n",
-                 szMSIArgs[0] ? szMSIArgs : "<None>");
+        RTPrintf("Additional MSI parameters: %s\n", szMSIArgs[0] ? szMSIArgs : "<None>");
     }
 
     /*
@@ -1155,38 +1131,13 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     if (   !fExtractOnly
         && !g_fSilent
         && !IsWow64())
-    {
         rcExit = ShowError("32-bit Windows hosts are not supported by this VirtualBox release.");
-        vrc = VERR_NOT_SUPPORTED;
-    }
-
-    if (RT_SUCCESS(vrc))
+    else
     {
         /*
-         * Determine the extration path if not given by the user, and gather some
-         * other bits we'll be needing later.
+         * Read our manifest.
          */
-        if (szExtractPath[0] == '\0')
-        {
-            vrc = RTPathTemp(szExtractPath, sizeof(szExtractPath));
-            if (RT_SUCCESS(vrc))
-                vrc = RTPathAppend(szExtractPath, sizeof(szExtractPath), "VirtualBox");
-            if (RT_FAILURE(vrc))
-                ShowError("Failed to determine extraction path (%Rrc)", vrc);
-
-        }
-        else
-        {
-            /** @todo should check if there is a .custom subdirectory there or not. */
-        }
-        RTPathChangeToDosSlashes(szExtractPath,
-                                 true /* Force conversion. */); /* MSI requirement. */
-    }
-
-    /* Read our manifest. */
-    if (RT_SUCCESS(vrc))
-    {
-        PVBOXSTUBPKGHEADER pHeader;
+        PVBOXSTUBPKGHEADER pHeader = NULL;
         vrc = FindData("MANIFEST", (PVOID *)&pHeader, NULL);
         if (RT_SUCCESS(vrc))
         {
@@ -1197,11 +1148,10 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
             /*
              * Up to this point, we haven't done anything that requires any cleanup.
-             * From here on, we do everything in function so we can counter clean up.
+             * From here on, we do everything in functions so we can counter clean up.
              */
-            bool fCreatedExtractDir;
-            rcExit = ExtractFiles(pHeader->byCntPkgs, szExtractPath,
-                                  fExtractOnly, &fCreatedExtractDir);
+            bool fCreatedExtractDir = false;
+            rcExit = ExtractFiles(pHeader->byCntPkgs, szExtractPath, fExtractOnly, &fCreatedExtractDir);
             if (rcExit == RTEXITCODE_SUCCESS)
             {
                 if (fExtractOnly)
@@ -1222,12 +1172,14 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                             rcExit = rcExit2;
                         iPackage++;
                     }
-
-                    /* Don't fail if cleanup fail. At least for now. */
-                    CleanUp(   !fEnableLogging
-                            && fCreatedExtractDir ? szExtractPath : NULL);
                 }
             }
+
+            /*
+             * Do cleanups unless we're only extracting (ignoring failures for now).
+             */
+            if (!fExtractOnly)
+                CleanUp(!fEnableLogging && fCreatedExtractDir ? szExtractPath : NULL);
 
             /* Free any left behind cleanup records (not strictly needed). */
             PSTUBCLEANUPREC pCur, pNext;
@@ -1249,13 +1201,10 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 #endif
 
     /*
-     * Release instance mutex.
+     * Release instance mutex just to be on the safe side.
      */
     if (hMutexAppRunning != NULL)
-    {
         CloseHandle(hMutexAppRunning);
-        hMutexAppRunning = NULL;
-    }
 
     return rcExit != (RTEXITCODE)ERROR_SUCCESS_REBOOT_REQUIRED || !fIgnoreReboot ? rcExit : RTEXITCODE_SUCCESS;
 }
