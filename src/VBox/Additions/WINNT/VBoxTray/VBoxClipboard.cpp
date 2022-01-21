@@ -344,18 +344,18 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             }
             else
             {
-                const uint32_t cbPrealloc = _4K;
-                      uint32_t cb         = 0;
+                uint32_t const cbPrealloc = _4K;
+                uint32_t       cb         = 0;
 
                 /* Preallocate a buffer, most of small text transfers will fit into it. */
                 HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, cbPrealloc);
                 if (hMem)
                 {
-                    void *pMem = GlobalLock(hMem);
-                    if (pMem)
+                    void *pvMem = GlobalLock(hMem);
+                    if (pvMem)
                     {
                         /* Read the host data to the preallocated buffer. */
-                        int rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, fFormat, pMem, cbPrealloc, &cb);
+                        int rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, fFormat, pvMem, cbPrealloc, &cb);
                         if (RT_SUCCESS(rc))
                         {
                             if (cb == 0)
@@ -377,12 +377,12 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                                 hMem = GlobalReAlloc(hMem, cb, 0);
                                 if (hMem)
                                 {
-                                    pMem = GlobalLock(hMem);
-                                    if (pMem)
+                                    pvMem = GlobalLock(hMem);
+                                    if (pvMem)
                                     {
                                         /* Read the host data to the preallocated buffer. */
                                         uint32_t cbNew = 0;
-                                        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, fFormat, pMem, cb, &cbNew);
+                                        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, fFormat, pvMem, cb, &cbNew);
                                         if (   RT_SUCCESS(rc)
                                             && cbNew <= cb)
                                         {
@@ -411,14 +411,14 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
                             if (hMem)
                             {
-                                /* pMem is the address of the data. cb is the size of returned data. */
+                                /* pvMem is the address of the data. cb is the size of returned data. */
                                 /* Verify the size of returned text, the memory block for clipboard
                                  * must have the exact string size.
                                  */
                                 if (fFormat == VBOX_SHCL_FMT_UNICODETEXT)
                                 {
                                     size_t cbActual = 0;
-                                    HRESULT hrc = StringCbLengthW((LPWSTR)pMem, cb, &cbActual);
+                                    HRESULT hrc = StringCbLengthW((LPWSTR)pvMem, cb, &cbActual);
                                     if (FAILED(hrc))
                                     {
                                         LogRel(("Shared Clipboard: Received host data is invalid (%RU32 vs. %zu)\n",
@@ -440,11 +440,12 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                                 else if (fFormat == VBOX_SHCL_FMT_HTML)
                                 {
                                     /* Wrap content into CF_HTML clipboard format if needed. */
-                                    if (!SharedClipboardWinIsCFHTML((const char *)pMem))
+                                    if (!SharedClipboardWinIsCFHTML((const char *)pvMem))
                                     {
                                         char *pszWrapped = NULL;
                                         uint32_t cbWrapped = 0;
-                                        rc =  SharedClipboardWinConvertMIMEToCFHTML((const char *)pMem, cb, &pszWrapped, &cbWrapped);
+                                        rc = SharedClipboardWinConvertMIMEToCFHTML((const char *)pvMem, cb,
+                                                                                   &pszWrapped, &cbWrapped);
                                         if (RT_SUCCESS(rc))
                                         {
                                             if (GlobalUnlock(hMem) == 0)
@@ -452,28 +453,25 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                                                 hMem = GlobalReAlloc(hMem, cbWrapped, 0);
                                                 if (hMem)
                                                 {
-                                                    pMem = GlobalLock(hMem);
-                                                    if (pMem)
+                                                    pvMem = GlobalLock(hMem);
+                                                    if (pvMem)
                                                     {
                                                         /* Copy wrapped content back to memory passed to system clipboard. */
-                                                        memcpy(pMem, pszWrapped, cbWrapped);
+                                                        memcpy(pvMem, pszWrapped, cbWrapped);
                                                         cb = cbWrapped;
                                                     }
                                                     else
                                                     {
-                                                        LogRel(("Shared Clipboard: Cannot lock memory, "
-                                                                "HTML clipboard data won't be converted into CF_HTML clipboard format\n"));
+                                                        LogRel(("Shared Clipboard: Failed to lock memory (%u), HTML clipboard data won't be converted into CF_HTML clipboard format\n", GetLastError()));
                                                         GlobalFree(hMem);
                                                         hMem = NULL;
                                                     }
                                                 }
                                                 else
-                                                    LogRel(("Shared Clipboard: Cannot re-allocate memory, "
-                                                            "HTML clipboard data won't be converted into CF_HTML clipboard format\n"));
+                                                    LogRel(("Shared Clipboard: Failed to re-allocate memory (%u), HTML clipboard data won't be converted into CF_HTML clipboard format\n", GetLastError()));
                                             }
                                             else
-                                                LogRel(("Shared Clipboard: Cannot unlock memory, "
-                                                        "HTML clipboard data won't be converted into CF_HTML clipboard format\n"));
+                                                LogRel(("Shared Clipboard: Failed to unlock memory (%u), HTML clipboard data won't be converted into CF_HTML clipboard format\n", GetLastError()));
 
                                             RTMemFree(pszWrapped);
                                         }
