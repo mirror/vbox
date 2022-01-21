@@ -573,7 +573,10 @@ int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t 
  *   StartFragment = 141(constant) may vary if the header html content will be extended
  *   EndFragment   = Header length + fragment length - 38(ending length)
  *
- * @return  IPRT status code.
+ * For more format details, check out:
+ * https://docs.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/aa767917(v=vs.85)
+ *
+ * @returns VBox status code. 
  * @param   pszSource   Source buffer that contains utf-16 string in mime html format
  * @param   cb          Size of source buffer in bytes
  * @param   ppszOutput  Where to return the allocated output buffer to put converted UTF-8
@@ -585,73 +588,87 @@ int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t 
  */
 int SharedClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput)
 {
-    /**
-     * CF_HTML format description (see also, https://docs.microsoft.com/en-us/previous-versions/
-     * windows/internet-explorer/ie-developer/platform-apis/aa767917(v=vs.85)?redirectedfrom=MSDN):
-     *
-     *   @StartHtml - pos before <html>
-     *   @EndHtml - whole size of text excluding ending zero char (pos after </html>)
-     *   @StartFragment - pos after <!--StartFragment-->
-     *   @EndFragment - pos before <!--EndFragment-->
-     *   @note: all values includes CR\LF inserted into text
-    */
-
-#define VBOX_CLIP_CF_HTML_HEADER \
-    "Version:1.0\r\n" \
-    "StartHTML:000000101\r\n" \
-    "EndHTML:%0000009u\r\n" \
-    "StartFragment:000000137\r\n" \
-    "EndFragment:%0000009u\r\n" \
-    "<html>\r\n" \
-    "<body>\r\n" \
-    "<!--StartFragment-->"
-
-#define VBOX_CLIP_CF_HTML_FOOTER \
-    "<!--EndFragment-->\r\n" \
-    "</body>\r\n" \
-    "</html>\r\n"
-
     Assert(ppszOutput);
     Assert(pcbOutput);
     Assert(pszSource);
     Assert(cb);
 
-    size_t  cchFragment;
-    int     rc;
+    /* construct CF_HTML formatted string */
 
-    char    *szFormat       = VBOX_CLIP_CF_HTML_HEADER "%s" VBOX_CLIP_CF_HTML_FOOTER;
-    size_t  offEndFragment  = sizeof(VBOX_CLIP_CF_HTML_HEADER) - 2 /* '%' chars */ + cb;
-    size_t  offEndHTML      = offEndFragment + sizeof(VBOX_CLIP_CF_HTML_FOOTER);
-    char    *pszResult      = NULL;
-    size_t  cbResult        = sizeof(VBOX_CLIP_CF_HTML_HEADER) + cb + sizeof(VBOX_CLIP_CF_HTML_FOOTER);
-
-    /* Make sure input string is '\0' terminated. */
-    rc = RTStrNLenEx(pszSource, cb, &cchFragment);
-    if (RT_FAILURE(rc))
+    /* Check that input is zero terminated. */
+    /** @todo r=bird: Check that it's valid UTF-8 encoded too. */
+    size_t cchFragment;
+    int rc = RTStrNLenEx(pszSource, cb, &cchFragment);
+    if (!RT_SUCCESS(rc))
     {
         LogRelFlowFunc(("Error: invalid source fragment. rc = %Rrc\n", rc));
-        return rc;
+        return VERR_INVALID_PARAMETER;
     }
 
-    pszResult = (char *)RTMemAllocZ(cbResult);
+    /*
+    @StartHtml - pos before <html>
+    @EndHtml - whole size of text excluding ending zero char
+    @StartFragment - pos after <!--StartFragment-->
+    @EndFragment - pos before <!--EndFragment-->
+    @note: all values includes CR\LF inserted into text
+    Calculations:
+    Header length = format Length + (3*6('digits')) - 2('%s') = format length + 16 (control value - 183)
+    EndHtml  = Header length + fragment length
+    StartHtml = 105(constant)
+    StartFragment = 143(constant)
+    EndFragment  = Header length + fragment length - 40(ending length)
+    */
+    static const char s_szFormatSample[] =
+    /*   0:   */ "Version:1.0\r\n"
+    /*  13:   */ "StartHTML:000000101\r\n"
+    /*  34:   */ "EndHTML:%0000009u\r\n" // END HTML = Header length + fragment length
+    /*  53:   */ "StartFragment:000000137\r\n"
+    /*  78:   */ "EndFragment:%0000009u\r\n"
+    /* 101:   */ "<html>\r\n"
+    /* 109:   */ "<body>\r\n"
+    /* 117:   */ "<!--StartFragment-->"
+    /* 137:   */ "%s"
+    /* 137+2: */ "<!--EndFragment-->\r\n"
+    /* 157+2: */ "</body>\r\n"
+    /* 166+2: */ "</html>\r\n";
+    /* 175+2: */
+    AssertCompile(sizeof(s_szFormatSample) == 175 + 2 + 1);
+
+    /* calculate parameters of CF_HTML header */
+    size_t cchHeader      = sizeof(s_szFormatSample) - 1;
+    size_t offEndHtml     = cchHeader + cchFragment;
+    size_t offEndFragment = cchHeader + cchFragment - 38; /* 175-137 = 38 */
+    char *pszResult = (char *)RTMemAlloc(offEndHtml + 1);
     if (pszResult == NULL)
     {
-        LogRel(("Shared Clipboard: cannot allocate memory for HTML clipboard conversion, rc = %Rrc\n", rc));
+        LogRelFlowFunc(("Error: Cannot allocate memory for result buffer. rc = %Rrc\n"));
         return VERR_NO_MEMORY;
     }
 
     /* format result CF_HTML string */
-    size_t cchFormatted = RTStrPrintf2(pszResult, cbResult, szFormat, offEndHTML, offEndFragment, pszSource);
-    if (cchFormatted > 0)
-    {
-        *ppszOutput = pszResult;
-        *pcbOutput = (uint32_t)cchFormatted + 1;
-        return VINF_SUCCESS;
-    }
-    else
-        LogRel(("Shared Clipboard: cannot format CF_HTML content\n"));
+    size_t cchFormatted = RTStrPrintf(pszResult, offEndHtml + 1,
+                                      s_szFormatSample, offEndHtml, offEndFragment, pszSource);
+    Assert(offEndHtml == cchFormatted);
 
-    return VERR_INVALID_PARAMETER;
+#ifdef VBOX_STRICT
+    /* Control calculations. check consistency.*/
+    static const char s_szStartFragment[] = "<!--StartFragment-->";
+    static const char s_szEndFragment[] = "<!--EndFragment-->";
+
+    /* check 'StartFragment:' value */
+    const char *pszRealStartFragment = RTStrStr(pszResult, s_szStartFragment);
+    Assert(&pszRealStartFragment[sizeof(s_szStartFragment) - 1] - pszResult == 137);
+
+    /* check 'EndFragment:' value */
+    const char *pszRealEndFragment = RTStrStr(pszResult, s_szEndFragment);
+    Assert((size_t)(pszRealEndFragment - pszResult) == offEndFragment);
+#endif
+
+    *ppszOutput = pszResult;
+    *pcbOutput = (uint32_t)cchFormatted + 1;
+    Assert(*pcbOutput == cchFormatted + 1);
+
+    return VINF_SUCCESS;
 }
 
 /**
