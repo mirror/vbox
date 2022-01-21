@@ -627,24 +627,27 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         hClip = GetClipboardData(format);
                         if (hClip != NULL)
                         {
-                            LPVOID lp = GlobalLock(hClip);
-                            if (lp != NULL)
+                            LPVOID const pvClip = GlobalLock(hClip);
+                            if (pvClip != NULL)
                             {
+                                uint32_t const cbClip = (uint32_t)GlobalSize(hClip);
+
                                 /* Unwrap clipboard content from CF_HTML format if needed. */
-                                if (SharedClipboardWinIsCFHTML((const char *)lp))
+                                if (SharedClipboardWinIsCFHTML((const char *)pvClip))
                                 {
                                     char        *pszBuf = NULL;
                                     uint32_t    cbBuf   = 0;
-
-                                    rc = SharedClipboardWinConvertCFHTMLToMIME((const char *)lp, (uint32_t)GlobalSize(hClip), &pszBuf, &cbBuf);
+                                    rc = SharedClipboardWinConvertCFHTMLToMIME((const char *)pvClip, cbClip, &pszBuf, &cbBuf);
                                     if (RT_SUCCESS(rc))
                                     {
                                         rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, pszBuf, cbBuf);
                                         RTMemFree(pszBuf);
                                     }
+                                    else
+                                        rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, pvClip, cbClip);
                                 }
                                 else
-                                    rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, lp, (uint32_t)GlobalSize(hClip));
+                                    rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, fFormat, pvClip, cbClip);
 
                                 GlobalUnlock(hClip);
                             }
