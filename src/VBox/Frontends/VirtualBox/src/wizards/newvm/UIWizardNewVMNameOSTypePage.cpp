@@ -550,12 +550,7 @@ void UIWizardNewVMNameOSTypePage::setSkipCheckBoxEnable()
 
 bool UIWizardNewVMNameOSTypePage::isUnattendedEnabled() const
 {
-    if (!m_pNameAndSystemEditor)
-        return false;
-    const QString &strPath = m_pNameAndSystemEditor->ISOImagePath();
-    if (strPath.isNull() || strPath.isEmpty())
-        return false;
-    if (m_pSkipUnattendedCheckBox && m_pSkipUnattendedCheckBox->isChecked())
-        return false;
-    return true;
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    AssertReturn(pWizard, false);
+    return pWizard->isUnattendedEnabled();
 }
