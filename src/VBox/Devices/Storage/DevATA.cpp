@@ -59,7 +59,9 @@
  * @{
  */
 /** The current saved state version. */
-#define ATA_SAVED_STATE_VERSION                         20
+#define ATA_SAVED_STATE_VERSION                         21
+/** Saved state version without iCurLBA for ATA commands. */
+#define ATA_SAVED_STATE_VERSION_WITHOUT_ATA_ILBA        20
 /** The saved state version used by VirtualBox 3.0.
  * This lacks the config part and has the type at the and.  */
 #define ATA_SAVED_STATE_VERSION_VBOX_30                 19
@@ -281,8 +283,8 @@ typedef struct ATADEVSTATE
     /** ATA/ATAPI current PIO read/write transfer end. Not shared with DMA for safety reasons. */
     uint32_t                            iIOBufferPIODataEnd;
 
-    /** ATAPI current LBA position. */
-    uint32_t                            iATAPILBA;
+    /** Current LBA position (both ATA/ATAPI). */
+    uint32_t                            iCurLBA;
     /** ATAPI current sector size. */
     uint32_t                            cbATAPISector;
     /** ATAPI current command. */
@@ -1845,7 +1847,7 @@ static bool ataR3ReadSectorsSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVS
 
     cSectors = s->cbElementaryTransfer / cbSector;
     Assert(cSectors);
-    iLBA = ataR3GetSector(s);
+    iLBA = s->iCurLBA;
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
     rc = ataR3ReadSectors(pDevIns, pCtl, s, pDevR3, iLBA, s->abIOBuffer, cSectors, &fRedo);
     if (RT_SUCCESS(rc))
@@ -1863,6 +1865,7 @@ static bool ataR3ReadSectorsSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVS
         else
             ataR3SetSector(s, iLBA + cSectors);
         s->uATARegNSector -= cSectors;
+        s->iCurLBA += cSectors;
         ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
     }
     else
@@ -1897,12 +1900,13 @@ static bool ataR3WriteSectorsSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEV
 
     cSectors = s->cbElementaryTransfer / cbSector;
     Assert(cSectors);
-    iLBA = ataR3GetSector(s);
+    iLBA = s->iCurLBA;
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
     rc = ataR3WriteSectors(pDevIns, pCtl, s, pDevR3, iLBA, s->abIOBuffer, cSectors, &fRedo);
     if (RT_SUCCESS(rc))
     {
         ataR3SetSector(s, iLBA + cSectors);
+        s->iCurLBA = iLBA + cSectors;
         if (!s->cbTotalTransfer)
             s->iSourceSink = ATAFN_SS_NULL;
         ataR3CmdOK(pCtl, s, ATA_STAT_SEEK);
@@ -2009,7 +2013,7 @@ static bool atapiR3ReadSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
     VDREGIONDATAFORM enmDataForm;
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
-    uint32_t const iATAPILBA     = s->iATAPILBA;
+    uint32_t const iATAPILBA     = s->iCurLBA;
     uint32_t const cbTransfer    = RT_MIN(s->cbTotalTransfer, RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE));
     uint32_t const cbATAPISector = s->cbATAPISector;
     uint32_t const cSectors      = cbTransfer / cbATAPISector;
@@ -2119,7 +2123,7 @@ static bool atapiR3ReadSS(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
         if (cbTransfer >= s->cbTotalTransfer)
             s->iSourceSink = ATAFN_SS_NULL;
         atapiR3CmdOK(pCtl, s);
-        s->iATAPILBA = iATAPILBA + cSectors;
+        s->iCurLBA = iATAPILBA + cSectors;
     }
     else
     {
@@ -2611,7 +2615,7 @@ static bool atapiR3ReadSectors(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVS
                                uint32_t iATAPILBA, uint32_t cSectors, uint32_t cbSector)
 {
     Assert(cSectors > 0);
-    s->iATAPILBA = iATAPILBA;
+    s->iCurLBA = iATAPILBA;
     s->cbATAPISector = cbSector;
     ataR3StartTransfer(pDevIns, pCtl, s, cSectors * cbSector,
                        PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ, true);
@@ -4397,6 +4401,7 @@ static void ataR3ParseCmd(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
             if (!pDevR3->pDrvMedia || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = 1;
+            s->iCurLBA = ataR3GetSector(s);
             ataR3StartTransfer(pDevIns, pCtl, s, ataR3GetNSectors(s) * s->cbSector, PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
             break;
         case ATA_WRITE_SECTORS_EXT:
@@ -4407,6 +4412,7 @@ static void ataR3ParseCmd(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
             if (!pDevR3->pDrvMedia || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = 1;
+            s->iCurLBA = ataR3GetSector(s);
             ataR3StartTransfer(pDevIns, pCtl, s, ataR3GetNSectors(s) * s->cbSector, PDMMEDIATXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
             break;
         case ATA_READ_MULTIPLE_EXT:
@@ -4416,6 +4422,7 @@ static void ataR3ParseCmd(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
             if (!pDevR3->pDrvMedia || !s->cMultSectors || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = s->cMultSectors;
+            s->iCurLBA = ataR3GetSector(s);
             ataR3StartTransfer(pDevIns, pCtl, s, ataR3GetNSectors(s) * s->cbSector, PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
             break;
         case ATA_WRITE_MULTIPLE_EXT:
@@ -4425,6 +4432,7 @@ static void ataR3ParseCmd(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
             if (!pDevR3->pDrvMedia || !s->cMultSectors || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = s->cMultSectors;
+            s->iCurLBA = ataR3GetSector(s);
             ataR3StartTransfer(pDevIns, pCtl, s, ataR3GetNSectors(s) * s->cbSector, PDMMEDIATXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
             break;
         case ATA_READ_DMA_EXT:
@@ -4435,6 +4443,7 @@ static void ataR3ParseCmd(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
             if (!pDevR3->pDrvMedia || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = ATA_MAX_MULT_SECTORS;
+            s->iCurLBA = ataR3GetSector(s);
             s->fDMA = true;
             ataR3StartTransfer(pDevIns, pCtl, s, ataR3GetNSectors(s) * s->cbSector, PDMMEDIATXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
             break;
@@ -4446,6 +4455,7 @@ static void ataR3ParseCmd(PPDMDEVINS pDevIns, PATACONTROLLER pCtl, PATADEVSTATE 
             if (!pDevR3->pDrvMedia || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = ATA_MAX_MULT_SECTORS;
+            s->iCurLBA = ataR3GetSector(s);
             s->fDMA = true;
             ataR3StartTransfer(pDevIns, pCtl, s, ataR3GetNSectors(s) * s->cbSector, PDMMEDIATXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
             break;
@@ -7259,7 +7269,7 @@ static DECLCALLBACK(int) ataR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].iIOBufferEnd);
             pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].iIOBufferPIODataStart);
             pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].iIOBufferPIODataEnd);
-            pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].iATAPILBA);
+            pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].iCurLBA);
             pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].cbATAPISector);
             pHlp->pfnSSMPutMem(pSSM, &pThis->aCts[i].aIfs[j].abATAPICmd, sizeof(pThis->aCts[i].aIfs[j].abATAPICmd));
             pHlp->pfnSSMPutMem(pSSM, &pThis->aCts[i].aIfs[j].abATAPISense, sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
@@ -7302,6 +7312,7 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     uint32_t        u32;
 
     if (   uVersion != ATA_SAVED_STATE_VERSION
+        && uVersion != ATA_SAVED_STATE_VERSION_WITHOUT_ATA_ILBA
         && uVersion != ATA_SAVED_STATE_VERSION_VBOX_30
         && uVersion != ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE
         && uVersion != ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS
@@ -7447,7 +7458,7 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferEnd);
             pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferPIODataStart);
             pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferPIODataEnd);
-            pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].iATAPILBA);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].iCurLBA);
             pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].cbATAPISector);
             pHlp->pfnSSMGetMem(pSSM, &pThis->aCts[i].aIfs[j].abATAPICmd, sizeof(pThis->aCts[i].aIfs[j].abATAPICmd));
             if (uVersion > ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
@@ -7474,6 +7485,12 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             uint32_t cbIOBuffer = 0;
             rc = pHlp->pfnSSMGetU32(pSSM, &cbIOBuffer);
             AssertRCReturn(rc, rc);
+
+            if (   (uVersion <= ATA_SAVED_STATE_VERSION_WITHOUT_ATA_ILBA)
+                && !pThis->aCts[i].aIfs[j].fATAPI)
+            {
+                pThis->aCts[i].aIfs[j].iCurLBA = ataR3GetSector(&pThis->aCts[i].aIfs[j]);
+            }
 
             if (cbIOBuffer)
             {
