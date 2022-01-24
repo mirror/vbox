@@ -27,13 +27,17 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS += xmmsaving
-xmmsaving_TEMPLATE = VBoxValidationKitR3
-xmmsaving_SOURCES  = xmmsaving.cpp xmmsaving-asm.asm
+if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+ PROGRAMS += xmmsaving
+ xmmsaving_TEMPLATE = VBoxValidationKitR3
+ xmmsaving_SOURCES  = xmmsaving.cpp xmmsaving-asm.asm
+endif
 
-PROGRAMS += exceptionsR3
-exceptionsR3_TEMPLATE = VBoxValidationKitR3
-exceptionsR3_SOURCES  = exceptionsR3.cpp exceptionsR3-asm.asm
+if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+ PROGRAMS += exceptionsR3
+ exceptionsR3_TEMPLATE = VBoxValidationKitR3
+ exceptionsR3_SOURCES  = exceptionsR3.cpp exceptionsR3-asm.asm
+endif
 
 PROGRAMS += cpu-numa
 cpu-numa_TEMPLATE = VBoxValidationKitR3
@@ -43,23 +47,27 @@ PROGRAMS += cpu-alloc-all-mem
 cpu-alloc-all-mem_TEMPLATE = VBoxValidationKitR3
 cpu-alloc-all-mem_SOURCES  = cpu-alloc-all-mem.cpp
 
-ifneq ($(KBUILD_HOST),os2)
-PROGRAMS += cidet-app
+if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+ ifneq ($(KBUILD_HOST),os2)
+ PROGRAMS += cidet-app
+ endif
+ cidet-app_TEMPLATE = VBoxValidationKitR3
+ cidet-app_SOURCES  = \
+ 	cidet-app.cpp \
+ 	cidet-appA.asm \
+ 	cidet-core.cpp \
+ 	cidet-instr-1.cpp
+ cidet-app_DEFS = IN_DIS
+ cidet-app_DEFS.linux = CIDET_REDUCED_CTX
+ cidet-app_LIBS = $(PATH_STAGE_LIB)/DisasmR3Static$(VBOX_SUFF_LIB)
+ cidet-app_VBOX_IMPORT_CHECKER.win.x86 = $(NO_SUCH_VARIABLE) # doesn't work on NT4 yet.
 endif
-cidet-app_TEMPLATE = VBoxValidationKitR3
-cidet-app_SOURCES  = \
-	cidet-app.cpp \
-	cidet-appA.asm \
-	cidet-core.cpp \
-	cidet-instr-1.cpp
-cidet-app_DEFS = IN_DIS
-cidet-app_DEFS.linux = CIDET_REDUCED_CTX
-cidet-app_LIBS = $(PATH_STAGE_LIB)/DisasmR3Static$(VBOX_SUFF_LIB)
-cidet-app_VBOX_IMPORT_CHECKER.win.x86 = $(NO_SUCH_VARIABLE) # doesn't work on NT4 yet.
 
-PROGRAMS += rdtsc
-rdtsc_TEMPLATE = VBoxValidationKitR3
-rdtsc_SOURCES  = rdtsc.cpp rdtsc-asm.asm
+if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+ PROGRAMS += rdtsc
+ rdtsc_TEMPLATE = VBoxValidationKitR3
+ rdtsc_SOURCES  = rdtsc.cpp rdtsc-asm.asm
+endif
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
