@@ -406,6 +406,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
 
         count = bios_dsk->hdcount;
         /* Maximum cylinder number is just one less than the number of cylinders. */
+        /* To make Windows 3.1x WDCTRL.386 happy, we'd have to subtract 2, not 1,
+         * to account for a diagnostic cylinder.
+         */
         nlc = nlc - 1; /* 0 based , last sector not used */
         SET_AL(0);
         SET_CH(nlc & 0xff);
