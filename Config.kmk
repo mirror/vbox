@@ -8087,6 +8087,8 @@ ifeq ($(KBUILD_HOST),win)
  TEMPLATE_VBoxAdvBldProg_CXXFLAGS = $(TEMPLATE_VBoxBldProg_CXXFLAGS) $(VBOX_VCC_WERR)
  TEMPLATE_VBoxAdvBldProg_PCHFLAGS = $(TEMPLATE_VBoxAdvBldProg_CXXFLAGS)
 endif
+TEMPLATE_VBoxAdvBldProg_LDFLAGS.darwin.arm64 = \
+	$(TEMPLATE_VBoxBldProg_LDFLAGS.darwin.arm64) -framework IOKit
 TEMPLATE_VBoxAdvBldProg_LIBS    = \
 	$(PATH_STAGE_LIB)/RuntimeBldProg$(VBOX_HOSTSUFF_LIB) \
 	$(TEMPLATE_VBoxBldProg_LIBS)
