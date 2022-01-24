@@ -31,7 +31,7 @@ include $(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/lib/Makefile.kmk
 
 
-if1of ($(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)
+if defined(VBOX_WITH_ADDITION_DRIVERS) && "$(intersects $(KBUILD_TARGET), darwin freebsd haiku netbsd os2 solaris win)" != ""
  #
  # VBoxGuest - The Guest Additions Driver.
  #
@@ -180,7 +180,7 @@ VBoxGuestLibOs2Hack_SOURCES = \
 endif # enabled
 
 
-ifeq ($(KBUILD_TARGET), darwin)
+if defined(VBOX_WITH_ADDITION_DRIVERS) && "$(KBUILD_TARGET)" == "darwin"
  # Files necessary to make a darwin kernel extension bundle.
  INSTALLS += VBoxGuest.kext
  VBoxGuest.kext_INST     = $(INST_ADDITIONS)/VBoxGuest.kext/Contents/
