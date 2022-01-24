@@ -78,9 +78,7 @@ else
   include $(PATH_SUB_CURRENT)/VMM/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/Devices/Makefile.kmk
- if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS) x86) # x86: For now include SUPR3.
-  include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
- endif
+ include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
  if1of ($(KBUILD_TARGET_ARCH), $(VBOX_SUPPORTED_HOST_ARCHS))
   include $(PATH_SUB_CURRENT)/HostServices/Makefile.kmk
   ifdef VBOX_WITH_DEBUGGER
