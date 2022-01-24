@@ -142,9 +142,13 @@
  *          - @ref pg_vgsvc_automount
  *          - @ref pg_vgsvc_clipboard
  *      - VBoxControl.
- *      - VBoxVideo.
+ *      - Linux, Solaris and FreeBSD specific guest services and drivers.
+ *          - @ref pg_vboxdrmcliet (Linux only).
+ *          - VBoxClient.
+ *          - VBoxVideo.
+ *      - Windows Guests.
+ *          - VBoxTray.
  *      - crOpenGL.
- *      - VBoxClient / VBoxTray.
  *      - pam.
  *      - ...
  *  - Network Services:

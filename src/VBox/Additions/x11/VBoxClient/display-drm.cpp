@@ -17,31 +17,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/*
- * General notes
+/** @page pg_vboxdrmcliet    VBoxDRMClient - The VMSVGA Guest Screen Resize Service
+ *
+ * The VMSVGA Guest Screen Resize Service is a service which communicates with a
+ * guest VMSVGA driver and triggers it to perform screen resize on a guest side.
  *
  * This service supposed to be started on early boot. On start it will try to find
  * compatible VMSVGA graphics card and terminate immediately if not found.
  * VMSVGA functionality implemented here is only supported starting from vmgfx
- * driver version 2.10 which was introduced in vanilla Linux kernel 4.6. When compatible
+ * driver version 2.10 which was introduced in Linux kernel 4.6. When compatible
  * graphics card is found, service will start a worker loop in order to receive screen
  * update data from host and apply it to local DRM stack.
  *
  * In addition, it will start a local IPC server in order to communicate with Desktop
- * Environment specific service(s). Currently, it will propagate to IPC client information
+ * Environment specific service(s). Currently, it will propagate to IPC client information regarding to
  * which display should be set as primary on Desktop Environment level. As well as
  * receive screen layout change events obtained on Desktop Environment level and send it
  * back to host, so host and guest will have the same screen layout representation.
  *
  * Logging is implemented in a way that errors are always printed out, VBClLogVerbose(1) and
  * VBClLogVerbose(2) are used for debugging purposes. Verbosity level 1 is for messages related
- * to daemon itself (excluding IPC), level 2 is for IPC communication debugging. In order to see
+ * to service itself (excluding IPC), level 2 is for IPC communication debugging. In order to see
  * logging on a host side it is enough to do:
  *
  *     echo 1 > /sys/module/vboxguest/parameters/r3_log_to_host.
  *
  *
- * Threads
+ * Service is running the following threads:
  *
  * DrmResizeThread - this thread listens for display layout update events from host.
  *     Once event is received, it either injects new screen layout data into DRM stack,
@@ -61,12 +63,12 @@
  *     name will be cropped by 15 characters.
  *
  *
- * Locking
+ * The following loack are utilized:
  *
- * g_ipcClientConnectionsListCritSect - protects access to list of IPC client connections.
+ * #g_ipcClientConnectionsListCritSect - protects access to list of IPC client connections.
  *     It is used by each thread - DrmResizeThread, DrmIpcSRV and IpcCLT-XXX.
  *
- * g_monitorPositionsCritSect - serializes access to host interface when guest Desktop
+ * #g_monitorPositionsCritSect - serializes access to host interface when guest Desktop
  *     Environment reports display layout changes.
  */
 
@@ -868,6 +870,7 @@ static DECLCALLBACK(int) vbDrmIpcClientWorker(RTTHREAD ThreadSelf, void *pvUser)
 static int vbDrmIpcClientStart(RTLOCALIPCSESSION hSession)
 {
     int         rc;
+    /** DRM client thread (IpcCLT-%u). */
     RTTHREAD    hThread = 0;
     RTPROCESS   hProcess = 0;
 
@@ -979,9 +982,11 @@ int main(int argc, char *argv[])
     RTFILE hPidFile;
 
     RTLOCALIPCSERVER hIpcServer;
+    /** DRM IPC server thread (DrmIpcSRV). */
     RTTHREAD vbDrmIpcThread;
     int rcDrmIpcThread = 0;
 
+    /** DRM resize thread: receive resize data from host and apply it to local DRM stack (DrmResizeThread). */
     RTTHREAD drmResizeThread;
     int rcDrmResizeThread = 0;
     int rc, rc2 = 0;
