@@ -67,10 +67,10 @@
 #define VBOXNETADP_FROM_IFACE(iface) ((PVBOXNETADP) ifnet_softc(iface))
 
 /** Set netdev MAC address. */
-#if RTLNX_VER_MAX(5,17,0)
-# define VBOX_DEV_ADDR_SET(dev, addr, len) memcpy(dev->dev_addr, addr, len)
-#else /* >= 5.17.0 */
+#if RTLNX_VER_MIN(5,17,0)
 # define VBOX_DEV_ADDR_SET(dev, addr, len) dev_addr_mod(dev, 0, addr, len)
+#else /* < 5.17.0 */
+# define VBOX_DEV_ADDR_SET(dev, addr, len) memcpy(dev->dev_addr, addr, len)
 #endif
 
 
