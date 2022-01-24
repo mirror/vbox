@@ -192,8 +192,10 @@ const char *stringify</xsl:text><xsl:value-of select="@name"/><xsl:text>(</xsl:t
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "StringifyEnums.h"
+
 #include "iprt/asm.h"
 #include "iprt/assert.h"
+#include "iprt/string.h"
 
 
 /*********************************************************************************************************************************
