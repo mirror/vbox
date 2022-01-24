@@ -859,6 +859,17 @@ bool UIWizardNewVM::isUnattendedEnabled() const
         return false;
     if (m_fSkipUnattendedInstall)
         return false;
+    if (!isOSTypeDetectionOK())
+        return false;
+    return true;
+}
+
+bool UIWizardNewVM::isOSTypeDetectionOK() const
+{
+    if (m_strDetectedOSTypeId.isEmpty())
+        return false;
+    if (m_strDetectedOSTypeId.contains("other", Qt::CaseInsensitive))
+        return false;
     return true;
 }
 

@@ -76,6 +76,7 @@ public:
     UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
                   const QString &strMachineGroup = QString(), const QString &strHelpHashtag = QString());
     bool isUnattendedEnabled() const;
+    bool isOSTypeDetectionOK() const;
     void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
     const UIUnattendedInstallData &unattendedInstallData() const;
     bool isGuestOSTypeWindows() const;

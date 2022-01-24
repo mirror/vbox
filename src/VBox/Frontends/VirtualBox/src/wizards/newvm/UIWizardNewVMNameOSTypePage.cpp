@@ -406,7 +406,7 @@ void UIWizardNewVMNameOSTypePage::sltPathChanged(const QString &strNewPath)
 void UIWizardNewVMNameOSTypePage::sltOsTypeChanged()
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
-    m_userModifiedParameters << "GuestOSType";
+    //m_userModifiedParameters << "GuestOSType";
     if (m_pNameAndSystemEditor)
         wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
 }
@@ -539,13 +539,20 @@ void UIWizardNewVMNameOSTypePage::markWidgets() const
 
 void UIWizardNewVMNameOSTypePage::setSkipCheckBoxEnable()
 {
-    if (!m_pSkipUnattendedCheckBox)
-        return;
-    if (m_pNameAndSystemEditor)
+    AssertReturnVoid(m_pSkipUnattendedCheckBox && m_pNameAndSystemEditor);
+    const QString &strPath = m_pNameAndSystemEditor->ISOImagePath();
+    if (strPath.isEmpty())
     {
-        const QString &strPath = m_pNameAndSystemEditor->ISOImagePath();
-        m_pSkipUnattendedCheckBox->setEnabled(!strPath.isNull() && !strPath.isEmpty());
+        m_pSkipUnattendedCheckBox->setEnabled(false);
+        return;
     }
+    if (!isOSTypeDetectionOK())
+    {
+        m_pSkipUnattendedCheckBox->setEnabled(false);
+        return;
+    }
+
+    m_pSkipUnattendedCheckBox->setEnabled(UIWizardNewVMNameOSTypeCommon::checkISOFile(m_pNameAndSystemEditor));
 }
 
 bool UIWizardNewVMNameOSTypePage::isUnattendedEnabled() const
@@ -553,4 +560,11 @@ bool UIWizardNewVMNameOSTypePage::isUnattendedEnabled() const
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
     return pWizard->isUnattendedEnabled();
+}
+
+bool UIWizardNewVMNameOSTypePage::isOSTypeDetectionOK() const
+{
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    AssertReturn(pWizard, false);
+    return pWizard->isOSTypeDetectionOK();
 }
