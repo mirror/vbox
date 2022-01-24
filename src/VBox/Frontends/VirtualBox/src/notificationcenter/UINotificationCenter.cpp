@@ -474,16 +474,16 @@ void UINotificationCenter::prepare()
     if (parent())
         parent()->installEventFilter(this);
 
+    /* Prepare order: */
+    m_enmOrder = gEDataManager->notificationCenterOrder();
+    connect(gEDataManager, &UIExtraDataManager::sigNotificationCenterOrderChange,
+            this, &UINotificationCenter::sltHandleOrderChange);
+
     /* Prepare the rest of stuff: */
     prepareModel();
     prepareWidgets();
     prepareStateMachineSliding();
     prepareOpenTimer();
-
-    /* Prepare order: */
-    m_enmOrder = gEDataManager->notificationCenterOrder();
-    connect(gEDataManager, &UIExtraDataManager::sigNotificationCenterOrderChange,
-            this, &UINotificationCenter::sltHandleOrderChange);
 
     /* Apply language settings: */
     retranslateUi();
@@ -507,6 +507,43 @@ void UINotificationCenter::prepareWidgets()
     m_pLayoutMain = new QVBoxLayout(this);
     if (m_pLayoutMain)
     {
+        /* Create container scroll-area: */
+        UINotificationScrollArea *pScrollAreaContainer = new UINotificationScrollArea(this);
+        if (pScrollAreaContainer)
+        {
+            /* Prepare container widget: */
+            QWidget *pWidgetContainer = new QWidget(pScrollAreaContainer);
+            if (pWidgetContainer)
+            {
+                /* Prepare container layout: */
+                QVBoxLayout *pLayoutContainer = new QVBoxLayout(pWidgetContainer);
+                if (pLayoutContainer)
+                {
+                    pLayoutContainer->setContentsMargins(0, 0, 0, 0);
+
+                    /* Prepare items layout: */
+                    m_pLayoutItems = new QVBoxLayout;
+                    if (m_pLayoutItems)
+                        pLayoutContainer->addLayout(m_pLayoutItems);
+
+                    pLayoutContainer->addStretch();
+                }
+
+                /* Add to scroll-area: */
+                pScrollAreaContainer->setWidget(pWidgetContainer);
+            }
+
+            /* Configure container scroll-area: */
+            pScrollAreaContainer->setWidgetResizable(true);
+            pScrollAreaContainer->setFrameShape(QFrame::NoFrame);
+            pScrollAreaContainer->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+            pScrollAreaContainer->viewport()->setAutoFillBackground(false);
+            pScrollAreaContainer->widget()->setAutoFillBackground(false);
+
+            /* Add to layout: */
+            m_pLayoutMain->addWidget(pScrollAreaContainer);
+        }
+
         /* Prepare buttons layout: */
         m_pLayoutButtons = new QHBoxLayout;
         if (m_pLayoutButtons)
@@ -558,44 +595,7 @@ void UINotificationCenter::prepareWidgets()
             }
 
             /* Add to layout: */
-            m_pLayoutMain->addLayout(m_pLayoutButtons);
-        }
-
-        /* Create container scroll-area: */
-        UINotificationScrollArea *pScrollAreaContainer = new UINotificationScrollArea(this);
-        if (pScrollAreaContainer)
-        {
-            /* Prepare container widget: */
-            QWidget *pWidgetContainer = new QWidget(pScrollAreaContainer);
-            if (pWidgetContainer)
-            {
-                /* Prepare container layout: */
-                QVBoxLayout *pLayoutContainer = new QVBoxLayout(pWidgetContainer);
-                if (pLayoutContainer)
-                {
-                    pLayoutContainer->setContentsMargins(0, 0, 0, 0);
-
-                    /* Prepare items layout: */
-                    m_pLayoutItems = new QVBoxLayout;
-                    if (m_pLayoutItems)
-                        pLayoutContainer->addLayout(m_pLayoutItems);
-
-                    pLayoutContainer->addStretch();
-                }
-
-                /* Add to scroll-area: */
-                pScrollAreaContainer->setWidget(pWidgetContainer);
-            }
-
-            /* Configure container scroll-area: */
-            pScrollAreaContainer->setWidgetResizable(true);
-            pScrollAreaContainer->setFrameShape(QFrame::NoFrame);
-            pScrollAreaContainer->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-            pScrollAreaContainer->viewport()->setAutoFillBackground(false);
-            pScrollAreaContainer->widget()->setAutoFillBackground(false);
-
-            /* Add to layout: */
-            m_pLayoutMain->addWidget(pScrollAreaContainer);
+            m_pLayoutMain->insertLayout(0, m_pLayoutButtons);
         }
     }
 }
