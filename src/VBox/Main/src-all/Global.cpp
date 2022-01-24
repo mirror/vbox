@@ -644,6 +644,29 @@ Global::stringifySessionState(SessionState_T aState)
 }
 
 /*static*/ const char *
+Global::stringifyStorageBus(StorageBus_T aBus)
+{
+    switch (aBus)
+    {
+        case StorageBus_Null:           return "Null";
+        case StorageBus_IDE:            return "IDE";
+        case StorageBus_SATA:           return "SATA";
+        case StorageBus_Floppy:         return "Floppy";
+        case StorageBus_SAS:            return "SAS";
+        case StorageBus_USB:            return "USB";
+        case StorageBus_PCIe:           return "PCIe";
+        case StorageBus_VirtioSCSI:     return "VirtioSCSI";
+        default:
+        {
+            AssertMsgFailed(("%d (%#x)\n", aBus, aBus));
+            static char s_szMsg[48];
+            RTStrPrintf(s_szMsg, sizeof(s_szMsg), "InvalidBus-0x%08x", aBus);
+            return s_szMsg;
+        }
+    }
+}
+
+/*static*/ const char *
 Global::stringifyDeviceType(DeviceType_T aType)
 {
     switch (aType)
@@ -664,7 +687,6 @@ Global::stringifyDeviceType(DeviceType_T aType)
         }
     }
 }
-
 
 /*static*/ const char *
 Global::stringifyReason(Reason_T aReason)

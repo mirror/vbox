@@ -49,31 +49,29 @@
 using namespace std;
 
 
-/* static */ UnattendedInstaller *UnattendedInstaller::createInstance(VBOXOSTYPE enmOsType,
-                                                                      const Utf8Str &strGuestOsType,
-                                                                      const Utf8Str &strDetectedOSVersion,
-                                                                      const Utf8Str &strDetectedOSFlavor,
-                                                                      const Utf8Str &strDetectedOSHints,
-                                                                      Unattended *pParent)
+/* static */ UnattendedInstaller *
+UnattendedInstaller::createInstance(VBOXOSTYPE enmDetectedOSType, const Utf8Str &strDetectedOSType,
+                                    const Utf8Str &strDetectedOSVersion, const Utf8Str &strDetectedOSFlavor,
+                                    const Utf8Str &strDetectedOSHints, Unattended *pParent)
 {
     UnattendedInstaller *pUinstaller = NULL;
 
-    if (strGuestOsType.find("Windows") != RTCString::npos)
+    if (strDetectedOSType.find("Windows") != RTCString::npos)
     {
-        if (enmOsType >= VBOXOSTYPE_WinVista)
+        if (enmDetectedOSType >= VBOXOSTYPE_WinVista)
             pUinstaller = new UnattendedWindowsXmlInstaller(pParent);
         else
             pUinstaller = new UnattendedWindowsSifInstaller(pParent);
     }
-    else if (enmOsType >= VBOXOSTYPE_OS2 && enmOsType < VBOXOSTYPE_Linux)
+    else if (enmDetectedOSType >= VBOXOSTYPE_OS2 && enmDetectedOSType < VBOXOSTYPE_Linux)
         pUinstaller = new UnattendedOs2Installer(pParent, strDetectedOSHints);
     else
     {
-        if (enmOsType == VBOXOSTYPE_Debian || enmOsType == VBOXOSTYPE_Debian_x64)
+        if (enmDetectedOSType == VBOXOSTYPE_Debian || enmDetectedOSType == VBOXOSTYPE_Debian_x64)
             pUinstaller = new UnattendedDebianInstaller(pParent);
-        else if (enmOsType >= VBOXOSTYPE_Ubuntu && enmOsType <= VBOXOSTYPE_Ubuntu_x64)
+        else if (enmDetectedOSType >= VBOXOSTYPE_Ubuntu && enmDetectedOSType <= VBOXOSTYPE_Ubuntu_x64)
             pUinstaller = new UnattendedUbuntuInstaller(pParent);
-        else if (enmOsType >= VBOXOSTYPE_RedHat && enmOsType <= VBOXOSTYPE_RedHat_x64)
+        else if (enmDetectedOSType >= VBOXOSTYPE_RedHat && enmDetectedOSType <= VBOXOSTYPE_RedHat_x64)
         {
             if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "8") >= 0)
                 pUinstaller = new UnattendedRhel8Installer(pParent);
@@ -90,9 +88,9 @@ using namespace std;
             else
                 pUinstaller = new UnattendedRhel6Installer(pParent);
         }
-        else if (enmOsType >= VBOXOSTYPE_FedoraCore && enmOsType <= VBOXOSTYPE_FedoraCore_x64)
+        else if (enmDetectedOSType >= VBOXOSTYPE_FedoraCore && enmDetectedOSType <= VBOXOSTYPE_FedoraCore_x64)
             pUinstaller = new UnattendedFedoraInstaller(pParent);
-        else if (enmOsType >= VBOXOSTYPE_Oracle && enmOsType <= VBOXOSTYPE_Oracle_x64)
+        else if (enmDetectedOSType >= VBOXOSTYPE_Oracle && enmDetectedOSType <= VBOXOSTYPE_Oracle_x64)
         {
             if (RTStrVersionCompare(strDetectedOSVersion.c_str(), "8") >= 0)
                 pUinstaller = new UnattendedOracleLinux8Installer(pParent);
@@ -104,7 +102,7 @@ using namespace std;
                 pUinstaller = new UnattendedOracleLinux6Installer(pParent);
         }
 #if 0 /* doesn't work, so convert later. */
-        else if (enmOsType == VBOXOSTYPE_OpenSUSE || enmOsType == VBOXOSTYPE_OpenSUSE_x64)
+        else if (enmDetectedOSType == VBOXOSTYPE_OpenSUSE || enmDetectedOSType == VBOXOSTYPE_OpenSUSE_x64)
             pUinstaller = new UnattendedSuseInstaller(new UnattendedSUSEXMLScript(pParent), pParent);
 #endif
     }

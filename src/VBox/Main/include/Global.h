@@ -162,6 +162,14 @@ public:
     static const char *stringifySessionState(SessionState_T aState);
 
     /**
+     * Stringify a storage bus type.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aBusType    The storage bus type.
+     */
+    static const char *stringifyStorageBus(StorageBus_T aBus);
+
+    /**
      * Stringify a device type.
      *
      * @returns Pointer to a read only string.

@@ -581,11 +581,6 @@ bool Unattended::i_isFirmwareEFI() const
     return menmFirmwareType != FirmwareType_BIOS;
 }
 
-VBOXOSTYPE Unattended::i_getGuestOsType() const
-{
-    return meGuestOsType;
-}
-
 Utf8Str const &Unattended::i_getDetectedOSVersion()
 {
     return mStrDetectedOSVersion;

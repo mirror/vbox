@@ -1724,6 +1724,37 @@ HRESULT Unattended::prepare()
     }
 
     /*
+     * Get the ISO's detect guest OS type info and make it's a known one (just
+     * in case the above step doesn't work right).
+     */
+    uint32_t const   idxIsoOSType = Global::getOSTypeIndexFromId(mStrDetectedOSTypeId.c_str());
+    VBOXOSTYPE const enmIsoOSType = idxIsoOSType < Global::cOSTypes ? Global::sOSTypes[idxIsoOSType].osType : VBOXOSTYPE_Unknown;
+    if ((enmIsoOSType & VBOXOSTYPE_OsTypeMask) == VBOXOSTYPE_Unknown)
+        return setError(E_FAIL, tr("The supplied ISO file does not contain an OS currently supported for unattended installation"));
+
+    /*
+     * Get the VM's configured guest OS type info.
+     */
+    uint32_t const   idxMachineOSType = Global::getOSTypeIndexFromId(mStrGuestOsTypeId.c_str());
+    VBOXOSTYPE const enmMachineOSType = idxMachineOSType < Global::cOSTypes
+                                      ? Global::sOSTypes[idxMachineOSType].osType : VBOXOSTYPE_Unknown;
+
+    /*
+     * Check that the detected guest OS type for the ISO is compatible with
+     * that of the VM, boardly speaking.
+     */
+    if (idxMachineOSType != idxIsoOSType)
+    {
+        /* Check that the architecture is compatible: */
+        if (   (enmIsoOSType & VBOXOSTYPE_ArchitectureMask) != (enmMachineOSType & VBOXOSTYPE_ArchitectureMask)
+            && (   (enmIsoOSType     & VBOXOSTYPE_ArchitectureMask) != VBOXOSTYPE_x86
+                || (enmMachineOSType & VBOXOSTYPE_ArchitectureMask) != VBOXOSTYPE_x64))
+            return setError(E_FAIL, tr("The supplied ISO file is incompatible with the guest OS type of the VM: CPU architecture mismatch"));
+
+        /** @todo check BIOS/EFI requirement */
+    }
+
+    /*
      * Do some default property stuff and check other properties.
      */
     try
@@ -1809,12 +1840,9 @@ HRESULT Unattended::prepare()
     }
 
     /*
-     * Get the guest OS type info and instantiate the appropriate installer.
+     * Instatiate the guest installer matching the ISO.
      */
-    uint32_t   const idxOSType = Global::getOSTypeIndexFromId(mStrGuestOsTypeId.c_str());
-    meGuestOsType     = idxOSType < Global::cOSTypes ? Global::sOSTypes[idxOSType].osType : VBOXOSTYPE_Unknown;
-
-    mpInstaller = UnattendedInstaller::createInstance(meGuestOsType, mStrGuestOsTypeId, mStrDetectedOSVersion,
+    mpInstaller = UnattendedInstaller::createInstance(enmIsoOSType, mStrDetectedOSTypeId, mStrDetectedOSVersion,
                                                       mStrDetectedOSFlavor, mStrDetectedOSHints, this);
     if (mpInstaller != NULL)
     {
@@ -1867,9 +1895,13 @@ HRESULT Unattended::reconfigureVM()
     StorageBus_T enmRecommendedStorageBus = StorageBus_IDE;
     {
         Bstr bstrGuestOsTypeId;
+        Bstr bstrDetectedOSTypeId;
         {
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            bstrGuestOsTypeId = mStrGuestOsTypeId;
+            if (mpInstaller == NULL)
+                return setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("prepare() not yet called"));
+            bstrGuestOsTypeId    = mStrGuestOsTypeId;
+            bstrDetectedOSTypeId = mStrDetectedOSTypeId;
         }
         ComPtr<IGuestOSType> ptrGuestOSType;
         HRESULT hrc = mParent->GetGuestOSType(bstrGuestOsTypeId.raw(), ptrGuestOSType.asOutParam());
@@ -1880,6 +1912,23 @@ HRESULT Unattended::reconfigureVM()
         }
         if (FAILED(hrc))
             return hrc;
+
+        /* If the detected guest OS type differs, log a warning if their DVD storage
+           bus recommendations differ.  */
+        if (bstrGuestOsTypeId != bstrDetectedOSTypeId)
+        {
+            StorageBus_T enmRecommendedStorageBus2 = StorageBus_IDE;
+            hrc = mParent->GetGuestOSType(bstrDetectedOSTypeId.raw(), ptrGuestOSType.asOutParam());
+            if (SUCCEEDED(hrc) && !ptrGuestOSType.isNull())
+                hrc = ptrGuestOSType->COMGETTER(RecommendedDVDStorageBus)(&enmRecommendedStorageBus2);
+            if (FAILED(hrc))
+                return hrc;
+
+            if (enmRecommendedStorageBus != enmRecommendedStorageBus2)
+                LogRel(("Unattended::reconfigureVM: DVD storage bus recommendations differs for the VM and the ISO guest OS types: VM: %s (%ls), ISO: %s (%ls)\n",
+                        Global::stringifyStorageBus(enmRecommendedStorageBus), bstrGuestOsTypeId.raw(),
+                        Global::stringifyStorageBus(enmRecommendedStorageBus2), bstrDetectedOSTypeId.raw() ));
+        }
     }
 
     /*
@@ -3150,12 +3199,6 @@ bool Unattended::i_isFirmwareEFI() const
 {
     Assert(isReadLockedOnCurrentThread());
     return menmFirmwareType != FirmwareType_BIOS;
-}
-
-VBOXOSTYPE Unattended::i_getGuestOsType() const
-{
-    Assert(isReadLockedOnCurrentThread());
-    return meGuestOsType;
 }
 
 Utf8Str const &Unattended::i_getDetectedOSVersion()
