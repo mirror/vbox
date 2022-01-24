@@ -357,7 +357,8 @@ VBOX_WITH_NEW_WINDOWS_DDK = 1
 VBOX_WITH_ADDITIONS = 1
 # Build the optional ring-0 part of the additions for syntax checking.
 # On linux we build this as a test case instead.
-ifneq ($(KBUILD_TARGET), linux)
+# Skip for darwin.arm64 for now.
+if "$(KBUILD_TARGET)" != "linux" && "$(intersects $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64)" == ""
  VBOX_WITH_ADDITION_DRIVERS = 1
 endif
 # Build X11 additions. Can be disabled separately.
