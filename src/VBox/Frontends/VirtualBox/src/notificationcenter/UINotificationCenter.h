@@ -100,6 +100,9 @@ protected:
 
 private slots:
 
+    /** Handles alignment changes. */
+    void sltHandleAlignmentChange();
+
     /** Issues order changes. */
     void sltIssueOrderChange();
     /** Handles order changes. */
@@ -160,6 +163,8 @@ private:
     /** Holds the model instance. */
     UINotificationModel *m_pModel;
 
+    /** Holds the alignment. */
+    Qt::Alignment  m_enmAlignment;
     /** Holds the order. */
     Qt::SortOrder  m_enmOrder;
 

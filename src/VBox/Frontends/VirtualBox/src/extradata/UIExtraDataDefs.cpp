@@ -28,6 +28,7 @@ const char *UIExtraDataDefs::GUI_ColorTheme = "GUI/ColorTheme";
 const char *UIExtraDataDefs::GUI_SuppressMessages = "GUI/SuppressMessages";
 const char *UIExtraDataDefs::GUI_InvertMessageOption = "GUI/InvertMessageOption";
 const char *UIExtraDataDefs::GUI_NotificationCenter_KeepSuccessfullProgresses = "GUI/NotificationCenter/KeepSuccessfullProgresses";
+const char *UIExtraDataDefs::GUI_NotificationCenter_Alignment = "GUI/NotificationCenter/Alignment";
 const char *UIExtraDataDefs::GUI_NotificationCenter_Order = "GUI/NotificationCenter/Order";
 #if !defined(VBOX_BLEEDING_EDGE) && !defined(DEBUG)
 const char *UIExtraDataDefs::GUI_PreventBetaWarning = "GUI/PreventBetaWarning";

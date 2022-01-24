@@ -31,6 +31,7 @@
 
 /* Determines if <Object of type X> can be converted to object of other type.
  * These functions returns 'true' for all allowed conversions. */
+template<> bool canConvert<Qt::Alignment>() { return true; }
 template<> bool canConvert<Qt::SortOrder>() { return true; }
 template<> bool canConvert<SizeSuffix>() { return true; }
 template<> bool canConvert<StorageSlot>() { return true; }
@@ -83,13 +84,45 @@ template<> bool canConvert<UISettingsDefs::RecordingMode>() { return true; }
 template<> bool canConvert<VMActivityOverviewColumn>(){ return true; };
 
 
+/* QString <= Qt::Alignment: */
+template<> QString toInternalString(const Qt::Alignment &enmAlignment)
+{
+    QString strResult;
+    switch (enmAlignment)
+    {
+        case Qt::AlignTop:    strResult = "Top"; break;
+        case Qt::AlignBottom: strResult = "Bottom"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for alignment=%d", enmAlignment));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* Qt::Alignment <= QString: */
+template<> Qt::Alignment fromInternalString<Qt::Alignment>(const QString &strAlignment)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys; QList<Qt::Alignment> values;
+    keys << "Top";    values << Qt::AlignTop;
+    keys << "Bottom"; values << Qt::AlignBottom;
+    /* Qt::AlignTop type for unknown words: */
+    if (!keys.contains(strAlignment, Qt::CaseInsensitive))
+        return Qt::AlignTop;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strAlignment, Qt::CaseInsensitive)));
+}
+
 /* QString <= Qt::SortOrder: */
 template<> QString toInternalString(const Qt::SortOrder &enmSortOrder)
 {
     QString strResult;
     switch (enmSortOrder)
     {
-        case Qt::AscendingOrder: strResult = "Ascending"; break;
+        case Qt::AscendingOrder:  strResult = "Ascending"; break;
         case Qt::DescendingOrder: strResult = "Descending"; break;
         default:
         {

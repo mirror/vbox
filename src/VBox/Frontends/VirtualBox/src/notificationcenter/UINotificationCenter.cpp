@@ -147,6 +147,7 @@ UINotificationCenter *UINotificationCenter::instance()
 UINotificationCenter::UINotificationCenter(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pModel(0)
+    , m_enmAlignment(Qt::AlignTop)
     , m_enmOrder(Qt::AscendingOrder)
     , m_pLayoutMain(0)
     , m_pLayoutButtons(0)
@@ -356,6 +357,16 @@ void UINotificationCenter::paintEvent(QPaintEvent *pEvent)
     paintFrame(&painter);
 }
 
+void UINotificationCenter::sltHandleAlignmentChange()
+{
+    /* Update alignment: */
+    m_enmAlignment = gEDataManager->notificationCenterAlignment();
+
+    /* Re-insert to layout: */
+    m_pLayoutMain->removeItem(m_pLayoutButtons);
+    m_pLayoutMain->insertLayout(m_enmAlignment == Qt::AlignTop ? 0 : -1, m_pLayoutButtons);
+}
+
 void UINotificationCenter::sltIssueOrderChange()
 {
     const Qt::SortOrder enmSortOrder = m_pButtonToggleSorting->isChecked()
@@ -474,6 +485,10 @@ void UINotificationCenter::prepare()
     if (parent())
         parent()->installEventFilter(this);
 
+    /* Prepare alignment: */
+    m_enmAlignment = gEDataManager->notificationCenterAlignment();
+    connect(gEDataManager, &UIExtraDataManager::sigNotificationCenterAlignmentChange,
+            this, &UINotificationCenter::sltHandleAlignmentChange);
     /* Prepare order: */
     m_enmOrder = gEDataManager->notificationCenterOrder();
     connect(gEDataManager, &UIExtraDataManager::sigNotificationCenterOrderChange,
@@ -595,7 +610,7 @@ void UINotificationCenter::prepareWidgets()
             }
 
             /* Add to layout: */
-            m_pLayoutMain->insertLayout(0, m_pLayoutButtons);
+            m_pLayoutMain->insertLayout(m_enmAlignment == Qt::AlignTop ? 0 : -1, m_pLayoutButtons);
         }
     }
 }
