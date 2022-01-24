@@ -165,7 +165,7 @@ public:
      * Stringify a storage bus type.
      *
      * @returns Pointer to a read only string.
-     * @param   aBusType    The storage bus type.
+     * @param   aBus        The storage bus type.
      */
     static const char *stringifyStorageBus(StorageBus_T aBus);
 
