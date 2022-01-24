@@ -554,10 +554,10 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  endif
 
  ifdef VBOX_WITH_VMNET
-  VBoxDD_DEFS           += VBOX_WITH_VMNET
-  VBoxDD_SOURCES        += \
+  VBoxDD_DEFS.darwin    += VBOX_WITH_VMNET
+  VBoxDD_SOURCES.darwin += \
  	Network/DrvVMNet.m
-  VBoxDD_LDFLAGS += -framework vmnet
+  VBoxDD_LDFLAGS.darwin += -framework vmnet
  endif
 
  if defined(VBOX_WITH_CLOUD_NET) && defined(VBOX_WITH_LIBSSH)

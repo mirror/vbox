@@ -125,7 +125,7 @@ endif
 ifdef VBOX_WITH_NETFLT
 VBOX_MAIN_DEFS += VBOX_WITH_NETFLT
 endif
-ifdef VBOX_WITH_VMNET
+if defined(VBOX_WITH_VMNET) && "$(KBUILD_TARGET)" == "darwin"
 VBOX_MAIN_DEFS += VBOX_WITH_VMNET
 endif
 ifdef VBOX_WITH_CLOUD_NET
@@ -621,9 +621,6 @@ VBoxSVC_SOURCES = \
 	../NetworkServices/Dhcpd/DhcpOptions.cpp \
 	src-server/NetworkServiceRunner.cpp \
 	src-server/NATNetworkImpl.cpp \
-	$(if $(VBOX_WITH_VMNET), \
-	src-server/HostOnlyNetworkImpl.cpp \
-	,) \
 	$(if $(VBOX_WITH_CLOUD_NET), \
 	src-server/CloudNetworkImpl.cpp \
 	,) \
@@ -692,6 +689,10 @@ VBoxSVC_SOURCES.darwin = \
 	src-server/darwin/iokit.cpp \
 	src-server/darwin/HostPowerDarwin.cpp \
 	src-server/darwin/HostDnsServiceDarwin.cpp
+ifdef VBOX_WITH_VMNET
+ VBoxSVC_SOURCES.darwin += \
+ 	src-server/HostOnlyNetworkImpl.cpp
+endif
 
 VBoxSVC_SOURCES.win = \
 	src-server/win/svcmain.cpp \
