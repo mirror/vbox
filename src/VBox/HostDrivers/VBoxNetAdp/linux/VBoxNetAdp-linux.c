@@ -66,6 +66,12 @@
 
 #define VBOXNETADP_FROM_IFACE(iface) ((PVBOXNETADP) ifnet_softc(iface))
 
+/** Set netdev MAC address. */
+#if RTLNX_VER_MAX(5,17,0)
+# define VBOX_DEV_ADDR_SET(dev, addr, len) memcpy(dev->dev_addr, addr, len)
+#else /* >= 5.17.0 */
+# define VBOX_DEV_ADDR_SET(dev, addr, len) dev_addr_mod(dev, 0, addr, len)
+#endif
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -303,7 +309,7 @@ int vboxNetAdpOsCreate(PVBOXNETADP pThis, PCRTMAC pMACAddress)
 
         if (pNetDev->dev_addr)
         {
-            memcpy(pNetDev->dev_addr, pMACAddress, ETH_ALEN);
+            VBOX_DEV_ADDR_SET(pNetDev, pMACAddress, ETH_ALEN);
             Log2(("vboxNetAdpOsCreate: pNetDev->dev_addr = %.6Rhxd\n", pNetDev->dev_addr));
 
             /*
