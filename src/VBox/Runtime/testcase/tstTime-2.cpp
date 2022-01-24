@@ -35,6 +35,12 @@
 #include <VBox/sup.h>
 
 
+/* HACK ALERT! */
+#if defined(RT_OS_DARWIN) && defined(RT_ARCH_ARM64)
+# undef  RTTimeNanoTSWorkerName
+# define RTTimeNanoTSWorkerName() "system"
+#endif
+
 
 int main()
 {
