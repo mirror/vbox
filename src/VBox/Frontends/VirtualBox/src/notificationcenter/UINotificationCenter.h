@@ -115,6 +115,9 @@ private slots:
     /** Removes finished notifications. */
     void sltHandleRemoveFinishedButtonClicked();
 
+    /** Invokes open button context menu at specified @a position. */
+    void sltHandleOpenButtonContextMenuRequested(const QPoint &position);
+
     /** Handles open-timer timeout. */
     void sltHandleOpenTimerTimeout();
 

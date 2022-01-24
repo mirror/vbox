@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QHBoxLayout>
+#include <QMenu>
 #include <QPainter>
 #include <QPaintEvent>
 #include <QPropertyAnimation>
@@ -420,6 +421,29 @@ void UINotificationCenter::sltHandleRemoveFinishedButtonClicked()
     m_pModel->revokeFinishedObjects();
 }
 
+void UINotificationCenter::sltHandleOpenButtonContextMenuRequested(const QPoint &)
+{
+    /* Create menu: */
+    QMenu menu(m_pButtonOpen);
+
+    /* Create action: */
+    QAction action(  m_enmAlignment == Qt::AlignTop
+                   ? tr("Align Bottom")
+                   : tr("Align Top"),
+                   m_pButtonOpen);
+    menu.addAction(&action);
+
+    /* Execute menu, check if any (single) action is clicked: */
+    QAction *pAction = menu.exec(m_pButtonOpen->mapToGlobal(QPoint(m_pButtonOpen->width(), 0)));
+    if (pAction)
+    {
+        const Qt::Alignment enmAlignment = m_enmAlignment == Qt::AlignTop
+                                         ? Qt::AlignBottom
+                                         : Qt::AlignTop;
+        gEDataManager->setNotificationCenterAlignment(enmAlignment);
+    }
+}
+
 void UINotificationCenter::sltHandleOpenTimerTimeout()
 {
     /* Make sure it's invoked by corresponding timer only: */
@@ -575,8 +599,11 @@ void UINotificationCenter::prepareWidgets()
             {
                 m_pButtonOpen->setIcon(UIIconPool::iconSet(":/notification_center_16px.png"));
                 m_pButtonOpen->setCheckable(true);
+                m_pButtonOpen->setContextMenuPolicy(Qt::CustomContextMenu);
                 connect(m_pButtonOpen, &QIToolButton::toggled,
                         this, &UINotificationCenter::sltHandleOpenButtonToggled);
+                connect(m_pButtonOpen, &QIToolButton::customContextMenuRequested,
+                        this, &UINotificationCenter::sltHandleOpenButtonContextMenuRequested);
                 m_pLayoutButtons->addWidget(m_pButtonOpen);
             }
 
