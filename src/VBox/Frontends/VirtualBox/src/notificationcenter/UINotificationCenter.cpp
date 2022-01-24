@@ -365,6 +365,10 @@ void UINotificationCenter::sltHandleAlignmentChange()
     /* Re-insert to layout: */
     m_pLayoutMain->removeItem(m_pLayoutButtons);
     m_pLayoutMain->insertLayout(m_enmAlignment == Qt::AlignTop ? 0 : -1, m_pLayoutButtons);
+
+    /* Adjust mask to make sure button visible, layout should be finalized already: */
+    QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+    adjustMask();
 }
 
 void UINotificationCenter::sltIssueOrderChange()
@@ -571,7 +575,8 @@ void UINotificationCenter::prepareWidgets()
             {
                 m_pButtonOpen->setIcon(UIIconPool::iconSet(":/notification_center_16px.png"));
                 m_pButtonOpen->setCheckable(true);
-                connect(m_pButtonOpen, &QIToolButton::toggled, this, &UINotificationCenter::sltHandleOpenButtonToggled);
+                connect(m_pButtonOpen, &QIToolButton::toggled,
+                        this, &UINotificationCenter::sltHandleOpenButtonToggled);
                 m_pLayoutButtons->addWidget(m_pButtonOpen);
             }
 
