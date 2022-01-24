@@ -1,5 +1,7 @@
 /* $Id$ */
 /** @file
+ * Guest Additions - Gnome3 Desktop Environment helper.
+ *
  * A helper for X11/Wayland Client which performs Gnome Desktop
  * Environment specific actions.
  */

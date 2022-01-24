@@ -1,7 +1,9 @@
 /* $Id$ */
 /** @file
+ * Guest Additions - Generic Desktop Environment helper.
+ *
  * A generic helper for X11 Client which performs Desktop Environment
- * specific actions.
+ * specific actions utilizing libXrandr.
  */
 
 /*

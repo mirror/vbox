@@ -1,5 +1,6 @@
 /* $Id$ */
 /** @file
+ * Guest Additions - DRM IPC communication core function definitions.
  *
  * Definitions for IPC communication in between VBoxDRMClient and VBoxClient.
  */

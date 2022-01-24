@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * Definitions for Desktop Environment helpers.
+ * Guest Additions - Definitions for Desktop Environment helpers.
  */
 
 /*

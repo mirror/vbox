@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Common code for IPC communication between VBoxDRMClient and VBoxClient.
+ * Guest Additions - DRM IPC communication core functions.
  */
 
 /*

@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
- * Desktop Environment specific guest screen assistant for
- * VMSVGA graphics adapter.
+ * Guest Additions - VMSVGA Desktop Environment user session assistant.
  *
  * This service connects to VBoxDRMClient IPC server, listens for
  * its commands and reports current display offsets to it. If IPC
