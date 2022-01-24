@@ -29,6 +29,7 @@
 #include "SystemPropertiesImpl.h"
 #include "MachineImpl.h"
 #include "Global.h"
+#include "StringifyEnums.h"
 
 #include <VBox/err.h>
 #include <iprt/ctype.h>
@@ -1926,8 +1927,8 @@ HRESULT Unattended::reconfigureVM()
 
             if (enmRecommendedStorageBus != enmRecommendedStorageBus2)
                 LogRel(("Unattended::reconfigureVM: DVD storage bus recommendations differs for the VM and the ISO guest OS types: VM: %s (%ls), ISO: %s (%ls)\n",
-                        Global::stringifyStorageBus(enmRecommendedStorageBus), bstrGuestOsTypeId.raw(),
-                        Global::stringifyStorageBus(enmRecommendedStorageBus2), bstrDetectedOSTypeId.raw() ));
+                        ::stringifyStorageBus(enmRecommendedStorageBus), bstrGuestOsTypeId.raw(),
+                        ::stringifyStorageBus(enmRecommendedStorageBus2), bstrDetectedOSTypeId.raw() ));
         }
     }
 

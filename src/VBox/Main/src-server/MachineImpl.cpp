@@ -60,6 +60,7 @@
 #include "AutoCaller.h"
 #include "HashedPw.h"
 #include "Performance.h"
+#include "StringifyEnums.h"
 
 #include <iprt/asm.h>
 #include <iprt/path.h>
@@ -2976,7 +2977,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
                         tr("The machine '%s' is not registered"),
                         mUserData->s.strName.c_str());
 
-    LogFlowThisFunc(("mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
+    LogFlowThisFunc(("mSession.mState=%s\n", ::stringifySessionState(mData->mSession.mState)));
 
     SessionState_T oldState = mData->mSession.mState;
     /* Hack: in case the session is closing and there is a progress object
@@ -2989,7 +2990,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
         alock.release();
         mData->mSession.mProgress->WaitForCompletion(1000);
         alock.acquire();
-        LogFlowThisFunc(("after waiting: mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
+        LogFlowThisFunc(("after waiting: mSession.mState=%s\n", ::stringifySessionState(mData->mSession.mState)));
     }
 
     // try again now
@@ -7400,7 +7401,7 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
                         tr("The machine '%s' is not registered"),
                         mUserData->s.strName.c_str());
 
-    LogFlowThisFunc(("mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
+    LogFlowThisFunc(("mSession.mState=%s\n", ::stringifySessionState(mData->mSession.mState)));
 
     /* The process started when launching a VM with separate UI/VM processes is always
      * the UI process, i.e. needs special handling as it won't claim the session. */
@@ -8475,7 +8476,7 @@ void Machine::i_ensureNoStateDependencies(AutoWriteLock &alock)
 HRESULT Machine::i_setMachineState(MachineState_T aMachineState)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aMachineState=%s\n", Global::stringifyMachineState(aMachineState) ));
+    LogFlowThisFunc(("aMachineState=%s\n", ::stringifyMachineState(aMachineState) ));
     Assert(aMachineState != MachineState_Null);
 
     AutoCaller autoCaller(this);
@@ -13600,10 +13601,7 @@ HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (!Global::IsOnline(mData->mMachineState))
-        {
-            AssertMsgFailedReturn(("%s\n", Global::stringifyMachineState(mData->mMachineState)),
-                                  VBOX_E_INVALID_VM_STATE);
-        }
+            AssertMsgFailedReturn(("%s\n", ::stringifyMachineState(mData->mMachineState)), VBOX_E_INVALID_VM_STATE);
 
         i_setModified(IsModified_MachineData);
         mHWData.backup();
@@ -14661,7 +14659,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
 
     AssertMsgReturn(oldMachineState != aMachineState,
                     ("oldMachineState=%s, aMachineState=%s\n",
-                     Global::stringifyMachineState(oldMachineState), Global::stringifyMachineState(aMachineState)),
+                     ::stringifyMachineState(oldMachineState), ::stringifyMachineState(aMachineState)),
                     E_FAIL);
 
     HRESULT rc = S_OK;
@@ -14888,7 +14886,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
         /* no special action so far */
     }
 
-    LogFlowThisFunc(("rc=%Rhrc [%s]\n", rc, Global::stringifyMachineState(mData->mMachineState) ));
+    LogFlowThisFunc(("rc=%Rhrc [%s]\n", rc, ::stringifyMachineState(mData->mMachineState) ));
     LogFlowThisFuncLeave();
     return rc;
 }

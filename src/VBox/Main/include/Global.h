@@ -146,7 +146,10 @@ public:
     }
 
     /**
-     * Stringify a machine state.
+     * Stringify a machine state - translated.
+     *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
      *
      * @returns Pointer to a read only string.
      * @param   aState      Valid machine state.
@@ -154,15 +157,22 @@ public:
     static const char *stringifyMachineState(MachineState_T aState);
 
     /**
-     * Stringify a session state.
+     * Stringify a session state - translated.
+     *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
      *
      * @returns Pointer to a read only string.
      * @param   aState      Valid session state.
      */
     static const char *stringifySessionState(SessionState_T aState);
 
+#if 0 /* unused */
     /**
      * Stringify a storage bus type.
+     *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
      *
      * @returns Pointer to a read only string.
      * @param   aBus        The storage bus type.
@@ -172,6 +182,9 @@ public:
     /**
      * Stringify a device type.
      *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
+     *
      * @returns Pointer to a read only string.
      * @param   aType       The device type.
      */
@@ -180,10 +193,14 @@ public:
     /**
      * Stringify a reason.
      *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
+     *
      * @returns Pointer to a read only string.
      * @param   aReason     The reason code.
      */
     static const char *stringifyReason(Reason_T aReason);
+#endif
 
     /**
      * Try convert a COM status code to a VirtualBox status code (VBox/err.h).

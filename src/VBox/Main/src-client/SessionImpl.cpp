@@ -20,8 +20,9 @@
 
 #include "SessionImpl.h"
 #include "ConsoleImpl.h"
-#include "Global.h"
 #include "ClientTokenHolder.h"
+#include "Global.h"
+#include "StringifyEnums.h"
 
 #include "AutoCaller.h"
 
@@ -524,7 +525,7 @@ HRESULT Session::uninitialize()
         /* close() needs write lock */
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        LogFlowThisFunc(("mState=%s, mType=%d\n", Global::stringifySessionState(mState), mType));
+        LogFlowThisFunc(("mState=%s, mType=%d\n", ::stringifySessionState(mState), mType));
 
         if (mState == SessionState_Unlocking)
         {
@@ -1162,7 +1163,7 @@ HRESULT Session::i_unlockMachine(bool aFinalRelease, bool aFromServer, AutoWrite
     LogFlowThisFunc(("aFinalRelease=%d, isFromServer=%d\n",
                       aFinalRelease, aFromServer));
 
-    LogFlowThisFunc(("mState=%s, mType=%d\n", Global::stringifySessionState(mState), mType));
+    LogFlowThisFunc(("mState=%s, mType=%d\n", ::stringifySessionState(mState), mType));
 
     Assert(aLockW.isWriteLockOnCurrentThread());
 

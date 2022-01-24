@@ -77,6 +77,7 @@
 #include "PCIDeviceAttachmentImpl.h"
 #include "EmulatedUSBImpl.h"
 #include "NvramStoreImpl.h"
+#include "StringifyEnums.h"
 
 #include "VBoxEvents.h"
 #include "AutoCaller.h"
@@ -6681,7 +6682,7 @@ HRESULT Console::i_pause(Reason_T aReason)
 
     LogFlowThisFunc(("Sending PAUSE request...\n"));
     if (aReason != Reason_Unspecified)
-        LogRel(("Pausing VM execution, reason '%s'\n", Global::stringifyReason(aReason)));
+        LogRel(("Pausing VM execution, reason '%s'\n", ::stringifyReason(aReason)));
 
     /** @todo r=klaus make use of aReason */
     VMSUSPENDREASON enmReason = VMSUSPENDREASON_USER;
@@ -6727,7 +6728,7 @@ HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
 
     LogFlowThisFunc(("Sending RESUME request...\n"));
     if (aReason != Reason_Unspecified)
-        LogRel(("Resuming VM execution, reason '%s'\n", Global::stringifyReason(aReason)));
+        LogRel(("Resuming VM execution, reason '%s'\n", ::stringifyReason(aReason)));
 
     int vrc;
     if (VMR3GetStateU(ptrVM.rawUVM()) == VMSTATE_CREATED)
@@ -6840,7 +6841,7 @@ HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgres
                         tr("Saving the execution state is disabled for this VM"));
 
     if (aReason != Reason_Unspecified)
-        LogRel(("Saving state of VM, reason '%s'\n", Global::stringifyReason(aReason)));
+        LogRel(("Saving state of VM, reason '%s'\n", ::stringifyReason(aReason)));
 
     /* ensure the directory for the saved state file exists */
     {
@@ -8145,10 +8146,10 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
               || mMachineState == MachineState_Restoring
               || mMachineState == MachineState_TeleportingPausedVM
               || mMachineState == MachineState_TeleportingIn
-              , ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
+              , ("Invalid machine state: %s\n", ::stringifyMachineState(mMachineState)));
 
     LogRel(("Console::powerDown(): A request to power off the VM has been issued (mMachineState=%s, InUninit=%d)\n",
-            Global::stringifyMachineState(mMachineState), getObjectState().getState() == ObjectState::InUninit));
+            ::stringifyMachineState(mMachineState), getObjectState().getState() == ObjectState::InUninit));
 
     /* Check if we need to power off the VM. In case of mVMPoweredOff=true, the
      * VM has already powered itself off in vmstateChangeCallback() and is just
@@ -8404,8 +8405,8 @@ HRESULT Console::i_setMachineState(MachineState_T aMachineState,
     if (mMachineState != aMachineState)
     {
         LogThisFunc(("machineState=%s -> %s aUpdateServer=%RTbool\n",
-                     Global::stringifyMachineState(mMachineState), Global::stringifyMachineState(aMachineState), aUpdateServer));
-        LogRel(("Console: Machine state changed to '%s'\n", Global::stringifyMachineState(aMachineState)));
+                     ::stringifyMachineState(mMachineState), ::stringifyMachineState(aMachineState), aUpdateServer));
+        LogRel(("Console: Machine state changed to '%s'\n", ::stringifyMachineState(aMachineState)));
         mMachineState = aMachineState;
 
         /// @todo (dmik)
@@ -9047,7 +9048,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                     break;
 
                 default:
-                    AssertMsgFailed(("%s\n", Global::stringifyMachineState(that->mMachineState)));
+                    AssertMsgFailed(("%s\n", ::stringifyMachineState(that->mMachineState)));
             }
             break;
         }
@@ -9074,7 +9075,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                     break;
 
                 default:
-                    AssertMsgFailed(("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState),
+                    AssertMsgFailed(("%s/%s -> %s\n", ::stringifyMachineState(that->mMachineState),
                                     VMR3GetStateName(enmOldState), VMR3GetStateName(enmState) ));
                     that->i_setMachineState(MachineState_Paused);
                     break;
@@ -9111,7 +9112,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
         case VMSTATE_RUNNING_LS:
             AssertMsg(   that->mMachineState == MachineState_LiveSnapshotting
                       || that->mMachineState == MachineState_Teleporting,
-                      ("%s/%s -> %s\n", Global::stringifyMachineState(that->mMachineState),
+                      ("%s/%s -> %s\n", ::stringifyMachineState(that->mMachineState),
                       VMR3GetStateName(enmOldState), VMR3GetStateName(enmState) ));
             break;
 

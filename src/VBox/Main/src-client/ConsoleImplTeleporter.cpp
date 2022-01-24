@@ -23,8 +23,9 @@
 #include "LoggingNew.h"
 
 #include "ConsoleImpl.h"
-#include "Global.h"
 #include "ProgressImpl.h"
+#include "Global.h"
+#include "StringifyEnums.h"
 
 #include "AutoCaller.h"
 #include "HashedPw.h"
@@ -813,8 +814,7 @@ Console::i_teleporterSrcThreadWrapper(RTTHREAD hThreadSelf, void *pvUser)
          *       powerDown.
          */
         AssertLogRelMsg(enmVMState == VMSTATE_SUSPENDED, ("%s\n", VMR3GetStateName(enmVMState)));
-        AssertLogRelMsg(enmMachineState == MachineState_TeleportingPausedVM,
-                        ("%s\n", Global::stringifyMachineState(enmMachineState)));
+        AssertLogRelMsg(enmMachineState == MachineState_TeleportingPausedVM, ("%s\n", ::stringifyMachineState(enmMachineState)));
 
         ptrVM.release();
 

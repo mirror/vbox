@@ -39,3 +39,7 @@ VBOX_XML_SCHEMADEFS_XSL = $(VBOX_PATH_MAIN_SRC)/xml/SchemaDefs.xsl
 VBOX_AUTOGEN_EVENT_H    = $(PATH_TARGET)/Main/VBoxEvents.h
 VBOX_AUTOGEN_EVENT_CPP  = $(PATH_TARGET)/Main/VBoxEvents.cpp
 
+# Enum stringify functions.
+VBOX_AUTOGEN_STRINGIFY_ENUMS_H    = $(PATH_TARGET)/Main/StringifyEnums.h
+VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP  = $(PATH_TARGET)/Main/StringifyEnums.cpp
+

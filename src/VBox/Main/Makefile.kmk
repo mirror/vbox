@@ -575,6 +575,7 @@ VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
 	$(VBOX_XML_SCHEMADEFS_H) \
 	$(VBOX_AUTOGEN_EVENT_H) \
+	$(VBOX_AUTOGEN_STRINGIFY_ENUMS_H) \
 	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 
 VBoxSVC_SOURCES = \
@@ -673,6 +674,7 @@ VBoxSVC_SOURCES = \
 	xml/Settings.cpp \
 	$(VBOX_XML_SCHEMADEFS_CPP) \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
+	$(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP) \
 	$(if $(VBOX_WITH_XPCOM),src-server/xpcom/server.cpp,)
 
 ifdef VBOX_WITH_MAIN_NLS
@@ -866,6 +868,8 @@ OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 #
 # Generate some event stuff for VBoxSVC and VBoxC.
 #
+
+# Events
 $(call KB_FN_AUTO_CMD_DEPS,$(VBOX_AUTOGEN_EVENT_H).ts)
 $(VBOX_AUTOGEN_EVENT_H).ts +| $(VBOX_AUTOGEN_EVENT_H): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
@@ -881,6 +885,23 @@ $(VBOX_AUTOGEN_EVENT_CPP).ts +| $(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)
 	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBOX_AUTOGEN_EVENT_CPP)"
 
 OTHER_CLEAN += $(VBOX_AUTOGEN_EVENT_H).ts $(VBOX_AUTOGEN_EVENT_H) $(VBOX_AUTOGEN_EVENT_CPP).ts $(VBOX_AUTOGEN_EVENT_CPP)
+
+# Enum stringifiers
+$(call KB_FN_AUTO_CMD_DEPS,$(VBOX_AUTOGEN_STRINGIFY_ENUMS_H).ts)
+$(VBOX_AUTOGEN_STRINGIFY_ENUMS_H).ts +| $(VBOX_AUTOGEN_STRINGIFY_ENUMS_H): $(VBOX_PATH_MAIN_SRC)/idl/stringify-enums.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(call MSG_TOOL,xsltproc,autogen enum stringifiers,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind header -o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/stringify-enums.xsl" "$(VBOX_XIDL_FILE)"
+	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBOX_AUTOGEN_STRINGIFY_ENUMS_H)"
+
+$(call KB_FN_AUTO_CMD_DEPS,$(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP).ts)
+$(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP).ts +| $(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP): $(VBOX_PATH_MAIN_SRC)/idl/stringify-enums.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(call MSG_TOOL,xsltproc,autogen enum stringifiers,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind source -o "$@" "$(VBOX_PATH_MAIN_SRC)/idl/stringify-enums.xsl" "$(VBOX_XIDL_FILE)"
+	$(QUIET)$(CP) --changed -fv -- "$@" "$(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP)"
+
+OTHER_CLEAN += $(VBOX_AUTOGEN_STRINGIFY_ENUMS_H).ts $(VBOX_AUTOGEN_STRINGIFY_ENUMS_H) $(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP).ts $(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP)
 
 ifdef VBOX_WITH_XPCOM
 #
@@ -1038,6 +1059,7 @@ VBoxC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
 	$(VBOX_XML_SCHEMADEFS_H) \
 	$(VBOX_AUTOGEN_EVENT_H) \
+	$(VBOX_AUTOGEN_STRINGIFY_ENUMS_H) \
 	$(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
 
 VBoxC_SOURCES += \
@@ -1086,6 +1108,7 @@ VBoxC_SOURCES += \
 	src-client/VirtualBoxClientImpl.cpp \
 	src-client/VMMDevInterface.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
+	$(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
 
 ifdef VBOX_WITH_MAIN_NLS
@@ -1214,6 +1237,7 @@ endif
  	src-client/SessionImpl.cpp \
  	src-client/VirtualBoxClientImpl.cpp \
  	$(VBOX_AUTOGEN_EVENT_CPP) \
+ 	$(VBOX_AUTOGEN_STRINGIFY_ENUMS_CPP) \
  	$(VBOX_XML_SCHEMADEFS_CPP)
  ifdef VBOX_WITH_MAIN_NLS
  VBoxClient-x86_SOURCES += \

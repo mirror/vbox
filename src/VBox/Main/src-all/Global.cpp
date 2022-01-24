@@ -18,6 +18,7 @@
  */
 
 #include "Global.h"
+#include "StringifyEnums.h"
 
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -614,12 +615,7 @@ Global::stringifyMachineState(MachineState_T aState)
         case MachineState_SettingUp:            return GlobalCtx::tr("SettingUp");
         case MachineState_Snapshotting:         return GlobalCtx::tr("Snapshotting");
         default:
-        {
-            AssertMsgFailed(("%d (%#x)\n", aState, aState));
-            static char s_szMsg[48];
-            RTStrPrintf(s_szMsg, sizeof(s_szMsg), GlobalCtx::tr("InvalidState-0x%08x\n"), aState);
-            return s_szMsg;
-        }
+            AssertMsgFailedReturn(("%d (%#x)\n", aState, aState), ::stringifyMachineState(aState));
     }
 }
 
@@ -634,35 +630,27 @@ Global::stringifySessionState(SessionState_T aState)
         case SessionState_Spawning:     return GlobalCtx::tr("Spawning");
         case SessionState_Unlocking:    return GlobalCtx::tr("Unlocking");
         default:
-        {
-            AssertMsgFailed(("%d (%#x)\n", aState, aState));
-            static char s_szMsg[48];
-            RTStrPrintf(s_szMsg, sizeof(s_szMsg), GlobalCtx::tr("InvalidState-0x%08x\n"), aState);
-            return s_szMsg;
-        }
+            AssertMsgFailedReturn(("%d (%#x)\n", aState, aState), ::stringifySessionState(aState));
     }
 }
+
+#if 0 /* unused */
 
 /*static*/ const char *
 Global::stringifyStorageBus(StorageBus_T aBus)
 {
     switch (aBus)
     {
-        case StorageBus_Null:           return "Null";
-        case StorageBus_IDE:            return "IDE";
-        case StorageBus_SATA:           return "SATA";
-        case StorageBus_Floppy:         return "Floppy";
-        case StorageBus_SAS:            return "SAS";
-        case StorageBus_USB:            return "USB";
-        case StorageBus_PCIe:           return "PCIe";
-        case StorageBus_VirtioSCSI:     return "VirtioSCSI";
+        case StorageBus_Null:           return GlobalCtx::tr("Null");
+        case StorageBus_IDE:            return GlobalCtx::tr("IDE");
+        case StorageBus_SATA:           return GlobalCtx::tr("SATA");
+        case StorageBus_Floppy:         return GlobalCtx::tr("Floppy");
+        case StorageBus_SAS:            return GlobalCtx::tr("SAS");
+        case StorageBus_USB:            return GlobalCtx::tr("USB");
+        case StorageBus_PCIe:           return GlobalCtx::tr("PCIe");
+        case StorageBus_VirtioSCSI:     return GlobalCtx::tr("VirtioSCSI");
         default:
-        {
-            AssertMsgFailed(("%d (%#x)\n", aBus, aBus));
-            static char s_szMsg[48];
-            RTStrPrintf(s_szMsg, sizeof(s_szMsg), "InvalidBus-0x%08x", aBus);
-            return s_szMsg;
-        }
+            AssertMsgFailedReturn(("%d (%#x)\n", aBus, aBus), ::stringifyStorageBus(aBus));
     }
 }
 
@@ -679,12 +667,7 @@ Global::stringifyDeviceType(DeviceType_T aType)
         case DeviceType_USB:          return GlobalCtx::tr("USB");
         case DeviceType_SharedFolder: return GlobalCtx::tr("ShardFolder");
         default:
-        {
-            AssertMsgFailed(("%d (%#x)\n", aType, aType));
-            static char s_szMsg[48];
-            RTStrPrintf(s_szMsg, sizeof(s_szMsg), GlobalCtx::tr("InvalidType-0x%08x\n"), aType);
-            return s_szMsg;
-        }
+            AssertMsgFailedReturn(("%d (%#x)\n", aType, aType), ::stringifyDeviceType(aType));
     }
 }
 
@@ -699,13 +682,10 @@ Global::stringifyReason(Reason_T aReason)
         case Reason_HostBatteryLow:   return GlobalCtx::tr("host battery low");
         case Reason_Snapshot:         return GlobalCtx::tr("snapshot");
         default:
-        {
-            AssertMsgFailed(("%d (%#x)\n", aReason, aReason));
-            static char s_szMsg[48];
-            RTStrPrintf(s_szMsg, sizeof(s_szMsg), GlobalCtx::tr("invalid reason %#010x\n"), aReason);
-            return s_szMsg;
-        }
+            AssertMsgFailedReturn(("%d (%#x)\n", aReason, aReason), ::stringifyReason(aReason));
     }
 }
+
+#endif /* unused */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

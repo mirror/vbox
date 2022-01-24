@@ -25,8 +25,9 @@
 #include "MachineImpl.h"
 #include "MediumImpl.h"
 #include "MediumFormatImpl.h"
-#include "Global.h"
 #include "ProgressImpl.h"
+#include "Global.h"
+#include "StringifyEnums.h"
 
 /// @todo these three includes are required for about one or two lines, try
 // to remove them and put that code in shared code in MachineImplcpp
@@ -1934,12 +1935,12 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
          */
         rc = i_finishTakingSnapshot(task, alock, true /*aSuccess*/);
         // do not throw rc here because we can't call i_finishTakingSnapshot() twice
-        LogFlowThisFunc(("i_finishTakingSnapshot -> %Rhrc [mMachineState=%s]\n", rc, Global::stringifyMachineState(mData->mMachineState)));
+        LogFlowThisFunc(("i_finishTakingSnapshot -> %Rhrc [mMachineState=%s]\n", rc, ::stringifyMachineState(mData->mMachineState)));
     }
     catch (HRESULT rcThrown)
     {
         rc = rcThrown;
-        LogThisFunc(("Caught %Rhrc [mMachineState=%s]\n", rc, Global::stringifyMachineState(mData->mMachineState)));
+        LogThisFunc(("Caught %Rhrc [mMachineState=%s]\n", rc, ::stringifyMachineState(mData->mMachineState)));
 
         /// @todo r=klaus check that the implicit diffs created above are cleaned up im the relevant error cases
 
@@ -1983,7 +1984,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
                 HRESULT rc2 = task.m_pDirectControl->COMGETTER(NominalState)(&enmMachineState);
                 if (FAILED(rc2) || enmMachineState == MachineState_Null)
                 {
-                    AssertMsgFailed(("state=%s\n", Global::stringifyMachineState(enmMachineState)));
+                    AssertMsgFailed(("state=%s\n", ::stringifyMachineState(enmMachineState)));
                     // pure nonsense, try to continue somehow
                     enmMachineState = MachineState_Aborted;
                 }
@@ -2018,8 +2019,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
                 pConsole->COMGETTER(State)(&enmMachineState);
         }
         LogFlowThisFunc(("local mMachineState=%s remote mMachineState=%s\n",
-                         Global::stringifyMachineState(mData->mMachineState),
-                         Global::stringifyMachineState(enmMachineState)));
+                         ::stringifyMachineState(mData->mMachineState), ::stringifyMachineState(enmMachineState)));
 
         if (fNeedClientMachineStateUpdate)
             i_updateMachineStateOnClient();
