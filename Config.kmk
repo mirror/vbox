@@ -2775,6 +2775,13 @@ VBOX_PATH_MACOSX_SDK := $(firstword $(wildcard $(addsuffix /MacOSX$(VBOX_DEF_MAC
  TOOL_BISON_YACC ?= $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(PATH_TOOL_$(VBOX_GCC_TOOL)_TOOLCHAIN_BIN_SLASH)bison
  TOOL_FLEX_LEX   ?= $(TOOL_$(VBOX_GCC_TOOL)_ENV_SETUP) $(PATH_TOOL_$(VBOX_GCC_TOOL)_TOOLCHAIN_BIN_SLASH)flex
 
+ #
+ # Disable VMNet if the SDK is too old.
+ #
+ if defined(VBOX_WITH_VMNET) && "$(VBOX_DEF_MACOSX_VERSION_MIN)" vlt "10.15"
+  VBOX_WITH_VMNET :=
+ endif
+
 endif # target=darwin
 
 #
