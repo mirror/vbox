@@ -47,7 +47,10 @@ else ifdef VBOX_ONLY_VALIDATIONKIT
  #
  # Only build the Validation Kit.
  #
- LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeR3 RuntimeR0 RuntimeBldProg
+ LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeR3 RuntimeBldProg
+ ifdef VBOX_WITH_R0_MODULES
+  LIBRARIES += RuntimeR0
+ endif
  LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub #RuntimeR3NoCrt
  LIBRARIES.win.x86 += RuntimeR3VccTricks
@@ -65,7 +68,10 @@ else ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  # Build extension packs using import libraries as much as possible (VBoxDTrace
  # needs Ring-0 IPRT, though).
  #
- LIBRARIES += RuntimeBldProg RuntimeR0
+ LIBRARIES += RuntimeBldProg
+ ifdef VBOX_WITH_R0_MODULES
+  LIBRARIES += RuntimeR0
+ endif
  LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub
  ifdef VBOX_WITH_RAW_MODE
@@ -84,7 +90,10 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_VALIDATIONKIT && !VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
  BLDPROGS += uniread
- LIBRARIES += RuntimeR3 RuntimeBldProg RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
+ LIBRARIES += RuntimeR3 RuntimeBldProg RuntimeEFCPP RuntimeR3NoCRTGCC
+ ifdef VBOX_WITH_R0_MODULES
+  LIBRARIES += RuntimeR0
+ endif
  LIBRARIES.solaris += RuntimeR0Stub
  LIBRARIES.win += RuntimeR0Stub RuntimeR3NoCrt
  LIBRARIES.win.amd64 += RuntimeR3-x86

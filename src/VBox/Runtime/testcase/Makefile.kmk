@@ -184,7 +184,7 @@ ifdef VBOX_WITH_LIBCURL
  	tstRTCRest-1 \
  	tstRTS3
 endif
-if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+ifdef VBOX_WITH_R0_MODULES
  PROGRAMS += \
  	tstLdr-2 \
  	tstLdr-3 \
