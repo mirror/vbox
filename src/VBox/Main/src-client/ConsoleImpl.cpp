@@ -7552,27 +7552,22 @@ void Console::i_safeVMPtrReleaser(PUVM *a_ppUVM)
  */
 HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
 {
-    HRESULT hrc = S_OK;
-
-    Bstr logFolder;
-    hrc = aMachine->COMGETTER(LogFolder)(logFolder.asOutParam());
+    Bstr bstrLogFolder;
+    HRESULT hrc = aMachine->COMGETTER(LogFolder)(bstrLogFolder.asOutParam());
     if (FAILED(hrc))
         return hrc;
-
-    Utf8Str logDir = logFolder;
+    Utf8Str strLogDir = bstrLogFolder;
 
     /* make sure the Logs folder exists */
-    Assert(logDir.length());
-    if (!RTDirExists(logDir.c_str()))
-        RTDirCreateFullPath(logDir.c_str(), 0700);
+    Assert(strLogDir.length());
+    if (!RTDirExists(strLogDir.c_str()))
+        RTDirCreateFullPath(strLogDir.c_str(), 0700);
 
-    Utf8Str logFile = Utf8StrFmt("%s%cVBox.log",
-                                 logDir.c_str(), RTPATH_DELIMITER);
-    Utf8Str pngFile = Utf8StrFmt("%s%cVBox.png",
-                                 logDir.c_str(), RTPATH_DELIMITER);
+    Utf8StrFmt logFile("%s%cVBox.log", strLogDir.c_str(), RTPATH_DELIMITER);
+    Utf8StrFmt pngFile("%s%cVBox.png", strLogDir.c_str(), RTPATH_DELIMITER);
 
     /*
-     * Age the old log files
+     * Age the old log files.
      * Rename .(n-1) to .(n), .(n-2) to .(n-1), ..., and the last log file to .1
      * Overwrite target files in case they exist.
      */
@@ -7584,7 +7579,7 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
     pSystemProperties->COMGETTER(LogHistoryCount)(&cHistoryFiles);
     if (cHistoryFiles)
     {
-        for (int i = cHistoryFiles-1; i >= 0; i--)
+        for (int i = cHistoryFiles - 1; i >= 0; i--)
         {
             Utf8Str *files[] = { &logFile, &pngFile };
             Utf8Str oldName, newName;
@@ -7592,15 +7587,15 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
             for (unsigned int j = 0; j < RT_ELEMENTS(files); ++j)
             {
                 if (i > 0)
-                    oldName = Utf8StrFmt("%s.%d", files[j]->c_str(), i);
+                    oldName.printf("%s.%d", files[j]->c_str(), i);
                 else
                     oldName = *files[j];
-                newName = Utf8StrFmt("%s.%d", files[j]->c_str(), i + 1);
+                newName.printf("%s.%d", files[j]->c_str(), i + 1);
+
                 /* If the old file doesn't exist, delete the new file (if it
                  * exists) to provide correct rotation even if the sequence is
                  * broken */
-                if (   RTFileRename(oldName.c_str(), newName.c_str(), RTFILEMOVE_FLAGS_REPLACE)
-                    == VERR_FILE_NOT_FOUND)
+                if (RTFileRename(oldName.c_str(), newName.c_str(), RTFILEMOVE_FLAGS_REPLACE) == VERR_FILE_NOT_FOUND)
                     RTFileDelete(newName.c_str());
             }
         }
@@ -7623,7 +7618,7 @@ HRESULT Console::i_consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
        Tip: Try 'export VBOX_RELEASE_LOG_FLAGS=flush' if the last bits of the log
             is missing. Just don't have too high hopes for this to help. */
     if (SUCCEEDED(hrc) || cHistoryFiles)
-        RTDirFlush(logDir.c_str());
+        RTDirFlush(strLogDir.c_str());
 
     return hrc;
 }
@@ -7643,12 +7638,42 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    HRESULT rc = autoCaller.rc();
+    if (FAILED(rc)) return rc;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
-    HRESULT rc = S_OK;
+
+    if (Global::IsOnlineOrTransient(mMachineState))
+        return setError(VBOX_E_INVALID_VM_STATE, tr("The virtual machine is already running or busy (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
+
+
+    /* Set up release logging as early as possible after the check if
+     * there is already a running VM which we shouldn't disturb. */
+    rc = i_consoleInitReleaseLog(mMachine);
+    if (FAILED(rc))
+        return rc;
+
+#ifdef VBOX_OPENSSL_FIPS
+    LogRel(("crypto: FIPS mode %s\n", FIPS_mode() ? "enabled" : "FAILED"));
+#endif
+
+    /* test and clear the TeleporterEnabled property  */
+    BOOL fTeleporterEnabled;
+    rc = mMachine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
+    if (FAILED(rc))
+        return rc;
+
+#if 0 /** @todo we should save it afterwards, but that isn't necessarily a good idea. Find a better place for this (VBoxSVC).  */
+    if (fTeleporterEnabled)
+    {
+        rc = mMachine->COMSETTER(TeleporterEnabled)(FALSE);
+        if (FAILED(rc))
+            return rc;
+    }
+#endif
+
     ComObjPtr<Progress> pPowerupProgress;
     bool fBeganPoweringUp = false;
 
@@ -7658,35 +7683,6 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 
     try
     {
-        if (Global::IsOnlineOrTransient(mMachineState))
-            throw setError(VBOX_E_INVALID_VM_STATE, tr("The virtual machine is already running or busy (machine state: %s)"),
-                           Global::stringifyMachineState(mMachineState));
-
-        /* Set up release logging as early as possible after the check if
-         * there is already a running VM which we shouldn't disturb. */
-        rc = i_consoleInitReleaseLog(mMachine);
-        if (FAILED(rc))
-            throw rc;
-
-#ifdef VBOX_OPENSSL_FIPS
-        LogRel(("crypto: FIPS mode %s\n", FIPS_mode() ? "enabled" : "FAILED"));
-#endif
-
-        /* test and clear the TeleporterEnabled property  */
-        BOOL fTeleporterEnabled;
-        rc = mMachine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
-        if (FAILED(rc))
-            throw rc;
-
-#if 0 /** @todo we should save it afterwards, but that isn't necessarily a good idea. Find a better place for this (VBoxSVC).  */
-        if (fTeleporterEnabled)
-        {
-            rc = mMachine->COMSETTER(TeleporterEnabled)(FALSE);
-            if (FAILED(rc))
-                throw rc;
-        }
-#endif
-
         /* Create a progress object to track progress of this operation. Must
          * be done as early as possible (together with BeginPowerUp()) as this
          * is vital for communicating as much as possible early powerup
@@ -10136,8 +10132,8 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
 
     /* Set up a build identifier so that it can be seen from core dumps what
      * exact build was used to produce the core. */
-    static char saBuildID[48];
-    RTStrPrintf(saBuildID, sizeof(saBuildID), "%s%s%s%s VirtualBox %s r%u %s%s%s%s",
+    static char szBuildID[48];
+    RTStrPrintf(szBuildID, sizeof(szBuildID), "%s%s%s%s VirtualBox %s r%u %s%s%s%s",
                 "BU", "IL", "DI", "D", RTBldCfgVersion(), RTBldCfgRevision(), "BU", "IL", "DI", "D");
 
     ComObjPtr<Console> pConsole = pTask->mConsole;
