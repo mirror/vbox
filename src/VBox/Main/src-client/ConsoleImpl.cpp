@@ -10132,8 +10132,8 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
 
     /* Set up a build identifier so that it can be seen from core dumps what
      * exact build was used to produce the core. */
-    static char szBuildID[48];
-    RTStrPrintf(szBuildID, sizeof(szBuildID), "%s%s%s%s VirtualBox %s r%u %s%s%s%s",
+    static char s_szBuildID[48];
+    RTStrPrintf(s_szBuildID, sizeof(s_szBuildID), "%s%s%s%s VirtualBox %s r%u %s%s%s%s",
                 "BU", "IL", "DI", "D", RTBldCfgVersion(), RTBldCfgRevision(), "BU", "IL", "DI", "D");
 
     ComObjPtr<Console> pConsole = pTask->mConsole;
