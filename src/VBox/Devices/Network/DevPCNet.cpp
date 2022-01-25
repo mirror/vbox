@@ -2744,7 +2744,7 @@ static VBOXSTRICTRC pcnetCSRWriteU16(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCN
                      * not apply the workaround to our emulated PCnet-PCI II (Am79C970A) and
                      * PCnet-FAST III (Am79C973).
                      *
-                     * The AMDPCnet32 drivers for NeXTSTEP/OpenStep (notably OS 4.2) cpompletely fail
+                     * The AMDPCnet32 drivers for NeXTSTEP/OpenStep (notably OS 4.2) completely fail
                      * unless we delay the initialization until after bus mastering is re-enabled.
                      */
                     if (PCNET_IS_PCI(pThis))
