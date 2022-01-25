@@ -782,7 +782,7 @@ endif
 
 
 
-if1of ($(KBUILD_TARGET), darwin)
+if defined(VBOX_WITH_VBOXDRV) && "$(KBUILD_TARGET)" == "darwin"
  # Files necessary to make a darwin kernel extension bundle.
  INSTALLS.darwin += VBoxDrv.kext
  VBoxDrv.kext_INST     = $(INST_VBOXDRV)Contents/
@@ -811,11 +811,13 @@ endif
 
 
 if1of ($(KBUILD_TARGET), darwin solaris)
- # Common manual loader script.
- INSTALLS += SUPDrvScripts
- SUPDrvScripts_INST = $(INST_DIST)
- SUPDrvScripts_EXEC_SOURCES  = \
-	$(KBUILD_TARGET)/load.sh
+ ifdef VBOX_WITH_VBOXDRV
+  # Common manual loader script.
+  INSTALLS += SUPDrvScripts
+  SUPDrvScripts_INST = $(INST_DIST)
+  SUPDrvScripts_EXEC_SOURCES  = \
+  	$(KBUILD_TARGET)/load.sh
+ endif
 endif
 
 
