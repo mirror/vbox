@@ -315,6 +315,9 @@ VBOX_PACKAGE_STRING = $(VBOX_PACKAGE_OS)_$(VBOX_PACKAGE_ARCH)_$(VBOX_PACKAGE_DIS
 
 # Supported VirtualBox host architectures.
 VBOX_SUPPORTED_HOST_ARCHS := amd64
+if1of ($(KBUILD_TARGET), darwin) # Work in progress.
+ VBOX_SUPPORTED_HOST_ARCHS += arm64
+endif
 
 #
 # The VirtualBox Configuration Defaults.
@@ -985,7 +988,9 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.x86
 endif
 # Whether we can use Open Watcom to build stuff.
 if1of ($(KBUILD_TARGET), darwin linux os2 win)
- VBOX_WITH_OPEN_WATCOM = 1
+ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+  VBOX_WITH_OPEN_WATCOM := 1
+ endif
 endif
 ## @}
 
@@ -1180,6 +1185,25 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_VRDP_RDESKTOP=
  # Permanent (no working SDL).
  VBOX_WITH_VBOXSDL=
+
+ ifeq ($(KBUILD_TARGET_ARCH),arm64)
+  # No Qt yet, so no GUI, NLS or qhelp.
+  VBOX_WITH_QTGUI :=
+  VBOX_WITH_DEBUGGER_GUI :=
+  VBOX_WITH_NLS :=
+  VBOX_WITH_MAIN_NLS :=
+  VBOX_WITH_PUEL_NLS :=
+  VBOX_WITH_VBOXMANAGE_NLS :=
+  VBOX_WITH_DOCS_QHELP :=
+  VBOX_WITH_DOCS_QHELP_PACKING :=
+  # Skip webservices as those are tedious to build.
+  VBOX_WITH_WEBSERVICES :=
+  # Ditto for the java<->XPCOM bridge.
+  VBOX_WITH_JXPCOM :=
+
+  # No need for hardening on arm64.
+  VBOX_WITH_HARDENING :=
+ endif
 endif
 
 ifeq ($(KBUILD_TARGET),freebsd)
