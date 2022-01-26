@@ -847,7 +847,10 @@ EXPAND_AS_DEFINED      = \
     \
     IOM_MMIO_STATS_COMMA_DECL \
     IOM_MMIO_STATS_COMMA_ARG \
-    SUP_HARDENED_SUID
+    SUP_HARDENED_SUID \
+    \
+    VTABLE_ENTRY \
+    VTABLE_RESERVED
 
 SKIP_FUNCTION_MACROS   = NO
 #---------------------------------------------------------------------------

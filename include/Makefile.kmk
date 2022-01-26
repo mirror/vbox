@@ -46,7 +46,7 @@ VBOX_HDRS_R3_CPP := \
 	VBox/dbggui.h \
 	VBox/settings.h \
 	VBox/com/Guid.h \
-	VBox/vmm/vmmapi.h \
+	VBox/vmm/vmmr3vtable.h \
 	iprt/cpp/% \
 	VBox/com/% \
 	$(subst $(PATH_SUB_CURRENT)/,,$(wildcard $(PATH_SUB_CURRENT)/iprt/*_cpp.h))
@@ -131,6 +131,7 @@ VBOX_HDRS_OMIT := \
 	VBox/xrandr-calls.h \
 	VBox/VBoxKeyboard.h \
 	VBox/vmm/pdmpcidevint.h \
+	VBox/vmm/vmmr3vtable-def.h \
 	iprt/runtime-loader.h \
 	iprt/mangling.h \
        $(subst $(PATH_SUB_CURRENT)/,,$(wildcard $(PATH_SUB_CURRENT)/iprt/asm*watcom*.h)) \

@@ -900,7 +900,8 @@ static DECLCALLBACK(void) MachineDebuggerInfoPrintf(PCDBGFINFOHLP pHlp, const ch
 /**
  * Initializes the debug info string buffer formatter
  *
- * @param   pHlp                The help structure to init.
+ * @param   pHlp    The help structure to init.
+ * @param   pVMM    The VMM vtable.
  */
 static void MachineDebuggerInfoInit(PMACHINEDEBUGGERINOFHLP pHlp, PCVMMR3VTABLE pVMM)
 {
