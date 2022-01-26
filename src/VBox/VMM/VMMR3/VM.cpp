@@ -67,6 +67,7 @@
 #include <VBox/vmm/gim.h>
 #include "VMInternal.h"
 #include <VBox/vmm/vmcc.h>
+#include <VBox/vmm/vmmr3vtable.h>
 
 #include <VBox/sup.h>
 #if defined(VBOX_WITH_DTRACE_R3) && !defined(VBOX_WITH_NATIVE_DTRACE)
@@ -3166,7 +3167,7 @@ static void vmR3DoAtState(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmSt
 
     for (PVMATSTATE pCur = pUVM->vm.s.pAtState; pCur; pCur = pCur->pNext)
     {
-        pCur->pfnAtState(pUVM, enmStateNew, enmStateOld, pCur->pvUser);
+        pCur->pfnAtState(pUVM, VMMR3GetVTable(), enmStateNew, enmStateOld, pCur->pvUser);
         if (    enmStateNew     != VMSTATE_DESTROYING
             &&  pVM->enmVMState == VMSTATE_DESTROYING)
             break;

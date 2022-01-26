@@ -106,7 +106,7 @@ protected:
 
 private:
     /** @callback_method_impl{FNVMATSTATE}  */
-    static DECLCALLBACK(void) atStateChange(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
+    static DECLCALLBACK(void) atStateChange(PUVM pUVM, PCVMMR3VTABLE pVMM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
 
 private:
     /** Pointer to the debugger GUI object. */

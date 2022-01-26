@@ -46,9 +46,7 @@ VBoxDragAndDropSvc_SOURCES.win = \
 	VBoxDragAndDropSvc.rc
 
 VBoxDragAndDropSvc_LIBS = \
-	$(LIB_VMM) \
 	$(LIB_RUNTIME) \
-	$(LIB_REM) \
 	$(PATH_STAGE_LIB)/VBoxDnDHostR3Lib$(VBOX_SUFF_LIB)
 
 VBoxDragAndDropSvc_LDFLAGS.darwin = \

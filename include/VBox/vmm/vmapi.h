@@ -158,11 +158,12 @@ VMMDECL(int) VMSetRuntimeErrorV(PVMCC pVM, uint32_t fFlags, const char *pszError
  * state callback, except VMR3Destroy().
  *
  * @param   pUVM        The user mode VM handle.
+ * @param   pVMM        The VMM ring-3 vtable.
  * @param   enmState    The new state.
  * @param   enmOldState The old state.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACKTYPE(void, FNVMATSTATE,(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser));
+typedef DECLCALLBACKTYPE(void, FNVMATSTATE,(PUVM pUVM, PCVMMR3VTABLE pVMM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser));
 /** Pointer to a VM state callback. */
 typedef FNVMATSTATE *PFNVMATSTATE;
 

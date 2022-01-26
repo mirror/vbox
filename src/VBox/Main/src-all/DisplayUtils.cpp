@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Implementation of IDisplay helpers.
+ * Implementation of IDisplay helpers, currently only used in VBoxSVC.
  */
 
 /*

@@ -35,7 +35,6 @@ VBoxHostChannel_SOURCES.win = \
 	VBoxHostChannelSvc.rc
 
 VBoxHostChannel_LIBS = \
-	$(LIB_VMM) \
 	$(LIB_RUNTIME)
 
 include $(FILE_KBUILD_SUB_FOOTER)

@@ -62,6 +62,7 @@
 #include "CFGMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
@@ -224,7 +225,7 @@ VMMR3DECL(int) CFGMR3Init(PVM pVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *
      * Call the constructor if specified, if not use the default one.
      */
     if (pfnCFGMConstructor)
-        rc = pfnCFGMConstructor(pVM->pUVM, pVM, pvUser);
+        rc = pfnCFGMConstructor(pVM->pUVM, pVM, VMMR3GetVTable(), pvUser);
     else
         rc = CFGMR3ConstructDefaultTree(pVM);
     if (RT_SUCCESS(rc))

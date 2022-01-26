@@ -342,10 +342,12 @@ private:
     static DECLCALLBACK(void)  i_displayVBVAReportCursorPosition(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fFlags, uint32_t uScreen, uint32_t x, uint32_t y);
 #endif
 
-    static DECLCALLBACK(void) i_displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser);
-    static DECLCALLBACK(int)  i_displaySSMLoadScreenshot(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass);
-    static DECLCALLBACK(void) i_displaySSMSave(PSSMHANDLE pSSM, void *pvUser);
-    static DECLCALLBACK(int)  i_displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass);
+    static DECLCALLBACK(int)  i_displaySSMSaveScreenshot(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser);
+    static DECLCALLBACK(int)  i_displaySSMLoadScreenshot(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser,
+                                                         uint32_t uVersion, uint32_t uPass);
+    static DECLCALLBACK(int)  i_displaySSMSave(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser);
+    static DECLCALLBACK(int)  i_displaySSMLoad(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser,
+                                               uint32_t uVersion, uint32_t uPass);
 
     Console * const         mParent;
     /** Pointer to the associated display driver. */

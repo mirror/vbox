@@ -152,6 +152,7 @@
 #include "SSMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/version.h>
@@ -4548,7 +4549,7 @@ static int ssmR3SaveDoDoneRun(PVM pVM, PSSMHANDLE pSSM)
                     rc = pUnit->u.Internal.pfnSaveDone(pVM, pSSM);
                     break;
                 case SSMUNITTYPE_EXTERNAL:
-                    rc = pUnit->u.External.pfnSaveDone(pSSM, pUnit->u.External.pvUser);
+                    rc = pUnit->u.External.pfnSaveDone(pSSM, VMMR3GetVTable(), pUnit->u.External.pvUser);
                     break;
                 default:
                     rc = VERR_SSM_IPE_1;
@@ -4900,8 +4901,7 @@ static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
                 rc = pUnit->u.Internal.pfnSaveExec(pVM, pSSM);
                 break;
             case SSMUNITTYPE_EXTERNAL:
-                pUnit->u.External.pfnSaveExec(pSSM, pUnit->u.External.pvUser);
-                rc = pSSM->rc;
+                rc = pUnit->u.External.pfnSaveExec(pSSM, VMMR3GetVTable(), pUnit->u.External.pvUser);
                 break;
             default:
                 rc = VERR_SSM_IPE_1;
@@ -4993,7 +4993,7 @@ static int ssmR3SaveDoPrepRun(PVM pVM, PSSMHANDLE pSSM)
                     rc = pUnit->u.Internal.pfnSavePrep(pVM, pSSM);
                     break;
                 case SSMUNITTYPE_EXTERNAL:
-                    rc = pUnit->u.External.pfnSavePrep(pSSM, pUnit->u.External.pvUser);
+                    rc = pUnit->u.External.pfnSavePrep(pSSM, VMMR3GetVTable(), pUnit->u.External.pvUser);
                     break;
                 default:
                     rc = VERR_SSM_IPE_1;
@@ -5339,7 +5339,7 @@ static int ssmR3LiveDoVoteRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                     rc = pUnit->u.Internal.pfnLiveVote(pVM, pSSM, uPass);
                     break;
                 case SSMUNITTYPE_EXTERNAL:
-                    rc = pUnit->u.External.pfnLiveVote(pSSM, pUnit->u.External.pvUser, uPass);
+                    rc = pUnit->u.External.pfnLiveVote(pSSM, VMMR3GetVTable(), pUnit->u.External.pvUser, uPass);
                     break;
                 default:
                     rc = VERR_SSM_IPE_1;
@@ -5482,7 +5482,7 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                 rc = pUnit->u.Internal.pfnLiveExec(pVM, pSSM, uPass);
                 break;
             case SSMUNITTYPE_EXTERNAL:
-                rc = pUnit->u.External.pfnLiveExec(pSSM, pUnit->u.External.pvUser, uPass);
+                rc = pUnit->u.External.pfnLiveExec(pSSM, VMMR3GetVTable(), pUnit->u.External.pvUser, uPass);
                 break;
             default:
                 rc = VERR_SSM_IPE_1;
@@ -5644,7 +5644,7 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
                     rc = pUnit->u.Internal.pfnLivePrep(pVM, pSSM);
                     break;
                 case SSMUNITTYPE_EXTERNAL:
-                    rc = pUnit->u.External.pfnLivePrep(pSSM, pUnit->u.External.pvUser);
+                    rc = pUnit->u.External.pfnLivePrep(pSSM, VMMR3GetVTable(), pUnit->u.External.pvUser);
                     break;
                 default:
                     rc = VERR_SSM_IPE_1;
@@ -8624,7 +8624,8 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                                 rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version, SSM_PASS_FINAL);
                                 break;
                             case SSMUNITTYPE_EXTERNAL:
-                                rc = pUnit->u.External.pfnLoadExec(pSSM, pUnit->u.External.pvUser, UnitHdr.u32Version, SSM_PASS_FINAL);
+                                rc = pUnit->u.External.pfnLoadExec(pSSM, VMMR3GetVTable(), pUnit->u.External.pvUser,
+                                                                   UnitHdr.u32Version, SSM_PASS_FINAL);
                                 break;
                             default:
                                 rc = VERR_SSM_IPE_1;
@@ -8892,7 +8893,8 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                     rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version, UnitHdr.u32Pass);
                     break;
                 case SSMUNITTYPE_EXTERNAL:
-                    rc = pUnit->u.External.pfnLoadExec(pSSM, pUnit->u.External.pvUser, UnitHdr.u32Version, UnitHdr.u32Pass);
+                    rc = pUnit->u.External.pfnLoadExec(pSSM, VMMR3GetVTable(), pUnit->u.External.pvUser,
+                                                       UnitHdr.u32Version, UnitHdr.u32Pass);
                     break;
                 default:
                     rc = VERR_SSM_IPE_1;
@@ -9076,7 +9078,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                         rc = pUnit->u.Internal.pfnLoadPrep(pVM, &Handle);
                         break;
                     case SSMUNITTYPE_EXTERNAL:
-                        rc = pUnit->u.External.pfnLoadPrep(&Handle, pUnit->u.External.pvUser);
+                        rc = pUnit->u.External.pfnLoadPrep(&Handle, VMMR3GetVTable(), pUnit->u.External.pvUser);
                         break;
                     default:
                         rc = VERR_SSM_IPE_1;
@@ -9152,7 +9154,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                         rc = pUnit->u.Internal.pfnLoadDone(pVM, &Handle);
                         break;
                     case SSMUNITTYPE_EXTERNAL:
-                        rc = pUnit->u.External.pfnLoadDone(&Handle, pUnit->u.External.pvUser);
+                        rc = pUnit->u.External.pfnLoadDone(&Handle, VMMR3GetVTable(), pUnit->u.External.pvUser);
                         break;
                     default:
                         rc = VERR_SSM_IPE_1;

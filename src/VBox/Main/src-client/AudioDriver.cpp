@@ -27,6 +27,7 @@
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pdmdrv.h>
+#include <VBox/vmm/vmmr3vtable.h>
 
 #include "AudioDriver.h"
 #include "ConsoleImpl.h"
@@ -79,32 +80,33 @@ int AudioDriver::InitializeConfig(AudioDriverCfg *pCfg)
  * Attaches the driver via EMT, if configured.
  *
  * @returns VBox status code.
- * @param   pUVM                The user mode VM handle for talking to EMT.
- * @param   pAutoLock           The callers auto lock instance.  Can be NULL if
- *                              not locked.
+ * @param   pUVM        The user mode VM handle for talking to EMT.
+ * @param   pVMM        The VMM ring-3 vtable.
+ * @param   pAutoLock   The callers auto lock instance.  Can be NULL if not
+ *                      locked.
  */
-int AudioDriver::doAttachDriverViaEmt(PUVM pUVM, util::AutoWriteLock *pAutoLock)
+int AudioDriver::doAttachDriverViaEmt(PUVM pUVM, PCVMMR3VTABLE pVMM, util::AutoWriteLock *pAutoLock)
 {
     if (!isConfigured())
         return VINF_SUCCESS;
 
     PVMREQ pReq;
-    int vrc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                           (PFNRT)attachDriverOnEmt, 1, this);
+    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                                    (PFNRT)attachDriverOnEmt, 1, this);
     if (vrc == VERR_TIMEOUT)
     {
         /* Release the lock before a blocking VMR3* call (EMT might wait for it, @bugref{7648})! */
         if (pAutoLock)
             pAutoLock->release();
 
-        vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
+        vrc = pVMM->pfnVMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
 
         if (pAutoLock)
             pAutoLock->acquire();
     }
 
     AssertRC(vrc);
-    VMR3ReqFree(pReq);
+    pVMM->pfnVMR3ReqFree(pReq);
 
     return vrc;
 }
@@ -137,13 +139,13 @@ DECLCALLBACK(int) AudioDriver::attachDriverOnEmt(AudioDriver *pThis)
              pCfg->strName.c_str(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN));
 
     /* Detach the driver chain from the audio device first. */
-    int rc = PDMR3DeviceDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN, 0 /* fFlags */);
+    int rc = ptrVM.vtable()->pfnPDMR3DeviceDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN, 0 /* fFlags */);
     if (RT_SUCCESS(rc))
     {
         rc = pThis->configure(pCfg->uLUN, true /* Attach */);
         if (RT_SUCCESS(rc))
-            rc = PDMR3DriverAttach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN, 0 /* fFlags */,
-                                   NULL /* ppBase */);
+            rc = ptrVM.vtable()->pfnPDMR3DriverAttach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN,
+                                                      0 /* fFlags */, NULL /* ppBase */);
     }
 
     if (RT_SUCCESS(rc))
@@ -163,32 +165,33 @@ DECLCALLBACK(int) AudioDriver::attachDriverOnEmt(AudioDriver *pThis)
  * Detatches the driver via EMT, if configured.
  *
  * @returns VBox status code.
- * @param   pUVM                The user mode VM handle for talking to EMT.
- * @param   pAutoLock           The callers auto lock instance.  Can be NULL if
- *                              not locked.
+ * @param   pUVM        The user mode VM handle for talking to EMT.
+ * @param   pVMM        The VMM ring-3 vtable.
+ * @param   pAutoLock   The callers auto lock instance.  Can be NULL if not
+ *                      locked.
  */
-int AudioDriver::doDetachDriverViaEmt(PUVM pUVM, util::AutoWriteLock *pAutoLock)
+int AudioDriver::doDetachDriverViaEmt(PUVM pUVM, PCVMMR3VTABLE pVMM, util::AutoWriteLock *pAutoLock)
 {
     if (!isConfigured())
         return VINF_SUCCESS;
 
     PVMREQ pReq;
-    int vrc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                           (PFNRT)detachDriverOnEmt, 1, this);
+    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                                    (PFNRT)detachDriverOnEmt, 1, this);
     if (vrc == VERR_TIMEOUT)
     {
         /* Release the lock before a blocking VMR3* call (EMT might wait for it, @bugref{7648})! */
         if (pAutoLock)
             pAutoLock->release();
 
-        vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
+        vrc = pVMM->pfnVMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
 
         if (pAutoLock)
             pAutoLock->acquire();
     }
 
     AssertRC(vrc);
-    VMR3ReqFree(pReq);
+    pVMM->pfnVMR3ReqFree(pReq);
 
     return vrc;
 }
@@ -226,8 +229,8 @@ DECLCALLBACK(int) AudioDriver::detachDriverOnEmt(AudioDriver *pThis)
      *
      * Start with the "AUDIO" driver, as this driver serves as the audio connector between
      * the device emulation and the select backend(s). */
-    int rc = PDMR3DriverDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN,
-                               "AUDIO", 0 /* iOccurrence */,  0 /* fFlags */);
+    int rc = ptrVM.vtable()->pfnPDMR3DriverDetach(ptrVM.rawUVM(), pCfg->strDev.c_str(), pCfg->uInst, pCfg->uLUN,
+                                                  "AUDIO", 0 /* iOccurrence */,  0 /* fFlags */);
     if (RT_SUCCESS(rc))
         rc = pThis->configure(pCfg->uLUN, false /* Detach */);/** @todo r=bird: Illogical and from what I can tell pointless! */
 
@@ -255,14 +258,11 @@ DECLCALLBACK(int) AudioDriver::detachDriverOnEmt(AudioDriver *pThis)
 int AudioDriver::configure(unsigned uLUN, bool fAttach)
 {
     Console::SafeVMPtrQuiet ptrVM(mpConsole);
-    Assert(ptrVM.isOk());
+    AssertReturn(ptrVM.isOk(), VERR_INVALID_STATE);
 
-    PUVM pUVM = ptrVM.rawUVM();
-    AssertPtr(pUVM);
-
-    PCFGMNODE pRoot = CFGMR3GetRootU(pUVM);
+    PCFGMNODE pRoot = ptrVM.vtable()->pfnCFGMR3GetRootU(ptrVM.rawUVM());
     AssertPtr(pRoot);
-    PCFGMNODE pDev0 = CFGMR3GetChildF(pRoot, "Devices/%s/%u/", mCfg.strDev.c_str(), mCfg.uInst);
+    PCFGMNODE pDev0 = ptrVM.vtable()->pfnCFGMR3GetChildF(pRoot, "Devices/%s/%u/", mCfg.strDev.c_str(), mCfg.uInst);
 
     if (!pDev0) /* No audio device configured? Bail out. */
     {
@@ -272,37 +272,37 @@ int AudioDriver::configure(unsigned uLUN, bool fAttach)
 
     int rc = VINF_SUCCESS;
 
-    PCFGMNODE pDevLun = CFGMR3GetChildF(pDev0, "LUN#%u/", uLUN);
+    PCFGMNODE pDevLun = ptrVM.vtable()->pfnCFGMR3GetChildF(pDev0, "LUN#%u/", uLUN);
 
     if (fAttach)
     {
-        do
+        do  /* break "loop" */
         {
             AssertMsgBreakStmt(pDevLun, ("%s: Device LUN #%u not found\n", mCfg.strName.c_str(), uLUN), rc = VERR_NOT_FOUND);
 
             LogRel2(("%s: Configuring audio driver (to LUN #%u)\n", mCfg.strName.c_str(), uLUN));
 
-            CFGMR3RemoveNode(pDevLun); /* Remove LUN completely first. */
+            ptrVM.vtable()->pfnCFGMR3RemoveNode(pDevLun); /* Remove LUN completely first. */
 
             /* Insert new LUN configuration and build up the new driver chain. */
-            rc = CFGMR3InsertNodeF(pDev0, &pDevLun, "LUN#%u/", uLUN);                               AssertRCBreak(rc);
-            rc = CFGMR3InsertString(pDevLun, "Driver", "AUDIO");                                    AssertRCBreak(rc);
+            rc = ptrVM.vtable()->pfnCFGMR3InsertNodeF(pDev0, &pDevLun, "LUN#%u/", uLUN);                        AssertRCBreak(rc);
+            rc = ptrVM.vtable()->pfnCFGMR3InsertString(pDevLun, "Driver", "AUDIO");                             AssertRCBreak(rc);
 
             PCFGMNODE pLunCfg;
-            rc = CFGMR3InsertNode(pDevLun, "Config", &pLunCfg);                                     AssertRCBreak(rc);
+            rc = ptrVM.vtable()->pfnCFGMR3InsertNode(pDevLun, "Config", &pLunCfg);                              AssertRCBreak(rc);
 
-            rc = CFGMR3InsertStringF(pLunCfg, "DriverName",    "%s", mCfg.strName.c_str());         AssertRCBreak(rc);
-            rc = CFGMR3InsertInteger(pLunCfg, "InputEnabled",  mCfg.fEnabledIn);                    AssertRCBreak(rc);
-            rc = CFGMR3InsertInteger(pLunCfg, "OutputEnabled", mCfg.fEnabledOut);                   AssertRCBreak(rc);
+            rc = ptrVM.vtable()->pfnCFGMR3InsertStringF(pLunCfg, "DriverName",    "%s", mCfg.strName.c_str());  AssertRCBreak(rc);
+            rc = ptrVM.vtable()->pfnCFGMR3InsertInteger(pLunCfg, "InputEnabled",  mCfg.fEnabledIn);             AssertRCBreak(rc);
+            rc = ptrVM.vtable()->pfnCFGMR3InsertInteger(pLunCfg, "OutputEnabled", mCfg.fEnabledOut);            AssertRCBreak(rc);
 
             PCFGMNODE pAttachedDriver;
-            rc = CFGMR3InsertNode(pDevLun, "AttachedDriver", &pAttachedDriver);                     AssertRCBreak(rc);
-            rc = CFGMR3InsertStringF(pAttachedDriver, "Driver", "%s", mCfg.strName.c_str());        AssertRCBreak(rc);
+            rc = ptrVM.vtable()->pfnCFGMR3InsertNode(pDevLun, "AttachedDriver", &pAttachedDriver);              AssertRCBreak(rc);
+            rc = ptrVM.vtable()->pfnCFGMR3InsertStringF(pAttachedDriver, "Driver", "%s", mCfg.strName.c_str()); AssertRCBreak(rc);
             PCFGMNODE pAttachedDriverCfg;
-            rc = CFGMR3InsertNode(pAttachedDriver, "Config", &pAttachedDriverCfg);                  AssertRCBreak(rc);
+            rc = ptrVM.vtable()->pfnCFGMR3InsertNode(pAttachedDriver, "Config", &pAttachedDriverCfg);           AssertRCBreak(rc);
 
             /* Call the (virtual) method for driver-specific configuration. */
-            rc = configureDriver(pAttachedDriverCfg);                                               AssertRCBreak(rc);
+            rc = configureDriver(pAttachedDriverCfg, ptrVM.vtable());                                           AssertRCBreak(rc);
 
         } while (0);
     }
@@ -315,7 +315,7 @@ int AudioDriver::configure(unsigned uLUN, bool fAttach)
     {
 #ifdef LOG_ENABLED
         LogFunc(("%s: fAttach=%RTbool\n", mCfg.strName.c_str(), fAttach));
-        CFGMR3Dump(pDevLun);
+        ptrVM.vtable()->pfnCFGMR3Dump(pDevLun);
 #endif
     }
     else

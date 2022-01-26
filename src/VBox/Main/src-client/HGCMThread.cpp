@@ -22,6 +22,7 @@
 
 #include <VBox/err.h>
 #include <VBox/vmm/stam.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
@@ -141,7 +142,8 @@ class HGCMThread : public HGCMReferencedObject
 
         int WaitForTermination (void);
 
-        int Initialize(const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser, const char *pszStatsSubDir, PUVM pUVM);
+        int Initialize(const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser,
+                       const char *pszStatsSubDir, PUVM pUVM, PCVMMR3VTABLE pVMM);
 
         int MsgAlloc(HGCMMsgCore **pMsg, uint32_t u32MsgId, PFNHGCMNEWMSGALLOC pfnNewMessage);
         int MsgGet(HGCMMsgCore **ppMsg);
@@ -265,7 +267,8 @@ int HGCMThread::WaitForTermination(void)
     return rc;
 }
 
-int HGCMThread::Initialize(const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser, const char *pszStatsSubDir, PUVM pUVM)
+int HGCMThread::Initialize(const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser,
+                           const char *pszStatsSubDir, PUVM pUVM, PCVMMR3VTABLE pVMM)
 {
     int rc = RTSemEventCreate(&m_eventThread);
 
@@ -295,21 +298,25 @@ int HGCMThread::Initialize(const char *pszThreadName, PFNHGCMTHREAD pfnThread, v
                     /* Register statistics while the thread starts. */
                     if (pUVM)
                     {
-                        STAMR3RegisterFU(pUVM, &m_StatPostMsgNoPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                                         "Times a message was appended to an empty input queue.",
-                                         "/HGCM/%s/PostMsg0Pending", pszStatsSubDir);
-                        STAMR3RegisterFU(pUVM, &m_StatPostMsgOnePending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                                         "Times a message was appended to input queue with only one pending message.",
-                                         "/HGCM/%s/PostMsg1Pending", pszStatsSubDir);
-                        STAMR3RegisterFU(pUVM, &m_StatPostMsgTwoPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                                         "Times a message was appended to input queue with only one pending message.",
-                                         "/HGCM/%s/PostMsg2Pending", pszStatsSubDir);
-                        STAMR3RegisterFU(pUVM, &m_StatPostMsgThreePending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                                         "Times a message was appended to input queue with only one pending message.",
-                                         "/HGCM/%s/PostMsg3Pending", pszStatsSubDir);
-                        STAMR3RegisterFU(pUVM, &m_StatPostMsgManyPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                                         "Times a message was appended to input queue with only one pending message.",
-                                         "/HGCM/%s/PostMsgManyPending", pszStatsSubDir);
+                        pVMM->pfnSTAMR3RegisterFU(pUVM, &m_StatPostMsgNoPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                                  STAMUNIT_COUNT, "Times a message was appended to an empty input queue.",
+                                                  "/HGCM/%s/PostMsg0Pending", pszStatsSubDir);
+                        pVMM->pfnSTAMR3RegisterFU(pUVM, &m_StatPostMsgOnePending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                                  STAMUNIT_COUNT,
+                                                  "Times a message was appended to input queue with only one pending message.",
+                                                  "/HGCM/%s/PostMsg1Pending", pszStatsSubDir);
+                        pVMM->pfnSTAMR3RegisterFU(pUVM, &m_StatPostMsgTwoPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                                  STAMUNIT_COUNT,
+                                                  "Times a message was appended to input queue with only one pending message.",
+                                                  "/HGCM/%s/PostMsg2Pending", pszStatsSubDir);
+                        pVMM->pfnSTAMR3RegisterFU(pUVM, &m_StatPostMsgThreePending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                                  STAMUNIT_COUNT,
+                                                  "Times a message was appended to input queue with only one pending message.",
+                                                  "/HGCM/%s/PostMsg3Pending", pszStatsSubDir);
+                        pVMM->pfnSTAMR3RegisterFU(pUVM, &m_StatPostMsgManyPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
+                                                  STAMUNIT_COUNT,
+                                                  "Times a message was appended to input queue with only one pending message.",
+                                                  "/HGCM/%s/PostMsgManyPending", pszStatsSubDir);
                     }
 
 
@@ -626,7 +633,7 @@ int HGCMThread::MsgComplete(HGCMMsgCore *pMsg, int32_t result)
  */
 
 int hgcmThreadCreate(HGCMThread **ppThread, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser,
-                     const char *pszStatsSubDir, PUVM pUVM)
+                     const char *pszStatsSubDir, PUVM pUVM, PCVMMR3VTABLE pVMM)
 {
     LogFlow(("MAIN::hgcmThreadCreate\n"));
     int rc;
@@ -639,7 +646,7 @@ int hgcmThreadCreate(HGCMThread **ppThread, const char *pszThreadName, PFNHGCMTH
         pThread->Reference(); /* (it's created with zero references) */
 
         /* Initialize the object. */
-        rc = pThread->Initialize(pszThreadName, pfnThread, pvUser, pszStatsSubDir, pUVM);
+        rc = pThread->Initialize(pszThreadName, pfnThread, pvUser, pszStatsSubDir, pUVM, pVMM);
         if (RT_SUCCESS(rc))
         {
             *ppThread = pThread;

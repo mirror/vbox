@@ -57,7 +57,7 @@ public:
 
 private:
 
-    int configureDriver(PCFGMNODE pLunCfg);
+    virtual int configureDriver(PCFGMNODE pLunCfg, PCVMMR3VTABLE pVMM) RT_OVERRIDE;
 
     /** Pointer to the associated video recording audio driver. */
     struct DRVAUDIORECORDING         *mpDrv;

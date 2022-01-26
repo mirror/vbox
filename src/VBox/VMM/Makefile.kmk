@@ -88,6 +88,7 @@ VBoxVMM_ASINCS   = .
 
 VBoxVMM_SOURCES  = \
 	VBoxVMM.d \
+       VMMR3/VMMR3VTable.cpp \
 	VMMR3/APIC.cpp \
 	VMMR3/CFGM.cpp \
 	VMMR3/CPUM.cpp \

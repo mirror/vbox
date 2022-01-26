@@ -81,9 +81,10 @@ typedef enum CFGMCONFIGTYPE
  * @returns VBox status code.
  * @param   pUVM        The user mode VM handle.
  * @param   pVM         The cross context VM structure.
+ * @param   pVMM        The VMM R3 vtable.
  * @param   pvUser      The argument supplied to VMR3Create().
  */
-typedef DECLCALLBACKTYPE(int, FNCFGMCONSTRUCTOR,(PUVM pUVM, PVM pVM, void *pvUser));
+typedef DECLCALLBACKTYPE(int, FNCFGMCONSTRUCTOR,(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, void *pvUser));
 /** Pointer to a FNCFGMCONSTRUCTOR(). */
 typedef FNCFGMCONSTRUCTOR *PFNCFGMCONSTRUCTOR;
 

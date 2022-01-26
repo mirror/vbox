@@ -35,6 +35,7 @@
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmaudioifs.h>
 #include <VBox/vmm/pdmaudioinline.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/RemoteDesktop/VRDE.h>
 #include <VBox/err.h>
 
@@ -110,17 +111,15 @@ AudioVRDE::~AudioVRDE(void)
 }
 
 
-/**
- * @copydoc AudioDriver::configureDriver
- */
-int AudioVRDE::configureDriver(PCFGMNODE pLunCfg)
+int AudioVRDE::configureDriver(PCFGMNODE pLunCfg, PCVMMR3VTABLE pVMM)
 {
-    int rc = CFGMR3InsertInteger(pLunCfg, "Object", (uintptr_t)this);
-    AssertRCReturn(rc, rc);
-    CFGMR3InsertInteger(pLunCfg, "ObjectVRDPServer", (uintptr_t)mpConsole->i_consoleVRDPServer());
+    int rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "Object", (uintptr_t)this);
     AssertRCReturn(rc, rc);
 
-    return AudioDriver::configureDriver(pLunCfg);
+    rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "ObjectVRDPServer", (uintptr_t)mpConsole->i_consoleVRDPServer());
+    AssertRCReturn(rc, rc);
+
+    return AudioDriver::configureDriver(pLunCfg, pVMM);
 }
 
 
@@ -748,7 +747,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Get the ConsoleVRDPServer object pointer.
      */
     void *pvUser;
-    int rc = CFGMR3QueryPtr(pCfg, "ObjectVRDPServer", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
+    int rc = pDrvIns->pHlpR3->pfnCFGMQueryPtr(pCfg, "ObjectVRDPServer", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
     AssertMsgRCReturn(rc, ("Confguration error: No/bad \"ObjectVRDPServer\" value, rc=%Rrc\n", rc), rc);
 
     /* CFGM tree saves the pointer to ConsoleVRDPServer in the Object node of AudioVRDE. */
@@ -761,7 +760,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Get the AudioVRDE object pointer.
      */
     pvUser = NULL;
-    rc = CFGMR3QueryPtr(pCfg, "Object", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
+    rc = pDrvIns->pHlpR3->pfnCFGMQueryPtr(pCfg, "Object", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
     AssertMsgRCReturn(rc, ("Confguration error: No/bad \"Object\" value, rc=%Rrc\n", rc), rc);
 
     pThis->pAudioVRDE = (AudioVRDE *)pvUser;

@@ -39,9 +39,7 @@ VBoxGuestControlSvc_SOURCES.win = \
 	VBoxGuestControlSvc.rc
 
 VBoxGuestControlSvc_LIBS = \
-	$(LIB_VMM) \
-	$(LIB_RUNTIME) \
-	$(LIB_REM)
+	$(LIB_RUNTIME)
 
 VBoxGuestControlSvc_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxGuestControlSvc.dylib

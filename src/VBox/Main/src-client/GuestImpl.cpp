@@ -40,6 +40,7 @@
 #include <iprt/stream.h>
 #include <iprt/timer.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/version.h>
 
 // defines
@@ -310,14 +311,16 @@ void Guest::i_updateStats(uint64_t iTick)
         {
             /* Query the missing per-VM memory statistics. */
             uint64_t cbTotalMemIgn, cbPrivateMemIgn, cbZeroMemIgn;
-            rc = PGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn, &cbSharedMem, &cbZeroMemIgn);
+            rc = ptrVM.vtable()->pfnPGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn,
+                                                          &cbSharedMem, &cbZeroMemIgn);
             if (rc == VINF_SUCCESS)
                 validStats |= pm::VMSTATMASK_GUEST_MEMSHARED;
         }
 
         if (mCollectVMMStats)
         {
-            rc = PGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal, &cbBalloonedTotal, &cbSharedTotal);
+            rc = ptrVM.vtable()->pfnPGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal,
+                                                                &cbBalloonedTotal, &cbSharedTotal);
             AssertRC(rc);
             if (rc == VINF_SUCCESS)
                 validStats |= pm::VMSTATMASK_VMM_ALLOC  | pm::VMSTATMASK_VMM_FREE
@@ -327,7 +330,7 @@ void Guest::i_updateStats(uint64_t iTick)
         uint64_t uRxPrev = mNetStatRx;
         uint64_t uTxPrev = mNetStatTx;
         mNetStatRx = mNetStatTx = 0;
-        rc = STAMR3Enum(ptrVM.rawUVM(), "/Public/Net/*/Bytes*", i_staticEnumStatsCallback, this);
+        rc = ptrVM.vtable()->pfnSTAMR3Enum(ptrVM.rawUVM(), "/Public/Net/*/Bytes*", i_staticEnumStatsCallback, this);
         AssertRC(rc);
 
         uint64_t uTsNow = RTTimeNanoTS();
@@ -705,7 +708,8 @@ HRESULT Guest::internalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *
         return E_FAIL;
 
     uint64_t cbFreeTotal, cbAllocTotal, cbBalloonedTotal, cbSharedTotal;
-    int rc = PGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal, &cbBalloonedTotal, &cbSharedTotal);
+    int rc = ptrVM.vtable()->pfnPGMR3QueryGlobalMemoryStats(ptrVM.rawUVM(), &cbAllocTotal, &cbFreeTotal,
+                                                            &cbBalloonedTotal, &cbSharedTotal);
     AssertRCReturn(rc, E_FAIL);
 
     *aMemAllocTotal   = (ULONG)(cbAllocTotal / _1K);  /* bytes -> KB */
@@ -715,7 +719,7 @@ HRESULT Guest::internalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *
 
     /* Query the missing per-VM memory statistics. */
     uint64_t cbTotalMemIgn, cbPrivateMemIgn, cbSharedMem, cbZeroMemIgn;
-    rc = PGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn, &cbSharedMem, &cbZeroMemIgn);
+    rc = ptrVM.vtable()->pfnPGMR3QueryMemoryStats(ptrVM.rawUVM(), &cbTotalMemIgn, &cbPrivateMemIgn, &cbSharedMem, &cbZeroMemIgn);
     AssertRCReturn(rc, E_FAIL);
     *aMemShared = (ULONG)(cbSharedMem / _1K);
 

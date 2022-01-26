@@ -209,9 +209,9 @@ static DECLCALLBACK(int) Thread(RTTHREAD hThreadSelf, void *pvUser)
 }
 
 static DECLCALLBACK(int)
-tstVMREQConfigConstructor(PUVM pUVM, PVM pVM, void *pvUser)
+tstVMREQConfigConstructor(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, void *pvUser)
 {
-    RT_NOREF2(pUVM, pvUser);
+    RT_NOREF(pUVM, pVMM, pvUser);
     return CFGMR3ConstructDefaultTree(pVM);
 }
 

@@ -344,7 +344,7 @@ HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
         rc = mConsole.createObject();
         AssertComRCReturn(rc, rc);
 
-        rc = mConsole->init(aMachine, mControl, aLockType);
+        rc = mConsole->initWithMachine(aMachine, mControl, aLockType);
         AssertComRCReturn(rc, rc);
     }
     else

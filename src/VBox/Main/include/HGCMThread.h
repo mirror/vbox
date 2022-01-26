@@ -142,11 +142,13 @@ void hgcmThreadUninit(void);
  *                          HGCMService, will deregister them.  NULL if no stats.
  * @param pUVM              The user mode VM handle to register statistics with.
  *                          NULL if no stats.
+ * @param pVMM              The VMM vtable for statistics registration. NULL if
+ *                          no stats.
  *
  * @return VBox status code.
  */
 int hgcmThreadCreate(HGCMThread **ppThread, const char *pszThreadName, PFNHGCMTHREAD pfnThread, void *pvUser,
-                     const char *pszStatsSubDir, PUVM pUVM);
+                     const char *pszStatsSubDir, PUVM pUVM, PCVMMR3VTABLE pVMM);
 
 /** Wait for termination of a HGCM worker thread.
  *

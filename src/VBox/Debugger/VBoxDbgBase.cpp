@@ -106,7 +106,7 @@ VBoxDbgBase::dbgcCreate(PCDBGCIO pIo, unsigned fFlags)
 
 
 /*static*/ DECLCALLBACK(void)
-VBoxDbgBase::atStateChange(PUVM pUVM, VMSTATE enmState, VMSTATE /*enmOldState*/, void *pvUser)
+VBoxDbgBase::atStateChange(PUVM pUVM, PCVMMR3VTABLE /*pVMM*/, VMSTATE enmState, VMSTATE /*enmOldState*/, void *pvUser)
 {
     VBoxDbgBase *pThis = (VBoxDbgBase *)pvUser; NOREF(pUVM);
     switch (enmState)

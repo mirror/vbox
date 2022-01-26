@@ -96,8 +96,8 @@ public:
 
     bool IsAttached(void) { return mfAttached; }
 
-    int doAttachDriverViaEmt(PUVM pUVM, util::AutoWriteLock *pAutoLock);
-    int doDetachDriverViaEmt(PUVM pUVM, util::AutoWriteLock *pAutoLock);
+    int doAttachDriverViaEmt(PUVM pUVM, PCVMMR3VTABLE pVMM, util::AutoWriteLock *pAutoLock);
+    int doDetachDriverViaEmt(PUVM pUVM, PCVMMR3VTABLE pVMM, util::AutoWriteLock *pAutoLock);
 
 protected:
     static DECLCALLBACK(int) attachDriverOnEmt(AudioDriver *pThis);
@@ -106,14 +106,19 @@ protected:
     int configure(unsigned uLUN, bool fAttach);
 
     /**
-     * Optional (virtual) function to give the derived audio driver
-     * class the ability to add (or change) the driver configuration
-     * entries when setting up.
+     * Virtual function for child specific driver configuration.
      *
-     * @return VBox status code.
-     * @param  pLunCfg          CFGM configuration node of the driver.
+     * This is called at the end of AudioDriver::configure().
+     *
+     * @returns VBox status code.
+     * @param   pLunCfg          CFGM configuration node of the driver.
+     * @param   pVMM            The VMM ring-3 vtable.
      */
-    virtual int configureDriver(PCFGMNODE pLunCfg) { RT_NOREF(pLunCfg); return VINF_SUCCESS; }
+    virtual int configureDriver(PCFGMNODE pLunCfg, PCVMMR3VTABLE pVMM)
+    {
+        RT_NOREF(pLunCfg, pVMM);
+        return VINF_SUCCESS;
+    }
 
 protected:
 

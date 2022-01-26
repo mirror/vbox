@@ -68,6 +68,7 @@
 #include <VBox/AssertGuest.h>
 #include <VBox/VMMDev.h>
 #include <VBox/vmm/ssm.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <iprt/assert.h>
 #include <iprt/cpp/autores.h>
 #include <iprt/cpp/utils.h>
@@ -904,8 +905,10 @@ public:
     static DECLCALLBACK(void) svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idClient, void *pvClient,
                                       uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival);
     static DECLCALLBACK(int)  svcHostCall(void *pvService, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    static DECLCALLBACK(int)  svcSaveState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM);
-    static DECLCALLBACK(int)  svcLoadState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion);
+    static DECLCALLBACK(int)  svcSaveState(void *pvService, uint32_t idClient, void *pvClient,
+                                           PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM);
+    static DECLCALLBACK(int)  svcLoadState(void *pvService, uint32_t idClient, void *pvClient,
+                                           PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, uint32_t uVersion);
     static DECLCALLBACK(int)  svcRegisterExtension(void *pvService, PFNHGCMSVCEXT pfnExtension, void *pvExtension);
 
 private:
@@ -2422,7 +2425,7 @@ GstCtrlService::svcHostCall(void *pvService, uint32_t u32Function, uint32_t cPar
  * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnSaveState}
  */
 /*static*/ DECLCALLBACK(int)
-GstCtrlService::svcSaveState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM)
+GstCtrlService::svcSaveState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM)
 {
     RT_NOREF(pvClient);
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
@@ -2433,9 +2436,9 @@ GstCtrlService::svcSaveState(void *pvService, uint32_t idClient, void *pvClient,
              save/restore.  The Main objects aren't there.  Clients shuts down.
              Only the root service survives, so remember who that is and its mode. */
 
-    SSMR3PutU32(pSSM, 1);
-    SSMR3PutBool(pSSM, pThis->m_fLegacyMode);
-    return SSMR3PutBool(pSSM, idClient == pThis->m_idMasterClient);
+    pVMM->pfnSSMR3PutU32(pSSM, 1);
+    pVMM->pfnSSMR3PutBool(pSSM, pThis->m_fLegacyMode);
+    return pVMM->pfnSSMR3PutBool(pSSM, idClient == pThis->m_idMasterClient);
 }
 
 
@@ -2443,7 +2446,8 @@ GstCtrlService::svcSaveState(void *pvService, uint32_t idClient, void *pvClient,
  * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnLoadState}
  */
 /*static*/ DECLCALLBACK(int)
-GstCtrlService::svcLoadState(void *pvService, uint32_t idClient, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
+GstCtrlService::svcLoadState(void *pvService, uint32_t idClient, void *pvClient,
+                             PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, uint32_t uVersion)
 {
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -2454,18 +2458,18 @@ GstCtrlService::svcLoadState(void *pvService, uint32_t idClient, void *pvClient,
     if (uVersion >= HGCM_SAVED_STATE_VERSION)
     {
         uint32_t uSubVersion;
-        int rc = SSMR3GetU32(pSSM, &uSubVersion);
+        int rc = pVMM->pfnSSMR3GetU32(pSSM, &uSubVersion);
         AssertRCReturn(rc, rc);
         if (uSubVersion != 1)
-            return SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+            return pVMM->pfnSSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
                                      "sub version %u, expected 1\n", uSubVersion);
         bool fLegacyMode;
-        rc = SSMR3GetBool(pSSM, &fLegacyMode);
+        rc = pVMM->pfnSSMR3GetBool(pSSM, &fLegacyMode);
         AssertRCReturn(rc, rc);
         pThis->m_fLegacyMode = fLegacyMode;
 
         bool fIsMaster;
-        rc = SSMR3GetBool(pSSM, &fIsMaster);
+        rc = pVMM->pfnSSMR3GetBool(pSSM, &fIsMaster);
         AssertRCReturn(rc, rc);
 
         pClient->m_fIsMaster = fIsMaster;

@@ -85,6 +85,8 @@ private:
     static DECLCALLBACK(void)   drvPowerOff(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(void)   drvSuspend(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(void)   drvResume(PPDMDRVINS pDrvIns);
+    static DECLCALLBACK(int)    hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM);
+    static DECLCALLBACK(int)    hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 
     Console * const         mParent;
 

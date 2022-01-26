@@ -15,6 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_MAIN
 #include "LoggingNew.h"
 
@@ -24,12 +28,17 @@
 #include <iprt/string.h>
 
 #include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/com/array.h>
 
 #include <map>
 #include <vector>
 #include <algorithm>
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 struct DeviceAssignmentRule
 {
     const char *pszName;
@@ -45,6 +54,10 @@ struct DeviceAliasRule
     const char *pszDevAlias;
 };
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 /* Those rules define PCI slots assignment */
 /** @note
  * The EFI takes assumptions about PCI slot assignments which are different
@@ -296,6 +309,12 @@ static const DeviceAliasRule g_aDeviceAliases[] =
     {"virtio-scsi", "storage"}
 };
 
+
+
+/**
+ * Bus assignment manage state data.
+ * @internal
+ */
 struct BusAssignmentManager::State
 {
     struct PCIDeviceRecord
@@ -336,14 +355,15 @@ struct BusAssignmentManager::State
     IommuType_T      mIommuType;
     PCIMap           mPCIMap;
     ReversePCIMap    mReversePCIMap;
+    PCVMMR3VTABLE    mpVMM;
 
     State()
-        : cRefCnt(1), mChipsetType(ChipsetType_Null), mpszBridgeName("unknownbridge")
+        : cRefCnt(1), mChipsetType(ChipsetType_Null), mpszBridgeName("unknownbridge"), mpVMM(NULL)
     {}
     ~State()
     {}
 
-    HRESULT init(ChipsetType_T chipsetType, IommuType_T iommuType);
+    HRESULT init(PCVMMR3VTABLE pVMM, ChipsetType_T chipsetType, IommuType_T iommuType);
 
     HRESULT record(const char *pszName, PCIBusAddress& GuestAddress, PCIBusAddress HostAddress);
     HRESULT autoAssign(const char *pszName, PCIBusAddress& Address);
@@ -355,8 +375,11 @@ struct BusAssignmentManager::State
     void listAttachedPCIDevices(std::vector<PCIDeviceInfo> &aAttached);
 };
 
-HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType, IommuType_T iommuType)
+
+HRESULT BusAssignmentManager::State::init(PCVMMR3VTABLE pVMM, ChipsetType_T chipsetType, IommuType_T iommuType)
 {
+    mpVMM = pVMM;
+
     if (iommuType != IommuType_None)
     {
 #if defined(VBOX_WITH_IOMMU_AMD) && defined(VBOX_WITH_IOMMU_INTEL)
@@ -549,10 +572,10 @@ BusAssignmentManager::~BusAssignmentManager()
     }
 }
 
-BusAssignmentManager *BusAssignmentManager::createInstance(ChipsetType_T chipsetType, IommuType_T iommuType)
+BusAssignmentManager *BusAssignmentManager::createInstance(PCVMMR3VTABLE pVMM, ChipsetType_T chipsetType, IommuType_T iommuType)
 {
     BusAssignmentManager *pInstance = new BusAssignmentManager();
-    pInstance->pState->init(chipsetType, iommuType);
+    pInstance->pState->init(pVMM, chipsetType, iommuType);
     Assert(pInstance);
     return pInstance;
 }
@@ -561,24 +584,25 @@ void BusAssignmentManager::AddRef()
 {
     ASMAtomicIncS32(&pState->cRefCnt);
 }
+
 void BusAssignmentManager::Release()
 {
     if (ASMAtomicDecS32(&pState->cRefCnt) == 0)
         delete this;
 }
 
-DECLINLINE(HRESULT) InsertConfigInteger(PCFGMNODE pCfg,  const char *pszName, uint64_t u64)
+DECLINLINE(HRESULT) InsertConfigInteger(PCVMMR3VTABLE pVMM, PCFGMNODE pCfg, const char *pszName, uint64_t u64)
 {
-    int vrc = CFGMR3InsertInteger(pCfg, pszName, u64);
+    int vrc = pVMM->pfnCFGMR3InsertInteger(pCfg, pszName, u64);
     if (RT_FAILURE(vrc))
         return E_INVALIDARG;
 
     return S_OK;
 }
 
-DECLINLINE(HRESULT) InsertConfigNode(PCFGMNODE pNode, const char *pcszName, PCFGMNODE *ppChild)
+DECLINLINE(HRESULT) InsertConfigNode(PCVMMR3VTABLE pVMM, PCFGMNODE pNode, const char *pcszName, PCFGMNODE *ppChild)
 {
-    int vrc = CFGMR3InsertNode(pNode, pcszName, ppChild);
+    int vrc = pVMM->pfnCFGMR3InsertNode(pNode, pcszName, ppChild);
     if (RT_FAILURE(vrc))
         return E_INVALIDARG;
 
@@ -618,15 +642,16 @@ HRESULT BusAssignmentManager::assignPCIDeviceImpl(const char *pszDevName,
     if (FAILED(rc))
         return rc;
 
+    PCVMMR3VTABLE const pVMM = pState->mpVMM;
     if (pCfg)
     {
-        rc = InsertConfigInteger(pCfg, "PCIBusNo",      GuestAddress.miBus);
+        rc = InsertConfigInteger(pVMM, pCfg, "PCIBusNo",      GuestAddress.miBus);
         if (FAILED(rc))
             return rc;
-        rc = InsertConfigInteger(pCfg, "PCIDeviceNo",   GuestAddress.miDevice);
+        rc = InsertConfigInteger(pVMM, pCfg, "PCIDeviceNo",   GuestAddress.miDevice);
         if (FAILED(rc))
             return rc;
-        rc = InsertConfigInteger(pCfg, "PCIFunctionNo", GuestAddress.miFn);
+        rc = InsertConfigInteger(pVMM, pCfg, "PCIFunctionNo", GuestAddress.miFn);
         if (FAILED(rc))
             return rc;
     }
@@ -635,9 +660,9 @@ HRESULT BusAssignmentManager::assignPCIDeviceImpl(const char *pszDevName,
     if (   GuestAddress.miBus > 0
         && !hasPCIDevice(pState->mpszBridgeName, GuestAddress.miBus - 1))
     {
-        PCFGMNODE pDevices = CFGMR3GetParent(CFGMR3GetParent(pCfg));
+        PCFGMNODE pDevices = pVMM->pfnCFGMR3GetParent(pVMM->pfnCFGMR3GetParent(pCfg));
         AssertLogRelMsgReturn(pDevices, ("BusAssignmentManager: cannot find base device configuration\n"), E_UNEXPECTED);
-        PCFGMNODE pBridges = CFGMR3GetChild(pDevices, "ich9pcibridge");
+        PCFGMNODE pBridges = pVMM->pfnCFGMR3GetChild(pDevices, "ich9pcibridge");
         AssertLogRelMsgReturn(pBridges, ("BusAssignmentManager: cannot find bridge configuration base\n"), E_UNEXPECTED);
 
         /* Device should be on a not yet existing bus, add it automatically */
@@ -653,8 +678,8 @@ HRESULT BusAssignmentManager::assignPCIDeviceImpl(const char *pszDevName,
                     AssertLogRelMsgFailedReturn(("BusAssignmentManager: cannot create bridge for bus %i because the possible parent bus positions are exhausted\n", iBridge + 1), E_UNEXPECTED);
 
                 PCFGMNODE pInst;
-                InsertConfigNode(pBridges, Utf8StrFmt("%d", iBridge).c_str(), &pInst);
-                InsertConfigInteger(pInst, "Trusted", 1);
+                InsertConfigNode(pVMM, pBridges, Utf8StrFmt("%d", iBridge).c_str(), &pInst);
+                InsertConfigInteger(pVMM, pInst, "Trusted", 1);
                 rc = assignPCIDevice(pState->mpszBridgeName, pInst);
                 if (FAILED(rc))
                     return rc;

@@ -1938,12 +1938,13 @@ VMMR3_INT_DECL(void) PGMR3MemSetup(PVM pVM, bool fAtReset)
  * VM state change callback for clearing fNoMorePhysWrites after
  * a snapshot has been created.
  */
-static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser)
+static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PUVM pUVM, PCVMMR3VTABLE pVMM, VMSTATE enmState,
+                                                         VMSTATE enmOldState, void *pvUser)
 {
     if (   enmState == VMSTATE_RUNNING
         || enmState == VMSTATE_RESUMING)
         pUVM->pVM->pgm.s.fNoMorePhysWrites = false;
-    NOREF(enmOldState); NOREF(pvUser);
+    RT_NOREF(pVMM, enmOldState, pvUser);
 }
 #endif
 

@@ -77,6 +77,9 @@ typedef SUPSEMEVENTMULTI                           *PSUPSEMEVENTMULTI;
 #define NIL_SUPSEMEVENTMULTI                        ((SUPSEMEVENTMULTI)0)
 
 
+/** Pointer to a ring-3 VMM API vtable. */
+typedef R3PTRTYPE(const struct VMMR3VTABLE *) PCVMMR3VTABLE;
+
 /** Pointer to a VM. */
 typedef struct VM                  *PVM;
 /** Pointer to a const VM. */

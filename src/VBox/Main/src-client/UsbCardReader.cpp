@@ -1876,14 +1876,13 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
 
     pThis->hReqQCardReaderCmd = NIL_RTREQQUEUE;
 
-    if (!CFGMR3AreValuesValid(pCfg, "Object\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "Object", "");
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
     void *pv;
-    int rc = CFGMR3QueryPtr(pCfg, "Object", &pv);
+    int rc = pDrvIns->pHlpR3->pfnCFGMQueryPtr(pCfg, "Object", &pv);
     AssertMsgRCReturn(rc, ("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc), rc);
 
     pThis->pUsbCardReader = (UsbCardReader *)pv;

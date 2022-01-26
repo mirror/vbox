@@ -46,7 +46,7 @@ public:
         PCIBusAddress hostAddress;
     };
 
-    static BusAssignmentManager *createInstance(ChipsetType_T chipsetType, IommuType_T iommuType);
+    static BusAssignmentManager *createInstance(PCVMMR3VTABLE pVMM, ChipsetType_T chipsetType, IommuType_T iommuType);
     virtual void AddRef();
     virtual void Release();
 

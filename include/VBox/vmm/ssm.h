@@ -944,10 +944,11 @@ typedef FNSSMINTLOADDONE *PFNSSMINTLOADDONE;
  *
  * @returns VBox status code.
  * @param   pSSM            SSM operation handle.
+ * @param   pVMM            The VMM ring-3 vtable.
  * @param   pvUser          User argument.
  * @thread  Any.
  */
-typedef DECLCALLBACKTYPE(int, FNSSMEXTLIVEPREP,(PSSMHANDLE pSSM, void *pvUser));
+typedef DECLCALLBACKTYPE(int, FNSSMEXTLIVEPREP,(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser));
 /** Pointer to a FNSSMEXTLIVEPREP() function. */
 typedef FNSSMEXTLIVEPREP *PFNSSMEXTLIVEPREP;
 
@@ -959,11 +960,12 @@ typedef FNSSMEXTLIVEPREP *PFNSSMEXTLIVEPREP;
  *
  * @returns VBox status code.
  * @param   pSSM            SSM operation handle.
+ * @param   pVMM            The VMM ring-3 vtable.
  * @param   pvUser          User argument.
  * @param   uPass           The data pass.
  * @thread  Any.
  */
-typedef DECLCALLBACKTYPE(int, FNSSMEXTLIVEEXEC,(PSSMHANDLE pSSM, void *pvUser, uint32_t uPass));
+typedef DECLCALLBACKTYPE(int, FNSSMEXTLIVEEXEC,(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser, uint32_t uPass));
 /** Pointer to a FNSSMEXTLIVEEXEC() function. */
 typedef FNSSMEXTLIVEEXEC *PFNSSMEXTLIVEEXEC;
 
@@ -981,11 +983,12 @@ typedef FNSSMEXTLIVEEXEC *PFNSSMEXTLIVEEXEC;
  * @retval  VERR_SSM_VOTE_FOR_GIVING_UP if its time to give up.
  *
  * @param   pSSM            SSM operation handle.
+ * @param   pVMM            The VMM ring-3 vtable.
  * @param   pvUser          User argument.
  * @param   uPass           The data pass.
  * @thread  Any.
  */
-typedef DECLCALLBACKTYPE(int, FNSSMEXTLIVEVOTE,(PSSMHANDLE pSSM, void *pvUser, uint32_t uPass));
+typedef DECLCALLBACKTYPE(int, FNSSMEXTLIVEVOTE,(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser, uint32_t uPass));
 /** Pointer to a FNSSMEXTLIVEVOTE() function. */
 typedef FNSSMEXTLIVEVOTE *PFNSSMEXTLIVEVOTE;
 
@@ -994,20 +997,22 @@ typedef FNSSMEXTLIVEVOTE *PFNSSMEXTLIVEVOTE;
  *
  * @returns VBox status code.
  * @param   pSSM            SSM operation handle.
+ * @param   pVMM            The VMM ring-3 vtable.
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACKTYPE(int, FNSSMEXTSAVEPREP,(PSSMHANDLE pSSM, void *pvUser));
+typedef DECLCALLBACKTYPE(int, FNSSMEXTSAVEPREP,(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser));
 /** Pointer to a FNSSMEXTSAVEPREP() function. */
 typedef FNSSMEXTSAVEPREP *PFNSSMEXTSAVEPREP;
 
 /**
  * Execute state save operation.
  *
+ * @returns VBox status code.
  * @param   pSSM            SSM operation handle.
+ * @param   pVMM            The VMM ring-3 vtable.
  * @param   pvUser          User argument.
- * @author  The lack of return code is for legacy reasons.
  */
-typedef DECLCALLBACKTYPE(void, FNSSMEXTSAVEEXEC,(PSSMHANDLE pSSM, void *pvUser));
+typedef DECLCALLBACKTYPE(int, FNSSMEXTSAVEEXEC,(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser));
 /** Pointer to a FNSSMEXTSAVEEXEC() function. */
 typedef FNSSMEXTSAVEEXEC *PFNSSMEXTSAVEEXEC;
 
@@ -1016,9 +1021,10 @@ typedef FNSSMEXTSAVEEXEC *PFNSSMEXTSAVEEXEC;
  *
  * @returns VBox status code.
  * @param   pSSM            SSM operation handle.
+ * @param   pVMM            The VMM ring-3 vtable.
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACKTYPE(int, FNSSMEXTSAVEDONE,(PSSMHANDLE pSSM, void *pvUser));
+typedef DECLCALLBACKTYPE(int, FNSSMEXTSAVEDONE,(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser));
 /** Pointer to a FNSSMEXTSAVEDONE() function. */
 typedef FNSSMEXTSAVEDONE *PFNSSMEXTSAVEDONE;
 
@@ -1027,9 +1033,10 @@ typedef FNSSMEXTSAVEDONE *PFNSSMEXTSAVEDONE;
  *
  * @returns VBox status code.
  * @param   pSSM            SSM operation handle.
+ * @param   pVMM            The VMM ring-3 vtable.
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACKTYPE(int, FNSSMEXTLOADPREP,(PSSMHANDLE pSSM, void *pvUser));
+typedef DECLCALLBACKTYPE(int, FNSSMEXTLOADPREP,(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser));
 /** Pointer to a FNSSMEXTLOADPREP() function. */
 typedef FNSSMEXTLOADPREP *PFNSSMEXTLOADPREP;
 
@@ -1038,13 +1045,15 @@ typedef FNSSMEXTLOADPREP *PFNSSMEXTLOADPREP;
  *
  * @returns VBox status code.
  * @param   pSSM            SSM operation handle.
+ * @param   pVMM            The VMM ring-3 vtable.
  * @param   pvUser          User argument.
  * @param   uVersion        Data layout version.
  * @param   uPass           The pass. This is always SSM_PASS_FINAL for units
  *                          that doesn't specify a pfnSaveLive callback.
  * @remark  The odd return value is for legacy reasons.
  */
-typedef DECLCALLBACKTYPE(int, FNSSMEXTLOADEXEC,(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass));
+typedef DECLCALLBACKTYPE(int, FNSSMEXTLOADEXEC,(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser,
+                                                uint32_t uVersion, uint32_t uPass));
 /** Pointer to a FNSSMEXTLOADEXEC() function. */
 typedef FNSSMEXTLOADEXEC *PFNSSMEXTLOADEXEC;
 
@@ -1053,9 +1062,10 @@ typedef FNSSMEXTLOADEXEC *PFNSSMEXTLOADEXEC;
  *
  * @returns VBox load code.
  * @param   pSSM            SSM operation handle.
+ * @param   pVMM            The VMM ring-3 vtable.
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACKTYPE(int, FNSSMEXTLOADDONE,(PSSMHANDLE pSSM, void *pvUser));
+typedef DECLCALLBACKTYPE(int, FNSSMEXTLOADDONE,(PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, void *pvUser));
 /** Pointer to a FNSSMEXTLOADDONE() function. */
 typedef FNSSMEXTLOADDONE *PFNSSMEXTLOADDONE;
 
@@ -1190,7 +1200,7 @@ VMMR3_INT_DECL(int)     SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const
 VMMR3_INT_DECL(int)     SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance);
 VMMR3_INT_DECL(int)     SSMR3DeregisterUsb(PVM pVM, PPDMUSBINS pUsbIns, const char *pszName, uint32_t uInstance);
 VMMR3DECL(int)          SSMR3DeregisterInternal(PVM pVM, const char *pszName);
-VMMR3DECL(int)          SSMR3DeregisterExternal(PVM pVM, const char *pszName);
+VMMR3DECL(int)          SSMR3DeregisterExternal(PUVM pUVM, const char *pszName);
 VMMR3DECL(int)          SSMR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
 VMMR3_INT_DECL(int)     SSMR3LiveSave(PVM pVM, uint32_t cMsMaxDowntime,
                                       const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOps,
@@ -1301,7 +1311,6 @@ VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel);
 VMMR3DECL(int) SSMR3GetMem(PSSMHANDLE pSSM, void *pv, size_t cb);
 VMMR3DECL(int) SSMR3GetStrZ(PSSMHANDLE pSSM, char *psz, size_t cbMax);
 VMMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *pcbStr);
-VMMR3DECL(int) SSMR3GetTimer(PSSMHANDLE pSSM, PTMTIMER pTimer);
 VMMR3DECL(int) SSMR3Skip(PSSMHANDLE pSSM, size_t cb);
 VMMR3DECL(int) SSMR3SkipToEndOfUnit(PSSMHANDLE pSSM);
 VMMR3DECL(int) SSMR3SetLoadError(PSSMHANDLE pSSM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(6, 7);

@@ -683,11 +683,15 @@ static DECLCALLBACK(void) iface_hgcmCancelled(PPDMIHGCMCONNECTOR pInterface, PVB
  * @param   pDrvIns         Driver instance of the driver which registered the data unit.
  * @param   pSSM            SSM operation handle.
  */
-static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+/*static*/ DECLCALLBACK(int) VMMDev::hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
-    RT_NOREF(pDrvIns);
+    PDRVMAINVMMDEV pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
     Log9(("Enter\n"));
-    return HGCMHostSaveState(pSSM);
+
+    AssertReturn(pThis->pVMMDev, VERR_INTERNAL_ERROR_2);
+    Console::SafeVMPtrQuiet ptrVM(pThis->pVMMDev->mParent);
+    AssertReturn(ptrVM.isOk(), VERR_INTERNAL_ERROR_3);
+    return HGCMHostSaveState(pSSM, ptrVM.vtable());
 }
 
 
@@ -700,9 +704,9 @@ static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
  */
-static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+/*static*/ DECLCALLBACK(int) VMMDev::hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    RT_NOREF(pDrvIns);
+    PDRVMAINVMMDEV pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
     LogFlowFunc(("Enter\n"));
 
     if (   uVersion != HGCM_SAVED_STATE_VERSION
@@ -710,7 +714,10 @@ static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uin
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    return HGCMHostLoadState(pSSM, uVersion);
+    AssertReturn(pThis->pVMMDev, VERR_INTERNAL_ERROR_2);
+    Console::SafeVMPtrQuiet ptrVM(pThis->pVMMDev->mParent);
+    AssertReturn(ptrVM.isOk(), VERR_INTERNAL_ERROR_3);
+    return HGCMHostLoadState(pSSM, ptrVM.vtable(), uVersion);
 }
 
 int VMMDev::hgcmLoadService(const char *pszServiceLibrary, const char *pszServiceName)
@@ -727,7 +734,7 @@ int VMMDev::hgcmLoadService(const char *pszServiceLibrary, const char *pszServic
            || !strcmp(pszServiceLibrary, "VBoxSharedCrOpenGL")
            );
     Console::SafeVMPtrQuiet ptrVM(mParent);
-    return HGCMHostLoad(pszServiceLibrary, pszServiceName, ptrVM.rawUVM(), mpDrv ? mpDrv->pHGCMPort : NULL);
+    return HGCMHostLoad(pszServiceLibrary, pszServiceName, ptrVM.rawUVM(), ptrVM.vtable(), mpDrv ? mpDrv->pHGCMPort : NULL);
 }
 
 int VMMDev::hgcmHostCall(const char *pszServiceName, uint32_t u32Function,
@@ -1047,18 +1054,17 @@ int VMMDev::i_guestPropLoadAndConfigure()
 /**
  * @interface_method_impl{PDMDRVREG,pfnConstruct}
  */
-DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    RT_NOREF(fFlags, pCfg);
     PDRVMAINVMMDEV pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
     LogFlow(("Keyboard::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, ""))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "", "");
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
@@ -1110,7 +1116,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
      * Get the Console object pointer and update the mpDrv member.
      */
     com::Guid uuid(VMMDEV_OID);
-    pThis->pVMMDev = (VMMDev*)PDMDrvHlpQueryGenericUserObject(pDrvIns, uuid.raw());
+    pThis->pVMMDev = (VMMDev *)PDMDrvHlpQueryGenericUserObject(pDrvIns, uuid.raw());
     if (!pThis->pVMMDev)
     {
         AssertMsgFailed(("Configuration error: No/bad VMMDev object!\n"));
@@ -1185,8 +1191,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
      */
     rc = PDMDrvHlpSSMRegisterEx(pDrvIns, HGCM_SAVED_STATE_VERSION, 4096 /* bad guess */,
                                 NULL, NULL, NULL,
-                                NULL, iface_hgcmSave, NULL,
-                                NULL, iface_hgcmLoad, NULL);
+                                NULL, VMMDev::hgcmSave, NULL,
+                                NULL, VMMDev::hgcmLoad, NULL);
     if (RT_FAILURE(rc))
         return rc;
 

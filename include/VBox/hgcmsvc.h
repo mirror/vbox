@@ -83,8 +83,9 @@
  * 8.1->9.1 Because pfnDisconnectClient was (temporarily) removed, and
  *          acMaxClients and acMaxCallsPerClient added (VBox 6.1.26).
  * 9.1->10.1 Because pfnDisconnectClient was added back (VBox 6.1.28).
+ * 10.1->11.1 Because pVMM added to pfnSaveState & pfnLoadState (VBox 7.0).
  */
-#define VBOX_HGCM_SVC_VERSION_MAJOR (0x000a)
+#define VBOX_HGCM_SVC_VERSION_MAJOR (0x000b)
 #define VBOX_HGCM_SVC_VERSION_MINOR (0x0001)
 #define VBOX_HGCM_SVC_VERSION ((VBOX_HGCM_SVC_VERSION_MAJOR << 16) + VBOX_HGCM_SVC_VERSION_MINOR)
 
@@ -477,38 +478,40 @@ DECLINLINE(void) HGCMSvcSetRTCStr(VBOXHGCMSVCPARM *pParm, const RTCString &rStri
 # endif
 #endif
 
-#ifdef IN_RING3
+#if defined(IN_RING3) && defined(VBOX_INCLUDED_vmm_vmmr3vtable_h)
+
 /**
  * Puts (serializes) a VBOXHGCMSVCPARM struct into SSM.
  *
  * @returns VBox status code.
- * @param   pParm               VBOXHGCMSVCPARM to serialize.
- * @param   pSSM                SSM handle to serialize to.
+ * @param   pParm   VBOXHGCMSVCPARM to serialize.
+ * @param   pSSM    SSM handle to serialize to.
+ * @param   pVMM    The VMM vtable.
  */
-DECLINLINE(int) HGCMSvcSSMR3Put(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
+DECLINLINE(int) HGCMSvcSSMR3Put(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM)
 {
     int rc;
 
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(pSSM,  VERR_INVALID_POINTER);
 
-    rc = SSMR3PutU32(pSSM, sizeof(VBOXHGCMSVCPARM));
+    rc = pVMM->pfnSSMR3PutU32(pSSM, sizeof(VBOXHGCMSVCPARM));
     AssertRCReturn(rc, rc);
-    rc = SSMR3PutU32(pSSM, pParm->type);
+    rc = pVMM->pfnSSMR3PutU32(pSSM, pParm->type);
     AssertRCReturn(rc, rc);
 
     switch (pParm->type)
     {
         case VBOX_HGCM_SVC_PARM_32BIT:
-            rc = SSMR3PutU32(pSSM, pParm->u.uint32);
+            rc = pVMM->pfnSSMR3PutU32(pSSM, pParm->u.uint32);
             break;
         case VBOX_HGCM_SVC_PARM_64BIT:
-            rc = SSMR3PutU64(pSSM, pParm->u.uint64);
+            rc = pVMM->pfnSSMR3PutU64(pSSM, pParm->u.uint64);
             break;
         case VBOX_HGCM_SVC_PARM_PTR:
-            rc = SSMR3PutU32(pSSM, pParm->u.pointer.size);
+            rc = pVMM->pfnSSMR3PutU32(pSSM, pParm->u.pointer.size);
             if (RT_SUCCESS(rc))
-                rc = SSMR3PutMem(pSSM, pParm->u.pointer.addr, pParm->u.pointer.size);
+                rc = pVMM->pfnSSMR3PutMem(pSSM, pParm->u.pointer.addr, pParm->u.pointer.size);
             break;
         default:
             AssertMsgFailed(("Paramter type %RU32 not implemented yet\n", pParm->type));
@@ -523,10 +526,11 @@ DECLINLINE(int) HGCMSvcSSMR3Put(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
  * Gets (loads) a VBOXHGCMSVCPARM struct from SSM.
  *
  * @returns VBox status code.
- * @param   pParm               VBOXHGCMSVCPARM to load into. Must be initialied (zero-ed) properly.
- * @param   pSSM                SSM handle to load from.
+ * @param   pParm   VBOXHGCMSVCPARM to load into. Must be zero'ed.
+ * @param   pSSM    SSM handle to load from.
+ * @param   pVMM    The VMM vtable.
  */
-DECLINLINE(int) HGCMSvcSSMR3Get(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
+DECLINLINE(int) HGCMSvcSSMR3Get(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM)
 {
     uint32_t cbParm;
     int rc;
@@ -534,25 +538,25 @@ DECLINLINE(int) HGCMSvcSSMR3Get(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(pSSM,  VERR_INVALID_POINTER);
 
-    rc = SSMR3GetU32(pSSM, &cbParm);
+    rc = pVMM->pfnSSMR3GetU32(pSSM, &cbParm);
     AssertRCReturn(rc, rc);
     AssertReturn(cbParm == sizeof(VBOXHGCMSVCPARM), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-    rc = SSMR3GetU32(pSSM, &pParm->type);
+    rc = pVMM->pfnSSMR3GetU32(pSSM, &pParm->type);
     AssertRCReturn(rc, rc);
 
     switch (pParm->type)
     {
         case VBOX_HGCM_SVC_PARM_32BIT:
         {
-            rc = SSMR3GetU32(pSSM, &pParm->u.uint32);
+            rc = pVMM->pfnSSMR3GetU32(pSSM, &pParm->u.uint32);
             AssertRCReturn(rc, rc);
             break;
         }
 
         case VBOX_HGCM_SVC_PARM_64BIT:
         {
-            rc = SSMR3GetU64(pSSM, &pParm->u.uint64);
+            rc = pVMM->pfnSSMR3GetU64(pSSM, &pParm->u.uint64);
             AssertRCReturn(rc, rc);
             break;
         }
@@ -562,7 +566,7 @@ DECLINLINE(int) HGCMSvcSSMR3Get(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
             AssertMsgReturn(pParm->u.pointer.size == 0,
                             ("Pointer size parameter already in use (or not initialized)\n"), VERR_INVALID_PARAMETER);
 
-            rc = SSMR3GetU32(pSSM, &pParm->u.pointer.size);
+            rc = pVMM->pfnSSMR3GetU32(pSSM, &pParm->u.pointer.size);
             AssertRCReturn(rc, rc);
 
             AssertMsgReturn(pParm->u.pointer.addr == NULL,
@@ -570,7 +574,7 @@ DECLINLINE(int) HGCMSvcSSMR3Get(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
 
             pParm->u.pointer.addr = RTMemAlloc(pParm->u.pointer.size);
             AssertPtrReturn(pParm->u.pointer.addr, VERR_NO_MEMORY);
-            rc = SSMR3GetMem(pSSM, pParm->u.pointer.addr, pParm->u.pointer.size);
+            rc = pVMM->pfnSSMR3GetMem(pSSM, pParm->u.pointer.addr, pParm->u.pointer.size);
 
             AssertRCReturn(rc, rc);
             break;
@@ -584,6 +588,7 @@ DECLINLINE(int) HGCMSvcSSMR3Get(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
 
     return VINF_SUCCESS;
 }
+
 #endif /* IN_RING3 */
 
 typedef VBOXHGCMSVCPARM *PVBOXHGCMSVCPARM;
@@ -692,11 +697,12 @@ typedef struct VBOXHGCMSVCFNTABLE
     DECLR3CALLBACKMEMBER(int, pfnHostCall, (void *pvService, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]));
 
     /** Inform the service about a VM save operation. */
-    DECLR3CALLBACKMEMBER(int, pfnSaveState, (void *pvService, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM));
+    DECLR3CALLBACKMEMBER(int, pfnSaveState, (void *pvService, uint32_t u32ClientID, void *pvClient,
+                                             PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM));
 
     /** Inform the service about a VM load operation. */
-    DECLR3CALLBACKMEMBER(int, pfnLoadState, (void *pvService, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM,
-                                             uint32_t uVersion));
+    DECLR3CALLBACKMEMBER(int, pfnLoadState, (void *pvService, uint32_t u32ClientID, void *pvClient,
+                                             PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, uint32_t uVersion));
 
     /** Register a service extension callback. */
     DECLR3CALLBACKMEMBER(int, pfnRegisterExtension, (void *pvService, PFNHGCMSVCEXT pfnExtension, void *pvExtension));

@@ -404,11 +404,10 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
     }
 
     void *pv = NULL;
-    int rc = CFGMR3QueryPtr(pCfg, "Object", &pv);
+    int rc = pDrvIns->pHlpR3->pfnCFGMQueryPtr(pCfg, "Object", &pv);
     if (!RT_VALID_PTR(pv))
          rc = VERR_INVALID_PARAMETER;
-    AssertMsgReturn(RT_SUCCESS(rc),
-                    ("Configuration error: No/bad \"Object\" %p value! rc=%Rrc\n", pv, rc), rc);
+    AssertMsgRCReturn(rc, ("Configuration error: No/bad \"Object\" %p value! rc=%Rrc\n", pv, rc), rc);
 
     /* Everything ok. Initialize. */
     pThis->pRemote = (EMWEBCAMREMOTE *)pv;

@@ -183,6 +183,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/log.h>
+#include <VBox/vmm/vmmr3vtable.h> /* must be included before hgcmsvc.h */
 
 #include <VBox/GuestHost/clipboard-helper.h>
 #include <VBox/HostServices/Service.h>
@@ -2456,7 +2457,7 @@ static SSMFIELD const s_aShClSSMClientMsgCtx[] =
 };
 #endif /* !UNIT_TEST */
 
-static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM)
 {
     LogFlowFuncEnter();
 
@@ -2474,74 +2475,74 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     AssertPtr(pClient);
 
     /* Write Shared Clipboard saved state version. */
-    SSMR3PutU32(pSSM, VBOX_SHCL_SAVED_STATE_VER_CURRENT);
+    pVMM->pfnSSMR3PutU32(pSSM, VBOX_SHCL_SAVED_STATE_VER_CURRENT);
 
-    int rc = SSMR3PutStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /*fFlags*/, &s_aShClSSMClientState[0], NULL);
+    int rc = pVMM->pfnSSMR3PutStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /*fFlags*/, &s_aShClSSMClientState[0], NULL);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutStructEx(pSSM, &pClient->State.POD, sizeof(pClient->State.POD), 0 /*fFlags*/, &s_aShClSSMClientPODState[0], NULL);
+    rc = pVMM->pfnSSMR3PutStructEx(pSSM, &pClient->State.POD, sizeof(pClient->State.POD), 0 /*fFlags*/, &s_aShClSSMClientPODState[0], NULL);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /*fFlags*/, &s_aShClSSMClientTransferState[0], NULL);
+    rc = pVMM->pfnSSMR3PutStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /*fFlags*/, &s_aShClSSMClientTransferState[0], NULL);
     AssertRCReturn(rc, rc);
 
     /* Serialize the client's internal message queue. */
-    rc = SSMR3PutU64(pSSM, pClient->cMsgAllocated);
+    rc = pVMM->pfnSSMR3PutU64(pSSM, pClient->cMsgAllocated);
     AssertRCReturn(rc, rc);
 
     PSHCLCLIENTMSG pMsg;
     RTListForEach(&pClient->MsgQueue, pMsg, SHCLCLIENTMSG, ListEntry)
     {
-        SSMR3PutStructEx(pSSM, pMsg, sizeof(SHCLCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
-        SSMR3PutStructEx(pSSM, pMsg, sizeof(SHCLCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgCtx[0], NULL);
+        pVMM->pfnSSMR3PutStructEx(pSSM, pMsg, sizeof(SHCLCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
+        pVMM->pfnSSMR3PutStructEx(pSSM, pMsg, sizeof(SHCLCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgCtx[0], NULL);
 
         for (uint32_t iParm = 0; iParm < pMsg->cParms; iParm++)
-            HGCMSvcSSMR3Put(&pMsg->aParms[iParm], pSSM);
+            HGCMSvcSSMR3Put(&pMsg->aParms[iParm], pSSM, pVMM);
     }
 
-    rc = SSMR3PutU64(pSSM, pClient->Legacy.cCID);
+    rc = pVMM->pfnSSMR3PutU64(pSSM, pClient->Legacy.cCID);
     AssertRCReturn(rc, rc);
 
     PSHCLCLIENTLEGACYCID pCID;
     RTListForEach(&pClient->Legacy.lstCID, pCID, SHCLCLIENTLEGACYCID, Node)
     {
-        rc = SSMR3PutStructEx(pSSM, pCID, sizeof(SHCLCLIENTLEGACYCID), 0 /*fFlags*/, &s_aShClSSMClientLegacyCID[0], NULL);
+        rc = pVMM->pfnSSMR3PutStructEx(pSSM, pCID, sizeof(SHCLCLIENTLEGACYCID), 0 /*fFlags*/, &s_aShClSSMClientLegacyCID[0], NULL);
         AssertRCReturn(rc, rc);
     }
 #else  /* UNIT_TEST */
-    RT_NOREF3(u32ClientID, pvClient, pSSM);
+    RT_NOREF(u32ClientID, pvClient, pSSM, pVMM);
 #endif /* UNIT_TEST */
     return VINF_SUCCESS;
 }
 
 #ifndef UNIT_TEST
-static int svcLoadStateV0(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
+static int svcLoadStateV0(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, uint32_t uVersion)
 {
     RT_NOREF(u32ClientID, pvClient, pSSM, uVersion);
 
     uint32_t uMarker;
-    int rc = SSMR3GetU32(pSSM, &uMarker);   /* Begin marker. */
+    int rc = pVMM->pfnSSMR3GetU32(pSSM, &uMarker);   /* Begin marker. */
     AssertRC(rc);
     Assert(uMarker == UINT32_C(0x19200102)  /* SSMR3STRUCT_BEGIN */);
 
-    rc = SSMR3Skip(pSSM, sizeof(uint32_t)); /* Client ID */
+    rc = pVMM->pfnSSMR3Skip(pSSM, sizeof(uint32_t)); /* Client ID */
     AssertRCReturn(rc, rc);
 
     bool fValue;
-    rc = SSMR3GetBool(pSSM, &fValue);       /* fHostMsgQuit */
+    rc = pVMM->pfnSSMR3GetBool(pSSM, &fValue);       /* fHostMsgQuit */
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3GetBool(pSSM, &fValue);       /* fHostMsgReadData */
+    rc = pVMM->pfnSSMR3GetBool(pSSM, &fValue);       /* fHostMsgReadData */
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3GetBool(pSSM, &fValue);       /* fHostMsgFormats */
+    rc = pVMM->pfnSSMR3GetBool(pSSM, &fValue);       /* fHostMsgFormats */
     AssertRCReturn(rc, rc);
 
     uint32_t fFormats;
-    rc = SSMR3GetU32(pSSM, &fFormats);      /* u32RequestedFormat */
+    rc = pVMM->pfnSSMR3GetU32(pSSM, &fFormats);      /* u32RequestedFormat */
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3GetU32(pSSM, &uMarker);       /* End marker. */
+    rc = pVMM->pfnSSMR3GetU32(pSSM, &uMarker);       /* End marker. */
     AssertRCReturn(rc, rc);
     Assert(uMarker == UINT32_C(0x19920406) /* SSMR3STRUCT_END */);
 
@@ -2549,7 +2550,8 @@ static int svcLoadStateV0(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM,
 }
 #endif /* UNIT_TEST */
 
-static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
+static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient,
+                                      PSSMHANDLE pSSM, PCVMMR3VTABLE pVMM, uint32_t uVersion)
 {
     LogFlowFuncEnter();
 
@@ -2562,32 +2564,34 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
     /* Restore the client data. */
     uint32_t lenOrVer;
-    int rc = SSMR3GetU32(pSSM, &lenOrVer);
+    int rc = pVMM->pfnSSMR3GetU32(pSSM, &lenOrVer);
     AssertRCReturn(rc, rc);
 
     LogFunc(("u32ClientID=%RU32, lenOrVer=%#RX64\n", u32ClientID, lenOrVer));
 
     if (lenOrVer == VBOX_SHCL_SAVED_STATE_VER_3_1)
-        return svcLoadStateV0(u32ClientID, pvClient, pSSM, uVersion);
+        return svcLoadStateV0(u32ClientID, pvClient, pSSM, pVMM, uVersion);
 
     if (   lenOrVer >= VBOX_SHCL_SAVED_STATE_VER_6_1B2
         && lenOrVer <= VBOX_SHCL_SAVED_STATE_VER_CURRENT)
     {
         if (lenOrVer >= VBOX_SHCL_SAVED_STATE_VER_6_1RC1)
         {
-            SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /* fFlags */, &s_aShClSSMClientState[0], NULL);
-            SSMR3GetStructEx(pSSM, &pClient->State.POD, sizeof(pClient->State.POD), 0 /* fFlags */,
-                             &s_aShClSSMClientPODState[0], NULL);
+            pVMM->pfnSSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /* fFlags */,
+                                      &s_aShClSSMClientState[0], NULL);
+            pVMM->pfnSSMR3GetStructEx(pSSM, &pClient->State.POD, sizeof(pClient->State.POD), 0 /* fFlags */,
+                                      &s_aShClSSMClientPODState[0], NULL);
         }
         else
-            SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /* fFlags */, &s_aShClSSMClientState61B1[0], NULL);
-        rc = SSMR3GetStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /* fFlags */,
-                              &s_aShClSSMClientTransferState[0], NULL);
+            pVMM->pfnSSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /* fFlags */,
+                                      &s_aShClSSMClientState61B1[0], NULL);
+        rc = pVMM->pfnSSMR3GetStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /* fFlags */,
+                                       &s_aShClSSMClientTransferState[0], NULL);
         AssertRCReturn(rc, rc);
 
         /* Load the client's internal message queue. */
         uint64_t cMsgs;
-        rc = SSMR3GetU64(pSSM, &cMsgs);
+        rc = pVMM->pfnSSMR3GetU64(pSSM, &cMsgs);
         AssertRCReturn(rc, rc);
         AssertLogRelMsgReturn(cMsgs < _16K, ("Too many messages: %u (%x)\n", cMsgs, cMsgs), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
@@ -2599,8 +2603,10 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
                 uint8_t abPadding[RT_UOFFSETOF(SHCLCLIENTMSG, aParms) + sizeof(VBOXHGCMSVCPARM) * 2];
             } u;
 
-            SSMR3GetStructEx(pSSM, &u.Msg, RT_UOFFSETOF(SHCLCLIENTMSG, aParms), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
-            rc = SSMR3GetStructEx(pSSM, &u.Msg, RT_UOFFSETOF(SHCLCLIENTMSG, aParms), 0 /*fFlags*/, &s_aShClSSMClientMsgCtx[0], NULL);
+            pVMM->pfnSSMR3GetStructEx(pSSM, &u.Msg, RT_UOFFSETOF(SHCLCLIENTMSG, aParms), 0 /*fFlags*/,
+                                      &s_aShClSSMClientMsgHdr[0], NULL);
+            rc = pVMM->pfnSSMR3GetStructEx(pSSM, &u.Msg, RT_UOFFSETOF(SHCLCLIENTMSG, aParms), 0 /*fFlags*/,
+                                           &s_aShClSSMClientMsgCtx[0], NULL);
             AssertRCReturn(rc, rc);
 
             AssertLogRelMsgReturn(u.Msg.cParms <= VMMDEV_MAX_HGCM_PARMS,
@@ -2613,7 +2619,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
             for (uint32_t p = 0; p < pMsg->cParms; p++)
             {
-                rc = HGCMSvcSSMR3Get(&pMsg->aParms[p], pSSM);
+                rc = HGCMSvcSSMR3Get(&pMsg->aParms[p], pSSM, pVMM);
                 AssertRCReturnStmt(rc, shClSvcMsgFree(pClient, pMsg), rc);
             }
 
@@ -2625,7 +2631,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
         if (lenOrVer >= VBOX_SHCL_SAVED_STATE_LEGACY_CID)
         {
             uint64_t cCID;
-            rc = SSMR3GetU64(pSSM, &cCID);
+            rc = pVMM->pfnSSMR3GetU64(pSSM, &cCID);
             AssertRCReturn(rc, rc);
             AssertLogRelMsgReturn(cCID < _16K, ("Too many context IDs: %u (%x)\n", cCID, cCID), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
@@ -2634,7 +2640,8 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
                 PSHCLCLIENTLEGACYCID pCID = (PSHCLCLIENTLEGACYCID)RTMemAlloc(sizeof(SHCLCLIENTLEGACYCID));
                 AssertPtrReturn(pCID, VERR_NO_MEMORY);
 
-                SSMR3GetStructEx(pSSM, pCID, sizeof(SHCLCLIENTLEGACYCID), 0 /* fFlags */, &s_aShClSSMClientLegacyCID[0], NULL);
+                pVMM->pfnSSMR3GetStructEx(pSSM, pCID, sizeof(SHCLCLIENTLEGACYCID), 0 /* fFlags */,
+                                          &s_aShClSSMClientLegacyCID[0], NULL);
                 RTListAppend(&pClient->Legacy.lstCID, &pCID->Node);
             }
         }
@@ -2649,7 +2656,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     ShClBackendSync(pClient);
 
 #else  /* UNIT_TEST */
-    RT_NOREF(u32ClientID, pvClient, pSSM, uVersion);
+    RT_NOREF(u32ClientID, pvClient, pSSM, pVMM, uVersion);
 #endif /* UNIT_TEST */
     return VINF_SUCCESS;
 }

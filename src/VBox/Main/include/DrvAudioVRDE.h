@@ -65,7 +65,7 @@ public:
 
 private:
 
-    int configureDriver(PCFGMNODE pLunCfg);
+    virtual int configureDriver(PCFGMNODE pLunCfg, PCVMMR3VTABLE pVMM) RT_OVERRIDE;
 
     /** Pointer to the associated VRDE audio driver. */
     struct DRVAUDIOVRDE *mpDrv;

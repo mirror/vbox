@@ -2277,7 +2277,7 @@ VMMR3DECL(int) DBGFR3RegCpuQueryU16( PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, u
 VMMR3DECL(int) DBGFR3RegCpuQueryU32( PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, uint32_t    *pu32);
 VMMR3DECL(int) DBGFR3RegCpuQueryU64( PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t    *pu64);
 VMMR3DECL(int) DBGFR3RegCpuQueryU128(PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, uint128_t   *pu128);
-VMMR3DECL(int) DBGFR3RegCpuQueryLrd( PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, long double *plrd);
+/*VMMR3DECL(int) DBGFR3RegCpuQueryLrd( PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, long double *plrd);*/
 VMMR3DECL(int) DBGFR3RegCpuQueryXdtr(PUVM pUVM, VMCPUID idCpu, DBGFREG enmReg, uint64_t *pu64Base, uint16_t *pu16Limit);
 #if 0
 VMMR3DECL(int) DBGFR3RegCpuQueryBatch(PUVM pUVM,VMCPUID idCpu, PDBGFREGENTRY paRegs, size_t cRegs);

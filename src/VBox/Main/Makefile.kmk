@@ -1028,9 +1028,7 @@ VBoxC_LDFLAGS.win += /MANIFEST \
 
 
 VBoxC_LIBS += \
-	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB) \
-	$(if-expr "$(LIB_VMM)" == "$(VBOX_LIB_VMM_LAZY)",$(LIB_REM),) \
-	$(VBOX_LIB_VMM_LAZY)
+	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB)
 VBoxC_LIBS.win += \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/psapi.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
@@ -1067,7 +1065,6 @@ VBoxC_SOURCES += \
 	$(VBoxAPIWrap_0_OUTDIR)/VBoxAPI.d \
 	src-all/DisplayPNGUtil.cpp \
 	src-all/DisplayResampleImage.cpp \
-	src-all/DisplayUtils.cpp \
 	src-all/EventImpl.cpp \
 	src-all/Global.cpp \
 	src-all/GlobalStatusConversion.cpp \
