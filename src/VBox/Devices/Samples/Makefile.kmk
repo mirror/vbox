@@ -27,8 +27,7 @@ VBoxSampleDevice_TEMPLATE = VBOXR3
 VBoxSampleDevice_SOURCES  = \
 	VBoxSampleDevice.cpp
 VBoxSampleDevice_LIBS     = \
-	$(LIB_RUNTIME) \
-	$(LIB_VMM)
+	$(LIB_RUNTIME)
 
 #
 # VBoxSampleDriver - A sample driver module.
@@ -38,8 +37,7 @@ VBoxSampleDriver_TEMPLATE = VBOXR3
 VBoxSampleDriver_SOURCES  = \
 	DrvStorageFilter.cpp
 VBoxSampleDriver_LIBS     = \
-	$(LIB_RUNTIME) \
-	$(LIB_VMM)
+	$(LIB_RUNTIME)
 
 
 #
@@ -51,8 +49,7 @@ VBoxPlaygroundDevice_SOURCES  = \
 	DevPlayground.cpp
 VBoxPlaygroundDevice_LIBS     = \
 	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
-	$(LIB_RUNTIME) \
-	$(LIB_VMM)
+	$(LIB_RUNTIME)
 
 ifdef VBOX_WITH_XPCOM
  ## @todo may be worth creating the VBOX_XPCOM SDK def, or just a SDK_VBOXXPCOM.

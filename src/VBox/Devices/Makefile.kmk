@@ -908,9 +908,6 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   endif
  endif
 
- VBoxDD_LIBS.darwin     += \
- 	$(LIB_REM)
-
 
  ifdef VBOX_WITH_DYNAMIC_DSDT
   VBoxDD_CLEAN          += $(VBoxDD_0_OUTDIR)/vboxdsl.hex
@@ -1174,7 +1171,6 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
 	    $(PATH_STAGE_LIB)/NetBiosBin$(VBOX_SUFF_LIB),\
 	    $(PATH_STAGE_LIB)/iPxeBiosBin$(VBOX_SUFF_LIB)),) \
  	$(LIB_RUNTIME)
- VBoxDD2_LIBS.darwin    += $(LIB_REM)
  VBoxDD2_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD2.dylib
  VBoxDD2_LDFLAGS.linux   = $(VBOX_GCC_NO_UNDEFINED)
  if defined(VBOX_WITH_EFI) && !defined(VBOX_WITH_EFIFW_PACKING)
