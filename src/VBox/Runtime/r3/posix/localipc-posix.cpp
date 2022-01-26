@@ -43,6 +43,7 @@
 #include <iprt/socket.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#include <iprt/path.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -294,6 +295,20 @@ RTDECL(int) RTLocalIpcServerGrantGroupAccess(RTLOCALIPCSERVER hServer, RTGID gid
     else
         LogRel(("RTLocalIpcServerGrantGroupAccess: cannot change IPC socket %s group ownership to %RTgid: errno=%d\n",
                 pThis->Name.sun_path, gid, errno));
+    return RTErrConvertFromErrno(errno);
+}
+
+
+RTDECL(int) RTLocalIpcServerSetAccessMode(RTLOCALIPCSERVER hServer, RTFMODE fMode)
+{
+    PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)hServer;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSERVER_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->Name.sun_path[0] != '\0', VERR_INVALID_STATE);
+
+    if (chmod(pThis->Name.sun_path, fMode & RTFS_UNIX_ALL_ACCESS_PERMS) == 0)
+        return VINF_SUCCESS;
+
     return RTErrConvertFromErrno(errno);
 }
 

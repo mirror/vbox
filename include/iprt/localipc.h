@@ -104,6 +104,15 @@ RTDECL(int) RTLocalIpcServerDestroy(RTLOCALIPCSERVER hServer);
 RTDECL(int) RTLocalIpcServerGrantGroupAccess(RTLOCALIPCSERVER hServer, RTGID gid);
 
 /**
+ * Set access mode for IPC server socket.
+ *
+ * @returns IPRT status code.
+ * @param   hServer     The server handle.
+ * @param   fMode       Access mode.
+ */
+RTDECL(int) RTLocalIpcServerSetAccessMode(RTLOCALIPCSERVER hServer, RTFMODE fMode);
+
+/**
  * Listen for clients.
  *
  * @returns IPRT status code.

@@ -1354,6 +1354,7 @@
 # define RTLocalIpcServerCreate                         RT_MANGLER(RTLocalIpcServerCreate)
 # define RTLocalIpcServerDestroy                        RT_MANGLER(RTLocalIpcServerDestroy)
 # define RTLocalIpcServerGrantGroupAccess               RT_MANGLER(RTLocalIpcServerGrantGroupAccess)
+# define RTLocalIpcServerSetAccessMode                  RT_MANGLER(RTLocalIpcServerSetAccessMode);
 # define RTLocalIpcServerCancel                         RT_MANGLER(RTLocalIpcServerCancel)
 # define RTLocalIpcServerListen                         RT_MANGLER(RTLocalIpcServerListen)
 # define RTLocalIpcSessionConnect                       RT_MANGLER(RTLocalIpcSessionConnect)
