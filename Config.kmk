@@ -7353,19 +7353,16 @@ ifdef VBOX_WITH_EXTPACK
   if1of ($(KBUILD_TARGET), win os2)
    TEMPLATE_VBoxR3ExtPack_LIBS = \
    	$(TEMPLATE_LIBS_VBOXR3) \
-   	$(if-expr "$(VBOX_LIB_VMM_LAZY)" == "$(LIB_VMM)", $(PATH_STAGE_LIB)/VMMR3Imp$(VBOX_SUFF_LIB), $(VBOX_LIB_VMM_LAZY)) \
    	$(PATH_STAGE_LIB)/VBoxRTImp$(VBOX_SUFF_LIB)
   else
    TEMPLATE_VBoxR3ExtPack_LIBS = \
    	$(TEMPLATE_LIBS_VBOXR3) \
-   	$(if-expr "$(VBOX_LIB_VMM_LAZY)" == "$(LIB_VMM)", $(PATH_STAGE_LIB)/VMMR3Imp$(VBOX_SUFF_DLL), $(VBOX_LIB_VMM_LAZY)) \
    	$(PATH_STAGE_LIB)/VBoxRTImp$(VBOX_SUFF_DLL)
   endif
  else
   TEMPLATE_VBoxR3ExtPack_LIBS = \
   	$(TEMPLATE_LIBS_VBOXR3) \
-  	$(LIB_RUNTIME) \
-  	$(VBOX_LIB_VMM_LAZY)
+  	$(LIB_RUNTIME)
  endif
  ifeq ($(KBUILD_TARGET),darwin)
   TEMPLATE_VBoxR3ExtPack_POST_CMDS = $(VBOX_SIGN_EXTPACK_DYLIB_CMDS)
@@ -7384,19 +7381,16 @@ ifdef VBOX_WITH_EXTPACK
   if1of ($(KBUILD_TARGET), win os2)
    TEMPLATE_VBoxR3ExtPackApi_LIBS = \
    	$(TEMPLATE_LIBS_VBOXR3) \
-   	$(if-expr "$(VBOX_LIB_VMM_LAZY)" == "$(LIB_VMM)", $(PATH_STAGE_LIB)/VMMR3Imp$(VBOX_SUFF_LIB), $(VBOX_LIB_VMM_LAZY)) \
    	$(PATH_STAGE_LIB)/VBoxRTImp$(VBOX_SUFF_LIB)
   else
    TEMPLATE_VBoxR3ExtPackApi_LIBS = \
    	$(TEMPLATE_LIBS_VBOXR3) \
-   	$(if-expr "$(VBOX_LIB_VMM_LAZY)" == "$(LIB_VMM)", $(PATH_STAGE_LIB)/VMMR3Imp$(VBOX_SUFF_DLL), $(VBOX_LIB_VMM_LAZY)) \
    	$(PATH_STAGE_LIB)/VBoxRTImp$(VBOX_SUFF_DLL)
   endif
  else
   TEMPLATE_VBoxR3ExtPackApi_LIBS = \
   	$(TEMPLATE_LIBS_VBOXR3) \
-  	$(LIB_RUNTIME) \
-  	$(VBOX_LIB_VMM_LAZY)
+  	$(LIB_RUNTIME)
  endif
  ifeq ($(KBUILD_TARGET),darwin)
   TEMPLATE_VBoxR3ExtPackApi_POST_CMDS = $(VBOX_SIGN_EXTPACK_DYLIB_CMDS)
@@ -7660,7 +7654,6 @@ ifdef VBOX_WITH_QTGUI
    TEMPLATE_VBOXQTGUIEXE_LIBS = \
    	$(VBOX_LIBS_QT) \
    	$(LIB_RUNTIME) \
-   	$(VBOX_LIB_VMM_LAZY) \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/vcruntime.lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
@@ -7675,7 +7668,6 @@ ifdef VBOX_WITH_QTGUI
    TEMPLATE_VBOXQTGUIEXE_LIBS = \
    	$(VBOX_LIBS_QT) \
    	$(LIB_RUNTIME) \
-   	$(VBOX_LIB_VMM_LAZY) \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcprt.lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/msvcrt.lib \
    	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/oldnames.lib \
@@ -7729,9 +7721,7 @@ ifdef VBOX_WITH_QTGUI
   TEMPLATE_VBOXQTGUIEXE_LDFLAGS.amd64 = -m64
   TEMPLATE_VBOXQTGUIEXE_LIBS = \
 	$(VBOX_LIBS_QT) \
-	$(LIB_RUNTIME) \
-	$(if-expr "$(LIB_VMM)" == "$(VBOX_LIB_VMM_LAZY)",$(LIB_REM),) \
-	$(VBOX_LIB_VMM_LAZY)
+	$(LIB_RUNTIME)
 
   ifeq ($(KBUILD_TARGET),linux)
    TEMPLATE_VBOXQTGUIEXE_LDFLAGS += -Wl,-z,noexecstack,-z,relro $(VBOX_LD_as_needed)

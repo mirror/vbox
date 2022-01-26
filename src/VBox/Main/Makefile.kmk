@@ -565,8 +565,7 @@ VBoxSVC_LIBS.solaris = \
 	adm \
 	nsl \
 	devinfo \
-	socket \
-	$(LIB_VMM)
+	socket
 
 VBoxSVC_LIBS.win += \
 	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/dnsapi.lib

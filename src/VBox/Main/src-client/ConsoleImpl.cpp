@@ -6786,7 +6786,7 @@ HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
     if (enmVMState == VMSTATE_CREATED)
     {
 #ifdef VBOX_WITH_EXTPACK
-        vrc = mptrExtPackManager->i_callAllVmPowerOnHooks(this, ptrVM.vtable()->pfnVMR3GetVM(ptrVM.rawUVM()));
+        vrc = mptrExtPackManager->i_callAllVmPowerOnHooks(this, ptrVM.vtable()->pfnVMR3GetVM(ptrVM.rawUVM()), ptrVM.vtable());
 #else
         vrc = VINF_SUCCESS;
 #endif
@@ -8387,7 +8387,7 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
         alock.release();
         vrc = pVMM->pfnVMR3PowerOff(pUVM);
 #ifdef VBOX_WITH_EXTPACK
-        mptrExtPackManager->i_callAllVmPowerOffHooks(this, pVMM->pfnVMR3GetVM(pUVM));
+        mptrExtPackManager->i_callAllVmPowerOffHooks(this, pVMM->pfnVMR3GetVM(pUVM), pVMM);
 #endif
         alock.acquire();
     }
@@ -10497,7 +10497,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                         {
                             /* Start/Resume the VM execution */
 #ifdef VBOX_WITH_EXTPACK
-                            vrc = pConsole->mptrExtPackManager->i_callAllVmPowerOnHooks(pConsole, pVM);
+                            vrc = pConsole->mptrExtPackManager->i_callAllVmPowerOnHooks(pConsole, pVM, pVMM);
 #endif
                             if (RT_SUCCESS(vrc))
                                 vrc = pVMM->pfnVMR3Resume(pConsole->mpUVM, VMRESUMEREASON_STATE_RESTORED);
@@ -10510,7 +10510,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                     {
                         int vrc2 = pVMM->pfnVMR3PowerOff(pConsole->mpUVM); AssertLogRelRC(vrc2);
 #ifdef VBOX_WITH_EXTPACK
-                        pConsole->mptrExtPackManager->i_callAllVmPowerOffHooks(pConsole, pVM);
+                        pConsole->mptrExtPackManager->i_callAllVmPowerOffHooks(pConsole, pVM, pVMM);
 #endif
                     }
                 }
@@ -10525,7 +10525,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                         ErrorInfoKeeper eik;
                         int vrc2 = pVMM->pfnVMR3PowerOff(pConsole->mpUVM); AssertLogRelRC(vrc2);
 #ifdef VBOX_WITH_EXTPACK
-                        pConsole->mptrExtPackManager->i_callAllVmPowerOffHooks(pConsole, pVM);
+                        pConsole->mptrExtPackManager->i_callAllVmPowerOffHooks(pConsole, pVM, pVMM);
 #endif
                     }
                 }
@@ -10536,7 +10536,7 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
                 {
                     /* Power on the VM (i.e. start executing) */
 #ifdef VBOX_WITH_EXTPACK
-                    vrc = pConsole->mptrExtPackManager->i_callAllVmPowerOnHooks(pConsole, pVM);
+                    vrc = pConsole->mptrExtPackManager->i_callAllVmPowerOnHooks(pConsole, pVM, pVMM);
 #endif
                     if (RT_SUCCESS(vrc))
                         vrc = pVMM->pfnVMR3PowerOn(pConsole->mpUVM);

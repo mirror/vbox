@@ -3715,7 +3715,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
     if (RT_SUCCESS(rc))
     {
         pAlock->release();
-        rc = mptrExtPackManager->i_callAllVmConfigureVmmHooks(this, pVM);
+        rc = mptrExtPackManager->i_callAllVmConfigureVmmHooks(this, pVM, pVMM);
         pAlock->acquire();
     }
 #endif

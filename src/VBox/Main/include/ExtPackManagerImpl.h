@@ -124,9 +124,10 @@ public:
     bool        i_callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachine, AutoWriteLock *a_pLock);
 #endif
 #ifdef VBOX_COM_INPROC
-    bool        i_callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc);
-    bool        i_callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc);
-    bool        i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock);
+    bool        i_callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM,
+                                         AutoWriteLock *a_pLock, int *a_pvrc);
+    bool        i_callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM, AutoWriteLock *a_pLock, int *a_pvrc);
+    bool        i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM, AutoWriteLock *a_pLock);
 #endif
     HRESULT     i_checkVrde(void);
     HRESULT     i_getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary);
@@ -253,9 +254,9 @@ public:
     void        i_callAllVmCreatedHooks(IMachine *a_pMachine);
 #endif
 #ifdef VBOX_COM_INPROC
-    int         i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM);
-    int         i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM);
-    void        i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM);
+    int         i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM);
+    int         i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM);
+    void        i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM);
 #endif
     HRESULT     i_checkVrdeExtPack(Utf8Str const *a_pstrExtPack);
     int         i_getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary);

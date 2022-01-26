@@ -1032,18 +1032,20 @@ bool ExtPack::i_callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachi
 #endif /* !VBOX_COM_INPROC */
 
 #ifdef VBOX_COM_INPROC
+
 /**
  * Calls the pfnVMConfigureVMM hook.
  *
  * @returns true if we left the lock, false if we didn't.
- * @param   a_pConsole          The console interface.
- * @param   a_pVM               The VM handle.
- * @param   a_pLock             The write lock held by the caller.
- * @param   a_pvrc              Where to return the status code of the
- *                              callback.  This is always set.  LogRel is
- *                              called on if a failure status is returned.
+ * @param   a_pConsole  The console interface.
+ * @param   a_pVM       The VM handle.
+ * @param   a_pVMM      The VMM function table.
+ * @param   a_pLock     The write lock held by the caller.
+ * @param   a_pvrc      Where to return the status code of the callback.  This
+ *                      is always set.  LogRel is called on if a failure status
+ *                      is returned.
  */
-bool ExtPack::i_callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc)
+bool ExtPack::i_callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM, AutoWriteLock *a_pLock, int *a_pvrc)
 {
     *a_pvrc = VINF_SUCCESS;
     if (   m != NULL
@@ -1054,7 +1056,7 @@ bool ExtPack::i_callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, AutoWrit
         {
             ComPtr<ExtPack> ptrSelfRef = this;
             a_pLock->release();
-            int vrc = m->pReg->pfnVMConfigureVMM(m->pReg, a_pConsole, a_pVM);
+            int vrc = m->pReg->pfnVMConfigureVMM(m->pReg, a_pConsole, a_pVM, a_pVMM);
             *a_pvrc = vrc;
             a_pLock->acquire();
             if (RT_FAILURE(vrc))
@@ -1069,14 +1071,15 @@ bool ExtPack::i_callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, AutoWrit
  * Calls the pfnVMPowerOn hook.
  *
  * @returns true if we left the lock, false if we didn't.
- * @param   a_pConsole          The console interface.
- * @param   a_pVM               The VM handle.
- * @param   a_pLock             The write lock held by the caller.
- * @param   a_pvrc              Where to return the status code of the
- *                              callback.  This is always set.  LogRel is
- *                              called on if a failure status is returned.
+ * @param   a_pConsole  The console interface.
+ * @param   a_pVM       The VM handle.
+ * @param   a_pVMM      The VMM function table.
+ * @param   a_pLock     The write lock held by the caller.
+ * @param   a_pvrc      Where to return the status code of the callback.  This
+ *                      is always set.  LogRel is called on if a failure status
+ *                      is returned.
  */
-bool ExtPack::i_callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc)
+bool ExtPack::i_callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM, AutoWriteLock *a_pLock, int *a_pvrc)
 {
     *a_pvrc = VINF_SUCCESS;
     if (   m != NULL
@@ -1087,7 +1090,7 @@ bool ExtPack::i_callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock
         {
             ComPtr<ExtPack> ptrSelfRef = this;
             a_pLock->release();
-            int vrc = m->pReg->pfnVMPowerOn(m->pReg, a_pConsole, a_pVM);
+            int vrc = m->pReg->pfnVMPowerOn(m->pReg, a_pConsole, a_pVM, a_pVMM);
             *a_pvrc = vrc;
             a_pLock->acquire();
             if (RT_FAILURE(vrc))
@@ -1102,11 +1105,12 @@ bool ExtPack::i_callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock
  * Calls the pfnVMPowerOff hook.
  *
  * @returns true if we left the lock, false if we didn't.
- * @param   a_pConsole          The console interface.
- * @param   a_pVM               The VM handle.
- * @param   a_pLock             The write lock held by the caller.
+ * @param   a_pConsole  The console interface.
+ * @param   a_pVM       The VM handle.
+ * @param   a_pVMM      The VMM function table.
+ * @param   a_pLock     The write lock held by the caller.
  */
-bool ExtPack::i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock)
+bool ExtPack::i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM, AutoWriteLock *a_pLock)
 {
     if (   m != NULL
         && m->hMainMod != NIL_RTLDRMOD
@@ -1116,13 +1120,14 @@ bool ExtPack::i_callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLoc
         {
             ComPtr<ExtPack> ptrSelfRef = this;
             a_pLock->release();
-            m->pReg->pfnVMPowerOff(m->pReg, a_pConsole, a_pVM);
+            m->pReg->pfnVMPowerOff(m->pReg, a_pConsole, a_pVM, a_pVMM);
             a_pLock->acquire();
             return true;
         }
     }
     return false;
 }
+
 #endif /* VBOX_COM_INPROC */
 
 /**
@@ -3363,15 +3368,17 @@ void ExtPackManager::i_callAllVmCreatedHooks(IMachine *a_pMachine)
 #endif
 
 #ifdef VBOX_COM_INPROC
+
 /**
  * Calls the pfnVMConfigureVMM hook for all working extension packs.
  *
  * @returns VBox status code.  Stops on the first failure, expecting the caller
  *          to signal this to the caller of the CFGM constructor.
- * @param   a_pConsole          The console interface for the VM.
- * @param   a_pVM               The VM handle.
+ * @param   a_pConsole  The console interface for the VM.
+ * @param   a_pVM       The VM handle.
+ * @param   a_pVMM      The VMM function table.
  */
-int ExtPackManager::i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM)
+int ExtPackManager::i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -3384,7 +3391,7 @@ int ExtPackManager::i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM
     for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); ++it)
     {
         int vrc;
-        (*it)->i_callVmConfigureVmmHook(a_pConsole, a_pVM, &autoLock, &vrc);
+        (*it)->i_callVmConfigureVmmHook(a_pConsole, a_pVM, a_pVMM, &autoLock, &vrc);
         if (RT_FAILURE(vrc))
             return vrc;
     }
@@ -3397,10 +3404,11 @@ int ExtPackManager::i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM
  *
  * @returns VBox status code.  Stops on the first failure, expecting the caller
  *          to not power on the VM.
- * @param   a_pConsole          The console interface for the VM.
- * @param   a_pVM               The VM handle.
+ * @param   a_pConsole  The console interface for the VM.
+ * @param   a_pVM       The VM handle.
+ * @param   a_pVMM      The VMM function table.
  */
-int ExtPackManager::i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM)
+int ExtPackManager::i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -3413,7 +3421,7 @@ int ExtPackManager::i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM)
     for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); ++it)
     {
         int vrc;
-        (*it)->i_callVmPowerOnHook(a_pConsole, a_pVM, &autoLock, &vrc);
+        (*it)->i_callVmPowerOnHook(a_pConsole, a_pVM, a_pVMM, &autoLock, &vrc);
         if (RT_FAILURE(vrc))
             return vrc;
     }
@@ -3424,10 +3432,11 @@ int ExtPackManager::i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM)
 /**
  * Calls the pfnVMPowerOff hook for all working extension packs.
  *
- * @param   a_pConsole          The console interface for the VM.
- * @param   a_pVM               The VM handle. Can be NULL.
+ * @param   a_pConsole  The console interface for the VM.
+ * @param   a_pVM       The VM handle. Can be NULL.
+ * @param   a_pVMM      The VMM function table.
  */
-void ExtPackManager::i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM)
+void ExtPackManager::i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM, PCVMMR3VTABLE a_pVMM)
 {
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
@@ -3438,10 +3447,10 @@ void ExtPackManager::i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM)
     ExtPackList             llExtPacks = m->llInstalledExtPacks;
 
     for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); ++it)
-        (*it)->i_callVmPowerOffHook(a_pConsole, a_pVM, &autoLock);
+        (*it)->i_callVmPowerOffHook(a_pConsole, a_pVM, a_pVMM, &autoLock);
 }
-#endif
 
+#endif /* VBOX_COM_INPROC */
 
 /**
  * Checks that the specified extension pack contains a VRDE module and that it

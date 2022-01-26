@@ -535,8 +535,10 @@ typedef struct VBOXEXTPACKVMREG
      * @param   pThis       Pointer to this structure.
      * @param   pConsole    The console interface.
      * @param   pVM         The cross context VM structure.
+     * @param   pVMM        The VMM function table.
      */
-    DECLCALLBACKMEMBER(int, pfnVMConfigureVMM,(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM));
+    DECLCALLBACKMEMBER(int, pfnVMConfigureVMM,(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole,
+                                               PVM pVM, PCVMMR3VTABLE pVMM));
 
     /**
      * Hook for doing work right before powering on the VM.
@@ -545,8 +547,10 @@ typedef struct VBOXEXTPACKVMREG
      * @param   pThis       Pointer to this structure.
      * @param   pConsole    The console interface.
      * @param   pVM         The cross context VM structure.
+     * @param   pVMM        The VMM function table.
      */
-    DECLCALLBACKMEMBER(int, pfnVMPowerOn,(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM));
+    DECLCALLBACKMEMBER(int, pfnVMPowerOn,(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole,
+                                          PVM pVM, PCVMMR3VTABLE pVMM));
 
     /**
      * Hook for doing work after powering off the VM.
@@ -554,8 +558,10 @@ typedef struct VBOXEXTPACKVMREG
      * @param   pThis       Pointer to this structure.
      * @param   pConsole    The console interface.
      * @param   pVM         The cross context VM structure. Can be NULL.
+     * @param   pVMM        The VMM function table.
      */
-    DECLCALLBACKMEMBER(void, pfnVMPowerOff,(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM));
+    DECLCALLBACKMEMBER(void, pfnVMPowerOff,(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole,
+                                            PVM pVM, PCVMMR3VTABLE pVMM));
 
     /**
      * Query the IUnknown interface to an object in the main VM module.
@@ -580,7 +586,7 @@ typedef struct VBOXEXTPACKVMREG
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKVMREG;
 /** Current version of the VBOXEXTPACKVMREG structure.  */
-#define VBOXEXTPACKVMREG_VERSION      RT_MAKE_U32(0, 3)
+#define VBOXEXTPACKVMREG_VERSION      RT_MAKE_U32(1, 0)
 
 
 /**
