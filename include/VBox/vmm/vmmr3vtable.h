@@ -103,7 +103,7 @@ typedef struct VMMR3VTABLE
 
 /** @def VTABLE_ENTRY
  * Define a VTable entry for the given function. */
-#if defined(__cplusplus) || defined(DOXYGEN_RUNNING)
+#if defined(DOXYGEN_RUNNING) || (defined(__cplusplus) && RT_GNUC_PREREQ_EX(4, 8, /*non-gcc: */1) /* For 4.8+ we enable c++11 */)
 # define VTABLE_ENTRY(a_Api) /** @copydoc a_Api */ decltype(a_Api) *pfn ## a_Api;
 #elif defined(__GNUC__)
 # define VTABLE_ENTRY(a_Api) /** @copydoc a_Api */ typeof(a_Api)   *pfn ## a_Api;
