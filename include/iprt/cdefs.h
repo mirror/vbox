@@ -1597,9 +1597,9 @@
  * @param   a_Args      The argument list enclosed in parentheses.
  * @note    DECL_NOTHROW is implied, but not supported by all compilers yet.
  */
-#if RT_CLANG_PREREQ(6,0)
+#if RT_CLANG_PREREQ(6,0) && !defined(RT_RELAXED_CALLBACKS_TYPES)
 # define DECLCALLBACKTYPE_EX(a_RetType, a_CallConv, a_Name, a_Args) __attribute__((__nothrow__)) a_RetType a_CallConv a_Name a_Args
-#elif RT_MSC_PREREQ(RT_MSC_VER_VS2015) /*?*/ && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
+#elif RT_MSC_PREREQ(RT_MSC_VER_VS2015) /*?*/ && defined(__cplusplus) && defined(_MSC_EXTENSIONS) && !defined(RT_RELAXED_CALLBACKS_TYPES)
 # define DECLCALLBACKTYPE_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType a_CallConv a_Name a_Args throw()
 #else
 # define DECLCALLBACKTYPE_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType a_CallConv a_Name a_Args
@@ -1623,9 +1623,9 @@
  */
 #if defined(__IBMC__) || defined(__IBMCPP__)
 # define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (* a_CallConv a_Name) a_Args
-#elif RT_CLANG_PREREQ(6,0)
+#elif RT_CLANG_PREREQ(6,0) && !defined(RT_RELAXED_CALLBACKS_TYPES)
 # define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) __attribute__((__nothrow__)) a_RetType (a_CallConv * a_Name) a_Args
-#elif RT_MSC_PREREQ(RT_MSC_VER_VS2015) /*?*/ && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
+#elif RT_MSC_PREREQ(RT_MSC_VER_VS2015) /*?*/ && defined(__cplusplus) && defined(_MSC_EXTENSIONS) && !defined(RT_RELAXED_CALLBACKS_TYPES)
 # define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv * a_Name) a_Args throw()
 #else
 # define DECLCALLBACKPTR_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv * a_Name) a_Args
@@ -1649,9 +1649,9 @@
  */
 #if defined(__IBMC__) || defined(__IBMCPP__)
 # define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (* a_CallConv a_Name) a_Args
-#elif RT_CLANG_PREREQ(6,0)
+#elif RT_CLANG_PREREQ(6,0) && !defined(RT_RELAXED_CALLBACKS_TYPES)
 # define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) __attribute__((__nothrow__)) a_RetType (a_CallConv *a_Name) a_Args
-#elif RT_MSC_PREREQ(RT_MSC_VER_VS2015) /*?*/ && defined(__cplusplus) && defined(_MSC_EXTENSIONS)
+#elif RT_MSC_PREREQ(RT_MSC_VER_VS2015) /*?*/ && defined(__cplusplus) && defined(_MSC_EXTENSIONS) && !defined(RT_RELAXED_CALLBACKS_TYPES)
 # define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv *a_Name) a_Args throw()
 #else
 # define DECLCALLBACKMEMBER_EX(a_RetType, a_CallConv, a_Name, a_Args) a_RetType (a_CallConv *a_Name) a_Args
