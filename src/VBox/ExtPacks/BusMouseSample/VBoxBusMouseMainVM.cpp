@@ -36,7 +36,7 @@
 
 #include <VBox/err.h>
 #include <VBox/version.h>
-#include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <iprt/string.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -62,7 +62,8 @@ static PCVBOXEXTPACKHLP g_pHlp;
 /**
  * @interface_method_impl{VBOXEXTPACKVMREG,pfnVMConfigureVMM
  */
-static DECLCALLBACK(int)  vboxBusMouseExtPackVM_VMConfigureVMM(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM)
+static DECLCALLBACK(int)  vboxBusMouseExtPackVM_VMConfigureVMM(PCVBOXEXTPACKVMREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole,
+                                                               PVM pVM, PCVMMR3VTABLE pVMM)
 {
     RT_NOREF(pThis, pConsole);
 
@@ -75,16 +76,16 @@ static DECLCALLBACK(int)  vboxBusMouseExtPackVM_VMConfigureVMM(PCVBOXEXTPACKVMRE
     if (RT_FAILURE(rc))
         return rc;
 
-    PCFGMNODE pCfgRoot = CFGMR3GetRoot(pVM);
+    PCFGMNODE pCfgRoot = pVMM->pfnCFGMR3GetRoot(pVM);
     AssertReturn(pCfgRoot, VERR_INTERNAL_ERROR_3);
 
-    PCFGMNODE pCfgDevices = CFGMR3GetChild(pCfgRoot, "PDM/Devices");
+    PCFGMNODE pCfgDevices = pVMM->pfnCFGMR3GetChild(pCfgRoot, "PDM/Devices");
     AssertReturn(pCfgDevices, VERR_INTERNAL_ERROR_3);
 
     PCFGMNODE pCfgMine;
-    rc = CFGMR3InsertNode(pCfgDevices, "VBoxBusMouse", &pCfgMine);
+    rc = pVMM->pfnCFGMR3InsertNode(pCfgDevices, "VBoxBusMouse", &pCfgMine);
     AssertRCReturn(rc, rc);
-    rc = CFGMR3InsertString(pCfgMine, "Path", szPath);
+    rc = pVMM->pfnCFGMR3InsertString(pCfgMine, "Path", szPath);
     AssertRCReturn(rc, rc);
 
     /*
@@ -94,14 +95,14 @@ static DECLCALLBACK(int)  vboxBusMouseExtPackVM_VMConfigureVMM(PCVBOXEXTPACKVMRE
     rc = g_pHlp->pfnFindModule(g_pHlp, "VBoxBusMouseRC", NULL, VBOXEXTPACKMODKIND_RC, szPath, sizeof(szPath), NULL);
     AssertRCReturn(rc, rc);
     RTPathStripFilename(szPath);
-    rc = CFGMR3InsertString(pCfgMine, "RCSearchPath", szPath);
+    rc = pVMM->pfnCFGMR3InsertString(pCfgMine, "RCSearchPath", szPath);
     AssertRCReturn(rc, rc);
 #endif
 
     rc = g_pHlp->pfnFindModule(g_pHlp, "VBoxBusMouseR0", NULL, VBOXEXTPACKMODKIND_R0, szPath, sizeof(szPath), NULL);
     AssertRCReturn(rc, rc);
     RTPathStripFilename(szPath);
-    rc = CFGMR3InsertString(pCfgMine, "R0SearchPath", szPath);
+    rc = pVMM->pfnCFGMR3InsertString(pCfgMine, "R0SearchPath", szPath);
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
