@@ -35,6 +35,7 @@
 #include <iprt/process.h>
 
 #if defined(RT_OS_LINUX)
+# include <VBox/HostServices/GuestPropertySvc.h>
 
 /** Defines the DRM client executable (image). */
 # define VBOX_DRMCLIENT_EXECUTABLE           "/usr/bin/VBoxDRMClient"
@@ -45,34 +46,78 @@
 #endif /* RT_OS_LINUX */
 
 /**
- * Returns if the DRM resizing client is needed.
+ * Check if specified guest property exist.
+ *
+ * @returns \c true if the property exists and its flags do match, \c false otherwise.
+ * @param   pszPropName     Guest property name.
+ * @param   fPropFlags      Guest property flags mask to verify if property exist.
+ *                          If \p fPropFlags is 0, flags verification is omitted.
+ */
+static bool vbglR3DrmClientCheckProp(const char *pszPropName, uint32_t fPropFlags)
+{
+    bool fExist = false;
+#if defined(RT_OS_LINUX) && defined(VBOX_WITH_GUEST_PROPS)
+    uint32_t idClient;
+
+    int rc = VbglR3GuestPropConnect(&idClient);
+    if (RT_SUCCESS(rc))
+    {
+        char *pcszFlags = NULL;
+
+        rc = VbglR3GuestPropReadEx(idClient, pszPropName, NULL /* ppszValue */, &pcszFlags, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            /* Check property flags match. */
+            if (fPropFlags)
+            {
+                uint32_t fFlags = 0;
+
+                rc = GuestPropValidateFlags(pcszFlags, &fFlags);
+                fExist = RT_SUCCESS(rc) && (fFlags & fPropFlags);
+            }
+            else
+                fExist = true;
+
+            RTStrFree(pcszFlags);
+        }
+
+        VbglR3GuestPropDisconnect(idClient);
+    }
+#endif /* RT_OS_LINUX */
+    return fExist;
+}
+
+/**
+ * Returns true if the DRM resizing client is needed.
  * This is achieved by querying existence of a guest property.
  *
  * @returns \c true if the DRM resizing client is needed, \c false if not.
  */
 VBGLR3DECL(bool) VbglR3DrmClientIsNeeded(void)
 {
-#if defined(RT_OS_LINUX)
-    bool fStartClient = false;
-
-# ifdef VBOX_WITH_GUEST_PROPS
-    uint32_t idClient;
-    int rc = VbglR3GuestPropConnect(&idClient);
-    if (RT_SUCCESS(rc))
-    {
-        fStartClient = VbglR3GuestPropExist(idClient, VBOX_DRMCLIENT_GUEST_PROP_RESIZE /*pszPropName*/);
-        VbglR3GuestPropDisconnect(idClient);
-    }
-# endif
-    return fStartClient;
-
-#else /* !RT_OS_LINUX */
-    return false;
-#endif
+    return vbglR3DrmClientCheckProp(VBOX_DRMCLIENT_GUEST_PROP_RESIZE, 0);
 }
 
 /**
- * Returns if the DRM resizing client already is running.
+ * Returns true if the DRM IPC server socket access should be restricted.
+ *
+ * Restricted access means that only users from a certain group should
+ * be granted with read and write access permission to IPC socket. Check
+ * is done by examining \c VBGLR3DRMIPCPROPRESTRICT guest property. Property
+ * is only considered valid if is read-only for guest. I.e., the following
+ * property should be set on the host side:
+ *
+ *  VBoxManage guestproperty set <VM> /VirtualBox/GuestAdd/DRMIpcRestricted 1 --flags RDONLYGUEST
+ *
+ * @returns \c true if restricted socket access is required, \c false otherwise.
+ */
+VBGLR3DECL(bool) VbglR3DrmRestrictedIpcAccessIsNeeded(void)
+{
+    return vbglR3DrmClientCheckProp(VBGLR3DRMIPCPROPRESTRICT, GUEST_PROP_F_RDONLYGUEST);
+}
+
+/**
+ * Returns true if the DRM resizing client already is running.
  * This is achieved by querying existence of a guest property.
  *
  * @returns \c true if the DRM resizing client is running, \c false if not.
