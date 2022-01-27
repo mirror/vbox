@@ -800,7 +800,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
      * Here is how to list images inside an install.wim file from powershell:
      * https://docs.microsoft.com/en-us/powershell/module/dism/get-windowsimage?view=windowsserver2022-ps
      *
-     * Unfortunately, powershell is available by default on non-windows hosts, so we
+     * Unfortunately, powershell is not available by default on non-windows hosts, so we
      * have to do it ourselves of course, but this can help when coding & testing.
      */
 
