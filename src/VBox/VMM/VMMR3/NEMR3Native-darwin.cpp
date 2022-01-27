@@ -253,6 +253,9 @@ typedef hv_return_t FN_HV_VMX_VCPU_SET_SHADOW_ACCESS(hv_vcpuid_t vcpu, uint32_t 
 typedef hv_return_t FN_HV_VMX_READ_CAPABILITY(hv_vmx_capability_t field, uint64_t *value);
 typedef hv_return_t FN_HV_VMX_VCPU_SET_APIC_ADDRESS(hv_vcpuid_t vcpu, hv_gpaddr_t gpa);
 
+/* Since 11.0 */
+typedef hv_return_t FN_HV_VMX_VCPU_GET_CAP_WRITE_VMCS(hv_vcpuid_t vcpu, uint32_t field, uint64_t *allowed_0, uint64_t *allowed_1);
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -302,6 +305,8 @@ static FN_HV_VMX_VCPU_READ_SHADOW_VMCS  *g_pfnHvVmxVCpuReadShadowVmcs   = NULL; 
 static FN_HV_VMX_VCPU_WRITE_SHADOW_VMCS *g_pfnHvVmxVCpuWriteShadowVmcs  = NULL; /* Since 10.15 */
 static FN_HV_VMX_VCPU_SET_SHADOW_ACCESS *g_pfnHvVmxVCpuSetShadowAccess  = NULL; /* Since 10.15 */
 static FN_HV_VMX_VCPU_SET_APIC_ADDRESS  *g_pfnHvVmxVCpuSetApicAddress   = NULL; /* Since 10.10 */
+
+static FN_HV_VMX_VCPU_GET_CAP_WRITE_VMCS *g_pfnHvVmxVCpuGetCapWriteVmcs = NULL; /* Since 11.0 */
 /** @} */
 
 
@@ -352,6 +357,7 @@ static const struct
     NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuWriteShadowVmcs, hv_vmx_vcpu_write_shadow_vmcs),
     NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuSetShadowAccess, hv_vmx_vcpu_set_shadow_access),
     NEM_DARWIN_IMPORT(false, g_pfnHvVmxVCpuSetApicAddress,  hv_vmx_vcpu_set_apic_address),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuGetCapWriteVmcs, hv_vmx_vcpu_get_cap_write_vmcs)
 #undef NEM_DARWIN_IMPORT
 };
 
@@ -397,7 +403,33 @@ static const struct
 # define hv_vmx_vcpu_write_shadow_vmcs  g_pfnHvVmxVCpuWriteShadowVmcs
 # define hv_vmx_vcpu_set_shadow_access  g_pfnHvVmxVCpuSetShadowAccess
 # define hv_vmx_vcpu_set_apic_address   g_pfnHvVmxVCpuSetApicAddress
+
+# define hv_vmx_vcpu_get_cap_write_vmcs g_pfnHvVmxVCpuGetCapWriteVmcs
 #endif
+
+static const struct
+{
+    uint32_t    u32VmcsFieldId;  /**< The VMCS field identifier. */
+    const char  *pszVmcsField;   /**< The VMCS field name. */
+    bool        f64Bit;
+} g_aVmcsFieldsCap[] =
+{
+#define NEM_DARWIN_VMCS64_FIELD_CAP(a_u32VmcsFieldId) { (a_u32VmcsFieldId), #a_u32VmcsFieldId, true  }
+#define NEM_DARWIN_VMCS32_FIELD_CAP(a_u32VmcsFieldId) { (a_u32VmcsFieldId), #a_u32VmcsFieldId, false }
+
+    NEM_DARWIN_VMCS32_FIELD_CAP(VMX_VMCS32_CTRL_PIN_EXEC),
+    NEM_DARWIN_VMCS32_FIELD_CAP(VMX_VMCS32_CTRL_PROC_EXEC),
+    NEM_DARWIN_VMCS32_FIELD_CAP(VMX_VMCS32_CTRL_EXCEPTION_BITMAP),
+    NEM_DARWIN_VMCS32_FIELD_CAP(VMX_VMCS32_CTRL_EXIT),
+    NEM_DARWIN_VMCS32_FIELD_CAP(VMX_VMCS32_CTRL_ENTRY),
+    NEM_DARWIN_VMCS32_FIELD_CAP(VMX_VMCS32_CTRL_PROC_EXEC2),
+    NEM_DARWIN_VMCS32_FIELD_CAP(VMX_VMCS32_CTRL_PLE_GAP),
+    NEM_DARWIN_VMCS32_FIELD_CAP(VMX_VMCS32_CTRL_PLE_WINDOW),
+    NEM_DARWIN_VMCS64_FIELD_CAP(VMX_VMCS64_CTRL_TSC_OFFSET_FULL),
+    NEM_DARWIN_VMCS64_FIELD_CAP(VMX_VMCS64_GUEST_DEBUGCTL_FULL)
+#undef NEM_DARWIN_VMCS64_FIELD_CAP
+#undef NEM_DARWIN_VMCS32_FIELD_CAP
+};
 
 
 /*********************************************************************************************************************************
@@ -2476,6 +2508,48 @@ static DECLCALLBACK(int) nemR3DarwinNativeInitVCpuOnEmt(PVM pVM, PVMCPU pVCpu, V
         /* First call initializs the MSR structure holding the capabilities of the host CPU. */
         int rc = nemR3DarwinCapsInit();
         AssertRCReturn(rc, rc);
+
+        if (hv_vmx_vcpu_get_cap_write_vmcs)
+        {
+            /* Log the VMCS field write capabilities. */
+            for (uint32_t i = 0; i < RT_ELEMENTS(g_aVmcsFieldsCap); i++)
+            {
+                uint64_t u64Allowed0 = 0;
+                uint64_t u64Allowed1 = 0;
+
+                hrc = hv_vmx_vcpu_get_cap_write_vmcs(pVCpu->nem.s.hVCpuId, g_aVmcsFieldsCap[i].u32VmcsFieldId,
+                                                     &u64Allowed0, &u64Allowed1);
+                if (hrc == HV_SUCCESS)
+                {
+                    if (g_aVmcsFieldsCap[i].f64Bit)
+                        LogRel(("NEM:    %s = (allowed_0=%#016RX64 allowed_1=%#016RX64)\n",
+                                g_aVmcsFieldsCap[i].pszVmcsField, u64Allowed0, u64Allowed1));
+                    else
+                        LogRel(("NEM:    %s = (allowed_0=%#08RX32 allowed_1=%#08RX32)\n",
+                                g_aVmcsFieldsCap[i].pszVmcsField, (uint32_t)u64Allowed0, (uint32_t)u64Allowed1));
+
+                    uint32_t cBits = g_aVmcsFieldsCap[i].f64Bit ? 64 : 32;
+                    for (uint32_t iBit = 0; iBit < cBits; iBit++)
+                    {
+                        bool fAllowed0 = RT_BOOL(u64Allowed0 & RT_BIT_64(iBit));
+                        bool fAllowed1 = RT_BOOL(u64Allowed1 & RT_BIT_64(iBit));
+
+                        if (!fAllowed0 && !fAllowed1)
+                            LogRel(("NEM:        Bit %02u = Must NOT be set\n", iBit));
+                        else if (!fAllowed0 && fAllowed1)
+                            LogRel(("NEM:        Bit %02u = Can be set or not be set\n", iBit));
+                        else if (fAllowed0 && !fAllowed1)
+                            LogRel(("NEM:        Bit %02u = UNDEFINED (AppleHV error)!\n", iBit));
+                        else if (fAllowed0 && fAllowed1)
+                            LogRel(("NEM:        Bit %02u = MUST be set\n", iBit));
+                        else
+                            AssertFailed();
+                    }
+                }
+                else
+                    LogRel(("NEM:    %s = failed to query (hrc=%d)\n", g_aVmcsFieldsCap[i].pszVmcsField, hrc));
+            }
+        }
     }
 
     int rc = nemR3DarwinInitVmcs(pVCpu);
