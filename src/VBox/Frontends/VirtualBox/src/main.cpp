@@ -278,12 +278,6 @@ static void ShowHelp()
 # endif /* VBOX_WITH_DEBUGGER_GUI */
         "\n"
         "Expert options:\n"
-        "  --disable-patm             disable code patching (ignored by AMD-V/VT-x)\n"
-        "  --disable-csam             disable code scanning (ignored by AMD-V/VT-x)\n"
-        "  --recompile-supervisor     recompiled execution of supervisor code (*)\n"
-        "  --recompile-user           recompiled execution of user code (*)\n"
-        "  --recompile-all            recompiled execution of all code, with disabled\n"
-        "                             code patching and scanning\n"
         "  --execute-all-in-iem       For debugging the interpreted execution mode.\n"
         "  --driverless               Do not open the support driver (NEM or IEM mode).\n"
         "  --warp-pct <pct>           time warp factor, 100%% (= 1.0) = normal speed\n"
