@@ -1006,90 +1006,6 @@ end function
 
 
 ''
-' Checks for a platform SDK that works with the compiler
-'
-sub CheckForPlatformSDK(strOptSDK)
-   dim strPathPSDK, strVersion, strSubKey, str, strHkey
-   PrintHdr "Windows Platform SDK (recent)"
-
-   '
-   ' Search for it.
-   '
-
-   ' Check the supplied argument first.
-   strPathPSDK = CheckForPlatformSDKSub(strOptSDK, strVersion)
-
-   ' The tools location (first).
-   if strPathPSDK = "" and g_blnInternalFirst = true then strPathPSDK = SearchTargetPlusTools("sdk", "v7.1", GetRef("CheckForPlatformSDKSub"), strVersion)
-   if strPathPSDK = "" and g_blnInternalFirst = true then strPathPSDK = SearchTargetPlusTools("sdk", "v8.0", GetRef("CheckForPlatformSDKSub"), strVersion)
-
-   ' Look for it in the environment
-   if strPathPSDK = "" then  strPathPSDK = CheckForPlatformSDKSub(EnvGet("MSSdk"), strVersion)
-   if strPathPSDK = "" then  strPathPSDK = CheckForPlatformSDKSub(EnvGet("Mstools"), strVersion)
-
-   ' Check if there is one installed with the compiler.
-   if strPathPSDK = "" then  strPathPSDK = CheckForPlatformSDKSub(g_strPathVCC & "/PlatformSDK", strVersion)
-
-   ' Check the registry next (ASSUMES sorting).
-   if strPathPSDK = "" then
-      for each strHkey in Array("HKLM", "HKCU")
-         for each strSubKey in RegEnumSubKeysRVerSorted(strHkey, "SOFTWARE\Microsoft\Microsoft SDKs\Windows")
-            str = LogRegGetString(strHkey & "\SOFTWARE\Microsoft\Microsoft SDKs\Windows\" & strSubKey & "\InstallationFolder")
-            strPathPSDK = CheckForPlatformSDKSub(str, strVersion)
-            if strPathPSDK <> "" then exit for
-         next
-         if strPathPSDK <> "" then exit for
-      next
-   end if
-
-   ' The tools location (post).
-   if strPathPSDK = "" and g_blnInternalFirst = false then strPathPSDK = SearchTargetPlusTools("sdk", "v7.1", GetRef("CheckForPlatformSDKSub"), strVersion)
-   if strPathPSDK = "" and g_blnInternalFirst = false then strPathPSDK = SearchTargetPlusTools("sdk", "v8.0", GetRef("CheckForPlatformSDKSub"), strVersion)
-
-   ' Give up.
-   if strPathPSDK = "" then
-      MsgError "Cannot find a suitable Platform SDK. Check configure.log and the build requirements."
-      exit sub
-   end if
-
-   '
-   ' Emit the config.
-   '
-   strPathPSDK = UnixSlashes(PathAbs(strPathPSDK))
-   CfgPrintAssign "PATH_SDK_WINPSDK" & strVersion, strPathPSDK
-   CfgPrintAssign "VBOX_WINPSDK",  "WINPSDK" & strVersion
-
-   PrintResult "Windows Platform SDK", strPathPSDK
-   PrintResultMsg "Windows Platform SDK version", strVersion
-   g_strVerPSDK  = strVersion
-   g_strPathPSDK = strPathPSDK
-end sub
-
-'' Checks if the specified path points to a usable PSDK.
-function CheckForPlatformSDKSub(strPathPSDK, ByRef strVersion)
-   dim strOutput
-   CheckForPlatformSDKSub = ""
-   if strPathPSDK <> "" then
-      LogPrint "Trying: strPathPSDK=" & strPathPSDK
-      if   LogFileExists(strPathPSDK, "include/Windows.h") _
-       and LogFileExists(strPathPSDK, "lib/Kernel32.Lib") _
-       and LogFileExists(strPathPSDK, "lib/User32.Lib") _
-       and LogFileExists(strPathPSDK, "bin/rc.exe") _
-       and Shell("""" & DosSlashes(strPathPSDK & "/bin/rc.exe") & """" , True, strOutput) <> 0 _
-      then
-         if InStr(1, strOutput, "Resource Compiler Version 6.2.") > 0 then
-            strVersion = "80"
-            CheckForPlatformSDKSub = UnixSlashes(PathAbs(strPathPSDK))
-         elseif InStr(1, strOutput, "Resource Compiler Version 6.1.") > 0 then
-            strVersion = "71"
-            CheckForPlatformSDKSub = UnixSlashes(PathAbs(strPathPSDK))
-         end if
-      end if
-   end if
-end function
-
-
-''
 ' Checks for a windows 10 SDK (later also WDK).
 '
 sub CheckForSDK10(strOptSDK10, strOptSDK10Version)
@@ -2094,12 +2010,10 @@ function Main
    ' Parse arguments.
    '
    strOptDDK = ""
-   strOptDXDDK = ""
    strOptkBuild = ""
    strOptlibSDL = ""
    strOptQt5 = ""
    strOptQt5Infix = ""
-   strOptSDK = ""
    strOptSDK10 = ""
    strOptSDK10Version = ""
    strOptVC = ""
@@ -2151,7 +2065,7 @@ function Main
          case "--with-qt5-infix"
             strOptQt5Infix = strPath
          case "--with-sdk"
-            strOptSDK = strPath
+            MsgWarning "Ignoring --with-sdk (the legacy Platform SDK is no longer required)."
          case "--with-sdk10"
             strOptSDK10 = strPath
          case "--with-sdk10-version"
@@ -2274,7 +2188,6 @@ function Main
    CheckForkBuild       strOptkBuild
    CheckForWinDDK       strOptDDK
    CheckForVisualCPP    strOptVC, strOptVCCommon
-   CheckForPlatformSDK  strOptSDK
    CheckForSDK10        strOptSDK10, strOptSDK10Version
    CheckForMidl         strOptMidl
    CheckForYasm         strOptYasm
