@@ -67,7 +67,6 @@
 #include <VBox/vmm/gim.h>
 #include "VMInternal.h"
 #include <VBox/vmm/vmcc.h>
-#include <VBox/vmm/vmmr3vtable.h>
 
 #include <VBox/sup.h>
 #if defined(VBOX_WITH_DTRACE_R3) && !defined(VBOX_WITH_NATIVE_DTRACE)

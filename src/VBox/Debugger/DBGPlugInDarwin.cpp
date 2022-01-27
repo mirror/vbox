@@ -21,7 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF /// @todo add new log group.
 #include "DBGPlugIns.h"
-#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>
@@ -131,15 +131,15 @@ typedef DBGDIGGERDARWIN *PDBGDIGGERDARWIN;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData);
+static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData);
 
 
 
 /**
  * @interface_method_impl{DBGFOSIDMESG,pfnQueryKernelLog}
  */
-static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
-                                                             char *pszBuf, size_t cbBuf, size_t *pcbActual)
+static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, uint32_t fFlags,
+                                                             uint32_t cMessages, char *pszBuf, size_t cbBuf, size_t *pcbActual)
 {
     RT_NOREF1(fFlags);
     PDBGDIGGERDARWIN pData = RT_FROM_MEMBER(pThis, DBGDIGGERDARWIN, IDmesg);
@@ -150,7 +150,7 @@ static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis
     /*
      * The 'msgbufp' variable points to a struct msgbuf (bsd/kern/subr_log.c).
      */
-    RTDBGAS  hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    RTDBGAS  hAs = pVMM->pfnDBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
     RTDBGMOD hMod;
     int rc = RTDbgAsModuleByName(hAs, "mach_kernel", 0, &hMod);
     if (RT_FAILURE(rc))
@@ -163,8 +163,9 @@ static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis
     rc = RTDbgModSymbolByName(hMod, "_msgbufp", &SymInfo);
     if (RT_SUCCESS(rc))
     {
-        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, SymInfo.Value + pData->AddrKernel.FlatPtr),
-                           &GCPtrMsgBufP, pData->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t));
+        rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                    pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, SymInfo.Value + pData->AddrKernel.FlatPtr),
+                                    &GCPtrMsgBufP, pData->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t));
         if (RT_FAILURE(rc))
         {
             LogRel(("dbgDiggerDarwinIDmsg_QueryKernelLog: failed to read _msgbufp at %RGv: %Rrc\n", Addr.FlatPtr, rc));
@@ -203,8 +204,8 @@ static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis
         uint32_t msg_bufr;
         uint64_t msg_bufc; /**< Size depends on windows size. */
     } MsgBuf;
-    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrMsgBufP),
-                       &MsgBuf, sizeof(MsgBuf) - (pData->f64Bit ? 0 : sizeof(uint32_t)) );
+    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, GCPtrMsgBufP),
+                                &MsgBuf, sizeof(MsgBuf) - (pData->f64Bit ? 0 : sizeof(uint32_t)) );
     if (RT_FAILURE(rc))
     {
         LogRel(("dbgDiggerDarwinIDmsg_QueryKernelLog: failed to read msgbuf struct at %RGv: %Rrc\n", Addr.FlatPtr, rc));
@@ -238,7 +239,8 @@ static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis
                 MsgBuf.msg_size));
         return VERR_INVALID_STATE;
     }
-    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, MsgBuf.msg_bufc), pchMsgBuf, MsgBuf.msg_size);
+    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, MsgBuf.msg_bufc), pchMsgBuf, MsgBuf.msg_size);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -311,11 +313,11 @@ static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis
 /**
  * @copydoc DBGFOSREG::pfnStackUnwindAssist
  */
-static DECLCALLBACK(int) dbgDiggerDarwinStackUnwindAssist(PUVM pUVM, void *pvData, VMCPUID idCpu, PDBGFSTACKFRAME pFrame,
-                                                          PRTDBGUNWINDSTATE pState, PCCPUMCTX pInitialCtx, RTDBGAS hAs,
-                                                          uint64_t *puScratch)
+static DECLCALLBACK(int) dbgDiggerDarwinStackUnwindAssist(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData, VMCPUID idCpu,
+                                                          PDBGFSTACKFRAME pFrame, PRTDBGUNWINDSTATE pState, PCCPUMCTX pInitialCtx,
+                                                          RTDBGAS hAs, uint64_t *puScratch)
 {
-    RT_NOREF(pUVM, pvData, idCpu, pFrame, pState, pInitialCtx, hAs, puScratch);
+    RT_NOREF(pUVM, pVMM, pvData, idCpu, pFrame, pState, pInitialCtx, hAs, puScratch);
     return VINF_SUCCESS;
 }
 
@@ -323,9 +325,9 @@ static DECLCALLBACK(int) dbgDiggerDarwinStackUnwindAssist(PUVM pUVM, void *pvDat
 /**
  * @copydoc DBGFOSREG::pfnQueryInterface
  */
-static DECLCALLBACK(void *) dbgDiggerDarwinQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
+static DECLCALLBACK(void *) dbgDiggerDarwinQueryInterface(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData, DBGFOSINTERFACE enmIf)
 {
-    RT_NOREF1(pUVM);
+    RT_NOREF(pUVM, pVMM);
     PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
     switch (enmIf)
     {
@@ -341,7 +343,8 @@ static DECLCALLBACK(void *) dbgDiggerDarwinQueryInterface(PUVM pUVM, void *pvDat
 /**
  * @copydoc DBGFOSREG::pfnQueryVersion
  */
-static DECLCALLBACK(int)  dbgDiggerDarwinQueryVersion(PUVM pUVM, void *pvData, char *pszVersion, size_t cchVersion)
+static DECLCALLBACK(int)  dbgDiggerDarwinQueryVersion(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData,
+                                                      char *pszVersion, size_t cchVersion)
 {
     PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
     Assert(pThis->fValid);
@@ -349,7 +352,7 @@ static DECLCALLBACK(int)  dbgDiggerDarwinQueryVersion(PUVM pUVM, void *pvData, c
     /*
      * It's all in the linux banner.
      */
-    int rc = DBGFR3MemReadString(pUVM, 0, &pThis->AddrKernelVersion, pszVersion, cchVersion);
+    int rc = pVMM->pfnDBGFR3MemReadString(pUVM, 0, &pThis->AddrKernelVersion, pszVersion, cchVersion);
     if (RT_SUCCESS(rc))
     {
         char *pszEnd = RTStrEnd(pszVersion, cchVersion);
@@ -369,9 +372,9 @@ static DECLCALLBACK(int)  dbgDiggerDarwinQueryVersion(PUVM pUVM, void *pvData, c
 /**
  * @copydoc DBGFOSREG::pfnTerm
  */
-static DECLCALLBACK(void)  dbgDiggerDarwinTerm(PUVM pUVM, void *pvData)
+static DECLCALLBACK(void)  dbgDiggerDarwinTerm(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
-    RT_NOREF1(pUVM);
+    RT_NOREF(pUVM, pVMM);
     PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
 
     pThis->fValid = false;
@@ -381,7 +384,7 @@ static DECLCALLBACK(void)  dbgDiggerDarwinTerm(PUVM pUVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnRefresh
  */
-static DECLCALLBACK(int)  dbgDiggerDarwinRefresh(PUVM pUVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerDarwinRefresh(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
     NOREF(pThis);
@@ -390,8 +393,8 @@ static DECLCALLBACK(int)  dbgDiggerDarwinRefresh(PUVM pUVM, void *pvData)
     /*
      * For now we'll flush and reload everything.
      */
-    dbgDiggerDarwinTerm(pUVM, pvData);
-    return dbgDiggerDarwinInit(pUVM, pvData);
+    dbgDiggerDarwinTerm(pUVM, pVMM, pvData);
+    return dbgDiggerDarwinInit(pUVM, pVMM, pvData);
 }
 
 
@@ -401,12 +404,14 @@ static DECLCALLBACK(int)  dbgDiggerDarwinRefresh(PUVM pUVM, void *pvData)
  *
  * @returns true if present, false if not.
  * @param   pUVM                The user mode VM structure.
+ * @param   pVMM                The VMM function table.
  * @param   uSegAddr            The segment addresss.
  * @param   cbSeg               The segment size.
  * @param   uMinAddr            Lowest allowed address.
  * @param   uMaxAddr            Highest allowed address.
  */
-static bool dbgDiggerDarwinIsSegmentPresent(PUVM pUVM, uint64_t uSegAddr, uint64_t cbSeg, uint64_t uMinAddr, uint64_t uMaxAddr)
+static bool dbgDiggerDarwinIsSegmentPresent(PUVM pUVM, PCVMMR3VTABLE pVMM, uint64_t uSegAddr, uint64_t cbSeg,
+                                            uint64_t uMinAddr, uint64_t uMaxAddr)
 {
     /*
      * Validate the size and address.
@@ -448,7 +453,8 @@ static bool dbgDiggerDarwinIsSegmentPresent(PUVM pUVM, uint64_t uSegAddr, uint64
     {
         uint8_t     abBuf[8];
         DBGFADDRESS Addr;
-        int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, uSegAddr), abBuf, sizeof(abBuf));
+        int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, uSegAddr),
+                                        abBuf, sizeof(abBuf));
         if (RT_FAILURE(rc))
         {
             LogRel(("OSXDig: __LINKEDIT read error at %#RX64: %Rrc\n", uSegAddr, rc));
@@ -499,7 +505,8 @@ static bool dbgDiggerDarwinIsValidSegOrSectName(const char *pszName, size_t cbNa
 }
 
 
-static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t uModAddr, const char *pszName, bool *pf64Bit)
+static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, PCVMMR3VTABLE pVMM,
+                                    uint64_t uModAddr, const char *pszName, bool *pf64Bit)
 {
     RT_NOREF1(pThis);
     union
@@ -511,7 +518,8 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
 
     /* Read the first page of the image. */
     DBGFADDRESS ModAddr;
-    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &ModAddr, uModAddr), uBuf.ab, X86_PAGE_4K_SIZE);
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                    pVMM->pfnDBGFR3AddrFromFlat(pUVM, &ModAddr, uModAddr), uBuf.ab, X86_PAGE_4K_SIZE);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -538,8 +546,8 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
     /* Do we need to read a 2nd page to get all the load commands? If so, do it. */
     if (uBuf.Hdr32.sizeofcmds + (f64Bit ? sizeof(mach_header_64_t) : sizeof(mach_header_32_t)) > X86_PAGE_4K_SIZE)
     {
-        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &ModAddr, uModAddr + X86_PAGE_4K_SIZE),
-                           &uBuf.ab[X86_PAGE_4K_SIZE], X86_PAGE_4K_SIZE);
+        rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &ModAddr, uModAddr + X86_PAGE_4K_SIZE),
+                                    &uBuf.ab[X86_PAGE_4K_SIZE], X86_PAGE_4K_SIZE);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -577,7 +585,7 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
                 if (!dbgDiggerDarwinIsValidSegOrSectName(uLCmd.pSeg32->segname, sizeof(uLCmd.pSeg32->segname)))
                     return VERR_INVALID_NAME;
                 if (   !strcmp(uLCmd.pSeg32->segname, "__LINKEDIT")
-                    && !(fHasLinkEdit = dbgDiggerDarwinIsSegmentPresent(pUVM, uLCmd.pSeg32->vmaddr, uLCmd.pSeg32->vmsize,
+                    && !(fHasLinkEdit = dbgDiggerDarwinIsSegmentPresent(pUVM, pVMM, uLCmd.pSeg32->vmaddr, uLCmd.pSeg32->vmsize,
                                                                         uModAddr, uModAddr + _64M)))
                     break; /* This usually is discarded or not loaded at all. */
                 if (cSegs >= RT_ELEMENTS(aSegs))
@@ -598,7 +606,7 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
                 if (!dbgDiggerDarwinIsValidSegOrSectName(uLCmd.pSeg64->segname, sizeof(uLCmd.pSeg64->segname)))
                     return VERR_INVALID_NAME;
                 if (   !strcmp(uLCmd.pSeg64->segname, "__LINKEDIT")
-                    && !(fHasLinkEdit = dbgDiggerDarwinIsSegmentPresent(pUVM, uLCmd.pSeg64->vmaddr, uLCmd.pSeg64->vmsize,
+                    && !(fHasLinkEdit = dbgDiggerDarwinIsSegmentPresent(pUVM, pVMM, uLCmd.pSeg64->vmaddr, uLCmd.pSeg64->vmsize,
                                                                         uModAddr, uModAddr + _128M)))
                     break; /* This usually is discarded or not loaded at all. */
                 if (cSegs >= RT_ELEMENTS(aSegs))
@@ -657,7 +665,7 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
      */
     RTDBGMOD hMod;
     rc = RTDbgModCreateFromMachOImage(&hMod, pszName, NULL, f64Bit ? RTLDRARCH_AMD64 : RTLDRARCH_X86_32, NULL /*phLdrModIn*/,
-                                      0 /*cbImage*/, cSegs, aSegs, &Uuid, DBGFR3AsGetConfig(pUVM),
+                                      0 /*cbImage*/, cSegs, aSegs, &Uuid, pVMM->pfnDBGFR3AsGetConfig(pUVM),
                                       RTDBGMOD_F_NOT_DEFERRED | (fHasLinkEdit ? RTDBGMOD_F_MACHO_LOAD_LINKEDIT : 0));
 
 
@@ -669,10 +677,10 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
     {
         DBGFADDRESS DbgfAddr;
         RTERRINFOSTATIC ErrInfo;
-        rc = DBGFR3ModInMem(pUVM, DBGFR3AddrFromFlat(pUVM, &DbgfAddr, uModAddr),
-                            DBGFMODINMEM_F_NO_CONTAINER_FALLBACK,
-                            pszName, NULL /*pszFilename*/, f64Bit ? RTLDRARCH_AMD64 : RTLDRARCH_X86_32, 0 /*cbImage */,
-                            &hMod, RTErrInfoInitStatic(&ErrInfo));
+        rc = pVMM->pfnDBGFR3ModInMem(pUVM, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &DbgfAddr, uModAddr),
+                                     DBGFMODINMEM_F_NO_CONTAINER_FALLBACK,
+                                     pszName, NULL /*pszFilename*/, f64Bit ? RTLDRARCH_AMD64 : RTLDRARCH_X86_32, 0 /*cbImage */,
+                                     &hMod, RTErrInfoInitStatic(&ErrInfo));
         if (RT_FAILURE(rc))
             LogRel(("OSXDig: Failed to do an in-memory-opening of '%s' at %#RX64: %Rrc%s%s\n", pszName, uModAddr, rc,
                     RTErrInfoIsSet(&ErrInfo.Core) ? " - " : "", RTErrInfoIsSet(&ErrInfo.Core) ? ErrInfo.Core.pszMsg : ""));
@@ -717,7 +725,7 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
     /*
      * Link the module.
      */
-    RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    RTDBGAS hAs = pVMM->pfnDBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
     if (hAs != NIL_RTDBGAS)
     {
         //uint64_t uRvaNext = 0; - what was this?
@@ -787,7 +795,7 @@ static bool dbgDiggerDarwinIsValidVersion(const char *pszVersion)
 /**
  * @copydoc DBGFOSREG::pfnInit
  */
-static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
     Assert(!pThis->fValid);
@@ -796,7 +804,7 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData)
      * Add the kernel module.
      */
     bool f64Bit;
-    int rc = dbgDiggerDarwinAddModule(pThis, pUVM, pThis->AddrKernel.FlatPtr, "mach_kernel", &f64Bit);
+    int rc = dbgDiggerDarwinAddModule(pThis, pUVM, pVMM, pThis->AddrKernel.FlatPtr, "mach_kernel", &f64Bit);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -808,23 +816,23 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData)
          *       it's any easier to find without any kernel map than 'kmod'.
          */
         RTDBGSYMBOL SymInfo;
-        rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "mach_kernel!kmod", &SymInfo, NULL);
+        rc = pVMM->pfnDBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "mach_kernel!kmod", &SymInfo, NULL);
         if (RT_FAILURE(rc))
-            rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "mach_kernel!_kmod", &SymInfo, NULL);
+            rc = pVMM->pfnDBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "mach_kernel!_kmod", &SymInfo, NULL);
         if (RT_SUCCESS(rc))
         {
             DBGFADDRESS AddrModInfo;
-            DBGFR3AddrFromFlat(pUVM, &AddrModInfo, SymInfo.Value);
+            pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrModInfo, SymInfo.Value);
 
             /* Read the variable. */
             RTUINT64U uKmodValue = { 0 };
             if (f64Bit)
-                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrModInfo, &uKmodValue.u, sizeof(uKmodValue.u));
+                rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrModInfo, &uKmodValue.u, sizeof(uKmodValue.u));
             else
-                rc = DBGFR3MemRead (pUVM, 0 /*idCpu*/, &AddrModInfo, &uKmodValue.s.Lo, sizeof(uKmodValue.s.Lo));
+                rc = pVMM->pfnDBGFR3MemRead (pUVM, 0 /*idCpu*/, &AddrModInfo, &uKmodValue.s.Lo, sizeof(uKmodValue.s.Lo));
             if (RT_SUCCESS(rc))
             {
-                DBGFR3AddrFromFlat(pUVM, &AddrModInfo, uKmodValue.u);
+                pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrModInfo, uKmodValue.u);
 
                 /* Walk the list of modules. */
                 uint32_t cIterations = 0;
@@ -856,8 +864,8 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData)
                         OSX32_kmod_info_t   Info32;
                     } uMod;
                     RT_ZERO(uMod);
-                    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrModInfo, &uMod,
-                                       f64Bit ? sizeof(uMod.Info64) : sizeof(uMod.Info32));
+                    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrModInfo, &uMod,
+                                                f64Bit ? sizeof(uMod.Info64) : sizeof(uMod.Info32));
                     if (RT_FAILURE(rc))
                     {
                         LogRel(("OSXDig: Error reading kmod_info structure at %RGv: %Rrc\n", AddrModInfo.FlatPtr, rc));
@@ -940,13 +948,13 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData)
                      */
                     LogRel(("OSXDig: kmod_info @%RGv: '%s' ver '%s', image @%#llx LB %#llx cbHdr=%#llx\n", AddrModInfo.FlatPtr,
                             pszName, pszVersion, uImageAddr, cbImage, cbHdr));
-                    rc = dbgDiggerDarwinAddModule(pThis, pUVM, uImageAddr, pszName, NULL);
+                    rc = dbgDiggerDarwinAddModule(pThis, pUVM, pVMM, uImageAddr, pszName, NULL);
 
 
                     /*
                      * Advance to the next kmod_info entry.
                      */
-                    DBGFR3AddrFromFlat(pUVM, &AddrModInfo, f64Bit ? uMod.Info64.next : uMod.Info32.next);
+                    pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrModInfo, f64Bit ? uMod.Info64.next : uMod.Info32.next);
                 }
             }
             else
@@ -966,7 +974,7 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnProbe
  */
-static DECLCALLBACK(bool)  dbgDiggerDarwinProbe(PUVM pUVM, void *pvData)
+static DECLCALLBACK(bool)  dbgDiggerDarwinProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
 
@@ -985,12 +993,12 @@ static DECLCALLBACK(bool)  dbgDiggerDarwinProbe(PUVM pUVM, void *pvData)
            with cpu in long mode that darwin used for a number of versions. */
         { UINT64_C(0x00001000), UINT64_C(0x0ffff000), }
     };
-    for (unsigned iRange = DBGFR3CpuGetMode(pUVM, 0 /*idCpu*/) != CPUMMODE_LONG;
+    for (unsigned iRange = pVMM->pfnDBGFR3CpuGetMode(pUVM, 0 /*idCpu*/) != CPUMMODE_LONG;
           iRange < RT_ELEMENTS(s_aRanges);
           iRange++)
     {
         DBGFADDRESS     KernelAddr;
-        for (DBGFR3AddrFromFlat(pUVM, &KernelAddr, s_aRanges[iRange].uStart);
+        for (pVMM->pfnDBGFR3AddrFromFlat(pUVM, &KernelAddr, s_aRanges[iRange].uStart);
              KernelAddr.FlatPtr < s_aRanges[iRange].uEnd;
              KernelAddr.FlatPtr += X86_PAGE_4K_SIZE)
         {
@@ -1000,11 +1008,11 @@ static DECLCALLBACK(bool)  dbgDiggerDarwinProbe(PUVM pUVM, void *pvData)
                 '_','_','K','L','D',  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, /* section_32_t::segname. */
             };
 
-            int rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, s_aRanges[iRange].uEnd - KernelAddr.FlatPtr,
-                                   1, s_abNeedle, sizeof(s_abNeedle), &KernelAddr);
+            int rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, s_aRanges[iRange].uEnd - KernelAddr.FlatPtr,
+                                            1, s_abNeedle, sizeof(s_abNeedle), &KernelAddr);
             if (RT_FAILURE(rc))
                 break;
-            DBGFR3AddrSub(&KernelAddr, KernelAddr.FlatPtr & X86_PAGE_4K_OFFSET_MASK);
+            pVMM->pfnDBGFR3AddrSub(&KernelAddr, KernelAddr.FlatPtr & X86_PAGE_4K_OFFSET_MASK);
 
             /*
              * Read the first page of the image and check the headers.
@@ -1015,7 +1023,7 @@ static DECLCALLBACK(bool)  dbgDiggerDarwinProbe(PUVM pUVM, void *pvData)
                 mach_header_64_t    Hdr64;
                 mach_header_32_t    Hdr32;
             } uBuf;
-            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &KernelAddr, uBuf.ab, X86_PAGE_4K_SIZE);
+            rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &KernelAddr, uBuf.ab, X86_PAGE_4K_SIZE);
             if (RT_FAILURE(rc))
                 continue;
             AssertCompileMembersSameSizeAndOffset(mach_header_64_t, magic,   mach_header_32_t, magic);
@@ -1046,10 +1054,10 @@ static DECLCALLBACK(bool)  dbgDiggerDarwinProbe(PUVM pUVM, void *pvData)
             /*
              * Finally, find the kernel version string.
              */
-            rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, 32*_1M, 1, RT_STR_TUPLE("Darwin Kernel Version"),
-                               &pThis->AddrKernelVersion);
+            rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, 32*_1M, 1, RT_STR_TUPLE("Darwin Kernel Version"),
+                                        &pThis->AddrKernelVersion);
             if (RT_FAILURE(rc))
-                DBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelVersion, 0);
+                pVMM->pfnDBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelVersion, 0);
             return true;
         }
     }
@@ -1060,19 +1068,18 @@ static DECLCALLBACK(bool)  dbgDiggerDarwinProbe(PUVM pUVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnDestruct
  */
-static DECLCALLBACK(void)  dbgDiggerDarwinDestruct(PUVM pUVM, void *pvData)
+static DECLCALLBACK(void)  dbgDiggerDarwinDestruct(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
-    RT_NOREF2(pUVM, pvData);
-
+    RT_NOREF(pUVM, pVMM, pvData);
 }
 
 
 /**
  * @copydoc DBGFOSREG::pfnConstruct
  */
-static DECLCALLBACK(int)  dbgDiggerDarwinConstruct(PUVM pUVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerDarwinConstruct(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
-    RT_NOREF1(pUVM);
+    RT_NOREF(pUVM, pVMM);
     PDBGDIGGERDARWIN pThis = (PDBGDIGGERDARWIN)pvData;
 
     pThis->IDmesg.u32Magic = DBGFOSIDMESG_MAGIC;

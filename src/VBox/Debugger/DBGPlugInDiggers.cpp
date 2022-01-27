@@ -21,13 +21,13 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGC
 #include <VBox/dbg.h>
-#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include "DBGPlugIns.h"
 #include <VBox/version.h>
 #include <iprt/errcore.h>
 
 
-DECLEXPORT(int) DbgPlugInEntry(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg)
+DECLEXPORT(int) DbgPlugInEntry(DBGFPLUGINOP enmOperation, PUVM pUVM, PCVMMR3VTABLE pVMM, uintptr_t uArg)
 {
     static PCDBGFOSREG s_aPlugIns[] =
     {
@@ -48,12 +48,12 @@ DECLEXPORT(int) DbgPlugInEntry(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t u
 
             for (unsigned i = 0; i < RT_ELEMENTS(s_aPlugIns); i++)
             {
-                int rc = DBGFR3OSRegister(pUVM, s_aPlugIns[i]);
+                int rc = pVMM->pfnDBGFR3OSRegister(pUVM, s_aPlugIns[i]);
                 if (RT_FAILURE(rc))
                 {
                     AssertRC(rc);
                     while (i-- > 0)
-                        DBGFR3OSDeregister(pUVM, s_aPlugIns[i]);
+                        pVMM->pfnDBGFR3OSDeregister(pUVM, s_aPlugIns[i]);
                     return rc;
                 }
             }
@@ -64,7 +64,7 @@ DECLEXPORT(int) DbgPlugInEntry(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t u
         {
             for (unsigned i = 0; i < RT_ELEMENTS(s_aPlugIns); i++)
             {
-                int rc = DBGFR3OSDeregister(pUVM, s_aPlugIns[i]);
+                int rc = pVMM->pfnDBGFR3OSDeregister(pUVM, s_aPlugIns[i]);
                 AssertRC(rc);
             }
             return VINF_SUCCESS;

@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/vmm.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/uvm.h>
 #include <VBox/vmm/vm.h>
@@ -366,7 +367,7 @@ static DECLCALLBACK(int) dbgfR3PlugInLoad(PUVM pUVM, const char *pszName, const 
         /*
          * Try initialize it.
          */
-        rc = pPlugIn->pfnEntry(DBGFPLUGINOP_INIT, pUVM, VBOX_VERSION);
+        rc = pPlugIn->pfnEntry(DBGFPLUGINOP_INIT, pUVM, VMMR3GetVTable(), VBOX_VERSION);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -537,7 +538,7 @@ VMMR3DECL(int) DBGFR3PlugInUnload(PUVM pUVM, const char *pszName)
         else
             pUVM->dbgf.s.pPlugInHead = pPlugIn->pNext;
 
-        pPlugIn->pfnEntry(DBGFPLUGINOP_TERM, pUVM, 0);
+        pPlugIn->pfnEntry(DBGFPLUGINOP_TERM, pUVM, VMMR3GetVTable(), 0);
         RTLdrClose(pPlugIn->hLdrMod);
 
         pPlugIn->pfnEntry = NULL;
@@ -567,7 +568,7 @@ static DECLCALLBACK(void) dbgfPlugInUnloadAll(PUVM pUVM)
         PDBGFPLUGIN pPlugin = pUVM->dbgf.s.pPlugInHead;
         pUVM->dbgf.s.pPlugInHead = pPlugin->pNext;
 
-        pPlugin->pfnEntry(DBGFPLUGINOP_TERM, pUVM, 0);
+        pPlugin->pfnEntry(DBGFPLUGINOP_TERM, pUVM, VMMR3GetVTable(), 0);
 
         int rc2 = RTLdrClose(pPlugin->hLdrMod);
         AssertRC(rc2);

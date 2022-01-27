@@ -54,13 +54,13 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_vm_apis   VM All Contexts API
- * @ingroup grp_vm
+/** @defgroup grp_vmm_vtable    VMM Function Table
+ * @ingroup grp_vmm
  * @{ */
 
 
 /** Magic and version for the VMM vtable.  (Magic: Emmet Cohen)   */
-#define VMMR3VTABLE_MAGIC_VERSION         RT_MAKE_U64(0x19900525, 0x00010000)
+#define VMMR3VTABLE_MAGIC_VERSION         RT_MAKE_U64(0x19900525, 0x00020000)
 /** Compatibility mask: These bits must match - magic and major version. */
 #define VMMR3VTABLE_MAGIC_VERSION_MASK    RT_MAKE_U64(0xffffffff, 0xffff0000)
 
@@ -83,8 +83,6 @@ RT_C_DECLS_BEGIN
 typedef DECLCALLBACKTYPE(PCVMMR3VTABLE, FNVMMGETVTABLE,(void));
 /** Pointer to VMM vtable getter. */
 typedef FNVMMGETVTABLE                 *PFNVMMGETVTABLE;
-/** @copydoc FNVMMGETVTABLE */
-VMMR3DECL(PCVMMR3VTABLE)                VMMR3GetVTable(void);
 /** The name of the FNVMMGETVTABLE function. */
 #define VMMR3VTABLE_GETTER_NAME         "VMMR3GetVTable"
 

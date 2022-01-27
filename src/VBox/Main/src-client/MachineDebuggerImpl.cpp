@@ -1007,7 +1007,7 @@ HRESULT MachineDebugger::queryOSKernelLog(ULONG aMaxMessages, com::Utf8Str &aDme
             if (RT_SUCCESS(vrc))
             {
                 uint32_t cMessages = aMaxMessages == 0 ? UINT32_MAX : aMaxMessages;
-                vrc = pDmesg->pfnQueryKernelLog(pDmesg, ptrVM.rawUVM(), 0 /*fFlags*/, cMessages,
+                vrc = pDmesg->pfnQueryKernelLog(pDmesg, ptrVM.rawUVM(), ptrVM.vtable(), 0 /*fFlags*/, cMessages,
                                                 aDmesg.mutableRaw(), cbBuf, &cbActual);
 
                 uint32_t cTries = 10;
@@ -1016,7 +1016,7 @@ HRESULT MachineDebugger::queryOSKernelLog(ULONG aMaxMessages, com::Utf8Str &aDme
                     cbBuf = RT_ALIGN_Z(cbActual + _4K, _4K);
                     vrc = aDmesg.reserveNoThrow(cbBuf);
                     if (RT_SUCCESS(vrc))
-                        vrc = pDmesg->pfnQueryKernelLog(pDmesg, ptrVM.rawUVM(), 0 /*fFlags*/, cMessages,
+                        vrc = pDmesg->pfnQueryKernelLog(pDmesg, ptrVM.rawUVM(), ptrVM.vtable(), 0 /*fFlags*/, cMessages,
                                                         aDmesg.mutableRaw(), cbBuf, &cbActual);
                 }
                 if (RT_SUCCESS(vrc))

@@ -2396,17 +2396,19 @@ typedef struct DBGFOSREG
      *
      * @returns VBox status code.
      * @param   pUVM    The user mode VM handle.
+     * @param   pVMM    The VMM function table.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(int, pfnConstruct,(PUVM pUVM, void *pvData));
+    DECLCALLBACKMEMBER(int, pfnConstruct,(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData));
 
     /**
      * Destroys the instance.
      *
      * @param   pUVM    The user mode VM handle.
+     * @param   pVMM    The VMM function table.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(void, pfnDestruct,(PUVM pUVM, void *pvData));
+    DECLCALLBACKMEMBER(void, pfnDestruct,(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData));
 
     /**
      * Probes the guest memory for OS finger prints.
@@ -2416,9 +2418,10 @@ typedef struct DBGFOSREG
      *
      * @returns true if is an OS handled by this module, otherwise false.
      * @param   pUVM    The user mode VM handle.
+     * @param   pVMM    The VMM function table.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(bool, pfnProbe,(PUVM pUVM, void *pvData));
+    DECLCALLBACKMEMBER(bool, pfnProbe,(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData));
 
     /**
      * Initializes a fresly detected guest, loading symbols and such useful stuff.
@@ -2427,9 +2430,10 @@ typedef struct DBGFOSREG
      *
      * @returns VBox status code.
      * @param   pUVM    The user mode VM handle.
+     * @param   pVMM    The VMM function table.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(int, pfnInit,(PUVM pUVM, void *pvData));
+    DECLCALLBACKMEMBER(int, pfnInit,(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData));
 
     /**
      * Refreshes symbols and stuff following a redetection of the same OS.
@@ -2438,9 +2442,10 @@ typedef struct DBGFOSREG
      *
      * @returns VBox status code.
      * @param   pUVM    The user mode VM handle.
+     * @param   pVMM    The VMM function table.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(int, pfnRefresh,(PUVM pUVM, void *pvData));
+    DECLCALLBACKMEMBER(int, pfnRefresh,(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData));
 
     /**
      * Terminates an OS when a new (or none) OS has been detected,
@@ -2449,9 +2454,10 @@ typedef struct DBGFOSREG
      * This is called after pfnProbe and if needed before pfnDestruct.
      *
      * @param   pUVM    The user mode VM handle.
+     * @param   pVMM    The VMM function table.
      * @param   pvData  Pointer to the instance data.
      */
-    DECLCALLBACKMEMBER(void, pfnTerm,(PUVM pUVM, void *pvData));
+    DECLCALLBACKMEMBER(void, pfnTerm,(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData));
 
     /**
      * Queries the version of the running OS.
@@ -2460,11 +2466,12 @@ typedef struct DBGFOSREG
      *
      * @returns VBox status code.
      * @param   pUVM    The user mode VM handle.
+     * @param   pVMM    The VMM function table.
      * @param   pvData      Pointer to the instance data.
      * @param   pszVersion  Where to store the version string.
      * @param   cchVersion  The size of the version string buffer.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryVersion,(PUVM pUVM, void *pvData, char *pszVersion, size_t cchVersion));
+    DECLCALLBACKMEMBER(int, pfnQueryVersion,(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData, char *pszVersion, size_t cchVersion));
 
     /**
      * Queries the pointer to a interface.
@@ -2476,10 +2483,11 @@ typedef struct DBGFOSREG
      *
      * @returns Pointer to the interface if available, NULL if not available.
      * @param   pUVM    The user mode VM handle.
+     * @param   pVMM    The VMM function table.
      * @param   pvData  Pointer to the instance data.
      * @param   enmIf   The interface identifier.
      */
-    DECLCALLBACKMEMBER(void *, pfnQueryInterface,(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf));
+    DECLCALLBACKMEMBER(void *, pfnQueryInterface,(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData, DBGFOSINTERFACE enmIf));
 
     /**
      * Stack unwind assist callback.
@@ -2488,6 +2496,7 @@ typedef struct DBGFOSREG
      *
      * @returns VBox status code (allocation error or something of  similar fatality).
      * @param   pUVM            The user mode VM handle.
+     * @param   pVMM    The VMM function table.
      * @param   pvData          Pointer to the instance data.
      * @param   idCpu           The CPU that's unwinding it's stack.
      * @param   pFrame          The current frame. Okay to modify it a little.
@@ -2496,7 +2505,7 @@ typedef struct DBGFOSREG
      * @param   hAs             The address space being used for the unwind.
      * @param   puScratch       Scratch area (initialized to zero, no dtor).
      */
-    DECLCALLBACKMEMBER(int, pfnStackUnwindAssist,(PUVM pUVM, void *pvData, VMCPUID idCpu, PDBGFSTACKFRAME pFrame,
+    DECLCALLBACKMEMBER(int, pfnStackUnwindAssist,(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData, VMCPUID idCpu, PDBGFSTACKFRAME pFrame,
                                                   PRTDBGUNWINDSTATE pState, PCCPUMCTX pInitialCtx, RTDBGAS hAs,
                                                   uint64_t *puScratch));
 
@@ -2534,6 +2543,7 @@ typedef struct DBGFOSIDMESG
      *
      * @param   pThis       Pointer to the interface structure.
      * @param   pUVM        The user mode VM handle.
+     * @param   pVMM        The VMM function table.
      * @param   fFlags      Flags reserved for future use, MBZ.
      * @param   cMessages   The number of messages to retrieve, counting from the
      *                      end of the log (i.e. like tail), use UINT32_MAX for all.
@@ -2543,8 +2553,8 @@ typedef struct DBGFOSIDMESG
      *                      including zero terminator.  On VERR_BUFFER_OVERFLOW this
      *                      holds the necessary buffer size.  Optional.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryKernelLog,(struct DBGFOSIDMESG *pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
-                                               char *pszBuf, size_t cbBuf, size_t *pcbActual));
+    DECLCALLBACKMEMBER(int, pfnQueryKernelLog,(struct DBGFOSIDMESG *pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, uint32_t fFlags,
+                                               uint32_t cMessages, char *pszBuf, size_t cbBuf, size_t *pcbActual));
     /** Trailing magic (DBGFOSIDMESG_MAGIC). */
     uint32_t    u32EndMagic;
 } DBGFOSIDMESG;
@@ -2573,7 +2583,7 @@ typedef struct DBGFOSIWINNT
      * @param   puBuildNumber                   Where to store the build number, optional.
      * @param   pf32Bit                         Where to store the flag whether this is a 32bit Windows NT, optional.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryVersion,(struct DBGFOSIWINNT *pThis, PUVM pUVM,
+    DECLCALLBACKMEMBER(int, pfnQueryVersion,(struct DBGFOSIWINNT *pThis, PUVM pUVM, PCVMMR3VTABLE pVMM,
                                              uint32_t *puVersMajor, uint32_t *puVersMinor,
                                              uint32_t *puBuildNumber, bool *pf32Bit));
 
@@ -2583,10 +2593,11 @@ typedef struct DBGFOSIWINNT
      * @returns VBox status code.
      * @param   pThis                           Pointer to the interface structure.
      * @param   pUVM                            The user mode VM handle.
+     * @param   pVMM                            The VMM function table.
      * @param   pGCPtrKernBase                  Where to store the kernel base on success.
      * @param   pGCPtrPsLoadedModuleList        Where to store the pointer to the laoded module list head on success.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryKernelPtrs,(struct DBGFOSIWINNT *pThis, PUVM pUVM,
+    DECLCALLBACKMEMBER(int, pfnQueryKernelPtrs,(struct DBGFOSIWINNT *pThis, PUVM pUVM, PCVMMR3VTABLE pVMM,
                                                 PRTGCUINTPTR pGCPtrKernBase, PRTGCUINTPTR pGCPtrPsLoadedModuleList));
 
     /**
@@ -2595,11 +2606,12 @@ typedef struct DBGFOSIWINNT
      * @returns VBox status code.
      * @param   pThis                           Pointer to the interface structure.
      * @param   pUVM                            The user mode VM handle.
+     * @param   pVMM                            The VMM function table.
      * @param   idCpu                           The vCPU to query the KPCR/KPCRB for.
      * @param   pKpcr                           Where to store the KPCR pointer on success, optional.
      * @param   pKpcrb                          Where to store the KPCR pointer on success, optional.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryKpcrForVCpu,(struct DBGFOSIWINNT *pThis, PUVM pUVM, VMCPUID idCpu,
+    DECLCALLBACKMEMBER(int, pfnQueryKpcrForVCpu,(struct DBGFOSIWINNT *pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, VMCPUID idCpu,
                                                  PRTGCUINTPTR pKpcr, PRTGCUINTPTR pKpcrb));
 
     /**
@@ -2608,10 +2620,11 @@ typedef struct DBGFOSIWINNT
      * @returns VBox status code.
      * @param   pThis                           Pointer to the interface structure.
      * @param   pUVM                            The user mode VM handle.
+     * @param   pVMM                            The VMM function table.
      * @param   idCpu                           The vCPU to query the KPCR/KPCRB for.
      * @param   pCurThrd                        Where to store the CurrentThread pointer on success.
      */
-    DECLCALLBACKMEMBER(int, pfnQueryCurThrdForVCpu,(struct DBGFOSIWINNT *pThis, PUVM pUVM, VMCPUID idCpu,
+    DECLCALLBACKMEMBER(int, pfnQueryCurThrdForVCpu,(struct DBGFOSIWINNT *pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, VMCPUID idCpu,
                                                     PRTGCUINTPTR pCurThrd));
 
     /** Trailing magic (DBGFOSIWINNT_MAGIC). */
@@ -2670,14 +2683,15 @@ typedef enum DBGFPLUGINOP
  *
  * @param   enmOperation    The operation.
  * @param   pUVM            The user mode VM handle. This may be NULL.
+ * @param   pVMM            The VMM function table.
  * @param   uArg            Extra argument.
  */
-typedef DECLCALLBACKTYPE(int, FNDBGFPLUGIN,(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg));
+typedef DECLCALLBACKTYPE(int, FNDBGFPLUGIN,(DBGFPLUGINOP enmOperation, PUVM pUVM, PCVMMR3VTABLE pVMM, uintptr_t uArg));
 /** Pointer to a FNDBGFPLUGIN. */
 typedef FNDBGFPLUGIN *PFNDBGFPLUGIN;
 
 /** @copydoc FNDBGFPLUGIN */
-DECLEXPORT(int) DbgPlugInEntry(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg);
+DECLEXPORT(int) DbgPlugInEntry(DBGFPLUGINOP enmOperation, PUVM pUVM, PCVMMR3VTABLE pVMM, uintptr_t uArg);
 
 VMMR3DECL(int)  DBGFR3PlugInLoad(PUVM pUVM, const char *pszPlugIn, char *pszActual, size_t cbActual, PRTERRINFO pErrInfo);
 VMMR3DECL(int)  DBGFR3PlugInUnload(PUVM pUVM, const char *pszName);

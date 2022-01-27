@@ -394,11 +394,12 @@ AssertCompileMemberOffset(RT_CONCAT(LNXKMODULE,LNX_SUFFIX), uPtrUnwindInfo, 392)
  * @param   uPtrSymStart        The start address of the array of symbols.
  * @param   cSyms               Number of symbols in the array.
  */
-static int RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(PUVM pUVM, RTDBGMOD hDbgMod, LNX_PTR_T uPtrModuleStart, LNX_PTR_T uPtrSymStart, uint32_t cSyms)
+static int RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(PUVM pUVM, PCVMMR3VTABLE pVMM, RTDBGMOD hDbgMod,
+                                                                 LNX_PTR_T uPtrModuleStart, LNX_PTR_T uPtrSymStart, uint32_t cSyms)
 {
     int rc = VINF_SUCCESS;
     DBGFADDRESS AddrSym;
-    DBGFR3AddrFromFlat(pUVM, &AddrSym, uPtrSymStart);
+    pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrSym, uPtrSymStart);
 
     while (   cSyms
            && RT_SUCCESS(rc))
@@ -406,18 +407,18 @@ static int RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(PUVM pUVM, RTDB
         RT_CONCAT(LNXMODKSYM,LNX_SUFFIX) aSyms[64];
         uint32_t cThisLoad = RT_MIN(cSyms, RT_ELEMENTS(aSyms));
 
-        rc = DBGFR3MemRead(pUVM, 0, &AddrSym, &aSyms[0], cThisLoad * sizeof(aSyms[0]));
+        rc = pVMM->pfnDBGFR3MemRead(pUVM, 0, &AddrSym, &aSyms[0], cThisLoad * sizeof(aSyms[0]));
         if (RT_SUCCESS(rc))
         {
             cSyms -= cThisLoad;
-            DBGFR3AddrAdd(&AddrSym, cThisLoad * sizeof(aSyms[0]));
+            pVMM->pfnDBGFR3AddrAdd(&AddrSym, cThisLoad * sizeof(aSyms[0]));
 
             for (uint32_t i = 0; i < cThisLoad; i++)
             {
                 char szSymName[128];
                 DBGFADDRESS AddrSymName;
-                rc = DBGFR3MemRead(pUVM, 0, DBGFR3AddrFromFlat(pUVM, &AddrSymName, aSyms[i].uPtrSymName),
-                                   &szSymName[0], sizeof(szSymName));
+                rc = pVMM->pfnDBGFR3MemRead(pUVM, 0, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrSymName, aSyms[i].uPtrSymName),
+                                            &szSymName[0], sizeof(szSymName));
                 if (RT_FAILURE(rc))
                     break;
 
@@ -427,7 +428,8 @@ static int RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(PUVM pUVM, RTDB
                     continue;
 
                 Assert(aSyms[i].uValue >= uPtrModuleStart);
-                rc = RTDbgModSymbolAdd(hDbgMod, szSymName, RTDBGSEGIDX_RVA, aSyms[i].uValue - uPtrModuleStart, 0 /*cb*/, 0 /*fFlags*/, NULL);
+                rc = RTDbgModSymbolAdd(hDbgMod, szSymName, RTDBGSEGIDX_RVA, aSyms[i].uValue - uPtrModuleStart,
+                                       0 /*cb*/, 0 /*fFlags*/, NULL);
                 if (RT_SUCCESS(rc))
                     LogFlowFunc(("Added symbol '%s' successfully\n", szSymName));
                 else
@@ -446,12 +448,14 @@ static int RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(PUVM pUVM, RTDB
 /**
  * Version specific module processing code.
  */
-static uint64_t RT_CONCAT(dbgDiggerLinuxLoadModule,LNX_SUFFIX)(PDBGDIGGERLINUX pThis, PUVM pUVM, PDBGFADDRESS pAddrModule)
+static uint64_t RT_CONCAT(dbgDiggerLinuxLoadModule,LNX_SUFFIX)(PDBGDIGGERLINUX pThis, PUVM pUVM,
+                                                               PCVMMR3VTABLE pVMM, PDBGFADDRESS pAddrModule)
 {
     RT_CONCAT(LNXKMODULE,LNX_SUFFIX) Module;
 
-    int rc = DBGFR3MemRead(pUVM, 0, DBGFR3AddrSub(pAddrModule, RT_UOFFSETOF(RT_CONCAT(LNXKMODULE,LNX_SUFFIX), uPtrNext)),
-                           &Module, sizeof(Module));
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0, pVMM->pfnDBGFR3AddrSub(pAddrModule, RT_UOFFSETOF(RT_CONCAT(LNXKMODULE,LNX_SUFFIX),
+                                                                                              uPtrNext)),
+                                    &Module, sizeof(Module));
     if (RT_FAILURE(rc))
     {
         LogRelFunc(("Failed to read module structure at %#RX64: %Rrc\n", pAddrModule->FlatPtr, rc));
@@ -494,37 +498,37 @@ static uint64_t RT_CONCAT(dbgDiggerLinuxLoadModule,LNX_SUFFIX)(PDBGDIGGERLINUX p
         rc = RTDbgModSetTag(hDbgMod, DIG_LNX_MOD_TAG);
         if (RT_SUCCESS(rc))
         {
-            RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+            RTDBGAS hAs = pVMM->pfnDBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
             rc = RTDbgAsModuleLink(hAs, hDbgMod, uPtrModuleCore, RTDBGASLINK_FLAGS_REPLACE /*fFlags*/);
             RTDbgAsRelease(hAs);
             if (RT_SUCCESS(rc))
             {
-                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, hDbgMod, uPtrModuleCore,
+                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, pVMM, hDbgMod, uPtrModuleCore,
                                                                            Module.uPtrSyms, Module.num_syms);
                 if (RT_FAILURE(rc))
                     LogRelFunc((" Faild to load symbols: %Rrc\n", rc));
 
 #if LNX_VER >= LNX_MK_VER(2,5,55)
-                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, hDbgMod, uPtrModuleCore,
+                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, pVMM, hDbgMod, uPtrModuleCore,
                                                                            Module.uPtrGplSyms, Module.num_gpl_syms);
                 if (RT_FAILURE(rc))
                     LogRelFunc((" Faild to load GPL symbols: %Rrc\n", rc));
 #endif
 
 #if LNX_VER >= LNX_MK_VER(2,6,17)
-                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, hDbgMod, uPtrModuleCore,
+                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, pVMM, hDbgMod, uPtrModuleCore,
                                                                            Module.uPtrGplFutureSyms, Module.num_gpl_future_syms);
                 if (RT_FAILURE(rc))
                     LogRelFunc((" Faild to load future GPL symbols: %Rrc\n", rc));
 #endif
 
 #if LNX_VER >= LNX_MK_VER(2,6,18)
-                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, hDbgMod, uPtrModuleCore,
+                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, pVMM, hDbgMod, uPtrModuleCore,
                                                                            Module.uPtrUnusedSyms, Module.num_unused_syms);
                 if (RT_FAILURE(rc))
                     LogRelFunc((" Faild to load unused symbols: %Rrc\n", rc));
 
-                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, hDbgMod, uPtrModuleCore,
+                rc = RT_CONCAT(dbgDiggerLinuxLoadModuleSymbols,LNX_SUFFIX)(pUVM, pVMM, hDbgMod, uPtrModuleCore,
                                                                            Module.uPtrUnusedGplSyms, Module.num_unused_gpl_syms);
                 if (RT_FAILURE(rc))
                     LogRelFunc((" Faild to load unused GPL symbols: %Rrc\n", rc));

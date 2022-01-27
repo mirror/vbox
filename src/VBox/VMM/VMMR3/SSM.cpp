@@ -149,10 +149,10 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/vmm.h>
 #include "SSMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
-#include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/version.h>

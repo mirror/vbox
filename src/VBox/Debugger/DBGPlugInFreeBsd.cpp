@@ -22,7 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DBGF /// @todo add new log group.
 #include "DBGPlugIns.h"
 #include "DBGPlugInCommonELF.h"
-#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <iprt/asm.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
@@ -194,7 +194,7 @@ typedef DBGDIGGERFBSD *PDBGDIGGERFBSD;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static DECLCALLBACK(int)  dbgDiggerFreeBsdInit(PUVM pUVM, void *pvData);
+static DECLCALLBACK(int)  dbgDiggerFreeBsdInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData);
 
 
 /*********************************************************************************************************************************
@@ -225,20 +225,20 @@ static const uint8_t g_abNeedleInterp[] = "/red/herring";
  * @param   pAddrDynstr     Start address of the .dynstr section containing the symbol names.
  * @param   cbDynstr        Size of the .dynstr section.
  */
-static int dbgDiggerFreeBsdLoadSymbols(PDBGDIGGERFBSD pThis, PUVM pUVM, const char *pszName, RTGCUINTPTR uKernelStart,
-                                       size_t cbKernel, PDBGFADDRESS pAddrDynsym, uint32_t cSymbols, PDBGFADDRESS pAddrDynstr,
-                                       size_t cbDynstr)
+static int dbgDiggerFreeBsdLoadSymbols(PDBGDIGGERFBSD pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszName,
+                                       RTGCUINTPTR uKernelStart, size_t cbKernel, PDBGFADDRESS pAddrDynsym, uint32_t cSymbols,
+                                       PDBGFADDRESS pAddrDynstr, size_t cbDynstr)
 {
     LogFlowFunc(("pThis=%#p pszName=%s uKernelStart=%RGv cbKernel=%zu pAddrDynsym=%#p{%RGv} cSymbols=%u pAddrDynstr=%#p{%RGv} cbDynstr=%zu\n",
                  pThis, pszName, uKernelStart, cbKernel, pAddrDynsym, pAddrDynsym->FlatPtr, cSymbols, pAddrDynstr, pAddrDynstr->FlatPtr, cbDynstr));
 
     char *pbDynstr = (char *)RTMemAllocZ(cbDynstr + 1); /* Extra terminator. */
-    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, pAddrDynstr, pbDynstr, cbDynstr);
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pAddrDynstr, pbDynstr, cbDynstr);
     if (RT_SUCCESS(rc))
     {
         uint32_t cbDynsymEnt = pThis->f64Bit ? sizeof(Elf64_Sym) : sizeof(Elf32_Sym);
         uint8_t *pbDynsym = (uint8_t *)RTMemAllocZ(cSymbols * cbDynsymEnt);
-        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, pAddrDynsym, pbDynsym, cSymbols * cbDynsymEnt);
+        rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pAddrDynsym, pbDynsym, cSymbols * cbDynsymEnt);
         if (RT_SUCCESS(rc))
         {
             /*
@@ -293,7 +293,7 @@ static int dbgDiggerFreeBsdLoadSymbols(PDBGDIGGERFBSD pThis, PUVM pUVM, const ch
                  */
                 if (RT_SUCCESS(rc))
                 {
-                    RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+                    RTDBGAS hAs = pVMM->pfnDBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
                     if (hAs != NIL_RTDBGAS)
                         rc = RTDbgAsModuleLink(hAs, hMod, uKernelStart, RTDBGASLINK_FLAGS_REPLACE);
                     else
@@ -326,9 +326,10 @@ static int dbgDiggerFreeBsdLoadSymbols(PDBGDIGGERFBSD pThis, PUVM pUVM, const ch
  *
  * @param   pThis           The instance data.
  * @param   pUVM            The user mode VM handle.
+ * @param   pVMM            The VMM function table.
  * @param   pszName         The image name.
  */
-static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, const char *pszName)
+static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszName)
 {
     /*
      * FreeBSD has parts of the kernel ELF image in guest memory, starting with the
@@ -377,7 +378,7 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
         char achBuf[_16K];
         size_t cbToRead = RT_MIN(sizeof(achBuf), AddrCur.FlatPtr - AddrInterpEnd.FlatPtr);
 
-        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrSub(&AddrCur, cbToRead), &achBuf[0], cbToRead);
+        rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrSub(&AddrCur, cbToRead), &achBuf[0], cbToRead);
         if (RT_FAILURE(rc))
             break;
 
@@ -402,14 +403,15 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
                     else
                     {
                         /* Two consecutive terminator symbols mean end of .dynstr section. */
-                        DBGFR3AddrAdd(&AddrCur, i);
+                        pVMM->pfnDBGFR3AddrAdd(&AddrCur, i);
                         DBGFADDRESS AddrDynstrStart = AddrCur;
                         DBGFADDRESS AddrDynsymStart = AddrCur;
-                        DBGFR3AddrSub(&AddrDynsymStart, cSymbols * (pThis->f64Bit ? sizeof(Elf64_Sym) : sizeof(Elf64_Sym)));
+                        pVMM->pfnDBGFR3AddrSub(&AddrDynsymStart, cSymbols * (pThis->f64Bit ? sizeof(Elf64_Sym) : sizeof(Elf64_Sym)));
                         LogFlowFunc(("Found all required section start addresses (.dynsym=%RGv cSymbols=%u, .dynstr=%RGv cb=%u)\n",
                                      AddrDynsymStart.FlatPtr, cSymbols, AddrDynstrStart.FlatPtr,
                                      pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr));
-                        dbgDiggerFreeBsdLoadSymbols(pThis, pUVM, pszName, uKernelStart, cbKernel, &AddrDynsymStart, cSymbols, &AddrDynstrStart,
+                        dbgDiggerFreeBsdLoadSymbols(pThis, pUVM, pVMM, pszName, uKernelStart, cbKernel,
+                                                    &AddrDynsymStart, cSymbols, &AddrDynstrStart,
                                                     pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr);
                         return;
                     }
@@ -430,14 +432,15 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
                         else
                         {
                             /* Indicates the end of the .dynstr section. */
-                            DBGFR3AddrAdd(&AddrCur, i);
+                            pVMM->pfnDBGFR3AddrAdd(&AddrCur, i);
                             DBGFADDRESS AddrDynstrStart = AddrCur;
                             DBGFADDRESS AddrDynsymStart = AddrCur;
-                            DBGFR3AddrSub(&AddrDynsymStart, cSymbols * (pThis->f64Bit ? sizeof(Elf64_Sym) : sizeof(Elf32_Sym)));
+                            pVMM->pfnDBGFR3AddrSub(&AddrDynsymStart, cSymbols * (pThis->f64Bit ? sizeof(Elf64_Sym) : sizeof(Elf32_Sym)));
                             LogFlowFunc(("Found all required section start addresses (.dynsym=%RGv cSymbols=%u, .dynstr=%RGv cb=%u)\n",
                                          AddrDynsymStart.FlatPtr, cSymbols, AddrDynstrStart.FlatPtr,
                                          pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr));
-                            dbgDiggerFreeBsdLoadSymbols(pThis, pUVM, pszName, uKernelStart, cbKernel, &AddrDynsymStart, cSymbols, &AddrDynstrStart,
+                            dbgDiggerFreeBsdLoadSymbols(pThis, pUVM, pVMM, pszName, uKernelStart, cbKernel,
+                                                        &AddrDynsymStart, cSymbols, &AddrDynstrStart,
                                                         pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr);
                             return;
                         }
@@ -454,10 +457,10 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
 #else
     /* Calculate the start of the .hash section. */
     DBGFADDRESS AddrHashStart = pThis->AddrKernelInterp;
-    DBGFR3AddrAdd(&AddrHashStart, sizeof(g_abNeedleInterp));
+    pVMM->pfnDBGFR3AddrAdd(&AddrHashStart, sizeof(g_abNeedleInterp));
     AddrHashStart.FlatPtr = RT_ALIGN_GCPT(AddrHashStart.FlatPtr, pThis->f64Bit ? 8 : 4, RTGCUINTPTR);
     uint32_t au32Counters[2];
-    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrHashStart, &au32Counters[0], sizeof(au32Counters));
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrHashStart, &au32Counters[0], sizeof(au32Counters));
     if (RT_SUCCESS(rc))
     {
         size_t cbHash = (au32Counters[0] + au32Counters[1] + 2) * sizeof(uint32_t);
@@ -468,7 +471,7 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
             size_t cbKernel = 0;
             RTGCUINTPTR uKernelStart = pThis->AddrKernelElfStart.FlatPtr;
 
-            DBGFR3AddrAdd(&AddrDynsymStart, cbHash);
+            pVMM->pfnDBGFR3AddrAdd(&AddrDynsymStart, cbHash);
             AddrDynsymStart.FlatPtr = RT_ALIGN_GCPT(AddrDynsymStart.FlatPtr, pThis->f64Bit ? 8 : 4, RTGCUINTPTR);
 
             DBGFADDRESS AddrDynstrStart = AddrDynsymStart;
@@ -478,7 +481,7 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
                 uint8_t abBuf[_16K];
                 size_t cbToRead = RT_MIN(sizeof(abBuf), pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr);
 
-                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrDynstrStart, &abBuf[0], cbToRead);
+                rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrDynstrStart, &abBuf[0], cbToRead);
                 if (RT_FAILURE(rc))
                     break;
 
@@ -521,11 +524,12 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
 
                         if (!cbLeft)
                         {
-                            DBGFR3AddrAdd(&AddrDynstrStart, i * cbDynSymEnt);
+                            pVMM->pfnDBGFR3AddrAdd(&AddrDynstrStart, i * cbDynSymEnt);
                             LogFlowFunc(("Found all required section start addresses (.dynsym=%RGv cSymbols=%u, .dynstr=%RGv cb=%u)\n",
                                          AddrDynsymStart.FlatPtr, cSymbols, AddrDynstrStart.FlatPtr,
                                          pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr));
-                            dbgDiggerFreeBsdLoadSymbols(pThis, pUVM, pszName, uKernelStart, cbKernel, &AddrDynsymStart, cSymbols, &AddrDynstrStart,
+                            dbgDiggerFreeBsdLoadSymbols(pThis, pUVM, pVMM, pszName, uKernelStart, cbKernel,
+                                                        &AddrDynsymStart, cSymbols, &AddrDynstrStart,
                                                         pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr);
                             return;
                         }
@@ -545,7 +549,7 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
                 }
 
                 /* Don't account incomplete entries. */
-                DBGFR3AddrAdd(&AddrDynstrStart, (cbToRead / cbDynSymEnt) * cbDynSymEnt);
+                pVMM->pfnDBGFR3AddrAdd(&AddrDynstrStart, (cbToRead / cbDynSymEnt) * cbDynSymEnt);
             }
         }
         else
@@ -559,26 +563,26 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
 /**
  * @interface_method_impl{DBGFOSIDMESG,pfnQueryKernelLog}
  */
-static DECLCALLBACK(int) dbgDiggerFreeBsdIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
-                                                              char *pszBuf, size_t cbBuf, size_t *pcbActual)
+static DECLCALLBACK(int) dbgDiggerFreeBsdIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, uint32_t fFlags,
+                                                              uint32_t cMessages, char *pszBuf, size_t cbBuf, size_t *pcbActual)
 {
-    RT_NOREF1(fFlags);
     PDBGDIGGERFBSD pData = RT_FROM_MEMBER(pThis, DBGDIGGERFBSD, IDmesg);
+    RT_NOREF(fFlags);
 
     if (cMessages < 1)
         return VERR_INVALID_PARAMETER;
 
     /* Resolve the message buffer address from the msgbufp symbol. */
     RTDBGSYMBOL SymInfo;
-    int rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "kernel!msgbufp", &SymInfo, NULL);
+    int rc = pVMM->pfnDBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "kernel!msgbufp", &SymInfo, NULL);
     if (RT_SUCCESS(rc))
     {
         DBGFADDRESS AddrMsgBuf;
 
         /* Read the message buffer pointer. */
         RTGCPTR     GCPtrMsgBufP = 0;
-        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &AddrMsgBuf, SymInfo.Value),
-                           &GCPtrMsgBufP, pData->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t));
+        rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrMsgBuf, SymInfo.Value),
+                                    &GCPtrMsgBufP, pData->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t));
         if (RT_FAILURE(rc))
         {
             Log(("dbgDiggerFreeBsdIDmsg_QueryKernelLog: failed to read msgbufp at %RGv: %Rrc\n", AddrMsgBuf.FlatPtr, rc));
@@ -592,8 +596,8 @@ static DECLCALLBACK(int) dbgDiggerFreeBsdIDmsg_QueryKernelLog(PDBGFOSIDMESG pThi
 
         /* Read the structure. */
         FBSDMSGBUF MsgBuf;
-        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &AddrMsgBuf, GCPtrMsgBufP),
-                           &MsgBuf, sizeof(MsgBuf));
+        rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrMsgBuf, GCPtrMsgBufP),
+                                    &MsgBuf, sizeof(MsgBuf));
         if (RT_SUCCESS(rc))
         {
             RTGCUINTPTR AddrBuf = FBSD_UNION(pData, &MsgBuf, msg_ptr);
@@ -626,7 +630,8 @@ static DECLCALLBACK(int) dbgDiggerFreeBsdIDmsg_QueryKernelLog(PDBGFOSIDMESG pThi
                      cbMsgBuf));
                 return VERR_INVALID_STATE;
             }
-            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &AddrMsgBuf, AddrBuf), pchMsgBuf, cbMsgBuf);
+            rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrMsgBuf, AddrBuf),
+                                        pchMsgBuf, cbMsgBuf);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -703,11 +708,11 @@ static DECLCALLBACK(int) dbgDiggerFreeBsdIDmsg_QueryKernelLog(PDBGFOSIDMESG pThi
 /**
  * @copydoc DBGFOSREG::pfnStackUnwindAssist
  */
-static DECLCALLBACK(int) dbgDiggerFreeBsdStackUnwindAssist(PUVM pUVM, void *pvData, VMCPUID idCpu, PDBGFSTACKFRAME pFrame,
-                                                           PRTDBGUNWINDSTATE pState, PCCPUMCTX pInitialCtx, RTDBGAS hAs,
-                                                           uint64_t *puScratch)
+static DECLCALLBACK(int) dbgDiggerFreeBsdStackUnwindAssist(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData, VMCPUID idCpu,
+                                                           PDBGFSTACKFRAME pFrame, PRTDBGUNWINDSTATE pState,
+                                                           PCCPUMCTX pInitialCtx, RTDBGAS hAs, uint64_t *puScratch)
 {
-    RT_NOREF(pUVM, pvData, idCpu, pFrame, pState, pInitialCtx, hAs, puScratch);
+    RT_NOREF(pUVM, pVMM, pvData, idCpu, pFrame, pState, pInitialCtx, hAs, puScratch);
     return VINF_SUCCESS;
 }
 
@@ -715,10 +720,11 @@ static DECLCALLBACK(int) dbgDiggerFreeBsdStackUnwindAssist(PUVM pUVM, void *pvDa
 /**
  * @copydoc DBGFOSREG::pfnQueryInterface
  */
-static DECLCALLBACK(void *) dbgDiggerFreeBsdQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
+static DECLCALLBACK(void *) dbgDiggerFreeBsdQueryInterface(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData, DBGFOSINTERFACE enmIf)
 {
-    RT_NOREF1(pUVM);
     PDBGDIGGERFBSD pThis = (PDBGDIGGERFBSD)pvData;
+    RT_NOREF(pUVM, pVMM);
+
     switch (enmIf)
     {
         case DBGFOSINTERFACE_DMESG:
@@ -733,19 +739,20 @@ static DECLCALLBACK(void *) dbgDiggerFreeBsdQueryInterface(PUVM pUVM, void *pvDa
 /**
  * @copydoc DBGFOSREG::pfnQueryVersion
  */
-static DECLCALLBACK(int)  dbgDiggerFreeBsdQueryVersion(PUVM pUVM, void *pvData, char *pszVersion, size_t cchVersion)
+static DECLCALLBACK(int)  dbgDiggerFreeBsdQueryVersion(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData,
+                                                       char *pszVersion, size_t cchVersion)
 {
     PDBGDIGGERFBSD pThis = (PDBGDIGGERFBSD)pvData;
     Assert(pThis->fValid); RT_NOREF(pThis);
 
     RTDBGSYMBOL SymInfo;
-    int rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "kernel!version", &SymInfo, NULL);
+    int rc = pVMM->pfnDBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "kernel!version", &SymInfo, NULL);
     if (RT_SUCCESS(rc))
     {
         DBGFADDRESS AddrVersion;
-        DBGFR3AddrFromFlat(pUVM, &AddrVersion, SymInfo.Value);
+        pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrVersion, SymInfo.Value);
 
-        rc = DBGFR3MemReadString(pUVM, 0, &AddrVersion, pszVersion, cchVersion);
+        rc = pVMM->pfnDBGFR3MemReadString(pUVM, 0, &AddrVersion, pszVersion, cchVersion);
         if (RT_SUCCESS(rc))
         {
             char *pszEnd = RTStrEnd(pszVersion, cchVersion);
@@ -767,13 +774,11 @@ static DECLCALLBACK(int)  dbgDiggerFreeBsdQueryVersion(PUVM pUVM, void *pvData, 
 /**
  * @copydoc DBGFOSREG::pfnTerm
  */
-static DECLCALLBACK(void)  dbgDiggerFreeBsdTerm(PUVM pUVM, void *pvData)
+static DECLCALLBACK(void)  dbgDiggerFreeBsdTerm(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
-    RT_NOREF1(pUVM);
     PDBGDIGGERFBSD pThis = (PDBGDIGGERFBSD)pvData;
     Assert(pThis->fValid);
-
-    RT_NOREF1(pUVM);
+    RT_NOREF(pUVM, pVMM);
 
     pThis->fValid = false;
 }
@@ -782,28 +787,28 @@ static DECLCALLBACK(void)  dbgDiggerFreeBsdTerm(PUVM pUVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnRefresh
  */
-static DECLCALLBACK(int)  dbgDiggerFreeBsdRefresh(PUVM pUVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerFreeBsdRefresh(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERFBSD pThis = (PDBGDIGGERFBSD)pvData;
     NOREF(pThis);
     Assert(pThis->fValid);
 
-    dbgDiggerFreeBsdTerm(pUVM, pvData);
-    return dbgDiggerFreeBsdInit(pUVM, pvData);
+    dbgDiggerFreeBsdTerm(pUVM, pVMM, pvData);
+    return dbgDiggerFreeBsdInit(pUVM, pVMM, pvData);
 }
 
 
 /**
  * @copydoc DBGFOSREG::pfnInit
  */
-static DECLCALLBACK(int)  dbgDiggerFreeBsdInit(PUVM pUVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerFreeBsdInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERFBSD pThis = (PDBGDIGGERFBSD)pvData;
     Assert(!pThis->fValid);
 
     RT_NOREF1(pUVM);
 
-    dbgDiggerFreeBsdProcessKernelImage(pThis, pUVM, "kernel");
+    dbgDiggerFreeBsdProcessKernelImage(pThis, pUVM, pVMM, "kernel");
     pThis->fValid = true;
     return VINF_SUCCESS;
 }
@@ -812,7 +817,7 @@ static DECLCALLBACK(int)  dbgDiggerFreeBsdInit(PUVM pUVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnProbe
  */
-static DECLCALLBACK(bool)  dbgDiggerFreeBsdProbe(PUVM pUVM, void *pvData)
+static DECLCALLBACK(bool)  dbgDiggerFreeBsdProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERFBSD pThis = (PDBGDIGGERFBSD)pvData;
 
@@ -826,14 +831,14 @@ static DECLCALLBACK(bool)  dbgDiggerFreeBsdProbe(PUVM pUVM, void *pvData)
     {
         static const uint8_t s_abNeedle[] = ELFMAG;
         DBGFADDRESS KernelAddr;
-        DBGFR3AddrFromFlat(pUVM, &KernelAddr, g_au64FreeBsdKernelAddresses[i]);
+        pVMM->pfnDBGFR3AddrFromFlat(pUVM, &KernelAddr, g_au64FreeBsdKernelAddresses[i]);
         DBGFADDRESS HitAddr;
         uint32_t    cbLeft  = FBSD_MAX_KERNEL_SIZE;
 
         while (cbLeft > X86_PAGE_4K_SIZE)
         {
-            int rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, cbLeft, 1,
-                                   s_abNeedle, sizeof(s_abNeedle) - 1, &HitAddr);
+            int rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, cbLeft, 1,
+                                            s_abNeedle, sizeof(s_abNeedle) - 1, &HitAddr);
             if (RT_FAILURE(rc))
                 break;
 
@@ -842,8 +847,8 @@ static DECLCALLBACK(bool)  dbgDiggerFreeBsdProbe(PUVM pUVM, void *pvData)
              * ELF header.
              */
             DBGFADDRESS HitAddrInterp;
-            rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &HitAddr, FBSD_MAX_INTERP_OFFSET, 1,
-                               g_abNeedleInterp, sizeof(g_abNeedleInterp), &HitAddrInterp);
+            rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /*idCpu*/, &HitAddr, FBSD_MAX_INTERP_OFFSET, 1,
+                                        g_abNeedleInterp, sizeof(g_abNeedleInterp), &HitAddrInterp);
             if (RT_SUCCESS(rc))
             {
                 union
@@ -857,7 +862,7 @@ static DECLCALLBACK(bool)  dbgDiggerFreeBsdProbe(PUVM pUVM, void *pvData)
                 AssertCompileMembersSameSizeAndOffset(Elf64_Ehdr, e_machine, Elf32_Ehdr, e_machine);
                 AssertCompileMembersSameSizeAndOffset(Elf64_Ehdr, e_version, Elf32_Ehdr, e_version);
 
-                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &HitAddr, &ElfHdr.ab[0], X86_PAGE_4K_SIZE);
+                rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &HitAddr, &ElfHdr.ab[0], X86_PAGE_4K_SIZE);
                 if (RT_SUCCESS(rc))
                 {
                     /* We verified the magic above already by scanning for it. */
@@ -874,7 +879,7 @@ static DECLCALLBACK(bool)  dbgDiggerFreeBsdProbe(PUVM pUVM, void *pvData)
                         pThis->f64Bit = ElfHdr.Hdr32.e_ident[EI_CLASS] == ELFCLASS64;
                         pThis->AddrKernelElfStart = HitAddr;
                         pThis->AddrKernelInterp = HitAddrInterp;
-                        DBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelText, FBSD_UNION(pThis, &ElfHdr, e_entry));
+                        pVMM->pfnDBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelText, FBSD_UNION(pThis, &ElfHdr, e_entry));
                         LogFunc(("Found %s FreeBSD kernel at %RGv (.interp section at %RGv, .text section at %RGv)\n",
                                  pThis->f64Bit ? "amd64" : "i386", pThis->AddrKernelElfStart.FlatPtr,
                                  pThis->AddrKernelInterp.FlatPtr, pThis->AddrKernelText.FlatPtr));
@@ -891,7 +896,7 @@ static DECLCALLBACK(bool)  dbgDiggerFreeBsdProbe(PUVM pUVM, void *pvData)
                 break;
 
             cbLeft -= cbDistance;
-            DBGFR3AddrAdd(&KernelAddr, cbDistance);
+            pVMM->pfnDBGFR3AddrAdd(&KernelAddr, cbDistance);
         }
     }
     return false;
@@ -901,19 +906,19 @@ static DECLCALLBACK(bool)  dbgDiggerFreeBsdProbe(PUVM pUVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnDestruct
  */
-static DECLCALLBACK(void)  dbgDiggerFreeBsdDestruct(PUVM pUVM, void *pvData)
+static DECLCALLBACK(void)  dbgDiggerFreeBsdDestruct(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
-    RT_NOREF2(pUVM, pvData);
+    RT_NOREF(pUVM, pVMM, pvData);
 }
 
 
 /**
  * @copydoc DBGFOSREG::pfnConstruct
  */
-static DECLCALLBACK(int)  dbgDiggerFreeBsdConstruct(PUVM pUVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerFreeBsdConstruct(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
-    RT_NOREF1(pUVM);
     PDBGDIGGERFBSD pThis = (PDBGDIGGERFBSD)pvData;
+    RT_NOREF(pUVM, pVMM);
 
     pThis->fValid = false;
     pThis->f64Bit = false;

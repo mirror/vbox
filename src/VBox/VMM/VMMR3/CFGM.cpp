@@ -59,10 +59,10 @@
 #include <VBox/vmm/cfgm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/vmm.h>
 #include "CFGMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
-#include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>

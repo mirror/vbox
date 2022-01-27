@@ -44,6 +44,7 @@
  * @returns VBox status code.
  *
  * @param   pUVM            The user mode VM handle.
+ * @param   pVMM            The VMM function table.
  * @param   pszModName      The module name.
  * @param   pszFilename     The filename. optional.
  * @param   fFlags          Flags.
@@ -68,13 +69,14 @@
  *                          sanity checks..
  * @param   uModTag         Module tag. Pass 0 if tagging is of no interest.
  */
-int DBGDiggerCommonParseElfMod(PUVM pUVM, const char *pszModName, const char *pszFilename, uint32_t fFlags,
+int DBGDiggerCommonParseElfMod(PUVM pUVM, PCVMMR3VTABLE pVMM, const char *pszModName, const char *pszFilename, uint32_t fFlags,
                                Elf_Ehdr const *pEhdr, Elf_Shdr const *paShdrs,
                                Elf_Sym const *paSyms, size_t cMaxSyms,
                                char const *pbStrings, size_t cbMaxStrings,
                                RTGCPTR MinAddr, RTGCPTR MaxAddr, uint64_t uModTag)
 {
     AssertPtrReturn(pUVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVMM, VERR_INVALID_POINTER);
     AssertPtrReturn(pszModName, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertReturn(!(fFlags & ~DBG_DIGGER_ELF_MASK), VERR_INVALID_PARAMETER);
@@ -314,7 +316,7 @@ int DBGDiggerCommonParseElfMod(PUVM pUVM, const char *pszModName, const char *ps
     /*
      * Link it into the address space.
      */
-    RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    RTDBGAS hAs = pVMM->pfnDBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
     if (hAs != NIL_RTDBGAS)
         rc = dbgDiggerCommonLinkElfSegs(hAs, hMod, paSegs, cSegs);
     else

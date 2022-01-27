@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/vmm.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/uvm.h>
 #include <VBox/err.h>
@@ -115,7 +116,7 @@ void dbgfR3OSTermPart1(PUVM pUVM)
      */
     if (pUVM->dbgf.s.pCurOS)
     {
-        pUVM->dbgf.s.pCurOS->pReg->pfnTerm(pUVM, pUVM->dbgf.s.pCurOS->abData);
+        pUVM->dbgf.s.pCurOS->pReg->pfnTerm(pUVM, VMMR3GetVTable(), pUVM->dbgf.s.pCurOS->abData);
         pUVM->dbgf.s.pCurOS = NULL;
     }
 
@@ -143,7 +144,7 @@ void dbgfR3OSTermPart2(PUVM pUVM)
         PDBGFOS pOS = pUVM->dbgf.s.pOSHead;
         pUVM->dbgf.s.pOSHead = pOS->pNext;
         if (pOS->pReg->pfnDestruct)
-            pOS->pReg->pfnDestruct(pUVM, pOS->abData);
+            pOS->pReg->pfnDestruct(pUVM, VMMR3GetVTable(), pOS->abData);
 
         PDBGFOSEMTWRAPPER pFree = pOS->pWrapperHead;
         while ((pFree = pOS->pWrapperHead) != NULL)
@@ -188,7 +189,7 @@ static DECLCALLBACK(int) dbgfR3OSRegister(PUVM pUVM, PDBGFOSREG pReg)
     AssertReturn(pOS, VERR_NO_MEMORY);
     pOS->pReg = pReg;
 
-    int rc = pOS->pReg->pfnConstruct(pUVM, pOS->abData);
+    int rc = pOS->pReg->pfnConstruct(pUVM, VMMR3GetVTable(), pOS->abData);
     if (RT_SUCCESS(rc))
     {
         DBGF_OS_WRITE_LOCK(pUVM);
@@ -199,7 +200,7 @@ static DECLCALLBACK(int) dbgfR3OSRegister(PUVM pUVM, PDBGFOSREG pReg)
     else
     {
         if (pOS->pReg->pfnDestruct)
-            pOS->pReg->pfnDestruct(pUVM, pOS->abData);
+            pOS->pReg->pfnDestruct(pUVM, VMMR3GetVTable(), pOS->abData);
         MMR3HeapFree(pOS);
     }
 
@@ -290,9 +291,9 @@ static DECLCALLBACK(int) dbgfR3OSDeregister(PUVM pUVM, PDBGFOSREG pReg)
      * destructor and clean up.
      */
     if (fWasCurOS)
-        pOS->pReg->pfnTerm(pUVM, pOS->abData);
+        pOS->pReg->pfnTerm(pUVM, VMMR3GetVTable(), pOS->abData);
     if (pOS->pReg->pfnDestruct)
-        pOS->pReg->pfnDestruct(pUVM, pOS->abData);
+        pOS->pReg->pfnDestruct(pUVM, VMMR3GetVTable(), pOS->abData);
 
     PDBGFOSEMTWRAPPER pFree = pOS->pWrapperHead;
     while ((pFree = pOS->pWrapperHead) != NULL)
@@ -370,17 +371,17 @@ static DECLCALLBACK(int) dbgfR3OSDetect(PUVM pUVM, char *pszName, size_t cchName
     pUVM->dbgf.s.pCurOS = NULL;
 
     for (PDBGFOS pNewOS = pUVM->dbgf.s.pOSHead; pNewOS; pNewOS = pNewOS->pNext)
-        if (pNewOS->pReg->pfnProbe(pUVM, pNewOS->abData))
+        if (pNewOS->pReg->pfnProbe(pUVM, VMMR3GetVTable(), pNewOS->abData))
         {
             int rc;
             pUVM->dbgf.s.pCurOS = pNewOS;
             if (pOldOS == pNewOS)
-                rc = pNewOS->pReg->pfnRefresh(pUVM, pNewOS->abData);
+                rc = pNewOS->pReg->pfnRefresh(pUVM, VMMR3GetVTable(), pNewOS->abData);
             else
             {
                 if (pOldOS)
-                    pOldOS->pReg->pfnTerm(pUVM, pNewOS->abData);
-                rc = pNewOS->pReg->pfnInit(pUVM, pNewOS->abData);
+                    pOldOS->pReg->pfnTerm(pUVM, VMMR3GetVTable(), pNewOS->abData);
+                rc = pNewOS->pReg->pfnInit(pUVM, VMMR3GetVTable(), pNewOS->abData);
             }
             if (pszName && cchName)
                 strncat(pszName, pNewOS->pReg->szName, cchName);
@@ -391,7 +392,7 @@ static DECLCALLBACK(int) dbgfR3OSDetect(PUVM pUVM, char *pszName, size_t cchName
 
     /* not found */
     if (pOldOS)
-        pOldOS->pReg->pfnTerm(pUVM, pOldOS->abData);
+        pOldOS->pReg->pfnTerm(pUVM, VMMR3GetVTable(), pOldOS->abData);
 
     DBGF_OS_WRITE_UNLOCK(pUVM);
     return VINF_DBGF_OS_NOT_DETCTED;
@@ -462,7 +463,8 @@ static DECLCALLBACK(int) dbgfR3OSQueryNameAndVersion(PUVM pUVM, char *pszName, s
 
         if (pszVersion && cchVersion)
         {
-            int rc2 = pUVM->dbgf.s.pCurOS->pReg->pfnQueryVersion(pUVM, pUVM->dbgf.s.pCurOS->abData, pszVersion, cchVersion);
+            int rc2 = pUVM->dbgf.s.pCurOS->pReg->pfnQueryVersion(pUVM, VMMR3GetVTable(),  pUVM->dbgf.s.pCurOS->abData,
+                                                                 pszVersion, cchVersion);
             if (RT_FAILURE(rc2) || rc == VINF_SUCCESS)
                 rc = rc2;
         }
@@ -515,8 +517,8 @@ VMMR3DECL(int) DBGFR3OSQueryNameAndVersion(PUVM pUVM, char *pszName, size_t cchN
 /**
  * @interface_method_impl{DBGFOSIDMESG,pfnQueryKernelLog, Generic EMT wrapper.}
  */
-static DECLCALLBACK(int) dbgfR3OSEmtIDmesg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
-                                                          char *pszBuf, size_t cbBuf, size_t *pcbActual)
+static DECLCALLBACK(int) dbgfR3OSEmtIDmesg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, uint32_t fFlags,
+                                                          uint32_t cMessages, char *pszBuf, size_t cbBuf, size_t *pcbActual)
 {
     PDBGFOSEMTWRAPPER pWrapper = RT_FROM_MEMBER(pThis, DBGFOSEMTWRAPPER, uWrapper.Dmesg);
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
@@ -528,8 +530,8 @@ static DECLCALLBACK(int) dbgfR3OSEmtIDmesg_QueryKernelLog(PDBGFOSIDMESG pThis, P
     AssertPtrNullReturn(pcbActual, VERR_INVALID_POINTER);
 
     return VMR3ReqPriorityCallWaitU(pWrapper->pUVM, 0 /*idDstCpu*/,
-                                   (PFNRT)pWrapper->uDigger.pDmesg->pfnQueryKernelLog, 7,
-                                    pWrapper->uDigger.pDmesg, pUVM, fFlags, cMessages, pszBuf, cbBuf, pcbActual);
+                                   (PFNRT)pWrapper->uDigger.pDmesg->pfnQueryKernelLog, 8,
+                                    pWrapper->uDigger.pDmesg, pUVM, pVMM, fFlags, cMessages, pszBuf, cbBuf, pcbActual);
 
 }
 
@@ -537,16 +539,16 @@ static DECLCALLBACK(int) dbgfR3OSEmtIDmesg_QueryKernelLog(PDBGFOSIDMESG pThis, P
 /**
  * @interface_method_impl{DBGFOSIWINNT,pfnQueryVersion, Generic EMT wrapper.}
  */
-static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryVersion(PDBGFOSIWINNT pThis, PUVM pUVM, uint32_t *puVersMajor, uint32_t *puVersMinor,
-                                                        uint32_t *puBuildNumber, bool *pf32Bit)
+static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryVersion(PDBGFOSIWINNT pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, uint32_t *puVersMajor,
+                                                        uint32_t *puVersMinor, uint32_t *puBuildNumber, bool *pf32Bit)
 {
     PDBGFOSEMTWRAPPER pWrapper = RT_FROM_MEMBER(pThis, DBGFOSEMTWRAPPER, uWrapper.WinNt);
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pUVM == pWrapper->pUVM, VERR_INVALID_VM_HANDLE);
 
     return VMR3ReqPriorityCallWaitU(pWrapper->pUVM, 0 /*idDstCpu*/,
-                                   (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryVersion, 6,
-                                    pWrapper->uDigger.pWinNt, pUVM, puVersMajor, puVersMinor,
+                                   (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryVersion, 7,
+                                    pWrapper->uDigger.pWinNt, pUVM, pVMM, puVersMajor, puVersMinor,
                                     puBuildNumber, pf32Bit);
 }
 
@@ -554,7 +556,7 @@ static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryVersion(PDBGFOSIWINNT pThis, PUV
 /**
  * @interface_method_impl{DBGFOSIWINNT,pfnQueryKernelPtrs, Generic EMT wrapper.}
  */
-static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryKernelPtrs(PDBGFOSIWINNT pThis, PUVM pUVM,
+static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryKernelPtrs(PDBGFOSIWINNT pThis, PUVM pUVM, PCVMMR3VTABLE pVMM,
                                                            PRTGCUINTPTR pGCPtrKernBase, PRTGCUINTPTR pGCPtrPsLoadedModuleList)
 {
     PDBGFOSEMTWRAPPER pWrapper = RT_FROM_MEMBER(pThis, DBGFOSEMTWRAPPER, uWrapper.WinNt);
@@ -562,40 +564,40 @@ static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryKernelPtrs(PDBGFOSIWINNT pThis, 
     AssertReturn(pUVM == pWrapper->pUVM, VERR_INVALID_VM_HANDLE);
 
     return VMR3ReqPriorityCallWaitU(pWrapper->pUVM, 0 /*idDstCpu*/,
-                                   (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryKernelPtrs, 4,
-                                    pWrapper->uDigger.pWinNt, pUVM, pGCPtrKernBase, pGCPtrPsLoadedModuleList);
+                                   (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryKernelPtrs, 5,
+                                    pWrapper->uDigger.pWinNt, pUVM, pVMM, pGCPtrKernBase, pGCPtrPsLoadedModuleList);
 }
 
 
 /**
  * @interface_method_impl{DBGFOSIWINNT,pfnQueryKpcrForVCpu, Generic EMT wrapper.}
  */
-static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryKpcrForVCpu(struct DBGFOSIWINNT *pThis, PUVM pUVM, VMCPUID idCpu,
-                                                            PRTGCUINTPTR pKpcr, PRTGCUINTPTR pKpcrb)
+static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryKpcrForVCpu(struct DBGFOSIWINNT *pThis, PUVM pUVM, PCVMMR3VTABLE pVMM,
+                                                            VMCPUID idCpu, PRTGCUINTPTR pKpcr, PRTGCUINTPTR pKpcrb)
 {
     PDBGFOSEMTWRAPPER pWrapper = RT_FROM_MEMBER(pThis, DBGFOSEMTWRAPPER, uWrapper.WinNt);
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pUVM == pWrapper->pUVM, VERR_INVALID_VM_HANDLE);
 
     return VMR3ReqPriorityCallWaitU(pWrapper->pUVM, 0 /*idDstCpu*/,
-                                    (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryKpcrForVCpu, 5,
-                                    pWrapper->uDigger.pWinNt, pUVM, idCpu, pKpcr, pKpcrb);
+                                    (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryKpcrForVCpu, 6,
+                                    pWrapper->uDigger.pWinNt, pUVM, pVMM, idCpu, pKpcr, pKpcrb);
 }
 
 
 /**
  * @interface_method_impl{DBGFOSIWINNT,pfnQueryCurThrdForVCpu, Generic EMT wrapper.}
  */
-static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryCurThrdForVCpu(struct DBGFOSIWINNT *pThis, PUVM pUVM, VMCPUID idCpu,
-                                                               PRTGCUINTPTR pCurThrd)
+static DECLCALLBACK(int) dbgfR3OSEmtIWinNt_QueryCurThrdForVCpu(struct DBGFOSIWINNT *pThis, PUVM pUVM, PCVMMR3VTABLE pVMM,
+                                                               VMCPUID idCpu, PRTGCUINTPTR pCurThrd)
 {
     PDBGFOSEMTWRAPPER pWrapper = RT_FROM_MEMBER(pThis, DBGFOSEMTWRAPPER, uWrapper.WinNt);
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(pUVM == pWrapper->pUVM, VERR_INVALID_VM_HANDLE);
 
     return VMR3ReqPriorityCallWaitU(pWrapper->pUVM, 0 /*idDstCpu*/,
-                                    (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryCurThrdForVCpu, 4,
-                                    pWrapper->uDigger.pWinNt, pUVM, idCpu, pCurThrd);
+                                    (PFNRT)pWrapper->uDigger.pWinNt->pfnQueryCurThrdForVCpu, 5,
+                                    pWrapper->uDigger.pWinNt, pUVM, pVMM, idCpu, pCurThrd);
 }
 
 
@@ -621,7 +623,7 @@ static DECLCALLBACK(void) dbgfR3OSQueryInterface(PUVM pUVM, DBGFOSINTERFACE enmI
     if (pOS)
     {
         void *pvDiggerIf;
-        pvDiggerIf = pOS->pReg->pfnQueryInterface(pUVM, pUVM->dbgf.s.pCurOS->abData, enmIf);
+        pvDiggerIf = pOS->pReg->pfnQueryInterface(pUVM, VMMR3GetVTable(), pUVM->dbgf.s.pCurOS->abData, enmIf);
         if (pvDiggerIf)
         {
             /*
@@ -729,7 +731,7 @@ int dbgfR3OSStackUnwindAssist(PUVM pUVM, VMCPUID idCpu, PDBGFSTACKFRAME pFrame, 
         DBGF_OS_READ_LOCK(pUVM);
         PDBGFOS pOS = pUVM->dbgf.s.pCurOS;
         if (pOS)
-            rc = pOS->pReg->pfnStackUnwindAssist(pUVM, pUVM->dbgf.s.pCurOS->abData, idCpu, pFrame,
+            rc = pOS->pReg->pfnStackUnwindAssist(pUVM, VMMR3GetVTable(), pUVM->dbgf.s.pCurOS->abData, idCpu, pFrame,
                                                  pState, pInitialCtx, hAs, puScratch);
         DBGF_OS_READ_UNLOCK(pUVM);
     }

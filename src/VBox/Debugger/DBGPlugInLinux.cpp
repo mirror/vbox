@@ -22,7 +22,7 @@
 #define LOG_GROUP LOG_GROUP_DBGF /// @todo add new log group.
 #include "DBGPlugIns.h"
 #include "DBGPlugInCommonELF.h"
-#include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/dis.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>
@@ -219,7 +219,7 @@ typedef LNXPRINTKHDR const *PCLNXPRINTKHDR;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData);
+static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData);
 
 
 /*********************************************************************************************************************************
@@ -245,27 +245,29 @@ static const uint8_t g_abKrnlLogNeedle[] = "BIOS-e820: [mem 0x0000000000000000";
  * @returns VBox status code.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pGCPtrLogBuf        Where to store the start of the kernel log buffer on success.
  * @param   pcbLogBuf           Where to store the size of the kernel log buffer on success.
  */
-static int dbgDiggerLinuxKrnlLogBufFindByNeedle(PDBGDIGGERLINUX pThis, PUVM pUVM, RTGCPTR *pGCPtrLogBuf, uint32_t *pcbLogBuf)
+static int dbgDiggerLinuxKrnlLogBufFindByNeedle(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM,
+                                                RTGCPTR *pGCPtrLogBuf, uint32_t *pcbLogBuf)
 {
     int rc = VINF_SUCCESS;
 
     /* Try to find the needle, it should be very early in the kernel log buffer. */
     DBGFADDRESS AddrScan;
     DBGFADDRESS AddrHit;
-    DBGFR3AddrFromFlat(pUVM, &AddrScan, pThis->f64Bit ? LNX64_KERNEL_ADDRESS_START : LNX32_KERNEL_ADDRESS_START);
+    pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrScan, pThis->f64Bit ? LNX64_KERNEL_ADDRESS_START : LNX32_KERNEL_ADDRESS_START);
 
-    rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &AddrScan, ~(RTGCUINTPTR)0, 1 /*uAlign*/,
-                       g_abKrnlLogNeedle, sizeof(g_abKrnlLogNeedle) - 1, &AddrHit);
+    rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /*idCpu*/, &AddrScan, ~(RTGCUINTPTR)0, 1 /*uAlign*/,
+                                g_abKrnlLogNeedle, sizeof(g_abKrnlLogNeedle) - 1, &AddrHit);
     if (RT_SUCCESS(rc))
     {
         uint32_t cbLogBuf = 0;
         uint64_t tsLastNs = 0;
         DBGFADDRESS AddrCur;
 
-        DBGFR3AddrSub(&AddrHit, sizeof(LNXPRINTKHDR));
+        pVMM->pfnDBGFR3AddrSub(&AddrHit, sizeof(LNXPRINTKHDR));
         AddrCur = AddrHit;
 
         /* Try to find the end of the kernel log buffer. */
@@ -275,7 +277,7 @@ static int dbgDiggerLinuxKrnlLogBufFindByNeedle(PDBGDIGGERLINUX pThis, PUVM pUVM
                 break;
 
             LNXPRINTKHDR Hdr;
-            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrCur, &Hdr, sizeof(Hdr));
+            rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrCur, &Hdr, sizeof(Hdr));
             if (RT_SUCCESS(rc))
             {
                 uint32_t const cbLogAlign = 4;
@@ -293,7 +295,7 @@ static int dbgDiggerLinuxKrnlLogBufFindByNeedle(PDBGDIGGERLINUX pThis, PUVM pUVM
                 /** @todo Maybe read text part and verify it is all ASCII. */
 
                 cbLogBuf += Hdr.cbTotal;
-                DBGFR3AddrAdd(&AddrCur, Hdr.cbTotal);
+                pVMM->pfnDBGFR3AddrAdd(&AddrCur, Hdr.cbTotal);
             }
 
             if (RT_FAILURE(rc))
@@ -359,12 +361,13 @@ DECLINLINE(RTGCUINTPTR) dbgDiggerLinuxConvOffsetToAddr(PDBGDIGGERLINUX pThis, in
  * @returns VBox status code.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   hMod                The module to use.
  * @param   pszSymbol           The symbol of the getter.
  * @param   pvVal               Where to store the value on success.
  * @param   cbVal               Size of the value in bytes.
  */
-static int dbgDiggerLinuxDisassembleSimpleGetter(PDBGDIGGERLINUX pThis, PUVM pUVM, RTDBGMOD hMod,
+static int dbgDiggerLinuxDisassembleSimpleGetter(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, RTDBGMOD hMod,
                                                  const char *pszSymbol, void *pvVal, uint32_t cbVal)
 {
     int rc = VINF_SUCCESS;
@@ -390,11 +393,11 @@ static int dbgDiggerLinuxDisassembleSimpleGetter(PDBGDIGGERLINUX pThis, PUVM pUV
         {
             DBGFADDRESS Addr;
             RTGCPTR GCPtrCur = (RTGCPTR)SymInfo.Value + pThis->AddrKernelBase.FlatPtr + offInstr;
-            DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrCur);
+            pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, GCPtrCur);
 
             /* Prefetch the instruction. */
             uint8_t abInstr[32];
-            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &abInstr[0], sizeof(abInstr));
+            rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &abInstr[0], sizeof(abInstr));
             if (RT_SUCCESS(rc))
             {
                 uint32_t cbInstr = 0;
@@ -443,9 +446,9 @@ static int dbgDiggerLinuxDisassembleSimpleGetter(PDBGDIGGERLINUX pThis, PUVM pUV
                                         AssertMsgFailedBreakStmt(("Invalid displacement\n"), rc = VERR_INVALID_STATE);
 
                                     DBGFADDRESS AddrVal;
-                                    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
-                                                       DBGFR3AddrFromFlat(pUVM, &AddrVal, GCPtrVal),
-                                                       pvVal, cbVal);
+                                    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                                                pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrVal, GCPtrVal),
+                                                                pvVal, cbVal);
                                 }
                             }
                             break;
@@ -472,11 +475,12 @@ static int dbgDiggerLinuxDisassembleSimpleGetter(PDBGDIGGERLINUX pThis, PUVM pUV
  * @returns VBox status code.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   hMod                The module to use.
  * @param   pGCPtrLogBuf        Where to store the log buffer pointer on success.
  * @param   pcbLogBuf           Where to store the size of the log buffer on success.
  */
-static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, RTDBGMOD hMod,
+static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, RTDBGMOD hMod,
                                                  RTGCPTR *pGCPtrLogBuf, uint32_t *pcbLogBuf)
 {
     int rc = VINF_SUCCESS;
@@ -521,11 +525,11 @@ static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUV
         {
             DBGFADDRESS Addr;
             RTGCPTR GCPtrCur = (RTGCPTR)SymInfo.Value + pThis->AddrKernelBase.FlatPtr + offInstr;
-            DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrCur);
+            pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, GCPtrCur);
 
             /* Prefetch the instruction. */
             uint8_t abInstr[32];
-            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &abInstr[0], sizeof(abInstr));
+            rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &Addr, &abInstr[0], sizeof(abInstr));
             if (RT_SUCCESS(rc))
             {
                 uint32_t cbInstr = 0;
@@ -573,9 +577,10 @@ static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUV
                                     DBGFADDRESS AddrVal;
                                     union { uint8_t abVal[8]; uint32_t u32Val; uint64_t u64Val; } Val;
 
-                                    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
-                                                       DBGFR3AddrFromFlat(pUVM, &AddrVal, aAddresses[i].GCPtrOrigSrc),
-                                                       &Val.abVal[0], aAddresses[i].cb);
+                                    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                                                pVMM->pfnDBGFR3AddrFromFlat(pUVM, &AddrVal,
+                                                                                            aAddresses[i].GCPtrOrigSrc),
+                                                                &Val.abVal[0], aAddresses[i].cb);
                                     if (RT_SUCCESS(rc))
                                     {
                                         if (pThis->f64Bit && aAddresses[i].cb == sizeof(uint64_t))
@@ -696,11 +701,12 @@ static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUV
  * @returns VBox status code.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   hMod                The module to use.
  * @param   pGCPtrLogBuf        Where to store the log buffer pointer on success.
  * @param   pcbLogBuf           Where to store the size of the log buffer on success.
  */
-static int dbgDiggerLinuxQueryLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, RTDBGMOD hMod,
+static int dbgDiggerLinuxQueryLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, RTDBGMOD hMod,
                                             RTGCPTR *pGCPtrLogBuf, uint32_t *pcbLogBuf)
 {
     int rc = VINF_SUCCESS;
@@ -714,7 +720,7 @@ static int dbgDiggerLinuxQueryLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, RT
     {
         RT_BZERO(aSymbols[i].pvVar, aSymbols[i].cbHost);
         Assert(aSymbols[i].cbHost >= aSymbols[i].cbGuest);
-        rc = dbgDiggerLinuxDisassembleSimpleGetter(pThis, pUVM, hMod, aSymbols[i].pszSymbol,
+        rc = dbgDiggerLinuxDisassembleSimpleGetter(pThis, pUVM, pVMM, hMod, aSymbols[i].pszSymbol,
                                                    aSymbols[i].pvVar, aSymbols[i].cbGuest);
     }
 
@@ -728,14 +734,15 @@ static int dbgDiggerLinuxQueryLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUVM, RT
  * @returns Flag whether the log buffer is the simple ascii buffer.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  */
-static bool dbgDiggerLinuxLogBufferIsAsciiBuffer(PDBGDIGGERLINUX pThis, PUVM pUVM)
+static bool dbgDiggerLinuxLogBufferIsAsciiBuffer(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM)
 {
     char szTmp[128];
     char const *pszVer = &szTmp[sizeof(g_abLinuxVersion) - 1];
 
     RT_ZERO(szTmp);
-    int rc = DBGFR3MemReadString(pUVM, 0, &pThis->AddrLinuxBanner, szTmp, sizeof(szTmp) - 1);
+    int rc = pVMM->pfnDBGFR3MemReadString(pUVM, 0, &pThis->AddrLinuxBanner, szTmp, sizeof(szTmp) - 1);
     if (    RT_SUCCESS(rc)
         &&  RTStrVersionCompare(pszVer, "3.4") == -1)
         return true;
@@ -749,6 +756,7 @@ static bool dbgDiggerLinuxLogBufferIsAsciiBuffer(PDBGDIGGERLINUX pThis, PUVM pUV
  * @returns VBox status code.
  * @param   pThis       The Linux digger data.
  * @param   pUVM        The VM user mdoe handle.
+ * @param   pVMM        The VMM function table.
  * @param   hMod        The debug module handle.
  * @param   fFlags      Flags reserved for future use, MBZ.
  * @param   cMessages   The number of messages to retrieve, counting from the
@@ -759,7 +767,7 @@ static bool dbgDiggerLinuxLogBufferIsAsciiBuffer(PDBGDIGGERLINUX pThis, PUVM pUV
  *                      including zero terminator.  On VERR_BUFFER_OVERFLOW this
  *                      holds the necessary buffer size.  Optional.
  */
-static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, RTDBGMOD hMod,
+static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, RTDBGMOD hMod,
                                              uint32_t fFlags, uint32_t cMessages,
                                              char *pszBuf, size_t cbBuf, size_t *pcbActual)
 {
@@ -782,9 +790,10 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
             RT_BZERO(aSymbols[i].pvVar, aSymbols[i].cbHost);
             Assert(aSymbols[i].cbHost >= aSymbols[i].cbGuest);
             DBGFADDRESS Addr;
-            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
-                               DBGFR3AddrFromFlat(pUVM, &Addr, (RTGCPTR)SymInfo.Value + pThis->AddrKernelBase.FlatPtr),
-                               aSymbols[i].pvVar,  aSymbols[i].cbGuest);
+            rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                        pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr,
+                                                                    (RTGCPTR)SymInfo.Value + pThis->AddrKernelBase.FlatPtr),
+                                        aSymbols[i].pvVar,  aSymbols[i].cbGuest);
             if (RT_SUCCESS(rc))
                 continue;
             LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Reading '%s' at %RGv: %Rrc\n", aSymbols[i].pszSymbol, Addr.FlatPtr, rc));
@@ -803,7 +812,7 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
      */
     if (rc == VERR_NOT_FOUND)
     {
-        rc = dbgDiggerLinuxQueryAsciiLogBufferPtrs(pThis, pUVM, hMod, &GCPtrLogBuf, &cbLogBuf);
+        rc = dbgDiggerLinuxQueryAsciiLogBufferPtrs(pThis, pUVM, pVMM, hMod, &GCPtrLogBuf, &cbLogBuf);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -834,7 +843,7 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
         return VERR_NO_MEMORY;
     }
     DBGFADDRESS Addr;
-    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrLogBuf), pbLogBuf, cbLogBuf);
+    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, GCPtrLogBuf), pbLogBuf, cbLogBuf);
     if (RT_FAILURE(rc))
     {
         LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error reading %#x bytes of log buffer at %RGv: %Rrc\n",
@@ -864,6 +873,7 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
  * @returns VBox status code.
  * @param   pThis       The Linux digger data.
  * @param   pUVM        The VM user mode handle.
+ * @param   pVMM        The VMM function table.
  * @param   GCPtrLogBuf Flat guest address of the start of the log buffer.
  * @param   cbLogBuf    Power of two aligned size of the log buffer.
  * @param   idxFirst    Index in the log bfufer of the first message.
@@ -877,7 +887,7 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
  *                      including zero terminator.  On VERR_BUFFER_OVERFLOW this
  *                      holds the necessary buffer size.  Optional.
  */
-static int dbgDiggerLinuxKrnLogBufferProcess(PDBGDIGGERLINUX pThis, PUVM pUVM, RTGCPTR GCPtrLogBuf,
+static int dbgDiggerLinuxKrnLogBufferProcess(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, RTGCPTR GCPtrLogBuf,
                                              uint32_t cbLogBuf, uint32_t idxFirst, uint32_t idxNext,
                                              uint32_t fFlags, uint32_t cMessages, char *pszBuf, size_t cbBuf,
                                              size_t *pcbActual)
@@ -923,7 +933,7 @@ static int dbgDiggerLinuxKrnLogBufferProcess(PDBGDIGGERLINUX pThis, PUVM pUVM, R
         return VERR_NO_MEMORY;
     }
     DBGFADDRESS Addr;
-    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrLogBuf), pbLogBuf, cbLogBuf);
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, GCPtrLogBuf), pbLogBuf, cbLogBuf);
     if (RT_FAILURE(rc))
     {
         LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error reading %#x bytes of log buffer at %RGv: %Rrc\n",
@@ -1060,6 +1070,7 @@ static int dbgDiggerLinuxKrnLogBufferProcess(PDBGDIGGERLINUX pThis, PUVM pUVM, R
  * @returns VBox status code.
  * @param   pThis       The Linux digger data.
  * @param   pUVM        The VM user mdoe handle.
+ * @param   pVMM        The VMM function table.
  * @param   hMod        The debug module handle.
  * @param   fFlags      Flags reserved for future use, MBZ.
  * @param   cMessages   The number of messages to retrieve, counting from the
@@ -1070,7 +1081,7 @@ static int dbgDiggerLinuxKrnLogBufferProcess(PDBGDIGGERLINUX pThis, PUVM pUVM, R
  *                      including zero terminator.  On VERR_BUFFER_OVERFLOW this
  *                      holds the necessary buffer size.  Optional.
  */
-static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM, RTDBGMOD hMod,
+static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, RTDBGMOD hMod,
                                                uint32_t fFlags, uint32_t cMessages,
                                                char *pszBuf, size_t cbBuf, size_t *pcbActual)
 {
@@ -1096,9 +1107,10 @@ static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM,
             RT_BZERO(aSymbols[i].pvVar, aSymbols[i].cbHost);
             Assert(aSymbols[i].cbHost >= aSymbols[i].cbGuest);
             DBGFADDRESS Addr;
-            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
-                               DBGFR3AddrFromFlat(pUVM, &Addr, (RTGCPTR)SymInfo.Value + pThis->AddrKernelBase.FlatPtr),
-                               aSymbols[i].pvVar,  aSymbols[i].cbGuest);
+            rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                        pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr,
+                                                                    (RTGCPTR)SymInfo.Value + pThis->AddrKernelBase.FlatPtr),
+                                        aSymbols[i].pvVar,  aSymbols[i].cbGuest);
             if (RT_SUCCESS(rc))
                 continue;
             LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Reading '%s' at %RGv: %Rrc\n", aSymbols[i].pszSymbol, Addr.FlatPtr, rc));
@@ -1119,27 +1131,26 @@ static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM,
     {
         idxFirst = 0;
         idxNext = 0;
-        rc = dbgDiggerLinuxQueryLogBufferPtrs(pThis, pUVM, hMod, &GCPtrLogBuf, &cbLogBuf);
+        rc = dbgDiggerLinuxQueryLogBufferPtrs(pThis, pUVM, pVMM, hMod, &GCPtrLogBuf, &cbLogBuf);
         if (RT_FAILURE(rc))
         {
             /*
              * Last resort, scan for a known value which should appear only once in the kernel log buffer
              * and try to deduce the boundaries from there.
              */
-            rc = dbgDiggerLinuxKrnlLogBufFindByNeedle(pThis, pUVM, &GCPtrLogBuf, &cbLogBuf);
-            return rc;
+            return dbgDiggerLinuxKrnlLogBufFindByNeedle(pThis, pUVM, pVMM, &GCPtrLogBuf, &cbLogBuf);
         }
     }
 
-    return dbgDiggerLinuxKrnLogBufferProcess(pThis, pUVM, GCPtrLogBuf, cbLogBuf, idxFirst, idxNext,
+    return dbgDiggerLinuxKrnLogBufferProcess(pThis, pUVM, pVMM, GCPtrLogBuf, cbLogBuf, idxFirst, idxNext,
                                              fFlags, cMessages, pszBuf, cbBuf, pcbActual);
 }
 
 /**
  * @interface_method_impl{DBGFOSIDMESG,pfnQueryKernelLog}
  */
-static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, uint32_t fFlags, uint32_t cMessages,
-                                                            char *pszBuf, size_t cbBuf, size_t *pcbActual)
+static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, uint32_t fFlags,
+                                                            uint32_t cMessages, char *pszBuf, size_t cbBuf, size_t *pcbActual)
 {
     PDBGDIGGERLINUX pData = RT_FROM_MEMBER(pThis, DBGDIGGERLINUX, IDmesg);
 
@@ -1149,7 +1160,7 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
     /*
      * Resolve the symbols we need and read their values.
      */
-    RTDBGAS  hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    RTDBGAS  hAs = pVMM->pfnDBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
     RTDBGMOD hMod;
     int rc = RTDbgAsModuleByName(hAs, "vmlinux", 0, &hMod);
     RTDbgAsRelease(hAs);
@@ -1163,10 +1174,10 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
          * The record based implementation was presumably introduced with kernel 3.4,
          * see: http://thread.gmane.org/gmane.linux.kernel/1284184
          */
-        if (dbgDiggerLinuxLogBufferIsAsciiBuffer(pData, pUVM))
-            rc = dbgDiggerLinuxLogBufferQueryAscii(pData, pUVM, hMod, fFlags, cMessages, pszBuf, cbBuf, &cbActual);
+        if (dbgDiggerLinuxLogBufferIsAsciiBuffer(pData, pUVM, pVMM))
+            rc = dbgDiggerLinuxLogBufferQueryAscii(pData, pUVM, pVMM, hMod, fFlags, cMessages, pszBuf, cbBuf, &cbActual);
         else
-            rc = dbgDiggerLinuxLogBufferQueryRecords(pData, pUVM, hMod, fFlags, cMessages, pszBuf, cbBuf, &cbActual);
+            rc = dbgDiggerLinuxLogBufferQueryRecords(pData, pUVM, pVMM, hMod, fFlags, cMessages, pszBuf, cbBuf, &cbActual);
 
         /* Release the module in any case. */
         RTDbgModRelease(hMod);
@@ -1177,14 +1188,14 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
          * For the record based kernel versions we have a last resort heuristic which doesn't
          * require any symbols, try that here.
          */
-        if (!dbgDiggerLinuxLogBufferIsAsciiBuffer(pData, pUVM))
+        if (!dbgDiggerLinuxLogBufferIsAsciiBuffer(pData, pUVM, pVMM))
         {
             RTGCPTR GCPtrLogBuf = 0;
             uint32_t cbLogBuf = 0;
 
-            rc = dbgDiggerLinuxKrnlLogBufFindByNeedle(pData, pUVM, &GCPtrLogBuf, &cbLogBuf);
+            rc = dbgDiggerLinuxKrnlLogBufFindByNeedle(pData, pUVM, pVMM, &GCPtrLogBuf, &cbLogBuf);
             if (RT_SUCCESS(rc))
-                rc = dbgDiggerLinuxKrnLogBufferProcess(pData, pUVM, GCPtrLogBuf, cbLogBuf, 0 /*idxFirst*/, 0 /*idxNext*/,
+                rc = dbgDiggerLinuxKrnLogBufferProcess(pData, pUVM, pVMM, GCPtrLogBuf, cbLogBuf, 0 /*idxFirst*/, 0 /*idxNext*/,
                                                        fFlags, cMessages, pszBuf, cbBuf, &cbActual);
         }
         else
@@ -1248,11 +1259,11 @@ static void dbgDiggerLinuxCfgDbDestroy(PDBGDIGGERLINUX pThis)
 /**
  * @copydoc DBGFOSREG::pfnStackUnwindAssist
  */
-static DECLCALLBACK(int) dbgDiggerLinuxStackUnwindAssist(PUVM pUVM, void *pvData, VMCPUID idCpu, PDBGFSTACKFRAME pFrame,
-                                                         PRTDBGUNWINDSTATE pState, PCCPUMCTX pInitialCtx, RTDBGAS hAs,
-                                                         uint64_t *puScratch)
+static DECLCALLBACK(int) dbgDiggerLinuxStackUnwindAssist(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData, VMCPUID idCpu,
+                                                         PDBGFSTACKFRAME pFrame, PRTDBGUNWINDSTATE pState, PCCPUMCTX pInitialCtx,
+                                                         RTDBGAS hAs, uint64_t *puScratch)
 {
-    RT_NOREF(pUVM, pvData, idCpu, pFrame, pState, pInitialCtx, hAs, puScratch);
+    RT_NOREF(pUVM, pVMM, pvData, idCpu, pFrame, pState, pInitialCtx, hAs, puScratch);
     return VINF_SUCCESS;
 }
 
@@ -1260,10 +1271,11 @@ static DECLCALLBACK(int) dbgDiggerLinuxStackUnwindAssist(PUVM pUVM, void *pvData
 /**
  * @copydoc DBGFOSREG::pfnQueryInterface
  */
-static DECLCALLBACK(void *) dbgDiggerLinuxQueryInterface(PUVM pUVM, void *pvData, DBGFOSINTERFACE enmIf)
+static DECLCALLBACK(void *) dbgDiggerLinuxQueryInterface(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData, DBGFOSINTERFACE enmIf)
 {
-    RT_NOREF1(pUVM);
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
+    RT_NOREF(pUVM, pVMM);
+
     switch (enmIf)
     {
         case DBGFOSINTERFACE_DMESG:
@@ -1278,7 +1290,8 @@ static DECLCALLBACK(void *) dbgDiggerLinuxQueryInterface(PUVM pUVM, void *pvData
 /**
  * @copydoc DBGFOSREG::pfnQueryVersion
  */
-static DECLCALLBACK(int)  dbgDiggerLinuxQueryVersion(PUVM pUVM, void *pvData, char *pszVersion, size_t cchVersion)
+static DECLCALLBACK(int)  dbgDiggerLinuxQueryVersion(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData,
+                                                     char *pszVersion, size_t cchVersion)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     Assert(pThis->fValid);
@@ -1286,7 +1299,7 @@ static DECLCALLBACK(int)  dbgDiggerLinuxQueryVersion(PUVM pUVM, void *pvData, ch
     /*
      * It's all in the linux banner.
      */
-    int rc = DBGFR3MemReadString(pUVM, 0, &pThis->AddrLinuxBanner, pszVersion, cchVersion);
+    int rc = pVMM->pfnDBGFR3MemReadString(pUVM, 0, &pThis->AddrLinuxBanner, pszVersion, cchVersion);
     if (RT_SUCCESS(rc))
     {
         char *pszEnd = RTStrEnd(pszVersion, cchVersion);
@@ -1306,7 +1319,7 @@ static DECLCALLBACK(int)  dbgDiggerLinuxQueryVersion(PUVM pUVM, void *pvData, ch
 /**
  * @copydoc DBGFOSREG::pfnTerm
  */
-static DECLCALLBACK(void)  dbgDiggerLinuxTerm(PUVM pUVM, void *pvData)
+static DECLCALLBACK(void)  dbgDiggerLinuxTerm(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     Assert(pThis->fValid);
@@ -1319,7 +1332,7 @@ static DECLCALLBACK(void)  dbgDiggerLinuxTerm(PUVM pUVM, void *pvData)
     /*
      * Unlink and release our modules.
      */
-    RTDBGAS hDbgAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    RTDBGAS hDbgAs = pVMM->pfnDBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
     if (hDbgAs != NIL_RTDBGAS)
     {
         uint32_t iMod = RTDbgAsModuleCount(hDbgAs);
@@ -1346,17 +1359,17 @@ static DECLCALLBACK(void)  dbgDiggerLinuxTerm(PUVM pUVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnRefresh
  */
-static DECLCALLBACK(int)  dbgDiggerLinuxRefresh(PUVM pUVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerLinuxRefresh(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
-    NOREF(pThis);
+    RT_NOREF(pThis);
     Assert(pThis->fValid);
 
     /*
      * For now we'll flush and reload everything.
      */
-    dbgDiggerLinuxTerm(pUVM, pvData);
-    return dbgDiggerLinuxInit(pUVM, pvData);
+    dbgDiggerLinuxTerm(pUVM, pVMM, pvData);
+    return dbgDiggerLinuxInit(pUVM, pVMM, pvData);
 }
 
 
@@ -1366,11 +1379,12 @@ static DECLCALLBACK(int)  dbgDiggerLinuxRefresh(PUVM pUVM, void *pvData)
  *
  * @returns VINF_SUCCESS.
  * @param   pThis               The Linux digger data to update.
+ * @param   pVMM                The VMM function table.
  * @param   pAddrKernelNames    The kallsyms_names address.
  * @param   cKernelSymbols      The number of kernel symbol.
  * @param   cbAddress           The guest address size.
  */
-static int dbgDiggerLinuxFoundStartOfNames(PDBGDIGGERLINUX pThis, PCDBGFADDRESS pAddrKernelNames,
+static int dbgDiggerLinuxFoundStartOfNames(PDBGDIGGERLINUX pThis, PCVMMR3VTABLE pVMM, PCDBGFADDRESS pAddrKernelNames,
                                            uint32_t cKernelSymbols, uint32_t cbAddress)
 {
     pThis->cKernelSymbols = cKernelSymbols;
@@ -1388,7 +1402,7 @@ static int dbgDiggerLinuxFoundStartOfNames(PDBGDIGGERLINUX pThis, PCDBGFADDRESS 
         && pThis->f64Bit
         && (pThis->cKernelSymbols & 1))
         cbAlign = sizeof(int32_t);
-    DBGFR3AddrSub(&pThis->AddrKernelAddresses, cKernelSymbols * cbOffsets + cbSymbolsSkip + cbAlign);
+    pVMM->pfnDBGFR3AddrSub(&pThis->AddrKernelAddresses, cKernelSymbols * cbOffsets + cbSymbolsSkip + cbAlign);
 
     Log(("dbgDiggerLinuxFoundStartOfNames: AddrKernelAddresses=%RGv\n"
          "dbgDiggerLinuxFoundStartOfNames: cKernelSymbols=%#x (at %RGv)\n"
@@ -1411,10 +1425,12 @@ static int dbgDiggerLinuxFoundStartOfNames(PDBGDIGGERLINUX pThis, PCDBGFADDRESS 
  * @returns VBox status code, success indicating that all three variables have
  *          been found and taken down.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pThis               The Linux digger data.
  * @param   pHitAddr            An address we think is inside kallsyms_names.
  */
-static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLINUX pThis, PCDBGFADDRESS pHitAddr)
+static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGDIGGERLINUX pThis,
+                                                        PCDBGFADDRESS pHitAddr)
 {
     /*
      * Search backwards in chunks.
@@ -1428,11 +1444,11 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
     uint32_t        cbLeft  = LNX_MAX_KALLSYMS_NAMES_SIZE;
     uint32_t        cbBuf   = pHitAddr->FlatPtr & (sizeof(uBuf) - 1);
     DBGFADDRESS     CurAddr = *pHitAddr;
-    DBGFR3AddrSub(&CurAddr, cbBuf);
+    pVMM->pfnDBGFR3AddrSub(&CurAddr, cbBuf);
     cbBuf += sizeof(uint64_t) - 1;      /* In case our kobj hit is in the first 4/8 bytes. */
     for (;;)
     {
-        int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &CurAddr, &uBuf, sizeof(uBuf));
+        int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &CurAddr, &uBuf, sizeof(uBuf));
         if (RT_FAILURE(rc))
             return rc;
 
@@ -1508,8 +1524,10 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
                             RTGCUINTPTR uKrnlRelBase = uBuf.au64[i - 1];
                             DBGFADDRESS RelAddr = CurAddr;
                             int32_t aiRelOff[3];
-                            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrAdd(&RelAddr, (i - 1) * sizeof(uint64_t) - sizeof(aiRelOff)),
-                                               &aiRelOff[0], sizeof(aiRelOff));
+                            rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                                        pVMM->pfnDBGFR3AddrAdd(&RelAddr,
+                                                                               (i - 1) * sizeof(uint64_t) - sizeof(aiRelOff)),
+                                                        &aiRelOff[0], sizeof(aiRelOff));
                             if (   RT_SUCCESS(rc)
                                 && LNX64_VALID_ADDRESS(uKrnlRelBase + aiRelOff[0])
                                 && LNX64_VALID_ADDRESS(uKrnlRelBase + aiRelOff[1])
@@ -1519,8 +1537,8 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
                                      uKrnlRelBase, CurAddr.FlatPtr + (i - 1) * sizeof(uint64_t)));
                                 pThis->fRelKrnlAddr = true;
                                 pThis->uKernelRelativeBase = uKrnlRelBase;
-                                return dbgDiggerLinuxFoundStartOfNames(pThis,
-                                                                       DBGFR3AddrAdd(&CurAddr, (i + 1) * sizeof(uint64_t)),
+                                return dbgDiggerLinuxFoundStartOfNames(pThis, pVMM,
+                                                                       pVMM->pfnDBGFR3AddrAdd(&CurAddr, (i + 1) * sizeof(uint64_t)),
                                                                        (uint32_t)uBuf.au64[i], sizeof(uint64_t));
                             }
                         }
@@ -1528,8 +1546,8 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
                         if (   (i <= 0 || LNX64_VALID_ADDRESS(uBuf.au64[i - 1]))
                             && (i <= 1 || LNX64_VALID_ADDRESS(uBuf.au64[i - 2]))
                             && (i <= 2 || LNX64_VALID_ADDRESS(uBuf.au64[i - 3])))
-                            return dbgDiggerLinuxFoundStartOfNames(pThis,
-                                                                   DBGFR3AddrAdd(&CurAddr, (i + 1) * sizeof(uint64_t)),
+                            return dbgDiggerLinuxFoundStartOfNames(pThis, pVMM,
+                                                                   pVMM->pfnDBGFR3AddrAdd(&CurAddr, (i + 1) * sizeof(uint64_t)),
                                                                    (uint32_t)uBuf.au64[i], sizeof(uint64_t));
                     }
                 }
@@ -1556,8 +1574,8 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
                                      uKrnlRelBase, CurAddr.FlatPtr + (i - 1) * sizeof(uint32_t)));
                                 pThis->fRelKrnlAddr = true;
                                 pThis->uKernelRelativeBase = uKrnlRelBase;
-                                return dbgDiggerLinuxFoundStartOfNames(pThis,
-                                                                       DBGFR3AddrAdd(&CurAddr, (i + 1) * sizeof(uint32_t)),
+                                return dbgDiggerLinuxFoundStartOfNames(pThis, pVMM,
+                                                                       pVMM->pfnDBGFR3AddrAdd(&CurAddr, (i + 1) * sizeof(uint32_t)),
                                                                        uBuf.au32[i], sizeof(uint32_t));
                             }
                         }
@@ -1565,8 +1583,8 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
                         if (   (i <= 0 || LNX32_VALID_ADDRESS(uBuf.au32[i - 1]))
                             && (i <= 1 || LNX32_VALID_ADDRESS(uBuf.au32[i - 2]))
                             && (i <= 2 || LNX32_VALID_ADDRESS(uBuf.au32[i - 3])))
-                            return dbgDiggerLinuxFoundStartOfNames(pThis,
-                                                                   DBGFR3AddrAdd(&CurAddr, (i + 1) * sizeof(uint32_t)),
+                            return dbgDiggerLinuxFoundStartOfNames(pThis, pVMM,
+                                                                   pVMM->pfnDBGFR3AddrAdd(&CurAddr, (i + 1) * sizeof(uint32_t)),
                                                                    uBuf.au32[i], sizeof(uint32_t));
                     }
                 }
@@ -1581,7 +1599,7 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
             return VERR_NOT_FOUND;
         }
         cbLeft -= sizeof(uBuf);
-        DBGFR3AddrSub(&CurAddr, sizeof(uBuf));
+        pVMM->pfnDBGFR3AddrSub(&CurAddr, sizeof(uBuf));
         cbBuf = sizeof(uBuf);
     }
 }
@@ -1592,16 +1610,18 @@ static int dbgDiggerLinuxFindStartOfNamesAndSymbolCount(PUVM pUVM, PDBGDIGGERLIN
  *
  * @returns VINF_SUCCESS
  * @param   pThis           The linux digger data to update.
+ * @param   pVMM                The VMM function table.
  * @param   pAddrMarkers    The address of the marker (kallsyms_markers).
  * @param   cbMarkerEntry   The size of a marker entry (32-bit or 64-bit).
  */
-static int dbgDiggerLinuxFoundMarkers(PDBGDIGGERLINUX pThis, PCDBGFADDRESS pAddrMarkers, uint32_t cbMarkerEntry)
+static int dbgDiggerLinuxFoundMarkers(PDBGDIGGERLINUX pThis, PCVMMR3VTABLE pVMM,
+                                      PCDBGFADDRESS pAddrMarkers, uint32_t cbMarkerEntry)
 {
     pThis->cbKernelNames         = pAddrMarkers->FlatPtr - pThis->AddrKernelNames.FlatPtr;
     pThis->AddrKernelNameMarkers = *pAddrMarkers;
     pThis->cKernelNameMarkers    = RT_ALIGN_32(pThis->cKernelSymbols, 256) / 256;
     pThis->AddrKernelTokenTable  = *pAddrMarkers;
-    DBGFR3AddrAdd(&pThis->AddrKernelTokenTable, pThis->cKernelNameMarkers * cbMarkerEntry);
+    pVMM->pfnDBGFR3AddrAdd(&pThis->AddrKernelTokenTable, pThis->cKernelNameMarkers * cbMarkerEntry);
 
     Log(("dbgDiggerLinuxFoundMarkers: AddrKernelNames=%RGv cbKernelNames=%#x\n"
          "dbgDiggerLinuxFoundMarkers: AddrKernelNameMarkers=%RGv cKernelNameMarkers=%#x\n"
@@ -1625,10 +1645,11 @@ static int dbgDiggerLinuxFoundMarkers(PDBGDIGGERLINUX pThis, PCDBGFADDRESS pAddr
  * @returns VBox status code, success indicating that all three variables have
  *          been found and taken down.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pThis               The Linux digger data.
  * @param   pHitAddr            An address we think is inside kallsyms_names.
  */
-static int dbgDiggerLinuxFindEndOfNamesAndMore(PUVM pUVM, PDBGDIGGERLINUX pThis, PCDBGFADDRESS pHitAddr)
+static int dbgDiggerLinuxFindEndOfNamesAndMore(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGDIGGERLINUX pThis, PCDBGFADDRESS pHitAddr)
 {
     /*
      * Search forward in chunks.
@@ -1643,10 +1664,10 @@ static int dbgDiggerLinuxFindEndOfNamesAndMore(PUVM pUVM, PDBGDIGGERLINUX pThis,
     uint32_t        cbLeft  = LNX_MAX_KALLSYMS_NAMES_SIZE + sizeof(uBuf);
     uint32_t        offBuf  = pHitAddr->FlatPtr & (sizeof(uBuf) - 1);
     DBGFADDRESS     CurAddr = *pHitAddr;
-    DBGFR3AddrSub(&CurAddr, offBuf);
+    pVMM->pfnDBGFR3AddrSub(&CurAddr, offBuf);
     for (;;)
     {
-        int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &CurAddr, &uBuf, sizeof(uBuf));
+        int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &CurAddr, &uBuf, sizeof(uBuf));
         if (RT_FAILURE(rc))
             return rc;
 
@@ -1677,7 +1698,8 @@ static int dbgDiggerLinuxFindEndOfNamesAndMore(PUVM pUVM, PDBGDIGGERLINUX pThis,
             if (   RT_UNLIKELY(fPendingZeroHit)
                 && uBuf.au64[0] >= (LNX_MIN_KALLSYMS_ENC_LENGTH + 1) * 256
                 && uBuf.au64[0] <= (LNX_MAX_KALLSYMS_ENC_LENGTH + 1) * 256)
-                return dbgDiggerLinuxFoundMarkers(pThis, DBGFR3AddrSub(&CurAddr, sizeof(uint64_t)), sizeof(uint64_t));
+                return dbgDiggerLinuxFoundMarkers(pThis, pVMM,
+                                                  pVMM->pfnDBGFR3AddrSub(&CurAddr, sizeof(uint64_t)), sizeof(uint64_t));
 
             uint32_t const cEntries = sizeof(uBuf) / sizeof(uint64_t);
             for (uint32_t i = offBuf / sizeof(uint64_t); i < cEntries; i++)
@@ -1690,7 +1712,8 @@ static int dbgDiggerLinuxFindEndOfNamesAndMore(PUVM pUVM, PDBGDIGGERLINUX pThis,
                     }
                     if (   uBuf.au64[i + 1] >= (LNX_MIN_KALLSYMS_ENC_LENGTH + 1) * 256
                         && uBuf.au64[i + 1] <= (LNX_MAX_KALLSYMS_ENC_LENGTH + 1) * 256)
-                        return dbgDiggerLinuxFoundMarkers(pThis, DBGFR3AddrAdd(&CurAddr, i * sizeof(uint64_t)), sizeof(uint64_t));
+                        return dbgDiggerLinuxFoundMarkers(pThis, pVMM,
+                                                          pVMM->pfnDBGFR3AddrAdd(&CurAddr, i * sizeof(uint64_t)), sizeof(uint64_t));
                 }
         }
         else
@@ -1698,7 +1721,8 @@ static int dbgDiggerLinuxFindEndOfNamesAndMore(PUVM pUVM, PDBGDIGGERLINUX pThis,
             if (   RT_UNLIKELY(fPendingZeroHit)
                 && uBuf.au32[0] >= (LNX_MIN_KALLSYMS_ENC_LENGTH + 1) * 256
                 && uBuf.au32[0] <= (LNX_MAX_KALLSYMS_ENC_LENGTH + 1) * 256)
-                return dbgDiggerLinuxFoundMarkers(pThis, DBGFR3AddrSub(&CurAddr, sizeof(uint32_t)), sizeof(uint32_t));
+                return dbgDiggerLinuxFoundMarkers(pThis, pVMM,
+                                                  pVMM->pfnDBGFR3AddrSub(&CurAddr, sizeof(uint32_t)), sizeof(uint32_t));
 
             uint32_t const cEntries = sizeof(uBuf) / sizeof(uint32_t);
             for (uint32_t i = offBuf / sizeof(uint32_t); i < cEntries; i++)
@@ -1711,7 +1735,8 @@ static int dbgDiggerLinuxFindEndOfNamesAndMore(PUVM pUVM, PDBGDIGGERLINUX pThis,
                     }
                     if (   uBuf.au32[i + 1] >= (LNX_MIN_KALLSYMS_ENC_LENGTH + 1) * 256
                         && uBuf.au32[i + 1] <= (LNX_MAX_KALLSYMS_ENC_LENGTH + 1) * 256)
-                        return dbgDiggerLinuxFoundMarkers(pThis, DBGFR3AddrAdd(&CurAddr, i * sizeof(uint32_t)), sizeof(uint32_t));
+                        return dbgDiggerLinuxFoundMarkers(pThis, pVMM,
+                                                          pVMM->pfnDBGFR3AddrAdd(&CurAddr, i * sizeof(uint32_t)), sizeof(uint32_t));
                 }
         }
 
@@ -1724,7 +1749,7 @@ static int dbgDiggerLinuxFindEndOfNamesAndMore(PUVM pUVM, PDBGDIGGERLINUX pThis,
             return VERR_NOT_FOUND;
         }
         cbLeft -= sizeof(uBuf);
-        DBGFR3AddrAdd(&CurAddr, sizeof(uBuf));
+        pVMM->pfnDBGFR3AddrAdd(&CurAddr, sizeof(uBuf));
         offBuf = 0;
     }
 }
@@ -1738,9 +1763,10 @@ static int dbgDiggerLinuxFindEndOfNamesAndMore(PUVM pUVM, PDBGDIGGERLINUX pThis,
  *
  * @returns VBox status code.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pThis               The Linux digger data.
  */
-static int dbgDiggerLinuxFindTokenIndex(PUVM pUVM, PDBGDIGGERLINUX pThis)
+static int dbgDiggerLinuxFindTokenIndex(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGDIGGERLINUX pThis)
 {
     /*
      * The kallsyms_token_table is very much like a string table.  Due to the
@@ -1755,7 +1781,7 @@ static int dbgDiggerLinuxFindTokenIndex(PUVM pUVM, PDBGDIGGERLINUX pThis)
         uint16_t au16[0x2000 / sizeof(uint16_t)];
     } uBuf;
     DBGFADDRESS CurAddr = pThis->AddrKernelTokenTable;
-    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &CurAddr, &uBuf, sizeof(uBuf));
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &CurAddr, &uBuf, sizeof(uBuf));
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1788,7 +1814,7 @@ static int dbgDiggerLinuxFindTokenIndex(PUVM pUVM, PDBGDIGGERLINUX pThis)
             )
         {
             pThis->AddrKernelTokenIndex = CurAddr;
-            DBGFR3AddrAdd(&pThis->AddrKernelTokenIndex, i * sizeof(uint16_t));
+            pVMM->pfnDBGFR3AddrAdd(&pThis->AddrKernelTokenIndex, i * sizeof(uint16_t));
             pThis->cbKernelTokenTable = i * sizeof(uint16_t);
             return VINF_SUCCESS;
         }
@@ -1804,25 +1830,26 @@ static int dbgDiggerLinuxFindTokenIndex(PUVM pUVM, PDBGDIGGERLINUX pThis)
  *
  * @returns VBox status code.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pThis               The Linux digger data.
  * @param   uKernelStart        Flat kernel start address.
  * @param   cbKernel            Size of the kernel in bytes.
  * @param   pauSymOff           Pointer to the array of symbol offsets in the kallsyms table
  *                              relative to the start of the kernel.
  */
-static int dbgDiggerLinuxLoadKernelSymbolsWorker(PUVM pUVM, PDBGDIGGERLINUX pThis, RTGCUINTPTR uKernelStart,
+static int dbgDiggerLinuxLoadKernelSymbolsWorker(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGDIGGERLINUX pThis, RTGCUINTPTR uKernelStart,
                                                  RTGCUINTPTR cbKernel, RTGCUINTPTR *pauSymOff)
 {
     uint8_t *pbNames = (uint8_t *)RTMemAllocZ(pThis->cbKernelNames);
-    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelNames, pbNames, pThis->cbKernelNames);
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelNames, pbNames, pThis->cbKernelNames);
     if (RT_SUCCESS(rc))
     {
         char *pszzTokens = (char *)RTMemAllocZ(pThis->cbKernelTokenTable);
-        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelTokenTable, pszzTokens, pThis->cbKernelTokenTable);
+        rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelTokenTable, pszzTokens, pThis->cbKernelTokenTable);
         if (RT_SUCCESS(rc))
         {
             uint16_t *paoffTokens = (uint16_t *)RTMemAllocZ(256 * sizeof(uint16_t));
-            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelTokenIndex, paoffTokens, 256 * sizeof(uint16_t));
+            rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelTokenIndex, paoffTokens, 256 * sizeof(uint16_t));
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -1914,7 +1941,7 @@ static int dbgDiggerLinuxLoadKernelSymbolsWorker(PUVM pUVM, PDBGDIGGERLINUX pThi
                      */
                     if (RT_SUCCESS(rc))
                     {
-                        RTDBGAS hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+                        RTDBGAS hAs = pVMM->pfnDBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
                         if (hAs != NIL_RTDBGAS)
                             rc = RTDbgAsModuleLink(hAs, hMod, uKernelStart, RTDBGASLINK_FLAGS_REPLACE);
                         else
@@ -1951,16 +1978,18 @@ static int dbgDiggerLinuxLoadKernelSymbolsWorker(PUVM pUVM, PDBGDIGGERLINUX pThi
  *
  * @returns VBox status code.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pThis               The Linux digger data.
  */
-static int dbgDiggerLinuxLoadKernelSymbolsAbsolute(PUVM pUVM, PDBGDIGGERLINUX pThis)
+static int dbgDiggerLinuxLoadKernelSymbolsAbsolute(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGDIGGERLINUX pThis)
 {
     /*
      * Allocate memory for temporary table copies, reading the tables as we go.
      */
     uint32_t const cbGuestAddr = pThis->f64Bit ? sizeof(uint64_t) : sizeof(uint32_t);
     void *pvAddresses = RTMemAllocZ(pThis->cKernelSymbols * cbGuestAddr);
-    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelAddresses, pvAddresses, pThis->cKernelSymbols * cbGuestAddr);
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelAddresses,
+                                    pvAddresses, pThis->cKernelSymbols * cbGuestAddr);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -2009,10 +2038,10 @@ static int dbgDiggerLinuxLoadKernelSymbolsAbsolute(PUVM pUVM, PDBGDIGGERLINUX pT
 
         RTGCUINTPTR cbKernel = uKernelEnd - uKernelStart;
         pThis->cbKernel = (uint32_t)cbKernel;
-        DBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelBase, uKernelStart);
+        pVMM->pfnDBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelBase, uKernelStart);
         Log(("dbgDiggerLinuxLoadKernelSymbolsAbsolute: uKernelStart=%RGv cbKernel=%#x\n", uKernelStart, cbKernel));
 
-        rc = dbgDiggerLinuxLoadKernelSymbolsWorker(pUVM, pThis, uKernelStart, cbKernel, pauSymOff);
+        rc = dbgDiggerLinuxLoadKernelSymbolsWorker(pUVM, pVMM, pThis, uKernelStart, cbKernel, pauSymOff);
         if (RT_FAILURE(rc))
             Log(("dbgDiggerLinuxLoadKernelSymbolsAbsolute: Loading symbols from given offset table failed: %Rrc\n", rc));
         RTMemTmpFree(pauSymOff);
@@ -2031,15 +2060,17 @@ static int dbgDiggerLinuxLoadKernelSymbolsAbsolute(PUVM pUVM, PDBGDIGGERLINUX pT
  *
  * @returns VBox status code.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pThis               The Linux digger data.
  */
-static int dbgDiggerLinuxLoadKernelSymbolsRelative(PUVM pUVM, PDBGDIGGERLINUX pThis)
+static int dbgDiggerLinuxLoadKernelSymbolsRelative(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGDIGGERLINUX pThis)
 {
     /*
      * Allocate memory for temporary table copies, reading the tables as we go.
      */
     int32_t *pai32Offsets = (int32_t *)RTMemAllocZ(pThis->cKernelSymbols * sizeof(int32_t));
-    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelAddresses, pai32Offsets, pThis->cKernelSymbols * sizeof(int32_t));
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &pThis->AddrKernelAddresses,
+                                    pai32Offsets, pThis->cKernelSymbols * sizeof(int32_t));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -2075,10 +2106,10 @@ static int dbgDiggerLinuxLoadKernelSymbolsRelative(PUVM pUVM, PDBGDIGGERLINUX pT
 
         RTGCUINTPTR cbKernel = uKernelEnd - uKernelStart;
         pThis->cbKernel = (uint32_t)cbKernel;
-        DBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelBase, uKernelStart);
+        pVMM->pfnDBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelBase, uKernelStart);
         Log(("dbgDiggerLinuxLoadKernelSymbolsRelative: uKernelStart=%RGv cbKernel=%#x\n", uKernelStart, cbKernel));
 
-        rc = dbgDiggerLinuxLoadKernelSymbolsWorker(pUVM, pThis, uKernelStart, cbKernel, pauSymOff);
+        rc = dbgDiggerLinuxLoadKernelSymbolsWorker(pUVM, pVMM, pThis, uKernelStart, cbKernel, pauSymOff);
         if (RT_FAILURE(rc))
             Log(("dbgDiggerLinuxLoadKernelSymbolsRelative: Loading symbols from given offset table failed: %Rrc\n", rc));
         RTMemTmpFree(pauSymOff);
@@ -2097,16 +2128,17 @@ static int dbgDiggerLinuxLoadKernelSymbolsRelative(PUVM pUVM, PDBGDIGGERLINUX pT
  *
  * @returns VBox status code.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pThis               The Linux digger data.
  */
-static int dbgDiggerLinuxLoadKernelSymbols(PUVM pUVM, PDBGDIGGERLINUX pThis)
+static int dbgDiggerLinuxLoadKernelSymbols(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGDIGGERLINUX pThis)
 {
     /*
      * First the kernel itself.
      */
     if (pThis->fRelKrnlAddr)
-        return dbgDiggerLinuxLoadKernelSymbolsRelative(pUVM, pThis);
-    return dbgDiggerLinuxLoadKernelSymbolsAbsolute(pUVM, pThis);
+        return dbgDiggerLinuxLoadKernelSymbolsRelative(pUVM, pVMM, pThis);
+    return dbgDiggerLinuxLoadKernelSymbolsAbsolute(pUVM, pVMM, pThis);
 }
 
 
@@ -2132,7 +2164,7 @@ static const struct
 {
     uint32_t    uVersion;
     bool        f64Bit;
-    uint64_t  (*pfnProcessModule)(PDBGDIGGERLINUX pThis, PUVM pUVM, PDBGFADDRESS pAddrModule);
+    uint64_t  (*pfnProcessModule)(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGFADDRESS pAddrModule);
 } g_aModVersions[] =
 {
 #define LNX_TEMPLATE_HEADER "DBGPlugInLinuxModuleTableEntryTmpl.cpp.h"
@@ -2155,13 +2187,14 @@ static const struct
  * @returns VBox status code.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  */
-static int dbgDiggerLinuxLoadModules(PDBGDIGGERLINUX pThis, PUVM pUVM)
+static int dbgDiggerLinuxLoadModules(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM)
 {
     /*
      * Locate the list head.
      */
-    RTDBGAS     hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    RTDBGAS     hAs = pVMM->pfnDBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
     RTDBGSYMBOL SymInfo;
     int rc = RTDbgAsSymbolByName(hAs, "vmlinux!modules", &SymInfo, NULL);
     RTDbgAsRelease(hAs);
@@ -2183,8 +2216,8 @@ static int dbgDiggerLinuxLoadModules(PDBGDIGGERLINUX pThis, PUVM pUVM)
         uint64_t u64Pair[2];
     } uListAnchor;
     DBGFADDRESS Addr;
-    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, SymInfo.Value),
-                       &uListAnchor, pThis->f64Bit ? sizeof(uListAnchor.u64Pair) : sizeof(uListAnchor.u32Pair));
+    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, SymInfo.Value),
+                                &uListAnchor, pThis->f64Bit ? sizeof(uListAnchor.u64Pair) : sizeof(uListAnchor.u32Pair));
     if (RT_FAILURE(rc))
     {
         LogRel(("dbgDiggerLinuxLoadModules: Error reading list anchor at %RX64: %Rrc\n", SymInfo.Value, rc));
@@ -2228,7 +2261,7 @@ static int dbgDiggerLinuxLoadModules(PDBGDIGGERLINUX pThis, PUVM pUVM)
      */
     uint64_t uModAddr = uListAnchor.u64Pair[0];
     for (size_t iModule = 0; iModule < 4096 && uModAddr != SymInfo.Value && uModAddr != 0; iModule++)
-        uModAddr = g_aModVersions[i].pfnProcessModule(pThis, pUVM, DBGFR3AddrFromFlat(pUVM, &Addr, uModAddr));
+        uModAddr = g_aModVersions[i].pfnProcessModule(pThis, pUVM, pVMM, pVMM->pfnDBGFR3AddrFromFlat(pUVM, &Addr, uModAddr));
 
     return VINF_SUCCESS;
 }
@@ -2239,11 +2272,13 @@ static int dbgDiggerLinuxLoadModules(PDBGDIGGERLINUX pThis, PUVM pUVM)
  *
  * @returns true if it's a likely fragment, false if not.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pHitAddr            The address where paNeedle was found.
  * @param   pabNeedle           The fragment we've been searching for.
  * @param   cbNeedle            The length of the fragment.
  */
-static bool dbgDiggerLinuxIsLikelyNameFragment(PUVM pUVM, PCDBGFADDRESS pHitAddr, uint8_t const *pabNeedle, uint8_t cbNeedle)
+static bool dbgDiggerLinuxIsLikelyNameFragment(PUVM pUVM, PCVMMR3VTABLE pVMM, PCDBGFADDRESS pHitAddr,
+                                               uint8_t const *pabNeedle, uint8_t cbNeedle)
 {
     /*
      * Examples of lead and tail bytes of our choosen needle in a randomly
@@ -2268,8 +2303,8 @@ static bool dbgDiggerLinuxIsLikelyNameFragment(PUVM pUVM, PCDBGFADDRESS pHitAddr
      */
     uint8_t         abBuf[32];
     DBGFADDRESS     ReadAddr = *pHitAddr;
-    DBGFR3AddrSub(&ReadAddr, 2);
-    int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &ReadAddr, abBuf, 2 + cbNeedle + 2);
+    pVMM->pfnDBGFR3AddrSub(&ReadAddr, 2);
+    int rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, &ReadAddr, abBuf, 2 + cbNeedle + 2);
     if (RT_SUCCESS(rc))
     {
         if (memcmp(&abBuf[2], pabNeedle, cbNeedle) == 0) /* paranoia */
@@ -2298,50 +2333,51 @@ static bool dbgDiggerLinuxIsLikelyNameFragment(PUVM pUVM, PCDBGFADDRESS pHitAddr
  * @returns VBox status code.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pabNeedle           The needle to use for searching.
  * @param   cbNeedle            Size of the needle in bytes.
  */
-static int dbgDiggerLinuxFindSymbolTableFromNeedle(PDBGDIGGERLINUX pThis, PUVM pUVM, uint8_t const *pabNeedle, uint8_t cbNeedle)
+static int dbgDiggerLinuxFindSymbolTableFromNeedle(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM,
+                                                   uint8_t const *pabNeedle, uint8_t cbNeedle)
 {
-    int rc = VINF_SUCCESS;
-
     /*
      * Go looking for the kallsyms table.  If it's there, it will be somewhere
      * after the linux_banner symbol, so use it for starting the search.
      */
+    int         rc      = VINF_SUCCESS;
     DBGFADDRESS CurAddr = pThis->AddrLinuxBanner;
     uint32_t    cbLeft  = LNX_MAX_KERNEL_SIZE;
     while (cbLeft > 4096)
     {
         DBGFADDRESS          HitAddr;
-        rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &CurAddr, cbLeft, 1 /*uAlign*/,
-                           pabNeedle, cbNeedle, &HitAddr);
+        rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /*idCpu*/, &CurAddr, cbLeft, 1 /*uAlign*/,
+                                    pabNeedle, cbNeedle, &HitAddr);
         if (RT_FAILURE(rc))
             break;
-        if (dbgDiggerLinuxIsLikelyNameFragment(pUVM, &HitAddr, pabNeedle, cbNeedle))
+        if (dbgDiggerLinuxIsLikelyNameFragment(pUVM, pVMM, &HitAddr, pabNeedle, cbNeedle))
         {
             /* There will be another hit near by. */
-            DBGFR3AddrAdd(&HitAddr, 1);
-            rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &HitAddr, LNX_MAX_KALLSYMS_NAMES_SIZE, 1 /*uAlign*/,
-                               pabNeedle, cbNeedle, &HitAddr);
+            pVMM->pfnDBGFR3AddrAdd(&HitAddr, 1);
+            rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /*idCpu*/, &HitAddr, LNX_MAX_KALLSYMS_NAMES_SIZE, 1 /*uAlign*/,
+                                        pabNeedle, cbNeedle, &HitAddr);
             if (   RT_SUCCESS(rc)
-                && dbgDiggerLinuxIsLikelyNameFragment(pUVM, &HitAddr, pabNeedle, cbNeedle))
+                && dbgDiggerLinuxIsLikelyNameFragment(pUVM, pVMM, &HitAddr, pabNeedle, cbNeedle))
             {
                 /*
                  * We've got a very likely candidate for a location inside kallsyms_names.
                  * Try find the start of it, that is to say, try find kallsyms_num_syms.
                  * kallsyms_num_syms is aligned on sizeof(unsigned long) boundrary
                  */
-                rc = dbgDiggerLinuxFindStartOfNamesAndSymbolCount(pUVM, pThis, &HitAddr);
+                rc = dbgDiggerLinuxFindStartOfNamesAndSymbolCount(pUVM, pVMM, pThis, &HitAddr);
                 if (RT_SUCCESS(rc))
-                    rc = dbgDiggerLinuxFindEndOfNamesAndMore(pUVM, pThis, &HitAddr);
+                    rc = dbgDiggerLinuxFindEndOfNamesAndMore(pUVM, pVMM, pThis, &HitAddr);
                 if (RT_SUCCESS(rc))
-                    rc = dbgDiggerLinuxFindTokenIndex(pUVM, pThis);
+                    rc = dbgDiggerLinuxFindTokenIndex(pUVM, pVMM, pThis);
                 if (RT_SUCCESS(rc))
-                    rc = dbgDiggerLinuxLoadKernelSymbols(pUVM, pThis);
+                    rc = dbgDiggerLinuxLoadKernelSymbols(pUVM, pVMM, pThis);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = dbgDiggerLinuxLoadModules(pThis, pUVM);
+                    rc = dbgDiggerLinuxLoadModules(pThis, pUVM, pVMM);
                     break;
                 }
             }
@@ -2357,8 +2393,7 @@ static int dbgDiggerLinuxFindSymbolTableFromNeedle(PDBGDIGGERLINUX pThis, PUVM p
             break;
         }
         cbLeft -= cbDistance;
-        DBGFR3AddrAdd(&CurAddr, cbDistance);
-
+        pVMM->pfnDBGFR3AddrAdd(&CurAddr, cbDistance);
     }
 
     return rc;
@@ -2665,10 +2700,11 @@ static int dbgDiggerLinuxCfgDecompress(const uint8_t *pbCfgComp, size_t cbCfgCom
  * @returns VBox status code.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   pAddrStart          The start address of the compressed config.
  * @param   cbCfgComp           The size of the compressed config.
  */
-static int dbgDiggerLinuxCfgDecode(PDBGDIGGERLINUX pThis, PUVM pUVM,
+static int dbgDiggerLinuxCfgDecode(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM,
                                    PCDBGFADDRESS pAddrStart, size_t cbCfgComp)
 {
     int rc = VINF_SUCCESS;
@@ -2676,7 +2712,7 @@ static int dbgDiggerLinuxCfgDecode(PDBGDIGGERLINUX pThis, PUVM pUVM,
     if (!pbCfgComp)
         return VERR_NO_MEMORY;
 
-    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, pAddrStart, pbCfgComp, cbCfgComp);
+    rc = pVMM->pfnDBGFR3MemRead(pUVM, 0 /*idCpu*/, pAddrStart, pbCfgComp, cbCfgComp);
     if (RT_SUCCESS(rc))
     {
         char *pszCfg = NULL;
@@ -2702,38 +2738,38 @@ static int dbgDiggerLinuxCfgDecode(PDBGDIGGERLINUX pThis, PUVM pUVM,
  * @returns VBox status code.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  */
-static int dbgDiggerLinuxCfgFind(PDBGDIGGERLINUX pThis, PUVM pUVM)
+static int dbgDiggerLinuxCfgFind(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM)
 {
-    int rc = VINF_SUCCESS;
-
     /*
      * Go looking for the IKCFG_ST string which indicates the start
      * of the compressed config file.
      */
     static const uint8_t s_abCfgNeedleStart[] = "IKCFG_ST";
     static const uint8_t s_abCfgNeedleEnd[] = "IKCFG_ED";
+    int         rc      = VINF_SUCCESS;
     DBGFADDRESS CurAddr = pThis->AddrLinuxBanner;
     uint32_t    cbLeft  = LNX_MAX_KERNEL_SIZE;
     while (cbLeft > 4096)
     {
         DBGFADDRESS HitAddrStart;
-        rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &CurAddr, cbLeft, 1 /*uAlign*/,
-                           s_abCfgNeedleStart, sizeof(s_abCfgNeedleStart) - 1, &HitAddrStart);
+        rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /*idCpu*/, &CurAddr, cbLeft, 1 /*uAlign*/,
+                                    s_abCfgNeedleStart, sizeof(s_abCfgNeedleStart) - 1, &HitAddrStart);
         if (RT_FAILURE(rc))
             break;
 
         /* Check for the end marker which shouldn't be that far away. */
-        DBGFR3AddrAdd(&HitAddrStart, sizeof(s_abCfgNeedleStart) - 1);
+        pVMM->pfnDBGFR3AddrAdd(&HitAddrStart, sizeof(s_abCfgNeedleStart) - 1);
         DBGFADDRESS HitAddrEnd;
-        rc = DBGFR3MemScan(pUVM, 0 /* idCpu */, &HitAddrStart, LNX_MAX_COMPRESSED_CFG_SIZE,
-                           1 /* uAlign */, s_abCfgNeedleEnd, sizeof(s_abCfgNeedleEnd) - 1, &HitAddrEnd);
+        rc = pVMM->pfnDBGFR3MemScan(pUVM, 0 /* idCpu */, &HitAddrStart, LNX_MAX_COMPRESSED_CFG_SIZE,
+                                    1 /* uAlign */, s_abCfgNeedleEnd, sizeof(s_abCfgNeedleEnd) - 1, &HitAddrEnd);
         if (RT_SUCCESS(rc))
         {
             /* Allocate a buffer to hold the compressed data between the markers and fetch it. */
             RTGCUINTPTR cbCfg = HitAddrEnd.FlatPtr - HitAddrStart.FlatPtr;
             Assert(cbCfg == (size_t)cbCfg);
-            rc = dbgDiggerLinuxCfgDecode(pThis, pUVM, &HitAddrStart, cbCfg);
+            rc = dbgDiggerLinuxCfgDecode(pThis, pUVM, pVMM, &HitAddrStart, cbCfg);
             if (RT_SUCCESS(rc))
                 break;
         }
@@ -2748,8 +2784,7 @@ static int dbgDiggerLinuxCfgFind(PDBGDIGGERLINUX pThis, PUVM pUVM)
             break;
         }
         cbLeft -= cbDistance;
-        DBGFR3AddrAdd(&CurAddr, cbDistance);
-
+        pVMM->pfnDBGFR3AddrAdd(&CurAddr, cbDistance);
     }
 
     return rc;
@@ -2761,25 +2796,27 @@ static int dbgDiggerLinuxCfgFind(PDBGDIGGERLINUX pThis, PUVM pUVM)
  * @returns Flag whether something which looks like a valid Linux kernel was found.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  * @param   uAddrStart          The address to start scanning at.
  * @param   cbScan              How much to scan.
  */
-static bool dbgDiggerLinuxProbeWithAddr(PDBGDIGGERLINUX pThis, PUVM pUVM, RTGCUINTPTR uAddrStart, size_t cbScan)
+static bool dbgDiggerLinuxProbeWithAddr(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM,
+                                        RTGCUINTPTR uAddrStart, size_t cbScan)
 {
     /*
      * Look for "Linux version " at the start of the rodata segment.
      * Hope that this comes before any message buffer or other similar string.
      */
     DBGFADDRESS KernelAddr;
-    DBGFR3AddrFromFlat(pUVM, &KernelAddr, uAddrStart);
+    pVMM->pfnDBGFR3AddrFromFlat(pUVM, &KernelAddr, uAddrStart);
     DBGFADDRESS HitAddr;
-    int rc = DBGFR3MemScan(pUVM, 0, &KernelAddr, cbScan, 1,
-                           g_abLinuxVersion, sizeof(g_abLinuxVersion) - 1, &HitAddr);
+    int rc = pVMM->pfnDBGFR3MemScan(pUVM, 0, &KernelAddr, cbScan, 1,
+                                    g_abLinuxVersion, sizeof(g_abLinuxVersion) - 1, &HitAddr);
     if (RT_SUCCESS(rc))
     {
         char szTmp[128];
         char const *pszX = &szTmp[sizeof(g_abLinuxVersion) - 1];
-        rc = DBGFR3MemReadString(pUVM, 0, &HitAddr, szTmp, sizeof(szTmp));
+        rc = pVMM->pfnDBGFR3MemReadString(pUVM, 0, &HitAddr, szTmp, sizeof(szTmp));
         if (    RT_SUCCESS(rc)
             &&  (   (   pszX[0] == '2'  /* 2.x.y with x in {0..6} */
                      && pszX[1] == '.'
@@ -2808,8 +2845,9 @@ static bool dbgDiggerLinuxProbeWithAddr(PDBGDIGGERLINUX pThis, PUVM pUVM, RTGCUI
  * @returns Flag whether a possible candidate location was found.
  * @param   pThis               The Linux digger data.
  * @param   pUVM                The user mode VM handle.
+ * @param   pVMM                The VMM function table.
  */
-static bool dbgDiggerLinuxProbeKaslr(PDBGDIGGERLINUX pThis, PUVM pUVM)
+static bool dbgDiggerLinuxProbeKaslr(PDBGDIGGERLINUX pThis, PUVM pUVM, PCVMMR3VTABLE pVMM)
 {
     /**
      * With KASLR the kernel is loaded at a different address at each boot making detection
@@ -2836,7 +2874,7 @@ static bool dbgDiggerLinuxProbeKaslr(PDBGDIGGERLINUX pThis, PUVM pUVM)
      *
      * So the highest offset the kernel can start is 0x40000000 which is 1GB (plus the maximum kernel size we defined).
      */
-    if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, LNX64_KERNEL_ADDRESS_START, _1G + LNX_MAX_KERNEL_SIZE))
+    if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, pVMM, LNX64_KERNEL_ADDRESS_START, _1G + LNX_MAX_KERNEL_SIZE))
         return true;
 
     /*
@@ -2845,7 +2883,7 @@ static bool dbgDiggerLinuxProbeKaslr(PDBGDIGGERLINUX pThis, PUVM pUVM)
      *
      * The default split is 3GB userspace and 1GB kernel, so we just search the entire upper 1GB kernel space.
      */
-    if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, LNX32_KERNEL_ADDRESS_START, _4G - LNX32_KERNEL_ADDRESS_START))
+    if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, pVMM, LNX32_KERNEL_ADDRESS_START, _4G - LNX32_KERNEL_ADDRESS_START))
         return true;
 
     return false;
@@ -2854,13 +2892,13 @@ static bool dbgDiggerLinuxProbeKaslr(PDBGDIGGERLINUX pThis, PUVM pUVM)
 /**
  * @copydoc DBGFOSREG::pfnInit
  */
-static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     Assert(!pThis->fValid);
 
     char szVersion[256] = "Linux version 4.19.0";
-    int rc = DBGFR3MemReadString(pUVM, 0, &pThis->AddrLinuxBanner, &szVersion[0], sizeof(szVersion));
+    int rc = pVMM->pfnDBGFR3MemReadString(pUVM, 0, &pThis->AddrLinuxBanner, &szVersion[0], sizeof(szVersion));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -2910,21 +2948,21 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
      * to get the symbol table, the config database is required to select
      * the method to use.
      */
-    rc = dbgDiggerLinuxCfgFind(pThis, pUVM);
+    rc = dbgDiggerLinuxCfgFind(pThis, pUVM, pVMM);
     if (RT_FAILURE(rc))
         LogFlowFunc(("Failed to find kernel config (%Rrc), no config database available\n", rc));
 
     static const uint8_t s_abNeedle[] = "kobj";
-    rc = dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, s_abNeedle, sizeof(s_abNeedle) - 1);
+    rc = dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, pVMM, s_abNeedle, sizeof(s_abNeedle) - 1);
     if (RT_FAILURE(rc))
     {
         /* Try alternate needle (seen on older x86 Linux kernels). */
         static const uint8_t s_abNeedleAlt[] = "kobjec";
-        rc = dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, s_abNeedleAlt, sizeof(s_abNeedleAlt) - 1);
+        rc = dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, pVMM, s_abNeedleAlt, sizeof(s_abNeedleAlt) - 1);
         if (RT_FAILURE(rc))
         {
             static const uint8_t s_abNeedleOSuseX86[] = "nmi"; /* OpenSuSe 10.2 x86 */
-            rc = dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, s_abNeedleOSuseX86, sizeof(s_abNeedleOSuseX86) - 1);
+            rc = dbgDiggerLinuxFindSymbolTableFromNeedle(pThis, pUVM, pVMM, s_abNeedleOSuseX86, sizeof(s_abNeedleOSuseX86) - 1);
         }
     }
 
@@ -2936,18 +2974,18 @@ static DECLCALLBACK(int)  dbgDiggerLinuxInit(PUVM pUVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnProbe
  */
-static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PUVM pUVM, void *pvData)
+static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
 
     for (unsigned i = 0; i < RT_ELEMENTS(g_au64LnxKernelAddresses); i++)
     {
-        if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, g_au64LnxKernelAddresses[i], LNX_MAX_KERNEL_SIZE))
+        if (dbgDiggerLinuxProbeWithAddr(pThis, pUVM, pVMM, g_au64LnxKernelAddresses[i], LNX_MAX_KERNEL_SIZE))
             return true;
     }
 
     /* Maybe the kernel uses KASLR. */
-    if (dbgDiggerLinuxProbeKaslr(pThis, pUVM))
+    if (dbgDiggerLinuxProbeKaslr(pThis, pUVM, pVMM))
         return true;
 
     return false;
@@ -2957,18 +2995,18 @@ static DECLCALLBACK(bool)  dbgDiggerLinuxProbe(PUVM pUVM, void *pvData)
 /**
  * @copydoc DBGFOSREG::pfnDestruct
  */
-static DECLCALLBACK(void)  dbgDiggerLinuxDestruct(PUVM pUVM, void *pvData)
+static DECLCALLBACK(void)  dbgDiggerLinuxDestruct(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
-    RT_NOREF2(pUVM, pvData);
+    RT_NOREF(pUVM, pVMM, pvData);
 }
 
 
 /**
  * @copydoc DBGFOSREG::pfnConstruct
  */
-static DECLCALLBACK(int)  dbgDiggerLinuxConstruct(PUVM pUVM, void *pvData)
+static DECLCALLBACK(int)  dbgDiggerLinuxConstruct(PUVM pUVM, PCVMMR3VTABLE pVMM, void *pvData)
 {
-    RT_NOREF1(pUVM);
+    RT_NOREF(pUVM, pVMM);
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     pThis->IDmesg.u32Magic = DBGFOSIDMESG_MAGIC;
     pThis->IDmesg.pfnQueryKernelLog = dbgDiggerLinuxIDmsg_QueryKernelLog;

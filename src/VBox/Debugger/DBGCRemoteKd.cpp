@@ -2749,11 +2749,12 @@ static int dbgcKdCtxPktManipulate64GetVersion(PKDCTX pThis, PCKDPACKETMANIPULATE
     bool f32Bit = false;
     if (pThis->pIfWinNt)
     {
-        int rc = pThis->pIfWinNt->pfnQueryVersion(pThis->pIfWinNt, pThis->Dbgc.pUVM,
+        int rc = pThis->pIfWinNt->pfnQueryVersion(pThis->pIfWinNt, pThis->Dbgc.pUVM, VMMR3GetVTable(),
                                                   NULL /*puVersMajor*/, NULL /*puVersMinor*/,
                                                   &NtBuildNumber, &f32Bit);
         if (RT_SUCCESS(rc))
-            rc = pThis->pIfWinNt->pfnQueryKernelPtrs(pThis->pIfWinNt, pThis->Dbgc.pUVM, &Resp.u.GetVersion.u64PtrKernBase,
+            rc = pThis->pIfWinNt->pfnQueryKernelPtrs(pThis->pIfWinNt, pThis->Dbgc.pUVM, VMMR3GetVTable(),
+                                                     &Resp.u.GetVersion.u64PtrKernBase,
                                                      &Resp.u.GetVersion.u64PtrPsLoadedModuleList);
     }
 
@@ -3027,7 +3028,7 @@ static int dbgcKdCtxPktManipulate64ReadCtrlSpace(PKDCTX pThis, PCKDPACKETMANIPUL
                 {
                     RTGCUINTPTR GCPtrKpcr = 0;
 
-                    rc = pThis->pIfWinNt->pfnQueryKpcrForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, RespHdr.idCpu,
+                    rc = pThis->pIfWinNt->pfnQueryKpcrForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, VMMR3GetVTable(), RespHdr.idCpu,
                                                               &GCPtrKpcr, NULL /*pKpcrb*/);
                     if (RT_SUCCESS(rc))
                         memcpy(&abResp[0], &GCPtrKpcr, sizeof(GCPtrKpcr));
@@ -3042,7 +3043,7 @@ static int dbgcKdCtxPktManipulate64ReadCtrlSpace(PKDCTX pThis, PCKDPACKETMANIPUL
                 {
                     RTGCUINTPTR GCPtrKpcrb = 0;
 
-                    rc = pThis->pIfWinNt->pfnQueryKpcrForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, RespHdr.idCpu,
+                    rc = pThis->pIfWinNt->pfnQueryKpcrForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, VMMR3GetVTable(), RespHdr.idCpu,
                                                               NULL /*pKpcr*/, &GCPtrKpcrb);
                     if (RT_SUCCESS(rc))
                         memcpy(&abResp[0], &GCPtrKpcrb, sizeof(GCPtrKpcrb));
@@ -3064,8 +3065,8 @@ static int dbgcKdCtxPktManipulate64ReadCtrlSpace(PKDCTX pThis, PCKDPACKETMANIPUL
                 {
                     RTGCUINTPTR GCPtrCurThrd = 0;
 
-                    rc = pThis->pIfWinNt->pfnQueryCurThrdForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, RespHdr.idCpu,
-                                                                 &GCPtrCurThrd);
+                    rc = pThis->pIfWinNt->pfnQueryCurThrdForVCpu(pThis->pIfWinNt, pThis->Dbgc.pUVM, VMMR3GetVTable(),
+                                                                 RespHdr.idCpu, &GCPtrCurThrd);
                     if (RT_SUCCESS(rc))
                         memcpy(&abResp[0], &GCPtrCurThrd, sizeof(GCPtrCurThrd));
                 }
@@ -3585,7 +3586,7 @@ static void dbgcKdCtxDetectGstOs(PKDCTX pThis)
 
     if (pThis->pIfWinNt)
     {
-        rc = pThis->pIfWinNt->pfnQueryVersion(pThis->pIfWinNt, pThis->Dbgc.pUVM,
+        rc = pThis->pIfWinNt->pfnQueryVersion(pThis->pIfWinNt, pThis->Dbgc.pUVM, VMMR3GetVTable(),
                                               NULL /*puVersMajor*/, NULL /*puVersMinor*/,
                                               NULL /*puBuildNumber*/, &pThis->f32Bit);
         AssertRC(rc);

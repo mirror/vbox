@@ -515,6 +515,7 @@ VMMR0_INT_DECL(PRTLOGGER) VMMR0GetReleaseLogger(PVMCPUCC pVCpu);
 /** @defgroup grp_vmm_api_r3    The VMM Host Context Ring 3 API
  * @{
  */
+VMMR3DECL(PCVMMR3VTABLE) VMMR3GetVTable(void);
 VMMR3_INT_DECL(int)     VMMR3Init(PVM pVM);
 VMMR3_INT_DECL(int)     VMMR3InitR0(PVM pVM);
 VMMR3_INT_DECL(int)     VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);

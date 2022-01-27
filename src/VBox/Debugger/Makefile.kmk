@@ -72,8 +72,6 @@ DbgPlugInDiggers_SOURCES = \
 	DBGPlugInCommonELF.cpp
 DbgPlugInDiggers_LIBS = \
 	$(PATH_STAGE_LIB)/DisasmR3$(VBOX_SUFF_LIB) \
-	$(if-expr "$(LIB_VMM)" == "$(VBOX_LIB_VMM_LAZY)",$(LIB_REM),) \
-	$(VBOX_LIB_VMM_LAZY) \
 	$(LIB_RUNTIME)
 $(call VBOX_SET_VER_INFO_DLL,DbgPlugInDiggers,VirtualBox Debugger Guest OS Digger Plug-in)
 
@@ -116,32 +114,6 @@ VBoxDbg_SOURCES = \
 VBoxDbg_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDbg.dylib
 $(call VBOX_SET_VER_INFO_DLL,VBoxDbg,VirtualBox Debugger GUI)
-
- ifdef VBOX_WITH_TESTCASES
-#
-# The VBoxDbg testcase (Qt).
-#
-PROGRAMS += tstVBoxDbg
-tstVBoxDbg_TEMPLATE     = VBOXQTGUIEXE
-tstVBoxDbg_USES         = qt5
-tstVBoxDbg_QTTOOL       = QT5
-tstVBoxDbg_QT_MODULES   = Core Gui Widgets
-tstVBoxDbg_LIBS.linux   += xcb
-tstVBoxDbg_LIBS.solaris += xcb
-tstVBoxDbg_LIBS.freebsd += xcb
-tstVBoxDbg_SOURCES      = testcase/tstVBoxDbg.cpp
-tstVBoxDbg_LIBS         = \
-	$(LIB_VMM) \
-	$(LIB_REM) \
-	$(LIB_RUNTIME)
-  ifeq ($(KBUILD_TARGET),win)
-tstVBoxDbg_LIBS        += \
-	$(PATH_STAGE_LIB)/VBoxDbg.lib
-  else
-tstVBoxDbg_LIBS        += \
-	$(PATH_STAGE_BIN)/VBoxDbg$(VBOX_SUFF_DLL)
-  endif
- endif # TESTCASES
 endif # Qt
 
 
