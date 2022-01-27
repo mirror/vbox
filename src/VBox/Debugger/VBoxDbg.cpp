@@ -150,11 +150,13 @@ DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiV
 DBGDECL(int) DBGGuiCreateForVM(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
 {
     AssertPtrReturn(pUVM, VERR_INVALID_POINTER);
-    AssertPtrReturn(VMR3RetainUVM(pUVM) != UINT32_MAX, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVMM, VERR_INVALID_POINTER);
+    AssertReturn(VMMR3VTABLE_IS_COMPATIBLE(pVMM->uMagicVersion), VERR_VERSION_MISMATCH);
+    AssertReturn(pVMM->pfnVMR3RetainUVM(pUVM) != UINT32_MAX, VERR_INVALID_POINTER);
 
     int rc = dbgGuiCreate(NULL, pUVM, pVMM, ppGui, ppGuiVT);
 
-    VMR3ReleaseUVM(pUVM);
+    pVMM->pfnVMR3ReleaseUVM(pUVM);
     return rc;
 }
 

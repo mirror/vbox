@@ -145,6 +145,15 @@ public:
     }
 
     /**
+     * Gets the VMM function table.
+     * @returns The VMM function table.
+     */
+    PCVMMR3VTABLE getVMMFunctionTable() const
+    {
+        return m_pVMM;
+    }
+
+    /**
      * @returns The name of the machine.
      */
     QString getMachineName() const;

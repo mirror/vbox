@@ -188,7 +188,7 @@ private:
      * @{ */
     void i_updateStats(uint64_t iTick);
     static DECLCALLBACK(int) i_staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *pvSample,
-                                                       STAMUNIT enmUnit, STAMVISIBILITY enmVisiblity,
+                                                       STAMUNIT enmUnit, const char *pszUnit, STAMVISIBILITY enmVisiblity,
                                                        const char *pszDesc, void *pvUser);
 
     /** @}  */

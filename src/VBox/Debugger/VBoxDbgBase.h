@@ -114,6 +114,8 @@ private:
     VBoxDbgGui *m_pDbgGui;
     /** The user mode VM handle. */
     PUVM volatile m_pUVM;
+    /** The VMM function table. */
+    PCVMMR3VTABLE volatile m_pVMM;
     /** The handle of the GUI thread. */
     RTNATIVETHREAD m_hGUIThread;
 };

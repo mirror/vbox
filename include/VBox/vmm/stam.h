@@ -1340,12 +1340,14 @@ VMMR3DECL(int)  STAMR3Print(PUVM pUVM, const char *pszPat);
  * @param   enmType         The type.
  * @param   pvSample        Pointer to the data. enmType indicates the format of this data.
  * @param   enmUnit         The unit.
+ * @param   pszUnit         The unit as string.  This is a permanent string,
+ *                          same as returned by STAMR3GetUnit().
  * @param   enmVisibility   The visibility.
  * @param   pszDesc         The description.
  * @param   pvUser          The pvUser argument given to STAMR3Enum().
  */
 typedef DECLCALLBACKTYPE(int, FNSTAMR3ENUM,(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                                            STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser));
+                                            const char *pszUnit, STAMVISIBILITY enmVisibility, const char *pszDesc, void *pvUser));
 /** Pointer to a FNSTAMR3ENUM(). */
 typedef FNSTAMR3ENUM *PFNSTAMR3ENUM;
 

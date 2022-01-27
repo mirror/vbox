@@ -33,7 +33,7 @@
 
 
 VBoxDbgBase::VBoxDbgBase(VBoxDbgGui *a_pDbgGui)
-    : m_pDbgGui(a_pDbgGui), m_pUVM(NULL), m_hGUIThread(RTThreadNativeSelf())
+    : m_pDbgGui(a_pDbgGui), m_pUVM(NULL), m_pVMM(NULL), m_hGUIThread(RTThreadNativeSelf())
 {
     NOREF(m_pDbgGui); /* shut up warning. */
 
@@ -41,11 +41,12 @@ VBoxDbgBase::VBoxDbgBase(VBoxDbgGui *a_pDbgGui)
      * Register
      */
     m_pUVM = a_pDbgGui->getUvmHandle();
-    if (m_pUVM)
+    m_pVMM = a_pDbgGui->getVMMFunctionTable();
+    if (m_pUVM && m_pVMM)
     {
-        VMR3RetainUVM(m_pUVM);
+        m_pVMM->pfnVMR3RetainUVM(m_pUVM);
 
-        int rc = VMR3AtStateRegister(m_pUVM, atStateChange, this);
+        int rc = m_pVMM->pfnVMR3AtStateRegister(m_pUVM, atStateChange, this);
         AssertRC(rc);
     }
 }
@@ -57,13 +58,14 @@ VBoxDbgBase::~VBoxDbgBase()
      * If the VM is still around.
      */
     /** @todo need to do some locking here?  */
-    PUVM pUVM = ASMAtomicXchgPtrT(&m_pUVM, NULL, PUVM);
-    if (pUVM)
+    PUVM          pUVM = ASMAtomicXchgPtrT(&m_pUVM, NULL, PUVM);
+    PCVMMR3VTABLE pVMM = ASMAtomicXchgPtrT(&m_pVMM, NULL, PCVMMR3VTABLE);
+    if (pUVM && pVMM)
     {
-        int rc = VMR3AtStateDeregister(pUVM, atStateChange, this);
+        int rc = pVMM->pfnVMR3AtStateDeregister(pUVM, atStateChange, this);
         AssertRC(rc);
 
-        VMR3ReleaseUVM(pUVM);
+        pVMM->pfnVMR3ReleaseUVM(pUVM);
     }
 }
 
@@ -73,10 +75,12 @@ VBoxDbgBase::stamReset(const QString &rPat)
 {
     QByteArray Utf8Array = rPat.toUtf8();
     const char *pszPat = !rPat.isEmpty() ? Utf8Array.constData() : NULL;
-    PUVM pUVM = m_pUVM;
-    if (    pUVM
-        &&  VMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
-        return STAMR3Reset(pUVM, pszPat);
+    PUVM          pUVM = m_pUVM;
+    PCVMMR3VTABLE pVMM = m_pVMM;
+    if (   pUVM
+        && pVMM
+        && pVMM->pfnVMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
+        return pVMM->pfnSTAMR3Reset(pUVM, pszPat);
     return VERR_INVALID_HANDLE;
 }
 
@@ -86,10 +90,12 @@ VBoxDbgBase::stamEnum(const QString &rPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
 {
     QByteArray Utf8Array = rPat.toUtf8();
     const char *pszPat = !rPat.isEmpty() ? Utf8Array.constData() : NULL;
-    PUVM pUVM = m_pUVM;
-    if (    pUVM
-        &&  VMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
-        return STAMR3Enum(pUVM, pszPat, pfnEnum, pvUser);
+    PUVM          pUVM = m_pUVM;
+    PCVMMR3VTABLE pVMM = m_pVMM;
+    if (   pUVM
+        && pVMM
+        && pVMM->pfnVMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
+        return pVMM->pfnSTAMR3Enum(pUVM, pszPat, pfnEnum, pvUser);
     return VERR_INVALID_HANDLE;
 }
 
@@ -97,16 +103,18 @@ VBoxDbgBase::stamEnum(const QString &rPat, PFNSTAMR3ENUM pfnEnum, void *pvUser)
 int
 VBoxDbgBase::dbgcCreate(PCDBGCIO pIo, unsigned fFlags)
 {
-    PUVM pUVM = m_pUVM;
-    if (    pUVM
-        &&  VMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
-        return DBGCCreate(pUVM, pIo, fFlags);
+    PUVM          pUVM = m_pUVM;
+    PCVMMR3VTABLE pVMM = m_pVMM;
+    if (   pUVM
+        && pVMM
+        && pVMM->pfnVMR3GetStateU(pUVM) < VMSTATE_DESTROYING)
+        return pVMM->pfnDBGCCreate(pUVM, pIo, fFlags);
     return VERR_INVALID_HANDLE;
 }
 
 
 /*static*/ DECLCALLBACK(void)
-VBoxDbgBase::atStateChange(PUVM pUVM, PCVMMR3VTABLE /*pVMM*/, VMSTATE enmState, VMSTATE /*enmOldState*/, void *pvUser)
+VBoxDbgBase::atStateChange(PUVM pUVM, PCVMMR3VTABLE pVMM, VMSTATE enmState, VMSTATE /*enmOldState*/, void *pvUser)
 {
     VBoxDbgBase *pThis = (VBoxDbgBase *)pvUser; NOREF(pUVM);
     switch (enmState)
@@ -114,12 +122,14 @@ VBoxDbgBase::atStateChange(PUVM pUVM, PCVMMR3VTABLE /*pVMM*/, VMSTATE enmState, 
         case VMSTATE_TERMINATED:
         {
             /** @todo need to do some locking here?  */
-            PUVM pUVM2 = ASMAtomicXchgPtrT(&pThis->m_pUVM, NULL, PUVM);
-            if (pUVM2)
+            PUVM          pUVM2 = ASMAtomicXchgPtrT(&pThis->m_pUVM, NULL, PUVM);
+            PCVMMR3VTABLE pVMM2 = ASMAtomicXchgPtrT(&pThis->m_pVMM, NULL, PCVMMR3VTABLE);
+            if (pUVM2 && pVMM2)
             {
                 Assert(pUVM2 == pUVM);
+                Assert(pVMM2 == pVMM);
                 pThis->sigTerminated();
-                VMR3ReleaseUVM(pUVM2);
+                pVMM->pfnVMR3ReleaseUVM(pUVM2);
             }
             break;
         }
@@ -131,6 +141,7 @@ VBoxDbgBase::atStateChange(PUVM pUVM, PCVMMR3VTABLE /*pVMM*/, VMSTATE enmState, 
         default:
             break;
     }
+    RT_NOREF(pVMM);
 }
 
 
