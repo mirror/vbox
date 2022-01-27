@@ -147,7 +147,7 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
 
     UIWizardNewVMNameOSTypeCommon::determineOSType(strISOPath, pWizard);
 
-    if (!pWizard->detectedOSTypeId().isEmpty() && !m_userModifiedParameters.contains("GuestOSType"))
+    if (!m_userModifiedParameters.contains("GuestOSType"))
         UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
     pWizard->setISOFilePath(strISOPath);
 

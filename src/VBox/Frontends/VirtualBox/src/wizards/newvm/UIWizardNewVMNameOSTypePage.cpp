@@ -177,6 +177,7 @@ static const osTypePattern gs_OSTypePattern[] =
 
 bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *pNameAndSystemEditor, QString strNewName)
 {
+    AssertReturn(pNameAndSystemEditor, false);
     /* Append default architecture bit-count (64/32) if not already in the name: */
     if (!strNewName.contains("32") && !strNewName.contains("64"))
     {
@@ -192,8 +193,7 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
     {
         if (strNewName.contains(gs_OSTypePattern[i].pattern))
         {
-            if (pNameAndSystemEditor)
-                pNameAndSystemEditor->setType(uiCommon().vmGuestOSType(gs_OSTypePattern[i].pcstId));
+            pNameAndSystemEditor->setType(uiCommon().vmGuestOSType(gs_OSTypePattern[i].pcstId));
             return true;
         }
     }
@@ -202,6 +202,9 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(UINameAndSystemEditor *p
 
 bool UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(UINameAndSystemEditor *pNameAndSystemEditor, QString strDetectedOSType)
 {
+    AssertReturn(pNameAndSystemEditor, false);
+    if (strDetectedOSType.isEmpty())
+        pNameAndSystemEditor->setType(uiCommon().vmGuestOSType("Other"));
     /* Append 32 as bit-count if the name has no 64 and 32 in the name since API returns a type name with no arch bit count for 32-bit OSs: */
     if (!strDetectedOSType.contains("32") && !strDetectedOSType.contains("64"))
         strDetectedOSType += "32";
@@ -211,8 +214,8 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(UINameAndSys
     {
         if (strDetectedOSType.contains(gs_OSTypePattern[i].pattern))
         {
-            if (pNameAndSystemEditor)
-                pNameAndSystemEditor->setType(uiCommon().vmGuestOSType(gs_OSTypePattern[i].pcstId));
+
+            pNameAndSystemEditor->setType(uiCommon().vmGuestOSType(gs_OSTypePattern[i].pcstId));
             return true;
         }
     }
@@ -470,7 +473,7 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
     AssertReturnVoid(pWizard);
     UIWizardNewVMNameOSTypeCommon::determineOSType(strPath, pWizard);
 
-    if (!pWizard->detectedOSTypeId().isEmpty() && !m_userModifiedParameters.contains("GuestOSType"))
+    if (!m_userModifiedParameters.contains("GuestOSType"))
         UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
     pWizard->setISOFilePath(strPath);
 
