@@ -204,7 +204,11 @@ bool UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(UINameAndSys
 {
     AssertReturn(pNameAndSystemEditor, false);
     if (strDetectedOSType.isEmpty())
+    {
         pNameAndSystemEditor->setType(uiCommon().vmGuestOSType("Other"));
+        /* Return false to allow OS type guessing from name. See caller code: */
+        return false;
+    }
     /* Append 32 as bit-count if the name has no 64 and 32 in the name since API returns a type name with no arch bit count for 32-bit OSs: */
     if (!strDetectedOSType.contains("32") && !strDetectedOSType.contains("64"))
         strDetectedOSType += "32";
@@ -389,11 +393,14 @@ bool UIWizardNewVMNameOSTypePage::isComplete() const
 void UIWizardNewVMNameOSTypePage::sltNameChanged(const QString &strNewName)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
-    if (!m_userModifiedParameters.contains("GuestOSType"))
+    if (!m_userModifiedParameters.contains("GuestOSTypeFromISO"))
     {
         m_pNameAndSystemEditor->blockSignals(true);
         if (UIWizardNewVMNameOSTypeCommon::guessOSTypeFromName(m_pNameAndSystemEditor, strNewName))
+        {
             wizardWindow<UIWizardNewVM>()->setGuestOSType(m_pNameAndSystemEditor->type());
+            m_userModifiedParameters << "GuestOSTypeFromName";
+        }
         m_pNameAndSystemEditor->blockSignals(false);
     }
     UIWizardNewVMNameOSTypeCommon::composeMachineFilePath(m_pNameAndSystemEditor, wizardWindow<UIWizardNewVM>());
@@ -473,8 +480,11 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
     AssertReturnVoid(pWizard);
     UIWizardNewVMNameOSTypeCommon::detectOSType(strPath, pWizard);
 
-    if (!m_userModifiedParameters.contains("GuestOSType"))
-        UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
+    if (UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId()))
+        m_userModifiedParameters << "GuestOSTypeFromISO";
+    else /* Remove GuestOSTypeFromISO fromthe set if it is there: */
+        m_userModifiedParameters.remove("GuestOSTypeFromISO");
+
     pWizard->setISOFilePath(strPath);
 
     /* Update the global recent ISO path: */
