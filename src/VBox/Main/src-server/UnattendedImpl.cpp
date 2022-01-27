@@ -392,8 +392,11 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
         hrc = i_innerDetectIsoOSLinux(hVfsIso, &uBuf, &enmOsType);
     if (hrc == S_FALSE && enmOsType == VBOXOSTYPE_Unknown)
         hrc = i_innerDetectIsoOSOs2(hVfsIso, &uBuf, &enmOsType);
-    try {  mStrDetectedOSTypeId = Global::OSTypeId(enmOsType); }
-    catch (std::bad_alloc &) { hrc = E_OUTOFMEMORY; }
+    if (enmOsType != VBOXOSTYPE_Unknown)
+    {
+        try {  mStrDetectedOSTypeId = Global::OSTypeId(enmOsType); }
+        catch (std::bad_alloc &) { hrc = E_OUTOFMEMORY; }
+    }
     return hrc;
 }
 
