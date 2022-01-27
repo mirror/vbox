@@ -43,8 +43,6 @@
 /** Defines the guest property that defines if the DRM resizing client needs to be active or not. */
 # define VBOX_DRMCLIENT_GUEST_PROP_RESIZE    "/VirtualBox/GuestAdd/DRMResize"
 
-#endif /* RT_OS_LINUX */
-
 /**
  * Check if specified guest property exist.
  *
@@ -56,7 +54,7 @@
 static bool vbglR3DrmClientCheckProp(const char *pszPropName, uint32_t fPropFlags)
 {
     bool fExist = false;
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_GUEST_PROPS)
+# if defined(VBOX_WITH_GUEST_PROPS)
     uint32_t idClient;
 
     int rc = VbglR3GuestPropConnect(&idClient);
@@ -83,9 +81,10 @@ static bool vbglR3DrmClientCheckProp(const char *pszPropName, uint32_t fPropFlag
 
         VbglR3GuestPropDisconnect(idClient);
     }
-#endif /* RT_OS_LINUX */
+# endif /* VBOX_WITH_GUEST_PROPS */
     return fExist;
 }
+#endif /* RT_OS_LINUX */
 
 /**
  * Returns true if the DRM resizing client is needed.
@@ -95,7 +94,11 @@ static bool vbglR3DrmClientCheckProp(const char *pszPropName, uint32_t fPropFlag
  */
 VBGLR3DECL(bool) VbglR3DrmClientIsNeeded(void)
 {
+#if defined(RT_OS_LINUX)
     return vbglR3DrmClientCheckProp(VBOX_DRMCLIENT_GUEST_PROP_RESIZE, 0);
+#else
+    return false;
+#endif
 }
 
 /**
@@ -113,7 +116,11 @@ VBGLR3DECL(bool) VbglR3DrmClientIsNeeded(void)
  */
 VBGLR3DECL(bool) VbglR3DrmRestrictedIpcAccessIsNeeded(void)
 {
+#if defined(RT_OS_LINUX)
     return vbglR3DrmClientCheckProp(VBGLR3DRMIPCPROPRESTRICT, GUEST_PROP_F_RDONLYGUEST);
+#else
+    return false;
+#endif
 }
 
 /**
