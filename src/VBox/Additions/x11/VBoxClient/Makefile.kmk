@@ -102,6 +102,7 @@ ifdef VBOX_WITH_GUEST_PROPS
  VBoxClient_DEFS    += VBOX_WITH_GUEST_PROPS
  VBoxClient_SOURCES += \
 	hostversion.cpp
+ VBoxDRMClient_DEFS += VBOX_WITH_GUEST_PROPS
 endif
 
 ifdef VBOX_WITH_DRAG_AND_DROP

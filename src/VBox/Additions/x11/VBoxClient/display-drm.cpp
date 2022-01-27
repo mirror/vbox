@@ -37,6 +37,15 @@
  * receive screen layout change events obtained on Desktop Environment level and send it
  * back to host, so host and guest will have the same screen layout representation.
  *
+ * By default, access to IPC server socket is granted to all users. It can be restricted to
+ * only root and users from group 'vboxdrmipc' if '/VirtualBox/GuestAdd/DRMIpcRestricted' guest
+ * property is set and READ-ONLY for guest. User group 'vboxdrmipc' is created during Guest
+ * Additions installation. If this group is removed (or not found due to any reason) prior to
+ * service start, access to IPC server socket will be granted to root only regardless
+ * if '/VirtualBox/GuestAdd/DRMIpcRestricted' guest property is set or not. If guest property
+ * is set, but is not READ-ONLY for guest, property is ignored and IPC socket access is granted
+ * to all users.
+ *
  * Logging is implemented in a way that errors are always printed out, VBClLogVerbose(1) and
  * VBClLogVerbose(2) are used for debugging purposes. Verbosity level 1 is for messages related
  * to service itself (excluding IPC), level 2 is for IPC communication debugging. In order to see
@@ -65,7 +74,7 @@
  *     name will be cropped by 15 characters.
  *
  *
- * The following loack are utilized:
+ * The following locks are utilized:
  *
  * #g_ipcClientConnectionsListCritSect - protects access to list of IPC client connections.
  *     It is used by each thread - DrmResizeThread, DrmIpcSRV and IpcCLT-XXX.
@@ -78,6 +87,7 @@
 #include "display-ipc.h"
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/HostServices/GuestPropertySvc.h>
 
 #include <iprt/getopt.h>
 #include <iprt/assert.h>
@@ -132,6 +142,12 @@
 
 /** IPC client connections counter. */
 static volatile uint32_t g_cDrmIpcConnections = 0;
+/* A flag which indicates whether access to IPC socket should be restricted.
+ * This flag caches '/VirtualBox/GuestAdd/DRMIpcRestricted' guest property
+ * in order to prevent its retrieving from the host side each time a new IPC
+ * client connects to server. This flag is updated each time when property is
+ * changed on the host side. */
+static volatile bool g_fDrmIpcRestricted;
 
 /** DRM version structure. */
 struct DRMVERSION
@@ -919,7 +935,9 @@ static DECLCALLBACK(int) vbDrmIpcServerWorker(RTTHREAD ThreadSelf, void *pvUser)
             if (ASMAtomicIncU32(&g_cDrmIpcConnections) <= DRM_IPC_SERVER_CONNECTIONS_MAX)
             {
                 /* Authenticate remote peer. */
-                rc = vbDrmIpcAuth(hClientSession);
+                if (ASMAtomicReadBool(&g_fDrmIpcRestricted))
+                    rc = vbDrmIpcAuth(hClientSession);
+
                 if (RT_SUCCESS(rc))
                 {
                     /* Start incoming connection handler thread. */
@@ -967,6 +985,91 @@ static void vbDrmRequestShutdown(int sig)
 {
     RT_NOREF(sig);
     ASMAtomicWriteBool(&g_fShutdown, true);
+}
+
+/**
+ * Grant access to DRM IPC server socket depending on VM configuration.
+ *
+ * If VM has '/VirtualBox/GuestAdd/DRMIpcRestricted' guest property set
+ * and this property is READ-ONLY for the guest side, access will be
+ * granted to root and users from 'vboxdrmipc' group only. If group does
+ * not exists, only root will have access to the socket.  When property is
+ * not set or not READ-ONLY, all users will have access to the socket.
+ *
+ * @param   hIpcServer  IPC server handle.
+ */
+static void vbDrmSetIpcServerAccessPermissions(RTLOCALIPCSERVER hIpcServer)
+{
+    int rc;
+
+    ASMAtomicWriteBool(&g_fDrmIpcRestricted, VbglR3DrmRestrictedIpcAccessIsNeeded());
+
+    if (g_fDrmIpcRestricted)
+    {
+        struct group *pGrp;
+        pGrp = getgrnam(VBOX_DRMIPC_USER_GROUP);
+        if (pGrp)
+        {
+            rc = RTLocalIpcServerGrantGroupAccess(hIpcServer, pGrp->gr_gid);
+            if (RT_SUCCESS(rc))
+                VBClLogInfo("IPC server socket access granted to '" VBOX_DRMIPC_USER_GROUP "' users\n");
+            else
+                VBClLogError("unable to grant IPC server socket access to '" VBOX_DRMIPC_USER_GROUP "' users, rc=%Rrc\n", rc);
+
+        }
+        else
+            VBClLogError("unable to grant IPC server socket access to '" VBOX_DRMIPC_USER_GROUP "', group does not exist\n");
+    }
+    else
+    {
+        rc = RTLocalIpcServerSetAccessMode(hIpcServer,
+                                           RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR |
+                                           RTFS_UNIX_IRGRP | RTFS_UNIX_IWGRP |
+                                           RTFS_UNIX_IROTH | RTFS_UNIX_IWOTH);
+        if (RT_SUCCESS(rc))
+            VBClLogInfo("IPC server socket access granted to all users\n");
+        else
+            VBClLogError("unable to grant IPC server socket access to all users, rc=%Rrc\n", rc);
+    }
+}
+
+/**
+ * Wait and handle '/VirtualBox/GuestAdd/DRMIpcRestricted' guest property change.
+ *
+ * This function is executed in context of main().
+ *
+ * @param   hIpcServer  IPC server handle.
+ */
+static void vbDrmPollIpcServerAccessMode(RTLOCALIPCSERVER hIpcServer)
+{
+    HGCMCLIENTID idClient;
+    int rc;
+
+    rc = VbglR3GuestPropConnect(&idClient);
+    if (RT_SUCCESS(rc))
+    {
+        do
+        {
+            /* Buffer should be big enough to fit guest property data layout: Name\0Value\0Flags\0. */
+            static char achBuf[GUEST_PROP_MAX_NAME_LEN];
+            uint64_t u64Timestamp = 0;
+
+            rc = VbglR3GuestPropWait(idClient, VBGLR3DRMIPCPROPRESTRICT, achBuf, sizeof(achBuf), u64Timestamp,
+                                     VBOX_DRMIPC_RX_TIMEOUT_MS, NULL, NULL, &u64Timestamp, NULL, NULL);
+            if (RT_SUCCESS(rc))
+                vbDrmSetIpcServerAccessPermissions(hIpcServer);
+            else if (rc != VERR_TIMEOUT)
+            {
+                VBClLogError("error on waiting guest property notification, rc=%Rrc\n", rc);
+                RTThreadSleep(VBOX_DRMIPC_RX_RELAX_MS);
+            }
+
+        } while (!ASMAtomicReadBool(&g_fShutdown));
+
+        VbglR3GuestPropDisconnect(idClient);
+    }
+    else
+        VBClLogError("cannot connect to VM guest properties service, rc=%Rrc\n", rc);
 }
 
 int main(int argc, char *argv[])
@@ -1092,16 +1195,8 @@ int main(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
 
-    struct group *pGrp;
-    pGrp = getgrnam(VBOX_DRMIPC_USER_GROUP);
-    if (pGrp)
-    {
-        rc = RTLocalIpcServerGrantGroupAccess(hIpcServer, pGrp->gr_gid);
-        if (RT_FAILURE(rc))
-            VBClLogError("unable to grant IPC server socket access to '" VBOX_DRMIPC_USER_GROUP "', rc=%Rrc\n", rc);
-    }
-    else
-        VBClLogError("unable to grant IPC server socket access to '" VBOX_DRMIPC_USER_GROUP "', group does not exist\n");
+    /* Set IPC server socket access permissions according to VM configuration. */
+    vbDrmSetIpcServerAccessPermissions(hIpcServer);
 
     /* Attempt to start DRM resize task. */
     rc = RTThreadCreate(&drmResizeThread, vbDrmResizeWorker, (void *)hDevice, 0,
@@ -1113,6 +1208,9 @@ int main(int argc, char *argv[])
                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, DRM_IPC_SERVER_THREAD_NAME);
         if (RT_SUCCESS(rc))
         {
+            /* Poll for host notification about IPC server socket access mode change. */
+            vbDrmPollIpcServerAccessMode(hIpcServer);
+
             /* HACK ALERT!
              * The sequence of RTThreadWait(drmResizeThread) -> RTLocalIpcServerDestroy() -> RTThreadWait(vbDrmIpcThread)
              * is intentional! Once process received a signal, it will pull g_fShutdown flag, which in turn will cause
