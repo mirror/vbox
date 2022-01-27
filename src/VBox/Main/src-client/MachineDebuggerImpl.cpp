@@ -87,10 +87,6 @@ HRESULT MachineDebugger::init(Console *aParent)
     for (unsigned i = 0; i < RT_ELEMENTS(maiQueuedEmExecPolicyParams); i++)
         maiQueuedEmExecPolicyParams[i] = UINT8_MAX;
     mSingleStepQueued = -1;
-    mRecompileUserQueued = -1;
-    mRecompileSupervisorQueued = -1;
-    mPatmEnabledQueued = -1;
-    mCsamEnabledQueued = -1;
     mLogEnabledQueued = -1;
     mVirtualTimeRateQueued = UINT32_MAX;
     mFlushMode = false;
@@ -258,52 +254,6 @@ HRESULT MachineDebugger::i_setEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL 
 }
 
 /**
- * Returns the current recompile user mode code flag.
- *
- * @returns COM status code
- * @param   aRecompileUser  address of result variable
- */
-HRESULT MachineDebugger::getRecompileUser(BOOL *aRecompileUser)
-{
-    return i_getEmExecPolicyProperty(EMEXECPOLICY_RECOMPILE_RING3, aRecompileUser);
-}
-
-/**
- * Sets the recompile user mode code flag.
- *
- * @returns COM status
- * @param   aRecompileUser  new user mode code recompile flag.
- */
-HRESULT MachineDebugger::setRecompileUser(BOOL aRecompileUser)
-{
-    LogFlowThisFunc(("enable=%d\n", aRecompileUser));
-    return i_setEmExecPolicyProperty(EMEXECPOLICY_RECOMPILE_RING3, aRecompileUser);
-}
-
-/**
- * Returns the current recompile supervisor code flag.
- *
- * @returns COM status code
- * @param   aRecompileSupervisor    address of result variable
- */
-HRESULT MachineDebugger::getRecompileSupervisor(BOOL *aRecompileSupervisor)
-{
-    return i_getEmExecPolicyProperty(EMEXECPOLICY_RECOMPILE_RING0, aRecompileSupervisor);
-}
-
-/**
- * Sets the new recompile supervisor code flag.
- *
- * @returns COM status code
- * @param   aRecompileSupervisor    new recompile supervisor code flag
- */
-HRESULT MachineDebugger::setRecompileSupervisor(BOOL aRecompileSupervisor)
-{
-    LogFlowThisFunc(("enable=%d\n", aRecompileSupervisor));
-    return i_setEmExecPolicyProperty(EMEXECPOLICY_RECOMPILE_RING0, aRecompileSupervisor);
-}
-
-/**
  * Returns the current execute-all-in-IEM setting.
  *
  * @returns COM status code
@@ -324,60 +274,6 @@ HRESULT MachineDebugger::setExecuteAllInIEM(BOOL aExecuteAllInIEM)
 {
     LogFlowThisFunc(("enable=%d\n", aExecuteAllInIEM));
     return i_setEmExecPolicyProperty(EMEXECPOLICY_IEM_ALL, aExecuteAllInIEM);
-}
-
-/**
- * Returns the current patch manager enabled flag.
- *
- * @returns COM status code
- * @param   aPATMEnabled    address of result variable
- */
-HRESULT MachineDebugger::getPATMEnabled(BOOL *aPATMEnabled)
-{
-    *aPATMEnabled = false;
-    return S_OK;
-}
-
-/**
- * Set the new patch manager enabled flag.
- *
- * @returns COM status code
- * @param   aPATMEnabled    new patch manager enabled flag
- */
-HRESULT MachineDebugger::setPATMEnabled(BOOL aPATMEnabled)
-{
-    LogFlowThisFunc(("enable=%d\n", aPATMEnabled));
-
-    if (aPATMEnabled)
-        return setErrorBoth(VBOX_E_VM_ERROR, VERR_RAW_MODE_NOT_SUPPORTED, tr("PATM not present"), VERR_NOT_SUPPORTED);
-    return S_OK;
-}
-
-/**
- * Returns the current code scanner enabled flag.
- *
- * @returns COM status code
- * @param   aCSAMEnabled    address of result variable
- */
-HRESULT MachineDebugger::getCSAMEnabled(BOOL *aCSAMEnabled)
-{
-    *aCSAMEnabled = false;
-    return S_OK;
-}
-
-/**
- * Sets the new code scanner enabled flag.
- *
- * @returns COM status code
- * @param   aCSAMEnabled    new code scanner enabled flag
- */
-HRESULT MachineDebugger::setCSAMEnabled(BOOL aCSAMEnabled)
-{
-    LogFlowThisFunc(("enable=%d\n", aCSAMEnabled));
-
-    if (aCSAMEnabled)
-        return setErrorBoth(VBOX_E_VM_ERROR, VERR_RAW_MODE_NOT_SUPPORTED, tr("CASM not present"));
-    return S_OK;
 }
 
 /**
@@ -533,28 +429,6 @@ HRESULT MachineDebugger::getExecutionEngine(VMExecutionEngine_T *apenmEngine)
                 case VM_EXEC_ENGINE_NATIVE_API: *apenmEngine = VMExecutionEngine_NativeApi; break;
                 default: AssertMsgFailed(("bEngine=%d\n", bEngine));
             }
-    }
-
-    return S_OK;
-}
-
-/**
- * Returns the current hardware virtualization flag.
- *
- * @returns COM status code
- * @param   aHWVirtExEnabled    address of result variable
- */
-HRESULT MachineDebugger::getHWVirtExEnabled(BOOL *aHWVirtExEnabled)
-{
-    *aHWVirtExEnabled = false;
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    Console::SafeVMPtrQuiet ptrVM(mParent);
-    if (ptrVM.isOk())
-    {
-        uint8_t bEngine = UINT8_MAX;
-        int rc = ptrVM.vtable()->pfnEMR3QueryMainExecutionEngine(ptrVM.rawUVM(), &bEngine);
-        *aHWVirtExEnabled = RT_SUCCESS(rc) && bEngine == VM_EXEC_ENGINE_HW_VIRT;
     }
 
     return S_OK;
@@ -730,37 +604,6 @@ HRESULT MachineDebugger::setVirtualTimeRate(ULONG aVirtualTimeRate)
         }
     }
 
-    return hrc;
-}
-
-/**
- * Hack for getting the user mode VM handle (UVM).
- *
- * This is only temporary (promise) while prototyping the debugger.
- *
- * @returns COM status code
- * @param   aVM         Where to store the vm handle. Since there is no
- *                      uintptr_t in COM, we're using the max integer.
- *                      (No, ULONG is not pointer sized!)
- * @remarks The returned handle must be passed to VMR3ReleaseUVM()!
- * @remarks Prior to 4.3 this returned PVM.
- */
-HRESULT MachineDebugger::getVM(LONG64 *aVM)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    Console::SafeVMPtr ptrVM(mParent);
-    HRESULT hrc = ptrVM.rc();
-    if (SUCCEEDED(hrc))
-    {
-        ptrVM.vtable()->pfnVMR3RetainUVM(ptrVM.rawUVM());
-        *aVM = (intptr_t)ptrVM.rawUVM();
-    }
-
-    /*
-     * Note! ptrVM protection provided by SafeVMPtr is no long effective
-     *       after we return from this method.
-     */
     return hrc;
 }
 
@@ -1592,6 +1435,57 @@ HRESULT MachineDebugger::takeGuestSample(const com::Utf8Str &aFilename, ULONG aU
     return hrc;
 }
 
+/**
+ * Hack for getting the user mode VM handle (UVM) and VMM function table.
+ *
+ * @returns COM status code
+ * @param   aUVM                Where to store the vm handle. Since there is no
+ *                              uintptr_t in COM, we're using the max integer. (No,
+ *                              ULONG is not pointer sized!)
+ * @param   aVMMFunctionTable   Where to store the vm handle.
+ *
+ * @remarks The returned handle must be passed to VMR3ReleaseUVM()!
+ */
+HRESULT MachineDebugger::getUVMAndVMMFunctionTable(LONG64 aMagicVersion, LONG64 *aVMMFunctionTable, LONG64 *aUVM)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /*
+     * Make sure it is a local call.
+     */
+    RTTHREAD hThread = RTThreadSelf();
+    if (hThread != NIL_RTTHREAD)
+    {
+        const char *pszName = RTThreadGetName(hThread);
+        if (   !RTStrStartsWith(pszName, "ALIEN-") /* COM worker threads are aliens */
+            && !RTStrStartsWith(pszName, "nspr-")  /* XPCOM worker threads are nspr-X */ )
+        {
+            /*
+             * Use safe VM pointer to get both the UVM and VMM function table.
+             */
+            Console::SafeVMPtr ptrVM(mParent);
+            HRESULT hrc = ptrVM.rc();
+            if (SUCCEEDED(hrc))
+            {
+                if (VMMR3VTABLE_IS_COMPATIBLE_EX(ptrVM.vtable()->uMagicVersion, (uint64_t)aMagicVersion))
+                {
+                    ptrVM.vtable()->pfnVMR3RetainUVM(ptrVM.rawUVM());
+                    *aUVM              = (intptr_t)ptrVM.rawUVM();
+                    *aVMMFunctionTable = (intptr_t)ptrVM.vtable();
+                    hrc = S_OK;
+                }
+                else
+                    hrc = setError(E_FAIL, tr("Incompatible VMM function table: %RX64 vs %RX64 (caller)"),
+                                   ptrVM.vtable()->uMagicVersion, (uint64_t)aMagicVersion);
+            }
+            return hrc;
+        }
+    }
+
+    return setError(E_ACCESSDENIED, tr("The method getUVMAndVMMFunctionTable is only for local calls"));
+}
+
+
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
@@ -1610,16 +1504,6 @@ void MachineDebugger::i_flushQueuedSettings()
             i_setEmExecPolicyProperty((EMEXECPOLICY)i, RT_BOOL(maiQueuedEmExecPolicyParams[i]));
             maiQueuedEmExecPolicyParams[i] = UINT8_MAX;
         }
-    if (mPatmEnabledQueued != -1)
-    {
-        COMSETTER(PATMEnabled)(mPatmEnabledQueued);
-        mPatmEnabledQueued = -1;
-    }
-    if (mCsamEnabledQueued != -1)
-    {
-        COMSETTER(CSAMEnabled)(mCsamEnabledQueued);
-        mCsamEnabledQueued = -1;
-    }
     if (mLogEnabledQueued != -1)
     {
         COMSETTER(LogEnabled)(mLogEnabledQueued);

@@ -21024,9 +21024,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="00ae6af4-00a7-4104-0009-49bc00b2da80"
+    uuid="fa43579a-2272-47c4-a443-9713f19a902f"
     wsmap="managed"
-    reservedMethods="15" reservedAttributes="16"
+    reservedMethods="16" reservedAttributes="16"
     >
     <method name="dumpGuestCore">
       <desc>
@@ -21435,16 +21435,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="getUVMAndVMMFunctionTable" wsmap="suppress">
+      <desc>
+        Gets the user-mode VM handle, with a reference, and the VMM function table.
+        The VM handle must be passed to VMR3ReleaseUVM when done.  This can only
+        be called from within the VM process, remote calls will always fail.
+      </desc>
+      <param name="magicVersion" type="long long" dir="in">
+        <desc>The VMMR3VTABLE_MAGIC_VERSION value of the caller.  The method
+        will fail if this is not compatible with the VMM function table.</desc>
+      </param>
+      <param name="VMMFunctionTable" type="long long" dir="out">
+        <desc>The VMM function table address.</desc>
+      </param>
+      <param name="UVM" type="long long" dir="return">
+        <desc>The user-mode VM handle.</desc>
+      </param>
+    </method>
+
     <attribute name="singleStep" type="boolean">
       <desc>Switch for enabling single-stepping.</desc>
-    </attribute>
-
-    <attribute name="recompileUser" type="boolean">
-      <desc>Switch for forcing code recompilation for user mode code.</desc>
-    </attribute>
-
-    <attribute name="recompileSupervisor" type="boolean">
-      <desc>Switch for forcing code recompilation for supervisor mode code.</desc>
     </attribute>
 
     <attribute name="executeAllInIEM" type="boolean">
@@ -21453,14 +21463,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         is mainly for testing the interpreter and not an execution mode
         intended for general consumption.
       </desc>
-    </attribute>
-
-    <attribute name="PATMEnabled" type="boolean">
-      <desc>Switch for enabling and disabling the PATM component.</desc>
-    </attribute>
-
-    <attribute name="CSAMEnabled" type="boolean">
-      <desc>Switch for enabling and disabling the CSAM component.</desc>
     </attribute>
 
     <attribute name="logEnabled" type="boolean">
@@ -21493,15 +21495,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="executionEngine" type="VMExecutionEngine" readonly="yes">
       <desc>Gets the main execution engine of the VM.</desc>
-    </attribute>
-
-    <attribute name="HWVirtExEnabled" type="boolean" readonly="yes">
-      <desc>
-        Flag indicating whether the VM is currently making use of CPU hardware
-        virtualization extensions.
-
-        Superseeded by mainExecutionMode.
-      </desc>
     </attribute>
 
     <attribute name="HWVirtExNestedPagingEnabled" type="boolean" readonly="yes">
@@ -21554,14 +21547,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         The rate at which the virtual time runs expressed as a percentage.
         The accepted range is 2% to 20000%.
-      </desc>
-    </attribute>
-
-    <attribute name="VM" type="long long" readonly="yes" wsmap="suppress">
-      <desc>
-        Gets the user-mode VM handle, with a reference. Must be passed to
-        VMR3ReleaseUVM when done. This is only for internal use while we carve
-        the details of this interface.
       </desc>
     </attribute>
 

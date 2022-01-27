@@ -255,14 +255,6 @@ public:
         /** Returns DVD image name. */
         QUuid getDvdImage() const { return m_uDvdImage; }
 
-        /** Returns the --disable-patm option value. */
-        bool isPatmDisabled() const { return m_fDisablePatm; }
-        /** Returns the --disable-csam option value. */
-        bool isCsamDisabled() const { return m_fDisableCsam; }
-        /** Returns the --recompile-supervisor option value. */
-        bool isSupervisorCodeExecedRecompiled() const { return m_fRecompileSupervisor; }
-        /** Returns the --recompile-user option value. */
-        bool isUserCodeExecedRecompiled() const { return m_fRecompileUser; }
         /** Returns the --execute-all-in-iem option value. */
         bool areWeToExecuteAllInIem() const { return m_fExecuteAllInIem; }
         /** Returns whether --warp-factor option value is equal to 100. */
@@ -677,14 +669,6 @@ private:
         /** Holds the --dvd | --cdrom option value (DVD image). */
         QUuid  m_uDvdImage;
 
-        /** Holds the --disable-patm option value. */
-        bool      m_fDisablePatm;
-        /** Holds the --disable-csam option value. */
-        bool      m_fDisableCsam;
-        /** Holds the --recompile-supervisor option value. */
-        bool      m_fRecompileSupervisor;
-        /** Holds the --recompile-user option value. */
-        bool      m_fRecompileUser;
         /** Holds the --execute-all-in-iem option value. */
         bool      m_fExecuteAllInIem;
         /** Holds the --warp-factor option value. */

@@ -172,14 +172,6 @@ bool UISession::initialize()
     /* Apply debug settings from the command line. */
     if (!debugger().isNull() && debugger().isOk())
     {
-        if (uiCommon().isPatmDisabled())
-            debugger().SetPATMEnabled(false);
-        if (uiCommon().isCsamDisabled())
-            debugger().SetCSAMEnabled(false);
-        if (uiCommon().isSupervisorCodeExecedRecompiled())
-            debugger().SetRecompileSupervisor(true);
-        if (uiCommon().isUserCodeExecedRecompiled())
-            debugger().SetRecompileUser(true);
         if (uiCommon().areWeToExecuteAllInIem())
             debugger().SetExecuteAllInIEM(true);
         if (!uiCommon().isDefaultWarpPct())

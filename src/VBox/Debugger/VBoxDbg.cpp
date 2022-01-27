@@ -78,10 +78,11 @@ static const DBGGUIVT g_dbgGuiVT =
  * @returns VBox status code.
  * @param   pSession    The ISession interface. (DBGGuiCreate)
  * @param   pUVM        The VM handle. (DBGGuiCreateForVM)
+ * @param   pVMM        The VMM function table.
  * @param   ppGui       See DBGGuiCreate.
  * @param   ppGuiVT     See DBGGuiCreate.
  */
-static int dbgGuiCreate(ISession *pSession, PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
+static int dbgGuiCreate(ISession *pSession, PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
 {
     /*
      * Allocate and initialize the Debugger GUI handle.
@@ -96,7 +97,7 @@ static int dbgGuiCreate(ISession *pSession, PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIV
     if (pSession)
         rc = pGui->pVBoxDbgGui->init(pSession);
     else
-        rc = pGui->pVBoxDbgGui->init(pUVM);
+        rc = pGui->pVBoxDbgGui->init(pUVM, pVMM);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -132,7 +133,7 @@ static int dbgGuiCreate(ISession *pSession, PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIV
 DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-    return dbgGuiCreate(pSession, NULL, ppGui, ppGuiVT);
+    return dbgGuiCreate(pSession, NULL, NULL, ppGui, ppGuiVT);
 }
 
 
@@ -141,16 +142,17 @@ DBGDECL(int) DBGGuiCreate(ISession *pSession, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiV
  *
  * @returns VBox status code.
  * @param   pUVM        The VM handle.
+ * @param   pVMM        The VMM function table.
  * @param   ppGui       Where to store the pointer to the debugger instance.
  * @param   ppGuiVT     Where to store the virtual method table pointer.
  *                      Optional.
  */
-DBGDECL(int) DBGGuiCreateForVM(PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
+DBGDECL(int) DBGGuiCreateForVM(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT)
 {
     AssertPtrReturn(pUVM, VERR_INVALID_POINTER);
     AssertPtrReturn(VMR3RetainUVM(pUVM) != UINT32_MAX, VERR_INVALID_POINTER);
 
-    int rc = dbgGuiCreate(NULL, pUVM, ppGui, ppGuiVT);
+    int rc = dbgGuiCreate(NULL, pUVM, pVMM, ppGui, ppGuiVT);
 
     VMR3ReleaseUVM(pUVM);
     return rc;

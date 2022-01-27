@@ -191,10 +191,6 @@ UICommon::UICommon(UIType enmType)
     , m_fAgressiveCaching(true)
 #endif
     , m_fRestoreCurrentSnapshot(false)
-    , m_fDisablePatm(false)
-    , m_fDisableCsam(false)
-    , m_fRecompileSupervisor(false)
-    , m_fRecompileUser(false)
     , m_fExecuteAllInIem(false)
     , m_uWarpPct(100)
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -487,35 +483,10 @@ void UICommon::prepare()
                 m_uDvdImage = arguments.at(i);
         }
         /* VMM Options: */
-        else if (!::strcmp(arg, "--disable-patm"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fDisablePatm = true;
-        }
-        else if (!::strcmp(arg, "--disable-csam"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fDisableCsam = true;
-        }
-        else if (!::strcmp(arg, "--recompile-supervisor"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fRecompileSupervisor = true;
-        }
-        else if (!::strcmp(arg, "--recompile-user"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fRecompileUser = true;
-        }
-        else if (!::strcmp(arg, "--recompile-all"))
-        {
-            enmOptType = OptType_VMRunner;
-            m_fDisablePatm = m_fDisableCsam = m_fRecompileSupervisor = m_fRecompileUser = true;
-        }
         else if (!::strcmp(arg, "--execute-all-in-iem"))
         {
             enmOptType = OptType_VMRunner;
-            m_fDisablePatm = m_fDisableCsam = m_fExecuteAllInIem = true;
+            m_fExecuteAllInIem = true;
         }
         else if (!::strcmp(arg, "--driverless"))
             enmOptType = OptType_VMRunner;

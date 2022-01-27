@@ -22,6 +22,7 @@
 #include <qapplication.h>
 #include <VBox/dbggui.h>
 #include <VBox/vmm/vmapi.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <iprt/errcore.h>
 #include <iprt/initterm.h>
 #include <VBox/log.h>
@@ -55,7 +56,7 @@ int main(int argc, char **argv)
         QApplication App(argc, argv);
         PDBGGUI pGui;
         PCDBGGUIVT pGuiVT;
-        rc = DBGGuiCreateForVM(pUVM, &pGui, &pGuiVT);
+        rc = DBGGuiCreateForVM(pUVM, VMMR3GetVTable(), &pGui, &pGuiVT);
         if (RT_SUCCESS(rc))
         {
             if (argc <= 1 || argc == 2)

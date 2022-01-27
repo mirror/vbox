@@ -798,10 +798,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     const char *vrdeEnabled = NULL;
     unsigned cVRDEProperties = 0;
     const char *aVRDEProperties[16];
-    unsigned fRawR0 = ~0U;
-    unsigned fRawR3 = ~0U;
-    unsigned fPATM  = ~0U;
-    unsigned fCSAM  = ~0U;
     unsigned fPaused = 0;
 #ifdef VBOX_WITH_RECORDING
     bool fRecordEnabled = false;
@@ -827,15 +823,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     enum eHeadlessOptions
     {
-        OPT_RAW_R0 = 0x100,
-        OPT_NO_RAW_R0,
-        OPT_RAW_R3,
-        OPT_NO_RAW_R3,
-        OPT_PATM,
-        OPT_NO_PATM,
-        OPT_CSAM,
-        OPT_NO_CSAM,
-        OPT_SETTINGSPW,
+        OPT_SETTINGSPW = 0x100,
         OPT_SETTINGSPW_FILE,
         OPT_COMMENT,
         OPT_PAUSED
@@ -855,22 +843,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--vrde", 'v', RTGETOPT_REQ_STRING },
         { "-vrdeproperty", 'e', RTGETOPT_REQ_STRING },
         { "--vrdeproperty", 'e', RTGETOPT_REQ_STRING },
-        { "-rawr0", OPT_RAW_R0, 0 },
-        { "--rawr0", OPT_RAW_R0, 0 },
-        { "-norawr0", OPT_NO_RAW_R0, 0 },
-        { "--norawr0", OPT_NO_RAW_R0, 0 },
-        { "-rawr3", OPT_RAW_R3, 0 },
-        { "--rawr3", OPT_RAW_R3, 0 },
-        { "-norawr3", OPT_NO_RAW_R3, 0 },
-        { "--norawr3", OPT_NO_RAW_R3, 0 },
-        { "-patm", OPT_PATM, 0 },
-        { "--patm", OPT_PATM, 0 },
-        { "-nopatm", OPT_NO_PATM, 0 },
-        { "--nopatm", OPT_NO_PATM, 0 },
-        { "-csam", OPT_CSAM, 0 },
-        { "--csam", OPT_CSAM, 0 },
-        { "-nocsam", OPT_NO_CSAM, 0 },
-        { "--nocsam", OPT_NO_CSAM, 0 },
         { "--settingspw", OPT_SETTINGSPW, RTGETOPT_REQ_STRING },
         { "--settingspwfile", OPT_SETTINGSPW_FILE, RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_RECORDING
@@ -919,30 +891,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     aVRDEProperties[cVRDEProperties++] = ValueUnion.psz;
                 else
                      RTPrintf("Warning: too many VRDE properties. Ignored: '%s'\n", ValueUnion.psz);
-                break;
-            case OPT_RAW_R0:
-                fRawR0 = true;
-                break;
-            case OPT_NO_RAW_R0:
-                fRawR0 = false;
-                break;
-            case OPT_RAW_R3:
-                fRawR3 = true;
-                break;
-            case OPT_NO_RAW_R3:
-                fRawR3 = false;
-                break;
-            case OPT_PATM:
-                fPATM = true;
-                break;
-            case OPT_NO_PATM:
-                fPATM = false;
-                break;
-            case OPT_CSAM:
-                fCSAM = true;
-                break;
-            case OPT_NO_CSAM:
-                fCSAM = false;
                 break;
             case OPT_SETTINGSPW:
                 pcszSettingsPw = ValueUnion.psz;
@@ -1163,50 +1111,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
 #endif /* defined(VBOX_WITH_RECORDING) */
 
+#if 0
         /* get the machine debugger (isn't necessarily available) */
         ComPtr <IMachineDebugger> machineDebugger;
         console->COMGETTER(Debugger)(machineDebugger.asOutParam());
         if (machineDebugger)
-        {
             Log(("Machine debugger available!\n"));
-        }
-
-        if (fRawR0 != ~0U)
-        {
-            if (!machineDebugger)
-            {
-                RTPrintf("Error: No debugger object; -%srawr0 cannot be executed!\n", fRawR0 ? "" : "no");
-                break;
-            }
-            machineDebugger->COMSETTER(RecompileSupervisor)(!fRawR0);
-        }
-        if (fRawR3 != ~0U)
-        {
-            if (!machineDebugger)
-            {
-                RTPrintf("Error: No debugger object; -%srawr3 cannot be executed!\n", fRawR3 ? "" : "no");
-                break;
-            }
-            machineDebugger->COMSETTER(RecompileUser)(!fRawR3);
-        }
-        if (fPATM != ~0U)
-        {
-            if (!machineDebugger)
-            {
-                RTPrintf("Error: No debugger object; -%spatm cannot be executed!\n", fPATM ? "" : "no");
-                break;
-            }
-            machineDebugger->COMSETTER(PATMEnabled)(fPATM);
-        }
-        if (fCSAM != ~0U)
-        {
-            if (!machineDebugger)
-            {
-                RTPrintf("Error: No debugger object; -%scsam cannot be executed!\n", fCSAM ? "" : "no");
-                break;
-            }
-            machineDebugger->COMSETTER(CSAMEnabled)(fCSAM);
-        }
+#endif
 
         /* initialize global references */
         gConsole = console;

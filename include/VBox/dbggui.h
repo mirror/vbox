@@ -103,13 +103,14 @@ typedef FNDBGGUICREATE *PFNDBGGUICREATE;
  *
  * @returns VBox status code.
  * @param   pUVM        The VM handle.
+ * @param   pVMM        The VMM function table.
  * @param   ppGui       Where to store the pointer to the debugger instance.
  * @param   ppGuiVT     Where to store the virtual method table pointer.
  *                      Optional.
  */
-DBGDECL(int) DBGGuiCreateForVM(PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT);
+DBGDECL(int) DBGGuiCreateForVM(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT);
 /** @copydoc DBGGuiCreateForVM */
-typedef DECLCALLBACKTYPE(int, FNDBGGUICREATEFORVM,(PUVM pUVM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT));
+typedef DECLCALLBACKTYPE(int, FNDBGGUICREATEFORVM,(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGGUI *ppGui, PCDBGGUIVT *ppGuiVT));
 /** Pointer to DBGGuiCreateForVM. */
 typedef FNDBGGUICREATEFORVM *PFNDBGGUICREATEFORVM;
 

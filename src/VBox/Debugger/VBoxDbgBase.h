@@ -24,6 +24,7 @@
 
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/vmapi.h>
+#include <VBox/vmm/vmmr3vtable.h>
 #include <VBox/dbg.h>
 #include <iprt/thread.h>
 #include <QString>

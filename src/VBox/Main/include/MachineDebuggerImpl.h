@@ -51,16 +51,8 @@ private:
     // wrapped IMachineDeugger properties
     HRESULT getSingleStep(BOOL *aSingleStep);
     HRESULT setSingleStep(BOOL aSingleStep);
-    HRESULT getRecompileUser(BOOL *aRecompileUser);
-    HRESULT setRecompileUser(BOOL aRecompileUser);
-    HRESULT getRecompileSupervisor(BOOL *aRecompileSupervisor);
-    HRESULT setRecompileSupervisor(BOOL aRecompileSupervisor);
     HRESULT getExecuteAllInIEM(BOOL *aExecuteAllInIEM);
     HRESULT setExecuteAllInIEM(BOOL aExecuteAllInIEM);
-    HRESULT getPATMEnabled(BOOL *aPATMEnabled);
-    HRESULT setPATMEnabled(BOOL aPATMEnabled);
-    HRESULT getCSAMEnabled(BOOL *aCSAMEnabled);
-    HRESULT setCSAMEnabled(BOOL aCSAMEnabled);
     HRESULT getLogEnabled(BOOL *aLogEnabled);
     HRESULT setLogEnabled(BOOL aLogEnabled);
     HRESULT getLogDbgFlags(com::Utf8Str &aLogDbgFlags);
@@ -70,7 +62,6 @@ private:
     HRESULT getLogRelGroups(com::Utf8Str &aLogRelGroups);
     HRESULT getLogRelDestinations(com::Utf8Str &aLogRelDestinations);
     HRESULT getExecutionEngine(VMExecutionEngine_T *apenmEngine);
-    HRESULT getHWVirtExEnabled(BOOL *aHWVirtExEnabled);
     HRESULT getHWVirtExNestedPagingEnabled(BOOL *aHWVirtExNestedPagingEnabled);
     HRESULT getHWVirtExVPIDEnabled(BOOL *aHWVirtExVPIDEnabled);
     HRESULT getHWVirtExUXEnabled(BOOL *aHWVirtExUXEnabled);
@@ -79,10 +70,9 @@ private:
     HRESULT getPAEEnabled(BOOL *aPAEEnabled);
     HRESULT getVirtualTimeRate(ULONG *aVirtualTimeRate);
     HRESULT setVirtualTimeRate(ULONG aVirtualTimeRate);
-    HRESULT getVM(LONG64 *aVM);
     HRESULT getUptime(LONG64 *aUptime);
 
-    // wrapped IMachineDeugger properties
+    // wrapped IMachineDeugger methods
     HRESULT dumpGuestCore(const com::Utf8Str &aFilename,
                           const com::Utf8Str &aCompression);
     HRESULT dumpHostProcessCore(const com::Utf8Str &aFilename,
@@ -135,6 +125,7 @@ private:
                      com::Utf8Str &aStats);
     HRESULT getCPULoad(ULONG aCpuId, ULONG *aPctExecuting, ULONG *aPctHalted, ULONG *aPctOther, LONG64 *aMsInterval) RT_OVERRIDE;
     HRESULT takeGuestSample(const com::Utf8Str &aFilename, ULONG aUsInterval, LONG64 aUsSampleTime, ComPtr<IProgress> &pProgress);
+    HRESULT getUVMAndVMMFunctionTable(LONG64 aMagicVersion, LONG64 *aVMMFunctionTable, LONG64 *aUVM);
 
     // private methods
     bool i_queueSettings() const;
@@ -155,10 +146,6 @@ private:
      * @{ */
     uint8_t maiQueuedEmExecPolicyParams[EMEXECPOLICY_END];
     int mSingleStepQueued;
-    int mRecompileUserQueued;
-    int mRecompileSupervisorQueued;
-    int mPatmEnabledQueued;
-    int mCsamEnabledQueued;
     int mLogEnabledQueued;
     uint32_t mVirtualTimeRateQueued;
     bool mFlushMode;
