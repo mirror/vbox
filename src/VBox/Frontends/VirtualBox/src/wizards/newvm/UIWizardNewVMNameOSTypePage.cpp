@@ -306,7 +306,7 @@ bool UIWizardNewVMNameOSTypeCommon::cleanupMachineFolder(UIWizardNewVM *pWizard,
     return true;
 }
 
-void UIWizardNewVMNameOSTypeCommon::determineOSType(const QString &strISOPath, UIWizardNewVM *pWizard)
+void UIWizardNewVMNameOSTypeCommon::detectOSType(const QString &strISOPath, UIWizardNewVM *pWizard)
 {
     if (!pWizard)
         return;
@@ -471,7 +471,7 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(this->wizard());
     AssertReturnVoid(pWizard);
-    UIWizardNewVMNameOSTypeCommon::determineOSType(strPath, pWizard);
+    UIWizardNewVMNameOSTypeCommon::detectOSType(strPath, pWizard);
 
     if (!m_userModifiedParameters.contains("GuestOSType"))
         UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());

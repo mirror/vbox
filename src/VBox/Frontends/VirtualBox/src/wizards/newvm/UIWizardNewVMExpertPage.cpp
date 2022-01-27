@@ -145,7 +145,7 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
 
-    UIWizardNewVMNameOSTypeCommon::determineOSType(strISOPath, pWizard);
+    UIWizardNewVMNameOSTypeCommon::detectOSType(strISOPath, pWizard);
 
     if (!m_userModifiedParameters.contains("GuestOSType"))
         UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
