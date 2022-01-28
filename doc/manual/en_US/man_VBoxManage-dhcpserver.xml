@@ -524,7 +524,7 @@
         </varlistentry>
         <varlistentry>
           <term><option>--del-user=<replaceable>string</replaceable></option></term>
-          <listitem><para>Delete the specific user class ID pattern from the group conditions.</para></listitem>
+          <listitem><para>Delete the specific user class ID from the group conditions.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--del-user-wild=<replaceable>pattern</replaceable></option></term>

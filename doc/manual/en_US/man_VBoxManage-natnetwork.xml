@@ -178,8 +178,8 @@
         <varlistentry>
           <term><option>--port-forward-4=<replaceable>rule</replaceable></option></term>
           <listitem><para>
-              Enables an IPv4 loopback interface by using the specified
-              rule.
+              Enables IPv4 port forwarding by using the rule specified
+              by <replaceable>rule</replaceable>.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -322,8 +322,8 @@
         <varlistentry>
           <term><option>--port-forward-4=<replaceable>rule</replaceable></option></term>
           <listitem><para>
-              Enables an IPv4 loopback interface by using the specified
-              rule.
+              Enables IPv4 port forwarding by using the rule specified
+              by <replaceable>rule</replaceable>.
             </para></listitem>
         </varlistentry>
         <varlistentry>

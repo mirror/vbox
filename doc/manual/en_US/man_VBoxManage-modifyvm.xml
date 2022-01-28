@@ -1798,7 +1798,7 @@ it unless this changes. -->
                   On a Windows host system,
                   <replaceable>pipe-name</replaceable> is a named pipe
                   that has a name that uses the following form:
-                  <literal>\\.\<replaceable>pipe</replaceable>\</literal>.
+                  <literal>\\.\pipe\<replaceable>pipe-name</replaceable></literal>.
                 </para><para>
                   On a Linux host system,
                   <replaceable>pipe-name</replaceable> is a local domain

@@ -256,7 +256,7 @@
       <variablelist>
         <varlistentry>
           <term><option>file[=<replaceable>file</replaceable>], nofile</option></term>
-          <listitem><para>Specifies a log file.  It no filname is given, one will be
+          <listitem><para>Specifies a log file.  If no filename is given, one will be
               generated based on the current UTC time and VM process name and placed in
               the current directory of the VM process.  Note that this will currently not
               have any effect if the log file has already been opened.
