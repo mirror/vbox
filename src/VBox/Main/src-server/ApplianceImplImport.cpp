@@ -5747,7 +5747,7 @@ l_skipped:
 
                             if (uOrigControllerPortValue != uNewControllerPortValue)
                             {
-                                AD.lPort = uNewControllerPortValue;
+                                AD.lPort = (int32_t)uNewControllerPortValue;
                             }
                             if (uOrigControllerIndex != uTargetControllerIndex)
                             {
