@@ -332,7 +332,6 @@ int AddressIPv4::maskToPrefix(const char *pcszNetmask)
 
 void AddressIPv4::deriveBroadcast(PCRTNETADDRIPV4 pcAddress, int iPrefix)
 {
-    /* Note: the address is big-endian. */
     RTNETADDRIPV4 mask, broadcast;
     int rc = RTNetPrefixToMaskIPv4(iPrefix, &mask);
     AssertRCReturnVoid(rc);
@@ -772,6 +771,9 @@ class NetworkAddressIPv4 : public NetworkAddress
         virtual bool matches(const char *pcszNetwork);
         virtual const char *defaultNetwork() { return "192.168.56.1/21"; }; /* Matches defaults in VBox/Main/include/netif.h, see @bugref{10077}. */
 
+    protected:
+        bool isValidUnicastAddress(PCRTNETADDRIPV4 address);
+
     private:
         RTNETADDRIPV4 m_address;
         int m_prefix;
@@ -793,7 +795,24 @@ NetworkAddressIPv4::NetworkAddressIPv4(const char *pcszIpAddress, const char *pc
     else
         rc = RTNetStrToIPv4Cidr(pcszIpAddress, &m_address, &m_prefix);
 #endif
-    m_fValid = RT_SUCCESS(rc);
+    m_fValid = RT_SUCCESS(rc) && isValidUnicastAddress(&m_address);
+}
+
+bool NetworkAddressIPv4::isValidUnicastAddress(PCRTNETADDRIPV4 address)
+{
+    /* Multicast addresses are not allowed. */
+    if ((address->au8[0] & 0xF0) == 0xE0)
+        return false;
+
+    /* Broadcast address is not allowed. */
+    if (address->au32[0] == 0xFFFFFFFF) /* Endianess does not matter in this particual case. */
+        return false;
+
+    /* Loopback addresses are not allowed. */
+    if ((address->au8[0] & 0xFF) == 0x7F)
+        return false;
+
+    return true;
 }
 
 bool NetworkAddressIPv4::matches(const char *pcszNetwork)
