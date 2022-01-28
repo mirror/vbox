@@ -3559,6 +3559,7 @@ void UIActionPool::updateMenuFileManagerWrapper(UIMenu *pMenu)
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Options));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Operations));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Log));
+    addAction(pMenu, action(UIActionIndex_M_FileManager_T_GuestSession));
 
     addAction(pMenu, action(UIActionIndex_M_FileManager_M_HostSubmenu));
     addAction(pMenu, action(UIActionIndex_M_FileManager_M_GuestSubmenu));
@@ -3583,7 +3584,6 @@ void UIActionPool::updateMenuFileManagerWrapper(UIMenu *pMenu)
     UIMenu *pGuestSubmenu = action(UIActionIndex_M_FileManager_M_GuestSubmenu)->menu();
     if (pGuestSubmenu)
     {
-        addAction(pMenu, action(UIActionIndex_M_FileManager_T_GuestSession));
         addAction(pGuestSubmenu, action(UIActionIndex_M_FileManager_S_Host_GoUp));
         addAction(pGuestSubmenu, action(UIActionIndex_M_FileManager_S_Guest_GoHome));
         addAction(pGuestSubmenu, action(UIActionIndex_M_FileManager_S_Guest_Refresh));
