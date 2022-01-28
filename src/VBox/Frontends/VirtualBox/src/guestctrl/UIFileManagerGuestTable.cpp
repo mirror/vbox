@@ -1390,40 +1390,29 @@ void UIFileManagerGuestTable::sltAdditionsStateChange()
 
 void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled()
 {
-    switch (m_enmState)
+    /* Disable menu actions if guest session is not running: */
+    UIMenu *pGuestSubmenu = m_pActionPool->action(UIActionIndex_M_FileManager_M_GuestSubmenu)->menu();
+    if (pGuestSubmenu)
+        pGuestSubmenu->setEnabled(m_enmState == State_SessionRunning);
+    UIMenu *pHostSubmenu = m_pActionPool->action(UIActionIndex_M_FileManager_M_HostSubmenu)->menu();
+    if (pHostSubmenu)
+        pHostSubmenu->setEnabled(m_enmState == State_SessionRunning);
+
+    /*Manage the guest session (login) widget: */
+    if (m_pGuestSessionPanel)
     {
-        case State_InvalidMachineReference:
-        case State_MachineNotRunning:
-        case State_NoGuestAdditions:
-            setSessionWidgetsEnabled(false);
-            m_pWarningLabelContainer->setVisible(true);
-            if (m_pGuestSessionPanel)
-            {
-                m_pGuestSessionPanel->setEnabled(false);
-                m_pGuestSessionPanel->switchSessionCreateMode();
-            }
-            break;
-        case State_SessionPossible:
-            setSessionWidgetsEnabled(false);
-            m_pWarningLabelContainer->setVisible(true);
-            if (m_pGuestSessionPanel)
-            {
-                m_pGuestSessionPanel->setEnabled(true);
-                m_pGuestSessionPanel->switchSessionCreateMode();
-            }
-            break;
-        case State_SessionRunning:
-            setSessionWidgetsEnabled(true);
-            m_pWarningLabelContainer->setVisible(false);
-            if (m_pGuestSessionPanel)
-            {
-                m_pGuestSessionPanel->switchSessionCloseMode();
-                m_pGuestSessionPanel->setEnabled(true);
-            }
-            break;
-        default:
-            break;
+        m_pGuestSessionPanel->setEnabled(m_enmState == State_SessionPossible || m_enmState == State_SessionRunning);
+        if (m_enmState == State_SessionRunning)
+            m_pGuestSessionPanel->switchSessionCreateMode();
+        else
+            m_pGuestSessionPanel->switchSessionCloseMode();
     }
+    /* Call to parent: */
+    setSessionWidgetsEnabled(m_enmState == State_SessionRunning);
+
+    if (m_pWarningLabelContainer)
+        m_pWarningLabelContainer->setVisible(m_enmState != State_SessionRunning);
+
     emit sigStateChanged(m_enmState == State_SessionRunning);
 }
 

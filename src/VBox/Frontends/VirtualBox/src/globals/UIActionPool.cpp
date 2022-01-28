@@ -3559,7 +3559,6 @@ void UIActionPool::updateMenuFileManagerWrapper(UIMenu *pMenu)
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Options));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Operations));
     addAction(pMenu, action(UIActionIndex_M_FileManager_T_Log));
-    addAction(pMenu, action(UIActionIndex_M_FileManager_T_GuestSession));
 
     addAction(pMenu, action(UIActionIndex_M_FileManager_M_HostSubmenu));
     addAction(pMenu, action(UIActionIndex_M_FileManager_M_GuestSubmenu));

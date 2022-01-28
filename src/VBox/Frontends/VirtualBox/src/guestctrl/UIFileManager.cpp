@@ -487,8 +487,16 @@ void UIFileManager::sltCurrentTabChanged(int iIndex)
             continue;
         pTable->setIsCurrent(pTable == pCurrentGuestTable);
     }
+    /* Disable host file table if guest session is not running: */
     if (m_pHostFileTable)
         m_pHostFileTable->setEnabled(pCurrentGuestTable->isGuestSessionRunning());
+    /* Disable/enable file table submenus of the menu: */
+    UIMenu *pGuestSubmenu = m_pActionPool->action(UIActionIndex_M_FileManager_M_GuestSubmenu)->menu();
+    if (pGuestSubmenu)
+        pGuestSubmenu->setEnabled(pCurrentGuestTable->isGuestSessionRunning());
+    UIMenu *pHostSubmenu = m_pActionPool->action(UIActionIndex_M_FileManager_M_HostSubmenu)->menu();
+    if (pHostSubmenu)
+        pHostSubmenu->setEnabled(pCurrentGuestTable->isGuestSessionRunning());
 }
 
 void UIFileManager::sltGuestFileTableStateChanged(bool fIsRunning)
