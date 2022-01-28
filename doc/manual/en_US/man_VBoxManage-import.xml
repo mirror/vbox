@@ -69,6 +69,8 @@
         </group></arg>
       <!-- <arg>&#45;&#45;controller=<replaceable>n</replaceable></arg> -->
       <arg>--disk=<replaceable>path</replaceable></arg>
+      <arg>--controller=<replaceable>index</replaceable></arg>
+      <arg>--port=<replaceable>n</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-import-cloud">
@@ -378,21 +380,23 @@ Virtual system 0:
     (change with "--vsys 0 --cpus &lt;n&gt;")
  7: Guest memory: 2048 MB (change with "--vsys 0 --memory &lt;MB&gt;")
  8: Sound card (appliance expects "ensoniq1371", can change on import)
-    (disable with "--vsys 0 --unit 5 --ignore")
+    (disable with "--vsys 0 --unit 8 --ignore")
  9: USB controller
-    (disable with "--vsys 0 --unit 6 --ignore")
+    (disable with "--vsys 0 --unit 9 --ignore")
 10: Network adapter: orig bridged, config 2, extra type=bridged
 11: Floppy
-    (disable with "--vsys 0 --unit 8 --ignore")
+    (disable with "--vsys 0 --unit 11 --ignore")
 12: SCSI controller, type BusLogic
-    (change with "--vsys 0 --unit 9 --scsitype {BusLogic|LsiLogic}";
-    disable with "--vsys 0 --unit 9 --ignore")
+    (change with "--vsys 0 --unit 12 --scsitype {BusLogic|LsiLogic}";
+    disable with "--vsys 0 --unit 12 --ignore")
 13: IDE controller, type PIIX4
-    (disable with "--vsys 0 --unit 10 --ignore")
+    (disable with "--vsys 0 --unit 13 --ignore")
 14: Hard disk image: source image=Windows10.vmdk,
-      target path=/home/user1/disks/Windows10.vmdk, controller=9;channel=0
-    (change target path with "--vsys 0 --unit 11 --disk &lt;path&gt;";
-    disable with "--vsys 0 --unit 11 --ignore")</screen>
+      target path=/home/user1/disks/Windows10.vmdk, controller=12;channel=0
+    (change target path with "--vsys 0 --unit 14 --disk &lt;path&gt;";
+    change controller with "--vsys 0 --unit 14 --controller &lt;index&gt;";
+    change controller port with "--vsys 0 --unit 14 --port &lt;n&gt;";
+    disable with "--vsys 0 --unit 14 --ignore")</screen>
     <para>
       The dry run output lists and numbers the individual configuration
       items that are described in the <filename>Windows10.ovf</filename>
@@ -415,7 +419,10 @@ Virtual system 0:
     <para>
       Item 14 indicates the hard disk image and the
       <option>--disk</option> option specifies the target path where the
-      image will be stored. The default value is specified in the OVF file.
+      image will be stored, the <option>--controller</option> option specifies
+      which controller the disk will be attached to, and the
+      <option>--port</option> option specifies which port on the controller the
+      disk will be attached to.  The default values are specified in the OVF file.
     </para>
     <para>
       You can combine several items for the same virtual system by

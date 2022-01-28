@@ -4304,6 +4304,67 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 }
 
 /**
+ * Helper routine to parse the ExtraData Utf8Str for a storage controller's
+ * value or channel value.
+ *
+ * @param   aExtraData    The ExtraData string with a format of
+ *                        'controller=13;channel=3'.
+ * @param   pszKey        The string being looked up, either 'controller' or
+ *                        'channel'.
+ * @param   puVal         The integer value of the 'controller=' or 'channel='
+ *                        key in the ExtraData string.
+ * @returns COM status code.
+ * @throws  Nothing.
+ */
+static int getStorageControllerDetailsFromStr(const com::Utf8Str &aExtraData, const char *pszKey, uint32_t *puVal)
+{
+    size_t posKey = aExtraData.find(pszKey);
+    if (posKey == Utf8Str::npos)
+        return VERR_INVALID_PARAMETER;
+
+    int vrc = RTStrToUInt32Ex(aExtraData.c_str() + posKey + strlen(pszKey), NULL, 0, puVal);
+    if (vrc == VWRN_NUMBER_TOO_BIG || vrc == VWRN_NEGATIVE_UNSIGNED)
+        return VERR_INVALID_PARAMETER;
+
+    return vrc;
+}
+
+/**
+ * Verifies the validity of a storage controller's channel (aka controller port).
+ *
+ * @param   aStorageControllerType     The type of storage controller as idenfitied
+ *                                     by the enum of type StorageControllerType_T.
+ * @param   uControllerPort            The controller port value.
+ * @param   aMaxPortCount              The maximum number of ports allowed for this
+ *                                     storage controller type.
+ * @returns COM status code.
+ * @throws  Nothing.
+ */
+HRESULT Appliance::i_verifyStorageControllerPortValid(const StorageControllerType_T aStorageControllerType,
+                                                      const uint32_t uControllerPort,
+                                                      ULONG *aMaxPortCount)
+{
+    SystemProperties *pSysProps;
+    pSysProps = mVirtualBox->i_getSystemProperties();
+    if (pSysProps == NULL)
+        return VBOX_E_OBJECT_NOT_FOUND;
+
+    StorageBus_T enmStorageBus = StorageBus_Null;
+    HRESULT vrc = pSysProps->GetStorageBusForStorageControllerType(aStorageControllerType, &enmStorageBus);
+    if (FAILED(vrc))
+        return vrc;
+
+    vrc = pSysProps->GetMaxPortCountForStorageBus(enmStorageBus, aMaxPortCount);
+    if (FAILED(vrc))
+        return vrc;
+
+    if (uControllerPort >= *aMaxPortCount)
+        return E_INVALIDARG;
+
+    return S_OK;
+}
+
+/**
  * Imports one OVF virtual system (described by the given ovf::VirtualSystem and VirtualSystemDescription)
  * into VirtualBox by creating an IMachine instance, which is returned.
  *
@@ -5013,12 +5074,96 @@ l_skipped:
                 if (FAILED(rc))
                     throw rc;
 
-                // find the hard disk controller to which we should attach
-                ovf::HardDiskController hdc = (*vsysThis.mapControllers.find(ovfVdisk.strIdController)).second;
-
                 // this is for rollback later
                 MyHardDiskAttachment mhda;
                 mhda.pMachine = pNewMachine;
+
+                // find the hard disk controller to which we should attach
+                ovf::HardDiskController hdc;
+
+                /*
+                 * Before importing the virtual hard disk found above (diCurrent/vsdeTargetHD) first
+                 * check if the user requested to change either the controller it is to be attached
+                 * to and/or the controller port (aka 'channel') on the controller.
+                 */
+                if (   !vsdeTargetHD->strExtraConfigCurrent.isEmpty()
+                    && vsdeTargetHD->strExtraConfigSuggested != vsdeTargetHD->strExtraConfigCurrent)
+                {
+                    int vrc;
+                    uint32_t uTargetControllerIndex;
+                    vrc = getStorageControllerDetailsFromStr(vsdeTargetHD->strExtraConfigCurrent, "controller=",
+                        &uTargetControllerIndex);
+                    if (RT_FAILURE(vrc))
+                        throw setError(E_FAIL,
+                                       tr("Target controller value invalid or missing: '%s'"),
+                                       vsdeTargetHD->strExtraConfigCurrent.c_str());
+
+                    uint32_t uNewControllerPortValue;
+                    vrc = getStorageControllerDetailsFromStr(vsdeTargetHD->strExtraConfigCurrent, "channel=",
+                        &uNewControllerPortValue);
+                    if (RT_FAILURE(vrc))
+                        throw setError(E_FAIL,
+                                       tr("Target controller port ('channel=') invalid or missing: '%s'"),
+                                       vsdeTargetHD->strExtraConfigCurrent.c_str());
+
+                    const VirtualSystemDescriptionEntry *vsdeTargetController;
+                    vsdeTargetController = vsdescThis->i_findByIndex(uTargetControllerIndex);
+                    if (!vsdeTargetController)
+                        throw setError(E_FAIL,
+                                       tr("Failed to find storage controller '%u' in the System Description list"),
+                                       uTargetControllerIndex);
+
+                    hdc = (*vsysThis.mapControllers.find(vsdeTargetController->strRef.c_str())).second;
+
+                    StorageControllerType_T hdStorageControllerType = StorageControllerType_Null;
+                    switch (hdc.system)
+                    {
+                        case ovf::HardDiskController::IDE:
+                            hdStorageControllerType = StorageControllerType_PIIX3;
+                            break;
+                        case ovf::HardDiskController::SATA:
+                            hdStorageControllerType = StorageControllerType_IntelAhci;
+                            break;
+                        case ovf::HardDiskController::SCSI:
+                        {
+                            if (hdc.strControllerType.compare("lsilogicsas")==0)
+                                hdStorageControllerType = StorageControllerType_LsiLogicSas;
+                            else
+                                hdStorageControllerType = StorageControllerType_LsiLogic;
+                            break;
+                        }
+                        case ovf::HardDiskController::VIRTIOSCSI:
+                            hdStorageControllerType = StorageControllerType_VirtioSCSI;
+                            break;
+                        default:
+                            throw setError(E_FAIL,
+                                           tr("Invalid hard disk contoller type: '%d'"),
+                                           hdc.system);
+                            break;
+                    }
+
+                    ULONG ulMaxPorts;
+                    rc = i_verifyStorageControllerPortValid(hdStorageControllerType,
+                                                            uNewControllerPortValue,
+                                                            &ulMaxPorts);
+                    if (FAILED(rc))
+                    {
+                        if (rc == E_INVALIDARG)
+                        {
+                            const char *pcszSCType = Global::stringifyStorageControllerType(hdStorageControllerType);
+                            throw setError(E_INVALIDARG,
+                                           tr("Illegal channel: '%u'.  For %s controllers the valid values are "
+                                           "0 to %lu (inclusive).\n"), uNewControllerPortValue, pcszSCType, ulMaxPorts-1);
+                        }
+                        else
+                            throw rc;
+                    }
+
+                    unconst(ovfVdisk.ulAddressOnParent) = uNewControllerPortValue;
+                }
+                else
+                    hdc = (*vsysThis.mapControllers.find(ovfVdisk.strIdController)).second;
+
 
                 i_convertDiskAttachmentValues(hdc,
                                               ovfVdisk.ulAddressOnParent,
@@ -5261,7 +5406,6 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
      * attachments pointing to the last hard disk image, which causes import
      * failures. A long fixed bug, however the OVF files are long lived. */
     settings::StorageControllersList &llControllers = config.hardwareMachine.storage.llStorageControllers;
-    Guid hdUuid;
     uint32_t cDisks = 0;
     bool fInconsistent = false;
     bool fRepairDuplicate = false;
@@ -5270,6 +5414,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
          it3 != llControllers.end();
          ++it3)
     {
+        Guid hdUuid;
         settings::AttachedDevicesList &llAttachments = it3->llAttachedDevices;
         settings::AttachedDevicesList::iterator it4 = llAttachments.begin();
         while (it4 != llAttachments.end())
@@ -5364,14 +5509,6 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
             continue;
         }
 
-
-
-
-
-
-
-
-
         /*
          * preliminary check availability of the image
          * This step is useful if image is placed in the OVA (TAR) package
@@ -5443,11 +5580,6 @@ l_skipped:
                         throw setError(E_FAIL,
                                        tr("Internal inconsistency looking up disk image '%s'"),
                                        diCurrent.strHref.c_str());
-
-
-
-
-
                 }
                 else
                 {
@@ -5472,6 +5604,223 @@ l_skipped:
         // there must be an image in the OVF disk structs with the same UUID
         bool fFound = false;
         Utf8Str strUuid;
+
+        /*
+         * Before importing the virtual hard disk found above (diCurrent/vsdeTargetHD) first
+         * check if the user requested to change either the controller it is to be attached
+         * to and/or the controller port (aka 'channel') on the controller.
+         */
+        if (   !vsdeTargetHD->strExtraConfigCurrent.isEmpty()
+            && vsdeTargetHD->strExtraConfigSuggested != vsdeTargetHD->strExtraConfigCurrent)
+        {
+            /*
+             * First, we examine the extra configuration values for this vdisk:
+             *   vsdeTargetHD->strExtraConfigSuggested
+             *   vsdeTargetHD->strExtraConfigCurrent
+             * in order to extract both the "before" and "after" storage controller and port
+             * details. The strExtraConfigSuggested string contains the current controller
+             * and port the vdisk is attached to and is populated by Appliance::interpret()
+             * when processing the OVF data; it is in the following format:
+             * 'controller=12;channel=0' (the 'channel=' label for the controller port is
+             * historical and is documented as such in the SDK so can't be changed). The
+             * strExtraConfigSuggested string contains the target controller and port specified
+             * by the user and it has the same format. The 'controller=' value is not a
+             * controller-ID but rather it is the index for the corresponding storage controller
+             * in the array of VirtualSystemDescriptionEntry entries.
+             */
+            int vrc;
+            uint32_t uOrigControllerIndex;
+            vrc = getStorageControllerDetailsFromStr(vsdeTargetHD->strExtraConfigSuggested, "controller=", &uOrigControllerIndex);
+            if (RT_FAILURE(vrc))
+                throw setError(E_FAIL,
+                               tr("Original controller value invalid or missing: '%s'"),
+                               vsdeTargetHD->strExtraConfigSuggested.c_str());
+
+            uint32_t uTargetControllerIndex;
+            vrc = getStorageControllerDetailsFromStr(vsdeTargetHD->strExtraConfigCurrent, "controller=", &uTargetControllerIndex);
+            if (RT_FAILURE(vrc))
+                throw setError(E_FAIL,
+                               tr("Target controller value invalid or missing: '%s'"),
+                               vsdeTargetHD->strExtraConfigCurrent.c_str());
+
+            uint32_t uOrigControllerPortValue;
+            vrc = getStorageControllerDetailsFromStr(vsdeTargetHD->strExtraConfigSuggested, "channel=",
+                &uOrigControllerPortValue);
+            if (RT_FAILURE(vrc))
+                throw setError(E_FAIL,
+                               tr("Original controller port ('channel=') invalid or missing: '%s'"),
+                               vsdeTargetHD->strExtraConfigSuggested.c_str());
+
+            uint32_t uNewControllerPortValue;
+            vrc = getStorageControllerDetailsFromStr(vsdeTargetHD->strExtraConfigCurrent, "channel=", &uNewControllerPortValue);
+            if (RT_FAILURE(vrc))
+                throw setError(E_FAIL,
+                               tr("Target controller port ('channel=') invalid or missing: '%s'"),
+                               vsdeTargetHD->strExtraConfigCurrent.c_str());
+
+            /*
+             * Second, now that we have the storage controller indexes we locate the corresponding
+             * VirtualSystemDescriptionEntry (VSDE) for both storage controllers which contain
+             * identifying details which will be needed later when walking the list of storage
+             * controllers.
+             */
+            const VirtualSystemDescriptionEntry *vsdeOrigController;
+            vsdeOrigController = vsdescThis->i_findByIndex(uOrigControllerIndex);
+            if (!vsdeOrigController)
+                throw setError(E_FAIL,
+                               tr("Failed to find storage controller '%u' in the System Description list"),
+                               uOrigControllerIndex);
+
+            const VirtualSystemDescriptionEntry *vsdeTargetController;
+            vsdeTargetController = vsdescThis->i_findByIndex(uTargetControllerIndex);
+            if (!vsdeTargetController)
+                throw setError(E_FAIL,
+                               tr("Failed to find storage controller '%u' in the System Description list"),
+                               uTargetControllerIndex);
+
+            /*
+             * Third, grab the UUID of the current vdisk so we can identify which device
+             * attached to the original storage controller needs to be updated (channel) and/or
+             * removed.
+             */
+            ovf::DiskImagesMap::const_iterator itDiskImageMap = stack.mapDisks.find(vsdeTargetHD->strRef);
+            if (itDiskImageMap == stack.mapDisks.end())
+                throw setError(E_FAIL,
+                               tr("Failed to find virtual disk '%s' in DiskImagesMap"),
+                               vsdeTargetHD->strVBoxCurrent.c_str());
+            const ovf::DiskImage &targetDiskImage = itDiskImageMap->second;
+            Utf8Str strTargetDiskUuid = targetDiskImage.uuidVBox;;
+
+            /*
+             * Fourth, walk the attached devices of the original storage controller to find the
+             * current vdisk and update the controller port (aka channel) value if necessary and
+             * also remove the vdisk from this controller if needed.
+             *
+             * A short note on the choice of which items to compare when determining the type of
+             * storage controller here and below in the vdisk addition scenario:
+             *  + The VirtualSystemDescriptionEntry 'strOvf' field is populated from the OVF
+             *    data which can contain a value like 'vmware.sata.ahci' if created by VMWare so
+             *    it isn't a reliable choice.
+             *  + The settings::StorageController 'strName' field can have varying content based
+             *    on the version of the settings file, e.g. 'IDE Controller' vs. 'IDE' so it
+             *    isn't a reliable choice.  Further, this field can contain 'SATA' whereas
+             *    'AHCI' is used in 'strOvf' and 'strVBoxSuggested'.
+             *  + The VirtualSystemDescriptionEntry 'strVBoxSuggested' field is populated by
+             *    Appliance::interpret()->VirtualSystemDescription::i_addEntry() and is thus
+             *    under VBox's control and has a fixed format and predictable content.
+             */
+            bool fDiskRemoved = false;
+            settings::AttachedDevice originalAttachedDevice;
+            settings::StorageControllersList::iterator itSCL;
+            for (itSCL = config.hardwareMachine.storage.llStorageControllers.begin();
+                 itSCL != config.hardwareMachine.storage.llStorageControllers.end();
+                 ++itSCL)
+            {
+                settings::StorageController &SC = *itSCL;
+                const char *pcszSCType = Global::stringifyStorageControllerType(SC.controllerType);
+
+                /* There can only be one storage controller of each type in the OVF data. */
+                if (!vsdeOrigController->strVBoxSuggested.compare(pcszSCType, Utf8Str::CaseInsensitive))
+                {
+                    settings::AttachedDevicesList::iterator itAD;
+                    for (itAD = SC.llAttachedDevices.begin();
+                         itAD != SC.llAttachedDevices.end();
+                         ++itAD)
+                    {
+                        settings::AttachedDevice &AD = *itAD;
+
+                        if (AD.uuid.toString() == strTargetDiskUuid)
+                        {
+                            ULONG ulMaxPorts;
+                            rc = i_verifyStorageControllerPortValid(SC.controllerType,
+                                                                    uNewControllerPortValue,
+                                                                    &ulMaxPorts);
+                            if (FAILED(rc))
+                            {
+                                if (rc == E_INVALIDARG)
+                                    throw setError(E_INVALIDARG,
+                                                   tr("Illegal channel: '%u'.  For %s controllers the valid values are "
+                                                   "0 to %lu (inclusive).\n"), uNewControllerPortValue, pcszSCType, ulMaxPorts-1);
+                                else
+                                    throw rc;
+                            }
+
+                            if (uOrigControllerPortValue != uNewControllerPortValue)
+                            {
+                                AD.lPort = uNewControllerPortValue;
+                            }
+                            if (uOrigControllerIndex != uTargetControllerIndex)
+                            {
+                                LogFunc(("Removing vdisk '%s' (uuid = %RTuuid) from the %s storage controller.\n",
+                                         vsdeTargetHD->strVBoxCurrent.c_str(),
+                                         itAD->uuid.raw(),
+                                         SC.strName.c_str()));
+                                originalAttachedDevice = AD;
+                                SC.llAttachedDevices.erase(itAD);
+                                fDiskRemoved = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            /*
+             * Fifth, if we are moving the vdisk to a different controller and not just changing
+             * the channel then we walk the attached devices of the target controller and check
+             * for conflicts before adding the vdisk detached/removed above.
+             */
+            bool fDiskAdded = false;
+            if (fDiskRemoved)
+            {
+                for (itSCL = config.hardwareMachine.storage.llStorageControllers.begin();
+                     itSCL != config.hardwareMachine.storage.llStorageControllers.end();
+                     ++itSCL)
+                {
+                    settings::StorageController &SC = *itSCL;
+                    const char *pcszSCType = Global::stringifyStorageControllerType(SC.controllerType);
+
+                    /* There can only be one storage controller of each type in the OVF data. */
+                    if (!vsdeTargetController->strVBoxSuggested.compare(pcszSCType, Utf8Str::CaseInsensitive))
+                    {
+                        settings::AttachedDevicesList::iterator itAD;
+                        for (itAD = SC.llAttachedDevices.begin();
+                             itAD != SC.llAttachedDevices.end();
+                             ++itAD)
+                        {
+                            settings::AttachedDevice &AD = *itAD;
+                            if (   AD.lDevice == originalAttachedDevice.lDevice
+                                && AD.lPort == originalAttachedDevice.lPort)
+                                    throw setError(E_FAIL,
+                                                   tr("Device of type '%s' already attached to the %s controller at this "
+                                                   "port/channel (%d)."),
+                                                   Global::stringifyDeviceType(AD.deviceType), pcszSCType, AD.lPort);
+                        }
+
+                        LogFunc(("Adding vdisk '%s' (uuid = %RTuuid) to the %s storage controller\n",
+                                 vsdeTargetHD->strVBoxCurrent.c_str(),
+                                 originalAttachedDevice.uuid.raw(),
+                                 SC.strName.c_str()));
+                        SC.llAttachedDevices.push_back(originalAttachedDevice);
+                        fDiskAdded = true;
+                    }
+                }
+
+                if (!fDiskAdded)
+                    throw setError(E_FAIL,
+                                   tr("Failed to add disk '%s' (uuid=%RTuuid) to the %s storage controller."),
+                                   vsdeTargetHD->strVBoxCurrent.c_str(),
+                                   originalAttachedDevice.uuid.raw(),
+                                   vsdeTargetController->strVBoxSuggested.c_str());
+            }
+
+            /*
+             * Sixth, update the machine settings since we've changed the storage controller
+             * and/or controller port for this vdisk.
+             */
+            AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+            mVirtualBox->i_saveSettings();
+            vboxLock.release();
+        }
 
         // for each storage controller...
         for (settings::StorageControllersList::iterator sit = config.hardwareMachine.storage.llStorageControllers.begin();
@@ -5655,7 +6004,7 @@ void Appliance::i_importMachines(ImportStack &stack)
         {
             VirtualSystemDescriptionEntry *vsdeSF1 = vsdeSettingsFile.front();
             if (vsdeSF1->strVBoxCurrent != vsdeSF1->strVBoxSuggested)
-            stack.strSettingsFilename = vsdeSF1->strVBoxCurrent;
+                stack.strSettingsFilename = vsdeSF1->strVBoxCurrent;
         }
         if (stack.strSettingsFilename.isEmpty())
         {

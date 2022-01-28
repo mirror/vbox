@@ -167,6 +167,28 @@ public:
      */
     static const char *stringifySessionState(SessionState_T aState);
 
+    /**
+     * Stringify a device type.
+     *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aType       The device type.
+     */
+    static const char *stringifyDeviceType(DeviceType_T aType);
+
+    /**
+     * Stringify a storage controller type.
+     *
+     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
+     * version of this method.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aType       The storage controller type.
+     */
+    static const char *stringifyStorageControllerType(StorageControllerType_T aType);
+
 #if 0 /* unused */
     /**
      * Stringify a storage bus type.
@@ -178,17 +200,6 @@ public:
      * @param   aBus        The storage bus type.
      */
     static const char *stringifyStorageBus(StorageBus_T aBus);
-
-    /**
-     * Stringify a device type.
-     *
-     * Drop the Global:: prefix and include StringifyEnums.h for an untranslated
-     * version of this method.
-     *
-     * @returns Pointer to a read only string.
-     * @param   aType       The device type.
-     */
-    static const char *stringifyDeviceType(DeviceType_T aType);
 
     /**
      * Stringify a reason.

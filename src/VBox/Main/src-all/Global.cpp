@@ -634,23 +634,25 @@ Global::stringifySessionState(SessionState_T aState)
     }
 }
 
-#if 0 /* unused */
-
 /*static*/ const char *
-Global::stringifyStorageBus(StorageBus_T aBus)
+Global::stringifyStorageControllerType(StorageControllerType_T aType)
 {
-    switch (aBus)
+    switch (aType)
     {
-        case StorageBus_Null:           return GlobalCtx::tr("Null");
-        case StorageBus_IDE:            return GlobalCtx::tr("IDE");
-        case StorageBus_SATA:           return GlobalCtx::tr("SATA");
-        case StorageBus_Floppy:         return GlobalCtx::tr("Floppy");
-        case StorageBus_SAS:            return GlobalCtx::tr("SAS");
-        case StorageBus_USB:            return GlobalCtx::tr("USB");
-        case StorageBus_PCIe:           return GlobalCtx::tr("PCIe");
-        case StorageBus_VirtioSCSI:     return GlobalCtx::tr("VirtioSCSI");
+        case StorageControllerType_Null:        return GlobalCtx::tr("Null");
+        case StorageControllerType_LsiLogic:    return GlobalCtx::tr("LsiLogic");
+        case StorageControllerType_BusLogic:    return GlobalCtx::tr("BusLogic");
+        case StorageControllerType_IntelAhci:   return GlobalCtx::tr("AHCI");
+        case StorageControllerType_PIIX3:       return GlobalCtx::tr("PIIX3");
+        case StorageControllerType_PIIX4 :      return GlobalCtx::tr("PIIX4");
+        case StorageControllerType_ICH6:        return GlobalCtx::tr("ICH6");
+        case StorageControllerType_I82078:      return GlobalCtx::tr("I82078");
+        case StorageControllerType_LsiLogicSas: return GlobalCtx::tr("LsiLogicSas");
+        case StorageControllerType_USB:         return GlobalCtx::tr("USB");
+        case StorageControllerType_NVMe:        return GlobalCtx::tr("NVMe");
+        case StorageControllerType_VirtioSCSI:  return GlobalCtx::tr("VirtioSCSI");
         default:
-            AssertMsgFailedReturn(("%d (%#x)\n", aBus, aBus), ::stringifyStorageBus(aBus));
+            AssertMsgFailedReturn(("%d (%#x)\n", aType, aType), ::stringifyStorageControllerType(aType));
     }
 }
 
@@ -668,6 +670,26 @@ Global::stringifyDeviceType(DeviceType_T aType)
         case DeviceType_SharedFolder: return GlobalCtx::tr("ShardFolder");
         default:
             AssertMsgFailedReturn(("%d (%#x)\n", aType, aType), ::stringifyDeviceType(aType));
+    }
+}
+
+#if 0 /* unused */
+
+/*static*/ const char *
+Global::stringifyStorageBus(StorageBus_T aBus)
+{
+    switch (aBus)
+    {
+        case StorageBus_Null:           return GlobalCtx::tr("Null");
+        case StorageBus_IDE:            return GlobalCtx::tr("IDE");
+        case StorageBus_SATA:           return GlobalCtx::tr("SATA");
+        case StorageBus_Floppy:         return GlobalCtx::tr("Floppy");
+        case StorageBus_SAS:            return GlobalCtx::tr("SAS");
+        case StorageBus_USB:            return GlobalCtx::tr("USB");
+        case StorageBus_PCIe:           return GlobalCtx::tr("PCIe");
+        case StorageBus_VirtioSCSI:     return GlobalCtx::tr("VirtioSCSI");
+        default:
+            AssertMsgFailedReturn(("%d (%#x)\n", aBus, aBus), ::stringifyStorageBus(aBus));
     }
 }
 

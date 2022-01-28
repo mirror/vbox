@@ -219,6 +219,9 @@ private:
                              ComPtr<IMachine> &pNewMachine,
                              ImportStack &stack);
     void i_importMachines(ImportStack &stack);
+    HRESULT i_verifyStorageControllerPortValid(const StorageControllerType_T aStorageControllerType,
+                                               const uint32_t aControllerPort,
+                                               ULONG *ulMaxPorts);
 
     HRESULT i_preCheckImageAvailability(ImportStack &stack);
     bool    i_importEnsureOvaLookAhead(ImportStack &stack);
@@ -309,6 +312,7 @@ public:
 
     std::list<VirtualSystemDescriptionEntry*> i_findByType(VirtualSystemDescriptionType_T aType);
     const VirtualSystemDescriptionEntry* i_findControllerFromID(const Utf8Str &id);
+    const VirtualSystemDescriptionEntry* i_findByIndex(const uint32_t aIndex);
 
     void i_importVBoxMachineXML(const xml::ElementNode &elmMachine);
     const settings::MachineConfigFile* i_getMachineConfig() const;

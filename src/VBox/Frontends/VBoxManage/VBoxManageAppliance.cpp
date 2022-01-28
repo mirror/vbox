@@ -122,6 +122,56 @@ static int parseImportOptions(const char *psz, com::SafeArray<ImportOptions_T> *
     return rc;
 }
 
+/**
+ * Helper routine to parse the ExtraData Utf8Str for a storage controller's
+ * value or channel value.
+ *
+ * @param   aExtraData    The ExtraData string which can have a format of
+ *                        either 'controller=13;channel=3' or '11'.
+ * @param   pszKey        The string being looked up, usually either 'controller'
+ *                        or 'channel' but can be NULL or empty.
+ * @param   puVal         The integer value of the 'controller=' or 'channel='
+ *                        key (or the controller number when there is no key) in
+ *                        the ExtraData string.
+ * @returns COM status code.
+ */
+static int getStorageControllerDetailsFromStr(const com::Utf8Str &aExtraData, const char *pszKey, uint32_t *puVal)
+{
+    int vrc;
+
+    if (pszKey && *pszKey)
+    {
+        size_t posKey = aExtraData.find(pszKey);
+        if (posKey == Utf8Str::npos)
+            return VERR_INVALID_PARAMETER;
+        vrc = RTStrToUInt32Ex(aExtraData.c_str() + posKey + strlen(pszKey), NULL, 0, puVal);
+    }
+    else
+    {
+        vrc = RTStrToUInt32Ex(aExtraData.c_str(), NULL, 0, puVal);
+    }
+
+    if (vrc == VWRN_NUMBER_TOO_BIG || vrc == VWRN_NEGATIVE_UNSIGNED)
+        return VERR_INVALID_PARAMETER;
+
+    return vrc;
+}
+
+static bool isStorageControllerType(VirtualSystemDescriptionType_T avsdType)
+{
+    switch (avsdType)
+    {
+        case VirtualSystemDescriptionType_HardDiskControllerIDE:
+        case VirtualSystemDescriptionType_HardDiskControllerSATA:
+        case VirtualSystemDescriptionType_HardDiskControllerSCSI:
+        case VirtualSystemDescriptionType_HardDiskControllerSAS:
+        case VirtualSystemDescriptionType_HardDiskControllerVirtioSCSI:
+            return true;
+        default:
+            return false;
+    }
+}
+
 static const RTGETOPTDEF g_aImportApplianceOptions[] =
 {
     { "--dry-run",              'n', RTGETOPT_REQ_NOTHING },
@@ -153,12 +203,8 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "-scsitype",              'T', RTGETOPT_REQ_UINT32 },     // deprecated
     { "--type",                 'T', RTGETOPT_REQ_UINT32 },     // deprecated
     { "-type",                  'T', RTGETOPT_REQ_UINT32 },     // deprecated
-#if 0 /* Changing the controller is fully valid, but the current design on how
-         the params are evaluated here doesn't allow two parameter for one
-         unit. The target disk path is more important. I leave it for future
-         improvments. */
     { "--controller",           'C', RTGETOPT_REQ_STRING },
-#endif
+    { "--port",                 'E', RTGETOPT_REQ_STRING },
     { "--disk",                 'D', RTGETOPT_REQ_STRING },
     { "--options",              'O', RTGETOPT_REQ_STRING },
 
@@ -342,6 +388,18 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                        Appliance::tr("Option \"%s\" requires preceding --unit option."),
                                        GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys][Utf8StrFmt("controller%u", ulCurUnit)] = ValueUnion.psz;
+                break;
+
+            case 'E':   // --port
+                if (enmApplType != LOCAL)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                       Appliance::tr("Option \"%s\" requires preceding --vsys option."),
+                                       GetState.pDef->pszLong);
+                if (ulCurUnit == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                       Appliance::tr("Option \"%s\" requires preceding --unit option."),
+                                       GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys][Utf8StrFmt("port%u", ulCurUnit)] = ValueUnion.psz;
                 break;
 
             case 'D':   // --disk
@@ -844,64 +902,256 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                             else
                             {
                                 Utf8StrFmt strTypeArg("disk%u", a);
+                                bool fDiskChanged = false;
+                                int vrc;
                                 RTCList<ImportOptions_T> optionsList = options.toList();
 
-                                bstrFinalValue = aVBoxValues[a];
-
                                 if (findArgValue(strOverride, pmapArgs, strTypeArg))
                                 {
-                                    if (!optionsList.contains(ImportOptions_ImportToVDI))
-                                    {
-                                        RTUUID uuid;
-                                        /* Check if this is a uuid. If so, don't touch. */
-                                        int vrc = RTUuidFromStr(&uuid, strOverride.c_str());
-                                        if (vrc != VINF_SUCCESS)
-                                        {
-                                            /* Make the path absolute. */
-                                            if (!RTPathStartsWithRoot(strOverride.c_str()))
-                                            {
-                                                char pszPwd[RTPATH_MAX];
-                                                vrc = RTPathGetCurrent(pszPwd, RTPATH_MAX);
-                                                if (RT_SUCCESS(vrc))
-                                                    strOverride = Utf8Str(pszPwd).append(RTPATH_SLASH).append(strOverride);
-                                            }
-                                        }
-                                        bstrFinalValue = strOverride;
-                                    }
-                                    else
-                                    {
-                                        //print some error about incompatible command-line arguments
+                                    if (optionsList.contains(ImportOptions_ImportToVDI))
                                         return errorSyntax(USAGE_IMPORTAPPLIANCE,
-                                                           Appliance::tr("Option --ImportToVDI shall not be used together with "
-                                                                         "manually set target path."));
-
+                                                           Appliance::tr("Option --ImportToVDI can not be used together with "
+                                                                         "a manually set target path."));
+                                    RTUUID uuid;
+                                    /* Check if this is a uuid. If so, don't touch. */
+                                    vrc = RTUuidFromStr(&uuid, strOverride.c_str());
+                                    if (vrc != VINF_SUCCESS)
+                                    {
+                                        /* Make the path absolute. */
+                                        if (!RTPathStartsWithRoot(strOverride.c_str()))
+                                        {
+                                            char pszPwd[RTPATH_MAX];
+                                            vrc = RTPathGetCurrent(pszPwd, RTPATH_MAX);
+                                            if (RT_SUCCESS(vrc))
+                                                strOverride = Utf8Str(pszPwd).append(RTPATH_SLASH).append(strOverride);
+                                        }
                                     }
-
-                                    RTPrintf(Appliance::tr("%2u: Hard disk image: source image=%ls, target path=%ls, %ls\n"),
-                                            a,
-                                            aOvfValues[a],
-                                            bstrFinalValue.raw(),
-                                            aExtraConfigValues[a]);
+                                    bstrFinalValue = strOverride;
+                                    fDiskChanged = true;
                                 }
-#if 0 /* Changing the controller is fully valid, but the current design on how
-         the params are evaluated here doesn't allow two parameter for one
-         unit. The target disk path is more important I leave it for future
-         improvments. */
-                                Utf8StrFmt strTypeArg("controller%u", a);
+
+                                strTypeArg.printf("controller%u", a);
+                                bool fControllerChanged = false;
+                                uint32_t uTargetController = (uint32_t)-1;
+                                VirtualSystemDescriptionType_T vsdControllerType = VirtualSystemDescriptionType_Ignore;
+                                Utf8Str strExtraConfigValue;
                                 if (findArgValue(strOverride, pmapArgs, strTypeArg))
                                 {
-                                    // strOverride now has the controller index as a number, but we
-                                    // need a "controller=X" format string
-                                    strOverride = Utf8StrFmt("controller=%s", strOverride.c_str());
+                                    vrc = getStorageControllerDetailsFromStr(strOverride, NULL, &uTargetController);
+                                    if (RT_FAILURE(vrc))
+                                        return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                                           Appliance::tr("Invalid controller value: '%s'"),
+                                                           strOverride.c_str());
+
+                                    vsdControllerType = retTypes[uTargetController];
+                                    if (!isStorageControllerType(vsdControllerType))
+                                        return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                                           Appliance::tr("Invalid storage controller specified: %u"),
+                                                           uTargetController);
+
+                                    fControllerChanged = true;
+                                }
+
+                                strTypeArg.printf("port%u", a);
+                                bool fControllerPortChanged = false;
+                                uint32_t uTargetControllerPort = (uint32_t)-1;;
+                                if (findArgValue(strOverride, pmapArgs, strTypeArg))
+                                {
+                                    vrc = getStorageControllerDetailsFromStr(strOverride, NULL, &uTargetControllerPort);
+                                    if (RT_FAILURE(vrc))
+                                        return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                                           Appliance::tr("Invalid port value: '%s'"),
+                                                           strOverride.c_str());
+
+                                    fControllerPortChanged = true;
+                                }
+
+                                /*
+                                 * aExtraConfigValues[a] has a format of 'controller=12;channel=0' and is set by
+                                 * Appliance::interpret() so any parsing errors here aren't due to user-supplied
+                                 * values so different error messages here.
+                                 */
+                                uint32_t uOrigController;
+                                Utf8Str strOrigController(Bstr(aExtraConfigValues[a]).raw());
+                                vrc = getStorageControllerDetailsFromStr(strOrigController, "controller=", &uOrigController);
+                                if (RT_FAILURE(vrc))
+                                    return RTMsgErrorExitFailure(Appliance::tr("Failed to extract controller value from ExtraConfig: '%s'"),
+                                                                 strOrigController.c_str());
+
+                                uint32_t uOrigControllerPort;
+                                vrc = getStorageControllerDetailsFromStr(strOrigController, "channel=", &uOrigControllerPort);
+                                if (RT_FAILURE(vrc))
+                                    return RTMsgErrorExitFailure(Appliance::tr("Failed to extract channel value from ExtraConfig: '%s'"),
+                                                                 strOrigController.c_str());
+
+                                /*
+                                 * The 'strExtraConfigValue' string is used to display the storage controller and
+                                 * port details for each virtual hard disk using the more accurate 'controller=' and
+                                 * 'port=' labels. The aExtraConfigValues[a] string has a format of
+                                 * 'controller=%u;channel=%u' from Appliance::interpret() which is required as per
+                                 * the API but for consistency and clarity with the CLI options --controller and
+                                 * --port we instead use strExtraConfigValue in the output below.
+                                 */
+                                strExtraConfigValue = Utf8StrFmt("controller=%u;port=%u", uOrigController, uOrigControllerPort);
+
+                                if (fControllerChanged || fControllerPortChanged)
+                                {
+                                    /*
+                                     * Verify that the new combination of controller and controller port is valid.
+                                     * cf. StorageController::i_checkPortAndDeviceValid()
+                                     */
+                                    if (uTargetControllerPort == (uint32_t)-1)
+                                        uTargetControllerPort = uOrigControllerPort;
+                                    if (uTargetController == (uint32_t)-1)
+                                        uTargetController = uOrigController;
+
+                                    if (   uOrigController == uTargetController
+                                        && uOrigControllerPort == uTargetControllerPort)
+                                        return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                                           Appliance::tr("Device already attached to controller %u at this port (%u) "
+                                                                         "location."),
+                                                           uTargetController,
+                                                           uTargetControllerPort);
+
+                                    if (vsdControllerType == VirtualSystemDescriptionType_Ignore)
+                                        vsdControllerType = retTypes[uOrigController];
+                                    if (!isStorageControllerType(vsdControllerType))
+                                        return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                                           Appliance::tr("Invalid storage controller specified: %u"),
+                                                           uOrigController);
+
+                                    ComPtr<IVirtualBox> pVirtualBox = arg->virtualBox;
+                                    ComPtr<ISystemProperties> systemProperties;
+                                    CHECK_ERROR(pVirtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()));
+                                    ULONG maxPorts = 0;
+                                    StorageBus_T enmStorageBus = StorageBus_Null;;
+                                    switch (vsdControllerType)
+                                    {
+                                        case VirtualSystemDescriptionType_HardDiskControllerIDE:
+                                            enmStorageBus = StorageBus_IDE;
+                                           break;
+                                        case VirtualSystemDescriptionType_HardDiskControllerSATA:
+                                            enmStorageBus = StorageBus_SATA;
+                                            break;
+                                        case VirtualSystemDescriptionType_HardDiskControllerSCSI:
+                                            enmStorageBus = StorageBus_SCSI;
+                                            break;
+                                        case VirtualSystemDescriptionType_HardDiskControllerSAS:
+                                            enmStorageBus = StorageBus_SAS;
+                                            break;
+                                        case VirtualSystemDescriptionType_HardDiskControllerVirtioSCSI:
+                                            enmStorageBus = StorageBus_VirtioSCSI;
+                                            break;
+                                        default:  // Not reached since vsdControllerType validated above but silence gcc.
+                                            break;
+                                    }
+                                    CHECK_ERROR_RET(systemProperties, GetMaxPortCountForStorageBus(enmStorageBus, &maxPorts),
+                                        RTEXITCODE_FAILURE);
+                                    if (uTargetControllerPort >= maxPorts)
+                                        return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                                           Appliance::tr("Illegal port value: %u. For %ls controllers the only valid values "
+                                                                         "are 0 to %lu (inclusive)"),
+                                                           uTargetControllerPort,
+                                                           aVBoxValues[uTargetController],
+                                                           maxPorts);
+
+                                    /*
+                                     * The 'strOverride' string will be mapped to the strExtraConfigCurrent value in
+                                     * VirtualSystemDescription::setFinalValues() which is then used in the appliance
+                                     * import routines i_importVBoxMachine()/i_importMachineGeneric() later.  This
+                                     * aExtraConfigValues[] array entry must have a format of
+                                     * 'controller=<index>;channel=<c>' as per the API documentation.
+                                     */
+                                    strExtraConfigValue = Utf8StrFmt("controller=%u;port=%u", uTargetController,
+                                                                     uTargetControllerPort);
+                                    strOverride = Utf8StrFmt("controller=%u;channel=%u", uTargetController,
+                                                             uTargetControllerPort);
                                     Bstr bstrExtraConfigValue = strOverride;
                                     bstrExtraConfigValue.detachTo(&aExtraConfigValues[a]);
-                                    RTPrintf(Appliance::tr("%2u: Hard disk image: source image=%ls, target path=%ls, %ls\n"),
-                                            a,
-                                            aOvfValues[a],
-                                            aVBoxValues[a],
-                                            aExtraConfigValues[a]);
                                 }
-#endif
+
+                                if (fDiskChanged && !fControllerChanged && !fControllerPortChanged)
+                                {
+                                    RTPrintf(Appliance::tr("%2u: "
+                                             "Hard disk image specified with --disk: source image=%ls, target path=%ls, %s"
+                                             "\n    (change controller with \"--vsys %u --unit %u --controller <index>\";"
+                                             "\n    change controller port with \"--vsys %u --unit %u --port <n>\")\n"),
+                                             a,
+                                             aOvfValues[a],
+                                             bstrFinalValue.raw(),
+                                             strExtraConfigValue.c_str(),
+                                             i, a,
+                                             i, a);
+                                }
+                                else if (fDiskChanged && fControllerChanged && !fControllerPortChanged)
+                                {
+                                    RTPrintf(Appliance::tr("%2u: "
+                                             "Hard disk image specified with --disk and --controller: source image=%ls, target path=%ls, %s"
+                                             "\n    (change controller port with \"--vsys %u --unit %u --port <n>\")\n"),
+                                             a,
+                                             aOvfValues[a],
+                                             bstrFinalValue.raw(),
+                                             strExtraConfigValue.c_str(),
+                                             i, a);
+                                }
+                                else if (fDiskChanged && !fControllerChanged && fControllerPortChanged)
+                                {
+                                    RTPrintf(Appliance::tr("%2u: "
+                                             "Hard disk image specified with --disk and --port: source image=%ls, target path=%ls, %s"
+                                             "\n    (change controller with \"--vsys %u --unit %u --controller <index>\")\n"),
+                                             a,
+                                             aOvfValues[a],
+                                             bstrFinalValue.raw(),
+                                             strExtraConfigValue.c_str(),
+                                             i, a);
+                                }
+                                else if (!fDiskChanged && fControllerChanged && fControllerPortChanged)
+                                {
+                                    RTPrintf(Appliance::tr("%2u: "
+                                             "Hard disk image specified with --controller and --port: source image=%ls, target path=%ls, %s"
+                                             "\n    (change target path with \"--vsys %u --unit %u --disk path\")\n"),
+                                             a,
+                                             aOvfValues[a],
+                                             bstrFinalValue.raw(),
+                                             strExtraConfigValue.c_str(),
+                                             i, a);
+                                }
+                                else if (!fDiskChanged && !fControllerChanged && fControllerPortChanged)
+                                {
+                                    RTPrintf(Appliance::tr("%2u: "
+                                             "Hard disk image specified with --port: source image=%ls, target path=%ls, %s"
+                                             "\n    (change target path with \"--vsys %u --unit %u --disk path\";"
+                                             "\n    change controller with \"--vsys %u --unit %u --controller <index>\")\n"),
+                                             a,
+                                             aOvfValues[a],
+                                             bstrFinalValue.raw(),
+                                             strExtraConfigValue.c_str(),
+                                             i, a,
+                                             i, a);
+                                }
+                                else if (!fDiskChanged && fControllerChanged && !fControllerPortChanged)
+                                {
+                                    RTPrintf(Appliance::tr("%2u: "
+                                             "Hard disk image specified with --controller: source image=%ls, target path=%ls, %s"
+                                             "\n    (change target path with \"--vsys %u --unit %u --disk path\";"
+                                             "\n    change controller port with \"--vsys %u --unit %u --port <n>\")\n"),
+                                             a,
+                                             aOvfValues[a],
+                                             bstrFinalValue.raw(),
+                                             strExtraConfigValue.c_str(),
+                                             i, a,
+                                             i, a);
+                                }
+                                else if (fDiskChanged && fControllerChanged && fControllerPortChanged)
+                                {
+                                    RTPrintf(Appliance::tr("%2u: "
+                                             "Hard disk image specified with --disk and --controller and --port: "
+                                             "source image=%ls, target path=%ls, %s\n"),
+                                             a,
+                                             aOvfValues[a],
+                                             bstrFinalValue.raw(),
+                                             strExtraConfigValue.c_str());
+                                }
                                 else
                                 {
                                     strOverride = aVBoxValues[a];
@@ -912,7 +1162,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                                      * Appliance::i_findMediumFormatFromDiskImage()
                                      * and creating one new function which returns
                                      * struct ovf::DiskImage for currently processed disk.
-                                    */
+                                     */
 
                                     /*
                                      * if user wants to convert all imported disks to VDI format
@@ -981,15 +1231,16 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
 
                                     bstrFinalValue = strOverride;
 
-                                    RTPrintf(Appliance::tr(
-                                                "%2u: Hard disk image: source image=%ls, target path=%ls, %ls"
-                                                "\n    (change target path with \"--vsys %u --unit %u --disk path\";"
-                                                "\n    disable with \"--vsys %u --unit %u --ignore\")\n"),
-                                            a,
-                                            aOvfValues[a],
-                                            bstrFinalValue.raw(),
-                                            aExtraConfigValues[a],
-                                            i, a, i, a);
+                                    RTPrintf(Appliance::tr("%2u: Hard disk image: source image=%ls, target path=%ls, %s"
+                                            "\n    (change target path with \"--vsys %u --unit %u --disk path\";"
+                                            "\n    change controller with \"--vsys %u --unit %u --controller <index>\";"
+                                            "\n    change controller port with \"--vsys %u --unit %u --port <n>\";"
+                                            "\n    disable with \"--vsys %u --unit %u --ignore\")\n"),
+                                            a, aOvfValues[a], bstrFinalValue.raw(), strExtraConfigValue.c_str(),
+                                            i, a,
+                                            i, a,
+                                            i, a,
+                                            i, a);
                                 }
                             }
                             break;

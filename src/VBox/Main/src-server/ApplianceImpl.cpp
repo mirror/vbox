@@ -1827,3 +1827,22 @@ const settings::MachineConfigFile* VirtualSystemDescription::i_getMachineConfig(
     return m->pConfig;
 }
 
+/**
+ * Private method; walks through the array of VirtualSystemDescriptionEntry entries
+ * and returns the one matching the given index.
+ */
+const VirtualSystemDescriptionEntry* VirtualSystemDescription::i_findByIndex(const uint32_t aIndex)
+{
+    vector<VirtualSystemDescriptionEntry>::const_iterator it;
+    for (it = m->maDescriptions.begin();
+         it != m->maDescriptions.end();
+         ++it)
+    {
+        const VirtualSystemDescriptionEntry &d = *it;
+        if (d.ulIndex == aIndex)
+            return &d;
+    }
+
+    return NULL;
+}
+
