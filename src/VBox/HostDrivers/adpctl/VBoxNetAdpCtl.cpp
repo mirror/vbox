@@ -276,12 +276,19 @@ protected:
 #ifdef RT_OS_LINUX
 /*
  * Helper class to incapsulate IPv4 address conversion.
+ *
+ * Note that this class relies on NetworkAddress to have been used for
+ * checking validity of IP addresses prior calling any methods of this
+ * class.
  */
 class AddressIPv4
 {
 public:
     AddressIPv4(const char *pcszAddress, const char *pcszNetmask = 0)
         {
+            m_Prefix = 0;
+            memset(&m_Address, 0, sizeof(m_Address));
+
             if (pcszNetmask)
                 m_Prefix = maskToPrefix(pcszNetmask);
             else
@@ -293,49 +300,44 @@ public:
                  */
                 m_Prefix = 24;
             }
-            inet_pton(AF_INET, pcszAddress, &(m_Address.sin_addr));
+            int rc = RTNetStrToIPv4Addr(pcszAddress, &m_Address);
+            AssertRCReturnVoid(rc);
             snprintf(m_szAddressAndMask, sizeof(m_szAddressAndMask), "%s/%d", pcszAddress, m_Prefix);
-            m_Broadcast.sin_addr.s_addr = computeBroadcast(m_Address.sin_addr.s_addr, m_Prefix);
-            inet_ntop(AF_INET, &(m_Broadcast.sin_addr), m_szBroadcast, sizeof(m_szBroadcast));
+            deriveBroadcast(&m_Address, m_Prefix);
         }
     const char *getBroadcast() const { return m_szBroadcast; };
     const char *getAddressAndMask() const { return m_szAddressAndMask; };
 private:
-    unsigned int maskToPrefix(const char *pcszNetmask);
-    unsigned long computeBroadcast(unsigned long ulAddress, unsigned int uPrefix);
+    int maskToPrefix(const char *pcszNetmask);
+    void deriveBroadcast(PCRTNETADDRIPV4 pcAddress, int uPrefix);
 
-    unsigned int       m_Prefix;
-    struct sockaddr_in m_Address;
-    struct sockaddr_in m_Broadcast;
+    int           m_Prefix;
+    RTNETADDRIPV4 m_Address;
     char m_szAddressAndMask[INET_ADDRSTRLEN + 3]; /* e.g. 192.168.56.101/24 */
     char m_szBroadcast[INET_ADDRSTRLEN];
 };
 
-unsigned int AddressIPv4::maskToPrefix(const char *pcszNetmask)
+int AddressIPv4::maskToPrefix(const char *pcszNetmask)
 {
-    unsigned cBits = 0;
-    unsigned m[4];
+    RTNETADDRIPV4 mask;
+    int prefix = 0;
 
-    if (sscanf(pcszNetmask, "%u.%u.%u.%u", &m[0], &m[1], &m[2], &m[3]) == 4)
-    {
-        for (int i = 0; i < 4 && m[i]; ++i)
-        {
-            int mask = m[i];
-            while (mask & 0x80)
-            {
-                cBits++;
-                mask <<= 1;
-            }
-        }
-    }
-    return cBits;
+    int rc = RTNetStrToIPv4Addr(pcszNetmask, &mask);
+    AssertRCReturn(rc, 0);
+    rc = RTNetMaskToPrefixIPv4(&mask, &prefix);
+    AssertRCReturn(rc, 0);
+
+    return prefix;
 }
 
-unsigned long AddressIPv4::computeBroadcast(unsigned long ulAddress, unsigned int uPrefix)
+void AddressIPv4::deriveBroadcast(PCRTNETADDRIPV4 pcAddress, int iPrefix)
 {
     /* Note: the address is big-endian. */
-    unsigned long ulNetworkMask = (1l << uPrefix) - 1;
-    return (ulAddress & ulNetworkMask) | ~ulNetworkMask;
+    RTNETADDRIPV4 mask, broadcast;
+    int rc = RTNetPrefixToMaskIPv4(iPrefix, &mask);
+    AssertRCReturnVoid(rc);
+    broadcast.au32[0] = (pcAddress->au32[0] & mask.au32[0]) | ~mask.au32[0];
+    inet_ntop(AF_INET, broadcast.au32, m_szBroadcast, sizeof(m_szBroadcast));
 }
 
 
