@@ -265,6 +265,7 @@ RuntimeWin32ASM_SOURCES = \
 	common/asm/ASMCpuId_Idx_ECX.asm \
 	common/asm/ASMGetSegAttr.asm
 
+
 #
 # NoCRT sources (minus math stuff).
 #
@@ -910,13 +911,17 @@ RuntimeR3_SOURCES.x86 += \
 
 # Some non-assembly for non-AMD64 / non-x86 targets:
 RuntimeR3_SOURCES.arm32 += \
-	common/string/RTStrEnd.cpp
+	common/string/RTStrEnd.cpp \
+	common/asm/ASMMultU64ByU32DivByU32-generic.cpp
 RuntimeR3_SOURCES.arm64 += \
-	common/string/RTStrEnd.cpp
+	common/string/RTStrEnd.cpp \
+	common/asm/ASMMultU64ByU32DivByU32-generic.cpp
 RuntimeR3_SOURCES.sparc32 += \
-	common/string/RTStrEnd.cpp
+	common/string/RTStrEnd.cpp \
+	common/asm/ASMMultU64ByU32DivByU32-generic.cpp
 RuntimeR3_SOURCES.sparc64 += \
-	common/string/RTStrEnd.cpp
+	common/string/RTStrEnd.cpp \
+	common/asm/ASMMultU64ByU32DivByU32-generic.cpp
 
 # VBox specific stuff.
 RuntimeR3_SOURCES += \
