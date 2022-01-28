@@ -4830,10 +4830,14 @@ endif
 SDK_VBOX_WIN_INT64 = Abstracts where to find int64.lib for x86 builds.
 ifn1of ($(VBOX_WINPSDK), WINPSDK71 WINPSDK80)
  SDK_VBOX_WIN_INT64_LIBS.x86 = $(PATH_SDK_$(VBOX_WINPSDK)_LIB.x86)/int64.lib
- include $(KBUILD_PATH)/sdks/$(VBOX_WINPSDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
+ ifeq ($(KBUILD_TARGET),win)
+  include $(KBUILD_PATH)/sdks/$(VBOX_WINPSDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
+ endif
 else
  SDK_VBOX_WIN_INT64_LIBS.x86 = $(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/int64.lib
- include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
+ ifeq ($(KBUILD_TARGET),win)
+  include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk ## TODO: Add a kBuild feature for loading SDKs.
+ endif
 endif
 
 #
