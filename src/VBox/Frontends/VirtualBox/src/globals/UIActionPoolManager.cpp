@@ -3836,6 +3836,10 @@ void UIActionPoolManager::updateMenus()
     addMenu(m_mainMenus, action(UIActionIndex_M_Activity));
     updateMenuVMActivityMonitor();
 
+    /* 'File Manager' menu*/
+    addMenu(m_mainMenus, action(UIActionIndex_M_FileManager));
+    updateMenuFileManager();
+
     /* 'Help' menu: */
     addMenu(m_mainMenus, action(UIActionIndex_Menu_Help));
     updateMenuHelp();
