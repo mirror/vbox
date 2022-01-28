@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    manpage, user manual, usage: VBoxManage closemedium
+
+    Copyright (C) 2006-2020 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"[
+<!ENTITY % all.entities SYSTEM "all-entities.ent">
+%all.entities;
+]>
+<refentry id="vboxmanage-closemedium" lang="en">
+  <refentryinfo>
+    <pubdate>August 2019</pubdate>
+    <title>VBoxManage closemedium</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-closemedium</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-closemedium</refname>
+    <refpurpose>удаляет образ жесткого диска, DVD, или флоппи из реестра носителей</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-closemedium">
+<!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage closemedium</command>
+      <group>
+        <arg choice="plain">disk</arg>
+        <arg choice="plain">dvd</arg>
+        <arg choice="plain">floppy</arg>
+      </group>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>имя-файла</replaceable></arg>
+      </group>
+      <arg>--delete</arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Описание</title>
+    <para>
+      Команда <command>VBoxManage closemedium</command> удаляет образ
+      жесткого диска, DVD или флоппи из списка известных носителей,
+      используемых &product-name;. После выполнения данной команды
+      указанный образ нельзя будет выбрать в Менеджере Виртуальных
+      Носителей.
+    </para>
+    <para>
+      Для использования этой команды образ не должен быть подключен
+      к какой-либо ВМ.
+    </para>
+    <para>
+      Дополнительно можно запросить удаление образа.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>disk|dvd|floppy</term>
+        <listitem><para>
+            Указывает тип носителя. Допустимые значения:
+            <literal>disk</literal> (жесткий диск),
+            <literal>dvd</literal> или <literal>floppy</literal>.
+          </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><replaceable>uuid</replaceable>|<replaceable>имя-файла</replaceable></term>
+        <listitem><para>
+            Указывает Универсальный Уникальный Идентификатор (UUID)
+            или абсолютный путь к носителю или образу.
+          </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--delete</option></term>
+        <listitem><para>
+            Удаляет файл образа.
+          </para></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>Примеры</title>
+    <remark role="help-scope" condition="GLOBAL" />
+    <para>
+      Следующая команда удаляет файл образа диска с именем
+      <filename>disk01.vdi</filename> из реестра.
+    </para>
+<screen>$ VBoxManage closemedium disk01.vdi</screen>
+    <para>
+      Следующая команда удаляет файл образа диска с именем
+      <filename>disk01.vdi</filename> из реестра и удаляет
+      файл образа.
+    </para>
+<screen>$ VBoxManage closemedium disk01.vdi --delete</screen>
+  </refsect1>
+</refentry>

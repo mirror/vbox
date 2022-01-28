@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    manpage, user manual, usage: VBoxManage updatecheck
+
+    Copyright (C) 2020 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<refentry id="vboxmanage-updatecheck" lang="en">
+
+  <refentryinfo>
+    <pubdate>$Date$</pubdate>
+    <title>VBoxManage updatecheck</title>
+  </refentryinfo>
+
+  <refmeta>
+    <refentrytitle>VBoxManage-updatecheck</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-updatecheck</refname>
+    <refpurpose>проверка на наличие новой версии VirtualBox</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-perform"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage updatecheck perform</command>
+      <arg>--machine-readable</arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-getsettings">
+      <command>VBoxManage updatecheck getsettings</command>
+        <arg>--machine-readable</arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-updatecheck-modifysettings">
+      <command>VBoxManage updatecheck modifysettings</command>
+      <group>
+        <arg choice="plain">--disable</arg>
+        <arg choice="plain">--enable</arg>
+      </group>
+      <arg>--target=<replaceable>stable | withbetas | allreleases</replaceable></arg>
+      <arg>--frequency=<replaceable>дни</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Описание</title>
+
+    <para>Подкоманда <command>updatecheck</command> используется для проверки доступности новой версии
+      VirtualBox. Две опции подкоманды <command>updatecheck</command> используются для изменения
+      или просмотра настроек, относящихся к проверке новой версии VirtualBox.</para>
+
+    <refsect2 id="vboxmanage-updatecheck-perform">
+      <title>updatecheck perform</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Проверяет доступность новой версии VirtualBox.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--machine-readable</option></term><listitem><para>Машино-читаемый вывод.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-updatecheck-getsettings">
+      <title>updatecheck getsettings</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Отображает текущие настройки, используемый при проверке новой версии VirtualBox.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--machine-readable</option></term><listitem><para>Машино-читаемый вывод.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-updatecheck-modifysettings">
+      <title>updatecheck modifysettings</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Изменяет настройки, используемые при проверке новой версии VirtaulBox.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--enable</option></term><listitem><para>Включает службу проверки обновлений.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--disable</option></term><listitem><para>Отключает службу проверки обновлений.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--target=stable | withbetas | allreleases</option></term>
+          <listitem><para>Предпочитаемый тип выпуска, используемый при определении доступности новой версии VirtualBox. По умолчанию 'stable'.</para>
+          <variablelist>
+            <varlistentry>
+             <term><option>stable</option></term>
+             <listitem><para>Проверяет на новые стабильные выпуски (корректирующие и минорные выпуски внутри того же самого мажорного выпуска) VirtualBox.</para> </listitem>
+            </varlistentry>
+            <varlistentry>
+             <term><option>allreleases</option></term>
+             <listitem><para>Проверяет на новые стабильные выпуски (корректирующие и минорные выпуски внутри того же самого мажорного выпуска), а также мажорные выпуски VirtualBox.</para></listitem>
+            </varlistentry>
+            <varlistentry>
+             <term><option>withbetas</option></term>
+             <listitem><para>Проверяет на новые стабильные выпуски (корректирующие и минорные выпуски внутри того же самого мажорного выпуска), мажорные и бета выпуски VirtualBox.</para></listitem>
+            </varlistentry>
+          </variablelist>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--frequency=дни</option></term>
+          <listitem><para>Указывает, как часто в днях проверять на новые версии VirtualBox.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+  </refsect1>
+
+</refentry>
+
