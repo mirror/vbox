@@ -442,6 +442,7 @@ static DECLCALLBACK(int)  dbgDiggerSolarisQueryVersion(PUVM pUVM, PCVMMR3VTABLE 
  * Processes a modctl_t.
  *
  * @param   pUVM    The user mode VM handle.
+ * @param   pVMM    The VMM function table.
  * @param   pThis   Our instance data.
  * @param   pModCtl Pointer to the modctl structure.
  */
@@ -594,6 +595,7 @@ static void dbgDiggerSolarisProcessModCtl32(PUVM pUVM, PCVMMR3VTABLE pVMM, PDBGD
  * Processes a modctl_t.
  *
  * @param   pUVM    The user mode VM handle.
+ * @param   pVMM    The VMM function table.
  * @param   pThis   Our instance data.
  * @param   pModCtl Pointer to the modctl structure.
  */

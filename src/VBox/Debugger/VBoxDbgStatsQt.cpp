@@ -584,7 +584,7 @@ public:
      * @param   a_pParent       The parent object. NULL is fine.
      * @param   a_pVMM          The VMM function table.
      */
-    VBoxDbgStatsModelVM(VBoxDbgGui *a_pDbgGui, QString &a_rPatStr, QObject *a_pParent, PCVMMR3VTABLE pVMM);
+    VBoxDbgStatsModelVM(VBoxDbgGui *a_pDbgGui, QString &a_rPatStr, QObject *a_pParent, PCVMMR3VTABLE a_pVMM);
 
     /** Destructor */
     virtual ~VBoxDbgStatsModelVM();
@@ -2683,8 +2683,8 @@ VBoxDbgStatsModel::logTree(QModelIndex &a_rRoot, bool a_fReleaseLog) const
  */
 
 
-VBoxDbgStatsModelVM::VBoxDbgStatsModelVM(VBoxDbgGui *a_pDbgGui, QString &a_rPatStr, QObject *a_pParent, PCVMMR3VTABLE pVMM)
-    : VBoxDbgStatsModel(a_pParent), VBoxDbgBase(a_pDbgGui), m_pVMM(pVMM)
+VBoxDbgStatsModelVM::VBoxDbgStatsModelVM(VBoxDbgGui *a_pDbgGui, QString &a_rPatStr, QObject *a_pParent, PCVMMR3VTABLE a_pVMM)
+    : VBoxDbgStatsModel(a_pParent), VBoxDbgBase(a_pDbgGui), m_pVMM(a_pVMM)
 {
     /*
      * Create a model containing the STAM entries matching the pattern.

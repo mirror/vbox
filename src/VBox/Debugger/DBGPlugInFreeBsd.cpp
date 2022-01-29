@@ -217,6 +217,7 @@ static const uint8_t g_abNeedleInterp[] = "/red/herring";
  * @returns VBox status code.
  * @param   pThis           The instance data.
  * @param   pUVM            The user mode VM handle.
+ * @param   pVMM            The VMM function table.
  * @param   pszName         The image name.
  * @param   uKernelStart    The kernel start address.
  * @param   cbKernel        Size of the kernel image.
