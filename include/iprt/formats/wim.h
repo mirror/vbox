@@ -146,4 +146,3 @@ AssertCompile(sizeof(WIMHEADER_MAGIC) == 8);
 
 #endif /* !IPRT_INCLUDED_formats_wim_h */
 
-
