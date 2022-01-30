@@ -2578,6 +2578,7 @@ typedef struct DBGFOSIWINNT
      * @returns VBox status code.
      * @param   pThis                           Pointer to the interface structure.
      * @param   pUVM                            The user mode VM handle.
+     * @param   pVMM                            The VMM function table.
      * @param   puVersMajor                     Where to store the major version part, optional.
      * @param   puVersMinor                     Where to store the minor version part, optional.
      * @param   puBuildNumber                   Where to store the build number, optional.
