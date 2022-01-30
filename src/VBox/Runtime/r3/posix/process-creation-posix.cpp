@@ -166,8 +166,8 @@
 #  define IPRT_LIBPAM_FILE_2_END_VER   1
 # else
 #  define IPRT_LIBPAM_FILE_1           "libpam.so"
-#  define IPRT_LIBPAM_FILE_1_MIN_VER   16
-#  define IPRT_LIBPAM_FILE_1_MAX_VER   0
+#  define IPRT_LIBPAM_FILE_1_FIRST_VER 16
+#  define IPRT_LIBPAM_FILE_1_END_VER   0
 # endif
 #endif
 
