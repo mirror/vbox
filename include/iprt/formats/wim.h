@@ -144,5 +144,7 @@ AssertCompile(sizeof(WIMHEADER_MAGIC) == 8);
 #define WIMHEADER_FLAGS_COMPRESS_LZX        RT_BIT_32(18)
 /** @} */
 
+/** @} */
+
 #endif /* !IPRT_INCLUDED_formats_wim_h */
 
