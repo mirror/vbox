@@ -751,6 +751,7 @@ int cpumR3MsrApplyFudge(PVM pVM)
     return rc;
 }
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 
 /**
  * Do we consider @a enmConsider a better match for @a enmTarget than
@@ -868,6 +869,7 @@ static bool cpumR3DbIsBetterIntelFam06Match(CPUMMICROARCH enmConsider, CPUMMICRO
     return cpumR3DbIsBetterMarchMatch(enmConsider, enmTarget, enmFound);
 }
 
+#endif /* RT_ARCH_X86 || RT_ARCH_AMD64 */
 
 int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
 {

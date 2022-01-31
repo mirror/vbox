@@ -36,6 +36,7 @@
 #include <iprt/ctype.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/x86-helpers.h>
 
 
 /*********************************************************************************************************************************
@@ -821,6 +822,7 @@ static PCPUMCPUIDLEAF cpumR3CpuIdEnsureSpace(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves,
 }
 
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 /**
  * Append a CPUID leaf or sub-leaf.
  *
@@ -865,6 +867,7 @@ static int cpumR3CollectCpuIdInfoAddOne(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
     *pcLeaves += 1;
     return VINF_SUCCESS;
 }
+#endif /* RT_ARCH_X86 || RT_ARCH_AMD64 */
 
 
 /**
@@ -5277,6 +5280,7 @@ void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
      * Save a good portion of the raw CPU IDs as well as they may come in
      * handy when validating features for raw mode.
      */
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     CPUMCPUID   aRawStd[16];
     for (unsigned i = 0; i < RT_ELEMENTS(aRawStd); i++)
         ASMCpuIdExSlow(i, 0, 0, 0, &aRawStd[i].uEax, &aRawStd[i].uEbx, &aRawStd[i].uEcx, &aRawStd[i].uEdx);
@@ -5288,6 +5292,12 @@ void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
         ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0, &aRawExt[i].uEax, &aRawExt[i].uEbx, &aRawExt[i].uEcx, &aRawExt[i].uEdx);
     SSMR3PutU32(pSSM, RT_ELEMENTS(aRawExt));
     SSMR3PutMem(pSSM, &aRawExt[0], sizeof(aRawExt));
+
+#else
+    /* Two zero counts on non-x86 hosts. */
+    SSMR3PutU32(pSSM, 0);
+    SSMR3PutU32(pSSM, 0);
+#endif
 }
 
 
@@ -5477,7 +5487,11 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
     rc = SSMR3GetMem(pSSM, &aRawStd[0], cRawStd * sizeof(aRawStd[0]));
     AssertRCReturn(rc, rc);
     for (uint32_t i = cRawStd; i < RT_ELEMENTS(aRawStd); i++)
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
         ASMCpuIdExSlow(i, 0, 0, 0, &aRawStd[i].uEax, &aRawStd[i].uEbx, &aRawStd[i].uEcx, &aRawStd[i].uEdx);
+#else
+        RT_ZERO(aRawStd[i]);
+#endif
 
     CPUMCPUID   aRawExt[32];
     uint32_t    cRawExt;
@@ -5487,19 +5501,31 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
     rc = SSMR3GetMem(pSSM, &aRawExt[0], cRawExt * sizeof(aRawExt[0]));
     AssertRCReturn(rc, rc);
     for (uint32_t i = cRawExt; i < RT_ELEMENTS(aRawExt); i++)
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
         ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0, &aRawExt[i].uEax, &aRawExt[i].uEbx, &aRawExt[i].uEcx, &aRawExt[i].uEdx);
+#else
+        RT_ZERO(aRawExt[i]);
+#endif
 
     /*
      * Get the raw CPU IDs for the current host.
      */
     CPUMCPUID   aHostRawStd[16];
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     for (unsigned i = 0; i < RT_ELEMENTS(aHostRawStd); i++)
         ASMCpuIdExSlow(i, 0, 0, 0, &aHostRawStd[i].uEax, &aHostRawStd[i].uEbx, &aHostRawStd[i].uEcx, &aHostRawStd[i].uEdx);
+#else
+    RT_ZERO(aHostRawStd);
+#endif
 
     CPUMCPUID   aHostRawExt[32];
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     for (unsigned i = 0; i < RT_ELEMENTS(aHostRawExt); i++)
         ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0,
                        &aHostRawExt[i].uEax, &aHostRawExt[i].uEbx, &aHostRawExt[i].uEcx, &aHostRawExt[i].uEdx);
+#else
+    RT_ZERO(aHostRawExt);
+#endif
 
     /*
      * Get the host and guest overrides so we don't reject the state because
@@ -5902,6 +5928,7 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
                                      RT_MAKE_U64(pCurLeaf->uEdx, pCurLeaf->uEcx));
 
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
         for (uint32_t uSubLeaf = 2; uSubLeaf < 64; uSubLeaf++)
         {
             pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x0000000d), uSubLeaf);
@@ -5921,6 +5948,7 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
                 }
             }
         }
+#endif
     }
     /* Clear leaf 0xd just in case we're loading an old state... */
     else if (pCurLeaf)
@@ -6055,8 +6083,10 @@ int cpumR3LoadCpuIdPre32(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
      */
     /** @todo we should check the 64 bits capabilities too! */
     uint32_t au32CpuId[8] = {0,0,0,0, 0,0,0,0};
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     ASMCpuIdExSlow(0, 0, 0, 0, &au32CpuId[0], &au32CpuId[1], &au32CpuId[2], &au32CpuId[3]);
     ASMCpuIdExSlow(1, 0, 0, 0, &au32CpuId[4], &au32CpuId[5], &au32CpuId[6], &au32CpuId[7]);
+#endif
     uint32_t au32CpuIdSaved[8];
     rc = SSMR3GetMem(pSSM, &au32CpuIdSaved[0], sizeof(au32CpuIdSaved));
     if (RT_SUCCESS(rc))
@@ -6629,8 +6659,10 @@ static void cpumR3CpuIdInfoStdLeaf1Details(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLEAF p
                     "Brand ID:",    (uEBX >>  0) & 0xff);
     if (fVerbose)
     {
-        CPUMCPUID Host;
+        CPUMCPUID Host = {0};
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
         ASMCpuIdExSlow(1, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
         pHlp->pfnPrintf(pHlp, "Features\n");
         pHlp->pfnPrintf(pHlp, "  Mnemonic - Description                                  = guest (host)\n");
         cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEdx, Host.uEdx, g_aLeaf1EdxSubFields, 56);
@@ -6660,8 +6692,10 @@ static void cpumR3CpuIdInfoStdLeaf7Details(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLEAF p
     pHlp->pfnPrintf(pHlp, "Structured Extended Feature Flags Enumeration (leaf 7):\n");
     for (;;)
     {
-        CPUMCPUID Host;
+        CPUMCPUID Host = {0};
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
         ASMCpuIdExSlow(pCurLeaf->uLeaf, 0, pCurLeaf->uSubLeaf, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
 
         switch (pCurLeaf->uSubLeaf)
         {
@@ -6717,8 +6751,10 @@ static void cpumR3CpuIdInfoStdLeaf13Details(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLEAF 
     pHlp->pfnPrintf(pHlp, "Processor Extended State Enumeration (leaf 0xd):\n");
     for (uint32_t uSubLeaf = 0; uSubLeaf < 64; uSubLeaf++)
     {
-        CPUMCPUID Host;
+        CPUMCPUID Host = {0};
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
         ASMCpuIdExSlow(UINT32_C(0x0000000d), 0, uSubLeaf, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
 
         switch (uSubLeaf)
         {
@@ -6809,8 +6845,10 @@ static PCCPUMCPUIDLEAF cpumR3CpuIdInfoRawRange(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLE
         while (   (uintptr_t)(pCurLeaf - paLeaves) < cLeaves
                && pCurLeaf->uLeaf <= uUpToLeaf)
         {
-            CPUMCPUID Host;
+            CPUMCPUID Host = {0};
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
             ASMCpuIdExSlow(pCurLeaf->uLeaf, 0, pCurLeaf->uSubLeaf, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
             pHlp->pfnPrintf(pHlp,
                             "Gst: %08x/%04x  %08x %08x %08x %08x\n"
                             "Hst:                %08x %08x %08x %08x\n",
@@ -6847,7 +6885,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
     }
 
     uint32_t        uLeaf;
-    CPUMCPUID       Host;
+    CPUMCPUID       Host     = {0};
     uint32_t        cLeaves  = pVM->cpum.s.GuestInfo.cCpuIdLeaves;
     PCPUMCPUIDLEAF  paLeaves = pVM->cpum.s.GuestInfo.paCpuIdLeavesR3;
     PCCPUMCPUIDLEAF pCurLeaf;
@@ -6859,7 +6897,11 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
     /*
      * Standard leaves.  Custom raw dump here due to ECX sub-leaves host handling.
      */
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     uint32_t        cHstMax = ASMCpuId_EAX(0);
+#else
+    uint32_t        cHstMax = 0;
+#endif
     uint32_t        cGstMax = paLeaves[0].uLeaf == 0 ? paLeaves[0].uEax : 0;
     uint32_t        cMax    = RT_MAX(cGstMax, cHstMax);
     pHlp->pfnPrintf(pHlp,
@@ -6875,7 +6917,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
         for (uint32_t uSubLeaf = 0; uSubLeaf < cMaxSubLeaves; uSubLeaf++)
         {
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
             ASMCpuIdExSlow(uLeaf, 0, uSubLeaf, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
             if (   (uintptr_t)(pCurLeaf - paLeaves) < cLeaves
                 && pCurLeaf->uLeaf    == uLeaf
                 && pCurLeaf->uSubLeaf == uSubLeaf)
@@ -6939,7 +6983,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
      */
     pCurLeaf = cpumR3CpuIdInfoRawRange(pHlp, paLeaves, cLeaves, pCurLeaf, UINT32_C(0x3fffffff), "Unknown CPUID Leaves");
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     ASMCpuIdExSlow(UINT32_C(0x40000000), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
     cHstMax  = Host.uEax >= UINT32_C(0x40000001) && Host.uEax <= UINT32_C(0x40000fff) ? Host.uEax : 0;
     cGstMax  = (uintptr_t)(pCurLeaf - paLeaves) < cLeaves && pCurLeaf->uLeaf == UINT32_C(0x40000000)
              ? RT_MIN(pCurLeaf->uEax, UINT32_C(0x40000fff)) : 0;
@@ -6960,7 +7006,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
      */
     pCurLeaf = cpumR3CpuIdInfoRawRange(pHlp, paLeaves, cLeaves, pCurLeaf, UINT32_C(0x7fffffff), "Unknown CPUID Leaves");
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     ASMCpuIdExSlow(UINT32_C(0x80000000), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
     cHstMax  = RTX86IsValidExtRange(Host.uEax) ? RT_MIN(Host.uEax, UINT32_C(0x80000fff)) : 0;
     cGstMax  = (uintptr_t)(pCurLeaf - paLeaves) < cLeaves && pCurLeaf->uLeaf == UINT32_C(0x80000000)
              ? RT_MIN(pCurLeaf->uEax, UINT32_C(0x80000fff)) : 0;
@@ -6980,7 +7028,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
             for (uint32_t uSubLeaf = 0; uSubLeaf < cMaxSubLeaves; uSubLeaf++)
             {
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
                 ASMCpuIdExSlow(uLeaf, 0, uSubLeaf, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
                 if (   (uintptr_t)(pCurLeaf - paLeaves) < cLeaves
                     && pCurLeaf->uLeaf    == uLeaf
                     && pCurLeaf->uSubLeaf == uSubLeaf)
@@ -7038,7 +7088,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
             }
             else
             {
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
                 ASMCpuIdExSlow(0x80000001, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
                 pHlp->pfnPrintf(pHlp, "Ext Features\n");
                 pHlp->pfnPrintf(pHlp, "  Mnemonic - Description                                  = guest (host)\n");
                 cpumR3CpuIdInfoVerboseCompareListU32(pHlp, pCurLeaf->uEdx, Host.uEdx, g_aExtLeaf1EdxSubFields, 56);
@@ -7046,7 +7098,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                 if (Host.uEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
                 {
                     pHlp->pfnPrintf(pHlp, "SVM Feature Identification (leaf A):\n");
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
                     ASMCpuIdExSlow(0x8000000a, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
                     pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x8000000a), 0);
                     uint32_t const uGstEdx = pCurLeaf ? pCurLeaf->uEdx : 0;
                     cpumR3CpuIdInfoVerboseCompareListU32(pHlp, uGstEdx, Host.uEdx, g_aExtLeafAEdxSubFields, 56);
@@ -7148,7 +7202,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
         if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000007), 0)) != NULL)
         {
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
             ASMCpuIdExSlow(UINT32_C(0x80000007), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
             if (pCurLeaf->uEdx || (Host.uEdx && iVerbosity))
             {
                 if (iVerbosity < 1)
@@ -7161,7 +7217,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
         pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000008), 0);
         if (pCurLeaf != NULL)
         {
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
             ASMCpuIdExSlow(UINT32_C(0x80000008), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
             if (pCurLeaf->uEbx || (Host.uEbx && iVerbosity))
             {
                 if (iVerbosity < 1)
@@ -7205,7 +7263,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
      */
     pCurLeaf = cpumR3CpuIdInfoRawRange(pHlp, paLeaves, cLeaves, pCurLeaf, UINT32_C(0xbfffffff), "Unknown CPUID Leaves");
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     ASMCpuIdExSlow(UINT32_C(0xc0000000), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
     cHstMax  = Host.uEax >= UINT32_C(0xc0000001) && Host.uEax <= UINT32_C(0xc0000fff)
              ? RT_MIN(Host.uEax,      UINT32_C(0xc0000fff)) : 0;
     cGstMax  = (uintptr_t)(pCurLeaf - paLeaves) < cLeaves && pCurLeaf->uLeaf == UINT32_C(0xc0000000)
@@ -7225,7 +7285,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
         if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0xc0000001), 0)) != NULL)
         {
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
             ASMCpuIdExSlow(0xc0000001, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+#endif
             uint32_t uEdxGst = pCurLeaf->uEdx;
             uint32_t uEdxHst = Host.uEdx;
 
