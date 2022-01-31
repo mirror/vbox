@@ -741,7 +741,7 @@ SHCL_X11_DECL(void) clipQueryX11TargetsCallback(Widget widget, XtPointer pClient
 
     unsigned cFormats = *pcLen;
 
-    LogRel2(("Shared Clipboard: Querying X11 formats ...\n", cFormats));
+    LogRel2(("Shared Clipboard: Querying X11 formats ...\n"));
     LogRel2(("Shared Clipboard: %u X11 formats were found\n", cFormats));
 
     SHCLX11FMTIDX *paIdxFmt = NULL;

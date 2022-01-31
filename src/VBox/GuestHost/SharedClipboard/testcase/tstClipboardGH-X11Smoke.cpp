@@ -71,7 +71,7 @@ int main()
         return RTTestSummaryAndDestroy(hTest);
     }
     SHCLX11CTX X11Ctx;
-    rc = ShClX11Init(&X11Ctx, NULL, false);
+    rc = ShClX11Init(&X11Ctx, NULL /* pCallbacks */, NULL /* pParent */, false);
     AssertRCReturn(rc, 1);
     rc = ShClX11ThreadStart(&X11Ctx, false /* fGrab */);
     AssertRCReturn(rc, 1);

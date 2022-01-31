@@ -669,7 +669,7 @@ int main()
      * Run the tests.
      */
     SHCLX11CTX X11Ctx;
-    rc = ShClX11Init(&X11Ctx, NULL /* pParent */, false /* fHeadless */);
+    rc = ShClX11Init(&X11Ctx, NULL /* pCallbacks */, NULL /* pParent */, false /* fHeadless */);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
     char *pc;
@@ -892,7 +892,7 @@ int main()
     /*
      * Headless clipboard tests
      */
-    rc = ShClX11Init(&X11Ctx, NULL /* pParent */, true /* fHeadless */);
+    rc = ShClX11Init(&X11Ctx, NULL /* pCallbacks */, NULL /* pParent */, true /* fHeadless */);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
     /* Read from X11 */
