@@ -3686,6 +3686,13 @@ else
  VBOX_HAVE_XMLLINT := 1
 endif
 
+# Older versions of GCC cannot compile libssh, so disable it and the feature if that's the case.
+ifn1of ($(KBUILD_TARGET), darwin win)
+ if $(VBOX_GCC_VERSION_CC) < 50000
+  VBOX_WITH_LIBSSH    :=
+  VBOX_WITH_CLOUD_NET :=
+ endif
+endif
 
 
 #
@@ -4782,25 +4789,12 @@ ifdef VBOX_WITH_DXVK
  SDK_VBOX_DXVK_LIBS         ?=
 endif
 
-# Older versions of GCC cannot compile libssh
-ifneq ($(KBUILD_TARGET),win)
- ifneq ($(VBOX_GCC_VERSION_CC),)
-  if $(VBOX_GCC_VERSION_CC) < 50000
-    # Build libssh with newer GCC only
-    VBOX_WITH_LIBSSH =
-    VBOX_WITH_CLOUD_NET =
-  endif
- endif
-endif
-
 ifdef VBOX_WITH_LIBSSH
- SDK_VBOX_SSH               = .
+ SDK_VBOX_SSH               = libssh SDK for link into a DLL/SO/DYLIB
+ SDK_VBOX_SSH_DEFS         ?= LIBSSH_STATIC=1
  SDK_VBOX_SSH_INCS         ?= $(PATH_ROOT)/src/libs/libssh-0.9.5/include
- SDK_VBOX_SSH_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libssh$(VBOX_SUFF_LIB)
-
- SDK_VBOX_SSH_STATIC         = .
- SDK_VBOX_SSH_STATIC_EXTENDS ?= VBOX_SSH
- SDK_VBOX_SSH_STATIC_LIBS    ?= $(PATH_STAGE_LIB)/VBox-libssh-static$(VBOX_SUFF_LIB)
+ SDK_VBOX_SSH_LIBS         ?= \
+ 	$(PATH_STAGE_LIB)/VBox-libssh$(VBOX_SUFF_LIB)
 endif
 
 #
