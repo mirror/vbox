@@ -466,7 +466,7 @@ static int nemR3WinInitProbeAndLoad(bool fForced, PRTERRINFO pErrInfo)
      */
     if (!ASMHasCpuId())
         return RTErrInfoSet(pErrInfo, VERR_NEM_NOT_AVAILABLE, "No CPUID support");
-    if (!ASMIsValidStdRange(ASMCpuId_EAX(0)))
+    if (!RTX86IsValidStdRange(ASMCpuId_EAX(0)))
         return RTErrInfoSet(pErrInfo, VERR_NEM_NOT_AVAILABLE, "No CPUID leaf #1");
     if (!(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_HVP))
         return RTErrInfoSet(pErrInfo, VERR_NEM_NOT_AVAILABLE, "Not in a hypervisor partition (HVP=0)");
@@ -476,7 +476,7 @@ static int nemR3WinInitProbeAndLoad(bool fForced, PRTERRINFO pErrInfo)
     uint32_t uEcx = 0;
     uint32_t uEdx = 0;
     ASMCpuIdExSlow(0x40000000, 0, 0, 0, &cMaxHyperLeaf, &uEbx, &uEcx, &uEdx);
-    if (!ASMIsValidHypervisorRange(cMaxHyperLeaf))
+    if (!RTX86IsValidHypervisorRange(cMaxHyperLeaf))
         return RTErrInfoSetF(pErrInfo, VERR_NEM_NOT_AVAILABLE, "Invalid hypervisor CPUID range (%#x %#x %#x %#x)",
                              cMaxHyperLeaf, uEbx, uEcx, uEdx);
     if (   uEbx != UINT32_C(0x7263694d) /* Micr */

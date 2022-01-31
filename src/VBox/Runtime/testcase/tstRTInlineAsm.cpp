@@ -408,7 +408,7 @@ void tstASMCpuId(void)
                   "Name:                            %.04s%.04s%.04s\n"
                   "Support:                         0-%u\n",
                   &s.uEBX, &s.uEDX, &s.uECX, s.uEAX);
-    bool const fIntel = ASMIsIntelCpuEx(s.uEBX, s.uECX, s.uEDX);
+    bool const fIntel = RTX86IsIntelCpu(s.uEBX, s.uECX, s.uEDX);
 
     /*
      * Get Features.
@@ -426,9 +426,9 @@ void tstASMCpuId(void)
                       "Logical CPUs:                    %d\n"
                       "CLFLUSH Size:                    %d\n"
                       "Brand ID:                        %#04x\n",
-                      (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
-                      (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX, fIntel),
-                      ASMGetCpuStepping(s.uEAX),
+                      (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, RTX86GetCpuFamily(s.uEAX),
+                      (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, RTX86GetCpuModel(s.uEAX, fIntel),
+                      RTX86GetCpuStepping(s.uEAX),
                       (s.uEAX >> 12) & 0x3, s_apszTypes[(s.uEAX >> 12) & 0x3],
                       (s.uEBX >> 24) & 0xff,
                       (s.uEBX >> 16) & 0xff,
@@ -557,9 +557,9 @@ void tstASMCpuId(void)
                       "Model:                           %#x \tExtended: %#x \tEffective: %#x\n"
                       "Stepping:                        %d\n"
                       "Brand ID:                        %#05x\n",
-                      (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
-                      (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX, fIntel),
-                      ASMGetCpuStepping(s.uEAX),
+                      (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, RTX86GetCpuFamily(s.uEAX),
+                      (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, RTX86GetCpuModel(s.uEAX, fIntel),
+                      RTX86GetCpuStepping(s.uEAX),
                       s.uEBX & 0xfff);
 
         RTTestIPrintf(RTTESTLVL_ALWAYS, "Features EDX:                   ");
@@ -2892,7 +2892,7 @@ void tstASMBench(void)
 #if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     uint32_t uAux;
     if (   ASMHasCpuId()
-        && ASMIsValidExtRange(ASMCpuId_EAX(0x80000000))
+        && RTX86IsValidExtRange(ASMCpuId_EAX(0x80000000))
         && (ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_RDTSCP) )
     {
         BENCH_TSC(ASMSerializeInstructionRdTscp(), "ASMSerializeInstructionRdTscp");

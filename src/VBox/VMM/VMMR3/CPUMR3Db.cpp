@@ -896,9 +896,9 @@ int cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo)
                                                                      pInfo->paCpuIdLeavesR3[0].uEcx,
                                                                      pInfo->paCpuIdLeavesR3[0].uEdx);
         uint32_t      const uStd1Eax     = pInfo->paCpuIdLeavesR3[1].uEax;
-        uint8_t       const uFamily      = ASMGetCpuFamily(uStd1Eax);
-        uint8_t       const uModel       = ASMGetCpuModel(uStd1Eax, enmVendor == CPUMCPUVENDOR_INTEL);
-        uint8_t       const uStepping    = ASMGetCpuStepping(uStd1Eax);
+        uint8_t       const uFamily      = RTX86GetCpuFamily(uStd1Eax);
+        uint8_t       const uModel       = RTX86GetCpuModel(uStd1Eax, enmVendor == CPUMCPUVENDOR_INTEL);
+        uint8_t       const uStepping    = RTX86GetCpuStepping(uStd1Eax);
         CPUMMICROARCH const enmMicroarch = CPUMR3CpuIdDetermineMicroarchEx(enmVendor, uFamily, uModel, uStepping);
 
         for (unsigned i = 0; i < RT_ELEMENTS(g_apCpumDbEntries); i++)

@@ -4300,16 +4300,16 @@ SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps)
         /* Check the range of standard CPUID leafs. */
         uint32_t uMaxLeaf, uVendorEbx, uVendorEcx, uVendorEdx;
         ASMCpuId(0, &uMaxLeaf, &uVendorEbx, &uVendorEcx, &uVendorEdx);
-        if (ASMIsValidStdRange(uMaxLeaf))
+        if (RTX86IsValidStdRange(uMaxLeaf))
         {
             /* Query the standard CPUID leaf. */
             uint32_t fFeatEcx, fFeatEdx, uDummy;
             ASMCpuId(1, &uDummy, &uDummy, &fFeatEcx, &fFeatEdx);
 
             /* Check if the vendor is Intel (or compatible). */
-            if (   ASMIsIntelCpuEx(uVendorEbx, uVendorEcx, uVendorEdx)
-                || ASMIsViaCentaurCpuEx(uVendorEbx, uVendorEcx, uVendorEdx)
-                || ASMIsShanghaiCpuEx(uVendorEbx, uVendorEcx, uVendorEdx))
+            if (   RTX86IsIntelCpu(uVendorEbx, uVendorEcx, uVendorEdx)
+                || RTX86IsViaCentaurCpu(uVendorEbx, uVendorEcx, uVendorEdx)
+                || RTX86IsShanghaiCpu(uVendorEbx, uVendorEcx, uVendorEdx))
             {
                 /* Check VT-x support. In addition, VirtualBox requires MSR and FXSAVE/FXRSTOR to function. */
                 if (   (fFeatEcx & X86_CPUID_FEATURE_ECX_VMX)
@@ -4323,15 +4323,15 @@ SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps)
             }
 
             /* Check if the vendor is AMD (or compatible). */
-            if (   ASMIsAmdCpuEx(uVendorEbx, uVendorEcx, uVendorEdx)
-                || ASMIsHygonCpuEx(uVendorEbx, uVendorEcx, uVendorEdx))
+            if (   RTX86IsAmdCpu(uVendorEbx, uVendorEcx, uVendorEdx)
+                || RTX86IsHygonCpu(uVendorEbx, uVendorEcx, uVendorEdx))
             {
                 uint32_t fExtFeatEcx, uExtMaxId;
                 ASMCpuId(0x80000000, &uExtMaxId, &uDummy, &uDummy, &uDummy);
                 ASMCpuId(0x80000001, &uDummy, &uDummy, &fExtFeatEcx, &uDummy);
 
                 /* Check AMD-V support. In addition, VirtualBox requires MSR and FXSAVE/FXRSTOR to function. */
-                if (   ASMIsValidExtRange(uExtMaxId)
+                if (   RTX86IsValidExtRange(uExtMaxId)
                     && uExtMaxId >= 0x8000000a
                     && (fExtFeatEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
                     && (fFeatEdx    & X86_CPUID_FEATURE_EDX_MSR)
@@ -4427,10 +4427,10 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
         /* Callers should have verified these at some point. */
         uint32_t uMaxId, uVendorEBX, uVendorECX, uVendorEDX;
         ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
-        Assert(ASMIsValidStdRange(uMaxId));
-        Assert(   ASMIsIntelCpuEx(     uVendorEBX, uVendorECX, uVendorEDX)
-               || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
-               || ASMIsShanghaiCpuEx(  uVendorEBX, uVendorECX, uVendorEDX));
+        Assert(RTX86IsValidStdRange(uMaxId));
+        Assert(   RTX86IsIntelCpu(     uVendorEBX, uVendorECX, uVendorEDX)
+               || RTX86IsViaCentaurCpu(uVendorEBX, uVendorECX, uVendorEDX)
+               || RTX86IsShanghaiCpu(  uVendorEBX, uVendorECX, uVendorEDX));
 #endif
         ASMCpuId(1, &uDummy, &uDummy, &fFeaturesECX, &uDummy);
         bool fSmxVmxHwSupport = false;
@@ -4678,13 +4678,13 @@ static int VBOXCALL supdrvQueryUcodeRev(uint32_t *puRevision)
         ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
         ASMCpuId(1, &uTFMSEAX, &uDummy, &uDummy, &uDummy);
 
-        if (ASMIsValidStdRange(uMaxId))
+        if (RTX86IsValidStdRange(uMaxId))
         {
             uint64_t    uRevMsr;
-            if (ASMIsIntelCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
+            if (RTX86IsIntelCpu(uVendorEBX, uVendorECX, uVendorEDX))
             {
                 /* Architectural MSR available on Pentium Pro and later. */
-                if (ASMGetCpuFamily(uTFMSEAX) >= 6)
+                if (RTX86GetCpuFamily(uTFMSEAX) >= 6)
                 {
                     /* Revision is in the high dword. */
                     uRevMsr = ASMRdMsr(MSR_IA32_BIOS_SIGN_ID);
@@ -4692,11 +4692,11 @@ static int VBOXCALL supdrvQueryUcodeRev(uint32_t *puRevision)
                     rc = VINF_SUCCESS;
                 }
             }
-            else if (   ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
-                     || ASMIsHygonCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
+            else if (   RTX86IsAmdCpu(uVendorEBX, uVendorECX, uVendorEDX)
+                     || RTX86IsHygonCpu(uVendorEBX, uVendorECX, uVendorEDX))
             {
                 /* Not well documented, but at least all AMD64 CPUs support this. */
-                if (ASMGetCpuFamily(uTFMSEAX) >= 15)
+                if (RTX86GetCpuFamily(uTFMSEAX) >= 15)
                 {
                     /* Revision is in the low dword. */
                     uRevMsr = ASMRdMsr(MSR_IA32_BIOS_SIGN_ID);  /* Same MSR as Intel. */

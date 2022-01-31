@@ -30,7 +30,9 @@
 #include <VBox/sup.h>
 
 #include <VBox/err.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/ctype.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -689,8 +691,9 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
  */
 VMMR3DECL(uint32_t) CPUMR3DeterminHostMxCsrMask(void)
 {
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     if (   ASMHasCpuId()
-        && ASMIsValidStdRange(ASMCpuId_EAX(0))
+        && RTX86IsValidStdRange(ASMCpuId_EAX(0))
         && ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_FXSR)
     {
         uint8_t volatile abBuf[sizeof(X86FXSTATE) + 64];
@@ -701,6 +704,7 @@ VMMR3DECL(uint32_t) CPUMR3DeterminHostMxCsrMask(void)
             return 0xffbf;
         return pState->MXCSR_MASK;
     }
+#endif
     return 0;
 }
 
@@ -1086,6 +1090,7 @@ static void cpumR3CpuIdRemoveRange(PCPUMCPUIDLEAF paLeaves, uint32_t *pcLeaves, 
 #endif /* IN_VBOX_CPU_REPORT */
 
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 /**
  * Checks if ECX make a difference when reading a given CPUID leaf.
  *
@@ -1176,7 +1181,7 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
         /* 99. Give up. */
         if (uSubLeaf >= 128)
         {
-#ifndef IN_VBOX_CPU_REPORT
+# ifndef IN_VBOX_CPU_REPORT
             /* Ok, limit it according to the documentation if possible just to
                avoid annoying users with these detection issues. */
             uint32_t cDocLimit = UINT32_MAX;
@@ -1194,7 +1199,7 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
                 *pcSubLeaves = cDocLimit + 3;
                 return true;
             }
-#endif
+# endif
             *pcSubLeaves = UINT32_MAX;
             return true;
         }
@@ -1211,6 +1216,7 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
         *pcSubLeaves = 1;
     return true;
 }
+#endif /* RT_ARCH_X86 || RT_ARCH_AMD64 */
 
 
 /**
@@ -1286,6 +1292,7 @@ VMMR3DECL(int) CPUMR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF pNewLeaf)
     return cpumR3CpuIdInsert(pVM, NULL /* ppaLeaves */, NULL /* pcLeaves */, pNewLeaf);
 }
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 
 /**
  * Collects CPUID leaves and sub-leaves, returning a sorted array of them.
@@ -1357,8 +1364,8 @@ VMMR3DECL(int) CPUMR3CpuIdCollectLeaves(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
                          && (   uEax
                              || uEbx
                              || uEdx
-                             || ASMIsAmdCpuEx((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)
-                             || ASMIsHygonCpuEx((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)) )
+                             || RTX86IsAmdCpu((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)
+                             || RTX86IsHygonCpu((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)) )
                     fFlags |= CPUMCPUIDLEAF_F_CONTAINS_APIC_ID;
 
                 /* The APIC bit is per-VCpu and needs flagging. */
@@ -1366,8 +1373,8 @@ VMMR3DECL(int) CPUMR3CpuIdCollectLeaves(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
                     fFlags |= CPUMCPUIDLEAF_F_CONTAINS_APIC;
                 else if (   uLeaf == UINT32_C(0x80000001)
                          && (   (uEdx & X86_CPUID_AMD_FEATURE_EDX_APIC)
-                             || ASMIsAmdCpuEx((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)
-                             || ASMIsHygonCpuEx((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)) )
+                             || RTX86IsAmdCpu((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)
+                             || RTX86IsHygonCpu((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)) )
                     fFlags |= CPUMCPUIDLEAF_F_CONTAINS_APIC;
 
                 /* Check three times here to reduce the chance of CPU migration
@@ -1479,7 +1486,7 @@ VMMR3DECL(int) CPUMR3CpuIdDetectUnknownLeafMethod(PCPUMUNKNOWNCPUID penmUnknownM
 {
     uint32_t uLastStd = ASMCpuId_EAX(0);
     uint32_t uLastExt = ASMCpuId_EAX(0x80000000);
-    if (!ASMIsValidExtRange(uLastExt))
+    if (!RTX86IsValidExtRange(uLastExt))
         uLastExt = 0x80000000;
 
     uint32_t auChecks[] =
@@ -1623,6 +1630,7 @@ VMMR3DECL(int) CPUMR3CpuIdDetectUnknownLeafMethod(PCPUMUNKNOWNCPUID penmUnknownM
     return VINF_SUCCESS;
 }
 
+#endif /* RT_ARCH_X86 || RT_ARCH_AMD64 */
 
 /**
  * Translates a unknow CPUID leaf method into the constant name (sans prefix).
@@ -1648,6 +1656,7 @@ VMMR3DECL(const char *) CPUMR3CpuIdUnknownLeafMethodName(CPUMUNKNOWNCPUID enmUnk
 }
 
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 /**
  * Detect the CPU vendor give n the
  *
@@ -1659,18 +1668,18 @@ VMMR3DECL(const char *) CPUMR3CpuIdUnknownLeafMethodName(CPUMUNKNOWNCPUID enmUnk
  */
 VMMR3DECL(CPUMCPUVENDOR) CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
 {
-    if (ASMIsValidStdRange(uEAX))
+    if (RTX86IsValidStdRange(uEAX))
     {
-        if (ASMIsAmdCpuEx(uEBX, uECX, uEDX))
+        if (RTX86IsAmdCpu(uEBX, uECX, uEDX))
             return CPUMCPUVENDOR_AMD;
 
-        if (ASMIsIntelCpuEx(uEBX, uECX, uEDX))
+        if (RTX86IsIntelCpu(uEBX, uECX, uEDX))
             return CPUMCPUVENDOR_INTEL;
 
-        if (ASMIsViaCentaurCpuEx(uEBX, uECX, uEDX))
+        if (RTX86IsViaCentaurCpu(uEBX, uECX, uEDX))
             return CPUMCPUVENDOR_VIA;
 
-        if (ASMIsShanghaiCpuEx(uEBX, uECX, uEDX))
+        if (RTX86IsShanghaiCpu(uEBX, uECX, uEDX))
             return CPUMCPUVENDOR_SHANGHAI;
 
         if (   uEBX == UINT32_C(0x69727943) /* CyrixInstead */
@@ -1678,7 +1687,7 @@ VMMR3DECL(CPUMCPUVENDOR) CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX,
             && uEDX == UINT32_C(0x736E4978))
             return CPUMCPUVENDOR_CYRIX;
 
-        if (ASMIsHygonCpuEx(uEBX, uECX, uEDX))
+        if (RTX86IsHygonCpu(uEBX, uECX, uEDX))
             return CPUMCPUVENDOR_HYGON;
 
         /* "Geode by NSC", example: family 5, model 9.  */
@@ -1688,6 +1697,7 @@ VMMR3DECL(CPUMCPUVENDOR) CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX,
 
     return CPUMCPUVENDOR_UNKNOWN;
 }
+#endif /* RT_ARCH_X86 || RT_ARCH_AMD64 */
 
 
 /**
@@ -1891,9 +1901,9 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCPU
                                                             pStd0Leaf->uEbx,
                                                             pStd0Leaf->uEcx,
                                                             pStd0Leaf->uEdx);
-        pFeatures->uFamily      = ASMGetCpuFamily(pStd1Leaf->uEax);
-        pFeatures->uModel       = ASMGetCpuModel(pStd1Leaf->uEax, pFeatures->enmCpuVendor == CPUMCPUVENDOR_INTEL);
-        pFeatures->uStepping    = ASMGetCpuStepping(pStd1Leaf->uEax);
+        pFeatures->uFamily      = RTX86GetCpuFamily(pStd1Leaf->uEax);
+        pFeatures->uModel       = RTX86GetCpuModel(pStd1Leaf->uEax, pFeatures->enmCpuVendor == CPUMCPUVENDOR_INTEL);
+        pFeatures->uStepping    = RTX86GetCpuStepping(pStd1Leaf->uEax);
         pFeatures->enmMicroarch = CPUMR3CpuIdDetermineMicroarchEx((CPUMCPUVENDOR)pFeatures->enmCpuVendor,
                                                                   pFeatures->uFamily,
                                                                   pFeatures->uModel,
@@ -2594,9 +2604,9 @@ static void cpumR3CpuIdLimitIntelFamModStep(PCPUM pCpum, PCPUMCPUIDCONFIG pConfi
     if (pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL)
     {
         PCPUMCPUIDLEAF pStdFeatureLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 1, 0);
-        uint32_t uCurIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(ASMGetCpuStepping(pStdFeatureLeaf->uEax),
-                                                                ASMGetCpuModelIntel(pStdFeatureLeaf->uEax),
-                                                                ASMGetCpuFamily(pStdFeatureLeaf->uEax),
+        uint32_t uCurIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(RTX86GetCpuStepping(pStdFeatureLeaf->uEax),
+                                                                RTX86GetCpuModelIntel(pStdFeatureLeaf->uEax),
+                                                                RTX86GetCpuFamily(pStdFeatureLeaf->uEax),
                                                                 0);
         uint32_t uMaxIntelFamilyModelStep = pConfig->uMaxIntelFamilyModelStep;
         if (pConfig->uMaxIntelFamilyModelStep < uCurIntelFamilyModelStep)
@@ -5396,7 +5406,7 @@ static int cpumR3LoadGuestCpuIdArray(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion
              */
             PCPUMCPUIDLEAF pLeaf = cpumR3CpuIdGetLeaf(*ppaLeaves, *pcLeaves, 0, 0);
             if (   pLeaf
-                && ASMIsIntelCpuEx(pLeaf->uEbx, pLeaf->uEcx, pLeaf->uEdx))
+                && RTX86IsIntelCpu(pLeaf->uEbx, pLeaf->uEcx, pLeaf->uEdx))
             {
                 CPUMCPUIDLEAF Leaf;
                 Leaf.uLeaf        = 4;
@@ -5771,10 +5781,10 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
     if (cpumR3CpuIdGetLeafLegacy(paLeaves, cLeaves, UINT32_C(0x80000001), 0, &aGuestCpuIdExt[1]))
     {
         /** @todo deal with no 0x80000001 on the host. */
-        bool const fHostAmd  = ASMIsAmdCpuEx(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx)
-                            || ASMIsHygonCpuEx(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx);
-        bool const fGuestAmd = ASMIsAmdCpuEx(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx)
-                            || ASMIsHygonCpuEx(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx);
+        bool const fHostAmd  = RTX86IsAmdCpu(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx)
+                            || RTX86IsHygonCpu(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx);
+        bool const fGuestAmd = RTX86IsAmdCpu(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx)
+                            || RTX86IsHygonCpu(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx);
 
         /* CPUID(0x80000001).ecx */
         CPUID_GST_FEATURE_WRN(Ext, uEcx, X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);   // -> EMU
@@ -6609,9 +6619,9 @@ static void cpumR3CpuIdInfoStdLeaf1Details(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLEAF p
                     "%36s %d\n"
                     "%36s %#04x\n"
                     ,
-                    "Family:",      (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ASMGetCpuFamily(uEAX),
-                    "Model:",       (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX, fIntel),
-                    "Stepping:",    ASMGetCpuStepping(uEAX),
+                    "Family:",      (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, RTX86GetCpuFamily(uEAX),
+                    "Model:",       (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, RTX86GetCpuModel(uEAX, fIntel),
+                    "Stepping:",    RTX86GetCpuStepping(uEAX),
                     "Type:",        (uEAX >> 12) & 3, s_apszTypes[(uEAX >> 12) & 3],
                     "APIC ID:",     (uEBX >> 24) & 0xff,
                     "Logical CPUs:",(uEBX >> 16) & 0xff,
@@ -6842,9 +6852,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
     PCPUMCPUIDLEAF  paLeaves = pVM->cpum.s.GuestInfo.paCpuIdLeavesR3;
     PCCPUMCPUIDLEAF pCurLeaf;
     PCCPUMCPUIDLEAF pNextLeaf;
-    bool const      fIntel = ASMIsIntelCpuEx(pVM->cpum.s.aGuestCpuIdPatmStd[0].uEbx,
-                                             pVM->cpum.s.aGuestCpuIdPatmStd[0].uEcx,
-                                             pVM->cpum.s.aGuestCpuIdPatmStd[0].uEdx);
+    bool const      fIntel = RTX86IsIntelCpu(pVM->cpum.s.aGuestCpuIdPatmStd[0].uEbx,
+                                               pVM->cpum.s.aGuestCpuIdPatmStd[0].uEcx,
+                                               pVM->cpum.s.aGuestCpuIdPatmStd[0].uEdx);
 
     /*
      * Standard leaves.  Custom raw dump here due to ECX sub-leaves host handling.
@@ -6951,7 +6961,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
     pCurLeaf = cpumR3CpuIdInfoRawRange(pHlp, paLeaves, cLeaves, pCurLeaf, UINT32_C(0x7fffffff), "Unknown CPUID Leaves");
 
     ASMCpuIdExSlow(UINT32_C(0x80000000), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
-    cHstMax  = ASMIsValidExtRange(Host.uEax) ? RT_MIN(Host.uEax, UINT32_C(0x80000fff)) : 0;
+    cHstMax  = RTX86IsValidExtRange(Host.uEax) ? RT_MIN(Host.uEax, UINT32_C(0x80000fff)) : 0;
     cGstMax  = (uintptr_t)(pCurLeaf - paLeaves) < cLeaves && pCurLeaf->uLeaf == UINT32_C(0x80000000)
              ? RT_MIN(pCurLeaf->uEax, UINT32_C(0x80000fff)) : 0;
     cMax     = RT_MAX(cHstMax, cGstMax);
@@ -7016,9 +7026,9 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                             "Model:                           %d  \tExtended: %d \tEffective: %d\n"
                             "Stepping:                        %d\n"
                             "Brand ID:                        %#05x\n",
-                            (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ASMGetCpuFamily(uEAX),
-                            (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX, fIntel),
-                            ASMGetCpuStepping(uEAX),
+                            (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, RTX86GetCpuFamily(uEAX),
+                            (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, RTX86GetCpuModel(uEAX, fIntel),
+                            RTX86GetCpuStepping(uEAX),
                             pCurLeaf->uEbx & 0xfff);
 
             if (iVerbosity == 1)

@@ -126,7 +126,9 @@
 #include <VBox/dis.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/assert.h>
 #include <iprt/cpuset.h>
 #include <iprt/mem.h>
@@ -971,6 +973,7 @@ static const SSMFIELD g_aCpumCtxFieldsV16[] =
 };
 
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 /**
  * Checks for partial/leaky FXSAVE/FXRSTOR handling on AMD CPUs.
  *
@@ -992,7 +995,7 @@ static void cpumR3CheckLeakyFpu(PVM pVM)
         && (ASMIsAmdCpu() || ASMIsHygonCpu()) )
     {
         uint32_t cExt = ASMCpuId_EAX(0x80000000);
-        if (ASMIsValidExtRange(cExt))
+        if (RTX86IsValidExtRange(cExt))
         {
             uint32_t fExtFeaturesEDX = ASMCpuId_EDX(0x80000001);
             if (fExtFeaturesEDX & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
@@ -1007,6 +1010,7 @@ static void cpumR3CheckLeakyFpu(PVM pVM)
         }
     }
 }
+#endif
 
 
 /**
@@ -2009,11 +2013,13 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Gather info about the host CPU.
      */
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     if (!ASMHasCpuId())
     {
         LogRel(("The CPU doesn't support CPUID!\n"));
         return VERR_UNSUPPORTED_CPU;
     }
+#endif
 
     pVM->cpum.s.fHostMxCsrMask = CPUMR3DeterminHostMxCsrMask();
 
@@ -2053,6 +2059,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
      */
     uint64_t fXcr0Host = 0;
     uint64_t fXStateHostMask = 0;
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     if (   pVM->cpum.s.HostFeatures.fXSaveRstor
         && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor)
     {
@@ -2061,6 +2068,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         AssertLogRelMsgStmt((fXStateHostMask & (XSAVE_C_X87 | XSAVE_C_SSE)) == (XSAVE_C_X87 | XSAVE_C_SSE),
                             ("%#llx\n", fXStateHostMask), fXStateHostMask = 0);
     }
+#endif
     pVM->cpum.s.fXStateHostMask = fXStateHostMask;
     LogRel(("CPUM: fXStateHostMask=%#llx; initial: %#llx; host XCR0=%#llx\n",
             pVM->cpum.s.fXStateHostMask, fXStateHostMask, fXcr0Host));
@@ -2116,10 +2124,12 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     if (RT_FAILURE(rc))
         return rc;
 
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
     /*
      * Check if we need to workaround partial/leaky FPU handling.
      */
     cpumR3CheckLeakyFpu(pVM);
+#endif
 
     /*
      * Initialize the Guest CPUID and MSR states.

@@ -175,9 +175,9 @@ static uint8_t vbCpuRepGetPhysAddrWidth(void)
     else
     {
         uint32_t cMaxExt = ASMCpuId_EAX(0x80000000);
-        if (ASMIsValidExtRange(cMaxExt)&& cMaxExt >= 0x80000008)
+        if (RTX86IsValidExtRange(cMaxExt)&& cMaxExt >= 0x80000008)
             cMaxWidth = ASMCpuId_EAX(0x80000008) & 0xff;
-        else if (   ASMIsValidStdRange(ASMCpuId_EAX(0))
+        else if (   RTX86IsValidStdRange(ASMCpuId_EAX(0))
                  && (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_PSE36))
             cMaxWidth = 36;
         else
@@ -190,7 +190,7 @@ static uint8_t vbCpuRepGetPhysAddrWidth(void)
 static bool vbCpuRepSupportsPae(void)
 {
     return ASMHasCpuId()
-        && ASMIsValidStdRange(ASMCpuId_EAX(0))
+        && RTX86IsValidStdRange(ASMCpuId_EAX(0))
         && (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_PAE);
 }
 
@@ -198,7 +198,7 @@ static bool vbCpuRepSupportsPae(void)
 static bool vbCpuRepSupportsLongMode(void)
 {
     return ASMHasCpuId()
-        && ASMIsValidExtRange(ASMCpuId_EAX(0x80000000))
+        && RTX86IsValidExtRange(ASMCpuId_EAX(0x80000000))
         && (ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
 }
 
@@ -206,7 +206,7 @@ static bool vbCpuRepSupportsLongMode(void)
 static bool vbCpuRepSupportsNX(void)
 {
     return ASMHasCpuId()
-        && ASMIsValidExtRange(ASMCpuId_EAX(0x80000000))
+        && RTX86IsValidExtRange(ASMCpuId_EAX(0x80000000))
         && (ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_NX);
 }
 
@@ -214,7 +214,7 @@ static bool vbCpuRepSupportsNX(void)
 static bool vbCpuRepSupportsX2Apic(void)
 {
     return ASMHasCpuId()
-        && ASMIsValidStdRange(ASMCpuId_EAX(0))
+        && RTX86IsValidStdRange(ASMCpuId_EAX(0))
         && (ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_X2APIC);
 }
 
@@ -4411,7 +4411,7 @@ static int probeMsrs(bool fHacking, const char *pszNameC, const char *pszCpuDesc
     /*
      * Are MSRs supported by the CPU?
      */
-    if (   !ASMIsValidStdRange(ASMCpuId_EAX(0))
+    if (   !RTX86IsValidStdRange(ASMCpuId_EAX(0))
         || !(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_MSR) )
     {
         vbCpuRepDebug("Skipping MSR probing, CPUID indicates there isn't any MSR support.\n");
@@ -4457,15 +4457,15 @@ static int probeMsrs(bool fHacking, const char *pszNameC, const char *pszCpuDesc
      */
     uint32_t uEax, uEbx, uEcx, uEdx;
     ASMCpuIdExSlow(0, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
-    if (!ASMIsValidStdRange(uEax))
+    if (!RTX86IsValidStdRange(uEax))
         return RTMsgErrorRc(VERR_NOT_SUPPORTED, "Invalid std CPUID range: %#x\n", uEax);
     g_enmVendor = CPUMR3CpuIdDetectVendorEx(uEax, uEbx, uEcx, uEdx);
 
     ASMCpuIdExSlow(1, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
     g_enmMicroarch = CPUMR3CpuIdDetermineMicroarchEx(g_enmVendor,
-                                                     ASMGetCpuFamily(uEax),
-                                                     ASMGetCpuModel(uEax, g_enmVendor == CPUMCPUVENDOR_INTEL),
-                                                     ASMGetCpuStepping(uEax));
+                                                     RTX86GetCpuFamily(uEax),
+                                                     RTX86GetCpuModel(uEax, g_enmVendor == CPUMCPUVENDOR_INTEL),
+                                                     RTX86GetCpuStepping(uEax));
     g_fIntelNetBurst = CPUMMICROARCH_IS_INTEL_NETBURST(g_enmMicroarch);
 
     /*
@@ -4636,7 +4636,7 @@ static int produceCpuReport(void)
         return RTMsgErrorRc(VERR_NOT_SUPPORTED, "No CPUID support.\n");
     uint32_t uEax, uEbx, uEcx, uEdx;
     ASMCpuIdExSlow(0, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
-    if (!ASMIsValidStdRange(uEax))
+    if (!RTX86IsValidStdRange(uEax))
         return RTMsgErrorRc(VERR_NOT_SUPPORTED, "Invalid std CPUID range: %#x\n", uEax);
 
     CPUMCPUVENDOR enmVendor = CPUMR3CpuIdDetectVendorEx(uEax, uEbx, uEcx, uEdx);
@@ -4649,9 +4649,9 @@ static int produceCpuReport(void)
      */
     ASMCpuIdExSlow(1, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
     CPUMMICROARCH enmMicroarch = CPUMR3CpuIdDetermineMicroarchEx(enmVendor,
-                                                                 ASMGetCpuFamily(uEax),
-                                                                 ASMGetCpuModel(uEax, enmVendor == CPUMCPUVENDOR_INTEL),
-                                                                 ASMGetCpuStepping(uEax));
+                                                                 RTX86GetCpuFamily(uEax),
+                                                                 RTX86GetCpuModel(uEax, enmVendor == CPUMCPUVENDOR_INTEL),
+                                                                 RTX86GetCpuStepping(uEax));
 
     /*
      * Generate a name.
@@ -4663,7 +4663,7 @@ static int produceCpuReport(void)
     char *pszCpuDesc = (char *)"";
 
     ASMCpuIdExSlow(0x80000000, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
-    if (ASMIsValidExtRange(uEax) && uEax >= UINT32_C(0x80000004))
+    if (RTX86IsValidExtRange(uEax) && uEax >= UINT32_C(0x80000004))
     {
         /* Get the raw name and strip leading spaces. */
         ASMCpuIdExSlow(0x80000002, 0, 0, 0, &szNameRaw[0 +  0], &szNameRaw[4 +  0], &szNameRaw[8 +  0], &szNameRaw[12 +  0]);
@@ -4736,8 +4736,8 @@ static int produceCpuReport(void)
     else
     {
         ASMCpuIdExSlow(1, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
-        RTStrPrintf(szNameC, sizeof(szNameC), "%s_%u_%u_%u", cpuVendorToString(enmVendor), ASMGetCpuFamily(uEax),
-                    ASMGetCpuModel(uEax, enmVendor == CPUMCPUVENDOR_INTEL), ASMGetCpuStepping(uEax));
+        RTStrPrintf(szNameC, sizeof(szNameC), "%s_%u_%u_%u", cpuVendorToString(enmVendor), RTX86GetCpuFamily(uEax),
+                    RTX86GetCpuModel(uEax, enmVendor == CPUMCPUVENDOR_INTEL), RTX86GetCpuStepping(uEax));
         pszCpuDesc = pszName = szNameC;
         vbCpuRepDebug("Name/NameC: %s\n", szNameC);
     }
@@ -4842,9 +4842,9 @@ static int produceCpuReport(void)
                    pszName,
                    pszCpuDesc,
                    CPUMR3CpuVendorName(enmVendor),
-                   ASMGetCpuFamily(uEax),
-                   ASMGetCpuModel(uEax, enmVendor == CPUMCPUVENDOR_INTEL),
-                   ASMGetCpuStepping(uEax),
+                   RTX86GetCpuFamily(uEax),
+                   RTX86GetCpuModel(uEax, enmVendor == CPUMCPUVENDOR_INTEL),
+                   RTX86GetCpuStepping(uEax),
                    CPUMR3MicroarchName(enmMicroarch),
                    vbCpuRepGuessScalableBusFrequencyName(),
                    vbCpuRepGetPhysAddrWidth(),

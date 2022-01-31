@@ -1664,7 +1664,7 @@ VMM_INT_DECL(bool)      CPUMIsGuestVmxEptPaePagingEnabled(PCVMCPUCC pVCpu);
 VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPUCC pVCpu, uint64_t fExtrnImport);
 /** @} */
 
-#if (!defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS) && defined(RT_ARCH_AMD64)) || defined(DOXYGEN_RUNNING)
+#if !defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS) || defined(DOXYGEN_RUNNING)
 /** @name Inlined Guest Getters and predicates Functions.
  * @{ */
 
@@ -2564,7 +2564,7 @@ DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PCCPUMCTX pCtx)
 }
 
 /** @} */
-#endif /* !IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS && RT_ARCH_AMD64 */
+#endif /* !IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS || DOXYGEN_RUNNING */
 
 
 

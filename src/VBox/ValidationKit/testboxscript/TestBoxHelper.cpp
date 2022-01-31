@@ -466,7 +466,7 @@ static HWVIRTTYPE isHwVirtSupported(void)
 
     /* VT-x */
     ASMCpuId(0x00000000, &uEax, &uEbx, &uEcx, &uEdx);
-    if (ASMIsValidStdRange(uEax))
+    if (RTX86IsValidStdRange(uEax))
     {
         ASMCpuId(0x00000001, &uEax, &uEbx, &uEcx, &uEdx);
         if (uEcx & X86_CPUID_FEATURE_ECX_VMX)
@@ -475,7 +475,7 @@ static HWVIRTTYPE isHwVirtSupported(void)
 
     /* AMD-V */
     ASMCpuId(0x80000000, &uEax, &uEbx, &uEcx, &uEdx);
-    if (ASMIsValidExtRange(uEax))
+    if (RTX86IsValidExtRange(uEax))
     {
         ASMCpuId(0x80000001, &uEax, &uEbx, &uEcx, &uEdx);
         if (uEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
@@ -508,7 +508,7 @@ static RTEXITCODE handlerCpuNestedPaging(int argc, char **argv)
     {
         uint32_t uEax, uEbx, uEcx, uEdx;
         ASMCpuId(0x80000000, &uEax, &uEbx, &uEcx, &uEdx);
-        if (ASMIsValidExtRange(uEax) && uEax >= 0x8000000a)
+        if (RTX86IsValidExtRange(uEax) && uEax >= 0x8000000a)
         {
             ASMCpuId(0x8000000a, &uEax, &uEbx, &uEcx, &uEdx);
             if (uEdx & RT_BIT(0) /* AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING */)
@@ -616,7 +616,7 @@ static RTEXITCODE handlerCpuLongMode(int argc, char **argv)
             /* PAE and HwVirt are required */
             uint32_t uEax, uEbx, uEcx, uEdx;
             ASMCpuId(0x00000000, &uEax, &uEbx, &uEcx, &uEdx);
-            if (ASMIsValidStdRange(uEax))
+            if (RTX86IsValidStdRange(uEax))
             {
                 ASMCpuId(0x00000001, &uEax, &uEbx, &uEcx, &uEdx);
                 if (uEdx & X86_CPUID_FEATURE_EDX_PAE)
@@ -624,7 +624,7 @@ static RTEXITCODE handlerCpuLongMode(int argc, char **argv)
                     /* AMD will usually advertise long mode in 32-bit mode. Intel OTOH,
                        won't necessarily do so. */
                     ASMCpuId(0x80000000, &uEax, &uEbx, &uEcx, &uEdx);
-                    if (ASMIsValidExtRange(uEax))
+                    if (RTX86IsValidExtRange(uEax))
                     {
                         ASMCpuId(0x80000001, &uEax, &uEbx, &uEcx, &uEdx);
                         if (uEdx & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE)
@@ -651,12 +651,12 @@ static RTEXITCODE handlerCpuRevision(int argc, char **argv)
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     uint32_t uEax, uEbx, uEcx, uEdx;
     ASMCpuId(0, &uEax, &uEbx, &uEcx, &uEdx);
-    if (ASMIsValidStdRange(uEax) && uEax >= 1)
+    if (RTX86IsValidStdRange(uEax) && uEax >= 1)
     {
         uint32_t uEax1 = ASMCpuId_EAX(1);
-        uint32_t uVersion = (ASMGetCpuFamily(uEax1) << 24)
-                          | (ASMGetCpuModel(uEax1, ASMIsIntelCpuEx(uEbx, uEcx, uEdx)) << 8)
-                          | ASMGetCpuStepping(uEax1);
+        uint32_t uVersion = (RTX86GetCpuFamily(uEax1) << 24)
+                          | (RTX86GetCpuModel(uEax1, RTX86IsIntelCpu(uEbx, uEcx, uEdx)) << 8)
+                          | RTX86GetCpuStepping(uEax1);
         int cch = RTPrintf("%#x\n", uVersion);
         return cch > 0 ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
     }

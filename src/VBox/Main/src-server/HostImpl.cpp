@@ -336,7 +336,7 @@ HRESULT Host::init(VirtualBox *aParent)
         /* Note! This code is duplicated in SUPDrv.c and other places! */
         uint32_t uMaxId, uVendorEBX, uVendorECX, uVendorEDX;
         ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
-        if (ASMIsValidStdRange(uMaxId))
+        if (RTX86IsValidStdRange(uMaxId))
         {
             /* PAE? */
             uint32_t uDummy, fFeaturesEcx, fFeaturesEdx;
@@ -347,7 +347,7 @@ HRESULT Host::init(VirtualBox *aParent)
             uint32_t uExtMaxId, fExtFeaturesEcx, fExtFeaturesEdx;
             ASMCpuId(0x80000000, &uExtMaxId, &uDummy, &uDummy, &uDummy);
             ASMCpuId(0x80000001, &uDummy, &uDummy, &fExtFeaturesEcx, &fExtFeaturesEdx);
-            m->fLongModeSupported = ASMIsValidExtRange(uExtMaxId)
+            m->fLongModeSupported = RTX86IsValidExtRange(uExtMaxId)
                                  && (fExtFeaturesEdx & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
 
 # if defined(RT_OS_DARWIN) && ARCH_BITS == 32 /* darwin.x86 has some optimizations of 64-bit on 32-bit. */
@@ -358,9 +358,9 @@ HRESULT Host::init(VirtualBox *aParent)
 # endif
 
             /* VT-x? */
-            if (   ASMIsIntelCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
-                || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
-                || ASMIsShanghaiCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
+            if (   RTX86IsIntelCpu(uVendorEBX, uVendorECX, uVendorEDX)
+                || RTX86IsViaCentaurCpu(uVendorEBX, uVendorECX, uVendorEDX)
+                || RTX86IsShanghaiCpu(uVendorEBX, uVendorECX, uVendorEDX))
             {
                 if (    (fFeaturesEcx & X86_CPUID_FEATURE_ECX_VMX)
                      && (fFeaturesEdx & X86_CPUID_FEATURE_EDX_MSR)
@@ -374,13 +374,13 @@ HRESULT Host::init(VirtualBox *aParent)
                 }
             }
             /* AMD-V */
-            else if (   ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
-                     || ASMIsHygonCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
+            else if (   RTX86IsAmdCpu(uVendorEBX, uVendorECX, uVendorEDX)
+                     || RTX86IsHygonCpu(uVendorEBX, uVendorECX, uVendorEDX))
             {
                 if (   (fExtFeaturesEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
                     && (fFeaturesEdx    & X86_CPUID_FEATURE_EDX_MSR)
                     && (fFeaturesEdx    & X86_CPUID_FEATURE_EDX_FXSR)
-                    && ASMIsValidExtRange(uExtMaxId)
+                    && RTX86IsValidExtRange(uExtMaxId)
                    )
                 {
                     m->fVTSupported = true;

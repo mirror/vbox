@@ -1252,7 +1252,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVMCC pVM)
      */
     uint32_t fWorldSwitcher = 0;
     uint32_t cLastStdLeaf   = ASMCpuId_EAX(0);
-    if (cLastStdLeaf >= 0x00000007 && ASMIsValidStdRange(cLastStdLeaf))
+    if (cLastStdLeaf >= 0x00000007 && RTX86IsValidStdRange(cLastStdLeaf))
     {
         uint32_t uEdx = 0;
         ASMCpuIdExSlow(0x00000007, 0, 0, 0, NULL, NULL, NULL, &uEdx);

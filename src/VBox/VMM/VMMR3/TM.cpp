@@ -886,7 +886,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
          * By feature. (Used to be AMD specific, intel seems to have picked it up.)
          */
         ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
-        if (uEAX >= 0x80000007 && ASMIsValidExtRange(uEAX))
+        if (uEAX >= 0x80000007 && RTX86IsValidExtRange(uEAX))
         {
             ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
             if (   (uEDX & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR) /* TscInvariant */
@@ -926,7 +926,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
              * This test is lacking in the same way and for the same reasons
              * as the AMD test above.
              */
-            /** @todo use ASMGetCpuFamily() and ASMGetCpuModel() here. */
+            /** @todo use RTX86GetCpuFamily() and RTX86GetCpuModel() here. */
             ASMCpuId(1, &uEAX, &uEBX, &uECX, &uEDX);
             unsigned uModel  = (uEAX >> 4) & 0x0f;
             unsigned uFamily = (uEAX >> 8) & 0x0f;
@@ -946,7 +946,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
              * This only checks for VIA CPU models Nano X2, Nano X3,
              * Eden X2 and QuadCore.
              */
-            /** @todo use ASMGetCpuFamily() and ASMGetCpuModel() here. */
+            /** @todo use RTX86GetCpuFamily() and RTX86GetCpuModel() here. */
             ASMCpuId(1, &uEAX, &uEBX, &uECX, &uEDX);
             unsigned uStepping = (uEAX & 0x0f);
             unsigned uModel    = (uEAX >> 4) & 0x0f;
@@ -962,7 +962,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
             /*
              * Shanghai - Check the model, family and stepping.
              */
-            /** @todo use ASMGetCpuFamily() and ASMGetCpuModel() here. */
+            /** @todo use RTX86GetCpuFamily() and RTX86GetCpuModel() here. */
             ASMCpuId(1, &uEAX, &uEBX, &uECX, &uEDX);
             unsigned uFamily   = (uEAX >> 8) & 0x0f;
             if (   uFamily == 0x06

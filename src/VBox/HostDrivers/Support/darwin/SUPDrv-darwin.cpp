@@ -2007,7 +2007,7 @@ static bool vboxdrvDarwinCpuHasSMAP(void)
 {
     uint32_t uMaxId, uEAX, uEBX, uECX, uEDX;
     ASMCpuId(0, &uMaxId, &uEBX, &uECX, &uEDX);
-    if (   ASMIsValidStdRange(uMaxId)
+    if (   RTX86IsValidStdRange(uMaxId)
         && uMaxId >= 0x00000007)
     {
         ASMCpuId_Idx_ECX(0x00000007, 0, &uEAX, &uEBX, &uECX, &uEDX);

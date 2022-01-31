@@ -198,7 +198,7 @@ static uint32_t supdrvGipGetApicIdSlow(void)
 
     /* The Intel CPU topology leaf: */
     uint32_t uOther = ASMCpuId_EAX(0);
-    if (uOther >= UINT32_C(0xb) && ASMIsValidStdRange(uOther))
+    if (uOther >= UINT32_C(0xb) && RTX86IsValidStdRange(uOther))
     {
         uint32_t uEax = 0;
         uint32_t uEbx = 0;
@@ -219,7 +219,7 @@ static uint32_t supdrvGipGetApicIdSlow(void)
 
     /* The AMD leaf: */
     uOther = ASMCpuId_EAX(UINT32_C(0x80000000));
-    if (uOther >= UINT32_C(0x8000001e) && ASMIsValidExtRange(uOther))
+    if (uOther >= UINT32_C(0x8000001e) && RTX86IsValidExtRange(uOther))
     {
         uOther = ASMGetApicIdExt8000001E();
         if ((uOther & 0xff) == idApic)
@@ -370,7 +370,7 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
              */
             if (ASMHasCpuId())
             {
-                if (   ASMIsValidExtRange(ASMCpuId_EAX(UINT32_C(0x80000000)))
+                if (   RTX86IsValidExtRange(ASMCpuId_EAX(UINT32_C(0x80000000)))
                     && (ASMCpuId_EDX(UINT32_C(0x80000001)) & X86_CPUID_EXT_FEATURE_EDX_RDTSCP) )
                 {
                     uint32_t uAux;
@@ -405,7 +405,7 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
      */
     idApic = UINT32_MAX;
     uEax = ASMCpuId_EAX(0);
-    if (uEax >= UINT32_C(0xb) && ASMIsValidStdRange(uEax))
+    if (uEax >= UINT32_C(0xb) && RTX86IsValidStdRange(uEax))
     {
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
         ASMCpuId_Idx_ECX(0xb, 0, &uEax, &uEbx, &uEcx, &uEdx);
@@ -429,7 +429,7 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
     }
 
     uEax = ASMCpuId_EAX(UINT32_C(0x80000000));
-    if (uEax >= UINT32_C(0x8000001e) && ASMIsValidExtRange(uEax))
+    if (uEax >= UINT32_C(0x8000001e) && RTX86IsValidExtRange(uEax))
     {
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
         ASMCpuId_Idx_ECX(UINT32_C(0x8000001e), 0, &uEax, &uEbx, &uEcx, &uEdx);
@@ -1767,7 +1767,7 @@ static SUPGIPMODE supdrvGipInitDetermineTscMode(PSUPDRVDEVEXT pDevExt)
     if (ASMHasCpuId())
     {
         uEAX = ASMCpuId_EAX(0x80000000);
-        if (ASMIsValidExtRange(uEAX) && uEAX >= 0x80000007)
+        if (RTX86IsValidExtRange(uEAX) && uEAX >= 0x80000007)
         {
             uEDX = ASMCpuId_EDX(0x80000007);
             if (uEDX & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR)
@@ -1813,12 +1813,12 @@ static SUPGIPMODE supdrvGipInitDetermineTscMode(PSUPDRVDEVEXT pDevExt)
 
     /* (2) If it's an AMD CPU with power management, we won't trust its TSC. */
     ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
-    if (   ASMIsValidStdRange(uEAX)
-        && (ASMIsAmdCpuEx(uEBX, uECX, uEDX) || ASMIsHygonCpuEx(uEBX, uECX, uEDX)) )
+    if (   RTX86IsValidStdRange(uEAX)
+        && (RTX86IsAmdCpu(uEBX, uECX, uEDX) || RTX86IsHygonCpu(uEBX, uECX, uEDX)) )
     {
         /* Check for APM support. */
         uEAX = ASMCpuId_EAX(0x80000000);
-        if (ASMIsValidExtRange(uEAX) && uEAX >= 0x80000007)
+        if (RTX86IsValidExtRange(uEAX) && uEAX >= 0x80000007)
         {
             uEDX = ASMCpuId_EDX(0x80000007);
             if (uEDX & 0x3e)  /* STC|TM|THERMTRIP|VID|FID. Ignore TS. */
@@ -4032,12 +4032,12 @@ static int supdrvTscMeasureDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
     if (   (   (pGipCpuMaster->idApic & ~1) == (pGipCpuWorker->idApic & ~1)
             && pGip->cOnlineCpus > 2
             && ASMHasCpuId()
-            && ASMIsValidStdRange(ASMCpuId_EAX(0))
+            && RTX86IsValidStdRange(ASMCpuId_EAX(0))
             && (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_HTT)
             && (   !ASMIsAmdCpu()
-                || ASMGetCpuFamily(u32Tmp = ASMCpuId_EAX(1)) > 0x15
-                || (   ASMGetCpuFamily(u32Tmp)   == 0x15           /* Piledriver+, not bulldozer (FX-4150 didn't like it). */
-                    && ASMGetCpuModelAMD(u32Tmp) >= 0x02) ) )
+                || RTX86GetCpuFamily(u32Tmp = ASMCpuId_EAX(1)) > 0x15
+                || (   RTX86GetCpuFamily(u32Tmp)   == 0x15           /* Piledriver+, not bulldozer (FX-4150 didn't like it). */
+                    && RTX86GetCpuModelAMD(u32Tmp) >= 0x02) ) )
         || !RTMpIsCpuOnline(idMaster) )
     {
         uint32_t i;

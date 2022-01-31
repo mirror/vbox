@@ -248,7 +248,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVMCC pVM)
          */
         uint32_t cExt = 0;
         ASMCpuId(0x80000000, &cExt, &u32Dummy, &u32Dummy, &u32Dummy);
-        if (ASMIsValidExtRange(cExt))
+        if (RTX86IsValidExtRange(cExt))
         {
             uint32_t fExtFeaturesEDX = ASMCpuId_EDX(0x80000001);
             if (fExtFeaturesEDX & X86_CPUID_EXT_FEATURE_EDX_SYSCALL)
@@ -278,7 +278,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVMCC pVM)
         pVM->cpum.s.HostFeatures.fArchVmmNeedNotFlushL1d = 0;
         pVM->cpum.s.HostFeatures.fArchMdsNo              = 0;
         uint32_t const cStdRange = ASMCpuId_EAX(0);
-        if (   ASMIsValidStdRange(cStdRange)
+        if (   RTX86IsValidStdRange(cStdRange)
             && cStdRange >= 7)
         {
             uint32_t fEdxFeatures = ASMCpuId_EDX(7);
@@ -727,12 +727,12 @@ static DECLCALLBACK(void) cpumR0MapLocalApicCpuProber(RTCPUID idCpu, void *pvUse
      */
     uint32_t uMaxLeaf, u32EBX, u32ECX, u32EDX;
     ASMCpuId(0, &uMaxLeaf, &u32EBX, &u32ECX, &u32EDX);
-    if (   (   ASMIsIntelCpuEx(u32EBX, u32ECX, u32EDX)
-            || ASMIsAmdCpuEx(u32EBX, u32ECX, u32EDX)
-            || ASMIsViaCentaurCpuEx(u32EBX, u32ECX, u32EDX)
-            || ASMIsShanghaiCpuEx(u32EBX, u32ECX, u32EDX)
-            || ASMIsHygonCpuEx(u32EBX, u32ECX, u32EDX))
-        && ASMIsValidStdRange(uMaxLeaf))
+    if (   (   RTX86IsIntelCpu(u32EBX, u32ECX, u32EDX)
+            || RTX86IsAmdCpu(u32EBX, u32ECX, u32EDX)
+            || RTX86IsViaCentaurCpu(u32EBX, u32ECX, u32EDX)
+            || RTX86IsShanghaiCpu(u32EBX, u32ECX, u32EDX)
+            || RTX86IsHygonCpu(u32EBX, u32ECX, u32EDX))
+        && RTX86IsValidStdRange(uMaxLeaf))
     {
         uint32_t uDummy;
         ASMCpuId(1, &uDummy, &u32EBX, &u32ECX, &u32EDX);
@@ -749,7 +749,7 @@ static DECLCALLBACK(void) cpumR0MapLocalApicCpuProber(RTCPUID idCpu, void *pvUse
             uint32_t uMaxExtLeaf;
             ASMCpuId(0x80000000, &uMaxExtLeaf, &u32EBX, &u32ECX, &u32EDX);
             if (   uMaxExtLeaf >= UINT32_C(0x80000008)
-                && ASMIsValidExtRange(uMaxExtLeaf))
+                && RTX86IsValidExtRange(uMaxExtLeaf))
             {
                 uint32_t u32PhysBits;
                 ASMCpuId(0x80000008, &u32PhysBits, &u32EBX, &u32ECX, &u32EDX);
