@@ -26,6 +26,7 @@
 #define IN_SUP_R0
 #define LINUX_VERSION_CODE 0
 #define KERNEL_VERSION(a,b,c) 1
+#include <iprt/linux/version.h>
 #include <VBox/types.h>
 #include <VBox/version.h>
 #include <VBox/vmm/pdmpci.h>

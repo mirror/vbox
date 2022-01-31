@@ -141,7 +141,7 @@ static DECLCALLBACK(int) tstDevIoFuzzEntry(TSTDEVDUT hDut, PCTSTDEVCFGITEM paCfg
                     fRing0 = RT_BOOL(RTRandAdvU32Ex(hRnd, 0, 1));
 
                 uint64_t u64Value = fRead ? 0 : RTRandAdvU64(hRnd);
-                uint32_t cbValue = g_aAccWidths[RTRandAdvU32Ex(hRnd, 0, 2)];
+                uint32_t cbValue = g_aAccWidths[RTRandAdvU32Ex(hRnd, 0, 3)];
 
                 if (fRead)
                 {

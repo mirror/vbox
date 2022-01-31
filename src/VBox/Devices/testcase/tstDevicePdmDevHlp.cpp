@@ -4942,8 +4942,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMARegister(PPDMDEVINS pDevIns, unsigned uC
     LogFlow(("pdmR3DevHlp_DMARegister: caller='%s'/%d: uChannel=%d pfnTransferHandler=%p pvUser=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uChannel, pfnTransferHandler, pvUser));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_DMARegister: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -4990,8 +4994,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMASetDREQ(PPDMDEVINS pDevIns, unsigned uCh
     LogFlow(("pdmR3DevHlp_DMASetDREQ: caller='%s'/%d: uChannel=%d uLevel=%d\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uChannel, uLevel));
 
+#ifndef VBOX_TSTDEV_NOT_IMPLEMENTED_STUBS_FAKE_SUCCESS
     int rc = VERR_NOT_IMPLEMENTED;
     AssertFailed();
+#else
+    int rc = VINF_SUCCESS;
+#endif
 
     LogFlow(("pdmR3DevHlp_DMASetDREQ: caller='%s'/%d: returns %Rrc\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc));

@@ -29,6 +29,7 @@
 RT_C_DECLS_BEGIN
 
 extern const TSTDEVTESTCASEREG g_TestcaseSsmFuzz;
+extern const TSTDEVTESTCASEREG g_TestcaseSsmLoadDbg;
 extern const TSTDEVTESTCASEREG g_TestcaseIoFuzz;
 
 RT_C_DECLS_END

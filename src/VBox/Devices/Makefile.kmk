@@ -1498,6 +1498,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  	testcase/tstDevicePdmDevHlpR0.cpp \
  	testcase/tstDevicePdmThread.cpp \
  	testcase/tstDeviceSsmFuzz.cpp \
+ 	testcase/tstDeviceSsmLoadDbg.cpp \
  	testcase/tstDeviceIoFuzz.cpp
  endif
 

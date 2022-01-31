@@ -995,6 +995,7 @@ int main(int argc, char *argv[])
 
         /* Register builtin tests. */
         tstDevRegisterTestcase(NULL, &g_TestcaseSsmFuzz);
+        tstDevRegisterTestcase(NULL, &g_TestcaseSsmLoadDbg);
         tstDevRegisterTestcase(NULL, &g_TestcaseIoFuzz);
 
         PCTSTDEVCFG pDevTstCfg = NULL;
