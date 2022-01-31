@@ -57,8 +57,11 @@ SHCLFUSECTX g_FuseCtx;
 #endif
 
 
-DECLCALLBACK(int) ShClX11RequestDataCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
+static DECLCALLBACK(int) vbclOnRequestDataFromSourceCallback(PSHCLCONTEXT pCtx,
+                                                             SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
 {
+    RT_NOREF(pvUser);
+
     LogFlowFunc(("pCtx=%p, uFmt=%#x\n", pCtx, uFmt));
 
     int rc = VINF_SUCCESS;
@@ -139,32 +142,36 @@ DECLCALLBACK(int) ShClX11RequestDataCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt,
 struct CLIPREADCBREQ
 {
     /** The data format that was requested. */
-    SHCLFORMAT Format;
+    SHCLFORMAT uFmt;
 };
 
-DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS fFormats)
+static DECLCALLBACK(int) vbclReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
 {
-    RT_NOREF(pCtx);
+    RT_NOREF(pvUser);
 
     LogFlowFunc(("fFormats=%#x\n", fFormats));
 
-    int rc2 = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, fFormats);
-    RT_NOREF(rc2);
-    LogFlowFuncLeaveRC(rc2);
+    int rc = VbglR3ClipboardReportFormats(pCtx->CmdCtx.idClient, fFormats);
+    LogFlowFuncLeaveRC(rc);
+
+    return rc;
 }
 
-DECLCALLBACK(void) ShClX11ReportDataCallback(PSHCLCONTEXT pCtx, int rcCompletion,
-                                             CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+static DECLCALLBACK(int) vbclOnSendDataToDestCallback(PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser)
 {
-    LogFlowFunc(("rcCompletion=%Rrc, Format=0x%x, pv=%p, cb=%RU32\n", rcCompletion, pReq->Format, pv, cb));
-    RT_NOREF(rcCompletion);
+    PSHCLX11READDATAREQ pData = (PSHCLX11READDATAREQ)pvUser;
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("rcCompletion=%Rrc, Format=0x%x, pv=%p, cb=%RU32\n", pData->rcCompletion, pData->pReq->uFmt, pv, cb));
 
     Assert((cb == 0 && pv == NULL) || (cb != 0 && pv != NULL));
-    rcCompletion = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pReq->Format, pv, cb);
+    pData->rcCompletion = VbglR3ClipboardWriteDataEx(&pCtx->CmdCtx, pData->pReq->uFmt, pv, cb);
 
-    RTMemFree(pReq);
+    RTMemFree(pData->pReq);
 
-    LogFlowFuncLeaveRC(rcCompletion);
+    LogFlowFuncLeaveRC(pData->rcCompletion);
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -176,7 +183,13 @@ static int vboxClipboardConnect(void)
 {
     LogFlowFuncEnter();
 
-    int rc = ShClX11Init(&g_Ctx.X11, NULL /* pCallbacks */, &g_Ctx, false /* fHeadless */);
+    SHCLCALLBACKS Callbacks;
+    RT_ZERO(Callbacks);
+    Callbacks.pfnReportFormats           = vbclReportFormatsCallback;
+    Callbacks.pfnOnRequestDataFromSource = vbclOnRequestDataFromSourceCallback;
+    Callbacks.pfnOnSendDataToDest        = vbclOnSendDataToDestCallback;
+
+    int rc = ShClX11Init(&g_Ctx.X11, &Callbacks, &g_Ctx, false /* fHeadless */);
     if (RT_SUCCESS(rc))
     {
         rc = ShClX11ThreadStart(&g_Ctx.X11, false /* grab */);
@@ -268,8 +281,8 @@ int vboxClipboardMain(void)
                     pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
                     if (pReq)
                     {
-                        pReq->Format = pEvent->u.fReadData;
-                        ShClX11ReadDataFromX11(&g_Ctx.X11, pReq->Format, pReq);
+                        pReq->uFmt = pEvent->u.fReadData;
+                        ShClX11ReadDataFromX11(&g_Ctx.X11, pReq->uFmt, pReq);
                     }
                     else
                         rc = VERR_NO_MEMORY;
