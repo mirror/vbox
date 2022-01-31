@@ -2095,13 +2095,9 @@ static DECLCALLBACK(int) rtFsIsoFile_Seek(void *pvThis, RTFOFF offSeek, unsigned
     }
     if (offNew >= 0)
     {
-        if (offNew <= _4G)
-        {
-            pThis->offFile = offNew;
-            *poffActual    = offNew;
-            return VINF_SUCCESS;
-        }
-        return VERR_OUT_OF_RANGE;
+        pThis->offFile = offNew;
+        *poffActual    = offNew;
+        return VINF_SUCCESS;
     }
     return VERR_NEGATIVE_SEEK;
 }
