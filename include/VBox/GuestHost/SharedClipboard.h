@@ -258,6 +258,8 @@ typedef struct _SHCLCALLBACKS
      * @returns VBox status code.
      * @param   pCtx            Opaque context pointer for the glue code.
      * @param   fFormats        The formats available.
+     * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
+     *                          Optional and can be NULL.
      */
     DECLCALLBACKMEMBER(int, pfnReportFormats, (PSHCLCONTEXT pCtx, SHCLFORMATS fFormats, void *pvUser));
 
@@ -319,15 +321,13 @@ typedef struct _SHCLCALLBACKS
     /**
      * Callback for sending clipboard data to the destination.
      *
-     * @note On X11:
-     *         (see @a rcCompletion)
-     *
      * @returns VBox status code.
      * @param   pCtx            Opaque context pointer for the glue code.
      * @param   pv              The clipboard data returned if the request succeeded.
      * @param   cb              The size of the data in @a pv.
      * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
-     *                          Optional and can be NULL.
+     *                          Optional and can be NUL
+     *                          On X11: Of type PSHCLX11READDATAREQ.
      */
     DECLCALLBACKMEMBER(int, pfnOnSendDataToDest, (PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser));
 } SHCLCALLBACKS;
