@@ -64,7 +64,7 @@ endif
 #
 # Darwin extras.
 #
-ifeq ($(KBUILD_TARGET),darwin)
+if "$(KBUILD_TARGET)" == "darwin" && defined(VBOX_WITH_VBOXDRV)
  INSTALLS += VBoxNetAdp.kext
  VBoxNetAdp.kext_INST     = $(INST_VBOXNETADP)Contents/
  VBoxNetAdp.kext_SOURCES  = $(VBoxNetAdp.kext_0_OUTDIR)/Contents/Info.plist
@@ -91,7 +91,7 @@ $$(VBoxNetAdp.kext_0_OUTDIR)/Contents/Info.plist: $(PATH_SUB_CURRENT)/darwin/Inf
  Scripts-darwin-adp_INST = $(INST_DIST)
  Scripts-darwin-adp_EXEC_SOURCES = \
  	darwin/loadnetadp.sh
-endif # darwin
+endif # darwin && host-drivers
 
 ifeq ($(KBUILD_TARGET),win)
  #

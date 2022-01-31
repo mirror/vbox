@@ -32,7 +32,9 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
  #
  # VBoxNetFlt.sys - The mixed case driver.
  #
- SYSMODS += VBoxNetFlt
+ ifdef VBOX_WITH_VBOXDRV
+  SYSMODS += VBoxNetFlt
+ endif
  VBoxNetFlt_TEMPLATE = VBOXR0DRV
  VBoxNetFlt_INST = $(INST_VBOXNETFLT)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
  VBoxNetFlt_DEBUG_INST.darwin = $(patsubst %/,%,$(INST_VBOXNETFLT))
@@ -78,7 +80,7 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
 
 
 # Darwin extras.
-ifeq ($(KBUILD_TARGET),darwin)
+if "$(KBUILD_TARGET)" == "darwin" && defined(VBOX_WITH_VBOXDRV)
  INSTALLS += VBoxNetFlt.kext
  VBoxNetFlt.kext_INST     = $(INST_VBOXNETFLT)Contents/
  VBoxNetFlt.kext_SOURCES  = $(VBoxNetFlt.kext_0_OUTDIR)/Contents/Info.plist
@@ -105,7 +107,7 @@ $$(VBoxNetFlt.kext_0_OUTDIR)/Contents/Info.plist: $(PATH_SUB_CURRENT)/darwin/Inf
  Scripts-darwin_INST = $(INST_DIST)
  Scripts-darwin_EXEC_SOURCES = \
  	darwin/loadnetflt.sh
-endif # darwin
+endif # darwin && host-drivers
 
 
 ifeq ($(KBUILD_TARGET),win)
