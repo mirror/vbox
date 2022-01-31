@@ -68,11 +68,7 @@ endif
 
  # libtpms for supporting the in process TPM emulation.
 if defined(VBOX_WITH_LIBTPMS) \
- && !defined(VBOX_ONLY_DOCS) \
- && !defined(VBOX_ONLY_ADDITIONS) \
- && !defined(VBOX_ONLY_SDK) \
- && !defined(VBOX_ONLY_VALIDATIONKIT) \
- && !defined(VBOX_ONLY_EXTPACKS) \
+ && !defined(VBOX_ONLY_BUILD) \
  && ("$(SDK_VBOX_LIBTPMS_INCS)" == "$(SDK_VBOX_LIBTPMS_DEFAULT_INCS)")
   include $(PATH_SUB_CURRENT)/libtpms-0.9.0/Makefile.kmk
 endif
@@ -116,12 +112,9 @@ endif
 
 # dxvk-native for supporting DirectX over Vulkan on platforms other than Windows.
 if defined(VBOX_WITH_DXVK) \
- && !defined(VBOX_ONLY_DOCS) \
- && !defined(VBOX_ONLY_ADDITIONS) \
- && !defined(VBOX_ONLY_SDK) \
- && !defined(VBOX_ONLY_VALIDATIONKIT) \
- && !defined(VBOX_ONLY_EXTPACKS) \
- && ("$(SDK_VBOX_DXVK_INCS)" == "$(SDK_VBOX_DXVK_DEFAULT_INCS)")
+ && !defined(VBOX_ONLY_BUILD) \
+ && "$(SDK_VBOX_DXVK_INCS)" == "$(SDK_VBOX_DXVK_DEFAULT_INCS)" \
+ && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SUPPORTED_HOST_ARCHS))" != ""
   include $(PATH_SUB_CURRENT)/dxvk-native-1.9.2a/Makefile.kmk
 endif
 
