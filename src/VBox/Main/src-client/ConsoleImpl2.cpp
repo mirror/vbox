@@ -840,56 +840,80 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         uMcfgBase = _4G - cbRamHole;
     }
 
+    /* Get the CPU profile name. */
+    Bstr bstrCpuProfile;
+    hrc = pMachine->COMGETTER(CPUProfile)(bstrCpuProfile.asOutParam());                     H();
+
+    /*
+     * Figure out the IOMMU config.
+     */
 #if defined(VBOX_WITH_IOMMU_AMD) || defined(VBOX_WITH_IOMMU_INTEL)
-    IommuType_T iommuType;
-    hrc = pMachine->COMGETTER(IommuType)(&iommuType);                                       H();
+    IommuType_T enmIommuType;
+    hrc = pMachine->COMGETTER(IommuType)(&enmIommuType);                                    H();
 
     /* Resolve 'automatic' type to an Intel or AMD IOMMU based on the host CPU. */
-    if (iommuType == IommuType_Automatic)
+    if (enmIommuType == IommuType_Automatic)
     {
-        if (ASMIsAmdCpu())
-            iommuType = IommuType_AMD;
+        if (   bstrCpuProfile.startsWith("AMD")
+            || bstrCpuProfile.startsWith("Quad-Core AMD")
+            || bstrCpuProfile.startsWith("Hygon"))
+            enmIommuType = IommuType_AMD;
+        else if (bstrCpuProfile.startsWith("Intel"))
+        {
+            if (   bstrCpuProfile.equals("Intel 8086")
+                || bstrCpuProfile.equals("Intel 80186")
+                || bstrCpuProfile.equals("Intel 80286")
+                || bstrCpuProfile.equals("Intel 80386")
+                || bstrCpuProfile.equals("Intel 80486"))
+                enmIommuType = IommuType_None;
+            else
+                enmIommuType = IommuType_Intel;
+        }
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+        else if (ASMIsAmdCpu())
+            enmIommuType = IommuType_AMD;
         else if (ASMIsIntelCpu())
-            iommuType = IommuType_Intel;
+            enmIommuType = IommuType_Intel;
+# endif
         else
         {
             /** @todo Should we handle other CPUs like Shanghai, VIA etc. here? */
             LogRel(("WARNING! Unrecognized CPU type, IOMMU disabled.\n"));
-            iommuType = IommuType_None;
+            enmIommuType = IommuType_None;
         }
     }
 
-    if (iommuType == IommuType_AMD)
+    if (enmIommuType == IommuType_AMD)
     {
-#ifdef VBOX_WITH_IOMMU_AMD
+# ifdef VBOX_WITH_IOMMU_AMD
         /*
          * Reserve the specific PCI address of the "SB I/O APIC" when using
          * an AMD IOMMU. Required by Linux guests, see @bugref{9654#c23}.
          */
         uIoApicPciAddress = VBOX_PCI_BDF_SB_IOAPIC;
-#else
+# else
         LogRel(("WARNING! AMD IOMMU not supported, IOMMU disabled.\n"));
-        iommuType = IommuType_None;
-#endif
+        enmIommuType = IommuType_None;
+# endif
     }
 
-    if (iommuType == IommuType_Intel)
+    if (enmIommuType == IommuType_Intel)
     {
-#ifdef VBOX_WITH_IOMMU_INTEL
+# ifdef VBOX_WITH_IOMMU_INTEL
         /*
          * Reserve a unique PCI address for the I/O APIC when using
          * an Intel IOMMU. For convenience we use the same address as
          * we do on AMD, see @bugref{9967#c13}.
          */
         uIoApicPciAddress = VBOX_PCI_BDF_SB_IOAPIC;
-#else
+# else
         LogRel(("WARNING! Intel IOMMU not supported, IOMMU disabled.\n"));
-        iommuType = IommuType_None;
-#endif
+        enmIommuType = IommuType_None;
+# endif
     }
 
-    if (   iommuType == IommuType_AMD
-        || iommuType == IommuType_Intel)
+    if (   enmIommuType == IommuType_AMD
+        || enmIommuType == IommuType_Intel)
     {
         if (chipsetType != ChipsetType_ICH9)
             return pVMM->pfnVMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
@@ -899,10 +923,12 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                                          N_("IOMMU requires an I/O APIC for remapping interrupts."));
     }
 #else
-    IommuType_T const iommuType = IommuType_None;
+    IommuType_T const enmIommuType = IommuType_None;
 #endif
-    Assert(iommuType != IommuType_Automatic);
-    BusAssignmentManager *pBusMgr = mBusMgr = BusAssignmentManager::createInstance(pVMM, chipsetType, iommuType);
+
+    /* Instantiate the bus assignment manager. */
+    Assert(enmIommuType != IommuType_Automatic);
+    BusAssignmentManager *pBusMgr = mBusMgr = BusAssignmentManager::createInstance(pVMM, chipsetType, enmIommuType);
 
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                            H();
@@ -1078,8 +1104,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             Assert(fEnableAPIC);
 
         /* CPUM profile name. */
-        hrc = pMachine->COMGETTER(CPUProfile)(bstr.asOutParam());                           H();
-        InsertConfigString(pCPUM, "GuestCpuName", bstr);
+        InsertConfigString(pCPUM, "GuestCpuName", bstrCpuProfile);
 
         /*
          * Temporary(?) hack to make sure we emulate the ancient 16-bit CPUs
@@ -1087,14 +1112,14 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
          * raw-mode or qemu for the 186 and 286, while we'll get undefined opcodes
          * dead wrong on 8086 (see http://www.os2museum.com/wp/undocumented-8086-opcodes/).
          */
-        if (   bstr.equals("Intel 80386") /* just for now */
-            || bstr.equals("Intel 80286")
-            || bstr.equals("Intel 80186")
-            || bstr.equals("Nec V20")
-            || bstr.equals("Intel 8086") )
+        if (   bstrCpuProfile.equals("Intel 80386") /* just for now */
+            || bstrCpuProfile.equals("Intel 80286")
+            || bstrCpuProfile.equals("Intel 80186")
+            || bstrCpuProfile.equals("Nec V20")
+            || bstrCpuProfile.equals("Intel 8086") )
         {
             InsertConfigInteger(pEM, "IemExecutesAll", true);
-            if (!bstr.equals("Intel 80386"))
+            if (!bstrCpuProfile.equals("Intel 80386"))
             {
                 fEnableAPIC = false;
                 fIOAPIC     = false;
@@ -1590,7 +1615,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             hrc = i_attachRawPCIDevices(pUVM, pBusMgr, pDevices);                           H();
 #endif
 
-            if (iommuType == IommuType_AMD)
+            if (enmIommuType == IommuType_AMD)
             {
                 /* AMD IOMMU. */
                 InsertConfigNode(pDevices, "iommu-amd", &pDev);
@@ -1615,7 +1640,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                 PCIBusAddress PCIAddr = PCIBusAddress((int32_t)uIoApicPciAddress);
                 hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
             }
-            else if (iommuType == IommuType_Intel)
+            else if (enmIommuType == IommuType_Intel)
             {
                 /* Intel IOMMU. */
                 InsertConfigNode(pDevices, "iommu-intel", &pDev);
@@ -1773,13 +1798,13 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                 InsertConfigInteger(pInst, "Trusted",      1); /* boolean */
                 InsertConfigNode(pInst,    "Config", &pCfg);
                 InsertConfigInteger(pCfg,  "NumCPUs", cCpus);
-                if (iommuType == IommuType_Intel)
+                if (enmIommuType == IommuType_AMD)
+                    InsertConfigInteger(pCfg, "PCIAddress", uIoApicPciAddress);
+                else if (enmIommuType == IommuType_Intel)
                 {
                     InsertConfigString(pCfg, "ChipType", "DMAR");
                     InsertConfigInteger(pCfg, "PCIAddress", uIoApicPciAddress);
                 }
-                else if (iommuType == IommuType_AMD)
-                    InsertConfigInteger(pCfg, "PCIAddress", uIoApicPciAddress);
             }
         }
 
@@ -3508,7 +3533,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     InsertConfigInteger(pCfg, "NvmePciAddress",    u32NvmePCIAddr);
                 }
             }
-            if (iommuType == IommuType_AMD)
+            if (enmIommuType == IommuType_AMD)
             {
                 PCIBusAddress Address;
                 if (pBusMgr->findPCIAddress("iommu-amd", 0, Address))
@@ -3526,7 +3551,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                                                      N_("AMD IOMMU is enabled, but the I/O APIC is not assigned a PCI address!"));
                 }
             }
-            else if (iommuType == IommuType_Intel)
+            else if (enmIommuType == IommuType_Intel)
             {
                 PCIBusAddress Address;
                 if (pBusMgr->findPCIAddress("iommu-intel", 0, Address))
