@@ -37,7 +37,6 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
 /**
  * Plugin structure.
  */
@@ -55,14 +54,8 @@ typedef VDPLUGIN *PVDPLUGIN;
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-
 #ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
 /** Head of loaded plugin list. */
 static RTLISTANCHOR g_ListPluginsLoaded;
@@ -617,10 +610,14 @@ DECLHIDDEN(int) vdPluginLoadFromFilename(const char *pszFilename)
 #ifndef VBOX_HDD_NO_DYNAMIC_BACKENDS
     /* Plugin loaded? Nothing to do. */
     if (vdPluginFind(pszFilename))
+    {
+        LogFlowFunc(("Plugin '%s' already loaded\n", pszFilename));
         return VINF_SUCCESS;
+    }
 
     RTLDRMOD hPlugin = NIL_RTLDRMOD;
     int rc = SUPR3HardenedLdrLoadPlugIn(pszFilename, &hPlugin, NULL);
+    LogFlowFunc(("SUPR3HardenedLdrLoadPlugIn('%s') -> %Rrc\n", pszFilename, rc));
     if (RT_SUCCESS(rc))
     {
         VDBACKENDREGISTER BackendRegister;
