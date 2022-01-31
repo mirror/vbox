@@ -321,7 +321,7 @@ int ShClBackendWriteData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENT
     return VINF_SUCCESS;
 }
 
-/** @copydoc SHCLBACKENDCALLBACKS::pfnReportFormats */
+/** @copydoc SHCLCALLBACKS::pfnReportFormats */
 static DECLCALLBACK(int) shClReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
 {
     RT_NOREF(pvUser);
@@ -351,7 +351,7 @@ static DECLCALLBACK(int) shClReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t f
     return rc;
 }
 
-/** @copydoc SHCLBACKENDCALLBACKS::pfnOnSendDataToDest */
+/** @copydoc SHCLCALLBACKS::pfnOnSendDataToDest */
 static DECLCALLBACK(int) shClSendDataToDestCallback(PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
@@ -401,7 +401,7 @@ static DECLCALLBACK(int) shClSendDataToDestCallback(PSHCLCONTEXT pCtx, void *pv,
     return VINF_SUCCESS;
 }
 
-/** @copydoc SHCLBACKENDCALLBACKS::pfnOnRequestDataFromSource */
+/** @copydoc SHCLCALLBACKS::pfnOnRequestDataFromSource */
 static DECLCALLBACK(int) shClRequestDataFromSourceCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
 {
     RT_NOREF(pvUser);

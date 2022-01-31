@@ -1823,9 +1823,6 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
     if (!pCtx)
         return False;
 
-    XSelectionRequestEvent* req =
-        XtGetSelectionRequest(widget, *atomSelection, (XtRequestId)NULL);
-
     /* Is this the rigt selection (clipboard) we were asked for? */
     if (!clipIsSupportedSelectionType(pCtx, *atomSelection))
         return False;
@@ -1838,9 +1835,12 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
         rc = clipConvertToX11Data(pCtx, atomTarget, atomTypeReturn,
                                   pValReturn, pcLenReturn, piFormatReturn);
 
-
+#ifdef LOG_ENABLED
+    XSelectionRequestEvent* pReq =
+        XtGetSelectionRequest(widget, *atomSelection, (XtRequestId)NULL);
     LogFlowFunc(("returning pVBoxWnd=%#x, ownerWnd=%#x, reqWnd=%#x, %RTbool, rc=%Rrc\n",
-                 XtWindow(pCtx->pWidget), req->owner, req->requestor, RT_SUCCESS(rc), rc));
+                 XtWindow(pCtx->pWidget), pReq->owner, pReq->requestor, RT_SUCCESS(rc), rc));
+#endif
     return RT_SUCCESS(rc) ? True : False;
 }
 
