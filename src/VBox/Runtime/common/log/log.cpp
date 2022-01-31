@@ -1085,7 +1085,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
     pLoggerInt = (PRTLOGGERINTERNAL)RTMemAllocZVarTag(cbLogger, "may-leak:log-instance");
     if (pLoggerInt)
     {
-# if defined(RT_ARCH_X86) && (!defined(LOG_USE_C99) || !defined(RT_WITHOUT_EXEC_ALLOC))
+# if defined(RT_ARCH_X86) && !defined(LOG_USE_C99)
         uint8_t *pu8Code;
 # endif
         pLoggerInt->Core.u32Magic               = RTLOGGER_MAGIC;
@@ -1169,7 +1169,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
         pLoggerInt->pBufDesc   = paBufDescs;
         pLoggerInt->idxBufDesc = 0;
 
-# if defined(RT_ARCH_X86) && (!defined(LOG_USE_C99) || !defined(RT_WITHOUT_EXEC_ALLOC))
+# if defined(RT_ARCH_X86) && !defined(LOG_USE_C99)
         /*
          * Emit wrapper code.
          */
@@ -1319,10 +1319,12 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, const char *pszEnvVarBase, uint6
 # ifdef IN_RING3
             RTFileClose(pLoggerInt->hFile);
 # endif
-# if defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC)
-            RTMemFree(*(void **)&pLoggerInt->Core.pfnLogger);
-# else
-            RTMemExecFree(*(void **)&pLoggerInt->Core.pfnLogger, 64);
+# if defined(RT_ARCH_X86) && !defined(LOG_USE_C99)
+            if (pLoggerInt->Core.pfnLogger)
+            {
+                RTMemExecFree(*(void **)&pLoggerInt->Core.pfnLogger, 64);
+                pLoggerInt->Core.pfnLogger = NULL;
+            }
 # endif
         }
         RTMemFree(pLoggerInt);
@@ -1429,15 +1431,13 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
             rc = rc2;
     }
 
+# if defined(RT_ARCH_X86) && !defined(LOG_USE_C99)
     if (pLoggerInt->Core.pfnLogger)
     {
-# if defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC)
-        RTMemFree(*(void **)&pLoggerInt->Core.pfnLogger);
-# else
         RTMemExecFree(*(void **)&pLoggerInt->Core.pfnLogger, 64);
-# endif
         pLoggerInt->Core.pfnLogger = NULL;
     }
+# endif
     RTMemFree(pLoggerInt);
 
     return rc;
