@@ -58,10 +58,10 @@ typedef struct RESHDRDISKSHORT
     uint64_t        bFlags : 8;
     /** 0x08 - Offset.
      * @note This is signed in the specficiation...  */
-    int64_t         off;
+    uint64_t        off;
     /** 0x10 - The uncompressed original size.
      * @note This is signed in the specficiation...  */
-    int64_t         cbOrginal;
+    uint64_t        cbOrginal;
 } RESHDRDISKSHORT;
 AssertCompileSize(RESHDRDISKSHORT, 0x18);
 /** Pointer to a short WIM resource entry. */
