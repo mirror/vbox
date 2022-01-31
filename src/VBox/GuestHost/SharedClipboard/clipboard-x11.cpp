@@ -1835,7 +1835,7 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
         rc = clipConvertToX11Data(pCtx, atomTarget, atomTypeReturn,
                                   pValReturn, pcLenReturn, piFormatReturn);
 
-#ifdef LOG_ENABLED
+#if 0 /** @todo Disabled -- crashes when running with tstClipboardGH-X11. */
     XSelectionRequestEvent* pReq =
         XtGetSelectionRequest(widget, *atomSelection, (XtRequestId)NULL);
     LogFlowFunc(("returning pVBoxWnd=%#x, ownerWnd=%#x, reqWnd=%#x, %RTbool, rc=%Rrc\n",

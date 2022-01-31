@@ -118,20 +118,6 @@ static int tstClipSetVBoxUtf16(PSHCLX11CTX pCtx, int retval,
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) ShClX11RequestDataCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
-{
-    RT_NOREF(pCtx, uFmt);
-    *pcb = g_tst_cbDataVBox;
-    if (g_tst_pvDataVBox != NULL)
-    {
-        void *pv = RTMemDup(g_tst_pvDataVBox, g_tst_cbDataVBox);
-        *ppv = pv;
-        return pv != NULL ? g_tst_rcDataVBox : VERR_NO_MEMORY;
-    }
-    *ppv = NULL;
-    return g_tst_rcDataVBox;
-}
-
 Display *XtDisplay(Widget w) { NOREF(w); return (Display *) 0xffff; }
 
 void XtAppSetExitFlag(XtAppContext app_context) { NOREF(app_context); }
@@ -241,12 +227,6 @@ void tstClipRequestData(PSHCLX11CTX pCtx, SHCLX11FMTIDX target, void *closure)
 
 /* The formats currently on offer from X11 via the shared clipboard. */
 static uint32_t g_tst_uX11Formats = 0;
-
-DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS fFormats)
-{
-    RT_NOREF(pCtx);
-    g_tst_uX11Formats = fFormats;
-}
 
 static uint32_t tstClipQueryFormats(void)
 {
@@ -397,20 +377,45 @@ static int g_tst_cbCompleted = 0;
 static CLIPREADCBREQ *g_tst_pCompletedReq = NULL;
 static char g_tst_abCompletedBuf[TESTCASE_MAX_BUF_SIZE];
 
-DECLCALLBACK(void) ShClX11ReportDataCallback(PSHCLCONTEXT pCtx, int rcCompletion,
-                                             CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+static DECLCALLBACK(int) tstShClReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
+{
+    RT_NOREF(pCtx, pvUser);
+    g_tst_uX11Formats = fFormats;
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) tstShClOnRequestDataFromSourceCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
+{
+    RT_NOREF(pCtx, uFmt, pvUser);
+    *pcb = g_tst_cbDataVBox;
+    if (g_tst_pvDataVBox != NULL)
+    {
+        void *pv = RTMemDup(g_tst_pvDataVBox, g_tst_cbDataVBox);
+        *ppv = pv;
+        return pv != NULL ? g_tst_rcDataVBox : VERR_NO_MEMORY;
+    }
+    *ppv = NULL;
+    return g_tst_rcDataVBox;
+}
+
+static DECLCALLBACK(int) tstShClOnSendDataToDestCallback(PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser)
 {
     RT_NOREF(pCtx);
+
+    PSHCLX11READDATAREQ pData = (PSHCLX11READDATAREQ)pvUser;
+
     if (cb <= TESTCASE_MAX_BUF_SIZE)
     {
-        g_tst_rcCompleted = rcCompletion;
+        g_tst_rcCompleted = pData->rcCompletion;
         if (cb != 0)
             memcpy(g_tst_abCompletedBuf, pv, cb);
     }
     else
         g_tst_rcCompleted = VERR_BUFFER_OVERFLOW;
     g_tst_cbCompleted = cb;
-    g_tst_pCompletedReq = pReq;
+    g_tst_pCompletedReq = pData->pReq;
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -668,8 +673,14 @@ int main()
     /*
      * Run the tests.
      */
+    SHCLCALLBACKS Callbacks;
+    RT_ZERO(Callbacks);
+    Callbacks.pfnReportFormats           = tstShClReportFormatsCallback;
+    Callbacks.pfnOnRequestDataFromSource = tstShClOnRequestDataFromSourceCallback;
+    Callbacks.pfnOnSendDataToDest        = tstShClOnSendDataToDestCallback;
+
     SHCLX11CTX X11Ctx;
-    rc = ShClX11Init(&X11Ctx, NULL /* pCallbacks */, NULL /* pParent */, false /* fHeadless */);
+    rc = ShClX11Init(&X11Ctx, &Callbacks, NULL /* pParent */, false /* fHeadless */);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
     char *pc;
@@ -892,7 +903,7 @@ int main()
     /*
      * Headless clipboard tests
      */
-    rc = ShClX11Init(&X11Ctx, NULL /* pCallbacks */, NULL /* pParent */, true /* fHeadless */);
+    rc = ShClX11Init(&X11Ctx, &Callbacks, NULL /* pParent */, true /* fHeadless */);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
     /* Read from X11 */

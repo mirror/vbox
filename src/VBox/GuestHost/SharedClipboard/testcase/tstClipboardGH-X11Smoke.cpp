@@ -30,21 +30,22 @@
 #include <VBox/GuestHost/clipboard-helper.h>
 
 
-DECLCALLBACK(int) ShClX11RequestDataCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb)
+static DECLCALLBACK(int) tstShClReportFormatsCallback(PSHCLCONTEXT pCtx, uint32_t fFormats, void *pvUser)
 {
-    RT_NOREF(pCtx, uFmt, ppv, pcb);
+    RT_NOREF(pCtx, fFormats, pvUser);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) tstShClOnRequestDataFromSourceCallback(PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser)
+{
+    RT_NOREF(pCtx, uFmt, ppv, pcb, pvUser);
     return VERR_NO_DATA;
 }
 
-DECLCALLBACK(void) ShClX11ReportFormatsCallback(PSHCLCONTEXT pCtx, SHCLFORMATS fFormats)
+static DECLCALLBACK(int) tstShClOnSendDataToDest(PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser)
 {
-    RT_NOREF(pCtx, fFormats);
-}
-
-DECLCALLBACK(void) ShClX11ReportDataCallback(PSHCLCONTEXT pCtx, int rcCompletion,
-                                             CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
-{
-    RT_NOREF(pCtx, rcCompletion, pReq, pv, cb);
+    RT_NOREF(pCtx, pv, cb, pvUser);
+    return VINF_SUCCESS;
 }
 
 int main()
@@ -70,8 +71,15 @@ int main()
                      "X11 not available, not running test\n");
         return RTTestSummaryAndDestroy(hTest);
     }
+
+    SHCLCALLBACKS Callbacks;
+    RT_ZERO(Callbacks);
+    Callbacks.pfnReportFormats           = tstShClReportFormatsCallback;
+    Callbacks.pfnOnRequestDataFromSource = tstShClOnRequestDataFromSourceCallback;
+    Callbacks.pfnOnSendDataToDest        = tstShClOnSendDataToDest;
+
     SHCLX11CTX X11Ctx;
-    rc = ShClX11Init(&X11Ctx, NULL /* pCallbacks */, NULL /* pParent */, false);
+    rc = ShClX11Init(&X11Ctx, &Callbacks, NULL /* pParent */, false);
     AssertRCReturn(rc, 1);
     rc = ShClX11ThreadStart(&X11Ctx, false /* fGrab */);
     AssertRCReturn(rc, 1);

@@ -1178,8 +1178,8 @@ static void tstShClUserMockInit(PTSTUSERMOCK pUsrMock, const char *pszName)
 #if defined(RT_OS_LINUX)
     SHCLCALLBACKS Callbacks;
     RT_ZERO(Callbacks);
-    Callbacks.pfnReportFormats = tstShClUserMockReportFormatsCallback;
-    Callbacks.pfnOnClipboardRead     = tstShClUserMockOnGetDataCallback;
+    Callbacks.pfnReportFormats   = tstShClUserMockReportFormatsCallback;
+    Callbacks.pfnOnClipboardRead = tstShClUserMockOnGetDataCallback;
 
     pUsrMock->pCtx = (PSHCLCONTEXT)RTMemAllocZ(sizeof(SHCLCONTEXT));
     AssertPtrReturnVoid(pUsrMock->pCtx);
