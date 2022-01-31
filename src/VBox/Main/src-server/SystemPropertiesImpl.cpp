@@ -1990,7 +1990,9 @@ ComObjPtr<MediumFormat> SystemProperties::i_mediumFormatFromExtension(const Utf8
  */
 int SystemProperties::i_loadVDPlugin(const char *pszPluginLibrary)
 {
-    return VDPluginLoadFromFilename(pszPluginLibrary);
+    int vrc = VDPluginLoadFromFilename(pszPluginLibrary);
+    LogFlowFunc(("pszPluginLibrary='%s' -> %Rrc\n", pszPluginLibrary, vrc));
+    return vrc;
 }
 
 /**
@@ -1998,7 +2000,9 @@ int SystemProperties::i_loadVDPlugin(const char *pszPluginLibrary)
  */
 int SystemProperties::i_unloadVDPlugin(const char *pszPluginLibrary)
 {
-    return VDPluginUnloadFromFilename(pszPluginLibrary);
+    int vrc = VDPluginUnloadFromFilename(pszPluginLibrary);
+    LogFlowFunc(("pszPluginLibrary='%s' -> %Rrc\n", pszPluginLibrary, vrc));
+    return vrc;
 }
 
 /**
