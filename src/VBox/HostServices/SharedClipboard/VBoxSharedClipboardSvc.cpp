@@ -241,6 +241,9 @@ using namespace HGCM;
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
+/** The backend instance data.
+ *  Only one backend at a time is supported currently. */
+SHCLBACKEND         g_ShClBackend;
 PVBOXHGCMSVCHELPERS g_pHelpers;
 
 static RTCRITSECT g_CritSect;               /** @todo r=andy Put this into some instance struct, avoid globals. */
@@ -281,6 +284,16 @@ static uint64_t const g_fHostFeatures0 = VBOX_SHCL_HF_0_CONTEXT_ID
 uint32_t ShClSvcGetMode(void)
 {
     return g_uMode;
+}
+
+/**
+ * Returns the Shared Clipboard backend in use.
+ *
+ * @returns Pointer to backend instance.
+ */
+PSHCLBACKEND ShClSvcGetBackend(void)
+{
+    return &g_ShClBackend;
 }
 
 /**
@@ -1562,7 +1575,7 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
                         RTStrFree(pszFmts);
                     }
 #endif
-                    rc = ShClBackendFormatAnnounce(pClient, fFormats);
+                    rc = ShClBackendFormatAnnounce(&g_ShClBackend, pClient, fFormats);
                     if (RT_FAILURE(rc))
                         LogRel(("Shared Clipboard: Reporting guest clipboard formats to the host failed with %Rrc\n", rc));
                 }
@@ -1716,7 +1729,7 @@ static int shClSvcClientReadData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMS
     }
     else
     {
-        rc = ShClBackendReadData(pClient, &cmdCtx, uFormat, pvData, cbData, &cbActual);
+        rc = ShClBackendReadData(&g_ShClBackend, pClient, &cmdCtx, uFormat, pvData, cbData, &cbActual);
         if (RT_SUCCESS(rc))
             LogRel2(("Shared Clipboard: Read host clipboard data (max %RU32 bytes), got %RU32 bytes\n", cbData, cbActual));
         else
@@ -1891,7 +1904,7 @@ int shClSvcClientWriteData(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM
     else
     {
         /* Let the backend implementation know. */
-        rc = ShClBackendWriteData(pClient, &cmdCtx, uFormat, pvData, cbData);
+        rc = ShClBackendWriteData(&g_ShClBackend, pClient, &cmdCtx, uFormat, pvData, cbData);
         if (RT_FAILURE(rc))
             LogRel(("Shared Clipboard: Writing guest clipboard data to the host failed with %Rrc\n", rc));
 
@@ -1969,7 +1982,7 @@ static int svcInit(VBOXHGCMSVCFNTABLE *pTable)
     {
         shClSvcModeSet(VBOX_SHCL_MODE_OFF);
 
-        rc = ShClBackendInit(pTable);
+        rc = ShClBackendInit(ShClSvcGetBackend(), pTable);
 
         /* Clean up on failure, because 'svnUnload' will not be called
          * if the 'svcInit' returns an error.
@@ -1987,7 +2000,7 @@ static DECLCALLBACK(int) svcUnload(void *)
 {
     LogFlowFuncEnter();
 
-    ShClBackendDestroy();
+    ShClBackendDestroy(ShClSvcGetBackend());
 
     RTCritSectDelete(&g_CritSect);
 
@@ -2015,7 +2028,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
     shClSvcClientTransfersReset(pClient);
 #endif
 
-    ShClBackendDisconnect(pClient);
+    ShClBackendDisconnect(&g_ShClBackend, pClient);
 
     shClSvcClientDestroy(pClient);
 
@@ -2038,12 +2051,11 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
          *        pClient value directly in g_ExtState instead of the ID?  It cannot
          *        crash any worse that racing map insertion/removal. */
         g_mapClients[u32ClientID] = pClient; /** @todo Handle OOM / collisions? */
-
-        rc = ShClBackendConnect(pClient, ShClSvcGetHeadless());
+        rc = ShClBackendConnect(&g_ShClBackend, pClient, ShClSvcGetHeadless());
         if (RT_SUCCESS(rc))
         {
             /* Sync the host clipboard content with the client. */
-            rc = ShClBackendSync(pClient);
+            rc = ShClBackendSync(&g_ShClBackend, pClient);
             if (RT_SUCCESS(rc))
             {
                 /* For now we ASSUME that the first client that connects is in charge for
@@ -2062,7 +2074,7 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
             }
 
             LogFunc(("ShClBackendSync failed: %Rrc\n", rc));
-            ShClBackendDisconnect(pClient);
+            ShClBackendDisconnect(&g_ShClBackend, pClient);
         }
         else
             LogFunc(("ShClBackendConnect failed: %Rrc\n", rc));
@@ -2653,7 +2665,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     }
 
     /* Actual host data are to be reported to guest (SYNC). */
-    ShClBackendSync(pClient);
+    ShClBackendSync(&g_ShClBackend, pClient);
 
 #else  /* UNIT_TEST */
     RT_NOREF(u32ClientID, pvClient, pSSM, pVMM, uVersion);

@@ -26,7 +26,7 @@
 #include <iprt/string.h>
 #include <iprt/test.h>
 
-extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable);
+extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *ptable);
 
 static SHCLCLIENT g_Client;
 static VBOXHGCMSVCHELPERS g_Helpers = { NULL };
@@ -54,14 +54,14 @@ static int setupTable(VBOXHGCMSVCFNTABLE *pTable)
     return VBoxHGCMSvcLoad(pTable);
 }
 
-int ShClBackendInit(VBOXHGCMSVCFNTABLE *) { return VINF_SUCCESS; }
-void ShClBackendDestroy(void) { }
-int ShClBackendDisconnect(PSHCLCLIENT) { return VINF_SUCCESS; }
-int ShClBackendConnect(PSHCLCLIENT, bool) { return VINF_SUCCESS; }
-int ShClBackendFormatAnnounce(PSHCLCLIENT, SHCLFORMATS) { AssertFailed(); return VINF_SUCCESS; }
-int ShClBackendReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t, unsigned int *) { AssertFailed(); return VERR_WRONG_ORDER; }
-int ShClBackendWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t) { AssertFailed(); return VINF_SUCCESS; }
-int ShClBackendSync(PSHCLCLIENT) { return VINF_SUCCESS; }
+int ShClBackendInit(PSHCLBACKEND, VBOXHGCMSVCFNTABLE *) { return VINF_SUCCESS; }
+void ShClBackendDestroy(PSHCLBACKEND) { }
+int ShClBackendDisconnect(PSHCLBACKEND, PSHCLCLIENT) { return VINF_SUCCESS; }
+int ShClBackendConnect(PSHCLBACKEND, PSHCLCLIENT, bool) { return VINF_SUCCESS; }
+int ShClBackendFormatAnnounce(PSHCLBACKEND, PSHCLCLIENT, SHCLFORMATS) { AssertFailed(); return VINF_SUCCESS; }
+int ShClBackendReadData(PSHCLBACKEND, PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t, unsigned int *) { AssertFailed(); return VERR_WRONG_ORDER; }
+int ShClBackendWriteData(PSHCLBACKEND, PSHCLCLIENT, PSHCLCLIENTCMDCTX, SHCLFORMAT, void *, uint32_t) { AssertFailed(); return VINF_SUCCESS; }
+int ShClBackendSync(PSHCLBACKEND, PSHCLCLIENT) { return VINF_SUCCESS; }
 
 static void testAnnounceAndReadData(void)
 {

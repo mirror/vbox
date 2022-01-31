@@ -76,7 +76,7 @@ void shClSvcClientTransfersReset(PSHCLCLIENT pClient)
     uint32_t      uIdx = 0;
     PSHCLTRANSFER pTransfer;
     while ((pTransfer = ShClTransferCtxGetTransferByIndex(&pClient->Transfers.Ctx, uIdx++)))
-        ShClBackendTransferDestroy(pClient, pTransfer);
+        ShClBackendTransferDestroy(pClient->pBackend, pClient, pTransfer);
 
     ShClTransferCtxDestroy(&pClient->Transfers.Ctx);
 }
@@ -1363,7 +1363,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 && ShClTransferGetDir(pTransfer)    == SHCLTRANSFERDIR_TO_REMOTE)
             {
                 /* Get roots if this is a local write transfer (host -> guest). */
-                rc = ShClBackendTransferGetRoots(pClient, pTransfer);
+                rc = ShClBackendTransferGetRoots(pClient->pBackend, pClient, pTransfer);
             }
             else
             {
@@ -1892,7 +1892,7 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
                     rc = ShClTransferCtxTransferRegister(pTxCtx, pTransfer, &uTransferID);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = ShClBackendTransferCreate(pClient, pTransfer);
+                        rc = ShClBackendTransferCreate(pClient->pBackend, pClient, pTransfer);
                         if (RT_SUCCESS(rc))
                         {
                             if (RT_SUCCESS(rc))
@@ -1953,7 +1953,7 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
 
             if (RT_FAILURE(rc))
             {
-                ShClBackendTransferDestroy(pClient, pTransfer);
+                ShClBackendTransferDestroy(pClient->pBackend, pClient, pTransfer);
                 ShClTransferDestroy(pTransfer);
 
                 RTMemFree(pTransfer);
@@ -2008,7 +2008,7 @@ int shClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
     int rc2 = ShClTransferCtxTransferUnregister(&pClient->Transfers.Ctx, ShClTransferGetID(pTransfer));
     if (RT_SUCCESS(rc2))
     {
-        ShClBackendTransferDestroy(pClient, pTransfer);
+        ShClBackendTransferDestroy(pClient->pBackend, pClient, pTransfer);
         ShClTransferDestroy(pTransfer);
         pTransfer = NULL;
     }

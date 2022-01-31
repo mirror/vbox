@@ -40,7 +40,7 @@
 /*
  * Initialise the host side of the shared clipboard - called by the hgcm layer.
  */
-int ShClBackendInit(VBOXHGCMSVCFNTABLE *pTable)
+int ShClBackendInit(PSHCLBACKEND pBackend, VBOXHGCMSVCFNTABLE *pTable)
 {
     RT_NOREF(pTable);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
@@ -50,14 +50,15 @@ int ShClBackendInit(VBOXHGCMSVCFNTABLE *pTable)
 /*
  * Terminate the host side of the shared clipboard - called by the hgcm layer.
  */
-void ShClBackendDestroy(void)
+void ShClBackendDestroy(PSHCLBACKEND pBackend)
 {
+    RT_NOREF(pBackend);
     LogFlowFunc(("called, returning\n"));
 }
 
-int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless)
+int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadless)
 {
-    RT_NOREF(pClient, fHeadless);
+    RT_NOREF(pBackend, pClient, fHeadless);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
@@ -66,16 +67,16 @@ int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless)
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int ShClBackendSync(PSHCLCLIENT pClient)
+int ShClBackendSync(PSHCLBACKEND pBackend, PSHCLCLIENT pClient)
 {
-    RT_NOREF(pClient);
+    RT_NOREF(pBackend, pClient);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
-int ShClBackendDisconnect(PSHCLCLIENT pClient)
+int ShClBackendDisconnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient)
 {
-    RT_NOREF(pClient);
+    RT_NOREF(pBackend, pClient);
     return VINF_SUCCESS;
 }
 
@@ -83,19 +84,19 @@ int ShClBackendDisconnect(PSHCLCLIENT pClient)
  * The guest is taking possession of the shared clipboard.
  * Called by the HGCM clipboard subsystem.
  */
-int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
+int ShClBackendFormatAnnounce(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
-    RT_NOREF(pClient, fFormats);
+    RT_NOREF(pBackend, pClient, fFormats);
     return VINF_SUCCESS;
 }
 
 /*
  * Called by the HGCM clipboard subsystem when the guest wants to read the host clipboard.
  */
-int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+int ShClBackendReadData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                         SHCLFORMAT uFormat, void *pvData, uint32_t cbData, uint32_t *pcbActual)
 {
-    RT_NOREF(pClient, pCmdCtx, uFormat, pvData, cbData);
+    RT_NOREF(pBackend, pClient, pCmdCtx, uFormat, pvData, cbData);
 
     /* No data available. */
     *pcbActual = 0;
@@ -103,10 +104,10 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     return VINF_SUCCESS;
 }
 
-int ShClBackendWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+int ShClBackendWriteData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                          SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
-    RT_NOREF(pClient, pCmdCtx, uFormat, pvData, cbData);
+    RT_NOREF(pBackend, pClient, pCmdCtx, uFormat, pvData, cbData);
     return VERR_NOT_IMPLEMENTED;
 }
 

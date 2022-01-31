@@ -231,6 +231,109 @@ typedef struct SHCLCONTEXT SHCLCONTEXT;
 /** Pointer to opaque data structure the X11/VBox frontend/glue code. */
 typedef SHCLCONTEXT *PSHCLCONTEXT;
 
+/**
+ * @name Shared Clipboard callback table.
+ *
+ * This table gets used by
+ *   - the backends on the host (where required)
+ *   - guest side implementations (e.g. VBoxClient)
+ *   - by the underlying core code (e.g. X11 backend -> X11 common code -> callback)
+ *
+ * Some clipboard mechanisms (e.g. X11) require asynchronous and/or event-driven handling
+ * of clipboard data, making it hard to control our program flow when testing stuff.
+ *
+ * So overriding required callbacks on runtime for testing purposes makes this approach much
+ * more flexible without implementing separate code paths for production code and test units.
+ *
+ * @{
+ */
+typedef struct _SHCLCALLBACKS
+{
+    /**
+     * Callback for reporting supported clipoard formats of current clipboard data.
+     *
+     * @note On X11:
+     *         Runs in Xt event thread for the X11 code.
+     *
+     * @returns VBox status code.
+     * @param   pCtx            Opaque context pointer for the glue code.
+     * @param   fFormats        The formats available.
+     */
+    DECLCALLBACKMEMBER(int, pfnReportFormats, (PSHCLCONTEXT pCtx, SHCLFORMATS fFormats, void *pvUser));
+
+    /**
+     * Callback for reading data from the clipboard.
+     * Optional and can be NULL.
+     *
+     * @note Used for testing X11 clipboard code.
+     *
+     * @returns VBox status code.
+     * @param   pCtx            Opaque context pointer for the glue code.
+     * @param   uFmt            The format in which the data should be read
+     *                          (VBOX_SHCL_FMT_XXX).
+     * @param   ppv             Returns an allocated buffer with data from on success.
+     *                          Needs to be free'd with RTMemFree() by the caller.
+     * @param   pcb             Returns the amount of data read (in bytes) on success.
+     * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
+     *                          Optional and can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnOnClipboardRead, (PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, size_t *pcb, void *pvUser));
+
+    /**
+     * Callback for writing data to the clipboard.
+     * Optional and can be NULL.
+     *
+     * @note Used for testing X11 clipboard code.
+     *
+     * @returns VBox status code.
+     * @param   pCtx            Opaque context pointer for the glue code.
+     * @param   uFmt            The format in which the data should be written as
+     *                          (VBOX_SHCL_FMT_XXX).
+     * @param   pv              The clipboard data to write.
+     * @param   cb              The size of the data in @a pv.
+     * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
+     *                          Optional and can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnOnClipboardWrite, (PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void *pv, size_t cb, void *pvUser));
+
+    /**
+     * Callback for requesting clipboard data from the source.
+     *
+     * @note On X11:
+     *         The function will be invoked for every single target the clipboard requests.
+     *         Runs in Xt event thread for the X11 code.
+     *
+     * @returns VBox status code. VERR_NO_DATA if no data available.
+     * @param   pCtx            Opaque context pointer for the glue code.
+     * @param   uFmt            The format in which the data should be transferred
+     *                          (VBOX_SHCL_FMT_XXX).
+     * @param   ppv             Returns an allocated buffer with data read from the guest on success.
+     *                          Needs to be free'd with RTMemFree() by the caller.
+     * @param   pcb             Returns the amount of data read (in bytes) on success.
+     * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
+     *                          Optional and can be NULL.
+     *                          On X11: Of type PSHCLX11READDATAREQ; We RTMemFree() this in this function.
+     */
+    DECLCALLBACKMEMBER(int, pfnOnRequestDataFromSource, (PSHCLCONTEXT pCtx, SHCLFORMAT uFmt, void **ppv, uint32_t *pcb, void *pvUser));
+
+    /**
+     * Callback for sending clipboard data to the destination.
+     *
+     * @note On X11:
+     *         (see @a rcCompletion)
+     *
+     * @returns VBox status code.
+     * @param   pCtx            Opaque context pointer for the glue code.
+     * @param   pv              The clipboard data returned if the request succeeded.
+     * @param   cb              The size of the data in @a pv.
+     * @param   pvUser          Implementation-dependent pointer to data for fullfilling the request.
+     *                          Optional and can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnOnSendDataToDest, (PSHCLCONTEXT pCtx, void *pv, uint32_t cb, void *pvUser));
+} SHCLCALLBACKS;
+typedef SHCLCALLBACKS *PSHCLCALLBACKS;
+/** @} */
+
 /** Opaque request structure for X11 clipboard data.
  * @{ */
 struct CLIPREADCBREQ;

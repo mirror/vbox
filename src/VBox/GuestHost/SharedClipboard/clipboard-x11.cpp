@@ -448,7 +448,7 @@ static void clipReportFormatsToVBox(PSHCLX11CTX pCtx)
     RTStrFree(pszFmts);
 #endif
 
-    ShClX11ReportFormatsCallback(pCtx->pFrontend, vboxFmt);
+    pCtx->Callbacks.pfnReportFormats(pCtx->pFrontend, vboxFmt, NULL /* pvUser */);
 }
 
 /**
@@ -741,7 +741,8 @@ SHCL_X11_DECL(void) clipQueryX11TargetsCallback(Widget widget, XtPointer pClient
 
     unsigned cFormats = *pcLen;
 
-    LogRel2(("Shared Clipboard: %u formats were found\n", cFormats));
+    LogRel2(("Shared Clipboard: Querying X11 formats ...\n", cFormats));
+    LogRel2(("Shared Clipboard: %u X11 formats were found\n", cFormats));
 
     SHCLX11FMTIDX *paIdxFmt = NULL;
     if (   cFormats
@@ -760,7 +761,7 @@ SHCL_X11_DECL(void) clipQueryX11TargetsCallback(Widget widget, XtPointer pClient
             if (pAtoms[i])
             {
                 char *pszName = XGetAtomName(XtDisplay(widget), pAtoms[i]);
-                LogRel2(("Shared Clipboard: Found target '%s'\n", pszName));
+                LogRel2(("Shared Clipboard: Found X11 format '%s'\n", pszName));
                 XFree(pszName);
             }
             else
@@ -782,7 +783,7 @@ SHCL_X11_DECL(void) clipQueryX11TargetsCallback(Widget widget, XtPointer pClient
             }
 #if !defined(TESTCASE)
             if (paIdxFmt[i] != SHCLX11FMT_INVALID)
-                LogRel2(("Shared Clipboard: Reporting format '%s'\n", g_aFormats[paIdxFmt[i]].pcszAtom));
+                LogRel2(("Shared Clipboard: Reporting X11 format '%s'\n", g_aFormats[paIdxFmt[i]].pcszAtom));
 #endif
         }
     }
@@ -1149,20 +1150,44 @@ static void clipUninitInternal(PSHCLX11CTX pCtx)
 }
 
 /**
+ * Sets the callback table, internal version.
+ *
+ * @param   pCtx                The clipboard context.
+ * @param   pCallbacks          Callback table to set. If NULL, the current callback table will be cleared.
+ */
+static void shClX11SetCallbacksInternal(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks)
+{
+    if (pCallbacks)
+    {
+        memcpy(&pCtx->Callbacks, pCallbacks, sizeof(SHCLCALLBACKS));
+    }
+    else
+        RT_ZERO(pCtx->Callbacks);
+}
+
+/**
+ * Sets the callback table.
+ *
+ * @param   pCtx                The clipboard context.
+ * @param   pCallbacks          Callback table to set. If NULL, the current callback table will be cleared.
+ */
+void ShClX11SetCallbacks(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks)
+{
+    shClX11SetCallbacksInternal(pCtx, pCallbacks);
+}
+
+/**
  * Initializes a X11 context of the Shared Clipboard.
  *
  * @returns VBox status code.
  * @param   pCtx                The clipboard context to initialize.
+ * @param   pCallbacks          Callback table to use.
  * @param   pParent             Parent context to use.
  * @param   fHeadless           Whether the code runs in a headless environment or not.
  */
-int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCONTEXT pParent, bool fHeadless)
+int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCALLBACKS pCallbacks, PSHCLCONTEXT pParent, bool fHeadless)
 {
-    AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
-#if !defined(SMOKETEST) && !defined(TESTCASE)
-    /* Smoktests / Testcases don't have a (valid) parent. */
-    AssertPtrReturn(pParent, VERR_INVALID_POINTER);
-#endif
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     LogFlowFunc(("pCtx=%p\n", pCtx));
 
@@ -1180,6 +1205,9 @@ int ShClX11Init(PSHCLX11CTX pCtx, PSHCLCONTEXT pParent, bool fHeadless)
          */
         LogRel(("Shared Clipboard: X11 DISPLAY variable not set -- disabling clipboard sharing\n"));
     }
+
+    /* Install given callbacks. */
+    shClX11SetCallbacksInternal(pCtx, pCallbacks);
 
     pCtx->fHaveX11       = !fHeadless;
     pCtx->pFrontend      = pParent;
@@ -1236,13 +1264,14 @@ void ShClX11Destroy(PSHCLX11CTX pCtx)
 
 #ifndef TESTCASE
 /**
- * Starts our own Xt even thread for handling Shared Clipboard messages.
+ * Starts our own Xt even thread for handling Shared Clipboard messages, extended version.
  *
  * @returns VBox status code.
  * @param   pCtx                The X11 clipboard context to use.
+ * @param   pszName             Thread name to use.
  * @param   fGrab               Whether we should try to grab the shared clipboard at once.
  */
-int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
+int ShClX11ThreadStartEx(PSHCLX11CTX pCtx, const char *pszName, bool fGrab)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -1283,7 +1312,7 @@ int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
         LogRel2(("Shared Clipboard: Starting X11 event thread ...\n"));
 
         rc = RTThreadCreate(&pCtx->Thread, clipThreadMain, pCtx, 0,
-                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLX11");
+                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, pszName);
         if (RT_SUCCESS(rc))
             rc = RTThreadUserWait(pCtx->Thread, RT_MS_30SEC /* msTimeout */);
 
@@ -1305,6 +1334,18 @@ int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+/**
+ * Starts our own Xt even thread for handling Shared Clipboard messages.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                The X11 clipboard context to use.
+ * @param   fGrab               Whether we should try to grab the shared clipboard at once.
+ */
+int ShClX11ThreadStart(PSHCLX11CTX pCtx, bool fGrab)
+{
+    return ShClX11ThreadStartEx(pCtx, "SHCLX11", fGrab);
 }
 
 /**
@@ -1452,10 +1493,12 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
     if (uFmt == VBOX_SHCL_FMT_UNICODETEXT)
     {
         if (pCtx->pvUnicodeCache == NULL) /** @todo r=andy Using string cache here? */
-            rc = ShClX11RequestDataCallback(pCtx->pFrontend, uFmt,
-                                            &pCtx->pvUnicodeCache,
-                                            &pCtx->cbUnicodeCache);
-        if (RT_SUCCESS(rc))
+            rc = pCtx->Callbacks.pfnOnRequestDataFromSource(pCtx->pFrontend, uFmt, &pCtx->pvUnicodeCache, &pCtx->cbUnicodeCache,
+                                                            NULL /* pvUser */);
+        if (   RT_SUCCESS(rc)
+            /* Catch misbehaving callbacks. */
+            && pCtx->pvUnicodeCache
+            && pCtx->cbUnicodeCache)
         {
             pv = RTMemDup(pCtx->pvUnicodeCache, pCtx->cbUnicodeCache);
             if (pv)
@@ -1465,7 +1508,7 @@ static int shClX11RequestDataForX11CallbackHelper(PSHCLX11CTX pCtx, SHCLFORMAT u
         }
     }
     else
-        rc = ShClX11RequestDataCallback(pCtx->pFrontend, uFmt, &pv, &cb);
+        rc = pCtx->Callbacks.pfnOnRequestDataFromSource(pCtx->pFrontend, uFmt, &pv, &cb, NULL /* pvUser */);
 
 
     /* Safey net in case the callbacks above misbehave
@@ -1780,6 +1823,9 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
     if (!pCtx)
         return False;
 
+    XSelectionRequestEvent* req =
+        XtGetSelectionRequest(widget, *atomSelection, (XtRequestId)NULL);
+
     /* Is this the rigt selection (clipboard) we were asked for? */
     if (!clipIsSupportedSelectionType(pCtx, *atomSelection))
         return False;
@@ -1792,8 +1838,22 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
         rc = clipConvertToX11Data(pCtx, atomTarget, atomTypeReturn,
                                   pValReturn, pcLenReturn, piFormatReturn);
 
-    LogFlowFunc(("returning %RTbool, rc=%Rrc\n", RT_SUCCESS(rc), rc));
+
+    LogFlowFunc(("returning pVBoxWnd=%#x, ownerWnd=%#x, reqWnd=%#x, %RTbool, rc=%Rrc\n",
+                 XtWindow(pCtx->pWidget), req->owner, req->requestor, RT_SUCCESS(rc), rc));
     return RT_SUCCESS(rc) ? True : False;
+}
+
+static void clipXtConvertSelectionProcLose(Widget widget, Atom *atomSelection)
+{
+    RT_NOREF(widget, atomSelection);
+    LogFlowFuncEnter();
+}
+
+static void clipXtConvertSelectionProcDone(Widget widget, Atom *atomSelection, Atom *atomTarget)
+{
+    RT_NOREF(widget, atomSelection, atomTarget);
+    LogFlowFuncEnter();
 }
 
 /**
@@ -1833,8 +1893,10 @@ static void clipGrabX11Clipboard(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
 {
     LogFlowFuncEnter();
 
+    /** @ŧodo r=andy The docs say: "the value CurrentTime is not acceptable" here!? */
     if (XtOwnSelection(pCtx->pWidget, clipGetAtom(pCtx, "CLIPBOARD"),
-                       CurrentTime, clipXtConvertSelectionProc, NULL, 0))
+                       CurrentTime,
+                       clipXtConvertSelectionProc, clipXtConvertSelectionProcLose, clipXtConvertSelectionProcDone))
     {
         pCtx->vboxFormats = uFormats;
 
@@ -1873,7 +1935,12 @@ static void ShClX11ReportFormatsToX11Worker(void *pvUserData, void * /* interval
 
     RTMemFree(pFormats);
 
-    LogFlowFunc (("fFormats=0x%x\n", fFormats));
+#ifdef LOG_ENABLED
+    char *pszFmts = ShClFormatsToStrA(fFormats);
+    AssertPtrReturnVoid(pszFmts);
+    LogRel2(("Shared Clipboard: Reported available VBox formats %s to X11\n", pszFmts));
+    RTStrFree(pszFmts);
+#endif
 
     clipInvalidateClipboardCache(pCtx);
     clipGrabX11Clipboard(pCtx, fFormats);
@@ -1905,7 +1972,6 @@ int ShClX11ReportFormatsToX11(PSHCLX11CTX pCtx, SHCLFORMATS uFormats)
     {
         pFormats->pCtx    = pCtx;
         pFormats->Formats = uFormats;
-
         rc = clipThreadScheduleCall(pCtx, ShClX11ReportFormatsToX11Worker,
                                     (XtPointer)pFormats);
         if (RT_FAILURE(rc))
@@ -1968,7 +2034,6 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
             case SHCLX11FMT_TEXT:
             {
                 size_t cwDst;
-
                 /* If we are given broken UTF-8, we treat it as Latin1. */ /** @todo BUGBUG Is this acceptable? */
                 if (RT_SUCCESS(RTStrValidateEncodingEx((char *)pvSrc, cbSrc, 0)))
                     rc = ShClConvUtf8LFToUtf16CRLF((const char *)pvSrc, cbSrc,
@@ -2150,7 +2215,12 @@ SHCL_X11_DECL(void) clipConvertDataFromX11Worker(void *pClient, void *pvSrc, uns
         LogRel(("Shared Clipboard: Converting X11 format '%s' (idxFmtX11=%u) to VBox format %#x failed, rc=%Rrc\n",
                 g_aFormats[pReq->idxFmtX11].pcszAtom, pReq->idxFmtX11, pReq->uFmtVBox, rc));
 
-    ShClX11ReportDataCallback(pReq->pCtx->pFrontend, rc, pReq->pReq, pvDst, cbDst);
+    SHCLX11READDATAREQ SendData;
+    RT_ZERO(SendData);
+    SendData.pReq         = pReq->pReq;
+    SendData.rcCompletion = rc;
+
+    pCtx->Callbacks.pfnOnSendDataToDest(pReq->pCtx->pFrontend, pvDst, cbDst, &SendData);
 
     RTMemFree(pvDst);
     RTMemFree(pReq);
@@ -2174,7 +2244,25 @@ SHCL_X11_DECL(void) clipConvertDataFromX11(Widget widget, XtPointer pClient,
     if (*atomType == XT_CONVERT_FAIL) /* Xt timeout */
         clipConvertDataFromX11Worker(pClient, NULL, 0);
     else
-        clipConvertDataFromX11Worker(pClient, pvSrc, (*pcLen) * (*piFormat) / 8);
+    {
+        CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pClient;
+        if (pReq->pCtx->Callbacks.pfnOnClipboardRead)
+        {
+            void  *pvData = NULL;
+            size_t cbData = 0;
+            int rc = pReq->pCtx->Callbacks.pfnOnClipboardRead(pReq->pCtx->pFrontend, pReq->uFmtVBox, &pvData, &cbData, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                /* Feed to conversion worker. */
+                clipConvertDataFromX11Worker(pClient, pvData, cbData);
+                RTMemFree(pvData);
+            }
+            else
+                clipConvertDataFromX11Worker(pClient, NULL, 0);
+        }
+        else /* Call with current data provided by X (default). */
+            clipConvertDataFromX11Worker(pClient, pvSrc, (*pcLen) * (*piFormat) / 8);
+    }
 
     XtFree((char *)pvSrc);
 }
@@ -2208,8 +2296,9 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
 
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pvUserData;
     SHCLX11CTX       *pCtx = pReq->pCtx;
+    AssertPtrReturnVoid(pCtx);
 
-    LogFlowFunc(("pReq->mFormat = %02x\n", pReq->uFmtVBox));
+    LogFlowFunc(("pReq->uFmtVBox=%#x, idxFmtX11=%#x\n", pReq->uFmtVBox, pReq->idxFmtX11));
 
     int rc = VERR_NO_DATA; /* VBox thinks we have data and we don't. */
 
@@ -2273,8 +2362,12 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
     {
         /* The clipboard callback was never scheduled, so we must signal
          * that the request processing is finished and clean up ourselves. */
-        ShClX11ReportDataCallback(pReq->pCtx->pFrontend, rc, pReq->pReq,
-                                  NULL /* pv */ ,0 /* cb */);
+        SHCLX11READDATAREQ SendData;
+        RT_ZERO(SendData);
+        SendData.pReq         = pReq->pReq;
+        SendData.rcCompletion = rc;
+
+        pCtx->Callbacks.pfnOnSendDataToDest(pReq->pCtx->pFrontend, NULL /* pv */ ,0 /* cb */, &SendData);
         RTMemFree(pReq);
     }
 
@@ -2288,16 +2381,15 @@ static void ShClX11ReadDataFromX11Worker(void *pvUserData, void * /* interval */
  * @retval  VERR_NO_DATA if format is supported but no data is available currently.
  * @retval  VERR_NOT_IMPLEMENTED if the format is not implemented.
  * @param   pCtx                Context data for the clipboard backend.
- * @param   Format              The format that the VBox would like to receive the data in.
+ * @param   uFmt                The format that the VBox would like to receive the data in.
  * @param   pReq                Read callback request to use. Will be free'd in the callback on success.
  *                              Otherwise the caller has to free this again on error.
  *
  * @note   We allocate a request structure which must be freed by the worker.
  */
-int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMAT Format, CLIPREADCBREQ *pReq)
+int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMAT uFmt, CLIPREADCBREQ *pReq)
 {
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-
     /*
      * Immediately return if we are not connected to the X server.
      */
@@ -2310,7 +2402,7 @@ int ShClX11ReadDataFromX11(PSHCLX11CTX pCtx, SHCLFORMAT Format, CLIPREADCBREQ *p
     if (pX11Req)
     {
         pX11Req->pCtx     = pCtx;
-        pX11Req->uFmtVBox = Format;
+        pX11Req->uFmtVBox = uFmt;
         pX11Req->pReq     = pReq;
 
         /* We use this to schedule a worker function on the event thread. */

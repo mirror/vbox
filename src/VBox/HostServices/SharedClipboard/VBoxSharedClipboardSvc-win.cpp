@@ -621,9 +621,9 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
  * Public platform dependent functions.
  */
 
-int ShClBackendInit(VBOXHGCMSVCFNTABLE *pTable)
+int ShClBackendInit(PSHCLBACKEND pBackend, VBOXHGCMSVCFNTABLE *pTable)
 {
-    RT_NOREF(pTable);
+    RT_NOREF(pBackend, pTable);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     HRESULT hr = OleInitialize(NULL);
     if (FAILED(hr))
@@ -638,17 +638,19 @@ int ShClBackendInit(VBOXHGCMSVCFNTABLE *pTable)
     return VINF_SUCCESS;
 }
 
-void ShClBackendDestroy(void)
+void ShClBackendDestroy(PSHCLBACKEND pBackend)
 {
+    RT_NOREF(pBackend);
+
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     OleSetClipboard(NULL); /* Make sure to flush the clipboard on destruction. */
     OleUninitialize();
 #endif
 }
 
-int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless)
+int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadless)
 {
-    RT_NOREF(fHeadless);
+    RT_NOREF(pBackend, fHeadless);
 
     LogFlowFuncEnter();
 
@@ -679,14 +681,18 @@ int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless)
     return rc;
 }
 
-int ShClBackendSync(PSHCLCLIENT pClient)
+int ShClBackendSync(PSHCLBACKEND pBackend, PSHCLCLIENT pClient)
 {
+    RT_NOREF(pBackend);
+
     /* Sync the host clipboard content with the client. */
     return vboxClipboardSvcWinSyncInternal(pClient->State.pCtx);
 }
 
-int ShClBackendDisconnect(PSHCLCLIENT pClient)
+int ShClBackendDisconnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient)
 {
+    RT_NOREF(pBackend);
+
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
@@ -726,8 +732,10 @@ int ShClBackendDisconnect(PSHCLCLIENT pClient)
     return rc;
 }
 
-int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
+int ShClBackendFormatAnnounce(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
+    RT_NOREF(pBackend);
+
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
 
     PSHCLCONTEXT pCtx = pClient->State.pCtx;
@@ -746,7 +754,7 @@ int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats)
     return VINF_SUCCESS;
 }
 
-int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+int ShClBackendReadData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                         SHCLFORMAT uFmt, void *pvData, uint32_t cbData, uint32_t *pcbActual)
 {
     AssertPtrReturn(pClient,   VERR_INVALID_POINTER);
@@ -754,7 +762,7 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     AssertPtrReturn(pvData,    VERR_INVALID_POINTER);
     AssertPtrReturn(pcbActual, VERR_INVALID_POINTER);
 
-    RT_NOREF(pCmdCtx);
+    RT_NOREF(pBackend, pCmdCtx);
 
     AssertPtrReturn(pClient->State.pCtx, VERR_INVALID_POINTER);
 
@@ -860,10 +868,10 @@ int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     return rc;
 }
 
-int ShClBackendWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+int ShClBackendWriteData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                          SHCLFORMAT uFormat, void *pvData, uint32_t cbData)
 {
-    RT_NOREF(pClient, pCmdCtx, uFormat, pvData, cbData);
+    RT_NOREF(pBackend, pClient, pCmdCtx, uFormat, pvData, cbData);
 
     LogFlowFuncEnter();
 
@@ -874,17 +882,19 @@ int ShClBackendWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int ShClBackendTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+int ShClBackendTransferCreate(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
-    RT_NOREF(pClient, pTransfer);
+    RT_NOREF(pBackend, pClient, pTransfer);
 
     LogFlowFuncEnter();
 
     return VINF_SUCCESS;
 }
 
-int ShClBackendTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+int ShClBackendTransferDestroy(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
+    RT_NOREF(pBackend);
+
     LogFlowFuncEnter();
 
     SharedClipboardWinTransferDestroy(&pClient->State.pCtx->Win, pTransfer);
@@ -892,8 +902,10 @@ int ShClBackendTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
     return VINF_SUCCESS;
 }
 
-int ShClBackendTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+int ShClBackendTransferGetRoots(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
+    RT_NOREF(pBackend);
+
     LogFlowFuncEnter();
 
     const PSHCLWINCTX pWinCtx = &pClient->State.pCtx->Win;

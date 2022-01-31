@@ -138,8 +138,10 @@ typedef struct SHCLCLIENTSTATE
     struct SHCLCLIENTSTATE *pNext;
     struct SHCLCLIENTSTATE *pPrev;
 
+    /** Backend-dependent opaque context structure.
+     *  This contains data only known to a certain backend implementation.
+     *  Optional and can be NULL. */
     SHCLCONTEXT            *pCtx;
-
     /** The client's HGCM ID. Not related to the session ID below! */
     uint32_t                uClientID;
     /** The client's session ID. */
@@ -176,11 +178,18 @@ typedef struct _SHCLIENTTRANSFERS
 } SHCLIENTTRANSFERS, *PSHCLIENTTRANSFERS;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
+/** Prototypes for the Shared Clipboard backend. */
+struct SHCLBACKEND;
+typedef SHCLBACKEND *PSHCLBACKEND;
+
 /**
  * Structure for keeping data per (connected) HGCM client.
  */
 typedef struct _SHCLCLIENT
 {
+    /** Pointer to associated backend, if any.
+     *  Might be NULL if not being used. */
+    PSHCLBACKEND                pBackend;
     /** General client state data. */
     SHCLCLIENTSTATE             State;
     /** The critical section protecting the queue, event source and whatnot.   */
@@ -295,6 +304,7 @@ void shClSvcClientTransfersReset(PSHCLCLIENT pClient);
 int ShClSvcGuestDataRequest(PSHCLCLIENT pClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent);
 int ShClSvcGuestDataSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData);
 int ShClSvcHostReportFormats(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
+PSHCLBACKEND ShClSvcGetBackend(void);
 uint32_t ShClSvcGetMode(void);
 bool ShClSvcGetHeadless(void);
 bool ShClSvcLock(void);
@@ -310,54 +320,83 @@ DECLINLINE(bool) ShClSvcIsBackendActive(void)
 }
 /** @} */
 
-
-/** @name Platform-dependent implementations for the Shared Clipboard host service, called *only* by the host service.
+/** @name Platform-dependent implementations for the Shared Clipboard host service ("backends"),
+ *        called *only* by the host service.
  * @{
  */
 /**
+ * Structure for keeping Shared Clipboard backend instance data.
+ */
+typedef struct SHCLBACKEND
+{
+    /** Callback table to use.
+     *  Some callbacks might be optional and therefore NULL -- see the table for more details. */
+    SHCLCALLBACKS Callbacks;
+} SHCLBACKEND;
+/** Pointer to a Shared Clipboard backend. */
+typedef SHCLBACKEND *PSHCLBACKEND;
+
+/**
  * Called on initialization.
  *
+ * @param   pBackend    Shared Clipboard backend to initialize.
  * @param   pTable      The HGCM service call and parameter table.  Mainly for
  *                      adjusting the limits.
  */
-int ShClBackendInit(VBOXHGCMSVCFNTABLE *pTable);
+int ShClBackendInit(PSHCLBACKEND pBackend, VBOXHGCMSVCFNTABLE *pTable);
 
 /**
  * Called on destruction.
+ *
+ * @param   pBackend    Shared Clipboard backend to destroy.
  */
-void ShClBackendDestroy(void);
+void ShClBackendDestroy(PSHCLBACKEND pBackend);
 
 /**
  * Called when a new HGCM client connects.
  *
  * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to set callbacks for.
+ * @param   pCallbacks          Backend callbacks to use.
+ *                              When NULL is specified, the backend's default callbacks are being used.
+ */
+void ShClBackendSetCallbacks(PSHCLBACKEND pBackend, PSHCLCALLBACKS pCallbacks);
+
+/**
+ * Called when a new HGCM client connects.
+ *
+ * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to connect to.
  * @param   pClient             Shared Clipboard client context.
  * @param   fHeadless           Whether this is a headless connection or not.
  */
-int ShClBackendConnect(PSHCLCLIENT pClient, bool fHeadless);
+int ShClBackendConnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, bool fHeadless);
 
 /**
  * Called when a HGCM client disconnects.
  *
  * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to disconnect from.
  * @param   pClient             Shared Clipboard client context.
  */
-int ShClBackendDisconnect(PSHCLCLIENT pClient);
+int ShClBackendDisconnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient);
 
 /**
  * Called when the guest reported available clipboard formats to the host OS.
  *
  * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to announce formats to.
  * @param   pClient             Shared Clipboard client context.
  * @param   fFormats            The announced formats from the guest,
  *                              VBOX_SHCL_FMT_XXX.
  */
-int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
+int ShClBackendFormatAnnounce(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, SHCLFORMATS fFormats);
 
 /**
  * Called when the guest wants to read host clipboard data.
  *
  * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to read data from.
  * @param   pClient             Shared Clipboard client context.
  * @param   pCmdCtx             Shared Clipboard command context.
  * @param   uFormat             Clipboard format to read.
@@ -368,28 +407,30 @@ int ShClBackendFormatAnnounce(PSHCLCLIENT pClient, SHCLFORMATS fFormats);
  * @todo    Document: Can return VINF_HGCM_ASYNC_EXECUTE to defer returning read
  *          data
  */
-int ShClBackendReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat,
+int ShClBackendReadData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat,
                         void *pvData, uint32_t cbData, uint32_t *pcbActual);
 
 /**
  * Called when the guest writes clipboard data to the host.
  *
  * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to write data to.
  * @param   pClient             Shared Clipboard client context.
  * @param   pCmdCtx             Shared Clipboard command context.
  * @param   uFormat             Clipboard format to write.
  * @param   pvData              Clipboard data to write.
  * @param   cbData              Size (in bytes) of buffer clipboard data to write.
  */
-int ShClBackendWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData);
+int ShClBackendWriteData(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, SHCLFORMAT uFormat, void *pvData, uint32_t cbData);
 
 /**
  * Called when synchronization of the clipboard contents of the host clipboard with the guest is needed.
  *
  * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to synchronize.
  * @param   pClient             Shared Clipboard client context.
  */
-int ShClBackendSync(PSHCLCLIENT pClient);
+int ShClBackendSync(PSHCLBACKEND pBackend, PSHCLCLIENT pClient);
 /** @} */
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -400,26 +441,29 @@ int ShClBackendSync(PSHCLCLIENT pClient);
  * Called after a transfer got created.
  *
  * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to use.
  * @param   pClient             Shared Clipboard client context.
  * @param   pTransfer           Shared Clipboard transfer created.
  */
-int ShClBackendTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+int ShClBackendTransferCreate(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 /**
  * Called before a transfer gets destroyed.
  *
  * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to use.
  * @param   pClient             Shared Clipboard client context.
  * @param   pTransfer           Shared Clipboard transfer to destroy.
  */
-int ShClBackendTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+int ShClBackendTransferDestroy(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 /**
  * Called when getting (determining) the transfer roots on the host side.
  *
  * @returns VBox status code.
+ * @param   pBackend            Shared Clipboard backend to use.
  * @param   pClient             Shared Clipboard client context.
  * @param   pTransfer           Shared Clipboard transfer to get roots for.
  */
-int ShClBackendTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+int ShClBackendTransferGetRoots(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 /** @} */
 #endif
 
