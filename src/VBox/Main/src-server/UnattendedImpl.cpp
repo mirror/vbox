@@ -541,7 +541,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                 char *pXmlBuf = (char*)RTMemAlloc(header.XmlData.cbOrginal);
                 if (pXmlBuf)
                 {
-                    vrc = RTVfsFileReadAt(hVfsFile, header.XmlData.off, pXmlBuf, (size_t)header.XmlData.cbOrginal, NULL);
+                    vrc = RTVfsFileReadAt(hVfsFile, (RTFOFF)header.XmlData.off, pXmlBuf, (size_t)header.XmlData.cbOrginal, NULL);
                     if (RT_SUCCESS(vrc))
                     {
                         xml::Document doc;
