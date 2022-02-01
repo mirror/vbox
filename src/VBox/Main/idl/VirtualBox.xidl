@@ -4673,7 +4673,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="6f89464f-7193-426c-a41f-522e8f537fa0"
+    uuid="6f89464f-7193-426c-a41f-522e8e537fa0"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
