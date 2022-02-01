@@ -3086,7 +3086,7 @@ HRESULT Unattended::setImageIndex(ULONG index)
                 return S_OK;
         }
     }
-    return VERR_INVALID_PARAMETER;
+    return E_INVALIDARG;
 }
 
 HRESULT Unattended::getMachine(ComPtr<IMachine> &aMachine)
