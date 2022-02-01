@@ -184,6 +184,28 @@ typedef struct OS2SYSLEVELENTRY
 #pragma pack()
 AssertCompileSize(OS2SYSLEVELENTRY, 0x80);
 
+/**
+ * Concatenate image name and version strings and return.
+ * A possible output would be Windows 10 Home 10-0-19041
+ *
+ * @returns Concatenated name and version strings
+ */
+Utf8Str WIMImage::getNameAndVersion() const
+{
+    Utf8Str strNameAndVersion(mName);
+    /* Append the major version number if it is not empty. */
+    if (mVersionMajor.isEmpty())
+        return strNameAndVersion;
+    strNameAndVersion.appendPrintfNoThrow(" %s", mVersionMajor);
+    /* Same for the minor version number and build number. */
+    if (mVersionMinor.isEmpty())
+        return strNameAndVersion;
+    strNameAndVersion.appendPrintfNoThrow("-%s", mVersionMinor);
+    if (mVersionBuild.isEmpty())
+        return strNameAndVersion;
+    strNameAndVersion.appendPrintfNoThrow("-%s", mVersionBuild);
+    return strNameAndVersion;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
@@ -476,6 +498,8 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
             continue;
         WIMImage newImage;
         newImage.mName = pDisplayDescriptionNode->getValue();
+        if (newImage.mName.isEmpty())
+            continue;
         const ElementNode *pVersionElement = pChild->findChildElement("VERSION");
         if (!pVersionElement)
             pVersionElement = pChild->findChildElement("version");
