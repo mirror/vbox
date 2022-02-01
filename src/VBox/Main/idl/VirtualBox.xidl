@@ -5005,6 +5005,12 @@
       </desc>
     </attribute>
 
+    <attribute name="detectedImageNames" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        A list of names of the images detected from install.wim file of a Windows ISO.
+      </desc>
+    </attribute>
+
     <method name="detectIsoOS">
       <desc>
         Detects the OS on the ISO given by <link to="IUnattended::isoPath"/> and sets

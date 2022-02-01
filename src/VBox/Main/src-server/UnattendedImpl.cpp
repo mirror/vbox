@@ -3063,6 +3063,7 @@ HRESULT Unattended::setImageIndex(ULONG index)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
+    AssertReturn(index >= mDetectedImages.size(), setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, tr("Image index is larger than the number of detected images")));
     midxImage = index;
     return S_OK;
 }
@@ -3206,6 +3207,15 @@ HRESULT Unattended::getDetectedOSHints(com::Utf8Str &aDetectedOSHints)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     aDetectedOSHints = mStrDetectedOSHints;
+    return S_OK;
+}
+
+HRESULT Unattended::getDetectedImageNames(std::vector<com::Utf8Str> &aDetectedImageNames)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aDetectedImageNames.clear();
+    for (size_t i = 0; i < mDetectedImages.size(); ++i)
+        aDetectedImageNames.push_back(mDetectedImages[i].getNameAndVersion());
     return S_OK;
 }
 

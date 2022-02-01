@@ -221,6 +221,7 @@ private:
     HRESULT getDetectedOSLanguages(com::Utf8Str &aDetectedOSLanguages);
     HRESULT getDetectedOSFlavor(com::Utf8Str &aDetectedOSFlavor);
     HRESULT getDetectedOSHints(com::Utf8Str &aDetectedOSHints);
+    HRESULT getDetectedImageNames(std::vector<com::Utf8Str> &aDetectedImageNames);
     //internal functions
 
     /**
