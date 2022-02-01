@@ -516,6 +516,7 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
         newImage.mName = pDisplayDescriptionNode->getValue();
         if (newImage.mName.isEmpty())
             continue;
+
         newImage.mImageIndex = pu32;
         const ElementNode *pVersionElement = pChild->findChildElement("VERSION");
         if (!pVersionElement)
@@ -3076,9 +3077,16 @@ HRESULT Unattended::setImageIndex(ULONG index)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
-    AssertReturn(index < mDetectedImages.size(), setErrorBoth(E_FAIL, VERR_OUT_OF_RANGE, tr("Image index is larger than the number of detected images")));
-    midxImage = index;
-    return S_OK;
+    /* Set midxImage only if mDetectedImages includes an image with an index equal to @param index. */
+    for (size_t i = 0; i < mDetectedImages.size(); ++i)
+    {
+        if (mDetectedImages[i].mImageIndex == index)
+        {
+                midxImage = index;
+                return S_OK;
+        }
+    }
+    return VERR_INVALID_PARAMETER;
 }
 
 HRESULT Unattended::getMachine(ComPtr<IMachine> &aMachine)
@@ -3229,6 +3237,15 @@ HRESULT Unattended::getDetectedImageNames(std::vector<com::Utf8Str> &aDetectedIm
     aDetectedImageNames.clear();
     for (size_t i = 0; i < mDetectedImages.size(); ++i)
         aDetectedImageNames.push_back(mDetectedImages[i].getNameAndVersion());
+    return S_OK;
+}
+
+HRESULT Unattended::getDetectedImageIndices(std::vector<uint32_t> &aDetectedImageIndices)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aDetectedImageIndices.clear();
+    for (size_t i = 0; i < mDetectedImages.size(); ++i)
+        aDetectedImageIndices.push_back(mDetectedImages[i].mImageIndex);
     return S_OK;
 }
 

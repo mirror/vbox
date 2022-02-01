@@ -4673,7 +4673,7 @@
 
   <interface
     name="IUnattended" extends="$unknown"
-    uuid="6f89464f-7193-426c-a41f-522e8e537fa0"
+    uuid="6f89464f-7193-426c-a41f-522e4e537fa0"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -4895,7 +4895,8 @@
 
     <attribute name="imageIndex" type="unsigned long">
       <desc>
-        The image index on installation CD/DVD used to install.
+        The image index on installation CD/DVD used to install. This index should be
+        one of the indices of <link to="IUnattended::detectedImageIndices"/>.
 
         Used only with Windows installation CD/DVD:
         https://technet.microsoft.com/en-us/library/cc766022%28v=ws.10%29.aspx
@@ -5004,10 +5005,17 @@
         Not yet implemented.
       </desc>
     </attribute>
-
     <attribute name="detectedImageNames" type="wstring" readonly="yes" safearray="yes">
       <desc>
-        A list of names of the images detected from install.wim file of a Windows ISO.
+        A list of names of the images detected from install.wim file of a Windows ISO. This
+        array is parallel to <link to="IUnattended::detectedImageIndices"/>.
+      </desc>
+    </attribute>
+    <attribute name="detectedImageIndices" type="unsigned long" readonly="yes" safearray="yes">
+      <desc>
+        A list of names of the images detected from install.wim file of a Windows ISO. This array
+        is parallel to <link to="IUnattended::detectedImageNames"/>. <link to="IUnattended::imageIndex"/>
+        should be one of these indices.
       </desc>
     </attribute>
 

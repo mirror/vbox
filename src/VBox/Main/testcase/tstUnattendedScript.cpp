@@ -444,6 +444,12 @@ HRESULT Unattended::getDetectedImageNames(std::vector<com::Utf8Str> &aDetectedIm
     return E_NOTIMPL;
 }
 
+HRESULT Unattended::getDetectedImageIndices(std::vector<uint32_t> &aDetectedImageIndices)
+{
+    RT_NOREF(aDetectedImageIndices);
+    return E_NOTIMPL;
+}
+
 /*
  * Getters that the installer and script classes can use.
  */
