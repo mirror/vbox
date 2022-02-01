@@ -426,12 +426,14 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
 
 /**
  * Parses XML Node assuming a structure as follows
+ * @verbatim
  * <VERSION>
  *     <MAJOR>10</MAJOR>
  *     <MINOR>0</MINOR>
  *     <BUILD>19041</BUILD>
  *     ......
  * </VERSION>
+ * @endverbatim
  * @param   pNode          Points to the vesion XML node,
  * @param   image          Out reference to an WIMImage instance.
  */
@@ -462,6 +464,7 @@ static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
 
 /**
  * Parses XML tree assuming th following structure
+ * @verbatim
  * <WIM>
  *     ....
  *     <IMAGE INDEX="1">
@@ -472,6 +475,7 @@ static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
  *     </VERSION>
  *     </IMAGE>
  * </WIM>
+ * @endverbatim
  *
  * @param   pElmRoot   Pointer to the root node of the tree,
  * @param   imageList  Detected images are appended to this list.
