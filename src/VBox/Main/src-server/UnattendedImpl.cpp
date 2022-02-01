@@ -413,7 +413,6 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
  * @param   pNode          Points to the vesion XML node,
  * @param   image          Out reference to an WIMImage instance.
  */
-
 static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
 {
     /* Major part. */
@@ -455,7 +454,6 @@ static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
  * @param   pElmRoot   Pointer to the root node of the tree,
  * @param   imageList  Detected images are appended to this list.
  */
-
 static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> &imageList)
 {
     if (!pElmRoot)
@@ -499,7 +497,6 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
  * @param   penmOsType  Where to return the OS type.  This is initialized to
  *                      VBOXOSTYPE_Unknown.
  */
-
 HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBOXOSTYPE *penmOsType)
 {
     /** @todo The 'sources/' path can differ. */
