@@ -3240,7 +3240,7 @@ HRESULT Unattended::getDetectedImageNames(std::vector<com::Utf8Str> &aDetectedIm
     return S_OK;
 }
 
-HRESULT Unattended::getDetectedImageIndices(std::vector<uint32_t> &aDetectedImageIndices)
+HRESULT Unattended::getDetectedImageIndices(std::vector<ULONG> &aDetectedImageIndices)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     aDetectedImageIndices.clear();

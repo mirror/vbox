@@ -223,7 +223,7 @@ private:
     HRESULT getDetectedOSFlavor(com::Utf8Str &aDetectedOSFlavor);
     HRESULT getDetectedOSHints(com::Utf8Str &aDetectedOSHints);
     HRESULT getDetectedImageNames(std::vector<com::Utf8Str> &aDetectedImageNames);
-    HRESULT getDetectedImageIndices(std::vector<uint32_t> &aDetectedImageIndices);
+    HRESULT getDetectedImageIndices(std::vector<ULONG> &aDetectedImageIndices);
     //internal functions
 
     /**
