@@ -196,14 +196,14 @@ Utf8Str WIMImage::getNameAndVersion() const
     /* Append the major version number if it is not empty. */
     if (mVersionMajor.isEmpty())
         return strNameAndVersion;
-    strNameAndVersion.appendPrintfNoThrow(" %s", mVersionMajor);
+    strNameAndVersion.appendPrintfNoThrow(" %s", mVersionMajor.c_str());
     /* Same for the minor version number and build number. */
     if (mVersionMinor.isEmpty())
         return strNameAndVersion;
-    strNameAndVersion.appendPrintfNoThrow("-%s", mVersionMinor);
+    strNameAndVersion.appendPrintfNoThrow("-%s", mVersionMinor.c_str());
     if (mVersionBuild.isEmpty())
         return strNameAndVersion;
-    strNameAndVersion.appendPrintfNoThrow("-%s", mVersionBuild);
+    strNameAndVersion.appendPrintfNoThrow("-%s", mVersionBuild.c_str());
     return strNameAndVersion;
 }
 
