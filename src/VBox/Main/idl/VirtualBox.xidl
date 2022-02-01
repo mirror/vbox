@@ -4823,7 +4823,7 @@
         This is more or less a Windows specific setting for choosing the UI language
         setting of the installer.
 
-        The value should be from the list availble via <link to="IUnattended::detectedOSLanguages"/>.
+        The value should be from the list available via <link to="IUnattended::detectedOSLanguages"/>.
         The typical format is {language-code}-{COUNTRY} but windows may also use
         {16-bit code}:{32-bit code} or insert another component between the language
         and country codes.  We consider the format guest OS specific.
