@@ -32,8 +32,10 @@
 #include "StringifyEnums.h"
 
 #include <VBox/err.h>
+#include <iprt/cpp/xml.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>
+#include <iprt/formats/wim.h>
 #include <iprt/fsvfs.h>
 #include <iprt/inifile.h>
 #include <iprt/locale.h>
@@ -401,6 +403,91 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
 }
 
 /**
+ * Parses XML Node assuming a structure as follows
+ * <VERSION>
+ *     <MAJOR>10</MAJOR>
+ *     <MINOR>0</MINOR>
+ *     <BUILD>19041</BUILD>
+ *     ......
+ * </VERSION>
+ * @param   pNode          Points to the vesion XML node,
+ * @param   image          Out reference to an WIMImage instance.
+ */
+
+static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
+{
+    /* Major part. */
+    const ElementNode *pMajorNode = pNode->findChildElement("MAJOR");
+    if (!pMajorNode)
+        pMajorNode = pNode->findChildElement("major");
+    if (pMajorNode)
+        image.mVersionMajor = pMajorNode->getValue();
+
+    /* Minor part. */
+    const ElementNode *pMinorNode = pNode->findChildElement("MINOR");
+    if (!pMinorNode)
+        pMinorNode = pNode->findChildElement("minor");
+    if (pMinorNode)
+        image.mVersionMinor = pMinorNode->getValue();
+
+    /* Build part. */
+    const ElementNode *pBuildNode = pNode->findChildElement("BUILD");
+    if (!pBuildNode)
+        pBuildNode = pNode->findChildElement("build");
+    if (pBuildNode)
+        image.mVersionBuild = pBuildNode->getValue();
+}
+
+
+/**
+ * Parses XML tree assuming th following structure
+ * <WIM>
+ *     ....
+ *     <IMAGE INDEX="1">
+ *     ....
+ *     <DISPLAYNAME>Windows 10 Home</DISPLAYNAME>
+ *     <VERSION>
+ *         ....
+ *     </VERSION>
+ *     </IMAGE>
+ * </WIM>
+ *
+ * @param   pElmRoot   Pointer to the root node of the tree,
+ * @param   imageList  Detected images are appended to this list.
+ */
+
+static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> &imageList)
+{
+    if (!pElmRoot)
+        return;
+
+    ElementNodesList children;
+    int cChildren = pElmRoot->getChildElements(children, "IMAGE");
+    if (cChildren == 0)
+        cChildren = pElmRoot->getChildElements(children, "image");
+
+    for (ElementNodesList::iterator iterator = children.begin(); iterator != children.end(); ++iterator)
+    {
+        const ElementNode *pChild = *(iterator);
+        if (!pChild)
+            continue;
+        const ElementNode *pDisplayDescriptionNode = pChild->findChildElement("DISPLAYNAME");
+        if (!pDisplayDescriptionNode)
+            pDisplayDescriptionNode = pChild->findChildElement("displayname");
+        if (!pDisplayDescriptionNode)
+            continue;
+        WIMImage newImage;
+        newImage.mName = pDisplayDescriptionNode->getValue();
+        const ElementNode *pVersionElement = pChild->findChildElement("VERSION");
+        if (!pVersionElement)
+            pVersionElement = pChild->findChildElement("version");
+        if (pVersionElement)
+            parseVersionElement(pVersionElement, newImage);
+        imageList.append(newImage);
+    }
+}
+
+/**
  * Detect Windows ISOs.
  *
  * @returns COM status code.
@@ -412,6 +499,7 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
  * @param   penmOsType  Where to return the OS type.  This is initialized to
  *                      VBOXOSTYPE_Unknown.
  */
+
 HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBOXOSTYPE *penmOsType)
 {
     /** @todo The 'sources/' path can differ. */
@@ -420,15 +508,93 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
     // sources/idwbinfo.txt   - ditto.
     // sources/lang.ini       - ditto.
 
+    RTVFSFILE hVfsFile;
+    /** @todo look at the install.wim file too, extracting the XML (easy) and
+     *        figure out the available image numbers and such. The format is
+     *        documented. It would also provide really accurate Windows
+     *        version information without the need to guess. The current
+     *        content of mStrDetectedOSVersion is mostly useful for human
+     *        consumption. ~~Long term it should be possible to have version
+     *        conditionals (expr style, please) in the templates, which
+     *        would make them a lot easier to write and more flexible at the
+     *        same time. - done already~~
+     *
+     * Here is how to list images inside an install.wim file from powershell:
+     * https://docs.microsoft.com/en-us/powershell/module/dism/get-windowsimage?view=windowsserver2022-ps
+     *
+     * Unfortunately, powershell is not available by default on non-windows hosts, so we
+     * have to do it ourselves of course, but this can help when coding & testing.
+     */
+
+    int vrc = RTVfsFileOpen(hVfsIso, "sources/install.wim", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+    if (RT_SUCCESS(vrc))
+    {
+        WIMHEADERV1 header;
+        size_t cbRead = 0;
+        vrc = RTVfsFileRead(hVfsFile, &header, sizeof(header), &cbRead);
+        if (RT_SUCCESS(vrc) && cbRead == sizeof(header))
+        {
+            /* If the xml data is not compressed, xml data is not empty, and not too big. */
+            if (    (header.XmlData.bFlags & RESHDR_FLAGS_METADATA)
+                && !(header.XmlData.bFlags & RESHDR_FLAGS_COMPRESSED)
+                &&  header.XmlData.cbOrginal != 0
+                &&  header.XmlData.cbOrginal < _32M
+                &&  header.XmlData.cbOrginal == header.XmlData.cb)
+            {
+                char *pXmlBuf = (char*)RTMemAlloc(header.XmlData.cbOrginal);
+                if (pXmlBuf)
+                {
+                    vrc = RTVfsFileReadAt(hVfsFile, header.XmlData.off, pXmlBuf, (size_t)header.XmlData.cbOrginal, NULL);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        xml::Document doc;
+                        xml::XmlMemParser parser;
+                        RTCString fileName = "dump";
+                        try
+                        {
+                            parser.read(pXmlBuf, header.XmlData.cbOrginal, fileName, doc);
+                        }
+                        catch (xml::XmlError &rErr)
+                        {
+                            LogRel(("Unattended: An error has occured during XML parsing: %s\n", rErr.what()));
+                            vrc = VERR_XAR_TOC_XML_PARSE_ERROR;
+                        }
+                        catch (...)
+                        {
+                            LogRel(("Unattended: An unknown error has occured during XML parsing.\n"));
+                            vrc = VERR_UNEXPECTED_EXCEPTION;
+                        }
+                        if (RT_SUCCESS(vrc))
+                        {
+                            xml::ElementNode *pElmRoot = doc.getRootElement();
+                            if (pElmRoot)
+                            {
+                                mDetectedImages.clear();
+                                parseWimXMLData(pElmRoot, mDetectedImages);
+                            }
+                            else
+                                LogRel(("Unattended: No root element found in XML Metadata of install.wim\n"));
+                        }
+                    }
+                    else
+                        LogRel(("Unattended: Failed during reading XML Metadata out of install.wim\n"));
+                    RTMemFree(pXmlBuf);
+                }
+            }
+            else
+                LogRel(("Unattended: XML Metadata of install.wim is either compressed, empty, or too big\n"));
+        }
+        RTVfsFileRelease(hVfsFile);
+    }
+
+    const char *pszVersion = NULL;
+    const char *pszProduct = NULL;
     /*
      * Try look for the 'sources/idwbinfo.txt' file containing windows build info.
      * This file appeared with Vista beta 2 from what we can tell.  Before windows 10
      * it contains easily decodable branch names, after that things goes weird.
      */
-    const char *pszVersion = NULL;
-    const char *pszProduct = NULL;
-    RTVFSFILE hVfsFile;
-    int vrc = RTVfsFileOpen(hVfsIso, "sources/idwbinfo.txt", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
+    vrc = RTVfsFileOpen(hVfsIso, "sources/idwbinfo.txt", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))
     {
         *penmOsType = VBOXOSTYPE_WinNT_x64;
@@ -786,23 +952,6 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
             RTIniFileRelease(hIniFile);
         }
     }
-
-    /** @todo look at the install.wim file too, extracting the XML (easy) and
-     *        figure out the available image numbers and such. The format is
-     *        documented. It would also provide really accurate Windows
-     *        version information without the need to guess. The current
-     *        content of mStrDetectedOSVersion is mostly useful for human
-     *        consumption. ~~Long term it should be possible to have version
-     *        conditionals (expr style, please) in the templates, which
-     *        would make them a lot easier to write and more flexible at the
-     *        same time. - done already~~
-     *
-     * Here is how to list images inside an install.wim file from powershell:
-     * https://docs.microsoft.com/en-us/powershell/module/dism/get-windowsimage?view=windowsserver2022-ps
-     *
-     * Unfortunately, powershell is not available by default on non-windows hosts, so we
-     * have to do it ourselves of course, but this can help when coding & testing.
-     */
 
     return S_FALSE;
 }
