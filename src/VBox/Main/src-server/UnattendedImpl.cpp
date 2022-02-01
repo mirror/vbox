@@ -495,6 +495,18 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
         const ElementNode *pChild = *(iterator);
         if (!pChild)
             continue;
+
+        const char *pszIndex = pChild->findAttributeValue("INDEX");
+        if (!pszIndex)
+            pszIndex = pChild->findAttributeValue("index");
+        if (!pszIndex)
+            continue;
+        uint32_t pu32 = 0;
+        int vrc = RTStrToUInt32Full(pszIndex, 10 /* uBase */, &pu32);
+
+        if (!RT_SUCCESS(vrc))
+            continue;
+
         const ElementNode *pDisplayDescriptionNode = pChild->findChildElement("DISPLAYNAME");
         if (!pDisplayDescriptionNode)
             pDisplayDescriptionNode = pChild->findChildElement("displayname");
@@ -504,6 +516,7 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
         newImage.mName = pDisplayDescriptionNode->getValue();
         if (newImage.mName.isEmpty())
             continue;
+        newImage.mImageIndex = pu32;
         const ElementNode *pVersionElement = pChild->findChildElement("VERSION");
         if (!pVersionElement)
             pVersionElement = pChild->findChildElement("version");

@@ -36,11 +36,12 @@ struct ControllerSlot;
  */
 struct WIMImage
 {
-    Utf8Str mName;
-    Utf8Str mVersionMajor;
-    Utf8Str mVersionMinor;
-    Utf8Str mVersionBuild;
-    Utf8Str getNameAndVersion() const;
+    Utf8Str  mName;
+    Utf8Str  mVersionMajor;
+    Utf8Str  mVersionMinor;
+    Utf8Str  mVersionBuild;
+    uint32_t mImageIndex;
+    Utf8Str  getNameAndVersion() const;
 };
 
 /**
