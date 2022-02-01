@@ -438,6 +438,12 @@ HRESULT Unattended::getDetectedOSHints(com::Utf8Str &aDetectedOSHints)
     return E_NOTIMPL;
 }
 
+HRESULT Unattended::getDetectedImageNames(std::vector<com::Utf8Str> &aDetectedImageNames)
+{
+    RT_NOREF(aDetectedImageNames);
+    return E_NOTIMPL;
+}
+
 /*
  * Getters that the installer and script classes can use.
  */
@@ -683,4 +689,3 @@ int main()
 
     return RTTestSummaryAndDestroy(hTest);
 }
-
