@@ -1446,7 +1446,11 @@ static int rtProcPosixConvertArgv(const char * const *papszArgs, RTENV hEnvToUse
             RT_NOREF_PV(pszVar);
         }
         else
+#ifdef RT_OS_DARWIN /* @bugref{10153}: Darwin defaults to UTF-8. */
+            pszEncoding = "UTF-8";
+#else
             pszEncoding = "ASCII";
+#endif
     }
 
     /*
