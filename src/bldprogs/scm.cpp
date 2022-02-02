@@ -89,6 +89,8 @@ typedef enum SCMOPT
     SCMOPT_FIX_ERR_H,
     SCMOPT_NO_FIX_ERR_H,
     SCMOPT_ONLY_GUEST_HOST_PAGE,
+    SCMOPT_NO_ASM_MEM_PAGE_USE,
+    SCMOPT_UNRESTRICTED_ASM_MEM_PAGE_USE,
     SCMOPT_NO_PAGE_RESTRICTIONS,
     SCMOPT_UPDATE_COPYRIGHT_YEAR,
     SCMOPT_NO_UPDATE_COPYRIGHT_YEAR,
@@ -198,6 +200,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fFixTodos = */                              true,
     /* .fFixErrH = */                               true,
     /* .fOnlyGuestHostPage = */                     false,
+    /* .fNoASMMemPageUse = */                       false,
     /* .fUpdateCopyrightYear = */                   false,
     /* .fExternalCopyright = */                     false,
     /* .fLgplDisclaimer = */                        false,
@@ -253,6 +256,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--no-fix-err-h",                     SCMOPT_NO_FIX_ERR_H,                    RTGETOPT_REQ_NOTHING },
     { "--only-guest-host-page",             SCMOPT_ONLY_GUEST_HOST_PAGE,            RTGETOPT_REQ_NOTHING },
     { "--no-page-restrictions",             SCMOPT_NO_PAGE_RESTRICTIONS,            RTGETOPT_REQ_NOTHING },
+    { "--no-ASMMemPage-use",                SCMOPT_NO_ASM_MEM_PAGE_USE,             RTGETOPT_REQ_NOTHING },
+    { "--unrestricted-ASMMemPage-use",      SCMOPT_UNRESTRICTED_ASM_MEM_PAGE_USE,   RTGETOPT_REQ_NOTHING },
     { "--update-copyright-year",            SCMOPT_UPDATE_COPYRIGHT_YEAR,           RTGETOPT_REQ_NOTHING },
     { "--no-update-copyright-year",         SCMOPT_NO_UPDATE_COPYRIGHT_YEAR,        RTGETOPT_REQ_NOTHING },
     { "--external-copyright",               SCMOPT_EXTERNAL_COPYRIGHT,              RTGETOPT_REQ_NOTHING },
@@ -1183,6 +1188,13 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_NO_PAGE_RESTRICTIONS:
             pSettings->fOnlyGuestHostPage = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_NO_ASM_MEM_PAGE_USE:
+            pSettings->fNoASMMemPageUse = true;
+            return VINF_SUCCESS;
+        case SCMOPT_UNRESTRICTED_ASM_MEM_PAGE_USE:
+            pSettings->fNoASMMemPageUse = false;
             return VINF_SUCCESS;
 
         case SCMOPT_UPDATE_COPYRIGHT_YEAR:
@@ -2906,6 +2918,11 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
             case SCMOPT_ONLY_GUEST_HOST_PAGE:
                 RTPrintf("      No PAGE_SIZE, PAGE_SHIFT or PAGE_OFFSET_MASK allowed, must have\n"
                          "      GUEST_ or HOST_ prefix.  Default: %RTbool\n", g_Defaults.fOnlyGuestHostPage);
+                break;
+            case SCMOPT_NO_ASM_MEM_PAGE_USE:
+                RTPrintf("      No ASMMemIsZeroPage or ASMMemZeroPage allowed, must instead use\n"
+                         "      ASMMemIsZero and RT_BZERO with appropriate page size.  Default: %RTbool\n",
+                         g_Defaults.fNoASMMemPageUse);
                 break;
             case SCMOPT_UPDATE_COPYRIGHT_YEAR:
                 RTPrintf("      Update the copyright year.  Default: %RTbool\n", g_Defaults.fUpdateCopyrightYear);

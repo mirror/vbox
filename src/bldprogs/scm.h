@@ -358,6 +358,8 @@ typedef struct SCMSETTINGSBASE
     /** No PAGE_SIZE, PAGE_SHIFT, PAGE_OFFSET_MASK allowed in C/C++, only the GUEST_
      * or HOST_ prefixed versions. */
     bool            fOnlyGuestHostPage;
+    /** No ASMMemIsZeroPage or ASMMemZeroPage calls allowed (C/C++). */
+    bool            fNoASMMemPageUse;
 
     /** Update the copyright year. */
     bool            fUpdateCopyrightYear;

@@ -3263,8 +3263,19 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
 bool rewrite_PageChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
     RT_NOREF(pOut);
-    if (!pSettings->fOnlyGuestHostPage)
+    if (!pSettings->fOnlyGuestHostPage && !pSettings->fNoASMMemPageUse)
         return false;
+
+    static RTSTRTUPLE const g_aWords[] =
+    {
+        { RT_STR_TUPLE("PAGE_SIZE") },
+        { RT_STR_TUPLE("PAGE_SHIFT") },
+        { RT_STR_TUPLE("PAGE_OFFSET_MASK") },
+        { RT_STR_TUPLE("ASMMemIsZeroPage") },
+        { RT_STR_TUPLE("ASMMemZeroPage") },
+    };
+    size_t const iFirstWord = pSettings->fOnlyGuestHostPage ? 0 : 3;
+    size_t const iEndWords  = pSettings->fNoASMMemPageUse   ? 5 : 3;
 
     uint32_t    iLine = 0;
     SCMEOL      enmEol;
@@ -3273,14 +3284,7 @@ bool rewrite_PageChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCS
     while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
     {
         iLine++;
-
-        static RTSTRTUPLE const g_aWords[] =
-        {
-            { RT_STR_TUPLE("PAGE_SIZE") },
-            { RT_STR_TUPLE("PAGE_SHIFT") },
-            { RT_STR_TUPLE("PAGE_OFFSET_MASK") },
-        };
-        for (size_t i = 0; i < RT_ELEMENTS(g_aWords); i++)
+        for (size_t i = iFirstWord; i < iEndWords; i++)
         {
             size_t const cchWord = g_aWords[i].cch;
             if (cchLine >= cchWord)
@@ -3296,8 +3300,14 @@ bool rewrite_PageChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCS
                             || !ScmIsCIdentifierChar(pchHit[-1]))
                         && (   cchLeft == cchWord
                             || !ScmIsCIdentifierChar(pchHit[cchWord])) )
-                        ScmFixManually(pState, "%u:%zu: %s is not allow! Use GUEST_%s or HOST_%s instead.\n",
-                                       iLine, pchHit - pchLine, pszWord, pszWord, pszWord);
+                    {
+                        if (i < 3)
+                            ScmFixManually(pState, "%u:%zu: %s is not allow! Use GUEST_%s or HOST_%s instead.\n",
+                                           iLine, pchHit - pchLine + 1, pszWord, pszWord, pszWord);
+                        else
+                            ScmFixManually(pState, "%u:%zu: %s is not allow! Use %s with correct page size instead.\n",
+                                           iLine, pchHit - pchLine + 1, pszWord, i == 3 ? "ASMMemIsZero" : "RT_BZERO");
+                    }
 
                     /* next */
                     cchLeft -= 1;
