@@ -681,7 +681,8 @@ protected:
         SaveSTS_StateTimeStamp = 0x80
     };
 
-    HRESULT i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings);
+    HRESULT i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings,
+                                  bool *pfSettingsFileIsNew);
     HRESULT i_saveSettings(bool *pfNeedsGlobalSaveSettings, AutoWriteLock &alock, int aFlags = 0);
 
     void i_copyMachineDataToSettings(settings::MachineConfigFile &config);

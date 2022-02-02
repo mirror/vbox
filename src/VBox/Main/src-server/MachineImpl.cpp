@@ -9612,14 +9612,14 @@ HRESULT Machine::i_getMediumAttachmentsOfController(const Utf8Str &aName,
  *
  *  @note Must be never called directly but only from #saveSettings().
  */
-HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
+HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings,
+                                       bool *pfSettingsFileIsNew)
 {
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
     HRESULT rc = S_OK;
 
     bool fSettingsFileIsNew = !mData->pMachineConfigFile->fileExists();
-
     /// @todo need to handle primary group change, too
 
     /* attempt to rename the settings file if machine name is changed */
@@ -9833,7 +9833,7 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
         }
 
         /* Note: open flags must correlate with RTFileOpen() in lockConfig() */
-        path = Utf8Str(mData->m_strConfigFileFull);
+        path = mData->m_strConfigFileFull;
         RTFILE f = NIL_RTFILE;
         vrc = RTFileOpen(&f, path.c_str(),
                          RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
@@ -9844,6 +9844,8 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                                 vrc);
         RTFileClose(f);
     }
+    if (pfSettingsFileIsNew)
+        *pfSettingsFileIsNew = fSettingsFileIsNew;
 
     return rc;
 }
@@ -9876,7 +9878,7 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
  */
 HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
                                 AutoWriteLock &alock,
-                                int  aFlags /*= 0*/)
+                                int aFlags /*= 0*/)
 {
     LogFlowThisFuncEnter();
 
@@ -9895,11 +9897,13 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
 
     HRESULT rc = S_OK;
     bool fNeedsWrite = false;
+    bool fSettingsFileIsNew = false;
 
     /* First, prepare to save settings. It will care about renaming the
      * settings directory and file if the machine name was changed and about
      * creating a new settings file if this is a new machine. */
-    rc = i_prepareSaveSettings(pfNeedsGlobalSaveSettings);
+    rc = i_prepareSaveSettings(pfNeedsGlobalSaveSettings,
+                               &fSettingsFileIsNew);
     if (FAILED(rc)) return rc;
 
     // keep a pointer to the current settings structures
@@ -9962,6 +9966,10 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
     {
         // we assume that error info is set by the thrower
         rc = err;
+
+        // delete any newly created settings file
+        if (fSettingsFileIsNew)
+            RTFileDelete(mData->m_strConfigFileFull.c_str());
 
         // restore old config
         delete pNewConfig;
