@@ -42,3 +42,10 @@
 /VMMR3/PGMPool.cpp:     --no-page-restrictions
 /testcase/tstVMStructSize.cpp:     --no-page-restrictions
 
+# Forbit ASMMemIsZeroPage and ASMMemZeroPage.
+/*.cpp: --no-ASMMemPage-use
+/*.h:   --no-ASMMemPage-use
+# Except in the pool where more care/work is needed.
+/VMMR3/PGMPool.cpp:     --unrestricted-ASMMemPage-use
+/VMMAll/PGMAllPool.cpp: --unrestricted-ASMMemPage-use
+

@@ -807,7 +807,7 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
         void *pvVmcbHost                    = RTR0MemObjAddress(pVCpu->hmr0.s.svm.hMemObjVmcbHost);
         pVCpu->hmr0.s.svm.HCPhysVmcbHost    = RTR0MemObjGetPagePhysAddr(pVCpu->hmr0.s.svm.hMemObjVmcbHost, 0 /* iPage */);
         Assert(pVCpu->hmr0.s.svm.HCPhysVmcbHost < _4G);
-        ASMMemZeroPage(pvVmcbHost);
+        RT_BZERO(pvVmcbHost, HOST_PAGE_SIZE);
 
         /*
          * Allocate one page for the guest-state VMCB.
@@ -820,7 +820,7 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
         pVCpu->hmr0.s.svm.pVmcb             = (PSVMVMCB)RTR0MemObjAddress(pVCpu->hmr0.s.svm.hMemObjVmcb);
         pVCpu->hmr0.s.svm.HCPhysVmcb        = RTR0MemObjGetPagePhysAddr(pVCpu->hmr0.s.svm.hMemObjVmcb, 0 /* iPage */);
         Assert(pVCpu->hmr0.s.svm.HCPhysVmcb < _4G);
-        ASMMemZeroPage(pVCpu->hmr0.s.svm.pVmcb);
+        RT_BZERO(pVCpu->hmr0.s.svm.pVmcb, HOST_PAGE_SIZE);
 
         /*
          * Allocate two pages (8 KB) for the MSR permission bitmap. There doesn't seem to be a way to convince

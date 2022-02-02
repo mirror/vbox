@@ -418,7 +418,7 @@ static int hmR0InitIntel(void)
             }
             void          *pvScatchPage      = RTR0MemObjAddress(hScatchMemObj);
             RTHCPHYS const HCPhysScratchPage = RTR0MemObjGetPagePhysAddr(hScatchMemObj, 0);
-            ASMMemZeroPage(pvScatchPage);
+            RT_BZERO(pvScatchPage, HOST_PAGE_SIZE);
 
             /* Set revision dword at the beginning of the VMXON structure. */
             *(uint32_t *)pvScatchPage = RT_BF_GET(uVmxBasicMsr, VMX_BF_BASIC_VMCS_ID);
@@ -913,7 +913,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
 
                 g_aHmCpuInfo[i].pvMemObj     = RTR0MemObjAddress(g_aHmCpuInfo[i].hMemObj);
                 AssertPtr(g_aHmCpuInfo[i].pvMemObj);
-                ASMMemZeroPage(g_aHmCpuInfo[i].pvMemObj);
+                RT_BZERO(g_aHmCpuInfo[i].pvMemObj, HOST_PAGE_SIZE);
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
                 rc = RTR0MemObjAllocCont(&g_aHmCpuInfo[i].n.svm.hNstGstMsrpm, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT,
