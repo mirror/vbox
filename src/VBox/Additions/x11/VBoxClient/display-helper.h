@@ -25,8 +25,6 @@
 
 /** Environment variable which contains information about currently running Desktop Environment. */
 #define VBCL_HLP_ENV_XDG_CURRENT_DESKTOP    "XDG_CURRENT_DESKTOP"
-/** Environment variable which is exported when in Wayland Desktop Environment. */
-#define VBCL_HLP_ENV_WAYLAND_DISPLAY        "WAYLAND_DISPLAY"
 
 /**
  * Display offsets change notification callback.

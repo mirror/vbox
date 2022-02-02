@@ -26,6 +26,9 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/string.h>
 
+/** Environment variable which is exported when in Wayland Desktop Environment. */
+#define VBCL_ENV_WAYLAND_DISPLAY    "WAYLAND_DISPLAY"
+
 void VBClLogInfo(const char *pszFormat, ...);
 void VBClLogError(const char *pszFormat, ...);
 void VBClLogFatalError(const char *pszFormat, ...);
@@ -34,6 +37,13 @@ void VBClLogVerbose(unsigned iLevel, const char *pszFormat, ...);
 int VBClLogCreate(const char *pszLogFile);
 void VBClLogSetLogPrefix(const char *pszPrefix);
 void VBClLogDestroy(void);
+
+/**
+ * Detect if user is running on Wayland by checking corresponding environment variable.
+ *
+ * @returns True if Wayland has been detected, False otherwise.
+ */
+extern bool VBClHasWayland(void);
 
 /** Call clean-up for the current service and exit. */
 extern void VBClShutdown(bool fExit = true);
