@@ -33,7 +33,7 @@ DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsPermValid)(PCVMCPUCC pVCpu, uint64_
 
 DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsMemTypeValid)(uint64_t uEntry, uint8_t uLevel)
 {
-    Assert(uLevel >= 3 && uLevel <= 1); NOREF(uLevel);
+    Assert(uLevel <= 3 && uLevel >= 1); NOREF(uLevel);
     uint64_t const fEptMemTypeMask = uEntry & VMX_BF_EPT_PT_MEMTYPE_MASK;
     if (   fEptMemTypeMask == EPT_E_MEMTYPE_INVALID_2
         || fEptMemTypeMask == EPT_E_MEMTYPE_INVALID_3
@@ -290,7 +290,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
             pWalk->fBigPage     = true;
             pWalk->fSucceeded   = true;
             pWalk->GCPhys       = GST_GET_BIG_PDE_GCPHYS(pVCpu->CTX_SUFF(pVM), Pde)
-                                     | (GCPhysNested & GST_BIG_PAGE_OFFSET_MASK);
+                                | (GCPhysNested & GST_BIG_PAGE_OFFSET_MASK);
             PGM_A20_APPLY_TO_VAR(pVCpu, pWalk->GCPhys);
             return VINF_SUCCESS;
         }
