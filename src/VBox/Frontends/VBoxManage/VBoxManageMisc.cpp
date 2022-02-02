@@ -1566,17 +1566,25 @@ RTEXITCODE handleUnattendedDetect(HandlerArg *a)
     CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedOSLanguages)(bstrDetectedLanguages.asOutParam()), RTEXITCODE_FAILURE);
     Bstr bstrDetectedHints;
     CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedOSHints)(bstrDetectedHints.asOutParam()), RTEXITCODE_FAILURE);
+    SafeArray<BSTR> aImageNames;
+    CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedImageNames)(ComSafeArrayAsOutParam(aImageNames)), RTEXITCODE_FAILURE);
+    SafeArray<ULONG> aImageIndices;
+    CHECK_ERROR2_RET(hrc, ptrUnattended, COMGETTER(DetectedImageIndices)(ComSafeArrayAsOutParam(aImageIndices)), RTEXITCODE_FAILURE);
+    Assert(aImageNames.size() == aImageIndices.size());
+
     if (fMachineReadable)
-        RTPrintf("OSTypeId=\"%ls\"\n"
-                 "OSVersion=\"%ls\"\n"
-                 "OSFlavor=\"%ls\"\n"
-                 "OSLanguages=\"%ls\"\n"
-                 "OSHints=\"%ls\"\n",
-                 bstrDetectedOSTypeId.raw(),
-                 bstrDetectedVersion.raw(),
-                 bstrDetectedFlavor.raw(),
-                 bstrDetectedLanguages.raw(),
-                 bstrDetectedHints.raw());
+    {
+        outputMachineReadableString("OSTypeId", &bstrDetectedOSTypeId);
+        outputMachineReadableString("OSVersion", &bstrDetectedVersion);
+        outputMachineReadableString("OSFlavor", &bstrDetectedFlavor);
+        outputMachineReadableString("OSLanguages", &bstrDetectedLanguages);
+        outputMachineReadableString("OSHints", &bstrDetectedHints);
+        for (size_t i = 0; i < aImageNames.size(); i++)
+        {
+            Bstr const bstrName = aImageNames[i];
+            outputMachineReadableStringWithFmtName(&bstrName, false, "ImageIndex%u", aImageIndices[i]);
+        }
+    }
     else
     {
         RTMsgInfo(Misc::tr("Detected '%s' to be:\n"), szIsoPath);
@@ -1590,6 +1598,8 @@ RTEXITCODE handleUnattendedDetect(HandlerArg *a)
                  bstrDetectedFlavor.raw(),
                  bstrDetectedLanguages.raw(),
                  bstrDetectedHints.raw());
+        for (size_t i = 0; i < aImageNames.size(); i++)
+            RTPrintf("    Image #%-3u   = %ls\n", aImageIndices[i], aImageNames[i]);
     }
 
     return rcExit;
@@ -1920,6 +1930,33 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     SHOW_STR_ATTR(DetectedOSFlavor,              "detectedOSFlavor");
     SHOW_STR_ATTR(DetectedOSLanguages,           "detectedOSLanguages");
     SHOW_STR_ATTR(DetectedOSHints,               "detectedOSHints");
+    {
+        ULONG idxImage = 0;
+        HRESULT hrc2 = ptrUnattended->COMGETTER(ImageIndex)(&idxImage);
+        if (FAILED(hrc2))
+            idxImage = 0;
+        SafeArray<BSTR> aImageNames;
+        hrc2 = ptrUnattended->COMGETTER(DetectedImageNames)(ComSafeArrayAsOutParam(aImageNames));
+        if (SUCCEEDED(hrc2))
+        {
+            SafeArray<ULONG> aImageIndices;
+            hrc2 = ptrUnattended->COMGETTER(DetectedImageIndices)(ComSafeArrayAsOutParam(aImageIndices));
+            if (SUCCEEDED(hrc2))
+            {
+                Assert(aImageNames.size() == aImageIndices.size());
+                for (size_t i = 0; i < aImageNames.size(); i++)
+                {
+                    char szTmp[64];
+                    RTStrPrintf(szTmp, sizeof(szTmp), "detectedImage[%u]%s", i, idxImage != aImageIndices[i] ? "" : "*");
+                    RTPrintf("  %32s = #%u: %ls\n", szTmp, aImageIndices[i], aImageNames[i]);
+                }
+            }
+            else
+                RTPrintf(Misc::tr("  %32s = failed: %Rhrc\n"), "detectedImageIndices", hrc2);
+        }
+        else
+            RTPrintf(Misc::tr("  %32 = failed: %Rhrc\n"), "detectedImageNames", hrc2);
+    }
 
 #undef SHOW_STR_ATTR
 #undef SHOW_ATTR
