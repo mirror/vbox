@@ -258,7 +258,7 @@ bool UIWizardNewVMNameOSTypeCommon::createMachineFolder(UINameAndSystemEditor *p
     /* Cleanup previosly created folder if any: */
     if (!cleanupMachineFolder(pWizard))
     {
-        UINotificationMessage::cannotRemoveMachineFolder(strMachineFolder, pWizard->notificationCenter());
+        UINotificationMessage::cannotRemoveMachineFolder(strCreatedFolder, pWizard->notificationCenter());
         return false;
     }
 
@@ -300,7 +300,7 @@ bool UIWizardNewVMNameOSTypeCommon::cleanupMachineFolder(UIWizardNewVM *pWizard,
     if (strCreatedFolder != strMachineFolder || fWizardCancel)
     {
         /* Try to cleanup folder (and it's predecessors): */
-        bool fMachineFolderRemoved = QDir().rmpath(strCreatedFolder);
+        bool fMachineFolderRemoved = QDir(strCreatedFolder).removeRecursively();
         /* Reset machine folder value: */
         if (fMachineFolderRemoved)
             pWizard->setCreatedMachineFolder(QString());
