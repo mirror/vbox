@@ -1509,6 +1509,7 @@ int ScmSvnQueryParentProperty(PSCMRWSTATE pState, const char *pszName, char **pp
         SCMRWSTATE ParentState;
         ParentState.pszFilename         = szPath;
         ParentState.fFirst              = false;
+        ParentState.fNeedsManualRepair  = false;
         ParentState.fIsInSvnWorkingCopy = true;
         ParentState.cSvnPropChanges     = 0;
         ParentState.paSvnPropChanges    = NULL;

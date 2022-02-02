@@ -211,6 +211,8 @@ typedef struct SCMRWSTATE
     /** Set after the printing the first verbose message about a file under
      *  rewrite. */
     bool                fFirst;
+    /** Set if the file requires manual repair. */
+    bool                fNeedsManualRepair;
     /** Cached ScmSvnIsInWorkingCopy response. 0 indicates not known, 1 means it
      * is in WC, -1 means it doesn't. */
     int8_t              fIsInSvnWorkingCopy;
@@ -250,6 +252,7 @@ FNSCMREWRITER rewrite_SvnBinary;
 FNSCMREWRITER rewrite_SvnKeywords;
 FNSCMREWRITER rewrite_SvnSyncProcess;
 FNSCMREWRITER rewrite_UnicodeChecks;
+FNSCMREWRITER rewrite_PageChecks;
 FNSCMREWRITER rewrite_Copyright_CstyleComment;
 FNSCMREWRITER rewrite_Copyright_HashComment;
 FNSCMREWRITER rewrite_Copyright_PythonComment;
@@ -352,6 +355,9 @@ typedef struct SCMSETTINGSBASE
     bool            fFixTodos;
     /** Whether to fix C/C++ err.h/errcore.h usage. */
     bool            fFixErrH;
+    /** No PAGE_SIZE, PAGE_SHIFT, PAGE_OFFSET_MASK allowed in C/C++, only the GUEST_
+     * or HOST_ prefixed versions. */
+    bool            fOnlyGuestHostPage;
 
     /** Update the copyright year. */
     bool            fUpdateCopyrightYear;
@@ -453,6 +459,7 @@ typedef SCMSETTINGS const *PCSCMSETTINGS;
 void ScmVerboseBanner(PSCMRWSTATE pState, int iLevel);
 void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 bool ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(3, 4);
+bool ScmFixManually(PSCMRWSTATE pState, const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 
 extern const char g_szTabSpaces[16+1];
 extern const char g_szAsterisks[255+1];

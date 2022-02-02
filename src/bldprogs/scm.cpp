@@ -88,6 +88,8 @@ typedef enum SCMOPT
     SCMOPT_NO_FIX_TODOS,
     SCMOPT_FIX_ERR_H,
     SCMOPT_NO_FIX_ERR_H,
+    SCMOPT_ONLY_GUEST_HOST_PAGE,
+    SCMOPT_NO_PAGE_RESTRICTIONS,
     SCMOPT_UPDATE_COPYRIGHT_YEAR,
     SCMOPT_NO_UPDATE_COPYRIGHT_YEAR,
     SCMOPT_EXTERNAL_COPYRIGHT,
@@ -173,6 +175,7 @@ static uint32_t     g_cFilesSkipped         = 0;
 static uint32_t     g_cFilesNotInSvn        = 0;
 static uint32_t     g_cFilesNoRewriters     = 0;
 static uint32_t     g_cFilesBinaries        = 0;
+static uint32_t     g_cFilesRequiringManualFixing = 0;
 /** @} */
 
 /** The global settings. */
@@ -194,6 +197,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .pszGuardRelativeToDir = */                  (char *)"{parent}",
     /* .fFixTodos = */                              true,
     /* .fFixErrH = */                               true,
+    /* .fOnlyGuestHostPage = */                     false,
     /* .fUpdateCopyrightYear = */                   false,
     /* .fExternalCopyright = */                     false,
     /* .fLgplDisclaimer = */                        false,
@@ -247,6 +251,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--no-fix-todos",                     SCMOPT_NO_FIX_TODOS,                    RTGETOPT_REQ_NOTHING },
     { "--fix-err-h",                        SCMOPT_FIX_ERR_H,                       RTGETOPT_REQ_NOTHING },
     { "--no-fix-err-h",                     SCMOPT_NO_FIX_ERR_H,                    RTGETOPT_REQ_NOTHING },
+    { "--only-guest-host-page",             SCMOPT_ONLY_GUEST_HOST_PAGE,            RTGETOPT_REQ_NOTHING },
+    { "--no-page-restrictions",             SCMOPT_NO_PAGE_RESTRICTIONS,            RTGETOPT_REQ_NOTHING },
     { "--update-copyright-year",            SCMOPT_UPDATE_COPYRIGHT_YEAR,           RTGETOPT_REQ_NOTHING },
     { "--no-update-copyright-year",         SCMOPT_NO_UPDATE_COPYRIGHT_YEAR,        RTGETOPT_REQ_NOTHING },
     { "--external-copyright",               SCMOPT_EXTERNAL_COPYRIGHT,              RTGETOPT_REQ_NOTHING },
@@ -310,6 +316,7 @@ SCM_REWRITER_CFG(g_SvnBinary,                       "svn-binary",               
 SCM_REWRITER_CFG(g_SvnKeywords,                     "svn-keywords",                 rewrite_SvnKeywords);
 SCM_REWRITER_CFG(g_SvnSyncProcess,                  "svn-sync-process",             rewrite_SvnSyncProcess);
 SCM_REWRITER_CFG(g_UnicodeChecks,                   "unicode-checks",               rewrite_UnicodeChecks);
+SCM_REWRITER_CFG(g_PageChecks,                      "page-checks",                  rewrite_PageChecks);
 SCM_REWRITER_CFG(g_Copyright_CstyleComment,         "copyright-c-style",            rewrite_Copyright_CstyleComment);
 SCM_REWRITER_CFG(g_Copyright_HashComment,           "copyright-hash-style",         rewrite_Copyright_HashComment);
 SCM_REWRITER_CFG(g_Copyright_PythonComment,         "copyright-python-style",       rewrite_Copyright_PythonComment);
@@ -354,6 +361,7 @@ static PCSCMREWRITERCFG const g_papRewriterActions[] =
     &g_Fix_C_and_CPP_Todos,
     &g_Fix_Err_H,
     &g_UnicodeChecks,
+    &g_PageChecks,
     &g_C_and_CPP,
 };
 
@@ -401,6 +409,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_C_and_CPP[] =
     &g_SvnKeywords,
     &g_SvnSyncProcess,
     &g_UnicodeChecks,
+    &g_PageChecks,
     &g_Copyright_CstyleComment,
     &g_FixFlowerBoxMarkers,
     &g_Fix_C_and_CPP_Todos,
@@ -418,6 +427,7 @@ static PCSCMREWRITERCFG const g_apRewritersFor_H_and_HPP[] =
     &g_SvnKeywords,
     &g_SvnSyncProcess,
     &g_UnicodeChecks,
+    &g_PageChecks,
     &g_Copyright_CstyleComment,
     /// @todo &g_FixFlowerBoxMarkers,
     &g_FixHeaderGuards,
@@ -1166,6 +1176,13 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             return VINF_SUCCESS;
         case SCMOPT_NO_FIX_ERR_H:
             pSettings->fFixErrH = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_ONLY_GUEST_HOST_PAGE:
+            pSettings->fOnlyGuestHostPage = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_PAGE_RESTRICTIONS:
+            pSettings->fOnlyGuestHostPage = false;
             return VINF_SUCCESS;
 
         case SCMOPT_UPDATE_COPYRIGHT_YEAR:
@@ -2153,6 +2170,33 @@ bool ScmError(PSCMRWSTATE pState, int rc, const char *pszFormat, ...)
 }
 
 
+/**
+ * Prints message indicating that something requires manual fixing.
+ *
+ * @returns false
+ * @param   pState              The rewrite state.  Optional.
+ * @param   rc                  The error code.
+ * @param   pszFormat           The message format string.
+ * @param   ...                 Format arguments.
+ */
+bool ScmFixManually(PSCMRWSTATE pState, const char *pszFormat, ...)
+{
+    pState->fNeedsManualRepair = true;
+
+    if (!pState->fFirst)
+    {
+        RTPrintf("%s: info: --= Rewriting '%s' =--\n", g_szProgName, pState->pszFilename);
+        pState->fFirst = true;
+    }
+    va_list va;
+    va_start(va, pszFormat);
+    RTPrintf("%s: error/fixme: %s: %N", g_szProgName, pState->pszFilename, pszFormat, &va);
+    va_end(va);
+
+    return false;
+}
+
+
 /* -=-=-=-=-=- file and directory processing -=-=-=-=-=- */
 
 
@@ -2433,6 +2477,7 @@ static int scmProcessFile(const char *pszFilename, const char *pszBasename, size
         SCMRWSTATE State;
         State.pszFilename           = pszFilename;
         State.fFirst                = false;
+        State.fNeedsManualRepair    = false;
         State.fIsInSvnWorkingCopy   = 0;
         State.cSvnPropChanges       = 0;
         State.paSvnPropChanges      = NULL;
@@ -2450,6 +2495,8 @@ static int scmProcessFile(const char *pszFilename, const char *pszBasename, size
 
         scmSettingsBaseDelete(&Base);
 
+        if (State.fNeedsManualRepair)
+            g_cFilesRequiringManualFixing++;
         g_cFilesProcessed++;
     }
     return rc;
@@ -2856,6 +2903,10 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
             case SCMOPT_FIX_ERR_H:
                 RTPrintf("      Fix err.h/errcore.h usage.  Default: %RTbool\n", g_Defaults.fFixErrH);
                 break;
+            case SCMOPT_ONLY_GUEST_HOST_PAGE:
+                RTPrintf("      No PAGE_SIZE, PAGE_SHIFT or PAGE_OFFSET_MASK allowed, must have\n"
+                         "      GUEST_ or HOST_ prefix.  Default: %RTbool\n", g_Defaults.fOnlyGuestHostPage);
+                break;
             case SCMOPT_UPDATE_COPYRIGHT_YEAR:
                 RTPrintf("      Update the copyright year.  Default: %RTbool\n", g_Defaults.fUpdateCopyrightYear);
                 break;
@@ -3113,6 +3164,15 @@ int main(int argc, char **argv)
     {
         RTMsgError("Checking mode failed! %u file%s needs modifications", g_cFilesBinaries, g_cFilesBinaries > 1 ? "s" : "");
         rcExit = RTEXITCODE_FAILURE;
+    }
+
+    /* Fail if any files require manual repair. */
+    if (g_cFilesRequiringManualFixing > 0)
+    {
+        RTMsgError("%u file%s needs manual modifications", g_cFilesRequiringManualFixing,
+                   g_cFilesRequiringManualFixing > 1 ? "s" : "");
+        if (rcExit == RTEXITCODE_SUCCESS)
+            rcExit = RTEXITCODE_FAILURE;
     }
 
     return rcExit;

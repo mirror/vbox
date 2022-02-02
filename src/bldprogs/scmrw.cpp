@@ -1114,18 +1114,10 @@ bool rewrite_UnicodeChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, 
 
                     /** @todo add checks for homoglyphs too. */
                 }
-#if 1
-                ScmError(pState, rc, "%u:%zu: Evil unicode codepoint: %s\n", iLine, pchCur - pchLine, pszWhat);
-#else
-                ScmVerbose(pState, 0, "%u:%zu: Evil unicode codepoint: %s\n", iLine, pchCur - pchLine, pszWhat);
-#endif
+                ScmFixManually(pState, "%u:%zu: Evil unicode codepoint: %s\n", iLine, pchCur - pchLine, pszWhat);
             }
             else
-#if 1
-                ScmError(pState, rc, "%u:%zu: Invalid UTF-8 encoding: %Rrc\n", iLine, pchCur - pchLine, rc);
-#else
-                ScmVerbose(pState, 0, "%u:%zu: Invalid UTF-8 encoding: %Rrc\n", iLine, pchCur - pchLine, rc);
-#endif
+                ScmFixManually(pState, "%u:%zu: Invalid UTF-8 encoding: %Rrc\n", iLine, pchCur - pchLine, rc);
         }
     }
 
@@ -3256,6 +3248,68 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
     }
 
     return fRet;
+}
+
+
+/**
+ * Checks for PAGE_SIZE, PAGE_SHIFT and PAGE_OFFSET_MASK w/o a GUEST_ or HOST_
+ * prefix.
+ *
+ * @returns true if modifications were made, false if not.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+bool rewrite_PageChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    RT_NOREF(pOut);
+    if (!pSettings->fOnlyGuestHostPage)
+        return false;
+
+    uint32_t    iLine = 0;
+    SCMEOL      enmEol;
+    size_t      cchLine;
+    const char *pchLine;
+    while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
+    {
+        iLine++;
+
+        static RTSTRTUPLE const g_aWords[] =
+        {
+            { RT_STR_TUPLE("PAGE_SIZE") },
+            { RT_STR_TUPLE("PAGE_SHIFT") },
+            { RT_STR_TUPLE("PAGE_OFFSET_MASK") },
+        };
+        for (size_t i = 0; i < RT_ELEMENTS(g_aWords); i++)
+        {
+            size_t const cchWord = g_aWords[i].cch;
+            if (cchLine >= cchWord)
+            {
+                const char * const pszWord = g_aWords[i].psz;
+                const char        *pchHit  = (const char *)memchr(pchLine, *pszWord, cchLine);
+                while (pchHit)
+                {
+                    size_t cchLeft = (uintptr_t)&pchLine[cchLine] - (uintptr_t)pchHit;
+                    if (   cchLeft >= cchWord
+                        && memcmp(pchHit, pszWord, cchWord) == 0
+                        && (   pchHit == pchLine
+                            || !ScmIsCIdentifierChar(pchHit[-1]))
+                        && (   cchLeft == cchWord
+                            || !ScmIsCIdentifierChar(pchHit[cchWord])) )
+                        ScmFixManually(pState, "%u:%zu: %s is not allow! Use GUEST_%s or HOST_%s instead.\n",
+                                       iLine, pchHit - pchLine, pszWord, pszWord, pszWord);
+
+                    /* next */
+                    cchLeft -= 1;
+                    if (cchLeft < cchWord)
+                        break;
+                    pchHit = (const char *)memchr(pchHit + 1, *pszWord, cchLeft);
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 
