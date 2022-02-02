@@ -29,6 +29,7 @@ class QIRichTextLabel;
 class UIAdditionalUnattendedOptions;
 class UIGAInstallationGroupBox;
 class UIUserNamePasswordGroupBox;
+class UIWindowsISOImageSelector;
 
 namespace UIWizardNewVMUnattendedCommon
 {
@@ -53,6 +54,7 @@ private slots:
     void sltHostnameDomainNameChanged(const QString &strHostnameDomainName);
     void sltProductKeyChanged(const QString &strProductKey);
     void sltStartHeadlessChanged(bool fStartHeadless);
+    void sltSelectedWindowsImageChanged(ulong uImageIndex);
 
 private:
 
@@ -72,6 +74,7 @@ private:
         UIAdditionalUnattendedOptions *m_pAdditionalOptionsContainer;
         UIGAInstallationGroupBox *m_pGAInstallationISOContainer;
         UIUserNamePasswordGroupBox *m_pUserNamePasswordGroupBox;
+        UIWindowsISOImageSelector *m_pWindowsISOImageSelector;
     /** @} */
     QSet<QString> m_userModifiedParameters;
 };

@@ -447,7 +447,7 @@ bool UIWindowsISOImageSelector::isEmpty() const
 
 void UIWindowsISOImageSelector::retranslateUi()
 {
-    setTitle(UIWizardNewVM::tr("Available OS Versions from ISO"));
+    setTitle(UIWizardNewVM::tr("Available OS Editions from the ISO"));
     if (m_pLabel)
         m_pLabel->setText(UIWizardNewVM::tr("ISO Images"));
 

@@ -40,6 +40,7 @@ UIWizardNewVMUnattendedPage::UIWizardNewVMUnattendedPage()
     , m_pAdditionalOptionsContainer(0)
     , m_pGAInstallationISOContainer(0)
     , m_pUserNamePasswordGroupBox(0)
+    , m_pWindowsISOImageSelector(0)
 {
     prepare();
 }
@@ -64,7 +65,11 @@ void UIWizardNewVMUnattendedPage::prepare()
     AssertReturnVoid(m_pGAInstallationISOContainer);
     pMainLayout->addWidget(m_pGAInstallationISOContainer, 2, 0, 1, 2);
 
-    pMainLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding), 3, 0, 1, 2);
+    m_pWindowsISOImageSelector = new UIWindowsISOImageSelector;
+    AssertReturnVoid(m_pWindowsISOImageSelector);
+    pMainLayout->addWidget(m_pWindowsISOImageSelector, 3, 0, 1, 2);
+
+    pMainLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding), 4, 0, 1, 2);
 
     createConnections();
 }
@@ -95,6 +100,10 @@ void UIWizardNewVMUnattendedPage::createConnections()
         connect(m_pAdditionalOptionsContainer, &UIAdditionalUnattendedOptions::sigStartHeadlessChanged,
                 this, &UIWizardNewVMUnattendedPage::sltStartHeadlessChanged);
     }
+
+    if (m_pWindowsISOImageSelector)
+        connect(m_pWindowsISOImageSelector, &UIWindowsISOImageSelector::sigSelectedWindowsImageChanged,
+                this, &UIWizardNewVMUnattendedPage::sltSelectedWindowsImageChanged);
 }
 
 
@@ -153,6 +162,12 @@ void UIWizardNewVMUnattendedPage::initializePage()
         m_pGAInstallationISOContainer->blockSignals(true);
         m_pGAInstallationISOContainer->setPath(pWizard->guestAdditionsISOPath());
         m_pGAInstallationISOContainer->blockSignals(false);
+    }
+    if (m_pWindowsISOImageSelector)
+    {
+        m_pWindowsISOImageSelector->setImageNamesAndIndices(pWizard->detectedWindowsImageNames(),
+                                                            pWizard->detectedWindowsImageIndices());
+        m_pWindowsISOImageSelector->setEnabled(!m_pWindowsISOImageSelector->isEmpty());
     }
 }
 
@@ -234,4 +249,10 @@ void UIWizardNewVMUnattendedPage::markWidgets() const
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     if (pWizard && pWizard->installGuestAdditions() && m_pGAInstallationISOContainer)
         m_pGAInstallationISOContainer->mark();
+}
+
+void UIWizardNewVMUnattendedPage::sltSelectedWindowsImageChanged(ulong uImageIndex)
+{
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setSelectedWindowImageIndex(uImageIndex);
 }
