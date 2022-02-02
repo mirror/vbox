@@ -5007,15 +5007,16 @@
     </attribute>
     <attribute name="detectedImageNames" type="wstring" readonly="yes" safearray="yes">
       <desc>
-        A list of names of the images detected from install.wim file of a Windows ISO. This
-        array is parallel to <link to="IUnattended::detectedImageIndices"/>.
+        A list of names of the images detected from install.wim file of a Windows Vista
+        or later ISO. This array is parallel to <link to="IUnattended::detectedImageIndices"/>.
+        This will be empty for older Windows ISOs and non-Windows ISOs.
       </desc>
     </attribute>
     <attribute name="detectedImageIndices" type="unsigned long" readonly="yes" safearray="yes">
       <desc>
-        A list of names of the images detected from install.wim file of a Windows ISO. This array
+        A list of image indexes detected from install.wim file of a Windows ISO. This array
         is parallel to <link to="IUnattended::detectedImageNames"/>. <link to="IUnattended::imageIndex"/>
-        should be one of these indices.
+        should be set to one of these indices for Vista and later Windows ISOs.
       </desc>
     </attribute>
 
@@ -5024,7 +5025,8 @@
         Detects the OS on the ISO given by <link to="IUnattended::isoPath"/> and sets
         <link to="IUnattended::detectedOSTypeId"/>, <link to="IUnattended::detectedOSVersion"/>
         <link to="IUnattended::detectedOSFlavor"/>, <link to="IUnattended::detectedOSLanguages"/>,
-        and <link to="IUnattended::detectedOSHints"/>.
+        <link to="IUnattended::detectedOSHints"/>, <link to="IUnattended::detectedImageNames"/>,
+        and <link to="IUnattended::detectedImageIndices"/>,
 
         Not really yet implemented.
       </desc>
