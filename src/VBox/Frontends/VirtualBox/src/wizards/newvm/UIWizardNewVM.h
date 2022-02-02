@@ -170,6 +170,10 @@ public:
         bool emptyDiskRecommended() const;
         void setEmptyDiskRecommended(bool fEmptyDiskRecommended);
 
+        void setDetectedImageNamesAndIndices(const QVector<QString> &names, const QVector<ULONG> &ids);
+        const QVector<QString> &detectedImageNames() const;
+        const QVector<ULONG> &detectedImageIndices() const;
+
         QVector<KMediumVariant> mediumVariants() const;
     /** @} */
 
@@ -223,6 +227,9 @@ private:
 
        /** Type Id od the OS detected from the ISO file by IUnattended. */
        QString m_strDetectedOSTypeId;
+       /* Name and index lists of the images detected from an ISO. Currently only for Windows ISOs. */
+       QVector<QString> m_detectedImageNames;
+       QVector<ULONG> m_detectedImageIndices;
 
        /** Holds the VM OS family ID. */
        QString  m_strGuestOSFamilyId;
