@@ -331,7 +331,7 @@ void UIWizardNewVMNameOSTypeCommon::detectOSAndImagesFromISO(const QString &strI
     QVector<ulong> qIndices;
     for (int i = 0; i < indices.size(); ++i)
         qIndices << indices[i];
-    pWizard->setDetectedImageNamesAndIndices(comUnatteded.GetDetectedImageNames(), qIndices);
+    pWizard->setDetectedWindowsImageNamesAndIndices(comUnatteded.GetDetectedImageNames(), qIndices);
 }
 
 bool UIWizardNewVMNameOSTypeCommon::checkISOFile(UINameAndSystemEditor *pNameAndSystemEditor)

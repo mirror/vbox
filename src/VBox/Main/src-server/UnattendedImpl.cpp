@@ -1915,6 +1915,19 @@ HRESULT Unattended::prepare()
             return hrc;
     }
 
+    /* We have to wait and do this check here since mDetectedImages is populated during detectIsoOS call. */
+    bool fImageFound = false;
+    for (size_t i = 0; i < mDetectedImages.size() && !fImageFound; ++i)
+    {
+        if (midxImage == mDetectedImages[i].mImageIndex)
+            fImageFound = true;
+    }
+    if (!fImageFound)
+    {
+        LogRel(("Unattended::prepare: warning: Image index '%d' is not found among detected image indices. Resetting to default value '%d'\n", midxImage, 1));
+        midxImage = 1;
+    }
+
     /*
      * Get the ISO's detect guest OS type info and make it's a known one (just
      * in case the above step doesn't work right).
@@ -3077,16 +3090,8 @@ HRESULT Unattended::setImageIndex(ULONG index)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
-    /* Set midxImage only if mDetectedImages includes an image with an index equal to @param index. */
-    for (size_t i = 0; i < mDetectedImages.size(); ++i)
-    {
-        if (mDetectedImages[i].mImageIndex == index)
-        {
-                midxImage = index;
-                return S_OK;
-        }
-    }
-    return E_INVALIDARG;
+    midxImage = index;
+    return S_OK;
 }
 
 HRESULT Unattended::getMachine(ComPtr<IMachine> &aMachine)

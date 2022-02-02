@@ -164,7 +164,8 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
 
     /* Populate the windows ISO images selector: */
     if (m_pWindowsISOImageSelector)
-        m_pWindowsISOImageSelector->setImageNamesAndIndices(pWizard->detectedImageNames(), pWizard->detectedImageIndices());
+        m_pWindowsISOImageSelector->setImageNamesAndIndices(pWizard->detectedWindowsImageNames(),
+                                                            pWizard->detectedWindowsImageIndices());
     setSkipCheckBoxEnable();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     emit completeChanged();
@@ -279,6 +280,10 @@ void UIWizardNewVMExpertPage::createConnections()
         connect(m_pAdditionalOptionsContainer, &UIAdditionalUnattendedOptions::sigStartHeadlessChanged,
                 this, &UIWizardNewVMExpertPage::sltStartHeadlessChanged);
     }
+
+    if (m_pWindowsISOImageSelector)
+        connect(m_pWindowsISOImageSelector, &UIWindowsISOImageSelector::sigSelectedWindowsImageChanged,
+                this, &UIWizardNewVMExpertPage::sltSelectedWindowsImageChanged);
 
     /* Virtual disk related connections: */
     if (m_pDiskSourceButtonGroup)
@@ -847,6 +852,12 @@ void UIWizardNewVMExpertPage::sltStartHeadlessChanged(bool fStartHeadless)
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "StartHeadless";
     wizardWindow<UIWizardNewVM>()->setStartHeadless(fStartHeadless);
+}
+
+void UIWizardNewVMExpertPage::sltSelectedWindowsImageChanged(ulong uImageIndex)
+{
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setSelectedWindowImageIndex(uImageIndex);
 }
 
 void UIWizardNewVMExpertPage::updateVirtualMediumPathFromMachinePathName()

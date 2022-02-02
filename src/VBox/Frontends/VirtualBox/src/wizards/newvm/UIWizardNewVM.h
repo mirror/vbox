@@ -57,6 +57,8 @@ struct UIUnattendedInstallData
     QString m_strProductKey;
     bool m_fInstallGuestAdditions;
     QString m_strGuestAdditionsISOPath;
+    /* 0 is for no selection. */
+    ulong m_uSelectedWindowsImageIndex;
 #if 0
     QString m_strDetectedOSVersion;
     QString m_strDetectedOSFlavor;
@@ -170,9 +172,12 @@ public:
         bool emptyDiskRecommended() const;
         void setEmptyDiskRecommended(bool fEmptyDiskRecommended);
 
-        void setDetectedImageNamesAndIndices(const QVector<QString> &names, const QVector<ulong> &ids);
-        const QVector<QString> &detectedImageNames() const;
-        const QVector<ulong> &detectedImageIndices() const;
+        void setDetectedWindowsImageNamesAndIndices(const QVector<QString> &names, const QVector<ulong> &ids);
+        const QVector<QString> &detectedWindowsImageNames() const;
+    const QVector<ulong> &detectedWindowsImageIndices() const;
+
+        void setSelectedWindowImageIndex(ulong uIndex);
+        ulong selectedWindowImageIndex() const;
 
         QVector<KMediumVariant> mediumVariants() const;
     /** @} */
@@ -228,8 +233,8 @@ private:
        /** Type Id od the OS detected from the ISO file by IUnattended. */
        QString m_strDetectedOSTypeId;
        /* Name and index lists of the images detected from an ISO. Currently only for Windows ISOs. */
-       QVector<QString> m_detectedImageNames;
-       QVector<ulong> m_detectedImageIndices;
+       QVector<QString> m_detectedWindowsImageNames;
+       QVector<ulong> m_detectedWindowsImageIndices;
 
        /** Holds the VM OS family ID. */
        QString  m_strGuestOSFamilyId;

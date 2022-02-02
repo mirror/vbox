@@ -62,6 +62,7 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
     , m_iFloppyCount(0)
     , m_iSASCount(0)
     , m_iUSBCount(0)
+    , m_fInstallGuestAdditions(false)
     , m_fSkipUnattendedInstall(false)
     , m_fEFIEnabled(false)
     , m_iCPUCount(1)
@@ -831,22 +832,32 @@ void UIWizardNewVM::setEmptyDiskRecommended(bool fEmptyDiskRecommended)
     m_fEmptyDiskRecommended = fEmptyDiskRecommended;
 }
 
-void UIWizardNewVM::setDetectedImageNamesAndIndices(const QVector<QString> &names, const QVector<ulong> &ids)
+void UIWizardNewVM::setDetectedWindowsImageNamesAndIndices(const QVector<QString> &names, const QVector<ulong> &ids)
 {
     AssertMsg(names.size() == ids.size(),
               ("Sizes of the arrays for names and indices of the detected images should be equal."));
-    m_detectedImageNames = names;
-    m_detectedImageIndices = ids;
+    m_detectedWindowsImageNames = names;
+    m_detectedWindowsImageIndices = ids;
 }
 
-const QVector<QString> &UIWizardNewVM::detectedImageNames() const
+const QVector<QString> &UIWizardNewVM::detectedWindowsImageNames() const
 {
-    return m_detectedImageNames;
+    return m_detectedWindowsImageNames;
 }
 
-const QVector<ulong> &UIWizardNewVM::detectedImageIndices() const
+const QVector<ulong> &UIWizardNewVM::detectedWindowsImageIndices() const
 {
-    return m_detectedImageIndices;
+    return m_detectedWindowsImageIndices;
+}
+
+void UIWizardNewVM::setSelectedWindowImageIndex(ulong uIndex)
+{
+    m_unattendedInstallData.m_uSelectedWindowsImageIndex = uIndex;
+}
+
+ulong UIWizardNewVM::selectedWindowImageIndex() const
+{
+    return m_unattendedInstallData.m_uSelectedWindowsImageIndex;
 }
 
 QVector<KMediumVariant> UIWizardNewVM::mediumVariants() const

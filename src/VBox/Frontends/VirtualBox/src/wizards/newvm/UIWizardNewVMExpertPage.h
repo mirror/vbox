@@ -82,6 +82,7 @@ private slots:
     void sltHostnameDomainNameChanged(const QString &strHostnameDomainName);
     void sltProductKeyChanged(const QString &strProductKey);
     void sltStartHeadlessChanged(bool fStartHeadless);
+    void sltSelectedWindowsImageChanged(ulong uImageIndex);
 
 private:
 
