@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/test.h>
-#include <iprt/param.h>
+#include <VBox/param.h>
 #include <iprt/mem.h>
 #include <iprt/errcore.h>
 #include <iprt/assert.h>
