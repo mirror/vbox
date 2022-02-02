@@ -927,18 +927,6 @@ DECL_FORCE_INLINE(int) iemVmxReadCurrentVmcsFromGstMem(PVMCPUCC pVCpu)
 
 
 /**
- * Implements VMSucceed for the VMREAD instruction and increments the guest RIP.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-DECL_FORCE_INLINE(void) iemVmxVmreadSuccess(PVMCPUCC pVCpu, uint8_t cbInstr)
-{
-    iemVmxVmSucceed(pVCpu);
-    iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-}
-
-
-/**
  * Gets the instruction diagnostic for segment base checks during VM-entry of a
  * nested-guest.
  *
@@ -3718,13 +3706,23 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPUCC pVCpu, uint8_t uVector, uint3
 /**
  * VMX VM-exit handler for EPT misconfiguration.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   GCPhysAddr  The physical address causing the EPT misconfiguration. This
- *                      must be page aligned.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   GCPhysAddr      The physical address causing the EPT misconfiguration.
+ *                          This need not be page aligned (e.g. nested-guest in real
+ *                          mode).
+ * @param   pExitEventInfo  Pointer to the VM-exit event information. Optional, can
+ *                          be NULL.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptMisconfig(PVMCPUCC pVCpu, RTGCPHYS GCPhysAddr)
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptMisconfig(PVMCPUCC pVCpu, RTGCPHYS GCPhysAddr, PCVMXVEXITEVENTINFO pExitEventInfo)
 {
-    Assert(!(GCPhysAddr & PAGE_OFFSET_MASK));
+    if (pExitEventInfo)
+    {
+        iemVmxVmcsSetExitIntInfo(pVCpu, pExitEventInfo->uExitIntInfo);
+        iemVmxVmcsSetExitIntErrCode(pVCpu, pExitEventInfo->uExitIntErrCode);
+        iemVmxVmcsSetIdtVectoringInfo(pVCpu, pExitEventInfo->uIdtVectoringInfo);
+        iemVmxVmcsSetIdtVectoringErrCode(pVCpu, pExitEventInfo->uIdtVectoringErrCode);
+    }
+
     iemVmxVmcsSetExitGuestPhysAddr(pVCpu, GCPhysAddr);
     return iemVmxVmexit(pVCpu, VMX_EXIT_EPT_MISCONFIG, 0 /* u64ExitQual */);
 }
@@ -3738,7 +3736,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptMisconfig(PVMCPUCC pVCpu, RTGCPHYS GCPhys
  * @param   fSlatFail           The SLAT failure info, IEM_SLAT_FAIL_XXX.
  * @param   fEptAccess          The EPT paging structure bits.
  * @param   GCPhysAddr          The physical address causing the EPT violation. This
- *                              must be page aligned.
+ *                              need not be page aligned (e.g. nested-guest in real
+ *                              mode).
  * @param   fIsLinearAddrValid  Whether translation of a linear address caused this
  *                              EPT violation. If @c false, GCPtrAddr must be 0.
  * @param   GCPtrAddr           The linear address causing the EPT violation.
@@ -3753,7 +3752,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAcces
      * While we can leave it this way, it's preferrable to zero it for consistency.
      */
     Assert(fLinearAddrValid || GCPtrAddr == 0);
-    Assert(!(GCPhysAddr & PAGE_OFFSET_MASK));
 
     uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
     uint8_t const fSupportsAccessDirty = fCaps & MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY;
@@ -3795,6 +3793,37 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAcces
 
 
 /**
+ * VMX VM-exit handler for EPT violation.
+ *
+ * This is intended for EPT violations where the caller provides all the
+ * relevant VM-exit information.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pExitInfo       Pointer to the VM-exit information.
+ * @param   pExitEventInfo  Pointer to the VM-exit event information.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolationWithInfo(PVMCPUCC pVCpu, PCVMXVEXITINFO pExitInfo,
+                                                         PCVMXVEXITEVENTINFO pExitEventInfo)
+{
+    Assert(pExitInfo->uReason == VMX_EXIT_EPT_VIOLATION);
+
+    iemVmxVmcsSetExitIntInfo(pVCpu, pExitEventInfo->uExitIntInfo);
+    iemVmxVmcsSetExitIntErrCode(pVCpu, pExitEventInfo->uExitIntErrCode);
+    iemVmxVmcsSetIdtVectoringInfo(pVCpu, pExitEventInfo->uIdtVectoringInfo);
+    iemVmxVmcsSetIdtVectoringErrCode(pVCpu, pExitEventInfo->uIdtVectoringErrCode);
+
+    iemVmxVmcsSetExitGuestPhysAddr(pVCpu, pExitInfo->u64GuestPhysAddr);
+    if (pExitInfo->u64Qual & VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_VALID_MASK)
+        iemVmxVmcsSetExitGuestLinearAddr(pVCpu, pExitInfo->u64GuestLinearAddr);
+    else
+        iemVmxVmcsSetExitGuestLinearAddr(pVCpu,  0);
+    iemVmxVmcsSetExitInstrLen(pVCpu, pExitInfo->cbInstr);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_EPT_VIOLATION, pExitInfo->u64Qual);
+}
+
+
+/**
  * VMX VM-exit handler for EPT-induced VM-exits.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -3814,13 +3843,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32
 
     if (pWalk->fFailed & PGM_WALKFAIL_EPT_VIOLATION)
     {
+        Log(("EptViolation: cs:rip=%x:%#RX64 fAccess=%#RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fAccess));
         uint64_t const fEptAccess = (pWalk->fEffective & PGM_PTATTRS_EPT_MASK) >> PGM_PTATTRS_EPT_SHIFT;
         return iemVmxVmexitEptViolation(pVCpu, fAccess, fSlatFail, fEptAccess, pWalk->GCPhysNested, pWalk->fIsLinearAddrValid,
                                         pWalk->GCPtr, cbInstr);
     }
 
+    Log(("EptMisconfig: cs:rip=%x:%#RX64 fAccess=%#RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fAccess));
     Assert(pWalk->fFailed & PGM_WALKFAIL_EPT_MISCONFIG);
-    return iemVmxVmexitEptMisconfig(pVCpu, pWalk->GCPhysNested);
+    return iemVmxVmexitEptMisconfig(pVCpu, pWalk->GCPhysNested, NULL /* pExitEventInfo */);
 }
 
 
@@ -7814,7 +7845,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg64(PVMCPUCC pVCpu, uint8_t cbInstr, uint6
     VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, pu64Dst, u64VmcsField, pExitInfo);
     if (rcStrict == VINF_SUCCESS)
     {
-        iemVmxVmreadSuccess(pVCpu, cbInstr);
+        iemVmxVmSucceed(pVCpu);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -7842,7 +7874,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg32(PVMCPUCC pVCpu, uint8_t cbInstr, uint3
     if (rcStrict == VINF_SUCCESS)
     {
         *pu32Dst = u64Dst;
-        iemVmxVmreadSuccess(pVCpu, cbInstr);
+        iemVmxVmSucceed(pVCpu);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -7881,7 +7914,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t
             rcStrict = iemMemStoreDataU32(pVCpu, iEffSeg, GCPtrDst, u64Dst);
         if (rcStrict == VINF_SUCCESS)
         {
-            iemVmxVmreadSuccess(pVCpu, cbInstr);
+            iemVmxVmSucceed(pVCpu);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
             return VINF_SUCCESS;
         }
 
@@ -8063,8 +8097,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
                     : &pVCpu->cpum.GstCtx.hwvirt.vmx.ShadowVmcs;
     iemVmxVmwriteNoCheck(pVmcs, u64Val, u64VmcsField);
 
-    if (   VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM))
-        && !fInVmxNonRootMode)
+    if (   !fInVmxNonRootMode
+        && VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
     {
         /* Notify HM that the VMCS content might have changed. */
         HMNotifyVmxNstGstCurrentVmcsChanged(pVCpu);
@@ -8525,7 +8559,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t i
         /*
          * Validate the descriptor.
          */
-        if (uDesc.s.Lo > 0xfff)
+        if (uDesc.s.Lo <= 0xffff)
+        { /* likely */ }
+        else
         {
             Log(("invvpid: reserved bits set in invvpid descriptor %#RX64 -> #GP(0)\n", uDesc.s.Lo));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag  = kVmxVDiag_Invvpid_DescRsvd;
@@ -8747,6 +8783,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvept(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iE
         uint64_t const uCr3 = pVCpu->cpum.GstCtx.cr3;
         PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
 
+        iemVmxVmSucceed(pVCpu);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
     }
 
