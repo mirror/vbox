@@ -46,6 +46,7 @@ UIWizardNewVMExpertPage::UIWizardNewVMExpertPage(UIActionPool *pActionPool)
     , m_pDiskVariantWidget(0)
     , m_pFormatComboBox(0)
     , m_pSizeAndLocationGroup(0)
+    , m_pWindowsISOImageSelector(0)
     , m_pNameAndSystemEditor(0)
     , m_pSkipUnattendedCheckBox(0)
     , m_pNameAndSystemLayout(0)
@@ -151,7 +152,7 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
 
     if (UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId()))
         m_userModifiedParameters << "GuestOSTypeFromISO";
-    else /* Remove GuestOSTypeFromISO fromthe set if it is there: */
+    else /* Remove GuestOSTypeFromISO from the set if it is there: */
         m_userModifiedParameters.remove("GuestOSTypeFromISO");
 
     pWizard->setISOFilePath(strISOPath);
@@ -160,6 +161,10 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
     QFileInfo fileInfo(strISOPath);
     if (fileInfo.exists() && fileInfo.isReadable())
         uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strISOPath);
+
+    /* Populate the windows ISO images selector: */
+    if (m_pWindowsISOImageSelector)
+        m_pWindowsISOImageSelector->setImageNamesAndIndices(pWizard->detectedImageNames(), pWizard->detectedImageIndices());
     setSkipCheckBoxEnable();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     emit completeChanged();
@@ -468,6 +473,10 @@ QWidget *UIWizardNewVMExpertPage::createUnattendedWidgets()
     AssertReturn(m_pGAInstallationISOContainer, 0);
     pLayout->addWidget(m_pGAInstallationISOContainer, iRow, 0, 1, 4);
 
+    m_pWindowsISOImageSelector = new UIWindowsISOImageSelector;
+    AssertReturn(m_pWindowsISOImageSelector, 0);
+    pLayout->addWidget(m_pWindowsISOImageSelector, iRow, 0, 1, 5);
+
     return pContainerWidget;
 }
 
@@ -672,6 +681,8 @@ void UIWizardNewVMExpertPage::disableEnableUnattendedRelatedWidgets(bool fEnable
         m_pAdditionalOptionsContainer->setEnabled(fEnabled);
     if (m_pGAInstallationISOContainer)
         m_pGAInstallationISOContainer->setEnabled(fEnabled);
+    if (m_pWindowsISOImageSelector)
+        m_pWindowsISOImageSelector->setEnabled(fEnabled && !m_pWindowsISOImageSelector->isEmpty());
     m_pAdditionalOptionsContainer->disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
 }
 

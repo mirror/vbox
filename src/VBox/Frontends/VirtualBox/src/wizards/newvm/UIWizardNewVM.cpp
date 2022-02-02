@@ -831,7 +831,7 @@ void UIWizardNewVM::setEmptyDiskRecommended(bool fEmptyDiskRecommended)
     m_fEmptyDiskRecommended = fEmptyDiskRecommended;
 }
 
-void UIWizardNewVM::setDetectedImageNamesAndIndices(const QVector<QString> &names, const QVector<ULONG> &ids)
+void UIWizardNewVM::setDetectedImageNamesAndIndices(const QVector<QString> &names, const QVector<ulong> &ids)
 {
     AssertMsg(names.size() == ids.size(),
               ("Sizes of the arrays for names and indices of the detected images should be equal."));
@@ -844,7 +844,7 @@ const QVector<QString> &UIWizardNewVM::detectedImageNames() const
     return m_detectedImageNames;
 }
 
-const QVector<ULONG> &UIWizardNewVM::detectedImageIndices() const
+const QVector<ulong> &UIWizardNewVM::detectedImageIndices() const
 {
     return m_detectedImageIndices;
 }
