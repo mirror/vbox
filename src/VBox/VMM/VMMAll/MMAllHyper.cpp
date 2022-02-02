@@ -196,8 +196,8 @@ static void mmHyperUnlock(PVMCC pVM)
  * @param   pVM         The cross context VM structure.
  * @param   cb          Number of bytes to allocate.
  * @param   uAlignment  Required memory alignment in bytes.
- *                      Values are 0,8,16,32,64 and PAGE_SIZE.
- *                      0 -> default alignment, i.e. 8 bytes.
+ *                      Values are 0,8,16,32,64 and GUEST_PAGE_SIZE. 0 ->
+ *                      default alignment, i.e. 8 bytes.
  * @param   enmTag      The statistics tag.
  * @param   ppv         Where to store the address to the allocated
  *                      memory.
@@ -227,9 +227,9 @@ static int mmHyperAllocInternal(PVM pVM, size_t cb, unsigned uAlignment, MMTAG e
             }
             break;
 
-        case PAGE_SIZE:
-            AssertMsg(RT_ALIGN_32(cb, PAGE_SIZE) == cb, ("The size isn't page aligned. (cb=%#x)\n", cb));
-            cbAligned = RT_ALIGN_32(cb, PAGE_SIZE);
+        case GUEST_PAGE_SIZE:
+            AssertMsg(RT_ALIGN_32(cb, GUEST_PAGE_SIZE) == cb, ("The size isn't page aligned. (cb=%#x)\n", cb));
+            cbAligned = RT_ALIGN_32(cb, GUEST_PAGE_SIZE);
             if (!cbAligned)
             {
                 Log2(("MMHyperAlloc: cb=%#x uAlignment=%#x returns VERR_INVALID_PARAMETER\n", cb, uAlignment));
@@ -260,7 +260,7 @@ static int mmHyperAllocInternal(PVM pVM, size_t cb, unsigned uAlignment, MMTAG e
 #else
     NOREF(enmTag);
 #endif
-    if (uAlignment < PAGE_SIZE)
+    if (uAlignment < GUEST_PAGE_SIZE)
     {
         /*
          * Allocate a chunk.
@@ -346,8 +346,8 @@ VMMDECL(int) MMHyperAlloc(PVMCC pVM, size_t cb, unsigned uAlignment, MMTAG enmTa
  * @param   pvSrc       The source memory block to copy from.
  * @param   cb          Size of the source memory block.
  * @param   uAlignment  Required memory alignment in bytes.
- *                      Values are 0,8,16,32,64 and PAGE_SIZE.
- *                      0 -> default alignment, i.e. 8 bytes.
+ *                      Values are 0,8,16,32,64 and GUEST_PAGE_SIZE. 0 ->
+ *                      default alignment, i.e. 8 bytes.
  * @param   enmTag      The statistics tag.
  * @param   ppv         Where to store the address to the allocated
  *                      memory.
@@ -644,7 +644,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
      */
     PMMHYPERCHUNKFREE pFree = (PMMHYPERCHUNKFREE)((char *)pHeap->CTX_SUFF(pbHeap) + pHeap->offFreeTail);
     ASSERT_CHUNK_FREE(pHeap, pFree);
-    if (    (((uintptr_t)(&pFree->core + 1) + pFree->cb) & (PAGE_OFFSET_MASK - 1))
+    if (    (((uintptr_t)(&pFree->core + 1) + pFree->cb) & (GUEST_PAGE_OFFSET_MASK - 1))
         ||  pFree->cb + sizeof(MMHYPERCHUNK) < cb)
     {
         Log3(("mmHyperAllocPages: Not enough/no page aligned memory!\n"));
@@ -659,7 +659,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
          */
         pFree->cb -= cb;
         pvRet = (char *)(&pFree->core + 1) + pFree->cb;
-        AssertMsg(RT_ALIGN_P(pvRet, PAGE_SIZE) == pvRet, ("pvRet=%p cb=%#x pFree=%p pFree->cb=%#x\n", pvRet, cb, pFree, pFree->cb));
+        AssertMsg(RT_ALIGN_P(pvRet, GUEST_PAGE_SIZE) == pvRet, ("pvRet=%p cb=%#x pFree=%p pFree->cb=%#x\n", pvRet, cb, pFree, pFree->cb));
         Log3(("mmHyperAllocPages: cbFree %d -> %d (%d)\n", pHeap->cbFree, pHeap->cbFree - cb, -(int)cb));
         pHeap->cbFree -= cb;
         ASSERT_CHUNK_FREE(pHeap, pFree);
@@ -828,7 +828,7 @@ static int mmHyperFreeInternal(PVM pVM, void *pv)
 
     /* The heap structure. */
     PMMHYPERHEAP    pHeap = (PMMHYPERHEAP)((uintptr_t)pChunk + pChunk->offHeap);
-    AssertMsgReturn(    !((uintptr_t)pHeap & PAGE_OFFSET_MASK)
+    AssertMsgReturn(    !((uintptr_t)pHeap & GUEST_PAGE_OFFSET_MASK)
                     &&  pChunk->offHeap,
                     ("%p: pHeap=%#x offHeap=%RX32\n", pv, pHeap->u32Magic, pChunk->offHeap),
                     VERR_INVALID_POINTER);

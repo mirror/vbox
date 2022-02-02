@@ -567,7 +567,7 @@ int     nemHCNativeNotifyPhysPageAllocated(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS 
 
 #ifdef RT_OS_WINDOWS
 /** Maximum number of pages we can map in a single NEMR0MapPages call. */
-# define NEM_MAX_MAP_PAGES      ((PAGE_SIZE - RT_UOFFSETOF(HV_INPUT_MAP_GPA_PAGES, PageList)) / sizeof(HV_SPA_PAGE_NUMBER))
+# define NEM_MAX_MAP_PAGES      ((HOST_PAGE_SIZE - RT_UOFFSETOF(HV_INPUT_MAP_GPA_PAGES, PageList)) / sizeof(HV_SPA_PAGE_NUMBER))
 /** Maximum number of pages we can unmap in a single NEMR0UnmapPages call. */
 # define NEM_MAX_UNMAP_PAGES    4095
 

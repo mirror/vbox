@@ -224,7 +224,7 @@ static int dbgfR0BpInitWorker(PGVM pGVM, R3PTRTYPE(volatile uint32_t *) *ppaBpLo
     /*
      * Figure out how much memory we need for the L1 lookup table and allocate it.
      */
-    uint32_t const cbL1Loc = RT_ALIGN_32(UINT16_MAX * sizeof(uint32_t), PAGE_SIZE);
+    uint32_t const cbL1Loc = RT_ALIGN_32(UINT16_MAX * sizeof(uint32_t), HOST_PAGE_SIZE);
 
     RTR0MEMOBJ hMemObj;
     int rc = RTR0MemObjAllocPage(&hMemObj, cbL1Loc, false /*fExecutable*/);
@@ -268,7 +268,7 @@ static int dbgfR0BpPortIoInitWorker(PGVM pGVM, R3PTRTYPE(volatile uint32_t *) *p
     /*
      * Figure out how much memory we need for the I/O port breakpoint lookup table and allocate it.
      */
-    uint32_t const cbPortIoLoc = RT_ALIGN_32(UINT16_MAX * sizeof(uint32_t), PAGE_SIZE);
+    uint32_t const cbPortIoLoc = RT_ALIGN_32(UINT16_MAX * sizeof(uint32_t), HOST_PAGE_SIZE);
 
     RTR0MEMOBJ hMemObj;
     int rc = RTR0MemObjAllocPage(&hMemObj, cbPortIoLoc, false /*fExecutable*/);
@@ -311,9 +311,9 @@ static int dbgfR0BpOwnerInitWorker(PGVM pGVM, R3PTRTYPE(void *) *ppaBpOwnerR3)
     /*
      * Figure out how much memory we need for the owner tables and allocate it.
      */
-    uint32_t const cbBpOwnerR0 = RT_ALIGN_32(DBGF_BP_OWNER_COUNT_MAX * sizeof(DBGFBPOWNERINTR0), PAGE_SIZE);
-    uint32_t const cbBpOwnerR3 = RT_ALIGN_32(DBGF_BP_OWNER_COUNT_MAX * sizeof(DBGFBPOWNERINT), PAGE_SIZE);
-    uint32_t const cbTotal     = RT_ALIGN_32(cbBpOwnerR0 + cbBpOwnerR3, PAGE_SIZE);
+    uint32_t const cbBpOwnerR0 = RT_ALIGN_32(DBGF_BP_OWNER_COUNT_MAX * sizeof(DBGFBPOWNERINTR0), HOST_PAGE_SIZE);
+    uint32_t const cbBpOwnerR3 = RT_ALIGN_32(DBGF_BP_OWNER_COUNT_MAX * sizeof(DBGFBPOWNERINT), HOST_PAGE_SIZE);
+    uint32_t const cbTotal     = RT_ALIGN_32(cbBpOwnerR0 + cbBpOwnerR3, HOST_PAGE_SIZE);
 
     RTR0MEMOBJ hMemObj;
     int rc = RTR0MemObjAllocPage(&hMemObj, cbTotal, false /*fExecutable*/);
@@ -368,8 +368,8 @@ static int dbgfR0BpChunkAllocWorker(PGVM pGVM, uint32_t idChunk, R3PTRTYPE(void 
     /*
      * Figure out how much memory we need for the chunk and allocate it.
      */
-    uint32_t const cbRing0  = RT_ALIGN_32(DBGF_BP_COUNT_PER_CHUNK * sizeof(DBGFBPINTR0), PAGE_SIZE);
-    uint32_t const cbShared = RT_ALIGN_32(DBGF_BP_COUNT_PER_CHUNK * sizeof(DBGFBPINT), PAGE_SIZE);
+    uint32_t const cbRing0  = RT_ALIGN_32(DBGF_BP_COUNT_PER_CHUNK * sizeof(DBGFBPINTR0), HOST_PAGE_SIZE);
+    uint32_t const cbShared = RT_ALIGN_32(DBGF_BP_COUNT_PER_CHUNK * sizeof(DBGFBPINT), HOST_PAGE_SIZE);
     uint32_t const cbTotal  = cbRing0 + cbShared;
 
     RTR0MEMOBJ hMemObj;
@@ -417,7 +417,7 @@ static int dbgfR0BpL2TblChunkAllocWorker(PGVM pGVM, uint32_t idChunk, R3PTRTYPE(
     /*
      * Figure out how much memory we need for the chunk and allocate it.
      */
-    uint32_t const cbTotal = RT_ALIGN_32(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK * sizeof(DBGFBPL2ENTRY), PAGE_SIZE);
+    uint32_t const cbTotal = RT_ALIGN_32(DBGF_BP_L2_TBL_ENTRIES_PER_CHUNK * sizeof(DBGFBPL2ENTRY), HOST_PAGE_SIZE);
 
     RTR0MEMOBJ hMemObj;
     int rc = RTR0MemObjAllocPage(&hMemObj, cbTotal, false /*fExecutable*/);

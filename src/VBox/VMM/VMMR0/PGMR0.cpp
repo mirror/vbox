@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
+#include <iprt/string.h>
 #include <iprt/time.h>
 
 
@@ -202,7 +203,7 @@ int pgmR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu, bool fRing3)
 #endif
                 AssertMsgRCReturn(rc, ("idPage=%#x HCPhys=%RHp rc=%Rrc\n", pPage->idPage, pPage->HCPhysGCPhys, rc), rc);
 
-                ASMMemZeroPage(pv);
+                RT_BZERO(pv, GUEST_PAGE_SIZE);
                 pPage->fZeroed = true;
             }
 #ifdef VBOX_STRICT
@@ -215,7 +216,7 @@ int pgmR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu, bool fRing3)
                 rc = GMMR0PageIdToVirt(pGVM, pPage->idPage, &pv);
 # endif
                 AssertMsgRCReturn(rc, ("idPage=%#x HCPhys=%RHp rc=%Rrc\n", pPage->idPage, pPage->HCPhysGCPhys, rc), rc);
-                AssertReturn(ASMMemIsZeroPage(pv), VERR_PGM_HANDY_PAGE_IPE);
+                AssertReturn(ASMMemIsZero(pv, GUEST_PAGE_SIZE), VERR_PGM_HANDY_PAGE_IPE);
             }
 #endif
             Log3(("PGMR0PhysAllocateHandyPages: idPage=%#x HCPhys=%RGp\n", pPage->idPage, pPage->HCPhysGCPhys));
@@ -427,7 +428,7 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
      */
     bool         fFlushTLBs = false;
     VBOXSTRICTRC rc         = VINF_SUCCESS;
-    unsigned     cLeft      = _2M / PAGE_SIZE;
+    unsigned     cLeft      = _2M / GUEST_PAGE_SIZE;
     while (cLeft-- > 0)
     {
         PPGMPAGE const pPage = pgmPhysGetPage(pGVM, GCPhys);
@@ -458,13 +459,13 @@ int pgmR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHYS GCPhys)
 
         /* advance */
         idPage++;
-        HCPhys += PAGE_SIZE;
-        GCPhys += PAGE_SIZE;
+        HCPhys += GUEST_PAGE_SIZE;
+        GCPhys += GUEST_PAGE_SIZE;
     }
 
-    STAM_COUNTER_ADD(&pGVM->pgm.s.Stats.StatRZPageReplaceZero, _2M / PAGE_SIZE);
-    pGVM->pgm.s.cZeroPages    -= _2M / PAGE_SIZE;
-    pGVM->pgm.s.cPrivatePages += _2M / PAGE_SIZE;
+    STAM_COUNTER_ADD(&pGVM->pgm.s.Stats.StatRZPageReplaceZero, _2M / GUEST_PAGE_SIZE);
+    pGVM->pgm.s.cZeroPages    -= _2M / GUEST_PAGE_SIZE;
+    pGVM->pgm.s.cPrivatePages += _2M / GUEST_PAGE_SIZE;
 
     /*
      * Flush all TLBs.
@@ -520,10 +521,10 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPHY
 
     /* The caller might have done this already, but since we're ring-3 callable we
        need to make sure everything is fine before starting the allocation here. */
-    for (unsigned i = 0; i < _2M / PAGE_SIZE; i++)
+    for (unsigned i = 0; i < _2M / GUEST_PAGE_SIZE; i++)
     {
         PPGMPAGE pPage;
-        rc = pgmPhysGetPageEx(pGVM, GCPhys + i * PAGE_SIZE, &pPage);
+        rc = pgmPhysGetPageEx(pGVM, GCPhys + i * GUEST_PAGE_SIZE, &pPage);
         AssertRCReturnStmt(rc, PGM_UNLOCK(pGVM), rc);
         AssertReturnStmt(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM, PGM_UNLOCK(pGVM), VERR_PGM_PHYS_NOT_RAM);
         AssertReturnStmt(PGM_PAGE_IS_ZERO(pPage), PGM_UNLOCK(pGVM), VERR_PGM_UNEXPECTED_PAGE_STATE);
@@ -581,8 +582,8 @@ DECLINLINE(PPGMREGMMIO2RANGE) pgmR0PhysMmio2Find(PGVM pGVM, PPDMDEVINS pDevIns, 
 VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
                                             size_t offSub, size_t cbSub, void **ppvMapping)
 {
-    AssertReturn(!(offSub & PAGE_OFFSET_MASK), VERR_UNSUPPORTED_ALIGNMENT);
-    AssertReturn(!(cbSub  & PAGE_OFFSET_MASK), VERR_UNSUPPORTED_ALIGNMENT);
+    AssertReturn(!(offSub & HOST_PAGE_OFFSET_MASK), VERR_UNSUPPORTED_ALIGNMENT);
+    AssertReturn(!(cbSub  & HOST_PAGE_OFFSET_MASK), VERR_UNSUPPORTED_ALIGNMENT);
 
     /*
      * Translate hRegion into a range pointer.
@@ -661,12 +662,12 @@ VMMR0_INT_DECL(int) GPciRawR0GuestPageBeginAssignments(PGVM pGVM)
  */
 VMMR0_INT_DECL(int) GPciRawR0GuestPageAssign(PGVM pGVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys)
 {
-    AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_3);
-    AssertReturn(!(HCPhys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_3);
+    AssertReturn(!(GCPhys & HOST_PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_3);
+    AssertReturn(!(HCPhys & HOST_PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_3);
 
     if (pGVM->rawpci.s.pfnContigMemInfo)
         /** @todo what do we do on failure? */
-        pGVM->rawpci.s.pfnContigMemInfo(&pGVM->rawpci.s, HCPhys, GCPhys, PAGE_SIZE, PCIRAW_MEMINFO_MAP);
+        pGVM->rawpci.s.pfnContigMemInfo(&pGVM->rawpci.s, HCPhys, GCPhys, HOST_PAGE_SIZE, PCIRAW_MEMINFO_MAP);
 
     return VINF_SUCCESS;
 }
@@ -686,11 +687,11 @@ VMMR0_INT_DECL(int) GPciRawR0GuestPageAssign(PGVM pGVM, RTGCPHYS GCPhys, RTHCPHY
  */
 VMMR0_INT_DECL(int) GPciRawR0GuestPageUnassign(PGVM pGVM, RTGCPHYS GCPhys)
 {
-    AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_3);
+    AssertReturn(!(GCPhys & HOST_PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_3);
 
     if (pGVM->rawpci.s.pfnContigMemInfo)
         /** @todo what do we do on failure? */
-        pGVM->rawpci.s.pfnContigMemInfo(&pGVM->rawpci.s, 0, GCPhys, PAGE_SIZE, PCIRAW_MEMINFO_UNMAP);
+        pGVM->rawpci.s.pfnContigMemInfo(&pGVM->rawpci.s, 0, GCPhys, HOST_PAGE_SIZE, PCIRAW_MEMINFO_UNMAP);
 
     return VINF_SUCCESS;
 }
@@ -726,8 +727,8 @@ VMMR0_INT_DECL(int) GPciRawR0GuestPageEndAssignments(PGVM pGVM)
  */
 VMMR0_INT_DECL(int) GPciRawR0GuestPageUpdate(PGVM pGVM, RTGCPHYS GCPhys, RTHCPHYS HCPhys)
 {
-    AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_4);
-    AssertReturn(!(HCPhys & PAGE_OFFSET_MASK) || HCPhys == NIL_RTHCPHYS, VERR_INTERNAL_ERROR_4);
+    AssertReturn(!(GCPhys & HOST_PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_4);
+    AssertReturn(!(HCPhys & HOST_PAGE_OFFSET_MASK) || HCPhys == NIL_RTHCPHYS, VERR_INTERNAL_ERROR_4);
     NOREF(pGVM);
     return VINF_SUCCESS;
 }
@@ -765,7 +766,7 @@ VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM)
             {
                 PPGMPAGE    pPage  = &pRam->aPages[0];
                 RTGCPHYS    GCPhys = pRam->GCPhys;
-                uint32_t    cLeft  = pRam->cb >> PAGE_SHIFT;
+                uint32_t    cLeft  = pRam->cb >> GUEST_PAGE_SHIFT;
                 while (cLeft-- > 0)
                 {
                     /* Only expose pages that are 100% safe for now. */
@@ -778,7 +779,7 @@ VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM)
 
                     /* next */
                     pPage++;
-                    GCPhys += PAGE_SIZE;
+                    GCPhys += HOST_PAGE_SIZE;
                 }
             }
 

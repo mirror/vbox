@@ -111,7 +111,7 @@ VMMR0_INT_DECL(int) TMR0TimerQueueGrow(PGVM pGVM, uint32_t idxQueue, uint32_t cM
      * Round up the request to the nearest page and do the allocation.
      */
     size_t cbNew = sizeof(TMTIMER) * cNewTimers;
-    cbNew = RT_ALIGN_Z(cbNew, PAGE_SIZE);
+    cbNew = RT_ALIGN_Z(cbNew, HOST_PAGE_SIZE);
     cNewTimers = (uint32_t)(cbNew / sizeof(TMTIMER));
 
     RTR0MEMOBJ hMemObj;
@@ -125,7 +125,8 @@ VMMR0_INT_DECL(int) TMR0TimerQueueGrow(PGVM pGVM, uint32_t idxQueue, uint32_t cM
         RT_BZERO(paTimers, cbNew);
 
         RTR0MEMOBJ hMapObj;
-        rc = RTR0MemObjMapUser(&hMapObj, hMemObj, (RTR3PTR)-1, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, RTR0ProcHandleSelf());
+        rc = RTR0MemObjMapUser(&hMapObj, hMemObj, (RTR3PTR)-1, HOST_PAGE_SIZE,
+                               RTMEM_PROT_READ | RTMEM_PROT_WRITE, RTR0ProcHandleSelf());
         if (RT_SUCCESS(rc))
         {
             tmHCTimerQueueGrowInit(paTimers, pQueueR0->paTimers, cNewTimers, cOldTimers);

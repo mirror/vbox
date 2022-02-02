@@ -592,7 +592,7 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         }
         else if (rc == VERR_PAGE_NOT_PRESENT)
         {
-            if ((GCPtrGDT & PAGE_OFFSET_MASK) + sizeof(X86DESC) - 1 < sizeof(X86DESC))
+            if ((GCPtrGDT & GUEST_PAGE_OFFSET_MASK) + sizeof(X86DESC) - 1 < sizeof(X86DESC))
                 pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%RGv)\n", iGDT << X86_SEL_SHIFT, GCPtrGDT);
         }
         else
@@ -642,7 +642,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         }
         else if (rc == VERR_PAGE_NOT_PRESENT)
         {
-            if ((GCPtrLdt & PAGE_OFFSET_MASK) + sizeof(X86DESC) - 1 < sizeof(X86DESC))
+            if ((GCPtrLdt & GUEST_PAGE_OFFSET_MASK) + sizeof(X86DESC) - 1 < sizeof(X86DESC))
                 pHlp->pfnPrintf(pHlp, "%04x - page not present (GCAddr=%RGv)\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, GCPtrLdt);
         }
         else

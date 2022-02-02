@@ -560,11 +560,11 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
          * pages for now (would be nice to have the VGA bits there though).
          */
         uint64_t cbMemRange  = GCPhysEnd - GCPhysStart + 1;
-        uint64_t cPages      = cbMemRange >> PAGE_SHIFT;
+        uint64_t cPages      = cbMemRange >> GUEST_PAGE_SHIFT;
         for (uint64_t iPage = 0; iPage < cPages; iPage++)
         {
-            uint8_t abPage[PAGE_SIZE];
-            rc = PGMPhysSimpleReadGCPhys(pVM, abPage, GCPhysStart + (iPage << PAGE_SHIFT),  sizeof(abPage));
+            uint8_t abPage[GUEST_PAGE_SIZE];
+            rc = PGMPhysSimpleReadGCPhys(pVM, abPage, GCPhysStart + (iPage << GUEST_PAGE_SHIFT),  sizeof(abPage));
             if (RT_FAILURE(rc))
             {
                 if (rc != VERR_PGM_PHYS_PAGE_RESERVED)

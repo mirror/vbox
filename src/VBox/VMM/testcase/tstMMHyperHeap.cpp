@@ -59,7 +59,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      */
     void       *pvVM = NULL;
     RTR0PTR     pvR0 = NIL_RTR0PTR;
-    SUPPAGE     aPages[(sizeof(GVM) + NUM_CPUS * sizeof(GVMCPU)) >> PAGE_SHIFT];
+    SUPPAGE     aPages[(sizeof(GVM) + NUM_CPUS * sizeof(GVMCPU)) >> HOST_PAGE_SHIFT];
     rc = SUPR3Init(NULL);
     if (RT_FAILURE(rc))
     {
@@ -72,12 +72,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         RTPrintf("Fatal error: Allocation failure! rc=%Rrc\n", rc);
         return RTEXITCODE_FAILURE;
     }
-    RT_BZERO(pvVM, RT_ELEMENTS(aPages) * PAGE_SIZE); /* SUPR3PageAllocEx doesn't necessarily zero the memory. */
+    RT_BZERO(pvVM, RT_ELEMENTS(aPages) * HOST_PAGE_SIZE); /* SUPR3PageAllocEx doesn't necessarily zero the memory. */
     PVM  pVM = (PVM)pvVM;
     pVM->paVMPagesR3 = aPages;
     pVM->pVMR0ForCall = pvR0;
 
-    PUVM pUVM = (PUVM)RTMemPageAllocZ(RT_ALIGN_Z(sizeof(*pUVM), PAGE_SIZE));
+    PUVM pUVM = (PUVM)RTMemPageAllocZ(RT_ALIGN_Z(sizeof(*pUVM), HOST_PAGE_SIZE));
     if (!pUVM)
     {
         RTPrintf("Fatal error: RTMEmPageAllocZ failed\n");
@@ -136,28 +136,28 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         unsigned    iFreeOrder;
     } aOps[] =
     {
-        {        16,          0,    NULL,  0 },
-        {        16,          4,    NULL,  1 },
-        {        16,          8,    NULL,  2 },
-        {        16,         16,    NULL,  5 },
-        {        16,         32,    NULL,  4 },
-        {        32,          0,    NULL,  3 },
-        {        31,          0,    NULL,  6 },
-        {      1024,          0,    NULL,  8 },
-        {      1024,         32,    NULL, 10 },
-        {      1024,         32,    NULL, 12 },
-        { PAGE_SIZE,  PAGE_SIZE,    NULL, 13 },
-        {      1024,         32,    NULL,  9 },
-        { PAGE_SIZE,         32,    NULL, 11 },
-        { PAGE_SIZE,  PAGE_SIZE,    NULL, 14 },
-        {        16,          0,    NULL, 15 },
-        {        9,           0,    NULL,  7 },
-        {        16,          0,    NULL,  7 },
-        {        36,          0,    NULL,  7 },
-        {        16,          0,    NULL,  7 },
-        {     12344,          0,    NULL,  7 },
-        {        50,          0,    NULL,  7 },
-        {        16,          0,    NULL,  7 },
+        {              16,                0,    NULL,  0 },
+        {              16,                4,    NULL,  1 },
+        {              16,                8,    NULL,  2 },
+        {              16,               16,    NULL,  5 },
+        {              16,               32,    NULL,  4 },
+        {              32,                0,    NULL,  3 },
+        {              31,                0,    NULL,  6 },
+        {            1024,                0,    NULL,  8 },
+        {            1024,               32,    NULL, 10 },
+        {            1024,               32,    NULL, 12 },
+        { GUEST_PAGE_SIZE,  GUEST_PAGE_SIZE,    NULL, 13 },
+        {            1024,               32,    NULL,  9 },
+        { GUEST_PAGE_SIZE,               32,    NULL, 11 },
+        { GUEST_PAGE_SIZE,  GUEST_PAGE_SIZE,    NULL, 14 },
+        {              16,                0,    NULL, 15 },
+        {              9,                 0,    NULL,  7 },
+        {              16,                0,    NULL,  7 },
+        {              36,                0,    NULL,  7 },
+        {              16,                0,    NULL,  7 },
+        {           12344,                0,    NULL,  7 },
+        {              50,                0,    NULL,  7 },
+        {              16,                0,    NULL,  7 },
     };
     unsigned i;
 #ifdef DEBUG
@@ -190,7 +190,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     for (i = 0; i < RT_ELEMENTS(aOps); i++)
     {
         if (    !aOps[i].pvAlloc
-            ||  aOps[i].uAlignment == PAGE_SIZE)
+            ||  aOps[i].uAlignment == GUEST_PAGE_SIZE)
             continue;
         size_t cbBeforeSub = MMHyperHeapGetFreeSize(pVM);
         rc = MMHyperFree(pVM, aOps[i].pvAlloc);
@@ -235,7 +235,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 ||  !aOps[j].pvAlloc)
                 continue;
             OUTPUT(("j=%02d i=%02d free=%d cb=%5u pv=%p\n", j, i, MMHyperHeapGetFreeSize(pVM), aOps[j].cb, aOps[j].pvAlloc));
-            if (aOps[j].uAlignment == PAGE_SIZE)
+            if (aOps[j].uAlignment == GUEST_PAGE_SIZE)
                 cbBefore -= aOps[j].cb;
             else
             {
@@ -273,7 +273,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     DBGFR3TermUVM(pUVM);
     MMR3TermUVM(pUVM);
     SUPR3PageFreeEx(pVM, RT_ELEMENTS(aPages));
-    RTMemPageFree(pUVM, RT_ALIGN_Z(sizeof(*pUVM), PAGE_SIZE));
+    RTMemPageFree(pUVM, RT_ALIGN_Z(sizeof(*pUVM), GUEST_PAGE_SIZE));
     return 0;
 }
 

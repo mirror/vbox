@@ -800,7 +800,7 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
          * FS, GS, Kernel GS Base, etc.) apart from the host-state save area specified in MSR_K8_VM_HSAVE_PA.
          */
 /** @todo Does this need to be below 4G? */
-        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjVmcbHost, SVM_VMCB_PAGES << PAGE_SHIFT, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjVmcbHost, SVM_VMCB_PAGES << HOST_PAGE_SHIFT, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
@@ -813,7 +813,7 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
          * Allocate one page for the guest-state VMCB.
          */
 /** @todo Does this need to be below 4G? */
-        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjVmcb, SVM_VMCB_PAGES << PAGE_SHIFT, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjVmcb, SVM_VMCB_PAGES << HOST_PAGE_SHIFT, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
@@ -827,7 +827,7 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
          * SVM to not require one.
          */
 /** @todo Does this need to be below 4G? */
-        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT,
+        rc = RTR0MemObjAllocCont(&pVCpu->hmr0.s.svm.hMemObjMsrBitmap, SVM_MSRPM_PAGES << HOST_PAGE_SHIFT,
                                  false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
@@ -835,7 +835,7 @@ VMMR0DECL(int) SVMR0InitVM(PVMCC pVM)
         pVCpu->hmr0.s.svm.pvMsrBitmap       = RTR0MemObjAddress(pVCpu->hmr0.s.svm.hMemObjMsrBitmap);
         pVCpu->hmr0.s.svm.HCPhysMsrBitmap   = RTR0MemObjGetPagePhysAddr(pVCpu->hmr0.s.svm.hMemObjMsrBitmap, 0 /* iPage */);
         /* Set all bits to intercept all MSR accesses (changed later on). */
-        ASMMemFill32(pVCpu->hmr0.s.svm.pvMsrBitmap, SVM_MSRPM_PAGES << X86_PAGE_4K_SHIFT, UINT32_C(0xffffffff));
+        ASMMemFill32(pVCpu->hmr0.s.svm.pvMsrBitmap, SVM_MSRPM_PAGES << HOST_PAGE_SHIFT, UINT32_C(0xffffffff));
    }
 
     return VINF_SUCCESS;
@@ -7912,7 +7912,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
      * TPR patching for 32-bit guests, using the reserved bit in the page tables for MMIO regions.
      */
     if (   pVM->hm.s.fTprPatchingAllowed
-        && (GCPhysFaultAddr & PAGE_OFFSET_MASK) == XAPIC_OFF_TPR
+        && (GCPhysFaultAddr & GUEST_PAGE_OFFSET_MASK) == XAPIC_OFF_TPR
         && (   !(u32ErrCode & X86_TRAP_PF_P)                                                             /* Not present */
             || (u32ErrCode & (X86_TRAP_PF_P | X86_TRAP_PF_RSVD)) == (X86_TRAP_PF_P | X86_TRAP_PF_RSVD))  /* MMIO page. */
         && !CPUMIsGuestInSvmNestedHwVirtMode(pCtx)

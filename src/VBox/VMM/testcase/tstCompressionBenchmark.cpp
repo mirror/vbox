@@ -39,13 +39,19 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define MY_BLOCK_SIZE       _4K     /**< Same as SSM uses. */
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static size_t   g_cPages = 20*_1M / PAGE_SIZE;
-static size_t   g_cbPages;
+static size_t   g_cBlocks = 20*_1M / MY_BLOCK_SIZE;
+static size_t   g_cbBlocks;
 static uint8_t *g_pabSrc;
 
-/** Buffer for the decompressed data (g_cbPages). */
+/** Buffer for the decompressed data (g_cbBlocks). */
 static uint8_t *g_pabDecompr;
 
 /** Buffer for the compressed data (g_cbComprAlloc). */
@@ -152,68 +158,68 @@ static void tstBenchmarkCRCsAllInOne(uint8_t const *pabSrc, size_t cbSrc)
 
 
 /**
- * Benchmark RTCrc routines potentially relevant for SSM or PGM - Page by page.
+ * Benchmark RTCrc routines potentially relevant for SSM or PGM - Bage by block.
  *
  * @param  pabSrc   Pointer to the test data.
  * @param  cbSrc    The size of the test data.
  */
-static void tstBenchmarkCRCsPageByPage(uint8_t const *pabSrc, size_t cbSrc)
+static void tstBenchmarkCRCsBlockByBlock(uint8_t const *pabSrc, size_t cbSrc)
 {
     RTPrintf("Algorithm     Speed                  Time     \n"
              "----------------------------------------------\n");
 
-    size_t const cPages = cbSrc / PAGE_SIZE;
+    size_t const cBlocks = cbSrc / MY_BLOCK_SIZE;
 
     uint64_t NanoTS = RTTimeNanoTS();
-    for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        RTCrc32(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE);
+    for (uint32_t iBlock = 0; iBlock < cBlocks; iBlock++)
+        RTCrc32(&pabSrc[iBlock * MY_BLOCK_SIZE], MY_BLOCK_SIZE);
     NanoTS = RTTimeNanoTS() - NanoTS;
     unsigned uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("CRC-32    %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
 
     NanoTS = RTTimeNanoTS();
-    for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        RTCrc64(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE);
+    for (uint32_t iBlock = 0; iBlock < cBlocks; iBlock++)
+        RTCrc64(&pabSrc[iBlock * MY_BLOCK_SIZE], MY_BLOCK_SIZE);
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("CRC-64    %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
     NanoTS = RTTimeNanoTS();
-    for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        RTCrcAdler32(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE);
+    for (uint32_t iBlock = 0; iBlock < cBlocks; iBlock++)
+        RTCrcAdler32(&pabSrc[iBlock * MY_BLOCK_SIZE], MY_BLOCK_SIZE);
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("Adler-32  %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
     NanoTS = RTTimeNanoTS();
     uint8_t abMd5Hash[RTMD5HASHSIZE];
-    for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        RTMd5(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abMd5Hash);
+    for (uint32_t iBlock = 0; iBlock < cBlocks; iBlock++)
+        RTMd5(&pabSrc[iBlock * MY_BLOCK_SIZE], MY_BLOCK_SIZE, abMd5Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("MD5       %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
     NanoTS = RTTimeNanoTS();
     uint8_t abSha1Hash[RTSHA1_HASH_SIZE];
-    for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        RTSha1(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abSha1Hash);
+    for (uint32_t iBlock = 0; iBlock < cBlocks; iBlock++)
+        RTSha1(&pabSrc[iBlock * MY_BLOCK_SIZE], MY_BLOCK_SIZE, abSha1Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("SHA-1     %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
     NanoTS = RTTimeNanoTS();
     uint8_t abSha256Hash[RTSHA256_HASH_SIZE];
-    for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        RTSha256(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abSha256Hash);
+    for (uint32_t iBlock = 0; iBlock < cBlocks; iBlock++)
+        RTSha256(&pabSrc[iBlock * MY_BLOCK_SIZE], MY_BLOCK_SIZE, abSha256Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("SHA-256   %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 
     NanoTS = RTTimeNanoTS();
     uint8_t abSha512Hash[RTSHA512_HASH_SIZE];
-    for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        RTSha512(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abSha512Hash);
+    for (uint32_t iBlock = 0; iBlock < cBlocks; iBlock++)
+        RTSha512(&pabSrc[iBlock * MY_BLOCK_SIZE], MY_BLOCK_SIZE, abSha512Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)((long double)cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("SHA-512   %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
@@ -241,17 +247,17 @@ int main(int argc, char **argv)
      */
     static const RTGETOPTDEF    s_aOptions[] =
     {
-        { "--iterations",     'i', RTGETOPT_REQ_UINT32 },
-        { "--num-pages",      'n', RTGETOPT_REQ_UINT32 },
-        { "--page-at-a-time", 'c', RTGETOPT_REQ_UINT32 },
-        { "--page-file",      'f', RTGETOPT_REQ_STRING },
-        { "--offset",         'o', RTGETOPT_REQ_UINT64 },
+        { "--iterations",      'i', RTGETOPT_REQ_UINT32 },
+        { "--num-blocks",      'n', RTGETOPT_REQ_UINT32 },
+        { "--block-at-a-time", 'c', RTGETOPT_REQ_UINT32 },
+        { "--block-file",      'f', RTGETOPT_REQ_STRING },
+        { "--offset",          'o', RTGETOPT_REQ_UINT64 },
     };
 
-    const char     *pszPageFile = NULL;
-    uint64_t        offPageFile = 0;
+    const char     *pszBlockFile = NULL;
+    uint64_t        offBlockFile = 0;
     uint32_t        cIterations = 1;
-    uint32_t        cPagesAtATime = 1;
+    uint32_t        cBlocksAtATime = 1;
     RTGETOPTUNION   Val;
     RTGETOPTSTATE   State;
     int rc = RTGetOptInit(&State, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, 0);
@@ -262,11 +268,12 @@ int main(int argc, char **argv)
         switch (rc)
         {
             case 'n':
-                g_cPages = Val.u32;
-                if (g_cPages * PAGE_SIZE * 4 / (PAGE_SIZE * 4) != g_cPages)
-                    return Error("The specified page count is too high: %#x (%#llx bytes)\n", g_cPages, (uint64_t)g_cPages * PAGE_SHIFT);
-                if (g_cPages < 1)
-                    return Error("The specified page count is too low: %#x\n", g_cPages);
+                g_cBlocks = Val.u32;
+                if (g_cBlocks * MY_BLOCK_SIZE * 4 / (MY_BLOCK_SIZE * 4) != g_cBlocks)
+                    return Error("The specified block count is too high: %#x (%#llx bytes)\n",
+                                 g_cBlocks, (uint64_t)g_cBlocks * MY_BLOCK_SIZE);
+                if (g_cBlocks < 1)
+                    return Error("The specified block count is too low: %#x\n", g_cBlocks);
                 break;
 
             case 'i':
@@ -276,21 +283,21 @@ int main(int argc, char **argv)
                 break;
 
             case 'c':
-                cPagesAtATime = Val.u32;
-                if (cPagesAtATime < 1 || cPagesAtATime > 10240)
-                    return Error("The specified pages-at-a-time count is out of range: %#x\n", cPagesAtATime);
+                cBlocksAtATime = Val.u32;
+                if (cBlocksAtATime < 1 || cBlocksAtATime > 10240)
+                    return Error("The specified blocks-at-a-time count is out of range: %#x\n", cBlocksAtATime);
                 break;
 
             case 'f':
-                pszPageFile = Val.psz;
+                pszBlockFile = Val.psz;
                 break;
 
             case 'o':
-                offPageFile = Val.u64;
+                offBlockFile = Val.u64;
                 break;
 
             case 'O':
-                offPageFile = Val.u64 * PAGE_SIZE;
+                offBlockFile = Val.u64 * MY_BLOCK_SIZE;
                 break;
 
             case 'h':
@@ -301,15 +308,15 @@ int main(int argc, char **argv)
                          "    Show this help page\n"
                          "  -i, --iterations <num>\n"
                          "    The number of iterations.\n"
-                         "  -n, --num-pages <pages>\n"
-                         "    The number of pages.\n"
-                         "  -c, --pages-at-a-time <pages>\n"
-                         "    Number of pages at a time.\n"
-                         "  -f, --page-file <filename>\n"
-                         "    File or device to read the page from. The default\n"
+                         "  -n, --num-blocks <blocks>\n"
+                         "    The number of blocks.\n"
+                         "  -c, --blocks-at-a-time <blocks>\n"
+                         "    Number of blocks at a time.\n"
+                         "  -f, --block-file <filename>\n"
+                         "    File or device to read the block from. The default\n"
                          "    is to generate some garbage.\n"
                          "  -o, --offset <file-offset>\n"
-                         "    Offset into the page file to start reading at.\n");
+                         "    Offset into the block file to start reading at.\n");
                 return 0;
 
             case 'V':
@@ -321,27 +328,27 @@ int main(int argc, char **argv)
         }
     }
 
-    g_cbPages = g_cPages * PAGE_SIZE;
-    uint64_t cbTotal = (uint64_t)g_cPages * PAGE_SIZE * cIterations;
+    g_cbBlocks = g_cBlocks * MY_BLOCK_SIZE;
+    uint64_t cbTotal = (uint64_t)g_cBlocks * MY_BLOCK_SIZE * cIterations;
     uint64_t cbTotalKB = cbTotal / _1K;
-    if (cbTotal / cIterations != g_cbPages)
-        return Error("cPages * cIterations -> overflow\n");
+    if (cbTotal / cIterations != g_cbBlocks)
+        return Error("cBlocks * cIterations -> overflow\n");
 
     /*
      * Gather the test memory.
      */
-    if (pszPageFile)
+    if (pszBlockFile)
     {
         size_t cbFile;
-        rc = RTFileReadAllEx(pszPageFile, offPageFile, g_cbPages, RTFILE_RDALL_O_DENY_NONE, (void **)&g_pabSrc, &cbFile);
+        rc = RTFileReadAllEx(pszBlockFile, offBlockFile, g_cbBlocks, RTFILE_RDALL_O_DENY_NONE, (void **)&g_pabSrc, &cbFile);
         if (RT_FAILURE(rc))
-            return Error("Error reading %zu bytes from %s at %llu: %Rrc\n", g_cbPages, pszPageFile, offPageFile, rc);
-        if (cbFile != g_cbPages)
-            return Error("Error reading %zu bytes from %s at %llu: got %zu bytes\n", g_cbPages, pszPageFile, offPageFile, cbFile);
+            return Error("Error reading %zu bytes from %s at %llu: %Rrc\n", g_cbBlocks, pszBlockFile, offBlockFile, rc);
+        if (cbFile != g_cbBlocks)
+            return Error("Error reading %zu bytes from %s at %llu: got %zu bytes\n", g_cbBlocks, pszBlockFile, offBlockFile, cbFile);
     }
     else
     {
-        g_pabSrc = (uint8_t *)RTMemAlloc(g_cbPages);
+        g_pabSrc = (uint8_t *)RTMemAlloc(g_cbBlocks);
         if (g_pabSrc)
         {
             /* Just fill it with something - warn about the low quality of the something. */
@@ -351,7 +358,7 @@ int main(int argc, char **argv)
             RTPrintf("To get real RAM on linux: sudo dd if=/dev/mem ... \n");
 #endif
             uint8_t *pb    = g_pabSrc;
-            uint8_t *pbEnd = &g_pabSrc[g_cbPages];
+            uint8_t *pbEnd = &g_pabSrc[g_cbBlocks];
             for (; pb != pbEnd; pb += 16)
             {
                 char szTmp[17];
@@ -361,11 +368,11 @@ int main(int argc, char **argv)
         }
     }
 
-    g_pabDecompr = (uint8_t *)RTMemAlloc(g_cbPages);
-    g_cbComprAlloc = RT_MAX(g_cbPages * 2, 256 * PAGE_SIZE);
+    g_pabDecompr = (uint8_t *)RTMemAlloc(g_cbBlocks);
+    g_cbComprAlloc = RT_MAX(g_cbBlocks * 2, 256 * MY_BLOCK_SIZE);
     g_pabCompr   = (uint8_t *)RTMemAlloc(g_cbComprAlloc);
     if (!g_pabSrc || !g_pabDecompr || !g_pabCompr)
-        return Error("failed to allocate memory buffers (g_cPages=%#x)\n", g_cPages);
+        return Error("failed to allocate memory buffers (g_cBlocks=%#x)\n", g_cBlocks);
 
     /*
      * Double loop compressing and uncompressing the data, where the outer does
@@ -408,7 +415,7 @@ int main(int argc, char **argv)
             if (RT_FAILURE(aTests[j].rc))
                 continue;
             memset(g_pabCompr,   0xaa, g_cbComprAlloc);
-            memset(g_pabDecompr, 0xcc, g_cbPages);
+            memset(g_pabDecompr, 0xcc, g_cbBlocks);
             g_cbCompr = 0;
             g_offComprIn = 0;
             RTPrintf("."); RTStrmFlush(g_pStdOut);
@@ -419,34 +426,34 @@ int main(int argc, char **argv)
             uint64_t NanoTS = RTTimeNanoTS();
             if (aTests[j].fBlock)
             {
-                size_t          cbLeft    = g_cbComprAlloc;
-                uint8_t const  *pbSrcPage = g_pabSrc;
-                uint8_t        *pbDstPage = g_pabCompr;
-                for (size_t iPage = 0; iPage < g_cPages; iPage += cPagesAtATime)
+                size_t          cbLeft     = g_cbComprAlloc;
+                uint8_t const  *pbSrcBlock = g_pabSrc;
+                uint8_t        *pbDstBlock = g_pabCompr;
+                for (size_t iBlock = 0; iBlock < g_cBlocks; iBlock += cBlocksAtATime)
                 {
-                    AssertBreakStmt(cbLeft > PAGE_SIZE * 4, aTests[j].rc = rc = VERR_BUFFER_OVERFLOW);
-                    uint32_t *pcb = (uint32_t *)pbDstPage;
-                    pbDstPage    += sizeof(uint32_t);
+                    AssertBreakStmt(cbLeft > MY_BLOCK_SIZE * 4, aTests[j].rc = rc = VERR_BUFFER_OVERFLOW);
+                    uint32_t *pcb = (uint32_t *)pbDstBlock;
+                    pbDstBlock   += sizeof(uint32_t);
                     cbLeft       -= sizeof(uint32_t);
-                    size_t  cbSrc = RT_MIN(g_cPages - iPage, cPagesAtATime) * PAGE_SIZE;
+                    size_t  cbSrc = RT_MIN(g_cBlocks - iBlock, cBlocksAtATime) * MY_BLOCK_SIZE;
                     size_t  cbDst;
                     rc = RTZipBlockCompress(aTests[j].enmType, aTests[j].enmLevel, 0 /*fFlags*/,
-                                            pbSrcPage, cbSrc,
-                                            pbDstPage, cbLeft, &cbDst);
+                                            pbSrcBlock, cbSrc,
+                                            pbDstBlock, cbLeft, &cbDst);
                     if (RT_FAILURE(rc))
                     {
                         Error("RTZipBlockCompress failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
                         aTests[j].rc = rc;
                         break;
                     }
-                    *pcb       = (uint32_t)cbDst;
-                    cbLeft    -= cbDst;
-                    pbDstPage += cbDst;
-                    pbSrcPage += cbSrc;
+                    *pcb        = (uint32_t)cbDst;
+                    cbLeft     -= cbDst;
+                    pbDstBlock += cbDst;
+                    pbSrcBlock += cbSrc;
                 }
                 if (RT_FAILURE(rc))
                     continue;
-                g_cbCompr = pbDstPage - g_pabCompr;
+                g_cbCompr = pbDstBlock - g_pabCompr;
             }
             else
             {
@@ -459,18 +466,18 @@ int main(int argc, char **argv)
                     continue;
                 }
 
-                uint8_t const  *pbSrcPage = g_pabSrc;
-                for (size_t iPage = 0; iPage < g_cPages; iPage += cPagesAtATime)
+                uint8_t const  *pbSrcBlock = g_pabSrc;
+                for (size_t iBlock = 0; iBlock < g_cBlocks; iBlock += cBlocksAtATime)
                 {
-                    size_t cb = RT_MIN(g_cPages - iPage, cPagesAtATime) * PAGE_SIZE;
-                    rc = RTZipCompress(pZipComp, pbSrcPage, cb);
+                    size_t cb = RT_MIN(g_cBlocks - iBlock, cBlocksAtATime) * MY_BLOCK_SIZE;
+                    rc = RTZipCompress(pZipComp, pbSrcBlock, cb);
                     if (RT_FAILURE(rc))
                     {
                         Error("RTZipCompress failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
                         aTests[j].rc = rc;
                         break;
                     }
-                    pbSrcPage += cb;
+                    pbSrcBlock += cb;
                 }
                 if (RT_FAILURE(rc))
                     continue;
@@ -493,27 +500,27 @@ int main(int argc, char **argv)
             NanoTS = RTTimeNanoTS();
             if (aTests[j].fBlock)
             {
-                uint8_t const  *pbSrcPage = g_pabCompr;
-                size_t          cbLeft    = g_cbCompr;
-                uint8_t        *pbDstPage = g_pabDecompr;
-                for (size_t iPage = 0; iPage < g_cPages; iPage += cPagesAtATime)
+                uint8_t const  *pbSrcBlock = g_pabCompr;
+                size_t          cbLeft     = g_cbCompr;
+                uint8_t        *pbDstBlock = g_pabDecompr;
+                for (size_t iBlock = 0; iBlock < g_cBlocks; iBlock += cBlocksAtATime)
                 {
-                    size_t   cbDst = RT_MIN(g_cPages - iPage, cPagesAtATime) * PAGE_SIZE;
-                    size_t   cbSrc = *(uint32_t *)pbSrcPage;
-                    pbSrcPage     += sizeof(uint32_t);
+                    size_t   cbDst = RT_MIN(g_cBlocks - iBlock, cBlocksAtATime) * MY_BLOCK_SIZE;
+                    size_t   cbSrc = *(uint32_t *)pbSrcBlock;
+                    pbSrcBlock    += sizeof(uint32_t);
                     cbLeft        -= sizeof(uint32_t);
                     rc = RTZipBlockDecompress(aTests[j].enmType, 0 /*fFlags*/,
-                                              pbSrcPage, cbSrc, &cbSrc,
-                                              pbDstPage, cbDst, &cbDst);
+                                              pbSrcBlock, cbSrc, &cbSrc,
+                                              pbDstBlock, cbDst, &cbDst);
                     if (RT_FAILURE(rc))
                     {
                         Error("RTZipBlockDecompress failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
                         aTests[j].rc = rc;
                         break;
                     }
-                    pbDstPage += cbDst;
-                    cbLeft    -= cbSrc;
-                    pbSrcPage += cbSrc;
+                    pbDstBlock += cbDst;
+                    cbLeft     -= cbSrc;
+                    pbSrcBlock += cbSrc;
                 }
                 if (RT_FAILURE(rc))
                     continue;
@@ -529,18 +536,18 @@ int main(int argc, char **argv)
                     continue;
                 }
 
-                uint8_t *pbDstPage = g_pabDecompr;
-                for (size_t iPage = 0; iPage < g_cPages; iPage += cPagesAtATime)
+                uint8_t *pbDstBlock = g_pabDecompr;
+                for (size_t iBlock = 0; iBlock < g_cBlocks; iBlock += cBlocksAtATime)
                 {
-                    size_t cb = RT_MIN(g_cPages - iPage, cPagesAtATime) * PAGE_SIZE;
-                    rc = RTZipDecompress(pZipDecomp, pbDstPage, cb, NULL);
+                    size_t cb = RT_MIN(g_cBlocks - iBlock, cBlocksAtATime) * MY_BLOCK_SIZE;
+                    rc = RTZipDecompress(pZipDecomp, pbDstBlock, cb, NULL);
                     if (RT_FAILURE(rc))
                     {
                         Error("RTZipDecompress failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
                         aTests[j].rc = rc;
                         break;
                     }
-                    pbDstPage += cb;
+                    pbDstBlock += cb;
                 }
                 RTZipDecompDestroy(pZipDecomp);
                 if (RT_FAILURE(rc))
@@ -549,7 +556,7 @@ int main(int argc, char **argv)
             NanoTS = RTTimeNanoTS() - NanoTS;
             aTests[j].cNanoDecompr += NanoTS;
 
-            if (memcmp(g_pabDecompr, g_pabSrc, g_cbPages))
+            if (memcmp(g_pabDecompr, g_pabSrc, g_cbBlocks))
             {
                 Error("The compressed data doesn't match the source for '%s' (%#u)\n", aTests[j].pszName, j);
                 aTests[j].rc = VERR_BAD_EXE_FORMAT;
@@ -576,7 +583,7 @@ int main(int argc, char **argv)
             unsigned uComprSpeedOut   = (unsigned)((long double)aTests[j].cbCompr / (long double)aTests[j].cNanoCompr   * 1000000000.0 / 1024);
             unsigned uDecomprSpeedIn  = (unsigned)((long double)aTests[j].cbCompr / (long double)aTests[j].cNanoDecompr * 1000000000.0 / 1024);
             unsigned uDecomprSpeedOut = (unsigned)((long double)cbTotalKB         / (long double)aTests[j].cNanoDecompr * 1000000000.0);
-            unsigned uRatio           = (unsigned)(aTests[j].cbCompr / cIterations * 100 / g_cbPages);
+            unsigned uRatio           = (unsigned)(aTests[j].cbCompr / cIterations * 100 / g_cbBlocks);
             RTPrintf("%-20s %'9u KB/s  %'9u KB/s  %3u%%  %'11llu bytes   %'9u KB/s  %'9u KB/s",
                      aTests[j].pszName,
                      uComprSpeedIn,   uComprSpeedOut, uRatio, aTests[j].cbCompr / cIterations,
@@ -595,45 +602,45 @@ int main(int argc, char **argv)
             rc = 1;
         }
     }
-    if (pszPageFile)
-        RTPrintf("Input: %'10zu pages from '%s' starting at offset %'lld (%#llx)\n"
+    if (pszBlockFile)
+        RTPrintf("Input: %'10zu Blocks from '%s' starting at offset %'lld (%#llx)\n"
                  "                                                           %'11zu bytes\n",
-                 g_cPages, pszPageFile, offPageFile, offPageFile, g_cbPages);
+                 g_cBlocks, pszBlockFile, offBlockFile, offBlockFile, g_cbBlocks);
     else
-        RTPrintf("Input: %'10zu pages of generated rubbish               %'11zu bytes\n",
-                 g_cPages, g_cbPages);
+        RTPrintf("Input: %'10zu Blocks of generated rubbish              %'11zu bytes\n",
+                 g_cBlocks, g_cbBlocks);
 
     /*
-     * Count zero pages in the data set.
+     * Count zero blocks in the data set.
      */
-    size_t cZeroPages = 0;
-    for (size_t iPage = 0; iPage < g_cPages; iPage++)
+    size_t cZeroBlocks = 0;
+    for (size_t iBlock = 0; iBlock < g_cBlocks; iBlock++)
     {
-        if (ASMMemIsZeroPage(&g_pabSrc[iPage * PAGE_SIZE]))
-            cZeroPages++;
+        if (ASMMemIsZero(&g_pabSrc[iBlock * MY_BLOCK_SIZE], MY_BLOCK_SIZE))
+            cZeroBlocks++;
     }
-    RTPrintf("       %'10zu zero pages (%u %%)\n", cZeroPages, cZeroPages * 100 / g_cPages);
+    RTPrintf("       %'10zu zero Blocks (%u %%)\n", cZeroBlocks, cZeroBlocks * 100 / g_cBlocks);
 
     /*
      * A little extension to the test, benchmark relevant CRCs.
      */
     RTPrintf("\n"
              "tstCompressionBenchmark: Hash/CRC - All In One\n");
-    tstBenchmarkCRCsAllInOne(g_pabSrc, g_cbPages);
+    tstBenchmarkCRCsAllInOne(g_pabSrc, g_cbBlocks);
 
     RTPrintf("\n"
-             "tstCompressionBenchmark: Hash/CRC - Page by Page\n");
-    tstBenchmarkCRCsPageByPage(g_pabSrc, g_cbPages);
+             "tstCompressionBenchmark: Hash/CRC - Block by Block\n");
+    tstBenchmarkCRCsBlockByBlock(g_pabSrc, g_cbBlocks);
 
     RTPrintf("\n"
-             "tstCompressionBenchmark: Hash/CRC - Zero Page Digest\n");
-    static uint8_t s_abZeroPg[PAGE_SIZE];
+             "tstCompressionBenchmark: Hash/CRC - Zero Block Digest\n");
+    static uint8_t s_abZeroPg[MY_BLOCK_SIZE];
     RT_ZERO(s_abZeroPg);
-    tstBenchmarkCRCsAllInOne(s_abZeroPg, PAGE_SIZE);
+    tstBenchmarkCRCsAllInOne(s_abZeroPg, MY_BLOCK_SIZE);
 
     RTPrintf("\n"
-             "tstCompressionBenchmark: Hash/CRC - Zero Half Page Digest\n");
-    tstBenchmarkCRCsAllInOne(s_abZeroPg, PAGE_SIZE / 2);
+             "tstCompressionBenchmark: Hash/CRC - Zero Half Block Digest\n");
+    tstBenchmarkCRCsAllInOne(s_abZeroPg, MY_BLOCK_SIZE / 2);
 
     RTPrintf("tstCompressionBenchmark: END RESULTS\n");
 

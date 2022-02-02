@@ -860,11 +860,11 @@ static int cpumR0MapLocalApics(void)
         if (g_aLApics[iCpu].fEnabled && !g_aLApics[iCpu].fX2Apic)
         {
             rc = RTR0MemObjEnterPhys(&g_aLApics[iCpu].hMemObj, g_aLApics[iCpu].PhysBase,
-                                     PAGE_SIZE, RTMEM_CACHE_POLICY_MMIO);
+                                     HOST_PAGE_SIZE, RTMEM_CACHE_POLICY_MMIO);
             if (RT_SUCCESS(rc))
             {
                 rc = RTR0MemObjMapKernel(&g_aLApics[iCpu].hMapObj, g_aLApics[iCpu].hMemObj, (void *)-1,
-                                         PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                                         HOST_PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
                 if (RT_SUCCESS(rc))
                 {
                     g_aLApics[iCpu].pv = RTR0MemObjAddress(g_aLApics[iCpu].hMapObj);

@@ -71,10 +71,10 @@
  *
  * @section sec_pgm_pool_monitoring Monitoring
  *
- * We always monitor PAGE_SIZE chunks of memory. When we've got multiple shadow
- * pages for the same PAGE_SIZE of guest memory (PAE and mixed PD/PT) the pages
- * sharing the monitor get linked using the iMonitoredNext/Prev. The head page
- * is the pvUser to the access handlers.
+ * We always monitor GUEST_PAGE_SIZE chunks of memory. When we've got multiple
+ * shadow pages for the same GUEST_PAGE_SIZE of guest memory (PAE and mixed
+ * PD/PT) the pages sharing the monitor get linked using the
+ * iMonitoredNext/Prev. The head page is the pvUser to the access handlers.
  *
  *
  * @section sec_pgm_pool_impl       Implementation
@@ -152,11 +152,12 @@ int pgmR3PoolInit(PVM pVM)
     /* Adjust it up relative to the RAM size, using the nested paging formula. */
     uint64_t cbRam;
     rc = CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0); AssertRCReturn(rc, rc);
+    /** @todo guest x86 specific */
     uint64_t u64MaxPages = (cbRam >> 9)
                          + (cbRam >> 18)
                          + (cbRam >> 27)
-                         + 32 * PAGE_SIZE;
-    u64MaxPages >>= PAGE_SHIFT;
+                         + 32 * GUEST_PAGE_SIZE;
+    u64MaxPages >>= GUEST_PAGE_SHIFT;
     if (u64MaxPages > PGMPOOL_IDX_LAST)
         cMaxPages = PGMPOOL_IDX_LAST;
     else
@@ -662,7 +663,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {
-        iPage = pRam->cb >> PAGE_SHIFT;
+        iPage = pRam->cb >> GUEST_PAGE_SHIFT;
         while (iPage-- > 0)
             PGM_PAGE_SET_TRACKING(pVM, &pRam->aPages[iPage], 0);
     }

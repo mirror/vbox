@@ -43,7 +43,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
 static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC);
 static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static int MMR3HyperReserveFence(PVM pVM);
-static int MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages,
+static int MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cHostPages, PCSUPPAGE paPages,
                              const char *pszDesc, PRTGCPTR pGCPtr);
 
 
@@ -131,7 +131,7 @@ int mmR3HyperInit(PVM pVM)
     int rc = CFGMR3QueryU32Def(pMM, "cbHyperHeap", &cbHyperHeap, mmR3HyperComputeHeapSize(pVM));
     AssertLogRelRCReturn(rc, rc);
 
-    cbHyperHeap = RT_ALIGN_32(cbHyperHeap, PAGE_SIZE);
+    cbHyperHeap = RT_ALIGN_32(cbHyperHeap, GUEST_PAGE_SIZE);
     LogRel(("MM: cbHyperHeap=%#x (%u)\n", cbHyperHeap, cbHyperHeap));
 
     /*
@@ -153,10 +153,10 @@ int mmR3HyperInit(PVM pVM)
          * Note! Keeping the mappings here for now in case someone is using
          *       MMHyperR3ToR0 or similar.
          */
-        AssertCompileSizeAlignment(VM, PAGE_SIZE);
-        AssertCompileSizeAlignment(VMCPU, PAGE_SIZE);
-        AssertCompileSizeAlignment(GVM, PAGE_SIZE);
-        AssertCompileSizeAlignment(GVMCPU, PAGE_SIZE);
+        AssertCompileSizeAlignment(VM, HOST_PAGE_SIZE);
+        AssertCompileSizeAlignment(VMCPU, HOST_PAGE_SIZE);
+        AssertCompileSizeAlignment(GVM, HOST_PAGE_SIZE);
+        AssertCompileSizeAlignment(GVMCPU, HOST_PAGE_SIZE);
         AssertRelease(pVM->cbSelf == sizeof(VM));
         AssertRelease(pVM->cbVCpu == sizeof(VMCPU));
 /** @todo get rid of this (don't dare right now because of
@@ -166,14 +166,15 @@ int mmR3HyperInit(PVM pVM)
             GCPtr = _1G;
         else
         {
-            rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0ForCall, sizeof(VM) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
-            uint32_t offPages = RT_UOFFSETOF_DYN(GVM, aCpus) >> PAGE_SHIFT; /* (Using the _DYN variant avoids -Winvalid-offset) */
-            for (uint32_t idCpu = 0; idCpu < pVM->cCpus && RT_SUCCESS(rc); idCpu++, offPages += sizeof(GVMCPU) >> PAGE_SHIFT)
+            Assert(GUEST_PAGE_SHIFT == HOST_PAGE_SHIFT);
+            rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0ForCall, sizeof(VM) >> HOST_PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
+            uint32_t offPages = RT_UOFFSETOF_DYN(GVM, aCpus) >> HOST_PAGE_SHIFT; /* (Using the _DYN variant avoids -Winvalid-offset) */
+            for (uint32_t idCpu = 0; idCpu < pVM->cCpus && RT_SUCCESS(rc); idCpu++, offPages += sizeof(GVMCPU) >> HOST_PAGE_SHIFT)
             {
                 PVMCPU pVCpu = pVM->apCpusR3[idCpu];
                 RTGCPTR GCPtrIgn;
-                rc = MMR3HyperMapPages(pVM, pVCpu, pVM->pVMR0ForCall + offPages * PAGE_SIZE,
-                                       sizeof(VMCPU) >> PAGE_SHIFT, &pVM->paVMPagesR3[offPages], "VMCPU", &GCPtrIgn);
+                rc = MMR3HyperMapPages(pVM, pVCpu, pVM->pVMR0ForCall + offPages * HOST_PAGE_SIZE,
+                                       sizeof(VMCPU) >> HOST_PAGE_SHIFT, &pVM->paVMPagesR3[offPages], "VMCPU", &GCPtrIgn);
             }
         }
         if (RT_SUCCESS(rc))
@@ -258,48 +259,49 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
  * @param   pVM         The cross context VM structure.
  * @param   pvR3        The ring-3 address of the memory, must be page aligned.
  * @param   pvR0        The ring-0 address of the memory, must be page aligned. (optional)
- * @param   cPages      The number of pages.
+ * @param   cHostPages  The number of host pages.
  * @param   paPages     The page descriptors.
  * @param   pszDesc     Mapping description.
  * @param   pGCPtr      Where to store the GC address corresponding to pvR3.
  */
-static int MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cPages, PCSUPPAGE paPages,
+static int MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cHostPages, PCSUPPAGE paPages,
                              const char *pszDesc, PRTGCPTR pGCPtr)
 {
-    LogFlow(("MMR3HyperMapPages: pvR3=%p pvR0=%p cPages=%zu paPages=%p pszDesc=%p:{%s} pGCPtr=%p\n",
-             pvR3, pvR0, cPages, paPages, pszDesc, pszDesc, pGCPtr));
+    LogFlow(("MMR3HyperMapPages: pvR3=%p pvR0=%p cHostPages=%zu paPages=%p pszDesc=%p:{%s} pGCPtr=%p\n",
+             pvR3, pvR0, cHostPages, paPages, pszDesc, pszDesc, pGCPtr));
 
     /*
      * Validate input.
      */
     AssertPtrReturn(pvR3, VERR_INVALID_POINTER);
     AssertPtrReturn(paPages, VERR_INVALID_POINTER);
-    AssertReturn(cPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
-    AssertReturn(cPages <= VBOX_MAX_ALLOC_PAGE_COUNT, VERR_PAGE_COUNT_OUT_OF_RANGE);
+    AssertReturn(cHostPages > 0, VERR_PAGE_COUNT_OUT_OF_RANGE);
+    AssertReturn(cHostPages <= VBOX_MAX_ALLOC_PAGE_COUNT, VERR_PAGE_COUNT_OUT_OF_RANGE);
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     AssertReturn(*pszDesc, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pGCPtr, VERR_INVALID_PARAMETER);
+    AssertReturn(GUEST_PAGE_SIZE == HOST_PAGE_SIZE, VERR_NOT_SUPPORTED);
 
     /*
      * Add the memory to the hypervisor area.
      */
     RTGCPTR         GCPtr;
     PMMLOOKUPHYPER  pLookup;
-    int rc = mmR3HyperMap(pVM, cPages << PAGE_SHIFT, pszDesc, &GCPtr, &pLookup);
+    int rc = mmR3HyperMap(pVM, cHostPages << HOST_PAGE_SHIFT, pszDesc, &GCPtr, &pLookup);
     if (RT_SUCCESS(rc))
     {
         /*
          * Copy the physical page addresses and tell PGM about them.
          */
-        PRTHCPHYS paHCPhysPages = (PRTHCPHYS)MMR3HeapAlloc(pVM, MM_TAG_MM, sizeof(RTHCPHYS) * cPages);
+        PRTHCPHYS paHCPhysPages = (PRTHCPHYS)MMR3HeapAlloc(pVM, MM_TAG_MM, sizeof(RTHCPHYS) * cHostPages);
         if (paHCPhysPages)
         {
             bool const fDriverless = SUPR3IsDriverless();
-            for (size_t i = 0; i < cPages; i++)
+            for (size_t i = 0; i < cHostPages; i++)
             {
                 AssertReleaseMsgReturn(   (   paPages[i].Phys != 0
                                            && paPages[i].Phys != NIL_RTHCPHYS
-                                           && !(paPages[i].Phys & PAGE_OFFSET_MASK))
+                                           && !(paPages[i].Phys & HOST_PAGE_OFFSET_MASK))
                                        || fDriverless,
                                        ("i=%#zx Phys=%RHp %s\n", i, paPages[i].Phys, pszDesc),
                                        VERR_INTERNAL_ERROR);
@@ -352,7 +354,7 @@ static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR 
     /*
      * Validate input.
      */
-    const uint32_t cbAligned = RT_ALIGN_32(cb, PAGE_SIZE);
+    const uint32_t cbAligned = RT_ALIGN_32(cb, GUEST_PAGE_SIZE);
     AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
     if (pVM->mm.s.offHyperNextStatic + cbAligned >= pVM->mm.s.cbHyperArea) /* don't use the last page, it's a fence. */
     {
@@ -410,22 +412,22 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
     /*
      * Allocate the hypervisor heap.
      */
-    const uint32_t  cbAligned = RT_ALIGN_32(cb, PAGE_SIZE);
+    const uint32_t  cbAligned  = RT_ALIGN_32(cb, RT_MAX(GUEST_PAGE_SIZE, HOST_PAGE_SIZE));
     AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
-    uint32_t const  cPages = cbAligned >> PAGE_SHIFT;
-    PSUPPAGE        paPages = (PSUPPAGE)MMR3HeapAlloc(pVM, MM_TAG_MM, cPages * sizeof(paPages[0]));
+    uint32_t const  cHostPages = cbAligned >> HOST_PAGE_SHIFT;
+    PSUPPAGE        paPages    = (PSUPPAGE)MMR3HeapAlloc(pVM, MM_TAG_MM, cHostPages * sizeof(paPages[0]));
     if (!paPages)
         return VERR_NO_MEMORY;
     void           *pv;
     RTR0PTR         pvR0 = NIL_RTR0PTR;
-    int rc = SUPR3PageAllocEx(cPages,
+    int rc = SUPR3PageAllocEx(cHostPages,
                               0 /*fFlags*/,
                               &pv,
                               &pvR0,
                               paPages);
     if (RT_SUCCESS(rc))
     {
-        Assert((pvR0 != NIL_RTR0PTR && !(PAGE_OFFSET_MASK & pvR0)) || SUPR3IsDriverless());
+        Assert((pvR0 != NIL_RTR0PTR && !(HOST_PAGE_OFFSET_MASK & pvR0)) || SUPR3IsDriverless());
         memset(pv, 0, cbAligned);
 
         /*
@@ -462,7 +464,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
         *pR0PtrHeap = pvR0;
         return VINF_SUCCESS;
     }
-    AssertMsgFailed(("SUPR3PageAllocEx(%d,,,,) -> %Rrc\n", cbAligned >> PAGE_SHIFT, rc));
+    AssertMsgFailed(("SUPR3PageAllocEx(%d,,,,) -> %Rrc\n", cbAligned >> HOST_PAGE_SHIFT, rc));
 
     *ppHeap = NULL;
     return rc;
@@ -474,13 +476,14 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
  */
 static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC)
 {
-    Assert(RT_ALIGN_Z(pHeap->cbHeap + MMYPERHEAP_HDR_SIZE, PAGE_SIZE) == pHeap->cbHeap + MMYPERHEAP_HDR_SIZE);
+    Assert(RT_ALIGN_Z(pHeap->cbHeap + MMYPERHEAP_HDR_SIZE, GUEST_PAGE_SIZE) == pHeap->cbHeap + MMYPERHEAP_HDR_SIZE);
+    Assert(RT_ALIGN_Z(pHeap->cbHeap + MMYPERHEAP_HDR_SIZE, HOST_PAGE_SIZE)  == pHeap->cbHeap + MMYPERHEAP_HDR_SIZE);
     Assert(pHeap->pbHeapR0);
     Assert(pHeap->paPages);
     int rc = MMR3HyperMapPages(pVM,
                                pHeap,
                                pHeap->pbHeapR0 - MMYPERHEAP_HDR_SIZE,
-                               (pHeap->cbHeap + MMYPERHEAP_HDR_SIZE) >> PAGE_SHIFT,
+                               (pHeap->cbHeap + MMYPERHEAP_HDR_SIZE) >> HOST_PAGE_SHIFT,
                                pHeap->paPages,
                                "Heap", ppHeapGC);
     if (RT_SUCCESS(rc))
@@ -512,7 +515,7 @@ static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC)
  * @param   pVM         The cross context VM structure.
  * @param   cb          Number of bytes to allocate.
  * @param   uAlignment  Required memory alignment in bytes.
- *                      Values are 0,8,16,32 and PAGE_SIZE.
+ *                      Values are 0,8,16,32 and GUEST_PAGE_SIZE.
  *                      0 -> default alignment, i.e. 8 bytes.
  * @param   enmTag      The statistics tag.
  * @param   ppv         Where to store the address to the allocated
@@ -539,7 +542,7 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, 
  * @param   pVM         The cross context VM structure.
  * @param   cb          Number of bytes to allocate.
  * @param   uAlignment  Required memory alignment in bytes.
- *                      Values are 0,8,16,32 and PAGE_SIZE.
+ *                      Values are 0,8,16,32 and GUEST_PAGE_SIZE.
  *                      0 -> default alignment, i.e. 8 bytes.
  * @param   enmTag      The statistics tag.
  * @param   fFlags      Flags, see MMHYPER_AONR_FLAGS_KERNEL_MAPPING.
@@ -557,7 +560,7 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
      * only at creation time.
      */
     if (   (   cb < _64K
-            && (   uAlignment != PAGE_SIZE
+            && (   uAlignment != GUEST_PAGE_SIZE
                 || cb < 48*_1K)
             && !(fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING)
            )
@@ -584,7 +587,7 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
         case 8:
         case 16:
         case 32:
-        case PAGE_SIZE:
+        case GUEST_PAGE_SIZE:
             break;
         default:
             AssertMsgFailed(("Invalid alignment %u\n", uAlignment));
@@ -594,15 +597,15 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
     /*
      * Allocate the pages and map them into HMA space.
      */
-    uint32_t const  cbAligned = RT_ALIGN_32(cb, PAGE_SIZE);
+    uint32_t const  cbAligned  = RT_ALIGN_32(cb, RT_MAX(GUEST_PAGE_SIZE, HOST_PAGE_SIZE));
     AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
-    uint32_t const  cPages    = cbAligned >> PAGE_SHIFT;
-    PSUPPAGE        paPages   = (PSUPPAGE)RTMemTmpAlloc(cPages * sizeof(paPages[0]));
+    uint32_t const  cHostPages = cbAligned >> HOST_PAGE_SHIFT;
+    PSUPPAGE        paPages    = (PSUPPAGE)RTMemTmpAlloc(cHostPages * sizeof(paPages[0]));
     if (!paPages)
         return VERR_NO_TMP_MEMORY;
     void           *pvPages;
     RTR0PTR         pvR0 = NIL_RTR0PTR;
-    int rc = SUPR3PageAllocEx(cPages,
+    int rc = SUPR3PageAllocEx(cHostPages,
                               0 /*fFlags*/,
                               &pvPages,
                               &pvR0,
@@ -616,7 +619,7 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
         rc = MMR3HyperMapPages(pVM,
                                pvPages,
                                pvR0,
-                               cPages,
+                               cHostPages,
                                paPages,
                                MMR3HeapAPrintf(pVM, MM_TAG_MM, "alloc once (%s)", mmGetTagName(enmTag)),
                                &GCPtr);
@@ -631,7 +634,7 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
             return rc;
         }
         AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cbAligned, rc));
-        SUPR3PageFreeEx(pvPages, cPages);
+        SUPR3PageFreeEx(pvPages, cHostPages);
 
 
         /*
@@ -676,7 +679,7 @@ VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvR3)
             {
                 unsigned off = (uint8_t *)pvR3 - (uint8_t *)pLookup->u.Locked.pvR3;
                 if (off < pLookup->cb)
-                    return pLookup->u.Locked.paHCPhysPages[off >> PAGE_SHIFT] | (off & PAGE_OFFSET_MASK);
+                    return pLookup->u.Locked.paHCPhysPages[off >> HOST_PAGE_SHIFT] | (off & HOST_PAGE_OFFSET_MASK);
                 break;
             }
 
@@ -799,8 +802,8 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
  *                          re-allocate (can be NULL).
  * @param   cbOld           Size of the existing block.
  * @param   uAlignmentNew   Required memory alignment in bytes. Values are
- *                          0,8,16,32 and PAGE_SIZE. 0 -> default alignment,
- *                          i.e. 8 bytes.
+ *                          0,8,16,32 and GUEST_PAGE_SIZE. 0 -> default
+ *                          alignment, i.e. 8 bytes.
  * @param   enmTagNew       The statistics tag.
  * @param   cbNew           The required size of the new block.
  * @param   ppv             Where to store the address to the re-allocated

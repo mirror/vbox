@@ -1655,7 +1655,7 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
      */
     if (pGVM != NULL)
     {
-        if (RT_LIKELY(((uintptr_t)pGVM & PAGE_OFFSET_MASK) == 0))
+        if (RT_LIKELY(((uintptr_t)pGVM & HOST_PAGE_OFFSET_MASK) == 0))
         { /* likely */ }
         else
         {
@@ -3136,7 +3136,7 @@ static bool vmmR0LoggerFlushCommon(PRTLOGGER pLogger, PRTLOGBUFFERDESC pBufDesc,
         {
             PGVMCPU const pGVCpu = (PGVMCPU)(uintptr_t)pLogger->u64UserValue2;
             if (   RT_VALID_PTR(pGVCpu)
-                && ((uintptr_t)pGVCpu & PAGE_OFFSET_MASK) == 0)
+                && ((uintptr_t)pGVCpu & HOST_PAGE_OFFSET_MASK) == 0)
             {
                 RTNATIVETHREAD const hNativeSelf = RTThreadNativeSelf();
                 PGVM const           pGVM        = pGVCpu->pGVM;

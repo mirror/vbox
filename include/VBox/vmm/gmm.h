@@ -82,10 +82,10 @@ RT_C_DECLS_BEGIN
 #define GMM_CHUNK_SHIFT                 21
 /** The allocation chunk size. */
 #define GMM_CHUNK_SIZE                  (1U << GMM_CHUNK_SHIFT)
-/** The allocation chunk size in pages. */
-#define GMM_CHUNK_NUM_PAGES             (1U << (GMM_CHUNK_SHIFT - PAGE_SHIFT))
+/** The allocation chunk size in (guest) pages. */
+#define GMM_CHUNK_NUM_PAGES             (1U << (GMM_CHUNK_SHIFT - GUEST_PAGE_SHIFT))
 /** The shift factor for converting a page id into a chunk id. */
-#define GMM_CHUNKID_SHIFT               (GMM_CHUNK_SHIFT - PAGE_SHIFT)
+#define GMM_CHUNKID_SHIFT               (GMM_CHUNK_SHIFT - GUEST_PAGE_SHIFT)
 /** The last valid Chunk ID value. */
 #define GMM_CHUNKID_LAST                (GMM_PAGEID_LAST >> GMM_CHUNKID_SHIFT)
 /** The last valid Page ID value. */

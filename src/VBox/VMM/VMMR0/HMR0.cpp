@@ -410,10 +410,10 @@ static int hmR0InitIntel(void)
         {
             /* Allocate a temporary VMXON region. */
             RTR0MEMOBJ hScatchMemObj;
-            rc = RTR0MemObjAllocCont(&hScatchMemObj, PAGE_SIZE, false /* fExecutable */);
+            rc = RTR0MemObjAllocCont(&hScatchMemObj, HOST_PAGE_SIZE, false /* fExecutable */);
             if (RT_FAILURE(rc))
             {
-                LogRel(("hmR0InitIntel: RTR0MemObjAllocCont(,PAGE_SIZE,false) -> %Rrc\n", rc));
+                LogRel(("hmR0InitIntel: RTR0MemObjAllocCont(,HOST_PAGE_SIZE,false) -> %Rrc\n", rc));
                 return rc;
             }
             void          *pvScatchPage      = RTR0MemObjAddress(hScatchMemObj);
@@ -904,12 +904,12 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
             if (RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(i)))
             {
                 /** @todo NUMA */
-                rc = RTR0MemObjAllocCont(&g_aHmCpuInfo[i].hMemObj, PAGE_SIZE, false /* executable R0 mapping */);
+                rc = RTR0MemObjAllocCont(&g_aHmCpuInfo[i].hMemObj, HOST_PAGE_SIZE, false /* executable R0 mapping */);
                 AssertLogRelRCReturn(rc, rc);
 
                 g_aHmCpuInfo[i].HCPhysMemObj = RTR0MemObjGetPagePhysAddr(g_aHmCpuInfo[i].hMemObj, 0);
                 Assert(g_aHmCpuInfo[i].HCPhysMemObj != NIL_RTHCPHYS);
-                Assert(!(g_aHmCpuInfo[i].HCPhysMemObj & PAGE_OFFSET_MASK));
+                Assert(!(g_aHmCpuInfo[i].HCPhysMemObj & HOST_PAGE_OFFSET_MASK));
 
                 g_aHmCpuInfo[i].pvMemObj     = RTR0MemObjAddress(g_aHmCpuInfo[i].hMemObj);
                 AssertPtr(g_aHmCpuInfo[i].pvMemObj);
@@ -922,7 +922,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
 
                 g_aHmCpuInfo[i].n.svm.HCPhysNstGstMsrpm = RTR0MemObjGetPagePhysAddr(g_aHmCpuInfo[i].n.svm.hNstGstMsrpm, 0);
                 Assert(g_aHmCpuInfo[i].n.svm.HCPhysNstGstMsrpm != NIL_RTHCPHYS);
-                Assert(!(g_aHmCpuInfo[i].n.svm.HCPhysNstGstMsrpm & PAGE_OFFSET_MASK));
+                Assert(!(g_aHmCpuInfo[i].n.svm.HCPhysNstGstMsrpm & HOST_PAGE_OFFSET_MASK));
 
                 g_aHmCpuInfo[i].n.svm.pvNstGstMsrpm    = RTR0MemObjAddress(g_aHmCpuInfo[i].n.svm.hNstGstMsrpm);
                 AssertPtr(g_aHmCpuInfo[i].n.svm.pvNstGstMsrpm);

@@ -1142,7 +1142,7 @@ DECLINLINE(int) pdmShwModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, uint64_t fFlags,
     uintptr_t idxShw = pVCpu->pgm.s.idxShadowModeData;
     AssertReturn(idxShw < RT_ELEMENTS(g_aPgmShadowModeData), VERR_PGM_MODE_IPE);
     AssertReturn(g_aPgmShadowModeData[idxShw].pfnModifyPage, VERR_PGM_MODE_IPE);
-    int rc = g_aPgmShadowModeData[idxShw].pfnModifyPage(pVCpu, GCPtr, PAGE_SIZE, fFlags, fMask, fOpFlags);
+    int rc = g_aPgmShadowModeData[idxShw].pfnModifyPage(pVCpu, GCPtr, GUEST_PAGE_SIZE, fFlags, fMask, fOpFlags);
 
     PGM_UNLOCK(pVM);
     return rc;
@@ -1942,7 +1942,7 @@ int pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALK
      * We also limit ourselves to the next page.
      */
     if (   pWalk->fSucceeded
-        && GCPtr - pWalk->GCPtr == PAGE_SIZE)
+        && GCPtr - pWalk->GCPtr == GUEST_PAGE_SIZE)
     {
         Assert(pWalk->uLevel == 0);
         if (pGstWalk->enmType == PGMPTWALKGSTTYPE_AMD64)
@@ -2016,7 +2016,7 @@ int pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALK
                 if ((GCPtr & X86_PAGE_2M_BASE_MASK) == (pWalk->GCPtr & X86_PAGE_2M_BASE_MASK))
                 {
                     pWalk->GCPtr   = GCPtr;
-                    pWalk->GCPhys += PAGE_SIZE;
+                    pWalk->GCPhys += GUEST_PAGE_SIZE;
                     return VINF_SUCCESS;
                 }
             }
@@ -2025,7 +2025,7 @@ int pgmGstPtWalkNext(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk, PPGMPTWALK
                 if ((GCPtr & X86_PAGE_1G_BASE_MASK) == (pWalk->GCPtr & X86_PAGE_1G_BASE_MASK))
                 {
                     pWalk->GCPtr   = GCPtr;
-                    pWalk->GCPhys += PAGE_SIZE;
+                    pWalk->GCPhys += GUEST_PAGE_SIZE;
                     return VINF_SUCCESS;
                 }
             }
@@ -2065,8 +2065,8 @@ VMMDECL(int)  PGMGstModifyPage(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_
     /*
      * Adjust input.
      */
-    cb     += GCPtr & PAGE_OFFSET_MASK;
-    cb      = RT_ALIGN_Z(cb, PAGE_SIZE);
+    cb     += GCPtr & GUEST_PAGE_OFFSET_MASK;
+    cb      = RT_ALIGN_Z(cb, GUEST_PAGE_SIZE);
     GCPtr   = (GCPtr & PAGE_BASE_GC_MASK);
 
     /*

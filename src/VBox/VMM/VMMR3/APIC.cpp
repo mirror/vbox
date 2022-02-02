@@ -1213,7 +1213,7 @@ static void apicR3TermState(PVM pVM)
     /* Unmap and free the PIB. */
     if (pApic->pvApicPibR3 != NIL_RTR3PTR)
     {
-        size_t const cPages = pApic->cbApicPib >> PAGE_SHIFT;
+        size_t const cPages = pApic->cbApicPib >> HOST_PAGE_SHIFT;
         if (cPages == 1)
             SUPR3PageFreeEx(pApic->pvApicPibR3, cPages);
         else
@@ -1260,14 +1260,14 @@ static int apicR3InitState(PVM pVM)
      */
     Assert(pApic->pvApicPibR3 == NIL_RTR3PTR);
     Assert(pApic->pvApicPibR0 == NIL_RTR0PTR);
-    pApic->cbApicPib    = RT_ALIGN_Z(pVM->cCpus * sizeof(APICPIB), PAGE_SIZE);
-    size_t const cPages = pApic->cbApicPib >> PAGE_SHIFT;
-    if (cPages == 1)
+    pApic->cbApicPib        = RT_ALIGN_Z(pVM->cCpus * sizeof(APICPIB), HOST_PAGE_SIZE);
+    size_t const cHostPages = pApic->cbApicPib >> HOST_PAGE_SHIFT;
+    if (cHostPages == 1)
     {
         SUPPAGE SupApicPib;
         RT_ZERO(SupApicPib);
         SupApicPib.Phys = NIL_RTHCPHYS;
-        int rc = SUPR3PageAllocEx(1 /* cPages */, 0 /* fFlags */, &pApic->pvApicPibR3, &pApic->pvApicPibR0, &SupApicPib);
+        int rc = SUPR3PageAllocEx(1 /* cHostPages */, 0 /* fFlags */, &pApic->pvApicPibR3, &pApic->pvApicPibR0, &SupApicPib);
         if (RT_SUCCESS(rc))
         {
             pApic->HCPhysApicPib = SupApicPib.Phys;
@@ -1280,7 +1280,7 @@ static int apicR3InitState(PVM pVM)
         }
     }
     else
-        pApic->pvApicPibR3 = SUPR3ContAlloc(cPages, &pApic->pvApicPibR0, &pApic->HCPhysApicPib);
+        pApic->pvApicPibR3 = SUPR3ContAlloc(cHostPages, &pApic->pvApicPibR0, &pApic->HCPhysApicPib);
 
     if (pApic->pvApicPibR3)
     {
@@ -1306,9 +1306,9 @@ static int apicR3InitState(PVM pVM)
             Assert(pVCpu->idCpu == idCpu);
             Assert(pApicCpu->pvApicPageR3 == NIL_RTR3PTR);
             Assert(pApicCpu->pvApicPageR0 == NIL_RTR0PTR);
-            AssertCompile(sizeof(XAPICPAGE) <= PAGE_SIZE);
+            AssertCompile(sizeof(XAPICPAGE) <= HOST_PAGE_SIZE);
             pApicCpu->cbApicPage = sizeof(XAPICPAGE);
-            int rc = SUPR3PageAllocEx(1 /* cPages */, 0 /* fFlags */, &pApicCpu->pvApicPageR3, &pApicCpu->pvApicPageR0,
+            int rc = SUPR3PageAllocEx(1 /* cHostPages */, 0 /* fFlags */, &pApicCpu->pvApicPageR3, &pApicCpu->pvApicPageR0,
                                       &SupApicPage);
             if (RT_SUCCESS(rc))
             {

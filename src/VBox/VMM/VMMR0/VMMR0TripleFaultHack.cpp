@@ -75,7 +75,7 @@ int vmmR0TripleFaultHackInit(void)
     /*
      * Map the first page.
      */
-    int rc = RTR0MemObjEnterPhys(&g_hMemPage0, 0, PAGE_SIZE, RTMEM_CACHE_POLICY_DONT_CARE);
+    int rc = RTR0MemObjEnterPhys(&g_hMemPage0, 0, HOST_PAGE_SIZE, RTMEM_CACHE_POLICY_DONT_CARE);
     AssertRCReturn(rc, rc);
     rc = RTR0MemObjMapKernel(&g_hMapPage0, g_hMemPage0, (void *)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     AssertRCReturn(rc, rc);
@@ -85,9 +85,9 @@ int vmmR0TripleFaultHackInit(void)
     /*
      * Allocate some "low core" memory.  If that fails, just grab some memory.
      */
-    //rc = RTR0MemObjAllocPhys(&g_hMemLowCore, PAGE_SIZE, _1M - 1);
+    //rc = RTR0MemObjAllocPhys(&g_hMemLowCore, HOST_PAGE_SIZE, _1M - 1);
     //__debugbreak();
-    rc = RTR0MemObjEnterPhys(&g_hMemLowCore, 0x7000, PAGE_SIZE, RTMEM_CACHE_POLICY_DONT_CARE);
+    rc = RTR0MemObjEnterPhys(&g_hMemLowCore, 0x7000, HOST_PAGE_SIZE, RTMEM_CACHE_POLICY_DONT_CARE);
     AssertRCReturn(rc, rc);
     rc = RTR0MemObjMapKernel(&g_hMapLowCore, g_hMemLowCore, (void *)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     AssertRCReturn(rc, rc);
@@ -98,9 +98,9 @@ int vmmR0TripleFaultHackInit(void)
     /*
      * Save memory we'll be overwriting.
      */
-    g_pvSavedLowCore = RTMemAlloc(PAGE_SIZE);
+    g_pvSavedLowCore = RTMemAlloc(HOST_PAGE_SIZE);
     AssertReturn(g_pvSavedLowCore, VERR_NO_MEMORY);
-    memcpy(g_pvSavedLowCore, g_pbLowCore, PAGE_SIZE);
+    memcpy(g_pvSavedLowCore, g_pbLowCore, HOST_PAGE_SIZE);
 
     g_u32SavedVector = RT_MAKE_U32_FROM_U8(g_pbPage0[0x467], g_pbPage0[0x467+1], g_pbPage0[0x467+2], g_pbPage0[0x467+3]);
     g_u16SavedCadIndicator = RT_MAKE_U16(g_pbPage0[0x472], g_pbPage0[0x472+1]);
@@ -109,7 +109,7 @@ int vmmR0TripleFaultHackInit(void)
      * Install the code.
      */
     size_t cbCode = (uintptr_t)&vmmR0TripleFaultHackEnd - (uintptr_t)&vmmR0TripleFaultHackStart;
-    AssertLogRelReturn(cbCode <= PAGE_SIZE, VERR_OUT_OF_RANGE);
+    AssertLogRelReturn(cbCode <= HOST_PAGE_SIZE, VERR_OUT_OF_RANGE);
     memcpy(g_pbLowCore, &vmmR0TripleFaultHackStart, cbCode);
 
     g_pbPage0[0x467+0] = 0x00;
@@ -157,7 +157,7 @@ void vmmR0TripleFaultHackTerm(void)
      */
     if (   g_pvSavedLowCore
         && g_pbLowCore)
-        memcpy(g_pbLowCore, g_pvSavedLowCore, PAGE_SIZE);
+        memcpy(g_pbLowCore, g_pvSavedLowCore, HOST_PAGE_SIZE);
 
     if (g_pbPage0)
     {

@@ -174,7 +174,7 @@ static void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPA
                                         void const *pvAddress, unsigned cbWrite)
 {
     AssertMsg(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX, ("%u (idx=%u)\n", pPage->iMonitoredPrev, pPage->idx));
-    const unsigned  off = GCPhysFault & PAGE_OFFSET_MASK;
+    const unsigned  off = GCPhysFault & GUEST_PAGE_OFFSET_MASK;
     PVMCC           pVM = pPool->CTX_SUFF(pVM);
     NOREF(pVCpu);
 
@@ -1101,7 +1101,7 @@ DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTG
             if (    pDis->uCpuMode == DISCPUMODE_32BIT
                 &&  pDis->fPrefix == DISPREFIX_REP
                 &&  pRegFrame->ecx <= 0x20
-                &&  pRegFrame->ecx * 4 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
+                &&  pRegFrame->ecx * 4 <= GUEST_PAGE_SIZE - ((uintptr_t)pvFault & GUEST_PAGE_OFFSET_MASK)
                 &&  !((uintptr_t)pvFault & 3)
                 &&  (pRegFrame->eax == 0 || pRegFrame->eax == 0x80) /* the two values observed. */
                 )
@@ -1113,7 +1113,7 @@ DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTG
             if (    pDis->uCpuMode == DISCPUMODE_64BIT
                 &&  pDis->fPrefix == (DISPREFIX_REP | DISPREFIX_REX)
                 &&  pRegFrame->rcx <= 0x20
-                &&  pRegFrame->rcx * 8 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
+                &&  pRegFrame->rcx * 8 <= GUEST_PAGE_SIZE - ((uintptr_t)pvFault & GUEST_PAGE_OFFSET_MASK)
                 &&  !((uintptr_t)pvFault & 7)
                 &&  (pRegFrame->rax == 0 || pRegFrame->rax == 0x80) /* the two values observed. */
                 )
@@ -1735,7 +1735,8 @@ void pgmPoolAddDirtyPage(PVMCC pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      */
     void *pvGst;
     int   rc  = PGM_GCPHYS_2_PTR_EX(pVM, pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
-    memcpy(&pPool->aDirtyPages[idxFree].aPage[0], pvGst, (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT) ? PAGE_SIZE : PAGE_SIZE/2);
+    memcpy(&pPool->aDirtyPages[idxFree].aPage[0], pvGst,
+           pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT ? PAGE_SIZE : PAGE_SIZE / 2);
 #  ifdef VBOX_STRICT
     void *pvShw = PGMPOOL_PAGE_2_PTR(pVM, pPage);
     if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)

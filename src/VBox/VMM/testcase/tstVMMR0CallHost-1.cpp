@@ -144,7 +144,7 @@ int main()
         return rcExit;
     RTTestBanner(hTest);
 
-    g_Jmp.cbStackBuf = PAGE_SIZE;
+    g_Jmp.cbStackBuf = HOST_PAGE_SIZE;
     g_Jmp.pvStackBuf = (uintptr_t)RTTestGuardedAllocTail(hTest, g_Jmp.cbStackBuf);
     g_Jmp.pMirrorBuf = (uintptr_t)&g_JmpMirror;
 

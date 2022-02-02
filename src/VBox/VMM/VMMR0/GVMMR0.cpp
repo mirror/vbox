@@ -889,9 +889,9 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                      * Allocate memory for the VM structure (combined VM + GVM).
                      */
                     const uint32_t  cbVM      = RT_UOFFSETOF_DYN(GVM, aCpus[cCpus]);
-                    const uint32_t  cPages    = RT_ALIGN_32(cbVM, PAGE_SIZE) >> PAGE_SHIFT;
+                    const uint32_t  cPages    = RT_ALIGN_32(cbVM, HOST_PAGE_SIZE) >> HOST_PAGE_SHIFT;
                     RTR0MEMOBJ      hVMMemObj = NIL_RTR0MEMOBJ;
-                    rc = RTR0MemObjAllocPage(&hVMMemObj, cPages << PAGE_SHIFT, false /* fExecutable */);
+                    rc = RTR0MemObjAllocPage(&hVMMemObj, cPages << HOST_PAGE_SHIFT, false /* fExecutable */);
                     if (RT_SUCCESS(rc))
                     {
                         PGVM pGVM = (PGVM)RTR0MemObjAddress(hVMMemObj);
@@ -900,7 +900,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                         /*
                          * Initialise the structure.
                          */
-                        RT_BZERO(pGVM, cPages << PAGE_SHIFT);
+                        RT_BZERO(pGVM, cPages << HOST_PAGE_SHIFT);
                         gvmmR0InitPerVMData(pGVM, iHandle, cCpus, pSession);
                         pGVM->gvmm.s.VMMemObj  = hVMMemObj;
                         rc = GMMR0InitPerVMData(pGVM);
@@ -930,13 +930,13 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                                 /*
                                  * Map the page array, VM and VMCPU structures into ring-3.
                                  */
-                                AssertCompileSizeAlignment(VM, PAGE_SIZE);
+                                AssertCompileSizeAlignment(VM, HOST_PAGE_SIZE);
                                 rc = RTR0MemObjMapUserEx(&pGVM->gvmm.s.VMMapObj, pGVM->gvmm.s.VMMemObj, (RTR3PTR)-1, 0,
                                                          RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS,
                                                          0 /*offSub*/, sizeof(VM));
                                 for (VMCPUID i = 0; i < cCpus && RT_SUCCESS(rc); i++)
                                 {
-                                    AssertCompileSizeAlignment(VMCPU, PAGE_SIZE);
+                                    AssertCompileSizeAlignment(VMCPU, HOST_PAGE_SIZE);
                                     rc = RTR0MemObjMapUserEx(&pGVM->aCpus[i].gvmm.s.VMCpuMapObj, pGVM->gvmm.s.VMMemObj,
                                                              (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS,
                                                              RT_UOFFSETOF_DYN(GVM, aCpus[i]), sizeof(VMCPU));
@@ -1253,7 +1253,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PGVM pGVM)
      * Validate the VM structure, state and caller.
      */
     AssertPtrReturn(pGVM, VERR_INVALID_POINTER);
-    AssertReturn(!((uintptr_t)pGVM & PAGE_OFFSET_MASK), VERR_INVALID_POINTER);
+    AssertReturn(!((uintptr_t)pGVM & HOST_PAGE_OFFSET_MASK), VERR_INVALID_POINTER);
     AssertMsgReturn(pGVM->enmVMState >= VMSTATE_CREATING && pGVM->enmVMState <= VMSTATE_TERMINATED, ("%d\n", pGVM->enmVMState),
                     VERR_WRONG_ORDER);
 
@@ -1860,7 +1860,7 @@ static int gvmmR0ByGVM(PGVM pGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
      */
     int rc;
     if (RT_LIKELY(   RT_VALID_PTR(pGVM)
-                  && ((uintptr_t)pGVM & PAGE_OFFSET_MASK) == 0 ))
+                  && ((uintptr_t)pGVM & HOST_PAGE_OFFSET_MASK) == 0 ))
     {
         /*
          * Get the pGVMM instance and check the VM handle.
@@ -1950,7 +1950,7 @@ static int gvmmR0ByGVMandEMT(PGVM pGVM, VMCPUID idCpu, PGVMM *ppGVMM)
      * Check the pointers.
      */
     AssertPtrReturn(pGVM, VERR_INVALID_POINTER);
-    AssertReturn(((uintptr_t)pGVM & PAGE_OFFSET_MASK) == 0, VERR_INVALID_POINTER);
+    AssertReturn(((uintptr_t)pGVM & HOST_PAGE_OFFSET_MASK) == 0, VERR_INVALID_POINTER);
 
     /*
      * Get the pGVMM instance and check the VM handle.
@@ -2268,7 +2268,7 @@ GVMMR0DECL(RTHCPHYS) GVMMR0ConvertGVMPtr2HCPhys(PGVM pGVM, void *pv)
     Assert(pGVM->u32Magic == GVM_MAGIC);
     uintptr_t const off = (uintptr_t)pv - (uintptr_t)pGVM;
     Assert(off < RT_UOFFSETOF_DYN(GVM, aCpus[pGVM->cCpus]));
-    return RTR0MemObjGetPagePhysAddr(pGVM->gvmm.s.VMMemObj, off >> PAGE_SHIFT) | ((uintptr_t)pv & PAGE_OFFSET_MASK);
+    return RTR0MemObjGetPagePhysAddr(pGVM->gvmm.s.VMMemObj, off >> HOST_PAGE_SHIFT) | ((uintptr_t)pv & HOST_PAGE_OFFSET_MASK);
 }
 
 

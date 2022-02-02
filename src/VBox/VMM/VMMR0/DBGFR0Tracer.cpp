@@ -103,13 +103,13 @@ static int dbgfR0TracerCreateWorker(PGVM pGVM, uint32_t cbRingBuf, RTRGPTR RCPtr
     /*
      * Figure out how much memory we need and allocate it.
      */
-    uint32_t const cbRing0     = RT_ALIGN_32(sizeof(DBGFTRACERINSR0), PAGE_SIZE);
-    uint32_t const cbRing3     = RT_ALIGN_32(sizeof(DBGFTRACERINSR3), RCPtrMapping != NIL_RTRGPTR ? PAGE_SIZE : 64);
+    uint32_t const cbRing0     = RT_ALIGN_32(sizeof(DBGFTRACERINSR0), HOST_PAGE_SIZE);
+    uint32_t const cbRing3     = RT_ALIGN_32(sizeof(DBGFTRACERINSR3), RCPtrMapping != NIL_RTRGPTR ? HOST_PAGE_SIZE : 64);
     uint32_t const cbRC        = RCPtrMapping != NIL_RTRGPTR ? 0
                                : RT_ALIGN_32(sizeof(DBGFTRACERINSRC), 64);
     uint32_t const cbShared    = RT_ALIGN_32(sizeof(DBGFTRACERSHARED) + cbRingBuf, 64);
     uint32_t const offShared   = cbRing0 + cbRing3 + cbRC;
-    uint32_t const cbTotal     = RT_ALIGN_32(cbRing0 + cbRing3 + cbRC + cbShared, PAGE_SIZE);
+    uint32_t const cbTotal     = RT_ALIGN_32(cbRing0 + cbRing3 + cbRC + cbShared, HOST_PAGE_SIZE);
     AssertLogRelMsgReturn(cbTotal <= DBGF_MAX_TRACER_INSTANCE_SIZE,
                           ("Instance of tracer is too big: cbTotal=%u, max %u\n", cbTotal, DBGF_MAX_TRACER_INSTANCE_SIZE),
                           VERR_OUT_OF_RANGE);

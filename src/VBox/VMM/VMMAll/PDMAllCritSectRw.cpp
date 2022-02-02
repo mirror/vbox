@@ -991,8 +991,8 @@ static int pdmCritSectRwLeaveSharedWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool 
                     pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] = pThis->s.pSelfR3;
                     VMM_ASSERT_RELEASE_MSG_RETURN(pVM,
                                                      RT_VALID_PTR(pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i])
-                                                  &&    ((uintptr_t)pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] & PAGE_OFFSET_MASK)
-                                                     == ((uintptr_t)pThis & PAGE_OFFSET_MASK),
+                                                  &&    ((uintptr_t)pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] & HOST_PAGE_OFFSET_MASK)
+                                                     == ((uintptr_t)pThis & HOST_PAGE_OFFSET_MASK),
                                                   ("%p vs %p\n", pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i], pThis),
                                                   pdmCritSectRwCorrupted(pThis, "Invalid self pointer"));
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
@@ -1895,8 +1895,8 @@ static int pdmCritSectRwLeaveExclWorker(PVMCC pVM, PPDMCRITSECTRW pThis, bool fN
     pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] = pThis->s.pSelfR3;
     VMM_ASSERT_RELEASE_MSG_RETURN(pVM,
                                      RT_VALID_PTR(pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i])
-                                  &&    ((uintptr_t)pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] & PAGE_OFFSET_MASK)
-                                     == ((uintptr_t)pThis & PAGE_OFFSET_MASK),
+                                  &&    ((uintptr_t)pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] & HOST_PAGE_OFFSET_MASK)
+                                     == ((uintptr_t)pThis & HOST_PAGE_OFFSET_MASK),
                                   ("%p vs %p\n", pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i], pThis),
                                   pdmCritSectRwCorrupted(pThis, "Invalid self pointer on queue (excl)"));
     VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);

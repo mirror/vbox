@@ -44,8 +44,8 @@
 VMMR3_INT_DECL(int) GVMMR3CreateVM(PUVM pUVM, uint32_t cCpus, PSUPDRVSESSION pSession, PVM *ppVM, PRTR0PTR ppVMR0)
 {
     AssertReturn(cCpus >= VMM_MIN_CPU_COUNT && cCpus <= VMM_MAX_CPU_COUNT, VERR_INVALID_PARAMETER);
-    AssertCompile((sizeof(VM)    & PAGE_OFFSET_MASK) == 0);
-    AssertCompile((sizeof(VMCPU) & PAGE_OFFSET_MASK) == 0);
+    AssertCompile((sizeof(VM)    & HOST_PAGE_OFFSET_MASK) == 0);
+    AssertCompile((sizeof(VMCPU) & HOST_PAGE_OFFSET_MASK) == 0);
 
     int rc;
     if (!SUPR3IsDriverless())
@@ -71,14 +71,14 @@ VMMR3_INT_DECL(int) GVMMR3CreateVM(PUVM pUVM, uint32_t cCpus, PSUPDRVSESSION pSe
          */
         /* Allocate the VM structure: */
         size_t const cbVM = sizeof(VM) + sizeof(VMCPU) * cCpus;
-        PVM          pVM  = (PVM)RTMemPageAlloc(cbVM + PAGE_SIZE * (1 + 2 * cCpus));
+        PVM          pVM  = (PVM)RTMemPageAlloc(cbVM + HOST_PAGE_SIZE * (1 + 2 * cCpus));
         if (!pVM)
             return VERR_NO_PAGE_MEMORY;
 
         /* Set up guard pages: */
-        RTMemProtect(pVM, PAGE_SIZE, RTMEM_PROT_NONE);
-        pVM = (PVM)((uintptr_t)pVM + PAGE_SIZE);
-        RTMemProtect(pVM + 1, PAGE_SIZE, RTMEM_PROT_NONE);
+        RTMemProtect(pVM, HOST_PAGE_SIZE, RTMEM_PROT_NONE);
+        pVM = (PVM)((uintptr_t)pVM + HOST_PAGE_SIZE);
+        RTMemProtect(pVM + 1, HOST_PAGE_SIZE, RTMEM_PROT_NONE);
 
         /* VM: */
         pVM->enmVMState           = VMSTATE_CREATING;
@@ -92,7 +92,7 @@ VMMR3_INT_DECL(int) GVMMR3CreateVM(PUVM pUVM, uint32_t cCpus, PSUPDRVSESSION pSe
         pVM->uStructVersion       = 1;
 
         /* CPUs: */
-        PVMCPU pVCpu = (PVMCPU)((uintptr_t)pVM + sizeof(VM) + PAGE_SIZE);
+        PVMCPU pVCpu = (PVMCPU)((uintptr_t)pVM + sizeof(VM) + HOST_PAGE_SIZE);
         for (VMCPUID idxCpu = 0; idxCpu < cCpus; idxCpu++)
         {
             pVM->apCpusR3[idxCpu] = pVCpu;
@@ -104,8 +104,8 @@ VMMR3_INT_DECL(int) GVMMR3CreateVM(PUVM pUVM, uint32_t cCpus, PSUPDRVSESSION pSe
             pVCpu->hThread         = NIL_RTTHREAD;
             pVCpu->idCpu           = idxCpu;
 
-            RTMemProtect(pVCpu + 1, PAGE_SIZE, RTMEM_PROT_NONE);
-            pVCpu = (PVMCPU)((uintptr_t)pVCpu + sizeof(VMCPU) + PAGE_SIZE);
+            RTMemProtect(pVCpu + 1, HOST_PAGE_SIZE, RTMEM_PROT_NONE);
+            pVCpu = (PVMCPU)((uintptr_t)pVCpu + sizeof(VMCPU) + HOST_PAGE_SIZE);
         }
 
         *ppVM   = pVM;
@@ -134,7 +134,8 @@ VMMR3_INT_DECL(int) GVMMR3DestroyVM(PUVM pUVM, PVM pVM)
         rc = SUPR3CallVMMR0Ex(pVM->pVMR0ForCall, 0 /*idCpu*/, VMMR0_DO_GVMM_DESTROY_VM, 0, NULL);
     else
     {
-        RTMemPageFree((uint8_t *)pVM - PAGE_SIZE, sizeof(VM) + sizeof(VMCPU) * pVM->cCpus + PAGE_SIZE * (1 + 2 * pVM->cCpus));
+        RTMemPageFree((uint8_t *)pVM - HOST_PAGE_SIZE,
+                      sizeof(VM) + sizeof(VMCPU) * pVM->cCpus + HOST_PAGE_SIZE * (1 + 2 * pVM->cCpus));
         rc = VINF_SUCCESS;
     }
     return rc;

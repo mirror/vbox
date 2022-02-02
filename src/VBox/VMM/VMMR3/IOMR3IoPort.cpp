@@ -230,7 +230,7 @@ static int iomR3IoPortGrowStatisticsTable(PVM pVM, uint32_t cNewEntries)
         /*
          * Calc size and allocate a new table.
          */
-        uint32_t const cbNew = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTSTATSENTRY), PAGE_SIZE);
+        uint32_t const cbNew = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTSTATSENTRY), HOST_PAGE_SIZE);
         cNewEntries = cbNew / sizeof(IOMIOPORTSTATSENTRY);
 
         PIOMIOPORTSTATSENTRY const paIoPortStats = (PIOMIOPORTSTATSENTRY)RTMemPageAllocZ(cbNew);
@@ -246,7 +246,7 @@ static int iomR3IoPortGrowStatisticsTable(PVM pVM, uint32_t cNewEntries)
             pVM->iom.s.paIoPortStats             = paIoPortStats;
             pVM->iom.s.cIoPortStatsAllocation    = cNewEntries;
 
-            RTMemPageFree(pOldIoPortStats, RT_ALIGN_32(cOldEntries * sizeof(IOMIOPORTSTATSENTRY), PAGE_SIZE));
+            RTMemPageFree(pOldIoPortStats, RT_ALIGN_32(cOldEntries * sizeof(IOMIOPORTSTATSENTRY), HOST_PAGE_SIZE));
 
             rc = VINF_SUCCESS;
         }
@@ -290,8 +290,8 @@ static int iomR3IoPortGrowTable(PVM pVM, uint32_t cNewEntries)
          * Allocate the new tables.  We use a single allocation for the three tables (ring-0,
          * ring-3, lookup) and does a partial mapping of the result to ring-3.
          */
-        uint32_t const cbRing3  = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTENTRYR3),     PAGE_SIZE);
-        uint32_t const cbShared = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTLOOKUPENTRY), PAGE_SIZE);
+        uint32_t const cbRing3  = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTENTRYR3),     HOST_PAGE_SIZE);
+        uint32_t const cbShared = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTLOOKUPENTRY), HOST_PAGE_SIZE);
         uint32_t const cbNew    = cbRing3 + cbShared;
 
         /* Use the rounded up space as best we can. */
@@ -328,8 +328,8 @@ static int iomR3IoPortGrowTable(PVM pVM, uint32_t cNewEntries)
             pVM->iom.s.cIoPortAlloc     = cNewEntries;
 
             RTMemPageFree(pvFree,
-                            RT_ALIGN_32(cOldEntries * sizeof(IOMIOPORTENTRYR3),     PAGE_SIZE)
-                          + RT_ALIGN_32(cOldEntries * sizeof(IOMIOPORTLOOKUPENTRY), PAGE_SIZE));
+                            RT_ALIGN_32(cOldEntries * sizeof(IOMIOPORTENTRYR3),     HOST_PAGE_SIZE)
+                          + RT_ALIGN_32(cOldEntries * sizeof(IOMIOPORTLOOKUPENTRY), HOST_PAGE_SIZE));
 
             rc = VINF_SUCCESS;
         }

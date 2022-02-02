@@ -487,7 +487,8 @@ typedef struct MMLOOKUPHYPER
             R3PTRTYPE(void *)       pvR3;
             /** Host context ring-0 pointer. Optional. */
             RTR0PTR                 pvR0;
-            /** Pointer to an array containing the physical address of each page. */
+            /** Pointer to an array containing the physical address of each page
+             * (HOST_PAGE_SIZE). */
             R3PTRTYPE(PRTHCPHYS)    paHCPhysPages;
         } Locked;
 

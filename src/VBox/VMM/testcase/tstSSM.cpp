@@ -56,7 +56,7 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-const uint8_t   gabPage[PAGE_SIZE] = {0};
+const uint8_t   gabPage[GUEST_PAGE_SIZE] = {0};
 const char      gachMem1[] = "sdfg\1asdfa\177hjkl;sdfghjkl;dfghjkl;dfghjkl;\0\0asdf;kjasdf;lkjasd;flkjasd;lfkjasd\0;lfk";
 #ifdef TSTSSM_BIG_CONFIG
 uint8_t         gabBigMem[_1M];
@@ -89,8 +89,8 @@ void initBigMem(void)
     }
 
     /* add some zero pages */
-    memset(&gabBigMem[sizeof(gabBigMem) / 4],     0, PAGE_SIZE * 4);
-    memset(&gabBigMem[sizeof(gabBigMem) / 4 * 3], 0, PAGE_SIZE * 4);
+    memset(&gabBigMem[sizeof(gabBigMem) / 4],     0, GUEST_PAGE_SIZE * 4);
+    memset(&gabBigMem[sizeof(gabBigMem) / 4 * 3], 0, GUEST_PAGE_SIZE * 4);
 #endif
 }
 
@@ -432,16 +432,16 @@ DECLCALLBACK(int) Item03Save(PVM pVM, PSSMHANDLE pSSM)
     const uint8_t *pu8Org = &gabBigMem[0];
     while (cb > 0)
     {
-        rc = SSMR3PutMem(pSSM, pu8Org, PAGE_SIZE);
+        rc = SSMR3PutMem(pSSM, pu8Org, GUEST_PAGE_SIZE);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("Item03: PutMem(,%p,%#x) -> %Rrc\n", pu8Org, PAGE_SIZE, rc);
+            RTPrintf("Item03: PutMem(,%p,%#x) -> %Rrc\n", pu8Org, GUEST_PAGE_SIZE, rc);
             return rc;
         }
 
         /* next */
-        cb -= PAGE_SIZE;
-        pu8Org += PAGE_SIZE;
+        cb -= GUEST_PAGE_SIZE;
+        pu8Org += GUEST_PAGE_SIZE;
         if (pu8Org >= &gabBigMem[sizeof(gabBigMem)])
             pu8Org = &gabBigMem[0];
     }
@@ -491,22 +491,22 @@ DECLCALLBACK(int) Item03Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
     const uint8_t *pu8Org = &gabBigMem[0];
     while (cb > 0)
     {
-        char achPage[PAGE_SIZE];
-        rc = SSMR3GetMem(pSSM, &achPage[0], PAGE_SIZE);
+        char achPage[GUEST_PAGE_SIZE];
+        rc = SSMR3GetMem(pSSM, &achPage[0], GUEST_PAGE_SIZE);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("Item03: SSMR3GetMem(,,%#x) -> %Rrc offset %#x\n", PAGE_SIZE, rc, TSTSSM_ITEM_SIZE - cb);
+            RTPrintf("Item03: SSMR3GetMem(,,%#x) -> %Rrc offset %#x\n", GUEST_PAGE_SIZE, rc, TSTSSM_ITEM_SIZE - cb);
             return rc;
         }
-        if (memcmp(achPage, pu8Org, PAGE_SIZE))
+        if (memcmp(achPage, pu8Org, GUEST_PAGE_SIZE))
         {
             RTPrintf("Item03: compare failed. mem offset=%#x\n", TSTSSM_ITEM_SIZE - cb);
             return VERR_GENERAL_FAILURE;
         }
 
         /* next */
-        cb -= PAGE_SIZE;
-        pu8Org += PAGE_SIZE;
+        cb -= GUEST_PAGE_SIZE;
+        pu8Org += GUEST_PAGE_SIZE;
         if (pu8Org >= &gabBigMem[sizeof(gabBigMem)])
             pu8Org = &gabBigMem[0];
     }
@@ -543,15 +543,15 @@ DECLCALLBACK(int) Item04Save(PVM pVM, PSSMHANDLE pSSM)
      */
     while (cb > 0)
     {
-        rc = SSMR3PutMem(pSSM, gabPage, PAGE_SIZE);
+        rc = SSMR3PutMem(pSSM, gabPage, GUEST_PAGE_SIZE);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("Item04: PutMem(,%p,%#x) -> %Rrc\n", gabPage, PAGE_SIZE, rc);
+            RTPrintf("Item04: PutMem(,%p,%#x) -> %Rrc\n", gabPage, GUEST_PAGE_SIZE, rc);
             return rc;
         }
 
         /* next */
-        cb -= PAGE_SIZE;
+        cb -= GUEST_PAGE_SIZE;
     }
 
     uint64_t u64Elapsed = RTTimeNanoTS() - u64Start;
@@ -598,21 +598,21 @@ DECLCALLBACK(int) Item04Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
      */
     while (cb > 0)
     {
-        char achPage[PAGE_SIZE];
-        rc = SSMR3GetMem(pSSM, &achPage[0], PAGE_SIZE);
+        char achPage[GUEST_PAGE_SIZE];
+        rc = SSMR3GetMem(pSSM, &achPage[0], GUEST_PAGE_SIZE);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("Item04: SSMR3GetMem(,,%#x) -> %Rrc offset %#x\n", PAGE_SIZE, rc, 512*_1M - cb);
+            RTPrintf("Item04: SSMR3GetMem(,,%#x) -> %Rrc offset %#x\n", GUEST_PAGE_SIZE, rc, 512*_1M - cb);
             return rc;
         }
-        if (memcmp(achPage, gabPage, PAGE_SIZE))
+        if (memcmp(achPage, gabPage, GUEST_PAGE_SIZE))
         {
             RTPrintf("Item04: compare failed. mem offset=%#x\n", 512*_1M - cb);
             return VERR_GENERAL_FAILURE;
         }
 
         /* next */
-        cb -= PAGE_SIZE;
+        cb -= GUEST_PAGE_SIZE;
     }
 
     return 0;

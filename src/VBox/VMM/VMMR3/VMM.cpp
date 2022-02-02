@@ -286,7 +286,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     /*
      * Allocate mapping for the host APIC.
      */
-    rc = MMR3HyperReserve(pVM, PAGE_SIZE, "Host APIC", &pVM->vmm.s.GCPtrApicBase);
+    rc = MMR3HyperReserve(pVM, HOST_PAGE_SIZE, "Host APIC", &pVM->vmm.s.GCPtrApicBase);
     AssertRC(rc);
 #endif
     if (RT_SUCCESS(rc))

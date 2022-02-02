@@ -66,8 +66,8 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMS
      */
     for (uint32_t idxRegion = 0; idxRegion < pModule->cRegions; idxRegion++)
     {
-        RTGCPTR  GCPtrPage  = paRegionsGCPtrs[idxRegion] & ~(RTGCPTR)PAGE_OFFSET_MASK;
-        uint32_t cbLeft     = pModule->aRegions[idxRegion].cb; Assert(!(cbLeft & PAGE_OFFSET_MASK));
+        RTGCPTR  GCPtrPage  = paRegionsGCPtrs[idxRegion] & ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK;
+        uint32_t cbLeft     = pModule->aRegions[idxRegion].cb; Assert(!(cbLeft & GUEST_PAGE_OFFSET_MASK));
         uint32_t idxPage    = 0;
 
         while (cbLeft)
@@ -150,8 +150,8 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMS
             }
 
             idxPage++;
-            GCPtrPage += PAGE_SIZE;
-            cbLeft    -= PAGE_SIZE;
+            GCPtrPage += HOST_PAGE_SIZE;
+            cbLeft    -= HOST_PAGE_SIZE;
         }
     }
 

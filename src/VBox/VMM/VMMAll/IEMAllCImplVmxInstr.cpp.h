@@ -4303,13 +4303,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPUCC pVCpu, PRTGCPHYS pGC
     Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
     Assert(pGCPhysAccess);
 
-    RTGCPHYS const GCPhysAccess = *pGCPhysAccess & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+    RTGCPHYS const GCPhysAccess = *pGCPhysAccess & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
     RTGCPHYS const GCPhysApic   = pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u64AddrApicAccess.u;
-    Assert(!(GCPhysApic & PAGE_OFFSET_MASK));
+    Assert(!(GCPhysApic & GUEST_PAGE_OFFSET_MASK));
 
     if (GCPhysAccess == GCPhysApic)
     {
-        uint16_t const offAccess = *pGCPhysAccess & PAGE_OFFSET_MASK;
+        uint16_t const offAccess = *pGCPhysAccess & GUEST_PAGE_OFFSET_MASK;
         uint32_t const fAccess   = IEM_ACCESS_TYPE_READ;
         uint16_t const cbAccess  = 1;
         bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, cbAccess, fAccess);

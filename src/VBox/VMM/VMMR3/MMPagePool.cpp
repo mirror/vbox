@@ -42,7 +42,8 @@ VMMR3DECL(void *) MMR3PageDummyHCPtr(PVM pVM)
     VM_ASSERT_EMT(pVM);
     if (!pVM->mm.s.pvDummyPage)
     {
-        int rc = MMHyperAlloc(pVM, PAGE_SIZE, PAGE_SIZE, MM_TAG_PGM, &pVM->mm.s.pvDummyPage);
+        /** @todo Redo this. */
+        int rc = MMHyperAlloc(pVM, RT_MAX(GUEST_PAGE_SIZE, HOST_PAGE_SIZE), GUEST_PAGE_SIZE, MM_TAG_PGM, &pVM->mm.s.pvDummyPage);
         AssertRelease(RT_SUCCESS(rc));
         AssertRelease(pVM->mm.s.pvDummyPage);
         pVM->mm.s.HCPhysDummyPage = MMR3HyperHCVirt2HCPhys(pVM, pVM->mm.s.pvDummyPage);

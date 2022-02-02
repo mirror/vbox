@@ -349,7 +349,7 @@ DECLCALLBACK(int) pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
     {
         PPGMPAGE    pPage  = &pRam->aPages[0];
         RTGCPHYS    GCPhys = pRam->GCPhys;
-        uint32_t    cLeft  = pRam->cb >> PAGE_SHIFT;
+        uint32_t    cLeft  = pRam->cb >> GUEST_PAGE_SHIFT;
         while (cLeft-- > 0)
         {
             if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
@@ -376,7 +376,7 @@ DECLCALLBACK(int) pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
                         const void    *pvPage;
                         int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvPage, &PgMpLck);
                         if (    RT_SUCCESS(rc)
-                            &&  ASMMemIsZeroPage(pvPage))
+                            &&  ASMMemIsZero(pvPage, GUEST_PAGE_SIZE))
                             cAllocZero++;
                         else if (GMMR3IsDuplicatePage(pVM, PGM_PAGE_GET_PAGEID(pPage)))
                             cDuplicate++;
@@ -395,7 +395,7 @@ DECLCALLBACK(int) pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
 
             /* next */
             pPage++;
-            GCPhys += PAGE_SIZE;
+            GCPhys += GUEST_PAGE_SIZE;
             cPages++;
             /* Give some feedback for every processed megabyte. */
             if ((cPages & 0x7f) == 0)

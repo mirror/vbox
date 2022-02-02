@@ -73,9 +73,9 @@ static int pgmR0PoolGrowInner(PGVM pGVM, PPGMPOOL pPool)
          */
         RTR0MEMOBJ hMemObj = NIL_RTR0MEMOBJ;
         if (fCanUseHighMemory)
-            rc = RTR0MemObjAllocPage(&hMemObj, cNewPages * PAGE_SIZE, false /*fExecutable*/);
+            rc = RTR0MemObjAllocPage(&hMemObj, cNewPages * HOST_PAGE_SIZE, false /*fExecutable*/);
         else
-            rc = RTR0MemObjAllocLow(&hMemObj, cNewPages * PAGE_SIZE, false /*fExecutable*/);
+            rc = RTR0MemObjAllocLow(&hMemObj, cNewPages * HOST_PAGE_SIZE, false /*fExecutable*/);
         if (RT_SUCCESS(rc))
         {
             RTR0MEMOBJ hMapObj = NIL_RTR0MEMOBJ;
@@ -88,9 +88,9 @@ static int pgmR0PoolGrowInner(PGVM pGVM, PPGMPOOL pPool)
                 uint8_t *pbRing0 = (uint8_t *)RTR0MemObjAddress(hMemObj);
                 RTR3PTR  pbRing3 = RTR0MemObjAddressR3(hMapObj);
                 AssertPtr(pbRing0);
-                Assert(((uintptr_t)pbRing0 & PAGE_OFFSET_MASK) == 0);
+                Assert(((uintptr_t)pbRing0 & HOST_PAGE_OFFSET_MASK) == 0);
                 Assert(pbRing3 != NIL_RTR3PTR);
-                Assert((pbRing3 & PAGE_OFFSET_MASK) == 0);
+                Assert((pbRing3 & HOST_PAGE_OFFSET_MASK) == 0);
 
                 /*
                  * Initialize the new pages.
@@ -98,8 +98,8 @@ static int pgmR0PoolGrowInner(PGVM pGVM, PPGMPOOL pPool)
                 for (unsigned iNewPage = 0; iNewPage < cNewPages; iNewPage++)
                 {
                     PPGMPOOLPAGE pPage = &pPool->aPages[cCurPages + iNewPage];
-                    pPage->pvPageR0         = &pbRing0[iNewPage * PAGE_SIZE];
-                    pPage->pvPageR3         = pbRing3 + iNewPage * PAGE_SIZE;
+                    pPage->pvPageR0         = &pbRing0[iNewPage * HOST_PAGE_SIZE];
+                    pPage->pvPageR3         = pbRing3 + iNewPage * HOST_PAGE_SIZE;
                     pPage->Core.Key         = RTR0MemObjGetPagePhysAddr(hMemObj, iNewPage);
                     AssertFatal(pPage->Core.Key < _4G || fCanUseHighMemory);
                     pPage->GCPhys           = NIL_RTGCPHYS;

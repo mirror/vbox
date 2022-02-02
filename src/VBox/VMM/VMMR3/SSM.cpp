@@ -3467,10 +3467,9 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
          */
         for (;;)
         {
-            AssertCompile(SSM_ZIP_BLOCK_SIZE == PAGE_SIZE);
             if (    cbBuf >= SSM_ZIP_BLOCK_SIZE
                 && (    ((uintptr_t)pvBuf & 0xf)
-                    ||  !ASMMemIsZeroPage(pvBuf))
+                    ||  !ASMMemIsZero(pvBuf, SSM_ZIP_BLOCK_SIZE))
                )
             {
                 /*

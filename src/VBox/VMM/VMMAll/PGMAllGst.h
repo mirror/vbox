@@ -335,7 +335,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
 
         pWalk->fSucceeded = true;
         RTGCPHYS GCPhysPte = GST_GET_PTE_GCPHYS(Pte)
-                           | (GCPtr & PAGE_OFFSET_MASK);
+                           | (GCPtr & GUEST_PAGE_OFFSET_MASK);
 # ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         PGM_GST_SLAT_WALK(pVCpu, GCPtr, GCPhysPte, GCPhysPte, pWalk);
 # endif
@@ -405,7 +405,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
                ;
     }
 
-    pWalk->GCPhys    &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
+    pWalk->GCPhys    &= ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
     pWalk->fEffective = fFlags;
     return VINF_SUCCESS;
 
@@ -431,7 +431,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
  */
 PGM_GST_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask)
 {
-    Assert((cb & PAGE_OFFSET_MASK) == 0); RT_NOREF_PV(cb);
+    Assert((cb & GUEST_PAGE_OFFSET_MASK) == 0); RT_NOREF_PV(cb);
 
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
  || PGM_GST_TYPE == PGM_TYPE_PAE \
@@ -460,10 +460,10 @@ PGM_GST_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t
                 GstWalk.pPt->a[iPTE] = Pte;
 
                 /* next page */
-                cb -= PAGE_SIZE;
+                cb -= GUEST_PAGE_SIZE;
                 if (!cb)
                     return VINF_SUCCESS;
-                GCPtr += PAGE_SIZE;
+                GCPtr += GUEST_PAGE_SIZE;
                 iPTE++;
             }
         }

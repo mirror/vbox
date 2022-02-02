@@ -451,8 +451,8 @@
  *
  * Cost wise, this means we'll double the cost for guest memory. There isn't anyway
  * around that I'm afraid. It means that the cost of dealing out 32GB of memory
- * to one or more VMs is: (32GB >> PAGE_SHIFT) * 16 bytes, or 128MBs. Or another
- * example, the VM heap cost when assigning 1GB to a VM will be: 4MB.
+ * to one or more VMs is: (32GB >> GUEST_PAGE_SHIFT) * 16 bytes, or 128MBs. Or
+ * another example, the VM heap cost when assigning 1GB to a VM will be: 4MB.
  *
  * A couple of cost examples for the total cost per-VM + kernel.
  * 32-bit Windows and 32-bit linux:
@@ -868,9 +868,9 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         cbRam = 0;
     else if (RT_SUCCESS(rc))
     {
-        if (cbRam < PAGE_SIZE)
+        if (cbRam < GUEST_PAGE_SIZE)
             cbRam = 0;
-        cbRam = RT_ALIGN_64(cbRam, PAGE_SIZE);
+        cbRam = RT_ALIGN_64(cbRam, GUEST_PAGE_SIZE);
     }
     else
     {
@@ -933,12 +933,12 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
      */
     if (RT_SUCCESS(rc))
     {
-        rc = MMHyperAlloc(pVM, PAGE_SIZE, PAGE_SIZE, MM_TAG_PGM, &pVM->pgm.s.pvZeroPgR3);
+        rc = MMHyperAlloc(pVM, RT_MAX(GUEST_PAGE_SIZE, HOST_PAGE_SIZE), GUEST_PAGE_SIZE, MM_TAG_PGM, &pVM->pgm.s.pvZeroPgR3);
         if (RT_SUCCESS(rc))
         {
             pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
             pVM->pgm.s.HCPhysZeroPg = !fDriverless ? MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3)
-                                    : _4G - PAGE_SIZE * 2 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
+                                    : _4G - GUEST_PAGE_SIZE * 2 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
             AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
         }
     }
@@ -949,12 +949,13 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
      */
     if (RT_SUCCESS(rc))
     {
-        rc = MMHyperAlloc(pVM, PAGE_SIZE, PAGE_SIZE, MM_TAG_PGM, &pVM->pgm.s.pvMmioPgR3);
+        rc = MMHyperAlloc(pVM, RT_MAX(GUEST_PAGE_SIZE, HOST_PAGE_SIZE), GUEST_PAGE_SIZE,
+                          MM_TAG_PGM, &pVM->pgm.s.pvMmioPgR3);
         if (RT_SUCCESS(rc))
         {
-            ASMMemFill32(pVM->pgm.s.pvMmioPgR3, PAGE_SIZE, 0xfeedface);
+            ASMMemFill32(pVM->pgm.s.pvMmioPgR3, RT_MAX(GUEST_PAGE_SIZE, HOST_PAGE_SIZE), 0xfeedface);
             pVM->pgm.s.HCPhysMmioPg = !fDriverless ? MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvMmioPgR3)
-                                    : _4G - PAGE_SIZE * 3 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
+                                    : _4G - GUEST_PAGE_SIZE * 3 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
             AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS);
             pVM->pgm.s.HCPhysInvMmioPg = pVM->pgm.s.HCPhysMmioPg;
         }
@@ -2458,7 +2459,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
      * Dump the physical memory, page by page.
      */
     RTGCPHYS    GCPhys = 0;
-    char        abZeroPg[PAGE_SIZE];
+    char        abZeroPg[GUEST_PAGE_SIZE];
     RT_ZERO(abZeroPg);
 
     PGM_LOCK_VOID(pVM);
@@ -2471,8 +2472,8 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
         {
             while (pRam->GCPhys > GCPhys && RT_SUCCESS(rc))
             {
-                rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
-                GCPhys += PAGE_SIZE;
+                rc = RTFileWrite(hFile, abZeroPg, GUEST_PAGE_SIZE, NULL);
+                GCPhys += GUEST_PAGE_SIZE;
             }
         }
 
@@ -2484,7 +2485,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
             {
                 if (fIncZeroPgs)
                 {
-                    rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
+                    rc = RTFileWrite(hFile, abZeroPg, GUEST_PAGE_SIZE, NULL);
                     if (RT_FAILURE(rc))
                         DBGCCmdHlpPrintf(pCmdHlp, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
                 }
@@ -2503,7 +2504,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                         rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, &pvPage, &Lock);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = RTFileWrite(hFile, pvPage, PAGE_SIZE, NULL);
+                            rc = RTFileWrite(hFile, pvPage, GUEST_PAGE_SIZE, NULL);
                             PGMPhysReleasePageMappingLock(pVM, &Lock);
                             if (RT_FAILURE(rc))
                                 DBGCCmdHlpPrintf(pCmdHlp, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
@@ -2521,7 +2522,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                     case PGMPAGETYPE_SPECIAL_ALIAS_MMIO:
                         if (fIncZeroPgs)
                         {
-                            rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
+                            rc = RTFileWrite(hFile, abZeroPg, GUEST_PAGE_SIZE, NULL);
                             if (RT_FAILURE(rc))
                                 DBGCCmdHlpPrintf(pCmdHlp, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
                         }
@@ -2531,7 +2532,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
 
             /* advance */
-            GCPhys += PAGE_SIZE;
+            GCPhys += GUEST_PAGE_SIZE;
             pPage++;
         }
     }

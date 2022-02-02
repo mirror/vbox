@@ -284,12 +284,12 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
         RTGCPHYS GCPhys = 0;
         for (;;)
         {
-            if (!(GCPhys % (PAGE_SIZE * 0x1000)))
+            if (!(GCPhys % (GUEST_PAGE_SIZE * 0x1000)))
                 RTPrintf("info: %RGp...\n", GCPhys);
 
             /* read a page from the file */
             size_t cbRead = 0;
-            uint8_t au8Page[PAGE_SIZE * 16];
+            uint8_t au8Page[GUEST_PAGE_SIZE * 16];
             rc = RTFileRead(File, &au8Page, sizeof(au8Page), &cbRead);
             if (RT_SUCCESS(rc) && !cbRead)
                 rc = RTFileRead(File, &au8Page, sizeof(au8Page), &cbRead);
@@ -801,7 +801,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             rc = RTFileQuerySize(FileRawMem, &cbMem);
             AssertReleaseRC(rc);
             cbMem -= offRawMem;
-            cbMem &= ~(PAGE_SIZE - 1);
+            cbMem &= ~(uint64_t)GUEST_PAGE_OFFSET_MASK;
         }
         else
         {

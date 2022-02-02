@@ -142,7 +142,7 @@ static int iomR3MmioGrowStatisticsTable(PVM pVM, uint32_t cNewEntries)
         /*
          * Calc size and allocate a new table.
          */
-        uint32_t const cbNew = RT_ALIGN_32(cNewEntries * sizeof(IOMMMIOSTATSENTRY), PAGE_SIZE);
+        uint32_t const cbNew = RT_ALIGN_32(cNewEntries * sizeof(IOMMMIOSTATSENTRY), HOST_PAGE_SIZE);
         cNewEntries = cbNew / sizeof(IOMMMIOSTATSENTRY);
 
         PIOMMMIOSTATSENTRY const paMmioStats = (PIOMMMIOSTATSENTRY)RTMemPageAllocZ(cbNew);
@@ -158,7 +158,7 @@ static int iomR3MmioGrowStatisticsTable(PVM pVM, uint32_t cNewEntries)
             pVM->iom.s.paMmioStats             = paMmioStats;
             pVM->iom.s.cMmioStatsAllocation    = cNewEntries;
 
-            RTMemPageFree(pOldMmioStats, RT_ALIGN_32(cOldEntries * sizeof(IOMMMIOSTATSENTRY), PAGE_SIZE));
+            RTMemPageFree(pOldMmioStats, RT_ALIGN_32(cOldEntries * sizeof(IOMMMIOSTATSENTRY), HOST_PAGE_SIZE));
 
             rc = VINF_SUCCESS;
         }
@@ -202,8 +202,8 @@ static int iomR3MmioGrowTable(PVM pVM, uint32_t cNewEntries)
          * Allocate the new tables.  We use a single allocation for the three tables (ring-0,
          * ring-3, lookup) and does a partial mapping of the result to ring-3.
          */
-        uint32_t const cbRing3  = RT_ALIGN_32(cNewEntries * sizeof(IOMMMIOENTRYR3),     PAGE_SIZE);
-        uint32_t const cbShared = RT_ALIGN_32(cNewEntries * sizeof(IOMMMIOLOOKUPENTRY), PAGE_SIZE);
+        uint32_t const cbRing3  = RT_ALIGN_32(cNewEntries * sizeof(IOMMMIOENTRYR3),     HOST_PAGE_SIZE);
+        uint32_t const cbShared = RT_ALIGN_32(cNewEntries * sizeof(IOMMMIOLOOKUPENTRY), HOST_PAGE_SIZE);
         uint32_t const cbNew    = cbRing3 + cbShared;
 
         /* Use the rounded up space as best we can. */
@@ -240,8 +240,8 @@ static int iomR3MmioGrowTable(PVM pVM, uint32_t cNewEntries)
             pVM->iom.s.cMmioAlloc     = cNewEntries;
 
             RTMemPageFree(pvFree,
-                            RT_ALIGN_32(cOldEntries * sizeof(IOMMMIOENTRYR3),     PAGE_SIZE)
-                          + RT_ALIGN_32(cOldEntries * sizeof(IOMMMIOLOOKUPENTRY), PAGE_SIZE));
+                            RT_ALIGN_32(cOldEntries * sizeof(IOMMMIOENTRYR3),     HOST_PAGE_SIZE)
+                          + RT_ALIGN_32(cOldEntries * sizeof(IOMMMIOLOOKUPENTRY), HOST_PAGE_SIZE));
 
             rc = VINF_SUCCESS;
         }
@@ -272,7 +272,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
 
     AssertMsgReturn(cbRegion > 0 && cbRegion <= MM_MMIO_64_MAX, ("cbRegion=%#RGp (max %#RGp)\n", cbRegion, MM_MMIO_64_MAX),
                     VERR_OUT_OF_RANGE);
-    AssertMsgReturn(!(cbRegion & PAGE_OFFSET_MASK), ("cbRegion=%#RGp\n", cbRegion), VERR_UNSUPPORTED_ALIGNMENT);
+    AssertMsgReturn(!(cbRegion & GUEST_PAGE_OFFSET_MASK), ("cbRegion=%#RGp\n", cbRegion), VERR_UNSUPPORTED_ALIGNMENT);
 
     AssertMsgReturn(   !(fFlags & ~IOMMMIO_FLAGS_VALID_MASK)
                     && (fFlags & IOMMMIO_FLAGS_READ_MODE)  <= IOMMMIO_FLAGS_READ_DWORD_QWORD
@@ -358,7 +358,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
     AssertMsgReturn(cbRegion > 0 && cbRegion <= MM_MMIO_64_MAX, ("cbRegion=%RGp\n", cbRegion), VERR_IOM_MMIO_IPE_1);
     RTGCPHYS const GCPhysLast = GCPhys + cbRegion - 1;
 
-    AssertLogRelMsgReturn(!(GCPhys & PAGE_OFFSET_MASK),
+    AssertLogRelMsgReturn(!(GCPhys & GUEST_PAGE_OFFSET_MASK),
                           ("Misaligned! GCPhys=%RGp LB %RGp %s (%s[#%u])\n",
                            GCPhys, cbRegion, pRegEntry->pszDesc, pDevIns->pReg->szName, pDevIns->iInstance),
                           VERR_IOM_INVALID_MMIO_RANGE);

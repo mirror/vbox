@@ -114,9 +114,9 @@ static int dbgfR3TraceEnable(PVM pVM, uint32_t cbEntry, uint32_t cEntries)
      * Note! We ASSUME that the returned trace buffer handle has the same value
      *       as the heap block.
      */
-    cbBlock = RT_ALIGN_Z(cbBlock, PAGE_SIZE);
+    cbBlock = RT_ALIGN_Z(cbBlock, GUEST_PAGE_SIZE); /** @todo page size */
     void *pvBlock;
-    rc = MMR3HyperAllocOnceNoRel(pVM, cbBlock, PAGE_SIZE, MM_TAG_DBGF, &pvBlock);
+    rc = MMR3HyperAllocOnceNoRel(pVM, cbBlock, GUEST_PAGE_SIZE, MM_TAG_DBGF, &pvBlock);
     if (RT_FAILURE(rc))
         return rc;
 

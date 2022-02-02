@@ -188,7 +188,7 @@ VMMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PUVM pUVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPh
      */
     if (HCPhys == NIL_RTHCPHYS)
         return VERR_INVALID_POINTER;
-    unsigned off = HCPhys & PAGE_OFFSET_MASK;
+    unsigned off = HCPhys & GUEST_PAGE_OFFSET_MASK;
     HCPhys &= X86_PTE_PAE_PG_MASK;
     if (HCPhys == 0)
         return VERR_INVALID_POINTER;
@@ -197,11 +197,11 @@ VMMR3DECL(int) PGMR3DbgHCPhys2GCPhys(PUVM pUVM, RTHCPHYS HCPhys, PRTGCPHYS pGCPh
          pRam;
          pRam = pRam->CTX_SUFF(pNext))
     {
-        uint32_t iPage = pRam->cb >> PAGE_SHIFT;
+        uint32_t iPage = pRam->cb >> GUEST_PAGE_SHIFT;
         while (iPage-- > 0)
             if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
             {
-                *pGCPhys = pRam->GCPhys + (iPage << PAGE_SHIFT) + off;
+                *pGCPhys = pRam->GCPhys + (iPage << GUEST_PAGE_SHIFT) + off;
                 return VINF_SUCCESS;
             }
     }
@@ -240,8 +240,8 @@ VMMR3_INT_DECL(int) PGMR3DbgReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc,
     rc = VINF_SUCCESS;
     while (cb > 0)
     {
-        size_t cbChunk = PAGE_SIZE;
-        cbChunk -= GCPhysSrc & PAGE_OFFSET_MASK;
+        size_t cbChunk = GUEST_PAGE_SIZE;
+        cbChunk -= GCPhysSrc & GUEST_PAGE_OFFSET_MASK;
         if (cbChunk > cb)
             cbChunk = cb;
 
@@ -291,8 +291,8 @@ VMMR3_INT_DECL(int) PGMR3DbgWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void 
     rc = VINF_SUCCESS;
     while (cb > 0)
     {
-        size_t cbChunk = PAGE_SIZE;
-        cbChunk -= GCPhysDst & PAGE_OFFSET_MASK;
+        size_t cbChunk = GUEST_PAGE_SIZE;
+        cbChunk -= GCPhysDst & GUEST_PAGE_OFFSET_MASK;
         if (cbChunk > cb)
             cbChunk = cb;
 
@@ -346,8 +346,8 @@ VMMR3_INT_DECL(int) PGMR3DbgReadGCPtr(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, si
     rc = VINF_SUCCESS;
     while (cb > 0)
     {
-        size_t cbChunk = PAGE_SIZE;
-        cbChunk -= GCPtrSrc & PAGE_OFFSET_MASK;
+        size_t cbChunk = GUEST_PAGE_SIZE;
+        cbChunk -= GCPtrSrc & GUEST_PAGE_OFFSET_MASK;
         if (cbChunk > cb)
             cbChunk = cb;
 
@@ -402,8 +402,8 @@ VMMR3_INT_DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pv
     rc = VINF_SUCCESS;
     while (cb > 0)
     {
-        size_t cbChunk = PAGE_SIZE;
-        cbChunk -= GCPtrDst & PAGE_OFFSET_MASK;
+        size_t cbChunk = GUEST_PAGE_SIZE;
+        cbChunk -= GCPtrDst & GUEST_PAGE_OFFSET_MASK;
         if (cbChunk > cb)
             cbChunk = cb;
 
@@ -676,9 +676,9 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
     }
 
     const bool      fAllZero   = ASMMemIsZero(pabNeedle, cbNeedle);
-    const uint32_t  cIncPages  = GCPhysAlign <= PAGE_SIZE
+    const uint32_t  cIncPages  = GCPhysAlign <= GUEST_PAGE_SIZE
                                ? 1
-                               : GCPhysAlign >> PAGE_SHIFT;
+                               : GCPhysAlign >> GUEST_PAGE_SHIFT;
     const RTGCPHYS  GCPhysLast = GCPhys + cbRange - 1 >= GCPhys
                                ? GCPhys + cbRange - 1
                                : ~(RTGCPHYS)0;
@@ -715,10 +715,10 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
              */
             uint8_t         abPrev[MAX_NEEDLE_SIZE];
             size_t          cbPrev   = 0;
-            const uint32_t  cPages   = pRam->cb >> PAGE_SHIFT;
-            uint32_t        iPage    = off >> PAGE_SHIFT;
-            uint32_t        offPage  = GCPhys & PAGE_OFFSET_MASK;
-            GCPhys &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
+            const uint32_t  cPages   = pRam->cb >> GUEST_PAGE_SHIFT;
+            uint32_t        iPage    = off      >> GUEST_PAGE_SHIFT;
+            uint32_t        offPage  = GCPhys   &  GUEST_PAGE_OFFSET_MASK;
+            GCPhys &= ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
             for (;; offPage = 0)
             {
                 PPGMPAGE pPage = &pRam->aPages[iPage];
@@ -734,11 +734,11 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
                     {
                         int32_t     offHit = offPage;
                         bool        fRc;
-                        if (GCPhysAlign < PAGE_SIZE)
+                        if (GCPhysAlign < GUEST_PAGE_SIZE)
                         {
-                            uint32_t cbSearch = (GCPhys ^ GCPhysLast) & ~(RTGCPHYS)PAGE_OFFSET_MASK
-                                              ? PAGE_SIZE                           - (uint32_t)offPage
-                                              : (GCPhysLast & PAGE_OFFSET_MASK) + 1 - (uint32_t)offPage;
+                            uint32_t cbSearch = (GCPhys ^ GCPhysLast) & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK
+                                              ? GUEST_PAGE_SIZE                           - (uint32_t)offPage
+                                              : (GCPhysLast & GUEST_PAGE_OFFSET_MASK) + 1 - (uint32_t)offPage;
                             fRc = pgmR3DbgScanPage((uint8_t const *)pvPage, &offHit, cbSearch, (uint32_t)GCPhysAlign,
                                                    pabNeedle, cbNeedle, pfnMemScan, &abPrev[0], &cbPrev);
                         }
@@ -760,7 +760,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
                     cbPrev = 0;
 
                 /* advance to the next page. */
-                GCPhys += (RTGCPHYS)cIncPages << PAGE_SHIFT;
+                GCPhys += (RTGCPHYS)cIncPages << GUEST_PAGE_SHIFT;
                 if (GCPhys >= GCPhysLast) /* (may not always hit, but we're run out of ranges.) */
                 {
                     PGM_UNLOCK(pVM);
@@ -851,15 +851,15 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
     RTGCPTR         GCPtrMask = PGMMODE_IS_LONG_MODE(enmMode) ? UINT64_MAX : UINT32_MAX;
     uint8_t         abPrev[MAX_NEEDLE_SIZE];
     size_t          cbPrev    = 0;
-    const uint32_t  cIncPages = GCPtrAlign <= PAGE_SIZE
+    const uint32_t  cIncPages = GCPtrAlign <= GUEST_PAGE_SIZE
                               ? 1
-                              : GCPtrAlign >> PAGE_SHIFT;
+                              : GCPtrAlign >> GUEST_PAGE_SHIFT;
     const RTGCPTR   GCPtrLast = GCPtr + cbRange - 1 >= GCPtr
                               ? (GCPtr + cbRange - 1) & GCPtrMask
                               : GCPtrMask;
-    RTGCPTR         cPages    = (((GCPtrLast - GCPtr) + (GCPtr & PAGE_OFFSET_MASK)) >> PAGE_SHIFT) + 1;
-    uint32_t        offPage   = GCPtr & PAGE_OFFSET_MASK;
-    GCPtr &= ~(RTGCPTR)PAGE_OFFSET_MASK;
+    RTGCPTR         cPages    = (((GCPtrLast - GCPtr) + (GCPtr & GUEST_PAGE_OFFSET_MASK)) >> GUEST_PAGE_SHIFT) + 1;
+    uint32_t        offPage   = GCPtr & GUEST_PAGE_OFFSET_MASK;
+    GCPtr &= ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK;
 
     PFNPGMR3DBGFIXEDMEMSCAN pfnMemScan = pgmR3DbgSelectMemScanFunction((uint32_t)GCPtrAlign, cbNeedle);
 
@@ -902,11 +902,11 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
                     {
                         int32_t offHit = offPage;
                         bool    fRc;
-                        if (GCPtrAlign < PAGE_SIZE)
+                        if (GCPtrAlign < GUEST_PAGE_SIZE)
                         {
                             uint32_t cbSearch = cPages > 0
-                                              ? PAGE_SIZE                          - (uint32_t)offPage
-                                              : (GCPtrLast & PAGE_OFFSET_MASK) + 1 - (uint32_t)offPage;
+                                              ? GUEST_PAGE_SIZE                          - (uint32_t)offPage
+                                              : (GCPtrLast & GUEST_PAGE_OFFSET_MASK) + 1 - (uint32_t)offPage;
                             fRc = pgmR3DbgScanPage((uint8_t const *)pvPage, &offHit, cbSearch, (uint32_t)GCPtrAlign,
                                                    pabNeedle, cbNeedle, pfnMemScan, &abPrev[0], &cbPrev);
                         }
@@ -1114,7 +1114,7 @@ static int pgmR3DumpHierarchyShwMapPage(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
                                 pState->cchAddress, pState->u64Address, pszDesc, HCPhys);
         return VERR_PGM_POOL_GET_PAGE_FAILED;
     }
-    *ppv = (uint8_t *)pPoolPage->pvPageR3 + (HCPhys & PAGE_OFFSET_MASK);
+    *ppv = (uint8_t *)pPoolPage->pvPageR3 + (HCPhys & GUEST_PAGE_OFFSET_MASK);
     return VINF_SUCCESS;
 }
 

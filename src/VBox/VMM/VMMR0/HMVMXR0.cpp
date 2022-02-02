@@ -761,7 +761,7 @@ static int hmR0VmxPagesAllocZ(PRTR0MEMOBJ phMemObj, PVMXPAGEALLOCINFO paAllocInf
     /* Allocate the pages. */
     if (cPages)
     {
-        size_t const cbPages = cPages << PAGE_SHIFT;
+        size_t const cbPages = cPages << HOST_PAGE_SHIFT;
         int rc = RTR0MemObjAllocPage(phMemObj, cbPages, false /* fExecutable */);
         if (RT_FAILURE(rc))
             return rc;

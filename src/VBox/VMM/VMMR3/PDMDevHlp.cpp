@@ -172,7 +172,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS c
     /* HACK ALERT! Round the size up to page size.  The PCI bus should do something similar before mapping it. */
     /** @todo It's possible we need to do dummy MMIO fill-in of the PCI bus or
      *        guest adds more alignment to an region. */
-    cbRegion = RT_ALIGN_T(cbRegion, PAGE_SIZE, RTGCPHYS);
+    cbRegion = RT_ALIGN_T(cbRegion, GUEST_PAGE_SIZE, RTGCPHYS);
 
     int rc = IOMR3MmioCreate(pVM, pDevIns, cbRegion, fFlags, pPciDev, iPciRegion,
                              pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, phRegion);
@@ -2112,11 +2112,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
      * We're currently restricted to page aligned MMIO regions.
      */
     if (   ((enmType & ~(PCI_ADDRESS_SPACE_BAR64 | PCI_ADDRESS_SPACE_MEM_PREFETCH)) == PCI_ADDRESS_SPACE_MEM)
-        && cbRegion != RT_ALIGN_64(cbRegion, PAGE_SIZE))
+        && cbRegion != RT_ALIGN_64(cbRegion, GUEST_PAGE_SIZE))
     {
         Log(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: aligning cbRegion %RGp -> %RGp\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, cbRegion, RT_ALIGN_64(cbRegion, PAGE_SIZE)));
-        cbRegion = RT_ALIGN_64(cbRegion, PAGE_SIZE);
+             pDevIns->pReg->szName, pDevIns->iInstance, cbRegion, RT_ALIGN_64(cbRegion, GUEST_PAGE_SIZE)));
+        cbRegion = RT_ALIGN_64(cbRegion, GUEST_PAGE_SIZE);
     }
 
     /*

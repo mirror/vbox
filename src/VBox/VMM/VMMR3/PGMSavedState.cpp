@@ -219,7 +219,7 @@ static PPGMROMPAGE pgmR3GetRomPage(PVM pVM, RTGCPHYS GCPhys) /** @todo change th
     {
         RTGCPHYS off = GCPhys - pRomRange->GCPhys;
         if (GCPhys - pRomRange->GCPhys < pRomRange->cb)
-            return &pRomRange->aPages[off >> PAGE_SHIFT];
+            return &pRomRange->aPages[off >> GUEST_PAGE_SHIFT];
     }
     return NULL;
 }
@@ -240,7 +240,7 @@ static int pgmR3PrepRomPages(PVM pVM)
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
     {
         PPGMRAMRANGE    pRamHint = NULL;;
-        uint32_t const  cPages   = pRom->cb >> PAGE_SHIFT;
+        uint32_t const  cPages   = pRom->cb >> GUEST_PAGE_SHIFT;
 
         for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
@@ -254,7 +254,7 @@ static int pgmR3PrepRomPages(PVM pVM)
                     pRom->aPages[iPage].LiveSave.fWrittenTo = !PGM_PAGE_IS_ZERO(&pRom->aPages[iPage].Shadow) && !PGM_PAGE_IS_BALLOONED(&pRom->aPages[iPage].Shadow);
                 else
                 {
-                    RTGCPHYS GCPhys = pRom->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                    RTGCPHYS GCPhys = pRom->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT);
                     PPGMPAGE pPage;
                     int rc = pgmPhysGetPageWithHintEx(pVM, GCPhys, &pPage, &pRamHint);
                     AssertLogRelMsgRC(rc, ("%Rrc GCPhys=%RGp\n", rc, GCPhys));
@@ -364,8 +364,8 @@ static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
         rc = SSMR3GetGCPhys(pSSM, &cb);
         if (RT_FAILURE(rc))
             return rc;
-        AssertLogRelMsgReturn(!(GCPhys & PAGE_OFFSET_MASK), ("GCPhys=%RGp %s\n", GCPhys, szDesc), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-        AssertLogRelMsgReturn(!(cb & PAGE_OFFSET_MASK),     ("cb=%RGp %s\n", cb, szDesc),         VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        AssertLogRelMsgReturn(!(GCPhys & GUEST_PAGE_OFFSET_MASK), ("GCPhys=%RGp %s\n", GCPhys, szDesc), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        AssertLogRelMsgReturn(!(cb & GUEST_PAGE_OFFSET_MASK),     ("cb=%RGp %s\n", cb, szDesc),         VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
         /*
          * Locate a matching ROM range.
@@ -406,7 +406,7 @@ static void pgmR3ScanRomPages(PVM pVM)
     {
         if (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
         {
-            uint32_t const cPages = pRom->cb >> PAGE_SHIFT;
+            uint32_t const cPages = pRom->cb >> GUEST_PAGE_SHIFT;
             for (uint32_t iPage = 0; iPage < cPages; iPage++)
             {
                 PPGMROMPAGE pRomPage = &pRom->aPages[iPage];
@@ -446,10 +446,10 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
     PGM_LOCK_VOID(pVM);
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
     {
-        uint32_t const cPages = pRom->cb >> PAGE_SHIFT;
+        uint32_t const cPages = pRom->cb >> GUEST_PAGE_SHIFT;
         for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
-            RTGCPHYS   GCPhys  = pRom->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+            RTGCPHYS   GCPhys  = pRom->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT);
             PGMROMPROT enmProt = pRom->aPages[iPage].enmProt;
 
             /* Get the virgin page descriptor. */
@@ -461,17 +461,17 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
 
             /* Get the page bits. (Cannot use pgmPhysGCPhys2CCPtrInternalReadOnly here!) */
             int rc = VINF_SUCCESS;
-            char abPage[PAGE_SIZE];
+            char abPage[GUEST_PAGE_SIZE];
             if (    !PGM_PAGE_IS_ZERO(pPage)
                 &&  !PGM_PAGE_IS_BALLOONED(pPage))
             {
                 void const *pvPage;
                 rc = pgmPhysPageMapReadOnly(pVM, pPage, GCPhys, &pvPage);
                 if (RT_SUCCESS(rc))
-                    memcpy(abPage, pvPage, PAGE_SIZE);
+                    memcpy(abPage, pvPage, GUEST_PAGE_SIZE);
             }
             else
-                ASMMemZeroPage(abPage);
+                RT_ZERO(abPage);
             PGM_UNLOCK(pVM);
             AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
 
@@ -485,7 +485,7 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
                 SSMR3PutU32(pSSM, iPage);
             }
             SSMR3PutU8(pSSM, (uint8_t)enmProt);
-            rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+            rc = SSMR3PutMem(pSSM, abPage, GUEST_PAGE_SIZE);
             if (RT_FAILURE(rc))
                 return rc;
 
@@ -529,7 +529,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
     {
         if (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
         {
-            uint32_t const cPages    = pRom->cb >> PAGE_SHIFT;
+            uint32_t const cPages    = pRom->cb >> GUEST_PAGE_SHIFT;
             uint32_t       iPrevPage = cPages;
             for (uint32_t iPage = 0; iPage < cPages; iPage++)
             {
@@ -543,9 +543,9 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                          )
                     )
                 {
-                    uint8_t     abPage[PAGE_SIZE];
+                    uint8_t     abPage[GUEST_PAGE_SIZE];
                     PGMROMPROT  enmProt = pRomPage->enmProt;
-                    RTGCPHYS    GCPhys  = pRom->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                    RTGCPHYS    GCPhys  = pRom->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT);
                     PPGMPAGE    pPage   = PGMROMPROT_IS_ROM(enmProt) ? &pRomPage->Shadow : pgmPhysGetPage(pVM, GCPhys);
                     bool        fZero   = PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_BALLOONED(pPage); Assert(!PGM_PAGE_IS_BALLOONED(pPage)); /* Shouldn't be ballooned. */
                     int         rc      = VINF_SUCCESS;
@@ -554,7 +554,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                         void const *pvPage;
                         rc = pgmPhysPageMapReadOnly(pVM, pPage, GCPhys, &pvPage);
                         if (RT_SUCCESS(rc))
-                            memcpy(abPage, pvPage, PAGE_SIZE);
+                            memcpy(abPage, pvPage, GUEST_PAGE_SIZE);
                     }
                     if (fLiveSave && RT_SUCCESS(rc))
                     {
@@ -577,7 +577,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                     }
                     rc = SSMR3PutU8(pSSM, (uint8_t)enmProt);
                     if (!fZero)
-                        rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+                        rc = SSMR3PutMem(pSSM, abPage, GUEST_PAGE_SIZE);
                     if (RT_FAILURE(rc))
                         return rc;
 
@@ -643,7 +643,7 @@ static int pgmR3PrepMmio2Pages(PVM pVM)
     PGM_LOCK_VOID(pVM);
     for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
     {
-        uint32_t const  cPages = pRegMmio->RamRange.cb >> PAGE_SHIFT;
+        uint32_t const  cPages = pRegMmio->RamRange.cb >> GUEST_PAGE_SHIFT;
         PGM_UNLOCK(pVM);
 
         PPGMLIVESAVEMMIO2PAGE paLSPages = (PPGMLIVESAVEMMIO2PAGE)MMR3HeapAllocZ(pVM, MM_TAG_PGM,
@@ -745,7 +745,7 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
 
         RTGCPHYS cb;
         rc = SSMR3GetGCPhys(pSSM, &cb);
-        AssertLogRelMsgReturn(!(cb & PAGE_OFFSET_MASK), ("cb=%RGp %s\n", cb, szDesc), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        AssertLogRelMsgReturn(!(cb & GUEST_PAGE_OFFSET_MASK), ("cb=%RGp %s\n", cb, szDesc), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
         /*
          * Locate a matching MMIO2 range.
@@ -800,7 +800,7 @@ DECLINLINE(bool) pgmR3ScanMmio2Page(PVM pVM, uint8_t const *pbPage, PPGMLIVESAVE
     bool const fZero = pLSPage->fZero;
     if (fZero)
     {
-        if (ASMMemIsZeroPage(pbPage))
+        if (ASMMemIsZero(pbPage, GUEST_PAGE_SIZE))
         {
             /* Not modified. */
             if (pLSPage->fDirty)
@@ -809,7 +809,7 @@ DECLINLINE(bool) pgmR3ScanMmio2Page(PVM pVM, uint8_t const *pbPage, PPGMLIVESAVE
         }
 
         pLSPage->fZero    = false;
-        pLSPage->u32CrcH1 = RTCrc32(pbPage, PAGE_SIZE / 2);
+        pLSPage->u32CrcH1 = RTCrc32(pbPage, GUEST_PAGE_SIZE / 2);
     }
     else
     {
@@ -817,10 +817,10 @@ DECLINLINE(bool) pgmR3ScanMmio2Page(PVM pVM, uint8_t const *pbPage, PPGMLIVESAVE
          * CRC the first half, if it doesn't match the page is dirty and
          * we won't check the 2nd half (we'll do that next time).
          */
-        uint32_t u32CrcH1 = RTCrc32(pbPage, PAGE_SIZE / 2);
+        uint32_t u32CrcH1 = RTCrc32(pbPage, GUEST_PAGE_SIZE / 2);
         if (u32CrcH1 == pLSPage->u32CrcH1)
         {
-            uint32_t u32CrcH2 = RTCrc32(pbPage + PAGE_SIZE / 2, PAGE_SIZE / 2);
+            uint32_t u32CrcH2 = RTCrc32(pbPage + GUEST_PAGE_SIZE / 2, GUEST_PAGE_SIZE / 2);
             if (u32CrcH2 == pLSPage->u32CrcH2)
             {
                 /* Probably not modified. */
@@ -835,7 +835,7 @@ DECLINLINE(bool) pgmR3ScanMmio2Page(PVM pVM, uint8_t const *pbPage, PPGMLIVESAVE
         {
             pLSPage->u32CrcH1 = u32CrcH1;
             if (    u32CrcH1 == PGM_STATE_CRC32_ZERO_HALF_PAGE
-                &&  ASMMemIsZeroPage(pbPage))
+                &&  ASMMemIsZero(pbPage, GUEST_PAGE_SIZE))
             {
                 pLSPage->u32CrcH2 = PGM_STATE_CRC32_ZERO_HALF_PAGE;
                 pLSPage->fZero    = true;
@@ -877,12 +877,12 @@ static void pgmR3ScanMmio2Pages(PVM pVM, uint32_t uPass)
     for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
     {
         PPGMLIVESAVEMMIO2PAGE paLSPages = pRegMmio->paLSPages;
-        uint32_t              cPages    = pRegMmio->RamRange.cb >> PAGE_SHIFT;
+        uint32_t              cPages    = pRegMmio->RamRange.cb >> GUEST_PAGE_SHIFT;
         PGM_UNLOCK(pVM);
 
         for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
-            uint8_t const *pbPage = (uint8_t const *)pRegMmio->pvR3 + iPage * PAGE_SIZE;
+            uint8_t const *pbPage = (uint8_t const *)pRegMmio->pvR3 + iPage * GUEST_PAGE_SIZE;
             pgmR3ScanMmio2Page(pVM, pbPage, &paLSPages[iPage]);
         }
 
@@ -920,13 +920,13 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
         {
             PPGMLIVESAVEMMIO2PAGE paLSPages = pRegMmio->paLSPages;
             uint8_t const        *pbPage    = (uint8_t const *)pRegMmio->RamRange.pvR3;
-            uint32_t              cPages    = pRegMmio->RamRange.cb >> PAGE_SHIFT;
+            uint32_t              cPages    = pRegMmio->RamRange.cb >> GUEST_PAGE_SHIFT;
             uint32_t              iPageLast = cPages;
-            for (uint32_t iPage = 0; iPage < cPages; iPage++, pbPage += PAGE_SIZE)
+            for (uint32_t iPage = 0; iPage < cPages; iPage++, pbPage += GUEST_PAGE_SIZE)
             {
                 uint8_t u8Type;
                 if (!fLiveSave)
-                    u8Type = ASMMemIsZeroPage(pbPage) ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
+                    u8Type = ASMMemIsZero(pbPage, GUEST_PAGE_SIZE) ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
                 else
                 {
                     /* Try figure if it's a clean page, compare the SHA-1 to be really sure. */
@@ -937,7 +937,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                             continue;
 
                         uint8_t abSha1Hash[RTSHA1_HASH_SIZE];
-                        RTSha1(pbPage, PAGE_SIZE, abSha1Hash);
+                        RTSha1(pbPage, GUEST_PAGE_SIZE, abSha1Hash);
                         if (!memcmp(abSha1Hash, paLSPages[iPage].abSha1Saved, sizeof(abSha1Hash)))
                             continue;
                     }
@@ -954,7 +954,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                     rc = SSMR3PutU32(pSSM, iPage);
                 }
                 if (u8Type == PGM_STATE_REC_MMIO2_RAW)
-                    rc = SSMR3PutMem(pSSM, pbPage, PAGE_SIZE);
+                    rc = SSMR3PutMem(pSSM, pbPage, GUEST_PAGE_SIZE);
                 if (RT_FAILURE(rc))
                     break;
                 iPageLast = iPage;
@@ -977,11 +977,11 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
         {
             PPGMLIVESAVEMMIO2PAGE paLSPages = pRegMmio->paLSPages;
             uint8_t const        *pbPage    = (uint8_t const *)pRegMmio->RamRange.pvR3;
-            uint32_t              cPages    = pRegMmio->RamRange.cb >> PAGE_SHIFT;
+            uint32_t              cPages    = pRegMmio->RamRange.cb >> GUEST_PAGE_SHIFT;
             uint32_t              iPageLast = cPages;
             PGM_UNLOCK(pVM);
 
-            for (uint32_t iPage = 0; iPage < cPages; iPage++, pbPage += PAGE_SIZE)
+            for (uint32_t iPage = 0; iPage < cPages; iPage++, pbPage += GUEST_PAGE_SIZE)
             {
                 /* Skip clean pages and pages which hasn't quiesced. */
                 if (!paLSPages[iPage].fDirty)
@@ -993,11 +993,11 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
 
                 /* Save it. */
                 bool const fZero = paLSPages[iPage].fZero;
-                uint8_t abPage[PAGE_SIZE];
+                uint8_t abPage[GUEST_PAGE_SIZE];
                 if (!fZero)
                 {
-                    memcpy(abPage, pbPage, PAGE_SIZE);
-                    RTSha1(abPage, PAGE_SIZE, paLSPages[iPage].abSha1Saved);
+                    memcpy(abPage, pbPage, GUEST_PAGE_SIZE);
+                    RTSha1(abPage, GUEST_PAGE_SIZE, paLSPages[iPage].abSha1Saved);
                 }
 
                 uint8_t u8Type = paLSPages[iPage].fZero ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
@@ -1010,7 +1010,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                     rc = SSMR3PutU32(pSSM, iPage);
                 }
                 if (u8Type == PGM_STATE_REC_MMIO2_RAW)
-                    rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+                    rc = SSMR3PutMem(pSSM, abPage, GUEST_PAGE_SIZE);
                 if (RT_FAILURE(rc))
                     break;
 
@@ -1089,7 +1089,7 @@ static int pgmR3PrepRamPages(PVM pVM)
                 && !PGM_RAM_RANGE_IS_AD_HOC(pCur))
             {
                 uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
-                uint32_t const  cPages = pCur->cb >> PAGE_SHIFT;
+                uint32_t const  cPages = pCur->cb >> GUEST_PAGE_SHIFT;
                 PGM_UNLOCK(pVM);
                 PPGMLIVESAVERAMPAGE paLSPages = (PPGMLIVESAVERAMPAGE)MMR3HeapAllocZ(pVM, MM_TAG_PGM, cPages * sizeof(PGMLIVESAVERAMPAGE));
                 if (!paLSPages)
@@ -1267,13 +1267,13 @@ static int pgmR3LoadRamConfig(PVM pVM, PSSMHANDLE pSSM)
  */
 static void pgmR3StateCalcCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVESAVERAMPAGE paLSPages, uint32_t iPage)
 {
-    RTGCPHYS        GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+    RTGCPHYS        GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT);
     PGMPAGEMAPLOCK  PgMpLck;
     void const     *pvPage;
     int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage, &PgMpLck);
     if (RT_SUCCESS(rc))
     {
-        paLSPages[iPage].u32Crc = RTCrc32(pvPage, PAGE_SIZE);
+        paLSPages[iPage].u32Crc = RTCrc32(pvPage, GUEST_PAGE_SIZE);
         pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
     }
     else
@@ -1294,13 +1294,13 @@ static void pgmR3StateVerifyCrc32ForPage(void const *pvPage, PPGMRAMRANGE pCur, 
 {
     if (paLSPages[iPage].u32Crc != UINT32_MAX)
     {
-        uint32_t u32Crc = RTCrc32(pvPage, PAGE_SIZE);
+        uint32_t u32Crc = RTCrc32(pvPage, GUEST_PAGE_SIZE);
         Assert(   (   !PGM_PAGE_IS_ZERO(&pCur->aPages[iPage])
                    && !PGM_PAGE_IS_BALLOONED(&pCur->aPages[iPage]))
                || u32Crc == PGM_STATE_CRC32_ZERO_PAGE);
         AssertMsg(paLSPages[iPage].u32Crc == u32Crc,
                   ("%08x != %08x for %RGp %R[pgmpage] %s\n", paLSPages[iPage].u32Crc, u32Crc,
-                   pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pCur->aPages[iPage], pszWhere));
+                   pCur->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT), &pCur->aPages[iPage], pszWhere));
     }
 }
 
@@ -1318,7 +1318,7 @@ static void pgmR3StateVerifyCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVE
 {
     if (paLSPages[iPage].u32Crc != UINT32_MAX)
     {
-        RTGCPHYS        GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+        RTGCPHYS        GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT);
         PGMPAGEMAPLOCK  PgMpLck;
         void const     *pvPage;
         int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage, &PgMpLck);
@@ -1355,8 +1355,8 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                 && !PGM_RAM_RANGE_IS_AD_HOC(pCur))
             {
                 PPGMLIVESAVERAMPAGE paLSPages = pCur->paLSPages;
-                uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
-                uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> PAGE_SHIFT;
+                uint32_t         cPages    = pCur->cb >> GUEST_PAGE_SHIFT;
+                uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> GUEST_PAGE_SHIFT;
                 GCPhysCur = 0;
                 for (; iPage < cPages; iPage++)
                 {
@@ -1368,7 +1368,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                         && PDMR3CritSectYield(pVM, &pVM->pgm.s.CritSectX)
                         && pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                     {
-                        GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                        GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT);
                         break; /* restart */
                     }
 
@@ -1389,7 +1389,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                 if (PGM_PAGE_IS_WRITTEN_TO(&pCur->aPages[iPage]))
                                 {
                                     AssertMsg(paLSPages[iPage].fWriteMonitored,
-                                              ("%RGp %R[pgmpage]\n", pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pCur->aPages[iPage]));
+                                              ("%RGp %R[pgmpage]\n", pCur->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT), &pCur->aPages[iPage]));
                                     PGM_PAGE_CLEAR_WRITTEN_TO(pVM, &pCur->aPages[iPage]);
                                     Assert(pVM->pgm.s.cWrittenToPages > 0);
                                     pVM->pgm.s.cWrittenToPages--;
@@ -1397,7 +1397,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                 else
                                 {
                                     AssertMsg(!paLSPages[iPage].fWriteMonitored,
-                                              ("%RGp %R[pgmpage]\n", pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pCur->aPages[iPage]));
+                                              ("%RGp %R[pgmpage]\n", pCur->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT), &pCur->aPages[iPage]));
                                     pVM->pgm.s.LiveSave.Ram.cMonitoredPages++;
                                 }
 
@@ -1412,7 +1412,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                 }
 
                                 pgmPhysPageWriteMonitor(pVM, &pCur->aPages[iPage],
-                                                        pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                                                        pCur->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT));
                                 paLSPages[iPage].fWriteMonitored        = 1;
                                 paLSPages[iPage].fWriteMonitoredJustNow = 1;
                                 paLSPages[iPage].fDirty                 = 1;
@@ -1569,8 +1569,8 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                 && !PGM_RAM_RANGE_IS_AD_HOC(pCur))
             {
                 PPGMLIVESAVERAMPAGE paLSPages = pCur->paLSPages;
-                uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
-                uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> PAGE_SHIFT;
+                uint32_t         cPages    = pCur->cb >> GUEST_PAGE_SHIFT;
+                uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> GUEST_PAGE_SHIFT;
                 GCPhysCur = 0;
                 for (; iPage < cPages; iPage++)
                 {
@@ -1580,7 +1580,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         && PDMR3CritSectYield(pVM, &pVM->pgm.s.CritSectX)
                         && pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                     {
-                        GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                        GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT);
                         break; /* restart */
                     }
 
@@ -1630,7 +1630,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                      * Do the saving outside the PGM critsect since SSM may block on I/O.
                      */
                     int         rc;
-                    RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                    RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT);
                     bool        fZero  = PGM_PAGE_IS_ZERO(pCurPage);
                     bool        fBallooned = PGM_PAGE_IS_BALLOONED(pCurPage);
                     bool        fSkipped = false;
@@ -1641,13 +1641,13 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                          * Copy the page and then save it outside the lock (since any
                          * SSM call may block).
                          */
-                        uint8_t         abPage[PAGE_SIZE];
+                        uint8_t         abPage[GUEST_PAGE_SIZE];
                         PGMPAGEMAPLOCK  PgMpLck;
                         void const     *pvPage;
                         rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pCurPage, GCPhys, &pvPage, &PgMpLck);
                         if (RT_SUCCESS(rc))
                         {
-                            memcpy(abPage, pvPage, PAGE_SIZE);
+                            memcpy(abPage, pvPage, GUEST_PAGE_SIZE);
 #ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
                             if (paLSPages)
                                 pgmR3StateVerifyCrc32ForPage(abPage, pCur, paLSPages, iPage, "save#3");
@@ -1658,20 +1658,20 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
 
                         /* Try save some memory when restoring. */
-                        if (!ASMMemIsZeroPage(pvPage))
+                        if (!ASMMemIsZero(pvPage, GUEST_PAGE_SIZE))
                         {
-                            if (GCPhys == GCPhysLast + PAGE_SIZE)
+                            if (GCPhys == GCPhysLast + GUEST_PAGE_SIZE)
                                 SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW);
                             else
                             {
                                 SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
                                 SSMR3PutGCPhys(pSSM, GCPhys);
                             }
-                            rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+                            rc = SSMR3PutMem(pSSM, abPage, GUEST_PAGE_SIZE);
                         }
                         else
                         {
-                            if (GCPhys == GCPhysLast + PAGE_SIZE)
+                            if (GCPhys == GCPhysLast + GUEST_PAGE_SIZE)
                                 rc = SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_ZERO);
                             else
                             {
@@ -1692,7 +1692,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         PGM_UNLOCK(pVM);
 
                         uint8_t u8RecType = fBallooned ? PGM_STATE_REC_RAM_BALLOONED : PGM_STATE_REC_RAM_ZERO;
-                        if (GCPhys == GCPhysLast + PAGE_SIZE)
+                        if (GCPhys == GCPhysLast + GUEST_PAGE_SIZE)
                             rc = SSMR3PutU8(pSSM, u8RecType);
                         else
                         {
@@ -1717,7 +1717,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                     }
                     if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
                     {
-                        GCPhysCur = GCPhys | PAGE_OFFSET_MASK;
+                        GCPhysCur = GCPhys | GUEST_PAGE_OFFSET_MASK;
                         break; /* restart */
                     }
 
@@ -1775,7 +1775,7 @@ static void pgmR3DoneRamPages(PVM pVM)
                 pvToFree = pCur->paLSPages;
                 pCur->paLSPages = NULL;
 
-                uint32_t iPage = pCur->cb >> PAGE_SHIFT;
+                uint32_t iPage = pCur->cb >> GUEST_PAGE_SHIFT;
                 while (iPage--)
                 {
                     PPGMPAGE pPage = &pCur->aPages[iPage];
@@ -2134,7 +2134,7 @@ static DECLCALLBACK(int) pgmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
  */
 static int pgmR3LoadPageToDevNullOld(PSSMHANDLE pSSM)
 {
-    uint8_t abPage[PAGE_SIZE];
+    uint8_t abPage[GUEST_PAGE_SIZE];
     return SSMR3GetMem(pSSM, &abPage[0], sizeof(abPage));
 }
 
@@ -2234,7 +2234,7 @@ static int pgmR3LoadPageBitsOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uOldType, PPGM
     int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvPage, &PgMpLck);
     if (RT_SUCCESS(rc))
     {
-        rc = SSMR3GetMem(pSSM, pvPage, PAGE_SIZE);
+        rc = SSMR3GetMem(pSSM, pvPage, GUEST_PAGE_SIZE);
         pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
     }
 
@@ -2301,7 +2301,7 @@ static int pgmR3LoadShadowedRomPageOld(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage,
 
     if (pRomPage->enmProt != enmProt)
     {
-        rc = PGMR3PhysRomProtect(pVM, GCPhys, PAGE_SIZE, enmProt);
+        rc = PGMR3PhysRomProtect(pVM, GCPhys, GUEST_PAGE_SIZE, enmProt);
         AssertLogRelRCReturn(rc, rc);
         AssertLogRelReturn(pRomPage->enmProt == enmProt, VERR_PGM_SAVED_ROM_PAGE_PROT);
     }
@@ -2427,7 +2427,7 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
             continue;
         }
 
-        uint32_t cPages = (GCPhysLast - GCPhys + 1) >> PAGE_SHIFT;
+        uint32_t cPages = (GCPhysLast - GCPhys + 1) >> GUEST_PAGE_SHIFT;
         if (uVersion >= PGM_SAVED_STATE_VERSION_RR_DESC)
         {
             /*
@@ -2435,7 +2435,7 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
              */
             for (uint32_t iPage = 0; iPage < cPages; iPage++)
             {
-                RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << PAGE_SHIFT) + pRam->GCPhys;
+                RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT) + pRam->GCPhys;
                 PPGMPAGE        pPage      = &pRam->aPages[iPage];
                 uint8_t         uOldType;
                 rc = SSMR3GetU8(pSSM, &uOldType);
@@ -2471,7 +2471,7 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
                 /*
                  * Dynamic chunks.
                  */
-                const uint32_t cPagesInChunk = (1*1024*1024) >> PAGE_SHIFT;
+                const uint32_t cPagesInChunk = (1*1024*1024) >> GUEST_PAGE_SHIFT;
                 AssertLogRelMsgReturn(cPages % cPagesInChunk == 0,
                                       ("cPages=%#x cPagesInChunk=%#x GCPhys=%RGp %s\n", cPages, cPagesInChunk, pRam->GCPhys, pRam->pszDesc),
                                       VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
@@ -2487,7 +2487,7 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
 
                     for (uint32_t iChunkPage = 0; iChunkPage < cPagesInChunk; iChunkPage++, iPage++)
                     {
-                        RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << PAGE_SHIFT) + pRam->GCPhys;
+                        RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT) + pRam->GCPhys;
                         PPGMPAGE        pPage      = &pRam->aPages[iPage];
                         if (fPresent)
                         {
@@ -2543,14 +2543,14 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
                 while (GCPhys < pRam->GCPhys)
                 {
                     rc = pgmR3LoadPageToDevNullOld(pSSM);
-                    GCPhys += PAGE_SIZE;
+                    GCPhys += GUEST_PAGE_SIZE;
                 }
 
                 /* Load the bios pages. */
-                cPages = pRam->cb >> PAGE_SHIFT;
+                cPages = pRam->cb >> GUEST_PAGE_SHIFT;
                 for (uint32_t iPage = 0; iPage < cPages; iPage++)
                 {
-                    RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << PAGE_SHIFT) + pRam->GCPhys;
+                    RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT) + pRam->GCPhys;
                     PPGMPAGE        pPage      = &pRam->aPages[iPage];
 
                     AssertLogRelMsgReturn(PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_ROM,
@@ -2641,14 +2641,14 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                  * Get the address and resolve it into a page descriptor.
                  */
                 if (!(u8 & PGM_STATE_REC_FLAG_ADDR))
-                    GCPhys += PAGE_SIZE;
+                    GCPhys += GUEST_PAGE_SIZE;
                 else
                 {
                     rc = SSMR3GetGCPhys(pSSM, &GCPhys);
                     if (RT_FAILURE(rc))
                         return rc;
                 }
-                AssertLogRelMsgReturn(!(GCPhys & PAGE_OFFSET_MASK), ("%RGp\n", GCPhys), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+                AssertLogRelMsgReturn(!(GCPhys & GUEST_PAGE_OFFSET_MASK), ("%RGp\n", GCPhys), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
                 PPGMPAGE pPage;
                 rc = pgmPhysGetPageWithHintEx(pVM, GCPhys, &pPage, &pRamHint);
@@ -2692,7 +2692,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDstPage, &PgMpLck);
                             AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp %R[pgmpage] rc=%Rrc\n", GCPhys, pPage, rc), rc);
 
-                            ASMMemZeroPage(pvDstPage);
+                            RT_BZERO(pvDstPage, GUEST_PAGE_SIZE);
                             pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
                         }
                         /* Free it only if it's not part of a previously
@@ -2737,7 +2737,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                         void          *pvDstPage;
                         rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDstPage, &PgMpLck);
                         AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp %R[pgmpage] rc=%Rrc\n", GCPhys, pPage, rc), rc);
-                        rc = SSMR3GetMem(pSSM, pvDstPage, PAGE_SIZE);
+                        rc = SSMR3GetMem(pSSM, pvDstPage, GUEST_PAGE_SIZE);
                         pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
                         if (RT_FAILURE(rc))
                             return rc;
@@ -2777,17 +2777,19 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             break;
                     AssertLogRelMsgReturn(pRegMmio, ("id=%#u iPage=%#x\n", id, iPage), VERR_PGM_SAVED_MMIO2_RANGE_NOT_FOUND);
                 }
-                AssertLogRelMsgReturn(iPage < (pRegMmio->RamRange.cb >> PAGE_SHIFT), ("iPage=%#x cb=%RGp %s\n", iPage, pRegMmio->RamRange.cb, pRegMmio->RamRange.pszDesc), VERR_PGM_SAVED_MMIO2_PAGE_NOT_FOUND);
-                void *pvDstPage = (uint8_t *)pRegMmio->RamRange.pvR3 + ((size_t)iPage << PAGE_SHIFT);
+                AssertLogRelMsgReturn(iPage < (pRegMmio->RamRange.cb >> GUEST_PAGE_SHIFT),
+                                      ("iPage=%#x cb=%RGp %s\n", iPage, pRegMmio->RamRange.cb, pRegMmio->RamRange.pszDesc),
+                                      VERR_PGM_SAVED_MMIO2_PAGE_NOT_FOUND);
+                void *pvDstPage = (uint8_t *)pRegMmio->RamRange.pvR3 + ((size_t)iPage << GUEST_PAGE_SHIFT);
 
                 /*
                  * Load the page bits.
                  */
                 if ((u8 & ~PGM_STATE_REC_FLAG_ADDR) == PGM_STATE_REC_MMIO2_ZERO)
-                    ASMMemZeroPage(pvDstPage);
+                    RT_BZERO(pvDstPage, GUEST_PAGE_SIZE);
                 else
                 {
-                    rc = SSMR3GetMem(pSSM, pvDstPage, PAGE_SIZE);
+                    rc = SSMR3GetMem(pSSM, pvDstPage, GUEST_PAGE_SIZE);
                     if (RT_FAILURE(rc))
                         return rc;
                 }
@@ -2823,9 +2825,11 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             break;
                     AssertLogRelMsgReturn(pRom, ("id=%#u iPage=%#x\n", id, iPage), VERR_PGM_SAVED_ROM_RANGE_NOT_FOUND);
                 }
-                AssertLogRelMsgReturn(iPage < (pRom->cb >> PAGE_SHIFT), ("iPage=%#x cb=%RGp %s\n", iPage, pRom->cb, pRom->pszDesc), VERR_PGM_SAVED_ROM_PAGE_NOT_FOUND);
+                AssertLogRelMsgReturn(iPage < (pRom->cb >> GUEST_PAGE_SHIFT),
+                                      ("iPage=%#x cb=%RGp %s\n", iPage, pRom->cb, pRom->pszDesc),
+                                      VERR_PGM_SAVED_ROM_PAGE_NOT_FOUND);
                 PPGMROMPAGE pRomPage = &pRom->aPages[iPage];
-                GCPhys = pRom->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                GCPhys = pRom->GCPhys + ((RTGCPHYS)iPage << GUEST_PAGE_SHIFT);
 
                 /*
                  * Get and set the protection.
@@ -2843,7 +2847,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                         return SSMR3SetCfgError(pSSM, RT_SRC_POS,
                                                 N_("Protection change of unshadowed ROM page: GCPhys=%RGp enmProt=%d %s"),
                                                 GCPhys, enmProt, pRom->pszDesc);
-                    rc = PGMR3PhysRomProtect(pVM, GCPhys, PAGE_SIZE, enmProt);
+                    rc = PGMR3PhysRomProtect(pVM, GCPhys, GUEST_PAGE_SIZE, enmProt);
                     AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp rc=%Rrc\n", GCPhys, rc), rc);
                     AssertLogRelReturn(pRomPage->enmProt == enmProt, VERR_PGM_SAVED_ROM_PAGE_PROT);
                 }
@@ -2911,12 +2915,12 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                 {
                     case PGM_STATE_REC_ROM_SHW_ZERO:
                         if (pvDstPage)
-                            ASMMemZeroPage(pvDstPage);
+                            RT_BZERO(pvDstPage, GUEST_PAGE_SIZE);
                         break;
 
                     case PGM_STATE_REC_ROM_VIRGIN:
                     case PGM_STATE_REC_ROM_SHW_RAW:
-                        rc = SSMR3GetMem(pSSM, pvDstPage, PAGE_SIZE);
+                        rc = SSMR3GetMem(pSSM, pvDstPage, GUEST_PAGE_SIZE);
                         if (RT_FAILURE(rc))
                             return rc;
                         break;

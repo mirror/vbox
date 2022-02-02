@@ -377,7 +377,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
      * Make the initial memory reservation with GMM.
      */
     uint32_t const cbUma      = _1M - 640*_1K;
-    uint64_t       cBasePages = ((cbRam - cbUma) >> PAGE_SHIFT) + pVM->mm.s.cBasePages;
+    uint64_t       cBasePages = ((cbRam - cbUma) >> GUEST_PAGE_SHIFT) + pVM->mm.s.cBasePages;
     rc = GMMR3InitialReservation(pVM,
                                  RT_MAX(cBasePages + pVM->mm.s.cHandyPages, 1),
                                  RT_MAX(pVM->mm.s.cShadowPages, 1),
@@ -391,13 +391,13 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
                               N_("Insufficient free memory to start the VM (cbRam=%#RX64 enmOcPolicy=%d enmPriority=%d)"),
                               cbRam, enmOcPolicy, enmPriority);
         return VMSetError(pVM, rc, RT_SRC_POS, "GMMR3InitialReservation(,%#RX64,0,0,%d,%d)",
-                          cbRam >> PAGE_SHIFT, enmOcPolicy, enmPriority);
+                          cbRam >> GUEST_PAGE_SHIFT, enmOcPolicy, enmPriority);
     }
 
     /*
      * If RamSize is 0 we're done now.
      */
-    if (cbRam < PAGE_SIZE)
+    if (cbRam < GUEST_PAGE_SIZE)
     {
         Log(("MM: No RAM configured\n"));
         return VINF_SUCCESS;
@@ -547,13 +547,13 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     RTUINT cb1;
 
     /* cBasePages (ignored) */
-    uint64_t cPages;
+    uint64_t cGuestPages;
     if (uVersion >= 2)
-        rc = SSMR3GetU64(pSSM, &cPages);
+        rc = SSMR3GetU64(pSSM, &cGuestPages);
     else
     {
         rc = SSMR3GetUInt(pSSM, &cb1);
-        cPages = cb1 >> PAGE_SHIFT;
+        cGuestPages = cb1 >> GUEST_PAGE_SHIFT;
     }
     if (RT_FAILURE(rc))
         return rc;
@@ -657,7 +657,8 @@ VMMR3DECL(int) MMR3ReserveHandyPages(PVM pVM, uint32_t cHandyPages)
  *
  * @returns VBox status code. Will set VM error on failure.
  * @param   pVM                 The cross context VM structure.
- * @param   cDeltaFixedPages    The number of pages to add (positive) or subtract (negative).
+ * @param   cDeltaFixedPages    The number of guest pages to add (positive) or
+ *                              subtract (negative).
  * @param   pszDesc             Some description associated with the reservation.
  */
 VMMR3DECL(int) MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc)
@@ -727,7 +728,7 @@ VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
     /*
      * Iterate thru the lookup records for HMA.
      */
-    uint32_t off = HCPhys & PAGE_OFFSET_MASK;
+    uint32_t off = HCPhys & GUEST_PAGE_OFFSET_MASK;
     HCPhys &= X86_PTE_PAE_PG_MASK;
     PMMLOOKUPHYPER pCur = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap) + pVM->mm.s.offLookupHyper);
     for (;;)
@@ -737,11 +738,11 @@ VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
             case MMLOOKUPHYPERTYPE_LOCKED:
             {
                 PCRTHCPHYS  paHCPhysPages = pCur->u.Locked.paHCPhysPages;
-                size_t      iPage         = pCur->cb >> PAGE_SHIFT;
+                size_t      iPage         = pCur->cb >> HOST_PAGE_SHIFT;
                 while (iPage-- > 0)
                     if (paHCPhysPages[iPage] == HCPhys)
                     {
-                        *ppv = (char *)pCur->u.Locked.pvR3 + (iPage << PAGE_SHIFT) + off;
+                        *ppv = (char *)pCur->u.Locked.pvR3 + (iPage << GUEST_PAGE_SHIFT) + off;
                         return VINF_SUCCESS;
                     }
                 break;

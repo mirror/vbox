@@ -1408,10 +1408,10 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, bool fB
     RTGCPTR     GCPtrPC;
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
     {
-        cbToTryRead = PAGE_SIZE;
+        cbToTryRead = GUEST_PAGE_SIZE;
         GCPtrPC     = pVCpu->cpum.GstCtx.rip;
         if (IEM_IS_CANONICAL(GCPtrPC))
-            cbToTryRead = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
+            cbToTryRead = GUEST_PAGE_SIZE - (GCPtrPC & GUEST_PAGE_OFFSET_MASK);
         else
             return iemRaiseGeneralProtectionFault0(pVCpu);
     }
@@ -1466,7 +1466,7 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, bool fB
 #endif
         return iemRaisePageFault(pVCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
-    RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrPC & PAGE_OFFSET_MASK);
+    RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrPC & GUEST_PAGE_OFFSET_MASK);
     /** @todo Check reserved bits and such stuff. PGM is better at doing
      *        that, so do it when implementing the guest virtual address
      *        TLB... */
@@ -1474,7 +1474,7 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PVMCPUCC pVCpu, bool fB
     /*
      * Read the bytes at this address.
      */
-    uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
+    uint32_t cbLeftOnPage = GUEST_PAGE_SIZE - (GCPtrPC & GUEST_PAGE_OFFSET_MASK);
     if (cbToTryRead > cbLeftOnPage)
         cbToTryRead = cbLeftOnPage;
     if (cbToTryRead > sizeof(pVCpu->iem.s.abOpcode))
@@ -1951,7 +1951,7 @@ IEM_STATIC VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin)
     RTGCPTR     GCPtrNext;
     if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
     {
-        cbToTryRead = PAGE_SIZE;
+        cbToTryRead = GUEST_PAGE_SIZE;
         GCPtrNext   = pVCpu->cpum.GstCtx.rip + pVCpu->iem.s.cbOpcode;
         if (!IEM_IS_CANONICAL(GCPtrNext))
             return iemRaiseGeneralProtectionFault0(pVCpu);
@@ -1977,7 +1977,7 @@ IEM_STATIC VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin)
 
     /* Only read up to the end of the page, and make sure we don't read more
        than the opcode buffer can hold. */
-    uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrNext & PAGE_OFFSET_MASK);
+    uint32_t cbLeftOnPage = GUEST_PAGE_SIZE - (GCPtrNext & GUEST_PAGE_OFFSET_MASK);
     if (cbToTryRead > cbLeftOnPage)
         cbToTryRead = cbLeftOnPage;
     if (cbToTryRead > sizeof(pVCpu->iem.s.abOpcode) - pVCpu->iem.s.cbOpcode)
@@ -2014,7 +2014,7 @@ IEM_STATIC VBOXSTRICTRC iemOpcodeFetchMoreBytes(PVMCPUCC pVCpu, size_t cbMin)
 #endif
         return iemRaisePageFault(pVCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
-    RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrNext & PAGE_OFFSET_MASK);
+    RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrNext & GUEST_PAGE_OFFSET_MASK);
     Log5(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys,  pVCpu->iem.s.cbOpcode));
     /** @todo Check reserved bits and such stuff. PGM is better at doing
      *        that, so do it when implementing the guest virtual address
@@ -8255,7 +8255,7 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
         Assert(!(CPUMGetGuestIa32VmxEptVpidCap(pVCpu) & VMX_BF_EPT_VPID_CAP_ACCESS_DIRTY_MASK));
     }
 
-    RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrMem & PAGE_OFFSET_MASK);
+    RTGCPHYS const GCPhys = Walk.GCPhys | (GCPtrMem & GUEST_PAGE_OFFSET_MASK);
     *pGCPhysMem = GCPhys;
     return VINF_SUCCESS;
 }
@@ -8586,11 +8586,11 @@ iemMemBounceBufferMapCrossPage(PVMCPUCC pVCpu, int iMemMap, void **ppvMem, size_
         return rcStrict;
 
     RTGCPHYS GCPhysSecond;
-    rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, (GCPtrFirst + (cbMem - 1)) & ~(RTGCPTR)PAGE_OFFSET_MASK,
+    rcStrict = iemMemPageTranslateAndCheckAccess(pVCpu, (GCPtrFirst + (cbMem - 1)) & ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK,
                                                  fAccess, &GCPhysSecond);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
-    GCPhysSecond &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
+    GCPhysSecond &= ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
 
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -8599,7 +8599,7 @@ iemMemBounceBufferMapCrossPage(PVMCPUCC pVCpu, int iMemMap, void **ppvMem, size_
      * write access.
      */
     uint8_t        *pbBuf        = &pVCpu->iem.s.aBounceBuffers[iMemMap].ab[0];
-    uint32_t const  cbFirstPage  = PAGE_SIZE - (GCPhysFirst & PAGE_OFFSET_MASK);
+    uint32_t const  cbFirstPage  = GUEST_PAGE_SIZE - (GCPhysFirst & GUEST_PAGE_OFFSET_MASK);
     uint32_t const  cbSecondPage = (uint32_t)(cbMem - cbFirstPage);
 
     if (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC | IEM_ACCESS_PARTIAL_WRITE))
@@ -8844,7 +8844,7 @@ iemMemMap(PVMCPUCC pVCpu, void **ppvMem, size_t cbMem, uint8_t iSegReg, RTGCPTR 
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    if ((GCPtrMem & PAGE_OFFSET_MASK) + cbMem > PAGE_SIZE) /* Crossing a page boundary? */
+    if ((GCPtrMem & GUEST_PAGE_OFFSET_MASK) + cbMem > GUEST_PAGE_SIZE) /* Crossing a page boundary? */
         return iemMemBounceBufferMapCrossPage(pVCpu, iMemMap, ppvMem, cbMem, GCPtrMem, fAccess);
 
     RTGCPHYS GCPhysFirst;
@@ -8967,7 +8967,7 @@ IEM_STATIC void *iemMemMapJmp(PVMCPUCC pVCpu, size_t cbMem, uint8_t iSegReg, RTG
     else longjmp(*pVCpu->iem.s.CTX_SUFF(pJmpBuf), VBOXSTRICTRC_VAL(rcStrict));
 
     /* Crossing a page boundary? */
-    if ((GCPtrMem & PAGE_OFFSET_MASK) + cbMem <= PAGE_SIZE)
+    if ((GCPtrMem & GUEST_PAGE_OFFSET_MASK) + cbMem <= GUEST_PAGE_SIZE)
     { /* No (likely). */ }
     else
     {
@@ -16374,7 +16374,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVMCC pVM, PVMCPUCC p
 {
     RT_NOREF3(pvPhys, enmOrigin, pvUser);
 
-    RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)PAGE_OFFSET_MASK;
+    RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
     if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
     {
         Assert(CPUMIsGuestVmxProcCtls2Set(IEM_GET_CTX(pVCpu), VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
@@ -16383,7 +16383,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVMCC pVM, PVMCPUCC p
         /** @todo NSTVMX: How are we to distinguish instruction fetch accesses here?
          *        Currently they will go through as read accesses. */
         uint32_t const fAccess   = enmAccessType == PGMACCESSTYPE_WRITE ? IEM_ACCESS_TYPE_WRITE : IEM_ACCESS_TYPE_READ;
-        uint16_t const offAccess = GCPhysFault & PAGE_OFFSET_MASK;
+        uint16_t const offAccess = GCPhysFault & GUEST_PAGE_OFFSET_MASK;
         VBOXSTRICTRC rcStrict = iemVmxVirtApicAccessMem(pVCpu, offAccess, cbBuf, pvBuf, fAccess);
         if (RT_FAILURE(rcStrict))
             return rcStrict;

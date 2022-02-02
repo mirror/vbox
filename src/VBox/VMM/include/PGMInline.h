@@ -106,7 +106,7 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPage(PVMCC pVM, RTGCPHYS GCPhys)
         && (off = GCPhys - pRam->GCPhys) < pRam->cb)
     {
         STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
-        return &pRam->aPages[off >> PAGE_SHIFT];
+        return &pRam->aPages[off >> GUEST_PAGE_SHIFT];
     }
     return pgmPhysGetPageSlow(pVM, GCPhys);
 }
@@ -132,7 +132,7 @@ DECLINLINE(int) pgmPhysGetPageEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
     if (   !pRam
         || (off = GCPhys - pRam->GCPhys) >= pRam->cb)
         return pgmPhysGetPageExSlow(pVM, GCPhys, ppPage);
-    *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
+    *ppPage = &pRam->aPages[off >> GUEST_PAGE_SHIFT];
     STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
     return VINF_SUCCESS;
 }
@@ -168,7 +168,7 @@ DECLINLINE(int) pgmPhysGetPageWithHintEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE p
         STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
         *ppRamHint = pRam;
     }
-    *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
+    *ppPage = &pRam->aPages[off >> GUEST_PAGE_SHIFT];
     return VINF_SUCCESS;
 }
 
@@ -194,7 +194,7 @@ DECLINLINE(int) pgmPhysGetPageAndRangeEx(PVMCC pVM, RTGCPHYS GCPhys, PPPGMPAGE p
 
     STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,RamRangeTlbHits));
     *ppRam = pRam;
-    *ppPage = &pRam->aPages[off >> PAGE_SHIFT];
+    *ppPage = &pRam->aPages[off >> GUEST_PAGE_SHIFT];
     return VINF_SUCCESS;
 }
 
@@ -216,7 +216,7 @@ DECLINLINE(int) pgmRamGCPhys2HCPhys(PVMCC pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhy
     int rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
     if (RT_FAILURE(rc))
         return rc;
-    *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & PAGE_OFFSET_MASK);
+    *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage) | (GCPhys & GUEST_PAGE_OFFSET_MASK);
     return VINF_SUCCESS;
 }
 

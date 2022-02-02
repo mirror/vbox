@@ -113,7 +113,7 @@
 /** @def PGMPOOL_CFG_MAX_GROW
  * The maximum number of pages to add to the pool in one go.
  */
-#define PGMPOOL_CFG_MAX_GROW            (_2M >> PAGE_SHIFT)
+#define PGMPOOL_CFG_MAX_GROW            (_2M >> GUEST_PAGE_SHIFT) /** @todo or HOST_PAGE_SHIFT ? */
 
 /** @def VBOX_STRICT_PGM_HANDLER_VIRTUAL
  * Enables some extra assertions for virtual handlers (mainly phys2virt related).
@@ -1212,7 +1212,8 @@ typedef struct PGMRAMRANGE
 #if HC_ARCH_BITS == 32
     uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 2 : 0];
 #endif
-    /** Array of physical guest page tracking structures. */
+    /** Array of physical guest page tracking structures.
+     * @note Number of entries is PGMRAMRANGE::cb / GUEST_PAGE_SIZE. */
     PGMPAGE                             aPages[1];
 } PGMRAMRANGE;
 /** Pointer to RAM range for GC Phys to HC Phys conversion. */
@@ -1626,7 +1627,7 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
  * @returns Physical TLB index.
  * @param   GCPhys      The guest physical address.
  */
-#define PGM_PAGER3MAPTLB_IDX(GCPhys)    ( ((GCPhys) >> PAGE_SHIFT) & (PGM_PAGER3MAPTLB_ENTRIES - 1) )
+#define PGM_PAGER3MAPTLB_IDX(GCPhys)    ( ((GCPhys) >> GUEST_PAGE_SHIFT) & (PGM_PAGER3MAPTLB_ENTRIES - 1) )
 
 /** @} */
 
@@ -1670,7 +1671,7 @@ typedef PGMPAGER0MAPTLB *PPGMPAGER0MAPTLB;
  * @returns Physical TLB index.
  * @param   GCPhys      The guest physical address.
  */
-#define PGM_PAGER0MAPTLB_IDX(GCPhys)    ( ((GCPhys) >> PAGE_SHIFT) & (PGM_PAGER0MAPTLB_ENTRIES - 1) )
+#define PGM_PAGER0MAPTLB_IDX(GCPhys)    ( ((GCPhys) >> GUEST_PAGE_SHIFT) & (PGM_PAGER0MAPTLB_ENTRIES - 1) )
 /** @} */
 
 
@@ -1966,7 +1967,7 @@ typedef PGMPOOLPAGE **PPPGMPOOLPAGE;
 /** The hash table size. */
 # define PGMPOOL_HASH_SIZE      0x40
 /** The hash function. */
-# define PGMPOOL_HASH(GCPhys)   ( ((GCPhys) >> PAGE_SHIFT) & (PGMPOOL_HASH_SIZE - 1) )
+# define PGMPOOL_HASH(GCPhys)   ( ((GCPhys) >> GUEST_PAGE_SHIFT) & (PGMPOOL_HASH_SIZE - 1) )
 
 
 /**

@@ -170,10 +170,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
          */
         ADDR2_TYPE  uVirtSrc1Addr = uSrc1AddrReg + (ADDR2_TYPE)uSrc1Base;
         ADDR2_TYPE  uVirtSrc2Addr = uSrc2AddrReg + (ADDR2_TYPE)uSrc2Base;
-        uint32_t    cLeftSrc1Page = (PAGE_SIZE - (uVirtSrc1Addr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftSrc1Page = (GUEST_PAGE_SIZE - (uVirtSrc1Addr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         if (cLeftSrc1Page > uCounterReg)
             cLeftSrc1Page = uCounterReg;
-        uint32_t    cLeftSrc2Page = (PAGE_SIZE - (uVirtSrc2Addr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftSrc2Page = (GUEST_PAGE_SIZE - (uVirtSrc2Addr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         uint32_t    cLeftPage     = RT_MIN(cLeftSrc1Page, cLeftSrc2Page);
 
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
@@ -340,10 +340,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
          */
         ADDR2_TYPE  uVirtSrc1Addr = uSrc1AddrReg + (ADDR2_TYPE)uSrc1Base;
         ADDR2_TYPE  uVirtSrc2Addr = uSrc2AddrReg + (ADDR2_TYPE)uSrc2Base;
-        uint32_t    cLeftSrc1Page = (PAGE_SIZE - (uVirtSrc1Addr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftSrc1Page = (GUEST_PAGE_SIZE - (uVirtSrc1Addr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         if (cLeftSrc1Page > uCounterReg)
             cLeftSrc1Page = uCounterReg;
-        uint32_t    cLeftSrc2Page = (PAGE_SIZE - (uVirtSrc2Addr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftSrc2Page = (GUEST_PAGE_SIZE - (uVirtSrc2Addr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         uint32_t    cLeftPage = RT_MIN(cLeftSrc1Page, cLeftSrc2Page);
 
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
@@ -502,7 +502,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
          * Do segmentation and virtual page stuff.
          */
         ADDR2_TYPE  uVirtAddr = uAddrReg + (ADDR2_TYPE)uBaseAddr;
-        uint32_t    cLeftPage = (PAGE_SIZE - (uVirtAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftPage = (GUEST_PAGE_SIZE - (uVirtAddr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         if (cLeftPage > uCounterReg)
             cLeftPage = uCounterReg;
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
@@ -634,7 +634,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
          * Do segmentation and virtual page stuff.
          */
         ADDR2_TYPE  uVirtAddr = uAddrReg + (ADDR2_TYPE)uBaseAddr;
-        uint32_t    cLeftPage = (PAGE_SIZE - (uVirtAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftPage = (GUEST_PAGE_SIZE - (uVirtAddr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         if (cLeftPage > uCounterReg)
             cLeftPage = uCounterReg;
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
@@ -783,10 +783,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
          */
         ADDR2_TYPE  uVirtSrcAddr = uSrcAddrReg + (ADDR2_TYPE)uSrcBase;
         ADDR2_TYPE  uVirtDstAddr = uDstAddrReg + (ADDR2_TYPE)uDstBase;
-        uint32_t    cLeftSrcPage = (PAGE_SIZE - (uVirtSrcAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftSrcPage = (GUEST_PAGE_SIZE - (uVirtSrcAddr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         if (cLeftSrcPage > uCounterReg)
             cLeftSrcPage = uCounterReg;
-        uint32_t    cLeftDstPage = (PAGE_SIZE - (uVirtDstAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftDstPage = (GUEST_PAGE_SIZE - (uVirtDstAddr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         uint32_t    cLeftPage = RT_MIN(cLeftSrcPage, cLeftDstPage);
 
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
@@ -823,8 +823,8 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 rcStrict = iemMemPageMap(pVCpu, GCPhysSrcMem, IEM_ACCESS_DATA_R, (void **)&puSrcMem, &PgLockSrcMem);
                 if (rcStrict == VINF_SUCCESS)
                 {
-                    Assert(   (GCPhysSrcMem         >> PAGE_SHIFT) != (GCPhysDstMem         >> PAGE_SHIFT)
-                           || ((uintptr_t)puSrcMem  >> PAGE_SHIFT) == ((uintptr_t)puDstMem  >> PAGE_SHIFT));
+                    Assert(   (GCPhysSrcMem         >> GUEST_PAGE_SHIFT) != (GCPhysDstMem         >> GUEST_PAGE_SHIFT)
+                           || ((uintptr_t)puSrcMem  >> GUEST_PAGE_SHIFT) == ((uintptr_t)puDstMem  >> GUEST_PAGE_SHIFT));
 
                     /* Perform the operation exactly (don't use memcpy to avoid
                        having to consider how its implementation would affect
@@ -937,7 +937,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
          * Do segmentation and virtual page stuff.
          */
         ADDR2_TYPE  uVirtAddr = uAddrReg + (ADDR2_TYPE)uBaseAddr;
-        uint32_t    cLeftPage = (PAGE_SIZE - (uVirtAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftPage = (GUEST_PAGE_SIZE - (uVirtAddr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         if (cLeftPage > uCounterReg)
             cLeftPage = uCounterReg;
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
@@ -1075,7 +1075,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
          * Do segmentation and virtual page stuff.
          */
         ADDR2_TYPE  uVirtAddr = uAddrReg + (ADDR2_TYPE)uBaseAddr;
-        uint32_t    cLeftPage = (PAGE_SIZE - (uVirtAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftPage = (GUEST_PAGE_SIZE - (uVirtAddr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         if (cLeftPage > uCounterReg)
             cLeftPage = uCounterReg;
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
@@ -1347,7 +1347,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
          * Do segmentation and virtual page stuff.
          */
         ADDR2_TYPE  uVirtAddr = uAddrReg + (ADDR2_TYPE)uBaseAddr;
-        uint32_t    cLeftPage = (PAGE_SIZE - (uVirtAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftPage = (GUEST_PAGE_SIZE - (uVirtAddr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         if (cLeftPage > uCounterReg)
             cLeftPage = uCounterReg;
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
@@ -1627,7 +1627,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
          * Do segmentation and virtual page stuff.
          */
         ADDR2_TYPE  uVirtAddr = uAddrReg + (ADDR2_TYPE)uBaseAddr;
-        uint32_t    cLeftPage = (PAGE_SIZE - (uVirtAddr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
+        uint32_t    cLeftPage = (GUEST_PAGE_SIZE - (uVirtAddr & GUEST_PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
         if (cLeftPage > uCounterReg)
             cLeftPage = uCounterReg;
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */

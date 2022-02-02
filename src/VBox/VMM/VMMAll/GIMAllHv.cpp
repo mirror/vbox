@@ -851,7 +851,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
             }
 
             /* Enable the hypercall-page. */
-            RTGCPHYS GCPhysHypercallPage = MSR_GIM_HV_HYPERCALL_GUEST_PFN(uRawValue) << PAGE_SHIFT;
+            RTGCPHYS GCPhysHypercallPage = MSR_GIM_HV_HYPERCALL_GUEST_PFN(uRawValue) << GUEST_PAGE_SHIFT;
             int rc = gimR3HvEnableHypercallPage(pVM, GCPhysHypercallPage);
             if (RT_SUCCESS(rc))
             {
@@ -881,7 +881,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
             }
 
             /* Enable the TSC page. */
-            RTGCPHYS GCPhysTscPage = MSR_GIM_HV_REF_TSC_GUEST_PFN(uRawValue) << PAGE_SHIFT;
+            RTGCPHYS GCPhysTscPage = MSR_GIM_HV_REF_TSC_GUEST_PFN(uRawValue) << GUEST_PAGE_SHIFT;
             int rc = gimR3HvEnableTscPage(pVM, GCPhysTscPage, false /* fUseThisTscSequence */, 0 /* uTscSequence */);
             if (RT_SUCCESS(rc))
             {
@@ -903,7 +903,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
 
             if (MSR_GIM_HV_APICASSIST_PAGE_IS_ENABLED(uRawValue))
             {
-                RTGCPHYS GCPhysApicAssistPage = MSR_GIM_HV_APICASSIST_GUEST_PFN(uRawValue) << PAGE_SHIFT;
+                RTGCPHYS GCPhysApicAssistPage = MSR_GIM_HV_APICASSIST_GUEST_PFN(uRawValue) << GUEST_PAGE_SHIFT;
                 if (PGMPhysIsGCPhysNormal(pVM, GCPhysApicAssistPage))
                 {
                     int rc = gimR3HvEnableApicAssistPage(pVCpu, GCPhysApicAssistPage);
@@ -1065,7 +1065,8 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
                     LogRelMax(1, ("GIM: HyperV: Initiated debug data reception via MSR\n"));
                     uint32_t cbReallyRead;
                     Assert(pHv->pvDbgBuffer);
-                    int rc = gimR3HvDebugRead(pVM, pHv->pvDbgBuffer, PAGE_SIZE, PAGE_SIZE, &cbReallyRead, 0, false /*fUdpPkt*/);
+                    int rc = gimR3HvDebugRead(pVM, pHv->pvDbgBuffer, GIM_HV_PAGE_SIZE, GIM_HV_PAGE_SIZE,
+                                              &cbReallyRead, 0, false /*fUdpPkt*/);
                     if (   RT_SUCCESS(rc)
                         && cbReallyRead > 0)
                     {
@@ -1271,7 +1272,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
             pHvCpu->uSiefpMsr = uRawValue;
             if (MSR_GIM_HV_SIEF_PAGE_IS_ENABLED(uRawValue))
             {
-                RTGCPHYS GCPhysSiefPage = MSR_GIM_HV_SIEF_GUEST_PFN(uRawValue) << PAGE_SHIFT;
+                RTGCPHYS GCPhysSiefPage = MSR_GIM_HV_SIEF_GUEST_PFN(uRawValue) << GUEST_PAGE_SHIFT;
                 if (PGMPhysIsGCPhysNormal(pVM, GCPhysSiefPage))
                 {
                     int rc = gimR3HvEnableSiefPage(pVCpu, GCPhysSiefPage);
@@ -1306,7 +1307,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPUCC pVCpu, uint32_t idMsr, PCCPUMM
                 RTGCPHYS GCPhysSimp = MSR_GIM_HV_SIMP_GPA(uRawValue);
                 if (PGMPhysIsGCPhysNormal(pVM, GCPhysSimp))
                 {
-                    uint8_t abSimp[PAGE_SIZE];
+                    uint8_t abSimp[GIM_HV_PAGE_SIZE];
                     RT_ZERO(abSimp);
                     int rc2 = PGMPhysSimpleWriteGCPhys(pVM, GCPhysSimp, &abSimp[0], sizeof(abSimp));
                     if (RT_SUCCESS(rc2))

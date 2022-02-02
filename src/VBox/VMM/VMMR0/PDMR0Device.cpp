@@ -261,9 +261,9 @@ static int pdmR0DeviceCreateWorker(PGVM pGVM, PCPDMDEVREGR0 pDevReg, uint32_t iI
     /*
      * Figure out how much memory we need and allocate it.
      */
-    uint32_t const cbRing0     = RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSR0, achInstanceData) + pDevReg->cbInstanceCC, PAGE_SIZE);
+    uint32_t const cbRing0     = RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSR0, achInstanceData) + pDevReg->cbInstanceCC, HOST_PAGE_SIZE);
     uint32_t const cbRing3     = RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSR3, achInstanceData) + cbInstanceR3,
-                                             RCPtrMapping != NIL_RTRGPTR ? PAGE_SIZE : 64);
+                                             RCPtrMapping != NIL_RTRGPTR ? HOST_PAGE_SIZE : 64);
     uint32_t const cbRC        = RCPtrMapping != NIL_RTRGPTR ? 0
                                : RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSRC, achInstanceData) + cbInstanceRC, 64);
     uint32_t const cbShared    = RT_ALIGN_32(pDevReg->cbInstanceShared, 64);
@@ -272,7 +272,7 @@ static int pdmR0DeviceCreateWorker(PGVM pGVM, PCPDMDEVREGR0 pDevReg, uint32_t iI
     uint32_t const cbPciDev    = RT_ALIGN_32(RT_UOFFSETOF_DYN(PDMPCIDEV, abMsixState[cbMsixState]), 64);
     uint32_t const cPciDevs    = RT_MIN(pDevReg->cMaxPciDevices, 8);
     uint32_t const cbPciDevs   = cbPciDev * cPciDevs;
-    uint32_t const cbTotal     = RT_ALIGN_32(cbRing0 + cbRing3 + cbRC + cbShared + cbCritSect + cbPciDevs, PAGE_SIZE);
+    uint32_t const cbTotal     = RT_ALIGN_32(cbRing0 + cbRing3 + cbRC + cbShared + cbCritSect + cbPciDevs, HOST_PAGE_SIZE);
     AssertLogRelMsgReturn(cbTotal <= PDM_MAX_DEVICE_INSTANCE_SIZE,
                           ("Instance of '%s' is too big: cbTotal=%u, max %u\n",
                            pDevReg->szName, cbTotal, PDM_MAX_DEVICE_INSTANCE_SIZE),

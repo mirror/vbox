@@ -1242,7 +1242,7 @@ typedef struct GIMHV
     uint64_t                    uDbgPendingBufferMsr;
     /** Debug status MSR. */
     uint64_t                    uDbgStatusMsr;
-    /** Intermediate debug I/O buffer. */
+    /** Intermediate debug I/O buffer (GIM_HV_PAGE_SIZE). */
     R3PTRTYPE(void *)           pvDbgBuffer;
     R3PTRTYPE(void *)           pvAlignment0;
     /** @} */

@@ -594,10 +594,10 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPUCC pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint
             }
 
             /* next page */
-            cb -= PAGE_SIZE;
+            cb -= HOST_PAGE_SIZE;
             if (!cb)
                 return VINF_SUCCESS;
-            GCPtr += PAGE_SIZE;
+            GCPtr += HOST_PAGE_SIZE;
             iPTE++;
         }
     }

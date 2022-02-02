@@ -94,7 +94,7 @@ VMMR0_INT_DECL(int)  IOMR0IoPortSetUpContext(PGVM pGVM, PPDMDEVINS pDevIns, IOMI
     AssertReturn(hIoPorts < pGVM->iomr0.s.cIoPortAlloc, VERR_IOM_INVALID_IOPORT_HANDLE);
     AssertReturn(hIoPorts < pGVM->iom.s.cIoPortRegs, VERR_IOM_INVALID_IOPORT_HANDLE);
     AssertPtrReturn(pDevIns, VERR_INVALID_HANDLE);
-    AssertReturn(pDevIns->pDevInsForR3 != NIL_RTR3PTR && !(pDevIns->pDevInsForR3 & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(pDevIns->pDevInsForR3 != NIL_RTR3PTR && !(pDevIns->pDevInsForR3 & HOST_PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(pGVM->iomr0.s.paIoPortRing3Regs[hIoPorts].pDevIns == pDevIns->pDevInsForR3, VERR_IOM_INVALID_IOPORT_HANDLE);
     AssertReturn(pGVM->iomr0.s.paIoPortRegs[hIoPorts].pDevIns == NULL, VERR_WRONG_ORDER);
     Assert(pGVM->iomr0.s.paIoPortRegs[hIoPorts].idxSelf == hIoPorts);
@@ -162,9 +162,9 @@ VMMR0_INT_DECL(int) IOMR0IoPortGrowRegistrationTables(PGVM pGVM, uint64_t cReqMi
      * Allocate the new tables.  We use a single allocation for the three tables (ring-0,
      * ring-3, lookup) and does a partial mapping of the result to ring-3.
      */
-    uint32_t const cbRing0  = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTENTRYR0),     PAGE_SIZE);
-    uint32_t const cbRing3  = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTENTRYR3),     PAGE_SIZE);
-    uint32_t const cbShared = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTLOOKUPENTRY), PAGE_SIZE);
+    uint32_t const cbRing0  = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTENTRYR0),     HOST_PAGE_SIZE);
+    uint32_t const cbRing3  = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTENTRYR3),     HOST_PAGE_SIZE);
+    uint32_t const cbShared = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTLOOKUPENTRY), HOST_PAGE_SIZE);
     uint32_t const cbNew    = cbRing0 + cbRing3 + cbShared;
 
     /* Use the rounded up space as best we can. */
@@ -181,7 +181,7 @@ VMMR0_INT_DECL(int) IOMR0IoPortGrowRegistrationTables(PGVM pGVM, uint64_t cReqMi
         RT_BZERO(RTR0MemObjAddress(hMemObj), cbNew);
 
         RTR0MEMOBJ hMapObj;
-        rc = RTR0MemObjMapUserEx(&hMapObj, hMemObj, (RTR3PTR)-1, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE,
+        rc = RTR0MemObjMapUserEx(&hMapObj, hMemObj, (RTR3PTR)-1, HOST_PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE,
                                  RTR0ProcHandleSelf(), cbRing0, cbNew - cbRing0);
         if (RT_SUCCESS(rc))
         {
@@ -284,7 +284,7 @@ VMMR0_INT_DECL(int) IOMR0IoPortGrowStatisticsTable(PGVM pGVM, uint64_t cReqMinEn
 #ifndef VBOX_WITH_STATISTICS
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 #else
-    uint32_t const cbNew = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTSTATSENTRY), PAGE_SIZE);
+    uint32_t const cbNew = RT_ALIGN_32(cNewEntries * sizeof(IOMIOPORTSTATSENTRY), HOST_PAGE_SIZE);
     cNewEntries = cbNew / sizeof(IOMIOPORTSTATSENTRY);
 
     RTR0MEMOBJ hMemObj;
@@ -294,7 +294,8 @@ VMMR0_INT_DECL(int) IOMR0IoPortGrowStatisticsTable(PGVM pGVM, uint64_t cReqMinEn
         RT_BZERO(RTR0MemObjAddress(hMemObj), cbNew);
 
         RTR0MEMOBJ hMapObj;
-        rc = RTR0MemObjMapUser(&hMapObj, hMemObj, (RTR3PTR)-1, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, RTR0ProcHandleSelf());
+        rc = RTR0MemObjMapUser(&hMapObj, hMemObj, (RTR3PTR)-1, HOST_PAGE_SIZE,
+                               RTMEM_PROT_READ | RTMEM_PROT_WRITE, RTR0ProcHandleSelf());
         if (RT_SUCCESS(rc))
         {
             PIOMIOPORTSTATSENTRY pIoPortStats = (PIOMIOPORTSTATSENTRY)RTR0MemObjAddress(hMemObj);

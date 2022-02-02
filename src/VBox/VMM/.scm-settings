@@ -34,3 +34,11 @@
 /*.h: --guard-relative-to-dir . --guard-prefix VMM_INCLUDED_SRC_
 /VMMR3/cpus/*.h: --guard-relative-to-dir VMMR3/cpus --guard-prefix VBOX_CPUDB_
 
+# Forbid PAGE_SIZE, PAGE_SIZE and PAGE_OFFSET_MASK w/o GUEST_ or HOST_ prefix.
+/*.cpp: --only-guest-host-page
+/*.h:   --only-guest-host-page
+# Except in the pool where more care/work is needed.
+/VMMAll/PGMAllPool.cpp: --no-page-restrictions
+/VMMR3/PGMPool.cpp:     --no-page-restrictions
+/testcase/tstVMStructSize.cpp:     --no-page-restrictions
+

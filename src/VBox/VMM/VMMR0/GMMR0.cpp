@@ -33,7 +33,7 @@
  * Each chunk is given an unique ID. Each page also has a unique ID. The
  * relationship between the two IDs is:
  * @code
- *  GMM_CHUNK_SHIFT = log2(GMM_CHUNK_SIZE / PAGE_SIZE);
+ *  GMM_CHUNK_SHIFT = log2(GMM_CHUNK_SIZE / GUEST_PAGE_SIZE);
  *  idPage = (idChunk << GMM_CHUNK_SHIFT) | iPage;
  * @endcode
  * Where iPage is the index of the page within the chunk. This ID scheme
@@ -309,13 +309,13 @@ typedef GMMPAGE *PGMMPAGE;
  *         see GMM_PAGE_PFN_UNSHAREABLE.
  */
 #define GMM_PAGE_PFN_LAST            UINT32_C(0xfffffff0)
-AssertCompile(GMM_PAGE_PFN_LAST == (GMM_GCPHYS_LAST >> PAGE_SHIFT));
+AssertCompile(GMM_PAGE_PFN_LAST == (GMM_GCPHYS_LAST >> GUEST_PAGE_SHIFT));
 
 /** @def GMM_PAGE_PFN_UNSHAREABLE
  * Indicates that this page isn't used for normal guest memory and thus isn't shareable.
  */
 #define GMM_PAGE_PFN_UNSHAREABLE    UINT32_C(0xfffffff1)
-AssertCompile(GMM_PAGE_PFN_UNSHAREABLE == (GMM_GCPHYS_UNSHAREABLE >> PAGE_SHIFT));
+AssertCompile(GMM_PAGE_PFN_UNSHAREABLE == (GMM_GCPHYS_UNSHAREABLE >> GUEST_PAGE_SHIFT));
 
 
 /**
@@ -392,7 +392,7 @@ typedef struct GMMCHUNK
     RTUID               uidOwner;
     uint32_t            u32Padding;
     /** The pages.  (Giant mtx.) */
-    GMMPAGE             aPages[GMM_CHUNK_SIZE >> PAGE_SHIFT];
+    GMMPAGE             aPages[GMM_CHUNK_NUM_PAGES];
 } GMMCHUNK;
 
 /** Indicates that the NUMA properies of the memory is unknown. */
@@ -726,6 +726,13 @@ GMMR0DECL(int) GMMR0Init(void)
 {
     LogFlow(("GMMInit:\n"));
 
+    /* Currently assuming same host and guest page size here.  Can change it to
+       dish out guest pages with different size from the host page later if
+       needed, though a restriction would be the host page size must be larger
+       than the guest page size. */
+    AssertCompile(GUEST_PAGE_SIZE == HOST_PAGE_SIZE);
+    AssertCompile(GUEST_PAGE_SIZE <= HOST_PAGE_SIZE);
+
     /*
      * Allocate the instance data and the locks.
      */
@@ -886,7 +893,7 @@ static DECLCALLBACK(int) gmmR0TermDestroyChunk(PAVLU32NODECORE pNode, void *pvGM
 {
     PGMMCHUNK pChunk = (PGMMCHUNK)pNode;
 
-    if (pChunk->cFree != (GMM_CHUNK_SIZE >> PAGE_SHIFT))
+    if (pChunk->cFree != GMM_CHUNK_NUM_PAGES)
         SUPR0Printf("GMMR0Term: %RKv/%#x: cFree=%d cPrivate=%d cShared=%d cMappings=%d\n", pChunk,
                     pChunk->Core.Key, pChunk->cFree, pChunk->cPrivate, pChunk->cShared, pChunk->cMappingsX);
 
@@ -1395,7 +1402,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
      * (Perform some internal checks while we're scanning.)
      */
 #ifndef VBOX_STRICT
-    if (pChunk->cFree != (GMM_CHUNK_SIZE >> PAGE_SHIFT))
+    if (pChunk->cFree != GMM_CHUNK_NUM_PAGES)
 #endif
     {
         unsigned cPrivate = 0;
@@ -1405,7 +1412,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
         gmmR0UnlinkChunk(pChunk);       /* avoiding cFreePages updates. */
 
         uint16_t hGVM = pGVM->hSelf;
-        unsigned iPage = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
+        unsigned iPage = (GMM_CHUNK_SIZE >> GUEST_PAGE_SHIFT);
         while (iPage-- > 0)
             if (GMM_PAGE_IS_PRIVATE(&pChunk->aPages[iPage]))
             {
@@ -2093,7 +2100,7 @@ static void gmmR0AllocatePage(PGMMCHUNK pChunk, uint32_t hGVM, PGMMPAGEDESC pPag
     AssertCompile(NIL_RTHCPHYS >= GMM_GCPHYS_LAST);
     AssertCompile(GMM_GCPHYS_UNSHAREABLE >= GMM_GCPHYS_LAST);
     if (pPageDesc->HCPhysGCPhys <= GMM_GCPHYS_LAST)
-        pPage->Private.pfn = pPageDesc->HCPhysGCPhys >> PAGE_SHIFT;
+        pPage->Private.pfn = pPageDesc->HCPhysGCPhys >> GUEST_PAGE_SHIFT;
     else
         pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE; /* unshareable / unassigned - same thing. */
 
@@ -2244,7 +2251,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
                 for (iPage = 0; iPage < cPagesAlloc; iPage++, iDstPage++)
                 {
                     if (paPages[iDstPage].HCPhysGCPhys <= GMM_GCPHYS_LAST)
-                        pChunk->aPages[iPage].Private.pfn = paPages[iDstPage].HCPhysGCPhys >> PAGE_SHIFT;
+                        pChunk->aPages[iPage].Private.pfn = paPages[iDstPage].HCPhysGCPhys >> GUEST_PAGE_SHIFT;
                     else
                         pChunk->aPages[iPage].Private.pfn = GMM_PAGE_PFN_UNSHAREABLE; /* unshareable / unassigned - same thing. */
                     pChunk->aPages[iPage].Private.hGVM    = hGVM;
@@ -2302,12 +2309,12 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
 #ifdef VBOX_WITH_LINEAR_HOST_PHYS_MEM
                 if (!(fChunkFlags & GMM_CHUNK_FLAGS_LARGE_PAGE))
                 {
-                    for (uint32_t iPage = 0; iPage < GMM_CHUNK_NUM_PAGES; iPage++)
+                    for (uint32_t iPage = 0; iPage < GMM_CHUNK_SIZE / HOST_PAGE_SIZE; iPage++)
                     {
                         void *pvPage = NULL;
                         rc = SUPR0HCPhysToVirt(RTR0MemObjGetPagePhysAddr(hMemObj, iPage), &pvPage);
                         AssertRCBreak(rc);
-                        RT_BZERO(pvPage, PAGE_SIZE);
+                        RT_BZERO(pvPage, HOST_PAGE_SIZE);
                     }
                 }
                 else
@@ -2374,7 +2381,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ hMemO
                     if (pChunk->aPages[iPage].Private.pfn == GMM_PAGE_PFN_UNSHAREABLE)
                         paPages[iDstPageFirst].HCPhysGCPhys = NIL_GMMPAGEDESC_PHYS;
                     else
-                        paPages[iDstPageFirst].HCPhysGCPhys = (RTHCPHYS)pChunk->aPages[iPage].Private.pfn << PAGE_SHIFT;
+                        paPages[iDstPageFirst].HCPhysGCPhys = (RTHCPHYS)pChunk->aPages[iPage].Private.pfn << GUEST_PAGE_SHIFT;
                     paPages[iDstPageFirst].idPage       = NIL_GMM_PAGEID;
                     paPages[iDstPageFirst].idSharedPage = NIL_GMM_PAGEID;
                 }
@@ -2463,7 +2470,7 @@ static uint32_t gmmR0AllocatePagesIndiscriminately(PGMMCHUNKFREESET pSet, PGVM p
             PGMMCHUNK pNext = pChunk->pFreeNext;
             if (   pChunk->uidOwner == uidSelf
                 || (   pChunk->cMappingsX == 0
-                    && pChunk->cFree == (GMM_CHUNK_SIZE >> PAGE_SHIFT)))
+                    && pChunk->cFree == (GMM_CHUNK_SIZE >> GUEST_PAGE_SHIFT)))
             {
                 iPage = gmmR0AllocatePagesFromChunk(pChunk, pGVM->hSelf, iPage, cPages, paPages);
                 if (iPage >= cPages)
@@ -2960,7 +2967,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
     for (; iPage < cPagesToUpdate; iPage++)
     {
         AssertMsgReturn(    (    paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST
-                             && !(paPages[iPage].HCPhysGCPhys & PAGE_OFFSET_MASK))
+                             && !(paPages[iPage].HCPhysGCPhys & GUEST_PAGE_OFFSET_MASK))
                         ||  paPages[iPage].HCPhysGCPhys == NIL_GMMPAGEDESC_PHYS
                         ||  paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE,
                         ("#%#x: %RHp\n", iPage, paPages[iPage].HCPhysGCPhys),
@@ -3016,7 +3023,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages
                             {
                                 AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_LAST && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_LAST);
                                 if (RT_LIKELY(paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST))
-                                    pPage->Private.pfn = paPages[iPage].HCPhysGCPhys >> PAGE_SHIFT;
+                                    pPage->Private.pfn = paPages[iPage].HCPhysGCPhys >> GUEST_PAGE_SHIFT;
                                 else if (paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE)
                                     pPage->Private.pfn = GMM_PAGE_PFN_UNSHAREABLE;
                                 /* else: NIL_RTHCPHYS nothing */
@@ -3165,7 +3172,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages, PGM
 
     AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
     AssertMsgReturn(enmAccount > GMMACCOUNT_INVALID && enmAccount < GMMACCOUNT_END, ("%d\n", enmAccount), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cPages > 0 && cPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cPages > 0 && cPages < RT_BIT(32 - GUEST_PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
 
     for (unsigned iPage = 0; iPage < cPages; iPage++)
     {
@@ -3173,7 +3180,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages, PGM
                         ||  paPages[iPage].HCPhysGCPhys == GMM_GCPHYS_UNSHAREABLE
                         ||  (    enmAccount == GMMACCOUNT_BASE
                              &&  paPages[iPage].HCPhysGCPhys <= GMM_GCPHYS_LAST
-                             && !(paPages[iPage].HCPhysGCPhys & PAGE_OFFSET_MASK)),
+                             && !(paPages[iPage].HCPhysGCPhys & GUEST_PAGE_OFFSET_MASK)),
                         ("#%#x: %RHp enmAccount=%d\n", iPage, paPages[iPage].HCPhysGCPhys, enmAccount),
                         VERR_INVALID_PARAMETER);
         AssertMsgReturn(paPages[iPage].fZeroed      == false,          ("#%#x: %#x\n", iPage, paPages[iPage].fZeroed), VERR_INVALID_PARAMETER);
@@ -3385,7 +3392,7 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PGVM pGVM, VMCPUID idCpu, uint32_t idPage)
     gmmR0MutexAcquire(pGMM);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        const unsigned cPages = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
+        const unsigned cPages = GMM_CHUNK_NUM_PAGES;
 
         if (RT_UNLIKELY(pGVM->gmm.s.Stats.Allocated.cBasePages < cPages))
         {
@@ -3883,7 +3890,7 @@ GMMR0DECL(int) GMMR0FreePages(PGVM pGVM, VMCPUID idCpu, uint32_t cPages, PGMMFRE
 
     AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
     AssertMsgReturn(enmAccount > GMMACCOUNT_INVALID && enmAccount < GMMACCOUNT_END, ("%d\n", enmAccount), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cPages > 0 && cPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cPages > 0 && cPages < RT_BIT(32 - GUEST_PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
 
     for (unsigned iPage = 0; iPage < cPages; iPage++)
         AssertMsgReturn(    paPages[iPage].idPage <= GMM_PAGEID_LAST
@@ -3960,7 +3967,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PGVM pGVM, VMCPUID idCpu, GMMBALLOONACTION en
     LogFlow(("GMMR0BalloonedPages: pGVM=%p enmAction=%d cBalloonedPages=%#x\n",
              pGVM, enmAction, cBalloonedPages));
 
-    AssertMsgReturn(cBalloonedPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cBalloonedPages), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(cBalloonedPages < RT_BIT(32 - GUEST_PAGE_SHIFT), ("%#x\n", cBalloonedPages), VERR_INVALID_PARAMETER);
 
     /*
      * Validate input and get the basics.
@@ -4119,7 +4126,7 @@ GMMR0DECL(int) GMMR0QueryHypervisorMemoryStatsReq(PGMMMEMSTATSREQ pReq)
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     pReq->cAllocPages     = pGMM->cAllocatedPages;
-    pReq->cFreePages      = (pGMM->cChunks << (GMM_CHUNK_SHIFT- PAGE_SHIFT)) - pGMM->cAllocatedPages;
+    pReq->cFreePages      = (pGMM->cChunks << (GMM_CHUNK_SHIFT - GUEST_PAGE_SHIFT)) - pGMM->cAllocatedPages;
     pReq->cBalloonedPages = pGMM->cBalloonedPages;
     pReq->cMaxPages       = pGMM->cMaxPages;
     pReq->cSharedPages    = pGMM->cDuplicatePages;
@@ -4577,7 +4584,7 @@ GMMR0DECL(int)  GMMR0PageIdToVirt(PGVM pGVM, uint32_t idPage, void **ppv)
                   || GMM_PAGE_IS_SHARED(pPage)))
     {
         AssertPtr(pChunk->pbMapping);
-        *ppv = &pChunk->pbMapping[(idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT];
+        *ppv = &pChunk->pbMapping[(idPage & GMM_PAGEID_IDX_MASK) << GUEST_PAGE_SHIFT];
         return VINF_SUCCESS;
     }
     AssertMsgFailed(("idPage=%#x is-private=%RTbool Private.hGVM=%u pGVM->hGVM=%u\n",
@@ -4607,9 +4614,9 @@ static uint32_t gmmR0StrictPageChecksum(PGMM pGMM, PGVM pGVM, uint32_t idPage)
     uint8_t *pbChunk;
     if (!gmmR0IsChunkMapped(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk))
         return 0;
-    uint8_t const *pbPage = pbChunk + ((idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+    uint8_t const *pbPage = pbChunk + ((idPage & GMM_PAGEID_IDX_MASK) << GUEST_PAGE_SHIFT);
 
-    return RTCrc32(pbPage, PAGE_SIZE);
+    return RTCrc32(pbPage, GUEST_PAGE_SIZE);
 }
 # endif /* VBOX_STRICT */
 
@@ -4662,11 +4669,11 @@ static PGMMSHAREDMODULE gmmR0ShModFindGlobal(PGMM pGMM, uint32_t uHash, uint32_t
         uint32_t i;
         for (i = 0; i < cRegions; i++)
         {
-            uint32_t off = paRegions[i].GCRegionAddr & PAGE_OFFSET_MASK;
+            uint32_t off = paRegions[i].GCRegionAddr & GUEST_PAGE_OFFSET_MASK;
             if (pGblMod->aRegions[i].off != off)
                 break;
 
-            uint32_t cb  = RT_ALIGN_32(paRegions[i].cbRegion + off, PAGE_SIZE);
+            uint32_t cb  = RT_ALIGN_32(paRegions[i].cbRegion + off, GUEST_PAGE_SIZE);
             if (pGblMod->aRegions[i].cb != cb)
                 break;
         }
@@ -4722,9 +4729,9 @@ static int gmmR0ShModNewGlobal(PGMM pGMM, uint32_t uHash, uint32_t cbModule, VBO
     for (uint32_t i = 0; i < cRegions; i++)
     {
         Log(("gmmR0ShModNewGlobal: rgn[%u]=%RGvLB%#x\n", i, paRegions[i].GCRegionAddr, paRegions[i].cbRegion));
-        pGblMod->aRegions[i].off        = paRegions[i].GCRegionAddr & PAGE_OFFSET_MASK;
+        pGblMod->aRegions[i].off        = paRegions[i].GCRegionAddr & GUEST_PAGE_OFFSET_MASK;
         pGblMod->aRegions[i].cb         = paRegions[i].cbRegion + pGblMod->aRegions[i].off;
-        pGblMod->aRegions[i].cb         = RT_ALIGN_32(pGblMod->aRegions[i].cb, PAGE_SIZE);
+        pGblMod->aRegions[i].cb         = RT_ALIGN_32(pGblMod->aRegions[i].cb, GUEST_PAGE_SIZE);
         pGblMod->aRegions[i].paidPages  = NULL; /* allocated when needed. */
     }
 
@@ -5131,7 +5138,7 @@ DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, RTHCPHYS HCPhys,
     pGVM->gmm.s.Stats.cPrivatePages--;
 
     /* Modify the page structure. */
-    pPage->Shared.pfn         = (uint32_t)(uint64_t)(HCPhys >> PAGE_SHIFT);
+    pPage->Shared.pfn         = (uint32_t)(uint64_t)(HCPhys >> GUEST_PAGE_SHIFT);
     pPage->Shared.cRefs       = 1;
 #ifdef VBOX_STRICT
     pPageDesc->u32StrictChecksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
@@ -5198,7 +5205,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
                     ("idxRegion=%#x cRegions=%#x %s %s\n", idxRegion, pModule->cRegions, pModule->szName, pModule->szVersion),
                     VERR_INVALID_PARAMETER);
 
-    uint32_t const cPages = pModule->aRegions[idxRegion].cb >> PAGE_SHIFT;
+    uint32_t const cPages = pModule->aRegions[idxRegion].cb >> GUEST_PAGE_SHIFT;
     AssertMsgReturn(idxPage < cPages,
                     ("idxRegion=%#x cRegions=%#x %s %s\n", idxRegion, pModule->cRegions, pModule->szName, pModule->szVersion),
                     VERR_INVALID_PARAMETER);
@@ -5255,7 +5262,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
         return gmmR0SharedModuleCheckPageFirstTime(pGMM, pGVM, pModule, idxRegion, idxPage, pPageDesc, pGlobalRegion);
     }
 
-    Log(("Replace existing page guest host %RHp -> %RHp\n", pPageDesc->HCPhys, ((uint64_t)pPage->Shared.pfn) << PAGE_SHIFT));
+    Log(("Replace existing page guest host %RHp -> %RHp\n", pPageDesc->HCPhys, ((uint64_t)pPage->Shared.pfn) << GUEST_PAGE_SHIFT));
 
     /*
      * Calculate the virtual address of the local page.
@@ -5268,7 +5275,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
     AssertMsgReturn(gmmR0IsChunkMapped(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk),
                     ("idPage=%#x (idxRegion=%#x idxPage=%#x) #3\n", pPageDesc->idPage, idxRegion, idxPage),
                     VERR_PGM_PHYS_INVALID_PAGE_ID);
-    uint8_t  *pbLocalPage = pbChunk + ((pPageDesc->idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+    uint8_t  *pbLocalPage = pbChunk + ((pPageDesc->idPage & GMM_PAGEID_IDX_MASK) << GUEST_PAGE_SHIFT);
 
     /*
      * Calculate the virtual address of the shared page.
@@ -5286,18 +5293,17 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
         rc = gmmR0MapChunk(pGMM, pGVM, pChunk, false /*fRelaxedSem*/, (PRTR3PTR)&pbChunk);
         AssertRCReturn(rc, rc);
     }
-    uint8_t *pbSharedPage = pbChunk + ((pGlobalRegion->paidPages[idxPage] & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+    uint8_t *pbSharedPage = pbChunk + ((pGlobalRegion->paidPages[idxPage] & GMM_PAGEID_IDX_MASK) << GUEST_PAGE_SHIFT);
 
 #ifdef VBOX_STRICT
-    pPageDesc->u32StrictChecksum = RTCrc32(pbSharedPage, PAGE_SIZE);
+    pPageDesc->u32StrictChecksum = RTCrc32(pbSharedPage, GUEST_PAGE_SIZE);
     uint32_t uChecksum = pPageDesc->u32StrictChecksum & UINT32_C(0x00003fff);
     AssertMsg(!uChecksum || uChecksum == pPage->Shared.u14Checksum || !pPage->Shared.u14Checksum,
               ("%#x vs %#x - idPage=%#x - %s %s\n", uChecksum, pPage->Shared.u14Checksum,
                pGlobalRegion->paidPages[idxPage], pModule->szName, pModule->szVersion));
 #endif
 
-    /** @todo write ASMMemComparePage. */
-    if (memcmp(pbSharedPage, pbLocalPage, PAGE_SIZE))
+    if (memcmp(pbSharedPage, pbLocalPage, GUEST_PAGE_SIZE))
     {
         Log(("Unexpected differences found between local and shared page; skip\n"));
         /* Signal to the caller that this one hasn't changed. */
@@ -5318,7 +5324,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
     /*
      * Pass along the new physical address & page id.
      */
-    pPageDesc->HCPhys = ((uint64_t)pPage->Shared.pfn) << PAGE_SHIFT;
+    pPageDesc->HCPhys = ((uint64_t)pPage->Shared.pfn) << GUEST_PAGE_SHIFT;
     pPageDesc->idPage = pGlobalRegion->paidPages[idxPage];
 
     return VINF_SUCCESS;
@@ -5511,13 +5517,13 @@ static bool gmmR0FindDupPageInChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, uint
             /*
              * Look for duplicate pages
              */
-            uintptr_t iPage = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
+            uintptr_t iPage = GMM_CHUNK_NUM_PAGES;
             while (iPage-- > 0)
             {
                 if (GMM_PAGE_IS_PRIVATE(&pChunk->aPages[iPage]))
                 {
-                    uint8_t *pbDestPage = pbChunk + (iPage  << PAGE_SHIFT);
-                    if (!memcmp(pbSourcePage, pbDestPage, PAGE_SIZE))
+                    uint8_t *pbDestPage = pbChunk + (iPage  << GUEST_PAGE_SHIFT);
+                    if (!memcmp(pbSourcePage, pbDestPage, GUEST_PAGE_SIZE))
                     {
                         fFoundDuplicate = true;
                         break;
@@ -5565,7 +5571,7 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PGVM pGVM, PGMMFINDDUPLICATEPAGEREQ pRe
         {
             if (gmmR0IsChunkMapped(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk))
             {
-                uint8_t *pbSourcePage = pbChunk + ((pReq->idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+                uint8_t *pbSourcePage = pbChunk + ((pReq->idPage & GMM_PAGEID_IDX_MASK) << GUEST_PAGE_SHIFT);
                 PGMMPAGE pPage = gmmR0GetPage(pGMM, pReq->idPage);
                 if (pPage)
                 {

@@ -1070,7 +1070,7 @@ VMMDECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hR
     AssertReturn(pRegEntry->pDevIns == pDevIns, VERR_ACCESS_DENIED);
 #endif
     AssertReturn(offRegion < pRegEntry->cbRegion, VERR_OUT_OF_RANGE);
-    Assert((pRegEntry->cbRegion & PAGE_OFFSET_MASK) == 0);
+    Assert((pRegEntry->cbRegion & GUEST_PAGE_OFFSET_MASK) == 0);
 
     /*
      * When getting and using the mapping address, we must sit on the IOM lock
@@ -1082,12 +1082,12 @@ VMMDECL(int) IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hR
         RTGCPHYS const GCPhys = pRegEntry->fMapped ? pRegEntry->GCPhysMapping : NIL_RTGCPHYS;
         if (GCPhys != NIL_RTGCPHYS)
         {
-            Assert(!(GCPhys & PAGE_OFFSET_MASK));
+            Assert(!(GCPhys & GUEST_PAGE_OFFSET_MASK));
 
             /*
              * Do the aliasing; page align the addresses since PGM is picky.
              */
-            rc = PGMHandlerPhysicalPageAliasMmio2(pVM, GCPhys, GCPhys + (offRegion & ~(RTGCPHYS)PAGE_OFFSET_MASK),
+            rc = PGMHandlerPhysicalPageAliasMmio2(pVM, GCPhys, GCPhys + (offRegion & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK),
                                                   pDevIns, hMmio2, offMmio2);
         }
         else
@@ -1160,15 +1160,15 @@ VMMR0_INT_DECL(int) IOMR0MmioMapMmioHCPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS G
         PIOMMMIOENTRYR0 pRegEntry = iomMmioGetEntry(pVM, GCPhys, &offIgn, &idxIgn);
         IOM_UNLOCK_SHARED(pVM);
         Assert(pRegEntry);
-        Assert(pRegEntry && !(pRegEntry->cbRegion & PAGE_OFFSET_MASK));
+        Assert(pRegEntry && !(pRegEntry->cbRegion & GUEST_PAGE_OFFSET_MASK));
     }
 # endif
 
     /*
      * Do the aliasing; page align the addresses since PGM is picky.
      */
-    GCPhys &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
-    HCPhys &= ~(RTHCPHYS)PAGE_OFFSET_MASK;
+    GCPhys &= ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+    HCPhys &= ~(RTHCPHYS)GUEST_PAGE_OFFSET_MASK;
 
     int rc = PGMHandlerPhysicalPageAliasHC(pVM, GCPhys, GCPhys, HCPhys);
     AssertRCReturn(rc, rc);
@@ -1236,15 +1236,15 @@ VMMDECL(int) IOMMmioResetRegion(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
     AssertReturn(pRegEntry->cbRegion > 0, VERR_IOM_INVALID_MMIO_HANDLE);
     AssertReturn(pRegEntry->pDevIns == pDevIns, VERR_ACCESS_DENIED);
 #endif
-    Assert((pRegEntry->cbRegion & PAGE_OFFSET_MASK) == 0);
+    Assert((pRegEntry->cbRegion & GUEST_PAGE_OFFSET_MASK) == 0);
 
     int rcSem = IOM_LOCK_SHARED(pVM);
     RTGCPHYS GCPhys = pRegEntry->fMapped ? pRegEntry->GCPhysMapping : NIL_RTGCPHYS;
     if (rcSem == VINF_SUCCESS)
         IOM_UNLOCK_SHARED(pVM);
 
-    Assert(!(GCPhys              & PAGE_OFFSET_MASK));
-    Assert(!(pRegEntry->cbRegion & PAGE_OFFSET_MASK));
+    Assert(!(GCPhys              & GUEST_PAGE_OFFSET_MASK));
+    Assert(!(pRegEntry->cbRegion & GUEST_PAGE_OFFSET_MASK));
 
     /*
      * Call PGM to do the job work.
@@ -1265,8 +1265,8 @@ VMMDECL(int) IOMMmioResetRegion(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
             RTHCPHYS HCPhys;
             rc = PGMShwGetPage(pVCpu, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
             Assert(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
-            cb     -= PAGE_SIZE;
-            GCPhys += PAGE_SIZE;
+            cb     -= RT_MIN(GUEST_PAGE_SIZE, HOST_PAGE_SIZE);
+            GCPhys += RT_MIN(GUEST_PAGE_SIZE, HOST_PAGE_SIZE);
         }
     }
 # endif

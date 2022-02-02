@@ -1617,14 +1617,14 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
             /* Allow all port IO, so that port IO instructions do not cause
                exceptions and would instead cause a VM-exit (based on VT-x's
                IO bitmap which we currently configure to always cause an exit). */
-            memset(pVM->hm.s.vmx.pRealModeTSS + 1, 0, PAGE_SIZE * 2);
+            memset(pVM->hm.s.vmx.pRealModeTSS + 1, 0, X86_PAGE_SIZE * 2);
             *((unsigned char *)pVM->hm.s.vmx.pRealModeTSS + HM_VTX_TSS_SIZE - 2) = 0xff;
 
             /*
              * Construct a 1024 element page directory with 4 MB pages for the identity mapped
              * page table used in real and protected mode without paging with EPT.
              */
-            pVM->hm.s.vmx.pNonPagingModeEPTPageTable = (PX86PD)((char *)pVM->hm.s.vmx.pRealModeTSS + PAGE_SIZE * 3);
+            pVM->hm.s.vmx.pNonPagingModeEPTPageTable = (PX86PD)((char *)pVM->hm.s.vmx.pRealModeTSS + X86_PAGE_SIZE * 3);
             for (uint32_t i = 0; i < X86_PG_ENTRIES; i++)
             {
                 pVM->hm.s.vmx.pNonPagingModeEPTPageTable->a[i].u  = _4M * i;

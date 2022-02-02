@@ -335,7 +335,7 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(Walk)(PVMCPUCC pVCpu, RTGCPHYS GCPhysNeste
         pWalk->fEffective = fEffective;
 
         pWalk->fSucceeded   = true;
-        pWalk->GCPhys       = GST_GET_PTE_GCPHYS(Pte) | (GCPhysNested & PAGE_OFFSET_MASK);
+        pWalk->GCPhys       = GST_GET_PTE_GCPHYS(Pte) | (GCPhysNested & GUEST_PAGE_OFFSET_MASK);
         return VINF_SUCCESS;
     }
 }

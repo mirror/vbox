@@ -39,6 +39,23 @@
  * @{
  */
 
+/** The guest page size (x86). */
+#define GUEST_PAGE_SIZE             0x1000
+/** The guest page offset mask (x86).
+ * @note If one-complementing this, always put a typecast after the operator! */
+#define GUEST_PAGE_OFFSET_MASK      0xfff
+/** The guest page shift (x86). */
+#define GUEST_PAGE_SHIFT            12
+
+/** Host page size. */
+#define HOST_PAGE_SIZE              PAGE_SIZE
+/** Host page offset mask.
+ * @note If one-complementing this, always put a typecast after the operator! */
+#define HOST_PAGE_OFFSET_MASK       PAGE_OFFSET_MASK
+/** Host page shift. */
+#define HOST_PAGE_SHIFT             PAGE_SHIFT
+
+
 /** The maximum number of pages that can be allocated and mapped
  * by various MM, PGM and SUP APIs. */
 #if ARCH_BITS == 64
