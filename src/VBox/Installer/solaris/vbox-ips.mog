@@ -44,6 +44,9 @@ depend fmri=pkg:/system/font/truetype/dejavu type=require
 # Ignore dependencies of vboxshell.py
 <transform file path=opt/VirtualBox/vboxshell.py$ -> set pkg.depend.bypass-generate .*>
 
+# Ignore dependencies on libpython2.7.so* since it's getting phased out
+<transform file path=opt/VirtualBox/(64/)?VBoxPython2_7.*\.so.*$ -> set pkg.depend.bypass-generate libpython2\.7\.so.*>
+
 # Tweak: do not try to get the dependencies for libGL.so which is needed by Qt
 <transform file path=opt/VirtualBox/amd64/libQt5GuiVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
 <transform file path=opt/VirtualBox/amd64/libQt5PrintSupportVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
