@@ -410,7 +410,7 @@ void UINewVMHardwareContainer::retranslateUi()
 
 
 /*********************************************************************************************************************************
-*   UIWindowsISOImageSelector implementation.                                                                                   *
+*   UIWindowsISOImageSelector implementation.                                                                                    *
 *********************************************************************************************************************************/
 
 UIWindowsISOImageSelector::UIWindowsISOImageSelector(QWidget *pParent /* = 0 */)
