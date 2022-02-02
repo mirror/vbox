@@ -288,7 +288,7 @@ static int rtstrConvertCached(const void *pvInput, size_t cbInput, const char *p
         iconv_t hIconv = (iconv_t)*phIconv;
         if (hIconv == (iconv_t)-1)
         {
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD)
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD) || /* @bugref{10153}: Default to UTF-8: */ defined(RT_OS_DARWIN)
             /* Some systems don't grok empty codeset strings, so help them find the current codeset. */
             if (!*pszInputCS)
                 pszInputCS = rtStrGetLocaleCodeset();
@@ -419,7 +419,7 @@ static int rtStrConvertUncached(const void *pvInput, size_t cbInput, const char 
         /*
          * Create conversion object.
          */
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD)
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_NETBSD) || /* @bugref{10153}: Default to UTF-8: */ defined(RT_OS_DARWIN)
         /* Some systems don't grok empty codeset strings, so help them find the current codeset. */
         if (!*pszInputCS)
             pszInputCS = rtStrGetLocaleCodeset();
