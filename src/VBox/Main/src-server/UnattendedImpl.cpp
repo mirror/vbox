@@ -196,6 +196,8 @@ AssertCompileSize(OS2SYSLEVELENTRY, 0x80);
  */
 const Utf8Str &WIMImage::formatName(Utf8Str &r_strName) const
 {
+    /* We skip the mFlavor as it's typically part of the description already. */
+
     if (mVersion.isEmpty() && mArch.isEmpty() && mDefaultLanguage.isEmpty() && mLanguages.size() == 0)
         return mName;
 
@@ -718,6 +720,22 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
             || (pElmWindows = pChild->findChildElement("windows")) != NULL
             || (pElmWindows = pChild->findChildElement("Windows")) != NULL)
         {
+            /* Do edition/flags before the version so it can better determin
+               the OS version enum value.  Old windows version (vista) typically
+               doesn't have an EDITIONID element, so fall back on the FLAGS element
+               under IMAGE as it is pretty similar (case differences). */
+            const ElementNode *pElmEditionId;
+            if (   (pElmEditionId = pElmWindows->findChildElement("EDITIONID")) != NULL
+                || (pElmEditionId = pElmWindows->findChildElement("editionid")) != NULL
+                || (pElmEditionId = pElmWindows->findChildElement("Editionid")) != NULL
+                || (pElmEditionId = pElmWindows->findChildElement("EditionId")) != NULL
+                || (pElmEditionId = pChild->findChildElement("FLAGS")) != NULL
+                || (pElmEditionId = pChild->findChildElement("flags")) != NULL
+                || (pElmEditionId = pChild->findChildElement("Flags")) != NULL)
+                if (   pElmEditionId->getValue()
+                    && *pElmEditionId->getValue() != '\0')
+                    newImage.mFlavor = pElmEditionId->getValue();
+
             const ElementNode *pElmVersion;
             if (   (pElmVersion = pElmWindows->findChildElement("VERSION")) != NULL
                 || (pElmVersion = pElmWindows->findChildElement("version")) != NULL
@@ -739,6 +757,7 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
                 || (pElmLang = pElmWindows->findChildElement("Languages")) != NULL)
                 parseLangaguesElement(pElmLang, newImage);
         }
+
 
         imageList.append(newImage);
     }
@@ -3775,6 +3794,11 @@ bool Unattended::i_updateDetectedAttributeForImage(WIMImage const &rImage)
 
     if (rImage.mVersion.isNotEmpty())
         mStrDetectedOSVersion = rImage.mVersion;
+    else
+        fRet = false;
+
+    if (rImage.mFlavor.isNotEmpty())
+        mStrDetectedOSFlavor = rImage.mFlavor;
     else
         fRet = false;
 

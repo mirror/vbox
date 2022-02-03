@@ -39,6 +39,7 @@ struct WIMImage
     Utf8Str  mName;
     Utf8Str  mVersion;
     Utf8Str  mArch;
+    Utf8Str  mFlavor;
     RTCList<RTCString, RTCString *> mLanguages;
     Utf8Str  mDefaultLanguage;
     uint32_t mImageIndex;
