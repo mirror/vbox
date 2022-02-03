@@ -192,20 +192,11 @@ AssertCompileSize(OS2SYSLEVELENTRY, 0x80);
  */
 Utf8Str WIMImage::getNameAndVersion() const
 {
-    Utf8Str strNameAndVersion(mName);
-    /* Append the major version number if it is not empty. */
-    if (mVersionMajor.isEmpty())
-        return strNameAndVersion;
-    strNameAndVersion.appendPrintfNoThrow(" %s", mVersionMajor.c_str());
-    /* Same for the minor version number and build number. */
-    if (mVersionMinor.isEmpty())
-        return strNameAndVersion;
-    strNameAndVersion.appendPrintfNoThrow("-%s", mVersionMinor.c_str());
-    if (mVersionBuild.isEmpty())
-        return strNameAndVersion;
-    strNameAndVersion.appendPrintfNoThrow("-%s", mVersionBuild.c_str());
-    return strNameAndVersion;
+    if (mVersion.isEmpty())
+        return mName;
+    return Utf8StrFmt("%s (%s)", mName.c_str(), mVersion.c_str());
 }
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
@@ -304,6 +295,15 @@ HRESULT Unattended::detectIsoOS()
 /** @todo once UDF is implemented properly and we've tested this code a lot
  *        more, replace E_NOTIMPL with E_FAIL. */
 
+    /*
+     * Reset output state before we start
+     */
+    mStrDetectedOSTypeId.setNull();
+    mStrDetectedOSVersion.setNull();
+    mStrDetectedOSFlavor.setNull();
+    mDetectedOSLanguages.clear();
+    mStrDetectedOSHints.setNull();
+    mDetectedImages.clear();
 
     /*
      * Open the ISO.
@@ -431,7 +431,7 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
  *     <MAJOR>10</MAJOR>
  *     <MINOR>0</MINOR>
  *     <BUILD>19041</BUILD>
- *     ......
+ *     <SPBUILD>1</SPBUILD>
  * </VERSION>
  * @endverbatim
  * @param   pNode          Points to the vesion XML node,
@@ -439,40 +439,73 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
  */
 static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
 {
-    /* Major part. */
-    const ElementNode *pMajorNode = pNode->findChildElement("MAJOR");
+    /* Major part: */
+    const xml::ElementNode *pMajorNode = pNode->findChildElement("MAJOR");
     if (!pMajorNode)
         pMajorNode = pNode->findChildElement("major");
+    if (!pMajorNode)
+        pMajorNode = pNode->findChildElement("Major");
     if (pMajorNode)
-        image.mVersionMajor = pMajorNode->getValue();
+    {
+        const char * const pszMajor = pMajorNode->getValue();
+        if (pszMajor && *pszMajor)
+        {
+            /* Minor part: */
+            const ElementNode *pMinorNode = pNode->findChildElement("MINOR");
+            if (!pMinorNode)
+                pMinorNode = pNode->findChildElement("minor");
+            if (!pMinorNode)
+                pMinorNode = pNode->findChildElement("Minor");
+            if (pMinorNode)
+            {
+                const char * const pszMinor = pMinorNode->getValue();
+                if (pszMinor && *pszMinor)
+                {
+                    /* Build: */
+                    const ElementNode *pBuildNode = pNode->findChildElement("BUILD");
+                    if (!pBuildNode)
+                        pBuildNode = pNode->findChildElement("build");
+                    if (!pBuildNode)
+                        pBuildNode = pNode->findChildElement("Build");
+                    if (pBuildNode)
+                    {
+                        const char * const pszBuild = pBuildNode->getValue();
+                        if (pszBuild && *pszBuild)
+                        {
+                            /* SPBuild: */
+                            const ElementNode *pSpBuildNode = pNode->findChildElement("SPBUILD");
+                            if (!pSpBuildNode)
+                                pSpBuildNode = pNode->findChildElement("spbuild");
+                            if (!pSpBuildNode)
+                                pSpBuildNode = pNode->findChildElement("Spbuild");
+                            if (!pSpBuildNode)
+                                pSpBuildNode = pNode->findChildElement("SpBuild");
+                            if (pSpBuildNode && pSpBuildNode->getValue() && *pSpBuildNode->getValue())
+                                image.mVersion.printf("%s.%s.%s.%s", pszMajor, pszMinor, pszBuild, pSpBuildNode->getValue());
+                            else
+                                image.mVersion.printf("%s.%s.%s", pszMajor, pszMinor, pszBuild);
+                        }
+                    }
 
-    /* Minor part. */
-    const ElementNode *pMinorNode = pNode->findChildElement("MINOR");
-    if (!pMinorNode)
-        pMinorNode = pNode->findChildElement("minor");
-    if (pMinorNode)
-        image.mVersionMinor = pMinorNode->getValue();
-
-    /* Build part. */
-    const ElementNode *pBuildNode = pNode->findChildElement("BUILD");
-    if (!pBuildNode)
-        pBuildNode = pNode->findChildElement("build");
-    if (pBuildNode)
-        image.mVersionBuild = pBuildNode->getValue();
+                }
+            }
+        }
+    }
 }
-
 
 /**
  * Parses XML tree assuming th following structure
  * @verbatim
  * <WIM>
- *     ....
+ *     ...
  *     <IMAGE INDEX="1">
- *     ....
- *     <DISPLAYNAME>Windows 10 Home</DISPLAYNAME>
- *     <VERSION>
- *         ....
- *     </VERSION>
+ *         ...
+ *         <DISPLAYNAME>Windows 10 Home</DISPLAYNAME>
+ *         <WINDOWS>
+ *             <VERSION>
+ *                 ...
+ *             </VERSION>
+ *         </WINDOWS>
  *     </IMAGE>
  * </WIM>
  * @endverbatim
@@ -496,15 +529,11 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
         if (!pChild)
             continue;
 
-        const char *pszIndex = pChild->findAttributeValue("INDEX");
-        if (!pszIndex)
-            pszIndex = pChild->findAttributeValue("index");
-        if (!pszIndex)
-            continue;
-        uint32_t pu32 = 0;
-        int vrc = RTStrToUInt32Full(pszIndex, 10 /* uBase */, &pu32);
+        WIMImage newImage;
 
-        if (!RT_SUCCESS(vrc))
+        if (   !pChild->getAttributeValue("INDEX", &newImage.mImageIndex)
+            && !pChild->getAttributeValue("index", &newImage.mImageIndex)
+            && !pChild->getAttributeValue("Index", &newImage.mImageIndex))
             continue;
 
         const ElementNode *pDisplayDescriptionNode = pChild->findChildElement("DISPLAYNAME");
@@ -512,17 +541,24 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
             pDisplayDescriptionNode = pChild->findChildElement("displayname");
         if (!pDisplayDescriptionNode)
             continue;
-        WIMImage newImage;
         newImage.mName = pDisplayDescriptionNode->getValue();
         if (newImage.mName.isEmpty())
             continue;
 
-        newImage.mImageIndex = pu32;
-        const ElementNode *pVersionElement = pChild->findChildElement("VERSION");
-        if (!pVersionElement)
-            pVersionElement = pChild->findChildElement("version");
-        if (pVersionElement)
-            parseVersionElement(pVersionElement, newImage);
+        const ElementNode *pElmWindows = pChild->findChildElement("WINDOWS");
+        if (!pElmWindows)
+            pElmWindows = pChild->findChildElement("windows");
+        if (!pElmWindows)
+            pElmWindows = pChild->findChildElement("Windows");
+        if (pElmWindows)
+        {
+            const ElementNode *pVersionElement = pElmWindows->findChildElement("VERSION");
+            if (!pVersionElement)
+                pVersionElement = pChild->findChildElement("version");
+            if (pVersionElement)
+                parseVersionElement(pVersionElement, newImage);
+        }
+
         imageList.append(newImage);
     }
 }
@@ -576,27 +612,36 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
             /* If the xml data is not compressed, xml data is not empty, and not too big. */
             if (    (header.XmlData.bFlags & RESHDR_FLAGS_METADATA)
                 && !(header.XmlData.bFlags & RESHDR_FLAGS_COMPRESSED)
-                &&  header.XmlData.cbOrginal != 0
-                &&  header.XmlData.cbOrginal < _32M
-                &&  header.XmlData.cbOrginal == header.XmlData.cb)
+                &&  header.XmlData.cbOriginal >= 32
+                &&  header.XmlData.cbOriginal < _32M
+                &&  header.XmlData.cbOriginal == header.XmlData.cb)
             {
-                char *pXmlBuf = (char*)RTMemAlloc(header.XmlData.cbOrginal);
-                if (pXmlBuf)
+                size_t const cbXmlData = (size_t)header.XmlData.cbOriginal;
+                char *pachXmlBuf = (char *)RTMemTmpAlloc(cbXmlData);
+                if (pachXmlBuf)
                 {
-                    vrc = RTVfsFileReadAt(hVfsFile, (RTFOFF)header.XmlData.off, pXmlBuf, (size_t)header.XmlData.cbOrginal, NULL);
+                    vrc = RTVfsFileReadAt(hVfsFile, (RTFOFF)header.XmlData.off, pachXmlBuf, cbXmlData, NULL);
                     if (RT_SUCCESS(vrc))
                     {
+                        LogRel2(("XML Data (%#zx bytes):\n%32.*Rhxd\n", cbXmlData, cbXmlData, pachXmlBuf));
+
+                        /* Parse the XML: */
                         xml::Document doc;
                         xml::XmlMemParser parser;
-                        RTCString fileName = "dump";
                         try
                         {
-                            parser.read(pXmlBuf, header.XmlData.cbOrginal, fileName, doc);
+                            RTCString strFileName = "source/install.wim";
+                            parser.read(pachXmlBuf, cbXmlData, strFileName, doc);
                         }
                         catch (xml::XmlError &rErr)
                         {
                             LogRel(("Unattended: An error has occured during XML parsing: %s\n", rErr.what()));
                             vrc = VERR_XAR_TOC_XML_PARSE_ERROR;
+                        }
+                        catch (std::bad_alloc &)
+                        {
+                            LogRel(("Unattended: std::bad_alloc\n"));
+                            vrc = VERR_NO_MEMORY;
                         }
                         catch (...)
                         {
@@ -605,11 +650,19 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                         }
                         if (RT_SUCCESS(vrc))
                         {
+                            /* Extract the information we need from the XML document: */
                             xml::ElementNode *pElmRoot = doc.getRootElement();
                             if (pElmRoot)
                             {
-                                mDetectedImages.clear();
-                                parseWimXMLData(pElmRoot, mDetectedImages);
+                                Assert(mDetectedImages.size() == 0);
+                                try
+                                {
+                                    parseWimXMLData(pElmRoot, mDetectedImages);
+                                }
+                                catch (std::bad_alloc &)
+                                {
+                                    vrc = VERR_NO_MEMORY;
+                                }
                             }
                             else
                                 LogRel(("Unattended: No root element found in XML Metadata of install.wim\n"));
@@ -617,13 +670,23 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                     }
                     else
                         LogRel(("Unattended: Failed during reading XML Metadata out of install.wim\n"));
-                    RTMemFree(pXmlBuf);
+                    RTMemTmpFree(pachXmlBuf);
+                }
+                else
+                {
+                    LogRel(("Unattended: Failed to allocate %#zx bytes for XML Metadata\n", cbXmlData));
+                    vrc = VERR_NO_TMP_MEMORY;
                 }
             }
             else
-                LogRel(("Unattended: XML Metadata of install.wim is either compressed, empty, or too big\n"));
+                LogRel(("Unattended: XML Metadata of install.wim is either compressed, empty, or too big (bFlags=%#x cbOriginal=%#RX64 cb=%#RX64)\n",
+                        header.XmlData.bFlags, header.XmlData.cbOriginal, header.XmlData.cb));
         }
         RTVfsFileRelease(hVfsFile);
+
+        /* Bail out if we ran out of memory here. */
+        if (vrc == VERR_NO_MEMORY || vrc == VERR_NO_TMP_MEMORY)
+            return setErrorBoth(E_OUTOFMEMORY, vrc, tr("Out of memory"));
     }
 
     const char *pszVersion = NULL;
