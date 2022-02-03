@@ -38,6 +38,7 @@ struct WIMImage
 {
     Utf8Str  mName;
     Utf8Str  mVersion;
+    Utf8Str  mArch;
     uint32_t mImageIndex;
     Utf8Str  getNameAndVersion() const;
 };

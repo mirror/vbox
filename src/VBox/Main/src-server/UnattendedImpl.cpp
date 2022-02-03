@@ -192,9 +192,13 @@ AssertCompileSize(OS2SYSLEVELENTRY, 0x80);
  */
 Utf8Str WIMImage::getNameAndVersion() const
 {
-    if (mVersion.isEmpty())
+    if (mVersion.isEmpty() && mArch.isEmpty())
         return mName;
-    return Utf8StrFmt("%s (%s)", mName.c_str(), mVersion.c_str());
+    if (mArch.isEmpty())
+        return Utf8StrFmt("%s (%s)", mName.c_str(), mVersion.c_str());
+    if (mVersion.isEmpty())
+        return Utf8StrFmt("%s (%s)", mName.c_str(), mArch.c_str());
+    return Utf8StrFmt("%s (%s / %s)", mName.c_str(), mVersion.c_str(), mArch.c_str());
 }
 
 
@@ -586,15 +590,18 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
                 pElmArch = pElmWindows->findChildElement("Arch");
             if (pElmArch)
             {
-                const char *pszValue = pElmArch->getValue();
-                if (pszValue && *pszValue)
+                const char *pszArch = pElmArch->getValue();
+                if (pszArch && *pszArch)
                 {
                     uint32_t uArch;
-                    int vrc = RTStrToUInt32Ex(pszValue, NULL, 10 /*uBase*/, &uArch);
-                    if (RT_SUCCESS(vrc) && vrc != VWRN_NUMBER_TOO_BIG && vrc != VWRN_NEGATIVE_UNSIGNED)
-                    {
-
-                    }
+                    int vrc = RTStrToUInt32Ex(pszArch, NULL, 10 /*uBase*/, &uArch);
+                    if (   RT_SUCCESS(vrc)
+                        && vrc != VWRN_NUMBER_TOO_BIG
+                        && vrc != VWRN_NEGATIVE_UNSIGNED
+                        && uArch < RT_ELEMENTS(s_apszArchs))
+                        newImage.mArch = s_apszArchs[uArch];
+                    else
+                        LogRel(("Unattended: bogus ARCH element value: '%s'\n", pszArch));
                 }
             }
         }
