@@ -1126,7 +1126,7 @@ DECLINLINE(int) padr_mcast(PDPNICSTATE pThis, const uint8_t *buf, int *mcast_typ
      */
     if (pThis->core.rcr.AM && ETHER_IS_MULTICAST(hdr->DstMac.au8))
     {
-        int             i;
+        unsigned        i;
         const uint8_t   *p = buf;
         unsigned        crc_frag, crc_rev;
         unsigned        ma_bit_mask, ma_byte_idx;
@@ -3335,7 +3335,8 @@ static uint32_t elGaIoRead(PDPNICSTATE pThis, uint32_t addr)
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) neIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+neIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
@@ -3377,7 +3378,8 @@ PDMBOTHCBDECL(int) neIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) wdIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+wdIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
@@ -3414,7 +3416,8 @@ PDMBOTHCBDECL(int) wdIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) elIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+elIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
@@ -3451,7 +3454,8 @@ PDMBOTHCBDECL(int) elIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(int) dp8390CoreIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+dp8390CoreIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
@@ -3491,7 +3495,8 @@ PDMBOTHCBDECL(int) dp8390CoreIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) neIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+neIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
@@ -3533,7 +3538,8 @@ PDMBOTHCBDECL(int) neIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) wdIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+wdIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
@@ -3568,7 +3574,8 @@ PDMBOTHCBDECL(int) wdIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) elIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+elIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
@@ -3603,7 +3610,8 @@ PDMBOTHCBDECL(int) elIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(int) dp8390CoreIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+dp8390CoreIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
@@ -3836,7 +3844,7 @@ static DECLCALLBACK(uint32_t) elnk3R3DMAXferHandler(PPDMDEVINS pDevIns, void *op
         uint16_t    cbToSkip = 0;
 
         /* Clip transfer size so it falls within local RAM. */
-        if ((uDmaAddr - 0x2000 + cbToXfer) > sizeof(pThis->abLocalRAM))
+        if ((uDmaAddr - 0x2000 + cbToXfer) > (int)sizeof(pThis->abLocalRAM))
         {
             /* Calculate how much to skip anything at the end. */
             cbToSkip = sizeof(pThis->abLocalRAM) - (0x2000 - uDmaAddr + cbToXfer);
@@ -3985,8 +3993,8 @@ static DECLCALLBACK(void) dpNicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     &pThis->MacConfigured,
                     pDevIns->fR0Enabled ? "RZ" : "");
 
-    /* In case of deadlocks, this should help identify the cause. */
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_INTERNAL_ERROR);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     pHlp->pfnPrintf(pHlp, "\nDP3890 NIC Core\n");
     pHlp->pfnPrintf(pHlp, "   CR=%02X: %s%s%s RD=%d PS=%d\n", pCore->CR,
@@ -4789,7 +4797,8 @@ static DECLCALLBACK(void) dpNicDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
 
     AssertLogRelReturnVoid(iLUN == 0);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     /*
      * Zero some important members.
@@ -4815,7 +4824,8 @@ static DECLCALLBACK(int) dpNicAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
-    PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
+    int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
+    PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     /*
      * Attach the driver.
