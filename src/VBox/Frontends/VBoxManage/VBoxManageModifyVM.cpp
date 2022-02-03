@@ -1571,11 +1571,11 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "3C503"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_3C503));
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_ELNK2));
                 }
                 else if (!RTStrICmp(ValueUnion.psz, "3C501"))
                 {
-                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_3C501));
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_ELNK1));
                 }
                 else
                 {

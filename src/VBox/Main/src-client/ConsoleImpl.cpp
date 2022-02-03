@@ -1570,9 +1570,9 @@ inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterT
         case NetworkAdapterType_NE2000:
         case NetworkAdapterType_WD8003:
         case NetworkAdapterType_WD8013:
-        case NetworkAdapterType_3C503:
+        case NetworkAdapterType_ELNK2:
             return "dp8390";
-        case NetworkAdapterType_3C501:
+        case NetworkAdapterType_ELNK1:
             return "3c501";
         default:
             AssertFailed();

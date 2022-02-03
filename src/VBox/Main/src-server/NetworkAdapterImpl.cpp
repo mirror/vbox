@@ -249,8 +249,8 @@ HRESULT NetworkAdapter::setAdapterType(NetworkAdapterType_T aAdapterType)
         case NetworkAdapterType_NE2000:
         case NetworkAdapterType_WD8003:
         case NetworkAdapterType_WD8013:
-        case NetworkAdapterType_3C503:
-        case NetworkAdapterType_3C501:
+        case NetworkAdapterType_ELNK2:
+        case NetworkAdapterType_ELNK1:
             break;
         default:
             return setError(E_FAIL,

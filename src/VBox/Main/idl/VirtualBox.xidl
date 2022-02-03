@@ -20569,10 +20569,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="WD8003"                value="11">
         <desc>WD/SMC EtherCard Plus network card (WD8003E).</desc>
     </const>
-    <const name="3C503"                 value="12">
+    <const name="ELNK2"                value="12">
         <desc>3Com EtherLink II network card (3C503).</desc>
     </const>
-    <const name="3C501"                 value="13">
+    <const name="ELNK1"                 value="13">
         <desc>3Com EtherLink network card (3C501/3C500).</desc>
     </const>
   </enum>
