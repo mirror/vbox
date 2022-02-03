@@ -2805,6 +2805,28 @@ typedef struct PGMSTATS
  */
 typedef struct PGM
 {
+    /** The zero page. */
+    uint8_t                         abZeroPg[RT_MAX(HOST_PAGE_SIZE, GUEST_PAGE_SIZE)];
+    /** The MMIO placeholder page. */
+    uint8_t                         abMmioPg[RT_MAX(HOST_PAGE_SIZE, GUEST_PAGE_SIZE)];
+
+    /** @name   The zero page (abPagePg).
+     * @{ */
+    /** The host physical address of the zero page. */
+    RTHCPHYS                        HCPhysZeroPg;
+    /** @}*/
+
+    /** @name   The Invalid MMIO page (abMmioPg).
+     * This page is filled with 0xfeedface.
+     * @{ */
+    /** The host physical address of the invalid MMIO page. */
+    RTHCPHYS                        HCPhysMmioPg;
+    /** The host pysical address of the invalid MMIO page plus all invalid
+     * physical address bits set.  This is used to trigger X86_TRAP_PF_RSVD.
+     * @remarks Check fLessThan52PhysicalAddressBits before use. */
+    RTHCPHYS                        HCPhysInvMmioPg;
+    /** @} */
+
     /** @cfgm{/RamPreAlloc, boolean, false}
      * Indicates whether the base RAM should all be allocated before starting
      * the VM (default), or if it should be allocated when first written to.
@@ -2923,7 +2945,7 @@ typedef struct PGM
      *  owner via pgmPhysGCPhys2CCPtrInternalDepr. */
     uint32_t                        cDeprecatedPageLocks;
     /** Alignment padding. */
-    uint32_t                        au32Alignment2[1];
+    uint32_t                        au32Alignment2[1+2];
 
     /** PGM critical section.
      * This protects the physical, ram ranges, and the page flag updating (some of
@@ -2959,33 +2981,6 @@ typedef struct PGM
     PGMPAGER3MAPTLB                 PhysTlbR3;
     /** The page mapping TLB for ring-0. */
     PGMPAGER0MAPTLB                 PhysTlbR0;
-
-    /** @name   The zero page.
-     * @{ */
-    /** The host physical address of the zero page. */
-    RTHCPHYS                        HCPhysZeroPg;
-    /** The ring-3 mapping of the zero page. */
-    RTR3PTR                         pvZeroPgR3;
-    /** The ring-0 mapping of the zero page. */
-    RTR0PTR                         pvZeroPgR0;
-    /** @}*/
-
-    /** @name   The Invalid MMIO page.
-     * This page is filled with 0xfeedface.
-     * @{ */
-    /** The host physical address of the invalid MMIO page. */
-    RTHCPHYS                        HCPhysMmioPg;
-    /** The host pysical address of the invalid MMIO page plus all invalid
-     * physical address bits set.  This is used to trigger X86_TRAP_PF_RSVD.
-     * @remarks Check fLessThan52PhysicalAddressBits before use. */
-    RTHCPHYS                        HCPhysInvMmioPg;
-    /** The ring-3 mapping of the invalid MMIO page. */
-    RTR3PTR                         pvMmioPgR3;
-#if HC_ARCH_BITS == 32
-    RTR3PTR                         R3PtrAlignment4;
-#endif
-    /** @} */
-
 
     /** The number of handy pages. */
     uint32_t                        cHandyPages;

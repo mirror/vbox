@@ -1426,7 +1426,7 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
     if (VM_IS_NEM_ENABLED(pVM))
     {
         uint8_t u2State = PGM_PAGE_GET_NEM_STATE(pPage);
-        NEMHCNotifyPhysPageChanged(pVM, GCPhys, HCPhysPrev, pVM->pgm.s.HCPhysZeroPg, pVM->pgm.s.pvZeroPgR3,
+        NEMHCNotifyPhysPageChanged(pVM, GCPhys, HCPhysPrev, pVM->pgm.s.HCPhysZeroPg, pVM->pgm.s.abZeroPg,
                                    pgmPhysPageCalcNemProtection(pPage, enmNewType), enmNewType, &u2State);
         PGM_PAGE_SET_NEM_STATE(pPage, u2State);
     }

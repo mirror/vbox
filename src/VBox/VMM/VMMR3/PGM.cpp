@@ -929,37 +929,22 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pVM->pgm.s.pTreesR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pTreesR3);
 
     /*
-     * Allocate the zero page.
+     * Setup the zero page.
      */
-    if (RT_SUCCESS(rc))
-    {
-        rc = MMHyperAlloc(pVM, RT_MAX(GUEST_PAGE_SIZE, HOST_PAGE_SIZE), GUEST_PAGE_SIZE, MM_TAG_PGM, &pVM->pgm.s.pvZeroPgR3);
-        if (RT_SUCCESS(rc))
-        {
-            pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
-            pVM->pgm.s.HCPhysZeroPg = !fDriverless ? MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvZeroPgR3)
-                                    : _4G - GUEST_PAGE_SIZE * 2 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
-            AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
-        }
-    }
+    RT_ZERO(pVM->pgm.s.abZeroPg);
+    pVM->pgm.s.HCPhysZeroPg = !fDriverless ? MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.abZeroPg)
+                            : _4G - GUEST_PAGE_SIZE * 2 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
+    AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
 
     /*
-     * Allocate the invalid MMIO page.
+     * Setup the invalid MMIO page.
      * (The invalid bits in HCPhysInvMmioPg are set later on init complete.)
      */
-    if (RT_SUCCESS(rc))
-    {
-        rc = MMHyperAlloc(pVM, RT_MAX(GUEST_PAGE_SIZE, HOST_PAGE_SIZE), GUEST_PAGE_SIZE,
-                          MM_TAG_PGM, &pVM->pgm.s.pvMmioPgR3);
-        if (RT_SUCCESS(rc))
-        {
-            ASMMemFill32(pVM->pgm.s.pvMmioPgR3, RT_MAX(GUEST_PAGE_SIZE, HOST_PAGE_SIZE), 0xfeedface);
-            pVM->pgm.s.HCPhysMmioPg = !fDriverless ? MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.pvMmioPgR3)
-                                    : _4G - GUEST_PAGE_SIZE * 3 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
-            AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS);
-            pVM->pgm.s.HCPhysInvMmioPg = pVM->pgm.s.HCPhysMmioPg;
-        }
-    }
+    ASMMemFill32(pVM->pgm.s.abMmioPg, sizeof(pVM->pgm.s.abMmioPg), 0xfeedface);
+    pVM->pgm.s.HCPhysMmioPg = !fDriverless ? MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.abMmioPg)
+                            : _4G - GUEST_PAGE_SIZE * 3 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
+    AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS);
+    pVM->pgm.s.HCPhysInvMmioPg = pVM->pgm.s.HCPhysMmioPg;
 
     /*
      * Register the physical access handler protecting ROMs.
@@ -1770,12 +1755,6 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
      */
     if (pVM->pgm.s.pRamRangesXR3)
         pgmR3PhysRelinkRamRanges(pVM);
-
-    /*
-     * The Zero page.
-     */
-    pVM->pgm.s.pvZeroPgR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pvZeroPgR3);
-    AssertRelease(pVM->pgm.s.pvZeroPgR0 != NIL_RTR0PTR || SUPR3IsDriverless());
 
     /*
      * The page pool.

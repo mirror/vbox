@@ -30,6 +30,7 @@
 
 struc GVMCPU
         .s                  resb VMCPU_size
+
         .idCpu              resd 1
 
         alignb 8
@@ -53,12 +54,13 @@ struc GVMCPU
         .vmmr0              resb 896
         alignb 64
         .pgmr0              resb 64
-        alignb 4096
+        alignb 16384
 endstruc
 
 
 struc GVM
         .s                  resb VM_size
+
         .u32Magic           resd 1
         .hSelf              resd 1
         alignb 8
@@ -92,10 +94,10 @@ struc GVM
         alignb 64
         .tmr0               resb 128
 
-        times ((($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB + 4095) & ~4095) - ($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB)) resb 1
+        times ((($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB + 16383) & ~16383) - ($ + VMM_MAX_CPU_COUNT * RTR0PTR_CB)) resb 1
         .apCpusR0           RTR0PTR_RES VMM_MAX_CPU_COUNT
 
-        alignb 4096
+        alignb 16384
         .aCpus              resb GVMCPU_size
 endstruc
 

@@ -315,11 +315,14 @@ typedef struct VMCPU
 #endif
         uint8_t             padding[40960];      /* multiple of 4096 */
     } em;
+
+    /** Align the structure size on 16384 boundrary for arm64 purposes. */
+    uint8_t                 abStructPadding[4096];
 } VMCPU;
 
 
 #ifndef VBOX_FOR_DTRACE_LIB
-AssertCompileSizeAlignment(VMCPU, 4096);
+AssertCompileSizeAlignment(VMCPU, 16384);
 
 /** @name Operations on VMCPU::enmState
  * @{ */
@@ -1255,8 +1258,18 @@ typedef struct VM
 #endif
         /** @todo this is rather bloated because of static MSR range allocation.
          *        Probably a good idea to move it to a separate R0 allocation... */
-        uint8_t     padding[8832 + 128*8192];    /* multiple of 64 */
+        uint8_t     padding[8832 + 128*8192 + 0x1d00]; /* multiple of 64 */
     } cpum;
+
+    /** PGM part.
+     * @note 16384 aligned for zero and mmio page storage. */
+    union
+    {
+#ifdef VMM_INCLUDED_SRC_include_PGMInternal_h
+        struct PGM  s;
+#endif
+        uint8_t     padding[53888];     /* multiple of 64 */
+    } pgm;
 
     /** VMM part. */
     union
@@ -1266,15 +1279,6 @@ typedef struct VM
 #endif
         uint8_t     padding[1600];      /* multiple of 64 */
     } vmm;
-
-    /** PGM part. */
-    union
-    {
-#ifdef VMM_INCLUDED_SRC_include_PGMInternal_h
-        struct PGM  s;
-#endif
-        uint8_t     padding[21120];     /* multiple of 64 */
-    } pgm;
 
     /** HM part. */
     union
@@ -1453,13 +1457,18 @@ typedef struct VM
     } R0Stats;
 
     /** Padding for aligning the structure size on a page boundrary. */
-    uint8_t         abAlignment2[1752 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[6616 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 
     /* ---- end small stuff ---- */
 
     /** Array of VMCPU ring-3 pointers. */
     PVMCPUR3        apCpusR3[VMM_MAX_CPU_COUNT];
+
+    /* This point is aligned on a 16384 boundrary (for arm64 purposes). */
 } VM;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSizeAlignment(VM, 16384);
+#endif
 
 
 #ifdef IN_RC

@@ -132,9 +132,9 @@ typedef struct GVMCPU
 
     /** Padding the structure size to page boundrary. */
 #ifdef VBOX_WITH_NEM_R0
-    uint8_t                 abPadding3[4096 - 64*2 - 256 - 1024 - 64 - 896 - 64];
+    uint8_t                 abPadding3[16384 - 64*2 - 256 - 1024 - 64 - 896 - 64];
 #else
-    uint8_t                 abPadding3[4096 - 64*2 - 256 - 1024 - 896 - 64];
+    uint8_t                 abPadding3[16384 - 64*2 - 256 - 1024 - 896 - 64];
 #endif
 } GVMCPU;
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
@@ -143,12 +143,12 @@ typedef struct GVMCPU
 #if RT_GNUC_PREREQ(4, 3) && defined(__cplusplus)
 # pragma GCC diagnostic ignored "-Winvalid-offsetof"
 #endif
-AssertCompileMemberAlignment(GVMCPU, idCpu,  4096);
+AssertCompileMemberAlignment(GVMCPU, idCpu,  16384);
 AssertCompileMemberAlignment(GVMCPU, gvmm,   64);
 #ifdef VBOX_WITH_NEM_R0
 AssertCompileMemberAlignment(GVMCPU, nemr0,  64);
 #endif
-AssertCompileSizeAlignment(GVMCPU,           4096);
+AssertCompileSizeAlignment(GVMCPU,           16384);
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
 # pragma GCC diagnostic pop
 #endif
@@ -299,9 +299,9 @@ typedef struct GVM
 
     /** Padding so aCpus starts on a page boundrary.  */
 #ifdef VBOX_WITH_NEM_R0
-    uint8_t         abPadding2[4096*2 - 64 - 256 - 256 - 1024 - 256 - 64 - 2176 - 640 - 512 - 64 - 1024 - 128 - 704 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
+    uint8_t         abPadding2[16384 - 64 - 4352 - 1024 - 256 - 256 - 64 - 2176 - 640 - 512 - 64 - 1024 - 128 - 704 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
 #else
-    uint8_t         abPadding2[4096*2 - 64 - 256 - 256 - 1024       - 64 - 2176 - 640 - 512 - 64 - 1024 - 128 - 704 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
+    uint8_t         abPadding2[16384 - 64 - 4352 - 1024 - 256 -     - 64 - 2176 - 640 - 512 - 64 - 1024 - 128 - 704 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
 #endif
 
     /** For simplifying CPU enumeration in VMMAll code. */
@@ -325,8 +325,8 @@ AssertCompileMemberAlignment(GVM, nemr0,    64);
 #endif
 AssertCompileMemberAlignment(GVM, rawpci,   64);
 AssertCompileMemberAlignment(GVM, pdmr0,    64);
-AssertCompileMemberAlignment(GVM, aCpus,    4096);
-AssertCompileSizeAlignment(GVM,             4096);
+AssertCompileMemberAlignment(GVM, aCpus,    16384);
+AssertCompileSizeAlignment(GVM,             16384);
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
 # pragma GCC diagnostic pop
 #endif
