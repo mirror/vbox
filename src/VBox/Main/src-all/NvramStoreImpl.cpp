@@ -659,42 +659,50 @@ int NvramStore::i_saveStoreAsTar(const char *pszPath)
  */
 int NvramStore::i_saveStore(void)
 {
-    /*
-     * Skip creating the tar archive if only the UEFI NVRAM content is available in order
-     * to maintain backwards compatibility. As soon as there is more than one entry or
-     * it doesn't belong to the UEFI the tar archive will be created.
-     */
     int rc = VINF_SUCCESS;
 
     Utf8Str strTmp;
     NvramStore::getNonVolatileStorageFile(strTmp);
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    if (   m->bd->mapNvram.size() == 1
-        && m->bd->mapNvram.find(Utf8Str("efi/nvram")) != m->bd->mapNvram.end())
+    /*
+     * Only store the NVRAM content if the path is not empty, if it is
+     * this means the VM was just created and the store was nnot saved yet,
+     * see @bugref{10191}.
+     */
+    if (strTmp.isNotEmpty())
     {
-        RTVFSFILE hVfsFileNvram = m->bd->mapNvram[Utf8Str("efi/nvram")];
-
-        rc = RTVfsFileSeek(hVfsFileNvram, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
-        AssertRC(rc); RT_NOREF(rc);
-
-        RTVFSIOSTREAM hVfsIosDst;
-        rc = RTVfsIoStrmOpenNormal(strTmp.c_str(), RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
-                                   &hVfsIosDst);
-        if (RT_SUCCESS(rc))
+        /*
+         * Skip creating the tar archive if only the UEFI NVRAM content is available in order
+         * to maintain backwards compatibility. As soon as there is more than one entry or
+         * it doesn't belong to the UEFI the tar archive will be created.
+         */
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (   m->bd->mapNvram.size() == 1
+            && m->bd->mapNvram.find(Utf8Str("efi/nvram")) != m->bd->mapNvram.end())
         {
-            RTVFSIOSTREAM hVfsIosSrc = RTVfsFileToIoStream(hVfsFileNvram);
-            Assert(hVfsIosSrc != NIL_RTVFSIOSTREAM);
+            RTVFSFILE hVfsFileNvram = m->bd->mapNvram[Utf8Str("efi/nvram")];
 
-            rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, 0 /*cbBufHint*/);
+            rc = RTVfsFileSeek(hVfsFileNvram, 0 /*offSeek*/, RTFILE_SEEK_BEGIN, NULL /*poffActual*/);
+            AssertRC(rc); RT_NOREF(rc);
 
-            RTVfsIoStrmRelease(hVfsIosSrc);
-            RTVfsIoStrmRelease(hVfsIosDst);
+            RTVFSIOSTREAM hVfsIosDst;
+            rc = RTVfsIoStrmOpenNormal(strTmp.c_str(), RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
+                                       &hVfsIosDst);
+            if (RT_SUCCESS(rc))
+            {
+                RTVFSIOSTREAM hVfsIosSrc = RTVfsFileToIoStream(hVfsFileNvram);
+                Assert(hVfsIosSrc != NIL_RTVFSIOSTREAM);
+
+                rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, 0 /*cbBufHint*/);
+
+                RTVfsIoStrmRelease(hVfsIosSrc);
+                RTVfsIoStrmRelease(hVfsIosDst);
+            }
         }
+        else if (m->bd->mapNvram.size())
+            rc = i_saveStoreAsTar(strTmp.c_str());
+        /* else: No NVRAM content to store so we are done here. */
     }
-    else if (m->bd->mapNvram.size())
-        rc = i_saveStoreAsTar(strTmp.c_str());
-    /* else: No NVRAM content to store so we are done here. */
 
     return rc;
 }
