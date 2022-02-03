@@ -20557,6 +20557,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Am79C960"              value="7">
         <desc>AMD PCnet-ISA/NE2100 network card (Am79C960).</desc>
     </const>
+    <const name="NE2000"                value="8">
+        <desc>Novell NE2000 network card (NE2000).</desc>
+    </const>
+    <const name="NE1000"                value="9">
+        <desc>Novell NE1000 network card (NE1000).</desc>
+    </const>
+    <const name="WD8013"                value="10">
+        <desc>WD/SMC EtherCard Plus 16 network card (WD8013EBT).</desc>
+    </const>
+    <const name="WD8003"                value="11">
+        <desc>WD/SMC EtherCard Plus network card (WD8003E).</desc>
+    </const>
+    <const name="3C503"                 value="12">
+        <desc>3Com EtherLink II network card (3C503).</desc>
+    </const>
+    <const name="3C501"                 value="13">
+        <desc>3Com EtherLink network card (3C501/3C500).</desc>
+    </const>
   </enum>
 
   <enum

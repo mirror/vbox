@@ -1566,6 +1566,14 @@ inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterT
         case NetworkAdapterType_Virtio:
             return "virtio-net";
 #endif
+        case NetworkAdapterType_NE1000:
+        case NetworkAdapterType_NE2000:
+        case NetworkAdapterType_WD8003:
+        case NetworkAdapterType_WD8013:
+        case NetworkAdapterType_3C503:
+            return "dp8390";
+        case NetworkAdapterType_3C501:
+            return "3c501";
         default:
             AssertFailed();
             return "unknown";

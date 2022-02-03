@@ -2629,6 +2629,11 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         PCFGMNODE pDevVirtioNet = NULL;          /* Virtio network devices */
         InsertConfigNode(pDevices, "virtio-net", &pDevVirtioNet);
 #endif /* VBOX_WITH_VIRTIO */
+        PCFGMNODE pDevDP8390 = NULL;         /* DP8390-type devices */
+        InsertConfigNode(pDevices, "dp8390", &pDevDP8390);
+        PCFGMNODE pDev3C501 = NULL;          /* EtherLink-type devices */
+        InsertConfigNode(pDevices, "3c501",  &pDev3C501);
+
         std::list<BootNic> llBootNics;
         for (ULONG uInstance = 0; uInstance < maxNetworkAdapters; ++uInstance)
         {
@@ -2666,6 +2671,16 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     pszAdapterName = "virtio-net";
                     break;
 #endif /* VBOX_WITH_VIRTIO */
+                case NetworkAdapterType_NE1000:
+                case NetworkAdapterType_NE2000:
+                case NetworkAdapterType_WD8003:
+                case NetworkAdapterType_WD8013:
+                case NetworkAdapterType_3C503:
+                    pDev = pDevDP8390;
+                    break;
+                case NetworkAdapterType_3C501:
+                    pDev = pDev3C501;
+                    break;
                 default:
                     AssertMsgFailed(("Invalid network adapter type '%d' for slot '%d'", adapterType, uInstance));
                     return pVMM->pfnVMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
@@ -2752,6 +2767,23 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
                     InsertConfigInteger(pCfg, "AdapterType", 2);
                     break;
                 case NetworkAdapterType_Virtio:
+                    break;
+                case NetworkAdapterType_NE1000:
+                    InsertConfigString(pCfg, "DeviceType", "NE1000");
+                    break;
+                case NetworkAdapterType_NE2000:
+                    InsertConfigString(pCfg, "DeviceType", "NE2000");
+                    break;
+                case NetworkAdapterType_WD8003:
+                    InsertConfigString(pCfg, "DeviceType", "WD8003");
+                    break;
+                case NetworkAdapterType_WD8013:
+                    InsertConfigString(pCfg, "DeviceType", "WD8013");
+                    break;
+                case NetworkAdapterType_3C503:
+                    InsertConfigString(pCfg, "DeviceType", "3C503");
+                    break;
+                case NetworkAdapterType_3C501:
                     break;
                 case NetworkAdapterType_Null:      AssertFailedBreak(); /* (compiler warnings) */
 #ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK

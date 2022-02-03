@@ -60,6 +60,8 @@ static PCPDMDEVREGR0 g_apVBoxDDR0DevRegs[] =
 #ifdef VBOX_WITH_VIRTIO
     &g_DeviceVirtioNet,
 #endif
+    &g_DeviceDP8390,
+    &g_Device3C501,
     &g_DeviceICHAC97,
     &g_DeviceHDA,
 #ifdef VBOX_WITH_VUSB

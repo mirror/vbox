@@ -201,6 +201,8 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	$(if $(VBOX_WITH_HGCM),VMMDev/VMMDevHGCM.cpp,) \
  	VMMDev/VMMDevTesting.cpp \
  	Network/DevPCNet.cpp \
+  	Network/DevDP8390.cpp \
+  	Network/Dev3C501.cpp \
  	PC/DevDMA.cpp \
  	PC/DevHPET.cpp \
  	PC/DevIoApic.cpp \
@@ -1041,6 +1043,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   	PC/DevHPET.cpp \
   	Storage/DevATA.cpp \
   	Network/DevPCNet.cpp \
+  	Network/DevDP8390.cpp \
+  	Network/Dev3C501.cpp \
   	Serial/DevSerial.cpp \
   	Serial/DevOxPcie958.cpp \
   	Serial/UartCore.cpp \
@@ -1242,6 +1246,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  	PC/DevHPET.cpp \
  	Storage/DevATA.cpp \
  	Network/DevPCNet.cpp \
+  	Network/DevDP8390.cpp \
+  	Network/Dev3C501.cpp \
  	Serial/DevSerial.cpp \
  	Serial/DevOxPcie958.cpp \
  	Serial/UartCore.cpp \

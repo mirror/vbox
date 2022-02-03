@@ -56,6 +56,8 @@ extern const PDMDEVREG g_DeviceE1000;
 #ifdef VBOX_WITH_VIRTIO
 extern const PDMDEVREG g_DeviceVirtioNet;
 #endif
+extern const PDMDEVREG g_DeviceDP8390;
+extern const PDMDEVREG g_Device3C501;
 #ifdef VBOX_WITH_INIP
 extern const PDMDEVREG g_DeviceINIP;
 #endif

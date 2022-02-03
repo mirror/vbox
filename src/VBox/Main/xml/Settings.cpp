@@ -4112,6 +4112,18 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
                 nic.type = NetworkAdapterType_I82545EM;
             else if (strTemp == "virtio")
                 nic.type = NetworkAdapterType_Virtio;
+            else if (strTemp == "NE1000")
+                nic.type = NetworkAdapterType_NE1000;
+            else if (strTemp == "NE2000")
+                nic.type = NetworkAdapterType_NE2000;
+            else if (strTemp == "WD8003")
+                nic.type = NetworkAdapterType_WD8003;
+            else if (strTemp == "WD8013")
+                nic.type = NetworkAdapterType_WD8013;
+            else if (strTemp == "3C503")
+                nic.type = NetworkAdapterType_3C503;
+            else if (strTemp == "3C501")
+                nic.type = NetworkAdapterType_3C501;
             else
                 throw ConfigFileError(this, pelmAdapter, N_("Invalid value '%s' in Adapter/@type attribute"), strTemp.c_str());
         }
@@ -6838,6 +6850,12 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                         case NetworkAdapterType_I82543GC:   pcszType = "82543GC"; break;
                         case NetworkAdapterType_I82545EM:   pcszType = "82545EM"; break;
                         case NetworkAdapterType_Virtio:     pcszType = "virtio"; break;
+                        case NetworkAdapterType_NE1000:     pcszType = "NE1000"; break;
+                        case NetworkAdapterType_NE2000:     pcszType = "NE2000"; break;
+                        case NetworkAdapterType_WD8003:     pcszType = "WD8003"; break;
+                        case NetworkAdapterType_WD8013:     pcszType = "WD8013"; break;
+                        case NetworkAdapterType_3C503:      pcszType = "3C503"; break;
+                        case NetworkAdapterType_3C501:      pcszType = "3C501"; break;
                         default: /*case NetworkAdapterType_Am79C970A:*/  pcszType = "Am79C970A"; break;
                     }
                     pelmAdapter->setAttribute("type", pcszType);

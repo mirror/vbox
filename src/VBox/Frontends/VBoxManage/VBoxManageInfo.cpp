@@ -1813,6 +1813,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 #ifdef VBOX_WITH_VIRTIO
                     case NetworkAdapterType_Virtio:     pszNICType = "virtio";      break;
 #endif
+                    case NetworkAdapterType_NE1000:     pszNICType = "NE1000";      break;
+                    case NetworkAdapterType_NE2000:     pszNICType = "NE2000";      break;
+                    case NetworkAdapterType_WD8003:     pszNICType = "WD8003";      break;
+                    case NetworkAdapterType_WD8013:     pszNICType = "WD8013";      break;
+                    case NetworkAdapterType_3C503:      pszNICType = "3C503";       break;
+                    case NetworkAdapterType_3C501:      pszNICType = "3C501";       break;
                     default:
                         AssertFailed();
                         if (details == VMINFO_MACHINEREADABLE)

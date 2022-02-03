@@ -98,12 +98,16 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_DEV_BUSLOGIC,
     /** DMA Controller group. */
     LOG_GROUP_DEV_DMA,
+    /** NS DP8390 Ethernet Device group. */
+    LOG_GROUP_DEV_DP8390,
     /** Gigabit Ethernet Device group. */
     LOG_GROUP_DEV_E1000,
     /** Extensible Firmware Interface Device group. */
     LOG_GROUP_DEV_EFI,
     /** USB EHCI Device group. */
     LOG_GROUP_DEV_EHCI,
+    /** 3C501 Ethernet Device group. */
+    LOG_GROUP_DEV_ELNK,
     /** Floppy Controller Device group. */
     LOG_GROUP_DEV_FDC,
     /** Flash Device group. */
@@ -827,9 +831,11 @@ typedef enum VBOXLOGGROUP
     "DEV_APIC", \
     "DEV_BUSLOGIC", \
     "DEV_DMA", \
+    "DEV_DP8390", \
     "DEV_E1000", \
     "DEV_EFI", \
     "DEV_EHCI", \
+    "DEV_ELNK", \
     "DEV_FDC", \
     "DEV_FLASH", \
     "DEV_GIM", \

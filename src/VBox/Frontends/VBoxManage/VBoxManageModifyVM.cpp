@@ -1553,6 +1553,30 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_Virtio));
                 }
 #endif /* VBOX_WITH_VIRTIO */
+                else if (!RTStrICmp(ValueUnion.psz, "NE1000"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_NE1000));
+                }
+                else if (!RTStrICmp(ValueUnion.psz, "NE2000"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_NE2000));
+                }
+                else if (!RTStrICmp(ValueUnion.psz, "WD8003"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_WD8003));
+                }
+                else if (!RTStrICmp(ValueUnion.psz, "WD8013"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_WD8013));
+                }
+                else if (!RTStrICmp(ValueUnion.psz, "3C503"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_3C503));
+                }
+                else if (!RTStrICmp(ValueUnion.psz, "3C501"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_3C501));
+                }
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid NIC type '%s' specified for NIC %u"),
