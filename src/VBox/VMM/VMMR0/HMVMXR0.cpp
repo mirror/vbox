@@ -6815,7 +6815,6 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
          * Profile the VM-exit.
          */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatNestedExitAll);
         STAM_COUNTER_INC(&pVCpu->hm.s.aStatNestedExitReason[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatPreExit, &pVCpu->hm.s.StatExitHandling, x);
@@ -7977,7 +7976,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
 
         /* Profile the VM-exit. */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatDebugExitAll);
         STAM_COUNTER_INC(&pVCpu->hm.s.aStatExitReason[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatPreExit, &pVCpu->hm.s.StatExitHandling, x);
         HMVMX_START_EXIT_DISPATCH_PROF();

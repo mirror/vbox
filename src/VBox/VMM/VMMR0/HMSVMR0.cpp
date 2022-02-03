@@ -58,21 +58,25 @@
             STAM_COUNTER_INC(&pVCpu->hm.s.aStatExitReason[(u64ExitCode) & MASK_EXITREASON_STAT]); \
         } while (0)
 
-# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-#  define HMSVM_NESTED_EXITCODE_STAM_COUNTER_INC(u64ExitCode) do { \
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll); \
+# define HMSVM_DEBUG_EXITCODE_STAM_COUNTER_INC(u64ExitCode) do { \
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatDebugExitAll); \
+        if ((u64ExitCode) == SVM_EXIT_NPF) \
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNpf); \
+        else \
+            STAM_COUNTER_INC(&pVCpu->hm.s.aStatExitReason[(u64ExitCode) & MASK_EXITREASON_STAT]); \
+        } while (0)
+
+# define HMSVM_NESTED_EXITCODE_STAM_COUNTER_INC(u64ExitCode) do { \
         STAM_COUNTER_INC(&pVCpu->hm.s.StatNestedExitAll); \
         if ((u64ExitCode) == SVM_EXIT_NPF) \
             STAM_COUNTER_INC(&pVCpu->hm.s.StatNestedExitReasonNpf); \
         else \
             STAM_COUNTER_INC(&pVCpu->hm.s.aStatNestedExitReason[(u64ExitCode) & MASK_EXITREASON_STAT]); \
         } while (0)
-# endif
 #else
 # define HMSVM_EXITCODE_STAM_COUNTER_INC(u64ExitCode)           do { } while (0)
-# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-#  define HMSVM_NESTED_EXITCODE_STAM_COUNTER_INC(u64ExitCode)   do { } while (0)
-# endif
+# define HMSVM_DEBUG_EXITCODE_STAM_COUNTER_INC(u64ExitCode)     do { } while (0)
+# define HMSVM_NESTED_EXITCODE_STAM_COUNTER_INC(u64ExitCode)    do { } while (0)
 #endif /* !VBOX_WITH_STATISTICS */
 
 /** If we decide to use a function table approach this can be useful to
@@ -6439,7 +6443,7 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeDebug(PVMCPUCC pVCpu, uint32_t *pcLoops)
         }
 
         /* Handle the #VMEXIT. */
-        HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
+        HMSVM_DEBUG_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatPreExit, &pVCpu->hm.s.StatExitHandling, x);
         VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pVCpu->hmr0.s.svm.pVmcb);
         rc = hmR0SvmDebugHandleExit(pVCpu, &SvmTransient, &DbgState);

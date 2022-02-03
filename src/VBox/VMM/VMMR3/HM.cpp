@@ -757,7 +757,8 @@ static int hmR3InitFinalizeR3(PVM pVM)
 # define HM_REG_COUNTER(a, b, desc) HM_REG_STAT(a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, b, desc)
 
 #ifdef VBOX_WITH_STATISTICS
-        HM_REG_COUNTER(&pHmCpu->StatExitAll,                "/HM/CPU%u/Exit/All", "Total exits (including nested-guest exits).");
+        HM_REG_COUNTER(&pHmCpu->StatExitAll,                "/HM/CPU%u/Exit/All", "Total exits (excludes nested-guest and debug loops exits).");
+        HM_REG_COUNTER(&pHmCpu->StatDebugExitAll,           "/HM/CPU%u/Exit/DebugAll", "Total debug-loop exits.");
         HM_REG_COUNTER(&pHmCpu->StatNestedExitAll,          "/HM/CPU%u/Exit/NestedGuest/All", "Total nested-guest exits.");
         HM_REG_COUNTER(&pHmCpu->StatExitShadowNM,           "/HM/CPU%u/Exit/Trap/Shw/#NM", "Shadow #NM (device not available, no math co-processor) exception.");
         HM_REG_COUNTER(&pHmCpu->StatExitGuestNM,            "/HM/CPU%u/Exit/Trap/Gst/#NM", "Guest #NM (device not available, no math co-processor) exception.");

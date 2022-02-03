@@ -850,6 +850,7 @@ typedef struct HMCPU
     STAMCOUNTER             StatInjectReflectNPF;
 
     STAMCOUNTER             StatExitAll;
+    STAMCOUNTER             StatDebugExitAll;
     STAMCOUNTER             StatNestedExitAll;
     STAMCOUNTER             StatExitShadowNM;
     STAMCOUNTER             StatExitGuestNM;
