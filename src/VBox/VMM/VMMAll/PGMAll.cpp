@@ -2479,7 +2479,8 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
     RTGCPHYS const GCPhysOldCR3 = pVCpu->pgm.s.GCPhysCR3;
     RTGCPHYS       GCPhysCR3    = pgmGetGuestMaskedCr3(pVCpu, cr3);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
-    if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
+    if (   pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT
+        && PGMMODE_WITH_PAGING(pVCpu->pgm.s.enmGuestMode))
     {
         LogFlowFunc(("nested_cr3=%RX64 old=%RX64\n", GCPhysCR3, pVCpu->pgm.s.GCPhysNstGstCR3));
         RTGCPHYS GCPhysOut;
@@ -3372,44 +3373,45 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
      *   - Update the second-level address translation (SLAT) mode.
      *   - Indicate that the CR3 is nested-guest physical address.
      */
-    if (   CPUMIsGuestVmxEptPagingEnabled(pVCpu)
-        && PGMMODE_WITH_PAGING(enmGuestMode))
+    if (CPUMIsGuestVmxEptPagingEnabled(pVCpu))
     {
-        /*
-         * Translate CR3 to its guest-physical address.
-         * We don't use pgmGstSlatTranslateCr3() here as we want to update GCPhysNstGstCR3 -after-
-         * switching modes to keep it consistent with how GCPhysCR3 is updated.
-         */
-        PGMPTWALK    Walk;
-        PGMPTWALKGST GstWalk;
-        int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysCR3, &Walk, &GstWalk);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else
+        if (PGMMODE_WITH_PAGING(enmGuestMode))
         {
             /*
-             * SLAT failed but we avoid reporting this to the caller because the caller
-             * is not supposed to fail. The only time the caller needs to indicate a
-             * failure to software is when PAE paging is used by the nested-guest, but
-             * we handle the PAE case separately (e.g., see VMX transition in IEM).
-             * In all other cases, the failure will be indicated when CR3 tries to be
-             * translated on the next linear-address memory access.
-             * See Intel spec. 27.2.1 "EPT Overview".
+             * Translate CR3 to its guest-physical address.
+             * We don't use pgmGstSlatTranslateCr3() here as we want to update GCPhysNstGstCR3 -after-
+             * switching modes to keep it consistent with how GCPhysCR3 is updated.
              */
-            AssertMsgFailed(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", GCPhysCR3, rc));
+            PGMPTWALK    Walk;
+            PGMPTWALKGST GstWalk;
+            int const rc = pgmGstSlatWalkPhys(pVCpu, PGMSLAT_EPT, GCPhysCR3, &Walk, &GstWalk);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+            {
+                /*
+                 * SLAT failed but we avoid reporting this to the caller because the caller
+                 * is not supposed to fail. The only time the caller needs to indicate a
+                 * failure to software is when PAE paging is used by the nested-guest, but
+                 * we handle the PAE case separately (e.g., see VMX transition in IEM).
+                 * In all other cases, the failure will be indicated when CR3 tries to be
+                 * translated on the next linear-address memory access.
+                 * See Intel spec. 27.2.1 "EPT Overview".
+                 */
+                AssertMsgFailed(("SLAT failed for CR3 %#RX64 rc=%Rrc\n", GCPhysCR3, rc));
 
-            /* Trying to coax PGM to succeed for the time being... */
-            Assert(pVCpu->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
+                /* Trying to coax PGM to succeed for the time being... */
+                Assert(pVCpu->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
+                pVCpu->pgm.s.GCPhysNstGstCR3  = GCPhysCR3;
+                pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_EPT;
+                pVCpu->pgm.s.enmGuestMode     = enmGuestMode;
+                HMHCChangedPagingMode(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
+                return VINF_SUCCESS;
+            }
             pVCpu->pgm.s.GCPhysNstGstCR3  = GCPhysCR3;
-            pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_EPT;
-            pVCpu->pgm.s.enmGuestMode     = enmGuestMode;
-            HMHCChangedPagingMode(pVM, pVCpu, pVCpu->pgm.s.enmShadowMode, pVCpu->pgm.s.enmGuestMode);
-            return VINF_SUCCESS;
+            GCPhysCR3 = Walk.GCPhys;
         }
-
-        pVCpu->pgm.s.GCPhysNstGstCR3  = GCPhysCR3;
         pVCpu->pgm.s.enmGuestSlatMode = PGMSLAT_EPT;
-        GCPhysCR3 = Walk.GCPhys;
     }
     else
     {
