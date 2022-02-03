@@ -61,7 +61,7 @@ typedef struct RESHDRDISKSHORT
     uint64_t        off;
     /** 0x10 - The uncompressed original size.
      * @note This is signed in the specficiation...  */
-    uint64_t        cbOrginal;
+    uint64_t        cbOriginal;
 } RESHDRDISKSHORT;
 AssertCompileSize(RESHDRDISKSHORT, 0x18);
 /** Pointer to a short WIM resource entry. */

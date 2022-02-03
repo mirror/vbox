@@ -502,6 +502,7 @@ static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
  *         ...
  *         <DISPLAYNAME>Windows 10 Home</DISPLAYNAME>
  *         <WINDOWS>
+ *             <ARCH>NN</ARCH>
  *             <VERSION>
  *                 ...
  *             </VERSION>
@@ -557,6 +558,45 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
                 pVersionElement = pChild->findChildElement("version");
             if (pVersionElement)
                 parseVersionElement(pVersionElement, newImage);
+
+            /* The ARCH element contains a number from the
+               PROCESSOR_ARCHITECTURE_XXX set of defines in winnt.h: */
+            static const char * const s_apszArchs[] =
+            {
+                /* PROCESSOR_ARCHITECTURE_INTEL         / [0]  = */ "x86",
+                /* PROCESSOR_ARCHITECTURE_MIPS          / [1]  = */ "mips",
+                /* PROCESSOR_ARCHITECTURE_ALPHA         / [2]  = */ "alpha",
+                /* PROCESSOR_ARCHITECTURE_PPC           / [3]  = */ "ppc",
+                /* PROCESSOR_ARCHITECTURE_SHX           / [4]  = */ "shx",
+                /* PROCESSOR_ARCHITECTURE_ARM           / [5]  = */ "arm32",
+                /* PROCESSOR_ARCHITECTURE_IA64          / [6]  = */ "ia64",
+                /* PROCESSOR_ARCHITECTURE_ALPHA64       / [7]  = */ "alpha64",
+                /* PROCESSOR_ARCHITECTURE_MSIL          / [8]  = */ "msil",
+                /* PROCESSOR_ARCHITECTURE_AMD64         / [9]  = */ "x64",
+                /* PROCESSOR_ARCHITECTURE_IA32_ON_WIN64 / [10] = */ "x86-on-x64",
+                /* PROCESSOR_ARCHITECTURE_NEUTRAL       / [11] = */ "noarch",
+                /* PROCESSOR_ARCHITECTURE_ARM64         / [12] = */ "arm64",
+                /* PROCESSOR_ARCHITECTURE_ARM32_ON_WIN64/ [13] = */ "arm32-on-arm64",
+                /* PROCESSOR_ARCHITECTURE_IA32_ON_ARM64 / [14] = */ "x86-on-arm32",
+            };
+            const ElementNode *pElmArch = pElmWindows->findChildElement("ARCH");
+            if (!pElmArch)
+                pElmArch = pElmWindows->findChildElement("arch");
+            if (!pElmArch)
+                pElmArch = pElmWindows->findChildElement("Arch");
+            if (pElmArch)
+            {
+                const char *pszValue = pElmArch->getValue();
+                if (pszValue && *pszValue)
+                {
+                    uint32_t uArch;
+                    int vrc = RTStrToUInt32Ex(pszValue, NULL, 10 /*uBase*/, &uArch);
+                    if (RT_SUCCESS(vrc) && vrc != VWRN_NUMBER_TOO_BIG && vrc != VWRN_NEGATIVE_UNSIGNED)
+                    {
+
+                    }
+                }
+            }
         }
 
         imageList.append(newImage);
