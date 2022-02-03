@@ -241,8 +241,6 @@ VMMR3DECL(int)      MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages)
 VMMR3DECL(int)      MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc);
 VMMR3DECL(int)      MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages);
 
-VMMR3DECL(int)      MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv);
-
 /** @defgroup grp_mm_r3_hyper  Hypervisor Memory Manager (HC R3 Portion)
  * @{ */
 VMMR3DECL(int)      MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
