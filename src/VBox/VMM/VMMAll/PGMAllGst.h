@@ -129,7 +129,7 @@ DECLINLINE(int) PGM_GST_NAME(Walk)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWa
  */
 # define PGM_GST_SLAT_WALK(a_pVCpu, a_GCPtrNested, a_GCPhysNested, a_GCPhysOut, a_pWalk) \
     do { \
-        if ((a_pVCpu)->pgm.s.enmGuestSlatMode != PGMSLAT_DIRECT) \
+        if ((a_pVCpu)->pgm.s.enmGuestSlatMode == PGMSLAT_EPT) \
         { \
             PGMPTWALK    SlatWalk; \
             PGMPTWALKGST SlatGstWalk; \
@@ -363,15 +363,34 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
 {
 #if PGM_GST_TYPE == PGM_TYPE_REAL \
  || PGM_GST_TYPE == PGM_TYPE_PROT
+
+    RT_ZERO(*pWalk);
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+    if (pVCpu->pgm.s.enmGuestSlatMode == PGMSLAT_EPT)
+    {
+        PGMPTWALK    SlatWalk;
+        PGMPTWALKGST SlatGstWalk;
+        int const rc = pgmGstSlatWalk(pVCpu, GCPtr, true /* fIsLinearAddrValid */, GCPtr, &SlatWalk, &SlatGstWalk);
+        if (RT_SUCCESS(rc))
+        {
+            pWalk->fSucceeded = true;
+            pWalk->GCPtr      = GCPtr;
+            pWalk->GCPhys     = SlatWalk.GCPhys & PAGE_BASE_GC_MASK;
+            pWalk->fEffective = X86_PTE_P | X86_PTE_RW | X86_PTE_US;
+        }
+        else
+            *pWalk = SlatWalk;
+        return rc;
+    }
+#  endif
+
     /*
      * Fake it.
      */
-    RT_ZERO(*pWalk);
     pWalk->fSucceeded = true;
     pWalk->GCPtr      = GCPtr;
     pWalk->GCPhys     = GCPtr & PAGE_BASE_GC_MASK;
     pWalk->fEffective = X86_PTE_P | X86_PTE_RW | X86_PTE_US;
-    pWalk->GCPhys     = GCPtr & PAGE_BASE_GC_MASK;
     NOREF(pVCpu);
     return VINF_SUCCESS;
 
