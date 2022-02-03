@@ -67,8 +67,9 @@
  *
  * @returns VBox status code.
  * @param   pGVM    Pointer to the global VM structure.
+ * @param   hMemObj Handle to the memory object backing pGVM.
  */
-VMMR0_INT_DECL(int) PGMR0InitPerVMData(PGVM pGVM)
+VMMR0_INT_DECL(int) PGMR0InitPerVMData(PGVM pGVM, RTR0MEMOBJ hMemObj)
 {
     AssertCompile(sizeof(pGVM->pgm.s) <= sizeof(pGVM->pgm.padding));
     AssertCompile(sizeof(pGVM->pgmr0.s) <= sizeof(pGVM->pgmr0.padding));
@@ -79,6 +80,20 @@ VMMR0_INT_DECL(int) PGMR0InitPerVMData(PGVM pGVM)
         pGVM->pgmr0.s.ahPoolMemObjs[i] = NIL_RTR0MEMOBJ;
         pGVM->pgmr0.s.ahPoolMapObjs[i] = NIL_RTR0MEMOBJ;
     }
+
+    /*
+     * Get the physical address of the ZERO and MMIO-dummy pages.
+     */
+    AssertReturn(((uintptr_t)&pGVM->pgm.s.abZeroPg[0] & HOST_PAGE_OFFSET_MASK) == 0, VERR_INTERNAL_ERROR_2);
+    pGVM->pgm.s.HCPhysZeroPg    = RTR0MemObjGetPagePhysAddr(hMemObj, RT_UOFFSETOF(GVM, pgm.s.abZeroPg) >> HOST_PAGE_SHIFT);
+    AssertReturn(pGVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS, VERR_INTERNAL_ERROR_3);
+
+    AssertReturn(((uintptr_t)&pGVM->pgm.s.abMmioPg[0] & HOST_PAGE_OFFSET_MASK) == 0, VERR_INTERNAL_ERROR_2);
+    pGVM->pgm.s.HCPhysMmioPg    = RTR0MemObjGetPagePhysAddr(hMemObj, RT_UOFFSETOF(GVM, pgm.s.abMmioPg) >> HOST_PAGE_SHIFT);
+    AssertReturn(pGVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS, VERR_INTERNAL_ERROR_3);
+
+    pGVM->pgm.s.HCPhysInvMmioPg = pGVM->pgm.s.HCPhysMmioPg;
+
     return RTCritSectInit(&pGVM->pgmr0.s.PoolGrowCritSect);
 }
 

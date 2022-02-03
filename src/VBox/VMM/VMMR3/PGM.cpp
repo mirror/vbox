@@ -929,21 +929,23 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pVM->pgm.s.pTreesR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pTreesR3);
 
     /*
-     * Setup the zero page.
+     * Setup the zero page (HCPHysZeroPg is set by ring-0).
      */
-    RT_ZERO(pVM->pgm.s.abZeroPg);
-    pVM->pgm.s.HCPhysZeroPg = !fDriverless ? MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.abZeroPg)
-                            : _4G - GUEST_PAGE_SIZE * 2 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
+    RT_ZERO(pVM->pgm.s.abZeroPg); /* paranoia */
+    if (fDriverless)
+        pVM->pgm.s.HCPhysZeroPg = _4G - GUEST_PAGE_SIZE * 2 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
     AssertRelease(pVM->pgm.s.HCPhysZeroPg != NIL_RTHCPHYS);
+    AssertRelease(pVM->pgm.s.HCPhysZeroPg != 0);
 
     /*
-     * Setup the invalid MMIO page.
+     * Setup the invalid MMIO page (HCPhysMmioPg is set by ring-0).
      * (The invalid bits in HCPhysInvMmioPg are set later on init complete.)
      */
     ASMMemFill32(pVM->pgm.s.abMmioPg, sizeof(pVM->pgm.s.abMmioPg), 0xfeedface);
-    pVM->pgm.s.HCPhysMmioPg = !fDriverless ? MMR3HyperHCVirt2HCPhys(pVM, pVM->pgm.s.abMmioPg)
-                            : _4G - GUEST_PAGE_SIZE * 3 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
+    if (fDriverless)
+        pVM->pgm.s.HCPhysMmioPg = _4G - GUEST_PAGE_SIZE * 3 /* fake to avoid PGM_PAGE_INIT_ZERO assertion */;
     AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS);
+    AssertRelease(pVM->pgm.s.HCPhysMmioPg != 0);
     pVM->pgm.s.HCPhysInvMmioPg = pVM->pgm.s.HCPhysMmioPg;
 
     /*

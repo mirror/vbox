@@ -912,7 +912,7 @@ VMMDECL(int)        PGMSetLargePageUsage(PVMCC pVM, bool fUseLargePages);
 /** @defgroup grp_pgm_r0  The PGM Host Context Ring-0 API
  * @{
  */
-VMMR0_INT_DECL(int)  PGMR0InitPerVMData(PGVM pGVM);
+VMMR0_INT_DECL(int)  PGMR0InitPerVMData(PGVM pGVM, RTR0MEMOBJ hMemObj);
 VMMR0_INT_DECL(int)  PGMR0InitVM(PGVM pGVM);
 VMMR0_INT_DECL(void) PGMR0CleanupVM(PGVM pGVM);
 VMMR0_INT_DECL(int)  PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu);

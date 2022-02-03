@@ -257,7 +257,6 @@ VMMR3DECL(int)      MMR3HyperRealloc(PVM pVM, void *pv, size_t cb, unsigned uAli
 #define MMHYPER_AONR_FLAGS_KERNEL_MAPPING   RT_BIT(0)
 /** @} */
 VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvHC);
-VMMR3DECL(int)      MMR3HyperHCVirt2HCPhysEx(PVM pVM, void *pvHC, PRTHCPHYS pHCPhys);
 /** @} */
 
 
