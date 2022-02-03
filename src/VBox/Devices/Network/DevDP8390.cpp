@@ -3659,10 +3659,7 @@ static DECLCALLBACK(VBOXSTRICTRC) wdMemRead(PPDMDEVINS pDevIns, void *pvUser, RT
             *pbData++ = pThis->abLocalRAM[off++ & DPNIC_MEM_MASK];
     }
     else
-    {
-        while (cb-- > 0)
-            *pbData++ = 0xff;
-    }
+        memset(pv, 0xff, cb);
 
 //    STAM_PROFILE_STOP(&pThis->CTX_MID_Z(Stat,MemoryRead), a);
     return VINF_SUCCESS;
@@ -3714,8 +3711,7 @@ static DECLCALLBACK(VBOXSTRICTRC) elMemRead(PPDMDEVINS pDevIns, void *pvUser, RT
     else
     {
         Log3Func(("#%d: Ignoring read of %u bytes from address %X\n", pDevIns->iInstance, cb, off));
-        while (cb-- > 0)
-            *pbData++ = 0xff;
+        memset(pv, 0xff, cb);
     }
     return VINF_SUCCESS;
 }
