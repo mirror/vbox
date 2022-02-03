@@ -120,6 +120,9 @@ void UIWizardNewVM::cleanWizard()
     deleteVirtualDisk();
     /* Cleanup the machine folder: */
     UIWizardNewVMNameOSTypeCommon::cleanupMachineFolder(this, true);
+
+    if (!m_machine.isNull())
+        m_machine.detach();
 }
 
 bool UIWizardNewVM::createVM()
