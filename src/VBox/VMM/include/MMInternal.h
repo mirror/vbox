@@ -588,14 +588,6 @@ typedef struct MM
     /** The hypervisor heap (R3 Ptr). */
     R3PTRTYPE(PMMHYPERHEAP)     pHyperHeapR3;
 
-    /** Pointer to the dummy page.
-     * The dummy page is a paranoia thingy used for instance for pure MMIO RAM ranges
-     * to make sure any bugs will not harm whatever the system stores in the first
-     * physical page. */
-    R3PTRTYPE(void *)           pvDummyPage;
-    /** Physical address of the dummy page. */
-    RTHCPHYS                    HCPhysDummyPage;
-
     /** Size of the base RAM in bytes. (The CFGM RamSize value.) */
     uint64_t                    cbRamBase;
     /** Number of bytes of RAM above 4GB, starting at address 4GB.  */

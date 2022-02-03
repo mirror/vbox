@@ -134,7 +134,6 @@ VBoxVMM_SOURCES  = \
 	VMMR3/MM.cpp \
 	VMMR3/MMHeap.cpp \
 	VMMR3/MMHyper.cpp \
-	VMMR3/MMPagePool.cpp \
 	VMMR3/NEMR3.cpp \
 	VMMR3/PDM.cpp \
 	VMMR3/PDMBlkCache.cpp \

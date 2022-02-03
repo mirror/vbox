@@ -271,13 +271,6 @@ VMMR3DECL(uint32_t) MMR3PhysGet4GBRamHoleSize(PVM pVM);
 /** @} */
 
 
-/** @defgroup grp_mm_page   Physical Page Pool (what's left of it)
- * @{ */
-VMMR3DECL(void *)   MMR3PageDummyHCPtr(PVM pVM);
-VMMR3DECL(RTHCPHYS) MMR3PageDummyHCPhys(PVM pVM);
-/** @} */
-
-
 /** @defgroup grp_mm_heap   Heap Manager
  * @{ */
 VMMR3DECL(void *)   MMR3HeapAlloc(PVM pVM, MMTAG enmTag, size_t cbSize);
