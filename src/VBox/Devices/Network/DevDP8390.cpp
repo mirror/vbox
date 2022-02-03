@@ -4074,11 +4074,11 @@ static DECLCALLBACK(void) dpNicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     {
         /* Dump the WD specific registers. */
         pHlp->pfnPrintf(pHlp, "\nWD80x3 Control Registers\n");
-        pHlp->pfnPrintf(pHlp, "  CTRL1=%02X: %s%s% A18-A13=%02X\n", pThis->CTRL1,
+        pHlp->pfnPrintf(pHlp, "  CTRL1=%02X: %s%s A18-A13=%02X\n", pThis->CTRL1,
                         pThis->ctrl1.RESET ? "RESET " : "",
                         pThis->ctrl1.MEME  ? "MEME " : "",
                         pThis->ctrl1.A13_18);
-        pHlp->pfnPrintf(pHlp, "  CTRL2=%02X: %s%s% A23-A19=%02X\n", pThis->CTRL2,
+        pHlp->pfnPrintf(pHlp, "  CTRL2=%02X: %s%s A23-A19=%02X\n", pThis->CTRL2,
                         pThis->ctrl2.M16  ? "M16 "  : "",
                         pThis->ctrl2.MEMW ? "MEMW " : "",
                         pThis->ctrl2.A19_23);
