@@ -2570,7 +2570,7 @@ static int pcnetXmitPending(PPDMDEVINS pDevIns, PPCNETSTATE pThis, PPCNETSTATECC
     int rc;
 
     /*
-     * Grab the xmit lock of the driver as well as the E1K device state.
+     * Grab the xmit lock of the driver as well as the PCnet device state.
      */
     PPDMINETWORKUP pDrv = pThisCC->pDrv;
     if (pDrv)
