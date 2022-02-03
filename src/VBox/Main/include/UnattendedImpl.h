@@ -40,6 +40,8 @@ struct WIMImage
     Utf8Str  mVersion;
     Utf8Str  mArch;
     uint32_t mImageIndex;
+    VBOXOSTYPE mOSType;
+    WIMImage() : mImageIndex(0), mOSType(VBOXOSTYPE_Unknown) { }
     const Utf8Str &formatName(Utf8Str &r_strName) const;
 };
 

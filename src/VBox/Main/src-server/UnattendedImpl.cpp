@@ -443,6 +443,59 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
 }
 
 /**
+ * Tries to set the image architecture.
+ *
+ * Input examples (x86 and amd64 respectively):
+ * @verbatim
+ * <ARCH>0</ARCH>
+ * <ARCH>9</ARCH>
+ * @endverbatim
+ *
+ * Will set mArch and update mOSType on success.
+ *
+ * @param   pElmArch    Points to the vesion XML node,
+ * @param   rImage      Out reference to an WIMImage instance.
+ */
+static void parseArchElement(const xml::ElementNode *pElmArch, WIMImage &rImage)
+{
+    /* These are from winnt.h */
+    static struct { const char *pszArch;  VBOXOSTYPE enmArch; } s_aArches[] =
+    {
+        /* PROCESSOR_ARCHITECTURE_INTEL         / [0]  = */ { "x86",                 VBOXOSTYPE_x86         },
+        /* PROCESSOR_ARCHITECTURE_MIPS          / [1]  = */ { "mips",                VBOXOSTYPE_UnknownArch },
+        /* PROCESSOR_ARCHITECTURE_ALPHA         / [2]  = */ { "alpha",               VBOXOSTYPE_UnknownArch },
+        /* PROCESSOR_ARCHITECTURE_PPC           / [3]  = */ { "ppc",                 VBOXOSTYPE_UnknownArch },
+        /* PROCESSOR_ARCHITECTURE_SHX           / [4]  = */ { "shx",                 VBOXOSTYPE_UnknownArch },
+        /* PROCESSOR_ARCHITECTURE_ARM           / [5]  = */ { "arm32",               VBOXOSTYPE_arm32       },
+        /* PROCESSOR_ARCHITECTURE_IA64          / [6]  = */ { "ia64",                VBOXOSTYPE_UnknownArch },
+        /* PROCESSOR_ARCHITECTURE_ALPHA64       / [7]  = */ { "alpha64",             VBOXOSTYPE_UnknownArch },
+        /* PROCESSOR_ARCHITECTURE_MSIL          / [8]  = */ { "msil",                VBOXOSTYPE_UnknownArch },
+        /* PROCESSOR_ARCHITECTURE_AMD64         / [9]  = */ { "x64",                 VBOXOSTYPE_x64         },
+        /* PROCESSOR_ARCHITECTURE_IA32_ON_WIN64 / [10] = */ { "x86-on-x64",          VBOXOSTYPE_UnknownArch },
+        /* PROCESSOR_ARCHITECTURE_NEUTRAL       / [11] = */ { "noarch",              VBOXOSTYPE_UnknownArch },
+        /* PROCESSOR_ARCHITECTURE_ARM64         / [12] = */ { "arm64",               VBOXOSTYPE_arm64       },
+        /* PROCESSOR_ARCHITECTURE_ARM32_ON_WIN64/ [13] = */ { "arm32-on-arm64",      VBOXOSTYPE_UnknownArch },
+        /* PROCESSOR_ARCHITECTURE_IA32_ON_ARM64 / [14] = */ { "x86-on-arm32",        VBOXOSTYPE_UnknownArch },
+    };
+    const char *pszArch = pElmArch->getValue();
+    if (pszArch && *pszArch)
+    {
+        uint32_t uArch;
+        int vrc = RTStrToUInt32Ex(pszArch, NULL, 10 /*uBase*/, &uArch);
+        if (   RT_SUCCESS(vrc)
+            && vrc != VWRN_NUMBER_TOO_BIG
+            && vrc != VWRN_NEGATIVE_UNSIGNED
+            && uArch < RT_ELEMENTS(s_aArches))
+        {
+            rImage.mArch   = s_aArches[uArch].pszArch;
+            rImage.mOSType = (VBOXOSTYPE)(s_aArches[uArch].enmArch | (rImage.mOSType & VBOXOSTYPE_ArchitectureMask));
+        }
+        else
+            LogRel(("Unattended: bogus ARCH element value: '%s'\n", pszArch));
+    }
+}
+
+/**
  * Parses XML Node assuming a structure as follows
  * @verbatim
  * <VERSION>
@@ -452,63 +505,82 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
  *     <SPBUILD>1</SPBUILD>
  * </VERSION>
  * @endverbatim
+ *
+ * Will update mOSType as well as setting mVersion on success.
+ *
  * @param   pNode          Points to the vesion XML node,
  * @param   image          Out reference to an WIMImage instance.
  */
 static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
 {
     /* Major part: */
-    const xml::ElementNode *pMajorNode = pNode->findChildElement("MAJOR");
-    if (!pMajorNode)
-        pMajorNode = pNode->findChildElement("major");
-    if (!pMajorNode)
-        pMajorNode = pNode->findChildElement("Major");
-    if (pMajorNode)
+    const xml::ElementNode *pElmMajor;
+    if (   (pElmMajor = pNode->findChildElement("MAJOR")) != NULL
+        || (pElmMajor = pNode->findChildElement("major")) != NULL
+        || (pElmMajor = pNode->findChildElement("Major")) != NULL)
+    if (pElmMajor)
     {
-        const char * const pszMajor = pMajorNode->getValue();
+        const char * const pszMajor = pElmMajor->getValue();
         if (pszMajor && *pszMajor)
         {
             /* Minor part: */
-            const ElementNode *pMinorNode = pNode->findChildElement("MINOR");
-            if (!pMinorNode)
-                pMinorNode = pNode->findChildElement("minor");
-            if (!pMinorNode)
-                pMinorNode = pNode->findChildElement("Minor");
-            if (pMinorNode)
+            const ElementNode *pElmMinor;
+            if (   (pElmMinor = pNode->findChildElement("MINOR")) != NULL
+                || (pElmMinor = pNode->findChildElement("minor")) != NULL
+                || (pElmMinor = pNode->findChildElement("Minor")) != NULL)
             {
-                const char * const pszMinor = pMinorNode->getValue();
+                const char * const pszMinor = pElmMinor->getValue();
                 if (pszMinor && *pszMinor)
                 {
                     /* Build: */
-                    const ElementNode *pBuildNode = pNode->findChildElement("BUILD");
-                    if (!pBuildNode)
-                        pBuildNode = pNode->findChildElement("build");
-                    if (!pBuildNode)
-                        pBuildNode = pNode->findChildElement("Build");
-                    if (pBuildNode)
+                    const ElementNode *pElmBuild;
+                    if (   (pElmBuild = pNode->findChildElement("BUILD")) != NULL
+                        || (pElmBuild = pNode->findChildElement("build")) != NULL
+                        || (pElmBuild = pNode->findChildElement("Build")) != NULL)
                     {
-                        const char * const pszBuild = pBuildNode->getValue();
+                        const char * const pszBuild = pElmBuild->getValue();
                         if (pszBuild && *pszBuild)
                         {
                             /* SPBuild: */
-                            const ElementNode *pSpBuildNode = pNode->findChildElement("SPBUILD");
-                            if (!pSpBuildNode)
-                                pSpBuildNode = pNode->findChildElement("spbuild");
-                            if (!pSpBuildNode)
-                                pSpBuildNode = pNode->findChildElement("Spbuild");
-                            if (!pSpBuildNode)
-                                pSpBuildNode = pNode->findChildElement("SpBuild");
-                            if (pSpBuildNode && pSpBuildNode->getValue() && *pSpBuildNode->getValue())
-                                image.mVersion.printf("%s.%s.%s.%s", pszMajor, pszMinor, pszBuild, pSpBuildNode->getValue());
+                            const ElementNode *pElmSpBuild;
+                            if (   (   (pElmSpBuild = pNode->findChildElement("SPBUILD")) != NULL
+                                    || (pElmSpBuild = pNode->findChildElement("spbuild")) != NULL
+                                    || (pElmSpBuild = pNode->findChildElement("Spbuild")) != NULL
+                                    || (pElmSpBuild = pNode->findChildElement("SpBuild")) != NULL)
+                                && pElmSpBuild->getValue()
+                                && *pElmSpBuild->getValue() != '\0')
+                                image.mVersion.printf("%s.%s.%s.%s", pszMajor, pszMinor, pszBuild, pElmSpBuild->getValue());
                             else
                                 image.mVersion.printf("%s.%s.%s", pszMajor, pszMinor, pszBuild);
+
+                            /*
+                             * Convert that to a version windows OS ID (newest first!).
+                             */
+                            /** @todo detect server editions. */
+                            VBOXOSTYPE enmVersion = VBOXOSTYPE_Unknown;
+                            if (RTStrVersionCompare(image.mVersion.c_str(), "10.0.22000.0") >= 0)
+                                enmVersion = VBOXOSTYPE_Win11_x64;
+                            else if (RTStrVersionCompare(image.mVersion.c_str(), "10.0") >= 0)
+                                enmVersion = VBOXOSTYPE_Win10;
+                            else if (RTStrVersionCompare(image.mVersion.c_str(), "6.3") >= 0)
+                                enmVersion = VBOXOSTYPE_Win81;
+                            else if (RTStrVersionCompare(image.mVersion.c_str(), "6.2") >= 0)
+                                enmVersion = VBOXOSTYPE_Win8;
+                            else if (RTStrVersionCompare(image.mVersion.c_str(), "6.1") >= 0)
+                                enmVersion = VBOXOSTYPE_Win7;
+                            else if (RTStrVersionCompare(image.mVersion.c_str(), "6.0") >= 0)
+                                enmVersion = VBOXOSTYPE_WinVista;
+                            if (enmVersion != VBOXOSTYPE_Unknown)
+                                image.mOSType = (VBOXOSTYPE)(  (image.mOSType & VBOXOSTYPE_ArchitectureMask)
+                                                             | (enmVersion & VBOXOSTYPE_OsTypeMask));
+                            return;
                         }
                     }
-
                 }
             }
         }
     }
+    Log(("Unattended: Warning! Bogus/missing version info for image #%u / %s\n", image.mImageIndex, image.mName.c_str()));
 }
 
 /**
@@ -524,6 +596,14 @@ static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
  *             <VERSION>
  *                 ...
  *             </VERSION>
+ *             <LANGUAGES>
+ *                 <LANGUAGE>
+ *                     en-US
+ *                 </LANGUAGE>
+ *                 <DEFAULT>
+ *                     en-US
+ *                 </DEFAULT>
+ *             </LANGUAGES>
  *         </WINDOWS>
  *     </IMAGE>
  * </WIM>
@@ -557,81 +637,38 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
             && !pChild->getAttributeValue("Index", &newImage.mImageIndex))
             continue;
 
-        const ElementNode *pDisplayDescriptionNode = pChild->findChildElement("DISPLAYNAME");
-        if (!pDisplayDescriptionNode)
-            pDisplayDescriptionNode = pChild->findChildElement("displayname");
-        if (!pDisplayDescriptionNode)
-            pDisplayDescriptionNode = pChild->findChildElement("Displayname");
-        if (!pDisplayDescriptionNode)
-            pDisplayDescriptionNode = pChild->findChildElement("DisplayName");
-        if (!pDisplayDescriptionNode)
-            pDisplayDescriptionNode = pChild->findChildElement("NAME"); /* Early vista images didn't have DISPLAYNAME. */
-        if (!pDisplayDescriptionNode)
-            pDisplayDescriptionNode = pChild->findChildElement("name");
-        if (!pDisplayDescriptionNode)
-            pDisplayDescriptionNode = pChild->findChildElement("Name");
-        if (!pDisplayDescriptionNode)
+        const ElementNode *pElmName;
+        if (   (pElmName = pChild->findChildElement("DISPLAYNAME")) == NULL
+            && (pElmName = pChild->findChildElement("displayname")) == NULL
+            && (pElmName = pChild->findChildElement("Displayname")) == NULL
+            && (pElmName = pChild->findChildElement("DisplayName")) == NULL
+                /* Early vista images didn't have DISPLAYNAME. */
+            && (pElmName = pChild->findChildElement("NAME")) == NULL
+            && (pElmName = pChild->findChildElement("name")) == NULL
+            && (pElmName = pChild->findChildElement("Name")) == NULL)
             continue;
-        newImage.mName = pDisplayDescriptionNode->getValue();
+        newImage.mName = pElmName->getValue();
         if (newImage.mName.isEmpty())
             continue;
 
-        const ElementNode *pElmWindows = pChild->findChildElement("WINDOWS");
-        if (!pElmWindows)
-            pElmWindows = pChild->findChildElement("windows");
-        if (!pElmWindows)
-            pElmWindows = pChild->findChildElement("Windows");
-        if (pElmWindows)
+        const ElementNode *pElmWindows;
+        if (   (pElmWindows = pChild->findChildElement("WINDOWS")) != NULL
+            || (pElmWindows = pChild->findChildElement("windows")) != NULL
+            || (pElmWindows = pChild->findChildElement("Windows")) != NULL)
         {
-            const ElementNode *pVersionElement = pElmWindows->findChildElement("VERSION");
-            if (!pVersionElement)
-                pVersionElement = pChild->findChildElement("version");
-            if (!pVersionElement)
-                pVersionElement = pChild->findChildElement("Version");
-            if (pVersionElement)
-                parseVersionElement(pVersionElement, newImage);
+            const ElementNode *pElmVersion;
+            if (   (pElmVersion = pElmWindows->findChildElement("VERSION")) != NULL
+                || (pElmVersion = pElmWindows->findChildElement("version")) != NULL
+                || (pElmVersion = pElmWindows->findChildElement("Version")) != NULL)
+                parseVersionElement(pElmVersion, newImage);
 
             /* The ARCH element contains a number from the
                PROCESSOR_ARCHITECTURE_XXX set of defines in winnt.h: */
-            static const char * const s_apszArchs[] =
-            {
-                /* PROCESSOR_ARCHITECTURE_INTEL         / [0]  = */ "x86",
-                /* PROCESSOR_ARCHITECTURE_MIPS          / [1]  = */ "mips",
-                /* PROCESSOR_ARCHITECTURE_ALPHA         / [2]  = */ "alpha",
-                /* PROCESSOR_ARCHITECTURE_PPC           / [3]  = */ "ppc",
-                /* PROCESSOR_ARCHITECTURE_SHX           / [4]  = */ "shx",
-                /* PROCESSOR_ARCHITECTURE_ARM           / [5]  = */ "arm32",
-                /* PROCESSOR_ARCHITECTURE_IA64          / [6]  = */ "ia64",
-                /* PROCESSOR_ARCHITECTURE_ALPHA64       / [7]  = */ "alpha64",
-                /* PROCESSOR_ARCHITECTURE_MSIL          / [8]  = */ "msil",
-                /* PROCESSOR_ARCHITECTURE_AMD64         / [9]  = */ "x64",
-                /* PROCESSOR_ARCHITECTURE_IA32_ON_WIN64 / [10] = */ "x86-on-x64",
-                /* PROCESSOR_ARCHITECTURE_NEUTRAL       / [11] = */ "noarch",
-                /* PROCESSOR_ARCHITECTURE_ARM64         / [12] = */ "arm64",
-                /* PROCESSOR_ARCHITECTURE_ARM32_ON_WIN64/ [13] = */ "arm32-on-arm64",
-                /* PROCESSOR_ARCHITECTURE_IA32_ON_ARM64 / [14] = */ "x86-on-arm32",
-            };
-            const ElementNode *pElmArch = pElmWindows->findChildElement("ARCH");
-            if (!pElmArch)
-                pElmArch = pElmWindows->findChildElement("arch");
-            if (!pElmArch)
-                pElmArch = pElmWindows->findChildElement("Arch");
-            if (pElmArch)
-            {
-                const char *pszArch = pElmArch->getValue();
-                if (pszArch && *pszArch)
-                {
-                    uint32_t uArch;
-                    int vrc = RTStrToUInt32Ex(pszArch, NULL, 10 /*uBase*/, &uArch);
-                    if (   RT_SUCCESS(vrc)
-                        && vrc != VWRN_NUMBER_TOO_BIG
-                        && vrc != VWRN_NEGATIVE_UNSIGNED
-                        && uArch < RT_ELEMENTS(s_apszArchs))
-                        newImage.mArch = s_apszArchs[uArch];
-                    else
-                        LogRel(("Unattended: bogus ARCH element value: '%s'\n", pszArch));
-                }
-            }
+            const ElementNode *pElmArch;
+            if (   (pElmArch = pElmWindows->findChildElement("ARCH")) != NULL
+                || (pElmArch = pElmWindows->findChildElement("arch")) != NULL
+                || (pElmArch = pElmWindows->findChildElement("Arch")) != NULL)
+                parseArchElement(pElmArch, newImage);
         }
 
         imageList.append(newImage);
