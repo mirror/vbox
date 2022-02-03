@@ -1756,29 +1756,6 @@ DECLINLINE(int) dp8390XmitAllocBuf(PDPNICSTATE pThis, size_t cbMin, bool fLoopba
 
 
 /**
- * Frees an unsent buffer.
- *
- * @param   pThis           The device instance.
- * @param   fLoopback       Set if we're in loopback mode.
- * @param   pSgBuf          The SG to free.  Can be NULL.
- */
-DECLINLINE(void) dp8390XmitFreeBuf(PDPNICSTATE pThis, bool fLoopback, PPDMSCATTERGATHER pSgBuf)
-{
-    if (pSgBuf)
-    {
-        if (RT_UNLIKELY(fLoopback))
-            pSgBuf->pvAllocator = NULL;
-        else
-        {
-            PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
-            if (RT_LIKELY(pDrv))
-                pDrv->pfnFreeBuf(pDrv, pSgBuf);
-        }
-    }
-}
-
-
-/**
  * Sends the scatter/gather buffer.
  *
  * Wrapper around PDMINETWORKUP::pfnSendBuf, so check it out for the fine print.
