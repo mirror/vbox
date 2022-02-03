@@ -4911,7 +4911,7 @@ static DECLCALLBACK(int) dpNicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Init what's required to make the destructor safe.
      */
     pThis->iInstance            = iInstance;
-    pThis->hEventOutOfRxSpace   = NIL_SUPSEMEVENT;
+    pThis->hEventOutOfRxSpace   = NIL_RTSEMEVENT;
     pThis->hIoPortsNic          = NIL_IOMIOPORTHANDLE;
     pThis->hIoPortsCore         = NIL_IOMIOPORTHANDLE;
 

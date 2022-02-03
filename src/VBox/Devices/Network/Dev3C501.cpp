@@ -2311,7 +2311,7 @@ static DECLCALLBACK(int) elnkConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Init what's required to make the destructor safe.
      */
     pThis->iInstance            = iInstance;
-    pThis->hEventOutOfRxSpace   = NIL_SUPSEMEVENT;
+    pThis->hEventOutOfRxSpace   = NIL_RTSEMEVENT;
     pThis->hIoPortsIsa          = NIL_IOMIOPORTHANDLE;
 
     /*
