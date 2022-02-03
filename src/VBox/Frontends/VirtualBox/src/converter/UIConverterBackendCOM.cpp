@@ -411,6 +411,12 @@ template<> QString toString(const KNetworkAdapterType &type)
         case KNetworkAdapterType_I82545EM:   return QApplication::translate("UICommon", "Intel PRO/1000 MT Server (82545EM)", "NetworkAdapterType");
         case KNetworkAdapterType_Virtio:     return QApplication::translate("UICommon", "Paravirtualized Network (virtio-net)", "NetworkAdapterType");
         case KNetworkAdapterType_Am79C960:   return QApplication::translate("UICommon", "PCnet-ISA (Am79C960)", "NetworkAdapterType");
+        case KNetworkAdapterType_NE2000:     return QApplication::translate("UICommon", "Novell NE2000 (NE2000)", "NetworkAdapterType");
+        case KNetworkAdapterType_NE1000:     return QApplication::translate("UICommon", "Novell NE1000 (NE1000)", "NetworkAdapterType");
+        case KNetworkAdapterType_WD8013:     return QApplication::translate("UICommon", "WD EtherCard Plus 16 (WD8013EBT)", "NetworkAdapterType");
+        case KNetworkAdapterType_WD8003:     return QApplication::translate("UICommon", "WD EtherCard Plus (WD8013E)", "NetworkAdapterType");
+        case KNetworkAdapterType_ELNK2:      return QApplication::translate("UICommon", "3Com EtherLink II (3C503)", "NetworkAdapterType");
+        case KNetworkAdapterType_ELNK1:      return QApplication::translate("UICommon", "3Com EtherLink (3C501)", "NetworkAdapterType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
