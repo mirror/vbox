@@ -184,21 +184,35 @@ typedef struct OS2SYSLEVELENTRY
 #pragma pack()
 AssertCompileSize(OS2SYSLEVELENTRY, 0x80);
 
+
+
 /**
  * Concatenate image name and version strings and return.
- * A possible output would be Windows 10 Home 10-0-19041
  *
- * @returns Concatenated name and version strings
+ * A possible output would be "Windows 10 Home (10.0.19041.330 / x64)".
+ *
+ * @returns Name string to use.
+ * @param   r_strName   String object that can be formatted into and returned.
  */
-Utf8Str WIMImage::getNameAndVersion() const
+const Utf8Str &WIMImage::formatName(Utf8Str &r_strName) const
 {
     if (mVersion.isEmpty() && mArch.isEmpty())
         return mName;
-    if (mArch.isEmpty())
-        return Utf8StrFmt("%s (%s)", mName.c_str(), mVersion.c_str());
-    if (mVersion.isEmpty())
-        return Utf8StrFmt("%s (%s)", mName.c_str(), mArch.c_str());
-    return Utf8StrFmt("%s (%s / %s)", mName.c_str(), mVersion.c_str(), mArch.c_str());
+
+    r_strName = mName;
+    bool fFirst = true;
+    if (mVersion.isNotEmpty())
+    {
+        r_strName.appendPrintf(fFirst ? " (%s" : " / %s", mVersion.c_str());
+        fFirst = false;
+    }
+    if (mArch.isNotEmpty())
+    {
+        r_strName.appendPrintf(fFirst ? " (%s" : " / %s", mArch.c_str());
+        fFirst = false;
+    }
+    r_strName.append(")");
+    return r_strName;
 }
 
 
@@ -527,6 +541,8 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
     int cChildren = pElmRoot->getChildElements(children, "IMAGE");
     if (cChildren == 0)
         cChildren = pElmRoot->getChildElements(children, "image");
+    if (cChildren == 0)
+        cChildren = pElmRoot->getChildElements(children, "Image");
 
     for (ElementNodesList::iterator iterator = children.begin(); iterator != children.end(); ++iterator)
     {
@@ -545,6 +561,16 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
         if (!pDisplayDescriptionNode)
             pDisplayDescriptionNode = pChild->findChildElement("displayname");
         if (!pDisplayDescriptionNode)
+            pDisplayDescriptionNode = pChild->findChildElement("Displayname");
+        if (!pDisplayDescriptionNode)
+            pDisplayDescriptionNode = pChild->findChildElement("DisplayName");
+        if (!pDisplayDescriptionNode)
+            pDisplayDescriptionNode = pChild->findChildElement("NAME"); /* Early vista images didn't have DISPLAYNAME. */
+        if (!pDisplayDescriptionNode)
+            pDisplayDescriptionNode = pChild->findChildElement("name");
+        if (!pDisplayDescriptionNode)
+            pDisplayDescriptionNode = pChild->findChildElement("Name");
+        if (!pDisplayDescriptionNode)
             continue;
         newImage.mName = pDisplayDescriptionNode->getValue();
         if (newImage.mName.isEmpty())
@@ -560,6 +586,8 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
             const ElementNode *pVersionElement = pElmWindows->findChildElement("VERSION");
             if (!pVersionElement)
                 pVersionElement = pChild->findChildElement("version");
+            if (!pVersionElement)
+                pVersionElement = pChild->findChildElement("Version");
             if (pVersionElement)
                 parseVersionElement(pVersionElement, newImage);
 
@@ -3357,7 +3385,10 @@ HRESULT Unattended::getDetectedImageNames(std::vector<com::Utf8Str> &aDetectedIm
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     aDetectedImageNames.clear();
     for (size_t i = 0; i < mDetectedImages.size(); ++i)
-        aDetectedImageNames.push_back(mDetectedImages[i].getNameAndVersion());
+    {
+        Utf8Str strTmp;
+        aDetectedImageNames.push_back(mDetectedImages[i].formatName(strTmp));
+    }
     return S_OK;
 }
 
