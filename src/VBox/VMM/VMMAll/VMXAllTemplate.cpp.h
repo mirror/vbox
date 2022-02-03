@@ -2085,7 +2085,7 @@ static int vmxHCExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
             uint32_t uProcCtls = pVmcsInfo->u32ProcCtls;
             if (VM_IS_VMX_NESTED_PAGING(pVM))
             {
-#ifndef HMVMX_ALAWAYS_INTERCEPT_CR3_ACCESS
+#ifndef HMVMX_ALWAYS_INTERCEPT_CR3_ACCESS
                 if (CPUMIsGuestPagingEnabled(pVCpu))
                 {
                     /* The guest has paging enabled, let it access CR3 without causing a VM-exit if supported. */
@@ -8023,7 +8023,7 @@ HMVMX_EXIT_DECL vmxHCExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
              *   - If the guest doesn't have paging enabled (intercept CR3 to update shadow page tables).
              *   - We are executing in the VM debug loop.
              */
-#ifndef HMVMX_ALAWAYS_INTERCEPT_CR3_ACCESS
+#ifndef HMVMX_ALWAYS_INTERCEPT_CR3_ACCESS
 # ifndef IN_NEM_DARWIN
             Assert(   iCrReg != 3
                    || !VM_IS_VMX_NESTED_PAGING(pVM)
@@ -8085,7 +8085,7 @@ HMVMX_EXIT_DECL vmxHCExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
              *   - If the guest doesn't have paging enabled (pass guest's CR3 rather than our identity mapped CR3).
              *   - We are executing in the VM debug loop.
              */
-#ifndef HMVMX_ALAWAYS_INTERCEPT_CR3_ACCESS
+#ifndef HMVMX_ALWAYS_INTERCEPT_CR3_ACCESS
 # ifndef IN_NEM_DARWIN
             Assert(   iCrReg != 3
                    || !VM_IS_VMX_NESTED_PAGING(pVM)
