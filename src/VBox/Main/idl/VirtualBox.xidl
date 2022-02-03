@@ -4898,6 +4898,12 @@
         The image index on installation CD/DVD used to install. This index should be
         one of the indices of <link to="IUnattended::detectedImageIndices"/>.
 
+        Changing this after ISO detection may cause
+        <link to="IUnattended::detectedOSTypeId"/>, <link to="IUnattended::detectedOSVersion"/>,
+        <link to="IUnattended::detectedOSFlavor"/>, <link to="IUnattended::detectedOSLanguages"/>,
+        and <link to="IUnattended::detectedOSHints"/> to be updated with values
+        specific to the selected image.
+
         Used only with Windows installation CD/DVD:
         https://technet.microsoft.com/en-us/library/cc766022%28v=ws.10%29.aspx
       </desc>
@@ -5036,10 +5042,16 @@
       <desc>
         Prepare for running the unattended process of installation.
 
-        This will instantiate the installer based on the guest type associated
-        with the machine (see <link to="IMachine::OSTypeId"/>).  It will also
-        perform <link to="IUnattended::detectIsoOS"/> if not yet called on the
-        current <link to="IUnattended::isoPath"/> value.
+        This will perform <link to="IUnattended::detectIsoOS"/> if not yet called on the
+        current <link to="IUnattended::isoPath"/> value.  It may then may cause
+        <link to="IUnattended::detectedOSTypeId"/>, <link to="IUnattended::detectedOSVersion"/>,
+        <link to="IUnattended::detectedOSFlavor"/>, <link to="IUnattended::detectedOSLanguages"/>,
+        and <link to="IUnattended::detectedOSHints"/> to be updated with values
+        specific to the image selected by <link to="IUnattended::imageIndex"/> if the ISO
+        contains images.
+
+        This method will then instantiate the installer based on the detected guest type
+        (see <link to="IUnattended::detectedOSTypeId"/>).
       </desc>
     </method>
 

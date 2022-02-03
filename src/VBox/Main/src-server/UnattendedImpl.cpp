@@ -550,7 +550,7 @@ static void parseArchElement(const xml::ElementNode *pElmArch, WIMImage &rImage)
             && uArch < RT_ELEMENTS(s_aArches))
         {
             rImage.mArch   = s_aArches[uArch].pszArch;
-            rImage.mOSType = (VBOXOSTYPE)(s_aArches[uArch].enmArch | (rImage.mOSType & VBOXOSTYPE_ArchitectureMask));
+            rImage.mOSType = (VBOXOSTYPE)(s_aArches[uArch].enmArch | (rImage.mOSType & VBOXOSTYPE_OsTypeMask));
         }
         else
             LogRel(("Unattended: bogus ARCH element value: '%s'\n", pszArch));
@@ -764,24 +764,12 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
     // sources/idwbinfo.txt   - ditto.
     // sources/lang.ini       - ditto.
 
-    RTVFSFILE hVfsFile;
-    /** @todo look at the install.wim file too, extracting the XML (easy) and
-     *        figure out the available image numbers and such. The format is
-     *        documented. It would also provide really accurate Windows
-     *        version information without the need to guess. The current
-     *        content of mStrDetectedOSVersion is mostly useful for human
-     *        consumption. ~~Long term it should be possible to have version
-     *        conditionals (expr style, please) in the templates, which
-     *        would make them a lot easier to write and more flexible at the
-     *        same time. - done already~~
-     *
-     * Here is how to list images inside an install.wim file from powershell:
-     * https://docs.microsoft.com/en-us/powershell/module/dism/get-windowsimage?view=windowsserver2022-ps
-     *
-     * Unfortunately, powershell is not available by default on non-windows hosts, so we
-     * have to do it ourselves of course, but this can help when coding & testing.
+    /*
+     * The install.wim file contains an XML document describing the install
+     * images it contains.  This includes all the info we need for a successful
+     * detection.
      */
-
+    RTVFSFILE hVfsFile;
     int vrc = RTVfsFileOpen(hVfsIso, "sources/install.wim", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))
     {
@@ -838,11 +826,31 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                                 Assert(mDetectedImages.size() == 0);
                                 try
                                 {
+                                    mDetectedImages.clear(); /* debugging convenience  */
                                     parseWimXMLData(pElmRoot, mDetectedImages);
                                 }
                                 catch (std::bad_alloc &)
                                 {
                                     vrc = VERR_NO_MEMORY;
+                                }
+
+                                /*
+                                 * If we found images, update the detected info attributes.
+                                 */
+                                if (RT_SUCCESS(vrc) && mDetectedImages.size() > 0)
+                                {
+                                    size_t i;
+                                    for (i = 0; i < mDetectedImages.size(); i++)
+                                        if (mDetectedImages[i].mImageIndex == midxImage)
+                                            break;
+                                    if (i >= mDetectedImages.size())
+                                        i = 0; /* use the first one if midxImage wasn't found */
+                                    if (i_updateDetectedAttributeForImage(mDetectedImages[i]))
+                                    {
+                                        LogRel2(("Unattended: happy with mDetectedImages[%u]\n", i));
+                                        *penmOsType = mDetectedImages[i].mOSType;
+                                        return S_OK;
+                                    }
                                 }
                             }
                             else
@@ -2170,8 +2178,8 @@ HRESULT Unattended::prepare()
         for (size_t i = 0; i < mDetectedImages.size(); ++i)
             if (midxImage == mDetectedImages[i].mImageIndex)
             {
+                i_updateDetectedAttributeForImage(mDetectedImages[i]);
                 fImageFound = true;
-                /** @todo Replace / amend the detected version? */
                 break;
             }
         if (!fImageFound)
@@ -3340,6 +3348,20 @@ HRESULT Unattended::setImageIndex(ULONG index)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mpInstaller == NULL, setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("Cannot change after prepare() has been called")));
+
+    /* Validate the selection if detection was done already: */
+    if (mDetectedImages.size() > 0)
+    {
+        for (size_t i = 0; i < mDetectedImages.size(); i++)
+            if (mDetectedImages[i].mImageIndex == index)
+            {
+                midxImage = index;
+                i_updateDetectedAttributeForImage(mDetectedImages[i]);
+                return S_OK;
+            }
+        LogRel(("Unattended: Setting invalid index=%u\n", index)); /** @todo fail? */
+    }
+
     midxImage = index;
     return S_OK;
 }
@@ -3735,3 +3757,32 @@ bool Unattended::i_isGuestOSArchX64(Utf8Str const &rStrGuestOsTypeId)
     }
     return false;
 }
+
+
+bool Unattended::i_updateDetectedAttributeForImage(WIMImage const &rImage)
+{
+    bool fRet = true;
+
+    /*
+     * If the image doesn't have a valid value, we don't change it.
+     * This is obviously a little bit bogus, but what can we do...
+     */
+    const char *pszOSTypeId = Global::OSTypeId(rImage.mOSType);
+    if (pszOSTypeId && strcmp(pszOSTypeId, "Other") != 0)
+        mStrDetectedOSTypeId = pszOSTypeId;
+    else
+        fRet = false;
+
+    if (rImage.mVersion.isNotEmpty())
+        mStrDetectedOSVersion = rImage.mVersion;
+    else
+        fRet = false;
+
+    if (rImage.mLanguages.size() > 0)
+        mDetectedOSLanguages  = rImage.mLanguages;
+    else
+        fRet = false;
+
+    return fRet;
+}
+
