@@ -2317,7 +2317,7 @@ static uint32_t dp8390CoreRead(PDPNICSTATE pThis, int ofs)
     else
     {
         /* Page 3 is undocumented and unimplemented. */
-        LogFunc(("Reading page 3 register: ofs=%X!\n"));
+        LogFunc(("Reading page 3 register: ofs=%X!\n", ofs));
         return 0;
     }
 }
@@ -2386,7 +2386,7 @@ static int dp8390CoreWriteCR(PDPNICSTATE pThis, uint32_t val)
         if (nCr.RD & DP_CR_RDMA_ABRT)
         {
             /* Abort. */
-            LogFunc(("RDMA Abort! RSAR=%04X RBCR=%04X CRDA=%04X\n", nCr.RD, pThis->core.RSAR, pThis->core.RBCR, pThis->core.CRDA));
+            LogFunc(("RDMA Abort! RD=%d RSAR=%04X RBCR=%04X CRDA=%04X\n", nCr.RD, pThis->core.RSAR, pThis->core.RBCR, pThis->core.CRDA));
         }
         else if (nCr.RD == DP_CR_RDMA_SP)
         {
@@ -2398,12 +2398,12 @@ static int dp8390CoreWriteCR(PDPNICSTATE pThis, uint32_t val)
             pThis->core.CRDA = RT_MAKE_U16(0, pThis->core.BNRY);
             pThis->core.RBCR = header.byte_cnt;
 
-            LogFunc(("RDMA SP: RSAR=%04X RBCR=%04X CRDA=%04X\n", nCr.RD, pThis->core.RSAR, pThis->core.RBCR, pThis->core.CRDA));
+            LogFunc(("RDMA SP: RD=%d RSAR=%04X RBCR=%04X CRDA=%04X\n", nCr.RD, pThis->core.RSAR, pThis->core.RBCR, pThis->core.CRDA));
         }
         else
         {
             /* Starting remote DMA read or write. */
-            LogFunc(("RDMA:%X RSAR=%04X RBCR=%04X\n", nCr.RD, pThis->core.RSAR, pThis->core.RBCR));
+            LogFunc(("RDMA: RD=%d RSAR=%04X RBCR=%04X\n", nCr.RD, pThis->core.RSAR, pThis->core.RBCR));
         }
         pThis->core.cr.RD = nCr.RD;
         /* NB: The current DMA address (CRDA) is not modified here. */
