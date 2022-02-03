@@ -620,7 +620,6 @@ static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
                             /*
                              * Convert that to a version windows OS ID (newest first!).
                              */
-                            /** @todo detect server editions. */
                             VBOXOSTYPE enmVersion = VBOXOSTYPE_Unknown;
                             if (RTStrVersionCompare(image.mVersion.c_str(), "10.0.22000.0") >= 0)
                                 enmVersion = VBOXOSTYPE_Win11_x64;
@@ -634,6 +633,19 @@ static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
                                 enmVersion = VBOXOSTYPE_Win7;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "6.0") >= 0)
                                 enmVersion = VBOXOSTYPE_WinVista;
+                            if (image.mFlavor.contains("server", Utf8Str::CaseInsensitive))
+                            {
+                                if (RTStrVersionCompare(image.mVersion.c_str(), "10.0.20348") >= 0)
+                                    enmVersion = VBOXOSTYPE_Win2k22_x64;
+                                else if (RTStrVersionCompare(image.mVersion.c_str(), "10.0.17763") >= 0)
+                                    enmVersion = VBOXOSTYPE_Win2k19_x64;
+                                else if (RTStrVersionCompare(image.mVersion.c_str(), "10.0") >= 0)
+                                    enmVersion = VBOXOSTYPE_Win2k16_x64;
+                                else if (RTStrVersionCompare(image.mVersion.c_str(), "6.2") >= 0)
+                                    enmVersion = VBOXOSTYPE_Win2k12_x64;
+                                else if (RTStrVersionCompare(image.mVersion.c_str(), "6.0") >= 0)
+                                    enmVersion = VBOXOSTYPE_Win2k8;
+                            }
                             if (enmVersion != VBOXOSTYPE_Unknown)
                                 image.mOSType = (VBOXOSTYPE)(  (image.mOSType & VBOXOSTYPE_ArchitectureMask)
                                                              | (enmVersion & VBOXOSTYPE_OsTypeMask));
