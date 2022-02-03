@@ -321,27 +321,6 @@ VMMDECL(RTR3PTR) MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr)
 }
 
 
-#ifndef IN_RING0
-/**
- * Converts a ring-0 host context address in the Hypervisor memory region to a current context address.
- *
- * @returns current context address.
- * @param   pVM         The cross context VM structure.
- * @param   R0Ptr       The ring-0 host context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-VMMDECL(void *) MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr)
-{
-    uint32_t off;
-    PMMLOOKUPHYPER pLookup = mmHyperLookupR0(pVM, R0Ptr, &off);
-    if (pLookup)
-        return mmHyperLookupCalcCC(pVM, pLookup, off);
-    return NULL;
-}
-#endif
-
-
 /**
  * Converts a ring-3 host context address in the Hypervisor memory region to a ring-0 host context address.
  *

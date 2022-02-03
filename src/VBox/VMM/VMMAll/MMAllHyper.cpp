@@ -1259,17 +1259,6 @@ VMMDECL(size_t) MMHyperHeapGetFreeSize(PVM pVM)
 
 
 /**
- * Query the size the hypervisor heap.
- *
- * @returns The size of the hypervisor heap in bytes.
- */
-VMMDECL(size_t) MMHyperHeapGetSize(PVM pVM)
-{
-    return pVM->mm.s.CTX_SUFF(pHyperHeap)->cbHeap;
-}
-
-
-/**
  * Converts a context neutral heap offset into a pointer.
  *
  * @returns Pointer to hyper heap data.
@@ -1295,21 +1284,6 @@ VMMDECL(uint32_t) MMHyperHeapPtrToOffset(PVM pVM, void *pv)
     size_t offHeap = (uint8_t *)pv - (uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap);
     Assert(offHeap - MMYPERHEAP_HDR_SIZE <= pVM->mm.s.CTX_SUFF(pHyperHeap)->cbHeap);
     return (uint32_t)offHeap;
-}
-
-
-/**
- * Query the address and size the hypervisor memory area.
- *
- * @returns Base address of the hypervisor area.
- * @param   pVM         The cross context VM structure.
- * @param   pcb         Where to store the size of the hypervisor area. (out)
- */
-VMMDECL(RTGCPTR) MMHyperGetArea(PVM pVM, size_t *pcb)
-{
-    if (pcb)
-        *pcb = pVM->mm.s.cbHyperArea;
-    return pVM->mm.s.pvHyperAreaGC;
 }
 
 

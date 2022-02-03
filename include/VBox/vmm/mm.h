@@ -154,9 +154,6 @@ typedef enum MMTAG
  * @{ */
 
 VMMDECL(RTR3PTR)    MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr);
-#ifndef IN_RING0
-VMMDECL(void *)     MMHyperR0ToCC(PVM pVM, RTR0PTR R0Ptr);
-#endif
 VMMDECL(RTR0PTR)    MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr);
 VMMDECL(RTR3PTR)    MMHyperRCToR3(PVM pVM, RTRCPTR RCPtr);
 VMMDECL(RTR0PTR)    MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr);
@@ -205,10 +202,8 @@ VMMDECL(void)       MMHyperHeapCheck(PVMCC pVM);
 VMMDECL(void)       MMHyperHeapDump(PVM pVM);
 #endif
 VMMDECL(size_t)     MMHyperHeapGetFreeSize(PVM pVM);
-VMMDECL(size_t)     MMHyperHeapGetSize(PVM pVM);
 VMMDECL(void *)     MMHyperHeapOffsetToPtr(PVM pVM, uint32_t offHeap);
 VMMDECL(uint32_t)   MMHyperHeapPtrToOffset(PVM pVM, void *pv);
-VMMDECL(RTGCPTR)    MMHyperGetArea(PVM pVM, size_t *pcb);
 VMMDECL(bool)       MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr);
 
 #if 0
