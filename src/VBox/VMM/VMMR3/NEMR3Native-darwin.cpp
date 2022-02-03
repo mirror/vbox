@@ -2190,7 +2190,7 @@ static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
          |  VMX_PROC_CTLS_MONITOR_EXIT                                /* MONITOR causes a VM-exit. */
          |  VMX_PROC_CTLS_MWAIT_EXIT;                                 /* MWAIT causes a VM-exit. */
 
-#ifdef HMVMX_ALAWAYS_INTERCEPT_CR3_ACCESS
+#ifdef HMVMX_ALWAYS_INTERCEPT_CR3_ACCESS
     fVal |= VMX_PROC_CTLS_CR3_LOAD_EXIT
          |  VMX_PROC_CTLS_CR3_STORE_EXIT;
 #endif
