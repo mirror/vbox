@@ -1915,17 +1915,23 @@ HRESULT Unattended::prepare()
             return hrc;
     }
 
-    /* We have to wait and do this check here since mDetectedImages is populated during detectIsoOS call. */
-    bool fImageFound = false;
-    for (size_t i = 0; i < mDetectedImages.size() && !fImageFound; ++i)
+    /*
+     * We can now check midxImage against mDetectedImages, since the latter is
+     * populated during the detectIsoOS call.  We ignore midxImage if no images
+     * were detected, assuming that it's not relevant or used for different purposes.
+     */
+    if (mDetectedImages.size() > 0)
     {
-        if (midxImage == mDetectedImages[i].mImageIndex)
-            fImageFound = true;
-    }
-    if (!fImageFound)
-    {
-        LogRel(("Unattended::prepare: warning: Image index '%d' is not found among detected image indices. Resetting to default value '%d'\n", midxImage, 1));
-        midxImage = 1;
+        bool fImageFound = false;
+        for (size_t i = 0; i < mDetectedImages.size(); ++i)
+            if (midxImage == mDetectedImages[i].mImageIndex)
+            {
+                fImageFound = true;
+                /** @todo Replace / amend the detected version? */
+                break;
+            }
+        if (!fImageFound)
+            return setErrorBoth(E_FAIL, VERR_NOT_FOUND, tr("imageIndex value %u not found in detectedImageIndices"), midxImage);
     }
 
     /*
