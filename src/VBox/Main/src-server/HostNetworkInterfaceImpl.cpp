@@ -542,6 +542,8 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
 #ifndef VBOX_WITH_HOSTNETIF_API
     return E_NOTIMPL;
 #else
+    HRESULT hrc;
+
     if (aIPAddress.isEmpty())
     {
         if (m.IPAddress)
@@ -602,7 +604,20 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
             else
             {
                 LogRel(("Failed to EnableStaticIpConfig with rc=%Rrc\n", rc));
-                return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : (rc == VERR_ACCESS_DENIED ? E_ACCESSDENIED : E_FAIL);
+                /* Global::vboxStatusCodeToCOM assert things we can guarantee */
+                switch (rc)
+                {
+                    case VERR_NOT_IMPLEMENTED:
+                        hrc = E_NOTIMPL;
+                        break;
+                    case VERR_ACCESS_DENIED:
+                        hrc = E_ACCESSDENIED;
+                        break;
+                    default:
+                        hrc = E_FAIL;
+                        break;
+                }
+                return hrc;
             }
 
         }
@@ -621,6 +636,7 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
         return mVirtualBox->setErrorBoth(E_INVALIDARG, VERR_INVALID_PARAMETER,
                    tr("Invalid IPv6 prefix length"));
 
+    HRESULT hrc;
     int rc;
 
     RTNETADDRIPV6 AddrOld, AddrNew;
@@ -654,7 +670,20 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
         if (RT_FAILURE(rc))
         {
             LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Rrc\n", rc));
-            return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+            /* Global::vboxStatusCodeToCOM assert things we can guarantee */
+            switch (rc)
+            {
+                case VERR_NOT_IMPLEMENTED:
+                    hrc = E_NOTIMPL;
+                    break;
+                case VERR_ACCESS_DENIED:
+                    hrc = E_ACCESSDENIED;
+                    break;
+                default:
+                    hrc = E_FAIL;
+                    break;
+            }
+            return hrc;
         }
         else
         {
