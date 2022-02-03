@@ -196,7 +196,7 @@ AssertCompileSize(OS2SYSLEVELENTRY, 0x80);
  */
 const Utf8Str &WIMImage::formatName(Utf8Str &r_strName) const
 {
-    if (mVersion.isEmpty() && mArch.isEmpty())
+    if (mVersion.isEmpty() && mArch.isEmpty() && mDefaultLanguage.isEmpty() && mLanguages.size() == 0)
         return mName;
 
     r_strName = mName;
@@ -211,6 +211,17 @@ const Utf8Str &WIMImage::formatName(Utf8Str &r_strName) const
         r_strName.appendPrintf(fFirst ? " (%s" : " / %s", mArch.c_str());
         fFirst = false;
     }
+    if (mDefaultLanguage.isNotEmpty())
+    {
+        r_strName.appendPrintf(fFirst ? " (%s" : " / %s", mDefaultLanguage.c_str());
+        fFirst = false;
+    }
+    else
+        for (size_t i = 0; i < mLanguages.size(); i++)
+        {
+            r_strName.appendPrintf(fFirst ? " (%s" : " / %s", mLanguages[i].c_str());
+            fFirst = false;
+        }
     r_strName.append(")");
     return r_strName;
 }
@@ -443,6 +454,57 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
 }
 
 /**
+ * Tries to parse a LANGUAGES element, with the following structure.
+ * @verbatim
+ * <LANGUAGES>
+ *     <LANGUAGE>
+ *         en-US
+ *     </LANGUAGE>
+ *     <DEFAULT>
+ *         en-US
+ *     </DEFAULT>
+ * </LANGUAGES>
+ * @endverbatim
+ *
+ * Will set mLanguages and mDefaultLanguage success.
+ *
+ * @param   pElmLanguages   Points to the LANGUAGES XML node.
+ * @param   rImage          Out reference to an WIMImage instance.
+ */
+static void parseLangaguesElement(const xml::ElementNode *pElmLanguages, WIMImage &rImage)
+{
+    /*
+     * The languages.
+     */
+    ElementNodesList children;
+    int cChildren = pElmLanguages->getChildElements(children, "LANGUAGE");
+    if (cChildren == 0)
+        cChildren = pElmLanguages->getChildElements(children, "language");
+    if (cChildren == 0)
+        cChildren = pElmLanguages->getChildElements(children, "Language");
+    for (ElementNodesList::iterator iterator = children.begin(); iterator != children.end(); ++iterator)
+    {
+        const ElementNode * const pElmLanguage = *(iterator);
+        if (pElmLanguage)
+        {
+            const char *pszValue = pElmLanguage->getValue();
+            if (pszValue && *pszValue != '\0')
+                rImage.mLanguages.append(pszValue);
+        }
+    }
+
+    /*
+     * Default language.
+     */
+    const xml::ElementNode *pElmDefault;
+    if (   (pElmDefault = pElmLanguages->findChildElement("DEFAULT")) != NULL
+        || (pElmDefault = pElmLanguages->findChildElement("default")) != NULL
+        || (pElmDefault = pElmLanguages->findChildElement("Default")) != NULL)
+        rImage.mDefaultLanguage = pElmDefault->getValue();
+}
+
+
+/**
  * Tries to set the image architecture.
  *
  * Input examples (x86 and amd64 respectively):
@@ -453,7 +515,7 @@ HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
  *
  * Will set mArch and update mOSType on success.
  *
- * @param   pElmArch    Points to the vesion XML node,
+ * @param   pElmArch    Points to the ARCH XML node.
  * @param   rImage      Out reference to an WIMImage instance.
  */
 static void parseArchElement(const xml::ElementNode *pElmArch, WIMImage &rImage)
@@ -669,6 +731,13 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
                 || (pElmArch = pElmWindows->findChildElement("arch")) != NULL
                 || (pElmArch = pElmWindows->findChildElement("Arch")) != NULL)
                 parseArchElement(pElmArch, newImage);
+
+            /* Extract languages and default language: */
+            const ElementNode *pElmLang;
+            if (   (pElmLang = pElmWindows->findChildElement("LANGUAGES")) != NULL
+                || (pElmLang = pElmWindows->findChildElement("languages")) != NULL
+                || (pElmLang = pElmWindows->findChildElement("Languages")) != NULL)
+                parseLangaguesElement(pElmLang, newImage);
         }
 
         imageList.append(newImage);

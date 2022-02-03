@@ -39,6 +39,8 @@ struct WIMImage
     Utf8Str  mName;
     Utf8Str  mVersion;
     Utf8Str  mArch;
+    RTCList<RTCString, RTCString *> mLanguages;
+    Utf8Str  mDefaultLanguage;
     uint32_t mImageIndex;
     VBOXOSTYPE mOSType;
     WIMImage() : mImageIndex(0), mOSType(VBOXOSTYPE_Unknown) { }
