@@ -1326,6 +1326,7 @@ DECL_FORCE_INLINE(bool) nemR3DarwinIsVmxLbr(PCVMCC pVM)
 #define IN_NEM_DARWIN
 //#define HMVMX_ALWAYS_TRAP_ALL_XCPTS
 //#define HMVMX_ALWAYS_SYNC_FULL_GUEST_STATE
+#define HMVMX_ALAWAYS_INTERCEPT_CR3_ACCESS /* Temporary to investigate an issue with 32bit guests whete seem to end up with an invalid page table root address. */
 #define VCPU_2_VMXSTATE(a_pVCpu)            (a_pVCpu)->nem.s
 #define VCPU_2_VMXSTATS(a_pVCpu)            (*(a_pVCpu)->nem.s.pVmxStats)
 
@@ -2188,6 +2189,11 @@ static int nemR3DarwinVmxSetupVmcsProcCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
          |  VMX_PROC_CTLS_RDPMC_EXIT                                  /* RDPMC causes a VM-exit. */
          |  VMX_PROC_CTLS_MONITOR_EXIT                                /* MONITOR causes a VM-exit. */
          |  VMX_PROC_CTLS_MWAIT_EXIT;                                 /* MWAIT causes a VM-exit. */
+
+#ifdef HMVMX_ALAWAYS_INTERCEPT_CR3_ACCESS
+    fVal |= VMX_PROC_CTLS_CR3_LOAD_EXIT
+         |  VMX_PROC_CTLS_CR3_STORE_EXIT;
+#endif
 
     /* We toggle VMX_PROC_CTLS_MOV_DR_EXIT later, check if it's not -always- needed to be set or clear. */
     if (   !(g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_MOV_DR_EXIT)

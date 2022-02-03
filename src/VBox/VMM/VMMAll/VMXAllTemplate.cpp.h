@@ -2085,6 +2085,7 @@ static int vmxHCExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
             uint32_t uProcCtls = pVmcsInfo->u32ProcCtls;
             if (VM_IS_VMX_NESTED_PAGING(pVM))
             {
+#ifndef HMVMX_ALAWAYS_INTERCEPT_CR3_ACCESS
                 if (CPUMIsGuestPagingEnabled(pVCpu))
                 {
                     /* The guest has paging enabled, let it access CR3 without causing a VM-exit if supported. */
@@ -2101,6 +2102,7 @@ static int vmxHCExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
                 /* If we have unrestricted guest execution, we never have to intercept CR3 reads. */
                 if (VM_IS_VMX_UNRESTRICTED_GUEST(pVM))
                     uProcCtls &= ~VMX_PROC_CTLS_CR3_STORE_EXIT;
+#endif
             }
             else
             {
@@ -8021,14 +8023,16 @@ HMVMX_EXIT_DECL vmxHCExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
              *   - If the guest doesn't have paging enabled (intercept CR3 to update shadow page tables).
              *   - We are executing in the VM debug loop.
              */
-#ifndef IN_NEM_DARWIN
+#ifndef HMVMX_ALAWAYS_INTERCEPT_CR3_ACCESS
+# ifndef IN_NEM_DARWIN
             Assert(   iCrReg != 3
                    || !VM_IS_VMX_NESTED_PAGING(pVM)
                    || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
                    || pVCpu->hmr0.s.fUsingDebugLoop);
-#else
+# else
             Assert(   iCrReg != 3
                    || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx));
+# endif
 #endif
 
             /* MOV to CR8 writes only cause VM-exits when TPR shadow is not used. */
@@ -8081,14 +8085,16 @@ HMVMX_EXIT_DECL vmxHCExitMovCRx(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
              *   - If the guest doesn't have paging enabled (pass guest's CR3 rather than our identity mapped CR3).
              *   - We are executing in the VM debug loop.
              */
-#ifndef IN_NEM_DARWIN
+#ifndef HMVMX_ALAWAYS_INTERCEPT_CR3_ACCESS
+# ifndef IN_NEM_DARWIN
             Assert(   iCrReg != 3
                    || !VM_IS_VMX_NESTED_PAGING(pVM)
                    || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx)
                    || pVCpu->hmr0.s.fLeaveDone);
-#else
+# else
             Assert(   iCrReg != 3
                    || !CPUMIsGuestPagingEnabledEx(&pVCpu->cpum.GstCtx));
+# endif
 #endif
 
             /* MOV from CR8 reads only cause a VM-exit when the TPR shadow feature isn't enabled. */
