@@ -333,7 +333,7 @@ void UINameAndSystemEditor::retranslateUi()
     if (m_pImageLabel)
         m_pImageLabel->setText(tr("&ISO Image:"));
     if (m_pEditionLabel)
-        m_pEditionLabel->setText(tr("&OS Edition:"));
+        m_pEditionLabel->setText(tr("&Edition:"));
     if (m_pLabelFamily)
         m_pLabelFamily->setText(tr("&Type:"));
     if (m_pLabelType)

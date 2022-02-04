@@ -383,6 +383,7 @@ void UIWizardNewVMNameOSTypePage::createConnections()
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged, this, &UIWizardNewVMNameOSTypePage::sltOsTypeChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged, this, &UIWizardNewVMNameOSTypePage::sltISOPathChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOSFamilyChanged, this, &UIWizardNewVMNameOSTypePage::sltGuestOSFamilyChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigEditionChanged, this, &UIWizardNewVMNameOSTypePage::sltSelectedEditionChanged);
     }
     if (m_pSkipUnattendedCheckBox)
         connect(m_pSkipUnattendedCheckBox, &QCheckBox::toggled, this, &UIWizardNewVMNameOSTypePage::sltSkipUnattendedInstallChanged);
@@ -456,7 +457,10 @@ void UIWizardNewVMNameOSTypePage::initializePage()
     /* Initialize this page's widgets etc: */
     {
         if (m_pNameAndSystemEditor)
+        {
             m_pNameAndSystemEditor->setFocus();
+            m_pNameAndSystemEditor->setEditionSelectorEnabled(false);
+        }
         setSkipCheckBoxEnable();
     }
 
@@ -469,9 +473,6 @@ void UIWizardNewVMNameOSTypePage::initializePage()
             /* Vm name, folder, file path etc. will be initilized by composeMachineFilePath: */
         }
     }
-
-    if (m_pNameAndSystemEditor)
-        m_pNameAndSystemEditor->setFocus();
 }
 
 bool UIWizardNewVMNameOSTypePage::validatePage()
@@ -497,7 +498,14 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
     QFileInfo fileInfo(strPath);
     if (fileInfo.exists() && fileInfo.isReadable())
         uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strPath);
+
+    /* Populate the editions selector: */
+    if (m_pNameAndSystemEditor)
+         m_pNameAndSystemEditor->setEditionNameAndIndices(pWizard->detectedWindowsImageNames(),
+                                                         pWizard->detectedWindowsImageIndices());
+
     setSkipCheckBoxEnable();
+    setEditionSelectorEnabled();
     emit completeChanged();
 }
 
@@ -507,11 +515,18 @@ void UIWizardNewVMNameOSTypePage::sltGuestOSFamilyChanged(const QString &strGues
     wizardWindow<UIWizardNewVM>()->setGuestOSFamilyId(strGuestOSFamilyId);
 }
 
+void UIWizardNewVMNameOSTypePage::sltSelectedEditionChanged(ulong uEditionIndex)
+{
+    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
+    wizardWindow<UIWizardNewVM>()->setSelectedWindowImageIndex(uEditionIndex);
+}
+
 void UIWizardNewVMNameOSTypePage::sltSkipUnattendedInstallChanged(bool fSkip)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
     m_userModifiedParameters << "SkipUnattendedInstall";
     wizardWindow<UIWizardNewVM>()->setSkipUnattendedInstall(fSkip);
+    setEditionSelectorEnabled();
 }
 
 QWidget *UIWizardNewVMNameOSTypePage::createNameOSTypeWidgets()
@@ -531,6 +546,7 @@ QWidget *UIWizardNewVMNameOSTypePage::createNameOSTypeWidgets()
                                                                true /* fChooseName? */,
                                                                true /* fChoosePath? */,
                                                                true /* fChooseImage? */,
+                                                               true /* fChooseEdition? */,
                                                                true /* fChooseType? */);
             if (m_pNameAndSystemEditor)
                 m_pNameAndSystemLayout->addWidget(m_pNameAndSystemEditor, 0, 0, 1, 2);
@@ -586,4 +602,13 @@ bool UIWizardNewVMNameOSTypePage::isOSTypeDetectionOK() const
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
     return pWizard->isOSTypeDetectionOK();
+}
+
+
+void  UIWizardNewVMNameOSTypePage::setEditionSelectorEnabled()
+{
+    if (!m_pNameAndSystemEditor || !m_pSkipUnattendedCheckBox)
+        return;
+    m_pNameAndSystemEditor->setEditionSelectorEnabled(   !m_pNameAndSystemEditor->isEditionsSelectorEmpty()
+                                                      && !m_pSkipUnattendedCheckBox->isChecked());
 }

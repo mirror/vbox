@@ -161,7 +161,7 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
     if (fileInfo.exists() && fileInfo.isReadable())
         uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strISOPath);
 
-    /* Populate the windows ISO images selector: */
+    /* Populate the editions selector: */
     if (m_pNameAndSystemEditor)
         m_pNameAndSystemEditor->setEditionNameAndIndices(pWizard->detectedWindowsImageNames(),
                                                          pWizard->detectedWindowsImageIndices());
