@@ -215,6 +215,7 @@ BS3_DECL(void) Main_lm64()
         {
 #define PAGES_2_MB(a_cPages) ((a_cPages) / (_1M / X86_PAGE_SIZE))
             uint64_t cTotalPages;
+            unsigned iLoop;
 
             /*
              * Time touching all the memory.
@@ -242,7 +243,7 @@ BS3_DECL(void) Main_lm64()
             /*
              * Time accessing all the memory again.  This might give a clue as to page pool performance.
              */
-            for (unsigned iLoop = 0; iLoop < 2; iLoop++)
+            for (iLoop = 0; iLoop < 2; iLoop++)
             {
                 Bs3TestSub(iLoop == 0 ? "2nd access" : "3rd access");
                 {
