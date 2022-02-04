@@ -71,6 +71,8 @@ signals:
     void sigOsTypeChanged();
     /** Notifies listeners about VM OS family change. */
     void sigOSFamilyChanged(const QString &strFamilyId);
+    /** Notifies listeners about edition change. */
+    void sigEditionChanged(ulong selectedEditionIndex);
 
 public:
 
@@ -131,6 +133,12 @@ public:
       *  effectively changing the background color and error-text. */
     void markImageEditor(bool fError, const QString &strErrorMessage);
 
+    /** @p names and @p indices are parallel array storing edition names and their indices, respectively.*/
+    void setEditionNameAndIndices(const QVector<QString> &names, const QVector<ulong> &ids);
+
+    void setEditionSelectorEnabled(bool fEnabled);
+    bool isEditionsSelectorEmpty() const;
+
     /** Returns 1st column width. */
     int firstColumnWidth() const;
 
@@ -145,6 +153,7 @@ private slots:
     void sltFamilyChanged(int iIndex);
     /** Handles VM OS type @a iIndex change. */
     void sltTypeChanged(int iIndex);
+    void sltSelectedEditionsChanged(int);
 
 private:
 
@@ -161,6 +170,8 @@ private:
         /** Prepares connections. */
         void prepareConnections();
     /** @} */
+
+    ulong selectedEditionIndex() const;
 
     /** Holds the current family ID list. */
     QStringList  m_familyIDs;

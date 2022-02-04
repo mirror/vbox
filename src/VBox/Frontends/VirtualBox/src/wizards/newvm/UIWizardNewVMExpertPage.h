@@ -45,7 +45,6 @@ class UINameAndSystemEditor;
 class UINewVMHardwareContainer;
 class UIToolBox;
 class UIUserNamePasswordGroupBox;
-class UIWindowsISOImageSelector;
 
 /** Expert page of the New Virtual Machine wizard. */
 class UIWizardNewVMExpertPage : public UINativeWizardPage
@@ -82,7 +81,7 @@ private slots:
     void sltHostnameDomainNameChanged(const QString &strHostnameDomainName);
     void sltProductKeyChanged(const QString &strProductKey);
     void sltStartHeadlessChanged(bool fStartHeadless);
-    void sltSelectedWindowsImageChanged(ulong uImageIndex);
+    void sltSelectedEditionChanged(ulong uEditionIndex);
 
 private:
 
@@ -134,7 +133,6 @@ private:
         UIDiskVariantWidget *m_pDiskVariantWidget;
         UIDiskFormatsComboBox *m_pFormatComboBox;
         UIMediumSizeAndPathGroupBox *m_pSizeAndLocationGroup;
-        UIWindowsISOImageSelector *m_pWindowsISOImageSelector;
         UINameAndSystemEditor *m_pNameAndSystemEditor;
         QCheckBox *m_pSkipUnattendedCheckBox;
         QGridLayout *m_pNameAndSystemLayout;

@@ -281,6 +281,31 @@ void UINameAndSystemEditor::markImageEditor(bool fError, const QString &strError
         m_pImageSelector->mark(fError, strErrorMessage);
 }
 
+void UINameAndSystemEditor::setEditionNameAndIndices(const QVector<QString> &names, const QVector<ulong> &ids)
+{
+    AssertReturnVoid(m_pEditionSelector && names.size() == ids.size());
+
+    m_pEditionSelector->clear();
+
+    for (int i = 0; i < names.size(); ++i)
+        m_pEditionSelector->addItem(names[i], QVariant::fromValue(ids[i]) /* user data */);
+}
+
+void UINameAndSystemEditor::setEditionSelectorEnabled(bool fEnabled)
+{
+    if (m_pEditionSelector)
+        m_pEditionSelector->setEnabled(fEnabled);
+    if (m_pEditionLabel)
+        m_pEditionLabel->setEnabled(fEnabled);
+}
+
+bool UINameAndSystemEditor::isEditionsSelectorEmpty() const
+{
+    if (m_pEditionSelector)
+        return m_pEditionSelector->count() == 0;
+    return true;
+}
+
 int UINameAndSystemEditor::firstColumnWidth() const
 {
     int iWidth = 0;
@@ -419,6 +444,11 @@ void UINameAndSystemEditor::sltTypeChanged(int iIndex)
 
     /* Notifies listeners about OS type change: */
     emit sigOsTypeChanged();
+}
+
+void UINameAndSystemEditor::sltSelectedEditionsChanged(int)
+{
+    emit sigEditionChanged(selectedEditionIndex());
 }
 
 void UINameAndSystemEditor::prepare()
@@ -682,4 +712,13 @@ void UINameAndSystemEditor::prepareConnections()
     if (m_pImageSelector)
         connect(m_pImageSelector, &UIFilePathSelector::pathChanged,
                 this, &UINameAndSystemEditor::sigImageChanged);
+    connect(m_pEditionSelector, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            this, &UINameAndSystemEditor::sltSelectedEditionsChanged);
+}
+
+ulong UINameAndSystemEditor::selectedEditionIndex() const
+{
+    if (!m_pEditionSelector || m_pEditionSelector->count() == 0)
+        return 0;
+    return m_pEditionSelector->currentData().value<ulong>();
 }

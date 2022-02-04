@@ -46,7 +46,6 @@ UIWizardNewVMExpertPage::UIWizardNewVMExpertPage(UIActionPool *pActionPool)
     , m_pDiskVariantWidget(0)
     , m_pFormatComboBox(0)
     , m_pSizeAndLocationGroup(0)
-    , m_pWindowsISOImageSelector(0)
     , m_pNameAndSystemEditor(0)
     , m_pSkipUnattendedCheckBox(0)
     , m_pNameAndSystemLayout(0)
@@ -163,9 +162,9 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
         uiCommon().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_DVD, strISOPath);
 
     /* Populate the windows ISO images selector: */
-    if (m_pWindowsISOImageSelector)
-        m_pWindowsISOImageSelector->setImageNamesAndIndices(pWizard->detectedWindowsImageNames(),
-                                                            pWizard->detectedWindowsImageIndices());
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->setEditionNameAndIndices(pWizard->detectedWindowsImageNames(),
+                                                         pWizard->detectedWindowsImageIndices());
     setSkipCheckBoxEnable();
     disableEnableUnattendedRelatedWidgets(isUnattendedEnabled());
     emit completeChanged();
@@ -243,6 +242,8 @@ void UIWizardNewVMExpertPage::createConnections()
                 this, &UIWizardNewVMExpertPage::sltOSFamilyTypeChanged);
         connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigImageChanged,
                 this, &UIWizardNewVMExpertPage::sltISOPathChanged);
+        connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigEditionChanged,
+                this, &UIWizardNewVMExpertPage::sltSelectedEditionChanged);
     }
 
     if (m_pHardwareWidgetContainer)
@@ -280,10 +281,6 @@ void UIWizardNewVMExpertPage::createConnections()
         connect(m_pAdditionalOptionsContainer, &UIAdditionalUnattendedOptions::sigStartHeadlessChanged,
                 this, &UIWizardNewVMExpertPage::sltStartHeadlessChanged);
     }
-
-    if (m_pWindowsISOImageSelector)
-        connect(m_pWindowsISOImageSelector, &UIWindowsISOImageSelector::sigSelectedWindowsImageChanged,
-                this, &UIWizardNewVMExpertPage::sltSelectedWindowsImageChanged);
 
     /* Virtual disk related connections: */
     if (m_pDiskSourceButtonGroup)
@@ -477,10 +474,6 @@ QWidget *UIWizardNewVMExpertPage::createUnattendedWidgets()
     m_pGAInstallationISOContainer = new UIGAInstallationGroupBox;
     AssertReturn(m_pGAInstallationISOContainer, 0);
     pLayout->addWidget(m_pGAInstallationISOContainer, iRow, 0, 1, 4);
-
-    m_pWindowsISOImageSelector = new UIWindowsISOImageSelector;
-    AssertReturn(m_pWindowsISOImageSelector, 0);
-    pLayout->addWidget(m_pWindowsISOImageSelector, iRow, 0, 1, 5);
 
     return pContainerWidget;
 }
@@ -686,8 +679,8 @@ void UIWizardNewVMExpertPage::disableEnableUnattendedRelatedWidgets(bool fEnable
         m_pAdditionalOptionsContainer->setEnabled(fEnabled);
     if (m_pGAInstallationISOContainer)
         m_pGAInstallationISOContainer->setEnabled(fEnabled);
-    if (m_pWindowsISOImageSelector)
-        m_pWindowsISOImageSelector->setEnabled(fEnabled && !m_pWindowsISOImageSelector->isEmpty());
+    if (m_pNameAndSystemEditor)
+        m_pNameAndSystemEditor->setEditionSelectorEnabled(fEnabled && !m_pNameAndSystemEditor->isEditionsSelectorEmpty());
     m_pAdditionalOptionsContainer->disableEnableProductKeyWidgets(isProductKeyWidgetEnabled());
 }
 
@@ -854,10 +847,10 @@ void UIWizardNewVMExpertPage::sltStartHeadlessChanged(bool fStartHeadless)
     wizardWindow<UIWizardNewVM>()->setStartHeadless(fStartHeadless);
 }
 
-void UIWizardNewVMExpertPage::sltSelectedWindowsImageChanged(ulong uImageIndex)
+void UIWizardNewVMExpertPage::sltSelectedEditionChanged(ulong uEditionIndex)
 {
     AssertReturnVoid(wizardWindow<UIWizardNewVM>());
-    wizardWindow<UIWizardNewVM>()->setSelectedWindowImageIndex(uImageIndex);
+    wizardWindow<UIWizardNewVM>()->setSelectedWindowImageIndex(uEditionIndex);
 }
 
 void UIWizardNewVMExpertPage::updateVirtualMediumPathFromMachinePathName()

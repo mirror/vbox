@@ -74,7 +74,6 @@ private:
         UIAdditionalUnattendedOptions *m_pAdditionalOptionsContainer;
         UIGAInstallationGroupBox *m_pGAInstallationISOContainer;
         UIUserNamePasswordGroupBox *m_pUserNamePasswordGroupBox;
-        UIWindowsISOImageSelector *m_pWindowsISOImageSelector;
     /** @} */
     QSet<QString> m_userModifiedParameters;
 };
