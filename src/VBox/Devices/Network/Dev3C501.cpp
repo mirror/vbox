@@ -187,9 +187,6 @@
 /** Maximum frame size we handle */
 #define MAX_FRAME                       1536
 
-#define ELNKSTATE_2_DEVINS(pThis)       ((pThis)->CTX_SUFF(pDevIns))
-#define ELNK_INSTANCE                   (ELNKSTATE_2_DEVINS(pThis)->iInstance)
-
 /* Size of the packet buffer. */
 #define ELNK_BUF_SIZE       2048u
 
@@ -322,40 +319,12 @@ typedef struct ELNK_INTR_STAT {
 
 /**
  * EtherLink 3C501 state.
- *
- * @extends     PDMPCIDEV
- * @implements  PDMIBASE
- * @implements  PDMINETWORKDOWN
- * @implements  PDMINETWORKCONFIG
- * @implements  PDMILEDPORTS
  */
 typedef struct ELNKSTATE
 {
-    /** Pointer to the device instance - R3. */
-    PPDMDEVINSR3                        pDevInsR3;
-    /** Pointer to the connector of the attached network driver - R3. */
-    PPDMINETWORKUPR3                    pDrvR3;
-    /** Pointer to the attached network driver. */
-    R3PTRTYPE(PPDMIBASE)                pDrvBase;
-    /** LUN\#0 + status LUN: The base interface. */
-    PDMIBASE                            IBase;
-    /** LUN\#0: The network port interface. */
-    PDMINETWORKDOWN                     INetworkDown;
-    /** LUN\#0: The network config port interface. */
-    PDMINETWORKCONFIG                   INetworkConfig;
     /** Restore timer.
      *  This is used to disconnect and reconnect the link after a restore. */
     TMTIMERHANDLE                       hTimerRestore;
-
-    /** Pointer to the device instance - R0. */
-    PPDMDEVINSR0                        pDevInsR0;
-    /** Pointer to the connector of the attached network driver - R0. */
-    PPDMINETWORKUPR0                    pDrvR0;
-
-    /** Pointer to the device instance - RC. */
-    PPDMDEVINSRC                        pDevInsRC;
-    /** Pointer to the connector of the attached network driver - RC. */
-    PPDMINETWORKUPRC                    pDrvRC;
 
     /** Transmit signaller. */
     PDMTASKHANDLE                       hXmitTask;
@@ -431,6 +400,8 @@ typedef struct ELNKSTATE
         EL_INTR_STAT                    IntrState;
     };
 
+    /** Set if ELNKSTATER3::pDrv is not NULL. */
+    bool                                fDriverAttached;
     /** The LED. */
     PDMLED                              Led;
     /** Status LUN: The LED ports. */
@@ -488,6 +459,69 @@ typedef struct ELNKSTATE
 } ELNKSTATE, *PELNKSTATE;
 
 
+/**
+ * EtherLink state for ring-3.
+ *
+ * @implements  PDMIBASE
+ * @implements  PDMINETWORKDOWN
+ * @implements  PDMINETWORKCONFIG
+ * @implements  PDMILEDPORTS
+ */
+typedef struct ELNKSTATER3
+{
+    /** Pointer to the device instance. */
+    PPDMDEVINSR3                        pDevIns;
+    /** Pointer to the connector of the attached network driver. */
+    PPDMINETWORKUPR3                    pDrv;
+    /** Pointer to the attached network driver. */
+    R3PTRTYPE(PPDMIBASE)                pDrvBase;
+    /** LUN\#0 + status LUN: The base interface. */
+    PDMIBASE                            IBase;
+    /** LUN\#0: The network port interface. */
+    PDMINETWORKDOWN                     INetworkDown;
+    /** LUN\#0: The network config port interface. */
+    PDMINETWORKCONFIG                   INetworkConfig;
+
+    /** Status LUN: The LED ports. */
+    PDMILEDPORTS                        ILeds;
+    /** Partner of ILeds. */
+    R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
+} ELNKSTATER3;
+/** Pointer to an EtherLink state structure for ring-3. */
+typedef ELNKSTATER3 *PELNKSTATER3;
+
+
+/**
+ * EtherLink state for ring-0.
+ */
+typedef struct ELNKSTATER0
+{
+    /** Pointer to the connector of the attached network driver. */
+    PPDMINETWORKUPR0                    pDrv;
+} ELNKSTATER0;
+/** Pointer to an EtherLink state structure for ring-0. */
+typedef ELNKSTATER0 *PELNKSTATER0;
+
+
+/**
+ * EtherLink state for raw-mode.
+ */
+typedef struct ELNKSTATERC
+{
+    /** Pointer to the connector of the attached network driver. */
+    PPDMINETWORKUPRC                    pDrv;
+} ELNKSTATERC;
+/** Pointer to an EtherLink state structure for raw-mode. */
+typedef ELNKSTATERC *PELNKSTATERC;
+
+
+/** The EtherLink state structure for the current context. */
+typedef CTX_SUFF(ELNKSTATE) ELNKSTATECC;
+/** Pointer to an EtherLink state structure for the current
+ *  context. */
+typedef CTX_SUFF(PELNKSTATE) PELNKSTATECC;
+
+
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 
@@ -495,7 +529,7 @@ typedef struct ELNKSTATE
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
-static int elnkAsyncTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis, bool fOnWorkerThread);
+static int elnkAsyncTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis, PELNKSTATECC pThisCC, bool fOnWorkerThread);
 
 /**
  * Checks if the link is up.
@@ -504,7 +538,7 @@ static int elnkAsyncTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis, bool fOnWorke
  */
 DECLINLINE(bool) elnkIsLinkUp(PELNKSTATE pThis)
 {
-    return pThis->pDrvR3 && !pThis->fLinkTempDown && pThis->fLinkUp;
+    return pThis->fDriverAttached && !pThis->fLinkTempDown && pThis->fLinkUp;
 }
 
 
@@ -565,7 +599,7 @@ DECLINLINE(int) padr_mcast(PELNKSTATE pThis, const uint8_t *buf)
 /**
  * Update the device IRQ line based on internal state.
  */
-static void elnkUpdateIrq(PELNKSTATE pThis)
+static void elnkUpdateIrq(PPDMDEVINS pDevIns, PELNKSTATE pThis)
 {
     bool     fISR = false;
 
@@ -577,13 +611,13 @@ static void elnkUpdateIrq(PELNKSTATE pThis)
     if (pThis->IntrStateReg && (pThis->AuxCmd.ride || pThis->AuxCmd.ire))
         fISR = true;
 
-    Log2(("#%d set irq fISR=%d\n", ELNK_INSTANCE, fISR));
+    Log2(("#%d set irq fISR=%d\n", pThis->iInstance, fISR));
 
     /* The IRQ line typically does not change. */
     if (RT_UNLIKELY(fISR != pThis->fISR))
     {
-        Log(("#%d IRQ=%d, state=%d\n", ELNK_INSTANCE, pThis->uIsaIrq, fISR));
-        PDMDevHlpISASetIrq(ELNKSTATE_2_DEVINS(pThis), pThis->uIsaIrq, fISR);
+        Log(("#%d IRQ=%d, state=%d\n", pThis->iInstance, pThis->uIsaIrq, fISR));
+        PDMDevHlpISASetIrq(pDevIns, pThis->uIsaIrq, fISR);
         pThis->fISR = fISR;
     }
     STAM_PROFILE_ADV_STOP(&pThis->StatInterrupt, a);
@@ -593,9 +627,9 @@ static void elnkUpdateIrq(PELNKSTATE pThis)
 /**
  * Perform a software reset of the NIC.
  */
-static void elnkSoftReset(PELNKSTATE pThis)
+static void elnkSoftReset(PPDMDEVINS pDevIns, PELNKSTATE pThis)
 {
-    LogFlow(("#%d elnkSoftReset:\n", ELNK_INSTANCE));
+    LogFlowFunc(("#%d:\n", pThis->iInstance));
 
     /* Clear some of the user-visible register state. */
     pThis->XmitCmdReg  = 0;
@@ -613,7 +647,7 @@ static void elnkSoftReset(PELNKSTATE pThis)
 
     /* Clear internal interrupt state. */
     pThis->IntrStateReg = 0;
-    elnkUpdateIrq(pThis);
+    elnkUpdateIrq(pDevIns, pThis);
 
     /* Note that a soft reset does not clear the packet buffer; software often
      * assumes that it survives soft reset. The programmed station address is
@@ -629,7 +663,7 @@ static void elnkSoftReset(PELNKSTATE pThis)
 
 static DECLCALLBACK(void) elnkR3WakeupReceive(PPDMDEVINS pDevIns)
 {
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     STAM_COUNTER_INC(&pThis->StatRxOverflowWakeup);
     if (pThis->hEventOutOfRxSpace != NIL_RTSEMEVENT)
         RTSemEventSignal(pThis->hEventOutOfRxSpace);
@@ -651,9 +685,8 @@ static DECLCALLBACK(void) elnkR3CanRxTaskCallback(PPDMDEVINS pDevIns, void *pvUs
 /**
  * Write incoming data into the packet buffer.
  */
-static void elnkReceiveLocked(PELNKSTATE pThis, const uint8_t *src, size_t cbToRecv, bool fLoopback)
+static void elnkReceiveLocked(PPDMDEVINS pDevIns, PELNKSTATE pThis, const uint8_t *src, size_t cbToRecv, bool fLoopback)
 {
-    PPDMDEVINS pDevIns = ELNKSTATE_2_DEVINS(pThis);
     int is_padr = 0, is_bcast = 0, is_mcast = 0;
     union {
         uint8_t     RcvStatNewReg;
@@ -703,7 +736,7 @@ static void elnkReceiveLocked(PELNKSTATE pThis, const uint8_t *src, size_t cbToR
         return;
     }
 
-    LogFlowFunc(("#%d: size on wire=%d, RCV ptr=%u\n", ELNK_INSTANCE, cbToRecv, pThis->uRCVBufPtr));
+    LogFlowFunc(("#%d: size on wire=%d, RCV ptr=%u\n", pThis->iInstance, cbToRecv, pThis->uRCVBufPtr));
 
     /*
      * Perform address matching. Packets which do not pass the address
@@ -717,7 +750,7 @@ static void elnkReceiveLocked(PELNKSTATE pThis, const uint8_t *src, size_t cbToR
     {
         uint8_t     *dst = pThis->abPacketBuf + pThis->uRCVBufPtr;
 
-        Log2Func(("#%d Packet passed address filter (is_padr=%d, is_bcast=%d, is_mcast=%d), size=%d\n", ELNK_INSTANCE, cbToRecv, is_padr, is_bcast, is_mcast));
+        Log2Func(("#%d Packet passed address filter (is_padr=%d, is_bcast=%d, is_mcast=%d), size=%d\n", pThis->iInstance, cbToRecv, is_padr, is_bcast, is_mcast));
 
         /* Receive status is evaluated from scratch. The stale bit must remain set until we know better. */
         RcvStatNewReg = 0;
@@ -751,7 +784,7 @@ static void elnkReceiveLocked(PELNKSTATE pThis, const uint8_t *src, size_t cbToR
             }
             else
             {
-                LogFunc(("#%d runt, size=%d\n", ELNK_INSTANCE, cbToRecv));
+                LogFunc(("#%d runt, size=%d\n", pThis->iInstance, cbToRecv));
                 RcvStatNew.runt = 1;
             }
         }
@@ -766,13 +799,13 @@ static void elnkReceiveLocked(PELNKSTATE pThis, const uint8_t *src, size_t cbToR
         }
         else
         {
-            LogFunc(("#%d overflow, size=%d\n", ELNK_INSTANCE, cbToRecv));
+            LogFunc(("#%d overflow, size=%d\n", pThis->iInstance, cbToRecv));
             RcvStatNew.oflow = 1;
         }
 
         if (fLoopback && pThis->AuxCmd.xmit_bf)
         {
-            LogFunc(("#%d bad FCS\n", ELNK_INSTANCE));
+            LogFunc(("#%d bad FCS\n", pThis->iInstance));
             RcvStatNew.fcs = 1;
         }
 
@@ -816,8 +849,8 @@ static void elnkReceiveLocked(PELNKSTATE pThis, const uint8_t *src, size_t cbToR
         /* Finally update the receive status. */
         pThis->RcvStat = RcvStatNew;
 
-        LogFlowFunc(("#%d: RcvCmd=%02X, RcvStat=%02X, RCVBufPtr=%u\n", ELNK_INSTANCE, pThis->RcvCmdReg, pThis->RcvStatReg, pThis->uRCVBufPtr));
-        elnkUpdateIrq(pThis);
+        LogFlowFunc(("#%d: RcvCmd=%02X, RcvStat=%02X, RCVBufPtr=%u\n", pThis->iInstance, pThis->RcvCmdReg, pThis->RcvStatReg, pThis->uRCVBufPtr));
+        elnkUpdateIrq(pDevIns, pThis);
     }
 }
 
@@ -827,10 +860,14 @@ static void elnkReceiveLocked(PELNKSTATE pThis, const uint8_t *src, size_t cbToR
  *
  * @returns VBox status code.  VERR_TRY_AGAIN is returned if we're busy.
  *
- * @param   pThis               The device instance data.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The EtherLink shared instance
+ *                              data.
+ * @param   pThisCC             The EtherLink state data for the
+ *                              current context.
  * @param   fOnWorkerThread     Whether we're on a worker thread or on an EMT.
  */
-static int elnkXmitBuffer(PELNKSTATE pThis, bool fOnWorkerThread)
+static int elnkXmitBuffer(PPDMDEVINS pDevIns, PELNKSTATE pThis, PELNKSTATECC pThisCC, bool fOnWorkerThread)
 {
     RT_NOREF_PV(fOnWorkerThread);
     int rc;
@@ -838,14 +875,13 @@ static int elnkXmitBuffer(PELNKSTATE pThis, bool fOnWorkerThread)
     /*
      * Grab the xmit lock of the driver as well as the 3C501 device state.
      */
-    PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+    PPDMINETWORKUP pDrv = pThisCC->pDrv;
     if (pDrv)
     {
         rc = pDrv->pfnBeginXmit(pDrv, false /*fOnWorkerThread*/);
         if (RT_FAILURE(rc))
             return rc;
     }
-    PPDMDEVINS pDevIns = ELNKSTATE_2_DEVINS(pThis);
     rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     if (RT_SUCCESS(rc))
     {
@@ -853,7 +889,7 @@ static int elnkXmitBuffer(PELNKSTATE pThis, bool fOnWorkerThread)
         /*
          * Do the transmitting.
          */
-        int rc2 = elnkAsyncTransmit(pDevIns, pThis, false /*fOnWorkerThread*/);
+        int rc2 = elnkAsyncTransmit(pDevIns, pThis, pThisCC, false /*fOnWorkerThread*/);
         AssertReleaseRC(rc2);
 
         /*
@@ -878,13 +914,14 @@ static int elnkXmitBuffer(PELNKSTATE pThis, bool fOnWorkerThread)
  */
 static DECLCALLBACK(void) elnkR3XmitTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 {
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATECC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PELNKSTATECC);
     NOREF(pvUser);
 
     /*
      * Transmit if we can.
      */
-    elnkXmitBuffer(pThis, true /*fOnWorkerThread*/);
+    elnkXmitBuffer(pDevIns, pThis, pThisCC, true /*fOnWorkerThread*/);
 }
 #endif /* IN_RING3 */
 
@@ -893,21 +930,22 @@ static DECLCALLBACK(void) elnkR3XmitTaskCallback(PPDMDEVINS pDevIns, void *pvUse
  * Allocates a scatter/gather buffer for a transfer.
  *
  * @returns See PPDMINETWORKUP::pfnAllocBuf.
- * @param   pThis       The device instance.
+ * @param   pThis       The shared state data.
+ * @param   pThisCC     The current context state data.
  * @param   cbMin       The minimum buffer size.
  * @param   fLoopback   Set if we're in loopback mode.
  * @param   pSgLoop     Pointer to stack storage for the loopback SG.
  * @param   ppSgBuf     Where to return the SG buffer descriptor on success.
  *                      Always set.
  */
-DECLINLINE(int) elnkXmitAllocBuf(PELNKSTATE pThis, size_t cbMin, bool fLoopback,
+DECLINLINE(int) elnkXmitAllocBuf(PELNKSTATE pThis, PELNKSTATECC pThisCC, size_t cbMin, bool fLoopback,
                                  PPDMSCATTERGATHER pSgLoop, PPPDMSCATTERGATHER ppSgBuf)
 {
     int rc;
 
     if (!fLoopback)
     {
-        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+        PPDMINETWORKUP pDrv = pThisCC->pDrv;
         if (RT_LIKELY(pDrv))
         {
             rc = pDrv->pfnAllocBuf(pDrv, cbMin, NULL /*pGso*/, ppSgBuf);
@@ -945,13 +983,15 @@ DECLINLINE(int) elnkXmitAllocBuf(PELNKSTATE pThis, size_t cbMin, bool fLoopback,
  * Wrapper around PDMINETWORKUP::pfnSendBuf, so check it out for the fine print.
  *
  * @returns See PDMINETWORKUP::pfnSendBuf.
- * @param   pThis           The device instance.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The shared EtherLink state data.
+ * @param   pThisCC         The current context state data.
  * @param   fLoopback       Set if we're in loopback mode.
  * @param   pSgBuf          The SG to send.
  * @param   fOnWorkerThread Set if we're being called on a work thread.  Clear
  *                          if an EMT.
  */
-DECLINLINE(int) elnkXmitSendBuf(PELNKSTATE pThis, bool fLoopback, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
+DECLINLINE(int) elnkXmitSendBuf(PPDMDEVINS pDevIns, PELNKSTATE pThis, PELNKSTATECC pThisCC, bool fLoopback, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
 {
     int rc;
     STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, pSgBuf->cbUsed);
@@ -961,7 +1001,7 @@ DECLINLINE(int) elnkXmitSendBuf(PELNKSTATE pThis, bool fLoopback, PPDMSCATTERGAT
         if (pSgBuf->cbUsed > 70) /* unqualified guess */
             pThis->Led.Asserted.s.fWriting = pThis->Led.Actual.s.fWriting = 1;
 
-        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+        PPDMINETWORKUP pDrv = pThisCC->pDrv;
         if (RT_LIKELY(pDrv))
         {
             rc = pDrv->pfnSendBuf(pDrv, pSgBuf, fOnWorkerThread);
@@ -979,8 +1019,8 @@ DECLINLINE(int) elnkXmitSendBuf(PELNKSTATE pThis, bool fLoopback, PPDMSCATTERGAT
         Assert(pSgBuf->pvAllocator == (void *)pThis);
         pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
 
-        LogFlowFunc(("#%d: loopback (%u bytes)\n", ELNK_INSTANCE, pSgBuf->cbUsed));
-        elnkReceiveLocked(pThis, pThis->abLoopBuf, pSgBuf->cbUsed, fLoopback);
+        LogFlowFunc(("#%d: loopback (%u bytes)\n", pThis->iInstance, pSgBuf->cbUsed));
+        elnkReceiveLocked(pDevIns, pThis, pThis->abLoopBuf, pSgBuf->cbUsed, fLoopback);
         pThis->Led.Actual.s.fReading = 0;
         rc = VINF_SUCCESS;
     }
@@ -1003,22 +1043,24 @@ DECLINLINE(void) elnkXmitRead(PPDMDEVINS pDevIns, PELNKSTATE pThis, const unsign
 /**
  * Try to transmit a frame.
  */
-static void elnkTransmit(PELNKSTATE pThis)
+static void elnkTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis)
 {
+    PELNKSTATECC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PELNKSTATECC);
+
     /*
      * Transmit the packet if possible, defer it if we cannot do it
      * in the current context.
      */
 #if defined(IN_RING0) || defined(IN_RC)
-    if (!pThis->CTX_SUFF(pDrv))
+    if (!pThisCC->pDrv)
     {
-        int rc = PDMDevHlpTaskTrigger(pThis->CTX_SUFF(pDevIns), pThis->hXmitTask);
+        int rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hXmitTask);
         AssertRC(rc);
     }
     else
 #endif
     {
-        int rc = elnkXmitBuffer(pThis, false /*fOnWorkerThread*/);
+        int rc = elnkXmitBuffer(pDevIns, pThis, pThisCC, false /*fOnWorkerThread*/);
         if (rc == VERR_TRY_AGAIN)
             rc = VINF_SUCCESS;
         AssertRC(rc);
@@ -1031,7 +1073,7 @@ static void elnkTransmit(PELNKSTATE pThis)
  *
  * @threads EMT.
  */
-static void elnkKickReceive(PELNKSTATE pThis)
+static void elnkKickReceive(PPDMDEVINS pDevIns, PELNKSTATE pThis)
 {
     /* Some drivers (e.g. NetWare IPX shell/ODI drivers) first go to receive mode through
      * the aux command register and only then enable address matching.
@@ -1041,9 +1083,9 @@ static void elnkKickReceive(PELNKSTATE pThis)
         if (pThis->fMaybeOutOfSpace)
         {
 #ifdef IN_RING3
-            elnkR3WakeupReceive(ELNKSTATE_2_DEVINS(pThis));
+            elnkR3WakeupReceive(pDevIns);
 #else
-            int rc = PDMDevHlpTaskTrigger(pThis->CTX_SUFF(pDevIns), pThis->hCanRxTask);
+            int rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hCanRxTask);
             AssertRC(rc);
 #endif
         }
@@ -1056,7 +1098,7 @@ static void elnkKickReceive(PELNKSTATE pThis)
  *
  * @threads TX or EMT.
  */
-static int elnkAsyncTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis, bool fOnWorkerThread)
+static int elnkAsyncTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis, PELNKSTATECC pThisCC, bool fOnWorkerThread)
 {
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
 
@@ -1066,13 +1108,13 @@ static int elnkAsyncTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis, bool fOnWorke
      */
     if (RT_UNLIKELY(!pThis->AuxStat.xmit_bsy))
     {
-        LogFunc(("#%d: Nope, xmit disabled (fOnWorkerThread=%RTbool)\n", ELNK_INSTANCE, fOnWorkerThread));
+        LogFunc(("#%d: Nope, xmit disabled (fOnWorkerThread=%RTbool)\n", pThis->iInstance, fOnWorkerThread));
         return VINF_SUCCESS;
     }
 
     if (RT_UNLIKELY((pThis->AuxCmd.buf_ctl != EL_BCTL_XMT_RCV) && (pThis->AuxCmd.buf_ctl != EL_BCTL_LOOPBACK)))
     {
-        LogFunc(("#%d: Nope, not in xmit-then-receive or loopback state (fOnWorkerThread=%RTbool)\n", ELNK_INSTANCE, fOnWorkerThread));
+        LogFunc(("#%d: Nope, not in xmit-then-receive or loopback state (fOnWorkerThread=%RTbool)\n", pThis->iInstance, fOnWorkerThread));
         return VINF_SUCCESS;
     }
 
@@ -1098,7 +1140,7 @@ static int elnkAsyncTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis, bool fOnWorke
          * a complete packet on hand.
          */
         const unsigned cb = ELNK_BUF_SIZE - ELNK_GP(pThis); /* Packet size. */
-        Log(("#%d elnkAsyncTransmit: cb=%d\n", ELNK_INSTANCE, cb));
+        LogFunc(("#%d: cb=%d\n", pThis->iInstance, cb));
 
         pThis->XmitStatReg = 0; /* Clear transmit status before filling it out. */
 
@@ -1106,17 +1148,17 @@ static int elnkAsyncTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis, bool fOnWorke
         {
             if (RT_LIKELY(cb <= MAX_FRAME))
             {
-                rc = elnkXmitAllocBuf(pThis, cb, fLoopback, &SgLoop, &pSgBuf);
+                rc = elnkXmitAllocBuf(pThis, pThisCC, cb, fLoopback, &SgLoop, &pSgBuf);
                 if (RT_SUCCESS(rc))
                 {
                     elnkXmitRead(pDevIns, pThis, cb, pSgBuf);
-                    rc = elnkXmitSendBuf(pThis, fLoopback, pSgBuf, fOnWorkerThread);
-                    Log2(("#%d elnkAsyncTransmit: rc=%Rrc\n", ELNK_INSTANCE, rc));
+                    rc = elnkXmitSendBuf(pDevIns, pThis, pThisCC, fLoopback, pSgBuf, fOnWorkerThread);
+                    Log2Func(("#%d: rc=%Rrc\n", pThis->iInstance, rc));
                 }
                 else if (rc == VERR_TRY_AGAIN)
                 {
                     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTransmit), a);
-                    Log(("#%d elnkAsyncTransmit: rc=%Rrc\n", ELNK_INSTANCE, rc));
+                    LogFunc(("#%d: rc=%Rrc\n", pThis->iInstance, rc));
                     return VINF_SUCCESS;
                 }
                 if (RT_SUCCESS(rc))
@@ -1128,33 +1170,34 @@ static int elnkAsyncTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis, bool fOnWorke
             {
                 /* Signal error, as this violates the Ethernet specs. */
                 /** @todo check if the correct error is generated. */
-                LogRel(("3C501#%d: elnkAsyncTransmit: illegal giant frame (%u bytes) -> signalling error\n", ELNK_INSTANCE, cb));
+                LogRel(("3C501#%d: illegal giant frame (%u bytes) -> signalling error\n", pThis->iInstance, cb));
             }
         }
         else
         {
             /* Signal a transmit error pretending there was a collision. */
+            pThis->cLinkDownReported++;
             pThis->XmitStat.coll = 1;
         }
         /* Transmit officially done, update register state. */
         pThis->AuxStat.xmit_bsy    = 0;
         pThis->IntrState.xmit_intr = !!(pThis->XmitCmdReg & pThis->XmitStatReg);
-        LogFlowFunc(("#%d: XmitCmd=%02X, XmitStat=%02X\n", ELNK_INSTANCE, pThis->XmitCmdReg, pThis->XmitStatReg));
+        LogFlowFunc(("#%d: XmitCmd=%02X, XmitStat=%02X\n", pThis->iInstance, pThis->XmitCmdReg, pThis->XmitStatReg));
 
         /* NB: After a transmit, the GP Buffer Pointer points just past
          * the end of the packet buffer (3C501 diagnostics).
          */
-        pThis->uGPBufPtr           = ELNK_BUF_SIZE;
+        pThis->uGPBufPtr = ELNK_BUF_SIZE;
 
         /* NB: The buffer control does *not* change to Receive and stays the way it was. */
         if (RT_UNLIKELY(!fLoopback))
         {
             pThis->AuxStat.recv_bsy = 1;    /* Receive Busy now set until a packet is received. */
-            elnkKickReceive(pThis);
+            elnkKickReceive(pDevIns, pThis);
         }
     } while (0);    /* No loop, because there isn't ever more than one packet to transmit. */
 
-    elnkUpdateIrq(pThis);
+    elnkUpdateIrq(pDevIns, pThis);
 
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTransmit), a);
 
@@ -1164,7 +1207,7 @@ static int elnkAsyncTransmit(PPDMDEVINS pDevIns, PELNKSTATE pThis, bool fOnWorke
 /* -=-=-=-=-=- I/O Port access -=-=-=-=-=- */
 
 
-static int elnkCsrWrite(PELNKSTATE pThis, uint8_t data)
+static int elnkCsrWrite(PPDMDEVINS pDevIns, PELNKSTATE pThis, uint8_t data)
 {
     int         rc = VINF_SUCCESS;
     bool        fTransmit = false;
@@ -1186,7 +1229,7 @@ static int elnkCsrWrite(PELNKSTATE pThis, uint8_t data)
              * state, we permit writes to other registers, but those have no
              * effect and will be overwritten when the card is taken out of reset.
              */
-            Log(("#%d elnkCsrWrite: Card going into reset\n", ELNK_INSTANCE));
+            LogFunc(("#%d: Card going into reset\n", pThis->iInstance));
             pThis->fInReset = true;
 
             /* Many EtherLink drivers like to reset the card a lot. That can lead to
@@ -1198,9 +1241,9 @@ static int elnkCsrWrite(PELNKSTATE pThis, uint8_t data)
         else
         {
             /* Card is being taken out of reset. */
-            Log(("#%d elnkCsrWrite: Card going out of reset\n", ELNK_INSTANCE));
+            LogFunc(("#%d: Card going out of reset\n", pThis->iInstance));
             STAM_COUNTER_INC(&pThis->StatResets);
-            elnkSoftReset(pThis);
+            elnkSoftReset(pDevIns, pThis);
         }
         pThis->AuxCmd.reset = val.reset;    /* Update the reset bit, if nothing else. */
     }
@@ -1216,10 +1259,10 @@ static int elnkCsrWrite(PELNKSTATE pThis, uint8_t data)
     {
         /* Start/stop DMA as requested. */
         pThis->fDMA = fDMAR;
-        PDMDevHlpDMASetDREQ(pThis->CTX_SUFF(pDevIns), pThis->uIsaDma, fDMAR);
+        PDMDevHlpDMASetDREQ(pDevIns, pThis->uIsaDma, fDMAR);
         if (fDMAR)
-            PDMDevHlpDMASchedule(pThis->CTX_SUFF(pDevIns));
-        Log(("3C501#%d: DMARQ for channel %u set to %u\n", ELNK_INSTANCE, pThis->uIsaDma, fDMAR));
+            PDMDevHlpDMASchedule(pDevIns);
+        Log(("3C501#%d: DMARQ for channel %u set to %u\n", pThis->iInstance, pThis->uIsaDma, fDMAR));
     }
 #else
         return VINF_IOM_R3_IOPORT_WRITE;
@@ -1249,12 +1292,12 @@ static int elnkCsrWrite(PELNKSTATE pThis, uint8_t data)
     {
 #ifdef LOG_ENABLED
         static const char   *apszBuffCntrl[4] = { "System", "Xmit then Recv", "Receive", "Loopback" };
-        Log(("3C501#%d: Packet buffer control `%s' -> `%s'\n", ELNK_INSTANCE, apszBuffCntrl[pThis->AuxCmd.buf_ctl], apszBuffCntrl[val.buf_ctl]));
+        Log(("3C501#%d: Packet buffer control `%s' -> `%s'\n", pThis->iInstance, apszBuffCntrl[pThis->AuxCmd.buf_ctl], apszBuffCntrl[val.buf_ctl]));
 #endif
         if (val.buf_ctl == EL_BCTL_XMT_RCV)
         {
             /* Transmit, then receive. */
-            Log2(("3C501#%d: Transmit %u bytes\n%Rhxs\nxmit_bsy=%u\n", ELNK_INSTANCE, ELNK_BUF_SIZE - pThis->uGPBufPtr, &pThis->abPacketBuf[pThis->uGPBufPtr], pThis->AuxStat.xmit_bsy));
+            Log2(("3C501#%d: Transmit %u bytes\n%Rhxs\nxmit_bsy=%u\n", pThis->iInstance, ELNK_BUF_SIZE - pThis->uGPBufPtr, &pThis->abPacketBuf[pThis->uGPBufPtr], pThis->AuxStat.xmit_bsy));
             fTransmit = true;
             pThis->AuxStat.recv_bsy = 0;
         }
@@ -1289,26 +1332,26 @@ static int elnkCsrWrite(PELNKSTATE pThis, uint8_t data)
     pThis->AuxStat.xmit_bf = pThis->AuxCmd.xmit_bf = val.xmit_bf;
 
     /* There are multiple bits that affect interrupt state. Handle them now. */
-    elnkUpdateIrq(pThis);
+    elnkUpdateIrq(pDevIns, pThis);
 
     /* After fully updating register state, do a transmit (including loopback) or receive. */
     if (fTransmit)
-        elnkTransmit(pThis);
+        elnkTransmit(pDevIns, pThis);
     else if (fReceive)
     {
         pThis->AuxStat.recv_bsy = 1;    /* Receive Busy now set until a packet is received. */
-        elnkKickReceive(pThis);
+        elnkKickReceive(pDevIns, pThis);
     }
 
     return rc;
 }
 
-static int elIoWrite(PELNKSTATE pThis, uint32_t addr, uint32_t val)
+static int elIoWrite(PPDMDEVINS pDevIns, PELNKSTATE pThis, uint32_t addr, uint32_t val)
 {
     int     reg = addr & 0xf;
     int     rc = VINF_SUCCESS;
 
-    Log2(("#%d elIoWrite: addr=%#06x val=%#04x\n", ELNK_INSTANCE, addr, val & 0xff));
+    Log2Func(("#%d: addr=%#06x val=%#04x\n", pThis->iInstance, addr, val & 0xff));
 
     switch (reg)
     {
@@ -1328,7 +1371,7 @@ static int elIoWrite(PELNKSTATE pThis, uint32_t addr, uint32_t val)
             pThis->RcvCmdReg = val;
             /* If address filter just got enabled, receive may need a kick. */
             if (OldRcvCmd.adr_match == EL_ADRM_DISABLED && pThis->RcvCmd.adr_match != EL_ADRM_DISABLED)
-                elnkKickReceive(pThis);
+                elnkKickReceive(pDevIns, pThis);
             Log2(("Receive Command register set to %02X\n", pThis->RcvCmdReg));
             break;
         }
@@ -1360,7 +1403,7 @@ static int elIoWrite(PELNKSTATE pThis, uint32_t addr, uint32_t val)
             break;
 
         case 0x0e:  /* Auxiliary Command (CSR). */
-            rc = elnkCsrWrite(pThis, val);
+            rc = elnkCsrWrite(pDevIns, pThis, val);
             break;
 
         case 0x0f:  /* Buffer window. */
@@ -1379,7 +1422,7 @@ static int elIoWrite(PELNKSTATE pThis, uint32_t addr, uint32_t val)
     return rc;
 }
 
-static uint32_t elIoRead(PELNKSTATE pThis, uint32_t addr, int *pRC)
+static uint32_t elIoRead(PPDMDEVINS pDevIns, PELNKSTATE pThis, uint32_t addr, int *pRC)
 {
     uint32_t val = UINT32_MAX;
 
@@ -1394,7 +1437,7 @@ static uint32_t elIoRead(PELNKSTATE pThis, uint32_t addr, int *pRC)
             val = pThis->RcvStatReg;
             pThis->RcvStat.stale = 1;       /* Allows further reception. */
             pThis->IntrState.recv_intr = 0; /* Reading clears receive interrupt. */
-            elnkUpdateIrq(pThis);
+            elnkUpdateIrq(pDevIns, pThis);
             break;
 
         case 0x01:  /* Transmit status register aliases. */
@@ -1403,7 +1446,7 @@ static uint32_t elIoRead(PELNKSTATE pThis, uint32_t addr, int *pRC)
         case 0x07:  /* Transmit status register. */
             val = pThis->XmitStatReg;
             pThis->IntrState.xmit_intr = 0; /* Reading clears transmit interrupt. */
-            elnkUpdateIrq(pThis);
+            elnkUpdateIrq(pDevIns, pThis);
             break;
 
         case 0x08:  /* GP Buffer pointer LSB. */
@@ -1439,9 +1482,9 @@ static uint32_t elIoRead(PELNKSTATE pThis, uint32_t addr, int *pRC)
             break;
     }
 
-    elnkUpdateIrq(pThis);
+    elnkUpdateIrq(pDevIns, pThis);
 
-    Log2(("#%d elIoRead: addr=%#06x val=%#04x\n", ELNK_INSTANCE, addr, val & 0xff));
+    Log2Func(("#%d: addr=%#06x val=%#04x\n", pThis->iInstance, addr, val & 0xff));
     return val;
 }
 
@@ -1452,7 +1495,7 @@ static uint32_t elIoRead(PELNKSTATE pThis, uint32_t addr, int *pRC)
 static DECLCALLBACK(VBOXSTRICTRC)
 elnkIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE  pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     int         rc    = VINF_SUCCESS;
     uint8_t     u8Lo, u8Hi;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
@@ -1462,23 +1505,23 @@ elnkIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, 
     switch (cb)
     {
         case 1:
-            *pu32 = elIoRead(pThis, Port, &rc);
+            *pu32 = elIoRead(pDevIns, pThis, Port, &rc);
             break;
         case 2:
             /* Manually split word access. */
-            u8Lo = elIoRead(pThis, Port + 0, &rc);
+            u8Lo = elIoRead(pDevIns, pThis, Port + 0, &rc);
             Assert(RT_SUCCESS(rc));
-            u8Hi = elIoRead(pThis, Port + 1, &rc);
+            u8Hi = elIoRead(pDevIns, pThis, Port + 1, &rc);
             Assert(RT_SUCCESS(rc));
             *pu32 = RT_MAKE_U16(u8Lo, u8Hi);
             break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                    "elnkIOPortRead: unsupported operation size: offset=%#10x cb=%u\n",
                                    Port, cb);
     }
 
-    Log2(("#%d elnkIOPortRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", ELNK_INSTANCE, Port, *pu32, cb, rc));
+    Log2Func(("#%d: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", pThis->iInstance, Port, *pu32, cb, rc));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIORead), a);
     return rc;
 }
@@ -1490,7 +1533,7 @@ elnkIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, 
 static DECLCALLBACK(VBOXSTRICTRC)
 elnkIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PELNKSTATE  pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE  pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     int         rc    = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
@@ -1499,22 +1542,22 @@ elnkIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, u
     switch (cb)
     {
         case 1:
-            rc = elIoWrite(pThis, Port, RT_LOBYTE(u32));
+            rc = elIoWrite(pDevIns, pThis, Port, RT_LOBYTE(u32));
             break;
         case 2:
             /* Manually split word access. */
-            rc = elIoWrite(pThis, Port + 0, RT_LOBYTE(u32));
+            rc = elIoWrite(pDevIns, pThis, Port + 0, RT_LOBYTE(u32));
             if (!RT_SUCCESS(rc))
                 break;
-            rc = elIoWrite(pThis, Port + 1, RT_HIBYTE(u32));
+            rc = elIoWrite(pDevIns, pThis, Port + 1, RT_HIBYTE(u32));
             break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                    "elnkIOPortWrite: unsupported operation size: offset=%#10x cb=%u\n",
                                    Port, cb);
     }
 
-    Log2(("#%d elnkIOPortWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", ELNK_INSTANCE, Port, u32, cb, rc));
+    Log2Func(("#%d: Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", pThis->iInstance, Port, u32, cb, rc));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     return rc;
 }
@@ -1565,7 +1608,7 @@ static DECLCALLBACK(uint32_t) elnkR3DMAXferHandler(PPDMDEVINS pDevIns, void *opa
      * the address into the packet buffer for both writing to and
      * reading from the buffer.
      */
-    dma_mode = PDMDevHlpDMAGetChannelMode(pThis->CTX_SUFF(pDevIns), pThis->uIsaDma);
+    dma_mode = PDMDevHlpDMAGetChannelMode(pDevIns, pThis->uIsaDma);
     dma_type = GET_MODE_XTYP(dma_mode);
     LogFlowFunc(("dma_mode=%d, dma_type=%d, dma_pos=%u, dma_len=%u, GPBP=%u\n", dma_mode, dma_type, dma_pos, dma_len, pThis->uGPBufPtr));
 
@@ -1574,7 +1617,7 @@ static DECLCALLBACK(uint32_t) elnkR3DMAXferHandler(PPDMDEVINS pDevIns, void *opa
     if (dma_type == DTYPE_WRITE)
     {
         /* Write transfer type. Reading from device, writing to memory. */
-        rc = PDMDevHlpDMAWriteMemory(pThis->CTX_SUFF(pDevIns), nchan,
+        rc = PDMDevHlpDMAWriteMemory(pDevIns, nchan,
                                      &pThis->abPacketBuf[ELNK_GP(pThis)],
                                      dma_pos, cbToXfer, &cbXferred);
         AssertMsgRC(rc, ("DMAWriteMemory -> %Rrc\n", rc));
@@ -1583,7 +1626,7 @@ static DECLCALLBACK(uint32_t) elnkR3DMAXferHandler(PPDMDEVINS pDevIns, void *opa
     else
     {
         /* Read of Verify transfer type. Reading from memory, writing to device. */
-        rc = PDMDevHlpDMAReadMemory(pThis->CTX_SUFF(pDevIns), nchan,
+        rc = PDMDevHlpDMAReadMemory(pDevIns, nchan,
                                     &pThis->abPacketBuf[ELNK_GP(pThis)],
                                     dma_pos, cbToXfer, &cbXferred);
         AssertMsgRC(rc, ("DMAReadMemory -> %Rrc\n", rc));
@@ -1596,15 +1639,15 @@ static DECLCALLBACK(uint32_t) elnkR3DMAXferHandler(PPDMDEVINS pDevIns, void *opa
     if (ELNK_GP(pThis) == uLastPos || 1)
     {
         Log2(("DMA completed\n"));
-        PDMDevHlpDMASetDREQ(pThis->CTX_SUFF(pDevIns), pThis->uIsaDma, 0);
+        PDMDevHlpDMASetDREQ(pDevIns, pThis->uIsaDma, 0);
         pThis->IntrState.dma_intr = 1;
         pThis->AuxStat.dma_done   = 1;
-        elnkUpdateIrq(pThis);
+        elnkUpdateIrq(pDevIns, pThis);
     }
     else
     {
         Log(("DMA continuing: GPBufPtr=%u, lastpos=%u, cbXferred=%u\n", pThis->uGPBufPtr, uLastPos, cbXferred));
-        PDMDevHlpDMASchedule(pThis->CTX_SUFF(pDevIns));
+        PDMDevHlpDMASchedule(pDevIns);
     }
 
     /* Returns the updated transfer count. */
@@ -1624,7 +1667,7 @@ static DECLCALLBACK(uint32_t) elnkR3DMAXferHandler(PPDMDEVINS pDevIns, void *opa
 static DECLCALLBACK(void) elnkTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     RT_NOREF(pvUser);
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     int         rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
@@ -1637,15 +1680,15 @@ static DECLCALLBACK(void) elnkTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTi
         if (pThis->fLinkUp)
         {
             LogRel(("3C501#%d: The link is back up again after the restore.\n",
-                    pDevIns->iInstance));
-            Log(("#%d elnkTimerRestore: Clearing ERR and CERR after load. cLinkDownReported=%d\n",
-                 pDevIns->iInstance, pThis->cLinkDownReported));
+                    pThis->iInstance));
+            LogFunc(("#%d: Clearing ERR and CERR after load. cLinkDownReported=%d\n",
+                 pThis->iInstance, pThis->cLinkDownReported));
             pThis->Led.Actual.s.fError = 0;
         }
     }
     else
         Log(("#%d elnkTimerRestore: cLinkDownReported=%d, wait another 1500ms...\n",
-             pDevIns->iInstance, pThis->cLinkDownReported));
+             pThis->iInstance, pThis->cLinkDownReported));
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
@@ -1658,7 +1701,7 @@ static DECLCALLBACK(void) elnkTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTi
  */
 static DECLCALLBACK(void) elnkInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PELNKSTATE          pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE          pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     bool                fStationAddr = false;
     bool                fRecvBuffer  = false;
     bool                fSendBuffer  = false;
@@ -1678,23 +1721,26 @@ static DECLCALLBACK(void) elnkInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const
      * Show info.
      */
     pHlp->pfnPrintf(pHlp,
-                    "3C501 #%d: port=%RTiop IRQ=%u DMA=%u mac-cfg=%RTmac %s%s\n",
-                    pDevIns->iInstance,
+                    "3C501 #%d: port=%RTiop IRQ=%u DMA=%u mac-cfg=%RTmac%s%s %s\n",
+                    pThis->iInstance,
                     pThis->IOPortBase, pThis->uIsaIrq, pThis->uIsaDma, &pThis->MacConfigured,
-                    pDevIns->fRCEnabled ? " RC" : "", pDevIns->fR0Enabled ? " R0" : "");
+                    pDevIns->fRCEnabled ? " RC" : "", pDevIns->fR0Enabled ? " RZ" : "",
+                    pThis->fDriverAttached ? "attached" : "unattached!");
 
     int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
     PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
 
     pHlp->pfnPrintf(pHlp, "  GP Buf Ptr : %u (masked %u)\n", pThis->uGPBufPtr, ELNK_GP(pThis));
     pHlp->pfnPrintf(pHlp, "  RCV Buf Ptr: %u\n", pThis->uRCVBufPtr);
-    pHlp->pfnPrintf(pHlp, "  Recv Command: %02X   Recv Status: %02X\n", pThis->RcvCmdReg,  pThis->RcvStatReg);
-    pHlp->pfnPrintf(pHlp, "  Xmit Command: %02X   Xmit Status: %02X\n", pThis->XmitCmdReg, pThis->XmitStatReg);
-    pHlp->pfnPrintf(pHlp, "  Aux  Command: %02X   Aux  Status: %02X\n", pThis->AuxCmdReg,  pThis->AuxStatReg);
+    pHlp->pfnPrintf(pHlp, "  Recv Command: %02X  Recv Status: %02X\n", pThis->RcvCmdReg,  pThis->RcvStatReg);
+    pHlp->pfnPrintf(pHlp, "  Xmit Command: %02X  Xmit Status: %02X\n", pThis->XmitCmdReg, pThis->XmitStatReg);
+    pHlp->pfnPrintf(pHlp, "  Aux  Command: %02X  Aux  Status: %02X\n", pThis->AuxCmdReg,  pThis->AuxStatReg);
 
     pHlp->pfnPrintf(pHlp, "  Address matching: %s\n", apszAddrMatch[pThis->RcvCmd.adr_match]);
     pHlp->pfnPrintf(pHlp, "  Buffer control  : %s\n", apszBuffCntrl[pThis->AuxCmd.buf_ctl]);
     pHlp->pfnPrintf(pHlp, "  Interrupt state : xmit=%u recv=%u dma=%u\n", pThis->IntrState.xmit_intr, pThis->IntrState.recv_intr, pThis->IntrState.dma_intr);
+    if (pThis->cLinkDownReported)
+        pHlp->pfnPrintf(pHlp, "  Link down count : %d\n", pThis->cLinkDownReported);
 
     /* Dump the station address. */
     if (fStationAddr)
@@ -1729,9 +1775,9 @@ static DECLCALLBACK(void) elnkInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const
 /* -=-=-=-=-=- Helper(s) -=-=-=-=-=- */
 
 
-static void elnkR3HardReset(PELNKSTATE pThis)
+static void elnkR3HardReset(PPDMDEVINS pDevIns, PELNKSTATE pThis)
 {
-    LogFlow(("#%d elnkHardReset:\n", ELNK_INSTANCE));
+    LogFlowFunc(("#%d:\n", pThis->iInstance));
 
     /* Initialize the PROM */
     Assert(sizeof(pThis->MacConfigured) == 6);
@@ -1746,7 +1792,7 @@ static void elnkR3HardReset(PELNKSTATE pThis)
     pThis->uGPBufPtr  = 0;
     pThis->uRCVBufPtr = 0;
 
-    elnkSoftReset(pThis);
+    elnkSoftReset(pDevIns, pThis);
 }
 
 /**
@@ -1758,16 +1804,17 @@ static void elnkR3HardReset(PELNKSTATE pThis)
  * connections have been lost and that it for instance is appropriate to
  * renegotiate any DHCP lease.
  *
+ * @param  pDevIns      The device instance.
  * @param  pThis        The device instance data.
  */
-static void elnkTempLinkDown(PELNKSTATE pThis)
+static void elnkTempLinkDown(PPDMDEVINS pDevIns, PELNKSTATE pThis)
 {
     if (pThis->fLinkUp)
     {
         pThis->fLinkTempDown = true;
         pThis->cLinkDownReported = 0;
         pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
-        int rc = PDMDevHlpTimerSetMillies(ELNKSTATE_2_DEVINS(pThis), pThis->hTimerRestore, pThis->cMsLinkUpDelay);
+        int rc = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerRestore, pThis->cMsLinkUpDelay);
         AssertRC(rc);
     }
 }
@@ -1781,7 +1828,7 @@ static void elnkTempLinkDown(PELNKSTATE pThis)
 static DECLCALLBACK(int) elnkLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     pDevIns->pHlpR3->pfnSSMPutMem(pSSM, &pThis->MacConfigured, sizeof(pThis->MacConfigured));
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -1794,7 +1841,7 @@ static DECLCALLBACK(int) elnkLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
 static DECLCALLBACK(int) elnkSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
@@ -1809,7 +1856,7 @@ static DECLCALLBACK(int) elnkSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) elnkSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PELNKSTATE      pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE      pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
     pHlp->pfnSSMPutU16(pSSM, pThis->uGPBufPtr);
@@ -1837,7 +1884,7 @@ static DECLCALLBACK(int) elnkSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) elnkLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     RT_NOREF(pSSM);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
@@ -1854,8 +1901,9 @@ static DECLCALLBACK(int) elnkLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) elnkLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PELNKSTATE      pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATECC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PELNKSTATECC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     if (   SSM_VERSION_MAJOR_CHANGED(uVersion, ELNK_SAVEDSTATE_VERSION)
         || SSM_VERSION_MINOR(uVersion) < 7)
@@ -1886,18 +1934,18 @@ static DECLCALLBACK(int) elnkLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     AssertRCReturn(rc, rc);
     if (    memcmp(&Mac, &pThis->MacConfigured, sizeof(Mac))
         && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
-        LogRel(("3C501#%u: The mac address differs: config=%RTmac saved=%RTmac\n", ELNK_INSTANCE, &pThis->MacConfigured, &Mac));
+        LogRel(("3C501#%u: The mac address differs: config=%RTmac saved=%RTmac\n", pThis->iInstance, &pThis->MacConfigured, &Mac));
 
     if (uPass == SSM_PASS_FINAL)
     {
         /* update promiscuous mode. */
-        if (pThis->pDrvR3)
-            pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, 0 /* promiscuous enabled */);
+        if (pThisCC->pDrv)
+            pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, 0 /* promiscuous enabled */);
 
         /* Indicate link down to the guest OS that all network connections have
            been lost, unless we've been teleported here. */
         if (!PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns))
-            elnkTempLinkDown(pThis);
+            elnkTempLinkDown(pDevIns, pThis);
     }
 
     return VINF_SUCCESS;
@@ -1913,11 +1961,11 @@ static DECLCALLBACK(int) elnkLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
  * the pfnRecieve() method is called.
  *
  * @returns VBox status code.
- * @param   pThis           The device instance data.
+ * @param   pDevIns         The device instance data.
+ * @param   pThis           The shared instance data.
  */
-static int elnkCanReceive(PELNKSTATE pThis)
+static int elnkCanReceive(PPDMDEVINS pDevIns, PELNKSTATE pThis)
 {
-    PPDMDEVINS pDevIns = ELNKSTATE_2_DEVINS(pThis);
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
@@ -1958,10 +2006,11 @@ static int elnkCanReceive(PELNKSTATE pThis)
  */
 static DECLCALLBACK(int) elnkNet_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
-    PELNKSTATE pThis = RT_FROM_MEMBER(pInterface, ELNKSTATE, INetworkDown);
-    PPDMDEVINS pDevIns = ELNKSTATE_2_DEVINS(pThis);
+    PELNKSTATECC    pThisCC = RT_FROM_MEMBER(pInterface, ELNKSTATECC, INetworkDown);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
 
-    int rc = elnkCanReceive(pThis);
+    int rc = elnkCanReceive(pDevIns, pThis);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
     if (RT_UNLIKELY(cMillies == 0))
@@ -1971,16 +2020,16 @@ static DECLCALLBACK(int) elnkNet_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, R
     ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, true);
     STAM_PROFILE_START(&pThis->StatRxOverflow, a);
     VMSTATE enmVMState;
-    while (RT_LIKELY(   (enmVMState = PDMDevHlpVMState(pThis->CTX_SUFF(pDevIns))) == VMSTATE_RUNNING
+    while (RT_LIKELY(   (enmVMState = PDMDevHlpVMState(pDevIns)) == VMSTATE_RUNNING
                      || enmVMState == VMSTATE_RUNNING_LS))
     {
-        int rc2 = elnkCanReceive(pThis);
+        int rc2 = elnkCanReceive(pDevIns, pThis);
         if (RT_SUCCESS(rc2))
         {
             rc = VINF_SUCCESS;
             break;
         }
-        LogFlow(("elnkNet_WaitReceiveAvail: waiting cMillies=%u...\n", cMillies));
+        LogFlowFunc(("waiting cMillies=%u...\n", cMillies));
 
         /* Start the poll timer once which will remain active as long fMaybeOutOfSpace
          * is true -- even if (transmit) polling is disabled. */
@@ -2001,9 +2050,10 @@ static DECLCALLBACK(int) elnkNet_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, R
  */
 static DECLCALLBACK(int) elnkNet_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
-    PELNKSTATE  pThis = RT_FROM_MEMBER(pInterface, ELNKSTATE, INetworkDown);
-    PPDMDEVINS  pDevIns = ELNKSTATE_2_DEVINS(pThis);
-    int         rc;
+    PELNKSTATECC    pThisCC = RT_FROM_MEMBER(pInterface, ELNKSTATECC, INetworkDown);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
+    int             rc;
 
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
     rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
@@ -2011,7 +2061,7 @@ static DECLCALLBACK(int) elnkNet_Receive(PPDMINETWORKDOWN pInterface, const void
 
     if (cb > 50) /* unqualified guess */
         pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
-    elnkReceiveLocked(pThis, (const uint8_t *)pvBuf, cb, false);
+    elnkReceiveLocked(pDevIns, pThis, (const uint8_t *)pvBuf, cb, false);
     pThis->Led.Actual.s.fReading = 0;
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
@@ -2026,8 +2076,11 @@ static DECLCALLBACK(int) elnkNet_Receive(PPDMINETWORKDOWN pInterface, const void
  */
 static DECLCALLBACK(void) elnkNet_XmitPending(PPDMINETWORKDOWN pInterface)
 {
-    PELNKSTATE pThis = RT_FROM_MEMBER(pInterface, ELNKSTATE, INetworkDown);
-    elnkXmitBuffer(pThis, true /*fOnWorkerThread*/);
+    PELNKSTATECC    pThisCC = RT_FROM_MEMBER(pInterface, ELNKSTATECC, INetworkDown);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
+
+    elnkXmitBuffer(pDevIns, pThis, pThisCC, true /*fOnWorkerThread*/);
 }
 
 
@@ -2038,7 +2091,11 @@ static DECLCALLBACK(void) elnkNet_XmitPending(PPDMINETWORKDOWN pInterface)
  */
 static DECLCALLBACK(int) elnkGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
-    PELNKSTATE pThis = RT_FROM_MEMBER(pInterface, ELNKSTATE, INetworkConfig);
+    PELNKSTATECC    pThisCC = RT_FROM_MEMBER(pInterface, ELNKSTATECC, INetworkConfig);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
+
+    LogFlowFunc(("#%d\n", pThis->iInstance));
     /// @todo This is broken!! We can't properly get the MAC address set by the guest
 #if 0
     memcpy(pMac, pThis->aStationAddr, sizeof(*pMac));
@@ -2054,7 +2111,10 @@ static DECLCALLBACK(int) elnkGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
  */
 static DECLCALLBACK(PDMNETWORKLINKSTATE) elnkGetLinkState(PPDMINETWORKCONFIG pInterface)
 {
-    PELNKSTATE pThis = RT_FROM_MEMBER(pInterface, ELNKSTATE, INetworkConfig);
+    PELNKSTATECC    pThisCC = RT_FROM_MEMBER(pInterface, ELNKSTATECC, INetworkConfig);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
+
     if (pThis->fLinkUp && !pThis->fLinkTempDown)
         return PDMNETWORKLINKSTATE_UP;
     if (!pThis->fLinkUp)
@@ -2071,15 +2131,17 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) elnkGetLinkState(PPDMINETWORKCONFIG pIn
  */
 static DECLCALLBACK(int) elnkSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
-    PELNKSTATE pThis = RT_FROM_MEMBER(pInterface, ELNKSTATE, INetworkConfig);
-    bool fLinkUp;
+    PELNKSTATECC    pThisCC = RT_FROM_MEMBER(pInterface, ELNKSTATECC, INetworkConfig);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
+    bool            fLinkUp;
 
     AssertMsgReturn(enmState > PDMNETWORKLINKSTATE_INVALID && enmState <= PDMNETWORKLINKSTATE_DOWN_RESUME,
                     ("Invalid link state: enmState=%d\n", enmState), VERR_INVALID_PARAMETER);
 
     if (enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
     {
-        elnkTempLinkDown(pThis);
+        elnkTempLinkDown(pDevIns, pThis);
         /*
          * Note that we do not notify the driver about the link state change because
          * the change is only temporary and can be disregarded from the driver's
@@ -2098,7 +2160,7 @@ static DECLCALLBACK(int) elnkSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETW
             pThis->fLinkTempDown = true;
             pThis->cLinkDownReported = 0;
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
-            int rc = PDMDevHlpTimerSetMillies(ELNKSTATE_2_DEVINS(pThis), pThis->hTimerRestore, pThis->cMsLinkUpDelay);
+            int rc = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerRestore, pThis->cMsLinkUpDelay);
             AssertRC(rc);
         }
         else
@@ -2107,9 +2169,9 @@ static DECLCALLBACK(int) elnkSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETW
             pThis->cLinkDownReported = 0;
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         }
-        Assert(!PDMDevHlpCritSectIsOwner(ELNKSTATE_2_DEVINS(pThis), &pThis->CritSect));
-        if (pThis->pDrvR3)
-            pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, enmState);
+        Assert(!PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
+        if (pThisCC->pDrv)
+            pThisCC->pDrv->pfnNotifyLinkChanged(pThisCC->pDrv, enmState);
     }
     return VINF_SUCCESS;
 }
@@ -2122,7 +2184,9 @@ static DECLCALLBACK(int) elnkSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETW
  */
 static DECLCALLBACK(int) elnkQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    PELNKSTATE pThis = RT_FROM_MEMBER(pInterface, ELNKSTATE, ILeds);
+    PELNKSTATECC    pThisCC = RT_FROM_MEMBER(pInterface, ELNKSTATECC, ILeds);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     if (iLUN == 0)
     {
         *ppLed = &pThis->Led;
@@ -2139,12 +2203,12 @@ static DECLCALLBACK(int) elnkQueryStatusLed(PPDMILEDPORTS pInterface, unsigned i
  */
 static DECLCALLBACK(void *) elnkQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    PELNKSTATE pThis = RT_FROM_MEMBER(pInterface, ELNKSTATE, IBase);
-    Assert(&pThis->IBase == pInterface);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
+    PELNKSTATECC pThisCC = RT_FROM_MEMBER(pInterface, ELNKSTATECC, IBase);
+    Assert(&pThisCC->IBase == pInterface);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThisCC->INetworkDown);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThisCC->INetworkConfig);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThisCC->ILeds);
     return NULL;
 }
 
@@ -2154,7 +2218,7 @@ static DECLCALLBACK(void *) elnkQueryInterface(struct PDMIBASE *pInterface, cons
 /**
  * @interface_method_impl{PDMDEVREG,pfnPowerOff}
  */
-static DECLCALLBACK(void) elnkPowerOff(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) elnkR3PowerOff(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
     elnkR3WakeupReceive(pDevIns);
@@ -2166,11 +2230,12 @@ static DECLCALLBACK(void) elnkPowerOff(PPDMDEVINS pDevIns)
  *
  * One port on the network card has been disconnected from the network.
  */
-static DECLCALLBACK(void) elnkDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(void) elnkR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATECC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PELNKSTATECC);
     RT_NOREF(fFlags);
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
-    Log(("#%d elnkDetach:\n", ELNK_INSTANCE));
+    LogFlowFunc(("#%d:\n", pThis->iInstance));
 
     AssertLogRelReturnVoid(iLUN == 0);
 
@@ -2180,10 +2245,9 @@ static DECLCALLBACK(void) elnkDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     /*
      * Zero some important members.
      */
-    pThis->pDrvBase = NULL;
-    pThis->pDrvR3 = NULL;
-    pThis->pDrvR0 = NIL_RTR0PTR;
-    pThis->pDrvRC = NIL_RTRCPTR;
+    pThis->fDriverAttached = false;
+    pThisCC->pDrvBase = NULL;
+    pThisCC->pDrv     = NULL;
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
@@ -2193,11 +2257,12 @@ static DECLCALLBACK(void) elnkDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
  * @interface_method_impl{PDMDEVREG,pfnAttach}
  * One port on the network card has been connected to a network.
  */
-static DECLCALLBACK(int) elnkAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(int) elnkR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATECC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PELNKSTATECC);
     RT_NOREF(fFlags);
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
-    LogFlow(("#%d elnkAttach:\n", ELNK_INSTANCE));
+    LogFlowFunc(("#%d:\n", pThis->iInstance));
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
@@ -2207,21 +2272,20 @@ static DECLCALLBACK(int) elnkAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     /*
      * Attach the driver.
      */
-    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
+    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        AssertMsgStmt(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
+        pThisCC->pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMINETWORKUP);
+        AssertMsgStmt(pThisCC->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
-        pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
-        pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
+        pThis->fDriverAttached = true;
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
     {
         /* This should never happen because this function is not called
          * if there is no driver to attach! */
-        Log(("#%d No attached driver!\n", ELNK_INSTANCE));
+        Log(("#%d: No attached driver!\n", pThis->iInstance));
     }
 
     /*
@@ -2230,7 +2294,7 @@ static DECLCALLBACK(int) elnkAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
      * network card
      */
     if (RT_SUCCESS(rc))
-        elnkTempLinkDown(pThis);
+        elnkTempLinkDown(pDevIns, pThis);
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return rc;
@@ -2240,7 +2304,7 @@ static DECLCALLBACK(int) elnkAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 /**
  * @interface_method_impl{PDMDEVREG,pfnSuspend}
  */
-static DECLCALLBACK(void) elnkSuspend(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) elnkR3Suspend(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
     elnkR3WakeupReceive(pDevIns);
@@ -2250,9 +2314,9 @@ static DECLCALLBACK(void) elnkSuspend(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
-static DECLCALLBACK(void) elnkReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) elnkR3Reset(PPDMDEVINS pDevIns)
 {
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     if (pThis->fLinkTempDown)
     {
         pThis->cLinkDownReported = 0x1000;
@@ -2261,28 +2325,27 @@ static DECLCALLBACK(void) elnkReset(PPDMDEVINS pDevIns)
     }
 
     /** @todo How to flush the queues? */
-    elnkR3HardReset(pThis);
+    elnkR3HardReset(pDevIns, pThis);
 }
 
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
-static DECLCALLBACK(void) elnkRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+static DECLCALLBACK(void) elnkR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    RT_NOREF(offDelta);
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    PELNKSTATERC pThisRC = PDMINS_2_DATA_RC(pDevIns, PELNKSTATERC);
+    pThisRC->pDrv += offDelta;
 }
 
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
-static DECLCALLBACK(int) elnkDestruct(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) elnkR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PELNKSTATE pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
 
     if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->CritSect))
     {
@@ -2298,11 +2361,12 @@ static DECLCALLBACK(int) elnkDestruct(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) elnkConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int) elnkR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PELNKSTATE      pThis = PDMINS_2_DATA(pDevIns, PELNKSTATE);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PELNKSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
+    PELNKSTATECC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PELNKSTATECC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     PPDMIBASE       pBase;
     char            szTmp[128];
     int             rc;
@@ -2313,6 +2377,7 @@ static DECLCALLBACK(int) elnkConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->iInstance            = iInstance;
     pThis->hEventOutOfRxSpace   = NIL_RTSEMEVENT;
     pThis->hIoPortsIsa          = NIL_IOMIOPORTHANDLE;
+    pThisCC->pDevIns            = pDevIns;
 
     /*
      * Validate configuration.
@@ -2366,22 +2431,19 @@ static DECLCALLBACK(int) elnkConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Initialize data (most of it anyway).
      */
-    pThis->pDevInsR3                        = pDevIns;
-    pThis->pDevInsR0                        = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC                        = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->Led.u32Magic                     = PDMLED_MAGIC;
+    pThis->Led.u32Magic                       = PDMLED_MAGIC;
     /* IBase */
-    pThis->IBase.pfnQueryInterface          = elnkQueryInterface;
+    pThisCC->IBase.pfnQueryInterface          = elnkQueryInterface;
     /* INetworkPort */
-    pThis->INetworkDown.pfnWaitReceiveAvail = elnkNet_WaitReceiveAvail;
-    pThis->INetworkDown.pfnReceive          = elnkNet_Receive;
-    pThis->INetworkDown.pfnXmitPending      = elnkNet_XmitPending;
+    pThisCC->INetworkDown.pfnWaitReceiveAvail = elnkNet_WaitReceiveAvail;
+    pThisCC->INetworkDown.pfnReceive          = elnkNet_Receive;
+    pThisCC->INetworkDown.pfnXmitPending      = elnkNet_XmitPending;
     /* INetworkConfig */
-    pThis->INetworkConfig.pfnGetMac         = elnkGetMac;
-    pThis->INetworkConfig.pfnGetLinkState   = elnkGetLinkState;
-    pThis->INetworkConfig.pfnSetLinkState   = elnkSetLinkState;
+    pThisCC->INetworkConfig.pfnGetMac         = elnkGetMac;
+    pThisCC->INetworkConfig.pfnGetLinkState   = elnkGetLinkState;
+    pThisCC->INetworkConfig.pfnSetLinkState   = elnkSetLinkState;
     /* ILeds */
-    pThis->ILeds.pfnQueryStatusLed          = elnkQueryStatusLed;
+    pThisCC->ILeds.pfnQueryStatusLed          = elnkQueryStatusLed;
 
     /*
      * We use our own critical section (historical reasons).
@@ -2444,13 +2506,13 @@ static DECLCALLBACK(int) elnkConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register the info item.
      */
-    RTStrPrintf(szTmp, sizeof(szTmp), "elnk%d", pDevIns->iInstance);
+    RTStrPrintf(szTmp, sizeof(szTmp), "elnk%d", pThis->iInstance);
     PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "3C501 info", elnkInfo);
 
     /*
      * Attach status driver (optional).
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThisCC->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
         pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     else if (   rc != VERR_PDM_NO_ATTACHED_DRIVER
@@ -2463,14 +2525,13 @@ static DECLCALLBACK(int) elnkConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Attach driver.
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        AssertMsgReturn(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
+        pThisCC->pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMINETWORKUP);
+        AssertMsgReturn(pThisCC->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                         VERR_PDM_MISSING_INTERFACE_BELOW);
-        pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
-        pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
+        pThis->fDriverAttached = true;
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
@@ -2484,7 +2545,7 @@ static DECLCALLBACK(int) elnkConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Reset the device state. (Do after attaching.)
      */
-    elnkR3HardReset(pThis);
+    elnkR3HardReset(pDevIns, pThis);
 
     /*
      * Register statistics counters.
@@ -2561,27 +2622,27 @@ const PDMDEVREG g_Device3C501 =
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(ELNKSTATE),
-    /* .cbInstanceCC = */           0,
-    /* .cbInstanceRC = */           0,
+    /* .cbInstanceCC = */           sizeof(ELNKSTATECC),
+    /* .cbInstanceRC = */           sizeof(ELNKSTATERC),
     /* .cMaxPciDevices = */         0,
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "3Com EtherLink 3C501 adapter.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
     /* .pszR0Mod = */               "VBoxDDR0.r0",
-    /* .pfnConstruct = */           elnkConstruct,
-    /* .pfnDestruct = */            elnkDestruct,
-    /* .pfnRelocate = */            elnkRelocate,
+    /* .pfnConstruct = */           elnkR3Construct,
+    /* .pfnDestruct = */            elnkR3Destruct,
+    /* .pfnRelocate = */            elnkR3Relocate,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               elnkReset,
-    /* .pfnSuspend = */             elnkSuspend,
+    /* .pfnReset = */               elnkR3Reset,
+    /* .pfnSuspend = */             elnkR3Suspend,
     /* .pfnResume = */              NULL,
-    /* .pfnAttach = */              elnkAttach,
-    /* .pfnDetach = */              elnkDetach,
+    /* .pfnAttach = */              elnkR3Attach,
+    /* .pfnDetach = */              elnkR3Detach,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
-    /* .pfnPowerOff = */            elnkPowerOff,
+    /* .pfnPowerOff = */            elnkR3PowerOff,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,

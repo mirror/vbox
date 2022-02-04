@@ -355,9 +355,6 @@
 /** Maximum frame size we handle */
 #define MAX_FRAME                       1536
 
-#define DPNICSTATE_2_DEVINS(pThis)      ((pThis)->CTX_SUFF(pDevIns))
-#define DPNIC_INSTANCE                  (DPNICSTATE_2_DEVINS(pThis)->iInstance)
-
 /* Size of the local RAM. */
 #define DPNIC_MEM_SIZE  16384u
 
@@ -830,40 +827,12 @@ typedef struct DP8390CORE
 
 /**
  * DP8390-based card state.
- *
- * @extends     PDMPCIDEV
- * @implements  PDMIBASE
- * @implements  PDMINETWORKDOWN
- * @implements  PDMINETWORKCONFIG
- * @implements  PDMILEDPORTS
  */
 typedef struct DPNICSTATE
 {
-    /** Pointer to the device instance - R3. */
-    PPDMDEVINSR3                        pDevInsR3;
-    /** Pointer to the connector of the attached network driver - R3. */
-    PPDMINETWORKUPR3                    pDrvR3;
-    /** Pointer to the attached network driver. */
-    R3PTRTYPE(PPDMIBASE)                pDrvBase;
-    /** LUN\#0 + status LUN: The base interface. */
-    PDMIBASE                            IBase;
-    /** LUN\#0: The network port interface. */
-    PDMINETWORKDOWN                     INetworkDown;
-    /** LUN\#0: The network config port interface. */
-    PDMINETWORKCONFIG                   INetworkConfig;
     /** Restore timer.
      *  This is used to disconnect and reconnect the link after a restore. */
     TMTIMERHANDLE                       hTimerRestore;
-
-    /** Pointer to the device instance - R0. */
-    PPDMDEVINSR0                        pDevInsR0;
-    /** Receive signaller - R0. */
-    PPDMINETWORKUPR0                    pDrvR0;
-
-    /** Pointer to the device instance - RC. */
-    PPDMDEVINSRC                        pDevInsRC;
-    /** Receive signaller - RC. */
-    PPDMINETWORKUPRC                    pDrvRC;
 
     /** Transmit signaller. */
     PDMTASKHANDLE                       hXmitTask;
@@ -920,6 +889,8 @@ typedef struct DPNICSTATE
     /** The "hardware" MAC address. */
     RTMAC                               MacConfigured;
 
+    /** Set if DPNICSTATER3::pDrv is not NULL. */
+    bool                                fDriverAttached;
     /** The LED. */
     PDMLED                              Led;
     /** Status LUN: The LED ports. */
@@ -982,6 +953,69 @@ typedef struct DPNICSTATE
 } DPNICSTATE, *PDPNICSTATE;
 
 
+/**
+ * DP8390 state for ring-3.
+ *
+ * @implements  PDMIBASE
+ * @implements  PDMINETWORKDOWN
+ * @implements  PDMINETWORKCONFIG
+ * @implements  PDMILEDPORTS
+ */
+typedef struct DPNICSTATER3
+{
+    /** Pointer to the device instance. */
+    PPDMDEVINSR3                        pDevIns;
+    /** Pointer to the connector of the attached network driver. */
+    PPDMINETWORKUPR3                    pDrv;
+    /** Pointer to the attached network driver. */
+    R3PTRTYPE(PPDMIBASE)                pDrvBase;
+    /** LUN\#0 + status LUN: The base interface. */
+    PDMIBASE                            IBase;
+    /** LUN\#0: The network port interface. */
+    PDMINETWORKDOWN                     INetworkDown;
+    /** LUN\#0: The network config port interface. */
+    PDMINETWORKCONFIG                   INetworkConfig;
+
+    /** Status LUN: The LED ports. */
+    PDMILEDPORTS                        ILeds;
+    /** Partner of ILeds. */
+    R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
+} DPNICSTATER3;
+/** Pointer to a DP8390 state structure for ring-3. */
+typedef DPNICSTATER3 *PDPNICSTATER3;
+
+
+/**
+ * DP8390 state for ring-0.
+ */
+typedef struct DPNICSTATER0
+{
+    /** Pointer to the connector of the attached network driver. */
+    PPDMINETWORKUPR0                    pDrv;
+} DPNICSTATER0;
+/** Pointer to a DP8390 state structure for ring-0. */
+typedef DPNICSTATER0 *PDPNICSTATER0;
+
+
+/**
+ * DP8390 state for raw-mode.
+ */
+typedef struct DPNICSTATERC
+{
+    /** Pointer to the connector of the attached network driver. */
+    PPDMINETWORKUPRC                    pDrv;
+} DPNICSTATERC;
+/** Pointer to a DP8390 state structure for raw-mode. */
+typedef DPNICSTATERC *PDPNICSTATERC;
+
+
+/** The DP8390 state structure for the current context. */
+typedef CTX_SUFF(DPNICSTATE) DPNICSTATECC;
+/** Pointer to a DP8390 state structure for the current
+ *  context. */
+typedef CTX_SUFF(PDPNICSTATE) PDPNICSTATECC;
+
+
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 
@@ -989,7 +1023,7 @@ typedef struct DPNICSTATE
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
-static int dp8390CoreAsyncXmitLocked(PDPNICSTATE pThis, bool fOnWorkerThread);
+static int dp8390CoreAsyncXmitLocked(PPDMDEVINS pDevIns, PDPNICSTATE pThis, PDPNICSTATECC pThisCC, bool fOnWorkerThread);
 
 /**
  * Checks if the link is up.
@@ -998,7 +1032,7 @@ static int dp8390CoreAsyncXmitLocked(PDPNICSTATE pThis, bool fOnWorkerThread);
  */
 DECLINLINE(bool) dp8390IsLinkUp(PDPNICSTATE pThis)
 {
-    return pThis->pDrvR3 && !pThis->fLinkTempDown && pThis->fLinkUp;
+    return pThis->fDriverAttached && !pThis->fLinkTempDown && pThis->fLinkUp;
 }
 
 
@@ -1183,7 +1217,7 @@ DECLINLINE(int) padr_promi(PDPNICSTATE pThis, const uint8_t *buf)
 /**
  * Update the device IRQ line based on internal state.
  */
-static void dp8390CoreUpdateIrq(PDPNICSTATE pThis)
+static void dp8390CoreUpdateIrq(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
 {
     bool     fCoreIrqActive = false;
     bool     fNicIrqActive  = false;
@@ -1206,14 +1240,14 @@ static void dp8390CoreUpdateIrq(PDPNICSTATE pThis)
     pThis->ga.fGaIrq = pThis->ga.streg.dtc && !pThis->ga.gacfr.tcm;
     fNicIrqActive = (fCoreIrqActive && !pThis->ga.gacfr.nim) || (pThis->ga.streg.dtc && !pThis->ga.gacfr.tcm);
 
-    Log2Func(("#%d set irq fNicIrqActive=%d (fCoreIrqActive=%d, fGaIrq=%d)\n", DPNIC_INSTANCE, fNicIrqActive, fCoreIrqActive, pThis->ga.fGaIrq));
+    Log2Func(("#%d set irq fNicIrqActive=%d (fCoreIrqActive=%d, fGaIrq=%d)\n", pThis->iInstance, fNicIrqActive, fCoreIrqActive, pThis->ga.fGaIrq));
 
     /* The IRQ line typically does not change. */
     if (RT_UNLIKELY(fNicIrqActive != pThis->fNicIrqActive))
     {
-        LogFunc(("#%d IRQ=%d, state=%d\n", DPNIC_INSTANCE, pThis->uIsaIrq, fNicIrqActive));
+        LogFunc(("#%d IRQ=%d, state=%d\n", pThis->iInstance, pThis->uIsaIrq, fNicIrqActive));
         /// @todo Handle IRQ 2/9 elsewhere
-        PDMDevHlpISASetIrq(DPNICSTATE_2_DEVINS(pThis), pThis->uIsaIrq == 2 ? 9 : pThis->uIsaIrq, fNicIrqActive);
+        PDMDevHlpISASetIrq(pDevIns, pThis->uIsaIrq == 2 ? 9 : pThis->uIsaIrq, fNicIrqActive);
         pThis->fNicIrqActive = fNicIrqActive;
     }
     STAM_PROFILE_ADV_STOP(&pThis->StatInterrupt, a);
@@ -1223,9 +1257,9 @@ static void dp8390CoreUpdateIrq(PDPNICSTATE pThis)
 /**
  * Perform a software reset of the NIC.
  */
-static void dp8390CoreReset(PDPNICSTATE pThis)
+static void dp8390CoreReset(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
 {
-    LogFlowFunc(("#%d:\n", DPNIC_INSTANCE));
+    LogFlowFunc(("#%d:\n", pThis->iInstance));
 
     /* DP8390 or DP83901A datasheet, section 11.0. */
     pThis->core.cr.TXP  = 0;
@@ -1242,15 +1276,15 @@ static void dp8390CoreReset(PDPNICSTATE pThis)
     memset(&pThis->core.fifo, 0, sizeof(pThis->core.fifo));
 
     /* Make sure the IRQ line us updated. */
-    dp8390CoreUpdateIrq(pThis);
+    dp8390CoreUpdateIrq(pDevIns, pThis);
 }
 
 #ifdef IN_RING3
 
-static DECLCALLBACK(void) dp8390WakeupReceive(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) dp8390R3WakeupReceive(PPDMDEVINS pDevIns)
 {
-    PDPNICSTATE pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
-    LogFlowFunc(("#%d\n", DPNIC_INSTANCE));
+    PDPNICSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+    LogFlowFunc(("#%d\n", pThis->iInstance));
     STAM_COUNTER_INC(&pThis->StatRxOverflowWakeup);
     if (pThis->hEventOutOfRxSpace != NIL_RTSEMEVENT)
         RTSemEventSignal(pThis->hEventOutOfRxSpace);
@@ -1263,7 +1297,7 @@ static DECLCALLBACK(void) dp8390WakeupReceive(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) dpNicR3CanRxTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 {
     RT_NOREF(pvUser);
-    dp8390WakeupReceive(pDevIns);
+    dp8390R3WakeupReceive(pDevIns);
 }
 
 #endif /* IN_RING3 */
@@ -1275,7 +1309,7 @@ static void dpLocalRAMReadBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, uin
 {
     if ((RT_LOBYTE(addr) + cb) > 256)
     {
-        LogFunc(("#%d: addr=%04X, cb=%X, cb!!\n", DPNIC_INSTANCE, addr, cb));
+        LogFunc(("#%d: addr=%04X, cb=%X, cb!!\n", pThis->iInstance, addr, cb));
         cb = 256 - RT_LOBYTE(addr);
     }
 
@@ -1291,7 +1325,7 @@ static void dpLocalRAMReadBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, uin
             memcpy(pDst, &pThis->abLocalRAM[addr], cb);
         }
         else
-            LogFunc(("#%d: Ignoring read at addr=%04X cb=%u!\n", DPNIC_INSTANCE, addr, cb));
+            LogFunc(("#%d: Ignoring read at addr=%04X cb=%u!\n", pThis->iInstance, addr, cb));
     }
     else if (pThis->uDevType == DEV_NE2000)
     {
@@ -1304,7 +1338,7 @@ static void dpLocalRAMReadBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, uin
             memcpy(pDst, &pThis->abLocalRAM[addr], cb);
         }
         else
-            LogFunc(("#%d: Ignoring read at addr=%04X cb=%u!\n", DPNIC_INSTANCE, addr, cb));
+            LogFunc(("#%d: Ignoring read at addr=%04X cb=%u!\n", pThis->iInstance, addr, cb));
     }
     else if ((pThis->uDevType == DEV_WD8003) || (pThis->uDevType == DEV_WD8013))
     {
@@ -1313,7 +1347,7 @@ static void dpLocalRAMReadBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, uin
         if (addr + cb <= DPNIC_MEM_SIZE)
             memcpy(pDst, &pThis->abLocalRAM[addr], cb);
         else
-            LogFunc(("#%d: Ignoring read at addr=%04X cb=%u!\n", DPNIC_INSTANCE, addr, cb));
+            LogFunc(("#%d: Ignoring read at addr=%04X cb=%u!\n", pThis->iInstance, addr, cb));
     }
     else if (pThis->uDevType == DEV_3C503)
     {
@@ -1327,7 +1361,7 @@ static void dpLocalRAMReadBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, uin
             memcpy(pDst, &pThis->abLocalRAM[addr], cb);
         }
         else
-            LogFunc(("#%d: Ignoring read at addr=%04X cb=%u!\n", DPNIC_INSTANCE, addr, cb));
+            LogFunc(("#%d: Ignoring read at addr=%04X cb=%u!\n", pThis->iInstance, addr, cb));
     }
     else
     {
@@ -1345,7 +1379,7 @@ static void dpLocalRAMWriteBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, co
 {
     if ((RT_LOBYTE(addr) + cb) > 256)
     {
-        LogFunc(("#%d: addr=%04X, cb=%X, cb!!\n", DPNIC_INSTANCE, addr, cb));
+        LogFunc(("#%d: addr=%04X, cb=%X, cb!!\n", pThis->iInstance, addr, cb));
         cb = 256 - RT_LOBYTE(addr);
     }
 
@@ -1361,7 +1395,7 @@ static void dpLocalRAMWriteBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, co
             memcpy(&pThis->abLocalRAM[addr], pSrc, cb);
         }
         else
-            LogFunc(("#%d: Ignoring write at addr=%04X cb=%u!\n", DPNIC_INSTANCE, addr, cb));
+            LogFunc(("#%d: Ignoring write at addr=%04X cb=%u!\n", pThis->iInstance, addr, cb));
     }
     else if (pThis->uDevType == DEV_NE2000)
     {
@@ -1374,7 +1408,7 @@ static void dpLocalRAMWriteBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, co
             memcpy(&pThis->abLocalRAM[addr], pSrc, cb);
         }
         else
-            LogFunc(("#%d: Ignoring write at addr=%04X cb=%u!\n", DPNIC_INSTANCE, addr, cb));
+            LogFunc(("#%d: Ignoring write at addr=%04X cb=%u!\n", pThis->iInstance, addr, cb));
     }
     else if ((pThis->uDevType == DEV_WD8003) || (pThis->uDevType == DEV_WD8013))
     {
@@ -1383,7 +1417,7 @@ static void dpLocalRAMWriteBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, co
         if (addr + cb <= DPNIC_MEM_SIZE)
             memcpy(&pThis->abLocalRAM[addr], pSrc, cb);
         else
-            LogFunc(("#%d: Ignoring write at addr=%04X cb=%u!\n", DPNIC_INSTANCE, addr, cb));
+            LogFunc(("#%d: Ignoring write at addr=%04X cb=%u!\n", pThis->iInstance, addr, cb));
     }
     else if (pThis->uDevType == DEV_3C503)
     {
@@ -1397,7 +1431,7 @@ static void dpLocalRAMWriteBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, co
             memcpy(&pThis->abLocalRAM[addr], pSrc, cb);
         }
         else
-            LogFunc(("#%d: Ignoring write at addr=%04X cb=%u!\n", DPNIC_INSTANCE, addr, cb));
+            LogFunc(("#%d: Ignoring write at addr=%04X cb=%u!\n", pThis->iInstance, addr, cb));
     }
     else
     {
@@ -1412,7 +1446,7 @@ static void dpLocalRAMWriteBuf(PDPNICSTATE pThis, uint16_t addr, unsigned cb, co
  */
 static void dp8390CoreReceiveBuf(PDPNICSTATE pThis, DP_RSR *pRsr, const uint8_t *src, unsigned cbLeft, bool fLast)
 {
-    LogFlow(("#%d: Initial CURR=%02X00 CLDA=%04X\n", DPNIC_INSTANCE, pThis->core.CURR, pThis->core.CLDA));
+    LogFlow(("#%d: Initial CURR=%02X00 CLDA=%04X\n", pThis->iInstance, pThis->core.CURR, pThis->core.CLDA));
 
     while (cbLeft)
     {
@@ -1423,7 +1457,7 @@ static void dp8390CoreReceiveBuf(PDPNICSTATE pThis, DP_RSR *pRsr, const uint8_t 
         cbPage = cbWrite = 256 - pThis->core.clda.CLDA0;
         if (cbWrite > cbLeft)
             cbWrite = cbLeft;
-        Log2Func(("#%d: cbLeft=%d CURR=%02X00 CLDA=%04X\n", DPNIC_INSTANCE, cbLeft, pThis->core.CURR, pThis->core.CLDA));
+        Log2Func(("#%d: cbLeft=%d CURR=%02X00 CLDA=%04X\n", pThis->iInstance, cbLeft, pThis->core.CURR, pThis->core.CLDA));
         dpLocalRAMWriteBuf(pThis, pThis->core.CLDA, cbWrite, src);
         src += cbWrite;
 
@@ -1435,13 +1469,13 @@ static void dp8390CoreReceiveBuf(PDPNICSTATE pThis, DP_RSR *pRsr, const uint8_t 
          */
         if (fLast && (cbWrite == cbLeft))
         {
-            Log3Func(("#%d: Round up: CLDA=%04X cbPage=%X\n", DPNIC_INSTANCE, pThis->core.CLDA, cbPage));
+            Log3Func(("#%d: Round up: CLDA=%04X cbPage=%X\n", pThis->iInstance, pThis->core.CLDA, cbPage));
             pThis->core.CLDA += cbPage;
         }
         else
             pThis->core.CLDA += cbWrite;
 
-        Log3Func(("#%d: Final CURR=%02X00 CLDA=%04X\n", DPNIC_INSTANCE, pThis->core.CURR, pThis->core.CLDA));
+        Log3Func(("#%d: Final CURR=%02X00 CLDA=%04X\n", pThis->iInstance, pThis->core.CURR, pThis->core.CLDA));
         /* If at end of ring, wrap around. */
         if (pThis->core.clda.CLDA1 == pThis->core.PSTOP)
             pThis->core.clda.CLDA1 = pThis->core.PSTART;
@@ -1453,7 +1487,7 @@ static void dp8390CoreReceiveBuf(PDPNICSTATE pThis, DP_RSR *pRsr, const uint8_t 
             pThis->core.isr.RST = 1;
             pRsr->MPA = 1;  /* Indicates to caller that receive was aborted. */
             STAM_COUNTER_INC(&pThis->StatDropPktNoBuffer);
-            Log3Func(("#%d: PSTART=%02X00 PSTOP=%02X00 BNRY=%02X00 CURR=%02X00 -- overflow!\n", DPNIC_INSTANCE, pThis->core.PSTART, pThis->core.PSTOP, pThis->core.BNRY, pThis->core.CURR));
+            Log3Func(("#%d: PSTART=%02X00 PSTOP=%02X00 BNRY=%02X00 CURR=%02X00 -- overflow!\n", pThis->iInstance, pThis->core.PSTART, pThis->core.PSTOP, pThis->core.BNRY, pThis->core.CURR));
             break;
         }
         cbLeft -= cbWrite;
@@ -1463,9 +1497,8 @@ static void dp8390CoreReceiveBuf(PDPNICSTATE pThis, DP_RSR *pRsr, const uint8_t 
 /**
  * Write incoming data into the packet buffer.
  */
-static void dp8390CoreReceiveLocked(PDPNICSTATE pThis, const uint8_t *src, size_t cbToRecv)
+static void dp8390CoreReceiveLocked(PPDMDEVINS pDevIns, PDPNICSTATE pThis, const uint8_t *src, size_t cbToRecv)
 {
-    PPDMDEVINS pDevIns = DPNICSTATE_2_DEVINS(pThis);
     int is_padr = 0, is_bcast = 0, is_mcast = 0, is_prom = 0;
     int mc_type = 0;
 
@@ -1508,7 +1541,7 @@ static void dp8390CoreReceiveLocked(PDPNICSTATE pThis, const uint8_t *src, size_
         return;
     }
 
-    LogFlowFunc(("#%d: size on wire=%d\n", DPNIC_INSTANCE, cbToRecv));
+    LogFlowFunc(("#%d: size on wire=%d\n", pThis->iInstance, cbToRecv));
 
     /*
      * Perform address matching. Packets which do not pass any address
@@ -1526,7 +1559,7 @@ static void dp8390CoreReceiveLocked(PDPNICSTATE pThis, const uint8_t *src, size_
         uint32_t    fcs = 0;
 
         nRSR = 0;
-        Log2Func(("#%d Packet passed address filter (is_padr=%d, is_bcast=%d, is_mcast=%d, is_prom=%d), size=%d\n", DPNIC_INSTANCE, is_padr, is_bcast, is_mcast, is_prom, cbToRecv));
+        Log2Func(("#%d Packet passed address filter (is_padr=%d, is_bcast=%d, is_mcast=%d, is_prom=%d), size=%d\n", pThis->iInstance, is_padr, is_bcast, is_mcast, is_prom, cbToRecv));
 
         if (is_bcast || mc_type)
             nRsr.PHY = 1;
@@ -1561,7 +1594,7 @@ static void dp8390CoreReceiveLocked(PDPNICSTATE pThis, const uint8_t *src, size_
                 src = pThis->abRuntBuf;
             }
 
-            LogFlowFunc(("#%d: PSTART=%02X00 PSTOP=%02X00 BNRY=%02X00 CURR=%02X00\n", DPNIC_INSTANCE, pThis->core.PSTART, pThis->core.PSTOP, pThis->core.BNRY, pThis->core.CURR));
+            LogFlowFunc(("#%d: PSTART=%02X00 PSTOP=%02X00 BNRY=%02X00 CURR=%02X00\n", pThis->iInstance, pThis->core.PSTART, pThis->core.PSTOP, pThis->core.BNRY, pThis->core.CURR));
 
             /* All packets that passed the address filter are copied to local RAM.
              * Since the DP8390 does not know how long the frame is until it detects
@@ -1626,11 +1659,11 @@ static void dp8390CoreReceiveLocked(PDPNICSTATE pThis, const uint8_t *src, size_
         pThis->core.RSR = nRSR;
 
         Log2Func(("Receive completed, size=%d, CURR=%02X00, RSR=%02X, ISR=%02X\n", cbToRecv, pThis->core.CURR, pThis->core.RSR, pThis->core.ISR));
-        dp8390CoreUpdateIrq(pThis);
+        dp8390CoreUpdateIrq(pDevIns, pThis);
     }
     else
     {
-        Log3Func(("#%d Packet did not pass address filter, size=%d\n", DPNIC_INSTANCE, cbToRecv));
+        Log3Func(("#%d Packet did not pass address filter, size=%d\n", pThis->iInstance, cbToRecv));
         STAM_COUNTER_INC(&pThis->StatDropPktNoMatch);
     }
 }
@@ -1643,32 +1676,33 @@ static void dp8390CoreReceiveLocked(PDPNICSTATE pThis, const uint8_t *src, size_
  *
  * @returns VBox status code.  VERR_TRY_AGAIN is returned if we're busy.
  *
- * @param   pThis               The device instance data.
+ * @param   pDevIns             The device instance data.
+ * @param   pThis               The device state data.
  * @param   fOnWorkerThread     Whether we're on a worker thread or on an EMT.
  */
-static int dp8390CoreXmitPacket(PDPNICSTATE pThis, bool fOnWorkerThread)
+static int dp8390CoreXmitPacket(PPDMDEVINS pDevIns, PDPNICSTATE pThis, bool fOnWorkerThread)
 {
+    PDPNICSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDPNICSTATECC);
     RT_NOREF_PV(fOnWorkerThread);
     int rc;
 
     /*
      * Grab the xmit lock of the driver as well as the DP8390 device state.
      */
-    PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+    PPDMINETWORKUP pDrv = pThisCC->pDrv;
     if (pDrv)
     {
         rc = pDrv->pfnBeginXmit(pDrv, false /*fOnWorkerThread*/);
         if (RT_FAILURE(rc))
             return rc;
     }
-    PPDMDEVINS pDevIns = DPNICSTATE_2_DEVINS(pThis);
     rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     if (RT_SUCCESS(rc))
     {
         /*
          * Do the transmitting.
          */
-        int rc2 = dp8390CoreAsyncXmitLocked(pThis, false /*fOnWorkerThread*/);
+        int rc2 = dp8390CoreAsyncXmitLocked(pDevIns, pThis, pThisCC, false /*fOnWorkerThread*/);
         AssertReleaseRC(rc2);
 
         /*
@@ -1693,13 +1727,13 @@ static int dp8390CoreXmitPacket(PDPNICSTATE pThis, bool fOnWorkerThread)
  */
 static DECLCALLBACK(void) dpNicR3XmitTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 {
-    PDPNICSTATE pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     NOREF(pvUser);
 
     /*
      * Transmit if we can.
      */
-    dp8390CoreXmitPacket(pThis, true /*fOnWorkerThread*/);
+    dp8390CoreXmitPacket(pDevIns, pThis, true /*fOnWorkerThread*/);
 }
 
 #endif /* IN_RING3 */
@@ -1710,20 +1744,21 @@ static DECLCALLBACK(void) dpNicR3XmitTaskCallback(PPDMDEVINS pDevIns, void *pvUs
  *
  * @returns See PPDMINETWORKUP::pfnAllocBuf.
  * @param   pThis       The device instance.
+ * @param   pThisCC     The device state for current context.
  * @param   cbMin       The minimum buffer size.
  * @param   fLoopback   Set if we're in loopback mode.
  * @param   pSgLoop     Pointer to stack storage for the loopback SG.
  * @param   ppSgBuf     Where to return the SG buffer descriptor on success.
  *                      Always set.
  */
-DECLINLINE(int) dp8390XmitAllocBuf(PDPNICSTATE pThis, size_t cbMin, bool fLoopback,
+DECLINLINE(int) dp8390XmitAllocBuf(PDPNICSTATE pThis, PDPNICSTATECC pThisCC, size_t cbMin, bool fLoopback,
                                    PPDMSCATTERGATHER pSgLoop, PPPDMSCATTERGATHER ppSgBuf)
 {
     int rc;
 
     if (!fLoopback)
     {
-        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+        PPDMINETWORKUP pDrv = pThisCC->pDrv;
         if (RT_LIKELY(pDrv))
         {
             rc = pDrv->pfnAllocBuf(pDrv, cbMin, NULL /*pGso*/, ppSgBuf);
@@ -1761,14 +1796,16 @@ DECLINLINE(int) dp8390XmitAllocBuf(PDPNICSTATE pThis, size_t cbMin, bool fLoopba
  * Wrapper around PDMINETWORKUP::pfnSendBuf, so check it out for the fine print.
  *
  * @returns See PDMINETWORKUP::pfnSendBuf.
- * @param   pThis           The device instance.
+ * @param   pDevIns         The device instance.
+ * @param   pThisCC         The current context device state.
  * @param   fLoopback       Set if we're in loopback mode.
  * @param   pSgBuf          The SG to send.
  * @param   fOnWorkerThread Set if we're being called on a work thread.  Clear
  *                          if an EMT.
  */
-DECLINLINE(int) dp8390CoreXmitSendBuf(PDPNICSTATE pThis, bool fLoopback, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
+DECLINLINE(int) dp8390CoreXmitSendBuf(PPDMDEVINS pDevIns, PDPNICSTATECC pThisCC, bool fLoopback, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
 {
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int rc;
     STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, pSgBuf->cbUsed);
     if (!fLoopback)
@@ -1777,7 +1814,7 @@ DECLINLINE(int) dp8390CoreXmitSendBuf(PDPNICSTATE pThis, bool fLoopback, PPDMSCA
         if (pSgBuf->cbUsed > 70) /* unqualified guess */
             pThis->Led.Asserted.s.fWriting = pThis->Led.Actual.s.fWriting = 1;
 
-        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+        PPDMINETWORKUP pDrv = pThisCC->pDrv;
         if (RT_LIKELY(pDrv))
         {
             rc = pDrv->pfnSendBuf(pDrv, pSgBuf, fOnWorkerThread);
@@ -1805,7 +1842,7 @@ DECLINLINE(int) dp8390CoreXmitSendBuf(PDPNICSTATE pThis, bool fLoopback, PPDMSCA
         Assert(pSgBuf->pvAllocator == (void *)pThis);
         pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
 
-        LogFlowFunc(("#%d: loopback (DCR=%02X LB=%u TCR=%02X RCR=%02X, %u bytes)\n", DPNIC_INSTANCE, pCore->DCR, pCore->tcr.LB, pCore->TCR, pCore->RCR, pSgBuf->cbUsed));
+        LogFlowFunc(("#%d: loopback (DCR=%02X LB=%u TCR=%02X RCR=%02X, %u bytes)\n", pThis->iInstance, pCore->DCR, pCore->tcr.LB, pCore->TCR, pCore->RCR, pSgBuf->cbUsed));
         for (ofs = 0; ofs < pSgBuf->cbUsed; ofs += 16)
             Log(("  %04X: %.*Rhxs\n", ofs, ofs + 16 < pSgBuf->cbUsed ? 16 : pSgBuf->cbUsed - ofs, &pThis->abLoopBuf[ofs]));
 
@@ -1885,7 +1922,7 @@ DECLINLINE(int) dp8390CoreXmitSendBuf(PDPNICSTATE pThis, bool fLoopback, PPDMSCA
             {
                 /* Receiving side checks the FCS. */
                 fGoodFcs = !memcmp(&pktbuf[pktlen - 4], abFcs, sizeof(abFcs));
-                Log2Func(("#%d: Address matched (is_padr=%d, is_bcast=%d, is_mcast=%d, is_prom=%d), checking FCS (fGoodFcs=%RTbool)\n", DPNIC_INSTANCE, is_padr, is_bcast, is_mcast, is_prom, fGoodFcs));
+                Log2Func(("#%d: Address matched (is_padr=%d, is_bcast=%d, is_mcast=%d, is_prom=%d), checking FCS (fGoodFcs=%RTbool)\n", pThis->iInstance, is_padr, is_bcast, is_mcast, is_prom, fGoodFcs));
 
                 /* Now we have to update the FIFO. Since only 8 bytes are visible
                  * in the FIFO after a receive, we can skip most of it.
@@ -1898,7 +1935,7 @@ DECLINLINE(int) dp8390CoreXmitSendBuf(PDPNICSTATE pThis, bool fLoopback, PPDMSCA
             {
                 nRsr.PRX = 1;   /* Weird but true, for non-matching address only! */
                 fAddrMatched = false;
-                Log3Func(("#%d: Address NOT matched, ignoring FCS errors.\n", DPNIC_INSTANCE));
+                Log3Func(("#%d: Address NOT matched, ignoring FCS errors.\n", pThis->iInstance));
             }
 
             /* The PHY bit is set when when an enabled broadcast packet is accepted,
@@ -1953,15 +1990,16 @@ DECLINLINE(int) dp8390CoreXmitSendBuf(PDPNICSTATE pThis, bool fLoopback, PPDMSCA
 /**
  * Reads the entire frame into the scatter gather buffer.
  */
-DECLINLINE(void) dp8390CoreXmitRead(PDPNICSTATE pThis, const unsigned uLocalAddr, const unsigned cbFrame, PPDMSCATTERGATHER pSgBuf, bool fLoopback)
+DECLINLINE(void) dp8390CoreXmitRead(PPDMDEVINS pDevIns, const unsigned uLocalAddr, const unsigned cbFrame, PPDMSCATTERGATHER pSgBuf, bool fLoopback)
 {
-    unsigned    uOfs = 0;
-    Assert(PDMDevHlpCritSectIsOwner(DPNICSTATE_2_DEVINS(pThis), &pThis->CritSect));
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+    unsigned        uOfs = 0;
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
     Assert(pSgBuf->cbAvailable >= cbFrame);
 
     pSgBuf->cbUsed = cbFrame;
 
-    LogFlowFunc(("#%d: uLocalAddr=%04X cbFrame=%d\n", DPNIC_INSTANCE, uLocalAddr, cbFrame));
+    LogFlowFunc(("#%d: uLocalAddr=%04X cbFrame=%d\n", pThis->iInstance, uLocalAddr, cbFrame));
     /* Have to figure out where the address is in local RAM. */
     if (pThis->uDevType == DEV_NE1000)
     {
@@ -1975,7 +2013,7 @@ DECLINLINE(void) dp8390CoreXmitRead(PDPNICSTATE pThis, const unsigned uLocalAddr
         else
         {
             /// @todo What are we supposed to do?!
-            LogFunc(("#%d: uOfs=%u, don't know what to do!!\n", DPNIC_INSTANCE, uOfs));
+            LogFunc(("#%d: uOfs=%u, don't know what to do!!\n", pThis->iInstance, uOfs));
         }
     }
     else if (pThis->uDevType == DEV_NE2000)
@@ -1990,7 +2028,7 @@ DECLINLINE(void) dp8390CoreXmitRead(PDPNICSTATE pThis, const unsigned uLocalAddr
         else
         {
             /// @todo What are we supposed to do?!
-            LogFunc(("#%d: uOfs=%u, don't know what to do!!\n", DPNIC_INSTANCE, uOfs));
+            LogFunc(("#%d: uOfs=%u, don't know what to do!!\n", pThis->iInstance, uOfs));
         }
     }
     else if ((pThis->uDevType == DEV_WD8003) || (pThis->uDevType == DEV_WD8013))
@@ -2010,7 +2048,7 @@ DECLINLINE(void) dp8390CoreXmitRead(PDPNICSTATE pThis, const unsigned uLocalAddr
         else
         {
             /// @todo What are we supposed to do?!
-            LogFunc(("#%d: uOfs=%u, don't know what to do!!\n", DPNIC_INSTANCE, uOfs));
+            LogFunc(("#%d: uOfs=%u, don't know what to do!!\n", pThis->iInstance, uOfs));
         }
     }
     else
@@ -2057,7 +2095,7 @@ DECLINLINE(void) dp8390CoreXmitRead(PDPNICSTATE pThis, const unsigned uLocalAddr
 /**
  * Try to transmit a frame.
  */
-static void dp8390CoreStartTransmit(PDPNICSTATE pThis)
+static void dp8390CoreStartTransmit(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
 {
     /*
      * Transmit the packet if possible, defer it if we cannot do it
@@ -2066,15 +2104,16 @@ static void dp8390CoreStartTransmit(PDPNICSTATE pThis)
     pThis->core.TSR = 0;    /* Clear transmit status. */
     pThis->core.NCR = 0;    /* Clear collision counter. */
 #if defined(IN_RING0) || defined(IN_RC)
-    if (!pThis->CTX_SUFF(pDrv))
+    PDPNICSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDPNICSTATECC);
+    if (!pThisCC->pDrv)
     {
-        int rc = PDMDevHlpTaskTrigger(pThis->CTX_SUFF(pDevIns), pThis->hXmitTask);
+        int rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hXmitTask);
         AssertRC(rc);
     }
     else
 #endif
     {
-        int rc = dp8390CoreXmitPacket(pThis, false /*fOnWorkerThread*/);
+        int rc = dp8390CoreXmitPacket(pDevIns, pThis, false /*fOnWorkerThread*/);
         if (rc == VERR_TRY_AGAIN)
             rc = VINF_SUCCESS;
         AssertRC(rc);
@@ -2087,15 +2126,15 @@ static void dp8390CoreStartTransmit(PDPNICSTATE pThis)
  *
  * @threads EMT.
  */
-static void dp8390CoreKickReceive(PDPNICSTATE pThis)
+static void dp8390CoreKickReceive(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
 {
     if (pThis->fMaybeOutOfSpace)
     {
         LogFlow(("Poking receive thread.\n"));
 #ifdef IN_RING3
-        dp8390WakeupReceive(DPNICSTATE_2_DEVINS(pThis));
+        dp8390R3WakeupReceive(pDevIns);
 #else
-        int rc = PDMDevHlpTaskTrigger(pThis->CTX_SUFF(pDevIns), pThis->hCanRxTask);
+        int rc = PDMDevHlpTaskTrigger(pDevIns, pThis->hCanRxTask);
         AssertRC(rc);
 #endif
     }
@@ -2106,9 +2145,9 @@ static void dp8390CoreKickReceive(PDPNICSTATE pThis)
  *
  * @threads TX or EMT.
  */
-static int dp8390CoreAsyncXmitLocked(PDPNICSTATE pThis, bool fOnWorkerThread)
+static int dp8390CoreAsyncXmitLocked(PPDMDEVINS pDevIns, PDPNICSTATE pThis, PDPNICSTATECC pThisCC, bool fOnWorkerThread)
 {
-    Assert(PDMDevHlpCritSectIsOwner(DPNICSTATE_2_DEVINS(pThis), &pThis->CritSect));
+    Assert(PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
 
     /*
      * Just drop it if not transmitting. Can happen with delayed transmits
@@ -2116,7 +2155,7 @@ static int dp8390CoreAsyncXmitLocked(PDPNICSTATE pThis, bool fOnWorkerThread)
      */
     if (RT_UNLIKELY(!pThis->core.cr.TXP))
     {
-        LogFunc(("#%d: Nope, CR.TXP is off (fOnWorkerThread=%RTbool)\n", DPNIC_INSTANCE, fOnWorkerThread));
+        LogFunc(("#%d: Nope, CR.TXP is off (fOnWorkerThread=%RTbool)\n", pThis->iInstance, fOnWorkerThread));
         return VINF_SUCCESS;
     }
 
@@ -2143,7 +2182,7 @@ static int dp8390CoreAsyncXmitLocked(PDPNICSTATE pThis, bool fOnWorkerThread)
          */
         unsigned    cb  = pThis->core.TBCR; /* Packet size. */
         const int   adr = RT_MAKE_U16(0, pThis->core.TPSR);
-        LogFunc(("#%d: cb=%d, adr=%04X\n", DPNIC_INSTANCE, cb, adr));
+        LogFunc(("#%d: cb=%d, adr=%04X\n", pThis->iInstance, cb, adr));
 
         if (RT_LIKELY(dp8390IsLinkUp(pThis) || fLoopback))
         {
@@ -2156,17 +2195,17 @@ static int dp8390CoreAsyncXmitLocked(PDPNICSTATE pThis, bool fOnWorkerThread)
                     Log(("Loopback with DCR.WTS set -> cb=%d\n", cb));
                 }
 
-                rc = dp8390XmitAllocBuf(pThis, cb, fLoopback, &SgLoop, &pSgBuf);
+                rc = dp8390XmitAllocBuf(pThis, pThisCC, cb, fLoopback, &SgLoop, &pSgBuf);
                 if (RT_SUCCESS(rc))
                 {
-                    dp8390CoreXmitRead(pThis, adr, cb, pSgBuf, fLoopback);
-                    rc = dp8390CoreXmitSendBuf(pThis, fLoopback, pSgBuf, fOnWorkerThread);
-                    Log2Func(("#%d: rc=%Rrc\n", DPNIC_INSTANCE, rc));
+                    dp8390CoreXmitRead(pDevIns, adr, cb, pSgBuf, fLoopback);
+                    rc = dp8390CoreXmitSendBuf(pDevIns, pThisCC, fLoopback, pSgBuf, fOnWorkerThread);
+                    Log2Func(("#%d: rc=%Rrc\n", pThis->iInstance, rc));
                 }
                 else if (rc == VERR_TRY_AGAIN)
                 {
                     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTransmit), a);
-                    LogFunc(("#%d: rc=%Rrc\n", DPNIC_INSTANCE, rc));
+                    LogFunc(("#%d: rc=%Rrc\n", pThis->iInstance, rc));
                     return VINF_SUCCESS;
                 }
                 if (RT_SUCCESS(rc))
@@ -2185,7 +2224,7 @@ static int dp8390CoreAsyncXmitLocked(PDPNICSTATE pThis, bool fOnWorkerThread)
                 /* Signal error, as this violates the Ethernet specs. Note that the DP8390
                  * hardware does *not* limit the packet length.
                  */
-                LogRel(("DPNIC#%d: Attempt to transmit illegal giant frame (%u bytes) -> signaling error\n", DPNIC_INSTANCE, cb));
+                LogRel(("DPNIC#%d: Attempt to transmit illegal giant frame (%u bytes) -> signaling error\n", pThis->iInstance, cb));
                 pThis->core.tsr.OWC = 1;    /* Pretend there was an out-of-window collision. */
                 pThis->core.isr.TXE = 1;
             }
@@ -2200,14 +2239,14 @@ static int dp8390CoreAsyncXmitLocked(PDPNICSTATE pThis, bool fOnWorkerThread)
         /* Transmit officially done, update register state. */
         pThis->core.cr.TXP = 0;
         pThis->core.TBCR   = 0;
-        LogFlowFunc(("#%d: TSR=%02X, ISR=%02X\n", DPNIC_INSTANCE, pThis->core.TSR, pThis->core.ISR));
+        LogFlowFunc(("#%d: TSR=%02X, ISR=%02X\n", pThis->iInstance, pThis->core.TSR, pThis->core.ISR));
 
     } while (0);    /* No loop, because there isn't ever more than one packet to transmit. */
 
-    dp8390CoreUpdateIrq(pThis);
+    dp8390CoreUpdateIrq(pDevIns, pThis);
 
     /* If there's anything waiting, this should be a good time to recheck. */
-    dp8390CoreKickReceive(pThis);
+    dp8390CoreKickReceive(pDevIns, pThis);
 
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTransmit), a);
 
@@ -2217,7 +2256,7 @@ static int dp8390CoreAsyncXmitLocked(PDPNICSTATE pThis, bool fOnWorkerThread)
 /* -=-=-=-=-=- I/O Port access -=-=-=-=-=- */
 
 
-static uint32_t dp8390CoreRead(PDPNICSTATE pThis, int ofs)
+static uint32_t dp8390CoreRead(PPDMDEVINS pDevIns, PDPNICSTATE pThis, int ofs)
 {
     uint8_t     val;
 
@@ -2258,17 +2297,17 @@ static uint32_t dp8390CoreRead(PDPNICSTATE pThis, int ofs)
         case DPR_P0_R_CNTR0:
             val = pThis->core.CNTR0;
             pThis->core.CNTR0 = 0;  /* Cleared by reading. */
-            dp8390CoreUpdateIrq(pThis);
+            dp8390CoreUpdateIrq(pDevIns, pThis);
             return val;
         case DPR_P0_R_CNTR1:
             val = pThis->core.CNTR1;
             pThis->core.CNTR1 = 0;  /* Cleared by reading. */
-            dp8390CoreUpdateIrq(pThis);
+            dp8390CoreUpdateIrq(pDevIns, pThis);
             return val;
         case DPR_P0_R_CNTR2:
             val = pThis->core.CNTR2;
             pThis->core.CNTR2 = 0;  /* Cleared by reading. */
-            dp8390CoreUpdateIrq(pThis);
+            dp8390CoreUpdateIrq(pDevIns, pThis);
             return val;
         default:
             return 0;   /// @todo or 0xFF? or something else?
@@ -2323,7 +2362,7 @@ static uint32_t dp8390CoreRead(PDPNICSTATE pThis, int ofs)
 }
 
 
-static int dp8390CoreWriteCR(PDPNICSTATE pThis, uint32_t val)
+static int dp8390CoreWriteCR(PPDMDEVINS pDevIns, PDPNICSTATE pThis, uint32_t val)
 {
     union {
         uint8_t     nCR;
@@ -2355,7 +2394,7 @@ static int dp8390CoreWriteCR(PDPNICSTATE pThis, uint32_t val)
         }
 
         /* Unblock receive thread if necessary, possibly drop any packets. */
-        dp8390CoreKickReceive(pThis);
+        dp8390CoreKickReceive(pDevIns, pThis);
     }
     if (nCr.STA && !pThis->core.cr.STA)
     {
@@ -2367,13 +2406,13 @@ static int dp8390CoreWriteCR(PDPNICSTATE pThis, uint32_t val)
         pThis->core.isr.RST = 0;
 
         /* Unblock receive thread. */
-        dp8390CoreKickReceive(pThis);
+        dp8390CoreKickReceive(pDevIns, pThis);
     }
     if (nCr.TXP && !pThis->core.cr.TXP)
     {
         /* Kick off a transmit. */
         pThis->core.cr.TXP = 1;     /* Indicate transmit in progress. */
-        dp8390CoreStartTransmit(pThis);
+        dp8390CoreStartTransmit(pDevIns, pThis);
     }
 
     /* It is not possible to write a zero (invalid value) to the RD bits. */
@@ -2414,17 +2453,17 @@ static int dp8390CoreWriteCR(PDPNICSTATE pThis, uint32_t val)
     return VINF_SUCCESS;
 }
 
-static int dp8390CoreWrite(PDPNICSTATE pThis, int ofs, uint32_t val)
+static int dp8390CoreWrite(PPDMDEVINS pDevIns, PDPNICSTATE pThis, int ofs, uint32_t val)
 {
     int     rc = VINF_SUCCESS;
     bool    fUpdateIRQ = false;
 
-    Log2Func(("#%d: page=%d reg=%X val=%02X\n", DPNIC_INSTANCE, pThis->core.cr.PS, ofs, val));
+    Log2Func(("#%d: page=%d reg=%X val=%02X\n", pThis->iInstance, pThis->core.cr.PS, ofs, val));
 
     /* Command Register exists in all pages. */
     if (ofs == DPR_CR)
     {
-        rc = dp8390CoreWriteCR(pThis, val);
+        rc = dp8390CoreWriteCR(pDevIns, pThis, val);
     }
     else if (pThis->core.cr.PS == 0)
     {
@@ -2442,7 +2481,7 @@ static int dp8390CoreWrite(PDPNICSTATE pThis, int ofs, uint32_t val)
             {
                 pThis->core.BNRY = val;
                 /* Probably made more room in receive ring. */
-                dp8390CoreKickReceive(pThis);
+                dp8390CoreKickReceive(pDevIns, pThis);
             }
             break;
         case DPR_P0_W_TPSR:
@@ -2537,7 +2576,7 @@ static int dp8390CoreWrite(PDPNICSTATE pThis, int ofs, uint32_t val)
     }
 
     if (fUpdateIRQ)
-        dp8390CoreUpdateIrq(pThis);
+        dp8390CoreUpdateIrq(pDevIns, pThis);
 
     return rc;
 }
@@ -2678,7 +2717,7 @@ static uint16_t neLocalRAMRead16(PDPNICSTATE pThis, uint16_t addr)
 }
 
 
-static int neDataPortWrite(PDPNICSTATE pThis, uint16_t val)
+static int neDataPortWrite(PPDMDEVINS pDevIns, PDPNICSTATE pThis, uint16_t val)
 {
     /* Remote Write; ignored if Remote DMA command is not 'Write'. */
     if (pThis->core.cr.RD == DP_CR_RDMA_WR)
@@ -2712,14 +2751,14 @@ static int neDataPortWrite(PDPNICSTATE pThis, uint16_t val)
             LogFunc(("RDMA EOP / write\n"));
             pThis->core.isr.RDC = 1;
             pThis->core.cr.RD   = 0;
-            dp8390CoreUpdateIrq(pThis);
+            dp8390CoreUpdateIrq(pDevIns, pThis);
         }
     }
     return VINF_SUCCESS;
 }
 
 
-static uint16_t neDataPortRead(PDPNICSTATE pThis)
+static uint16_t neDataPortRead(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
 {
     uint16_t    val = 0x1234;
 
@@ -2756,27 +2795,27 @@ static uint16_t neDataPortRead(PDPNICSTATE pThis)
             LogFunc(("RDMA EOP / read\n"));
             pThis->core.isr.RDC = 1;
             pThis->core.cr.RD   = 0;
-            dp8390CoreUpdateIrq(pThis);
+            dp8390CoreUpdateIrq(pDevIns, pThis);
         }
     }
     return val;
 }
 
 
-static int neResetPortWrite(PDPNICSTATE pThis)
+static int neResetPortWrite(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
 {
     LogFlowFunc(("\n"));
-    dp8390CoreReset(pThis);
+    dp8390CoreReset(pDevIns, pThis);
     return VINF_SUCCESS;
 }
 
 
-static int dpNeIoWrite(PDPNICSTATE pThis, uint32_t addr, uint32_t val)
+static int dpNeIoWrite(PPDMDEVINS pDevIns, PDPNICSTATE pThis, uint32_t addr, uint32_t val)
 {
     int     reg = addr & 0x0f;
     int     rc = VINF_SUCCESS;
 
-    Log2Func(("#%d: addr=%#06x val=%#04x\n", DPNIC_INSTANCE, addr, val & 0xff));
+    Log2Func(("#%d: addr=%#06x val=%#04x\n", pThis->iInstance, addr, val & 0xff));
 
     /* The NE2000 has 8 bytes of data port followed by 8 bytes of reset port.
      * In contrast, the NE1000 has 4 bytes of data port followed by 4 bytes
@@ -2785,15 +2824,15 @@ static int dpNeIoWrite(PDPNICSTATE pThis, uint32_t addr, uint32_t val)
     if (pThis->uDevType == DEV_NE2000)
         reg >>= 1;
     if (reg & 0x04)
-        rc = neResetPortWrite(pThis);
+        rc = neResetPortWrite(pDevIns, pThis);
     else
-        rc = neDataPortWrite(pThis, val);
+        rc = neDataPortWrite(pDevIns, pThis, val);
 
     return rc;
 }
 
 
-static uint32_t neIoRead(PDPNICSTATE pThis, uint32_t addr)
+static uint32_t neIoRead(PPDMDEVINS pDevIns, PDPNICSTATE pThis, uint32_t addr)
 {
     uint32_t    val = UINT32_MAX;
     int         reg = addr & 0x0f;
@@ -2807,14 +2846,14 @@ static uint32_t neIoRead(PDPNICSTATE pThis, uint32_t addr)
     if (reg & 0x04)
         val = 0x52; /// @todo Check what really happens
     else
-        val = neDataPortRead(pThis);
+        val = neDataPortRead(pDevIns, pThis);
 
-    Log2Func(("#%d: addr=%#06x val=%#04x\n", DPNIC_INSTANCE, addr, val & 0xff));
+    Log2Func(("#%d: addr=%#06x val=%#04x\n", pThis->iInstance, addr, val & 0xff));
     return val;
 }
 
 
-static int wdIoWrite(PDPNICSTATE pThis, uint32_t addr, uint32_t val)
+static int wdIoWrite(PPDMDEVINS pDevIns, PDPNICSTATE pThis, uint32_t addr, uint32_t val)
 {
     int             reg = addr & 0xf;
     int             rc = VINF_SUCCESS;
@@ -2827,7 +2866,7 @@ static int wdIoWrite(PDPNICSTATE pThis, uint32_t addr, uint32_t val)
         WD_CTRL2    nCtrl2;
     };
 
-    Log2Func(("#%d: addr=%#06x val=%#04x\n", DPNIC_INSTANCE, addr, val & 0xff));
+    Log2Func(("#%d: addr=%#06x val=%#04x\n", pThis->iInstance, addr, val & 0xff));
 
     switch (reg)
     {
@@ -2840,7 +2879,7 @@ static int wdIoWrite(PDPNICSTATE pThis, uint32_t addr, uint32_t val)
         }
         if (nCtrl1.RESET)
         {
-            dp8390CoreReset(pThis);
+            dp8390CoreReset(pDevIns, pThis);
             pThis->CTRL1 = 0;
         }
         break;
@@ -2918,7 +2957,7 @@ static uint32_t wdIoRead(PDPNICSTATE pThis, uint32_t addr)
 
     }
 
-    Log2Func(("#%d: addr=%#06x val=%#04x\n", DPNIC_INSTANCE, addr, val & 0xff));
+    Log2Func(("#%d: addr=%#06x val=%#04x\n", pThis->iInstance, addr, val & 0xff));
     return val;
 }
 
@@ -2969,7 +3008,7 @@ static uint8_t elGetDrqFromIdcfr(uint8_t val)
     return drq;
 }
 
-static void elWriteIdcfr(PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
+static void elWriteIdcfr(PPDMDEVINS pDevIns, PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
 {
     uint8_t     uOldIrq = pThis->uIsaIrq;
     uint8_t     uNewIrq;
@@ -2980,15 +3019,15 @@ static void elWriteIdcfr(PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
     uNewIrq = elGetIrqFromIdcfr(val);
     if (uOldIrq != uNewIrq)
     {
-        LogFunc(("#%d Switching IRQ=%d -> IRQ=%d\n", DPNIC_INSTANCE, uOldIrq, uNewIrq));
+        LogFunc(("#%d Switching IRQ=%d -> IRQ=%d\n", pThis->iInstance, uOldIrq, uNewIrq));
         if (pThis->fNicIrqActive)
         {
             /* This probably isn't supposed to happen. */
-            LogFunc(("#%d Moving active IRQ!\n", DPNIC_INSTANCE));
+            LogFunc(("#%d Moving active IRQ!\n", pThis->iInstance));
             if (uOldIrq)
-                PDMDevHlpISASetIrq(DPNICSTATE_2_DEVINS(pThis), uOldIrq, 0);
+                PDMDevHlpISASetIrq(pDevIns, uOldIrq, 0);
             if (uNewIrq)
-                PDMDevHlpISASetIrq(DPNICSTATE_2_DEVINS(pThis), uNewIrq, 1);
+                PDMDevHlpISASetIrq(pDevIns, uNewIrq, 1);
         }
         pThis->uIsaIrq = uNewIrq;
     }
@@ -2998,7 +3037,7 @@ static void elWriteIdcfr(PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
     if (uOldDrq != uNewDrq)
     {
         /// @todo We can't really move the DRQ, what can we do?
-        LogFunc(("#%d Switching DRQ=%d -> DRQ=%d\n", DPNIC_INSTANCE, uOldDrq, uNewDrq));
+        LogFunc(("#%d Switching DRQ=%d -> DRQ=%d\n", pThis->iInstance, uOldDrq, uNewDrq));
         pThis->uElIsaDma = uNewDrq;
     }
 
@@ -3006,7 +3045,7 @@ static void elWriteIdcfr(PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
 }
 
 
-static void elWriteGacfr(PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
+static void elWriteGacfr(PPDMDEVINS pDevIns, PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
 {
     union {
         uint8_t     nGACFR;
@@ -3020,27 +3059,27 @@ static void elWriteGacfr(PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
         /// @todo Should we just run UpdateInterrupts?
         if (pThis->fNicIrqActive && !nGacfr.nim)
         {
-            LogFunc(("#%d: Unmasking active IRQ!\n", DPNIC_INSTANCE));
-            PDMDevHlpISASetIrq(DPNICSTATE_2_DEVINS(pThis), pThis->uIsaIrq, 1);
+            LogFunc(("#%d: Unmasking active IRQ!\n", pThis->iInstance));
+            PDMDevHlpISASetIrq(pDevIns, pThis->uIsaIrq, 1);
         }
         else if (pThis->fNicIrqActive && nGacfr.nim)
         {
-            LogFunc(("#%d: Masking active IRQ\n", DPNIC_INSTANCE));
-            PDMDevHlpISASetIrq(DPNICSTATE_2_DEVINS(pThis), pThis->uIsaIrq, 0);
+            LogFunc(("#%d: Masking active IRQ\n", pThis->iInstance));
+            PDMDevHlpISASetIrq(pDevIns, pThis->uIsaIrq, 0);
         }
     }
 
     /// @todo rsel/mbs bit change?
     if (nGacfr.rsel != pGa->gacfr.rsel)
     {
-        LogFunc(("#%d: rsel=%u mbs=%u\n", DPNIC_INSTANCE, nGacfr.rsel, nGacfr.mbs));
+        LogFunc(("#%d: rsel=%u mbs=%u\n", pThis->iInstance, nGacfr.rsel, nGacfr.mbs));
     }
 
     pGa->GACFR = nGACFR;
 }
 
 
-static void elSoftReset(PDPNICSTATE pThis)
+static void elSoftReset(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
 {
     PEL_GA      pGa = &pThis->ga;
 
@@ -3048,20 +3087,20 @@ static void elSoftReset(PDPNICSTATE pThis)
     /* Most GA registers are zeroed. */
     pGa->PSTR = pGa->PSPR = 0;
     pGa->DQTR = 0;
-    elWriteGacfr(pThis, pGa, 0);
+    elWriteGacfr(pDevIns, pThis, pGa, 0);
     pGa->STREG = ELNKII_GA_REV;
     pGa->VPTR0 = pGa->VPTR1 = pGa->VPTR2 = 0;
     pGa->DALSB = pGa->DAMSB = 0;
-    elWriteIdcfr(pThis, pGa, 0);
+    elWriteIdcfr(pDevIns, pThis, pGa, 0);
     pGa->GACR = 0x0B;   /* Low bit set = in reset state. */
     pGa->fGaIrq = false;
 
     /* Reset the NIC core. */
-    dp8390CoreReset(pThis);
+    dp8390CoreReset(pDevIns, pThis);
 }
 
 
-static int elWriteGacr(PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
+static int elWriteGacr(PPDMDEVINS pDevIns, PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
 {
     union {
         uint8_t     nGACR;
@@ -3074,7 +3113,7 @@ static int elWriteGacr(PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
     {
         /* When going out of reset, only clear the rst bit. 3C503 diagnostics checks for this. */
         if (nGacr.rst)
-            elSoftReset(pThis);
+            elSoftReset(pDevIns, pThis);
         else
             pGa->gacr.rst = 0;
     }
@@ -3106,10 +3145,10 @@ static int elWriteGacr(PDPNICSTATE pThis, PEL_GA pGa, uint8_t val)
         if (pThis->uElIsaDma == pThis->uIsaDma)
         {
 #ifdef IN_RING3
-            PDMDevHlpDMASetDREQ(pThis->CTX_SUFF(pDevIns), pThis->uIsaDma, pGa->streg.dprdy);
+            PDMDevHlpDMASetDREQ(pDevIns, pThis->uIsaDma, pGa->streg.dprdy);
             if (pGa->streg.dprdy)
-                PDMDevHlpDMASchedule(pThis->CTX_SUFF(pDevIns));
-            LogFunc(("#%d: DREQ for channel %u set to %u\n", DPNIC_INSTANCE, pThis->uIsaDma, pGa->streg.dprdy));
+                PDMDevHlpDMASchedule(pDevIns);
+            LogFunc(("#%d: DREQ for channel %u set to %u\n", pThis->iInstance, pThis->uIsaDma, pGa->streg.dprdy));
 #else
             /* Must not get here. */
             Assert(0);
@@ -3179,13 +3218,13 @@ static uint8_t elGaDataRead(PDPNICSTATE pThis, PEL_GA pGa)
 }
 
 
-static int elGaIoWrite(PDPNICSTATE pThis, uint32_t addr, uint32_t val)
+static int elGaIoWrite(PPDMDEVINS pDevIns, PDPNICSTATE pThis, uint32_t addr, uint32_t val)
 {
     int         reg = addr & 0xf;
     int         rc = VINF_SUCCESS;
     PEL_GA      pGa = &pThis->ga;
 
-    Log2Func(("#%d: addr=%#06x val=%#04x\n", DPNIC_INSTANCE, addr, val & 0xff));
+    Log2Func(("#%d: addr=%#06x val=%#04x\n", pThis->iInstance, addr, val & 0xff));
 
     switch (reg)
     {
@@ -3199,19 +3238,19 @@ static int elGaIoWrite(PDPNICSTATE pThis, uint32_t addr, uint32_t val)
         pGa->DQTR = val;
         break;
     case GAR_GACFR:
-        elWriteGacfr(pThis, pGa, val);
+        elWriteGacfr(pDevIns, pThis, pGa, val);
         break;
     case GAR_GACR:
-        rc = elWriteGacr(pThis, pGa, val);
+        rc = elWriteGacr(pDevIns, pThis, pGa, val);
         break;
     case GAR_STREG:
         /* Writing anything to STREG clears ASIC interrupt. */
         pThis->ga.streg.dtc = 0;
         pThis->ga.fGaIrq    = false;
-        dp8390CoreUpdateIrq(pThis);
+        dp8390CoreUpdateIrq(pDevIns, pThis);
         break;
     case GAR_IDCFR:
-        elWriteIdcfr(pThis, pGa, val);
+        elWriteIdcfr(pDevIns, pThis, pGa, val);
         break;
     case GAR_DAMSB:
         pGa->DAMSB = val;
@@ -3304,7 +3343,7 @@ static uint32_t elGaIoRead(PDPNICSTATE pThis, uint32_t addr)
         break;
     }
 
-    Log2Func(("#%d: addr=%#06x val=%#04x\n", DPNIC_INSTANCE, addr, val & 0xff));
+    Log2Func(("#%d: addr=%#06x val=%#04x\n", pThis->iInstance, addr, val & 0xff));
     return val;
 }
 
@@ -3315,7 +3354,7 @@ static uint32_t elGaIoRead(PDPNICSTATE pThis, uint32_t addr)
 static DECLCALLBACK(VBOXSTRICTRC)
 neIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
     int             reg   = Port & 0xf;
     uint8_t         u8Lo, u8Hi = 0;
@@ -3326,27 +3365,27 @@ neIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, un
     switch (cb)
     {
         case 1:
-            *pu32 = neIoRead(pThis, reg);
+            *pu32 = neIoRead(pDevIns, pThis, reg);
             break;
         case 2:
             /* Manually split word access if necessary if it's an NE1000. Perhaps overkill. */
             if (pThis->uDevType == DEV_NE1000)
             {
-                u8Lo = neIoRead(pThis, reg);
+                u8Lo = neIoRead(pDevIns, pThis, reg);
                 if (reg < 0xf)  // This logic is not entirely accurate (wraparound).
-                    u8Hi = neIoRead(pThis, reg + 1);
+                    u8Hi = neIoRead(pDevIns, pThis, reg + 1);
                 *pu32 = RT_MAKE_U16(u8Lo, u8Hi);
             }
             else
-                *pu32 = neIoRead(pThis, reg);
+                *pu32 = neIoRead(pDevIns, pThis, reg);
             break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                    "neIOPortRead: unsupported operation size: offset=%#10x cb=%u\n",
                                    Port, cb);
     }
 
-    Log2Func(("#%d: NE Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", DPNIC_INSTANCE, Port, *pu32, cb, rc));
+    Log2Func(("#%d: NE Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", pThis->iInstance, Port, *pu32, cb, rc));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIORead), a);
     return rc;
 }
@@ -3358,7 +3397,7 @@ neIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, un
 static DECLCALLBACK(VBOXSTRICTRC)
 wdIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
     int             reg   = Port & 0xf;
     uint8_t         u8Lo, u8Hi = 0;
@@ -3379,12 +3418,12 @@ wdIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, un
             *pu32 = RT_MAKE_U16(u8Lo, u8Hi);
             break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                    "wdIOPortRead: unsupported operation size: offset=%#10x cb=%u\n",
                                    Port, cb);
     }
 
-    Log2Func(("#%d: WD Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", DPNIC_INSTANCE, Port, *pu32, cb, rc));
+    Log2Func(("#%d: WD Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", pThis->iInstance, Port, *pu32, cb, rc));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIORead), a);
     return rc;
 }
@@ -3396,7 +3435,7 @@ wdIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, un
 static DECLCALLBACK(VBOXSTRICTRC)
 elIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
     int             reg   = Port & 0xf;
     uint8_t         u8Lo, u8Hi = 0;
@@ -3417,12 +3456,12 @@ elIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, un
             *pu32 = RT_MAKE_U16(u8Lo, u8Hi);
             break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                    "elIOPortRead: unsupported operation size: offset=%#10x cb=%u\n",
                                    Port, cb);
     }
 
-    Log2Func(("#%d: EL Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", DPNIC_INSTANCE, Port, *pu32, cb, rc));
+    Log2Func(("#%d: EL Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", pThis->iInstance, Port, *pu32, cb, rc));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIORead), a);
     return rc;
 }
@@ -3434,7 +3473,7 @@ elIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, un
 static DECLCALLBACK(VBOXSTRICTRC)
 dp8390CoreIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
     int             reg   = Port & 0xf;
     uint8_t         u8Lo, u8Hi;
@@ -3445,25 +3484,25 @@ dp8390CoreIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *
     switch (cb)
     {
         case 1:
-            *pu32 = dp8390CoreRead(pThis, reg);
+            *pu32 = dp8390CoreRead(pDevIns, pThis, reg);
             break;
         case 2:
             /* Manually split word access. */
-            u8Lo = dp8390CoreRead(pThis, reg + 0);
+            u8Lo = dp8390CoreRead(pDevIns, pThis, reg + 0);
             /* This logic is not entirely accurate. */
             if (reg < 0xf)
-                u8Hi = dp8390CoreRead(pThis, reg + 1);
+                u8Hi = dp8390CoreRead(pDevIns, pThis, reg + 1);
             else
                 u8Hi = 0;
             *pu32 = RT_MAKE_U16(u8Lo, u8Hi);
             break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                    "dp8390CoreIOPortRead: unsupported operation size: offset=%#10x cb=%u\n",
                                    Port, cb);
     }
 
-    Log2Func(("#%d: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", DPNIC_INSTANCE, Port, *pu32, cb, rc));
+    Log2Func(("#%d: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", pThis->iInstance, Port, *pu32, cb, rc));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIORead), a);
     return rc;
 }
@@ -3475,7 +3514,7 @@ dp8390CoreIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *
 static DECLCALLBACK(VBOXSTRICTRC)
 neIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
     int             reg   = Port & 0xf;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
@@ -3485,28 +3524,28 @@ neIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, uns
     switch (cb)
     {
         case 1:
-            rc = dpNeIoWrite(pThis, Port, RT_LOBYTE(u32));
+            rc = dpNeIoWrite(pDevIns, pThis, Port, RT_LOBYTE(u32));
             break;
         case 2:
             /* Manually split word access if necessary. */
             if (pThis->uDevType == DEV_NE2000)
             {
-                rc = dpNeIoWrite(pThis, Port, RT_LOWORD(u32));
+                rc = dpNeIoWrite(pDevIns, pThis, Port, RT_LOWORD(u32));
             }
             else
             {
-                rc = dpNeIoWrite(pThis, reg + 0, RT_LOBYTE(u32));
+                rc = dpNeIoWrite(pDevIns, pThis, reg + 0, RT_LOBYTE(u32));
                 if (RT_SUCCESS(rc) && (reg < 0xf))
-                    rc = dpNeIoWrite(pThis, reg + 1, RT_HIBYTE(u32));
+                    rc = dpNeIoWrite(pDevIns, pThis, reg + 1, RT_HIBYTE(u32));
             }
             break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                    "neIOPortWrite: unsupported operation size: offset=%#10x cb=%u\n",
                                    Port, cb);
     }
 
-    Log2Func(("#%d: NE Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", DPNIC_INSTANCE, Port, u32, cb, rc));
+    Log2Func(("#%d: NE Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", pThis->iInstance, Port, u32, cb, rc));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     return rc;
 }
@@ -3518,7 +3557,7 @@ neIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, uns
 static DECLCALLBACK(VBOXSTRICTRC)
 wdIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
     int             reg   = Port & 0xf;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
@@ -3528,21 +3567,21 @@ wdIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, uns
     switch (cb)
     {
         case 1:
-            rc = wdIoWrite(pThis, Port, RT_LOBYTE(u32));
+            rc = wdIoWrite(pDevIns, pThis, Port, RT_LOBYTE(u32));
             break;
         case 2:
             /* Manually split word access. */
-            rc = wdIoWrite(pThis, reg + 0, RT_LOBYTE(u32));
+            rc = wdIoWrite(pDevIns, pThis, reg + 0, RT_LOBYTE(u32));
             if (RT_SUCCESS(rc) && (reg < 0xf))
-                rc = wdIoWrite(pThis, reg + 1, RT_HIBYTE(u32));
+                rc = wdIoWrite(pDevIns, pThis, reg + 1, RT_HIBYTE(u32));
             break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                    "wdIOPortWrite: unsupported operation size: offset=%#10x cb=%u\n",
                                    Port, cb);
     }
 
-    Log2Func(("#%d: WD Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", DPNIC_INSTANCE, Port, u32, cb, rc));
+    Log2Func(("#%d: WD Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", pThis->iInstance, Port, u32, cb, rc));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     return rc;
 }
@@ -3554,7 +3593,7 @@ wdIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, uns
 static DECLCALLBACK(VBOXSTRICTRC)
 elIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
     int             reg   = Port & 0xf;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
@@ -3564,21 +3603,21 @@ elIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, uns
     switch (cb)
     {
         case 1:
-            rc = elGaIoWrite(pThis, Port, RT_LOBYTE(u32));
+            rc = elGaIoWrite(pDevIns, pThis, Port, RT_LOBYTE(u32));
             break;
         case 2:
             /* Manually split word access. */
-            rc = elGaIoWrite(pThis, reg + 0, RT_LOBYTE(u32));
+            rc = elGaIoWrite(pDevIns, pThis, reg + 0, RT_LOBYTE(u32));
             if (RT_SUCCESS(rc) && (reg < 0xf))
-                rc = elGaIoWrite(pThis, reg + 1, RT_HIBYTE(u32));
+                rc = elGaIoWrite(pDevIns, pThis, reg + 1, RT_HIBYTE(u32));
             break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                    "elIOPortWrite: unsupported operation size: offset=%#10x cb=%u\n",
                                    Port, cb);
     }
 
-    Log2Func(("#%d: EL Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", DPNIC_INSTANCE, Port, u32, cb, rc));
+    Log2Func(("#%d: EL Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", pThis->iInstance, Port, u32, cb, rc));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     return rc;
 }
@@ -3590,7 +3629,7 @@ elIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, uns
 static DECLCALLBACK(VBOXSTRICTRC)
 dp8390CoreIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc    = VINF_SUCCESS;
     int             reg   = Port & 0xf;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
@@ -3600,22 +3639,22 @@ dp8390CoreIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t 
     switch (cb)
     {
         case 1:
-            rc = dp8390CoreWrite(pThis, reg, RT_LOBYTE(u32));
+            rc = dp8390CoreWrite(pDevIns, pThis, reg, RT_LOBYTE(u32));
             break;
         case 2:
             /* Manually split word access. */
-            rc = dp8390CoreWrite(pThis, reg + 0, RT_LOBYTE(u32));
+            rc = dp8390CoreWrite(pDevIns, pThis, reg + 0, RT_LOBYTE(u32));
             if (!RT_SUCCESS(rc))
                 break;
-            rc = dp8390CoreWrite(pThis, reg + 1, RT_HIBYTE(u32));
+            rc = dp8390CoreWrite(pDevIns, pThis, reg + 1, RT_HIBYTE(u32));
             break;
         default:
-            rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+            rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                    "dp8390CoreIOPortWrite: unsupported operation size: offset=%#10x cb=%u\n",
                                    Port, cb);
     }
 
-    Log2Func(("#%d: Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", DPNIC_INSTANCE, Port, u32, cb, rc));
+    Log2Func(("#%d: Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", pThis->iInstance, Port, u32, cb, rc));
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     return rc;
 }
@@ -3630,7 +3669,7 @@ dp8390CoreIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t 
 static DECLCALLBACK(VBOXSTRICTRC)
 dpWdMmioFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, uint32_t u32Item, unsigned cbItem, unsigned cItems)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
 
     !!
@@ -3645,7 +3684,7 @@ dpWdMmioFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, uint32_t u32Item, u
  */
 static DECLCALLBACK(VBOXSTRICTRC) wdMemRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    PDPNICSTATE     pThis   = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     uint8_t         *pbData = (uint8_t *)pv;
     NOREF(pvUser);
 
@@ -3654,7 +3693,7 @@ static DECLCALLBACK(VBOXSTRICTRC) wdMemRead(PPDMDEVINS pDevIns, void *pvUser, RT
 
     if (pThis->ctrl1.MEME)
     {
-        Log3Func(("#%d: Reading %u bytes from address %X: [%.*Rhxs]\n", pDevIns->iInstance, cb, off, cb, &pThis->abLocalRAM[off & DPNIC_MEM_MASK]));
+        Log3Func(("#%d: Reading %u bytes from address %X: [%.*Rhxs]\n", pThis->iInstance, cb, off, cb, &pThis->abLocalRAM[off & DPNIC_MEM_MASK]));
         while (cb-- > 0)
             *pbData++ = pThis->abLocalRAM[off++ & DPNIC_MEM_MASK];
     }
@@ -3671,7 +3710,7 @@ static DECLCALLBACK(VBOXSTRICTRC) wdMemRead(PPDMDEVINS pDevIns, void *pvUser, RT
  */
 static DECLCALLBACK(VBOXSTRICTRC) wdMemWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    PDPNICSTATE     pThis  = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis  = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     uint8_t const   *pbSrc = (uint8_t const *)pv;
     NOREF(pvUser);
 
@@ -3680,7 +3719,7 @@ static DECLCALLBACK(VBOXSTRICTRC) wdMemWrite(PPDMDEVINS pDevIns, void *pvUser, R
 
     if (pThis->ctrl1.MEME)
     {
-        Log3Func(("#%d: Writing %u bytes to address %X: [%.*Rhxs]\n", pDevIns->iInstance, cb, off, cb, pbSrc));
+        Log3Func(("#%d: Writing %u bytes to address %X: [%.*Rhxs]\n", pThis->iInstance, cb, off, cb, pbSrc));
         while (cb-- > 0)
             pThis->abLocalRAM[off++ & DPNIC_MEM_MASK] = *pbSrc++;
     }
@@ -3696,7 +3735,7 @@ static DECLCALLBACK(VBOXSTRICTRC) wdMemWrite(PPDMDEVINS pDevIns, void *pvUser, R
  */
 static DECLCALLBACK(VBOXSTRICTRC) elMemRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    PDPNICSTATE     pThis   = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     uint8_t         *pbData = (uint8_t *)pv;
     NOREF(pvUser);
 
@@ -3704,13 +3743,13 @@ static DECLCALLBACK(VBOXSTRICTRC) elMemRead(PPDMDEVINS pDevIns, void *pvUser, RT
 
     if (pThis->ga.gacfr.rsel)
     {
-        Log3Func(("#%d: Reading %u bytes from address %X\n", pDevIns->iInstance, cb, off));
+        Log3Func(("#%d: Reading %u bytes from address %X\n", pThis->iInstance, cb, off));
         while (cb-- > 0)
             *pbData++ = pThis->abLocalRAM[off++ & DPNIC_MEM_MASK];
     }
     else
     {
-        Log3Func(("#%d: Ignoring read of %u bytes from address %X\n", pDevIns->iInstance, cb, off));
+        Log3Func(("#%d: Ignoring read of %u bytes from address %X\n", pThis->iInstance, cb, off));
         memset(pv, 0xff, cb);
     }
     return VINF_SUCCESS;
@@ -3723,7 +3762,7 @@ static DECLCALLBACK(VBOXSTRICTRC) elMemRead(PPDMDEVINS pDevIns, void *pvUser, RT
  */
 static DECLCALLBACK(VBOXSTRICTRC) elMemWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    PDPNICSTATE     pThis  = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis  = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     uint8_t const   *pbSrc = (uint8_t const *)pv;
     NOREF(pvUser);
 
@@ -3731,13 +3770,13 @@ static DECLCALLBACK(VBOXSTRICTRC) elMemWrite(PPDMDEVINS pDevIns, void *pvUser, R
 
     if (pThis->ga.gacfr.rsel)
     {
-        Log3Func(("#%d: Writing %u bytes to address %X\n", pDevIns->iInstance, cb, off));
+        Log3Func(("#%d: Writing %u bytes to address %X\n", pThis->iInstance, cb, off));
         while (cb-- > 0)
             pThis->abLocalRAM[off++ & DPNIC_MEM_MASK] = *pbSrc++;
     }
     else
     {
-        Log3Func(("#%d: Ignoring write of %u bytes to address %X\n", pDevIns->iInstance, cb, off));
+        Log3Func(("#%d: Ignoring write of %u bytes to address %X\n", pThis->iInstance, cb, off));
     }
     return VINF_SUCCESS;
 }
@@ -3877,7 +3916,7 @@ static DECLCALLBACK(uint32_t) elnk3R3DMAXferHandler(PPDMDEVINS pDevIns, void *op
         PDMDevHlpDMASetDREQ(pDevIns, pThis->uIsaDma, 0);
         pThis->ga.streg.dtc = 1;
         pThis->ga.fGaIrq    = true;
-        dp8390CoreUpdateIrq(pThis);
+        dp8390CoreUpdateIrq(pDevIns, pThis);
     }
     else
     {
@@ -3902,7 +3941,7 @@ static DECLCALLBACK(uint32_t) elnk3R3DMAXferHandler(PPDMDEVINS pDevIns, void *op
 static DECLCALLBACK(void) dpNicTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     RT_NOREF(pvUser);
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
@@ -3915,13 +3954,13 @@ static DECLCALLBACK(void) dpNicTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
         if (pThis->fLinkUp)
         {
             LogRel(("DPNIC#%d: The link is back up again after the restore.\n",
-                    pDevIns->iInstance));
-            LogFunc(("#%d: cLinkDownReported=%d\n", pDevIns->iInstance, pThis->cLinkDownReported));
+                    pThis->iInstance));
+            LogFunc(("#%d: cLinkDownReported=%d\n", pThis->iInstance, pThis->cLinkDownReported));
             pThis->Led.Actual.s.fError = 0;
         }
     }
     else
-        LogFunc(("#%d: cLinkDownReported=%d, wait another 1500ms...\n", pDevIns->iInstance, pThis->cLinkDownReported));
+        LogFunc(("#%d: cLinkDownReported=%d, wait another 1500ms...\n", pThis->iInstance, pThis->cLinkDownReported));
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
@@ -3934,7 +3973,7 @@ static DECLCALLBACK(void) dpNicTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
  */
 static DECLCALLBACK(void) dpNicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     bool            fRecvBuffer  = false;
     bool            fSendBuffer  = false;
     unsigned        uFreePages;
@@ -3954,7 +3993,7 @@ static DECLCALLBACK(void) dpNicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
      * Show device information.
      */
     pHlp->pfnPrintf(pHlp, "DPNIC #%d: %s port=%RTiop IRQ=%u",
-                    pDevIns->iInstance,
+                    pThis->iInstance,
                     aszModels[pThis->uDevType],
                     pThis->IOPortBase,
                     pThis->uIsaIrq);
@@ -3962,9 +4001,10 @@ static DECLCALLBACK(void) dpNicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
         pHlp->pfnPrintf(pHlp, " mem=%05X-%05X", pThis->MemBase, pThis->MemBase + pThis->cbMemSize - 1);
     if (pThis->uIsaDma)
         pHlp->pfnPrintf(pHlp, " DMA=%u", pThis->uIsaDma);
-    pHlp->pfnPrintf(pHlp, " mac-cfg=%RTmac %s\n",
+    pHlp->pfnPrintf(pHlp, " mac-cfg=%RTmac%s %s\n",
                     &pThis->MacConfigured,
-                    pDevIns->fR0Enabled ? "RZ" : "");
+                    pDevIns->fR0Enabled ? " RZ" : "",
+                    pThis->fDriverAttached ? "attached" : "unattached!");
 
     int const rcLock = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
     PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, &pThis->CritSect, rcLock);
@@ -4065,6 +4105,8 @@ static DECLCALLBACK(void) dpNicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 
     if (pThis->fMaybeOutOfSpace)
         pHlp->pfnPrintf(pHlp, "  Waiting for receive space\n");
+    if (pThis->cLinkDownReported)
+        pHlp->pfnPrintf(pHlp, "  Link down count %d\n", pThis->cLinkDownReported);
 
     if ((pThis->uDevType == DEV_WD8003) || (pThis->uDevType == DEV_WD8013))
     {
@@ -4150,9 +4192,9 @@ static DECLCALLBACK(void) dpNicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 /* -=-=-=-=-=- Helper(s) -=-=-=-=-=- */
 
 
-static void dpNicR3HardReset(PDPNICSTATE pThis)
+static void dpNicR3HardReset(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
 {
-    LogFlowFunc(("#%d:\n", DPNIC_INSTANCE));
+    LogFlowFunc(("#%d:\n", pThis->iInstance));
 
     /* Initialize the PROM. Covers both NE1000 and NE2000. */
     Assert(sizeof(pThis->MacConfigured) == 6);
@@ -4222,7 +4264,7 @@ static void dpNicR3HardReset(PDPNICSTATE pThis)
     /* Wipe out all of the DP8390 core state. */
     memset(&pThis->core, 0, sizeof(pThis->core));
 
-    dp8390CoreReset(pThis);
+    dp8390CoreReset(pDevIns, pThis);
 }
 
 /**
@@ -4234,16 +4276,17 @@ static void dpNicR3HardReset(PDPNICSTATE pThis)
  * connections have been lost and that it for instance is appropriate to
  * renegotiate any DHCP lease.
  *
- * @param  pThis        The device instance data.
+ * @param  pDevIns      The device instance data.
+ * @param  pThis        The device state.
  */
-static void dp8390TempLinkDown(PDPNICSTATE pThis)
+static void dp8390TempLinkDown(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
 {
     if (pThis->fLinkUp)
     {
         pThis->fLinkTempDown = true;
         pThis->cLinkDownReported = 0;
         pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
-        int rc = PDMDevHlpTimerSetMillies(DPNICSTATE_2_DEVINS(pThis), pThis->hTimerRestore, pThis->cMsLinkUpDelay);
+        int rc = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerRestore, pThis->cMsLinkUpDelay);
         AssertRC(rc);
     }
 }
@@ -4257,7 +4300,7 @@ static void dp8390TempLinkDown(PDPNICSTATE pThis)
 static DECLCALLBACK(int) dpNicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PDPNICSTATE pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     pDevIns->pHlpR3->pfnSSMPutMem(pSSM, &pThis->MacConfigured, sizeof(pThis->MacConfigured));
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -4270,7 +4313,7 @@ static DECLCALLBACK(int) dpNicLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 static DECLCALLBACK(int) dpNicSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PDPNICSTATE pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
@@ -4285,7 +4328,7 @@ static DECLCALLBACK(int) dpNicSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) dpNicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
 
     /* Start with saving the generic bits. */
@@ -4358,7 +4401,7 @@ static DECLCALLBACK(int) dpNicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) dpNicLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDPNICSTATE pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     RT_NOREF(pSSM);
 
     int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->CritSect, VERR_SEM_BUSY);
@@ -4375,8 +4418,9 @@ static DECLCALLBACK(int) dpNicLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) dpNicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDPNICSTATECC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     if (SSM_VERSION_MAJOR_CHANGED(uVersion, DPNIC_SAVEDSTATE_VERSION))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -4451,18 +4495,18 @@ static DECLCALLBACK(int) dpNicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     AssertRCReturn(rc, rc);
     if (    memcmp(&Mac, &pThis->MacConfigured, sizeof(Mac))
         && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
-        LogRel(("DPNIC#%u: The mac address differs: config=%RTmac saved=%RTmac\n", DPNIC_INSTANCE, &pThis->MacConfigured, &Mac));
+        LogRel(("DPNIC#%u: The mac address differs: config=%RTmac saved=%RTmac\n", pThis->iInstance, &pThis->MacConfigured, &Mac));
 
     if (uPass == SSM_PASS_FINAL)
     {
         /* update promiscuous mode. */
-        if (pThis->pDrvR3)
-            pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, 0 /* promiscuous enabled */);
+        if (pThisCC->pDrv)
+            pThisCC->pDrv->pfnSetPromiscuousMode(pThisCC->pDrv, 0 /* promiscuous enabled */);
 
         /* Indicate link down to the guest OS that all network connections have
            been lost, unless we've been teleported here. */
         if (!PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns))
-            dp8390TempLinkDown(pThis);
+            dp8390TempLinkDown(pDevIns, pThis);
     }
 
     return VINF_SUCCESS;
@@ -4524,7 +4568,7 @@ static int dp8390CanReceive(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
                 /* Free space does not wrap. */
                 free_pages = pCore->BNRY - pCore->CURR;
             }
-            Log2Func(("#%d: %u free pages (%u bytes)\n", DPNIC_INSTANCE, free_pages, free_pages * 256));
+            Log2Func(("#%d: %u free pages (%u bytes)\n", pThis->iInstance, free_pages, free_pages * 256));
 
             /* Six pages (1,536 bytes) is enough for the longest standard Ethernet frame
              * (1522 bytes including FCS) plus packet header (4 bytes).
@@ -4532,7 +4576,7 @@ static int dp8390CanReceive(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
             if (free_pages < 6)
             {
                 rc = VERR_NET_NO_BUFFER_SPACE;
-                Log2Func(("#%d: Buffer space low, returning %Rrc!\n", DPNIC_INSTANCE, rc));
+                Log2Func(("#%d: Buffer space low, returning %Rrc!\n", pThis->iInstance, rc));
             }
         }
     }
@@ -4547,8 +4591,9 @@ static int dp8390CanReceive(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
  */
 static DECLCALLBACK(int) dpNicNet_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
-    PDPNICSTATE pThis = RT_FROM_MEMBER(pInterface, DPNICSTATE, INetworkDown);
-    PPDMDEVINS pDevIns = DPNICSTATE_2_DEVINS(pThis);
+    PDPNICSTATECC   pThisCC = RT_FROM_MEMBER(pInterface, DPNICSTATECC, INetworkDown);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
 
     int rc = dp8390CanReceive(pDevIns, pThis);
     if (RT_SUCCESS(rc))
@@ -4566,7 +4611,7 @@ static DECLCALLBACK(int) dpNicNet_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, 
     ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, true);
     STAM_PROFILE_START(&pThis->StatRxOverflow, a);
     VMSTATE enmVMState;
-    while (RT_LIKELY(   (enmVMState = PDMDevHlpVMState(pThis->CTX_SUFF(pDevIns))) == VMSTATE_RUNNING
+    while (RT_LIKELY(   (enmVMState = PDMDevHlpVMState(pDevIns)) == VMSTATE_RUNNING
                      || enmVMState == VMSTATE_RUNNING_LS))
     {
         int rc2 = dp8390CanReceive(pDevIns, pThis);
@@ -4596,8 +4641,9 @@ static DECLCALLBACK(int) dpNicNet_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, 
  */
 static DECLCALLBACK(int) dpNicNet_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
-    PDPNICSTATE     pThis = RT_FROM_MEMBER(pInterface, DPNICSTATE, INetworkDown);
-    PPDMDEVINS      pDevIns = DPNICSTATE_2_DEVINS(pThis);
+    PDPNICSTATECC   pThisCC = RT_FROM_MEMBER(pInterface, DPNICSTATECC, INetworkDown);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     int             rc;
 
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
@@ -4606,7 +4652,7 @@ static DECLCALLBACK(int) dpNicNet_Receive(PPDMINETWORKDOWN pInterface, const voi
 
     if (cb > 50) /* unqualified guess */
         pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
-    dp8390CoreReceiveLocked(pThis, (const uint8_t *)pvBuf, cb);
+    dp8390CoreReceiveLocked(pDevIns, pThis, (const uint8_t *)pvBuf, cb);
     pThis->Led.Actual.s.fReading = 0;
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
@@ -4621,8 +4667,10 @@ static DECLCALLBACK(int) dpNicNet_Receive(PPDMINETWORKDOWN pInterface, const voi
  */
 static DECLCALLBACK(void) dpNicNet_XmitPending(PPDMINETWORKDOWN pInterface)
 {
-    PDPNICSTATE pThis = RT_FROM_MEMBER(pInterface, DPNICSTATE, INetworkDown);
-    dp8390CoreXmitPacket(pThis, true /*fOnWorkerThread*/);
+    PDPNICSTATECC   pThisCC = RT_FROM_MEMBER(pInterface, DPNICSTATECC, INetworkDown);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+    dp8390CoreXmitPacket(pDevIns, pThis, true /*fOnWorkerThread*/);
 }
 
 
@@ -4633,10 +4681,14 @@ static DECLCALLBACK(void) dpNicNet_XmitPending(PPDMINETWORKDOWN pInterface)
  */
 static DECLCALLBACK(int) dpNicGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
-    PDPNICSTATE pThis = RT_FROM_MEMBER(pInterface, DPNICSTATE, INetworkConfig);
+    PDPNICSTATECC   pThisCC = RT_FROM_MEMBER(pInterface, DPNICSTATECC, INetworkConfig);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+
+    LogFlowFunc(("#%d\n", pThis->iInstance));
     /// @todo This is broken!! We can't properly get the MAC address set by the guest
 #if 0
-    memcpy(pMac, pThis->aStationAddr, sizeof(*pMac));
+    memcpy(pMac, pThis->core.pg1.PAR, sizeof(*pMac));
 #else
     memcpy(pMac, pThis->aPROM, sizeof(*pMac));
 #endif
@@ -4649,7 +4701,10 @@ static DECLCALLBACK(int) dpNicGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
  */
 static DECLCALLBACK(PDMNETWORKLINKSTATE) dpNicGetLinkState(PPDMINETWORKCONFIG pInterface)
 {
-    PDPNICSTATE pThis = RT_FROM_MEMBER(pInterface, DPNICSTATE, INetworkConfig);
+    PDPNICSTATECC   pThisCC = RT_FROM_MEMBER(pInterface, DPNICSTATECC, INetworkConfig);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+
     if (pThis->fLinkUp && !pThis->fLinkTempDown)
         return PDMNETWORKLINKSTATE_UP;
     if (!pThis->fLinkUp)
@@ -4666,16 +4721,18 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) dpNicGetLinkState(PPDMINETWORKCONFIG pI
  */
 static DECLCALLBACK(int) dpNicSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
-    PDPNICSTATE pThis = RT_FROM_MEMBER(pInterface, DPNICSTATE, INetworkConfig);
-    bool fLinkUp;
+    PDPNICSTATECC   pThisCC = RT_FROM_MEMBER(pInterface, DPNICSTATECC, INetworkConfig);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+    bool            fLinkUp;
 
-    LogFlowFunc(("#%d\n", DPNIC_INSTANCE));
+    LogFlowFunc(("#%d\n", pThis->iInstance));
     AssertMsgReturn(enmState > PDMNETWORKLINKSTATE_INVALID && enmState <= PDMNETWORKLINKSTATE_DOWN_RESUME,
                     ("Invalid link state: enmState=%d\n", enmState), VERR_INVALID_PARAMETER);
 
     if (enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
     {
-        dp8390TempLinkDown(pThis);
+        dp8390TempLinkDown(pDevIns, pThis);
         /*
          * Note that we do not notify the driver about the link state change because
          * the change is only temporary and can be disregarded from the driver's
@@ -4694,7 +4751,7 @@ static DECLCALLBACK(int) dpNicSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
             pThis->fLinkTempDown = true;
             pThis->cLinkDownReported = 0;
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
-            int rc = PDMDevHlpTimerSetMillies(DPNICSTATE_2_DEVINS(pThis), pThis->hTimerRestore, pThis->cMsLinkUpDelay);
+            int rc = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerRestore, pThis->cMsLinkUpDelay);
             AssertRC(rc);
         }
         else
@@ -4703,9 +4760,9 @@ static DECLCALLBACK(int) dpNicSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
             pThis->cLinkDownReported = 0;
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         }
-        Assert(!PDMDevHlpCritSectIsOwner(DPNICSTATE_2_DEVINS(pThis), &pThis->CritSect));
-        if (pThis->pDrvR3)
-            pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, enmState);
+        Assert(!PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
+        if (pThisCC->pDrv)
+            pThisCC->pDrv->pfnNotifyLinkChanged(pThisCC->pDrv, enmState);
     }
     return VINF_SUCCESS;
 }
@@ -4718,7 +4775,9 @@ static DECLCALLBACK(int) dpNicSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
  */
 static DECLCALLBACK(int) dpNicQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    PDPNICSTATE pThis = RT_FROM_MEMBER(pInterface, DPNICSTATE, ILeds);
+    PDPNICSTATECC   pThisCC = RT_FROM_MEMBER(pInterface, DPNICSTATECC, ILeds);
+    PPDMDEVINS      pDevIns = pThisCC->pDevIns;
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     if (iLUN == 0)
     {
         *ppLed = &pThis->Led;
@@ -4735,12 +4794,12 @@ static DECLCALLBACK(int) dpNicQueryStatusLed(PPDMILEDPORTS pInterface, unsigned 
  */
 static DECLCALLBACK(void *) dpNicQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    PDPNICSTATE pThis = RT_FROM_MEMBER(pInterface, DPNICSTATE, IBase);
-    Assert(&pThis->IBase == pInterface);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
+    PDPNICSTATECC pThisCC = RT_FROM_MEMBER(pInterface, DPNICSTATECC, IBase);
+    Assert(&pThisCC->IBase == pInterface);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThisCC->INetworkDown);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThisCC->INetworkConfig);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThisCC->ILeds);
     return NULL;
 }
 
@@ -4750,10 +4809,10 @@ static DECLCALLBACK(void *) dpNicQueryInterface(struct PDMIBASE *pInterface, con
 /**
  * @interface_method_impl{PDMDEVREG,pfnPowerOff}
  */
-static DECLCALLBACK(void) dpNicPowerOff(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) dpNicR3PowerOff(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
-    dp8390WakeupReceive(pDevIns);
+    dp8390R3WakeupReceive(pDevIns);
 }
 
 
@@ -4762,11 +4821,12 @@ static DECLCALLBACK(void) dpNicPowerOff(PPDMDEVINS pDevIns)
  *
  * One port on the network card has been disconnected from the network.
  */
-static DECLCALLBACK(void) dpNicDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(void) dpNicR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDPNICSTATECC);
     RT_NOREF(fFlags);
-    PDPNICSTATE pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
-    LogFlowFunc(("#%d\n", DPNIC_INSTANCE));
+    LogFlowFunc(("#%d\n", pThis->iInstance));
 
     AssertLogRelReturnVoid(iLUN == 0);
 
@@ -4776,10 +4836,9 @@ static DECLCALLBACK(void) dpNicDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
     /*
      * Zero some important members.
      */
-    pThis->pDrvBase = NULL;
-    pThis->pDrvR3 = NULL;
-    pThis->pDrvR0 = NIL_RTR0PTR;
-    pThis->pDrvRC = NIL_RTRCPTR;
+    pThis->fDriverAttached = false;
+    pThisCC->pDrvBase = NULL;
+    pThisCC->pDrv     = NULL;
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
@@ -4789,11 +4848,12 @@ static DECLCALLBACK(void) dpNicDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
  * @interface_method_impl{PDMDEVREG,pfnAttach}
  * One port on the network card has been connected to a network.
  */
-static DECLCALLBACK(int) dpNicAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+static DECLCALLBACK(int) dpNicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
+    PDPNICSTATE      pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATECC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDPNICSTATECC);
     RT_NOREF(fFlags);
-    PDPNICSTATE pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
-    LogFlowFunc(("#%d\n", DPNIC_INSTANCE));
+    LogFlowFunc(("#%d\n", pThis->iInstance));
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
@@ -4803,21 +4863,20 @@ static DECLCALLBACK(int) dpNicAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     /*
      * Attach the driver.
      */
-    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
+    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        AssertMsgStmt(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
+        pThisCC->pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMINETWORKUP);
+        AssertMsgStmt(pThisCC->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
-        pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
-        pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
+        pThis->fDriverAttached = true;
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
     {
         /* This should never happen because this function is not called
          * if there is no driver to attach! */
-        LogFunc(("#%d No attached driver!\n", DPNIC_INSTANCE));
+        LogFunc(("#%d No attached driver!\n", pThis->iInstance));
     }
 
     /*
@@ -4826,7 +4885,7 @@ static DECLCALLBACK(int) dpNicAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
      * network card
      */
     if (RT_SUCCESS(rc))
-        dp8390TempLinkDown(pThis);
+        dp8390TempLinkDown(pDevIns, pThis);
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return rc;
@@ -4836,20 +4895,20 @@ static DECLCALLBACK(int) dpNicAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 /**
  * @interface_method_impl{PDMDEVREG,pfnSuspend}
  */
-static DECLCALLBACK(void) dpNicSuspend(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) dpNicR3Suspend(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
-    dp8390WakeupReceive(pDevIns);
+    dp8390R3WakeupReceive(pDevIns);
 }
 
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
-static DECLCALLBACK(void) dpNicReset(PPDMDEVINS pDevIns)
+static DECLCALLBACK(void) dpNicR3Reset(PPDMDEVINS pDevIns)
 {
-    PDPNICSTATE pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
-    LogFlowFunc(("#%d\n", DPNIC_INSTANCE));
+    PDPNICSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+    LogFlowFunc(("#%d\n", pThis->iInstance));
     if (pThis->fLinkTempDown)
     {
         pThis->cLinkDownReported = 0x1000;
@@ -4857,28 +4916,27 @@ static DECLCALLBACK(void) dpNicReset(PPDMDEVINS pDevIns)
         dpNicTimerRestore(pDevIns, pThis->hTimerRestore, pThis);
     }
 
-    dpNicR3HardReset(pThis);
+    dpNicR3HardReset(pDevIns, pThis);
 }
 
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
-static DECLCALLBACK(void) dpNicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+static DECLCALLBACK(void) dpNicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    RT_NOREF(offDelta);
-    PDPNICSTATE pThis   = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
-    pThis->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
+    PDPNICSTATERC pThisRC = PDMINS_2_DATA_RC(pDevIns, PDPNICSTATERC);
+    pThisRC->pDrv += offDelta;
 }
 
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
-static DECLCALLBACK(int) dpNicDestruct(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) dpNicR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PDPNICSTATE pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
 
     if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->CritSect))
     {
@@ -4894,10 +4952,11 @@ static DECLCALLBACK(int) dpNicDestruct(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) dpNicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int) dpNicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDPNICSTATE     pThis = PDMINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
+    PDPNICSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDPNICSTATECC);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     PPDMIBASE       pBase;
     char            szTmp[128];
@@ -4910,6 +4969,7 @@ static DECLCALLBACK(int) dpNicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->hEventOutOfRxSpace   = NIL_RTSEMEVENT;
     pThis->hIoPortsNic          = NIL_IOMIOPORTHANDLE;
     pThis->hIoPortsCore         = NIL_IOMIOPORTHANDLE;
+    pThisCC->pDevIns            = pDevIns;
 
     /*
      * Validate configuration.
@@ -5025,22 +5085,19 @@ static DECLCALLBACK(int) dpNicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Initialize data (most of it anyway).
      */
-    pThis->pDevInsR3                        = pDevIns;
-    pThis->pDevInsR0                        = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC                        = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->Led.u32Magic                     = PDMLED_MAGIC;
+    pThis->Led.u32Magic                       = PDMLED_MAGIC;
     /* IBase */
-    pThis->IBase.pfnQueryInterface          = dpNicQueryInterface;
+    pThisCC->IBase.pfnQueryInterface          = dpNicQueryInterface;
     /* INetworkPort */
-    pThis->INetworkDown.pfnWaitReceiveAvail = dpNicNet_WaitReceiveAvail;
-    pThis->INetworkDown.pfnReceive          = dpNicNet_Receive;
-    pThis->INetworkDown.pfnXmitPending      = dpNicNet_XmitPending;
+    pThisCC->INetworkDown.pfnWaitReceiveAvail = dpNicNet_WaitReceiveAvail;
+    pThisCC->INetworkDown.pfnReceive          = dpNicNet_Receive;
+    pThisCC->INetworkDown.pfnXmitPending      = dpNicNet_XmitPending;
     /* INetworkConfig */
-    pThis->INetworkConfig.pfnGetMac         = dpNicGetMac;
-    pThis->INetworkConfig.pfnGetLinkState   = dpNicGetLinkState;
-    pThis->INetworkConfig.pfnSetLinkState   = dpNicSetLinkState;
+    pThisCC->INetworkConfig.pfnGetMac         = dpNicGetMac;
+    pThisCC->INetworkConfig.pfnGetLinkState   = dpNicGetLinkState;
+    pThisCC->INetworkConfig.pfnSetLinkState   = dpNicSetLinkState;
     /* ILeds */
-    pThis->ILeds.pfnQueryStatusLed          = dpNicQueryStatusLed;
+    pThisCC->ILeds.pfnQueryStatusLed          = dpNicQueryStatusLed;
 
     pThis->hIoPortsCore = NIL_IOMIOPORTHANDLE;
     pThis->hIoPortsNic  = NIL_IOMIOPORTHANDLE;
@@ -5175,15 +5232,15 @@ static DECLCALLBACK(int) dpNicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Register the info item.
      */
-    RTStrPrintf(szTmp, sizeof(szTmp), "dpnic%d", pDevIns->iInstance);
+    RTStrPrintf(szTmp, sizeof(szTmp), "dpnic%d", pThis->iInstance);
     PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "dpnic info", dpNicInfo);
 
     /*
      * Attach status driver (optional).
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThisCC->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
-        pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+        pThisCC->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     else if (   rc != VERR_PDM_NO_ATTACHED_DRIVER
              && rc != VERR_PDM_CFG_MISSING_DRIVER_NAME)
     {
@@ -5194,14 +5251,13 @@ static DECLCALLBACK(int) dpNicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Attach driver.
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        AssertMsgReturn(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
+        pThisCC->pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMINETWORKUP);
+        AssertMsgReturn(pThisCC->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                         VERR_PDM_MISSING_INTERFACE_BELOW);
-        pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
-        pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
+        pThis->fDriverAttached = true;
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
@@ -5215,7 +5271,7 @@ static DECLCALLBACK(int) dpNicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Reset the device state. (Do after attaching.)
      */
-    dpNicR3HardReset(pThis);
+    dpNicR3HardReset(pDevIns, pThis);
 
     /*
      * Register statistics counters.
@@ -5342,27 +5398,27 @@ const PDMDEVREG g_DeviceDP8390 =
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(DPNICSTATE),
-    /* .cbInstanceCC = */           0,
-    /* .cbInstanceRC = */           0,
+    /* .cbInstanceCC = */           sizeof(DPNICSTATECC),
+    /* .cbInstanceRC = */           sizeof(DPNICSTATERC),
     /* .cMaxPciDevices = */         0,
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "National Semiconductor DP8390 based adapter.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
     /* .pszR0Mod = */               "VBoxDDR0.r0",
-    /* .pfnConstruct = */           dpNicConstruct,
-    /* .pfnDestruct = */            dpNicDestruct,
-    /* .pfnRelocate = */            dpNicRelocate,
+    /* .pfnConstruct = */           dpNicR3Construct,
+    /* .pfnDestruct = */            dpNicR3Destruct,
+    /* .pfnRelocate = */            dpNicR3Relocate,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
-    /* .pfnReset = */               dpNicReset,
-    /* .pfnSuspend = */             dpNicSuspend,
+    /* .pfnReset = */               dpNicR3Reset,
+    /* .pfnSuspend = */             dpNicR3Suspend,
     /* .pfnResume = */              NULL,
-    /* .pfnAttach = */              dpNicAttach,
-    /* .pfnDetach = */              dpNicDetach,
+    /* .pfnAttach = */              dpNicR3Attach,
+    /* .pfnDetach = */              dpNicR3Detach,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
-    /* .pfnPowerOff = */            dpNicPowerOff,
+    /* .pfnPowerOff = */            dpNicR3PowerOff,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
