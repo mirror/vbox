@@ -23,6 +23,15 @@
 #define LOG_GROUP LOG_GROUP_VMM
 #include <VBox/vmm/vmmr3vtable.h>
 
+#include <iprt/asm.h>
+#include <iprt/errcore.h>
+
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static DECLCALLBACK(int) vmmR3ReservedVTableEntry(void);
+
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -34,7 +43,7 @@ static const VMMR3VTABLE g_VMMR3VTable =
     /* .pszDescription = */     "x86 & amd64",
 
 #define VTABLE_ENTRY(a_Api)     a_Api,
-#define VTABLE_RESERVED(a_Name) NULL,
+#define VTABLE_RESERVED(a_Name) vmmR3ReservedVTableEntry,
 
 #include <VBox/vmm/vmmr3vtable-def.h>
 
@@ -43,6 +52,17 @@ static const VMMR3VTABLE g_VMMR3VTable =
 
     /* .uMagicVersionEnd = */   VMMR3VTABLE_MAGIC_VERSION,
 };
+
+
+/**
+ * Reserved VMM function table entry.
+ */
+static DECLCALLBACK(int) vmmR3ReservedVTableEntry(void)
+{
+    void * volatile pvCaller = ASMReturnAddress();
+    AssertLogRel(("Reserved VMM function table entry called from %p!\n", pvCaller ));
+    return VERR_INTERNAL_ERROR;
+}
 
 
 VMMR3DECL(PCVMMR3VTABLE) VMMR3GetVTable(void)

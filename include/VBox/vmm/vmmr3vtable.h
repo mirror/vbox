@@ -111,7 +111,7 @@ typedef struct VMMR3VTABLE
 #endif
 /** @def VTABLE_RESERVED
  * Define a reserved VTable entry with the given name. */
-#define VTABLE_RESERVED(a_Name)  PFNRT   a_Name;
+#define VTABLE_RESERVED(a_Name)  DECLCALLBACKMEMBER(int, a_Name,(void));
 
 #include "vmmr3vtable-def.h"
 
