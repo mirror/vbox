@@ -275,7 +275,6 @@ $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME): \
 	$(RM_EXT) -f $(PATH_OUT)/repackadd/*.rpt
 	$(EXEC_X86_WIN32) cmd /c $(PATH_OUT)/repackadd/PackDriversForSubmission.cmd -b $(PATH_STAGE_BIN) -a $(KBUILD_TARGET_ARCH) -x -n --no-main --ga -o $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
 endif #VBOX_GA_ATTESTATION_SIGNING
-	
 
 #
 # Repackaging scripts and files.
