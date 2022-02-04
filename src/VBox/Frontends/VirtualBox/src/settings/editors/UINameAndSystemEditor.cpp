@@ -43,11 +43,13 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
                                              bool fChooseName /* = true */,
                                              bool fChoosePath /* = false */,
                                              bool fChooseImage /* = false */,
+                                             bool fChooseEdition /* = false */,
                                              bool fChooseType /* = true */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_fChooseName(fChooseName)
     , m_fChoosePath(fChoosePath)
     , m_fChooseImage(fChooseImage)
+    , m_fChooseEdition(fChooseEdition)
     , m_fChooseType(fChooseType)
     , m_fSupportsHWVirtEx(false)
     , m_fSupportsLongMode(false)
@@ -55,12 +57,14 @@ UINameAndSystemEditor::UINameAndSystemEditor(QWidget *pParent,
     , m_pNameLabel(0)
     , m_pPathLabel(0)
     , m_pImageLabel(0)
+    , m_pEditionLabel(0)
     , m_pLabelFamily(0)
     , m_pLabelType(0)
     , m_pIconType(0)
     , m_pNameLineEdit(0)
     , m_pPathSelector(0)
     , m_pImageSelector(0)
+    , m_pEditionSelector(0)
     , m_pComboFamily(0)
     , m_pComboType(0)
 {
@@ -286,6 +290,8 @@ int UINameAndSystemEditor::firstColumnWidth() const
         iWidth = qMax(iWidth, m_pPathLabel->width());
     if (m_pImageLabel)
         iWidth = qMax(iWidth, m_pImageLabel->width());
+    if (m_pEditionLabel)
+        iWidth = qMax(iWidth, m_pEditionLabel->width());
     if (m_pLabelFamily)
         iWidth = qMax(iWidth, m_pLabelFamily->width());
     if (m_pLabelType)
@@ -301,6 +307,8 @@ void UINameAndSystemEditor::retranslateUi()
         m_pPathLabel->setText(tr("&Folder:"));
     if (m_pImageLabel)
         m_pImageLabel->setText(tr("&ISO Image:"));
+    if (m_pEditionLabel)
+        m_pEditionLabel->setText(tr("&OS Edition:"));
     if (m_pLabelFamily)
         m_pLabelFamily->setText(tr("&Type:"));
     if (m_pLabelType)
@@ -519,6 +527,31 @@ void UINameAndSystemEditor::prepareWidgets()
 
             ++iRow;
         }
+
+
+        if (m_fChooseEdition)
+        {
+            /* Prepare edition label: */
+            m_pEditionLabel = new QLabel(this);
+            if (m_pEditionLabel)
+            {
+                m_pEditionLabel->setAlignment(Qt::AlignRight);
+                m_pEditionLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+
+                m_pMainLayout->addWidget(m_pEditionLabel, iRow, 0);
+            }
+            /* Prepare image selector: */
+            m_pEditionSelector = new QIComboBox(this);
+            if (m_pEditionSelector)
+            {
+                m_pEditionLabel->setBuddy(m_pEditionSelector->focusProxy());
+
+                m_pMainLayout->addWidget(m_pEditionSelector, iRow, 1, 1, 2);
+            }
+
+            ++iRow;
+        }
+
 
         if (m_fChooseType)
         {

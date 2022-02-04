@@ -36,6 +36,7 @@
 class QComboBox;
 class QGridLayout;
 class QLabel;
+class QIComboBox;
 class QILineEdit;
 class QString;
 class UIFilePathSelector;
@@ -74,14 +75,16 @@ signals:
 public:
 
     /** Constructs VM parameters editor passing @a pParent to the base-class.
-     * @param  fChooseName   Controls whether we should propose to choose name.
-     * @param  fChoosePath   Controls whether we should propose to choose path.
-     * @param  fChooseImage  Controls whether we should propose to choose image.
-     * @param  fChooseType   Controls whether we should propose to choose type. */
+     * @param  fChooseName    Controls whether we should propose to choose name.
+     * @param  fChoosePath    Controls whether we should propose to choose path.
+     * @param  fChooseImage   Controls whether we should propose to choose image.
+     * @param  fChooseEdition Controls whether we should propose to choose edition.
+     * @param  fChooseType    Controls whether we should propose to choose type. */
     UINameAndSystemEditor(QWidget *pParent,
                           bool fChooseName = true,
                           bool fChoosePath = false,
                           bool fChooseImage = false,
+                          bool fChooseEdition = false,
                           bool fChooseType = true);
 
     /** Defines minimum layout @a iIndent. */
@@ -179,6 +182,8 @@ private:
     bool  m_fChoosePath;
     /** Holds whether we should propose to choose an image. */
     bool  m_fChooseImage;
+    /** Holds whether we should propose to choose an edition. */
+    bool  m_fChooseEdition;
     /** Holds whether we should propose to choose a type. */
     bool  m_fChooseType;
     /** Holds whether host supports hardware virtualization. */
@@ -193,8 +198,10 @@ private:
     QLabel *m_pNameLabel;
     /** Holds the VM path label instance. */
     QLabel *m_pPathLabel;
-    /** Holds the VM image label instance. */
+    /** Holds the ISO image label instance. */
     QLabel *m_pImageLabel;
+    /** Holds the edition label instance. */
+    QLabel *m_pEditionLabel;
     /** Holds the VM OS family label instance. */
     QLabel *m_pLabelFamily;
     /** Holds the VM OS type label instance. */
@@ -206,8 +213,10 @@ private:
     QILineEdit         *m_pNameLineEdit;
     /** Holds the VM path editor instance. */
     UIFilePathSelector *m_pPathSelector;
-    /** Holds the VM image editor instance. */
+    /** Holds the file selector for ISO image (either for unattended install or to be attached to vm). */
     UIFilePathSelector *m_pImageSelector;
+    /** Combobox to select an image out of selected ISO image (currently only Windows ISO have this). */
+    QIComboBox *m_pEditionSelector;
     /** Holds the VM OS family combo instance. */
     QComboBox          *m_pComboFamily;
     /** Holds the VM OS type combo instance. */
