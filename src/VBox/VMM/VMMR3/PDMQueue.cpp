@@ -541,7 +541,9 @@ VMMR3_INT_DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
  * Free an item.
  *
  * @param   pQueue  The queue.
- * @param   pItem   The item.
+ * @param   pbItems Where the items area starts.
+ * @param   cbItem  Item size.
+ * @param   pItem   The item to free.
  */
 DECLINLINE(void) pdmR3QueueFreeItem(PPDMQUEUE pQueue, uint8_t *pbItems, uint32_t cbItem, PPDMQUEUEITEMCORE pItem)
 {

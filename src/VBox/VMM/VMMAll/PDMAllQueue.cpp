@@ -190,11 +190,10 @@ VMMDECL(int) PDMQueueAllocEx(PVMCC pVM, PDMQUEUEHANDLE hQueue, void *pvOwner, PP
  * The allocated item must be handed on to PDMR3QueueInsert() after the
  * data have been filled in.
  *
- * @returns VBox status code.
+ * @returns Pointer to the new item on success, NULL on failure.
  * @param   pVM         Pointer to the cross context VM structure w/ ring-0.
  * @param   hQueue      The queue handle.
  * @param   pvOwner     The queue owner.
- * @param   ppNew       Where to return the item pointer on success.
  * @thread  Any thread.
  */
 VMMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PVMCC pVM, PDMQUEUEHANDLE hQueue, void *pvOwner)
