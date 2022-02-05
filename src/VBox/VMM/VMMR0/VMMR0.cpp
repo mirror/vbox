@@ -2071,6 +2071,14 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
             break;
         }
 
+        case VMMR0_DO_PDM_QUEUE_CREATE:
+        {
+            if (!pReqHdr || u64Arg || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = PDMR0QueueCreateReqHandler(pGVM, (PPDMQUEUECREATEREQ)pReqHdr);
+            break;
+        }
+
         /*
          * Requests to the internal networking service.
          */

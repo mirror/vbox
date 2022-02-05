@@ -840,7 +840,7 @@ typedef struct PDMDRVHLPR3
                                               PFNPDMQUEUEDRV pfnCallback, const char *pszName, PDMQUEUEHANDLE *phQueue));
 
     DECLR3CALLBACKMEMBER(PPDMQUEUEITEMCORE, pfnQueueAlloc,(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue));
-    DECLR3CALLBACKMEMBER(void, pfnQueueInsert,(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem));
+    DECLR3CALLBACKMEMBER(int, pfnQueueInsert,(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem));
     DECLR3CALLBACKMEMBER(bool, pfnQueueFlushIfNecessary,(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue));
     /** @} */
 
@@ -1704,9 +1704,9 @@ DECLINLINE(PPDMQUEUEITEMCORE) PDMDrvHlpQueueAlloc(PPDMDRVINS pDrvIns, PDMQUEUEHA
 /**
  * @copydoc PDMDRVHLPR3::pfnQueueInsert
  */
-DECLINLINE(void) PDMDrvHlpQueueInsert(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
+DECLINLINE(int) PDMDrvHlpQueueInsert(PPDMDRVINS pDrvIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
 {
-    pDrvIns->CTX_SUFF(pHlp)->pfnQueueInsert(pDrvIns, hQueue, pItem);
+    return pDrvIns->CTX_SUFF(pHlp)->pfnQueueInsert(pDrvIns, hQueue, pItem);
 }
 
 /**

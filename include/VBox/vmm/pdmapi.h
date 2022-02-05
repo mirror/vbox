@@ -342,6 +342,37 @@ typedef PDMDEVICECOMPATSETCRITSECTREQ *PPDMDEVICECOMPATSETCRITSECTREQ;
 
 VMMR0_INT_DECL(int) PDMR0DeviceCompatSetCritSectReqHandler(PGVM pGVM, PPDMDEVICECOMPATSETCRITSECTREQ pReq);
 
+
+/**
+ * Request buffer for PDMR0QueueCreateReqHandler / VMMR0_DO_PDM_QUEUE_CREATE.
+ * @see PDMR0QueueCreateReqHandler.
+ */
+typedef struct PDMQUEUECREATEREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR          Hdr;
+
+    /** Number of queue items. */
+    uint32_t                cItems;
+    /** Queue item size.   */
+    uint32_t                cbItem;
+    /** Owner type (PDMQUEUETYPE). */
+    uint32_t                enmType;
+    /** The ring-3 owner pointer. */
+    RTR3PTR                 pvOwner;
+    /** The ring-3 callback function address. */
+    RTR3PTR                 pfnCallback;
+    /** The queue name. */
+    char                    szName[40];
+
+    /** Output: The queue handle. */
+    PDMQUEUEHANDLE          hQueue;
+} PDMQUEUECREATEREQ;
+/** Pointer to a PDMR0QueueCreateReqHandler / VMMR0_DO_PDM_QUEUE_CREATE request buffer. */
+typedef PDMQUEUECREATEREQ *PPDMQUEUECREATEREQ;
+
+VMMR0_INT_DECL(int) PDMR0QueueCreateReqHandler(PGVM pGVM, PPDMQUEUECREATEREQ pReq);
+
 /** @} */
 
 RT_C_DECLS_END

@@ -1322,7 +1322,7 @@ typedef struct VM
 #ifdef VMM_INCLUDED_SRC_include_PDMInternal_h
         struct PDM s;
 #endif
-        uint8_t     padding[8320];      /* multiple of 64 */
+        uint8_t     padding[8448];      /* multiple of 64 */
     } pdm;
 
     /** IOM part. */
@@ -1457,7 +1457,7 @@ typedef struct VM
     } R0Stats;
 
     /** Padding for aligning the structure size on a page boundrary. */
-    uint8_t         abAlignment2[6616 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[6488 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 
     /* ---- end small stuff ---- */
 
@@ -1467,7 +1467,7 @@ typedef struct VM
     /* This point is aligned on a 16384 boundrary (for arm64 purposes). */
 } VM;
 #ifndef VBOX_FOR_DTRACE_LIB
-AssertCompileSizeAlignment(VM, 16384);
+//AssertCompileSizeAlignment(VM, 16384);
 #endif
 
 

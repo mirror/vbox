@@ -487,6 +487,7 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMR0/PDMR0DevHlp.cpp \
  	$(if-expr defined(VBOX_WITH_DBGF_TRACING), VMMR0/PDMR0DevHlpTracing.cpp,) \
  	VMMR0/PDMR0Driver.cpp \
+ 	VMMR0/PDMR0Queue.cpp \
  	VMMR0/PGMR0.cpp \
  	VMMR0/PGMR0Pool.cpp \
  	VMMR0/PGMR0SharedPage.cpp \

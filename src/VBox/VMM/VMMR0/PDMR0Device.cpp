@@ -193,6 +193,13 @@ VMMR0_INT_DECL(void) PDMR0CleanupVM(PGVM pGVM)
         if (pDevIns)
             pdmR0DeviceDestroy(pGVM, pDevIns, i);
     }
+
+    i = pGVM->pdmr0.s.cQueues;
+    while (i-- > 0)
+    {
+        if (pGVM->pdmr0.s.aQueues[i].pQueue != NULL)
+            pdmR0QueueDestroy(pGVM, i);
+    }
 }
 
 

@@ -211,13 +211,13 @@ VMM_INT_DECL(void) PDMIoApicBroadcastEoi(PVMCC pVM, uint8_t uVector)
     else if (pIoApic->pDevInsR3)
     {
         /* Queue for ring-3 execution. */
-        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueR0);
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM, pVM->pdm.s.hDevHlpQueue, pVM);
         if (pTask)
         {
             pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SET_EOI;
             pTask->pDevInsR3 = NIL_RTR3PTR; /* not required */
             pTask->u.IoApicSetEoi.uVector = uVector;
-            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+            PDMQueueInsert(pVM, pVM->pdm.s.hDevHlpQueue, pVM, &pTask->Core);
         }
         else
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
@@ -249,7 +249,7 @@ VMM_INT_DECL(void) PDMIoApicSendMsi(PVMCC pVM, PCIBDF uBusDevFn, PCMSIMSG pMsi, 
     else if (pIoApic->pDevInsR3)
     {
         /* Queue for ring-3 execution. */
-        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM->pdm.s.pDevHlpQueueR0);
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pVM, pVM->pdm.s.hDevHlpQueue, pVM);
         if (pTask)
         {
             pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SEND_MSI;
@@ -257,7 +257,7 @@ VMM_INT_DECL(void) PDMIoApicSendMsi(PVMCC pVM, PCIBDF uBusDevFn, PCMSIMSG pMsi, 
             pTask->u.IoApicSendMsi.uBusDevFn = uBusDevFn;
             pTask->u.IoApicSendMsi.Msi       = *pMsi;
             pTask->u.IoApicSendMsi.uTagSrc   = uTagSrc;
-            PDMQueueInsertEx(pVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+            PDMQueueInsert(pVM, pVM->pdm.s.hDevHlpQueue, pVM, &pTask->Core);
         }
         else
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));

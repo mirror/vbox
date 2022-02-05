@@ -244,7 +244,7 @@ static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
         pdmUnlock(pGVM);
 
         /* queue for ring-3 execution. */
-        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM->pdm.s.pDevHlpQueueR0);
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM, pGVM->pdm.s.hDevHlpQueue, pGVM);
         AssertReturnVoid(pTask);
 
         pTask->enmOp = PDMDEVHLPTASKOP_PCI_SET_IRQ;
@@ -252,9 +252,9 @@ static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
         pTask->u.PciSetIrq.iIrq = iIrq;
         pTask->u.PciSetIrq.iLevel = iLevel;
         pTask->u.PciSetIrq.uTagSrc = uTagSrc;
-        pTask->u.PciSetIrq.pPciDevR3 = MMHyperR0ToR3(pGVM, pPciDev);
+        pTask->u.PciSetIrq.idxPciDev = pPciDev->Int.s.idxSubDev;
 
-        PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+        PDMQueueInsert(pGVM, pGVM->pdm.s.hDevHlpQueue, pGVM, &pTask->Core);
     }
 
     LogFlow(("pdmR0DevHlp_PCISetIrq: caller=%p/%d: returns void; uTagSrc=%#x\n", pDevIns, pDevIns->iInstance, uTagSrc));
@@ -580,32 +580,27 @@ static DECLCALLBACK(uint64_t) pdmR0DevHlp_TMTimeVirtGetNano(PPDMDEVINS pDevIns)
 }
 
 
-/** Converts a queue handle to a ring-0 queue pointer. */
-DECLINLINE(PPDMQUEUE)  pdmR0DevHlp_QueueToPtr(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    return (PPDMQUEUE)MMHyperR3ToCC(pDevIns->Internal.s.pGVM, hQueue);
-}
-
-
 /** @interface_method_impl{PDMDEVHLPR0,pfnQueueAlloc} */
 static DECLCALLBACK(PPDMQUEUEITEMCORE) pdmR0DevHlp_QueueAlloc(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
 {
-    return PDMQueueAlloc(pdmR0DevHlp_QueueToPtr(pDevIns, hQueue));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMQueueAlloc(pDevIns->Internal.s.pGVM, hQueue, pDevIns);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnQueueInsert} */
-static DECLCALLBACK(void) pdmR0DevHlp_QueueInsert(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
+static DECLCALLBACK(int) pdmR0DevHlp_QueueInsert(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
 {
-    return PDMQueueInsert(pdmR0DevHlp_QueueToPtr(pDevIns, hQueue), pItem);
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMQueueInsert(pDevIns->Internal.s.pGVM, hQueue, pDevIns, pItem);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnQueueFlushIfNecessary} */
 static DECLCALLBACK(bool) pdmR0DevHlp_QueueFlushIfNecessary(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
 {
-    return PDMQueueFlushIfNecessary(pdmR0DevHlp_QueueToPtr(pDevIns, hQueue));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMQueueFlushIfNecessary(pDevIns->Internal.s.pGVM, hQueue, pDevIns) == VINF_SUCCESS;
 }
 
 
@@ -1785,7 +1780,7 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, PCIBDF uB
     else if (pGVM->pdm.s.IoApic.pDevInsR3)
     {
         /* queue for ring-3 execution. */
-        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM->pdm.s.pDevHlpQueueR0);
+        PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM, pGVM->pdm.s.hDevHlpQueue, pGVM);
         if (pTask)
         {
             pTask->enmOp = PDMDEVHLPTASKOP_IOAPIC_SET_IRQ;
@@ -1795,7 +1790,7 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, PCIBDF uB
             pTask->u.IoApicSetIrq.iLevel = iLevel;
             pTask->u.IoApicSetIrq.uTagSrc = uTagSrc;
 
-            PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+            PDMQueueInsert(pGVM, pGVM->pdm.s.hDevHlpQueue, pGVM, &pTask->Core);
         }
         else
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
@@ -1974,7 +1969,7 @@ DECLHIDDEN(bool) pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSr
     }
 
     /* queue for ring-3 execution. */
-    PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM->pdm.s.pDevHlpQueueR0);
+    PPDMDEVHLPTASK pTask = (PPDMDEVHLPTASK)PDMQueueAlloc(pGVM, pGVM->pdm.s.hDevHlpQueue, pGVM);
     AssertReturn(pTask, false);
 
     pTask->enmOp = PDMDEVHLPTASKOP_ISA_SET_IRQ;
@@ -1984,7 +1979,7 @@ DECLHIDDEN(bool) pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSr
     pTask->u.IsaSetIrq.iLevel = iLevel;
     pTask->u.IsaSetIrq.uTagSrc = uTagSrc;
 
-    PDMQueueInsertEx(pGVM->pdm.s.pDevHlpQueueR0, &pTask->Core, 0);
+    PDMQueueInsert(pGVM, pGVM->pdm.s.hDevHlpQueue, pGVM, &pTask->Core);
     return false;
 }
 

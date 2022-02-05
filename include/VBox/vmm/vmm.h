@@ -320,6 +320,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_PDM_DEVICE_GEN_CALL,
     /** Old style device compat: Set ring-0 critical section. */
     VMMR0_DO_PDM_DEVICE_COMPAT_SET_CRITSECT,
+    /** Call PDMR0QueueCreateReqHandler. */
+    VMMR0_DO_PDM_QUEUE_CREATE,
 
     /** Set a GVMM or GMM configuration value. */
     VMMR0_DO_GCFGM_SET_VALUE = 400,

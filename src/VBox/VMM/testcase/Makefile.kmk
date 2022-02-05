@@ -68,6 +68,7 @@ PROGRAMS += tstCFGM tstVMREQ tstMMHyperHeap tstAnimate
 PROGRAMS += \
 	tstCompressionBenchmark \
 	tstIEMCheckMc \
+	tstPDMQueue \
 	tstSSM \
 	tstVMMR0CallHost-1 \
 	tstX86-FpuSaveRestore
@@ -458,6 +459,14 @@ NemRawBench-1_LDFLAGS.darwin = \
 	/System/Library/Frameworks/Hypervisor.framework/Hypervisor
  endif
 endif
+
+#
+# PDM Queue tests.
+#
+tstPDMQueue_TEMPLATE := VBOXR3EXE
+tstPDMQueue_DEFS     = $(VMM_COMMON_DEFS)
+tstPDMQueue_SOURCES  := tstPDMQueue.cpp
+tstPDMQueue_LIBS     := $(LIB_VMM) $(LIB_RUNTIME)
 
 
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION

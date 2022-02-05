@@ -984,8 +984,14 @@ typedef PDMMOD *PPDMMOD;
 
 
 
-/** Extra space in the free array. */
-#define PDMQUEUE_FREE_SLACK         16
+/** Max number of items in a queue. */
+#define PDMQUEUE_MAX_ITEMS          _16K
+/** Max item size. */
+#define PDMQUEUE_MAX_ITEM_SIZE      _1M
+/** Max total queue item size for ring-0 capable queues.  */
+#define PDMQUEUE_MAX_TOTAL_SIZE_R0  _8M
+/** Max total queue item size for ring-3 only queues. */
+#define PDMQUEUE_MAX_TOTAL_SIZE_R3  _32M
 
 /**
  * Queue type.
@@ -1002,16 +1008,33 @@ typedef enum PDMQUEUETYPE
     PDMQUEUETYPE_EXTERNAL
 } PDMQUEUETYPE;
 
-/** Pointer to a PDM Queue. */
-typedef struct PDMQUEUE *PPDMQUEUE;
-
 /**
  * PDM Queue.
  */
 typedef struct PDMQUEUE
 {
-    /** Pointer to the next queue in the list. */
-    R3PTRTYPE(PPDMQUEUE)            pNext;
+    /** Magic value (PDMQUEUE_MAGIC). */
+    uint32_t                u32Magic;
+    /** Item size (bytes). */
+    uint32_t                cbItem;
+    /** Number of items in the queue. */
+    uint32_t                cItems;
+    /** Offset of the the queue items relative to the PDMQUEUE structure. */
+    uint32_t                offItems;
+
+    /** Interval timer. Only used if cMilliesInterval is non-zero. */
+    TMTIMERHANDLE           hTimer;
+    /** The interval between checking the queue for events.
+     * The realtime timer below is used to do the waiting.
+     * If 0, the queue will use the VM_FF_PDM_QUEUE forced action. */
+    uint32_t                cMilliesInterval;
+
+    /** This is VINF_SUCCESS if the queue is okay, error status if not. */
+    int32_t                 rcOkay;
+    uint32_t                u32Padding;
+
+    /** Queue type. */
+    PDMQUEUETYPE            enmType;
     /** Type specific data. */
     union
     {
@@ -1045,38 +1068,23 @@ typedef struct PDMQUEUE
             /** Pointer to user argument. */
             R3PTRTYPE(void *)           pvUser;
         } Ext;
+        struct
+        {
+            /** Generic callback pointer. */
+            RTR3PTR                     pfnCallback;
+            /** Generic owner pointer. */
+            RTR3PTR                     pvOwner;
+        } Gen;
     } u;
-    /** Queue type. */
-    PDMQUEUETYPE                    enmType;
-    /** The interval between checking the queue for events.
-     * The realtime timer below is used to do the waiting.
-     * If 0, the queue will use the VM_FF_PDM_QUEUE forced action. */
-    uint32_t                        cMilliesInterval;
-    /** Interval timer. Only used if cMilliesInterval is non-zero. */
-    TMTIMERHANDLE                   hTimer;
-    /** Pointer to the VM - R3. */
-    PVMR3                           pVMR3;
-    /** LIFO of pending items - R3. */
-    R3PTRTYPE(PPDMQUEUEITEMCORE) volatile pPendingR3;
-    /** Pointer to the VM - R0. */
-    PVMR0                           pVMR0;
-    /** LIFO of pending items - R0. */
-    R0PTRTYPE(PPDMQUEUEITEMCORE) volatile pPendingR0;
-
-    /** Item size (bytes). */
-    uint32_t                        cbItem;
-    /** Number of items in the queue. */
-    uint32_t                        cItems;
-    /** Index to the free head (where we insert). */
-    uint32_t volatile               iFreeHead;
-    /** Index to the free tail (where we remove). */
-    uint32_t volatile               iFreeTail;
 
     /** Unique queue name. */
-    R3PTRTYPE(const char *)         pszName;
-#if HC_ARCH_BITS == 32
-    RTR3PTR                         Alignment1;
-#endif
+    char                            szName[40];
+
+    /** LIFO of pending items (item index), UINT32_MAX if empty. */
+    uint32_t volatile               iPending;
+
+    /** State: Pending items. */
+    uint32_t volatile               cStatPending;
     /** Stat: Times PDMQueueAlloc fails. */
     STAMCOUNTER                     StatAllocFailures;
     /** Stat: PDMQueueInsert calls. */
@@ -1085,23 +1093,23 @@ typedef struct PDMQUEUE
     STAMCOUNTER                     StatFlush;
     /** Stat: Queue flushes with pending items left over. */
     STAMCOUNTER                     StatFlushLeftovers;
-#ifdef VBOX_WITH_STATISTICS
     /** State: Profiling the flushing. */
     STAMPROFILE                     StatFlushPrf;
-    /** State: Pending items. */
-    uint32_t volatile               cStatPending;
-    uint32_t volatile               cAlignment;
-#endif
+    uint64_t                        au64Padding[3];
 
-    /** Array of pointers to free items. Variable size. */
-    struct PDMQUEUEFREEITEM
-    {
-        /** Pointer to the free item - HC Ptr. */
-        R3PTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemR3;
-        /** Pointer to the free item - HC Ptr. */
-        R0PTRTYPE(PPDMQUEUEITEMCORE) volatile   pItemR0;
-    }                               aFreeItems[1];
+    /** Allocation bitmap: Set bits means free, clear means allocated. */
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    uint64_t                        bmAlloc[RT_FLEXIBLE_ARRAY];
+    /* The items follows after the end of the bitmap */
 } PDMQUEUE;
+AssertCompileMemberAlignment(PDMQUEUE, bmAlloc, 64);
+/** Pointer to a PDM Queue. */
+typedef struct PDMQUEUE *PPDMQUEUE;
+
+/** Magic value PDMQUEUE::u32Magic (Bud Powell). */
+#define PDMQUEUE_MAGIC              UINT32_C(0x19240927)
+/** Magic value PDMQUEUE::u32Magic after destroy. */
+#define PDMQUEUE_MAGIC_DEAD         UINT32_C(0x19660731)
 
 /** @name PDM::fQueueFlushing
  * @{ */
@@ -1114,6 +1122,30 @@ typedef struct PDMQUEUE
  * other EMTs from spinning. */
 #define PDM_QUEUE_FLUSH_FLAG_PENDING_BIT    1
 /** @}  */
+
+/**
+ * Ring-0 queue
+ *
+ * @author bird (2022-02-04)
+ */
+typedef struct PDMQUEUER0
+{
+    /** Pointer to the shared queue data. */
+    R0PTRTYPE(PPDMQUEUE)    pQueue;
+    /** The memory allocation. */
+    RTR0MEMOBJ              hMemObj;
+    /** The ring-3 mapping object. */
+    RTR0MEMOBJ              hMapObj;
+    /** The owner pointer.  This is NULL if not allocated. */
+    RTR0PTR                 pvOwner;
+    /** Queue item size. */
+    uint32_t                cbItem;
+    /** Number of queue items. */
+    uint32_t                cItems;
+    /** Offset of the the queue items relative to the PDMQUEUE structure. */
+    uint32_t                offItems;
+    uint32_t                u32Reserved;
+} PDMQUEUER0;
 
 
 /** @name PDM task structures.
@@ -1186,8 +1218,8 @@ typedef struct PDMTASKSET
 } PDMTASKSET;
 AssertCompileMemberAlignment(PDMTASKSET, fTriggered, 64);
 AssertCompileMemberAlignment(PDMTASKSET, aTasks, 64);
-/** Magic value for PDMTASKSET::u32Magic. */
-#define PDMTASKSET_MAGIC        UINT32_C(0x19320314)
+/** Magic value for PDMTASKSET::u32Magic (Quincy Delight Jones Jr.). */
+#define PDMTASKSET_MAGIC        UINT32_C(0x19330314)
 /** Pointer to a task set. */
 typedef PDMTASKSET *PPDMTASKSET;
 
@@ -1252,12 +1284,12 @@ typedef struct PDMDEVHLPTASK
          */
         struct PDMDEVHLPTASKPCISETIRQ
         {
-            /** Pointer to the PCI device (R3 Ptr). */
-            R3PTRTYPE(PPDMPCIDEV)   pPciDevR3;
+            /** Index of the PCI device (into PDMDEVINSR3::apPciDevs). */
+            uint32_t                idxPciDev;
             /** The IRQ */
-            int                     iIrq;
+            int32_t                 iIrq;
             /** The new level. */
-            int                     iLevel;
+            int32_t                 iLevel;
             /** The IRQ tag and source. */
             uint32_t                uTagSrc;
         } PciSetIrq;
@@ -1418,13 +1450,20 @@ typedef struct PDM
 
     /** @name Queues
      * @{ */
-    /** Queue in which devhlp tasks are queued for R3 execution - R3 Ptr. */
-    R3PTRTYPE(PPDMQUEUE)            pDevHlpQueueR3;
-    /** Queue in which devhlp tasks are queued for R3 execution - R0 Ptr. */
-    R0PTRTYPE(PPDMQUEUE)            pDevHlpQueueR0;
-    /** Pointer to the queue which should be manually flushed - R0 Ptr.
-     * Only touched by EMT. */
-    R0PTRTYPE(struct PDMQUEUE *)    pQueueFlushR0;
+    /** Number of ring-0 capable queues in apQueues. */
+    uint32_t                        cRing0Queues;
+    uint32_t                        u32Padding1;
+    /** Array of ring-0 capable queues running in parallel to PDMR0PERVM::aQueues. */
+    R3PTRTYPE(PPDMQUEUE)            apRing0Queues[16];
+    /** Number of ring-3 only queues  */
+    uint32_t                        cRing3Queues;
+    /** The allocation size of the ring-3 queue handle table. */
+    uint32_t                        cRing3QueuesAlloc;
+    /** Handle table for the ring-3 only queues. */
+    R3PTRTYPE(PPDMQUEUE *)          papRing3Queues;
+
+    /** Queue in which devhlp tasks are queued for R3 execution. */
+    PDMQUEUEHANDLE                  hDevHlpQueue;
     /** Bitmask controlling the queue flushing.
      * See PDM_QUEUE_FLUSH_FLAG_ACTIVE and PDM_QUEUE_FLUSH_FLAG_PENDING. */
     uint32_t volatile               fQueueFlushing;
@@ -1506,9 +1545,14 @@ typedef struct PDMR0PERVM
     PDMIOMMUR0                      aIommus[PDM_IOMMUS_MAX];
     /** Number of valid ring-0 device instances (apDevInstances). */
     uint32_t                        cDevInstances;
-    uint32_t                        u32Padding;
+    uint32_t                        u32Padding1;
     /** Pointer to ring-0 device instances. */
     R0PTRTYPE(struct PDMDEVINSR0 *) apDevInstances[190];
+    /** Number of valid ring-0 queue instances (aQueues). */
+    uint32_t                        cQueues;
+    uint32_t                        u32Padding2;
+    /** Array of ring-0 queues. */
+    PDMQUEUER0                      aQueues[16];
 } PDMR0PERVM;
 
 
@@ -1518,13 +1562,6 @@ typedef struct PDMR0PERVM
 typedef struct PDMUSERPERVM
 {
     /** @todo move more stuff over here. */
-
-    /** Linked list of timer driven PDM queues.
-     * Currently serialized by PDM::CritSect.  */
-    R3PTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
-    /** Linked list of force action driven PDM queues.
-     * Currently serialized by PDM::CritSect. */
-    R3PTRTYPE(struct PDMQUEUE *)    pQueuesForced;
 
     /** Lock protecting the lists below it. */
     RTCRITSECT                      ListCritSect;
@@ -1659,7 +1696,12 @@ int         pdmR3LdrInitU(PUVM pUVM);
 void        pdmR3LdrTermU(PUVM pUVM, bool fFinal);
 char       *pdmR3FileR3(const char *pszFile, bool fShared);
 int         pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName);
+#endif /* IN_RING3 */
 
+void        pdmQueueInit(PPDMQUEUE pQueue, uint32_t cbBitmap, uint32_t cbItem, uint32_t cItems,
+                         const char *pszName, PDMQUEUETYPE enmType, RTR3PTR pfnCallback, RTR3PTR pvOwner);
+
+#ifdef IN_RING3
 int         pdmR3TaskInit(PVM pVM);
 void        pdmR3TaskTerm(PVM pVM);
 
@@ -1676,7 +1718,7 @@ void        pdmR3ThreadDestroyAll(PVM pVM);
 int         pdmR3ThreadResumeAll(PVM pVM);
 int         pdmR3ThreadSuspendAll(PVM pVM);
 
-#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+# ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 int         pdmR3AsyncCompletionInit(PVM pVM);
 int         pdmR3AsyncCompletionTerm(PVM pVM);
 void        pdmR3AsyncCompletionResume(PVM pVM);
@@ -1687,17 +1729,16 @@ int         pdmR3AsyncCompletionTemplateCreateUsb(PVM pVM, PPDMUSBINS pUsbIns, P
 int         pdmR3AsyncCompletionTemplateDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
 int         pdmR3AsyncCompletionTemplateDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
 int         pdmR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);
-#endif
+# endif
 
-#ifdef VBOX_WITH_NETSHAPER
+# ifdef VBOX_WITH_NETSHAPER
 int         pdmR3NetShaperInit(PVM pVM);
 int         pdmR3NetShaperTerm(PVM pVM);
-#endif
+# endif
 
 int         pdmR3BlkCacheInit(PVM pVM);
 void        pdmR3BlkCacheTerm(PVM pVM);
 int         pdmR3BlkCacheResume(PVM pVM);
-
 #endif /* IN_RING3 */
 
 void        pdmLock(PVMCC pVM);
@@ -1725,6 +1766,8 @@ void        pdmCritSectRwLeaveExclQueued(PVMCC pVM, PPDMCRITSECTRW pThis);
 
 #ifdef IN_RING0
 DECLHIDDEN(bool)           pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSrc);
+DECLHIDDEN(void)           pdmR0QueueDestroy(PGVM pGVM, uint32_t iQueue);
+
 #endif
 
 #ifdef VBOX_WITH_DBGF_TRACING

@@ -2746,11 +2746,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_QueueCreate(PPDMDEVINS pDevIns, size_t cbIt
         AssertLogRelReturn(pszName, VERR_NO_MEMORY);
     }
 
-    PPDMQUEUE pQueue = NULL;
-    int rc = PDMR3QueueCreateDevice(pVM, pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName, &pQueue);
-    *phQueue = (uintptr_t)pQueue;
+    int rc = PDMR3QueueCreateDevice(pVM, pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName, phQueue);
 
-    LogFlow(("pdmR3DevHlp_QueueCreate: caller='%s'/%d: returns %Rrc *ppQueue=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, rc, *phQueue));
+    LogFlow(("pdmR3DevHlp_QueueCreate: caller='%s'/%d: returns %Rrc *phQueue=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, rc, *phQueue));
     return rc;
 }
 
@@ -2769,21 +2768,22 @@ DECLINLINE(PPDMQUEUE)  pdmR3DevHlp_QueueToPtr(PPDMDEVINS pDevIns, PDMQUEUEHANDLE
 /** @interface_method_impl{PDMDEVHLPR3,pfnQueueAlloc} */
 static DECLCALLBACK(PPDMQUEUEITEMCORE) pdmR3DevHlp_QueueAlloc(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
 {
-    return PDMQueueAlloc(pdmR3DevHlp_QueueToPtr(pDevIns, hQueue));
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMQueueAlloc(pDevIns->Internal.s.pVMR3, hQueue, pDevIns);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnQueueInsert} */
-static DECLCALLBACK(void) pdmR3DevHlp_QueueInsert(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
+static DECLCALLBACK(int) pdmR3DevHlp_QueueInsert(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
 {
-    return PDMQueueInsert(pdmR3DevHlp_QueueToPtr(pDevIns, hQueue), pItem);
+    return PDMQueueInsert(pDevIns->Internal.s.pVMR3, hQueue, pDevIns, pItem);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnQueueFlushIfNecessary} */
 static DECLCALLBACK(bool) pdmR3DevHlp_QueueFlushIfNecessary(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
 {
-    return PDMQueueFlushIfNecessary(pdmR3DevHlp_QueueToPtr(pDevIns, hQueue));
+    return PDMQueueFlushIfNecessary(pDevIns->Internal.s.pVMR3, hQueue, pDevIns) == VINF_SUCCESS;
 }
 
 
@@ -6359,7 +6359,9 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
         case PDMDEVHLPTASKOP_PCI_SET_IRQ:
         {
             /* Same as pdmR3DevHlp_PCISetIrq, except we've got a tag already. */
-            PPDMPCIDEV pPciDev = pTask->u.PciSetIrq.pPciDevR3;
+            PPDMDEVINSR3 pDevIns = pTask->pDevInsR3;
+            PPDMPCIDEV   pPciDev = pTask->u.PciSetIrq.idxPciDev < RT_ELEMENTS(pDevIns->apPciDevs)
+                                 ? pDevIns->apPciDevs[pTask->u.PciSetIrq.idxPciDev] : NULL;
             if (pPciDev)
             {
                 size_t const idxBus = pPciDev->Int.s.idxPdmBus;
@@ -6372,7 +6374,7 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
                 pdmUnlock(pVM);
             }
             else
-                AssertReleaseMsgFailed(("No PCI device registered!\n"));
+                AssertReleaseMsgFailed(("No PCI device given! (%#x)\n", pPciDev->Int.s.idxSubDev));
             break;
         }
 

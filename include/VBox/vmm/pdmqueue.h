@@ -38,26 +38,23 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** PDM queue handle. */
-typedef uint64_t PDMQUEUEHANDLE;
-/** NIL PDM queue handle. */
-#define NIL_PDMQUEUEHANDLE      UINT64_MAX
-
 /** Pointer to a PDM queue. */
 typedef struct PDMQUEUE *PPDMQUEUE;
 
 /** Pointer to a PDM queue item core. */
-typedef struct PDMQUEUEITEMCORE *PPDMQUEUEITEMCORE;
+typedef union PDMQUEUEITEMCORE *PPDMQUEUEITEMCORE;
 
 /**
  * PDM queue item core.
  */
-typedef struct PDMQUEUEITEMCORE
+typedef union PDMQUEUEITEMCORE
 {
-    /** Pointer to the next item in the pending list - R3 Pointer. */
-    R3PTRTYPE(PPDMQUEUEITEMCORE)    pNextR3;
-    /** Pointer to the next item in the pending list - R0 Pointer. */
-    R0PTRTYPE(PPDMQUEUEITEMCORE)    pNextR0;
+    /** The next queue item on the pending list (UINT32_MAX for NIL). */
+    uint32_t volatile               iNext;
+    /** The next item about to be flushed. */
+    R3PTRTYPE(PPDMQUEUEITEMCORE)    pNext;
+    /** Make sure the core is 64-bit wide. */
+    uint64_t                        u64View;
 } PDMQUEUEITEMCORE;
 
 
@@ -133,25 +130,26 @@ typedef DECLCALLBACKTYPE(bool, FNPDMQUEUEEXT,(void *pvUser, PPDMQUEUEITEMCORE pI
 typedef FNPDMQUEUEEXT *PFNPDMQUEUEEXT;
 
 #ifdef VBOX_IN_VMM
-VMMR3_INT_DECL(int)  PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                            PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue);
-VMMR3_INT_DECL(int)  PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                            PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue);
-VMMR3_INT_DECL(int)  PDMR3QueueCreateInternal(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                              PFNPDMQUEUEINT pfnCallback, bool fGCEnabled, const char *pszName, PPDMQUEUE *ppQueue);
-VMMR3_INT_DECL(int)  PDMR3QueueCreateExternal(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                              PFNPDMQUEUEEXT pfnCallback, void *pvUser, const char *pszName, PPDMQUEUE *ppQueue);
-VMMR3_INT_DECL(int)  PDMR3QueueDestroy(PPDMQUEUE pQueue);
+VMMR3_INT_DECL(int)  PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems,
+                                            uint32_t cMilliesInterval, PFNPDMQUEUEDEV pfnCallback,
+                                            bool fRZEnabled, const char *pszName, PDMQUEUEHANDLE *phQueue);
+VMMR3_INT_DECL(int)  PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, size_t cbItem, uint32_t cItems,
+                                            uint32_t cMilliesInterval, PFNPDMQUEUEDRV pfnCallback,
+                                            const char *pszName, PDMQUEUEHANDLE *phQueue);
+VMMR3_INT_DECL(int)  PDMR3QueueCreateInternal(PVM pVM, size_t cbItem, uint32_t cItems,
+                                              uint32_t cMilliesInterval, PFNPDMQUEUEINT pfnCallback,
+                                              bool fRZEnabled, const char *pszName, PDMQUEUEHANDLE *phQueue);
+VMMR3DECL(int)       PDMR3QueueCreateExternal(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                              PFNPDMQUEUEEXT pfnCallback, void *pvUser, const char *pszName, PDMQUEUEHANDLE *phQueue);
+VMMR3DECL(int)       PDMR3QueueDestroy(PVM pVM, PDMQUEUEHANDLE hQueue, void *pvOwner);
 VMMR3_INT_DECL(int)  PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
 VMMR3_INT_DECL(int)  PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
-VMMR3_INT_DECL(void) PDMR3QueueFlushAll(PVM pVM);
+VMMR3DECL(void)      PDMR3QueueFlushAll(PVM pVM);
 #endif /* VBOX_IN_VMM */
 
-VMMDECL(PPDMQUEUEITEMCORE)    PDMQueueAlloc(PPDMQUEUE pQueue);
-VMMDECL(void)                 PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem);
-VMMDECL(void)                 PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64_t NanoMaxDelay);
-VMMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue);
-VMMDECL(bool)                 PDMQueueFlushIfNecessary(PPDMQUEUE pQueue);
+VMMDECL(PPDMQUEUEITEMCORE)  PDMQueueAlloc(PVMCC pVM, PDMQUEUEHANDLE hQueue, void *pvOwner);
+VMMDECL(int)                PDMQueueInsert(PVMCC pVM, PDMQUEUEHANDLE hQueue, void *pvOwner, PPDMQUEUEITEMCORE pInsert);
+VMMDECL(int)                PDMQueueFlushIfNecessary(PVMCC pVM, PDMQUEUEHANDLE hQueue, void *pvOwner);
 
 /** @} */
 

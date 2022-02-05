@@ -30,47 +30,190 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/*
+ * Macros for thoroughly validating a queue handle and ownership.
+ */
+#define PDMQUEUE_HANDLE_TO_VARS_RETURN_COMMON(a_cbMax, a_cbTotalMax) \
+    AssertReturn(cbItem >= sizeof(PDMQUEUEITEMCORE), pQueue->rcOkay = VERR_INTERNAL_ERROR_4); \
+    AssertReturn(cbItem <= (a_cbMax), pQueue->rcOkay = VERR_INTERNAL_ERROR_4); \
+    \
+    /* paranoia^3: */ \
+    AssertReturn(cItems > 0, pQueue->rcOkay = VERR_INTERNAL_ERROR_4); \
+    AssertReturn(cItems <= PDMQUEUE_MAX_ITEMS, pQueue->rcOkay = VERR_INTERNAL_ERROR_4); \
+    AssertReturn(cbItem * cItems <= (a_cbTotalMax), pQueue->rcOkay = VERR_INTERNAL_ERROR_4)
+
+#ifdef IN_RING0
+# define PDMQUEUE_HANDLE_TO_VARS_RETURN(a_pVM, a_hQueue, a_pvOwner) \
+    AssertPtrReturn((a_pvOwner), VERR_INVALID_PARAMETER); \
+    \
+    AssertCompile(RT_ELEMENTS((a_pVM)->pdm.s.apRing0Queues) == RT_ELEMENTS((a_pVM)->pdmr0.s.aQueues)); \
+    AssertReturn((a_hQueue) < RT_ELEMENTS((a_pVM)->pdmr0.s.aQueues), VERR_INVALID_HANDLE); \
+    AssertReturn((a_hQueue) < (a_pVM)->pdmr0.s.cQueues, VERR_INVALID_HANDLE); \
+    AssertReturn((a_pVM)->pdmr0.s.aQueues[(a_hQueue)].pvOwner == (a_pvOwner), VERR_INVALID_HANDLE); \
+    PPDMQUEUE pQueue = (a_pVM)->pdmr0.s.aQueues[(a_hQueue)].pQueue; \
+    AssertPtrReturn(pQueue, VERR_INVALID_HANDLE); \
+    AssertReturn(pQueue->u32Magic == PDMQUEUE_MAGIC, VERR_INVALID_HANDLE); \
+    AssertReturn(pQueue->rcOkay == VINF_SUCCESS, pQueue->rcOkay); \
+    \
+    uint32_t const cbItem   = (a_pVM)->pdmr0.s.aQueues[(a_hQueue)].cbItem; \
+    uint32_t const cItems   = (a_pVM)->pdmr0.s.aQueues[(a_hQueue)].cItems; \
+    uint32_t const offItems = (a_pVM)->pdmr0.s.aQueues[(a_hQueue)].offItems; \
+    \
+    /* paranoia^2: */ \
+    AssertReturn(pQueue->cbItem == cbItem, pQueue->rcOkay = VERR_INTERNAL_ERROR_3); \
+    AssertReturn(pQueue->cItems == cItems, pQueue->rcOkay = VERR_INTERNAL_ERROR_3); \
+    AssertReturn(pQueue->offItems == offItems, pQueue->rcOkay = VERR_INTERNAL_ERROR_3); \
+    \
+    PDMQUEUE_HANDLE_TO_VARS_RETURN_COMMON(PDMQUEUE_MAX_ITEM_SIZE, PDMQUEUE_MAX_TOTAL_SIZE_R0)
+
+#else
+# define PDMQUEUE_HANDLE_TO_VARS_RETURN(a_pVM, a_hQueue, a_pvOwner) \
+    AssertPtrReturn((a_pvOwner), VERR_INVALID_PARAMETER); \
+    \
+    PPDMQUEUE pQueue; \
+    if ((a_hQueue) < RT_ELEMENTS((a_pVM)->pdm.s.apRing0Queues)) \
+        pQueue = (a_pVM)->pdm.s.apRing0Queues[(a_hQueue)]; \
+    else \
+    { \
+        (a_hQueue) -= RT_ELEMENTS((a_pVM)->pdm.s.apRing0Queues); \
+        AssertReturn((a_pVM)->pdm.s.cRing3Queues, VERR_INVALID_HANDLE); \
+        pQueue = (a_pVM)->pdm.s.papRing3Queues[(a_hQueue)]; \
+    } \
+    AssertPtrReturn(pQueue, VERR_INVALID_HANDLE); \
+    AssertReturn(pQueue->u32Magic == PDMQUEUE_MAGIC, VERR_INVALID_HANDLE); \
+    AssertReturn(pQueue->u.Gen.pvOwner == (a_pvOwner), VERR_INVALID_HANDLE); \
+    AssertReturn(pQueue->rcOkay == VINF_SUCCESS, pQueue->rcOkay); \
+    \
+    uint32_t const cbItem   = pQueue->cbItem; \
+    uint32_t const cItems   = pQueue->cItems; \
+    uint32_t const offItems = pQueue->offItems; \
+    \
+    PDMQUEUE_HANDLE_TO_VARS_RETURN_COMMON(PDMQUEUE_MAX_ITEM_SIZE, PDMQUEUE_MAX_TOTAL_SIZE_R3)
+
+#endif
+
+
+/**
+ * Commmon function for initializing the shared queue structure.
+ */
+void pdmQueueInit(PPDMQUEUE pQueue, uint32_t cbBitmap, uint32_t cbItem, uint32_t cItems,
+                  const char *pszName, PDMQUEUETYPE enmType, RTR3PTR pfnCallback, RTR3PTR pvOwner)
+{
+    Assert(cbBitmap * 8 >= cItems);
+
+    pQueue->u32Magic            = PDMQUEUE_MAGIC;
+    pQueue->cbItem              = cbItem;
+    pQueue->cItems              = cItems;
+    pQueue->offItems            = RT_UOFFSETOF(PDMQUEUE, bmAlloc) + cbBitmap;
+    pQueue->rcOkay              = VINF_SUCCESS;
+    pQueue->u32Padding          = 0;
+    pQueue->hTimer              = NIL_TMTIMERHANDLE;
+    pQueue->cMilliesInterval    = 0;
+    pQueue->enmType             = enmType;
+    pQueue->u.Gen.pfnCallback   = pfnCallback;
+    pQueue->u.Gen.pvOwner       = pvOwner;
+    RTStrCopy(pQueue->szName, sizeof(pQueue->szName), pszName);
+    pQueue->iPending            = UINT32_MAX;
+    RT_BZERO(pQueue->bmAlloc, cbBitmap);
+    ASMBitSetRange(pQueue->bmAlloc, 0, cItems);
+
+    uint8_t *pbItem = (uint8_t *)&pQueue->bmAlloc[0] + cbBitmap;
+    while (cItems-- > 0)
+    {
+        ((PPDMQUEUEITEMCORE)pbItem)->u64View = UINT64_C(0xfeedfeedfeedfeed);
+
+        /* next */
+        pbItem += cbItem;
+    }
+}
+
+
+/**
+ * Allocate an item from a queue, extended version.
+ *
+ * The allocated item must be handed on to PDMR3QueueInsert() after the
+ * data have been filled in.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the cross context VM structure w/ ring-0.
+ * @param   hQueue      The queue handle.
+ * @param   pvOwner     The queue owner.
+ * @param   ppNew       Where to return the item pointer on success.
+ * @thread  Any thread.
+ */
+VMMDECL(int) PDMQueueAllocEx(PVMCC pVM, PDMQUEUEHANDLE hQueue, void *pvOwner, PPDMQUEUEITEMCORE *ppNew)
+{
+    /*
+     * Validate and translate input.
+     */
+    *ppNew = NULL;
+    PDMQUEUE_HANDLE_TO_VARS_RETURN(pVM, hQueue, pvOwner);
+
+    /*
+     * Do the allocation.
+     */
+    uint32_t cEmptyScans = 0;
+    for (;;)
+    {
+        int32_t iBit = ASMBitFirstSet(pQueue->bmAlloc, cItems);
+        if (iBit >= 0)
+        {
+            if (ASMAtomicBitTestAndClear(pQueue->bmAlloc, iBit))
+            {
+                PPDMQUEUEITEMCORE pNew = (PPDMQUEUEITEMCORE)&((uint8_t *)pQueue)[offItems + iBit * cbItem];
+                pNew->u64View = UINT64_C(0xbeefbeefbeefbeef);
+                *ppNew = pNew;
+                return VINF_SUCCESS;
+            }
+            cEmptyScans = 0;
+        }
+        else if (++cEmptyScans < 16)
+            ASMNopPause();
+        else
+        {
+            STAM_REL_COUNTER_INC(&pQueue->StatAllocFailures);
+            return VERR_OUT_OF_RESOURCES;
+        }
+    }
+}
 
 
 /**
  * Allocate an item from a queue.
+ *
  * The allocated item must be handed on to PDMR3QueueInsert() after the
  * data have been filled in.
  *
- * @returns Pointer to allocated queue item.
- * @returns NULL on failure. The queue is exhausted.
- * @param   pQueue      The queue handle.
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the cross context VM structure w/ ring-0.
+ * @param   hQueue      The queue handle.
+ * @param   pvOwner     The queue owner.
+ * @param   ppNew       Where to return the item pointer on success.
  * @thread  Any thread.
  */
-VMMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PPDMQUEUE pQueue)
+VMMDECL(PPDMQUEUEITEMCORE) PDMQueueAlloc(PVMCC pVM, PDMQUEUEHANDLE hQueue, void *pvOwner)
 {
-    Assert(RT_VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
-    PPDMQUEUEITEMCORE pNew;
-    uint32_t iNext;
-    uint32_t i;
-    do
-    {
-        i = pQueue->iFreeTail;
-        if (i == pQueue->iFreeHead)
-        {
-            STAM_REL_COUNTER_INC(&pQueue->StatAllocFailures);
-            return NULL;
-        }
-        pNew = pQueue->aFreeItems[i].CTX_SUFF(pItem);
-        iNext = (i + 1) % (pQueue->cItems + PDMQUEUE_FREE_SLACK);
-    } while (!ASMAtomicCmpXchgU32(&pQueue->iFreeTail, iNext, i));
-    return pNew;
+    PPDMQUEUEITEMCORE pNew = NULL;
+    int rc = PDMQueueAllocEx(pVM, hQueue, pvOwner, &pNew);
+    if (RT_SUCCESS(rc))
+        return pNew;
+    return NULL;
 }
 
 
 /**
  * Sets the FFs and fQueueFlushed.
  *
- * @param   pQueue              The PDM queue.
+ * @param   pVM         Pointer to the cross context VM structure w/ ring-0.
  */
-static void pdmQueueSetFF(PPDMQUEUE pQueue)
+static void pdmQueueSetFF(PVMCC pVM)
 {
-    PVM pVM = pQueue->CTX_SUFF(pVM);
     Log2(("PDMQueueInsert: VM_FF_PDM_QUEUES %d -> 1\n", VM_FF_IS_SET(pVM, VM_FF_PDM_QUEUES)));
     VM_FF_SET(pVM, VM_FF_PDM_QUEUES);
     ASMAtomicBitSet(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT);
@@ -86,106 +229,76 @@ static void pdmQueueSetFF(PPDMQUEUE pQueue)
  * The item must have been obtained using PDMQueueAlloc(). Once the item
  * have been passed to this function it must not be touched!
  *
- * @param   pQueue      The queue handle.
- * @param   pItem       The item to insert.
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the cross context VM structure w/ ring-0.
+ * @param   hQueue      The queue handle.
+ * @param   pvOwner     The queue owner.
+ * @param   pInsert     The item to insert.
  * @thread  Any thread.
  */
-VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
+VMMDECL(int) PDMQueueInsert(PVMCC pVM, PDMQUEUEHANDLE hQueue, void *pvOwner, PPDMQUEUEITEMCORE pInsert)
 {
-    Assert(RT_VALID_PTR(pQueue) && pQueue->CTX_SUFF(pVM));
-    AssertPtr(pItem);
+    /*
+     * Validate and translate input.
+     */
+    PDMQUEUE_HANDLE_TO_VARS_RETURN(pVM, hQueue, pvOwner);
 
-#if 0 /* the paranoid android version: */
-    void *pvNext;
-    do
+    uint8_t * const pbItems   = (uint8_t *)pQueue + offItems;
+    uintptr_t const offInsert = (uintptr_t)pInsert - (uintptr_t)pbItems;
+    uintptr_t const iInsert   = offInsert / cbItem;
+    AssertReturn(iInsert < cItems, VERR_INVALID_PARAMETER);
+    AssertReturn(iInsert * cbItem == offInsert, VERR_INVALID_PARAMETER);
+
+    AssertReturn(ASMBitTest(pQueue->bmAlloc, iInsert) == false, VERR_INVALID_PARAMETER);
+
+    /*
+     * Append the item to the pending list.
+     */
+    for (;;)
     {
-        pvNext = ASMAtomicUoReadPtr((void * volatile *)&pQueue->CTX_SUFF(pPending));
-        ASMAtomicUoWritePtr((void * volatile *)&pItem->CTX_SUFF(pNext), pvNext);
-    } while (!ASMAtomicCmpXchgPtr(&pQueue->CTX_SUFF(pPending), pItem, pvNext));
-#else
-    PPDMQUEUEITEMCORE pNext;
-    do
-    {
-        pNext = pQueue->CTX_SUFF(pPending);
-        pItem->CTX_SUFF(pNext) = pNext;
-    } while (!ASMAtomicCmpXchgPtr(&pQueue->CTX_SUFF(pPending), pItem, pNext));
-#endif
+        uint32_t const iOldPending = ASMAtomicUoReadU32(&pQueue->iPending);
+        pInsert->iNext = iOldPending;
+        if (ASMAtomicCmpXchgU32(&pQueue->iPending, iInsert, iOldPending))
+            break;
+        ASMNopPause();
+    }
 
     if (pQueue->hTimer == NIL_TMTIMERHANDLE)
-        pdmQueueSetFF(pQueue);
+        pdmQueueSetFF(pVM);
     STAM_REL_COUNTER_INC(&pQueue->StatInsert);
     STAM_STATS({ ASMAtomicIncU32(&pQueue->cStatPending); });
-}
 
-
-/**
- * Queue an item.
- *
- * The item must have been obtained using PDMQueueAlloc(). Once the item
- * have been passed to this function it must not be touched!
- *
- * @param   pQueue          The queue handle.
- * @param   pItem           The item to insert.
- * @param   NanoMaxDelay    The maximum delay before processing the queue, in nanoseconds.
- *                          This applies only to GC.
- * @thread  Any thread.
- */
-VMMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64_t NanoMaxDelay)
-{
-    NOREF(NanoMaxDelay);
-    PDMQueueInsert(pQueue, pItem);
-#ifdef IN_RC
-    PVM pVM = pQueue->CTX_SUFF(pVM);
-    /** @todo figure out where to put this, the next bit should go there too.
-    if (NanoMaxDelay)
-    {
-
-    }
-    else */
-    {
-        VMCPU_FF_SET(VMMGetCpu0(pVM), VMCPU_FF_TO_R3);
-        Log2(("PDMQueueInsertEx: Setting VMCPU_FF_TO_R3\n"));
-    }
-#endif
-}
-
-
-/**
- * Gets the ring-0 pointer for the specified queue.
- *
- * @returns The ring-0 address of the queue.
- * @returns NULL if pQueue is invalid.
- * @param   pQueue          The queue handle.
- */
-VMMDECL(R0PTRTYPE(PPDMQUEUE)) PDMQueueR0Ptr(PPDMQUEUE pQueue)
-{
-    AssertPtr(pQueue);
-    Assert(pQueue->pVMR3);
-#ifdef IN_RING0
-    AssertPtr(pQueue->pVMR0);
-    return pQueue;
-#else
-    Assert(pQueue->pVMR0 || SUPR3IsDriverless());
-    return MMHyperCCToR0(pQueue->CTX_SUFF(pVM), pQueue);
-#endif
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Schedule the queue for flushing (processing) if necessary.
  *
- * @returns @c true if necessary, @c false if not.
- * @param   pQueue              The queue.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if a flush was necessary.
+ * @retval  VINF_NO_CHANGE if no flushing needed.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pvOwner     The alleged queue owner.
+ * @param   hQueue      The queueu to maybe flush.
  */
-VMMDECL(bool) PDMQueueFlushIfNecessary(PPDMQUEUE pQueue)
+VMMDECL(int) PDMQueueFlushIfNecessary(PVMCC pVM, PDMQUEUEHANDLE hQueue, void *pvOwner)
 {
-    AssertPtr(pQueue);
-    if (   pQueue->pPendingR3 != NIL_RTR3PTR
-        || pQueue->pPendingR0 != NIL_RTR0PTR)
+    /*
+     * Validate input.
+     */
+    PDMQUEUE_HANDLE_TO_VARS_RETURN(pVM, hQueue, pvOwner);
+    RT_NOREF(offItems);
+
+    /*
+     * Check and maybe flush.
+     */
+    if (ASMAtomicUoReadU32(&pQueue->iPending) != UINT32_MAX)
     {
-        pdmQueueSetFF(pQueue);
-        return false;
+        pdmQueueSetFF(pVM);
+        return VINF_SUCCESS;
     }
-    return false;
+    return VINF_NO_CHANGE;
 }
 

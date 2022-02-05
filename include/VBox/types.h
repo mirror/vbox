@@ -446,6 +446,13 @@ typedef union PDMCRITSECTRW *PPDMCRITSECTRW;
 /** Pointer to a const PDM read/write critical section. */
 typedef union PDMCRITSECTRW const *PCPDMCRITSECTRW;
 
+/** PDM queue handle. */
+typedef uint64_t PDMQUEUEHANDLE;
+/** Pointer to a PDM queue handle. */
+typedef PDMQUEUEHANDLE *PPDMQUEUEHANDLE;
+/** NIL PDM queue handle. */
+#define NIL_PDMQUEUEHANDLE ((PDMQUEUEHANDLE)UINT64_MAX)
+
 /** R3 pointer to a timer. */
 typedef R3PTRTYPE(struct TMTIMER *) PTMTIMERR3;
 /** Pointer to a R3 pointer to a timer. */
