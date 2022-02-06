@@ -42,7 +42,6 @@ static int mmR3HyperMap(PVM pVM, const size_t cb, const char *pszDesc, PRTGCPTR 
 static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, PRTR0PTR pR0PtrHeap);
 static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC);
 static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
-static int MMR3HyperReserveFence(PVM pVM);
 static int MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cHostPages, PCSUPPAGE paPages,
                              const char *pszDesc, PRTGCPTR pGCPtr);
 
@@ -144,11 +143,6 @@ int mmR3HyperInit(PVM pVM)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Make a small head fence to fend of accidental sequential access.
-         */
-        MMR3HyperReserveFence(pVM);
-
-        /*
          * Map the VM structure into the hypervisor space.
          * Note! Keeping the mappings here for now in case someone is using
          *       MMHyperR3ToR0 or similar.
@@ -182,9 +176,6 @@ int mmR3HyperInit(PVM pVM)
             pVM->pVMRC = (RTRCPTR)GCPtr;
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
                 pVM->apCpusR3[i]->pVMRC = pVM->pVMRC;
-
-            /* Reserve a page for fencing. */
-            MMR3HyperReserveFence(pVM);
 
             /*
              * Map the heap into the hypervisor space.
@@ -321,19 +312,6 @@ static int MMR3HyperMapPages(PVM pVM, void *pvR3, RTR0PTR pvR0, size_t cHostPage
     }
 
     return rc;
-}
-
-
-/**
- * Reserves an electric fence page.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- */
-static int MMR3HyperReserveFence(PVM pVM)
-{
-    RT_NOREF(pVM);
-    return VINF_SUCCESS;
 }
 
 
@@ -490,173 +468,11 @@ static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC)
     {
         pHeap->pVMRC    = pVM->pVMRC;
         pHeap->pbHeapRC = *ppHeapGC + MMYPERHEAP_HDR_SIZE;
-        /* Reserve a page for fencing. */
-        MMR3HyperReserveFence(pVM);
 
         /* We won't need these any more. */
         MMR3HeapFree(pHeap->paPages);
         pHeap->paPages = NULL;
     }
-    return rc;
-}
-
-
-/**
- * Allocates memory in the Hypervisor (GC VMM) area which never will
- * be freed and doesn't have any offset based relation to other heap blocks.
- *
- * The latter means that two blocks allocated by this API will not have the
- * same relative position to each other in GC and HC. In short, never use
- * this API for allocating nodes for an offset based AVL tree!
- *
- * The returned memory is of course zeroed.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   cb          Number of bytes to allocate.
- * @param   uAlignment  Required memory alignment in bytes.
- *                      Values are 0,8,16,32 and GUEST_PAGE_SIZE.
- *                      0 -> default alignment, i.e. 8 bytes.
- * @param   enmTag      The statistics tag.
- * @param   ppv         Where to store the address to the allocated
- *                      memory.
- * @remark  This is assumed not to be used at times when serialization is required.
- */
-VMMR3DECL(int) MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv)
-{
-    return MMR3HyperAllocOnceNoRelEx(pVM, cb, uAlignment, enmTag, 0/*fFlags*/, ppv);
-}
-
-
-/**
- * Allocates memory in the Hypervisor (GC VMM) area which never will
- * be freed and doesn't have any offset based relation to other heap blocks.
- *
- * The latter means that two blocks allocated by this API will not have the
- * same relative position to each other in GC and HC. In short, never use
- * this API for allocating nodes for an offset based AVL tree!
- *
- * The returned memory is of course zeroed.
- *
- * @returns VBox status code.
- * @param   pVM         The cross context VM structure.
- * @param   cb          Number of bytes to allocate.
- * @param   uAlignment  Required memory alignment in bytes.
- *                      Values are 0,8,16,32 and GUEST_PAGE_SIZE.
- *                      0 -> default alignment, i.e. 8 bytes.
- * @param   enmTag      The statistics tag.
- * @param   fFlags      Flags, see MMHYPER_AONR_FLAGS_KERNEL_MAPPING.
- * @param   ppv         Where to store the address to the allocated memory.
- * @remark  This is assumed not to be used at times when serialization is required.
- */
-VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag, uint32_t fFlags, void **ppv)
-{
-    AssertMsg(cb >= 8, ("Hey! Do you really mean to allocate less than 8 bytes?! cb=%d\n", cb));
-    Assert(!(fFlags & ~(MMHYPER_AONR_FLAGS_KERNEL_MAPPING)));
-
-    /*
-     * Choose between allocating a new chunk of HMA memory
-     * and the heap. We will only do BIG allocations from HMA and
-     * only at creation time.
-     */
-    if (   (   cb < _64K
-            && (   uAlignment != GUEST_PAGE_SIZE
-                || cb < 48*_1K)
-            && !(fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING)
-           )
-        ||  VMR3GetState(pVM) != VMSTATE_CREATING
-       )
-    {
-        Assert(!(fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING));
-        int rc = MMHyperAlloc(pVM, cb, uAlignment, enmTag, ppv);
-        if (    rc != VERR_MM_HYPER_NO_MEMORY
-            ||  cb <= 8*_1K)
-        {
-            Log2(("MMR3HyperAllocOnceNoRel: cb=%#zx uAlignment=%#x returns %Rrc and *ppv=%p\n",
-                  cb, uAlignment, rc, *ppv));
-            return rc;
-        }
-    }
-
-    /*
-     * Validate alignment.
-     */
-    switch (uAlignment)
-    {
-        case 0:
-        case 8:
-        case 16:
-        case 32:
-        case GUEST_PAGE_SIZE:
-            break;
-        default:
-            AssertMsgFailed(("Invalid alignment %u\n", uAlignment));
-            return VERR_INVALID_PARAMETER;
-    }
-
-    /*
-     * Allocate the pages and map them into HMA space.
-     */
-    uint32_t const  cbAligned  = RT_ALIGN_32(cb, RT_MAX(GUEST_PAGE_SIZE, HOST_PAGE_SIZE));
-    AssertReturn(cbAligned >= cb, VERR_INVALID_PARAMETER);
-    uint32_t const  cHostPages = cbAligned >> HOST_PAGE_SHIFT;
-    PSUPPAGE        paPages    = (PSUPPAGE)RTMemTmpAlloc(cHostPages * sizeof(paPages[0]));
-    if (!paPages)
-        return VERR_NO_TMP_MEMORY;
-    void           *pvPages;
-    RTR0PTR         pvR0 = NIL_RTR0PTR;
-    int rc = SUPR3PageAllocEx(cHostPages,
-                              0 /*fFlags*/,
-                              &pvPages,
-                              &pvR0,
-                              paPages);
-    if (RT_SUCCESS(rc))
-    {
-        Assert(pvR0 != NIL_RTR0PTR || SUPR3IsDriverless());
-        memset(pvPages, 0, cbAligned);
-
-        RTGCPTR GCPtr;
-        rc = MMR3HyperMapPages(pVM,
-                               pvPages,
-                               pvR0,
-                               cHostPages,
-                               paPages,
-                               MMR3HeapAPrintf(pVM, MM_TAG_MM, "alloc once (%s)", mmGetTagName(enmTag)),
-                               &GCPtr);
-        /* not needed anymore */
-        RTMemTmpFree(paPages);
-        if (RT_SUCCESS(rc))
-        {
-            *ppv = pvPages;
-            Log2(("MMR3HyperAllocOnceNoRel: cbAligned=%#x uAlignment=%#x returns VINF_SUCCESS and *ppv=%p\n",
-                  cbAligned, uAlignment, *ppv));
-            MMR3HyperReserveFence(pVM);
-            return rc;
-        }
-        AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cbAligned, rc));
-        SUPR3PageFreeEx(pvPages, cHostPages);
-
-
-        /*
-         * HACK ALERT! Try allocate it off the heap so that we don't freak
-         * out during vga/vmmdev mmio2 allocation with certain ram sizes.
-         */
-        /** @todo make a proper fix for this so we will never end up in this kind of situation! */
-        Log(("MMR3HyperAllocOnceNoRel: MMR3HyperMapHCRam failed with rc=%Rrc, try MMHyperAlloc(,%#x,,) instead\n",  rc, cb));
-        int rc2 = MMHyperAlloc(pVM, cb, uAlignment, enmTag, ppv);
-        if (RT_SUCCESS(rc2))
-        {
-            Log2(("MMR3HyperAllocOnceNoRel: cb=%#x uAlignment=%#x returns %Rrc and *ppv=%p\n",
-                  cb, uAlignment, rc, *ppv));
-            return rc;
-        }
-    }
-    else
-        AssertMsgFailed(("Failed to allocate %zd bytes! %Rrc\n", cbAligned, rc));
-
-    if (rc == VERR_NO_MEMORY)
-        rc = VERR_MM_HYPER_NO_MEMORY;
-    LogRel(("MMR3HyperAllocOnceNoRel: cb=%#zx uAlignment=%#x returns %Rrc\n", cb, uAlignment, rc));
     return rc;
 }
 

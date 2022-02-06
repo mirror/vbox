@@ -153,10 +153,7 @@ typedef enum MMTAG
 /** @defgroup grp_mm_hyper  Hypervisor Memory Management
  * @{ */
 
-VMMDECL(RTR3PTR)    MMHyperR0ToR3(PVM pVM, RTR0PTR R0Ptr);
 VMMDECL(RTR0PTR)    MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr);
-VMMDECL(RTR3PTR)    MMHyperRCToR3(PVM pVM, RTRCPTR RCPtr);
-VMMDECL(RTR0PTR)    MMHyperRCToR0(PVM pVM, RTRCPTR RCPtr);
 
 #ifndef IN_RING3
 VMMDECL(void *)     MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr);
@@ -168,18 +165,6 @@ DECLINLINE(void *)  MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 }
 #endif
 
-
-VMMDECL(void *)     MMHyperRCToCC(PVM pVM, RTRCPTR RCPtr);
-
-#ifndef IN_RING3
-VMMDECL(RTR3PTR)    MMHyperCCToR3(PVM pVM, void *pv);
-#else
-DECLINLINE(RTR3PTR) MMHyperCCToR3(PVM pVM, void *pv)
-{
-    NOREF(pVM);
-    return pv;
-}
-#endif
 
 #ifndef IN_RING0
 VMMDECL(RTR0PTR)    MMHyperCCToR0(PVM pVM, void *pv);
@@ -240,20 +225,6 @@ VMMR3DECL(int)      MMR3ReserveHandyPages(PVM pVM, uint32_t cHandyPages);
 VMMR3DECL(int)      MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages);
 VMMR3DECL(int)      MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc);
 VMMR3DECL(int)      MMR3UpdateShadowReservation(PVM pVM, uint32_t cShadowPages);
-
-/** @defgroup grp_mm_r3_hyper  Hypervisor Memory Manager (HC R3 Portion)
- * @{ */
-VMMR3DECL(int)      MMR3HyperAllocOnceNoRel(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
-VMMR3DECL(int)      MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, uint32_t fFlags, void **ppv);
-#if 0
-VMMR3DECL(int)      MMR3HyperRealloc(PVM pVM, void *pv, size_t cb, unsigned uAlignmentNew, MMTAG enmTagNew, size_t cbNew, void **ppv);
-#endif
-/** @name  MMR3HyperAllocOnceNoRelEx flags
- * @{ */
-/** Must have kernel mapping.
- * If not specified, the R0 pointer may point to the user process mapping. */
-#define MMHYPER_AONR_FLAGS_KERNEL_MAPPING   RT_BIT(0)
-/** @} */
 /** @} */
 
 
