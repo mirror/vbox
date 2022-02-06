@@ -1309,6 +1309,8 @@ typedef struct PGMROMRANGE
     R3PTRTYPE(struct PGMROMRANGE *)     pNextR3;
     /** Pointer to the next range - R0. */
     R0PTRTYPE(struct PGMROMRANGE *)     pNextR0;
+    /** Pointer to the this range - R0. */
+    R0PTRTYPE(struct PGMROMRANGE *)     pSelfR0;
     /** Address of the range. */
     RTGCPHYS                            GCPhys;
     /** Address of the last byte in the range. */
