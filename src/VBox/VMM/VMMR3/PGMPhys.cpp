@@ -1142,7 +1142,6 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
 #ifdef VBOX_STRICT
     for (pCur = pVM->pgm.s.pRamRangesXR3; pCur; pCur = pCur->pNextR3)
     {
-        Assert((pCur->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pCur->pSelfR0 == MMHyperCCToR0(pVM, pCur));
         Assert((pCur->GCPhys     & GUEST_PAGE_OFFSET_MASK) == 0);
         Assert((pCur->GCPhysLast & GUEST_PAGE_OFFSET_MASK) == GUEST_PAGE_OFFSET_MASK);
         Assert((pCur->cb         & GUEST_PAGE_OFFSET_MASK) == 0);
@@ -1183,7 +1182,6 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
 static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev)
 {
     AssertMsg(pNew->pszDesc, ("%RGp-%RGp\n", pNew->GCPhys, pNew->GCPhysLast));
-    Assert((pNew->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pNew->pSelfR0 == MMHyperCCToR0(pVM, pNew));
 
     PGM_LOCK_VOID(pVM);
 
@@ -1218,7 +1216,6 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
 static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pPrev)
 {
     Assert(pPrev ? pPrev->pNextR3 == pRam : pVM->pgm.s.pRamRangesXR3 == pRam);
-    Assert((pRam->fFlags & PGM_RAM_RANGE_FLAGS_FLOATING) || pRam->pSelfR0 == MMHyperCCToR0(pVM, pRam));
 
     PGM_LOCK_VOID(pVM);
 
@@ -1819,11 +1816,13 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
          * Allocate, initialize and link the new RAM range.
          */
         const size_t cbRamRange = RT_UOFFSETOF_DYN(PGMRAMRANGE, aPages[cPages]);
-        PPGMRAMRANGE pNew;
-        rc = MMR3HyperAllocOnceNoRel(pVM, cbRamRange, 0, MM_TAG_PGM_PHYS, (void **)&pNew);
+        PPGMRAMRANGE pNew = NULL;
+        RTR0PTR      pNewR0 = NIL_RTR0PTR;
+        rc = SUPR3PageAllocEx(RT_ALIGN_Z(cbRamRange, HOST_PAGE_SIZE) >> HOST_PAGE_SHIFT, 0 /*fFlags*/,
+                              (void **)&pNew, &pNewR0, NULL /*paPages*/);
         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc cbRamRange=%zu\n", rc, cbRamRange), rc);
 
-        rc = pgmR3PhysInitAndLinkRamRange(pVM, pNew, GCPhys, GCPhysLast, MMHyperCCToR0(pVM, pNew), 0 /*fFlags*/, pszDesc, pPrev);
+        rc = pgmR3PhysInitAndLinkRamRange(pVM, pNew, GCPhys, GCPhysLast, pNewR0, 0 /*fFlags*/, pszDesc, pPrev);
         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc cbRamRange=%zu\n", rc, cbRamRange), rc);
     }
     pgmPhysInvalidatePageMapTLB(pVM);
@@ -2781,45 +2780,24 @@ static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, u
         const uint32_t   cPagesTrackedByChunk = RT_MIN(cPagesLeft, cPagesPerChunk);
         const size_t     cbRange = RT_UOFFSETOF_DYN(PGMREGMMIO2RANGE, RamRange.aPages[cPagesTrackedByChunk]);
         PPGMREGMMIO2RANGE pNew    = NULL;
-        if (   iChunk + 1 < cChunks
-            || cbRange >= _1M)
-        {
-            /*
-             * Allocate memory for the registration structure.
-             */
-            size_t const cChunkPages  = RT_ALIGN_Z(cbRange, HOST_PAGE_SIZE) >> HOST_PAGE_SHIFT;
-            size_t const cbChunk      = (1 + cChunkPages + 1) << HOST_PAGE_SHIFT;
-            AssertLogRelBreakStmt(cbChunk == (uint32_t)cbChunk, rc = VERR_OUT_OF_RANGE);
-            PSUPPAGE     paChunkPages = (PSUPPAGE)RTMemTmpAllocZ(sizeof(SUPPAGE) * cChunkPages);
-            AssertBreakStmt(paChunkPages, rc = VERR_NO_TMP_MEMORY);
-            RTR0PTR      R0PtrChunk   = NIL_RTR0PTR;
-            void        *pvChunk      = NULL;
-            rc = SUPR3PageAllocEx(cChunkPages, 0 /*fFlags*/, &pvChunk, &R0PtrChunk, paChunkPages);
-            AssertLogRelMsgRCBreakStmt(rc, ("rc=%Rrc, cChunkPages=%#zx\n", rc, cChunkPages), RTMemTmpFree(paChunkPages));
 
-            Assert(R0PtrChunk != NIL_RTR0PTR || PGM_IS_IN_NEM_MODE(pVM));
-            RT_BZERO(pvChunk, cChunkPages << HOST_PAGE_SHIFT);
-
-            pNew = (PPGMREGMMIO2RANGE)pvChunk;
-            pNew->RamRange.fFlags   = PGM_RAM_RANGE_FLAGS_FLOATING;
-            pNew->RamRange.pSelfR0  = R0PtrChunk + RT_UOFFSETOF(PGMREGMMIO2RANGE, RamRange);
-
-            RTMemTmpFree(paChunkPages);
-        }
         /*
-         * Not so big, do a one time hyper allocation.
+         * Allocate memory for the registration structure.
          */
-        else
-        {
-            rc = MMR3HyperAllocOnceNoRel(pVM, cbRange, 0, MM_TAG_PGM_PHYS, (void **)&pNew);
-            AssertLogRelMsgRCBreak(rc, ("cbRange=%zu\n", cbRange));
+        size_t const cChunkPages  = RT_ALIGN_Z(cbRange, HOST_PAGE_SIZE) >> HOST_PAGE_SHIFT;
+        size_t const cbChunk      = (1 + cChunkPages + 1) << HOST_PAGE_SHIFT;
+        AssertLogRelBreakStmt(cbChunk == (uint32_t)cbChunk, rc = VERR_OUT_OF_RANGE);
+        RTR0PTR      R0PtrChunk   = NIL_RTR0PTR;
+        void        *pvChunk      = NULL;
+        rc = SUPR3PageAllocEx(cChunkPages, 0 /*fFlags*/, &pvChunk, &R0PtrChunk, NULL /*paPages*/);
+        AssertLogRelMsgRCBreak(rc, ("rc=%Rrc, cChunkPages=%#zx\n", rc, cChunkPages));
 
-            /*
-             * Initialize allocation specific items.
-             */
-            //pNew->RamRange.fFlags = 0;
-            pNew->RamRange.pSelfR0  = MMHyperCCToR0(pVM, &pNew->RamRange);
-        }
+        Assert(R0PtrChunk != NIL_RTR0PTR || PGM_IS_IN_NEM_MODE(pVM));
+        RT_BZERO(pvChunk, cChunkPages << HOST_PAGE_SHIFT);
+
+        pNew = (PPGMREGMMIO2RANGE)pvChunk;
+        pNew->RamRange.fFlags   = PGM_RAM_RANGE_FLAGS_FLOATING;
+        pNew->RamRange.pSelfR0  = R0PtrChunk + RT_UOFFSETOF(PGMREGMMIO2RANGE, RamRange);
 
         /*
          * Initialize the registration structure (caller does specific bits).
