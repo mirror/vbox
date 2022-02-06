@@ -243,27 +243,6 @@ DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
 
 
 /**
- * Calculate the guest context address of an offset into the HMA memory chunk.
- *
- * @returns the guest context base address.
- * @param   pVM         The cross context VM structure.
- * @param   pLookup     The HMA lookup record.
- * @param   off         The offset into the HMA memory chunk.
- */
-DECLINLINE(void *) mmHyperLookupCalcCC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t off)
-{
-#ifdef IN_RING0
-    return mmHyperLookupCalcR0(pVM, pLookup, off);
-#elif defined(IN_RING3)
-    NOREF(pVM);
-    return mmHyperLookupCalcR3(pLookup, off);
-#else
-# error "Neither IN_RING0 nor IN_RING3!"
-#endif
-}
-
-
-/**
  * Converts a ring-3 host context address in the Hypervisor memory region to a ring-0 host context address.
  *
  * @returns ring-0 host context address.
@@ -283,7 +262,7 @@ VMMDECL(RTR0PTR) MMHyperR3ToR0(PVM pVM, RTR3PTR R3Ptr)
 }
 
 
-#ifndef IN_RING3
+#ifdef IN_RING0
 /**
  * Converts a ring-3 host context address in the Hypervisor memory region to a current context address.
  *
@@ -298,7 +277,7 @@ VMMDECL(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
     uint32_t off;
     PMMLOOKUPHYPER pLookup = mmHyperLookupR3(pVM, R3Ptr, &off);
     if (pLookup)
-        return mmHyperLookupCalcCC(pVM, pLookup, off);
+        return mmHyperLookupCalcR0(pVM, pLookup, off);
     return NULL;
 }
 #endif
