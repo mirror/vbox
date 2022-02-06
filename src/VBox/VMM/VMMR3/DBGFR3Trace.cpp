@@ -114,19 +114,20 @@ static int dbgfR3TraceEnable(PVM pVM, uint32_t cbEntry, uint32_t cEntries)
      * Note! We ASSUME that the returned trace buffer handle has the same value
      *       as the heap block.
      */
-    cbBlock = RT_ALIGN_Z(cbBlock, GUEST_PAGE_SIZE); /** @todo page size */
-    void *pvBlock;
-    rc = MMR3HyperAllocOnceNoRel(pVM, cbBlock, GUEST_PAGE_SIZE, MM_TAG_DBGF, &pvBlock);
+    cbBlock = RT_ALIGN_Z(cbBlock, HOST_PAGE_SIZE);
+    RTR0PTR pvBlockR0 = NIL_RTR0PTR;
+    void   *pvBlockR3 = NULL;
+    rc = SUPR3PageAllocEx(cbBlock >> HOST_PAGE_SHIFT, 0, &pvBlockR3, &pvBlockR0, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = RTTraceBufCarve(&hTraceBuf, cEntries, cbEntry, 0 /*fFlags*/, pvBlock, &cbBlock);
+    rc = RTTraceBufCarve(&hTraceBuf, cEntries, cbEntry, 0 /*fFlags*/, pvBlockR3, &cbBlock);
     AssertRCReturn(rc, rc);
-    AssertRelease(hTraceBuf == (RTTRACEBUF)pvBlock);
-    AssertRelease((void *)hTraceBuf == pvBlock);
+    AssertReleaseReturn(hTraceBuf == (RTTRACEBUF)pvBlockR3, VERR_INTERNAL_ERROR_3);
+    AssertReleaseReturn((void *)hTraceBuf == pvBlockR3, VERR_INTERNAL_ERROR_3);
 
     pVM->hTraceBufR3 = hTraceBuf;
-    pVM->hTraceBufR0 = MMHyperCCToR0(pVM, hTraceBuf);
+    pVM->hTraceBufR0 = pvBlockR0;
     return VINF_SUCCESS;
 }
 
