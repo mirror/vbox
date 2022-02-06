@@ -91,6 +91,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
 }
 
 
+#ifdef IN_RING0
 /**
  * Lookup a host context ring-0 address.
  *
@@ -151,6 +152,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
     AssertMsgFailed(("R0Ptr=%RHv is not inside the hypervisor memory area!\n", R0Ptr));
     return NULL;
 }
+#endif /* IN_RING0 */
 
 
 /**
