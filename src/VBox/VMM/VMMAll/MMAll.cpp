@@ -91,47 +91,6 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
 }
 
 
-#ifdef IN_RING3
-/**
- * Lookup a current context address.
- *
- * @returns Pointer to the corresponding lookup record.
- * @returns NULL on failure.
- * @param   pVM     The cross context VM structure.
- * @param   pv      The current context address to lookup.
- * @param   poff    Where to store the offset into the HMA memory chunk.
- */
-DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupCC(PVM pVM, void *pv, uint32_t *poff)
-{
-    return mmHyperLookupR3(pVM, pv, poff);
-}
-#endif
-
-
-#ifdef IN_RING3
-/**
- * Calculate the host context ring-3 address of an offset into the HMA memory chunk.
- *
- * @returns the host context ring-3 address.
- * @param   pLookup     The HMA lookup record.
- * @param   off         The offset into the HMA memory chunk.
- */
-DECLINLINE(RTR3PTR) mmHyperLookupCalcR3(PMMLOOKUPHYPER pLookup, uint32_t off)
-{
-    switch (pLookup->enmType)
-    {
-        case MMLOOKUPHYPERTYPE_LOCKED:
-            return (RTR3PTR)((RTR3UINTPTR)pLookup->u.Locked.pvR3 + off);
-        case MMLOOKUPHYPERTYPE_HCPHYS:
-            return (RTR3PTR)((RTR3UINTPTR)pLookup->u.HCPhys.pvR3 + off);
-        default:
-            AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
-            return NIL_RTR3PTR;
-    }
-}
-#endif
-
-
 /**
  * Calculate the host context ring-0 address of an offset into the HMA memory chunk.
  *
