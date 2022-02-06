@@ -265,7 +265,7 @@ $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME): \
 		$(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
 	$(RM_EXT) -f $(PATH_OUT)/repackadd/*.zip
 	$(SHELL) $(PATH_OUT)/repackadd/sign-attestation.sh $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME)
-	$(MV_EXT) $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME).*.zip $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME)
+	$(EXEC_X86_WIN32) mv $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME).*.zip $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME)
 
 $(PATH_OUT)/repackadd/$(VBOX_DRIVERS_PACK_NAME): \
 		$(PATH_OUT)/repackadd/PackDriversForSubmission.cmd
