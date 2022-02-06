@@ -494,15 +494,21 @@ void outputMachineReadableStringWorker(const char *psz)
  * @param   pszName     The variable name.
  * @param   pszValue    The value.
  * @param   fQuoteName  Whether to unconditionally quote the name or not.
+ * @param   fNewline    Whether to automatically add a newline after the value.
  */
-void outputMachineReadableString(const char *pszName, const char *pszValue, bool fQuoteName /*=false*/)
+void outputMachineReadableString(const char *pszName, const char *pszValue, bool fQuoteName /*=false*/, bool fNewline /*=true*/)
 {
     if (!fQuoteName)
         fQuoteName = strchr(pszName, '=') != NULL;
     bool const fEscapeName  = doesMachineReadableStringNeedEscaping(pszName);
     bool const fEscapeValue = doesMachineReadableStringNeedEscaping(pszValue);
     if (!fEscapeName && !fEscapeValue)
-        RTPrintf(!fQuoteName ? "%s=\"%s\"\n" : "\"%s\"=\"%s\"\n", pszName, pszValue);
+    {
+        if (fNewline)
+            RTPrintf(!fQuoteName ? "%s=\"%s\"\n" : "\"%s\"=\"%s\"\n", pszName, pszValue);
+        else
+            RTPrintf(!fQuoteName ? "%s=\"%s\""   : "\"%s\"=\"%s\"",   pszName, pszValue);
+    }
     else
     {
         /* The name and string quotation: */
@@ -521,7 +527,10 @@ void outputMachineReadableString(const char *pszName, const char *pszValue, bool
 
         /* the value and the closing quotation */
         outputMachineReadableStringWorker(pszValue);
-        RTStrmWrite(g_pStdOut, RT_STR_TUPLE("\"\n"));
+        if (fNewline)
+            RTStrmWrite(g_pStdOut, RT_STR_TUPLE("\"\n"));
+        else
+            RTStrmWrite(g_pStdOut, RT_STR_TUPLE("\""));
     }
 }
 
@@ -533,11 +542,12 @@ void outputMachineReadableString(const char *pszName, const char *pszValue, bool
  * @param   pszName     The variable name.
  * @param   pbstrValue  The value.
  * @param   fQuoteName  Whether to unconditionally quote the name or not.
+ * @param   fNewline    Whether to automatically add a newline after the value.
  */
-void outputMachineReadableString(const char *pszName, Bstr const *pbstrValue, bool fQuoteName /*=false*/)
+void outputMachineReadableString(const char *pszName, Bstr const *pbstrValue, bool fQuoteName /*=false*/, bool fNewline /*=true*/)
 {
     com::Utf8Str strValue(*pbstrValue);
-    outputMachineReadableString(pszName, strValue.c_str(), fQuoteName);
+    outputMachineReadableString(pszName, strValue.c_str(), fQuoteName, fNewline);
 }
 
 
@@ -694,85 +704,90 @@ static const char * bwGroupTypeToString(BandwidthGroupType_T enmType)
 HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
                             VMINFO_DETAILS details)
 {
-    int rc = S_OK;
     SafeIfaceArray<IBandwidthGroup> bwGroups;
+    CHECK_ERROR2I_RET(bwCtrl, GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups)), hrcCheck);
 
-    CHECK_ERROR_RET(bwCtrl, GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups)), rc);
-
-    if (bwGroups.size() && details != VMINFO_MACHINEREADABLE)
-        RTPrintf("\n\n");
+    if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf(bwGroups.size() != 0 ? "\n" : Info::tr("<none>\n"));
     for (size_t i = 0; i < bwGroups.size(); i++)
     {
         Bstr strName;
-        LONG64 cMaxBytesPerSec;
+        CHECK_ERROR2I_RET(bwGroups[i], COMGETTER(Name)(strName.asOutParam()), hrcCheck);
         BandwidthGroupType_T enmType;
-
-        CHECK_ERROR_RET(bwGroups[i], COMGETTER(Name)(strName.asOutParam()), rc);
-        CHECK_ERROR_RET(bwGroups[i], COMGETTER(Type)(&enmType), rc);
-        CHECK_ERROR_RET(bwGroups[i], COMGETTER(MaxBytesPerSec)(&cMaxBytesPerSec), rc);
+        CHECK_ERROR2I_RET(bwGroups[i], COMGETTER(Type)(&enmType), hrcCheck);
+        LONG64 cbMaxPerSec;
+        CHECK_ERROR2I_RET(bwGroups[i], COMGETTER(MaxBytesPerSec)(&cbMaxPerSec), hrcCheck);
 
         const char *pszType = bwGroupTypeToString(enmType);
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("BandwidthGroup%zu=%ls,%s,%lld\n", i, strName.raw(), pszType, cMaxBytesPerSec);
+        {
+            /* Complicated condensed format. */
+            char szName[64];
+            RTStrPrintf(szName, sizeof(szName), "BandwidthGroup%zu", i);
+            outputMachineReadableString(szName, &strName, false /*fQuoteName*/, false /*fNewline*/);
+            RTPrintf(",%s,%RI64\n", pszType, cbMaxPerSec);
+        }
         else
         {
-            const char *pszUnits = "";
-            LONG64 cBytes = cMaxBytesPerSec;
-            if (cBytes == 0)
+            if (cbMaxPerSec == 0)
             {
-                RTPrintf(Info::tr("Name: '%ls', Type: %s, Limit: none (disabled)\n"), strName.raw(), pszType);
+                RTPrintf(Info::tr("#%zu: Name: '%ls', Type: %s, Limit: none (disabled)\n"), i, strName.raw(), pszType);
                 continue;
             }
-            else if (!(cBytes % _1G))
+
+            /* translate to human readable units.*/
+            const char *pszUnit;
+            LONG64      cUnits;
+            if (!(cbMaxPerSec % _1G))
             {
-                pszUnits = "G";
-                cBytes /= _1G;
+                cUnits  = cbMaxPerSec / _1G;
+                pszUnit = "GiB/s";
             }
-            else if (!(cBytes % _1M))
+            else if (!(cbMaxPerSec % _1M))
             {
-                pszUnits = "M";
-                cBytes /= _1M;
+                cUnits  = cbMaxPerSec / _1M;
+                pszUnit = "MiB/s";
             }
-            else if (!(cBytes % _1K))
+            else if (!(cbMaxPerSec % _1K))
             {
-                pszUnits = "K";
-                cBytes /= _1K;
+                cUnits  = cbMaxPerSec / _1K;
+                pszUnit = "KiB/s";
             }
-            const char *pszNetUnits = NULL;
-            if (enmType == BandwidthGroupType_Network)
+            else
             {
-                /*
-                 * We want to report network rate limit in bits/s, not bytes.
-                 * Only if it cannot be express it in kilobits we will fall
-                 * back to reporting it in bytes.
-                 */
-                LONG64 cBits = cMaxBytesPerSec;
-                if (!(cBits % 125))
+                cUnits  = cbMaxPerSec;
+                pszUnit = "bytes/s";
+            }
+
+            /*
+             * We want to report network rate limit in bits/s, not bytes.
+             * Only if it cannot be express it in kilobits we will fall
+             * back to reporting it in bytes.
+             */
+            if (   enmType == BandwidthGroupType_Network
+                && !(cbMaxPerSec % 125) )
+            {
+                LONG64      cNetUnits  = cbMaxPerSec / 125;
+                const char *pszNetUnit = "kbps";
+                if (!(cNetUnits % 1000000))
                 {
-                    cBits /= 125;
-                    pszNetUnits = "k";
-                    if (!(cBits % 1000000))
-                    {
-                        cBits /= 1000000;
-                        pszNetUnits = "g";
-                    }
-                    else if (!(cBits % 1000))
-                    {
-                        cBits /= 1000;
-                        pszNetUnits = "m";
-                    }
-                    RTPrintf(Info::tr("Name: '%ls', Type: %s, Limit: %lld %sbits/sec (%lld %sbytes/sec)\n"),
-                             strName.raw(), pszType, cBits, pszNetUnits, cBytes, pszUnits);
+                    cNetUnits /= 1000000;
+                    pszNetUnit = "Gbps";
                 }
+                else if (!(cNetUnits % 1000))
+                {
+                    cNetUnits /= 1000;
+                    pszNetUnit = "Mbps";
+                }
+                RTPrintf(Info::tr("#%zu: Name: '%ls', Type: %s, Limit: %RI64 %s (%RI64 %s)\n"),
+                         i, strName.raw(), pszType, cNetUnits, pszNetUnit, cUnits, pszUnit);
             }
-            if (!pszNetUnits)
-                RTPrintf(Info::tr("Name: '%ls', Type: %s, Limit: %lld %sbytes/sec\n"), strName.raw(), pszType, cBytes, pszUnits);
+            else
+                RTPrintf(Info::tr("#%zu: Name: '%ls', Type: %s, Limit: %RI64 %s\n"), i, strName.raw(), pszType, cUnits, pszUnit);
         }
     }
-    if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf(bwGroups.size() != 0 ? "\n" : Info::tr("<none>\n"));
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /** Shows a shared folder.   */

@@ -310,8 +310,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 const char *machineStateToName(MachineState_T machineState, bool fShort);
 HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
                             VMINFO_DETAILS details);
-void outputMachineReadableString(const char *pszName, const char *pszValue, bool fQuoteName = false);
-void outputMachineReadableString(const char *pszName, com::Bstr const *pbstrValue, bool fQuoteName = false);
+void outputMachineReadableString(const char *pszName, const char *pszValue, bool fQuoteName = false, bool fNewline = true);
+void outputMachineReadableString(const char *pszName, com::Bstr const *pbstrValue, bool fQuoteName = false, bool fNewline = true);
 void outputMachineReadableStringWithFmtName(const char *pszValue, bool fQuoteName, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 void outputMachineReadableStringWithFmtName(com::Bstr const *pbstrValue, bool fQuoteName, const char *pszNameFmt, ...) RT_IPRT_FORMAT_ATTR(3, 4);
 void outputMachineReadableBool(const char *pszName, BOOL const *pfValue);
