@@ -155,51 +155,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
 #endif /* IN_RING0 */
 
 
-/**
- * Lookup a raw-mode context address.
- *
- * @returns Pointer to the corresponding lookup record.
- * @returns NULL on failure.
- * @param   pVM     The cross context VM structure.
- * @param   RCPtr   The raw-mode context address to lookup.
- * @param   poff    Where to store the offset into the HMA memory chunk.
- */
-DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *poff)
-{
-    /** @todo cache last lookup this stuff ain't cheap! */
-    unsigned        offRC = (RTRCUINTPTR)RCPtr - (RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC;
-    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap) + pVM->mm.s.offLookupHyper);
-    for (;;)
-    {
-        const uint32_t off = offRC - pLookup->off;
-        if (off < pLookup->cb)
-        {
-            switch (pLookup->enmType)
-            {
-                case MMLOOKUPHYPERTYPE_LOCKED:
-                case MMLOOKUPHYPERTYPE_HCPHYS:
-                    *poff = off;
-                    return pLookup;
-                default:
-                    break;
-            }
-            AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
-            *poff = 0; /* shut up gcc */
-            return NULL;
-        }
-
-        /* next */
-        if (pLookup->offNext == (int32_t)NIL_OFFSET)
-            break;
-        pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
-    }
-
-    AssertMsgFailed(("RCPtr=%RRv is not inside the hypervisor memory area!\n", RCPtr));
-    *poff = 0; /* shut up gcc */
-    return NULL;
-}
-
-
+#ifdef IN_RING3
 /**
  * Lookup a current context address.
  *
@@ -211,16 +167,18 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *pof
  */
 DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupCC(PVM pVM, void *pv, uint32_t *poff)
 {
-#ifdef IN_RING0
+# ifdef IN_RING0
     return mmHyperLookupR0(pVM, pv, poff);
-#elif defined(IN_RING3)
+# elif defined(IN_RING3)
     return mmHyperLookupR3(pVM, pv, poff);
-#else
-# error "Neither IN_RING0 nor IN_RING3!"
-#endif
+# else
+#  error "Neither IN_RING0 nor IN_RING3!"
+# endif
 }
+#endif
 
 
+#ifdef IN_RING3
 /**
  * Calculate the host context ring-3 address of an offset into the HMA memory chunk.
  *
@@ -241,6 +199,7 @@ DECLINLINE(RTR3PTR) mmHyperLookupCalcR3(PMMLOOKUPHYPER pLookup, uint32_t off)
             return NIL_RTR3PTR;
     }
 }
+#endif
 
 
 /**
