@@ -91,70 +91,6 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR3(PVM pVM, RTR3PTR R3Ptr, uint32_t *pof
 }
 
 
-#ifdef IN_RING0
-/**
- * Lookup a host context ring-0 address.
- *
- * @returns Pointer to the corresponding lookup record.
- * @returns NULL on failure.
- * @param   pVM     The cross context VM structure.
- * @param   R0Ptr   The host context ring-0 address to lookup.
- * @param   poff    Where to store the offset into the HMA memory chunk.
- */
-DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *poff)
-{
-    AssertCompile(sizeof(RTR0PTR) == sizeof(RTR3PTR));
-
-    /** @todo cache last lookup, this stuff ain't cheap! */
-    PMMLOOKUPHYPER  pLookup = (PMMLOOKUPHYPER)((uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap) + pVM->mm.s.offLookupHyper);
-    for (;;)
-    {
-        switch (pLookup->enmType)
-        {
-            case MMLOOKUPHYPERTYPE_LOCKED:
-            {
-                const RTR0UINTPTR off = (RTR0UINTPTR)R0Ptr - (RTR0UINTPTR)pLookup->u.Locked.pvR0;
-                if (off < pLookup->cb && pLookup->u.Locked.pvR0)
-                {
-                    *poff = off;
-                    return pLookup;
-                }
-                break;
-            }
-
-            case MMLOOKUPHYPERTYPE_HCPHYS:
-            {
-                const RTR0UINTPTR off = (RTR0UINTPTR)R0Ptr - (RTR0UINTPTR)pLookup->u.HCPhys.pvR0;
-                if (off < pLookup->cb && pLookup->u.HCPhys.pvR0)
-                {
-                    *poff = off;
-                    return pLookup;
-                }
-                break;
-            }
-
-            case MMLOOKUPHYPERTYPE_GCPHYS:  /* (for now we'll not allow these kind of conversions) */
-            case MMLOOKUPHYPERTYPE_MMIO2:
-            case MMLOOKUPHYPERTYPE_DYNAMIC:
-                break;
-
-            default:
-                AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
-                break;
-        }
-
-        /* next */
-        if (pLookup->offNext ==  (int32_t)NIL_OFFSET)
-            break;
-        pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
-    }
-
-    AssertMsgFailed(("R0Ptr=%RHv is not inside the hypervisor memory area!\n", R0Ptr));
-    return NULL;
-}
-#endif /* IN_RING0 */
-
-
 #ifdef IN_RING3
 /**
  * Lookup a current context address.
@@ -167,13 +103,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupR0(PVM pVM, RTR0PTR R0Ptr, uint32_t *pof
  */
 DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupCC(PVM pVM, void *pv, uint32_t *poff)
 {
-# ifdef IN_RING0
-    return mmHyperLookupR0(pVM, pv, poff);
-# elif defined(IN_RING3)
     return mmHyperLookupR3(pVM, pv, poff);
-# else
-#  error "Neither IN_RING0 nor IN_RING3!"
-# endif
 }
 #endif
 
@@ -279,27 +209,6 @@ VMMDECL(void *) MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
     if (pLookup)
         return mmHyperLookupCalcR0(pVM, pLookup, off);
     return NULL;
-}
-#endif
-
-
-#ifndef IN_RING0
-/**
- * Converts a current context address in the Hypervisor memory region to a ring-0 host context address.
- *
- * @returns ring-0 host context address.
- * @param   pVM         The cross context VM structure.
- * @param   pv          The current context address.
- *                      You'll be damned if this is not in the HMA! :-)
- * @thread  The Emulation Thread.
- */
-VMMDECL(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
-{
-    uint32_t off;
-    PMMLOOKUPHYPER pLookup = mmHyperLookupCC(pVM, pv, &off);
-    if (pLookup)
-        return mmHyperLookupCalcR0(pVM, pLookup, off);
-    return NIL_RTR0PTR;
 }
 #endif
 
