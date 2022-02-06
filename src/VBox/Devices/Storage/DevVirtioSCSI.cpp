@@ -1555,10 +1555,11 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
+    Log6Func(("[Re]starting %s worker\n", VIRTQNAME(uVirtqNbr)));
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        if (!pWorkerR3->cRedoDescs && IS_VIRTQ_EMPTY(pDevIns, &pThis->Virtio, uVirtqNbr))
-        {
+        if (    !pWorkerR3->cRedoDescs
+ 	         && IS_VIRTQ_EMPTY(pDevIns, &pThis->Virtio, uVirtqNbr))        {
             /* Atomic interlocks avoid missing alarm while going to sleep & notifier waking the awoken */
             ASMAtomicWriteBool(&pWorker->fSleeping, true);
             bool fNotificationSent = ASMAtomicXchgBool(&pWorker->fNotified, false);
@@ -1569,13 +1570,24 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
                 int rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pWorker->hEvtProcess, RT_INDEFINITE_WAIT);
                 AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
                 if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
+ 		        {
+                    Log6Func(("%s worker thread not running, exiting\n", VIRTQNAME(uVirtqNbr)));
                     return VINF_SUCCESS;
+                }
                 if (rc == VERR_INTERRUPTED)
+                {
+                    Log6Func(("%s worker interrupted ... continuing\n", VIRTQNAME(uVirtqNbr)));
                     continue;
+                }
                 Log6Func(("%s worker woken\n", VIRTQNAME(uVirtqNbr)));
                 ASMAtomicWriteBool(&pWorker->fNotified, false);
             }
             ASMAtomicWriteBool(&pWorker->fSleeping, false);
+        }
+        if (!virtioCoreIsVirtqEnabled(&pThis->Virtio, uVirtqNbr))
+        {
+            LogFunc(("%s queue not enabled, worker aborting...\n", VIRTQNAME(uVirtqNbr)));
+            break;
         }
 
         if (!pThis->afVirtqAttached[uVirtqNbr])
@@ -2293,7 +2305,8 @@ static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
      */
     for (uint16_t uVirtqNbr = 0; uVirtqNbr < VIRTIOSCSI_REQ_VIRTQ_CNT; uVirtqNbr++)
     {
-        if (ASMAtomicReadBool(&pThis->aWorkers[uVirtqNbr].fSleeping))
+        if (   virtioCoreIsVirtqEnabled(&pThis->Virtio, uVirtqNbr)
+            && ASMAtomicReadBool(&pThis->aWorkers[uVirtqNbr].fSleeping))
         {
             Log6Func(("waking %s worker.\n", VIRTQNAME(uVirtqNbr)));
             int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->aWorkers[uVirtqNbr].hEvtProcess);
