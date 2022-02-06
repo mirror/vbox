@@ -121,6 +121,7 @@ VMMR3_INT_DECL(int) PDMR3NsAttach(PVM pVM, PPDMDRVINS pDrvIns, const char *pszNa
 
             uint32_t cRefs = ASMAtomicIncU32(&pGroup->cRefs);
             AssertMsg(cRefs > 0 && cRefs < _16K, ("%u\n", cRefs));
+            RT_NOREF_PV(cRefs);
 
             LogFlow(("PDMR3NsAttach: Attached '%s'/%u to %s (cRefs=%u)\n",
                      pDrvIns->pReg->szName, pDrvIns->iInstance, pGroup->szName, cRefs));
@@ -182,6 +183,7 @@ VMMR3_INT_DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFil
 
             uint32_t cRefs = ASMAtomicDecU32(&pGroup->cRefs);
             Assert(cRefs < _16K);
+            RT_NOREF_PV(cRefs);
 
             LogFlow(("PDMR3NsDetach: Detached '%s'/%u from %s (cRefs=%u)\n",
                      pDrvIns->pReg->szName, pDrvIns->iInstance, pGroup->szName, cRefs));
