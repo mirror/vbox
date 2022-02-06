@@ -3810,7 +3810,19 @@ SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32
     {
         int rc2;
         if (ppvR3)
+        {
+            /* Make sure memory mapped into ring-3 is zero initialized if we can: */
+            if (   ppvR0
+                && !RTR0MemObjWasZeroInitialized(Mem.MemObj))
+            {
+                void *pv = RTR0MemObjAddress(Mem.MemObj);
+                Assert(pv || !ppvR0);
+                if (pv)
+                    RT_BZERO(pv, (size_t)cPages * PAGE_SIZE);
+            }
+
             rc = RTR0MemObjMapUser(&Mem.MapObjR3, Mem.MemObj, (RTR3PTR)-1, 0, RTMEM_PROT_WRITE | RTMEM_PROT_READ, NIL_RTR0PROCESS);
+        }
         else
             Mem.MapObjR3 = NIL_RTR0MEMOBJ;
         if (RT_SUCCESS(rc))

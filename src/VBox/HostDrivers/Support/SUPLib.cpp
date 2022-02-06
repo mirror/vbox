@@ -1104,6 +1104,7 @@ static int supPagePageAllocNoKernelFallback(size_t cPages, void **ppvPages, PSUP
     int rc = suplibOsPageAlloc(&g_supLibData, cPages, 0, ppvPages);
     if (RT_SUCCESS(rc))
     {
+        Assert(ASMMemIsZero(*ppvPages, cPages << PAGE_SHIFT));
         if (!paPages)
             paPages = (PSUPPAGE)alloca(sizeof(paPages[0]) * cPages);
         rc = supR3PageLock(*ppvPages, cPages, paPages);
@@ -1134,6 +1135,7 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
     if (g_supLibData.fDriverless)
     {
         int rc = SUPR3PageAlloc(cPages, 0 /*fFlags*/, ppvPages);
+        Assert(RT_FAILURE(rc) || ASMMemIsZero(*ppvPages, cPages << PAGE_SHIFT));
         if (pR0Ptr)
             *pR0Ptr = NIL_RTR0PTR;
         if (paPages)
@@ -1185,7 +1187,16 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
             {
                 *ppvPages = pReq->u.Out.pvR3;
                 if (pR0Ptr)
-                    *pR0Ptr   = pReq->u.Out.pvR0;
+                {
+                    *pR0Ptr = pReq->u.Out.pvR0;
+                    Assert(ASMMemIsZero(pReq->u.Out.pvR3, cPages << PAGE_SHIFT));
+#ifdef RT_OS_DARWIN /* HACK ALERT! */
+                    supR3TouchPages(pReq->u.Out.pvR3, cPages);
+#endif
+                }
+                else
+                    RT_BZERO(pReq->u.Out.pvR3, cPages << PAGE_SHIFT);
+
                 if (paPages)
                     for (size_t iPage = 0; iPage < cPages; iPage++)
                     {
@@ -1193,9 +1204,6 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
                         paPages[iPage].Phys = pReq->u.Out.aPages[iPage];
                         Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
                     }
-#ifdef RT_OS_DARWIN /* HACK ALERT! */
-                supR3TouchPages(pReq->u.Out.pvR3, cPages);
-#endif
             }
             else if (   rc == VERR_NOT_SUPPORTED
                      && !pR0Ptr)
