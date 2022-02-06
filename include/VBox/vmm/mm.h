@@ -166,17 +166,6 @@ DECLINLINE(void *)  MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 #endif
 
 
-#ifndef IN_RING0
-VMMDECL(RTR0PTR)    MMHyperCCToR0(PVM pVM, void *pv);
-#else
-DECLINLINE(RTR0PTR) MMHyperCCToR0(PVM pVM, void *pv)
-{
-    NOREF(pVM);
-    return pv;
-}
-#endif
-
-
 VMMDECL(int)        MMHyperAlloc(PVMCC pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
 #if 0
 VMMDECL(int)        MMHyperDupMem(PVMCC pVM, const void *pvSrc, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv);

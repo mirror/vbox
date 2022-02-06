@@ -1226,6 +1226,41 @@ typedef PDMTASKSET *PPDMTASKSET;
 /** @} */
 
 
+/** @name PDM Network Shaper
+ * @{ */
+
+/**
+ * Bandwidth group.
+ */
+typedef struct PDMNSBWGROUP
+{
+    /** Critical section protecting all members below. */
+    PDMCRITSECT                                 Lock;
+    /** List of filters in this group (PDMNSFILTER). */
+    RTLISTANCHORR3                              FilterList;
+    /** Reference counter - How many filters are associated with this group. */
+    volatile uint32_t                           cRefs;
+    uint32_t                                    uPadding1;
+    /** The group name. */
+    char                                        szName[PDM_NET_SHAPER_MAX_NAME_LEN + 1];
+    /** Maximum number of bytes filters are allowed to transfer. */
+    volatile uint64_t                           cbPerSecMax;
+    /** Number of bytes we are allowed to transfer in one burst. */
+    volatile uint32_t                           cbBucket;
+    /** Number of bytes we were allowed to transfer at the last update. */
+    volatile uint32_t                           cbTokensLast;
+    /** Timestamp of the last update */
+    volatile uint64_t                           tsUpdatedLast;
+    /** Pad the structure to a multiple of 64 bytes. */
+    uint64_t                                    au64Padding[2];
+} PDMNSBWGROUP;
+AssertCompileSizeAlignment(PDMNSBWGROUP, 64);
+/** Pointer to a bandwidth group. */
+typedef PDMNSBWGROUP *PPDMNSBWGROUP;
+
+/* @} */
+
+
 /**
  * Queue device helper task operation.
  */
@@ -1506,6 +1541,22 @@ typedef struct PDM
     RTGCPHYS                        GCPhysVMMDevHeap;
     /** @} */
 
+    /** @name Network Shaper
+     * @{ */
+    /** Pending TX thread. */
+    PPDMTHREAD                      pNsTxThread;
+    uint32_t                        au32Padding[1+8];
+    /** Number of network shaper groups.
+     * @note Marked volatile to prevent re-reading after validation. */
+    uint32_t volatile               cNsGroups;
+    /** The network shaper groups. */
+    PDMNSBWGROUP                    aNsGroups[PDM_NET_SHAPER_MAX_GROUPS];
+    /** Critical section protecting attaching, detaching and unchoking.
+     * This helps making sure pNsTxThread can do unchoking w/o needing to lock the
+     * individual groups and cause unnecessary contention. */
+    RTCRITSECT                      NsLock;
+    /** @} */
+
     /** Number of times a critical section leave request needed to be queued for ring-3 execution. */
     STAMCOUNTER                     StatQueuedCritSectLeaves;
     /** Number of times we've successfully aborted a wait in ring-0. */
@@ -1528,6 +1579,10 @@ typedef struct PDM
 } PDM;
 AssertCompileMemberAlignment(PDM, CritSect, 8);
 AssertCompileMemberAlignment(PDM, aTaskSets, 64);
+AssertCompileMemberAlignment(PDM, aNsGroups, 8);
+AssertCompileMemberAlignment(PDM, aNsGroups, 16);
+AssertCompileMemberAlignment(PDM, aNsGroups, 32);
+AssertCompileMemberAlignment(PDM, aNsGroups, 64);
 AssertCompileMemberAlignment(PDM, StatQueuedCritSectLeaves, 8);
 AssertCompileMemberAlignment(PDM, GCPhysVMMDevHeap, sizeof(RTGCPHYS));
 /** Pointer to PDM VM instance data. */
@@ -1586,11 +1641,6 @@ typedef struct PDMUSERPERVM
 
     /** Global block cache data. */
     R3PTRTYPE(PPDMBLKCACHEGLOBAL)   pBlkCacheGlobal;
-#ifdef VBOX_WITH_NETSHAPER
-    /** Pointer to network shaper instance. */
-    R3PTRTYPE(PPDMNETSHAPER)        pNetShaper;
-#endif /* VBOX_WITH_NETSHAPER */
-
 } PDMUSERPERVM;
 /** Pointer to the PDM data kept in the UVM. */
 typedef PDMUSERPERVM *PPDMUSERPERVM;
@@ -1733,7 +1783,7 @@ int         pdmR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIns);
 
 # ifdef VBOX_WITH_NETSHAPER
 int         pdmR3NetShaperInit(PVM pVM);
-int         pdmR3NetShaperTerm(PVM pVM);
+void        pdmR3NetShaperTerm(PVM pVM);
 # endif
 
 int         pdmR3BlkCacheInit(PVM pVM);

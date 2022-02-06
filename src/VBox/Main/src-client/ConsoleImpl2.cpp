@@ -1463,39 +1463,35 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         /*
          * Bandwidth groups.
          */
-        PCFGMNODE pAc;
-        PCFGMNODE pAcFile;
-        PCFGMNODE pAcFileBwGroups;
         ComPtr<IBandwidthControl> bwCtrl;
-        com::SafeIfaceArray<IBandwidthGroup> bwGroups;
-
         hrc = pMachine->COMGETTER(BandwidthControl)(bwCtrl.asOutParam());                   H();
 
+        com::SafeIfaceArray<IBandwidthGroup> bwGroups;
         hrc = bwCtrl->GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups));              H();
 
+        PCFGMNODE pAc;
         InsertConfigNode(pPDM, "AsyncCompletion", &pAc);
+        PCFGMNODE pAcFile;
         InsertConfigNode(pAc,  "File", &pAcFile);
+        PCFGMNODE pAcFileBwGroups;
         InsertConfigNode(pAcFile,  "BwGroups", &pAcFileBwGroups);
 #ifdef VBOX_WITH_NETSHAPER
         PCFGMNODE pNetworkShaper;
-        PCFGMNODE pNetworkBwGroups;
-
         InsertConfigNode(pPDM, "NetworkShaper",  &pNetworkShaper);
+        PCFGMNODE pNetworkBwGroups;
         InsertConfigNode(pNetworkShaper, "BwGroups", &pNetworkBwGroups);
 #endif /* VBOX_WITH_NETSHAPER */
 
         for (size_t i = 0; i < bwGroups.size(); i++)
         {
             Bstr strName;
-            LONG64 cMaxBytesPerSec;
-            BandwidthGroupType_T enmType;
-
             hrc = bwGroups[i]->COMGETTER(Name)(strName.asOutParam());                       H();
-            hrc = bwGroups[i]->COMGETTER(Type)(&enmType);                                   H();
-            hrc = bwGroups[i]->COMGETTER(MaxBytesPerSec)(&cMaxBytesPerSec);                 H();
-
             if (strName.isEmpty())
                 return pVMM->pfnVMR3SetError(pUVM, VERR_CFGM_NO_NODE, RT_SRC_POS, N_("No bandwidth group name specified"));
+            BandwidthGroupType_T enmType = BandwidthGroupType_Null;
+            hrc = bwGroups[i]->COMGETTER(Type)(&enmType);                                   H();
+            LONG64 cMaxBytesPerSec = 0;
+            hrc = bwGroups[i]->COMGETTER(MaxBytesPerSec)(&cMaxBytesPerSec);                 H();
 
             if (enmType == BandwidthGroupType_Disk)
             {

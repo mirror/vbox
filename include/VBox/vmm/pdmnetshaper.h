@@ -31,6 +31,7 @@
 
 #include <VBox/types.h>
 #include <VBox/vmm/pdmnetifs.h>
+#include <iprt/list.h>
 #include <iprt/sg.h>
 
 
@@ -45,26 +46,34 @@
 
 RT_C_DECLS_BEGIN
 
+/**
+ * A network shaper filter entry.
+ *
+ * This is used by DrvNetShaper and any similar drivers.
+ */
 typedef struct PDMNSFILTER
 {
-    /** Pointer to the next group in the list (ring-3). */
-    R3PTRTYPE(struct PDMNSFILTER *)     pNextR3;
-    /** Pointer to the bandwidth group (ring-3). */
-    R3PTRTYPE(struct PDMNSBWGROUP *)    pBwGroupR3;
-    /** Pointer to the bandwidth group (ring-0). */
-    R0PTRTYPE(struct PDMNSBWGROUP *)    pBwGroupR0;
-    /** Set when the filter fails to obtain bandwidth. */
+    /** Entry in the group's filter list.
+     * Both members are NULL when not associated with a group. */
+    RTLISTNODER3                        ListEntry;
+    /** The group index + 1.
+     * @note For safety reasons the value zero is invalid and this is 1-based
+     *       (like pascal) rather than 0-based indexing.
+     * @note Volatile to prevent re-reading after validation. */
+    uint32_t volatile                   iGroup;
+    /** Set when the filter fails to obtain bandwidth.
+     * This will then cause pIDrvNetR3 to be called before long.  */
     bool                                fChoked;
     /** Aligment padding. */
-    bool                                afPadding[HC_ARCH_BITS == 32 ? 3 : 7];
+    bool                                afPadding[3];
     /** The driver this filter is aggregated into (ring-3). */
     R3PTRTYPE(PPDMINETWORKDOWN)         pIDrvNetR3;
 } PDMNSFILTER;
 
 VMM_INT_DECL(bool)      PDMNetShaperAllocateBandwidth(PVMCC pVM, PPDMNSFILTER pFilter, size_t cbTransfer);
-VMMR3_INT_DECL(int)     PDMR3NsAttach(PUVM pUVM, PPDMDRVINS pDrvIns, const char *pcszBwGroup, PPDMNSFILTER pFilter);
-VMMR3_INT_DECL(int)     PDMR3NsDetach(PUVM pUVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter);
-VMMR3DECL(int)          PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszBwGroup, uint64_t cbPerSecMax);
+VMMR3_INT_DECL(int)     PDMR3NsAttach(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, PPDMNSFILTER pFilter);
+VMMR3_INT_DECL(int)     PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter);
+VMMR3DECL(int)          PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszName, uint64_t cbPerSecMax);
 
 /** @} */
 

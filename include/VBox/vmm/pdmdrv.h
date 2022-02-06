@@ -1306,9 +1306,10 @@ typedef struct PDMDRVHLPR3
 
 
     /**
-     * Attaches network filter driver to a bandwidth group.
+     * Attaches a network filter driver to a named bandwidth group.
      *
      * @returns VBox status code.
+     * @retval  VERR_ALREADY_INITIALIZED if already attached to a group.
      * @param   pDrvIns         The driver instance.
      * @param   pszBwGroup      Name of the bandwidth group to attach to.
      * @param   pFilter         Pointer to the filter we attach.
@@ -1316,7 +1317,7 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnNetShaperAttach,(PPDMDRVINS pDrvIns, const char *pszBwGroup, PPDMNSFILTER pFilter));
 
     /**
-     * Detaches network filter driver to a bandwidth group.
+     * Detaches a network filter driver from its current bandwidth group (if any).
      *
      * @returns VBox status code.
      * @param   pDrvIns         The driver instance.

@@ -121,6 +121,15 @@
 
 /** @} */
 
+/** @defgroup   grp_vbox_param_pdm  Pluggable Device Manager Parameters
+ * @{
+ */
+/** Max number of network shaper groups. */
+#define PDM_NET_SHAPER_MAX_GROUPS   32
+/** Max length of a network shaper group name (excluding terminator). */
+#define PDM_NET_SHAPER_MAX_NAME_LEN 63
+/** @} */
+
 
 /** @defgroup   grp_vbox_param_pgm  Page Manager Parameters
  * @{

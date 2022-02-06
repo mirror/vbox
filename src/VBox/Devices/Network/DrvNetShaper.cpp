@@ -120,26 +120,26 @@ PDMBOTHCBDECL(int) drvNetShaperUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnW
  * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
  */
 PDMBOTHCBDECL(int) drvNetShaperUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
-                                                  PCPDMNETWORKGSO pGso, PPPDMSCATTERGATHER ppSgBuf)
+                                           PCPDMNETWORKGSO pGso, PPPDMSCATTERGATHER ppSgBuf)
 {
     PDRVNETSHAPER pThis = RT_FROM_MEMBER(pInterface, DRVNETSHAPER, CTX_SUFF(INetworkUp));
-    if (RT_UNLIKELY(!pThis->CTX_SUFF(pIBelowNet)))
-        return VERR_NET_DOWN;
-    //LogFlow(("drvNetShaperUp_AllocBuf: cb=%d\n", cbMin));
-    STAM_REL_COUNTER_ADD(&pThis->StatXmitBytesRequested, cbMin);
-    STAM_REL_COUNTER_INC(&pThis->StatXmitPktsRequested);
-#if defined(IN_RING3) || defined(IN_RING0)
-    if (!PDMDrvHlpNetShaperAllocateBandwidth(pThis->CTX_SUFF(pDrvIns), &pThis->Filter, cbMin))
+    if (pThis->CTX_SUFF(pIBelowNet))
     {
-        STAM_REL_COUNTER_ADD(&pThis->StatXmitBytesDenied, cbMin);
-        STAM_REL_COUNTER_INC(&pThis->StatXmitPktsDenied);
-        return VERR_TRY_AGAIN;
+        //LogFlow(("drvNetShaperUp_AllocBuf: cb=%d\n", cbMin));
+        STAM_REL_COUNTER_ADD(&pThis->StatXmitBytesRequested, cbMin);
+        STAM_REL_COUNTER_INC(&pThis->StatXmitPktsRequested);
+        if (!PDMDrvHlpNetShaperAllocateBandwidth(pThis->CTX_SUFF(pDrvIns), &pThis->Filter, cbMin))
+        {
+            STAM_REL_COUNTER_ADD(&pThis->StatXmitBytesDenied, cbMin);
+            STAM_REL_COUNTER_INC(&pThis->StatXmitPktsDenied);
+            return VERR_TRY_AGAIN;
+        }
+        STAM_REL_COUNTER_ADD(&pThis->StatXmitBytesGranted, cbMin);
+        STAM_REL_COUNTER_INC(&pThis->StatXmitPktsGranted);
+        //LogFlow(("drvNetShaperUp_AllocBuf: got cb=%d\n", cbMin));
+        return pThis->CTX_SUFF(pIBelowNet)->pfnAllocBuf(pThis->CTX_SUFF(pIBelowNet), cbMin, pGso, ppSgBuf);
     }
-#endif
-    STAM_REL_COUNTER_ADD(&pThis->StatXmitBytesGranted, cbMin);
-    STAM_REL_COUNTER_INC(&pThis->StatXmitPktsGranted);
-    //LogFlow(("drvNetShaperUp_AllocBuf: got cb=%d\n", cbMin));
-    return pThis->CTX_SUFF(pIBelowNet)->pfnAllocBuf(pThis->CTX_SUFF(pIBelowNet), cbMin, pGso, ppSgBuf);
+    return VERR_NET_DOWN;
 }
 
 

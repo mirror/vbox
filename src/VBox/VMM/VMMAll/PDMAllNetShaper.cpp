@@ -20,12 +20,12 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NET_SHAPER
-#include <VBox/vmm/pdm.h>
+#include <VBox/vmm/pdmnetshaper.h>
+#include "PDMInternal.h"
+#include <VBox/vmm/vmcc.h>
+
 #include <VBox/log.h>
 #include <iprt/time.h>
-
-#include <VBox/vmm/pdmnetshaper.h>
-#include "PDMNetShaperInternal.h"
 
 
 /**
@@ -39,47 +39,67 @@
 VMM_INT_DECL(bool) PDMNetShaperAllocateBandwidth(PVMCC pVM, PPDMNSFILTER pFilter, size_t cbTransfer)
 {
     AssertPtrReturn(pFilter, true);
-    if (!RT_VALID_PTR(pFilter->CTX_SUFF(pBwGroup)))
-        return true;
 
-    PPDMNSBWGROUP pBwGroup = ASMAtomicReadPtrT(&pFilter->CTX_SUFF(pBwGroup), PPDMNSBWGROUP);
-    int rc = PDMCritSectEnter(pVM, &pBwGroup->Lock, VERR_SEM_BUSY); AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    { /* likely */ }
-    else
-    {
-        if (rc == VERR_SEM_BUSY)
-            return true;
-        PDM_CRITSECT_RELEASE_ASSERT_RC(pVM, &pBwGroup->Lock, rc);
-        return false;
-    }
-
+    /*
+     * If we haven't got a valid bandwidth group, we always allow the traffic.
+     */
     bool fAllowed = true;
-    if (pBwGroup->cbPerSecMax)
+    uint32_t iGroup = ASMAtomicUoReadU32(&pFilter->iGroup);
+    if (iGroup != 0)
     {
-        /* Re-fill the bucket first */
-        uint64_t tsNow        = RTTimeSystemNanoTS();
-        uint32_t uTokensAdded = (tsNow - pBwGroup->tsUpdatedLast) * pBwGroup->cbPerSecMax / (1000 * 1000 * 1000);
-        uint32_t uTokens      = RT_MIN(pBwGroup->cbBucket, uTokensAdded + pBwGroup->cbTokensLast);
-
-        if (cbTransfer > uTokens)
+        if (iGroup <= RT_MIN(pVM->pdm.s.cNsGroups, RT_ELEMENTS(pVM->pdm.s.aNsGroups)))
         {
-            fAllowed = false;
-            ASMAtomicWriteBool(&pFilter->fChoked, true);
+            PPDMNSBWGROUP pGroup = &pVM->pdm.s.aNsGroups[iGroup - 1];
+            int rc = PDMCritSectEnter(pVM, &pGroup->Lock, VINF_TRY_AGAIN);
+            if (rc == VINF_SUCCESS)
+            {
+                uint64_t const cbPerSecMax = pGroup->cbPerSecMax;
+                if (cbPerSecMax > 0)
+                {
+                    /*
+                     * Re-fill the bucket first
+                     */
+                    uint64_t const tsNow    = RTTimeSystemNanoTS();
+                    uint64_t const cNsDelta = tsNow - pGroup->tsUpdatedLast;
+                    /** @todo r=bird: there might be an overflow issue here if the gap
+                     *                between two transfers is too large. */
+                    uint32_t cTokensAdded   = cNsDelta * cbPerSecMax / RT_NS_1SEC;
+
+                    uint32_t const cbBucket     = pGroup->cbBucket;
+                    uint32_t const cbTokensLast = pGroup->cbTokensLast;
+                    uint32_t const cTokens      = RT_MIN(cbBucket, cTokensAdded + cbTokensLast);
+
+                    /*
+                     * Allowed?
+                     */
+                    if (cbTransfer <= cTokens)
+                    {
+                        pGroup->cbTokensLast  = cTokens - (uint32_t)cbTransfer;
+                        pGroup->tsUpdatedLast = tsNow;
+                        Log2(("pdmNsAllocateBandwidth/%s: allowed - cbTransfer=%#zx cTokens=%#x cTokensAdded=%#x\n",
+                              pGroup->szName, cbTransfer, cTokens, cTokensAdded));
+                    }
+                    else
+                    {
+                        ASMAtomicWriteBool(&pFilter->fChoked, true);
+                        Log2(("pdmNsAllocateBandwidth/%s: refused - cbTransfer=%#zx cTokens=%#x cTokensAdded=%#x\n",
+                              pGroup->szName, cbTransfer, cTokens, cTokensAdded));
+                        fAllowed = false;
+                    }
+                }
+                else
+                    Log2(("pdmNsAllocateBandwidth/%s: disabled\n", pGroup->szName));
+
+                rc = PDMCritSectLeave(pVM, &pGroup->Lock);
+                AssertRCSuccess(rc);
+            }
+            else if (rc == VINF_TRY_AGAIN) /* (accounted for by the critsect stats) */
+                Log2(("pdmNsAllocateBandwidth/%s: allowed - lock contention\n", pGroup->szName));
+            else
+                PDM_CRITSECT_RELEASE_ASSERT_RC(pVM, &pGroup->Lock, rc);
         }
         else
-        {
-            pBwGroup->tsUpdatedLast = tsNow;
-            pBwGroup->cbTokensLast = uTokens - (uint32_t)cbTransfer;
-        }
-        Log2(("pdmNsAllocateBandwidth: BwGroup=%#p{%s} cbTransfer=%u uTokens=%u uTokensAdded=%u fAllowed=%RTbool\n",
-              pBwGroup, R3STRING(pBwGroup->pszNameR3), cbTransfer, uTokens, uTokensAdded, fAllowed));
+            AssertMsgFailed(("Invalid iGroup=%d\n", iGroup));
     }
-    else
-        Log2(("pdmNsAllocateBandwidth: BwGroup=%#p{%s} disabled fAllowed=%RTbool\n",
-              pBwGroup, R3STRING(pBwGroup->pszNameR3), fAllowed));
-
-    rc = PDMCritSectLeave(pVM, &pBwGroup->Lock); AssertRC(rc);
     return fAllowed;
 }
-
