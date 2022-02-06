@@ -1983,6 +1983,10 @@ typedef struct PGMPOOL
     PVMR3                       pVMR3;
     /** The VM handle - R0 Ptr. */
     R0PTRTYPE(PVMCC)            pVMR0;
+    /** The ring-3 pointer to this structure. */
+    R3PTRTYPE(struct PGMPOOL *) pPoolR3;
+    /** The ring-0 pointer to this structure. */
+    R0PTRTYPE(struct PGMPOOL *) pPoolR0;
     /** The max pool size. This includes the special IDs. */
     uint16_t                    cMaxPages;
     /** The current pool size. */
@@ -3664,6 +3668,40 @@ DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmRZPoolAccessPfHandler;
 void            pgmPoolAddDirtyPage(PVMCC pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolResetDirtyPages(PVMCC pVM);
 void            pgmPoolResetDirtyPage(PVMCC pVM, RTGCPTR GCPtrPage);
+
+/** Gets the ring-0 pointer for the given pool page. */
+DECLINLINE(R0PTRTYPE(PPGMPOOLPAGE)) pgmPoolConvertPageToR0(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
+{
+#ifdef IN_RING3
+    size_t offPage = (uintptr_t)pPage - (uintptr_t)pPool;
+# ifdef VBOX_STRICT
+    size_t iPage   = (offPage - RT_UOFFSETOF(PGMPOOL, aPages)) / sizeof(*pPage);
+    AssertReturn(iPage < pPool->cMaxPages, NIL_RTR0PTR);
+    AssertReturn(iPage * sizeof(*pPage) + RT_UOFFSETOF(PGMPOOL, aPages) == offPage, NIL_RTR0PTR);
+# endif
+    return pPool->pPoolR0 + offPage;
+#else
+    RT_NOREF(pPool);
+    return pPage;
+#endif
+}
+
+/** Gets the ring-3 pointer for the given pool page. */
+DECLINLINE(R3PTRTYPE(PPGMPOOLPAGE)) pgmPoolConvertPageToR3(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
+{
+#ifdef IN_RING3
+    RT_NOREF(pPool);
+    return pPage;
+#else
+    size_t offPage = (uintptr_t)pPage - (uintptr_t)pPool;
+# ifdef VBOX_STRICT
+    size_t iPage   = (offPage - RT_UOFFSETOF(PGMPOOL, aPages)) / sizeof(*pPage);
+    AssertReturn(iPage < pPool->cMaxPages, NIL_RTR3PTR);
+    AssertReturn(iPage * sizeof(*pPage) + RT_UOFFSETOF(PGMPOOL, aPages) == offPage, NIL_RTR3PTR);
+# endif
+    return pPool->pPoolR3 + offPage;
+#endif
+}
 
 int             pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu);
 int             pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu);

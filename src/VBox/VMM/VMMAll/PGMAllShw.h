@@ -244,8 +244,8 @@ PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
                           &pNewShwPageCR3);
     AssertLogRelRCReturnStmt(rc, PGM_UNLOCK(pVM), rc);
 
-    pVCpu->pgm.s.pShwPageCR3R3 = (R3PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR3(pVM, pNewShwPageCR3);
-    pVCpu->pgm.s.pShwPageCR3R0 = (R0PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR0(pVM, pNewShwPageCR3);
+    pVCpu->pgm.s.pShwPageCR3R3 = pgmPoolConvertPageToR3(pVM->pgm.s.CTX_SUFF(pPool), pNewShwPageCR3);
+    pVCpu->pgm.s.pShwPageCR3R0 = pgmPoolConvertPageToR0(pVM->pgm.s.CTX_SUFF(pPool), pNewShwPageCR3);
 
     PGM_UNLOCK(pVM);
 

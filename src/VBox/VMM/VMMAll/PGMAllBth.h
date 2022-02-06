@@ -140,8 +140,8 @@ PGM_BTH_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
                           &pNewShwPageCR3);
     AssertRCReturn(rc, rc);
 
-    pVCpu->pgm.s.pShwPageCR3R3 = (R3PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR3(pVM, pNewShwPageCR3);
-    pVCpu->pgm.s.pShwPageCR3R0 = (R0PTRTYPE(PPGMPOOLPAGE))MMHyperCCToR0(pVM, pNewShwPageCR3);
+    pVCpu->pgm.s.pShwPageCR3R3 = pgmPoolConvertPageToR3(pPool, pNewShwPageCR3);
+    pVCpu->pgm.s.pShwPageCR3R0 = pgmPoolConvertPageToR0(pPool, pNewShwPageCR3);
 
     /* Mark the page as locked; disallow flushing. */
     pgmPoolLockPage(pPool, pNewShwPageCR3);
@@ -4242,12 +4242,8 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
                                  PGM_A20_IS_ENABLED(pVCpu), NIL_PGMPOOL_IDX, UINT32_MAX, true /*fLockPage*/, &pNewShwPageCR3);
     AssertFatalRC(rc2);
 
-    pVCpu->pgm.s.CTX_SUFF(pShwPageCR3) = pNewShwPageCR3;
-#  ifdef IN_RING0
-    pVCpu->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
-#  else
-    pVCpu->pgm.s.pShwPageCR3R0 = MMHyperCCToR0(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
-#  endif
+    pVCpu->pgm.s.pShwPageCR3R3 = pgmPoolConvertPageToR3(pPool, pNewShwPageCR3);
+    pVCpu->pgm.s.pShwPageCR3R0 = pgmPoolConvertPageToR0(pPool, pNewShwPageCR3);
 
     /* Set the current hypervisor CR3. */
     CPUMSetHyperCR3(pVCpu, PGMGetHyperCR3(pVCpu));

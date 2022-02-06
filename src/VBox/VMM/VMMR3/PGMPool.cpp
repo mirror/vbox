@@ -232,11 +232,13 @@ int pgmR3PoolInit(PVM pVM)
     cb += cMaxUsers * sizeof(PGMPOOLUSER);
     cb += cMaxPhysExts * sizeof(PGMPOOLPHYSEXT);
     PPGMPOOL pPool;
-    rc = MMR3HyperAllocOnceNoRel(pVM, cb, 0, MM_TAG_PGM_POOL, (void **)&pPool);
+    RTR0PTR  pPoolR0;
+    rc = SUPR3PageAllocEx(RT_ALIGN_32(cb, HOST_PAGE_SIZE) >> HOST_PAGE_SHIFT, 0 /*fFlags*/, (void **)&pPool, &pPoolR0, NULL);
     if (RT_FAILURE(rc))
         return rc;
-    pVM->pgm.s.pPoolR3 = pPool;
-    pVM->pgm.s.pPoolR0 = MMHyperR3ToR0(pVM, pPool);
+    Assert(ASMMemIsZero(pPool, cb));
+    pVM->pgm.s.pPoolR3 = pPool->pPoolR3 = pPool;
+    pVM->pgm.s.pPoolR0 = pPool->pPoolR0 = pPoolR0;
 
     /*
      * Initialize it.
@@ -249,7 +251,7 @@ int pgmR3PoolInit(PVM pVM)
     pPool->cMaxUsers = cMaxUsers;
     PPGMPOOLUSER paUsers = (PPGMPOOLUSER)&pPool->aPages[pPool->cMaxPages];
     pPool->paUsersR3 = paUsers;
-    pPool->paUsersR0 = MMHyperR3ToR0(pVM, paUsers);
+    pPool->paUsersR0 = pPoolR0 + (uintptr_t)paUsers - (uintptr_t)pPool;
     for (unsigned i = 0; i < cMaxUsers; i++)
     {
         paUsers[i].iNext = i + 1;
@@ -261,7 +263,7 @@ int pgmR3PoolInit(PVM pVM)
     pPool->cMaxPhysExts = cMaxPhysExts;
     PPGMPOOLPHYSEXT paPhysExts = (PPGMPOOLPHYSEXT)&paUsers[cMaxUsers];
     pPool->paPhysExtsR3 = paPhysExts;
-    pPool->paPhysExtsR0 = MMHyperR3ToR0(pVM, paPhysExts);
+    pPool->paPhysExtsR0 = pPoolR0 + (uintptr_t)paPhysExts - (uintptr_t)pPool;
     for (unsigned i = 0; i < cMaxPhysExts; i++)
     {
         paPhysExts[i].iNext = i + 1;
