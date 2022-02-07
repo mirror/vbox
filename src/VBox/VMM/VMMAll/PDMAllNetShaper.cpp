@@ -26,6 +26,7 @@
 
 #include <VBox/log.h>
 #include <iprt/time.h>
+#include <iprt/asm-math.h>
 
 
 /**
@@ -58,16 +59,21 @@ VMM_INT_DECL(bool) PDMNetShaperAllocateBandwidth(PVMCC pVM, PPDMNSFILTER pFilter
                 {
                     /*
                      * Re-fill the bucket first
+                     *
+                     * Note! We limit the cTokensAdded calculation to 1 second, since it's really
+                     *       pointless to calculate much beyond PDM_NETSHAPER_MAX_LATENCY (100ms)
+                     *       let alone 1 sec.  This makes it possible to use ASMMultU64ByU32DivByU32
+                     *       as the cNsDelta is less than 30 bits wide now, which means we don't get
+                     *       into overflow issues when multiplying two 64-bit values.
                      */
-                    uint64_t const nsNow    = RTTimeSystemNanoTS();
-                    uint64_t const cNsDelta = nsNow - pGroup->tsUpdatedLast;
-                    /** @todo r=bird: there might be an overflow issue here if the gap
-                     *                between two transfers is too large. */
-                    uint32_t cTokensAdded   = cNsDelta * cbPerSecMax / RT_NS_1SEC;
-
+                    uint64_t const nsNow        = RTTimeSystemNanoTS();
+                    uint64_t const cNsDelta     = nsNow - pGroup->tsUpdatedLast;
+                    uint64_t const cTokensAdded = cNsDelta < RT_NS_1SEC
+                                                ? ASMMultU64ByU32DivByU32(cbPerSecMax, (uint32_t)cNsDelta, RT_NS_1SEC)
+                                                : cbPerSecMax;
                     uint32_t const cbBucket     = pGroup->cbBucket;
                     uint32_t const cbTokensLast = pGroup->cbTokensLast;
-                    uint32_t const cTokens      = RT_MIN(cbBucket, cTokensAdded + cbTokensLast);
+                    uint32_t const cTokens      = (uint32_t)RT_MIN(cbBucket, cTokensAdded + cbTokensLast);
 
                     /*
                      * Allowed?
