@@ -107,6 +107,7 @@ VMM_INT_DECL(bool) PDMNetShaperAllocateBandwidth(PVMCC pVM, PPDMNSFILTER pFilter
                         else
                             Log2(("pdmNsAllocateBandwidth/%s: refused - cbTransfer=%#zx cTokens=%#x cTokensAdded=%#x\n",
                                   pGroup->szName, cbTransfer, cTokens, cTokensAdded));
+                        ASMAtomicIncU64(&pGroup->cTotalChokings);
                         fAllowed = false;
                     }
                 }

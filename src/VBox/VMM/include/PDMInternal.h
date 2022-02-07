@@ -1251,8 +1251,10 @@ typedef struct PDMNSBWGROUP
     volatile uint32_t                           cbTokensLast;
     /** Timestamp of the last update */
     volatile uint64_t                           tsUpdatedLast;
+    /** Number of times a filter was choked. */
+    volatile uint64_t                           cTotalChokings;
     /** Pad the structure to a multiple of 64 bytes. */
-    uint64_t                                    au64Padding[2];
+    uint64_t                                    au64Padding[1];
 } PDMNSBWGROUP;
 AssertCompileSizeAlignment(PDMNSBWGROUP, 64);
 /** Pointer to a bandwidth group. */

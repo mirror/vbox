@@ -482,6 +482,22 @@ int pdmR3NetShaperInit(PVM pVM)
                          iGroup, pVM->pdm.s.aNsGroups[iGroup].szName, pVM->pdm.s.aNsGroups[iGroup].cbPerSecMax,
                          pVM->pdm.s.aNsGroups[iGroup].cbBucket));
 
+            /*
+             * Register statistics.
+             */
+            STAMR3RegisterF(pVM, (void *)&pVM->pdm.s.aNsGroups[iGroup].cbPerSecMax,     STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
+                            STAMUNIT_BYTES, "", "/PDM/NetShaper/%u-%s/cbPerSecMax", iGroup, szName);
+            STAMR3RegisterF(pVM, (void *)&pVM->pdm.s.aNsGroups[iGroup].cRefs,           STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
+                            STAMUNIT_BYTES, "", "/PDM/NetShaper/%u-%s/cRefs", iGroup, szName);
+            STAMR3RegisterF(pVM, (void *)&pVM->pdm.s.aNsGroups[iGroup].cbBucket,        STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
+                            STAMUNIT_BYTES, "", "/PDM/NetShaper/%u-%s/cbBucket", iGroup, szName);
+            STAMR3RegisterF(pVM, (void *)&pVM->pdm.s.aNsGroups[iGroup].cbTokensLast,    STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
+                            STAMUNIT_BYTES, "", "/PDM/NetShaper/%u-%s/cbTokensLast", iGroup, szName);
+            STAMR3RegisterF(pVM, (void *)&pVM->pdm.s.aNsGroups[iGroup].tsUpdatedLast,   STAMTYPE_U64, STAMVISIBILITY_ALWAYS,
+                            STAMUNIT_NS, "", "/PDM/NetShaper/%u-%s/tsUpdatedLast", iGroup, szName);
+            STAMR3RegisterF(pVM, (void *)&pVM->pdm.s.aNsGroups[iGroup].cTotalChokings,  STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS,
+                            STAMUNIT_OCCURENCES, "", "/PDM/NetShaper/%u-%s/TotalChokings", iGroup, szName);
+
             pVM->pdm.s.cNsGroups = ++iGroup;
         }
     }
