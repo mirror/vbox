@@ -129,6 +129,7 @@ public:
         void setDomainName(const QString &strDomain);
         QString hostnameDomainName() const;
         bool isComplete() const;
+        bool isHostnameComplete() const;
         void mark();
         void disableEnableProductKeyWidgets(bool fEnabled);
     /** @} */

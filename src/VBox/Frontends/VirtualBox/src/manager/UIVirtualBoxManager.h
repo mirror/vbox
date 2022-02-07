@@ -370,7 +370,7 @@ private:
         static void launchMachine(CCloudMachine &comMachine);
 
         /** Creates an unattended installer and uses it to install guest os to newly created vm. */
-        void startUnattendedInstall(CUnattended &comUnattendedInstaller, const UIUnattendedInstallData &unattendedData);
+    void startUnattendedInstall(CUnattended &comUnattendedInstaller, bool fStartHeadless, const QString &strMachineId);
 
         /** Launches or shows virtual machines represented by passed @a items in corresponding @a enmLaunchMode (for launch). */
         void performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UICommon::LaunchMode enmLaunchMode);

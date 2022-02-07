@@ -42,32 +42,6 @@ enum SelectedDiskSource
     SelectedDiskSource_Max
 };
 
-/** Container for unattended install related data. */
-struct UIUnattendedInstallData
-{
-    UIUnattendedInstallData();
-    QUuid m_uMachineUid;
-    QString m_strISOPath;
-
-    bool m_fUnattendedEnabled;
-    bool m_fStartHeadless;
-    QString m_strUserName;
-    QString m_strPassword;
-    QString m_strHostnameDomainName;
-    QString m_strProductKey;
-    bool m_fInstallGuestAdditions;
-    QString m_strGuestAdditionsISOPath;
-    /* 0 is for no selection. */
-    ulong m_uSelectedWindowsImageIndex;
-#if 0
-    QString m_strDetectedOSVersion;
-    QString m_strDetectedOSFlavor;
-    QString m_strDetectedOSLanguages;
-    QString m_strDetectedOSHints;
-#endif
-};
-
-
 /** New Virtual Machine wizard: */
 class UIWizardNewVM : public UINativeWizard
 {
@@ -76,11 +50,9 @@ class UIWizardNewVM : public UINativeWizard
 public:
 
     UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
-                  const QString &strMachineGroup = QString(), const QString &strHelpHashtag = QString());
+                  const QString &strMachineGroup, const QString &strHelpHashtag, CUnattended &comUnattended);
     bool isUnattendedEnabled() const;
     bool isOSTypeDetectionOK() const;
-    void setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData);
-    const UIUnattendedInstallData &unattendedInstallData() const;
     bool isGuestOSTypeWindows() const;
 
     bool createVM();
@@ -91,6 +63,7 @@ public:
     void setVirtualDisk(const QUuid &mediumId);
 
     const QString &machineGroup() const;
+    QUuid createdMachineId() const;
 
     /** @name Setter/getters for vm parameters
       * @{ */
@@ -130,22 +103,22 @@ public:
         bool EFIEnabled() const;
         void setEFIEnabled(bool fEnabled);
 
-        const QString &ISOFilePath() const;
+        QString ISOFilePath() const;
         void setISOFilePath(const QString &strISOFilePath);
 
-        const QString &userName() const;
+        QString userName() const;
         void setUserName(const QString &strUserName);
 
-        const QString &password() const;
+        QString password() const;
         void setPassword(const QString &strPassword);
 
-        const QString &guestAdditionsISOPath() const;
+        QString guestAdditionsISOPath() const;
         void setGuestAdditionsISOPath(const QString &strGAISOPath);
 
-        const QString &hostnameDomainName() const;
+        QString hostnameDomainName() const;
         void setHostnameDomainName(const QString &strHostnameDomainName);
 
-        const QString &productKey() const;
+        QString productKey() const;
         void setProductKey(const QString &productKey);
 
         int CPUCount() const;
@@ -199,10 +172,8 @@ private:
     void retranslateUi();
     QString getNextControllerName(KStorageBus type);
     void setUnattendedPageVisible(bool fVisible);
-    /** Returns the Id of newly created VM. */
-    QUuid createdMachineId() const;
     void deleteVirtualDisk();
-
+    bool checkUnattendedInstallError(const CUnattended &comUnattended) const;
     /** @name Variables
      * @{ */
        CMedium m_virtualDisk;
@@ -214,10 +185,6 @@ private:
        int m_iFloppyCount;
        int m_iSASCount;
        int m_iUSBCount;
-       mutable UIUnattendedInstallData m_unattendedInstallData;
-
-       /** Path of the ISO file attached to the new vm. Possibly used for the unattended install. */
-       QString m_strISOFilePath;
 
        /** Path of the folder created by this wizard page. Used to remove previously created
          *  folder. see cleanupMachineFolder();*/
@@ -258,6 +225,8 @@ private:
        bool m_fEmptyDiskRecommended;
        QVector<KMediumVariant> m_mediumVariants;
        UIActionPool *m_pActionPool;
+       CUnattended &m_comUnattended;
+       bool m_fStartHeadless;
     /** @} */
 };
 

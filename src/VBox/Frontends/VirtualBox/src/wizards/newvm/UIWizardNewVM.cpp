@@ -35,25 +35,20 @@
 #include "CAudioAdapter.h"
 #include "CBIOSSettings.h"
 #include "CGraphicsAdapter.h"
+#include "CExtPackManager.h"
 #include "CMediumFormat.h"
+#include "CStorageController.h"
 #include "CUSBController.h"
 #include "CUSBDeviceFilters.h"
-#include "CExtPackManager.h"
-#include "CStorageController.h"
+#include "CUnattended.h"
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
 
 
-UIUnattendedInstallData::UIUnattendedInstallData()
-    : m_fUnattendedEnabled(false)
-    , m_fStartHeadless(false)
-{
-}
-
 UIWizardNewVM::UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
-                             const QString &strMachineGroup /* = QString() */,
-                             const QString &strHelpHashtag /* = QString() */)
+                             const QString &strMachineGroup, const QString &strHelpHashtag,
+                             CUnattended &comUnattended)
     : UINativeWizard(pParent, WizardType_NewVM, WizardMode_Auto, strHelpHashtag)
     , m_strMachineGroup(strMachineGroup)
     , m_iIDECount(0)
@@ -73,6 +68,8 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
     , m_enmDiskSource(SelectedDiskSource_New)
     , m_fEmptyDiskRecommended(false)
     , m_pActionPool(pActionPool)
+    , m_comUnattended(comUnattended)
+    , m_fStartHeadless(false)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -176,7 +173,23 @@ bool UIWizardNewVM::createVM()
         cleanWizard();
         return false;
     }
-    return attachDefaultDevices();
+
+    if (!attachDefaultDevices())
+    {
+        cleanWizard();
+        return false;
+    }
+
+    if (isUnattendedEnabled())
+    {
+        m_comUnattended.SetMachine(m_machine);
+        if (!checkUnattendedInstallError(m_comUnattended))
+        {
+            cleanWizard();
+            return false;
+        }
+    }
+    return true;
 }
 
 bool UIWizardNewVM::createVirtualDisk()
@@ -546,10 +559,10 @@ QUuid UIWizardNewVM::createdMachineId() const
     return QUuid();
 }
 
-void UIWizardNewVM::setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData)
-{
-    m_unattendedInstallData = unattendedInstallData;
-}
+// void UIWizardNewVM::setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData)
+// {
+//     m_unattendedInstallData = unattendedInstallData;
+// }
 
 CMedium &UIWizardNewVM::virtualDisk()
 {
@@ -652,22 +665,25 @@ void UIWizardNewVM::setGuestOSType(const CGuestOSType &guestOSType)
 
 bool UIWizardNewVM::installGuestAdditions() const
 {
-    return m_unattendedInstallData.m_fInstallGuestAdditions;
+    AssertReturn(!m_comUnattended.isNull(), false);
+    return m_comUnattended.GetInstallGuestAdditions();
 }
 
 void UIWizardNewVM::setInstallGuestAdditions(bool fInstallGA)
 {
-    m_unattendedInstallData.m_fInstallGuestAdditions = fInstallGA;
+    AssertReturnVoid(!m_comUnattended.isNull());
+    m_comUnattended.SetInstallGuestAdditions(fInstallGA);
+    AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
 }
 
 bool UIWizardNewVM::startHeadless() const
 {
-    return m_unattendedInstallData.m_fStartHeadless;
+    return m_fStartHeadless;
 }
 
 void UIWizardNewVM::setStartHeadless(bool fStartHeadless)
 {
-    m_unattendedInstallData.m_fStartHeadless = fStartHeadless;
+    m_fStartHeadless = fStartHeadless;
 }
 
 bool UIWizardNewVM::skipUnattendedInstall() const
@@ -692,66 +708,84 @@ void UIWizardNewVM::setEFIEnabled(bool fEnabled)
     m_fEFIEnabled = fEnabled;
 }
 
-const QString &UIWizardNewVM::ISOFilePath() const
+QString UIWizardNewVM::ISOFilePath() const
 {
-    return m_strISOFilePath;
+    AssertReturn(!m_comUnattended.isNull(), QString());
+    return m_comUnattended.GetIsoPath();
 }
 
 void UIWizardNewVM::setISOFilePath(const QString &strISOFilePath)
 {
-    m_strISOFilePath = strISOFilePath;
+    AssertReturnVoid(!m_comUnattended.isNull());
+    m_comUnattended.SetIsoPath(strISOFilePath);
     /* We hide/show unattended install page depending on the value of isUnattendedEnabled: */
     setUnattendedPageVisible(isUnattendedEnabled());
+    AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
 }
 
-const QString &UIWizardNewVM::userName() const
+QString UIWizardNewVM::userName() const
 {
-    return m_unattendedInstallData.m_strUserName;
+    AssertReturn(!m_comUnattended.isNull(), QString());
+    return m_comUnattended.GetUser();
 }
 
 void UIWizardNewVM::setUserName(const QString &strUserName)
 {
-    m_unattendedInstallData.m_strUserName = strUserName;
+    AssertReturnVoid(!m_comUnattended.isNull());
+    m_comUnattended.SetUser(strUserName);
+    AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
 }
 
-const QString &UIWizardNewVM::password() const
+QString UIWizardNewVM::password() const
 {
-    return m_unattendedInstallData.m_strPassword;
+    AssertReturn(!m_comUnattended.isNull(), QString());
+    return m_comUnattended.GetPassword();
 }
 
 void UIWizardNewVM::setPassword(const QString &strPassword)
 {
-    m_unattendedInstallData.m_strPassword = strPassword;
+    AssertReturnVoid(!m_comUnattended.isNull());
+    m_comUnattended.SetPassword(strPassword);
+    AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
 }
 
-const QString &UIWizardNewVM::guestAdditionsISOPath() const
+QString UIWizardNewVM::guestAdditionsISOPath() const
 {
-    return m_unattendedInstallData.m_strGuestAdditionsISOPath;
+    AssertReturn(!m_comUnattended.isNull(), QString());
+    return m_comUnattended.GetAdditionsIsoPath();
 }
 
 void UIWizardNewVM::setGuestAdditionsISOPath(const QString &strGAISOPath)
 {
-    m_unattendedInstallData.m_strGuestAdditionsISOPath = strGAISOPath;
+    AssertReturnVoid(!m_comUnattended.isNull());
+    m_comUnattended.SetAdditionsIsoPath(strGAISOPath);
+    AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
 }
 
-const QString &UIWizardNewVM::hostnameDomainName() const
+QString UIWizardNewVM::hostnameDomainName() const
 {
-    return m_unattendedInstallData.m_strHostnameDomainName;
+    AssertReturn(!m_comUnattended.isNull(), QString());
+    return m_comUnattended.GetHostname();
 }
 
 void UIWizardNewVM::setHostnameDomainName(const QString &strHostnameDomain)
 {
-    m_unattendedInstallData.m_strHostnameDomainName = strHostnameDomain;
+    AssertReturnVoid(!m_comUnattended.isNull());
+    m_comUnattended.SetHostname(strHostnameDomain);
+    AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
 }
 
-const QString &UIWizardNewVM::productKey() const
+QString UIWizardNewVM::productKey() const
 {
-    return m_unattendedInstallData.m_strProductKey;
+    AssertReturn(!m_comUnattended.isNull(), QString());
+    return  m_comUnattended.GetProductKey();
 }
 
 void UIWizardNewVM::setProductKey(const QString &productKey)
 {
-    m_unattendedInstallData.m_strProductKey = productKey;
+    AssertReturnVoid(!m_comUnattended.isNull());
+    m_comUnattended.SetProductKey(productKey);
+    AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
 }
 
 int UIWizardNewVM::CPUCount() const
@@ -855,12 +889,15 @@ const QVector<ulong> &UIWizardNewVM::detectedWindowsImageIndices() const
 
 void UIWizardNewVM::setSelectedWindowImageIndex(ulong uIndex)
 {
-    m_unattendedInstallData.m_uSelectedWindowsImageIndex = uIndex;
+    AssertReturnVoid(!m_comUnattended.isNull());
+    m_comUnattended.SetImageIndex(uIndex);
+    AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
 }
 
 ulong UIWizardNewVM::selectedWindowImageIndex() const
 {
-    return m_unattendedInstallData.m_uSelectedWindowsImageIndex;
+    AssertReturn(!m_comUnattended.isNull(), 0);
+    return m_comUnattended.GetImageIndex();
 }
 
 QVector<KMediumVariant> UIWizardNewVM::mediumVariants() const
@@ -876,18 +913,11 @@ QVector<KMediumVariant> UIWizardNewVM::mediumVariants() const
     return variants;
 }
 
-const UIUnattendedInstallData &UIWizardNewVM::unattendedInstallData() const
-{
-    m_unattendedInstallData.m_strISOPath = m_strISOFilePath;
-    m_unattendedInstallData.m_fUnattendedEnabled = isUnattendedEnabled();
-    m_unattendedInstallData.m_uMachineUid = createdMachineId();
-
-    return m_unattendedInstallData;
-}
-
 bool UIWizardNewVM::isUnattendedEnabled() const
 {
-    if (m_strISOFilePath.isEmpty() || m_strISOFilePath.isNull())
+    if (m_comUnattended.isNull())
+        return false;
+    if (m_comUnattended.GetIsoPath().isEmpty())
         return false;
     if (m_fSkipUnattendedInstall)
         return false;
@@ -914,4 +944,14 @@ void UIWizardNewVM::setUnattendedPageVisible(bool fVisible)
 {
     if (m_iUnattendedInstallPageIndex != -1)
         setPageVisible(m_iUnattendedInstallPageIndex, fVisible);
+}
+
+bool UIWizardNewVM::checkUnattendedInstallError(const CUnattended &comUnattended) const
+{
+    if (!comUnattended.isOk())
+    {
+        UINotificationMessage::cannotRunUnattendedGuestInstall(comUnattended);
+        return false;
+    }
+    return true;
 }

@@ -970,33 +970,25 @@ void UIVirtualBoxManager::sltOpenNewMachineWizard()
     if (   !pItem
         || pItem->itemType() == UIVirtualMachineItemType_Local)
     {
-        /* Use the "safe way" to open stack of Mac OS X Sheets: */
-        QWidget *pWizardParent = windowManager().realParentWindow(this);
-        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, actionPool(),
-                                                             m_pWidget->fullGroupName(), "gui-createvm");
-        windowManager().registerNewParent(pWizard, pWizardParent);
-
         CUnattended comUnattendedInstaller = uiCommon().virtualBox().CreateUnattendedInstaller();
         AssertMsg(!comUnattendedInstaller.isNull(), ("Could not create unattended installer!\n"));
 
-        UIUnattendedInstallData unattendedInstallData;
-        unattendedInstallData.m_strUserName = comUnattendedInstaller.GetUser();
-        unattendedInstallData.m_strPassword = comUnattendedInstaller.GetPassword();
-        unattendedInstallData.m_fInstallGuestAdditions = comUnattendedInstaller.GetInstallGuestAdditions();
-        unattendedInstallData.m_strGuestAdditionsISOPath = comUnattendedInstaller.GetAdditionsIsoPath();
-        unattendedInstallData.m_uSelectedWindowsImageIndex = comUnattendedInstaller.GetImageIndex();
-        pWizard->setDefaultUnattendedInstallData(unattendedInstallData);
+        /* Use the "safe way" to open stack of Mac OS X Sheets: */
+        QWidget *pWizardParent = windowManager().realParentWindow(this);
+        UISafePointerWizardNewVM pWizard = new UIWizardNewVM(pWizardParent, actionPool(),
+                                                             m_pWidget->fullGroupName(), "gui-createvm", comUnattendedInstaller);
+        windowManager().registerNewParent(pWizard, pWizardParent);
 
         /* Execute wizard: */
         pWizard->exec();
 
-        /* Cache unattended install related info and delete the wizard before handling the unattended install stuff: */
-        unattendedInstallData = pWizard->unattendedInstallData();
-
+        bool fStartHeadless = pWizard->startHeadless();
+        bool fUnattendedEnabled = pWizard->isUnattendedEnabled();
+        QString strMachineId = pWizard->createdMachineId().toString();
         delete pWizard;
         /* Handle unattended install stuff: */
-        if (unattendedInstallData.m_fUnattendedEnabled)
-            startUnattendedInstall(comUnattendedInstaller, unattendedInstallData);
+        if (fUnattendedEnabled)
+            startUnattendedInstall(comUnattendedInstaller, fStartHeadless, strMachineId);
     }
     /* For cloud machine: */
     else
@@ -2527,40 +2519,13 @@ void UIVirtualBoxManager::launchMachine(CCloudMachine &comMachine)
     gpNotificationCenter->append(pNotification);
 }
 
-void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInstaller, const UIUnattendedInstallData &unattendedData)
+void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInstaller,
+                                                 bool fStartHeadless, const QString &strMachineId)
 {
     CVirtualBox comVBox = uiCommon().virtualBox();
-    CMachine comMachine = comVBox.FindMachine(unattendedData.m_uMachineUid.toString());
+    CMachine comMachine = comVBox.FindMachine(strMachineId);
     if (comMachine.isNull())
         return;
-
-    if (!QFileInfo(unattendedData.m_strISOPath).exists())
-    {
-        /// @todo Show a relavant error message here
-        return;
-    }
-
-    comUnattendedInstaller.SetIsoPath(unattendedData.m_strISOPath);
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    comUnattendedInstaller.SetMachine(comMachine);
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    comUnattendedInstaller.SetUser(unattendedData.m_strUserName);
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    comUnattendedInstaller.SetPassword(unattendedData.m_strPassword);
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    comUnattendedInstaller.SetHostname(unattendedData.m_strHostnameDomainName);
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    comUnattendedInstaller.SetProductKey(unattendedData.m_strProductKey);
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    comUnattendedInstaller.SetInstallGuestAdditions(unattendedData.m_fInstallGuestAdditions);
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    comUnattendedInstaller.SetAdditionsIsoPath(unattendedData.m_strGuestAdditionsISOPath);
-    AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    if (unattendedData.m_uSelectedWindowsImageIndex != 0)
-    {
-        comUnattendedInstaller.SetImageIndex(unattendedData.m_uSelectedWindowsImageIndex);
-        AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
-    }
 
     comUnattendedInstaller.Prepare();
     AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
@@ -2569,10 +2534,7 @@ void UIVirtualBoxManager::startUnattendedInstall(CUnattended &comUnattendedInsta
     comUnattendedInstaller.ReconfigureVM();
     AssertReturnVoid(checkUnattendedInstallError(comUnattendedInstaller));
 
-    UICommon::LaunchMode enmLaunchMode = UICommon::LaunchMode_Default;
-    if (unattendedData.m_fStartHeadless)
-        enmLaunchMode = UICommon::LaunchMode_Headless;
-    launchMachine(comMachine, enmLaunchMode);
+    launchMachine(comMachine, fStartHeadless ? UICommon::LaunchMode_Headless : UICommon::LaunchMode_Default);
 }
 
 void UIVirtualBoxManager::performStartOrShowVirtualMachines(const QList<UIVirtualMachineItem*> &items, UICommon::LaunchMode enmLaunchMode)

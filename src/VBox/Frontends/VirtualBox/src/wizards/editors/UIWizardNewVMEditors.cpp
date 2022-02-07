@@ -321,10 +321,16 @@ QString UIAdditionalUnattendedOptions::hostnameDomainName() const
 
 bool UIAdditionalUnattendedOptions::isComplete() const
 {
+    return isHostnameComplete();
+}
+
+bool UIAdditionalUnattendedOptions::isHostnameComplete() const
+{
     if (m_pHostnameDomainNameEditor)
         return m_pHostnameDomainNameEditor->isComplete();
     return false;
 }
+
 
 void UIAdditionalUnattendedOptions::mark()
 {
