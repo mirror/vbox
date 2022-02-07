@@ -847,8 +847,11 @@ void UIWizardNewVMExpertPage::sltStartHeadlessChanged(bool fStartHeadless)
 
 void UIWizardNewVMExpertPage::sltSelectedEditionChanged(ulong uEditionIndex)
 {
-    AssertReturnVoid(wizardWindow<UIWizardNewVM>());
-    wizardWindow<UIWizardNewVM>()->setSelectedWindowImageIndex(uEditionIndex);
+    UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
+    AssertReturnVoid(pWizard);
+    pWizard->setSelectedWindowImageIndex(uEditionIndex);
+    /* Update the OS type since IUnattended updates the detected OS type after edition (image index) changes: */
+    UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId());
 }
 
 void UIWizardNewVMExpertPage::updateVirtualMediumPathFromMachinePathName()
