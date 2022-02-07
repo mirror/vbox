@@ -2230,6 +2230,7 @@
 # define RTStrCopyP                                     RT_MANGLER(RTStrCopyP)
 # define RTStrCopyPEx                                   RT_MANGLER(RTStrCopyPEx)
 # define RTStrCurrentCPToUtf8Tag                        RT_MANGLER(RTStrCurrentCPToUtf8Tag)
+# define RTStrConsoleCPToUtf8Tag                        RT_MANGLER(RTStrConsoleCPToUtf8Tag)
 # define RTStrDupExTag                                  RT_MANGLER(RTStrDupExTag)
 # define RTStrDupNTag                                   RT_MANGLER(RTStrDupNTag)
 # define RTStrDupNExTag                                 RT_MANGLER(RTStrDupNExTag)
