@@ -277,6 +277,27 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCPExTag(char **ppszString, const char *pszStrin
  */
 RTR3DECL(int)  RTStrCurrentCPToUtf8Tag(char **ppszString, const char *pszString, const char *pszTag);
 
+/**
+ * Allocates tmp buffer, translates pszString from console codepage to UTF-8.
+ *
+ * @returns iprt status code.
+ * @param   ppszString      Receives pointer of allocated UTF-8 string.
+ *                          The returned pointer must be freed using RTStrFree().
+ * @param   pszString       Native string to convert.
+ */
+#define RTStrConsoleCPToUtf8(ppszString, pszString)     RTStrConsoleCPToUtf8Tag((ppszString), (pszString), RTSTR_TAG)
+
+/**
+ * Allocates tmp buffer, translates pszString from console codepage to UTF-8.
+ *
+ * @returns iprt status code.
+ * @param   ppszString      Receives pointer of allocated UTF-8 string.
+ *                          The returned pointer must be freed using RTStrFree().
+ * @param   pszString       Native string to convert.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTR3DECL(int)  RTStrConsoleCPToUtf8Tag(char **ppszString, const char *pszString, const char *pszTag);
+
 #endif /* IN_RING3 */
 
 /**

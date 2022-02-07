@@ -116,8 +116,7 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCPExTag(char **ppszString, const char *pszStrin
     return rc;
 }
 
-
-RTR3DECL(int)  RTStrCurrentCPToUtf8Tag(char **ppszString, const char *pszString, const char *pszTag)
+static int rtStrCPToUtf8Tag(char **ppszString, const char *pszString, uint32_t uCodePage, const char *pszTag)
 {
     Assert(ppszString);
     Assert(pszString);
@@ -142,7 +141,7 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8Tag(char **ppszString, const char *pszString,
      * First calc result string length.
      */
     int rc;
-    int cwc = MultiByteToWideChar(CP_ACP, 0, pszString, -1, NULL, 0);
+    int cwc = MultiByteToWideChar((UINT)uCodePage, 0, pszString, -1, NULL, 0);
     if (cwc > 0)
     {
         /*
@@ -154,7 +153,7 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8Tag(char **ppszString, const char *pszString,
             /*
              * Do the translation.
              */
-            if (MultiByteToWideChar(CP_ACP, 0, pszString, -1, pwszString, cwc) > 0)
+            if (MultiByteToWideChar((UINT)uCodePage, 0, pszString, -1, pwszString, cwc) > 0)
             {
                 /*
                  * Now we got UTF-16, convert it to UTF-8
@@ -182,3 +181,14 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8Tag(char **ppszString, const char *pszString,
     return rc;
 }
 
+
+RTR3DECL(int)  RTStrCurrentCPToUtf8Tag(char **ppszString, const char *pszString, const char *pszTag)
+{
+    return rtStrCPToUtf8Tag(ppszString, pszString, CP_ACP, pszTag);
+}
+
+
+RTR3DECL(int)  RTStrConsoleCPToUtf8Tag(char **ppszString, const char *pszString, const char *pszTag)
+{
+    return rtStrCPToUtf8Tag(ppszString, pszString, GetConsoleCP(), pszTag);
+}

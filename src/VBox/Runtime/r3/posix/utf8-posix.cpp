@@ -692,3 +692,8 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8Tag(char **ppszString, const char *pszString,
     return rtStrConvertWrapper(pszString, cch, "", ppszString, 0, "UTF-8", 2, RTSTRICONV_LOCALE_TO_UTF8);
 }
 
+
+RTR3DECL(int)  RTStrConsoleCPToUtf8Tag(char **ppszString, const char *pszString, const char *pszTag)
+{
+    return RTStrCurrentCPToUtf8Tag(ppszString, pszString, pszTag);
+}
