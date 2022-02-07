@@ -37,15 +37,15 @@ depend fmri=pkg:/system/font/truetype/dejavu type=require
 <transform file path=opt/VirtualBox/amd64/legacy/.*$ -> drop>
 
 # Drop all API helper libraries for python 2.x other than 2.7
-<transform file path=opt/VirtualBox/64/VBoxPython\.so.*$ -> drop>
-<transform file path=opt/VirtualBox/64/VBoxPython2\.so.*$ -> drop>
-<transform file path=opt/VirtualBox/(64/)?VBoxPython2_[^7].*\.so.*$ -> drop>
+<transform file path=opt/VirtualBox/VBoxPython\.so.*$ -> drop>
+<transform file path=opt/VirtualBox/VBoxPython2\.so.*$ -> drop>
+<transform file path=opt/VirtualBox/VBoxPython2_[^7].*\.so.*$ -> drop>
 
 # Ignore dependencies of vboxshell.py
 <transform file path=opt/VirtualBox/vboxshell.py$ -> set pkg.depend.bypass-generate .*>
 
 # Ignore dependencies on libpython2.7.so* since it's getting phased out
-<transform file path=opt/VirtualBox/(64/)?VBoxPython2_7.*\.so.*$ -> set pkg.depend.bypass-generate .*/libpython2\\.7\\.so.*>
+<transform file path=opt/VirtualBox/VBoxPython2_7.*\.so.*$ -> set pkg.depend.bypass-generate .*/libpython2\\.7\\.so.*>
 
 # Tweak: do not try to get the dependencies for libGL.so which is needed by Qt
 <transform file path=opt/VirtualBox/amd64/libQt5GuiVBox\.so\.5$ -> set pkg.depend.runpath /usr/lib/mesa/amd64:$PKGDEPEND_RUNPATH>
