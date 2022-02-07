@@ -497,9 +497,14 @@ typedef struct PGMPHYSHANDLERTYPEINT
     PGMPHYSHANDLERKIND                  enmKind;
     /** The PGM_PAGE_HNDL_PHYS_STATE_XXX value corresponding to enmKind. */
     uint8_t                             uState;
-    /** Whether to keep the PGM lock when calling the handler. */
+    /** Whether to keep the PGM lock when calling the handler.
+     * @sa PGMPHYSHANDLER_F_KEEP_PGM_LOCK  */
     bool                                fKeepPgmLock;
-    bool                                afPadding[2];
+    /** Set if this is registered by a device instance and uUser should be
+     * translated from a device instance ID to a pointer.
+     * @sa PGMPHYSHANDLER_F_R0_DEVINS_IDX  */
+    bool                                fRing0DevInsIdx;
+    bool                                afPadding[1];
     /** Pointer to R3 callback function. */
     R3PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandlerR3;
     /** Pointer to R0 callback function. */
@@ -542,10 +547,8 @@ typedef struct PGMPHYSHANDLER
     uint32_t                            cTmpOffPages;
     /** Registered handler type handle (heap offset). */
     PGMPHYSHANDLERTYPE                  hType;
-    /** User argument for R3 handlers. */
-    R3PTRTYPE(void *)                   pvUserR3;
-    /** User argument for R0 handlers. */
-    R0PTRTYPE(void *)                   pvUserR0;
+    /** User argument for the handlers. */
+    uint64_t                            uUser;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
 #ifdef VBOX_WITH_STATISTICS
@@ -3568,8 +3571,8 @@ void            pgmUnlock(PVMCC pVM);
  */
 #define PGM_LOCK_ASSERT_OWNER_EX(a_pVM, a_pVCpu)  Assert(PDMCritSectIsOwnerEx((a_pVCpu), &(a_pVM)->pgm.s.CritSectX))
 
-int             pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
-                                           RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc, PPGMPHYSHANDLER *ppPhysHandler);
+int             pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, uint64_t uUser,
+                                           R3PTRTYPE(const char *) pszDesc, PPGMPHYSHANDLER *ppPhysHandler);
 int             pgmHandlerPhysicalExDup(PVMCC pVM, PPGMPHYSHANDLER pPhysHandlerSrc, PPGMPHYSHANDLER *ppPhysHandler);
 int             pgmHandlerPhysicalExRegister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
 int             pgmHandlerPhysicalExDeregister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler);

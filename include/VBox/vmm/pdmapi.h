@@ -52,6 +52,7 @@ VMMDECL(int)            PDMGetInterrupt(PVMCPUCC pVCpu, uint8_t *pu8Interrupt);
 VMMDECL(int)            PDMIsaSetIrq(PVMCC pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
 VMM_INT_DECL(bool)      PDMHasIoApic(PVM pVM);
 VMM_INT_DECL(bool)      PDMHasApic(PVM pVM);
+VMM_INT_DECL(PPDMDEVINS) PDMDeviceRing0IdxToInstance(PVMCC pVM, uint64_t idxR0Device);
 VMM_INT_DECL(int)       PDMIoApicSetIrq(PVM pVM, PCIBDF uBusDevFn, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
 VMM_INT_DECL(void)      PDMIoApicBroadcastEoi(PVMCC pVM, uint8_t uVector);
 VMM_INT_DECL(void)      PDMIoApicSendMsi(PVMCC pVM, PCIBDF uBusDevFn, PCMSIMSG pMsi, uint32_t uTagSrc);

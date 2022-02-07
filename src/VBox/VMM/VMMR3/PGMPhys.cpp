@@ -2256,13 +2256,11 @@ int pgmR3PhysRamTerm(PVM pVM)
  * @param   GCPhys          The start of the MMIO region.
  * @param   cb              The size of the MMIO region.
  * @param   hType           The physical access handler type registration.
- * @param   pvUserR3        The user argument for R3.
- * @param   pvUserR0        The user argument for R0.
- * @param   pvUserRC        The user argument for RC.
+ * @param   uUser           The user argument.
  * @param   pszDesc         The description of the MMIO region.
  */
 VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMPHYSHANDLERTYPE hType,
-                                     RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC, const char *pszDesc)
+                                     uint64_t uUser, const char *pszDesc)
 {
     /*
      * Assert on some assumption.
@@ -2402,7 +2400,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMP
     /*
      * Register the access handler.
      */
-    rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, hType, pvUserR3, pvUserR0, pvUserRC, pszDesc);
+    rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, hType, uUser, pszDesc);
     if (RT_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_NATIVE_NEM
@@ -2846,8 +2844,7 @@ static int pgmR3PhysMmio2Create(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, u
             )
 
         {
-            rc = pgmHandlerPhysicalExCreate(pVM, pVM->pgm.s.hMmio2DirtyPhysHandlerType,
-                                            (RTR3PTR)(uintptr_t)idMmio2, idMmio2, idMmio2, pszDesc, &pNew->pPhysHandlerR3);
+            rc = pgmHandlerPhysicalExCreate(pVM, pVM->pgm.s.hMmio2DirtyPhysHandlerType, idMmio2, pszDesc, &pNew->pPhysHandlerR3);
             AssertLogRelMsgRCBreak(rc, ("idMmio2=%zu\n", idMmio2));
         }
     }
@@ -4517,8 +4514,7 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
         /*
          * Register the ROM access handler.
          */
-        rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
-                                        pRomNew, pRomNewR0, NIL_RTRCPTR, pszDesc);
+        rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType, GCPhys, pszDesc);
         if (RT_SUCCESS(rc))
         {
             /*

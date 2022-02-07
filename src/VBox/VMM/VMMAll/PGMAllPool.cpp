@@ -936,17 +936,18 @@ DECLINLINE(int) pgmRZPoolAccessPfHandlerSimple(PVMCC pVM, PVMCPUCC pVCpu, PPGMPO
  * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
  *      \#PF access handler callback for page table pages.}
  *
- * @remarks The @a pvUser argument points to the PGMPOOLPAGE.
+ * @remarks The @a uUser argument is the index of the PGMPOOLPAGE.
  */
 DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
-                                                  RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+                                                  RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser)
 {
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pPool)->StatMonitorRZ, a);
-    PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
-    unsigned        cMaxModifications;
-    bool            fForcedFlush = false;
-    NOREF(uErrorCode);
+    PPGMPOOL const      pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    AssertReturn(uUser < pPool->cCurPages, VERR_PGM_POOL_IPE);
+    PPGMPOOLPAGE const  pPage = &pPool->aPages[uUser];
+    unsigned            cMaxModifications;
+    bool                fForcedFlush = false;
+    RT_NOREF_PV(uErrorCode);
 
     LogFlow(("pgmRZPoolAccessPfHandler: pvFault=%RGv pPage=%p:{.idx=%d} GCPhysFault=%RGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
@@ -1240,14 +1241,16 @@ flushPage:
  *      Access handler for shadowed page table pages.}
  *
  * @remarks Only uses the VINF_PGM_HANDLER_DO_DEFAULT status.
+ * @note    The @a uUser argument is the index of the PGMPOOLPAGE.
  */
 PGM_ALL_CB2_DECL(VBOXSTRICTRC)
 pgmPoolAccessHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                     PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+                     PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, uint64_t uUser)
 {
-    PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    PPGMPOOL const      pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->CTX_SUFF_Z(StatMonitor), a);
-    PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
+    AssertReturn(uUser < pPool->cCurPages, VERR_PGM_POOL_IPE);
+    PPGMPOOLPAGE const  pPage = &pPool->aPages[uUser];
     LogFlow(("PGM_ALL_CB_DECL: GCPhys=%RGp %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
              GCPhys, pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));
 
@@ -2476,8 +2479,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         PVMCC pVM = pPool->CTX_SUFF(pVM);
         const RTGCPHYS GCPhysPage = pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
         rc = PGMHandlerPhysicalRegister(pVM, GCPhysPage, GCPhysPage + PAGE_OFFSET_MASK, pPool->hAccessHandlerType,
-                                        pgmPoolConvertPageToR3(pPool, pPage), pgmPoolConvertPageToR0(pPool, pPage),
-                                        NIL_RTRCPTR, NIL_RTR3PTR /*pszDesc*/);
+                                        pPage - &pPool->aPages[0], NIL_RTR3PTR /*pszDesc*/);
         /** @todo we should probably deal with out-of-memory conditions here, but for now increasing
          * the heap size should suffice. */
         AssertFatalMsgRC(rc, ("PGMHandlerPhysicalRegisterEx %RGp failed with %Rrc\n", GCPhysPage, rc));
@@ -2554,9 +2556,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         {
             PPGMPOOLPAGE pNewHead = &pPool->aPages[pPage->iMonitoredNext];
             pNewHead->iMonitoredPrev = NIL_PGMPOOL_IDX;
-            rc = PGMHandlerPhysicalChangeUserArgs(pVM, pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK,
-                                                  pgmPoolConvertPageToR3(pPool, pNewHead),
-                                                  pgmPoolConvertPageToR0(pPool, pNewHead));
+            rc = PGMHandlerPhysicalChangeUserArg(pVM, pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK, pPage->iMonitoredNext);
 
             AssertFatalRCSuccess(rc);
             pPage->iMonitoredNext = NIL_PGMPOOL_IDX;

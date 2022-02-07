@@ -171,7 +171,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
     if (pVM->cpum.ro.GuestFeatures.fVmx)
     {
         PVMCPU pVCpu0 = pVM->apCpusR3[0];
-        int rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_ALL, false /*fKeepPgmLock*/,
+        int rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_ALL, 0 /*fFlags*/,
                                                   iemVmxApicAccessPageHandler,
                                                   NULL /* pszModR0 */,
                                                   "iemVmxApicAccessPageHandler", NULL /* pszPfHandlerR0 */,

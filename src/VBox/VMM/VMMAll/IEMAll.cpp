@@ -16366,13 +16366,13 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvept(PVMCPUCC pVCpu, PCVMXVEXITINFO p
 /**
  * @callback_method_impl{FNPGMPHYSHANDLER, VMX APIC-access page accesses}
  *
- * @remarks The @a pvUser argument is currently unused.
+ * @remarks The @a uUser argument is currently unused.
  */
 PGM_ALL_CB2_DECL(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysFault, void *pvPhys,
                                                            void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType,
-                                                           PGMACCESSORIGIN enmOrigin, void *pvUser)
+                                                           PGMACCESSORIGIN enmOrigin, uint64_t uUser)
 {
-    RT_NOREF3(pvPhys, enmOrigin, pvUser);
+    RT_NOREF3(pvPhys, enmOrigin, uUser);
 
     RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
     if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))

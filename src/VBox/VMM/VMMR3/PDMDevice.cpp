@@ -389,11 +389,16 @@ int pdmR3DevInit(PVM pVM)
             AssertLogRelRCReturn(rc, rc);
             rc = RTStrCopy(Req.szModName, sizeof(Req.szModName), pReg->pszR0Mod);
             AssertLogRelRCReturn(rc, rc);
+
             rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_PDM_DEVICE_CREATE, 0, &Req.Hdr);
             AssertLogRelMsgRCReturn(rc, ("VMMR0_DO_PDM_DEVICE_CREATE for %s failed: %Rrc\n", pReg->szName, rc), rc);
+
             pDevIns = Req.pDevInsR3;
             pCritSect = pDevIns->pCritSectRoR3;
+
             Assert(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED);
+            AssertLogRelReturn(pDevIns->Internal.s.idxR0Device < PDM_MAX_RING0_DEVICE_INSTANCES, VERR_PDM_DEV_IPE_1);
+            AssertLogRelReturn(pVM->pdm.s.apDevRing0Instances[pDevIns->Internal.s.idxR0Device] == pDevIns, VERR_PDM_DEV_IPE_1);
         }
         else
         {

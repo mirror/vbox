@@ -135,42 +135,24 @@ VMMDECL(uint32_t) PGMHandlerPhysicalTypeRetain(PVM pVM, PGMPHYSHANDLERTYPE hType
  *
  * @param   pVM             The cross context VM structure.
  * @param   hType           The handler type registration handle.
- * @param   pvUserR3        User argument to the R3 handler.
- * @param   pvUserR0        User argument to the R0 handler.
- * @param   pvUserRC        User argument to the RC handler. This can be a value
- *                          less that 0x10000 or a (non-null) pointer that is
- *                          automatically relocated.
+ * @param   uUser           User argument to the handlers (not pointer).
  * @param   pszDesc         Description of this handler.  If NULL, the type
  *                          description will be used instead.
  * @param   ppPhysHandler   Where to return the access handler structure on
  *                          success.
  */
-int pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC,
+int pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, uint64_t uUser,
                                R3PTRTYPE(const char *) pszDesc, PPGMPHYSHANDLER *ppPhysHandler)
 {
     PPGMPHYSHANDLERTYPEINT pType = PGMPHYSHANDLERTYPEINT_FROM_HANDLE(pVM, hType);
-    Log(("pgmHandlerPhysicalExCreate: pvUserR3=%RHv pvUserR0=%RHv pvUserGC=%RRv hType=%#x (%d, %s) pszDesc=%RHv:%s\n",
-         pvUserR3, pvUserR0, pvUserRC, hType, pType->enmKind, R3STRING(pType->pszDesc), pszDesc, R3STRING(pszDesc)));
+    Log(("pgmHandlerPhysicalExCreate: uUser=%#RX64 hType=%#x (%d, %s) pszDesc=%RHv:%s\n",
+         uUser, hType, pType->enmKind, R3STRING(pType->pszDesc), pszDesc, R3STRING(pszDesc)));
 
     /*
      * Validate input.
      */
     AssertPtr(ppPhysHandler);
     AssertReturn(pType->u32Magic == PGMPHYSHANDLERTYPEINT_MAGIC, VERR_INVALID_HANDLE);
-#ifdef VBOX_WITH_RAW_MODE_KEEP
-    AssertMsgReturn(    (RTRCUINTPTR)pvUserRC < 0x10000
-                    ||  MMHyperR3ToRC(pVM, MMHyperRCToR3(pVM, pvUserRC)) == pvUserRC,
-                    ("Not RC pointer! pvUserRC=%RRv\n", pvUserRC),
-                    VERR_INVALID_PARAMETER);
-#else
-    RT_NOREF(pvUserRC);
-#endif
-#if 0 /* No longer valid. */
-    AssertMsgReturn(    (RTR0UINTPTR)pvUserR0 < 0x10000
-                    ||  MMHyperR3ToR0(pVM, MMHyperR0ToR3(pVM, pvUserR0)) == pvUserR0,
-                    ("Not R0 pointer! pvUserR0=%RHv\n", pvUserR0),
-                    VERR_INVALID_PARAMETER);
-#endif
 
     /*
      * Allocate and initialize the new entry.
@@ -184,8 +166,7 @@ int pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUs
         pNew->cPages        = 0;
         pNew->cAliasedPages = 0;
         pNew->cTmpOffPages  = 0;
-        pNew->pvUserR3      = pvUserR3;
-        pNew->pvUserR0      = pvUserR0;
+        pNew->uUser         = uUser;
         pNew->hType         = hType;
         pNew->pszDesc       = pszDesc != NIL_RTR3PTR ? pszDesc : pType->pszDesc;
         pgmHandlerPhysicalTypeRetain(pVM, pType);
@@ -210,13 +191,8 @@ int pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, RTR3PTR pvUs
  */
 int pgmHandlerPhysicalExDup(PVMCC pVM, PPGMPHYSHANDLER pPhysHandlerSrc, PPGMPHYSHANDLER *ppPhysHandler)
 {
-    return pgmHandlerPhysicalExCreate(pVM,
-                                      pPhysHandlerSrc->hType,
-                                      pPhysHandlerSrc->pvUserR3,
-                                      pPhysHandlerSrc->pvUserR0,
-                                      NIL_RTR0PTR,
-                                      pPhysHandlerSrc->pszDesc,
-                                      ppPhysHandler);
+    return pgmHandlerPhysicalExCreate(pVM, pPhysHandlerSrc->hType, pPhysHandlerSrc->uUser,
+                                      pPhysHandlerSrc->pszDesc, ppPhysHandler);
 }
 
 
@@ -328,25 +304,21 @@ int pgmHandlerPhysicalExRegister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPH
  * @param   GCPhys          Start physical address.
  * @param   GCPhysLast      Last physical address. (inclusive)
  * @param   hType           The handler type registration handle.
- * @param   pvUserR3        User argument to the R3 handler.
- * @param   pvUserR0        User argument to the R0 handler.
- * @param   pvUserRC        User argument to the RC handler. This can be a value
- *                          less that 0x10000 or a (non-null) pointer that is
- *                          automatically relocated.
+ * @param   uUser           User argument to the handler.
  * @param   pszDesc         Description of this handler.  If NULL, the type
  *                          description will be used instead.
  */
 VMMDECL(int) PGMHandlerPhysicalRegister(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast, PGMPHYSHANDLERTYPE hType,
-                                        RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc)
+                                        uint64_t uUser, R3PTRTYPE(const char *) pszDesc)
 {
 #ifdef LOG_ENABLED
     PPGMPHYSHANDLERTYPEINT pType = PGMPHYSHANDLERTYPEINT_FROM_HANDLE(pVM, hType);
-    Log(("PGMHandlerPhysicalRegister: GCPhys=%RGp GCPhysLast=%RGp pvUserR3=%RHv pvUserR0=%RHv pvUserGC=%RRv hType=%#x (%d, %s) pszDesc=%RHv:%s\n",
-         GCPhys, GCPhysLast, pvUserR3, pvUserR0, pvUserRC, hType, pType->enmKind, R3STRING(pType->pszDesc), pszDesc, R3STRING(pszDesc)));
+    Log(("PGMHandlerPhysicalRegister: GCPhys=%RGp GCPhysLast=%RGp uUser=%#RX64 hType=%#x (%d, %s) pszDesc=%RHv:%s\n",
+         GCPhys, GCPhysLast, uUser, hType, pType->enmKind, R3STRING(pType->pszDesc), pszDesc, R3STRING(pszDesc)));
 #endif
 
     PPGMPHYSHANDLER pNew;
-    int rc = pgmHandlerPhysicalExCreate(pVM, hType, pvUserR3, pvUserR0, pvUserRC, pszDesc, &pNew);
+    int rc = pgmHandlerPhysicalExCreate(pVM, hType, uUser, pszDesc, &pNew);
     if (RT_SUCCESS(rc))
     {
         rc = pgmHandlerPhysicalExRegister(pVM, pNew, GCPhys, GCPhysLast);
@@ -969,24 +941,20 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHY
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
  * @param   GCPhys          Start physical address of the handler.
- * @param   pvUserR3        User argument to the R3 handler.
- * @param   pvUserR0        User argument to the R0 handler.
+ * @param   uUser           User argument to the handlers.
  */
-VMMDECL(int) PGMHandlerPhysicalChangeUserArgs(PVMCC pVM, RTGCPHYS GCPhys, RTR3PTR pvUserR3, RTR0PTR pvUserR0)
+VMMDECL(int) PGMHandlerPhysicalChangeUserArg(PVMCC pVM, RTGCPHYS GCPhys, uint64_t uUser)
 {
     /*
-     * Find the handler.
+     * Find the handler and make the change.
      */
-    int rc = VINF_SUCCESS;
+    int rc;
     PGM_LOCK_VOID(pVM);
     PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
     if (pCur)
     {
-        /*
-         * Change arguments.
-         */
-        pCur->pvUserR3 = pvUserR3;
-        pCur->pvUserR0 = pvUserR0;
+        pCur->uUser = uUser;
+        rc = VINF_SUCCESS;
     }
     else
     {

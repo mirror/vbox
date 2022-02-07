@@ -4894,17 +4894,13 @@ typedef struct PDMDEVHLPR3
      * @param   GCPhys              Start physical address.
      * @param   GCPhysLast          Last physical address. (inclusive)
      * @param   hType               The handler type registration handle.
-     * @param   pvUserR3            User argument to the R3 handler.
-     * @param   pvUserR0            User argument to the R0 handler.
-     * @param   pvUserRC            User argument to the RC handler. This can be a value
-     *                              less that 0x10000 or a (non-null) pointer that is
-     *                              automatically relocated.
      * @param   pszDesc             Description of this handler.  If NULL, the type
      *                              description will be used instead.
+     * @note    There is no @a uUser argument, because it will be set to the pDevIns
+     *          in the context the handler is called.
      */
     DECLR3CALLBACKMEMBER(int, pfnPGMHandlerPhysicalRegister, (PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
-                                                              PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
-                                                              RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc));
+                                                              PGMPHYSHANDLERTYPE hType, R3PTRTYPE(const char *) pszDesc));
 
     /**
      * Deregister a physical page access handler.
@@ -9478,11 +9474,9 @@ DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMP
  * @copydoc PDMDEVHLPR3::pfnPGMHandlerPhysicalRegister
  */
 DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
-                                                    PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
-                                                    RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc)
+                                                    PGMPHYSHANDLERTYPE hType, R3PTRTYPE(const char *) pszDesc)
 {
-    return pDevIns->pHlpR3->pfnPGMHandlerPhysicalRegister(pDevIns, GCPhys, GCPhysLast, hType,
-                                                          pvUserR3, pvUserR0, pvUserRC, pszDesc);
+    return pDevIns->pHlpR3->pfnPGMHandlerPhysicalRegister(pDevIns, GCPhys, GCPhysLast, hType, pszDesc);
 }
 
 /**
@@ -9492,7 +9486,8 @@ DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalDeregister(PPDMDEVINS pDevIns, RTGCPH
 {
     return pDevIns->pHlpR3->pfnPGMHandlerPhysicalDeregister(pDevIns, GCPhys);
 }
-#endif
+
+#endif /* IN_RING3 */
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPGMHandlerPhysicalPageTempOff
@@ -9503,6 +9498,7 @@ DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalPageTempOff(PPDMDEVINS pDevIns, RTGCP
 }
 
 #ifdef IN_RING3
+
 /**
  * @copydoc PDMDEVHLPR3::pfnPGMHandlerPhysicalReset
  */
@@ -9587,7 +9583,8 @@ DECLINLINE(int) PDMDevHlpGIMGetDebugSetup(PPDMDEVINS pDevIns, PGIMDEBUGSETUP pDb
 {
     return pDevIns->pHlpR3->pfnGIMGetDebugSetup(pDevIns, pDbgSetup);
 }
-#endif
+
+#endif /* IN_RING3 */
 
 /**
  * @copydoc PDMDEVHLPR3::pfnGIMGetMmio2Regions
@@ -9598,6 +9595,7 @@ DECLINLINE(PGIMMMIO2REGION) PDMDevHlpGIMGetMmio2Regions(PPDMDEVINS pDevIns, uint
 }
 
 #ifdef IN_RING3
+
 /** Wrapper around SSMR3GetU32 for simplifying getting enum values saved as uint32_t. */
 # define PDMDEVHLP_SSM_GET_ENUM32_RET(a_pHlp, a_pSSM, a_enmDst, a_EnumType) \
     do { \

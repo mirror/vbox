@@ -194,11 +194,11 @@ typedef enum PGMACCESSTYPE
  *                      NULL on DMA and other non CPU access.
  * @param   pvFault     The fault address (cr2).
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
- * @param   pvUser      User argument.
+ * @param   uUser       User argument (not a pointer).
  * @thread  EMT(pVCpu)
  */
 typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPGMRZPHYSPFHANDLER,(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
-                                                             RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser));
+                                                             RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser));
 /** Pointer to PGM access callback. */
 typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
 
@@ -225,12 +225,12 @@ typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
  * @param   enmOrigin       The origin of this call.
- * @param   pvUser          User argument.
+ * @param   uUser           User argument (not a pointer).
  * @thread  EMT(pVCpu)
  */
 typedef DECLCALLBACKTYPE(VBOXSTRICTRC, FNPGMPHYSHANDLER,(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, void *pvPhys,
                                                          void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType,
-                                                         PGMACCESSORIGIN enmOrigin, void *pvUser));
+                                                         PGMACCESSORIGIN enmOrigin, uint64_t uUser));
 /** Pointer to PGM access callback. */
 typedef FNPGMPHYSHANDLER *PFNPGMPHYSHANDLER;
 
@@ -633,11 +633,10 @@ VMMDECL(uint32_t)   PGMHandlerPhysicalTypeRelease(PVMCC pVM, PGMPHYSHANDLERTYPE 
 VMMDECL(uint32_t)   PGMHandlerPhysicalTypeRetain(PVM pVM, PGMPHYSHANDLERTYPE hType);
 
 VMMDECL(int)        PGMHandlerPhysicalRegister(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast, PGMPHYSHANDLERTYPE hType,
-                                               RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC,
-                                               R3PTRTYPE(const char *) pszDesc);
+                                               uint64_t uUser, R3PTRTYPE(const char *) pszDesc);
 VMMDECL(int)        PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
 VMMDECL(int)        PGMHandlerPhysicalDeregister(PVMCC pVM, RTGCPHYS GCPhys);
-VMMDECL(int)        PGMHandlerPhysicalChangeUserArgs(PVMCC pVM, RTGCPHYS GCPhys, RTR3PTR pvUserR3, RTR0PTR pvUserR0);
+VMMDECL(int)        PGMHandlerPhysicalChangeUserArg(PVMCC pVM, RTGCPHYS GCPhys, uint64_t uUser);
 VMMDECL(int)        PGMHandlerPhysicalSplit(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysSplit);
 VMMDECL(int)        PGMHandlerPhysicalJoin(PVMCC pVM, RTGCPHYS GCPhys1, RTGCPHYS GCPhys2);
 VMMDECL(int)        PGMHandlerPhysicalPageTempOff(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage);
@@ -959,7 +958,7 @@ VMMR3DECL(int)      PGMR3QueryMemoryStats(PUVM pUVM, uint64_t *pcbTotalMem, uint
 VMMR3DECL(int)      PGMR3QueryGlobalMemoryStats(PUVM pUVM, uint64_t *pcbAllocMem, uint64_t *pcbFreeMem, uint64_t *pcbBallonedMem, uint64_t *pcbSharedMem);
 
 VMMR3DECL(int)      PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMPHYSHANDLERTYPE hType,
-                                          RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC, const char *pszDesc);
+                                          uint64_t uUser, const char *pszDesc);
 VMMR3DECL(int)      PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
 
 /** @name PGMPHYS_MMIO2_FLAGS_XXX - MMIO2 registration flags.
@@ -1005,17 +1004,30 @@ VMMR3DECL(int)      PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS G
 VMMR3DECL(int)      PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROMPROT enmProt);
 VMMDECL(void)       PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable);
 
-VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKIND enmKind, bool fKeepPgmLock,
+VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKIND enmKind, uint32_t fFlags,
                                                        PFNPGMPHYSHANDLER pfnHandlerR3,
                                                        R0PTRTYPE(PFNPGMPHYSHANDLER)     pfnHandlerR0,
                                                        R0PTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerR0,
                                                        const char *pszDesc, PPGMPHYSHANDLERTYPE phType);
-VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, bool fKeepPgmLock,
+VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, uint32_t fFlags,
                                                      R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
                                                      const char *pszModR0, const char *pszHandlerR0, const char *pszPfHandlerR0,
                                                      const char *pszModRC, const char *pszHandlerRC, const char *pszPfHandlerRC,
                                                      const char *pszDesc,
                                                      PPGMPHYSHANDLERTYPE phType);
+/** @name PGMPHYSHANDLER_F_XXX - flags for PGMR3HandlerPhysicalTypeRegister
+ * @{ */
+/** Whether to hold the PGM lock while calling the handler or not.
+ *  Mainly an optimization for PGM callers. */
+#define PGMPHYSHANDLER_F_KEEP_PGM_LOCK  RT_BIT_32(0)
+/** The uUser value is a ring-0 device instance index that needs translating
+ * into a PDMDEVINS pointer before calling the handler.  This is a hack to make
+ * it possible to use access handlers in devices. */
+#define PGMPHYSHANDLER_F_R0_DEVINS_IDX  RT_BIT_32(1)
+/** Mask of valid bits.   */
+#define PGMPHYSHANDLER_F_VALID_MASK     UINT32_C(3)
+/** @} */
+
 VMMR3_INT_DECL(int) PGMR3PoolGrow(PVM pVM, PVMCPU pVCpu);
 
 VMMR3DECL(int)      PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, void **ppv);

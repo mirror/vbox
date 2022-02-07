@@ -357,21 +357,24 @@ const char *vmsvgaR3FifoCmdToString(uint32_t u32Cmd)
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
  * @param   enmOrigin       Who is making the access.
- * @param   pvUser          User argument.
+ * @param   pvUser          User argument - VMM sets this to the address of the
+ *                          device instance.
  */
 DECLCALLBACK(VBOXSTRICTRC)
 vmsvgaR3GboAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                         PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+                         PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, uint64_t uUser)
 {
     RT_NOREF(pVM, pVCpu, pvPhys, enmAccessType);
 
     if (RT_LIKELY(enmOrigin == PGMACCESSORIGIN_DEVICE || enmOrigin == PGMACCESSORIGIN_DEBUGGER))
         return VINF_PGM_HANDLER_DO_DEFAULT;
 
-    PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
-    PVGASTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
-    PVGASTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
-    PVMSVGAR3STATE pSvgaR3State = pThisCC->svga.pSvgaR3State;
+    PPDMDEVINS      pDevIns = (PPDMDEVINS)uUser;
+    AssertPtrReturn(pDevIns, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pDevIns->u32Version == PDM_DEVINSR3_VERSION, VERR_INTERNAL_ERROR_5);
+    PVGASTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATECC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVGASTATECC);
+    PVMSVGAR3STATE  pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
     /*
      * The guest is not allowed to access the memory.
@@ -414,8 +417,8 @@ vmsvgaR3GboAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, v
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
-
 #ifdef VBOX_WITH_VMSVGA3D
+
 static int vmsvgaR3GboCreate(PVMSVGAR3STATE pSvgaR3State, SVGAMobFormat ptDepth, PPN64 baseAddress, uint32_t sizeInBytes, bool fGCPhys64, bool fWriteProtected, PVMSVGAGBO pGbo)
 {
     ASSERT_GUEST_RETURN(sizeInBytes <= _128M, VERR_INVALID_PARAMETER); /** @todo Less than SVGA_REG_MOB_MAX_SIZE */
@@ -591,9 +594,9 @@ fWriteProtected = false;
         pGbo->fGboFlags |= VMSVGAGBO_F_WRITE_PROTECTED;
         for (uint32_t i = 0; i < pGbo->cDescriptors; ++i)
         {
-            rc = PDMDevHlpPGMHandlerPhysicalRegister(pSvgaR3State->pDevIns,
-                                                     pGbo->paDescriptors[i].GCPhys, pGbo->paDescriptors[i].GCPhys + pGbo->paDescriptors[i].cPages * PAGE_SIZE - 1,
-                                                     pSvgaR3State->hGboAccessHandlerType, pSvgaR3State->pDevIns, NIL_RTR0PTR, NIL_RTRCPTR, "VMSVGA GBO");
+            rc = PDMDevHlpPGMHandlerPhysicalRegister(pSvgaR3State->pDevIns, pGbo->paDescriptors[i].GCPhys,
+                                                     pGbo->paDescriptors[i].GCPhys + pGbo->paDescriptors[i].cPages * PAGE_SIZE - 1,
+                                                     pSvgaR3State->hGboAccessHandlerType, "VMSVGA GBO");
             AssertRC(rc);
         }
     }
@@ -1034,8 +1037,8 @@ int vmsvgaR3UpdateGBSurfaceEx(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *p
 
     return rc;
 }
-#endif /* VBOX_WITH_VMSVGA3D */
 
+#endif /* VBOX_WITH_VMSVGA3D */
 
 /*
  * Screen objects.

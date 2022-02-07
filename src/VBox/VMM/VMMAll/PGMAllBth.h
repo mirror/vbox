@@ -318,7 +318,8 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
                 if (pCurType->fKeepPgmLock)
                 {
                     rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault,
-                                                                pCur->CTX_SUFF(pvUser));
+                                                                !pCurType->fRing0DevInsIdx ? pCur->uUser
+                                                                : (uintptr_t)PDMDeviceRing0IdxToInstance(pVM, pCur->uUser));
 
 #  ifdef VBOX_WITH_STATISTICS
                     pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault); /* paranoia in case the handler deregistered itself */
@@ -328,11 +329,12 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
                 }
                 else
                 {
-                    void * const pvUser = pCur->CTX_SUFF(pvUser);
+                    uint64_t const uUser = !pCurType->fRing0DevInsIdx ? pCur->uUser
+                                         : (uintptr_t)PDMDeviceRing0IdxToInstance(pVM, pCur->uUser);
                     PGM_UNLOCK(pVM);
                     *pfLockTaken = false;
 
-                    rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
+                    rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault, uUser);
 
 #  ifdef VBOX_WITH_STATISTICS
                     PGM_LOCK_VOID(pVM);

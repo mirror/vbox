@@ -872,7 +872,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalTypeRegister(PPDMDEVINS p
              pszHandlerRC, pszHandlerRC, pszPfHandlerRC, pszPfHandlerRC,
              pszDesc, pszDesc, phType));
 
-    int rc = PGMR3HandlerPhysicalTypeRegister(pVM, enmKind, false /*fKeepPgmLock*/, pfnHandlerR3,
+    int rc = PGMR3HandlerPhysicalTypeRegister(pVM, enmKind,
+                                              pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED
+                                              ? PGMPHYSHANDLER_F_R0_DEVINS_IDX : 0,
+                                              pfnHandlerR3,
                                               pDevIns->pReg->pszR0Mod, pszHandlerR0, pszPfHandlerR0,
                                               pDevIns->pReg->pszRCMod, pszHandlerRC, pszPfHandlerRC,
                                               pszDesc, phType);
@@ -885,15 +888,17 @@ static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalTypeRegister(PPDMDEVINS p
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
-                                                                PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
-                                                                RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc)
+                                                                PGMPHYSHANDLERTYPE hType, R3PTRTYPE(const char *) pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM  pVM = pDevIns->Internal.s.pVMR3;
-    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalRegister: caller='%s'/%d: GCPhys=%RGp GCPhysLast=%RGp hType=%u pvUserR3=%p pvUserR0=%llx pvUsereRC=%llx pszDesc=%p:{%s}\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, GCPhys, GCPhysLast, hType, pvUserR3, pvUserR0, pvUserRC, pszDesc, pszDesc));
+    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalRegister: caller='%s'/%d: GCPhys=%RGp GCPhysLast=%RGp hType=%u pszDesc=%p:{%s}\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, GCPhys, GCPhysLast, hType, pszDesc, pszDesc));
 
-    int rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, hType, pvUserR3, pvUserR0, pvUserRC, pszDesc);
+    int rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, hType,
+                                        pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED
+                                        ? pDevIns->Internal.s.idxR0Device : (uintptr_t)pDevIns,
+                                        pszDesc);
 
     Log(("pdmR3DevHlp_PGMHandlerPhysicalRegister: caller='%s'/%d: returns %Rrc\n",
          pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -5773,13 +5778,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PGMHandlerPhysicalTypeRegister(PP
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PGMHandlerPhysicalRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
-                                                                          PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0,
-                                                                          RTRCPTR pvUserRC, R3PTRTYPE(const char *) pszDesc)
+                                                                          PGMPHYSHANDLERTYPE hType, R3PTRTYPE(const char *) pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(GCPhys, GCPhysLast, hType, pvUserR3, pvUserR0, pvUserRC, pszDesc);
-    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
-                            pDevIns->pReg->szName, pDevIns->iInstance));
+    RT_NOREF(GCPhys, GCPhysLast, hType, pszDesc);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
     return VERR_ACCESS_DENIED;
 }
 

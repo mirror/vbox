@@ -1432,6 +1432,10 @@ typedef struct PDMCPU
 } PDMCPU;
 
 
+/** Max number of ring-0 device instances. */
+#define PDM_MAX_RING0_DEVICE_INSTANCES  190
+
+
 /**
  * PDM VM Instance data.
  * Changes to this must checked against the padding of the cfgm union in VM!
@@ -1469,7 +1473,12 @@ typedef struct PDM
     /** List of registered devices. (FIFO) */
     R3PTRTYPE(PPDMDEV)              pDevs;
     /** List of devices instances. (FIFO) */
-    R3PTRTYPE(PPDMDEVINS)           pDevInstances;
+    PPDMDEVINSR3                    pDevInstances;
+    /** This runs parallel to PDMR0PERVM::apDevInstances and is used with
+     *  physical access handlers to get the ring-3 device instance for passing down
+     *  as uUser. */
+    PPDMDEVINSR3                    apDevRing0Instances[PDM_MAX_RING0_DEVICE_INSTANCES];
+
     /** List of registered USB devices. (FIFO) */
     R3PTRTYPE(PPDMUSB)              pUsbDevs;
     /** List of USB devices instances. (FIFO) */
@@ -1555,7 +1564,7 @@ typedef struct PDM
     /** Indicates whether the unchoke timer has been armed already or not. */
     bool volatile                   fNsUnchokeTimerArmed;
     /** Align aNsGroups on a cacheline.   */
-    bool                            afPadding2[19];
+    bool                            afPadding2[19+16];
     /** Number of network shaper groups.
      * @note Marked volatile to prevent re-reading after validation. */
     uint32_t volatile               cNsGroups;
@@ -1612,7 +1621,7 @@ typedef struct PDMR0PERVM
     uint32_t                        cDevInstances;
     uint32_t                        u32Padding1;
     /** Pointer to ring-0 device instances. */
-    R0PTRTYPE(struct PDMDEVINSR0 *) apDevInstances[190];
+    R0PTRTYPE(struct PDMDEVINSR0 *) apDevInstances[PDM_MAX_RING0_DEVICE_INSTANCES];
     /** Number of valid ring-0 queue instances (aQueues). */
     uint32_t                        cQueues;
     uint32_t                        u32Padding2;

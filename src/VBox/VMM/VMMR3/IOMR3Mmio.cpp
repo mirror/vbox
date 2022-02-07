@@ -398,7 +398,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
                         /* Register with PGM before we shuffle the array: */
                         ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
                         rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
-                                                   (void *)(uintptr_t)hRegion, hRegion, hRegion, pRegEntry->pszDesc);
+                                                   hRegion, pRegEntry->pszDesc);
                         AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
                         /* Insert after the entry we just considered: */
@@ -417,7 +417,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
                         /* Register with PGM before we shuffle the array: */
                         ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
                         rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
-                                                   (void *)(uintptr_t)hRegion, hRegion, hRegion, pRegEntry->pszDesc);
+                                                   hRegion, pRegEntry->pszDesc);
                         AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
                         /* Insert at the entry we just considered: */
@@ -443,8 +443,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
         {
             /* First entry in the lookup table: */
             ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
-            rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
-                                       (void *)(uintptr_t)hRegion, hRegion, hRegion, pRegEntry->pszDesc);
+            rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType, hRegion, pRegEntry->pszDesc);
             AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
             pEntry = paEntries;

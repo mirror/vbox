@@ -298,6 +298,31 @@ VMM_INT_DECL(bool) PDMHasApic(PVM pVM)
 
 
 /**
+ * Translates a ring-0 device instance index to a pointer.
+ *
+ * This is used by PGM for device access handlers.
+ *
+ * @returns Device instance pointer if valid index, otherwise NULL (asserted).
+ * @param   pVM         The cross context VM structure.
+ * @param   idxR0Device The ring-0 device instance index.
+ */
+VMM_INT_DECL(PPDMDEVINS) PDMDeviceRing0IdxToInstance(PVMCC pVM, uint64_t idxR0Device)
+{
+#ifdef IN_RING0
+    AssertMsgReturn(idxR0Device < RT_ELEMENTS(pVM->pdmr0.s.apDevInstances), ("%#RX64\n", idxR0Device), NULL);
+    PPDMDEVINS pDevIns = pVM->pdmr0.s.apDevInstances[idxR0Device];
+#elif defined(IN_RING3)
+    AssertMsgReturn(idxR0Device < RT_ELEMENTS(pVM->pdm.s.apDevRing0Instances), ("%#RX64\n", idxR0Device), NULL);
+    PPDMDEVINS pDevIns = pVM->pdm.s.apDevRing0Instances[idxR0Device];
+#else
+# error "Unsupported context"
+#endif
+    AssertMsg(pDevIns, ("%#RX64\n", idxR0Device));
+    return pDevIns;
+}
+
+
+/**
  * Locks PDM.
  *
  * This might block.

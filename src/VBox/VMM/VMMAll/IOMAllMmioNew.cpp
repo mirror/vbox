@@ -725,10 +725,10 @@ DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, ui
  * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
  *      \#PF access handler callback for MMIO pages.}
  *
- * @remarks The @a pvUser argument is the MMIO handle.
+ * @remarks The @a uUser argument is the MMIO handle.
  */
 DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
-                                             RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+                                             RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser)
 {
     STAM_PROFILE_START(&pVM->iom.s.StatMmioPfHandler, Prf);
     LogFlow(("iomMmioPfHandlerNew: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
@@ -736,12 +736,12 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT
     RT_NOREF(pvFault, pCtxCore);
 
     /* Translate the MMIO handle to a registration entry for the current context. */
-    AssertReturn((uintptr_t)pvUser < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), VERR_IOM_INVALID_MMIO_HANDLE);
+    AssertReturn(uUser < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), VERR_IOM_INVALID_MMIO_HANDLE);
 # ifdef IN_RING0
-    AssertReturn((uintptr_t)pvUser < pVM->iomr0.s.cMmioAlloc, VERR_IOM_INVALID_MMIO_HANDLE);
-    CTX_SUFF(PIOMMMIOENTRY) pRegEntry = &pVM->iomr0.s.paMmioRegs[(uintptr_t)pvUser];
+    AssertReturn(uUser < pVM->iomr0.s.cMmioAlloc, VERR_IOM_INVALID_MMIO_HANDLE);
+    CTX_SUFF(PIOMMMIOENTRY) pRegEntry = &pVM->iomr0.s.paMmioRegs[uUser];
 # else
-    CTX_SUFF(PIOMMMIOENTRY) pRegEntry = &pVM->iom.s.paMmioRegs[(uintptr_t)pvUser];
+    CTX_SUFF(PIOMMMIOENTRY) pRegEntry = &pVM->iom.s.paMmioRegs[uUser];
 # endif
 
     VBOXSTRICTRC rcStrict = iomMmioCommonPfHandlerNew(pVM, pVCpu, (uint32_t)uErrorCode, GCPhysFault, pRegEntry);
@@ -794,14 +794,14 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMR0MmioPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, uint3
 /**
  * @callback_method_impl{FNPGMPHYSHANDLER, MMIO page accesses}
  *
- * @remarks The @a pvUser argument is the MMIO handle.
+ * @remarks The @a uUser argument is the MMIO handle.
  */
 PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhysFault, void *pvPhys, void *pvBuf,
-                                                 size_t cbBuf, PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+                                                 size_t cbBuf, PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, uint64_t uUser)
 {
     STAM_PROFILE_START(UnusedMacroArg, Prf);
     STAM_COUNTER_INC(&pVM->iom.s.CTX_SUFF(StatMmioHandler));
-    Log4(("iomMmioHandlerNew: GCPhysFault=%RGp cbBuf=%#x enmAccessType=%d enmOrigin=%d pvUser=%p\n", GCPhysFault, cbBuf, enmAccessType, enmOrigin, pvUser));
+    Log4(("iomMmioHandlerNew: GCPhysFault=%RGp cbBuf=%#x enmAccessType=%d enmOrigin=%d uUser=%p\n", GCPhysFault, cbBuf, enmAccessType, enmOrigin, uUser));
 
     Assert(enmAccessType == PGMACCESSTYPE_READ || enmAccessType == PGMACCESSTYPE_WRITE);
     AssertMsg(cbBuf >= 1, ("%zu\n", cbBuf));
@@ -814,16 +814,16 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
 #endif
 
     /*
-     * Translate pvUser to an MMIO registration table entry.  We can do this
+     * Translate uUser to an MMIO registration table entry.  We can do this
      * without any locking as the data is static after VM creation.
      */
-    AssertReturn((uintptr_t)pvUser < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), VERR_IOM_INVALID_MMIO_HANDLE);
+    AssertReturn(uUser < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), VERR_IOM_INVALID_MMIO_HANDLE);
 #ifdef IN_RING0
-    AssertReturn((uintptr_t)pvUser < pVM->iomr0.s.cMmioAlloc, VERR_IOM_INVALID_MMIO_HANDLE);
-    CTX_SUFF(PIOMMMIOENTRY) const pRegEntry    = &pVM->iomr0.s.paMmioRegs[(uintptr_t)pvUser];
-    PIOMMMIOENTRYR3 const         pRegEntryR3  = &pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser];
+    AssertReturn(uUser < pVM->iomr0.s.cMmioAlloc, VERR_IOM_INVALID_MMIO_HANDLE);
+    CTX_SUFF(PIOMMMIOENTRY) const pRegEntry    = &pVM->iomr0.s.paMmioRegs[uUser];
+    PIOMMMIOENTRYR3 const         pRegEntryR3  = &pVM->iomr0.s.paMmioRing3Regs[uUser];
 #else
-    CTX_SUFF(PIOMMMIOENTRY) const pRegEntry    = &pVM->iom.s.paMmioRegs[(uintptr_t)pvUser];
+    CTX_SUFF(PIOMMMIOENTRY) const pRegEntry    = &pVM->iom.s.paMmioRegs[uUser];
 #endif
 #ifdef VBOX_WITH_STATISTICS
     PIOMMMIOSTATSENTRY const      pStats       = iomMmioGetStats(pVM, pRegEntry);  /* (Works even without ring-0 device setup.) */
@@ -853,18 +853,18 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
     if (   RT_LIKELY(cbBuf <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue))
         && pRegEntry->cbRegion != 0
         && (  enmAccessType == PGMACCESSTYPE_READ
-            ? pRegEntry->pfnReadCallback  != NULL || pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser].pfnReadCallback == NULL
-            : pRegEntry->pfnWriteCallback != NULL || pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser].pfnWriteCallback == NULL)
+            ? pRegEntry->pfnReadCallback  != NULL || pVM->iomr0.s.paMmioRing3Regs[uUser].pfnReadCallback == NULL
+            : pRegEntry->pfnWriteCallback != NULL || pVM->iomr0.s.paMmioRing3Regs[uUser].pfnWriteCallback == NULL)
         && pDevIns )
     { /* likely */ }
     else
     {
-        Log4(("iomMmioHandlerNew: to ring-3: to-big=%RTbool zero-size=%RTbool no-callback=%RTbool pDevIns=%p hRegion=%p\n",
+        Log4(("iomMmioHandlerNew: to ring-3: to-big=%RTbool zero-size=%RTbool no-callback=%RTbool pDevIns=%p hRegion=%#RX64\n",
               !(cbBuf <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue)), !(pRegEntry->cbRegion != 0),
               !(  enmAccessType == PGMACCESSTYPE_READ
-                ? pRegEntry->pfnReadCallback  != NULL || pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser].pfnReadCallback == NULL
-                : pRegEntry->pfnWriteCallback != NULL || pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser].pfnWriteCallback == NULL),
-              pDevIns, pvUser));
+                ? pRegEntry->pfnReadCallback  != NULL || pVM->iomr0.s.paMmioRing3Regs[uUser].pfnReadCallback == NULL
+                : pRegEntry->pfnWriteCallback != NULL || pVM->iomr0.s.paMmioRing3Regs[uUser].pfnWriteCallback == NULL),
+              pDevIns, uUser));
         STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pStats->ReadRZToR3 : &pStats->WriteRZToR3);
         STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pVM->iom.s.StatMmioReadsR0ToR3 : &pVM->iom.s.StatMmioWritesR0ToR3);
         return rcToRing3;
