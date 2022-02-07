@@ -310,30 +310,6 @@ bool UIWizardNewVMNameOSTypeCommon::cleanupMachineFolder(UIWizardNewVM *pWizard,
     return true;
 }
 
-void UIWizardNewVMNameOSTypeCommon::detectOSAndImagesFromISO(const QString &strISOPath, UIWizardNewVM *pWizard)
-{
-    if (!pWizard)
-        return;
-
-    QFileInfo isoFileInfo(strISOPath);
-    if (!isoFileInfo.exists())
-    {
-        pWizard->setDetectedOSTypeId(QString());
-        return;
-    }
-
-    CUnattended comUnatteded = uiCommon().virtualBox().CreateUnattendedInstaller();
-    comUnatteded.SetIsoPath(strISOPath);
-    comUnatteded.DetectIsoOS();
-    pWizard->setDetectedOSTypeId(comUnatteded.GetDetectedOSTypeId());
-
-    const QVector<ULONG> &indices = comUnatteded.GetDetectedImageIndices();
-    QVector<ulong> qIndices;
-    for (int i = 0; i < indices.size(); ++i)
-        qIndices << indices[i];
-    pWizard->setDetectedWindowsImageNamesAndIndices(comUnatteded.GetDetectedImageNames(), qIndices);
-}
-
 bool UIWizardNewVMNameOSTypeCommon::checkISOFile(UINameAndSystemEditor *pNameAndSystemEditor)
 {
     if (!pNameAndSystemEditor)
@@ -485,14 +461,13 @@ void UIWizardNewVMNameOSTypePage::sltISOPathChanged(const QString &strPath)
 {
     UIWizardNewVM *pWizard = qobject_cast<UIWizardNewVM*>(this->wizard());
     AssertReturnVoid(pWizard);
-    UIWizardNewVMNameOSTypeCommon::detectOSAndImagesFromISO(strPath, pWizard);
+
+    pWizard->setISOFilePath(strPath);
 
     if (UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId()))
         m_userModifiedParameters << "GuestOSTypeFromISO";
     else /* Remove GuestOSTypeFromISO fromthe set if it is there: */
         m_userModifiedParameters.remove("GuestOSTypeFromISO");
-
-    pWizard->setISOFilePath(strPath);
 
     /* Update the global recent ISO path: */
     QFileInfo fileInfo(strPath);

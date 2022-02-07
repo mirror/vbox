@@ -559,11 +559,6 @@ QUuid UIWizardNewVM::createdMachineId() const
     return QUuid();
 }
 
-// void UIWizardNewVM::setDefaultUnattendedInstallData(const UIUnattendedInstallData &unattendedInstallData)
-// {
-//     m_unattendedInstallData = unattendedInstallData;
-// }
-
 CMedium &UIWizardNewVM::virtualDisk()
 {
     return m_virtualDisk;
@@ -633,14 +628,10 @@ void UIWizardNewVM::setCreatedMachineFolder(const QString &strCreatedMachineFold
     m_strCreatedFolder = strCreatedMachineFolder;
 }
 
-const QString &UIWizardNewVM::detectedOSTypeId() const
+QString UIWizardNewVM::detectedOSTypeId() const
 {
-    return m_strDetectedOSTypeId;
-}
-
-void UIWizardNewVM::setDetectedOSTypeId(const QString &strDetectedOSTypeId)
-{
-    m_strDetectedOSTypeId = strDetectedOSTypeId;
+    AssertReturn(!m_comUnattended.isNull(), QString());
+    return m_comUnattended.GetDetectedOSTypeId();
 }
 
 const QString &UIWizardNewVM::guestOSFamilyId() const
@@ -716,11 +707,24 @@ QString UIWizardNewVM::ISOFilePath() const
 
 void UIWizardNewVM::setISOFilePath(const QString &strISOFilePath)
 {
+    /* am I being a paranoid?: */
+    QFileInfo isoFileInfo(strISOFilePath);
+    if (!isoFileInfo.exists())
+        return;
+
     AssertReturnVoid(!m_comUnattended.isNull());
     m_comUnattended.SetIsoPath(strISOFilePath);
     /* We hide/show unattended install page depending on the value of isUnattendedEnabled: */
     setUnattendedPageVisible(isUnattendedEnabled());
     AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
+
+    m_comUnattended.DetectIsoOS();
+
+    const QVector<ULONG> &indices = m_comUnattended.GetDetectedImageIndices();
+    QVector<ulong> qIndices;
+    for (int i = 0; i < indices.size(); ++i)
+        qIndices << indices[i];
+    setDetectedWindowsImageNamesAndIndices(m_comUnattended.GetDetectedImageNames(), qIndices);
 }
 
 QString UIWizardNewVM::userName() const
@@ -928,9 +932,10 @@ bool UIWizardNewVM::isUnattendedEnabled() const
 
 bool UIWizardNewVM::isOSTypeDetectionOK() const
 {
-    if (m_strDetectedOSTypeId.isEmpty())
+    QString strDetectedOSTypeId = detectedOSTypeId();
+    if (strDetectedOSTypeId.isEmpty())
         return false;
-    if (m_strDetectedOSTypeId.contains("other", Qt::CaseInsensitive))
+    if (strDetectedOSTypeId.contains("other", Qt::CaseInsensitive))
         return false;
     return true;
 }

@@ -147,14 +147,12 @@ void UIWizardNewVMExpertPage::sltISOPathChanged(const QString &strISOPath)
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturnVoid(pWizard);
 
-    UIWizardNewVMNameOSTypeCommon::detectOSAndImagesFromISO(strISOPath, pWizard);
+    pWizard->setISOFilePath(strISOPath);
 
     if (UIWizardNewVMNameOSTypeCommon::guessOSTypeDetectedOSTypeString(m_pNameAndSystemEditor, pWizard->detectedOSTypeId()))
         m_userModifiedParameters << "GuestOSTypeFromISO";
     else /* Remove GuestOSTypeFromISO from the set if it is there: */
         m_userModifiedParameters.remove("GuestOSTypeFromISO");
-
-    pWizard->setISOFilePath(strISOPath);
 
     /* Update the global recent ISO path: */
     QFileInfo fileInfo(strISOPath);

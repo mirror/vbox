@@ -42,7 +42,6 @@ namespace UIWizardNewVMNameOSTypeCommon
      *  wizard cancel */
     bool cleanupMachineFolder(UIWizardNewVM *pWizard, bool fWizardCancel = false);
     void composeMachineFilePath(UINameAndSystemEditor *pNameAndSystemEditor, UIWizardNewVM *pWizard);
-    void detectOSAndImagesFromISO(const QString &strISOPath, UIWizardNewVM *pWizard);
     /** Return false if ISO path is not empty but points to an missing or unreadable file. */
     bool checkISOFile(UINameAndSystemEditor *pNameAndSystemEditor);
 }
