@@ -59,8 +59,8 @@ VMM_INT_DECL(bool) PDMNetShaperAllocateBandwidth(PVMCC pVM, PPDMNSFILTER pFilter
                     /*
                      * Re-fill the bucket first
                      */
-                    uint64_t const tsNow    = RTTimeSystemNanoTS();
-                    uint64_t const cNsDelta = tsNow - pGroup->tsUpdatedLast;
+                    uint64_t const nsNow    = RTTimeSystemNanoTS();
+                    uint64_t const cNsDelta = nsNow - pGroup->tsUpdatedLast;
                     /** @todo r=bird: there might be an overflow issue here if the gap
                      *                between two transfers is too large. */
                     uint32_t cTokensAdded   = cNsDelta * cbPerSecMax / RT_NS_1SEC;
@@ -75,15 +75,32 @@ VMM_INT_DECL(bool) PDMNetShaperAllocateBandwidth(PVMCC pVM, PPDMNSFILTER pFilter
                     if (cbTransfer <= cTokens)
                     {
                         pGroup->cbTokensLast  = cTokens - (uint32_t)cbTransfer;
-                        pGroup->tsUpdatedLast = tsNow;
+                        pGroup->tsUpdatedLast = nsNow;
                         Log2(("pdmNsAllocateBandwidth/%s: allowed - cbTransfer=%#zx cTokens=%#x cTokensAdded=%#x\n",
                               pGroup->szName, cbTransfer, cTokens, cTokensAdded));
                     }
                     else
                     {
+                        /*
+                         * No, we're choked.  Arm the unchoke timer for the next period.
+                         * Just do this on a simple PDM_NETSHAPER_MAX_LATENCY clock granularity.
+                         * ASSUMES the timer uses millisecond resolution clock.
+                         */
                         ASMAtomicWriteBool(&pFilter->fChoked, true);
-                        Log2(("pdmNsAllocateBandwidth/%s: refused - cbTransfer=%#zx cTokens=%#x cTokensAdded=%#x\n",
-                              pGroup->szName, cbTransfer, cTokens, cTokensAdded));
+                        if (ASMAtomicCmpXchgBool(&pVM->pdm.s.fNsUnchokeTimerArmed, true, false))
+                        {
+                            Assert(TMTimerGetFreq(pVM, pVM->pdm.s.hNsUnchokeTimer) == RT_MS_1SEC);
+                            uint64_t const msNow    = TMTimerGet(pVM, pVM->pdm.s.hNsUnchokeTimer);
+                            uint64_t const msExpire = (msNow / PDM_NETSHAPER_MAX_LATENCY + 1) * PDM_NETSHAPER_MAX_LATENCY;
+                            rc = TMTimerSet(pVM, pVM->pdm.s.hNsUnchokeTimer, msExpire);
+                            AssertRC(rc);
+
+                            Log2(("pdmNsAllocateBandwidth/%s: refused - cbTransfer=%#zx cTokens=%#x cTokensAdded=%#x cMsExpire=%u\n",
+                                  pGroup->szName, cbTransfer, cTokens, cTokensAdded, msExpire - msNow));
+                        }
+                        else
+                            Log2(("pdmNsAllocateBandwidth/%s: refused - cbTransfer=%#zx cTokens=%#x cTokensAdded=%#x\n",
+                                  pGroup->szName, cbTransfer, cTokens, cTokensAdded));
                         fAllowed = false;
                     }
                 }

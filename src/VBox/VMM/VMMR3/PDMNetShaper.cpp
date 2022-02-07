@@ -29,12 +29,10 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/thread.h>
-#include <iprt/mem.h>
 #include <iprt/critsect.h>
-#include <iprt/tcp.h>
-#include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/semaphore.h>
+#include <iprt/thread.h>
 
 #include <VBox/vmm/pdmnetshaper.h>
 
@@ -202,7 +200,7 @@ VMMR3_INT_DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFil
 
 
 /**
- * This is used both by pdmR3NsTxThread and PDMR3NsBwGroupSetLimit,
+ * This is used both by pdmR3NsUnchokeThread and PDMR3NsBwGroupSetLimit,
  * the latter only when setting cbPerSecMax to zero.
  *
  * @param   pGroup      The group which filters should be unchoked.
@@ -315,19 +313,22 @@ VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PUVM pUVM, const char *pszName, uint64_t c
 
 
 /**
- * I/O thread for pending TX.
+ * I/O thread for pending unchoking and associating transmitting.
  *
  * @returns VINF_SUCCESS (ignored).
  * @param   pVM         The cross context VM structure.
  * @param   pThread     The PDM thread data.
  */
-static DECLCALLBACK(int) pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
+static DECLCALLBACK(int) pdmR3NsUnchokeThread(PVM pVM, PPDMTHREAD pThread)
 {
-    LogFlow(("pdmR3NsTxThread: pVM=%p\n", pVM));
+    LogFlow(("pdmR3NsUnchokeThread: pVM=%p\n", pVM));
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        /** @todo r=bird: This sleep is horribly crude and wasteful! (Michael would go nuts if he knew) */
-        RTThreadSleep(PDM_NETSHAPER_MAX_LATENCY);
+        int rc = RTSemEventWait(pVM->pdm.s.hNsUnchokeEvt, RT_INDEFINITE_WAIT);
+        if (pThread->enmState != PDMTHREADSTATE_RUNNING)
+            break;
+        AssertMsgStmt(RT_SUCCESS(rc) || rc == VERR_TIMEOUT /* paranioa*/, ("%Rrc\n", rc),
+                      RTThreadSleep(PDM_NETSHAPER_MAX_LATENCY));
 
         /*
          * Go over all bandwidth groups/filters and unchoke their filters.
@@ -335,7 +336,7 @@ static DECLCALLBACK(int) pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
          * We take the main lock here to prevent any detaching or attaching
          * from taking place while we're traversing the filter lists.
          */
-        int rc = RTCritSectEnter(&pVM->pdm.s.NsLock);
+        rc = RTCritSectEnter(&pVM->pdm.s.NsLock);
         AssertRC(rc);
 
         size_t const cGroups = RT_MIN(pVM->pdm.s.cNsGroups, RT_ELEMENTS(pVM->pdm.s.aNsGroups));
@@ -357,14 +358,31 @@ static DECLCALLBACK(int) pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
 /**
  * @copydoc FNPDMTHREADWAKEUPINT
  */
-static DECLCALLBACK(int) pdmR3NsTxWakeUp(PVM pVM, PPDMTHREAD pThread)
+static DECLCALLBACK(int) pdmR3NsUnchokeWakeUp(PVM pVM, PPDMTHREAD pThread)
 {
-    RT_NOREF2(pVM, pThread);
-    LogFlow(("pdmR3NsTxWakeUp: pShaper=%p\n", pThread->pvUser));
-    /* Nothing to do */
-    /** @todo r=bird: use a semaphore, this'll cause a PDM_NETSHAPER_MAX_LATENCY/2
-     *        delay every time we pause the VM! Stupid stupid stupid. */
+    LogFlow(("pdmR3NsUnchokeWakeUp:\n"));
+
+    /* Wake up the thread. */
+    int rc = RTSemEventSignal(pVM->pdm.s.hNsUnchokeEvt);
+    AssertRC(rc);
+
+    RT_NOREF(pThread);
     return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNTMTIMERINT, Wakes up pdmR3NsUnchokeThread.}
+ */
+static DECLCALLBACK(void) pdmR3NsUnchokeTimer(PVM pVM, TMTIMERHANDLE hTimer, void *pvUser)
+{
+    ASMAtomicWriteBool(&pVM->pdm.s.fNsUnchokeTimerArmed, false);
+
+    /* Wake up the thread. */
+    int rc = RTSemEventSignal(pVM->pdm.s.hNsUnchokeEvt);
+    AssertRC(rc);
+
+    RT_NOREF(hTimer, pvUser);
 }
 
 
@@ -399,6 +417,10 @@ int pdmR3NetShaperInit(PVM pVM)
 {
     LogFlow(("pdmR3NetShaperInit: pVM=%p\n", pVM));
     VM_ASSERT_EMT(pVM);
+
+    Assert(pVM->pdm.s.cNsGroups == 0);
+    pVM->pdm.s.hNsUnchokeEvt   = NIL_RTSEMEVENT;
+    pVM->pdm.s.hNsUnchokeTimer = NIL_TMTIMERHANDLE;
 
     /*
      * Initialize the critical section protecting attaching, detaching and unchoking.
@@ -466,14 +488,32 @@ int pdmR3NetShaperInit(PVM pVM)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Create the transmit thread.
+         * If there are any groups configured, create a unchoke thread and an
+         * associated timer for waking it up when needed.   The timer runs on
+         * the real time clock.
          */
-        rc = PDMR3ThreadCreate(pVM, &pVM->pdm.s.pNsTxThread, NULL, pdmR3NsTxThread, pdmR3NsTxWakeUp,
-                               0 /*cbStack*/, RTTHREADTYPE_IO, "PDMNsTx");
+        if (pVM->pdm.s.cNsGroups == 0)
+        {
+            LogFlowFunc(("returns VINF_SUCCESS - no groups\n"));
+            return VINF_SUCCESS;
+        }
+
+        rc = RTSemEventCreate(&pVM->pdm.s.hNsUnchokeEvt);
         if (RT_SUCCESS(rc))
         {
-            LogFlowFunc(("returns VINF_SUCCESS\n"));
-            return VINF_SUCCESS;
+            rc = TMR3TimerCreate(pVM, TMCLOCK_REAL, pdmR3NsUnchokeTimer, NULL, TMTIMER_FLAGS_NO_RING0,
+                                 "PDMNetShaperUnchoke", &pVM->pdm.s.hNsUnchokeTimer);
+            if (RT_SUCCESS(rc))
+            {
+                rc = PDMR3ThreadCreate(pVM, &pVM->pdm.s.pNsUnchokeThread, NULL, pdmR3NsUnchokeThread, pdmR3NsUnchokeWakeUp,
+                                       0 /*cbStack*/, RTTHREADTYPE_IO, "PDMNsUnchoke");
+                if (RT_SUCCESS(rc))
+                {
+
+                    LogFlowFunc(("returns VINF_SUCCESS (%u groups)\n", pVM->pdm.s.cNsGroups));
+                    return VINF_SUCCESS;
+                }
+            }
         }
     }
 
