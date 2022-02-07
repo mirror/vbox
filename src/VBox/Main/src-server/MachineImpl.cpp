@@ -7269,8 +7269,7 @@ Utf8Str Machine::i_getDefaultNVRAMFilename()
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (   mHWData->mFirmwareType == FirmwareType_BIOS
-        || i_isSnapshotMachine())
+    if (i_isSnapshotMachine())
         return Utf8Str::Empty;
 
     Utf8Str strNVRAMFilePath = mData->m_strConfigFileFull;
@@ -7292,9 +7291,6 @@ Utf8Str Machine::i_getSnapshotNVRAMFilename()
     AssertComRCReturn(autoCaller.rc(), Utf8Str::Empty);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (mHWData->mFirmwareType == FirmwareType_BIOS)
-        return Utf8Str::Empty;
 
     RTTIMESPEC ts;
     RTTimeNow(&ts);
