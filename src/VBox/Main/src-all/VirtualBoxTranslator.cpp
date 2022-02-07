@@ -24,6 +24,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/ctype.h>
+#include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/locale.h>
 #include <iprt/once.h>
@@ -31,6 +32,11 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/strcache.h>
+
+#ifdef RT_OS_DARWIN
+#include <CoreFoundation/CFLocale.h>
+#include <CoreFoundation/CFString.h>
+#endif
 
 #include "Global.h"
 #include "VirtualBoxBase.h"
@@ -57,7 +63,6 @@ static RTTLS                g_idxTlsTr = NIL_RTTLS;
 static RTTLS                g_idxTlsSrc = NIL_RTTLS;
 
 
-
 /**
  * @callback_method_impl{FNRTONCE}
  */
@@ -67,6 +72,68 @@ static DECLCALLBACK(int32_t) initLock(void *pvUser)
     return VirtualBoxTranslator::initCritSect();
 }
 
+
+/**
+ * Obtains the user language code in ll_CC form depending on platform
+ *
+ * @returns VBox status code
+ * @param pszName   The buffer for storing user language code
+ * @param cbName    Size of the pszName buffer
+ */
+static int vboxGetDefaultUserLanguage(char *pszName, size_t cbName)
+{
+    AssertReturn(pszName, VERR_INVALID_PARAMETER);
+    AssertReturn(cbName >= 6, VERR_INVALID_PARAMETER); /* 5 chars for language + null termination */
+
+#ifdef RT_OS_WINDOWS
+    if (   GetLocaleInfoA(GetUserDefaultLCID(), LOCALE_SISO639LANGNAME, pszName, (int)cbName) == 3
+        && GetLocaleInfoA(GetUserDefaultLCID(), LOCALE_SISO3166CTRYNAME, &pszName[3], (int)cbName - 4) == 3)
+    {
+        pszName[2] = '_';
+        Assert(RTLOCALE_IS_LANGUAGE2_UNDERSCORE_COUNTRY2(pszName));
+        return VINF_SUCCESS;
+    }
+#elif RT_OS_DARWIN
+    CFLocaleRef locale = CFLocaleCopyCurrent();
+    CFTypeRef localeId = CFLocaleGetValue (locale, kCFLocaleIdentifier);
+    char szLocale[256] = { 0 };
+    if (CFGetTypeID(localeId) == CFStringGetTypeID())
+        CFStringGetCString((CFStringRef)localeId, szLocale, sizeof(szLocale), kCFStringEncodingUTF8);
+    /* Some cleanup */
+    CFRelease(locale);
+    if (szLocale[0] == '\0')
+    {
+        pszName[0] = 'C';
+        pszName[1] = 0;
+        return VINF_SUCCESS;
+    }
+    else
+        return RTStrCopy(pszName, cbName, szLocale);
+
+#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD) || defined(RT_OS_SOLARIS)
+    const char *pszValue = RTEnvGet("LC_ALL");
+    if (pszValue == 0)
+        pszValue = RTEnvGet("LC_MESSAGES");
+    if (pszValue == 0)
+        pszValue = RTEnvGet("LANG");
+    if (pszValue != 0)
+    {
+        /* ignore codepage part, i.e. ignore ".UTF-8" in "ru_RU.UTF-8" */
+        const char *pszDot = strchr(pszValue, '.');
+        size_t cbValue = strlen(pszValue);
+        if (pszDot != NULL)
+          cbValue = RT_MIN(cbValue, (size_t)(pszDot - pszValue));
+
+        if (   (   cbValue == 2
+                && RT_C_IS_LOWER(pszValue[0])
+                && RT_C_IS_LOWER(pszValue[1]))
+            || (   cbValue == 5
+                && RTLOCALE_IS_LANGUAGE2_UNDERSCORE_COUNTRY2(pszValue)))
+            return RTStrCopyEx(pszName, cbName, pszValue, cbValue);
+    }
+#endif
+    return RTLocaleQueryNormalizedBaseLocaleName(pszName, cbName);
+}
 
 VirtualBoxTranslator::VirtualBoxTranslator()
     : util::RWLockHandle(util::LOCKCLASS_TRANSLATOR)
@@ -240,7 +307,7 @@ int VirtualBoxTranslator::i_loadLanguage(const char *pszLang)
     char szLocale[256];
     if (pszLang == NULL || *pszLang == '\0')
     {
-        rc = RTLocaleQueryNormalizedBaseLocaleName(szLocale, sizeof(szLocale));
+        rc = vboxGetDefaultUserLanguage(szLocale, sizeof(szLocale));
         if (RT_SUCCESS(rc))
             pszLang = szLocale;
     }
