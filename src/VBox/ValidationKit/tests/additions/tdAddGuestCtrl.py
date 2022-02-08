@@ -198,9 +198,11 @@ class tdTestGuestCtrlBase(object):
                     # Be nice to Guest Additions < 4.3: They don't support session handling and
                     # therefore return WaitFlagNotSupported.
                     #
-                    if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
+                    if waitResult not in (vboxcon.GuestSessionWaitResult_Start, \
+                                          vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
                         # Just log, don't assume an error here (will be done in the main loop then).
-                        reporter.maybeErr(fIsError, 'Session did not start successfully, returned wait result: %d' % (waitResult,));
+                        reporter.maybeErr(fIsError, 'Session did not start successfully, returned wait result: %d' \
+                                          % (waitResult,));
                         return (False, None);
                     reporter.log('Session "%s" successfully started' % (sName,));
                 except:
