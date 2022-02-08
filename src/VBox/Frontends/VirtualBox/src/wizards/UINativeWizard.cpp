@@ -647,6 +647,29 @@ void UINativeWizard::resizeToGoldenRatio()
     resize(minimumSizeHint());
 }
 
+
+bool UINativeWizard::isLastVisiblePage(int iPageIndex) const
+{
+    if (!m_pWidgetStack)
+        return false;
+    if (iPageIndex == -1)
+        return false;
+    /* The page itself is not visible: */
+    if (m_invisiblePages.contains(iPageIndex))
+        return false;
+    bool fLastVisible = true;
+    /* Look at the page coming after the page with @p iPageIndex and check if they are visible: */
+    for (int i = iPageIndex + 1; i < m_pWidgetStack->count(); ++i)
+    {
+        if (!m_invisiblePages.contains(i))
+        {
+            fLastVisible = false;
+            break;
+        }
+    }
+    return fLastVisible;
+}
+
 #ifdef VBOX_WS_MAC
 void UINativeWizard::assignBackground()
 {
@@ -720,28 +743,6 @@ void UINativeWizard::assignWatermark()
     pixmapNew.setDevicePixelRatio(dRatio);
     /* Assign watermark finally: */
     m_pLabelPixmap->setPixmap(pixmapNew);
-}
-
-bool UINativeWizard::isLastVisiblePage(int iPageIndex) const
-{
-    if (!m_pWidgetStack)
-        return false;
-    if (iPageIndex == -1)
-        return false;
-    /* The page itself is not visible: */
-    if (m_invisiblePages.contains(iPageIndex))
-        return false;
-    bool fLastVisible = true;
-    /* Look at the page coming after the page with @p iPageIndex and check if they are visible: */
-    for (int i = iPageIndex + 1; i < m_pWidgetStack->count(); ++i)
-    {
-        if (!m_invisiblePages.contains(i))
-        {
-            fLastVisible = false;
-            break;
-        }
-    }
-    return fLastVisible;
 }
 
 #endif /* !VBOX_WS_MAC */
