@@ -1766,6 +1766,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_LdrGetRCInterfaceSymbols(PPDMDRVINS pDrvIns
 #else
         {
             AssertLogRelMsgFailed(("ring-0 drivers are not supported in this VBox version!\n"));
+            RT_NOREF(pvInterface, cbInterface, pszSymList);
             rc = VERR_NOT_SUPPORTED;
         }
 #endif
@@ -1811,6 +1812,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_LdrGetR0InterfaceSymbols(PPDMDRVINS pDrvIns
 #else
         {
             AssertLogRelMsgFailed(("ring-0 drivers are not supported in this VBox version!\n"));
+            RT_NOREF(pvInterface, cbInterface, pszSymList);
             rc = VERR_NOT_SUPPORTED;
         }
 #endif
@@ -1957,7 +1959,9 @@ static DECLCALLBACK(int)      pdmR3DrvHlp_CritSectDelete(PPDMDRVINS pDrvIns, PPD
 static DECLCALLBACK(int) pdmR3DrvHlp_CallR0(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
+#ifdef PDM_WITH_RING0_DRIVERS
     PVM pVM = pDrvIns->Internal.s.pVMR3;
+#endif
     LogFlow(("pdmR3DrvHlp_CallR0: caller='%s'/%d: uOperation=%#x u64Arg=%#RX64\n",
              pDrvIns->pReg->szName, pDrvIns->iInstance, uOperation, u64Arg));
 
@@ -1970,6 +1974,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_CallR0(PPDMDRVINS pDrvIns, uint32_t uOperat
     {
         if (pDrvIns->pReg->fFlags & PDM_DRVREG_FLAGS_R0)
         {
+#ifdef PDM_WITH_RING0_DRIVERS
             char szSymbol[          sizeof("drvR0") + sizeof(pDrvIns->pReg->szName) + sizeof("ReqHandler")];
             strcat(strcat(strcpy(szSymbol, "drvR0"),         pDrvIns->pReg->szName),         "ReqHandler");
             szSymbol[sizeof("drvR0") - 1] = RT_C_TO_UPPER(szSymbol[sizeof("drvR0") - 1]);
@@ -1980,12 +1985,17 @@ static DECLCALLBACK(int) pdmR3DrvHlp_CallR0(PPDMDRVINS pDrvIns, uint32_t uOperat
                 pDrvIns->Internal.s.pfnReqHandlerR0 = pfnReqHandlerR0;
             else
                 pfnReqHandlerR0 = NIL_RTR0PTR;
+#else
+            RT_NOREF(uOperation, u64Arg);
+            rc = VERR_NOT_SUPPORTED;
+#endif
         }
         else
             rc = VERR_ACCESS_DENIED;
     }
-    if (RT_LIKELY(pfnReqHandlerR0 != NIL_RTR0PTR))
+    if (RT_LIKELY(pfnReqHandlerR0 != NIL_RTR0PTR && RT_SUCCESS(rc)))
     {
+#ifdef PDM_WITH_RING0_DRIVERS
         /*
          * Make the ring-0 call.
          */
@@ -1997,10 +2007,12 @@ static DECLCALLBACK(int) pdmR3DrvHlp_CallR0(PPDMDRVINS pDrvIns, uint32_t uOperat
         Req.u32Alignment    = 0;
         Req.u64Arg          = u64Arg;
         rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), NIL_VMCPUID, VMMR0_DO_PDM_DRIVER_CALL_REQ_HANDLER, 0, &Req.Hdr);
+#else
+        rc = VERR_NOT_SUPPORTED;
+#endif
     }
 
-    LogFlow(("pdmR3DrvHlp_CallR0: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName,
-             pDrvIns->iInstance, rc));
+    LogFlow(("pdmR3DrvHlp_CallR0: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc));
     return rc;
 }
 
