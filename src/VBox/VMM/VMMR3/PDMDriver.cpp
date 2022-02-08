@@ -703,11 +703,14 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                  */
                 size_t cb = RT_UOFFSETOF_DYN(PDMDRVINS, achInstanceData[pDrv->pReg->cbInstance]);
                 cb = RT_ALIGN_Z(cb, 16);
-                bool const fHyperHeap = !!(pDrv->pReg->fFlags & (PDM_DRVREG_FLAGS_R0 | PDM_DRVREG_FLAGS_RC));
                 PPDMDRVINS pNew;
+#undef PDM_WITH_RING0_DRIVERS
+#ifdef PDM_WITH_RING0_DRIVERS
+                bool const fHyperHeap = !!(pDrv->pReg->fFlags & (PDM_DRVREG_FLAGS_R0 | PDM_DRVREG_FLAGS_RC));
                 if (fHyperHeap)
                     rc = MMHyperAlloc(pVM, cb, 64, MM_TAG_PDM_DRIVER, (void **)&pNew);
                 else
+#endif
                     rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_DRIVER, cb, (void **)&pNew);
                 if (RT_SUCCESS(rc))
                 {
@@ -721,12 +724,16 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                     pNew->Internal.s.pLun           = pLun;
                     pNew->Internal.s.pDrv           = pDrv;
                     pNew->Internal.s.pVMR3          = pVM;
+#ifdef PDM_WITH_RING0_DRIVERS
                     pNew->Internal.s.pVMR0          = pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_R0 ? pVM->pVMR0ForCall : NIL_RTR0PTR;
                     pNew->Internal.s.pVMRC          = pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_RC ? pVM->pVMRC : NIL_RTRCPTR;
+#endif
                     //pNew->Internal.s.fDetaching     = false;
                     pNew->Internal.s.fVMSuspended   = true; /** @todo should be 'false', if driver is attached at runtime. */
                     //pNew->Internal.s.fVMReset       = false;
+#ifdef PDM_WITH_RING0_DRIVERS
                     pNew->Internal.s.fHyperHeap     = fHyperHeap;
+#endif
                     //pNew->Internal.s.pfnAsyncNotify = NULL;
                     pNew->Internal.s.pCfgHandle     = pNode;
                     pNew->pReg                      = pDrv->pReg;
@@ -739,13 +746,14 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                     pNew->idTracing                 = ++pVM->pdm.s.idTracingOther;
                     pNew->pHlpR3                    = &g_pdmR3DrvHlp;
                     pNew->pvInstanceDataR3          = &pNew->achInstanceData[0];
+#ifdef PDM_WITH_RING0_DRIVERS
                     if (pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_R0)
                     {
                         pNew->pvInstanceDataR0      = MMHyperR3ToR0(pVM, &pNew->achInstanceData[0]);
                         rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0DrvHlp", &pNew->pHlpR0);
                         AssertReleaseRCReturn(rc, rc);
                     }
-#ifdef VBOX_WITH_RAW_MODE_KEEP
+# ifdef VBOX_WITH_RAW_MODE_KEEP
                     if (   (pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_RC)
                         && VM_IS_RAW_MODE_ENABLED(pVM))
                     {
@@ -753,6 +761,7 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                         rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDrvHlp", &pNew->pHlpRC);
                         AssertReleaseRCReturn(rc, rc);
                     }
+# endif
 #endif
 
                     pDrv->iNextInstance++;
@@ -995,11 +1004,15 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
 #endif
 
         /* Finally, the driver it self. */
-        bool fHyperHeap = pCur->Internal.s.fHyperHeap;
+#ifdef PDM_WITH_RING0_DRIVERS
+        bool const fHyperHeap = pCur->Internal.s.fHyperHeap;
+#endif
         ASMMemFill32(pCur, RT_UOFFSETOF_DYN(PDMDRVINS, achInstanceData[pCur->pReg->cbInstance]), 0xdeadd0d0);
+#ifdef PDM_WITH_RING0_DRIVERS
         if (fHyperHeap)
             MMHyperFree(pVM, pCur);
         else
+#endif
             MMR3HeapFree(pCur);
 
     } while (pCur != pDrvIns);
@@ -1338,7 +1351,9 @@ static DECLCALLBACK(int) pdmR3DrvHlp_TimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enm
     {
         AssertReturn(!(fFlags & TMTIMER_FLAGS_NO_RING0), VERR_INVALID_FLAGS);
         Assert(pDrvIns->Internal.s.pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_R0);
-        /* if (!(pDrvIns->Internal.s.fIntFlags & PDMDRVINSINT_FLAGS_R0_ENABLED)) */ /** @todo PDMDRVINSINT_FLAGS_R0_ENABLED? */
+#ifdef PDM_WITH_RING0_DRIVERS
+        if (!(pDrvIns->Internal.s.fIntFlags & PDMDRVINSINT_FLAGS_R0_ENABLED)) /** @todo PDMDRVINSINT_FLAGS_R0_ENABLED? */
+#endif
             fFlags = (fFlags & ~TMTIMER_FLAGS_RING0) | TMTIMER_FLAGS_NO_RING0;
     }
     else
@@ -1742,11 +1757,18 @@ static DECLCALLBACK(int) pdmR3DrvHlp_LdrGetRCInterfaceSymbols(PPDMDRVINS pDrvIns
         && RTStrIStr(pszSymPrefix + 3, pDrvIns->pReg->szName) != NULL)
     {
         if (pDrvIns->pReg->fFlags & PDM_DRVREG_FLAGS_RC)
+#ifdef PDM_WITH_RING0_DRIVERS
             rc = PDMR3LdrGetInterfaceSymbols(pDrvIns->Internal.s.pVMR3,
                                              pvInterface, cbInterface,
                                              pDrvIns->pReg->szRCMod, pDrvIns->Internal.s.pDrv->pszRCSearchPath,
                                              pszSymPrefix, pszSymList,
                                              false /*fRing0OrRC*/);
+#else
+        {
+            AssertLogRelMsgFailed(("ring-0 drivers are not supported in this VBox version!\n"));
+            rc = VERR_NOT_SUPPORTED;
+        }
+#endif
         else
         {
             AssertMsgFailed(("Not a raw-mode enabled driver\n"));
@@ -1780,11 +1802,18 @@ static DECLCALLBACK(int) pdmR3DrvHlp_LdrGetR0InterfaceSymbols(PPDMDRVINS pDrvIns
         && RTStrIStr(pszSymPrefix + 3, pDrvIns->pReg->szName) != NULL)
     {
         if (pDrvIns->pReg->fFlags & PDM_DRVREG_FLAGS_R0)
+#ifdef PDM_WITH_RING0_DRIVERS
             rc = PDMR3LdrGetInterfaceSymbols(pDrvIns->Internal.s.pVMR3,
                                              pvInterface, cbInterface,
                                              pDrvIns->pReg->szR0Mod, pDrvIns->Internal.s.pDrv->pszR0SearchPath,
                                              pszSymPrefix, pszSymList,
                                              true /*fRing0OrRC*/);
+#else
+        {
+            AssertLogRelMsgFailed(("ring-0 drivers are not supported in this VBox version!\n"));
+            rc = VERR_NOT_SUPPORTED;
+        }
+#endif
         else
         {
             AssertMsgFailed(("Not a ring-0 enabled driver\n"));

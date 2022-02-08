@@ -1255,8 +1255,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  	GIMDev/GIMDev.cpp \
  	VMMDev/VMMDev.cpp \
  	VMMDev/VMMDevTesting.cpp \
- 	Network/DrvIntNet.cpp \
- 	Network/DrvDedicatedNic.cpp
+ 	Network/DrvDedicatedNic.cpp \
+  	$(if-expr 0,Network/DrvIntNet.cpp,) # no ring-0 driver support at the moment
 
  ifdef VBOX_WITH_DTRACE_R0
   VBoxDDR0_USES         += dtrace
@@ -1294,7 +1294,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   	Network/DevVirtioNet_1_0.cpp
  endif
 
- ifdef VBOX_WITH_NETSHAPER
+ if 0 #def VBOX_WITH_NETSHAPER - no ring-0 driver support at the moment.
   VBoxDDR0_DEFS         += VBOX_WITH_NETSHAPER
   VBoxDDR0_SOURCES      += \
  	Network/DrvNetShaper.cpp

@@ -52,8 +52,10 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+#if 0
 /** Enables the ring-0 part. */
 #define VBOX_WITH_DRVINTNET_IN_R0
+#endif
 
 
 /*********************************************************************************************************************************
@@ -92,6 +94,7 @@ typedef struct DRVINTNET
     PPDMDRVINSR3                    pDrvInsR3;
     /** Pointer to the communication buffer (ring-3). */
     R3PTRTYPE(PINTNETBUF)           pBufR3;
+#ifdef VBOX_WITH_DRVINTNET_IN_R0
     /** Ring-3 base interface for the ring-0 context. */
     PDMIBASER0                      IBaseR0;
     /** Ring-3 base interface for the raw-mode context. */
@@ -110,6 +113,7 @@ typedef struct DRVINTNET
     /** Pointer to the driver instance. */
     PPDMDRVINSRC                    pDrvInsRC;
     RTRCPTR                         RCPtrAlignment;
+#endif
 
     /** The transmit lock. */
     PDMCRITSECT                     XmitLock;
@@ -924,6 +928,8 @@ static DECLCALLBACK(int) drvR3IntNetRecvThread(RTTHREAD hThreadSelf, void *pvUse
 }
 
 
+#ifdef VBOX_WITH_DRVINTNET_IN_R0
+
 /* -=-=-=-=- PDMIBASERC -=-=-=-=- */
 
 /**
@@ -932,7 +938,6 @@ static DECLCALLBACK(int) drvR3IntNetRecvThread(RTTHREAD hThreadSelf, void *pvUse
 static DECLCALLBACK(RTRCPTR) drvR3IntNetIBaseRC_QueryInterface(PPDMIBASERC pInterface, const char *pszIID)
 {
     PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, IBaseRC);
-
 #if 0
     PDMIBASERC_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMINETWORKUP, &pThis->INetworkUpRC);
 #else
@@ -950,14 +955,14 @@ static DECLCALLBACK(RTRCPTR) drvR3IntNetIBaseRC_QueryInterface(PPDMIBASERC pInte
 static DECLCALLBACK(RTR0PTR) drvR3IntNetIBaseR0_QueryInterface(PPDMIBASER0 pInterface, const char *pszIID)
 {
     PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, IBaseR0);
-#ifdef VBOX_WITH_DRVINTNET_IN_R0
     PDMIBASER0_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMINETWORKUP, &pThis->INetworkUpR0);
-#endif
     return NIL_RTR0PTR;
 }
 
+#endif /* VBOX_WITH_DRVINTNET_IN_R0 */
 
 /* -=-=-=-=- PDMIBASE -=-=-=-=- */
+
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -968,8 +973,10 @@ static DECLCALLBACK(void *) drvR3IntNetIBase_QueryInterface(PPDMIBASE pInterface
     PDRVINTNET pThis   = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+#ifdef VBOX_WITH_DRVINTNET_IN_R0
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASER0, &pThis->IBaseR0);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASERC, &pThis->IBaseRC);
+#endif
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKUP, &pThis->INetworkUpR3);
     return NULL;
 }
@@ -1377,8 +1384,10 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->fActivateEarlyDeactivateLate             = false;
     /* IBase* */
     pDrvIns->IBase.pfnQueryInterface                = drvR3IntNetIBase_QueryInterface;
+#ifdef VBOX_WITH_DRVINTNET_IN_R0
     pThis->IBaseR0.pfnQueryInterface                = drvR3IntNetIBaseR0_QueryInterface;
     pThis->IBaseRC.pfnQueryInterface                = drvR3IntNetIBaseRC_QueryInterface;
+#endif
     /* INetworkUp */
     pThis->INetworkUpR3.pfnBeginXmit                = drvIntNetUp_BeginXmit;
     pThis->INetworkUpR3.pfnAllocBuf                 = drvIntNetUp_AllocBuf;
@@ -1791,7 +1800,9 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
                                    N_("Failed to get ring-3 buffer for the newly created interface to '%s'"), pThis->szNetwork);
     AssertRelease(RT_VALID_PTR(GetBufferPtrsReq.pRing3Buf));
     pThis->pBufR3 = GetBufferPtrsReq.pRing3Buf;
+#ifdef VBOX_WITH_DRVINTNET_IN_R0
     pThis->pBufR0 = GetBufferPtrsReq.pRing0Buf;
+#endif
 
     /*
      * Register statistics.
