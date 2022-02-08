@@ -1452,10 +1452,7 @@ QHBoxLayout* UIFileManagerTable::toolBarLayout()
 bool UIFileManagerTable::event(QEvent *pEvent)
 {
     if (pEvent->type() == QEvent::EnabledChange)
-    {
-        m_pView->setVisible(isEnabled());
         retranslateUi();
-    }
     return QIWithRetranslateUI<QWidget>::event(pEvent);
 }
 
