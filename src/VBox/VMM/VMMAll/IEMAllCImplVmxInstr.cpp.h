@@ -6850,10 +6850,9 @@ IEM_STATIC int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *ps
          */
         if (!PGMHandlerPhysicalIsRegistered(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
         {
-            PVMCC pVM       = pVCpu->CTX_SUFF(pVM);
-            PVMCPUCC pVCpu0 = VMCC_GET_CPU_0(pVM);
+            PVMCC pVM = pVCpu->CTX_SUFF(pVM);
             int rc = PGMHandlerPhysicalRegister(pVM, GCPhysApicAccess, GCPhysApicAccess + X86_PAGE_4K_SIZE - 1,
-                                                pVCpu0->iem.s.hVmxApicAccessPage, 0 /*uUser*/, NULL /*pszDesc*/);
+                                                pVM->iem.s.hVmxApicAccessPage, 0 /*uUser*/, NULL /*pszDesc*/);
             if (RT_SUCCESS(rc))
             { /* likely */ }
             else

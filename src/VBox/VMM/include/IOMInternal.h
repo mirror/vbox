@@ -570,9 +570,9 @@ void                iomR0MmioInitPerVMData(PGVM pGVM);
 #endif
 
 #ifndef IN_RING3
-DECLEXPORT(FNPGMRZPHYSPFHANDLER)    iomMmioPfHandlerNew;
+DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  iomMmioPfHandlerNew;
 #endif
-PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) iomMmioHandlerNew;
+DECLCALLBACK(FNPGMPHYSHANDLER)      iomMmioHandlerNew;
 
 /* IOM locking helpers. */
 #ifdef IOM_WITH_CRIT_SECT_RW

@@ -2788,11 +2788,15 @@ RuntimeR0_SOURCES      := \
 	common/misc/sanity-cpp.cpp \
 	common/misc/term.cpp \
  	common/path/RTPathFilename.cpp \
+ 	common/rand/rand.cpp \
+ 	common/rand/randadv.cpp \
+ 	common/rand/randparkmiller.cpp \
 	common/string/strprintf-ellipsis.cpp \
 	common/string/strprintf2-ellipsis.cpp \
 	common/string/strhash1.cpp \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
+	common/string/strtonum.cpp \
 	common/string/RTStrCat.cpp \
 	common/string/RTStrCatEx.cpp \
 	common/string/RTStrCatP.cpp \
@@ -2823,6 +2827,8 @@ RuntimeR0_SOURCES      := \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/critsect-generic.cpp \
 	generic/critsectrw-generic.cpp \
+	generic/RTRandAdvCreateSystemFaster-generic.cpp \
+	generic/RTRandAdvCreateSystemTruer-generic.cpp \
 	\
 	$(RuntimeNoCrt_SOURCES)
 

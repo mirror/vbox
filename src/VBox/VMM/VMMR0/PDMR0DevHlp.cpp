@@ -1323,6 +1323,25 @@ static DECLCALLBACK(int) pdmR0DevHlp_HpetSetUpContext(PPDMDEVINS pDevIns, PPDMHP
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnPGMHandlerPhysicalTypeSetUpContext} */
+static DECLCALLBACK(int) pdmR0DevHlp_PGMHandlerPhysicalTypeSetUpContext(PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
+                                                                        PFNPGMPHYSHANDLER pfnHandler,
+                                                                        PFNPGMRZPHYSPFHANDLER pfnPfHandler,
+                                                                        const char *pszDesc, PGMPHYSHANDLERTYPE hType)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_PGMHandlerPhysicalTypeSetUpContext: caller='%s'/%d: enmKind=%d pfnHandler=%p pfnPfHandler=%p pszDesc=%p:{%s} hType=%#x\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, enmKind, pfnHandler, pfnPfHandler, pszDesc, pszDesc, hType));
+
+    int rc = PGMR0HandlerPhysicalTypeSetUpContext(pDevIns->Internal.s.pGVM, enmKind, PGMPHYSHANDLER_F_R0_DEVINS_IDX,
+                                                  pfnHandler, pfnPfHandler, pszDesc, hType);
+
+    Log(("pdmR0DevHlp_PGMHandlerPhysicalTypeSetUpContext: caller='%s'/%d: returns %Rrc\n",
+         pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR0,pfnPGMHandlerPhysicalPageTempOff} */
 static DECLCALLBACK(int) pdmR0DevHlp_PGMHandlerPhysicalPageTempOff(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage)
 {
@@ -1476,6 +1495,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_ApicSetUpContext,
     pdmR0DevHlp_IoApicSetUpContext,
     pdmR0DevHlp_HpetSetUpContext,
+    pdmR0DevHlp_PGMHandlerPhysicalTypeSetUpContext,
     pdmR0DevHlp_PGMHandlerPhysicalPageTempOff,
     pdmR0DevHlp_MmioMapMmio2Page,
     pdmR0DevHlp_MmioResetRegion,
@@ -1588,6 +1608,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlpTracing =
     pdmR0DevHlp_ApicSetUpContext,
     pdmR0DevHlp_IoApicSetUpContext,
     pdmR0DevHlp_HpetSetUpContext,
+    pdmR0DevHlp_PGMHandlerPhysicalTypeSetUpContext,
     pdmR0DevHlp_PGMHandlerPhysicalPageTempOff,
     pdmR0DevHlp_MmioMapMmio2Page,
     pdmR0DevHlp_MmioResetRegion,

@@ -551,8 +551,6 @@ typedef struct IEMCPU
     uint64_t                uCurXcptCr2;
     /** The error code for the current exception / interrupt. */
     uint32_t                uCurXcptErr;
-    /** The VMX APIC-access page handler type. */
-    PGMPHYSHANDLERTYPE      hVmxApicAccessPage;
 
     /** @name Statistics
      * @{  */
@@ -724,6 +722,17 @@ typedef IEMCPU const *PCIEMCPU;
 #else
 # define IEM_GET_INSTR_LEN(a_pVCpu)     ((a_pVCpu)->iem.s.offOpcode)
 #endif
+
+
+/**
+ * Shared per-VM IEM data.
+ */
+typedef struct IEM
+{
+    /** The VMX APIC-access page handler type. */
+    PGMPHYSHANDLERTYPE      hVmxApicAccessPage;
+} IEM;
+
 
 
 /** @name IEM_ACCESS_XXX - Access details.

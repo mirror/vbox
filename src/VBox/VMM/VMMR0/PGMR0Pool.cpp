@@ -34,6 +34,26 @@
 
 
 /**
+ * Called by PGMR0InitVM to complete the page pool setup for ring-0.
+ *
+ * @returns VBox status code.
+ * @param   pGVM    Pointer to the global VM structure.
+ */
+int pgmR0PoolInitVM(PGVM pGVM)
+{
+    PPGMPOOL pPool = pGVM->pgm.s.pPoolR0;
+    AssertPtrReturn(pPool, VERR_PGM_POOL_IPE);
+
+    int rc = PGMR0HandlerPhysicalTypeSetUpContext(pGVM, PGMPHYSHANDLERKIND_WRITE, PGMPHYSHANDLER_F_KEEP_PGM_LOCK,
+                                                  pgmPoolAccessHandler, pgmRZPoolAccessPfHandler,
+                                                  "Guest Paging Access Handler", pPool->hAccessHandlerType);
+    AssertLogRelRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Worker for PGMR0PoolGrow.
  */
 static int pgmR0PoolGrowInner(PGVM pGVM, PPGMPOOL pPool)

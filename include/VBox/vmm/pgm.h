@@ -115,13 +115,18 @@ typedef enum PGMACCESSORIGIN
  */
 typedef enum PGMPHYSHANDLERKIND
 {
+    /** Invalid zero value. */
+    PGMPHYSHANDLERKIND_INVALID = 0,
     /** MMIO range. Pages are not present, all access is done in interpreter or recompiler. */
-    PGMPHYSHANDLERKIND_MMIO = 1,
+    PGMPHYSHANDLERKIND_MMIO,
     /** Handler all write access to a physical page range. */
     PGMPHYSHANDLERKIND_WRITE,
     /** Handler all access to a physical page range. */
-    PGMPHYSHANDLERKIND_ALL
-
+    PGMPHYSHANDLERKIND_ALL,
+    /** End of the valid values. */
+    PGMPHYSHANDLERKIND_END,
+    /** Type size hack. */
+    PGMPHYSHANDLERKIND_32BIT_HACK = 0x7fffffff,
 } PGMPHYSHANDLERKIND;
 
 /**
@@ -624,14 +629,11 @@ VMM_INT_DECL(void)  PGMSetGuestEptPtr(PVMCPUCC pVCpu, uint64_t uEptPtr);
 /** PGM physical access handler type registration handle (heap offset, valid
  * cross contexts without needing fixing up).  Callbacks and handler type is
  * associated with this and it is shared by all handler registrations. */
-typedef uint32_t PGMPHYSHANDLERTYPE;
+typedef uint64_t PGMPHYSHANDLERTYPE;
 /** Pointer to a PGM physical handler type registration handle. */
 typedef PGMPHYSHANDLERTYPE *PPGMPHYSHANDLERTYPE;
 /** NIL value for PGM physical access handler type handle. */
-#define NIL_PGMPHYSHANDLERTYPE  UINT32_MAX
-VMMDECL(uint32_t)   PGMHandlerPhysicalTypeRelease(PVMCC pVM, PGMPHYSHANDLERTYPE hType);
-VMMDECL(uint32_t)   PGMHandlerPhysicalTypeRetain(PVM pVM, PGMPHYSHANDLERTYPE hType);
-
+#define NIL_PGMPHYSHANDLERTYPE  UINT64_MAX
 VMMDECL(int)        PGMHandlerPhysicalRegister(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast, PGMPHYSHANDLERTYPE hType,
                                                uint64_t uUser, R3PTRTYPE(const char *) pszDesc);
 VMMDECL(int)        PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
@@ -645,6 +647,19 @@ VMMDECL(int)        PGMHandlerPhysicalPageAliasMmio2(PVMCC pVM, RTGCPHYS GCPhys,
 VMMDECL(int)        PGMHandlerPhysicalPageAliasHC(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysPage, RTHCPHYS HCPhysPageRemap);
 VMMDECL(int)        PGMHandlerPhysicalReset(PVMCC pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMHandlerPhysicalIsRegistered(PVMCC pVM, RTGCPHYS GCPhys);
+
+/** @name PGMPHYSHANDLER_F_XXX - flags for PGMR3HandlerPhysicalTypeRegister and PGMR0HandlerPhysicalTypeRegister
+ * @{ */
+/** Whether to hold the PGM lock while calling the handler or not.
+ *  Mainly an optimization for PGM callers. */
+#define PGMPHYSHANDLER_F_KEEP_PGM_LOCK  RT_BIT_32(0)
+/** The uUser value is a ring-0 device instance index that needs translating
+ * into a PDMDEVINS pointer before calling the handler.  This is a hack to make
+ * it possible to use access handlers in devices. */
+#define PGMPHYSHANDLER_F_R0_DEVINS_IDX  RT_BIT_32(1)
+/** Mask of valid bits.   */
+#define PGMPHYSHANDLER_F_VALID_MASK     UINT32_C(3)
+/** @} */
 
 
 /**
@@ -913,6 +928,7 @@ VMMDECL(int)        PGMSetLargePageUsage(PVMCC pVM, bool fUseLargePages);
  */
 VMMR0_INT_DECL(int)  PGMR0InitPerVMData(PGVM pGVM, RTR0MEMOBJ hMemObj);
 VMMR0_INT_DECL(int)  PGMR0InitVM(PGVM pGVM);
+VMMR0_INT_DECL(void) PGMR0DoneInitVM(PGVM pGVM);
 VMMR0_INT_DECL(void) PGMR0CleanupVM(PGVM pGVM);
 VMMR0_INT_DECL(int)  PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int)  PGMR0PhysFlushHandyPages(PGVM pGVM, VMCPUID idCpu);
@@ -920,6 +936,10 @@ VMMR0_INT_DECL(int)  PGMR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPH
 VMMR0_INT_DECL(int)  PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
                                              size_t offSub, size_t cbSub, void **ppvMapping);
 VMMR0_INT_DECL(int)  PGMR0PhysSetupIoMmu(PGVM pGVM);
+VMMR0_INT_DECL(int)  PGMR0HandlerPhysicalTypeSetUpContext(PGVM pGVM, PGMPHYSHANDLERKIND enmKind, uint32_t fFlags,
+                                                          PFNPGMPHYSHANDLER pfnHandler, PFNPGMRZPHYSPFHANDLER pfnPfHandler,
+                                                          const char *pszDesc, PGMPHYSHANDLERTYPE hType);
+
 VMMR0DECL(int)       PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule,
                                             PCRTGCPTR64 paRegionsGCPtrs);
 VMMR0DECL(int)       PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
@@ -1004,29 +1024,9 @@ VMMR3DECL(int)      PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS G
 VMMR3DECL(int)      PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROMPROT enmProt);
 VMMDECL(void)       PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable);
 
-VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKIND enmKind, uint32_t fFlags,
-                                                       PFNPGMPHYSHANDLER pfnHandlerR3,
-                                                       R0PTRTYPE(PFNPGMPHYSHANDLER)     pfnHandlerR0,
-                                                       R0PTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerR0,
-                                                       const char *pszDesc, PPGMPHYSHANDLERTYPE phType);
-VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, uint32_t fFlags,
-                                                     R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
-                                                     const char *pszModR0, const char *pszHandlerR0, const char *pszPfHandlerR0,
-                                                     const char *pszModRC, const char *pszHandlerRC, const char *pszPfHandlerRC,
-                                                     const char *pszDesc,
+VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, uint32_t fFlags,
+                                                     PFNPGMPHYSHANDLER pfnHandlerR3, const char *pszDesc,
                                                      PPGMPHYSHANDLERTYPE phType);
-/** @name PGMPHYSHANDLER_F_XXX - flags for PGMR3HandlerPhysicalTypeRegister
- * @{ */
-/** Whether to hold the PGM lock while calling the handler or not.
- *  Mainly an optimization for PGM callers. */
-#define PGMPHYSHANDLER_F_KEEP_PGM_LOCK  RT_BIT_32(0)
-/** The uUser value is a ring-0 device instance index that needs translating
- * into a PDMDEVINS pointer before calling the handler.  This is a hack to make
- * it possible to use access handlers in devices. */
-#define PGMPHYSHANDLER_F_R0_DEVINS_IDX  RT_BIT_32(1)
-/** Mask of valid bits.   */
-#define PGMPHYSHANDLER_F_VALID_MASK     UINT32_C(3)
-/** @} */
 
 VMMR3_INT_DECL(int) PGMR3PoolGrow(PVM pVM, PVMCPU pVCpu);
 

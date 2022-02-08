@@ -859,26 +859,18 @@ static DECLCALLBACK(void *) pdmR3DevHlp_QueryGenericUserObject(PPDMDEVINS pDevIn
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalTypeRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
-                                                                    R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
-                                                                    const char *pszHandlerR0, const char *pszPfHandlerR0,
-                                                                    const char *pszHandlerRC, const char *pszPfHandlerRC,
-                                                                    const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
+                                                                    PFNPGMPHYSHANDLER pfnHandlerR3, const char *pszDesc,
+                                                                    PPGMPHYSHANDLERTYPE phType)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM  pVM = pDevIns->Internal.s.pVMR3;
-    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: enmKind=%d pfnHandlerR3=%p pszHandlerR0=%p:{%s} pszPfHandlerR0=%p:{%s} pszHandlerRC=%p:{%s} pszPfHandlerRC=%p:{%s} pszDesc=%p:{%s} phType=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, enmKind, pfnHandlerR3,
-             pszHandlerR0, pszHandlerR0, pszPfHandlerR0, pszPfHandlerR0,
-             pszHandlerRC, pszHandlerRC, pszPfHandlerRC, pszPfHandlerRC,
-             pszDesc, pszDesc, phType));
+    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: enmKind=%d pfnHandlerR3=%p pszDesc=%p:{%s} phType=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, enmKind, pfnHandlerR3, pszDesc, pszDesc, phType));
 
     int rc = PGMR3HandlerPhysicalTypeRegister(pVM, enmKind,
                                               pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED
                                               ? PGMPHYSHANDLER_F_R0_DEVINS_IDX : 0,
-                                              pfnHandlerR3,
-                                              pDevIns->pReg->pszR0Mod, pszHandlerR0, pszPfHandlerR0,
-                                              pDevIns->pReg->pszRCMod, pszHandlerRC, pszPfHandlerRC,
-                                              pszDesc, phType);
+                                              pfnHandlerR3, pszDesc, phType);
 
     Log(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: returns %Rrc\n",
          pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -5763,15 +5755,14 @@ static DECLCALLBACK(void *) pdmR3DevHlp_Untrusted_QueryGenericUserObject(PPDMDEV
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalTypeRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
-                                                                              R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
-                                                                              const char *pszHandlerR0, const char *pszPfHandlerR0,
-                                                                              const char *pszHandlerRC, const char *pszPfHandlerRC,
+                                                                              PFNPGMPHYSHANDLER pfnHandler,
                                                                               const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(enmKind, pfnHandlerR3, pszHandlerR0, pszPfHandlerR0, pszHandlerRC, pszPfHandlerRC, pszDesc, phType);
+    RT_NOREF(pDevIns, enmKind, pfnHandler, pszDesc);
     AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n",
                             pDevIns->pReg->szName, pDevIns->iInstance));
+    *phType = NIL_PGMPHYSHANDLERTYPE;
     return VERR_ACCESS_DENIED;
 }
 

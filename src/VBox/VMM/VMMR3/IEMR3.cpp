@@ -170,14 +170,9 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
      */
     if (pVM->cpum.ro.GuestFeatures.fVmx)
     {
-        PVMCPU pVCpu0 = pVM->apCpusR3[0];
         int rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_ALL, 0 /*fFlags*/,
                                                   iemVmxApicAccessPageHandler,
-                                                  NULL /* pszModR0 */,
-                                                  "iemVmxApicAccessPageHandler", NULL /* pszPfHandlerR0 */,
-                                                  NULL /* pszModRC */,
-                                                  NULL /* pszHandlerRC */, NULL /* pszPfHandlerRC */,
-                                                  "VMX APIC-access page", &pVCpu0->iem.s.hVmxApicAccessPage);
+                                                  "VMX APIC-access page", &pVM->iem.s.hVmxApicAccessPage);
         AssertLogRelRCReturn(rc, rc);
     }
 #endif

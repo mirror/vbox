@@ -482,17 +482,20 @@ typedef PGMSHWPTPAE const  *PCPGMSHWPTPAE;
 /** @} */
 
 
+/** The physical access handler type handle count (power of two). */
+#define PGMPHYSHANDLERTYPE_COUNT        0x20
+/** Mask for getting the array index from an access handler type handle.
+ * The other handle bits are random and non-zero to avoid mixups due to zero
+ * initialized fields. */
+#define PGMPHYSHANDLERTYPE_IDX_MASK     0x1f
+
 /**
- * Physical page access handler type registration.
+ * Physical page access handler type registration, ring-0 part.
  */
-typedef struct PGMPHYSHANDLERTYPEINT
+typedef struct PGMPHYSHANDLERTYPEINTR0
 {
-    /** Number of references.   */
-    uint32_t volatile                   cRefs;
-    /** Magic number (PGMPHYSHANDLERTYPEINT_MAGIC). */
-    uint32_t                            u32Magic;
-    /** Link of handler types anchored in PGMTREES::HeadPhysHandlerTypes.   */
-    RTLISTOFF32NODE                     ListNode;
+    /** The handle value for verfication.  */
+    PGMPHYSHANDLERTYPE                  hType;
     /** The kind of accesses we're handling. */
     PGMPHYSHANDLERKIND                  enmKind;
     /** The PGM_PAGE_HNDL_PHYS_STATE_XXX value corresponding to enmKind. */
@@ -505,29 +508,50 @@ typedef struct PGMPHYSHANDLERTYPEINT
      * @sa PGMPHYSHANDLER_F_R0_DEVINS_IDX  */
     bool                                fRing0DevInsIdx;
     bool                                afPadding[1];
-    /** Pointer to R3 callback function. */
-    R3PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandlerR3;
-    /** Pointer to R0 callback function. */
-    R0PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandlerR0;
-    /** Pointer to R0 callback function for \#PFs. */
-    R0PTRTYPE(PFNPGMRZPHYSPFHANDLER)    pfnPfHandlerR0;
+    /** Pointer to the ring-0 callback function. */
+    R0PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandler;
+    /** Pointer to the ring-9 callback function for \#PFs. */
+    R0PTRTYPE(PFNPGMRZPHYSPFHANDLER)    pfnPfHandler;
     /** Description / Name. For easing debugging. */
-    R3PTRTYPE(const char *)             pszDesc;
-} PGMPHYSHANDLERTYPEINT;
+    R0PTRTYPE(const char *)             pszDesc;
+} PGMPHYSHANDLERTYPEINTR0;
 /** Pointer to a physical access handler type registration. */
-typedef PGMPHYSHANDLERTYPEINT *PPGMPHYSHANDLERTYPEINT;
-/** Magic value for the physical handler callbacks (Robert A. Heinlein). */
-#define PGMPHYSHANDLERTYPEINT_MAGIC        UINT32_C(0x19070707)
-/** Magic value for the physical handler callbacks. */
-#define PGMPHYSHANDLERTYPEINT_MAGIC_DEAD   UINT32_C(0x19880508)
+typedef PGMPHYSHANDLERTYPEINTR0 *PPGMPHYSHANDLERTYPEINTR0;
 
 /**
- * Converts a handle to a pointer.
- * @returns PPGMPHYSHANDLERTYPEINT
- * @param   a_pVM           The cross context VM structure.
- * @param   a_hType         Physical access handler type handle.
+ * Physical page access handler type registration, shared/ring-3 part.
  */
-#define PGMPHYSHANDLERTYPEINT_FROM_HANDLE(a_pVM, a_hType) ((PPGMPHYSHANDLERTYPEINT)MMHyperHeapOffsetToPtr(a_pVM, a_hType))
+typedef struct PGMPHYSHANDLERTYPEINTR3
+{
+    /** The handle value for verfication.  */
+    PGMPHYSHANDLERTYPE                  hType;
+    /** The kind of accesses we're handling. */
+    PGMPHYSHANDLERKIND                  enmKind;
+    /** The PGM_PAGE_HNDL_PHYS_STATE_XXX value corresponding to enmKind. */
+    uint8_t                             uState;
+    /** Whether to keep the PGM lock when calling the handler.
+     * @sa PGMPHYSHANDLER_F_KEEP_PGM_LOCK  */
+    bool                                fKeepPgmLock;
+    /** Set if this is registered by a device instance and uUser should be
+     * translated from a device instance ID to a pointer.
+     * @sa PGMPHYSHANDLER_F_R0_DEVINS_IDX  */
+    bool                                fRing0DevInsIdx;
+    /** Set by ring-0 if the handler is ring-0 enabled (for debug). */
+    bool                                fRing0Enabled : 1;
+    /** Pointer to the ring-3 callback function. */
+    R3PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandler;
+    /** Description / Name. For easing debugging. */
+    R3PTRTYPE(const char *)             pszDesc;
+} PGMPHYSHANDLERTYPEINTR3;
+/** Pointer to a physical access handler type registration. */
+typedef PGMPHYSHANDLERTYPEINTR3 *PPGMPHYSHANDLERTYPEINTR3;
+
+/** Pointer to a physical access handler type record for the current context. */
+typedef CTX_SUFF(PPGMPHYSHANDLERTYPEINT) PPGMPHYSHANDLERTYPEINT;
+/** Pointer to a const physical access handler type record for the current context. */
+typedef CTX_SUFF(PGMPHYSHANDLERTYPEINT) const *PCPGMPHYSHANDLERTYPEINT;
+/** Dummy physical access handler type record. */
+extern CTX_SUFF(PGMPHYSHANDLERTYPEINT) const g_pgmHandlerPhysicalDummyType;
 
 
 /**
@@ -545,8 +569,10 @@ typedef struct PGMPHYSHANDLER
     uint32_t                            cAliasedPages;
     /** Set if we have pages that have temporarily been disabled. */
     uint32_t                            cTmpOffPages;
-    /** Registered handler type handle (heap offset). */
-    PGMPHYSHANDLERTYPE                  hType;
+    uint32_t                            u32Padding;
+    /** Registered handler type handle.
+     * @note Marked volatile to prevent re-reading after validation. */
+    PGMPHYSHANDLERTYPE volatile         hType;
     /** User argument for the handlers. */
     uint64_t                            uUser;
     /** Description / Name. For easing debugging. */
@@ -561,12 +587,24 @@ typedef PGMPHYSHANDLER *PPGMPHYSHANDLER;
 
 /**
  * Gets the type record for a physical handler (no reference added).
- * @returns PPGMPHYSHANDLERTYPEINT
+ * @returns PCPGMPHYSHANDLERTYPEINT, can be NULL
  * @param   a_pVM           The cross context VM structure.
  * @param   a_pPhysHandler  Pointer to the physical handler structure
  *                          (PGMPHYSHANDLER).
  */
-#define PGMPHYSHANDLER_GET_TYPE(a_pVM, a_pPhysHandler) PGMPHYSHANDLERTYPEINT_FROM_HANDLE(a_pVM, (a_pPhysHandler)->hType)
+#define PGMPHYSHANDLER_GET_TYPE(a_pVM, a_pPhysHandler) \
+    pgmHandlerPhysicalTypeHandleToPtr(a_pVM, (a_pPhysHandler) ? (a_pPhysHandler)->hType : NIL_PGMPHYSHANDLERTYPE)
+
+/**
+ * Gets the type record for a physical handler, never returns NULL.
+ *
+ * @returns PCPGMPHYSHANDLERTYPEINT, never NULL.
+ * @param   a_pVM           The cross context VM structure.
+ * @param   a_pPhysHandler  Pointer to the physical handler structure
+ *                          (PGMPHYSHANDLER).
+ */
+#define PGMPHYSHANDLER_GET_TYPE_NO_NULL(a_pVM, a_pPhysHandler) \
+    pgmHandlerPhysicalTypeHandleToPtr2(a_pVM, (a_pPhysHandler) ? (a_pPhysHandler)->hType : NIL_PGMPHYSHANDLERTYPE)
 
 
 /**
@@ -2033,6 +2071,8 @@ typedef struct PGMPOOL
     uint16_t                    iModifiedHead;
     /** The current number of modified pages. */
     uint16_t                    cModifiedPages;
+    /** Alignment padding. */
+    uint32_t                    u32Padding2;
     /** Physical access handler type registration handle. */
     PGMPHYSHANDLERTYPE          hAccessHandlerType;
     /** Next available slot (in aDirtyPages). */
@@ -2329,11 +2369,9 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCal
  */
 typedef struct PGMTREES
 {
-    /** List of physical access handler types (offset pointers) of type
-     * PGMPHYSHANDLERTYPEINT.  This is needed for relocations. */
-    RTLISTOFF32ANCHOR               HeadPhysHandlerTypes;
     /** Physical access handlers (AVL range+offsetptr tree). */
     AVLROGCPHYSTREE                 PhysHandlers;
+    uint32_t                        u32PaddingTo8Bytes;
 } PGMTREES;
 /** Pointer to PGM trees. */
 typedef PGMTREES *PPGMTREES;
@@ -2953,8 +2991,12 @@ typedef struct PGM
     /** Hack: Number of deprecated page mapping locks taken by the current lock
      *  owner via pgmPhysGCPhys2CCPtrInternalDepr. */
     uint32_t                        cDeprecatedPageLocks;
-    /** Alignment padding. */
-    uint32_t                        au32Alignment2[1+2];
+
+    /** Registered physical access handler types. */
+    uint32_t                        cPhysHandlerTypes;
+    /** Physical access handler types.
+     * Initialized to callback causing guru meditations and invalid enmKind. */
+    PGMPHYSHANDLERTYPEINTR3         aPhysHandlerTypes[PGMPHYSHANDLERTYPE_COUNT];
 
     /** PGM critical section.
      * This protects the physical, ram ranges, and the page flag updating (some of
@@ -3536,12 +3578,16 @@ typedef struct PGMR0PERVM
     /** @name PGM Pool related stuff.
      * @{ */
     /** Critical section for serializing pool growth. */
-    RTCRITSECT  PoolGrowCritSect;
+    RTCRITSECT                      PoolGrowCritSect;
     /** The memory objects for the pool pages. */
-    RTR0MEMOBJ  ahPoolMemObjs[(PGMPOOL_IDX_LAST + PGMPOOL_CFG_MAX_GROW - 1) / PGMPOOL_CFG_MAX_GROW];
+    RTR0MEMOBJ                      ahPoolMemObjs[(PGMPOOL_IDX_LAST + PGMPOOL_CFG_MAX_GROW - 1) / PGMPOOL_CFG_MAX_GROW];
     /** The ring-3 mapping objects for the pool pages. */
-    RTR0MEMOBJ  ahPoolMapObjs[(PGMPOOL_IDX_LAST + PGMPOOL_CFG_MAX_GROW - 1) / PGMPOOL_CFG_MAX_GROW];
+    RTR0MEMOBJ                      ahPoolMapObjs[(PGMPOOL_IDX_LAST + PGMPOOL_CFG_MAX_GROW - 1) / PGMPOOL_CFG_MAX_GROW];
     /** @} */
+
+    /** Physical access handler types for ring-0.
+     * Initialized to callback causing return to ring-3 and invalid enmKind. */
+    PGMPHYSHANDLERTYPEINTR0         aPhysHandlerTypes[PGMPHYSHANDLERTYPE_COUNT];
 } PGMR0PERVM;
 
 RT_C_DECLS_BEGIN
@@ -3582,6 +3628,12 @@ bool            pgmHandlerPhysicalIsAll(PVMCC pVM, RTGCPHYS GCPhys);
 void            pgmHandlerPhysicalResetAliasedPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage, PPGMRAMRANGE pRam, bool fDoAccounting);
 DECLHIDDEN(int) pgmHandlerPhysicalResetMmio2WithBitmap(PVMCC pVM, RTGCPHYS GCPhys, void *pvBitmap, uint32_t offBitmap);
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+DECLCALLBACK(FNPGMPHYSHANDLER)      pgmR3HandlerPhysicalHandlerInvalid;
+#ifndef IN_RING3
+DECLCALLBACK(FNPGMPHYSHANDLER)      pgmR0HandlerPhysicalHandlerToRing3;
+DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  pgmR0HandlerPhysicalPfHandlerToRing3;
+#endif
+
 int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 
 int             pgmPhysAllocPage(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
@@ -3605,13 +3657,11 @@ int             pgmPhysGCPhys2CCPtrInternalDepr(PVMCC pVM, PPGMPAGE pPage, RTGCP
 int             pgmPhysGCPhys2CCPtrInternal(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
 int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv, PPGMPAGEMAPLOCK pLock);
 void            pgmPhysReleaseInternalPageMappingLock(PVMCC pVM, PPGMPAGEMAPLOCK pLock);
-PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) pgmPhysRomWriteHandler;
-PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) pgmPhysMmio2WriteHandler;
+DECLCALLBACK(FNPGMPHYSHANDLER)      pgmPhysRomWriteHandler;
+DECLCALLBACK(FNPGMPHYSHANDLER)      pgmPhysMmio2WriteHandler;
 #ifndef IN_RING3
-DECLEXPORT(FNPGMPHYSHANDLER)        pgmPhysHandlerRedirectToHC;
-DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPhysPfHandlerRedirectToHC;
-DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPhysRomWritePfHandler;
-DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPhysMmio2WritePfHandler;
+DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  pgmPhysRomWritePfHandler;
+DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  pgmPhysMmio2WritePfHandler;
 #endif
 int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys,
                                 PGMPAGETYPE enmNewType);
@@ -3647,6 +3697,9 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 void            pgmR3PoolWriteProtectPages(PVM pVM);
 
 #endif /* IN_RING3 */
+#ifdef IN_RING0
+int             pgmR0PoolInitVM(PGVM pGVM);
+#endif
 int             pgmPoolAlloc(PVMCC pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, bool fA20Enabled,
                              uint16_t iUser, uint32_t iUserTable, bool fLockPage, PPPGMPOOLPAGE ppPage);
 void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable);

@@ -617,8 +617,9 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/env.h>
-#include <iprt/mem.h>
 #include <iprt/file.h>
+#include <iprt/mem.h>
+#include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #ifdef RT_OS_LINUX
@@ -795,6 +796,15 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         pVM->pgm.s.aLargeHandyPage[i].idSharedPage  = NIL_GMM_PAGEID;
     }
 
+    AssertReleaseReturn(pVM->pgm.s.cPhysHandlerTypes == 0, VERR_WRONG_ORDER);
+    for (size_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.aPhysHandlerTypes); i++)
+    {
+        if (fDriverless)
+            pVM->pgm.s.aPhysHandlerTypes[i].hType  = i | (RTRandU64() & ~(uint64_t)PGMPHYSHANDLERTYPE_IDX_MASK);
+        pVM->pgm.s.aPhysHandlerTypes[i].enmKind    = PGMPHYSHANDLERKIND_INVALID;
+        pVM->pgm.s.aPhysHandlerTypes[i].pfnHandler = pgmR3HandlerPhysicalHandlerInvalid;
+    }
+
     /* Init the per-CPU part. */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
@@ -953,22 +963,15 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
      */
     if (RT_SUCCESS(rc))
         /** @todo why isn't pgmPhysRomWriteHandler registered for ring-0?   */
-        rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE, 0 /*fFlags*/,
-                                              pgmPhysRomWriteHandler,
-                                              NULL, NULL, "pgmPhysRomWritePfHandler",
-                                              NULL, NULL, "pgmPhysRomWritePfHandler",
-                                              "ROM write protection",
-                                              &pVM->pgm.s.hRomPhysHandlerType);
+        rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE, 0 /*fFlags*/, pgmPhysRomWriteHandler,
+                                              "ROM write protection", &pVM->pgm.s.hRomPhysHandlerType);
 
     /*
      * Register the physical access handler doing dirty MMIO2 tracing.
      */
     if (RT_SUCCESS(rc))
         rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE, PGMPHYSHANDLER_F_KEEP_PGM_LOCK,
-                                              pgmPhysMmio2WriteHandler,
-                                              NULL, "pgmPhysMmio2WriteHandler", "pgmPhysMmio2WritePfHandler",
-                                              NULL, "pgmPhysMmio2WriteHandler", "pgmPhysMmio2WritePfHandler",
-                                              "MMIO2 dirty page tracing",
+                                              pgmPhysMmio2WriteHandler, "MMIO2 dirty page tracing",
                                               &pVM->pgm.s.hMmio2DirtyPhysHandlerType);
 
     /*

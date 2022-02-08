@@ -1442,6 +1442,15 @@ typedef struct VM
         uint8_t     padding[8];         /* multiple of 8 */
     } cfgm;
 
+    /** IEM part. */
+    union
+    {
+#ifdef VMM_INCLUDED_SRC_include_IEMInternal_h
+        struct IEM  s;
+#endif
+        uint8_t     padding[8];         /* multiple of 8 */
+    } iem;
+
     /** Statistics for ring-0 only components. */
     struct
     {
@@ -1457,7 +1466,7 @@ typedef struct VM
     } R0Stats;
 
     /** Padding for aligning the structure size on a page boundrary. */
-    uint8_t         abAlignment2[8920 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[8912 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 
     /* ---- end small stuff ---- */
 

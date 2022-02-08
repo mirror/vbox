@@ -480,6 +480,7 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMR0/HMR0UtilA.asm \
  	VMMR0/HMVMXR0.cpp \
  	VMMR0/HMSVMR0.cpp \
+ 	VMMR0/IEMR0.cpp \
  	VMMR0/IOMR0.cpp \
  	VMMR0/IOMR0IoPort.cpp \
  	VMMR0/IOMR0Mmio.cpp \

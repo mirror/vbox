@@ -2270,7 +2270,11 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMP
     AssertReturn(!(GCPhys & GUEST_PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     AssertReturn(*pszDesc, VERR_INVALID_PARAMETER);
-    Assert(((PPGMPHYSHANDLERTYPEINT)MMHyperHeapOffsetToPtr(pVM, hType))->enmKind == PGMPHYSHANDLERKIND_MMIO);
+#ifdef VBOX_STRICT
+    PCPGMPHYSHANDLERTYPEINT pType = pgmHandlerPhysicalTypeHandleToPtr(pVM, hType);
+    Assert(pType);
+    Assert(pType->enmKind == PGMPHYSHANDLERKIND_MMIO);
+#endif
 
     int rc = PGM_LOCK(pVM);
     AssertRCReturn(rc, rc);

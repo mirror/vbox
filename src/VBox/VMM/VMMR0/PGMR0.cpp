@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
+#include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
 
@@ -82,6 +83,24 @@ VMMR0_INT_DECL(int) PGMR0InitPerVMData(PGVM pGVM, RTR0MEMOBJ hMemObj)
     }
 
     /*
+     * Initialize the handler type table with return to ring-3 callbacks so we
+     * don't have to do anything special for ring-3 only registrations.
+     *
+     * Note! The random bits of the hType value is mainly for prevent trouble
+     *       with zero initialized handles w/o needing to sacrifice handle zero.
+     */
+    for (size_t i = 0; i < RT_ELEMENTS(pGVM->pgm.s.aPhysHandlerTypes); i++)
+    {
+        pGVM->pgmr0.s.aPhysHandlerTypes[i].hType        = i | (RTRandU64() & ~(uint64_t)PGMPHYSHANDLERTYPE_IDX_MASK);
+        pGVM->pgmr0.s.aPhysHandlerTypes[i].enmKind      = PGMPHYSHANDLERKIND_INVALID;
+        pGVM->pgmr0.s.aPhysHandlerTypes[i].pfnHandler   = pgmR0HandlerPhysicalHandlerToRing3;
+        pGVM->pgmr0.s.aPhysHandlerTypes[i].pfnPfHandler = pgmR0HandlerPhysicalPfHandlerToRing3;
+
+        pGVM->pgm.s.aPhysHandlerTypes[i].hType          = pGVM->pgmr0.s.aPhysHandlerTypes[i].hType;
+        pGVM->pgm.s.aPhysHandlerTypes[i].enmKind        = PGMPHYSHANDLERKIND_INVALID;
+    }
+
+    /*
      * Get the physical address of the ZERO and MMIO-dummy pages.
      */
     AssertReturn(((uintptr_t)&pGVM->pgm.s.abZeroPg[0] & HOST_PAGE_OFFSET_MASK) == 0, VERR_INTERNAL_ERROR_2);
@@ -106,9 +125,108 @@ VMMR0_INT_DECL(int) PGMR0InitPerVMData(PGVM pGVM, RTR0MEMOBJ hMemObj)
  */
 VMMR0_INT_DECL(int) PGMR0InitVM(PGVM pGVM)
 {
-    RT_NOREF(pGVM);
-    /* Was used for DynMap init */
-    return VINF_SUCCESS;
+    /*
+     * Set up the ring-0 context for our access handlers.
+     */
+    int rc = PGMR0HandlerPhysicalTypeSetUpContext(pGVM, PGMPHYSHANDLERKIND_WRITE, 0 /*fFlags*/,
+                                                  pgmPhysRomWriteHandler, pgmPhysRomWritePfHandler,
+                                                  "ROM write protection", pGVM->pgm.s.hRomPhysHandlerType);
+    AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * Register the physical access handler doing dirty MMIO2 tracing.
+     */
+    rc = PGMR0HandlerPhysicalTypeSetUpContext(pGVM, PGMPHYSHANDLERKIND_WRITE, PGMPHYSHANDLER_F_KEEP_PGM_LOCK,
+                                              pgmPhysMmio2WriteHandler, pgmPhysMmio2WritePfHandler,
+                                              "MMIO2 dirty page tracing", pGVM->pgm.s.hMmio2DirtyPhysHandlerType);
+    AssertLogRelRCReturn(rc, rc);
+
+    /*
+     * The page pool.
+     */
+    return pgmR0PoolInitVM(pGVM);
+}
+
+
+/**
+ * Called at the end of the ring-0 initialization to seal access handler types.
+ *
+ * @returns VBox status code.
+ * @param   pGVM    Pointer to the global VM structure.
+ */
+VMMR0_INT_DECL(void) PGMR0DoneInitVM(PGVM pGVM)
+{
+    /*
+     * Seal all the access handler types. Does both ring-3 and ring-0.
+     *
+     * Note! Since this is a void function and we don't have any ring-0 state
+     *       machinery for marking the VM as bogus, this code will just
+     *       override corrupted values as best as it can.
+     */
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.aPhysHandlerTypes) == RT_ELEMENTS(pGVM->pgm.s.aPhysHandlerTypes));
+    for (size_t i = 0; i < RT_ELEMENTS(pGVM->pgmr0.s.aPhysHandlerTypes); i++)
+    {
+        PPGMPHYSHANDLERTYPEINTR0 const pTypeR0   = &pGVM->pgmr0.s.aPhysHandlerTypes[i];
+        PPGMPHYSHANDLERTYPEINTR3 const pTypeR3   = &pGVM->pgm.s.aPhysHandlerTypes[i];
+        PGMPHYSHANDLERKIND       const enmKindR3 = pTypeR3->enmKind;
+        PGMPHYSHANDLERKIND       const enmKindR0 = pTypeR0->enmKind;
+        AssertLogRelMsgStmt(pTypeR0->hType == pTypeR3->hType,
+                            ("i=%u %#RX64 vs %#RX64 %s\n", i, pTypeR0->hType, pTypeR3->hType, pTypeR0->pszDesc),
+                            pTypeR3->hType = pTypeR0->hType);
+        switch (enmKindR3)
+        {
+            case PGMPHYSHANDLERKIND_ALL:
+            case PGMPHYSHANDLERKIND_MMIO:
+                if (   enmKindR0 == enmKindR3
+                    || enmKindR0 == PGMPHYSHANDLERKIND_INVALID)
+                {
+                    pTypeR3->fRing0Enabled = enmKindR0 == enmKindR3;
+                    pTypeR0->uState = PGM_PAGE_HNDL_PHYS_STATE_ALL;
+                    pTypeR3->uState = PGM_PAGE_HNDL_PHYS_STATE_ALL;
+                    continue;
+                }
+                break;
+
+            case PGMPHYSHANDLERKIND_WRITE:
+                if (   enmKindR0 == enmKindR3
+                    || enmKindR0 == PGMPHYSHANDLERKIND_INVALID)
+                {
+                    pTypeR3->fRing0Enabled = enmKindR0 == enmKindR3;
+                    pTypeR0->uState = PGM_PAGE_HNDL_PHYS_STATE_WRITE;
+                    pTypeR3->uState = PGM_PAGE_HNDL_PHYS_STATE_WRITE;
+                    continue;
+                }
+                break;
+
+            default:
+                AssertLogRelMsgFailed(("i=%u enmKindR3=%d\n", i, enmKindR3));
+                RT_FALL_THROUGH();
+            case PGMPHYSHANDLERKIND_INVALID:
+                AssertLogRelMsg(enmKindR0 == PGMPHYSHANDLERKIND_INVALID,
+                                ("i=%u enmKind=%d %s\n", i, enmKindR0, pTypeR0->pszDesc));
+                AssertLogRelMsg(pTypeR0->pfnHandler == pgmR0HandlerPhysicalHandlerToRing3,
+                                ("i=%u pfnHandler=%p %s\n", i, pTypeR0->pfnHandler, pTypeR0->pszDesc));
+                AssertLogRelMsg(pTypeR0->pfnPfHandler == pgmR0HandlerPhysicalPfHandlerToRing3,
+                                ("i=%u pfnPfHandler=%p %s\n", i, pTypeR0->pfnPfHandler, pTypeR0->pszDesc));
+
+                /* Unused of bad ring-3 entry, make it and the ring-0 one harmless. */
+                pTypeR3->enmKind         = PGMPHYSHANDLERKIND_END;
+                pTypeR3->fRing0DevInsIdx = false;
+                pTypeR3->fKeepPgmLock    = false;
+                pTypeR3->uState          = 0;
+                break;
+        }
+        pTypeR3->fRing0Enabled   = false;
+
+        /* Make sure the entry is harmless and goes to ring-3. */
+        pTypeR0->enmKind         = PGMPHYSHANDLERKIND_END;
+        pTypeR0->pfnHandler      = pgmR0HandlerPhysicalHandlerToRing3;
+        pTypeR0->pfnPfHandler    = pgmR0HandlerPhysicalPfHandlerToRing3;
+        pTypeR0->fRing0DevInsIdx = false;
+        pTypeR0->fKeepPgmLock    = false;
+        pTypeR0->uState          = 0;
+        pTypeR0->pszDesc         = "invalid";
+    }
 }
 
 
@@ -633,6 +751,79 @@ VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMM
 }
 
 
+/**
+ * Updates a physical access handler type with ring-0 callback functions.
+ *
+ * The handler type must first have been registered in ring-3.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @param   enmKind         The kind of access handler.
+ * @param   fFlags          PGMPHYSHANDLER_F_XXX
+ * @param   pfnHandler      Pointer to the ring-0 handler callback.
+ * @param   pfnPfHandler    Pointer to the ring-0 \#PF handler callback.
+ *                          callback.
+ * @param   pszDesc         The type description.
+ * @param   hType           The handle to do ring-0 callback registrations for.
+ * @thread  EMT(0)
+ */
+VMMR0_INT_DECL(int) PGMR0HandlerPhysicalTypeSetUpContext(PGVM pGVM, PGMPHYSHANDLERKIND enmKind, uint32_t fFlags,
+                                                         PFNPGMPHYSHANDLER pfnHandler, PFNPGMRZPHYSPFHANDLER pfnPfHandler,
+                                                         const char *pszDesc, PGMPHYSHANDLERTYPE hType)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pfnHandler, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfnPfHandler, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
+    AssertReturn(   enmKind == PGMPHYSHANDLERKIND_WRITE
+                 || enmKind == PGMPHYSHANDLERKIND_ALL
+                 || enmKind == PGMPHYSHANDLERKIND_MMIO,
+                 VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!(fFlags & ~PGMPHYSHANDLER_F_VALID_MASK), ("%#x\n", fFlags), VERR_INVALID_FLAGS);
+
+    PPGMPHYSHANDLERTYPEINTR0 const pTypeR0 = &pGVM->pgmr0.s.aPhysHandlerTypes[hType & PGMPHYSHANDLERTYPE_IDX_MASK];
+    AssertMsgReturn(hType == pTypeR0->hType, ("%#RX64, expected=%#RX64\n", hType, pTypeR0->hType), VERR_INVALID_HANDLE);
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.aPhysHandlerTypes) == RT_ELEMENTS(pGVM->pgm.s.aPhysHandlerTypes));
+    AssertCompile(RT_ELEMENTS(pGVM->pgmr0.s.aPhysHandlerTypes) == PGMPHYSHANDLERTYPE_IDX_MASK + 1);
+    AssertReturn(pTypeR0->enmKind == PGMPHYSHANDLERKIND_INVALID, VERR_ALREADY_INITIALIZED);
+
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
+    AssertRCReturn(rc, rc);
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE); /** @todo ring-0 safe state check. */
+
+    PPGMPHYSHANDLERTYPEINTR3 const pTypeR3 = &pGVM->pgm.s.aPhysHandlerTypes[hType & PGMPHYSHANDLERTYPE_IDX_MASK];
+    AssertMsgReturn(pTypeR3->enmKind == enmKind,
+                    ("%#x: %d, expected %d\n", hType, pTypeR3->enmKind, enmKind),
+                    VERR_INVALID_HANDLE);
+    AssertMsgReturn(pTypeR3->fKeepPgmLock == RT_BOOL(fFlags & PGMPHYSHANDLER_F_KEEP_PGM_LOCK),
+                    ("%#x: %d, fFlags=%d\n", hType, pTypeR3->fKeepPgmLock, fFlags),
+                    VERR_INVALID_HANDLE);
+    AssertMsgReturn(pTypeR3->fRing0DevInsIdx == RT_BOOL(fFlags & PGMPHYSHANDLER_F_R0_DEVINS_IDX),
+                    ("%#x: %d, fFlags=%d\n", hType, pTypeR3->fRing0DevInsIdx, fFlags),
+                    VERR_INVALID_HANDLE);
+
+    /*
+     * Update the entry.
+     */
+    pTypeR0->enmKind          = enmKind;
+    pTypeR0->uState           = enmKind == PGMPHYSHANDLERKIND_WRITE
+                              ? PGM_PAGE_HNDL_PHYS_STATE_WRITE : PGM_PAGE_HNDL_PHYS_STATE_ALL;
+    pTypeR0->fKeepPgmLock     = RT_BOOL(fFlags & PGMPHYSHANDLER_F_KEEP_PGM_LOCK);
+    pTypeR0->fRing0DevInsIdx  = RT_BOOL(fFlags & PGMPHYSHANDLER_F_R0_DEVINS_IDX);
+    pTypeR0->pfnHandler       = pfnHandler;
+    pTypeR0->pfnPfHandler     = pfnPfHandler;
+    pTypeR0->pszDesc          = pszDesc;
+
+    pTypeR3->fRing0Enabled    = true;
+
+    LogFlow(("PGMR0HandlerPhysicalTypeRegister: hType=%#x: enmKind=%d fFlags=%#x pfnHandler=%p pfnPfHandler=%p pszDesc=%s\n",
+             hType, enmKind, fFlags, pfnHandler, pfnPfHandler, pszDesc));
+    return VINF_SUCCESS;
+}
+
+
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
 /* Interface sketch.  The interface belongs to a global PCI pass-through
    manager.  It shall use the global VM handle, not the user VM handle to
@@ -964,8 +1155,8 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
      * Try lookup the all access physical handler for the address.
      */
     PGM_LOCK_VOID(pGVM);
-    PPGMPHYSHANDLER         pHandler     = pgmHandlerPhysicalLookup(pGVM, GCPhysFault);
-    PPGMPHYSHANDLERTYPEINT  pHandlerType = RT_LIKELY(pHandler) ? PGMPHYSHANDLER_GET_TYPE(pGVM, pHandler) : NULL;
+    PPGMPHYSHANDLER          pHandler     = pgmHandlerPhysicalLookup(pGVM, GCPhysFault);
+    PCPGMPHYSHANDLERTYPEINT  pHandlerType = RT_LIKELY(pHandler) ? PGMPHYSHANDLER_GET_TYPE_NO_NULL(pGVM, pHandler) : NULL;
     if (RT_LIKELY(pHandler && pHandlerType->enmKind != PGMPHYSHANDLERKIND_WRITE))
     {
         /*
@@ -987,16 +1178,16 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
         }
         else
         {
-            if (pHandlerType->CTX_SUFF(pfnPfHandler))
+            if (pHandlerType->pfnPfHandler)
             {
                 uint64_t const uUser = !pHandlerType->fRing0DevInsIdx ? pHandler->uUser
                                      : (uintptr_t)PDMDeviceRing0IdxToInstance(pGVM, pHandler->uUser);
                 STAM_PROFILE_START(&pHandler->Stat, h);
                 PGM_UNLOCK(pGVM);
 
-                Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pHandlerType->CTX_SUFF(pfnPfHandler), uErr, GCPhysFault, uUser));
-                rc = pHandlerType->CTX_SUFF(pfnPfHandler)(pGVM, pGVCpu, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame,
-                                                          GCPhysFault, GCPhysFault, uUser);
+                Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pHandlerType->pfnPfHandler, uErr, GCPhysFault, uUser));
+                rc = pHandlerType->pfnPfHandler(pGVM, pGVCpu, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame,
+                                                GCPhysFault, GCPhysFault, uUser);
 
 #ifdef VBOX_WITH_STATISTICS
                 PGM_LOCK_VOID(pGVM);

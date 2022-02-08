@@ -991,6 +991,48 @@ DECLINLINE(PPGMPHYSHANDLER) pgmHandlerPhysicalLookup(PVMCC pVM, RTGCPHYS GCPhys)
 
 
 /**
+ * Converts a handle to a pointer.
+ *
+ * @returns Pointer on success, NULL on failure (asserted).
+ * @param   pVM     The cross context VM structure.
+ * @param   hType   Physical access handler type handle.
+ */
+DECLINLINE(PCPGMPHYSHANDLERTYPEINT) pgmHandlerPhysicalTypeHandleToPtr(PVMCC pVM, PGMPHYSHANDLERTYPE hType)
+{
+#ifdef IN_RING0
+    PPGMPHYSHANDLERTYPEINT pType = &pVM->pgmr0.s.aPhysHandlerTypes[hType & PGMPHYSHANDLERTYPE_IDX_MASK];
+#elif defined(IN_RING3)
+    PPGMPHYSHANDLERTYPEINT pType = &pVM->pgm.s.aPhysHandlerTypes[hType & PGMPHYSHANDLERTYPE_IDX_MASK];
+#else
+# error "Invalid context"
+#endif
+    AssertReturn(pType->hType == hType, NULL);
+    return pType;
+}
+
+
+/**
+ * Converts a handle to a pointer, never returns NULL.
+ *
+ * @returns Pointer on success, dummy on failure (asserted).
+ * @param   pVM     The cross context VM structure.
+ * @param   hType   Physical access handler type handle.
+ */
+DECLINLINE(PCPGMPHYSHANDLERTYPEINT) pgmHandlerPhysicalTypeHandleToPtr2(PVMCC pVM, PGMPHYSHANDLERTYPE hType)
+{
+#ifdef IN_RING0
+    PPGMPHYSHANDLERTYPEINT pType = &pVM->pgmr0.s.aPhysHandlerTypes[hType & PGMPHYSHANDLERTYPE_IDX_MASK];
+#elif defined(IN_RING3)
+    PPGMPHYSHANDLERTYPEINT pType = &pVM->pgm.s.aPhysHandlerTypes[hType & PGMPHYSHANDLERTYPE_IDX_MASK];
+#else
+# error "Invalid context"
+#endif
+    AssertReturn(pType->hType == hType, &g_pgmHandlerPhysicalDummyType);
+    return pType;
+}
+
+
+/**
  * Internal worker for finding a 'in-use' shadow page give by it's physical address.
  *
  * @returns Pointer to the shadow page structure.

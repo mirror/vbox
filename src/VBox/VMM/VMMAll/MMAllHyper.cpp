@@ -1259,35 +1259,6 @@ VMMDECL(size_t) MMHyperHeapGetFreeSize(PVM pVM)
 
 
 /**
- * Converts a context neutral heap offset into a pointer.
- *
- * @returns Pointer to hyper heap data.
- * @param   pVM         The cross context VM structure.
- * @param   offHeap     The hyper heap offset.
- */
-VMMDECL(void *) MMHyperHeapOffsetToPtr(PVM pVM, uint32_t offHeap)
-{
-    Assert(offHeap - MMYPERHEAP_HDR_SIZE <= pVM->mm.s.CTX_SUFF(pHyperHeap)->cbHeap);
-    return (uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap) + offHeap;
-}
-
-
-/**
- * Converts a context specific heap pointer into a neutral heap offset.
- *
- * @returns Heap offset.
- * @param   pVM         The cross context VM structure.
- * @param   pv          Pointer to the heap data.
- */
-VMMDECL(uint32_t) MMHyperHeapPtrToOffset(PVM pVM, void *pv)
-{
-    size_t offHeap = (uint8_t *)pv - (uint8_t *)pVM->mm.s.CTX_SUFF(pHyperHeap);
-    Assert(offHeap - MMYPERHEAP_HDR_SIZE <= pVM->mm.s.CTX_SUFF(pHyperHeap)->cbHeap);
-    return (uint32_t)offHeap;
-}
-
-
-/**
  * Checks if an address is within the hypervisor memory area.
  *
  * @returns true if inside.

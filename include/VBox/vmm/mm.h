@@ -176,8 +176,6 @@ VMMDECL(void)       MMHyperHeapCheck(PVMCC pVM);
 VMMDECL(void)       MMHyperHeapDump(PVM pVM);
 #endif
 VMMDECL(size_t)     MMHyperHeapGetFreeSize(PVM pVM);
-VMMDECL(void *)     MMHyperHeapOffsetToPtr(PVM pVM, uint32_t offHeap);
-VMMDECL(uint32_t)   MMHyperHeapPtrToOffset(PVM pVM, void *pv);
 VMMDECL(bool)       MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr);
 
 #if 0

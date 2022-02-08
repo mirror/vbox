@@ -386,6 +386,12 @@ VMM_INT_DECL(VBOXSTRICTRC)  IEMExecDecodedInvept(PVMCPUCC pVCpu, PCVMXVEXITINFO 
 #endif
 /** @}  */
 
+/** @defgroup grp_iem_r3     The IEM Host Context Ring-3 API.
+ * @{
+ */
+VMMR0_INT_DECL(int) IEMR0InitVM(PGVM pGVM);
+/** @} */
+
 
 /** @defgroup grp_iem_r3     The IEM Host Context Ring-3 API.
  * @{

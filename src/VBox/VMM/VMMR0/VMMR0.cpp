@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_VMM
 #include <VBox/vmm/vmm.h>
 #include <VBox/sup.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/cpum.h>
@@ -54,6 +55,7 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 #include <iprt/crc.h>
+#include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
 #include <iprt/mp.h>
@@ -281,6 +283,7 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
     GVMMR0Term();
 
     vmmTermFormatTypes();
+    RTTermRunCallbacks(RTTERMREASON_UNLOAD, 0);
 
     LogFlow(("ModuleTerm: returns\n"));
 }
@@ -435,7 +438,7 @@ static int vmmR0InitVM(PGVM pGVM, uint32_t uSvnRev, uint32_t uBuildType)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Init HM, CPUM and PGM (Darwin only).
+         * Init HM, CPUM and PGM.
          */
         rc = HMR0InitVM(pGVM);
         if (RT_SUCCESS(rc))
@@ -449,29 +452,38 @@ static int vmmR0InitVM(PGVM pGVM, uint32_t uSvnRev, uint32_t uBuildType)
                     rc = EMR0InitVM(pGVM);
                     if (RT_SUCCESS(rc))
                     {
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
-                        rc = PciRawR0InitVM(pGVM);
-#endif
+                        rc = IEMR0InitVM(pGVM);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = GIMR0InitVM(pGVM);
+                            rc = IOMR0InitVM(pGVM);
                             if (RT_SUCCESS(rc))
                             {
-                                GVMMR0DoneInitVM(pGVM);
-
-                                /*
-                                 * Collect a bit of info for the VM release log.
-                                 */
-                                pGVM->vmm.s.fIsPreemptPendingApiTrusty = RTThreadPreemptIsPendingTrusty();
-                                pGVM->vmm.s.fIsPreemptPossible         = RTThreadPreemptIsPossible();;
-                                return rc;
-
-                                /* bail out*/
-                                //GIMR0TermVM(pGVM);
-                            }
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
-                            PciRawR0TermVM(pGVM);
+                                rc = PciRawR0InitVM(pGVM);
 #endif
+                                if (RT_SUCCESS(rc))
+                                {
+                                    rc = GIMR0InitVM(pGVM);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        GVMMR0DoneInitVM(pGVM);
+                                        PGMR0DoneInitVM(pGVM);
+
+                                        /*
+                                         * Collect a bit of info for the VM release log.
+                                         */
+                                        pGVM->vmm.s.fIsPreemptPendingApiTrusty = RTThreadPreemptIsPendingTrusty();
+                                        pGVM->vmm.s.fIsPreemptPossible         = RTThreadPreemptIsPossible();;
+                                        return rc;
+
+                                        /* bail out*/
+                                        //GIMR0TermVM(pGVM);
+                                    }
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                                    PciRawR0TermVM(pGVM);
+#endif
+                                }
+                            }
                         }
                     }
                 }

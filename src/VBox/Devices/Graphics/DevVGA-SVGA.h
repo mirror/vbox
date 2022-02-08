@@ -369,8 +369,6 @@ typedef struct VMSVGAState
 #if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
     /** FIFO debug access handler type handle. */
     PGMPHYSHANDLERTYPE          hFifoAccessHandlerType;
-#elif defined(DEBUG_GMR_ACCESS)
-    uint32_t                    uPadding1;
 #endif
     /** Number of GMRs (VMSVGA_MAX_GMR_IDS, count of elements in VMSVGAR3STATE::paGMR array). */
     uint32_t                    cGMR;

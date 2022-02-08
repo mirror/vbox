@@ -242,7 +242,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
         PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
         if (pCur)
         {
-            PPGMPHYSHANDLERTYPEINT pCurType = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
+            PCPGMPHYSHANDLERTYPEINT const pCurType = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
 
 #  ifdef PGM_SYNC_N_PAGES
             /*
@@ -311,15 +311,15 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
                 if (uErr & X86_TRAP_PF_RSVD) STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eHandlersPhysAllOpt);
             }
 
-            if (pCurType->CTX_SUFF(pfnPfHandler))
+            if (pCurType->pfnPfHandler)
             {
                 STAM_PROFILE_START(&pCur->Stat, h);
 
                 if (pCurType->fKeepPgmLock)
                 {
-                    rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault,
-                                                                !pCurType->fRing0DevInsIdx ? pCur->uUser
-                                                                : (uintptr_t)PDMDeviceRing0IdxToInstance(pVM, pCur->uUser));
+                    rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault,
+                                                      !pCurType->fRing0DevInsIdx ? pCur->uUser
+                                                      : (uintptr_t)PDMDeviceRing0IdxToInstance(pVM, pCur->uUser));
 
 #  ifdef VBOX_WITH_STATISTICS
                     pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault); /* paranoia in case the handler deregistered itself */
@@ -334,7 +334,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
                     PGM_UNLOCK(pVM);
                     *pfLockTaken = false;
 
-                    rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault, uUser);
+                    rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault, uUser);
 
 #  ifdef VBOX_WITH_STATISTICS
                     PGM_LOCK_VOID(pVM);

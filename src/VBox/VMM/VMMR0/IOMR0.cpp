@@ -21,10 +21,13 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_IOM
 #include <VBox/vmm/iom.h>
+#include <VBox/vmm/pgm.h>
 #include "IOMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/log.h>
+#include <iprt/assert.h>
 #include <iprt/assertcompile.h>
+#include <iprt/errcore.h>
 
 
 
@@ -43,6 +46,22 @@ VMMR0_INT_DECL(void) IOMR0InitPerVMData(PGVM pGVM)
 
     iomR0IoPortInitPerVMData(pGVM);
     iomR0MmioInitPerVMData(pGVM);
+}
+
+
+/**
+ * Called during ring-0 init (vmmR0InitVM).
+ *
+ * @returns VBox status code.
+ * @param   pGVM    Pointer to the global VM structure.
+ */
+VMMR0_INT_DECL(int) IOMR0InitVM(PGVM pGVM)
+{
+    int rc = PGMR0HandlerPhysicalTypeSetUpContext(pGVM, PGMPHYSHANDLERKIND_MMIO, 0 /*fFlags*/,
+                                                  iomMmioHandlerNew, iomMmioPfHandlerNew,
+                                                  "MMIO", pGVM->iom.s.hNewMmioHandlerType);
+    AssertRCReturn(rc, rc);
+    return VINF_SUCCESS;
 }
 
 

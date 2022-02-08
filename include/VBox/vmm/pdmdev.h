@@ -4858,25 +4858,15 @@ typedef struct PDMDEVHLPR3
      * Register a physical page access handler type.
      *
      * @returns VBox status code.
-     * @param   pDevIns             The device instance.
-     * @param   enmKind             The kind of access handler.
-     * @param   pfnHandlerR3        Pointer to the ring-3 handler callback.
-     * @param   pszHandlerR0        The name of the ring-0 handler, NULL if the ring-3
-     *                              handler should be called.
-     * @param   pszPfHandlerR0      The name of the ring-0 \#PF handler, NULL if the
-     *                              ring-3 handler should be called.
-     * @param   pszHandlerRC        The name of the raw-mode context handler, NULL if
-     *                              the ring-3 handler should be called.
-     * @param   pszPfHandlerRC      The name of the raw-mode context \#PF handler, NULL
-     *                              if the ring-3 handler should be called.
-     * @param   pszDesc             The type description.
-     * @param   phType              Where to return the type handle (cross context
-     *                              safe).
+     * @param   pDevIns     The device instance.
+     * @param   enmKind     The kind of access handler.
+     * @param   pfnHandler  Pointer to the ring-3 handler callback.
+     * @param   pszDesc     The type description.
+     * @param   phType      Where to return the type handle (cross context safe).
+     * @sa      PDMDevHlpPGMHandlerPhysicalTypeSetUpContext
      */
     DECLR3CALLBACKMEMBER(int, pfnPGMHandlerPhysicalTypeRegister, (PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
-                                                                  R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
-                                                                  const char *pszHandlerR0, const char *pszPfHandlerR0,
-                                                                  const char *pszHandlerRC, const char *pszPfHandlerRC,
+                                                                  PFNPGMPHYSHANDLER pfnHandler,
                                                                   const char *pszDesc, PPGMPHYSHANDLERTYPE phType));
 
     /**
@@ -5963,6 +5953,25 @@ typedef struct PDMDEVHLPR0
     DECLR0CALLBACKMEMBER(int, pfnHpetSetUpContext,(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR0 *ppHpetHlp));
 
     /**
+     * Sets up a physical page access handler type for ring-0 callbacks.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         The device instance.
+     * @param   enmKind         The kind of access handler.
+     * @param   pfnHandler      Pointer to the ring-0 handler callback. NULL if
+     *                          the ring-3 handler should be called.
+     * @param   pfnPfHandler    The name of the ring-0 \#PF handler, NULL if the
+     *                          ring-3 handler should be called.
+     * @param   pszDesc         The type description.
+     * @param   hType           The type handle registered in ring-3 already.
+     * @sa      PDMDevHlpPGMHandlerPhysicalTypeRegister
+     */
+    DECLR0CALLBACKMEMBER(int, pfnPGMHandlerPhysicalTypeSetUpContext, (PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
+                                                                      PFNPGMPHYSHANDLER pfnHandler,
+                                                                      PFNPGMRZPHYSPFHANDLER pfnPfHandler,
+                                                                      const char *pszDesc, PGMPHYSHANDLERTYPE hType));
+
+    /**
      * Temporarily turns off the access monitoring of a page within a monitored
      * physical write/all page access handler region.
      *
@@ -6058,7 +6067,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 26, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 27, 0)
 
 
 /**
@@ -9459,16 +9468,26 @@ DECLINLINE(void *) PDMDevHlpQueryGenericUserObject(PPDMDEVINS pDevIns, PCRTUUID 
  * @copydoc PDMDEVHLPR3::pfnPGMHandlerPhysicalTypeRegister
  */
 DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
-                                                        R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
-                                                        const char *pszHandlerR0, const char *pszPfHandlerR0,
-                                                        const char *pszHandlerRC, const char *pszPfHandlerRC,
-                                                        const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
+                                                        PFNPGMPHYSHANDLER pfnHandler, const char *pszDesc,
+                                                        PPGMPHYSHANDLERTYPE phType)
 {
-    return pDevIns->pHlpR3->pfnPGMHandlerPhysicalTypeRegister(pDevIns, enmKind, pfnHandlerR3,
-                                                              pszHandlerR0, pszPfHandlerR0,
-                                                              pszHandlerRC, pszPfHandlerRC,
-                                                              pszDesc, phType);
+    return pDevIns->pHlpR3->pfnPGMHandlerPhysicalTypeRegister(pDevIns, enmKind, pfnHandler, pszDesc, phType);
 }
+
+#elif defined(IN_RING0)
+
+/**
+ * @copydoc PDMDEVHLPR0::pfnPGMHandlerPhysicalTypeSetUpContext
+ */
+DECLINLINE(int) PDMDevHlpPGMHandlerPhysicalTypeSetUpContext(PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
+                                                            PFNPGMPHYSHANDLER pfnHandler, PFNPGMRZPHYSPFHANDLER pfnPfHandler,
+                                                            const char *pszDesc, PGMPHYSHANDLERTYPE hType)
+{
+    return pDevIns->pHlpR0->pfnPGMHandlerPhysicalTypeSetUpContext(pDevIns, enmKind, pfnHandler, pfnPfHandler, pszDesc, hType);
+}
+
+#endif
+#ifdef IN_RING3
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPGMHandlerPhysicalRegister

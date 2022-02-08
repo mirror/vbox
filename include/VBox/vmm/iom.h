@@ -513,6 +513,7 @@ VMMR3_INT_DECL(void) IOMR3NotifyDebugEventChange(PVM pVM, DBGFEVENT enmEvent, bo
 /** @defgroup grpm_iom_r0   The IOM Host Context Ring-0 API
  * @{ */
 VMMR0_INT_DECL(void) IOMR0InitPerVMData(PGVM pGVM);
+VMMR0_INT_DECL(int)  IOMR0InitVM(PGVM pGVM);
 VMMR0_INT_DECL(void) IOMR0CleanupVM(PGVM pGVM);
 
 VMMR0_INT_DECL(int)  IOMR0IoPortSetUpContext(PGVM pGVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
