@@ -178,25 +178,36 @@ class tdTestGuestCtrlBase(object):
                                       % (sName, self.oCreds.sUser, self.oCreds.sPassword, self.oCreds.sDomain));
                 return (False, None);
 
-            reporter.log('Waiting for session "%s" to start within %dms...' % (sName, self.timeoutMS));
-            aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start, ];
-            try:
-                waitResult = self.oGuestSession.waitForArray(aeWaitFor, self.timeoutMS);
+            tsStartMs = base.timestampMilli();
+            while base.timestampMilli() - tsStartMs < self.timeoutMS:
+                reporter.log('Waiting for session "%s" to start within %dms...' % (sName, self.timeoutMS));
+                aeWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start, ];
+                try:
+                    waitResult = self.oGuestSession.waitForArray(aeWaitFor, self.timeoutMS);
 
-                #
-                # Be nice to Guest Additions < 4.3: They don't support session handling and
-                # therefore return WaitFlagNotSupported.
-                #
-                if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
+                    # Log session status changes.
+                    if waitResult is vboxcon.GuestSessionWaitResult_Status:
+                        reporter.error('Session "%s" indicated status change (status is now %d)' \
+                                     % (sName, self.oGuestSession.status));
+                        if self.oGuestSession.status is vboxcon.GuestSessionStatus_Started:
+                            reporter.error('Session "%s" successfully started (thru status change)' % (sName,));
+                            break;
+                        continue; # Continue waiting for the session to start.
+
+                    #
+                    # Be nice to Guest Additions < 4.3: They don't support session handling and
+                    # therefore return WaitFlagNotSupported.
+                    #
+                    if waitResult not in (vboxcon.GuestSessionWaitResult_Start, vboxcon.GuestSessionWaitResult_WaitFlagNotSupported):
+                        # Just log, don't assume an error here (will be done in the main loop then).
+                        reporter.maybeErr(fIsError, 'Session did not start successfully, returned wait result: %d' % (waitResult,));
+                        return (False, None);
+                    reporter.log('Session "%s" successfully started' % (sName,));
+                except:
                     # Just log, don't assume an error here (will be done in the main loop then).
-                    reporter.maybeErr(fIsError, 'Session did not start successfully, returned wait result: %d' % (waitResult,));
+                    reporter.maybeErrXcpt(fIsError, 'Waiting for guest session "%s" (usr=%s;pw=%s;dom=%s) to start failed:'
+                                          % (sName, self.oCreds.sUser, self.oCreds.sPassword, self.oCreds.sDomain,));
                     return (False, None);
-                reporter.log('Session "%s" successfully started' % (sName,));
-            except:
-                # Just log, don't assume an error here (will be done in the main loop then).
-                reporter.maybeErrXcpt(fIsError, 'Waiting for guest session "%s" (usr=%s;pw=%s;dom=%s) to start failed:'
-                                      % (sName, self.oCreds.sUser, self.oCreds.sPassword, self.oCreds.sDomain,));
-                return (False, None);
         else:
             reporter.log('Warning: Session already set; this is probably not what you want');
         return (True, self.oGuestSession);
