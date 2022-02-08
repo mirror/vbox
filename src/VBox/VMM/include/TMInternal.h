@@ -488,13 +488,9 @@ typedef struct TM
      * This is a valid range u64NanoTS to u64NanoTS + 1000000000 (ie. 1sec). */
     uint64_t volatile           u64VirtualRawPrev;
     /** The ring-3 data structure for the RTTimeNanoTS workers used by tmVirtualGetRawNanoTS. */
-    RTTIMENANOTSDATAR3          VirtualGetRawDataR3;
-    /** The ring-0 data structure for the RTTimeNanoTS workers used by tmVirtualGetRawNanoTS. */
-    RTTIMENANOTSDATAR0          VirtualGetRawDataR0;
+    RTTIMENANOTSDATAR3          VirtualGetRawData;
     /** Pointer to the ring-3 tmVirtualGetRawNanoTS worker function. */
-    R3PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawR3;
-    /** Pointer to the ring-0 tmVirtualGetRawNanoTS worker function. */
-    R0PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRawR0;
+    R3PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRaw;
     /** The guest virtual timer synchronous time when fVirtualSyncTicking is cleared.
      * When fVirtualSyncTicking is set it holds the last time returned to
      * the guest (while the lock was held). */
@@ -845,6 +841,11 @@ typedef struct TMR0PERVM
 {
     /** Timer queues for the different clock types. */
     TMTIMERQUEUER0              aTimerQueues[TMCLOCK_MAX];
+
+    /** The ring-0 data structure for the RTTimeNanoTS workers used by tmVirtualGetRawNanoTS. */
+    RTTIMENANOTSDATAR0          VirtualGetRawData;
+    /** Pointer to the ring-0 tmVirtualGetRawNanoTS worker function. */
+    R0PTRTYPE(PFNTIMENANOTSINTERNAL) pfnVirtualGetRaw;
 } TMR0PERVM;
 
 

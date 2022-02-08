@@ -286,11 +286,11 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /*
      * Setup the VirtualGetRaw backend.
      */
-    pVM->tm.s.pfnVirtualGetRawR3                 = tmVirtualNanoTSRediscover;
-    pVM->tm.s.VirtualGetRawDataR3.pfnRediscover  = tmVirtualNanoTSRediscover;
-    pVM->tm.s.VirtualGetRawDataR3.pfnBad         = tmVirtualNanoTSBad;
-    pVM->tm.s.VirtualGetRawDataR3.pfnBadCpuIndex = tmVirtualNanoTSBadCpuIndex;
-    pVM->tm.s.VirtualGetRawDataR3.pu64Prev       = &pVM->tm.s.u64VirtualRawPrev;
+    pVM->tm.s.pfnVirtualGetRaw                 = tmVirtualNanoTSRediscover;
+    pVM->tm.s.VirtualGetRawData.pfnRediscover  = tmVirtualNanoTSRediscover;
+    pVM->tm.s.VirtualGetRawData.pfnBad         = tmVirtualNanoTSBad;
+    pVM->tm.s.VirtualGetRawData.pfnBadCpuIndex = tmVirtualNanoTSBadCpuIndex;
+    pVM->tm.s.VirtualGetRawData.pu64Prev       = &pVM->tm.s.u64VirtualRawPrev;
 
     /*
      * Get our CFGM node, create it if necessary.
@@ -670,10 +670,12 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /*
      * Register statistics.
      */
-    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR3.c1nsSteps,STAMTYPE_U32, "/TM/R3/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
-    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR3.cBadPrev, STAMTYPE_U32, "/TM/R3/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawData.c1nsSteps,STAMTYPE_U32, "/TM/R3/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawData.cBadPrev, STAMTYPE_U32, "/TM/R3/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+#if 0 /** @todo retreive from ring-0 */
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR0.c1nsSteps,STAMTYPE_U32, "/TM/R0/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataR0.cBadPrev, STAMTYPE_U32, "/TM/R0/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
+#endif
     STAM_REL_REG(     pVM,(void*)&pVM->tm.s.offVirtualSync,               STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset",               STAMUNIT_NS, "The current offset. (subtract GivenUp to get the lag)");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.offVirtualSyncGivenUp,        STAMTYPE_U64, "/TM/VirtualSync/GivenUp",                     STAMUNIT_NS, "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attempted caught up with.");
     STAM_REL_REG(     pVM,(void*)&pVM->tm.s.HzHint.s.uMax,                STAMTYPE_U32, "/TM/MaxHzHint",                               STAMUNIT_HZ, "Max guest timer frequency hint.");
@@ -685,10 +687,12 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     }
 
 #ifdef VBOX_WITH_STATISTICS
-    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR3.cExpired,    STAMTYPE_U32, "/TM/R3/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
-    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR3.cUpdateRaces,STAMTYPE_U32, "/TM/R3/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawData.cExpired,    STAMTYPE_U32, "/TM/R3/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
+    STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawData.cUpdateRaces,STAMTYPE_U32, "/TM/R3/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+# if 0 /** @todo retreive from ring-0 */
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR0.cExpired,    STAMTYPE_U32, "/TM/R0/cExpired",                     STAMUNIT_OCCURENCES, "Times the TSC interval expired (overlaps 1ns steps).");
     STAM_REG_USED(pVM,(void *)&pVM->tm.s.VirtualGetRawDataR0.cUpdateRaces,STAMTYPE_U32, "/TM/R0/cUpdateRaces",                 STAMUNIT_OCCURENCES, "Thread races when updating the previous timestamp.");
+# endif
     STAM_REG(pVM, &pVM->tm.s.StatDoQueues,                            STAMTYPE_PROFILE, "/TM/DoQueues",                    STAMUNIT_TICKS_PER_CALL, "Profiling timer TMR3TimerQueuesDo.");
     STAM_REG(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL].StatDo,    STAMTYPE_PROFILE, "/TM/DoQueues/Virtual",            STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual clock queue.");
     STAM_REG(pVM, &pVM->tm.s.aTimerQueues[TMCLOCK_VIRTUAL_SYNC].StatDo,STAMTYPE_PROFILE,"/TM/DoQueues/VirtualSync",        STAMUNIT_TICKS_PER_CALL, "Time spent on the virtual sync clock queue.");

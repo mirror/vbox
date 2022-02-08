@@ -611,6 +611,11 @@ static VBOXSTRICTRC apicSendIntr(PVMCC pVM, PVMCPUCC pVCpu, uint8_t uVector, XAP
                                  XAPICDELIVERYMODE enmDeliveryMode, PCVMCPUSET pDestCpuSet, bool *pfIntrAccepted,
                                  uint32_t uSrcTag, int rcRZ)
 {
+    AssertCompile(sizeof(pVM->apic.s) <= sizeof(pVM->apic.padding));
+    AssertCompile(sizeof(pVCpu->apic.s) <= sizeof(pVCpu->apic.padding));
+#ifdef IN_RING0
+    AssertCompile(sizeof(pVM->apicr0.s) <= sizeof(pVM->apicr0.padding));
+#endif
     VBOXSTRICTRC  rcStrict  = VINF_SUCCESS;
     VMCPUID const cCpus     = pVM->cCpus;
     bool          fAccepted = false;

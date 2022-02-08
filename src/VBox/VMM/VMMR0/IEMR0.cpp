@@ -33,6 +33,9 @@
 
 VMMR0_INT_DECL(int) IEMR0InitVM(PGVM pGVM)
 {
+    AssertCompile(sizeof(pGVM->iem.s) <= sizeof(pGVM->iem.padding));
+    AssertCompile(sizeof(pGVM->aCpus[0].iem.s) <= sizeof(pGVM->aCpus[0].iem.padding));
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /*
      * Register the per-VM VMX APIC-access page handler type.

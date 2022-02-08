@@ -50,6 +50,7 @@
  */
 VMMR0_INT_DECL(void) DBGFR0InitPerVMData(PGVM pGVM)
 {
+    AssertCompile(sizeof(pGVM->dbgfr0.s) <= sizeof(pGVM->dbgfr0.padding));
     pGVM->dbgfr0.s.pTracerR0 = NULL;
 
     dbgfR0BpInit(pGVM);

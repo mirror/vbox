@@ -45,7 +45,7 @@
 DECLCALLBACK(DECLEXPORT(void)) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev,
                                                   uint64_t u64PrevNanoTS)
 {
-    PVM pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
+    PVMCC pVM = RT_FROM_MEMBER(pData, VMCC, VMCC_CTX(tm).s.VirtualGetRawData);
     pData->cBadPrev++;
     if ((int64_t)u64DeltaPrev < 0)
         LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 pVM=%p\n",
@@ -80,7 +80,7 @@ static DECLCALLBACK(uint64_t) tmR3VirtualNanoTSDriverless(PRTTIMENANOTSDATA pDat
  */
 DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra)
 {
-    PVM                   pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
+    PVMCC                 pVM = RT_FROM_MEMBER(pData, VMCC, VMCC_CTX(tm).s.VirtualGetRawData);
     PFNTIMENANOTSINTERNAL pfnWorker;
 
     /*
@@ -165,7 +165,7 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
     /*
      * Update the pfnVirtualGetRaw pointer and call the worker we selected.
      */
-    ASMAtomicWritePtr((void * volatile *)&CTX_SUFF(pVM->tm.s.pfnVirtualGetRaw), (void *)(uintptr_t)pfnWorker);
+    ASMAtomicWritePtr((void * volatile *)&pVM->VMCC_CTX(tm).s.pfnVirtualGetRaw, (void *)(uintptr_t)pfnWorker);
     return pfnWorker(pData, pExtra);
 }
 
@@ -176,7 +176,7 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
 DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra,
                                                               uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu)
 {
-    PVM pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
+    PVMCC pVM = RT_FROM_MEMBER(pData, VMCC, VMCC_CTX(tm).s.VirtualGetRawData);
     AssertFatalMsgFailed(("pVM=%p idApic=%#x iCpuSet=%#x iGipCpu=%#x pExtra=%p\n", pVM, idApic, iCpuSet, iGipCpu, pExtra));
 #ifndef _MSC_VER
     return UINT64_MAX;
@@ -189,14 +189,16 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA 
  */
 DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVMCC pVM)
 {
-# ifdef IN_RING3
-    uint64_t u64 = CTXALLSUFF(pVM->tm.s.pfnVirtualGetRaw)(&CTXALLSUFF(pVM->tm.s.VirtualGetRawData), NULL /*pExtra*/);
-# else  /* !IN_RING3 */
-    uint32_t cPrevSteps = pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps;
-    uint64_t u64 = pVM->tm.s.CTX_SUFF(pfnVirtualGetRaw)(&pVM->tm.s.CTX_SUFF(VirtualGetRawData), NULL /*pExtra*/);
-    if (cPrevSteps != pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps)
+#ifdef IN_RING3
+    uint64_t u64 = pVM->tm.s.pfnVirtualGetRaw(&pVM->tm.s.VirtualGetRawData, NULL /*pExtra*/);
+#elif defined(IN_RING0)
+    uint32_t cPrevSteps = pVM->tmr0.s.VirtualGetRawData.c1nsSteps;
+    uint64_t u64 = pVM->tmr0.s.pfnVirtualGetRaw(&pVM->tmr0.s.VirtualGetRawData, NULL /*pExtra*/);
+    if (cPrevSteps != pVM->tmr0.s.VirtualGetRawData.c1nsSteps)
         VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_TO_R3);
-# endif /* !IN_RING3 */
+#else
+# error "unsupported context"
+#endif
     /*DBGFTRACE_POS_U64(pVM, u64);*/
     return u64;
 }
@@ -208,14 +210,16 @@ DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVMCC pVM)
 DECLINLINE(uint64_t) tmVirtualGetRawNanoTSEx(PVMCC pVM, uint64_t *puTscNow)
 {
     RTITMENANOTSEXTRA Extra;
-# ifdef IN_RING3
-    uint64_t u64 = CTXALLSUFF(pVM->tm.s.pfnVirtualGetRaw)(&CTXALLSUFF(pVM->tm.s.VirtualGetRawData), &Extra);
-# else  /* !IN_RING3 */
-    uint32_t cPrevSteps = pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps;
-    uint64_t u64 = pVM->tm.s.CTX_SUFF(pfnVirtualGetRaw)(&pVM->tm.s.CTX_SUFF(VirtualGetRawData), &Extra);
-    if (cPrevSteps != pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps)
+#ifdef IN_RING3
+    uint64_t u64 = pVM->tm.s.pfnVirtualGetRaw(&pVM->tm.s.VirtualGetRawData, &Extra);
+#elif defined(IN_RING0)
+    uint32_t cPrevSteps = pVM->tmr0.s.VirtualGetRawData.c1nsSteps;
+    uint64_t u64 = pVM->tmr0.s.pfnVirtualGetRaw(&pVM->tmr0.s.VirtualGetRawData, &Extra);
+    if (cPrevSteps != pVM->tmr0.s.VirtualGetRawData.c1nsSteps)
         VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_TO_R3);
-# endif /* !IN_RING3 */
+#else
+# error "unsupported context"
+#endif
     if (puTscNow)
         *puTscNow = Extra.uTSCValue;
     /*DBGFTRACE_POS_U64(pVM, u64);*/
