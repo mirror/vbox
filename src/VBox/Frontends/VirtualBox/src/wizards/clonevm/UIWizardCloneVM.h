@@ -42,6 +42,7 @@ public:
     bool isCloneModePageVisible() const;
     /** Clone VM stuff. */
     bool cloneVM();
+    bool machineHasSnapshot() const;
 
     /** @name Parameter setter/getters
       * @{ */

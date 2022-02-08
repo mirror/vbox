@@ -172,6 +172,9 @@ private:
     /** Assigns wizard watermark. */
     void assignWatermark();
 #endif
+    /** Checks if the pages coming after the page with iPageIndex is visible or not. Returns true if
+      * page with iPageIndex is the last visible page of the wizard. Returns false otherwise. */
+    bool isLastVisiblePage(int iPageIndex) const;
 
     /** Holds the wizard type. */
     WizardType  m_enmType;

@@ -142,6 +142,8 @@ void UINativeWizard::setPageVisible(int iIndex, bool fVisible)
         m_invisiblePages.remove(iIndex);
     else
         m_invisiblePages.insert(iIndex);
+    /* Update the button labels since the last visible page might have changed. Thus 'Next' <-> 'Finish' might be needed: */
+    retranslateUi();
 }
 
 int UINativeWizard::addPage(UINativeWizardPage *pPage)
@@ -209,7 +211,7 @@ void UINativeWizard::retranslateUi()
     /* Translate Next button: */
     QPushButton *pButtonNext = wizardButton(WizardButtonType_Next);
     AssertMsgReturnVoid(pButtonNext, ("No Next wizard button found!\n"));
-    if (m_pWidgetStack && m_pWidgetStack->currentIndex() < m_pWidgetStack->count() - 1)
+    if (!isLastVisiblePage(m_pWidgetStack->currentIndex()))
     {
         pButtonNext->setText(tr("&Next"));
         pButtonNext->setToolTip(tr("Go to next wizard page."));
@@ -719,4 +721,27 @@ void UINativeWizard::assignWatermark()
     /* Assign watermark finally: */
     m_pLabelPixmap->setPixmap(pixmapNew);
 }
+
+bool UINativeWizard::isLastVisiblePage(int iPageIndex) const
+{
+    if (!m_pWidgetStack)
+        return false;
+    if (iPageIndex == -1)
+        return false;
+    /* The page itself is not visible: */
+    if (m_invisiblePages.contains(iPageIndex))
+        return false;
+    bool fLastVisible = true;
+    /* Look at the page coming after the page with @p iPageIndex and check if they are visible: */
+    for (int i = iPageIndex + 1; i < m_pWidgetStack->count(); ++i)
+    {
+        if (!m_invisiblePages.contains(i))
+        {
+            fLastVisible = false;
+            break;
+        }
+    }
+    return fLastVisible;
+}
+
 #endif /* !VBOX_WS_MAC */

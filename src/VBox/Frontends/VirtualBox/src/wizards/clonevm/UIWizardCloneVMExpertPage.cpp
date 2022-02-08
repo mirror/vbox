@@ -79,7 +79,6 @@ void UIWizardCloneVMExpertPage::prepare(const QString &strOriginalName, const QS
         connect(m_pAdditionalOptionsGroupBox, &UICloneVMAdditionalOptionsEditor::sigKeepHardwareUUIDsToggled,
                 this, &UIWizardCloneVMExpertPage::sltKeepHardwareUUIDsToggled);
     }
-
     retranslateUi();
 }
 
@@ -117,6 +116,9 @@ void UIWizardCloneVMExpertPage::initializePage()
         pWizard->setLinkedClone(!m_pCloneTypeGroupBox->isFullClone());
     if (m_pCloneModeGroupBox)
         pWizard->setCloneMode(m_pCloneModeGroupBox->cloneMode());
+
+    if (m_pCloneModeGroupBox)
+        m_pCloneModeGroupBox->setEnabled(pWizard->machineHasSnapshot());
 
     retranslateUi();
 }
