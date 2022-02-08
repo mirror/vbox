@@ -291,12 +291,6 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.VirtualGetRawDataR3.pfnBad         = tmVirtualNanoTSBad;
     pVM->tm.s.VirtualGetRawDataR3.pfnBadCpuIndex = tmVirtualNanoTSBadCpuIndex;
     pVM->tm.s.VirtualGetRawDataR3.pu64Prev       = &pVM->tm.s.u64VirtualRawPrev;
-    if (!SUPR3IsDriverless())
-    {
-        pVM->tm.s.VirtualGetRawDataR0.pu64Prev   = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
-        AssertRelease(pVM->tm.s.VirtualGetRawDataR0.pu64Prev);
-    }
-    /* The rest is done in TMR3InitFinalize() since it's too early to call PDM. */
 
     /*
      * Get our CFGM node, create it if necessary.
@@ -1070,20 +1064,6 @@ static uint64_t tmR3CalibrateTSC(void)
 VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
 {
     int rc;
-
-    /*
-     * Resolve symbols, unless we're in driverless mode.
-     */
-    if (!SUPR3IsDriverless())
-    {
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBad",           &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
-        AssertRCReturn(rc, rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBadCpuIndex",   &pVM->tm.s.VirtualGetRawDataR0.pfnBadCpuIndex);
-        AssertRCReturn(rc, rc);
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSRediscover",    &pVM->tm.s.VirtualGetRawDataR0.pfnRediscover);
-        AssertRCReturn(rc, rc);
-        pVM->tm.s.pfnVirtualGetRawR0 = pVM->tm.s.VirtualGetRawDataR0.pfnRediscover;
-    }
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     /*

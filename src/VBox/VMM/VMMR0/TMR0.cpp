@@ -50,6 +50,12 @@ VMMR0_INT_DECL(void)    TMR0InitPerVMData(PGVM pGVM)
         pGVM->tmr0.s.aTimerQueues[idxQueue].hMemObj = NIL_RTR0MEMOBJ;
         pGVM->tmr0.s.aTimerQueues[idxQueue].hMapObj = NIL_RTR0MEMOBJ;
     }
+
+    pGVM->tm.s.VirtualGetRawDataR0.pu64Prev       = &pGVM->tm.s.u64VirtualRawPrev;
+    pGVM->tm.s.VirtualGetRawDataR0.pfnBad         = tmVirtualNanoTSBad;
+    pGVM->tm.s.VirtualGetRawDataR0.pfnBadCpuIndex = tmVirtualNanoTSBadCpuIndex;
+    pGVM->tm.s.VirtualGetRawDataR0.pfnRediscover  = tmVirtualNanoTSRediscover;
+    pGVM->tm.s.pfnVirtualGetRawR0                 = tmVirtualNanoTSRediscover;
 }
 
 
