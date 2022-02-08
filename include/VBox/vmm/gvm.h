@@ -339,4 +339,3 @@ AssertCompileSizeAlignment(GVM,             16384);
 
 #endif /* !VBOX_INCLUDED_vmm_gvm_h */
 
-
