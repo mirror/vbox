@@ -45,7 +45,7 @@
 DECLCALLBACK(DECLEXPORT(void)) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev,
                                                   uint64_t u64PrevNanoTS)
 {
-    PVMCC pVM = RT_FROM_MEMBER(pData, VMCC, VMCC_CTX(tm).s.VirtualGetRawData);
+    PVMCC pVM = RT_FROM_CPP_MEMBER(pData, VMCC, VMCC_CTX(tm).s.VirtualGetRawData);
     pData->cBadPrev++;
     if ((int64_t)u64DeltaPrev < 0)
         LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 pVM=%p\n",
@@ -80,7 +80,7 @@ static DECLCALLBACK(uint64_t) tmR3VirtualNanoTSDriverless(PRTTIMENANOTSDATA pDat
  */
 DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra)
 {
-    PVMCC                 pVM = RT_FROM_MEMBER(pData, VMCC, VMCC_CTX(tm).s.VirtualGetRawData);
+    PVMCC                 pVM = RT_FROM_CPP_MEMBER(pData, VMCC, VMCC_CTX(tm).s.VirtualGetRawData);
     PFNTIMENANOTSINTERNAL pfnWorker;
 
     /*
@@ -176,7 +176,7 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
 DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, PRTITMENANOTSEXTRA pExtra,
                                                               uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu)
 {
-    PVMCC pVM = RT_FROM_MEMBER(pData, VMCC, VMCC_CTX(tm).s.VirtualGetRawData);
+    PVMCC pVM = RT_FROM_CPP_MEMBER(pData, VMCC, VMCC_CTX(tm).s.VirtualGetRawData);
     AssertFatalMsgFailed(("pVM=%p idApic=%#x iCpuSet=%#x iGipCpu=%#x pExtra=%p\n", pVM, idApic, iCpuSet, iGipCpu, pExtra));
 #ifndef _MSC_VER
     return UINT64_MAX;
