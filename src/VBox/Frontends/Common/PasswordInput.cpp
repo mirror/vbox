@@ -22,7 +22,7 @@
 #include "PasswordInput.h"
 
 #include <iprt/ctype.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include <iprt/message.h>
 #include <iprt/stream.h>
 
