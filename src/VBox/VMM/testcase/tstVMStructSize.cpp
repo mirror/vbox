@@ -226,6 +226,7 @@ int main()
     CHECK_PADDING_VM(8, vm);
     CHECK_PADDING_VM(8, cfgm);
     CHECK_PADDING_VM(8, apic);
+    CHECK_PADDING_VM(8, iem);
     PRINT_OFFSET(VM, cfgm);
     PRINT_OFFSET(VM, apCpusR3);
 
