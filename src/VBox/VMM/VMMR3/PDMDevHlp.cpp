@@ -859,18 +859,18 @@ static DECLCALLBACK(void *) pdmR3DevHlp_QueryGenericUserObject(PPDMDEVINS pDevIn
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPGMHandlerPhysicalTypeRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PGMHandlerPhysicalTypeRegister(PPDMDEVINS pDevIns, PGMPHYSHANDLERKIND enmKind,
-                                                                    PFNPGMPHYSHANDLER pfnHandlerR3, const char *pszDesc,
+                                                                    PFNPGMPHYSHANDLER pfnHandler, const char *pszDesc,
                                                                     PPGMPHYSHANDLERTYPE phType)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM  pVM = pDevIns->Internal.s.pVMR3;
-    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: enmKind=%d pfnHandlerR3=%p pszDesc=%p:{%s} phType=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, enmKind, pfnHandlerR3, pszDesc, pszDesc, phType));
+    LogFlow(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: enmKind=%d pfnHandler=%p pszDesc=%p:{%s} phType=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, enmKind, pfnHandler, pszDesc, pszDesc, phType));
 
     int rc = PGMR3HandlerPhysicalTypeRegister(pVM, enmKind,
                                               pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED
                                               ? PGMPHYSHANDLER_F_R0_DEVINS_IDX : 0,
-                                              pfnHandlerR3, pszDesc, phType);
+                                              pfnHandler, pszDesc, phType);
 
     Log(("pdmR3DevHlp_PGMHandlerPhysicalTypeRegister: caller='%s'/%d: returns %Rrc\n",
          pDevIns->pReg->szName, pDevIns->iInstance, rc));

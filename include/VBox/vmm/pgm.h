@@ -126,7 +126,7 @@ typedef enum PGMPHYSHANDLERKIND
     /** End of the valid values. */
     PGMPHYSHANDLERKIND_END,
     /** Type size hack. */
-    PGMPHYSHANDLERKIND_32BIT_HACK = 0x7fffffff,
+    PGMPHYSHANDLERKIND_32BIT_HACK = 0x7fffffff
 } PGMPHYSHANDLERKIND;
 
 /**
