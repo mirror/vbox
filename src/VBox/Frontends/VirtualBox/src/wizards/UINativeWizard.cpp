@@ -647,7 +647,6 @@ void UINativeWizard::resizeToGoldenRatio()
     resize(minimumSizeHint());
 }
 
-
 bool UINativeWizard::isLastVisiblePage(int iPageIndex) const
 {
     if (!m_pWidgetStack)

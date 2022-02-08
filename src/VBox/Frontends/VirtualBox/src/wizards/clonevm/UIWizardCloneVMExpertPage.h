@@ -49,6 +49,7 @@ private slots:
     void sltMACAddressClonePolicyChanged(MACAddressClonePolicy enmMACAddressClonePolicy);
     void sltKeepDiskNamesToggled(bool fKeepDiskNames);
     void sltKeepHardwareUUIDsToggled(bool fKeepHardwareUUIDs);
+    void sltCloneTypeChanged(bool fIsFullClone);
 
 private:
 
@@ -62,6 +63,7 @@ private:
     /** Validation stuff. */
     bool isComplete() const;
     bool validatePage();
+    void setCloneModeGroupBoxEnabled();
 
     UICloneVMNamePathEditor *m_pNamePathGroupBox;
     UICloneVMCloneTypeGroupBox *m_pCloneTypeGroupBox;

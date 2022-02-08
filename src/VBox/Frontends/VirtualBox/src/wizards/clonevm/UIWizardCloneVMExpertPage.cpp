@@ -79,6 +79,10 @@ void UIWizardCloneVMExpertPage::prepare(const QString &strOriginalName, const QS
         connect(m_pAdditionalOptionsGroupBox, &UICloneVMAdditionalOptionsEditor::sigKeepHardwareUUIDsToggled,
                 this, &UIWizardCloneVMExpertPage::sltKeepHardwareUUIDsToggled);
     }
+    if (m_pCloneTypeGroupBox)
+        connect(m_pCloneTypeGroupBox, &UICloneVMCloneTypeGroupBox::sigFullCloneSelected,
+                this, &UIWizardCloneVMExpertPage::sltCloneTypeChanged);
+
     retranslateUi();
 }
 
@@ -117,10 +121,18 @@ void UIWizardCloneVMExpertPage::initializePage()
     if (m_pCloneModeGroupBox)
         pWizard->setCloneMode(m_pCloneModeGroupBox->cloneMode());
 
-    if (m_pCloneModeGroupBox)
-        m_pCloneModeGroupBox->setEnabled(pWizard->machineHasSnapshot());
+    setCloneModeGroupBoxEnabled();
 
     retranslateUi();
+}
+
+void UIWizardCloneVMExpertPage::setCloneModeGroupBoxEnabled()
+{
+    UIWizardCloneVM *pWizard = wizardWindow<UIWizardCloneVM>();
+    AssertReturnVoid(pWizard);
+
+    if (m_pCloneModeGroupBox)
+        m_pCloneModeGroupBox->setEnabled(pWizard->machineHasSnapshot() && !pWizard->linkedClone());
 }
 
 bool UIWizardCloneVMExpertPage::isComplete() const
@@ -169,4 +181,12 @@ void UIWizardCloneVMExpertPage::sltKeepHardwareUUIDsToggled(bool fKeepHardwareUU
 {
     AssertReturnVoid(wizardWindow<UIWizardCloneVM>());
     wizardWindow<UIWizardCloneVM>()->setKeepHardwareUUIDs(fKeepHardwareUUIDs);
+}
+
+void UIWizardCloneVMExpertPage::sltCloneTypeChanged(bool fIsFullClone)
+{
+    UIWizardCloneVM *pWizard = wizardWindow<UIWizardCloneVM>();
+    AssertReturnVoid(pWizard);
+    pWizard->setLinkedClone(!fIsFullClone);
+    setCloneModeGroupBoxEnabled();
 }
