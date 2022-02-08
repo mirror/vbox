@@ -714,8 +714,6 @@ void UIWizardNewVM::setISOFilePath(const QString &strISOFilePath)
 
     AssertReturnVoid(!m_comUnattended.isNull());
     m_comUnattended.SetIsoPath(strISOFilePath);
-    /* We hide/show unattended install page depending on the value of isUnattendedEnabled: */
-    setUnattendedPageVisible(isUnattendedEnabled());
     AssertReturnVoid(checkUnattendedInstallError(m_comUnattended));
 
     m_comUnattended.DetectIsoOS();
@@ -725,6 +723,8 @@ void UIWizardNewVM::setISOFilePath(const QString &strISOFilePath)
     for (int i = 0; i < indices.size(); ++i)
         qIndices << indices[i];
     setDetectedWindowsImageNamesAndIndices(m_comUnattended.GetDetectedImageNames(), qIndices);
+    /* We hide/show unattended install page depending on the value of isUnattendedEnabled: */
+    setUnattendedPageVisible(isUnattendedEnabled());
 }
 
 QString UIWizardNewVM::userName() const
