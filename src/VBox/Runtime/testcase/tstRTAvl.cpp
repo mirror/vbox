@@ -29,6 +29,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/avl.h>
+#include <iprt/cpp/hardavlrange.h>
 
 #include <iprt/asm.h>
 #include <iprt/initterm.h>
@@ -1023,6 +1024,173 @@ int avlul(void)
 }
 
 
+/*********************************************************************************************************************************
+*   RTCHardAvlRangeTreeGCPhys                                                                                                    *
+*********************************************************************************************************************************/
+
+typedef struct TESTNODE
+{
+    RTGCPHYS Key, KeyLast;
+    uint32_t idxLeft, idxRight;
+    uint8_t  cHeight;
+} MYTESTNODE;
+
+static DECLCALLBACK(int) hardAvlRangeTreeGCPhysEnumCallbackAscBy4(TESTNODE *pNode, void *pvUser)
+{
+    PRTGCPHYS pExpect = (PRTGCPHYS)pvUser;
+    if (pNode->Key != *pExpect)
+        RTTestIFailed("Key=%RGp, expected %RGp\n", pNode->Key, *pExpect);
+    *pExpect = pNode->Key + 4;
+    return VINF_SUCCESS;
+}
+
+/** @return meaningless, just for return RTTestIFailed(); */
+int hardAvlRangeTreeGCPhys(RTTEST hTest)
+{
+    RTTestISubF("RTCHardAvlRangeTreeGCPhys");
+
+    /*
+     * Tree and allocator variables.
+     */
+    RTCHardAvlTreeSlabAllocator<MYTESTNODE>   Allocator;
+    RTCHardAvlRangeTree<MYTESTNODE, RTGCPHYS> Tree(&Allocator);
+    AssertCompileSize(Tree, sizeof(uint32_t) * 2);
+    AssertCompileSize(Allocator, sizeof(void *) * 2 + sizeof(uint32_t) * 4);
+
+    /* Initialize the allocator with a decent slab of memory. */
+    const uint32_t cItems = 16384;
+    void *pvItems;
+    RTTESTI_CHECK_RC_RET(RTTestGuardedAlloc(hTest, sizeof(MYTESTNODE) * cItems,
+                                            sizeof(uint64_t), false, &pvItems), VINF_SUCCESS, 1);
+    void *pbmBitmap;
+    RTTESTI_CHECK_RC_RET(RTTestGuardedAlloc(hTest, RT_ALIGN_32(cItems, 64) / 64 * 8,
+                                            sizeof(uint64_t), false, &pbmBitmap), VINF_SUCCESS, 1);
+    Allocator.initSlabAllocator(cItems, (TESTNODE *)pvItems, (uint64_t *)pbmBitmap);
+
+    /*
+     * Simple linear insert, get and remove.
+     */
+    /* insert */
+    for (unsigned i = 0; i < 65536; i += 4)
+    {
+        MYTESTNODE *pNode = Allocator.allocateNode();
+        if (!pNode)
+            return RTTestIFailed("out of nodes: i=%#x", i);
+        pNode->Key = i;
+        pNode->KeyLast = i + 3;
+        int rc = Tree.insert(&Allocator, pNode);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("linear insert i=%#x failed: %Rrc", i, rc);
+
+        /* look it up again immediately */
+        for (unsigned j = 0; j < 4; j++)
+        {
+            MYTESTNODE *pNode2;
+            rc = Tree.lookup(&Allocator, i + j, &pNode2);
+            if (rc != VINF_SUCCESS || pNode2 != pNode)
+                return RTTestIFailed("get after insert i=%#x j=%#x: %Rrc pNode=%p pNode2=%p", i, j, rc, pNode, pNode2);
+        }
+
+        /* Do negative inserts if we've got more free nodes. */
+        if (i / 4 + 1 < cItems)
+        {
+            MYTESTNODE *pNode2 = Allocator.allocateNode();
+            if (!pNode2)
+                return RTTestIFailed("out of nodes: i=%#x (#2)", i);
+            RTTESTI_CHECK(pNode2 != pNode);
+
+            *pNode2 = *pNode;
+            for (unsigned j = i >= 32 ? i - 32 : 0; j <= i + 3; j++)
+            {
+                for (unsigned k = i; k < i + 32; k++)
+                {
+                    pNode2->Key     = RT_MIN(j, k);
+                    pNode2->KeyLast = RT_MAX(k, j);
+                    rc = Tree.insert(&Allocator, pNode2);
+                    if (rc != VERR_ALREADY_EXISTS)
+                        return RTTestIFailed("linear negative insert: %Rrc, expected VERR_ALREADY_EXISTS; i=%#x j=%#x k=%#x; Key2=%RGp KeyLast2=%RGp vs Key=%RGp KeyLast=%RGp",
+                                             rc, i, j, k, pNode2->Key, pNode2->KeyLast, pNode->Key, pNode->KeyLast);
+                }
+                if (j == 0)
+                    break;
+            }
+
+            rc = Allocator.freeNode(pNode2);
+            if (rc != VINF_SUCCESS)
+                return RTTestIFailed("freeNode(pNode2=%p) failed: %Rrc (i=%#x)", pNode2, rc, i);
+        }
+    }
+
+    /* do gets. */
+    for (unsigned i = 0; i < 65536; i += 4)
+    {
+        MYTESTNODE *pNode;
+        int rc = Tree.lookup(&Allocator, i, &pNode);
+        if (rc != VINF_SUCCESS || pNode == NULL)
+            return RTTestIFailed("linear get i=%#x: %Rrc pNode=%p", i, rc, pNode);
+        if (i < pNode->Key || i > pNode->KeyLast)
+            return RTTestIFailed("linear get i=%#x Key=%RGp KeyLast=%RGp\n", i, pNode->Key, pNode->KeyLast);
+
+        for (unsigned j = 1; j < 4; j++)
+        {
+            MYTESTNODE *pNode2;
+            rc = Tree.lookup(&Allocator, i + j, &pNode2);
+            if (rc != VINF_SUCCESS || pNode2 != pNode)
+                return RTTestIFailed("linear get i=%#x j=%#x: %Rrc pNode=%p pNode2=%p", i, j, rc, pNode, pNode2);
+        }
+    }
+
+    /* negative get */
+    for (unsigned i = 65536; i < 65536 * 2; i += 1)
+    {
+        MYTESTNODE *pNode = (MYTESTNODE *)(uintptr_t)i;
+        int rc = Tree.lookup(&Allocator, i, &pNode);
+        if (rc != VERR_NOT_FOUND || pNode != NULL)
+            return RTTestIFailed("linear negative get i=%#x: %Rrc pNode=%p, expected VERR_NOT_FOUND and NULL", i, rc, pNode);
+    }
+
+    /* enumerate */
+    {
+        RTGCPHYS Expect = 0;
+        int rc = Tree.doWithAllFromLeft(&Allocator, hardAvlRangeTreeGCPhysEnumCallbackAscBy4, &Expect);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("enumeration after linear insert failed: %Rrc", rc);
+    }
+
+    /* remove */
+    for (unsigned i = 0, j = 0; i < 65536; i += 4, j += 3)
+    {
+        MYTESTNODE *pNode;
+        int rc = Tree.remove(&Allocator, i + (j % 4), &pNode);
+        if (rc != VINF_SUCCESS || pNode == NULL)
+            return RTTestIFailed("linear remove(%#x): %Rrc pNode=%p", i + (j % 4), rc, pNode);
+        if (i < pNode->Key || i > pNode->KeyLast)
+            return RTTestIFailed("linear remove i=%#x Key=%RGp KeyLast=%RGp\n", i, pNode->Key, pNode->KeyLast);
+
+        memset(pNode, 0xcc, sizeof(*pNode));
+        Allocator.freeNode(pNode);
+
+        /* negative */
+        for (unsigned k = i; k < i + 4; k++)
+        {
+            pNode = (MYTESTNODE *)(uintptr_t)k;
+            rc = Tree.remove(&Allocator, k, &pNode);
+            if (rc != VERR_NOT_FOUND || pNode != NULL)
+                return RTTestIFailed("linear negative remove(%#x): %Rrc pNode=%p", k, rc, pNode);
+        }
+    }
+
+    /*
+     * Randomized stuff.
+     */
+    /** @todo add randomized testing step.  Split the address space up into equal
+     *        portition and pick what to insert/remove/lookup using a random
+     *        function against a insertion status bitmap. */
+
+    return 0;
+}
+
+
 int main()
 {
     /*
@@ -1065,6 +1233,7 @@ int main()
 
     avlrogcphys();
     avlul();
+    hardAvlRangeTreeGCPhys(hTest);
 
     /*
      * Done.
