@@ -876,7 +876,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
     #
 
     ## VBox windows services we can query the status of.
-    kasWindowsServices = [ 'vboxdrv', 'vboxusbmon', 'vboxnetadp', 'vboxnetflt', 'vboxnetlwf' ];
+    kasWindowsServices = [ 'vboxsup', 'vboxusbmon', 'vboxnetadp', 'vboxnetflt', 'vboxnetlwf' ];
 
     def _installVBoxOnWindows(self):
         """ Installs VBox on Windows."""
