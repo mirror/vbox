@@ -205,6 +205,7 @@ class tdTestGuestCtrlBase(object):
                                           % (waitResult,));
                         return (False, None);
                     reporter.log('Session "%s" successfully started' % (sName,));
+                    break;
                 except:
                     # Just log, don't assume an error here (will be done in the main loop then).
                     reporter.maybeErrXcpt(fIsError, 'Waiting for guest session "%s" (usr=%s;pw=%s;dom=%s) to start failed:'
