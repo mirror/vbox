@@ -106,11 +106,11 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND
     /*
      * Do the allocating.
      */
-    PGMPHYSHANDLERTYPE hType = pVM->pgm.s.cPhysHandlerTypes;
-    AssertLogRelReturn(hType < RT_ELEMENTS(pVM->pgm.s.aPhysHandlerTypes), VERR_OUT_OF_RESOURCES);
-    PPGMPHYSHANDLERTYPEINTR3 const pType = &pVM->pgm.s.aPhysHandlerTypes[hType];
+    uint32_t const idxType = pVM->pgm.s.cPhysHandlerTypes;
+    AssertLogRelReturn(idxType < RT_ELEMENTS(pVM->pgm.s.aPhysHandlerTypes), VERR_OUT_OF_RESOURCES);
+    PPGMPHYSHANDLERTYPEINTR3 const pType = &pVM->pgm.s.aPhysHandlerTypes[idxType];
     AssertReturn(pType->enmKind == PGMPHYSHANDLERKIND_INVALID, VERR_PGM_HANDLER_IPE_1);
-    pVM->pgm.s.cPhysHandlerTypes++;
+    pVM->pgm.s.cPhysHandlerTypes = idxType + 1;
 
     pType->enmKind          = enmKind;
     pType->uState           = enmKind == PGMPHYSHANDLERKIND_WRITE
@@ -121,8 +121,8 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND
     pType->pszDesc          = pszDesc;
 
     *phType = pType->hType;
-    LogFlow(("PGMR3HandlerPhysicalTypeRegisterEx: hType=%#x: enmKind=%d fFlags=%#x pfnHandler=%p pszDesc=%s\n",
-             hType, enmKind, fFlags, pfnHandler, pszDesc));
+    LogFlow(("PGMR3HandlerPhysicalTypeRegisterEx: hType=%#RX64/%#x: enmKind=%d fFlags=%#x pfnHandler=%p pszDesc=%s\n",
+             pType->hType, idxType, enmKind, fFlags, pfnHandler, pszDesc));
     return VINF_SUCCESS;
 }
 
