@@ -1905,8 +1905,7 @@ static DECLCALLBACK(int) elnkLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     PELNKSTATECC    pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PELNKSTATECC);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
-    if (   SSM_VERSION_MAJOR_CHANGED(uVersion, ELNK_SAVEDSTATE_VERSION)
-        || SSM_VERSION_MINOR(uVersion) < 7)
+    if (SSM_VERSION_MAJOR_CHANGED(uVersion, ELNK_SAVEDSTATE_VERSION))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     if (uPass == SSM_PASS_FINAL)
@@ -1925,7 +1924,6 @@ static DECLCALLBACK(int) elnkLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
         pHlp->pfnSSMGetBool(pSSM, &pThis->fInReset);
         pHlp->pfnSSMGetBool(pSSM, &pThis->fLinkUp);
         pHlp->pfnSSMGetBool(pSSM, &pThis->fISR);
-        pHlp->pfnSSMGetMem(pSSM, &pThis->aStationAddr, sizeof(pThis->aStationAddr));
     }
 
     /* check config */
