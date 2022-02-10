@@ -1075,7 +1075,7 @@ static uint32_t PickClearBitAndSetIt(uint64_t *pbm, uint32_t cItems)
     return idx;
 }
 
-
+#if 0
 static uint32_t PickSetBit(uint64_t *pbm, uint32_t cItems)
 {
     uint32_t idx = RTRandU32Ex(0, cItems - 1);
@@ -1105,6 +1105,7 @@ static uint32_t PickSetBitAndClearIt(uint64_t *pbm, uint32_t cItems)
     RTTESTI_CHECK(ASMBitTestAndSet(pbm, idx) == true);
     return idx;
 }
+#endif
 
 
 /** @return meaningless, just for return RTTestIFailed(); */
