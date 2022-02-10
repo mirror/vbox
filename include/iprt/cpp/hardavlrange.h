@@ -291,7 +291,7 @@ struct RTCHardAvlRangeTree
                                      AVLStack.apidxEntries[RT_ELEMENTS(AVLStack.apidxEntries) - 4], *AVLStack.apidxEntries[RT_ELEMENTS(AVLStack.apidxEntries) - 4],
                                      AVLStack.apidxEntries[RT_ELEMENTS(AVLStack.apidxEntries) - 5], *AVLStack.apidxEntries[RT_ELEMENTS(AVLStack.apidxEntries) - 5]),
                                     m_cErrors++, VERR_HARDAVL_STACK_OVERFLOW);
-                AVLStack.apidxEntries[cEntries] = pidxDeleteNode;
+                AVLStack.apidxEntries[cEntries] = pidxLeftLeast;
                 AVLStack.cEntries = cEntries + 1;
 
                 pidxLeftLeast    = &pLeftLeastNode->idxRight;
@@ -436,7 +436,9 @@ struct RTCHardAvlRangeTree
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
                     if (pLeftNode)
                     {
+#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
                         AssertCompile(kMaxStack > 6);
+#endif
                         AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
                                             ("%p[%#x] %p %p %p %p %p %p\n", pLeftNode, pNode->idxLeft, apEntries[kMaxStack - 1],
                                              apEntries[kMaxStack - 2], apEntries[kMaxStack - 3], apEntries[kMaxStack - 4],
@@ -468,7 +470,9 @@ struct RTCHardAvlRangeTree
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pRightNode));
                     if (pRightNode)
                     {
+#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
                         AssertCompile(kMaxStack > 6);
+#endif
                         AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
                                             ("%p[%#x] %p %p %p %p %p %p\n", pRightNode, pNode->idxRight, apEntries[kMaxStack - 1],
                                              apEntries[kMaxStack - 2], apEntries[kMaxStack - 3], apEntries[kMaxStack - 4],
@@ -553,7 +557,9 @@ struct RTCHardAvlRangeTree
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
                     if (pLeftNode)
                     {
+#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
                         AssertCompile(kMaxStack > 6);
+#endif
                         AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
                                             ("%p[%#x] %p %p %p %p %p %p\n", pLeftNode, pNode->idxLeft, apEntries[kMaxStack - 1],
                                              apEntries[kMaxStack - 2], apEntries[kMaxStack - 3], apEntries[kMaxStack - 4],
@@ -581,7 +587,9 @@ struct RTCHardAvlRangeTree
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pRightNode));
                     if (pRightNode)
                     {
+#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
                         AssertCompile(kMaxStack > 6);
+#endif
                         AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
                                             ("%p[%#x] %p %p %p %p %p %p\n", pRightNode, pNode->idxRight, apEntries[kMaxStack - 1],
                                              apEntries[kMaxStack - 2], apEntries[kMaxStack - 3], apEntries[kMaxStack - 4],

@@ -1044,6 +1044,69 @@ static DECLCALLBACK(int) hardAvlRangeTreeGCPhysEnumCallbackAscBy4(TESTNODE *pNod
     return VINF_SUCCESS;
 }
 
+
+static uint32_t PickClearBit(uint64_t *pbm, uint32_t cItems)
+{
+    uint32_t idx = RTRandU32Ex(0, cItems - 1);
+    if (ASMBitTest(pbm, idx) == 0)
+        return idx;
+
+    /* Scan forward as we've got code for that already: */
+    uint32_t const idxOrg = idx;
+    idx = ASMBitNextClear(pbm, cItems, idx);
+    if ((int32_t)idx >= 0)
+        return idx;
+
+    /* Scan backwards bit-by-bit because we don't have code for this: */
+    for (idx = idxOrg - 1; idx < cItems; idx--)
+        if (ASMBitTest(pbm, idx) == 0)
+            return idx;
+
+    AssertFailed();
+    RTTestIFailed("no clear bit in bitmap!\n");
+    return 0;
+}
+
+
+static uint32_t PickClearBitAndSetIt(uint64_t *pbm, uint32_t cItems)
+{
+    uint32_t idx = PickClearBit(pbm, cItems);
+    RTTESTI_CHECK(ASMBitTestAndSet(pbm, idx) == false);
+    return idx;
+}
+
+
+static uint32_t PickSetBit(uint64_t *pbm, uint32_t cItems)
+{
+    uint32_t idx = RTRandU32Ex(0, cItems - 1);
+    if (ASMBitTest(pbm, idx) == 1)
+        return idx;
+
+    /* Scan forward as we've got code for that already: */
+    uint32_t const idxOrg = idx;
+    idx = ASMBitNextSet(pbm, cItems, idx);
+    if ((int32_t)idx >= 0)
+        return idx;
+
+    /* Scan backwards bit-by-bit because we don't have code for this: */
+    for (idx = idxOrg - 1; idx < cItems; idx--)
+        if (ASMBitTest(pbm, idx) == 1)
+            return idx;
+
+    AssertFailed();
+    RTTestIFailed("no set bit in bitmap!\n");
+    return 0;
+}
+
+
+static uint32_t PickSetBitAndClearIt(uint64_t *pbm, uint32_t cItems)
+{
+    uint32_t idx = PickSetBit(pbm, cItems);
+    RTTESTI_CHECK(ASMBitTestAndSet(pbm, idx) == true);
+    return idx;
+}
+
+
 /** @return meaningless, just for return RTTestIFailed(); */
 int hardAvlRangeTreeGCPhys(RTTEST hTest)
 {
@@ -1183,9 +1246,65 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
     /*
      * Randomized stuff.
      */
-    /** @todo add randomized testing step.  Split the address space up into equal
-     *        portition and pick what to insert/remove/lookup using a random
-     *        function against a insertion status bitmap. */
+    uint64_t uSeed = RTRandU64();
+    RTRandAdvSeed(g_hRand, uSeed);
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "Random seed: %#RX64\n", uSeed);
+
+    RTGCPHYS const   cbStep     = RTGCPHYS_MAX / cItems + 1;
+    uint64_t * const pbmPresent = (uint64_t *)RTMemAllocZ(RT_ALIGN_32(cItems, 64) / 64 * 8);
+    RTTESTI_CHECK_RET(pbmPresent, 1);
+
+    /* insert all in random order */
+    for (unsigned i = 0; i < cItems; i++)
+    {
+        MYTESTNODE *pNode = Allocator.allocateNode();
+        if (!pNode)
+            return RTTestIFailed("out of nodes: i=%#x #3", i);
+
+        uint32_t const idx = PickClearBitAndSetIt(pbmPresent, cItems);
+        pNode->Key     = idx * cbStep;
+        pNode->KeyLast = pNode->Key + cbStep - 1;
+        int rc = Tree.insert(&Allocator, pNode);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("random insert failed: %Rrc, i=%#x, idx=%#x (%RGp ... %RGp)", rc, i, idx, pNode->Key, pNode->KeyLast);
+
+        MYTESTNODE *pNode2 = (MYTESTNODE *)(intptr_t)i;
+        rc = Tree.lookup(&Allocator, pNode->Key, &pNode2);
+        if (rc != VINF_SUCCESS || pNode2 != pNode)
+            return RTTestIFailed("lookup after random insert %#x: %Rrc pNode=%p pNode2=%p idx=%#x", i, rc, pNode, pNode2, idx);
+    }
+
+#if 0 /** @todo this doesn't work quit right yet */
+    /* remove all in random order. */
+    for (unsigned i = 0; i < cItems; i++)
+    {
+        uint32_t const idx = PickSetBitAndClearIt(pbmPresent, cItems);
+
+        MYTESTNODE *pNode = (MYTESTNODE *)(intptr_t)i;
+        int rc = Tree.remove(&Allocator, idx * cbStep, &pNode);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("random remove failed: %Rrc, i=%#x, idx=%#x (%RGp ... %RGp)",
+                          rc, idx, idx * cbStep, idx * cbStep + cbStep - 1);
+        else if (   pNode->Key     != idx * cbStep
+                 || pNode->KeyLast != idx * cbStep + cbStep - 1)
+            RTTestIFailed("random remove returned wrong node: %RGp ... %RGp, expected %RGp ... %RGp (i=%#x, idx=%#x)",
+                          pNode->Key, pNode->KeyLast, idx * cbStep, idx * cbStep + cbStep - 1, i, idx);
+        else
+        {
+            MYTESTNODE *pNode2 = (MYTESTNODE *)(intptr_t)i;
+            rc = Tree.lookup(&Allocator, idx * cbStep, &pNode2);
+            if (rc != VERR_NOT_FOUND)
+                RTTestIFailed("lookup after random removal %#x: %Rrc pNode=%p pNode2=%p idx=%#x", i, rc, pNode, pNode2, idx);
+
+            rc = Allocator.freeNode(pNode);
+            if (rc != VINF_SUCCESS)
+                RTTestIFailed("free after random removal %#x failed: %Rrc pNode=%p idx=%#x", i, rc, pNode, idx);
+        }
+    }
+#endif
+
+    /** @todo Add more random stuff here where we pick the operation to perform
+     *        using random as well and just do large number of these iterations. */
 
     return 0;
 }
@@ -1213,6 +1332,7 @@ int main()
     /*
      * Testing.
      */
+#if 0
     unsigned i;
     RTTestSub(hTest, "oGCPhys(32..2048)");
     for (i = 32; i < 2048; i++)
@@ -1233,6 +1353,8 @@ int main()
 
     avlrogcphys();
     avlul();
+#endif
+
     hardAvlRangeTreeGCPhys(hTest);
 
     /*
