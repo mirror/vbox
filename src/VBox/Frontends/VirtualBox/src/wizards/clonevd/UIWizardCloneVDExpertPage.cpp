@@ -30,9 +30,10 @@
 #include "CSystemProperties.h"
 
 UIWizardCloneVDExpertPage::UIWizardCloneVDExpertPage(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize)
-    :m_pFormatGroupBox(0)
+    : m_pFormatComboBox(0)
     , m_pVariantWidget(0)
     , m_pMediumSizePathGroupBox(0)
+    , m_pFormatVariantGroupBox(0)
     , m_enmDeviceType(enmDeviceType)
 {
     prepare(enmDeviceType, uSourceDiskLogicaSize);
@@ -40,13 +41,13 @@ UIWizardCloneVDExpertPage::UIWizardCloneVDExpertPage(KDeviceType enmDeviceType, 
 
 void UIWizardCloneVDExpertPage::prepare(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize)
 {
-    QGridLayout *pMainLayout = new QGridLayout(this);
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
 
     m_pMediumSizePathGroupBox = new UIMediumSizeAndPathGroupBox(true /* expert mode */, 0 /* parent */, uSourceDiskLogicaSize);
 
     if (m_pMediumSizePathGroupBox)
     {
-        pMainLayout->addWidget(m_pMediumSizePathGroupBox, 0, 0, 4, 2);
+        pMainLayout->addWidget(m_pMediumSizePathGroupBox);
         connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumLocationButtonClicked,
                 this, &UIWizardCloneVDExpertPage::sltSelectLocationButtonClicked);
         connect(m_pMediumSizePathGroupBox, &UIMediumSizeAndPathGroupBox::sigMediumPathChanged,
@@ -55,27 +56,30 @@ void UIWizardCloneVDExpertPage::prepare(KDeviceType enmDeviceType, qulonglong uS
                 this, &UIWizardCloneVDExpertPage::sltMediumSizeChanged);
     }
 
-    m_pFormatGroupBox = new UIDiskFormatsGroupBox(true /* expert mode */, enmDeviceType, 0);
-    if (m_pFormatGroupBox)
-    {
-        pMainLayout-> addWidget(m_pFormatGroupBox, 4, 0, 7, 1);
-        connect(m_pFormatGroupBox, &UIDiskFormatsGroupBox::sigMediumFormatChanged,
+    m_pFormatComboBox = new UIDiskFormatsComboBox(true /* expert mode */, enmDeviceType, 0);
+    if (m_pFormatComboBox)
+        connect(m_pFormatComboBox, &UIDiskFormatsComboBox::sigMediumFormatChanged,
                 this, &UIWizardCloneVDExpertPage::sltMediumFormatChanged);
-    }
 
     m_pVariantWidget = new UIDiskVariantWidget(0);
     if (m_pVariantWidget)
-    {
-        pMainLayout-> addWidget(m_pVariantWidget, 4, 1, 3, 1);
         connect(m_pVariantWidget, &UIDiskVariantWidget::sigMediumVariantChanged,
                 this, &UIWizardCloneVDExpertPage::sltMediumVariantChanged);
+
+    m_pFormatVariantGroupBox = new QGroupBox;
+    if (m_pFormatVariantGroupBox)
+    {
+        QHBoxLayout *pFormatVariantLayout = new QHBoxLayout(m_pFormatVariantGroupBox);
+        pFormatVariantLayout->addWidget(m_pFormatComboBox, 0, Qt::AlignTop);
+        pFormatVariantLayout->addWidget(m_pVariantWidget);
+        pMainLayout->addWidget(m_pFormatVariantGroupBox);
     }
 }
 
 void UIWizardCloneVDExpertPage::sltMediumFormatChanged()
 {
-    if (wizardWindow<UIWizardCloneVD>() && m_pFormatGroupBox)
-        wizardWindow<UIWizardCloneVD>()->setMediumFormat(m_pFormatGroupBox->mediumFormat());
+    if (wizardWindow<UIWizardCloneVD>() && m_pFormatComboBox)
+        wizardWindow<UIWizardCloneVD>()->setMediumFormat(m_pFormatComboBox->mediumFormat());
     updateDiskWidgetsAfterMediumFormatChange();
     emit completeChanged();
 }
@@ -124,14 +128,16 @@ void UIWizardCloneVDExpertPage::sltMediumPathChanged(const QString &strPath)
 
 void UIWizardCloneVDExpertPage::retranslateUi()
 {
+    if (m_pFormatVariantGroupBox)
+        m_pFormatVariantGroupBox->setTitle(UIWizardCloneVD::tr("Hard Disk File &Type and Variant"));
 }
 
 void UIWizardCloneVDExpertPage::initializePage()
 {
-    AssertReturnVoid(wizardWindow<UIWizardCloneVD>() && m_pMediumSizePathGroupBox && m_pFormatGroupBox && m_pVariantWidget);
+    AssertReturnVoid(wizardWindow<UIWizardCloneVD>() && m_pMediumSizePathGroupBox && m_pFormatComboBox && m_pVariantWidget);
     UIWizardCloneVD *pWizard = wizardWindow<UIWizardCloneVD>();
 
-    pWizard->setMediumFormat(m_pFormatGroupBox->mediumFormat());
+    pWizard->setMediumFormat(m_pFormatComboBox->mediumFormat());
 
     pWizard->setMediumVariant(m_pVariantWidget->mediumVariant());
     m_pVariantWidget->updateMediumVariantWidgetsAfterFormatChange(pWizard->mediumFormat());
@@ -159,8 +165,8 @@ bool UIWizardCloneVDExpertPage::isComplete() const
 {
     bool fResult = true;
 
-    if (m_pFormatGroupBox)
-        fResult = m_pFormatGroupBox->mediumFormat().isNull();
+    if (m_pFormatComboBox)
+        fResult = m_pFormatComboBox->mediumFormat().isNull();
     if (m_pVariantWidget)
         fResult = m_pVariantWidget->isComplete();
     if (m_pMediumSizePathGroupBox)
@@ -187,7 +193,7 @@ bool UIWizardCloneVDExpertPage::validatePage()
 void UIWizardCloneVDExpertPage::updateDiskWidgetsAfterMediumFormatChange()
 {
     UIWizardCloneVD *pWizard = wizardWindow<UIWizardCloneVD>();
-    AssertReturnVoid(pWizard && m_pVariantWidget && m_pMediumSizePathGroupBox && m_pFormatGroupBox);
+    AssertReturnVoid(pWizard && m_pVariantWidget && m_pMediumSizePathGroupBox && m_pFormatComboBox);
     const CMediumFormat &comMediumFormat = pWizard->mediumFormat();
     AssertReturnVoid(!comMediumFormat.isNull());
 
@@ -196,7 +202,7 @@ void UIWizardCloneVDExpertPage::updateDiskWidgetsAfterMediumFormatChange()
     m_pVariantWidget->blockSignals(false);
 
     m_pMediumSizePathGroupBox->blockSignals(true);
-    m_pMediumSizePathGroupBox->updateMediumPath(comMediumFormat, m_pFormatGroupBox->formatExtensions(), m_enmDeviceType);
+    m_pMediumSizePathGroupBox->updateMediumPath(comMediumFormat, m_pFormatComboBox->formatExtensions(), m_enmDeviceType);
     m_pMediumSizePathGroupBox->blockSignals(false);
     /* Update the wizard parameters explicitly since we blocked th signals: */
     pWizard->setMediumPath(m_pMediumSizePathGroupBox->mediumFilePath());

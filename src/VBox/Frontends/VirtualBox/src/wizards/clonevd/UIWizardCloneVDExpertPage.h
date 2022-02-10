@@ -28,9 +28,11 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
-class UIDiskFormatsGroupBox;
+class QGroupBox;
+class UIDiskFormatsComboBox;
 class UIDiskVariantWidget;
 class UIMediumSizeAndPathGroupBox;
+
 
 /** Expert page of the Clone Virtual Disk Image wizard: */
 class UIWizardCloneVDExpertPage : public UINativeWizardPage
@@ -75,9 +77,10 @@ private:
     void setTargetLocation();
     void updateDiskWidgetsAfterMediumFormatChange();
 
-    UIDiskFormatsGroupBox *m_pFormatGroupBox;
+    UIDiskFormatsComboBox *m_pFormatComboBox;
     UIDiskVariantWidget *m_pVariantWidget;
     UIMediumSizeAndPathGroupBox *m_pMediumSizePathGroupBox;
+    QGroupBox *m_pFormatVariantGroupBox;
     KDeviceType m_enmDeviceType;
 };
 

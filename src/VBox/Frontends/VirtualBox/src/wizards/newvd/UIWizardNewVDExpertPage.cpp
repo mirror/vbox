@@ -32,7 +32,7 @@
 UIWizardNewVDExpertPage::UIWizardNewVDExpertPage(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
     : UINativeWizardPage()
     , m_pSizeAndPathGroup(0)
-    , m_pFormatComboxBox(0)
+    , m_pFormatComboBox(0)
     , m_pVariantWidget(0)
     , m_pFormatVariantGroupBox(0)
     , m_strDefaultName(strDefaultName)
@@ -48,18 +48,18 @@ void UIWizardNewVDExpertPage::prepare()
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     m_pSizeAndPathGroup = new UIMediumSizeAndPathGroupBox(true /* fExpertMode */, 0 /* parent */, _4M /* minimum size */);
-    m_pFormatComboxBox = new UIDiskFormatsComboBox(true /* fExpertMode */, KDeviceType_HardDisk, 0);
+    m_pFormatComboBox = new UIDiskFormatsComboBox(true /* fExpertMode */, KDeviceType_HardDisk, 0);
     m_pVariantWidget = new UIDiskVariantWidget(0);
 
     m_pFormatVariantGroupBox = new QGroupBox;
     QHBoxLayout *pFormatVariantLayout = new QHBoxLayout(m_pFormatVariantGroupBox);
-    pFormatVariantLayout->addWidget(m_pFormatComboxBox, 0, Qt::AlignTop);
+    pFormatVariantLayout->addWidget(m_pFormatComboBox, 0, Qt::AlignTop);
     pFormatVariantLayout->addWidget(m_pVariantWidget);
 
     pMainLayout->addWidget(m_pSizeAndPathGroup);
     pMainLayout->addWidget(m_pFormatVariantGroupBox);
 
-    connect(m_pFormatComboxBox, &UIDiskFormatsComboBox::sigMediumFormatChanged,
+    connect(m_pFormatComboBox, &UIDiskFormatsComboBox::sigMediumFormatChanged,
             this, &UIWizardNewVDExpertPage::sltMediumFormatChanged);
     connect(m_pVariantWidget, &UIDiskVariantWidget::sigMediumVariantChanged,
             this, &UIWizardNewVDExpertPage::sltMediumVariantChanged);
@@ -100,9 +100,9 @@ void UIWizardNewVDExpertPage::sltMediumVariantChanged(qulonglong uVariant)
 
 void UIWizardNewVDExpertPage::sltMediumFormatChanged()
 {
-    AssertReturnVoid(m_pFormatComboxBox);
+    AssertReturnVoid(m_pFormatComboBox);
     AssertReturnVoid(wizardWindow<UIWizardNewVD>());
-    wizardWindow<UIWizardNewVD>()->setMediumFormat(m_pFormatComboxBox->mediumFormat());
+    wizardWindow<UIWizardNewVD>()->setMediumFormat(m_pFormatComboBox->mediumFormat());
     updateDiskWidgetsAfterMediumFormatChange();
     completeChanged();
 }
@@ -136,8 +136,8 @@ void UIWizardNewVDExpertPage::initializePage()
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
     AssertReturnVoid(pWizard);
     /* First set the medium format of the wizard: */
-    AssertReturnVoid(m_pFormatComboxBox);
-    const CMediumFormat &comMediumFormat = m_pFormatComboxBox->mediumFormat();
+    AssertReturnVoid(m_pFormatComboBox);
+    const CMediumFormat &comMediumFormat = m_pFormatComboBox->mediumFormat();
     AssertReturnVoid(!comMediumFormat.isNull());
     pWizard->setMediumFormat(comMediumFormat);
 
@@ -210,10 +210,10 @@ bool UIWizardNewVDExpertPage::validatePage()
 void UIWizardNewVDExpertPage::updateDiskWidgetsAfterMediumFormatChange()
 {
     UIWizardNewVD *pWizard = wizardWindow<UIWizardNewVD>();
-    AssertReturnVoid(pWizard && m_pVariantWidget && m_pSizeAndPathGroup && m_pFormatComboxBox);
+    AssertReturnVoid(pWizard && m_pVariantWidget && m_pSizeAndPathGroup && m_pFormatComboBox);
     const CMediumFormat &comMediumFormat = pWizard->mediumFormat();
     AssertReturnVoid(!comMediumFormat.isNull());
 
     m_pVariantWidget->updateMediumVariantWidgetsAfterFormatChange(comMediumFormat);
-    m_pSizeAndPathGroup->updateMediumPath(comMediumFormat, m_pFormatComboxBox->formatExtensions(), KDeviceType_HardDisk);
+    m_pSizeAndPathGroup->updateMediumPath(comMediumFormat, m_pFormatComboBox->formatExtensions(), KDeviceType_HardDisk);
 }

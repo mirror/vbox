@@ -64,7 +64,7 @@ private:
    /** @name Widgets
      * @{ */
        UIMediumSizeAndPathGroupBox *m_pSizeAndPathGroup;
-       UIDiskFormatsComboBox *m_pFormatComboxBox;
+       UIDiskFormatsComboBox *m_pFormatComboBox;
        UIDiskVariantWidget *m_pVariantWidget;
        QGroupBox *m_pFormatVariantGroupBox;
    /** @} */
