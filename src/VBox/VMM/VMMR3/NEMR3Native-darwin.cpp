@@ -984,6 +984,24 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
                 CPUMSetGuestCR3(pVCpu, u64CrTmp);
                 fUpdateCr3 = true;
             }
+
+            /*
+             * If the guest is in PAE mode, sync back the PDPE's into the guest state.
+             * CR4.PAE, CR0.PG, EFER MSR changes are always intercepted, so they're up to date.
+             */
+            if (CPUMIsGuestInPAEModeEx(&pVCpu->cpum.GstCtx))
+            {
+                X86PDPE aPaePdpes[4];
+                READ_VMCS_FIELD(VMX_VMCS64_GUEST_PDPTE0_FULL, aPaePdpes[0].u);
+                READ_VMCS_FIELD(VMX_VMCS64_GUEST_PDPTE1_FULL, aPaePdpes[1].u);
+                READ_VMCS_FIELD(VMX_VMCS64_GUEST_PDPTE2_FULL, aPaePdpes[2].u);
+                READ_VMCS_FIELD(VMX_VMCS64_GUEST_PDPTE3_FULL, aPaePdpes[3].u);
+                if (memcmp(&aPaePdpes[0], &pVCpu->cpum.GstCtx.aPaePdpes[0], sizeof(aPaePdpes)))
+                {
+                    memcpy(&pVCpu->cpum.GstCtx.aPaePdpes[0], &aPaePdpes[0], sizeof(aPaePdpes));
+                    fUpdateCr3 = true;
+                }
+            }
         }
         if (fWhat & CPUMCTX_EXTRN_CR4)
         {
