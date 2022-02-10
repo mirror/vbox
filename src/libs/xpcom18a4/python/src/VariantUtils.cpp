@@ -2771,7 +2771,7 @@ nsresult PyXPCOM_GatewayVariantHelper::BackFillVariant( PyObject *val, int index
 	  case nsXPTType::T_INTERFACE:  {
 		nsISupports *pnew = nsnull;
 		// Find out what IID we are declared to use.
-		nsIID *iid;
+		nsIID *iid = NULL;
 		nsIInterfaceInfo *ii = GetInterfaceInfo();
 		if (ii)
 			ii->GetIIDForParam(m_method_index, pi, &iid);
