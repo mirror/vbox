@@ -303,6 +303,7 @@ void UIGuestSessionCreateWidget::setLoginWidgetsEnabled(bool fEnabled)
         m_pButton->setEnabled(fEnabled);
 }
 
+
 /*********************************************************************************************************************************
 *   UIGuestDirectoryDiskUsageComputer definition.                                                                                *
 *********************************************************************************************************************************/
