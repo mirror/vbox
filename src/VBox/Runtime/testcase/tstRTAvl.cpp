@@ -1333,7 +1333,6 @@ int main()
     /*
      * Testing.
      */
-#if 0
     unsigned i;
     RTTestSub(hTest, "oGCPhys(32..2048)");
     for (i = 32; i < 2048; i++)
@@ -1354,7 +1353,6 @@ int main()
 
     avlrogcphys();
     avlul();
-#endif
 
     hardAvlRangeTreeGCPhys(hTest);
 
