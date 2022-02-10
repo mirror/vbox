@@ -352,6 +352,9 @@
 /** Maximum number of times we report a link down to the guest (failure to send frame) */
 #define DPNIC_MAX_LINKDOWN_REPORTED     3
 
+/** Maximum number of times we postpone restoring a link that is temporarily down. */
+#define DPNIC_MAX_LINKRST_POSTPONED     3
+
 /** Maximum frame size we handle */
 #define MAX_FRAME                       1536
 
@@ -885,6 +888,8 @@ typedef struct DPNICSTATE
     bool                                fLinkTempDown;
     /** Number of times we've reported the link down. */
     uint16_t                            cLinkDownReported;
+    /** Number of times we've postponed the link restore. */
+    uint16_t                            cLinkRestorePostponed;
 
     /** The "hardware" MAC address. */
     RTMAC                               MacConfigured;
@@ -3938,7 +3943,7 @@ static DECLCALLBACK(uint32_t) elnk3R3DMAXferHandler(PPDMDEVINS pDevIns, void *op
  * disconnected the network link to inform the guest that network connections
  * should be considered lost.
  */
-static DECLCALLBACK(void) dpNicTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
+static DECLCALLBACK(void) dpNicR3TimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     RT_NOREF(pvUser);
     PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
@@ -3946,7 +3951,17 @@ static DECLCALLBACK(void) dpNicTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
     AssertReleaseRC(rc);
 
     rc = VERR_GENERAL_FAILURE;
-    if (pThis->cLinkDownReported <= DPNIC_MAX_LINKDOWN_REPORTED)
+
+    /* The DP8390 based cards have no concept of link state. Reporting collisions on all transmits
+     * is the best approximation of a disconnected cable that we can do. Some drivers (3C503) warn
+     * of possible disconnected cable, some don't. Many cards with DP8390 chips had permanently
+     * attached cables (AUI or BNC) and their drivers do not expect cables to be disconnected and
+     * re-connected at runtime. Guests which are waiting for a receive have no way to notice any
+     * problem, therefore we only postpone restoring a link a couple of times, and then reconnect
+     * regardless of whether the guest noticed anything or not.
+     */
+    if (   (pThis->cLinkDownReported <= DPNIC_MAX_LINKDOWN_REPORTED)
+        && (pThis->cLinkRestorePostponed <= DPNIC_MAX_LINKRST_POSTPONED))
         rc = PDMDevHlpTimerSetMillies(pDevIns, hTimer, 1500);
     if (RT_FAILURE(rc))
     {
@@ -3960,7 +3975,11 @@ static DECLCALLBACK(void) dpNicTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
         }
     }
     else
-        LogFunc(("#%d: cLinkDownReported=%d, wait another 1500ms...\n", pThis->iInstance, pThis->cLinkDownReported));
+    {
+        LogFunc(("#%d: cLinkDownReported=%d, cLinkRestorePostponed=%d, wait another 1500ms...\n",
+                 pThis->iInstance, pThis->cLinkDownReported, pThis->cLinkRestorePostponed));
+        pThis->cLinkRestorePostponed++;
+    }
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
@@ -3971,7 +3990,7 @@ static DECLCALLBACK(void) dpNicTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hT
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV}
  */
-static DECLCALLBACK(void) dpNicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) dpNicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PDPNICSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PDPNICSTATE);
     bool            fRecvBuffer  = false;
@@ -4105,8 +4124,11 @@ static DECLCALLBACK(void) dpNicInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 
     if (pThis->fMaybeOutOfSpace)
         pHlp->pfnPrintf(pHlp, "  Waiting for receive space\n");
-    if (pThis->cLinkDownReported)
+    if (pThis->fLinkTempDown)
+    {
         pHlp->pfnPrintf(pHlp, "  Link down count %d\n", pThis->cLinkDownReported);
+        pHlp->pfnPrintf(pHlp, "  Postpone count  %d\n", pThis->cLinkRestorePostponed);
+    }
 
     if ((pThis->uDevType == DEV_WD8003) || (pThis->uDevType == DEV_WD8013))
     {
@@ -4285,6 +4307,7 @@ static void dp8390TempLinkDown(PPDMDEVINS pDevIns, PDPNICSTATE pThis)
     {
         pThis->fLinkTempDown = true;
         pThis->cLinkDownReported = 0;
+        pThis->cLinkRestorePostponed = 0;
         pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         int rc = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerRestore, pThis->cMsLinkUpDelay);
         AssertRC(rc);
@@ -4484,9 +4507,12 @@ static DECLCALLBACK(int) dpNicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         pHlp->pfnSSMGetU16(pSSM, &pThis->ga.CDADR);
         pHlp->pfnSSMGetBool(pSSM, &pThis->ga.fGaIrq);
 
-        /* Set IRQ and DMA based on IDCFR. */
-        pThis->uIsaIrq   = elGetIrqFromIdcfr(pThis->ga.IDCFR);
-        pThis->uElIsaDma = elGetDrqFromIdcfr(pThis->ga.IDCFR);
+        /* Set IRQ and DMA based on IDCFR if this is a 3C503. */
+        if (pThis->uDevType == DEV_3C503)
+        {
+            pThis->uIsaIrq   = elGetIrqFromIdcfr(pThis->ga.IDCFR);
+            pThis->uElIsaDma = elGetDrqFromIdcfr(pThis->ga.IDCFR);
+        }
     }
 
     /* check config */
@@ -4750,6 +4776,7 @@ static DECLCALLBACK(int) dpNicSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
             /* Connect with a configured delay. */
             pThis->fLinkTempDown = true;
             pThis->cLinkDownReported = 0;
+            pThis->cLinkRestorePostponed = 0;
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
             int rc = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerRestore, pThis->cMsLinkUpDelay);
             AssertRC(rc);
@@ -4758,6 +4785,7 @@ static DECLCALLBACK(int) dpNicSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
         {
             /* Disconnect. */
             pThis->cLinkDownReported = 0;
+            pThis->cLinkRestorePostponed = 0;
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         }
         Assert(!PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
@@ -4912,8 +4940,9 @@ static DECLCALLBACK(void) dpNicR3Reset(PPDMDEVINS pDevIns)
     if (pThis->fLinkTempDown)
     {
         pThis->cLinkDownReported = 0x1000;
+        pThis->cLinkRestorePostponed = 0x1000;
         PDMDevHlpTimerStop(pDevIns, pThis->hTimerRestore);
-        dpNicTimerRestore(pDevIns, pThis->hTimerRestore, pThis);
+        dpNicR3TimerRestore(pDevIns, pThis->hTimerRestore, pThis);
     }
 
     dpNicR3HardReset(pDevIns, pThis);
@@ -5203,7 +5232,7 @@ static DECLCALLBACK(int) dpNicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     }
 
 
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, dpNicTimerRestore, NULL, TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, dpNicR3TimerRestore, NULL, TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
                               "DPNIC Link Restore Timer", &pThis->hTimerRestore);
     if (RT_FAILURE(rc))
         return rc;
@@ -5233,7 +5262,7 @@ static DECLCALLBACK(int) dpNicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Register the info item.
      */
     RTStrPrintf(szTmp, sizeof(szTmp), "dpnic%d", pThis->iInstance);
-    PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "dpnic info", dpNicInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "dpnic info", dpNicR3Info);
 
     /*
      * Attach status driver (optional).

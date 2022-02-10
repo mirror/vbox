@@ -184,6 +184,9 @@
 /** Maximum number of times we report a link down to the guest (failure to send frame) */
 #define ELNK_MAX_LINKDOWN_REPORTED      3
 
+/** Maximum number of times we postpone restoring a link that is temporarily down. */
+#define ELNK_MAX_LINKRST_POSTPONED      3
+
 /** Maximum frame size we handle */
 #define MAX_FRAME                       1536
 
@@ -391,6 +394,8 @@ typedef struct ELNKSTATE
     bool                                fLinkTempDown;
     /** Number of times we've reported the link down. */
     uint16_t                            cLinkDownReported;
+    /** Number of times we've postponed the link restore. */
+    uint16_t                            cLinkRestorePostponed;
 
     /** The "hardware" MAC address. */
     RTMAC                               MacConfigured;
@@ -1664,7 +1669,7 @@ static DECLCALLBACK(uint32_t) elnkR3DMAXferHandler(PPDMDEVINS pDevIns, void *opa
  * disconnected the network link to inform the guest that network connections
  * should be considered lost.
  */
-static DECLCALLBACK(void) elnkTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
+static DECLCALLBACK(void) elnkR3TimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
 {
     RT_NOREF(pvUser);
     PELNKSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
@@ -1672,7 +1677,16 @@ static DECLCALLBACK(void) elnkTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTi
     AssertReleaseRC(rc);
 
     rc = VERR_GENERAL_FAILURE;
-    if (pThis->cLinkDownReported <= ELNK_MAX_LINKDOWN_REPORTED)
+
+    /* The EhterLink cards have no concept of a link state, and cables were assumed to be
+     * permanently attached (AUI or BNC). We can simulate a disconnected cable by reporting
+     * collisions on transmit, but a guest that waits to receive something will never know.
+     * For that reason, the link is temporarily down, we will only postpone restoring it
+     * a couple of times, and then reconnect regardless of whether the guest noticed
+     * anything or not.
+     */
+    if (   (pThis->cLinkDownReported <= ELNK_MAX_LINKDOWN_REPORTED)
+        && (pThis->cLinkRestorePostponed <= ELNK_MAX_LINKRST_POSTPONED))
         rc = PDMDevHlpTimerSetMillies(pDevIns, hTimer, 1500);
     if (RT_FAILURE(rc))
     {
@@ -1681,14 +1695,17 @@ static DECLCALLBACK(void) elnkTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTi
         {
             LogRel(("3C501#%d: The link is back up again after the restore.\n",
                     pThis->iInstance));
-            LogFunc(("#%d: Clearing ERR and CERR after load. cLinkDownReported=%d\n",
+            LogFunc(("#%d: cLinkDownReported=%d\n",
                  pThis->iInstance, pThis->cLinkDownReported));
             pThis->Led.Actual.s.fError = 0;
         }
     }
     else
-        Log(("#%d elnkTimerRestore: cLinkDownReported=%d, wait another 1500ms...\n",
-             pThis->iInstance, pThis->cLinkDownReported));
+    {
+        LogFunc(("#%d: cLinkDownReported=%d, cLinkRestorePostponed=%d, wait another 1500ms...\n",
+                 pThis->iInstance, pThis->cLinkDownReported, pThis->cLinkRestorePostponed));
+        pThis->cLinkRestorePostponed++;
+    }
 
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
 }
@@ -1699,7 +1716,7 @@ static DECLCALLBACK(void) elnkTimerRestore(PPDMDEVINS pDevIns, TMTIMERHANDLE hTi
 /**
  * @callback_method_impl{FNDBGFHANDLERDEV}
  */
-static DECLCALLBACK(void) elnkInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(void) elnkR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PELNKSTATE          pThis = PDMDEVINS_2_DATA(pDevIns, PELNKSTATE);
     bool                fStationAddr = false;
@@ -1739,8 +1756,11 @@ static DECLCALLBACK(void) elnkInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const
     pHlp->pfnPrintf(pHlp, "  Address matching: %s\n", apszAddrMatch[pThis->RcvCmd.adr_match]);
     pHlp->pfnPrintf(pHlp, "  Buffer control  : %s\n", apszBuffCntrl[pThis->AuxCmd.buf_ctl]);
     pHlp->pfnPrintf(pHlp, "  Interrupt state : xmit=%u recv=%u dma=%u\n", pThis->IntrState.xmit_intr, pThis->IntrState.recv_intr, pThis->IntrState.dma_intr);
-    if (pThis->cLinkDownReported)
+    if (pThis->fLinkTempDown)
+    {
         pHlp->pfnPrintf(pHlp, "  Link down count : %d\n", pThis->cLinkDownReported);
+        pHlp->pfnPrintf(pHlp, "  Postpone count  : %d\n", pThis->cLinkRestorePostponed);
+    }
 
     /* Dump the station address. */
     if (fStationAddr)
@@ -1813,6 +1833,7 @@ static void elnkTempLinkDown(PPDMDEVINS pDevIns, PELNKSTATE pThis)
     {
         pThis->fLinkTempDown = true;
         pThis->cLinkDownReported = 0;
+        pThis->cLinkRestorePostponed = 0;
         pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         int rc = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerRestore, pThis->cMsLinkUpDelay);
         AssertRC(rc);
@@ -1874,6 +1895,9 @@ static DECLCALLBACK(int) elnkSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutBool(pSSM, pThis->fISR);
     pHlp->pfnSSMPutMem(pSSM, pThis->aStationAddr, sizeof(pThis->aStationAddr));
 
+    /* Save the configured MAC address. */
+    pHlp->pfnSSMPutMem(pSSM, &pThis->MacConfigured, sizeof(pThis->MacConfigured));
+
     return VINF_SUCCESS;
 }
 
@@ -1924,6 +1948,7 @@ static DECLCALLBACK(int) elnkLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
         pHlp->pfnSSMGetBool(pSSM, &pThis->fInReset);
         pHlp->pfnSSMGetBool(pSSM, &pThis->fLinkUp);
         pHlp->pfnSSMGetBool(pSSM, &pThis->fISR);
+        pHlp->pfnSSMGetMem(pSSM, &pThis->aStationAddr, sizeof(pThis->aStationAddr));
     }
 
     /* check config */
@@ -2157,6 +2182,7 @@ static DECLCALLBACK(int) elnkSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETW
             /* Connect with a configured delay. */
             pThis->fLinkTempDown = true;
             pThis->cLinkDownReported = 0;
+            pThis->cLinkRestorePostponed = 0;
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
             int rc = PDMDevHlpTimerSetMillies(pDevIns, pThis->hTimerRestore, pThis->cMsLinkUpDelay);
             AssertRC(rc);
@@ -2165,6 +2191,7 @@ static DECLCALLBACK(int) elnkSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETW
         {
             /* Disconnect. */
             pThis->cLinkDownReported = 0;
+            pThis->cLinkRestorePostponed = 0;
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         }
         Assert(!PDMDevHlpCritSectIsOwner(pDevIns, &pThis->CritSect));
@@ -2318,8 +2345,9 @@ static DECLCALLBACK(void) elnkR3Reset(PPDMDEVINS pDevIns)
     if (pThis->fLinkTempDown)
     {
         pThis->cLinkDownReported = 0x1000;
+        pThis->cLinkRestorePostponed = 0x1000;
         PDMDevHlpTimerStop(pDevIns, pThis->hTimerRestore);
-        elnkTimerRestore(pDevIns, pThis->hTimerRestore, pThis);
+        elnkR3TimerRestore(pDevIns, pThis->hTimerRestore, pThis);
     }
 
     /** @todo How to flush the queues? */
@@ -2475,7 +2503,7 @@ static DECLCALLBACK(int) elnkR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     else
         LogRel(("3C501#%d: Disabling DMA\n", iInstance));
 
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, elnkTimerRestore, NULL, TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, elnkR3TimerRestore, NULL, TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
                               "3C501 Restore Timer", &pThis->hTimerRestore);
     if (RT_FAILURE(rc))
         return rc;
@@ -2505,7 +2533,7 @@ static DECLCALLBACK(int) elnkR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Register the info item.
      */
     RTStrPrintf(szTmp, sizeof(szTmp), "elnk%d", pThis->iInstance);
-    PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "3C501 info", elnkInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "3C501 info", elnkR3Info);
 
     /*
      * Attach status driver (optional).
