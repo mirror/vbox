@@ -49,6 +49,7 @@
 #include <mach/mach_time.h>
 #include <mach/kern_return.h>
 
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -1112,41 +1113,11 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
         READ_MSR(MSR_K8_CSTAR, pVCpu->cpum.GstCtx.msrCSTAR);
         READ_MSR(MSR_K8_SF_MASK, pVCpu->cpum.GstCtx.msrSFMASK);
     }
-#if 0
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
-        Assert(aenmNames[iReg] == WHvX64RegisterApicBase);
-        const uint64_t uOldBase = APICGetBaseMsrNoCheck(pVCpu);
-        if (aValues[iReg].Reg64 != uOldBase)
-        {
-            Log7(("NEM/%u: MSR APICBase changed %RX64 -> %RX64 (%RX64)\n",
-                  pVCpu->idCpu, uOldBase, aValues[iReg].Reg64, aValues[iReg].Reg64 ^ uOldBase));
-            int rc2 = APICSetBaseMsr(pVCpu, aValues[iReg].Reg64);
-            AssertLogRelMsg(rc2 == VINF_SUCCESS, ("%Rrc %RX64\n", rc2, aValues[iReg].Reg64));
-        }
-        iReg++;
-
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrPAT, WHvX64RegisterPat, "MSR PAT");
-#if 0 /*def LOG_ENABLED*/ /** @todo something's wrong with HvX64RegisterMtrrCap? (AMD) */
-        GET_REG64_LOG7(pVCpu->cpum.GstCtx.msrPAT, WHvX64RegisterMsrMtrrCap);
-#endif
         PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrDefType,      WHvX64RegisterMsrMtrrDefType,     "MSR MTRR_DEF_TYPE");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix64K_00000, WHvX64RegisterMsrMtrrFix64k00000, "MSR MTRR_FIX_64K_00000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix16K_80000, WHvX64RegisterMsrMtrrFix16k80000, "MSR MTRR_FIX_16K_80000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix16K_A0000, WHvX64RegisterMsrMtrrFix16kA0000, "MSR MTRR_FIX_16K_A0000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_C0000,  WHvX64RegisterMsrMtrrFix4kC0000,  "MSR MTRR_FIX_4K_C0000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_C8000,  WHvX64RegisterMsrMtrrFix4kC8000,  "MSR MTRR_FIX_4K_C8000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_D0000,  WHvX64RegisterMsrMtrrFix4kD0000,  "MSR MTRR_FIX_4K_D0000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_D8000,  WHvX64RegisterMsrMtrrFix4kD8000,  "MSR MTRR_FIX_4K_D8000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_E0000,  WHvX64RegisterMsrMtrrFix4kE0000,  "MSR MTRR_FIX_4K_E0000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_E8000,  WHvX64RegisterMsrMtrrFix4kE8000,  "MSR MTRR_FIX_4K_E8000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_F0000,  WHvX64RegisterMsrMtrrFix4kF0000,  "MSR MTRR_FIX_4K_F0000");
-        GET_REG64_LOG7(pCtxMsrs->msr.MtrrFix4K_F8000,  WHvX64RegisterMsrMtrrFix4kF8000,  "MSR MTRR_FIX_4K_F8000");
-        GET_REG64_LOG7(pCtxMsrs->msr.TscAux,           WHvX64RegisterTscAux,             "MSR TSC_AUX");
-        /** @todo look for HvX64RegisterIa32MiscEnable and HvX64RegisterIa32FeatureControl? */
+        READ_MSR(MSR_K8_TSC_AUX, pCtxMsrs->msr.TscAux);
     }
-#endif
 
     /* Almost done, just update extrn flags and maybe change PGM mode. */
     pVCpu->cpum.GstCtx.fExtrn &= ~fWhat;
@@ -1726,42 +1697,10 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
     }
     if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
     {
-#if 0
-        hv_return_t hrc = hv_vmx_vcpu_set_apic_address(pVCpu->nem.s.hVCpuId, APICGetBaseMsrNoCheck(pVCpu) & PAGE_BASE_GC_MASK);
-        if (RT_UNLIKELY(hrc != HV_SUCCESS))
-            return nemR3DarwinHvSts2Rc(hrc);
-#endif
-
-        ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_OTHER_MSRS);
-
-#if 0
-        ADD_REG64(WHvX64RegisterPat, pVCpu->cpum.GstCtx.msrPAT);
-#if 0 /** @todo check if WHvX64RegisterMsrMtrrCap works here... */
-        ADD_REG64(WHvX64RegisterMsrMtrrCap, CPUMGetGuestIa32MtrrCap(pVCpu));
-#endif
         PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
-        ADD_REG64(WHvX64RegisterMsrMtrrDefType, pCtxMsrs->msr.MtrrDefType);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix64k00000, pCtxMsrs->msr.MtrrFix64K_00000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix16k80000, pCtxMsrs->msr.MtrrFix16K_80000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix16kA0000, pCtxMsrs->msr.MtrrFix16K_A0000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kC0000,  pCtxMsrs->msr.MtrrFix4K_C0000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kC8000,  pCtxMsrs->msr.MtrrFix4K_C8000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kD0000,  pCtxMsrs->msr.MtrrFix4K_D0000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kD8000,  pCtxMsrs->msr.MtrrFix4K_D8000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kE0000,  pCtxMsrs->msr.MtrrFix4K_E0000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kE8000,  pCtxMsrs->msr.MtrrFix4K_E8000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kF0000,  pCtxMsrs->msr.MtrrFix4K_F0000);
-        ADD_REG64(WHvX64RegisterMsrMtrrFix4kF8000,  pCtxMsrs->msr.MtrrFix4K_F8000);
-        ADD_REG64(WHvX64RegisterTscAux, pCtxMsrs->msr.TscAux);
-#if 0 /** @todo these registers aren't available? Might explain something.. .*/
-        const CPUMCPUVENDOR enmCpuVendor = CPUMGetHostCpuVendor(pVM);
-        if (enmCpuVendor != CPUMCPUVENDOR_AMD)
-        {
-            ADD_REG64(HvX64RegisterIa32MiscEnable, pCtxMsrs->msr.MiscEnable);
-            ADD_REG64(HvX64RegisterIa32FeatureControl, CPUMGetGuestIa32FeatureControl(pVCpu));
-        }
-#endif
-#endif
+
+        WRITE_MSR(MSR_K8_TSC_AUX, pCtxMsrs->msr.TscAux);
+        ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_OTHER_MSRS);
     }
 
     WRITE_VMCS_FIELD(VMX_VMCS64_GUEST_DEBUGCTL_FULL, 0 /*MSR_IA32_DEBUGCTL_LBR*/);
@@ -1772,9 +1711,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
     pVCpu->cpum.GstCtx.fExtrn |= CPUMCTX_EXTRN_ALL | CPUMCTX_EXTRN_KEEPER_NEM;
 
     /* Clear any bits that may be set but exported unconditionally or unused/reserved bits. */
-    ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~(
-                                                     HM_CHANGED_GUEST_TSC_AUX
-                                                   | HM_CHANGED_GUEST_HWVIRT
+    ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~(  HM_CHANGED_GUEST_HWVIRT
                                                    | HM_CHANGED_VMX_GUEST_AUTO_MSRS
                                                    | HM_CHANGED_VMX_GUEST_LAZY_MSRS
                                                    | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_VMX_MASK)));
@@ -3414,7 +3351,6 @@ VMM_INT_DECL(int) NEMHCQueryCpuTick(PVMCPUCC pVCpu, uint64_t *pcTicks, uint32_t 
     {
         if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_TSC_AUX)
         {
-            /** @todo Why the heck is puAux a uint32_t?. */
             uint64_t u64Aux;
             rc = nemR3DarwinMsrRead(pVCpu, MSR_K8_TSC_AUX, &u64Aux);
             if (RT_SUCCESS(rc))
