@@ -94,7 +94,7 @@ bool UIWizardCloneVD::copyVirtualDisk()
 void UIWizardCloneVD::retranslateUi()
 {
     /* Translate wizard: */
-    setWindowTitle(tr("Copy Virtual Disk Image"));
+    setWindowTitle(tr("Copy Virtual Disk"));
     UINativeWizard::retranslateUi();
 }
 

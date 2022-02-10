@@ -3703,6 +3703,7 @@ void UIActionPoolManager::preparePool()
     m_groupPool[UIActionIndexMN_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Group_M_Tools_T_Snapshots));
     m_groupPool[UIActionIndexMN_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Group_M_Tools_T_Logs));
     m_groupPool[UIActionIndexMN_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Group_M_Tools_T_Activity));
+    m_groupPool[UIActionIndexMN_M_Group_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Group_M_Tools_T_FileManager));
 
     /* 'Machine' action groups: */
     m_groupPool[UIActionIndexMN_M_Machine_M_Tools] = new QActionGroup(m_pool.value(UIActionIndexMN_M_Machine_M_Tools));
@@ -3710,6 +3711,7 @@ void UIActionPoolManager::preparePool()
     m_groupPool[UIActionIndexMN_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Machine_M_Tools_T_Snapshots));
     m_groupPool[UIActionIndexMN_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Machine_M_Tools_T_Logs));
     m_groupPool[UIActionIndexMN_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Machine_M_Tools_T_Activity));
+    m_groupPool[UIActionIndexMN_M_Machine_M_Tools]->addAction(m_pool.value(UIActionIndexMN_M_Machine_M_Tools_T_FileManager));
 
     /* Prepare update-handlers for known menus: */
     m_menuUpdateHandlers[UIActionIndexMN_M_File].ptfm =                  &UIActionPoolManager::updateMenuFile;
@@ -4239,6 +4241,7 @@ void UIActionPoolManager::updateMenuGroupTools()
     pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Snapshots));
     pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Logs));
     pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_Activity));
+    pMenu->addAction(action(UIActionIndexMN_M_Group_M_Tools_T_FileManager));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexMN_M_Group_M_Tools);
