@@ -46,6 +46,8 @@
 #include <iprt/system.h>
 #include <iprt/utf16.h>
 
+#include <mach/mach_time.h>
+#include <mach/kern_return.h>
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -2452,6 +2454,20 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     int rc = nemR3DarwinLoadHv(fForced, pErrInfo);
     if (RT_SUCCESS(rc))
     {
+        if (hv_vcpu_run_until)
+        {
+            struct mach_timebase_info TimeInfo;
+
+            if (mach_timebase_info(&TimeInfo) == KERN_SUCCESS)
+            {
+                pVM->nem.s.cMachTimePerNs = RT_MIN(1, (double)TimeInfo.denom / (double)TimeInfo.numer);
+                LogRel(("NEM: cMachTimePerNs=%llu (TimeInfo.numer=%u TimeInfo.denom=%u)\n",
+                        pVM->nem.s.cMachTimePerNs, TimeInfo.numer, TimeInfo.denom));
+            }
+            else
+                hv_vcpu_run_until = NULL; /* To avoid running forever (TM asserts when the guest runs for longer than 4 seconds). */
+        }
+
         hv_return_t hrc = hv_vm_create(HV_VM_DEFAULT);
         if (hrc == HV_SUCCESS)
         {
@@ -2894,8 +2910,8 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
 
         Assert(!pVCpu->nem.s.fCtxChanged);
         hv_return_t hrc;
-        if (hv_vcpu_run_until)
-            hrc = hv_vcpu_run_until(pVCpu->nem.s.hVCpuId, HV_DEADLINE_FOREVER);
+        if (hv_vcpu_run_until) /** @todo Configur the deadline dynamically based on when the next timer triggers. */
+            hrc = hv_vcpu_run_until(pVCpu->nem.s.hVCpuId, mach_absolute_time() + 2 * RT_NS_1SEC_64 * pVM->nem.s.cMachTimePerNs);
         else
             hrc = hv_vcpu_run(pVCpu->nem.s.hVCpuId);
 

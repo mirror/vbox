@@ -267,6 +267,8 @@ typedef struct NEM
     bool                        fCreatedAsid : 1;
     /** The ASID for this VM (only valid if fCreatedAsid is true). */
     hv_vm_space_t               uVmAsid;
+    /** Number of mach time units per NS, for hv_vcpu_run_until(). */
+    uint64_t                    cMachTimePerNs;
     STAMCOUNTER                 StatMapPage;
     STAMCOUNTER                 StatUnmapPage;
     STAMCOUNTER                 StatMapPageFailed;
