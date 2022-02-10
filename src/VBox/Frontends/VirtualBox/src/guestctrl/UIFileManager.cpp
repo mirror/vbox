@@ -217,13 +217,13 @@ void UIFileManager::prepareObjects()
             m_pGuestTablesContainer->setTabBarAutoHide(true);
             m_pFileTableSplitter->addWidget(m_pGuestTablesContainer);
         }
+        m_pFileTableSplitter->setStretchFactor(0, 1);
+        m_pFileTableSplitter->setStretchFactor(1, 1);
     }
 
     pTopLayout->addWidget(m_pFileTableSplitter);
     for (int i = 0; i < m_pFileTableSplitter->count(); ++i)
         m_pFileTableSplitter->setCollapsible(i, false);
-    m_pFileTableSplitter->setStretchFactor(0, 2);
-    m_pFileTableSplitter->setStretchFactor(1, 1);
 
     /* Create options and session panels and insert them into pTopLayout: */
     prepareOptionsAndSessionPanels(pTopLayout);

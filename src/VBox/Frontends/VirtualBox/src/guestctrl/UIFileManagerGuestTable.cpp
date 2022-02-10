@@ -73,6 +73,8 @@ public:
     /** Makes sure certain widgets are enabled so that a guest session can be created. */
     void switchSessionCloseMode();
     void markForError(bool fMarkForError);
+    void setStatusLabelIconAndToolTip(const QIcon &icon, const QString &strToolTip);
+    void setLoginWidgetsEnabled(bool fEnabled);
 
 protected:
 
@@ -104,6 +106,7 @@ private:
     QColor        m_defaultBaseColor;
     QColor        m_errorBaseColor;
     bool          m_fMarkedForError;
+    QLabel       *m_pStatusIconLabel;
 };
 
 
@@ -119,6 +122,7 @@ UIGuestSessionCreateWidget::UIGuestSessionCreateWidget(QWidget *pParent /* = 0 *
     , m_pButton(0)
     , m_pMainLayout(0)
     , m_fMarkedForError(0)
+    , m_pStatusIconLabel(0)
 {
     prepareWidgets();
 }
@@ -160,7 +164,12 @@ void UIGuestSessionCreateWidget::prepareWidgets()
         m_pMainLayout->addWidget(m_pButton);
         connect(m_pButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sltButtonClick);
     }
-
+    m_pStatusIconLabel = new QLabel(this);
+    if (m_pStatusIconLabel)
+    {
+        m_pMainLayout->addWidget(m_pStatusIconLabel);
+        m_pStatusIconLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    }
 
     m_pMainLayout->insertStretch(-1, 1);
     switchSessionCreateMode();
@@ -198,9 +207,15 @@ void UIGuestSessionCreateWidget::retranslateUi()
     if (m_pButton)
     {
         if (m_enmButtonMode == ButtonMode_Create)
+        {
             m_pButton->setText(QApplication::translate("UIFileManager", "Create Session"));
+            m_pButton->setToolTip(QApplication::translate("UIFileManager", "Create Session"));
+        }
         else
+        {
             m_pButton->setText(QApplication::translate("UIFileManager", "Close Session"));
+            m_pButton->setToolTip(QApplication::translate("UIFileManager", "Close Session"));
+        }
     }
 }
 
@@ -269,6 +284,24 @@ void UIGuestSessionCreateWidget::markForError(bool fMarkForError)
     }
 }
 
+void UIGuestSessionCreateWidget::setStatusLabelIconAndToolTip(const QIcon &icon, const QString &strToolTip)
+{
+    if (!m_pStatusIconLabel)
+        return;
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_ButtonIconSize);
+    m_pStatusIconLabel->setPixmap(icon.pixmap(QSize(iIconMetric, iIconMetric)));
+    m_pStatusIconLabel->setToolTip(strToolTip);
+}
+
+void UIGuestSessionCreateWidget::setLoginWidgetsEnabled(bool fEnabled)
+{
+    if (m_pUserNameEdit)
+        m_pUserNameEdit->setEnabled(fEnabled);
+    if (m_pPasswordEdit)
+        m_pPasswordEdit->setEnabled(fEnabled);
+    if (m_pButton)
+        m_pButton->setEnabled(fEnabled);
+}
 
 /*********************************************************************************************************************************
 *   UIGuestDirectoryDiskUsageComputer definition.                                                                                *
@@ -377,16 +410,12 @@ void UIGuestDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStri
 UIFileManagerGuestTable::UIFileManagerGuestTable(UIActionPool *pActionPool, const CMachine &comMachine, QWidget *pParent /*= 0*/)
     :UIFileManagerTable(pActionPool, pParent)
     , m_comMachine(comMachine)
-    , m_pGuestSessionPanel(0)
-    , m_pWarningLabelContainer(0)
-    , m_pWarningLabel(0)
-    , m_pWarningIconLabel(0)
+    , m_pGuestSessionWidget(0)
     , m_fIsCurrent(false)
 {
     if (!m_comMachine.isNull())
         m_strTableName = m_comMachine.GetName();
     prepareToolbar();
-    prepareWarningLabels();
     prepareGuestSessionPanel();
     prepareActionConnections();
 
@@ -424,37 +453,38 @@ void UIFileManagerGuestTable::retranslateUi()
     if (m_pLocationLabel)
         m_pLocationLabel->setText(UIFileManager::tr("Guest File System:"));
 
-    if (m_pWarningLabel && m_pWarningIconLabel)
+    if (m_pGuestSessionWidget)
     {
-        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        QIcon icon;
         QString strWarningText;
         switch (m_enmState)
         {
             case State_InvalidMachineReference:
                 strWarningText = UIFileManager::tr("Machine reference is invalid.");
-                m_pWarningIconLabel->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(iIconMetric, iIconMetric)));
+                icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_MachineNotRunning:
                 strWarningText = UIFileManager::tr("File manager cannot work since the selected guest is not currenly running.");
-                m_pWarningIconLabel->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(iIconMetric, iIconMetric)));
+                icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_NoGuestAdditions:
                 strWarningText = UIFileManager::tr("File manager cannot work since the selected guest does not have the guest additions.");
-                m_pWarningIconLabel->setPixmap(UIIconPool::iconSet(":/status_error_16px.png").pixmap(QSize(iIconMetric, iIconMetric)));
+                icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_SessionPossible:
                 strWarningText = UIFileManager::tr("Enter a valid user name and password to initiate the file manager.");
-                m_pWarningIconLabel->setPixmap(UIIconPool::iconSet(":/session_info_16px.png").pixmap(QSize(iIconMetric, iIconMetric)));
+                icon = UIIconPool::iconSet(":/session_info_16px.png");
+                break;
+            case State_SessionRunning:
+                strWarningText = UIFileManager::tr("Guest control session is running.");
+                icon = UIIconPool::iconSet(":/status_check_16px.png");
                 break;
             default:
                 break;
         }
-        m_pWarningLabel->setText(QString("<p>%1</p>").arg(strWarningText));
+        m_pGuestSessionWidget->setStatusLabelIconAndToolTip(icon, strWarningText);
     }
-    if (m_pWarningIconLabel)
-    {
 
-    }
     UIFileManagerTable::retranslateUi();
 }
 
@@ -1041,39 +1071,15 @@ void UIFileManagerGuestTable::prepareGuestSessionPanel()
 {
     if (m_pMainLayout)
     {
-        m_pGuestSessionPanel = new UIGuestSessionCreateWidget;
-        if (m_pGuestSessionPanel)
+        m_pGuestSessionWidget = new UIGuestSessionCreateWidget;
+        if (m_pGuestSessionWidget)
         {
-            m_pMainLayout->addWidget(m_pGuestSessionPanel, m_pMainLayout->rowCount(), 0, 1, m_pMainLayout->columnCount());
-            m_pGuestSessionPanel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-            connect(m_pGuestSessionPanel, &UIGuestSessionCreateWidget::sigCreateSession,
+            m_pMainLayout->addWidget(m_pGuestSessionWidget, m_pMainLayout->rowCount(), 0, 1, m_pMainLayout->columnCount());
+            m_pGuestSessionWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+            connect(m_pGuestSessionWidget, &UIGuestSessionCreateWidget::sigCreateSession,
                     this, &UIFileManagerGuestTable::sltCreateGuestSession);
-            connect(m_pGuestSessionPanel, &UIGuestSessionCreateWidget::sigCloseSession,
+            connect(m_pGuestSessionWidget, &UIGuestSessionCreateWidget::sigCloseSession,
                     this, &UIFileManagerGuestTable::sltHandleCloseSessionRequest);
-        }
-    }
-}
-
-void UIFileManagerGuestTable::prepareWarningLabels()
-{
-    if (m_pMainLayout)
-    {
-        m_pWarningLabelContainer = new QWidget(this);
-        QHBoxLayout *pContainerLayout = new QHBoxLayout(m_pWarningLabelContainer);
-        m_pWarningLabelContainer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-        m_pMainLayout->addWidget(m_pWarningLabelContainer, m_pMainLayout->rowCount(), 0, 1, m_pMainLayout->columnCount());
-
-        m_pWarningIconLabel = new QILabel(this);
-        if (m_pWarningIconLabel)
-        {
-            pContainerLayout->addWidget(m_pWarningIconLabel);
-            m_pWarningIconLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-        }
-        m_pWarningLabel = new QILabel(this);
-        if (m_pWarningLabel)
-        {
-            pContainerLayout->addWidget(m_pWarningLabel);
-            m_pWarningLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Maximum);
         }
     }
 }
@@ -1121,8 +1127,8 @@ bool UIFileManagerGuestTable::isFileObjectHidden(const CFsObjInfo &fsInfo)
 
 void UIFileManagerGuestTable::sltGuestSessionPanelToggled(bool fChecked)
 {
-    if (m_pGuestSessionPanel)
-        m_pGuestSessionPanel->setVisible(fChecked);
+    if (m_pGuestSessionWidget)
+        m_pGuestSessionWidget->setVisible(fChecked);
 }
 
 void UIFileManagerGuestTable::sltMachineStateChange(const QUuid &uMachineId, const KMachineState enmMachineState)
@@ -1303,8 +1309,8 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
         if (cErrorInfo.GetResultDetail() < VINF_SUCCESS)
             emit sigLogOutput(cErrorInfo.GetText(), m_strTableName, FileManagerLogType_Error);
 
-        if (m_pGuestSessionPanel)
-            m_pGuestSessionPanel->markForError(cErrorInfo.GetResultDetail() == VERR_AUTHENTICATION_FAILURE);
+        if (m_pGuestSessionWidget)
+            m_pGuestSessionWidget->markForError(cErrorInfo.GetResultDetail() == VERR_AUTHENTICATION_FAILURE);
     }
     if (m_comGuestSession.isOk())
     {
@@ -1330,8 +1336,8 @@ void UIFileManagerGuestTable::sltCreateGuestSession(QString strUserName, QString
     if (strUserName.isEmpty())
     {
         emit sigLogOutput("No user name is given", m_strTableName, FileManagerLogType_Error);
-        if (m_pGuestSessionPanel)
-            m_pGuestSessionPanel->markForError(true);
+        if (m_pGuestSessionWidget)
+            m_pGuestSessionWidget->markForError(true);
         return;
     }
     openGuestSession(strUserName, strPassword);
@@ -1399,19 +1405,16 @@ void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled()
         pHostSubmenu->setEnabled(m_enmState == State_SessionRunning);
 
     /*Manage the guest session (login) widget: */
-    if (m_pGuestSessionPanel)
+    if (m_pGuestSessionWidget)
     {
-        m_pGuestSessionPanel->setEnabled(m_enmState == State_SessionPossible || m_enmState == State_SessionRunning);
-        if (m_enmState == State_SessionRunning)
-            m_pGuestSessionPanel->switchSessionCreateMode();
-        else
-            m_pGuestSessionPanel->switchSessionCloseMode();
+        m_pGuestSessionWidget->setLoginWidgetsEnabled(m_enmState == State_SessionPossible || m_enmState == State_SessionRunning);
+        if (m_enmState == State_SessionPossible)
+            m_pGuestSessionWidget->switchSessionCreateMode();
+        else if (m_enmState == State_SessionRunning)
+            m_pGuestSessionWidget->switchSessionCloseMode();
     }
     /* Call to parent: */
     setSessionWidgetsEnabled(m_enmState == State_SessionRunning);
-
-    if (m_pWarningLabelContainer)
-        m_pWarningLabelContainer->setVisible(m_enmState != State_SessionRunning);
 
     emit sigStateChanged(m_enmState == State_SessionRunning);
 }
@@ -1427,8 +1430,8 @@ bool UIFileManagerGuestTable::openGuestSession(const QString &strUserName, const
     if (!isGuestAdditionsAvailable())
     {
         emit sigLogOutput("Could not find Guest Additions", m_strTableName, FileManagerLogType_Error);
-        if (m_pGuestSessionPanel)
-            m_pGuestSessionPanel->markForError(true);
+        if (m_pGuestSessionWidget)
+            m_pGuestSessionWidget->markForError(true);
         return false;
     }
 
