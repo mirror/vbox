@@ -46,6 +46,7 @@ UIVMActivityToolWidget::UIVMActivityToolWidget(EmbedTo enmEmbedding, UIActionPoo
     , m_pToolBar(0)
     , m_pExportToFileAction(0)
 {
+    setTabPosition(QTabWidget::East);
     prepare();
     prepareActions();
     prepareToolBar();
