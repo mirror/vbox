@@ -730,6 +730,7 @@ private:
      *
      * @param     a_pAllocator  Pointer to the allocator.
      * @param     a_pStack      Pointer to stack to rewind.
+     * @param     a_fLog        Log is done (DEBUG builds only).
      *
      * @code
      *            LOOP thru all stack entries
@@ -780,9 +781,9 @@ private:
      * @endcode
      * @internal
      */
-    int i_rebalance(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, HardAvlStack *a_pStack, bool fLog = false)
+    int i_rebalance(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, HardAvlStack *a_pStack, bool a_fLog = false)
     {
-        RT_NOREF(fLog);
+        RT_NOREF(a_fLog);
 
         while (a_pStack->cEntries > 0)
         {
@@ -841,7 +842,7 @@ private:
                     pLeftNode->idxRight = idxNode;
                     *pidxNode = idxLeftNode;
 #ifdef DEBUG
-                    if (fLog) RTAssertMsg2("rebalance: %#2u: op #1\n", a_pStack->cEntries);
+                    if (a_fLog) RTAssertMsg2("rebalance: %#2u: op #1\n", a_pStack->cEntries);
 #endif
                 }
                 else
@@ -863,7 +864,7 @@ private:
                     pLeftRightNode->cHeight  = cLeftHeight;
                     *pidxNode = idxLeftRightNode;
 #ifdef DEBUG
-                    if (fLog) RTAssertMsg2("rebalance: %#2u: op #2\n", a_pStack->cEntries);
+                    if (a_fLog) RTAssertMsg2("rebalance: %#2u: op #2\n", a_pStack->cEntries);
 #endif
                 }
             }
@@ -895,7 +896,7 @@ private:
                     pRightNode->cHeight = (uint8_t)(cRightLeftHeight + 2);
                     *pidxNode = idxRightNode;
 #ifdef DEBUG
-                    if (fLog) RTAssertMsg2("rebalance: %#2u: op #3 h=%d, *pidxNode=%#x\n", a_pStack->cEntries, pRightNode->cHeight, *pidxNode);
+                    if (a_fLog) RTAssertMsg2("rebalance: %#2u: op #3 h=%d, *pidxNode=%#x\n", a_pStack->cEntries, pRightNode->cHeight, *pidxNode);
 #endif
                     RTHARDAVL_STRICT_CHECK_HEIGHTS(pRightNode, NULL, 0);
                     RTHARDAVL_STRICT_CHECK_HEIGHTS(pNode, NULL, 0);
@@ -919,7 +920,7 @@ private:
                     pRightLeftNode->cHeight  = cRightHeight;
                     *pidxNode = idxRightLeftNode;
 #ifdef DEBUG
-                    if (fLog) RTAssertMsg2("rebalance: %#2u: op #4 h=%d, *pidxNode=%#x\n", a_pStack->cEntries, pRightLeftNode->cHeight, *pidxNode);
+                    if (a_fLog) RTAssertMsg2("rebalance: %#2u: op #4 h=%d, *pidxNode=%#x\n", a_pStack->cEntries, pRightLeftNode->cHeight, *pidxNode);
 #endif
                 }
             }
@@ -930,7 +931,7 @@ private:
                 if (cHeight == pNode->cHeight)
                 {
 #ifdef DEBUG
-                    if (fLog) RTAssertMsg2("rebalance: %#2u: op #5, h=%d - done\n", a_pStack->cEntries, cHeight);
+                    if (a_fLog) RTAssertMsg2("rebalance: %#2u: op #5, h=%d - done\n", a_pStack->cEntries, cHeight);
 #endif
                     RTHARDAVL_STRICT_CHECK_HEIGHTS(pNode, NULL, 0);
                     if (pLeftNode)
@@ -940,7 +941,7 @@ private:
                     break;
                 }
 #ifdef DEBUG
-                if (fLog) RTAssertMsg2("rebalance: %#2u: op #5, h=%d - \n", a_pStack->cEntries, cHeight);
+                if (a_fLog) RTAssertMsg2("rebalance: %#2u: op #5, h=%d - \n", a_pStack->cEntries, cHeight);
 #endif
                 pNode->cHeight = cHeight;
             }
