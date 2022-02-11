@@ -465,7 +465,7 @@ void UIFileManagerGuestTable::retranslateUi()
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_MachineNotRunning:
-                strWarningText = UIFileManager::tr("File manager cannot work since the selected guest is not currenly running.");
+                strWarningText = UIFileManager::tr("File manager cannot work since the selected guest is not currently running.");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_NoGuestAdditions:
