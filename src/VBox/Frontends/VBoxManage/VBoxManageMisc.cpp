@@ -671,8 +671,7 @@ RTEXITCODE handleStartVM(HandlerArg *a)
                 if (!RTStrStr(ValueUnion.psz, "\n"))
                     aBstrEnv.push_back(Bstr(ValueUnion.psz).raw());
                 else
-                    return errorSyntax(USAGE_STARTVM,
-                                       Misc::tr("Parameter to option --putenv must not contain any newline character"));
+                    return errorSyntax(Misc::tr("Parameter to option --putenv must not contain any newline character"));
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -683,22 +682,22 @@ RTEXITCODE handleStartVM(HandlerArg *a)
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_STARTVM, Misc::tr("Invalid option -%c"), c);
+                        return errorSyntax(Misc::tr("Invalid option -%c"), c);
                     else
-                        return errorSyntax(USAGE_STARTVM, Misc::tr("Invalid option case %i"), c);
+                        return errorSyntax(Misc::tr("Invalid option case %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_STARTVM, Misc::tr("unknown option: %s\n"), ValueUnion.psz);
+                    return errorSyntax(Misc::tr("unknown option: %s\n"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_STARTVM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                    return errorSyntax("%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_STARTVM, Misc::tr("error: %Rrs"), c);
+                    return errorSyntax(Misc::tr("error: %Rrs"), c);
         }
     }
 
     /* check for required options */
     if (VMs.empty())
-        return errorSyntax(USAGE_STARTVM, Misc::tr("at least one VM name or uuid required"));
+        return errorSyntax(Misc::tr("at least one VM name or uuid required"));
 
     for (std::list<const char *>::const_iterator it = VMs.begin();
          it != VMs.end();

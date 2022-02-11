@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-controlvm" lang="en">
   <refentryinfo>
-    <pubdate>September 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage controlvm</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-controlvm</refname>
     <refpurpose>change state and settings for a running virtual machine</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
@@ -115,6 +115,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">shutdown</arg>
+      <arg choice="opt">--force</arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-keyboardputscancode">
@@ -315,13 +316,13 @@
       </group>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-clipboard">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-clipboard-mode">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
-      <arg choice="plain">clipboard</arg>
+      <arg choice="plain">clipboard mode</arg>
       <group choice="req">
         <arg choice="plain">disabled</arg>
         <arg choice="plain">hosttoguest</arg>
@@ -329,6 +330,21 @@
         <arg choice="plain">bidirectional</arg>
       </group>
     </cmdsynopsis>
+
+    <!--
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-clipboard-filetransfers">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">clipboard filetransfers</arg>
+      <group choice="req">
+        <arg choice="plain">on</arg>
+        <arg choice="plain">off</arg>
+      </group>
+    </cmdsynopsis>
+    -->
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-draganddrop">
       <command>VBoxManage controlvm</command>
@@ -443,7 +459,7 @@
       </group>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingscreens">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-screens">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -453,11 +469,11 @@
       <group choice="req">
         <arg choice="plain">all</arg>
         <arg choice="plain">none</arg>
-        <arg choice="plain"><replaceable>screen</replaceable>,[<replaceable>screen</replaceable>...]</arg>
+        <arg choice="plain"><replaceable>screen-ID</replaceable>[,<replaceable>screen-ID</replaceable>...]</arg>
       </group>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingfilename">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-filename">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -467,7 +483,7 @@
       <arg choice="req">filename</arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingvideores">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-videores">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -477,7 +493,7 @@
       <arg choice="req"><replaceable>width</replaceable>x<replaceable>height</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingvideorate">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-videorate">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -487,7 +503,7 @@
       <arg choice="req"><replaceable>rate</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingvideofps">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-videofps">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -497,7 +513,7 @@
       <arg choice="req"><replaceable>fps</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingmaxtime">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-maxtime">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -507,7 +523,7 @@
       <arg choice="req"><replaceable>sec</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingmaxfilesize">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-maxfilesize">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -516,6 +532,18 @@
       <arg choice="plain">recording maxfilesize</arg>
       <arg choice="req"><replaceable>MB</replaceable></arg>
     </cmdsynopsis>
+
+    <!--
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-opts">
+      <command>VBoxManage controlvm</command>
+      <group choice="req">
+        <arg choice="plain"><replaceable>uuid</replaceable></arg>
+        <arg choice="plain"><replaceable>vmname</replaceable></arg>
+      </group>
+      <arg choice="plain">recording opts</arg>
+      <arg choice="req"><replaceable>key</replaceable>=<arg><replaceable>value</replaceable></arg></arg>
+    </cmdsynopsis>
+    -->
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-setcredentials">
       <command>VBoxManage controlvm</command>
@@ -582,7 +610,7 @@
       <arg choice="req"><replaceable>num</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-vmprocesspriority">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-vm-process-priority">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -682,7 +710,7 @@
       </group>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-autostartenabled">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-autostart-enabled">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -695,7 +723,7 @@
       </group>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-autostartdelay">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-autostart-delay">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -795,7 +823,8 @@
         <emphasis role="bold">Save the Machine State</emphasis>.
       </para>
       <para>
-        When in the powered off state, you can restart the VM.
+        When in the saved state, you can restart the VM. It will continue
+        exactly in the state you saved.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-acpipowerbutton">
@@ -809,9 +838,9 @@
         physical computer.
       </para>
       <para>
-        So long as the VM runs a guest OS that provides ACPI support,
-        this command triggers a proper shutdown mechanism from within
-        the VM.
+        So long as the VM runs a guest OS that provides appropriately
+        configured ACPI support, this command triggers an operating
+        system shutdown from within the VM.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-acpisleepbutton">
@@ -823,9 +852,9 @@
         command sends an ACPI sleep signal to the VM.
       </para>
       <para>
-        So long as the VM runs a guest OS that provides ACPI support,
-        this command triggers a proper sleep mechanism from within the
-        VM.
+        So long as the VM runs a guest OS that provides appropriately
+        configured ACPI support, this command triggers a sleep mechanism
+        from within the VM.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-reboot">
@@ -837,7 +866,7 @@
         command asks the guest OS to reboot itself.
       </para>
       <para>
-        This commands new recent Guest Additions installed.
+        This commands requires Guest Additions to be installed in the VM.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-shutdown">
@@ -846,10 +875,11 @@
       <para>
         The <command>VBoxManage controlvm
         <replaceable>vmname</replaceable> shutdown</command>
-        command asks the guest OS to halt + shutdown.
+        command asks the guest OS to halt + shutdown, optionally forcing
+        the shutdown.
       </para>
       <para>
-        This commands new recent Guest Additions installed.
+        This commands requires Guest Additions to be installed in the VM.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-keyboardputscancode">
@@ -883,76 +913,6 @@
         command sends a file to the VM.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-teleport">
-      <title>Configure a Virtual Machine Target for Teleporting</title>
-      <remark role="help-copy-synopsis"/>
-      <para>
-        The <command>VBoxManage controlvm
-        <replaceable>vmname</replaceable> teleport</command> command
-        initiates a teleporting operation between the specified VM and
-        the specified host system. See <xref linkend="teleporting" />.
-      </para>
-      <para>
-        If you specify a password, it must match the password you
-        specified when you issued the <command>VBoxManage
-        modifyvm</command> command for the target machine.
-      </para>
-      <variablelist>
-        <varlistentry>
-          <term><option>--host=<replaceable>hostname</replaceable></option></term>
-          <listitem><para>
-              Specifies the name of the VM.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--port=<replaceable>port</replaceable></option></term>
-          <listitem><para>
-              Specifies the port on the VM that should listen for a
-              teleporting request from other VMs. The port number can be
-              any free TCP/IP port number, such as
-              <literal>6000</literal>.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--maxdowntime=<replaceable>msec</replaceable></option></term>
-          <listitem><para>
-              Specifies the maximum downtime, in milliseconds, for the
-              teleporting target VM.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--password=<replaceable>password</replaceable></option></term>
-          <listitem><para>
-              Specifies the password that the source machine uses for
-              the teleporting request. The request succeeds only if the
-              source machine specifies the same password.
-            </para><remark>
-              This design does not conform to Oracle's security
-              guidelines. You should not be able to specify a password
-              on the command line because the password can be seen in a
-              process listing.
-            </remark><para>
-              The <option>--password</option> is mutually exclusive with
-              the <option>--passwordfile</option> option.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--passwordfile=<replaceable>filename</replaceable></option></term>
-          <listitem><para>
-              Specifies the file from which to obtain the password that
-              the source machine uses for the teleporting request. The
-              request succeeds only if the source machine specifies the
-              same password.
-            </para><para>
-              When you specify a file name of <literal>stdin</literal>,
-              you can read the password from standard input.
-            </para><para>
-              The <option>--passwordfile</option> is mutually exclusive
-              with the <option>--password</option> option.
-            </para></listitem>
-        </varlistentry>
-      </variablelist>
-    </refsect2>
     <refsect2 id="vboxmanage-controlvm-setlinkstate">
       <title>Set the Link State for a Virtual Machine</title>
       <remark role="help-copy-synopsis"/>
@@ -964,18 +924,6 @@
         (<replaceable>N</replaceable>). Valid values are
         <literal>on</literal> and <literal>off</literal>. The default
         value is <literal>on</literal>.
-      </para>
-      <para>
-        Before connecting the virtual network cable, use the
-        <command>VBoxManage controlvm
-        nictracefile<replaceable>N</replaceable></command> command at
-        runtime to specify the name of the file in which to log the
-        trace. Otherwise, use the <command>VBoxManage modifyvm
-        --nic-trace-file<replaceable>N</replaceable>=<replaceable>filename</replaceable></command>
-        command to specify the name of the file.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-nic">
@@ -1023,9 +971,6 @@
             to rarely used submodes
           </para></listitem>
       </itemizedlist>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-nictrace">
       <title>Trace the Network Traffic of a Virtual Machine</title>
@@ -1042,15 +987,8 @@
         <literal>off</literal>.
       </para>
       <para>
-        When set to <literal>on</literal>, use the same value of
-        <replaceable>N</replaceable> for the <command>VBoxManage
-        controlvm <replaceable>vmname</replaceable>
-        nictracefile<replaceable>N</replaceable></command> command that
-        you use to specify the path name to the log file in which to
-        write trace output.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
+        If you did not configure a file name for the trace file then
+        a default one is used, placing it in the VM subdirectory.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-nictracefile">
@@ -1063,16 +1001,7 @@
         enables you to specify the name of the network traffic trace log
         file for the specified virtual network card
         (<replaceable>N</replaceable>). <replaceable>N</replaceable>
-        numbering begins with <literal>1</literal>. Ensure that you use
-        the same value of <replaceable>N</replaceable> as you used for
-        the <command>VBoxManage controlvm
-        <replaceable>vmname</replaceable>
-        nic<replaceable>N</replaceable></command> and
-        <command>VBoxManage controlvm <replaceable>vmname</replaceable>
-        nictrace<replaceable>N</replaceable></command> commands.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
+        numbering begins with <literal>1</literal>.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-nicpromisc">
@@ -1089,9 +1018,6 @@
         this VM but enables the VM to see traffic to and from other VMs.
         The <literal>allow-all</literal> value removes this restriction
         completely.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-nicproperty">
@@ -1111,9 +1037,6 @@
         between UDP Tunnel and the VDE backend drivers. See
         <xref linkend="network_udp_tunnel" />.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-natpf">
       <title>Specify a NAT Port Forwarding Rule for a Virtual Machine</title>
@@ -1124,9 +1047,6 @@
         natpf<replaceable>N</replaceable></command> command specifies a
         NAT port-forwarding rule. See <xref linkend="natforward"/>.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-natpf-delete">
       <title>Delete a NAT Port Forwarding Rule for a Virtual Machine</title>
@@ -1134,12 +1054,9 @@
       <para>
         The <command>VBoxManage controlvm
         <replaceable>vmname</replaceable>
-        natpf<replaceable>N</replaceable> delete</command> deletes the
-        specified NAT port-forwarding rule. See
+        natpf<replaceable>N</replaceable> delete</command> command deletes
+        the specified NAT port-forwarding rule. See
         <xref linkend="natforward"/>.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-guestmemoryballoon">
@@ -1153,9 +1070,6 @@
         Guest Additions from the guest OS and returned to the hypervisor
         for reuse by other VMs. The value you specify is in megabytes.
         See <xref linkend="guestadd-balloon" />.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-usbattach">
@@ -1177,9 +1091,6 @@
         Use the <option>--capturefile</option> option to specify the
         absolute path of a file in which to write logging data.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-usbdetach">
       <title>Make a Host System USB Device Invisible to a Virtual Machine</title>
@@ -1196,9 +1107,6 @@
         command to obtain information about USB devices on the host
         system.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-audioin">
       <title>Enable or Disable Audio Capture From the Host System</title>
@@ -1210,9 +1118,6 @@
         host system. Valid values are <literal>on</literal>, which
         enables audio capture and <literal>off</literal>, which disables
         audio capture. The default value is <literal>off</literal>.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-audioout">
@@ -1226,16 +1131,13 @@
         audio playback and <literal>off</literal>, which disables audio
         playback. The default value is <literal>off</literal>.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-clipboard">
-      <title>Specify How to Share The Host OS or Guest OS Clipboard</title>
+    <refsect2 id="vboxmanage-controlvm-clipboard-mode">
+      <title>Specify How to Share the Host OS or Guest OS Clipboard</title>
       <remark role="help-copy-synopsis"/>
       <para>
         The <command>VBoxManage controlvm
-        <replaceable>vmname</replaceable> clipboard</command> command
+        <replaceable>vmname</replaceable> clipboard mode</command> command
         specifies how to share the guest or host OS's clipboard with the
         host system or VM. Valid values are <literal>disabled</literal>,
         <literal>hosttoguest</literal>, <literal>guesttohost</literal>,
@@ -1247,10 +1149,25 @@
         This feature requires that the &product-name; Guest Additions
         are installed in the VM.
       </para>
+    </refsect2>
+    <!--
+    <refsect2 id="vboxmanage-controlvm-clipboard-filetransfers">
+      <title>Specify If Files Can Be Transferred Through the Clipboard</title>
+      <remark role="help-copy-synopsis"/>
       <para>
-        This subcommand does not affect the VM's running state directly.
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> clipboard filetransfers</command>
+        command specifies if it is possible to transfer files through the
+        clipboard between the host and VM, in the direction which is allowed.
+        Valid values are <literal>off</literal> and <literal>on</literal>.
+        The default value is <literal>off</literal>.
+      </para>
+      <para>
+        This feature requires that the &product-name; Guest Additions
+        are installed in the VM.
       </para>
     </refsect2>
+    -->
     <refsect2 id="vboxmanage-controlvm-draganddrop">
       <title>Set the Drag and Drop Mode Between the Host System and a Virtual Machine</title>
       <remark role="help-copy-synopsis"/>
@@ -1268,9 +1185,6 @@
         This feature requires that the &product-name; Guest Additions
         are installed in the VM.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-vrde">
       <title>Enable or Disable the VRDE Server</title>
@@ -1282,9 +1196,6 @@
         server, if installed. Valid values are <literal>on</literal> and
         <literal>off</literal>. The default value is
         <literal>off</literal>.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-vrdeport">
@@ -1300,10 +1211,7 @@
       </para>
       <para>
         Also see the <option>--vrde-port</option> option description in
-        <xref linkend="vboxmanage-modifyvm" />.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
+        <xref linkend="vboxmanage-modifyvm-vrde" />.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-vrdeproperty">
@@ -1315,9 +1223,6 @@
         specifies the port numbers and IP address on the VM to which the
         VRDE server can bind.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
       <itemizedlist>
         <listitem><para>
             <literal>TCP/Ports</literal> specifies a port or a range of
@@ -1326,7 +1231,7 @@
             is the standard RDP port, <literal>3389</literal>.
           </para><para>
             Also see the <option>--vrde-port</option> option description
-            in <xref linkend="vboxmanage-modifyvm" />.
+            in <xref linkend="vboxmanage-modifyvm-vrde" />.
           </para></listitem>
         <listitem><para>
             <literal>TCP/Address</literal> specifies the IP address of
@@ -1335,7 +1240,7 @@
             specified host network interface.
           </para><para>
             Also see the <option>--vrde-address</option> option
-            description in <xref linkend="vboxmanage-modifyvm" />.
+            description in <xref linkend="vboxmanage-modifyvm-vrde" />.
           </para></listitem>
         <listitem><para>
             <literal>VideoChannel/Enabled</literal> specifies whether to
@@ -1511,9 +1416,6 @@
         Lower values mean lower quality but higher compression. See
         <xref linkend="vrde-videochannel" />.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-setvideomodehint">
       <title>Specify the Video Mode for the Guest VM</title>
@@ -1524,9 +1426,6 @@
         command specifies the video mode for the guest VM to use. You
         must have the &product-name; Guest Additions installed. Note
         that this feature does not work for all guest systems.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-setscreenlayout">
@@ -1539,9 +1438,6 @@
         specified screen on the guest VM can be enabled or disabled, or
         a custom screen layout can be configured.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-screenshotpng">
       <title>Take a Screen Shot of the Virtual Machine Display</title>
@@ -1551,9 +1447,6 @@
         <replaceable>vmname</replaceable> screenshotpng</command>
         command takes a screenshot of the guest display and saves it as
         PNG in the specified file.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
       <itemizedlist>
         <listitem><para>
@@ -1579,11 +1472,8 @@
         <literal>off</literal>, which disables recording. The default
         value is <literal>off</literal>.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingscreens">
+    <refsect2 id="vboxmanage-controlvm-recording-screens">
       <title>Specify the Virtual Machine Screens to Record</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1593,9 +1483,6 @@
         recording for each screen that you specify is saved to its own
         file in the machine folder. You cannot modify this setting while
         recording is enabled.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
       <itemizedlist>
         <listitem><para>
@@ -1612,7 +1499,7 @@
           </para></listitem>
       </itemizedlist>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingfilename">
+    <refsect2 id="vboxmanage-controlvm-recording-filename">
       <title>Specify the File in Which to Save Virtual Machine Recording</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1626,11 +1513,8 @@
         folder, using the VM name as the file name, with a
         <filename>webm</filename> file name extension.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingvideores">
+    <refsect2 id="vboxmanage-controlvm-recording-videores">
       <title>Specify the Resolution of the Recorded Video</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1644,9 +1528,6 @@
         which are based on the resolution (frame size). See the Frame
         Size field on the Recording tab of the Display page to view the
         default value.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
       <para>
         Specify the resolution as
@@ -1663,7 +1544,7 @@
           </para></listitem>
       </itemizedlist>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingvideorate">
+    <refsect2 id="vboxmanage-controlvm-recording-videorate">
       <title>Specify the Bit Rate of the Video</title>
       <remark role="help-copy-synopsis"/>
 <!-- @todo r=andy Clarify rate. -->
@@ -1682,11 +1563,8 @@
         on the Recording tab of the Display page to view the default
         value.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingvideofps">
+    <refsect2 id="vboxmanage-controlvm-recording-videofps">
       <title>Specify the Maximum Frequency of the Video</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1704,11 +1582,8 @@
         which are based on the frame size. See the Frame Rate field on
         the Recording tab of the Display page to view the default value.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingmaxtime">
+    <refsect2 id="vboxmanage-controlvm-recording-maxtime">
       <title>Specify the Maximum Amount of Time to Record Video</title>
       <remark role="help-copy-synopsis"/>
 <!-- @todo r=andy Clarify time format. -->
@@ -1720,11 +1595,8 @@
         elapses. If this value is zero, the recording continues until
         you stop the recording.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingmaxfilesize">
+    <refsect2 id="vboxmanage-controlvm-recording-maxfilesize">
       <title>Specify the Maximum Size of the Recorded Video</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1736,10 +1608,26 @@
         recording continues until you stop the recording. You cannot
         modify this setting while recording is enabled.
       </para>
+    </refsect2>
+    <!--
+    <refsect2 id="vboxmanage-controlvm-recording-opts">
+      <title>Specify Custom Options for Recording Video and/or Audio</title>
+      <remark role="help-copy-synopsis"/>
       <para>
-        This subcommand does not affect the VM's running state directly.
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> recording
+        opts</command> command specifies additional recording options
+        in a comma-separated keyword-value format. For example,
+        <computeroutput>foo=bar,a=b</computeroutput>. You cannot
+        modify this setting while recording is enabled.
+      </para>
+      <para>
+        Use this option if you are an advanced user only. For
+        information about keywords, see <emphasis>&product-name;
+        Programming Guide and Reference</emphasis>.
       </para>
     </refsect2>
+    -->
     <refsect2 id="vboxmanage-controlvm-setcredentials">
       <title>Specify Credentials for Remote Logins on Windows Virtual Machines</title>
       <remark role="help-copy-synopsis"/>
@@ -1747,9 +1635,6 @@
         The <command>setcredentials</command> command enables you to
         specify the credentials for remotely logging in to Windows VMs.
         See <xref linkend="autologon" />.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
       <itemizedlist>
         <listitem><para>
@@ -1785,6 +1670,76 @@
           </para></listitem>
       </itemizedlist>
     </refsect2>
+    <refsect2 id="vboxmanage-controlvm-teleport">
+      <title>Configure a Virtual Machine Target for Teleporting</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        The <command>VBoxManage controlvm
+        <replaceable>vmname</replaceable> teleport</command> command
+        initiates a teleporting operation between the specified VM and
+        the specified host system. See <xref linkend="teleporting" />.
+      </para>
+      <para>
+        If you specify a password, it must match the password you
+        specified when you issued the <command>VBoxManage
+        modifyvm</command> command for the target machine.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--host=<replaceable>hostname</replaceable></option></term>
+          <listitem><para>
+              Specifies the name of the VM.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--port=<replaceable>port</replaceable></option></term>
+          <listitem><para>
+              Specifies the port on the VM that should listen for a
+              teleporting request from other VMs. The port number can be
+              any free TCP/IP port number, such as
+              <literal>6000</literal>.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--maxdowntime=<replaceable>msec</replaceable></option></term>
+          <listitem><para>
+              Specifies the maximum downtime, in milliseconds, for the
+              teleporting target VM.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--password=<replaceable>password</replaceable></option></term>
+          <listitem><para>
+              Specifies the password that the source machine uses for
+              the teleporting request. The request succeeds only if the
+              source machine specifies the same password.
+            </para><remark>
+              This design does not conform to Oracle's security
+              guidelines. You should not be able to specify a password
+              on the command line because the password can be seen in a
+              process listing.
+            </remark><para>
+              The <option>--password</option> is mutually exclusive with
+              the <option>--passwordfile</option> option.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--passwordfile=<replaceable>filename</replaceable></option></term>
+          <listitem><para>
+              Specifies the file from which to obtain the password that
+              the source machine uses for the teleporting request. The
+              request succeeds only if the source machine specifies the
+              same password.
+            </para><para>
+              When you specify a file name of <literal>stdin</literal>,
+              you can read the password from standard input.
+            </para><para>
+              The <option>--passwordfile</option> is mutually exclusive
+              with the <option>--password</option> option.
+            </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
     <refsect2 id="vboxmanage-controlvm-plugcpu">
       <title>Add a Virtual CPU to a Virtual Machine</title>
       <remark role="help-copy-synopsis"/>
@@ -1795,9 +1750,6 @@
         enabled. <replaceable>ID</replaceable> specifies the index of
         the virtual CPU to be added and must be a number from 0 to the
         maximum number of CPUs configured.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-unplugcpu">
@@ -1810,9 +1762,6 @@
         is enabled. <replaceable>ID</replaceable> specifies the index of
         the virtual CPU to be removed and must be a number from 0 to the
         maximum number of CPUs configured. You cannot remove CPU 0.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-cpuexecutioncap">
@@ -1829,10 +1778,13 @@
         <literal>100</literal>.
       </para>
       <para>
-        This subcommand does not affect the VM's running state directly.
+        Use this feature with caution, it can have unexpected results
+        including timekeeping problems and lower performance than
+        specified. If you want to limit the resource usage of a VM
+        it is more reliable to pick an appropriate number of VCPUs.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-vmprocesspriority">
+    <refsect2 id="vboxmanage-controlvm-vm-process-priority">
       <title>Change the Priority of a VM Process</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1872,9 +1824,6 @@
             in the system to starve.
           </para></listitem>
       </itemizedlist>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-webcam-attach">
       <title>Attach a Webcam to a Virtual Machine</title>
@@ -1928,9 +1877,6 @@
             </para></listitem>
         </varlistentry>
       </variablelist>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-webcam-detach">
       <title>Detach a Webcam From a Virtual Machine</title>
@@ -1969,9 +1915,6 @@
             command.
           </para></listitem>
       </itemizedlist>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-webcam-list">
       <title>List the Webcams Attached to a Virtual Machine</title>
@@ -1984,9 +1927,6 @@
         webcams to the VM by using the <command>VBoxManage controlvm
         <replaceable>vmname</replaceable> webcam attach</command>
         command.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-addencpassword">
@@ -2049,9 +1989,6 @@
           $ VBoxManage <replaceable>vmname</replaceable> controlvm addencpassword <replaceable>vmname</replaceable> -
           Password: <replaceable>encryption-password</replaceable>
         </screen>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-removeencpassword">
       <title>Disable an Encryption Password for a Virtual Machine</title>
@@ -2066,9 +2003,6 @@
         <replaceable>ID</replaceable> is the password identifier for the
         encryption password that you want to disable.
       </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
-      </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-removeallencpasswords">
       <title>Disable All Encryption Passwords for a Virtual Machine</title>
@@ -2078,9 +2012,6 @@
         <replaceable>vmname</replaceable>
         removeallencpasswords</command> command disables all encryption
         passwords for all encrypted media attached to the VM.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
     </refsect2>
     <refsect2 id="vboxmanage-controlvm-changeuartmode">
@@ -2093,9 +2024,6 @@
         command changes the connection mode for the specified virtual
         serial port. Valid serial port values are integers that start
         from <literal>1</literal>.
-      </para>
-      <para>
-        This subcommand does not affect the VM's running state directly.
       </para>
       <variablelist>
         <varlistentry>
@@ -2142,7 +2070,7 @@
         </varlistentry>
       </variablelist>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-autostartenabled">
+    <refsect2 id="vboxmanage-controlvm-autostart-enabled">
       <title>Enabling autostart the VM during host system boot</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -2157,7 +2085,7 @@
         default value is <literal>off</literal>.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-autostartdelay">
+    <refsect2 id="vboxmanage-controlvm-autostart-delay">
       <title>Setting the delay of starting the VM on host system boot</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -2182,7 +2110,7 @@
       the <filename>ol7</filename> VM. Copying of clipboard data is
       allowed in both directions between the host and guest.
     </para>
-<screen>$ VBoxManage controlvm ol7 clipboard bidirectional</screen>
+<screen>$ VBoxManage controlvm ol7 clipboard mode bidirectional</screen>
   </refsect1>
 
   <refsect1>

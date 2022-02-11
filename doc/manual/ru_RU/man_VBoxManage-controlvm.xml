@@ -318,13 +318,13 @@
       </group>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-clipboard">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-clipboard-mode">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>имя-ВМ</replaceable></arg>
       </group>
-      <arg choice="plain">clipboard</arg>
+      <arg choice="plain">clipboard mode</arg>
       <group choice="req">
         <arg choice="plain">disabled</arg>
         <arg choice="plain">hosttoguest</arg>
@@ -446,7 +446,7 @@
       </group>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingscreens">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-screens">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -460,7 +460,7 @@
       </group>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingfilename">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-filename">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -470,7 +470,7 @@
       <arg choice="req">filename</arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingvideores">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-videores">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -480,7 +480,7 @@
       <arg choice="req"><replaceable>ширина</replaceable>x<replaceable>высота</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingvideorate">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-videorate">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -490,7 +490,7 @@
       <arg choice="req"><replaceable>битрейт</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingvideofps">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-videofps">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -500,7 +500,7 @@
       <arg choice="req"><replaceable>кадров/сек</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingmaxtime">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-maxtime">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -510,7 +510,7 @@
       <arg choice="req"><replaceable>сек</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recordingmaxfilesize">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-recording-maxfilesize">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -585,7 +585,7 @@
       <arg choice="req"><replaceable>число</replaceable></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-vmprocesspriority">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-vm-process-priority">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -685,7 +685,7 @@
       </group>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-autostartenabled">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-autostart-enabled">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -698,7 +698,7 @@
       </group>
     </cmdsynopsis>
 
-    <cmdsynopsis id="synopsis-vboxmanage-controlvm-autostartdelay">
+    <cmdsynopsis id="synopsis-vboxmanage-controlvm-autostart-delay">
       <command>VBoxManage controlvm</command>
       <group choice="req">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
@@ -1216,12 +1216,12 @@
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-clipboard">
+    <refsect2 id="vboxmanage-controlvm-clipboard-mode">
       <title>Задать как предоставить общий доступ к буферам обмена хост ОС или гостевой ОС</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Команда <command>VBoxManage controlvm
-        <replaceable>имя-ВМ</replaceable> clipboard</command> задает
+        <replaceable>имя-ВМ</replaceable> clipboard mode</command> задает
         как предоставить общий доступ к буферам обмена гостевой системы
         или хоста хост-системе или ВМ. Допустимые значения:
         <literal>disabled</literal>, <literal>hosttoguest</literal>,
@@ -1555,7 +1555,7 @@
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingscreens">
+    <refsect2 id="vboxmanage-controlvm-recording-screens">
       <title>Задать экран виртуальной машины для записи</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1581,7 +1581,7 @@
           </para></listitem>
       </itemizedlist>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingfilename">
+    <refsect2 id="vboxmanage-controlvm-recording-filename">
       <title>Задать файл для сохранения записанной сессии виртуальной машины</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1599,7 +1599,7 @@
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingvideores">
+    <refsect2 id="vboxmanage-controlvm-recording-videores">
       <title>Задать разрешение записанного видео</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1628,7 +1628,7 @@
           </para></listitem>
       </itemizedlist>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingvideorate">
+    <refsect2 id="vboxmanage-controlvm-recording-videorate">
       <title>Задать битрейт видео</title>
       <remark role="help-copy-synopsis"/>
 <!-- @todo r=andy Clarify rate. -->
@@ -1649,7 +1649,7 @@
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingvideofps">
+    <refsect2 id="vboxmanage-controlvm-recording-videofps">
       <title>Задать максимальную частоту видео</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1672,7 +1672,7 @@
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingmaxtime">
+    <refsect2 id="vboxmanage-controlvm-recording-maxtime">
       <title>Задать максимальное время записи видео</title>
       <remark role="help-copy-synopsis"/>
 <!-- @todo r=andy Clarify time format. -->
@@ -1688,7 +1688,7 @@
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-recordingmaxfilesize">
+    <refsect2 id="vboxmanage-controlvm-recording-maxfilesize">
       <title>Задать максимальный размер записанного видео</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -1798,7 +1798,7 @@
         Эта команда не влияет прямо на состояние выполнения ВМ.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-vmprocesspriority">
+    <refsect2 id="vboxmanage-controlvm-vm-process-priority">
       <title>Изменить приоритет процесса ВМ</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -2107,7 +2107,7 @@
         </varlistentry>
       </variablelist>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-autostartenabled">
+    <refsect2 id="vboxmanage-controlvm-autostart-enabled">
       <title>Включить автостарт ВМ во время загрузки хост-системы</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -2122,7 +2122,7 @@
         отключающую ее. Значение по умолчанию <literal>off</literal>.
       </para>
     </refsect2>
-    <refsect2 id="vboxmanage-controlvm-autostartdelay">
+    <refsect2 id="vboxmanage-controlvm-autostart-delay">
       <title>Установить задержку старта ВМ во время загрузки хост-системы</title>
       <remark role="help-copy-synopsis"/>
       <para>
@@ -2149,7 +2149,7 @@
       разрешено в обоих направлениях между хостом и гостевой
       системой.
     </para>
-<screen>$ VBoxManage controlvm ol7 clipboard bidirectional</screen>
+<screen>$ VBoxManage controlvm ol7 clipboard mode bidirectional</screen>
   </refsect1>
 
   <refsect1>

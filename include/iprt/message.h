@@ -233,11 +233,11 @@ RTDECL(int)  RTMsgInfoV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1
  *  ORed in. */
 #define RTMSGREFENTRYSTR_SCOPE_SAME     UINT64_C(0)
 /** Global scope. */
-#define RTMSGREFENTRYSTR_SCOPE_GLOBAL   UINT64_C(0x00ffffffffffffff)
+#define RTMSGREFENTRYSTR_SCOPE_GLOBAL   UINT64_C(0x0fffffffffffffff)
 /** Scope mask. */
-#define RTMSGREFENTRYSTR_SCOPE_MASK     UINT64_C(0x00ffffffffffffff)
+#define RTMSGREFENTRYSTR_SCOPE_MASK     UINT64_C(0x0fffffffffffffff)
 /** Flags mask. */
-#define RTMSGREFENTRYSTR_FLAGS_MASK     UINT64_C(0xff00000000000000)
+#define RTMSGREFENTRYSTR_FLAGS_MASK     UINT64_C(0xf000000000000000)
 /** Command synopsis, special hanging indent rules applies. */
 #define RTMSGREFENTRYSTR_FLAGS_SYNOPSIS RT_BIT_64(63)
 /** @} */

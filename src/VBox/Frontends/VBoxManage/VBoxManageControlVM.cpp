@@ -41,7 +41,7 @@
 
 #include <list>
 
-DECLARE_TRANSLATION_CONTEXT(CloudVM);
+DECLARE_TRANSLATION_CONTEXT(ControlVM);
 
 VMProcPriority_T nameToVMProcPriority(const char *pszName);
 
@@ -62,7 +62,7 @@ static unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name)
         &&  u32 >= 1
         &&  u32 <= cMaxNum)
         return (unsigned)u32;
-    errorArgument(CloudVM::tr("Invalid %s number '%s'"), name, psz);
+    errorArgument(ControlVM::tr("Invalid %s number '%s'."), name, psz);
     return 0;
 }
 
@@ -212,7 +212,6 @@ static HRESULT keyboardPutScancodes(IKeyboard *pKeyboard, const std::list<LONG> 
     /* Send scancodes to the VM. */
     com::SafeArray<LONG> saScancodes(llScancodes);
 
-#if 1
     HRESULT rc = S_OK;
     size_t i;
     for (i = 0; i < saScancodes.size(); ++i)
@@ -220,23 +219,12 @@ static HRESULT keyboardPutScancodes(IKeyboard *pKeyboard, const std::list<LONG> 
         rc = pKeyboard->PutScancode(saScancodes[i]);
         if (FAILED(rc))
         {
-            RTMsgError(CloudVM::tr("Failed to send a scancode"));
+            RTMsgError(ControlVM::tr("Failed to send a scancode."));
             break;
         }
 
         RTThreadSleep(10); /* "Typing" too fast causes lost characters. */
     }
-#else
-    /** @todo PutScancodes does not deliver more than 20 scancodes. */
-    ULONG codesStored = 0;
-    HRESULT rc = pKeyboard->PutScancodes(ComSafeArrayAsInParam(saScancodes),
-                                         &codesStored);
-    if (SUCCEEDED(rc) && codesStored < saScancodes.size())
-    {
-        RTMsgError(CloudVM::tr("Only %d scancodes were stored", "", codesStored), codesStored);
-        rc = E_FAIL;
-    }
-#endif
 
     return rc;
 }
@@ -332,18 +320,18 @@ static HRESULT keyboardPutFile(IKeyboard *pKeyboard, const char *pszFilename)
                     RTMemFree(pchBuf);
                 }
                 else
-                    RTMsgError(CloudVM::tr("Out of memory allocating %d bytes", "", cbBuffer), cbBuffer);
+                    RTMsgError(ControlVM::tr("Out of memory allocating %d bytes.", "", cbBuffer), cbBuffer);
             }
             else
-                RTMsgError(CloudVM::tr("File size %RI64 is greater than %RI64: '%s'"), cbFile, cbFileMax, pszFilename);
+                RTMsgError(ControlVM::tr("File size %RI64 is greater than %RI64: '%s'."), cbFile, cbFileMax, pszFilename);
         }
         else
-            RTMsgError(CloudVM::tr("Cannot get size of file '%s': %Rrc"), pszFilename, vrc);
+            RTMsgError(ControlVM::tr("Cannot get size of file '%s': %Rrc."), pszFilename, vrc);
 
         RTFileClose(File);
     }
     else
-        RTMsgError(CloudVM::tr("Cannot open file '%s': %Rrc"), pszFilename, vrc);
+        RTMsgError(ControlVM::tr("Cannot open file '%s': %Rrc."), pszFilename, vrc);
 
     /* Release SHIFT if pressed. */
     if (fShift)
@@ -360,7 +348,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
     HRESULT rc;
 
     if (a->argc < 2)
-        return errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Not enough parameters"));
+        return errorSyntax(ControlVM::tr("Not enough parameters."));
 
     /* try to find the given machine */
     ComPtr<IMachine> machine;
@@ -380,7 +368,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         /* get the associated console */
         CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
         if (!console)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, CloudVM::tr("Machine '%s' is not currently running"), a->argv[0]);
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, ControlVM::tr("Machine '%s' is not currently running."), a->argv[0]);
 
         /* ... and session machine */
         CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
@@ -388,21 +376,25 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         /* which command? */
         if (!strcmp(a->argv[1], "pause"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_PAUSE);
             CHECK_ERROR_BREAK(console, Pause());
         }
         else if (!strcmp(a->argv[1], "resume"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RESUME);
             CHECK_ERROR_BREAK(console, Resume());
         }
         else if (!strcmp(a->argv[1], "reset"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RESET);
             CHECK_ERROR_BREAK(console, Reset());
         }
         else if (!strcmp(a->argv[1], "unplugcpu"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_UNPLUGCPU);
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'. Expected CPU number."), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -413,9 +405,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "plugcpu"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_PLUGCPU);
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'. Expected CPU number."), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -426,9 +419,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "cpuexecutioncap"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_CPUEXECUTIONCAP);
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'. Expected execution cap number."), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -439,60 +433,48 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "audioin"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_AUDIOIN);
             ComPtr<IAudioAdapter> adapter;
             CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioAdapter)(adapter.asOutParam()));
             if (adapter)
             {
-                if (!strcmp(a->argv[2], "on"))
+                bool fEnabled;
+                if (RT_FAILURE(parseBool(a->argv[2], &fEnabled)))
                 {
-                    CHECK_ERROR_RET(adapter, COMSETTER(EnabledIn)(TRUE), RTEXITCODE_FAILURE);
-                }
-                else if (!strcmp(a->argv[2], "off"))
-                {
-                    CHECK_ERROR_RET(adapter, COMSETTER(EnabledIn)(FALSE), RTEXITCODE_FAILURE);
-                }
-                else
-                {
-                    errorArgument(CloudVM::tr("Invalid value '%s'"), Utf8Str(a->argv[2]).c_str());
+                    errorSyntax(ControlVM::tr("Invalid value '%s'."), a->argv[2]);
                     rc = E_FAIL;
                     break;
                 }
-                if (SUCCEEDED(rc))
-                    fNeedsSaving = true;
+                CHECK_ERROR_RET(adapter, COMSETTER(EnabledIn)(fEnabled), RTEXITCODE_FAILURE);
+                fNeedsSaving = true;
             }
             else
             {
-                errorArgument(CloudVM::tr("audio adapter not enabled in VM configuration"));
+                errorSyntax(ControlVM::tr("Audio adapter not enabled in VM configuration."));
                 rc = E_FAIL;
                 break;
             }
         }
         else if (!strcmp(a->argv[1], "audioout"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_AUDIOOUT);
             ComPtr<IAudioAdapter> adapter;
             CHECK_ERROR_BREAK(sessionMachine, COMGETTER(AudioAdapter)(adapter.asOutParam()));
             if (adapter)
             {
-                if (!strcmp(a->argv[2], "on"))
+                bool fEnabled;
+                if (RT_FAILURE(parseBool(a->argv[2], &fEnabled)))
                 {
-                    CHECK_ERROR_RET(adapter, COMSETTER(EnabledOut)(TRUE), RTEXITCODE_FAILURE);
-                }
-                else if (!strcmp(a->argv[2], "off"))
-                {
-                    CHECK_ERROR_RET(adapter, COMSETTER(EnabledOut)(FALSE), RTEXITCODE_FAILURE);
-                }
-                else
-                {
-                    errorArgument(CloudVM::tr("Invalid value '%s'"), Utf8Str(a->argv[2]).c_str());
+                    errorSyntax(ControlVM::tr("Invalid value '%s'."), a->argv[2]);
                     rc = E_FAIL;
                     break;
                 }
-                if (SUCCEEDED(rc))
-                    fNeedsSaving = true;
+                CHECK_ERROR_RET(adapter, COMSETTER(EnabledOut)(fEnabled), RTEXITCODE_FAILURE);
+                fNeedsSaving = true;
             }
             else
             {
-                errorArgument(CloudVM::tr("audio adapter not enabled in VM configuration"));
+                errorSyntax(ControlVM::tr("Audio adapter not enabled in VM configuration."));
                 rc = E_FAIL;
                 break;
             }
@@ -502,7 +484,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         {
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'."), a->argv[1]);
+                errorArgument(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -510,6 +492,14 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             ClipboardMode_T mode = ClipboardMode_Disabled; /* Shut up MSC */
             if (!strcmp(a->argv[2], "mode"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_CLIPBOARD_MODE);
+                if (a->argc <= 1 + 2)
+                {
+                    errorSyntax(ControlVM::tr("Missing argument to '%s %s'."), a->argv[1], a->argv[2]);
+                    rc = E_FAIL;
+                    break;
+                }
+
                 if (!strcmp(a->argv[3], "disabled"))
                     mode = ClipboardMode_Disabled;
                 else if (!strcmp(a->argv[3], "hosttoguest"))
@@ -520,7 +510,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     mode = ClipboardMode_Bidirectional;
                 else
                 {
-                    errorArgument(CloudVM::tr("Invalid '%s' argument '%s'."), a->argv[2], a->argv[3]);
+                    errorSyntax(ControlVM::tr("Invalid '%s %s' argument '%s'."), a->argv[1], a->argv[2], a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
@@ -532,37 +522,29 @@ RTEXITCODE handleControlVM(HandlerArg *a)
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             else if (!strcmp(a->argv[2], "filetransfers"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_CLIPBOARD_FILETRANSFERS);
                 if (a->argc <= 1 + 2)
                 {
-                    errorArgument(CloudVM::tr("Missing argument to '%s'. Expected enabled / disabled."), a->argv[2]);
+                    errorSyntax(ControlVM::tr("Missing argument to '%s %s'."), a->argv[1], a->argv[2]);
                     rc = E_FAIL;
                     break;
                 }
 
-                BOOL fEnabled;
-                if (!strcmp(a->argv[3], "enabled"))
+                bool fEnabled;
+                if (RT_FAILURE(parseBool(a->argv[3], &fEnabled)))
                 {
-                    fEnabled = TRUE;
-                }
-                else if (!strcmp(a->argv[3], "disabled"))
-                {
-                    fEnabled = FALSE;
-                }
-                else
-                {
-                    errorArgument(CloudVM::tr("Invalid '%s' argument '%s'."), a->argv[2], a->argv[3]);
+                    errorSyntax(ControlVM::tr("Invalid '%s %s' argument '%s'."), a->argv[1], a->argv[2], a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
 
                 CHECK_ERROR_BREAK(sessionMachine, COMSETTER(ClipboardFileTransfersEnabled)(fEnabled));
-                if (SUCCEEDED(rc))
-                    fNeedsSaving = true;
+                fNeedsSaving = true;
             }
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
             else
             {
-                errorArgument(CloudVM::tr("Invalid '%s' argument '%s'."), a->argv[1], a->argv[2]);
+                errorArgument(ControlVM::tr("Invalid '%s' argument '%s'."), a->argv[1], a->argv[2]);
                 rc = E_FAIL;
                 break;
             }
@@ -570,9 +552,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
 #endif /* VBOX_WITH_SHARED_CLIPBOARD */
         else if (!strcmp(a->argv[1], "draganddrop"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_DRAGANDDROP);
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'. Expected drag and drop mode."), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -588,7 +571,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 mode = DnDMode_Bidirectional;
             else
             {
-                errorArgument(CloudVM::tr("Invalid '%s' argument '%s'."), a->argv[1], a->argv[2]);
+                errorSyntax(ControlVM::tr("Invalid '%s' argument '%s'."), a->argv[1], a->argv[2]);
                 rc = E_FAIL;
             }
             if (SUCCEEDED(rc))
@@ -600,14 +583,16 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "poweroff"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_POWEROFF);
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
 
             rc = showProgress(progress);
-            CHECK_PROGRESS_ERROR(progress, (CloudVM::tr("Failed to power off machine")));
+            CHECK_PROGRESS_ERROR(progress, (ControlVM::tr("Failed to power off machine.")));
         }
         else if (!strcmp(a->argv[1], "savestate"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_SAVESTATE);
             /* first pause so we don't trigger a live save which needs more time/resources */
             bool fPaused = false;
             rc = console->Pause();
@@ -623,7 +608,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     rc = VBOX_E_INVALID_VM_STATE;
                     if (machineState != MachineState_Paused)
                     {
-                        RTMsgError(CloudVM::tr("Machine in invalid state %d -- %s\n"),
+                        RTMsgError(ControlVM::tr("Machine in invalid state %d -- %s."),
                                    machineState, machineStateToName(machineState, false));
                     }
                     else
@@ -646,7 +631,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
 
             rc = showProgress(progress);
-            CHECK_PROGRESS_ERROR(progress, (CloudVM::tr("Failed to save machine state")));
+            CHECK_PROGRESS_ERROR(progress, (ControlVM::tr("Failed to save machine state.")));
             if (FAILED(rc))
             {
                 if (!fPaused)
@@ -655,26 +640,32 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "acpipowerbutton"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_ACPIPOWERBUTTON);
             CHECK_ERROR_BREAK(console, PowerButton());
         }
         else if (!strcmp(a->argv[1], "acpisleepbutton"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_ACPISLEEPBUTTON);
             CHECK_ERROR_BREAK(console, SleepButton());
         }
 #ifdef VBOX_WITH_GUEST_CONTROL
         else if (   !strcmp(a->argv[1], "reboot")
                  || !strcmp(a->argv[1], "shutdown")) /* With shutdown we mean gracefully powering off the VM by letting the guest OS do its thing. */
         {
+            const bool fReboot = !strcmp(a->argv[1], "reboot");
+            if (fReboot)
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_REBOOT);
+            else
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_SHUTDOWN);
+
             ComPtr<IGuest> pGuest;
             CHECK_ERROR_BREAK(console, COMGETTER(Guest)(pGuest.asOutParam()));
             if (!pGuest)
             {
-                RTMsgError(CloudVM::tr("Guest not running"));
+                RTMsgError(ControlVM::tr("Guest not running."));
                 rc = E_FAIL;
                 break;
             }
-
-            const bool fReboot = !strcmp(a->argv[1], "reboot");
 
             com::SafeArray<GuestShutdownFlag_T> aShutdownFlags;
             if (fReboot)
@@ -690,25 +681,30 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (FAILED(rc))
             {
                 if (rc == VBOX_E_NOT_SUPPORTED)
-                    RTPrintf(CloudVM::tr("Current installed Guest Additions don't support %s the guest."),
-                             fReboot ? CloudVM::tr("rebooting") : CloudVM::tr("shutting down"));
+                {
+                    if (fReboot)
+                        RTMsgError(ControlVM::tr("Current installed Guest Additions don't support rebooting the guest."));
+                    else
+                        RTMsgError(ControlVM::tr("Current installed Guest Additions don't support shutting down the guest."));
+                }
             }
         }
 #endif
         else if (!strcmp(a->argv[1], "keyboardputscancode"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_KEYBOARDPUTSCANCODE);
             ComPtr<IKeyboard> pKeyboard;
             CHECK_ERROR_BREAK(console, COMGETTER(Keyboard)(pKeyboard.asOutParam()));
             if (!pKeyboard)
             {
-                RTMsgError(CloudVM::tr("Guest not running"));
+                RTMsgError(ControlVM::tr("Guest not running."));
                 rc = E_FAIL;
                 break;
             }
 
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'. Expected IBM PC AT set 2 keyboard scancode(s) as hex byte(s)."),
+                errorSyntax(ControlVM::tr("Missing argument to '%s'. Expected IBM PC AT set 2 keyboard scancode(s)."),
                               a->argv[1]);
                 rc = E_FAIL;
                 break;
@@ -728,7 +724,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     int irc = RTStrToUInt8Ex(a->argv[i], NULL, 16, &u8Scancode);
                     if (RT_FAILURE (irc))
                     {
-                        RTMsgError(CloudVM::tr("Converting '%s' returned %Rrc!"), a->argv[i], rc);
+                        RTMsgError(ControlVM::tr("Converting '%s' returned %Rrc!"), a->argv[i], rc);
                         rc = E_FAIL;
                         break;
                     }
@@ -737,7 +733,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 }
                 else
                 {
-                    RTMsgError(CloudVM::tr("Error: '%s' is not a hex byte!"), a->argv[i]);
+                    RTMsgError(ControlVM::tr("'%s' is not a hex byte!"), a->argv[i]);
                     rc = E_FAIL;
                     break;
                 }
@@ -750,18 +746,19 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "keyboardputstring"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_KEYBOARDPUTSTRING);
             ComPtr<IKeyboard> pKeyboard;
             CHECK_ERROR_BREAK(console, COMGETTER(Keyboard)(pKeyboard.asOutParam()));
             if (!pKeyboard)
             {
-                RTMsgError(CloudVM::tr("Guest not running"));
+                RTMsgError(ControlVM::tr("Guest not running."));
                 rc = E_FAIL;
                 break;
             }
 
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'. Expected ASCII string(s)."), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'. Expected ASCII string(s)."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -770,18 +767,19 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "keyboardputfile"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_KEYBOARDPUTFILE);
             ComPtr<IKeyboard> pKeyboard;
             CHECK_ERROR_BREAK(console, COMGETTER(Keyboard)(pKeyboard.asOutParam()));
             if (!pKeyboard)
             {
-                RTMsgError(CloudVM::tr("Guest not running"));
+                RTMsgError(ControlVM::tr("Guest not running."));
                 rc = E_FAIL;
                 break;
             }
 
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'. Expected file name."), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -790,6 +788,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strncmp(a->argv[1], "setlinkstate", 12))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_SETLINKSTATE);
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
@@ -800,7 +799,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -809,22 +808,15 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
             if (adapter)
             {
-                if (!strcmp(a->argv[2], "on"))
+                bool fEnabled;
+                if (RT_FAILURE(parseBool(a->argv[3], &fEnabled)))
                 {
-                    CHECK_ERROR_BREAK(adapter, COMSETTER(CableConnected)(TRUE));
-                }
-                else if (!strcmp(a->argv[2], "off"))
-                {
-                    CHECK_ERROR_BREAK(adapter, COMSETTER(CableConnected)(FALSE));
-                }
-                else
-                {
-                    errorArgument(CloudVM::tr("Invalid link state '%s'"), Utf8Str(a->argv[2]).c_str());
+                    errorSyntax(ControlVM::tr("Invalid link state '%s'."), a->argv[2]);
                     rc = E_FAIL;
                     break;
                 }
-                if (SUCCEEDED(rc))
-                    fNeedsSaving = true;
+                CHECK_ERROR_BREAK(adapter, COMSETTER(CableConnected)(fEnabled));
+                fNeedsSaving = true;
             }
         }
         /* here the order in which strncmp is called is important
@@ -834,6 +826,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
          */
         else if (!strncmp(a->argv[1], "nictracefile", 12))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_NICTRACEFILE);
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
@@ -844,7 +837,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             if (a->argc <= 2)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -864,7 +857,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     }
                     else
                     {
-                        errorArgument(CloudVM::tr("Invalid filename or filename not specified for NIC %lu"), n);
+                        errorSyntax(ControlVM::tr("Filename not specified for NIC %lu."), n);
                         rc = E_FAIL;
                         break;
                     }
@@ -872,11 +865,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         fNeedsSaving = true;
                 }
                 else
-                    RTMsgError(CloudVM::tr("The NIC %d is currently disabled and thus its tracefile can't be changed"), n);
+                    RTMsgError(ControlVM::tr("The NIC %d is currently disabled and thus its tracefile can't be changed."), n);
             }
         }
         else if (!strncmp(a->argv[1], "nictrace", 8))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_NICTRACE);
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             unsigned n = parseNum(&a->argv[1][8], NetworkAdapterCount, "NIC");
@@ -887,7 +881,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             if (a->argc <= 2)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -901,25 +895,18 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 adapter->COMGETTER(Enabled)(&fEnabled);
                 if (fEnabled)
                 {
-                    if (!strcmp(a->argv[2], "on"))
+                    bool fTraceEnabled;
+                    if (RT_FAILURE(parseBool(a->argv[3], &fTraceEnabled)))
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(TraceEnabled)(TRUE), RTEXITCODE_FAILURE);
-                    }
-                    else if (!strcmp(a->argv[2], "off"))
-                    {
-                        CHECK_ERROR_RET(adapter, COMSETTER(TraceEnabled)(FALSE), RTEXITCODE_FAILURE);
-                    }
-                    else
-                    {
-                        errorArgument(CloudVM::tr("Invalid nictrace%lu argument '%s'"), n, Utf8Str(a->argv[2]).c_str());
+                        errorSyntax(ControlVM::tr("Invalid nictrace%lu argument '%s'."), n, a->argv[2]);
                         rc = E_FAIL;
                         break;
                     }
-                    if (SUCCEEDED(rc))
-                        fNeedsSaving = true;
+                    CHECK_ERROR_RET(adapter, COMSETTER(TraceEnabled)(fTraceEnabled), RTEXITCODE_FAILURE);
+                    fNeedsSaving = true;
                 }
                 else
-                    RTMsgError(CloudVM::tr("The NIC %d is currently disabled and thus its trace flag can't be changed"), n);
+                    RTMsgError(ControlVM::tr("The NIC %d is currently disabled and thus its trace flag can't be changed."), n);
             }
         }
         else if(   a->argc > 2
@@ -935,7 +922,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             if (a->argc <= 2)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorArgument(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -958,20 +945,21 @@ RTEXITCODE handleControlVM(HandlerArg *a)
 
             if (!strcmp(a->argv[2], "delete"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_NATPF_DELETE);
                 if (a->argc >= 3)
                     CHECK_ERROR(engine, RemoveRedirect(Bstr(a->argv[3]).raw()));
             }
             else
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_NATPF);
 #define ITERATE_TO_NEXT_TERM(ch)                                                        \
     do {                                                                                \
         while (*ch != ',')                                                              \
         {                                                                               \
             if (*ch == 0)                                                               \
             {                                                                           \
-                return errorSyntax(USAGE_CONTROLVM,                                     \
-                                   CloudVM::tr("Missing or invalid argument to '%s'"),  \
-                                    a->argv[1]);                                        \
+                return errorSyntax(ControlVM::tr("Missing or invalid argument to '%s'."), \
+                                   a->argv[1]);                                         \
             }                                                                           \
             ch++;                                                                       \
         }                                                                               \
@@ -1005,8 +993,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     proto = NATProtocol_TCP;
                 else
                 {
-                    return errorSyntax(USAGE_CONTROLVM,
-                                       CloudVM::tr("Wrong rule proto '%s' specified -- only 'udp' and 'tcp' are allowed."),
+                    return errorSyntax(ControlVM::tr("Wrong rule proto '%s' specified -- only 'udp' and 'tcp' are allowed."),
                                        strProto);
                 }
                 CHECK_ERROR(engine, AddRedirect(Bstr(strName).raw(), proto, Bstr(strHostIp).raw(),
@@ -1018,6 +1005,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strncmp(a->argv[1], "nicproperty", 11))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_NICPROPERTY);
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             unsigned n = parseNum(&a->argv[1][11], NetworkAdapterCount, "NIC");
@@ -1028,7 +1016,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             if (a->argc <= 2)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -1059,14 +1047,14 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         }
                         else
                         {
-                            errorArgument(CloudVM::tr("Invalid nicproperty%d argument '%s'"), n, a->argv[2]);
+                            errorSyntax(ControlVM::tr("Invalid nicproperty%d argument '%s'."), n, a->argv[2]);
                             rc = E_FAIL;
                         }
                         RTStrFree(pszProperty);
                     }
                     else
                     {
-                        RTStrmPrintf(g_pStdErr, CloudVM::tr("Error: Failed to allocate memory for nicproperty%d '%s'\n"),
+                        RTMsgError(ControlVM::tr("Failed to allocate memory for nicproperty%d '%s'."),
                                      n, a->argv[2]);
                         rc = E_FAIL;
                     }
@@ -1074,11 +1062,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         break;
                 }
                 else
-                    RTMsgError(CloudVM::tr("The NIC %d is currently disabled and thus its properties can't be changed"), n);
+                    RTMsgError(ControlVM::tr("The NIC %d is currently disabled and thus its properties can't be changed."), n);
             }
         }
         else if (!strncmp(a->argv[1], "nicpromisc", 10))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_NICPROMISC);
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             unsigned n = parseNum(&a->argv[1][10], NetworkAdapterCount, "NIC");
@@ -1089,7 +1078,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             if (a->argc <= 2)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -1113,7 +1102,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         enmPromiscModePolicy = NetworkAdapterPromiscModePolicy_AllowAll;
                     else
                     {
-                        errorArgument(CloudVM::tr("Unknown promiscuous mode policy '%s'"), a->argv[2]);
+                        errorSyntax(ControlVM::tr("Unknown promiscuous mode policy '%s'."), a->argv[2]);
                         rc = E_INVALIDARG;
                         break;
                     }
@@ -1123,11 +1112,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         fNeedsSaving = true;
                 }
                 else
-                    RTMsgError(CloudVM::tr("The NIC %d is currently disabled and thus its promiscuous mode can't be changed"), n);
+                    RTMsgError(ControlVM::tr("The NIC %d is currently disabled and thus its promiscuous mode can't be changed."), n);
             }
         }
         else if (!strncmp(a->argv[1], "nic", 3))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_NIC);
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             unsigned n = parseNum(&a->argv[1][3], NetworkAdapterCount, "NIC");
@@ -1138,7 +1128,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             if (a->argc <= 2)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -1167,7 +1157,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     {
                         if (a->argc <= 3)
                         {
-                            errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[2]);
+                            errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[2]);
                             rc = E_FAIL;
                             break;
                         }
@@ -1179,7 +1169,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     {
                         if (a->argc <= 3)
                         {
-                            errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[2]);
+                            errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[2]);
                             rc = E_FAIL;
                             break;
                         }
@@ -1191,7 +1181,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     {
                         if (a->argc <= 3)
                         {
-                            errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[2]);
+                            errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[2]);
                             rc = E_FAIL;
                             break;
                         }
@@ -1204,7 +1194,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     {
                         if (a->argc <= 3)
                         {
-                            errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[2]);
+                            errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[2]);
                             rc = E_FAIL;
                             break;
                         }
@@ -1215,28 +1205,16 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     {
                         if (a->argc <= 3)
                         {
-                            errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[2]);
+                            errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[2]);
                             rc = E_FAIL;
                             break;
                         }
                         CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
                         CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_NATNetwork), RTEXITCODE_FAILURE);
                     }
-                    /** @todo obsolete, remove eventually */
-                    else if (!strcmp(a->argv[2], "vde"))
-                    {
-                        if (a->argc <= 3)
-                        {
-                            errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[2]);
-                            rc = E_FAIL;
-                            break;
-                        }
-                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic), RTEXITCODE_FAILURE);
-                        CHECK_ERROR_RET(adapter, SetProperty(Bstr("name").raw(), Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
-                    }
                     else
                     {
-                        errorArgument(CloudVM::tr("Invalid type '%s' specfied for NIC %lu"), Utf8Str(a->argv[2]).c_str(), n);
+                        errorSyntax(ControlVM::tr("Invalid type '%s' specfied for NIC %lu."), a->argv[2], n);
                         rc = E_FAIL;
                         break;
                     }
@@ -1244,18 +1222,19 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                         fNeedsSaving = true;
                 }
                 else
-                    RTMsgError(CloudVM::tr("The NIC %d is currently disabled and thus its attachment type can't be changed"), n);
+                    RTMsgError(ControlVM::tr("The NIC %d is currently disabled and thus its attachment type can't be changed."), n);
             }
         }
         else if (   !strcmp(a->argv[1], "vrde")
                  || !strcmp(a->argv[1], "vrdp"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_VRDE);
             if (!strcmp(a->argv[1], "vrdp"))
-                RTStrmPrintf(g_pStdErr, CloudVM::tr("Warning: 'vrdp' is deprecated. Use 'vrde'.\n"));
+                RTMsgWarning(ControlVM::tr("'vrdp' is deprecated. Use 'vrde'."));
 
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -1264,33 +1243,27 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             ASSERT(vrdeServer);
             if (vrdeServer)
             {
-                if (!strcmp(a->argv[2], "on"))
+                bool fEnabled;
+                if (RT_FAILURE(parseBool(a->argv[2], &fEnabled)))
                 {
-                    CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(TRUE));
-                }
-                else if (!strcmp(a->argv[2], "off"))
-                {
-                    CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(FALSE));
-                }
-                else
-                {
-                    errorArgument(CloudVM::tr("Invalid remote desktop server state '%s'"), Utf8Str(a->argv[2]).c_str());
+                    errorSyntax(ControlVM::tr("Invalid remote desktop server state '%s'."), a->argv[2]);
                     rc = E_FAIL;
                     break;
                 }
-                if (SUCCEEDED(rc))
-                    fNeedsSaving = true;
+                CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(fEnabled));
+                fNeedsSaving = true;
             }
         }
         else if (   !strcmp(a->argv[1], "vrdeport")
                  || !strcmp(a->argv[1], "vrdpport"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_VRDEPORT);
             if (!strcmp(a->argv[1], "vrdpport"))
-                RTStrmPrintf(g_pStdErr, CloudVM::tr("Warning: 'vrdpport' is deprecated. Use 'vrdeport'.\n"));
+                RTMsgWarning(ControlVM::tr("'vrdpport' is deprecated. Use 'vrdeport'."));
 
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -1315,13 +1288,13 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         else if (   !strcmp(a->argv[1], "vrdevideochannelquality")
                  || !strcmp(a->argv[1], "vrdpvideochannelquality"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_VRDEVIDEOCHANNELQUALITY);
             if (!strcmp(a->argv[1], "vrdpvideochannelquality"))
-                RTStrmPrintf(g_pStdErr,
-                             CloudVM::tr("Warning: 'vrdpvideochannelquality' is deprecated. Use 'vrdevideochannelquality'.\n"));
+                RTMsgWarning(ControlVM::tr("'vrdpvideochannelquality' is deprecated. Use 'vrdevideochannelquality'."));
 
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -1339,9 +1312,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "vrdeproperty"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_VRDEPROPERTY);
             if (a->argc <= 1 + 1)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -1367,14 +1341,14 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     }
                     else
                     {
-                        errorArgument(CloudVM::tr("Invalid vrdeproperty argument '%s'"), a->argv[2]);
+                        errorSyntax(ControlVM::tr("Invalid vrdeproperty argument '%s'."), a->argv[2]);
                         rc = E_FAIL;
                     }
                     RTStrFree(pszProperty);
                 }
                 else
                 {
-                    RTStrmPrintf(g_pStdErr, CloudVM::tr("Error: Failed to allocate memory for VRDE property '%s'\n"),
+                    RTMsgError(ControlVM::tr("Failed to allocate memory for VRDE property '%s'."),
                                  a->argv[2]);
                     rc = E_FAIL;
                 }
@@ -1387,20 +1361,24 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         else if (   !strcmp(a->argv[1], "usbattach")
                  || !strcmp(a->argv[1], "usbdetach"))
         {
+            bool attach = !strcmp(a->argv[1], "usbattach");
+            if (attach)
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_USBATTACH);
+            else
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_USBDETACH);
+
             if (a->argc < 3)
             {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Not enough parameters"));
+                errorSyntax(ControlVM::tr("Not enough parameters."));
                 rc = E_FAIL;
                 break;
             }
             else if (a->argc == 4 || a->argc > 5)
             {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Wrong number of arguments"));
+                errorSyntax(ControlVM::tr("Wrong number of arguments."));
                 rc = E_FAIL;
                 break;
             }
-
-            bool attach = !strcmp(a->argv[1], "usbattach");
 
             Bstr usbId = a->argv[2];
             Bstr captureFilename;
@@ -1411,7 +1389,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     captureFilename = a->argv[4];
                 else
                 {
-                    errorArgument(CloudVM::tr("Invalid parameter '%s'"), a->argv[3]);
+                    errorSyntax(ControlVM::tr("Invalid parameter '%s'."), a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
@@ -1444,7 +1422,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (guid.isZero())
             {
-                errorArgument(CloudVM::tr("Zero UUID argument '%s'"), a->argv[2]);
+                errorSyntax(ControlVM::tr("Zero UUID argument '%s'."), a->argv[2]);
                 rc = E_FAIL;
                 break;
             }
@@ -1460,9 +1438,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "setvideomodehint"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_SETVIDEOMODEHINT);
             if (a->argc != 5 && a->argc != 6 && a->argc != 7 && a->argc != 9)
             {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                 rc = E_FAIL;
                 break;
             }
@@ -1478,14 +1457,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 uDisplayIdx = RTStrToUInt32(a->argv[5]);
             if (a->argc >= 7)
             {
-                int vrc = parseBool(a->argv[6], &fEnabled);
-                if (RT_FAILURE(vrc))
+                if (RT_FAILURE(parseBool(a->argv[6], &fEnabled)))
                 {
-                    errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Either \"yes\" or \"no\" is expected"));
+                    errorSyntax(ControlVM::tr("Either \"yes\" or \"no\" is expected."));
                     rc = E_FAIL;
                     break;
                 }
-                fEnabled = !RTStrICmp(a->argv[6], "yes");
             }
             if (a->argc == 9)
             {
@@ -1498,7 +1475,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
             if (!pDisplay)
             {
-                RTMsgError(CloudVM::tr("Guest not running"));
+                RTMsgError(ControlVM::tr("Guest not running."));
                 rc = E_FAIL;
                 break;
             }
@@ -1508,9 +1485,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "setscreenlayout"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_SETSCREENLAYOUT);
             if (a->argc < 4)
             {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                 rc = E_FAIL;
                 break;
             }
@@ -1519,7 +1497,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
             if (!pDisplay)
             {
-                RTMsgError(CloudVM::tr("Guest not running"));
+                RTMsgError(ControlVM::tr("Guest not running."));
                 rc = E_FAIL;
                 break;
             }
@@ -1546,7 +1524,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     aStatus = GuestMonitorStatus_Disabled;
                 else
                 {
-                    errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Display status must be <on> or <off>"));
+                    errorSyntax(ControlVM::tr("Display status must be <on> or <off>."));
                     rc = E_FAIL;
                     break;
                 }
@@ -1561,7 +1539,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 {
                     if (argc < 7)
                     {
-                        errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                        errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                         rc = E_FAIL;
                         break;
                     }
@@ -1596,6 +1574,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "setcredentials"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_SETCREDENTIALS);
             bool fAllowLocalLogon = true;
             if (   a->argc == 7
                 || (   a->argc == 8
@@ -1605,7 +1584,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 if (   strcmp(a->argv[5 + (a->argc - 7)], "--allowlocallogon")
                     && strcmp(a->argv[5 + (a->argc - 7)], "-allowlocallogon"))
                 {
-                    errorArgument(CloudVM::tr("Invalid parameter '%s'"), a->argv[5]);
+                    errorSyntax(ControlVM::tr("Invalid parameter '%s'."), a->argv[5]);
                     rc = E_FAIL;
                     break;
                 }
@@ -1617,7 +1596,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                          || (   strcmp(a->argv[3], "-p")
                              && strcmp(a->argv[3], "--passwordfile"))))
             {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                 rc = E_FAIL;
                 break;
             }
@@ -1642,7 +1621,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(console, COMGETTER(Guest)(pGuest.asOutParam()));
             if (!pGuest)
             {
-                RTMsgError(CloudVM::tr("Guest not running"));
+                RTMsgError(ControlVM::tr("Guest not running."));
                 rc = E_FAIL;
                 break;
             }
@@ -1651,133 +1630,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                                                      Bstr(domain).raw(),
                                                      fAllowLocalLogon));
         }
-#if 0 /** @todo review & remove */
-        else if (!strcmp(a->argv[1], "dvdattach"))
-        {
-            Bstr uuid;
-            if (a->argc != 3)
-            {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
-                rc = E_FAIL;
-                break;
-            }
-
-            ComPtr<IMedium> dvdMedium;
-
-            /* unmount? */
-            if (!strcmp(a->argv[2], "none"))
-            {
-                /* nothing to do, NULL object will cause unmount */
-            }
-            /* host drive? */
-            else if (!strncmp(a->argv[2], "host:", 5))
-            {
-                ComPtr<IHost> host;
-                CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-
-                rc = host->FindHostDVDDrive(Bstr(a->argv[2] + 5), dvdMedium.asOutParam());
-                if (!dvdMedium)
-                {
-                    errorArgument(CloudVM::tr("Invalid host DVD drive name \"%s\""),
-                                  a->argv[2] + 5);
-                    rc = E_FAIL;
-                    break;
-                }
-            }
-            else
-            {
-                /* first assume it's a UUID */
-                uuid = a->argv[2];
-                rc = a->virtualBox->GetDVDImage(uuid, dvdMedium.asOutParam());
-                if (FAILED(rc) || !dvdMedium)
-                {
-                    /* must be a filename, check if it's in the collection */
-                    rc = a->virtualBox->FindDVDImage(Bstr(a->argv[2]), dvdMedium.asOutParam());
-                    /* not registered, do that on the fly */
-                    if (!dvdMedium)
-                    {
-                        Bstr emptyUUID;
-                        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(a->argv[2]), emptyUUID, dvdMedium.asOutParam()));
-                    }
-                }
-                if (!dvdMedium)
-                {
-                    rc = E_FAIL;
-                    break;
-                }
-            }
-
-            /** @todo generalize this, allow arbitrary number of DVD drives
-             * and as a consequence multiple attachments and different
-             * storage controllers. */
-            if (dvdMedium)
-                dvdMedium->COMGETTER(Id)(uuid.asOutParam());
-            else
-                uuid = Guid().toString();
-            CHECK_ERROR(sessionMachine, MountMedium(Bstr(CloudVM::tr("IDE Controller")), 1, 0, uuid, FALSE /* aForce */));
-        }
-        else if (!strcmp(a->argv[1], "floppyattach"))
-        {
-            Bstr uuid;
-            if (a->argc != 3)
-            {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
-                rc = E_FAIL;
-                break;
-            }
-
-            ComPtr<IMedium> floppyMedium;
-
-            /* unmount? */
-            if (!strcmp(a->argv[2], "none"))
-            {
-                /* nothing to do, NULL object will cause unmount */
-            }
-            /* host drive? */
-            else if (!strncmp(a->argv[2], "host:", 5))
-            {
-                ComPtr<IHost> host;
-                CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                host->FindHostFloppyDrive(Bstr(a->argv[2] + 5), floppyMedium.asOutParam());
-                if (!floppyMedium)
-                {
-                    errorArgument(CloudVM::tr("Invalid host floppy drive name \"%s\""),
-                                  a->argv[2] + 5);
-                    rc = E_FAIL;
-                    break;
-                }
-            }
-            else
-            {
-                /* first assume it's a UUID */
-                uuid = a->argv[2];
-                rc = a->virtualBox->GetFloppyImage(uuid, floppyMedium.asOutParam());
-                if (FAILED(rc) || !floppyMedium)
-                {
-                    /* must be a filename, check if it's in the collection */
-                    rc = a->virtualBox->FindFloppyImage(Bstr(a->argv[2]), floppyMedium.asOutParam());
-                    /* not registered, do that on the fly */
-                    if (!floppyMedium)
-                    {
-                        Bstr emptyUUID;
-                        CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(a->argv[2]), emptyUUID, floppyMedium.asOutParam()));
-                    }
-                }
-                if (!floppyMedium)
-                {
-                    rc = E_FAIL;
-                    break;
-                }
-            }
-            floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-            CHECK_ERROR(sessionMachine, MountMedium(Bstr(CloudVM::tr("Floppy Controller")), 0, 0, uuid, FALSE /* aForce */));
-        }
-#endif /* obsolete dvdattach/floppyattach */
         else if (!strcmp(a->argv[1], "guestmemoryballoon"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_GUESTMEMORYBALLOON);
             if (a->argc != 3)
             {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                 rc = E_FAIL;
                 break;
             }
@@ -1786,7 +1644,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
             if (vrc != VINF_SUCCESS)
             {
-                errorArgument(CloudVM::tr("Error parsing guest memory balloon size '%s'"), a->argv[2]);
+                errorSyntax(ControlVM::tr("Error parsing guest memory balloon size '%s'."), a->argv[2]);
                 rc = E_FAIL;
                 break;
             }
@@ -1797,7 +1655,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             {
                 if (!pGuest)
                 {
-                    RTMsgError(CloudVM::tr("Guest not running"));
+                    RTMsgError(ControlVM::tr("Guest not running."));
                     rc = E_FAIL;
                     break;
                 }
@@ -1814,7 +1672,6 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             static const RTGETOPTDEF s_aTeleportOptions[] =
             {
                 { "--host",              'h', RTGETOPT_REQ_STRING }, /** @todo RTGETOPT_FLAG_MANDATORY */
-                { "--hostname",          'h', RTGETOPT_REQ_STRING }, /** @todo remove this */
                 { "--maxdowntime",       'd', RTGETOPT_REQ_UINT32 },
                 { "--port",              'P', RTGETOPT_REQ_UINT32 }, /** @todo RTGETOPT_FLAG_MANDATORY */
                 { "--passwordfile",      'p', RTGETOPT_REQ_STRING },
@@ -1824,6 +1681,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             };
             RTGETOPTSTATE GetOptState;
             RTGetOptInit(&GetOptState, a->argc, a->argv, s_aTeleportOptions, RT_ELEMENTS(s_aTeleportOptions), 2, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_TELEPORT);
             int ch;
             RTGETOPTUNION Value;
             while (   SUCCEEDED(rc)
@@ -1845,7 +1703,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     case 'W': strPassword   = Value.psz; break;
                     case 't': cMsTimeout    = Value.u32; break;
                     default:
-                        errorGetOpt(USAGE_CONTROLVM, ch, &Value);
+                        errorGetOpt(ch, &Value);
                         rc = E_FAIL;
                         break;
                 }
@@ -1867,13 +1725,14 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
 
             rc = showProgress(progress);
-            CHECK_PROGRESS_ERROR(progress, (CloudVM::tr("Teleportation failed")));
+            CHECK_PROGRESS_ERROR(progress, (ControlVM::tr("Teleportation failed")));
         }
         else if (!strcmp(a->argv[1], "screenshotpng"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_SCREENSHOTPNG);
             if (a->argc <= 2 || a->argc > 4)
             {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                 rc = E_FAIL;
                 break;
             }
@@ -1884,7 +1743,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &iScreen);
                 if (vrc != VINF_SUCCESS)
                 {
-                    errorArgument(CloudVM::tr("Error parsing display number '%s'"), a->argv[3]);
+                    errorSyntax(ControlVM::tr("Error parsing display number '%s'."), a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
@@ -1893,7 +1752,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
             if (!pDisplay)
             {
-                RTMsgError(CloudVM::tr("Guest not running"));
+                RTMsgError(ControlVM::tr("Guest not running."));
                 rc = E_FAIL;
                 break;
             }
@@ -1907,14 +1766,14 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             vrc = RTFileOpen(&pngFile, a->argv[2], RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_ALL);
             if (RT_FAILURE(vrc))
             {
-                RTMsgError(CloudVM::tr("Failed to create file '%s' (%Rrc)"), a->argv[2], vrc);
+                RTMsgError(ControlVM::tr("Failed to create file '%s' (%Rrc)."), a->argv[2], vrc);
                 rc = E_FAIL;
                 break;
             }
             vrc = RTFileWrite(pngFile, saScreenshot.raw(), saScreenshot.size(), NULL);
             if (RT_FAILURE(vrc))
             {
-                RTMsgError(CloudVM::tr("Failed to write screenshot to file '%s' (%Rrc)"), a->argv[2], vrc);
+                RTMsgError(ControlVM::tr("Failed to write screenshot to file '%s' (%Rrc)."), a->argv[2], vrc);
                 rc = E_FAIL;
             }
             RTFileClose(pngFile);
@@ -1925,7 +1784,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         {
             if (a->argc < 3)
             {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                 rc = E_FAIL;
                 break;
             }
@@ -1945,58 +1804,29 @@ RTEXITCODE handleControlVM(HandlerArg *a)
              * Note: Commands starting with "vcp" are the deprecated versions and are
              *       kept to ensure backwards compatibility.
              */
-            if (!strcmp(a->argv[2], "on"))
+            bool fEnabled;
+            if (RT_SUCCESS(parseBool(a->argv[2], &fEnabled)))
             {
-                CHECK_ERROR_RET(recordingSettings, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
-            }
-            else if (!strcmp(a->argv[2], "off"))
-            {
-                CHECK_ERROR_RET(recordingSettings, COMSETTER(Enabled)(FALSE), RTEXITCODE_FAILURE);
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING);
+                CHECK_ERROR_RET(recordingSettings, COMSETTER(Enabled)(fEnabled), RTEXITCODE_FAILURE);
             }
             else if (!strcmp(a->argv[2], "screens"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_SCREENS);
                 ULONG cMonitors = 64;
                 CHECK_ERROR_BREAK(pGraphicsAdapter, COMGETTER(MonitorCount)(&cMonitors));
                 com::SafeArray<BOOL> saScreens(cMonitors);
-                if (   a->argc == 4
-                    && !strcmp(a->argv[3], "all"))
+                if (a->argc != 4)
                 {
-                    /* enable all screens */
-                    for (unsigned i = 0; i < cMonitors; i++)
-                        saScreens[i] = true;
+                    errorSyntax(ControlVM::tr("Incorrect number of parameters."));
+                    rc = E_FAIL;
+                    break;
                 }
-                else if (   a->argc == 4
-                         && !strcmp(a->argv[3], "none"))
+                if (RT_FAILURE(parseScreens(a->argv[3], &saScreens)))
                 {
-                    /* disable all screens */
-                    for (unsigned i = 0; i < cMonitors; i++)
-                        saScreens[i] = false;
-
-                    /** @todo r=andy What if this is specified? */
-                }
-                else
-                {
-                    /* enable selected screens */
-                    for (unsigned i = 0; i < cMonitors; i++)
-                        saScreens[i] = false;
-                    for (int i = 3; SUCCEEDED(rc) && i < a->argc; i++)
-                    {
-                        uint32_t iScreen;
-                        int vrc = RTStrToUInt32Ex(a->argv[i], NULL, 0, &iScreen);
-                        if (vrc != VINF_SUCCESS)
-                        {
-                            errorArgument(CloudVM::tr("Error parsing display number '%s'"), a->argv[i]);
-                            rc = E_FAIL;
-                            break;
-                        }
-                        if (iScreen >= cMonitors)
-                        {
-                            errorArgument(CloudVM::tr("Invalid screen ID specified '%u'"), iScreen);
-                            rc = E_FAIL;
-                            break;
-                        }
-                        saScreens[iScreen] = true;
-                    }
+                    errorSyntax(ControlVM::tr("Error parsing list of screen IDs '%s'."), a->argv[3]);
+                    rc = E_FAIL;
+                    break;
                 }
 
                 for (size_t i = 0; i < saRecordingScreenScreens.size(); ++i)
@@ -2004,9 +1834,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "filename"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_FILENAME);
                 if (a->argc != 4)
                 {
-                    errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                    errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                     rc = E_FAIL;
                     break;
                 }
@@ -2017,9 +1848,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             else if (   !strcmp(a->argv[2], "videores")
                      || !strcmp(a->argv[2], "videoresolution"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_VIDEORES);
                 if (a->argc != 5)
                 {
-                    errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                    errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                     rc = E_FAIL;
                     break;
                 }
@@ -2028,7 +1860,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uWidth);
                 if (RT_FAILURE(vrc))
                 {
-                    errorArgument(CloudVM::tr("Error parsing video width '%s'"), a->argv[3]);
+                    errorSyntax(ControlVM::tr("Error parsing video width '%s'."), a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
@@ -2037,7 +1869,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 vrc = RTStrToUInt32Ex(a->argv[4], NULL, 0, &uHeight);
                 if (RT_FAILURE(vrc))
                 {
-                    errorArgument(CloudVM::tr("Error parsing video height '%s'"), a->argv[4]);
+                    errorSyntax(ControlVM::tr("Error parsing video height '%s'."), a->argv[4]);
                     rc = E_FAIL;
                     break;
                 }
@@ -2050,9 +1882,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "videorate"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_VIDEORATE);
                 if (a->argc != 4)
                 {
-                    errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                    errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                     rc = E_FAIL;
                     break;
                 }
@@ -2061,7 +1894,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uRate);
                 if (RT_FAILURE(vrc))
                 {
-                    errorArgument(CloudVM::tr("Error parsing video rate '%s'"), a->argv[3]);
+                    errorSyntax(ControlVM::tr("Error parsing video rate '%s'."), a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
@@ -2071,9 +1904,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "videofps"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_VIDEOFPS);
                 if (a->argc != 4)
                 {
-                    errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                    errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                     rc = E_FAIL;
                     break;
                 }
@@ -2082,7 +1916,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uFPS);
                 if (RT_FAILURE(vrc))
                 {
-                    errorArgument(CloudVM::tr("Error parsing video FPS '%s'"), a->argv[3]);
+                    errorSyntax(ControlVM::tr("Error parsing video FPS '%s'."), a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
@@ -2092,9 +1926,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "maxtime"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_MAXTIME);
                 if (a->argc != 4)
                 {
-                    errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                    errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                     rc = E_FAIL;
                     break;
                 }
@@ -2103,7 +1938,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uMaxTime);
                 if (RT_FAILURE(vrc))
                 {
-                    errorArgument(CloudVM::tr("Error parsing maximum time '%s'"), a->argv[3]);
+                    errorSyntax(ControlVM::tr("Error parsing maximum time '%s'."), a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
@@ -2113,9 +1948,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "maxfilesize"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_MAXFILESIZE);
                 if (a->argc != 4)
                 {
-                    errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                    errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                     rc = E_FAIL;
                     break;
                 }
@@ -2124,7 +1960,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 int vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uMaxFileSize);
                 if (RT_FAILURE(vrc))
                 {
-                    errorArgument(CloudVM::tr("Error parsing maximum file size '%s'"), a->argv[3]);
+                    errorSyntax(ControlVM::tr("Error parsing maximum file size '%s'."), a->argv[3]);
                     rc = E_FAIL;
                     break;
                 }
@@ -2134,9 +1970,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "opts"))
             {
+#if 0 /* Add when the corresponding documentation is enabled. */
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_RECORDING_OPTS);
+#endif
                 if (a->argc != 4)
                 {
-                    errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                    errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                     rc = E_FAIL;
                     break;
                 }
@@ -2150,7 +1989,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         {
             if (a->argc < 3)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorArgument(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -2159,13 +1998,14 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(console, COMGETTER(EmulatedUSB)(pEmulatedUSB.asOutParam()));
             if (!pEmulatedUSB)
             {
-                RTMsgError(CloudVM::tr("Guest not running"));
+                RTMsgError(ControlVM::tr("Guest not running."));
                 rc = E_FAIL;
                 break;
             }
 
             if (!strcmp(a->argv[2], "attach"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_WEBCAM_ATTACH);
                 Bstr path("");
                 if (a->argc >= 4)
                     path = a->argv[3];
@@ -2176,6 +2016,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "detach"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_WEBCAM_DETACH);
                 Bstr path("");
                 if (a->argc >= 4)
                     path = a->argv[3];
@@ -2183,6 +2024,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else if (!strcmp(a->argv[2], "list"))
             {
+                setCurrentSubcommand(HELP_SCOPE_CONTROLVM_WEBCAM_LIST);
                 com::SafeArray <BSTR> webcams;
                 CHECK_ERROR_BREAK(pEmulatedUSB, COMGETTER(Webcams)(ComSafeArrayAsOutParam(webcams)));
                 for (size_t i = 0; i < webcams.size(); ++i)
@@ -2192,17 +2034,18 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             else
             {
-                errorArgument(CloudVM::tr("Invalid argument to '%s'"), a->argv[1]);
+                errorArgument(ControlVM::tr("Invalid argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
         }
         else if (!strcmp(a->argv[1], "addencpassword"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_ADDENCPASSWORD);
             if (   a->argc != 4
                 && a->argc != 6)
             {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                 break;
             }
 
@@ -2213,7 +2056,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                     || (   strcmp(a->argv[5], "yes")
                         && strcmp(a->argv[5], "no")))
                 {
-                    errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Invalid parameters"));
+                    errorSyntax(ControlVM::tr("Invalid parameters."));
                     break;
                 }
                 if (!strcmp(a->argv[5], "yes"))
@@ -2226,7 +2069,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             if (!RTStrCmp(a->argv[3], "-"))
             {
                 /* Get password from console. */
-                RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, CloudVM::tr("Enter password:"));
+                RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, ControlVM::tr("Enter password:"));
                 if (rcExit == RTEXITCODE_FAILURE)
                     break;
             }
@@ -2235,7 +2078,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 RTEXITCODE rcExit = readPasswordFile(a->argv[3], &strPassword);
                 if (rcExit == RTEXITCODE_FAILURE)
                 {
-                    RTMsgError(CloudVM::tr("Failed to read new password from file"));
+                    RTMsgError(ControlVM::tr("Failed to read new password from file."));
                     break;
                 }
             }
@@ -2244,9 +2087,10 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "removeencpassword"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_REMOVEENCPASSWORD);
             if (a->argc != 3)
             {
-                errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Incorrect number of parameters"));
+                errorSyntax(ControlVM::tr("Incorrect number of parameters."));
                 break;
             }
             Bstr bstrPwId(a->argv[2]);
@@ -2254,10 +2098,12 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "removeallencpasswords"))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_REMOVEALLENCPASSWORDS);
             CHECK_ERROR_BREAK(console, ClearAllDiskEncryptionPasswords());
         }
         else if (!strncmp(a->argv[1], "changeuartmode", 14))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_CHANGEUARTMODE);
             unsigned n = parseNum(&a->argv[1][14], 4, "UART");
             if (!n)
             {
@@ -2266,7 +2112,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
             if (a->argc < 3)
             {
-                errorArgument(CloudVM::tr("Missing argument to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Missing argument to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -2280,7 +2126,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             {
                 if (a->argc != 3)
                 {
-                    errorArgument(CloudVM::tr("Incorrect arguments to '%s'"), a->argv[1]);
+                    errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
                     rc = E_FAIL;
                     break;
                 }
@@ -2295,7 +2141,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 const char *pszMode = a->argv[2];
                 if (a->argc != 4)
                 {
-                    errorArgument(CloudVM::tr("Incorrect arguments to '%s'"), a->argv[1]);
+                    errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
                     rc = E_FAIL;
                     break;
                 }
@@ -2336,7 +2182,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             {
                 if (a->argc != 3)
                 {
-                    errorArgument(CloudVM::tr("Incorrect arguments to '%s'"), a->argv[1]);
+                    errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
                     rc = E_FAIL;
                     break;
                 }
@@ -2346,16 +2192,17 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strncmp(a->argv[1], "vm-process-priority", 14))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_VM_PROCESS_PRIORITY);
             if (a->argc != 3)
             {
-                errorArgument(CloudVM::tr("Incorrect arguments to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
             VMProcPriority_T enmPriority = nameToVMProcPriority(a->argv[2]);
             if (enmPriority == VMProcPriority_Invalid)
             {
-                errorArgument(CloudVM::tr("Invalid vm-process-priority '%s'"), a->argv[2]);
+                errorSyntax(ControlVM::tr("Invalid vm-process-priority '%s'."), a->argv[2]);
                 rc = E_FAIL;
             }
             else
@@ -2366,35 +2213,30 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else if (!strncmp(a->argv[1], "autostart-enabled", 17))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_AUTOSTART_ENABLED);
             if (a->argc != 3)
             {
-                errorArgument(CloudVM::tr("Incorrect arguments to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
-            if (!strcmp(a->argv[2], "on"))
+            bool fEnabled;
+            if (RT_FAILURE(parseBool(a->argv[2], &fEnabled)))
             {
-                CHECK_ERROR(sessionMachine, COMSETTER(AutostartEnabled)(TRUE));
-            }
-            else if (!strcmp(a->argv[2], "off"))
-            {
-                CHECK_ERROR(sessionMachine, COMSETTER(AutostartEnabled)(FALSE));
-            }
-            else
-            {
-                errorArgument(CloudVM::tr("Invalid value '%s'"), Utf8Str(a->argv[2]).c_str());
+                errorSyntax(ControlVM::tr("Invalid value '%s'."), a->argv[2]);
                 rc = E_FAIL;
                 break;
             }
-            if (SUCCEEDED(rc))
-                fNeedsSaving = true;
+            CHECK_ERROR(sessionMachine, COMSETTER(AutostartEnabled)(TRUE));
+            fNeedsSaving = true;
             break;
         }
         else if (!strncmp(a->argv[1], "autostart-delay", 15))
         {
+            setCurrentSubcommand(HELP_SCOPE_CONTROLVM_AUTOSTART_DELAY);
             if (a->argc != 3)
             {
-                errorArgument(CloudVM::tr("Incorrect arguments to '%s'"), a->argv[1]);
+                errorSyntax(ControlVM::tr("Incorrect arguments to '%s'."), a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
@@ -2403,7 +2245,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             int vrc = RTStrToUInt32Ex(a->argv[2], &pszNext, 10, &u32);
             if (RT_FAILURE(vrc) || *pszNext != '\0')
             {
-                errorArgument(CloudVM::tr("Invalid autostart delay number '%s'"), a->argv[2]);
+                errorSyntax(ControlVM::tr("Invalid autostart delay number '%s'."), a->argv[2]);
                 rc = E_FAIL;
                 break;
             }
@@ -2414,7 +2256,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         }
         else
         {
-            errorSyntax(USAGE_CONTROLVM, CloudVM::tr("Invalid parameter '%s'"), a->argv[1]);
+            errorSyntax(ControlVM::tr("Invalid parameter '%s'."), a->argv[1]);
             rc = E_FAIL;
         }
     } while (0);

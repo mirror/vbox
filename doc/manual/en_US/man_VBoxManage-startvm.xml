@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-startvm" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage startvm</title>
   </refentryinfo>
 
@@ -31,14 +31,14 @@
   <refnamediv>
     <refname>VBoxManage-startvm</refname>
     <refpurpose>start a virtual machine</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-startvm">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage startvm</command>
-      <group choice="req">
+      <group choice="req" rep="repeat">
         <arg choice="plain"><replaceable>uuid</replaceable></arg>
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>

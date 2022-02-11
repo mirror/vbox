@@ -64,7 +64,7 @@ enum
 #define HELP_SCOPE_</xsl:text>
         <xsl:value-of select="$sBaseNm"/>
         <xsl:value-of select="substring('                                               ',1,56 - string-length($sBaseNm) - 11)"/>
-        <xsl:text> RT_BIT_32(HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_BIT)
+        <xsl:text> RT_BIT_64(HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_BIT)
         HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_BIT = 0</xsl:text>
 
         <!-- Synopsis IDs -->
@@ -79,13 +79,13 @@ enum
 #define </xsl:text>
           <xsl:value-of select="$sSubNm"/>
           <xsl:value-of select="substring('                                               ',1,56 - string-length($sSubNm))"/>
-          <xsl:text> RT_BIT_32(</xsl:text><xsl:value-of select="$sSubNm"/><xsl:text>_BIT)
+          <xsl:text> RT_BIT_64(</xsl:text><xsl:value-of select="$sSubNm"/><xsl:text>_BIT)
         </xsl:text>
           <xsl:value-of select="$sSubNm"/><xsl:text>_BIT</xsl:text>
         </xsl:for-each>
 
-        <!-- Add scoping info for refsect1, refsect2 and refsect3 IDs that aren't part of the synopsis. -->
-        <xsl:for-each select=".//refsect1[@id] | .//refsect2[@id] | .//refsect3[@id]">
+        <!-- Add scoping info for refsect1 and refsect2 IDs that aren't part of the synopsis. -->
+        <xsl:for-each select=".//refsect1[@id] | .//refsect2[@id]">
           <xsl:variable name="sThisId" select="@id"/>
           <xsl:if test="not($RefEntry[@id = $sThisId]) and not($RefEntry/refsynopsisdiv/cmdsynopsis[@id = concat('synopsis-', $sThisId)])">
             <xsl:variable name="sSubNm">
@@ -107,7 +107,7 @@ enum
 #define </xsl:text>
             <xsl:value-of select="$sSubNm"/>
             <xsl:value-of select="substring('                                               ',1,56 - string-length($sSubNm))"/>
-            <xsl:text> RT_BIT_32(</xsl:text><xsl:value-of select="$sSubNm"/><xsl:text>_BIT)
+            <xsl:text> RT_BIT_64(</xsl:text><xsl:value-of select="$sSubNm"/><xsl:text>_BIT)
         </xsl:text>
             <xsl:value-of select="$sSubNm"/><xsl:text>_BIT</xsl:text>
           </xsl:if>
@@ -117,6 +117,9 @@ enum
         <xsl:text>,
         HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_END
 };
+AssertCompile((int)HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_END &gt;= 1);
+AssertCompile((int)HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_END &lt; 64);
+AssertCompile(RT_BIT_64(HELP_SCOPE_</xsl:text><xsl:value-of select="$sBaseNm"/><xsl:text>_END - 1) &amp; RTMSGREFENTRYSTR_SCOPE_MASK);
 </xsl:text>
       </xsl:when>
 
