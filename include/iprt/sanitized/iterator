@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_sanitized_iterator_h
-#define IPRT_INCLUDED_sanitized_iterator_h
+#ifndef IPRT_INCLUDED_sanitized_iterator
+#define IPRT_INCLUDED_sanitized_iterator
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -46,5 +46,5 @@
 # pragma warning(pop)
 #endif
 
-#endif /* !IPRT_INCLUDED_sanitized_iterator_h */
+#endif /* !IPRT_INCLUDED_sanitized_iterator */
 

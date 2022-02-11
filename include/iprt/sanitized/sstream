@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef IPRT_INCLUDED_sanitized_sstream_h
-#define IPRT_INCLUDED_sanitized_sstream_h
+#ifndef IPRT_INCLUDED_sanitized_sstream
+#define IPRT_INCLUDED_sanitized_sstream
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -48,5 +48,5 @@
 # pragma warning(pop)
 #endif
 
-#endif /* !IPRT_INCLUDED_sanitized_sstream_h */
+#endif /* !IPRT_INCLUDED_sanitized_sstream */
 
