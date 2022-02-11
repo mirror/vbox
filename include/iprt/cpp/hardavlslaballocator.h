@@ -136,7 +136,7 @@ struct RTCHardAvlTreeSlabAllocator
         return (int)a_idxNode - (VERR_HARDAVL_INDEX_OUT_OF_BOUNDS - kErr_IndexOutOfBound);
     }
 
-    inline bool isIntValid(uint32_t a_idxNode1)
+    inline bool isIntValid(uint32_t a_idxNode1) RT_NOEXCEPT
     {
         return a_idxNode1 <= m_cNodes;
     }
@@ -179,8 +179,28 @@ struct RTCHardAvlTreeSlabAllocator
         }
         return NULL;
     }
-
 };
+
+
+/**
+ * Placeholder structure for ring-3 slab allocator.
+ */
+typedef struct RTCHardAvlTreeSlabAllocatorR3_T
+{
+    /** Pointer to an array of nodes. */
+    RTR3PTR     m_paNodes;
+    /** Node allocation bitmap: 1 = free, 0 = allocated. */
+    RTR3PTR     m_pbmAlloc;
+    /** Max number of nodes in m_paNodes and valid bits in m_pbmAlloc. */
+    uint32_t    m_cNodes;
+    /** Pointer error counter. */
+    uint32_t    m_cErrors;
+    /** Allocation hint. */
+    uint32_t    m_idxAllocHint;
+    uint32_t    m_uPadding;
+} RTCHardAvlTreeSlabAllocatorR3_T;
+AssertCompileSize(RTCHardAvlTreeSlabAllocatorR3_T,
+                  sizeof(RTCHardAvlTreeSlabAllocator<RTUINT128U>) - (sizeof(void *) - sizeof(RTR3PTR)) * 2);
 
 /** @} */
 
