@@ -127,23 +127,28 @@ struct RTCHardAvlRangeTree
     /**
      * Read an index value trying to prevent the compiler from re-reading it.
      */
-    DECL_FORCE_INLINE(uint32_t) readIdx(uint32_t volatile *pidx)
+    DECL_FORCE_INLINE(uint32_t) readIdx(uint32_t volatile *pidx) RT_NOEXCEPT
     {
         uint32_t idx = *pidx;
         ASMCompilerBarrier();
         return idx;
     }
 
-
-    RTCHardAvlRangeTree()
+    RTCHardAvlRangeTree() RT_NOEXCEPT
         : m_idxRoot(0)
         , m_cErrors(0)
     { }
 
-    RTCHardAvlRangeTree(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator)
-        : m_idxRoot(a_pAllocator->kNilIndex)
-        , m_cErrors(0)
-    { }
+    RTCHardAvlRangeTree(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator) RT_NOEXCEPT
+    {
+        initWithAllocator(a_pAllocator);
+    }
+
+    void initWithAllocator(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator) RT_NOEXCEPT
+    {
+        m_idxRoot = a_pAllocator->kNilIndex;
+        m_cErrors = 0;
+    }
 
     /**
      * Inserts a node into the AVL-tree.
@@ -168,7 +173,7 @@ struct RTCHardAvlRangeTree
      *            Rebalance the tree.
      * @endcode
      */
-    int insert(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, NodeType *a_pNode)
+    int insert(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, NodeType *a_pNode) RT_NOEXCEPT
     {
         KeyType const Key     = a_pNode->Key;
         KeyType const KeyLast = a_pNode->KeyLast;
@@ -268,7 +273,7 @@ struct RTCHardAvlRangeTree
      *            return pointer to the removed node (if found).
      * @endcode
      */
-    int remove(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, KeyType a_Key, NodeType **a_ppRemoved)
+    int remove(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, KeyType a_Key, NodeType **a_ppRemoved) RT_NOEXCEPT
     {
         *a_ppRemoved = NULL;
 
@@ -405,7 +410,7 @@ struct RTCHardAvlRangeTree
      * @param     a_Key         A key value in the range of the desired node.
      * @param     a_ppFound     Where to return the pointer to the node.
      */
-    int lookup(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, KeyType a_Key, NodeType **a_ppFound)
+    int lookup(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, KeyType a_Key, NodeType **a_ppFound) RT_NOEXCEPT
     {
         *a_ppFound = NULL;
 
@@ -474,8 +479,11 @@ struct RTCHardAvlRangeTree
      * @param     a_pAllocator  Pointer to the allocator.
      * @param     a_pfnCallBack Pointer to callback function.
      * @param     a_pvUser      Callback user argument.
+     *
+     * @note      This is very similar code to doWithAllFromRight() and destroy().
      */
-    int doWithAllFromLeft(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, PFNCALLBACK a_pfnCallBack, void *a_pvUser)
+    int doWithAllFromLeft(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator,
+                          PFNCALLBACK a_pfnCallBack, void *a_pvUser) RT_NOEXCEPT
     {
         NodeType *pNode = a_pAllocator->ptrFromInt(readIdx(&m_idxRoot));
         AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
@@ -574,6 +582,116 @@ struct RTCHardAvlRangeTree
     }
 
     /**
+     * Iterates thru all nodes in the tree from right (larger) to left (smaller).
+     *
+     * @returns   IPRT status code.
+     *
+     * @param     a_pAllocator  Pointer to the allocator.
+     * @param     a_pfnCallBack Pointer to callback function.
+     * @param     a_pvUser      Callback user argument.
+     *
+     * @note      This is very similar code to doWithAllFromLeft() and destroy().
+     */
+    int doWithAllFromRight(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator,
+                           PFNCALLBACK a_pfnCallBack, void *a_pvUser) RT_NOEXCEPT
+    {
+        NodeType *pNode = a_pAllocator->ptrFromInt(readIdx(&m_idxRoot));
+        AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
+                            m_cErrors++, a_pAllocator->ptrErrToStatus(pNode));
+        if (!pNode)
+            return VINF_SUCCESS;
+
+        /*
+         * We simulate recursive calling here.  For safety reasons, we do not
+         * pop before going down the right tree like the original code did.
+         */
+        uint32_t  cNodesLeft = a_pAllocator->m_cNodes;
+        NodeType *apEntries[kMaxStack];
+        uint8_t   abState[kMaxStack];
+        unsigned  cEntries = 1;
+        abState[0]   = 0;
+        apEntries[0] = pNode;
+        while (cEntries > 0)
+        {
+            pNode = apEntries[cEntries - 1];
+            switch (abState[cEntries - 1])
+            {
+                /* Go right. */
+                case 0:
+                {
+                    abState[cEntries - 1] = 1;
+
+                    NodeType * const pRightNode = a_pAllocator->ptrFromInt(readIdx(&pNode->idxRight));
+                    AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pRightNode),
+                                        ("idxRight=%#x pRightNode=%p\n", pNode->idxRight, pRightNode),
+                                        m_cErrors++, a_pAllocator->ptrErrToStatus(pRightNode));
+                    if (pRightNode)
+                    {
+#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
+                        AssertCompile(kMaxStack > 6);
+#endif
+                        AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
+                                            ("%p[%#x] %p %p %p %p %p %p\n", pRightNode, pNode->idxRight, apEntries[kMaxStack - 1],
+                                             apEntries[kMaxStack - 2], apEntries[kMaxStack - 3], apEntries[kMaxStack - 4],
+                                             apEntries[kMaxStack - 5], apEntries[kMaxStack - 6]),
+                                            m_cErrors++, VERR_HARDAVL_STACK_OVERFLOW);
+                        apEntries[cEntries] = pRightNode;
+                        abState[cEntries]   = 0;
+                        cEntries++;
+
+                        AssertReturn(cNodesLeft > 0, VERR_HARDAVL_TRAVERSED_TOO_MANY_NODES);
+                        cNodesLeft--;
+                        break;
+                    }
+                    RT_FALL_THROUGH();
+                }
+
+                /* center then left. */
+                case 1:
+                {
+                    abState[cEntries - 1] = 2;
+
+                    RTHARDAVL_STRICT_CHECK_HEIGHTS(pNode, NULL, 0);
+
+                    int rc = a_pfnCallBack(pNode, a_pvUser);
+                    if (rc != VINF_SUCCESS)
+                        return rc;
+
+                    NodeType * const pLeftNode = a_pAllocator->ptrFromInt(readIdx(&pNode->idxLeft));
+                    AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pLeftNode),
+                                        ("idxLeft=%#x pLeftNode=%p\n", pNode->idxLeft, pLeftNode),
+                                        m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
+                    if (pLeftNode)
+                    {
+#if RT_GNUC_PREREQ_EX(4,7, 1) /* 32-bit 4.4.7 has trouble, dunno when it started working exactly */
+                        AssertCompile(kMaxStack > 6);
+#endif
+                        AssertMsgReturnStmt(cEntries < RT_ELEMENTS(apEntries),
+                                            ("%p[%#x] %p %p %p %p %p %p\n", pLeftNode, pNode->idxLeft, apEntries[kMaxStack - 1],
+                                             apEntries[kMaxStack - 2], apEntries[kMaxStack - 3], apEntries[kMaxStack - 4],
+                                             apEntries[kMaxStack - 5], apEntries[kMaxStack - 6]),
+                                            m_cErrors++, VERR_HARDAVL_STACK_OVERFLOW);
+                        apEntries[cEntries] = pLeftNode;
+                        abState[cEntries]   = 0;
+                        cEntries++;
+
+                        AssertReturn(cNodesLeft > 0, VERR_HARDAVL_TRAVERSED_TOO_MANY_NODES);
+                        cNodesLeft--;
+                        break;
+                    }
+                    RT_FALL_THROUGH();
+                }
+
+                default:
+                    /* pop it. */
+                    cEntries -= 1;
+                    break;
+            }
+        }
+        return VINF_SUCCESS;
+    }
+
+    /**
      * A callback for destroy to do additional cleanups before the node is freed.
      *
      * @param   pNode   The current node.
@@ -598,7 +716,8 @@ struct RTCHardAvlRangeTree
      *
      * @note      This is mostly the same code as the doWithAllFromLeft().
      */
-    int destroy(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, PFNDESTROYCALLBACK a_pfnCallBack = NULL, void *a_pvUser = NULL)
+    int destroy(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator,
+                PFNDESTROYCALLBACK a_pfnCallBack = NULL, void *a_pvUser = NULL) RT_NOEXCEPT
     {
         NodeType *pNode = a_pAllocator->ptrFromInt(readIdx(&m_idxRoot));
         AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
@@ -706,7 +825,7 @@ struct RTCHardAvlRangeTree
      *
      * @retval UINT8_MAX if bogus tree.
      */
-    uint8_t getHeight(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator)
+    uint8_t getHeight(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator) RT_NOEXCEPT
     {
         NodeType *pNode = a_pAllocator->ptrFromInt(readIdx(&m_idxRoot));
         AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
@@ -718,7 +837,7 @@ struct RTCHardAvlRangeTree
 
 #ifdef RT_STRICT
 
-    static void dumpStack(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, HardAvlStack const *pStack)
+    static void dumpStack(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, HardAvlStack const *pStack) RT_NOEXCEPT
     {
         uint32_t const * const *paidx = pStack->apidxEntries;
         RTAssertMsg2("stack: %u:\n", pStack->cEntries);
@@ -734,7 +853,7 @@ struct RTCHardAvlRangeTree
     }
 
     static void printTree(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, uint32_t a_idxRoot,
-                          unsigned a_uLevel = 0, unsigned a_uMaxLevel = 8, const char *a_pszDir = "")
+                          unsigned a_uLevel = 0, unsigned a_uMaxLevel = 8, const char *a_pszDir = "") RT_NOEXCEPT
     {
         if (a_idxRoot == a_pAllocator->kNilIndex)
             RTAssertMsg2("%*snil\n", a_uLevel * 6, a_pszDir);
@@ -810,7 +929,7 @@ private:
      * @endcode
      * @internal
      */
-    int i_rebalance(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, HardAvlStack *a_pStack, bool a_fLog = false)
+    int i_rebalance(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, HardAvlStack *a_pStack, bool a_fLog = false) RT_NOEXCEPT
     {
         RT_NOREF(a_fLog);
 

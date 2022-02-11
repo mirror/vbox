@@ -1123,6 +1123,16 @@ static DECLCALLBACK(int) hardAvlRangeTreeGCPhysEnumCallbackAscBy4(TESTNODE *pNod
 }
 
 
+static DECLCALLBACK(int) hardAvlRangeTreeGCPhysEnumCallbackDescBy4(TESTNODE *pNode, void *pvUser)
+{
+    PRTGCPHYS pExpect = (PRTGCPHYS)pvUser;
+    if (pNode->Key != *pExpect)
+        RTTestIFailed("Key=%RGp, expected %RGp\n", pNode->Key, *pExpect);
+    *pExpect = pNode->Key - 4;
+    return VINF_SUCCESS;
+}
+
+
 static DECLCALLBACK(int) hardAvlRangeTreeGCPhysEnumCallbackCount(TESTNODE *pNode, void *pvUser)
 {
     *(uint32_t *)pvUser += 1;
@@ -1313,6 +1323,11 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
     {
         RTGCPHYS Expect = 0;
         int rc = Tree.doWithAllFromLeft(&Allocator, hardAvlRangeTreeGCPhysEnumCallbackAscBy4, &Expect);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("enumeration after linear insert failed: %Rrc", rc);
+
+        Expect -= 4;
+        rc = Tree.doWithAllFromRight(&Allocator, hardAvlRangeTreeGCPhysEnumCallbackDescBy4, &Expect);
         if (rc != VINF_SUCCESS)
             RTTestIFailed("enumeration after linear insert failed: %Rrc", rc);
     }
