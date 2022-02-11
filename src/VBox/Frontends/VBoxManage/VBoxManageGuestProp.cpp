@@ -234,9 +234,9 @@ static RTEXITCODE handleEnumGuestProperty(HandlerArg *a)
     /*
      * Pack the patterns
      */
-    Utf8Str Utf8Patterns(a->argc > 2 ? a->argv[2] : "");
+    Utf8Str strPatterns(a->argc > 2 ? a->argv[2] : "");
     for (int i = 3; i < a->argc; ++i)
-        Utf8Patterns = Utf8StrFmt ("%s,%s", Utf8Patterns.c_str(), a->argv[i]);
+        strPatterns = Utf8StrFmt ("%s,%s", strPatterns.c_str(), a->argv[i]);
 
     /*
      * Make the actual call to Main.
@@ -257,7 +257,7 @@ static RTEXITCODE handleEnumGuestProperty(HandlerArg *a)
         com::SafeArray<BSTR> values;
         com::SafeArray<LONG64> timestamps;
         com::SafeArray<BSTR> flags;
-        CHECK_ERROR(machine, EnumerateGuestProperties(Bstr(Utf8Patterns).raw(),
+        CHECK_ERROR(machine, EnumerateGuestProperties(Bstr(strPatterns).raw(),
                                                       ComSafeArrayAsOutParam(names),
                                                       ComSafeArrayAsOutParam(values),
                                                       ComSafeArrayAsOutParam(timestamps),
