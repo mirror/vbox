@@ -319,6 +319,8 @@ KAVL_DECL(bool) KAVL_FN(Insert)(PPKAVLNODECORE ppTree, PKAVLNODECORE pNode)
             pCurNode = KAVL_GET_POINTER(ppCurNode);
         else
             break;
+        Assert(pCurNode->uchHeight == RT_MAX(AVL_HEIGHTOF(KAVL_GET_POINTER_NULL(&pCurNode->pLeft)),
+                                             AVL_HEIGHTOF(KAVL_GET_POINTER_NULL(&pCurNode->pRight))) + 1);
 
         kASSERT(AVLStack.cEntries < KAVL_MAX_STACK);
         AVLStack.aEntries[AVLStack.cEntries++] = ppCurNode;
@@ -410,6 +412,8 @@ KAVL_DECL(PKAVLNODECORE) KAVL_FN(Remove)(PPKAVLNODECORE ppTree, KAVLKEY Key)
             pDeleteNode = KAVL_GET_POINTER(ppDeleteNode);
         else
             return NULL;
+        Assert(pDeleteNode->uchHeight == RT_MAX(AVL_HEIGHTOF(KAVL_GET_POINTER_NULL(&pDeleteNode->pLeft)),
+                                                AVL_HEIGHTOF(KAVL_GET_POINTER_NULL(&pDeleteNode->pRight))) + 1);
 
         kASSERT(AVLStack.cEntries < KAVL_MAX_STACK);
         AVLStack.aEntries[AVLStack.cEntries++] = ppDeleteNode;

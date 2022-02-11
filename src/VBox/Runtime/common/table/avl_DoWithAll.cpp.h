@@ -71,6 +71,8 @@ KAVL_DECL(int) KAVL_FN(DoWithAll)(PPKAVLNODECORE ppTree, int fFromLeft, PKAVLCAL
             }
 
             /* center */
+            Assert(pNode->uchHeight == RT_MAX(AVL_HEIGHTOF(KAVL_GET_POINTER_NULL(&pNode->pLeft)),
+                                              AVL_HEIGHTOF(KAVL_GET_POINTER_NULL(&pNode->pRight))) + 1);
             rc = pfnCallBack(pNode, pvParam);
             if (rc != VINF_SUCCESS)
                 return rc;
@@ -111,6 +113,8 @@ KAVL_DECL(int) KAVL_FN(DoWithAll)(PPKAVLNODECORE ppTree, int fFromLeft, PKAVLCAL
             }
 
             /* center */
+            Assert(pNode->uchHeight == RT_MAX(AVL_HEIGHTOF(KAVL_GET_POINTER_NULL(&pNode->pLeft)),
+                                              AVL_HEIGHTOF(KAVL_GET_POINTER_NULL(&pNode->pRight))) + 1);
             rc = pfnCallBack(pNode, pvParam);
             if (rc != VINF_SUCCESS)
                 return rc;
