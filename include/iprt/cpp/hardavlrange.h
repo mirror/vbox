@@ -46,9 +46,9 @@
  */
 #ifdef RT_STRICT
 # define RTHARDAVL_STRICT_CHECK_HEIGHTS(a_pNode, a_pAvlStack, a_cStackEntries) do { \
-        NodeType * const pLeftNodeX    = a_pAllocator->ptrFromInt((a_pNode)->idxLeft); \
+        NodeType * const pLeftNodeX    = a_pAllocator->ptrFromInt(readIdx(&(a_pNode)->idxLeft)); \
         AssertReturnStmt(a_pAllocator->isPtrRetOkay(pLeftNodeX), m_cErrors++, a_pAllocator->ptrErrToStatus((a_pNode))); \
-        NodeType * const pRightNodeX   = a_pAllocator->ptrFromInt((a_pNode)->idxRight); \
+        NodeType * const pRightNodeX   = a_pAllocator->ptrFromInt(readIdx(&(a_pNode)->idxRight)); \
         AssertReturnStmt(a_pAllocator->isPtrRetOkay(pRightNodeX), m_cErrors++, a_pAllocator->ptrErrToStatus((a_pNode))); \
         uint8_t const    cLeftHeightX  = pLeftNodeX  ? pLeftNodeX->cHeight  : 0; \
         uint8_t const    cRightHeightX = pRightNodeX ? pRightNodeX->cHeight : 0; \
@@ -124,6 +124,17 @@ struct RTCHardAvlRangeTree
     }
     /** @} */
 
+    /**
+     * Read an index value trying to prevent the compiler from re-reading it.
+     */
+    DECL_FORCE_INLINE(uint32_t) readIdx(uint32_t volatile *pidx)
+    {
+        uint32_t idx = *pidx;
+        ASMCompilerBarrier();
+        return idx;
+    }
+
+
     RTCHardAvlRangeTree()
         : m_idxRoot(0)
         , m_cErrors(0)
@@ -169,7 +180,7 @@ struct RTCHardAvlRangeTree
         AVLStack.cEntries = 0;
         for (;;)
         {
-            NodeType *pCurNode = a_pAllocator->ptrFromInt(*pidxCurNode);
+            NodeType *pCurNode = a_pAllocator->ptrFromInt(readIdx(pidxCurNode));
             AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pCurNode), ("*pidxCurNode=%#x pCurNode=%p\n", *pidxCurNode, pCurNode),
                                 m_cErrors++, a_pAllocator->ptrErrToStatus(pCurNode));
             if (!pCurNode)
@@ -270,7 +281,7 @@ struct RTCHardAvlRangeTree
         AVLStack.cEntries = 0;
         for (;;)
         {
-            pDeleteNode = a_pAllocator->ptrFromInt(*pidxDeleteNode);
+            pDeleteNode = a_pAllocator->ptrFromInt(readIdx(pidxDeleteNode));
             AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pDeleteNode),
                                 ("*pidxCurNode=%#x pDeleteNode=%p\n", *pidxDeleteNode, pDeleteNode),
                                 m_cErrors++, a_pAllocator->ptrErrToStatus(pDeleteNode));
@@ -308,7 +319,7 @@ struct RTCHardAvlRangeTree
         /*
          * Do the deletion.
          */
-        uint32_t const idxDeleteLeftNode = pDeleteNode->idxLeft;
+        uint32_t const idxDeleteLeftNode = readIdx(&pDeleteNode->idxLeft);
         if (idxDeleteLeftNode != a_pAllocator->kNilIndex)
         {
             /*
@@ -319,7 +330,7 @@ struct RTCHardAvlRangeTree
                                 ("idxDeleteLeftNode=%#x pDeleteLeftNode=%p\n", idxDeleteLeftNode, pDeleteLeftNode),
                                 m_cErrors++, a_pAllocator->ptrErrToStatus(pDeleteLeftNode));
 
-            uint32_t const   idxDeleteRightNode = pDeleteNode->idxRight;
+            uint32_t const   idxDeleteRightNode = readIdx(&pDeleteNode->idxRight);
             AssertReturnStmt(a_pAllocator->isIntValid(idxDeleteRightNode), m_cErrors++, VERR_HARDAVL_INDEX_OUT_OF_BOUNDS);
 
             const unsigned   iStackEntry = AVLStack.cEntries;
@@ -329,7 +340,8 @@ struct RTCHardAvlRangeTree
             NodeType *pLeftBiggestNode   = pDeleteLeftNode;
             RTHARDAVL_STRICT_CHECK_HEIGHTS(pLeftBiggestNode, &AVLStack, AVLStack.cEntries);
 
-            while (pLeftBiggestNode->idxRight != a_pAllocator->kNilIndex)
+            uint32_t idxRightTmp;
+            while ((idxRightTmp = readIdx(&pLeftBiggestNode->idxRight)) != a_pAllocator->kNilIndex)
             {
                 unsigned const cEntries = AVLStack.cEntries;
                 AssertMsgReturnStmt(cEntries < RT_ELEMENTS(AVLStack.apidxEntries),
@@ -345,15 +357,15 @@ struct RTCHardAvlRangeTree
                 AVLStack.cEntries = cEntries + 1;
 
                 pidxLeftBiggest    = &pLeftBiggestNode->idxRight;
-                idxLeftBiggestNode = pLeftBiggestNode->idxRight;
-                pLeftBiggestNode   = a_pAllocator->ptrFromInt(idxLeftBiggestNode);
+                idxLeftBiggestNode = idxRightTmp;
+                pLeftBiggestNode   = a_pAllocator->ptrFromInt(idxRightTmp);
                 AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pLeftBiggestNode),
                                     ("idxLeftBiggestNode=%#x pLeftBiggestNode=%p\n", idxLeftBiggestNode, pLeftBiggestNode),
                                     m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftBiggestNode));
                 RTHARDAVL_STRICT_CHECK_HEIGHTS(pLeftBiggestNode, &AVLStack, AVLStack.cEntries);
             }
 
-            uint32_t const idxLeftBiggestLeftNode = pLeftBiggestNode->idxLeft;
+            uint32_t const idxLeftBiggestLeftNode = readIdx(&pLeftBiggestNode->idxLeft);
             AssertReturnStmt(a_pAllocator->isIntValid(idxLeftBiggestLeftNode), m_cErrors++, VERR_HARDAVL_INDEX_OUT_OF_BOUNDS);
 
             /* link out pLeftBiggestNode */
@@ -373,7 +385,7 @@ struct RTCHardAvlRangeTree
         else
         {
             /* No left node, just pull up the right one. */
-            uint32_t const idxDeleteRightNode = pDeleteNode->idxRight;
+            uint32_t const idxDeleteRightNode = readIdx(&pDeleteNode->idxRight);
             AssertReturnStmt(a_pAllocator->isIntValid(idxDeleteRightNode), m_cErrors++, VERR_HARDAVL_INDEX_OUT_OF_BOUNDS);
             *pidxDeleteNode = idxDeleteRightNode;
             AVLStack.cEntries--;
@@ -397,7 +409,7 @@ struct RTCHardAvlRangeTree
     {
         *a_ppFound = NULL;
 
-        NodeType *pNode = a_pAllocator->ptrFromInt(m_idxRoot);
+        NodeType *pNode = a_pAllocator->ptrFromInt(readIdx(&m_idxRoot));
         AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
                             m_cErrors++, a_pAllocator->ptrErrToStatus(pNode));
 #ifdef RT_STRICT
@@ -422,7 +434,7 @@ struct RTCHardAvlRangeTree
 #ifdef RT_STRICT
                 AVLStack.apidxEntries[AVLStack.cEntries++] = &pNode->idxLeft;
 #endif
-                uint32_t const idxLeft = pNode->idxLeft;
+                uint32_t const idxLeft = readIdx(&pNode->idxLeft);
                 pNode = a_pAllocator->ptrFromInt(idxLeft);
                 AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("idxLeft=%#x pNode=%p\n", idxLeft, pNode),
                                     m_cErrors++, a_pAllocator->ptrErrToStatus(pNode));
@@ -432,7 +444,7 @@ struct RTCHardAvlRangeTree
 #ifdef RT_STRICT
                 AVLStack.apidxEntries[AVLStack.cEntries++] = &pNode->idxRight;
 #endif
-                uint32_t const idxRight = pNode->idxRight;
+                uint32_t const idxRight = readIdx(&pNode->idxRight);
                 pNode = a_pAllocator->ptrFromInt(idxRight);
                 AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("idxRight=%#x pNode=%p\n", idxRight, pNode),
                                     m_cErrors++, a_pAllocator->ptrErrToStatus(pNode));
@@ -465,7 +477,7 @@ struct RTCHardAvlRangeTree
      */
     int doWithAllFromLeft(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, PFNCALLBACK a_pfnCallBack, void *a_pvUser)
     {
-        NodeType *pNode = a_pAllocator->ptrFromInt(m_idxRoot);
+        NodeType *pNode = a_pAllocator->ptrFromInt(readIdx(&m_idxRoot));
         AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
                             m_cErrors++, a_pAllocator->ptrErrToStatus(pNode));
         if (!pNode)
@@ -491,7 +503,7 @@ struct RTCHardAvlRangeTree
                 {
                     abState[cEntries - 1] = 1;
 
-                    NodeType * const pLeftNode = a_pAllocator->ptrFromInt(pNode->idxLeft);
+                    NodeType * const pLeftNode = a_pAllocator->ptrFromInt(readIdx(&pNode->idxLeft));
                     AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pLeftNode),
                                         ("idxLeft=%#x pLeftNode=%p\n", pNode->idxLeft, pLeftNode),
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
@@ -527,7 +539,7 @@ struct RTCHardAvlRangeTree
                     if (rc != VINF_SUCCESS)
                         return rc;
 
-                    NodeType * const pRightNode = a_pAllocator->ptrFromInt(pNode->idxRight);
+                    NodeType * const pRightNode = a_pAllocator->ptrFromInt(readIdx(&pNode->idxRight));
                     AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pRightNode),
                                         ("idxRight=%#x pRightNode=%p\n", pNode->idxRight, pRightNode),
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pRightNode));
@@ -588,7 +600,7 @@ struct RTCHardAvlRangeTree
      */
     int destroy(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, PFNDESTROYCALLBACK a_pfnCallBack = NULL, void *a_pvUser = NULL)
     {
-        NodeType *pNode = a_pAllocator->ptrFromInt(m_idxRoot);
+        NodeType *pNode = a_pAllocator->ptrFromInt(readIdx(&m_idxRoot));
         AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
                             m_cErrors++, a_pAllocator->ptrErrToStatus(pNode));
         if (!pNode)
@@ -614,7 +626,7 @@ struct RTCHardAvlRangeTree
                 {
                     abState[cEntries - 1] = 1;
 
-                    NodeType * const pLeftNode = a_pAllocator->ptrFromInt(pNode->idxLeft);
+                    NodeType * const pLeftNode = a_pAllocator->ptrFromInt(readIdx(&pNode->idxLeft));
                     AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pLeftNode),
                                         ("idxLeft=%#x pLeftNode=%p\n", pNode->idxLeft, pLeftNode),
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
@@ -644,7 +656,7 @@ struct RTCHardAvlRangeTree
                 {
                     abState[cEntries - 1] = 2;
 
-                    NodeType * const pRightNode = a_pAllocator->ptrFromInt(pNode->idxRight);
+                    NodeType * const pRightNode = a_pAllocator->ptrFromInt(readIdx(&pNode->idxRight));
                     AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pRightNode),
                                         ("idxRight=%#x pRightNode=%p\n", pNode->idxRight, pRightNode),
                                         m_cErrors++, a_pAllocator->ptrErrToStatus(pRightNode));
@@ -696,7 +708,7 @@ struct RTCHardAvlRangeTree
      */
     uint8_t getHeight(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator)
     {
-        NodeType *pNode = a_pAllocator->ptrFromInt(m_idxRoot);
+        NodeType *pNode = a_pAllocator->ptrFromInt(readIdx(&m_idxRoot));
         AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
                             m_cErrors++, UINT8_MAX);
         if (pNode)
@@ -729,9 +741,9 @@ struct RTCHardAvlRangeTree
         else if (a_uLevel < a_uMaxLevel)
         {
             NodeType *pNode = a_pAllocator->ptrFromInt(a_idxRoot);
-            printTree(a_pAllocator, pNode->idxRight, a_uLevel + 1, a_uMaxLevel, "/ ");
+            printTree(a_pAllocator, readIdx(&pNode->idxRight), a_uLevel + 1, a_uMaxLevel, "/ ");
             RTAssertMsg2("%*s%#x/%u\n", a_uLevel * 6, a_pszDir, a_idxRoot, pNode->cHeight);
-            printTree(a_pAllocator, pNode->idxLeft, a_uLevel + 1, a_uMaxLevel, "\\ ");
+            printTree(a_pAllocator, readIdx(&pNode->idxLeft), a_uLevel + 1, a_uMaxLevel, "\\ ");
         }
         else
             RTAssertMsg2("%*stoo deep\n", a_uLevel * 6, a_pszDir);
@@ -806,20 +818,20 @@ private:
         {
             /* pop */
             uint32_t * const pidxNode  = a_pStack->apidxEntries[--a_pStack->cEntries];
-            uint32_t const   idxNode   = *pidxNode;
+            uint32_t const   idxNode   = readIdx(pidxNode);
             NodeType * const pNode     = a_pAllocator->ptrFromInt(idxNode);
             AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode),
                                 ("pidxNode=%p[%#x] pNode=%p\n", pidxNode, *pidxNode, pNode),
                                 m_cErrors++, a_pAllocator->ptrErrToStatus(pNode));
 
             /* Read node properties: */
-            uint32_t const   idxLeftNode = pNode->idxLeft;
+            uint32_t const   idxLeftNode = readIdx(&pNode->idxLeft);
             NodeType * const pLeftNode   = a_pAllocator->ptrFromInt(idxLeftNode);
             AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pLeftNode),
                                 ("idxLeftNode=%#x pLeftNode=%p\n", idxLeftNode, pLeftNode),
                                 m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
 
-            uint32_t const   idxRightNode = pNode->idxRight;
+            uint32_t const   idxRightNode = readIdx(&pNode->idxRight);
             NodeType * const pRightNode   = a_pAllocator->ptrFromInt(idxRightNode);
             AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pRightNode),
                                 ("idxRight=%#x pRightNode=%p\n", idxRightNode, pRightNode),
@@ -837,13 +849,13 @@ private:
                 Assert(cRightHeight + 2 == cLeftHeight);
                 AssertReturnStmt(pLeftNode, m_cErrors++, VERR_HARDAVL_UNEXPECTED_NULL_LEFT);
 
-                uint32_t const   idxLeftLeftNode = pLeftNode->idxLeft;
+                uint32_t const   idxLeftLeftNode = readIdx(&pLeftNode->idxLeft);
                 NodeType * const pLeftLeftNode   = a_pAllocator->ptrFromInt(idxLeftLeftNode);
                 AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pLeftLeftNode),
                                     ("idxLeftLeftNode=%#x pLeftLeftNode=%p\n", idxLeftLeftNode, pLeftLeftNode),
                                     m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftLeftNode));
 
-                uint32_t const   idxLeftRightNode = pLeftNode->idxRight;
+                uint32_t const   idxLeftRightNode = readIdx(&pLeftNode->idxRight);
                 NodeType * const pLeftRightNode   = a_pAllocator->ptrFromInt(idxLeftRightNode);
                 AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pLeftRightNode),
                                     ("idxLeftRightNode=%#x pLeftRightNode=%p\n", idxLeftRightNode, pLeftRightNode),
@@ -867,9 +879,9 @@ private:
                     AssertReturnStmt(cLeftRightHeight <= kMaxHeight, m_cErrors++, VERR_HARDAVL_BAD_RIGHT_HEIGHT);
                     AssertReturnStmt(pLeftRightNode, m_cErrors++, VERR_HARDAVL_UNEXPECTED_NULL_RIGHT);
 
-                    uint32_t const idxLeftRightLeftNode  = pLeftRightNode->idxLeft;
+                    uint32_t const idxLeftRightLeftNode  = readIdx(&pLeftRightNode->idxLeft);
                     AssertReturnStmt(a_pAllocator->isIntValid(idxLeftRightLeftNode), m_cErrors++, VERR_HARDAVL_INDEX_OUT_OF_BOUNDS);
-                    uint32_t const idxLeftRightRightNode = pLeftRightNode->idxRight;
+                    uint32_t const idxLeftRightRightNode = readIdx(&pLeftRightNode->idxRight);
                     AssertReturnStmt(a_pAllocator->isIntValid(idxLeftRightRightNode), m_cErrors++, VERR_HARDAVL_INDEX_OUT_OF_BOUNDS);
                     pLeftNode->idxRight = idxLeftRightLeftNode;
                     pNode->idxLeft      = idxLeftRightRightNode;
@@ -890,13 +902,13 @@ private:
                 Assert(cLeftHeight + 2 == cRightHeight);
                 AssertReturnStmt(pRightNode, m_cErrors++, VERR_HARDAVL_UNEXPECTED_NULL_RIGHT);
 
-                uint32_t const   idxRightLeftNode = pRightNode->idxLeft;
+                uint32_t const   idxRightLeftNode = readIdx(&pRightNode->idxLeft);
                 NodeType * const pRightLeftNode   = a_pAllocator->ptrFromInt(idxRightLeftNode);
                 AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pRightLeftNode),
                                     ("idxRightLeftNode=%#x pRightLeftNode=%p\n", idxRightLeftNode, pRightLeftNode),
                                     m_cErrors++, a_pAllocator->ptrErrToStatus(pRightLeftNode));
 
-                uint32_t const   idxRightRightNode = pRightNode->idxRight;
+                uint32_t const   idxRightRightNode = readIdx(&pRightNode->idxRight);
                 NodeType * const pRightRightNode   = a_pAllocator->ptrFromInt(idxRightRightNode);
                 AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pRightRightNode),
                                     ("idxRightRightNode=%#x pRightRightNode=%p\n", idxRightRightNode, pRightRightNode),
@@ -923,9 +935,9 @@ private:
                     AssertReturnStmt(cRightLeftHeight <= kMaxHeight, m_cErrors++, VERR_HARDAVL_BAD_LEFT_HEIGHT);
                     AssertReturnStmt(pRightLeftNode, m_cErrors++, VERR_HARDAVL_UNEXPECTED_NULL_LEFT);
 
-                    uint32_t const idxRightLeftRightNode = pRightLeftNode->idxRight;
+                    uint32_t const idxRightLeftRightNode = readIdx(&pRightLeftNode->idxRight);
                     AssertReturnStmt(a_pAllocator->isIntValid(idxRightLeftRightNode), m_cErrors++, VERR_HARDAVL_INDEX_OUT_OF_BOUNDS);
-                    uint32_t const idxRightLeftLeftNode  = pRightLeftNode->idxLeft;
+                    uint32_t const idxRightLeftLeftNode  = readIdx(&pRightLeftNode->idxLeft);
                     AssertReturnStmt(a_pAllocator->isIntValid(idxRightLeftLeftNode), m_cErrors++, VERR_HARDAVL_INDEX_OUT_OF_BOUNDS);
                     pRightNode->idxLeft      = idxRightLeftRightNode;
                     pNode->idxRight          = idxRightLeftLeftNode;
