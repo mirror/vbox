@@ -30,8 +30,8 @@
 
   <refnamediv>
     <refname>VBoxManage-snapshot</refname>
-    <refpurpose>manage &product-name; virtual machine snapshots</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refpurpose>manage virtual machine snapshots</refpurpose>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

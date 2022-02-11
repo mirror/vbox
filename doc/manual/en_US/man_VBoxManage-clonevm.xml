@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-clonevm" lang="en">
   <refentryinfo>
-    <pubdate>February 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage clonevm</title>
   </refentryinfo>
 
@@ -30,8 +30,8 @@
 
   <refnamediv>
     <refname>VBoxManage-clonevm</refname>
-    <refpurpose>create a clone of an existing &product-name; virtual machine</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refpurpose>create a clone of an existing virtual machine</refpurpose>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

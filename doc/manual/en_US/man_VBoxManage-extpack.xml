@@ -28,7 +28,7 @@
   <refnamediv>
     <refname>VBoxManage-extpack</refname>
     <refpurpose>extension package management</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-export" lang="en">
   <refentryinfo>
-    <pubdate>$Date</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage export</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-export</refname>
     <refpurpose>export one or more virtual machines to a virtual appliance or to a cloud service</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

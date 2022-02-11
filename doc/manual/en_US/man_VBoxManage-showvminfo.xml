@@ -32,7 +32,7 @@
     <refname>VBoxManage-showvminfo</refname>
     <refpurpose>show configuration information or log file contents for a virtual
       machine</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

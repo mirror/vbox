@@ -26,13 +26,13 @@
   <refmeta>
     <refentrytitle>VBoxManage-cloud</refentrytitle>
     <manvolnum>1</manvolnum>
-    <refmiscinfo class="manual">Oracle VM VirtualBox</refmiscinfo>
+    <refmiscinfo class="manual">&product-name;</refmiscinfo>
   </refmeta>
 
   <refnamediv>
     <refname>VBoxManage-cloud</refname>
     <refpurpose>Manage the cloud entities</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

@@ -28,7 +28,7 @@
   <refnamediv>
     <refname>VBoxManage-hostonlynet</refname>
     <refpurpose>Host Only Network management</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-movevm</refname>
     <refpurpose>move a virtual machine to a new location on the host system</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

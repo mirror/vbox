@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-dhcpserver</refname>
     <refpurpose>DHCP server management</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

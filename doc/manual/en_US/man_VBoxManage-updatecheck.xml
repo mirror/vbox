@@ -28,7 +28,7 @@
   <refnamediv>
     <refname>VBoxManage-updatecheck</refname>
     <refpurpose>Check for a newer version of VirtualBox</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

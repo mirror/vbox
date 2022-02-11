@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-createvm</refname>
     <refpurpose>create a new virtual machine</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

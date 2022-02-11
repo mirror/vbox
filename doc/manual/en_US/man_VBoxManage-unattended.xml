@@ -28,7 +28,7 @@
   <refnamediv>
     <refname>VBoxManage-unattended</refname>
     <refpurpose>unattended guest OS installation</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

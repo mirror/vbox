@@ -28,7 +28,7 @@
   <refnamediv>
     <refname>VBoxManage-debugvm</refname>
     <refpurpose>introspection and guest debugging</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

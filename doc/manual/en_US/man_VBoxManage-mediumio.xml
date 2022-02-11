@@ -28,7 +28,7 @@
   <refnamediv>
     <refname>VBoxManage-mediumio</refname>
     <refpurpose>medium content access</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

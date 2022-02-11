@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-modifyvm</refname>
     <refpurpose>Change settings for a virtual machine that is stopped</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
@@ -482,12 +482,13 @@ actually is ready for users. -->
         </group></arg>
       <arg>--recording-screens=<group choice="plain">
           <arg choice="plain">all</arg>
-          <arg choice="plain"><replaceable>screen-ID</replaceable> [<replaceable>screen-ID</replaceable>...]</arg>
+          <arg choice="plain">none</arg>
+          <arg choice="plain"><replaceable>screen-ID</replaceable>[,<replaceable>screen-ID</replaceable>...]</arg>
         </group></arg>
       <arg>--recording-file=<replaceable>filename</replaceable></arg>
       <arg>--recording-max-size=<replaceable>MB</replaceable></arg>
       <arg>--recording-max-time=<replaceable>msec</replaceable></arg>
-      <arg>--recording-opts= <arg choice="plain"><replaceable>key</replaceable>=<replaceable>value</replaceable> [,<replaceable>key</replaceable>=<replaceable>value</replaceable>...]</arg></arg>
+      <arg>--recording-opts= <arg choice="plain"><replaceable>key</replaceable>=<replaceable>value</replaceable>[,<replaceable>key</replaceable>=<replaceable>value</replaceable>...]</arg></arg>
       <arg>--recording-video-fps=<replaceable>fps</replaceable></arg>
       <arg>--recording-video-rate=<replaceable>rate</replaceable></arg>
       <arg>--recording-video-res=<replaceable>width</replaceable> <replaceable>height</replaceable></arg>
@@ -810,12 +811,20 @@ it unless this changes. -->
         </varlistentry>
         <varlistentry>
           <term><option>--cpuexectioncap=<replaceable>percentage</replaceable></option></term>
-          <listitem><para>
+          <listitem>
+            <para>
               Specifies how much CPU time a virtual CPU can use. A valid
               value is from <literal>1</literal> to
               <literal>100</literal>. A value of 50 indicates that a
               single virtual CPU can use up to 50% of a single host CPU.
-            </para></listitem>
+            </para>
+            <para>
+              Use this feature with caution, it can have unexpected results
+              including timekeeping problems and lower performance than
+              specified. If you want to limit the resource usage of a VM
+              it is more reliable to pick an appropriate number of VCPUs.
+            </para>
+          </listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--pae=on | off</option></term>
@@ -2016,11 +2025,12 @@ it unless this changes. -->
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--recording-screens=all | <replaceable>screen-ID</replaceable></option></term>
+          <term><option>--recording-screens=all | none | <replaceable>screen-ID</replaceable>[,<replaceable>screen-ID</replaceable>...</option></term>
           <listitem><para>
               Enables you to specify the VM screens to record. The
               recording for each screen is output to its own file. Valid
               values are: <literal>all</literal>, which records all
+              screens, <literal>none</literal>, which records no
               screens, or one or more specified screens.
             </para></listitem>
         </varlistentry>

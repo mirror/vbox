@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-modifynvram" lang="en">
   <refentryinfo>
-    <pubdate>October 2021</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage modifynvram</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-modifynvram</refname>
     <refpurpose>List and modify the NVRAM content of a virtual machine</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
