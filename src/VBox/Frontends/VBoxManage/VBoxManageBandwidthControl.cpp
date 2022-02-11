@@ -355,7 +355,7 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a)
         rc = handleBandwidthControlList(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     else
     {
-        errorSyntax(USAGE_BANDWIDTHCONTROL, BWControl::tr("Invalid parameter '%s'"), Utf8Str(a->argv[1]).c_str());
+        errorSyntax(USAGE_BANDWIDTHCONTROL, BWControl::tr("Invalid parameter '%s'"), a->argv[1]);
         rc = E_FAIL;
     }
 
