@@ -1106,8 +1106,10 @@ int avlul(void)
 
 typedef struct TESTNODE
 {
-    RTGCPHYS Key, KeyLast;
-    uint32_t idxLeft, idxRight;
+    RTGCPHYS Key;
+    RTGCPHYS KeyLast;
+    uint32_t idxLeft;
+    uint32_t idxRight;
     uint8_t  cHeight;
 } MYTESTNODE;
 
@@ -1530,8 +1532,14 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
             && RTTimeNanoTS() - nsStart >= RT_NS_15SEC)
             break;
     }
+    uint64_t cNsElapsed = RTTimeNanoTS() - nsStart;
     RTTestIPrintf(RTTESTLVL_ALWAYS, "Performed %'u operations and enumerated %'RU64 nodes in %'RU64 ns\n",
-                  i, cItemsEnumed, RTTimeNanoTS() - nsStart);
+                  i, cItemsEnumed, cNsElapsed);
+
+    RTTestIValue("Operations rate",        (uint64_t)i * RT_NS_1SEC / RT_MAX(cNsElapsed, 1), RTTESTUNIT_OCCURRENCES_PER_SEC);
+    RTTestIValue("Nodes enumeration rate",
+                 (uint64_t)((double)cItemsEnumed * (double)RT_NS_1SEC / (double)RT_MAX(cNsElapsed, 1)),
+                 RTTESTUNIT_OCCURRENCES_PER_SEC);
 
     return 0;
 }
