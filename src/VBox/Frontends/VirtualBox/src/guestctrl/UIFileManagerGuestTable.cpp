@@ -52,25 +52,25 @@
 #include <iprt/err.h>
 
 /*********************************************************************************************************************************
-*   UIGuestSessionCreateWidget definition.                                                                                   *
+*   UIGuestSessionWidget definition.                                                                                   *
 *********************************************************************************************************************************/
 /** A QWidget extension containing text entry fields for password and username and buttons to
   *  start/stop a guest session. */
-class UIGuestSessionCreateWidget : public QIWithRetranslateUI<QWidget>
+class UIGuestSessionWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 signals:
 
-    void sigCreateSession(QString strUserName, QString strPassword);
+    void sigOpenSession(QString strUserName, QString strPassword);
     void sigCloseSession();
 
 public:
 
-    UIGuestSessionCreateWidget(QWidget *pParent = 0);
-    /** Disables certain widget after a guest session has been created. */
-    void switchSessionCreateMode();
-    /** Makes sure certain widgets are enabled so that a guest session can be created. */
+    UIGuestSessionWidget(QWidget *pParent = 0);
+    /** Disables certain widget after a guest session has been opened. */
+    void switchSessionOpenMode();
+    /** Makes sure certain widgets are enabled so that a guest session can be opened. */
     void switchSessionCloseMode();
     void markForError(bool fMarkForError);
     void setStatusLabelIconAndToolTip(const QIcon &icon, const QString &strToolTip);
@@ -91,7 +91,7 @@ private:
 
     enum ButtonMode
     {
-        ButtonMode_Create,
+        ButtonMode_Open,
         ButtonMode_Close
     };
 
@@ -111,12 +111,12 @@ private:
 
 
 /*********************************************************************************************************************************
-*   UIGuestSessionCreateWidget implementation.                                                                                   *
+*   UIGuestSessionWidget implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIGuestSessionCreateWidget::UIGuestSessionCreateWidget(QWidget *pParent /* = 0 */)
+UIGuestSessionWidget::UIGuestSessionWidget(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_enmButtonMode(ButtonMode_Create)
+    , m_enmButtonMode(ButtonMode_Open)
     , m_pUserNameEdit(0)
     , m_pPasswordEdit(0)
     , m_pButton(0)
@@ -127,7 +127,7 @@ UIGuestSessionCreateWidget::UIGuestSessionCreateWidget(QWidget *pParent /* = 0 *
     prepareWidgets();
 }
 
-void UIGuestSessionCreateWidget::prepareWidgets()
+void UIGuestSessionWidget::prepareWidgets()
 {
     m_pMainLayout = new QHBoxLayout(this);
     if (!m_pMainLayout)
@@ -145,7 +145,7 @@ void UIGuestSessionCreateWidget::prepareWidgets()
                                   0.5 * m_defaultBaseColor.green(),
                                   0.5 * m_defaultBaseColor.blue());
         connect(m_pUserNameEdit, &QILineEdit::textChanged,
-                this, &UIGuestSessionCreateWidget::sltHandleTextChanged);
+                this, &UIGuestSessionWidget::sltHandleTextChanged);
     }
 
     m_pPasswordEdit = new UIPasswordLineEdit;
@@ -155,14 +155,14 @@ void UIGuestSessionCreateWidget::prepareWidgets()
         m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIFileManager", "Password"));
         m_pPasswordEdit->setEchoMode(QLineEdit::Password);
         connect(m_pPasswordEdit, &UIPasswordLineEdit::textChanged,
-                this, &UIGuestSessionCreateWidget::sltHandleTextChanged);
+                this, &UIGuestSessionWidget::sltHandleTextChanged);
     }
 
     m_pButton = new QPushButton;
     if (m_pButton)
     {
         m_pMainLayout->addWidget(m_pButton);
-        connect(m_pButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sltButtonClick);
+        connect(m_pButton, &QPushButton::clicked, this, &UIGuestSessionWidget::sltButtonClick);
     }
     m_pStatusIconLabel = new QLabel(this);
     if (m_pStatusIconLabel)
@@ -172,25 +172,25 @@ void UIGuestSessionCreateWidget::prepareWidgets()
     }
 
     m_pMainLayout->insertStretch(-1, 1);
-    switchSessionCreateMode();
+    switchSessionOpenMode();
     retranslateUi();
 }
 
-void UIGuestSessionCreateWidget::sltButtonClick()
+void UIGuestSessionWidget::sltButtonClick()
 {
-    if (m_enmButtonMode == ButtonMode_Create && m_pUserNameEdit && m_pPasswordEdit)
-        emit sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
+    if (m_enmButtonMode == ButtonMode_Open && m_pUserNameEdit && m_pPasswordEdit)
+        emit sigOpenSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
     else if (m_enmButtonMode == ButtonMode_Close)
         emit sigCloseSession();
 }
 
-void UIGuestSessionCreateWidget::sltHandleTextChanged(const QString &strText)
+void UIGuestSessionWidget::sltHandleTextChanged(const QString &strText)
 {
     Q_UNUSED(strText);
     markForError(false);
 }
 
-void UIGuestSessionCreateWidget::retranslateUi()
+void UIGuestSessionWidget::retranslateUi()
 {
     if (m_pUserNameEdit)
     {
@@ -206,10 +206,10 @@ void UIGuestSessionCreateWidget::retranslateUi()
 
     if (m_pButton)
     {
-        if (m_enmButtonMode == ButtonMode_Create)
+        if (m_enmButtonMode == ButtonMode_Open)
         {
-            m_pButton->setText(QApplication::translate("UIFileManager", "Create Session"));
-            m_pButton->setToolTip(QApplication::translate("UIFileManager", "Create Session"));
+            m_pButton->setText(QApplication::translate("UIFileManager", "Open Session"));
+            m_pButton->setToolTip(QApplication::translate("UIFileManager", "Open Session"));
         }
         else
         {
@@ -219,36 +219,36 @@ void UIGuestSessionCreateWidget::retranslateUi()
     }
 }
 
-void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
+void UIGuestSessionWidget::keyPressEvent(QKeyEvent * pEvent)
 {
-    /* Emit sigCreateSession upon enter press: */
+    /* Emit sigOpenSession upon enter press: */
     if (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return)
     {
         if ((m_pUserNameEdit && m_pUserNameEdit->hasFocus()) ||
             (m_pPasswordEdit && m_pPasswordEdit->hasFocus()))
-            sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
+            sigOpenSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
     }
     QWidget::keyPressEvent(pEvent);
 }
 
-void UIGuestSessionCreateWidget::showEvent(QShowEvent *pEvent)
+void UIGuestSessionWidget::showEvent(QShowEvent *pEvent)
 {
     QIWithRetranslateUI<QWidget>::showEvent(pEvent);
     if (m_pUserNameEdit)
         m_pUserNameEdit->setFocus();
 }
 
-void UIGuestSessionCreateWidget::switchSessionCreateMode()
+void UIGuestSessionWidget::switchSessionOpenMode()
 {
     if (m_pUserNameEdit)
         m_pUserNameEdit->setEnabled(true);
     if (m_pPasswordEdit)
         m_pPasswordEdit->setEnabled(true);
-    m_enmButtonMode = ButtonMode_Create;
+    m_enmButtonMode = ButtonMode_Open;
     retranslateUi();
 }
 
-void UIGuestSessionCreateWidget::switchSessionCloseMode()
+void UIGuestSessionWidget::switchSessionCloseMode()
 {
     if (m_pUserNameEdit)
         m_pUserNameEdit->setEnabled(false);
@@ -258,7 +258,7 @@ void UIGuestSessionCreateWidget::switchSessionCloseMode()
     retranslateUi();
 }
 
-void UIGuestSessionCreateWidget::markForError(bool fMarkForError)
+void UIGuestSessionWidget::markForError(bool fMarkForError)
 {
     if (m_fMarkedForError == fMarkForError)
         return;
@@ -284,7 +284,7 @@ void UIGuestSessionCreateWidget::markForError(bool fMarkForError)
     }
 }
 
-void UIGuestSessionCreateWidget::setStatusLabelIconAndToolTip(const QIcon &icon, const QString &strToolTip)
+void UIGuestSessionWidget::setStatusLabelIconAndToolTip(const QIcon &icon, const QString &strToolTip)
 {
     if (!m_pStatusIconLabel)
         return;
@@ -293,7 +293,7 @@ void UIGuestSessionCreateWidget::setStatusLabelIconAndToolTip(const QIcon &icon,
     m_pStatusIconLabel->setToolTip(strToolTip);
 }
 
-void UIGuestSessionCreateWidget::setLoginWidgetsEnabled(bool fEnabled)
+void UIGuestSessionWidget::setLoginWidgetsEnabled(bool fEnabled)
 {
     if (m_pUserNameEdit)
         m_pUserNameEdit->setEnabled(fEnabled);
@@ -461,23 +461,23 @@ void UIFileManagerGuestTable::retranslateUi()
         switch (m_enmState)
         {
             case State_InvalidMachineReference:
-                strWarningText = UIFileManager::tr("Machine reference is invalid.");
+                strWarningText = UIFileManager::tr("<p>Machine reference is invalid.</p>");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_MachineNotRunning:
-                strWarningText = UIFileManager::tr("File manager cannot work since the selected guest is not currently running.");
+                strWarningText = UIFileManager::tr("<p>File manager cannot work since the selected guest is not currently running.</p>");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_NoGuestAdditions:
-                strWarningText = UIFileManager::tr("File manager cannot work since the selected guest does not have the guest additions.");
+                strWarningText = UIFileManager::tr("<p>File manager cannot work since the selected guest does not have the guest additions.</p>");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
             case State_SessionPossible:
-                strWarningText = UIFileManager::tr("Enter a valid user name and password to initiate the file manager.");
+                strWarningText = UIFileManager::tr("<p>Enter a valid user name and password to initiate the file manager.</p>");
                 icon = UIIconPool::iconSet(":/session_info_16px.png");
                 break;
             case State_SessionRunning:
-                strWarningText = UIFileManager::tr("Guest control session is running.");
+                strWarningText = UIFileManager::tr("<p>Guest control session is running.</p>");
                 icon = UIIconPool::iconSet(":/status_check_16px.png");
                 break;
             default:
@@ -1072,14 +1072,14 @@ void UIFileManagerGuestTable::prepareGuestSessionPanel()
 {
     if (m_pMainLayout)
     {
-        m_pGuestSessionWidget = new UIGuestSessionCreateWidget;
+        m_pGuestSessionWidget = new UIGuestSessionWidget;
         if (m_pGuestSessionWidget)
         {
             m_pMainLayout->addWidget(m_pGuestSessionWidget, m_pMainLayout->rowCount(), 0, 1, m_pMainLayout->columnCount());
             m_pGuestSessionWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-            connect(m_pGuestSessionWidget, &UIGuestSessionCreateWidget::sigCreateSession,
-                    this, &UIFileManagerGuestTable::sltCreateGuestSession);
-            connect(m_pGuestSessionWidget, &UIGuestSessionCreateWidget::sigCloseSession,
+            connect(m_pGuestSessionWidget, &UIGuestSessionWidget::sigOpenSession,
+                    this, &UIFileManagerGuestTable::sltOpenGuestSession);
+            connect(m_pGuestSessionWidget, &UIGuestSessionWidget::sigCloseSession,
                     this, &UIFileManagerGuestTable::sltHandleCloseSessionRequest);
         }
     }
@@ -1332,7 +1332,7 @@ void UIFileManagerGuestTable::sltGuestSessionStateChanged(const CGuestSessionSta
     setStateAndEnableWidgets();
 }
 
-void UIFileManagerGuestTable::sltCreateGuestSession(QString strUserName, QString strPassword)
+void UIFileManagerGuestTable::sltOpenGuestSession(QString strUserName, QString strPassword)
 {
     if (strUserName.isEmpty())
     {
@@ -1410,7 +1410,7 @@ void UIFileManagerGuestTable::setSessionDependentWidgetsEnabled()
     {
         m_pGuestSessionWidget->setLoginWidgetsEnabled(m_enmState == State_SessionPossible || m_enmState == State_SessionRunning);
         if (m_enmState == State_SessionPossible)
-            m_pGuestSessionWidget->switchSessionCreateMode();
+            m_pGuestSessionWidget->switchSessionOpenMode();
         else if (m_enmState == State_SessionRunning)
             m_pGuestSessionWidget->switchSessionCloseMode();
     }
