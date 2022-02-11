@@ -1216,11 +1216,13 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
                                             sizeof(uint64_t), false, &pbmBitmap), VINF_SUCCESS, 1);
     Allocator.initSlabAllocator(cItems, (TESTNODE *)pvItems, (uint64_t *)pbmBitmap);
 
+    uint32_t cInserted = 0;
+
     /*
      * Simple linear insert, get and remove.
      */
     /* insert */
-    for (unsigned i = 0; i < cItems * 4; i += 4)
+    for (unsigned i = 0; i < cItems * 4; i += 4, cInserted++)
     {
         MYTESTNODE *pNode = Allocator.allocateNode();
         if (!pNode)
@@ -1268,6 +1270,13 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
             if (rc != VINF_SUCCESS)
                 return RTTestIFailed("freeNode(pNode2=%p) failed: %Rrc (i=%#x)", pNode2, rc, i);
         }
+
+        /* check the height */
+        uint8_t  const cHeight = Tree.getHeight(&Allocator);
+        uint32_t const cMax    = RT_BIT_32(cHeight);
+        if (cInserted > cMax || cInserted < (cMax >> 4))
+            RTTestIFailed("wrong tree height after linear insert i=%#x: cMax=%#x, cInserted=%#x, cHeight=%u\n",
+                          i, cMax, cInserted, cHeight);
     }
 
     /* do gets. */
@@ -1307,7 +1316,7 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
     }
 
     /* remove */
-    for (unsigned i = 0, j = 0; i < cItems * 4; i += 4, j += 3)
+    for (unsigned i = 0, j = 0; i < cItems * 4; i += 4, j += 3, cInserted--)
     {
         MYTESTNODE *pNode;
         int rc = Tree.remove(&Allocator, i + (j % 4), &pNode);
@@ -1327,6 +1336,13 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
             if (rc != VERR_NOT_FOUND || pNode != NULL)
                 return RTTestIFailed("linear negative remove(%#x): %Rrc pNode=%p", k, rc, pNode);
         }
+
+        /* check the height */
+        uint8_t  const cHeight = Tree.getHeight(&Allocator);
+        uint32_t const cMax    = RT_BIT_32(cHeight);
+        if (cInserted > cMax || cInserted < (cMax >> 4))
+            RTTestIFailed("wrong tree height after linear remove i=%#x: cMax=%#x, cInserted=%#x cHeight=%d\n",
+                          i, cMax, cInserted, cHeight);
     }
 
     /*
@@ -1341,6 +1357,7 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
     RTTESTI_CHECK_RET(pbmPresent, 1);
 
     /* insert all in random order */
+    cInserted = 0;
     for (unsigned i = 0; i < cItems; i++)
     {
         MYTESTNODE *pNode = Allocator.allocateNode();
@@ -1351,7 +1368,9 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
         pNode->Key     = idx * cbStep;
         pNode->KeyLast = pNode->Key + cbStep - 1;
         int rc = Tree.insert(&Allocator, pNode);
-        if (rc != VINF_SUCCESS)
+        if (rc == VINF_SUCCESS)
+            cInserted++;
+        else
             RTTestIFailed("random insert failed: %Rrc, i=%#x, idx=%#x (%RGp ... %RGp)", rc, i, idx, pNode->Key, pNode->KeyLast);
 
         MYTESTNODE *pNode2 = (MYTESTNODE *)(intptr_t)i;
@@ -1363,8 +1382,15 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
         rc = Tree.doWithAllFromLeft(&Allocator, hardAvlRangeTreeGCPhysEnumCallbackCount, &cCount);
         if (rc != VINF_SUCCESS)
             RTTestIFailed("enum after random insert %#x: %Rrc idx=%#x", i, rc, idx);
-        else if (cCount != i + 1)
-            RTTestIFailed("wrong count after random removal %#x: %#x, expected %#x", i, cCount, i + 1);
+        else if (cCount != cInserted)
+            RTTestIFailed("wrong count after random removal %#x: %#x, expected %#x", i, cCount, cInserted);
+
+        /* check the height */
+        uint8_t  const cHeight = Tree.getHeight(&Allocator);
+        uint32_t const cMax    = RT_BIT_32(cHeight);
+        if (cInserted > cMax || cInserted < (cMax >> 4))
+            RTTestIFailed("wrong tree height after random insert %#x: cMax=%#x, cInserted=%#x, cHeight=%u\n",
+                          i, cMax, cInserted, cHeight);
     }
 
     /* remove all in random order. */
@@ -1379,7 +1405,8 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
                           rc, i, idx, idx * cbStep, idx * cbStep + cbStep - 1);
         else
         {
-            if (   pNode->Key     != idx * cbStep
+            cInserted--;
+            if (    pNode->Key     != idx * cbStep
                  || pNode->KeyLast != idx * cbStep + cbStep - 1)
                 RTTestIFailed("random remove returned wrong node: %RGp ... %RGp, expected %RGp ... %RGp (i=%#x, idx=%#x)",
                               pNode->Key, pNode->KeyLast, idx * cbStep, idx * cbStep + cbStep - 1, i, idx);
@@ -1394,14 +1421,21 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
                 rc = Tree.doWithAllFromLeft(&Allocator, hardAvlRangeTreeGCPhysEnumCallbackCount, &cCount);
                 if (rc != VINF_SUCCESS)
                     RTTestIFailed("enum after random removal %#x: %Rrc idx=%#x", i, rc, idx);
-                else if (cCount != cItems - i - 1)
-                    RTTestIFailed("wrong count after random removal %#x: %#x, expected %#x", i, cCount, cItems - i - 1);
+                else if (cCount != cInserted)
+                    RTTestIFailed("wrong count after random removal %#x: %#x, expected %#x", i, cCount, cInserted);
             }
 
             rc = Allocator.freeNode(pNode);
             if (rc != VINF_SUCCESS)
                 RTTestIFailed("free after random removal %#x failed: %Rrc pNode=%p idx=%#x", i, rc, pNode, idx);
         }
+
+        /* check the height */
+        uint8_t  const cHeight = Tree.getHeight(&Allocator);
+        uint32_t const cMax    = RT_BIT_32(cHeight);
+        if (cInserted > cMax || cInserted < (cMax >> 4))
+            RTTestIFailed("wrong tree height after random removal %#x: cMax=%#x, cInserted=%#x, cHeight=%u\n",
+                          i, cMax, cInserted, cHeight);
     }
 
     /*
@@ -1410,12 +1444,11 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
     uSeed = RTRandU64();
     RTRandAdvSeed(g_hRand, uSeed);
     RTTestIPrintf(RTTESTLVL_ALWAYS, "Random seed #2: %#RX64\n", uSeed);
-    uint32_t       cInserted    = 0;
     uint64_t       cItemsEnumed = 0;
     bool           fAdding      = true;
     uint64_t const nsStart      = RTTimeNanoTS();
     unsigned       i;
-    for (i = 0; i < _64M; i++)
+    for (i = 0, cInserted = 0; i < _64M; i++)
     {
         /* The operation. */
         bool fDelete;
@@ -1482,8 +1515,15 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
             RTTestIFailed("enum after random %s failed: %Rrc - i=%#x", fDelete ? "removal" : "insert", rc, i);
         else if (cCount != cInserted)
             RTTestIFailed("wrong count after random %s: %#x, expected %#x - i=%#x",
-                          cCount, cInserted, fDelete ? "removal" : "insert", i);
+                          fDelete ? "removal" : "insert", cCount, cInserted, i);
         cItemsEnumed += cCount;
+
+        /* check the height */
+        uint8_t  const cHeight = Tree.getHeight(&Allocator);
+        uint32_t const cMax    = RT_BIT_32(cHeight);
+        if (cInserted > cMax || cInserted < (cMax >> 4))
+            RTTestIFailed("wrong tree height after random %s: cMax=%#x, cInserted=%#x, cHeight=%u - i=%#x\n",
+                          fDelete ? "removal" : "insert", cMax, cInserted, cHeight, i);
 
         /* Check for timeout. */
         if (   (i & 0xffff) == 0

@@ -212,40 +212,6 @@ struct RTCHardAvlRangeTree
         return i_rebalance(a_pAllocator, &AVLStack);
     }
 
-#ifdef RT_STRICT
-
-    static void dumpStack(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, HardAvlStack const *pStack)
-    {
-        uint32_t const * const *paidx = pStack->apidxEntries;
-        RTAssertMsg2("stack: %u:\n", pStack->cEntries);
-        for (unsigned i = 0; i < pStack->cEntries; i++)
-        {
-            uint32_t idx     = *paidx[i];
-            uint32_t idxNext = i + 1 < pStack->cEntries ? *paidx[i + 1] : UINT32_MAX;
-            NodeType const *pNode = a_pAllocator->ptrFromInt(idx);
-            RTAssertMsg2(" #%02u: %p[%#06x] pNode=%p h=%02d l=%#06x%c r=%#06x%c\n", i, paidx[i], idx, pNode, pNode->cHeight,
-                         pNode->idxLeft,  pNode->idxLeft  == idxNext ? '*' : ' ',
-                         pNode->idxRight, pNode->idxRight == idxNext ? '*' : ' ');
-        }
-    }
-
-    static void printTree(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, uint32_t a_idxRoot, unsigned iLevel = 0)
-    {
-        if (a_idxRoot == a_pAllocator->kNilIndex)
-            RTAssertMsg2("%*snil\n", iLevel * 6, "");
-        else if (iLevel < 7)
-        {
-            NodeType *pNode = a_pAllocator->ptrFromInt(a_idxRoot);
-            printTree(a_pAllocator, pNode->idxRight, iLevel + 1);
-            RTAssertMsg2("%*s%#x/%u\n", iLevel * 6, "", a_idxRoot, pNode->cHeight);
-            printTree(a_pAllocator, pNode->idxLeft, iLevel + 1);
-        }
-        else
-            RTAssertMsg2("%*stoo deep\n", iLevel * 6, "");
-    }
-
-#endif
-
     /**
      * Removes a node from the AVL-tree by a key value.
      *
@@ -721,6 +687,57 @@ struct RTCHardAvlRangeTree
         Assert(m_idxRoot == a_pAllocator->kNilIndex);
         return VINF_SUCCESS;
     }
+
+
+    /**
+     * Gets the tree height value (reads cHeigh from the root node).
+     *
+     * @retval UINT8_MAX if bogus tree.
+     */
+    uint8_t getHeight(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator)
+    {
+        NodeType *pNode = a_pAllocator->ptrFromInt(m_idxRoot);
+        AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
+                            m_cErrors++, UINT8_MAX);
+        if (pNode)
+            return pNode->cHeight;
+        return 0;
+    }
+
+#ifdef RT_STRICT
+
+    static void dumpStack(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, HardAvlStack const *pStack)
+    {
+        uint32_t const * const *paidx = pStack->apidxEntries;
+        RTAssertMsg2("stack: %u:\n", pStack->cEntries);
+        for (unsigned i = 0; i < pStack->cEntries; i++)
+        {
+            uint32_t idx     = *paidx[i];
+            uint32_t idxNext = i + 1 < pStack->cEntries ? *paidx[i + 1] : UINT32_MAX;
+            NodeType const *pNode = a_pAllocator->ptrFromInt(idx);
+            RTAssertMsg2(" #%02u: %p[%#06x] pNode=%p h=%02d l=%#06x%c r=%#06x%c\n", i, paidx[i], idx, pNode, pNode->cHeight,
+                         pNode->idxLeft,  pNode->idxLeft  == idxNext ? '*' : ' ',
+                         pNode->idxRight, pNode->idxRight == idxNext ? '*' : ' ');
+        }
+    }
+
+    static void printTree(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, uint32_t a_idxRoot,
+                          unsigned a_uLevel = 0, unsigned a_uMaxLevel = 8, const char *a_pszDir = "")
+    {
+        if (a_idxRoot == a_pAllocator->kNilIndex)
+            RTAssertMsg2("%*snil\n", a_uLevel * 6, a_pszDir);
+        else if (a_uLevel < a_uMaxLevel)
+        {
+            NodeType *pNode = a_pAllocator->ptrFromInt(a_idxRoot);
+            printTree(a_pAllocator, pNode->idxRight, a_uLevel + 1, a_uMaxLevel, "/ ");
+            RTAssertMsg2("%*s%#x/%u\n", a_uLevel * 6, a_pszDir, a_idxRoot, pNode->cHeight);
+            printTree(a_pAllocator, pNode->idxLeft, a_uLevel + 1, a_uMaxLevel, "\\ ");
+        }
+        else
+            RTAssertMsg2("%*stoo deep\n", a_uLevel * 6, a_pszDir);
+    }
+
+#endif
 
 private:
     /**
