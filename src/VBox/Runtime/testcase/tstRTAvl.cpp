@@ -36,6 +36,7 @@
 #include <iprt/mem.h>
 #include <iprt/rand.h>
 #include <iprt/stdarg.h>
+#include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 #include <iprt/time.h>
@@ -74,7 +75,7 @@ static RTRAND g_hRand;
  */
 static PTRACKER TrackerCreate(uint32_t MaxKey)
 {
-    uint32_t cbBitmap = (MaxKey + sizeof(uint32_t) * sizeof(uint8_t) - 1) / sizeof(uint8_t);
+    uint32_t cbBitmap = RT_ALIGN_32(MaxKey, 64) / 8;
     PTRACKER pTracker = (PTRACKER)RTMemAllocZ(RT_UOFFSETOF_DYN(TRACKER, abBitmap[cbBitmap]));
     if (pTracker)
     {
@@ -253,17 +254,18 @@ static bool TrackerFindRandom(PTRACKER pTracker, uint32_t *pKey)
         else
         {
             /* we're missing a ASMBitPrevSet function, so here's a quick replacement hack. */
-            uint32_t *pu32Start = (uint32_t *)&pTracker->abBitmap[0];
-            uint32_t *pu32Cur   = (uint32_t *)&pTracker->abBitmap[Key >> 8];
-            while (pu32Cur >= pu32Start)
+            uint32_t const *pu32Bitmap = (uint32_t const *)&pTracker->abBitmap[0];
+            Key >>= 5;
+            do
             {
-                if (*pu32Cur)
+                uint32_t u32;
+                if ((u32 = pu32Bitmap[Key]) != 0)
                 {
-                    *pKey = ASMBitLastSetU32(*pu32Cur) - 1 + (uint32_t)((pu32Cur - pu32Start) * 32);
+                    *pKey = ASMBitLastSetU32(u32) - 1 + (Key << 5);
                     return true;
                 }
-                pu32Cur--;
-            }
+            } while (Key-- > 0);
+
             Key2 = ASMBitFirstSet(pTracker->abBitmap, pTracker->MaxKey);
             if (Key2 == -1)
             {
@@ -276,6 +278,15 @@ static bool TrackerFindRandom(PTRACKER pTracker, uint32_t *pKey)
 
     *pKey = Key;
     return true;
+}
+
+
+/**
+ * Gets the number of keys in the tree.
+ */
+static uint32_t TrackerGetCount(PTRACKER pTracker)
+{
+    return pTracker->cSetBits;
 }
 
 
@@ -537,7 +548,14 @@ static int avlogcphys(unsigned cMax)
 }
 
 
-int avlogcphysRand(unsigned cMax, unsigned cMax2)
+static DECLCALLBACK(int) avlogcphysCallbackCounter(PAVLOGCPHYSNODECORE pNode, void *pvUser)
+{
+    RT_NOREF(pNode);
+    *(uint32_t *)pvUser += 1;
+    return 0;
+}
+
+int avlogcphysRand(unsigned cMax, unsigned cMax2, uint32_t fCountMask)
 {
     PAVLOGCPHYSTREE pTree = (PAVLOGCPHYSTREE)RTMemAllocZ(sizeof(*pTree));
     unsigned i;
@@ -580,6 +598,21 @@ int avlogcphysRand(unsigned cMax, unsigned cMax2)
             return 1;
         }
         TrackerInsert(pTracker, Key, Key);
+
+        if (!(i & fCountMask))
+        {
+            uint32_t cCount = 0;
+            RTAvloGCPhysDoWithAll(pTree, i & 1, avlogcphysCallbackCounter, &cCount);
+            if (cCount != TrackerGetCount(pTracker))
+                RTTestIFailed("wrong tree count after random insert i=%d: %u, expected %u", i, cCount, TrackerGetCount(pTracker));
+        }
+    }
+
+    {
+        uint32_t cCount = 0;
+        RTAvloGCPhysDoWithAll(pTree, i & 1, avlogcphysCallbackCounter, &cCount);
+        if (cCount != TrackerGetCount(pTracker))
+            RTTestIFailed("wrong tree count after random insert i=%d: %u, expected %u", i, cCount, TrackerGetCount(pTracker));
     }
 
 
@@ -610,6 +643,20 @@ int avlogcphysRand(unsigned cMax, unsigned cMax2)
         TrackerRemove(pTracker, Key, Key);
         memset(pNode, 0xdd, sizeof(*pNode));
         RTMemFree(pNode);
+
+        if (!(i & fCountMask))
+        {
+            uint32_t cCount = 0;
+            RTAvloGCPhysDoWithAll(pTree, i & 1, avlogcphysCallbackCounter, &cCount);
+            if (cCount != TrackerGetCount(pTracker))
+                RTTestIFailed("wrong tree count after random remove i=%d: %u, expected %u", i, cCount, TrackerGetCount(pTracker));
+        }
+    }
+    {
+        uint32_t cCount = 0;
+        RTAvloGCPhysDoWithAll(pTree, i & 1, avlogcphysCallbackCounter, &cCount);
+        if (cCount != TrackerGetCount(pTracker))
+            RTTestIFailed("wrong tree count after random insert i=%d: %u, expected %u", i, cCount, TrackerGetCount(pTracker));
     }
     if (*pTree)
     {
@@ -936,9 +983,11 @@ int avlul(void)
      * Simple linear insert and remove.
      */
     PAVLULNODECORE  pTree = 0;
-    unsigned i;
+    unsigned        cInserted = 0;
+    unsigned        i;
+
     /* insert */
-    for (i = 0; i < 65536; i++)
+    for (i = 0; i < 65536; i++, cInserted++)
     {
         PAVLULNODECORE pNode = (PAVLULNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = i;
@@ -947,6 +996,7 @@ int avlul(void)
             RTTestIFailed("linear insert i=%d\n", i);
             return 1;
         }
+
         /* negative. */
         AVLULNODECORE Node = *pNode;
         if (RTAvlULInsert(&pTree, &Node))
@@ -954,9 +1004,15 @@ int avlul(void)
             RTTestIFailed("linear negative insert i=%d\n", i);
             return 1;
         }
+
+        /* check height */
+        uint8_t  const cHeight = pTree ? pTree->uchHeight : 0;
+        uint32_t const cMax    = cHeight > 0 ? RT_BIT_32(cHeight) : 1;
+        if (cInserted > cMax || cInserted < (cMax >> 2))
+            RTTestIFailed("bad tree height after linear insert i=%d: cMax=%#x, cInserted=%#x\n", i, cMax, cInserted);
     }
 
-    for (i = 0; i < 65536; i++)
+    for (i = 0; i < 65536; i++, cInserted--)
     {
         PAVLULNODECORE pNode = RTAvlULRemove(&pTree, i);
         if (!pNode)
@@ -976,12 +1032,18 @@ int avlul(void)
             RTTestIFailed("linear negative remove i=%d\n", i);
             return 1;
         }
+
+        /* check height */
+        uint8_t  const cHeight = pTree ? pTree->uchHeight : 0;
+        uint32_t const cMax    = cHeight > 0 ? RT_BIT_32(cHeight) : 1;
+        if (cInserted > cMax || cInserted < (cMax >> 2))
+            RTTestIFailed("bad tree height after linear removal i=%d: cMax=%#x, cInserted=%#x\n", i, cMax, cInserted);
     }
 
     /*
      * Make a sparsely populated tree.
      */
-    for (i = 0; i < 65536; i += 8)
+    for (i = 0; i < 65536; i += 8, cInserted++)
     {
         PAVLULNODECORE pNode = (PAVLULNODECORE)RTMemAlloc(sizeof(*pNode));
         pNode->Key = i;
@@ -990,6 +1052,7 @@ int avlul(void)
             RTTestIFailed("linear insert i=%d\n", i);
             return 1;
         }
+
         /* negative. */
         AVLULNODECORE Node = *pNode;
         if (RTAvlULInsert(&pTree, &Node))
@@ -997,6 +1060,12 @@ int avlul(void)
             RTTestIFailed("linear negative insert i=%d\n", i);
             return 1;
         }
+
+        /* check height */
+        uint8_t  const cHeight = pTree ? pTree->uchHeight : 0;
+        uint32_t const cMax    = cHeight > 0 ? RT_BIT_32(cHeight) : 1;
+        if (cInserted > cMax || cInserted < (cMax >> 2))
+            RTTestIFailed("bad tree height after sparse insert i=%d: cMax=%#x, cInserted=%#x\n", i, cMax, cInserted);
     }
 
     /*
@@ -1005,7 +1074,7 @@ int avlul(void)
     unsigned j;
     for (j = 0; j < 4; j++)
     {
-        for (i = 0; i < 65536; i += 8 * 4)
+        for (i = 0; i < 65536; i += 8 * 4, cInserted--)
         {
             PAVLULNODECORE pNode = RTAvlULRemoveBestFit(&pTree, i, true);
             //PAVLULNODECORE pNode = RTAvlULRemove(&pTree, i + j * 8);
@@ -1018,6 +1087,12 @@ int avlul(void)
             pNode->pRight    = (PAVLULNODECORE)(uintptr_t)0xcccccccc;
             pNode->uchHeight = 'E';
             RTMemFree(pNode);
+
+            /* check height */
+            uint8_t  const cHeight = pTree ? pTree->uchHeight : 0;
+            uint32_t const cMax    = cHeight > 0 ? RT_BIT_32(cHeight) : 1;
+            if (cInserted > cMax || cInserted < (cMax >> 2))
+                RTTestIFailed("bad tree height after sparse removal i=%d: cMax=%#x, cInserted=%#x\n", i, cMax, cInserted);
         }
     }
 
@@ -1444,6 +1519,7 @@ int main()
     /*
      * Testing.
      */
+#if 0
     unsigned i;
     RTTestSub(hTest, "oGCPhys(32..2048)");
     for (i = 32; i < 2048; i++)
@@ -1456,13 +1532,14 @@ int main()
 
     RTTestISubF("oGCPhys(32..2048, *1K)");
     for (i = 32; i < 4096; i++)
-        if (avlogcphysRand(i, i + _1K))
+        if (avlogcphysRand(i, i + _1K, 0xff))
             break;
     for (; i <= _4M; i *= 2)
-        if (avlogcphysRand(i, i * 8))
+        if (avlogcphysRand(i, i * 8, i * 2 - 1))
             break;
 
     avlrogcphys();
+#endif
     avlul();
 
     hardAvlRangeTreeGCPhys(hTest);
