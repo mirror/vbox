@@ -530,28 +530,40 @@ void parseGroups(const char *pcszGroups, com::SafeArray<BSTR> *pGroups)
 }
 
 #ifdef VBOX_WITH_RECORDING
-static int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens)
+int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens)
 {
+    if (!RTStrICmp(pcszScreens, "all"))
+    {
+        for (uint32_t i = 0; i < pScreens->size(); i++)
+            (*pScreens)[i] = TRUE;
+        return VINF_SUCCESS;
+    }
+    if (!RTStrICmp(pcszScreens, "none"))
+    {
+        for (uint32_t i = 0; i < pScreens->size(); i++)
+            (*pScreens)[i] = FALSE;
+        return VINF_SUCCESS;
+    }
     while (pcszScreens && *pcszScreens)
     {
         char *pszNext;
         uint32_t iScreen;
         int rc = RTStrToUInt32Ex(pcszScreens, &pszNext, 0, &iScreen);
         if (RT_FAILURE(rc))
-            return 1;
+            return VERR_PARSE_ERROR;
         if (iScreen >= pScreens->size())
-            return 1;
+            return VERR_PARSE_ERROR;
         if (pszNext && *pszNext)
         {
             pszNext = RTStrStripL(pszNext);
             if (*pszNext != ',')
-                return 1;
+                return VERR_PARSE_ERROR;
             pszNext++;
         }
         (*pScreens)[iScreen] = true;
         pcszScreens = pszNext;
     }
-    return 0;
+    return VINF_SUCCESS;
 }
 #endif
 
@@ -589,7 +601,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
     /* VM ID + at least one parameter. Parameter arguments are checked
      * individually. */
     if (a->argc < 2)
-        return errorSyntax(USAGE_MODIFYVM, ModifyVM::tr("Not enough parameters"));
+        return errorSyntax(ModifyVM::tr("Not enough parameters"));
 
     /* try to find the given sessionMachine */
     ComPtr<IMachine> machine;
@@ -823,7 +835,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 {
                     int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX);
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_MODIFYVM, ModifyVM::tr("Missing or Invalid argument to '%s'"),
+                        return errorSyntax(ModifyVM::tr("Missing or invalid argument to '%s'"),
                                            GetOptState.pDef->pszLong);
                     aValue[i] = ValueUnion.u32;
                 }
@@ -1940,9 +1952,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
         {                                                                                \
             if (*ch == 0)                                                                \
             {                                                                            \
-                return errorSyntax(USAGE_MODIFYVM,                                       \
-                                   ModifyVM::tr("Missing or Invalid argument to '%s'"),  \
-                                    GetOptState.pDef->pszLong);                          \
+                return errorSyntax(ModifyVM::tr("Missing or invalid argument to '%s'"),  \
+                                   GetOptState.pDef->pszLong);                           \
             }                                                                            \
             ch++;                                                                        \
         }                                                                                \
@@ -2041,7 +2052,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     int vrc;
                     vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_STRING);
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_MODIFYVM, ModifyVM::tr("Not enough parameters"));
+                        return errorSyntax(ModifyVM::tr("Not enough parameters"));
                     CHECK_ERROR(engine, RemoveRedirect(Bstr(ValueUnion.psz).raw()));
                 }
                 break;
@@ -2333,8 +2344,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
                     int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_STRING);
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_MODIFYVM,
-                                           ModifyVM::tr("Missing or Invalid argument to '%s'"),
+                        return errorSyntax(ModifyVM::tr("Missing or invalid argument to '%s'"),
                                            GetOptState.pDef->pszLong);
 
                     CHECK_ERROR(uart, COMSETTER(Path)(Bstr(ValueUnion.psz).raw()));
@@ -2392,8 +2402,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(uart, COMSETTER(UartType)(UartType_U16750));
                 }
                 else
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       ModifyVM::tr("Invalid argument to '%s'"),
+                    return errorSyntax(ModifyVM::tr("Invalid argument to '%s'"),
                                        GetOptState.pDef->pszLong);
                 break;
             }
@@ -2414,8 +2423,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
                     int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32) != MODIFYVM_UART;
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_MODIFYVM,
-                                           ModifyVM::tr("Missing or Invalid argument to '%s'"),
+                        return errorSyntax(ModifyVM::tr("Missing or invalid argument to '%s'"),
                                            GetOptState.pDef->pszLong);
 
                     CHECK_ERROR(uart, COMSETTER(IRQ)(ValueUnion.u32));
@@ -2458,8 +2466,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
                     int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32) != MODIFYVM_LPT;
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_MODIFYVM,
-                                           ModifyVM::tr("Missing or Invalid argument to '%s'"),
+                        return errorSyntax(ModifyVM::tr("Missing or invalid argument to '%s'"),
                                            GetOptState.pDef->pszLong);
 
                     CHECK_ERROR(lpt, COMSETTER(IRQ)(ValueUnion.u32));
@@ -2895,8 +2902,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 const char *pszName = ValueUnion.psz;
                 int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_STRING);
                 if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_MODIFYVM,
-                                       ModifyVM::tr("Missing or Invalid argument to '%s'"),
+                    return errorSyntax(ModifyVM::tr("Missing or invalid argument to '%s'"),
                                        GetOptState.pDef->pszLong);
                 const char *pszNewName = ValueUnion.psz;
 
@@ -3239,7 +3245,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         ULONG cMonitors = 64;
                         CHECK_ERROR(pGraphicsAdapter, COMGETTER(MonitorCount)(&cMonitors));
                         com::SafeArray<BOOL> screens(cMonitors);
-                        if (parseScreens(ValueUnion.psz, &screens))
+                        if (RT_FAILURE(parseScreens(ValueUnion.psz, &screens)))
                         {
                             errorArgument(ModifyVM::tr("Invalid list of screens specified\n"));
                             rc = E_FAIL;
@@ -3483,7 +3489,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
 
             default:
-                errorGetOpt(USAGE_MODIFYVM, c, &ValueUnion);
+                errorGetOpt(c, &ValueUnion);
                 rc = E_FAIL;
                 break;
         }

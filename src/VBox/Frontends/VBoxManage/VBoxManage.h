@@ -100,7 +100,6 @@ typedef enum
     USAGE_REGISTERVM,
     USAGE_UNREGISTERVM,
     USAGE_CREATEVM,
-    USAGE_MODIFYVM,
     USAGE_STARTVM,
     USAGE_CONTROLVM,
     USAGE_DISCARDSTATE,
@@ -273,6 +272,9 @@ RTEXITCODE handleControlVM(HandlerArg *a);
 /* VBoxManageModifyVM.cpp */
 #ifndef VBOX_ONLY_DOCS
 void parseGroups(const char *pcszGroups, com::SafeArray<BSTR> *pGroups);
+# ifdef VBOX_WITH_RECORDING
+int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens);
+# endif
 #endif
 RTEXITCODE handleModifyVM(HandlerArg *a);
 
