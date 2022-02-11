@@ -186,7 +186,7 @@ static RTEXITCODE handleNATList(HandlerArg *a)
             Bstr strVal;
             CHECK_ERROR_BREAK(pNATNet, COMGETTER(NetworkName)(strVal.asOutParam()));
 
-            Utf8Str strValUTF8 = Utf8Str(strVal);
+            Utf8Str strValUTF8(strVal);
             if (!RTStrSimplePatternMatch(pszFilter,  strValUTF8.c_str()))
                 continue;
         }
@@ -622,7 +622,7 @@ RTEXITCODE handleNATNetwork(HandlerArg *a)
     else if (strcmp(a->argv[0], "list") == 0)
         rcExit = handleNATList(a);
     else
-        rcExit = errorSyntax(USAGE_NATNETWORK, Nat::tr("Invalid parameter '%s'"), Utf8Str(a->argv[0]).c_str());
+        rcExit = errorSyntax(USAGE_NATNETWORK, Nat::tr("Invalid parameter '%s'"), a->argv[0]);
     return rcExit;
 }
 
