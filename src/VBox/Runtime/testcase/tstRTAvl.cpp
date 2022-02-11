@@ -38,6 +38,7 @@
 #include <iprt/stdarg.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+#include <iprt/time.h>
 
 
 /*********************************************************************************************************************************
@@ -1045,9 +1046,17 @@ static DECLCALLBACK(int) hardAvlRangeTreeGCPhysEnumCallbackAscBy4(TESTNODE *pNod
 }
 
 
+static DECLCALLBACK(int) hardAvlRangeTreeGCPhysEnumCallbackCount(TESTNODE *pNode, void *pvUser)
+{
+    *(uint32_t *)pvUser += 1;
+    RT_NOREF(pNode);
+    return VINF_SUCCESS;
+}
+
+
 static uint32_t PickClearBit(uint64_t *pbm, uint32_t cItems)
 {
-    uint32_t idx = RTRandU32Ex(0, cItems - 1);
+    uint32_t idx = RTRandAdvU32Ex(g_hRand, 0, cItems - 1);
     if (ASMBitTest(pbm, idx) == 0)
         return idx;
 
@@ -1075,10 +1084,10 @@ static uint32_t PickClearBitAndSetIt(uint64_t *pbm, uint32_t cItems)
     return idx;
 }
 
-#if 0
+
 static uint32_t PickSetBit(uint64_t *pbm, uint32_t cItems)
 {
-    uint32_t idx = RTRandU32Ex(0, cItems - 1);
+    uint32_t idx = RTRandAdvU32Ex(g_hRand, 0, cItems - 1);
     if (ASMBitTest(pbm, idx) == 1)
         return idx;
 
@@ -1102,13 +1111,14 @@ static uint32_t PickSetBit(uint64_t *pbm, uint32_t cItems)
 static uint32_t PickSetBitAndClearIt(uint64_t *pbm, uint32_t cItems)
 {
     uint32_t idx = PickSetBit(pbm, cItems);
-    RTTESTI_CHECK(ASMBitTestAndSet(pbm, idx) == true);
+    RTTESTI_CHECK(ASMBitTestAndClear(pbm, idx) == true);
     return idx;
 }
-#endif
 
 
-/** @return meaningless, just for return RTTestIFailed(); */
+/**
+ * @return meaningless value, just for shortening 'return RTTestIFailed();'.
+ */
 int hardAvlRangeTreeGCPhys(RTTEST hTest)
 {
     RTTestISubF("RTCHardAvlRangeTreeGCPhys");
@@ -1122,7 +1132,7 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
     AssertCompileSize(Allocator, sizeof(void *) * 2 + sizeof(uint32_t) * 4);
 
     /* Initialize the allocator with a decent slab of memory. */
-    const uint32_t cItems = 16384;
+    const uint32_t cItems = 8192;
     void *pvItems;
     RTTESTI_CHECK_RC_RET(RTTestGuardedAlloc(hTest, sizeof(MYTESTNODE) * cItems,
                                             sizeof(uint64_t), false, &pvItems), VINF_SUCCESS, 1);
@@ -1135,7 +1145,7 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
      * Simple linear insert, get and remove.
      */
     /* insert */
-    for (unsigned i = 0; i < 65536; i += 4)
+    for (unsigned i = 0; i < cItems * 4; i += 4)
     {
         MYTESTNODE *pNode = Allocator.allocateNode();
         if (!pNode)
@@ -1186,7 +1196,7 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
     }
 
     /* do gets. */
-    for (unsigned i = 0; i < 65536; i += 4)
+    for (unsigned i = 0; i < cItems * 4; i += 4)
     {
         MYTESTNODE *pNode;
         int rc = Tree.lookup(&Allocator, i, &pNode);
@@ -1205,7 +1215,7 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
     }
 
     /* negative get */
-    for (unsigned i = 65536; i < 65536 * 2; i += 1)
+    for (unsigned i = cItems * 4; i < cItems * 4 * 2; i += 1)
     {
         MYTESTNODE *pNode = (MYTESTNODE *)(uintptr_t)i;
         int rc = Tree.lookup(&Allocator, i, &pNode);
@@ -1222,7 +1232,7 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
     }
 
     /* remove */
-    for (unsigned i = 0, j = 0; i < 65536; i += 4, j += 3)
+    for (unsigned i = 0, j = 0; i < cItems * 4; i += 4, j += 3)
     {
         MYTESTNODE *pNode;
         int rc = Tree.remove(&Allocator, i + (j % 4), &pNode);
@@ -1249,7 +1259,7 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
      */
     uint64_t uSeed = RTRandU64();
     RTRandAdvSeed(g_hRand, uSeed);
-    RTTestIPrintf(RTTESTLVL_ALWAYS, "Random seed: %#RX64\n", uSeed);
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "Random seed #1: %#RX64\n", uSeed);
 
     RTGCPHYS const   cbStep     = RTGCPHYS_MAX / cItems + 1;
     uint64_t * const pbmPresent = (uint64_t *)RTMemAllocZ(RT_ALIGN_32(cItems, 64) / 64 * 8);
@@ -1273,9 +1283,15 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
         rc = Tree.lookup(&Allocator, pNode->Key, &pNode2);
         if (rc != VINF_SUCCESS || pNode2 != pNode)
             return RTTestIFailed("lookup after random insert %#x: %Rrc pNode=%p pNode2=%p idx=%#x", i, rc, pNode, pNode2, idx);
+
+        uint32_t cCount = 0;
+        rc = Tree.doWithAllFromLeft(&Allocator, hardAvlRangeTreeGCPhysEnumCallbackCount, &cCount);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("enum after random insert %#x: %Rrc idx=%#x", i, rc, idx);
+        else if (cCount != i + 1)
+            RTTestIFailed("wrong count after random removal %#x: %#x, expected %#x", i, cCount, i + 1);
     }
 
-#if 0 /** @todo this doesn't work quit right yet */
     /* remove all in random order. */
     for (unsigned i = 0; i < cItems; i++)
     {
@@ -1285,27 +1301,122 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
         int rc = Tree.remove(&Allocator, idx * cbStep, &pNode);
         if (rc != VINF_SUCCESS)
             RTTestIFailed("random remove failed: %Rrc, i=%#x, idx=%#x (%RGp ... %RGp)",
-                          rc, idx, idx * cbStep, idx * cbStep + cbStep - 1);
-        else if (   pNode->Key     != idx * cbStep
-                 || pNode->KeyLast != idx * cbStep + cbStep - 1)
-            RTTestIFailed("random remove returned wrong node: %RGp ... %RGp, expected %RGp ... %RGp (i=%#x, idx=%#x)",
-                          pNode->Key, pNode->KeyLast, idx * cbStep, idx * cbStep + cbStep - 1, i, idx);
+                          rc, i, idx, idx * cbStep, idx * cbStep + cbStep - 1);
         else
         {
-            MYTESTNODE *pNode2 = (MYTESTNODE *)(intptr_t)i;
-            rc = Tree.lookup(&Allocator, idx * cbStep, &pNode2);
-            if (rc != VERR_NOT_FOUND)
-                RTTestIFailed("lookup after random removal %#x: %Rrc pNode=%p pNode2=%p idx=%#x", i, rc, pNode, pNode2, idx);
+            if (   pNode->Key     != idx * cbStep
+                 || pNode->KeyLast != idx * cbStep + cbStep - 1)
+                RTTestIFailed("random remove returned wrong node: %RGp ... %RGp, expected %RGp ... %RGp (i=%#x, idx=%#x)",
+                              pNode->Key, pNode->KeyLast, idx * cbStep, idx * cbStep + cbStep - 1, i, idx);
+            else
+            {
+                MYTESTNODE *pNode2 = (MYTESTNODE *)(intptr_t)i;
+                rc = Tree.lookup(&Allocator, idx * cbStep, &pNode2);
+                if (rc != VERR_NOT_FOUND)
+                    RTTestIFailed("lookup after random removal %#x: %Rrc pNode=%p pNode2=%p idx=%#x", i, rc, pNode, pNode2, idx);
+
+                uint32_t cCount = 0;
+                rc = Tree.doWithAllFromLeft(&Allocator, hardAvlRangeTreeGCPhysEnumCallbackCount, &cCount);
+                if (rc != VINF_SUCCESS)
+                    RTTestIFailed("enum after random removal %#x: %Rrc idx=%#x", i, rc, idx);
+                else if (cCount != cItems - i - 1)
+                    RTTestIFailed("wrong count after random removal %#x: %#x, expected %#x", i, cCount, cItems - i - 1);
+            }
 
             rc = Allocator.freeNode(pNode);
             if (rc != VINF_SUCCESS)
                 RTTestIFailed("free after random removal %#x failed: %Rrc pNode=%p idx=%#x", i, rc, pNode, idx);
         }
     }
-#endif
 
-    /** @todo Add more random stuff here where we pick the operation to perform
-     *        using random as well and just do large number of these iterations. */
+    /*
+     * Randomized operation.
+     */
+    uSeed = RTRandU64();
+    RTRandAdvSeed(g_hRand, uSeed);
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "Random seed #2: %#RX64\n", uSeed);
+    uint32_t       cInserted    = 0;
+    uint64_t       cItemsEnumed = 0;
+    bool           fAdding      = true;
+    uint64_t const nsStart      = RTTimeNanoTS();
+    unsigned       i;
+    for (i = 0; i < _64M; i++)
+    {
+        /* The operation. */
+        bool fDelete;
+        if (cInserted == cItems)
+        {
+            fDelete = true;
+            fAdding = false;
+        }
+        else if (cInserted == 0)
+        {
+            fDelete = false;
+            fAdding = true;
+        }
+        else
+            fDelete = fAdding ? RTRandU32Ex(0, 3) == 1 : RTRandU32Ex(0, 3) != 0;
+
+        if (!fDelete)
+        {
+            uint32_t const idxInsert = PickClearBitAndSetIt(pbmPresent, cItems);
+
+            MYTESTNODE *pNode = Allocator.allocateNode();
+            if (!pNode)
+                return RTTestIFailed("out of nodes: cInserted=%#x cItems=%#x i=%#x", cInserted, cItems, i);
+            pNode->Key     = idxInsert * cbStep;
+            pNode->KeyLast = pNode->Key + cbStep - 1;
+            int rc = Tree.insert(&Allocator, pNode);
+            if (rc == VINF_SUCCESS)
+                cInserted += 1;
+            else
+            {
+                RTTestIFailed("random insert failed: %Rrc - %RGp ... %RGp cInserted=%#x cItems=%#x i=%#x",
+                              rc, pNode->Key, pNode->KeyLast, cInserted, cItems, i);
+                Allocator.freeNode(pNode);
+            }
+        }
+        else
+        {
+            uint32_t const idxDelete = PickSetBitAndClearIt(pbmPresent, cItems);
+
+            MYTESTNODE *pNode = (MYTESTNODE *)(intptr_t)idxDelete;
+            int rc = Tree.remove(&Allocator, idxDelete * cbStep, &pNode);
+            if (rc == VINF_SUCCESS)
+            {
+                if (   pNode->Key     != idxDelete * cbStep
+                    || pNode->KeyLast != idxDelete * cbStep + cbStep - 1)
+                    RTTestIFailed("random remove returned wrong node: %RGp ... %RGp, expected %RGp ... %RGp (cInserted=%#x cItems=%#x i=%#x)",
+                                  pNode->Key, pNode->KeyLast, idxDelete * cbStep, idxDelete * cbStep + cbStep - 1,
+                                  cInserted, cItems, i);
+
+                cInserted -= 1;
+                rc = Allocator.freeNode(pNode);
+                if (rc != VINF_SUCCESS)
+                    RTTestIFailed("free after random removal failed: %Rrc - pNode=%p i=%#x", rc, pNode, i);
+            }
+            else
+                RTTestIFailed("random remove failed: %Rrc - %RGp ... %RGp cInserted=%#x cItems=%#x i=%#x",
+                              rc, idxDelete * cbStep, idxDelete * cbStep + cbStep - 1, cInserted, cItems, i);
+        }
+
+        /* Count the tree items.  This will make sure the tree is balanced in strict builds. */
+        uint32_t cCount = 0;
+        int rc = Tree.doWithAllFromLeft(&Allocator, hardAvlRangeTreeGCPhysEnumCallbackCount, &cCount);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("enum after random %s failed: %Rrc - i=%#x", fDelete ? "removal" : "insert", rc, i);
+        else if (cCount != cInserted)
+            RTTestIFailed("wrong count after random %s: %#x, expected %#x - i=%#x",
+                          cCount, cInserted, fDelete ? "removal" : "insert", i);
+        cItemsEnumed += cCount;
+
+        /* Check for timeout. */
+        if (   (i & 0xffff) == 0
+            && RTTimeNanoTS() - nsStart >= RT_NS_15SEC)
+            break;
+    }
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "Performed %'u operations and enumerated %'RU64 nodes in %'RU64 ns\n",
+                  i, cItemsEnumed, RTTimeNanoTS() - nsStart);
 
     return 0;
 }

@@ -2785,6 +2785,10 @@
 #define VERR_HARDAVL_TRAVERSED_TOO_MANY_NODES                   (-26817)
 /** Too deep walk during lookup.  */
 #define VERR_HARDAVL_LOOKUP_TOO_DEEP                            (-26818)
+/** Bad tree height. */
+#define VERR_HARDAVL_BAD_HEIGHT                                 (-26819)
+/** Unbalanced tree. */
+#define VERR_HARDAVL_UNBALANCED                                 (-26820)
 /** @} */
 
 /* SED-END */
