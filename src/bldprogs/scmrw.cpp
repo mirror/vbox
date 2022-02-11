@@ -3149,7 +3149,7 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
         if (RT_FAILURE(rc))
             return ScmError(pState, rc, "seek error\n");
         fRet |= pSettings->fPragmaOnce;
-        ScmVerbose(pState, 2, "Missing #pragma once\n");
+        ScmVerbose(pState, pSettings->fPragmaOnce ? 2 : 3, "Missing #pragma once\n");
     }
 
     /*
