@@ -42,7 +42,7 @@
  * other checks to ensure safe AVL tree operation.
  *
  * @note the a_cStackEntries parameter is a hack to avoid running into gcc's
- *       "the address of ‘AVLStack’ will never be NULL" errors.
+ *       "the address of 'AVLStack' will never be NULL" errors.
  */
 #ifdef RT_STRICT
 # define RTHARDAVL_STRICT_CHECK_HEIGHTS(a_pNode, a_pAvlStack, a_cStackEntries) do { \
