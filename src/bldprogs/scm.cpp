@@ -2820,6 +2820,7 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
                          && (   strstr(paOpts[i+1].pszLong, "-no-") != NULL
                              || strstr(paOpts[i+1].pszLong, "-not-") != NULL
                              || strstr(paOpts[i+1].pszLong, "-dont-") != NULL
+                             || strcmp(paOpts[i+1].pszLong, "--unrestricted-ASMMemPage-use") == 0
                              || (paOpts[i].iShort == 'q' && paOpts[i+1].iShort == 'v')
                              || (paOpts[i].iShort == 'd' && paOpts[i+1].iShort == 'D')
                             );
