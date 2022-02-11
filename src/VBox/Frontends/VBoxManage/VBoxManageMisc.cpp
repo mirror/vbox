@@ -65,7 +65,7 @@ RTEXITCODE handleRegisterVM(HandlerArg *a)
     HRESULT rc;
 
     if (a->argc != 1)
-        return errorSyntax(USAGE_REGISTERVM, Misc::tr("Incorrect number of parameters"));
+        return errorSyntax(Misc::tr("Incorrect number of parameters"));
 
     ComPtr<IMachine> machine;
     /** @todo Ugly hack to get both the API interpretation of relative paths
@@ -124,27 +124,27 @@ RTEXITCODE handleUnregisterVM(HandlerArg *a)
                 if (!VMName)
                     VMName = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_UNREGISTERVM, Misc::tr("Invalid parameter '%s'"), ValueUnion.psz);
+                    return errorSyntax(Misc::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_UNREGISTERVM, Misc::tr("Invalid option -%c"), c);
-                    return errorSyntax(USAGE_UNREGISTERVM, Misc::tr("Invalid option case %i"), c);
+                        return errorSyntax(Misc::tr("Invalid option -%c"), c);
+                    return errorSyntax(Misc::tr("Invalid option case %i"), c);
                 }
                 if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_UNREGISTERVM, Misc::tr("unknown option: %s\n"), ValueUnion.psz);
+                    return errorSyntax(Misc::tr("unknown option: %s\n"), ValueUnion.psz);
                 if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_UNREGISTERVM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
-                return errorSyntax(USAGE_UNREGISTERVM, Misc::tr("error: %Rrs"), c);
+                    return errorSyntax("%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                return errorSyntax(Misc::tr("error: %Rrs"), c);
         }
     }
 
     /* check for required options */
     if (!VMName)
-        return errorSyntax(USAGE_UNREGISTERVM, Misc::tr("VM name required"));
+        return errorSyntax(Misc::tr("VM name required"));
 
     ComPtr<IMachine> machine;
     CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(VMName).raw(),
@@ -249,13 +249,13 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
                 break;
 
             default:
-                return errorGetOpt(USAGE_CREATEVM, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
     /* check for required options */
     if (bstrName.isEmpty())
-        return errorSyntax(USAGE_CREATEVM, Misc::tr("Parameter --name is required"));
+        return errorSyntax(Misc::tr("Parameter --name is required"));
 
     do
     {
@@ -353,11 +353,11 @@ RTEXITCODE handleMoveVM(HandlerArg *a)
                 if (!pszSrcName)
                     pszSrcName = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_MOVEVM, Misc::tr("Invalid parameter '%s'"), ValueUnion.psz);
+                    return errorSyntax(Misc::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
-                return errorGetOpt(USAGE_MOVEVM, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
@@ -369,7 +369,7 @@ RTEXITCODE handleMoveVM(HandlerArg *a)
 
     /* Check for required options */
     if (!pszSrcName)
-        return errorSyntax(USAGE_MOVEVM, Misc::tr("VM name required"));
+        return errorSyntax(Misc::tr("VM name required"));
 
     /* Get the machine object */
     ComPtr<IMachine> srcMachine;
@@ -2131,15 +2131,15 @@ static RTEXITCODE setCloudProfileProperties(HandlerArg *a, int iFirst, PCLOUDPRO
                 Bstr(ValueUnion.psz).detachTo(values.appendedRaw());
                 break;
             default:
-                return errorGetOpt(USAGE_CLOUDPROFILE, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
     /* check for required options */
     if (bstrProvider.isEmpty())
-        return errorSyntax(USAGE_CLOUDPROFILE, Misc::tr("Parameter --provider is required"));
+        return errorSyntax(Misc::tr("Parameter --provider is required"));
     if (bstrProfile.isEmpty())
-        return errorSyntax(USAGE_CLOUDPROFILE, Misc::tr("Parameter --profile is required"));
+        return errorSyntax(Misc::tr("Parameter --profile is required"));
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
 
@@ -2187,9 +2187,9 @@ static RTEXITCODE showCloudProfileProperties(HandlerArg *a, PCLOUDPROFILECOMMONO
 
     /* check for required options */
     if (bstrProvider.isEmpty())
-        return errorSyntax(USAGE_CLOUDPROFILE, Misc::tr("Parameter --provider is required"));
+        return errorSyntax(Misc::tr("Parameter --provider is required"));
     if (bstrProfile.isEmpty())
-        return errorSyntax(USAGE_CLOUDPROFILE, Misc::tr("Parameter --profile is required"));
+        return errorSyntax(Misc::tr("Parameter --profile is required"));
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
     ComPtr<ICloudProviderManager> pCloudProviderManager;
@@ -2247,9 +2247,9 @@ static RTEXITCODE addCloudProfile(HandlerArg *a, int iFirst, PCLOUDPROFILECOMMON
 
     /* check for required options */
     if (bstrProvider.isEmpty())
-        return errorSyntax(USAGE_CLOUDPROFILE, Misc::tr("Parameter --provider is required"));
+        return errorSyntax(Misc::tr("Parameter --provider is required"));
     if (bstrProfile.isEmpty())
-        return errorSyntax(USAGE_CLOUDPROFILE, Misc::tr("Parameter --profile is required"));
+        return errorSyntax(Misc::tr("Parameter --profile is required"));
 
     /*
      * Parse options.
@@ -2307,7 +2307,7 @@ static RTEXITCODE addCloudProfile(HandlerArg *a, int iFirst, PCLOUDPROFILECOMMON
                 Bstr(ValueUnion.psz).detachTo(values.appendedRaw());
                 break;
             default:
-                return errorGetOpt(USAGE_CLOUDPROFILE, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
@@ -2345,9 +2345,9 @@ static RTEXITCODE deleteCloudProfile(HandlerArg *a, PCLOUDPROFILECOMMONOPT pComm
 
     /* check for required options */
     if (bstrProvider.isEmpty())
-        return errorSyntax(USAGE_CLOUDPROFILE, Misc::tr("Parameter --provider is required"));
+        return errorSyntax(Misc::tr("Parameter --provider is required"));
     if (bstrProfile.isEmpty())
-        return errorSyntax(USAGE_CLOUDPROFILE, Misc::tr("Parameter --profile is required"));
+        return errorSyntax(Misc::tr("Parameter --profile is required"));
 
     ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
     ComPtr<ICloudProviderManager> pCloudProviderManager;

@@ -97,9 +97,6 @@ struct a_CtxName \
 typedef enum
 {
     USAGE_INVALID = 0,
-    USAGE_REGISTERVM,
-    USAGE_UNREGISTERVM,
-    USAGE_CREATEVM,
     USAGE_STARTVM,
     USAGE_CONTROLVM,
     USAGE_DISCARDSTATE,
@@ -108,7 +105,6 @@ typedef enum
     USAGE_CREATEMEDIUM,
     USAGE_MODIFYMEDIUM,
     USAGE_CLONEMEDIUM,
-    USAGE_MOVEVM,
     USAGE_CREATEHOSTIF,
     USAGE_REMOVEHOSTIF,
     USAGE_GETEXTRADATA,
@@ -149,7 +145,6 @@ typedef enum
     USAGE_ENCRYPTMEDIUM,
     USAGE_MEDIUMENCCHKPWD,
     USAGE_USBDEVSOURCE,
-    USAGE_CLOUDPROFILE,
     /* Insert new entries before this line, but only if it is not an option
      * to go for the new style command and help handling (see e.g. extpack,
      * unattend or mediumio. */
