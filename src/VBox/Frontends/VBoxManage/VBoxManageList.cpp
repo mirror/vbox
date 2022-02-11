@@ -2347,10 +2347,10 @@ RTEXITCODE handleList(HandlerArg *a)
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                return errorSyntax(USAGE_LIST, List::tr("Unknown subcommand \"%s\"."), ValueUnion.psz);
+                return errorSyntax(List::tr("Unknown subcommand \"%s\"."), ValueUnion.psz);
 
             default:
-                return errorGetOpt(USAGE_LIST, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
@@ -2358,7 +2358,7 @@ RTEXITCODE handleList(HandlerArg *a)
      * If not in multiple list mode, we have to produce the list now.
      */
     if (enmOptCommand == kListNotSpecified)
-        return errorSyntax(USAGE_LIST, List::tr("Missing subcommand for \"list\" command.\n"));
+        return errorSyntax(List::tr("Missing subcommand for \"list\" command.\n"));
     if (!fOptMultiple)
     {
         HRESULT hrc = produceList(enmOptCommand, fOptLong, fOptSorted, a->virtualBox);
