@@ -89,6 +89,12 @@ struct RTCHardAvlRangeTree
     uint32_t m_idxRoot;
     /** The error count. */
     uint32_t m_cErrors;
+    /** @name Statistics
+     * @{ */
+    uint64_t m_cInserts;
+    uint64_t m_cRemovals;
+    uint64_t m_cRebalancingOperations;
+    /** @}  */
 
     /** The max stack depth. */
     enum { kMaxStack = 28 };
@@ -225,6 +231,7 @@ struct RTCHardAvlRangeTree
                         a_pAllocator->idxErrToStatus(idxNode));
         *pidxCurNode = idxNode;
 
+        m_cInserts++;
         return i_rebalance(a_pAllocator, &AVLStack);
     }
 
@@ -397,6 +404,7 @@ struct RTCHardAvlRangeTree
         }
         *a_ppRemoved = pDeleteNode;
 
+        m_cRemovals++;
         return i_rebalance(a_pAllocator, &AVLStack);
     }
 
@@ -1175,6 +1183,7 @@ private:
                     if (a_fLog) RTAssertMsg2("rebalance: %#2u: op #2\n", a_pStack->cEntries);
 #endif
                 }
+                m_cRebalancingOperations++;
             }
             else if (cLeftHeight + 1 < cRightHeight)
             {
@@ -1231,6 +1240,7 @@ private:
                     if (a_fLog) RTAssertMsg2("rebalance: %#2u: op #4 h=%d, *pidxNode=%#x\n", a_pStack->cEntries, pRightLeftNode->cHeight, *pidxNode);
 #endif
                 }
+                m_cRebalancingOperations++;
             }
             else
             {

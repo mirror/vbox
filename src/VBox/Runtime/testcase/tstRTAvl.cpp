@@ -1215,7 +1215,7 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
      */
     RTCHardAvlTreeSlabAllocator<MYTESTNODE>   Allocator;
     RTCHardAvlRangeTree<MYTESTNODE, RTGCPHYS> Tree(&Allocator);
-    AssertCompileSize(Tree, sizeof(uint32_t) * 2);
+    AssertCompileSize(Tree, sizeof(uint32_t) * 2 + sizeof(uint64_t) * 3);
     AssertCompileSize(Allocator, sizeof(void *) * 2 + sizeof(uint32_t) * 4);
 
     /* Initialize the allocator with a decent slab of memory. */
