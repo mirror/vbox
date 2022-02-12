@@ -1410,27 +1410,46 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
                           i, cMax, cInserted, cHeight);
     }
 
-    /* remove all in random order. */
+    /* remove all in random order, doing adjacent lookups while at it. */
     for (unsigned i = 0; i < cItems; i++)
     {
         uint32_t const idx = PickSetBitAndClearIt(pbmPresent, cItems);
+        RTGCPHYS const Key = idx * cbStep;
 
+        /* pre-removal lookup tests */
         MYTESTNODE *pNode = (MYTESTNODE *)(intptr_t)i;
-        int rc = Tree.remove(&Allocator, idx * cbStep, &pNode);
+        int rc = Tree.lookupMatchingOrSmaller(&Allocator, Key, &pNode);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("pre-remove lookupMatchingOrSmaller failed: %Rrc, i=%#x, idx=%#x (%RGp ... %RGp)",
+                          rc, i, idx, Key, Key + cbStep - 1);
+        else if (pNode->Key != Key)
+            RTTestIFailed("pre-remove lookupMatchingOrSmaller returned the wrong node: Key=%RGp, expected %RGp", pNode->Key, Key);
+
+        pNode = (MYTESTNODE *)(intptr_t)i;
+        rc = Tree.lookupMatchingOrLarger(&Allocator, Key, &pNode);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("pre-remove lookupMatchingOrLarger failed: %Rrc, i=%#x, idx=%#x (%RGp ... %RGp)",
+                          rc, i, idx, Key, Key + cbStep - 1);
+        else if (pNode->Key != Key)
+            RTTestIFailed("pre-remove lookupMatchingOrLarger returned the wrong node: Key=%RGp, expected %RGp", pNode->Key, Key);
+
+        /* remove */
+        pNode = (MYTESTNODE *)(intptr_t)i;
+        rc = Tree.remove(&Allocator, Key, &pNode);
         if (rc != VINF_SUCCESS)
             RTTestIFailed("random remove failed: %Rrc, i=%#x, idx=%#x (%RGp ... %RGp)",
-                          rc, i, idx, idx * cbStep, idx * cbStep + cbStep - 1);
+                          rc, i, idx, Key, Key + cbStep - 1);
         else
         {
             cInserted--;
-            if (    pNode->Key     != idx * cbStep
-                 || pNode->KeyLast != idx * cbStep + cbStep - 1)
+            if (    pNode->Key     != Key
+                 || pNode->KeyLast != Key + cbStep - 1)
                 RTTestIFailed("random remove returned wrong node: %RGp ... %RGp, expected %RGp ... %RGp (i=%#x, idx=%#x)",
-                              pNode->Key, pNode->KeyLast, idx * cbStep, idx * cbStep + cbStep - 1, i, idx);
+                              pNode->Key, pNode->KeyLast, Key, Key + cbStep - 1, i, idx);
             else
             {
                 MYTESTNODE *pNode2 = (MYTESTNODE *)(intptr_t)i;
-                rc = Tree.lookup(&Allocator, idx * cbStep, &pNode2);
+                rc = Tree.lookup(&Allocator, Key, &pNode2);
                 if (rc != VERR_NOT_FOUND)
                     RTTestIFailed("lookup after random removal %#x: %Rrc pNode=%p pNode2=%p idx=%#x", i, rc, pNode, pNode2, idx);
 
@@ -1445,6 +1464,52 @@ int hardAvlRangeTreeGCPhys(RTTEST hTest)
             rc = Allocator.freeNode(pNode);
             if (rc != VINF_SUCCESS)
                 RTTestIFailed("free after random removal %#x failed: %Rrc pNode=%p idx=%#x", i, rc, pNode, idx);
+
+            /* post-removal lookup tests */
+            pNode = (MYTESTNODE *)(intptr_t)i;
+            rc = Tree.lookupMatchingOrSmaller(&Allocator, Key, &pNode);
+            uint32_t idxAbove;
+            if (rc == VINF_SUCCESS)
+            {
+                uint32_t idxRet = pNode->Key / cbStep;
+                RTTESTI_CHECK(ASMBitTest(pbmPresent, idxRet) == true);
+                idxAbove = (uint32_t)ASMBitNextSet(pbmPresent, cItems, idxRet);
+                if (idxAbove <= idx)
+                    RTTestIFailed("post-remove lookupMatchingOrSmaller wrong: idxRet=%#x idx=%#x idxAbove=%#x",
+                                  idxRet, idx, idxAbove);
+            }
+            else if (rc == VERR_NOT_FOUND)
+            {
+                idxAbove = (uint32_t)ASMBitFirstSet(pbmPresent, cItems);
+                if (idxAbove <= idx)
+                    RTTestIFailed("post-remove lookupMatchingOrSmaller wrong: VERR_NOT_FOUND idx=%#x idxAbove=%#x", idx, idxAbove);
+            }
+            else
+            {
+                RTTestIFailed("post-remove lookupMatchingOrSmaller failed: %Rrc, i=%#x, idx=%#x (%RGp ... %RGp)",
+                              rc, i, idx, Key, Key + cbStep - 1);
+                idxAbove = (uint32_t)ASMBitNextSet(pbmPresent, cItems, idx);
+            }
+
+            pNode = (MYTESTNODE *)(intptr_t)i;
+            rc = Tree.lookupMatchingOrLarger(&Allocator, Key, &pNode);
+            if (rc == VINF_SUCCESS)
+            {
+                uint32_t idxRet = pNode->Key / cbStep;
+                if (idxRet != idxAbove)
+                    RTTestIFailed("post-remove lookupMatchingOrLarger wrong: idxRet=%#x idxAbove=%#x idx=%#x",
+                                  idxRet, idxAbove, idx);
+            }
+            else if (rc == VERR_NOT_FOUND)
+            {
+                if (idxAbove != UINT32_MAX)
+                    RTTestIFailed("post-remove lookupMatchingOrLarger wrong: VERR_NOT_FOUND idxAbove=%#x idx=%#x", idxAbove, idx);
+            }
+            else
+            {
+                RTTestIFailed("post-remove lookupMatchingOrLarger failed: %Rrc, i=%#x, idx=%#x (%RGp ... %RGp) idxAbove=%#x",
+                              rc, i, idx, Key, Key + cbStep - 1, idxAbove);
+            }
         }
 
         /* check the height */

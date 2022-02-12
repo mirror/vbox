@@ -460,6 +460,166 @@ struct RTCHardAvlRangeTree
     }
 
     /**
+     * Looks up node matching @a a_Key or if no exact match the closest smaller than it.
+     *
+     * @returns   IPRT status code.
+     * @retval    VERR_NOT_FOUND if not found.
+     *
+     * @param     a_pAllocator  Pointer to the allocator.
+     * @param     a_Key         A key value in the range of the desired node.
+     * @param     a_ppFound     Where to return the pointer to the node.
+     */
+    int lookupMatchingOrSmaller(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, KeyType a_Key,
+                                NodeType **a_ppFound) RT_NOEXCEPT
+    {
+        *a_ppFound = NULL;
+
+        NodeType *pNode = a_pAllocator->ptrFromInt(readIdx(&m_idxRoot));
+        AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
+                            m_cErrors++, a_pAllocator->ptrErrToStatus(pNode));
+#ifdef RT_STRICT
+        HardAvlStack  AVLStack;
+        AVLStack.apidxEntries[0] = &m_idxRoot;
+        AVLStack.cEntries = 1;
+#endif
+        unsigned  cDepth = 0;
+        NodeType *pNodeLast = NULL;
+        while (pNode)
+        {
+            RTHARDAVL_STRICT_CHECK_HEIGHTS(pNode, &AVLStack, AVLStack.cEntries);
+            AssertReturn(cDepth <= kMaxHeight, VERR_HARDAVL_LOOKUP_TOO_DEEP);
+            cDepth++;
+
+            if (isKeyInRange(a_Key, pNode->Key, pNode->KeyLast))
+            {
+                *a_ppFound = pNode;
+                return VINF_SUCCESS;
+            }
+            if (isKeyGreater(pNode->Key, a_Key))
+            {
+#ifdef RT_STRICT
+                AVLStack.apidxEntries[AVLStack.cEntries++] = &pNode->idxLeft;
+#endif
+                uint32_t const idxLeft = readIdx(&pNode->idxLeft);
+                NodeType *pLeftNode = a_pAllocator->ptrFromInt(idxLeft);
+                AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pLeftNode), ("idxLeft=%#x pLeftNode=%p\n", idxLeft, pLeftNode),
+                                    m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
+                if (pLeftNode)
+                    pNode = pLeftNode;
+                else if (!pNodeLast)
+                    break;
+                else
+                {
+                    *a_ppFound = pNodeLast;
+                    return VINF_SUCCESS;
+                }
+            }
+            else
+            {
+#ifdef RT_STRICT
+                AVLStack.apidxEntries[AVLStack.cEntries++] = &pNode->idxRight;
+#endif
+                uint32_t const idxRight = readIdx(&pNode->idxRight);
+                NodeType *pRightNode = a_pAllocator->ptrFromInt(idxRight);
+                AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pRightNode), ("idxRight=%#x pRightNode=%p\n", idxRight, pRightNode),
+                                    m_cErrors++, a_pAllocator->ptrErrToStatus(pRightNode));
+                if (pRightNode)
+                {
+                    pNodeLast = pNode;
+                    pNode = pRightNode;
+                }
+                else
+                {
+                    *a_ppFound = pNode;
+                    return VINF_SUCCESS;
+                }
+            }
+        }
+
+        return VERR_NOT_FOUND;
+    }
+
+    /**
+     * Looks up node matching @a a_Key or if no exact match the closest larger than it.
+     *
+     * @returns   IPRT status code.
+     * @retval    VERR_NOT_FOUND if not found.
+     *
+     * @param     a_pAllocator  Pointer to the allocator.
+     * @param     a_Key         A key value in the range of the desired node.
+     * @param     a_ppFound     Where to return the pointer to the node.
+     */
+    int lookupMatchingOrLarger(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, KeyType a_Key,
+                               NodeType **a_ppFound) RT_NOEXCEPT
+    {
+        *a_ppFound = NULL;
+
+        NodeType *pNode = a_pAllocator->ptrFromInt(readIdx(&m_idxRoot));
+        AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pNode), ("m_idxRoot=%#x pNode=%p\n", m_idxRoot, pNode),
+                            m_cErrors++, a_pAllocator->ptrErrToStatus(pNode));
+#ifdef RT_STRICT
+        HardAvlStack  AVLStack;
+        AVLStack.apidxEntries[0] = &m_idxRoot;
+        AVLStack.cEntries = 1;
+#endif
+        unsigned  cDepth = 0;
+        NodeType *pNodeLast = NULL;
+        while (pNode)
+        {
+            RTHARDAVL_STRICT_CHECK_HEIGHTS(pNode, &AVLStack, AVLStack.cEntries);
+            AssertReturn(cDepth <= kMaxHeight, VERR_HARDAVL_LOOKUP_TOO_DEEP);
+            cDepth++;
+
+            if (isKeyInRange(a_Key, pNode->Key, pNode->KeyLast))
+            {
+                *a_ppFound = pNode;
+                return VINF_SUCCESS;
+            }
+            if (isKeyGreater(pNode->Key, a_Key))
+            {
+#ifdef RT_STRICT
+                AVLStack.apidxEntries[AVLStack.cEntries++] = &pNode->idxLeft;
+#endif
+                uint32_t const idxLeft = readIdx(&pNode->idxLeft);
+                NodeType *pLeftNode = a_pAllocator->ptrFromInt(idxLeft);
+                AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pLeftNode), ("idxLeft=%#x pLeftNode=%p\n", idxLeft, pLeftNode),
+                                    m_cErrors++, a_pAllocator->ptrErrToStatus(pLeftNode));
+                if (pLeftNode)
+                {
+                    pNodeLast = pNode;
+                    pNode = pLeftNode;
+                }
+                else
+                {
+                    *a_ppFound = pNode;
+                    return VINF_SUCCESS;
+                }
+            }
+            else
+            {
+#ifdef RT_STRICT
+                AVLStack.apidxEntries[AVLStack.cEntries++] = &pNode->idxRight;
+#endif
+                uint32_t const idxRight = readIdx(&pNode->idxRight);
+                NodeType *pRightNode = a_pAllocator->ptrFromInt(idxRight);
+                AssertMsgReturnStmt(a_pAllocator->isPtrRetOkay(pRightNode), ("idxRight=%#x pRightNode=%p\n", idxRight, pRightNode),
+                                    m_cErrors++, a_pAllocator->ptrErrToStatus(pRightNode));
+                if (pRightNode)
+                    pNode = pRightNode;
+                else if (!pNodeLast)
+                    break;
+                else
+                {
+                    *a_ppFound = pNodeLast;
+                    return VINF_SUCCESS;
+                }
+            }
+        }
+
+        return VERR_NOT_FOUND;
+    }
+
+    /**
      * A callback for doWithAllFromLeft and doWithAllFromRight.
      *
      * @returns IPRT status code.  Any non-zero status causes immediate return from
