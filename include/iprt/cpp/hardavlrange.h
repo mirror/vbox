@@ -477,8 +477,8 @@ struct RTCHardAvlRangeTree
      * @param     a_Key         A key value in the range of the desired node.
      * @param     a_ppFound     Where to return the pointer to the node.
      */
-    int lookupMatchingOrSmaller(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, KeyType a_Key,
-                                NodeType **a_ppFound) RT_NOEXCEPT
+    int lookupMatchingOrBelow(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, KeyType a_Key,
+                              NodeType **a_ppFound) RT_NOEXCEPT
     {
         *a_ppFound = NULL;
 
@@ -557,8 +557,8 @@ struct RTCHardAvlRangeTree
      * @param     a_Key         A key value in the range of the desired node.
      * @param     a_ppFound     Where to return the pointer to the node.
      */
-    int lookupMatchingOrLarger(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, KeyType a_Key,
-                               NodeType **a_ppFound) RT_NOEXCEPT
+    int lookupMatchingOrAbove(RTCHardAvlTreeSlabAllocator<NodeType> *a_pAllocator, KeyType a_Key,
+                              NodeType **a_ppFound) RT_NOEXCEPT
     {
         *a_ppFound = NULL;
 
