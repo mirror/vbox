@@ -239,6 +239,13 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
                 ## @todo Final test: Uninstallation.
 
+                # Download the TxS (Test Execution Service) log. This is not fatal when not being present.
+                if not fRc:
+                    self.txsDownloadFiles(oSession, oTxsSession,
+                                          [ (oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'vbox-txs-release.log'),
+                                                              'vbox-txs-%s.log' % oTestVm.sVmName) ],
+                                          fIgnoreErrors = True);
+
                 # Cleanup.
                 self.removeTask(oTxsSession);
                 self.terminateVmBySession(oSession);
