@@ -37,6 +37,7 @@
 #include "UIMessageCenter.h"
 #include "UIVMActivityMonitor.h"
 #include "UISession.h"
+#include "UIVirtualBoxEventHandler.h"
 #include "UIVMInformationDialog.h"
 #include "VBoxUtils.h"
 
@@ -63,8 +64,15 @@ UIVMInformationDialog::UIVMInformationDialog(UIMachineWindow *pMachineWindow)
     , m_fCloseEmitted(false)
     , m_iGeometrySaveTimerId(-1)
 {
+    if (m_pMachineWindow && !m_pMachineWindow->console().isNull())
+    {
+        CMachine comMachine = m_pMachineWindow->console().GetMachine();
+        m_uMachineId = comMachine.GetId();
+    }
     /* Prepare: */
     prepare();
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UIVMInformationDialog::sltMachineStateChange);
 }
 
 UIVMInformationDialog::~UIVMInformationDialog()
@@ -82,9 +90,9 @@ void UIVMInformationDialog::retranslateUi()
     setWindowTitle(tr("%1 - Session Information").arg(m_pMachineWindow->machine().GetName()));
 
     /* Translate tabs: */
-    m_pTabWidget->setTabText(0, tr("Configuration &Details"));
-    m_pTabWidget->setTabText(1, tr("&Runtime Information"));
-    m_pTabWidget->setTabText(2, tr("VM &Activity"));
+    m_pTabWidget->setTabText(Tabs_ConfigurationDetails, tr("Configuration &Details"));
+    m_pTabWidget->setTabText(Tabs_RuntimeInformation, tr("&Runtime Information"));
+    m_pTabWidget->setTabText(Tabs_ActivityMonitor, tr("VM &Activity"));
     m_pTabWidget->setTabText(3, tr("&Guest Control"));
 
     /* Retranslate button box buttons: */
@@ -146,6 +154,16 @@ void UIVMInformationDialog::sltHandlePageChanged(int iIndex)
     m_pTabWidget->widget(iIndex)->setFocus();
 }
 
+void UIVMInformationDialog::sltMachineStateChange(const QUuid &uMachineId, const KMachineState state)
+{
+    if (m_uMachineId != uMachineId)
+        return;
+    QWidget *pWidget = m_tabs.value(Tabs_GuestControl);
+    if (!pWidget)
+        return;
+    pWidget->setEnabled(state == KMachineState_Running);
+}
+
 void UIVMInformationDialog::saveDialogGeometry()
 {
     const QRect geo = currentGeometry();
@@ -204,16 +222,16 @@ void UIVMInformationDialog::prepareTabWidget()
     AssertPtrReturnVoid(m_pTabWidget);
     {
         /* Prepare tab-widget: */
-        m_pTabWidget->setTabIcon(0, UIIconPool::iconSet(":/session_info_details_16px.png"));
-        m_pTabWidget->setTabIcon(1, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
+        m_pTabWidget->setTabIcon(Tabs_ConfigurationDetails, UIIconPool::iconSet(":/session_info_details_16px.png"));
+        m_pTabWidget->setTabIcon(Tabs_RuntimeInformation, UIIconPool::iconSet(":/session_info_runtime_16px.png"));
 
         /* Create Configuration Details tab: */
         UIInformationConfiguration *pInformationConfigurationWidget =
             new UIInformationConfiguration(this, m_pMachineWindow->machine(), m_pMachineWindow->console());
         if (pInformationConfigurationWidget)
         {
-            m_tabs.insert(0, pInformationConfigurationWidget);
-            m_pTabWidget->addTab(m_tabs.value(0), QString());
+            m_tabs.insert(Tabs_ConfigurationDetails, pInformationConfigurationWidget);
+            m_pTabWidget->addTab(m_tabs.value(Tabs_ConfigurationDetails), QString());
         }
 
         /* Create Runtime Information tab: */
@@ -221,8 +239,8 @@ void UIVMInformationDialog::prepareTabWidget()
             new UIInformationRuntime(this, m_pMachineWindow->machine(), m_pMachineWindow->console(), m_pMachineWindow->uisession());
         if (pInformationRuntimeWidget)
         {
-            m_tabs.insert(1, pInformationRuntimeWidget);
-            m_pTabWidget->addTab(m_tabs.value(1), QString());
+            m_tabs.insert(Tabs_RuntimeInformation, pInformationRuntimeWidget);
+            m_pTabWidget->addTab(m_tabs.value(Tabs_RuntimeInformation), QString());
         }
 
         /* Create Performance Monitor tab: */
@@ -232,8 +250,8 @@ void UIVMInformationDialog::prepareTabWidget()
         {
             connect(m_pMachineWindow->uisession(), &UISession::sigAdditionsStateChange,
                     pVMActivityMonitorWidget, &UIVMActivityMonitor::sltGuestAdditionsStateChange);
-            m_tabs.insert(2, pVMActivityMonitorWidget);
-            m_pTabWidget->addTab(m_tabs.value(2), QString());
+            m_tabs.insert(Tabs_ActivityMonitor, pVMActivityMonitorWidget);
+            m_pTabWidget->addTab(m_tabs.value(Tabs_ActivityMonitor), QString());
         }
 
         /* Create Guest Process Control tab: */
@@ -253,8 +271,7 @@ void UIVMInformationDialog::prepareTabWidget()
             m_pTabWidget->addTab(m_tabs.value(3), QString());
         }
 
-        /* Set Runtime Information tab as default: */
-        m_pTabWidget->setCurrentIndex(2);
+        m_pTabWidget->setCurrentIndex(Tabs_ActivityMonitor);
 
         /* Assign tab-widget page change handler: */
         connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMInformationDialog::sltHandlePageChanged);
