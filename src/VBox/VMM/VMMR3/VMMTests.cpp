@@ -22,7 +22,6 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_VMM
-#include <iprt/asm-amd64-x86.h> /* for SUPGetCpuHzFromGIP */
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/cpum.h>

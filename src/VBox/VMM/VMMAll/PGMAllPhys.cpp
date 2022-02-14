@@ -34,7 +34,6 @@
 #include <VBox/err.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#include <iprt/asm-amd64-x86.h>
 #include <VBox/log.h>
 #ifdef IN_RING3
 # include <iprt/thread.h>

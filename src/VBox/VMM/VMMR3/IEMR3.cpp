@@ -27,8 +27,8 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 
-#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
+
 
 static const char *iemGetTargetCpuName(uint32_t enmTargetCpu)
 {

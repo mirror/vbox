@@ -37,7 +37,9 @@
 #include <VBox/vmm/vmcc.h>
 #include "PGMInline.h"
 #include <iprt/assert.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/string.h>
 #include <VBox/log.h>
 #include <VBox/param.h>

@@ -130,7 +130,9 @@ VMM_INT_DECL(void)              HMGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs
  * based purely on the Intel VT-x specification (used by IEM/REM and HM) can be
  * found in CPUM.
  * @{ */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 VMM_INT_DECL(bool)              HMIsSubjectToVmxPreemptTimerErratum(void);
+#endif
 VMM_INT_DECL(bool)              HMCanExecuteVmxGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(TRPMEVENT)         HMVmxEventTypeToTrpmEventType(uint32_t uIntInfo);
 VMM_INT_DECL(uint32_t)          HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT enmTrpmEvent, bool fIcebp);
@@ -169,7 +171,9 @@ VMM_INT_DECL(bool)              HMIsSvmVGifActive(PCVMCC pVM);
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 VMM_INT_DECL(void)              HMNotifySvmNstGstVmexit(PVMCPUCC pVCpu, PCPUMCTX pCtx);
 # endif
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 VMM_INT_DECL(int)               HMIsSubjectToSvmErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
+# endif
 VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCC pVM, PVMCPUCC pVCpu);
 /** @} */
 
@@ -191,7 +195,9 @@ VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCC pVM, PVMCPUCC 
  * @{ */
 # define HMIsSvmVGifActive(pVM)                                       false
 # define HMNotifySvmNstGstVmexit(pVCpu, pCtx)                         do { } while (0)
-# define HMIsSubjectToSvmErratum170(puFamily, puModel, puStepping)    false
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  define HMIsSubjectToSvmErratum170(puFamily, puModel, puStepping)   false
+# endif
 # define HMHCMaybeMovTprSvmHypercall(pVM, pVCpu)                      do { } while (0)
 /** @} */
 

@@ -35,7 +35,6 @@
 #include <VBox/err.h>
 #include <VBox/sup.h>
 
-#include <iprt/asm-amd64-x86.h>
 #include <iprt/time.h>
 
 

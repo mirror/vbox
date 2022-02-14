@@ -28,6 +28,9 @@
 #include <VBox/vmm/vmcc.h>
 
 #include <VBox/err.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h> /* ASMCpuId */
+#endif
 
 
 
@@ -215,6 +218,7 @@ VMM_INT_DECL(int) HMHCMaybeMovTprSvmHypercall(PVMCC pVM, PVMCPUCC pVCpu)
 }
 
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 /**
  * Checks if the current AMD CPU is subject to erratum 170 "In SVM mode,
  * incorrect code bytes may be fetched after a world-switch".
@@ -254,9 +258,7 @@ VMM_INT_DECL(int) HMIsSubjectToSvmErratum170(uint32_t *pu32Family, uint32_t *pu3
     if (   u32Family == 0xf
         && !((u32Model == 0x68 || u32Model == 0x6b || u32Model == 0x7f) && u32Stepping >= 1)
         && !((u32Model == 0x6f || u32Model == 0x6c || u32Model == 0x7c) && u32Stepping >= 2))
-    {
         fErratumApplies = true;
-    }
 
     if (pu32Family)
         *pu32Family   = u32Family;
@@ -267,7 +269,7 @@ VMM_INT_DECL(int) HMIsSubjectToSvmErratum170(uint32_t *pu32Family, uint32_t *pu3
 
     return fErratumApplies;
 }
-
+#endif
 
 
 /**

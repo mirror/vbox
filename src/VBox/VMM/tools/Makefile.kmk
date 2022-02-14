@@ -52,7 +52,9 @@ endif
 #
 # CPU report program (CPUM DB).
 #
+if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
 PROGRAMS += VBoxCpuReport
+endif
 VBoxCpuReport_TEMPLATE := VBoxR3Static
 VBoxCpuReport_DEFS      = VBOX_IN_VMM IN_VMM_R3 IN_VBOX_CPU_REPORT $(VMM_COMMON_DEFS)
 VBoxCpuReport_INCS      = ../include

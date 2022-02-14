@@ -36,7 +36,6 @@
 
 #include <VBox/err.h>
 
-#include <iprt/asm-amd64-x86.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
 #endif

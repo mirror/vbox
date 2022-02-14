@@ -148,7 +148,6 @@ VBoxVMM_SOURCES  = \
 	VMMR3/PDMThread.cpp \
 	VMMR3/PGM.cpp \
 	VMMR3/PGMDbg.cpp \
-	VMMR3/PGMR3DbgA.asm \
 	VMMR3/PGMHandler.cpp \
 	VMMR3/PGMPhys.cpp \
 	VMMR3/PGMPool.cpp \
@@ -176,7 +175,6 @@ VBoxVMM_SOURCES  = \
 	VMMAll/HMSVMAll.cpp \
 	VMMAll/HMVMXAll.cpp \
 	VMMAll/IEMAll.cpp \
-	VMMAll/IEMAllAImpl.asm \
 	VMMAll/IEMAllAImplC.cpp \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMmioNew.cpp \
@@ -204,7 +202,10 @@ VBoxVMM_SOURCES  = \
 	VMMAll/TMAllVirtual.cpp \
 	VMMAll/TRPMAll.cpp \
 	VMMAll/VMAll.cpp \
-	VMMAll/VMMAll.cpp \
+	VMMAll/VMMAll.cpp
+VBoxVMM_SOURCES.amd64 += \
+	VMMR3/PGMR3DbgA.asm \
+	VMMAll/IEMAllAImpl.asm \
 	VMMAll/VMMAllA.asm
 ifdef VBOX_WITH_VUSB
 VBoxVMM_SOURCES += VMMR3/PDMUsb.cpp

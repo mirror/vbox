@@ -37,7 +37,9 @@
 #include <VBox/vmm/tm.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
-#include <iprt/asm-amd64-x86.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #ifdef IN_RING3
 # include <iprt/thread.h>
 #endif
