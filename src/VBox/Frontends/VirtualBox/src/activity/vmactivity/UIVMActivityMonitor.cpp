@@ -951,6 +951,8 @@ QString UIVMActivityMonitor::machineName() const
 
 void UIVMActivityMonitor::openSession()
 {
+    if (!m_comSession.isNull())
+        return;
     m_comSession = uiCommon().openSession(m_comMachine.GetId(), KLockType_Shared);
     AssertReturnVoid(!m_comSession.isNull());
 
@@ -1159,13 +1161,20 @@ void UIVMActivityMonitor::sltMachineStateChange(const QUuid &uId)
         return;
     if (m_comMachine.GetId() != uId)
         return;
-    reset();
     if (m_comMachine.GetState() == KMachineState_Running)
     {
         setEnabled(true);
         openSession();
         start();
     }
+    else if (m_comMachine.GetState() == KMachineState_Paused)
+    {
+        /* If we are already active then stop: */
+        if (!m_comSession.isNull() && m_pTimer && m_pTimer->isActive())
+            m_pTimer->stop();
+    }
+    else
+        reset();
 }
 
 void UIVMActivityMonitor::sltExportMetricsToFile()
@@ -1210,7 +1219,10 @@ void UIVMActivityMonitor::sltGuestAdditionsStateChange()
 void UIVMActivityMonitor::sltClearCOMData()
 {
     if (!m_comSession.isNull())
+    {
         m_comSession.UnlockMachine();
+        m_comSession.detach();
+    }
 }
 
 void UIVMActivityMonitor::prepareMetrics()
@@ -1539,6 +1551,7 @@ void UIVMActivityMonitor::reset()
     resetDiskIOInfoLabel();
     resetVMExitInfoLabel();
     update();
+    sltClearCOMData();
 }
 
 void UIVMActivityMonitor::start()
