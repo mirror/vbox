@@ -415,9 +415,7 @@ HRESULT GuestProcess::getStatus(ProcessStatus_T *aStatus)
 {
     LogFlowThisFuncEnter();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aStatus = mData.mStatus;
+    *aStatus = i_getStatus();
 
     return S_OK;
 }
@@ -515,6 +513,20 @@ inline int GuestProcess::i_checkPID(uint32_t uPID)
 }
 
 /**
+ * Returns the current process status.
+ *
+ * @returns Current process status.
+ *
+ * @note    Takes the read lock.
+ */
+ProcessStatus_T GuestProcess::i_getStatus(void)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    return mData.mStatus;
+}
+
+/**
  * Converts a given guest process error to a string.
  *
  * @returns Error as a string.
@@ -550,6 +562,47 @@ Utf8Str GuestProcess::i_guestErrorToString(int rcGuest, const char *pcszWhat)
     }
 
     return strErr;
+}
+
+/**
+ * Translates a process status to a human readable string.
+ *
+ * @returns Process status as a string.
+ * @param   enmStatus           Guest process status to return string for.
+ */
+/* static */
+Utf8Str GuestProcess::i_statusToString(ProcessStatus_T enmStatus)
+{
+    switch (enmStatus)
+    {
+        case ProcessStatus_Starting:
+            return "starting";
+        case ProcessStatus_Started:
+            return "started";
+        case ProcessStatus_Paused:
+            return "paused";
+        case ProcessStatus_Terminating:
+            return "terminating";
+        case ProcessStatus_TerminatedNormally:
+            return "successfully terminated";
+        case ProcessStatus_TerminatedSignal:
+            return "terminated by signal";
+        case ProcessStatus_TerminatedAbnormally:
+            return "abnormally aborted";
+        case ProcessStatus_TimedOutKilled:
+            return "timed out";
+        case ProcessStatus_TimedOutAbnormally:
+            return "timed out, hanging";
+        case ProcessStatus_Down:
+            return "killed";
+        case ProcessStatus_Error:
+            return "error";
+        default:
+            break;
+    }
+
+    AssertFailed(); /* Should never happen! */
+    return "unknown";
 }
 
 /**
@@ -2023,31 +2076,48 @@ HRESULT GuestProcess::terminate()
 
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int vrc = i_terminateProcess(30 * 1000 /* Timeout in ms */, &rcGuest);
-    if (RT_FAILURE(vrc))
-    {
-        switch (vrc)
-        {
-            case VERR_GSTCTL_GUEST_ERROR:
-            {
-                GuestErrorInfo ge(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str());
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Terminating guest process failed: %s"),
-                                  GuestBase::getErrorAsString(ge).c_str());
-                break;
-            }
-            case VERR_NOT_SUPPORTED:
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                                  tr("Terminating guest process \"%s\" (PID %RU32) not supported by installed Guest Additions"),
-                                  mData.mProcess.mExecutable.c_str(), mData.mPID);
-                break;
 
-            default:
-                hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Terminating guest process \"%s\" (PID %RU32) failed: %Rrc"),
-                                  mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
-                break;
+    switch (vrc)
+    {
+        case VINF_SUCCESS:
+            /* Nothing to do here, all good. */
+            break;
+
+        case VWRN_INVALID_STATE:
+        {
+            GuestErrorInfo ge(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str());
+            hr = setErrorBoth(VBOX_E_IPRT_ERROR, VWRN_INVALID_STATE,
+                              tr("Guest process is not in '%s' state anymore (current is in '%s')"),
+                              GuestProcess::i_statusToString(ProcessStatus_Started).c_str(),
+                              GuestProcess::i_statusToString(i_getStatus()).c_str());
+            break;
         }
+
+        case VERR_GSTCTL_GUEST_ERROR:
+        {
+            GuestErrorInfo ge(GuestErrorInfo::Type_Process, rcGuest, mData.mProcess.mExecutable.c_str());
+            hr = setErrorBoth(VBOX_E_IPRT_ERROR, rcGuest, tr("Terminating guest process failed: %s"),
+                              GuestBase::getErrorAsString(ge).c_str());
+            break;
+        }
+
+        case VERR_NOT_SUPPORTED:
+        {
+            hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                              tr("Terminating guest process \"%s\" (PID %RU32) not supported by installed Guest Additions"),
+                              mData.mProcess.mExecutable.c_str(), mData.mPID);
+            break;
+        }
+
+        default:
+            hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Terminating guest process \"%s\" (PID %RU32) failed: %Rrc"),
+                              mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
+            break;
     }
 
-    if (vrc == VINF_SUCCESS) /* Note: Also could be VWRN_INVALID_STATE from i_terminateProcess(). */
+    /* Note: Also could be VWRN_INVALID_STATE from i_terminateProcess().
+     *       In such a case we have to keep the process in our list in order to fullfill any upcoming responses / requests. */
+    if (vrc == VINF_SUCCESS)
     {
         /* Remove process from guest session list. Now only API clients
          * still can hold references to it. */

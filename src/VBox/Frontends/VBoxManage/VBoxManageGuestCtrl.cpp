@@ -464,6 +464,8 @@ static int gctlSignalHandlerUninstall(void)
 
 /**
  * Translates a process status to a human readable string.
+ *
+ * @sa GuestProcess::i_statusToString()
  */
 const char *gctlProcessStatusToText(ProcessStatus_T enmStatus)
 {
