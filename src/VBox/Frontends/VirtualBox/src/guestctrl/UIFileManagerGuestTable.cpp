@@ -468,6 +468,10 @@ void UIFileManagerGuestTable::retranslateUi()
                 strWarningText = UIFileManager::tr("<p>File manager cannot work since the selected guest is not currently running.</p>");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
                 break;
+            case State_MachinePaused:
+                strWarningText = UIFileManager::tr("<p>File manager cannot work since the guest is paused.</p>");
+                icon = UIIconPool::iconSet(":/session_info_16px.png");
+                break;
             case State_NoGuestAdditions:
                 strWarningText = UIFileManager::tr("<p>File manager cannot work since the selected guest does not have the guest additions.</p>");
                 icon = UIIconPool::iconSet(":/status_error_16px.png");
@@ -1139,9 +1143,7 @@ void UIFileManagerGuestTable::sltMachineStateChange(const QUuid &uMachineId, con
 
     if (enmMachineState == KMachineState_Running)
         openMachineSession();
-    else if (enmMachineState == KMachineState_Paused)
-        return;
-    else
+    else if (enmMachineState != KMachineState_Paused)
         cleanAll();
     setStateAndEnableWidgets();
 }
@@ -1349,6 +1351,11 @@ void UIFileManagerGuestTable::setState()
     if (m_comMachine.isNull())
     {
         m_enmState = State_InvalidMachineReference;
+        return;
+    }
+    if (m_comMachine.GetState() == KMachineState_Paused)
+    {
+        m_enmState = State_MachinePaused;
         return;
     }
     if (m_comMachine.GetState() != KMachineState_Running)

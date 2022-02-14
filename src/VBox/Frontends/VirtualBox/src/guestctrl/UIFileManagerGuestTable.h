@@ -112,6 +112,7 @@ private:
         State_NoGuestAdditions,
         State_SessionPossible,
         State_SessionRunning,
+        State_MachinePaused,
         State_Max
     };
 
