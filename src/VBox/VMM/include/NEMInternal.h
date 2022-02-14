@@ -265,10 +265,30 @@ typedef struct NEM
     bool                        fCreatedVm   : 1;
     /** Set if hv_vm_space_create() was called successfully. */
     bool                        fCreatedAsid : 1;
+    /** Set if Last Branch Record (LBR) is enabled. */
+    bool                        fLbr;
     /** The ASID for this VM (only valid if fCreatedAsid is true). */
     hv_vm_space_t               uVmAsid;
     /** Number of mach time units per NS, for hv_vcpu_run_until(). */
     uint64_t                    cMachTimePerNs;
+    /** Pause-loop exiting (PLE) gap in ticks. */
+    uint32_t                    cPleGapTicks;
+    /** Pause-loop exiting (PLE) window in ticks. */
+    uint32_t                    cPleWindowTicks;
+
+    /** The host LBR TOS (top-of-stack) MSR id. */
+    uint32_t                    idLbrTosMsr;
+
+    /** The first valid host LBR branch-from-IP stack range. */
+    uint32_t                    idLbrFromIpMsrFirst;
+    /** The last valid host LBR branch-from-IP stack range. */
+    uint32_t                    idLbrFromIpMsrLast;
+
+    /** The first valid host LBR branch-to-IP stack range. */
+    uint32_t                    idLbrToIpMsrFirst;
+    /** The last valid host LBR branch-to-IP stack range. */
+    uint32_t                    idLbrToIpMsrLast;
+
     STAMCOUNTER                 StatMapPage;
     STAMCOUNTER                 StatUnmapPage;
     STAMCOUNTER                 StatMapPageFailed;

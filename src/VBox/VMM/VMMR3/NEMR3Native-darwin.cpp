@@ -216,6 +216,16 @@ typedef enum
 } hv_x86_reg_t;
 
 
+/** MSR permission flags type. */
+typedef uint32_t hv_msr_flags_t;
+/** MSR can't be accessed. */
+#define HV_MSR_NONE     0
+/** MSR is readable by the guest. */
+#define HV_MSR_READ     RT_BIT(0)
+/** MSR is writeable by the guest. */
+#define HV_MSR_WRITE    RT_BIT(1)
+
+
 typedef hv_return_t FN_HV_CAPABILITY(hv_capability_t capability, uint64_t *valu);
 typedef hv_return_t FN_HV_VM_CREATE(hv_vm_options_t flags);
 typedef hv_return_t FN_HV_VM_DESTROY(void);
@@ -258,6 +268,8 @@ typedef hv_return_t FN_HV_VMX_VCPU_SET_APIC_ADDRESS(hv_vcpuid_t vcpu, hv_gpaddr_
 
 /* Since 11.0 */
 typedef hv_return_t FN_HV_VMX_VCPU_GET_CAP_WRITE_VMCS(hv_vcpuid_t vcpu, uint32_t field, uint64_t *allowed_0, uint64_t *allowed_1);
+typedef hv_return_t FN_HV_VCPU_ENABLE_MANAGED_MSR(hv_vcpuid_t vcpu, uint32_t msr, bool enable);
+typedef hv_return_t FN_HV_VCPU_SET_MSR_ACCESS(hv_vcpuid_t vcpu, uint32_t msr, hv_msr_flags_t flags);
 
 
 /*********************************************************************************************************************************
@@ -310,6 +322,8 @@ static FN_HV_VMX_VCPU_SET_SHADOW_ACCESS *g_pfnHvVmxVCpuSetShadowAccess  = NULL; 
 static FN_HV_VMX_VCPU_SET_APIC_ADDRESS  *g_pfnHvVmxVCpuSetApicAddress   = NULL; /* Since 10.10 */
 
 static FN_HV_VMX_VCPU_GET_CAP_WRITE_VMCS *g_pfnHvVmxVCpuGetCapWriteVmcs = NULL; /* Since 11.0 */
+static FN_HV_VCPU_ENABLE_MANAGED_MSR     *g_pfnHvVCpuEnableManagedMsr   = NULL; /* Since 11.0 */
+static FN_HV_VCPU_SET_MSR_ACCESS         *g_pfnHvVCpuSetMsrAccess       = NULL; /* Since 11.0 */
 /** @} */
 
 
@@ -360,7 +374,9 @@ static const struct
     NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuWriteShadowVmcs, hv_vmx_vcpu_write_shadow_vmcs),
     NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuSetShadowAccess, hv_vmx_vcpu_set_shadow_access),
     NEM_DARWIN_IMPORT(false, g_pfnHvVmxVCpuSetApicAddress,  hv_vmx_vcpu_set_apic_address),
-    NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuGetCapWriteVmcs, hv_vmx_vcpu_get_cap_write_vmcs)
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVmxVCpuGetCapWriteVmcs, hv_vmx_vcpu_get_cap_write_vmcs),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVCpuEnableManagedMsr,   hv_vcpu_enable_managed_msr),
+    NEM_DARWIN_IMPORT(true,  g_pfnHvVCpuSetMsrAccess,       hv_vcpu_set_msr_access)
 #undef NEM_DARWIN_IMPORT
 };
 
@@ -408,6 +424,8 @@ static const struct
 # define hv_vmx_vcpu_set_apic_address   g_pfnHvVmxVCpuSetApicAddress
 
 # define hv_vmx_vcpu_get_cap_write_vmcs g_pfnHvVmxVCpuGetCapWriteVmcs
+# define hv_vcpu_enable_managed_msr     g_pfnHvVCpuEnableManagedMsr
+# define hv_vcpu_set_msr_access         g_pfnHvVCpuSetMsrAccess
 #endif
 
 static const struct
@@ -1117,6 +1135,26 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
     {
         PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
         READ_MSR(MSR_K8_TSC_AUX, pCtxMsrs->msr.TscAux);
+
+        /* Last Branch Record. */
+        if (pVM->nem.s.fLbr)
+        {
+            PVMXVMCSINFOSHARED const pVmcsInfoShared = &pVCpu->nem.s.vmx.VmcsInfo;
+            uint32_t const idFromIpMsrStart = pVM->nem.s.idLbrFromIpMsrFirst;
+            uint32_t const idToIpMsrStart   = pVM->nem.s.idLbrToIpMsrFirst;
+            uint32_t const cLbrStack        = pVM->nem.s.idLbrFromIpMsrLast - pVM->nem.s.idLbrFromIpMsrFirst + 1;
+            Assert(cLbrStack <= 32);
+            for (uint32_t i = 0; i < cLbrStack; i++)
+            {
+                READ_MSR(idFromIpMsrStart + i, pVmcsInfoShared->au64LbrFromIpMsr[i]);
+
+                /* Some CPUs don't have a Branch-To-IP MSR (P4 and related Xeons). */
+                if (idToIpMsrStart != 0)
+                    READ_MSR(idToIpMsrStart + i, pVmcsInfoShared->au64LbrToIpMsr[i]);
+            }
+
+            READ_MSR(pVM->nem.s.idLbrTosMsr, pVmcsInfoShared->u64LbrTosMsr);
+        }
     }
 
     /* Almost done, just update extrn flags and maybe change PGM mode. */
@@ -1701,9 +1739,27 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
 
         WRITE_MSR(MSR_K8_TSC_AUX, pCtxMsrs->msr.TscAux);
         ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_OTHER_MSRS);
-    }
 
-    WRITE_VMCS_FIELD(VMX_VMCS64_GUEST_DEBUGCTL_FULL, 0 /*MSR_IA32_DEBUGCTL_LBR*/);
+        /* Last Branch Record. */
+        if (pVM->nem.s.fLbr)
+        {
+            PVMXVMCSINFOSHARED const pVmcsInfoShared = &pVCpu->nem.s.vmx.VmcsInfo;
+            uint32_t const idFromIpMsrStart = pVM->nem.s.idLbrFromIpMsrFirst;
+            uint32_t const idToIpMsrStart   = pVM->nem.s.idLbrToIpMsrFirst;
+            uint32_t const cLbrStack        = pVM->nem.s.idLbrFromIpMsrLast - pVM->nem.s.idLbrFromIpMsrFirst + 1;
+            Assert(cLbrStack <= 32);
+            for (uint32_t i = 0; i < cLbrStack; i++)
+            {
+                WRITE_MSR(idFromIpMsrStart + i, pVmcsInfoShared->au64LbrFromIpMsr[i]);
+
+                /* Some CPUs don't have a Branch-To-IP MSR (P4 and related Xeons). */
+                if (idToIpMsrStart != 0)
+                    WRITE_MSR(idToIpMsrStart + i, pVmcsInfoShared->au64LbrToIpMsr[i]);
+            }
+
+            WRITE_MSR(pVM->nem.s.idLbrTosMsr, pVmcsInfoShared->u64LbrTosMsr);
+        }
+    }
 
     hv_vcpu_invalidate_tlb(pVCpu->nem.s.hVCpuId);
     hv_vcpu_flush(pVCpu->nem.s.hVCpuId);
@@ -1909,6 +1965,112 @@ static int nemR3DarwinCapsInit(void)
 
 
 /**
+ * Sets up the LBR MSR ranges based on the host CPU.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The cross context VM structure.
+ *
+ * @sa hmR0VmxSetupLbrMsrRange
+ */
+static int nemR3DarwinSetupLbrMsrRange(PVMCC pVM)
+{
+    Assert(pVM->nem.s.fLbr);
+    uint32_t idLbrFromIpMsrFirst;
+    uint32_t idLbrFromIpMsrLast;
+    uint32_t idLbrToIpMsrFirst;
+    uint32_t idLbrToIpMsrLast;
+    uint32_t idLbrTosMsr;
+
+    /*
+     * Determine the LBR MSRs supported for this host CPU family and model.
+     *
+     * See Intel spec. 17.4.8 "LBR Stack".
+     * See Intel "Model-Specific Registers" spec.
+     */
+    uint32_t const uFamilyModel = (pVM->cpum.ro.HostFeatures.uFamily << 8)
+                                | pVM->cpum.ro.HostFeatures.uModel;
+    switch (uFamilyModel)
+    {
+        case 0x0f01: case 0x0f02:
+            idLbrFromIpMsrFirst = MSR_P4_LASTBRANCH_0;
+            idLbrFromIpMsrLast  = MSR_P4_LASTBRANCH_3;
+            idLbrToIpMsrFirst   = 0x0;
+            idLbrToIpMsrLast    = 0x0;
+            idLbrTosMsr         = MSR_P4_LASTBRANCH_TOS;
+            break;
+
+        case 0x065c: case 0x065f: case 0x064e: case 0x065e: case 0x068e:
+        case 0x069e: case 0x0655: case 0x0666: case 0x067a: case 0x0667:
+        case 0x066a: case 0x066c: case 0x067d: case 0x067e:
+            idLbrFromIpMsrFirst = MSR_LASTBRANCH_0_FROM_IP;
+            idLbrFromIpMsrLast  = MSR_LASTBRANCH_31_FROM_IP;
+            idLbrToIpMsrFirst   = MSR_LASTBRANCH_0_TO_IP;
+            idLbrToIpMsrLast    = MSR_LASTBRANCH_31_TO_IP;
+            idLbrTosMsr         = MSR_LASTBRANCH_TOS;
+            break;
+
+        case 0x063d: case 0x0647: case 0x064f: case 0x0656: case 0x063c:
+        case 0x0645: case 0x0646: case 0x063f: case 0x062a: case 0x062d:
+        case 0x063a: case 0x063e: case 0x061a: case 0x061e: case 0x061f:
+        case 0x062e: case 0x0625: case 0x062c: case 0x062f:
+            idLbrFromIpMsrFirst = MSR_LASTBRANCH_0_FROM_IP;
+            idLbrFromIpMsrLast  = MSR_LASTBRANCH_15_FROM_IP;
+            idLbrToIpMsrFirst   = MSR_LASTBRANCH_0_TO_IP;
+            idLbrToIpMsrLast    = MSR_LASTBRANCH_15_TO_IP;
+            idLbrTosMsr         = MSR_LASTBRANCH_TOS;
+            break;
+
+        case 0x0617: case 0x061d: case 0x060f:
+            idLbrFromIpMsrFirst = MSR_CORE2_LASTBRANCH_0_FROM_IP;
+            idLbrFromIpMsrLast  = MSR_CORE2_LASTBRANCH_3_FROM_IP;
+            idLbrToIpMsrFirst   = MSR_CORE2_LASTBRANCH_0_TO_IP;
+            idLbrToIpMsrLast    = MSR_CORE2_LASTBRANCH_3_TO_IP;
+            idLbrTosMsr         = MSR_CORE2_LASTBRANCH_TOS;
+            break;
+
+        /* Atom and related microarchitectures we don't care about:
+        case 0x0637: case 0x064a: case 0x064c: case 0x064d: case 0x065a:
+        case 0x065d: case 0x061c: case 0x0626: case 0x0627: case 0x0635:
+        case 0x0636: */
+        /* All other CPUs: */
+        default:
+        {
+            LogRelFunc(("Could not determine LBR stack size for the CPU model %#x\n", uFamilyModel));
+            VMCC_GET_CPU_0(pVM)->nem.s.u32HMError = VMX_UFC_LBR_STACK_SIZE_UNKNOWN;
+            return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
+        }
+    }
+
+    /*
+     * Validate.
+     */
+    uint32_t const cLbrStack = idLbrFromIpMsrLast - idLbrFromIpMsrFirst + 1;
+    PCVMCPU pVCpu0 = VMCC_GET_CPU_0(pVM);
+    AssertCompile(   RT_ELEMENTS(pVCpu0->nem.s.vmx.VmcsInfo.au64LbrFromIpMsr)
+                  == RT_ELEMENTS(pVCpu0->nem.s.vmx.VmcsInfo.au64LbrToIpMsr));
+    if (cLbrStack > RT_ELEMENTS(pVCpu0->nem.s.vmx.VmcsInfo.au64LbrFromIpMsr))
+    {
+        LogRelFunc(("LBR stack size of the CPU (%u) exceeds our buffer size\n", cLbrStack));
+        VMCC_GET_CPU_0(pVM)->nem.s.u32HMError = VMX_UFC_LBR_STACK_SIZE_OVERFLOW;
+        return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
+    }
+    NOREF(pVCpu0);
+
+    /*
+     * Update the LBR info. to the VM struct. for use later.
+     */
+    pVM->nem.s.idLbrTosMsr = idLbrTosMsr;
+
+    pVM->nem.s.idLbrFromIpMsrFirst = idLbrFromIpMsrFirst;
+    pVM->nem.s.idLbrFromIpMsrLast  = idLbrFromIpMsrLast;
+
+    pVM->nem.s.idLbrToIpMsrFirst   = idLbrToIpMsrFirst;
+    pVM->nem.s.idLbrToIpMsrLast    = idLbrToIpMsrLast;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Sets up pin-based VM-execution controls in the VMCS.
  *
  * @returns VBox status code.
@@ -2014,18 +2176,16 @@ static int nemR3DarwinVmxSetupVmcsProcCtls2(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsIn
         && (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_RDTSCP))
         fVal |= VMX_PROC_CTLS2_RDTSCP;
 
-#if 0
     /* Enable Pause-Loop exiting. */
     if (   (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT)
-        && pVM->hm.s.vmx.cPleGapTicks
-        && pVM->hm.s.vmx.cPleWindowTicks)
+        && pVM->nem.s.cPleGapTicks
+        && pVM->nem.s.cPleWindowTicks)
     {
         fVal |= VMX_PROC_CTLS2_PAUSE_LOOP_EXIT;
 
-        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_GAP, pVM->hm.s.vmx.cPleGapTicks);          AssertRC(rc);
-        rc     = VMXWriteVmcs32(VMX_VMCS32_CTRL_PLE_WINDOW, pVM->hm.s.vmx.cPleWindowTicks);    AssertRC(rc);
+        int rc = nemR3DarwinWriteVmcs32(pVCpu, VMX_VMCS32_CTRL_PLE_GAP, pVM->nem.s.cPleGapTicks);          AssertRC(rc);
+        rc     = nemR3DarwinWriteVmcs32(pVCpu, VMX_VMCS32_CTRL_PLE_WINDOW, pVM->nem.s.cPleWindowTicks);    AssertRC(rc);
     }
-#endif
 
     if ((fVal & fZap) != fVal)
     {
@@ -2056,6 +2216,30 @@ static int nemR3DarwinMsrSetNative(PVMCPUCC pVCpu, uint32_t idMsr)
     hv_return_t hrc = hv_vcpu_enable_native_msr(pVCpu->nem.s.hVCpuId, idMsr, true /*enable*/);
     if (hrc == HV_SUCCESS)
         return VINF_SUCCESS;
+
+    return nemR3DarwinHvSts2Rc(hrc);
+}
+
+
+/**
+ * Sets the MSR to managed for the given vCPU allowing the guest to access it.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   idMsr       The MSR to enable managed access for.
+ * @param   fMsrPerm    The MSR permissions flags.
+ */
+static int nemR3DarwinMsrSetManaged(PVMCPUCC pVCpu, uint32_t idMsr, hv_msr_flags_t fMsrPerm)
+{
+    Assert(hv_vcpu_enable_managed_msr);
+
+    hv_return_t hrc = hv_vcpu_enable_managed_msr(pVCpu->nem.s.hVCpuId, idMsr, true /*enable*/);
+    if (hrc == HV_SUCCESS)
+    {
+        hrc = hv_vcpu_set_msr_access(pVCpu->nem.s.hVCpuId, idMsr, fMsrPerm);
+        if (hrc == HV_SUCCESS)
+            return VINF_SUCCESS;
+    }
 
     return nemR3DarwinHvSts2Rc(hrc);
 }
@@ -2122,6 +2306,27 @@ static int nemR3DarwinSetupVmcsMsrPermissions(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
 
     /* Required for enabling the RDTSCP instruction. */
     rc = nemR3DarwinMsrSetNative(pVCpu, MSR_K8_TSC_AUX);        AssertRCReturn(rc, rc);
+
+    /* Last Branch Record. */
+    if (pVM->nem.s.fLbr)
+    {
+        uint32_t const idFromIpMsrStart = pVM->nem.s.idLbrFromIpMsrFirst;
+        uint32_t const idToIpMsrStart   = pVM->nem.s.idLbrToIpMsrFirst;
+        uint32_t const cLbrStack        = pVM->nem.s.idLbrFromIpMsrLast - pVM->nem.s.idLbrFromIpMsrFirst + 1;
+        Assert(cLbrStack <= 32);
+        for (uint32_t i = 0; i < cLbrStack; i++)
+        {
+            rc = nemR3DarwinMsrSetManaged(pVCpu, idFromIpMsrStart + i, HV_MSR_READ); AssertRCReturn(rc, rc);
+
+            /* Some CPUs don't have a Branch-To-IP MSR (P4 and related Xeons). */
+            if (idToIpMsrStart != 0)
+            {
+                rc = nemR3DarwinMsrSetManaged(pVCpu, idToIpMsrStart + i, HV_MSR_READ); AssertRCReturn(rc, rc);
+            }
+        }
+
+        rc = nemR3DarwinMsrSetManaged(pVCpu, pVM->nem.s.idLbrTosMsr, HV_MSR_READ); AssertRCReturn(rc, rc);
+    }
 
     return VINF_SUCCESS;
 }
@@ -2213,13 +2418,11 @@ static int nemR3DarwinVmxSetupVmcsMiscCtls(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
         pVmcsInfo->u64Cr0Mask = u64Cr0Mask;
         pVmcsInfo->u64Cr4Mask = u64Cr4Mask;
 
-#if 0 /** @todo */
-        if (pVCpu->CTX_SUFF(pVM)->hmr0.s.vmx.fLbr)
+        if (pVCpu->CTX_SUFF(pVM)->nem.s.fLbr)
         {
-            rc = VMXWriteVmcsNw(VMX_VMCS64_GUEST_DEBUGCTL_FULL, MSR_IA32_DEBUGCTL_LBR);
+            rc = nemR3DarwinWriteVmcs64(pVCpu, VMX_VMCS64_GUEST_DEBUGCTL_FULL, MSR_IA32_DEBUGCTL_LBR);
             AssertRC(rc);
         }
-#endif
         return VINF_SUCCESS;
     }
     else
@@ -2362,6 +2565,59 @@ static int nemR3DarwinStatisticsRegister(PVM pVM, VMCPUID idCpu, PNEMCPU pNemCpu
 
 
 /**
+ * Displays the HM Last-Branch-Record info. for the guest.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pHlp        The info helper functions.
+ * @param   pszArgs     Arguments, ignored.
+ */
+static DECLCALLBACK(void) nemR3DarwinInfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    NOREF(pszArgs);
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        pVCpu = pVM->apCpusR3[0];
+
+    Assert(pVM->nem.s.fLbr);
+
+    PCVMXVMCSINFOSHARED pVmcsInfoShared = &pVCpu->nem.s.vmx.VmcsInfo;
+    uint32_t const      cLbrStack       = pVM->nem.s.idLbrFromIpMsrLast - pVM->nem.s.idLbrFromIpMsrFirst + 1;
+
+    /** @todo r=ramshankar: The index technically varies depending on the CPU, but
+     *        0xf should cover everything we support thus far. Fix if necessary
+     *        later. */
+    uint32_t const idxTopOfStack = pVmcsInfoShared->u64LbrTosMsr & 0xf;
+    if (idxTopOfStack > cLbrStack)
+    {
+        pHlp->pfnPrintf(pHlp, "Top-of-stack LBR MSR seems corrupt (index=%u, msr=%#RX64) expected index < %u\n",
+                        idxTopOfStack, pVmcsInfoShared->u64LbrTosMsr, cLbrStack);
+        return;
+    }
+
+    /*
+     * Dump the circular buffer of LBR records starting from the most recent record (contained in idxTopOfStack).
+     */
+    pHlp->pfnPrintf(pHlp, "CPU[%u]: LBRs (most-recent first)\n", pVCpu->idCpu);
+    uint32_t idxCurrent = idxTopOfStack;
+    Assert(idxTopOfStack < cLbrStack);
+    Assert(RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr) <= cLbrStack);
+    Assert(RT_ELEMENTS(pVmcsInfoShared->au64LbrToIpMsr) <= cLbrStack);
+    for (;;)
+    {
+        if (pVM->nem.s.idLbrToIpMsrFirst)
+            pHlp->pfnPrintf(pHlp, "  Branch (%2u): From IP=%#016RX64 - To IP=%#016RX64\n", idxCurrent,
+                            pVmcsInfoShared->au64LbrFromIpMsr[idxCurrent], pVmcsInfoShared->au64LbrToIpMsr[idxCurrent]);
+        else
+            pHlp->pfnPrintf(pHlp, "  Branch (%2u): LBR=%#RX64\n", idxCurrent, pVmcsInfoShared->au64LbrFromIpMsr[idxCurrent]);
+
+        idxCurrent = (idxCurrent - 1) % cLbrStack;
+        if (idxCurrent == idxTopOfStack)
+            break;
+    }
+}
+
+
+/**
  * Try initialize the native API.
  *
  * This may only do part of the job, more can be done in
@@ -2381,6 +2637,31 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     /*
      * Some state init.
      */
+    PCFGMNODE pCfgNem = CFGMR3GetChild(CFGMR3GetRoot(pVM), "NEM/");
+
+    /** @cfgm{/NEM/VmxPleGap, uint32_t, 0}
+     * The pause-filter exiting gap in TSC ticks. When the number of ticks between
+     * two successive PAUSE instructions exceeds VmxPleGap, the CPU considers the
+     * latest PAUSE instruction to be start of a new PAUSE loop.
+     */
+    int rc = CFGMR3QueryU32Def(pCfgNem, "VmxPleGap", &pVM->nem.s.cPleGapTicks, 0);
+    AssertRCReturn(rc, rc);
+
+    /** @cfgm{/NEM/VmxPleWindow, uint32_t, 0}
+     * The pause-filter exiting window in TSC ticks. When the number of ticks
+     * between the current PAUSE instruction and first PAUSE of a loop exceeds
+     * VmxPleWindow, a VM-exit is triggered.
+     *
+     * Setting VmxPleGap and VmxPleGap to 0 disables pause-filter exiting.
+     */
+    rc = CFGMR3QueryU32Def(pCfgNem, "VmxPleWindow", &pVM->nem.s.cPleWindowTicks, 0);
+    AssertRCReturn(rc, rc);
+
+    /** @cfgm{/NEM/VmxLbr, bool, false}
+     * Whether to enable LBR for the guest. This is disabled by default as it's only
+     * useful while debugging and enabling it causes a noticeable performance hit. */
+    rc = CFGMR3QueryBoolDef(pCfgNem, "VmxLbr", &pVM->nem.s.fLbr, false);
+    AssertRCReturn(rc, rc);
 
     /*
      * Error state.
@@ -2388,9 +2669,16 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
      */
     RTERRINFOSTATIC ErrInfo;
     PRTERRINFO pErrInfo = RTErrInfoInitStatic(&ErrInfo);
-    int rc = nemR3DarwinLoadHv(fForced, pErrInfo);
+    rc = nemR3DarwinLoadHv(fForced, pErrInfo);
     if (RT_SUCCESS(rc))
     {
+        if (   !hv_vcpu_enable_managed_msr
+            && pVM->nem.s.fLbr)
+        {
+            LogRel(("NEM: LBR recording is disabled because the Hypervisor API misses hv_vcpu_enable_managed_msr/hv_vcpu_set_msr_access functionality\n"));
+            pVM->nem.s.fLbr = false;
+        }
+
         if (hv_vcpu_run_until)
         {
             struct mach_timebase_info TimeInfo;
@@ -2458,6 +2746,12 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
     if (   (fForced || !fFallback)
         && pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NATIVE_API)
         return VMSetError(pVM, RT_SUCCESS_NP(rc) ? VERR_NEM_NOT_AVAILABLE : rc, RT_SRC_POS, "%s", pErrInfo->pszMsg);
+
+    if (pVM->nem.s.fLbr)
+    {
+        rc = DBGFR3InfoRegisterInternalEx(pVM, "lbr", "Dumps the NEM LBR info.", nemR3DarwinInfoLbr, DBGFINFO_FLAGS_ALL_EMTS);
+        AssertRCReturn(rc, rc);
+    }
 
     if (RTErrInfoIsSet(pErrInfo))
         LogRel(("NEM: Not available: %s\n", pErrInfo->pszMsg));
@@ -2610,6 +2904,12 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
      */
     AssertReturn(!pVM->nem.s.fCreatedEmts, VERR_WRONG_ORDER);
     AssertReturn(pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API, VERR_WRONG_ORDER);
+
+    if (pVM->nem.s.fLbr)
+    {
+        int rc = nemR3DarwinSetupLbrMsrRange(pVM);
+        AssertRCReturn(rc, rc);
+    }
 
     /*
      * Setup the EMTs.
