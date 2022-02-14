@@ -1519,8 +1519,51 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_LASTBRANCH_30_TO_IP             0x6de
 #define MSR_LASTBRANCH_31_TO_IP             0x6df
 
+#define MSR_LASTBRANCH_0_INFO               0xdc0
+#define MSR_LASTBRANCH_1_INFO               0xdc1
+#define MSR_LASTBRANCH_2_INFO               0xdc2
+#define MSR_LASTBRANCH_3_INFO               0xdc3
+#define MSR_LASTBRANCH_4_INFO               0xdc4
+#define MSR_LASTBRANCH_5_INFO               0xdc5
+#define MSR_LASTBRANCH_6_INFO               0xdc6
+#define MSR_LASTBRANCH_7_INFO               0xdc7
+#define MSR_LASTBRANCH_8_INFO               0xdc8
+#define MSR_LASTBRANCH_9_INFO               0xdc9
+#define MSR_LASTBRANCH_10_INFO              0xdca
+#define MSR_LASTBRANCH_11_INFO              0xdcb
+#define MSR_LASTBRANCH_12_INFO              0xdcc
+#define MSR_LASTBRANCH_13_INFO              0xdcd
+#define MSR_LASTBRANCH_14_INFO              0xdce
+#define MSR_LASTBRANCH_15_INFO              0xdcf
+#define MSR_LASTBRANCH_16_INFO              0xdd0
+#define MSR_LASTBRANCH_17_INFO              0xdd1
+#define MSR_LASTBRANCH_18_INFO              0xdd2
+#define MSR_LASTBRANCH_19_INFO              0xdd3
+#define MSR_LASTBRANCH_20_INFO              0xdd4
+#define MSR_LASTBRANCH_21_INFO              0xdd5
+#define MSR_LASTBRANCH_22_INFO              0xdd6
+#define MSR_LASTBRANCH_23_INFO              0xdd7
+#define MSR_LASTBRANCH_24_INFO              0xdd8
+#define MSR_LASTBRANCH_25_INFO              0xdd9
+#define MSR_LASTBRANCH_26_INFO              0xdda
+#define MSR_LASTBRANCH_27_INFO              0xddb
+#define MSR_LASTBRANCH_28_INFO              0xddc
+#define MSR_LASTBRANCH_29_INFO              0xddd
+#define MSR_LASTBRANCH_30_INFO              0xdde
+#define MSR_LASTBRANCH_31_INFO              0xddf
+
+/** LBR branch tracking selection MSR. */
+#define MSR_LASTBRANCH_SELECT               0x1c8
 /** LBR Top-of-stack MSR (index to most recent record). */
 #define MSR_LASTBRANCH_TOS                  0x1c9
+/** @} */
+
+/** @name Last event record registers.
+ * @{ */
+/** Last event record source IP register. */
+#define MSR_LER_FROM_IP                     0x1dd
+/** Last event record destination IP register. */
+#define MSR_LER_TO_IP                       0x1de
 /** @} */
 
 /** Intel TSX (Transactional Synchronization Extensions) control MSR. */
