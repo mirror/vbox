@@ -1131,17 +1131,20 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
         READ_MSR(MSR_K8_CSTAR, pVCpu->cpum.GstCtx.msrCSTAR);
         READ_MSR(MSR_K8_SF_MASK, pVCpu->cpum.GstCtx.msrSFMASK);
     }
-    if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
+    if (fWhat & CPUMCTX_EXTRN_TSC_AUX)
     {
         PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
         READ_MSR(MSR_K8_TSC_AUX, pCtxMsrs->msr.TscAux);
-
+    }
+    if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
+    {
         /* Last Branch Record. */
         if (pVM->nem.s.fLbr)
         {
             PVMXVMCSINFOSHARED const pVmcsInfoShared = &pVCpu->nem.s.vmx.VmcsInfo;
             uint32_t const idFromIpMsrStart = pVM->nem.s.idLbrFromIpMsrFirst;
             uint32_t const idToIpMsrStart   = pVM->nem.s.idLbrToIpMsrFirst;
+            uint32_t const idInfoMsrStart   = pVM->nem.s.idLbrInfoMsrFirst;
             uint32_t const cLbrStack        = pVM->nem.s.idLbrFromIpMsrLast - pVM->nem.s.idLbrFromIpMsrFirst + 1;
             Assert(cLbrStack <= 32);
             for (uint32_t i = 0; i < cLbrStack; i++)
@@ -1151,9 +1154,16 @@ static int nemR3DarwinCopyStateFromHv(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat)
                 /* Some CPUs don't have a Branch-To-IP MSR (P4 and related Xeons). */
                 if (idToIpMsrStart != 0)
                     READ_MSR(idToIpMsrStart + i, pVmcsInfoShared->au64LbrToIpMsr[i]);
+                if (idInfoMsrStart != 0)
+                    READ_MSR(idInfoMsrStart + i, pVmcsInfoShared->au64LbrInfoMsr[i]);
             }
 
             READ_MSR(pVM->nem.s.idLbrTosMsr, pVmcsInfoShared->u64LbrTosMsr);
+
+            if (pVM->nem.s.idLerFromIpMsr)
+                READ_MSR(pVM->nem.s.idLerFromIpMsr, pVmcsInfoShared->u64LerFromIpMsr);
+            if (pVM->nem.s.idLerToIpMsr)
+                READ_MSR(pVM->nem.s.idLerToIpMsr, pVmcsInfoShared->u64LerToIpMsr);
         }
     }
 
@@ -1748,6 +1758,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
             PVMXVMCSINFOSHARED const pVmcsInfoShared = &pVCpu->nem.s.vmx.VmcsInfo;
             uint32_t const idFromIpMsrStart = pVM->nem.s.idLbrFromIpMsrFirst;
             uint32_t const idToIpMsrStart   = pVM->nem.s.idLbrToIpMsrFirst;
+            uint32_t const idInfoMsrStart   = pVM->nem.s.idLbrInfoMsrFirst;
             uint32_t const cLbrStack        = pVM->nem.s.idLbrFromIpMsrLast - pVM->nem.s.idLbrFromIpMsrFirst + 1;
             Assert(cLbrStack <= 32);
             for (uint32_t i = 0; i < cLbrStack; i++)
@@ -1757,9 +1768,15 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
                 /* Some CPUs don't have a Branch-To-IP MSR (P4 and related Xeons). */
                 if (idToIpMsrStart != 0)
                     WRITE_MSR(idToIpMsrStart + i, pVmcsInfoShared->au64LbrToIpMsr[i]);
+                if (idInfoMsrStart != 0)
+                    WRITE_MSR(idInfoMsrStart + i, pVmcsInfoShared->au64LbrInfoMsr[i]);
             }
 
             WRITE_MSR(pVM->nem.s.idLbrTosMsr, pVmcsInfoShared->u64LbrTosMsr);
+            if (pVM->nem.s.idLerFromIpMsr)
+                WRITE_MSR(pVM->nem.s.idLerFromIpMsr, pVmcsInfoShared->u64LerFromIpMsr);
+            if (pVM->nem.s.idLerToIpMsr)
+                WRITE_MSR(pVM->nem.s.idLerToIpMsr, pVmcsInfoShared->u64LerToIpMsr);
         }
 
         ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_OTHER_MSRS);
@@ -1983,7 +2000,12 @@ static int nemR3DarwinSetupLbrMsrRange(PVMCC pVM)
     uint32_t idLbrFromIpMsrLast;
     uint32_t idLbrToIpMsrFirst;
     uint32_t idLbrToIpMsrLast;
+    uint32_t idLbrInfoMsrFirst;
+    uint32_t idLbrInfoMsrLast;
     uint32_t idLbrTosMsr;
+    uint32_t idLbrSelectMsr;
+    uint32_t idLerFromIpMsr;
+    uint32_t idLerToIpMsr;
 
     /*
      * Determine the LBR MSRs supported for this host CPU family and model.
@@ -2000,7 +2022,12 @@ static int nemR3DarwinSetupLbrMsrRange(PVMCC pVM)
             idLbrFromIpMsrLast  = MSR_P4_LASTBRANCH_3;
             idLbrToIpMsrFirst   = 0x0;
             idLbrToIpMsrLast    = 0x0;
+            idLbrInfoMsrFirst   = 0x0;
+            idLbrInfoMsrLast    = 0x0;
             idLbrTosMsr         = MSR_P4_LASTBRANCH_TOS;
+            idLbrSelectMsr      = 0x0;
+            idLerFromIpMsr      = 0x0;
+            idLerToIpMsr        = 0x0;
             break;
 
         case 0x065c: case 0x065f: case 0x064e: case 0x065e: case 0x068e:
@@ -2010,7 +2037,12 @@ static int nemR3DarwinSetupLbrMsrRange(PVMCC pVM)
             idLbrFromIpMsrLast  = MSR_LASTBRANCH_31_FROM_IP;
             idLbrToIpMsrFirst   = MSR_LASTBRANCH_0_TO_IP;
             idLbrToIpMsrLast    = MSR_LASTBRANCH_31_TO_IP;
+            idLbrInfoMsrFirst   = MSR_LASTBRANCH_0_INFO;
+            idLbrInfoMsrLast    = MSR_LASTBRANCH_31_INFO;
             idLbrTosMsr         = MSR_LASTBRANCH_TOS;
+            idLbrSelectMsr      = MSR_LASTBRANCH_SELECT;
+            idLerFromIpMsr      = MSR_LER_FROM_IP;
+            idLerToIpMsr        = MSR_LER_TO_IP;
             break;
 
         case 0x063d: case 0x0647: case 0x064f: case 0x0656: case 0x063c:
@@ -2021,7 +2053,12 @@ static int nemR3DarwinSetupLbrMsrRange(PVMCC pVM)
             idLbrFromIpMsrLast  = MSR_LASTBRANCH_15_FROM_IP;
             idLbrToIpMsrFirst   = MSR_LASTBRANCH_0_TO_IP;
             idLbrToIpMsrLast    = MSR_LASTBRANCH_15_TO_IP;
+            idLbrInfoMsrFirst   = MSR_LASTBRANCH_0_INFO;
+            idLbrInfoMsrLast    = MSR_LASTBRANCH_15_INFO;
             idLbrTosMsr         = MSR_LASTBRANCH_TOS;
+            idLbrSelectMsr      = MSR_LASTBRANCH_SELECT;
+            idLerFromIpMsr      = MSR_LER_FROM_IP;
+            idLerToIpMsr        = MSR_LER_TO_IP;
             break;
 
         case 0x0617: case 0x061d: case 0x060f:
@@ -2029,7 +2066,12 @@ static int nemR3DarwinSetupLbrMsrRange(PVMCC pVM)
             idLbrFromIpMsrLast  = MSR_CORE2_LASTBRANCH_3_FROM_IP;
             idLbrToIpMsrFirst   = MSR_CORE2_LASTBRANCH_0_TO_IP;
             idLbrToIpMsrLast    = MSR_CORE2_LASTBRANCH_3_TO_IP;
+            idLbrInfoMsrFirst   = 0x0;
+            idLbrInfoMsrLast    = 0x0;
             idLbrTosMsr         = MSR_CORE2_LASTBRANCH_TOS;
+            idLbrSelectMsr      = 0x0;
+            idLerFromIpMsr      = 0x0;
+            idLerToIpMsr        = 0x0;
             break;
 
         /* Atom and related microarchitectures we don't care about:
@@ -2052,6 +2094,8 @@ static int nemR3DarwinSetupLbrMsrRange(PVMCC pVM)
     PCVMCPU pVCpu0 = VMCC_GET_CPU_0(pVM);
     AssertCompile(   RT_ELEMENTS(pVCpu0->nem.s.vmx.VmcsInfo.au64LbrFromIpMsr)
                   == RT_ELEMENTS(pVCpu0->nem.s.vmx.VmcsInfo.au64LbrToIpMsr));
+    AssertCompile(   RT_ELEMENTS(pVCpu0->nem.s.vmx.VmcsInfo.au64LbrFromIpMsr)
+                  == RT_ELEMENTS(pVCpu0->nem.s.vmx.VmcsInfo.au64LbrInfoMsr));
     if (cLbrStack > RT_ELEMENTS(pVCpu0->nem.s.vmx.VmcsInfo.au64LbrFromIpMsr))
     {
         LogRelFunc(("LBR stack size of the CPU (%u) exceeds our buffer size\n", cLbrStack));
@@ -2063,13 +2107,20 @@ static int nemR3DarwinSetupLbrMsrRange(PVMCC pVM)
     /*
      * Update the LBR info. to the VM struct. for use later.
      */
-    pVM->nem.s.idLbrTosMsr = idLbrTosMsr;
+    pVM->nem.s.idLbrTosMsr         = idLbrTosMsr;
+    pVM->nem.s.idLbrSelectMsr      = idLbrSelectMsr;
 
     pVM->nem.s.idLbrFromIpMsrFirst = idLbrFromIpMsrFirst;
     pVM->nem.s.idLbrFromIpMsrLast  = idLbrFromIpMsrLast;
 
     pVM->nem.s.idLbrToIpMsrFirst   = idLbrToIpMsrFirst;
     pVM->nem.s.idLbrToIpMsrLast    = idLbrToIpMsrLast;
+
+    pVM->nem.s.idLbrInfoMsrFirst   = idLbrInfoMsrFirst;
+    pVM->nem.s.idLbrInfoMsrLast    = idLbrInfoMsrLast;
+
+    pVM->nem.s.idLerFromIpMsr      = idLerFromIpMsr;
+    pVM->nem.s.idLerToIpMsr        = idLerToIpMsr;
     return VINF_SUCCESS;
 }
 
@@ -2316,20 +2367,48 @@ static int nemR3DarwinSetupVmcsMsrPermissions(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcs
     {
         uint32_t const idFromIpMsrStart = pVM->nem.s.idLbrFromIpMsrFirst;
         uint32_t const idToIpMsrStart   = pVM->nem.s.idLbrToIpMsrFirst;
+        uint32_t const idInfoMsrStart   = pVM->nem.s.idLbrInfoMsrFirst;
         uint32_t const cLbrStack        = pVM->nem.s.idLbrFromIpMsrLast - pVM->nem.s.idLbrFromIpMsrFirst + 1;
         Assert(cLbrStack <= 32);
         for (uint32_t i = 0; i < cLbrStack; i++)
         {
-            rc = nemR3DarwinMsrSetManaged(pVCpu, idFromIpMsrStart + i, HV_MSR_READ); AssertRCReturn(rc, rc);
+            rc = nemR3DarwinMsrSetManaged(pVCpu, idFromIpMsrStart + i, HV_MSR_READ | HV_MSR_WRITE);
+            AssertRCReturn(rc, rc);
 
             /* Some CPUs don't have a Branch-To-IP MSR (P4 and related Xeons). */
             if (idToIpMsrStart != 0)
             {
-                rc = nemR3DarwinMsrSetManaged(pVCpu, idToIpMsrStart + i, HV_MSR_READ); AssertRCReturn(rc, rc);
+                rc = nemR3DarwinMsrSetManaged(pVCpu, idToIpMsrStart + i, HV_MSR_READ | HV_MSR_WRITE);
+                AssertRCReturn(rc, rc);
+            }
+
+            if (idInfoMsrStart != 0)
+            {
+                rc = nemR3DarwinMsrSetManaged(pVCpu, idInfoMsrStart + i, HV_MSR_READ | HV_MSR_WRITE);
+                AssertRCReturn(rc, rc);
             }
         }
 
-        rc = nemR3DarwinMsrSetManaged(pVCpu, pVM->nem.s.idLbrTosMsr, HV_MSR_READ); AssertRCReturn(rc, rc);
+        rc = nemR3DarwinMsrSetManaged(pVCpu, pVM->nem.s.idLbrTosMsr, HV_MSR_READ | HV_MSR_WRITE);
+        AssertRCReturn(rc, rc);
+
+        if (pVM->nem.s.idLerFromIpMsr)
+        {
+            rc = nemR3DarwinMsrSetManaged(pVCpu, pVM->nem.s.idLerFromIpMsr, HV_MSR_READ | HV_MSR_WRITE);
+            AssertRCReturn(rc, rc);
+        }
+
+        if (pVM->nem.s.idLerToIpMsr)
+        {
+            rc = nemR3DarwinMsrSetManaged(pVCpu, pVM->nem.s.idLerToIpMsr, HV_MSR_READ | HV_MSR_WRITE);
+            AssertRCReturn(rc, rc);
+        }
+
+        if (pVM->nem.s.idLbrSelectMsr)
+        {
+            rc = nemR3DarwinMsrSetManaged(pVCpu, pVM->nem.s.idLbrSelectMsr, HV_MSR_READ | HV_MSR_WRITE);
+            AssertRCReturn(rc, rc);
+        }
     }
 
     return VINF_SUCCESS;
@@ -2602,6 +2681,9 @@ static DECLCALLBACK(void) nemR3DarwinInfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const 
      * Dump the circular buffer of LBR records starting from the most recent record (contained in idxTopOfStack).
      */
     pHlp->pfnPrintf(pHlp, "CPU[%u]: LBRs (most-recent first)\n", pVCpu->idCpu);
+    if (pVM->nem.s.idLerFromIpMsr)
+        pHlp->pfnPrintf(pHlp, "LER: From IP=%#016RX64 - To IP=%#016RX64\n",
+                        pVmcsInfoShared->u64LerFromIpMsr, pVmcsInfoShared->u64LerToIpMsr);
     uint32_t idxCurrent = idxTopOfStack;
     Assert(idxTopOfStack < cLbrStack);
     Assert(RT_ELEMENTS(pVmcsInfoShared->au64LbrFromIpMsr) <= cLbrStack);
@@ -2609,8 +2691,10 @@ static DECLCALLBACK(void) nemR3DarwinInfoLbr(PVM pVM, PCDBGFINFOHLP pHlp, const 
     for (;;)
     {
         if (pVM->nem.s.idLbrToIpMsrFirst)
-            pHlp->pfnPrintf(pHlp, "  Branch (%2u): From IP=%#016RX64 - To IP=%#016RX64\n", idxCurrent,
-                            pVmcsInfoShared->au64LbrFromIpMsr[idxCurrent], pVmcsInfoShared->au64LbrToIpMsr[idxCurrent]);
+            pHlp->pfnPrintf(pHlp, "  Branch (%2u): From IP=%#016RX64 - To IP=%#016RX64 (Info: %#016RX64)\n", idxCurrent,
+                            pVmcsInfoShared->au64LbrFromIpMsr[idxCurrent],
+                            pVmcsInfoShared->au64LbrToIpMsr[idxCurrent],
+                            pVmcsInfoShared->au64LbrInfoMsr[idxCurrent]);
         else
             pHlp->pfnPrintf(pHlp, "  Branch (%2u): LBR=%#RX64\n", idxCurrent, pVmcsInfoShared->au64LbrFromIpMsr[idxCurrent]);
 

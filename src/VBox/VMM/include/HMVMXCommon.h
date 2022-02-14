@@ -250,8 +250,14 @@ typedef struct VMXVMCSINFOSHARED
     uint64_t                    au64LbrFromIpMsr[32];
     /** List of LastBranch-To-IP MSRs. */
     uint64_t                    au64LbrToIpMsr[32];
+    /** List of LastBranch-Info MSRs. */
+    uint64_t                    au64LbrInfoMsr[32];
     /** The MSR containing the index to the most recent branch record.  */
     uint64_t                    u64LbrTosMsr;
+    /** The MSR containing the last event record from IP value. */
+    uint64_t                    u64LerFromIpMsr;
+    /** The MSR containing the last event record to IP value. */
+    uint64_t                    u64LerToIpMsr;
     /** @} */
 } VMXVMCSINFOSHARED;
 /** Pointer to a VMXVMCSINFOSHARED struct.  */
