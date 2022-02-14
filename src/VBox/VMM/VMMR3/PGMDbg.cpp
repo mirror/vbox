@@ -99,14 +99,14 @@ typedef PGMR3DUMPHIERARCHYSTATE *PPGMR3DUMPHIERARCHYSTATE;
  * Assembly scanning function.
  *
  * @returns Pointer to possible match or NULL.
- * @param   pvHaystack      Pointer to what we search in.
+ * @param   pbHaystack      Pointer to what we search in.
  * @param   cbHaystack      Number of bytes to search.
- * @param   pvNeedle        Pointer to what we search for.
+ * @param   pbNeedle        Pointer to what we search for.
  * @param   cbNeedle        Size of what we're searching for.
  */
 
-typedef DECLCALLBACKTYPE(uint8_t const *, FNPGMR3DBGFIXEDMEMSCAN,(void const *pvHaystack, uint32_t cbHaystack,
-                                                                  void const *pvNeedle, size_t cbNeedle));
+typedef DECLCALLBACKTYPE(uint8_t const *, FNPGMR3DBGFIXEDMEMSCAN,(uint8_t const *pbHaystack, uint32_t cbHaystack,
+                                                                  uint8_t const *pbNeedle, size_t cbNeedle));
 /** Pointer to an fixed size and step assembly scanner function. */
 typedef FNPGMR3DBGFIXEDMEMSCAN *PFNPGMR3DBGFIXEDMEMSCAN;
 
@@ -114,12 +114,14 @@ typedef FNPGMR3DBGFIXEDMEMSCAN *PFNPGMR3DBGFIXEDMEMSCAN;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-DECLASM(uint8_t const *) pgmR3DbgFixedMemScan8Wide8Step(void const *, uint32_t, void const *, size_t cbNeedle);
-DECLASM(uint8_t const *) pgmR3DbgFixedMemScan4Wide4Step(void const *, uint32_t, void const *, size_t cbNeedle);
-DECLASM(uint8_t const *) pgmR3DbgFixedMemScan2Wide2Step(void const *, uint32_t, void const *, size_t cbNeedle);
-DECLASM(uint8_t const *) pgmR3DbgFixedMemScan1Wide1Step(void const *, uint32_t, void const *, size_t cbNeedle);
-DECLASM(uint8_t const *) pgmR3DbgFixedMemScan4Wide1Step(void const *, uint32_t, void const *, size_t cbNeedle);
-DECLASM(uint8_t const *) pgmR3DbgFixedMemScan8Wide1Step(void const *, uint32_t, void const *, size_t cbNeedle);
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan8Wide8Step(uint8_t const *, uint32_t, uint8_t const *, size_t);
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan4Wide4Step(uint8_t const *, uint32_t, uint8_t const *, size_t);
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan2Wide2Step(uint8_t const *, uint32_t, uint8_t const *, size_t);
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan1Wide1Step(uint8_t const *, uint32_t, uint8_t const *, size_t);
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan4Wide1Step(uint8_t const *, uint32_t, uint8_t const *, size_t);
+DECLASM(uint8_t const *) pgmR3DbgFixedMemScan8Wide1Step(uint8_t const *, uint32_t, uint8_t const *, size_t);
+#endif
 
 
 /**
@@ -421,6 +423,123 @@ VMMR3_INT_DECL(int) PGMR3DbgWriteGCPtr(PVM pVM, RTGCPTR GCPtrDst, void const *pv
     return *pcbWritten && RT_FAILURE(rc) ? -rc : rc;
 
 }
+
+
+#if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)
+/*
+ * For AMD64 and x86 we've got optimized assembly code for these search functions.
+ */
+
+static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan8Wide8Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
+                                                                    uint8_t const *pbNeedle, size_t cbNeedle)
+{
+    Assert(cbNeedle == 8); RT_NOREF(cbNeedle);
+    const uint64_t uNeedle = *(const uint64_t *)pbNeedle;
+    uint64_t const *puHaystack = (uint64_t const *)pbHaystack;
+    cbHaystack /= sizeof(uint64_t);
+    while (cbHaystack-- > 0)
+        if (*puHaystack != uNeedle)
+            puHaystack++;
+        else
+            return (uint8_t const *)puHaystack;
+    return NULL;
+}
+
+
+static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan4Wide4Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
+                                                                    uint8_t const *pbNeedle, size_t cbNeedle)
+{
+    Assert(cbNeedle == 4); RT_NOREF(cbNeedle);
+    const uint32_t uNeedle = *(const uint32_t *)pbNeedle;
+    uint32_t const *puHaystack = (uint32_t const *)pbHaystack;
+    cbHaystack /= sizeof(uint32_t);
+    while (cbHaystack-- > 0)
+        if (*puHaystack != uNeedle)
+            puHaystack++;
+        else
+            return (uint8_t const *)puHaystack;
+    return NULL;
+}
+
+
+static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan2Wide2Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
+                                                                    uint8_t const *pbNeedle, size_t cbNeedle)
+{
+    Assert(cbNeedle == 2); RT_NOREF(cbNeedle);
+    const uint16_t uNeedle = *(const uint16_t *)pbNeedle;
+    uint16_t const *puHaystack = (uint16_t const *)pbHaystack;
+    cbHaystack /= sizeof(uint16_t);
+    while (cbHaystack-- > 0)
+        if (*puHaystack != uNeedle)
+            puHaystack++;
+        else
+            return (uint8_t const *)puHaystack;
+    return NULL;
+}
+
+static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan1Wide1Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
+                                                                    uint8_t const *pbNeedle, size_t cbNeedle)
+{
+    Assert(cbNeedle == 1); RT_NOREF(cbNeedle);
+    const uint8_t bNeedle = *pbNeedle;
+    while (cbHaystack-- > 0)
+        if (*pbHaystack != bNeedle)
+            pbHaystack++;
+        else
+            return pbHaystack;
+    return NULL;
+}
+
+
+static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan4Wide1Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
+                                                                    uint8_t const *pbNeedle, size_t cbNeedle)
+{
+    Assert(cbNeedle == 4); RT_NOREF(cbNeedle);
+    uint32_t const uNeedle = *(uint32_t const *)pbNeedle;
+    while (cbHaystack >= sizeof(uint32_t))
+    {
+        uint8_t const *pbHit = (uint8_t const *)memchr(pbHaystack, (uint8_t)uNeedle, cbHaystack - sizeof(uint32_t) + 1);
+        if (pbHit)
+        {
+            uint32_t const uFound = !((uintptr_t)pbHit & 3) ? *(const uint32_t *)pbHit
+                                  : RT_MAKE_U32_FROM_U8(pbHit[0], pbHit[1], pbHit[2], pbHit[3]);
+            if (uFound == uNeedle)
+                return pbHit;
+            cbHaystack -= (uintptr_t)pbHit - (uintptr_t)pbHaystack + 1;
+            pbHaystack  = pbHit + 1;
+        }
+        else
+            break;
+    }
+    return NULL;
+}
+
+
+static DECLCALLBACK(uint8_t const *) pgmR3DbgFixedMemScan8Wide1Step(uint8_t const *pbHaystack, uint32_t cbHaystack,
+                                                                    uint8_t const *pbNeedle, size_t cbNeedle)
+{
+    Assert(cbNeedle == 8); RT_NOREF(cbNeedle);
+    uint64_t const uNeedle = *(uint64_t const *)pbNeedle;
+    while (cbHaystack >= sizeof(uint64_t))
+    {
+        uint8_t const *pbHit = (uint8_t const *)memchr(pbHaystack, (uint8_t)uNeedle, cbHaystack - sizeof(uint64_t) + 1);
+        if (pbHit)
+        {
+            uint32_t const uFound = !((uintptr_t)pbHit & 7) ? *(const uint32_t *)pbHit
+                                  : RT_MAKE_U64_FROM_U8(pbHit[0], pbHit[1], pbHit[2], pbHit[3],
+                                                        pbHit[4], pbHit[5], pbHit[6], pbHit[7]);
+            if (uFound == uNeedle)
+                return pbHit;
+            cbHaystack -= (uintptr_t)pbHit - (uintptr_t)pbHaystack + 1;
+            pbHaystack  = pbHit + 1;
+        }
+        else
+            break;
+    }
+    return NULL;
+}
+
+#endif /* !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86) */
 
 
 /**
