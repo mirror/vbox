@@ -42,6 +42,7 @@
 #include <iprt/critsect.h>
 #include <iprt/list-off32.h>
 #include <iprt/sha.h>
+#include <iprt/cpp/hardavlrange.h>
 
 
 
@@ -562,14 +563,23 @@ extern CTX_SUFF(PGMPHYSHANDLERTYPEINT) const g_pgmHandlerPhysicalDummyType;
  */
 typedef struct PGMPHYSHANDLER
 {
-    AVLROGCPHYSNODECORE                 Core;
+    /** @name Tree stuff.
+     * @{  */
+    /** First address. */
+    RTGCPHYS                            Key;
+    /** Last address. */
+    RTGCPHYS                            KeyLast;
+    uint32_t                            idxLeft;
+    uint32_t                            idxRight;
+    uint8_t                             cHeight;
+    /**  @}  */
+    uint8_t                             abPadding[3];
     /** Number of pages to update. */
     uint32_t                            cPages;
     /** Set if we have pages that have been aliased. */
     uint32_t                            cAliasedPages;
     /** Set if we have pages that have temporarily been disabled. */
     uint32_t                            cTmpOffPages;
-    uint32_t                            u32Padding;
     /** Registered handler type handle.
      * @note Marked volatile to prevent re-reading after validation. */
     PGMPHYSHANDLERTYPE volatile         hType;
@@ -577,11 +587,11 @@ typedef struct PGMPHYSHANDLER
     uint64_t                            uUser;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
-#ifdef VBOX_WITH_STATISTICS
-    /** Profiling of this handler. */
+    /** Profiling of this handler.
+     * @note VBOX_WITH_STATISTICS only, but included to keep structure stable. */
     STAMPROFILE                         Stat;
-#endif
 } PGMPHYSHANDLER;
+AssertCompileSize(PGMPHYSHANDLER, 12*8);
 /** Pointer to a physical page access handler structure. */
 typedef PGMPHYSHANDLER *PPGMPHYSHANDLER;
 
@@ -605,6 +615,14 @@ typedef PGMPHYSHANDLER *PPGMPHYSHANDLER;
  */
 #define PGMPHYSHANDLER_GET_TYPE_NO_NULL(a_pVM, a_pPhysHandler) \
     pgmHandlerPhysicalTypeHandleToPtr2(a_pVM, (a_pPhysHandler) ? (a_pPhysHandler)->hType : NIL_PGMPHYSHANDLERTYPE)
+
+/** Physical access handler allocator. */
+typedef RTCHardAvlTreeSlabAllocator<PGMPHYSHANDLER>   PGMPHYSHANDLERALLOCATOR;
+
+/** Physical access handler tree. */
+typedef RTCHardAvlRangeTree<PGMPHYSHANDLER, RTGCPHYS> PGMPHYSHANDLERTREE;
+/** Pointer to a physical access handler tree. */
+typedef PGMPHYSHANDLERTREE                           *PPGMPHYSHANDLERTREE;
 
 
 /**
@@ -2360,24 +2378,6 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCal
 
 
 /**
- * Roots and anchors for trees and list employing self relative offsets as
- * pointers.
- *
- * When using self-relative offsets instead of pointers, the offsets needs to be
- * the same in all offsets.  Thus the roots and anchors needs to live on the
- * hyper heap just like the nodes.
- */
-typedef struct PGMTREES
-{
-    /** Physical access handlers (AVL range+offsetptr tree). */
-    AVLROGCPHYSTREE                 PhysHandlers;
-    uint32_t                        u32PaddingTo8Bytes;
-} PGMTREES;
-/** Pointer to PGM trees. */
-typedef PGMTREES *PPGMTREES;
-
-
-/**
  * Guest page table walk for the AMD64 mode.
  */
 typedef struct PGMPTWALKGSTAMD64
@@ -2956,10 +2956,6 @@ typedef struct PGM
     R3PTRTYPE(PPGMRAMRANGE)         pRamRangesXR3;
     /** Root of the RAM range search tree for ring-3. */
     R3PTRTYPE(PPGMRAMRANGE)         pRamRangeTreeR3;
-    /** PGM offset based trees - R3 Ptr. */
-    R3PTRTYPE(PPGMTREES)            pTreesR3;
-    /** Caching the last physical handler we looked up in R3. */
-    R3PTRTYPE(PPGMPHYSHANDLER)      pLastPhysHandlerR3;
     /** Shadow Page Pool - R3 Ptr. */
     R3PTRTYPE(PPGMPOOL)             pPoolR3;
     /** Pointer to the list of ROM ranges - for R3.
@@ -2977,10 +2973,6 @@ typedef struct PGM
     R0PTRTYPE(PPGMRAMRANGE)         pRamRangesXR0;
     /** Root of the RAM range search tree for ring-0. */
     R0PTRTYPE(PPGMRAMRANGE)         pRamRangeTreeR0;
-    /** PGM offset based trees - R0 Ptr. */
-    R0PTRTYPE(PPGMTREES)            pTreesR0;
-    /** Caching the last physical handler we looked up in R0. */
-    R0PTRTYPE(PPGMPHYSHANDLER)      pLastPhysHandlerR0;
     /** Shadow Page Pool - R0 Ptr. */
     R0PTRTYPE(PPGMPOOL)             pPoolR0;
     /** R0 pointer corresponding to PGM::pRomRangesR3. */
@@ -2997,6 +2989,18 @@ typedef struct PGM
     /** Physical access handler types.
      * Initialized to callback causing guru meditations and invalid enmKind. */
     PGMPHYSHANDLERTYPEINTR3         aPhysHandlerTypes[PGMPHYSHANDLERTYPE_COUNT];
+    /** Physical handler allocator, ring-3 edition. */
+#ifdef IN_RING3
+    PGMPHYSHANDLERALLOCATOR         PhysHandlerAllocator;
+#else
+    RTCHardAvlTreeSlabAllocatorR3_T PhysHandlerAllocator;
+#endif
+    /** The pointer to the ring-3 mapping of the physical access handler tree. */
+    R3PTRTYPE(PPGMPHYSHANDLERTREE)  pPhysHandlerTree;
+    /** Caching the last physical handler we looked. */
+    uint32_t                        idxLastPhysHandler;
+
+    uint32_t                        au64Padding3[5];
 
     /** PGM critical section.
      * This protects the physical, ram ranges, and the page flag updating (some of
@@ -3557,15 +3561,17 @@ typedef PGMCPU *PPGMCPU;
 /** @} */
 
 
+#if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
+
 /**
  * PGM GVMCPU instance data.
  */
 typedef struct PGMR0PERVCPU
 {
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
     /** R0: Which statistic this \#PF should be attributed to. */
     R0PTRTYPE(PSTAMPROFILE)         pStatTrap0eAttributionR0;
-#endif
+# endif
     uint64_t                        u64Dummy;
 } PGMR0PERVCPU;
 
@@ -3588,7 +3594,17 @@ typedef struct PGMR0PERVM
     /** Physical access handler types for ring-0.
      * Initialized to callback causing return to ring-3 and invalid enmKind. */
     PGMPHYSHANDLERTYPEINTR0         aPhysHandlerTypes[PGMPHYSHANDLERTYPE_COUNT];
+    /** Physical handler allocator, ring-3 edition. */
+    PGMPHYSHANDLERALLOCATOR         PhysHandlerAllocator;
+    /** The pointer to the ring-3 mapping of the physical access handler tree. */
+    PPGMPHYSHANDLERTREE             pPhysHandlerTree;
+    /** The allocation object for the physical access handler tree. */
+    RTR0MEMOBJ                      hPhysHandlerMemObj;
+    /** The ring-3 mapping object for the physicall access handler tree. */
+    RTR0MEMOBJ                      hPhysHandlerMapObj;
 } PGMR0PERVM;
+
+#endif /* IN_RING0 || DOXYGEN_RUNNING */
 
 RT_C_DECLS_BEGIN
 
@@ -3617,6 +3633,7 @@ void            pgmUnlock(PVMCC pVM);
  */
 #define PGM_LOCK_ASSERT_OWNER_EX(a_pVM, a_pVCpu)  Assert(PDMCritSectIsOwnerEx((a_pVCpu), &(a_pVM)->pgm.s.CritSectX))
 
+uint32_t        pgmHandlerPhysicalCalcTableSizes(uint32_t *pcEntries, uint32_t *pcbTreeAndBitmap);
 int             pgmHandlerPhysicalExCreate(PVMCC pVM, PGMPHYSHANDLERTYPE hType, uint64_t uUser,
                                            R3PTRTYPE(const char *) pszDesc, PPGMPHYSHANDLER *ppPhysHandler);
 int             pgmHandlerPhysicalExDup(PVMCC pVM, PPGMPHYSHANDLER pPhysHandlerSrc, PPGMPHYSHANDLER *ppPhysHandler);

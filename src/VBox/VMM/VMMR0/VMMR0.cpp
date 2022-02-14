@@ -1903,6 +1903,12 @@ DECL_NO_INLINE(static, int) vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OP
             rc = PGMR0PoolGrow(pGVM, idCpu);
             break;
 
+        case VMMR0_DO_PGM_PHYS_HANDLER_INIT:
+            if (idCpu != 0 || pReqHdr != NULL || u64Arg > UINT32_MAX)
+                return VERR_INVALID_PARAMETER;
+            rc = PGMR0PhysHandlerInitReqHandler(pGVM, (uint32_t)u64Arg);
+            break;
+
         /*
          * GMM wrappers.
          */

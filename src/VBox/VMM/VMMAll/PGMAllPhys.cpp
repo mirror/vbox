@@ -114,6 +114,63 @@
 
 
 /**
+ * Calculate the actual table size.
+ *
+ * The memory is layed out like this:
+ *      - PGMPHYSHANDLERTREE (8 bytes)
+ *      - Allocation bitmap (8-byte size align)
+ *      - Slab of PGMPHYSHANDLER. Start is 64 byte aligned.
+ */
+uint32_t pgmHandlerPhysicalCalcTableSizes(uint32_t *pcEntries, uint32_t *pcbTreeAndBitmap)
+{
+    /*
+     * A minimum of 64 entries and a maximum of ~64K.
+     */
+    uint32_t cEntries = *pcEntries;
+    if (cEntries <= 64)
+        cEntries = 64;
+    else if (cEntries >= _64K)
+        cEntries = _64K;
+    else
+        cEntries = RT_ALIGN_32(cEntries, 16);
+
+    /*
+     * Do the initial calculation.
+     */
+    uint32_t cbBitmap        = RT_ALIGN_32(cEntries, 64) / 8;
+    uint32_t cbTreeAndBitmap = RT_ALIGN_32(sizeof(PGMPHYSHANDLERTREE) + cbBitmap, 64);
+    uint32_t cbTable         = cEntries * sizeof(PGMPHYSHANDLER);
+    uint32_t cbTotal         = cbTreeAndBitmap + cbTable;
+
+    /*
+     * Align the total and try use up extra space from that.
+     */
+    uint32_t cbTotalAligned = RT_ALIGN_32(cbTotal, RT_MAX(HOST_PAGE_SIZE, _16K));
+    uint32_t cAvail         = cbTotalAligned - cbTotal;
+    cAvail /= sizeof(PGMPHYSHANDLER);
+    if (cAvail >= 1)
+        for (;;)
+        {
+            cbBitmap        = RT_ALIGN_32(cEntries, 64) / 8;
+            cbTreeAndBitmap = RT_ALIGN_32(sizeof(PGMPHYSHANDLERTREE) + cbBitmap, 64);
+            cbTable         = cEntries * sizeof(PGMPHYSHANDLER);
+            cbTotal         = cbTreeAndBitmap + cbTable;
+            if (cbTotal <= cbTotalAligned)
+                break;
+            cEntries--;
+            Assert(cEntries >= 16);
+        }
+
+    /*
+     * Return the result.
+     */
+    *pcbTreeAndBitmap = cbTreeAndBitmap;
+    *pcEntries        = cEntries;
+    return cbTotalAligned;
+}
+
+
+/**
  * Looks up a ROM range by its PGMROMRANGE::GCPhys value.
  */
 DECLINLINE(PPGMROMRANGE) pgmPhysRomLookupByBase(PVMCC pVM, RTGCPHYS GCPhys)
@@ -2406,12 +2463,13 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhy
     if (   PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL
         || PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage))
     {
-        PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
-        if (pCur)
+        PPGMPHYSHANDLER pCur;
+        rc = pgmHandlerPhysicalLookup(pVM, GCPhys, &pCur);
+        if (RT_SUCCESS(rc))
         {
-            Assert(pCur && GCPhys >= pCur->Core.Key && GCPhys <= pCur->Core.KeyLast);
-            Assert((pCur->Core.Key     & GUEST_PAGE_OFFSET_MASK) == 0);
-            Assert((pCur->Core.KeyLast & GUEST_PAGE_OFFSET_MASK) == GUEST_PAGE_OFFSET_MASK);
+            Assert(pCur && GCPhys >= pCur->Key && GCPhys <= pCur->KeyLast);
+            Assert((pCur->Key     & GUEST_PAGE_OFFSET_MASK) == 0);
+            Assert((pCur->KeyLast & GUEST_PAGE_OFFSET_MASK) == GUEST_PAGE_OFFSET_MASK);
 #ifndef IN_RING3
             if (enmOrigin != PGMACCESSORIGIN_IEM)
             {
@@ -2434,13 +2492,8 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhy
             rcStrict = pfnHandler(pVM, pVCpu, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, enmOrigin, uUser);
             PGM_LOCK_VOID(pVM);
 
-#ifdef VBOX_WITH_STATISTICS
-            pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
-            if (pCur)
-                STAM_PROFILE_STOP(&pCur->Stat, h);
-#else
+            STAM_PROFILE_STOP(&pCur->Stat, h); /* no locking needed, entry is unlikely reused before we get here. */
             pCur = NULL; /* might not be valid anymore. */
-#endif
             AssertLogRelMsg(PGM_HANDLER_PHYS_IS_VALID_STATUS(rcStrict, false),
                             ("rcStrict=%Rrc GCPhys=%RGp\n", VBOXSTRICTRC_VAL(rcStrict), GCPhys));
             if (   rcStrict != VINF_PGM_HANDLER_DO_DEFAULT
@@ -2450,8 +2503,10 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPhy
                 return rcStrict;
             }
         }
+        else if (rc == VERR_NOT_FOUND)
+            AssertLogRelMsgFailed(("rc=%Rrc GCPhys=%RGp cb=%#x\n", rc, GCPhys, cb));
         else
-            AssertLogRelMsgFailed(("GCPhys=%RGp cb=%#x\n", GCPhys, cb));
+            AssertLogRelMsgFailedReturn(("rc=%Rrc GCPhys=%RGp cb=%#x\n", rc, GCPhys, cb), rc);
     }
 
     /*
@@ -2645,16 +2700,17 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
      * usage of full page handlers in the page pool.
      */
     PVMCPUCC pVCpu = VMMGetCpu(pVM);
-    PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
-    if (pCur)
+    PPGMPHYSHANDLER pCur;
+    rcStrict = pgmHandlerPhysicalLookup(pVM, GCPhys, &pCur);
+    if (RT_SUCCESS(rcStrict))
     {
-        Assert(GCPhys >= pCur->Core.Key && GCPhys <= pCur->Core.KeyLast);
+        Assert(GCPhys >= pCur->Key && GCPhys <= pCur->KeyLast);
 #ifndef IN_RING3
         if (enmOrigin != PGMACCESSORIGIN_IEM)
             /* Cannot reliably handle informational status codes in this context */
             return VERR_PGM_PHYS_WR_HIT_HANDLER;
 #endif
-        size_t cbRange = pCur->Core.KeyLast - GCPhys + 1;
+        size_t cbRange = pCur->KeyLast - GCPhys + 1;
         if (cbRange > cbWrite)
             cbRange = cbWrite;
 
@@ -2686,13 +2742,8 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
                 PGM_LOCK_VOID(pVM);
             }
 
-#ifdef VBOX_WITH_STATISTICS
-            pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
-            if (pCur)
-                STAM_PROFILE_STOP(&pCur->Stat, h);
-#else
+            STAM_PROFILE_STOP(&pCur->Stat, h); /* no locking needed, entry is unlikely reused before we get here. */
             pCur = NULL; /* might not be valid anymore. */
-#endif
             if (rcStrict == VINF_PGM_HANDLER_DO_DEFAULT)
             {
                 if (pvDst)
@@ -2720,8 +2771,10 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
         pvBuf    = (uint8_t *)pvBuf + cbRange;
         pvDst    = (uint8_t *)pvDst + cbRange;
     }
-    else /* The handler is somewhere else in the page, deal with it below. */
+    else if (rcStrict == VERR_NOT_FOUND) /* The handler is somewhere else in the page, deal with it below. */
         rcStrict = VINF_SUCCESS;
+    else
+        AssertMsgFailedReturn(("rcStrict=%Rrc GCPhys=%RGp\n", VBOXSTRICTRC_VAL(rcStrict), GCPhys), rcStrict);
     Assert(!PGM_PAGE_IS_MMIO_OR_ALIAS(pPage)); /* MMIO handlers are all GUEST_PAGE_SIZEed! */
 
     /*
@@ -2751,21 +2804,27 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
     {
         if (fMorePhys && !pPhys)
         {
-            pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
-            if (pPhys)
+            rcStrict = pgmHandlerPhysicalLookup(pVM, GCPhys, &pPhys);
+            if (RT_SUCCESS_NP(rcStrict))
             {
                 offPhys = 0;
-                offPhysLast = pPhys->Core.KeyLast - GCPhys; /* ASSUMES < 4GB handlers... */
+                offPhysLast = pPhys->KeyLast - GCPhys; /* ASSUMES < 4GB handlers... */
             }
             else
             {
-                pPhys = (PPGMPHYSHANDLER)RTAvlroGCPhysGetBestFit(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers,
-                                                                 GCPhys, true /* fAbove */);
-                if (    pPhys
-                    &&  pPhys->Core.Key <= GCPhys + (cbWrite - 1))
+                AssertMsgReturn(rcStrict == VERR_NOT_FOUND, ("%Rrc GCPhys=%RGp\n", VBOXSTRICTRC_VAL(rcStrict), GCPhys), rcStrict);
+
+                rcStrict = pVM->VMCC_CTX(pgm).s.pPhysHandlerTree->lookupMatchingOrAbove(&pVM->VMCC_CTX(pgm).s.PhysHandlerAllocator,
+                                                                                        GCPhys, &pPhys);
+                AssertMsgReturn(RT_SUCCESS(rcStrict) || rcStrict == VERR_NOT_FOUND,
+                                ("%Rrc GCPhys=%RGp\n", VBOXSTRICTRC_VAL(rcStrict), GCPhys), rcStrict);
+
+                if (   RT_SUCCESS(rcStrict)
+                    && pPhys->Key <= GCPhys + (cbWrite - 1))
                 {
-                    offPhys     = pPhys->Core.Key     - GCPhys;
-                    offPhysLast = pPhys->Core.KeyLast - GCPhys; /* ASSUMES < 4GB handlers... */
+                    offPhys     = pPhys->Key     - GCPhys;
+                    offPhysLast = pPhys->KeyLast - GCPhys; /* ASSUMES < 4GB handlers... */
+                    Assert(pPhys->KeyLast - pPhys->Key < _4G);
                 }
                 else
                 {
@@ -2817,13 +2876,8 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVMCC pVM, PPGMPAGE pPage, RTGCPHYS GCPh
                 PGM_LOCK_VOID(pVM);
             }
 
-#ifdef VBOX_WITH_STATISTICS
-            pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
-            if (pPhys)
-                STAM_PROFILE_STOP(&pPhys->Stat, h);
-#else
+            STAM_PROFILE_STOP(&pPhys->Stat, h); /* no locking needed, entry is unlikely reused before we get here. */
             pPhys = NULL; /* might not be valid anymore. */
-#endif
             AssertLogRelMsg(PGM_HANDLER_PHYS_IS_VALID_STATUS(rcStrict2, true),
                             ("rcStrict2=%Rrc (rcStrict=%Rrc) GCPhys=%RGp pPage=%R[pgmpage] %s\n", VBOXSTRICTRC_VAL(rcStrict2),
                              VBOXSTRICTRC_VAL(rcStrict), GCPhys, pPage,  pPhys ? R3STRING(pPhys->pszDesc) : ""));

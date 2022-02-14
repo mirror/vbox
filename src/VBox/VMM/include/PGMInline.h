@@ -967,26 +967,39 @@ DECLINLINE(PX86PML4E) pgmShwGetLongModePML4EPtr(PVMCPUCC pVCpu, unsigned int iPm
 /**
  * Cached physical handler lookup.
  *
- * @returns Physical handler covering @a GCPhys.
- * @param   pVM                 The cross context VM structure.
- * @param   GCPhys              The lookup address.
+ * @returns VBox status code.
+ * @retval  VERR_NOT_FOUND if no handler.
+ * @param   pVM         The cross context VM structure.
+ * @param   GCPhys      The lookup address.
+ * @param   ppHandler   Where to return the handler pointer.
  */
-DECLINLINE(PPGMPHYSHANDLER) pgmHandlerPhysicalLookup(PVMCC pVM, RTGCPHYS GCPhys)
+DECLINLINE(int) pgmHandlerPhysicalLookup(PVMCC pVM, RTGCPHYS GCPhys, PPGMPHYSHANDLER *ppHandler)
 {
-    PPGMPHYSHANDLER pHandler = pVM->pgm.s.CTX_SUFF(pLastPhysHandler);
+    PPGMPHYSHANDLER pHandler = pVM->VMCC_CTX(pgm).s.PhysHandlerAllocator.ptrFromInt(pVM->pgm.s.idxLastPhysHandler);
     if (   pHandler
-        && GCPhys >= pHandler->Core.Key
-        && GCPhys < pHandler->Core.KeyLast)
+        && pVM->VMCC_CTX(pgm).s.PhysHandlerAllocator.isPtrRetOkay(pHandler)
+        && GCPhys >= pHandler->Key
+        && GCPhys <  pHandler->KeyLast
+        && pHandler->hType != NIL_PGMPHYSHANDLERTYPE
+        && pHandler->hType != 0)
+
     {
         STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,PhysHandlerLookupHits));
-        return pHandler;
+        *ppHandler = pHandler;
+        return VINF_SUCCESS;
     }
 
     STAM_COUNTER_INC(&pVM->pgm.s.Stats.CTX_MID_Z(Stat,PhysHandlerLookupMisses));
-    pHandler = (PPGMPHYSHANDLER)RTAvlroGCPhysRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, GCPhys);
-    if (pHandler)
-        pVM->pgm.s.CTX_SUFF(pLastPhysHandler) = pHandler;
-    return pHandler;
+    AssertPtrReturn(pVM->VMCC_CTX(pgm).s.pPhysHandlerTree, VERR_PGM_HANDLER_IPE_1);
+    int rc = pVM->VMCC_CTX(pgm).s.pPhysHandlerTree->lookup(&pVM->VMCC_CTX(pgm).s.PhysHandlerAllocator, GCPhys, &pHandler);
+    if (RT_SUCCESS(rc))
+    {
+        *ppHandler = pHandler;
+        pVM->pgm.s.idxLastPhysHandler = pVM->VMCC_CTX(pgm).s.PhysHandlerAllocator.ptrToInt(pHandler);
+        return VINF_SUCCESS;
+    }
+    *ppHandler = NULL;
+    return rc;
 }
 
 

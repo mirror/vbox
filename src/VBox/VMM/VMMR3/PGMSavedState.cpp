@@ -27,7 +27,7 @@
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmdev.h>
 #include "PGMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include "PGMInline.h"
 
 #include <VBox/param.h>

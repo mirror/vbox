@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
+#include <iprt/process.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
@@ -81,6 +82,8 @@ VMMR0_INT_DECL(int) PGMR0InitPerVMData(PGVM pGVM, RTR0MEMOBJ hMemObj)
         pGVM->pgmr0.s.ahPoolMemObjs[i] = NIL_RTR0MEMOBJ;
         pGVM->pgmr0.s.ahPoolMapObjs[i] = NIL_RTR0MEMOBJ;
     }
+    pGVM->pgmr0.s.hPhysHandlerMemObj = NIL_RTR0MEMOBJ;
+    pGVM->pgmr0.s.hPhysHandlerMapObj = NIL_RTR0MEMOBJ;
 
     /*
      * Initialize the handler type table with return to ring-3 callbacks so we
@@ -250,6 +253,20 @@ VMMR0_INT_DECL(void) PGMR0CleanupVM(PGVM pGVM)
             AssertRC(rc);
             pGVM->pgmr0.s.ahPoolMemObjs[i] = NIL_RTR0MEMOBJ;
         }
+    }
+
+    if (pGVM->pgmr0.s.hPhysHandlerMapObj != NIL_RTR0MEMOBJ)
+    {
+        int rc = RTR0MemObjFree(pGVM->pgmr0.s.hPhysHandlerMapObj, true /*fFreeMappings*/);
+        AssertRC(rc);
+        pGVM->pgmr0.s.hPhysHandlerMapObj = NIL_RTR0MEMOBJ;
+    }
+
+    if (pGVM->pgmr0.s.hPhysHandlerMemObj != NIL_RTR0MEMOBJ)
+    {
+        int rc = RTR0MemObjFree(pGVM->pgmr0.s.hPhysHandlerMemObj, true /*fFreeMappings*/);
+        AssertRC(rc);
+        pGVM->pgmr0.s.hPhysHandlerMemObj = NIL_RTR0MEMOBJ;
     }
 
     if (RTCritSectIsInitialized(&pGVM->pgmr0.s.PoolGrowCritSect))
@@ -752,6 +769,72 @@ VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMM
 
 
 /**
+ * This is called during PGMR3Init to init the physical access handler allocator
+ * and tree.
+ *
+ * @returns VBox status code.
+ * @param   pGVM        Pointer to the global VM structure.
+ * @param   cEntries    Desired number of physical access handlers to reserve
+ *                      space for (will be adjusted).
+ * @thread  EMT(0)
+ */
+VMMR0_INT_DECL(int) PGMR0PhysHandlerInitReqHandler(PGVM pGVM, uint32_t cEntries)
+{
+    /*
+     * Validate the input and state.
+     */
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
+    AssertRCReturn(rc, rc);
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE); /** @todo ring-0 safe state check. */
+
+    AssertReturn(pGVM->pgmr0.s.PhysHandlerAllocator.m_paNodes == NULL, VERR_WRONG_ORDER);
+    AssertReturn(pGVM->pgm.s.PhysHandlerAllocator.m_paNodes == NULL, VERR_WRONG_ORDER);
+
+    AssertLogRelMsgReturn(cEntries <= _64K, ("%#x\n", cEntries), VERR_OUT_OF_RANGE);
+
+    /*
+     * Calculate the table size and allocate it.
+     */
+    uint32_t       cbTreeAndBitmap = 0;
+    uint32_t const cbTotalAligned  = pgmHandlerPhysicalCalcTableSizes(&cEntries, &cbTreeAndBitmap);
+    RTR0MEMOBJ     hMemObj         = NIL_RTR0MEMOBJ;
+    rc = RTR0MemObjAllocPage(&hMemObj, cbTotalAligned, false);
+    if (RT_SUCCESS(rc))
+    {
+        RTR0MEMOBJ hMapObj = NIL_RTR0MEMOBJ;
+        rc = RTR0MemObjMapUser(&hMapObj, hMemObj, (RTR3PTR)-1, 0, RTMEM_PROT_READ | RTMEM_PROT_WRITE, RTR0ProcHandleSelf());
+        if (RT_SUCCESS(rc))
+        {
+            uint8_t *pb = (uint8_t *)RTR0MemObjAddress(hMemObj);
+            if (!RTR0MemObjWasZeroInitialized(hMemObj))
+                RT_BZERO(pb, cbTotalAligned);
+
+            pGVM->pgmr0.s.PhysHandlerAllocator.initSlabAllocator(cEntries, (PPGMPHYSHANDLER)&pb[cbTreeAndBitmap],
+                                                                 (uint64_t *)&pb[sizeof(PGMPHYSHANDLERTREE)]);
+            pGVM->pgmr0.s.pPhysHandlerTree = (PPGMPHYSHANDLERTREE)pb;
+            pGVM->pgmr0.s.pPhysHandlerTree->initWithAllocator(&pGVM->pgmr0.s.PhysHandlerAllocator);
+            pGVM->pgmr0.s.hPhysHandlerMemObj = hMemObj;
+            pGVM->pgmr0.s.hPhysHandlerMapObj = hMapObj;
+
+            AssertCompile(sizeof(pGVM->pgm.s.PhysHandlerAllocator) == sizeof(pGVM->pgmr0.s.PhysHandlerAllocator));
+            RTR3PTR R3Ptr = RTR0MemObjAddressR3(hMapObj);
+            pGVM->pgm.s.pPhysHandlerTree                    = R3Ptr;
+            pGVM->pgm.s.PhysHandlerAllocator.m_paNodes      = R3Ptr + cbTreeAndBitmap;
+            pGVM->pgm.s.PhysHandlerAllocator.m_pbmAlloc     = R3Ptr + sizeof(PGMPHYSHANDLERTREE);
+            pGVM->pgm.s.PhysHandlerAllocator.m_cNodes       = cEntries;
+            pGVM->pgm.s.PhysHandlerAllocator.m_cErrors      = 0;
+            pGVM->pgm.s.PhysHandlerAllocator.m_idxAllocHint = 0;
+            pGVM->pgm.s.PhysHandlerAllocator.m_uPadding     = 0;
+            return VINF_SUCCESS;
+        }
+
+        RTR0MemObjFree(hMemObj, true /*fFreeMappings*/);
+    }
+    return rc;
+}
+
+
+/**
  * Updates a physical access handler type with ring-0 callback functions.
  *
  * The handler type must first have been registered in ring-3.
@@ -1155,69 +1238,69 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu,
      * Try lookup the all access physical handler for the address.
      */
     PGM_LOCK_VOID(pGVM);
-    PPGMPHYSHANDLER          pHandler     = pgmHandlerPhysicalLookup(pGVM, GCPhysFault);
-    PCPGMPHYSHANDLERTYPEINT  pHandlerType = RT_LIKELY(pHandler) ? PGMPHYSHANDLER_GET_TYPE_NO_NULL(pGVM, pHandler) : NULL;
-    if (RT_LIKELY(pHandler && pHandlerType->enmKind != PGMPHYSHANDLERKIND_WRITE))
+    PPGMPHYSHANDLER pHandler;
+    rc = pgmHandlerPhysicalLookup(pGVM, GCPhysFault, &pHandler);
+    if (RT_SUCCESS(rc))
     {
-        /*
-         * If the handle has aliases page or pages that have been temporarily
-         * disabled, we'll have to take a detour to make sure we resync them
-         * to avoid lots of unnecessary exits.
-         */
-        PPGMPAGE pPage;
-        if (   (   pHandler->cAliasedPages
-                || pHandler->cTmpOffPages)
-            && (   (pPage = pgmPhysGetPage(pGVM, GCPhysFault)) == NULL
-                || PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
-           )
+        PCPGMPHYSHANDLERTYPEINT pHandlerType = PGMPHYSHANDLER_GET_TYPE_NO_NULL(pGVM, pHandler);
+        if (RT_LIKELY(pHandlerType->enmKind != PGMPHYSHANDLERKIND_WRITE))
         {
-            Log(("PGMR0Trap0eHandlerNPMisconfig: Resyncing aliases / tmp-off page at %RGp (uErr=%#x) %R[pgmpage]\n", GCPhysFault, uErr, pPage));
-            STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatR0NpMiscfgSyncPage);
-            rc = pgmShwSyncNestedPageLocked(pGVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
-            PGM_UNLOCK(pGVM);
-        }
-        else
-        {
-            if (pHandlerType->pfnPfHandler)
+            /*
+             * If the handle has aliases page or pages that have been temporarily
+             * disabled, we'll have to take a detour to make sure we resync them
+             * to avoid lots of unnecessary exits.
+             */
+            PPGMPAGE pPage;
+            if (   (   pHandler->cAliasedPages
+                    || pHandler->cTmpOffPages)
+                && (   (pPage = pgmPhysGetPage(pGVM, GCPhysFault)) == NULL
+                    || PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_DISABLED)
+               )
             {
-                uint64_t const uUser = !pHandlerType->fRing0DevInsIdx ? pHandler->uUser
-                                     : (uintptr_t)PDMDeviceRing0IdxToInstance(pGVM, pHandler->uUser);
-                STAM_PROFILE_START(&pHandler->Stat, h);
+                Log(("PGMR0Trap0eHandlerNPMisconfig: Resyncing aliases / tmp-off page at %RGp (uErr=%#x) %R[pgmpage]\n", GCPhysFault, uErr, pPage));
+                STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatR0NpMiscfgSyncPage);
+                rc = pgmShwSyncNestedPageLocked(pGVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
                 PGM_UNLOCK(pGVM);
-
-                Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pHandlerType->pfnPfHandler, uErr, GCPhysFault, uUser));
-                rc = pHandlerType->pfnPfHandler(pGVM, pGVCpu, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame,
-                                                GCPhysFault, GCPhysFault, uUser);
-
-#ifdef VBOX_WITH_STATISTICS
-                PGM_LOCK_VOID(pGVM);
-                pHandler = pgmHandlerPhysicalLookup(pGVM, GCPhysFault);
-                if (pHandler)
-                    STAM_PROFILE_STOP(&pHandler->Stat, h);
-                PGM_UNLOCK(pGVM);
-#endif
             }
             else
             {
-                PGM_UNLOCK(pGVM);
-                Log(("PGMR0Trap0eHandlerNPMisconfig: %RGp (uErr=%#x) -> R3\n", GCPhysFault, uErr));
-                rc = VINF_EM_RAW_EMULATE_INSTR;
+                if (pHandlerType->pfnPfHandler)
+                {
+                    uint64_t const uUser = !pHandlerType->fRing0DevInsIdx ? pHandler->uUser
+                                         : (uintptr_t)PDMDeviceRing0IdxToInstance(pGVM, pHandler->uUser);
+                    STAM_PROFILE_START(&pHandler->Stat, h);
+                    PGM_UNLOCK(pGVM);
+
+                    Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pHandlerType->pfnPfHandler, uErr, GCPhysFault, uUser));
+                    rc = pHandlerType->pfnPfHandler(pGVM, pGVCpu, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame,
+                                                    GCPhysFault, GCPhysFault, uUser);
+
+                    STAM_PROFILE_STOP(&pHandler->Stat, h); /* no locking needed, entry is unlikely reused before we get here. */
+                }
+                else
+                {
+                    PGM_UNLOCK(pGVM);
+                    Log(("PGMR0Trap0eHandlerNPMisconfig: %RGp (uErr=%#x) -> R3\n", GCPhysFault, uErr));
+                    rc = VINF_EM_RAW_EMULATE_INSTR;
+                }
             }
+            STAM_PROFILE_STOP(&pGVCpu->pgm.s.Stats.StatR0NpMiscfg, a);
+            return rc;
         }
     }
     else
-    {
-        /*
-         * Must be out of sync, so do a SyncPage and restart the instruction.
-         *
-         * ASSUMES that ALL handlers are page aligned and covers whole pages
-         * (assumption asserted in PGMHandlerPhysicalRegisterEx).
-         */
-        Log(("PGMR0Trap0eHandlerNPMisconfig: Out of sync page at %RGp (uErr=%#x)\n", GCPhysFault, uErr));
-        STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatR0NpMiscfgSyncPage);
-        rc = pgmShwSyncNestedPageLocked(pGVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
-        PGM_UNLOCK(pGVM);
-    }
+        AssertMsgReturn(rc == VERR_NOT_FOUND, ("%Rrc GCPhysFault=%RGp\n", VBOXSTRICTRC_VAL(rc), GCPhysFault), rc);
+
+    /*
+     * Must be out of sync, so do a SyncPage and restart the instruction.
+     *
+     * ASSUMES that ALL handlers are page aligned and covers whole pages
+     * (assumption asserted in PGMHandlerPhysicalRegisterEx).
+     */
+    Log(("PGMR0Trap0eHandlerNPMisconfig: Out of sync page at %RGp (uErr=%#x)\n", GCPhysFault, uErr));
+    STAM_COUNTER_INC(&pGVCpu->pgm.s.Stats.StatR0NpMiscfgSyncPage);
+    rc = pgmShwSyncNestedPageLocked(pGVCpu, GCPhysFault, 1 /*cPages*/, enmShwPagingMode);
+    PGM_UNLOCK(pGVM);
 
     STAM_PROFILE_STOP(&pGVCpu->pgm.s.Stats.StatR0NpMiscfg, a);
     return rc;

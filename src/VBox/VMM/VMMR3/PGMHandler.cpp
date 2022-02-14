@@ -33,7 +33,7 @@
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/ssm.h>
 #include "PGMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include "PGMInline.h"
 #include <VBox/dbg.h>
 
@@ -51,9 +51,9 @@
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode, void *pvUser);
-static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, void *pvUser);
-static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode, void *pvUser);
+static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PPGMPHYSHANDLER pHandler, void *pvUser);
+static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PPGMPHYSHANDLER pHandler, void *pvUser);
+static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PPGMPHYSHANDLER pHandler, void *pvUser);
 
 
 
@@ -142,8 +142,12 @@ void pgmR3HandlerPhysicalUpdateAll(PVM pVM)
      * (the right -> left on the setting pass is just bird speculating on cache hits)
      */
     PGM_LOCK_VOID(pVM);
-    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers,  true, pgmR3HandlerPhysicalOneClear, pVM);
-    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysHandlers, false, pgmR3HandlerPhysicalOneSet, pVM);
+
+    int rc = pVM->pgm.s.pPhysHandlerTree->doWithAllFromLeft(&pVM->pgm.s.PhysHandlerAllocator, pgmR3HandlerPhysicalOneClear, pVM);
+    AssertRC(rc);
+    rc = pVM->pgm.s.pPhysHandlerTree->doWithAllFromRight(&pVM->pgm.s.PhysHandlerAllocator, pgmR3HandlerPhysicalOneSet, pVM);
+    AssertRC(rc);
+
     PGM_UNLOCK(pVM);
 }
 
@@ -152,15 +156,14 @@ void pgmR3HandlerPhysicalUpdateAll(PVM pVM)
  * Clears all the page level flags for one physical handler range.
  *
  * @returns 0
- * @param   pNode   Pointer to a PGMPHYSHANDLER.
- * @param   pvUser  Pointer to the VM.
+ * @param   pHandler    The physical access handler entry.
+ * @param   pvUser      Pointer to the VM.
  */
-static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PPGMPHYSHANDLER pHandler, void *pvUser)
 {
-    PPGMPHYSHANDLER pCur     = (PPGMPHYSHANDLER)pNode;
     PPGMRAMRANGE    pRamHint = NULL;
-    RTGCPHYS        GCPhys   = pCur->Core.Key;
-    RTUINT          cPages   = pCur->cPages;
+    RTGCPHYS        GCPhys   = pHandler->Key;
+    RTUINT          cPages   = pHandler->cPages;
     PVM             pVM      = (PVM)pvUser;
     for (;;)
     {
@@ -197,18 +200,17 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode
  * Sets all the page level flags for one physical handler range.
  *
  * @returns 0
- * @param   pNode   Pointer to a PGMPHYSHANDLER.
- * @param   pvUser  Pointer to the VM.
+ * @param   pHandler    The physical access handler entry.
+ * @param   pvUser      Pointer to the VM.
  */
-static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PPGMPHYSHANDLER pHandler, void *pvUser)
 {
     PVM                     pVM       = (PVM)pvUser;
-    PPGMPHYSHANDLER         pCur      = (PPGMPHYSHANDLER)pNode;
-    PCPGMPHYSHANDLERTYPEINT pCurType  = PGMPHYSHANDLER_GET_TYPE_NO_NULL(pVM, pCur);
-    unsigned                uState    = pCurType->uState;
+    PCPGMPHYSHANDLERTYPEINT pType     = PGMPHYSHANDLER_GET_TYPE_NO_NULL(pVM, pHandler);
+    unsigned                uState    = pType->uState;
     PPGMRAMRANGE            pRamHint  = NULL;
-    RTGCPHYS                GCPhys    = pCur->Core.Key;
-    RTUINT                  cPages    = pCur->cPages;
+    RTGCPHYS                GCPhys    = pHandler->Key;
+    RTUINT                  cPages    = pHandler->cPages;
     for (;;)
     {
         PPGMPAGE pPage;
@@ -274,13 +276,15 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
      * Dump the handlers.
      */
     pHlp->pfnPrintf(pHlp,
-                    "Physical handlers: (PhysHandlers=%d (%#x))\n"
+                    "Physical handlers: max %#x, %u allocator error%s, %u tree error%s\n"
                     "%*s %*s %*s uUser             Type     Description\n",
-                    pVM->pgm.s.pTreesR3->PhysHandlers, pVM->pgm.s.pTreesR3->PhysHandlers,
+                    pVM->pgm.s.PhysHandlerAllocator.m_cNodes,
+                    pVM->pgm.s.PhysHandlerAllocator.m_cErrors, pVM->pgm.s.PhysHandlerAllocator.m_cErrors != 0 ? "s" : "",
+                    pVM->pgm.s.pPhysHandlerTree->m_cErrors, pVM->pgm.s.pPhysHandlerTree->m_cErrors != 0 ? "s" : "",
                     - (int)sizeof(RTGCPHYS) * 2,     "From",
                     - (int)sizeof(RTGCPHYS) * 2 - 3, "- To (incl)",
                     - (int)sizeof(RTHCPTR)  * 2 - 1, "Handler (R3)");
-    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers, true, pgmR3InfoHandlersPhysicalOne, &Args);
+    pVM->pgm.s.pPhysHandlerTree->doWithAllFromLeft(&pVM->pgm.s.PhysHandlerAllocator, pgmR3InfoHandlersPhysicalOne, &Args);
 }
 
 
@@ -288,17 +292,16 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
  * Displays one physical handler range.
  *
  * @returns 0
- * @param   pNode   Pointer to a PGMPHYSHANDLER.
- * @param   pvUser  Pointer to command helper functions.
+ * @param   pHandler    The physical access handler entry.
+ * @param   pvUser      Pointer to command helper functions.
  */
-static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PPGMPHYSHANDLER pHandler, void *pvUser)
 {
-    PPGMPHYSHANDLER         pCur     = (PPGMPHYSHANDLER)pNode;
-    PPGMHANDLERINFOARG      pArgs    = (PPGMHANDLERINFOARG)pvUser;
-    PCDBGFINFOHLP           pHlp     = pArgs->pHlp;
-    PCPGMPHYSHANDLERTYPEINT pCurType = PGMPHYSHANDLER_GET_TYPE_NO_NULL(pArgs->pVM, pCur);
+    PPGMHANDLERINFOARG      pArgs = (PPGMHANDLERINFOARG)pvUser;
+    PCDBGFINFOHLP           pHlp  = pArgs->pHlp;
+    PCPGMPHYSHANDLERTYPEINT pType = PGMPHYSHANDLER_GET_TYPE_NO_NULL(pArgs->pVM, pHandler);
     const char *pszType;
-    switch (pCurType->enmKind)
+    switch (pType->enmKind)
     {
         case PGMPHYSHANDLERKIND_MMIO:   pszType = "MMIO   "; break;
         case PGMPHYSHANDLERKIND_WRITE:  pszType = "Write  "; break;
@@ -308,23 +311,23 @@ static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode
 
     char   szFlags[80];
     size_t cchFlags = 0;
-    if (pCurType->fKeepPgmLock)
+    if (pType->fKeepPgmLock)
         cchFlags = RTStrPrintf(szFlags, sizeof(szFlags), "(keep-pgm-lock");
-    if (pCurType->fRing0DevInsIdx)
+    if (pType->fRing0DevInsIdx)
         cchFlags += RTStrPrintf(&szFlags[cchFlags], sizeof(szFlags) - cchFlags, cchFlags ? ", keep-pgm-lock" : "(keep-pgm-lock");
-    if (pCurType->fRing0Enabled)
+    if (pType->fRing0Enabled)
         cchFlags += RTStrPrintf(&szFlags[cchFlags], sizeof(szFlags) - cchFlags, cchFlags ? ", r0-enabled)" : "(r0-enabled)");
     else
         cchFlags += RTStrPrintf(&szFlags[cchFlags], sizeof(szFlags) - cchFlags, cchFlags ? ", r3-only)" : "(r3-only)");
 
     pHlp->pfnPrintf(pHlp,
                     "%RGp - %RGp  %p  %016RX64  %s  %s  %s\n",
-                    pCur->Core.Key, pCur->Core.KeyLast, pCurType->pfnHandler, pCur->uUser, pszType, pCur->pszDesc, szFlags);
+                    pHandler->Key, pHandler->KeyLast, pType->pfnHandler, pHandler->uUser, pszType, pHandler->pszDesc, szFlags);
 #ifdef VBOX_WITH_STATISTICS
     if (pArgs->fStats)
         pHlp->pfnPrintf(pHlp, "   cPeriods: %9RU64  cTicks: %11RU64  Min: %11RU64  Avg: %11RU64 Max: %11RU64\n",
-                        pCur->Stat.cPeriods, pCur->Stat.cTicks, pCur->Stat.cTicksMin,
-                        pCur->Stat.cPeriods ? pCur->Stat.cTicks / pCur->Stat.cPeriods : 0, pCur->Stat.cTicksMax);
+                        pHandler->Stat.cPeriods, pHandler->Stat.cTicks, pHandler->Stat.cTicksMin,
+                        pHandler->Stat.cPeriods ? pHandler->Stat.cTicks / pHandler->Stat.cPeriods : 0, pHandler->Stat.cTicksMax);
 #endif
     return 0;
 }

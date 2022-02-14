@@ -936,6 +936,7 @@ VMMR0_INT_DECL(int)  PGMR0PhysAllocateLargePage(PGVM pGVM, VMCPUID idCpu, RTGCPH
 VMMR0_INT_DECL(int)  PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
                                              size_t offSub, size_t cbSub, void **ppvMapping);
 VMMR0_INT_DECL(int)  PGMR0PhysSetupIoMmu(PGVM pGVM);
+VMMR0_INT_DECL(int)  PGMR0PhysHandlerInitReqHandler(PGVM pGVM, uint32_t cEntries);
 VMMR0_INT_DECL(int)  PGMR0HandlerPhysicalTypeSetUpContext(PGVM pGVM, PGMPHYSHANDLERKIND enmKind, uint32_t fFlags,
                                                           PFNPGMPHYSHANDLER pfnHandler, PFNPGMRZPHYSPFHANDLER pfnPfHandler,
                                                           const char *pszDesc, PGMPHYSHANDLERTYPE hType);

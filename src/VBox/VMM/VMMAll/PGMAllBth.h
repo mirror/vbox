@@ -239,8 +239,9 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
 # else
         const RTGCPHYS  GCPhysFault = PGM_A20_APPLY(pVCpu, (RTGCPHYS)pvFault);
 # endif
-        PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
-        if (pCur)
+        PPGMPHYSHANDLER pCur;
+        rcStrict = pgmHandlerPhysicalLookup(pVM, GCPhysFault, &pCur);
+        if (RT_SUCCESS(rcStrict))
         {
             PCPGMPHYSHANDLERTYPEINT const pCurType = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
 
@@ -321,11 +322,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
                                                       !pCurType->fRing0DevInsIdx ? pCur->uUser
                                                       : (uintptr_t)PDMDeviceRing0IdxToInstance(pVM, pCur->uUser));
 
-#  ifdef VBOX_WITH_STATISTICS
-                    pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault); /* paranoia in case the handler deregistered itself */
-                    if (pCur)
-                        STAM_PROFILE_STOP(&pCur->Stat, h);
-#  endif
+                    STAM_PROFILE_STOP(&pCur->Stat, h); /* no locking needed, entry is unlikely reused before we get here. */
                 }
                 else
                 {
@@ -336,13 +333,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
 
                     rcStrict = pCurType->pfnPfHandler(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault, uUser);
 
-#  ifdef VBOX_WITH_STATISTICS
-                    PGM_LOCK_VOID(pVM);
-                    pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
-                    if (pCur)
-                        STAM_PROFILE_STOP(&pCur->Stat, h);
-                    PGM_UNLOCK(pVM);
-#  endif
+                    STAM_PROFILE_STOP(&pCur->Stat, h); /* no locking needed, entry is unlikely reused before we get here. */
                 }
             }
             else
@@ -351,6 +342,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPUCC pVCpu, 
             STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2HndPhys; });
             return rcStrict;
         }
+        AssertMsgReturn(rcStrict == VERR_NOT_FOUND, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), rcStrict);
     }
 
     /*

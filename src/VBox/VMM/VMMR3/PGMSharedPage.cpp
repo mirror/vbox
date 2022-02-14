@@ -25,7 +25,7 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/uvm.h>
 #include "PGMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>

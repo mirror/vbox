@@ -605,7 +605,7 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/hm.h>
 #include "PGMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/uvm.h>
 #include "PGMInline.h"
 
@@ -932,13 +932,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     AssertRCReturn(rc, rc);
 
     /*
-     * Trees
-     */
-    rc = MMHyperAlloc(pVM, sizeof(PGMTREES), 0, MM_TAG_PGM, (void **)&pVM->pgm.s.pTreesR3);
-    if (RT_SUCCESS(rc))
-        pVM->pgm.s.pTreesR0 = MMHyperR3ToR0(pVM, pVM->pgm.s.pTreesR3);
-
-    /*
      * Setup the zero page (HCPHysZeroPg is set by ring-0).
      */
     RT_ZERO(pVM->pgm.s.abZeroPg); /* paranoia */
@@ -957,6 +950,42 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     AssertRelease(pVM->pgm.s.HCPhysMmioPg != NIL_RTHCPHYS);
     AssertRelease(pVM->pgm.s.HCPhysMmioPg != 0);
     pVM->pgm.s.HCPhysInvMmioPg = pVM->pgm.s.HCPhysMmioPg;
+
+    /*
+     * Initialize physical access handlers.
+     */
+    /** @cfgm{/PGM/MaxPhysicalAccessHandlers, uint32_t, 32, 65536, 6144}
+     * Number of physical access handlers allowed (subject to rounding).  This is
+     * managed as one time allocation during initializations.  The default is
+     * lower for a driverless setup. */
+    /** @todo can lower it for nested paging too, at least when there is no
+     *        nested guest involved. */
+    uint32_t cAccessHandlers = 0;
+    rc = CFGMR3QueryU32Def(pCfgPGM, "MaxPhysicalAccessHandlers", &cAccessHandlers, !fDriverless ? 6144 : 640);
+    AssertLogRelRCReturn(rc, rc);
+    AssertLogRelMsgStmt(cAccessHandlers >= 32, ("cAccessHandlers=%#x, min 32\n", cAccessHandlers), cAccessHandlers = 32);
+    AssertLogRelMsgStmt(cAccessHandlers <= _64K, ("cAccessHandlers=%#x, max 65536\n", cAccessHandlers), cAccessHandlers = _64K);
+    if (!fDriverless)
+    {
+        rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_PHYS_HANDLER_INIT, cAccessHandlers, NULL);
+        AssertRCReturn(rc, rc);
+        AssertPtr(pVM->pgm.s.pPhysHandlerTree);
+        AssertPtr(pVM->pgm.s.PhysHandlerAllocator.m_paNodes);
+        AssertPtr(pVM->pgm.s.PhysHandlerAllocator.m_pbmAlloc);
+    }
+    else
+    {
+        uint32_t       cbTreeAndBitmap = 0;
+        uint32_t const cbTotalAligned  = pgmHandlerPhysicalCalcTableSizes(&cAccessHandlers, &cbTreeAndBitmap);
+        uint8_t       *pb = NULL;
+        rc = SUPR3PageAlloc(cbTotalAligned >> HOST_PAGE_SHIFT, 0, (void **)&pb);
+        AssertLogRelRCReturn(rc, rc);
+
+        pVM->pgm.s.PhysHandlerAllocator.initSlabAllocator(cAccessHandlers, (PPGMPHYSHANDLER)&pb[cbTreeAndBitmap],
+                                                          (uint64_t *)&pb[sizeof(PGMPHYSHANDLERTREE)]);
+        pVM->pgm.s.pPhysHandlerTree = (PPGMPHYSHANDLERTREE)pb;
+        pVM->pgm.s.pPhysHandlerTree->initWithAllocator(&pVM->pgm.s.PhysHandlerAllocator);
+    }
 
     /*
      * Register the physical access handler protecting ROMs.
@@ -1218,6 +1247,18 @@ static int pgmR3InitStats(PVM pVM)
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b); \
         AssertRC(rc);
 
+#define PGM_REG_U64(a, b, c) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b); \
+        AssertRC(rc);
+
+#define PGM_REG_U64_RESET(a, b, c) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b); \
+        AssertRC(rc);
+
+#define PGM_REG_U32(a, b, c) \
+        rc = STAMR3RegisterF(pVM, a, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b); \
+        AssertRC(rc);
+
 #define PGM_REG_COUNTER_BYTES(a, b, c) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, c, b); \
         AssertRC(rc);
@@ -1282,7 +1323,16 @@ static int pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER(&pStats->StatR3PhysHandlerLookupHits,       "/PGM/R3/PhysHandlerLookupHits",      "The number of cache hits when looking up physical handlers.");
     PGM_REG_COUNTER(&pStats->StatRZPhysHandlerLookupMisses,     "/PGM/RZ/PhysHandlerLookupMisses",    "The number of cache misses when looking up physical handlers.");
     PGM_REG_COUNTER(&pStats->StatR3PhysHandlerLookupMisses,     "/PGM/R3/PhysHandlerLookupMisses",    "The number of cache misses when looking up physical handlers.");
+#endif /* VBOX_WITH_STATISTICS */
+    PPGMPHYSHANDLERTREE pPhysHndlTree = pVM->pgm.s.pPhysHandlerTree;
+    PGM_REG_U32(&pPhysHndlTree->m_cErrors,                      "/PGM/PhysHandlerTree/ErrorsTree",    "Physical access handler tree errors.");
+    PGM_REG_U32(&pVM->pgm.s.PhysHandlerAllocator.m_cErrors,     "/PGM/PhysHandlerTree/ErrorsAllocatorR3", "Physical access handler tree allocator errors (ring-3 only).");
+    PGM_REG_U64_RESET(&pPhysHndlTree->m_cInserts,               "/PGM/PhysHandlerTree/Inserts",       "Physical access handler tree inserts.");
+    PGM_REG_U32(&pVM->pgm.s.PhysHandlerAllocator.m_cNodes,      "/PGM/PhysHandlerTree/MaxHandlers",   "Max physical access handlers.");
+    PGM_REG_U64_RESET(&pPhysHndlTree->m_cRemovals,              "/PGM/PhysHandlerTree/Removals",      "Physical access handler tree removals.");
+    PGM_REG_U64_RESET(&pPhysHndlTree->m_cRebalancingOperations, "/PGM/PhysHandlerTree/RebalancingOperations", "Physical access handler tree rebalancing transformations.");
 
+#ifdef VBOX_WITH_STATISTICS
     PGM_REG_COUNTER(&pStats->StatRZPageReplaceShared,           "/PGM/RZ/Page/ReplacedShared",        "Times a shared page was replaced.");
     PGM_REG_COUNTER(&pStats->StatRZPageReplaceZero,             "/PGM/RZ/Page/ReplacedZero",          "Times the zero page was replaced.");
 /// @todo    PGM_REG_COUNTER(&pStats->StatRZPageHandyAllocs,             "/PGM/RZ/Page/HandyAllocs",               "Number of times we've allocated more handy pages.");
@@ -1322,6 +1372,9 @@ static int pgmR3InitStats(PVM pVM)
 #endif
 
 #undef PGM_REG_COUNTER
+#undef PGM_REG_U64
+#undef PGM_REG_U64_RESET
+#undef PGM_REG_U32
 #undef PGM_REG_PROFILE
 #undef PGM_REG_PROFILE_NS
 
@@ -2103,8 +2156,9 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                     {
                         pszType = "MMIO";
                         PGM_LOCK_VOID(pVM);
-                        PPGMPHYSHANDLER pHandler = pgmHandlerPhysicalLookup(pVM, iFirstPage * X86_PAGE_SIZE);
-                        if (pHandler)
+                        PPGMPHYSHANDLER pHandler;
+                        int rc = pgmHandlerPhysicalLookup(pVM, iFirstPage * X86_PAGE_SIZE, &pHandler);
+                        if (RT_SUCCESS(rc))
                             pszMore = pHandler->pszDesc;
                         PGM_UNLOCK(pVM);
                         break;
@@ -2536,6 +2590,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 typedef struct PGMCHECKINTARGS
 {
     bool                    fLeftToRight;    /**< true: left-to-right; false: right-to-left. */
+    uint32_t                cErrors;
     PPGMPHYSHANDLER         pPrevPhys;
     PVM                     pVM;
 } PGMCHECKINTARGS, *PPGMCHECKINTARGS;
@@ -2547,22 +2602,27 @@ typedef struct PGMCHECKINTARGS
  * @param   pNode       The handler node.
  * @param   pvUser      pVM.
  */
-static DECLCALLBACK(int) pgmR3CheckIntegrityPhysHandlerNode(PAVLROGCPHYSNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) pgmR3CheckIntegrityPhysHandlerNode(PPGMPHYSHANDLER pNode, void *pvUser)
 {
     PPGMCHECKINTARGS pArgs = (PPGMCHECKINTARGS)pvUser;
-    PPGMPHYSHANDLER pCur = (PPGMPHYSHANDLER)pNode;
-    AssertReleaseReturn(!((uintptr_t)pCur & 7), 1);
-    AssertReleaseMsg(pCur->Core.Key <= pCur->Core.KeyLast,
-                     ("pCur=%p %RGp-%RGp %s\n", pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
-    AssertReleaseMsg(   !pArgs->pPrevPhys
-                     || (  pArgs->fLeftToRight
-                         ? pArgs->pPrevPhys->Core.KeyLast < pCur->Core.Key
-                         : pArgs->pPrevPhys->Core.KeyLast > pCur->Core.Key),
-                     ("pPrevPhys=%p %RGp-%RGp %s\n"
-                      "     pCur=%p %RGp-%RGp %s\n",
-                      pArgs->pPrevPhys, pArgs->pPrevPhys->Core.Key, pArgs->pPrevPhys->Core.KeyLast, pArgs->pPrevPhys->pszDesc,
-                      pCur, pCur->Core.Key, pCur->Core.KeyLast, pCur->pszDesc));
-    pArgs->pPrevPhys = pCur;
+
+    AssertLogRelMsgReturnStmt(!((uintptr_t)pNode & 7), ("pNode=%p\n", pNode), pArgs->cErrors++, VERR_INVALID_POINTER);
+
+    AssertLogRelMsgStmt(pNode->Key <= pNode->KeyLast,
+                        ("pNode=%p %RGp-%RGp %s\n", pNode, pNode->Key, pNode->KeyLast, pNode->pszDesc),
+                        pArgs->cErrors++);
+
+    AssertLogRelMsgStmt(   !pArgs->pPrevPhys
+                        || (  pArgs->fLeftToRight
+                            ? pArgs->pPrevPhys->KeyLast < pNode->Key
+                            : pArgs->pPrevPhys->KeyLast > pNode->Key),
+                        ("pPrevPhys=%p %RGp-%RGp %s\n"
+                         "    pNode=%p %RGp-%RGp %s\n",
+                         pArgs->pPrevPhys, pArgs->pPrevPhys->Key, pArgs->pPrevPhys->KeyLast, pArgs->pPrevPhys->pszDesc,
+                         pNode, pNode->Key, pNode->KeyLast, pNode->pszDesc),
+                        pArgs->cErrors++);
+
+    pArgs->pPrevPhys = pNode;
     return 0;
 }
 
@@ -2579,14 +2639,19 @@ VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
     /*
      * Check the trees.
      */
-    int cErrors = 0;
-    const PGMCHECKINTARGS LeftToRight = {  true, NULL, pVM };
-    const PGMCHECKINTARGS RightToLeft = { false, NULL, pVM };
-    PGMCHECKINTARGS Args = LeftToRight;
-    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       true,  pgmR3CheckIntegrityPhysHandlerNode, &Args);
-    Args = RightToLeft;
-    cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       false, pgmR3CheckIntegrityPhysHandlerNode, &Args);
+    PGMCHECKINTARGS Args = { true, 0, NULL, pVM };
+    int rc = pVM->pgm.s.pPhysHandlerTree->doWithAllFromLeft(&pVM->pgm.s.PhysHandlerAllocator,
+                                                            pgmR3CheckIntegrityPhysHandlerNode, &Args);
+    AssertLogRelRCReturn(rc, rc);
 
-    return !cErrors ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
+    Args.fLeftToRight = false;
+    Args.pPrevPhys    = NULL;
+    rc = pVM->pgm.s.pPhysHandlerTree->doWithAllFromRight(&pVM->pgm.s.PhysHandlerAllocator,
+                                                         pgmR3CheckIntegrityPhysHandlerNode, &Args);
+    AssertLogRelMsgReturn(pVM->pgm.s.pPhysHandlerTree->m_cErrors == 0,
+                          ("m_cErrors=%#x\n", pVM->pgm.s.pPhysHandlerTree->m_cErrors == 0),
+                          VERR_INTERNAL_ERROR);
+
+    return Args.cErrors == 0 ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
 }
 

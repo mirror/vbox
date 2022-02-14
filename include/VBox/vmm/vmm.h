@@ -278,6 +278,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_PGM_PHYS_SETUP_IOMMU,
     /** Call PGMR0PoolGrow(). */
     VMMR0_DO_PGM_POOL_GROW,
+    /** Call PGMR0PhysHandlerInitReqHandler(). */
+    VMMR0_DO_PGM_PHYS_HANDLER_INIT,
 
     /** Call GMMR0InitialReservation(). */
     VMMR0_DO_GMM_INITIAL_RESERVATION = 256,

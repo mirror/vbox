@@ -24,7 +24,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/stam.h>
 #include "PGMInternal.h"
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/uvm.h>
 #include "PGMInline.h"
 #include <iprt/assert.h>
