@@ -710,7 +710,7 @@ DISDECL(int) DISInstrWithPrefetchedBytes(RTUINTPTR uInstrAddr, DISCPUMODE enmCpu
                                          PFNDISREADBYTES pfnReadBytes, void *pvUser,
                                          PDISSTATE pDis, uint32_t *pcbInstr);
 
-DISDECL(int)        DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam);
+DISDECL(uint8_t)    DISGetParamSize(PCDISSTATE pDis, PCDISOPPARAM pParam);
 DISDECL(DISSELREG)  DISDetectSegReg(PCDISSTATE pDis, PCDISOPPARAM pParam);
 DISDECL(uint8_t)    DISQuerySegPrefixByte(PCDISSTATE pDis);
 
@@ -742,6 +742,11 @@ typedef struct
         uint16_t    val16;
         uint32_t    val32;
         uint64_t    val64;
+
+        int8_t      i8;
+        int16_t     i16;
+        int32_t     i32;
+        int64_t     i64;
 
         struct
         {
