@@ -2349,7 +2349,7 @@ it unless this changes. -->
                 </para></listitem>
               <listitem><para>
                   <emphasis role="bold">И IPv6 и IPv4:</emphasis>
-                  Используйте опцию <option>--vrde-address=&ldquo;&rdquo;</option>.
+                  Используйте опцию <option>--vrde-address=""</option>.
                   Это значение по умолчанию.
                 </para></listitem>
             </itemizedlist></listitem>

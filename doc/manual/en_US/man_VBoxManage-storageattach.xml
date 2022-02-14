@@ -257,7 +257,7 @@
             the medium unusable or lead to broken VM configurations if
             another VM already refers to the same medium.
           </para><para>
-            Using the <option>--setuuid=&ldquo;&rdquo;</option> option
+            Using the <option>--setuuid=""</option> option
             assigns a new random UUID to an image, which can resolve
             duplicate UUID errors if you used a file copy utility to
             duplicate an image.

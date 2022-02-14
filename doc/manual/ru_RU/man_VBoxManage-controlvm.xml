@@ -211,7 +211,7 @@
         <arg choice="plain"><replaceable>имя-ВМ</replaceable></arg>
       </group>
       <arg choice="plain">nicproperty<replaceable>N</replaceable></arg>
-      <arg choice="req"><replaceable>имя-свойства</replaceable>=<arg><replaceable>значение-свойства</replaceable></arg></arg>
+      <arg choice="req"><replaceable>имя-свойства</replaceable>=<replaceable>значение-свойства</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-nicpromisc">
@@ -378,7 +378,7 @@
         <arg choice="plain"><replaceable>имя-ВМ</replaceable></arg>
       </group>
       <arg choice="plain">vrdeproperty</arg>
-      <arg choice="req"><replaceable>имя-свойства</replaceable>=<arg><replaceable>значение-свойства</replaceable></arg></arg>
+      <arg choice="req"><replaceable>имя-свойства</replaceable>=<replaceable>значение-свойства</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-vrdevideochannelquality">
@@ -1092,7 +1092,7 @@
       <para>
         Команда <command>VBoxManage controlvm <replaceable>имя-ВМ</replaceable>
         nicproperty<replaceable>N</replaceable>
-        <replaceable>имя-свойства</replaceable>="<replaceable>значение-свойства</replaceable>"</command>
+        <replaceable>имя-свойства</replaceable>=<replaceable>значение-свойства</replaceable></command>
         в комбинации с <literal>nicgenericdrv</literal> позволяет передать
         значения свойств в редко используемые сетевые бэкенды.
       </para>
@@ -1353,28 +1353,28 @@
         <listitem><para>
             <literal>Client/DisableDisplay</literal> позволяет отключить функцию
             отображения сервера VRDE. Допустимые значения <literal>1</literal>,
-            отключающее функцию и null (<literal>&ldquo;&rdquo;</literal>),
+            отключающее функцию и null (<literal>""</literal>),
             включающую эту функцию. Значение по умолчанию null. Смотрите
             <xref linkend="vrde-customization"/>.
           </para></listitem>
         <listitem><para>
             <literal>Client/DisableInput</literal> позволяет отключить функцию
             ввода сервера VRDE. Допустимые значения <literal>1</literal>,
-            отключающее функцию и null (<literal>&ldquo;&rdquo;</literal>),
+            отключающее функцию и null (<literal>""</literal>),
             включающую эту функцию. Значение по умолчанию <literal>1</literal>.
             Смотрите <xref linkend="vrde-customization"/>.
           </para></listitem>
         <listitem><para>
             <literal>Client/DisableAudio</literal> позволяет отключить функцию
             аудио сервера VRDE. Допустимые значения <literal>1</literal>,
-            отключающее функцию и null (<literal>&ldquo;&rdquo;</literal>),
+            отключающее функцию и null (<literal>""</literal>),
             включающую эту функцию. Значение по умолчанию <literal>1</literal>.
             Смотрите <xref linkend="vrde-customization"/>.
           </para></listitem>
         <listitem><para>
             <literal>Client/DisableUSB</literal> позволяет отключить функцию
             USB сервера VRDE. Допустимые значения <literal>1</literal>,
-            отключающее функцию и null (<literal>&ldquo;&rdquo;</literal>),
+            отключающее функцию и null (<literal>""</literal>),
             включающую эту функцию. Значение по умолчанию <literal>1</literal>.
             Смотрите <xref linkend="vrde-customization"/>.
           </para></listitem>
@@ -1382,7 +1382,7 @@
             <literal>Client/DisableClipboard</literal> позволяет отключить
             функцию буфера обмена сервера VRDE. Допустимые значения
             <literal>1</literal>, отключающее функцию и null
-            (<literal>&ldquo;&rdquo;</literal>), включающую эту функцию.
+            (<literal>""</literal>), включающую эту функцию.
             Используйте <literal>Client/DisableClipboard=</literal> для
             включения этой функции. Значение по умолчанию <literal>1</literal>.
             Смотрите <xref linkend="vrde-customization"/>.
@@ -1391,7 +1391,7 @@
             <literal>Client/DisableUpstreamAudio</literal> позволяет отключить
             функцию загрузки аудио на сервер VRDE. Допустимые значения
             <literal>1</literal>, отключающее функцию и null
-            (<literal>&ldquo;&rdquo;</literal>), включающую эту функцию.
+            (<literal>""</literal>), включающую эту функцию.
             Используйте <literal>Client/DisableUpstreamAudio=</literal> для
             включения этой функции. Значение по умолчанию <literal>1</literal>.
             Смотрите <xref linkend="vrde-customization"/>.
@@ -1400,7 +1400,7 @@
             <literal>Client/DisableRDPDR</literal> позволяет отключить функцию
             Перенаправления Устройств RDP Для Смарт-Карт сервера VRDE.
             Допустимые значения <literal>1</literal>, отключающее функцию и
-            null (<literal>&ldquo;&rdquo;</literal>), включающую эту функцию.
+            null (<literal>""</literal>), включающую эту функцию.
             Значение по умолчанию <literal>1</literal>. Смотрите
             <xref linkend="vrde-customization"/>.
           </para></listitem>
@@ -1408,7 +1408,7 @@
             <literal>H3DRedirect/Enabled</literal> позволяет включить функцию
             Перенаправления 3D сервера VRDE. Допустимые значения
             <literal>1</literal>, включающее функцию и
-            null (<literal>&ldquo;&rdquo;</literal>), отключающую эту функцию.
+            null (<literal>""</literal>), отключающую эту функцию.
             Смотрите <xref linkend="vrde-customization"/>.
           </para></listitem>
         <listitem><para>

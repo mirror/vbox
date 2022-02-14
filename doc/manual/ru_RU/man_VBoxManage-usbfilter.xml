@@ -68,13 +68,13 @@
       <arg>--name=<replaceable>строка</replaceable></arg>
       <arg>--action=ignore | hold</arg>
       <arg>--active=yes | no</arg>
-      <arg>--vendorid=<replaceable>XXXX</replaceable> | &ldquo;&rdquo;</arg>
-      <arg>--productid=<replaceable>XXXX</replaceable> | &ldquo;&rdquo;</arg>
-      <arg>--revision=<replaceable>IIFF</replaceable> | &ldquo;&rdquo;</arg>
-      <arg>--manufacturer=<replaceable>строка</replaceable> | &ldquo;&rdquo;</arg>
-      <arg>--product=<replaceable>строка</replaceable> | &ldquo;&rdquo;</arg>
+      <arg>--vendorid=<replaceable>XXXX</replaceable> | ""</arg>
+      <arg>--productid=<replaceable>XXXX</replaceable> | ""</arg>
+      <arg>--revision=<replaceable>IIFF</replaceable> | ""</arg>
+      <arg>--manufacturer=<replaceable>строка</replaceable> | ""</arg>
+      <arg>--product=<replaceable>строка</replaceable> | ""</arg>
       <arg>--remote=yes | no</arg>
-      <arg>--serialnumber=<replaceable>строка</replaceable> | &ldquo;&rdquo;</arg>
+      <arg>--serialnumber=<replaceable>строка</replaceable> | ""</arg>
       <arg>--maskedinterfaces=<replaceable>XXXXXXXX</replaceable></arg>
     </cmdsynopsis>
 
@@ -148,7 +148,7 @@
           <term><option>--manufacturer=<replaceable>строка</replaceable></option></term>
           <listitem><para>
               Задает фильтр по ID производителя как строку. Значение
-              по умолчанию пустое (<literal>&ldquo;&rdquo;</literal>).
+              по умолчанию пустое (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -172,7 +172,7 @@
           <term><option>--product=<replaceable>строка</replaceable></option></term>
           <listitem><para>
               Задает фильтр по ID продукта как строку. Значение по
-              умолчанию пустое (<literal>&ldquo;&rdquo;</literal>).
+              умолчанию пустое (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -183,7 +183,7 @@
               <replaceable>XXXX</replaceable>, где
               <replaceable>X</replaceable> - это шестнадцатеричная
               цифра включающая лидирующие нули. Значение по умолчанию
-              пустое (<literal>&ldquo;&rdquo;</literal>).
+              пустое (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -193,7 +193,7 @@
               физически устройство к удаленному клиенту VRDE или
               или к локальной системе. Эта опцию применяется только
               к фильтрам ВМ. Значение по умолчанию пустое
-              (<literal>&ldquo;&rdquo;</literal>).
+              (<literal>""</literal>).
             </para><remark>
               Почему значение по умолчанию пустое когда допустимые
               значения <literal>yes</literal> или <literal>no</literal>?
@@ -208,7 +208,7 @@
               целой части ревизии. <replaceable>F</replaceable> -
               это десятичная цифра ее дробной части включающая
               лидирующие и замыкающие нули. Значение по умолчанию
-              пустое (<literal>&ldquo;&rdquo;</literal>).
+              пустое (<literal>""</literal>).
             </para><para>
               Для того, чтобы указать диапазон ревизий ID, убедитесь
               что используется шестнадцатеричная форма, то есть в виде
@@ -221,7 +221,7 @@
           <term><option>--serialnumber=<replaceable>строка</replaceable></option></term>
           <listitem><para>
               Задает фильтр серийного номера как строку. Значение по
-              умолчанию пустое(<literal>&ldquo;&rdquo;</literal>).
+              умолчанию пустое(<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -239,7 +239,7 @@
               Задает фильтр по ID поставщика, который представляется
               строкой шестнадцатеричного номера, состоящего из
               четырех цифр включая лидирующие нули. Значение по
-              умолчанию пустое (<literal>&ldquo;&rdquo;</literal>).
+              умолчанию пустое (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
       </variablelist>

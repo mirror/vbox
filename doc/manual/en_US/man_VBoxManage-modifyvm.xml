@@ -2374,7 +2374,7 @@ it unless this changes. -->
                 </para></listitem>
               <listitem><para>
                   <emphasis role="bold">Both IPv6 and IPv4:</emphasis>
-                  Use the <option>--vrde-address=&ldquo;&rdquo;</option>
+                  Use the <option>--vrde-address=""</option>
                   option. This is the default value.
                 </para></listitem>
             </itemizedlist></listitem>

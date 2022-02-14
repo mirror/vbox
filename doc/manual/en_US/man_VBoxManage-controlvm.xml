@@ -212,7 +212,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">nicproperty<replaceable>N</replaceable></arg>
-      <arg choice="req"><replaceable>prop-name</replaceable>=<arg><replaceable>prop-value</replaceable></arg></arg>
+      <arg choice="req"><replaceable>prop-name</replaceable>=<replaceable>prop-value</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-nicpromisc">
@@ -391,7 +391,7 @@
         <arg choice="plain"><replaceable>vmname</replaceable></arg>
       </group>
       <arg choice="plain">vrdeproperty</arg>
-      <arg choice="req"><replaceable>prop-name</replaceable>=<arg><replaceable>prop-value</replaceable></arg></arg>
+      <arg choice="req"><replaceable>prop-name</replaceable>=<replaceable>prop-value</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-controlvm-vrdevideochannelquality">
@@ -1027,7 +1027,7 @@
         The <command>VBoxManage controlvm
         <replaceable>vmname</replaceable>
         nicproperty<replaceable>N</replaceable>
-        <replaceable>prop-name</replaceable>="<replaceable>prop-value</replaceable>"</command>
+        <replaceable>prop-name</replaceable>=<replaceable>prop-value</replaceable></command>
         command, in combination with <literal>nicgenericdrv</literal>,
         enables you to pass property values to rarely-used network
         backends.
@@ -1276,7 +1276,7 @@
             <literal>Client/DisableDisplay</literal> specifies whether
             to disable the VRDE server display feature. Valid values are
             <literal>1</literal> to disable the feature and null
-            (<literal>&ldquo;&rdquo;</literal>) to enable the feature.
+            (<literal>""</literal>) to enable the feature.
             The default value is null. See
             <xref linkend="vrde-customization"/>.
           </para></listitem>
@@ -1284,7 +1284,7 @@
             <literal>Client/DisableInput</literal> specifies whether to
             disable the VRDE server input feature. Valid values are
             <literal>1</literal> to disable the feature and null
-            (<literal>&ldquo;&rdquo;</literal>) to enable the feature.
+            (<literal>""</literal>) to enable the feature.
             The default value is <literal>1</literal>. See
             <xref linkend="vrde-customization"/>.
           </para></listitem>
@@ -1292,7 +1292,7 @@
             <literal>Client/DisableAudio</literal> specifies whether to
             disable the VRDE server audio feature. Valid values are
             <literal>1</literal> to disable the feature and null
-            (<literal>&ldquo;&rdquo;</literal>) to enable the feature.
+            (<literal>""</literal>) to enable the feature.
             The default value is <literal>1</literal>. See
             <xref linkend="vrde-customization"/>.
           </para></listitem>
@@ -1300,7 +1300,7 @@
             <literal>Client/DisableUSB</literal> specifies whether to
             disable the VRDE server USB feature. Valid values are
             <literal>1</literal> to disable the feature and null
-            (<literal>&ldquo;&rdquo;</literal>) to enable the feature.
+            (<literal>""</literal>) to enable the feature.
             The default value is <literal>1</literal>. See
             <xref linkend="vrde-customization"/>.
           </para></listitem>
@@ -1308,7 +1308,7 @@
             <literal>Client/DisableClipboard</literal> specifies whether
             to disable the VRDE clipboard feature. Valid values are
             <literal>1</literal> to disable the feature and null
-            (<literal>&ldquo;&rdquo;</literal>) to enable the feature.
+            (<literal>""</literal>) to enable the feature.
             To reenable the feature, use
             <literal>Client/DisableClipboard=</literal>. The default
             value is <literal>1</literal>. See
@@ -1318,7 +1318,7 @@
             <literal>Client/DisableUpstreamAudio</literal> specifies
             whether to disable the VRDE upstream audio feature. Valid
             values are <literal>1</literal> to disable the feature and
-            null (<literal>&ldquo;&rdquo;</literal>) to enable the
+            null (<literal>""</literal>) to enable the
             feature. To reenable the feature, use
             <literal>Client/DisableUpstreamAudio=</literal>. The default
             value is <literal>1</literal>. See
@@ -1329,7 +1329,7 @@
             disable the RDP Device Redirection For Smart Cards feature
             on the VRDE server. Valid values are <literal>1</literal> to
             disable the feature and null
-            (<literal>&ldquo;&rdquo;</literal>) to enable the feature.
+            (<literal>""</literal>) to enable the feature.
             The default value is <literal>1</literal>. See
             <xref linkend="vrde-customization"/>.
           </para></listitem>
@@ -1337,7 +1337,7 @@
             <literal>H3DRedirect/Enabled</literal> specifies whether to
             enable the VRDE server 3D redirection feature. Valid values
             are <literal>1</literal> to enable the feature and null
-            (<literal>&ldquo;&rdquo;</literal>) to disable the feature.
+            (<literal>""</literal>) to disable the feature.
             See <xref linkend="vrde-customization"/>.
           </para></listitem>
         <listitem><para>

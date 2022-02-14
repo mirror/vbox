@@ -68,13 +68,13 @@
       <arg>--name=<replaceable>string</replaceable></arg>
       <arg>--action=ignore | hold</arg>
       <arg>--active=yes | no</arg>
-      <arg>--vendorid=<replaceable>XXXX</replaceable> | &ldquo;&rdquo;</arg>
-      <arg>--productid=<replaceable>XXXX</replaceable> | &ldquo;&rdquo;</arg>
-      <arg>--revision=<replaceable>IIFF</replaceable> | &ldquo;&rdquo;</arg>
-      <arg>--manufacturer=<replaceable>string</replaceable> | &ldquo;&rdquo;</arg>
-      <arg>--product=<replaceable>string</replaceable> | &ldquo;&rdquo;</arg>
+      <arg>--vendorid=<replaceable>XXXX</replaceable> | ""</arg>
+      <arg>--productid=<replaceable>XXXX</replaceable> | ""</arg>
+      <arg>--revision=<replaceable>IIFF</replaceable> | ""</arg>
+      <arg>--manufacturer=<replaceable>string</replaceable> | ""</arg>
+      <arg>--product=<replaceable>string</replaceable> | ""</arg>
       <arg>--remote=yes | no</arg>
-      <arg>--serialnumber=<replaceable>string</replaceable> | &ldquo;&rdquo;</arg>
+      <arg>--serialnumber=<replaceable>string</replaceable> | ""</arg>
       <arg>--maskedinterfaces=<replaceable>XXXXXXXX</replaceable></arg>
     </cmdsynopsis>
 
@@ -149,7 +149,7 @@
           <term><option>--manufacturer=<replaceable>string</replaceable></option></term>
           <listitem><para>
               Specifies a manufacturer ID filter as a string. The
-              default value is null (<literal>&ldquo;&rdquo;</literal>).
+              default value is null (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -172,7 +172,7 @@
           <term><option>--product=<replaceable>string</replaceable></option></term>
           <listitem><para>
               Specifies a product ID filter as a string. The default
-              value is null (<literal>&ldquo;&rdquo;</literal>).
+              value is null (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -183,7 +183,7 @@
               <replaceable>XXXX</replaceable>, where
               <replaceable>X</replaceable> is a hexadecimal digit
               including leading zeroes. The default value is null
-              (<literal>&ldquo;&rdquo;</literal>).
+              (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -193,7 +193,7 @@
               device is physically connected to a remote VRDE client or
               to a local host system. This option applies to VM filters
               only. The default value is null
-              (<literal>&ldquo;&rdquo;</literal>).
+              (<literal>""</literal>).
             </para><remark>
               Why is the default value null when valid values are
               <literal>yes</literal> or <literal>no</literal>?
@@ -209,7 +209,7 @@
               integer part of the revision. <replaceable>F</replaceable>
               is a decimal digit of its fractional part that includes
               leading and trailing zeros. The default value is null
-              (<literal>&ldquo;&rdquo;</literal>).
+              (<literal>""</literal>).
             </para><para>
               To specify a range of revision IDs, ensure that you use
               the hexadecimal form so that the revision is stored as a
@@ -222,7 +222,7 @@
           <term><option>--serialnumber=<replaceable>string</replaceable></option></term>
           <listitem><para>
               Specifies a serial number filter as a string. The default
-              value is null (<literal>&ldquo;&rdquo;</literal>).
+              value is null (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -241,7 +241,7 @@
               representation of a four-digit hexadecimal number.
               <replaceable>X</replaceable> is the hexadecimal digit
               including leading zeroes. The default value is null
-              (<literal>&ldquo;&rdquo;</literal>).
+              (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
       </variablelist>
