@@ -3098,6 +3098,10 @@ VMMR3DECL(int) TMR3TimerSetCritSect(PVM pVM, TMTIMERHANDLE hTimer, PPDMCRITSECT 
     AssertReturn(pszName, VERR_INVALID_PARAMETER);
     AssertReturn(!pTimer->pCritSect, VERR_ALREADY_EXISTS);
     AssertReturn(pTimer->enmState == TMTIMERSTATE_STOPPED, VERR_INVALID_STATE);
+    AssertReturn(   pTimer->enmType == TMTIMERTYPE_DEV
+                 || pTimer->enmType == TMTIMERTYPE_DRV
+                 || pTimer->enmType == TMTIMERTYPE_USB,
+                 VERR_NOT_SUPPORTED); /* Not supported on internal timers, see tmRZTimerGetCritSect. */
     LogFlow(("pTimer=%p (%s) pCritSect=%p (%s)\n", pTimer, pTimer->szName, pCritSect, pszName));
 
     pTimer->pCritSect = pCritSect;

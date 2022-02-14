@@ -140,7 +140,9 @@ DECLINLINE(PPDMCRITSECT) tmRZTimerGetCritSect(PVMCC pVM, PTMTIMER pTimer)
         if (offCritSect < pDevInsR0->pReg->cbInstanceShared)
             return (PPDMCRITSECT)((uintptr_t)pDevInsR0->pvInstanceDataR0 + offCritSect);
     }
-    return (PPDMCRITSECT)MMHyperR3ToCC(pVM, pTimer->pCritSect);
+    RT_NOREF(pVM);
+    Assert(pTimer->pCritSect == NULL);
+    return NULL;
 }
 #endif /* VBOX_STRICT && IN_RING0 */
 
