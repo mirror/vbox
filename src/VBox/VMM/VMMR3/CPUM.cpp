@@ -1876,6 +1876,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     pGuestFeat->fVmxVmwriteAll            = (pBaseFeat->fVmxVmwriteAll            & EmuFeat.fVmxVmwriteAll           );
     pGuestFeat->fVmxEntryInjectSoftInt    = (pBaseFeat->fVmxEntryInjectSoftInt    & EmuFeat.fVmxEntryInjectSoftInt   );
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     /* Don't expose VMX preemption timer if host is subject to VMX-preemption timer erratum. */
     if (   pGuestFeat->fVmxPreemptTimer
         && HMIsSubjectToVmxPreemptTimerErratum())
@@ -1884,6 +1885,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
         pGuestFeat->fVmxPreemptTimer     = 0;
         pGuestFeat->fVmxSavePreemptTimer = 0;
     }
+#endif
 
     /* Sanity checking. */
     if (!pGuestFeat->fVmxSecondaryExecCtls)

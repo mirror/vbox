@@ -100,17 +100,20 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
         /*
          * Determine the new worker.
          */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
         bool const fLFence = RT_BOOL(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2);
+#endif
         switch (pGip->u32Mode)
         {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
             case SUPGIPMODE_SYNC_TSC:
             case SUPGIPMODE_INVARIANT_TSC:
-#ifdef IN_RING0
+# ifdef IN_RING0
                 if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
                     pfnWorker = fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta    : RTTimeNanoTSLegacySyncInvarNoDelta;
                 else
                     pfnWorker = fLFence ? RTTimeNanoTSLFenceSyncInvarWithDelta  : RTTimeNanoTSLegacySyncInvarWithDelta;
-#else
+# else
                 if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
                     pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
                               ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta             : RTTimeNanoTSLegacySyncInvarNoDelta
@@ -131,13 +134,13 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
                     pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
                               ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta            : RTTimeNanoTSLegacySyncInvarNoDelta
                               : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId;
-#endif
+# endif
                 break;
 
             case SUPGIPMODE_ASYNC_TSC:
-#ifdef IN_RING0
+# ifdef IN_RING0
                 pfnWorker = fLFence ? RTTimeNanoTSLFenceAsync : RTTimeNanoTSLegacyAsync;
-#else
+# else
                 if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
                     pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseIdtrLim     : RTTimeNanoTSLegacyAsyncUseIdtrLim;
                 else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
@@ -150,9 +153,9 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
                     pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicIdExt8000001E  : RTTimeNanoTSLegacyAsyncUseApicIdExt8000001E;
                 else
                     pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicId      : RTTimeNanoTSLegacyAsyncUseApicId;
-#endif
+# endif
                 break;
-
+#endif
             default:
                 AssertFatalMsgFailed(("pVM=%p pGip=%p u32Mode=%#x\n", pVM, pGip, pGip->u32Mode));
         }

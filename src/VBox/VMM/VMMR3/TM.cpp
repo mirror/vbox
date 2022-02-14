@@ -872,6 +872,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
     if (enmGipMode == SUPGIPMODE_INVARIANT_TSC)
         return true;
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     /*
      * Go by features and model info from the CPUID instruction.
      */
@@ -903,7 +904,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
              * older models, but this isn't relevant since the result is currently
              * only used for making a decision on AMD-V models.
              */
-#if 0 /* Promoted to generic */
+# if 0 /* Promoted to generic */
             ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
             if (uEAX >= 0x80000007)
             {
@@ -913,7 +914,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
                         || enmGipMode == SUPGIPMODE_INVARIANT_TSC))
                     return true;
             }
-#endif
+# endif
         }
         else if (CPUMGetHostCpuVendor(pVM) == CPUMCPUVENDOR_INTEL)
         {
@@ -969,6 +970,10 @@ static bool tmR3HasFixedTSC(PVM pVM)
             }
         }
     }
+
+# else  /* !X86 && !AMD64 */
+    RT_NOREF_PV(pVM);
+# endif /* !X86 && !AMD64 */
     return false;
 }
 

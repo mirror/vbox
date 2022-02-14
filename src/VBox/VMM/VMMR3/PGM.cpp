@@ -1621,6 +1621,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
      * Determine the max physical address width (MAXPHYADDR) and apply it to
      * all the mask members and stuff.
      */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     uint32_t cMaxPhysAddrWidth;
     uint32_t uMaxExtLeaf = ASMCpuId_EAX(0x80000000);
     if (   uMaxExtLeaf >= 0x80000008
@@ -1641,6 +1642,10 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         pVM->pgm.s.HCPhysInvMmioPg |= UINT64_C(0x000f0000000000);
     }
     Assert(pVM->cpum.ro.GuestFeatures.cMaxPhysAddrWidth == cMaxPhysAddrWidth);
+#else
+    uint32_t const cMaxPhysAddrWidth = pVM->cpum.ro.GuestFeatures.cMaxPhysAddrWidth;
+    LogRel(("PGM: The (guest) CPU physical address width is %u bits\n", cMaxPhysAddrWidth));
+#endif
 
     /** @todo query from CPUM. */
     pVM->pgm.s.GCPhysInvAddrMask = 0;
@@ -1683,8 +1688,8 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         pVCpu->pgm.s.fGst64ShadowedPteMask    = X86_PTE_P   | X86_PTE_RW   | X86_PTE_US   | X86_PTE_G | X86_PTE_A | X86_PTE_D;
         pVCpu->pgm.s.fGst64ShadowedPdeMask    = X86_PDE_P   | X86_PDE_RW   | X86_PDE_US   | X86_PDE_A;
         pVCpu->pgm.s.fGst64ShadowedBigPdeMask = X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_A;
-        pVCpu->pgm.s.fGst64ShadowedBigPde4PteMask =
-            X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_G | X86_PDE4M_A | X86_PDE4M_D;
+        pVCpu->pgm.s.fGst64ShadowedBigPde4PteMask
+            = X86_PDE4M_P | X86_PDE4M_RW | X86_PDE4M_US | X86_PDE4M_G | X86_PDE4M_A | X86_PDE4M_D;
         pVCpu->pgm.s.fGstAmd64ShadowedPdpeMask  = X86_PDPE_P  | X86_PDPE_RW  | X86_PDPE_US  | X86_PDPE_A;
         pVCpu->pgm.s.fGstAmd64ShadowedPml4eMask = X86_PML4E_P | X86_PML4E_RW | X86_PML4E_US | X86_PML4E_A;
 

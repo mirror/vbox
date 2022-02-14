@@ -2342,6 +2342,10 @@ VMMR3_INT_DECL(void) VMMR3InitR0StackUnwindState(PUVM pUVM, VMCPUID idCpu, struc
     off += 4;
     pState->uPc                        = *(uint32_t const *)&pVCpu->vmm.s.abAssertStack[off];
     pState->u.x86.auRegs[X86_GREG_xSP] = pVCpu->vmm.s.AssertJmpBuf.UnwindRetSp;
+
+#elif defined(RT_ARCH_ARM64)
+    /** @todo PORTME: arm ring-0  */
+
 #else
 # error "Port me"
 #endif

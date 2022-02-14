@@ -29,7 +29,7 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#ifdef RT_ARCH_X86
+#ifndef RT_ARCH_AMD64
 /**
  * Parity calculation table.
  *
@@ -325,7 +325,7 @@ static uint8_t const g_afParity[256] =
     /* 0xfe = 11111110b */ 0,
     /* 0xff = 11111111b */ X86_EFL_PF,
 };
-#endif /* RT_ARCH_X86 */
+#endif /* RT_ARCH_AMD64 */
 
 
 /**
@@ -377,7 +377,7 @@ static uint8_t const g_afParity[256] =
     } while (0)
 
 
-#ifdef RT_ARCH_X86
+#ifndef RT_ARCH_AMD64
 /*
  * There are a few 64-bit on 32-bit things we'd rather do in C.  Actually, doing
  * it all in C is probably safer atm., optimize what's necessary later, maybe.
@@ -1131,8 +1131,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64,(uint64_t *puMem, uint64_t *puReg))
 }
 
 
-#endif /* RT_ARCH_X86 */
-#ifdef RT_ARCH_X86
+#endif /* !RT_ARCH_AMD64 */
+#ifndef RT_ARCH_AMD64
 
 /* multiplication and division */
 
@@ -1336,7 +1336,7 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
 }
 
 
-#endif /* RT_ARCH_X86 */
+#endif /* !RT_ARCH_AMD64 */
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_arpl,(uint16_t *pu16Dst, uint16_t u16Src, uint32_t *pfEFlags))

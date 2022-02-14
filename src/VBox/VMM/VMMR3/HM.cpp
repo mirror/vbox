@@ -724,7 +724,11 @@ static int hmR3InitFinalizeR3(PVM pVM)
     STAM_REG(pVM, &pVM->hm.s.StatTprReplaceFailure,    STAMTYPE_COUNTER, "/HM/TPR/Replace/Failed",     STAMUNIT_OCCURENCES, "Number of unsuccessful replace attempts.");
 #endif
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     bool const fCpuSupportsVmx = ASMIsIntelCpu() || ASMIsViaCentaurCpu() || ASMIsShanghaiCpu();
+#else
+    bool const fCpuSupportsVmx = false;
+#endif
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu  = pVM->apCpusR3[idCpu];
@@ -1782,11 +1786,13 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
 
     LogRel(("HM: Using AMD-V implementation 2.0\n"));
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     uint32_t u32Family;
     uint32_t u32Model;
     uint32_t u32Stepping;
     if (HMIsSubjectToSvmErratum170(&u32Family, &u32Model, &u32Stepping))
         LogRel(("HM: AMD Cpu with erratum 170 family %#x model %#x stepping %#x\n", u32Family, u32Model, u32Stepping));
+#endif
     LogRel(("HM: Max resume loops                  = %u\n",     pVM->hm.s.cMaxResumeLoopsCfg));
     LogRel(("HM: AMD HWCR MSR                      = %#RX64\n", pVM->hm.s.ForR3.svm.u64MsrHwcr));
     LogRel(("HM: AMD-V revision                    = %#x\n",    pVM->hm.s.ForR3.svm.u32Rev));
