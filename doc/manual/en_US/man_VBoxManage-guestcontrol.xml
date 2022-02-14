@@ -446,8 +446,8 @@
           <listitem><para>
               Specifies the password for the specified user. If you do
               not specify a password on the command line or if the
-              password file is empty, the specified user has a null
-              password.
+              password file is empty, the specified user needs to have
+              an empty password.
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -456,8 +456,8 @@
               Specifies the absolute path to a file on the guest OS that
               contains the password for the specified user. If the
               password file is empty or if you do not specify a password
-              on the command line, the specified user has a null
-              password.
+              on the command line, the specified user needs to have an
+              empty password.
             </para></listitem>
         </varlistentry>
         <varlistentry>

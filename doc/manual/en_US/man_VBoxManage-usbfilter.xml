@@ -149,7 +149,7 @@
           <term><option>--manufacturer=<replaceable>string</replaceable></option></term>
           <listitem><para>
               Specifies a manufacturer ID filter as a string. The
-              default value is null (<literal>""</literal>).
+              default value is an empty string (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -172,7 +172,7 @@
           <term><option>--product=<replaceable>string</replaceable></option></term>
           <listitem><para>
               Specifies a product ID filter as a string. The default
-              value is null (<literal>""</literal>).
+              value is an empty string (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -182,7 +182,7 @@
               for an exact match has the form
               <replaceable>XXXX</replaceable>, where
               <replaceable>X</replaceable> is a hexadecimal digit
-              including leading zeroes. The default value is null
+              including leading zeroes. The default value is an empty string
               (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
@@ -192,11 +192,11 @@
               Specifies a remote filter that indicates whether the
               device is physically connected to a remote VRDE client or
               to a local host system. This option applies to VM filters
-              only. The default value is null
+              only. The default value is an empty string
               (<literal>""</literal>).
             </para><remark>
-              Why is the default value null when valid values are
-              <literal>yes</literal> or <literal>no</literal>?
+              Why is the default value an empty string when valid values
+              are <literal>yes</literal> or <literal>no</literal>?
             </remark></listitem>
         </varlistentry>
         <varlistentry>
@@ -208,8 +208,8 @@
               <replaceable>I</replaceable> is a decimal digit of the
               integer part of the revision. <replaceable>F</replaceable>
               is a decimal digit of its fractional part that includes
-              leading and trailing zeros. The default value is null
-              (<literal>""</literal>).
+              leading and trailing zeros. The default value is an empty
+              string (<literal>""</literal>).
             </para><para>
               To specify a range of revision IDs, ensure that you use
               the hexadecimal form so that the revision is stored as a
@@ -222,7 +222,7 @@
           <term><option>--serialnumber=<replaceable>string</replaceable></option></term>
           <listitem><para>
               Specifies a serial number filter as a string. The default
-              value is null (<literal>""</literal>).
+              value is an empty string (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
         <varlistentry>
@@ -240,8 +240,8 @@
               Specifies a vendor ID filter, which is a string
               representation of a four-digit hexadecimal number.
               <replaceable>X</replaceable> is the hexadecimal digit
-              including leading zeroes. The default value is null
-              (<literal>""</literal>).
+              including leading zeroes. The default value is an empty
+              string (<literal>""</literal>).
             </para></listitem>
         </varlistentry>
       </variablelist>

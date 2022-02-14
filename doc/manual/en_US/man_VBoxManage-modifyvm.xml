@@ -2189,7 +2189,7 @@ it unless this changes. -->
           <listitem><para>
               Disables the display VRDE server feature.
             </para><para>
-              To reenable a feature, assign a null value. For example,
+              To reenable a feature, assign an empty value. For example,
               to reenable the display feature, specify the
               <command>VBoxManage modifyvm
               --vrde-property=Client/DisableDisplay=</command> command.
@@ -2218,7 +2218,7 @@ it unless this changes. -->
           <term><option>--vrde-property=Client/DisableClipboard=1</option></term>
           <listitem><para>
               Disables the clipboard VRDE server feature. To reenable
-              the feature, assign a null value. See
+              the feature, assign an empty value. See
               <xref linkend="vrde-customization" />.
             </para></listitem>
         </varlistentry>
@@ -2226,7 +2226,7 @@ it unless this changes. -->
           <term><option>--vrde-property=DisableUpstreamAudio=1</option></term>
           <listitem><para>
               Disables the upstream audio VRDE server feature. To
-              reenable the feature, assign a null value. See
+              reenable the feature, assign an empty value. See
               <xref linkend="vrde-customization" />.
             </para></listitem>
         </varlistentry>
@@ -2234,7 +2234,7 @@ it unless this changes. -->
           <term><option>--vrde-property=Client/DisableRDPDR=1</option></term>
           <listitem><para>
               Disables the RDP device redirection for smart cards VRDE
-              server feature. To reenable this feature, assign a null
+              server feature. To reenable this feature, assign an empty
               value.
             </para></listitem>
         </varlistentry>
@@ -2242,7 +2242,7 @@ it unless this changes. -->
           <term><option>--vrde-property=H3DRedirect/Enabled=1</option></term>
           <listitem><para>
               Enables the 3D redirection VRDE server feature. To disable
-              this feature, assign a null value.
+              this feature, assign an empty value.
             </para></listitem>
         </varlistentry>
         <varlistentry>
