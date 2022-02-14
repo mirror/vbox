@@ -1219,6 +1219,7 @@
           <xsl:choose>
             <xsl:when test="(name(..)='screen') or (name(../..)='screen')
                          or (name(..)='programlisting') or (name(../..)='programlisting')
+                         or (name(..)='literal') or (name(../..)='literal')
                            ">
               <xsl:value-of select="$subst10" />
             </xsl:when>
