@@ -511,7 +511,7 @@ typedef struct PGMPHYSHANDLERTYPEINTR0
     bool                                afPadding[1];
     /** Pointer to the ring-0 callback function. */
     R0PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandler;
-    /** Pointer to the ring-9 callback function for \#PFs. */
+    /** Pointer to the ring-0 callback function for \#PFs, can be NULL. */
     R0PTRTYPE(PFNPGMRZPHYSPFHANDLER)    pfnPfHandler;
     /** Description / Name. For easing debugging. */
     R0PTRTYPE(const char *)             pszDesc;

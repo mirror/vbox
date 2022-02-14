@@ -845,7 +845,7 @@ VMMR0_INT_DECL(int) PGMR0PhysHandlerInitReqHandler(PGVM pGVM, uint32_t cEntries)
  * @param   fFlags          PGMPHYSHANDLER_F_XXX
  * @param   pfnHandler      Pointer to the ring-0 handler callback.
  * @param   pfnPfHandler    Pointer to the ring-0 \#PF handler callback.
- *                          callback.
+ *                          callback.  Can be NULL (not recommended though).
  * @param   pszDesc         The type description.
  * @param   hType           The handle to do ring-0 callback registrations for.
  * @thread  EMT(0)
@@ -858,7 +858,8 @@ VMMR0_INT_DECL(int) PGMR0HandlerPhysicalTypeSetUpContext(PGVM pGVM, PGMPHYSHANDL
      * Validate input.
      */
     AssertPtrReturn(pfnHandler, VERR_INVALID_POINTER);
-    AssertPtrReturn(pfnPfHandler, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnPfHandler, VERR_INVALID_POINTER);
+
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     AssertReturn(   enmKind == PGMPHYSHANDLERKIND_WRITE
                  || enmKind == PGMPHYSHANDLERKIND_ALL
