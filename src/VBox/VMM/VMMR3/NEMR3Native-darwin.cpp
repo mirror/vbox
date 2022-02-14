@@ -1733,13 +1733,15 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
         WRITE_MSR(MSR_K8_SF_MASK, pVCpu->cpum.GstCtx.msrSFMASK);
         ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_SYSCALL_MSRS);
     }
-    if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
+    if (fWhat & CPUMCTX_EXTRN_TSC_AUX)
     {
         PCPUMCTXMSRS pCtxMsrs = CPUMQueryGuestCtxMsrsPtr(pVCpu);
 
         WRITE_MSR(MSR_K8_TSC_AUX, pCtxMsrs->msr.TscAux);
-        ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_OTHER_MSRS);
-
+        ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_TSC_AUX);
+    }
+    if (fWhat & CPUMCTX_EXTRN_OTHER_MSRS)
+    {
         /* Last Branch Record. */
         if (pVM->nem.s.fLbr)
         {
@@ -1759,6 +1761,8 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
 
             WRITE_MSR(pVM->nem.s.idLbrTosMsr, pVmcsInfoShared->u64LbrTosMsr);
         }
+
+        ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_OTHER_MSRS);
     }
 
     hv_vcpu_invalidate_tlb(pVCpu->nem.s.hVCpuId);
