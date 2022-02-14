@@ -34,7 +34,10 @@ struc VMXVMCSINFOSHARED
     alignb 8
     .au64LbrFromIpMsr               resq    32
     .au64LbrToIpMsr                 resq    32
+    .au64LbrInfoMsr                 resq    32
     .u64LbrTosMsr                   resq    1
+    .u64LerFromIpMsr                resq    1
+    .u64LerToIpMsr                  resq    1
 endstruc
 
 
