@@ -60,6 +60,12 @@
 #include <iprt/uuid.h>
 #include <iprt/zip.h>
 
+#include <package-generated.h>
+#include "product-generated.h"
+
+#include <VBox/version.h>
+#include <VBox/log.h>
+
 #include "product-generated.h"
 #include "TestExecServiceInternal.h"
 
@@ -168,6 +174,8 @@ static const PCTXSTRANSPORT g_apTransports[] =
     //&g_TestDevTransport,
 };
 
+/** The release logger. */
+static PRTLOGGER            g_pRelLogger;
 /** The select transport layer. */
 static PCTXSTRANSPORT       g_pTransport;
 /** The scratch path. */
@@ -3793,6 +3801,75 @@ int main(int argc, char **argv)
     RTEXITCODE rcExit = txsParseArgv(argc, argv, &fExit);
     if (rcExit != RTEXITCODE_SUCCESS || fExit)
         return rcExit;
+
+    /*
+     * Enable (release) TxS logging to stdout + file. This is independent from the actual test cases being run.
+     *
+     * Keep the log file path + naming predictable (the OS' temp dir) so that we later can retrieve it
+     * from the host side without guessing much.
+     *
+     * If enabling logging fails for some reason, just tell but don't bail out to not make tests fail.
+     */
+    char szLogFile[RTPATH_MAX];
+    rc = RTPathTemp(szLogFile, sizeof(szLogFile));
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTPathAppend(szLogFile, sizeof(szLogFile), "vbox-txs-release.log");
+        if (RT_FAILURE(rc))
+            RTMsgError("RTPathAppend failed when constructing log file path: %Rrc\n", rc);
+    }
+    else
+        RTMsgError("RTPathTemp failed when constructing log file path: %Rrc\n", rc);
+
+    if (RT_SUCCESS(rc))
+    {
+        RTUINT fFlags  = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+               fFlags |= RTLOGFLAGS_USECRLF;
+#endif
+        static const char * const g_apszLogGroups[] = VBOX_LOGGROUP_NAMES;
+        rc = RTLogCreate(&g_pRelLogger, fFlags, "all.e.l", "VBOX_TXS_RELEASE_LOG",
+                         RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDOUT | RTLOGDEST_FILE, szLogFile);
+        if (RT_SUCCESS(rc))
+        {
+            RTLogRelSetDefaultInstance(g_pRelLogger);
+            if (g_cVerbose)
+            {
+                RTMsgInfo("Setting verbosity logging to level %u\n", g_cVerbose);
+                switch (g_cVerbose) /* Not very elegant, but has to do it for now. */
+                {
+                    case 1:
+                        rc = RTLogGroupSettings(g_pRelLogger, "all.e.l.l2");
+                        break;
+
+                    case 2:
+                        rc = RTLogGroupSettings(g_pRelLogger, "all.e.l.l2.l3");
+                        break;
+
+                    case 3:
+                        rc = RTLogGroupSettings(g_pRelLogger, "all.e.l.l2.l3.l4");
+                        break;
+
+                    case 4:
+                        RT_FALL_THROUGH();
+                    default:
+                        rc = RTLogGroupSettings(g_pRelLogger, "all.e.l.l2.l3.l4.f");
+                        break;
+                }
+                if (RT_FAILURE(rc))
+                    RTMsgError("Setting logging groups failed, rc=%Rrc\n", rc);
+            }
+        }
+        else
+            RTMsgError("Failed to create release logger: %Rrc", rc);
+
+        if (RT_SUCCESS(rc))
+            RTMsgInfo("Log file written to '%s'\n", szLogFile);
+
+        LogRel((VBOX_PRODUCT " TestExecService (Validation Kit TxS) Version " VBOX_VERSION_STRING " - r%s\n"
+                "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+                "All rights reserved.\n\n", RTBldCfgRevisionStr()));
+    }
 
     /*
      * Generate a UUID for this TXS instance.
