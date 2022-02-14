@@ -1659,7 +1659,6 @@ VMMR3DECL(const char *) CPUMR3CpuIdUnknownLeafMethodName(CPUMUNKNOWNCPUID enmUnk
 }
 
 
-#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
 /**
  * Detect the CPU vendor give n the
  *
@@ -1700,7 +1699,6 @@ VMMR3DECL(CPUMCPUVENDOR) CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX,
 
     return CPUMCPUVENDOR_UNKNOWN;
 }
-#endif /* RT_ARCH_X86 || RT_ARCH_AMD64 */
 
 
 /**
