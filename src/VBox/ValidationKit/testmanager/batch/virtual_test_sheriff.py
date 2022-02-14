@@ -608,7 +608,16 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
 
     ## @name Failure reasons we know.
     ## @{
-    ktReason_Add_CopyToGuest_Timeout                   = ( 'Additions',         'CopyToGuest Timeout' );
+
+    ktReason_Add_Installer_Win_Failed                  = ( 'Additions',         'Installer (Windows) failed' );
+    ktReason_Add_ShFl_Automount                        = ( 'Additions',         'Shared Folders: Automounting' );
+    ktReason_Add_ShFl_FsPerf                           = ( 'Additions',         'Shared Folders: Runnings FsPerf' );
+    ktReason_Add_GstCtl_Preparations                   = ( 'Additions',         'Guest Control: Preparations' );
+    ktReason_Add_GstCtl_SessionBasics                  = ( 'Additions',         'Guest Control: Session basics' );
+    ktReason_Add_GstCtl_SessionProcRefs                = ( 'Additions',         'Guest Control: Session process references' );
+    ktReason_Add_GstCtl_CopyFromGuest_Timeout          = ( 'Additions',         'Guest Control: Copy from guest timeout' );
+    ktReason_Add_GstCtl_CopyToGuest_Timeout            = ( 'Additions',         'Guest Control: Copy to guest timeout' );
+    ktReason_Add_GstCtl_Session_Reboot                 = ( 'Additions',         'Guest Control: Session w/ reboot' );
     ktReason_Add_FlushViewOfFile                       = ( 'Additions',         'FlushViewOfFile' );
     ktReason_Add_Mmap_Coherency                        = ( 'Additions',         'mmap coherency' );
     ktReason_BSOD_Recovery                             = ( 'BSOD',              'Recovery' );
@@ -1181,14 +1190,34 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         Investigates a failed VM run.
         """
         enmReason = None;
-        if oFailedResult.sName == 'mmap':
+        if oFailedResult.sName == 'VBoxWindowsAdditions.exe' >= 0:
+            enmReason = self.ktReason_Add_Installer_Win_Failed;
+        elif oFailedResult.sName == 'Automounting' >= 0:
+            if sResultLog.find('Shared Folders') >= 0:
+                enmReason = self.ktReason_Add_ShFl_Automount;
+        elif oFailedResult.sName == 'Running FsPerf' >= 0:
+            if sResultLog.find('Shared Folders') >= 0:
+                enmReason = self.ktReason_Add_ShFl_FsPerf;
+        elif oFailedResult.sName == 'Preparations' >= 0:
+            if sResultLog.find('Guest Control') >= 0:
+                enmReason = self.ktReason_Add_GstCtl_Preparations;
+        elif oFailedResult.sName == 'Session Basics':
+            enmReason = self.ktReason_Add_GstCtl_SessionBasics;
+        elif oFailedResult.sName == 'Session Process References':
+            enmReason = self.ktReason_Add_GstCtl_SessionProcRefs;
+        elif oFailedResult.sName == 'Copy from guest':
+            if sResultLog.find('*** abort action ***') >= 0:
+                enmReason = self.ktReason_Add_GstCtl_CopyFromGuest_Timeout;
+        elif oFailedResult.sName == 'Copy to guest':
+            if sResultLog.find('*** abort action ***') >= 0:
+                enmReason = self.ktReason_Add_GstCtl_CopyToGuest_Timeout;
+        elif oFailedResult.sName.find('Session w/ Guest Reboot') >= 0:
+            enmReason = self.ktReason_Add_GstCtl_Session_Reboot;
+        elif oFailedResult.sName == 'mmap':
             if sResultLog.find('FsPerf: Flush issue at offset ') >= 0:
                 enmReason = self.ktReason_Add_Mmap_Coherency;
             elif sResultLog.find('FlushViewOfFile') >= 0:
                 enmReason = self.ktReason_Add_FlushViewOfFile;
-        elif oFailedResult.sName == 'Copy to guest':
-            if sResultLog.find('*** abort action ***') >= 0:
-                enmReason = self.ktReason_Add_CopyToGuest_Timeout;
 
         if enmReason is not None:
             return oCaseFile.noteReasonForId(enmReason, oFailedResult.idTestResult);
