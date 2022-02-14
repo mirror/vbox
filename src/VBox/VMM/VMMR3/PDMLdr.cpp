@@ -474,7 +474,6 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
     /*
      * Validate input.
      */
-    AssertMsg(MMR3IsInitialized(pVM), ("bad init order!\n"));
     AssertReturn(VM_IS_RAW_MODE_ENABLED(pVM), VERR_PDM_HM_IPE);
 
     /*
@@ -967,7 +966,6 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
     AssertPtr(pVM);
     AssertPtrNull(pszModule);
     AssertPtr(pRCPtrValue);
-    AssertMsg(MMR3IsInitialized(pVM), ("bad init order!\n"));
 
     if (!pszModule)
         pszModule = VMMRC_MAIN_MODULE_NAME;
@@ -1036,7 +1034,6 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const cha
         pszModule = VMMRC_MAIN_MODULE_NAME;
     AssertPtr(pszModule);
     AssertPtr(pRCPtrValue);
-    AssertMsg(MMR3IsInitialized(pVM), ("bad init order!\n"));
 
     /*
      * Since we're lazy, we'll only check if the module is present

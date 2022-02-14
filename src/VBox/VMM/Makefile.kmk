@@ -133,7 +133,6 @@ VBoxVMM_SOURCES  = \
 	VMMR3/GVMMR3.cpp \
 	VMMR3/MM.cpp \
 	VMMR3/MMHeap.cpp \
-	VMMR3/MMHyper.cpp \
 	VMMR3/NEMR3.cpp \
 	VMMR3/PDM.cpp \
 	VMMR3/PDMBlkCache.cpp \
@@ -182,7 +181,6 @@ VBoxVMM_SOURCES  = \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMmioNew.cpp \
 	VMMAll/MMAll.cpp \
-	VMMAll/MMAllHyper.cpp \
 	VMMAll/NEMAll.cpp \
 	VMMAll/PDMAll.cpp \
 	VMMAll/PDMAllCritSect.cpp \
@@ -516,7 +514,6 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/IOMAll.cpp \
  	VMMAll/IOMAllMmioNew.cpp \
  	VMMAll/MMAll.cpp \
- 	VMMAll/MMAllHyper.cpp \
  	VMMAll/NEMAll.cpp \
  	VMMAll/PDMAll.cpp \
  	VMMAll/PDMAllCritSect.cpp \

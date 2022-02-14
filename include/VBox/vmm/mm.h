@@ -166,26 +166,6 @@ DECLINLINE(void *)  MMHyperR3ToCC(PVM pVM, RTR3PTR R3Ptr)
 #endif
 
 
-VMMDECL(int)        MMHyperAlloc(PVMCC pVM, size_t cb, uint32_t uAlignment, MMTAG enmTag, void **ppv);
-#if 0
-VMMDECL(int)        MMHyperDupMem(PVMCC pVM, const void *pvSrc, size_t cb, unsigned uAlignment, MMTAG enmTag, void **ppv);
-#endif
-VMMDECL(int)        MMHyperFree(PVMCC pVM, void *pv);
-VMMDECL(void)       MMHyperHeapCheck(PVMCC pVM);
-#ifdef DEBUG
-VMMDECL(void)       MMHyperHeapDump(PVM pVM);
-#endif
-VMMDECL(size_t)     MMHyperHeapGetFreeSize(PVM pVM);
-VMMDECL(bool)       MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr);
-
-#if 0
-VMMDECL(RTHCPHYS)   MMPage2Phys(PVM pVM, void *pvPage);
-VMMDECL(void *)     MMPagePhys2Page(PVM pVM, RTHCPHYS HCPhysPage);
-VMMDECL(int)        MMPagePhys2PageEx(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
-VMMDECL(int)        MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvPage);
-#endif
-
-
 /** @def MMHYPER_RC_ASSERT_RCPTR
  * Asserts that an address is either NULL or inside the hypervisor memory area.
  * This assertion only works while IN_RC, it's a NOP everywhere else.
@@ -204,10 +184,8 @@ VMMDECL(int)        MMPagePhys2PageTry(PVM pVM, RTHCPHYS HCPhysPage, void **ppvP
 VMMR3DECL(int)      MMR3InitUVM(PUVM pUVM);
 VMMR3DECL(int)      MMR3Init(PVM pVM);
 VMMR3DECL(int)      MMR3InitPaging(PVM pVM);
-VMMR3DECL(int)      MMR3HyperInitFinalize(PVM pVM);
 VMMR3DECL(int)      MMR3Term(PVM pVM);
 VMMR3DECL(void)     MMR3TermUVM(PUVM pUVM);
-VMMR3_INT_DECL(bool) MMR3IsInitialized(PVM pVM);
 VMMR3DECL(int)      MMR3ReserveHandyPages(PVM pVM, uint32_t cHandyPages);
 VMMR3DECL(int)      MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages);
 VMMR3DECL(int)      MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc);

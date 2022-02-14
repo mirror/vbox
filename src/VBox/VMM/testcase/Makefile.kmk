@@ -60,10 +60,10 @@ PROGRAMS += tstVMMFork
  endif
  ifdef VBOX_WITH_TESTCASES
   if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-PROGRAMS += tstCFGMHardened tstVMREQHardened tstMMHyperHeapHardened tstAnimateHardened
-DLLS     += tstCFGM tstVMREQ tstMMHyperHeap tstAnimate
+PROGRAMS += tstCFGMHardened tstVMREQHardened tstAnimateHardened
+DLLS     += tstCFGM tstVMREQ tstAnimate
   else
-PROGRAMS += tstCFGM tstVMREQ tstMMHyperHeap tstAnimate
+PROGRAMS += tstCFGM tstVMREQ tstAnimate
   endif
 PROGRAMS += \
 	tstCompressionBenchmark \
@@ -242,26 +242,6 @@ tstIEMCheckMc_CXXFLAGS  = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS) -wd4189 # loc
 else
 tstIEMCheckMc_CXXFLAGS  = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS) -Wno-unused-value -Wno-unused-variable
 endif
-
-#
-# VMM heap testcase.
-#
-if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
-tstMMHyperHeapHardened_TEMPLATE = VBoxR3HardenedTstExe
-tstMMHyperHeapHardened_NAME     = tstMMHyperHeap
- ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-tstMMHyperHeapHardened_DEFS     = PROGRAM_NAME_STR="tstMMHyperHeap"
- else
-tstMMHyperHeapHardened_DEFS     = PROGRAM_NAME_STR=\"tstMMHyperHeap\"
- endif
-tstMMHyperHeapHardened_SOURCES  = ../../HostDrivers/Support/SUPR3HardenedMainTemplateTestcase.cpp
-tstMMHyperHeap_TEMPLATE = VBoxR3HardenedTstDll
-else
-tstMMHyperHeap_TEMPLATE = VBOXR3TSTEXE
-endif
-tstMMHyperHeap_DEFS     = $(VMM_COMMON_DEFS)
-tstMMHyperHeap_SOURCES  = tstMMHyperHeap.cpp
-tstMMHyperHeap_LIBS     = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
 #
 # Saved state manager testcase.

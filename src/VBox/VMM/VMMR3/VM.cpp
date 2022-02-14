@@ -884,9 +884,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                 rc = PDMR3Init(pVM);
                                                                 if (RT_SUCCESS(rc))
                                                                 {
-                                                                    rc = MMR3HyperInitFinalize(pVM);
-                                                                    if (RT_SUCCESS(rc))
-                                                                        rc = PGMR3InitFinalize(pVM);
+                                                                    rc = PGMR3InitFinalize(pVM);
                                                                     if (RT_SUCCESS(rc))
                                                                         rc = TMR3InitFinalize(pVM);
                                                                     if (RT_SUCCESS(rc))

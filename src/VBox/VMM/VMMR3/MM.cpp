@@ -232,44 +232,28 @@ VMMR3DECL(int) MMR3Init(PVM pVM)
      */
     AssertRelease(!(RT_UOFFSETOF(VM, mm.s) & 31));
     AssertRelease(sizeof(pVM->mm.s) <= sizeof(pVM->mm.padding));
-    AssertMsg(pVM->mm.s.offVM == 0, ("Already initialized!\n"));
 
     /*
-     * Init the structure.
+     * Register the saved state data unit.
      */
-    pVM->mm.s.offVM = RT_UOFFSETOF(VM, mm);
-    pVM->mm.s.offLookupHyper = NIL_OFFSET;
-
-    /*
-     * Init the hypervisor related stuff.
-     */
-    int rc = mmR3HyperInit(pVM);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Register the saved state data unit.
-         */
-        rc = SSMR3RegisterInternal(pVM, "mm", 1, MM_SAVED_STATE_VERSION, sizeof(uint32_t) * 2,
+    int rc = SSMR3RegisterInternal(pVM, "mm", 1, MM_SAVED_STATE_VERSION, sizeof(uint32_t) * 2,
                                    NULL, NULL, NULL,
                                    NULL, mmR3Save, NULL,
                                    NULL, mmR3Load, NULL);
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Statistics.
-             */
-            STAM_REG(pVM, &pVM->mm.s.cBasePages,   STAMTYPE_U64, "/MM/Reserved/cBasePages",   STAMUNIT_PAGES, "Reserved number of base pages, ROM and Shadow ROM included.");
-            STAM_REG(pVM, &pVM->mm.s.cHandyPages,  STAMTYPE_U32, "/MM/Reserved/cHandyPages",  STAMUNIT_PAGES, "Reserved number of handy pages.");
-            STAM_REG(pVM, &pVM->mm.s.cShadowPages, STAMTYPE_U32, "/MM/Reserved/cShadowPages", STAMUNIT_PAGES, "Reserved number of shadow paging pages.");
-            STAM_REG(pVM, &pVM->mm.s.cFixedPages,  STAMTYPE_U32, "/MM/Reserved/cFixedPages",  STAMUNIT_PAGES, "Reserved number of fixed pages (MMIO2).");
-            STAM_REG(pVM, &pVM->mm.s.cbRamBase,    STAMTYPE_U64, "/MM/cbRamBase",             STAMUNIT_BYTES, "Size of the base RAM.");
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Statistics.
+         */
+        STAM_REG(pVM, &pVM->mm.s.cBasePages,   STAMTYPE_U64, "/MM/Reserved/cBasePages",   STAMUNIT_PAGES, "Reserved number of base pages, ROM and Shadow ROM included.");
+        STAM_REG(pVM, &pVM->mm.s.cHandyPages,  STAMTYPE_U32, "/MM/Reserved/cHandyPages",  STAMUNIT_PAGES, "Reserved number of handy pages.");
+        STAM_REG(pVM, &pVM->mm.s.cShadowPages, STAMTYPE_U32, "/MM/Reserved/cShadowPages", STAMUNIT_PAGES, "Reserved number of shadow paging pages.");
+        STAM_REG(pVM, &pVM->mm.s.cFixedPages,  STAMTYPE_U32, "/MM/Reserved/cFixedPages",  STAMUNIT_PAGES, "Reserved number of fixed pages (MMIO2).");
+        STAM_REG(pVM, &pVM->mm.s.cbRamBase,    STAMTYPE_U64, "/MM/cbRamBase",             STAMUNIT_BYTES, "Size of the base RAM.");
 
-            return rc;
-        }
-
-        /* .... failure .... */
+        return rc;
     }
-    MMR3Term(pVM);
+
     return rc;
 }
 
@@ -450,20 +434,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
  */
 VMMR3DECL(int) MMR3Term(PVM pVM)
 {
-    /*
-     * Clean up the hypervisor heap.
-     */
-    mmR3HyperTerm(pVM);
-
-    /*
-     * Zero stuff to detect after termination use of the MM interface
-     */
-    pVM->mm.s.offLookupHyper = NIL_OFFSET;
-    pVM->mm.s.pHyperHeapR3   = NULL;        /* freed above. */
-    pVM->mm.s.pHyperHeapR0   = NIL_RTR0PTR; /* freed above. */
-    pVM->mm.s.pHyperHeapRC   = NIL_RTRCPTR; /* freed above. */
-    pVM->mm.s.offVM          = 0;           /* init assertion on this */
-
+    RT_NOREF(pVM);
     return VINF_SUCCESS;
 }
 
@@ -484,18 +455,6 @@ VMMR3DECL(void) MMR3TermUVM(PUVM pUVM)
      */
     mmR3HeapDestroy(pUVM->mm.s.pHeap);
     pUVM->mm.s.pHeap = NULL;
-}
-
-
-/**
- * Checks if the both VM and UVM parts of MM have been initialized.
- *
- * @returns true if initialized, false if not.
- * @param   pVM         The cross context VM structure.
- */
-VMMR3_INT_DECL(bool) MMR3IsInitialized(PVM pVM)
-{
-    return pVM->mm.s.pHyperHeapR3 != NULL;
 }
 
 
