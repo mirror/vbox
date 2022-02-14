@@ -509,24 +509,6 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      *        VERR_SVM_IN_USE. */
     if (pVM->fHMEnabled)
     {
-        /*
-         * Register info handlers.
-         */
-        rc = DBGFR3InfoRegisterInternalEx(pVM, "hm", "Dumps HM info.", hmR3Info, DBGFINFO_FLAGS_ALL_EMTS);
-        AssertRCReturn(rc, rc);
-
-        rc = DBGFR3InfoRegisterInternalEx(pVM, "hmeventpending", "Dumps the pending HM event.", hmR3InfoEventPending,
-                                          DBGFINFO_FLAGS_ALL_EMTS);
-        AssertRCReturn(rc, rc);
-
-        rc = DBGFR3InfoRegisterInternalEx(pVM, "svmvmcbcache", "Dumps the HM SVM nested-guest VMCB cache.",
-                                          hmR3InfoSvmNstGstVmcbCache, DBGFINFO_FLAGS_ALL_EMTS);
-        AssertRCReturn(rc, rc);
-
-        rc = DBGFR3InfoRegisterInternalEx(pVM, "lbr", "Dumps the HM LBR info.", hmR3InfoLbr, DBGFINFO_FLAGS_ALL_EMTS);
-        AssertRCReturn(rc, rc);
-
-
         uint32_t fCaps;
         rc = SUPR3QueryVTCaps(&fCaps);
         if (RT_SUCCESS(rc))
@@ -653,6 +635,26 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_RAW_MODE
             || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT /* paranoia */)
             return VM_SET_ERROR(pVM, rc, "Misconfigured VM: No guest execution engine available!");
+    }
+
+    if (pVM->fHMEnabled)
+    {
+        /*
+         * Register info handlers now that HM is used for sure.
+         */
+        rc = DBGFR3InfoRegisterInternalEx(pVM, "hm", "Dumps HM info.", hmR3Info, DBGFINFO_FLAGS_ALL_EMTS);
+        AssertRCReturn(rc, rc);
+
+        rc = DBGFR3InfoRegisterInternalEx(pVM, "hmeventpending", "Dumps the pending HM event.", hmR3InfoEventPending,
+                                          DBGFINFO_FLAGS_ALL_EMTS);
+        AssertRCReturn(rc, rc);
+
+        rc = DBGFR3InfoRegisterInternalEx(pVM, "svmvmcbcache", "Dumps the HM SVM nested-guest VMCB cache.",
+                                          hmR3InfoSvmNstGstVmcbCache, DBGFINFO_FLAGS_ALL_EMTS);
+        AssertRCReturn(rc, rc);
+
+        rc = DBGFR3InfoRegisterInternalEx(pVM, "lbr", "Dumps the HM LBR info.", hmR3InfoLbr, DBGFINFO_FLAGS_ALL_EMTS);
+        AssertRCReturn(rc, rc);
     }
 
     Assert(pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NOT_SET);
