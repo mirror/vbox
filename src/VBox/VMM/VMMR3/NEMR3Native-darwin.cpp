@@ -1841,6 +1841,43 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT p
 
 
 /**
+ * Handles an exit from hv_vcpu_run() - debug runloop variant.
+ *
+ * @returns VBox strict status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   pVmxTransient   The transient VMX structure.
+ * @param   pDbgState       The debug state structure.
+ */
+static VBOXSTRICTRC nemR3DarwinHandleExitDebug(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, PVMXRUNDBGSTATE pDbgState)
+{
+    uint32_t uExitReason;
+    int rc = nemR3DarwinReadVmcs32(pVCpu, VMX_VMCS32_RO_EXIT_REASON, &uExitReason);
+    AssertRC(rc);
+    pVmxTransient->fVmcsFieldsRead = 0;
+    pVmxTransient->fIsNestedGuest  = false;
+    pVmxTransient->uExitReason     = VMX_EXIT_REASON_BASIC(uExitReason);
+    pVmxTransient->fVMEntryFailed  = VMX_EXIT_REASON_HAS_ENTRY_FAILED(uExitReason);
+
+    if (RT_UNLIKELY(pVmxTransient->fVMEntryFailed))
+        AssertLogRelMsgFailedReturn(("Running guest failed for CPU #%u: %#x %u\n",
+                                    pVCpu->idCpu, pVmxTransient->uExitReason, vmxHCCheckGuestState(pVCpu, &pVCpu->nem.s.VmcsInfo)),
+                                    VERR_NEM_IPE_0);
+
+    /** @todo Only copy the state on demand (the R0 VT-x code saves some stuff unconditionally and the VMX template assumes that
+     * when handling exits). */
+    rc = nemR3DarwinCopyStateFromHv(pVM, pVCpu, CPUMCTX_EXTRN_ALL);
+    AssertRCReturn(rc, rc);
+
+    STAM_COUNTER_INC(&pVCpu->nem.s.pVmxStats->aStatExitReason[pVmxTransient->uExitReason & MASK_EXITREASON_STAT]);
+    STAM_REL_COUNTER_INC(&pVCpu->nem.s.pVmxStats->StatExitAll);
+
+    return vmxHCRunDebugHandleExit(pVCpu, pVmxTransient, pDbgState);
+}
+
+
+/**
  * Worker for nemR3NativeInit that loads the Hypervisor.framework shared library.
  *
  * @returns VBox status code.
@@ -3124,35 +3161,64 @@ void nemR3NativeResetCpu(PVMCPU pVCpu, bool fInitIpi)
 }
 
 
-VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
+/**
+ * Runs the guest once until an exit occurs.
+ *
+ * @returns HV status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmxTransient   The transient VMX execution structure.
+ */
+static hv_return_t nemR3DarwinRunGuest(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 <=\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags));
-#ifdef LOG_ENABLED
-    if (LogIs3Enabled())
-        nemR3DarwinLogState(pVM, pVCpu);
-#endif
+    TMNotifyStartOfExecution(pVM, pVCpu);
 
-    AssertReturn(NEMR3CanExecuteGuest(pVM, pVCpu), VERR_NEM_IPE_9);
+    Assert(!pVCpu->nem.s.fCtxChanged);
+    hv_return_t hrc;
+    if (hv_vcpu_run_until) /** @todo Configur the deadline dynamically based on when the next timer triggers. */
+        hrc = hv_vcpu_run_until(pVCpu->nem.s.hVCpuId, mach_absolute_time() + 2 * RT_NS_1SEC_64 * pVM->nem.s.cMachTimePerNs);
+    else
+        hrc = hv_vcpu_run(pVCpu->nem.s.hVCpuId);
+
+    TMNotifyEndOfExecution(pVM, pVCpu, ASMReadTSC());
 
     /*
-     * Try switch to NEM runloop state.
+     * Sync the TPR shadow with our APIC state.
      */
-    if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED))
-    { /* likely */ }
-    else
+    if (   !pVmxTransient->fIsNestedGuest
+        && (pVCpu->nem.s.VmcsInfo.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
     {
-        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED);
-        LogFlow(("NEM/%u: returning immediately because canceled\n", pVCpu->idCpu));
-        return VINF_SUCCESS;
+        uint64_t u64Tpr;
+        hv_return_t hrc2 = hv_vcpu_read_register(pVCpu->nem.s.hVCpuId, HV_X86_TPR, &u64Tpr);
+        Assert(hrc2 == HV_SUCCESS);
+
+        if (pVmxTransient->u8GuestTpr != (uint8_t)u64Tpr)
+        {
+            int rc = APICSetTpr(pVCpu, (uint8_t)u64Tpr);
+            AssertRC(rc);
+            ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
+        }
     }
 
+    return hrc;
+}
+
+
+/**
+ * The normal runloop (no debugging features enabled).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+static VBOXSTRICTRC nemR3DarwinRunGuestNormal(PVM pVM, PVMCPU pVCpu)
+{
     /*
      * The run loop.
      *
      * Current approach to state updating to use the sledgehammer and sync
      * everything every time.  This will be optimized later.
      */
-
     VMXTRANSIENT VmxTransient;
     RT_ZERO(VmxTransient);
     VmxTransient.pVmcsInfo = &pVCpu->nem.s.VmcsInfo;
@@ -3231,35 +3297,7 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         LogFlowFunc(("Running vCPU\n"));
         pVCpu->nem.s.Event.fPending = false;
 
-        TMNotifyStartOfExecution(pVM, pVCpu);
-
-        Assert(!pVCpu->nem.s.fCtxChanged);
-        hv_return_t hrc;
-        if (hv_vcpu_run_until) /** @todo Configur the deadline dynamically based on when the next timer triggers. */
-            hrc = hv_vcpu_run_until(pVCpu->nem.s.hVCpuId, mach_absolute_time() + 2 * RT_NS_1SEC_64 * pVM->nem.s.cMachTimePerNs);
-        else
-            hrc = hv_vcpu_run(pVCpu->nem.s.hVCpuId);
-
-        TMNotifyEndOfExecution(pVM, pVCpu, ASMReadTSC());
-
-        /*
-         * Sync the TPR shadow with our APIC state.
-         */
-        if (   !VmxTransient.fIsNestedGuest
-            && (pVCpu->nem.s.VmcsInfo.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW))
-        {
-            uint64_t u64Tpr;
-            hrc = hv_vcpu_read_register(pVCpu->nem.s.hVCpuId, HV_X86_TPR, &u64Tpr);
-            Assert(hrc == HV_SUCCESS);
-
-            if (VmxTransient.u8GuestTpr != (uint8_t)u64Tpr)
-            {
-                rc = APICSetTpr(pVCpu, (uint8_t)u64Tpr);
-                AssertRC(rc);
-                ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_GUEST_APIC_TPR);
-            }
-        }
-
+        hv_return_t hrc = nemR3DarwinRunGuest(pVM, pVCpu, &VmxTransient);
         if (hrc == HV_SUCCESS)
         {
             /*
@@ -3284,6 +3322,174 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         }
     } /* the run loop */
 
+    return rcStrict;
+}
+
+
+/**
+ * The debug runloop.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+static VBOXSTRICTRC nemR3DarwinRunGuestDebug(PVM pVM, PVMCPU pVCpu)
+{
+    /*
+     * The run loop.
+     *
+     * Current approach to state updating to use the sledgehammer and sync
+     * everything every time.  This will be optimized later.
+     */
+    VMXTRANSIENT VmxTransient;
+    RT_ZERO(VmxTransient);
+    VmxTransient.pVmcsInfo = &pVCpu->nem.s.VmcsInfo;
+
+    /* State we keep to help modify and later restore the VMCS fields we alter, and for detecting steps.  */
+    VMXRUNDBGSTATE DbgState;
+    vmxHCRunDebugStateInit(pVCpu, &VmxTransient, &DbgState);
+    vmxHCPreRunGuestDebugStateUpdate(pVCpu, &VmxTransient, &DbgState);
+
+    /*
+     * Poll timers and run for a bit.
+     */
+    /** @todo See if we cannot optimize this TMTimerPollGIP by only redoing
+     *        the whole polling job when timers have changed... */
+    uint64_t       offDeltaIgnored;
+    uint64_t const nsNextTimerEvt = TMTimerPollGIP(pVM, pVCpu, &offDeltaIgnored); NOREF(nsNextTimerEvt);
+
+    const bool      fSingleStepping = DBGFIsStepping(pVCpu);
+    VBOXSTRICTRC    rcStrict        = VINF_SUCCESS;
+    for (unsigned iLoop = 0;; iLoop++)
+    {
+        /* Set up VM-execution controls the next two can respond to. */
+        vmxHCPreRunGuestDebugStateApply(pVCpu, &VmxTransient, &DbgState);
+
+        /*
+         * Check and process force flag actions, some of which might require us to go back to ring-3.
+         */
+        rcStrict = vmxHCCheckForceFlags(pVCpu, false /*fIsNestedGuest*/, fSingleStepping);
+        if (rcStrict == VINF_SUCCESS)
+        { /*likely */ }
+        else
+        {
+            if (rcStrict == VINF_EM_RAW_TO_R3)
+                rcStrict = VINF_SUCCESS;
+            break;
+        }
+
+        /*
+         * Do not execute in HV if the A20 isn't enabled.
+         */
+        if (PGMPhysIsA20Enabled(pVCpu))
+        { /* likely */ }
+        else
+        {
+            rcStrict = VINF_EM_RESCHEDULE_REM;
+            LogFlow(("NEM/%u: breaking: A20 disabled\n", pVCpu->idCpu));
+            break;
+        }
+
+        /*
+         * Evaluate events to be injected into the guest.
+         *
+         * Events in TRPM can be injected without inspecting the guest state.
+         * If any new events (interrupts/NMI) are pending currently, we try to set up the
+         * guest to cause a VM-exit the next time they are ready to receive the event.
+         */
+        if (TRPMHasTrap(pVCpu))
+            vmxHCTrpmTrapToPendingEvent(pVCpu);
+
+        uint32_t fIntrState;
+        rcStrict = vmxHCEvaluatePendingEvent(pVCpu, &pVCpu->nem.s.VmcsInfo, false /*fIsNestedGuest*/, &fIntrState);
+
+        /*
+         * Event injection may take locks (currently the PGM lock for real-on-v86 case) and thus
+         * needs to be done with longjmps or interrupts + preemption enabled. Event injection might
+         * also result in triple-faulting the VM.
+         *
+         * With nested-guests, the above does not apply since unrestricted guest execution is a
+         * requirement. Regardless, we do this here to avoid duplicating code elsewhere.
+         */
+        rcStrict = vmxHCInjectPendingEvent(pVCpu, &pVCpu->nem.s.VmcsInfo, false /*fIsNestedGuest*/, fIntrState, fSingleStepping);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /* likely */ }
+        else
+        {
+            AssertMsg(rcStrict == VINF_EM_RESET || (rcStrict == VINF_EM_DBG_STEPPED && fSingleStepping),
+                      ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            break;
+        }
+
+        int rc = nemR3DarwinExportGuestState(pVM, pVCpu, &VmxTransient);
+        AssertRCReturn(rc, rc);
+
+        LogFlowFunc(("Running vCPU\n"));
+        pVCpu->nem.s.Event.fPending = false;
+
+        /* Override any obnoxious code in the above two calls. */
+        vmxHCPreRunGuestDebugStateApply(pVCpu, &VmxTransient, &DbgState);
+
+        hv_return_t hrc = nemR3DarwinRunGuest(pVM, pVCpu, &VmxTransient);
+        if (hrc == HV_SUCCESS)
+        {
+            /*
+             * Deal with the message.
+             */
+            rcStrict = nemR3DarwinHandleExitDebug(pVM, pVCpu, &VmxTransient, &DbgState);
+            if (rcStrict == VINF_SUCCESS)
+            { /* hopefully likely */ }
+            else
+            {
+                LogFlow(("NEM/%u: breaking: nemR3DarwinHandleExitDebug -> %Rrc\n", pVCpu->idCpu, VBOXSTRICTRC_VAL(rcStrict) ));
+                STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
+                break;
+            }
+            //Assert(!pVCpu->cpum.GstCtx.fExtrn);
+        }
+        else
+        {
+            AssertLogRelMsgFailedReturn(("hv_vcpu_run()) failed for CPU #%u: %#x %u\n",
+                                        pVCpu->idCpu, hrc, vmxHCCheckGuestState(pVCpu, &pVCpu->nem.s.VmcsInfo)),
+                                        VERR_NEM_IPE_0);
+        }
+    } /* the run loop */
+
+    /* Restore all controls applied by vmxHCPreRunGuestDebugStateApply above. */
+    return vmxHCRunDebugStateRevert(pVCpu, &VmxTransient, &DbgState, rcStrict);
+}
+
+
+VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
+{
+    LogFlow(("NEM/%u: %04x:%08RX64 efl=%#08RX64 <=\n", pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.rflags));
+#ifdef LOG_ENABLED
+    if (LogIs3Enabled())
+        nemR3DarwinLogState(pVM, pVCpu);
+#endif
+
+    AssertReturn(NEMR3CanExecuteGuest(pVM, pVCpu), VERR_NEM_IPE_9);
+
+    /*
+     * Try switch to NEM runloop state.
+     */
+    if (VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED))
+    { /* likely */ }
+    else
+    {
+        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC_NEM, VMCPUSTATE_STARTED_EXEC_NEM_CANCELED);
+        LogFlow(("NEM/%u: returning immediately because canceled\n", pVCpu->idCpu));
+        return VINF_SUCCESS;
+    }
+
+    VBOXSTRICTRC rcStrict;
+    if (   !pVCpu->nem.s.fUseDebugLoop
+        /** @todo dtrace && (!VBOXVMM_ANY_PROBES_ENABLED() || !hmR0VmxAnyExpensiveProbesEnabled()) */
+        && !DBGFIsStepping(pVCpu)
+        && !pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledInt3Breakpoints)
+        rcStrict = nemR3DarwinRunGuestNormal(pVM, pVCpu);
+    else
+        rcStrict = nemR3DarwinRunGuestDebug(pVM, pVCpu);
 
     /*
      * Convert any pending HM events back to TRPM due to premature exits.
