@@ -637,6 +637,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Host_DriverNotUnloading                   = ( 'Host',              'Driver not unloading' );
     ktReason_Host_DriverNotCompilable                  = ( 'Host',              'Driver not compilable' );
     ktReason_Host_InstallationFailed                   = ( 'Host',              'Installation failed' );
+    ktReason_Host_InstallationWantReboot               = ( 'Host',              'Installation want reboot' );
     ktReason_Host_NotSignedWithBuildCert               = ( 'Host',              'Not signed with build cert' );
     ktReason_Host_DoubleFreeHeap                       = ( 'Host',              'Double free or corruption' );
     ktReason_Host_LeftoverService                      = ( 'Host',              'Leftover service' );
@@ -871,6 +872,11 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             ( True, ktReason_Host_InstallationFailed, 'svcadm: Couldn\'t bind to svc.configd.' ),
             ( True, ktReason_Host_InstallationFailed, 'pkgadd: ERROR: postinstall script did not complete successfully' ),
         ],
+        'win': {
+            # ( Whether to stop on hit, reason tuple, needle text. )
+            ( True,  ktReason_Host_InstallationWantReboot, 'ERROR_SUCCESS_REBOOT_REQUIRED' ),
+            ( False, ktReason_Host_InstallationFailed, 'Installation error.' ),
+        }
     };
 
 
