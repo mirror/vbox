@@ -4447,6 +4447,15 @@ DxgkDdiCreateContext(
                         break;
                     }
 #endif
+#ifdef VBOX_WITH_VMSVGA3D_DX
+                    /** @todo Implement buffers submittion and memory menagement for this new type of context **/
+                    case VBOXWDDM_CONTEXT_TYPE_VMSVGA_DX:
+                    {
+                        pContext->enmType = VBOXWDDM_CONTEXT_TYPE_VMSVGA_DX;
+                        WARN(("Context type VBOXWDDM_CONTEXT_TYPE_VMSVGA_DX is not supported yet"));
+                        break;
+                    }
+#endif
                     default:
                     {
                         WARN(("unsupported context type %d", pInfo->enmType));
@@ -4521,6 +4530,14 @@ DxgkDdiDestroyContext(
         case VBOXWDDM_CONTEXT_TYPE_GA_3D:
         {
             Status = GaContextDestroy(pDevExt->pGa, pContext);
+            break;
+        }
+#endif
+#ifdef VBOX_WITH_VMSVGA3D_DX
+        case VBOXWDDM_CONTEXT_TYPE_VMSVGA_DX:
+        {
+            pContext->enmType = VBOXWDDM_CONTEXT_TYPE_VMSVGA_DX;
+            WARN(("Context type VBOXWDDM_CONTEXT_TYPE_VMSVGA_DX is not supported yet"));
             break;
         }
 #endif
