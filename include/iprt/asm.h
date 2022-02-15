@@ -1663,7 +1663,11 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_
                          : "=m" (*pu8)
                          , "=qm" (u8Ret)
                          , "=a" (*pu8Old)
+#  if defined(RT_ARCH_X86)
+                         : "q" (u8New)
+#  else
                          : "r" (u8New)
+#  endif
                          , "a" (u8Old)
                          , "m" (*pu8)
                          : "cc");
