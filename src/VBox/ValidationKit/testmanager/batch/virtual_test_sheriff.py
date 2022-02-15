@@ -1575,6 +1575,13 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
 
         #
+        # Windows python/com screwup.
+        #
+        if sMainLog.find('ModuleNotFoundError: No module named \'win32com.gen_py') > 0:
+            oCaseFile.noteReason(self.ktReason_Host_win32com_gen_py);
+            return self.caseClosed(oCaseFile);
+
+        #
         # Check VBoxSVC.log and VBoxHardening.log for VM crashes if inconclusive on single VM runs.
         #
         if fSingleVM and len(oCaseFile.dReasonForResultId) < len(aoFailedResults):
