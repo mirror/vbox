@@ -1203,7 +1203,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         """
         enmReason = None;
         sParentName = oFailedResult.oParent.sName if oFailedResult.oParent else '';
-        if oFailedResult.sName == 'VBoxWindowsAdditions.exe':
+        if oFailedResult.sName == 'VBoxWindowsAdditions.exe' or sResultLog.find('VBoxWindowsAdditions.exe" failed with') > 0:
             enmReason = self.ktReason_Add_Installer_Win_Failed;
         # guest control:
         elif sParentName == 'Guest Control' and oFailedResult.sName == 'Preparations':
