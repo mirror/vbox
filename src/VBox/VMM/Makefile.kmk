@@ -289,6 +289,14 @@ $(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / descriptio
 
 
 #
+# This'll apply to both VBoxVMM and VMMR0.
+#
+ifdef IEM_WITHOUT_ASSEMBLY
+VMMAll/IEMAllAImplC.cpp_DEFS = IEM_WITHOUT_ASSEMBLY
+endif
+
+
+#
 # Generate macro template for IEM instruction statistics.
 #
 $(call KB_FN_DO_PASS0_ON_TARGET,VBoxVMM) # Set VBoxVMM_0_OUTDIR
