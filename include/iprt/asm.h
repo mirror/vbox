@@ -68,6 +68,8 @@
 # pragma intrinsic(_InterlockedExchange)
 # pragma intrinsic(_InterlockedExchangeAdd)
 # pragma intrinsic(_InterlockedCompareExchange)
+# pragma intrinsic(_InterlockedCompareExchange8)
+# pragma intrinsic(_InterlockedCompareExchange16)
 # pragma intrinsic(_InterlockedCompareExchange64)
 # pragma intrinsic(_rotl)
 # pragma intrinsic(_rotr)
@@ -1632,6 +1634,256 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtrVoid(void RT_FAR * volatile RT_FAR *ppv, con
                 break; \
         } \
     } while (0)
+
+
+/**
+ * Atomically Compare and Exchange an unsigned 8-bit value, additionally passes
+ * back old value, ordered.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pu8         Pointer to the value to update.
+ * @param   u8New       The new value to assigned to *pu32.
+ * @param   u8Old       The old value to *pu8 compare with.
+ * @param   pu8Old      Pointer store the old value at.
+ *
+ * @remarks x86: Requires a 486 or later.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_t u8New, const uint8_t u8Old, uint8_t RT_FAR *pu8Old) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_t u8New, const uint8_t u8Old, uint8_t RT_FAR *pu8Old) RT_NOTHROW_DEF
+{
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
+    uint8_t u8Ret;
+    __asm__ __volatile__("lock; cmpxchgb %3, %0\n\t"
+                         "setz  %1\n\t"
+                         : "=m" (*pu8)
+                         , "=qm" (u8Ret)
+                         , "=a" (*pu8Old)
+                         : "r" (u8New)
+                         , "a" (u8Old)
+                         , "m" (*pu8)
+                         : "cc");
+    return (bool)u8Ret;
+
+#  elif RT_INLINE_ASM_USES_INTRIN
+    return (*pu8Old = _InterlockedCompareExchange8((char RT_FAR *)pu8, u8New, u8Old)) == u8Old;
+
+#  else
+    uint8_t u8Ret;
+    __asm
+    {
+#   ifdef RT_ARCH_AMD64
+        mov     rdx, [pu8]
+#   else
+        mov     edx, [pu8]
+#   endif
+        mov     eax, [u8Old]
+        mov     ecx, [u8New]
+#   ifdef RT_ARCH_AMD64
+        lock cmpxchg [rdx], ecx
+        mov     rdx, [pu8Old]
+        mov     [rdx], eax
+#   else
+        lock cmpxchg [edx], ecx
+        mov     edx, [pu8Old]
+        mov     [edx], eax
+#   endif
+        setz    al
+        movzx   eax, al
+        mov     [u8Ret], eax
+    }
+    return !!u8Ret;
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    union { uint8_t u; bool f; } fXchg;
+    uint8_t u8ActualOld;
+    uint8_t rcSpill;
+    __asm__ __volatile__(".Ltry_again_ASMAtomicCmpXchgExU8_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxrb    %w[uOld], %[pMem]\n\t"
+                         "cmp       %w[uOld], %w[uCmp]\n\t"
+                         "bne       1f\n\t"   /* stop here if not equal */
+                         "stlxrb    %w[rc], %w[uNew], %[pMem]\n\t"
+                         "cbnz      %w[rc], .Ltry_again_ASMAtomicCmpXchgExU8_%=\n\t"
+                         "mov       %w[fXchg], #1\n\t"
+#  else
+                         "ldrexb     %[uOld], %[pMem]\n\t"
+                         "teq       %[uOld], %[uCmp]\n\t"
+                         "strexbeq  %[rc], %[uNew], %[pMem]\n\t"
+                         "bne       1f\n\t"   /* stop here if not equal */
+                         "cmp       %[rc], #0\n\t"
+                         "bne       .Ltry_again_ASMAtomicCmpXchgExU8_%=\n\t"
+                         "mov       %[fXchg], #1\n\t"
+#  endif
+                         "1:\n\t"
+                         : [pMem]   "+m"  (*pu8)
+                         , [uOld]   "=&r" (u8ActualOld)
+                         , [rc]     "=&r" (rcSpill)
+                         , [fXchg]  "=&r" (fXchg.u)
+                         : [uCmp]   "r"  (u8Old)
+                         , [uNew]   "r"  (u8New)
+                         , "[fXchg]" (0)
+                           RTASM_ARM_DMB_SY_COMMA_IN_REG
+                         : "cc");
+    *pu8Old = u8ActualOld;
+    return fXchg.f;
+
+# else
+#  error "Port me"
+# endif
+}
+#endif
+
+
+/**
+ * Atomically Compare and Exchange a signed 8-bit value, additionally
+ * passes back old value, ordered.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pi8         Pointer to the value to update.
+ * @param   i8New       The new value to assigned to *pi8.
+ * @param   i8Old       The old value to *pi8 compare with.
+ * @param   pi8Old      Pointer store the old value at.
+ *
+ * @remarks x86: Requires a 486 or later.
+ */
+DECLINLINE(bool) ASMAtomicCmpXchgExS8(volatile int8_t RT_FAR *pi8, const int8_t i8New, const int8_t i8Old, int8_t RT_FAR *pi8Old) RT_NOTHROW_DEF
+{
+    return ASMAtomicCmpXchgExU8((volatile uint8_t RT_FAR *)pi8, (uint8_t)i8New, (uint8_t)i8Old, (uint8_t RT_FAR *)pi8Old);
+}
+
+
+/**
+ * Atomically Compare and Exchange an unsigned 16-bit value, additionally passes
+ * back old value, ordered.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pu16        Pointer to the value to update.
+ * @param   u16New      The new value to assigned to *pu16.
+ * @param   u16Old      The old value to *pu32 compare with.
+ * @param   pu16Old     Pointer store the old value at.
+ *
+ * @remarks x86: Requires a 486 or later.
+ */
+#if RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN
+RT_ASM_DECL_PRAGMA_WATCOM(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uint16_t u16New, const uint16_t u16Old, uint16_t RT_FAR *pu16Old) RT_NOTHROW_PROTO;
+#else
+DECLINLINE(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uint16_t u16New, const uint16_t u16Old, uint16_t RT_FAR *pu16Old) RT_NOTHROW_DEF
+{
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
+    uint8_t u8Ret;
+    __asm__ __volatile__("lock; cmpxchgw %3, %0\n\t"
+                         "setz  %1\n\t"
+                         : "=m" (*pu16)
+                         , "=qm" (u8Ret)
+                         , "=a" (*pu16Old)
+                         : "r" (u16New)
+                         , "a" (u16Old)
+                         , "m" (*pu16)
+                         : "cc");
+    return (bool)u8Ret;
+
+#  elif RT_INLINE_ASM_USES_INTRIN
+    return (*pu16Old = _InterlockedCompareExchange16((short RT_FAR *)pu16, u16New, u16Old)) == u16Old;
+
+#  else
+    uint16_t u16Ret;
+    __asm
+    {
+#   ifdef RT_ARCH_AMD64
+        mov     rdx, [pu16]
+#   else
+        mov     edx, [pu16]
+#   endif
+        mov     eax, [u16Old]
+        mov     ecx, [u16New]
+#   ifdef RT_ARCH_AMD64
+        lock cmpxchg [rdx], ecx
+        mov     rdx, [pu16Old]
+        mov     [rdx], eax
+#   else
+        lock cmpxchg [edx], ecx
+        mov     edx, [pu16Old]
+        mov     [edx], eax
+#   endif
+        setz    al
+        movzx   eax, al
+        mov     [u16Ret], eax
+    }
+    return !!u16Ret;
+#  endif
+
+# elif defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+    union { uint16_t u; bool f; } fXchg;
+    uint16_t u16ActualOld;
+    uint16_t rcSpill;
+    __asm__ __volatile__(".Ltry_again_ASMAtomicCmpXchgExU16_%=:\n\t"
+                         RTASM_ARM_DMB_SY
+#  if defined(RT_ARCH_ARM64)
+                         "ldaxrh    %w[uOld], %[pMem]\n\t"
+                         "cmp       %w[uOld], %w[uCmp]\n\t"
+                         "bne       1f\n\t"   /* stop here if not equal */
+                         "stlxrh    %w[rc], %w[uNew], %[pMem]\n\t"
+                         "cbnz      %w[rc], .Ltry_again_ASMAtomicCmpXchgExU16_%=\n\t"
+                         "mov       %w[fXchg], #1\n\t"
+#  else
+                         "ldrexh     %[uOld], %[pMem]\n\t"
+                         "teq       %[uOld], %[uCmp]\n\t"
+                         "strexheq  %[rc], %[uNew], %[pMem]\n\t"
+                         "bne       1f\n\t"   /* stop here if not equal */
+                         "cmp       %[rc], #0\n\t"
+                         "bne       .Ltry_again_ASMAtomicCmpXchgExU16_%=\n\t"
+                         "mov       %[fXchg], #1\n\t"
+#  endif
+                         "1:\n\t"
+                         : [pMem]   "+m"  (*pu16)
+                         , [uOld]   "=&r" (u16ActualOld)
+                         , [rc]     "=&r" (rcSpill)
+                         , [fXchg]  "=&r" (fXchg.u)
+                         : [uCmp]   "r"  (u16Old)
+                         , [uNew]   "r"  (u16New)
+                         , "[fXchg]" (0)
+                           RTASM_ARM_DMB_SY_COMMA_IN_REG
+                         : "cc");
+    *pu16Old = u16ActualOld;
+    return fXchg.f;
+
+# else
+#  error "Port me"
+# endif
+}
+#endif
+
+
+/**
+ * Atomically Compare and Exchange a signed 16-bit value, additionally
+ * passes back old value, ordered.
+ *
+ * @returns true if xchg was done.
+ * @returns false if xchg wasn't done.
+ *
+ * @param   pi16        Pointer to the value to update.
+ * @param   i16New      The new value to assigned to *pi16.
+ * @param   i16Old      The old value to *pi16 compare with.
+ * @param   pi16Old     Pointer store the old value at.
+ *
+ * @remarks x86: Requires a 486 or later.
+ */
+DECLINLINE(bool) ASMAtomicCmpXchgExS16(volatile int16_t RT_FAR *pi16, const int16_t i16New, const int16_t i16Old, int16_t RT_FAR *pi16Old) RT_NOTHROW_DEF
+{
+    return ASMAtomicCmpXchgExU16((volatile uint16_t RT_FAR *)pi16, (uint16_t)i16New, (uint16_t)i16Old, (uint16_t RT_FAR *)pi16Old);
+}
 
 
 /**

@@ -1569,6 +1569,52 @@ static void tstASMAtomicCmpXchg(void)
 }
 
 
+DECLINLINE(void) tstASMAtomicCmpXchgExU8Worker(uint8_t volatile *pu8)
+{
+    *pu8          = UINT8_C(0xff);
+    uint8_t u8Old = UINT8_C(0x11);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu8, u8Old, ASMAtomicCmpXchgExU8(pu8, 0, 0, &u8Old), false, UINT8_C(0xff), UINT8_C(0xff));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu8, u8Old, ASMAtomicCmpXchgExU8(pu8, 0, UINT8_C(0xff), &u8Old), true,  0, UINT8_C(0xff));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu8, u8Old, ASMAtomicCmpXchgExU8(pu8, 0, UINT8_C(0xff), &u8Old), false, 0, UINT8_C(0x00));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu8, u8Old, ASMAtomicCmpXchgExU8(pu8, UINT8_C(0xfd), 0, &u8Old), true,  UINT8_C(0xfd), 0);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu8, u8Old, ASMAtomicCmpXchgExU8(pu8, UINT8_C(0xfd), 0, &u8Old), false, UINT8_C(0xfd), UINT8_C(0xfd));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu8, u8Old, ASMAtomicCmpXchgExU8(pu8, UINT8_C(0xe0), UINT8_C(0xfd), &u8Old), true,  UINT8_C(0xe0), UINT8_C(0xfd));
+
+    int8_t volatile *pi8   = (int8_t volatile *)pu8;
+    int8_t           i8Old = 0;
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi8, i8Old, ASMAtomicCmpXchgExS8(pi8, 32, 32, &i8Old), false, -32, -32);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi8, i8Old, ASMAtomicCmpXchgExS8(pi8, 32, -32, &i8Old), true, 32, -32);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi8, i8Old, ASMAtomicCmpXchgExS8(pi8, INT8_MIN, 32, &i8Old), true, INT8_MIN, 32);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi8, i8Old, ASMAtomicCmpXchgExS8(pi8, INT8_MIN, 32, &i8Old), false, INT8_MIN, INT8_MIN);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi8, i8Old, ASMAtomicCmpXchgExS8(pi8, INT8_MAX, INT8_MAX, &i8Old), false, INT8_MIN, INT8_MIN);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi8, i8Old, ASMAtomicCmpXchgExS8(pi8, INT8_MAX, INT8_MIN, &i8Old), true, INT8_MAX, INT8_MIN);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi8, i8Old, ASMAtomicCmpXchgExS8(pi8, 42, INT8_MAX, &i8Old), true, 42, INT8_MAX);
+}
+
+
+DECLINLINE(void) tstASMAtomicCmpXchgExU16Worker(uint16_t volatile *pu16)
+{
+    *pu16           = UINT16_C(0xffff);
+    uint16_t u16Old = UINT16_C(0x5111);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu16, u16Old, ASMAtomicCmpXchgExU16(pu16, 0, 0, &u16Old), false, UINT16_C(0xffff), UINT16_C(0xffff));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu16, u16Old, ASMAtomicCmpXchgExU16(pu16, 0, UINT16_C(0xffff), &u16Old), true,  0, UINT16_C(0xffff));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu16, u16Old, ASMAtomicCmpXchgExU16(pu16, 0, UINT16_C(0xffff), &u16Old), false, 0, UINT16_C(0x0000));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu16, u16Old, ASMAtomicCmpXchgExU16(pu16, UINT16_C(0x8efd), 0, &u16Old), true,  UINT16_C(0x8efd), 0);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu16, u16Old, ASMAtomicCmpXchgExU16(pu16, UINT16_C(0x8efd), 0, &u16Old), false, UINT16_C(0x8efd), UINT16_C(0x8efd));
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%#x", pu16, u16Old, ASMAtomicCmpXchgExU16(pu16, UINT16_C(0xffe0), UINT16_C(0x8efd), &u16Old), true,  UINT16_C(0xffe0), UINT16_C(0x8efd));
+
+    int16_t volatile *pi16   = (int16_t volatile *)pu16;
+    int16_t           i16Old = 0;
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi16, i16Old, ASMAtomicCmpXchgExS16(pi16, 32, 32, &i16Old), false, -32, -32);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi16, i16Old, ASMAtomicCmpXchgExS16(pi16, 32, -32, &i16Old), true, 32, -32);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi16, i16Old, ASMAtomicCmpXchgExS16(pi16, INT16_MIN, 32, &i16Old), true, INT16_MIN, 32);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi16, i16Old, ASMAtomicCmpXchgExS16(pi16, INT16_MIN, 32, &i16Old), false, INT16_MIN, INT16_MIN);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi16, i16Old, ASMAtomicCmpXchgExS16(pi16, INT16_MAX, INT16_MAX, &i16Old), false, INT16_MIN, INT16_MIN);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi16, i16Old, ASMAtomicCmpXchgExS16(pi16, INT16_MAX, INT16_MIN, &i16Old), true, INT16_MAX, INT16_MIN);
+    CHECK_OP_AND_VAL_EX2(bool, "%d", "%d", pi16, i16Old, ASMAtomicCmpXchgExS16(pi16, 42, INT16_MAX, &i16Old), true, 42, INT16_MAX);
+}
+
+
 DECLINLINE(void) tstASMAtomicCmpXchgExU32Worker(uint32_t volatile *pu32)
 {
     *pu32           = UINT32_C(0xffffffff);
@@ -1654,6 +1700,8 @@ DECLINLINE(void) tstASMAtomicCmpXchgExU64Worker(uint64_t volatile *pu64)
 
 static void tstASMAtomicCmpXchgEx(void)
 {
+    DO_SIMPLE_TEST(ASMAtomicCmpXchgExU8, uint8_t);
+    DO_SIMPLE_TEST(ASMAtomicCmpXchgExU16, uint16_t);
     DO_SIMPLE_TEST(ASMAtomicCmpXchgExU32, uint32_t);
     DO_SIMPLE_TEST(ASMAtomicCmpXchgExU64, uint64_t);
 }
@@ -2752,6 +2800,14 @@ void tstASMBench(void)
     static int32_t  volatile s_i32;
     static uint64_t volatile s_u64;
     static int64_t  volatile s_i64;
+    static uint8_t  s_u8Old;
+    static int8_t   s_i8Old;
+    static uint16_t s_u16Old;
+    static int16_t  s_i16Old;
+    static uint32_t s_u32Old;
+    static int32_t  s_i32Old;
+    static uint64_t s_u64Old;
+    static int64_t  s_i64Old;
     unsigned i;
     const unsigned cRounds = _16M;       /* Must be multiple of 8 */
     uint64_t u64Elapsed;
@@ -2852,17 +2908,41 @@ void tstASMBench(void)
     BENCH(ASMAtomicXchgS32(&s_i32, 0),           "ASMAtomicXchgS32");
     BENCH(ASMAtomicXchgU64(&s_u64, 0),           "ASMAtomicXchgU64");
     BENCH(ASMAtomicXchgS64(&s_i64, 0),           "ASMAtomicXchgS64");
+    BENCH(ASMAtomicCmpXchgU8(&s_u8, 0, 0),       "ASMAtomicCmpXchgU8");
+    BENCH(ASMAtomicCmpXchgS8(&s_i8, 0, 0),       "ASMAtomicCmpXchgS8");
+    //BENCH(ASMAtomicCmpXchgU16(&s_u16, 0, 0),     "ASMAtomicCmpXchgU16");
+    //BENCH(ASMAtomicCmpXchgS16(&s_i16, 0, 0),     "ASMAtomicCmpXchgS16");
     BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 0),     "ASMAtomicCmpXchgU32");
     BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 0),     "ASMAtomicCmpXchgS32");
     BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 0),     "ASMAtomicCmpXchgU64");
     BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 0),     "ASMAtomicCmpXchgS64");
+    BENCH(ASMAtomicCmpXchgU8(&s_u8, 0, 1),       "ASMAtomicCmpXchgU8/neg");
+    BENCH(ASMAtomicCmpXchgS8(&s_i8, 0, 1),       "ASMAtomicCmpXchgS8/neg");
+    //BENCH(ASMAtomicCmpXchgU16(&s_u16, 0, 1),     "ASMAtomicCmpXchgU16/neg");
+    //BENCH(ASMAtomicCmpXchgS16(&s_s16, 0, 1),     "ASMAtomicCmpXchgS16/neg");
     BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 1),     "ASMAtomicCmpXchgU32/neg");
     BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 1),     "ASMAtomicCmpXchgS32/neg");
     BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 1),     "ASMAtomicCmpXchgU64/neg");
     BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 1),     "ASMAtomicCmpXchgS64/neg");
+    BENCH(ASMAtomicCmpXchgExU8(&s_u8, 0, 0, &s_u8Old),    "ASMAtomicCmpXchgExU8");
+    BENCH(ASMAtomicCmpXchgExS8(&s_i8, 0, 0, &s_i8Old),    "ASMAtomicCmpXchgExS8");
+    BENCH(ASMAtomicCmpXchgExU16(&s_u16, 0, 0, &s_u16Old), "ASMAtomicCmpXchgExU16");
+    BENCH(ASMAtomicCmpXchgExS16(&s_i16, 0, 0, &s_i16Old), "ASMAtomicCmpXchgExS16");
+    BENCH(ASMAtomicCmpXchgExU32(&s_u32, 0, 0, &s_u32Old), "ASMAtomicCmpXchgExU32");
+    BENCH(ASMAtomicCmpXchgExS32(&s_i32, 0, 0, &s_i32Old), "ASMAtomicCmpXchgExS32");
+    BENCH(ASMAtomicCmpXchgExU64(&s_u64, 0, 0, &s_u64Old), "ASMAtomicCmpXchgExU64");
+    BENCH(ASMAtomicCmpXchgExS64(&s_i64, 0, 0, &s_i64Old), "ASMAtomicCmpXchgExS64");
+    BENCH(ASMAtomicCmpXchgExU8(&s_u8, 0, 1, &s_u8Old),    "ASMAtomicCmpXchgExU8/neg");
+    BENCH(ASMAtomicCmpXchgExS8(&s_i8, 0, 1, &s_i8Old),    "ASMAtomicCmpXchgExS8/neg");
+    BENCH(ASMAtomicCmpXchgExU16(&s_u16, 0, 1, &s_u16Old), "ASMAtomicCmpXchgExU16/neg");
+    BENCH(ASMAtomicCmpXchgExS16(&s_i16, 0, 1, &s_i16Old), "ASMAtomicCmpXchgExS16/neg");
+    BENCH(ASMAtomicCmpXchgExU32(&s_u32, 0, 1, &s_u32Old), "ASMAtomicCmpXchgExU32/neg");
+    BENCH(ASMAtomicCmpXchgExS32(&s_i32, 0, 1, &s_i32Old), "ASMAtomicCmpXchgExS32/neg");
+    BENCH(ASMAtomicCmpXchgExU64(&s_u64, 0, 1, &s_u64Old), "ASMAtomicCmpXchgExU64/neg");
+    BENCH(ASMAtomicCmpXchgExS64(&s_i64, 0, 1, &s_i64Old), "ASMAtomicCmpXchgExS64/neg");
     BENCH(ASMAtomicIncU32(&s_u32),               "ASMAtomicIncU32");
     BENCH(ASMAtomicIncS32(&s_i32),               "ASMAtomicIncS32");
-    BENCH(ASMAtomicDecU32(&s_u32),               "ASMAtomicDecU32");
+    BENCH(ASMAtomicDecU32(&s_u32),               "ASMAtomicDecU32") ;
     BENCH(ASMAtomicDecS32(&s_i32),               "ASMAtomicDecS32");
     BENCH(ASMAtomicAddU32(&s_u32, 5),            "ASMAtomicAddU32");
     BENCH(ASMAtomicAddS32(&s_i32, 5),            "ASMAtomicAddS32");
