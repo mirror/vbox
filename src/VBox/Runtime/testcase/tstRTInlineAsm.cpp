@@ -2861,7 +2861,7 @@ void tstASMBench(void)
             op; \
         } \
         u64Elapsed = ASMReadTSC() - u64Elapsed; \
-        RTTestValue(g_hTest, str, u64Elapsed / cRounds, /*RTTESTUNIT_TICKS_PER_CALL*/ RTTESTUNIT_NONE); \
+        RTTestValue(g_hTest, str, u64Elapsed / cRounds, RTTESTUNIT_TICKS_PER_CALL); \
     } while (0)
 #else
 # define BENCH_TSC(op, str) BENCH(op, str)

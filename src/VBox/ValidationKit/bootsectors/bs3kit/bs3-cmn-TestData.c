@@ -102,6 +102,13 @@ char const  g_aszBs3TestUnitNames[][12] =
     "pages/s",
     "ticks/page",
     "ns/page",
+    "ps",
+    "ps/call",
+    "ps/frame",
+    "ps/occ",
+    "ps/packet",
+    "ps/rndtrp",
+    "ps/page",
 };
 
 

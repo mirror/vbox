@@ -523,6 +523,13 @@ typedef enum RTTESTUNIT
     RTTESTUNIT_PAGES_PER_SEC,                   /**< Pages per second. */
     RTTESTUNIT_TICKS_PER_PAGE,                  /**< CPU ticks per page. */
     RTTESTUNIT_NS_PER_PAGE,                     /**< Nanoseconds per page. */
+    RTTESTUNIT_PS,                              /**< Picoseconds. */
+    RTTESTUNIT_PS_PER_CALL,                     /**< Picoseconds per call. */
+    RTTESTUNIT_PS_PER_FRAME,                    /**< Picoseconds per frame. */
+    RTTESTUNIT_PS_PER_OCCURRENCE,               /**< Picoseconds per occurrence. */
+    RTTESTUNIT_PS_PER_PACKET,                   /**< Picoseconds per frame. */
+    RTTESTUNIT_PS_PER_ROUND_TRIP,               /**< Picoseconds per round trip. */
+    RTTESTUNIT_PS_PER_PAGE,                     /**< Picoseconds per page. */
 
     /** The end of valid units. */
     RTTESTUNIT_END
@@ -530,6 +537,7 @@ typedef enum RTTESTUNIT
 AssertCompile(RTTESTUNIT_INSTRS      == 0x19);
 AssertCompile(RTTESTUNIT_NONE        == 0x1b);
 AssertCompile(RTTESTUNIT_NS_PER_PAGE == 0x26);
+AssertCompile(RTTESTUNIT_PS_PER_PAGE == 0x2d);
 
 /**
  * Report a named test result value.

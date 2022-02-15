@@ -76,7 +76,14 @@ PAGES                   = 0x23;
 PAGES_PER_SEC           = 0x24;
 TICKS_PER_PAGE          = 0x25;
 NS_PER_PAGE             = 0x26;
-END                     = 0x27;
+PS                      = 0x27;
+PS_PER_CALL             = 0x28;
+PS_PER_FRAME            = 0x29;
+PS_PER_OCCURRENCE       = 0x2a;
+PS_PER_PACKET           = 0x2b;
+PS_PER_ROUND_TRIP       = 0x2c;
+PS_PER_PAGE             = 0x2d;
+END                     = 0x2e;
 ## @}
 
 
@@ -122,9 +129,17 @@ g_asNames = \
     'pages/s',
     'ticks/page',
     'ns/page',
+    'ps',
+    'ps/call',
+    'ps/frame',
+    'ps/occurrences',
+    'ps/packet',
+    'ps/roundtrips',
+    'ps/page',
 ];
 assert g_asNames[PP1K] == 'pp1k';
 assert g_asNames[NS_PER_PAGE] == 'ns/page';
+assert g_asNames[PS_PER_PAGE] == 'ps/page';
 
 
 ## Translation table for XML -> number.

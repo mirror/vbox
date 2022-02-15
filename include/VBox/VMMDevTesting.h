@@ -184,6 +184,13 @@
 #define VMMDEV_TESTING_UNIT_PAGES_PER_SEC       UINT8_C(0x24)   /**< Pages per second. */
 #define VMMDEV_TESTING_UNIT_TICKS_PER_PAGE      UINT8_C(0x25)   /**< CPU ticks per page. */
 #define VMMDEV_TESTING_UNIT_NS_PER_PAGE         UINT8_C(0x26)   /**< Nanoseconds per page. */
+#define VMMDEV_TESTING_UNIT_PS                  UINT8_C(0x27)   /**< Picoseconds. */
+#define VMMDEV_TESTING_UNIT_PS_PER_CALL         UINT8_C(0x28)   /**< Picoseconds per call. */
+#define VMMDEV_TESTING_UNIT_PS_PER_FRAME        UINT8_C(0x29)   /**< Picoseconds per frame. */
+#define VMMDEV_TESTING_UNIT_PS_PER_OCCURRENCE   UINT8_C(0x2a)   /**< Picoseconds per occurrence. */
+#define VMMDEV_TESTING_UNIT_PS_PER_PACKET       UINT8_C(0x2b)   /**< Picoseconds per frame. */
+#define VMMDEV_TESTING_UNIT_PS_PER_ROUND_TRIP   UINT8_C(0x2c)   /**< Picoseconds per round trip. */
+#define VMMDEV_TESTING_UNIT_PS_PER_PAGE         UINT8_C(0x2d)   /**< Picoseconds per page. */
 /** @}  */
 
 /** What the NOP accesses returns. */
