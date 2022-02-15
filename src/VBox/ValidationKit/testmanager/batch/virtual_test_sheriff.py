@@ -1238,12 +1238,14 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
         return False;
 
-    def isResultFromGATest(self, oFailedResult):
+    def isResultFromGATest(self, oCaseFile, oFailedResult):
         """
         Checks if this result and corresponding log snippet looks like a GA test run.
         """
         while oFailedResult is not None:
-            if oFailedResult.sName in [ 'Guest Control', 'Shared Folders', 'FsPerf', 'VBoxWindowsAdditions.exe', 'Additions' ]:
+            if oFailedResult.sName in [ 'Guest Control', 'Shared Folders', 'FsPerf', 'VBoxWindowsAdditions.exe' ]:
+                return True;
+            if oCaseFile.oTestCase.sName == 'Additions' and oFailedResult.sName in [ 'Install', ]:
                 return True;
             oFailedResult = oFailedResult.oParent;
         return False;
@@ -1553,7 +1555,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             elif self.isResultFromVMRun(oFailedResult, sResultLog):
                 self.investigateVMResult(oCaseFile, oFailedResult, sResultLog);
 
-            elif self.isResultFromGATest(oFailedResult):
+            elif self.isResultFromGATest(oCaseFile, oFailedResult):
                 self.investigateGATest(oCaseFile, oFailedResult, sResultLog);
 
             elif sResultLog.find('most likely not unique') > 0:
