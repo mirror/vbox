@@ -271,11 +271,10 @@ class VirtualTestSheriffCaseFile(object):
             else:
                 try:
                     oHash = hashlib.sha256();
-                    if sys.version_info < (3, 9, 0):
-                        # Removed since Python 3.9.
-                        oHash.update(oImage.tostring()); # pylint: disable=no-member
-                    else:
+                    if hasattr(oImage, 'tobytes'):
                         oHash.update(oImage.tobytes());
+                    else:
+                        oHash.update(oImage.tostring()); # pylint: disable=no-member
                 except Exception as oXcpt:
                     self.oSheriff.vprint(u'Error hashing the uncompressed image bytes for "%s": %s' % (oFile.sFile, oXcpt,))
                 else:
