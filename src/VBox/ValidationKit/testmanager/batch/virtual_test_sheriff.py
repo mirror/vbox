@@ -1190,11 +1190,11 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         Investigates a failed VM run.
         """
         enmReason = None;
+        sParentName = oFailedResult.oParent.sName if oFailedResult.oParent else '';
         if oFailedResult.sName == 'VBoxWindowsAdditions.exe' >= 0:
             enmReason = self.ktReason_Add_Installer_Win_Failed;
         # guest control:
-        elif oFailedResult.sName == 'Preparations' >= 0 \
-         and oFailedResult.oParent and oFailedResult.oParent.sName == 'Guest Control':
+        elif sParentName == 'Guest Control' and oFailedResult.sName == 'Preparations':
             enmReason = self.ktReason_Add_GstCtl_Preparations;
         elif oFailedResult.sName == 'Session Basics':
             enmReason = self.ktReason_Add_GstCtl_SessionBasics;
@@ -1209,16 +1209,14 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         elif oFailedResult.sName.find('Session w/ Guest Reboot') >= 0:
             enmReason = self.ktReason_Add_GstCtl_Session_Reboot;
         # shared folders:
-        elif oFailedResult.sName == 'Automounting' >= 0 \
-         and oFailedResult.oParent and oFailedResult.oParent.sName == 'Shared Folders':
+        elif sParentName == 'Shared Folders' and oFailedResult.sName == 'Automounting':
             enmReason = self.ktReason_Add_ShFl_Automount;
         elif oFailedResult.sName == 'mmap':
             if sResultLog.find('FsPerf: Flush issue at offset ') >= 0:
                 enmReason = self.ktReason_Add_Mmap_Coherency;
             elif sResultLog.find('FlushViewOfFile') >= 0:
                 enmReason = self.ktReason_Add_FlushViewOfFile;
-        elif oFailedResult.sName == 'Running FsPerf' >= 0 \
-         and oFailedResult.oParent and oFailedResult.oParent.sName == 'Shared Folders':
+        elif sParentName == 'Shared Folders' and oFailedResult.sName == 'Running FsPerf':
             enmReason = self.ktReason_Add_ShFl_FsPerf;  ## Maybe it would be better to be more specific...
 
         if enmReason is not None:
