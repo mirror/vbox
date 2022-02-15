@@ -50,9 +50,9 @@ from email.mime.text        import MIMEText;
 from email.utils            import COMMASPACE;
 
 if sys.version_info[0] >= 3:
-    from io       import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
+    from io       import BytesIO as BytesIO;        # pylint: disable=import-error,no-name-in-module,useless-import-alias
 else:
-    from StringIO import StringIO as StringIO;      # pylint: disable=import-error,no-name-in-module,useless-import-alias
+    from StringIO import StringIO as BytesIO;       # pylint: disable=import-error,no-name-in-module,useless-import-alias
 from optparse import OptionParser;                  # pylint: disable=deprecated-module
 from PIL import Image;                              # pylint: disable=import-error
 
@@ -265,7 +265,7 @@ class VirtualTestSheriffCaseFile(object):
             self.oSheriff.vprint(u'Error reading the "%s" image file: %s' % (oFile.sFile, oXcpt,))
         else:
             try:
-                oImage = Image.open(StringIO(abImageFile));
+                oImage = Image.open(BytesIO(abImageFile));
             except Exception as oXcpt:
                 self.oSheriff.vprint(u'Error opening the "%s" image bytes using PIL.Image.open: %s' % (oFile.sFile, oXcpt,))
             else:
