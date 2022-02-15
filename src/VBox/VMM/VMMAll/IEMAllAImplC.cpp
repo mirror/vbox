@@ -73,16 +73,16 @@
  * @param   a_CfExpr        Bool expression for the carry flag (CF).
  * @param   a_OfMethod      0 for ADD-style, 1 for SUB-style.
  */
-#define IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(a_pfEFlags, a_uResult, a_uDst, a_Src, a_cBitsWidth, a_CfExpr, a_OfMethod) \
+#define IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(a_pfEFlags, a_uResult, a_uDst, a_uSrc, a_cBitsWidth, a_CfExpr, a_OfMethod) \
     do { \
         uint32_t fEflTmp = *(a_pfEFlags); \
         fEflTmp &= ~X86_EFL_STATUS_BITS; \
         fEflTmp |= (a_CfExpr) << X86_EFL_CF_BIT; \
         fEflTmp |= g_afParity[(a_uResult) & 0xff]; \
-        fEflTmp |= ((uint32_t)uResult ^ (uint32_t)uSrc ^ (uint32_t)uDst) & X86_EFL_AF; \
+        fEflTmp |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uSrc) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
         fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
         fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
-        fEflTmp |= (   ((uDst ^ uSrc ^ (a_OfMethod == 0 ? RT_BIT_64(a_cBitsWidth - 1) : 0)) & (uResult ^ uDst))  \
+        fEflTmp |= (   (((a_uDst) ^ (a_uSrc) ^ (a_OfMethod == 0 ? RT_BIT_64(a_cBitsWidth - 1) : 0)) & ((a_uResult) ^ (a_uDst)))  \
                     >> (64 - X86_EFL_OF_BIT)) & X86_EFL_OF; \
         *(a_pfEFlags) = fEflTmp; \
     } while (0)
