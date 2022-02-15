@@ -872,11 +872,11 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             ( True, ktReason_Host_InstallationFailed, 'svcadm: Couldn\'t bind to svc.configd.' ),
             ( True, ktReason_Host_InstallationFailed, 'pkgadd: ERROR: postinstall script did not complete successfully' ),
         ],
-        'win': {
+        'win': [
             # ( Whether to stop on hit, reason tuple, needle text. )
             ( True,  ktReason_Host_InstallationWantReboot, 'ERROR_SUCCESS_REBOOT_REQUIRED' ),
             ( False, ktReason_Host_InstallationFailed, 'Installation error.' ),
-        }
+        ],
     };
 
 
