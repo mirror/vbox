@@ -3033,9 +3033,6 @@ static int txsDoExec(PCTXSPKTHDR pPktHdr)
  */
 static RTEXITCODE txsMainLoop(void)
 {
-    RTMsgInfo("Version %s r%s %s.%s (%s %s)\n",
-              RTBldCfgVersion(), RTBldCfgRevisionStr(), KBUILD_TARGET, KBUILD_TARGET_ARCH, __DATE__, __TIME__);
-
     if (g_cVerbose > 0)
         RTMsgInfo("txsMainLoop: start...\n");
     RTEXITCODE enmExitCode = RTEXITCODE_SUCCESS;
@@ -3783,6 +3780,78 @@ static RTEXITCODE txsParseArgv(int argc, char **argv, bool *pfExit)
     return RTEXITCODE_SUCCESS;
 }
 
+/**
+ * @callback_method_impl{FNRTLOGPHASE, Release logger callback}
+ */
+static DECLCALLBACK(void) logHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
+{
+    /* Some introductory information. */
+    static RTTIMESPEC s_TimeSpec;
+    char szTmp[256];
+    if (enmPhase == RTLOGPHASE_BEGIN)
+        RTTimeNow(&s_TimeSpec);
+    RTTimeSpecToString(&s_TimeSpec, szTmp, sizeof(szTmp));
+
+    switch (enmPhase)
+    {
+        case RTLOGPHASE_BEGIN:
+        {
+            pfnLog(pLoggerRelease,
+                   "TestExecService (Validation Kit TxS) %s r%s (verbosity: %u) %s %s (%s %s) release log\n"
+                   "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+                   "All rights reserved.\n\n"
+                   "Log opened %s\n",
+                   RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbose,
+                   KBUILD_TARGET, KBUILD_TARGET_ARCH,
+                   __DATE__, __TIME__, szTmp);
+
+            int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Product: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Release: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Version: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Service Pack: %s\n", szTmp);
+
+            /* the package type is interesting for Linux distributions */
+            char szExecName[RTPATH_MAX];
+            char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
+            pfnLog(pLoggerRelease,
+                   "Executable: %s\n"
+                   "Process ID: %u\n"
+                   "Package type: %s"
+#ifdef VBOX_OSE
+                   " (OSE)"
+#endif
+                   "\n",
+                   pszExecName ? pszExecName : "unknown",
+                   RTProcSelf(),
+                   VBOX_PACKAGE_STRING);
+            break;
+        }
+
+        case RTLOGPHASE_PREROTATE:
+            pfnLog(pLoggerRelease, "Log rotated - Log started %s\n", szTmp);
+            break;
+
+        case RTLOGPHASE_POSTROTATE:
+            pfnLog(pLoggerRelease, "Log continuation - Log started %s\n", szTmp);
+            break;
+
+        case RTLOGPHASE_END:
+            pfnLog(pLoggerRelease, "End of log file - Log started %s\n", szTmp);
+            break;
+
+        default:
+            /* nothing */
+            break;
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -3827,9 +3896,13 @@ int main(int argc, char **argv)
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
                fFlags |= RTLOGFLAGS_USECRLF;
 #endif
-        static const char * const g_apszLogGroups[] = VBOX_LOGGROUP_NAMES;
-        rc = RTLogCreate(&g_pRelLogger, fFlags, "all.e.l", "VBOX_TXS_RELEASE_LOG",
-                         RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDOUT | RTLOGDEST_FILE, szLogFile);
+        static const char * const s_apszLogGroups[] = VBOX_LOGGROUP_NAMES;
+        rc = RTLogCreateEx(&g_pRelLogger, "VBOX_TXS_RELEASE_LOG", fFlags, "all",
+                           RT_ELEMENTS(s_apszLogGroups), s_apszLogGroups, UINT32_MAX /* cMaxEntriesPerGroup */,
+                           0 /*cBufDescs*/, NULL /* paBufDescs */, RTLOGDEST_STDOUT | RTLOGDEST_FILE,
+                           logHeaderFooter /* pfnPhase */ ,
+                           10 /* cHistory */, 100 * _1M /* cbHistoryFileMax */, RT_SEC_1DAY /* cSecsHistoryTimeSlot */,
+                           NULL /* pErrInfo */, "%s", szLogFile);
         if (RT_SUCCESS(rc))
         {
             RTLogRelSetDefaultInstance(g_pRelLogger);
@@ -3865,10 +3938,6 @@ int main(int argc, char **argv)
 
         if (RT_SUCCESS(rc))
             RTMsgInfo("Log file written to '%s'\n", szLogFile);
-
-        LogRel((VBOX_PRODUCT " TestExecService (Validation Kit TxS) Version " VBOX_VERSION_STRING " - r%s\n"
-                "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-                "All rights reserved.\n\n", RTBldCfgRevisionStr()));
     }
 
     /*
