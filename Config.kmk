@@ -3846,9 +3846,13 @@ endef # VBOX_GENERATE_IMPORT_TARGET_DEF
 # as the VCC100 CRT typically ends up with its internal code page not being
 # CP_UTF8 but the default codepage for the locale.
 #
+# We don't use this for old x86-only stuff like NT4, 2K or WinXP,
+# as this breaks loading our binaries.
+# (unless we're also wanting support for exotic stuff like WinXP 64-bit).
+#
 # @param 1 the output filename.
 #
-ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120)
+ifn1of ($(VBOX_VCC_TOOL_STEM), VCC100 VCC110 VCC120) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" != "win.x86"
  VBOX_UTF8_MANIFEST_FN = \
 	$(QUIET)$(APPEND) -tn "$(1).manifest" \
 		'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' \
@@ -8253,7 +8257,6 @@ endif
 # than what we are targetting, and do not use the stack protector, which
 # needs glibc 2.4 or later.
 TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux    = \
-	-include $(PATH_ROOT)/include/iprt/linux/symvers.h \
 	$(VBOX_GCC_fno-stack-protector)
 TEMPLATE_VBOXGUESTR3EXE_CFLAGS.linux      = $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS.linux)
 # The GNU_HASH ELF tag is not supported by older systems.
