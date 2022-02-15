@@ -1445,15 +1445,15 @@ int main(int argc, char **argv)
 #endif
 
     /*
-     * Configure release logging to go to stderr.
+     * Configure release logging to go to stdout.
      */
     RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     fFlags |= RTLOGFLAGS_USECRLF;
 #endif
-    static const char * const g_apszLogGroups[] = VBOX_LOGGROUP_NAMES;
+    static const char * const s_apszLogGroups[] = VBOX_LOGGROUP_NAMES;
     rc = RTLogCreate(&g_pRelLogger, fFlags, "all.e.l", "VKAT_RELEASE_LOG",
-                     RT_ELEMENTS(g_apszLogGroups), g_apszLogGroups, RTLOGDEST_STDOUT, NULL /*"vkat-release.log"*/);
+                     RT_ELEMENTS(s_apszLogGroups), s_apszLogGroups, RTLOGDEST_STDOUT, NULL /*"vkat-release.log"*/);
     if (RT_SUCCESS(rc))
     {
         RTLogRelSetDefaultInstance(g_pRelLogger);
