@@ -205,7 +205,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/VMMAll.cpp
 VBoxVMM_SOURCES.amd64 += \
 	VMMR3/PGMR3DbgA.asm \
-	VMMAll/IEMAllAImpl.asm \
+	$(if-expr !defined(IEM_WITHOUT_ASSEMBLY),VMMAll/IEMAllAImpl.asm,) \
 	VMMAll/VMMAllA.asm
 ifdef VBOX_WITH_VUSB
 VBoxVMM_SOURCES += VMMR3/PDMUsb.cpp
@@ -510,7 +510,7 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/HMSVMAll.cpp \
  	VMMAll/HMVMXAll.cpp \
  	VMMAll/IEMAll.cpp \
- 	VMMAll/IEMAllAImpl.asm \
+	$(if-expr !defined(IEM_WITHOUT_ASSEMBLY),VMMAll/IEMAllAImpl.asm,) \
  	VMMAll/IEMAllAImplC.cpp \
  	VMMAll/IOMAll.cpp \
  	VMMAll/IOMAllMmioNew.cpp \
