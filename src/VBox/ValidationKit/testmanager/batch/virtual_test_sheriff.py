@@ -1243,7 +1243,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         Checks if this result and corresponding log snippet looks like a GA test run.
         """
         while oFailedResult is not None:
-            if oFailedResult.sName in [ 'Guest Control', 'Shared Folders', 'FsPerf', 'VBoxWindowsAdditions.exe' ]:
+            if oFailedResult.sName in [ 'Guest Control', 'Shared Folders', 'FsPerf', 'VBoxWindowsAdditions.exe', 'Additions' ]:
                 return True;
             oFailedResult = oFailedResult.oParent;
         return False;
