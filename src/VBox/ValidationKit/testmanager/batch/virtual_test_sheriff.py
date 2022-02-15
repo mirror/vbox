@@ -643,6 +643,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Host_NotSignedWithBuildCert               = ( 'Host',              'Not signed with build cert' );
     ktReason_Host_DoubleFreeHeap                       = ( 'Host',              'Double free or corruption' );
     ktReason_Host_LeftoverService                      = ( 'Host',              'Leftover service' );
+    ktReason_Host_win32com_gen_py                      = ( 'Host',              'win32com.gen_py' );
     ktReason_Host_Reboot_OSX_Watchdog_Timeout          = ( 'Host Reboot',       'OSX Watchdog Timeout' );
     ktReason_Host_Modprobe_Failed                      = ( 'Host',              'Modprobe failed' );
     ktReason_Host_Install_Hang                         = ( 'Host',              'Install hang' );
@@ -1087,6 +1088,8 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ## This we search a main log for to figure out why something went bust.
     katSimpleMainLogReasons = [
         # ( Whether to stop on hit, reason tuple, needle text. )
+        ( False, ktReason_Host_win32com_gen_py,                     'ModuleNotFoundError: No module named \'win32com.gen_py' ),
+
     ];
 
     ## This we search a VM log  for to figure out why something went bust.
