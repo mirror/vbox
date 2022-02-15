@@ -1245,7 +1245,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         while oFailedResult is not None:
             if oFailedResult.sName in [ 'Guest Control', 'Shared Folders', 'FsPerf', 'VBoxWindowsAdditions.exe' ]:
                 return True;
-            if oCaseFile.oTestCase.sName == 'Additions' and oFailedResult.sName in [ 'Install', ]:
+            if oCaseFile.oTestCase.sName == 'Guest Additions' and oFailedResult.sName in [ 'Install', ]:
                 return True;
             oFailedResult = oFailedResult.oParent;
         return False;
