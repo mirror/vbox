@@ -58,11 +58,18 @@
     ( (uint32_t)((a_uResult) == 0) << X86_EFL_ZF_BIT )
 
 /**
- * Updates the status bits (CF, PF, AF, ZF, SF, and OF) after arithmetic op.
+ * Extracts the OF flag from a OF calculation result.
  *
- * CF and OF are defined to be 0 by logical operations.  AF on the other hand is
- * undefined.  We do not set AF, as that seems to make the most sense (which
- * probably makes it the most wrong in real life).
+ * These are typically used by concating with a bitcount.  The problem is that
+ * 8-bit values needs shifting in the other direction than the others.
+ */
+#define X86_EFL_GET_OF_8(a_uValue)  ((uint32_t)((a_uValue) << (X86_EFL_OF_BIT - 8))  & X86_EFL_OF)
+#define X86_EFL_GET_OF_16(a_uValue) ((uint32_t)((a_uValue) >> (16 - X86_EFL_OF_BIT)) & X86_EFL_OF)
+#define X86_EFL_GET_OF_32(a_uValue) ((uint32_t)((a_uValue) >> (32 - X86_EFL_OF_BIT)) & X86_EFL_OF)
+#define X86_EFL_GET_OF_64(a_uValue) ((uint32_t)((a_uValue) >> (64 - X86_EFL_OF_BIT)) & X86_EFL_OF)
+
+/**
+ * Updates the status bits (CF, PF, AF, ZF, SF, and OF) after arithmetic op.
  *
  * @returns Status bits.
  * @param   a_pfEFlags      Pointer to the 32-bit EFLAGS value to update.
@@ -82,8 +89,8 @@
         fEflTmp |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uSrc) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
         fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
         fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
-        fEflTmp |= (   (((a_uDst) ^ (a_uSrc) ^ (a_OfMethod == 0 ? RT_BIT_64(a_cBitsWidth - 1) : 0)) & ((a_uResult) ^ (a_uDst)))  \
-                    >> (64 - X86_EFL_OF_BIT)) & X86_EFL_OF; \
+        fEflTmp |= X86_EFL_GET_OF_ ## a_cBitsWidth( ((a_uDst) ^ (a_uSrc) ^ (a_OfMethod == 0 ? RT_BIT_64(a_cBitsWidth - 1) : 0)) \
+                                                   & ((a_uResult) ^ (a_uDst)) ); \
         *(a_pfEFlags) = fEflTmp; \
     } while (0)
 
@@ -2006,47 +2013,120 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u16,(uint16_t *pu16RAX, uint16_t *pu16RDX, 
 *   Unary operations.                                                                                                            *
 *********************************************************************************************************************************/
 
+/**
+ * Updates the status bits (CF, PF, AF, ZF, SF, and OF) for an INC or DEC instruction.
+ *
+ * CF is NOT modified for hysterical raisins (allegedly for carrying and
+ * borrowing in arithmetic loops on intel 8008).
+ *
+ * @returns Status bits.
+ * @param   a_pfEFlags      Pointer to the 32-bit EFLAGS value to update.
+ * @param   a_uResult       Unsigned result value.
+ * @param   a_uDst          The original destination value (for AF calc).
+ * @param   a_cBitsWidth    The width of the result (8, 16, 32, 64).
+ * @param   a_OfMethod      0 for INC-style, 1 for DEC-style.
+ */
+#define IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC(a_pfEFlags, a_uResult, a_uDst, a_cBitsWidth, a_OfMethod) \
+    do { \
+        uint32_t fEflTmp = *(a_pfEFlags); \
+        fEflTmp &= ~X86_EFL_STATUS_BITS & ~X86_EFL_CF; \
+        fEflTmp |= g_afParity[(a_uResult) & 0xff]; \
+        fEflTmp |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
+        fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
+        fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
+        fEflTmp |= X86_EFL_GET_OF_ ## a_cBitsWidth(a_OfMethod == 0 ? (((a_uDst) ^ RT_BIT_64(63)) & (a_uResult)) \
+                                                                   : ((a_uDst) & ((a_uResult) ^ RT_BIT_64(63))) ); \
+        *(a_pfEFlags) = fEflTmp; \
+    } while (0)
+
+/*
+ * INC
+ */
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_inc_u64,(uint64_t  *puDst,  uint32_t *pfEFlags))
 {
     uint64_t uDst    = *puDst;
     uint64_t uResult = uDst + 1;
     *puDst = uResult;
-
-    /*
-     * Calc EFLAGS.
-     * CF is NOT modified for hysterical raisins (allegedly for carrying and
-     * borrowing in arithmetic loops on intel 8008).
-     */
-    uint32_t fEfl = *pfEFlags & ~(X86_EFL_STATUS_BITS & ~X86_EFL_CF);
-    fEfl |= g_afParity[uResult & 0xff];
-    fEfl |= ((uint32_t)uResult ^ (uint32_t)uDst) & X86_EFL_AF;
-    fEfl |= X86_EFL_CALC_ZF(uResult);
-    fEfl |= X86_EFL_CALC_SF(uResult, 64);
-    fEfl |= (((uDst ^ RT_BIT_64(63)) & uResult) >> (64 - X86_EFL_OF_BIT)) & X86_EFL_OF;
-    *pfEFlags = fEfl;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC(pfEFlags, uResult, uDst, 64, 0 /*INC*/);
 }
 
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_inc_u32,(uint32_t  *puDst,  uint32_t *pfEFlags))
+{
+    uint32_t uDst    = *puDst;
+    uint32_t uResult = uDst + 1;
+    *puDst = uResult;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC(pfEFlags, uResult, uDst, 32, 0 /*INC*/);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_inc_u16,(uint16_t  *puDst,  uint32_t *pfEFlags))
+{
+    uint16_t uDst    = *puDst;
+    uint16_t uResult = uDst + 1;
+    *puDst = uResult;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC(pfEFlags, uResult, uDst, 16, 0 /*INC*/);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_inc_u8,(uint8_t  *puDst,  uint32_t *pfEFlags))
+{
+    uint8_t uDst    = *puDst;
+    uint8_t uResult = uDst + 1;
+    *puDst = uResult;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC(pfEFlags, uResult, uDst, 8, 0 /*INC*/);
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
+
+/*
+ * DEC
+ */
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_dec_u64,(uint64_t  *puDst,  uint32_t *pfEFlags))
 {
     uint64_t uDst    = *puDst;
     uint64_t uResult = uDst - 1;
     *puDst = uResult;
-
-    /*
-     * Calc EFLAGS.
-     * CF is NOT modified for hysterical raisins (allegedly for carrying and
-     * borrowing in arithmetic loops on intel 8008).
-     */
-    uint32_t fEfl = *pfEFlags & ~(X86_EFL_STATUS_BITS & ~X86_EFL_CF);
-    fEfl |= g_afParity[uResult & 0xff];
-    fEfl |= ((uint32_t)uResult ^ (uint32_t)uDst) & X86_EFL_AF;
-    fEfl |= X86_EFL_CALC_ZF(uResult);
-    fEfl |= X86_EFL_CALC_SF(uResult, 64);
-    fEfl |= ((uDst & (uResult ^ RT_BIT_64(63))) >> (64 - X86_EFL_OF_BIT)) & X86_EFL_OF;
-    *pfEFlags = fEfl;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC(pfEFlags, uResult, uDst, 64, 1 /*INC*/);
 }
 
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_dec_u32,(uint32_t  *puDst,  uint32_t *pfEFlags))
+{
+    uint32_t uDst    = *puDst;
+    uint32_t uResult = uDst - 1;
+    *puDst = uResult;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC(pfEFlags, uResult, uDst, 32, 1 /*INC*/);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_dec_u16,(uint16_t  *puDst,  uint32_t *pfEFlags))
+{
+    uint16_t uDst    = *puDst;
+    uint16_t uResult = uDst - 1;
+    *puDst = uResult;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC(pfEFlags, uResult, uDst, 16, 1 /*INC*/);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_dec_u8,(uint8_t  *puDst,  uint32_t *pfEFlags))
+{
+    uint8_t uDst    = *puDst;
+    uint8_t uResult = uDst - 1;
+    *puDst = uResult;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC(pfEFlags, uResult, uDst, 8, 1 /*INC*/);
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
+
+/*
+ * NOT
+ */
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_not_u64,(uint64_t  *puDst,  uint32_t *pfEFlags))
 {
@@ -2057,66 +2137,148 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_not_u64,(uint64_t  *puDst,  uint32_t *pfEFlags)
     RT_NOREF_PV(pfEFlags);
 }
 
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_neg_u64,(uint64_t  *puDst,  uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_not_u32,(uint32_t  *puDst,  uint32_t *pfEFlags))
 {
-    uint64_t uDst    = 0;
-    uint64_t uSrc    = *puDst;
-    uint64_t uResult = uDst - uSrc;
+    uint32_t uDst    = *puDst;
+    uint32_t uResult = ~uDst;
     *puDst = uResult;
+    /* EFLAGS are not modified. */
+    RT_NOREF_PV(pfEFlags);
+}
 
-    /* Calc EFLAGS. */
-    uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS;
-    fEfl |= (uSrc != 0) << X86_EFL_CF_BIT;
-    fEfl |= g_afParity[uResult & 0xff];
-    fEfl |= ((uint32_t)uResult ^ (uint32_t)uDst) & X86_EFL_AF;
-    fEfl |= X86_EFL_CALC_ZF(uResult);
-    fEfl |= X86_EFL_CALC_SF(uResult, 64);
-    fEfl |= ((uSrc & uResult) >> (64 - X86_EFL_OF_BIT)) & X86_EFL_OF;
-    *pfEFlags = fEfl;
+IEM_DECL_IMPL_DEF(void, iemAImpl_not_u16,(uint16_t  *puDst,  uint32_t *pfEFlags))
+{
+    uint16_t uDst    = *puDst;
+    uint16_t uResult = ~uDst;
+    *puDst = uResult;
+    /* EFLAGS are not modified. */
+    RT_NOREF_PV(pfEFlags);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_not_u8,(uint8_t  *puDst,  uint32_t *pfEFlags))
+{
+    uint8_t uDst    = *puDst;
+    uint8_t uResult = ~uDst;
+    *puDst = uResult;
+    /* EFLAGS are not modified. */
+    RT_NOREF_PV(pfEFlags);
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
+
+/*
+ * NEG
+ */
+
+/**
+ * Updates the status bits (CF, PF, AF, ZF, SF, and OF) for an NEG instruction.
+ *
+ * @returns Status bits.
+ * @param   a_pfEFlags      Pointer to the 32-bit EFLAGS value to update.
+ * @param   a_uResult       Unsigned result value.
+ * @param   a_uDst          The original destination value (for AF calc).
+ * @param   a_cBitsWidth    The width of the result (8, 16, 32, 64).
+ */
+#define IEM_EFL_UPDATE_STATUS_BITS_FOR_NEG(a_pfEFlags, a_uResult, a_uDst, a_cBitsWidth) \
+    do { \
+        uint32_t fEflTmp = *(a_pfEFlags); \
+        fEflTmp &= ~X86_EFL_STATUS_BITS & ~X86_EFL_CF; \
+        fEflTmp |= ((a_uDst) != 0) << X86_EFL_CF_BIT; \
+        fEflTmp |= g_afParity[(a_uResult) & 0xff]; \
+        fEflTmp |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
+        fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
+        fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
+        fEflTmp |= X86_EFL_GET_OF_ ## a_cBitsWidth((a_uDst) & (a_uResult)); \
+        *(a_pfEFlags) = fEflTmp; \
+    } while (0)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_neg_u64,(uint64_t *puDst, uint32_t *pfEFlags))
+{
+    uint64_t uDst    = *puDst;
+    uint64_t uResult = (uint64_t)0 - uDst;
+    *puDst = uResult;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_NEG(pfEFlags, uResult, uDst, 64);
+}
+
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_neg_u32,(uint32_t *puDst, uint32_t *pfEFlags))
+{
+    uint32_t uDst    = *puDst;
+    uint32_t uResult = (uint32_t)0 - uDst;
+    *puDst = uResult;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_NEG(pfEFlags, uResult, uDst, 32);
 }
 
 
-/** 64-bit locked unary operand operation. */
-# define DO_LOCKED_UNARY_OP_U64(a_Mnemonic) \
-    do { \
-        uint64_t uOld = ASMAtomicReadU64(puDst); \
-        uint64_t uTmp; \
+IEM_DECL_IMPL_DEF(void, iemAImpl_neg_u16,(uint16_t *puDst, uint32_t *pfEFlags))
+{
+    uint16_t uDst    = *puDst;
+    uint16_t uResult = (uint16_t)0 - uDst;
+    *puDst = uResult;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_NEG(pfEFlags, uResult, uDst, 16);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_neg_u8,(uint8_t *puDst, uint32_t *pfEFlags))
+{
+    uint8_t uDst    = *puDst;
+    uint8_t uResult = (uint8_t)0 - uDst;
+    *puDst = uResult;
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_NEG(pfEFlags, uResult, uDst, 8);
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
+/*
+ * Locked variants.
+ */
+
+/** Emit a function for doing a locked unary operand operation. */
+# define EMIT_LOCKED_UNARY_OP(a_Mnemonic, a_cBitsWidth) \
+    IEM_DECL_IMPL_DEF(void, iemAImpl_ ## a_Mnemonic ## _u ## a_cBitsWidth ## _locked,(uint ## a_cBitsWidth ## _t *puDst, \
+                                                                                      uint32_t *pfEFlags)) \
+    { \
+        uint ## a_cBitsWidth ## _t uOld = ASMAtomicUoReadU ## a_cBitsWidth(puDst); \
+        uint ## a_cBitsWidth ## _t uTmp; \
         uint32_t fEflTmp; \
         do \
         { \
             uTmp = uOld; \
             fEflTmp = *pfEFlags; \
-            iemAImpl_ ## a_Mnemonic ## _u64(&uTmp, &fEflTmp); \
-        } while (!ASMAtomicCmpXchgExU64(puDst, uTmp, uOld, &uOld)); \
+            iemAImpl_ ## a_Mnemonic ## _u ## a_cBitsWidth(&uTmp, &fEflTmp); \
+        } while (!ASMAtomicCmpXchgExU ## a_cBitsWidth(puDst, uTmp, uOld, &uOld)); \
         *pfEFlags = fEflTmp; \
-    } while (0)
+    }
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_inc_u64_locked,(uint64_t  *puDst,  uint32_t *pfEFlags))
-{
-    DO_LOCKED_UNARY_OP_U64(inc);
-}
+EMIT_LOCKED_UNARY_OP(inc, 64);
+EMIT_LOCKED_UNARY_OP(dec, 64);
+EMIT_LOCKED_UNARY_OP(not, 64);
+EMIT_LOCKED_UNARY_OP(neg, 64);
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_LOCKED_UNARY_OP(inc, 32);
+EMIT_LOCKED_UNARY_OP(dec, 32);
+EMIT_LOCKED_UNARY_OP(not, 32);
+EMIT_LOCKED_UNARY_OP(neg, 32);
 
+EMIT_LOCKED_UNARY_OP(inc, 16);
+EMIT_LOCKED_UNARY_OP(dec, 16);
+EMIT_LOCKED_UNARY_OP(not, 16);
+EMIT_LOCKED_UNARY_OP(neg, 16);
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_dec_u64_locked,(uint64_t  *puDst,  uint32_t *pfEFlags))
-{
-    DO_LOCKED_UNARY_OP_U64(dec);
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_not_u64_locked,(uint64_t  *puDst,  uint32_t *pfEFlags))
-{
-    DO_LOCKED_UNARY_OP_U64(not);
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_neg_u64_locked,(uint64_t  *puDst,  uint32_t *pfEFlags))
-{
-    DO_LOCKED_UNARY_OP_U64(neg);
-}
+EMIT_LOCKED_UNARY_OP(inc, 8);
+EMIT_LOCKED_UNARY_OP(dec, 8);
+EMIT_LOCKED_UNARY_OP(not, 8);
+EMIT_LOCKED_UNARY_OP(neg, 8);
+# endif
 
 
-/* Shift and rotate. */
+/*********************************************************************************************************************************
+*   Shifting and Rotating                                                                                                        *
+*********************************************************************************************************************************/
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_rol_u64,(uint64_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
 {
@@ -2339,6 +2501,31 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u64,(uint64_t *puDst, uint64_t uSrc, uint8
     }
 }
 
+
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+/*
+ * BSWAP
+ */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bswap_u64,(uint64_t *puDst))
+{
+    *puDst = ASMByteSwapU64(*puDst);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bswap_u32,(uint32_t *puDst))
+{
+    *puDst = ASMByteSwapU32(*puDst);
+}
+
+
+/* Note! undocument, so 32-bit arg */
+IEM_DECL_IMPL_DEF(void, iemAImpl_bswap_u16,(uint32_t *puDst))
+{
+    *puDst = ASMByteSwapU16((uint16_t)*puDst) | (*puDst & UINT32_C(0xffff0000));
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 #endif /* !RT_ARCH_AMD64 || IEM_WITHOUT_ASSEMBLY */
 
