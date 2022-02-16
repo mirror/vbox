@@ -2600,6 +2600,11 @@ RTDECL(uint32_t) RTExprEvalRelease(RTEXPREVAL hEval)
     if (cRefs == 0)
     {
         pThis->u32Magic = ~RTEXPREVAL_MAGIC;
+        if (pThis->pszName)
+        {
+            RTStrFree(pThis->pszName);
+            pThis->pszName = NULL;
+        }
         RTMemFree(pThis);
         return 0;
     }
