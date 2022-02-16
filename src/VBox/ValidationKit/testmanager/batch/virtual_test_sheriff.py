@@ -618,6 +618,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Add_GstCtl_CopyFromGuest_Timeout          = ( 'Additions',         'CopyFromGuest timeout' );
     ktReason_Add_GstCtl_CopyToGuest_Timeout            = ( 'Additions',         'CopyToGuest timeout' );
     ktReason_Add_GstCtl_CopyToGuest_DstEmpty           = ( 'Additions',         'CopyToGuest dst empty' );
+    ktReason_Add_GstCtl_CopyToGuest_DstExists          = ( 'Additions',         'CopyToGuest dst exists' );
     ktReason_Add_FlushViewOfFile                       = ( 'Additions',         'FlushViewOfFile' );
     ktReason_Add_Mmap_Coherency                        = ( 'Additions',         'mmap coherency' );
     ktReason_BSOD_Recovery                             = ( 'BSOD',              'Recovery' );
@@ -1217,7 +1218,10 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             if sResultLog.find('*** abort action ***') >= 0:
                 enmReason = self.ktReason_Add_GstCtl_CopyFromGuest_Timeout;
         elif oFailedResult.sName == 'Copy to guest':
-            if sResultLog.find('Guest destination must not be empty') >= 0:
+            off = sResultLog.find('"Guest directory "');
+            if off > 0 and sResultLog.find('" already exists"', off, off + 80):
+                enmReason = self.ktReason_Add_GstCtl_CopyToGuest_DstExists;
+            elif sResultLog.find('Guest destination must not be empty') >= 0:
                 enmReason = self.ktReason_Add_GstCtl_CopyToGuest_DstEmpty;
             elif sResultLog.find('*** abort action ***') >= 0:
                 enmReason = self.ktReason_Add_GstCtl_CopyToGuest_Timeout;
