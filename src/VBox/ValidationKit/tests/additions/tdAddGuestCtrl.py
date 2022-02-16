@@ -2759,8 +2759,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests the guest session process reference handling.
         """
 
-        sCmd = self.oTstDrv.getGuestSystemShell(oTestVm);
-        asArgs = [sCmd,];
+        sShell = self.oTstDrv.getGuestSystemShell(oTestVm);
+        asArgs = [sShell,];
 
         # Use credential defaults.
         oCreds = tdCtxCreds();
@@ -2794,7 +2794,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for i in xrange(0, cProcsPerGroup):
             try:
                 reporter.log2('Starting stale process #%d...' % (i));
-                oGuestSession.processCreate(sCmd,
+                oGuestSession.processCreate(sShell,
                                             asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:], [],
                                             [ vboxcon.ProcessCreateFlag_WaitForStdOut ], 30 * 1000);
                 # Note: Not keeping a process reference from the created process above is intentional and part of the test!
@@ -2820,15 +2820,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Fire off non-stale processes and wait for termination.
             #
             if oTestVm.isWindows() or oTestVm.isOS2():
-                asArgs = [ sCmd, '/C', 'dir', '/S', self.oTstDrv.getGuestSystemDir(oTestVm), ];
+                asArgs = [ sShell, '/C', 'dir', '/S', self.oTstDrv.getGuestSystemDir(oTestVm), ];
             else:
-                asArgs = [ sCmd, '-c', 'ls -la ' + self.oTstDrv.getGuestSystemDir(oTestVm), ];
+                asArgs = [ sShell, '-c', 'ls -la ' + self.oTstDrv.getGuestSystemDir(oTestVm), ];
             reporter.log('Starting non-stale processes...');
             aoProcs = [];
             for i in xrange(0, cProcsPerGroup):
                 try:
                     reporter.log2('Starting non-stale process #%d...' % (i));
-                    oCurProc = oGuestSession.processCreate(sCmd, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
+                    oCurProc = oGuestSession.processCreate(sShell, asArgs if self.oTstDrv.fpApiVer >= 5.0 else asArgs[1:],
                                                            [], [], 0); # Infinite timeout.
                     aoProcs.append(oCurProc);
                 except:
@@ -2871,8 +2871,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Fire off non-stale blocking processes which are terminated via terminate().
             #
             if oTestVm.isWindows() or oTestVm.isOS2():
+                sCmd   = sShell;
                 asArgs = [ sCmd, '/C', 'pause'];
             else:
+                sCmd   = '/usr/bin/yes';
                 asArgs = [ sCmd ];
             reporter.log('Starting blocking processes...');
             aoProcs = [];
