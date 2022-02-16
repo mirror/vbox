@@ -105,9 +105,9 @@ else
  VBOX_PATH_DOCBOOK        ?= /usr/share/xml/docbook/stylesheet/docbook-xsl
  VBOX_PATH_DOCBOOK_DTD    ?= /usr/share/xml/docbook/schema/dtd/4.5
 endif
-VBOX_XML_CATALOG          ?= $(VBOX_PATH_MANUAL_OUTBASE)/catalog
-VBOX_XML_CATALOG_DOCBOOK  ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook
-VBOX_XML_CATALOG_MANUAL   ?= $(VBOX_PATH_MANUAL_OUTBASE)/manual
+VBOX_XML_CATALOG          ?= $(VBOX_PATH_MANUAL_OUTBASE)/vbox-doc.cat
+VBOX_XML_CATALOG_DOCBOOK  ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook.cat
+VBOX_XML_CATALOG_MANUAL   ?= $(VBOX_PATH_MANUAL_OUTBASE)/manual.cat
 VBOX_XML_ENTITIES         ?= $(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent
 
 # xsltproc with the catalog trick if applicable (set XML_DEBUG_CATALOG to
