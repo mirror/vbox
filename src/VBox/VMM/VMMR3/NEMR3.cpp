@@ -473,6 +473,7 @@ VMMR3_INT_DECL(void) NEMR3NotifyDebugEventChanged(PVM pVM)
 {
     AssertLogRelReturnVoid(VM_IS_NEM_ENABLED(pVM));
 
+#ifdef VBOX_WITH_NATIVE_NEM
     /* Interrupts. */
     bool fUseDebugLoop = pVM->dbgf.ro.cSoftIntBreakpoints > 0
                       || pVM->dbgf.ro.cHardIntBreakpoints > 0;
@@ -491,6 +492,9 @@ VMMR3_INT_DECL(void) NEMR3NotifyDebugEventChanged(PVM pVM)
 
     /* Done. */
     pVM->nem.s.fUseDebugLoop = nemR3NativeNotifyDebugEventChanged(pVM, fUseDebugLoop);
+#else
+    RT_NOREF(pVM);
+#endif
 }
 
 
@@ -507,6 +511,10 @@ VMMR3_INT_DECL(void) NEMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu)
 {
     AssertLogRelReturnVoid(VM_IS_NEM_ENABLED(pVM));
 
+#ifdef VBOX_WITH_NATIVE_NEM
     pVCpu->nem.s.fUseDebugLoop = nemR3NativeNotifyDebugEventChangedPerCpu(pVM, pVCpu,
                                                                           pVCpu->nem.s.fSingleInstruction | pVM->nem.s.fUseDebugLoop);
+#else
+    RT_NOREF(pVM, pVCpu);
+#endif
 }
