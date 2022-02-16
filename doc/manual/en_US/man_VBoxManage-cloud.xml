@@ -19,8 +19,8 @@
 ]>
 <refentry id="vboxmanage-cloud" lang="en">
   <refentryinfo>
-    <title>VBoxManage cloud</title>
     <pubdate>$Date$</pubdate>
+    <title>VBoxManage cloud</title>
   </refentryinfo>
 
   <refmeta>
