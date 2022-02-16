@@ -4936,6 +4936,8 @@ Value: 2006.01.01</screen>
 
   </sect1>
 
+  <xi:include href="user_man_VBoxManage-hostonlynet.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+
   <xi:include href="user_man_VBoxManage-dhcpserver.xml"     xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <sect1 id="vboxmanage-usbdevsource">
