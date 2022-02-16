@@ -2280,226 +2280,409 @@ EMIT_LOCKED_UNARY_OP(neg, 8);
 *   Shifting and Rotating                                                                                                        *
 *********************************************************************************************************************************/
 
+/*
+ * ROL
+ */
+
+/**
+ * Updates the status bits (OF and CF) for an ROL instruction.
+ *
+ * @returns Status bits.
+ * @param   a_pfEFlags      Pointer to the 32-bit EFLAGS value to update.
+ * @param   a_uResult       Unsigned result value.
+ * @param   a_cBitsWidth    The width of the result (8, 16, 32, 64).
+ */
+#define IEM_EFL_UPDATE_STATUS_BITS_FOR_ROL(a_pfEFlags, a_uResult, a_cBitsWidth) do { \
+        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
+           it the same way as for 1 bit shifts. */ \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        uint32_t fEflTmp = *(a_pfEFlags); \
+        fEflTmp &= ~(X86_EFL_CF | X86_EFL_OF); \
+        uint32_t const fCarry = ((a_uResult) & X86_EFL_CF); \
+        fEflTmp |= fCarry; \
+        fEflTmp |= (((a_uResult) >> (a_cBitsWidth - 1)) ^ fCarry) << X86_EFL_OF_BIT; \
+        *(a_pfEFlags) = fEflTmp; \
+    } while (0)
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_rol_u64,(uint64_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
 {
     cShift &= 63;
     if (cShift)
     {
-        uint64_t uDst = *puDst;
-        uint64_t uResult;
-        uResult  = uDst << cShift;
-        uResult |= uDst >> (64 - cShift);
+        uint64_t uResult = ASMRotateLeftU64(*puDst, cShift);
         *puDst = uResult;
-
-        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement
-           it the same way as for 1 bit shifts. */
-        AssertCompile(X86_EFL_CF_BIT == 0);
-        uint32_t fEfl   = *pfEFlags & ~(X86_EFL_CF | X86_EFL_OF);
-        uint32_t fCarry = (uResult & 1);
-        fEfl |= fCarry;
-        fEfl |= ((uResult >> 63) ^ fCarry) << X86_EFL_OF_BIT;
-        *pfEFlags = fEfl;
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ROL(pfEFlags, uResult, 64);
     }
 }
 
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_rol_u32,(uint32_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
+{
+    cShift &= 31;
+    if (cShift)
+    {
+        uint32_t uResult = ASMRotateLeftU32(*puDst, cShift);
+        *puDst = uResult;
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ROL(pfEFlags, uResult, 32);
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_rol_u16,(uint16_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
+{
+    cShift &= 15;
+    if (cShift)
+    {
+        uint16_t uDst = *puDst;
+        uint16_t uResult = (uDst << cShift) | (uDst >> (16 - cShift));
+        *puDst = uResult;
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ROL(pfEFlags, uResult, 16);
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_rol_u8,(uint8_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
+{
+    cShift &= 7;
+    if (cShift)
+    {
+        uint8_t uDst = *puDst;
+        uint8_t uResult = (uDst << cShift) | (uDst >> (8 - cShift));
+        *puDst = uResult;
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ROL(pfEFlags, uResult, 8);
+    }
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
+
+/*
+ * ROR
+ */
+
+/**
+ * Updates the status bits (OF and CF) for an ROL instruction.
+ *
+ * @returns Status bits.
+ * @param   a_pfEFlags      Pointer to the 32-bit EFLAGS value to update.
+ * @param   a_uResult       Unsigned result value.
+ * @param   a_cBitsWidth    The width of the result (8, 16, 32, 64).
+ */
+#define IEM_EFL_UPDATE_STATUS_BITS_FOR_ROR(a_pfEFlags, a_uResult, a_cBitsWidth) do { \
+        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
+           it the same way as for 1 bit shifts. */ \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        uint32_t fEflTmp = *(a_pfEFlags); \
+        fEflTmp &= ~(X86_EFL_CF | X86_EFL_OF); \
+        uint32_t const fCarry = ((a_uResult) >> ((a_cBitsWidth) - 1)) & X86_EFL_CF; \
+        fEflTmp |= fCarry; \
+        fEflTmp |= (((a_uResult) >> ((a_cBitsWidth) - 2)) ^ fCarry) << X86_EFL_OF_BIT; \
+        *(a_pfEFlags) = fEflTmp; \
+    } while (0)
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_ror_u64,(uint64_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
 {
     cShift &= 63;
     if (cShift)
     {
-        uint64_t uDst = *puDst;
-        uint64_t uResult;
+        uint64_t const uResult = ASMRotateRightU64(*puDst, cShift);
+        *puDst = uResult;
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ROR(pfEFlags, uResult, 64);
+    }
+}
+
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_ror_u32,(uint32_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
+{
+    cShift &= 31;
+    if (cShift)
+    {
+        uint64_t const uResult = ASMRotateRightU32(*puDst, cShift);
+        *puDst = uResult;
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ROR(pfEFlags, uResult, 32);
+    }
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_ror_u16,(uint16_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
+{
+    cShift &= 15;
+    if (cShift)
+    {
+        uint16_t uDst = *puDst;
+        uint16_t uResult;
         uResult  = uDst >> cShift;
-        uResult |= uDst << (64 - cShift);
+        uResult |= uDst << (16 - cShift);
         *puDst = uResult;
-
-        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement
-           it the same way as for 1 bit shifts (OF = OF XOR New-CF). */
-        AssertCompile(X86_EFL_CF_BIT == 0);
-        uint32_t fEfl   = *pfEFlags & ~(X86_EFL_CF | X86_EFL_OF);
-        uint32_t fCarry = (uResult >> 63) & X86_EFL_CF;
-        fEfl |= fCarry;
-        fEfl |= (((uResult >> 62) ^ fCarry) << X86_EFL_OF_BIT) & X86_EFL_OF;
-        *pfEFlags = fEfl;
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ROR(pfEFlags, uResult, 16);
     }
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_rcl_u64,(uint64_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_ror_u8,(uint8_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
 {
-    cShift &= 63;
+    cShift &= 7;
     if (cShift)
     {
-        uint32_t fEfl = *pfEFlags;
-        uint64_t uDst = *puDst;
-        uint64_t uResult;
-        uResult = uDst << cShift;
-        AssertCompile(X86_EFL_CF_BIT == 0);
-        if (cShift > 1)
-            uResult |= uDst >> (65 - cShift);
-        uResult |= (uint64_t)(fEfl & X86_EFL_CF) << (cShift - 1);
-        *puDst = uResult;
-
-        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement
-           it the same way as for 1 bit shifts. */
-        uint32_t fCarry = (uDst >> (64 - cShift)) & X86_EFL_CF;
-        fEfl &= ~(X86_EFL_CF | X86_EFL_OF);
-        fEfl |= fCarry;
-        fEfl |= ((uResult >> 63) ^ fCarry) << X86_EFL_OF_BIT;
-        *pfEFlags = fEfl;
-    }
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_rcr_u64,(uint64_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
-{
-    cShift &= 63;
-    if (cShift)
-    {
-        uint32_t fEfl = *pfEFlags;
-        uint64_t uDst = *puDst;
-        uint64_t uResult;
+        uint8_t uDst = *puDst;
+        uint8_t uResult;
         uResult  = uDst >> cShift;
-        AssertCompile(X86_EFL_CF_BIT == 0);
-        if (cShift > 1)
-            uResult |= uDst << (65 - cShift);
-        uResult |= (uint64_t)(fEfl & X86_EFL_CF) << (64 - cShift);
+        uResult |= uDst << (8 - cShift);
         *puDst = uResult;
-
-        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement
-           it the same way as for 1 bit shifts. */
-        uint32_t fCarry = (uDst >> (cShift - 1)) & X86_EFL_CF;
-        fEfl &= ~(X86_EFL_CF | X86_EFL_OF);
-        fEfl |= fCarry;
-        fEfl |= ((uResult >> 63) ^ fCarry) << X86_EFL_OF_BIT;
-        *pfEFlags = fEfl;
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ROR(pfEFlags, uResult, 8);
     }
 }
 
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_shl_u64,(uint64_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
-{
-    cShift &= 63;
-    if (cShift)
-    {
-        uint64_t uDst = *puDst;
-        uint64_t uResult = uDst << cShift;
-        *puDst = uResult;
 
-        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement
-           it the same way as for 1 bit shifts.  The AF bit is undefined, we
-           always set it to zero atm. */
-        AssertCompile(X86_EFL_CF_BIT == 0);
-        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS;
-        uint32_t fCarry = (uDst >> (64 - cShift)) & X86_EFL_CF;
-        fEfl |= fCarry;
-        fEfl |= ((uResult >> 63) ^ fCarry) << X86_EFL_OF_BIT;
-        fEfl |= X86_EFL_CALC_SF(uResult, 64);
-        fEfl |= X86_EFL_CALC_ZF(uResult);
-        fEfl |= g_afParity[uResult & 0xff];
-        *pfEFlags = fEfl;
-    }
+/*
+ * RCL
+ */
+#define EMIT_RCL(a_cBitsWidth) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_rcl_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## _t *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
+{ \
+    cShift &= a_cBitsWidth - 1; \
+    if (cShift) \
+    { \
+        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
+        uint ## a_cBitsWidth ## _t       uResult = uDst << cShift; \
+        if (cShift > 1) \
+            uResult |= uDst >> (a_cBitsWidth + 1 - cShift); \
+        \
+        uint32_t fEfl = *pfEFlags; \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        uResult |= (uint ## a_cBitsWidth ## _t)(fEfl & X86_EFL_CF) << (cShift - 1); \
+        \
+        *puDst = uResult; \
+        \
+        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
+           it the same way as for 1 bit shifts. */ \
+        fEfl &= ~(X86_EFL_CF | X86_EFL_OF); \
+        uint32_t const fCarry = (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF; \
+        fEfl |= fCarry; \
+        fEfl |= ((uResult >> (a_cBitsWidth - 1)) ^ fCarry) << X86_EFL_OF_BIT; \
+        *pfEFlags = fEfl; \
+    } \
 }
+EMIT_RCL(64);
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_RCL(32);
+EMIT_RCL(16);
+EMIT_RCL(8);
+# endif
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_shr_u64,(uint64_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
-{
-    cShift &= 63;
-    if (cShift)
-    {
-        uint64_t uDst = *puDst;
-        uint64_t uResult = uDst >> cShift;
-        *puDst = uResult;
-
-        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement
-           it the same way as for 1 bit shifts.  The AF bit is undefined, we
-           always set it to zero atm. */
-        AssertCompile(X86_EFL_CF_BIT == 0);
-        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS;
-        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF;
-        fEfl |= (uDst >> 63) << X86_EFL_OF_BIT;
-        fEfl |= X86_EFL_CALC_SF(uResult, 64);
-        fEfl |= X86_EFL_CALC_ZF(uResult);
-        fEfl |= g_afParity[uResult & 0xff];
-        *pfEFlags = fEfl;
-    }
+/*
+ * RCR
+ */
+#define EMIT_RCR(a_cBitsWidth) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_rcr_u ## a_cBitsWidth,(uint ## a_cBitsWidth ##_t *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
+{ \
+    cShift &= a_cBitsWidth - 1; \
+    if (cShift) \
+    { \
+        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
+        uint ## a_cBitsWidth ## _t       uResult = uDst >> cShift; \
+        if (cShift > 1) \
+            uResult |= uDst << (a_cBitsWidth + 1 - cShift); \
+        \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        uint32_t fEfl = *pfEFlags; \
+        uResult |= (uint ## a_cBitsWidth ## _t)(fEfl & X86_EFL_CF) << (a_cBitsWidth - cShift); \
+        *puDst = uResult; \
+        \
+        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
+           it the same way as for 1 bit shifts. */ \
+        fEfl &= ~(X86_EFL_CF | X86_EFL_OF); \
+        uint32_t const fCarry = (uDst >> (cShift - 1)) & X86_EFL_CF; \
+        fEfl |= fCarry; \
+        fEfl |= ((uResult >> (a_cBitsWidth - 1)) ^ fCarry) << X86_EFL_OF_BIT; \
+        *pfEFlags = fEfl; \
+    } \
 }
+EMIT_RCR(64);
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_RCR(32);
+EMIT_RCR(16);
+EMIT_RCR(8);
+# endif
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_sar_u64,(uint64_t *puDst, uint8_t cShift, uint32_t *pfEFlags))
-{
-    cShift &= 63;
-    if (cShift)
-    {
-        uint64_t uDst = *puDst;
-        uint64_t uResult = (int64_t)uDst >> cShift;
-        *puDst = uResult;
-
-        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement
-           it the same way as for 1 bit shifts (0).  The AF bit is undefined,
-           we always set it to zero atm. */
-        AssertCompile(X86_EFL_CF_BIT == 0);
-        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS;
-        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF;
-        fEfl |= X86_EFL_CALC_SF(uResult, 64);
-        fEfl |= X86_EFL_CALC_ZF(uResult);
-        fEfl |= g_afParity[uResult & 0xff];
-        *pfEFlags = fEfl;
-    }
+/*
+ * SHL
+ */
+#define EMIT_SHL(a_cBitsWidth) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_shl_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## _t *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
+{ \
+    cShift &= a_cBitsWidth - 1; \
+    if (cShift) \
+    { \
+        uint ## a_cBitsWidth ##_t const uDst  = *puDst; \
+        uint ## a_cBitsWidth ##_t       uResult = uDst << cShift; \
+        *puDst = uResult; \
+        \
+        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
+           it the same way as for 1 bit shifts.  The AF bit is undefined, we \
+           always set it to zero atm. */ \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        uint32_t fCarry = (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF; \
+        fEfl |= fCarry; \
+        fEfl |= ((uResult >> (a_cBitsWidth - 1)) ^ fCarry) << X86_EFL_OF_BIT; \
+        fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
+        fEfl |= X86_EFL_CALC_ZF(uResult); \
+        fEfl |= g_afParity[uResult & 0xff]; \
+        *pfEFlags = fEfl; \
+    } \
 }
+EMIT_SHL(64)
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SHL(32)
+EMIT_SHL(16)
+EMIT_SHL(8)
+# endif
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_shld_u64,(uint64_t *puDst, uint64_t uSrc, uint8_t cShift, uint32_t *pfEFlags))
-{
-    cShift &= 63;
-    if (cShift)
-    {
-        uint64_t uDst = *puDst;
-        uint64_t uResult;
-        uResult  = uDst << cShift;
-        uResult |= uSrc >> (64 - cShift);
-        *puDst = uResult;
-
-        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement
-           it the same way as for 1 bit shifts.  The AF bit is undefined,
-           we always set it to zero atm. */
-        AssertCompile(X86_EFL_CF_BIT == 0);
-        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS;
-        fEfl |= (uDst >> (64 - cShift)) & X86_EFL_CF;
-        fEfl |= (uint32_t)((uDst >> 63) ^ (uint32_t)(uResult >> 63)) << X86_EFL_OF_BIT;
-        fEfl |= X86_EFL_CALC_SF(uResult, 64);
-        fEfl |= X86_EFL_CALC_ZF(uResult);
-        fEfl |= g_afParity[uResult & 0xff];
-        *pfEFlags = fEfl;
-    }
+/*
+ * SHR
+ */
+#define EMIT_SHR(a_cBitsWidth) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_shr_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## _t *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
+{ \
+    cShift &= a_cBitsWidth - 1; \
+    if (cShift) \
+    { \
+        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
+        uint ## a_cBitsWidth ## _t       uResult = uDst >> cShift; \
+        *puDst = uResult; \
+        \
+        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
+           it the same way as for 1 bit shifts.  The AF bit is undefined, we \
+           always set it to zero atm. */ \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
+        fEfl |= (uDst >> (a_cBitsWidth - 1)) << X86_EFL_OF_BIT; \
+        fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
+        fEfl |= X86_EFL_CALC_ZF(uResult); \
+        fEfl |= g_afParity[uResult & 0xff]; \
+        *pfEFlags = fEfl; \
+    } \
 }
+EMIT_SHR(64)
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SHR(32)
+EMIT_SHR(16)
+EMIT_SHR(8)
+# endif
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u64,(uint64_t *puDst, uint64_t uSrc, uint8_t cShift, uint32_t *pfEFlags))
-{
-    cShift &= 63;
-    if (cShift)
-    {
-        uint64_t uDst = *puDst;
-        uint64_t uResult;
-        uResult  = uDst >> cShift;
-        uResult |= uSrc << (64 - cShift);
-        *puDst = uResult;
-
-        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement
-           it the same way as for 1 bit shifts.  The AF bit is undefined,
-           we always set it to zero atm. */
-        AssertCompile(X86_EFL_CF_BIT == 0);
-        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS;
-        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF;
-        fEfl |= (uint32_t)((uDst >> 63) ^ (uint32_t)(uResult >> 63)) << X86_EFL_OF_BIT;
-        fEfl |= X86_EFL_CALC_SF(uResult, 64);
-        fEfl |= X86_EFL_CALC_ZF(uResult);
-        fEfl |= g_afParity[uResult & 0xff];
-        *pfEFlags = fEfl;
-    }
+/*
+ * SAR
+ */
+#define EMIT_SAR(a_cBitsWidth) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_sar_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## _t *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
+{ \
+    cShift &= a_cBitsWidth - 1; \
+    if (cShift) \
+    { \
+        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
+        uint ## a_cBitsWidth ## _t       uResult = (int ## a_cBitsWidth ## _t)uDst >> cShift; \
+        *puDst = uResult; \
+        \
+        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
+           it the same way as for 1 bit shifts (0).  The AF bit is undefined, \
+           we always set it to zero atm. */ \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
+        fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
+        fEfl |= X86_EFL_CALC_ZF(uResult); \
+        fEfl |= g_afParity[uResult & 0xff]; \
+        *pfEFlags = fEfl; \
+    } \
 }
+EMIT_SAR(64)
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SAR(32)
+EMIT_SAR(16)
+EMIT_SAR(8)
+# endif
+
+
+/*
+ * SHLD
+ */
+#define EMIT_SHLD(a_cBitsWidth) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_shld_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## _t *puDst, \
+                                                         uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
+{ \
+    cShift &= a_cBitsWidth - 1; \
+    if (cShift) \
+    { \
+        uint ## a_cBitsWidth ## _t const uDst = *puDst; \
+        uint ## a_cBitsWidth ## _t       uResult = uDst << cShift; \
+        uResult |= uSrc >> (a_cBitsWidth - cShift); \
+        *puDst = uResult; \
+        \
+        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
+           it the same way as for 1 bit shifts.  The AF bit is undefined, \
+           we always set it to zero atm. */ \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        fEfl |= (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF; \
+        fEfl |= (uint32_t)((uDst >> (a_cBitsWidth - 1)) ^ (uint32_t)(uResult >> (a_cBitsWidth - 1))) << X86_EFL_OF_BIT; \
+        fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
+        fEfl |= X86_EFL_CALC_ZF(uResult); \
+        fEfl |= g_afParity[uResult & 0xff]; \
+        *pfEFlags = fEfl; \
+    } \
+}
+EMIT_SHLD(64)
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SHLD(32)
+EMIT_SHLD(16)
+EMIT_SHLD(8)
+# endif
+
+
+/*
+ * SHRD
+ */
+#define EMIT_SHRD(a_cBitsWidth) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## _t *puDst, \
+                                                         uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
+{ \
+    cShift &= a_cBitsWidth - 1; \
+    if (cShift) \
+    { \
+        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
+        uint ## a_cBitsWidth ## _t       uResult = uDst >> cShift; \
+        uResult |= uSrc << (a_cBitsWidth - cShift); \
+        *puDst = uResult; \
+        \
+        /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
+           it the same way as for 1 bit shifts.  The AF bit is undefined, \
+           we always set it to zero atm. */ \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
+        fEfl |= (uint32_t)((uDst >> (a_cBitsWidth - 1)) ^ (uint32_t)(uResult >> (a_cBitsWidth - 1))) << X86_EFL_OF_BIT;  \
+        fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
+        fEfl |= X86_EFL_CALC_ZF(uResult); \
+        fEfl |= g_afParity[uResult & 0xff]; \
+        *pfEFlags = fEfl; \
+    } \
+}
+EMIT_SHRD(64)
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SHRD(32)
+EMIT_SHRD(16)
+EMIT_SHRD(8)
+# endif
 
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)

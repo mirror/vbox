@@ -1101,35 +1101,47 @@ IEMIMPL_UNARY_OP neg, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_E
 IEMIMPL_UNARY_OP not, 0, 0
 
 
-;;
-; Macro for implementing memory fence operation.
 ;
-; No return value, no operands or anything.
+; BSWAP. No flag changes.
 ;
-; @param        1      The instruction.
+; Each function takes one argument, pointer to the value to bswap
+; (input/output). They all return void.
 ;
-%macro IEMIMPL_MEM_FENCE 1
-BEGINCODE
-BEGINPROC_FASTCALL iemAImpl_ %+ %1, 0
-        %1
-        ret
-ENDPROC iemAImpl_ %+ %1
-%endmacro
+BEGINPROC_FASTCALL iemAImpl_bswap_u16, 4
+        PROLOGUE_1_ARGS
+        mov     T0_32, [A0]             ; just in case any of the upper bits are used.
+        db 66h
+        bswap   T0_32
+        mov     [A0], T0_32
+        EPILOGUE_1_ARGS
+ENDPROC iemAImpl_bswap_u16
 
-IEMIMPL_MEM_FENCE lfence
-IEMIMPL_MEM_FENCE sfence
-IEMIMPL_MEM_FENCE mfence
+BEGINPROC_FASTCALL iemAImpl_bswap_u32, 4
+        PROLOGUE_1_ARGS
+        mov     T0_32, [A0]
+        bswap   T0_32
+        mov     [A0], T0_32
+        EPILOGUE_1_ARGS
+ENDPROC iemAImpl_bswap_u32
 
-;;
-; Alternative for non-SSE2 host.
-;
-BEGINPROC_FASTCALL iemAImpl_alt_mem_fence, 0
-        push    xAX
-        xchg    xAX, [xSP]
-        add     xSP, xCB
-        ret
-ENDPROC iemAImpl_alt_mem_fence
-
+BEGINPROC_FASTCALL iemAImpl_bswap_u64, 4
+%ifdef RT_ARCH_AMD64
+        PROLOGUE_1_ARGS
+        mov     T0, [A0]
+        bswap   T0
+        mov     [A0], T0
+        EPILOGUE_1_ARGS
+%else
+        PROLOGUE_1_ARGS
+        mov     T0, [A0]
+        mov     T1, [A0 + 4]
+        bswap   T0
+        bswap   T1
+        mov     [A0 + 4], T0
+        mov     [A0], T1
+        EPILOGUE_1_ARGS
+%endif
+ENDPROC iemAImpl_bswap_u64
 
 
 ;;
@@ -1743,47 +1755,34 @@ IEMIMPL_DIV_OP div,  0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86
 IEMIMPL_DIV_OP idiv, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 1
 
 
+;;
+; Macro for implementing memory fence operation.
 ;
-; BSWAP. No flag changes.
+; No return value, no operands or anything.
 ;
-; Each function takes one argument, pointer to the value to bswap
-; (input/output). They all return void.
+; @param        1      The instruction.
 ;
-BEGINPROC_FASTCALL iemAImpl_bswap_u16, 4
-        PROLOGUE_1_ARGS
-        mov     T0_32, [A0]             ; just in case any of the upper bits are used.
-        db 66h
-        bswap   T0_32
-        mov     [A0], T0_32
-        EPILOGUE_1_ARGS
-ENDPROC iemAImpl_bswap_u16
+%macro IEMIMPL_MEM_FENCE 1
+BEGINCODE
+BEGINPROC_FASTCALL iemAImpl_ %+ %1, 0
+        %1
+        ret
+ENDPROC iemAImpl_ %+ %1
+%endmacro
 
-BEGINPROC_FASTCALL iemAImpl_bswap_u32, 4
-        PROLOGUE_1_ARGS
-        mov     T0_32, [A0]
-        bswap   T0_32
-        mov     [A0], T0_32
-        EPILOGUE_1_ARGS
-ENDPROC iemAImpl_bswap_u32
+IEMIMPL_MEM_FENCE lfence
+IEMIMPL_MEM_FENCE sfence
+IEMIMPL_MEM_FENCE mfence
 
-BEGINPROC_FASTCALL iemAImpl_bswap_u64, 4
-%ifdef RT_ARCH_AMD64
-        PROLOGUE_1_ARGS
-        mov     T0, [A0]
-        bswap   T0
-        mov     [A0], T0
-        EPILOGUE_1_ARGS
-%else
-        PROLOGUE_1_ARGS
-        mov     T0, [A0]
-        mov     T1, [A0 + 4]
-        bswap   T0
-        bswap   T1
-        mov     [A0 + 4], T0
-        mov     [A0], T1
-        EPILOGUE_1_ARGS
-%endif
-ENDPROC iemAImpl_bswap_u64
+;;
+; Alternative for non-SSE2 host.
+;
+BEGINPROC_FASTCALL iemAImpl_alt_mem_fence, 0
+        push    xAX
+        xchg    xAX, [xSP]
+        add     xSP, xCB
+        ret
+ENDPROC iemAImpl_alt_mem_fence
 
 
 ;;
