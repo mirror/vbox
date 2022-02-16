@@ -3695,8 +3695,11 @@ VMMR3_INT_DECL(bool) NEMR3CanExecuteGuest(PVM pVM, PVMCPU pVCpu)
 
 bool nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
 {
-    NOREF(pVM); NOREF(pVCpu); NOREF(fEnable);
-    return false;
+    VMCPU_ASSERT_EMT(pVCpu);
+    bool fOld = pVCpu->nem.s.fSingleInstruction;
+    pVCpu->nem.s.fSingleInstruction = fEnable;
+    pVCpu->nem.s.fUseDebugLoop = fEnable || pVM->nem.s.fUseDebugLoop;
+    return fOld;
 }
 
 
@@ -3719,6 +3722,24 @@ void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
     hv_return_t hrc = hv_vcpu_interrupt(&pVCpu->nem.s.hVCpuId, 1);
     if (hrc != HV_SUCCESS)
         LogRel(("NEM: hv_vcpu_interrupt(%u, 1) failed with %#x\n", pVCpu->nem.s.hVCpuId, hrc));
+}
+
+
+DECLHIDDEN(bool) nemR3NativeNotifyDebugEventChanged(PVM pVM, bool fUseDebugLoop)
+{
+    for (DBGFEVENTTYPE enmEvent = DBGFEVENT_EXIT_VMX_FIRST;
+         !fUseDebugLoop && enmEvent <= DBGFEVENT_EXIT_VMX_LAST;
+         enmEvent = (DBGFEVENTTYPE)(enmEvent + 1))
+        fUseDebugLoop = DBGF_IS_EVENT_ENABLED(pVM, enmEvent);
+
+    return fUseDebugLoop;
+}
+
+
+DECLHIDDEN(bool) nemR3NativeNotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu, bool fUseDebugLoop)
+{
+    RT_NOREF(pVM, pVCpu);
+    return fUseDebugLoop;
 }
 
 

@@ -179,6 +179,9 @@ typedef struct NEM
     bool                        fEnabled;
     /** Set if long mode guests are allowed. */
     bool                        fAllow64BitGuests;
+    /** Set when the debug facility has breakpoints/events enabled that requires
+     *  us to use the debug execution loop. */
+    bool                        fUseDebugLoop;
 
 #if defined(RT_OS_LINUX)
     /** The '/dev/kvm' file descriptor.   */
@@ -326,6 +329,11 @@ typedef struct NEMCPU
     bool                        fGIMTrapXcptUD : 1;
     /** Whether \#GP needs to be intercept for mesa driver workaround. */
     bool                        fTrapXcptGpForLovelyMesaDrv: 1;
+    /** Whether we should use the debug loop because of single stepping or special
+     *  debug breakpoints / events are armed. */
+    bool                        fUseDebugLoop : 1;
+    /** Whether we're executing a single instruction. */
+    bool                        fSingleInstruction : 1;
 
 #if defined(RT_OS_LINUX)
     uint8_t                     abPadding[3];
@@ -438,14 +446,6 @@ typedef struct NEMCPU
 
     /** @name State shared with the VT-x code.
      * @{ */
-    /** Whether we should use the debug loop because of single stepping or special
-     *  debug breakpoints / events are armed. */
-    bool                        fUseDebugLoop;
-    /** Whether we're executing a single instruction. */
-    bool                        fSingleInstruction;
-
-    bool                        afAlignment0[2];
-
     /** An additional error code used for some gurus. */
     uint32_t                    u32HMError;
     /** The last exit-to-ring-3 reason. */
@@ -589,6 +589,29 @@ VBOXSTRICTRC    nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu);
 bool            nemR3NativeCanExecuteGuest(PVM pVM, PVMCPU pVCpu);
 bool            nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
 void            nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
+
+/**
+ * Called by NEMR3NotifyDebugEventChanged() to let the native backend take the final decision
+ * on whether to switch to the debug loop.
+ *
+ * @returns Final flag whether to switch to the debug loop.
+ * @param   pVM             The VM cross context VM structure.
+ * @param   fUseDebugLoop   The current value determined by NEMR3NotifyDebugEventChanged().
+ * @thread  EMT(0)
+ */
+DECLHIDDEN(bool) nemR3NativeNotifyDebugEventChanged(PVM pVM, bool fUseDebugLoop);
+
+
+/**
+ * Called by NEMR3NotifyDebugEventChangedPerCpu() to let the native backend take the final decision
+ * on whether to switch to the debug loop.
+ *
+ * @returns Final flag whether to switch to the debug loop.
+ * @param   pVM             The VM cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   fUseDebugLoop   The current value determined by NEMR3NotifyDebugEventChangedPerCpu().
+ */
+DECLHIDDEN(bool) nemR3NativeNotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu, bool fUseDebugLoop);
 #endif
 
 void    nemHCNativeNotifyHandlerPhysicalRegister(PVMCC pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb);

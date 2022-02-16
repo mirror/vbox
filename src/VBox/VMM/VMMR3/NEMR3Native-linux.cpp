@@ -1997,6 +1997,20 @@ void nemR3NativeNotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 }
 
 
+DECLHIDDEN(bool) nemR3NativeNotifyDebugEventChanged(PVM pVM, bool fUseDebugLoop);
+{
+    RT_NOREF(pVM, fUseDebugLoop);
+    return false;
+}
+
+
+DECLHIDDEN(bool) nemR3NativeNotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu, bool fUseDebugLoop);
+{
+    RT_NOREF(pVM, pVCpu, fUseDebugLoop);
+    return false;
+}
+
+
 /**
  * Deals with pending interrupt FFs prior to executing guest code.
  */

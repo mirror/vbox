@@ -75,6 +75,7 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/nem.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
@@ -1911,14 +1912,24 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3EventConfigEx(PVM pVM, PVMCPU pVCpu, voi
         /*
          * Inform HM about changes.
          */
-        if (cChanges > 0 && HMIsEnabled(pVM))
+        if (cChanges > 0)
         {
-            HMR3NotifyDebugEventChanged(pVM);
-            HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+            if (HMIsEnabled(pVM))
+            {
+                HMR3NotifyDebugEventChanged(pVM);
+                HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+            }
+            else if (VM_IS_NEM_ENABLED(pVM))
+            {
+                NEMR3NotifyDebugEventChanged(pVM);
+                NEMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+            }
         }
     }
     else if (HMIsEnabled(pVM))
         HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+    else if (VM_IS_NEM_ENABLED(pVM))
+        NEMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
 
     return VINF_SUCCESS;
 }
@@ -2135,14 +2146,24 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3InterruptConfigEx(PVM pVM, PVMCPU pVCpu,
         /*
          * Inform HM about changes.
          */
-        if (fChanged && HMIsEnabled(pVM))
+        if (fChanged)
         {
-            HMR3NotifyDebugEventChanged(pVM);
-            HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+            if (HMIsEnabled(pVM))
+            {
+                HMR3NotifyDebugEventChanged(pVM);
+                HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+            }
+            else if (VM_IS_NEM_ENABLED(pVM))
+            {
+                NEMR3NotifyDebugEventChanged(pVM);
+                NEMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+            }
         }
     }
     else if (HMIsEnabled(pVM))
         HMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
+    else if (VM_IS_NEM_ENABLED(pVM))
+        NEMR3NotifyDebugEventChangedPerCpu(pVM, pVCpu);
 
     return VINF_SUCCESS;
 }

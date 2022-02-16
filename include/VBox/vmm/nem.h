@@ -159,6 +159,8 @@ VMMR3_INT_DECL(int)  NEMR3NotifyPhysRomRegisterLate(PVM pVM, RTGCPHYS GCPhys, RT
 /** @} */
 
 VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled);
+VMMR3_INT_DECL(void) NEMR3NotifyDebugEventChanged(PVM pVM);
+VMMR3_INT_DECL(void) NEMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu);
 /** @} */
 
 
@@ -213,6 +215,7 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageProtChanged(PVMCC pVM, RTGCPHYS GCPhys, RT
                                                   PGMPAGETYPE enmType, uint8_t *pu2State);
 VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew,
                                               RTR3PTR pvNewR3, uint32_t fPageProt, PGMPAGETYPE enmType, uint8_t *pu2State);
+VMM_INT_DECL(void) NEMHCNotifyPagingModeChanged(PVM pVM, PVMCPUCC pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 /** @name NEM_PAGE_PROT_XXX - Page protection
  * @{ */
 #define NEM_PAGE_PROT_NONE      UINT32_C(0)     /**< All access causes VM exits. */

@@ -30,6 +30,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_NEM
+#include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/nem.h>
 #include <VBox/vmm/gim.h>
 #include "NEMInternal.h"
@@ -457,3 +458,55 @@ VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled)
 }
 #endif
 
+
+/**
+ * Notification callback from DBGF when interrupt breakpoints or generic debug
+ * event settings changes.
+ *
+ * DBGF will call NEMR3NotifyDebugEventChangedPerCpu on each CPU afterwards, this
+ * function is just updating the VM globals.
+ *
+ * @param   pVM         The VM cross context VM structure.
+ * @thread  EMT(0)
+ */
+VMMR3_INT_DECL(void) NEMR3NotifyDebugEventChanged(PVM pVM)
+{
+    AssertLogRelReturnVoid(VM_IS_NEM_ENABLED(pVM));
+
+    /* Interrupts. */
+    bool fUseDebugLoop = pVM->dbgf.ro.cSoftIntBreakpoints > 0
+                      || pVM->dbgf.ro.cHardIntBreakpoints > 0;
+
+    /* CPU Exceptions. */
+    for (DBGFEVENTTYPE enmEvent = DBGFEVENT_XCPT_FIRST;
+         !fUseDebugLoop && enmEvent <= DBGFEVENT_XCPT_LAST;
+         enmEvent = (DBGFEVENTTYPE)(enmEvent + 1))
+        fUseDebugLoop = DBGF_IS_EVENT_ENABLED(pVM, enmEvent);
+
+    /* Common VM exits. */
+    for (DBGFEVENTTYPE enmEvent = DBGFEVENT_EXIT_FIRST;
+         !fUseDebugLoop && enmEvent <= DBGFEVENT_EXIT_LAST_COMMON;
+         enmEvent = (DBGFEVENTTYPE)(enmEvent + 1))
+        fUseDebugLoop = DBGF_IS_EVENT_ENABLED(pVM, enmEvent);
+
+    /* Done. */
+    pVM->nem.s.fUseDebugLoop = nemR3NativeNotifyDebugEventChanged(pVM, fUseDebugLoop);
+}
+
+
+/**
+ * Follow up notification callback to NEMR3NotifyDebugEventChanged for each CPU.
+ *
+ * NEM uses this to combine the decision made NEMR3NotifyDebugEventChanged with
+ * per CPU settings.
+ *
+ * @param   pVM         The VM cross context VM structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ */
+VMMR3_INT_DECL(void) NEMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu)
+{
+    AssertLogRelReturnVoid(VM_IS_NEM_ENABLED(pVM));
+
+    pVCpu->nem.s.fUseDebugLoop = nemR3NativeNotifyDebugEventChangedPerCpu(pVM, pVCpu,
+                                                                          pVCpu->nem.s.fSingleInstruction | pVM->nem.s.fUseDebugLoop);
+}
