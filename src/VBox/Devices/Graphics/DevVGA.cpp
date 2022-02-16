@@ -1697,8 +1697,6 @@ static const uint8_t empty_glyph[32 * 4] = { 0 };
 
 /**
  * Text mode update
- * Missing:
- * - underline
  */
 static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisCC, bool full_update,
                          bool fFailOnResize, bool reset_dirty, PDMIDISPLAYCONNECTOR *pDrv)
@@ -1717,6 +1715,7 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
     uint64_t time_ns;
     bool blink_on, chr_blink_flip, cur_blink_flip;
     bool blink_enabled, blink_do_redraw;
+    int uline_pos;
 
     full_update |= vgaR3UpdatePalette16(pThis, pThisCC);
     palette = pThis->last_palette;
@@ -1837,6 +1836,9 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
     }
     blink_enabled = !!(pThis->ar[0x10] & 0x08); /* Attribute controller blink enable. */
 
+    /* Underline position */
+    uline_pos  = pThis->cr[0x14] & 0x1f;
+
     for(cy = 0; cy < (height - dscan); cy = cy + (1 << dscan)) {
         d1 = dest;
         src = s1;
@@ -1882,6 +1884,25 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
                     if (pThis->fRenderVRAM)
                         vga_draw_glyph9(d1, linesize, font_ptr, cheight, fgcol, bgcol, dup9);
                 }
+
+                /* Underline. Typically turned off by setting it past cell height. */
+                if (((cattr & 0x03) == 1) && (uline_pos < cheight))
+                {
+                    int h;
+
+                    d = d1 + (linesize * uline_pos << dscan);
+                    h = 1;
+
+                    if (cw != 9) {
+                        if (pThis->fRenderVRAM)
+                            vga_draw_glyph8(d, linesize, cursor_glyph, h, fgcol, bgcol, dscan);
+                    } else {
+                        if (pThis->fRenderVRAM)
+                            vga_draw_glyph9(d, linesize, cursor_glyph, h, fgcol, bgcol, 1);
+                    }
+                }
+
+                /* Cursor. */
                 if (src == cursor_ptr &&
                     !(pThis->cr[0x0a] & 0x20)) {
                     int line_start, line_last, h;
