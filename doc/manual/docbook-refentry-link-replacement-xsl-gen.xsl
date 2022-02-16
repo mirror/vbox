@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-    docbook-refentry-link-replacement-xsl-gen.xsl.xsl:
+    docbook-refentry-link-replacement-xsl-gen.xsl:
         XSLT stylesheet for generate a stylesheet that replaces links
         to the user manual in the manpages.
 
@@ -142,6 +142,16 @@ Produce the transformation templates:
   <xsl:text>&lt;xsl:template match="xref[@linkend='</xsl:text>
   <xsl:value-of select="../../@id"/><xsl:text>']"&gt;
   &lt;xsl:text&gt; &quot;</xsl:text>
+  <xsl:value-of select="normalize-space()"/><xsl:text>&quot;&lt;/xsl:text&gt;
+&lt;/xsl:template&gt;
+</xsl:text>
+  <xsl:apply-templates/>
+</xsl:template>
+
+<xsl:template match="refsect2[@id]/title">
+  <xsl:text>&lt;xsl:template match="xref[@linkend='</xsl:text>
+  <xsl:value-of select="../@id"/><xsl:text>']"&gt;
+  &lt;xsl:text&gt;&quot;</xsl:text>
   <xsl:value-of select="normalize-space()"/><xsl:text>&quot;&lt;/xsl:text&gt;
 &lt;/xsl:template&gt;
 </xsl:text>

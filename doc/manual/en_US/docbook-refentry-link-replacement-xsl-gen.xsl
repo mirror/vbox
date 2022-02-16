@@ -24,10 +24,7 @@
   <xsl:import href="../docbook-refentry-link-replacement-xsl-gen.xsl"/>
 
   <!-- Translated strings -->
-  <xsl:variable name="sChapter" select="'глава'"/>
-  <xsl:variable name="sSection" select="'секция'"/>
-  <xsl:variable name="sOfManual" select="'руководства пользователя'"/>
-  <xsl:variable name="sInManual" select="'руководства пользователя'"/>
+  <!-- none needed, English is the base language -->
 
 </xsl:stylesheet>
 
