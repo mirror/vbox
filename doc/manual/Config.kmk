@@ -131,12 +131,12 @@ VBOX_XML_XREF_TO_TEXT      = xref-to-text.xsl
 # Emits rules for preprocessing refentry sources (applying remarks element),
 # and for producing the actual man pages.
 #
-# $(evalcall2 def_vbox_refentry_to_manpage)
+# $(evalcall2 def_vbox_refentry_preprocess_for_manpage)
 # @param    1   The output directory.
 # @param    2   The XML file name (no path).
 # @param    3   The XML file with full path.
 # @param    4   Non-empty if xrefs to replace.
-# @param    5   Language code (optional)
+# @param    5   Language code (optional if $4 is empty).
 define def_vbox_refentry_preprocess_for_manpage
 $(1)/$(2): \
 		$(3) \
@@ -362,6 +362,8 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT) \
 		,$$(NLTAB)$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT, -ato "$$@") --stringparam 'g_sMode' 'append' \
 			"$$<" "$$(VBOX_PATH_MANUAL_SRC)/en_US/$$(x)")
 	$$(QUIET)$$(APPEND) -n "$$@" '' '</xsl:stylesheet>'
+
+BLDDIRS += $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/
 endef
 # generate rules for $(VBOX_XML_XREF_TO_TEXT)
 $(evalcall2 def_vbox_xref_to_text,en_US)
