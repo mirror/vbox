@@ -59,9 +59,7 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-cloudprofile.xml \
 	man_VBoxManage-signova.xml \
 	man_VBoxManage-modifynvram.xml \
-	$(if $(VBOX_WITH_VMNET), \
 	man_VBoxManage-hostonlynet.xml \
-	,) \
 	man_VBoxManage-updatecheck.xml
 
 ## List of user manual XML files.
