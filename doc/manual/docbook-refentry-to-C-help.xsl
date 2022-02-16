@@ -227,8 +227,12 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     <xsl:apply-templates select="node()|@*"/>
   </xsl:template>
 
-  <xsl:template match="command|option|computeroutput|literal|emphasis|filename">
+  <xsl:template match="command|option|computeroutput|literal|emphasis|filename|citetitle|note">
     <xsl:apply-templates select="node()|@*"/>
+  </xsl:template>
+
+  <xsl:template match="ulink">
+    <xsl:value-of select="@url"/>
   </xsl:template>
 
   <xsl:template match="replaceable">
@@ -601,6 +605,10 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     -->
   <xsl:template match="synopfragment|synopfragmentref|title|refsect1">
     <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>The <xsl:value-of select="name()"/> element is not supported</xsl:message>
+  </xsl:template>
+
+  <xsl:template match="xref">
+    <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>The <xsl:value-of select="name()"/> element is not supported, most likely the linkend is not defined or incorrectly processed by docbook-refentry-link-replacement-xsl-gen.xsl</xsl:message>
   </xsl:template>
 
   <!--
