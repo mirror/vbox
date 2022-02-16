@@ -156,10 +156,10 @@ void UIHostnameDomainNameEditor::prepare()
     addLineEdit(iRow, m_pHostnameLabel, m_pHostnameLineEdit, m_pMainLayout);
     addLineEdit(iRow, m_pDomainNameLabel, m_pDomainNameLineEdit, m_pMainLayout);
 
-    // QRegularExpression hostNameRegex("^[a-zA-Z0-9-.]{2,}\\.[a-zA-Z0-9-.]+$");^[a-zA-Z0-9-.]{2,}\.[a-zA-Z0-9-.]+$
-    /* Host name and domain should be strings of minimum length of 2 and composed of alpha numerics, '-', and '.': */
-    m_pHostnameLineEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("^[a-zA-Z0-9-.]{2,}"), this));
-    m_pDomainNameLineEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("^[a-zA-Z0-9-.]{2,}"), this));
+    /* Host name and domain should be strings of minimum length of 2 and composed of alpha numerics, '-', and '.'
+     * Exclude strings with . at the end: */
+    m_pHostnameLineEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("^[a-zA-Z0-9-.]{2,}[^$.]"), this));
+    m_pDomainNameLineEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("^[a-zA-Z0-9-.]{2,}[^$.]"), this));
 
     connect(m_pHostnameLineEdit, &QILineEdit::textChanged,
             this, &UIHostnameDomainNameEditor::sltHostnameChanged);
