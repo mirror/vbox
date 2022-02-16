@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for VBoxManage (the cli frontend).
+# Sub-Makefile for VBoxManage (the CLI frontend).
 #
 
 #
@@ -212,13 +212,18 @@ $(call KB_FN_DO_PASS0_ON_TARGET,VBoxManage)
 # specially to be useful in VBoxManage.
 
 VBoxManage_CLEAN += \
+	$(VBOX_XML_CATALOG) \
+	$(VBOX_XML_CATALOG_DOCBOOK) \
+	$(VBOX_XML_CATALOG_MANUAL) \
+	$(VBOX_XML_ENTITIES) \
+	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/, $(VBOX_XML_XREF_TO_TEXT) $(VBOX_XML_XREF_TO_TEXT).cat) \
 	$(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp_en_US.cpp \
 	$(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp_en_US.cpp.ts \
 	$(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.cpp \
 	$(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.cpp.ts \
 	$(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.h \
 	$(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.h.ts \
-       $(addprefix $(VBoxManage_0_OUTDIR)/,$(filter man_VBoxManage-%,$(VBOX_MANUAL_XML_REFENTRY_FILES)))
+	$(addprefix $(VBoxManage_0_OUTDIR)/,$(filter man_VBoxManage-%,$(VBOX_MANUAL_XML_REFENTRY_FILES)))
 
 # Preprocess the xml files, applying remarks.
 $(foreach file,$(filter man_VBoxManage-%,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
@@ -280,7 +285,7 @@ endef
 $(evalcall2 def_vbox_man_generate_cpp_help, $(VBoxManage_0_OUTDIR),en_US)
 
 
-# generate built-in for the english only
+# Generate built-in help for all languages (English is implicit).
 $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.cpp.ts \
 +| $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.cpp: \
 		$(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp_en_US.cpp \
@@ -383,6 +388,11 @@ ifdef VBOX_WITH_VBOXMANAGE_NLS
 	, $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp_$(lang).cpp)
 
  VBoxManage_CLEAN += \
+	$(foreach lang,$(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES), \
+        $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/, \
+            $(VBOX_XML_XREF_TO_TEXT) \
+            $(VBOX_XML_XREF_TO_TEXT).cat \
+        )) \
 	$(addsuffix .cpp,$(addprefix $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp_,$(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES))) \
 	$(addsuffix .cpp.ts,$(addprefix $(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp_,$(VBOX_APPROVED_VBOXMANAGE_DOCBOOK_LANGUAGES))) \
 	$(foreach file, $(filter man_VBoxManage-%,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
