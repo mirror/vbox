@@ -143,7 +143,7 @@ define def_vbox_refentry_preprocess_for_manpage
 $(1)/$(2): \
 		$(3) \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl \
-		$(if $(4), $$(VBOX_PATH_MANUAL_OUTBASE)/$(5)/,$$(VBOX_XML_XREF_TO_TEXT)) \
+		$(if $(4), $$(VBOX_PATH_MANUAL_OUTBASE)/$(5)/$$(VBOX_XML_XREF_TO_TEXT),) \
 		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
 		$$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
