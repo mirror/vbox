@@ -611,6 +611,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
     ktReason_Add_Installer_Win_Failed                  = ( 'Additions',         'Win GA install' );
     ktReason_Add_ShFl_Automount                        = ( 'Additions',         'Automounting' );
     ktReason_Add_ShFl_FsPerf                           = ( 'Additions',         'FsPerf' );
+    ktReason_Add_ShFl_FsPerf_Abend                     = ( 'Additions',         'FsPerf abend' );
     ktReason_Add_GstCtl_Preparations                   = ( 'Additions',         'GstCtl preparations' );
     ktReason_Add_GstCtl_SessionBasics                  = ( 'Additions',         'Session basics' );
     ktReason_Add_GstCtl_SessionProcRefs                = ( 'Additions',         'Session process' );
