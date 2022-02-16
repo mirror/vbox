@@ -250,11 +250,11 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
  	$(VBOX_XML_CATALOG_DOCBOOK) \
  	$(VBOX_XML_CATALOG_MANUAL) \
  	$(VBOX_XML_ENTITIES) \
- 	$(VBOX_XML_XREF_TO_TEXT) \
- 	$(VBOX_XML_XREF_TO_TEXT).cat \
  	$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/, \
+        $(VBOX_XML_XREF_TO_TEXT) \
+        $(VBOX_XML_XREF_TO_TEXT).cat \
         $(addprefix user_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
-	 $(VBOX_MANUAL_XML_REFENTRY_FILES) \
+		$(VBOX_MANUAL_XML_REFENTRY_FILES) \
         $(patsubst man_%,%.1,$(basename $(VBOX_MANUAL_XML_REFENTRY_FILES))) \
         man_VBoxHeadless.xml \
         user_man_VBoxHeadless.xml \
