@@ -356,7 +356,7 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/xref-to-text.xsl \
 		,'  <system systemId="$$(VBOX_PATH_MANUAL_SRC)/en_US/$$(x)" uri="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_PATH_MANUAL_SRC)/dummy-sect1.xml"/>') \
 		'  <nextCatalog catalog="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_XML_CATALOG)"/>' \
 		'</catalog>'
-	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT, -E "XML_CATALOG_FILES=$$(VBOX_PATH_MANUAL_OUTBASE)/xref-to-text$(1).xsl.cat") \
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT, -E "XML_CATALOG_FILES=$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/xref-to-text.xsl.cat") \
 		--stringparam 'g_sMode' 'first' --output "$$@" "$$<" $$(filter %UserManual.xml,$$^)
 	# Using en-US version as section and chapter names until user manual is translated as well
 	$$(foreach x, $$(VBOX_MANUAL_XML_REFENTRY_FILES)\
