@@ -1259,6 +1259,39 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64,(uint64_t *puMem, uint64_t *puReg))
     *puReg = uOldMem;
 }
 
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u32,(uint32_t *puMem, uint32_t *puReg))
+{
+    /* XCHG implies LOCK. */
+    uint32_t uOldMem = *puMem;
+    while (!ASMAtomicCmpXchgExU32(puMem, *puReg, uOldMem, &uOldMem))
+        ASMNopPause();
+    *puReg = uOldMem;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u16,(uint16_t *puMem, uint16_t *puReg))
+{
+    /* XCHG implies LOCK. */
+    uint16_t uOldMem = *puMem;
+    while (!ASMAtomicCmpXchgExU16(puMem, *puReg, uOldMem, &uOldMem))
+        ASMNopPause();
+    *puReg = uOldMem;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8,(uint8_t *puMem, uint8_t *puReg))
+{
+    /* XCHG implies LOCK. */
+    uint8_t uOldMem = *puMem;
+    while (!ASMAtomicCmpXchgExU8(puMem, *puReg, uOldMem, &uOldMem))
+        ASMNopPause();
+    *puReg = uOldMem;
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
 
 /*
  * XADD and LOCK XADD.
@@ -1392,6 +1425,45 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, u
     return 0;
 }
 
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u32,(uint32_t *pu32RAX, uint32_t *pu32RDX, uint32_t u32Factor, uint32_t *pfEFlags))
+{
+    RTUINT64U Result;
+    Result.u = (uint64_t)*pu32RAX * u32Factor;
+    *pu32RAX = Result.s.Lo;
+    *pu32RDX = Result.s.Hi;
+
+    /* MUL EFLAGS according to Skylake (similar to IMUL). */
+    *pfEFlags &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF);
+    if (Result.s.Lo & RT_BIT_32(31))
+        *pfEFlags |= X86_EFL_SF;
+    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
+    if (Result.s.Hi != 0)
+        *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+    return 0;
+}
+
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u16,(uint16_t *pu16RAX, uint16_t *pu16RDX, uint16_t u16Factor, uint32_t *pfEFlags))
+{
+    RTUINT32U Result;
+    Result.u = (uint32_t)*pu16RAX * u16Factor;
+    *pu16RAX = Result.s.Lo;
+    *pu16RDX = Result.s.Hi;
+
+    /* MUL EFLAGS according to Skylake (similar to IMUL). */
+    *pfEFlags &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF);
+    if (Result.s.Lo & RT_BIT_32(15))
+        *pfEFlags |= X86_EFL_SF;
+    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
+    if (Result.s.Hi != 0)
+        *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+    return 0;
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
 
 /*
  * IMUL
@@ -1453,6 +1525,123 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u64,(uint64_t *puDst, uint64_t uSrc, u
     iemAImpl_imul_u64(puDst, &u64Ign, uSrc, pfEFlags);
 }
 
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u32,(uint32_t *pu32RAX, uint32_t *pu32RDX, uint32_t u32Factor, uint32_t *pfEFlags))
+{
+    RTUINT64U Result;
+    *pfEFlags &= ~( X86_EFL_SF | X86_EFL_CF | X86_EFL_OF
+                   /* Skylake always clears: */ | X86_EFL_AF | X86_EFL_ZF
+                   /* Skylake may set: */       | X86_EFL_PF);
+
+    if ((int32_t)*pu32RAX >= 0)
+    {
+        if ((int32_t)u32Factor >= 0)
+        {
+            Result.u = (uint64_t)*pu32RAX * u32Factor;
+            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_32(31))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+        }
+        else
+        {
+            Result.u = (uint64_t)*pu32RAX * (UINT32_C(0) - u32Factor);
+            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_32(31))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+            Result.u = UINT64_C(0) - Result.u;
+        }
+    }
+    else
+    {
+        if ((int32_t)u32Factor >= 0)
+        {
+            Result.u = (uint64_t)(UINT32_C(0) - *pu32RAX) * u32Factor;
+            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_32(31))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+            Result.u = UINT64_C(0) - Result.u;
+        }
+        else
+        {
+            Result.u = (uint64_t)(UINT32_C(0) - *pu32RAX) * (UINT32_C(0) - u32Factor);
+            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_32(31))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+        }
+    }
+    *pu32RAX = Result.s.Lo;
+    if (Result.s.Lo & RT_BIT_32(31))
+        *pfEFlags |= X86_EFL_SF;
+    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
+    *pu32RDX = Result.s.Hi;
+
+    return 0;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+{
+/** @todo Testcase: IMUL 2 and 3 operands. */
+    uint32_t u32Ign;
+    iemAImpl_imul_u32(puDst, &u32Ign, uSrc, pfEFlags);
+}
+
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u16,(uint16_t *pu16RAX, uint16_t *pu16RDX, uint16_t u16Factor, uint32_t *pfEFlags))
+{
+    RTUINT32U Result;
+    *pfEFlags &= ~( X86_EFL_SF | X86_EFL_CF | X86_EFL_OF
+                   /* Skylake always clears: */ | X86_EFL_AF | X86_EFL_ZF
+                   /* Skylake may set: */       | X86_EFL_PF);
+
+    if ((int16_t)*pu16RAX >= 0)
+    {
+        if ((int16_t)u16Factor >= 0)
+        {
+            Result.u = (uint32_t)*pu16RAX * u16Factor;
+            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_32(15))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+        }
+        else
+        {
+            Result.u = (uint32_t)*pu16RAX * (UINT16_C(0) - u16Factor);
+            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_32(15))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+            Result.u = UINT32_C(0) - Result.u;
+        }
+    }
+    else
+    {
+        if ((int16_t)u16Factor >= 0)
+        {
+            Result.u = (uint32_t)(UINT16_C(0) - *pu16RAX) * u16Factor;
+            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_32(15))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+            Result.u = UINT32_C(0) - Result.u;
+        }
+        else
+        {
+            Result.u = (uint32_t)(UINT16_C(0) - *pu16RAX) * (UINT16_C(0) - u16Factor);
+            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_32(15))
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
+        }
+    }
+    *pu16RAX = Result.s.Lo;
+    if (Result.s.Lo & RT_BIT_32(15))
+        *pfEFlags |= X86_EFL_SF;
+    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
+    *pu16RDX = Result.s.Hi;
+
+    return 0;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+{
+/** @todo Testcase: IMUL 2 and 3 operands. */
+    uint16_t u16Ign;
+    iemAImpl_imul_u16(puDst, &u16Ign, uSrc, pfEFlags);
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
 
 /*
  * DIV
@@ -1494,6 +1683,65 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_div_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, u
     return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
 }
 
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_div_u32,(uint32_t *pu32RAX, uint32_t *pu32RDX, uint32_t u32Divisor, uint32_t *pfEFlags))
+{
+    /* Note! Skylake leaves all flags alone. */
+    RT_NOREF_PV(pfEFlags);
+
+    if (   u32Divisor != 0
+        && *pu32RDX < u32Divisor)
+    {
+        RTUINT64U Dividend;
+        Dividend.s.Lo = *pu32RAX;
+        Dividend.s.Hi = *pu32RDX;
+
+        RTUINT64U Remainder;
+        RTUINT64U Quotient;
+        Quotient.u  = Dividend.u / u32Divisor;
+        Remainder.u = Dividend.u % u32Divisor;
+
+        *pu32RAX = Quotient.s.Lo;
+        *pu32RDX = Remainder.s.Lo;
+        /** @todo research the undefined DIV flags. */
+        return 0;
+
+    }
+    /* #DE */
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+}
+
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_div_u16,(uint16_t *pu16RAX, uint16_t *pu16RDX, uint16_t u16Divisor, uint32_t *pfEFlags))
+{
+    /* Note! Skylake leaves all flags alone. */
+    RT_NOREF_PV(pfEFlags);
+
+    if (   u16Divisor != 0
+        && *pu16RDX < u16Divisor)
+    {
+        RTUINT32U Dividend;
+        Dividend.s.Lo = *pu16RAX;
+        Dividend.s.Hi = *pu16RDX;
+
+        RTUINT32U Remainder;
+        RTUINT32U Quotient;
+        Quotient.u  = Dividend.u / u16Divisor;
+        Remainder.u = Dividend.u % u16Divisor;
+
+        *pu16RAX = Quotient.s.Lo;
+        *pu16RDX = Remainder.s.Lo;
+        /** @todo research the undefined DIV flags. */
+        return 0;
+
+    }
+    /* #DE */
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
 
 /*
  * IDIV
@@ -1504,6 +1752,7 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
     /* Note! Skylake leaves all flags alone. */
     RT_NOREF_PV(pfEFlags);
 
+    /** @todo overflow checks   */
     if (u64Divisor != 0)
     {
         /*
@@ -1524,7 +1773,7 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
 
         RTUINT128U Remainder;
         RTUINT128U Quotient;
-# ifdef __GNUC__ /* GCC maybe really annoying in function. */
+# ifdef __GNUC__ /* GCC maybe really annoying. */
         Quotient.s.Lo = 0;
         Quotient.s.Hi = 0;
 # endif
@@ -1583,6 +1832,174 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
     /* #DE */
     return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
 }
+
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u32,(uint32_t *pu32RAX, uint32_t *pu32RDX, uint32_t u32Divisor, uint32_t *pfEFlags))
+{
+    /* Note! Skylake leaves all flags alone. */
+    RT_NOREF_PV(pfEFlags);
+
+    /** @todo overflow checks   */
+    if (u32Divisor != 0)
+    {
+        /*
+         * Convert to unsigned division.
+         */
+        RTUINT64U Dividend;
+        Dividend.s.Lo = *pu32RAX;
+        Dividend.s.Hi = *pu32RDX;
+        if ((int32_t)*pu32RDX < 0)
+            Dividend.u = UINT64_C(0) - Dividend.u;
+
+        uint32_t u32DivisorPositive;
+        if ((int32_t)u32Divisor >= 0)
+            u32DivisorPositive = u32Divisor;
+        else
+            u32DivisorPositive = UINT32_C(0) - u32Divisor;
+
+        RTUINT64U Remainder;
+        RTUINT64U Quotient;
+        Quotient.u  = Dividend.u / u32DivisorPositive;
+        Remainder.u = Dividend.u % u32DivisorPositive;
+
+        /*
+         * Setup the result, checking for overflows.
+         */
+        if ((int32_t)u32Divisor >= 0)
+        {
+            if ((int32_t)*pu32RDX >= 0)
+            {
+                /* Positive divisor, positive dividend => result positive. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint32_t)INT32_MAX)
+                {
+                    *pu32RAX = Quotient.s.Lo;
+                    *pu32RDX = Remainder.s.Lo;
+                    return 0;
+                }
+            }
+            else
+            {
+                /* Positive divisor, positive dividend => result negative. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_32(31))
+                {
+                    *pu32RAX = UINT32_C(0) - Quotient.s.Lo;
+                    *pu32RDX = UINT32_C(0) - Remainder.s.Lo;
+                    return 0;
+                }
+            }
+        }
+        else
+        {
+            if ((int32_t)*pu32RDX >= 0)
+            {
+                /* Negative divisor, positive dividend => negative quotient, positive remainder. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_32(31))
+                {
+                    *pu32RAX = UINT32_C(0) - Quotient.s.Lo;
+                    *pu32RDX = Remainder.s.Lo;
+                    return 0;
+                }
+            }
+            else
+            {
+                /* Negative divisor, negative dividend => positive quotient, negative remainder. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint32_t)INT32_MAX)
+                {
+                    *pu32RAX = Quotient.s.Lo;
+                    *pu32RDX = UINT32_C(0) - Remainder.s.Lo;
+                    return 0;
+                }
+            }
+        }
+    }
+    /* #DE */
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+}
+
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u16,(uint16_t *pu16RAX, uint16_t *pu16RDX, uint16_t u16Divisor, uint32_t *pfEFlags))
+{
+    /* Note! Skylake leaves all flags alone. */
+    RT_NOREF_PV(pfEFlags);
+
+    if (u16Divisor != 0)
+    {
+        /*
+         * Convert to unsigned division.
+         */
+        RTUINT32U Dividend;
+        Dividend.s.Lo = *pu16RAX;
+        Dividend.s.Hi = *pu16RDX;
+        if ((int16_t)*pu16RDX < 0)
+            Dividend.u = UINT32_C(0) - Dividend.u;
+
+        uint16_t u16DivisorPositive;
+        if ((int16_t)u16Divisor >= 0)
+            u16DivisorPositive = u16Divisor;
+        else
+            u16DivisorPositive = UINT16_C(0) - u16Divisor;
+
+        RTUINT32U Remainder;
+        RTUINT32U Quotient;
+        Quotient.u  = Dividend.u / u16DivisorPositive;
+        Remainder.u = Dividend.u % u16DivisorPositive;
+
+        /*
+         * Setup the result, checking for overflows.
+         */
+        if ((int16_t)u16Divisor >= 0)
+        {
+            if ((int16_t)*pu16RDX >= 0)
+            {
+                /* Positive divisor, positive dividend => result positive. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint16_t)INT16_MAX)
+                {
+                    *pu16RAX = Quotient.s.Lo;
+                    *pu16RDX = Remainder.s.Lo;
+                    return 0;
+                }
+            }
+            else
+            {
+                /* Positive divisor, positive dividend => result negative. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_32(15))
+                {
+                    *pu16RAX = UINT16_C(0) - Quotient.s.Lo;
+                    *pu16RDX = UINT16_C(0) - Remainder.s.Lo;
+                    return 0;
+                }
+            }
+        }
+        else
+        {
+            if ((int16_t)*pu16RDX >= 0)
+            {
+                /* Negative divisor, positive dividend => negative quotient, positive remainder. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_32(15))
+                {
+                    *pu16RAX = UINT16_C(0) - Quotient.s.Lo;
+                    *pu16RDX = Remainder.s.Lo;
+                    return 0;
+                }
+            }
+            else
+            {
+                /* Negative divisor, negative dividend => positive quotient, negative remainder. */
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint16_t)INT16_MAX)
+                {
+                    *pu16RAX = Quotient.s.Lo;
+                    *pu16RDX = UINT16_C(0) - Remainder.s.Lo;
+                    return 0;
+                }
+            }
+        }
+    }
+    /* #DE */
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
 /*********************************************************************************************************************************
