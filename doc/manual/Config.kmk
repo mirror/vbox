@@ -364,7 +364,7 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT) \
 	$$(QUIET)$$(APPEND) -n "$$@" '' '</xsl:stylesheet>'
 endef
 # generate rules for $(VBOX_XML_XREF_TO_TEXT)
-$(evalcall2 def_vbox_xref_to_text,)
+$(evalcall2 def_vbox_xref_to_text,en_US)
 
 #
 # Generate rules for editing the refentry to C/H style sheets.
