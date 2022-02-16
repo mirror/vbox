@@ -289,7 +289,7 @@ ifdef VBOX_XML_CATALOG
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_ChangeLogImpl.xml"                  uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xsl"                        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl"/>' \
 		$(foreach x,user_VBoxManage_CommandsOverview.xml user_isomakercmd-man.xml $(addprefix user_,$(VBOX_MANUAL_XML_REFENTRY_FILES) man_VBoxHeadless.xml man_vboximg-mount.xml)\
-		,'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/$(x)"        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/$(x)"/>') \
+		,'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/$(x)"        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/$(x)"/>' \$(NLTAB)$(TAB)) \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/SDKRef_apiref.xml"                       uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef_apiref.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/all-entities.ent"                        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/html/docbook.xsl"                              uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK)/html/docbook.xsl"/>' \
@@ -351,8 +351,8 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT) \
 		'<?xml version="1.0"?>' \
 		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
 		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
-		$$(foreach x,user_VBoxManage_CommandsOverview.xml user_isomakercmd-man.xml $$(addprefix user_,$$(VBOX_MANUAL_XML_REFENTRY_FILES))\
-		,'  <system systemId="$$(VBOX_PATH_MANUAL_SRC)/en_US/$$(x)" uri="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_PATH_MANUAL_SRC)/dummy-sect1.xml"/>') \
+		$$(foreach x,user_VBoxManage_CommandsOverview.xml user_isomakercmd-man.xml $$(addprefix user_,$$(VBOX_MANUAL_XML_REFENTRY_FILES) man_VBoxHeadless.xml man_vboximg-mount.xml)\
+		,'  <system systemId="$$(VBOX_PATH_MANUAL_SRC)/en_US/$$(x)" uri="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_PATH_MANUAL_SRC)/dummy-sect1.xml"/>' \$$(NLTAB)$$(TAB)) \
 		'  <nextCatalog catalog="file://$$(VBOX_FILE_URL_MAYBE_SLASH)$$(VBOX_XML_CATALOG)"/>' \
 		'</catalog>'
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT,,$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$$(VBOX_XML_XREF_TO_TEXT).cat) \
