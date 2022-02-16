@@ -215,7 +215,6 @@ VMM_INT_DECL(void) NEMHCNotifyPhysPageProtChanged(PVMCC pVM, RTGCPHYS GCPhys, RT
                                                   PGMPAGETYPE enmType, uint8_t *pu2State);
 VMM_INT_DECL(void) NEMHCNotifyPhysPageChanged(PVMCC pVM, RTGCPHYS GCPhys, RTHCPHYS HCPhysPrev, RTHCPHYS HCPhysNew,
                                               RTR3PTR pvNewR3, uint32_t fPageProt, PGMPAGETYPE enmType, uint8_t *pu2State);
-VMM_INT_DECL(void) NEMHCNotifyPagingModeChanged(PVM pVM, PVMCPUCC pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 /** @name NEM_PAGE_PROT_XXX - Page protection
  * @{ */
 #define NEM_PAGE_PROT_NONE      UINT32_C(0)     /**< All access causes VM exits. */
