@@ -681,14 +681,27 @@ static DECLCALLBACK(VBOXSTRICTRC) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser
     PDEVPIC     pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
     PDEVPICCC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPICCC);
     uint32_t    iPic    = (uint32_t)(uintptr_t)pvUser;
+    int         rc;
 
     Assert(iPic == 0 || iPic == 1);
     if (cb == 1)
     {
-        int rc;
         PIC_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_READ);
         *pu32 = pic_ioport_read(pDevIns, pThis, pThisCC, &RT_SAFE_SUBSCRIPT(pThis->aPics, iPic), offPort, &rc);
         PIC_UNLOCK(pDevIns, pThisCC);
+        return rc;
+    }
+    else if (cb == 2)
+    {
+        uint8_t     u8Lo, u8Hi = 0;
+        /* Manually split access. Probably not 100% accurate! */
+        PIC_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_READ);
+        u8Lo = pic_ioport_read(pDevIns, pThis, pThisCC, &RT_SAFE_SUBSCRIPT(pThis->aPics, iPic), offPort, &rc);
+        Assert(rc == VINF_SUCCESS);
+        if (!(offPort & 1))
+            u8Hi = pic_ioport_read(pDevIns, pThis, pThisCC, &RT_SAFE_SUBSCRIPT(pThis->aPics, iPic), offPort + 1, &rc);
+        PIC_UNLOCK(pDevIns, pThisCC);
+        *pu32 = RT_MAKE_U16(u8Lo, u8Hi);
         return rc;
     }
     return VERR_IOM_IOPORT_UNUSED;
@@ -703,14 +716,24 @@ static DECLCALLBACK(VBOXSTRICTRC) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUse
     PDEVPIC     pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVPIC);
     PDEVPICCC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVPICCC);
     uint32_t    iPic    = (uint32_t)(uintptr_t)pvUser;
+    VBOXSTRICTRC rc;
 
     Assert(iPic == 0 || iPic == 1);
 
     if (cb == 1)
     {
-        VBOXSTRICTRC rc;
         PIC_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_WRITE);
         rc = pic_ioport_write(pDevIns, pThis, pThisCC, &RT_SAFE_SUBSCRIPT(pThis->aPics, iPic), offPort, u32);
+        PIC_UNLOCK(pDevIns, pThisCC);
+        return rc;
+    }
+    else if (cb == 2)
+    {
+        PIC_LOCK_RET(pDevIns, pThisCC, VINF_IOM_R3_IOPORT_WRITE);
+        /* Manually split access. Probably not 100% accurate! */
+        rc = pic_ioport_write(pDevIns, pThis, pThisCC, &RT_SAFE_SUBSCRIPT(pThis->aPics, iPic), offPort, RT_LOBYTE(u32));
+        if (RT_SUCCESS(rc) && !(offPort & 1))
+            rc = pic_ioport_write(pDevIns, pThis, pThisCC, &RT_SAFE_SUBSCRIPT(pThis->aPics, iPic), offPort + 1, RT_HIBYTE(u32));
         PIC_UNLOCK(pDevIns, pThisCC);
         return rc;
     }
