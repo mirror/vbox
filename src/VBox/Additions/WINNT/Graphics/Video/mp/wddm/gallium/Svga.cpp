@@ -132,6 +132,66 @@ static uint32_t SvgaCmdBufReserve(VBOXWDDM_EXT_VMSVGA *pSvga)
     return UINT32_MAX;
 }
 
+/** @todo The size of each Object Table should not be hardcoded but estimated using some VMSVGA device limits **/
+static NTSTATUS SvgaObjectTablesInit(VBOXWDDM_EXT_VMSVGA *pSvga, bool enable)
+{
+    uint32_t idCmdHdr = UINT32_MAX;
+    void *pvCmd = NULL;
+    int rc = STATUS_SUCCESS;
+
+    if (enable)
+    {
+        rc = RTR0MemObjAllocPageTag(&pSvga->hMemObjOTables, (SVGA_OTABLE_DXCONTEXT + 1) * PAGE_SIZE,
+                                false /* executable R0 mapping */, "WDDMGA");
+    }
+    else
+    {
+        rc = RTR0MemObjFree(pSvga->hMemObjOTables, true);
+        pSvga->hMemObjOTables = NIL_RTR0MEMOBJ;
+        return rc;
+    }
+
+    idCmdHdr = SvgaCmdBufReserve(pSvga);
+
+    if (idCmdHdr < pSvga->u32NumCmdBufs)
+    {
+        pvCmd = pSvga->pvR0Cmd;
+    }
+    else
+    {
+        GALOGREL(32, ("WDDM: SvgaCmdBufReserve failed\n"));
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    SVGA3dCmdHeader *pHeader = (SVGA3dCmdHeader *)pvCmd;
+    SVGA3dCmdSetOTableBase64 *pCommand = (SVGA3dCmdSetOTableBase64 *)&pHeader[1];
+    uint32_t cbSubmit = 0;
+    uint32_t idOTable;
+
+    for(idOTable = 0; idOTable <= SVGA_OTABLE_DXCONTEXT; idOTable++)
+    {
+        RTHCPHYS paOT = RTR0MemObjGetPagePhysAddr(pSvga->hMemObjOTables, idOTable);
+
+        pHeader->id = SVGA_3D_CMD_SET_OTABLE_BASE64;
+        pHeader->size = sizeof(SVGA3dCmdSetOTableBase64);
+        pCommand->type = (SVGAOTableType)idOTable;
+        pCommand->baseAddress = paOT >> 12;
+        pCommand->sizeInBytes = PAGE_SIZE;
+        pCommand->validSizeInBytes = 0;
+        pCommand->ptDepth = SVGA3D_MOBFMT_PTDEPTH64_0;
+
+        cbSubmit += sizeof(SVGA3dCmdHeader) + sizeof(SVGA3dCmdSetOTableBase64);
+
+        pHeader = (SVGA3dCmdHeader *)&pCommand[1];
+        pCommand = (SVGA3dCmdSetOTableBase64 *)&pHeader[1];
+    }
+
+    SvgaCmdBufSubmit(pSvga, cbSubmit, idCmdHdr);
+
+    AssertRC(rc);
+    return rc;
+}
+
 static NTSTATUS svgaHwInit(VBOXWDDM_EXT_VMSVGA *pSvga)
 {
     pSvga->u32Caps      = SVGARegRead(pSvga, SVGA_REG_CAPABILITIES);
@@ -178,6 +238,7 @@ static NTSTATUS svgaHwInit(VBOXWDDM_EXT_VMSVGA *pSvga)
     if (pSvga->u32Caps & SVGA_CAP_COMMAND_BUFFERS)
     {
         SvgaCmdBufCtxInit(pSvga, true);
+        SvgaObjectTablesInit(pSvga, true);
     }
 
     return Status;
@@ -209,6 +270,7 @@ void SvgaAdapterStop(PVBOXWDDM_EXT_VMSVGA pSvga,
 
         if (pSvga->u32Caps & SVGA_CAP_COMMAND_BUFFERS)
         {
+            SvgaObjectTablesInit(pSvga, false);
             SvgaCmdBufCtxInit(pSvga, false);
         }
 

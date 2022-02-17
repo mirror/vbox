@@ -73,6 +73,8 @@ typedef struct VBOXWDDM_EXT_VMSVGA
     RTHCPHYS paHdr, paCmd;
     uint32_t u32NumCmdBufs;
 
+    RTR0MEMOBJ hMemObjOTables;
+
     /**
      * Hardware capabilities.
      */
