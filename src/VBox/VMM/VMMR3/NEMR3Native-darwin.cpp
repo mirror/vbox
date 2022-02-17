@@ -1468,6 +1468,162 @@ static int nemR3DarwinExportGuestGprs(PVMCPUCC pVCpu)
 
 
 /**
+ * Exports the guest debug registers into the guest-state applying any hypervisor
+ * debug related states (hardware breakpoints from the debugger, etc.).
+ *
+ * This also sets up whether \#DB and MOV DRx accesses cause VM-exits.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmxTransient   The VMX-transient structure.
+ */
+static int nemR3DarwinExportDebugState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+
+#ifdef VBOX_STRICT
+    /* Validate. Intel spec. 26.3.1.1 "Checks on Guest Controls Registers, Debug Registers, MSRs" */
+    if (pVmcsInfo->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
+    {
+        /* Validate. Intel spec. 17.2 "Debug Registers", recompiler paranoia checks. */
+        Assert((pVCpu->cpum.GstCtx.dr[7] & (X86_DR7_MBZ_MASK | X86_DR7_RAZ_MASK)) == 0);
+        Assert((pVCpu->cpum.GstCtx.dr[7] & X86_DR7_RA1_MASK) == X86_DR7_RA1_MASK);
+    }
+#endif
+
+    bool     fSteppingDB      = false;
+    bool     fInterceptMovDRx = false;
+    uint32_t uProcCtls        = pVmcsInfo->u32ProcCtls;
+    if (pVCpu->nem.s.fSingleInstruction)
+    {
+        /* If the CPU supports the monitor trap flag, use it for single stepping in DBGF and avoid intercepting #DB. */
+        if (g_HmMsrs.u.vmx.ProcCtls.n.allowed1 & VMX_PROC_CTLS_MONITOR_TRAP_FLAG)
+        {
+            uProcCtls |= VMX_PROC_CTLS_MONITOR_TRAP_FLAG;
+            Assert(fSteppingDB == false);
+        }
+        else
+        {
+            pVCpu->cpum.GstCtx.eflags.u32 |= X86_EFL_TF;
+            pVCpu->nem.s.fCtxChanged |= HM_CHANGED_GUEST_RFLAGS;
+            pVCpu->nem.s.fClearTrapFlag = true;
+            fSteppingDB = true;
+        }
+    }
+
+    uint64_t u64GuestDr7;
+    if (   fSteppingDB
+        || (CPUMGetHyperDR7(pVCpu) & X86_DR7_ENABLED_MASK))
+    {
+        /*
+         * Use the combined guest and host DRx values found in the hypervisor register set
+         * because the hypervisor debugger has breakpoints active or someone is single stepping
+         * on the host side without a monitor trap flag.
+         *
+         * Note! DBGF expects a clean DR6 state before executing guest code.
+         */
+        if (!CPUMIsHyperDebugStateActive(pVCpu))
+        {
+            /*
+             * Make sure the hypervisor values are up to date.
+             */
+            CPUMRecalcHyperDRx(pVCpu, UINT8_MAX /* no loading, please */);
+
+            CPUMR3NemActivateHyperDebugState(pVCpu);
+
+            Assert(CPUMIsHyperDebugStateActive(pVCpu));
+            Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+        }
+
+        /* Update DR7 with the hypervisor value (other DRx registers are handled by CPUM one way or another). */
+        u64GuestDr7 = CPUMGetHyperDR7(pVCpu);
+        pVCpu->nem.s.fUsingHyperDR7 = true;
+        fInterceptMovDRx = true;
+    }
+    else
+    {
+        /*
+         * If the guest has enabled debug registers, we need to load them prior to
+         * executing guest code so they'll trigger at the right time.
+         */
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR7);
+        if (pVCpu->cpum.GstCtx.dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
+        {
+            if (!CPUMIsGuestDebugStateActive(pVCpu))
+            {
+                CPUMR3NemActivateGuestDebugState(pVCpu);
+
+                Assert(CPUMIsGuestDebugStateActive(pVCpu));
+                Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+            }
+            Assert(!fInterceptMovDRx);
+        }
+        else if (!CPUMIsGuestDebugStateActive(pVCpu))
+        {
+            /*
+             * If no debugging enabled, we'll lazy load DR0-3.  Unlike on AMD-V, we
+             * must intercept #DB in order to maintain a correct DR6 guest value, and
+             * because we need to intercept it to prevent nested #DBs from hanging the
+             * CPU, we end up always having to intercept it. See hmR0VmxSetupVmcsXcptBitmap().
+             */
+            fInterceptMovDRx = true;
+        }
+
+        /* Update DR7 with the actual guest value. */
+        u64GuestDr7 = pVCpu->cpum.GstCtx.dr[7];
+        pVCpu->nem.s.fUsingHyperDR7 = false;
+    }
+
+    if (fInterceptMovDRx)
+        uProcCtls |= VMX_PROC_CTLS_MOV_DR_EXIT;
+    else
+        uProcCtls &= ~VMX_PROC_CTLS_MOV_DR_EXIT;
+
+    /*
+     * Update the processor-based VM-execution controls with the MOV-DRx intercepts and the
+     * monitor-trap flag and update our cache.
+     */
+    if (uProcCtls != pVmcsInfo->u32ProcCtls)
+    {
+        int rc = nemR3DarwinWriteVmcs32(pVCpu, VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
+        AssertRC(rc);
+        pVmcsInfo->u32ProcCtls = uProcCtls;
+    }
+
+    /*
+     * If we have forced EFLAGS.TF to be set because we're single-stepping in the hypervisor debugger,
+     * we need to clear interrupt inhibition if any as otherwise it causes a VM-entry failure.
+     *
+     * See Intel spec. 26.3.1.5 "Checks on Guest Non-Register State".
+     */
+    if (fSteppingDB)
+    {
+        Assert(pVCpu->nem.s.fSingleInstruction);
+        Assert(pVCpu->cpum.GstCtx.eflags.Bits.u1TF);
+
+        uint32_t fIntrState = 0;
+        int rc = nemR3DarwinReadVmcs32(pVCpu, VMX_VMCS32_GUEST_INT_STATE, &fIntrState);
+        AssertRC(rc);
+
+        if (fIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS))
+        {
+            fIntrState &= ~(VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS);
+            rc = nemR3DarwinWriteVmcs32(pVCpu, VMX_VMCS32_GUEST_INT_STATE, fIntrState);
+            AssertRC(rc);
+        }
+    }
+
+    /*
+     * Store status of the shared guest/host debug state at the time of VM-entry.
+     */
+    pVmxTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActive(pVCpu);
+    pVmxTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActive(pVCpu);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Converts the given CPUM externalized bitmask to the appropriate HM changed bitmask.
  *
  * @returns Bitmask of HM changed flags.
@@ -1660,6 +1816,9 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
         return VBOXSTRICTRC_VAL(rcStrict);
     }
 
+    rc = nemR3DarwinExportDebugState(pVCpu, pVmxTransient);
+    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
+
     vmxHCExportGuestXcptIntercepts(pVCpu, pVmxTransient);
     vmxHCExportGuestRip(pVCpu);
     //vmxHCExportGuestRsp(pVCpu);
@@ -1689,20 +1848,20 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
     /* Debug registers. */
     if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
     {
-        WRITE_GREG(HV_X86_DR0, pVCpu->cpum.GstCtx.dr[0]); // CPUMGetHyperDR0(pVCpu));
-        WRITE_GREG(HV_X86_DR1, pVCpu->cpum.GstCtx.dr[1]); // CPUMGetHyperDR1(pVCpu));
-        WRITE_GREG(HV_X86_DR2, pVCpu->cpum.GstCtx.dr[2]); // CPUMGetHyperDR2(pVCpu));
-        WRITE_GREG(HV_X86_DR3, pVCpu->cpum.GstCtx.dr[3]); // CPUMGetHyperDR3(pVCpu));
+        WRITE_GREG(HV_X86_DR0, CPUMGetHyperDR0(pVCpu));
+        WRITE_GREG(HV_X86_DR1, CPUMGetHyperDR1(pVCpu));
+        WRITE_GREG(HV_X86_DR2, CPUMGetHyperDR2(pVCpu));
+        WRITE_GREG(HV_X86_DR3, CPUMGetHyperDR3(pVCpu));
         ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_DR0_DR3);
     }
     if (fWhat & CPUMCTX_EXTRN_DR6)
     {
-        WRITE_GREG(HV_X86_DR6, pVCpu->cpum.GstCtx.dr[6]); // CPUMGetHyperDR6(pVCpu));
+        WRITE_GREG(HV_X86_DR6, CPUMGetHyperDR6(pVCpu));
         ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_DR6);
     }
     if (fWhat & CPUMCTX_EXTRN_DR7)
     {
-        WRITE_GREG(HV_X86_DR7, pVCpu->cpum.GstCtx.dr[7]); // CPUMGetHyperDR7(pVCpu));
+        WRITE_GREG(HV_X86_DR7, CPUMGetHyperDR7(pVCpu));
         ASMAtomicUoAndU64(&pVCpu->nem.s.fCtxChanged, ~HM_CHANGED_GUEST_DR7);
     }
 
@@ -3204,6 +3363,73 @@ static hv_return_t nemR3DarwinRunGuest(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT pVmx
 
 
 /**
+ * Prepares the VM to run the guest.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   pVmxTransient       The VMX transient state.
+ * @param   fSingleStepping     Flag whether we run in single stepping mode.
+ */
+static VBOXSTRICTRC nemR3DarwinPreRunGuest(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, bool fSingleStepping)
+{
+    /*
+     * Check and process force flag actions, some of which might require us to go back to ring-3.
+     */
+    VBOXSTRICTRC rcStrict = vmxHCCheckForceFlags(pVCpu, false /*fIsNestedGuest*/, fSingleStepping);
+    if (rcStrict == VINF_SUCCESS)
+    { /*likely */ }
+    else
+        return rcStrict;
+
+    /*
+     * Do not execute in HV if the A20 isn't enabled.
+     */
+    if (PGMPhysIsA20Enabled(pVCpu))
+    { /* likely */ }
+    else
+    {
+        LogFlow(("NEM/%u: breaking: A20 disabled\n", pVCpu->idCpu));
+        return VINF_EM_RESCHEDULE_REM;
+    }
+
+    /*
+     * Evaluate events to be injected into the guest.
+     *
+     * Events in TRPM can be injected without inspecting the guest state.
+     * If any new events (interrupts/NMI) are pending currently, we try to set up the
+     * guest to cause a VM-exit the next time they are ready to receive the event.
+     */
+    if (TRPMHasTrap(pVCpu))
+        vmxHCTrpmTrapToPendingEvent(pVCpu);
+
+    uint32_t fIntrState;
+    rcStrict = vmxHCEvaluatePendingEvent(pVCpu, &pVCpu->nem.s.VmcsInfo, false /*fIsNestedGuest*/, &fIntrState);
+
+    /*
+     * Event injection may take locks (currently the PGM lock for real-on-v86 case) and thus
+     * needs to be done with longjmps or interrupts + preemption enabled. Event injection might
+     * also result in triple-faulting the VM.
+     *
+     * With nested-guests, the above does not apply since unrestricted guest execution is a
+     * requirement. Regardless, we do this here to avoid duplicating code elsewhere.
+     */
+    rcStrict = vmxHCInjectPendingEvent(pVCpu, &pVCpu->nem.s.VmcsInfo, false /*fIsNestedGuest*/, fIntrState, fSingleStepping);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    { /* likely */ }
+    else
+        return rcStrict;
+
+    int rc = nemR3DarwinExportGuestState(pVM, pVCpu, pVmxTransient);
+    AssertRCReturn(rc, rc);
+
+    LogFlowFunc(("Running vCPU\n"));
+    pVCpu->nem.s.Event.fPending = false;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * The normal runloop (no debugging features enabled).
  *
  * @returns Strict VBox status code.
@@ -3229,72 +3455,12 @@ static VBOXSTRICTRC nemR3DarwinRunGuestNormal(PVM pVM, PVMCPU pVCpu)
      *        the whole polling job when timers have changed... */
     uint64_t       offDeltaIgnored;
     uint64_t const nsNextTimerEvt = TMTimerPollGIP(pVM, pVCpu, &offDeltaIgnored); NOREF(nsNextTimerEvt);
-
-    const bool      fSingleStepping = DBGFIsStepping(pVCpu);
     VBOXSTRICTRC    rcStrict        = VINF_SUCCESS;
     for (unsigned iLoop = 0;; iLoop++)
     {
-        /*
-         * Check and process force flag actions, some of which might require us to go back to ring-3.
-         */
-        rcStrict = vmxHCCheckForceFlags(pVCpu, false /*fIsNestedGuest*/, fSingleStepping);
-        if (rcStrict == VINF_SUCCESS)
-        { /*likely */ }
-        else
-        {
-            if (rcStrict == VINF_EM_RAW_TO_R3)
-                rcStrict = VINF_SUCCESS;
+        rcStrict = nemR3DarwinPreRunGuest(pVM, pVCpu, &VmxTransient, false /* fSingleStepping */);
+        if (rcStrict != VINF_SUCCESS)
             break;
-        }
-
-        /*
-         * Do not execute in HV if the A20 isn't enabled.
-         */
-        if (PGMPhysIsA20Enabled(pVCpu))
-        { /* likely */ }
-        else
-        {
-            rcStrict = VINF_EM_RESCHEDULE_REM;
-            LogFlow(("NEM/%u: breaking: A20 disabled\n", pVCpu->idCpu));
-            break;
-        }
-
-        /*
-         * Evaluate events to be injected into the guest.
-         *
-         * Events in TRPM can be injected without inspecting the guest state.
-         * If any new events (interrupts/NMI) are pending currently, we try to set up the
-         * guest to cause a VM-exit the next time they are ready to receive the event.
-         */
-        if (TRPMHasTrap(pVCpu))
-            vmxHCTrpmTrapToPendingEvent(pVCpu);
-
-        uint32_t fIntrState;
-        rcStrict = vmxHCEvaluatePendingEvent(pVCpu, &pVCpu->nem.s.VmcsInfo, false /*fIsNestedGuest*/, &fIntrState);
-
-        /*
-         * Event injection may take locks (currently the PGM lock for real-on-v86 case) and thus
-         * needs to be done with longjmps or interrupts + preemption enabled. Event injection might
-         * also result in triple-faulting the VM.
-         *
-         * With nested-guests, the above does not apply since unrestricted guest execution is a
-         * requirement. Regardless, we do this here to avoid duplicating code elsewhere.
-         */
-        rcStrict = vmxHCInjectPendingEvent(pVCpu, &pVCpu->nem.s.VmcsInfo, false /*fIsNestedGuest*/, fIntrState, fSingleStepping);
-        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-        { /* likely */ }
-        else
-        {
-            AssertMsg(rcStrict == VINF_EM_RESET || (rcStrict == VINF_EM_DBG_STEPPED && fSingleStepping),
-                      ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-            break;
-        }
-
-        int rc = nemR3DarwinExportGuestState(pVM, pVCpu, &VmxTransient);
-        AssertRCReturn(rc, rc);
-
-        LogFlowFunc(("Running vCPU\n"));
-        pVCpu->nem.s.Event.fPending = false;
 
         hv_return_t hrc = nemR3DarwinRunGuest(pVM, pVCpu, &VmxTransient);
         if (hrc == HV_SUCCESS)
@@ -3311,7 +3477,6 @@ static VBOXSTRICTRC nemR3DarwinRunGuestNormal(PVM pVM, PVMCPU pVCpu)
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
                 break;
             }
-            //Assert(!pVCpu->cpum.GstCtx.fExtrn);
         }
         else
         {
@@ -3477,6 +3642,11 @@ static VBOXSTRICTRC nemR3DarwinRunGuestDebug(PVM pVM, PVMCPU pVCpu)
     RT_ZERO(VmxTransient);
     VmxTransient.pVmcsInfo = &pVCpu->nem.s.VmcsInfo;
 
+    bool const fSavedSingleInstruction = pVCpu->nem.s.fSingleInstruction;
+    pVCpu->nem.s.fSingleInstruction    = pVCpu->nem.s.fSingleInstruction || DBGFIsStepping(pVCpu);
+    pVCpu->nem.s.fDebugWantRdTscExit   = false;
+    pVCpu->nem.s.fUsingDebugLoop       = true;
+
     /* State we keep to help modify and later restore the VMCS fields we alter, and for detecting steps.  */
     VMXRUNDBGSTATE DbgState;
     vmxHCRunDebugStateInit(pVCpu, &VmxTransient, &DbgState);
@@ -3489,77 +3659,19 @@ static VBOXSTRICTRC nemR3DarwinRunGuestDebug(PVM pVM, PVMCPU pVCpu)
      *        the whole polling job when timers have changed... */
     uint64_t       offDeltaIgnored;
     uint64_t const nsNextTimerEvt = TMTimerPollGIP(pVM, pVCpu, &offDeltaIgnored); NOREF(nsNextTimerEvt);
-
-    const bool      fSingleStepping = DBGFIsStepping(pVCpu);
     VBOXSTRICTRC    rcStrict        = VINF_SUCCESS;
     for (unsigned iLoop = 0;; iLoop++)
     {
+        bool fStepping = pVCpu->nem.s.fSingleInstruction;
+
         /* Set up VM-execution controls the next two can respond to. */
         vmxHCPreRunGuestDebugStateApply(pVCpu, &VmxTransient, &DbgState);
 
-        /*
-         * Check and process force flag actions, some of which might require us to go back to ring-3.
-         */
-        rcStrict = vmxHCCheckForceFlags(pVCpu, false /*fIsNestedGuest*/, fSingleStepping);
-        if (rcStrict == VINF_SUCCESS)
-        { /*likely */ }
-        else
-        {
-            if (rcStrict == VINF_EM_RAW_TO_R3)
-                rcStrict = VINF_SUCCESS;
+        rcStrict = nemR3DarwinPreRunGuest(pVM, pVCpu, &VmxTransient, fStepping);
+        if (rcStrict != VINF_SUCCESS)
             break;
-        }
 
-        /*
-         * Do not execute in HV if the A20 isn't enabled.
-         */
-        if (PGMPhysIsA20Enabled(pVCpu))
-        { /* likely */ }
-        else
-        {
-            rcStrict = VINF_EM_RESCHEDULE_REM;
-            LogFlow(("NEM/%u: breaking: A20 disabled\n", pVCpu->idCpu));
-            break;
-        }
-
-        /*
-         * Evaluate events to be injected into the guest.
-         *
-         * Events in TRPM can be injected without inspecting the guest state.
-         * If any new events (interrupts/NMI) are pending currently, we try to set up the
-         * guest to cause a VM-exit the next time they are ready to receive the event.
-         */
-        if (TRPMHasTrap(pVCpu))
-            vmxHCTrpmTrapToPendingEvent(pVCpu);
-
-        uint32_t fIntrState;
-        rcStrict = vmxHCEvaluatePendingEvent(pVCpu, &pVCpu->nem.s.VmcsInfo, false /*fIsNestedGuest*/, &fIntrState);
-
-        /*
-         * Event injection may take locks (currently the PGM lock for real-on-v86 case) and thus
-         * needs to be done with longjmps or interrupts + preemption enabled. Event injection might
-         * also result in triple-faulting the VM.
-         *
-         * With nested-guests, the above does not apply since unrestricted guest execution is a
-         * requirement. Regardless, we do this here to avoid duplicating code elsewhere.
-         */
-        rcStrict = vmxHCInjectPendingEvent(pVCpu, &pVCpu->nem.s.VmcsInfo, false /*fIsNestedGuest*/, fIntrState, fSingleStepping);
-        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-        { /* likely */ }
-        else
-        {
-            AssertMsg(rcStrict == VINF_EM_RESET || (rcStrict == VINF_EM_DBG_STEPPED && fSingleStepping),
-                      ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-            break;
-        }
-
-        int rc = nemR3DarwinExportGuestState(pVM, pVCpu, &VmxTransient);
-        AssertRCReturn(rc, rc);
-
-        LogFlowFunc(("Running vCPU\n"));
-        pVCpu->nem.s.Event.fPending = false;
-
-        /* Override any obnoxious code in the above two calls. */
+        /* Override any obnoxious code in the above call. */
         vmxHCPreRunGuestDebugStateApply(pVCpu, &VmxTransient, &DbgState);
 
         hv_return_t hrc = nemR3DarwinRunGuest(pVM, pVCpu, &VmxTransient);
@@ -3577,7 +3689,23 @@ static VBOXSTRICTRC nemR3DarwinRunGuestDebug(PVM pVM, PVMCPU pVCpu)
                 STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatBreakOnStatus);
                 break;
             }
-            //Assert(!pVCpu->cpum.GstCtx.fExtrn);
+
+            /*
+             * Stepping: Did the RIP change, if so, consider it a single step.
+             * Otherwise, make sure one of the TFs gets set.
+             */
+            if (fStepping)
+            {
+                int rc = vmxHCImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_CS | CPUMCTX_EXTRN_RIP);
+                AssertRC(rc);
+                if (   pVCpu->cpum.GstCtx.rip    != DbgState.uRipStart
+                    || pVCpu->cpum.GstCtx.cs.Sel != DbgState.uCsStart)
+                {
+                    rcStrict = VINF_EM_DBG_STEPPED;
+                    break;
+                }
+                ASMAtomicUoOrU64(&pVCpu->nem.s.fCtxChanged, HM_CHANGED_GUEST_DR7);
+            }
         }
         else
         {
@@ -3586,6 +3714,21 @@ static VBOXSTRICTRC nemR3DarwinRunGuestDebug(PVM pVM, PVMCPU pVCpu)
                                         VERR_NEM_IPE_0);
         }
     } /* the run loop */
+
+    /*
+     * Clear the X86_EFL_TF if necessary.
+     */
+    if (pVCpu->nem.s.fClearTrapFlag)
+    {
+        int rc = vmxHCImportGuestState(pVCpu, VmxTransient.pVmcsInfo, CPUMCTX_EXTRN_RFLAGS);
+        AssertRC(rc);
+        pVCpu->nem.s.fClearTrapFlag = false;
+        pVCpu->cpum.GstCtx.eflags.Bits.u1TF = 0;
+    }
+
+    pVCpu->nem.s.fUsingDebugLoop     = false;
+    pVCpu->nem.s.fDebugWantRdTscExit = false;
+    pVCpu->nem.s.fSingleInstruction  = fSavedSingleInstruction;
 
     /* Restore all controls applied by vmxHCPreRunGuestDebugStateApply above. */
     return vmxHCRunDebugStateRevert(pVCpu, &VmxTransient, &DbgState, rcStrict);
@@ -3622,6 +3765,9 @@ VBOXSTRICTRC nemR3NativeRunGC(PVM pVM, PVMCPU pVCpu)
         rcStrict = nemR3DarwinRunGuestNormal(pVM, pVCpu);
     else
         rcStrict = nemR3DarwinRunGuestDebug(pVM, pVCpu);
+
+    if (rcStrict == VINF_EM_RAW_TO_R3)
+        rcStrict = VINF_SUCCESS;
 
     /*
      * Convert any pending HM events back to TRPM due to premature exits.
