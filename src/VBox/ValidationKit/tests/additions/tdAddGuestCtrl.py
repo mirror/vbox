@@ -2888,8 +2888,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     #       do not support terminating guest processes.
                     try:
                         reporter.log('Waiting for blocking process #%d getting started...' % (i));
-                        eWaitResult = oProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Start, ], 30 * 1000);
-                        eProcessStatus = oProcess.status;
+                        eWaitResult = oCurProc.waitForArray([ vboxcon.ProcessWaitForFlag_Start, ], 30 * 1000);
+                        eProcessStatus = oCurProc.status;
                     except:
                         fRc = reporter.errorXcpt('Waiting for blocking process #%d failed:' % (i,));
                     else:
