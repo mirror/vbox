@@ -284,9 +284,7 @@ void UINameAndSystemEditor::markImageEditor(bool fError, const QString &strError
 void UINameAndSystemEditor::setEditionNameAndIndices(const QVector<QString> &names, const QVector<ulong> &ids)
 {
     AssertReturnVoid(m_pEditionSelector && names.size() == ids.size());
-
     m_pEditionSelector->clear();
-
     for (int i = 0; i < names.size(); ++i)
         m_pEditionSelector->addItem(names[i], QVariant::fromValue(ids[i]) /* user data */);
 }
@@ -500,7 +498,6 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pNameLabel->setBuddy(m_pNameLineEdit);
                 m_pMainLayout->addWidget(m_pNameLineEdit, iRow, 1, 1, 2);
             }
-
             ++iRow;
         }
 
@@ -526,7 +523,6 @@ void UINameAndSystemEditor::prepareWidgets()
 
                 m_pMainLayout->addWidget(m_pPathSelector, iRow, 1, 1, 2);
             }
-
             ++iRow;
         }
 
@@ -538,7 +534,6 @@ void UINameAndSystemEditor::prepareWidgets()
             {
                 m_pImageLabel->setAlignment(Qt::AlignRight);
                 m_pImageLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-
                 m_pMainLayout->addWidget(m_pImageLabel, iRow, 0);
             }
             /* Prepare image selector: */
@@ -551,13 +546,10 @@ void UINameAndSystemEditor::prepareWidgets()
                 m_pImageSelector->setFileDialogFilters("ISO Images(*.iso *.ISO)");
                 m_pImageSelector->setInitialPath(uiCommon().defaultFolderPathForType(UIMediumDeviceType_DVD));
                 m_pImageSelector->setRecentMediaListType(UIMediumDeviceType_DVD);
-
                 m_pMainLayout->addWidget(m_pImageSelector, iRow, 1, 1, 2);
             }
-
             ++iRow;
         }
-
 
         if (m_fChooseEdition)
         {
@@ -575,13 +567,10 @@ void UINameAndSystemEditor::prepareWidgets()
             if (m_pEditionSelector)
             {
                 m_pEditionLabel->setBuddy(m_pEditionSelector->focusProxy());
-
                 m_pMainLayout->addWidget(m_pEditionSelector, iRow, 1, 1, 2);
             }
-
             ++iRow;
         }
-
 
         if (m_fChooseType)
         {
@@ -712,8 +701,9 @@ void UINameAndSystemEditor::prepareConnections()
     if (m_pImageSelector)
         connect(m_pImageSelector, &UIFilePathSelector::pathChanged,
                 this, &UINameAndSystemEditor::sigImageChanged);
-    connect(m_pEditionSelector, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-            this, &UINameAndSystemEditor::sltSelectedEditionsChanged);
+    if (m_pEditionSelector)
+        connect(m_pEditionSelector, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+                this, &UINameAndSystemEditor::sltSelectedEditionsChanged);
 }
 
 ulong UINameAndSystemEditor::selectedEditionIndex() const
