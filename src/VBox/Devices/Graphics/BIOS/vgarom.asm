@@ -68,11 +68,18 @@ db      40h             ; ROM module length in units of 512 bytes */
 
 vgabios_entry_point:
 
-  jmp _vgabios_init_func
+  jmp vgabios_init
 
         org     1Eh
 
         db      'IBM',0
+
+vgabios_init:
+;; We have to set ds to access the right data segment
+  push  cs
+  pop   ds
+  cld
+  jmp _vgabios_init_func
 
 ;;
 ;;  int10 handled here
