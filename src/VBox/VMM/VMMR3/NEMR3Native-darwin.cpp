@@ -1801,7 +1801,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
 
 
 /**
- * Handles an exit from hv_vcpu_run().
+ * Common worker for both nemR3DarwinHandleExit() and nemR3DarwinHandleExitDebug().
  *
  * @returns VBox strict status code.
  * @param   pVM             The cross context VM structure.
@@ -1809,7 +1809,7 @@ static int nemR3DarwinExportGuestState(PVMCC pVM, PVMCPUCC pVCpu, PVMXTRANSIENT 
  *                          calling EMT.
  * @param   pVmxTransient   The transient VMX structure.
  */
-static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) nemR3DarwinHandleExitCommon(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     uint32_t uExitReason;
     int rc = nemR3DarwinReadVmcs32(pVCpu, VMX_VMCS32_RO_EXIT_REASON, &uExitReason);
@@ -1831,6 +1831,23 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT p
 
     STAM_COUNTER_INC(&pVCpu->nem.s.pVmxStats->aStatExitReason[pVmxTransient->uExitReason & MASK_EXITREASON_STAT]);
     STAM_REL_COUNTER_INC(&pVCpu->nem.s.pVmxStats->StatExitAll);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles an exit from hv_vcpu_run().
+ *
+ * @returns VBox strict status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVCpu           The cross context virtual CPU structure of the
+ *                          calling EMT.
+ * @param   pVmxTransient   The transient VMX structure.
+ */
+static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    int rc = nemR3DarwinHandleExitCommon(pVM, pVCpu, pVmxTransient);
+    AssertRCReturn(rc, rc);
 
 #ifndef HMVMX_USE_FUNCTION_TABLE
     return vmxHCHandleExit(pVCpu, pVmxTransient);
@@ -1852,26 +1869,8 @@ static VBOXSTRICTRC nemR3DarwinHandleExit(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT p
  */
 static VBOXSTRICTRC nemR3DarwinHandleExitDebug(PVM pVM, PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, PVMXRUNDBGSTATE pDbgState)
 {
-    uint32_t uExitReason;
-    int rc = nemR3DarwinReadVmcs32(pVCpu, VMX_VMCS32_RO_EXIT_REASON, &uExitReason);
-    AssertRC(rc);
-    pVmxTransient->fVmcsFieldsRead = 0;
-    pVmxTransient->fIsNestedGuest  = false;
-    pVmxTransient->uExitReason     = VMX_EXIT_REASON_BASIC(uExitReason);
-    pVmxTransient->fVMEntryFailed  = VMX_EXIT_REASON_HAS_ENTRY_FAILED(uExitReason);
-
-    if (RT_UNLIKELY(pVmxTransient->fVMEntryFailed))
-        AssertLogRelMsgFailedReturn(("Running guest failed for CPU #%u: %#x %u\n",
-                                    pVCpu->idCpu, pVmxTransient->uExitReason, vmxHCCheckGuestState(pVCpu, &pVCpu->nem.s.VmcsInfo)),
-                                    VERR_NEM_IPE_0);
-
-    /** @todo Only copy the state on demand (the R0 VT-x code saves some stuff unconditionally and the VMX template assumes that
-     * when handling exits). */
-    rc = nemR3DarwinCopyStateFromHv(pVM, pVCpu, CPUMCTX_EXTRN_ALL);
+    int rc = nemR3DarwinHandleExitCommon(pVM, pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
-
-    STAM_COUNTER_INC(&pVCpu->nem.s.pVmxStats->aStatExitReason[pVmxTransient->uExitReason & MASK_EXITREASON_STAT]);
-    STAM_REL_COUNTER_INC(&pVCpu->nem.s.pVmxStats->StatExitAll);
 
     return vmxHCRunDebugHandleExit(pVCpu, pVmxTransient, pDbgState);
 }
