@@ -198,24 +198,24 @@ bool UIGlobalSettingsProxy::validate(QList<UIValidationMessage> &messages)
 
 void UIGlobalSettingsProxy::retranslateUi()
 {
-    m_pRadioButtonProxyAuto->setWhatsThis(tr("When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like "
-                                       "downloading Guest Additions from the network or checking for updates."));
+    m_pRadioButtonProxyAuto->setToolTip(tr("When chosen, VirtualBox will try to auto-detect host proxy settings for tasks like "
+                                           "downloading Guest Additions from the network or checking for updates."));
     m_pRadioButtonProxyAuto->setText(tr("&Auto-detect Host Proxy Settings"));
-    m_pRadioButtonProxyDisabled->setWhatsThis(tr("When chosen, VirtualBox will use direct Internet connection for tasks like downloading "
-                                           "Guest Additions from the network or checking for updates."));
+    m_pRadioButtonProxyDisabled->setToolTip(tr("When chosen, VirtualBox will use direct Internet connection for tasks like "
+                                               "downloading Guest Additions from the network or checking for updates."));
     m_pRadioButtonProxyDisabled->setText(tr("&Direct Connection to the Internet"));
-    m_pRadioButtonProxyEnabled->setWhatsThis(tr("When chosen, VirtualBox will use the proxy settings supplied for tasks like downloading "
-                                          "Guest Additions from the network or checking for updates."));
+    m_pRadioButtonProxyEnabled->setToolTip(tr("When chosen, VirtualBox will use the proxy settings supplied for tasks like "
+                                              "downloading Guest Additions from the network or checking for updates."));
     m_pRadioButtonProxyEnabled->setText(tr("&Manual Proxy Configuration"));
-    m_pLabelHost->setText(tr("&URL:"));
 
     /* Translate proxy URL editor: */
-    m_pEditorHost->setWhatsThis(tr("Holds the proxy URL. "
-                                   "The format is: "
-                                   "<table cellspacing=0 style='white-space:pre'>"
-                                   "<tr><td>[{type}://][{userid}[:{password}]@]{server}[:{port}]</td></tr>"
-                                   "<tr><td>http://username:password@proxy.host.com:port</td></tr>"
-                                   "</table>"));
+    m_pLabelHost->setText(tr("&URL:"));
+    m_pEditorHost->setToolTip(tr("Holds the proxy URL. "
+                                 "The format is: "
+                                 "<table cellspacing=0 style='white-space:pre'>"
+                                 "<tr><td>[{type}://][{userid}[:{password}]@]{server}[:{port}]</td></tr>"
+                                 "<tr><td>http://username:password@proxy.host.com:port</td></tr>"
+                                 "</table>"));
 }
 
 void UIGlobalSettingsProxy::sltHandleProxyToggle()

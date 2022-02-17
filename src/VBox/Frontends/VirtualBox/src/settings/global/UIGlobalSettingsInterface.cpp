@@ -119,7 +119,7 @@ void UIGlobalSettingsInterface::saveFromCacheTo(QVariant &data)
 void UIGlobalSettingsInterface::retranslateUi()
 {
     m_pLabelColorTheme->setText(tr("Color &Theme:"));
-    m_pEditorColorTheme->setWhatsThis(tr("Selects the color theme. It can be Light, Dark or automatically detected (default)."));
+    m_pEditorColorTheme->setToolTip(tr("Selects the color theme. It can be Light, Dark or automatically detected (default)."));
 }
 
 void UIGlobalSettingsInterface::prepare()
