@@ -3409,6 +3409,13 @@ typedef struct PGMCPU
      *  When SLAT is inactive, this is unused (and NIL_RTGCPHYS). */
     RTGCPHYS                        GCPhysNstGstCR3;
 
+    /** The cached guest CR3 when it has been mapped in PAE mode.
+     * This allows us to skip remapping the CR3 and PAE PDPEs
+     * (in PGMFlushTLB or similar) when it was already done as
+     * part of MOV CRx instruction emulation.
+     */
+    RTGCPHYS                        GCPhysPaeCR3;
+
     /** @name 32-bit Guest Paging.
      * @{ */
     /** The guest's page directory, R3 pointer. */

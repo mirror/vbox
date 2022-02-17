@@ -4146,7 +4146,8 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
     PGM_A20_ASSERT_MASKED(pVCpu, GCPhysCR3);
 
 # if PGM_GST_TYPE == PGM_TYPE_PAE
-    if (!pVCpu->pgm.s.CTX_SUFF(fPaePdpesAndCr3Mapped))
+    if (   !pVCpu->pgm.s.CTX_SUFF(fPaePdpesAndCr3Mapped)
+        ||  pVCpu->pgm.s.GCPhysPaeCR3 != GCPhysCR3)
 # endif
     {
         /*
@@ -4182,6 +4183,15 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
             CPUMSetGuestPaePdpes(pVCpu, &aGstPaePdpes[0]);
             PGMGstMapPaePdpes(pVCpu, &aGstPaePdpes[0]);
 
+            pVCpu->pgm.s.GCPhysPaeCR3 = GCPhysCR3;
+#  ifdef IN_RING3
+            pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = true;
+            pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = false;
+#  else
+            pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = false;
+            pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = true;
+#  endif
+
 # elif PGM_GST_TYPE == PGM_TYPE_AMD64
 #  ifdef IN_RING3
             pVCpu->pgm.s.pGstAmd64Pml4R3 = (PX86PML4)HCPtrGuestCR3;
@@ -4195,14 +4205,6 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
         else
             AssertMsgFailed(("rc=%Rrc GCPhysGuestPD=%RGp\n", rc, GCPhysCR3));
     }
-
-    /*
-     * Reset fPaePdpesAndCr3Mapped for all modes as there's no guarantee that
-     * we were called in the correct sequence of PAE followed by other modes
-     * without CR3 changing in between.
-     */
-    pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = false;
-    pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = false;
 #endif
 
     /*
@@ -4309,6 +4311,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPUCC pVCpu)
 
     pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = false;
     pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = false;
+    pVCpu->pgm.s.GCPhysPaeCR3            = NIL_RTGCPHYS;
 
     /*
      * Update shadow paging info.

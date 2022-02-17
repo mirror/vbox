@@ -822,6 +822,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
 
         pPGM->GCPhysCR3         = NIL_RTGCPHYS;
         pPGM->GCPhysNstGstCR3   = NIL_RTGCPHYS;
+        pPGM->GCPhysPaeCR3      = NIL_RTGCPHYS;
 
         pPGM->pGst32BitPdR3     = NULL;
         pPGM->pGstPaePdptR3     = NULL;

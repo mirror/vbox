@@ -2519,6 +2519,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal)
             AssertMsg(rc == VINF_PGM_SYNC_CR3, ("%Rrc\n", rc));
             Assert(VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_PGM_SYNC_CR3));
             pVCpu->pgm.s.CTX_SUFF(fPaePdpesAndCr3Mapped) = false;
+            pVCpu->pgm.s.GCPhysPaeCR3 = NIL_RTGCPHYS;
             pVCpu->pgm.s.GCPhysCR3 = GCPhysOldCR3;
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_MAP_CR3;
         }
@@ -2915,6 +2916,7 @@ VMM_INT_DECL(int) PGMGstMapPaePdpesAtCr3(PVMCPUCC pVCpu, uint64_t cr3)
                 pVCpu->pgm.s.fPaePdpesAndCr3MappedR3 = false;
                 pVCpu->pgm.s.fPaePdpesAndCr3MappedR0 = true;
 #endif
+                pVCpu->pgm.s.GCPhysPaeCR3 = GCPhysCR3;
             }
         }
         else
@@ -3273,6 +3275,7 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
     }
     pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
     pVCpu->pgm.s.GCPhysNstGstCR3 = NIL_RTGCPHYS;
+    pVCpu->pgm.s.GCPhysPaeCR3 = NIL_RTGCPHYS;
     Assert(!pVCpu->pgm.s.CTX_SUFF(fPaePdpesAndCr3Mapped));
 
     /*
