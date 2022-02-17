@@ -777,52 +777,62 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
 void UIMachineSettingsDisplay::retranslateUi()
 {
     m_pLabelVideoMemorySize->setText(tr("Video &Memory:"));
-    m_pEditorVideoMemorySize->setWhatsThis(tr("Controls the amount of video memory provided to the virtual machine."));
+    m_pEditorVideoMemorySize->setToolTip(tr("Controls the amount of video memory provided to the virtual machine."));
     m_pLabelMonitorCount->setText(tr("Mo&nitor Count:"));
-    m_pSliderMonitorCount->setWhatsThis(tr("Controls the amount of virtual monitors provided to the virtual machine."));
-    m_pSpinboxMonitorCount->setWhatsThis(tr("Controls the amount of virtual monitors provided to the virtual machine."));
+    m_pSliderMonitorCount->setToolTip(tr("Controls the amount of virtual monitors provided to the virtual machine."));
+    m_pSpinboxMonitorCount->setToolTip(tr("Controls the amount of virtual monitors provided to the virtual machine."));
     m_pLabelScaleFactor->setText(tr("Scale &Factor:"));
-    m_pEditorScaleFactor->setWhatsThis(tr("Controls the guest screen scale factor."));
+    m_pEditorScaleFactor->setToolTip(tr("Controls the guest screen scale factor."));
     m_pLabelGraphicsController->setText(tr("&Graphics Controller:"));
-    m_pEditorGraphicsController->setWhatsThis(tr("Selects the graphics adapter type the virtual machine will use."));
+    m_pEditorGraphicsController->setToolTip(tr("Selects the graphics adapter type the virtual machine will use."));
     m_pLabelAcceleration->setText(tr("Acceleration:"));
-    m_pCheckbox3D->setWhatsThis(tr("When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host."));
+    m_pCheckbox3D->setToolTip(tr("When checked, the virtual machine will be given access "
+                                 "to the 3D graphics capabilities available on the host."));
     m_pCheckbox3D->setText(tr("Enable &3D Acceleration"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabScreen), tr("&Screen"));
-    m_pCheckboxRemoteDisplay->setWhatsThis(tr("When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client."));
+    m_pCheckboxRemoteDisplay->setToolTip(tr("When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing "
+                                            "remote clients to connect and operate the VM (when it is running) using a standard "
+                                            "RDP client."));
     m_pCheckboxRemoteDisplay->setText(tr("&Enable Server"));
     m_pLabelRemoteDisplayPort->setText(tr("Server &Port:"));
-    m_pEditorRemoteDisplayPort->setWhatsThis(tr("Holds the VRDP Server port number. You may specify <tt>0</tt> (zero), to select port 3389, the standard port for RDP."));
+    m_pEditorRemoteDisplayPort->setToolTip(tr("Holds the VRDP Server port number. You may specify <tt>0</tt> (zero), to select "
+                                              "port 3389, the standard port for RDP."));
     m_pLabelRemoteDisplayAuthMethod->setText(tr("Authentication &Method:"));
-    m_pComboRemoteDisplayAuthMethod->setWhatsThis(tr("Selects the VRDP authentication method."));
+    m_pComboRemoteDisplayAuthMethod->setToolTip(tr("Selects the VRDP authentication method."));
     m_pLabelRemoteDisplayTimeout->setText(tr("Authentication &Timeout:"));
-    m_pEditorRemoteDisplayTimeout->setWhatsThis(tr("Holds the timeout for guest authentication, in milliseconds."));
+    m_pEditorRemoteDisplayTimeout->setToolTip(tr("Holds the timeout for guest authentication, in milliseconds."));
     m_pLabelRemoteDisplayOptions->setText(tr("Extended Features:"));
-    m_pCheckboxMultipleConn->setWhatsThis(tr("When checked, multiple simultaneous connections to the VM are permitted."));
+    m_pCheckboxMultipleConn->setToolTip(tr("When checked, multiple simultaneous connections to the VM are permitted."));
     m_pCheckboxMultipleConn->setText(tr("&Allow Multiple Connections"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRemoteDisplay), tr("&Remote Display"));
-    m_pCheckboxRecording->setWhatsThis(tr("When checked, VirtualBox will record the virtual machine session as a video file."));
+    m_pCheckboxRecording->setToolTip(tr("When checked, VirtualBox will record the virtual machine session as a video file."));
     m_pCheckboxRecording->setText(tr("&Enable Recording"));
     m_pLabelRecordingMode->setText(tr("Recording &Mode:"));
-    m_pComboRecordingMode->setWhatsThis(tr("Selects the recording mode."));
+    m_pComboRecordingMode->setToolTip(tr("Selects the recording mode."));
     m_pLabelRecordingFilePath->setText(tr("File &Path:"));
-    m_pEditorRecordingFilePath->setWhatsThis(tr("Holds the filename VirtualBox uses to save the recorded content."));
+    m_pEditorRecordingFilePath->setToolTip(tr("Holds the filename VirtualBox uses to save the recorded content."));
     m_pLabelRecordingFrameSize->setText(tr("Frame Si&ze:"));
-    m_pComboRecordingFrameSize->setWhatsThis(tr("Selects the resolution (frame size) of the recorded video."));
-    m_pSpinboxRecordingFrameWidth->setWhatsThis(tr("Holds the <b>horizontal</b> resolution (frame width) of the recorded video."));
-    m_pSpinboxRecordingFrameHeight->setWhatsThis(tr("Holds the <b>vertical</b> resolution (frame height) of the recorded video."));
+    m_pComboRecordingFrameSize->setToolTip(tr("Selects the resolution (frame size) of the recorded video."));
+    m_pSpinboxRecordingFrameWidth->setToolTip(tr("Holds the <b>horizontal</b> resolution (frame width) of the recorded video."));
+    m_pSpinboxRecordingFrameHeight->setToolTip(tr("Holds the <b>vertical</b> resolution (frame height) of the recorded video."));
     m_pLabelRecordingFrameRate->setText(tr("Frame R&ate:"));
-    m_pSliderRecordingFrameRate->setWhatsThis(tr("Controls the maximum number of <b>frames per second</b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size."));
-    m_pSpinboxRecordingFrameRate->setWhatsThis(tr("Controls the maximum number of <b>frames per second</b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size."));
+    m_pSliderRecordingFrameRate->setToolTip(tr("Controls the maximum number of <b>frames per second</b>. Additional frames will "
+                                               "be skipped. Reducing this value will increase the number of skipped frames and "
+                                               "reduce the file size."));
+    m_pSpinboxRecordingFrameRate->setToolTip(tr("Controls the maximum number of <b>frames per second</b>. Additional frames will "
+                                                "be skipped. Reducing this value will increase the number of skipped frames and "
+                                                "reduce the file size."));
     m_pLabelRecordingVideoQuality->setText(tr("&Video Quality:"));
-    m_pSliderRecordingVideoQuality->setWhatsThis(tr("Controls the <b>quality</b>. Increasing this value will make the video look better at the cost of an increased file size."));
-    m_pSpinboxRecordingVideoQuality->setWhatsThis(tr("Holds the bitrate in <b>kilobits per second</b>. Increasing this value will make the video look better at the cost of an increased file size."));
+    m_pSliderRecordingVideoQuality->setToolTip(tr("Controls the <b>quality</b>. Increasing this value will make the video look "
+                                                  "better at the cost of an increased file size."));
+    m_pSpinboxRecordingVideoQuality->setToolTip(tr("Holds the bitrate in <b>kilobits per second</b>. Increasing this value will "
+                                                   "make the video look better at the cost of an increased file size."));
     m_pLabelRecordingAudioQuality->setText(tr("&Audio Quality:"));
-    m_pSliderRecordingAudioQuality->setWhatsThis(tr("Controls the <b>quality</b>. Increasing this value will make the audio sound better at the cost of an increased file size."));
+    m_pSliderRecordingAudioQuality->setToolTip(tr("Controls the <b>quality</b>. Increasing this value will make the audio sound "
+                                                  "better at the cost of an increased file size."));
     m_pLabelRecordingScreens->setText(tr("Scree&ns:"));
-    m_pScrollerRecordingScreens->setWhatsThis(QString());
+    m_pScrollerRecordingScreens->setToolTip(QString());
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRecording), tr("Re&cording"));
-
 
     /* Screen stuff: */
     CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();

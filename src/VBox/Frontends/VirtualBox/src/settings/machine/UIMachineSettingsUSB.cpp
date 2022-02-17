@@ -559,16 +559,16 @@ void UIMachineSettingsUSB::setOrderAfter(QWidget *pWidget)
 
 void UIMachineSettingsUSB::retranslateUi()
 {
-    m_pCheckBoxUSB->setWhatsThis(tr("When checked, enables the virtual USB controller of this machine."));
+    m_pCheckBoxUSB->setToolTip(tr("When checked, enables the virtual USB controller of this machine."));
     m_pCheckBoxUSB->setText(tr("Enable &USB Controller"));
-    m_pRadioButtonUSB1->setWhatsThis(tr("When chosen, enables the virtual USB OHCI controller of "
-                                        "this machine. The USB OHCI controller provides USB 1.0 support."));
+    m_pRadioButtonUSB1->setToolTip(tr("When chosen, enables the virtual USB OHCI controller of "
+                                      "this machine. The USB OHCI controller provides USB 1.0 support."));
     m_pRadioButtonUSB1->setText(tr("USB &1.1 (OHCI) Controller"));
-    m_pRadioButtonUSB2->setWhatsThis(tr("When chosen, enables the virtual USB OHCI and EHCI "
-                                        "controllers of this machine. Together they provide USB 2.0 support."));
+    m_pRadioButtonUSB2->setToolTip(tr("When chosen, enables the virtual USB OHCI and EHCI "
+                                      "controllers of this machine. Together they provide USB 2.0 support."));
     m_pRadioButtonUSB2->setText(tr("USB &2.0 (OHCI + EHCI) Controller"));
-    m_pRadioButtonUSB3->setWhatsThis(tr("When chosen, enables the virtual USB xHCI controller of "
-                                        "this machine. The USB xHCI controller provides USB 3.0 support."));
+    m_pRadioButtonUSB3->setToolTip(tr("When chosen, enables the virtual USB xHCI controller of "
+                                      "this machine. The USB xHCI controller provides USB 3.0 support."));
     m_pRadioButtonUSB3->setText(tr("USB &3.0 (xHCI) Controller"));
     m_pLabelSeparatorFilters->setText(tr("USB Device &Filters"));
     QTreeWidgetItem *pQtreewidgetitem = m_pTreeWidgetFilters->headerItem();
@@ -584,14 +584,14 @@ void UIMachineSettingsUSB::retranslateUi()
     m_pActionMoveUp->setText(tr("Move Filter Up"));
     m_pActionMoveDown->setText(tr("Move Filter Down"));
 
-    m_pActionNew->setWhatsThis(tr("Adds new USB filter with all fields initially set to empty strings. "
+    m_pActionNew->setToolTip(tr("Adds new USB filter with all fields initially set to empty strings. "
                                 "Note that such a filter will match any attached USB device."));
-    m_pActionAdd->setWhatsThis(tr("Adds new USB filter with all fields set to the values of the "
+    m_pActionAdd->setToolTip(tr("Adds new USB filter with all fields set to the values of the "
                                 "selected USB device attached to the host PC."));
-    m_pActionEdit->setWhatsThis(tr("Edits selected USB filter."));
-    m_pActionRemove->setWhatsThis(tr("Removes selected USB filter."));
-    m_pActionMoveUp->setWhatsThis(tr("Moves selected USB filter up."));
-    m_pActionMoveDown->setWhatsThis(tr("Moves selected USB filter down."));
+    m_pActionEdit->setToolTip(tr("Edits selected USB filter."));
+    m_pActionRemove->setToolTip(tr("Removes selected USB filter."));
+    m_pActionMoveUp->setToolTip(tr("Moves selected USB filter up."));
+    m_pActionMoveDown->setToolTip(tr("Moves selected USB filter down."));
 
     m_pActionNew->setToolTip(m_pActionNew->whatsThis());
     m_pActionAdd->setToolTip(m_pActionAdd->whatsThis());

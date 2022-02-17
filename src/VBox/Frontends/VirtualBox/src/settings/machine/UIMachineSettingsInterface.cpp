@@ -298,17 +298,17 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
 
 void UIMachineSettingsInterface::retranslateUi()
 {
-    m_pEditorMenuBar->setWhatsThis(tr("Allows to modify VM menu-bar contents."));
+    m_pEditorMenuBar->setToolTip(tr("Allows to modify VM menu-bar contents."));
     m_pLabelVisualState->setText(tr("Visual State:"));
-    m_pEditorVisualState->setWhatsThis(tr("Selects the visual state. If machine is running it will be applied as soon as possible,"
-                                          "otherwise desired one will be defined."));
+    m_pEditorVisualState->setToolTip(tr("Selects the visual state. If machine is running it will be applied as soon as possible, "
+                                        "otherwise desired one will be defined."));
     m_pLabelMiniToolBar->setText(tr("Mini ToolBar:"));
-    m_pCheckBoxShowMiniToolBar->setWhatsThis(tr("When checked, show the Mini ToolBar in full-screen and seamless modes."));
+    m_pCheckBoxShowMiniToolBar->setToolTip(tr("When checked, show the Mini ToolBar in full-screen and seamless modes."));
     m_pCheckBoxShowMiniToolBar->setText(tr("Show in &Full-screen/Seamless"));
-    m_pCheckBoxMiniToolBarAlignment->setWhatsThis(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in its"
-                                              "default position at the bottom of the screen."));
+    m_pCheckBoxMiniToolBarAlignment->setToolTip(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in "
+                                                   "its default position at the bottom of the screen."));
     m_pCheckBoxMiniToolBarAlignment->setText(tr("Show at &Top of Screen"));
-    m_pEditorStatusBar->setWhatsThis(tr("Allows to modify VM status-bar contents."));
+    m_pEditorStatusBar->setToolTip(tr("Allows to modify VM status-bar contents."));
 }
 
 void UIMachineSettingsInterface::polishPage()

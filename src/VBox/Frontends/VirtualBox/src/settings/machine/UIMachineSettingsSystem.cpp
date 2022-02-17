@@ -608,72 +608,64 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
 void UIMachineSettingsSystem::retranslateUi()
 {
     m_pLabelBaseMemory->setText(tr("Base &Memory:"));
-    m_pEditorBaseMemory->setWhatsThis(tr("Controls the amount of memory provided "
-                                         "to the virtual machine. If you assign too much, the machine might not start."));
+    m_pEditorBaseMemory->setToolTip(tr("Controls the amount of memory provided to the virtual machine. "
+                                       "If you assign too much, the machine might not start."));
     m_pLabelBootOrder->setText(tr("&Boot Order:"));
     m_pEditorBootOrder->setWhatsThis(tr("Defines the boot device order. Use the "
-                                        "checkboxes on the left to enable or disable individual boot devices."
+                                        "checkboxes on the left to enable or disable individual boot devices. "
                                         "Move items up and down to change the device order."));
     m_pLabelChipset->setText(tr("&Chipset:"));
-    m_pComboChipset->setWhatsThis(tr("Selects the chipset to be emulated in "
-                                     "this virtual machine. Note that the ICH9 chipset emulation is experimental "
-                                     "and not recommended except for guest systems (such as Mac OS X) which require it."));
+    m_pComboChipset->setToolTip(tr("Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset "
+                                   "emulation is experimental and not recommended except for guest systems (such as Mac OS X) "
+                                   "which require it."));
     m_pLabelPointingHID->setText(tr("&Pointing Device:"));
-    m_pComboPointingHID->setWhatsThis(tr("Determines whether the emulated "
-                                         "pointing device is a standard PS/2 mouse, a USB tablet or a "
-                                         "USB multi-touch tablet."));
+    m_pComboPointingHID->setToolTip(tr("Determines whether the emulated pointing device is a standard PS/2 mouse, "
+                                       "a USB tablet or a USB multi-touch tablet."));
     m_pLabelExtendedMotherboard->setText(tr("Extended Features:"));
-    m_pCheckBoxAPIC->setWhatsThis(tr("When checked, the virtual machine will "
-                                     "support the Input Output APIC (I/O APIC), which may slightly decrease "
-                                     "performance. <b>Note:</b> don't disable this feature after having "
-                                     "installed a Windows guest operating system!"));
+    m_pCheckBoxAPIC->setToolTip(tr("When checked, the virtual machine will support the Input Output APIC (I/O APIC), "
+                                   "which may slightly decrease performance. <b>Note:</b> don't disable this feature after "
+                                   "having installed a Windows guest operating system!"));
     m_pCheckBoxAPIC->setText(tr("Enable &I/O APIC"));
-    m_pCheckBoxEFI->setWhatsThis(tr("When checked, the guest will support the "
-                                    "Extended Firmware Interface (EFI), which is required to boot certain "
-                                    "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated."));
+    m_pCheckBoxEFI->setToolTip(tr("When checked, the guest will support the Extended Firmware Interface (EFI), "
+                                  "which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot "
+                                  "if this option is activated."));
     m_pCheckBoxEFI->setText(tr("Enable &EFI (special OSes only)"));
-    m_pCheckBoxUTC->setWhatsThis(tr("When checked, the RTC device will report "
-                                    "the time in UTC, otherwise in local (host) time. Unix usually expects "
-                                    "the hardware clock to be set to UTC."));
+    m_pCheckBoxUTC->setToolTip(tr("When checked, the RTC device will report the time in UTC, otherwise in local (host) time. "
+                                  "Unix usually expects the hardware clock to be set to UTC."));
     m_pCheckBoxUTC->setText(tr("Hardware Clock in &UTC Time"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabMotherboard), tr("&Motherboard"));
     m_pLabelProcessorCount->setText(tr("&Processor(s):"));
-    m_pSliderProcessorCount->setWhatsThis(tr("Controls the number of virtual CPUs in the "
-                                             "virtual machine. You need hardware virtualization support on your host "
-                                             "system to use more than one virtual CPU."));
-    m_pSpinboxProcessorCount->setWhatsThis(tr("Controls the number of virtual CPUs in the "
-                                              "virtual machine. You need hardware virtualization support on your host "
-                                              "system to use more than one virtual CPU."));
+    m_pSliderProcessorCount->setToolTip(tr("Controls the number of virtual CPUs in the virtual machine. You need hardware "
+                                           "virtualization support on your host system to use more than one virtual CPU."));
+    m_pSpinboxProcessorCount->setToolTip(tr("Controls the number of virtual CPUs in the virtual machine. You need hardware "
+                                            "virtualization support on your host system to use more than one virtual CPU."));
     m_pLabelProcessorExecCap->setText(tr("&Execution Cap:"));
-    m_pSliderProcessorExecCap->setWhatsThis(tr("Limits the amount of time that each virtual "
-                                               "CPU is allowed to run for. Each virtual CPU will be allowed to use up "
-                                               "to this percentage of the processing time available on one physical CPU. "
-                                               "The execution cap can be disabled by setting it to 100%. Setting the cap "
-                                               "too low can make the machine feel slow to respond."));
-    m_pSpinboxProcessorExecCap->setWhatsThis(tr("Limits the amount of time that each virtual CPU "
-                                                "is allowed to run for. Each virtual CPU will be allowed to use up "
-                                                "to this percentage of the processing time available on one physical "
-                                                "CPU. The execution cap can be disabled by setting it to 100%. Setting "
-                                                "the cap too low can make the machine feel slow to respond."));
+    m_pSliderProcessorExecCap->setToolTip(tr("Limits the amount of time that each virtual CPU is allowed to run for. "
+                                             "Each virtual CPU will be allowed to use up to this percentage of the processing "
+                                             "time available on one physical CPU. The execution cap can be disabled by setting "
+                                             "it to 100%. Setting the cap too low can make the machine feel slow to respond."));
+    m_pSpinboxProcessorExecCap->setToolTip(tr("Limits the amount of time that each virtual CPU is allowed to run for. "
+                                              "Each virtual CPU will be allowed to use up to this percentage of the processing "
+                                              "time available on one physical CPU. The execution cap can be disabled by setting "
+                                              "it to 100%. Setting the cap too low can make the machine feel slow to respond."));
     m_pSpinboxProcessorExecCap->setSuffix(tr("%"));
     m_pLabelExtendedProcessor->setText(tr("Extended Features:"));
-    m_pCheckBoxPAE->setWhatsThis(tr("When checked, the Physical Address Extension "
-                                    "(PAE) feature of the host CPU will be exposed to the virtual machine."));
+    m_pCheckBoxPAE->setToolTip(tr("When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed "
+                                  "to the virtual machine."));
     m_pCheckBoxPAE->setText(tr("Enable PA&E/NX"));
-    m_pCheckBoxNestedVirtualization->setWhatsThis(tr("When checked, the nested hardware "
-                                                     "virtualization CPU feature will be exposed to the virtual machine."));
+    m_pCheckBoxNestedVirtualization->setToolTip(tr("When checked, the nested hardware virtualization CPU feature will be "
+                                                   "exposed to the virtual machine."));
     m_pCheckBoxNestedVirtualization->setText(tr("Enable Nested &VT-x/AMD-V"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabProcessor), tr("&Processor"));
     m_pLabelParavirtProvider->setText(tr("&Paravirtualization Interface:"));
-    m_pComboParavirtProvider->setWhatsThis(tr("Selects the paravirtualization "
-                                              "guest interface provider to be used by this virtual machine."));
+    m_pComboParavirtProvider->setToolTip(tr("Selects the paravirtualization guest interface provider to be used by this "
+                                            "virtual machine."));
     m_pLabelVirtualization->setText(tr("Hardware Virtualization:"));
-    m_pCheckBoxVirtualization->setWhatsThis(tr("When checked, the virtual machine "
-                                               "will try to make use of the host CPU's hardware virtualization "
-                                               "extensions such as Intel VT-x and AMD-V."));
+    m_pCheckBoxVirtualization->setToolTip(tr("When checked, the virtual machine will try to make use of the host CPU's hardware "
+                                             "virtualization extensions such as Intel VT-x and AMD-V."));
     m_pCheckBoxVirtualization->setText(tr("Enable &VT-x/AMD-V"));
-    m_pCheckBoxNestedPaging->setWhatsThis(tr("When checked, the virtual machine will "
-                                             "try to make use of the nested paging extension of Intel VT-x and AMD-V."));
+    m_pCheckBoxNestedPaging->setToolTip(tr("When checked, the virtual machine will try to make use of the nested paging "
+                                           "extension of Intel VT-x and AMD-V."));
     m_pCheckBoxNestedPaging->setText(tr("Enable Nested Pa&ging"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAcceleration), tr("Acce&leration"));
 

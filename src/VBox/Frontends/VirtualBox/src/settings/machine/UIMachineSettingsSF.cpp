@@ -427,18 +427,17 @@ void UIMachineSettingsSF::retranslateUi()
     pQTreeWidgetItem->setText(2, tr("Access"));
     pQTreeWidgetItem->setText(1, tr("Path"));
     pQTreeWidgetItem->setText(0, tr("Name"));
-#ifndef QT_NO_WHATSTHIS
-    m_pTreeWidget->setWhatsThis(tr("Lists all shared folders accessible to this machine. Use 'net use x: \\\\vboxsvr\\share' to access a shared folder named <i>share</i> from a DOS-like OS, or 'mount -t vboxsf share mount_point' to access it from a Linux OS. This feature requires Guest Additions."));
-#endif // QT_NO_WHATSTHIS
-
+    m_pTreeWidget->setWhatsThis(tr("Lists all shared folders accessible to this machine. Use 'net use x: \\\\vboxsvr\\share' "
+                                   "to access a shared folder named <i>share</i> from a DOS-like OS, or 'mount -t vboxsf share "
+                                   "mount_point' to access it from a Linux OS. This feature requires Guest Additions."));
 
     m_pActionAdd->setText(tr("Add Shared Folder"));
     m_pActionEdit->setText(tr("Edit Shared Folder"));
     m_pActionRemove->setText(tr("Remove Shared Folder"));
 
-    m_pActionAdd->setWhatsThis(tr("Adds new shared folder."));
-    m_pActionEdit->setWhatsThis(tr("Edits selected shared folder."));
-    m_pActionRemove->setWhatsThis(tr("Removes selected shared folder."));
+    m_pActionAdd->setToolTip(tr("Adds new shared folder."));
+    m_pActionEdit->setToolTip(tr("Edits selected shared folder."));
+    m_pActionRemove->setToolTip(tr("Removes selected shared folder."));
 
     m_pActionAdd->setToolTip(m_pActionAdd->whatsThis());
     m_pActionEdit->setToolTip(m_pActionEdit->whatsThis());

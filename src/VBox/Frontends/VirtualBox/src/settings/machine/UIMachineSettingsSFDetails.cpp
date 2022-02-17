@@ -123,7 +123,9 @@ void UIMachineSettingsSFDetails::retranslateUi()
     m_pCheckBoxAutoMount->setToolTip(tr("When checked, the guest OS will try to automatically mount the shared folder on startup."));
     m_pCheckBoxAutoMount->setText(tr("&Auto-mount"));
     m_pLabelAutoMountPoint->setText(tr("Mount point:"));
-    m_pEditorAutoMountPoint->setToolTip(tr("Where to automatically mount the folder in the guest.  A drive letter (e.g. 'G:') for Windows and OS/2 guests, path for the others.  If left empty the guest will pick something fitting."));
+    m_pEditorAutoMountPoint->setToolTip(tr("Where to automatically mount the folder in the guest.  A drive letter (e.g. 'G:') "
+                                           "for Windows and OS/2 guests, path for the others.  If left empty the guest will pick "
+                                           "something fitting."));
     m_pCheckBoxPermanent->setToolTip(tr("When checked, this shared folder will be permanent."));
     m_pCheckBoxPermanent->setText(tr("&Make Permanent"));
 

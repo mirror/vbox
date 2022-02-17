@@ -59,34 +59,30 @@ void UIMachineSettingsUSBFilterDetails::retranslateUi()
     m_pLabelName->setText(tr("&Name:"));
     m_pEditorName->setToolTip(tr("Holds the filter name."));
     m_pLabelVendorID->setText(tr("&Vendor ID:"));
-    m_pEditorVendorID->setToolTip(tr("Holds the vendor ID filter. The "
-                                       "<i>exact match</i> string format is <tt>XXXX</tt> where <tt>X</tt> is a "
-                                       "hexadecimal digit. An empty string will match any value."));
+    m_pEditorVendorID->setToolTip(tr("Holds the vendor ID filter. The <i>exact match</i> string format is <tt>XXXX</tt> "
+                                     "where <tt>X</tt> is a hexadecimal digit. An empty string will match any value."));
     m_pLabelProductID->setText(tr("&Product ID:"));
-    m_pEditorProductID->setToolTip(tr("Holds the product ID filter. The "
-                                        "<i>exact match</i> string format is <tt>XXXX</tt> where <tt>X</tt> is a "
-                                        "hexadecimal digit. An empty string will match any value."));
+    m_pEditorProductID->setToolTip(tr("Holds the product ID filter. The <i>exact match</i> string format is <tt>XXXX</tt> "
+                                      "where <tt>X</tt> is a hexadecimal digit. An empty string will match any value."));
     m_pLabelRevision->setText(tr("&Revision:"));
-    m_pEditorRevision->setToolTip(tr("Holds the revision number filter. The "
-                                       "<i>exact match</i> string format is <tt>IIFF</tt> where <tt>I</tt> is a decimal "
-                                       "digit of the integer part and <tt>F</tt> is a decimal digit of the fractional "
-                                       "part. An empty string will match any value."));
+    m_pEditorRevision->setToolTip(tr("Holds the revision number filter. The <i>exact match</i> string format is <tt>IIFF</tt> "
+                                     "where <tt>I</tt> is a decimal digit of the integer part and <tt>F</tt> is a decimal digit "
+                                     "of the fractional part. An empty string will match any value."));
     m_pLabelManufacturer->setText(tr("&Manufacturer:"));
-    m_pEditorManufacturer->setToolTip(tr("Holds the manufacturer filter as an "
-                                           "<i>exact match</i> string. An empty string will match any value."));
+    m_pEditorManufacturer->setToolTip(tr("Holds the manufacturer filter as an <i>exact match</i> string. An empty string will "
+                                         "match any value."));
     m_pLabelProduct->setText(tr("Pro&duct:"));
-    m_pEditorProduct->setToolTip(tr("Holds the product name filter as an "
-                                      "<i>exact match</i> string. An empty string will match any value."));
+    m_pEditorProduct->setToolTip(tr("Holds the product name filter as an <i>exact match</i> string. An empty string will match "
+                                    "any value."));
     m_pLabelSerialNo->setText(tr("&Serial No.:"));
-    m_pEditorSerialNo->setToolTip(tr("Holds the serial number filter as an "
-                                       "<i>exact match</i> string. An empty string will match any value."));
+    m_pEditorSerialNo->setToolTip(tr("Holds the serial number filter as an <i>exact match</i> string. An empty string will match "
+                                     "any value."));
     m_pLabelPort->setText(tr("Por&t:"));
-    m_pEditorPort->setToolTip(tr("Holds the host USB port filter as an "
-                                   "<i>exact match</i> string. An empty string will match any value."));
+    m_pEditorPort->setToolTip(tr("Holds the host USB port filter as an <i>exact match</i> string. An empty string will match any "
+                                 "value."));
     m_pLabelRemote->setText(tr("R&emote:"));
-    m_pComboRemote->setToolTip(tr("Holds whether this filter applies to USB "
-                                     "devices attached locally to the host computer (<i>No</i>), to a VRDP client's "
-                                     "computer (<i>Yes</i>), or both (<i>Any</i>)."));
+    m_pComboRemote->setToolTip(tr("Holds whether this filter applies to USB devices attached locally to the host computer "
+                                  "(<i>No</i>), to a VRDP client's computer (<i>Yes</i>), or both (<i>Any</i>)."));
 
     m_pComboRemote->setItemText(UIMachineSettingsUSB::ModeAny, tr("Any", "remote"));
     m_pComboRemote->setItemText(UIMachineSettingsUSB::ModeOn,  tr("Yes", "remote"));

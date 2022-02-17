@@ -3353,30 +3353,32 @@ void UIMachineSettingsStorage::retranslateUi()
 {
     m_pLabelSeparatorLeftPane->setText(tr("&Storage Devices"));
     m_pLabelSeparatorEmpty->setText(tr("Information"));
-    m_pLabelInfo->setText(tr("The Storage Tree can contain several controllers of different types. This machine currently has no controllers."));
+    m_pLabelInfo->setText(tr("The Storage Tree can contain several controllers of different types. This machine currently has no "
+                             "controllers."));
     m_pLabelSeparatorParameters->setText(tr("Attributes"));
     m_pLabelName->setText(tr("&Name:"));
-    m_pEditorName->setWhatsThis(tr("Holds the name of the storage controller currently selected in the Storage Tree."));
+    m_pEditorName->setToolTip(tr("Holds the name of the storage controller currently selected in the Storage Tree."));
     m_pLabelType->setText(tr("&Type:"));
-    m_pComboType->setWhatsThis(tr("Selects the sub-type of the storage controller currently selected in the Storage Tree."));
+    m_pComboType->setToolTip(tr("Selects the sub-type of the storage controller currently selected in the Storage Tree."));
     m_pLabelPortCount->setText(tr("&Port Count:"));
-    m_pSpinboxPortCount->setWhatsThis(tr("Selects the port count of the SATA storage controller currently selected in the"
-                                         "Storage Tree. This must be at least one more than the highest port number you need to use."));
-    m_pCheckBoxIoCache->setWhatsThis(tr("When checked, allows to use host I/O caching capabilities."));
+    m_pSpinboxPortCount->setToolTip(tr("Selects the port count of the SATA storage controller currently selected in the "
+                                       "Storage Tree. This must be at least one more than the highest port number you need to "
+                                       "use."));
+    m_pCheckBoxIoCache->setToolTip(tr("When checked, allows to use host I/O caching capabilities."));
     m_pCheckBoxIoCache->setText(tr("Use Host I/O Cache"));
     m_pLabelSeparatorAttributes->setText(tr("Attributes"));
-    m_pComboSlot->setWhatsThis(tr("Selects the slot on the storage controller used by this attachment. The available slots depend"
-                                     "on the type of the controller and other attachments on it."));
+    m_pComboSlot->setToolTip(tr("Selects the slot on the storage controller used by this attachment. The available slots depend "
+                                "on the type of the controller and other attachments on it."));
     m_pToolButtonOpen->setText(QString());
-    m_pCheckBoxPassthrough->setWhatsThis(tr("When checked, allows the guest to send ATAPI commands directly to the host-drive"
-                                            "which makes it possible to use CD/DVD writers connected to the host inside the VM."
-                                            "Note that writing audio CD inside the VM is not yet supported."));
+    m_pCheckBoxPassthrough->setToolTip(tr("When checked, allows the guest to send ATAPI commands directly to the host-drive "
+                                          "which makes it possible to use CD/DVD writers connected to the host inside the VM. "
+                                          "Note that writing audio CD inside the VM is not yet supported."));
     m_pCheckBoxPassthrough->setText(tr("&Passthrough"));
-    m_pCheckBoxTempEject->setWhatsThis(tr("When checked, the virtual disk will not be removed when the guest system ejects it."));
+    m_pCheckBoxTempEject->setToolTip(tr("When checked, the virtual disk will not be removed when the guest system ejects it."));
     m_pCheckBoxTempEject->setText(tr("&Live CD/DVD"));
-    m_pCheckBoxNonRotational->setWhatsThis(tr("When checked, the guest system will see the virtual disk as a solid-state device."));
+    m_pCheckBoxNonRotational->setToolTip(tr("When checked, the guest system will see the virtual disk as a solid-state device."));
     m_pCheckBoxNonRotational->setText(tr("&Solid-state Drive"));
-    m_pCheckBoxHotPluggable->setWhatsThis(tr("When checked, the guest system will see the virtual disk as a hot-pluggable device."));
+    m_pCheckBoxHotPluggable->setToolTip(tr("When checked, the guest system will see the virtual disk as a hot-pluggable device."));
     m_pCheckBoxHotPluggable->setText(tr("&Hot-pluggable"));
     m_pLabelSeparatorInformation->setText(tr("Information"));
     m_pLabelHDFormat->setText(tr("Type (Format):"));
@@ -3391,7 +3393,7 @@ void UIMachineSettingsStorage::retranslateUi()
 
     /* Translate storage-view: */
     m_pTreeViewStorage->setWhatsThis(tr("Lists all storage controllers for this machine and "
-                                    "the virtual images and host drives attached to them."));
+                                        "the virtual images and host drives attached to them."));
 
     /* Translate tool-bar: */
     m_pActionAddController->setShortcut(QKeySequence("Ins"));
@@ -3418,10 +3420,10 @@ void UIMachineSettingsStorage::retranslateUi()
     m_pActionAddAttachmentFD->setText(tr("Floppy Drive"));
     m_pActionRemoveAttachment->setText(tr("Remove Attachment"));
 
-    m_pActionAddController->setWhatsThis(tr("Adds new storage controller."));
-    m_pActionRemoveController->setWhatsThis(tr("Removes selected storage controller."));
-    m_pActionAddAttachment->setWhatsThis(tr("Adds new storage attachment."));
-    m_pActionRemoveAttachment->setWhatsThis(tr("Removes selected storage attachment."));
+    m_pActionAddController->setToolTip(tr("Adds new storage controller."));
+    m_pActionRemoveController->setToolTip(tr("Removes selected storage controller."));
+    m_pActionAddAttachment->setToolTip(tr("Adds new storage attachment."));
+    m_pActionRemoveAttachment->setToolTip(tr("Removes selected storage attachment."));
 
     m_pActionAddController->setToolTip(m_pActionAddController->whatsThis());
     m_pActionRemoveController->setToolTip(m_pActionRemoveController->whatsThis());
@@ -3774,22 +3776,24 @@ void UIMachineSettingsStorage::sltGetInformation()
                     case KDeviceType_HardDisk:
                         m_pLabelMedium->setText(tr("Hard &Disk:"));
                         m_pToolButtonOpen->setIcon(iconPool()->icon(HDAttachmentNormal));
-                        m_pToolButtonOpen->setWhatsThis(tr("Choose or create a virtual hard disk file. The virtual machine will see "
-                                                 "the data in the file as the contents of the virtual hard disk."));
+                        m_pToolButtonOpen->setToolTip(tr("Choose or create a virtual hard disk file. The virtual machine will "
+                                                         "see the data in the file as the contents of the virtual hard disk."));
                         break;
                     case KDeviceType_DVD:
                         m_pLabelMedium->setText(tr("Optical &Drive:"));
                         m_pToolButtonOpen->setIcon(iconPool()->icon(CDAttachmentNormal));
-                        m_pToolButtonOpen->setWhatsThis(tr("Choose a virtual optical disk or a physical drive to use with the virtual drive. "
-                                                 "The virtual machine will see a disk inserted into the drive with the data "
-                                                 "in the file or on the disk in the physical drive as its contents."));
+                        m_pToolButtonOpen->setToolTip(tr("Choose a virtual optical disk or a physical drive to use with the "
+                                                         "virtual drive. The virtual machine will see a disk inserted into the "
+                                                         "drive with the data in the file or on the disk in the physical drive "
+                                                         "as its contents."));
                         break;
                     case KDeviceType_Floppy:
                         m_pLabelMedium->setText(tr("Floppy &Drive:"));
                         m_pToolButtonOpen->setIcon(iconPool()->icon(FDAttachmentNormal));
-                        m_pToolButtonOpen->setWhatsThis(tr("Choose a virtual floppy disk or a physical drive to use with the virtual drive. "
-                                                 "The virtual machine will see a disk inserted into the drive with the data "
-                                                 "in the file or on the disk in the physical drive as its contents."));
+                        m_pToolButtonOpen->setToolTip(tr("Choose a virtual floppy disk or a physical drive to use with the "
+                                                         "virtual drive. The virtual machine will see a disk inserted into the "
+                                                         "drive with the data in the file or on the disk in the physical drive "
+                                                         "as its contents."));
                         break;
                     default:
                         break;

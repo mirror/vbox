@@ -487,36 +487,29 @@ void UIMachineSettingsGeneral::retranslateUi()
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabBasic), tr("Basi&c"));
     m_pLabelSnapshotFolder->setText(tr("S&napshot Folder:"));
     m_pLabelClipboard->setText(tr("&Shared Clipboard:"));
-    m_pComboClipboard->setWhatsThis(tr("Selects which clipboard data will be copied "
-                                       "between the guest and the host OS. This feature requires Guest Additions "
-                                       "to be installed in the guest OS."));
+    m_pComboClipboard->setToolTip(tr("Selects which clipboard data will be copied between the guest and the host OS. "
+                                     "This feature requires Guest Additions to be installed in the guest OS."));
     m_pLabelDragAndDrop->setText(tr("D&rag'n'Drop:"));
-    m_pComboDragAndDrop->setWhatsThis(tr("Selects which data will be copied between "
-                                         "the guest and the host OS by drag'n'drop. This feature requires Guest "
-                                         "Additions to be installed in the guest OS."));
+    m_pComboDragAndDrop->setToolTip(tr("Selects which data will be copied between the guest and the host OS by drag'n'drop. "
+                                       "This feature requires Guest Additions to be installed in the guest OS."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabAdvanced), tr("A&dvanced"));
-    m_pEditorDescription->setWhatsThis(tr("Holds the description of the virtual machine. "
-                                          "The description field is useful for commenting on configuration details "
-                                          "of the installed guest OS."));
+    m_pEditorDescription->setToolTip(tr("Holds the description of the virtual machine. The description field is useful for "
+                                        "commenting on configuration details of the installed guest OS."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabDescription), tr("D&escription"));
-    m_pCheckBoxEncryption->setWhatsThis(tr("When checked, disks attached to this "
-                                           "virtual machine will be encrypted."));
+    m_pCheckBoxEncryption->setToolTip(tr("When checked, disks attached to this virtual machine will be encrypted."));
     m_pCheckBoxEncryption->setText(tr("En&able Disk Encryption"));
     m_pLabelCipher->setText(tr("Disk Encryption C&ipher:"));
-    m_pComboCipher->setWhatsThis(tr("Selects the cipher to be used for encrypting "
-                                    "the virtual machine disks."));
+    m_pComboCipher->setToolTip(tr("Selects the cipher to be used for encrypting the virtual machine disks."));
     m_pLabelEncryptionPassword->setText(tr("E&nter New Password:"));
-    m_pEditorEncryptionPassword->setWhatsThis(tr("Holds the encryption password "
-                                                 "for disks attached to this virtual machine."));
+    m_pEditorEncryptionPassword->setToolTip(tr("Holds the encryption password for disks attached to this virtual machine."));
     m_pLabelEncryptionPasswordConfirm->setText(tr("C&onfirm New Password:"));
-    m_pEditorEncryptionPasswordConfirm->setWhatsThis(tr("Confirms the disk encryption password."));
+    m_pEditorEncryptionPasswordConfirm->setToolTip(tr("Confirms the disk encryption password."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabEncryption), tr("Disk Enc&ryption"));
 
     /* Translate path selector: */
-    AssertPtrReturnVoid(m_pEditorSnapshotFolder);
-    m_pEditorSnapshotFolder->setWhatsThis(tr("Holds the path where snapshots of this "
-                                             "virtual machine will be stored. Be aware that "
-                                             "snapshots can take quite a lot of storage space."));
+    if (m_pEditorSnapshotFolder)
+        m_pEditorSnapshotFolder->setToolTip(tr("Holds the path where snapshots of this virtual machine will be stored. "
+                                               "Be aware that snapshots can take quite a lot of storage space."));
 
     /* Translate Clipboard mode combo: */
     AssertPtrReturnVoid(m_pComboClipboard);

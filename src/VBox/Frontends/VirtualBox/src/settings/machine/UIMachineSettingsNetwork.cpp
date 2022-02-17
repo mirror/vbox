@@ -654,43 +654,35 @@ void UIMachineSettingsNetwork::setAdvancedButtonState(bool fExpanded)
 void UIMachineSettingsNetwork::retranslateUi()
 {
     int iFirstColumnWidth = 0;
-    m_pCheckBoxAdapter->setWhatsThis(tr("When checked, plugs this virtual "
-                                        "network adapter into the virtual machine."));
+    m_pCheckBoxAdapter->setToolTip(tr("When checked, plugs this virtual network adapter into the virtual machine."));
     m_pCheckBoxAdapter->setText(tr("&Enable Network Adapter"));
     m_pLabelAttachmentType->setText(tr("&Attached to:"));
     iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelAttachmentType->minimumSizeHint().width());
-    m_pEditorAttachmentType->setWhatsThis(tr("Selects how this virtual adapter "
-                                             "is attached to the real network of the Host OS."));
+    m_pEditorAttachmentType->setToolTip(tr("Selects how this virtual adapter is attached to the real network of the Host OS."));
     m_pLabelNetworkName->setText(tr("&Name:"));
     iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelNetworkName->minimumSizeHint().width());
     m_pButtonAdvanced->setText(tr("A&dvanced"));
-    m_pButtonAdvanced->setWhatsThis(tr("Shows additional network adapter options."));
+    m_pButtonAdvanced->setToolTip(tr("Shows additional network adapter options."));
     m_pLabelAdapterType->setText(tr("Adapter &Type:"));
     iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelAdapterType->minimumSizeHint().width());
-    m_pComboAdapterType->setWhatsThis(tr("Selects the type of the virtual network "
-                                         "adapter. Depending on this value, VirtualBox will provide different "
-                                         "network hardware to the virtual machine."));
+    m_pComboAdapterType->setToolTip(tr("Selects the type of the virtual network adapter. Depending on this value, VirtualBox "
+                                       "will provide different network hardware to the virtual machine."));
     m_pLabelPromiscuousMode->setText(tr("&Promiscuous Mode:"));
     iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelPromiscuousMode->minimumSizeHint().width());
-    m_pComboPromiscuousMode->setWhatsThis(tr("Selects the promiscuous mode policy "
-                                             "of the network adapter when attached to an internal network, "
-                                             "host only network or a bridge."));
+    m_pComboPromiscuousMode->setToolTip(tr("Selects the promiscuous mode policy of the network adapter when attached to an "
+                                           "internal network, host only network or a bridge."));
     m_pLabelMAC->setText(tr("&MAC Address:"));
     iFirstColumnWidth = qMax(iFirstColumnWidth, m_pLabelMAC->minimumSizeHint().width());
-    m_pEditorMAC->setWhatsThis(tr("Holds the MAC address of this adapter. It contains "
-                                  "exactly 12 characters chosen from {0-9,A-F}. Note that the second character "
-                                  "must be an even digit."));
-    m_pButtonMAC->setWhatsThis(tr("Generates a new random MAC address."));
+    m_pEditorMAC->setToolTip(tr("Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. "
+                                "Note that the second character must be an even digit."));
+    m_pButtonMAC->setToolTip(tr("Generates a new random MAC address."));
     m_pLabelGenericProperties->setText(tr("Generic Properties:"));
-    m_pEditorGenericProperties->setWhatsThis(tr("Holds the configuration settings "
-                                                "for the network attachment driver. The settings should be of "
-                                                "the form <b>name=value</b> and will depend on the driver. "
-                                                "Use <b>shift-enter</b> to add a new entry."));
-    m_pCheckBoxCableConnected->setWhatsThis(tr("When checked, the virtual network "
-                                               "cable is plugged in."));
+    m_pEditorGenericProperties->setToolTip(tr("Holds the configuration settings for the network attachment driver. The settings "
+                                              "should be of the form <b>name=value</b> and will depend on the driver. "
+                                              "Use <b>shift-enter</b> to add a new entry."));
+    m_pCheckBoxCableConnected->setToolTip(tr("When checked, the virtual network cable is plugged in."));
     m_pCheckBoxCableConnected->setText(tr("&Cable Connected"));
-    m_pButtonPortForwarding->setWhatsThis(tr("Displays a window to configure port "
-                                             "forwarding rules."));
+    m_pButtonPortForwarding->setToolTip(tr("Displays a window to configure port forwarding rules."));
     m_pButtonPortForwarding->setText(tr("&Port Forwarding"));
 
     /* Translate combo-boxes content: */

@@ -288,32 +288,32 @@ bool UIMachineSettingsSerial::isUserDefined()
 
 void UIMachineSettingsSerial::retranslateUi()
 {
-    m_pCheckBoxPort->setWhatsThis(tr("When checked, enables the given serial port of the virtual machine."));
+    m_pCheckBoxPort->setToolTip(tr("When checked, enables the given serial port of the virtual machine."));
     m_pCheckBoxPort->setText(tr("&Enable Serial Port"));
     m_pLabelNumber->setText(tr("Port &Number:"));
-    m_pComboNumber->setWhatsThis(tr("Selects the serial port number. You can choose one of the standard serial ports or "
-                                      "select <b>User-defined</b> and specify port parameters manually."));
+    m_pComboNumber->setToolTip(tr("Selects the serial port number. You can choose one of the standard serial ports or select "
+                                  "<b>User-defined</b> and specify port parameters manually."));
     m_pLabelIRQ->setText(tr("&IRQ:"));
-    m_pLineEditIRQ->setWhatsThis(tr("Holds the IRQ number of this serial port. This should be a whole number between <tt>0</tt> "
-                                    "and <tt>255</tt>. Values greater than <tt>15</tt> may only be used if the <b>I/O APIC</b> "
-                                    "setting is enabled for this virtual machine."));
+    m_pLineEditIRQ->setToolTip(tr("Holds the IRQ number of this serial port. This should be a whole number between <tt>0</tt> "
+                                  "and <tt>255</tt>. Values greater than <tt>15</tt> may only be used if the <b>I/O APIC</b> "
+                                  "setting is enabled for this virtual machine."));
     m_pLabelIOPort->setText(tr("I/O Po&rt:"));
-    m_pLineEditIOPort->setWhatsThis(tr("Holds the base I/O port address of this serial port. Valid values are integer numbers in "
-                                       "range from <tt>0</tt> to <tt>0xFFFF</tt>."));
+    m_pLineEditIOPort->setToolTip(tr("Holds the base I/O port address of this serial port. Valid values are integer numbers in "
+                                     "range from <tt>0</tt> to <tt>0xFFFF</tt>."));
     m_pLabelMode->setText(tr("Port &Mode:"));
-    m_pComboMode->setWhatsThis(tr("Selects the working mode of this serial port. If you select <b>Disconnected</b>, the guest "
-                                     "OS will detect the serial port but will not be able to operate it."));
-    m_pCheckBoxPipe->setWhatsThis(tr("When checked, the virtual machine will assume that the pipe or socket specified in the "
-                                     "<b>Path/Address</b> field exists and try to use it. Otherwise, the pipe or socket will be "
-                                     "created by the virtual machine when it starts."));
+    m_pComboMode->setToolTip(tr("Selects the working mode of this serial port. If you select <b>Disconnected</b>, the guest OS "
+                                "will detect the serial port but will not be able to operate it."));
+    m_pCheckBoxPipe->setToolTip(tr("When checked, the virtual machine will assume that the pipe or socket specified in the "
+                                   "<b>Path/Address</b> field exists and try to use it. Otherwise, the pipe or socket will be "
+                                   "created by the virtual machine when it starts."));
     m_pCheckBoxPipe->setText(tr("&Connect to existing pipe/socket"));
     m_pLabelPath->setText(tr("&Path/Address:"));
-    m_pEditorPath->setWhatsThis(tr("<p>In <b>Host Pipe</b> mode: Holds the path to the serial port's pipe on the host. "
-                                     "Examples: \"\\\\.\\pipe\\myvbox\" or \"/tmp/myvbox\", for Windows and UNIX-like systems "
-                                     "respectively.</p><p>In <b>Host Device</b> mode: Holds the host serial device name. "
-                                     "Examples: \"COM1\" or \"/dev/ttyS0\".</p><p>In <b>Raw File</b> mode: Holds the file-path "
-                                     "on the host system, where the serial output will be dumped.</p><p>In <b>TCP</b> mode: Holds "
-                                     "the TCP \"port\" when in server mode, or \"hostname:port\" when in client mode."));
+    m_pEditorPath->setToolTip(tr("<p>In <b>Host Pipe</b> mode: Holds the path to the serial port's pipe on the host. "
+                                 "Examples: \"\\\\.\\pipe\\myvbox\" or \"/tmp/myvbox\", for Windows and UNIX-like systems "
+                                 "respectively.</p><p>In <b>Host Device</b> mode: Holds the host serial device name. "
+                                 "Examples: \"COM1\" or \"/dev/ttyS0\".</p><p>In <b>Raw File</b> mode: Holds the file-path "
+                                 "on the host system, where the serial output will be dumped.</p><p>In <b>TCP</b> mode: Holds "
+                                 "the TCP \"port\" when in server mode, or \"hostname:port\" when in client mode."));
 
     m_pComboNumber->setItemText(m_pComboNumber->count() - 1, UITranslator::toCOMPortName(0, 0));
 
