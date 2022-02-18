@@ -505,7 +505,17 @@ class tdUnitTest1(vbox.TestDriver):
             if   self.sNicAttachment == 'nat':     eNic0AttachType = vboxcon.NetworkAttachmentType_NAT;
             elif self.sNicAttachment == 'bridged': eNic0AttachType = vboxcon.NetworkAttachmentType_Bridged;
             else:                                  eNic0AttachType = None;
-            return self.oTestVmSet.actionConfig(self, eNic0AttachType = eNic0AttachType);
+
+            # Make sure to mount the Validation Kit .ISO so that TxS has the chance
+            # to update itself.
+            #
+            # This is necessary as a lot of our test VMs nowadays have a very old TxS
+            # installed which don't understand commands like uploading files to the guest.
+            # Uploading files is needed for this test driver, however.
+            #
+            ## @todo Get rid of this as soon as we create test VMs in a descriptive (automated) manner.
+            return self.oTestVmSet.actionConfig(self, eNic0AttachType = eNic0AttachType, \
+                                                sDvdImage = self.sVBoxValidationKitIso);
 
         return True;
 
@@ -559,7 +569,9 @@ class tdUnitTest1(vbox.TestDriver):
         # Simple test.
         self.logVmInfo(oVM);
         # Try waiting for a bit longer (5 minutes) until the CD is available to avoid running into timeouts.
-        self.oSession, self.oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = False);
+        self.oSession, self.oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, \
+                                                                            fCdWait = True, \
+                                                                            cMsCdWait = 5 * 60 * 1000);
         if self.oSession is not None:
             self.addTask(self.oTxsSession);
 
