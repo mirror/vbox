@@ -44,8 +44,9 @@ sys.path.append(g_ksValidationKitDir)
 
 # Validation Kit imports.
 from common     import utils;
-from testdriver import vbox
-from testdriver import reporter
+from testdriver import reporter;
+from testdriver import vbox;
+from testdriver import vboxcon;
 
 
 class tdUnitTest1(vbox.TestDriver):
