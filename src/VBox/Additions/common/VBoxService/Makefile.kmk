@@ -87,8 +87,6 @@ VBoxService_DEFS         += \
 	$(if $(VBOX_WITH_VBOXSERVICE_TOOLBOX),VBOX_WITH_VBOXSERVICE_TOOLBOX,) \
 	$(if $(VBOX_WITH_VBOXSERVICE_VMINFO),VBOX_WITH_VBOXSERVICE_VMINFO,)
 
-VBoxService_DEFS         := VBOX_WITH_VBOXSERVICE_CONTROL
-
 # Import global defines.
 VBoxService_DEFS         += \
 	$(if $(VBOX_WITH_DBUS),VBOX_WITH_DBUS,) \
@@ -177,7 +175,6 @@ VBoxService_SOURCES.win  += \
 VBoxService_SOURCES.os2  += \
 	VBoxService-os2.def
 
-VBoxService_LDFLAGS       += -static
 VBoxService_LDFLAGS.darwin = -framework IOKit
 
 VBoxService_LIBS         += \
