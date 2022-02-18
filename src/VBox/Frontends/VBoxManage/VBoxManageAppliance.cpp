@@ -1361,6 +1361,8 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                         case VirtualSystemDescriptionType_BootingFirmware:
                         case VirtualSystemDescriptionType_CloudInitScriptPath:
                         case VirtualSystemDescriptionType_CloudCompartmentId:
+                        case VirtualSystemDescriptionType_CloudShapeCpus:
+                        case VirtualSystemDescriptionType_CloudShapeMemory:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
 

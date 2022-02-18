@@ -4381,6 +4381,8 @@
     <const name="BootingFirmware" value="49" />
     <const name="CloudInitScriptPath" value="50" />
     <const name="CloudCompartmentId" value="51" />
+    <const name="CloudShapeCpus" value="52" />
+    <const name="CloudShapeMemory" value="53" />
     <const name="HardDiskControllerVirtioSCSI" value="60" />
   </enum>
 
