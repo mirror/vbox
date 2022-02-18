@@ -1741,6 +1741,20 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
         pThis->plane_updated = 0;
         full_update = true;
     }
+
+    /* Underline position */
+    uline_pos  = pThis->cr[0x14] & 0x1f;
+    if (uline_pos != pThis->last_uline) {
+        pThis->last_uline = uline_pos;
+        full_update = true;
+    }
+
+    blink_enabled = !!(pThis->ar[0x10] & 0x08); /* Attribute controller blink enable. */
+    if (blink_enabled != pThis->last_blink) {
+        pThis->last_blink = blink_enabled;
+        full_update = true;
+    }
+
     full_update |= vgaR3UpdateBasicParams(pThis, pThisCC);
 
     line_offset = pThis->line_offset;
@@ -1834,10 +1848,6 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
         chr_blink_flip = true;
         cur_blink_flip = true;
     }
-    blink_enabled = !!(pThis->ar[0x10] & 0x08); /* Attribute controller blink enable. */
-
-    /* Underline position */
-    uline_pos  = pThis->cr[0x14] & 0x1f;
 
     for(cy = 0; cy < (height - dscan); cy = cy + (1 << dscan)) {
         d1 = dest;
