@@ -1119,7 +1119,7 @@
 /** @def RT_COMPILER_WITH_128BIT_INT_TYPES
  * Defined when uint128_t and int128_t are native integer types.  If
  * undefined, they are structure with Hi & Lo members. */
-#if defined(__GNUC__) && defined(RT_ARCH_AMD64)
+#if defined(__SIZEOF_INT128__) || (defined(__GNUC__) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)))
 # define RT_COMPILER_WITH_128BIT_INT_TYPES
 #endif
 
