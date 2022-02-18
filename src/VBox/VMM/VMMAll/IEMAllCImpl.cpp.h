@@ -8107,7 +8107,8 @@ IEM_CIMPL_DEF_0(iemCImpl_xsetbv)
     return iemRaiseUndefinedOpcode(pVCpu);
 }
 
-#ifdef IN_RING3
+#ifndef RT_ARCH_ARM64
+# ifdef IN_RING3
 
 /** Argument package for iemCImpl_cmpxchg16b_fallback_rendezvous_callback. */
 struct IEMCIMPLCX16ARGS
@@ -8116,9 +8117,9 @@ struct IEMCIMPLCX16ARGS
     PRTUINT128U     pu128RaxRdx;
     PRTUINT128U     pu128RbxRcx;
     uint32_t       *pEFlags;
-# ifdef VBOX_STRICT
+#  ifdef VBOX_STRICT
     uint32_t        cCalls;
-# endif
+#  endif
 };
 
 /**
@@ -8129,16 +8130,16 @@ static DECLCALLBACK(VBOXSTRICTRC) iemCImpl_cmpxchg16b_fallback_rendezvous_callba
 {
     RT_NOREF(pVM, pVCpu);
     struct IEMCIMPLCX16ARGS *pArgs = (struct IEMCIMPLCX16ARGS *)pvUser;
-# ifdef VBOX_STRICT
+#  ifdef VBOX_STRICT
     Assert(pArgs->cCalls == 0);
     pArgs->cCalls++;
-# endif
+#  endif
 
     iemAImpl_cmpxchg16b_fallback(pArgs->pu128Dst, pArgs->pu128RaxRdx, pArgs->pu128RbxRcx, pArgs->pEFlags);
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+# endif /* IN_RING3 */
 
 /**
  * Implements 'CMPXCHG16B' fallback using rendezvous.
@@ -8146,15 +8147,15 @@ static DECLCALLBACK(VBOXSTRICTRC) iemCImpl_cmpxchg16b_fallback_rendezvous_callba
 IEM_CIMPL_DEF_4(iemCImpl_cmpxchg16b_fallback_rendezvous, PRTUINT128U, pu128Dst, PRTUINT128U, pu128RaxRdx,
                 PRTUINT128U, pu128RbxRcx, uint32_t *, pEFlags)
 {
-#ifdef IN_RING3
+# ifdef IN_RING3
     struct IEMCIMPLCX16ARGS Args;
     Args.pu128Dst       = pu128Dst;
     Args.pu128RaxRdx    = pu128RaxRdx;
     Args.pu128RbxRcx    = pu128RbxRcx;
     Args.pEFlags        = pEFlags;
-# ifdef VBOX_STRICT
+#  ifdef VBOX_STRICT
     Args.cCalls         = 0;
-# endif
+#  endif
     VBOXSTRICTRC rcStrict = VMMR3EmtRendezvous(pVCpu->CTX_SUFF(pVM), VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE,
                                                iemCImpl_cmpxchg16b_fallback_rendezvous_callback, &Args);
     Assert(Args.cCalls == 1);
@@ -8174,12 +8175,13 @@ IEM_CIMPL_DEF_4(iemCImpl_cmpxchg16b_fallback_rendezvous, PRTUINT128U, pu128Dst, 
         }
     }
     return rcStrict;
-#else
+# else
     RT_NOREF(pVCpu, cbInstr, pu128Dst, pu128RaxRdx, pu128RbxRcx, pEFlags);
     return VERR_IEM_ASPECT_NOT_IMPLEMENTED; /* This should get us to ring-3 for now.  Should perhaps be replaced later. */
-#endif
+# endif
 }
 
+#endif /* RT_ARCH_ARM64 */
 
 /**
  * Implements 'CLFLUSH' and 'CLFLUSHOPT'.

@@ -1113,7 +1113,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u16,       (uint16_t *pu16Dst, uint16_t
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u16_locked,(uint16_t *pu16Dst, uint16_t *puAx,  uint16_t uSrcReg, uint32_t *pEFlags));
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u32,       (uint32_t *pu32Dst, uint32_t *puEax, uint32_t uSrcReg, uint32_t *pEFlags));
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u32_locked,(uint32_t *pu32Dst, uint32_t *puEax, uint32_t uSrcReg, uint32_t *pEFlags));
-#ifdef RT_ARCH_X86
+#if ARCH_BITS == 32
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64,       (uint64_t *pu64Dst, uint64_t *puRax, uint64_t *puSrcReg, uint32_t *pEFlags));
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64_locked,(uint64_t *pu64Dst, uint64_t *puRax, uint64_t *puSrcReg, uint32_t *pEFlags));
 #else
@@ -1128,8 +1128,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b,(PRTUINT128U pu128Dst, PRTUINT128U p
                                              uint32_t *pEFlags));
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b_locked,(PRTUINT128U pu128Dst, PRTUINT128U pu128RaxRdx, PRTUINT128U pu128RbxRcx,
                                                     uint32_t *pEFlags));
+#ifndef RT_ARCH_ARM64
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b_fallback,(PRTUINT128U pu128Dst, PRTUINT128U pu128RaxRdx,
                                                       PRTUINT128U pu128RbxRcx, uint32_t *pEFlags));
+#endif
 /** @} */
 
 /** @name Memory ordering
@@ -1139,7 +1141,9 @@ typedef FNIEMAIMPLMEMFENCE *PFNIEMAIMPLMEMFENCE;
 IEM_DECL_IMPL_DEF(void, iemAImpl_mfence,(void));
 IEM_DECL_IMPL_DEF(void, iemAImpl_sfence,(void));
 IEM_DECL_IMPL_DEF(void, iemAImpl_lfence,(void));
+#ifndef RT_ARCH_ARM64
 IEM_DECL_IMPL_DEF(void, iemAImpl_alt_mem_fence,(void));
+#endif
 /** @} */
 
 /** @name Double precision shifts

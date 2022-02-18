@@ -29,8 +29,13 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#if defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64)
-# define IEM_WITHOUT_ASSEMBLY
+/** @def IEM_WITHOUT_ASSEMBLY
+ * Enables all the code in this file.
+ */
+#if !defined(IEM_WITHOUT_ASSEMBLY)
+# if defined(RT_ARCH_ARM32) || defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
+#  define IEM_WITHOUT_ASSEMBLY
+# endif
 #endif
 
 /**
@@ -1411,6 +1416,114 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u8_locked,(uint8_t *puDst, uint8_t *puReg,
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 #endif
 
+/*
+ * CMPXCHG, CMPXCHG8B, CMPXCHG16B
+ *
+ * Note! We don't have non-locking/atomic cmpxchg primitives, so all cmpxchg
+ *       instructions are emulated as locked.
+ */
+#if defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u8_locked, (uint8_t  *pu8Dst,  uint8_t  *puAl,  uint8_t  uSrcReg, uint32_t *pEFlags))
+{
+    uint8_t const uOld = *puAl;
+    if (ASMAtomicCmpXchgExU8(pu8Dst, uSrcReg, uOld, puAl))
+    {
+        Assert(*puAl == uOld);
+        *pEFlags |= X86_EFL_ZF;
+    }
+    else
+        *pEFlags &= ~X86_EFL_ZF;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u16_locked,(uint16_t *pu16Dst, uint16_t *puAx,  uint16_t uSrcReg, uint32_t *pEFlags))
+{
+    uint16_t const uOld = *puAx;
+    if (ASMAtomicCmpXchgExU16(pu16Dst, uSrcReg, uOld, puAx))
+    {
+        Assert(*puAx == uOld);
+        *pEFlags |= X86_EFL_ZF;
+    }
+    else
+        *pEFlags &= ~X86_EFL_ZF;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u32_locked,(uint32_t *pu32Dst, uint32_t *puEax, uint32_t uSrcReg, uint32_t *pEFlags))
+{
+    uint32_t const uOld = *puEax;
+    if (ASMAtomicCmpXchgExU32(pu32Dst, uSrcReg, uOld, puEax))
+    {
+        Assert(*puEax == uOld);
+        *pEFlags |= X86_EFL_ZF;
+    }
+    else
+        *pEFlags &= ~X86_EFL_ZF;
+}
+
+
+# if ARCH_BITS == 32
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64_locked,(uint64_t *pu64Dst, uint64_t *puRax, uint64_t *puSrcReg, uint32_t *pEFlags))
+# else
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64_locked,(uint64_t *pu64Dst, uint64_t *puRax, uint64_t uSrcReg, uint32_t *pEFlags))
+# endif
+{
+# if ARCH_BITS == 32
+    uint64_t const uSrcReg = *puSrcReg;
+# endif
+    uint64_t const uOld = *puRax;
+    if (ASMAtomicCmpXchgExU64(pu64Dst, uSrcReg, uOld, puRax))
+    {
+        Assert(*puRax == uOld);
+        *pEFlags |= X86_EFL_ZF;
+    }
+    else
+        *pEFlags &= ~X86_EFL_ZF;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg8b_locked,(uint64_t *pu64Dst, PRTUINT64U pu64EaxEdx, PRTUINT64U pu64EbxEcx,
+                                                   uint32_t *pEFlags))
+{
+    uint64_t const uNew = pu64EbxEcx->u;
+    uint64_t const uOld = pu64EaxEdx->u;
+    if (ASMAtomicCmpXchgExU64(pu64Dst, uNew, uOld, &pu64EaxEdx->u))
+    {
+        Assert(pu64EaxEdx->u == uOld);
+        *pEFlags |= X86_EFL_ZF;
+    }
+    else
+        *pEFlags &= ~X86_EFL_ZF;
+}
+
+
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b_locked,(PRTUINT128U pu128Dst, PRTUINT128U pu128RaxRdx, PRTUINT128U pu128RbxRcx,
+                                                    uint32_t *pEFlags))
+{
+#  ifdef VBOX_STRICT
+    RTUINT128U const uOld = *pu128RaxRdx;
+#  endif
+#  if defined(RT_ARCH_AMD64)
+    if (ASMAtomicCmpXchgU128v2(&pu128Dst->u, pu128RbxRcx->s.Hi, pu128RbxRcx->s.Lo, pu128RaxRdx->s.Hi, pu128RaxRdx->s.Lo,
+                               &pu128RaxRdx->u))
+#  else
+    if (ASMAtomicCmpXchgU128(&pu128Dst->u, pu128RbxRcx->u, pu128RaxRdx->u, &pu128RaxRdx->u))
+#  endif
+    {
+        Assert(pu128RaxRdx->s.Lo == uOld.s.Lo && pu128RaxRdx->s.Hi == uOld.s.Hi);
+        *pEFlags |= X86_EFL_ZF;
+    }
+    else
+        *pEFlags &= ~X86_EFL_ZF;
+}
+# endif
+
+#endif /* defined(IEM_WITHOUT_ASSEMBLY) */
+
+
+# if !defined(RT_ARCH_ARM64) /** @todo may need this for unaligned accesses... */
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b_fallback,(PRTUINT128U pu128Dst, PRTUINT128U pu128RaxRdx,
                                                       PRTUINT128U pu128RbxRcx, uint32_t *pEFlags))
 {
@@ -1426,6 +1539,53 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b_fallback,(PRTUINT128U pu128Dst, PRTU
         *pu128RaxRdx = u128Tmp;
         *pEFlags &= ~X86_EFL_ZF;
     }
+}
+#endif /* !RT_ARCH_ARM64 */
+
+
+/* Unlocked versions mapped to the locked ones: */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u8,        (uint8_t  *pu8Dst,  uint8_t  *puAl,  uint8_t  uSrcReg, uint32_t *pEFlags))
+{
+    iemAImpl_cmpxchg_u8_locked(pu8Dst, puAl, uSrcReg, pEFlags);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u16,       (uint16_t *pu16Dst, uint16_t *puAx,  uint16_t uSrcReg, uint32_t *pEFlags))
+{
+    iemAImpl_cmpxchg_u16_locked(pu16Dst, puAx, uSrcReg, pEFlags);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u32,       (uint32_t *pu32Dst, uint32_t *puEax, uint32_t uSrcReg, uint32_t *pEFlags))
+{
+    iemAImpl_cmpxchg_u32_locked(pu32Dst, puEax, uSrcReg, pEFlags);
+}
+
+
+# if ARCH_BITS == 32
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64,       (uint64_t *pu64Dst, uint64_t *puRax, uint64_t *puSrcReg, uint32_t *pEFlags))
+{
+    iemAImpl_cmpxchg_u64_locked(pu64Dst, puRax, puSrcReg, pEFlags);
+}
+# else
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64,       (uint64_t *pu64Dst, uint64_t *puRax, uint64_t uSrcReg, uint32_t *pEFlags))
+{
+    iemAImpl_cmpxchg_u64_locked(pu64Dst, puRax, uSrcReg, pEFlags);
+}
+# endif
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg8b,(uint64_t *pu64Dst, PRTUINT64U pu64EaxEdx, PRTUINT64U pu64EbxEcx, uint32_t *pEFlags))
+{
+    iemAImpl_cmpxchg8b_locked(pu64Dst, pu64EaxEdx, pu64EbxEcx, pEFlags);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b,(PRTUINT128U pu128Dst, PRTUINT128U pu128RaxRdx, PRTUINT128U pu128RbxRcx,
+                                             uint32_t *pEFlags))
+{
+    iemAImpl_cmpxchg16b_locked(pu128Dst, pu128RaxRdx, pu128RbxRcx, pEFlags);
 }
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
@@ -1758,6 +1918,34 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_div_u16,(uint16_t *pu16RAX, uint16_t *pu16RDX, u
 
         *pu16RAX = Quotient.s.Lo;
         *pu16RDX = Remainder.s.Lo;
+        /** @todo research the undefined DIV flags. */
+        return 0;
+
+    }
+    /* #DE */
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+}
+
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_div_u8,(uint8_t *pu8RAX, uint8_t *pu8RDX, uint8_t u8Divisor, uint32_t *pfEFlags))
+{
+    /* Note! Skylake leaves all flags alone. */
+    RT_NOREF_PV(pfEFlags);
+
+    if (   u8Divisor != 0
+        && *pu8RDX < u8Divisor)
+    {
+        RTUINT16U Dividend;
+        Dividend.s.Lo = *pu8RAX;
+        Dividend.s.Hi = *pu8RDX;
+
+        RTUINT16U Remainder;
+        RTUINT16U Quotient;
+        Quotient.u  = Dividend.u / u8Divisor;
+        Remainder.u = Dividend.u % u8Divisor;
+
+        *pu8RAX = Quotient.s.Lo;
+        *pu8RDX = Remainder.s.Lo;
         /** @todo research the undefined DIV flags. */
         return 0;
 
@@ -2753,6 +2941,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_mfence,(void))
 {
     ASMMemoryFence();
 }
+
+
+#  ifndef RT_ARCH_ARM64
+IEM_DECL_IMPL_DEF(void, iemAImpl_alt_mem_fence,(void))
+{
+    ASMMemoryFence();
+}
+#  endif
 
 # endif
 

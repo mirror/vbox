@@ -7032,10 +7032,14 @@ FNIEMOP_DEF_1(iemOp_Grp15_lfence,   uint8_t, bRm)
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(0, 0);
+#ifndef RT_ARCH_ARM64
     if (IEM_GET_HOST_CPU_FEATURES(pVCpu)->fSse2)
+#endif
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_lfence);
+#ifndef RT_ARCH_ARM64
     else
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_alt_mem_fence);
+#endif
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -7052,10 +7056,14 @@ FNIEMOP_DEF_1(iemOp_Grp15_mfence,   uint8_t, bRm)
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(0, 0);
+#ifndef RT_ARCH_ARM64
     if (IEM_GET_HOST_CPU_FEATURES(pVCpu)->fSse2)
+#endif
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_mfence);
+#ifndef RT_ARCH_ARM64
     else
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_alt_mem_fence);
+#endif
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -7072,10 +7080,14 @@ FNIEMOP_DEF_1(iemOp_Grp15_sfence,   uint8_t, bRm)
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(0, 0);
+#ifndef RT_ARCH_ARM64
     if (IEM_GET_HOST_CPU_FEATURES(pVCpu)->fSse2)
+#endif
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_sfence);
+#ifndef RT_ARCH_ARM64
     else
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_alt_mem_fence);
+#endif
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
@@ -8567,16 +8579,21 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
         IEM_MC_REF_LOCAL(pu128RbxRcx, u128RbxRcx);
 
         IEM_MC_FETCH_EFLAGS(EFlags);
-# ifdef RT_ARCH_AMD64
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64)
+#  if defined(RT_ARCH_AMD64)
         if (IEM_GET_HOST_CPU_FEATURES(pVCpu)->fMovCmpXchg16b)
+#  endif
         {
             if (!(pVCpu->iem.s.fPrefixes & IEM_OP_PRF_LOCK))
                 IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
             else
                 IEM_MC_CALL_VOID_AIMPL_4(iemAImpl_cmpxchg16b_locked, pu128MemDst, pu128RaxRdx, pu128RbxRcx, pEFlags);
         }
+#  if defined(RT_ARCH_AMD64)
         else
+#  endif
 # endif
+# if !defined(RT_ARCH_ARM64) /** @todo may need this for unaligned accesses... */
         {
             /* Note! The fallback for 32-bit systems and systems without CX16 is multiple
                      accesses and not all all atomic, which works fine on in UNI CPU guest
@@ -8590,6 +8607,7 @@ FNIEMOP_DEF_1(iemOp_Grp9_cmpxchg16b_Mdq, uint8_t, bRm)
                 /* Does not get here, tail code is duplicated in iemCImpl_cmpxchg16b_fallback_rendezvous. */
             }
         }
+# endif
 
         IEM_MC_MEM_COMMIT_AND_UNMAP(pu128MemDst, IEM_ACCESS_DATA_RW);
         IEM_MC_COMMIT_EFLAGS(EFlags);
