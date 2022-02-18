@@ -159,30 +159,29 @@ void init_vga_card(void)
 #include "vgadefs.h"
 
 // --------------------------------------------------------------------------------------------
-/*
- *  Boot time bios area inits
- */
-void init_bios_area(void)
-{
-    uint8_t __far   *bda;
 
-    bda = 0x40 :> 0;
+#pragma pack(0)
 
-    /* Indicate 80x25 color was detected. */
-    bda[BIOSMEM_INITIAL_MODE] = (bda[BIOSMEM_INITIAL_MODE] & 0xcf) | 0x20;
-    /* Just for the first int10 find its children. */
+/* Alphanumeric character set override. */
+typedef struct {
+    uint8_t       c_height;   /* Bytes/lines per character. */
+    uint8_t       cgen_bank;  /* Character generator bank. */
+    uint16_t      char_num;   /* Number of chars defined. */
+    uint16_t      char_1st;   /* First char code in table. */
+    uint16_t      font_ofs;   /* Font definition table offset. */
+    uint16_t      font_seg;   /* Font definition table segment. */
+    uint8_t       n_rows;     /* Number of text rows shown. */
+    uint8_t       modes[1];   /* Applicable modes list, 0xFF terminated. */
+} cso_txt;
 
-    /* The default char height. */
-    bda[BIOSMEM_CHAR_HEIGHT] = 16;
-    /* Clear the screen. */
-    bda[BIOSMEM_VIDEO_CTL]   = 0x60;
-    /* Set the basic screen we have. */
-    bda[BIOSMEM_SWITCHES]    = 0xf9;
-    /* Set the basic mode set options. */
-    bda[BIOSMEM_MODESET_CTL] = 0x51;
-    /* Set the default MSR. */
-    bda[BIOSMEM_CURRENT_MSR] = 0x09;
-}
+/* Graphics character set override. */
+typedef struct {
+    uint8_t       c_height;   /* Lines per character. */
+    uint16_t      c_len;      /* Bytes per character. */
+    uint16_t      font_ofs;   /* Font definition table offset. */
+    uint16_t      font_seg;   /* Font definition table segment. */
+    uint8_t       modes[1];   /* Applicable modes list, 0xFF terminated. */
+} cso_grf;
 
 struct dcc {
     uint8_t     n_ent;
@@ -216,6 +215,33 @@ void __far *video_save_pointer_table[7] = {
     0,
     &secondary_save_area
 };
+
+/*
+ *  Boot time bios area inits
+ */
+void init_bios_area(void)
+{
+    uint8_t __far   *bda;
+
+    bda = 0x40 :> 0;
+
+    /* Indicate 80x25 color was detected. */
+    bda[BIOSMEM_INITIAL_MODE] = (bda[BIOSMEM_INITIAL_MODE] & 0xcf) | 0x20;
+    /* Just for the first int10 find its children. */
+
+    /* The default char height. */
+    bda[BIOSMEM_CHAR_HEIGHT] = 16;
+    /* Clear the screen. */
+    bda[BIOSMEM_VIDEO_CTL]   = 0x60;
+    /* Set the basic screen we have. */
+    bda[BIOSMEM_SWITCHES]    = 0xf9;
+    /* Set the basic mode set options. */
+    bda[BIOSMEM_MODESET_CTL] = 0x51;
+    /* Set the default MSR. */
+    bda[BIOSMEM_CURRENT_MSR] = 0x09;
+    /* Initialize the default save area pointer. */
+    *(void __far * __far *)&bda[BIOSMEM_VS_POINTER] = video_save_pointer_table;
+}
 
 // ============================================================================================
 //
@@ -855,7 +881,7 @@ static void biosfn_set_active_page(uint8_t page)
  biosfn_set_cursor_pos(page,cursor);
 }
 
-/// Recursive BIOS invocation, uses
+/// Recursive BIOS invocation, uses vector 6Dh
 extern void vga_font_set(uint8_t function, uint8_t data);
 #pragma aux vga_font_set =  \
     "mov    ah, 11h"        \
@@ -873,6 +899,8 @@ uint8_t cga_msr[8] = {
     0x2C, 0x28, 0x2D, 0x29, 0x2A, 0x2E, 0x1E, 0x29
 };
 
+static void biosfn_load_text_user_pat(uint8_t AL, uint16_t ES, uint16_t BP, uint16_t CX, uint16_t DX, uint8_t BL, uint8_t BH);
+
 void biosfn_set_video_mode(uint8_t mode)
 {// mode: Bit 7 is 1 if no clear screen
 
@@ -883,6 +911,8 @@ void biosfn_set_video_mode(uint8_t mode)
  uint8_t  *palette;
  uint16_t i;
  uint16_t crtc_addr;
+ void __far * __far *save_area;
+ VideoParamTableEntry __far *vpt;
 
 #ifdef VBE
  if (vbe_has_vbe_display()) {
@@ -895,10 +925,8 @@ void biosfn_set_video_mode(uint8_t mode)
  // The real mode
  mode=mode&0x7f;
 
- // Display switching is not supported, and mono monitors aren't either.
- // Requests to set mode 7 (mono) must set mode 0 instead (color).
- if (mode == 7)
-     mode = 0;
+ // Display switching is not supported; mono monitors aren't really either,
+ // but requests to set mode 7 are honored.
 
  // find the entry in the video modes
  line=find_vga_entry(mode);
@@ -910,7 +938,12 @@ void biosfn_set_video_mode(uint8_t mode)
  if(line==0xFF)
   return;
 
+ // Read the save area pointer.
+ save_area = (void __far *)read_dword(BIOSMEM_SEG, BIOSMEM_VS_POINTER);
+
  vpti=line_to_vpti[line];
+ vpt = save_area[0];
+ vpt += vpti;
 
 #if 0   // These are unused, but perhaps they shouldn't be?
  // Read the bios vga control
@@ -974,42 +1007,55 @@ void biosfn_set_video_mode(uint8_t mode)
  // Set Attribute Ctl
  for(i=0;i<=0x13;i++)
   {outb(VGAREG_ACTL_ADDRESS,i);
-   outb(VGAREG_ACTL_WRITE_DATA,video_param_table[vpti].actl_regs[i]);
+   outb(VGAREG_ACTL_WRITE_DATA,vpt->actl_regs[i]);
   }
  outb(VGAREG_ACTL_ADDRESS,0x14);
  outb(VGAREG_ACTL_WRITE_DATA,0x00);
+
+ save_area[0] = video_param_table;
+
+ // Save palette into the save area if it exists.
+ if(save_area[1])
+ {
+    uint8_t __far *dyn_save;
+
+    dyn_save = save_area[1];
+    for (i = 0; i < 16; ++i)
+       dyn_save[i] = vpt->actl_regs[i];
+    dyn_save[16] = vpt->actl_regs[17];
+ }
 
  // Set Sequencer Ctl
  outb(VGAREG_SEQU_ADDRESS,0);
  outb(VGAREG_SEQU_DATA,0x03);
  for(i=1;i<=4;i++)
   {outb(VGAREG_SEQU_ADDRESS,i);
-   outb(VGAREG_SEQU_DATA,video_param_table[vpti].sequ_regs[i - 1]);
+   outb(VGAREG_SEQU_DATA,vpt->sequ_regs[i - 1]);
   }
 
  // Set Grafx Ctl
  for(i=0;i<=8;i++)
   {outb(VGAREG_GRDC_ADDRESS,i);
-   outb(VGAREG_GRDC_DATA,video_param_table[vpti].grdc_regs[i]);
+   outb(VGAREG_GRDC_DATA,vpt->grdc_regs[i]);
   }
 
  // Set CRTC address VGA or MDA
  crtc_addr=vga_modes[line].memmodel==MTEXT?VGAREG_MDA_CRTC_ADDRESS:VGAREG_VGA_CRTC_ADDRESS;
+
+  // Set the misc register; may change CRTC base!
+ outb(VGAREG_WRITE_MISC_OUTPUT,vpt->miscreg);
 
  // Disable CRTC write protection
  outw(crtc_addr,0x0011);
  // Set CRTC regs
  for(i=0;i<=0x18;i++)
   {outb(crtc_addr,i);
-   outb(crtc_addr+1,video_param_table[vpti].crtc_regs[i]);
+   outb(crtc_addr+1,vpt->crtc_regs[i]);
   }
-
- // Set the misc register
- outb(VGAREG_WRITE_MISC_OUTPUT,video_param_table[vpti].miscreg);
 
  // Enable video
  outb(VGAREG_ACTL_ADDRESS,0x20);
- inb(VGAREG_ACTL_RESET);
+ inb(crtc_addr + VGAREG_ACTL_RESET - VGAREG_VGA_CRTC_ADDRESS);
 
  if(noclearmem==0x00)
   {
@@ -1036,18 +1082,17 @@ void biosfn_set_video_mode(uint8_t mode)
 
  // Set the BIOS mem
  write_byte(BIOSMEM_SEG,BIOSMEM_CURRENT_MODE,mode);
- write_word(BIOSMEM_SEG,BIOSMEM_NB_COLS,video_param_table[vpti].twidth);
- write_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE,video_param_table[vpti].slength);
+ write_word(BIOSMEM_SEG,BIOSMEM_NB_COLS,vpt->twidth);
+ write_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE,vpt->slength);
  write_word(BIOSMEM_SEG,BIOSMEM_CRTC_ADDRESS,crtc_addr);
- write_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS,video_param_table[vpti].theightm1);
- write_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,video_param_table[vpti].cheight);
+ write_byte(BIOSMEM_SEG,BIOSMEM_NB_ROWS,vpt->theightm1);
+ write_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,vpt->cheight);
  write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,(0x60|noclearmem));
  write_byte(BIOSMEM_SEG,BIOSMEM_SWITCHES,0xF9);
  write_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,read_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x7f);
 
  // FIXME We nearly have the good tables. to be reworked
  write_byte(BIOSMEM_SEG,BIOSMEM_DCC_INDEX,0x08);    // 8 is VGA should be ok for now
- write_dword(BIOSMEM_SEG,BIOSMEM_VS_POINTER, (uint32_t)(void __far *)video_save_pointer_table);
 
  if (mode <= 7)
  {
@@ -1061,6 +1106,7 @@ void biosfn_set_video_mode(uint8_t mode)
    biosfn_set_cursor_shape(0x06,0x07);
   }
 
+ /// @todo Could be optimized to a memset since only BDA needs updating.
  // Set cursor pos for page 0..7
  for(i=0;i<8;i++)
   biosfn_set_cursor_pos(i,0x0000);
@@ -1071,14 +1117,39 @@ void biosfn_set_video_mode(uint8_t mode)
  // Write the fonts in memory
  if(vga_modes[line].class==TEXT)
   {
+     cso_txt __far   *ovr = save_area[2];
+
      biosfn_load_text_8_16_pat(0x04, 0);    /* Load 8x16 font into page 0. */
+     if (ovr)
+      {
+#ifdef VGA_DEBUG
+         printf("Charmap override found, font at %04x:%04x\n", ovr->font_seg, ovr->font_ofs);
+#endif
+         i = 0;
+         // Does the override support current mode?
+         while (ovr->modes[i] != 0xff)
+          {
+             if (ovr->modes[i] == mode)
+                break;
+             ++i;
+          }
+         // If there is a valid font override, apply it.
+         if (ovr->modes[i] == mode)
+          {
+#ifdef VGA_DEBUG
+             printf("Loading override, %04x chars, height %02x\n", ovr->char_num, ovr->c_height);
+#endif
+             biosfn_load_text_user_pat(0x10, ovr->font_seg, ovr->font_ofs, ovr->char_num,
+                                       ovr->char_1st, ovr->cgen_bank, ovr->c_height);
+          }
+      }
      vga_font_set(0x03, 0);                 /* Select font page mode 0. */
   }
 
  // Set the ints 0x1F and 0x43
  set_int_vector(0x1f, vgafont8+128*8);
 
-  switch(video_param_table[vpti].cheight)
+  switch(vpt->cheight)
    {case 8:
      set_int_vector(0x43, vgafont8);
      break;
@@ -1856,6 +1927,13 @@ static void set_scan_lines(uint8_t lines)
  write_word(BIOSMEM_SEG,BIOSMEM_PAGE_SIZE, rows * cols * 2);
 }
 
+static void biosfn_set_font_block(uint8_t BL)
+{
+ outw(VGAREG_SEQU_ADDRESS, 0x0100);
+ outw(VGAREG_SEQU_ADDRESS, 0x0003 | (BL << 8));
+ outw(VGAREG_SEQU_ADDRESS, 0x0300);
+}
+
 static void biosfn_load_text_user_pat(uint8_t AL, uint16_t ES, uint16_t BP, uint16_t CX,
                                       uint16_t DX, uint8_t BL, uint8_t BH)
 {
@@ -2147,7 +2225,7 @@ uint16_t biosfn_save_video_state(uint16_t CX, uint16_t ES, uint16_t BX)
         }
 
         for(i=0;i<=0x13;i++) {
-            inb(VGAREG_ACTL_RESET);
+            inb(VGAREG_ACTL_RESET); /* Reads do not toggle flip-flop! */
             outb(VGAREG_ACTL_ADDRESS, i | (ar_index & 0x20));
             write_byte(ES, BX, inb(VGAREG_ACTL_READ_DATA)); BX++;
         }
@@ -2509,6 +2587,9 @@ void __cdecl int10_func(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint
        case 0x02:
        case 0x12:
         biosfn_load_text_8_8_pat(GET_AL(),GET_BL());
+        break;
+       case 0x03:
+        biosfn_set_font_block(GET_BL());
         break;
        case 0x04:
        case 0x14:
