@@ -1548,6 +1548,16 @@ DECLINLINE(void) tstASMAtomicCmpWriteU128Worker(RTUINT128U volatile *pu128)
                                                                      u128A = RTUINT128_INIT_C(0xfff40ff8f08ef3, 0x4ee8ee04cc4de4),
                                                                      u128B = RTUINT128_INIT_C(0x80040008008efd, 0x40080004004def)),
                            true, 0xfff40ff8f08ef3, 0x4ee8ee04cc4de4);
+
+    /* Make sure the v2 version works too (arm) */
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpWriteU128v2(&pu128->u,
+                                                                      UINT64_C(0x95487930069587), UINT64_C(0x89958490385964),
+                                                                      UINT64_C(0xfff40ff8f08ef3), UINT64_C(0x4ee8ee04cc4de4)),
+                           true, 0x95487930069587, 0x89958490385964);
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpWriteU128v2(&pu128->u,
+                                                                      UINT64_C(0x99969404869434), UINT64_C(0x11049309994567),
+                                                                      UINT64_C(0x33f40ff8f08eff), UINT64_C(0x99e8ee04cc4dee)),
+                           false, 0x95487930069587, 0x89958490385964);
 }
 #endif /* RTASM_HAVE_CMP_WRITE_U128 */
 
@@ -1697,6 +1707,95 @@ DECLINLINE(void) tstASMAtomicCmpXchgExU64Worker(uint64_t volatile *pu64)
 #endif
 }
 
+DECLINLINE(void) tstASMAtomicCmpXchgU128Worker(RTUINT128U volatile *pu128)
+{
+    pu128->s.Lo = UINT64_C(0xffffffffffffff);
+    pu128->s.Hi = UINT64_C(0xffffffffffffff);
+
+    RTUINT128U u128A, u128B;
+    RTUINT128U const u128OldInit = RTUINT128_INIT_C(0x4242424242424242, 0x2222222222222222);
+    RTUINT128U       u128Old     = u128OldInit;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpXchgU128U(pu128,
+                                                                    u128A = RTUINT128_INIT_C(0, 0),
+                                                                    u128B = RTUINT128_INIT_C(0, 0),
+                                                                    &u128Old),
+                           false, 0xffffffffffffff, 0xffffffffffffff);
+    CHECKVAL128_C(&u128Old, 0xffffffffffffff, 0xffffffffffffff);
+
+    u128Old = u128OldInit;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpXchgU128U(pu128,
+                                                                    u128A = RTUINT128_INIT_C(0, 0),
+                                                                    u128B = RTUINT128_INIT_C(0xffffffffffffff, 0xffffffffffffff),
+                                                                    &u128Old),
+                           true, 0, 0);
+    CHECKVAL128_C(&u128Old, 0xffffffffffffff, 0xffffffffffffff);
+
+    u128Old = u128OldInit;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpXchgU128U(pu128,
+                                                                    u128A = RTUINT128_INIT_C(0x80040008008efd, 0x40080004004def),
+                                                                    u128B = RTUINT128_INIT_C(0, 1),
+                                                                    &u128Old),
+                           false, 0, 0);
+    CHECKVAL128_C(&u128Old, 0, 0);
+
+    u128Old = u128OldInit;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpXchgU128U(pu128,
+                                                                    u128A = RTUINT128_INIT_C(0x80040008008efd, 0x40080004004def),
+                                                                    u128B = RTUINT128_INIT_C(1, 0),
+                                                                    &u128Old),
+                           false, 0, 0);
+    CHECKVAL128_C(&u128Old, 0, 0);
+
+    u128Old = u128OldInit;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpXchgU128U(pu128,
+                                                                    u128A = RTUINT128_INIT_C(0x80040008008efd, 0x40080004004def),
+                                                                    u128B = RTUINT128_INIT_C(0, 0),
+                                                                    &u128Old),
+                           true, 0x80040008008efd, 0x40080004004def);
+    CHECKVAL128_C(&u128Old, 0, 0);
+
+    u128Old = u128OldInit;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpXchgU128U(pu128,
+                                                                    u128A = RTUINT128_INIT_C(0xfff40ff8f08ef3, 0x4ee8ee04cc4de4),
+                                                                    u128B = RTUINT128_INIT_C(0x80040008008efd, 0),
+                                                                    &u128Old),
+                           false, 0x80040008008efd, 0x40080004004def);
+    CHECKVAL128_C(&u128Old, 0x80040008008efd, 0x40080004004def);
+
+    u128Old = u128OldInit;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpXchgU128U(pu128,
+                                                                    u128A = RTUINT128_INIT_C(0xfff40ff8f08ef3, 0x4ee8ee04cc4de4),
+                                                                    u128B = RTUINT128_INIT_C(0, 0x40080004004def),
+                                                                    &u128Old),
+                           false, 0x80040008008efd, 0x40080004004def);
+    CHECKVAL128_C(&u128Old, 0x80040008008efd, 0x40080004004def);
+
+    u128Old = u128OldInit;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpXchgU128U(pu128,
+                                                                    u128A = RTUINT128_INIT_C(0xfff40ff8f08ef3, 0x4ee8ee04cc4de4),
+                                                                    u128B = RTUINT128_INIT_C(0x80040008008efd, 0x40080004004def),
+                                                                    &u128Old),
+                           true, 0xfff40ff8f08ef3, 0x4ee8ee04cc4de4);
+    CHECKVAL128_C(&u128Old, 0x80040008008efd, 0x40080004004def);
+
+    /* Make sure the v2 version works too (arm) */
+    u128Old = u128OldInit;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpXchgU128v2(&pu128->u,
+                                                                     UINT64_C(0x78039485960543), UINT64_C(0x97058437294586),
+                                                                     UINT64_C(0xfff40ff8f08ef3), UINT64_C(0x4ee8ee04cc4de4),
+                                                                     &u128Old.u),
+                           true, 0x78039485960543, 0x97058437294586);
+    CHECKVAL128_C(&u128Old, 0xfff40ff8f08ef3, 0x4ee8ee04cc4de4);
+
+    u128Old = u128OldInit;
+    CHECK_OP_AND_VAL_128_C(bool, "%d", pu128, ASMAtomicCmpXchgU128v2(&pu128->u,
+                                                                     UINT64_C(0x13495874560495), UINT64_C(0x12304896098597),
+                                                                     UINT64_C(0xfff40ff8f08ef3), UINT64_C(0x4ee8ee04cc4de4),
+                                                                     &u128Old.u),
+                           false, 0x78039485960543, 0x97058437294586);
+    CHECKVAL128_C(&u128Old, 0x78039485960543, 0x97058437294586);
+}
+
 
 static void tstASMAtomicCmpXchgEx(void)
 {
@@ -1704,6 +1803,15 @@ static void tstASMAtomicCmpXchgEx(void)
     DO_SIMPLE_TEST(ASMAtomicCmpXchgExU16, uint16_t);
     DO_SIMPLE_TEST(ASMAtomicCmpXchgExU32, uint32_t);
     DO_SIMPLE_TEST(ASMAtomicCmpXchgExU64, uint64_t);
+#ifdef RTASM_HAVE_CMP_XCHG_U128
+# ifdef RT_ARCH_AMD64
+    if (ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_CX16)
+# endif
+    {
+        RTTestISub("ASMAtomicCmpXchgU128");
+        DO_SIMPLE_TEST_NO_SUB_NO_STACK(tstASMAtomicCmpXchgU128Worker, RTUINT128U);
+    }
+#endif
 }
 
 
@@ -2800,6 +2908,9 @@ void tstASMBench(void)
     static int32_t  volatile s_i32;
     static uint64_t volatile s_u64;
     static int64_t  volatile s_i64;
+#if defined(RTASM_HAVE_CMP_WRITE_U128) || defined(RTASM_HAVE_CMP_XCHG_U128)
+    static RTUINT128U volatile s_u128;
+#endif
     static uint8_t  s_u8Old;
     static int8_t   s_i8Old;
     static uint16_t s_u16Old;
@@ -2808,6 +2919,15 @@ void tstASMBench(void)
     static int32_t  s_i32Old;
     static uint64_t s_u64Old;
     static int64_t  s_i64Old;
+#if defined(RTASM_HAVE_CMP_WRITE_U128) || defined(RTASM_HAVE_CMP_XCHG_U128)
+    static RTUINT128U s_u128Old;
+    RTUINT128U u128Tmp1, u128Tmp2;
+# ifdef RT_ARCH_AMD64
+    bool const fHaveCmpXchg128 = RT_BOOL(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_CX16);
+# else
+    bool const fHaveCmpXchg128 = true;
+# endif
+#endif
     unsigned i;
     const unsigned cRounds = _16M;       /* Must be multiple of 8 */
     uint64_t u64Elapsed;
@@ -2916,6 +3036,11 @@ void tstASMBench(void)
     BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 0),     "ASMAtomicCmpXchgS32");
     BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 0),     "ASMAtomicCmpXchgU64");
     BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 0),     "ASMAtomicCmpXchgS64");
+#ifdef RTASM_HAVE_CMP_WRITE_U128
+    if (fHaveCmpXchg128)
+        BENCH(ASMAtomicCmpWriteU128U(&s_u128, u128Tmp1 = RTUINT128_INIT_C(0, 0), u128Tmp2 = RTUINT128_INIT_C(0, 0)),
+              "ASMAtomicCmpWriteU128U");
+#endif
     BENCH(ASMAtomicCmpXchgU8(&s_u8, 0, 1),       "ASMAtomicCmpXchgU8/neg");
     BENCH(ASMAtomicCmpXchgS8(&s_i8, 0, 1),       "ASMAtomicCmpXchgS8/neg");
     //BENCH(ASMAtomicCmpXchgU16(&s_u16, 0, 1),     "ASMAtomicCmpXchgU16/neg");
@@ -2924,6 +3049,11 @@ void tstASMBench(void)
     BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 1),     "ASMAtomicCmpXchgS32/neg");
     BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 1),     "ASMAtomicCmpXchgU64/neg");
     BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 1),     "ASMAtomicCmpXchgS64/neg");
+#ifdef RTASM_HAVE_CMP_WRITE_U128
+    if (fHaveCmpXchg128)
+        BENCH(ASMAtomicCmpWriteU128U(&s_u128, u128Tmp1 = RTUINT128_INIT_C(0, 0), u128Tmp2 = RTUINT128_INIT_C(0, 1)),
+              "ASMAtomicCmpWriteU128U/neg");
+#endif
     BENCH(ASMAtomicCmpXchgExU8(&s_u8, 0, 0, &s_u8Old),    "ASMAtomicCmpXchgExU8");
     BENCH(ASMAtomicCmpXchgExS8(&s_i8, 0, 0, &s_i8Old),    "ASMAtomicCmpXchgExS8");
     BENCH(ASMAtomicCmpXchgExU16(&s_u16, 0, 0, &s_u16Old), "ASMAtomicCmpXchgExU16");
@@ -2932,6 +3062,11 @@ void tstASMBench(void)
     BENCH(ASMAtomicCmpXchgExS32(&s_i32, 0, 0, &s_i32Old), "ASMAtomicCmpXchgExS32");
     BENCH(ASMAtomicCmpXchgExU64(&s_u64, 0, 0, &s_u64Old), "ASMAtomicCmpXchgExU64");
     BENCH(ASMAtomicCmpXchgExS64(&s_i64, 0, 0, &s_i64Old), "ASMAtomicCmpXchgExS64");
+#ifdef RTASM_HAVE_CMP_XCHG_U128
+    if (fHaveCmpXchg128)
+        BENCH(ASMAtomicCmpXchgU128U(&s_u128, u128Tmp1 = RTUINT128_INIT_C(0, 0), u128Tmp2 = RTUINT128_INIT_C(0, 0), &s_u128Old),
+              "ASMAtomicCmpXchgU128U");
+#endif
     BENCH(ASMAtomicCmpXchgExU8(&s_u8, 0, 1, &s_u8Old),    "ASMAtomicCmpXchgExU8/neg");
     BENCH(ASMAtomicCmpXchgExS8(&s_i8, 0, 1, &s_i8Old),    "ASMAtomicCmpXchgExS8/neg");
     BENCH(ASMAtomicCmpXchgExU16(&s_u16, 0, 1, &s_u16Old), "ASMAtomicCmpXchgExU16/neg");
@@ -2940,6 +3075,11 @@ void tstASMBench(void)
     BENCH(ASMAtomicCmpXchgExS32(&s_i32, 0, 1, &s_i32Old), "ASMAtomicCmpXchgExS32/neg");
     BENCH(ASMAtomicCmpXchgExU64(&s_u64, 0, 1, &s_u64Old), "ASMAtomicCmpXchgExU64/neg");
     BENCH(ASMAtomicCmpXchgExS64(&s_i64, 0, 1, &s_i64Old), "ASMAtomicCmpXchgExS64/neg");
+#ifdef RTASM_HAVE_CMP_XCHG_U128
+    if (fHaveCmpXchg128)
+        BENCH(ASMAtomicCmpXchgU128U(&s_u128, u128Tmp1 = RTUINT128_INIT_C(0, 0), u128Tmp2 = RTUINT128_INIT_C(0, 1), &s_u128Old),
+              "ASMAtomicCmpXchgU128U/neg");
+#endif
     BENCH(ASMAtomicIncU32(&s_u32),               "ASMAtomicIncU32");
     BENCH(ASMAtomicIncS32(&s_i32),               "ASMAtomicIncS32");
     BENCH(ASMAtomicDecU32(&s_u32),               "ASMAtomicDecU32");

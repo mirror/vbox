@@ -1429,10 +1429,11 @@ DECLINLINE(bool) ASMAtomicCmpXchgS64(volatile int64_t RT_FAR *pi64, const int64_
     return ASMAtomicCmpXchgU64((volatile uint64_t RT_FAR *)pi64, (uint64_t)i64, (uint64_t)i64Old);
 }
 
-#if defined(RT_ARCH_AMD64) || defined(DOXYGEN_RUNNING)
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
 
 /** @def RTASM_HAVE_CMP_WRITE_U128
- * Indicates that we've got ASMAtomicCmpWriteU128() available.  */
+ * Indicates that we've got ASMAtomicCmpWriteU128(), ASMAtomicCmpWriteU128v2()
+ * and ASMAtomicCmpWriteExU128() available. */
 # define RTASM_HAVE_CMP_WRITE_U128 1
 
 
@@ -1462,6 +1463,9 @@ DECLINLINE(bool) ASMAtomicCmpWriteU128v2(volatile uint128_t *pu128, const uint64
     ai64Cmp[0] = u64OldLo;
     ai64Cmp[1] = u64OldHi;
     return _InterlockedCompareExchange128((__int64 volatile *)pu128, u64NewHi, u64NewLo, ai64Cmp) != 0;
+
+#  elif (defined(__clang_major__) || defined(__GNUC__)) && defined(RT_ARCH_ARM64)
+    return __sync_bool_compare_and_swap(pu128, ((uint128_t)u64OldHi << 64) | u64OldLo, ((uint128_t)u64NewHi << 64) | u64NewLo);
 
 #  elif defined(RT_ARCH_AMD64)
 #   if RT_INLINE_ASM_GNU_STYLE
@@ -1505,8 +1509,12 @@ DECLINLINE(bool) ASMAtomicCmpWriteU128v2(volatile uint128_t *pu128, const uint64
 DECLINLINE(bool) ASMAtomicCmpWriteU128(volatile uint128_t *pu128, const uint128_t u128New, const uint128_t u128Old) RT_NOTHROW_DEF
 {
 # ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
+#  if (defined(__clang_major__) || defined(__GNUC__)) && defined(RT_ARCH_ARM64)
+    return __sync_bool_compare_and_swap(pu128, u128Old, u128New);
+#  else
     return ASMAtomicCmpWriteU128v2(pu128, (uint64_t)(u128New >> 64), (uint64_t)u128New,
                                    (uint64_t)(u128Old >> 64), (uint64_t)u128Old);
+#  endif
 # else
     return ASMAtomicCmpWriteU128v2(pu128, u128New.Hi, u128New.Lo, u128Old.Hi, u128Old.Lo);
 # endif
@@ -1519,11 +1527,14 @@ DECLINLINE(bool) ASMAtomicCmpWriteU128(volatile uint128_t *pu128, const uint128_
 DECLINLINE(bool) ASMAtomicCmpWriteU128U(volatile RTUINT128U *pu128, const RTUINT128U u128New,
                                         const RTUINT128U u128Old) RT_NOTHROW_DEF
 {
+# if (defined(__clang_major__) || defined(__GNUC__)) && defined(RT_ARCH_ARM64)
+    return ASMAtomicCmpWriteU128(&pu128->u, u128New.u, u128Old.u);
+# else
     return ASMAtomicCmpWriteU128v2(&pu128->u, u128New.s.Hi, u128New.s.Lo, u128Old.s.Hi, u128Old.s.Lo);
+# endif
 }
 
-#endif /* RT_ARCH_AMD64 */
-
+#endif /* RT_ARCH_AMD64 || RT_ARCH_ARM64 */
 
 /**
  * Atomically Compare and Exchange a pointer value, ordered.
@@ -2179,6 +2190,123 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t RT_FAR *pi64, const int6
 {
     return ASMAtomicCmpXchgExU64((volatile uint64_t RT_FAR *)pi64, (uint64_t)i64, (uint64_t)i64Old, (uint64_t RT_FAR *)pi64Old);
 }
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_ARM64) || defined(DOXYGEN_RUNNING)
+
+/** @def RTASM_HAVE_CMP_XCHG_U128
+ * Indicates that we've got ASMAtomicCmpSwapU128(), ASMAtomicCmpSwapU128v2()
+ * and ASMAtomicCmpSwapExU128() available. */
+# define RTASM_HAVE_CMP_XCHG_U128 1
+
+
+/**
+ * Atomically compare and exchange an unsigned 128-bit value, ordered.
+ *
+ * @returns true if exchange was done.
+ * @returns false if exchange wasn't done.
+ *
+ * @param   pu128       Pointer to the 128-bit variable to update.
+ * @param   u64NewHi    The high 64 bits of the value to assign to *pu128.
+ * @param   u64NewLo    The low 64 bits of the value to assign to *pu128.
+ * @param   u64OldHi    The high 64-bit of the value to compare with.
+ * @param   u64OldLo    The low 64-bit of the value to compare with.
+ * @param   pu128Old    Where to return the old value.
+ *
+ * @remarks AMD64: Not present in the earliest CPUs, so check CPUID.
+ */
+# if (RT_INLINE_ASM_EXTERNAL_TMP_ARM && !RT_INLINE_ASM_USES_INTRIN)
+DECLASM(bool) ASMAtomicCmpXchgU128v2(volatile uint128_t *pu128, const uint64_t u64NewHi, const uint64_t u64NewLo,
+                                     const uint64_t u64OldHi, const uint64_t u64OldLo, uint128_t *pu128Old) RT_NOTHROW_PROTO;
+# else
+DECLINLINE(bool) ASMAtomicCmpXchgU128v2(volatile uint128_t *pu128, const uint64_t u64NewHi, const uint64_t u64NewLo,
+                                        const uint64_t u64OldHi, const uint64_t u64OldLo, uint128_t *pu128Old) RT_NOTHROW_DEF
+{
+#  if RT_INLINE_ASM_USES_INTRIN
+    pu128Old->Hi = u64OldHi;
+    pu128Old->Lo = u64OldLo;
+    AssertCompileMemberOffset(uint128_t, Lo, 0);
+    return _InterlockedCompareExchange128((__int64 volatile *)pu128, u64NewHi, u64NewLo, (__int64 *)&pu128Old->Lo) != 0;
+
+#  elif (defined(__clang_major__) || defined(__GNUC__)) && defined(RT_ARCH_ARM64)
+    uint128_t const uCmp = ((uint128_t)u64OldHi << 64) | u64OldLo;
+    uint128_t const uOld = __sync_val_compare_and_swap(pu128, uCmp, ((uint128_t)u64NewHi << 64) | u64NewLo);
+    *pu128Old = uOld;
+    return uCmp == uOld;
+
+#  elif defined(RT_ARCH_AMD64)
+#   if RT_INLINE_ASM_GNU_STYLE
+    uint8_t bRet;
+    uint64_t u64RetHi, u64RetLo;
+    __asm__ __volatile__("lock; cmpxchg16b %3\n\t"
+                         "setz  %b0\n\t"
+                         : "=r" (bRet)
+                         , "=a" (u64RetLo)
+                         , "=d" (u64RetHi)
+                         , "+m" (*pu128)
+                         : "a" (u64OldLo)
+                         , "d" (u64OldHi)
+                         , "b" (u64NewLo)
+                         , "c" (u64NewHi)
+                         : "cc");
+    *pu128Old = ((uint128_t)u64RetHi << 64) | u64RetLo;
+    return (bool)bRet;
+#   else
+#    error "Port me"
+#   endif
+#  else
+#   error "Port me"
+#  endif
+}
+# endif
+
+
+/**
+ * Atomically compare and exchange an unsigned 128-bit value, ordered.
+ *
+ * @returns true if exchange was done.
+ * @returns false if exchange wasn't done.
+ *
+ * @param   pu128       Pointer to the 128-bit variable to update.
+ * @param   u128New     The 128-bit value to assign to *pu128.
+ * @param   u128Old     The value to compare with.
+ * @param   pu128Old    Where to return the old value.
+ *
+ * @remarks AMD64: Not present in the earliest CPUs, so check CPUID.
+ */
+DECLINLINE(bool) ASMAtomicCmpXchgU128(volatile uint128_t *pu128, const uint128_t u128New,
+                                      const uint128_t u128Old, uint128_t *pu128Old) RT_NOTHROW_DEF
+{
+# ifdef RT_COMPILER_WITH_128BIT_INT_TYPES
+#  if (defined(__clang_major__) || defined(__GNUC__)) && defined(RT_ARCH_ARM64)
+    uint128_t const uSwapped = __sync_val_compare_and_swap(pu128, u128Old, u128New);
+    *pu128Old = uSwapped;
+    return uSwapped == u128Old;
+#  else
+    return ASMAtomicCmpXchgU128v2(pu128, (uint64_t)(u128New >> 64), (uint64_t)u128New,
+                                  (uint64_t)(u128Old >> 64), (uint64_t)u128Old, pu128Old);
+#  endif
+# else
+    return ASMAtomicCmpXchgU128v2(pu128, u128New.Hi, u128New.Lo, u128Old.Hi, u128Old.Lo, pu128Old);
+# endif
+}
+
+
+/**
+ * RTUINT128U wrapper for ASMAtomicCmpXchgU128.
+ */
+DECLINLINE(bool) ASMAtomicCmpXchgU128U(volatile RTUINT128U *pu128, const RTUINT128U u128New,
+                                        const RTUINT128U u128Old, PRTUINT128U pu128Old) RT_NOTHROW_DEF
+{
+# if (defined(__clang_major__) || defined(__GNUC__)) && defined(RT_ARCH_ARM64)
+    return ASMAtomicCmpXchgU128(&pu128->u, u128New.u, u128Old.u, &pu128Old->u);
+# else
+    return ASMAtomicCmpXchgU128v2(&pu128->u, u128New.s.Hi, u128New.s.Lo, u128Old.s.Hi, u128Old.s.Lo, &pu128Old->u);
+# endif
+}
+
+#endif /* RT_ARCH_AMD64 || RT_ARCH_ARM64 */
+
+
 
 /** @def ASMAtomicCmpXchgExHandle
  * Atomically Compare and Exchange a typical IPRT handle value, ordered.
