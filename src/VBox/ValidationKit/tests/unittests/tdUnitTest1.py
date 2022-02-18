@@ -342,6 +342,9 @@ class tdUnitTest1(vbox.TestDriver):
         # See the "--local" switch in self.parseOption().
         self.oTestVmSet = self.oTestVmManager.getSmokeVmSet('nat');
 
+        # Selected NIC attachment.
+        self.sNicAttachment = '';
+
         # Session handling stuff.
         # Only needed for remote tests executed by TxS.
         self.oSession    = None;
@@ -780,7 +783,7 @@ class tdUnitTest1(vbox.TestDriver):
             os.environ[sName] = sValue;
         return True;
 
-    def _executeTestCase(self, sName, sFullPath, sTestCaseSubDir, oDevNull): # pylint: disable=too-many-locals
+    def _executeTestCase(self, sName, sFullPath, sTestCaseSubDir, oDevNull): # pylint: disable=too-many-locals,too-many-statements
         """
         Executes a test case.
         """
