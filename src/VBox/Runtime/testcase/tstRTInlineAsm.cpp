@@ -1707,6 +1707,8 @@ DECLINLINE(void) tstASMAtomicCmpXchgExU64Worker(uint64_t volatile *pu64)
 #endif
 }
 
+
+#ifdef RTASM_HAVE_CMP_XCHG_U128
 DECLINLINE(void) tstASMAtomicCmpXchgU128Worker(RTUINT128U volatile *pu128)
 {
     pu128->s.Lo = UINT64_C(0xffffffffffffff);
@@ -1795,6 +1797,7 @@ DECLINLINE(void) tstASMAtomicCmpXchgU128Worker(RTUINT128U volatile *pu128)
                            false, 0x78039485960543, 0x97058437294586);
     CHECKVAL128_C(&u128Old, 0x78039485960543, 0x97058437294586);
 }
+#endif /* RTASM_HAVE_CMP_XCHG_U128 */
 
 
 static void tstASMAtomicCmpXchgEx(void)
