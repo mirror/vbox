@@ -827,6 +827,8 @@ HRESULT UnattendedScriptTemplate::getConditional(const char *pachPlaceholder, si
                         *pfOutputting = true;
                 else if ( res < 0 && chComp == '<' )
                         *pfOutputting = true;
+                else if ( res == 0 && chComp == '=' )
+                        *pfOutputting = true;
                 else
                     *pfOutputting = false;
             }
