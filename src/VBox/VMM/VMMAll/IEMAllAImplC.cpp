@@ -1593,252 +1593,15 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b,(PRTUINT128U pu128Dst, PRTUINT128U p
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 
 /*
- * MUL
- */
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Factor, uint32_t *pfEFlags))
-{
-    RTUINT128U Result;
-    RTUInt128MulU64ByU64(&Result, *pu64RAX, u64Factor);
-    *pu64RAX = Result.s.Lo;
-    *pu64RDX = Result.s.Hi;
-
-    /* MUL EFLAGS according to Skylake (similar to IMUL). */
-    *pfEFlags &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF);
-    if (Result.s.Lo & RT_BIT_64(63))
-        *pfEFlags |= X86_EFL_SF;
-    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
-    if (Result.s.Hi != 0)
-        *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-    return 0;
-}
-
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u32,(uint32_t *pu32RAX, uint32_t *pu32RDX, uint32_t u32Factor, uint32_t *pfEFlags))
-{
-    RTUINT64U Result;
-    Result.u = (uint64_t)*pu32RAX * u32Factor;
-    *pu32RAX = Result.s.Lo;
-    *pu32RDX = Result.s.Hi;
-
-    /* MUL EFLAGS according to Skylake (similar to IMUL). */
-    *pfEFlags &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF);
-    if (Result.s.Lo & RT_BIT_32(31))
-        *pfEFlags |= X86_EFL_SF;
-    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
-    if (Result.s.Hi != 0)
-        *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-    return 0;
-}
-
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u16,(uint16_t *pu16RAX, uint16_t *pu16RDX, uint16_t u16Factor, uint32_t *pfEFlags))
-{
-    RTUINT32U Result;
-    Result.u = (uint32_t)*pu16RAX * u16Factor;
-    *pu16RAX = Result.s.Lo;
-    *pu16RDX = Result.s.Hi;
-
-    /* MUL EFLAGS according to Skylake (similar to IMUL). */
-    *pfEFlags &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF);
-    if (Result.s.Lo & RT_BIT_32(15))
-        *pfEFlags |= X86_EFL_SF;
-    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
-    if (Result.s.Hi != 0)
-        *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-    return 0;
-}
-
-# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
-
-
-/*
- * IMUL
- */
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Factor, uint32_t *pfEFlags))
-{
-    RTUINT128U Result;
-    *pfEFlags &= ~( X86_EFL_SF | X86_EFL_CF | X86_EFL_OF
-                   /* Skylake always clears: */ | X86_EFL_AF | X86_EFL_ZF
-                   /* Skylake may set: */       | X86_EFL_PF);
-
-    if ((int64_t)*pu64RAX >= 0)
-    {
-        if ((int64_t)u64Factor >= 0)
-        {
-            RTUInt128MulU64ByU64(&Result, *pu64RAX, u64Factor);
-            if (Result.s.Hi != 0 || Result.s.Lo >= UINT64_C(0x8000000000000000))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-        }
-        else
-        {
-            RTUInt128MulU64ByU64(&Result, *pu64RAX, UINT64_C(0) - u64Factor);
-            if (Result.s.Hi != 0 || Result.s.Lo > UINT64_C(0x8000000000000000))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-            RTUInt128AssignNeg(&Result);
-        }
-    }
-    else
-    {
-        if ((int64_t)u64Factor >= 0)
-        {
-            RTUInt128MulU64ByU64(&Result, UINT64_C(0) - *pu64RAX, u64Factor);
-            if (Result.s.Hi != 0 || Result.s.Lo > UINT64_C(0x8000000000000000))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-            RTUInt128AssignNeg(&Result);
-        }
-        else
-        {
-            RTUInt128MulU64ByU64(&Result, UINT64_C(0) - *pu64RAX, UINT64_C(0) - u64Factor);
-            if (Result.s.Hi != 0 || Result.s.Lo >= UINT64_C(0x8000000000000000))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-        }
-    }
-    *pu64RAX = Result.s.Lo;
-    if (Result.s.Lo & RT_BIT_64(63))
-        *pfEFlags |= X86_EFL_SF;
-    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
-    *pu64RDX = Result.s.Hi;
-
-    return 0;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
-{
-/** @todo Testcase: IMUL 2 and 3 operands. */
-    uint64_t u64Ign;
-    iemAImpl_imul_u64(puDst, &u64Ign, uSrc, pfEFlags);
-}
-
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u32,(uint32_t *pu32RAX, uint32_t *pu32RDX, uint32_t u32Factor, uint32_t *pfEFlags))
-{
-    RTUINT64U Result;
-    *pfEFlags &= ~( X86_EFL_SF | X86_EFL_CF | X86_EFL_OF
-                   /* Skylake always clears: */ | X86_EFL_AF | X86_EFL_ZF
-                   /* Skylake may set: */       | X86_EFL_PF);
-
-    if ((int32_t)*pu32RAX >= 0)
-    {
-        if ((int32_t)u32Factor >= 0)
-        {
-            Result.u = (uint64_t)*pu32RAX * u32Factor;
-            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_32(31))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-        }
-        else
-        {
-            Result.u = (uint64_t)*pu32RAX * (UINT32_C(0) - u32Factor);
-            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_32(31))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-            Result.u = UINT64_C(0) - Result.u;
-        }
-    }
-    else
-    {
-        if ((int32_t)u32Factor >= 0)
-        {
-            Result.u = (uint64_t)(UINT32_C(0) - *pu32RAX) * u32Factor;
-            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_32(31))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-            Result.u = UINT64_C(0) - Result.u;
-        }
-        else
-        {
-            Result.u = (uint64_t)(UINT32_C(0) - *pu32RAX) * (UINT32_C(0) - u32Factor);
-            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_32(31))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-        }
-    }
-    *pu32RAX = Result.s.Lo;
-    if (Result.s.Lo & RT_BIT_32(31))
-        *pfEFlags |= X86_EFL_SF;
-    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
-    *pu32RDX = Result.s.Hi;
-
-    return 0;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
-{
-/** @todo Testcase: IMUL 2 and 3 operands. */
-    uint32_t u32Ign;
-    iemAImpl_imul_u32(puDst, &u32Ign, uSrc, pfEFlags);
-}
-
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u16,(uint16_t *pu16RAX, uint16_t *pu16RDX, uint16_t u16Factor, uint32_t *pfEFlags))
-{
-    RTUINT32U Result;
-    *pfEFlags &= ~( X86_EFL_SF | X86_EFL_CF | X86_EFL_OF
-                   /* Skylake always clears: */ | X86_EFL_AF | X86_EFL_ZF
-                   /* Skylake may set: */       | X86_EFL_PF);
-
-    if ((int16_t)*pu16RAX >= 0)
-    {
-        if ((int16_t)u16Factor >= 0)
-        {
-            Result.u = (uint32_t)*pu16RAX * u16Factor;
-            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_32(15))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-        }
-        else
-        {
-            Result.u = (uint32_t)*pu16RAX * (UINT16_C(0) - u16Factor);
-            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_32(15))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-            Result.u = UINT32_C(0) - Result.u;
-        }
-    }
-    else
-    {
-        if ((int16_t)u16Factor >= 0)
-        {
-            Result.u = (uint32_t)(UINT16_C(0) - *pu16RAX) * u16Factor;
-            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_32(15))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-            Result.u = UINT32_C(0) - Result.u;
-        }
-        else
-        {
-            Result.u = (uint32_t)(UINT16_C(0) - *pu16RAX) * (UINT16_C(0) - u16Factor);
-            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_32(15))
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF;
-        }
-    }
-    *pu16RAX = Result.s.Lo;
-    if (Result.s.Lo & RT_BIT_32(15))
-        *pfEFlags |= X86_EFL_SF;
-    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */
-    *pu16RDX = Result.s.Hi;
-
-    return 0;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
-{
-/** @todo Testcase: IMUL 2 and 3 operands. */
-    uint16_t u16Ign;
-    iemAImpl_imul_u16(puDst, &u16Ign, uSrc, pfEFlags);
-}
-
-# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
-
-
-/*
- * DIV and IDIV helpers.
+ * MUL, IMUL, DIV and IDIV helpers.
  *
  * - The U64 versions must use 128-bit intermediates, so we need to abstract the
- *   division step so we can select between using C operators and RTUInt128DivRem.
+ *   division step so we can select between using C operators and
+ *   RTUInt128DivRem/RTUInt128MulU64ByU64.
  *
- * - The U8 versions work on AX and returns output in AL + AH instead of xDX:xAX
- *   and return xAX + xDX, so we need load and store wrappers to hide this.
+ * - The U8 versions work returns output in AL + AH instead of xDX + xAX, with the
+ *   IDIV/DIV taking all the input in AX too.  This means we have to abstract some
+ *   input loads and the result storing.
  */
 
 DECLINLINE(void) RTUInt128DivRemByU64(PRTUINT128U pQuotient, PRTUINT128U pRemainder, PCRTUINT128U pDividend, uint64_t u64Divisor)
@@ -1858,20 +1621,140 @@ DECLINLINE(void) RTUInt128DivRemByU64(PRTUINT128U pQuotient, PRTUINT128U pRemain
 # define DIV_LOAD_U8(a_Dividend) \
     a_Dividend.u = *puAX
 
-# define DIV_STORE(a_Quotient, a_uReminder)    *puA  = (a_Quotient), *puD = (a_uReminder)
+# define DIV_STORE(a_Quotient, a_uReminder)    *puA  = (a_Quotient),    *puD = (a_uReminder)
 # define DIV_STORE_U8(a_Quotient, a_uReminder) *puAX = (a_Quotient) | ((uint16_t)(a_uReminder) << 8)
 
-# define DIV_NEG(a_Value, a_cBitsWidth2x) \
+# define MUL_LOAD_F1()                         *puA
+# define MUL_LOAD_F1_U8()                      ((uint8_t)*puAX)
+
+# define MUL_STORE(a_Result)                   *puA  = (a_Result).s.Hi, *puD = (a_Result).s.Lo
+# define MUL_STORE_U8(a_Result)                *puAX = a_Result.u
+
+# define MULDIV_NEG(a_Value, a_cBitsWidth2x) \
     (a_Value).u = UINT ## a_cBitsWidth2x ## _C(0) - (a_Value).u
-# define DIV_NEG_U128(a_Value, a_cBitsWidth2x) \
+# define MULDIV_NEG_U128(a_Value, a_cBitsWidth2x) \
     RTUInt128AssignNeg(&(a_Value))
 
-# define DIV_DO_DIVREM(a_Quotient, a_Remainder, a_Dividend, a_uDivisor) \
+# define MULDIV_MUL(a_Result, a_Factor1, a_Factor2, a_cBitsWidth2x) \
+    (a_Result).u = (uint ## a_cBitsWidth2x ## _t)(a_Factor1) * (a_Factor2)
+# define MULDIV_MUL_U128(a_Result, a_Factor1, a_Factor2, a_cBitsWidth2x) \
+    RTUInt128MulU64ByU64(&(a_Result), a_Factor1, a_Factor2);
+
+# define MULDIV_MODDIV(a_Quotient, a_Remainder, a_Dividend, a_uDivisor) \
     a_Quotient.u = (a_Dividend).u / (a_uDivisor), \
     a_Remainder.u = (a_Dividend).u % (a_uDivisor)
-# define DIV_DO_DIVREM_U128(a_Quotient, a_Remainder, a_Dividend, a_uDivisor) \
+# define MULDIV_MODDIV_U128(a_Quotient, a_Remainder, a_Dividend, a_uDivisor) \
     RTUInt128DivRemByU64(&a_Quotient, &a_Remainder, &a_Dividend, a_uDivisor)
 
+
+/*
+ * MUL
+ */
+# define EMIT_MUL(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_fnLoadF1, a_fnStore, a_fnMul) \
+IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u ## a_cBitsWidth, a_Args) \
+{ \
+    RTUINT ## a_cBitsWidth2x ## U Result; \
+    a_fnMul(Result, a_fnLoadF1(), uFactor, a_cBitsWidth2x); \
+    a_fnStore(Result); \
+    \
+    /* MUL EFLAGS according to Skylake (similar to IMUL). */ \
+    *pfEFlags &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF); \
+    if (Result.s.Lo & RT_BIT_64(a_cBitsWidth - 1)) \
+        *pfEFlags |= X86_EFL_SF; \
+    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */ \
+    if (Result.s.Hi != 0) \
+        *pfEFlags |= X86_EFL_CF | X86_EFL_OF; \
+    return 0; \
+}
+EMIT_MUL(64, 128, (uint64_t *puA, uint64_t *puD, uint64_t uFactor, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_MUL_U128)
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_MUL(32, 64, (uint32_t *puA, uint32_t *puD, uint32_t uFactor, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_MUL)
+EMIT_MUL(16, 32, (uint16_t *puA, uint16_t *puD, uint16_t uFactor, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_MUL)
+EMIT_MUL(8, 16, (uint16_t *puAX, uint8_t uFactor, uint32_t *pfEFlags), MUL_LOAD_F1_U8, MUL_STORE_U8, MULDIV_MUL)
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
+
+/*
+ * IMUL
+ */
+# define EMIT_IMUL(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_fnLoadF1, a_fnStore, a_fnNeg, a_fnMul) \
+IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u ## a_cBitsWidth,a_Args) \
+{ \
+    RTUINT ## a_cBitsWidth2x ## U Result; \
+    *pfEFlags &= ~( X86_EFL_SF | X86_EFL_CF | X86_EFL_OF \
+                   /* Skylake always clears: */ | X86_EFL_AF | X86_EFL_ZF \
+                   /* Skylake may set: */       | X86_EFL_PF); \
+    \
+    uint ## a_cBitsWidth ## _t const uFactor1 = a_fnLoadF1(); \
+    if ((int ## a_cBitsWidth ## _t)uFactor1 >= 0) \
+    { \
+        if ((int ## a_cBitsWidth ## _t)uFactor2 >= 0) \
+        { \
+            a_fnMul(Result, uFactor1, uFactor2, a_cBitsWidth2x); \
+            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_64(a_cBitsWidth - 1)) \
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF; \
+        } \
+        else \
+        { \
+            a_fnMul(Result, uFactor1, UINT ## a_cBitsWidth ## _C(0) - uFactor2, a_cBitsWidth2x); \
+            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_64(a_cBitsWidth - 1)) \
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF; \
+            a_fnNeg(Result, a_cBitsWidth2x); \
+        } \
+    } \
+    else \
+    { \
+        if ((int ## a_cBitsWidth ## _t)uFactor2 >= 0) \
+        { \
+            a_fnMul(Result, UINT ## a_cBitsWidth ## _C(0) - uFactor1, uFactor2, a_cBitsWidth2x); \
+            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_64(a_cBitsWidth - 1)) \
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF; \
+            a_fnNeg(Result, a_cBitsWidth2x); \
+        } \
+        else \
+        { \
+            a_fnMul(Result, UINT ## a_cBitsWidth ## _C(0) - uFactor1, UINT ## a_cBitsWidth ## _C(0) - uFactor2, a_cBitsWidth2x); \
+            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_64(a_cBitsWidth - 1)) \
+                *pfEFlags |= X86_EFL_CF | X86_EFL_OF; \
+        } \
+    } \
+    a_fnStore(Result); \
+    if (Result.s.Lo & RT_BIT_64(a_cBitsWidth - 1)) \
+        *pfEFlags |= X86_EFL_SF; \
+    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */ \
+    return 0; \
+}
+/** @todo Testcase: IMUL 2 and 3 operands. */
+EMIT_IMUL(64, 128, (uint64_t *puA, uint64_t *puD, uint64_t uFactor2, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_NEG_U128, MULDIV_MUL_U128)
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_IMUL(32, 64, (uint32_t *puA, uint32_t *puD, uint32_t uFactor2, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_NEG, MULDIV_MUL)
+EMIT_IMUL(16, 32, (uint16_t *puA, uint16_t *puD, uint16_t uFactor2, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_NEG, MULDIV_MUL)
+EMIT_IMUL(8, 16, (uint16_t *puAX, uint8_t uFactor2, uint32_t *pfEFlags), MUL_LOAD_F1_U8, MUL_STORE_U8, MULDIV_NEG, MULDIV_MUL)
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+{
+    uint64_t uIgn;
+    iemAImpl_imul_u64(puDst, &uIgn, uSrc, pfEFlags);
+}
+
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+{
+    uint32_t uIgn;
+    iemAImpl_imul_u32(puDst, &uIgn, uSrc, pfEFlags);
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+{
+    uint16_t uIgn;
+    iemAImpl_imul_u16(puDst, &uIgn, uSrc, pfEFlags);
+}
+
+#endif
 
 /*
  * DIV
@@ -1896,11 +1779,11 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_div_u ## a_cBitsWidth,a_Args) \
     /* #DE */ \
     return -1; \
 }
-EMIT_DIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM_U128)
+EMIT_DIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_MODDIV_U128)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_DIV(32,64, (uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM)
-EMIT_DIV(16,32, (uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM)
-EMIT_DIV(8,16,  (uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags), DIV_LOAD_U8, DIV_STORE_U8, DIV_DO_DIVREM)
+EMIT_DIV(32,64, (uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_MODDIV)
+EMIT_DIV(16,32, (uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_MODDIV)
+EMIT_DIV(8,16,  (uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags), DIV_LOAD_U8, DIV_STORE_U8, MULDIV_MODDIV)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
@@ -1982,11 +1865,11 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u ## a_cBitsWidth,a_Args) \
     /* #DE */ \
     return -1; \
 }
-EMIT_IDIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_NEG_U128, DIV_DO_DIVREM_U128)
+EMIT_IDIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_NEG_U128, MULDIV_MODDIV_U128)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_IDIV(32,64,(uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_NEG, DIV_DO_DIVREM)
-EMIT_IDIV(16,32,(uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_NEG, DIV_DO_DIVREM)
-EMIT_IDIV(8,16,(uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags),           DIV_LOAD_U8, DIV_STORE_U8, DIV_NEG, DIV_DO_DIVREM)
+EMIT_IDIV(32,64,(uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_NEG, MULDIV_MODDIV)
+EMIT_IDIV(16,32,(uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_NEG, MULDIV_MODDIV)
+EMIT_IDIV(8,16,(uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags),           DIV_LOAD_U8, DIV_STORE_U8, MULDIV_NEG, MULDIV_MODDIV)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
