@@ -1262,44 +1262,72 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u16,(uint16_t *puDst, uint16_t uSrc, uint32
  * XCHG
  */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64,(uint64_t *puMem, uint64_t *puReg))
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64_locked,(uint64_t *puMem, uint64_t *puReg))
 {
-    /* XCHG implies LOCK. */
+#if ARCH_BITS >= 64
+    *puReg = ASMAtomicXchgU64(puMem, *puReg);
+#else
     uint64_t uOldMem = *puMem;
     while (!ASMAtomicCmpXchgExU64(puMem, *puReg, uOldMem, &uOldMem))
         ASMNopPause();
     *puReg = uOldMem;
+#endif
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u32,(uint32_t *puMem, uint32_t *puReg))
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u32_locked,(uint32_t *puMem, uint32_t *puReg))
 {
-    /* XCHG implies LOCK. */
-    uint32_t uOldMem = *puMem;
-    while (!ASMAtomicCmpXchgExU32(puMem, *puReg, uOldMem, &uOldMem))
-        ASMNopPause();
-    *puReg = uOldMem;
+    *puReg = ASMAtomicXchgU32(puMem, *puReg);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u16,(uint16_t *puMem, uint16_t *puReg))
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u16_locked,(uint16_t *puMem, uint16_t *puReg))
 {
-    /* XCHG implies LOCK. */
-    uint16_t uOldMem = *puMem;
-    while (!ASMAtomicCmpXchgExU16(puMem, *puReg, uOldMem, &uOldMem))
-        ASMNopPause();
-    *puReg = uOldMem;
+    *puReg = ASMAtomicXchgU16(puMem, *puReg);
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8,(uint8_t *puMem, uint8_t *puReg))
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8_locked,(uint8_t *puMem, uint8_t *puReg))
 {
-    /* XCHG implies LOCK. */
-    uint8_t uOldMem = *puMem;
-    while (!ASMAtomicCmpXchgExU8(puMem, *puReg, uOldMem, &uOldMem))
-        ASMNopPause();
-    *puReg = uOldMem;
+    *puReg = ASMAtomicXchgU8(puMem, *puReg);
+}
+
+# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
+
+/* Unlocked variants for fDisregardLock mode: */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64_unlocked,(uint64_t *puMem, uint64_t *puReg))
+{
+    uint64_t const uOld = *puMem;
+    *puMem = *puReg;
+    *puReg = uOld;
+}
+
+# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u32_unlocked,(uint32_t *puMem, uint32_t *puReg))
+{
+    uint32_t const uOld = *puMem;
+    *puMem = *puReg;
+    *puReg = uOld;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u16_unlocked,(uint16_t *puMem, uint16_t *puReg))
+{
+    uint16_t const uOld = *puMem;
+    *puMem = *puReg;
+    *puReg = uOld;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8_unlocked,(uint8_t *puMem, uint8_t *puReg))
+{
+    uint8_t const uOld = *puMem;
+    *puMem = *puReg;
+    *puReg = uOld;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
