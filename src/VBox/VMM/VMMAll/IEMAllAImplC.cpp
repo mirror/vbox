@@ -1896,11 +1896,11 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_div_u ## a_cBitsWidth,a_Args) \
     /* #DE */ \
     return -1; \
 }
-EMIT_DIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM_U128);
+EMIT_DIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM_U128)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_DIV(32,64, (uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM);
-EMIT_DIV(16,32, (uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM);
-EMIT_DIV(8,16,  (uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags), DIV_LOAD_U8, DIV_STORE_U8, DIV_DO_DIVREM);
+EMIT_DIV(32,64, (uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM)
+EMIT_DIV(16,32, (uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM)
+EMIT_DIV(8,16,  (uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags), DIV_LOAD_U8, DIV_STORE_U8, DIV_DO_DIVREM)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
@@ -2235,25 +2235,25 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_neg_u8,(uint8_t *puDst, uint32_t *pfEFlags))
         *pfEFlags = fEflTmp; \
     }
 
-EMIT_LOCKED_UNARY_OP(inc, 64);
-EMIT_LOCKED_UNARY_OP(dec, 64);
-EMIT_LOCKED_UNARY_OP(not, 64);
-EMIT_LOCKED_UNARY_OP(neg, 64);
+EMIT_LOCKED_UNARY_OP(inc, 64)
+EMIT_LOCKED_UNARY_OP(dec, 64)
+EMIT_LOCKED_UNARY_OP(not, 64)
+EMIT_LOCKED_UNARY_OP(neg, 64)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_LOCKED_UNARY_OP(inc, 32);
-EMIT_LOCKED_UNARY_OP(dec, 32);
-EMIT_LOCKED_UNARY_OP(not, 32);
-EMIT_LOCKED_UNARY_OP(neg, 32);
+EMIT_LOCKED_UNARY_OP(inc, 32)
+EMIT_LOCKED_UNARY_OP(dec, 32)
+EMIT_LOCKED_UNARY_OP(not, 32)
+EMIT_LOCKED_UNARY_OP(neg, 32)
 
-EMIT_LOCKED_UNARY_OP(inc, 16);
-EMIT_LOCKED_UNARY_OP(dec, 16);
-EMIT_LOCKED_UNARY_OP(not, 16);
-EMIT_LOCKED_UNARY_OP(neg, 16);
+EMIT_LOCKED_UNARY_OP(inc, 16)
+EMIT_LOCKED_UNARY_OP(dec, 16)
+EMIT_LOCKED_UNARY_OP(not, 16)
+EMIT_LOCKED_UNARY_OP(neg, 16)
 
-EMIT_LOCKED_UNARY_OP(inc, 8);
-EMIT_LOCKED_UNARY_OP(dec, 8);
-EMIT_LOCKED_UNARY_OP(not, 8);
-EMIT_LOCKED_UNARY_OP(neg, 8);
+EMIT_LOCKED_UNARY_OP(inc, 8)
+EMIT_LOCKED_UNARY_OP(dec, 8)
+EMIT_LOCKED_UNARY_OP(not, 8)
+EMIT_LOCKED_UNARY_OP(neg, 8)
 # endif
 
 
@@ -2448,11 +2448,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_rcl_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## 
         *pfEFlags = fEfl; \
     } \
 }
-EMIT_RCL(64);
+EMIT_RCL(64)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_RCL(32);
-EMIT_RCL(16);
-EMIT_RCL(8);
+EMIT_RCL(32)
+EMIT_RCL(16)
+EMIT_RCL(8)
 # endif
 
 
@@ -2484,11 +2484,11 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_rcr_u ## a_cBitsWidth,(uint ## a_cBitsWidth ##_
         *pfEFlags = fEfl; \
     } \
 }
-EMIT_RCR(64);
+EMIT_RCR(64)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_RCR(32);
-EMIT_RCR(16);
-EMIT_RCR(8);
+EMIT_RCR(32)
+EMIT_RCR(16)
+EMIT_RCR(8)
 # endif
 
 
