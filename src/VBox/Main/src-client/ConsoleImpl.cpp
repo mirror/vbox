@@ -10882,7 +10882,7 @@ Console::i_vmm2User_NotifyResetTurnedIntoPowerOff(PCVMM2USERMETHODS pThis, PUVM 
  *
  * @returns pointer to PDMLED object
  *
- * @param   pDevIns     The device insatnce data.
+ * @param   iLedSet      Index of LED set to fetch
  */
 PPDMLED *
 Console::i_getLedSet(uint32_t iLedSet)
