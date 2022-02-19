@@ -10878,6 +10878,20 @@ Console::i_vmm2User_NotifyResetTurnedIntoPowerOff(PCVMM2USERMETHODS pThis, PUVM 
 }
 
 /**
+ * Internal function to get LED set off of Console instance
+ *
+ * @returns pointer to PDMLED object
+ *
+ * @param   pDevIns     The device insatnce data.
+ */
+PPDMLED *
+Console::i_getLedSet(uint32_t iLedSet)
+{
+    AssertReturn(iLedSet < RT_ELEMENTS(maLedSets), NULL);
+    return maLedSets[iLedSet].papLeds;
+}
+
+/**
  * @interface_method_impl{VMM2USERMETHODS,pfnQueryGenericObject}
  */
 /*static*/ DECLCALLBACK(void *)
@@ -11190,20 +11204,29 @@ DECLCALLBACK(int) Console::i_drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE p
     PDRVMAINSTATUS pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
 
+    com::Guid uuid(COM_IIDOF(IConsole));
+    IConsole *pIConsole = (IConsole *)PDMDrvHlpQueryGenericUserObject(pDrvIns, uuid.raw());
+    Console *pConsole = static_cast<Console *>(pIConsole);
+
     /*
      * Validate configuration.
      */
     PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns,
-                                  "papLeds|"
-                                  "pmapMediumAttachments|"
                                   "DeviceInstance|"
-                                  "pConsole|"
+                                  "iLedSet|"
+                                  "HasMediumAttachments|"
                                   "First|"
                                   "Last",
                                   "");
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
+
+    PCPDMDRVHLPR3 const pHlp = pDrvIns->pHlpR3;
+
+    uint32_t iLedSet;
+    int rc = pHlp->pfnCFGMQueryU32Def(pCfg, "iLedSet", &iLedSet, 0);
+    AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"iLedSet\" value! rc=%Rrc\n", rc), rc);
 
     /*
      * Data.
@@ -11212,25 +11235,24 @@ DECLCALLBACK(int) Console::i_drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE p
     pThis->ILedConnectors.pfnUnitChanged    = Console::i_drvStatus_UnitChanged;
     pThis->IMediaNotify.pfnEjected          = Console::i_drvStatus_MediumEjected;
     pThis->pDrvIns                          = pDrvIns;
+    pThis->pConsole                         = pConsole;
+    pThis->pmapMediumAttachments            = &pConsole->mapMediumAttachments;
+    pThis->papLeds                          = pConsole->i_getLedSet(iLedSet);
     pThis->pszDeviceInstance                = NULL;
 
     /*
      * Read config.
      */
-    PCPDMDRVHLPR3 const pHlp = pDrvIns->pHlpR3;
-    int rc = pHlp->pfnCFGMQueryPtr(pCfg, "papLeds", (void **)&pThis->papLeds);
-    AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"papLeds\" value! rc=%Rrc\n", rc), rc);
+    uint32_t fHasMediumAttachments;
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "HasMediumAttachments", &fHasMediumAttachments, 0);
+    AssertLogRelMsgRCReturn(RT_SUCCESS(rc) || rc == VERR_CFGM_VALUE_NOT_FOUND,
+         ("Configuration error: Failed to query the \"HasMediumAttachments\" value! rc=%Rrc\n", rc), rc);
 
-    rc = pHlp->pfnCFGMQueryPtrDef(pCfg, "pmapMediumAttachments", (void **)&pThis->pmapMediumAttachments, NULL);
-    AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"pmapMediumAttachments\" value! rc=%Rrc\n", rc), rc);
-    if (pThis->pmapMediumAttachments)
+    if (fHasMediumAttachments)
     {
         rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "DeviceInstance", &pThis->pszDeviceInstance);
         AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"DeviceInstance\" value! rc=%Rrc\n", rc), rc);
-        rc = pHlp->pfnCFGMQueryPtr(pCfg, "pConsole", (void **)&pThis->pConsole);
-        AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"pConsole\" value! rc=%Rrc\n", rc), rc);
     }
-
     rc = pHlp->pfnCFGMQueryU32Def(pCfg, "First", &pThis->iFirstLUN, 0);
     AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"First\" value! rc=%Rrc\n", rc), rc);
 
