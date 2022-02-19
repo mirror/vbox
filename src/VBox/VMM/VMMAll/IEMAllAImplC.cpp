@@ -21,7 +21,7 @@
 *********************************************************************************************************************************/
 #include "IEMInternal.h"
 #include <VBox/vmm/vmcc.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <iprt/x86.h>
 #include <iprt/uint128.h>
 
