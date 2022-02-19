@@ -1832,389 +1832,161 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u16,(uint16_t *puDst, uint16_t uSrc, u
 
 
 /*
- * DIV
+ * DIV and IDIV helpers.
+ *
+ * - The U64 versions must use 128-bit intermediates, so we need to abstract the
+ *   division step so we can select between using C operators and RTUInt128DivRem.
+ *
+ * - The U8 versions work on AX and returns output in AL + AH instead of xDX:xAX
+ *   and return xAX + xDX, so we need load and store wrappers to hide this.
  */
 
-IEM_DECL_IMPL_DEF(int, iemAImpl_div_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Divisor, uint32_t *pfEFlags))
+DECLINLINE(void) RTUInt128DivRemByU64(PRTUINT128U pQuotient, PRTUINT128U pRemainder, PCRTUINT128U pDividend, uint64_t u64Divisor)
 {
-    /* Note! Skylake leaves all flags alone. */
-    RT_NOREF_PV(pfEFlags);
-
-    if (   u64Divisor != 0
-        && *pu64RDX < u64Divisor)
-    {
-        RTUINT128U Dividend;
-        Dividend.s.Lo = *pu64RAX;
-        Dividend.s.Hi = *pu64RDX;
-
-        RTUINT128U Divisor;
-        Divisor.s.Lo = u64Divisor;
-        Divisor.s.Hi = 0;
-
-        RTUINT128U Remainder;
-        RTUINT128U Quotient;
 # ifdef __GNUC__ /* GCC maybe really annoying in function. */
-        Quotient.s.Lo = 0;
-        Quotient.s.Hi = 0;
+    pQuotient->s.Lo = 0;
+    pQuotient->s.Hi = 0;
 # endif
-        RTUInt128DivRem(&Quotient, &Remainder, &Dividend, &Divisor);
-        Assert(Quotient.s.Hi == 0);
-        Assert(Remainder.s.Hi == 0);
-
-        *pu64RAX = Quotient.s.Lo;
-        *pu64RDX = Remainder.s.Lo;
-        /** @todo research the undefined DIV flags. */
-        return 0;
-
-    }
-    /* #DE */
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+    RTUINT128U Divisor;
+    Divisor.s.Lo = u64Divisor;
+    Divisor.s.Hi = 0;
+    RTUInt128DivRem(pQuotient, pRemainder, pDividend, &Divisor);
 }
 
+# define DIV_LOAD(a_Dividend)  \
+    a_Dividend.s.Lo = *puA, a_Dividend.s.Hi = *puD
+# define DIV_LOAD_U8(a_Dividend) \
+    a_Dividend.u = *puAX
+
+# define DIV_STORE(a_Quotient, a_uReminder)    *puA  = (a_Quotient), *puD = (a_uReminder)
+# define DIV_STORE_U8(a_Quotient, a_uReminder) *puAX = (a_Quotient) | ((uint16_t)(a_uReminder) << 8)
+
+# define DIV_NEG(a_Value, a_cBitsWidth2x) \
+    (a_Value).u = UINT ## a_cBitsWidth2x ## _C(0) - (a_Value).u
+# define DIV_NEG_U128(a_Value, a_cBitsWidth2x) \
+    RTUInt128AssignNeg(&(a_Value))
+
+# define DIV_DO_DIVREM(a_Quotient, a_Remainder, a_Dividend, a_uDivisor) \
+    a_Quotient.u = (a_Dividend).u / (a_uDivisor), \
+    a_Remainder.u = (a_Dividend).u % (a_uDivisor)
+# define DIV_DO_DIVREM_U128(a_Quotient, a_Remainder, a_Dividend, a_uDivisor) \
+    RTUInt128DivRemByU64(&a_Quotient, &a_Remainder, &a_Dividend, a_uDivisor)
+
+
+/*
+ * DIV
+ */
+# define EMIT_DIV(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_fnLoad, a_fnStore, a_fnDivRem) \
+IEM_DECL_IMPL_DEF(int, iemAImpl_div_u ## a_cBitsWidth,a_Args) \
+{ \
+    /* Note! Skylake leaves all flags alone. */ \
+    RT_NOREF_PV(pfEFlags); \
+    \
+    RTUINT ## a_cBitsWidth2x ## U Dividend; \
+    a_fnLoad(Dividend); \
+    if (   uDivisor != 0 \
+        && Dividend.s.Hi < uDivisor) \
+    { \
+        RTUINT ## a_cBitsWidth2x ## U Remainder, Quotient; \
+        a_fnDivRem(Remainder, Quotient, Dividend, uDivisor); \
+        a_fnStore(Quotient.s.Lo, Remainder.s.Lo); \
+        /** @todo research the undefined DIV flags. */ \
+        return 0; \
+    } \
+    /* #DE */ \
+    return -1; \
+}
+EMIT_DIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM_U128);
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_div_u32,(uint32_t *pu32RAX, uint32_t *pu32RDX, uint32_t u32Divisor, uint32_t *pfEFlags))
-{
-    /* Note! Skylake leaves all flags alone. */
-    RT_NOREF_PV(pfEFlags);
-
-    if (   u32Divisor != 0
-        && *pu32RDX < u32Divisor)
-    {
-        RTUINT64U Dividend;
-        Dividend.s.Lo = *pu32RAX;
-        Dividend.s.Hi = *pu32RDX;
-
-        RTUINT64U Remainder;
-        RTUINT64U Quotient;
-        Quotient.u  = Dividend.u / u32Divisor;
-        Remainder.u = Dividend.u % u32Divisor;
-
-        *pu32RAX = Quotient.s.Lo;
-        *pu32RDX = Remainder.s.Lo;
-        /** @todo research the undefined DIV flags. */
-        return 0;
-
-    }
-    /* #DE */
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
-}
-
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_div_u16,(uint16_t *pu16RAX, uint16_t *pu16RDX, uint16_t u16Divisor, uint32_t *pfEFlags))
-{
-    /* Note! Skylake leaves all flags alone. */
-    RT_NOREF_PV(pfEFlags);
-
-    if (   u16Divisor != 0
-        && *pu16RDX < u16Divisor)
-    {
-        RTUINT32U Dividend;
-        Dividend.s.Lo = *pu16RAX;
-        Dividend.s.Hi = *pu16RDX;
-
-        RTUINT32U Remainder;
-        RTUINT32U Quotient;
-        Quotient.u  = Dividend.u / u16Divisor;
-        Remainder.u = Dividend.u % u16Divisor;
-
-        *pu16RAX = Quotient.s.Lo;
-        *pu16RDX = Remainder.s.Lo;
-        /** @todo research the undefined DIV flags. */
-        return 0;
-
-    }
-    /* #DE */
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
-}
-
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_div_u8,(uint8_t *pu8RAX, uint8_t *pu8RDX, uint8_t u8Divisor, uint32_t *pfEFlags))
-{
-    /* Note! Skylake leaves all flags alone. */
-    RT_NOREF_PV(pfEFlags);
-
-    if (   u8Divisor != 0
-        && *pu8RDX < u8Divisor)
-    {
-        RTUINT16U Dividend;
-        Dividend.s.Lo = *pu8RAX;
-        Dividend.s.Hi = *pu8RDX;
-
-        RTUINT16U Remainder;
-        RTUINT16U Quotient;
-        Quotient.u  = Dividend.u / u8Divisor;
-        Remainder.u = Dividend.u % u8Divisor;
-
-        *pu8RAX = Quotient.s.Lo;
-        *pu8RDX = Remainder.s.Lo;
-        /** @todo research the undefined DIV flags. */
-        return 0;
-
-    }
-    /* #DE */
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
-}
-
+EMIT_DIV(32,64, (uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM);
+EMIT_DIV(16,32, (uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_DO_DIVREM);
+EMIT_DIV(8,16,  (uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags), DIV_LOAD_U8, DIV_STORE_U8, DIV_DO_DIVREM);
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
 /*
  * IDIV
  */
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Divisor, uint32_t *pfEFlags))
-{
-    /* Note! Skylake leaves all flags alone. */
-    RT_NOREF_PV(pfEFlags);
-
-    /** @todo overflow checks   */
-    if (u64Divisor != 0)
-    {
-        /*
-         * Convert to unsigned division.
-         */
-        RTUINT128U Dividend;
-        Dividend.s.Lo = *pu64RAX;
-        Dividend.s.Hi = *pu64RDX;
-        if ((int64_t)*pu64RDX < 0)
-            RTUInt128AssignNeg(&Dividend);
-
-        RTUINT128U Divisor;
-        Divisor.s.Hi = 0;
-        if ((int64_t)u64Divisor >= 0)
-            Divisor.s.Lo = u64Divisor;
-        else
-            Divisor.s.Lo = UINT64_C(0) - u64Divisor;
-
-        RTUINT128U Remainder;
-        RTUINT128U Quotient;
-# ifdef __GNUC__ /* GCC maybe really annoying. */
-        Quotient.s.Lo = 0;
-        Quotient.s.Hi = 0;
-# endif
-        RTUInt128DivRem(&Quotient, &Remainder, &Dividend, &Divisor);
-
-        /*
-         * Setup the result, checking for overflows.
-         */
-        if ((int64_t)u64Divisor >= 0)
-        {
-            if ((int64_t)*pu64RDX >= 0)
-            {
-                /* Positive divisor, positive dividend => result positive. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint64_t)INT64_MAX)
-                {
-                    *pu64RAX = Quotient.s.Lo;
-                    *pu64RDX = Remainder.s.Lo;
-                    return 0;
-                }
-            }
-            else
-            {
-                /* Positive divisor, positive dividend => result negative. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= UINT64_C(0x8000000000000000))
-                {
-                    *pu64RAX = UINT64_C(0) - Quotient.s.Lo;
-                    *pu64RDX = UINT64_C(0) - Remainder.s.Lo;
-                    return 0;
-                }
-            }
-        }
-        else
-        {
-            if ((int64_t)*pu64RDX >= 0)
-            {
-                /* Negative divisor, positive dividend => negative quotient, positive remainder. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= UINT64_C(0x8000000000000000))
-                {
-                    *pu64RAX = UINT64_C(0) - Quotient.s.Lo;
-                    *pu64RDX = Remainder.s.Lo;
-                    return 0;
-                }
-            }
-            else
-            {
-                /* Negative divisor, negative dividend => positive quotient, negative remainder. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint64_t)INT64_MAX)
-                {
-                    *pu64RAX = Quotient.s.Lo;
-                    *pu64RDX = UINT64_C(0) - Remainder.s.Lo;
-                    return 0;
-                }
-            }
-        }
-    }
-    /* #DE */
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
+# define EMIT_IDIV(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_fnLoad, a_fnStore, a_fnNeg, a_fnDivRem) \
+IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u ## a_cBitsWidth,a_Args) \
+{ \
+    /* Note! Skylake leaves all flags alone. */ \
+    RT_NOREF_PV(pfEFlags); \
+    \
+    /** @todo overflow checks */ \
+    if (uDivisor != 0) \
+    { \
+        /* \
+         * Convert to unsigned division. \
+         */ \
+        RTUINT ## a_cBitsWidth2x ## U Dividend; \
+        a_fnLoad(Dividend); \
+        if ((int ## a_cBitsWidth ## _t)Dividend.s.Hi < 0) \
+            a_fnNeg(Dividend, a_cBitsWidth2x); \
+        \
+        uint ## a_cBitsWidth ## _t uDivisorPositive; \
+        if ((int ## a_cBitsWidth ## _t)uDivisor >= 0) \
+            uDivisorPositive = uDivisor; \
+        else \
+            uDivisorPositive = UINT ## a_cBitsWidth ## _C(0) - uDivisor; \
+        \
+        RTUINT ## a_cBitsWidth2x ## U Remainder, Quotient; \
+        a_fnDivRem(Remainder, Quotient, Dividend, uDivisorPositive); \
+        \
+        /* \
+         * Setup the result, checking for overflows. \
+         */ \
+        if ((int ## a_cBitsWidth ## _t)uDivisor >= 0) \
+        { \
+            if ((int ## a_cBitsWidth ## _t)Dividend.s.Hi >= 0) \
+            { \
+                /* Positive divisor, positive dividend => result positive. */ \
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint ## a_cBitsWidth ## _t)INT ## a_cBitsWidth ## _MAX) \
+                { \
+                    a_fnStore(Quotient.s.Lo, Remainder.s.Lo); \
+                    return 0; \
+                } \
+            } \
+            else \
+            { \
+                /* Positive divisor, positive dividend => result negative. */ \
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_64(a_cBitsWidth - 1)) \
+                { \
+                    a_fnStore(UINT ## a_cBitsWidth ## _C(0) - Quotient.s.Lo, UINT ## a_cBitsWidth ## _C(0) - Remainder.s.Lo); \
+                    return 0; \
+                } \
+            } \
+        } \
+        else \
+        { \
+            if ((int ## a_cBitsWidth ## _t)Dividend.s.Hi >= 0) \
+            { \
+                /* Negative divisor, positive dividend => negative quotient, positive remainder. */ \
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_64(a_cBitsWidth - 1)) \
+                { \
+                    a_fnStore(UINT ## a_cBitsWidth ## _C(0) - Quotient.s.Lo, Remainder.s.Lo); \
+                    return 0; \
+                } \
+            } \
+            else \
+            { \
+                /* Negative divisor, negative dividend => positive quotient, negative remainder. */ \
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint ## a_cBitsWidth ## _t)INT ## a_cBitsWidth ## _MAX) \
+                { \
+                    a_fnStore(Quotient.s.Lo, UINT ## a_cBitsWidth ## _C(0) - Remainder.s.Lo); \
+                    return 0; \
+                } \
+            } \
+        } \
+    } \
+    /* #DE */ \
+    return -1; \
 }
-
+EMIT_IDIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_NEG_U128, DIV_DO_DIVREM_U128)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u32,(uint32_t *pu32RAX, uint32_t *pu32RDX, uint32_t u32Divisor, uint32_t *pfEFlags))
-{
-    /* Note! Skylake leaves all flags alone. */
-    RT_NOREF_PV(pfEFlags);
-
-    /** @todo overflow checks   */
-    if (u32Divisor != 0)
-    {
-        /*
-         * Convert to unsigned division.
-         */
-        RTUINT64U Dividend;
-        Dividend.s.Lo = *pu32RAX;
-        Dividend.s.Hi = *pu32RDX;
-        if ((int32_t)*pu32RDX < 0)
-            Dividend.u = UINT64_C(0) - Dividend.u;
-
-        uint32_t u32DivisorPositive;
-        if ((int32_t)u32Divisor >= 0)
-            u32DivisorPositive = u32Divisor;
-        else
-            u32DivisorPositive = UINT32_C(0) - u32Divisor;
-
-        RTUINT64U Remainder;
-        RTUINT64U Quotient;
-        Quotient.u  = Dividend.u / u32DivisorPositive;
-        Remainder.u = Dividend.u % u32DivisorPositive;
-
-        /*
-         * Setup the result, checking for overflows.
-         */
-        if ((int32_t)u32Divisor >= 0)
-        {
-            if ((int32_t)*pu32RDX >= 0)
-            {
-                /* Positive divisor, positive dividend => result positive. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint32_t)INT32_MAX)
-                {
-                    *pu32RAX = Quotient.s.Lo;
-                    *pu32RDX = Remainder.s.Lo;
-                    return 0;
-                }
-            }
-            else
-            {
-                /* Positive divisor, positive dividend => result negative. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_32(31))
-                {
-                    *pu32RAX = UINT32_C(0) - Quotient.s.Lo;
-                    *pu32RDX = UINT32_C(0) - Remainder.s.Lo;
-                    return 0;
-                }
-            }
-        }
-        else
-        {
-            if ((int32_t)*pu32RDX >= 0)
-            {
-                /* Negative divisor, positive dividend => negative quotient, positive remainder. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_32(31))
-                {
-                    *pu32RAX = UINT32_C(0) - Quotient.s.Lo;
-                    *pu32RDX = Remainder.s.Lo;
-                    return 0;
-                }
-            }
-            else
-            {
-                /* Negative divisor, negative dividend => positive quotient, negative remainder. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint32_t)INT32_MAX)
-                {
-                    *pu32RAX = Quotient.s.Lo;
-                    *pu32RDX = UINT32_C(0) - Remainder.s.Lo;
-                    return 0;
-                }
-            }
-        }
-    }
-    /* #DE */
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
-}
-
-
-IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u16,(uint16_t *pu16RAX, uint16_t *pu16RDX, uint16_t u16Divisor, uint32_t *pfEFlags))
-{
-    /* Note! Skylake leaves all flags alone. */
-    RT_NOREF_PV(pfEFlags);
-
-    if (u16Divisor != 0)
-    {
-        /*
-         * Convert to unsigned division.
-         */
-        RTUINT32U Dividend;
-        Dividend.s.Lo = *pu16RAX;
-        Dividend.s.Hi = *pu16RDX;
-        if ((int16_t)*pu16RDX < 0)
-            Dividend.u = UINT32_C(0) - Dividend.u;
-
-        uint16_t u16DivisorPositive;
-        if ((int16_t)u16Divisor >= 0)
-            u16DivisorPositive = u16Divisor;
-        else
-            u16DivisorPositive = UINT16_C(0) - u16Divisor;
-
-        RTUINT32U Remainder;
-        RTUINT32U Quotient;
-        Quotient.u  = Dividend.u / u16DivisorPositive;
-        Remainder.u = Dividend.u % u16DivisorPositive;
-
-        /*
-         * Setup the result, checking for overflows.
-         */
-        if ((int16_t)u16Divisor >= 0)
-        {
-            if ((int16_t)*pu16RDX >= 0)
-            {
-                /* Positive divisor, positive dividend => result positive. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint16_t)INT16_MAX)
-                {
-                    *pu16RAX = Quotient.s.Lo;
-                    *pu16RDX = Remainder.s.Lo;
-                    return 0;
-                }
-            }
-            else
-            {
-                /* Positive divisor, positive dividend => result negative. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_32(15))
-                {
-                    *pu16RAX = UINT16_C(0) - Quotient.s.Lo;
-                    *pu16RDX = UINT16_C(0) - Remainder.s.Lo;
-                    return 0;
-                }
-            }
-        }
-        else
-        {
-            if ((int16_t)*pu16RDX >= 0)
-            {
-                /* Negative divisor, positive dividend => negative quotient, positive remainder. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_32(15))
-                {
-                    *pu16RAX = UINT16_C(0) - Quotient.s.Lo;
-                    *pu16RDX = Remainder.s.Lo;
-                    return 0;
-                }
-            }
-            else
-            {
-                /* Negative divisor, negative dividend => positive quotient, negative remainder. */
-                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint16_t)INT16_MAX)
-                {
-                    *pu16RAX = Quotient.s.Lo;
-                    *pu16RDX = UINT16_C(0) - Remainder.s.Lo;
-                    return 0;
-                }
-            }
-        }
-    }
-    /* #DE */
-    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
-}
-
+EMIT_IDIV(32,64,(uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_NEG, DIV_DO_DIVREM)
+EMIT_IDIV(16,32,(uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, DIV_NEG, DIV_DO_DIVREM)
+EMIT_IDIV(8,16,(uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags),           DIV_LOAD_U8, DIV_STORE_U8, DIV_NEG, DIV_DO_DIVREM)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
