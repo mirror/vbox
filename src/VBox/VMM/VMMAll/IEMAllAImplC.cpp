@@ -3262,7 +3262,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fyl2xp1_r80_by_r80,(PCX86FXSTATE pFpuState, PIE
 
 
 /*********************************************************************************************************************************
-*   SSE & VEX                                                                                                                    *
+*   MMX, SSE & AVX                                                                                                               *
 *********************************************************************************************************************************/
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_movsldup,(PCX86FXSTATE pFpuState, PRTUINT128U puDst, PCRTUINT128U puSrc))
@@ -3341,3 +3341,204 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_vmovddup_256_rm,(PX86XSAVEAREA pXState, uint8_t
 
 #endif /* IEM_WITH_VEX */
 
+#ifdef  IEM_WITHOUT_ASSEMBLY
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqb_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pcmpeqd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pxor_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pxor_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovmskb_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu64Src);
+    AssertReleaseFailed();
+
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pmovmskb_u128,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, PCRTUINT128U pu128Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu128Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufw,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src, uint8_t bEvil))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu64Src, bEvil);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufhw,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src, uint8_t bEvil))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src, bEvil);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshuflw,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src, uint8_t bEvil))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src, bEvil);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufd,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src, uint8_t bEvil))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src, bEvil);
+    AssertReleaseFailed();
+}
+
+/* PUNPCKHxxx */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhbw_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhbw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhwd_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhwd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhdq_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhdq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckhqdq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, PCRTUINT128U pu128Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu128Src);
+    AssertReleaseFailed();
+}
+
+/* PUNPCKLxxx */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklbw_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint32_t const *pu32Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu32Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklbw_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklwd_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint32_t const *pu32Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu32Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklwd_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckldq_u64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint32_t const *pu32Src))
+{
+    RT_NOREF(pFpuState, pu64Dst, pu32Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpckldq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_punpcklqdq_u128,(PCX86FXSTATE pFpuState, PRTUINT128U pu128Dst, uint64_t const *pu64Src))
+{
+    RT_NOREF(pFpuState, pu128Dst, pu64Src);
+    AssertReleaseFailed();
+}
+
+#endif /* IEM_WITHOUT_ASSEMBLY */
