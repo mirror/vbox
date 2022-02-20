@@ -4000,7 +4000,7 @@ DECLCALLBACK(int) Console::i_detachStorageDevice(Console *pThis,
             AssertRCReturn(rc, rc);
             pVMM->pfnCFGMR3RemoveNode(pLunL0);
 
-            Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
+            Utf8StrFmt devicePath("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
             pThis->mapMediumAttachments.erase(devicePath);
 
         }
@@ -11236,20 +11236,20 @@ DECLCALLBACK(int) Console::i_drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE p
     pThis->IMediaNotify.pfnEjected          = Console::i_drvStatus_MediumEjected;
     pThis->pDrvIns                          = pDrvIns;
     pThis->pConsole                         = pConsole;
-    pThis->pmapMediumAttachments            = &pConsole->mapMediumAttachments;
+    pThis->pmapMediumAttachments            = NULL;
     pThis->papLeds                          = pConsole->i_getLedSet(iLedSet);
     pThis->pszDeviceInstance                = NULL;
 
     /*
      * Read config.
      */
-    uint32_t fHasMediumAttachments;
-    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "HasMediumAttachments", &fHasMediumAttachments, 0);
-    AssertLogRelMsgRCReturn(RT_SUCCESS(rc) || rc == VERR_CFGM_VALUE_NOT_FOUND,
-         ("Configuration error: Failed to query the \"HasMediumAttachments\" value! rc=%Rrc\n", rc), rc);
+    bool fHasMediumAttachments;
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "HasMediumAttachments", &fHasMediumAttachments, false);
+    AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"HasMediumAttachments\" value! rc=%Rrc\n", rc), rc);
 
     if (fHasMediumAttachments)
     {
+        pThis->pmapMediumAttachments = &pConsole->mapMediumAttachments;
         rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "DeviceInstance", &pThis->pszDeviceInstance);
         AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"DeviceInstance\" value! rc=%Rrc\n", rc), rc);
     }

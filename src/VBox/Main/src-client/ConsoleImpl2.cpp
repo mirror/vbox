@@ -644,12 +644,13 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, BusAssignmentManager *pBusMgr,
  *
  * This grabs a maLedSets entry and populates it with @a cLeds.
  *
- * @param  cLeds        The number of LEDs in the set.
- * @param  enmType      The device type.
- * @param  ppaSubTypes  When not NULL, subtypes for each LED and return the array pointer here.
- * @throws HRESULT or ConfigError on trouble
+ * @returns Index into maLedSets.
+ * @param   cLeds        The number of LEDs in the set.
+ * @param   enmType      The device type.
+ * @param   ppaSubTypes  When not NULL, subtypes for each LED and return the
+ *                       array pointer here.
  */
-Console::PLEDSET Console::i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, DeviceType_T **ppaSubTypes)
+uint32_t Console::i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, DeviceType_T **ppaSubTypes)
 {
     Assert(cLeds > 0);
     Assert(cLeds < 1024);  /* Adjust if any driver supports >=1024 units! */
@@ -658,7 +659,8 @@ Console::PLEDSET Console::i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmT
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); /* Caller should have this already. Need protect mcLedSets check and update. */
     AssertStmt(mcLedSets < RT_ELEMENTS(maLedSets),
                throw ConfigError("AllocateDriverPapLeds", VERR_OUT_OF_RANGE, "Too many LED sets"));
-    PLEDSET pLS = &maLedSets[mcLedSets++];
+    uint32_t const idxLedSet = mcLedSets++;
+    PLEDSET pLS = &maLedSets[idxLedSet];
     pLS->papLeds = (PPDMLED *)RTMemAllocZ(sizeof(PPDMLED) * cLeds);
     AssertStmt(pLS->papLeds, throw E_OUTOFMEMORY);
     pLS->cLeds = cLeds;
@@ -673,8 +675,8 @@ Console::PLEDSET Console::i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmT
             pLS->paSubTypes[idxSub] = DeviceType_Null;
     }
 
-    LogRel(("mcLedSets = %d, RT_ELEMENTS(maLedSets) = %d\n", mcLedSets, RT_ELEMENTS(maLedSets)));
-    return pLS;
+    LogRel2(("mcLedSets = %d, RT_ELEMENTS(maLedSets) = %d\n", mcLedSets, RT_ELEMENTS(maLedSets)));
+    return idxLedSet;
 }
 
 
@@ -686,18 +688,19 @@ void Console::i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType,
                                    const char *pcszDevice, unsigned uInstance)
 {
     Assert(uFirst <= uLast);
-    PCFGMNODE pLunL0, pCfg;
+    PCFGMNODE pLunL0;
     InsertConfigNode(pCtlInst,  "LUN#999", &pLunL0);
     InsertConfigString(pLunL0,  "Driver",               "MainStatus");
+    PCFGMNODE pCfg;
     InsertConfigNode(pLunL0,    "Config", &pCfg);
-    InsertConfigInteger(pCfg,   "iLedSet", mcLedSets);
-    (void) i_allocateDriverLeds(uLast - uFirst + 1, enmType, ppaSubTypes);
+    uint32_t const iLedSet = i_allocateDriverLeds(uLast - uFirst + 1, enmType, ppaSubTypes);
+    InsertConfigInteger(pCfg,   "iLedSet", iLedSet);
 
+    InsertConfigInteger(pCfg,   "HasMediumAttachments", pmapMediumAttachments != NULL);
     if (pmapMediumAttachments)
     {
-        InsertConfigInteger(pCfg,   "HasMediumAttachments", 1);
         AssertPtr(pcszDevice);
-        Utf8Str deviceInstance = Utf8StrFmt("%s/%u", pcszDevice, uInstance);
+        Utf8StrFmt deviceInstance("%s/%u", pcszDevice, uInstance);
         InsertConfigString(pCfg,    "DeviceInstance", deviceInstance.c_str());
     }
     InsertConfigInteger(pCfg,   "First",    uFirst);
@@ -1486,6 +1489,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
         for (size_t i = 0; i < bwGroups.size(); i++)
         {
             Bstr strName;
+            hrc = bwGroups[i]->COMGETTER(Name)(strName.asOutParam());                       H();
             if (strName.isEmpty())
                 return pVMM->pfnVMR3SetError(pUVM, VERR_CFGM_NO_NODE, RT_SRC_POS, N_("No bandwidth group name specified"));
 
@@ -1493,6 +1497,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
             hrc = bwGroups[i]->COMGETTER(Type)(&enmType);                                   H();
             LONG64 cMaxBytesPerSec = 0;
             hrc = bwGroups[i]->COMGETTER(MaxBytesPerSec)(&cMaxBytesPerSec);                 H();
+
             if (enmType == BandwidthGroupType_Disk)
             {
                 PCFGMNODE pBwGroup;
@@ -4863,7 +4868,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
         if (ppLunL0)
             *ppLunL0 = pLunL0;
 
-        Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
+        Utf8StrFmt devicePath("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
         mapMediumAttachments[devicePath] = pMediumAtt;
 
         ComPtr<IMedium> ptrMedium;

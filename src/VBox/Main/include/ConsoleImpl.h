@@ -783,7 +783,7 @@ private:
     struct LEDSET;
     typedef struct LEDSET *PLEDSET;
     PPDMLED *i_getLedSet(uint32_t iLedSet);
-    PLEDSET i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, DeviceType_T **ppSubTypes);
+    uint32_t i_allocateDriverLeds(uint32_t cLeds, DeviceType_T enmType, DeviceType_T **ppSubTypes);
     void i_attachStatusDriver(PCFGMNODE pCtlInst, DeviceType_T enmType,
                               uint32_t uFirst, uint32_t uLast,
                               DeviceType_T **ppaSubTypes,
