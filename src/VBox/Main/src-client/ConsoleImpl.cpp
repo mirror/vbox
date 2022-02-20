@@ -11043,17 +11043,16 @@ typedef struct DRVMAINSTATUS
     /** Pointer to the array of LED pointers. */
     PPDMLED            *papLeds;
     /** The unit number corresponding to the first entry in the LED array. */
-    RTUINT              iFirstLUN;
+    uint32_t            iFirstLUN;
     /** The unit number corresponding to the last entry in the LED array.
      * (The size of the LED array is iLastLUN - iFirstLUN + 1.) */
-    RTUINT              iLastLUN;
+    uint32_t            iLastLUN;
     /** Pointer to the driver instance. */
     PPDMDRVINS          pDrvIns;
     /** The Media Notify interface. */
     PDMIMEDIANOTIFY     IMediaNotify;
-    /** Map for translating PDM storage controller/LUN information to
-     * IMediumAttachment references. */
-    Console::MediumAttachmentMap *pmapMediumAttachments;
+    /** Set if there potentially are medium attachments. */
+    bool                fHasMediumAttachments;
     /** Device name+instance for mapping */
     char                *pszDeviceInstance;
     /** Pointer to the Console object, for driver triggered activities. */
@@ -11110,14 +11109,15 @@ DECLCALLBACK(int) Console::i_drvStatus_MediumEjected(PPDMIMEDIANOTIFY pInterface
 {
     PDRVMAINSTATUS pThis = RT_FROM_MEMBER(pInterface, DRVMAINSTATUS, IMediaNotify);
     LogFunc(("uLUN=%d\n", uLUN));
-    if (pThis->pmapMediumAttachments)
+    if (pThis->fHasMediumAttachments)
     {
-        AutoWriteLock alock(pThis->pConsole COMMA_LOCKVAL_SRC_POS);
+        Console * const pConsole = pThis->pConsole;
+        AutoWriteLock alock(pConsole COMMA_LOCKVAL_SRC_POS);
 
         ComPtr<IMediumAttachment> pMediumAtt;
         Utf8Str devicePath = Utf8StrFmt("%s/LUN#%u", pThis->pszDeviceInstance, uLUN);
-        Console::MediumAttachmentMap::const_iterator end = pThis->pmapMediumAttachments->end();
-        Console::MediumAttachmentMap::const_iterator it = pThis->pmapMediumAttachments->find(devicePath);
+        Console::MediumAttachmentMap::const_iterator end = pConsole->mapMediumAttachments.end();
+        Console::MediumAttachmentMap::const_iterator it  = pConsole->mapMediumAttachments.find(devicePath);
         if (it != end)
             pMediumAtt = it->second;
         Assert(!pMediumAtt.isNull());
@@ -11146,8 +11146,8 @@ DECLCALLBACK(int) Console::i_drvStatus_MediumEjected(PPDMIMEDIANOTIFY pInterface
                     alock.acquire();
                     if (pNewMediumAtt != pMediumAtt)
                     {
-                        pThis->pmapMediumAttachments->erase(devicePath);
-                        pThis->pmapMediumAttachments->insert(std::make_pair(devicePath, pNewMediumAtt));
+                        pConsole->mapMediumAttachments.erase(devicePath);
+                        pConsole->mapMediumAttachments.insert(std::make_pair(devicePath, pNewMediumAtt));
                     }
                 }
             }
@@ -11204,9 +11204,23 @@ DECLCALLBACK(int) Console::i_drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE p
     PDRVMAINSTATUS pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
 
-    com::Guid uuid(COM_IIDOF(IConsole));
-    IConsole *pIConsole = (IConsole *)PDMDrvHlpQueryGenericUserObject(pDrvIns, uuid.raw());
+    /*
+     * Initialize data.
+     */
+    com::Guid ConsoleUuid(COM_IIDOF(IConsole));
+    IConsole *pIConsole = (IConsole *)PDMDrvHlpQueryGenericUserObject(pDrvIns, ConsoleUuid.raw());
+    AssertLogRelReturn(pIConsole, VERR_INTERNAL_ERROR_3);
     Console *pConsole = static_cast<Console *>(pIConsole);
+    AssertLogRelReturn(pConsole, VERR_INTERNAL_ERROR_3);
+
+    pDrvIns->IBase.pfnQueryInterface        = Console::i_drvStatus_QueryInterface;
+    pThis->ILedConnectors.pfnUnitChanged    = Console::i_drvStatus_UnitChanged;
+    pThis->IMediaNotify.pfnEjected          = Console::i_drvStatus_MediumEjected;
+    pThis->pDrvIns                          = pDrvIns;
+    pThis->pConsole                         = pConsole;
+    pThis->fHasMediumAttachments            = false;
+    pThis->papLeds                          = NULL;
+    pThis->pszDeviceInstance                = NULL;
 
     /*
      * Validate configuration.
@@ -11222,37 +11236,25 @@ DECLCALLBACK(int) Console::i_drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE p
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
-    PCPDMDRVHLPR3 const pHlp = pDrvIns->pHlpR3;
-
-    uint32_t iLedSet;
-    int rc = pHlp->pfnCFGMQueryU32Def(pCfg, "iLedSet", &iLedSet, 0);
-    AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"iLedSet\" value! rc=%Rrc\n", rc), rc);
-
-    /*
-     * Data.
-     */
-    pDrvIns->IBase.pfnQueryInterface        = Console::i_drvStatus_QueryInterface;
-    pThis->ILedConnectors.pfnUnitChanged    = Console::i_drvStatus_UnitChanged;
-    pThis->IMediaNotify.pfnEjected          = Console::i_drvStatus_MediumEjected;
-    pThis->pDrvIns                          = pDrvIns;
-    pThis->pConsole                         = pConsole;
-    pThis->pmapMediumAttachments            = NULL;
-    pThis->papLeds                          = pConsole->i_getLedSet(iLedSet);
-    pThis->pszDeviceInstance                = NULL;
-
     /*
      * Read config.
      */
-    bool fHasMediumAttachments;
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "HasMediumAttachments", &fHasMediumAttachments, false);
+    PCPDMDRVHLPR3 const pHlp = pDrvIns->pHlpR3;
+
+    uint32_t iLedSet;
+    int rc = pHlp->pfnCFGMQueryU32(pCfg, "iLedSet", &iLedSet);
+    AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"iLedSet\" value! rc=%Rrc\n", rc), rc);
+    pThis->papLeds = pConsole->i_getLedSet(iLedSet);
+
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "HasMediumAttachments", &pThis->fHasMediumAttachments, false);
     AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"HasMediumAttachments\" value! rc=%Rrc\n", rc), rc);
 
-    if (fHasMediumAttachments)
+    if (pThis->fHasMediumAttachments)
     {
-        pThis->pmapMediumAttachments = &pConsole->mapMediumAttachments;
         rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "DeviceInstance", &pThis->pszDeviceInstance);
         AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"DeviceInstance\" value! rc=%Rrc\n", rc), rc);
     }
+
     rc = pHlp->pfnCFGMQueryU32Def(pCfg, "First", &pThis->iFirstLUN, 0);
     AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query the \"First\" value! rc=%Rrc\n", rc), rc);
 
