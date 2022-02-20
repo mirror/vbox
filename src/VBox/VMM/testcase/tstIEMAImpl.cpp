@@ -168,7 +168,7 @@ static void BinU8Generate(uint32_t cTests)
             RTPrintf("    { %#08x, %#08x, %#04x, %#04x, %#04x, %#x }, /* #%u */\n",
                      Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uReserved, iTest);
         }
-        RTPrintf("};\n", g_aBinU8[iFn].pszName);
+        RTPrintf("};\n");
     }
 }
 
@@ -283,7 +283,7 @@ static void BinU16Generate(uint32_t cTests)
             RTPrintf("    { %#08x, %#08x, %#06x, %#06x, %#06x, %#x }, /* #%u */\n",
                      Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uReserved, iTest);
         }
-        RTPrintf("};\n", g_aBinU16[iFn].pszName);
+        RTPrintf("};\n");
     }
 }
 
