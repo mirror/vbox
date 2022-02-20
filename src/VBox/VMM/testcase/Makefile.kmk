@@ -68,8 +68,10 @@ PROGRAMS += tstCFGM tstVMREQ tstAnimate
 PROGRAMS += \
 	tstCompressionBenchmark \
 	tstIEMCheckMc \
+	tstIEMAImpl \
 	tstPDMQueue \
 	tstSSM
+PROGRAMS.amd64 += tstIEMAImplAsm
 
   if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 PROGRAMS += \
@@ -233,6 +235,27 @@ tstGlobalConfig_TEMPLATE = VBOXR3TSTEXE
 endif
 tstGlobalConfig_SOURCES  = tstGlobalConfig.cpp
 tstGlobalConfig_LIBS     = $(LIB_RUNTIME)
+
+#
+# Testcase for checking the C (IEMAllAImplC.cpp) and assembly (IEMAllAImpl.asm)
+# instruction emulation helpers.
+#
+# Note! The IN_TSTVMSTRUCT define is for avoiding IEMInstructionStatisticsTmpl.h.
+#
+tstIEMAImpl_TEMPLATE  = VBOXR3TSTEXE
+tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT
+tstIEMAImpl_INCS      = ../include
+tstIEMAImpl_SOURCES   = \
+	tstIEMAImpl.cpp \
+       ../VMMAll/IEMAllAImplC.cpp
+
+# This variant mainly for generating data.
+tstIEMAImplAsm_TEMPLATE  = VBOXR3TSTEXE
+tstIEMAImplAsm_DEFS      = $(VMM_COMMON_DEFS) IN_TSTVMSTRUCT
+tstIEMAImplAsm_INCS      = ../include
+tstIEMAImplAsm_SOURCES   = \
+	tstIEMAImpl.cpp \
+       ../VMMAll/IEMAllAImpl.asm
 
 #
 # Testcase for checking the repurposing of the IEM instruction code.
