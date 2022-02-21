@@ -151,11 +151,6 @@ public:
 
     /** Returns item name. */
     QString name() const { return m_strName; }
-
-protected:
-
-    /** Returns default text. */
-    virtual QString defaultText() const /* override */;
 };
 
 
@@ -171,11 +166,6 @@ public:
 
     /** Returns item name. */
     QString name() const { return m_strName; }
-
-protected:
-
-    /** Returns default text. */
-    virtual QString defaultText() const /* override */;
 };
 
 
@@ -339,11 +329,6 @@ void UIItemNATNetwork::updateFields()
     setToolTip(NATNetworkColumn_Name, strTable.arg(strToolTip));
 }
 
-QString UIItemNATNetwork::defaultText() const
-{
-    return tr("%1, %2", "col.2 text, col.1 name").arg(text(1)).arg(parentTree()->headerItem()->text(0));
-}
-
 
 /*********************************************************************************************************************************
 *   Class UIItemCloudNetwork implementation.                                                                                     *
@@ -368,11 +353,6 @@ void UIItemCloudNetwork::updateFields()
 
     /* Assign tool-tip finally: */
     setToolTip(CloudNetworkColumn_Name, strTable.arg(strToolTip));
-}
-
-QString UIItemCloudNetwork::defaultText() const
-{
-    return tr("%1, %2", "col.2 text, col.1 name").arg(text(1)).arg(parentTree()->headerItem()->text(0));
 }
 
 
