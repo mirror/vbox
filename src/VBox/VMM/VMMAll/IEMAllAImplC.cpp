@@ -37,6 +37,10 @@
 #  define IEM_WITHOUT_ASSEMBLY
 # endif
 #endif
+/* IEM_WITH_ASSEMBLY trumps IEM_WITHOUT_ASSEMBLY for tstIEMAImplAsm purposes. */
+#ifdef IEM_WITH_ASSEMBLY
+# undef IEM_WITHOUT_ASSEMBLY
+#endif
 
 /**
  * Calculates the signed flag value given a result and it's bit width.
@@ -911,40 +915,40 @@ EMIT_LOCKED_BIN_OP(and, 8)
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
-       logical operation (AND/OR/whatever). */
+    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
+             not modified by either AMD (3990x) or Intel (i9-9980HK). */
     Assert(uSrc < 64);
     uint64_t uDst = *puDst;
     if (uDst & RT_BIT_64(uSrc))
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 64, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     else
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 64, 0);
+        *pfEFlags &= ~X86_EFL_CF;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
-       logical operation (AND/OR/whatever). */
+    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
+             not modified by either AMD (3990x) or Intel (i9-9980HK). */
     Assert(uSrc < 32);
     uint32_t uDst = *puDst;
     if (uDst & RT_BIT_32(uSrc))
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 32, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     else
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 32, 0);
+        *pfEFlags &= ~X86_EFL_CF;
 }
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
-       logical operation (AND/OR/whatever). */
+    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
+             not modified by either AMD (3990x) or Intel (i9-9980HK). */
     Assert(uSrc < 16);
     uint16_t uDst = *puDst;
     if (uDst & RT_BIT_32(uSrc))
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 16, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     else
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 16, 0);
+        *pfEFlags &= ~X86_EFL_CF;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -955,8 +959,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u16,(uint16_t *puDst, uint16_t uSrc, uint32_
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
-       logical operation (AND/OR/whatever). */
+    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
+             not modified by either AMD (3990x) or Intel (i9-9980HK). */
     Assert(uSrc < 64);
     uint64_t fMask = RT_BIT_64(uSrc);
     uint64_t uDst = *puDst;
@@ -964,13 +968,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u64,(uint64_t *puDst, uint64_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 64, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     }
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 64, 0);
+        *pfEFlags &= ~X86_EFL_CF;
     }
 }
 
@@ -978,8 +982,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u64,(uint64_t *puDst, uint64_t uSrc, uint32
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
-       logical operation (AND/OR/whatever). */
+    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
+             not modified by either AMD (3990x) or Intel (i9-9980HK). */
     Assert(uSrc < 32);
     uint32_t fMask = RT_BIT_32(uSrc);
     uint32_t uDst = *puDst;
@@ -987,21 +991,21 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u32,(uint32_t *puDst, uint32_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 32, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     }
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 32, 0);
+        *pfEFlags &= ~X86_EFL_CF;
     }
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  We set them as after an
-       logical operation (AND/OR/whatever). */
+    /* Note! "undefined" flags: OF, SF, ZF, AF, PF.  However, it seems they're
+             not modified by either AMD (3990x) or Intel (i9-9980HK). */
     Assert(uSrc < 16);
     uint16_t fMask = RT_BIT_32(uSrc);
     uint16_t uDst = *puDst;
@@ -1009,13 +1013,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btc_u16,(uint16_t *puDst, uint16_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 16, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     }
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 16, 0);
+        *pfEFlags &= ~X86_EFL_CF;
     }
 }
 
@@ -1036,10 +1040,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btr_u64,(uint64_t *puDst, uint64_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 64, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     }
     else
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 64, 0);
+        *pfEFlags &= ~X86_EFL_CF;
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
@@ -1055,10 +1059,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btr_u32,(uint32_t *puDst, uint32_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 32, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     }
     else
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 32, 0);
+        *pfEFlags &= ~X86_EFL_CF;
 }
 
 
@@ -1073,10 +1077,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_btr_u16,(uint16_t *puDst, uint16_t uSrc, uint32
     {
         uDst &= ~fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 16, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     }
     else
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 16, 0);
+        *pfEFlags &= ~X86_EFL_CF;
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -1093,12 +1097,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u64,(uint64_t *puDst, uint64_t uSrc, uint32
     uint64_t fMask = RT_BIT_64(uSrc);
     uint64_t uDst = *puDst;
     if (uDst & fMask)
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 64, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 64, 0);
+        *pfEFlags &= ~X86_EFL_CF;
     }
 }
 
@@ -1112,12 +1116,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u32,(uint32_t *puDst, uint32_t uSrc, uint32
     uint32_t fMask = RT_BIT_32(uSrc);
     uint32_t uDst = *puDst;
     if (uDst & fMask)
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 32, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 32, 0);
+        *pfEFlags &= ~X86_EFL_CF;
     }
 }
 
@@ -1130,12 +1134,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bts_u16,(uint16_t *puDst, uint16_t uSrc, uint32
     uint16_t fMask = RT_BIT_32(uSrc);
     uint32_t uDst = *puDst;
     if (uDst & fMask)
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 32, X86_EFL_CF);
+        *pfEFlags |= X86_EFL_CF;
     else
     {
         uDst |= fMask;
         *puDst = uDst;
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_LOGIC(pfEFlags, uDst, 32, 0);
+        *pfEFlags &= ~X86_EFL_CF;
     }
 }
 
@@ -1163,7 +1167,7 @@ EMIT_LOCKED_BIN_OP(bts, 16)
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /** @todo check what real CPUs do. */
+    /* Intel & AMD differs here. This is is the AMD behaviour. */
     unsigned iBit = ASMBitFirstSetU64(uSrc);
     if (iBit)
     {
@@ -1179,7 +1183,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u64,(uint64_t *puDst, uint64_t uSrc, uint32
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /** @todo check what real CPUs do. */
+    /* Intel & AMD differs here. This is is the AMD behaviour. */
     unsigned iBit = ASMBitFirstSetU32(uSrc);
     if (iBit)
     {
@@ -1194,7 +1198,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u32,(uint32_t *puDst, uint32_t uSrc, uint32
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /** @todo check what real CPUs do. */
+    /* Intel & AMD differs here. This is is the AMD behaviour. */
     unsigned iBit = ASMBitFirstSetU16(uSrc);
     if (iBit)
     {
@@ -1214,7 +1218,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u16,(uint16_t *puDst, uint16_t uSrc, uint32
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /** @todo check what real CPUs do. */
+    /* Intel & AMD differs here. This is is the AMD behaviour. */
     unsigned iBit = ASMBitLastSetU64(uSrc);
     if (uSrc)
     {
@@ -1230,7 +1234,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64,(uint64_t *puDst, uint64_t uSrc, uint32
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /** @todo check what real CPUs do. */
+    /* Intel & AMD differs here. This is is the AMD behaviour. */
     unsigned iBit = ASMBitLastSetU32(uSrc);
     if (uSrc)
     {
@@ -1245,7 +1249,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u32,(uint32_t *puDst, uint32_t uSrc, uint32
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
 {
     /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /** @todo check what real CPUs do. */
+    /* Intel & AMD differs here. This is is the AMD behaviour. */
     unsigned iBit = ASMBitLastSetU16(uSrc);
     if (uSrc)
     {
