@@ -1343,112 +1343,37 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u8_unlocked,(uint8_t *puMem, uint8_t *puRe
 /*
  * XADD and LOCK XADD.
  */
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64,(uint64_t *puDst, uint64_t *puReg, uint32_t *pfEFlags))
-{
-    uint64_t uDst    = *puDst;
-    uint64_t uResult = uDst;
-    iemAImpl_add_u64(&uResult, *puReg, pfEFlags);
-    *puDst = uResult;
-    *puReg = uDst;
+#define EMIT_XADD(a_cBitsWidth, a_Type) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u ## a_cBitsWidth,(a_Type *puDst, a_Type *puReg, uint32_t *pfEFlags)) \
+{ \
+    a_Type uDst    = *puDst; \
+    a_Type uResult = uDst; \
+    iemAImpl_add_u ## a_cBitsWidth(&uResult, *puReg, pfEFlags); \
+    *puDst = uResult; \
+    *puReg = uDst; \
+} \
+\
+IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u ## a_cBitsWidth ## _locked,(a_Type *puDst, a_Type *puReg, uint32_t *pfEFlags)) \
+{ \
+    a_Type uOld = ASMAtomicUoReadU ## a_cBitsWidth(puDst); \
+    a_Type uResult; \
+    uint32_t fEflTmp; \
+    do \
+    { \
+        uResult = uOld; \
+        fEflTmp = *pfEFlags; \
+        iemAImpl_add_u ## a_cBitsWidth(&uResult, *puReg, &fEflTmp); \
+    } while (!ASMAtomicCmpXchgExU ## a_cBitsWidth(puDst, uResult, uOld, &uOld)); \
+    *puReg    = uOld; \
+    *pfEFlags = fEflTmp; \
 }
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64_locked,(uint64_t *puDst, uint64_t *puReg, uint32_t *pfEFlags))
-{
-    uint64_t uOld = ASMAtomicUoReadU64(puDst);
-    uint64_t uResult;
-    uint32_t fEflTmp;
-    do
-    {
-        uResult = uOld;
-        fEflTmp = *pfEFlags;
-        iemAImpl_add_u64(&uResult, *puReg, &fEflTmp);
-    } while (!ASMAtomicCmpXchgExU64(puDst, uResult, uOld, &uOld));
-    *puReg    = uOld;
-    *pfEFlags = fEflTmp;
-}
-
+EMIT_XADD(64, uint64_t)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u32,(uint32_t *puDst, uint32_t *puReg, uint32_t *pfEFlags))
-{
-    uint32_t uDst    = *puDst;
-    uint32_t uResult = uDst;
-    iemAImpl_add_u32(&uResult, *puReg, pfEFlags);
-    *puDst = uResult;
-    *puReg = uDst;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u32_locked,(uint32_t *puDst, uint32_t *puReg, uint32_t *pfEFlags))
-{
-    uint32_t uOld = ASMAtomicUoReadU32(puDst);
-    uint32_t uResult;
-    uint32_t fEflTmp;
-    do
-    {
-        uResult = uOld;
-        fEflTmp = *pfEFlags;
-        iemAImpl_add_u32(&uResult, *puReg, &fEflTmp);
-    } while (!ASMAtomicCmpXchgExU32(puDst, uResult, uOld, &uOld));
-    *puReg    = uOld;
-    *pfEFlags = fEflTmp;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u16,(uint16_t *puDst, uint16_t *puReg, uint32_t *pfEFlags))
-{
-    uint16_t uDst    = *puDst;
-    uint16_t uResult = uDst;
-    iemAImpl_add_u16(&uResult, *puReg, pfEFlags);
-    *puDst = uResult;
-    *puReg = uDst;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u16_locked,(uint16_t *puDst, uint16_t *puReg, uint32_t *pfEFlags))
-{
-    uint16_t uOld = ASMAtomicUoReadU16(puDst);
-    uint16_t uResult;
-    uint32_t fEflTmp;
-    do
-    {
-        uResult = uOld;
-        fEflTmp = *pfEFlags;
-        iemAImpl_add_u16(&uResult, *puReg, &fEflTmp);
-    } while (!ASMAtomicCmpXchgExU16(puDst, uResult, uOld, &uOld));
-    *puReg    = uOld;
-    *pfEFlags = fEflTmp;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u8,(uint8_t *puDst, uint8_t *puReg, uint32_t *pfEFlags))
-{
-    uint8_t uDst    = *puDst;
-    uint8_t uResult = uDst;
-    iemAImpl_add_u8(&uResult, *puReg, pfEFlags);
-    *puDst = uResult;
-    *puReg = uDst;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u8_locked,(uint8_t *puDst, uint8_t *puReg, uint32_t *pfEFlags))
-{
-    uint8_t uOld = ASMAtomicUoReadU8(puDst);
-    uint8_t uResult;
-    uint32_t fEflTmp;
-    do
-    {
-        uResult = uOld;
-        fEflTmp = *pfEFlags;
-        iemAImpl_add_u8(&uResult, *puReg, &fEflTmp);
-    } while (!ASMAtomicCmpXchgExU8(puDst, uResult, uOld, &uOld));
-    *puReg    = uOld;
-    *pfEFlags = fEflTmp;
-}
-
+EMIT_XADD(32, uint32_t)
+EMIT_XADD(16, uint16_t)
+EMIT_XADD(8, uint8_t)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
+
 #endif
 
 /*
