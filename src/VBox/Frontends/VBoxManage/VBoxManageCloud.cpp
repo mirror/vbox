@@ -118,8 +118,8 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     {
         { "--compartment-id", 'c', RTGETOPT_REQ_STRING },
         { "--state",          's', RTGETOPT_REQ_STRING },
-        { "help",             1001, RTGETOPT_REQ_NOTHING },
-        { "--help",           1002, RTGETOPT_REQ_NOTHING }
+        { "help",             'h', RTGETOPT_REQ_NOTHING },
+        { "--help",           'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -164,8 +164,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
                     return errorArgument(Cloud::tr("Unknown cloud instance state \"%s\""), pszState);
                 break;
             }
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
@@ -285,8 +284,8 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     {
         { "--compartment-id", 'c', RTGETOPT_REQ_STRING },
         { "--state",          's', RTGETOPT_REQ_STRING },
-        { "help",             1001, RTGETOPT_REQ_NOTHING },
-        { "--help",           1002, RTGETOPT_REQ_NOTHING }
+        { "help",             'h', RTGETOPT_REQ_NOTHING },
+        { "--help",           'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -325,8 +324,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
                     return errorArgument(Cloud::tr("Unknown cloud image state \"%s\""), pszState);
                 break;
             }
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
@@ -534,8 +532,8 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         { "--launch",         'l', RTGETOPT_REQ_STRING },
         { "--public-ssh-key", 'k', RTGETOPT_REQ_STRING },
         { "--cloud-init-script-path", 'c', RTGETOPT_REQ_STRING },
-        { "help",             1001, RTGETOPT_REQ_NOTHING },
-        { "--help",           1002, RTGETOPT_REQ_NOTHING }
+        { "help",             'h', RTGETOPT_REQ_NOTHING },
+        { "--help",           'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -625,8 +623,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudInitScriptPath,
                                      Bstr(ValueUnion.psz).raw(), NULL);
                 break;
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
@@ -717,8 +714,8 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--id",   'i', RTGETOPT_REQ_STRING },
-        { "help",   1001, RTGETOPT_REQ_NOTHING },
-        { "--help", 1002, RTGETOPT_REQ_NOTHING }
+        { "help",   'h', RTGETOPT_REQ_NOTHING },
+        { "--help", 'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -749,8 +746,7 @@ static RTEXITCODE showCloudInstanceInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONO
 
                 break;
             }
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
@@ -869,8 +865,8 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--id",   'i', RTGETOPT_REQ_STRING },
-        { "help",   1001, RTGETOPT_REQ_NOTHING },
-        { "--help", 1002, RTGETOPT_REQ_NOTHING }
+        { "help",   'h', RTGETOPT_REQ_NOTHING },
+        { "--help", 'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -901,8 +897,7 @@ static RTEXITCODE startCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 
                 break;
             }
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
@@ -952,8 +947,8 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--id",   'i', RTGETOPT_REQ_STRING },
-        { "help",   1001, RTGETOPT_REQ_NOTHING },
-        { "--help", 1002, RTGETOPT_REQ_NOTHING }
+        { "help",   'h', RTGETOPT_REQ_NOTHING },
+        { "--help", 'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -984,8 +979,7 @@ static RTEXITCODE pauseCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 
                 break;
             }
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
@@ -1035,8 +1029,8 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--id",   'i', RTGETOPT_REQ_STRING },
-        { "help",   1001, RTGETOPT_REQ_NOTHING },
-        { "--help", 1002, RTGETOPT_REQ_NOTHING }
+        { "help",   'h', RTGETOPT_REQ_NOTHING },
+        { "--help", 'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -1067,8 +1061,7 @@ static RTEXITCODE terminateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMON
 
                 break;
             }
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
@@ -1210,8 +1203,8 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         { "--instance-id",    'i', RTGETOPT_REQ_STRING },
         { "--display-name",   'd', RTGETOPT_REQ_STRING },
         { "--launch-mode",    'm', RTGETOPT_REQ_STRING },
-        { "help",             1001, RTGETOPT_REQ_NOTHING },
-        { "--help",           1002, RTGETOPT_REQ_NOTHING }
+        { "help",             'h', RTGETOPT_REQ_NOTHING },
+        { "--help",           'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -1260,8 +1253,7 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 strBucketName=ValueUnion.psz;
                 Bstr(Utf8Str("launch-mode=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
@@ -1317,8 +1309,8 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         { "--object-name",    'o', RTGETOPT_REQ_STRING },
         { "--display-name",   'd', RTGETOPT_REQ_STRING },
         { "--launch-mode",    'm', RTGETOPT_REQ_STRING },
-        { "help",             1001, RTGETOPT_REQ_NOTHING },
-        { "--help",           1002, RTGETOPT_REQ_NOTHING }
+        { "help",             'h', RTGETOPT_REQ_NOTHING },
+        { "--help",           'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -1403,8 +1395,7 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 break;
             }
 
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
 
@@ -1513,8 +1504,8 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         { "--id",             'i', RTGETOPT_REQ_STRING },
         { "--bucket-name",    'b', RTGETOPT_REQ_STRING },
         { "--object-name",    'o', RTGETOPT_REQ_STRING },
-        { "help",             1001, RTGETOPT_REQ_NOTHING },
-        { "--help",           1002, RTGETOPT_REQ_NOTHING }
+        { "help",             'h', RTGETOPT_REQ_NOTHING },
+        { "--help",           'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -1550,8 +1541,7 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 strObjectName=ValueUnion.psz;
                 Bstr(Utf8Str("object-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
@@ -1599,8 +1589,8 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--id", 'i', RTGETOPT_REQ_STRING },
-        { "help",   1001, RTGETOPT_REQ_NOTHING },
-        { "--help", 1002, RTGETOPT_REQ_NOTHING }
+        { "help",   'h', RTGETOPT_REQ_NOTHING },
+        { "--help", 'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -1623,8 +1613,7 @@ static RTEXITCODE showCloudImageInfo(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
             case 'i':
                 strImageId = ValueUnion.psz;
                 break;
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
@@ -1691,8 +1680,8 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--id", 'i', RTGETOPT_REQ_STRING },
-        { "help",   1001, RTGETOPT_REQ_NOTHING },
-        { "--help", 1002, RTGETOPT_REQ_NOTHING }
+        { "help",   'h', RTGETOPT_REQ_NOTHING },
+        { "--help", 'h', RTGETOPT_REQ_NOTHING }
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -1724,8 +1713,7 @@ static RTEXITCODE deleteCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 break;
             }
 
-            case 1001:
-            case 1002:
+            case 'h':
                 printHelp(g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             case VINF_GETOPT_NOT_OPTION:
