@@ -209,6 +209,7 @@ void UIMediumManagerWidget::retranslateUi()
     QITreeWidget *pTreeWidgetHD = treeWidget(UIMediumDeviceType_HardDisk);
     if (pTreeWidgetHD)
     {
+        pTreeWidgetHD->setWhatsThis(tr("Registered hard drives"));
         pTreeWidgetHD->headerItem()->setText(0, UIMediumManager::tr("Name"));
         pTreeWidgetHD->headerItem()->setText(1, UIMediumManager::tr("Virtual Size"));
         pTreeWidgetHD->headerItem()->setText(2, UIMediumManager::tr("Actual Size"));
@@ -218,6 +219,7 @@ void UIMediumManagerWidget::retranslateUi()
     QITreeWidget *pTreeWidgetCD = treeWidget(UIMediumDeviceType_DVD);
     if (pTreeWidgetCD)
     {
+        pTreeWidgetCD->setWhatsThis(tr("Registered optical disks"));
         pTreeWidgetCD->headerItem()->setText(0, UIMediumManager::tr("Name"));
         pTreeWidgetCD->headerItem()->setText(1, UIMediumManager::tr("Size"));
     }
@@ -226,6 +228,7 @@ void UIMediumManagerWidget::retranslateUi()
     QITreeWidget *pTreeWidgetFD = treeWidget(UIMediumDeviceType_Floppy);
     if (pTreeWidgetFD)
     {
+        pTreeWidgetFD->setWhatsThis(tr("Registered floppy disks"));
         pTreeWidgetFD->headerItem()->setText(0, UIMediumManager::tr("Name"));
         pTreeWidgetFD->headerItem()->setText(1, UIMediumManager::tr("Size"));
     }

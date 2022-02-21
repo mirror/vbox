@@ -204,6 +204,7 @@ void UICloudProfileManagerWidget::retranslateUi()
     m_pTreeWidget->setHeaderLabels(   QStringList()
                                    << tr("Source")
                                    << tr("List VMs"));
+    m_pTreeWidget->setWhatsThis(tr("Registered cloud providers and profiles"));
 }
 
 bool UICloudProfileManagerWidget::makeSureChangesResolved()

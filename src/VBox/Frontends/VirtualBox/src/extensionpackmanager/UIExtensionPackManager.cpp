@@ -203,6 +203,7 @@ void UIExtensionPackManagerWidget::retranslateUi()
                                    << tr("Active")
                                    << tr("Name")
                                    << tr("Version"));
+    m_pTreeWidget->setWhatsThis(tr("Registered extension packs"));
 }
 
 void UIExtensionPackManagerWidget::sltInstallExtensionPack()
