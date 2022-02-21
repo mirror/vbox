@@ -305,7 +305,7 @@ static const BINU16_T g_aBinU16[] =
     ENTRY(bsf_u16),
     ENTRY(bsr_u16),
     ENTRY(imul_two_u16),
-/// @todo     ENTRY(arpl),
+    ENTRY(arpl),
 };
 
 

@@ -101,11 +101,13 @@
         \
         /* Overflow during ADDition happens when both inputs have the same signed \
            bit value and the result has a different sign bit value. \
-        \
+           \
            Since subtraction can be rewritten as addition: 2 - 1 == 2 + -1, it \
            follows that for SUBtraction the signed bit value must differ between \
            the two inputs and the result's signed bit diff from the first input. \
-           Note! Must xor with sign bit to convert, not do (0 - a_uSrc). */ \
+           Note! Must xor with sign bit to convert, not do (0 - a_uSrc). \
+           \
+           See also: http://teaching.idallen.com/dat2343/10f/notes/040_overflow.txt */ \
         fEflTmp |= X86_EFL_GET_OF_ ## a_cBitsWidth(  (  ((uint ## a_cBitsWidth ## _t)~((a_uDst) ^ (a_uSrcOf))) \
                                                       & RT_BIT_64(a_cBitsWidth - 1)) \
                                                    & ((a_uResult) ^ (a_uDst)) ); \
@@ -1660,7 +1662,7 @@ DECLINLINE(void) RTUInt128DivRemByU64(PRTUINT128U pQuotient, PRTUINT128U pRemain
 # define MUL_LOAD_F1()                         *puA
 # define MUL_LOAD_F1_U8()                      ((uint8_t)*puAX)
 
-# define MUL_STORE(a_Result)                   *puA  = (a_Result).s.Hi, *puD = (a_Result).s.Lo
+# define MUL_STORE(a_Result)                   *puA  = (a_Result).s.Lo, *puD = (a_Result).s.Hi
 # define MUL_STORE_U8(a_Result)                *puAX = a_Result.u
 
 # define MULDIV_NEG(a_Value, a_cBitsWidth2x) \
@@ -1714,47 +1716,54 @@ EMIT_MUL(8, 16, (uint16_t *puAX, uint8_t uFactor, uint32_t *pfEFlags), MUL_LOAD_
 IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u ## a_cBitsWidth,a_Args) \
 { \
     RTUINT ## a_cBitsWidth2x ## U Result; \
-    *pfEFlags &= ~( X86_EFL_SF | X86_EFL_CF | X86_EFL_OF \
-                   /* Skylake always clears: */ | X86_EFL_AF | X86_EFL_ZF \
-                   /* Skylake may set: */       | X86_EFL_PF); \
+    /* The SF, ZF, AF and PF flags are "undefined". AMD (3990x) leaves these \
+       flags as is. Whereas Intel skylake always clear AF and ZF and calculates \
+       SF and PF as per the lower half of the result. */ \
+    uint32_t fEfl = *pfEFlags & ~(X86_EFL_CF | X86_EFL_OF); \
     \
     uint ## a_cBitsWidth ## _t const uFactor1 = a_fnLoadF1(); \
-    if ((int ## a_cBitsWidth ## _t)uFactor1 >= 0) \
+    if (!(uFactor1 & RT_BIT_64(a_cBitsWidth - 1))) \
     { \
-        if ((int ## a_cBitsWidth ## _t)uFactor2 >= 0) \
+        if (!(uFactor2 & RT_BIT_64(a_cBitsWidth - 1))) \
         { \
             a_fnMul(Result, uFactor1, uFactor2, a_cBitsWidth2x); \
             if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_64(a_cBitsWidth - 1)) \
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF; \
+                fEfl |= X86_EFL_CF | X86_EFL_OF; \
         } \
         else \
         { \
             a_fnMul(Result, uFactor1, UINT ## a_cBitsWidth ## _C(0) - uFactor2, a_cBitsWidth2x); \
             if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_64(a_cBitsWidth - 1)) \
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF; \
+                fEfl |= X86_EFL_CF | X86_EFL_OF; \
             a_fnNeg(Result, a_cBitsWidth2x); \
         } \
     } \
     else \
     { \
-        if ((int ## a_cBitsWidth ## _t)uFactor2 >= 0) \
+        if (!(uFactor2 & RT_BIT_64(a_cBitsWidth - 1))) \
         { \
             a_fnMul(Result, UINT ## a_cBitsWidth ## _C(0) - uFactor1, uFactor2, a_cBitsWidth2x); \
             if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_64(a_cBitsWidth - 1)) \
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF; \
+                fEfl |= X86_EFL_CF | X86_EFL_OF; \
             a_fnNeg(Result, a_cBitsWidth2x); \
         } \
         else \
         { \
-            a_fnMul(Result, UINT ## a_cBitsWidth ## _C(0) - uFactor1, UINT ## a_cBitsWidth ## _C(0) - uFactor2, a_cBitsWidth2x); \
+            /*a_fnMul(Result, UINT ## a_cBitsWidth ## _C(0) - uFactor1, UINT ## a_cBitsWidth ## _C(0) - uFactor2, a_cBitsWidth2x);*/ \
+            a_fnMul(Result, uFactor1, uFactor2, a_cBitsWidth2x); \
             if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_64(a_cBitsWidth - 1)) \
-                *pfEFlags |= X86_EFL_CF | X86_EFL_OF; \
+                fEfl |= X86_EFL_CF | X86_EFL_OF; \
         } \
     } \
     a_fnStore(Result); \
-    if (Result.s.Lo & RT_BIT_64(a_cBitsWidth - 1)) \
-        *pfEFlags |= X86_EFL_SF; \
-    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */ \
+    if (false) \
+    {   /* Intel (skylake) flags "undefined" behaviour: */  \
+        fEfl &= ~(X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_PF); \
+        if (Result.s.Lo & RT_BIT_64(a_cBitsWidth - 1)) \
+            fEfl |= X86_EFL_SF;  \
+        fEfl |= g_afParity[Result.s.Lo & 0xff]; \
+    } \
+    *pfEFlags = fEfl; \
     return 0; \
 }
 /** @todo Testcase: IMUL 2 and 3 operands. */
