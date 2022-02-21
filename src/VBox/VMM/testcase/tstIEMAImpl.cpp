@@ -96,7 +96,6 @@ typedef struct BINU16_T
 static uint32_t RandEFlags(void);
 static uint8_t  RandU8(void);
 static uint16_t RandU16(void);
-static const char *FmtEflagsDiff(uint32_t fEfl, uint32_t fExpected);
 
 
 /*********************************************************************************************************************************
