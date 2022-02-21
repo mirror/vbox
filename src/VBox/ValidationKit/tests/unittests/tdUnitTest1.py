@@ -284,6 +284,7 @@ class tdUnitTest1(vbox.TestDriver):
         "testcase/tstRTR0ThreadDriver",
         'testcase/tstRTR0DbgKrnlInfoDriver',
         "tstInt",
+        "tstPDMQueue",  # Comment in testcase says its driverless, but it needs driver access.
         "tstVMM",
         "tstVMMFork",
         "tstVMREQ",
