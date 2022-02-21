@@ -68,10 +68,10 @@
  * These are typically used by concating with a bitcount.  The problem is that
  * 8-bit values needs shifting in the other direction than the others.
  */
-#define X86_EFL_GET_OF_8(a_uValue)  ((uint32_t)((a_uValue) << (X86_EFL_OF_BIT - 8))  & X86_EFL_OF)
-#define X86_EFL_GET_OF_16(a_uValue) ((uint32_t)((a_uValue) >> (16 - X86_EFL_OF_BIT)) & X86_EFL_OF)
-#define X86_EFL_GET_OF_32(a_uValue) ((uint32_t)((a_uValue) >> (32 - X86_EFL_OF_BIT)) & X86_EFL_OF)
-#define X86_EFL_GET_OF_64(a_uValue) ((uint32_t)((a_uValue) >> (64 - X86_EFL_OF_BIT)) & X86_EFL_OF)
+#define X86_EFL_GET_OF_8(a_uValue)  (((uint32_t)(a_uValue) << (X86_EFL_OF_BIT - 8 + 1))  & X86_EFL_OF)
+#define X86_EFL_GET_OF_16(a_uValue) ((uint32_t)((a_uValue) >> (16 - X86_EFL_OF_BIT - 1)) & X86_EFL_OF)
+#define X86_EFL_GET_OF_32(a_uValue) ((uint32_t)((a_uValue) >> (32 - X86_EFL_OF_BIT - 1)) & X86_EFL_OF)
+#define X86_EFL_GET_OF_64(a_uValue) ((uint32_t)((a_uValue) >> (64 - X86_EFL_OF_BIT - 1)) & X86_EFL_OF)
 
 /**
  * Updates the status bits (CF, PF, AF, ZF, SF, and OF) after arithmetic op.
@@ -83,9 +83,9 @@
  * @param   a_uDst          The original destination value (for AF calc).
  * @param   a_cBitsWidth    The width of the result (8, 16, 32, 64).
  * @param   a_CfExpr        Bool expression for the carry flag (CF).
- * @param   a_OfMethod      0 for ADD-style, 1 for SUB-style.
+ * @param   a_uOfSrc        The a_uSrc value to use for overflow calculation.
  */
-#define IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(a_pfEFlags, a_uResult, a_uDst, a_uSrc, a_cBitsWidth, a_CfExpr, a_OfMethod) \
+#define IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(a_pfEFlags, a_uResult, a_uDst, a_uSrc, a_cBitsWidth, a_CfExpr, a_uSrcOf) \
     do { \
         uint32_t fEflTmp = *(a_pfEFlags); \
         fEflTmp &= ~X86_EFL_STATUS_BITS; \
@@ -94,7 +94,16 @@
         fEflTmp |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uSrc) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
         fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
         fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
-        fEflTmp |= X86_EFL_GET_OF_ ## a_cBitsWidth( ((a_uDst) ^ (a_uSrc) ^ (a_OfMethod == 0 ? RT_BIT_64(a_cBitsWidth - 1) : 0)) \
+        \
+        /* Overflow during ADDition happens when both inputs have the same signed \
+           bit value and the result has a different sign bit value. \
+        \
+           Since subtraction can be rewritten as addition: 2 - 1 == 2 + -1, it \
+           follows that for SUBtraction the signed bit value must differ between \
+           the two inputs and the result's signed bit diff from the first input. \
+           Note! Must xor with sign bit to convert, not do (0 - a_uSrc). */ \
+        fEflTmp |= X86_EFL_GET_OF_ ## a_cBitsWidth(  (  ((uint ## a_cBitsWidth ## _t)~((a_uDst) ^ (a_uSrcOf))) \
+                                                      & RT_BIT_64(a_cBitsWidth - 1)) \
                                                    & ((a_uResult) ^ (a_uDst)) ); \
         *(a_pfEFlags) = fEflTmp; \
     } while (0)
@@ -447,7 +456,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_add_u64,(uint64_t *puDst, uint64_t uSrc, uint32
     uint64_t uDst    = *puDst;
     uint64_t uResult = uDst + uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uResult < uDst, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uResult < uDst, uSrc);
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
@@ -457,7 +466,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_add_u32,(uint32_t *puDst, uint32_t uSrc, uint32
     uint32_t uDst    = *puDst;
     uint32_t uResult = uDst + uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uResult < uDst, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uResult < uDst, uSrc);
 }
 
 
@@ -466,7 +475,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_add_u16,(uint16_t *puDst, uint16_t uSrc, uint32
     uint16_t uDst    = *puDst;
     uint16_t uResult = uDst + uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uResult < uDst, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uResult < uDst, uSrc);
 }
 
 
@@ -475,7 +484,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_add_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
     uint8_t uDst    = *puDst;
     uint8_t uResult = uDst + uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uResult < uDst, 0);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uResult < uDst, uSrc);
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -493,8 +502,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_adc_u64,(uint64_t *puDst, uint64_t uSrc, uint32
         uint64_t uDst    = *puDst;
         uint64_t uResult = uDst + uSrc + 1;
         *puDst = uResult;
-        /** @todo verify AF and OF calculations. */
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uResult <= uDst, 0);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uResult <= uDst, uSrc);
     }
 }
 
@@ -509,8 +517,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_adc_u32,(uint32_t *puDst, uint32_t uSrc, uint32
         uint32_t uDst    = *puDst;
         uint32_t uResult = uDst + uSrc + 1;
         *puDst = uResult;
-        /** @todo verify AF and OF calculations. */
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uResult <= uDst, 0);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uResult <= uDst, uSrc);
     }
 }
 
@@ -524,8 +531,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_adc_u16,(uint16_t *puDst, uint16_t uSrc, uint32
         uint16_t uDst    = *puDst;
         uint16_t uResult = uDst + uSrc + 1;
         *puDst = uResult;
-        /** @todo verify AF and OF calculations. */
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uResult <= uDst, 0);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uResult <= uDst, uSrc);
     }
 }
 
@@ -539,8 +545,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_adc_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
         uint8_t uDst    = *puDst;
         uint8_t uResult = uDst + uSrc + 1;
         *puDst = uResult;
-        /** @todo verify AF and OF calculations. */
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uResult <= uDst, 0);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uResult <= uDst, uSrc);
     }
 }
 
@@ -555,7 +560,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sub_u64,(uint64_t *puDst, uint64_t uSrc, uint32
     uint64_t uDst    = *puDst;
     uint64_t uResult = uDst - uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uResult < uDst, 1);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uDst < uSrc, uSrc ^ RT_BIT_64(63));
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
@@ -565,7 +570,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sub_u32,(uint32_t *puDst, uint32_t uSrc, uint32
     uint32_t uDst    = *puDst;
     uint32_t uResult = uDst - uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uResult < uDst, 1);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uDst < uSrc, uSrc ^ RT_BIT_32(31));
 }
 
 
@@ -574,7 +579,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sub_u16,(uint16_t *puDst, uint16_t uSrc, uint32
     uint16_t uDst    = *puDst;
     uint16_t uResult = uDst - uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uResult < uDst, 1);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uDst < uSrc, uSrc ^ (uint16_t)0x8000);
 }
 
 
@@ -583,7 +588,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sub_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
     uint8_t uDst    = *puDst;
     uint8_t uResult = uDst - uSrc;
     *puDst = uResult;
-    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uResult < uDst, 1);
+    IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uDst < uSrc, uSrc ^ (uint8_t)0x80);
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -601,8 +606,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sbb_u64,(uint64_t *puDst, uint64_t uSrc, uint32
         uint64_t uDst    = *puDst;
         uint64_t uResult = uDst - uSrc - 1;
         *puDst = uResult;
-        /** @todo verify AF and OF calculations. */
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uResult <= uDst, 1);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 64, uDst <= uSrc, uSrc ^ RT_BIT_64(63));
     }
 }
 
@@ -617,8 +621,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sbb_u32,(uint32_t *puDst, uint32_t uSrc, uint32
         uint32_t uDst    = *puDst;
         uint32_t uResult = uDst - uSrc - 1;
         *puDst = uResult;
-        /** @todo verify AF and OF calculations. */
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uResult <= uDst, 1);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 32, uDst <= uSrc, uSrc ^ RT_BIT_32(31));
     }
 }
 
@@ -632,8 +635,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sbb_u16,(uint16_t *puDst, uint16_t uSrc, uint32
         uint16_t uDst    = *puDst;
         uint16_t uResult = uDst - uSrc - 1;
         *puDst = uResult;
-        /** @todo verify AF and OF calculations. */
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uResult <= uDst, 1);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 16, uDst <= uSrc, uSrc ^ (uint16_t)0x8000);
     }
 }
 
@@ -647,8 +649,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sbb_u8,(uint8_t *puDst, uint8_t uSrc, uint32_t 
         uint8_t uDst    = *puDst;
         uint8_t uResult = uDst - uSrc - 1;
         *puDst = uResult;
-        /** @todo verify AF and OF calculations. */
-        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uResult <= uDst, 1);
+        IEM_EFL_UPDATE_STATUS_BITS_FOR_ARITHMETIC(pfEFlags, uResult, uDst, uSrc, 8, uDst <= uSrc, uSrc ^ (uint8_t)0x80);
     }
 }
 
