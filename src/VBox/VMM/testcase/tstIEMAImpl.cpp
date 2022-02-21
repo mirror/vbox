@@ -82,6 +82,52 @@ typedef struct BINU16_T
 /** @} */
 
 
+/** @name 32-bit binary (PFNIEMAIMPLBINU32)
+ * @{ */
+typedef struct BINU32_TEST_T
+{
+    uint32_t                fEflIn;
+    uint32_t                fEflOut;
+    uint32_t                uDstIn;
+    uint32_t                uDstOut;
+    uint32_t                uSrcIn;
+    uint32_t                uReserved;
+} BINU32_TEST_T;
+
+typedef struct BINU32_T
+{
+    const char             *pszName;
+    PFNIEMAIMPLBINU32       pfn;
+    BINU32_TEST_T const    *paTests;
+    uint32_t                cTests;
+    uint32_t                uExtra;
+} BINU32_T;
+/** @} */
+
+
+/** @name 64-bit binary (PFNIEMAIMPLBINU64)
+ * @{ */
+typedef struct BINU64_TEST_T
+{
+    uint32_t                fEflIn;
+    uint32_t                fEflOut;
+    uint64_t                uDstIn;
+    uint64_t                uDstOut;
+    uint64_t                uSrcIn;
+    uint64_t                uReserved;
+} BINU64_TEST_T;
+
+typedef struct BINU64_T
+{
+    const char             *pszName;
+    PFNIEMAIMPLBINU64       pfn;
+    BINU64_TEST_T const    *paTests;
+    uint32_t                cTests;
+    uint32_t                uExtra;
+} BINU64_T;
+/** @} */
+
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -96,6 +142,8 @@ typedef struct BINU16_T
 static uint32_t RandEFlags(void);
 static uint8_t  RandU8(void);
 static uint16_t RandU16(void);
+static uint32_t RandU32(void);
+static uint64_t RandU64(void);
 
 
 /*********************************************************************************************************************************
@@ -308,7 +356,6 @@ static const BINU16_T g_aBinU16[] =
     ENTRY(arpl),
 };
 
-
 static void BinU16Generate(uint32_t cTests)
 {
     RTPrintf("\n\n#define HAVE_BINU16_TESTS\n");
@@ -360,6 +407,232 @@ static void BinU16Test(void)
 
 
 /*
+ * 32-bit binary operations.
+ */
+
+#ifndef HAVE_BINU32_TESTS
+static const BINU32_TEST_T g_aTests_add_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_add_u32_locked[] = { {0} };
+static const BINU32_TEST_T g_aTests_adc_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_adc_u32_locked[] = { {0} };
+static const BINU32_TEST_T g_aTests_sub_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_sub_u32_locked[] = { {0} };
+static const BINU32_TEST_T g_aTests_sbb_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_sbb_u32_locked[] = { {0} };
+static const BINU32_TEST_T g_aTests_or_u32[]         = { {0} };
+static const BINU32_TEST_T g_aTests_or_u32_locked[]  = { {0} };
+static const BINU32_TEST_T g_aTests_xor_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_xor_u32_locked[] = { {0} };
+static const BINU32_TEST_T g_aTests_and_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_and_u32_locked[] = { {0} };
+static const BINU32_TEST_T g_aTests_cmp_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_test_u32[]       = { {0} };
+static const BINU32_TEST_T g_aTests_bt_u32[]         = { {0} };
+static const BINU32_TEST_T g_aTests_btc_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_btc_u32_locked[] = { {0} };
+static const BINU32_TEST_T g_aTests_btr_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_btr_u32_locked[] = { {0} };
+static const BINU32_TEST_T g_aTests_bts_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_bts_u32_locked[] = { {0} };
+static const BINU32_TEST_T g_aTests_bsf_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_bsr_u32[]        = { {0} };
+static const BINU32_TEST_T g_aTests_imul_two_u32[]   = { {0} };
+#endif
+
+static const BINU32_T g_aBinU32[] =
+{
+    ENTRY(add_u32),
+    ENTRY(add_u32_locked),
+    ENTRY(adc_u32),
+    ENTRY(adc_u32_locked),
+    ENTRY(sub_u32),
+    ENTRY(sub_u32_locked),
+    ENTRY(sbb_u32),
+    ENTRY(sbb_u32_locked),
+    ENTRY(or_u32),
+    ENTRY(or_u32_locked),
+    ENTRY(xor_u32),
+    ENTRY(xor_u32_locked),
+    ENTRY(and_u32),
+    ENTRY(and_u32_locked),
+    ENTRY(cmp_u32),
+    ENTRY(test_u32),
+    ENTRY_EX(bt_u32, 1),
+    ENTRY_EX(btc_u32, 1),
+    ENTRY_EX(btc_u32_locked, 1),
+    ENTRY_EX(btr_u32, 1),
+    ENTRY_EX(btr_u32_locked, 1),
+    ENTRY_EX(bts_u32, 1),
+    ENTRY_EX(bts_u32_locked, 1),
+    ENTRY(bsf_u32),
+    ENTRY(bsr_u32),
+    ENTRY(imul_two_u32),
+};
+
+static void BinU32Generate(uint32_t cTests)
+{
+    RTPrintf("\n\n#define HAVE_BINU32_TESTS\n");
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU32); iFn++)
+    {
+        RTPrintf("static const BINU32_TEST_T g_aTests_%s[] =\n{\n", g_aBinU32[iFn].pszName);
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
+        {
+            BINU32_TEST_T Test;
+            Test.fEflIn    = RandEFlags();
+            Test.fEflOut   = Test.fEflIn;
+            Test.uDstIn    = RandU32();
+            Test.uDstOut   = Test.uDstIn;
+            Test.uSrcIn    = RandU32();
+            if (g_aBinU32[iFn].uExtra)
+                Test.uSrcIn &= 0x1f; /* Restrict bit index to a word */
+            Test.uReserved = 0;
+            g_aBinU32[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
+            RTPrintf("    { %#08x, %#08x, %#010RX32, %#010RX32, %#010RX32, %#x }, /* #%u */\n",
+                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uReserved, iTest);
+        }
+        RTPrintf("};\n");
+    }
+}
+
+static void BinU32Test(void)
+{
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU32); iFn++)
+    {
+        RTTestSub(g_hTest, g_aBinU32[iFn].pszName);
+
+        BINU32_TEST_T const * const paTests = g_aBinU32[iFn].paTests;
+        uint32_t const              cTests  = g_aBinU32[iFn].cTests;
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
+        {
+            uint32_t fEfl = paTests[iTest].fEflIn;
+            uint32_t uDst = paTests[iTest].uDstIn;
+            g_aBinU32[iFn].pfn(&uDst, paTests[iTest].uSrcIn, &fEfl);
+            if (   uDst != paTests[iTest].uDstOut
+                || fEfl != paTests[iTest].fEflOut)
+                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=%#010RX32 src=%#010RX32 -> efl=%#08x dst=%#010RX32, expected %#08x & %#010RX32%s - %s\n",
+                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn,
+                             fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut,
+                             EFlagsDiff(fEfl, paTests[iTest].fEflOut),
+                             uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both");
+        }
+    }
+}
+
+
+/*
+ * 64-bit binary operations.
+ */
+
+#ifndef HAVE_BINU64_TESTS
+static const BINU64_TEST_T g_aTests_add_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_add_u64_locked[] = { {0} };
+static const BINU64_TEST_T g_aTests_adc_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_adc_u64_locked[] = { {0} };
+static const BINU64_TEST_T g_aTests_sub_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_sub_u64_locked[] = { {0} };
+static const BINU64_TEST_T g_aTests_sbb_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_sbb_u64_locked[] = { {0} };
+static const BINU64_TEST_T g_aTests_or_u64[]         = { {0} };
+static const BINU64_TEST_T g_aTests_or_u64_locked[]  = { {0} };
+static const BINU64_TEST_T g_aTests_xor_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_xor_u64_locked[] = { {0} };
+static const BINU64_TEST_T g_aTests_and_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_and_u64_locked[] = { {0} };
+static const BINU64_TEST_T g_aTests_cmp_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_test_u64[]       = { {0} };
+static const BINU64_TEST_T g_aTests_bt_u64[]         = { {0} };
+static const BINU64_TEST_T g_aTests_btc_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_btc_u64_locked[] = { {0} };
+static const BINU64_TEST_T g_aTests_btr_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_btr_u64_locked[] = { {0} };
+static const BINU64_TEST_T g_aTests_bts_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_bts_u64_locked[] = { {0} };
+static const BINU64_TEST_T g_aTests_bsf_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_bsr_u64[]        = { {0} };
+static const BINU64_TEST_T g_aTests_imul_two_u64[]   = { {0} };
+#endif
+
+static const BINU64_T g_aBinU64[] =
+{
+    ENTRY(add_u64),
+    ENTRY(add_u64_locked),
+    ENTRY(adc_u64),
+    ENTRY(adc_u64_locked),
+    ENTRY(sub_u64),
+    ENTRY(sub_u64_locked),
+    ENTRY(sbb_u64),
+    ENTRY(sbb_u64_locked),
+    ENTRY(or_u64),
+    ENTRY(or_u64_locked),
+    ENTRY(xor_u64),
+    ENTRY(xor_u64_locked),
+    ENTRY(and_u64),
+    ENTRY(and_u64_locked),
+    ENTRY(cmp_u64),
+    ENTRY(test_u64),
+    ENTRY_EX(bt_u64, 1),
+    ENTRY_EX(btc_u64, 1),
+    ENTRY_EX(btc_u64_locked, 1),
+    ENTRY_EX(btr_u64, 1),
+    ENTRY_EX(btr_u64_locked, 1),
+    ENTRY_EX(bts_u64, 1),
+    ENTRY_EX(bts_u64_locked, 1),
+    ENTRY(bsf_u64),
+    ENTRY(bsr_u64),
+    ENTRY(imul_two_u64),
+};
+
+static void BinU64Generate(uint32_t cTests)
+{
+    RTPrintf("\n\n#define HAVE_BINU64_TESTS\n");
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU64); iFn++)
+    {
+        RTPrintf("static const BINU64_TEST_T g_aTests_%s[] =\n{\n", g_aBinU64[iFn].pszName);
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
+        {
+            BINU64_TEST_T Test;
+            Test.fEflIn    = RandEFlags();
+            Test.fEflOut   = Test.fEflIn;
+            Test.uDstIn    = RandU64();
+            Test.uDstOut   = Test.uDstIn;
+            Test.uSrcIn    = RandU64();
+            if (g_aBinU64[iFn].uExtra)
+                Test.uSrcIn &= 0x3f; /* Restrict bit index to a word */
+            Test.uReserved = 0;
+            g_aBinU64[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
+            RTPrintf("    { %#08x, %#08x, %#018RX64, %#018RX64, %#018RX64, %#x }, /* #%u */\n",
+                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uReserved, iTest);
+        }
+        RTPrintf("};\n");
+    }
+}
+
+static void BinU64Test(void)
+{
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU64); iFn++)
+    {
+        RTTestSub(g_hTest, g_aBinU64[iFn].pszName);
+
+        BINU64_TEST_T const * const paTests = g_aBinU64[iFn].paTests;
+        uint32_t const              cTests  = g_aBinU64[iFn].cTests;
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
+        {
+            uint32_t fEfl = paTests[iTest].fEflIn;
+            uint64_t uDst = paTests[iTest].uDstIn;
+            g_aBinU64[iFn].pfn(&uDst, paTests[iTest].uSrcIn, &fEfl);
+            if (   uDst != paTests[iTest].uDstOut
+                || fEfl != paTests[iTest].fEflOut)
+                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=%#018RX64 src=%#018RX64 -> efl=%#08x dst=%#018RX64, expected %#08x & %#018RX64%s - %s\n",
+                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn,
+                             fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut,
+                             EFlagsDiff(fEfl, paTests[iTest].fEflOut),
+                             uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both");
+        }
+    }
+}
+
+
+/*
  * Random helpers.
  */
 
@@ -378,6 +651,18 @@ static uint8_t  RandU8(void)
 static uint16_t  RandU16(void)
 {
     return RTRandU32Ex(0, 0xffff);
+}
+
+
+static uint32_t  RandU32(void)
+{
+    return RTRandU32();
+}
+
+
+static uint64_t  RandU64(void)
+{
+    return RTRandU64();
 }
 
 
@@ -416,6 +701,8 @@ int main(int argc, char **argv)
         uint32_t cTests = 64;
         BinU8Generate(cTests);
         BinU16Generate(cTests);
+        BinU32Generate(cTests);
+        BinU64Generate(cTests);
         return RTEXITCODE_SUCCESS;
     }
 
@@ -429,6 +716,8 @@ int main(int argc, char **argv)
     {
         BinU8Test();
         BinU16Test();
+        BinU32Test();
+        BinU64Test();
         return RTTestSummaryAndDestroy(g_hTest);
     }
     return RTTestSkipAndDestroy(g_hTest, "unfinished testcase");
