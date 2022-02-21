@@ -2014,34 +2014,45 @@ static void biosfn_load_text_8_16_pat(uint8_t AL, uint8_t BL)
 
 static void biosfn_load_gfx_8_8_chars(uint16_t ES, uint16_t BP)
 {
-#ifdef VGA_DEBUG
- unimplemented();
-#endif
+    set_int_vector(0x1F, ES:>BP);
 }
+
+static void set_gfx_font(void _far *font, uint16_t cheight, uint8_t row_code, uint8_t rows)
+{
+    static  uint8_t row_tbl[] = { 0, 14, 25, 43 };
+
+    set_int_vector(0x43, font);
+    if (row_code) {
+        if (row_code > 3)
+            row_code = 2;   /* Default to 25 rows. */
+        rows = row_tbl[row_code];
+    }
+    /* Else 'rows' used as is. */
+
+    write_word(BIOSMEM_SEG, BIOSMEM_CHAR_HEIGHT, cheight);
+    write_word(BIOSMEM_SEG, BIOSMEM_NB_ROWS, rows - 1);
+}
+
 static void biosfn_load_gfx_user_chars(uint16_t ES, uint16_t BP, uint16_t CX,
                                        uint8_t BL, uint8_t DL)
 {
-#ifdef VGA_DEBUG
- unimplemented();
-#endif
+    set_gfx_font(ES:>BP, CX, BL, DL);
 }
-static void biosfn_load_gfx_8_14_chars(uint8_t BL)
+
+/* Some references (RBIL) suggest that only BL is used; that is wrong,
+ * all of these subfunctions will use DL if BL is zero.
+ */
+static void biosfn_load_gfx_8_14_chars(uint8_t BL, uint8_t DL)
 {
-#ifdef VGA_DEBUG
- unimplemented();
-#endif
+    set_gfx_font(vgafont14, 14, BL, DL);
 }
-static void biosfn_load_gfx_8_8_dd_chars(uint8_t BL)
+static void biosfn_load_gfx_8_8_dd_chars(uint8_t BL, uint8_t DL)
 {
-#ifdef VGA_DEBUG
- unimplemented();
-#endif
+    set_gfx_font(vgafont8, 8, BL, DL);
 }
-static void biosfn_load_gfx_8_16_chars(uint8_t BL)
+static void biosfn_load_gfx_8_16_chars(uint8_t BL, uint8_t DL)
 {
-#ifdef VGA_DEBUG
- unimplemented();
-#endif
+    set_gfx_font(vgafont16, 16, BL, DL);
 }
 // --------------------------------------------------------------------------------------------
 static void biosfn_alternate_prtsc(void)
@@ -2602,13 +2613,13 @@ void __cdecl int10_func(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint
         biosfn_load_gfx_user_chars(ES,BP,CX,GET_BL(),GET_DL());
         break;
        case 0x22:
-        biosfn_load_gfx_8_14_chars(GET_BL());
+        biosfn_load_gfx_8_14_chars(GET_BL(),GET_DL());
         break;
        case 0x23:
-        biosfn_load_gfx_8_8_dd_chars(GET_BL());
+        biosfn_load_gfx_8_8_dd_chars(GET_BL(),GET_DL());
         break;
        case 0x24:
-        biosfn_load_gfx_8_16_chars(GET_BL());
+        biosfn_load_gfx_8_16_chars(GET_BL(),GET_DL());
         break;
        case 0x30:
         vga_get_font_info(GET_BH(), &ES, &BP, &CX, &DX);
