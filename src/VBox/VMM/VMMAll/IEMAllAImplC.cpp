@@ -1357,14 +1357,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64,(uint64_t *puDst, uint64_t *puReg, uin
 IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64_locked,(uint64_t *puDst, uint64_t *puReg, uint32_t *pfEFlags))
 {
     uint64_t uOld = ASMAtomicUoReadU64(puDst);
-    uint64_t uTmpDst;
+    uint64_t uResult;
     uint32_t fEflTmp;
     do
     {
-        uTmpDst = uOld;
+        uResult = uOld;
         fEflTmp = *pfEFlags;
-        iemAImpl_add_u64(&uTmpDst, *puReg, pfEFlags);
-    } while (!ASMAtomicCmpXchgExU64(puDst, uTmpDst, uOld, &uOld));
+        iemAImpl_add_u64(&uResult, *puReg, &fEflTmp);
+    } while (!ASMAtomicCmpXchgExU64(puDst, uResult, uOld, &uOld));
     *puReg    = uOld;
     *pfEFlags = fEflTmp;
 }
@@ -1384,14 +1384,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u32,(uint32_t *puDst, uint32_t *puReg, uin
 IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u32_locked,(uint32_t *puDst, uint32_t *puReg, uint32_t *pfEFlags))
 {
     uint32_t uOld = ASMAtomicUoReadU32(puDst);
-    uint32_t uTmpDst;
+    uint32_t uResult;
     uint32_t fEflTmp;
     do
     {
-        uTmpDst = uOld;
+        uResult = uOld;
         fEflTmp = *pfEFlags;
-        iemAImpl_add_u32(&uTmpDst, *puReg, pfEFlags);
-    } while (!ASMAtomicCmpXchgExU32(puDst, uTmpDst, uOld, &uOld));
+        iemAImpl_add_u32(&uResult, *puReg, &fEflTmp);
+    } while (!ASMAtomicCmpXchgExU32(puDst, uResult, uOld, &uOld));
     *puReg    = uOld;
     *pfEFlags = fEflTmp;
 }
@@ -1410,14 +1410,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u16,(uint16_t *puDst, uint16_t *puReg, uin
 IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u16_locked,(uint16_t *puDst, uint16_t *puReg, uint32_t *pfEFlags))
 {
     uint16_t uOld = ASMAtomicUoReadU16(puDst);
-    uint16_t uTmpDst;
+    uint16_t uResult;
     uint32_t fEflTmp;
     do
     {
-        uTmpDst = uOld;
+        uResult = uOld;
         fEflTmp = *pfEFlags;
-        iemAImpl_add_u16(&uTmpDst, *puReg, pfEFlags);
-    } while (!ASMAtomicCmpXchgExU16(puDst, uTmpDst, uOld, &uOld));
+        iemAImpl_add_u16(&uResult, *puReg, &fEflTmp);
+    } while (!ASMAtomicCmpXchgExU16(puDst, uResult, uOld, &uOld));
     *puReg    = uOld;
     *pfEFlags = fEflTmp;
 }
@@ -1436,14 +1436,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u8,(uint8_t *puDst, uint8_t *puReg, uint32
 IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u8_locked,(uint8_t *puDst, uint8_t *puReg, uint32_t *pfEFlags))
 {
     uint8_t uOld = ASMAtomicUoReadU8(puDst);
-    uint8_t uTmpDst;
+    uint8_t uResult;
     uint32_t fEflTmp;
     do
     {
-        uTmpDst = uOld;
+        uResult = uOld;
         fEflTmp = *pfEFlags;
-        iemAImpl_add_u8(&uTmpDst, *puReg, pfEFlags);
-    } while (!ASMAtomicCmpXchgExU8(puDst, uTmpDst, uOld, &uOld));
+        iemAImpl_add_u8(&uResult, *puReg, &fEflTmp);
+    } while (!ASMAtomicCmpXchgExU8(puDst, uResult, uOld, &uOld));
     *puReg    = uOld;
     *pfEFlags = fEflTmp;
 }

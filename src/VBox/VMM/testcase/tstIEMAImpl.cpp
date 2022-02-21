@@ -149,7 +149,13 @@ static uint64_t RandU64(void);
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-static RTTEST g_hTest;
+static RTTEST       g_hTest;
+static uint8_t     *g_pu8,   *g_pu8Two;
+static uint16_t    *g_pu16,  *g_pu16Two;
+static uint32_t    *g_pu32,  *g_pu32Two,  *g_pfEfl;
+static uint64_t    *g_pu64,  *g_pu64Two;
+static RTUINT128U  *g_pu128, *g_pu128Two;
+
 
 #include "tstIEMAImplData.h"
 
@@ -286,6 +292,14 @@ static void BinU8Test(void)
                              fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut,
                              EFlagsDiff(fEfl, paTests[iTest].fEflOut),
                              uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both");
+            else
+            {
+                 *g_pu8   = paTests[iTest].uDstIn;
+                 *g_pfEfl = paTests[iTest].fEflIn;
+                 g_aBinU8[iFn].pfn(g_pu8, paTests[iTest].uSrcIn, g_pfEfl);
+                 RTTEST_CHECK(g_hTest, *g_pu8   == paTests[iTest].uDstOut);
+                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut);
+            }
         }
     }
 }
@@ -401,6 +415,14 @@ static void BinU16Test(void)
                              fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut,
                              EFlagsDiff(fEfl, paTests[iTest].fEflOut),
                              uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both");
+            else
+            {
+                 *g_pu16  = paTests[iTest].uDstIn;
+                 *g_pfEfl = paTests[iTest].fEflIn;
+                 g_aBinU16[iFn].pfn(g_pu16, paTests[iTest].uSrcIn, g_pfEfl);
+                 RTTEST_CHECK(g_hTest, *g_pu16== paTests[iTest].uDstOut);
+                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut);
+            }
         }
     }
 }
@@ -514,6 +536,14 @@ static void BinU32Test(void)
                              fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut,
                              EFlagsDiff(fEfl, paTests[iTest].fEflOut),
                              uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both");
+            else
+            {
+                 *g_pu32  = paTests[iTest].uDstIn;
+                 *g_pfEfl = paTests[iTest].fEflIn;
+                 g_aBinU32[iFn].pfn(g_pu32, paTests[iTest].uSrcIn, g_pfEfl);
+                 RTTEST_CHECK(g_hTest, *g_pu32  == paTests[iTest].uDstOut);
+                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut);
+            }
         }
     }
 }
@@ -627,8 +657,137 @@ static void BinU64Test(void)
                              fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut,
                              EFlagsDiff(fEfl, paTests[iTest].fEflOut),
                              uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both");
+            else
+            {
+                 *g_pu64  = paTests[iTest].uDstIn;
+                 *g_pfEfl = paTests[iTest].fEflIn;
+                 g_aBinU64[iFn].pfn(g_pu64, paTests[iTest].uSrcIn, g_pfEfl);
+                 RTTEST_CHECK(g_hTest, *g_pu64  == paTests[iTest].uDstOut);
+                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut);
+            }
         }
     }
+}
+
+
+/*
+ * XCHG
+ */
+static void XchgTest(void)
+{
+    RTTestSub(g_hTest, "xchg");
+    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXCHGU8, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg));
+    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXCHGU16,(uint16_t *pu16Mem, uint16_t *pu16Reg));
+    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXCHGU32,(uint32_t *pu32Mem, uint32_t *pu32Reg));
+    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXCHGU64,(uint64_t *pu64Mem, uint64_t *pu64Reg));
+
+    static struct
+    {
+        uint8_t cb; uint64_t fMask;
+        union
+        {
+            uintptr_t           pfn;
+            FNIEMAIMPLXCHGU8   *pfnU8;
+            FNIEMAIMPLXCHGU16  *pfnU16;
+            FNIEMAIMPLXCHGU32  *pfnU32;
+            FNIEMAIMPLXCHGU64  *pfnU64;
+        } u;
+    }
+    s_aXchgWorkers[] =
+    {
+        { 1, UINT8_MAX,  { (uintptr_t)iemAImpl_xchg_u8_locked    } },
+        { 2, UINT16_MAX, { (uintptr_t)iemAImpl_xchg_u16_locked   } },
+        { 4, UINT32_MAX, { (uintptr_t)iemAImpl_xchg_u32_locked   } },
+        { 8, UINT64_MAX, { (uintptr_t)iemAImpl_xchg_u64_locked   } },
+        { 1, UINT8_MAX,  { (uintptr_t)iemAImpl_xchg_u8_unlocked  } },
+        { 2, UINT16_MAX, { (uintptr_t)iemAImpl_xchg_u16_unlocked } },
+        { 4, UINT32_MAX, { (uintptr_t)iemAImpl_xchg_u32_unlocked } },
+        { 8, UINT64_MAX, { (uintptr_t)iemAImpl_xchg_u64_unlocked } },
+    };
+    for (size_t i = 0; i < RT_ELEMENTS(s_aXchgWorkers); i++)
+    {
+        RTUINT64U uIn1, uIn2, uMem, uDst;
+        uMem.u = uIn1.u = RTRandU64Ex(0, s_aXchgWorkers[i].fMask);
+        uDst.u = uIn2.u = RTRandU64Ex(0, s_aXchgWorkers[i].fMask);
+        if (uIn1.u == uIn2.u)
+            uDst.u = uIn2.u = ~uIn2.u;
+
+        switch (s_aXchgWorkers[i].cb)
+        {
+            case 1:
+                s_aXchgWorkers[i].u.pfnU8(g_pu8, g_pu8Two);
+                s_aXchgWorkers[i].u.pfnU8(&uMem.au8[0], &uDst.au8[0]);
+                break;
+            case 2:
+                s_aXchgWorkers[i].u.pfnU16(g_pu16, g_pu16Two);
+                s_aXchgWorkers[i].u.pfnU16(&uMem.Words.w0, &uDst.Words.w0);
+                break;
+            case 4:
+                s_aXchgWorkers[i].u.pfnU32(g_pu32, g_pu32Two);
+                s_aXchgWorkers[i].u.pfnU32(&uMem.DWords.dw0, &uDst.DWords.dw0);
+                break;
+            case 8:
+                s_aXchgWorkers[i].u.pfnU64(g_pu64, g_pu64Two);
+                s_aXchgWorkers[i].u.pfnU64(&uMem.u, &uDst.u);
+                break;
+            default: RTTestFailed(g_hTest, "%d\n", s_aXchgWorkers[i].cb); break;
+        }
+
+        if (uMem.u != uIn2.u || uDst.u != uIn1.u)
+            RTTestFailed(g_hTest, "i=%u: %#RX64, %#RX64 -> %#RX64, %#RX64\n", i,  uIn1.u, uIn2.u, uMem.u, uDst.u);
+    }
+}
+
+
+/*
+ * XADD
+ */
+static void XaddTest(void)
+{
+    RTTestSub(g_hTest, "xadd");
+    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU8, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg,  uint32_t *pEFlags));
+    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU16,(uint16_t *pu16Mem, uint16_t *pu16Reg, uint32_t *pEFlags));
+    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU32,(uint32_t *pu32Mem, uint32_t *pu32Reg, uint32_t *pEFlags));
+    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU64,(uint64_t *pu64Mem, uint64_t *pu64Reg, uint32_t *pEFlags));
+
+#define TEST_XADD(a_cBits, a_Type, a_Fmt) do {\
+        static struct \
+        { \
+            const char                         *pszName; \
+            FNIEMAIMPLXADDU ## a_cBits         *pfn; \
+            BINU ## a_cBits ## _TEST_T const   *paTests; \
+            uint32_t                            cTests; \
+        } const s_aFuncs[] = \
+        { \
+            { "xadd_u" # a_cBits,            iemAImpl_xadd_u ## a_cBits, \
+              g_aTests_add_u ## a_cBits, RT_ELEMENTS(g_aTests_add_u ## a_cBits) }, \
+            { "xadd_u" # a_cBits "8_locked", iemAImpl_xadd_u ## a_cBits ## _locked, \
+              g_aTests_add_u ## a_cBits, RT_ELEMENTS(g_aTests_add_u ## a_cBits) }, \
+        }; \
+        for (size_t iFn = 0; iFn < RT_ELEMENTS(s_aFuncs); iFn++) \
+        { \
+            BINU ## a_cBits ## _TEST_T const * const paTests = s_aFuncs[iFn].paTests; \
+            uint32_t const                           cTests  = s_aFuncs[iFn].cTests; \
+            for (uint32_t iTest = 0; iTest < cTests; iTest++) \
+            { \
+                uint32_t fEfl = paTests[iTest].fEflIn; \
+                a_Type   uSrc = paTests[iTest].uSrcIn; \
+                *g_pu ## a_cBits = paTests[iTest].uDstIn; \
+                s_aFuncs[iFn].pfn(g_pu ## a_cBits, &uSrc, &fEfl); \
+                if (   fEfl             != paTests[iTest].fEflOut \
+                    || *g_pu ## a_cBits != paTests[iTest].uDstOut \
+                    || uSrc             != paTests[iTest].uDstIn) \
+                    RTTestFailed(g_hTest, "%s/#%u: efl=%#08x dst=" a_Fmt " src=" a_Fmt " -> efl=%#08x dst=" a_Fmt " src=" a_Fmt ", expected %#08x, " a_Fmt ", " a_Fmt "%s\n", \
+                                 s_aFuncs[iFn].pszName, iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn, \
+                                 fEfl, *g_pu ## a_cBits, uSrc, paTests[iTest].fEflOut, paTests[iTest].uDstOut, paTests[iTest].uDstIn, \
+                                 EFlagsDiff(fEfl, paTests[iTest].fEflOut)); \
+            } \
+        } \
+    } while(0)
+    TEST_XADD(8, uint8_t, "%#04x");
+    TEST_XADD(16, uint16_t, "%#06x");
+    TEST_XADD(32, uint32_t, "%#010RX32");
+    TEST_XADD(64, uint64_t, "%#010RX64");
 }
 
 
@@ -714,10 +873,31 @@ int main(int argc, char **argv)
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
     if (argc > 1)
     {
-        BinU8Test();
-        BinU16Test();
-        BinU32Test();
-        BinU64Test();
+        /* Allocate guarded memory for use in the tests. */
+#define ALLOC_GUARDED_VAR(a_uVar) do { \
+            rc = RTTestGuardedAlloc(g_hTest, sizeof(a_uVar), sizeof(a_uVar), false /*fHead*/, (void **)&a_uVar); \
+            if (RT_FAILURE(rc)) RTTestFailed(g_hTest, "Failed to allocate guarded mem: " #a_uVar); \
+        } while (0)
+        ALLOC_GUARDED_VAR(g_pu8);
+        ALLOC_GUARDED_VAR(g_pu16);
+        ALLOC_GUARDED_VAR(g_pu32);
+        ALLOC_GUARDED_VAR(g_pu64);
+        ALLOC_GUARDED_VAR(g_pu128);
+        ALLOC_GUARDED_VAR(g_pu8Two);
+        ALLOC_GUARDED_VAR(g_pu16Two);
+        ALLOC_GUARDED_VAR(g_pu32Two);
+        ALLOC_GUARDED_VAR(g_pu64Two);
+        ALLOC_GUARDED_VAR(g_pu128Two);
+        ALLOC_GUARDED_VAR(g_pfEfl);
+        if (RTTestErrorCount(g_hTest) == 0)
+        {
+            BinU8Test();
+            BinU16Test();
+            BinU32Test();
+            BinU64Test();
+            XchgTest();
+            XaddTest();
+        }
         return RTTestSummaryAndDestroy(g_hTest);
     }
     return RTTestSkipAndDestroy(g_hTest, "unfinished testcase");
