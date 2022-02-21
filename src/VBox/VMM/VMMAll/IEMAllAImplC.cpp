@@ -1386,40 +1386,28 @@ EMIT_XADD(8, uint8_t)
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u8_locked, (uint8_t  *pu8Dst,  uint8_t  *puAl,  uint8_t  uSrcReg, uint32_t *pEFlags))
 {
-    uint8_t const uOld = *puAl;
+    uint8_t uOld = *puAl;
     if (ASMAtomicCmpXchgExU8(pu8Dst, uSrcReg, uOld, puAl))
-    {
         Assert(*puAl == uOld);
-        *pEFlags |= X86_EFL_ZF;
-    }
-    else
-        *pEFlags &= ~X86_EFL_ZF;
+    iemAImpl_cmp_u8(&uOld, *puAl, pEFlags);
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u16_locked,(uint16_t *pu16Dst, uint16_t *puAx,  uint16_t uSrcReg, uint32_t *pEFlags))
 {
-    uint16_t const uOld = *puAx;
+    uint16_t uOld = *puAx;
     if (ASMAtomicCmpXchgExU16(pu16Dst, uSrcReg, uOld, puAx))
-    {
         Assert(*puAx == uOld);
-        *pEFlags |= X86_EFL_ZF;
-    }
-    else
-        *pEFlags &= ~X86_EFL_ZF;
+    iemAImpl_cmp_u16(&uOld, *puAx, pEFlags);
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u32_locked,(uint32_t *pu32Dst, uint32_t *puEax, uint32_t uSrcReg, uint32_t *pEFlags))
 {
-    uint32_t const uOld = *puEax;
+    uint32_t uOld = *puEax;
     if (ASMAtomicCmpXchgExU32(pu32Dst, uSrcReg, uOld, puEax))
-    {
         Assert(*puEax == uOld);
-        *pEFlags |= X86_EFL_ZF;
-    }
-    else
-        *pEFlags &= ~X86_EFL_ZF;
+    iemAImpl_cmp_u32(&uOld, *puEax, pEFlags);
 }
 
 
@@ -1432,14 +1420,10 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg_u64_locked,(uint64_t *pu64Dst, uint64_t
 # if ARCH_BITS == 32
     uint64_t const uSrcReg = *puSrcReg;
 # endif
-    uint64_t const uOld = *puRax;
+    uint64_t uOld = *puRax;
     if (ASMAtomicCmpXchgExU64(pu64Dst, uSrcReg, uOld, puRax))
-    {
         Assert(*puRax == uOld);
-        *pEFlags |= X86_EFL_ZF;
-    }
-    else
-        *pEFlags &= ~X86_EFL_ZF;
+    iemAImpl_cmp_u64(&uOld, *puRax, pEFlags);
 }
 
 

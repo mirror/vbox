@@ -745,12 +745,8 @@ static void XchgTest(void)
 static void XaddTest(void)
 {
     RTTestSub(g_hTest, "xadd");
-    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU8, (uint8_t  *pu8Mem,  uint8_t  *pu8Reg,  uint32_t *pEFlags));
-    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU16,(uint16_t *pu16Mem, uint16_t *pu16Reg, uint32_t *pEFlags));
-    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU32,(uint32_t *pu32Mem, uint32_t *pu32Reg, uint32_t *pEFlags));
-    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU64,(uint64_t *pu64Mem, uint64_t *pu64Reg, uint32_t *pEFlags));
-
-#define TEST_XADD(a_cBits, a_Type, a_Fmt) do {\
+#define TEST_XADD(a_cBits, a_Type, a_Fmt) do { \
+        typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU ## a_cBits, (a_Type *, a_Type *, uint32_t *)); \
         static struct \
         { \
             const char                         *pszName; \
@@ -789,6 +785,137 @@ static void XaddTest(void)
     TEST_XADD(32, uint32_t, "%#010RX32");
     TEST_XADD(64, uint64_t, "%#010RX64");
 }
+
+
+/*
+ * CMPXCHG
+ */
+
+static void CmpXchgTest(void)
+{
+    RTTestSub(g_hTest, "cmpxchg");
+#define TEST_CMPXCHG(a_cBits, a_Type, a_Fmt) do {\
+        typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCMPXCHGU ## a_cBits, (a_Type *, a_Type *, a_Type, uint32_t *)); \
+        static struct \
+        { \
+            const char                         *pszName; \
+            FNIEMAIMPLCMPXCHGU ## a_cBits      *pfn; \
+            PFNIEMAIMPLBINU ## a_cBits          pfnSub; \
+            BINU ## a_cBits ## _TEST_T const   *paTests; \
+            uint32_t                            cTests; \
+        } const s_aFuncs[] = \
+        { \
+            { "cmpxchg_u" # a_cBits,           iemAImpl_cmpxchg_u ## a_cBits, iemAImpl_sub_u ## a_cBits, \
+              g_aTests_cmp_u ## a_cBits, RT_ELEMENTS(g_aTests_cmp_u ## a_cBits) }, \
+            { "cmpxchg_u" # a_cBits "_locked", iemAImpl_cmpxchg_u ## a_cBits ## _locked, iemAImpl_sub_u ## a_cBits, \
+              g_aTests_cmp_u ## a_cBits, RT_ELEMENTS(g_aTests_cmp_u ## a_cBits) }, \
+        }; \
+        for (size_t iFn = 0; iFn < RT_ELEMENTS(s_aFuncs); iFn++) \
+        { \
+            BINU ## a_cBits ## _TEST_T const * const paTests = s_aFuncs[iFn].paTests; \
+            uint32_t const                           cTests  = s_aFuncs[iFn].cTests; \
+            for (uint32_t iTest = 0; iTest < cTests; iTest++) \
+            { \
+                /* as is (99% likely to be negative). */ \
+                uint32_t      fEfl    = paTests[iTest].fEflIn; \
+                a_Type const  uNew    = paTests[iTest].uSrcIn + 0x42; \
+                a_Type        uA      = paTests[iTest].uDstIn; \
+                *g_pu ## a_cBits      = paTests[iTest].uSrcIn; \
+                a_Type const  uExpect = uA != paTests[iTest].uSrcIn ? paTests[iTest].uSrcIn : uNew; \
+                s_aFuncs[iFn].pfn(g_pu ## a_cBits, &uA, uNew, &fEfl); \
+                if (   fEfl             != paTests[iTest].fEflOut \
+                    || *g_pu ## a_cBits != uExpect \
+                    || uA               != paTests[iTest].uSrcIn) \
+                    RTTestFailed(g_hTest, "%s/#%ua: efl=%#08x dst=" a_Fmt " cmp=" a_Fmt " new=" a_Fmt " -> efl=%#08x dst=" a_Fmt " old=" a_Fmt ", expected %#08x, " a_Fmt ", " a_Fmt "%s\n", \
+                                 s_aFuncs[iFn].pszName, iTest, paTests[iTest].fEflIn, paTests[iTest].uSrcIn, paTests[iTest].uDstIn, \
+                                 uNew, fEfl, *g_pu ## a_cBits, uA, paTests[iTest].fEflOut, uExpect, paTests[iTest].uSrcIn, \
+                                 EFlagsDiff(fEfl, paTests[iTest].fEflOut)); \
+                /* positive */ \
+                uint32_t fEflExpect = paTests[iTest].fEflIn; \
+                uA                  = paTests[iTest].uDstIn; \
+                s_aFuncs[iFn].pfnSub(&uA, uA, &fEflExpect); \
+                fEfl                = paTests[iTest].fEflIn; \
+                uA                  = paTests[iTest].uDstIn; \
+                *g_pu ## a_cBits    = uA; \
+                s_aFuncs[iFn].pfn(g_pu ## a_cBits, &uA, uNew, &fEfl); \
+                if (   fEfl             != fEflExpect \
+                    || *g_pu ## a_cBits != uNew \
+                    || uA               != paTests[iTest].uDstIn) \
+                    RTTestFailed(g_hTest, "%s/#%ua: efl=%#08x dst=" a_Fmt " cmp=" a_Fmt " new=" a_Fmt " -> efl=%#08x dst=" a_Fmt " old=" a_Fmt ", expected %#08x, " a_Fmt ", " a_Fmt "%s\n", \
+                                 s_aFuncs[iFn].pszName, iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uDstIn, \
+                                 uNew, fEfl, *g_pu ## a_cBits, uA, fEflExpect, uNew, paTests[iTest].uDstIn, \
+                                 EFlagsDiff(fEfl, fEflExpect)); \
+            } \
+        } \
+    } while(0)
+    TEST_CMPXCHG(8, uint8_t, "%#04RX8");
+    TEST_CMPXCHG(16, uint16_t, "%#06x");
+    TEST_CMPXCHG(32, uint32_t, "%#010RX32");
+#if ARCH_BITS != 32 /* calling convension issue, skipping as it's an unsupported host  */
+    TEST_CMPXCHG(64, uint64_t, "%#010RX64");
+#endif
+}
+
+#if 0
+static void CmpXchgTest(void)
+{
+    RTTestSub(g_hTest, "cmpxchg");
+#define TEST_CMPXCHG(a_cBits, a_Type, a_Fmt) do {\
+        typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCMPXCHGU ## a_cBits, (a_Type *, a_Type *, a_Type, uint32_t *)); \
+        static struct \
+        { \
+            const char                         *pszName; \
+            FNIEMAIMPLCMPXCHGU ## a_cBits      *pfn; \
+        } const s_aFuncs[] = \
+        { \
+            { "cmpxchg_u" # a_cBits,           iemAImpl_cmpxchg_u ## a_cBits  }, \
+            { "cmpxchg_u" # a_cBits "_locked", iemAImpl_cmpxchg_u ## a_cBits ## _locked }, \
+        }; \
+        for (size_t iFn = 0; iFn < RT_ELEMENTS(s_aFuncs); iFn++) \
+        { \
+            for (uint32_t iTest = 0; iTest < 4; iTest += 2) \
+            { \
+                a_Type const uOldValue = RandU ## a_cBits(); \
+                a_Type const uNewValue = RandU ## a_cBits(); \
+                /* positive test. */ \
+                *g_pu ## a_cBits = uOldValue; \
+                a_Type   uA      = uOldValue; \
+                uint32_t fEflIn  = RandEFlags(); \
+                uint32_t fEfl    = fEflIn; \
+                s_aFuncs[iFn].pfn(g_pu ## a_cBits, &uA, uNewValue, &fEfl); \
+                if (   fEfl != (fEflIn | X86_EFL_ZF) \
+                    || *g_pu ## a_cBits != uNewValue \
+                    || uA != uOldValue) \
+                    RTTestFailed(g_hTest, "%s/#%u: efl=%#08x dst=" a_Fmt " cmp=" a_Fmt " new=" a_Fmt " -> efl=%#08x dst=" a_Fmt " old=" a_Fmt ", expected %#08x, " a_Fmt ", " a_Fmt "%s\n", \
+                                 s_aFuncs[iFn].pszName, iTest, fEflIn, uOldValue, uOldValue, uNewValue, \
+                                 fEfl, *g_pu ## a_cBits, uA, \
+                                 (fEflIn | X86_EFL_ZF), uNewValue, uOldValue, EFlagsDiff(fEfl, fEflIn | X86_EFL_ZF)); \
+                /* negative */ \
+                a_Type const uExpect = ~uOldValue; \
+                *g_pu ## a_cBits = uExpect; \
+                uA   = uOldValue; \
+                fEfl = fEflIn = RandEFlags(); \
+                s_aFuncs[iFn].pfn(g_pu ## a_cBits, &uA, uNewValue, &fEfl); \
+                if (   fEfl != (fEflIn & ~X86_EFL_ZF) \
+                    || *g_pu ## a_cBits != uExpect \
+                    || uA != uExpect) \
+                    RTTestFailed(g_hTest, "%s/#%u: efl=%#08x dst=" a_Fmt " cmp=" a_Fmt " new=" a_Fmt " -> efl=%#08x dst=" a_Fmt " old=" a_Fmt ", expected %#08x, " a_Fmt ", " a_Fmt "%s\n", \
+                                 s_aFuncs[iFn].pszName, iTest + 1, fEflIn, uExpect, uOldValue, uNewValue, \
+                                 fEfl, *g_pu ## a_cBits, uA, \
+                                 (fEflIn & ~X86_EFL_ZF), uExpect, uExpect, EFlagsDiff(fEfl, fEflIn & ~X86_EFL_ZF)); \
+            } \
+        } \
+    } while(0)
+    TEST_CMPXCHG(8, uint8_t, "%#04RX8");
+#if 0
+    TEST_CMPXCHG(16, uint16_t, "%#06x");
+    TEST_CMPXCHG(32, uint32_t, "%#010RX32");
+#if ARCH_BITS != 32 /* calling convension issue, skipping as it's an unsupported host  */
+    TEST_CMPXCHG(64, uint64_t, "%#010RX64");
+#endif
+#endif
+}
+#endif
 
 
 /*
@@ -897,6 +1024,7 @@ int main(int argc, char **argv)
             BinU64Test();
             XchgTest();
             XaddTest();
+            CmpXchgTest();
         }
         return RTTestSummaryAndDestroy(g_hTest);
     }
