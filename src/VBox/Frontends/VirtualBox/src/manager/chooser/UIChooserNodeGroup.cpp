@@ -104,7 +104,7 @@ QString UIChooserNodeGroup::fullName() const
 
 QString UIChooserNodeGroup::description() const
 {
-    return m_strDescription;
+    return name();
 }
 
 QString UIChooserNodeGroup::definition(bool fFull /* = false */) const
@@ -302,9 +302,6 @@ QUuid UIChooserNodeGroup::id() const
 
 void UIChooserNodeGroup::retranslateUi()
 {
-    /* Update description: */
-    m_strDescription = tr("Virtual Machine group");
-
     /* Update group-item: */
     if (item())
         item()->updateItem();
