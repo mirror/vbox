@@ -100,7 +100,7 @@ namespace NativeWindowSubsystem
     /** X11: Returns the list of Inhibit methods found by introspecting DBus services. */
     SHARED_LIBRARY_STUFF QVector<X11ScreenSaverInhibitMethod*> X11FindDBusScrenSaverInhibitMethods();
     /** X11: Disables/enables Screen Saver through QDBus. */
-    SHARED_LIBRARY_STUFF void X11InhibitUninhibitScrenSaver(bool fInhibit, QVector<X11ScreenSaverInhibitMethod*> &inOutIhibitMethods);
+    SHARED_LIBRARY_STUFF void X11InhibitUninhibitScrenSaver(bool fInhibit, QVector<X11ScreenSaverInhibitMethod*> &inOutInhibitMethods);
 
     /** Activates window with certain @a wId, @a fSwitchDesktop if requested. */
     bool X11ActivateWindow(WId wId, bool fSwitchDesktop);

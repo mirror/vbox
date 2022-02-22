@@ -610,6 +610,7 @@ void UIMachineLogic::sltHidLedsSyncStateChanged(bool fEnabled)
 void UIMachineLogic::sltDisableHostScreenSaverStateChanged(bool fDisabled)
 {
 #if defined(VBOX_WS_X11)
+    /* Find the methods once and cache them: */
     if (m_methods.isEmpty())
         m_methods = NativeWindowSubsystem::X11FindDBusScrenSaverInhibitMethods();
     NativeWindowSubsystem::X11InhibitUninhibitScrenSaver(fDisabled, m_methods);

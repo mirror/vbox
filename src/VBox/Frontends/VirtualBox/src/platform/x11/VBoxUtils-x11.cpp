@@ -298,20 +298,20 @@ QVector<X11ScreenSaverInhibitMethod*> NativeWindowSubsystem::X11FindDBusScrenSav
     return methods;
 }
 
-void NativeWindowSubsystem::X11InhibitUninhibitScrenSaver(bool fInhibit, QVector<X11ScreenSaverInhibitMethod*> &inOutIhibitMethods)
+void NativeWindowSubsystem::X11InhibitUninhibitScrenSaver(bool fInhibit, QVector<X11ScreenSaverInhibitMethod*> &inOutInhibitMethods)
 {
     QDBusConnection connection = QDBusConnection::sessionBus();
     if (!X11CheckDBusConnection(connection))
         return;
-    for (int i = 0; i < inOutIhibitMethods.size(); ++i)
+    for (int i = 0; i < inOutInhibitMethods.size(); ++i)
     {
-        QDBusInterface screenSaverInterface(inOutIhibitMethods[i]->m_strServiceName, inOutIhibitMethods[i]->m_strPath,
-                                            inOutIhibitMethods[i]->m_strInterface, connection);
+        QDBusInterface screenSaverInterface(inOutInhibitMethods[i]->m_strServiceName, inOutInhibitMethods[i]->m_strPath,
+                                            inOutInhibitMethods[i]->m_strInterface, connection);
         if (!screenSaverInterface.isValid())
         {
             QDBusError error = screenSaverInterface.lastError();
             LogRel(("QDBus error for service %s: %s. %s\n",
-                    inOutIhibitMethods[i]->m_strServiceName.toUtf8().constData(),
+                    inOutInhibitMethods[i]->m_strServiceName.toUtf8().constData(),
                     error.name().toUtf8().constData(),
                     error.message().toUtf8().constData()));
             continue;
@@ -321,17 +321,17 @@ void NativeWindowSubsystem::X11InhibitUninhibitScrenSaver(bool fInhibit, QVector
         {
             reply = screenSaverInterface.call("Inhibit", "Oracle VirtualBox", "ScreenSaverInhibit");
             if (reply.isValid())
-                inOutIhibitMethods[i]->m_iCookie = reply.value();
+                inOutInhibitMethods[i]->m_iCookie = reply.value();
         }
         else
         {
-            reply = screenSaverInterface.call("UnInhibit", inOutIhibitMethods[i]->m_iCookie);
+            reply = screenSaverInterface.call("UnInhibit", inOutInhibitMethods[i]->m_iCookie);
         }
         if (!reply.isValid())
         {
             QDBusError error = reply.error();
             LogRel(("QDBus inhibition call error for service %s: %s. %s\n",
-                    inOutIhibitMethods[i]->m_strServiceName.toUtf8().constData(),
+                    inOutInhibitMethods[i]->m_strServiceName.toUtf8().constData(),
                     error.name().toUtf8().constData(),
                     error.message().toUtf8().constData()));
         }
