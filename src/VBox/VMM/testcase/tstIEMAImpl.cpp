@@ -45,7 +45,7 @@ typedef struct BINU8_TEST_T
     uint8_t                 uDstIn;
     uint8_t                 uDstOut;
     uint8_t                 uSrcIn;
-    uint8_t                 uReserved;
+    uint8_t                 uMisc;
 } BINU8_TEST_T;
 
 typedef struct BINU8_T
@@ -68,7 +68,7 @@ typedef struct BINU16_TEST_T
     uint16_t                uDstIn;
     uint16_t                uDstOut;
     uint16_t                uSrcIn;
-    uint16_t                uReserved;
+    uint16_t                uMisc;
 } BINU16_TEST_T;
 
 typedef struct BINU16_T
@@ -91,7 +91,7 @@ typedef struct BINU32_TEST_T
     uint32_t                uDstIn;
     uint32_t                uDstOut;
     uint32_t                uSrcIn;
-    uint32_t                uReserved;
+    uint32_t                uMisc;
 } BINU32_TEST_T;
 
 typedef struct BINU32_T
@@ -114,7 +114,7 @@ typedef struct BINU64_TEST_T
     uint64_t                uDstIn;
     uint64_t                uDstOut;
     uint64_t                uSrcIn;
-    uint64_t                uReserved;
+    uint64_t                uMisc;
 } BINU64_TEST_T;
 
 typedef struct BINU64_T
@@ -264,10 +264,10 @@ static void BinU8Generate(uint32_t cTests)
             Test.uDstIn    = RandU8();
             Test.uDstOut   = Test.uDstIn;
             Test.uSrcIn    = RandU8();
-            Test.uReserved = 0;
+            Test.uMisc     = 0;
             g_aBinU8[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
             RTPrintf("    { %#08x, %#08x, %#04x, %#04x, %#04x, %#x }, /* #%u */\n",
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uReserved, iTest);
+                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest);
         }
         RTPrintf("};\n");
     }
@@ -387,10 +387,10 @@ static void BinU16Generate(uint32_t cTests)
             Test.uSrcIn    = RandU16();
             if (g_aBinU16[iFn].uExtra)
                 Test.uSrcIn &= 0xf; /* Restrict bit index to a word */
-            Test.uReserved = 0;
+            Test.uMisc     = 0;
             g_aBinU16[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
             RTPrintf("    { %#08x, %#08x, %#06x, %#06x, %#06x, %#x }, /* #%u */\n",
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uReserved, iTest);
+                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest);
         }
         RTPrintf("};\n");
     }
@@ -508,10 +508,10 @@ static void BinU32Generate(uint32_t cTests)
             Test.uSrcIn    = RandU32();
             if (g_aBinU32[iFn].uExtra)
                 Test.uSrcIn &= 0x1f; /* Restrict bit index to a word */
-            Test.uReserved = 0;
+            Test.uMisc     = 0;
             g_aBinU32[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
             RTPrintf("    { %#08x, %#08x, %#010RX32, %#010RX32, %#010RX32, %#x }, /* #%u */\n",
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uReserved, iTest);
+                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest);
         }
         RTPrintf("};\n");
     }
@@ -629,10 +629,10 @@ static void BinU64Generate(uint32_t cTests)
             Test.uSrcIn    = RandU64();
             if (g_aBinU64[iFn].uExtra)
                 Test.uSrcIn &= 0x3f; /* Restrict bit index to a word */
-            Test.uReserved = 0;
+            Test.uMisc     = 0;
             g_aBinU64[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
             RTPrintf("    { %#08x, %#08x, %#018RX64, %#018RX64, %#018RX64, %#x }, /* #%u */\n",
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uReserved, iTest);
+                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest);
         }
         RTPrintf("};\n");
     }
@@ -988,6 +988,106 @@ static void CmpXchg16bTest(void)
 
 
 /*
+ * Double shifts.
+ *
+ * Note! We use BINUxx_TEST_T with the shift value in the uMisc field.
+ */
+
+#ifndef HAVE_SHIFT_DBL_TESTS
+static const BINU16_TEST_T g_aTests_shrd_u16[] = { {0} };
+static const BINU16_TEST_T g_aTests_shld_u16[] = { {0} };
+static const BINU32_TEST_T g_aTests_shrd_u32[] = { {0} };
+static const BINU32_TEST_T g_aTests_shld_u32[] = { {0} };
+static const BINU64_TEST_T g_aTests_shrd_u64[] = { {0} };
+static const BINU64_TEST_T g_aTests_shld_u64[] = { {0} };
+#endif
+
+#define TEST_SHIFT_DBL(a_cBits, a_Type, a_Fmt) \
+static const struct \
+{ \
+    const char                       *pszName; \
+    PFNIEMAIMPLSHIFTDBLU ## a_cBits   pfn; \
+    BINU ## a_cBits ## _TEST_T const *paTests; \
+    uint32_t                          cTests, uExtra; \
+} g_aShiftDblU ## a_cBits [] = \
+{ \
+    ENTRY(shld_u ## a_cBits), \
+    ENTRY(shrd_u ## a_cBits), \
+}; \
+\
+static void ShiftDblU ## a_cBits ## Generate(uint32_t cTests) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aShiftDblU ## a_cBits); iFn++) \
+    { \
+        RTPrintf("static const BINU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aShiftDblU ## a_cBits[iFn].pszName); \
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+        { \
+            BINU ## a_cBits ## _TEST_T Test; \
+            Test.fEflIn    = RandEFlags(); \
+            Test.fEflOut   = Test.fEflIn; \
+            Test.uDstIn    = RandU ## a_cBits(); \
+            Test.uDstOut   = Test.uDstIn; \
+            Test.uSrcIn    = RandU ## a_cBits(); \
+            Test.uMisc     = RandU8() & (a_cBits - 1); \
+            g_aShiftDblU ## a_cBits[iFn].pfn(&Test.uDstOut, Test.uSrcIn, Test.uMisc, &Test.fEflOut); \
+            RTPrintf("    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %2u }, /* #%u */\n", \
+                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
+        } \
+        RTPrintf("};\n"); \
+    } \
+} \
+\
+static void ShiftDblU ## a_cBits ## Test(void) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aShiftDblU ## a_cBits); iFn++) \
+    { \
+        RTTestSub(g_hTest, g_aShiftDblU ## a_cBits[iFn].pszName); \
+        BINU ## a_cBits ## _TEST_T const * const paTests = g_aShiftDblU ## a_cBits[iFn].paTests; \
+        uint32_t const                           cTests  = g_aShiftDblU ## a_cBits[iFn].cTests; \
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+        { \
+            uint32_t fEfl = paTests[iTest].fEflIn; \
+            a_Type   uDst = paTests[iTest].uDstIn; \
+            g_aShiftDblU ## a_cBits[iFn].pfn(&uDst, paTests[iTest].uSrcIn, paTests[iTest].uMisc, &fEfl); \
+            if (   uDst != paTests[iTest].uDstOut \
+                || (fEfl /*| X86_EFL_AF*/) != (paTests[iTest].fEflOut /*| X86_EFL_AF*/)) \
+                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=" a_Fmt " src=" a_Fmt " shift=%-2u -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s\n", \
+                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn, (unsigned)paTests[iTest].uMisc, \
+                             fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut, \
+                             EFlagsDiff(fEfl /*| X86_EFL_AF*/, paTests[iTest].fEflOut /*| X86_EFL_AF*/)); \
+            else \
+            { \
+                 *g_pu ## a_cBits  = paTests[iTest].uDstIn; \
+                 *g_pfEfl          = paTests[iTest].fEflIn; \
+                 g_aShiftDblU ## a_cBits[iFn].pfn(g_pu ## a_cBits, paTests[iTest].uSrcIn, paTests[iTest].uMisc, g_pfEfl); \
+                 RTTEST_CHECK(g_hTest, *g_pu ## a_cBits == paTests[iTest].uDstOut); \
+                 RTTEST_CHECK(g_hTest, (*g_pfEfl  | X86_EFL_AF) == (paTests[iTest].fEflOut | X86_EFL_AF)); \
+            } \
+        } \
+    } \
+}
+TEST_SHIFT_DBL(16, uint16_t, "%#06RX16")
+TEST_SHIFT_DBL(32, uint32_t, "%#010RX32")
+TEST_SHIFT_DBL(64, uint64_t, "%#018RX64")
+
+static void ShiftDblGenerate(uint32_t cTests)
+{
+    RTPrintf("\n\n#define HAVE_SHIFT_DBL_TESTS\n");
+    ShiftDblU16Generate(cTests);
+    ShiftDblU32Generate(cTests);
+    ShiftDblU64Generate(cTests);
+}
+
+static void ShiftDblTest(void)
+{
+    ShiftDblU16Test();
+    ShiftDblU32Test();
+    ShiftDblU64Test();
+}
+
+
+
+/*
  * Random helpers.
  */
 
@@ -1067,6 +1167,7 @@ int main(int argc, char **argv)
         BinU16Generate(cTests);
         BinU32Generate(cTests);
         BinU64Generate(cTests);
+        ShiftDblGenerate(cTests);
         return RTEXITCODE_SUCCESS;
     }
 
@@ -1105,6 +1206,7 @@ int main(int argc, char **argv)
             CmpXchgTest();
             CmpXchg8bTest();
             CmpXchg16bTest();
+            ShiftDblTest();
         }
         return RTTestSummaryAndDestroy(g_hTest);
     }
