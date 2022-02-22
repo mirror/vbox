@@ -1844,13 +1844,13 @@ EMIT_IDIV(8,16,(uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags),          
 #define IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC(a_pfEFlags, a_uResult, a_uDst, a_cBitsWidth, a_OfMethod) \
     do { \
         uint32_t fEflTmp = *(a_pfEFlags); \
-        fEflTmp &= ~X86_EFL_STATUS_BITS & ~X86_EFL_CF; \
+        fEflTmp &= ~X86_EFL_STATUS_BITS | X86_EFL_CF; \
         fEflTmp |= g_afParity[(a_uResult) & 0xff]; \
         fEflTmp |= ((uint32_t)(a_uResult) ^ (uint32_t)(a_uDst)) & X86_EFL_AF; \
         fEflTmp |= X86_EFL_CALC_ZF(a_uResult); \
         fEflTmp |= X86_EFL_CALC_SF(a_uResult, a_cBitsWidth); \
-        fEflTmp |= X86_EFL_GET_OF_ ## a_cBitsWidth(a_OfMethod == 0 ? (((a_uDst) ^ RT_BIT_64(63)) & (a_uResult)) \
-                                                                   : ((a_uDst) & ((a_uResult) ^ RT_BIT_64(63))) ); \
+        fEflTmp |= X86_EFL_GET_OF_ ## a_cBitsWidth(a_OfMethod == 0 ? (((a_uDst) ^ RT_BIT_64(a_cBitsWidth - 1)) & (a_uResult)) \
+                                                                   : ((a_uDst) & ((a_uResult) ^ RT_BIT_64(a_cBitsWidth - 1))) ); \
         *(a_pfEFlags) = fEflTmp; \
     } while (0)
 

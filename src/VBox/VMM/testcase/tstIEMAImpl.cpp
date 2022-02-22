@@ -1061,7 +1061,7 @@ static void ShiftDblU ## a_cBits ## Test(void) \
                  *g_pfEfl          = paTests[iTest].fEflIn; \
                  g_aShiftDblU ## a_cBits[iFn].pfn(g_pu ## a_cBits, paTests[iTest].uSrcIn, paTests[iTest].uMisc, g_pfEfl); \
                  RTTEST_CHECK(g_hTest, *g_pu ## a_cBits == paTests[iTest].uDstOut); \
-                 RTTEST_CHECK(g_hTest, (*g_pfEfl  | X86_EFL_AF) == (paTests[iTest].fEflOut | X86_EFL_AF)); \
+                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut); \
             } \
         } \
     } \
@@ -1085,6 +1085,120 @@ static void ShiftDblTest(void)
     ShiftDblU64Test();
 }
 
+
+/*
+ * Unary operators.
+ *
+ * Note! We use BINUxx_TEST_T ignoreing uSrc and uMisc.
+ */
+
+#ifndef HAVE_UNARY_TESTS
+# define DUMMY_UNARY_TESTS(a_cBits, a_Type) \
+    static const a_Type g_aTests_inc_u ## a_cBits[] = { {0} }; \
+    static const a_Type g_aTests_inc_u ## a_cBits ## _locked[] = { {0} }; \
+    static const a_Type g_aTests_dec_u ## a_cBits[] = { {0} }; \
+    static const a_Type g_aTests_dec_u ## a_cBits ## _locked[] = { {0} }; \
+    static const a_Type g_aTests_not_u ## a_cBits[] = { {0} }; \
+    static const a_Type g_aTests_not_u ## a_cBits ## _locked[] = { {0} }; \
+    static const a_Type g_aTests_neg_u ## a_cBits[] = { {0} }; \
+    static const a_Type g_aTests_neg_u ## a_cBits ## _locked[] = { {0} }
+DUMMY_UNARY_TESTS(8,  BINU8_TEST_T);
+DUMMY_UNARY_TESTS(16, BINU16_TEST_T);
+DUMMY_UNARY_TESTS(32, BINU32_TEST_T);
+DUMMY_UNARY_TESTS(64, BINU64_TEST_T);
+#endif
+
+#define TEST_UNARY(a_cBits, a_Type, a_Fmt, a_TestType) \
+static const struct \
+{ \
+    const char                  *pszName; \
+    PFNIEMAIMPLUNARYU ## a_cBits pfn; \
+    a_TestType const            *paTests; \
+    uint32_t                     cTests, uExtra; \
+} g_aUnaryU ## a_cBits [] = \
+{ \
+    ENTRY(inc_u ## a_cBits), \
+    ENTRY(inc_u ## a_cBits ## _locked), \
+    ENTRY(dec_u ## a_cBits), \
+    ENTRY(dec_u ## a_cBits ## _locked), \
+    ENTRY(not_u ## a_cBits), \
+    ENTRY(not_u ## a_cBits ## _locked), \
+    ENTRY(neg_u ## a_cBits), \
+    ENTRY(neg_u ## a_cBits ## _locked), \
+}; \
+\
+static void UnaryU ## a_cBits ## Generate(uint32_t cTests) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aUnaryU ## a_cBits); iFn++) \
+    { \
+        RTPrintf("static const BINU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aUnaryU ## a_cBits[iFn].pszName); \
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+        { \
+            a_TestType Test; \
+            Test.fEflIn    = RandEFlags(); \
+            Test.fEflOut   = Test.fEflIn; \
+            Test.uDstIn    = RandU ## a_cBits(); \
+            Test.uDstOut   = Test.uDstIn; \
+            Test.uSrcIn    = 0; \
+            Test.uMisc     = 0; \
+            g_aUnaryU ## a_cBits[iFn].pfn(&Test.uDstOut, &Test.fEflOut); \
+            RTPrintf("    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", 0, 0 }, /* #%u */\n", \
+                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, iTest); \
+        } \
+        RTPrintf("};\n"); \
+    } \
+} \
+\
+static void UnaryU ## a_cBits ## Test(void) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aUnaryU ## a_cBits); iFn++) \
+    { \
+        RTTestSub(g_hTest, g_aUnaryU ## a_cBits[iFn].pszName); \
+        a_TestType const * const paTests = g_aUnaryU ## a_cBits[iFn].paTests; \
+        uint32_t const           cTests  = g_aUnaryU ## a_cBits[iFn].cTests; \
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+        { \
+            uint32_t fEfl = paTests[iTest].fEflIn; \
+            a_Type   uDst = paTests[iTest].uDstIn; \
+            g_aUnaryU ## a_cBits[iFn].pfn(&uDst, &fEfl); \
+            if (   uDst != paTests[iTest].uDstOut \
+                || fEfl != paTests[iTest].fEflOut) \
+                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=" a_Fmt " -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s\n", \
+                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, \
+                             fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut, \
+                             EFlagsDiff(fEfl, paTests[iTest].fEflOut)); \
+            else \
+            { \
+                 *g_pu ## a_cBits  = paTests[iTest].uDstIn; \
+                 *g_pfEfl          = paTests[iTest].fEflIn; \
+                 g_aUnaryU ## a_cBits[iFn].pfn(g_pu ## a_cBits, g_pfEfl); \
+                 RTTEST_CHECK(g_hTest, *g_pu ## a_cBits == paTests[iTest].uDstOut); \
+                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut); \
+            } \
+        } \
+    } \
+}
+TEST_UNARY(8,  uint8_t,  "%#04RX8",   BINU8_TEST_T)
+TEST_UNARY(16, uint16_t, "%#06RX16",  BINU16_TEST_T)
+TEST_UNARY(32, uint32_t, "%#010RX32", BINU32_TEST_T)
+TEST_UNARY(64, uint64_t, "%#018RX64", BINU64_TEST_T)
+
+static void UnaryGenerate(uint32_t cTests)
+{
+    RTPrintf("\n\n#define HAVE_UNARY_TESTS\n");
+    UnaryU8Generate(cTests);
+    UnaryU16Generate(cTests);
+    UnaryU32Generate(cTests);
+    UnaryU64Generate(cTests);
+}
+
+static void UnaryTest(void)
+{
+    UnaryU8Test();
+    UnaryU16Test();
+    UnaryU32Test();
+    UnaryU64Test();
+}
 
 
 /*
@@ -1168,6 +1282,7 @@ int main(int argc, char **argv)
         BinU32Generate(cTests);
         BinU64Generate(cTests);
         ShiftDblGenerate(cTests);
+        UnaryGenerate(cTests);
         return RTEXITCODE_SUCCESS;
     }
 
@@ -1207,6 +1322,7 @@ int main(int argc, char **argv)
             CmpXchg8bTest();
             CmpXchg16bTest();
             ShiftDblTest();
+            UnaryTest();
         }
         return RTTestSummaryAndDestroy(g_hTest);
     }
