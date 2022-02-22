@@ -497,6 +497,8 @@ void UIVMLogViewerSearchPanel::selectMatch(int iMatchIndex, const QString &searc
 
 void UIVMLogViewerSearchPanel::moveSelection(bool fForward)
 {
+    if (matchCount() == 0)
+        return;
     if (fForward)
         m_iSelectedMatchIndex = m_iSelectedMatchIndex >= m_matchedCursorPosition.size() - 1 ? 0 : (m_iSelectedMatchIndex + 1);
     else
