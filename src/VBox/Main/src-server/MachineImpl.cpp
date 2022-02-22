@@ -5654,6 +5654,9 @@ HRESULT Machine::setGuestProperty(const com::Utf8Str &aProperty, const com::Utf8
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
 #else // VBOX_WITH_GUEST_PROPS
+    AssertReturn(RT_SUCCESS(GuestPropValidateName(aProperty.c_str(), (uint32_t)aProperty.length() + 1 /* '\0' */)), E_INVALIDARG);
+    AssertReturn(RT_SUCCESS(GuestPropValidateValue(aValue.c_str(), (uint32_t)aValue.length() + 1  /* '\0' */)), E_INVALIDARG);
+
     HRESULT rc = i_setGuestPropertyToVM(aProperty, aValue, aFlags, /* fDelete = */ false);
     if (rc == E_ACCESSDENIED)
         /* The VM is not running or the service is not (yet) accessible */
@@ -5736,6 +5739,9 @@ HRESULT Machine::i_enumerateGuestPropertiesInService(const com::Utf8Str &aPatter
         aTimestamps[i] = it->second.mTimestamp;
         GuestPropWriteFlags(it->second.mFlags, szFlags);
         aFlags[i] = Utf8Str(szFlags);
+
+        AssertReturn(RT_SUCCESS(GuestPropValidateName(aNames[i].c_str(), (uint32_t)aNames[i].length() + 1 /* '\0' */)), E_INVALIDARG);
+        AssertReturn(RT_SUCCESS(GuestPropValidateValue(aValues[i].c_str(), (uint32_t)aValues[i].length() + 1 /* '\0' */)), E_INVALIDARG);
     }
 
     return S_OK;
@@ -13571,6 +13577,9 @@ HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
         }
         else
             aFlags[i] = "";
+
+        AssertReturn(RT_SUCCESS(GuestPropValidateName(aNames[i].c_str(), (uint32_t)aNames[i].length() + 1 /* '\0' */)), E_INVALIDARG);
+        AssertReturn(RT_SUCCESS(GuestPropValidateValue(aValues[i].c_str(), (uint32_t)aValues[i].length() + 1 /* '\0' */)), E_INVALIDARG);
     }
     return S_OK;
 #else
@@ -13581,7 +13590,8 @@ HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
 HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
                                           const com::Utf8Str &aValue,
                                           LONG64 aTimestamp,
-                                          const com::Utf8Str &aFlags)
+                                          const com::Utf8Str &aFlags,
+                                          BOOL fWasDeleted)
 {
     LogFlowThisFunc(("\n"));
 
@@ -13610,11 +13620,10 @@ HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
         i_setModified(IsModified_MachineData);
         mHWData.backup();
 
-        bool fDelete = !aValue.length();
         HWData::GuestPropertyMap::iterator it = mHWData->mGuestProperties.find(aName);
         if (it != mHWData->mGuestProperties.end())
         {
-            if (!fDelete)
+            if (!fWasDeleted)
             {
                 it->second.strValue   = aValue;
                 it->second.mTimestamp = aTimestamp;
@@ -13625,7 +13634,7 @@ HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
 
             mData->mGuestPropertiesModified = TRUE;
         }
-        else if (!fDelete)
+        else if (!fWasDeleted)
         {
             HWData::GuestProperty prop;
             prop.strValue   = aValue;
@@ -15045,12 +15054,14 @@ HRESULT Machine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
 HRESULT Machine::pushGuestProperty(const com::Utf8Str &aName,
                                    const com::Utf8Str &aValue,
                                    LONG64 aTimestamp,
-                                   const com::Utf8Str &aFlags)
+                                   const com::Utf8Str &aFlags,
+                                   BOOL fWasDeleted)
 {
     NOREF(aName);
     NOREF(aValue);
     NOREF(aTimestamp);
     NOREF(aFlags);
+    NOREF(fWasDeleted);
     ReturnComNotImplemented();
 }
 

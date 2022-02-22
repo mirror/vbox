@@ -1848,7 +1848,8 @@ DECLCALLBACK(int) Console::i_doGuestPropNotification(void *pvExtension,
     HRESULT hrc = pConsole->mControl->PushGuestProperty(name.raw(),
                                                         value.raw(),
                                                         pCBData->u64Timestamp,
-                                                        flags.raw());
+                                                        flags.raw(),
+                                                        !pCBData->pcszValue);
     if (SUCCEEDED(hrc))
     {
         ::FireGuestPropertyChangedEvent(pConsole->mEventSource, pConsole->i_getId().raw(), name.raw(), value.raw(), flags.raw());

@@ -415,8 +415,6 @@ public:
 private:
     static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
     uint64_t getCurrentTimestamp(void);
-    int validateName(const char *pszName, uint32_t cbName);
-    int validateValue(const char *pszValue, uint32_t cbValue);
     int setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest);
@@ -470,51 +468,6 @@ uint64_t Service::getCurrentTimestamp(void)
     }
     this->mPrevTimestamp = u64NanoTS;
     return u64NanoTS;
-}
-
-/**
- * Check that a string fits our criteria for a property name.
- *
- * @returns IPRT status code
- * @param   pszName   the string to check, must be valid Utf8
- * @param   cbName    the number of bytes @a pszName points to, including the
- *                    terminating '\0'
- * @thread  HGCM
- */
-int Service::validateName(const char *pszName, uint32_t cbName)
-{
-    LogFlowFunc(("cbName=%d\n", cbName));
-    int rc = VINF_SUCCESS;
-    if (RT_SUCCESS(rc) && (cbName < 2))
-        rc = VERR_INVALID_PARAMETER;
-    for (unsigned i = 0; RT_SUCCESS(rc) && i < cbName; ++i)
-        if (pszName[i] == '*' || pszName[i] == '?' || pszName[i] == '|')
-            rc = VERR_INVALID_PARAMETER;
-    LogFlowFunc(("returning %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Check a string fits our criteria for the value of a guest property.
- *
- * @returns IPRT status code
- * @param   pszValue  the string to check, must be valid Utf8
- * @param   cbValue   the length in bytes of @a pszValue, including the
- *                    terminator
- * @thread  HGCM
- */
-int Service::validateValue(const char *pszValue, uint32_t cbValue)
-{
-    LogFlowFunc(("cbValue=%d\n", cbValue)); RT_NOREF1(pszValue);
-
-    int rc = VINF_SUCCESS;
-    if (RT_SUCCESS(rc) && cbValue == 0)
-        rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc))
-        LogFlow(("    pszValue=%s\n", cbValue > 0 ? pszValue : NULL));
-    LogFlowFunc(("returning %Rrc\n", rc));
-    return rc;
 }
 
 /**
@@ -643,7 +596,7 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
        )
         rc = VERR_INVALID_PARAMETER;
     else
-        rc = validateName(pcszName, cbName);
+        rc = GuestPropValidateName(pcszName, cbName);
     if (RT_FAILURE(rc))
     {
         LogFlowThisFunc(("rc = %Rrc\n", rc));
@@ -735,9 +688,9 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
      * Check the values passed in the parameters for correctness.
      */
     if (RT_SUCCESS(rc))
-        rc = validateName(pcszName, cchName);
+        rc = GuestPropValidateName(pcszName, cchName);
     if (RT_SUCCESS(rc))
-        rc = validateValue(pcszValue, cchValue);
+        rc = GuestPropValidateValue(pcszValue, cchValue);
     if ((3 == cParms) && RT_SUCCESS(rc))
         rc = RTStrValidateEncodingEx(pcszFlags, cchFlags,
                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
@@ -868,7 +821,7 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     if (   (cParms == 1)  /* Hardcoded value as the next lines depend on it. */
         && RT_SUCCESS(HGCMSvcGetCStr(&paParms[0], &pcszName, &cbName))  /* name */
        )
-        rc = validateName(pcszName, cbName);
+        rc = GuestPropValidateName(pcszName, cbName);
     else
         rc = VERR_INVALID_PARAMETER;
     if (RT_FAILURE(rc))
@@ -1341,7 +1294,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t nsTimestamp)
         else
         {
             /* Send out a host notification */
-            rc = notifyHost(pszProperty, "", nsTimestamp, "");
+            rc = notifyHost(pszProperty, NULL, nsTimestamp, "");
         }
     }
 
@@ -1387,7 +1340,8 @@ int Service::notifyHost(const char *pszName, const char *pszValue, uint64_t nsTi
         pu8 += cbName;
         *pu8++ = 0;
 
-        pHostCallbackData->pcszValue    = (const char *)pu8;
+        /* NULL value means property was deleted. */
+        pHostCallbackData->pcszValue    = pszValue ? (const char *)pu8 : NULL;
         memcpy(pu8, pszValue, cbValue);
         pu8 += cbValue;
         *pu8++ = 0;

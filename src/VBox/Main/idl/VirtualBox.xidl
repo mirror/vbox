@@ -5319,6 +5319,11 @@
           The flags of the property.
         </desc>
       </param>
+      <param name="fWasDeleted" type="boolean" dir="in">
+        <desc>
+          The flag which indicates if property was deleted.
+        </desc>
+      </param>
     </method>
 
     <method name="lockMedia">

@@ -67,6 +67,48 @@
 /** @} */
 
 /**
+ * Check that a string fits our criteria for a property name.
+ *
+ * @returns IPRT status code
+ * @param   pszName   the string to check, must be valid Utf8
+ * @param   cbName    the number of bytes @a pszName points to, including the terminating character.
+ */
+DECLINLINE(int) GuestPropValidateName(const char *pszName, uint32_t cbName)
+{
+    /* Property name is expected to be at least 1 charecter long plus terminating character. */
+    AssertReturn(cbName >= 2, VERR_INVALID_PARAMETER);
+    AssertReturn(cbName < GUEST_PROP_MAX_NAME_LEN, VERR_INVALID_PARAMETER);
+
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+
+    AssertReturn(memchr(pszName, '*', cbName) == NULL, VERR_INVALID_PARAMETER);
+    AssertReturn(memchr(pszName, '?', cbName) == NULL, VERR_INVALID_PARAMETER);
+    AssertReturn(memchr(pszName, '|', cbName) == NULL, VERR_INVALID_PARAMETER);
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Check a string fits our criteria for the value of a guest property.
+ *
+ * @returns IPRT status code
+ * @param   pszValue  the string to check, must be valid Utf8
+ * @param   cbValue   the length in bytes of @a pszValue, including the
+ *                    terminator
+ * @thread  HGCM
+ */
+DECLINLINE(int) GuestPropValidateValue(const char *pszValue, uint32_t cbValue)
+{
+    AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
+
+    /* Zero-length values are possible, however buffer should contain terminating character at least. */
+    AssertReturn(cbValue > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cbValue < GUEST_PROP_MAX_VALUE_LEN, VERR_INVALID_PARAMETER);
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Get the name of a flag as a string.
  * @returns the name, or NULL if fFlag is invalid.
  * @param   fFlag       The flag, GUEST_PROP_F_XXX.

@@ -1233,7 +1233,8 @@ private:
     HRESULT pushGuestProperty(const com::Utf8Str &aName,
                               const com::Utf8Str &aValue,
                               LONG64 aTimestamp,
-                              const com::Utf8Str &aFlags);
+                              const com::Utf8Str &aFlags,
+                              BOOL fWasDeleted);
     HRESULT lockMedia();
     HRESULT unlockMedia();
     HRESULT ejectMedium(const ComPtr<IMediumAttachment> &aAttachment,
@@ -1389,7 +1390,8 @@ private:
     HRESULT pushGuestProperty(const com::Utf8Str &aName,
                               const com::Utf8Str &aValue,
                               LONG64 aTimestamp,
-                              const com::Utf8Str &aFlags);
+                              const com::Utf8Str &aFlags,
+                              BOOL fWasDeleted);
     HRESULT lockMedia();
     HRESULT unlockMedia();
     HRESULT ejectMedium(const ComPtr<IMediumAttachment> &aAttachment,
