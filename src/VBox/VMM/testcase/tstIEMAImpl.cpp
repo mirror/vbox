@@ -139,11 +139,12 @@ typedef struct BINU64_T
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static uint32_t RandEFlags(void);
-static uint8_t  RandU8(void);
-static uint16_t RandU16(void);
-static uint32_t RandU32(void);
-static uint64_t RandU64(void);
+static uint32_t     RandEFlags(void);
+static uint8_t      RandU8(void);
+static uint16_t     RandU16(void);
+static uint32_t     RandU32(void);
+static uint64_t     RandU64(void);
+static RTUINT128U   RandU128(void);
 
 
 /*********************************************************************************************************************************
@@ -744,7 +745,6 @@ static void XchgTest(void)
  */
 static void XaddTest(void)
 {
-    RTTestSub(g_hTest, "xadd");
 #define TEST_XADD(a_cBits, a_Type, a_Fmt) do { \
         typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLXADDU ## a_cBits, (a_Type *, a_Type *, uint32_t *)); \
         static struct \
@@ -762,6 +762,7 @@ static void XaddTest(void)
         }; \
         for (size_t iFn = 0; iFn < RT_ELEMENTS(s_aFuncs); iFn++) \
         { \
+            RTTestSub(g_hTest, s_aFuncs[iFn].pszName); \
             BINU ## a_cBits ## _TEST_T const * const paTests = s_aFuncs[iFn].paTests; \
             uint32_t const                           cTests  = s_aFuncs[iFn].cTests; \
             for (uint32_t iTest = 0; iTest < cTests; iTest++) \
@@ -793,7 +794,6 @@ static void XaddTest(void)
 
 static void CmpXchgTest(void)
 {
-    RTTestSub(g_hTest, "cmpxchg");
 #define TEST_CMPXCHG(a_cBits, a_Type, a_Fmt) do {\
         typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCMPXCHGU ## a_cBits, (a_Type *, a_Type *, a_Type, uint32_t *)); \
         static struct \
@@ -812,6 +812,7 @@ static void CmpXchgTest(void)
         }; \
         for (size_t iFn = 0; iFn < RT_ELEMENTS(s_aFuncs); iFn++) \
         { \
+            RTTestSub(g_hTest, s_aFuncs[iFn].pszName); \
             BINU ## a_cBits ## _TEST_T const * const paTests = s_aFuncs[iFn].paTests; \
             uint32_t const                           cTests  = s_aFuncs[iFn].cTests; \
             for (uint32_t iTest = 0; iTest < cTests; iTest++) \
@@ -856,66 +857,134 @@ static void CmpXchgTest(void)
 #endif
 }
 
-#if 0
-static void CmpXchgTest(void)
+static void CmpXchg8bTest(void)
 {
-    RTTestSub(g_hTest, "cmpxchg");
-#define TEST_CMPXCHG(a_cBits, a_Type, a_Fmt) do {\
-        typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCMPXCHGU ## a_cBits, (a_Type *, a_Type *, a_Type, uint32_t *)); \
-        static struct \
-        { \
-            const char                         *pszName; \
-            FNIEMAIMPLCMPXCHGU ## a_cBits      *pfn; \
-        } const s_aFuncs[] = \
-        { \
-            { "cmpxchg_u" # a_cBits,           iemAImpl_cmpxchg_u ## a_cBits  }, \
-            { "cmpxchg_u" # a_cBits "_locked", iemAImpl_cmpxchg_u ## a_cBits ## _locked }, \
-        }; \
-        for (size_t iFn = 0; iFn < RT_ELEMENTS(s_aFuncs); iFn++) \
-        { \
-            for (uint32_t iTest = 0; iTest < 4; iTest += 2) \
-            { \
-                a_Type const uOldValue = RandU ## a_cBits(); \
-                a_Type const uNewValue = RandU ## a_cBits(); \
-                /* positive test. */ \
-                *g_pu ## a_cBits = uOldValue; \
-                a_Type   uA      = uOldValue; \
-                uint32_t fEflIn  = RandEFlags(); \
-                uint32_t fEfl    = fEflIn; \
-                s_aFuncs[iFn].pfn(g_pu ## a_cBits, &uA, uNewValue, &fEfl); \
-                if (   fEfl != (fEflIn | X86_EFL_ZF) \
-                    || *g_pu ## a_cBits != uNewValue \
-                    || uA != uOldValue) \
-                    RTTestFailed(g_hTest, "%s/#%u: efl=%#08x dst=" a_Fmt " cmp=" a_Fmt " new=" a_Fmt " -> efl=%#08x dst=" a_Fmt " old=" a_Fmt ", expected %#08x, " a_Fmt ", " a_Fmt "%s\n", \
-                                 s_aFuncs[iFn].pszName, iTest, fEflIn, uOldValue, uOldValue, uNewValue, \
-                                 fEfl, *g_pu ## a_cBits, uA, \
-                                 (fEflIn | X86_EFL_ZF), uNewValue, uOldValue, EFlagsDiff(fEfl, fEflIn | X86_EFL_ZF)); \
-                /* negative */ \
-                a_Type const uExpect = ~uOldValue; \
-                *g_pu ## a_cBits = uExpect; \
-                uA   = uOldValue; \
-                fEfl = fEflIn = RandEFlags(); \
-                s_aFuncs[iFn].pfn(g_pu ## a_cBits, &uA, uNewValue, &fEfl); \
-                if (   fEfl != (fEflIn & ~X86_EFL_ZF) \
-                    || *g_pu ## a_cBits != uExpect \
-                    || uA != uExpect) \
-                    RTTestFailed(g_hTest, "%s/#%u: efl=%#08x dst=" a_Fmt " cmp=" a_Fmt " new=" a_Fmt " -> efl=%#08x dst=" a_Fmt " old=" a_Fmt ", expected %#08x, " a_Fmt ", " a_Fmt "%s\n", \
-                                 s_aFuncs[iFn].pszName, iTest + 1, fEflIn, uExpect, uOldValue, uNewValue, \
-                                 fEfl, *g_pu ## a_cBits, uA, \
-                                 (fEflIn & ~X86_EFL_ZF), uExpect, uExpect, EFlagsDiff(fEfl, fEflIn & ~X86_EFL_ZF)); \
-            } \
-        } \
-    } while(0)
-    TEST_CMPXCHG(8, uint8_t, "%#04RX8");
-#if 0
-    TEST_CMPXCHG(16, uint16_t, "%#06x");
-    TEST_CMPXCHG(32, uint32_t, "%#010RX32");
-#if ARCH_BITS != 32 /* calling convension issue, skipping as it's an unsupported host  */
-    TEST_CMPXCHG(64, uint64_t, "%#010RX64");
-#endif
-#endif
+    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCMPXCHG8B,(uint64_t *, PRTUINT64U, PRTUINT64U, uint32_t *));
+    static struct
+    {
+        const char           *pszName;
+        FNIEMAIMPLCMPXCHG8B  *pfn;
+    } const s_aFuncs[] =
+    {
+        { "cmpxchg8b",        iemAImpl_cmpxchg8b },
+        { "cmpxchg8b_locked", iemAImpl_cmpxchg8b_locked },
+    };
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(s_aFuncs); iFn++)
+    {
+        RTTestSub(g_hTest, s_aFuncs[iFn].pszName);
+        for (uint32_t iTest = 0; iTest < 4; iTest += 2)
+        {
+            uint64_t const uOldValue = RandU64();
+            uint64_t const uNewValue = RandU64();
+
+            /* positive test. */
+            RTUINT64U uA, uB;
+            uB.u             = uNewValue;
+            uA.u             = uOldValue;
+            *g_pu64          = uOldValue;
+            uint32_t fEflIn  = RandEFlags();
+            uint32_t fEfl    = fEflIn;
+            s_aFuncs[iFn].pfn(g_pu64, &uA, &uB, &fEfl);
+            if (   fEfl    != (fEflIn | X86_EFL_ZF)
+                || *g_pu64 != uNewValue
+                || uA.u    != uOldValue)
+                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=%#018RX64 cmp=%#018RX64 new=%#018RX64\n -> efl=%#08x dst=%#018RX64 old=%#018RX64,\n wanted %#08x,    %#018RX64,    %#018RX64%s\n",
+                             iTest, fEflIn, uOldValue, uOldValue, uNewValue,
+                             fEfl, *g_pu64, uA.u,
+                             (fEflIn | X86_EFL_ZF), uNewValue, uOldValue, EFlagsDiff(fEfl, fEflIn | X86_EFL_ZF));
+            RTTEST_CHECK(g_hTest, uB.u == uNewValue);
+
+            /* negative */
+            uint64_t const uExpect = ~uOldValue;
+            *g_pu64 = uExpect;
+            uA.u = uOldValue;
+            uB.u = uNewValue;
+            fEfl = fEflIn = RandEFlags();
+            s_aFuncs[iFn].pfn(g_pu64, &uA, &uB, &fEfl);
+            if (   fEfl    != (fEflIn & ~X86_EFL_ZF)
+                || *g_pu64 != uExpect
+                || uA.u    != uExpect)
+                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=%#018RX64 cmp=%#018RX64 new=%#018RX64\n -> efl=%#08x dst=%#018RX64 old=%#018RX64,\n wanted %#08x,    %#018RX64,    %#018RX64%s\n",
+                             iTest + 1, fEflIn, uExpect, uOldValue, uNewValue,
+                             fEfl, *g_pu64, uA.u,
+                             (fEflIn & ~X86_EFL_ZF), uExpect, uExpect, EFlagsDiff(fEfl, fEflIn & ~X86_EFL_ZF));
+            RTTEST_CHECK(g_hTest, uB.u == uNewValue);
+        }
+    }
 }
+
+static void CmpXchg16bTest(void)
+{
+    typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLCMPXCHG16B,(PRTUINT128U, PRTUINT128U, PRTUINT128U, uint32_t *));
+    static struct
+    {
+        const char           *pszName;
+        FNIEMAIMPLCMPXCHG16B *pfn;
+    } const s_aFuncs[] =
+    {
+        { "cmpxchg16b",          iemAImpl_cmpxchg16b },
+        { "cmpxchg16b_locked",   iemAImpl_cmpxchg16b_locked },
+#if !defined(RT_ARCH_ARM64)
+        { "cmpxchg16b_fallback", iemAImpl_cmpxchg16b_fallback },
 #endif
+    };
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(s_aFuncs); iFn++)
+    {
+#if !defined(IEM_WITHOUT_ASSEMBLY) && defined(RT_ARCH_AMD64)
+        if (!(ASMCpuId_ECX(1) & X86_CPUID_FEATURE_ECX_CX16))
+            continue;
+#endif
+        RTTestSub(g_hTest, s_aFuncs[iFn].pszName);
+        for (uint32_t iTest = 0; iTest < 4; iTest += 2)
+        {
+            RTUINT128U const uOldValue = RandU128();
+            RTUINT128U const uNewValue = RandU128();
+
+            /* positive test. */
+            RTUINT128U uA, uB;
+            uB               = uNewValue;
+            uA               = uOldValue;
+            *g_pu128         = uOldValue;
+            uint32_t fEflIn  = RandEFlags();
+            uint32_t fEfl    = fEflIn;
+            s_aFuncs[iFn].pfn(g_pu128, &uA, &uB, &fEfl);
+            if (   fEfl    != (fEflIn | X86_EFL_ZF)
+                || g_pu128->s.Lo != uNewValue.s.Lo
+                || g_pu128->s.Hi != uNewValue.s.Hi
+                || uA.s.Lo       != uOldValue.s.Lo
+                || uA.s.Hi       != uOldValue.s.Hi)
+                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=%#018RX64'%016RX64 cmp=%#018RX64'%016RX64 new=%#018RX64'%016RX64\n"
+                                      " -> efl=%#08x dst=%#018RX64'%016RX64 old=%#018RX64'%016RX64,\n"
+                                      " wanted %#08x,    %#018RX64'%016RX64,    %#018RX64'%016RX64%s\n",
+                             iTest, fEflIn, uOldValue.s.Hi, uOldValue.s.Lo, uOldValue.s.Hi, uOldValue.s.Lo, uNewValue.s.Hi, uNewValue.s.Lo,
+                             fEfl, g_pu128->s.Hi, g_pu128->s.Lo, uA.s.Hi, uA.s.Lo,
+                             (fEflIn | X86_EFL_ZF), uNewValue.s.Hi, uNewValue.s.Lo, uOldValue.s.Hi, uOldValue.s.Lo,
+                             EFlagsDiff(fEfl, fEflIn | X86_EFL_ZF));
+            RTTEST_CHECK(g_hTest, uB.s.Lo == uNewValue.s.Lo && uB.s.Hi == uNewValue.s.Hi);
+
+            /* negative */
+            RTUINT128U const uExpect = RTUINT128_INIT(~uOldValue.s.Hi, ~uOldValue.s.Lo);
+            *g_pu128 = uExpect;
+            uA       = uOldValue;
+            uB       = uNewValue;
+            fEfl = fEflIn = RandEFlags();
+            s_aFuncs[iFn].pfn(g_pu128, &uA, &uB, &fEfl);
+            if (   fEfl          != (fEflIn & ~X86_EFL_ZF)
+                || g_pu128->s.Lo != uExpect.s.Lo
+                || g_pu128->s.Hi != uExpect.s.Hi
+                || uA.s.Lo       != uExpect.s.Lo
+                || uA.s.Hi       != uExpect.s.Hi)
+                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=%#018RX64'%016RX64 cmp=%#018RX64'%016RX64 new=%#018RX64'%016RX64\n"
+                                      " -> efl=%#08x dst=%#018RX64'%016RX64 old=%#018RX64'%016RX64,\n"
+                                      " wanted %#08x,    %#018RX64'%016RX64,    %#018RX64'%016RX64%s\n",
+                             iTest + 1, fEflIn, uExpect.s.Hi, uExpect.s.Lo, uOldValue.s.Hi, uOldValue.s.Lo, uNewValue.s.Hi, uNewValue.s.Lo,
+                             fEfl, g_pu128->s.Hi, g_pu128->s.Lo, uA.s.Hi, uA.s.Lo,
+                             (fEflIn & ~X86_EFL_ZF), uExpect.s.Hi, uExpect.s.Lo, uExpect.s.Hi, uExpect.s.Lo,
+                             EFlagsDiff(fEfl, fEflIn & ~X86_EFL_ZF));
+            RTTEST_CHECK(g_hTest, uB.s.Lo == uNewValue.s.Lo && uB.s.Hi == uNewValue.s.Hi);
+        }
+    }
+}
 
 
 /*
@@ -949,6 +1018,15 @@ static uint32_t  RandU32(void)
 static uint64_t  RandU64(void)
 {
     return RTRandU64();
+}
+
+
+static RTUINT128U RandU128(void)
+{
+    RTUINT128U Ret;
+    Ret.s.Hi = RTRandU64();
+    Ret.s.Lo = RTRandU64();
+    return Ret;
 }
 
 
@@ -1001,9 +1079,9 @@ int main(int argc, char **argv)
     if (argc > 1)
     {
         /* Allocate guarded memory for use in the tests. */
-#define ALLOC_GUARDED_VAR(a_uVar) do { \
-            rc = RTTestGuardedAlloc(g_hTest, sizeof(a_uVar), sizeof(a_uVar), false /*fHead*/, (void **)&a_uVar); \
-            if (RT_FAILURE(rc)) RTTestFailed(g_hTest, "Failed to allocate guarded mem: " #a_uVar); \
+#define ALLOC_GUARDED_VAR(a_puVar) do { \
+            rc = RTTestGuardedAlloc(g_hTest, sizeof(*a_puVar), sizeof(*a_puVar), false /*fHead*/, (void **)&a_puVar); \
+            if (RT_FAILURE(rc)) RTTestFailed(g_hTest, "Failed to allocate guarded mem: " #a_puVar); \
         } while (0)
         ALLOC_GUARDED_VAR(g_pu8);
         ALLOC_GUARDED_VAR(g_pu16);
@@ -1025,6 +1103,8 @@ int main(int argc, char **argv)
             XchgTest();
             XaddTest();
             CmpXchgTest();
+            CmpXchg8bTest();
+            CmpXchg16bTest();
         }
         return RTTestSummaryAndDestroy(g_hTest);
     }
