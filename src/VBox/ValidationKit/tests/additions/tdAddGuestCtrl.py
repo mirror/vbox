@@ -4751,6 +4751,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if self.oTestFiles.writeToDisk(sScratchHst) is not True:
             return reporter.error('Filed to write test files to "%s" on the host!' % (sScratchHst,));
 
+        # If for whatever reason the directory tree does not exist on the host, let us know.
+        # Copying an non-existing tree *will* fail the tests which otherwise should succeed!
+        assert os.path.exists(sScratchTreeDirHst);
+
         # Generate a test file in 32MB to 64 MB range.
         sBigFileHst  = os.path.join(self.oTstDrv.sScratchPath, 'gctrl-random.data');
         cbBigFileHst = random.randrange(32*1024*1024, 64*1024*1024);
