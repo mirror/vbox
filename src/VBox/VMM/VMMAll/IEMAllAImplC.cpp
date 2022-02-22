@@ -1566,7 +1566,7 @@ DECLINLINE(void) RTUInt128DivRemByU64(PRTUINT128U pQuotient, PRTUINT128U pRemain
     a_Dividend.u = *puAX
 
 # define DIV_STORE(a_Quotient, a_uReminder)    *puA  = (a_Quotient),    *puD = (a_uReminder)
-# define DIV_STORE_U8(a_Quotient, a_uReminder) *puAX = (a_Quotient) | ((uint16_t)(a_uReminder) << 8)
+# define DIV_STORE_U8(a_Quotient, a_uReminder) *puAX = (uint8_t)(a_Quotient) | ((uint16_t)(a_uReminder) << 8)
 
 # define MUL_LOAD_F1()                         *puA
 # define MUL_LOAD_F1_U8()                      ((uint8_t)*puAX)
@@ -1602,12 +1602,13 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u ## a_cBitsWidth, a_Args) \
     a_fnStore(Result); \
     \
     /* MUL EFLAGS according to Skylake (similar to IMUL). */ \
-    *pfEFlags &= ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF); \
+    uint32_t fEfl = *pfEFlags & ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF); \
     if (Result.s.Lo & RT_BIT_64(a_cBitsWidth - 1)) \
-        *pfEFlags |= X86_EFL_SF; \
-    *pfEFlags |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */ \
+        fEfl |= X86_EFL_SF; \
+    fEfl |= g_afParity[Result.s.Lo & 0xff]; /* (Skylake behaviour) */ \
     if (Result.s.Hi != 0) \
-        *pfEFlags |= X86_EFL_CF | X86_EFL_OF; \
+        fEfl |= X86_EFL_CF | X86_EFL_OF; \
+    *pfEFlags = fEfl; \
     return 0; \
 }
 EMIT_MUL(64, 128, (uint64_t *puA, uint64_t *puD, uint64_t uFactor, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_MUL_U128)
@@ -1626,8 +1627,9 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u ## a_cBitsWidth,a_Args) \
 { \
     RTUINT ## a_cBitsWidth2x ## U Result; \
     /* The SF, ZF, AF and PF flags are "undefined". AMD (3990x) leaves these \
-       flags as is. Whereas Intel skylake always clear AF and ZF and calculates \
-       SF and PF as per the lower half of the result. */ \
+       flags as is - at least for the two op version. Whereas Intel skylake \
+       always clear AF and ZF and calculates SF and PF as per the lower half \
+       of the result. */ \
     uint32_t fEfl = *pfEFlags & ~(X86_EFL_CF | X86_EFL_OF); \
     \
     uint ## a_cBitsWidth ## _t const uFactor1 = a_fnLoadF1(); \
@@ -1641,7 +1643,8 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u ## a_cBitsWidth,a_Args) \
         } \
         else \
         { \
-            a_fnMul(Result, uFactor1, UINT ## a_cBitsWidth ## _C(0) - uFactor2, a_cBitsWidth2x); \
+            uint ## a_cBitsWidth ## _t const uPositiveFactor2 = UINT ## a_cBitsWidth ## _C(0) - uFactor2; \
+            a_fnMul(Result, uFactor1, uPositiveFactor2, a_cBitsWidth2x); \
             if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_64(a_cBitsWidth - 1)) \
                 fEfl |= X86_EFL_CF | X86_EFL_OF; \
             a_fnNeg(Result, a_cBitsWidth2x); \
@@ -1651,15 +1654,17 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u ## a_cBitsWidth,a_Args) \
     { \
         if (!(uFactor2 & RT_BIT_64(a_cBitsWidth - 1))) \
         { \
-            a_fnMul(Result, UINT ## a_cBitsWidth ## _C(0) - uFactor1, uFactor2, a_cBitsWidth2x); \
+            uint ## a_cBitsWidth ## _t const uPositiveFactor1 = UINT ## a_cBitsWidth ## _C(0) - uFactor1; \
+            a_fnMul(Result, uPositiveFactor1, uFactor2, a_cBitsWidth2x); \
             if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_64(a_cBitsWidth - 1)) \
                 fEfl |= X86_EFL_CF | X86_EFL_OF; \
             a_fnNeg(Result, a_cBitsWidth2x); \
         } \
         else \
         { \
-            /*a_fnMul(Result, UINT ## a_cBitsWidth ## _C(0) - uFactor1, UINT ## a_cBitsWidth ## _C(0) - uFactor2, a_cBitsWidth2x);*/ \
-            a_fnMul(Result, uFactor1, uFactor2, a_cBitsWidth2x); \
+            uint ## a_cBitsWidth ## _t const uPositiveFactor1 = UINT ## a_cBitsWidth ## _C(0) - uFactor1; \
+            uint ## a_cBitsWidth ## _t const uPositiveFactor2 = UINT ## a_cBitsWidth ## _C(0) - uFactor2; \
+            a_fnMul(Result, uPositiveFactor1, uPositiveFactor2, a_cBitsWidth2x); \
             if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_64(a_cBitsWidth - 1)) \
                 fEfl |= X86_EFL_CF | X86_EFL_OF; \
         } \
@@ -1722,7 +1727,7 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_div_u ## a_cBitsWidth,a_Args) \
         && Dividend.s.Hi < uDivisor) \
     { \
         RTUINT ## a_cBitsWidth2x ## U Remainder, Quotient; \
-        a_fnDivRem(Remainder, Quotient, Dividend, uDivisor); \
+        a_fnDivRem(Quotient, Remainder, Dividend, uDivisor); \
         a_fnStore(Quotient.s.Lo, Remainder.s.Lo); \
         /** @todo research the undefined DIV flags. */ \
         return 0; \
@@ -1755,24 +1760,25 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u ## a_cBitsWidth,a_Args) \
          */ \
         RTUINT ## a_cBitsWidth2x ## U Dividend; \
         a_fnLoad(Dividend); \
-        if ((int ## a_cBitsWidth ## _t)Dividend.s.Hi < 0) \
+        bool const fSignedDividend = RT_BOOL(Dividend.s.Hi & RT_BIT_64(a_cBitsWidth - 1)); \
+        if (fSignedDividend) \
             a_fnNeg(Dividend, a_cBitsWidth2x); \
         \
         uint ## a_cBitsWidth ## _t uDivisorPositive; \
-        if ((int ## a_cBitsWidth ## _t)uDivisor >= 0) \
+        if (!(uDivisor & RT_BIT_64(a_cBitsWidth - 1))) \
             uDivisorPositive = uDivisor; \
         else \
             uDivisorPositive = UINT ## a_cBitsWidth ## _C(0) - uDivisor; \
         \
         RTUINT ## a_cBitsWidth2x ## U Remainder, Quotient; \
-        a_fnDivRem(Remainder, Quotient, Dividend, uDivisorPositive); \
+        a_fnDivRem(Quotient, Remainder, Dividend, uDivisorPositive); \
         \
         /* \
          * Setup the result, checking for overflows. \
          */ \
-        if ((int ## a_cBitsWidth ## _t)uDivisor >= 0) \
+        if (!(uDivisor & RT_BIT_64(a_cBitsWidth - 1))) \
         { \
-            if ((int ## a_cBitsWidth ## _t)Dividend.s.Hi >= 0) \
+            if (!fSignedDividend) \
             { \
                 /* Positive divisor, positive dividend => result positive. */ \
                 if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint ## a_cBitsWidth ## _t)INT ## a_cBitsWidth ## _MAX) \
@@ -1783,7 +1789,7 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u ## a_cBitsWidth,a_Args) \
             } \
             else \
             { \
-                /* Positive divisor, positive dividend => result negative. */ \
+                /* Positive divisor, negative dividend => result negative. */ \
                 if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_64(a_cBitsWidth - 1)) \
                 { \
                     a_fnStore(UINT ## a_cBitsWidth ## _C(0) - Quotient.s.Lo, UINT ## a_cBitsWidth ## _C(0) - Remainder.s.Lo); \
@@ -1793,7 +1799,7 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u ## a_cBitsWidth,a_Args) \
         } \
         else \
         { \
-            if ((int ## a_cBitsWidth ## _t)Dividend.s.Hi >= 0) \
+            if (!fSignedDividend) \
             { \
                 /* Negative divisor, positive dividend => negative quotient, positive remainder. */ \
                 if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_64(a_cBitsWidth - 1)) \

@@ -128,6 +128,56 @@ typedef struct BINU64_T
 /** @} */
 
 
+/** @name mult/div (PFNIEMAIMPLBINU8, PFNIEMAIMPLBINU16, PFNIEMAIMPLBINU32, PFNIEMAIMPLBINU64)
+ * @{ */
+typedef struct MULDIVU8_TEST_T
+{
+    uint32_t                fEflIn;
+    uint32_t                fEflOut;
+    uint16_t                uDstIn;
+    uint16_t                uDstOut;
+    uint8_t                 uSrcIn;
+    int32_t                 rc;
+} MULDIVU8_TEST_T;
+
+typedef struct MULDIVU16_TEST_T
+{
+    uint32_t                fEflIn;
+    uint32_t                fEflOut;
+    uint16_t                uDst1In;
+    uint16_t                uDst1Out;
+    uint16_t                uDst2In;
+    uint16_t                uDst2Out;
+    uint16_t                uSrcIn;
+    int32_t                 rc;
+} MULDIVU16_TEST_T;
+
+typedef struct MULDIVU32_TEST_T
+{
+    uint32_t                fEflIn;
+    uint32_t                fEflOut;
+    uint32_t                uDst1In;
+    uint32_t                uDst1Out;
+    uint32_t                uDst2In;
+    uint32_t                uDst2Out;
+    uint32_t                uSrcIn;
+    int32_t                 rc;
+} MULDIVU32_TEST_T;
+
+typedef struct MULDIVU64_TEST_T
+{
+    uint32_t                fEflIn;
+    uint32_t                fEflOut;
+    uint64_t                uDst1In;
+    uint64_t                uDst1Out;
+    uint64_t                uDst2In;
+    uint64_t                uDst2Out;
+    uint64_t                uSrcIn;
+    int32_t                 rc;
+} MULDIVU64_TEST_T;
+/** @} */
+
+
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
@@ -1089,7 +1139,7 @@ static void ShiftDblTest(void)
 /*
  * Unary operators.
  *
- * Note! We use BINUxx_TEST_T ignoreing uSrc and uMisc.
+ * Note! We use BINUxx_TEST_T ignoreing uSrcIn and uMisc.
  */
 
 #ifndef HAVE_UNARY_TESTS
@@ -1204,7 +1254,7 @@ static void UnaryTest(void)
 /*
  * Shifts.
  *
- * Note! We use BINUxx_TEST_T with the shift count in uMisc and uSrc unused.
+ * Note! We use BINUxx_TEST_T with the shift count in uMisc and uSrcIn unused.
  */
 
 #ifndef HAVE_SHIFT_TESTS
@@ -1314,6 +1364,197 @@ static void ShiftTest(void)
 }
 
 
+/*
+ * Multiplication and division.
+ *
+ * Note! The 8-bit functions has a different format, so we need to duplicate things.
+ * Note! Currently ignoring undefined bits.
+ */
+
+#ifndef HAVE_MULDIV_TESTS
+# define DUMMY_MULDIV_TESTS(a_cBits, a_Type) \
+    static const a_Type g_aTests_mul_u ## a_cBits[]  = { {0} }; \
+    static const a_Type g_aTests_imul_u ## a_cBits[] = { {0} }; \
+    static const a_Type g_aTests_div_u ## a_cBits[]  = { {0} }; \
+    static const a_Type g_aTests_idiv_u ## a_cBits[] = { {0} }
+DUMMY_MULDIV_TESTS(8,  MULDIVU8_TEST_T);
+DUMMY_MULDIV_TESTS(16, MULDIVU16_TEST_T);
+DUMMY_MULDIV_TESTS(32, MULDIVU32_TEST_T);
+DUMMY_MULDIV_TESTS(64, MULDIVU64_TEST_T);
+#endif
+
+/* U8 */
+static const struct
+{
+    const char                     *pszName;
+    PFNIEMAIMPLMULDIVU8             pfn;
+    MULDIVU8_TEST_T const          *paTests;
+    uint32_t                        cTests, uExtra;
+} g_aMulDivU8[] =
+{
+    ENTRY_EX(mul_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
+    ENTRY_EX(imul_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
+    ENTRY_EX(div_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF),
+    ENTRY_EX(idiv_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF),
+};
+
+static void MulDivU8Generate(uint32_t cTests)
+{
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
+    {
+        RTPrintf("static const MULDIVU8_TEST_T g_aTests_%s[] =\n{\n", g_aMulDivU8[iFn].pszName);
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
+        {
+            MULDIVU8_TEST_T Test;
+            Test.fEflIn    = RandEFlags();
+            Test.fEflOut   = Test.fEflIn;
+            Test.uDstIn    = RandU16();
+            Test.uDstOut   = Test.uDstIn;
+            Test.uSrcIn    = RandU8();
+            Test.rc        = g_aMulDivU8[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
+            RTPrintf("    { %#08x, %#08x, %#06RX16, %#06RX16, %#04RX8, %d }, /* #%u */\n",
+                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.rc, iTest);
+        }
+        RTPrintf("};\n");
+    }
+}
+
+static void MulDivU8Test(void)
+{
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
+    {
+        RTTestSub(g_hTest, g_aMulDivU8[iFn].pszName);
+        MULDIVU8_TEST_T const * const paTests = g_aMulDivU8[iFn].paTests;
+        uint32_t const                cTests  = g_aMulDivU8[iFn].cTests;
+        uint32_t const                fEflIgn = g_aMulDivU8[iFn].uExtra;
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
+        {
+            uint32_t fEfl  = paTests[iTest].fEflIn;
+            uint16_t uDst  = paTests[iTest].uDstIn;
+            int      rc    = g_aMulDivU8[iFn].pfn(&uDst, paTests[iTest].uSrcIn, &fEfl);
+            if (   uDst != paTests[iTest].uDstOut
+                || (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn)
+                || rc != paTests[iTest].rc)
+                RTTestFailed(g_hTest, "#%02u: efl=%#08x dst=%#06RX16 src=%#04RX8\n"
+                                      "  -> efl=%#08x dst=%#06RX16 rc=%d\n"
+                                      "expected %#08x     %#06RX16    %d%s\n",
+                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn,
+                             fEfl, uDst, rc, paTests[iTest].fEflOut, paTests[iTest].uDstOut, paTests[iTest].rc,
+                             EFlagsDiff(fEfl | fEflIgn, paTests[iTest].fEflOut | fEflIgn));
+            else
+            {
+                 *g_pu16  = paTests[iTest].uDstIn;
+                 *g_pfEfl = paTests[iTest].fEflIn;
+                 rc = g_aMulDivU8[iFn].pfn(g_pu16, paTests[iTest].uSrcIn, g_pfEfl);
+                 RTTEST_CHECK(g_hTest, *g_pu16  == paTests[iTest].uDstOut);
+                 RTTEST_CHECK(g_hTest, (*g_pfEfl | fEflIgn) == (paTests[iTest].fEflOut | fEflIgn));
+                 RTTEST_CHECK(g_hTest, rc  == paTests[iTest].rc);
+            }
+        }
+    }
+}
+
+#define TEST_MULDIV(a_cBits, a_Type, a_Fmt, a_TestType) \
+static const struct \
+{ \
+    const char                     *pszName; \
+    PFNIEMAIMPLMULDIVU ## a_cBits   pfn; \
+    a_TestType const               *paTests; \
+    uint32_t                        cTests, uExtra; \
+} g_aMulDivU ## a_cBits [] = \
+{ \
+    ENTRY_EX(mul_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF), \
+    ENTRY_EX(imul_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF), \
+    ENTRY_EX(div_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF), \
+    ENTRY_EX(idiv_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF), \
+}; \
+\
+static void MulDivU ## a_cBits ## Generate(uint32_t cTests) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU ## a_cBits); iFn++) \
+    { \
+        RTPrintf("static const MULDIVU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aMulDivU ## a_cBits[iFn].pszName); \
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+        { \
+            a_TestType Test; \
+            Test.fEflIn    = RandEFlags(); \
+            Test.fEflOut   = Test.fEflIn; \
+            Test.uDst1In   = RandU ## a_cBits(); \
+            Test.uDst1Out  = Test.uDst1In; \
+            Test.uDst2In   = RandU ## a_cBits(); \
+            Test.uDst2Out  = Test.uDst2In; \
+            Test.uSrcIn    = RandU ## a_cBits(); \
+            Test.rc        = g_aMulDivU ## a_cBits[iFn].pfn(&Test.uDst1Out, &Test.uDst2Out, Test.uSrcIn, &Test.fEflOut); \
+            RTPrintf("    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", " a_Fmt ", " a_Fmt ", %d }, /* #%u */\n", \
+                     Test.fEflIn, Test.fEflOut, Test.uDst1In, Test.uDst1Out, Test.uDst2In, Test.uDst2Out, Test.uSrcIn, \
+                     Test.rc, iTest); \
+        } \
+        RTPrintf("};\n"); \
+    } \
+} \
+\
+static void MulDivU ## a_cBits ## Test(void) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU ## a_cBits); iFn++) \
+    { \
+        RTTestSub(g_hTest, g_aMulDivU ## a_cBits[iFn].pszName); \
+        a_TestType const * const paTests = g_aMulDivU ## a_cBits[iFn].paTests; \
+        uint32_t const           cTests  = g_aMulDivU ## a_cBits[iFn].cTests; \
+        uint32_t const           fEflIgn = g_aMulDivU ## a_cBits[iFn].uExtra; \
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+        { \
+            uint32_t fEfl  = paTests[iTest].fEflIn; \
+            a_Type   uDst1 = paTests[iTest].uDst1In; \
+            a_Type   uDst2 = paTests[iTest].uDst2In; \
+            int rc = g_aMulDivU ## a_cBits[iFn].pfn(&uDst1, &uDst2, paTests[iTest].uSrcIn, &fEfl); \
+            if (   uDst1 != paTests[iTest].uDst1Out \
+                || uDst2 != paTests[iTest].uDst2Out \
+                || (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn)\
+                || rc    != paTests[iTest].rc) \
+                RTTestFailed(g_hTest, "#%02u: efl=%#08x dst1=" a_Fmt " dst2=" a_Fmt " src=" a_Fmt "\n" \
+                                       "  -> efl=%#08x dst1=" a_Fmt  " dst2=" a_Fmt " rc=%d\n" \
+                                       "expected %#08x      " a_Fmt  "      " a_Fmt "    %d%s -%s%s%s\n", \
+                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDst1In, paTests[iTest].uDst2In, paTests[iTest].uSrcIn, \
+                             fEfl, uDst1, uDst2, rc, \
+                             paTests[iTest].fEflOut, paTests[iTest].uDst1Out, paTests[iTest].uDst2Out, paTests[iTest].rc, \
+                             EFlagsDiff(fEfl | fEflIgn, paTests[iTest].fEflOut | fEflIgn), \
+                             uDst1 != paTests[iTest].uDst1Out ? " dst1" : "", uDst2 != paTests[iTest].uDst2Out ? " dst2" : "", \
+                             (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn) ? " eflags" : ""); \
+            else \
+            { \
+                 *g_pu ## a_cBits        = paTests[iTest].uDst1In; \
+                 *g_pu ## a_cBits ## Two = paTests[iTest].uDst2In; \
+                 *g_pfEfl                = paTests[iTest].fEflIn; \
+                 rc  = g_aMulDivU ## a_cBits[iFn].pfn(g_pu ## a_cBits, g_pu ## a_cBits ## Two, paTests[iTest].uSrcIn, g_pfEfl); \
+                 RTTEST_CHECK(g_hTest, *g_pu ## a_cBits        == paTests[iTest].uDst1Out); \
+                 RTTEST_CHECK(g_hTest, *g_pu ## a_cBits ## Two == paTests[iTest].uDst2Out); \
+                 RTTEST_CHECK(g_hTest, (*g_pfEfl | fEflIgn)    == (paTests[iTest].fEflOut | fEflIgn)); \
+                 RTTEST_CHECK(g_hTest, rc                      == paTests[iTest].rc); \
+            } \
+        } \
+    } \
+}
+TEST_MULDIV(16, uint16_t, "%#06RX16",  MULDIVU16_TEST_T)
+TEST_MULDIV(32, uint32_t, "%#010RX32", MULDIVU32_TEST_T)
+TEST_MULDIV(64, uint64_t, "%#018RX64", MULDIVU64_TEST_T)
+
+static void MulDivGenerate(uint32_t cTests)
+{
+    RTPrintf("\n\n#define HAVE_MULDIV_TESTS\n");
+    MulDivU8Generate(cTests);
+    MulDivU16Generate(cTests);
+    MulDivU32Generate(cTests);
+    MulDivU64Generate(cTests);
+}
+
+static void MulDivTest(void)
+{
+    MulDivU8Test();
+    MulDivU16Test();
+    MulDivU32Test();
+    MulDivU64Test();
+}
+
 
 /*
  * Random helpers.
@@ -1398,6 +1639,7 @@ int main(int argc, char **argv)
         ShiftDblGenerate(cTests);
         UnaryGenerate(cTests);
         ShiftGenerate(cTests);
+        MulDivGenerate(cTests);
         return RTEXITCODE_SUCCESS;
     }
 
@@ -1439,6 +1681,7 @@ int main(int argc, char **argv)
             ShiftDblTest();
             UnaryTest();
             ShiftTest();
+            MulDivTest();
         }
         return RTTestSummaryAndDestroy(g_hTest);
     }
