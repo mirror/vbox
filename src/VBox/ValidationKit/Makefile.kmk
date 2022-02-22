@@ -284,6 +284,29 @@ else ifdef VBOX_WITH_VALIDATIONKIT_PACKING.win.amd64
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.win.amd64)/../vboxtxs-nat.reg)
 endif
 
+# If enabled, this includes the unit tests located in the out/testcase directory.
+# This is useful if we want to run those on platforms where we don't have / support
+# any host support anymore (like Windows XP, for instance).
+#
+# Note that executing the tests require an additional component (tdUnitTest test driver)
+# which runs as part of the Validation Kit.
+#
+# See @bugref{10195}
+ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
+ define def_vbox_validationkit_unittests
+  VBOX_VALIDATIONKIT_PATH_UNITTESTS:=$(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/bin
+  VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += $$(wildcard $(VBOX_VALIDATIONKIT_PATH_UNITTESTS)/testcase/tst*$(TMP_SUFF_EXE))
+ endef
+
+ TMP_SUFF_EXE=.exe
+  $(foreach os, win,$(foreach arch, x86 amd64, \
+	$(eval $(def_vbox_validationkit_unittests)) \
+))
+  TMP_SUFF_EXE=
+  $(foreach os, darwin freebsd linux solaris,$(foreach arch, x86 amd64, \
+	$(eval $(def_vbox_validationkit_unittests)) \
+))
+endif
 
 #
 # Build the Validation Kit guest ISO.
@@ -298,21 +321,24 @@ $(VBOX_PATH_VALIDATIONKIT)/VBoxValidationKit.iso: \
 ifneq ($(KBUILD_TARGET),os2)
 	$(QUIET)$(ECHO) VBOX_VALIDATIONKIT_FILESPEC $(VBOX_VALIDATIONKIT_FILESPEC)
 endif
+	$(QUIET)$(ECHO) VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS $(VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS)
 	$(VBOX_RTISOMAKER) \
 		--output $@ \
 		--iso-level 3 \
 		--rock-ridge \
 		--joliet \
 		--rational-attribs \
-               --random-order-verification 2048 \
+		--random-order-verification 2048 \
 		$(foreach spec,$(VBOX_VALIDATIONKIT_FILESPEC) \
 			,$(if $(findstring =,$(spec)), $(spec), /$(lastword $(subst /$(INST_VALIDATIONKIT), ,$(spec))=$(spec))) ) \
+		$(foreach spec,$(VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS) \
+			,$(if $(findstring =,$(spec)), $(spec), /$(lastword $(subst $(PATH_OUT_BASE), testcase,$(spec))=$(spec))) ) \
 		$(foreach spec,$(filter-out %.txt %.dll %.xml %.reg %.img, $(VBOX_VALIDATIONKIT_FILESPEC)) \
 			,--chmod=a+x:/$(lastword $(if $(findstring =,$(spec)), \
 				        	   $(subst =, $(SP), $(spec)), \
 						   $(subst /$(INST_VALIDATIONKIT), ,$(spec))))) \
 		--volume-id "VBOXVALK_$(VBOX_SVN_REV)_$(VBOX_VERSION_STRING_RAW)" \
-               --name-setup joliet \
+		--name-setup joliet \
 		--volume-id "VBoxValK $(VBOX_SVN_REV)"
 
 # Alias for creating the iso.
