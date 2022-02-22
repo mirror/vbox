@@ -2192,7 +2192,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_rol_u8,(uint8_t *puDst, uint8_t cShift, uint32_
         fEflTmp &= ~(X86_EFL_CF | X86_EFL_OF); \
         uint32_t const fCarry = ((a_uResult) >> ((a_cBitsWidth) - 1)) & X86_EFL_CF; \
         fEflTmp |= fCarry; \
-        fEflTmp |= (((a_uResult) >> ((a_cBitsWidth) - 2)) ^ fCarry) << X86_EFL_OF_BIT; \
+        fEflTmp |= ((((a_uResult) >> ((a_cBitsWidth) - 2)) ^ fCarry) & 1) << X86_EFL_OF_BIT; \
         *(a_pfEFlags) = fEflTmp; \
     } while (0)
 
@@ -2314,7 +2314,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_rcr_u ## a_cBitsWidth,(uint ## a_cBitsWidth ##_
         fEfl &= ~(X86_EFL_CF | X86_EFL_OF); \
         uint32_t const fCarry = (uDst >> (cShift - 1)) & X86_EFL_CF; \
         fEfl |= fCarry; \
-        fEfl |= ((uResult >> (a_cBitsWidth - 1)) ^ fCarry) << X86_EFL_OF_BIT; \
+        fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uResult ^ (uResult << 1)); /* XOR two most signficant bits of the result */ \
         *pfEFlags = fEfl; \
     } \
 }
@@ -2340,8 +2340,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_shl_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## 
         *puDst = uResult; \
         \
         /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
-           it the same way as for 1 bit shifts.  The AF bit is undefined, we \
-           always set it to zero atm. */ \
+           it the same way as for 1 bit shifts.  The AF bit is undefined, but
+           AMD 3990x sets it unconditionally so we do the same. */ \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
         uint32_t fCarry = (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF; \
@@ -2350,6 +2350,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_shl_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## 
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
         fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= X86_EFL_AF; /* AMD 3990x sets it unconditionally */ \
         *pfEFlags = fEfl; \
     } \
 }
@@ -2375,15 +2376,17 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_shr_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## 
         *puDst = uResult; \
         \
         /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
-           it the same way as for 1 bit shifts.  The AF bit is undefined, we \
-           always set it to zero atm. */ \
+           it the same way as for 1 bit shifts.  The AF bit is undefined, but \
+           AMD 3990x sets it unconditionally so we do the same. */ \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
         fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
-        fEfl |= (uDst >> (a_cBitsWidth - 1)) << X86_EFL_OF_BIT; \
+        if (cShift == 1) /* AMD 3990x does this too, even if only intel documents this. */ \
+            fEfl |= (uDst >> (a_cBitsWidth - 1)) << X86_EFL_OF_BIT; \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
         fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= X86_EFL_AF; /* AMD 3990x sets it unconditionally */ \
         *pfEFlags = fEfl; \
     } \
 }
@@ -2409,14 +2412,16 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_sar_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## 
         *puDst = uResult; \
         \
         /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
-           it the same way as for 1 bit shifts (0).  The AF bit is undefined, \
-           we always set it to zero atm. */ \
+           it the same way as for 1 bit shifts (0).  The AF bit is undefined, but \
+           AMD 3990x sets it unconditionally so we do the same.  The OF flag is \
+           zero because the result never differs from the input. */ \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
         fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
         fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= X86_EFL_AF; /* AMD 3990x sets it unconditionally */ \
         *pfEFlags = fEfl; \
     } \
 }
