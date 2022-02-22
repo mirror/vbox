@@ -32,8 +32,6 @@
 /* Forward declarations: */
 class QAbstractButton;
 class QCheckBox;
-class QGridLayout;
-class QGroupBox;
 class QLabel;
 class QLineEdit;
 class QRadioButton;
@@ -210,14 +208,10 @@ private:
 
     /** @name Network variables.
       * @{ */
-        /** Holds the name layout instance. */
-        QGridLayout       *m_pLayoutName;
         /** Holds the network name label instance. */
         QLabel            *m_pLabelNetworkName;
         /** Holds the network name editor instance. */
         QLineEdit         *m_pEditorNetworkName;
-        /** Holds the IPv4 group-box instance. */
-        QGroupBox         *m_pGroupBoxIPv4;
         /** Holds the network IPv4 prefix label instance. */
         QLabel            *m_pLabelNetworkIPv4Prefix;
         /** Holds the network IPv4 prefix editor instance. */
@@ -225,7 +219,7 @@ private:
         /** Holds the 'supports DHCP' check-box instance. */
         QCheckBox         *m_pCheckboxSupportsDHCP;
         /** Holds the IPv4 group-box instance. */
-        QGroupBox         *m_pGroupBoxIPv6;
+        QCheckBox         *m_pCheckboxIPv6;
         /** Holds the network IPv6 prefix label instance. */
         QLabel            *m_pLabelNetworkIPv6Prefix;
         /** Holds the network IPv6 prefix editor instance. */
