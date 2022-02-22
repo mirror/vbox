@@ -2556,7 +2556,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bswap_u32,(uint32_t *puDst))
 /* Note! undocument, so 32-bit arg */
 IEM_DECL_IMPL_DEF(void, iemAImpl_bswap_u16,(uint32_t *puDst))
 {
-    *puDst = ASMByteSwapU16((uint16_t)*puDst) | (*puDst & UINT32_C(0xffff0000));
+#if 0
+    *(uint16_t *)puDst = ASMByteSwapU16(*(uint16_t *)puDst);
+#else
+    /* This is the behaviour AMD 3990x (64-bit mode): */
+    *(uint16_t *)puDst = 0;
+#endif
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */

@@ -1557,6 +1557,39 @@ static void MulDivTest(void)
 
 
 /*
+ * BSWAP
+ */
+static void BswapTest(void)
+{
+    RTTestSub(g_hTest, "bswap_u16");
+    *g_pu32 = UINT32_C(0x12345678);
+    iemAImpl_bswap_u16(g_pu32);
+#if 0
+    RTTEST_CHECK_MSG(g_hTest, *g_pu32 == UINT32_C(0x12347856), (g_hTest, "*g_pu32=%#RX32\n", *g_pu32));
+#else
+    RTTEST_CHECK_MSG(g_hTest, *g_pu32 == UINT32_C(0x12340000), (g_hTest, "*g_pu32=%#RX32\n", *g_pu32));
+#endif
+    *g_pu32 = UINT32_C(0xffff1122);
+    iemAImpl_bswap_u16(g_pu32);
+#if 0
+    RTTEST_CHECK_MSG(g_hTest, *g_pu32 == UINT32_C(0xffff2211), (g_hTest, "*g_pu32=%#RX32\n", *g_pu32));
+#else
+    RTTEST_CHECK_MSG(g_hTest, *g_pu32 == UINT32_C(0xffff0000), (g_hTest, "*g_pu32=%#RX32\n", *g_pu32));
+#endif
+
+    RTTestSub(g_hTest, "bswap_u32");
+    *g_pu32 = UINT32_C(0x12345678);
+    iemAImpl_bswap_u32(g_pu32);
+    RTTEST_CHECK(g_hTest, *g_pu32 == UINT32_C(0x78563412));
+
+    RTTestSub(g_hTest, "bswap_u64");
+    *g_pu64 = UINT64_C(0x0123456789abcdef);
+    iemAImpl_bswap_u64(g_pu64);
+    RTTEST_CHECK(g_hTest, *g_pu64 == UINT64_C(0xefcdab8967452301));
+}
+
+
+/*
  * Random helpers.
  */
 
@@ -1682,6 +1715,7 @@ int main(int argc, char **argv)
             UnaryTest();
             ShiftTest();
             MulDivTest();
+            BswapTest();
         }
         return RTTestSummaryAndDestroy(g_hTest);
     }
