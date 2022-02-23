@@ -491,6 +491,10 @@ endif
 if1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_DRIVERLESS_NEM_FALLBACK = 1
 endif
+# Enable forced driverless mode by default.
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.arm64)
+ VBOX_WITH_DRIVERLESS_FORCED = 1
+endif
 # Enables the new breakpoint handling code, see @bugref{8650}
 VBOX_WITH_DBGF_FLOW_TRACING = 1
 ## @}
@@ -1904,6 +1908,9 @@ ifdef VBOX_WITH_REM
 endif
 ifdef VBOX_WITH_RAW_MODE
  DEFS += VBOX_WITH_RAW_MODE
+endif
+ifdef VBOX_WITH_DRIVERLESS_FORCED
+ DEFS += VBOX_WITH_DRIVERLESS_FORCED
 endif
 
 # Don't flood CDEFS, old MASMs doesn't like too many defines.
