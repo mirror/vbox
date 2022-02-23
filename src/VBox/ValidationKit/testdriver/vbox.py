@@ -3666,6 +3666,10 @@ class TestDriver(base.TestDriver):                                              
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncIsSymlink,
                               (sRemoteSymlink, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
 
+    def txsCopyFile(self, oSession, oTxsSession, sSrcFile, sDstFile, fMode = 0, cMsTimeout = 30000, fIgnoreErrors = False):
+        return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncCopyFile, \
+                              (sSrcFile, sDstFile, fMode, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));
+
     def txsUploadFile(self, oSession, oTxsSession, sLocalFile, sRemoteFile, cMsTimeout = 30000, fIgnoreErrors = False):
         return self.txsDoTask(oSession, oTxsSession, oTxsSession.asyncUploadFile, \
                               (sLocalFile, sRemoteFile, self.adjustTimeoutMs(cMsTimeout), fIgnoreErrors));

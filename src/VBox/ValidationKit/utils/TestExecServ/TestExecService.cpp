@@ -659,7 +659,7 @@ static int txsReplaceStringVariables(PCTXSPKTHDR pPktHdr, const char *pszSrc, ch
  *
  * @returns true if valid, false if invalid.
  * @param   pPktHdr             The packet being unpacked.
- * @param   pszArgName           The argument name.
+ * @param   pszArgName          The argument name.
  * @param   psz                 Pointer to the string within pPktHdr.
  * @param   ppszExp             Where to return the expanded string.  Must be
  *                              freed by calling RTStrFree().
@@ -1006,6 +1006,55 @@ static int txsDoGetFile(PCTXSPKTHDR pPktHdr)
         rc = txsReplyRC(pPktHdr, rc, "RTFileOpen(,\"%s\",)", pszPath);
 
     RTStrFree(pszPath);
+    return rc;
+}
+
+/**
+ * Copies a file from the source to the destination locally.
+ *
+ * @returns IPRT status code from send.
+ * @param   pPktHdr             The copy file packet.
+ */
+static int txsDoCopyFile(PCTXSPKTHDR pPktHdr)
+{
+    /* After the packet header follows a 32-bit file mode,
+     * the remainder of the packet are two zero terminated paths. */
+    size_t const cbMin = sizeof(TXSPKTHDR) + sizeof(RTFMODE) + 2;
+    if (pPktHdr->cb < cbMin)
+        return txsReplyBadMinSize(pPktHdr, cbMin);
+
+    RTFMODE const fMode = *(RTFMODE const *)(pPktHdr + 1);
+
+    int rc;
+
+    char       *pszSrc;
+    const char *pch;
+    if (txsIsStringValid(pPktHdr, "source", (const char *)(pPktHdr + 1) + sizeof(uint32_t) * 2, &pszSrc, &pch, &rc))
+    {
+        char *pszDst;
+        if (txsIsStringValid(pPktHdr, "dest", pch, &pszDst, NULL /* Check for string termination */, &rc))
+        {
+            rc = RTFileCopy(pszSrc, pszDst);
+            if (RT_SUCCESS(rc))
+            {
+                if (fMode) /* Do we need to set the file mode? */
+                {
+                    rc = RTPathSetMode(pszDst, fMode);
+                    if (RT_FAILURE(rc))
+                        rc = txsReplyRC(pPktHdr, rc, "RTPathSetMode(\"%s\", %#x)", pszDst, fMode);
+                }
+
+                if (RT_SUCCESS(rc))
+                    rc = txsReplyAck(pPktHdr);
+            }
+            else
+                rc = txsReplyRC(pPktHdr, rc, "RTFileCopy");
+            RTStrFree(pszDst);
+        }
+
+        RTStrFree(pszSrc);
+    }
+
     return rc;
 }
 
@@ -3104,6 +3153,8 @@ static RTEXITCODE txsMainLoop(void)
             rc = txsDoLStat(pPktHdr);
         else if (txsIsSameOpcode(pPktHdr, "LIST    "))
             rc = txsDoList(pPktHdr);
+        else if (txsIsSameOpcode(pPktHdr, "CPFILE  "))
+            rc = txsDoCopyFile(pPktHdr);
         else if (txsIsSameOpcode(pPktHdr, "PUT FILE"))
             rc = txsDoPutFile(pPktHdr, false /*fHasMode*/);
         else if (txsIsSameOpcode(pPktHdr, "PUT2FILE"))
@@ -3972,4 +4023,3 @@ int main(int argc, char **argv)
 
     return rcExit;
 }
-

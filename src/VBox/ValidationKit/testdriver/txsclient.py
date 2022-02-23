@@ -1086,6 +1086,15 @@ class Session(TdTaskBase):
     #def "LSTAT   "
     #def "LIST    "
 
+    def taskCopyFile(self, sSrcFile, sDstFile, fMode, fFallbackOkay):
+        """ Copies a file within the remote from source to destination. """
+        # Note: If fMode is set to 0, it's up to the target OS' implementation with
+        #       what a file mode the destination file gets created (i.e. via umask).
+        rc = self.sendMsg('CPFILE', (fMode, sSrcFile, sDstFile,));
+        if rc is True:
+            rc = self.recvAckLogged('CPFILE');
+        return rc;
+
     def taskUploadFile(self, sLocalFile, sRemoteFile, fMode, fFallbackOkay):
         #
         # Open the local file (make sure it exist before bothering TXS) and
@@ -1713,6 +1722,18 @@ class Session(TdTaskBase):
         try:    cbFile = os.path.getsize(sLocalFile);
         except: cbFile = 1024*1024;
         return Session.calcFileXferTimeout(cbFile);
+
+    def asyncCopyFile(self, sSrcFile, sDstFile,
+                      fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
+        """
+        Initiates a file copying task on the remote.
+
+        Returns True on success, False on failure (logged).
+
+        The task returns True on success, False on failure (logged).
+        """
+        return self.startTask(cMsTimeout, fIgnoreErrors, "cpfile",
+                              self.taskCopyFile, (sSrcFile, sDstFile, fMode, fFallbackOkay));
 
     def asyncUploadFile(self, sLocalFile, sRemoteFile,
                         fMode = 0, fFallbackOkay = True, cMsTimeout = 30000, fIgnoreErrors = False):
