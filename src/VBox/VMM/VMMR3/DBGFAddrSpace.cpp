@@ -592,6 +592,7 @@ static DECLCALLBACK(int) dbgfR3AsLazyPopulateR0Callback(PVM pVM, const char *psz
 }
 
 
+#ifdef VBOX_WITH_RAW_MODE_KEEP
 /**
  * @callback_method_impl{FNPDMR3ENUM}
  */
@@ -618,6 +619,7 @@ static DECLCALLBACK(int) dbgfR3AsLazyPopulateRCCallback(PVM pVM, const char *psz
     }
     return VINF_SUCCESS;
 }
+#endif /* VBOX_WITH_RAW_MODE_KEEP */
 
 
 /**

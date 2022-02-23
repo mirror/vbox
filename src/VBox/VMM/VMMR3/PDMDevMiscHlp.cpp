@@ -426,7 +426,7 @@ static DECLCALLBACK(PCPDMPCIRAWHLPRC) pdmR3PciRawHlp_GetRCHelpers(PPDMDEVINS pDe
         AssertRelease(pRCHelpers);
     }
 #else
-    RT_NOREF(pDevIns);
+    RT_NOREF(pVM, pDevIns);
 #endif
 
     LogFlow(("pdmR3PciRawHlp_GetGCHelpers: caller='%s'/%d: returns %RRv\n",
