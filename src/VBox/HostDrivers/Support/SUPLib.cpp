@@ -225,6 +225,11 @@ SUPR3DECL(int) SUPR3InitEx(uint32_t fFlags, PSUPDRVSESSION *ppSession)
     Assert(!(RT_UOFFSETOF(SUPGLOBALINFOPAGE, aCPUs[0].u64TSC) & 0x7));
     Assert(!(RT_UOFFSETOF(SUPGLOBALINFOPAGE, aCPUs[0].u64CpuHz) & 0x7));
 
+#ifdef VBOX_WITH_DRIVERLESS_FORCED
+    fFlags |= SUPR3INIT_F_DRIVERLESS;
+    fFlags &= ~SUPR3INIT_F_UNRESTRICTED;
+#endif
+
     /*
      * Check if already initialized.
      */
@@ -412,7 +417,11 @@ SUPR3DECL(int) SUPR3InitEx(uint32_t fFlags, PSUPDRVSESSION *ppSession)
 
 SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
 {
+#ifndef VBOX_WITH_DRIVERLESS_FORCED
     return SUPR3InitEx(SUPR3INIT_F_UNRESTRICTED, ppSession);
+#else
+    return SUPR3InitEx(SUPR3INIT_F_DRIVERLESS, ppSession);
+#endif
 }
 
 /**
