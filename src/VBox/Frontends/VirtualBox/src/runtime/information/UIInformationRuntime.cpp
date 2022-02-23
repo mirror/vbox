@@ -347,8 +347,8 @@ void UIRuntimeInfoWidget::updateVirtualizationInfo()
         case KVMExecutionEngine_HwVirt:
             strExecutionEngine = "VT-x/AMD-V";  /* no translation */
             break;
-        case KVMExecutionEngine_RawMode:
-            strExecutionEngine = "raw-mode";    /* no translation */
+        case KVMExecutionEngine_Emulated:
+            strExecutionEngine = "IEM";         /* no translation */
             break;
         case KVMExecutionEngine_NativeApi:
             strExecutionEngine = "native API";  /* no translation */

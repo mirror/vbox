@@ -1090,20 +1090,16 @@ AssertCompileSizeAlignment(VMCPU, 16384);
     } while (0)
 
 /**
- * Checks whether raw-mode is used.
+ * Checks whether iem-executes-all-mode is used.
  *
- * @retval  true if either is used.
- * @retval  false if software virtualization (raw-mode) is used.
+ * @retval  true if IEM is used.
+ * @retval  false if not.
  *
  * @param   a_pVM       The cross context VM structure.
  * @sa      VM_IS_HM_OR_NEM_ENABLED, VM_IS_HM_ENABLED, VM_IS_NEM_ENABLED.
  * @internal
  */
-#ifdef VBOX_WITH_RAW_MODE
-# define VM_IS_RAW_MODE_ENABLED(a_pVM)      ((a_pVM)->bMainExecutionEngine == VM_EXEC_ENGINE_RAW_MODE)
-#else
-# define VM_IS_RAW_MODE_ENABLED(a_pVM)      (false)
-#endif
+#define VM_IS_EXEC_ENGINE_IEM(a_pVM)      ((a_pVM)->bMainExecutionEngine == VM_EXEC_ENGINE_IEM)
 
 /**
  * Checks whether HM (VT-x/AMD-V) or NEM is being used by this VM.
@@ -1112,10 +1108,10 @@ AssertCompileSizeAlignment(VMCPU, 16384);
  * @retval  false if software virtualization (raw-mode) is used.
  *
  * @param   a_pVM       The cross context VM structure.
- * @sa      VM_IS_RAW_MODE_ENABLED, VM_IS_HM_ENABLED, VM_IS_NEM_ENABLED.
+ * @sa      VM_IS_EXEC_ENGINE_IEM, VM_IS_HM_ENABLED, VM_IS_NEM_ENABLED.
  * @internal
  */
-#define VM_IS_HM_OR_NEM_ENABLED(a_pVM)      ((a_pVM)->bMainExecutionEngine != VM_EXEC_ENGINE_RAW_MODE)
+#define VM_IS_HM_OR_NEM_ENABLED(a_pVM)      ((a_pVM)->bMainExecutionEngine != VM_EXEC_ENGINE_IEM)
 
 /**
  * Checks whether HM is being used by this VM.
@@ -1124,7 +1120,7 @@ AssertCompileSizeAlignment(VMCPU, 16384);
  * @retval  false if not.
  *
  * @param   a_pVM       The cross context VM structure.
- * @sa      VM_IS_NEM_ENABLED, VM_IS_RAW_MODE_ENABLED, VM_IS_HM_OR_NEM_ENABLED.
+ * @sa      VM_IS_NEM_ENABLED, VM_IS_EXEC_ENGINE_IEM, VM_IS_HM_OR_NEM_ENABLED.
  * @internal
  */
 #define VM_IS_HM_ENABLED(a_pVM)             ((a_pVM)->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT)
@@ -1136,7 +1132,7 @@ AssertCompileSizeAlignment(VMCPU, 16384);
  * @retval  false if not.
  *
  * @param   a_pVM       The cross context VM structure.
- * @sa      VM_IS_HM_ENABLED, VM_IS_RAW_MODE_ENABLED, VM_IS_HM_OR_NEM_ENABLED.
+ * @sa      VM_IS_HM_ENABLED, VM_IS_EXEC_ENGINE_IEM, VM_IS_HM_OR_NEM_ENABLED.
  * @internal
  */
 #define VM_IS_NEM_ENABLED(a_pVM)             ((a_pVM)->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API)

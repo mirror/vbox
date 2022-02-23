@@ -1312,7 +1312,7 @@ int pgmShwSyncPaePDPtr(PVMCPUCC pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX8
                 /* PD not present; guest must reload CR3 to change it.
                  * No need to monitor anything in this case. */
                 /** @todo r=bird: WTF is hit?!?   */
-                Assert(VM_IS_RAW_MODE_ENABLED(pVM));
+                /*Assert(VM_IS_RAW_MODE_ENABLED(pVM)); - ??? */
                 GCPdPt  = uGstPdpe & X86_PDPE_PG_MASK;
                 enmKind = PGMPOOLKIND_PAE_PD_PHYS;
                 Assert(uGstPdpe & X86_PDPE_P); /* caller should do this already */
@@ -3035,20 +3035,8 @@ static PGMMODE pgmCalcShadowMode(PVMCC pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
 {
     switch (enmGuestMode)
     {
-        /*
-         * When switching to real or protected mode we don't change
-         * anything since it's likely that we'll switch back pretty soon.
-         *
-         * During pgmR3InitPaging we'll end up here with PGMMODE_INVALID
-         * and is supposed to determine which shadow paging and switcher to
-         * use during init.
-         */
         case PGMMODE_REAL:
         case PGMMODE_PROTECTED:
-            if (    enmShadowMode != PGMMODE_INVALID
-                && VM_IS_RAW_MODE_ENABLED(pVM) /* always switch in hm and nem modes! */)
-                break; /* (no change) */
-
             switch (enmHostMode)
             {
                 case SUPPAGINGMODE_32_BIT:

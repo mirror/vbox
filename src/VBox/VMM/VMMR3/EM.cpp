@@ -107,7 +107,13 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     PCFGMNODE pCfgRoot = CFGMR3GetRoot(pVM);
     PCFGMNODE pCfgEM = CFGMR3GetChild(pCfgRoot, "EM");
 
-    int rc = CFGMR3QueryBoolDef(pCfgEM, "IemExecutesAll", &pVM->em.s.fIemExecutesAll, false);
+    int rc = CFGMR3QueryBoolDef(pCfgEM, "IemExecutesAll", &pVM->em.s.fIemExecutesAll,
+#if defined(RT_ARCH_ARM64) && defined(RT_OS_DARWIN)
+                                true
+#else
+                                false
+#endif
+                                );
     AssertLogRelRCReturn(rc, rc);
 
     bool fEnabled;
@@ -1279,173 +1285,23 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu)
     /*
      * Execute everything in IEM?
      */
-    if (pVM->em.s.fIemExecutesAll)
+    if (   pVM->em.s.fIemExecutesAll
+        || VM_IS_EXEC_ENGINE_IEM(pVM))
         return EMSTATE_IEM;
 
-    /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
-    /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
-    /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
-
-    X86EFLAGS EFlags = pVCpu->cpum.GstCtx.eflags;
-    if (!VM_IS_RAW_MODE_ENABLED(pVM))
+    if (VM_IS_HM_ENABLED(pVM))
     {
-        if (VM_IS_HM_ENABLED(pVM))
-        {
-            if (HMCanExecuteGuest(pVM, pVCpu, &pVCpu->cpum.GstCtx))
-                return EMSTATE_HM;
-        }
-        else if (NEMR3CanExecuteGuest(pVM, pVCpu))
-            return EMSTATE_NEM;
-
-        /*
-         * Note! Raw mode and hw accelerated mode are incompatible. The latter
-         *       turns off monitoring features essential for raw mode!
-         */
-        return EMSTATE_IEM_THEN_REM;
+        if (HMCanExecuteGuest(pVM, pVCpu, &pVCpu->cpum.GstCtx))
+            return EMSTATE_HM;
     }
+    else if (NEMR3CanExecuteGuest(pVM, pVCpu))
+        return EMSTATE_NEM;
 
     /*
-     * Standard raw-mode:
-     *
-     * Here we only support 16 & 32 bits protected mode ring 3 code that has no IO privileges
-     * or 32 bits protected mode ring 0 code
-     *
-     * The tests are ordered by the likelihood of being true during normal execution.
+     * Note! Raw mode and hw accelerated mode are incompatible. The latter
+     *       turns off monitoring features essential for raw mode!
      */
-    if (EFlags.u32 & (X86_EFL_TF /* | HF_INHIBIT_IRQ_MASK*/))
-    {
-        Log2(("raw mode refused: EFlags=%#x\n", EFlags.u32));
-        return EMSTATE_REM;
-    }
-
-# ifndef VBOX_RAW_V86
-    if (EFlags.u32 & X86_EFL_VM) {
-        Log2(("raw mode refused: VM_MASK\n"));
-        return EMSTATE_REM;
-    }
-# endif
-
-    /** @todo check up the X86_CR0_AM flag in respect to raw mode!!! We're probably not emulating it right! */
-    uint32_t u32CR0 = pVCpu->cpum.GstCtx.cr0;
-    if ((u32CR0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE))
-    {
-        //Log2(("raw mode refused: %s%s%s\n", (u32CR0 & X86_CR0_PG) ? "" : " !PG", (u32CR0 & X86_CR0_PE) ? "" : " !PE", (u32CR0 & X86_CR0_AM) ? "" : " !AM"));
-        return EMSTATE_REM;
-    }
-
-    if (pVCpu->cpum.GstCtx.cr4 & X86_CR4_PAE)
-    {
-        uint32_t u32Dummy, u32Features;
-
-        CPUMGetGuestCpuId(pVCpu, 1, 0, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
-        if (!(u32Features & X86_CPUID_FEATURE_EDX_PAE))
-            return EMSTATE_REM;
-    }
-
-    unsigned uSS = pVCpu->cpum.GstCtx.ss.Sel;
-    if (    pVCpu->cpum.GstCtx.eflags.Bits.u1VM
-        ||  (uSS & X86_SEL_RPL) == 3)
-    {
-        if (!(EFlags.u32 & X86_EFL_IF))
-        {
-            Log2(("raw mode refused: IF (RawR3)\n"));
-            return EMSTATE_REM;
-        }
-
-        if (!(u32CR0 & X86_CR0_WP))
-        {
-            Log2(("raw mode refused: CR0.WP + RawR0\n"));
-            return EMSTATE_REM;
-        }
-    }
-    else
-    {
-        /* Only ring 0 supervisor code. */
-        if ((uSS & X86_SEL_RPL) != 0)
-        {
-            Log2(("raw r0 mode refused: CPL %d\n", uSS & X86_SEL_RPL));
-            return EMSTATE_REM;
-        }
-
-        // Let's start with pure 32 bits ring 0 code first
-        /** @todo What's pure 32-bit mode? flat? */
-        if (    !(pVCpu->cpum.GstCtx.ss.Attr.n.u1DefBig)
-            ||  !(pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig))
-        {
-            Log2(("raw r0 mode refused: SS/CS not 32bit\n"));
-            return EMSTATE_REM;
-        }
-
-        /* Write protection must be turned on, or else the guest can overwrite our hypervisor code and data. */
-        if (!(u32CR0 & X86_CR0_WP))
-        {
-            Log2(("raw r0 mode refused: CR0.WP=0!\n"));
-            return EMSTATE_REM;
-        }
-
-# if !defined(VBOX_ALLOW_IF0) && !defined(VBOX_RUN_INTERRUPT_GATE_HANDLERS)
-        if (!(EFlags.u32 & X86_EFL_IF))
-        {
-            ////Log2(("R0: IF=0 VIF=%d %08X\n", eip, pVMeflags));
-            //Log2(("RR0: Interrupts turned off; fall back to emulation\n"));
-            return EMSTATE_REM;
-        }
-# endif
-
-# ifndef VBOX_WITH_RAW_RING1
-        /** @todo still necessary??? */
-        if (EFlags.Bits.u2IOPL != 0)
-        {
-            Log2(("raw r0 mode refused: IOPL %d\n", EFlags.Bits.u2IOPL));
-            return EMSTATE_REM;
-        }
-# endif
-    }
-
-    /*
-     * Stale hidden selectors means raw-mode is unsafe (being very careful).
-     */
-    if (pVCpu->cpum.GstCtx.cs.fFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale CS\n"));
-        return EMSTATE_REM;
-    }
-    if (pVCpu->cpum.GstCtx.ss.fFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale SS\n"));
-        return EMSTATE_REM;
-    }
-    if (pVCpu->cpum.GstCtx.ds.fFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale DS\n"));
-        return EMSTATE_REM;
-    }
-    if (pVCpu->cpum.GstCtx.es.fFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale ES\n"));
-        return EMSTATE_REM;
-    }
-    if (pVCpu->cpum.GstCtx.fs.fFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale FS\n"));
-        return EMSTATE_REM;
-    }
-    if (pVCpu->cpum.GstCtx.gs.fFlags & CPUMSELREG_FLAGS_STALE)
-    {
-        Log2(("raw mode refused: stale GS\n"));
-        return EMSTATE_REM;
-    }
-
-# ifdef VBOX_WITH_SAFE_STR
-    if (pVCpu->cpum.GstCtx.tr.Sel == 0)
-    {
-        Log(("Raw mode refused -> TR=0\n"));
-        return EMSTATE_REM;
-    }
-# endif
-
-    /*Assert(PGMPhysIsA20Enabled(pVCpu));*/
-    return EMSTATE_RAW;
+    return EMSTATE_IEM_THEN_REM;
 }
 
 
@@ -2353,16 +2209,8 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
 /** @todo r=bird: consider merging VINF_EM_RESCHEDULE_RAW with VINF_EM_RESCHEDULE_HM, they serve the same purpose here at least. */
                 case VINF_EM_RESCHEDULE_RAW:
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
-                    if (VM_IS_RAW_MODE_ENABLED(pVM))
-                    {
-                        Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_RAW: %d -> %d (EMSTATE_RAW)\n", enmOldState, EMSTATE_RAW));
-                        pVCpu->em.s.enmState = EMSTATE_RAW;
-                    }
-                    else
-                    {
-                        AssertLogRelFailed();
-                        pVCpu->em.s.enmState = EMSTATE_NONE;
-                    }
+                    AssertLogRelFailed();
+                    pVCpu->em.s.enmState = EMSTATE_NONE;
                     break;
 
                 /*
@@ -2392,20 +2240,12 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_RESCHEDULE_REM:
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
-                    if (!VM_IS_RAW_MODE_ENABLED(pVM))
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_IEM_THEN_REM)\n",
+                          enmOldState, EMSTATE_IEM_THEN_REM));
+                    if (pVCpu->em.s.enmState != EMSTATE_IEM_THEN_REM)
                     {
-                        Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_IEM_THEN_REM)\n",
-                              enmOldState, EMSTATE_IEM_THEN_REM));
-                        if (pVCpu->em.s.enmState != EMSTATE_IEM_THEN_REM)
-                        {
-                            pVCpu->em.s.enmState = EMSTATE_IEM_THEN_REM;
-                            pVCpu->em.s.cIemThenRemInstructions = 0;
-                        }
-                    }
-                    else
-                    {
-                        Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_REM)\n", enmOldState, EMSTATE_REM));
-                        pVCpu->em.s.enmState = EMSTATE_REM;
+                        pVCpu->em.s.enmState = EMSTATE_IEM_THEN_REM;
+                        pVCpu->em.s.cIemThenRemInstructions = 0;
                     }
                     break;
 

@@ -244,6 +244,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                               "HMForced"  /* implied 'true' these days */
                               "|UseNEMInstead"
                               "|FallbackToNEM"
+                              "|FallbackToIEM"
                               "|EnableNestedPaging"
                               "|EnableUX"
                               "|EnableLargePages"
@@ -276,9 +277,12 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     /** @cfgm{/HM/HMForced, bool, false}
      * Forces hardware virtualization, no falling back on raw-mode. HM must be
      * enabled, i.e. /HMEnabled must be true. */
-    bool fHMForced;
+    bool const fHMForced = true;
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     AssertRelease(pVM->fHMEnabled);
-    fHMForced = true;
+#else
+    AssertRelease(!pVM->fHMEnabled);
+#endif
 
     /** @cfgm{/HM/UseNEMInstead, bool, true}
      * Don't use HM, use NEM instead. */
@@ -295,6 +299,16 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
      * Enables fallback on NEM. */
     bool fFallbackToNEM = true;
     rc = CFGMR3QueryBoolDef(pCfgHm, "FallbackToNEM", &fFallbackToNEM, true);
+    AssertRCReturn(rc, rc);
+
+    /** @cfgm{/HM/FallbackToIEM, bool, false on AMD64 else true }
+     * Enables fallback on NEM. */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    bool fFallbackToIEM = false;
+#else
+    bool fFallbackToIEM = true;
+#endif
+    rc = CFGMR3QueryBoolDef(pCfgHm, "fFallbackToIEM", &fFallbackToIEM, fFallbackToIEM);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/EnableNestedPaging, bool, false}
@@ -612,8 +626,21 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                     PGMSetLargePageUsage(pVM, pVM->hm.s.fLargePages);
                 }
             }
+
+            /*
+             * Then try fall back on IEM if NEM isn't available and we're allowed to.
+             */
             if (RT_FAILURE(rc))
-                return VM_SET_ERROR(pVM, rc, pszMsg);
+            {
+                if (   fFallbackToIEM
+                    && (!fFallbackToNEM || rc == VERR_NEM_NOT_AVAILABLE))
+                {
+                    LogRel(("HM: HMR3Init: Falling back on IEM: %s\n", !fFallbackToNEM ? pszMsg : "NEM not available"));
+                    VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_IEM);
+                }
+                else
+                    return VM_SET_ERROR(pVM, rc, pszMsg);
+            }
         }
     }
     else
@@ -621,18 +648,27 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
         /*
          * Disabled HM mean raw-mode, unless NEM is supposed to be used.
          */
+        rc = VERR_NEM_NOT_AVAILABLE;
         if (fUseNEMInstead)
         {
             rc = NEMR3Init(pVM, false /*fFallback*/, true);
             ASMCompilerBarrier(); /* NEMR3Init may have changed bMainExecutionEngine. */
-            if (RT_FAILURE(rc))
+            if (RT_SUCCESS(rc))
+            {
+                /* For some reason, HM is in charge or large pages. Make sure to enable them: */
+                PGMSetLargePageUsage(pVM, pVM->hm.s.fLargePages);
+            }
+            else if (!fFallbackToIEM || rc != VERR_NEM_NOT_AVAILABLE)
                 return rc;
-
-            /* For some reason, HM is in charge or large pages. Make sure to enable them: */
-            PGMSetLargePageUsage(pVM, pVM->hm.s.fLargePages);
         }
+
+        if (fFallbackToIEM && rc == VERR_NEM_NOT_AVAILABLE)
+        {
+            LogRel(("HM: HMR3Init: Falling back on IEM%s\n", fUseNEMInstead ? ": NEM not available" : ""));
+            VM_SET_MAIN_EXECUTION_ENGINE(pVM, VM_EXEC_ENGINE_IEM);
+        }
+
         if (   pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NOT_SET
-            || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_RAW_MODE
             || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT /* paranoia */)
             return VM_SET_ERROR(pVM, rc, "Misconfigured VM: No guest execution engine available!");
     }
@@ -658,7 +694,6 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     }
 
     Assert(pVM->bMainExecutionEngine != VM_EXEC_ENGINE_NOT_SET);
-    Assert(pVM->bMainExecutionEngine != VM_EXEC_ENGINE_RAW_MODE);
     return VINF_SUCCESS;
 }
 

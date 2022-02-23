@@ -1609,40 +1609,6 @@ bool UIMessageCenter::warnAboutNetworkInterfaceNotFound(const QString &strMachin
                           tr("Change Network Settings"), tr("Close VM"));
 }
 
-bool UIMessageCenter::warnAboutVirtExInactiveFor64BitsGuest(bool fHWVirtExSupported) const
-{
-    if (fHWVirtExSupported)
-        return questionBinary(0, MessageType_Error,
-                              tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
-                                 "Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</p>"
-                                 "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
-                              0 /* auto-confirm id */,
-                              tr("Close VM"), tr("Continue"));
-    else
-        return questionBinary(0, MessageType_Error,
-                              tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
-                                 "Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot."),
-                              0 /* auto-confirm id */,
-                              tr("Close VM"), tr("Continue"));
-}
-
-bool UIMessageCenter::warnAboutVirtExInactiveForRecommendedGuest(bool fHWVirtExSupported) const
-{
-    if (fHWVirtExSupported)
-        return questionBinary(0, MessageType_Error,
-                              tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
-                                 "Certain guests (e.g. OS/2 and QNX) require this feature.</p>"
-                                 "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
-                              0 /* auto-confirm id */,
-                              tr("Close VM"), tr("Continue"));
-    else
-        return questionBinary(0, MessageType_Error,
-                              tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
-                                 "Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.</p>"),
-                              0 /* auto-confirm id */,
-                              tr("Close VM"), tr("Continue"));
-}
-
 void UIMessageCenter::warnAboutVBoxSVCUnavailable() const
 {
     alert(0, MessageType_Critical,

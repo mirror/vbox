@@ -728,19 +728,22 @@ static DECLCALLBACK(int) vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCT
  */
 static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
 {
-    int         rc;
-    PCFGMNODE   pRoot = CFGMR3GetRoot(pVM);
+    PCFGMNODE const pRoot = CFGMR3GetRoot(pVM);
 
     /*
      * Base EM and HM config properties.
      */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     pVM->fHMEnabled = true;
+#else /* Other architectures must fall back on IEM for the time being: */
+    pVM->fHMEnabled = false;
+#endif
 
     /*
      * Make sure the CPU count in the config data matches.
      */
     uint32_t cCPUsCfg;
-    rc = CFGMR3QueryU32Def(pRoot, "NumCPUs", &cCPUsCfg, 1);
+    int rc = CFGMR3QueryU32Def(pRoot, "NumCPUs", &cCPUsCfg, 1);
     AssertLogRelMsgRCReturn(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Rrc\n", rc), rc);
     AssertLogRelMsgReturn(cCPUsCfg == cCpus,
                           ("Configuration error: \"NumCPUs\"=%RU32 and VMR3Create::cCpus=%RU32 does not match!\n",
@@ -830,9 +833,10 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
         rc = HMR3Init(pVM);
     if (RT_SUCCESS(rc))
     {
-        ASMCompilerBarrier(); /* HMR3Init will have modified bMainExecutionEngine */
+        ASMCompilerBarrier(); /* HMR3Init will have modified const member bMainExecutionEngine. */
         Assert(   pVM->bMainExecutionEngine == VM_EXEC_ENGINE_HW_VIRT
-               || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API);
+               || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_NATIVE_API
+               || pVM->bMainExecutionEngine == VM_EXEC_ENGINE_IEM);
         rc = MMR3Init(pVM);
         if (RT_SUCCESS(rc))
         {

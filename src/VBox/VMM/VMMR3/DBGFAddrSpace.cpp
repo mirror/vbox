@@ -635,11 +635,13 @@ static void dbgfR3AsLazyPopulate(PUVM pUVM, RTDBGAS hAlias)
         RTDBGAS hDbgAs = pUVM->dbgf.s.ahAsAliases[iAlias];
         if (hAlias == DBGF_AS_R0 && pUVM->pVM)
             PDMR3LdrEnumModules(pUVM->pVM, dbgfR3AsLazyPopulateR0Callback, hDbgAs);
+#ifdef VBOX_WITH_RAW_MODE_KEEP /* needs fixing */
         else if (hAlias == DBGF_AS_RC && pUVM->pVM && VM_IS_RAW_MODE_ENABLED(pUVM->pVM))
         {
             LogRel(("DBGF: Lazy init of RC address space\n"));
             PDMR3LdrEnumModules(pUVM->pVM, dbgfR3AsLazyPopulateRCCallback, hDbgAs);
         }
+#endif
         else if (hAlias == DBGF_AS_PHYS && pUVM->pVM)
         {
             /** @todo Lazy load pc and vga bios symbols or the EFI stuff. */

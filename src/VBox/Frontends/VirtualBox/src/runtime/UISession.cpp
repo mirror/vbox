@@ -1907,43 +1907,8 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType en
 
 bool UISession::postprocessInitialization()
 {
-    /* Check if the required virtualization features are active. We get this info only when the session is active. */
-    const bool fIs64BitsGuest = uiCommon().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetIs64Bit();
-    const bool fRecommendVirtEx = uiCommon().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetRecommendedVirtEx();
-    AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
-    const KVMExecutionEngine enmEngine = debugger().GetExecutionEngine();
-    if (fRecommendVirtEx && enmEngine == KVMExecutionEngine_RawMode)
-    {
-        /* Check whether vt-x / amd-v supported: */
-        bool fVTxAMDVSupported = uiCommon().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
-
-        /* Pause VM: */
-        setPause(true);
-
-        /* Ask the user about further actions: */
-        bool fShouldWeClose;
-        if (fIs64BitsGuest)
-            fShouldWeClose = msgCenter().warnAboutVirtExInactiveFor64BitsGuest(fVTxAMDVSupported);
-        else
-            fShouldWeClose = msgCenter().warnAboutVirtExInactiveForRecommendedGuest(fVTxAMDVSupported);
-
-        /* If user asked to close VM: */
-        if (fShouldWeClose)
-        {
-            /* Enable 'manual-override',
-             * preventing automatic Runtime UI closing: */
-            setManualOverrideMode(true);
-            /* Power off VM: */
-            LogRel(("GUI: Aborting startup due to postprocess initialization issue detected...\n"));
-            powerOff(false /* do NOT restore current snapshot */);
-            return false;
-        }
-
-        /* Resume VM: */
-        setPause(false);
-    }
-
-    /* True by default: */
+    /* There used to be some raw-mode warnings here for raw-mode incompatible
+       guests (64-bit ones and OS/2).  Nothing to do at present. */
     return true;
 }
 

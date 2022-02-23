@@ -985,10 +985,12 @@ public:
         , m_iCPULoadPercentage(0)
     {
         /* Assign state-icons: */
+/** @todo  The vtx_amdv_disabled_16px.png icon isn't really approprate anymore (no raw-mode),
+ * might want to get something different for KVMExecutionEngine_Emulated or reuse the
+ * vm_execution_engine_native_api_16px.png one... @bugref{9898} */
         setStateIcon(KVMExecutionEngine_NotSet, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
-        setStateIcon(KVMExecutionEngine_RawMode, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
+        setStateIcon(KVMExecutionEngine_Emulated, UIIconPool::iconSet(":/vtx_amdv_disabled_16px.png"));
         setStateIcon(KVMExecutionEngine_HwVirt, UIIconPool::iconSet(":/vtx_amdv_16px.png"));
-        /** @todo New indicator icon, vm_execution_engine_native_api_16px.png, V inside a turtle / tortoise.  @bugref{9044} */
         setStateIcon(KVMExecutionEngine_NativeApi, UIIconPool::iconSet(":/vm_execution_engine_native_api_16px.png"));
 
         /* Configure machine state-change listener: */
@@ -1078,8 +1080,8 @@ private:
             case KVMExecutionEngine_HwVirt:
                 strExecutionEngine = "VT-x/AMD-V";  /* no translation */
                 break;
-            case KVMExecutionEngine_RawMode:
-                strExecutionEngine = "raw-mode";    /* no translation */
+            case KVMExecutionEngine_Emulated:
+                strExecutionEngine = "IEM";         /* no translation */
                 break;
             case KVMExecutionEngine_NativeApi:
                 strExecutionEngine = "native API";  /* no translation */

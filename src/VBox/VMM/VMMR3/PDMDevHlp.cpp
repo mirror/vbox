@@ -4105,8 +4105,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_ApicRegister(PPDMDEVINS pDevIns)
      * Set the ring-3 and raw-mode bits, leave the ring-0 to ring-0 setup.
      */
     pVM->pdm.s.Apic.pDevInsR3 = pDevIns;
+#ifdef VBOX_WITH_RAW_MODE_KEEP
     pVM->pdm.s.Apic.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     Assert(pVM->pdm.s.Apic.pDevInsRC || !VM_IS_RAW_MODE_ENABLED(pVM));
+#endif
 
     LogFlow(("pdmR3DevHlp_ApicRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;

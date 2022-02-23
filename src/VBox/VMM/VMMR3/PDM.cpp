@@ -576,7 +576,9 @@ VMMR3_INT_DECL(int) PDMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("PDMR3Relocate\n"));
+    RT_NOREF(pVM, offDelta);
 
+#ifdef VBOX_WITH_RAW_MODE_KEEP /* needs fixing */
     /*
      * The registered PIC.
      */
@@ -609,7 +611,6 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Devices & Drivers.
      */
-#ifdef VBOX_WITH_RAW_MODE_KEEP /* needs fixing */
     int rc;
     PCPDMDEVHLPRC pDevHlpRC = NIL_RTRCPTR;
     if (VM_IS_RAW_MODE_ENABLED(pVM))

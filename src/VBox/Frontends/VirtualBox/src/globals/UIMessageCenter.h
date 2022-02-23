@@ -403,8 +403,6 @@ public:
         void cannotStartMachine(const CProgress &progress, const QString &strName) const;
 
         bool warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames) const;
-        bool warnAboutVirtExInactiveFor64BitsGuest(bool fHWVirtExSupported) const;
-        bool warnAboutVirtExInactiveForRecommendedGuest(bool fHWVirtExSupported) const;
 
         void warnAboutVBoxSVCUnavailable() const;
         bool warnAboutGuruMeditation(const QString &strLogFolder);

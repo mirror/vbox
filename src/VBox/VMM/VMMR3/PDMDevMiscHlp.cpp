@@ -418,12 +418,16 @@ static DECLCALLBACK(PCPDMPCIRAWHLPRC) pdmR3PciRawHlp_GetRCHelpers(PPDMDEVINS pDe
     VM_ASSERT_EMT(pVM);
 
     RTRCPTR pRCHelpers = NIL_RTRCPTR;
+#if 0
     if (VM_IS_RAW_MODE_ENABLED(pVM))
     {
         int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCPciRawHlp", &pRCHelpers);
         AssertReleaseRC(rc);
         AssertRelease(pRCHelpers);
     }
+#else
+    RT_NOREF(pDevIns);
+#endif
 
     LogFlow(("pdmR3PciRawHlp_GetGCHelpers: caller='%s'/%d: returns %RRv\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pRCHelpers));

@@ -367,7 +367,6 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
              * Active trap? This is only of partial interest when in hardware
              * assisted virtualization mode, thus the different messages.
              */
-            uint32_t        uEIP       = 0; //CPUMGetHyperEIP(pVCpu);
             TRPMEVENT       enmType;
             uint8_t         u8TrapNo   =       0xce;
             uint32_t        uErrorCode = 0xdeadface;
@@ -375,18 +374,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             uint8_t         cbInstr    = UINT8_MAX;
             bool            fIcebp     = false;
             int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrorCode, &uCR2, &cbInstr, &fIcebp);
-            if (VM_IS_RAW_MODE_ENABLED(pVM))
-            {
-                if (RT_SUCCESS(rc2))
-                    pHlp->pfnPrintf(pHlp,
-                                    "!! TRAP=%02x ERRCD=%RX32 CR2=%RGv EIP=%RX32 Type=%d cbInstr=%02x fIcebp=%RTbool\n",
-                                    u8TrapNo, uErrorCode, uCR2, uEIP, enmType, cbInstr, fIcebp);
-                else
-                    pHlp->pfnPrintf(pHlp,
-                                    "!! EIP=%RX32 NOTRAP\n",
-                                    uEIP);
-            }
-            else if (RT_SUCCESS(rc2))
+            if (RT_SUCCESS(rc2))
                 pHlp->pfnPrintf(pHlp,
                                 "!! ACTIVE TRAP=%02x ERRCD=%RX32 CR2=%RGv PC=%RGr Type=%d cbInstr=%02x fIcebp=%RTbool (Guest!)\n",
                                 u8TrapNo, uErrorCode, uCR2, CPUMGetGuestRIP(pVCpu), enmType, cbInstr, fIcebp);

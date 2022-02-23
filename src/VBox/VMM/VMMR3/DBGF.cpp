@@ -285,8 +285,7 @@ bool dbgfR3WaitForAttach(PVM pVM, PVMCPU pVCpu, DBGFEVENTTYPE enmEvent)
     int cWait = 10;
 #else
     int cWait = RTEnvExist("VBOX_DBGF_NO_WAIT_FOR_ATTACH")
-             || (   !VM_IS_RAW_MODE_ENABLED(pVM)
-                 && (   enmEvent == DBGFEVENT_ASSERTION_HYPER
+             || (   (   enmEvent == DBGFEVENT_ASSERTION_HYPER
                      || enmEvent == DBGFEVENT_FATAL_ERROR)
                  && !RTEnvExist("VBOX_DBGF_WAIT_FOR_ATTACH"))
               ? 10

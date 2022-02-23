@@ -47,8 +47,8 @@ RT_C_DECLS_BEGIN
  * @{ */
 /** Has not yet been set. */
 #define VM_EXEC_ENGINE_NOT_SET              UINT8_C(0)
-/** Raw-mode. */
-#define VM_EXEC_ENGINE_RAW_MODE             UINT8_C(1)
+/** The interpreter (IEM). */
+#define VM_EXEC_ENGINE_IEM                  UINT8_C(1)
 /** Hardware assisted virtualization thru HM. */
 #define VM_EXEC_ENGINE_HW_VIRT              UINT8_C(2)
 /** Hardware assisted virtualization thru native API (NEM). */
