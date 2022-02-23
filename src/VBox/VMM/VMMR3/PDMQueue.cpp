@@ -432,6 +432,7 @@ VMMR3DECL(int) PDMR3QueueDestroy(PVM pVM, PDMQUEUEHANDLE hQueue, void *pvOwner)
             while (hQueue > 0 && pVM->pdm.s.papRing3Queues[hQueue - 1] == NULL)
                 hQueue--;
             pVM->pdm.s.cRing3Queues = hQueue;
+            /** @todo this should be done by PDMR3Term not here. */
             if (!hQueue)
             {
                 pVM->pdm.s.cRing3QueuesAlloc = 0;
