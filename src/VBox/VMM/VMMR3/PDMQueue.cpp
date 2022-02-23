@@ -432,6 +432,12 @@ VMMR3DECL(int) PDMR3QueueDestroy(PVM pVM, PDMQUEUEHANDLE hQueue, void *pvOwner)
             while (hQueue > 0 && pVM->pdm.s.papRing3Queues[hQueue - 1] == NULL)
                 hQueue--;
             pVM->pdm.s.cRing3Queues = hQueue;
+            if (!hQueue)
+            {
+                pVM->pdm.s.cRing3QueuesAlloc = 0;
+                PPDMQUEUE *papQueuesOld = ASMAtomicXchgPtrT(&pVM->pdm.s.papRing3Queues, NULL, PPDMQUEUE *);
+                RTMemFree(papQueuesOld);
+            }
         }
         pQueue->u32Magic = PDMQUEUE_MAGIC_DEAD;
         pdmUnlock(pVM);
