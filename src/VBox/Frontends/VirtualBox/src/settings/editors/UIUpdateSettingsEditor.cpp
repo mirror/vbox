@@ -81,8 +81,8 @@ void UIUpdateSettingsEditor::retranslateUi()
     /* Translate check-box: */
     if (m_pCheckBox)
     {
-        m_pCheckBox->setWhatsThis(tr("When checked, the application will periodically connect to the VirtualBox "
-                                     "website and check whether a new VirtualBox version is available."));
+        m_pCheckBox->setToolTip(tr("When checked, the application will periodically connect to the VirtualBox "
+                                   "website and check whether a new VirtualBox version is available."));
         m_pCheckBox->setText(tr("&Check for Updates"));
     }
 
@@ -91,8 +91,7 @@ void UIUpdateSettingsEditor::retranslateUi()
         m_pLabelUpdatePeriod->setText(tr("&Once per:"));
     if (m_pComboUpdatePeriod)
     {
-        m_pComboUpdatePeriod->setWhatsThis(tr("Selects how often the new version check should be performed. Note that if you want "
-                                              "to completely disable this check, just clear the above check box."));
+        m_pComboUpdatePeriod->setToolTip(tr("Selects how often the new version check should be performed."));
         const int iCurrenIndex = m_pComboUpdatePeriod->currentIndex();
         m_pComboUpdatePeriod->clear();
         VBoxUpdateData::populate();
@@ -107,21 +106,21 @@ void UIUpdateSettingsEditor::retranslateUi()
     /* Translate branch widgets: */
     if (m_mapRadioButtons.value(VBoxUpdateData::BranchStable))
     {
-        m_mapRadioButtons.value(VBoxUpdateData::BranchStable)->setWhatsThis(tr("<p>Choose this if you only wish to be notified "
-                                                                               "about stable updates to VirtualBox.</p>"));
+        m_mapRadioButtons.value(VBoxUpdateData::BranchStable)->setToolTip(tr("When chosen, you will be notified "
+                                                                             "about stable updates to VirtualBox."));
         m_mapRadioButtons.value(VBoxUpdateData::BranchStable)->setText(tr("&Stable Release Versions"));
     }
     if (m_mapRadioButtons.value(VBoxUpdateData::BranchAllRelease))
     {
-        m_mapRadioButtons.value(VBoxUpdateData::BranchAllRelease)->setWhatsThis(tr("<p>Choose this if you wish to be notified "
-                                                                                   "about all new VirtualBox releases.</p>"));
+        m_mapRadioButtons.value(VBoxUpdateData::BranchAllRelease)->setToolTip(tr("When chosen, you will be notified "
+                                                                                 "about all new VirtualBox releases."));
         m_mapRadioButtons.value(VBoxUpdateData::BranchAllRelease)->setText(tr("&All New Releases"));
     }
     if (m_mapRadioButtons.value(VBoxUpdateData::BranchWithBetas))
     {
-        m_mapRadioButtons.value(VBoxUpdateData::BranchWithBetas)->setWhatsThis(tr("<p>Choose this to be notified about all new "
-                                                                                  "VirtualBox releases and pre-release versions "
-                                                                                  "of VirtualBox.</p>"));
+        m_mapRadioButtons.value(VBoxUpdateData::BranchWithBetas)->setToolTip(tr("When chosen, you will be notified "
+                                                                                "about all new VirtualBox releases and "
+                                                                                "pre-release versions of VirtualBox."));
         m_mapRadioButtons.value(VBoxUpdateData::BranchWithBetas)->setText(tr("All New Releases and &Pre-Releases"));
     }
 }
