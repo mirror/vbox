@@ -1575,7 +1575,7 @@ static int shClSvcClientReportFormats(PSHCLCLIENT pClient, uint32_t cParms, VBOX
                         RTStrFree(pszFmts);
                     }
 #endif
-                    rc = ShClBackendFormatAnnounce(&g_ShClBackend, pClient, fFormats);
+                    rc = ShClBackendReportFormats(&g_ShClBackend, pClient, fFormats);
                     if (RT_FAILURE(rc))
                         LogRel(("Shared Clipboard: Reporting guest clipboard formats to the host failed with %Rrc\n", rc));
                 }

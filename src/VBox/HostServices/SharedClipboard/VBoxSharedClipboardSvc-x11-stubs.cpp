@@ -84,7 +84,7 @@ int ShClBackendDisconnect(PSHCLBACKEND pBackend, PSHCLCLIENT pClient)
  * The guest is taking possession of the shared clipboard.
  * Called by the HGCM clipboard subsystem.
  */
-int ShClBackendFormatAnnounce(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, SHCLFORMATS fFormats)
+int ShClBackendReportFormats(PSHCLBACKEND pBackend, PSHCLCLIENT pClient, SHCLFORMATS fFormats)
 {
     RT_NOREF(pBackend, pClient, fFormats);
     return VINF_SUCCESS;

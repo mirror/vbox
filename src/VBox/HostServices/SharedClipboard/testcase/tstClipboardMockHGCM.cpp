@@ -1349,7 +1349,7 @@ static DECLCALLBACK(int) tstTestReadFromHostExec(PTESTPARMS pTstParms, void *pvC
 #if 1
     PSHCLBACKEND pBackend = ShClSvcGetBackend();
 
-    ShClBackendFormatAnnounce(pBackend, &pMockClient->Client, pTask->enmFmtHst);
+    ShClBackendReportFormats(pBackend, &pMockClient->Client, pTask->enmFmtHst);
     tstTaskWait(pTask, RT_MS_30SEC);
 #endif
 
