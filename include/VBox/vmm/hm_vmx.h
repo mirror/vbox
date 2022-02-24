@@ -419,19 +419,19 @@
 #define EPT_E_MEMTYPE_SMASK     UINT64_C(0x0007)
 /** Bits 3-5 - Memory type shift count. */
 #define EPT_E_MEMTYPE_SHIFT     3
-/** Bits 3-5 - Memory type: UC. */
+/** Bits 3-5 - Memory type: UC (Uncacheable). */
 #define EPT_E_MEMTYPE_UC        (UINT64_C(0) << EPT_E_MEMTYPE_SHIFT)
-/** Bits 3-5 - Memory type: WC. */
+/** Bits 3-5 - Memory type: WC (Write Combining). */
 #define EPT_E_MEMTYPE_WC        (UINT64_C(1) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (2). */
 #define EPT_E_MEMTYPE_INVALID_2 (UINT64_C(2) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (3). */
 #define EPT_E_MEMTYPE_INVALID_3 (UINT64_C(3) << EPT_E_MEMTYPE_SHIFT)
-/** Bits 3-5 - Memory type: WT. */
+/** Bits 3-5 - Memory type: WT (Write Through). */
 #define EPT_E_MEMTYPE_WT        (UINT64_C(4) << EPT_E_MEMTYPE_SHIFT)
-/** Bits 3-5 - Memory type: WP. */
+/** Bits 3-5 - Memory type: WP (Write Protected). */
 #define EPT_E_MEMTYPE_WP        (UINT64_C(5) << EPT_E_MEMTYPE_SHIFT)
-/** Bits 3-5 - Memory type: WB. */
+/** Bits 3-5 - Memory type: WB (Write Back). */
 #define EPT_E_MEMTYPE_WB        (UINT64_C(6) << EPT_E_MEMTYPE_SHIFT)
 /** Bits 3-5 - Memory type: Invalid (7). */
 #define EPT_E_MEMTYPE_INVALID_7 (UINT64_C(7) << EPT_E_MEMTYPE_SHIFT)
