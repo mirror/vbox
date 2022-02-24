@@ -3060,3 +3060,16 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxEptPaePagingEnabled(PCVMCPUCC pVCpu)
            && CPUMIsGuestInPAEModeEx(&pVCpu->cpum.s.Guest);
 }
 
+
+/**
+ * Returns the guest-physical address of the APIC-access page when executing a
+ * nested-guest.
+ *
+ * @returns The APIC-access page guest-physical address.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCVMCPUCC pVCpu)
+{
+    return CPUMGetGuestVmxApicAccessPageAddrEx(&pVCpu->cpum.s.Guest);
+}
+

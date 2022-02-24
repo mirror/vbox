@@ -36,6 +36,8 @@ RT_C_DECLS_BEGIN
 PGM_BTH_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3);
 #ifndef IN_RING3
 PGM_BTH_DECL(int, Trap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken);
+PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNested,
+                                       bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk, bool *pfLockTaken);
 #endif
 PGM_BTH_DECL(int, InvalidatePage)(PVMCPUCC pVCpu, RTGCPTR GCPtrPage);
 static int PGM_BTH_NAME(SyncPage)(PVMCPUCC pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uErr);
@@ -965,6 +967,276 @@ rc=0
 
 # else  /* Nested paging, EPT except PGM_GST_TYPE = PROT, NONE.   */
     NOREF(uErr); NOREF(pRegFrame); NOREF(pvFault);
+    AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_SHW_TYPE, PGM_GST_TYPE));
+    return VERR_PGM_NOT_USED_IN_MODE;
+# endif
+}
+
+
+/**
+ * Nested \#PF handler for nested-guest hardware-assisted execution using nested
+ * paging.
+ *
+ * @returns VBox status code (appropriate for trap handling and GC return).
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   uErr                The fault error (X86_TRAP_PF_*).
+ * @param   pRegFrame           The register frame.
+ * @param   GCPhysNested        The nested-guest physical address being accessed.
+ * @param   fIsLinearAddrValid  Whether translation of a nested-guest linear address
+ *                              caused this fault. If @c false, GCPtrNested must be
+ *                              0.
+ * @param   GCPtrNested         The nested-guest linear address that caused this
+ *                              fault.
+ * @param   pWalk               The guest page table walk result.
+ * @param   pfLockTaken         Where to store whether the PGM lock is still held
+ *                              when this function completes.
+ */
+PGM_BTH_DECL(int, NestedTrap0eHandler)(PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNested,
+                                       bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk, bool *pfLockTaken)
+{
+    *pfLockTaken = false;
+# if defined(VBOX_WITH_NESTED_HWVIRT_VMX_EPT) \
+    && (   PGM_GST_TYPE == PGM_TYPE_REAL || PGM_GST_TYPE == PGM_TYPE_PROT || PGM_GST_TYPE == PGM_TYPE_32BIT  \
+        || PGM_GST_TYPE == PGM_TYPE_PAE  || PGM_GST_TYPE == PGM_TYPE_AMD64) \
+    && PGM_SHW_TYPE == PGM_TYPE_EPT
+
+    Assert(CPUMIsGuestVmxEptPagingEnabled(pVCpu));
+
+    /*
+     * Walk the guest EPT tables and check if it's an EPT violation or misconfiguration.
+     */
+    PGMPTWALKGST GstWalkAll;
+    int rc = pgmGstSlatWalk(pVCpu, GCPhysNested, fIsLinearAddrValid, GCPtrNested, pWalk, &GstWalkAll);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Assert(GstWalkAll.enmType == PGMPTWALKGSTTYPE_EPT);
+    Assert(pWalk->fSucceeded);
+    Assert(pWalk->fEffective & PGM_PTATTRS_R_MASK);
+    Assert(pWalk->fIsSlat);
+
+    if (uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_US | X86_TRAP_PF_ID))
+    {
+        if (    (   (uErr & X86_TRAP_PF_RW)
+                 && !(pWalk->fEffective & PGM_PTATTRS_W_MASK)
+                 && (   (uErr & X86_TRAP_PF_US)
+                     || CPUMIsGuestR0WriteProtEnabled(pVCpu)) )
+            ||  ((uErr & X86_TRAP_PF_US) && !(pWalk->fEffective & PGM_PTATTRS_US_MASK))
+            ||  ((uErr & X86_TRAP_PF_ID) &&  (pWalk->fEffective & PGM_PTATTRS_NX_MASK))
+           )
+            return VERR_ACCESS_DENIED;
+    }
+
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    RTGCPHYS const GCPhysFault = PGM_A20_APPLY(pVCpu, GCPhysNested & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK);
+    GSTPDE const   PdeSrcDummy = { X86_PDE_P | X86_PDE_US | X86_PDE_RW | X86_PDE_A };
+
+    /* Take the big lock now. */
+    *pfLockTaken = true;
+    PGM_LOCK_VOID(pVM);
+
+    /*
+     * Check if this is an APIC-access page access (VMX specific).
+     */
+    RTGCPHYS const GCPhysApicAccess = CPUMGetGuestVmxApicAccessPageAddr(pVCpu);
+    if ((pWalk->GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK) == GCPhysApicAccess)
+    {
+        PPGMPAGE pPage;
+        rc = pgmPhysGetPageEx(pVM, PGM_A20_APPLY(pVCpu, GCPhysApicAccess), &pPage);
+        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
+        {
+            rc = VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, pWalk->GCPhys, pPage,
+                                                                               pfLockTaken));
+            return rc;
+        }
+    }
+
+#  ifdef PGM_WITH_MMIO_OPTIMIZATIONS
+    /*
+    * Check if this is an MMIO access.
+    */
+    if (uErr & X86_TRAP_PF_RSVD)
+    {
+        PPGMPAGE pPage;
+        rc = pgmPhysGetPageEx(pVM, PGM_A20_APPLY(pVCpu, (RTGCPHYS)GCPhysFault), &pPage);
+        if (RT_SUCCESS(rc) && PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
+            return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, GCPhysFault, pPage,
+                                                                                 pfLockTaken));
+        rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, GCPhysFault, 1, uErr);
+        AssertRC(rc);
+        HMInvalidatePhysPage(pVM, GCPhysFault);
+        return rc; /* Restart with the corrected entry. */
+    }
+#  endif /* PGM_WITH_MMIO_OPTIMIZATIONS */
+
+    /*
+     * Fetch the guest EPT page directory pointer.
+     */
+    const unsigned  iPDDst = ((GCPhysFault >> SHW_PD_SHIFT) & SHW_PD_MASK);
+    PEPTPD          pPDDst;
+    rc = pgmShwGetEPTPDPtr(pVCpu, GCPhysFault, NULL /* ppPdpt */, &pPDDst);
+    AssertMsgReturn(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc), RT_FAILURE_NP(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS);
+    Assert(pPDDst);
+
+    /*
+     * A common case is the not-present error caused by lazy page table syncing.
+     *
+     * It is IMPORTANT that we weed out any access to non-present shadow PDEs
+     * here so we can safely assume that the shadow PT is present when calling
+     * SyncPage later.
+     *
+     * On failure, we ASSUME that SyncPT is out of memory or detected some kind
+     * of mapping conflict and defer to SyncCR3 in R3.
+     * (Again, we do NOT support access handlers for non-present guest pages.)
+     *
+     */
+    if (   !(uErr & X86_TRAP_PF_P) /* not set means page not present instead of page protection violation */
+        && !SHW_PDE_IS_P(pPDDst->a[iPDDst]))
+    {
+        STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2SyncPT; });
+        LogFlow(("=>SyncPT GCPhysFault=%RGp\n", GCPhysFault));
+        rc = PGM_BTH_NAME(SyncPT)(pVCpu, 0 /* iPDSrc */, NULL /* pPDSrc */, GCPhysFault);
+        if (RT_SUCCESS(rc))
+            return rc;
+        Log(("SyncPT: %RGp failed!! rc=%Rrc\n", GCPhysFault, rc));
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3); /** @todo no need to do global sync, right? */
+        return VINF_PGM_SYNC_CR3;
+    }
+
+    /*
+     * Check if this fault address is flagged for special treatment,
+     * which means we'll have to figure out the physical address and
+     * check flags associated with it.
+     *
+     * ASSUME that we can limit any special access handling to pages
+     * in page tables which the guest believes to be present.
+     */
+    PPGMPAGE pPage;
+    rc = pgmPhysGetPageEx(pVM, GCPhysFault, &pPage);
+    if (RT_FAILURE(rc))
+    {
+        /*
+         * When the guest accesses invalid physical memory (e.g. probing
+         * of RAM or accessing a remapped MMIO range), then we'll fall
+         * back to the recompiler to emulate the instruction.
+         */
+        LogFlow(("PGM #PF: pgmPhysGetPageEx(%RGp) failed with %Rrc\n", GCPhysFault, rc));
+        STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.StatRZTrap0eHandlersInvalid);
+        STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2InvalidPhys; });
+        return VINF_EM_RAW_EMULATE_INSTR;
+    }
+
+    /*
+     * Any handlers for this page?
+     */
+    if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+        return VBOXSTRICTRC_TODO(PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(pVCpu, uErr, pRegFrame, GCPhysFault, pPage,
+                                                                             pfLockTaken));
+
+    /*
+     * We are here only if page is present in Guest page tables and
+     * trap is not handled by our handlers.
+     *
+     * Check it for page out-of-sync situation.
+     */
+    if (!(uErr & X86_TRAP_PF_P))
+    {
+        /*
+         * Page is not present in our page tables. Try to sync it!
+         */
+        if (uErr & X86_TRAP_PF_US)
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,PageOutOfSyncUser));
+        else /* supervisor */
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,PageOutOfSyncSupervisor));
+
+        if (PGM_PAGE_IS_BALLOONED(pPage))
+        {
+            /* Emulate reads from ballooned pages as they are not present in
+               our shadow page tables. (Required for e.g. Solaris guests; soft
+               ecc, random nr generator.) */
+            rc = VBOXSTRICTRC_TODO(PGMInterpretInstruction(pVM, pVCpu, pRegFrame, GCPhysFault));
+            LogFlow(("PGM: PGMInterpretInstruction balloon -> rc=%d pPage=%R[pgmpage]\n", rc, pPage));
+            STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,PageOutOfSyncBallloon));
+            STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2Ballooned; });
+            return rc;
+        }
+
+        rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, GCPhysFault, PGM_SYNC_NR_PAGES, uErr);
+        if (RT_SUCCESS(rc))
+        {
+            /* The page was successfully synced, return to the guest. */
+            STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2OutOfSync; });
+            return VINF_SUCCESS;
+        }
+    }
+    else
+    {
+        /*
+         * Write protected pages are made writable when the guest makes the
+         * first write to it.  This happens for pages that are shared, write
+         * monitored or not yet allocated.
+         *
+         * We may also end up here when CR0.WP=0 in the guest.
+         *
+         * Also, a side effect of not flushing global PDEs are out of sync
+         * pages due to physical monitored regions, that are no longer valid.
+         * Assume for now it only applies to the read/write flag.
+         */
+        if (uErr & X86_TRAP_PF_RW)
+        {
+            /*
+             * Check if it is a read-only page.
+             */
+            if (PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+            {
+                Assert(!PGM_PAGE_IS_ZERO(pPage));
+                AssertFatalMsg(!PGM_PAGE_IS_BALLOONED(pPage), ("Unexpected ballooned page at %RGp\n", GCPhysFault));
+                STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2MakeWritable; });
+
+                rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhysFault);
+                if (rc != VINF_SUCCESS)
+                {
+                    AssertMsg(rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("%Rrc\n", rc));
+                    return rc;
+                }
+                if (RT_UNLIKELY(VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY)))
+                    return VINF_EM_NO_MEMORY;
+            }
+
+            if (uErr & X86_TRAP_PF_US)
+                STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,PageOutOfSyncUserWrite));
+            else
+                STAM_COUNTER_INC(&pVCpu->pgm.s.Stats.CTX_MID_Z(Stat,PageOutOfSyncSupervisorWrite));
+
+            /*
+             * Sync the page.
+             *
+             * Note: Do NOT use PGM_SYNC_NR_PAGES here. That only works if the
+             *       page is not present, which is not true in this case.
+             */
+            rc = PGM_BTH_NAME(SyncPage)(pVCpu, PdeSrcDummy, GCPhysFault, 1, uErr);
+            if (RT_SUCCESS(rc))
+            {
+               /*
+                * Page was successfully synced, return to guest but invalidate
+                * the TLB first as the page is very likely to be in it.
+                */
+                HMInvalidatePhysPage(pVM, GCPhysFault);
+                STAM_STATS({ pVCpu->pgmr0.s.pStatTrap0eAttributionR0 = &pVCpu->pgm.s.Stats.StatRZTrap0eTime2OutOfSyncHndObs; });
+                return VINF_SUCCESS;
+            }
+        }
+    }
+
+    /*
+     * If we get here it is because something failed above, i.e. most like guru meditation time.
+     */
+    LogRelFunc(("returns rc=%Rrc GCPhysFault=%RGp uErr=%RX64 cs:rip=%04x:%08RX64\n", rc, GCPhysFault, (uint64_t)uErr,
+                pRegFrame->cs.Sel, pRegFrame->rip));
+    return rc;
+
+# else
+    RT_NOREF7(pVCpu, uErr, pRegFrame, GCPhysNested, fIsLinearAddrValid, GCPtrNested, pWalk);
     AssertReleaseMsgFailed(("Shw=%d Gst=%d is not implemented!\n", PGM_SHW_TYPE, PGM_GST_TYPE));
     return VERR_PGM_NOT_USED_IN_MODE;
 # endif

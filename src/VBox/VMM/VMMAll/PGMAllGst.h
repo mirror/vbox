@@ -375,7 +375,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPUCC pVCpu, RTGCPTR GCPtr, PPGMPTWALK pWalk)
         {
             pWalk->fSucceeded = true;
             pWalk->GCPtr      = GCPtr;
-            pWalk->GCPhys     = SlatWalk.GCPhys & PAGE_BASE_GC_MASK;
+            pWalk->GCPhys     = SlatWalk.GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
             pWalk->fEffective = X86_PTE_P | X86_PTE_RW | X86_PTE_US;
         }
         else

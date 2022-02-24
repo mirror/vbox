@@ -941,11 +941,14 @@ typedef enum IEMACCESSCRX
  *  physical address. */
 # define IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR          RT_BIT_32(0)
 /** Translating a nested-guest linear address failed accessing a
- *  paging-structure entry. */
+ *  paging-structure entry or updating accessed/dirty bits. */
 # define IEM_SLAT_FAIL_LINEAR_TO_PAGE_TABLE         RT_BIT_32(1)
 /** @} */
 
 PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) iemVmxApicAccessPageHandler;
+# ifndef IN_RING3
+DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  iemVmxApicAccessPagePfHandler;
+# endif
 #endif
 
 /**

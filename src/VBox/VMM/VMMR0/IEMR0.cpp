@@ -43,7 +43,7 @@ VMMR0_INT_DECL(int) IEMR0InitVM(PGVM pGVM)
     if (pGVM->cpum.ro.GuestFeatures.fVmx)
     {
         int rc = PGMR0HandlerPhysicalTypeSetUpContext(pGVM, PGMPHYSHANDLERKIND_ALL, 0 /*fFlags*/,
-                                                      iemVmxApicAccessPageHandler, NULL /*pfnzPfHandlerR0*/,
+                                                      iemVmxApicAccessPageHandler, iemVmxApicAccessPagePfHandler,
                                                       "VMX APIC-access page", pGVM->iem.s.hVmxApicAccessPage);
         AssertLogRelRCReturn(rc, rc);
     }

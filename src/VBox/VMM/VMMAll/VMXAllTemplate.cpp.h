@@ -310,6 +310,10 @@ static FNVMXEXITHANDLER            vmxHCExitInvpcidNested;
 static FNVMXEXITHANDLERNSRC        vmxHCExitErrInvalidGuestStateNested;
 static FNVMXEXITHANDLER            vmxHCExitInstrNested;
 static FNVMXEXITHANDLER            vmxHCExitInstrWithInfoNested;
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+static FNVMXEXITHANDLER            vmxHCExitEptViolationNested;
+static FNVMXEXITHANDLER            vmxHCExitEptMisconfigNested;
+# endif
 /** @} */
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
@@ -5410,8 +5414,8 @@ DECLINLINE(VBOXSTRICTRC) vmxHCHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
     uint32_t const uExitReason = pVmxTransient->uExitReason;
     switch (uExitReason)
     {
-        case VMX_EXIT_EPT_MISCONFIG:            return vmxHCExitEptMisconfig(pVCpu, pVmxTransient);
-        case VMX_EXIT_EPT_VIOLATION:            return vmxHCExitEptViolation(pVCpu, pVmxTransient);
+        case VMX_EXIT_EPT_MISCONFIG:            return vmxHCExitEptMisconfigNested(pVCpu, pVmxTransient);
+        case VMX_EXIT_EPT_VIOLATION:            return vmxHCExitEptViolationNested(pVCpu, pVmxTransient);
         case VMX_EXIT_XCPT_OR_NMI:              return vmxHCExitXcptOrNmiNested(pVCpu, pVmxTransient);
         case VMX_EXIT_IO_INSTR:                 return vmxHCExitIoInstrNested(pVCpu, pVmxTransient);
         case VMX_EXIT_HLT:                      return vmxHCExitHltNested(pVCpu, pVmxTransient);
@@ -10209,6 +10213,121 @@ HMVMX_EXIT_DECL vmxHCExitInstrWithInfoNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxT
     ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
     return IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
 }
+
+
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Nested-guest VM-exit handler for EPT violation (VMX_EXIT_EPT_VIOLATION).
+ * Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL vmxHCExitEptViolationNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+    Assert(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
+
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    int rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
+    AssertRCReturn(rc, rc);
+
+    vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
+    vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+    vmxHCReadGuestPhysicalAddrVmcs(pVCpu, pVmxTransient);
+
+    RTGCPHYS const GCPhysNested = pVmxTransient->uGuestPhysicalAddr;
+    uint64_t const uExitQual    = pVmxTransient->uExitQual;
+
+    RTGCPTR GCPtrNested;
+    bool const fIsLinearAddrValid = RT_BOOL(uExitQual & VMX_EXIT_QUAL_EPT_LINEAR_ADDR_VALID);
+    if (fIsLinearAddrValid)
+    {
+        vmxHCReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+        GCPtrNested = pVmxTransient->uGuestLinearAddr;
+    }
+    else
+        GCPtrNested = 0;
+
+    RTGCUINT const uErr = ((uExitQual & VMX_EXIT_QUAL_EPT_ACCESS_INSTR_FETCH) ? X86_TRAP_PF_ID : 0)
+                        | ((uExitQual & VMX_EXIT_QUAL_EPT_ACCESS_WRITE)       ? X86_TRAP_PF_RW : 0)
+                        | ((uExitQual & (  VMX_EXIT_QUAL_EPT_ENTRY_READ
+                                         | VMX_EXIT_QUAL_EPT_ENTRY_WRITE
+                                         | VMX_EXIT_QUAL_EPT_ENTRY_EXECUTE))  ? X86_TRAP_PF_P  : 0);
+
+    PGMPTWALK Walk;
+    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    VBOXSTRICTRC rcStrict = PGMR0NestedTrap0eHandlerNestedPaging(pVCpu, PGMMODE_EPT, uErr, CPUMCTX2CORE(pCtx), GCPhysNested,
+                                                                 fIsLinearAddrValid, GCPtrNested, &Walk);
+    if (RT_SUCCESS(rcStrict))
+    {
+        if (rcStrict == VINF_SUCCESS)
+            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+        else if (rcStrict == VINF_IEM_RAISED_XCPT)
+        {
+            ASMAtomicUoOrU64(&VCPU_2_VMXSTATE(pVCpu).fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+            rcStrict = VINF_SUCCESS;
+        }
+        return rcStrict;
+    }
+
+    vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
+    vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
+
+    VMXVEXITEVENTINFO ExitEventInfo;
+    RT_ZERO(ExitEventInfo);
+    ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
+    ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+
+    if (Walk.fFailed & PGM_WALKFAIL_EPT_VIOLATION)
+    {
+        VMXVEXITINFO ExitInfo;
+        RT_ZERO(ExitInfo);
+        ExitInfo.uReason            = VMX_EXIT_EPT_VIOLATION;
+        ExitInfo.cbInstr            = pVmxTransient->cbExitInstr;
+        ExitInfo.u64Qual            = pVmxTransient->uExitQual;
+        ExitInfo.u64GuestLinearAddr = pVmxTransient->uGuestLinearAddr;
+        ExitInfo.u64GuestPhysAddr   = pVmxTransient->uGuestPhysicalAddr;
+        return IEMExecVmxVmexitEptViolation(pVCpu, &ExitInfo, &ExitEventInfo);
+    }
+
+    Assert(Walk.fFailed & PGM_WALKFAIL_EPT_MISCONFIG);
+    return IEMExecVmxVmexitEptMisconfig(pVCpu, pVmxTransient->uGuestPhysicalAddr, &ExitEventInfo);
+}
+
+
+/**
+ * Nested-guest VM-exit handler for EPT misconfiguration (VMX_EXIT_EPT_MISCONFIG).
+ * Conditional VM-exit.
+ */
+HMVMX_EXIT_DECL vmxHCExitEptMisconfigNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+{
+    HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+    Assert(pVCpu->CTX_SUFF(pVM)->hmr0.s.fNestedPaging);
+
+    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+    int rc = vmxHCImportGuestState(pVCpu, pVmcsInfo, IEM_CPUMCTX_EXTRN_MUST_MASK);
+    AssertRCReturn(rc, rc);
+
+    vmxHCReadGuestPhysicalAddrVmcs(pVCpu, pVmxTransient);
+
+    PGMPTWALK Walk;
+    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    RTGCPHYS const GCPhysNested = pVmxTransient->uGuestPhysicalAddr;
+    VBOXSTRICTRC rcStrict = PGMR0NestedTrap0eHandlerNestedPaging(pVCpu, PGMMODE_EPT, X86_TRAP_PF_RSVD, CPUMCTX2CORE(pCtx),
+                                                                 GCPhysNested, false /* fIsLinearAddrValid */,
+                                                                 0 /* GCPtrNested*/, &Walk);
+    if (RT_SUCCESS(rcStrict))
+        return VINF_EM_RAW_EMULATE_INSTR;
+
+    vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
+    vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
+
+    VMXVEXITEVENTINFO ExitEventInfo;
+    RT_ZERO(ExitEventInfo);
+    ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
+    ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+
+    return IEMExecVmxVmexitEptMisconfig(pVCpu, pVmxTransient->uGuestPhysicalAddr, &ExitEventInfo);
+}
+# endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 /** @} */
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */

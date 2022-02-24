@@ -1596,6 +1596,7 @@ VMM_INT_DECL(int)       CPUMStopGuestVmxPremptTimer(PVMCPUCC pVCpu);
 VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxEptPagingEnabled(PCVMCPUCC pVCpu);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxEptPaePagingEnabled(PCVMCPUCC pVCpu);
+VMM_INT_DECL(uint64_t)  CPUMGetGuestVmxApicAccessPageAddr(PCVMCPUCC pVCpu);
 /** @} */
 
 /** @name Externalized State Helpers.
@@ -2334,7 +2335,7 @@ DECLINLINE(void) CPUMSetGuestVmxVmFail(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
  * @returns The APIC-access page guest-physical address.
  * @param   pCtx    Current CPU context.
  */
-DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCCPUMCTX pCtx)
+DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddrEx(PCCPUMCTX pCtx)
 {
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     return pCtx->hwvirt.vmx.Vmcs.u64AddrApicAccess.u;

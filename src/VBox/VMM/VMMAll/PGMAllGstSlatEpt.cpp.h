@@ -20,11 +20,10 @@ DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsPermValid)(PCVMCPUCC pVCpu, uint64_
 {
     if (!(uEntry & EPT_E_READ))
     {
-        if (uEntry & EPT_E_WRITE)
-            return false;
         Assert(!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmxModeBasedExecuteEpt);
-        if (   !RT_BF_GET(pVCpu->pgm.s.uEptVpidCapMsr, VMX_BF_EPT_VPID_CAP_EXEC_ONLY)
-            && (uEntry & EPT_E_EXECUTE))
+        Assert(!RT_BF_GET(pVCpu->pgm.s.uEptVpidCapMsr, VMX_BF_EPT_VPID_CAP_EXEC_ONLY));
+        NOREF(pVCpu);
+        if (uEntry & (EPT_E_WRITE | EPT_E_EXECUTE))
             return false;
     }
     return true;
@@ -34,12 +33,17 @@ DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsPermValid)(PCVMCPUCC pVCpu, uint64_
 DECLINLINE(bool) PGM_GST_SLAT_NAME_EPT(WalkIsMemTypeValid)(uint64_t uEntry, uint8_t uLevel)
 {
     Assert(uLevel <= 3 && uLevel >= 1); NOREF(uLevel);
-    uint64_t const fEptMemTypeMask = uEntry & VMX_BF_EPT_PT_MEMTYPE_MASK;
-    if (   fEptMemTypeMask == EPT_E_MEMTYPE_INVALID_2
-        || fEptMemTypeMask == EPT_E_MEMTYPE_INVALID_3
-        || fEptMemTypeMask == EPT_E_MEMTYPE_INVALID_7)
-        return false;
-    return true;
+    uint8_t const fEptMemTypeMask = uEntry & VMX_BF_EPT_PT_MEMTYPE_MASK;
+    switch (fEptMemTypeMask)
+    {
+        case EPT_E_MEMTYPE_WB:
+        case EPT_E_MEMTYPE_UC:
+        case EPT_E_MEMTYPE_WP:
+        case EPT_E_MEMTYPE_WT:
+        case EPT_E_MEMTYPE_WC:
+            return true;
+    }
+    return false;
 }
 
 
@@ -87,10 +91,10 @@ DECLINLINE(int) PGM_GST_SLAT_NAME_EPT(WalkReturnRsvdError)(PVMCPUCC pVCpu, PPGMP
  * @param   pVCpu               The cross context virtual CPU structure of the calling EMT.
  * @param   GCPhysNested        The nested-guest physical address to walk.
  * @param   fIsLinearAddrValid  Whether the linear-address in @c GCPtrNested caused
- *                              this page walk. If this is false, @c GCPtrNested
- *                              must be 0.
+ *                              this page walk.
  * @param   GCPtrNested         The nested-guest linear address that caused this
- *                              page walk.
+ *                              page walk. If @c fIsLinearAddrValid is false, pass
+ *                              0.
  * @param   pWalk               The page walk info.
  * @param   pGstWalk            The guest mode specific page walk info.
  */

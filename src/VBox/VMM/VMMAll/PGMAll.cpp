@@ -735,12 +735,12 @@ PGMMODEDATABTH const g_aPgmBothModeData[PGM_BOTH_MODE_DATA_ARRAY_SIZE] =
 #if   !defined(IN_RING3) && !defined(VBOX_STRICT)
 # define PGMMODEDATABTH_NULL_ENTRY()    { UINT32_MAX, UINT32_MAX, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 # define PGMMODEDATABTH_ENTRY(uShwT, uGstT, Nm) \
-    { uShwT, uGstT, Nm(InvalidatePage), Nm(SyncCR3), Nm(PrefetchPage), Nm(VerifyAccessSyncPage), Nm(MapCR3), Nm(UnmapCR3), Nm(Enter), Nm(Trap0eHandler) }
+    { uShwT, uGstT, Nm(InvalidatePage), Nm(SyncCR3), Nm(PrefetchPage), Nm(VerifyAccessSyncPage), Nm(MapCR3), Nm(UnmapCR3), Nm(Enter), Nm(Trap0eHandler), Nm(NestedTrap0eHandler) }
 
 #elif !defined(IN_RING3) && defined(VBOX_STRICT)
 # define PGMMODEDATABTH_NULL_ENTRY()    { UINT32_MAX, UINT32_MAX, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 # define PGMMODEDATABTH_ENTRY(uShwT, uGstT, Nm) \
-    { uShwT, uGstT, Nm(InvalidatePage), Nm(SyncCR3), Nm(PrefetchPage), Nm(VerifyAccessSyncPage), Nm(MapCR3), Nm(UnmapCR3), Nm(Enter), Nm(Trap0eHandler), Nm(AssertCR3) }
+    { uShwT, uGstT, Nm(InvalidatePage), Nm(SyncCR3), Nm(PrefetchPage), Nm(VerifyAccessSyncPage), Nm(MapCR3), Nm(UnmapCR3), Nm(Enter), Nm(Trap0eHandler), Nm(NestedTrap0eHandler), Nm(AssertCR3) }
 
 #elif defined(IN_RING3) && !defined(VBOX_STRICT)
 # define PGMMODEDATABTH_NULL_ENTRY()    { UINT32_MAX, UINT32_MAX, NULL, NULL, NULL, NULL, NULL, NULL }
@@ -1906,8 +1906,8 @@ static int pgmGstSlatWalkPhys(PVMCPUCC pVCpu, PGMSLAT enmSlatMode, RTGCPHYS GCPh
     {
         case PGMSLAT_EPT:
             pGstWalk->enmType = PGMPTWALKGSTTYPE_EPT;
-            return PGM_GST_SLAT_NAME_EPT(Walk)(pVCpu, GCPhysNested, false /* fIsLinearaddrValid */, NIL_RTGCPTR, pWalk,
-                                               &pGstWalk->u.Ept);
+            return PGM_GST_SLAT_NAME_EPT(Walk)(pVCpu, GCPhysNested, false /* fIsLinearaddrValid */, 0 /* GCPtrNested */,
+                                               pWalk, &pGstWalk->u.Ept);
 
         default:
             AssertFailed();
@@ -2990,7 +2990,7 @@ VMMDECL(int) PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t 
 
     /* Flush the TLB */
     PGM_INVL_VCPU_TLBS(pVCpu);
-    return PGMHCChangeMode(pVCpu->CTX_SUFF(pVM), pVCpu, enmGuestMode);
+    return PGMHCChangeMode(pVCpu->CTX_SUFF(pVM), pVCpu, enmGuestMode, fForce);
 }
 
 
@@ -3225,8 +3225,9 @@ static PGMMODE pgmCalcShadowMode(PVMCC pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   enmGuestMode    The new guest mode. This is assumed to be different from
  *                          the current mode.
+ * @param   fForce          Whether to force a shadow paging mode change.
  */
-VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMode)
+VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMode, bool fForce)
 {
     Log(("PGMHCChangeMode: Guest mode: %s -> %s\n", PGMGetModeName(pVCpu->pgm.s.enmGuestMode), PGMGetModeName(enmGuestMode)));
     STAM_REL_COUNTER_INC(&pVCpu->pgm.s.cGuestModeChanges);
@@ -3234,15 +3235,16 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
     /*
      * Calc the shadow mode and switcher.
      */
-    PGMMODE enmShadowMode = pgmCalcShadowMode(pVM, enmGuestMode, pVM->pgm.s.enmHostMode, pVCpu->pgm.s.enmShadowMode);
+    PGMMODE const enmShadowMode = pgmCalcShadowMode(pVM, enmGuestMode, pVM->pgm.s.enmHostMode, pVCpu->pgm.s.enmShadowMode);
+    bool const fShadowModeChanged = enmShadowMode != pVCpu->pgm.s.enmShadowMode || fForce;
 
     /*
      * Exit old mode(s).
      */
     /* shadow */
-    if (enmShadowMode != pVCpu->pgm.s.enmShadowMode)
+    if (fShadowModeChanged)
     {
-        LogFlow(("PGMHCChangeMode: Shadow mode: %s -> %s\n",  PGMGetModeName(pVCpu->pgm.s.enmShadowMode), PGMGetModeName(enmShadowMode)));
+        LogFlow(("PGMHCChangeMode: Shadow mode: %s -> %s\n", PGMGetModeName(pVCpu->pgm.s.enmShadowMode), PGMGetModeName(enmShadowMode)));
         uintptr_t idxOldShw = pVCpu->pgm.s.idxShadowModeData;
         if (   idxOldShw < RT_ELEMENTS(g_aPgmShadowModeData)
             && g_aPgmShadowModeData[idxOldShw].pfnExit)
@@ -3309,7 +3311,7 @@ VMM_INT_DECL(int) PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMod
     /*
      * Enter new shadow mode (if changed).
      */
-    if (enmShadowMode != pVCpu->pgm.s.enmShadowMode)
+    if (fShadowModeChanged)
     {
         pVCpu->pgm.s.enmShadowMode = enmShadowMode;
         int rc = g_aPgmShadowModeData[idxNewShw].pfnEnter(pVCpu, enmGuestMode >= PGMMODE_AMD64);
@@ -3579,7 +3581,7 @@ VMM_INT_DECL(const char *) PGMGetSlatModeName(PGMSLAT enmSlatMode)
         default:                    return "Unknown";
     }
 }
-#endif
+#endif  /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 
 /**

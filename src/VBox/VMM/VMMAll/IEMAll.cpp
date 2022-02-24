@@ -16365,6 +16365,49 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvept(PVMCPUCC pVCpu, PCVMXVEXITINFO p
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
+
+
+/**
+ * Interface for HM and EM to emulate a VM-exit due to an EPT violation.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   pExitInfo       Pointer to the VM-exit information.
+ * @param   pExitEventInfo  Pointer to the VM-exit event information.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitEptViolation(PVMCPUCC pVCpu, PCVMXVEXITINFO pExitInfo,
+                                                        PCVMXVEXITEVENTINFO pExitEventInfo)
+{
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK | CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = iemVmxVmexitEptViolationWithInfo(pVCpu, pExitInfo, pExitEventInfo);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to emulate a VM-exit due to an EPT misconfiguration.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   GCPhysAddr      The nested-guest physical address causing the EPT
+ *                          misconfiguration.
+ * @param   pExitEventInfo  Pointer to the VM-exit event information.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitEptMisconfig(PVMCPUCC pVCpu, RTGCPHYS GCPhysAddr, PCVMXVEXITEVENTINFO pExitEventInfo)
+{
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK | CPUMCTX_EXTRN_INHIBIT_INT | CPUMCTX_EXTRN_INHIBIT_NMI);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = iemVmxVmexitEptMisconfigWithInfo(pVCpu, GCPhysAddr, pExitEventInfo);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
 # endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
 
 
@@ -16383,11 +16426,9 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVMCC pVM, PVMCPUCC p
     if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
     {
         Assert(CPUMIsGuestVmxProcCtls2Set(IEM_GET_CTX(pVCpu), VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
-        Assert(CPUMGetGuestVmxApicAccessPageAddr(IEM_GET_CTX(pVCpu)) == GCPhysAccessBase);
+        Assert(CPUMGetGuestVmxApicAccessPageAddrEx(IEM_GET_CTX(pVCpu)) == GCPhysAccessBase);
 
-        /** @todo NSTVMX: How are we to distinguish instruction fetch accesses here?
-         *        Currently they will go through as read accesses. */
-        uint32_t const fAccess   = enmAccessType == PGMACCESSTYPE_WRITE ? IEM_ACCESS_TYPE_WRITE : IEM_ACCESS_TYPE_READ;
+        uint32_t const fAccess   = enmAccessType == PGMACCESSTYPE_WRITE ? IEM_ACCESS_DATA_W : IEM_ACCESS_DATA_R;
         uint16_t const offAccess = GCPhysFault & GUEST_PAGE_OFFSET_MASK;
         VBOXSTRICTRC rcStrict = iemVmxVirtApicAccessMem(pVCpu, offAccess, cbBuf, pvBuf, fAccess);
         if (RT_FAILURE(rcStrict))
@@ -16397,7 +16438,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVMCC pVM, PVMCPUCC p
         return VINF_SUCCESS;
     }
 
-    Log(("iemVmxApicAccessPageHandler: Access outside VMX non-root mode, deregistering page at %#RGp\n", GCPhysAccessBase));
+    LogFunc(("Accessed outside VMX non-root mode, deregistering page handler for %#RGp\n", GCPhysAccessBase));
     int rc = PGMHandlerPhysicalDeregister(pVM, GCPhysAccessBase);
     if (RT_FAILURE(rc))
         return rc;
@@ -16406,7 +16447,58 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVMCC pVM, PVMCPUCC p
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
+
+# ifndef IN_RING3
+/**
+ * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
+ *      \#PF access handler callback for guest VMX APIC-access page.}
+ */
+DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame,
+                                                         RTGCPTR pvFault, RTGCPHYS GCPhysFault, uint64_t uUser)
+
+{
+    RT_NOREF4(pVM, pRegFrame, pvFault, uUser);
+
+    /** @todo We lack information about such as the current instruction length, IDT
+     *        vectoring info etc. These need to be queried from HMR0. */
+    RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+    if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
+    {
+        Assert(CPUMIsGuestVmxProcCtls2Set(IEM_GET_CTX(pVCpu), VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
+        Assert(CPUMGetGuestVmxApicAccessPageAddrEx(IEM_GET_CTX(pVCpu)) == GCPhysAccessBase);
+
+        uint32_t fAccess;
+        if (uErr & X86_TRAP_PF_ID)
+            fAccess = IEM_ACCESS_INSTRUCTION;
+        else if (uErr & X86_TRAP_PF_RW)
+            fAccess = IEM_ACCESS_DATA_W;
+        else
+            fAccess = IEM_ACCESS_DATA_R;
+
+        uint16_t const offAccess = GCPhysFault & GUEST_PAGE_OFFSET_MASK;
+        bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, 0 /* cbAccess */, fAccess);
+        if (fIntercept)
+        {
+            /** @todo Once HMR0 interface for querying VMXTRANSIENT info is available, use
+             *        iemVmxVmexitApicAccessWithInfo instead. This is R0-only code anyway. */
+            VBOXSTRICTRC rcStrict = iemVmxVmexitApicAccess(pVCpu, offAccess, fAccess);
+            return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+        }
+
+        /* The access isn't intercepted, which means it needs to be virtualized. */
+        return VINF_EM_RAW_EMULATE_INSTR;
+    }
+
+    LogFunc(("Accessed outside VMX non-root mode, deregistering page handler for %#RGp\n", GCPhysAccessBase));
+    int rc = PGMHandlerPhysicalDeregister(pVM, GCPhysAccessBase);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    return VINF_SUCCESS;
+}
+# endif /* !IN_RING3 */
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
+
 
 #ifdef IN_RING3
 

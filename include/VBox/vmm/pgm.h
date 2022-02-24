@@ -507,8 +507,7 @@ typedef struct PGMPTWALK
      *  @remarks only valid if fIsSlat is set. */
     RTGCPHYS        GCPhysNested;
 
-    /** The physical address that is the result of the walk (output).
-     * @remarks This is page aligned and only valid if fSucceeded is set. */
+    /** The physical address that is the result of the walk (output). */
     RTGCPHYS        GCPhys;
 
     /** Set if the walk succeeded. */
@@ -612,7 +611,7 @@ VMMDECL(int)        PGMFlushTLB(PVMCPUCC pVCpu, uint64_t cr3, bool fGlobal);
 VMMDECL(int)        PGMSyncCR3(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal);
 VMMDECL(int)        PGMUpdateCR3(PVMCPUCC pVCpu, uint64_t cr3);
 VMMDECL(int)        PGMChangeMode(PVMCPUCC pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer, bool fForce);
-VMM_INT_DECL(int)   PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMode);
+VMM_INT_DECL(int)   PGMHCChangeMode(PVMCC pVM, PVMCPUCC pVCpu, PGMMODE enmGuestMode, bool fForce);
 VMMDECL(void)       PGMCr0WpEnabled(PVMCPUCC pVCpu);
 VMMDECL(PGMMODE)    PGMGetGuestMode(PVMCPU pVCpu);
 VMMDECL(PGMMODE)    PGMGetShadowMode(PVMCPU pVCpu);
@@ -948,6 +947,12 @@ VMMR0DECL(int)       PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, P
 VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode,
                                                       PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, uint32_t uErr);
 VMMR0_INT_DECL(int)  PGMR0PoolGrow(PGVM pGVM, VMCPUID idCpu);
+
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+VMMR0DECL(VBOXSTRICTRC) PGMR0NestedTrap0eHandlerNestedPaging(PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
+                                                             PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNested,
+                                                             bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk);
+# endif
 /** @} */
 #endif /* IN_RING0 */
 

@@ -3710,19 +3710,32 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPUCC pVCpu, uint8_t uVector, uint3
  * @param   GCPhysAddr      The physical address causing the EPT misconfiguration.
  *                          This need not be page aligned (e.g. nested-guest in real
  *                          mode).
- * @param   pExitEventInfo  Pointer to the VM-exit event information. Optional, can
- *                          be NULL.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptMisconfig(PVMCPUCC pVCpu, RTGCPHYS GCPhysAddr, PCVMXVEXITEVENTINFO pExitEventInfo)
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptMisconfig(PVMCPUCC pVCpu, RTGCPHYS GCPhysAddr)
 {
-    if (pExitEventInfo)
-    {
-        iemVmxVmcsSetExitIntInfo(pVCpu, pExitEventInfo->uExitIntInfo);
-        iemVmxVmcsSetExitIntErrCode(pVCpu, pExitEventInfo->uExitIntErrCode);
-        iemVmxVmcsSetIdtVectoringInfo(pVCpu, pExitEventInfo->uIdtVectoringInfo);
-        iemVmxVmcsSetIdtVectoringErrCode(pVCpu, pExitEventInfo->uIdtVectoringErrCode);
-    }
+    iemVmxVmcsSetExitGuestPhysAddr(pVCpu, GCPhysAddr);
+    return iemVmxVmexit(pVCpu, VMX_EXIT_EPT_MISCONFIG, 0 /* u64ExitQual */);
+}
 
+
+/**
+ * VMX VM-exit handler for EPT misconfiguration.
+ *
+ * This is intended for EPT misconfigurations where the caller provides all the
+ * relevant VM-exit information.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   GCPhysAddr      The physical address causing the EPT misconfiguration.
+ *                          This need not be page aligned (e.g. nested-guest in real
+ *                          mode).
+ * @param   pExitEventInfo  Pointer to the VM-exit event information.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptMisconfigWithInfo(PVMCPUCC pVCpu, RTGCPHYS GCPhysAddr, PCVMXVEXITEVENTINFO pExitEventInfo)
+{
+    Assert(pExitEventInfo);
+    Assert(!VMX_EXIT_INT_INFO_IS_VALID(pExitEventInfo->uExitIntInfo));
+    iemVmxVmcsSetIdtVectoringInfo(pVCpu, pExitEventInfo->uIdtVectoringInfo);
+    iemVmxVmcsSetIdtVectoringErrCode(pVCpu, pExitEventInfo->uIdtVectoringErrCode);
     iemVmxVmcsSetExitGuestPhysAddr(pVCpu, GCPhysAddr);
     return iemVmxVmexit(pVCpu, VMX_EXIT_EPT_MISCONFIG, 0 /* u64ExitQual */);
 }
@@ -3744,26 +3757,30 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptMisconfig(PVMCPUCC pVCpu, RTGCPHYS GCPhys
  * @param   cbInstr             The VM-exit instruction length.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAccess, uint32_t fSlatFail, uint64_t fEptAccess,
-                                                 RTGCPHYS GCPhysAddr, bool fLinearAddrValid, uint64_t GCPtrAddr, uint8_t cbInstr)
+                                                 RTGCPHYS GCPhysAddr, bool fIsLinearAddrValid, uint64_t GCPtrAddr,
+                                                 uint8_t cbInstr)
 {
     /*
      * If the linear address isn't valid (can happen when loading PDPTEs
      * as part of MOV CR execution) the linear address field is undefined.
      * While we can leave it this way, it's preferrable to zero it for consistency.
      */
-    Assert(fLinearAddrValid || GCPtrAddr == 0);
+    Assert(fIsLinearAddrValid || GCPtrAddr == 0);
 
     uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
-    uint8_t const fSupportsAccessDirty = fCaps & MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY;
+    bool const fSupportsAccessDirty = RT_BOOL(fCaps & MSR_IA32_VMX_EPT_VPID_CAP_ACCESS_DIRTY);
 
-    uint8_t const fDataRead      = ((fAccess & IEM_ACCESS_DATA_R)  == IEM_ACCESS_DATA_R)  | fSupportsAccessDirty;
-    uint8_t const fDataWrite     = ((fAccess & IEM_ACCESS_DATA_RW) == IEM_ACCESS_DATA_RW) | fSupportsAccessDirty;
-    uint8_t const fInstrFetch    = (fAccess & IEM_ACCESS_INSTRUCTION) == IEM_ACCESS_INSTRUCTION;
-    bool const fEptRead          = RT_BOOL(fEptAccess & EPT_E_READ);
-    bool const fEptWrite         = RT_BOOL(fEptAccess & EPT_E_WRITE);
-    bool const fEptExec          = RT_BOOL(fEptAccess & EPT_E_EXECUTE);
-    bool const fNmiUnblocking    = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
-    bool const fLinearToPhysAddr = fLinearAddrValid & RT_BOOL(fSlatFail & IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR);
+    uint32_t const fDataRdMask     = IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_READ;
+    uint32_t const fDataWrMask     = IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_WRITE;
+    uint32_t const fInstrMask      = IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_EXEC;
+    bool const fDataRead           = ((fAccess & fDataRdMask) == IEM_ACCESS_DATA_R) | fSupportsAccessDirty;
+    bool const fDataWrite          = ((fAccess & fDataWrMask) == IEM_ACCESS_DATA_W) | fSupportsAccessDirty;
+    bool const fInstrFetch         = ((fAccess & fInstrMask)  == IEM_ACCESS_INSTRUCTION);
+    bool const fEptRead            = RT_BOOL(fEptAccess & EPT_E_READ);
+    bool const fEptWrite           = RT_BOOL(fEptAccess & EPT_E_WRITE);
+    bool const fEptExec            = RT_BOOL(fEptAccess & EPT_E_EXECUTE);
+    bool const fNmiUnblocking      = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
+    bool const fIsLinearToPhysAddr = fIsLinearAddrValid & RT_BOOL(fSlatFail & IEM_SLAT_FAIL_LINEAR_TO_PHYS_ADDR);
 
     uint64_t const u64ExitQual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ACCESS_READ,         fDataRead)
                                | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ACCESS_WRITE,        fDataWrite)
@@ -3771,8 +3788,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAcces
                                | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ENTRY_READ,          fEptRead)
                                | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ENTRY_WRITE,         fEptWrite)
                                | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_ENTRY_EXECUTE,       fEptExec)
-                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_VALID,   fLinearAddrValid)
-                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_LINEAR_TO_PHYS_ADDR, fLinearToPhysAddr)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_VALID,   fIsLinearAddrValid)
+                               | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_LINEAR_TO_PHYS_ADDR, fIsLinearToPhysAddr)
                                | RT_BF_MAKE(VMX_BF_EXIT_QUAL_EPT_NMI_UNBLOCK_IRET,    fNmiUnblocking);
 
 #ifdef VBOX_STRICT
@@ -3806,10 +3823,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolation(PVMCPUCC pVCpu, uint32_t fAcces
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolationWithInfo(PVMCPUCC pVCpu, PCVMXVEXITINFO pExitInfo,
                                                          PCVMXVEXITEVENTINFO pExitEventInfo)
 {
+    Assert(pExitInfo);
+    Assert(pExitEventInfo);
     Assert(pExitInfo->uReason == VMX_EXIT_EPT_VIOLATION);
+    Assert(!VMX_EXIT_INT_INFO_IS_VALID(pExitEventInfo->uExitIntInfo));
 
-    iemVmxVmcsSetExitIntInfo(pVCpu, pExitEventInfo->uExitIntInfo);
-    iemVmxVmcsSetExitIntErrCode(pVCpu, pExitEventInfo->uExitIntErrCode);
     iemVmxVmcsSetIdtVectoringInfo(pVCpu, pExitEventInfo->uIdtVectoringInfo);
     iemVmxVmcsSetIdtVectoringErrCode(pVCpu, pExitEventInfo->uIdtVectoringErrCode);
 
@@ -3817,7 +3835,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolationWithInfo(PVMCPUCC pVCpu, PCVMXVE
     if (pExitInfo->u64Qual & VMX_BF_EXIT_QUAL_EPT_LINEAR_ADDR_VALID_MASK)
         iemVmxVmcsSetExitGuestLinearAddr(pVCpu, pExitInfo->u64GuestLinearAddr);
     else
-        iemVmxVmcsSetExitGuestLinearAddr(pVCpu,  0);
+        iemVmxVmcsSetExitGuestLinearAddr(pVCpu, 0);
     iemVmxVmcsSetExitInstrLen(pVCpu, pExitInfo->cbInstr);
     return iemVmxVmexit(pVCpu, VMX_EXIT_EPT_VIOLATION, pExitInfo->u64Qual);
 }
@@ -3833,8 +3851,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEptViolationWithInfo(PVMCPUCC pVCpu, PCVMXVE
  * @param   cbInstr     The VM-exit instruction length if applicable. Pass 0 if not
  *                      applicable.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32_t fAccess, uint32_t fSlatFail,
-                                        uint8_t cbInstr)
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32_t fAccess, uint32_t fSlatFail, uint8_t cbInstr)
 {
     Assert(pWalk->fIsSlat);
     Assert(pWalk->fFailed & PGM_WALKFAIL_EPT);
@@ -3851,7 +3868,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32
 
     Log(("EptMisconfig: cs:rip=%x:%#RX64 fAccess=%#RX32\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, fAccess));
     Assert(pWalk->fFailed & PGM_WALKFAIL_EPT_MISCONFIG);
-    return iemVmxVmexitEptMisconfig(pVCpu, pWalk->GCPhysNested, NULL /* pExitEventInfo */);
+    return iemVmxVmexitEptMisconfig(pVCpu, pWalk->GCPhysNested);
 }
 
 
@@ -3860,18 +3877,15 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEpt(PVMCPUCC pVCpu, PPGMPTWALK pWalk, uint32
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offAccess   The offset of the register being accessed.
- * @param   fAccess     The type of access (must contain IEM_ACCESS_TYPE_READ or
- *                      IEM_ACCESS_TYPE_WRITE or IEM_ACCESS_INSTRUCTION).
+ * @param   fAccess     The type of access, see IEM_ACCESS_XXX.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitApicAccess(PVMCPUCC pVCpu, uint16_t offAccess, uint32_t fAccess)
 {
-    Assert((fAccess & IEM_ACCESS_TYPE_READ) || (fAccess & IEM_ACCESS_TYPE_WRITE) || (fAccess & IEM_ACCESS_INSTRUCTION));
-
     VMXAPICACCESS enmAccess;
     bool const fInEventDelivery = IEMGetCurrentXcpt(pVCpu, NULL, NULL, NULL, NULL);
     if (fInEventDelivery)
         enmAccess = VMXAPICACCESS_LINEAR_EVENT_DELIVERY;
-    else if (fAccess & IEM_ACCESS_INSTRUCTION)
+    else if ((fAccess & (IEM_ACCESS_WHAT_MASK | IEM_ACCESS_TYPE_MASK)) == IEM_ACCESS_INSTRUCTION)
         enmAccess = VMXAPICACCESS_LINEAR_INSTR_FETCH;
     else if (fAccess & IEM_ACCESS_TYPE_WRITE)
         enmAccess = VMXAPICACCESS_LINEAR_WRITE;
@@ -4126,8 +4140,7 @@ IEM_STATIC void iemVmxVirtApicClearVectorInReg(PVMCPUCC pVCpu, uint16_t offReg, 
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offAccess   The offset of the register being accessed.
  * @param   cbAccess    The size of the access in bytes.
- * @param   fAccess     The type of access (must be IEM_ACCESS_TYPE_READ or
- *                      IEM_ACCESS_TYPE_WRITE).
+ * @param   fAccess     The type of access, see IEM_ACCESS_XXX.
  *
  * @remarks This must not be used for MSR-based APIC-access page accesses!
  * @sa      iemVmxVirtApicAccessMsrWrite, iemVmxVirtApicAccessMsrRead.
@@ -4135,7 +4148,6 @@ IEM_STATIC void iemVmxVirtApicClearVectorInReg(PVMCPUCC pVCpu, uint16_t offReg, 
 IEM_STATIC bool iemVmxVirtApicIsMemAccessIntercepted(PVMCPUCC pVCpu, uint16_t offAccess, size_t cbAccess, uint32_t fAccess)
 {
     PCVMXVVMCS const pVmcs = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
-    Assert(fAccess == IEM_ACCESS_TYPE_READ || fAccess == IEM_ACCESS_TYPE_WRITE);
 
     /*
      * We must cause a VM-exit if any of the following are true:
@@ -4296,9 +4308,10 @@ IEM_STATIC bool iemVmxVirtApicIsMemAccessIntercepted(PVMCPUCC pVCpu, uint16_t of
  * page-faults but do not use the address to access memory.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pGCPhysAccess   Pointer to the guest-physical address used.
+ * @param   pGCPhysAccess   Pointer to the guest-physical address accessed.
+ * @param   fAccess         The type of access, see IEM_ACCESS_XXX.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPUCC pVCpu, PRTGCPHYS pGCPhysAccess)
+IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPUCC pVCpu, PRTGCPHYS pGCPhysAccess, uint32_t fAccess)
 {
     Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
     Assert(pGCPhysAccess);
@@ -4310,7 +4323,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPUCC pVCpu, PRTGCPHYS pGC
     if (GCPhysAccess == GCPhysApic)
     {
         uint16_t const offAccess = *pGCPhysAccess & GUEST_PAGE_OFFSET_MASK;
-        uint32_t const fAccess   = IEM_ACCESS_TYPE_READ;
         uint16_t const cbAccess  = 1;
         bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, cbAccess, fAccess);
         if (fIntercept)
@@ -4337,17 +4349,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPUCC pVCpu, PRTGCPHYS pGC
  * @param   cbAccess    The size of the access in bytes.
  * @param   pvData      Pointer to the data being written or where to store the data
  *                      being read.
- * @param   fAccess     The type of access (must contain IEM_ACCESS_TYPE_READ or
- *                      IEM_ACCESS_TYPE_WRITE or IEM_ACCESS_INSTRUCTION).
+ * @param   fAccess     The type of access, see IEM_ACCESS_XXX.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPUCC pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData,
                                                 uint32_t fAccess)
 {
     Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
     Assert(pvData);
-    Assert(   (fAccess & IEM_ACCESS_TYPE_READ)
-           || (fAccess & IEM_ACCESS_TYPE_WRITE)
-           || (fAccess & IEM_ACCESS_INSTRUCTION));
 
     bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, cbAccess, fAccess);
     if (fIntercept)
@@ -4388,6 +4396,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMem(PVMCPUCC pVCpu, uint16_t offAcce
          *
          * See Intel spec. 29.4.2 "Virtualizing Reads from the APIC-Access Page".
          */
+        Assert(fAccess & IEM_ACCESS_TYPE_READ);
+
         Assert(cbAccess <= 4);
         Assert(offAccess < XAPIC_OFF_END + 4);
         static uint32_t const s_auAccessSizeMasks[] = { 0, 0xff, 0xffff, 0xffffff, 0xffffffff };

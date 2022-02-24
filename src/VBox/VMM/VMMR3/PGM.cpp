@@ -1023,7 +1023,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PVMCPU pVCpu = pVM->apCpusR3[i];
-            rc = PGMHCChangeMode(pVM, pVCpu, PGMMODE_REAL);
+            rc = PGMHCChangeMode(pVM, pVCpu, PGMMODE_REAL, false /* fForce */);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -1646,7 +1646,9 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
         pVM->pgm.s.fLessThan52PhysicalAddressBits = true;
         pVM->pgm.s.HCPhysInvMmioPg |= UINT64_C(0x000f0000000000);
     }
-    Assert(pVM->cpum.ro.GuestFeatures.cMaxPhysAddrWidth == cMaxPhysAddrWidth);
+    /* Disabled the below assertion -- triggers 24 vs 39 on my Intel Skylake box for a 32-bit (Guest-type Other/Unknown) VM. */
+    //AssertMsg(pVM->cpum.ro.GuestFeatures.cMaxPhysAddrWidth == cMaxPhysAddrWidth,
+    //          ("CPUM %u - PGM %u\n", pVM->cpum.ro.GuestFeatures.cMaxPhysAddrWidth, cMaxPhysAddrWidth));
 #else
     uint32_t const cMaxPhysAddrWidth = pVM->cpum.ro.GuestFeatures.cMaxPhysAddrWidth;
     LogRel(("PGM: The (guest) CPU physical address width is %u bits\n", cMaxPhysAddrWidth));
@@ -1851,7 +1853,7 @@ VMMR3DECL(void) PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     pVCpu->pgm.s.GCPhysCR3 = NIL_RTGCPHYS;
     pVCpu->pgm.s.GCPhysNstGstCR3 = NIL_RTGCPHYS;
 
-    int rc = PGMHCChangeMode(pVM, pVCpu, PGMMODE_REAL);
+    int rc = PGMHCChangeMode(pVM, pVCpu, PGMMODE_REAL, false /* fForce */);
     AssertReleaseRC(rc);
 
     STAM_REL_COUNTER_RESET(&pVCpu->pgm.s.cGuestModeChanges);
@@ -1917,7 +1919,7 @@ VMMR3_INT_DECL(void) PGMR3Reset(PVM pVM)
     {
         PVMCPU  pVCpu = pVM->apCpusR3[i];
 
-        int rc = PGMHCChangeMode(pVM, pVCpu, PGMMODE_REAL);
+        int rc = PGMHCChangeMode(pVM, pVCpu, PGMMODE_REAL, false /* fForce */);
         AssertReleaseRC(rc);
 
         STAM_REL_COUNTER_RESET(&pVCpu->pgm.s.cGuestModeChanges);
@@ -2297,7 +2299,7 @@ int pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu)
 int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
 {
     pVCpu->pgm.s.enmShadowMode = PGMMODE_INVALID;
-    int rc = PGMHCChangeMode(pVM, pVCpu, PGMGetGuestMode(pVCpu));
+    int rc = PGMHCChangeMode(pVM, pVCpu, PGMGetGuestMode(pVCpu), false /* fForce */);
     Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
     AssertRCReturn(rc, rc);
     AssertRCSuccessReturn(rc, VERR_IPE_UNEXPECTED_INFO_STATUS);

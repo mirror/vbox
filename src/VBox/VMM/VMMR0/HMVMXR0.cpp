@@ -42,6 +42,9 @@
 #include "VMXInternal.h"
 #include "dtrace/VBoxVMM.h"
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #ifdef DEBUG_ramshankar
 # define HMVMX_ALWAYS_SAVE_GUEST_RFLAGS
 # define HMVMX_ALWAYS_SAVE_RO_GUEST_STATE
@@ -57,14 +60,8 @@
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-
 /**
  * VMX page allocation information.
  */
@@ -85,13 +82,8 @@ AssertCompileSizeAlignment(VMXPAGEALLOCINFO, 8);
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient);
-static int hmR0VmxExitHostNmi(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo);
+static bool     hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient);
+static int      hmR0VmxExitHostNmi(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo);
 
 
 /**
@@ -3519,14 +3511,14 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPUCC pVCpu, uint64_t uHostCr4)
     int rc;
     rc = VMXWriteVmcs16(VMX_VMCS16_HOST_CS_SEL,  pVCpu->hmr0.s.vmx.RestoreHost.uHostSelCS);       AssertRC(rc);
     rc = VMXWriteVmcs16(VMX_VMCS16_HOST_SS_SEL,  pVCpu->hmr0.s.vmx.RestoreHost.uHostSelSS);       AssertRC(rc);
-    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_DS_SEL,  uSelDS);                                       AssertRC(rc);
-    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_ES_SEL,  uSelES);                                       AssertRC(rc);
-    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_FS_SEL,  uSelFS);                                       AssertRC(rc);
-    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_GS_SEL,  uSelGS);                                       AssertRC(rc);
+    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_DS_SEL,  uSelDS);                                         AssertRC(rc);
+    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_ES_SEL,  uSelES);                                         AssertRC(rc);
+    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_FS_SEL,  uSelFS);                                         AssertRC(rc);
+    rc = VMXWriteVmcs16(VMX_VMCS16_HOST_GS_SEL,  uSelGS);                                         AssertRC(rc);
     rc = VMXWriteVmcs16(VMX_VMCS16_HOST_TR_SEL,  pVCpu->hmr0.s.vmx.RestoreHost.uHostSelTR);       AssertRC(rc);
     rc = VMXWriteVmcsNw(VMX_VMCS_HOST_GDTR_BASE, pVCpu->hmr0.s.vmx.RestoreHost.HostGdtr.uAddr);   AssertRC(rc);
     rc = VMXWriteVmcsNw(VMX_VMCS_HOST_IDTR_BASE, pVCpu->hmr0.s.vmx.RestoreHost.HostIdtr.uAddr);   AssertRC(rc);
-    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_TR_BASE,   uTRBase);                                      AssertRC(rc);
+    rc = VMXWriteVmcsNw(VMX_VMCS_HOST_TR_BASE,   uTRBase);                                        AssertRC(rc);
     rc = VMXWriteVmcsNw(VMX_VMCS_HOST_FS_BASE,   pVCpu->hmr0.s.vmx.RestoreHost.uHostFSBase);      AssertRC(rc);
     rc = VMXWriteVmcsNw(VMX_VMCS_HOST_GS_BASE,   pVCpu->hmr0.s.vmx.RestoreHost.uHostGSBase);      AssertRC(rc);
 
@@ -5588,18 +5580,15 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT
  * this not done as part of exporting guest state, see @bugref{8721}.
  *
  * @returns VBox status code.
- * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   u64MsrApicBase  The guest-physical address of the APIC access page.
  */
-static int hmR0VmxMapHCApicAccessPage(PVMCPUCC pVCpu)
+static int hmR0VmxMapHCApicAccessPage(PVMCPUCC pVCpu, RTGCPHYS GCPhysApicBase)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    uint64_t const u64MsrApicBase = APICGetBaseMsrNoCheck(pVCpu);
+    Assert(GCPhysApicBase);
 
-    Assert(PDMHasApic(pVM));
-    Assert(u64MsrApicBase);
-
-    RTGCPHYS const GCPhysApicBase = u64MsrApicBase & PAGE_BASE_GC_MASK;
-    Log4Func(("Mappping HC APIC-access page at %#RGp\n", GCPhysApicBase));
+    LogFunc(("Mappping HC APIC-access page at %#RGp\n", GCPhysApicBase));
 
     /* Unalias the existing mapping. */
     int rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
@@ -5610,8 +5599,6 @@ static int hmR0VmxMapHCApicAccessPage(PVMCPUCC pVCpu)
     rc = IOMR0MmioMapMmioHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hmr0.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
     AssertRCReturn(rc, rc);
 
-    /* Update the per-VCPU cache of the APIC base MSR. */
-    pVCpu->hm.s.vmx.u64GstMsrApicBase = u64MsrApicBase;
     return VINF_SUCCESS;
 }
 
@@ -6112,8 +6099,15 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
         && (g_HmMsrs.u.vmx.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
         && PDMHasApic(pVM))
     {
-        int rc = hmR0VmxMapHCApicAccessPage(pVCpu);
+        /* Get the APIC base MSR from the virtual APIC device. */
+        uint64_t const uApicBaseMsr = APICGetBaseMsrNoCheck(pVCpu);
+
+        /* Map the APIC access page. */
+        int rc = hmR0VmxMapHCApicAccessPage(pVCpu, uApicBaseMsr & PAGE_BASE_GC_MASK);
         AssertRCReturn(rc, rc);
+
+        /* Update the per-VCPU cache of the APIC base MSR corresponding to the mapped APIC access page. */
+        pVCpu->hm.s.vmx.u64GstMsrApicBase = uApicBaseMsr;
     }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
@@ -6814,6 +6808,17 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
         }
 
         /*
+         * Undo temporary disabling of the APIC-access page monitoring we did in hmR0VmxMergeVmcsNested.
+         * This is needed for NestedTrap0eHandler (and IEM) to cause nested-guest APIC-access VM-exits.
+         */
+        if (VmxTransient.pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+        {
+            PVMXVVMCS const pVmcsNstGst      = &pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs;
+            RTGCPHYS const  GCPhysApicAccess = pVmcsNstGst->u64AddrApicAccess.u;
+            PGMHandlerPhysicalReset(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess);
+        }
+
+        /*
          * Profile the VM-exit.
          */
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
@@ -7238,3 +7243,4 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPUCC pVCpu)
     Assert(!VMMR0AssertionIsNotificationSet(pVCpu));
     return rcStrict;
 }
+

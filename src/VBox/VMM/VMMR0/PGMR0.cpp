@@ -1214,6 +1214,38 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
 }
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
+/**
+ * Nested \#PF Handler for nested-guest execution using nested paging.
+ *
+ * @returns Strict VBox status code (appropriate for trap handling and GC return).
+ * @param   pGVM                The global (ring-0) VM structure.
+ * @param   pGVCpu              The global (ring-0) CPU structure of the calling
+ *                              EMT.
+ * @param   uErr                The trap error code.
+ */
+VMMR0DECL(VBOXSTRICTRC) PGMR0NestedTrap0eHandlerNestedPaging(PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
+                                                             PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNested,
+                                                             bool fIsLinearAddrValid, RTGCPTR GCPtrNested, PPGMPTWALK pWalk)
+{
+    Assert(enmShwPagingMode == PGMMODE_EPT);
+    NOREF(enmShwPagingMode);
+
+    bool fLockTaken;
+    VBOXSTRICTRC rcStrict = PGM_BTH_NAME_EPT_PROT(NestedTrap0eHandler)(pGVCpu, uErr, pRegFrame, GCPhysNested, fIsLinearAddrValid,
+                                                                       GCPtrNested, pWalk, &fLockTaken);
+    if (fLockTaken)
+    {
+        PGM_LOCK_ASSERT_OWNER(pGVCpu->CTX_SUFF(pVM));
+        PGM_UNLOCK(pGVCpu->CTX_SUFF(pVM));
+    }
+    if (rcStrict == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
+        rcStrict = VINF_SUCCESS;
+    return rcStrict;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX_EPT */
+
+
 /**
  * \#PF Handler for deliberate nested paging misconfiguration (/reserved bit)
  * employed for MMIO pages.
