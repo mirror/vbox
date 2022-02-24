@@ -44,6 +44,7 @@ sys.path.append(g_ksValidationKitDir)
 
 # Validation Kit imports.
 from common     import utils;
+from testdriver import base;
 from testdriver import reporter;
 from testdriver import vbox;
 from testdriver import vboxcon;
@@ -263,8 +264,8 @@ class tdUnitTest1(vbox.TestDriver):
         'testcase/tstTime-4': '',
         'testcase/tstTimer': '',
         'testcase/tstThread-1': '',
-        'testcase/tstUtf8': '',
-    }
+        'testcase/tstUtf8': ''
+    };
 
     # Test dependency list -- libraries.
     # Needed in order to execute testcases on remote targets which don't have a VBox installation present.
@@ -352,6 +353,12 @@ class tdUnitTest1(vbox.TestDriver):
         self.oTxsSession = None;
 
         self.sVBoxInstallRoot = None;
+
+        # Testing mode being used:
+        #   "local":       Execute unit tests locally (same host, default).
+        #   "remote-copy": Copies unit tests from host to the remote, then executing it.
+        #   "remote-exec": Executes unit tests right on the remote from a given source.
+        self.sMode = 'local';
 
         self.cSkipped   = 0;
         self.cPassed    = 0;
@@ -462,12 +469,18 @@ class tdUnitTest1(vbox.TestDriver):
         reporter.log('Unit Test #1 options:');
         reporter.log('  --dryrun');
         reporter.log('      Performs a dryrun (no tests being executed).');
-        reporter.log('  --local');
-        reporter.log('      Runs unit tests locally (this host).');
+        reporter.log('  --mode <local|remote>');
+        reporter.log('      Specifies the execution mode.');
         reporter.log('  --only-whitelist');
         reporter.log('      Only processes the white list.');
         reporter.log('  --quick');
         reporter.log('      Very selective testing.');
+        reporter.log('  --unittest-source <dir>');
+        reporter.log('      Sets the unit test source to <dir>.');
+        reporter.log('      Also used for remote execution.');
+        reporter.log('  --vbox-install-root <dir>');
+        reporter.log('      Sets the VBox install root to <dir>.');
+        reporter.log('      Also used for remote execution.');
         return fRc;
 
     def parseOption(self, asArgs, iArg):
@@ -476,13 +489,34 @@ class tdUnitTest1(vbox.TestDriver):
         """
         if asArgs[iArg] == '--dryrun':
             self.fDryRun = True;
-        elif asArgs[iArg] == '--local':
-            # Disable the test VM set and only run stuff locally.
-            self.oTestVmSet = None;
+        elif asArgs[iArg] == '--mode':
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
+            if asArgs[iArg] == 'local':
+                self.sMode = asArgs[iArg];
+            elif asArgs[iArg] == 'remote':
+                if self.sUnitTestsPathSrc:
+                    self.sMode = 'remote-exec';
+                else:
+                    self.sMode = 'remote-copy';
+            else:
+                raise base.InvalidOption('Argument "%s" invalid' % (asArgs[iArg]));
+        elif asArgs[iArg] == '--unittest-source':
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
+            self.sUnitTestsPathSrc = asArgs[iArg];
+            self.sMode = 'remote-exec';
         elif asArgs[iArg] == '--only-whitelist':
             self.fOnlyWhiteList = True;
         elif asArgs[iArg] == '--quick':
             self.fOnlyWhiteList = True;
+        elif asArgs[iArg] == '--vbox-install-root':
+            iArg += 1;
+            if iArg >= len(asArgs):
+                raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
+            self.sVBoxInstallRoot = asArgs[iArg];
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -502,7 +536,7 @@ class tdUnitTest1(vbox.TestDriver):
             return False;
 
         # Do the configuring.
-        if self.oTestVmSet:
+        if self.sMode.startswith('remote'):
             if   self.sNicAttachment == 'nat':     eNic0AttachType = vboxcon.NetworkAttachmentType_NAT;
             elif self.sNicAttachment == 'bridged': eNic0AttachType = vboxcon.NetworkAttachmentType_Bridged;
             else:                                  eNic0AttachType = None;
@@ -523,12 +557,14 @@ class tdUnitTest1(vbox.TestDriver):
     def actionExecute(self):
         if self.sUnitTestsPathSrc is None and not self._detectPaths():
             return False;
+        reporter.log2('Unit test source path is "%s"\n' % self.sUnitTestsPathSrc);
 
         if not self.sUnitTestsPathDst:
             self.sUnitTestsPathDst = self.sScratchPath;
-        reporter.log('Unit test destination path is "%s"\n' % self.sUnitTestsPathDst);
+        reporter.log2('Unit test destination path is "%s"\n' % self.sUnitTestsPathDst);
 
-        if self.oTestVmSet: # Run on a test VM (guest).
+        if self.sMode.startswith('remote'): # Run on a test VM (guest).
+            assert self.oTestVmSet is not None;
             fRc = self.oTestVmSet.actionExecute(self, self.testOneVmConfig);
         else: # Run locally (host).
             self._figureVersion();
@@ -551,9 +587,18 @@ class tdUnitTest1(vbox.TestDriver):
         fRc = self.cFailed == 0;
 
         reporter.log('');
-        reporter.log('********************');
-        reporter.log('Target: %s' % (oTestVm.sVmName if oTestVm else 'local'));
-        reporter.log('********************');
+        if self.fDryRun:
+            reporter.log('*********************************************************');
+            reporter.log('DRY RUN - DRY RUN - DRY RUN - DRY RUN - DRY RUN - DRY RUN');
+            reporter.log('*********************************************************');
+        reporter.log('*********************************************************');
+        reporter.log('           Target: %s' % (oTestVm.sVmName if oTestVm else 'local'));
+        reporter.log('             Mode: %s' % (self.sMode));
+        reporter.log('Unit tests source: %s %s' % (self.sUnitTestsPathSrc, \
+                    '(on remote)' if self.sMode is 'remote-exec' else ''));
+        reporter.log('VBox install root: %s %s' % (self.sVBoxInstallRoot, \
+                     '(on remote)' if self.sMode is 'remote-exec' else ''));
+        reporter.log('*********************************************************');
         reporter.log('***  PASSED: %d' % self.cPassed);
         reporter.log('***  FAILED: %d' % self.cFailed);
         reporter.log('*** SKIPPED: %d' % self.cSkipped);
@@ -569,25 +614,28 @@ class tdUnitTest1(vbox.TestDriver):
 
         # Simple test.
         self.logVmInfo(oVM);
-        # Try waiting for a bit longer (5 minutes) until the CD is available to avoid running into timeouts.
-        self.oSession, self.oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, \
-                                                                            fCdWait = True, \
-                                                                            cMsCdWait = 5 * 60 * 1000);
-        if self.oSession is not None:
+
+        if not self.fDryRun:
+            # Try waiting for a bit longer (5 minutes) until the CD is available to avoid running into timeouts.
+            self.oSession, self.oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, \
+                                                                                fCdWait = not self.fDryRun, \
+                                                                                cMsCdWait = 5 * 60 * 1000);
+            if self.oSession is None:
+                return False;
+
             self.addTask(self.oTxsSession);
 
-            # Determine the unit tests destination path.
-            self.sUnitTestsPathDst = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'testUnitTests');
+        # Determine the unit tests destination path.
+        self.sUnitTestsPathDst = oTestVm.pathJoin(self.getGuestTempDir(oTestVm), 'testUnitTests');
 
-            # Run the unit tests.
-            self._testRunUnitTests(oTestVm);
+        # Run the unit tests.
+        self._testRunUnitTests(oTestVm);
 
-            # Cleanup.
+        # Cleanup.
+        if self.oSession is not None:
             self.removeTask(self.oTxsSession);
             self.terminateVmBySession(self.oSession);
-            return True;
-
-        return False;
+        return True;
 
     #
     # Test execution helpers.
@@ -682,8 +730,8 @@ class tdUnitTest1(vbox.TestDriver):
         Returns True if the process executed successfully and returned 0,
         otherwise False is returned.
         """
-        reporter.log('Executing [sudo]: %s' % (asArgs, ));
-        if self.oTestVmSet:
+        reporter.log2('Executing [sudo]: %s' % (asArgs, ));
+        if self.sMode.startswith('remote'):
             iRc = -1; ## @todo Not used remotely yet.
         else:
             try:
@@ -694,13 +742,15 @@ class tdUnitTest1(vbox.TestDriver):
             reporter.log('Exit code [sudo]: %s (%s)' % (iRc, asArgs));
         return iRc == 0;
 
-    def _hardenedPathExists(self, sPath):
+    def _wrapPathExists(self, sPath):
         """
         Creates the directory specified sPath (including parents).
         """
-        reporter.log('_hardenedPathExists: %s' % (sPath,));
+        reporter.log2('_wrapPathExists: %s' % (sPath,));
+        if self.fDryRun:
+            return True;
         fRc = False;
-        if self.oTestVmSet:
+        if self.sMode.startswith('remote'):
             fRc = self.txsIsDir(self.oSession, self.oTxsSession, sPath, fIgnoreErrors = True);
             if not fRc:
                 fRc = self.txsIsFile(self.oSession, self.oTxsSession, sPath, fIgnoreErrors = True);
@@ -708,13 +758,15 @@ class tdUnitTest1(vbox.TestDriver):
             fRc = os.path.exists(sPath);
         return fRc;
 
-    def _hardenedMkDir(self, sPath):
+    def _wrapMkDir(self, sPath):
         """
         Creates the directory specified sPath (including parents).
         """
-        reporter.log('_hardenedMkDir: %s' % (sPath,));
+        reporter.log2('_wrapMkDir: %s' % (sPath,));
+        if self.fDryRun:
+            return True;
         fRc = True;
-        if self.oTestVmSet:
+        if self.sMode.startswith('remote'):
             fRc = self.txsMkDirPath(self.oSession, self.oTxsSession, sPath, fMode = 0o755);
         else:
             if utils.getHostOs() in [ 'win', 'os2' ]:
@@ -725,16 +777,21 @@ class tdUnitTest1(vbox.TestDriver):
             raise Exception('Failed to create dir "%s".' % (sPath,));
         return True;
 
-    def _hardenedCopyFile(self, sSrc, sDst, iMode):
+    def _wrapCopyFile(self, sSrc, sDst, iMode):
         """
         Copies a file.
         """
-        reporter.log('_hardenedCopyFile: %s -> %s (mode: %o)' % (sSrc, sDst, iMode,));
+        reporter.log2('_wrapCopyFile: %s -> %s (mode: %o)' % (sSrc, sDst, iMode,));
+        if self.fDryRun:
+            return True;
         fRc = True;
-        if self.oTestVmSet:
-            fRc = self.txsUploadFile(self.oSession, self.oTxsSession, sSrc, sDst);
-            if fRc:
-                self.oTxsSession.syncChMod(sDst, 0o755);
+        if self.sMode.startswith('remote'):
+            if self.sMode == 'remote-exec':
+                self.oTxsSession.txsCopyFile(self.oSession, self.oTxsSession, sSrc, sDst, iMode);
+            else:
+                fRc = self.txsUploadFile(self.oSession, self.oTxsSession, sSrc, sDst);
+                if fRc:
+                    self.oTxsSession.syncChMod(sDst, iMode);
         else:
             if utils.getHostOs() in [ 'win', 'os2' ]:
                 utils.copyFileSimple(sSrc, sDst);
@@ -749,13 +806,15 @@ class tdUnitTest1(vbox.TestDriver):
             raise Exception('Failed to copy "%s" to "%s".' % (sSrc, sDst,));
         return True;
 
-    def _hardenedDeleteFile(self, sPath):
+    def _wrapDeleteFile(self, sPath):
         """
         Deletes a file.
         """
-        reporter.log('_hardenedDeleteFile: %s' % (sPath,));
+        reporter.log2('_wrapDeleteFile: %s' % (sPath,));
+        if self.fDryRun:
+            return True;
         fRc = True;
-        if self.oTestVmSet:
+        if self.sMode.startswith('remote'):
             if self.txsIsFile(self.oSession, self.oTxsSession, sPath):
                 fRc = self.txsRmFile(self.oSession, self.oTxsSession, sPath);
         else:
@@ -768,13 +827,15 @@ class tdUnitTest1(vbox.TestDriver):
             raise Exception('Failed to remove "%s".' % (sPath,));
         return True;
 
-    def _hardenedRemoveDir(self, sPath):
+    def _wrapRemoveDir(self, sPath):
         """
         Removes a directory.
         """
-        reporter.log('_hardenedRemoveDir: %s' % (sPath,));
+        reporter.log2('_wrapRemoveDir: %s' % (sPath,));
+        if self.fDryRun:
+            return True;
         fRc = True;
-        if self.oTestVmSet:
+        if self.sMode.startswith('remote'):
             if self.txsIsDir(self.oSession, self.oTxsSession, sPath):
                 fRc = self.txsRmDir(self.oSession, self.oTxsSession, sPath);
         else:
@@ -788,7 +849,7 @@ class tdUnitTest1(vbox.TestDriver):
         return True;
 
     def _envSet(self, sName, sValue):
-        if self.oTestVmSet:
+        if self.sMode.startswith('remote'):
             # For remote execution we cache the environment block and pass it
             # right when the process execution happens.
             self.asEnv.append([ sName, sValue ]);
@@ -805,12 +866,12 @@ class tdUnitTest1(vbox.TestDriver):
 
         #
         # If hardening is enabled, some test cases and their dependencies
-        # needs to be copied to and execute from the sVBoxInstallRoot
+        # needs to be copied to and execute from the source
         # directory in order to work. They also have to be executed as
         # root, i.e. via sudo.
         #
         fHardened       = False;
-        fToRemote       = False;
+        fCopyToRemote   = False;
         fCopyDeps       = False;
         asFilesToRemove = []; # Stuff to clean up.
         asDirsToRemove  = []; # Ditto.
@@ -819,32 +880,33 @@ class tdUnitTest1(vbox.TestDriver):
         and self.sUnitTestsPathSrc != self.sVBoxInstallRoot:
             fHardened = True;
 
-        if self.oTestVmSet:
-            fToRemote = True;
-            fCopyDeps = True;
+        if self.sMode.startswith('remote'):
+            fCopyToRemote = True;
+            fCopyDeps     = True;
 
         if fHardened \
-        or fToRemote:
-            if fToRemote:
+        or fCopyToRemote:
+            if fCopyToRemote:
                 sDstDir = os.path.join(self.sUnitTestsPathDst, sTestCaseSubDir);
             else:
                 sDstDir = os.path.join(self.sVBoxInstallRoot, sTestCaseSubDir);
-            if not self._hardenedPathExists(sDstDir):
-                self._hardenedMkDir(sDstDir);
+            if not self._wrapPathExists(sDstDir):
+                self._wrapMkDir(sDstDir);
                 asDirsToRemove.append(sDstDir);
 
             sDst = os.path.join(sDstDir, os.path.basename(sFullPath));
-            self._hardenedCopyFile(sFullPath, sDst, 0o755);
+            self._wrapCopyFile(sFullPath, sDst, 0o755);
             asFilesToRemove.append(sDst);
 
             # Copy required dependencies to destination.
             if fCopyDeps:
                 for sLib in self.kdTestCaseDepsLibs:
                     for sSuff in [ '.dll', '.so', '.dylib' ]:
+                        assert self.sVBoxInstallRoot is not None;
                         sSrc = os.path.join(self.sVBoxInstallRoot, sLib + sSuff);
-                        if os.path.exists(sSrc):
+                        if self._wrapPathExists(sSrc):
                             sDst = os.path.join(sDstDir, os.path.basename(sSrc));
-                            self._hardenedCopyFile(sSrc, sDst, 0o644);
+                            self._wrapCopyFile(sSrc, sDst, 0o644);
                             asFilesToRemove.append(sDst);
 
             # Copy any associated .dll/.so/.dylib.
@@ -852,7 +914,7 @@ class tdUnitTest1(vbox.TestDriver):
                 sSrc = os.path.splitext(sFullPath)[0] + sSuff;
                 if os.path.exists(sSrc):
                     sDst = os.path.join(sDstDir, os.path.basename(sSrc));
-                    self._hardenedCopyFile(sSrc, sDst, 0o644);
+                    self._wrapCopyFile(sSrc, sDst, 0o644);
                     asFilesToRemove.append(sDst);
 
             # Copy any associated .r0, .rc and .gc modules.
@@ -862,7 +924,7 @@ class tdUnitTest1(vbox.TestDriver):
                     sSrc = sFullPath[:offDriver] + sSuff;
                     if os.path.exists(sSrc):
                         sDst = os.path.join(sDstDir, os.path.basename(sSrc));
-                        self._hardenedCopyFile(sSrc, sDst, 0o644);
+                        self._wrapCopyFile(sSrc, sDst, 0o644);
                         asFilesToRemove.append(sDst);
 
             sFullPath = os.path.join(sDstDir, os.path.basename(sFullPath));
@@ -879,9 +941,9 @@ class tdUnitTest1(vbox.TestDriver):
         self._envSet('IPRT_TEST_OMIT_TOP_TEST', '1');
         self._envSet('IPRT_TEST_FILE', sXmlFile);
 
-        if self._hardenedPathExists(sXmlFile):
+        if self._wrapPathExists(sXmlFile):
             try:    os.unlink(sXmlFile);
-            except: self._hardenedDeleteFile(sXmlFile);
+            except: self._wrapDeleteFile(sXmlFile);
 
         #
         # Execute the test case.
@@ -896,10 +958,13 @@ class tdUnitTest1(vbox.TestDriver):
         except: pass;
         try:    sys.stderr.flush();
         except: pass;
+
+        iRc = 0;
+
         if not self.fDryRun:
-            if fToRemote:
+            if fCopyToRemote:
                 fRc = self.txsRunTest(self.oTxsSession, sName, 30 * 60 * 1000, asArgs[0], asArgs, self.asEnv, \
-                                      fCheckSessionStatus = True);
+                                        fCheckSessionStatus = True);
                 if fRc:
                     iRc = 0;
                 else:
@@ -911,6 +976,7 @@ class tdUnitTest1(vbox.TestDriver):
                     else:
                         iRc = -1; ## @todo
             else:
+                oChild = None;
                 try:
                     if fHardened:
                         oChild = utils.sudoProcessPopen(asArgs, stdin = oDevNull, stdout = sys.stdout, stderr = sys.stdout);
@@ -930,16 +996,13 @@ class tdUnitTest1(vbox.TestDriver):
                     self.pidFileAdd(oChild.pid, sName, fSudo = fHardened);
                     iRc = oChild.wait();
                     self.pidFileRemove(oChild.pid);
-        else:
-            iRc = 0;
-
         #
         # Clean up
         #
         for sPath in asFilesToRemove:
-            self._hardenedDeleteFile(sPath);
+            self._wrapDeleteFile(sPath);
         for sPath in asDirsToRemove:
-            self._hardenedRemoveDir(sPath);
+            self._wrapRemoveDir(sPath);
 
         #
         # Report.
@@ -947,7 +1010,7 @@ class tdUnitTest1(vbox.TestDriver):
         if os.path.exists(sXmlFile):
             reporter.addSubXmlFile(sXmlFile);
             if fHardened:
-                self._hardenedDeleteFile(sXmlFile);
+                self._wrapDeleteFile(sXmlFile);
             else:
                 os.unlink(sXmlFile);
 
@@ -1001,23 +1064,42 @@ class tdUnitTest1(vbox.TestDriver):
         #
         # Process the file list and run everything looking like a testcase.
         #
-        for sFilename in sorted(os.listdir(os.path.join(self.sUnitTestsPathSrc, sTestCaseSubDir))):
+        if not self.fOnlyWhiteList:
+            if self.sMode == 'local' \
+            or self.sMode == 'remote-copy':
+                asFiles = sorted(os.listdir(os.path.join(self.sUnitTestsPathSrc, sTestCaseSubDir)));
+            else: # 'remote-exec'
+                ## @todo Implement remote file enumeration / directory listing.
+                reporter.error('Sorry, no remote file enumeration implemented yet!\nUse --only-whitelist instead.');
+                return False;
+        else:
+            # Transform our dict into a list, where the keys are the list elements.
+            asFiles = list(self.kdTestCasesWhiteList.keys());
+            # Make sure to only keep the list item's base name so that the iteration down below works
+            # with our white list without any additional modification.
+            asFiles = [os.path.basename(s) for s in asFiles];
+
+        for sFilename in asFiles:
             # Separate base and suffix and morph the base into something we
             # can use for reporting and array lookups.
-            sName, sSuffix = os.path.splitext(sFilename);
+            sBaseName = os.path.basename(sFilename);
+            sName, sSuffix = os.path.splitext(sBaseName);
             if sTestCaseSubDir != '.':
                 sName = sTestCaseSubDir + '/' + sName;
 
+            reporter.log2('sTestCasePattern=%s, sBaseName=%s, sName=%s, sFileName=%s' \
+                          % (sTestCasePattern, sBaseName, sName, sFilename,));
+
             # Process white list first, if set.
             if  self.fOnlyWhiteList \
-            and sName not in self.kdTestCasesWhiteList:
-                reporter.log2('"%s" is not in white list, skipping.' % (sFilename,));
+            and not self._isExcluded(sName, self.kdTestCasesWhiteList):
+                reporter.log('%s: SKIPPED (not in white list)' % (sName,));
                 continue;
 
             # Basic exclusion.
-            if   not re.match(sTestCasePattern, sFilename) \
+            if   not re.match(sTestCasePattern, sBaseName) \
               or sSuffix in self.kasSuffixBlackList:
-                reporter.log2('"%s" is not a test case.' % (sFilename,));
+                reporter.log2('"%s" is not a test case.' % (sName,));
                 continue;
 
             # Check if the testcase is black listed or buggy before executing it.
