@@ -2919,7 +2919,8 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
             case SCMOPT_ONLY_GUEST_HOST_PAGE:
                 RTPrintf("      No PAGE_SIZE, PAGE_SHIFT or PAGE_OFFSET_MASK allowed, must have\n"
                          "      GUEST_ or HOST_ prefix.  Also forbids use of PAGE_BASE_MASK,\n"
-                         "      PAGE_BASE_HC_MASK and PAGE_BASE_GC_MASK  Default: %RTbool\n", g_Defaults.fOnlyGuestHostPage);
+                         "      PAGE_BASE_HC_MASK, PAGE_BASE_GC_MASK, PAGE_ADDRESS,\n"
+                         "      PHYS_PAGE_ADDRESS.  Default: %RTbool\n", g_Defaults.fOnlyGuestHostPage);
                 break;
             case SCMOPT_NO_ASM_MEM_PAGE_USE:
                 RTPrintf("      No ASMMemIsZeroPage or ASMMemZeroPage allowed, must instead use\n"
@@ -2963,7 +2964,7 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
 
             case SCMOPT_ADD_ACTION:
                 RTPrintf("      Adds a rewriter action.  The first use after a --treat-as will copy and\n"
-                         "      the action list selected by the --treat-as.  The actuion list will be\n"
+                         "      the action list selected by the --treat-as.  The action list will be\n"
                          "      flushed by --treat-as.\n");
                 break;
 

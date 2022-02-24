@@ -3275,11 +3275,13 @@ bool rewrite_PageChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCS
         { RT_STR_TUPLE("PAGE_BASE_MASK") },
         { RT_STR_TUPLE("PAGE_BASE_GC_MASK") },
         { RT_STR_TUPLE("PAGE_BASE_HC_MASK") },
+        { RT_STR_TUPLE("PAGE_ADDRESS") },
+        { RT_STR_TUPLE("PHYS_PAGE_ADDRESS") },
         { RT_STR_TUPLE("ASMMemIsZeroPage") },
         { RT_STR_TUPLE("ASMMemZeroPage") },
     };
-    size_t const iFirstWord = pSettings->fOnlyGuestHostPage ? 0 : 5;
-    size_t const iEndWords  = pSettings->fNoASMMemPageUse   ? 7 : 5;
+    size_t const iFirstWord = pSettings->fOnlyGuestHostPage ? 0 : 7;
+    size_t const iEndWords  = pSettings->fNoASMMemPageUse   ? 9 : 7;
 
     uint32_t    iLine = 0;
     SCMEOL      enmEol;
@@ -3305,9 +3307,12 @@ bool rewrite_PageChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCS
                         && (   cchLeft == cchWord
                             || !ScmIsCIdentifierChar(pchHit[cchWord])) )
                     {
-                        if (i < 5)
+                        if (i < 3)
                             ScmFixManually(pState, "%u:%zu: %s is not allow! Use GUEST_%s or HOST_%s instead.\n",
                                            iLine, pchHit - pchLine + 1, pszWord, pszWord, pszWord);
+                        else if (i < 7)
+                            ScmFixManually(pState, "%u:%zu: %s is not allow! Rewrite using GUEST/HOST_PAGE_OFFSET_MASK.\n",
+                                           iLine, pchHit - pchLine + 1, pszWord);
                         else
                             ScmFixManually(pState, "%u:%zu: %s is not allow! Use %s with correct page size instead.\n",
                                            iLine, pchHit - pchLine + 1, pszWord, i == 3 ? "ASMMemIsZero" : "RT_BZERO");
