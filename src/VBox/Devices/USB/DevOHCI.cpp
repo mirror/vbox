@@ -242,7 +242,7 @@ typedef struct OHCIPAGECACHE
     /** Last read physical page address. */
     RTGCPHYS            GCPhysReadCacheAddr;
     /** Copy of last read physical page. */
-    uint8_t             abPhysReadCache[PAGE_SIZE];
+    uint8_t             abPhysReadCache[GUEST_PAGE_SIZE];
 } OHCIPAGECACHE;
 typedef OHCIPAGECACHE *POHCIPAGECACHE;
 #endif
@@ -1438,9 +1438,9 @@ static void ohciR3PhysReadCacheInvalidate(POHCIPAGECACHE pPageCache)
 
 static void ohciR3PhysReadCacheRead(PPDMDEVINS pDevIns, POHCIPAGECACHE pPageCache, RTGCPHYS GCPhys, void *pvBuf, size_t cbBuf)
 {
-    const RTGCPHYS PageAddr = PAGE_ADDRESS(GCPhys);
+    const RTGCPHYS PageAddr = GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
 
-    if (PageAddr == PAGE_ADDRESS(GCPhys + cbBuf))
+    if (PageAddr == ((GCPhys + cbBuf) & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK))
     {
         if (PageAddr != pPageCache->GCPhysReadCacheAddr)
         {
@@ -1451,7 +1451,7 @@ static void ohciR3PhysReadCacheRead(PPDMDEVINS pDevIns, POHCIPAGECACHE pPageCach
 #  endif
         }
 
-        memcpy(pvBuf, &pPageCache->abPhysReadCache[GCPhys & PAGE_OFFSET_MASK], cbBuf);
+        memcpy(pvBuf, &pPageCache->abPhysReadCache[GCPhys & GUEST_PAGE_OFFSET_MASK], cbBuf);
 #  ifdef VBOX_WITH_OHCI_PHYS_READ_STATS
         ++g_PhysReadState.cCacheReads;
 #  endif
@@ -1478,12 +1478,12 @@ static void ohciR3PhysReadCacheRead(PPDMDEVINS pDevIns, POHCIPAGECACHE pPageCach
  */
 static void ohciR3PhysCacheUpdate(POHCIPAGECACHE pPageCache, RTGCPHYS GCPhys, const void *pvBuf, size_t cbBuf)
 {
-    const RTGCPHYS GCPhysPage = PAGE_ADDRESS(GCPhys);
+    const RTGCPHYS GCPhysPage = GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
 
     if (GCPhysPage == pPageCache->GCPhysReadCacheAddr)
     {
-        uint32_t offPage = GCPhys & PAGE_OFFSET_MASK;
-        memcpy(&pPageCache->abPhysReadCache[offPage], pvBuf, RT_MIN(PAGE_SIZE - offPage, cbBuf));
+        uint32_t offPage = GCPhys & GUEST_PAGE_OFFSET_MASK;
+        memcpy(&pPageCache->abPhysReadCache[offPage], pvBuf, RT_MIN(GUEST_PAGE_SIZE - offPage, cbBuf));
     }
 }
 

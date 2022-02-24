@@ -45,7 +45,7 @@
 #endif
 #endif
 #else /* VBOX */
-# include <iprt/param.h>
+# include <VBox/param.h>
 # include "misc.h"
 # include "ext.h"
 
@@ -75,7 +75,7 @@ DECL_NO_RETURN(static void) panic (char *fmt, ...)
 /* (vvl) some definitions from sys/param.h */
 /*
  * Constants related to network buffer management.
- * MCLBYTES must be no larger than PAGE_SIZE.
+ * MCLBYTES must be no larger than HOST_PAGE_SIZE.
  */
 # ifndef	MSIZE
 #  define MSIZE		256		/* size of an mbuf */
@@ -90,7 +90,7 @@ DECL_NO_RETURN(static void) panic (char *fmt, ...)
 # endif /*MCLBYTES*/
 
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-#  define	MJUMPAGESIZE	PAGE_SIZE	/* jumbo cluster 4k */
+#  define	MJUMPAGESIZE	HOST_PAGE_SIZE	/* jumbo cluster 4k */
 # else
 #  define	MJUMPAGESIZE	(4 * 1024)	/* jumbo cluster 4k */
 # endif

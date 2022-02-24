@@ -1596,7 +1596,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioLegacyIOPortIn(PPDMDEVINS pDevIns, void 
     if (VIRTIO_DEV_CONFIG_MATCH_MEMBER(   uVirtqPfn,                  VIRTIO_LEGACY_PCI_COMMON_CFG_T, offPort))
     {
         PVIRTQUEUE pVirtQueue = &pVirtio->aVirtqueues[uVirtq];
-        *pu32 = pVirtQueue->GCPhysVirtqDesc >> PAGE_SHIFT;
+        *pu32 = pVirtQueue->GCPhysVirtqDesc >> GUEST_PAGE_SHIFT;
         Log(("%-23s: Guest read  uVirtqPfn .................... %#x\n",   __FUNCTION__, *pu32));
     }
     else

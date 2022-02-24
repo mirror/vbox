@@ -77,9 +77,9 @@ typedef struct VIRTUALKD
     bool fFencedCmdBody;    /**< Set if pbCmdBody was allocated using RTMemPageAlloc rather than RTMemAlloc. */
 } VIRTUALKD;
 
-#define VIRTUALKB_CMDBODY_SIZE          _256K           /**< Size of buffer pointed to by VIRTUALKB::pbCmdBody */
-#define VIRTUALKB_CMDBODY_PRE_FENCE     (PAGE_SIZE * 4) /**< Size of the eletrict fence before the command body. */
-#define VIRTUALKB_CMDBODY_POST_FENCE    (PAGE_SIZE * 8) /**< Size of the eletrict fence after the command body. */
+#define VIRTUALKB_CMDBODY_SIZE          _256K                /**< Size of buffer pointed to by VIRTUALKB::pbCmdBody */
+#define VIRTUALKB_CMDBODY_PRE_FENCE     (HOST_PAGE_SIZE * 4) /**< Size of the eletrict fence before the command body. */
+#define VIRTUALKB_CMDBODY_POST_FENCE    (HOST_PAGE_SIZE * 8) /**< Size of the eletrict fence after the command body. */
 
 
 
@@ -192,10 +192,10 @@ static DECLCALLBACK(int) vkdDestruct(PPDMDEVINS pDevIns)
     if (pThis->pbCmdBody)
     {
         if (pThis->fFencedCmdBody)
-            RTMemPageFree((uint8_t *)pThis->pbCmdBody - RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, PAGE_SIZE),
-                            RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE,  PAGE_SIZE)
-                          + RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE,       PAGE_SIZE)
-                          + RT_ALIGN_Z(VIRTUALKB_CMDBODY_POST_FENCE, PAGE_SIZE));
+            RTMemPageFree((uint8_t *)pThis->pbCmdBody - RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, HOST_PAGE_SIZE),
+                            RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE,  HOST_PAGE_SIZE)
+                          + RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE,       HOST_PAGE_SIZE)
+                          + RT_ALIGN_Z(VIRTUALKB_CMDBODY_POST_FENCE, HOST_PAGE_SIZE));
         else
             RTMemFree(pThis->pbCmdBody);
         pThis->pbCmdBody = NULL;
@@ -245,21 +245,23 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             if (pThis->pKDClient)
             {
                 /* We allocate a fenced buffer for reasons of paranoia. */
-                uint8_t *pbCmdBody = (uint8_t *)RTMemPageAlloc(  RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE,  PAGE_SIZE)
-                                                               + RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE,       PAGE_SIZE)
-                                                               + RT_ALIGN_Z(VIRTUALKB_CMDBODY_POST_FENCE, PAGE_SIZE));
+                uint8_t *pbCmdBody = (uint8_t *)RTMemPageAlloc(  RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE,  HOST_PAGE_SIZE)
+                                                               + RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE,       HOST_PAGE_SIZE)
+                                                               + RT_ALIGN_Z(VIRTUALKB_CMDBODY_POST_FENCE, HOST_PAGE_SIZE));
                 if (pbCmdBody)
                 {
-                    rc = RTMemProtect(pbCmdBody, RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, PAGE_SIZE), RTMEM_PROT_NONE);
-                    pbCmdBody += RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, PAGE_SIZE);
+                    rc = RTMemProtect(pbCmdBody, RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, HOST_PAGE_SIZE), RTMEM_PROT_NONE);
+                    pbCmdBody += RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, HOST_PAGE_SIZE);
 
                     pThis->fFencedCmdBody = true;
                     pThis->pbCmdBody = (char *)pbCmdBody;
-                    rc = RTMemProtect(pbCmdBody, RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE, PAGE_SIZE), RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                    rc = RTMemProtect(pbCmdBody, RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE, HOST_PAGE_SIZE),
+                                      RTMEM_PROT_READ | RTMEM_PROT_WRITE);
                     AssertLogRelRC(rc);
-                    pbCmdBody += RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE, PAGE_SIZE);
+                    pbCmdBody += RT_ALIGN_Z(VIRTUALKB_CMDBODY_SIZE, HOST_PAGE_SIZE);
 
-                    rc = RTMemProtect(pbCmdBody, RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, PAGE_SIZE), RTMEM_PROT_NONE);
+                    rc = RTMemProtect(pbCmdBody, RT_ALIGN_Z(VIRTUALKB_CMDBODY_PRE_FENCE, HOST_PAGE_SIZE),
+                                      RTMEM_PROT_NONE);
                     AssertLogRelRC(rc);
                 }
                 else

@@ -680,7 +680,7 @@ DECLINLINE(bool) vmmdevR3HgcmGuestBufferIsContiguous(const VBOXHGCMPARMPTR *pPtr
 {
     if (pPtr->cPages == 1)
         return true;
-    RTGCPHYS64 Phys = pPtr->paPages[0] + PAGE_SIZE;
+    RTGCPHYS64 Phys = pPtr->paPages[0] + GUEST_PAGE_SIZE;
     if (Phys != pPtr->paPages[1])
         return false;
     if (pPtr->cPages > 2)
@@ -688,7 +688,7 @@ DECLINLINE(bool) vmmdevR3HgcmGuestBufferIsContiguous(const VBOXHGCMPARMPTR *pPtr
         uint32_t iPage = 2;
         do
         {
-            Phys += PAGE_SIZE;
+            Phys += GUEST_PAGE_SIZE;
             if (Phys != pPtr->paPages[iPage])
                 return false;
             ++iPage;
@@ -723,7 +723,7 @@ static int vmmdevR3HgcmGuestBufferRead(PPDMDEVINSR3 pDevIns, void *pvDst, uint32
 
     for (uint32_t iPage = 0; iPage < pPtr->cPages && cbRemaining > 0; ++iPage)
     {
-        uint32_t cbToRead = PAGE_SIZE - offPage;
+        uint32_t cbToRead = GUEST_PAGE_SIZE - offPage;
         if (cbToRead > cbRemaining)
             cbToRead = cbRemaining;
 
@@ -762,7 +762,7 @@ static int vmmdevR3HgcmGuestBufferWrite(PPDMDEVINSR3 pDevIns, const VBOXHGCMPARM
     uint32_t iPage;
     for (iPage = 0; iPage < pPtr->cPages && cbRemaining > 0; ++iPage)
     {
-        uint32_t cbToWrite = PAGE_SIZE - offPage;
+        uint32_t cbToWrite = GUEST_PAGE_SIZE - offPage;
         if (cbToWrite > cbRemaining)
             cbToWrite = cbRemaining;
 
@@ -1087,8 +1087,8 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
 
                 ASSERT_GUEST_RETURN(cbData <= VMMDEV_MAX_HGCM_DATA_SIZE, VERR_INVALID_PARAMETER);
 
-                const uint32_t offFirstPage = cbData > 0 ? GCPtr & PAGE_OFFSET_MASK : 0;
-                const uint32_t cPages       = cbData > 0 ? (offFirstPage + cbData + PAGE_SIZE - 1) / PAGE_SIZE : 0;
+                const uint32_t offFirstPage = cbData > 0 ? GCPtr & GUEST_PAGE_OFFSET_MASK : 0;
+                const uint32_t cPages       = cbData > 0 ? (offFirstPage + cbData + GUEST_PAGE_SIZE - 1) / GUEST_PAGE_SIZE : 0;
 
                 pGuestParm->u.ptr.cbData        = cbData;
                 pGuestParm->u.ptr.offFirstPage  = offFirstPage;
@@ -1123,7 +1123,7 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
                         LogFunc(("Page %d: %RGv -> %RGp. %Rrc\n", iPage, GCPtr, GCPhys, rc2));
 
                         pGuestParm->u.ptr.paPages[iPage] = GCPhys;
-                        GCPtr += PAGE_SIZE;
+                        GCPtr += GUEST_PAGE_SIZE;
                     }
                 }
 
@@ -1168,7 +1168,7 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
                 ASSERT_GUEST_MSG_RETURN(VBOX_HGCM_F_PARM_ARE_VALID(pPageListInfo->flags),
                                         ("%#x\n", pPageListInfo->flags), VERR_INVALID_FLAGS);
                 /* First page offset. */
-                ASSERT_GUEST_MSG_RETURN(pPageListInfo->offFirstPage < PAGE_SIZE,
+                ASSERT_GUEST_MSG_RETURN(pPageListInfo->offFirstPage < GUEST_PAGE_SIZE,
                                         ("%#x\n", pPageListInfo->offFirstPage), VERR_INVALID_PARAMETER);
 
                 /* Contiguous page lists only ever have a single page and
@@ -1176,7 +1176,8 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
                    Plain page list does not impose any restrictions on cPages currently. */
                 ASSERT_GUEST_MSG_RETURN(      pPageListInfo->cPages
                                            == (pGuestParm->enmType == VMMDevHGCMParmType_ContiguousPageList ? 1
-                                               : RT_ALIGN_32(pPageListInfo->offFirstPage + cbData, PAGE_SIZE) >> PAGE_SHIFT)
+                                               :    RT_ALIGN_32(pPageListInfo->offFirstPage + cbData, GUEST_PAGE_SIZE)
+                                                 >> GUEST_PAGE_SHIFT)
                                         || pGuestParm->enmType == VMMDevHGCMParmType_PageList,
                                         ("offFirstPage=%#x cbData=%#x cPages=%#x enmType=%d\n",
                                          pPageListInfo->offFirstPage, cbData, pPageListInfo->cPages, pGuestParm->enmType),
@@ -1191,13 +1192,13 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
                 if (pGuestParm->enmType == VMMDevHGCMParmType_NoBouncePageList)
                 {
                     /* Validate page offsets */
-                    ASSERT_GUEST_MSG_RETURN(   !(pPageListInfo->aPages[0] & PAGE_OFFSET_MASK)
-                                            || (pPageListInfo->aPages[0] & PAGE_OFFSET_MASK) == pPageListInfo->offFirstPage,
+                    ASSERT_GUEST_MSG_RETURN(   !(pPageListInfo->aPages[0] & GUEST_PAGE_OFFSET_MASK)
+                                            || (pPageListInfo->aPages[0] & GUEST_PAGE_OFFSET_MASK) == pPageListInfo->offFirstPage,
                                             ("%#RX64 offFirstPage=%#x\n", pPageListInfo->aPages[0], pPageListInfo->offFirstPage),
                                             VERR_INVALID_POINTER);
                     uint32_t const cPages = pPageListInfo->cPages;
                     for (uint32_t iPage = 1; iPage < cPages; iPage++)
-                        ASSERT_GUEST_MSG_RETURN(!(pPageListInfo->aPages[iPage] & PAGE_OFFSET_MASK),
+                        ASSERT_GUEST_MSG_RETURN(!(pPageListInfo->aPages[iPage] & GUEST_PAGE_OFFSET_MASK),
                                                 ("[%#zx]=%#RX64\n", iPage, pPageListInfo->aPages[iPage]), VERR_INVALID_POINTER);
                     RT_UNTRUSTED_VALIDATED_FENCE();
 

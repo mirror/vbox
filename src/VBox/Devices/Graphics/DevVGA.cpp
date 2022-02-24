@@ -308,7 +308,7 @@ static uint8_t expand4to8[16];
 DECLINLINE(void) vgaR3MarkDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
 {
     AssertMsg(offVRAM < pThis->vram_size, ("offVRAM = %p, pThis->vram_size = %p\n", offVRAM, pThis->vram_size));
-    ASMBitSet(&pThis->bmDirtyBitmap[0], offVRAM >> PAGE_SHIFT);
+    ASMBitSet(&pThis->bmDirtyBitmap[0], offVRAM >> GUEST_PAGE_SHIFT);
     pThis->fHasDirtyBits = true;
 }
 
@@ -323,7 +323,7 @@ DECLINLINE(void) vgaR3MarkDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
 DECLINLINE(bool) vgaIsDirty(PVGASTATE pThis, RTGCPHYS offVRAM)
 {
     AssertMsg(offVRAM < pThis->vram_size, ("offVRAM = %p, pThis->vram_size = %p\n", offVRAM, pThis->vram_size));
-    return ASMBitTest(&pThis->bmDirtyBitmap[0], offVRAM >> PAGE_SHIFT);
+    return ASMBitTest(&pThis->bmDirtyBitmap[0], offVRAM >> GUEST_PAGE_SHIFT);
 }
 
 #ifdef IN_RING3
@@ -340,7 +340,7 @@ DECLINLINE(void) vgaR3ResetDirty(PVGASTATE pThis, RTGCPHYS offVRAMStart, RTGCPHY
     Assert(offVRAMStart < pThis->vram_size);
     Assert(offVRAMEnd <= pThis->vram_size);
     Assert(offVRAMStart < offVRAMEnd);
-    ASMBitClearRange(&pThis->bmDirtyBitmap[0], offVRAMStart >> PAGE_SHIFT, offVRAMEnd >> PAGE_SHIFT);
+    ASMBitClearRange(&pThis->bmDirtyBitmap[0], offVRAMStart >> GUEST_PAGE_SHIFT, offVRAMEnd >> GUEST_PAGE_SHIFT);
 }
 
 
@@ -349,7 +349,7 @@ DECLINLINE(void) vgaR3ResetDirty(PVGASTATE pThis, RTGCPHYS offVRAMStart, RTGCPHY
  */
 static void vgaR3UpdateDirtyBitsAndResetMonitoring(PPDMDEVINS pDevIns, PVGASTATE pThis)
 {
-    size_t const cbBitmap = RT_ALIGN_Z(RT_MIN(pThis->vram_size, VGA_VRAM_MAX), PAGE_SIZE * 64) / PAGE_SIZE / 8;
+    size_t const cbBitmap = RT_ALIGN_Z(RT_MIN(pThis->vram_size, VGA_VRAM_MAX), GUEST_PAGE_SIZE * 64) / GUEST_PAGE_SIZE / 8;
 
     /*
      * If we don't have any dirty bits from MMIO accesses, we can just query
@@ -365,7 +365,7 @@ static void vgaR3UpdateDirtyBitsAndResetMonitoring(PPDMDEVINS pDevIns, PVGASTATE
      */
     else
     {
-        uint64_t bmDirtyPages[VGA_VRAM_MAX / PAGE_SIZE / 64]; /* (256 MB VRAM -> 8KB bitmap) */
+        uint64_t bmDirtyPages[VGA_VRAM_MAX / GUEST_PAGE_SIZE / 64]; /* (256 MB VRAM -> 8KB bitmap) */
         int rc = PDMDevHlpMmio2QueryAndResetDirtyBitmap(pDevIns, pThis->hMmio2VRam, bmDirtyPages, cbBitmap);
         if (RT_SUCCESS(rc))
         {
@@ -2286,16 +2286,16 @@ static int vmsvgaR3DrawGraphic(PVGASTATE pThis, PVGASTATER3 pThisCC, bool fFullU
     for (y = 0; y < cy; y++)
     {
         uint32_t offSrcLine = offSrcStart + y * cbScanline;
-        uint32_t offPage0   = offSrcLine & ~PAGE_OFFSET_MASK;
-        uint32_t offPage1   = (offSrcLine + cbScanline - 1) & ~PAGE_OFFSET_MASK;
+        uint32_t offPage0   = offSrcLine & ~(uint32_t)GUEST_PAGE_OFFSET_MASK;
+        uint32_t offPage1   = (offSrcLine + cbScanline - 1) & ~(uint32_t)GUEST_PAGE_OFFSET_MASK;
         /** @todo r=klaus this assumes that a line is fully covered by 3 pages,
          * irrespective of alignment. Not guaranteed for high res modes, i.e.
          * anything wider than 2050 pixels @32bpp. Need to check all pages
          * between the first and last one. */
         bool     fUpdate    = fFullUpdate | vgaIsDirty(pThis, offPage0) | vgaIsDirty(pThis, offPage1);
-        if (offPage1 - offPage0 > PAGE_SIZE)
+        if (offPage1 - offPage0 > GUEST_PAGE_SIZE)
             /* if wide line, can use another page */
-            fUpdate |= vgaIsDirty(pThis, offPage0 + PAGE_SIZE);
+            fUpdate |= vgaIsDirty(pThis, offPage0 + GUEST_PAGE_SIZE);
         /* explicit invalidation for the hardware cursor */
         fUpdate |= (pThis->invalidated_y_table[y >> 5] >> (y & 0x1f)) & 1;
         if (fUpdate)
@@ -2329,7 +2329,7 @@ static int vmsvgaR3DrawGraphic(PVGASTATE pThis, PVGASTATER3 pThisCC, bool fFullU
 
     /* reset modified pages */
     if (offPageMax != -1 && reset_dirty)
-        vgaR3ResetDirty(pThis, offPageMin, offPageMax + PAGE_SIZE);
+        vgaR3ResetDirty(pThis, offPageMin, offPageMax + GUEST_PAGE_SIZE);
     memset(pThis->invalidated_y_table, 0, ((cy + 31) >> 5) * 4);
 
     return VINF_SUCCESS;
@@ -2485,16 +2485,16 @@ static int vgaR3DrawGraphic(PVGASTATE pThis, PVGASTATER3 pThisCC, bool full_upda
             addr = (addr & ~(1 << 16)) | ((y1 & 2) << 15);
         }
         addr &= pThis->vga_addr_mask;
-        page0 = addr & ~PAGE_OFFSET_MASK;
-        page1 = (addr + bwidth - 1) & ~PAGE_OFFSET_MASK;
+        page0 = addr & ~(uint32_t)GUEST_PAGE_OFFSET_MASK;
+        page1 = (addr + bwidth - 1) & ~(uint32_t)GUEST_PAGE_OFFSET_MASK;
         /** @todo r=klaus this assumes that a line is fully covered by 3 pages,
          * irrespective of alignment. Not guaranteed for high res modes, i.e.
          * anything wider than 2050 pixels @32bpp. Need to check all pages
          * between the first and last one. */
         bool update = full_update | vgaIsDirty(pThis, page0) | vgaIsDirty(pThis, page1);
-        if (page1 - page0 > PAGE_SIZE) {
+        if (page1 - page0 > GUEST_PAGE_SIZE) {
             /* if wide line, can use another page */
-            update |= vgaIsDirty(pThis, page0 + PAGE_SIZE);
+            update |= vgaIsDirty(pThis, page0 + GUEST_PAGE_SIZE);
         }
         /* explicit invalidation for the hardware cursor */
         update |= (pThis->invalidated_y_table[y >> 5] >> (y & 0x1f)) & 1;
@@ -2540,7 +2540,7 @@ static int vgaR3DrawGraphic(PVGASTATE pThis, PVGASTATER3 pThisCC, bool full_upda
     }
     /* reset modified pages */
     if (page_max != -1 && reset_dirty) {
-        vgaR3ResetDirty(pThis, page_min, page_max + PAGE_SIZE);
+        vgaR3ResetDirty(pThis, page_min, page_max + GUEST_PAGE_SIZE);
     }
     memset(pThis->invalidated_y_table, 0, ((height + 31) >> 5) * 4);
     return VINF_SUCCESS;
@@ -2573,11 +2573,12 @@ static int vgaR3DrawBlank(PVGASTATE pThis, PVGASTATER3 pThisCC, bool full_update
     /* reset modified pages, i.e. everything */
     if (reset_dirty && pThis->last_scr_height > 0)
     {
-        page_min = (pThis->start_addr * 4) & ~PAGE_OFFSET_MASK;
-        /* round up page_max by one page, as otherwise this can be -PAGE_SIZE,
+        page_min = (pThis->start_addr * 4) & ~(uint32_t)GUEST_PAGE_OFFSET_MASK;
+        /* round up page_max by one page, as otherwise this can be -GUEST_PAGE_SIZE,
          * which causes assertion trouble in vgaR3ResetDirty. */
-        page_max = (pThis->start_addr * 4 + pThis->line_offset * pThis->last_scr_height - 1 + PAGE_SIZE) & ~PAGE_OFFSET_MASK;
-        vgaR3ResetDirty(pThis, page_min, page_max + PAGE_SIZE);
+        page_max = (pThis->start_addr * 4 + pThis->line_offset * pThis->last_scr_height - 1 + GUEST_PAGE_SIZE)
+                 & ~(uint32_t)GUEST_PAGE_OFFSET_MASK;
+        vgaR3ResetDirty(pThis, page_min, page_max + GUEST_PAGE_SIZE);
     }
     if (pDrv->pbData == pThisCC->pbVRam) /* Do not clear the VRAM itself. */
         return VINF_SUCCESS;
@@ -4209,7 +4210,7 @@ vbeR3IoPortWriteCmdLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint
                 while (offDirty <= LOGO_MAX_SIZE)
                 {
                     vgaR3MarkDirty(pThis, offDirty);
-                    offDirty += PAGE_SIZE;
+                    offDirty += GUEST_PAGE_SIZE;
                 }
                 break;
             }
@@ -6753,7 +6754,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     }
 
     AssertReleaseMsg(cbVgaBiosBinary <= _64K && cbVgaBiosBinary >= 32*_1K, ("cbVgaBiosBinary=%#x\n", cbVgaBiosBinary));
-    AssertReleaseMsg(RT_ALIGN_Z(cbVgaBiosBinary, PAGE_SIZE) == cbVgaBiosBinary, ("cbVgaBiosBinary=%#x\n", cbVgaBiosBinary));
+    AssertReleaseMsg(RT_ALIGN_Z(cbVgaBiosBinary, GUEST_PAGE_SIZE) == cbVgaBiosBinary, ("cbVgaBiosBinary=%#x\n", cbVgaBiosBinary));
     /* Note! Because of old saved states we'll always register at least 36KB of ROM. */
     rc = PDMDevHlpROMRegister(pDevIns, 0x000c0000, RT_MAX(cbVgaBiosBinary, 36*_1K), pbVgaBiosBinary, cbVgaBiosBinary,
                               fFlags, "VGA BIOS");
@@ -7308,10 +7309,10 @@ static DECLCALLBACK(int) vgaRZConstruct(PPDMDEVINS pDevIns)
      * We currently only access SVGA_FIFO_MIN, SVGA_FIFO_PITCHLOCK, and SVGA_FIFO_BUSY.
      */
 # if defined(VBOX_WITH_VMSVGA) && !defined(IN_RC)
-    AssertCompile((RT_MAX(SVGA_FIFO_MIN, RT_MAX(SVGA_FIFO_PITCHLOCK, SVGA_FIFO_BUSY)) + 1) * sizeof(uint32_t) < PAGE_SIZE);
+    AssertCompile((RT_MAX(SVGA_FIFO_MIN, RT_MAX(SVGA_FIFO_PITCHLOCK, SVGA_FIFO_BUSY)) + 1) * sizeof(uint32_t) < GUEST_PAGE_SIZE);
     if (pThis->fVMSVGAEnabled)
     {
-        rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VmSvgaFifo, 0 /* off */, PAGE_SIZE,
+        rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VmSvgaFifo, 0 /* off */, GUEST_PAGE_SIZE,
                                         (void **)&pThisCC->svga.pau32FIFO);
         AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMapMMIO2IntoR0(%#x,) -> %Rrc\n", pThis->svga.cbFIFO, rc), rc);
     }

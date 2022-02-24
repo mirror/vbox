@@ -17,4 +17,12 @@
 
 /*.h: --guard-relative-to-dir .
 /Graphics/vmsvga_glext/*.h|/Graphics/vmsvga/*.h: --guard-relative-to-dir ''
+/*.h: --only-guest-host-page
 
+# Same as for the VMM, careful with page stuff.
+/*.h:   --only-guest-host-page --no-ASMMemPage-use
+/*.cpp: --only-guest-host-page --no-ASMMemPage-use
+/*.m:   --only-guest-host-page --no-ASMMemPage-use
+
+# This defines it's own PAGE_XXX macros.
+/PC/ipxe/src/include/ipxe/virtio-ring.h: --no-page-restrictions

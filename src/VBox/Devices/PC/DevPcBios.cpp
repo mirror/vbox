@@ -1091,31 +1091,31 @@ static DECLCALLBACK(void) pcbiosMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX e
      * This is normally done by the BIOS code, but since we're currently lacking
      * the chipset support for this we do it here (and in the constructor).
      */
-    uint32_t    cPages = RT_ALIGN_64(pThis->cbLanBoot, PAGE_SIZE) >> PAGE_SHIFT;
+    uint32_t    cPages = RT_ALIGN_64(pThis->cbLanBoot, GUEST_PAGE_SIZE) >> GUEST_PAGE_SHIFT;
     RTGCPHYS    GCPhys = VBOX_LANBOOT_SEG << 4;
     while (cPages > 0)
     {
-        uint8_t abPage[PAGE_SIZE];
+        uint8_t abPage[GUEST_PAGE_SIZE];
         int     rc;
 
         /* Read the (original) ROM page and write it back to the RAM page. */
-        rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, PAGE_SIZE, PGMROMPROT_READ_ROM_WRITE_RAM);
+        rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, GUEST_PAGE_SIZE, PGMROMPROT_READ_ROM_WRITE_RAM);
         AssertLogRelRC(rc);
 
-        rc = PDMDevHlpPhysRead(pDevIns, GCPhys, abPage, PAGE_SIZE);
+        rc = PDMDevHlpPhysRead(pDevIns, GCPhys, abPage, GUEST_PAGE_SIZE);
         AssertLogRelRC(rc);
         if (RT_FAILURE(rc))
             memset(abPage, 0xcc, sizeof(abPage));
 
-        rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, abPage, PAGE_SIZE);
+        rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, abPage, GUEST_PAGE_SIZE);
         AssertLogRelRC(rc);
 
         /* Switch to the RAM/RAM mode. */
-        rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, PAGE_SIZE, PGMROMPROT_READ_RAM_WRITE_RAM);
+        rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, GUEST_PAGE_SIZE, PGMROMPROT_READ_RAM_WRITE_RAM);
         AssertLogRelRC(rc);
 
         /* Advance */
-        GCPhys += PAGE_SIZE;
+        GCPhys += GUEST_PAGE_SIZE;
         cPages--;
     }
 }

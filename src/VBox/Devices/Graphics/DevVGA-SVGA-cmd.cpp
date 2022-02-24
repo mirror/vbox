@@ -392,7 +392,7 @@ vmsvgaR3GboAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, v
             for (uint32_t j = 0; j < pGbo->cDescriptors; ++j)
             {
                 if (   GCPhys >= pGbo->paDescriptors[j].GCPhys
-                    && GCPhys < pGbo->paDescriptors[j].GCPhys + pGbo->paDescriptors[j].cPages * PAGE_SIZE)
+                    && GCPhys < pGbo->paDescriptors[j].GCPhys + pGbo->paDescriptors[j].cPages * GUEST_PAGE_SIZE)
                 {
                     switch (i)
                     {
@@ -594,8 +594,10 @@ fWriteProtected = false;
         pGbo->fGboFlags |= VMSVGAGBO_F_WRITE_PROTECTED;
         for (uint32_t i = 0; i < pGbo->cDescriptors; ++i)
         {
-            rc = PDMDevHlpPGMHandlerPhysicalRegister(pSvgaR3State->pDevIns, pGbo->paDescriptors[i].GCPhys,
-                                                     pGbo->paDescriptors[i].GCPhys + pGbo->paDescriptors[i].cPages * PAGE_SIZE - 1,
+            rc = PDMDevHlpPGMHandlerPhysicalRegister(pSvgaR3State->pDevIns,
+                                                     pGbo->paDescriptors[i].GCPhys,
+                                                       pGbo->paDescriptors[i].GCPhys
+                                                     + pGbo->paDescriptors[i].cPages * GUEST_PAGE_SIZE - 1,
                                                      pSvgaR3State->hGboAccessHandlerType, "VMSVGA GBO");
             AssertRC(rc);
         }
@@ -6947,7 +6949,7 @@ void vmsvgaR3CmdRemapGMR2(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdRemap
         if (fGCPhys64)
             GCPhys = (paPages64[0] << X86_PAGE_SHIFT) & UINT64_C(0x00000FFFFFFFFFFF); /* Seeing rubbish in the top bits with certain linux guests. */
         else
-            GCPhys = (RTGCPHYS)paPages32[0] << PAGE_SHIFT;
+            GCPhys = (RTGCPHYS)paPages32[0] << GUEST_PAGE_SHIFT;
         paDescs[0].GCPhys    = GCPhys;
         paDescs[0].numPages  = 1;
 
@@ -7217,9 +7219,9 @@ int vmsvgaR3GmrTransfer(PVGASTATE pThis, PVGASTATECC pThisCC, const SVGA3dTransf
         uint8_t *pbCurrentHost  = pbHstScanline;
 
         /* Find the right descriptor */
-        while (offDesc + paDesc[iDesc].numPages * PAGE_SIZE <= offGmrCurrent)
+        while (offDesc + paDesc[iDesc].numPages * GUEST_PAGE_SIZE <= offGmrCurrent)
         {
-            offDesc += paDesc[iDesc].numPages * PAGE_SIZE;
+            offDesc += paDesc[iDesc].numPages * GUEST_PAGE_SIZE;
             AssertReturn(offDesc < pGMR->cbTotal, VERR_INTERNAL_ERROR); /* overflow protection */
             ++iDesc;
             AssertReturn(iDesc < pGMR->numDescriptors, VERR_INTERNAL_ERROR);
@@ -7229,13 +7231,11 @@ int vmsvgaR3GmrTransfer(PVGASTATE pThis, PVGASTATECC pThisCC, const SVGA3dTransf
         {
             uint32_t cbToCopy;
 
-            if (offGmrCurrent + cbCurrentWidth <= offDesc + paDesc[iDesc].numPages * PAGE_SIZE)
-            {
+            if (offGmrCurrent + cbCurrentWidth <= offDesc + paDesc[iDesc].numPages * GUEST_PAGE_SIZE)
                 cbToCopy = cbCurrentWidth;
-            }
             else
             {
-                cbToCopy = (offDesc + paDesc[iDesc].numPages * PAGE_SIZE - offGmrCurrent);
+                cbToCopy = (offDesc + paDesc[iDesc].numPages * GUEST_PAGE_SIZE - offGmrCurrent);
                 AssertReturn(cbToCopy <= cbCurrentWidth, VERR_INVALID_PARAMETER);
             }
 
@@ -7261,7 +7261,7 @@ int vmsvgaR3GmrTransfer(PVGASTATE pThis, PVGASTATECC pThisCC, const SVGA3dTransf
             /* Go to the next descriptor if there's anything left. */
             if (cbCurrentWidth)
             {
-                offDesc += paDesc[iDesc].numPages * PAGE_SIZE;
+                offDesc += paDesc[iDesc].numPages * GUEST_PAGE_SIZE;
                 AssertReturn(offDesc < pGMR->cbTotal, VERR_INTERNAL_ERROR);
                 ++iDesc;
                 AssertReturn(iDesc < pGMR->numDescriptors, VERR_INTERNAL_ERROR);

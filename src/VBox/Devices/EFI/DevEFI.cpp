@@ -955,30 +955,30 @@ static DECLCALLBACK(void) efiMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmC
     /*
      * Re-shadow the Firmware Volume and make it RAM/RAM.
      */
-    uint32_t    cPages = RT_ALIGN_64(pThisCC->cbEfiRom, PAGE_SIZE) >> PAGE_SHIFT;
+    uint32_t    cPages = RT_ALIGN_64(pThisCC->cbEfiRom, GUEST_PAGE_SIZE) >> GUEST_PAGE_SHIFT;
     RTGCPHYS    GCPhys = pThisCC->GCLoadAddress;
     while (cPages > 0)
     {
-        uint8_t abPage[PAGE_SIZE];
+        uint8_t abPage[GUEST_PAGE_SIZE];
 
         /* Read the (original) ROM page and write it back to the RAM page. */
-        int rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, PAGE_SIZE, PGMROMPROT_READ_ROM_WRITE_RAM);
+        int rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, GUEST_PAGE_SIZE, PGMROMPROT_READ_ROM_WRITE_RAM);
         AssertLogRelRC(rc);
 
-        rc = PDMDevHlpPhysRead(pDevIns, GCPhys, abPage, PAGE_SIZE);
+        rc = PDMDevHlpPhysRead(pDevIns, GCPhys, abPage, GUEST_PAGE_SIZE);
         AssertLogRelRC(rc);
         if (RT_FAILURE(rc))
             memset(abPage, 0xcc, sizeof(abPage));
 
-        rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, abPage, PAGE_SIZE);
+        rc = PDMDevHlpPhysWrite(pDevIns, GCPhys, abPage, GUEST_PAGE_SIZE);
         AssertLogRelRC(rc);
 
         /* Switch to the RAM/RAM mode. */
-        rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, PAGE_SIZE, PGMROMPROT_READ_RAM_WRITE_RAM);
+        rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, GUEST_PAGE_SIZE, PGMROMPROT_READ_RAM_WRITE_RAM);
         AssertLogRelRC(rc);
 
         /* Advance */
-        GCPhys += PAGE_SIZE;
+        GCPhys += GUEST_PAGE_SIZE;
         cPages--;
     }
 }
@@ -1152,7 +1152,7 @@ static int efiParseFirmware(PPDMDEVINS pDevIns, PDEVEFI pThis, PDEVEFIR3 pThisCC
                           ("%#x, %x\n", pFwVolHdr->BlockMap[0].Length, pFwVolHdr->BlockMap[0].NumBlocks),
                           VERR_INVALID_PARAMETER);
 
-    AssertLogRelMsgReturn(!(pThisCC->cbEfiRom & PAGE_OFFSET_MASK), ("%RX64\n", pThisCC->cbEfiRom), VERR_INVALID_PARAMETER);
+    AssertLogRelMsgReturn(!(pThisCC->cbEfiRom & GUEST_PAGE_OFFSET_MASK), ("%RX64\n", pThisCC->cbEfiRom), VERR_INVALID_PARAMETER);
 
     LogRel(("Found EFI FW Volume, %u bytes (%u %u-byte blocks)\n", pFwVolHdr->FvLength, pFwVolHdr->BlockMap[0].NumBlocks, pFwVolHdr->BlockMap[0].Length));
 
@@ -1164,7 +1164,7 @@ static int efiParseFirmware(PPDMDEVINS pDevIns, PDEVEFI pThis, PDEVEFIR3 pThisCC
     /* Found NVRAM storage, configure flash device. */
     pThisCC->offEfiRom   = pFwVolHdr->FvLength;
     pThisCC->cbNvram     = pFwVolHdr->FvLength;
-    pThisCC->GCPhysNvram = UINT32_C(0xfffff000) - pThisCC->cbEfiRom + PAGE_SIZE;
+    pThisCC->GCPhysNvram = UINT32_C(0xfffff000) - pThisCC->cbEfiRom + GUEST_PAGE_SIZE;
     pThisCC->cbEfiRom   -= pThisCC->cbNvram;
 
     int rc = flashR3Init(&pThis->Flash, pThisCC->pDevIns, 0xA289 /*Intel*/, pThisCC->cbNvram, pFwVolHdr->BlockMap[0].Length);
@@ -1283,7 +1283,7 @@ static int efiLoadRom(PPDMDEVINS pDevIns, PDEVEFI pThis, PDEVEFIR3 pThisCC, PCFG
                           VERR_IMAGE_TOO_BIG);
 
     uint32_t const  cbChunk = pThisCC->cbNvram + pThisCC->cbEfiRom >= _2M ? _512K
-                            : (uint32_t)RT_ALIGN_64((pThisCC->cbNvram + pThisCC->cbEfiRom) / 4, PAGE_SIZE);
+                            : (uint32_t)RT_ALIGN_64((pThisCC->cbNvram + pThisCC->cbEfiRom) / 4, GUEST_PAGE_SIZE);
     uint32_t        cbLeft  = pThisCC->cbEfiRom;           /* ASSUMES NVRAM comes first! */
     uint32_t        off     = pThisCC->offEfiRom + cbLeft; /* ASSUMES NVRAM comes first! */
     RTGCPHYS64      GCPhys  = pThisCC->GCLoadAddress + cbLeft;
@@ -1327,7 +1327,7 @@ static int efiLoadRom(PPDMDEVINS pDevIns, PDEVEFI pThis, PDEVEFIR3 pThisCC, PCFG
     AssertRCReturn(rc, rc);
 
 #else
-    RTGCPHYS cbQuart = RT_ALIGN_64(pThisCC->cbEfiRom / 4, PAGE_SIZE);
+    RTGCPHYS cbQuart = RT_ALIGN_64(pThisCC->cbEfiRom / 4, GUEST_PAGE_SIZE);
     rc = PDMDevHlpROMRegister(pDevIns,
                               pThisCC->GCLoadAddress,
                               cbQuart,

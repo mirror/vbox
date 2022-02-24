@@ -47,24 +47,6 @@
 #include "tstDeviceBuiltin.h"
 
 
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Structures and Typedefs                                                                                                      *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Global Variables                                                                                                             *
-*********************************************************************************************************************************/
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
 
 /**
  * Create a new PDM device with default config.
@@ -81,9 +63,10 @@ DECLHIDDEN(int) tstDevPdmDevR0R3Create(const char *pszName, bool fRCEnabled, PTS
     PCTSTDEVPDMDEV pPdmDev = tstDevPdmDeviceFind(pszName, &pPdmDevR0);
     if (RT_LIKELY(pPdmDev))
     {
-        uint32_t const cbRing0     = RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSR0, achInstanceData) + pPdmDevR0->cbInstanceCC, PAGE_SIZE);
+        uint32_t const cbRing0     = RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSR0, achInstanceData) + pPdmDevR0->cbInstanceCC,
+                                                 HOST_PAGE_SIZE);
         uint32_t const cbRing3     = RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSR3, achInstanceData) + pPdmDev->pReg->cbInstanceCC,
-                                                 fRCEnabled ? PAGE_SIZE : 64);
+                                                 fRCEnabled ? HOST_PAGE_SIZE : 64);
         uint32_t const cbRC        = fRCEnabled ? 0
                                    : RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSRC, achInstanceData) + pPdmDevR0->cbInstanceRC, 64);
         uint32_t const cbShared    = RT_ALIGN_32(pPdmDev->pReg->cbInstanceShared, 64);
@@ -92,7 +75,7 @@ DECLHIDDEN(int) tstDevPdmDevR0R3Create(const char *pszName, bool fRCEnabled, PTS
         uint32_t const cbPciDev    = RT_ALIGN_32(RT_UOFFSETOF_DYN(PDMPCIDEV, abMsixState[cbMsixState]), 64);
         uint32_t const cPciDevs    = RT_MIN(pPdmDev->pReg->cMaxPciDevices, 8);
         uint32_t const cbPciDevs   = cbPciDev * cPciDevs;
-        uint32_t const cbTotal     = RT_ALIGN_32(cbRing0 + cbRing3 + cbRC + cbShared + cbCritSect + cbPciDevs, PAGE_SIZE);
+        uint32_t const cbTotal     = RT_ALIGN_32(cbRing0 + cbRing3 + cbRC + cbShared + cbCritSect + cbPciDevs, HOST_PAGE_SIZE);
         AssertLogRelMsgReturn(cbTotal <= PDM_MAX_DEVICE_INSTANCE_SIZE,
                               ("Instance of '%s' is too big: cbTotal=%u, max %u\n",
                                pPdmDev->pReg->szName, cbTotal, PDM_MAX_DEVICE_INSTANCE_SIZE),

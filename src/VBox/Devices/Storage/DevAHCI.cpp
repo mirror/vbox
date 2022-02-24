@@ -5920,7 +5920,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     /*
      * The non-fake PCI I/O regions:
-     * Note! The 4352 byte MMIO region will be rounded up to PAGE_SIZE.
+     * Note! The 4352 byte MMIO region will be rounded up to GUEST_PAGE_SIZE.
      */
     rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, 4 /*iPciRegion*/, 0x10 /*cPorts*/,
                                       ahciIdxDataWrite, ahciIdxDataRead, NULL /*pvUser*/,

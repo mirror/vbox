@@ -98,8 +98,8 @@ typedef struct USBPROXYISOCBUFCOL
     void                       *pvFrames;
     /** The buffers.
      * The number of buffers here is decided by pvFrame begin allocated in
-     * PAGE_SIZE chunks. The size of IOUSBLowLatencyIsocFrame is 16 bytes
-     * and we require 8 of those per buffer. PAGE_SIZE / (16 * 8) = 32.
+     * GUEST_PAGE_SIZE chunks. The size of IOUSBLowLatencyIsocFrame is 16 bytes
+     * and we require 8 of those per buffer. GUEST_PAGE_SIZE / (16 * 8) = 32.
      * @remarks  Don't allocate too many as it may temporarily halt the system if
      *           some pool is low / exhausted. (Contiguous memory woes on mach.)
      */
@@ -456,7 +456,8 @@ static int usbProxyDarwinUrbAllocIsocBuf(PUSBPROXYURBOSX pUrbOsX, PUSBPROXYIFOSX
     }
     if (irc == kIOReturnSuccess)
     {
-        irc = (*pIf->ppIfI)->LowLatencyCreateBuffer(pIf->ppIfI, &pNew->pvFrames, PAGE_SIZE, kUSBLowLatencyFrameListBuffer);
+        /** @todo GUEST_PAGE_SIZE or HOST_PAGE_SIZE or just 4K? */
+        irc = (*pIf->ppIfI)->LowLatencyCreateBuffer(pIf->ppIfI, &pNew->pvFrames, GUEST_PAGE_SIZE, kUSBLowLatencyFrameListBuffer);
         if ((irc == kIOReturnSuccess) != RT_VALID_PTR(pNew->pvFrames))
         {
             AssertPtr(pNew->pvFrames);

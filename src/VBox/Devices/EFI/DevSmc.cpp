@@ -35,7 +35,7 @@
 # include <iprt/asm-amd64-x86.h>
 # include <iprt/once.h>
 #endif
-#if defined(RT_OS_DARWIN) && defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE) /* drags in bad PAGE_SIZE */
+#if defined(RT_OS_DARWIN) && defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE) /* drags in bad page size define */
 # include "IOKit/IOKitLib.h"
 #endif
 

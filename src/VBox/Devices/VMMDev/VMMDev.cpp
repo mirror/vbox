@@ -4983,7 +4983,7 @@ static DECLCALLBACK(int) vmmdevRZConstruct(PPDMDEVINS pDevIns)
      * We map the first page of the VMMDevRAM into raw-mode and kernel contexts so we
      * can handle interrupt acknowledge requests more timely (vmmdevFastRequestIrqAck).
      */
-    rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VMMDevRAM, 0, PAGE_SIZE, (void **)&pThisCC->CTX_SUFF(pVMMDevRAM));
+    rc = PDMDevHlpMmio2SetUpContext(pDevIns, pThis->hMmio2VMMDevRAM, 0, GUEST_PAGE_SIZE, (void **)&pThisCC->CTX_SUFF(pVMMDevRAM));
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortFast, vmmdevFastRequestHandler, vmmdevFastRequestIrqAck, NULL);

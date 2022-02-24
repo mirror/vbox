@@ -453,7 +453,7 @@ static bool TestOhciReads(RTVPTRUNION uPtr)
             /* Test unaligned word access. */
             if (fDone)
             {
-                for (int iWord = ((uintptr_t)uPtr.pv & PAGE_OFFSET_MASK) == 0; iWord < 3; iWord++)
+                for (int iWord = (uPtr.u & HOST_PAGE_OFFSET_MASK) == 0; iWord < 3; iWord++)
                 {
                     u32A = *uPtr.pu32;
                     u32B = *(volatile uint16_t *)&uPtr.pu8[iWord * 2 - 1];
@@ -482,7 +482,7 @@ static bool TestOhciReads(RTVPTRUNION uPtr)
             /* Test unaligned dword access. */
             if (fDone)
             {
-                for (int iByte = ((uintptr_t)uPtr.pv & PAGE_OFFSET_MASK) == 0 ? 0 : -3; iByte < 4; iByte++)
+                for (int iByte = (uPtr.u & HOST_PAGE_OFFSET_MASK) == 0 ? 0 : -3; iByte < 4; iByte++)
                 {
                     u32A = *uPtr.pu32;
                     u32B = *(volatile uint32_t *)&uPtr.pu8[iByte];
@@ -548,7 +548,7 @@ int tstOhciRegisterAccess(RTHCPHYS HCPhysOHCI)
      * Map the OHCI registers so we can access them.
      */
     RTR0MEMOBJ hMemObj;
-    int rc = RTR0MemObjEnterPhys(&hMemObj, HCPhysOHCI, PAGE_SIZE, RTMEM_CACHE_POLICY_MMIO);
+    int rc = RTR0MemObjEnterPhys(&hMemObj, HCPhysOHCI, HOST_PAGE_SIZE, RTMEM_CACHE_POLICY_MMIO);
     if (RT_FAILURE(rc))
     {
         LogRel(("tstOhciRegisterAccess: Failed to enter OHCI memory at %RHp: %Rrc\n", HCPhysOHCI, rc));

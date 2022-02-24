@@ -46,10 +46,10 @@ static void vqueueReset(PVQUEUE pQueue)
 
 static void vqueueInit(PVQUEUE pQueue, uint32_t uPageNumber)
 {
-    pQueue->VRing.addrDescriptors = (uint64_t)uPageNumber << PAGE_SHIFT;
+    pQueue->VRing.addrDescriptors = (uint64_t)uPageNumber << GUEST_PAGE_SHIFT;
     pQueue->VRing.addrAvail       = pQueue->VRing.addrDescriptors + sizeof(VRINGDESC) * pQueue->VRing.uSize;
     pQueue->VRing.addrUsed        = RT_ALIGN(pQueue->VRing.addrAvail + RT_UOFFSETOF_DYN(VRINGAVAIL, auRing[pQueue->VRing.uSize]),
-                                             PAGE_SIZE); /* The used ring must start from the next page. */
+                                             GUEST_PAGE_SIZE); /* The used ring must start from the next page. */
     pQueue->uNextAvailIndex       = 0;
     pQueue->uNextUsedIndex        = 0;
 }

@@ -350,7 +350,7 @@ typedef struct VGAState
     /** Current refresh timer interval. */
     uint32_t                    cMilliesRefreshInterval;
     /** Bitmap tracking dirty pages. */
-    uint64_t                    bmDirtyBitmap[VGA_VRAM_MAX / PAGE_SIZE / 64];
+    uint64_t                    bmDirtyBitmap[VGA_VRAM_MAX / GUEST_PAGE_SIZE / 64];
 
     /** Flag indicating that there are dirty bits. This is used to optimize the handler resetting. */
     bool                        fHasDirtyBits;

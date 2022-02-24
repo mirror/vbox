@@ -2101,7 +2101,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
             vmsvgaR3GmrFree(pThisCC, idGMR);
 
             /* Just undefine the GMR? */
-            RTGCPHYS GCPhys = (RTGCPHYS)u32 << PAGE_SHIFT;
+            RTGCPHYS GCPhys = (RTGCPHYS)u32 << GUEST_PAGE_SHIFT;
             if (GCPhys == 0)
             {
                 STAM_REL_COUNTER_INC(&pSVGAState->StatR3RegGmrDescriptorWrFree);
@@ -2116,7 +2116,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
             PVMSVGAGMRDESCRIPTOR    paDescs     = NULL;
             uint32_t                cLoops      = 0;
             RTGCPHYS                GCPhysBase  = GCPhys;
-            while (PHYS_PAGE_ADDRESS(GCPhys) == PHYS_PAGE_ADDRESS(GCPhysBase))
+            while ((GCPhys >> GUEST_PAGE_SHIFT) == (GCPhysBase >> GUEST_PAGE_SHIFT))
             {
                 /* Read descriptor. */
                 SVGAGuestMemDescriptor desc;
@@ -2136,7 +2136,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
                         paDescs = (PVMSVGAGMRDESCRIPTOR)pvNew;
                     }
 
-                    paDescs[iDesc].GCPhys     = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
+                    paDescs[iDesc].GCPhys     = (RTGCPHYS)desc.ppn << GUEST_PAGE_SHIFT;
                     paDescs[iDesc++].numPages = desc.numPages;
 
                     /* Continue with the next descriptor. */
@@ -2145,7 +2145,7 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
                 else if (desc.ppn == 0)
                     break;  /* terminator */
                 else /* Pointer to the next physical page of descriptors. */
-                    GCPhys = GCPhysBase = (RTGCPHYS)desc.ppn << PAGE_SHIFT;
+                    GCPhys = GCPhysBase = (RTGCPHYS)desc.ppn << GUEST_PAGE_SHIFT;
 
                 cLoops++;
                 AssertBreakStmt(cLoops < VMSVGA_MAX_GMR_DESC_LOOP_COUNT, rc = VERR_OUT_OF_RANGE);
@@ -2158,8 +2158,8 @@ static VBOXSTRICTRC vmsvgaWritePort(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTA
                 pSVGAState->paGMR[idGMR].paDesc         = paDescs;
                 pSVGAState->paGMR[idGMR].numDescriptors = iDesc;
                 pSVGAState->paGMR[idGMR].cMaxPages      = cPagesTotal;
-                pSVGAState->paGMR[idGMR].cbTotal        = cPagesTotal * PAGE_SIZE;
-                Assert((pSVGAState->paGMR[idGMR].cbTotal >> PAGE_SHIFT) == cPagesTotal);
+                pSVGAState->paGMR[idGMR].cbTotal        = cPagesTotal * GUEST_PAGE_SIZE;
+                Assert((pSVGAState->paGMR[idGMR].cbTotal >> GUEST_PAGE_SHIFT) == cPagesTotal);
                 Log(("Defined new gmr %x numDescriptors=%d cbTotal=%x (%#x pages)\n",
                      idGMR, iDesc, pSVGAState->paGMR[idGMR].cbTotal, cPagesTotal));
             }
@@ -2833,7 +2833,7 @@ vmsvgaR3GmrAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, v
             for (uint32_t j = 0; j < pGMR->numDescriptors; j++)
             {
                 if (    GCPhys >= pGMR->paDesc[j].GCPhys
-                    &&  GCPhys < pGMR->paDesc[j].GCPhys + pGMR->paDesc[j].numPages * PAGE_SIZE)
+                    &&  GCPhys < pGMR->paDesc[j].GCPhys + pGMR->paDesc[j].numPages * GUEST_PAGE_SIZE)
                 {
                     /*
                      * Turn off the write handler for this particular page and make it R/W.
@@ -2860,8 +2860,8 @@ static DECLCALLBACK(int) vmsvgaR3RegisterGmr(PPDMDEVINS pDevIns, uint32_t gmrId)
 
     for (uint32_t i = 0; i < pGMR->numDescriptors; i++)
     {
-        rc = PDMDevHlpPGMHandlerPhysicalRegister(pDevIns,
-                                                 pGMR->paDesc[i].GCPhys, pGMR->paDesc[i].GCPhys + pGMR->paDesc[i].numPages * PAGE_SIZE - 1,
+        rc = PDMDevHlpPGMHandlerPhysicalRegister(pDevIns, pGMR->paDesc[i].GCPhys,
+                                                 pGMR->paDesc[i].GCPhys + pGMR->paDesc[i].numPages * GUEST_PAGE_SIZE - 1,
                                                  pThis->svga.hGmrAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR, "VMSVGA GMR");
         AssertRC(rc);
     }
@@ -5146,7 +5146,7 @@ static void vmsvgaR3SetTraces(PPDMDEVINS pDevIns, PVGASTATE pThis, bool fTraces)
 # endif
             /* Hardware enabled; return real framebuffer size .*/
             cbFrameBuffer = (uint32_t)pThis->svga.uHeight * pThis->svga.cbScanline;
-            cbFrameBuffer = RT_ALIGN(cbFrameBuffer, PAGE_SIZE);
+            cbFrameBuffer = RT_ALIGN(cbFrameBuffer, GUEST_PAGE_SIZE);
         }
 
         if (!pThis->svga.fVRAMTracking)
@@ -5199,7 +5199,7 @@ DECLCALLBACK(int) vmsvgaR3PciIORegionFifoMapUnmap(PPDMDEVINS pDevIns, PPDMPCIDEV
 #  ifdef DEBUG_FIFO_ACCESS
                                                      GCPhysAddress + (pThis->svga.cbFIFO - 1),
 #  else
-                                                     GCPhysAddress + PAGE_SIZE - 1,
+                                                     GCPhysAddress + GUEST_PAGE_SIZE - 1,
 #  endif
                                                      pThis->svga.hFifoAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR,
                                                      "VMSVGA FIFO");
