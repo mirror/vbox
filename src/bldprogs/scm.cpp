@@ -2918,7 +2918,8 @@ static int scmHelp(PCRTGETOPTDEF paOpts, size_t cOpts)
                 break;
             case SCMOPT_ONLY_GUEST_HOST_PAGE:
                 RTPrintf("      No PAGE_SIZE, PAGE_SHIFT or PAGE_OFFSET_MASK allowed, must have\n"
-                         "      GUEST_ or HOST_ prefix.  Default: %RTbool\n", g_Defaults.fOnlyGuestHostPage);
+                         "      GUEST_ or HOST_ prefix.  Also forbids use of PAGE_BASE_MASK,\n"
+                         "      PAGE_BASE_HC_MASK and PAGE_BASE_GC_MASK  Default: %RTbool\n", g_Defaults.fOnlyGuestHostPage);
                 break;
             case SCMOPT_NO_ASM_MEM_PAGE_USE:
                 RTPrintf("      No ASMMemIsZeroPage or ASMMemZeroPage allowed, must instead use\n"

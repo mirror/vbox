@@ -1189,7 +1189,9 @@ DECLEXPORT(VBOXSTRICTRC) pgmRZPoolAccessPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTG
             pgmPoolAddDirtyPage(pVM, pPool, pPage);
 
             /* Temporarily allow write access to the page table again. */
-            rc = PGMHandlerPhysicalPageTempOff(pVM, pPage->GCPhys & PAGE_BASE_GC_MASK, pPage->GCPhys & PAGE_BASE_GC_MASK);
+            rc = PGMHandlerPhysicalPageTempOff(pVM,
+                                               pPage->GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK,
+                                               pPage->GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK);
             if (rc == VINF_SUCCESS)
             {
                 rc = PGMShwMakePageWritable(pVCpu, pvFault, PGM_MK_PG_IS_WRITE_FAULT);
@@ -1640,7 +1642,7 @@ static void pgmPoolFlushDirtyPage(PVMCC pVM, PPGMPOOL pPool, unsigned idxSlot, b
     Log(("Flush dirty page %RGp cMods=%d\n", pPage->GCPhys, pPage->cModifications));
 
     /* First write protect the page again to catch all write accesses. (before checking for changes -> SMP) */
-    int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys & PAGE_BASE_GC_MASK);
+    int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK);
     Assert(rc == VINF_SUCCESS);
     pPage->fDirty = false;
 

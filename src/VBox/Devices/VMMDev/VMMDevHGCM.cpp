@@ -1108,7 +1108,7 @@ static int vmmdevR3HgcmCallFetchGuestParms(PPDMDEVINS pDevIns, PVMMDEVCC pThisCC
                     }
 
                     /* Gonvert the guest linear pointers of pages to physical addresses. */
-                    GCPtr &= PAGE_BASE_GC_MASK;
+                    GCPtr &= ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK;
                     for (uint32_t iPage = 0; iPage < cPages; ++iPage)
                     {
                         /* The guest might specify invalid GCPtr, just skip such addresses.

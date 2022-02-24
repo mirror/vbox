@@ -3253,7 +3253,8 @@ bool rewrite_FixHeaderGuards(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
 
 /**
  * Checks for PAGE_SIZE, PAGE_SHIFT and PAGE_OFFSET_MASK w/o a GUEST_ or HOST_
- * prefix.
+ * prefix as well as banning PAGE_BASE_HC_MASK, PAGE_BASE_GC_MASK and
+ * PAGE_BASE_MASK.
  *
  * @returns true if modifications were made, false if not.
  * @param   pIn                 The input stream.
@@ -3271,11 +3272,14 @@ bool rewrite_PageChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCS
         { RT_STR_TUPLE("PAGE_SIZE") },
         { RT_STR_TUPLE("PAGE_SHIFT") },
         { RT_STR_TUPLE("PAGE_OFFSET_MASK") },
+        { RT_STR_TUPLE("PAGE_BASE_MASK") },
+        { RT_STR_TUPLE("PAGE_BASE_GC_MASK") },
+        { RT_STR_TUPLE("PAGE_BASE_HC_MASK") },
         { RT_STR_TUPLE("ASMMemIsZeroPage") },
         { RT_STR_TUPLE("ASMMemZeroPage") },
     };
-    size_t const iFirstWord = pSettings->fOnlyGuestHostPage ? 0 : 3;
-    size_t const iEndWords  = pSettings->fNoASMMemPageUse   ? 5 : 3;
+    size_t const iFirstWord = pSettings->fOnlyGuestHostPage ? 0 : 5;
+    size_t const iEndWords  = pSettings->fNoASMMemPageUse   ? 7 : 5;
 
     uint32_t    iLine = 0;
     SCMEOL      enmEol;

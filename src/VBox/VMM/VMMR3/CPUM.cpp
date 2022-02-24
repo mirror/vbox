@@ -4185,7 +4185,7 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
             || (GCPtr >> GUEST_PAGE_SHIFT) != (pState->pvPageGC >> GUEST_PAGE_SHIFT))
         {
             /* translate the address */
-            pState->pvPageGC = GCPtr & PAGE_BASE_GC_MASK;
+            pState->pvPageGC = GCPtr & ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK;
 
             /* Release mapping lock previously acquired. */
             if (pState->fLocked)

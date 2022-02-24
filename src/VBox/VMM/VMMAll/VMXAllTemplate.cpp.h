@@ -8519,7 +8519,7 @@ HMVMX_EXIT_DECL vmxHCExitApicAccess(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                       ("vmxHCExitApicAccess: can't access TPR offset while using TPR shadowing.\n"));
 
             RTGCPHYS GCPhys = VCPU_2_VMXSTATE(pVCpu).vmx.u64GstMsrApicBase;    /* Always up-to-date, as it is not part of the VMCS. */
-            GCPhys &= PAGE_BASE_GC_MASK;
+            GCPhys &= ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
             GCPhys += VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(pVmxTransient->uExitQual);
             Log4Func(("Linear access uAccessType=%#x GCPhys=%#RGp Off=%#x\n", uAccessType, GCPhys,
                  VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(pVmxTransient->uExitQual)));

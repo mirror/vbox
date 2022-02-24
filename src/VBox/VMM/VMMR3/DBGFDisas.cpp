@@ -220,7 +220,7 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
             int rc = VINF_SUCCESS;
 
             /* translate the address */
-            pState->GCPtrPage = GCPtr & PAGE_BASE_GC_MASK;
+            pState->GCPtrPage = GCPtr & ~(RTGCPTR)GUEST_PAGE_OFFSET_MASK;
             if (pState->fLocked)
                 PGMPhysReleasePageMappingLock(pState->pVM, &pState->PageMapLock);
             if (pState->enmMode <= PGMMODE_PROTECTED)
