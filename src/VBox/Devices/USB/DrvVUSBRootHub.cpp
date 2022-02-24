@@ -917,16 +917,16 @@ static DECLCALLBACK(int) vusbRhCancelAllUrbsWorker(PVUSBDEV pDev)
 /** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnCancelAllUrbs} */
 static DECLCALLBACK(void) vusbRhCancelAllUrbs(PVUSBIROOTHUBCONNECTOR pInterface)
 {
-    PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
 
-    RTCritSectEnter(&pRh->CritSectDevices);
-    PVUSBDEV pDev = pRh->pDevices;
-    while (pDev)
+    RTCritSectEnter(&pThis->CritSectDevices);
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->apDevByPort); i++)
     {
-        vusbDevIoThreadExecSync(pDev, (PFNRT)vusbRhCancelAllUrbsWorker, 1, pDev);
-        pDev = pDev->pNext;
+        PVUSBDEV pDev = pThis->apDevByPort[i];
+        if (pDev)
+            vusbDevIoThreadExecSync(pDev, (PFNRT)vusbRhCancelAllUrbsWorker, 1, pDev);
     }
-    RTCritSectLeave(&pRh->CritSectDevices);
+    RTCritSectLeave(&pThis->CritSectDevices);
 }
 
 /**
@@ -1418,9 +1418,6 @@ static int vusbRhHubOpAttach(PVUSBHUB pHub, PVUSBDEV pDev)
     if (RT_SUCCESS(rc))
     {
         RTCritSectEnter(&pRh->CritSectDevices);
-        pDev->pNext = pRh->pDevices;
-        pRh->pDevices = pDev;
-
         Assert(!pRh->apDevByPort[iPort]);
         pRh->apDevByPort[iPort] = pDev;
 
@@ -1455,18 +1452,7 @@ static void vusbRhHubOpDetach(PVUSBHUB pHub, PVUSBDEV pDev)
      * Check that it's attached and unlink it from the linked list.
      */
     RTCritSectEnter(&pRh->CritSectDevices);
-    if (pRh->pDevices != pDev)
-    {
-        PVUSBDEV pPrev = pRh->pDevices;
-        while (pPrev && pPrev->pNext != pDev)
-            pPrev = pPrev->pNext;
-        Assert(pPrev);
-        pPrev->pNext = pDev->pNext;
-    }
-    else
-        pRh->pDevices = pDev->pNext;
-    pDev->pNext = NULL;
-
+    Assert(pRh->apDevByPort[pDev->i16Port] == pDev);
     pRh->apDevByPort[pDev->i16Port] = NULL;
     RTCritSectLeave(&pRh->CritSectDevices);
 
