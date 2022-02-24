@@ -238,7 +238,7 @@ void UILanguageSettingsEditor::retranslateUi()
     if (m_pTreeWidget)
     {
         m_pTreeWidget->setWhatsThis(tr("Lists all available user interface languages. The effective language is written "
-                                       "in <b>bold</b>. Select <i>Default</i> to reset to the system default language."));
+                                       "in bold. Select Default to reset to the system default language."));
 
         /* Translate tree-widget header: */
         QTreeWidgetItem *pTreeWidgetHeaderItem = m_pTreeWidget->headerItem();
