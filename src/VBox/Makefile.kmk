@@ -44,7 +44,7 @@ else ifdef VBOX_ONLY_EXTPACKS
  include $(PATH_SUB_CURRENT)/Main/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Storage/Makefile.kmk
  include $(PATH_SUB_CURRENT)/ExtPacks/Makefile.kmk
- ifdef VBOX_WITH_VRDP
+ if defined(VBOX_WITH_VRDP) || defined(VBOX_WITH_VRDP_RDESKTOP)
   include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/VMM/Makefile.kmk
