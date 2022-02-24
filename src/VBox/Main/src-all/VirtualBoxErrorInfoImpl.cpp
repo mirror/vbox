@@ -244,8 +244,7 @@ NS_IMETHODIMP VirtualBoxErrorInfo::GetMessage(char **aMessage)
 /* readonly attribute nsresult result; */
 NS_IMETHODIMP VirtualBoxErrorInfo::GetResult(nsresult *aResult)
 {
-    if (!aResult)
-      return NS_ERROR_INVALID_POINTER;
+    AssertReturn(aResult, NS_ERROR_INVALID_POINTER);
 
     PRInt32 lrc;
     nsresult rc = COMGETTER(ResultCode)(&lrc);
