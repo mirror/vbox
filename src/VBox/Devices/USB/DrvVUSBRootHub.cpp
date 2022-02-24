@@ -1131,7 +1131,7 @@ static DECLCALLBACK(VUSBDEVICESTATE) vusbR3RhDevGetState(PVUSBIROOTHUBCONNECTOR 
 }
 
 
-/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnIsSavedStateSupported} */
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnDevIsSavedStateSupported} */
 static DECLCALLBACK(bool) vusbR3RhDevIsSavedStateSupported(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
 {
     PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
@@ -1190,7 +1190,7 @@ static const char *vusbGetSpeedString(VUSBSPEED enmSpeed)
 
 
 /**
- * @callback_method_impl{FNSSMDEVSAVEPREP, All URBs needs to be canceled.}
+ * @callback_method_impl{FNSSMDRVSAVEPREP, All URBs needs to be canceled.}
  */
 static DECLCALLBACK(int) vusbR3RhSavePrep(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
@@ -1242,7 +1242,7 @@ static DECLCALLBACK(int) vusbR3RhSavePrep(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 
 
 /**
- * @callback_method_impl{FNSSMDEVSAVEDONE}
+ * @callback_method_impl{FNSSMDRVSAVEDONE}
  */
 static DECLCALLBACK(int) vusbR3RhSaveDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
@@ -1278,7 +1278,7 @@ static DECLCALLBACK(int) vusbR3RhSaveDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 
 
 /**
- * @callback_method_impl{FNSSMDEVLOADPREP, This must detach the devices
+ * @callback_method_impl{FNSSMDRVLOADPREP, This must detach the devices
  * currently attached and save them for reconnect after the state load has been
  * completed.}
  */
@@ -1356,7 +1356,7 @@ static DECLCALLBACK(void) vusbR3RhLoadReattachDevices(PPDMDRVINS pDrvIns, TMTIME
 
 
 /**
- * @callback_method_impl{FNSSMDEVLOADDONE}
+ * @callback_method_impl{FNSSMDRVLOADDONE}
  */
 static DECLCALLBACK(int) vusbR3RhLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
