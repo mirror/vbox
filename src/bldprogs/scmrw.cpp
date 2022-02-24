@@ -3305,7 +3305,7 @@ bool rewrite_PageChecks(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCS
                         && (   cchLeft == cchWord
                             || !ScmIsCIdentifierChar(pchHit[cchWord])) )
                     {
-                        if (i < 3)
+                        if (i < 5)
                             ScmFixManually(pState, "%u:%zu: %s is not allow! Use GUEST_%s or HOST_%s instead.\n",
                                            iLine, pchHit - pchLine + 1, pszWord, pszWord, pszWord);
                         else
