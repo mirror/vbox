@@ -5581,7 +5581,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   u64MsrApicBase  The guest-physical address of the APIC access page.
+ * @param   GCPhysApicBase  The guest-physical address of the APIC access page.
  */
 static int hmR0VmxMapHCApicAccessPage(PVMCPUCC pVCpu, RTGCPHYS GCPhysApicBase)
 {
