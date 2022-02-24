@@ -58,12 +58,16 @@
 # GAS assembly files w/o preprocessing.
 /*.S:          --treat-as Makefile
 
+# Python sources.
+/*.pyw:        --treat-as python
+
 # Not quite sure what this is, uses C++ comment style.
 /*.vfr:        --treat-as .h
 /*.Vfr:        --treat-as .h
 
 # Linker scripts.
 /*-ld-script:  --treat-as .h
+/*.lds:        --treat-as .h
 
 # Grammar files. Treat as C for now.
 /*.g:          --treat-as .c
@@ -123,12 +127,39 @@
 
 # Misc
 --filter-out-files */.gitignore
+--filter-out-files */.gitmodules
+--filter-out-files /.mailmap
+--filter-out-files *.cmm
+--filter-out-files *.CMM
+--filter-out-files *.cer
+--filter-out-files *.idf
+--filter-out-files *.g4
+--filter-out-files *.html
+--filter-out-files *.lds
+--filter-out-files *.md
+--filter-out-files *.pem
 --filter-out-files *.ps
+--filter-out-files *.sct
+--filter-out-files *.svg
+--filter-out-files *.rst
+--filter-out-files *.yml
+--filter-out-files *.yaml
+--filter-out-files /BaseTools/Conf/diff.order
+--filter-out-files /BaseTools/Conf/gitattributes
+--filter-out-files /BaseTools/BinPipWrappers/PosixLike/*
 --filter-out-files /BaseTools/Source/Python/Rsa2048Sha256Sign/TestSigningPrivateKey.pem
+--filter-out-files /EmbeddedPkg/Library/FdtLib/Makefile.libfdt
+--filter-out-files /IntelFsp2Pkg/Tools/Tests/ExpectedOutput.bsf
+--filter-out-files /OvmfPkg/AmdSev/Grub/grub.cfg
+--filter-out-files /ShellPkg/Application/ShellCTestApp/*.log
 --filter-out-dirs  /StdLib/Efi/StdLib/etc/.
 
 # @todo Temporary until openssl is updated and we can cleanup the eol style mess
 --filter-out-dirs  /CryptoPkg/Library/OpensslLib/.
+
+# Ignore PAGE_SIZE related stuff here.
+/OvmfPkg/Include/IndustryStandard/Xen/io/*.h: --no-page-restrictions
+
 
 #
 # VBoxPkg
