@@ -17,8 +17,7 @@
 
 /* Qt includes: */
 #include <QCheckBox>
-#include <QGridLayout>
-#include <QLabel>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "UIAutoCaptureKeyboardEditor.h"
@@ -67,7 +66,6 @@ struct UIDataSettingsGlobalInput
 UIGlobalSettingsInput::UIGlobalSettingsInput()
     : m_pCache(0)
     , m_pEditorShortcutConfiguration(0)
-    , m_pLabelInputExtended(0)
     , m_pEditorAutoCaptureKeyboard(0)
 {
     prepare();
@@ -178,7 +176,6 @@ bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
 
 void UIGlobalSettingsInput::retranslateUi()
 {
-    m_pLabelInputExtended->setText(tr("Extended Features:"));
 }
 
 void UIGlobalSettingsInput::prepare()
@@ -198,25 +195,18 @@ void UIGlobalSettingsInput::prepare()
 void UIGlobalSettingsInput::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
     if (pLayoutMain)
     {
         /* Prepare 'shortcut configuration' editor: */
         m_pEditorShortcutConfiguration = new UIShortcutConfigurationEditor(this);
         if (m_pEditorShortcutConfiguration)
-            pLayoutMain->addWidget(m_pEditorShortcutConfiguration, 0, 0, 1, 2);
+            pLayoutMain->addWidget(m_pEditorShortcutConfiguration);
 
-        /* Prepare input extended label: */
-        m_pLabelInputExtended = new QLabel(this);
-        if (m_pLabelInputExtended)
-        {
-            m_pLabelInputExtended->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelInputExtended, 1, 0);
-        }
         /* Prepare 'auto capture keyboard' editor: */
         m_pEditorAutoCaptureKeyboard = new UIAutoCaptureKeyboardEditor(this);
         if (m_pEditorAutoCaptureKeyboard)
-            pLayoutMain->addWidget(m_pEditorAutoCaptureKeyboard, 1, 1);
+            pLayoutMain->addWidget(m_pEditorAutoCaptureKeyboard);
     }
 }
 

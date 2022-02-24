@@ -854,8 +854,8 @@ void UIShortcutConfigurationEditor::retranslateUi()
     m_pTabWidget->setTabText(TableIndex_Runtime, tr("Virtual &Machine"));
     m_pTableManager->setWhatsThis(tr("Lists all available shortcuts which can be configured."));
     m_pTableRuntime->setWhatsThis(tr("Lists all available shortcuts which can be configured."));
-    m_pEditorFilterManager->setWhatsThis(tr("Holds a sequence to filter the shortcut list."));
-    m_pEditorFilterRuntime->setWhatsThis(tr("Holds a sequence to filter the shortcut list."));
+    m_pEditorFilterManager->setToolTip(tr("Holds a sequence to filter the shortcut list."));
+    m_pEditorFilterRuntime->setToolTip(tr("Holds a sequence to filter the shortcut list."));
 }
 
 void UIShortcutConfigurationEditor::prepare()

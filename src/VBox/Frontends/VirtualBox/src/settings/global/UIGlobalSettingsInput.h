@@ -25,7 +25,6 @@
 #include "UISettingsPage.h"
 
 /* Forward declarations: */
-class QLabel;
 class UIAutoCaptureKeyboardEditor;
 class UIShortcutConfigurationEditor;
 struct UIDataSettingsGlobalInput;
@@ -86,8 +85,6 @@ private:
      * @{ */
         /** Holds the 'shortcut configuration' editor instance. */
         UIShortcutConfigurationEditor *m_pEditorShortcutConfiguration;
-        /** Holds the input extended label instance. */
-        QLabel                        *m_pLabelInputExtended;
         /** Holds the 'auto capture keyboard' editor instance. */
         UIAutoCaptureKeyboardEditor   *m_pEditorAutoCaptureKeyboard;
     /** @} */

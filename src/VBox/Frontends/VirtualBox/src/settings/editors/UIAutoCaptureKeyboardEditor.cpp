@@ -24,9 +24,8 @@
 #include "UIAutoCaptureKeyboardEditor.h"
 
 
-UIAutoCaptureKeyboardEditor::UIAutoCaptureKeyboardEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+UIAutoCaptureKeyboardEditor::UIAutoCaptureKeyboardEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabel(fWithLabel)
     , m_fValue(false)
     , m_pLabel(0)
     , m_pCheckBox(0)
@@ -59,9 +58,9 @@ void UIAutoCaptureKeyboardEditor::retranslateUi()
         m_pLabel->setText(tr("Extended Features:"));
     if (m_pCheckBox)
     {
-        m_pCheckBox->setWhatsThis(tr("When checked, the keyboard is automatically captured every time the VM window is "
-                                     "activated. When the keyboard is captured, all keystrokes (including system ones like "
-                                     "Alt-Tab) are directed to the VM."));
+        m_pCheckBox->setToolTip(tr("When checked, the keyboard is automatically captured every time the VM window is "
+                                   "activated. When the keyboard is captured, all keystrokes (including system ones like "
+                                   "Alt-Tab) are directed to the VM."));
         m_pCheckBox->setText(tr("&Auto Capture Keyboard"));
     }
 }
@@ -74,19 +73,15 @@ void UIAutoCaptureKeyboardEditor::prepare()
     {
         pLayoutMain->setContentsMargins(0, 0, 0, 0);
         pLayoutMain->setColumnStretch(1, 1);
-        int iColumn = 0;
 
         /* Prepare label: */
-        if (m_fWithLabel)
-        {
-            m_pLabel = new QLabel(this);
-            if (m_pLabel)
-                pLayoutMain->addWidget(m_pLabel, 0, iColumn++);
-        }
+        m_pLabel = new QLabel(this);
+        if (m_pLabel)
+            pLayoutMain->addWidget(m_pLabel, 0, 0);
         /* Prepare check-box: */
         m_pCheckBox = new QCheckBox(this);
         if (m_pCheckBox)
-            pLayoutMain->addWidget(m_pCheckBox, 0, iColumn++);
+            pLayoutMain->addWidget(m_pCheckBox, 0, 1);
     }
 
     /* Apply language settings: */
