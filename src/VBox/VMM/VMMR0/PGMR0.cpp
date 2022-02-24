@@ -1223,6 +1223,14 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE
  * @param   pGVCpu              The global (ring-0) CPU structure of the calling
  *                              EMT.
  * @param   uErr                The trap error code.
+ * @param   pRegFrame           Trap register frame.
+ * @param   GCPhysNested        The nested-guest physical address causing the fault.
+ * @param   fIsLinearAddrValid  Whether translation of a nested-guest linear address
+ *                              caused this fault. If @c false, GCPtrNested must be
+ *                              0.
+ * @param   GCPtrNested         The nested-guest linear address that caused this
+ *                              fault.
+ * @param   pWalk               Where to store the SLAT walk result.
  */
 VMMR0DECL(VBOXSTRICTRC) PGMR0NestedTrap0eHandlerNestedPaging(PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr,
                                                              PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysNested,
