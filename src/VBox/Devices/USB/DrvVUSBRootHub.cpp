@@ -257,7 +257,34 @@ static PVUSBDEV vusbR3RhGetVUsbDevByPortRetain(PVUSBROOTHUB pThis, uint32_t uPor
 
     pDev = pThis->apDevByPort[uPort];
     if (RT_LIKELY(pDev))
-        ASMAtomicIncU32(&pDev->cRefs);
+        vusbDevRetain(pDev);
+
+    RTCritSectLeave(&pThis->CritSectDevices);
+
+    return pDev;
+}
+
+
+/**
+ * Returns the attached VUSB device for the given port or NULL if none is attached.
+ *
+ * @returns Pointer to the VUSB device or NULL if not found.
+ * @param   pThis               The VUSB roothub device instance.
+ * @param   u8Address           The address to get the device for.
+ *
+ * @note The reference count of the VUSB device structure is retained to prevent it from going away.
+ */
+static PVUSBDEV vusbR3RhGetVUsbDevByAddrRetain(PVUSBROOTHUB pThis, uint8_t u8Address)
+{
+    PVUSBDEV pDev = NULL;
+
+    AssertReturn(u8Address < RT_ELEMENTS(pThis->apDevByAddr), NULL);
+
+    RTCritSectEnter(&pThis->CritSectDevices);
+
+    pDev = pThis->apDevByAddr[u8Address];
+    if (RT_LIKELY(pDev))
+        vusbDevRetain(pDev);
 
     RTCritSectLeave(&pThis->CritSectDevices);
 
@@ -352,34 +379,6 @@ static const PDMUSBHUBREG g_vusbHubReg =
 
 
 /**
- * Finds an device attached to a roothub by it's address.
- *
- * @returns Pointer to the device.
- * @returns NULL if not found.
- * @param   pRh         Pointer to the root hub.
- * @param   Address     The device address.
- */
-static PVUSBDEV vusbRhFindDevByAddress(PVUSBROOTHUB pRh, uint8_t Address)
-{
-    unsigned iHash = vusbHashAddress(Address);
-    PVUSBDEV pDev = NULL;
-
-    RTCritSectEnter(&pRh->CritSectDevices);
-    for (PVUSBDEV pCur = pRh->apAddrHash[iHash]; pCur; pCur = pCur->pNextHash)
-        if (pCur->u8Address == Address)
-        {
-            pDev = pCur;
-            break;
-        }
-
-    if (pDev)
-        vusbDevRetain(pDev);
-    RTCritSectLeave(&pRh->CritSectDevices);
-    return pDev;
-}
-
-
-/**
  * Callback for freeing an URB.
  * @param   pUrb    The URB to free.
  */
@@ -433,7 +432,7 @@ static PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, uint32_t uPor
 
     PVUSBDEV pDev;
     if (uPort == VUSB_DEVICE_PORT_INVALID)
-        pDev = vusbRhFindDevByAddress(pRh, DstAddress);
+        pDev = vusbR3RhGetVUsbDevByAddrRetain(pRh, DstAddress);
     else
         pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort);
 
@@ -1448,12 +1447,37 @@ static void vusbRhHubOpDetach(PVUSBHUB pHub, PVUSBDEV pDev)
     PVUSBROOTHUB pRh = (PVUSBROOTHUB)pHub;
     Assert(pDev->i16Port != -1);
 
-    /*
-     * Check that it's attached and unlink it from the linked list.
-     */
+    /* Check that it's attached and remvoe it. */
     RTCritSectEnter(&pRh->CritSectDevices);
     Assert(pRh->apDevByPort[pDev->i16Port] == pDev);
-    pRh->apDevByPort[pDev->i16Port] = NULL;
+    pRh->apDevByPort[pDev->i16Port]   = NULL;
+
+    if (pDev->u8Address == VUSB_DEFAULT_ADDRESS)
+    {
+        AssertPtr(pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS]);
+
+        if (pDev == pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS])
+            pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS] = pDev->pNextDefAddr;
+        else
+        {
+            /* Search the list for the device and remove it. */
+            PVUSBDEV pDevPrev = pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS];
+
+            while (   pDevPrev
+                   && pDevPrev->pNextDefAddr != pDev)
+                pDevPrev = pDevPrev->pNextDefAddr;
+
+            AssertPtr(pDevPrev);
+            pDevPrev->pNextDefAddr = pDev->pNextDefAddr;
+        }
+
+        pDev->pNextDefAddr = NULL;
+    }
+    else
+    {
+        Assert(pRh->apDevByAddr[pDev->u8Address] == pDev);
+        pRh->apDevByAddr[pDev->u8Address] = NULL;
+    }
     RTCritSectLeave(&pRh->CritSectDevices);
 
     /*

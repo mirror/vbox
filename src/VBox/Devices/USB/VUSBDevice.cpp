@@ -993,57 +993,6 @@ bool vusbDevStandardRequest(PVUSBDEV pDev, int EndPoint, PVUSBSETUP pSetup, void
 
 
 /**
- * Add a device to the address hash
- */
-static void vusbDevAddressHash(PVUSBDEV pDev)
-{
-    if (pDev->u8Address == VUSB_INVALID_ADDRESS)
-        return;
-    uint8_t u8Hash = vusbHashAddress(pDev->u8Address);
-    pDev->pNextHash = pDev->pHub->pRootHub->apAddrHash[u8Hash];
-    pDev->pHub->pRootHub->apAddrHash[u8Hash] = pDev;
-}
-
-/**
- * Remove a device from the address hash
- */
-static void vusbDevAddressUnHash(PVUSBDEV pDev)
-{
-    if (pDev->u8Address == VUSB_INVALID_ADDRESS)
-        return;
-
-    uint8_t u8Hash = vusbHashAddress(pDev->u8Address);
-    pDev->u8Address = VUSB_INVALID_ADDRESS;
-    pDev->u8NewAddress = VUSB_INVALID_ADDRESS;
-
-    RTCritSectEnter(&pDev->pHub->pRootHub->CritSectDevices);
-    PVUSBDEV pCur = pDev->pHub->pRootHub->apAddrHash[u8Hash];
-    if (pCur == pDev)
-    {
-        /* special case, we're at the head */
-        pDev->pHub->pRootHub->apAddrHash[u8Hash] = pDev->pNextHash;
-        pDev->pNextHash = NULL;
-    }
-    else
-    {
-        /* search the list */
-        PVUSBDEV pPrev;
-        for (pPrev = pCur, pCur = pCur->pNextHash;
-             pCur;
-             pPrev = pCur, pCur = pCur->pNextHash)
-        {
-            if (pCur == pDev)
-            {
-                pPrev->pNextHash = pCur->pNextHash;
-                pDev->pNextHash = NULL;
-                break;
-            }
-        }
-    }
-    RTCritSectLeave(&pDev->pHub->pRootHub->CritSectDevices);
-}
-
-/**
  * Sets the address of a device.
  *
  * Called by status_completion() and vusbDevResetWorker().
@@ -1076,30 +1025,61 @@ void vusbDevSetAddress(PVUSBDEV pDev, uint8_t u8Address)
     if (pDev->u8Address == u8Address)
         return;
 
+    /** @todo The following logic belongs to the roothub and should actually be in that file. */
     PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
     AssertPtrReturnVoid(pRh);
-    if (pDev->u8Address == VUSB_DEFAULT_ADDRESS)
-        pRh->pDefaultAddress = NULL;
 
-    vusbDevAddressUnHash(pDev);
+    RTCritSectEnter(&pRh->CritSectDevices);
+
+    /* Remove the device from the current address. */
+    if (pDev->u8Address == VUSB_DEFAULT_ADDRESS)
+    {
+        AssertPtr(pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS]);
+
+        if (pDev == pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS])
+            pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS] = pDev->pNextDefAddr;
+        else
+        {
+            /* Search the list for the device and remove it. */
+            PVUSBDEV pDevPrev = pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS];
+
+            while (   pDevPrev
+                   && pDevPrev->pNextDefAddr != pDev)
+                pDevPrev = pDevPrev->pNextDefAddr;
+
+            AssertPtr(pDevPrev);
+            pDevPrev->pNextDefAddr = pDev->pNextDefAddr;
+        }
+
+        pDev->pNextDefAddr = NULL;
+    }
+    else
+        pRh->apDevByAddr[pDev->u8Address] = NULL;
 
     if (u8Address == VUSB_DEFAULT_ADDRESS)
     {
-        if (pRh->pDefaultAddress != NULL)
+        PVUSBDEV pDevDef = pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS];
+
+        if (pDevDef)
         {
-            vusbDevAddressUnHash(pRh->pDefaultAddress);
-            vusbDevSetStateCmp(pRh->pDefaultAddress, VUSB_DEVICE_STATE_POWERED, VUSB_DEVICE_STATE_DEFAULT);
+            vusbDevSetStateCmp(pDevDef, VUSB_DEVICE_STATE_POWERED, VUSB_DEVICE_STATE_DEFAULT);
             Log(("2 DEFAULT ADDRS\n"));
         }
 
-        pRh->pDefaultAddress = pDev;
+        pDev->pNextDefAddr = pDevDef;
+        pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS] = pDev;
         vusbDevSetState(pDev, VUSB_DEVICE_STATE_DEFAULT);
     }
     else
+    {
+        Assert(!pRh->apDevByAddr[u8Address]);
+        pRh->apDevByAddr[u8Address] = pDev;
         vusbDevSetState(pDev, VUSB_DEVICE_STATE_ADDRESS);
+    }
+
+    RTCritSectLeave(&pRh->CritSectDevices);
 
     pDev->u8Address = u8Address;
-    vusbDevAddressHash(pDev);
 
     Log(("vusb: %p[%s]/%i: Assigned address %u\n",
          pDev, pDev->pUsbIns->pszName, pDev->i16Port, u8Address));
@@ -1326,14 +1306,12 @@ int vusbDevDetach(PVUSBDEV pDev)
     Assert(pDev->enmState != VUSB_DEVICE_STATE_RESET);
 
     vusbDevCancelAllUrbs(pDev, true);
-    vusbDevAddressUnHash(pDev);
 
     PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
     if (!pRh)
         AssertMsgFailedReturn(("Not attached!\n"), VERR_VUSB_DEVICE_NOT_ATTACHED);
-    if (pRh->pDefaultAddress == pDev)
-        pRh->pDefaultAddress = NULL;
 
+    /* The roothub will remove the device from the address to device array. */
     pDev->pHub->pOps->pfnDetach(pDev->pHub, pDev);
     pDev->i16Port = -1;
 
@@ -1841,8 +1819,7 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
     pDev->IDevice.pfnIsSavedStateSupported = vusbIDeviceIsSavedStateSupported;
     pDev->IDevice.pfnGetSpeed = vusbIDeviceGetSpeed;
     pDev->pUsbIns = pUsbIns;
-    pDev->pNext = NULL;
-    pDev->pNextHash = NULL;
+    pDev->pNextDefAddr = NULL;
     pDev->pHub = NULL;
     pDev->enmState = VUSB_DEVICE_STATE_DETACHED;
     pDev->cRefs = 1;

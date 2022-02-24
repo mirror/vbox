@@ -224,10 +224,8 @@ typedef struct VUSBDEV
     VUSBIDEVICE         IDevice;
     /** Pointer to the PDM USB device instance. */
     PPDMUSBINS          pUsbIns;
-    /** Next device in the chain maintained by the roothub. */
-    PVUSBDEV            pNext;
-    /** Pointer to the next device with the same address hash. */
-    PVUSBDEV            pNextHash;
+    /** Next device in the chain of devices with the default address. */
+    PVUSBDEV            pNextDefAddr;
     /** Pointer to the hub this device is attached to. */
     PVUSBHUB            pHub;
     /** The device state. */
@@ -379,9 +377,6 @@ typedef struct VUSBROOTHUBTYPESTATS
 /** Pointer to a VUSBROOTHUBLOAD struct. */
 typedef struct VUSBROOTHUBLOAD *PVUSBROOTHUBLOAD;
 
-/** The address hash table size. */
-#define VUSB_ADDR_HASHSZ    5
-
 /**
  * The instance data of a root hub driver.
  *
@@ -394,11 +389,6 @@ typedef struct VUSBROOTHUB
     /** The HUB.
      * @todo remove this? */
     VUSBHUB                     Hub;
-    /** Address hash table. */
-    PVUSBDEV                    apAddrHash[VUSB_ADDR_HASHSZ];
-    /** The default address. */
-    PVUSBDEV                    pDefaultAddress;
-
     /** Pointer to the driver instance. */
     PPDMDRVINS                  pDrvIns;
     /** Pointer to the root hub port interface we're attached to. */
@@ -410,6 +400,8 @@ typedef struct VUSBROOTHUB
     RTCRITSECT                  CritSectDevices;
     /** Array of pointers to USB devices indexed by the port the device is on. */
     PVUSBDEV                    apDevByPort[VUSB_DEVICES_MAX];
+    /** Array of pointers to USB devices indexed by the address assigned. */
+    PVUSBDEV                    apDevByAddr[VUSB_DEVICES_MAX];
     /** Structure after a saved state load to re-attach devices. */
     PVUSBROOTHUBLOAD            pLoad;
 
@@ -641,21 +633,6 @@ DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
 #define VUSB_DEV_IO_THREAD_EXEC_FLAGS_SYNC RT_BIT_32(0)
 
 /** @} */
-
-
-
-
-/**
- * Addresses are between 0 and 127 inclusive
- */
-DECLINLINE(uint8_t) vusbHashAddress(uint8_t Address)
-{
-    uint8_t u8Hash = Address;
-    u8Hash ^= (Address >> 2);
-    u8Hash ^= (Address >> 3);
-    u8Hash %= VUSB_ADDR_HASHSZ;
-    return u8Hash;
-}
 
 
 /**
