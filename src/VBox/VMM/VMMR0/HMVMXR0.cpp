@@ -6104,7 +6104,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
         uint64_t const uApicBaseMsr = APICGetBaseMsrNoCheck(pVCpu);
 
         /* Map the APIC access page. */
-        int rc = hmR0VmxMapHCApicAccessPage(pVCpu, uApicBaseMsr & PAGE_BASE_GC_MASK);
+        int rc = hmR0VmxMapHCApicAccessPage(pVCpu, uApicBaseMsr & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK);
         AssertRCReturn(rc, rc);
 
         /* Update the per-VCPU cache of the APIC base MSR corresponding to the mapped APIC access page. */
