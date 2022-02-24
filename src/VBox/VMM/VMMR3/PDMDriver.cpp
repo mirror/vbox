@@ -1366,6 +1366,20 @@ static DECLCALLBACK(int) pdmR3DrvHlp_TimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enm
 }
 
 
+/** @interface_method_impl{PDMDRVHLPR3,pfnTimerDestroy} */
+static DECLCALLBACK(int) pdmR3DrvHlp_TimerDestroy(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    LogFlow(("pdmR3DrvHlp_TimerDestroy: caller='%s'/%d: hTimer=%RX64\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, hTimer));
+
+    int rc = TMR3TimerDestroy(pDrvIns->Internal.s.pVMR3, hTimer);
+
+    LogFlow(("pdmR3DrvHlp_TimerDestroy: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDRVHLPR3,pfnTimerSetMillies} */
 static DECLCALLBACK(int) pdmR3DrvHlp_TimerSetMillies(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext)
 {
@@ -2101,6 +2115,7 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_TMGetVirtualFreq,
     pdmR3DrvHlp_TMGetVirtualTime,
     pdmR3DrvHlp_TimerCreate,
+    pdmR3DrvHlp_TimerDestroy,
     pdmR3DrvHlp_SSMRegister,
     pdmR3DrvHlp_SSMDeregister,
     SSMR3PutStruct,

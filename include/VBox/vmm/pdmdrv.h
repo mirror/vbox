@@ -883,6 +883,15 @@ typedef struct PDMDRVHLPR3
                                               uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer));
 
     /**
+     * Destroys a timer.
+     *
+     * @returns VBox status.
+     * @param   pDrvIns         Driver instance.
+     * @param   hTimer          The timer handle to destroy.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTimerDestroy,(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer));
+
+    /**
      * Register a save state data unit.
      *
      * @returns VBox status.
@@ -1517,7 +1526,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 14, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 15, 0)
 
 
 /**
@@ -1742,6 +1751,15 @@ DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFN
 
 {
     return pDrvIns->pHlpR3->pfnTimerCreate(pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, phTimer);
+}
+
+/**
+ * @copydoc PDMDRVHLPR3::pfnTimerDestroy
+ */
+DECLINLINE(int) PDMDrvHlpTimerDestroy(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer)
+
+{
+    return pDrvIns->pHlpR3->pfnTimerDestroy(pDrvIns, hTimer);
 }
 
 /**
