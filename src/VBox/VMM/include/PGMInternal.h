@@ -718,7 +718,7 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_INIT(a_pPage, a_HCPhys, a_idPage, a_uType, a_uState) \
     do { \
         RTHCPHYS SetHCPhysTmp = (a_HCPhys); \
-        AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
+        AssertFatalMsg(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000)), ("%RHp\n", SetHCPhysTmp)); \
         (a_pPage)->au64[0]           = SetHCPhysTmp; \
         (a_pPage)->au64[1]           = 0; \
         (a_pPage)->s.idPage          = (a_idPage); \

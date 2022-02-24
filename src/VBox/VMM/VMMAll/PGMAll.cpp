@@ -3151,10 +3151,11 @@ static PGMMODE pgmCalcShadowMode(PVMCC pVM, PGMMODE enmGuestMode, SUPPAGINGMODE 
     }
 
     /*
-     * Override the shadow mode when NEM or nested paging is active.
+     * Override the shadow mode when NEM, IEM or nested paging is active.
      */
-    if (VM_IS_NEM_ENABLED(pVM))
+    if (!VM_IS_HM_ENABLED(pVM))
     {
+        Assert(VM_IS_NEM_ENABLED(pVM) || VM_IS_EXEC_ENGINE_IEM(pVM));
         pVM->pgm.s.fNestedPaging = true;
         enmShadowMode = PGMMODE_NONE;
     }

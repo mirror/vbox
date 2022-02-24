@@ -1134,7 +1134,6 @@ static int pgmR3InitPaging(PVM pVM)
         case SUPPAGINGMODE_PAE_GLOBAL:
         case SUPPAGINGMODE_PAE_NX:
         case SUPPAGINGMODE_PAE_GLOBAL_NX:
-            break;
 
         case SUPPAGINGMODE_AMD64:
         case SUPPAGINGMODE_AMD64_GLOBAL:
@@ -1147,6 +1146,11 @@ static int pgmR3InitPaging(PVM pVM)
                 return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
             }
             break;
+#if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)
+        case SUPPAGINGMODE_INVALID:
+            pVM->pgm.s.enmHostMode = SUPPAGINGMODE_AMD64_GLOBAL_NX;
+            break;
+#endif
         default:
             AssertMsgFailed(("Host mode %d is not supported\n", pVM->pgm.s.enmHostMode));
             return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;

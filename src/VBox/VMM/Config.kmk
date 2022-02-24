@@ -77,6 +77,9 @@ endif
 if1of ($(KBUILD_TARGET), freebsd linux solaris) # Hosts that implements SUPR0HCPhysToVirt.
  VMM_COMMON_DEFS += VBOX_WITH_LINEAR_HOST_PHYS_MEM
 endif
+ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+ VMM_COMMON_DEFS += VBOX_WITH_PGM_NEM_MODE
+endif
 
 # VMM_COMMON_DEFS += VBOX_WITH_NS_ACCOUNTING_STATS
 

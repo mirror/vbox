@@ -1497,20 +1497,23 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
      */
     if (pVM->pgm.s.fNemMode)
     {
-        Assert(VM_IS_NEM_ENABLED(pVM));
-        uint32_t const  fNemNotify = (pvMmio2 ? NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2 : 0) | NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE;
-        uint8_t         u2State    = 0; /* (We don't support UINT8_MAX here.) */
-        int rc = NEMR3NotifyPhysMmioExMapEarly(pVM, GCPhys, GCPhysLast - GCPhys + 1, fNemNotify,
-                                               pRam->pvR3 ? (uint8_t *)pRam->pvR3 + GCPhys - pRam->GCPhys : NULL,
-                                               pvMmio2, &u2State, NULL /*puNemRange*/);
-        AssertLogRelRCReturn(rc, rc);
+        Assert(VM_IS_NEM_ENABLED(pVM) || VM_IS_EXEC_ENGINE_IEM(pVM));
+        uint8_t u2State = 0; /* (We don't support UINT8_MAX here.) */
+        if (VM_IS_NEM_ENABLED(pVM))
+        {
+            uint32_t const  fNemNotify = (pvMmio2 ? NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2 : 0) | NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE;
+            int rc = NEMR3NotifyPhysMmioExMapEarly(pVM, GCPhys, GCPhysLast - GCPhys + 1, fNemNotify,
+                                                   pRam->pvR3 ? (uint8_t *)pRam->pvR3 + GCPhys - pRam->GCPhys : NULL,
+                                                   pvMmio2, &u2State, NULL /*puNemRange*/);
+            AssertLogRelRCReturn(rc, rc);
+        }
 
         /* Iterate the pages. */
         PPGMPAGE pPageDst   = &pRam->aPages[(GCPhys - pRam->GCPhys) >> GUEST_PAGE_SHIFT];
         uint32_t cPagesLeft = ((GCPhysLast - GCPhys) >> GUEST_PAGE_SHIFT) + 1;
         while (cPagesLeft-- > 0)
         {
-            rc = pgmPhysFreePage(pVM, NULL, NULL, pPageDst, GCPhys, PGMPAGETYPE_MMIO);
+            int rc = pgmPhysFreePage(pVM, NULL, NULL, pPageDst, GCPhys, PGMPAGETYPE_MMIO);
             AssertLogRelRCReturn(rc, rc); /* We're done for if this goes wrong. */
 
             PGM_PAGE_SET_TYPE(pVM, pPageDst, PGMPAGETYPE_MMIO);
@@ -1519,7 +1522,7 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
             GCPhys += GUEST_PAGE_SIZE;
             pPageDst++;
         }
-        return rc;
+        return VINF_SUCCESS;
     }
 #else  /* !VBOX_WITH_PGM_NEM_MODE */
     RT_NOREF(pvMmio2);
@@ -3050,14 +3053,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
 #endif
 #ifdef VBOX_WITH_PGM_NEM_MODE
             if (PGM_IS_IN_NEM_MODE(pVM))
-            {
-                for (uint32_t i = 0; i < cHostPages; i++)
-                {
-                    paPages[i].Phys       = UINT64_C(0x0000fffffffff000);
-                    paPages[i].uReserved = 0;
-                }
                 rc = SUPR3PageAlloc(cHostPages, pVM->pgm.s.fUseLargePages ? SUP_PAGE_ALLOC_F_LARGE_PAGES : 0, &pvPages);
-            }
             else
 #endif
             {
@@ -3092,12 +3088,20 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t
                         pCur->RamRange.pvR3 = pbCurPages;
 
                         uint32_t iDstPage = pCur->RamRange.cb >> GUEST_PAGE_SHIFT;
-                        while (iDstPage-- > 0)
+#ifdef VBOX_WITH_PGM_NEM_MODE
+                        if (PGM_IS_IN_NEM_MODE(pVM))
+                            while (iDstPage-- > 0)
+                                PGM_PAGE_INIT(&pNew->RamRange.aPages[iDstPage], UINT64_C(0x0000ffffffff0000),
+                                              PGM_MMIO2_PAGEID_MAKE(idMmio2, iDstPage),
+                                              PGMPAGETYPE_MMIO2, PGM_PAGE_STATE_ALLOCATED);
+                        else
+#endif
                         {
-                            PGM_PAGE_INIT(&pNew->RamRange.aPages[iDstPage],
-                                          paPages[iDstPage + iSrcPage].Phys,
-                                          PGM_MMIO2_PAGEID_MAKE(idMmio2, iDstPage),
-                                          PGMPAGETYPE_MMIO2, PGM_PAGE_STATE_ALLOCATED);
+                            AssertRelease(HOST_PAGE_SHIFT == GUEST_PAGE_SHIFT);
+                            while (iDstPage-- > 0)
+                                PGM_PAGE_INIT(&pNew->RamRange.aPages[iDstPage], paPages[iDstPage + iSrcPage].Phys,
+                                              PGM_MMIO2_PAGEID_MAKE(idMmio2, iDstPage),
+                                              PGMPAGETYPE_MMIO2, PGM_PAGE_STATE_ALLOCATED);
                         }
 
                         /* advance. */

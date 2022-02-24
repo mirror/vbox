@@ -233,7 +233,7 @@ PGM_SHW_DECL(int, Enter)(PVMCPUCC pVCpu, bool fIs64BitsPagingMode)
     PPGMPOOLPAGE pNewShwPageCR3;
     PVMCC        pVM       = pVCpu->CTX_SUFF(pVM);
 
-    Assert((HMIsNestedPagingActive(pVM) || VM_IS_NEM_ENABLED(pVM)) == pVM->pgm.s.fNestedPaging);
+    Assert(HMIsNestedPagingActive(pVM));
     Assert(pVM->pgm.s.fNestedPaging);
     Assert(!pVCpu->pgm.s.pShwPageCR3R3);
 

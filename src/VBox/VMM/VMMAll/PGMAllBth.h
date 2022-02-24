@@ -110,7 +110,7 @@ PGM_BTH_DECL(int, Enter)(PVMCPUCC pVCpu, RTGCPHYS GCPhysCR3)
 
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
-    Assert((HMIsNestedPagingActive(pVM) || VM_IS_NEM_ENABLED(pVM)) == pVM->pgm.s.fNestedPaging);
+    Assert(HMIsNestedPagingActive(pVM));
     Assert(!pVM->pgm.s.fNestedPaging);
 
     PGM_LOCK_VOID(pVM);
@@ -2865,9 +2865,10 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPUCC pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, 
     Assert(!SHW_PDE_IS_P(PdeDst)); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
 # if defined(PGM_WITH_LARGE_PAGES) && PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE
-    if (    BTH_IS_NP_ACTIVE(pVM)
-        && !VM_IS_NEM_ENABLED(pVM)) /** @todo NEM: Large page support. */
+    if (BTH_IS_NP_ACTIVE(pVM))
     {
+        Assert(!VM_IS_NEM_ENABLED(pVM));
+
         /* Check if we allocated a big page before for this 2 MB range. */
         PPGMPAGE pPage;
         rc = pgmPhysGetPageEx(pVM, PGM_A20_APPLY(pVCpu, GCPtrPage & X86_PDE2M_PAE_PG_MASK), &pPage);

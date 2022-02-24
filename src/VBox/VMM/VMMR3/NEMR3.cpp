@@ -450,14 +450,41 @@ VMMR3_INT_DECL(void) NEMR3NotifyFF(PVM pVM, PVMCPU pVCpu, uint32_t fFlags)
 #endif
 }
 
-
 #ifndef VBOX_WITH_NATIVE_NEM
+
 VMMR3_INT_DECL(void) NEMR3NotifySetA20(PVMCPU pVCpu, bool fEnabled)
 {
     RT_NOREF(pVCpu, fEnabled);
 }
-#endif
 
+# ifdef VBOX_WITH_PGM_NEM_MODE
+
+VMMR3_INT_DECL(bool) NEMR3IsMmio2DirtyPageTrackingSupported(PVM pVM)
+{
+    RT_NOREF(pVM);
+    return false;
+}
+
+
+VMMR3_INT_DECL(int)  NEMR3PhysMmio2QueryAndResetDirtyBitmap(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t uNemRange,
+                                                            void *pvBitmap, size_t cbBitmap)
+{
+    RT_NOREF(pVM, GCPhys, cb, uNemRange, pvBitmap, cbBitmap);
+    AssertFailed();
+    return VERR_INTERNAL_ERROR_2;
+}
+
+
+VMMR3_INT_DECL(int)  NEMR3NotifyPhysMmioExMapEarly(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, uint32_t fFlags,
+                                                   void *pvRam, void *pvMmio2, uint8_t *pu2State, uint32_t *puNemRange)
+{
+    RT_NOREF(pVM, GCPhys, cb, fFlags, pvRam, pvMmio2, pu2State, puNemRange);
+    AssertFailed();
+    return VERR_INTERNAL_ERROR_2;
+}
+
+# endif /* VBOX_WITH_PGM_NEM_MODE */
+#endif /* !VBOX_WITH_NATIVE_NEM */
 
 /**
  * Notification callback from DBGF when interrupt breakpoints or generic debug
