@@ -25,13 +25,13 @@ def main():
         if not line: break
 
         if line.startswith("#") or line.startswith("include"):
-            print line,
+            print(line,)
             continue
 
         fields = line.split()
 
         if line.startswith("map"):
-            print "map 0x%s" % fields[1]
+            print("map 0x%s" % fields[1])
             continue
 
         scancode = fields[0]
@@ -49,14 +49,14 @@ def main():
             else:
                 raise("Invalid line: %s" % line)
             
-            print "%s 0x%s %s" % (keysym, scancode, modifiers)
+            print("%s 0x%s %s" % (keysym, scancode, modifiers))
 
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Convert old-style keymaps to new style"
-        print "Usage: %s <old-style-keymap>" % sys.argv[0]
+        print("Convert old-style keymaps to new style")
+        print("Usage: %s <old-style-keymap>" % sys.argv[0])
         sys.exit(1)
     else:
         main()
