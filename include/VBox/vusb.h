@@ -563,6 +563,52 @@ typedef struct VUSBIROOTHUBPORT *PVUSBIROOTHUBPORT;
 typedef struct VUSBURB          *PVUSBURB;
 
 
+/**
+ * VUSB device reset completion callback function.
+ * This is called by the reset thread when the reset has been completed.
+ *
+ * @param   pDevice Pointer to the virtual USB device core.
+ * @param   uPort   The port of the device which completed the reset.
+ * @param   rc      The VBox status code of the reset operation.
+ * @param   pvUser  User specific argument.
+ *
+ * @thread  The reset thread or EMT.
+ */
+typedef DECLCALLBACKTYPE(void, FNVUSBRESETDONE,(PVUSBIDEVICE pDevice, uint32_t uPort, int rc, void *pvUser));
+/** Pointer to a device reset completion callback function (FNUSBRESETDONE). */
+typedef FNVUSBRESETDONE *PFNVUSBRESETDONE;
+
+
+/**
+ * The state of a VUSB Device.
+ *
+ * @remark  The order of these states is vital.
+ */
+typedef enum VUSBDEVICESTATE
+{
+    VUSB_DEVICE_STATE_INVALID = 0,
+    VUSB_DEVICE_STATE_DETACHED,
+    VUSB_DEVICE_STATE_ATTACHED,
+    VUSB_DEVICE_STATE_POWERED,
+    VUSB_DEVICE_STATE_DEFAULT,
+    VUSB_DEVICE_STATE_ADDRESS,
+    VUSB_DEVICE_STATE_CONFIGURED,
+    VUSB_DEVICE_STATE_SUSPENDED,
+    /** The device is being reset. Don't mess with it.
+     * Next states: VUSB_DEVICE_STATE_DEFAULT, VUSB_DEVICE_STATE_DESTROYED
+     */
+    VUSB_DEVICE_STATE_RESET,
+    /** The device has been destroyed. */
+    VUSB_DEVICE_STATE_DESTROYED,
+    /** The usual 32-bit hack. */
+    VUSB_DEVICE_STATE_32BIT_HACK = 0x7fffffff
+} VUSBDEVICESTATE;
+
+
+/** Maximum number of USB devices supported. */
+#define VUSB_DEVICES_MAX            128
+/** An invalid device port. */
+#define VUSB_DEVICE_PORT_INVALID    UINT32_MAX
 
 /**
  * VBox USB port bitmap.
@@ -572,10 +618,11 @@ typedef struct VUSBURB          *PVUSBURB;
 typedef struct VUSBPORTBITMAP
 {
     /** 128 bits */
-    char ach[16];
+    char ach[VUSB_DEVICES_MAX / 8];
 } VUSBPORTBITMAP;
 /** Pointer to a VBox USB port bitmap. */
 typedef VUSBPORTBITMAP *PVUSBPORTBITMAP;
+AssertCompile(sizeof(VUSBPORTBITMAP) * 8 >= VUSB_DEVICES_MAX);
 
 #ifndef RDESKTOP
 
@@ -606,26 +653,25 @@ typedef struct VUSBIROOTHUBPORT
      * A device is being attached to a port in the roothub.
      *
      * @param   pInterface      Pointer to this structure.
-     * @param   pDev            Pointer to the device being attached.
      * @param   uPort           The port number assigned to the device.
+     * @param   enmSpeed        The speed of the device being attached.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAttach,(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort));
+    DECLR3CALLBACKMEMBER(int, pfnAttach,(PVUSBIROOTHUBPORT pInterface, uint32_t uPort, VUSBSPEED enmSpeed));
 
     /**
      * A device is being detached from a port in the roothub.
      *
      * @param   pInterface      Pointer to this structure.
-     * @param   pDev            Pointer to the device being detached.
      * @param   uPort           The port number assigned to the device.
      */
-    DECLR3CALLBACKMEMBER(void, pfnDetach,(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort));
+    DECLR3CALLBACKMEMBER(void, pfnDetach,(PVUSBIROOTHUBPORT pInterface, uint32_t uPort));
 
     /**
      * Reset the root hub.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to this structure.
-     * @param   pResetOnLinux   Whether or not to do real reset on linux.
+     * @param   fResetOnLinux   Whether or not to do real reset on linux.
      */
     DECLR3CALLBACKMEMBER(int, pfnReset,(PVUSBIROOTHUBPORT pInterface, bool fResetOnLinux));
 
@@ -638,7 +684,7 @@ typedef struct VUSBIROOTHUBPORT
      * @param   pInterface      Pointer to this structure.
      * @param   pUrb            Pointer to the URB in question.
      */
-    DECLR3CALLBACKMEMBER(void, pfnXferCompletion,(PVUSBIROOTHUBPORT pInterface, PVUSBURB urb));
+    DECLR3CALLBACKMEMBER(void, pfnXferCompletion,(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb));
 
     /**
      * Handle transfer errors.
@@ -676,7 +722,7 @@ typedef struct VUSBIROOTHUBPORT
 
 } VUSBIROOTHUBPORT;
 /** VUSBIROOTHUBPORT interface ID. */
-# define VUSBIROOTHUBPORT_IID                   "6571aece-6c33-4714-a8ac-9508a3b8b429"
+# define VUSBIROOTHUBPORT_IID                   "2ece01c2-4dbf-4bd5-96ca-09fc14164cd4"
 
 /** Pointer to a VUSB RootHub connector interface. */
 typedef struct VUSBIROOTHUBCONNECTOR *PVUSBIROOTHUBCONNECTOR;
@@ -703,6 +749,31 @@ typedef struct VUSBIROOTHUBCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnSetUrbParams, (PVUSBIROOTHUBCONNECTOR pInterface, size_t cbHci, size_t cbHciTd));
 
     /**
+     * Resets the roothub.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this struct.
+     * @param   fResetOnLinux   Whether or not to do real reset on linux.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReset, (PVUSBIROOTHUBCONNECTOR pInterface, bool fResetOnLinux));
+
+    /**
+     * Powers on the roothub.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this struct.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPowerOn, (PVUSBIROOTHUBCONNECTOR pInterface));
+
+    /**
+     * Power off the roothub.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this struct.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPowerOff, (PVUSBIROOTHUBCONNECTOR pInterface));
+
+    /**
      * Allocates a new URB for a transfer.
      *
      * Either submit using pfnSubmitUrb or free using VUSBUrbFree().
@@ -713,7 +784,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      *          at submit time, since that makes the usage of this api simpler.
      * @param   pInterface  Pointer to this struct.
      * @param   DstAddress  The destination address of the URB.
-     * @param   pDev        Optional device pointer the URB is for.
+     * @param   uPort       Optional port of the device the URB is for, use VUSB_DEVICE_PORT_INVALID to indicate to use the destination address.
      * @param   enmType     Type of the URB.
      * @param   enmDir      Data transfer direction.
      * @param   cbData      The amount of data space required.
@@ -724,7 +795,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @note pDev should be NULL in most cases. The only useful case is for USB3 where
      *       it is required for the SET_ADDRESS request because USB3 uses unicast traffic.
      */
-    DECLR3CALLBACKMEMBER(PVUSBURB, pfnNewUrb,(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, PVUSBIDEVICE pDev,
+    DECLR3CALLBACKMEMBER(PVUSBURB, pfnNewUrb,(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, uint32_t uPort,
                                               VUSBXFERTYPE enmType, VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag));
 
     /**
@@ -760,10 +831,10 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @returns Other VBox status code.
      *
      * @param   pInterface  Pointer to this struct.
-     * @param   pDevice     Pointer to a USB device.
+     * @param   uPort       Port of the device to reap URBs on.
      * @param   cMillies    Number of milliseconds to poll for completion.
      */
-    DECLR3CALLBACKMEMBER(void, pfnReapAsyncUrbs,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice, RTMSINTERVAL cMillies));
+    DECLR3CALLBACKMEMBER(void, pfnReapAsyncUrbs,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, RTMSINTERVAL cMillies));
 
     /**
      * Cancels and completes - with CRC failure - all URBs queued on an endpoint.
@@ -789,11 +860,11 @@ typedef struct VUSBIROOTHUBCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface  Pointer to this struct.
-     * @param   pDevice     Pointer to a USB device.
+     * @param   uPort       Port of the device.
      * @param   EndPt       Endpoint number.
      * @param   enmDir      Endpoint direction.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAbortEp,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice, int EndPt, VUSBDIRECTION enmDir));
+    DECLR3CALLBACKMEMBER(int, pfnAbortEp,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, int EndPt, VUSBDIRECTION enmDir));
 
     /**
      * Attach the device to the root hub.
@@ -801,9 +872,9 @@ typedef struct VUSBIROOTHUBCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface  Pointer to this struct.
-     * @param   pDevice     Pointer to the device (interface) to attach.
+     * @param   uPort       Port of the device to attach.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAttachDevice,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice));
+    DECLR3CALLBACKMEMBER(int, pfnAttachDevice,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort));
 
     /**
      * Detach the device from the root hub.
@@ -811,9 +882,9 @@ typedef struct VUSBIROOTHUBCONNECTOR
      *
      * @returns VBox status code.
      * @param   pInterface  Pointer to this struct.
-     * @param   pDevice     Pointer to the device (interface) to detach.
+     * @param   uPort       Port of the device to detach.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDetachDevice,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice));
+    DECLR3CALLBACKMEMBER(int, pfnDetachDevice,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort));
 
     /**
      * Sets periodic frame processing.
@@ -842,17 +913,90 @@ typedef struct VUSBIROOTHUBCONNECTOR
      * @returns Delta between currently and previously scheduled frame.
      * @retval  0 if no previous frame was set.
      * @param   pInterface  Pointer to this struct.
-     * @param   pDevice     Pointer to a USB device.
+     * @param   uPort       Port of the device.
      * @param   EndPt       Endpoint number.
      * @param   enmDir      Endpoint direction.
      * @param   uNewFrameID The frame ID of a new transfer.
      * @param   uBits       The number of significant bits in frame ID.
      */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnUpdateIsocFrameDelta, (PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice,
+    DECLR3CALLBACKMEMBER(uint32_t, pfnUpdateIsocFrameDelta, (PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort,
                                                              int EndPt, VUSBDIRECTION enmDir, uint16_t uNewFrameID, uint8_t uBits));
 
-    /** Alignment dummy. */
-    RTR3PTR Alignment;
+    /**
+     * Resets the device.
+     *
+     * Since a device reset shall take at least 10ms from the guest point of view,
+     * it must be performed asynchronously. We create a thread which performs this
+     * operation and ensures it will take at least 10ms.
+     *
+     * At times - like init - a synchronous reset is required, this can be done
+     * by passing NULL for pfnDone.
+     *
+     * -- internal stuff, move it --
+     * While the device is being reset it is in the VUSB_DEVICE_STATE_RESET state.
+     * On completion it will be in the VUSB_DEVICE_STATE_DEFAULT state if successful,
+     * or in the VUSB_DEVICE_STATE_DETACHED state if the rest failed.
+     * -- internal stuff, move it --
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this struct.
+     * @param   uPort           Port of the device to reset.
+     * @param   fResetOnLinux   Set if we can permit a real reset and a potential logical
+     *                          device reconnect on linux hosts.
+     * @param   pfnDone         Pointer to the completion routine. If NULL a synchronous
+     *                          reset  is performed not respecting the 10ms.
+     * @param   pvUser          User argument to the completion routine.
+     * @param   pVM             The cross context VM structure.  Required if pfnDone
+     *                          is not NULL.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDevReset,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, bool fResetOnLinux,
+                                           PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM));
+
+    /**
+     * Powers on the device.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this struct.
+     * @param   uPort           Port of the device to power on.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDevPowerOn,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort));
+
+    /**
+     * Powers off the device.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this struct.
+     * @param   uPort           Port of the device to power off.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDevPowerOff,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort));
+
+    /**
+     * Get the state of the device.
+     *
+     * @returns Device state.
+     * @param   pInterface      Pointer to this struct.
+     * @param   uPort           Port of the device to get the state for.
+     */
+    DECLR3CALLBACKMEMBER(VUSBDEVICESTATE, pfnDevGetState,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort));
+
+    /**
+     * Returns whether the device implements the saved state handlers
+     * and doesn't need to get detached.
+     *
+     * @returns true if the device supports saving the state, false otherwise.
+     * @param   pInterface      Pointer to this struct.
+     * @param   uPort           Port of the device to query saved state support for.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnDevIsSavedStateSupported,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort));
+
+    /**
+     * Get the speed the device is operating at.
+     *
+     * @returns Device state.
+     * @param   pInterface      Pointer to this struct.
+     * @param   uPort           Port of the device to query the speed for.
+     */
+    DECLR3CALLBACKMEMBER(VUSBSPEED, pfnDevGetSpeed,(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort));
 
 } VUSBIROOTHUBCONNECTOR;
 AssertCompileSizeAlignment(VUSBIROOTHUBCONNECTOR, 8);
@@ -868,10 +1012,10 @@ DECLINLINE(int) VUSBIRhSetUrbParams(PVUSBIROOTHUBCONNECTOR pInterface, size_t cb
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnNewUrb */
-DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, PVUSBIDEVICE pDev,
+DECLINLINE(PVUSBURB) VUSBIRhNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, uint32_t uPort,
                                    VUSBXFERTYPE enmType, VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
 {
-    return pInterface->pfnNewUrb(pInterface, DstAddress, pDev, enmType, enmDir, cbData, cTds, pszTag);
+    return pInterface->pfnNewUrb(pInterface, DstAddress, uPort, enmType, enmDir, cbData, cTds, pszTag);
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnFreeUrb */
@@ -887,9 +1031,9 @@ DECLINLINE(int) VUSBIRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBURB pUr
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnReapAsyncUrbs */
-DECLINLINE(void) VUSBIRhReapAsyncUrbs(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice, RTMSINTERVAL cMillies)
+DECLINLINE(void) VUSBIRhReapAsyncUrbs(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, RTMSINTERVAL cMillies)
 {
-    pInterface->pfnReapAsyncUrbs(pInterface, pDevice, cMillies);
+    pInterface->pfnReapAsyncUrbs(pInterface, uPort, cMillies);
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnCancelAllUrbs */
@@ -899,15 +1043,15 @@ DECLINLINE(void) VUSBIRhCancelAllUrbs(PVUSBIROOTHUBCONNECTOR pInterface)
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnAttachDevice */
-DECLINLINE(int) VUSBIRhAttachDevice(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice)
+DECLINLINE(int) VUSBIRhAttachDevice(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
 {
-    return pInterface->pfnAttachDevice(pInterface, pDevice);
+    return pInterface->pfnAttachDevice(pInterface, uPort);
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnDetachDevice */
-DECLINLINE(int) VUSBIRhDetachDevice(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice)
+DECLINLINE(int) VUSBIRhDetachDevice(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
 {
-    return pInterface->pfnDetachDevice(pInterface, pDevice);
+    return pInterface->pfnDetachDevice(pInterface, uPort);
 }
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnSetPeriodicFrameProcessing */
@@ -921,49 +1065,47 @@ DECLINLINE(uint32_t) VUSBIRhGetPeriodicFrameRate(PVUSBIROOTHUBCONNECTOR pInterfa
 {
     return pInterface->pfnGetPeriodicFrameRate(pInterface);
 }
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnDevReset */
+DECLINLINE(int) VUSBIRhDevReset(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, bool fResetOnLinux,
+                                PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM)
+{
+    return pInterface->pfnDevReset(pInterface, uPort, fResetOnLinux, pfnDone, pvUser, pVM);
+}
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnDevPowerOn */
+DECLINLINE(int) VUSBIRhDevPowerOn(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
+{
+    return pInterface->pfnDevPowerOn(pInterface, uPort);
+}
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnDevPowerOff */
+DECLINLINE(int) VUSBIRhDevPowerOff(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
+{
+    return pInterface->pfnDevPowerOff(pInterface, uPort);
+}
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnDevGetState */
+DECLINLINE(VUSBDEVICESTATE) VUSBIRhDevGetState(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
+{
+    return pInterface->pfnDevGetState(pInterface, uPort);
+}
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnDevGetState */
+DECLINLINE(bool) VUSBIRhDevIsSavedStateSupported(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
+{
+    return pInterface->pfnDevIsSavedStateSupported(pInterface, uPort);
+}
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnDevGetSpeed */
+DECLINLINE(VUSBSPEED) VUSBIRhDevGetSpeed(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
+{
+    return pInterface->pfnDevGetSpeed(pInterface, uPort);
+}
 # endif /* IN_RING3 */
 
 #endif /* ! RDESKTOP */
 
-
-/**
- * VUSB device reset completion callback function.
- * This is called by the reset thread when the reset has been completed.
- *
- * @param   pDevice Pointer to the virtual USB device core.
- * @param   rc      The VBox status code of the reset operation.
- * @param   pvUser  User specific argument.
- *
- * @thread  The reset thread or EMT.
- */
-typedef DECLCALLBACKTYPE(void, FNVUSBRESETDONE,(PVUSBIDEVICE pDevice, int rc, void *pvUser));
-/** Pointer to a device reset completion callback function (FNUSBRESETDONE). */
-typedef FNVUSBRESETDONE *PFNVUSBRESETDONE;
-
-/**
- * The state of a VUSB Device.
- *
- * @remark  The order of these states is vital.
- */
-typedef enum VUSBDEVICESTATE
-{
-    VUSB_DEVICE_STATE_INVALID = 0,
-    VUSB_DEVICE_STATE_DETACHED,
-    VUSB_DEVICE_STATE_ATTACHED,
-    VUSB_DEVICE_STATE_POWERED,
-    VUSB_DEVICE_STATE_DEFAULT,
-    VUSB_DEVICE_STATE_ADDRESS,
-    VUSB_DEVICE_STATE_CONFIGURED,
-    VUSB_DEVICE_STATE_SUSPENDED,
-    /** The device is being reset. Don't mess with it.
-     * Next states: VUSB_DEVICE_STATE_DEFAULT, VUSB_DEVICE_STATE_DESTROYED
-     */
-    VUSB_DEVICE_STATE_RESET,
-    /** The device has been destroyed. */
-    VUSB_DEVICE_STATE_DESTROYED,
-    /** The usual 32-bit hack. */
-    VUSB_DEVICE_STATE_32BIT_HACK = 0x7fffffff
-} VUSBDEVICESTATE;
 
 #ifndef RDESKTOP
 

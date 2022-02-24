@@ -219,6 +219,51 @@
 #include "VBoxDD.h"
 
 
+#define VUSB_ROOTHUB_SAVED_STATE_VERSION 1
+
+
+/**
+ * Data used for reattaching devices on a state load.
+ */
+typedef struct VUSBROOTHUBLOAD
+{
+    /** Timer used once after state load to inform the guest about new devices.
+     * We do this to be sure the guest get any disconnect / reconnect on the
+     * same port. */
+    TMTIMERHANDLE       hTimer;
+    /** Number of detached devices. */
+    unsigned            cDevs;
+    /** Array of devices which were detached. */
+    PVUSBDEV            apDevs[VUSB_DEVICES_MAX];
+} VUSBROOTHUBLOAD;
+
+
+/**
+ * Returns the attached VUSB device for the given port or NULL if none is attached.
+ *
+ * @returns Pointer to the VUSB device or NULL if not found.
+ * @param   pThis               The VUSB roothub device instance.
+ * @param   uPort               The port to get the device for.
+ *
+ * @note The reference count of the VUSB device structure is retained to prevent it from going away.
+ */
+static PVUSBDEV vusbR3RhGetVUsbDevByPortRetain(PVUSBROOTHUB pThis, uint32_t uPort)
+{
+    PVUSBDEV pDev = NULL;
+
+    AssertReturn(uPort < RT_ELEMENTS(pThis->apDevByPort), NULL);
+
+    RTCritSectEnter(&pThis->CritSectDevices);
+
+    pDev = pThis->apDevByPort[uPort];
+    if (RT_LIKELY(pDev))
+        ASMAtomicIncU32(&pDev->cRefs);
+
+    RTCritSectLeave(&pThis->CritSectDevices);
+
+    return pDev;
+}
+
 
 /**
  * Attaches a device to a specific hub.
@@ -374,7 +419,7 @@ static DECLCALLBACK(void) vusbRhFreeUrb(PVUSBURB pUrb)
 /**
  * Worker routine for vusbRhConnNewUrb().
  */
-static PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, PVUSBDEV pDev, VUSBXFERTYPE enmType,
+static PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, uint32_t uPort, VUSBXFERTYPE enmType,
                              VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
 {
     RT_NOREF(pszTag);
@@ -386,10 +431,11 @@ static PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, PVUSBDEV pDev
         return NULL;
     }
 
-    if (!pDev)
+    PVUSBDEV pDev;
+    if (uPort == VUSB_DEVICE_PORT_INVALID)
         pDev = vusbRhFindDevByAddress(pRh, DstAddress);
     else
-        vusbDevRetain(pDev);
+        pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort);
 
     if (pDev)
         pUrbPool = &pDev->UrbPool;
@@ -630,12 +676,57 @@ static DECLCALLBACK(int) vusbRhSetUrbParams(PVUSBIROOTHUBCONNECTOR pInterface, s
 }
 
 
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnReset} */
+static DECLCALLBACK(int) vusbR3RhReset(PVUSBIROOTHUBCONNECTOR pInterface, bool fResetOnLinux)
+{
+    PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    return pRh->pIRhPort->pfnReset(pRh->pIRhPort, fResetOnLinux);
+}
+
+
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnPowerOn} */
+static DECLCALLBACK(int) vusbR3RhPowerOn(PVUSBIROOTHUBCONNECTOR pInterface)
+{
+    PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    LogFlow(("vusR3bRhPowerOn: pRh=%p\n", pRh));
+
+    Assert(     pRh->Hub.Dev.enmState != VUSB_DEVICE_STATE_DETACHED
+           &&   pRh->Hub.Dev.enmState != VUSB_DEVICE_STATE_RESET);
+
+    if (pRh->Hub.Dev.enmState == VUSB_DEVICE_STATE_ATTACHED)
+        pRh->Hub.Dev.enmState = VUSB_DEVICE_STATE_POWERED;
+
+    return VINF_SUCCESS;
+}
+
+
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnPowerOff} */
+static DECLCALLBACK(int) vusbR3RhPowerOff(PVUSBIROOTHUBCONNECTOR pInterface)
+{
+    PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    LogFlow(("vusbR3RhDevPowerOff: pThis=%p\n", pThis));
+
+    Assert(     pThis->Hub.Dev.enmState != VUSB_DEVICE_STATE_DETACHED
+           &&   pThis->Hub.Dev.enmState != VUSB_DEVICE_STATE_RESET);
+
+    /*
+     * Cancel all URBs and reap them.
+     */
+    VUSBIRhCancelAllUrbs(&pThis->IRhConnector);
+    for (uint32_t uPort = 0; uPort < RT_ELEMENTS(pThis->apDevByPort); uPort++)
+        VUSBIRhReapAsyncUrbs(&pThis->IRhConnector, uPort, 0);
+
+    pThis->Hub.Dev.enmState = VUSB_DEVICE_STATE_ATTACHED;
+    return VINF_SUCCESS;
+}
+
+
 /** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnNewUrb} */
-static DECLCALLBACK(PVUSBURB) vusbRhConnNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, PVUSBIDEVICE pDev, VUSBXFERTYPE enmType,
+static DECLCALLBACK(PVUSBURB) vusbRhConnNewUrb(PVUSBIROOTHUBCONNECTOR pInterface, uint8_t DstAddress, uint32_t uPort, VUSBXFERTYPE enmType,
                                                VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
 {
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
-    return vusbRhNewUrb(pRh, DstAddress, (PVUSBDEV)pDev, enmType, enmDir, cbData, cTds, pszTag);
+    return vusbRhNewUrb(pRh, DstAddress, uPort, enmType, enmDir, cbData, cTds, pszTag);
 }
 
 
@@ -759,18 +850,21 @@ static DECLCALLBACK(int) vusbRhReapAsyncUrbsWorker(PVUSBDEV pDev, RTMSINTERVAL c
 }
 
 /** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnReapAsyncUrbs} */
-static DECLCALLBACK(void) vusbRhReapAsyncUrbs(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice, RTMSINTERVAL cMillies)
+static DECLCALLBACK(void) vusbRhReapAsyncUrbs(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, RTMSINTERVAL cMillies)
 {
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface); NOREF(pRh);
-    PVUSBDEV pDev = (PVUSBDEV)pDevice;
+    PVUSBDEV pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort);
 
-    if (RTListIsEmpty(&pDev->LstAsyncUrbs))
+    if (  !pDev
+        || RTListIsEmpty(&pDev->LstAsyncUrbs))
         return;
 
     STAM_PROFILE_START(&pRh->StatReapAsyncUrbs, a);
     int rc = vusbDevIoThreadExecSync(pDev, (PFNRT)vusbRhReapAsyncUrbsWorker, 2, pDev, cMillies);
     AssertRC(rc);
     STAM_PROFILE_STOP(&pRh->StatReapAsyncUrbs, a);
+
+    vusbDevRelease(pDev);
 }
 
 
@@ -870,38 +964,20 @@ static DECLCALLBACK(int) vusbRhAbortEpWorker(PVUSBDEV pDev, int EndPt, VUSBDIREC
 
 
 /** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnAbortEp} */
-static DECLCALLBACK(int) vusbRhAbortEp(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice, int EndPt, VUSBDIRECTION enmDir)
+static DECLCALLBACK(int) vusbRhAbortEp(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, int EndPt, VUSBDIRECTION enmDir)
 {
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
-    if (&pRh->Hub != ((PVUSBDEV)pDevice)->pHub)
+    PVUSBDEV pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort);
+
+    if (&pRh->Hub != pDev->pHub)
         AssertFailedReturn(VERR_INVALID_PARAMETER);
 
-    RTCritSectEnter(&pRh->CritSectDevices);
-    PVUSBDEV pDev = (PVUSBDEV)pDevice;
     vusbDevIoThreadExecSync(pDev, (PFNRT)vusbRhAbortEpWorker, 3, pDev, EndPt, enmDir);
-    RTCritSectLeave(&pRh->CritSectDevices);
+    vusbDevRelease(pDev);
 
     /* The reaper thread will take care of completing the URB. */
 
     return VINF_SUCCESS;
-}
-
-
-/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnAttachDevice} */
-static DECLCALLBACK(int) vusbRhAttachDevice(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice)
-{
-    PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
-    return vusbHubAttach(&pRh->Hub, (PVUSBDEV)pDevice);
-}
-
-
-/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnDetachDevice} */
-static DECLCALLBACK(int) vusbRhDetachDevice(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice)
-{
-    PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
-    if (&pRh->Hub != ((PVUSBDEV)pDevice)->pHub)
-        AssertFailedReturn(VERR_INVALID_PARAMETER);
-    return vusbDevDetach((PVUSBDEV)pDevice);
 }
 
 
@@ -979,12 +1055,12 @@ static DECLCALLBACK(uint32_t) vusbRhGetPeriodicFrameRate(PVUSBIROOTHUBCONNECTOR 
 }
 
 /** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnUpdateIsocFrameDelta} */
-static DECLCALLBACK(uint32_t) vusbRhUpdateIsocFrameDelta(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice,
+static DECLCALLBACK(uint32_t) vusbRhUpdateIsocFrameDelta(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort,
                                                          int EndPt, VUSBDIRECTION enmDir, uint16_t uNewFrameID, uint8_t uBits)
 {
     PVUSBROOTHUB    pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     AssertReturn(pRh, 0);
-    PVUSBDEV        pDev = (PVUSBDEV)pDevice;
+    PVUSBDEV        pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort); AssertPtr(pDev);
     PVUSBPIPE       pPipe = &pDev->aPipes[EndPt];
     uint32_t        *puLastFrame;
     int32_t         uFrameDelta;
@@ -997,78 +1073,87 @@ static DECLCALLBACK(uint32_t) vusbRhUpdateIsocFrameDelta(PVUSBIROOTHUBCONNECTOR 
     if (uFrameDelta < 0)
         uFrameDelta += uMaxVal;
 
+    vusbDevRelease(pDev);
     return (uint16_t)uFrameDelta;
 }
 
-/* -=-=-=-=-=- VUSB Device methods (for the root hub) -=-=-=-=-=- */
 
-
-/**
- * @interface_method_impl{VUSBIDEVICE,pfnReset}
- */
-static DECLCALLBACK(int) vusbRhDevReset(PVUSBIDEVICE pInterface, bool fResetOnLinux,
-                                        PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM)
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnDevReset} */
+static DECLCALLBACK(int) vusbR3RhDevReset(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort, bool fResetOnLinux,
+                                          PFNVUSBRESETDONE pfnDone, void *pvUser, PVM pVM)
 {
-    RT_NOREF(pfnDone, pvUser, pVM);
-    PVUSBROOTHUB pRh = RT_FROM_MEMBER(pInterface, VUSBROOTHUB, Hub.Dev.IDevice);
-    Assert(!pfnDone);
-    return pRh->pIRhPort->pfnReset(pRh->pIRhPort, fResetOnLinux); /** @todo change rc from bool to vbox status everywhere! */
+    PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort);
+    AssertPtr(pDev);
+
+    int rc = VUSBIDevReset(&pDev->IDevice, fResetOnLinux, pfnDone, pvUser, pVM);
+    vusbDevRelease(pDev);
+    return rc;
 }
 
 
-/**
- * @interface_method_impl{VUSBIDEVICE,pfnPowerOn}
- */
-static DECLCALLBACK(int) vusbRhDevPowerOn(PVUSBIDEVICE pInterface)
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnDevPowerOn} */
+static DECLCALLBACK(int) vusbR3RhDevPowerOn(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
 {
-    PVUSBROOTHUB pRh = RT_FROM_MEMBER(pInterface, VUSBROOTHUB, Hub.Dev.IDevice);
-    LogFlow(("vusbRhDevPowerOn: pRh=%p\n", pRh));
+    PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort);
+    AssertPtr(pDev);
 
-    Assert(     pRh->Hub.Dev.enmState != VUSB_DEVICE_STATE_DETACHED
-           &&   pRh->Hub.Dev.enmState != VUSB_DEVICE_STATE_RESET);
-
-    if (pRh->Hub.Dev.enmState == VUSB_DEVICE_STATE_ATTACHED)
-        pRh->Hub.Dev.enmState = VUSB_DEVICE_STATE_POWERED;
-
-    return VINF_SUCCESS;
+    int rc = VUSBIDevPowerOn(&pDev->IDevice);
+    vusbDevRelease(pDev);
+    return rc;
 }
 
 
-/**
- * @interface_method_impl{VUSBIDEVICE,pfnPowerOff}
- */
-static DECLCALLBACK(int) vusbRhDevPowerOff(PVUSBIDEVICE pInterface)
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnDevPowerOff} */
+static DECLCALLBACK(int) vusbR3RhDevPowerOff(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
 {
-    PVUSBROOTHUB pRh = RT_FROM_MEMBER(pInterface, VUSBROOTHUB, Hub.Dev.IDevice);
-    LogFlow(("vusbRhDevPowerOff: pRh=%p\n", pRh));
+    PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort);
+    AssertPtr(pDev);
 
-    Assert(     pRh->Hub.Dev.enmState != VUSB_DEVICE_STATE_DETACHED
-           &&   pRh->Hub.Dev.enmState != VUSB_DEVICE_STATE_RESET);
-
-    /*
-     * Cancel all URBs and reap them.
-     */
-    VUSBIRhCancelAllUrbs(&pRh->IRhConnector);
-    RTCritSectEnter(&pRh->CritSectDevices);
-    PVUSBDEV pDev = pRh->pDevices;
-    while (pDev)
-    {
-        VUSBIRhReapAsyncUrbs(&pRh->IRhConnector, (PVUSBIDEVICE)pDev, 0);
-        pDev = pDev->pNext;
-    }
-    RTCritSectLeave(&pRh->CritSectDevices);
-
-    pRh->Hub.Dev.enmState = VUSB_DEVICE_STATE_ATTACHED;
-    return VINF_SUCCESS;
+    int rc = VUSBIDevPowerOff(&pDev->IDevice);
+    vusbDevRelease(pDev);
+    return rc;
 }
 
-/**
- * @interface_method_impl{VUSBIDEVICE,pfnGetState}
- */
-static DECLCALLBACK(VUSBDEVICESTATE) vusbRhDevGetState(PVUSBIDEVICE pInterface)
+
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnDevGetState} */
+static DECLCALLBACK(VUSBDEVICESTATE) vusbR3RhDevGetState(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
 {
-    PVUSBROOTHUB pRh = RT_FROM_MEMBER(pInterface, VUSBROOTHUB, Hub.Dev.IDevice);
-    return pRh->Hub.Dev.enmState;
+    PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort);
+    AssertPtr(pDev);
+
+    VUSBDEVICESTATE enmState = VUSBIDevGetState(&pDev->IDevice);
+    vusbDevRelease(pDev);
+    return enmState;
+}
+
+
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnIsSavedStateSupported} */
+static DECLCALLBACK(bool) vusbR3RhDevIsSavedStateSupported(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
+{
+    PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort);
+    AssertPtr(pDev);
+
+    bool fSavedStateSupported = VUSBIDevIsSavedStateSupported(&pDev->IDevice);
+    vusbDevRelease(pDev);
+    return fSavedStateSupported;
+}
+
+
+/** @interface_method_impl{VUSBIROOTHUBCONNECTOR,pfnDevGetSpeed} */
+static DECLCALLBACK(VUSBSPEED) vusbR3RhDevGetSpeed(PVUSBIROOTHUBCONNECTOR pInterface, uint32_t uPort)
+{
+    PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    PVUSBDEV     pDev  = vusbR3RhGetVUsbDevByPortRetain(pThis, uPort);
+    AssertPtr(pDev);
+
+    VUSBSPEED enmSpeed = pDev->IDevice.pfnGetSpeed(&pDev->IDevice);
+    vusbDevRelease(pDev);
+    return enmSpeed;
 }
 
 
@@ -1103,6 +1188,199 @@ static const char *vusbGetSpeedString(VUSBSPEED enmSpeed)
     return pszSpeed;
 }
 
+
+/**
+ * @callback_method_impl{FNSSMDEVSAVEPREP, All URBs needs to be canceled.}
+ */
+static DECLCALLBACK(int) vusbR3RhSavePrep(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
+    LogFlow(("vusbR3RhSavePrep:\n"));
+    RT_NOREF(pSSM);
+
+    /*
+     * Detach all proxied devices.
+     */
+    RTCritSectEnter(&pThis->CritSectDevices);
+
+    /** @todo we a) can't tell which are proxied, and b) this won't work well when continuing after saving! */
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->apDevByPort); i++)
+    {
+        PVUSBDEV pDev = pThis->apDevByPort[i];
+        if (pDev)
+        {
+            if (!VUSBIDevIsSavedStateSupported(&pDev->IDevice))
+            {
+                int rc = vusbDevDetach(pDev);
+                AssertRC(rc);
+
+                /*
+                 * Save the device pointers here so we can reattach them afterwards.
+                 * This will work fine even if the save fails since the Done handler is
+                 * called unconditionally if the Prep handler was called.
+                 */
+                pThis->apDevByPort[i] = pDev;
+            }
+        }
+    }
+
+    RTCritSectLeave(&pThis->CritSectDevices);
+
+    /*
+     * Kill old load data which might be hanging around.
+     */
+    if (pThis->pLoad)
+    {
+        PDMDrvHlpTimerDestroy(pDrvIns, pThis->pLoad->hTimer);
+        pThis->pLoad->hTimer = NIL_TMTIMERHANDLE;
+        PDMDrvHlpMMHeapFree(pDrvIns, pThis->pLoad);
+        pThis->pLoad = NULL;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNSSMDEVSAVEDONE}
+ */
+static DECLCALLBACK(int) vusbR3RhSaveDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
+    PVUSBDEV     aPortsOld[VUSB_DEVICES_MAX];
+    unsigned     i;
+    LogFlow(("vusbR3RhSaveDone:\n"));
+    RT_NOREF(pSSM);
+
+    /* Save the current data. */
+    memcpy(aPortsOld, pThis->apDevByPort, sizeof(aPortsOld));
+    AssertCompile(sizeof(aPortsOld) == sizeof(pThis->apDevByPort));
+
+    /*
+     * NULL the dev pointers.
+     */
+    for (i = 0; i < RT_ELEMENTS(pThis->apDevByPort); i++)
+        if (pThis->apDevByPort[i] && !VUSBIDevIsSavedStateSupported(&pThis->apDevByPort[i]->IDevice))
+            pThis->apDevByPort[i] = NULL;
+
+    /*
+     * Attach the devices.
+     */
+    for (i = 0; i < RT_ELEMENTS(pThis->apDevByPort); i++)
+    {
+        PVUSBDEV pDev = aPortsOld[i];
+        if (pDev && !VUSBIDevIsSavedStateSupported(&pDev->IDevice))
+            vusbHubAttach(&pThis->Hub, pDev);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADPREP, This must detach the devices
+ * currently attached and save them for reconnect after the state load has been
+ * completed.}
+ */
+static DECLCALLBACK(int) vusbR3RhLoadPrep(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
+    int     rc = VINF_SUCCESS;
+    LogFlow(("vusbR3RhLoadPrep:\n"));
+    RT_NOREF(pSSM);
+
+    if (!pThis->pLoad)
+    {
+        VUSBROOTHUBLOAD Load;
+        unsigned        i;
+
+        /// @todo This is all bogus.
+        /*
+         * Detach all devices which are present in this session. Save them in the load
+         * structure so we can reattach them after restoring the guest.
+         */
+        Load.hTimer = NIL_TMTIMERHANDLE;
+        Load.cDevs  = 0;
+        for (i = 0; i < RT_ELEMENTS(pThis->apDevByPort); i++)
+        {
+            PVUSBDEV pDev = pThis->apDevByPort[i];
+            if (pDev && !VUSBIDevIsSavedStateSupported(&pDev->IDevice))
+            {
+                Load.apDevs[Load.cDevs++] = pDev;
+                vusbDevDetach(pDev);
+                Assert(!pThis->apDevByPort[i]);
+            }
+        }
+
+        /*
+         * Any devices to reattach? If so, duplicate the Load struct.
+         */
+        if (Load.cDevs)
+        {
+            pThis->pLoad = (PVUSBROOTHUBLOAD)RTMemAllocZ(sizeof(Load));
+            if (!pThis->pLoad)
+                return VERR_NO_MEMORY;
+            *pThis->pLoad = Load;
+        }
+    }
+    /* else: we ASSUME no device can be attached or detached in the time
+     *       between a state load and the pLoad stuff processing. */
+    return rc;
+}
+
+
+/**
+ * Reattaches devices after a saved state load.
+ */
+static DECLCALLBACK(void) vusbR3RhLoadReattachDevices(PPDMDRVINS pDrvIns, TMTIMERHANDLE hTimer, void *pvUser)
+{
+    PVUSBROOTHUB        pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
+    PVUSBROOTHUBLOAD    pLoad = pThis->pLoad;
+    LogFlow(("vusbR3RhLoadReattachDevices:\n"));
+    Assert(hTimer == pLoad->hTimer); RT_NOREF(pvUser);
+
+    /*
+     * Reattach devices.
+     */
+    for (unsigned i = 0; i < pLoad->cDevs; i++)
+        vusbHubAttach(&pThis->Hub, pLoad->apDevs[i]);
+
+    /*
+     * Cleanup.
+     */
+    PDMDrvHlpTimerDestroy(pDrvIns, hTimer);
+    pLoad->hTimer = NIL_TMTIMERHANDLE;
+    RTMemFree(pLoad);
+    pThis->pLoad = NULL;
+}
+
+
+/**
+ * @callback_method_impl{FNSSMDEVLOADDONE}
+ */
+static DECLCALLBACK(int) vusbR3RhLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
+{
+    PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
+    LogFlow(("vusbR3RhLoadDone:\n"));
+    RT_NOREF(pSSM);
+
+    /*
+     * Start a timer if we've got devices to reattach
+     */
+    if (pThis->pLoad)
+    {
+        int rc = PDMDrvHlpTMTimerCreate(pDrvIns, TMCLOCK_VIRTUAL, vusbR3RhLoadReattachDevices, NULL,
+                                        TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0,
+                                        "VUSB reattach on load", &pThis->pLoad->hTimer);
+        if (RT_SUCCESS(rc))
+            rc = PDMDrvHlpTimerSetMillies(pDrvIns, pThis->pLoad->hTimer, 250);
+        return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /* -=-=-=-=-=- VUSB Hub methods -=-=-=-=-=- */
 
 
@@ -1135,12 +1413,17 @@ static int vusbRhHubOpAttach(PVUSBHUB pHub, PVUSBDEV pDev)
      * Call the HCI attach routine and let it have its say before the device is
      * linked into the device list of this hub.
      */
-    int rc = pRh->pIRhPort->pfnAttach(pRh->pIRhPort, &pDev->IDevice, iPort);
+    VUSBSPEED enmSpeed = pDev->IDevice.pfnGetSpeed(&pDev->IDevice);
+    int rc = pRh->pIRhPort->pfnAttach(pRh->pIRhPort, iPort, enmSpeed);
     if (RT_SUCCESS(rc))
     {
         RTCritSectEnter(&pRh->CritSectDevices);
         pDev->pNext = pRh->pDevices;
         pRh->pDevices = pDev;
+
+        Assert(!pRh->apDevByPort[iPort]);
+        pRh->apDevByPort[iPort] = pDev;
+
         RTCritSectLeave(&pRh->CritSectDevices);
         LogRel(("VUSB: Attached '%s' to port %d on %s (%sSpeed)\n", pDev->pUsbIns->pszName,
                 iPort, pHub->pszName, vusbGetSpeedString(pDev->pUsbIns->enmSpeed)));
@@ -1183,13 +1466,15 @@ static void vusbRhHubOpDetach(PVUSBHUB pHub, PVUSBDEV pDev)
     else
         pRh->pDevices = pDev->pNext;
     pDev->pNext = NULL;
+
+    pRh->apDevByPort[pDev->i16Port] = NULL;
     RTCritSectLeave(&pRh->CritSectDevices);
 
     /*
      * Detach the device and mark the port as available.
      */
     unsigned uPort = pDev->i16Port;
-    pRh->pIRhPort->pfnDetach(pRh->pIRhPort, &pDev->IDevice, uPort);
+    pRh->pIRhPort->pfnDetach(pRh->pIRhPort, uPort);
     LogRel(("VUSB: Detached '%s' from port %u on %s\n", pDev->pUsbIns->pszName, uPort, pHub->pszName));
     ASMBitSet(&pRh->Bitmap, uPort);
     pHub->cDevices--;
@@ -1306,14 +1591,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pDrvIns->IBase.pfnQueryInterface    = vusbRhQueryInterface;
     /* the usb device */
     pThis->Hub.Dev.enmState             = VUSB_DEVICE_STATE_ATTACHED;
-    pThis->Hub.Dev.u8Address            = VUSB_INVALID_ADDRESS;
-    pThis->Hub.Dev.u8NewAddress         = VUSB_INVALID_ADDRESS;
-    pThis->Hub.Dev.i16Port              = -1;
     pThis->Hub.Dev.cRefs                = 1;
-    pThis->Hub.Dev.IDevice.pfnReset     = vusbRhDevReset;
-    pThis->Hub.Dev.IDevice.pfnPowerOn   = vusbRhDevPowerOn;
-    pThis->Hub.Dev.IDevice.pfnPowerOff  = vusbRhDevPowerOff;
-    pThis->Hub.Dev.IDevice.pfnGetState  = vusbRhDevGetState;
     /* the hub */
     pThis->Hub.pOps                     = &s_VUsbRhHubOps;
     pThis->Hub.pRootHub                 = pThis;
@@ -1325,6 +1603,9 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->pDrvIns                      = pDrvIns;
     /* the connector */
     pThis->IRhConnector.pfnSetUrbParams               = vusbRhSetUrbParams;
+    pThis->IRhConnector.pfnReset                      = vusbR3RhReset;
+    pThis->IRhConnector.pfnPowerOn                    = vusbR3RhPowerOn;
+    pThis->IRhConnector.pfnPowerOff                   = vusbR3RhPowerOff;
     pThis->IRhConnector.pfnNewUrb                     = vusbRhConnNewUrb;
     pThis->IRhConnector.pfnFreeUrb                    = vusbRhConnFreeUrb;
     pThis->IRhConnector.pfnSubmitUrb                  = vusbRhSubmitUrb;
@@ -1332,11 +1613,15 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->IRhConnector.pfnCancelUrbsEp               = vusbRhCancelUrbsEp;
     pThis->IRhConnector.pfnCancelAllUrbs              = vusbRhCancelAllUrbs;
     pThis->IRhConnector.pfnAbortEp                    = vusbRhAbortEp;
-    pThis->IRhConnector.pfnAttachDevice               = vusbRhAttachDevice;
-    pThis->IRhConnector.pfnDetachDevice               = vusbRhDetachDevice;
     pThis->IRhConnector.pfnSetPeriodicFrameProcessing = vusbRhSetFrameProcessing;
     pThis->IRhConnector.pfnGetPeriodicFrameRate       = vusbRhGetPeriodicFrameRate;
     pThis->IRhConnector.pfnUpdateIsocFrameDelta       = vusbRhUpdateIsocFrameDelta;
+    pThis->IRhConnector.pfnDevReset                   = vusbR3RhDevReset;
+    pThis->IRhConnector.pfnDevPowerOn                 = vusbR3RhDevPowerOn;
+    pThis->IRhConnector.pfnDevPowerOff                = vusbR3RhDevPowerOff;
+    pThis->IRhConnector.pfnDevGetState                = vusbR3RhDevGetState;
+    pThis->IRhConnector.pfnDevIsSavedStateSupported   = vusbR3RhDevIsSavedStateSupported;
+    pThis->IRhConnector.pfnDevGetSpeed                = vusbR3RhDevGetSpeed;
     pThis->hSniffer                                   = VUSBSNIFFER_NIL;
     pThis->cbHci                                      = 0;
     pThis->cbHciTd                                    = 0;
@@ -1387,6 +1672,15 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     rc = PDMDrvHlpUSBRegisterHub(pDrvIns, pThis->fHcVersions, pThis->Hub.cPorts, &g_vusbHubReg, &pHlpUsb);
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Register the saved state data unit for attaching devices.
+     */
+    rc = PDMDrvHlpSSMRegisterEx(pDrvIns, VUSB_ROOTHUB_SAVED_STATE_VERSION, 0,
+                                NULL, NULL, NULL,
+                                vusbR3RhSavePrep, NULL, vusbR3RhSaveDone,
+                                vusbR3RhLoadPrep, NULL, vusbR3RhLoadDone);
+    AssertRCReturn(rc, rc);
 
     /*
      * Statistics. (It requires a 30" monitor or extremely tiny fonts to edit this "table".)

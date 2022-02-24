@@ -135,6 +135,8 @@
 
 /* Macro to query the number of currently configured ports. */
 #define OHCI_NDP_CFG(pohci) ((pohci)->RootHub.desc_a & OHCI_RHA_NDP)
+/** Macro to convert a EHCI port index (zero based) to a VUSB roothub port ID (one based). */
+#define OHCI_PORT_2_VUSB_PORT(a_uPort) ((a_uPort) + 1)
 
 /** Pointer to OHCI device data. */
 typedef struct OHCI *POHCI;
@@ -179,15 +181,10 @@ typedef struct OHCIHUBPORT
 {
     /** The port register. */
     uint32_t                fReg;
-#if HC_ARCH_BITS == 64
-    uint32_t                Alignment0; /**< Align the pointer correctly. */
-#endif
-    /** The device attached to the port. */
-    R3PTRTYPE(PVUSBIDEVICE) pDev;
+    /** Flag whether there is a device attached to the port. */
+    bool                    fAttached;
+    bool                    afPadding[3];
 } OHCIHUBPORT;
-#if HC_ARCH_BITS == 64
-AssertCompile(sizeof(OHCIHUBPORT) == 16); /* saved state */
-#endif
 /** Pointer to an OHCI hub port. */
 typedef OHCIHUBPORT *POHCIHUBPORT;
 
@@ -221,8 +218,6 @@ typedef struct OHCIROOTHUBR3
     R3PTRTYPE(PPDMIBASE)                pIBase;
     /** Pointer to the connector interface of the VUSB RootHub. */
     R3PTRTYPE(PVUSBIROOTHUBCONNECTOR)   pIRhConn;
-    /** Pointer to the device interface of the VUSB RootHub. */
-    R3PTRTYPE(PVUSBIDEVICE)             pIDev;
     /** The base interface exposed to the roothub driver. */
     PDMIBASE                            IBase;
     /** The roothub port interface exposed to the roothub driver. */
@@ -240,24 +235,6 @@ typedef struct OHCIROOTHUBR3
 } OHCIROOTHUBR3;
 /** Pointer to the OHCI ring-3 root hub data. */
 typedef OHCIROOTHUBR3 *POHCIROOTHUBR3;
-
-
-/**
- * Data used for reattaching devices on a state load.
- */
-typedef struct OHCILOAD
-{
-    /** Timer used once after state load to inform the guest about new devices.
-     * We do this to be sure the guest get any disconnect / reconnect on the
-     * same port. */
-    TMTIMERHANDLE       hTimer;
-    /** Number of detached devices. */
-    unsigned            cDevs;
-    /** Array of devices which were detached. */
-    PVUSBIDEVICE apDevs[OHCI_NDP_MAX];
-} OHCILOAD;
-/** Pointer to an OHCILOAD structure. */
-typedef OHCILOAD *POHCILOAD;
 
 #ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
 typedef struct OHCIPAGECACHE
@@ -282,6 +259,8 @@ typedef struct OHCI
     /** frame number overflow. */
     uint32_t            fno : 1;
 
+    /** Align roothub structure on a 8-byte boundary. */
+    uint32_t            u32Alignment0;
     /** Root hub device, shared data. */
     OHCIROOTHUB         RootHub;
 
@@ -422,8 +401,6 @@ typedef struct OHCIR3
     /** Critical section to synchronize the framer and URB completion handler. */
     RTCRITSECT          CritSect;
 
-    /** Pointer to state load data. */
-    R3PTRTYPE(POHCILOAD) pLoad;
     /** The restored periodic frame rate. */
     uint32_t             uRestoredPeriodicFrameRate;
 } OHCIR3;
@@ -889,7 +866,7 @@ static SSMFIELD const g_aOhciFields8Ports[] =
 RT_C_DECLS_BEGIN
 #ifdef IN_RING3
 /* Update host controller state to reflect a device attach */
-static void                 ohciR3RhPortPower(POHCIROOTHUB pRh, unsigned iPort, bool fPowerUp);
+static void                 ohciR3RhPortPower(POHCIROOTHUBR3 pRh, unsigned iPort, bool fPowerUp);
 static void                 ohciR3BusResume(PPDMDEVINS pDevIns, POHCI pOhci, POHCICC pThisCC, bool fHardware);
 static void                 ohciR3BusStop(POHCICC pThisCC);
 #ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
@@ -1039,7 +1016,7 @@ static DECLCALLBACK(unsigned) ohciR3RhGetAvailablePorts(PVUSBIROOTHUBPORT pInter
 
 
     for (unsigned iPort = 0; iPort < OHCI_NDP_CFG(pThis); iPort++)
-        if (!pThis->RootHub.aPorts[iPort].pDev)
+        if (!pThis->RootHub.aPorts[iPort].fAttached)
         {
             cPorts++;
             ASMBitSet(pAvailable, iPort + 1);
@@ -1063,20 +1040,13 @@ static DECLCALLBACK(uint32_t) ohciR3RhGetUSBVersions(PVUSBIROOTHUBPORT pInterfac
 }
 
 
-/**
- * A device is being attached to a port in the roothub.
- *
- * @param   pInterface      Pointer to this structure.
- * @param   pDev            Pointer to the device being attached.
- * @param   uPort           The port number assigned to the device.
- */
-static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort)
+/** @interface_method_impl{VUSBIROOTHUBPORT,pfnAttach} */
+static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, uint32_t uPort, VUSBSPEED enmSpeed)
 {
     POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
     PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
     POHCI      pThis   = PDMDEVINS_2_DATA(pDevIns, POHCI);
-    VUSBSPEED  enmSpeed;
-    LogFlow(("ohciR3RhAttach: pDev=%p uPort=%u\n", pDev, uPort));
+    LogFlow(("ohciR3RhAttach: uPort=%u\n", uPort));
     int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
@@ -1085,8 +1055,7 @@ static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVI
      */
     Assert(uPort >= 1 && uPort <= OHCI_NDP_CFG(pThis));
     uPort--;
-    Assert(!pThis->RootHub.aPorts[uPort].pDev);
-    enmSpeed = pDev->pfnGetSpeed(pDev);
+    Assert(!pThis->RootHub.aPorts[uPort].fAttached);
     /* Only LS/FS devices should end up here. */
     Assert(enmSpeed == VUSB_SPEED_LOW || enmSpeed == VUSB_SPEED_FULL);
 
@@ -1096,8 +1065,8 @@ static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVI
     pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_CCS | OHCI_PORT_CSC;
     if (enmSpeed == VUSB_SPEED_LOW)
         pThis->RootHub.aPorts[uPort].fReg |= OHCI_PORT_LSDA;
-    pThis->RootHub.aPorts[uPort].pDev = pDev;
-    ohciR3RhPortPower(&pThis->RootHub, uPort, 1 /* power on */);
+    pThis->RootHub.aPorts[uPort].fAttached = true;
+    ohciR3RhPortPower(&pThisCC->RootHub, uPort, 1 /* power on */);
 
     ohciR3RemoteWakeup(pDevIns, pThis, pThisCC);
     ohciR3SetInterrupt(pDevIns, pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
@@ -1111,16 +1080,14 @@ static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVI
  * A device is being detached from a port in the roothub.
  *
  * @param   pInterface      Pointer to this structure.
- * @param   pDev            Pointer to the device being detached.
  * @param   uPort           The port number assigned to the device.
  */
-static DECLCALLBACK(void) ohciR3RhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort)
+static DECLCALLBACK(void) ohciR3RhDetach(PVUSBIROOTHUBPORT pInterface, uint32_t uPort)
 {
     POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
     PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
     POHCI      pThis   = PDMDEVINS_2_DATA(pDevIns, POHCI);
-    RT_NOREF(pDev);
-    LogFlow(("ohciR3RhDetach: pDev=%p uPort=%u\n", pDev, uPort));
+    LogFlow(("ohciR3RhDetach: uPort=%u\n", uPort));
     int const  rcLock  = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     PDM_CRITSECT_RELEASE_ASSERT_RC_DEV(pDevIns, pDevIns->pCritSectRoR3, rcLock);
 
@@ -1129,12 +1096,12 @@ static DECLCALLBACK(void) ohciR3RhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEV
      */
     Assert(uPort >= 1 && uPort <= OHCI_NDP_CFG(pThis));
     uPort--;
-    Assert(pThis->RootHub.aPorts[uPort].pDev == pDev);
+    Assert(pThis->RootHub.aPorts[uPort].fAttached);
 
     /*
      * Detach it.
      */
-    pThis->RootHub.aPorts[uPort].pDev = NULL;
+    pThis->RootHub.aPorts[uPort].fAttached = false;
     if (pThis->RootHub.aPorts[uPort].fReg & OHCI_PORT_PES)
         pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_CSC | OHCI_PORT_PESC;
     else
@@ -1155,13 +1122,14 @@ static DECLCALLBACK(void) ohciR3RhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEV
  * during a root hub reset.
  *
  * @param pDev      The root hub device.
+ * @param uPort     The port of the device completing the reset.
  * @param rc        The result of the operation.
  * @param pvUser    Pointer to the controller.
  */
-static DECLCALLBACK(void) ohciR3RhResetDoneOneDev(PVUSBIDEVICE pDev, int rc, void *pvUser)
+static DECLCALLBACK(void) ohciR3RhResetDoneOneDev(PVUSBIDEVICE pDev, uint32_t uPort, int rc, void *pvUser)
 {
     LogRel(("OHCI: root hub reset completed with %Rrc\n", rc));
-    NOREF(pDev); NOREF(rc); NOREF(pvUser);
+    RT_NOREF(pDev, uPort, rc, pvUser);
 }
 
 
@@ -1204,13 +1172,14 @@ static DECLCALLBACK(int) ohciR3RhReset(PVUSBIROOTHUBPORT pInterface, bool fReset
      */
     for (unsigned iPort = 0; iPort < OHCI_NDP_CFG(pThis); iPort++)
     {
-        if (pThis->RootHub.aPorts[iPort].pDev)
+        if (pThis->RootHub.aPorts[iPort].fAttached)
         {
             pThis->RootHub.aPorts[iPort].fReg = OHCI_PORT_CCS | OHCI_PORT_CSC | OHCI_PORT_PPS;
             if (fResetOnLinux)
             {
                 PVM pVM = PDMDevHlpGetVM(pDevIns);
-                VUSBIDevReset(pThis->RootHub.aPorts[iPort].pDev, fResetOnLinux, ohciR3RhResetDoneOneDev, pThis, pVM);
+                VUSBIRhDevReset(pThisCC->RootHub.pIRhConn, OHCI_PORT_2_VUSB_PORT(iPort), fResetOnLinux,
+                                ohciR3RhResetDoneOneDev, pThis, pVM);
             }
         }
         else
@@ -1309,7 +1278,7 @@ static void ohciR3DoReset(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, uint
      * device construction, so nothing to worry about there.)
      */
     if (fNewMode == OHCI_USB_RESET)
-        VUSBIDevReset(pThisCC->RootHub.pIDev, fResetOnLinux, NULL, NULL, NULL);
+        pThisCC->RootHub.pIRhConn->pfnReset(pThisCC->RootHub.pIRhConn, fResetOnLinux);
 }
 
 
@@ -3094,7 +3063,7 @@ static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, VU
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThisCC->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThisCC->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, VUSB_DEVICE_PORT_INVALID,
                                   enmType, enmDir, Buf.cbTotal, 1, NULL);
     if (!pUrb)
         return false;                   /* retry later... */
@@ -3264,7 +3233,7 @@ static bool ohciR3ServiceTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYP
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThisCC->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThisCC->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, VUSB_DEVICE_PORT_INVALID,
                                   enmType, enmDir, cbTotal, cTds, "ohciR3ServiceTdMultiple");
     if (!pUrb)
         /* retry later... */
@@ -3498,7 +3467,7 @@ static bool ohciR3ServiceIsochronousTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC 
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThisCC->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThisCC->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, VUSB_DEVICE_PORT_INVALID,
                                   VUSBXFERTYPE_ISOC, enmDir, cbTotal, 1, NULL);
     if (!pUrb)
         /* retry later... */
@@ -4404,7 +4373,7 @@ static DECLCALLBACK(void) ohciR3FrameRateChanged(PVUSBIROOTHUBPORT pInterface, u
  */
 static void ohciR3BusStart(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
-    VUSBIDevPowerOn(pThisCC->RootHub.pIDev);
+    pThisCC->RootHub.pIRhConn->pfnPowerOn(pThisCC->RootHub.pIRhConn);
     pThis->dqic = 0x7;
 
     Log(("ohci: Bus started\n"));
@@ -4422,7 +4391,7 @@ static void ohciR3BusStop(POHCICC pThisCC)
 {
     int rc = pThisCC->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThisCC->RootHub.pIRhConn, 0);
     AssertRC(rc);
-    VUSBIDevPowerOff(pThisCC->RootHub.pIDev);
+    pThisCC->RootHub.pIRhConn->pfnPowerOff(pThisCC->RootHub.pIRhConn);
 }
 
 
@@ -4445,7 +4414,7 @@ static void ohciR3BusResume(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, bo
 
 
 /* Power a port up or down */
-static void ohciR3RhPortPower(POHCIROOTHUB pRh, unsigned iPort, bool fPowerUp)
+static void ohciR3RhPortPower(POHCIROOTHUBR3 pRh, unsigned iPort, bool fPowerUp)
 {
     POHCIHUBPORT pPort = &pRh->aPorts[iPort];
     bool fOldPPS = !!(pPort->fReg & OHCI_PORT_PPS);
@@ -4455,19 +4424,19 @@ static void ohciR3RhPortPower(POHCIROOTHUB pRh, unsigned iPort, bool fPowerUp)
     if (fPowerUp)
     {
         /* power up */
-        if (pPort->pDev)
+        if (pPort->fAttached)
             pPort->fReg |= OHCI_PORT_CCS;
         if (pPort->fReg & OHCI_PORT_CCS)
             pPort->fReg |= OHCI_PORT_PPS;
-        if (pPort->pDev && !fOldPPS)
-            VUSBIDevPowerOn(pPort->pDev);
+        if (pPort->fAttached && !fOldPPS)
+            VUSBIRhDevPowerOn(pRh->pIRhConn, OHCI_PORT_2_VUSB_PORT(iPort));
     }
     else
     {
         /* power down */
         pPort->fReg &= ~(OHCI_PORT_PPS | OHCI_PORT_CCS | OHCI_PORT_PSS | OHCI_PORT_PRS);
-        if (pPort->pDev && fOldPPS)
-            VUSBIDevPowerOff(pPort->pDev);
+        if (pPort->fAttached && fOldPPS)
+            VUSBIRhDevPowerOff(pRh->pIRhConn, OHCI_PORT_2_VUSB_PORT(iPort));
     }
 }
 
@@ -4562,7 +4531,7 @@ static VBOXSTRICTRC HcControl_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t iReg, 
                 /** @todo This should probably do a real reset, but we don't implement
                  * that correctly in the roothub reset callback yet. check it's
                  * comments and argument for more details. */
-                VUSBIDevReset(pThisCC->RootHub.pIDev, false /* don't do a real reset */, NULL, NULL, NULL);
+                pThisCC->RootHub.pIRhConn->pfnReset(pThisCC->RootHub.pIRhConn, false /* don't do a real reset */);
                 break;
             }
         }
@@ -5209,6 +5178,8 @@ static VBOXSTRICTRC HcRhStatus_r(PPDMDEVINS pDevIns, PCOHCI pThis, uint32_t iReg
 static VBOXSTRICTRC HcRhStatus_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t iReg, uint32_t val)
 {
 #ifdef IN_RING3
+    POHCICC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
+
     /* log */
     uint32_t old = pThis->RootHub.status;
     uint32_t chg;
@@ -5230,7 +5201,7 @@ static VBOXSTRICTRC HcRhStatus_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t iReg,
         unsigned i;
         Log2(("ohci: global power up\n"));
         for (i = 0; i < OHCI_NDP_CFG(pThis); i++)
-            ohciR3RhPortPower(&pThis->RootHub, i, true /* power up */);
+            ohciR3RhPortPower(&pThisCC->RootHub, i, true /* power up */);
     }
 
     /* ClearGlobalPower */
@@ -5239,7 +5210,7 @@ static VBOXSTRICTRC HcRhStatus_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t iReg,
         unsigned i;
         Log2(("ohci: global power down\n"));
         for (i = 0; i < OHCI_NDP_CFG(pThis); i++)
-            ohciR3RhPortPower(&pThis->RootHub, i, false /* power down */);
+            ohciR3RhPortPower(&pThisCC->RootHub, i, false /* power down */);
     }
 
     if ( val & OHCI_RHS_DRWE )
@@ -5295,27 +5266,15 @@ static VBOXSTRICTRC HcRhPortStatus_r(PPDMDEVINS pDevIns, PCOHCI pThis, uint32_t 
  * Completion callback for the vusb_dev_reset() operation.
  * @thread EMT.
  */
-static DECLCALLBACK(void) ohciR3PortResetDone(PVUSBIDEVICE pDev, int rc, void *pvUser)
+static DECLCALLBACK(void) ohciR3PortResetDone(PVUSBIDEVICE pDev, uint32_t uPort, int rc, void *pvUser)
 {
-    PPDMDEVINS pDevIns = (PPDMDEVINS)pvUser;
-    POHCI      pThis   = PDMDEVINS_2_DATA(pDevIns, POHCI);
+    RT_NOREF(pDev);
 
-    /*
-     * Find the port in question
-     */
-    POHCIHUBPORT pPort = NULL;
-    unsigned iPort;
-    for (iPort = 0; iPort < OHCI_NDP_CFG(pThis); iPort++) /* lazy bird */
-        if (pThis->RootHub.aPorts[iPort].pDev == pDev)
-        {
-            pPort = &pThis->RootHub.aPorts[iPort];
-            break;
-        }
-    if (!pPort)
-    {
-        Assert(pPort); /* sometimes happens because of @bugref{1510} */
-        return;
-    }
+    Assert(uPort >= 1);
+    PPDMDEVINS      pDevIns = (PPDMDEVINS)pvUser;
+    POHCI           pThis   = PDMDEVINS_2_DATA(pDevIns, POHCI);
+    POHCICC         pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
+    POHCIHUBPORT    pPort   = &pThis->RootHub.aPorts[uPort - 1];
 
     if (RT_SUCCESS(rc))
     {
@@ -5329,8 +5288,8 @@ static DECLCALLBACK(void) ohciR3PortResetDone(PVUSBIDEVICE pDev, int rc, void *p
     else
     {
         /* desperate measures. */
-        if (    pPort->pDev
-            &&  VUSBIDevGetState(pPort->pDev) == VUSB_DEVICE_STATE_ATTACHED)
+        if (    pPort->fAttached
+            &&  VUSBIRhDevGetState(pThisCC->RootHub.pIRhConn, uPort) == VUSB_DEVICE_STATE_ATTACHED)
         {
             /*
              * Damn, something weird happened during reset. We'll pretend the user did an
@@ -5395,6 +5354,7 @@ static VBOXSTRICTRC HcRhPortStatus_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t i
 {
 #ifdef IN_RING3
     const unsigned  i = iReg - 21;
+    POHCICC         pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
     POHCIHUBPORT    p = &pThis->RootHub.aPorts[i];
     uint32_t        old_state = p->fReg;
 
@@ -5442,7 +5402,8 @@ static VBOXSTRICTRC HcRhPortStatus_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t i
         {
             PVM pVM = PDMDevHlpGetVM(pDevIns);
             p->fReg &= ~OHCI_PORT_PRSC;
-            VUSBIDevReset(p->pDev, false /* don't reset on linux */, ohciR3PortResetDone, pDevIns, pVM);
+            VUSBIRhDevReset(pThisCC->RootHub.pIRhConn, OHCI_PORT_2_VUSB_PORT(i), false /* don't reset on linux */,
+                            ohciR3PortResetDone, pDevIns, pVM);
         }
         else if (p->fReg & OHCI_PORT_PRS)
         {
@@ -5459,15 +5420,15 @@ static VBOXSTRICTRC HcRhPortStatus_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t i
          * sure it isn't gang powered
          */
         if (val & OHCI_PORT_CLRPP)
-            ohciR3RhPortPower(&pThis->RootHub, i, false /* power down */);
+            ohciR3RhPortPower(&pThisCC->RootHub, i, false /* power down */);
         if (val & OHCI_PORT_PPS)
-            ohciR3RhPortPower(&pThis->RootHub, i, true /* power up */);
+            ohciR3RhPortPower(&pThisCC->RootHub, i, true /* power up */);
     }
 
     /** @todo r=frank:  ClearSuspendStatus. Timing? */
     if (val & OHCI_PORT_CLRSS)
     {
-        ohciR3RhPortPower(&pThis->RootHub, i, true /* power up */);
+        ohciR3RhPortPower(&pThisCC->RootHub, i, true /* power up */);
         pThis->RootHub.aPorts[i].fReg &= ~OHCI_PORT_PSS;
         pThis->RootHub.aPorts[i].fReg |= OHCI_PORT_PSSC;
         ohciR3SetInterrupt(pDevIns, pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
@@ -5613,61 +5574,6 @@ PDMBOTHCBDECL(VBOXSTRICTRC) ohciMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGC
 #ifdef IN_RING3
 
 /**
- * Prepares for state saving.
- * All URBs needs to be canceled.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSM        The handle to save the state to.
- */
-static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-    RT_NOREF(pSSM);
-    POHCICC      pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
-    POHCI        pThis   = PDMDEVINS_2_DATA(pDevIns, POHCI);
-    LogFlow(("ohciR3SavePrep: \n"));
-
-    /*
-     * Detach all proxied devices.
-     */
-    int rc = PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
-    AssertRCReturn(rc, rc);
-
-    /** @todo this won't work well when continuing after saving! */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->RootHub.aPorts); i++)
-    {
-        PVUSBIDEVICE pDev = pThis->RootHub.aPorts[i].pDev;
-        if (pDev)
-        {
-            if (!VUSBIDevIsSavedStateSupported(pDev))
-            {
-                VUSBIRhDetachDevice(pThisCC->RootHub.pIRhConn, pDev);
-                /*
-                 * Save the device pointers here so we can reattach them afterwards.
-                 * This will work fine even if the save fails since the Done handler is
-                 * called unconditionally if the Prep handler was called.
-                 */
-                pThis->RootHub.aPorts[i].pDev = pDev;
-            }
-        }
-    }
-
-    PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
-
-    /*
-     * Kill old load data which might be hanging around.
-     */
-    if (pThisCC->pLoad)
-    {
-        PDMDevHlpTimerDestroy(pDevIns, pThisCC->pLoad->hTimer);
-        PDMDevHlpMMHeapFree(pDevIns, pThisCC->pLoad);
-        pThisCC->pLoad = NULL;
-    }
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Saves the state of the OHCI device.
  *
  * @returns VBox status code.
@@ -5685,102 +5591,6 @@ static DECLCALLBACK(int) ohciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     /* Save the periodic frame rate so we can we can tell if the bus was started or not when restoring. */
     return pDevIns->pHlpR3->pfnSSMPutU32(pSSM, VUSBIRhGetPeriodicFrameRate(pThisCC->RootHub.pIRhConn));
-}
-
-
-/**
- * Done state save operation.
- *
- * @returns VBox load code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
- * @param   pSSM            SSM operation handle.
- */
-static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-    POHCI   pThis   = PDMDEVINS_2_DATA(pDevIns, POHCI);
-    POHCICC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
-    LogFlow(("ohciR3SaveDone:\n"));
-    RT_NOREF(pSSM);
-
-    /*
-     * NULL the dev pointers.
-     */
-    POHCIROOTHUB pRh = &pThis->RootHub;
-    OHCIROOTHUB  Rh  = *pRh;
-    for (unsigned i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
-    {
-        if (   pRh->aPorts[i].pDev
-            && !VUSBIDevIsSavedStateSupported(pRh->aPorts[i].pDev))
-            pRh->aPorts[i].pDev = NULL;
-    }
-
-    /*
-     * Attach the devices.
-     */
-    for (unsigned i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
-    {
-        PVUSBIDEVICE pDev = Rh.aPorts[i].pDev;
-        if (   pDev
-            && !VUSBIDevIsSavedStateSupported(pDev))
-            VUSBIRhAttachDevice(pThisCC->RootHub.pIRhConn, pDev);
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Prepare loading the state of the OHCI device.
- * This must detach the devices currently attached and save
- * the up for reconnect after the state load have been completed
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pSSM        The handle to the saved state.
- */
-static DECLCALLBACK(int) ohciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-    POHCICC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
-    POHCI   pThis   = PDMDEVINS_2_DATA(pDevIns, POHCI);
-    LogFlow(("ohciR3LoadPrep:\n"));
-    RT_NOREF(pSSM);
-
-    if (!pThisCC->pLoad)
-    {
-        /*
-         * Detach all devices which are present in this session. Save them in the load
-         * structure so we can reattach them after restoring the guest.
-         */
-        POHCIROOTHUB pRh = &pThis->RootHub;
-        OHCILOAD Load;
-        Load.hTimer = NIL_TMTIMERHANDLE;
-        Load.cDevs  = 0;
-        for (unsigned i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
-        {
-            PVUSBIDEVICE pDev = pRh->aPorts[i].pDev;
-            if (   pDev
-                && !VUSBIDevIsSavedStateSupported(pDev))
-            {
-                Load.apDevs[Load.cDevs++] = pDev;
-                VUSBIRhDetachDevice(pThisCC->RootHub.pIRhConn, pDev);
-                Assert(!pRh->aPorts[i].pDev);
-            }
-        }
-
-        /*
-         * Any devices to reattach, if so duplicate the Load struct.
-         */
-        if (Load.cDevs)
-        {
-            pThisCC->pLoad = (POHCILOAD)PDMDevHlpMMHeapAlloc(pDevIns, sizeof(Load));
-            if (!pThisCC->pLoad)
-                return VERR_NO_MEMORY;
-            *pThisCC->pLoad = Load;
-        }
-    }
-    /* else: we ASSUME no device can be attached or detach in the period
-     *       between a state load and the pLoad stuff is processed. */
-    return VINF_SUCCESS;
 }
 
 
@@ -5841,63 +5651,6 @@ static DECLCALLBACK(int) ohciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     }
 
     /** @todo could we restore the frame rate here instead of in ohciR3Resume? */
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @callback_method_impl{FNTMTIMERDEV,
- *      Reattaches devices after a saved state load.}
- */
-static DECLCALLBACK(void) ohciR3LoadReattachDevices(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, void *pvUser)
-{
-    POHCICC      pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
-    POHCILOAD    pLoad   = pThisCC->pLoad;
-    LogFlow(("ohciR3LoadReattachDevices:\n"));
-    Assert(hTimer == pLoad->hTimer); RT_NOREF(pvUser);
-
-    /*
-     * Reattach devices.
-     */
-    for (unsigned i = 0; i < pLoad->cDevs; i++)
-        VUSBIRhAttachDevice(pThisCC->RootHub.pIRhConn, pLoad->apDevs[i]);
-
-    /*
-     * Cleanup.
-     */
-    PDMDevHlpTimerDestroy(pDevIns, hTimer);
-    pLoad->hTimer = NIL_TMTIMERHANDLE;
-    PDMDevHlpMMHeapFree(pDevIns, pLoad);
-    pThisCC->pLoad = NULL;
-}
-
-
-/**
- * Done state load operation.
- *
- * @returns VBox load code.
- * @param   pDevIns         Device instance of the device which registered the data unit.
- * @param   pSSM            SSM operation handle.
- */
-static DECLCALLBACK(int) ohciR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-    POHCICC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, POHCICC);
-    LogFlow(("ohciR3LoadDone:\n"));
-    RT_NOREF(pSSM);
-
-    /*
-     * Start a timer if we've got devices to reattach
-     */
-    if (pThisCC->pLoad)
-    {
-        int rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ohciR3LoadReattachDevices, NULL /*pvUser*/,
-                                      TMTIMER_FLAGS_NO_CRIT_SECT | TMTIMER_FLAGS_NO_RING0, "OHCI reattach on load",
-                                      &pThisCC->pLoad->hTimer);
-        if (RT_SUCCESS(rc))
-            rc = PDMDevHlpTimerSetMillies(pDevIns, pThisCC->pLoad->hTimer, 250);
-        return rc;
-    }
-
     return VINF_SUCCESS;
 }
 
@@ -6152,8 +5905,8 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, OHCI_SAVED_STATE_VERSION, sizeof(*pThis), NULL,
                                 NULL, NULL, NULL,
-                                ohciR3SavePrep, ohciR3SaveExec, ohciR3SaveDone,
-                                ohciR3LoadPrep, ohciR3LoadExec, ohciR3LoadDone);
+                                NULL, ohciR3SaveExec, NULL,
+                                NULL, ohciR3LoadExec, NULL);
     AssertRCReturn(rc, rc);
 
     /*
@@ -6168,10 +5921,6 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThisCC->RootHub.pIRhConn = PDMIBASE_QUERY_INTERFACE(pThisCC->RootHub.pIBase, VUSBIROOTHUBCONNECTOR);
     AssertMsgReturn(pThisCC->RootHub.pIRhConn,
                     ("Configuration error: The driver doesn't provide the VUSBIROOTHUBCONNECTOR interface!\n"),
-                    VERR_PDM_MISSING_INTERFACE);
-    pThisCC->RootHub.pIDev = PDMIBASE_QUERY_INTERFACE(pThisCC->RootHub.pIBase, VUSBIDEVICE);
-    AssertMsgReturn(pThisCC->RootHub.pIDev,
-                    ("Configuration error: The driver doesn't provide the VUSBIDEVICE interface!\n"),
                     VERR_PDM_MISSING_INTERFACE);
 
     /*

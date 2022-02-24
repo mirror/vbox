@@ -1432,7 +1432,7 @@ static void vusbDevResetDone(PVUSBDEV pDev, int rc, PFNVUSBRESETDONE pfnDone, vo
     if (!vusbDevIsRh(pDev))
         vusbDevSetAddress(pDev, VUSB_DEFAULT_ADDRESS);
     if (pfnDone)
-        pfnDone(&pDev->IDevice, rc, pvUser);
+        pfnDone(&pDev->IDevice, pDev->i16Port, rc, pvUser);
 }
 
 
@@ -1646,7 +1646,7 @@ static DECLCALLBACK(int) vusbIDevicePowerOff(PVUSBIDEVICE pInterface)
     {
         PVUSBROOTHUB pRh = (PVUSBROOTHUB)pDev;
         VUSBIRhCancelAllUrbs(&pRh->IRhConnector);
-        VUSBIRhReapAsyncUrbs(&pRh->IRhConnector, pInterface, 0);
+        VUSBIRhReapAsyncUrbs(&pRh->IRhConnector, pDev->i16Port, 0);
     }
 
     vusbDevSetState(pDev, VUSB_DEVICE_STATE_ATTACHED);

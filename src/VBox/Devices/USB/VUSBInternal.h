@@ -376,6 +376,9 @@ typedef struct VUSBROOTHUBTYPESTATS
 
 
 
+/** Pointer to a VUSBROOTHUBLOAD struct. */
+typedef struct VUSBROOTHUBLOAD *PVUSBROOTHUBLOAD;
+
 /** The address hash table size. */
 #define VUSB_ADDR_HASHSZ    5
 
@@ -390,23 +393,28 @@ typedef struct VUSBROOTHUB
 {
     /** The HUB.
      * @todo remove this? */
-    VUSBHUB                    Hub;
+    VUSBHUB                     Hub;
     /** Address hash table. */
-    PVUSBDEV                   apAddrHash[VUSB_ADDR_HASHSZ];
+    PVUSBDEV                    apAddrHash[VUSB_ADDR_HASHSZ];
     /** The default address. */
-    PVUSBDEV                   pDefaultAddress;
+    PVUSBDEV                    pDefaultAddress;
 
     /** Pointer to the driver instance. */
-    PPDMDRVINS                 pDrvIns;
+    PPDMDRVINS                  pDrvIns;
     /** Pointer to the root hub port interface we're attached to. */
-    PVUSBIROOTHUBPORT          pIRhPort;
+    PVUSBIROOTHUBPORT           pIRhPort;
     /** Connector interface exposed upwards. */
-    VUSBIROOTHUBCONNECTOR      IRhConnector;
+    VUSBIROOTHUBCONNECTOR       IRhConnector;
 
     /** Critical section protecting the device list. */
-    RTCRITSECT                 CritSectDevices;
+    RTCRITSECT                  CritSectDevices;
     /** Chain of devices attached to this hub. */
-    PVUSBDEV                   pDevices;
+    PVUSBDEV                    pDevices;
+
+    /** Array of pointers to USB devices indexed by the port the device is on. */
+    PVUSBDEV                    apDevByPort[VUSB_DEVICES_MAX];
+    /** Structure after a saved state load to re-attach devices. */
+    PVUSBROOTHUBLOAD            pLoad;
 
 #if HC_ARCH_BITS == 32
     uint32_t                   Alignment0;
