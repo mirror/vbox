@@ -2393,7 +2393,7 @@ VMM_INT_DECL(int) PGMPhysGCPtr2HCPhys(PVMCPUCC pVCpu, RTGCPTR GCPtr, PRTHCPHYS p
  * @param   pVM             The cross context VM structure.
  * @param   pCache          Cache structure pointer
  * @param   GCPhys          GC physical address
- * @param   pbHC            HC pointer corresponding to physical page
+ * @param   pbR3            HC pointer corresponding to physical page
  *
  * @thread  EMT.
  */
@@ -2403,8 +2403,8 @@ static void pgmPhysCacheAdd(PVM pVM, PGMPHYSCACHE *pCache, RTGCPHYS GCPhys, uint
 
     Assert(VM_IS_EMT(pVM));
 
-    GCPhys = PHYS_PAGE_ADDRESS(GCPhys);
-    pbR3   = (uint8_t *)PAGE_ADDRESS(pbR3);
+    GCPhys &= ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
+    pbR3   = (uint8_t *)((uintptr_t)pbR3 & ~(uintptr_t)GUEST_PAGE_OFFSET_MASK);
 
     iCacheIndex = ((GCPhys >> GUEST_PAGE_SHIFT) & PGM_MAX_PHYSCACHE_ENTRIES_MASK);
 
