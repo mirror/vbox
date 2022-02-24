@@ -845,11 +845,7 @@ $$(vboxdrv-src_0_OUTDIR)/Makefile: \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "" \
-		$(if-expr !defined(VBOX_WITH_HARDENING)   ,-e "s;VBOX_WITH_HARDENING;;g",) \
-		$(if-expr ($(VBOX_VERSION_BUILD) % 2) == 0 || defined(VBOX_WITH_RAM_IN_KERNEL) \
-		 , -e "s;VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" -e "s;IPRT_WITH_EFLAGS_AC_PRESERVING;;g",) \
-		$(if-expr !defined(VBOX_WITH_RAM_IN_KERNEL) \
-		 , -e 's;VBOX_WITHOUT_EFLAGS_AC_SET_IN_VBOXDRV;;g' -e 's;IPRT_WITHOUT_EFLAGS_AC_PRESERVING;;g',) \
+		$(if-expr !defined(VBOX_WITH_HARDENING),-e "s;VBOX_WITH_HARDENING;;g",) \
 		--output $@ $<
 	%$(QUIET2)$(APPEND) -t -n '$(PATH_TARGET)/vboxdrv-src-1.dep' \
 		'Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)' \
