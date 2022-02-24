@@ -1053,7 +1053,7 @@ void vusbDevSetAddress(PVUSBDEV pDev, uint8_t u8Address)
 
         pDev->pNextDefAddr = NULL;
     }
-    else
+    else if (pDev->u8Address != VUSB_INVALID_ADDRESS)
         pRh->apDevByAddr[pDev->u8Address] = NULL;
 
     if (u8Address == VUSB_DEFAULT_ADDRESS)
