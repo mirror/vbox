@@ -3121,6 +3121,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r80,(PCX86FXSTATE pFpuState, uint16_
 }
 
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_d80,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
+                                                 PRTPBCD80U pd80Dst, PCRTFLOAT80U pr80Src))
+{
+    RT_NOREF(pFpuState, pu16FSW, pd80Dst, pr80Src);
+    AssertReleaseFailed();
+}
+
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_fsub_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
 {
