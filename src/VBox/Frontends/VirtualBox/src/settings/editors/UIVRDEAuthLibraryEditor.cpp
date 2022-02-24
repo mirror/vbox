@@ -25,9 +25,8 @@
 #include "UIVRDEAuthLibraryEditor.h"
 
 
-UIVRDEAuthLibraryEditor::UIVRDEAuthLibraryEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+UIVRDEAuthLibraryEditor::UIVRDEAuthLibraryEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabel(fWithLabel)
     , m_strValue(QString())
     , m_pLabel(0)
     , m_pSelector(0)
@@ -54,13 +53,24 @@ QString UIVRDEAuthLibraryEditor::value() const
     return m_pSelector ? m_pSelector->path() : m_strValue;
 }
 
+int UIVRDEAuthLibraryEditor::minimumLabelHorizontalHint() const
+{
+    return m_pLabel->minimumSizeHint().width();
+}
+
+void UIVRDEAuthLibraryEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
+}
+
 void UIVRDEAuthLibraryEditor::retranslateUi()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("V&RDP Authentication Library:"));
     if (m_pSelector)
-        m_pSelector->setWhatsThis(tr("Holds the path to the library that provides "
-                                     "authentication for Remote Display (VRDP) clients."));
+        m_pSelector->setToolTip(tr("Holds the path to the library that provides "
+                                   "authentication for Remote Display (VRDP) clients."));
 }
 
 void UIVRDEAuthLibraryEditor::sltHandleSelectorPathChanged()
@@ -72,18 +82,18 @@ void UIVRDEAuthLibraryEditor::sltHandleSelectorPathChanged()
 void UIVRDEAuthLibraryEditor::prepare()
 {
     /* Create main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-        int iRow = 0;
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
+        m_pLayout->setColumnStretch(1, 1);
 
         /* Create label: */
-        if (m_fWithLabel)
+        m_pLabel = new QLabel(this);
+        if (m_pLabel)
         {
-            m_pLabel = new QLabel(this);
-            if (m_pLabel)
-                pMainLayout->addWidget(m_pLabel, 0, iRow++, 1, 1);
+            m_pLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabel, 0, 0);
         }
 
         /* Create selector: */
@@ -97,7 +107,7 @@ void UIVRDEAuthLibraryEditor::prepare()
             connect(m_pSelector, &UIFilePathSelector::pathChanged,
                     this, &UIVRDEAuthLibraryEditor::sltHandleSelectorPathChanged);
 
-            pMainLayout->addWidget(m_pSelector, 0, iRow++, 1, 1);
+            m_pLayout->addWidget(m_pSelector, 0, 1);
         }
     }
 

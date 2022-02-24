@@ -16,8 +16,7 @@
  */
 
 /* Qt includes: */
-#include <QGridLayout>
-#include <QLabel>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "UICommon.h"
@@ -63,9 +62,7 @@ struct UIDataSettingsGlobalGeneral
 
 UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
     : m_pCache(0)
-    , m_pLabelDefaultMachineFolder(0)
     , m_pEditorDefaultMachineFolder(0)
-    , m_pLabelVRDEAuthLibrary(0)
     , m_pEditorVRDEAuthLibrary(0)
 {
     prepare();
@@ -127,8 +124,12 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
 
 void UIGlobalSettingsGeneral::retranslateUi()
 {
-    m_pLabelDefaultMachineFolder->setText(UIDefaultMachineFolderEditor::tr("Default &Machine Folder:"));
-    m_pLabelVRDEAuthLibrary->setText(UIVRDEAuthLibraryEditor::tr("V&RDP Authentication Library:"));
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDefaultMachineFolder->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVRDEAuthLibrary->minimumLabelHorizontalHint());
+    m_pEditorDefaultMachineFolder->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorVRDEAuthLibrary->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIGlobalSettingsGeneral::prepare()
@@ -147,43 +148,21 @@ void UIGlobalSettingsGeneral::prepare()
 void UIGlobalSettingsGeneral::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
+    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
     if (pLayoutMain)
     {
-        pLayoutMain->setColumnStretch(1, 1);
-        pLayoutMain->setRowStretch(3, 1);
-
-        /* Prepare 'default machine folder' label: */
-        m_pLabelDefaultMachineFolder = new QLabel(this);
-        if (m_pLabelDefaultMachineFolder)
-        {
-            m_pLabelDefaultMachineFolder->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelDefaultMachineFolder, 0, 0);
-        }
         /* Prepare 'default machine folder' editor: */
         m_pEditorDefaultMachineFolder = new UIDefaultMachineFolderEditor(this);
         if (m_pEditorDefaultMachineFolder)
-        {
-            if (m_pLabelDefaultMachineFolder)
-                m_pLabelDefaultMachineFolder->setBuddy(m_pEditorDefaultMachineFolder);
-            pLayoutMain->addWidget(m_pEditorDefaultMachineFolder, 0, 1, 1, 2);
-        }
+            pLayoutMain->addWidget(m_pEditorDefaultMachineFolder);
 
-        /* Prepare 'VRDE auth library' label: */
-        m_pLabelVRDEAuthLibrary = new QLabel(this);
-        if (m_pLabelVRDEAuthLibrary)
-        {
-            m_pLabelVRDEAuthLibrary->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelVRDEAuthLibrary, 1, 0);
-        }
         /* Prepare 'VRDE auth library' editor: */
         m_pEditorVRDEAuthLibrary = new UIVRDEAuthLibraryEditor(this);
         if (m_pEditorVRDEAuthLibrary)
-        {
-            if (m_pLabelVRDEAuthLibrary)
-                m_pLabelVRDEAuthLibrary->setBuddy(m_pEditorVRDEAuthLibrary);
-            pLayoutMain->addWidget(m_pEditorVRDEAuthLibrary, 1, 1, 1, 2);
-        }
+            pLayoutMain->addWidget(m_pEditorVRDEAuthLibrary);
+
+        /* Add stretch to the end: */
+        pLayoutMain->addStretch();
     }
 }
 

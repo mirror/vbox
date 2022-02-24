@@ -25,10 +25,10 @@
 #include "UIFilePathSelector.h"
 
 
-UIDefaultMachineFolderEditor::UIDefaultMachineFolderEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+UIDefaultMachineFolderEditor::UIDefaultMachineFolderEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabel(fWithLabel)
     , m_strValue(QString())
+    , m_pLayout(0)
     , m_pLabel(0)
     , m_pSelector(0)
 {
@@ -54,13 +54,24 @@ QString UIDefaultMachineFolderEditor::value() const
     return m_pSelector ? m_pSelector->path() : m_strValue;
 }
 
+int UIDefaultMachineFolderEditor::minimumLabelHorizontalHint() const
+{
+    return m_pLabel->minimumSizeHint().width();
+}
+
+void UIDefaultMachineFolderEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
+}
+
 void UIDefaultMachineFolderEditor::retranslateUi()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Default &Machine Folder:"));
     if (m_pSelector)
-        m_pSelector->setWhatsThis(tr("Holds the path to the default virtual machine folder. This folder is used, "
-                                     "if not explicitly specified otherwise, when creating new virtual machines."));
+        m_pSelector->setToolTip(tr("Holds the path to the default virtual machine folder. This folder is used, "
+                                   "if not explicitly specified otherwise, when creating new virtual machines."));
 }
 
 void UIDefaultMachineFolderEditor::sltHandleSelectorPathChanged()
@@ -72,18 +83,18 @@ void UIDefaultMachineFolderEditor::sltHandleSelectorPathChanged()
 void UIDefaultMachineFolderEditor::prepare()
 {
     /* Create main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-        int iRow = 0;
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
+        m_pLayout->setColumnStretch(1, 1);
 
         /* Create label: */
-        if (m_fWithLabel)
+        m_pLabel = new QLabel(this);
+        if (m_pLabel)
         {
-            m_pLabel = new QLabel(this);
-            if (m_pLabel)
-                pMainLayout->addWidget(m_pLabel, 0, iRow++, 1, 1);
+            m_pLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabel, 0, 0);
         }
 
         /* Create selector: */
@@ -96,7 +107,7 @@ void UIDefaultMachineFolderEditor::prepare()
             connect(m_pSelector, &UIFilePathSelector::pathChanged,
                     this, &UIDefaultMachineFolderEditor::sltHandleSelectorPathChanged);
 
-            pMainLayout->addWidget(m_pSelector, 0, iRow++, 1, 1);
+            m_pLayout->addWidget(m_pSelector, 0, 1);
         }
     }
 

@@ -25,7 +25,6 @@
 #include "UISettingsPage.h"
 
 /* Forward declarations: */
-class QLabel;
 class UIDefaultMachineFolderEditor;
 class UIVRDEAuthLibraryEditor;
 struct UIDataSettingsGlobalGeneral;
@@ -79,12 +78,8 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds 'default machine folder' label instance. */
-        QLabel                       *m_pLabelDefaultMachineFolder;
         /** Holds 'default machine folder' editor instance. */
         UIDefaultMachineFolderEditor *m_pEditorDefaultMachineFolder;
-        /** Holds 'VRDE auth library' label instance. */
-        QLabel                       *m_pLabelVRDEAuthLibrary;
         /** Holds 'VRDE auth library' editor instance. */
         UIVRDEAuthLibraryEditor      *m_pEditorVRDEAuthLibrary;
     /** @} */
