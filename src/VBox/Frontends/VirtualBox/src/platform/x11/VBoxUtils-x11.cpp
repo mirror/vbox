@@ -292,7 +292,8 @@ QVector<X11ScreenSaverInhibitMethod*> NativeWindowSubsystem::X11FindDBusScrenSav
     if (!X11CheckDBusConnection(connection))
         return methods;
 
-    foreach(const QString &strServiceName, X11FindDBusScreenSaverServices(connection))
+    QStringList services = X11FindDBusScreenSaverServices(connection);
+    foreach(const QString &strServiceName, services)
         X11IntrospectServices(connection, strServiceName, "", methods);
 
     return methods;
