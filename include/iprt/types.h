@@ -1121,6 +1121,48 @@ typedef const RTFLOAT80U2 RT_FAR *PCRTFLOAT80U2;
 #endif /* uint16_t bitfields doesn't work */
 
 
+/**
+ * Packed BCD 18-digit signed integer format (80-bit).
+ */
+#pragma pack(1)
+typedef union RTPBCD80U
+{
+    /** Format using bitfields.  */
+    RT_GCC_EXTENSION struct
+    {
+# ifdef RT_BIG_ENDIAN
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint8_t    fSign : 1;
+        /** Padding, non-zero if indefinite. */
+        RT_GCC_EXTENSION uint8_t    uPad : 7;
+        /** 18 packed BCD digits, two to a byte. */
+        uint8_t                     aBcdDigits[9];
+# else
+        /** 18 packed BCD digits, two to a byte. */
+        uint8_t                     aBcdDigits[9];
+        /** Padding, non-zero if indefinite. */
+        RT_GCC_EXTENSION uint8_t    uPad : 7;
+        /** The sign indicator. */
+        RT_GCC_EXTENSION uint8_t    fSign : 1;
+# endif
+    } s;
+
+    /** 64-bit view. */
+    uint64_t    au64[1];
+    /** 32-bit view. */
+    uint32_t    au32[2];
+    /** 16-bit view. */
+    uint16_t    au16[5];
+    /** 8-bit view. */
+    uint8_t     au8[10];
+} RTPBCD80U;
+#pragma pack()
+/** Pointer to a packed BCD integer format union. */
+typedef RTPBCD80U RT_FAR *PRTPBCD80U;
+/** Pointer to a const packed BCD integer format union. */
+typedef const RTPBCD80U RT_FAR *PCRTPBCD80U;
+
+
 /** Generic function type.
  * @see PFNRT
  */
