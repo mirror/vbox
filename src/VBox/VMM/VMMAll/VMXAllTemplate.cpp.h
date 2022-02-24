@@ -5414,8 +5414,13 @@ DECLINLINE(VBOXSTRICTRC) vmxHCHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
     uint32_t const uExitReason = pVmxTransient->uExitReason;
     switch (uExitReason)
     {
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX_EPT
         case VMX_EXIT_EPT_MISCONFIG:            return vmxHCExitEptMisconfigNested(pVCpu, pVmxTransient);
         case VMX_EXIT_EPT_VIOLATION:            return vmxHCExitEptViolationNested(pVCpu, pVmxTransient);
+# else
+        case VMX_EXIT_EPT_MISCONFIG:            return vmxHCExitEptMisconfig(pVCpu, pVmxTransient);
+        case VMX_EXIT_EPT_VIOLATION:            return vmxHCExitEptViolation(pVCpu, pVmxTransient);
+# endif
         case VMX_EXIT_XCPT_OR_NMI:              return vmxHCExitXcptOrNmiNested(pVCpu, pVmxTransient);
         case VMX_EXIT_IO_INSTR:                 return vmxHCExitIoInstrNested(pVCpu, pVmxTransient);
         case VMX_EXIT_HLT:                      return vmxHCExitHltNested(pVCpu, pVmxTransient);
