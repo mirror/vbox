@@ -79,13 +79,13 @@ extern "C" __attribute__((naked)) nsresult CommonXPTCStub(void)
         stp     d2, d3, [sp, %[cbGPRs] + 16] \n\
         stp     d4, d5, [sp, %[cbGPRs] + 32] \n\
         stp     d6, d7, [sp, %[cbGPRs] + 48] \n\
-\n\
-"        /* Call the C worker. We keep x0 as is.
+\n"
+        /* Call the C worker. We keep x0 as is.
            Set w1 to the w17 method index from the stubs. */ "\
         mov     w1, w17 \n\
         mov     x2, sp \n\
         add     x3, sp, %[cbGPRs] \n\
-        add     x4, sp, %[cbGPRs] + 16 \n\
+        add     x4, sp, %[cbGPRandFPRs] + 16 \n\
         bl      " NAME_PREFIX_STR "CommonXPTCStubCWorker \n\
 "
         /* Epilogue (clang does not emit the .cfi's here, so drop them too?): */ "\
