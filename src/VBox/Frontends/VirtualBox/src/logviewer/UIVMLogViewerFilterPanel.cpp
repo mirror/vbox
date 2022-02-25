@@ -227,11 +227,11 @@ void UIVMFilterLineEdit::createButtons()
             m_pClearAllButton->setFixedSize(sh);
         }
     }
-    if (!m_pRemoveTermButton && !m_pClearAllButton)
+    if (m_pRemoveTermButton && m_pClearAllButton)
         setMinimumHeight(qMax(m_pRemoveTermButton->minimumHeight(), m_pClearAllButton->minimumHeight()));
-    else if (!m_pRemoveTermButton)
+    else if (m_pRemoveTermButton)
         setMinimumHeight(m_pRemoveTermButton->minimumHeight());
-    else if (!m_pClearAllButton)
+    else if (m_pClearAllButton)
         setMinimumHeight(m_pClearAllButton->minimumHeight());
 }
 
