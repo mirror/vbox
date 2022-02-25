@@ -488,7 +488,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
                 return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, \
                                            N_("Configuration error: Querying \"" name "\" as a string failed")); \
             } \
-            else if (!strcmp(szBuf, "<EMPTY>")) \
+            if (!strcmp(szBuf, "<EMPTY>")) \
                 pszTmp = ""; \
             else \
                 pszTmp = szBuf; \
@@ -498,10 +498,9 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         else \
         { \
             variable = iStrNr++; \
-            size_t cStr = strlen(pszTmp) + 1; \
-            DMI_CHECK_SIZE(cStr); \
-            memcpy(pszStr, pszTmp, cStr); \
-            pszStr += cStr ; \
+            size_t const cbStr = strlen(pszTmp) + 1; \
+            DMI_CHECK_SIZE(cbStr); \
+            pszStr = (char *)mempcpy(pszStr, pszTmp, cbStr); \
         } \
     }
 
@@ -528,16 +527,23 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         } \
     }
 
-#define DMI_START_STRUCT(tbl) \
-        pszStr                       = (char *)(tbl + 1); \
-        iStrNr                       = 1;
+#define DMI_START_STRUCT(a_pTbl) do { \
+        pszStr = (char *)((a_pTbl) + 1); \
+        iStrNr = 1; \
+    } while (0)
 
-#define DMI_TERM_STRUCT \
-    { \
+#if 0 /* GCC 11.2.1 barfs on this: error: writing 1 byte into a region of size 0 [-Werror=stringop-overflow=] */
+# define DMI_TERM_STRUCT do { \
         *pszStr++                    = '\0'; /* terminate set of text strings */ \
         if (iStrNr == 1) \
             *pszStr++                = '\0'; /* terminate a structure without strings */ \
-    }
+    } while (0)
+#else
+# define DMI_TERM_STRUCT do { \
+        size_t const cbToZero = iStrNr == 1 ? 2 : 1; \
+        pszStr = (char *)memset(pszStr, 0, cbToZero) + cbToZero; \
+    } while (0)
+#endif
 
     bool fForceDefault = false;
 #ifdef VBOX_BIOS_DMI_FALLBACK
@@ -729,7 +735,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
          ********************************************/
         PDMICHASSIS pChassis         = (PDMICHASSIS)pszStr;
         DMI_CHECK_SIZE(sizeof(*pChassis));
-        pszStr                       = (char*)&pChassis->u32OEMdefined;
+        pszStr                       = (char *)&pChassis->u32OEMdefined;
         iStrNr                       = 1;
 #ifdef VBOX_WITH_DMI_CHASSIS
         pChassis->header.u8Type      = 3; /* System Enclosure or Chassis */
@@ -780,10 +786,9 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         RTStrPrintf(szSocket, sizeof(szSocket), "Socket #%u", 0);
         pProcessorInf->u8SocketDesignation = iStrNr++;
         {
-            size_t cStr = strlen(szSocket) + 1;
-            DMI_CHECK_SIZE(cStr);
-            memcpy(pszStr, szSocket, cStr);
-            pszStr += cStr;
+            size_t cbStr = strlen(szSocket) + 1;
+            DMI_CHECK_SIZE(cbStr);
+            pszStr = (char *)mempcpy(pszStr, szSocket, cbStr);
         }
         pProcessorInf->u8ProcessorType     = 0x03; /* Central Processor */
         pProcessorInf->u8ProcessorFamily   = 0xB1; /* Pentium III with Intel SpeedStep(TM) */
