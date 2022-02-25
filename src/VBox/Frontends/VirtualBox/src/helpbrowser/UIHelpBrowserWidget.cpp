@@ -863,13 +863,13 @@ void UIHelpBrowserTab::sltHistoryChanged()
 
 void UIHelpBrowserTab::sltAddressBarIndexChanged(int iIndex)
 {
-    if (!m_pAddressBar && iIndex >= m_pAddressBar->count())
+    if (!m_pAddressBar || iIndex >= m_pAddressBar->count())
         return;
     int iHistoryIndex = m_pAddressBar->itemData(iIndex).toInt();
     /* There seems to be no way to one-step-jump to a history item: */
     if (iHistoryIndex == 0)
         return;
-    else if (iHistoryIndex > 0)
+    if (iHistoryIndex > 0)
         for (int i = 0; i < iHistoryIndex; ++i)
             m_pContentViewer->forward();
     else
