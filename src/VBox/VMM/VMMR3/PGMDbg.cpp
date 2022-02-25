@@ -1296,7 +1296,7 @@ static void pgmR3DumpHierarchyShwGuestPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
  */
 static int pgmR3DumpHierarchyShwPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys)
 {
-    PCPGMSHWPTPAE pPT;
+    PCPGMSHWPTPAE pPT = NULL;
     int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page table", (void const **)&pPT);
     if (RT_FAILURE(rc))
         return rc;
@@ -1364,7 +1364,7 @@ static int pgmR3DumpHierarchyShwPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
  */
 static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
-    PCX86PDPAE pPD;
+    PCX86PDPAE pPD = NULL;
     int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page directory", (void const **)&pPD);
     if (RT_FAILURE(rc))
         return rc;
@@ -1464,7 +1464,7 @@ static int  pgmR3DumpHierarchyShwPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
     if (!pState->fLme && pState->u64Address >= _4G)
         return VINF_SUCCESS;
 
-    PCX86PDPT pPDPT;
+    PCX86PDPT pPDPT = NULL;
     int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page directory pointer table", (void const **)&pPDPT);
     if (RT_FAILURE(rc))
         return rc;
@@ -1554,7 +1554,7 @@ static int  pgmR3DumpHierarchyShwPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
  */
 static int pgmR3DumpHierarchyShwPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
-    PCX86PML4 pPML4;
+    PCX86PML4 pPML4 = NULL;
     int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page map level 4", (void const **)&pPML4);
     if (RT_FAILURE(rc))
         return rc;
@@ -1630,7 +1630,7 @@ static int pgmR3DumpHierarchyShwPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
  */
 static int pgmR3DumpHierarchyShw32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys)
 {
-    PCX86PT pPT;
+    PCX86PT pPT = NULL;
     int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page table", (void const **)&pPT);
     if (RT_FAILURE(rc))
         return rc;
@@ -1680,7 +1680,7 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
     if (pState->u64Address >= _4G)
         return VINF_SUCCESS;
 
-    PCX86PD pPD;
+    PCX86PD pPD = NULL;
     int rc = pgmR3DumpHierarchyShwMapPage(pState, HCPhys, "Page directory", (void const **)&pPD);
     if (RT_FAILURE(rc))
         return rc;
