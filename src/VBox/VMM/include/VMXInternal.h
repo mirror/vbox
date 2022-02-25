@@ -45,18 +45,6 @@ RT_C_DECLS_BEGIN
 /** @addtogroup grp_hm_int_vmx  VMX Internal
  * @{ */
 /**
- * VMX VMCS information, shared.
- *
- * This structure provides information maintained for and during the executing of a
- * guest (or nested-guest) VMCS (VM control structure) using hardware-assisted VMX.
- *
- * Note! The members here are ordered and aligned based on estimated frequency of
- * usage and grouped to fit within a cache line in hot code paths. Even subtle
- * changes here have a noticeable effect in the bootsector benchmarks. Modify with
- * care.
- */
-
-/**
  * VMX per-VCPU transient state.
  *
  * A state structure for holding miscellaneous information across
