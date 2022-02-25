@@ -9340,10 +9340,9 @@ HRESULT Machine::i_loadStorageDevices(StorageController *aStorageController,
 
             default:
                 return setError(E_FAIL,
-                                tr("Device '%s' with unknown type is attached to the virtual machine '%s' ('%s')"),
-                                medium->i_getLocationFull().c_str(),
-                                mUserData->s.strName.c_str(),
-                                mData->m_strConfigFileFull.c_str());
+                                tr("Controller '%s' port %u unit %u has device with unknown type (%d) - virtual machine '%s' ('%s')"),
+                                data.strName.c_str(), dev.lPort, dev.lDevice, dev.deviceType,
+                                mUserData->s.strName.c_str(), mData->m_strConfigFileFull.c_str());
         }
 
         if (FAILED(rc))
