@@ -3807,9 +3807,9 @@ typedef struct
     /** IDT-vectoring error code. */
     uint32_t                uIdtVectoringErrCode;
 } VMXVEXITEVENTINFO;
-/** Pointer to the VMXVEXITINFO2 struct. */
+/** Pointer to the VMXVEXITEVENTINFO struct. */
 typedef VMXVEXITEVENTINFO *PVMXVEXITEVENTINFO;
-/** Pointer to a const VMXVEXITINFO2 struct. */
+/** Pointer to a const VMXVEXITEVENTINFO struct. */
 typedef const VMXVEXITEVENTINFO *PCVMXVEXITEVENTINFO;
 
 /**
