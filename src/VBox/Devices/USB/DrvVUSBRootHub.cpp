@@ -399,51 +399,17 @@ static int vusbHubAttach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
 }
 
 
-/* -=-=-=-=-=- PDMUSBHUBREG methods -=-=-=-=-=- */
-
-/** @interface_method_impl{PDMUSBHUBREG,pfnAttachDevice} */
-static DECLCALLBACK(int) vusbPDMHubAttachDevice(PPDMDRVINS pDrvIns, PPDMUSBINS pUsbIns, const char *pszCaptureFilename, uint32_t *piPort)
+/**
+ * Detaches the given device from the given roothub.
+ *
+ * @returns VBox status code.
+ * @param   pThis       The roothub to detach the device from.
+ * @param   pDev        The device to detach.
+ */
+static int vusbHubDetach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
 {
-    PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
-
-    /*
-     * Allocate a new VUSB device and initialize it.
-     */
-    PVUSBDEV pDev = (PVUSBDEV)RTMemAllocZ(sizeof(*pDev));
-    AssertReturn(pDev, VERR_NO_MEMORY);
-    int rc = vusbDevInit(pDev, pUsbIns, pszCaptureFilename);
-    if (RT_SUCCESS(rc))
-    {
-        pUsbIns->pvVUsbDev2 = pDev;
-        rc = vusbHubAttach(pThis, pDev);
-        if (RT_SUCCESS(rc))
-        {
-            *piPort = UINT32_MAX; /// @todo implement piPort
-            return rc;
-        }
-
-        RTMemFree(pDev->paIfStates);
-        pUsbIns->pvVUsbDev2 = NULL;
-    }
-    vusbDevRelease(pDev);
-    return rc;
-}
-
-
-/** @interface_method_impl{PDMUSBHUBREG,pfnDetachDevice} */
-static DECLCALLBACK(int) vusbPDMHubDetachDevice(PPDMDRVINS pDrvIns, PPDMUSBINS pUsbIns, uint32_t iPort)
-{
-    RT_NOREF(iPort);
-    PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
     PVUSBHUB pHub = &pThis->Hub;
-    PVUSBDEV pDev = (PVUSBDEV)pUsbIns->pvVUsbDev2;
-    Assert(pDev);
 
-    /*
-     * Deal with pending async reset.
-     * (anything but reset)
-     */
-    vusbDevSetStateCmp(pDev, VUSB_DEVICE_STATE_DEFAULT, VUSB_DEVICE_STATE_RESET);
     Assert(pDev->i16Port != -1);
 
     /* Cancel all in-flight URBs from this device. */
@@ -491,12 +457,61 @@ static DECLCALLBACK(int) vusbPDMHubDetachDevice(PPDMDRVINS pDrvIns, PPDMUSBINS p
     }
     RTCritSectLeave(&pThis->CritSectDevices);
 
-    /*
-     * Detach and free resources.
-     */
+    /* Free resources. */
     vusbDevDetach(pDev);
+    return VINF_SUCCESS;
+}
 
-    LogRel(("VUSB: Detached '%s' from port %u on %s\n", pDev->pUsbIns->pszName, uPort, pHub->pszName));
+
+
+/* -=-=-=-=-=- PDMUSBHUBREG methods -=-=-=-=-=- */
+
+/** @interface_method_impl{PDMUSBHUBREG,pfnAttachDevice} */
+static DECLCALLBACK(int) vusbPDMHubAttachDevice(PPDMDRVINS pDrvIns, PPDMUSBINS pUsbIns, const char *pszCaptureFilename, uint32_t *piPort)
+{
+    PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
+
+    /*
+     * Allocate a new VUSB device and initialize it.
+     */
+    PVUSBDEV pDev = (PVUSBDEV)RTMemAllocZ(sizeof(*pDev));
+    AssertReturn(pDev, VERR_NO_MEMORY);
+    int rc = vusbDevInit(pDev, pUsbIns, pszCaptureFilename);
+    if (RT_SUCCESS(rc))
+    {
+        pUsbIns->pvVUsbDev2 = pDev;
+        rc = vusbHubAttach(pThis, pDev);
+        if (RT_SUCCESS(rc))
+        {
+            *piPort = UINT32_MAX; /// @todo implement piPort
+            return rc;
+        }
+
+        RTMemFree(pDev->paIfStates);
+        pUsbIns->pvVUsbDev2 = NULL;
+    }
+    vusbDevRelease(pDev);
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMUSBHUBREG,pfnDetachDevice} */
+static DECLCALLBACK(int) vusbPDMHubDetachDevice(PPDMDRVINS pDrvIns, PPDMUSBINS pUsbIns, uint32_t iPort)
+{
+    RT_NOREF(iPort);
+    PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
+    PVUSBHUB pHub = &pThis->Hub;
+    PVUSBDEV pDev = (PVUSBDEV)pUsbIns->pvVUsbDev2;
+    Assert(pDev);
+
+    LogRel(("VUSB: Detached '%s' from port %u on %s\n", pDev->pUsbIns->pszName, pDev->i16Port, pHub->pszName));
+
+    /*
+     * Deal with pending async reset.
+     * (anything but reset)
+     */
+    vusbDevSetStateCmp(pDev, VUSB_DEVICE_STATE_DEFAULT, VUSB_DEVICE_STATE_RESET);
+    vusbHubDetach(pThis, pDev);
     vusbDevRelease(pDev);
     return VINF_SUCCESS;
 }
@@ -1316,7 +1331,7 @@ static DECLCALLBACK(int) vusbR3RhSavePrep(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
         {
             if (!VUSBIDevIsSavedStateSupported(&pDev->IDevice))
             {
-                int rc = vusbDevDetach(pDev);
+                int rc = vusbHubDetach(pThis, pDev);
                 AssertRC(rc);
 
                 /*
@@ -1412,7 +1427,7 @@ static DECLCALLBACK(int) vusbR3RhLoadPrep(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
             if (pDev && !VUSBIDevIsSavedStateSupported(&pDev->IDevice))
             {
                 Load.apDevs[Load.cDevs++] = pDev;
-                vusbDevDetach(pDev);
+                vusbHubDetach(pThis, pDev);
                 Assert(!pThis->apDevByPort[i]);
             }
         }
