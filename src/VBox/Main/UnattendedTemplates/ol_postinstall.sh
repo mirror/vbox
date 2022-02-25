@@ -201,7 +201,7 @@ log_command_in_target yum -y install "kernel-headers-$(uname -r)"
 log_command_in_target yum -y install gcc
 log_command_in_target yum -y install binutils
 log_command_in_target yum -y install make
-@@VBOX_COND_GUEST_VERSION[>8.0.0]@@
+@@VBOX_COND[${GUEST_OS_VERSION} vgt 8.0.0]@@
 log_command_in_target yum -y install elfutils-libelf-devel
 @@VBOX_COND_END@@
 log_command_in_target yum -y install dkms
@@ -328,4 +328,3 @@ echo "** Final exit code: ${MY_EXITCODE}" >> "${MY_LOGFILE}"
 echo "******************************************************************************" >> "${MY_LOGFILE}"
 
 exit ${MY_EXITCODE}
-
