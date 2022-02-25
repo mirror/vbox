@@ -319,32 +319,18 @@ bool vusbDevStandardRequest(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, void *p
  */
 
 
-/** Virtual method table for USB hub devices.
- * Hub and roothub drivers need to implement these functions in addition to the
- * vusb_dev_ops.
- */
-typedef struct VUSBHUBOPS
-{
-    int     (*pfnAttach)(PVUSBHUB pHub, PVUSBDEV pDev);
-    void    (*pfnDetach)(PVUSBHUB pHub, PVUSBDEV pDev);
-} VUSBHUBOPS;
-/** Pointer to a const HUB method table. */
-typedef const VUSBHUBOPS *PCVUSBHUBOPS;
-
 /** A VUSB Hub Device - Hub and roothub drivers need to use this struct
  * @todo eliminate this (PDM  / roothubs only).
  */
 typedef struct VUSBHUB
 {
     VUSBDEV             Dev;
-    PCVUSBHUBOPS        pOps;
     PVUSBROOTHUB        pRootHub;
     uint16_t            cPorts;
     uint16_t            cDevices;
     /** Name of the hub. Used for logging. */
     char               *pszName;
 } VUSBHUB;
-AssertCompileMemberAlignment(VUSBHUB, pOps, 8);
 AssertCompileSizeAlignment(VUSBHUB, 8);
 
 /** @} */

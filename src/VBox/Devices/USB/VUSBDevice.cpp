@@ -1278,9 +1278,6 @@ int vusbDevAttach(PVUSBDEV pDev, PVUSBHUB pHub)
 
     /* Create I/O thread and attach to the hub. */
     int rc = vusbDevUrbIoThreadCreate(pDev);
-    if (RT_SUCCESS(rc))
-        rc = pHub->pOps->pfnAttach(pHub, pDev);
-
     if (RT_FAILURE(rc))
     {
         pDev->pHub = NULL;
@@ -1304,16 +1301,6 @@ int vusbDevDetach(PVUSBDEV pDev)
     LogFlow(("vusbDevDetach: pDev=%p[%s] enmState=%#x\n", pDev, pDev->pUsbIns->pszName, pDev->enmState));
     VUSBDEV_ASSERT_VALID_STATE(pDev->enmState);
     Assert(pDev->enmState != VUSB_DEVICE_STATE_RESET);
-
-    vusbDevCancelAllUrbs(pDev, true);
-
-    PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
-    if (!pRh)
-        AssertMsgFailedReturn(("Not attached!\n"), VERR_VUSB_DEVICE_NOT_ATTACHED);
-
-    /* The roothub will remove the device from the address to device array. */
-    pDev->pHub->pOps->pfnDetach(pDev->pHub, pDev);
-    pDev->i16Port = -1;
 
     /*
      * Destroy I/O thread and request queue last because they might still be used
