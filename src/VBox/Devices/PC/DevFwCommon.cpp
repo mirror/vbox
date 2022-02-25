@@ -786,7 +786,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         RTStrPrintf(szSocket, sizeof(szSocket), "Socket #%u", 0);
         pProcessorInf->u8SocketDesignation = iStrNr++;
         {
-            size_t cbStr = strlen(szSocket) + 1;
+            size_t const cbStr = strlen(szSocket) + 1;
             DMI_CHECK_SIZE(cbStr);
             pszStr = (char *)mempcpy(pszStr, szSocket, cbStr);
         }
