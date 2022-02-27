@@ -36,4 +36,3 @@ RTDECL(void *) mempcpy(void *pvDst, const void *pvSrc, size_t cb)
     return (char *)memcpy(pvDst, pvSrc, cb) + cb;
 }
 
-

@@ -74,13 +74,10 @@
  * Supply prototypes for standard string functions provided by
  * IPRT instead of the operating environment.
  */
-#if defined(RT_OS_DARWIN)
+#if defined(RT_OS_DARWIN) && defined(KERNEL)
 RT_C_DECLS_BEGIN
-# ifdef KERNEL
 void *memchr(const void *pv, int ch, size_t cb);
 char *strpbrk(const char *pszStr, const char *pszChars);
-# endif
-RTDECL(void *) mempcpy(void *pvDst, const void *pvSrc, size_t cb);
 RT_C_DECLS_END
 #endif
 
@@ -93,6 +90,12 @@ RT_C_DECLS_END
 #if defined(RT_OS_NETBSD) && defined(_KERNEL)
 RT_C_DECLS_BEGIN
 char *strpbrk(const char *pszStr, const char *pszChars);
+RT_C_DECLS_END
+#endif
+
+#if (defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)) !defined(IPRT_NO_CRT)
+RT_C_DECLS_BEGIN
+RTDECL(void *) mempcpy(void *pvDst, const void *pvSrc, size_t cb);
 RT_C_DECLS_END
 #endif
 
