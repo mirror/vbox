@@ -95,7 +95,11 @@ RT_C_DECLS_END
 
 #if (defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)) && !defined(IPRT_NO_CRT)
 RT_C_DECLS_BEGIN
+# if !defined(RT_OS_DARWIN) || RT_CLANG_PREREQ(7 /* whatever post gcc-4.2 */, 0)
 RTDECL(void *) mempcpy(void *pvDst, const void *pvSrc, size_t cb);
+# else
+void *mempcpy(void *pvDst, const void *pvSrc, size_t cb);
+# endif
 RT_C_DECLS_END
 #endif
 
