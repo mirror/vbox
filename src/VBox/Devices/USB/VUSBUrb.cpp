@@ -215,13 +215,12 @@ static void vusbMsgCompletion(PVUSBURB pUrb)
  *
  * @returns true if it could be retried.
  * @returns false if it should be completed with failure.
+ * @param   pRh     The roothub the URB originated from.
  * @param   pUrb    The URB in question.
  */
-int vusbUrbErrorRh(PVUSBURB pUrb)
+int vusbUrbErrorRhEx(PVUSBROOTHUB pRh, PVUSBURB pUrb)
 {
     PVUSBDEV pDev = pUrb->pVUsb->pDev;
-    PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
-    AssertPtrReturn(pRh, VERR_VUSB_DEVICE_NOT_ATTACHED);
     LogFlow(("%s: vusbUrbErrorRh: pDev=%p[%s] rh=%p\n", pUrb->pszDesc, pDev, pDev->pUsbIns ? pDev->pUsbIns->pszName : "", pRh));
     return pRh->pIRhPort->pfnXferError(pRh->pIRhPort, pUrb);
 }
@@ -229,9 +228,10 @@ int vusbUrbErrorRh(PVUSBURB pUrb)
 /**
  * Does URB completion on roothub level.
  *
+ * @param   pRh     The roothub the URB originated from.
  * @param   pUrb    The URB to complete.
  */
-void vusbUrbCompletionRh(PVUSBURB pUrb)
+void vusbUrbCompletionRhEx(PVUSBROOTHUB pRh, PVUSBURB pUrb)
 {
     LogFlow(("%s: vusbUrbCompletionRh: type=%s status=%s\n",
              pUrb->pszDesc, vusbUrbTypeName(pUrb->enmType), vusbUrbStatusName(pUrb->enmStatus)));
@@ -248,9 +248,6 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
         if (RT_FAILURE(rc))
             LogRel(("VUSB: Capturing URB completion event failed with %Rrc\n", rc));
     }
-
-    PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->pVUsb->pDev);
-    AssertPtrReturnVoid(pRh);
 
     /* If there is a sniffer on the roothub record the completed URB there too. */
     if (pRh->hSniffer != VUSBSNIFFER_NIL)
@@ -364,7 +361,7 @@ void vusbUrbCompletionRh(PVUSBURB pUrb)
 #endif
         case VUSBXFERTYPE_BULK:
             if (pUrb->enmStatus != VUSBSTATUS_OK)
-                vusbUrbErrorRh(pUrb);
+                vusbUrbErrorRhEx(pRh, pUrb);
             break;
     }
 #ifdef LOG_ENABLED

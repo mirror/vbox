@@ -410,9 +410,6 @@ static int vusbHubDetach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
 {
     Assert(pDev->i16Port != -1);
 
-    /* Cancel all in-flight URBs from this device. */
-    vusbDevCancelAllUrbs(pDev, true);
-
     /*
      * Detach the device and mark the port as available.
      */
@@ -433,6 +430,9 @@ static int vusbHubDetach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
         pThis->apDevByAddr[pDev->u8Address] = NULL;
     }
     RTCritSectLeave(&pThis->CritSectDevices);
+
+    /* Cancel all in-flight URBs from this device. */
+    vusbDevCancelAllUrbs(pDev, true);
 
     /* Free resources. */
     vusbDevDetach(pDev);
@@ -955,7 +955,7 @@ static DECLCALLBACK(int) vusbRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUS
 
         pUrb->enmState = VUSBURBSTATE_REAPED;
         pUrb->enmStatus = VUSBSTATUS_DNR;
-        vusbUrbCompletionRh(pUrb);
+        vusbUrbCompletionRhEx(pRh, pUrb);
         rc = VINF_SUCCESS;
     }
 

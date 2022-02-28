@@ -483,9 +483,9 @@ void vusbUrbDoReapAsyncDev(PVUSBDEV pDev, RTMSINTERVAL cMillies);
 void vusbUrbCancel(PVUSBURB pUrb, CANCELMODE mode);
 void vusbUrbCancelAsync(PVUSBURB pUrb, CANCELMODE mode);
 void vusbUrbRipe(PVUSBURB pUrb);
-void vusbUrbCompletionRh(PVUSBURB pUrb);
+void vusbUrbCompletionRhEx(PVUSBROOTHUB pRh, PVUSBURB pUrb);
 int vusbUrbSubmitHardError(PVUSBURB pUrb);
-int vusbUrbErrorRh(PVUSBURB pUrb);
+int vusbUrbErrorRhEx(PVUSBROOTHUB pRh, PVUSBURB pUrb);
 int vusbDevUrbIoThreadWakeup(PVUSBDEV pDev);
 int vusbDevUrbIoThreadCreate(PVUSBDEV pDev);
 int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev);
@@ -577,6 +577,26 @@ DECLINLINE(void) vusbUrbUnlink(PVUSBURB pUrb)
     RTListNodeRemove(&pUrb->pVUsb->NdLst);
     RTCritSectLeave(&pDev->CritSectAsyncUrbs);
 }
+
+
+DECLINLINE(int) vusbUrbErrorRh(PVUSBURB pUrb)
+{
+    PVUSBDEV pDev = pUrb->pVUsb->pDev;
+    PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
+    AssertPtrReturn(pRh, VERR_VUSB_DEVICE_NOT_ATTACHED);
+
+    return vusbUrbErrorRhEx(pRh, pUrb);
+}
+
+
+DECLINLINE(void) vusbUrbCompletionRh(PVUSBURB pUrb)
+{
+    PVUSBROOTHUB pRh = vusbDevGetRh(pUrb->pVUsb->pDev);
+    AssertPtrReturnVoid(pRh);
+
+    vusbUrbCompletionRhEx(pRh, pUrb);
+}
+
 
 /** @def vusbUrbAssert
  * Asserts that a URB is valid.
