@@ -432,13 +432,6 @@ VMMR3DECL(int) PDMR3QueueDestroy(PVM pVM, PDMQUEUEHANDLE hQueue, void *pvOwner)
             while (hQueue > 0 && pVM->pdm.s.papRing3Queues[hQueue - 1] == NULL)
                 hQueue--;
             pVM->pdm.s.cRing3Queues = hQueue;
-            /** @todo this should be done by PDMR3Term not here. */
-            if (!hQueue)
-            {
-                pVM->pdm.s.cRing3QueuesAlloc = 0;
-                PPDMQUEUE *papQueuesOld = ASMAtomicXchgPtrT(&pVM->pdm.s.papRing3Queues, NULL, PPDMQUEUE *);
-                RTMemFree(papQueuesOld);
-            }
         }
         pQueue->u32Magic = PDMQUEUE_MAGIC_DEAD;
         pdmUnlock(pVM);
@@ -800,3 +793,32 @@ static DECLCALLBACK(void) pdmR3QueueTimer(PVM pVM, TMTIMERHANDLE hTimer, void *p
     AssertRC(rc);
 }
 
+
+/**
+ * Terminate the queues, freeing any resources still allocated.
+ *
+ * @returns nothing.
+ * @param   pVM                 The cross-context VM structure.
+ */
+DECLHIDDEN(void) pdmR3QueueTerm(PVM pVM)
+{
+    if (pVM->pdm.s.papRing3Queues)
+    {
+        /*
+         * Free the R3 queue handle array.
+         */
+        PDMQUEUEHANDLE cQueues = pVM->pdm.s.cRing3Queues;
+        for (PDMQUEUEHANDLE i = 0; i < cQueues; i++)
+            if (pVM->pdm.s.papRing3Queues[i])
+            {
+                PPDMQUEUE pQueue = pVM->pdm.s.papRing3Queues[i];
+
+                PDMR3QueueDestroy(pVM, RT_ELEMENTS(pVM->pdm.s.apRing0Queues) + i, pQueue->u.Gen.pvOwner);
+                Assert(!pVM->pdm.s.papRing3Queues[i]);
+            }
+
+        RTMemFree(pVM->pdm.s.papRing3Queues);
+        pVM->pdm.s.cRing3QueuesAlloc = 0;
+        pVM->pdm.s.papRing3Queues    = NULL;
+    }
+}

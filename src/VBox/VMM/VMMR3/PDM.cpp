@@ -887,6 +887,11 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
     pdmR3TaskTerm(pVM);
 
     /*
+     * Cleanup any leftover queues.
+     */
+    pdmR3QueueTerm(pVM);
+
+    /*
      * Destroy the PDM lock.
      */
     PDMR3CritSectDelete(pVM, &pVM->pdm.s.CritSect);
