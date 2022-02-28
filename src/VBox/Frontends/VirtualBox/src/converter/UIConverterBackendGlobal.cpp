@@ -104,16 +104,11 @@ template<> QString toInternalString(const Qt::Alignment &enmAlignment)
 /* Qt::Alignment <= QString: */
 template<> Qt::Alignment fromInternalString<Qt::Alignment>(const QString &strAlignment)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys; QList<Qt::Alignment> values;
-    keys << "Top";    values << Qt::AlignTop;
-    keys << "Bottom"; values << Qt::AlignBottom;
-    /* Qt::AlignTop type for unknown words: */
-    if (!keys.contains(strAlignment, Qt::CaseInsensitive))
+    if (strAlignment.compare("Top", Qt::CaseInsensitive) == 0)
         return Qt::AlignTop;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strAlignment, Qt::CaseInsensitive)));
+    if (strAlignment.compare("Bottom", Qt::CaseInsensitive) == 0)
+        return Qt::AlignBottom;
+    return Qt::AlignTop;
 }
 
 /* QString <= Qt::SortOrder: */
@@ -136,16 +131,11 @@ template<> QString toInternalString(const Qt::SortOrder &enmSortOrder)
 /* Qt::SortOrder <= QString: */
 template<> Qt::SortOrder fromInternalString<Qt::SortOrder>(const QString &strSortOrder)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;     QList<Qt::SortOrder> values;
-    keys << "Ascending";  values << Qt::AscendingOrder;
-    keys << "Descending"; values << Qt::DescendingOrder;
-    /* Qt::AscendingOrder type for unknown words: */
-    if (!keys.contains(strSortOrder, Qt::CaseInsensitive))
+    if (strSortOrder.compare("Ascending", Qt::CaseInsensitive) == 0)
         return Qt::AscendingOrder;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strSortOrder, Qt::CaseInsensitive)));
+    if (strSortOrder.compare("Descending", Qt::CaseInsensitive) == 0)
+        return Qt::DescendingOrder;
+    return Qt::AscendingOrder;
 }
 
 /* QString <= SizeSuffix: */
@@ -469,17 +459,13 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DialogType &enmDi
 /* UIExtraDataMetaDefs::DialogType <= QString: */
 template<> UIExtraDataMetaDefs::DialogType fromInternalString<UIExtraDataMetaDefs::DialogType>(const QString &strDialogType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<UIExtraDataMetaDefs::DialogType> values;
-    keys << "VISOCreator"; values << UIExtraDataMetaDefs::DialogType_VISOCreator;
-    keys << "BootFailure"; values << UIExtraDataMetaDefs::DialogType_BootFailure;
-    keys << "All";         values << UIExtraDataMetaDefs::DialogType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDialogType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DialogType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDialogType, Qt::CaseInsensitive)));
+    if (strDialogType.compare("VISOCreator", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DialogType_VISOCreator;
+    if (strDialogType.compare("BootFailure", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DialogType_BootFailure;
+    if (strDialogType.compare("All", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DialogType_All;
+    return UIExtraDataMetaDefs::DialogType_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::MenuType: */
@@ -513,27 +499,20 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuType &menuTyp
 /* UIExtraDataMetaDefs::MenuType <= QString: */
 template<> UIExtraDataMetaDefs::MenuType fromInternalString<UIExtraDataMetaDefs::MenuType>(const QString &strMenuType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<UIExtraDataMetaDefs::MenuType> values;
-    keys << "Application"; values << UIExtraDataMetaDefs::MenuType_Application;
-    keys << "Machine";     values << UIExtraDataMetaDefs::MenuType_Machine;
-    keys << "View";        values << UIExtraDataMetaDefs::MenuType_View;
-    keys << "Input";       values << UIExtraDataMetaDefs::MenuType_Input;
-    keys << "Devices";     values << UIExtraDataMetaDefs::MenuType_Devices;
+    if (strMenuType.compare("Application", Qt::CaseInsensitive) == 0) return UIExtraDataMetaDefs::MenuType_Application;
+    if (strMenuType.compare("Machine", Qt::CaseInsensitive) == 0)     return UIExtraDataMetaDefs::MenuType_Machine;
+    if (strMenuType.compare("View", Qt::CaseInsensitive) == 0)        return UIExtraDataMetaDefs::MenuType_View;
+    if (strMenuType.compare("Input", Qt::CaseInsensitive) == 0)       return UIExtraDataMetaDefs::MenuType_Input;
+    if (strMenuType.compare("Devices", Qt::CaseInsensitive) == 0)     return UIExtraDataMetaDefs::MenuType_Devices;
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    keys << "Debug";       values << UIExtraDataMetaDefs::MenuType_Debug;
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+    if (strMenuType.compare("Debug", Qt::CaseInsensitive) == 0)       return UIExtraDataMetaDefs::MenuType_Debug;
+#endif
 #ifdef RT_OS_DARWIN
-    keys << "Window";      values << UIExtraDataMetaDefs::MenuType_Window;
-#endif /* RT_OS_DARWIN */
-    keys << "Help";        values << UIExtraDataMetaDefs::MenuType_Help;
-    keys << "All";         values << UIExtraDataMetaDefs::MenuType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strMenuType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::MenuType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strMenuType, Qt::CaseInsensitive)));
+    if (strMenuType.compare("Window", Qt::CaseInsensitive) == 0)      return UIExtraDataMetaDefs::MenuType_Window;
+#endif
+    if (strMenuType.compare("Help", Qt::CaseInsensitive) == 0)        return UIExtraDataMetaDefs::MenuType_Help;
+    if (strMenuType.compare("All", Qt::CaseInsensitive) == 0)         return UIExtraDataMetaDefs::MenuType_All;
+    return UIExtraDataMetaDefs::MenuType_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::MenuApplicationActionType: */
@@ -563,27 +542,28 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuApplicationAc
 }
 
 /* UIExtraDataMetaDefs::MenuApplicationActionType <= QString: */
-template<> UIExtraDataMetaDefs::MenuApplicationActionType fromInternalString<UIExtraDataMetaDefs::MenuApplicationActionType>(const QString &strMenuApplicationActionType)
+template<> UIExtraDataMetaDefs::MenuApplicationActionType
+fromInternalString<UIExtraDataMetaDefs::MenuApplicationActionType>(const QString &strMenuApplicationActionType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;               QList<UIExtraDataMetaDefs::MenuApplicationActionType> values;
 #ifdef VBOX_WS_MAC
-    keys << "About";                values << UIExtraDataMetaDefs::MenuApplicationActionType_About;
-#endif /* VBOX_WS_MAC */
-    keys << "Preferences";          values << UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
+    if (strMenuApplicationActionType.compare("About", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuApplicationActionType_About;
+#endif
+    if (strMenuApplicationActionType.compare("Preferences", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    keys << "NetworkAccessManager"; values << UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager;
-    keys << "CheckForUpdates";      values << UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates;
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-    keys << "ResetWarnings";        values << UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings;
-    keys << "Close";                values << UIExtraDataMetaDefs::MenuApplicationActionType_Close;
-    keys << "All";                  values << UIExtraDataMetaDefs::MenuApplicationActionType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strMenuApplicationActionType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::MenuApplicationActionType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strMenuApplicationActionType, Qt::CaseInsensitive)));
+    if (strMenuApplicationActionType.compare("NetworkAccessManager", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager;
+    if (strMenuApplicationActionType.compare("CheckForUpdates", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates;
+#endif
+    if (strMenuApplicationActionType.compare("ResetWarnings", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings;
+    if (strMenuApplicationActionType.compare("Close", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuApplicationActionType_Close;
+    if (strMenuApplicationActionType.compare("All", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuApplicationActionType_All;
+    return UIExtraDataMetaDefs::MenuApplicationActionType_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::MenuHelpActionType: */
@@ -611,25 +591,26 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuHelpActionTyp
 }
 
 /* UIExtraDataMetaDefs::MenuHelpActionType <= QString: */
-template<> UIExtraDataMetaDefs::MenuHelpActionType fromInternalString<UIExtraDataMetaDefs::MenuHelpActionType>(const QString &strMenuHelpActionType)
+template<> UIExtraDataMetaDefs::MenuHelpActionType
+fromInternalString<UIExtraDataMetaDefs::MenuHelpActionType>(const QString &strMenuHelpActionType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;               QList<UIExtraDataMetaDefs::MenuHelpActionType> values;
-    keys << "Contents";             values << UIExtraDataMetaDefs::MenuHelpActionType_Contents;
-    keys << "WebSite";              values << UIExtraDataMetaDefs::MenuHelpActionType_WebSite;
-    keys << "BugTracker";           values << UIExtraDataMetaDefs::MenuHelpActionType_BugTracker;
-    keys << "Forums";               values << UIExtraDataMetaDefs::MenuHelpActionType_Forums;
-    keys << "Oracle";               values << UIExtraDataMetaDefs::MenuHelpActionType_Oracle;
+    if (strMenuHelpActionType.compare("Contents", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuHelpActionType_Contents;
+    if (strMenuHelpActionType.compare("WebSite", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuHelpActionType_WebSite;
+    if (strMenuHelpActionType.compare("BugTracker", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuHelpActionType_BugTracker;
+    if (strMenuHelpActionType.compare("Forums", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuHelpActionType_Forums;
+    if (strMenuHelpActionType.compare("Oracle", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuHelpActionType_Oracle;
 #ifndef VBOX_WS_MAC
-    keys << "About";                values << UIExtraDataMetaDefs::MenuHelpActionType_About;
-#endif /* !VBOX_WS_MAC */
-    keys << "All";                  values << UIExtraDataMetaDefs::MenuHelpActionType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strMenuHelpActionType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::MenuHelpActionType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strMenuHelpActionType, Qt::CaseInsensitive)));
+    if (strMenuHelpActionType.compare("About", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuHelpActionType_About;
+#endif
+    if (strMenuHelpActionType.compare("All", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuHelpActionType_All;
+    return UIExtraDataMetaDefs::MenuHelpActionType_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::RuntimeMenuMachineActionType: */
@@ -661,29 +642,36 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachin
 }
 
 /* UIExtraDataMetaDefs::RuntimeMenuMachineActionType <= QString: */
-template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(const QString &strRuntimeMenuMachineActionType)
+template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType
+fromInternalString<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>(const QString &strRuntimeMenuMachineActionType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;             QList<UIExtraDataMetaDefs::RuntimeMenuMachineActionType> values;
-    keys << "SettingsDialog";                values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog;
-    keys << "TakeSnapshot";                  values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot;
-    keys << "InformationDialog";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog;
-    keys << "FileManagerDialog";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_FileManagerDialog;
-    keys << "GuestProcessControlDialog";     values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestProcessControlDialog;
-    keys << "Pause";                         values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause;
-    keys << "Reset";                         values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset;
-    keys << "Detach";                        values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach;
-    keys << "SaveState";                     values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState;
-    keys << "Shutdown";                      values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown;
-    keys << "PowerOff";                      values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff;
-    keys << "Nothing";                       values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing;
-    keys << "All";                           values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strRuntimeMenuMachineActionType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strRuntimeMenuMachineActionType, Qt::CaseInsensitive)));
+    if (strRuntimeMenuMachineActionType.compare("SettingsDialog", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog;
+    if (strRuntimeMenuMachineActionType.compare("TakeSnapshot", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot;
+    if (strRuntimeMenuMachineActionType.compare("InformationDialog", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog;
+    if (strRuntimeMenuMachineActionType.compare("FileManagerDialog", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_FileManagerDialog;
+    if (strRuntimeMenuMachineActionType.compare("GuestProcessControlDialog", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_GuestProcessControlDialog;
+    if (strRuntimeMenuMachineActionType.compare("Pause", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause;
+    if (strRuntimeMenuMachineActionType.compare("Reset", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset;
+    if (strRuntimeMenuMachineActionType.compare("Detach", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Detach;
+    if (strRuntimeMenuMachineActionType.compare("SaveState", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState;
+    if (strRuntimeMenuMachineActionType.compare("Shutdown", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown;
+    if (strRuntimeMenuMachineActionType.compare("PowerOff", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff;
+    if (strRuntimeMenuMachineActionType.compare("Nothing", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing;
+    if (strRuntimeMenuMachineActionType.compare("All", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All;
+    return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::RuntimeMenuViewActionType: */
@@ -727,41 +715,56 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
 }
 
 /* UIExtraDataMetaDefs::RuntimeMenuViewActionType <= QString: */
-template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(const QString &strRuntimeMenuViewActionType)
+template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType
+fromInternalString<UIExtraDataMetaDefs::RuntimeMenuViewActionType>(const QString &strRuntimeMenuViewActionType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;               QList<UIExtraDataMetaDefs::RuntimeMenuViewActionType> values;
-    keys << "Fullscreen";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen;
-    keys << "Seamless";             values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless;
-    keys << "Scale";                values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale;
+    if (strRuntimeMenuViewActionType.compare("Fullscreen", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen;
+    if (strRuntimeMenuViewActionType.compare("Seamless", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless;
+    if (strRuntimeMenuViewActionType.compare("Scale", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale;
 #ifndef VBOX_WS_MAC
-    keys << "MinimizeWindow";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow;
+    if (strRuntimeMenuViewActionType.compare("MinimizeWindow", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow;
 #endif /* !VBOX_WS_MAC */
-    keys << "AdjustWindow";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
-    keys << "GuestAutoresize";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize;
-    keys << "TakeScreenshot";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot;
-    keys << "Recording";            values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Recording;
-    keys << "RecordingSettings";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_RecordingSettings;
-    keys << "StartRecording";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartRecording;
-    keys << "VRDEServer";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer;
-    keys << "MenuBar";              values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
-    keys << "MenuBarSettings";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
+    if (strRuntimeMenuViewActionType.compare("AdjustWindow", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
+    if (strRuntimeMenuViewActionType.compare("GuestAutoresize", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize;
+    if (strRuntimeMenuViewActionType.compare("TakeScreenshot", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot;
+    if (strRuntimeMenuViewActionType.compare("Recording", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Recording;
+    if (strRuntimeMenuViewActionType.compare("RecordingSettings", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_RecordingSettings;
+    if (strRuntimeMenuViewActionType.compare("StartRecording", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartRecording;
+    if (strRuntimeMenuViewActionType.compare("VRDEServer", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer;
+    if (strRuntimeMenuViewActionType.compare("MenuBar", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
+    if (strRuntimeMenuViewActionType.compare("MenuBarSettings", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
 #ifndef VBOX_WS_MAC
-    keys << "ToggleMenuBar";        values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar;
+    if (strRuntimeMenuViewActionType.compare("ToggleMenuBar", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar;
 #endif /* !VBOX_WS_MAC */
-    keys << "StatusBar";            values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
-    keys << "StatusBarSettings";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
-    keys << "ToggleStatusBar";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;
-    keys << "Resize";               values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize;
-    keys << "Remap";                values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap;
-    keys << "Rescale";              values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale;
-    keys << "All";                  values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strRuntimeMenuViewActionType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strRuntimeMenuViewActionType, Qt::CaseInsensitive)));
+    if (strRuntimeMenuViewActionType.compare("StatusBar", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
+    if (strRuntimeMenuViewActionType.compare("StatusBarSettings", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
+    if (strRuntimeMenuViewActionType.compare("ToggleStatusBar", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;
+    if (strRuntimeMenuViewActionType.compare("Resize", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize;
+    if (strRuntimeMenuViewActionType.compare("Remap", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Remap;
+    if (strRuntimeMenuViewActionType.compare("Rescale", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Rescale;
+    if (strRuntimeMenuViewActionType.compare("All", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuViewActionType_All;
+    return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::RuntimeMenuInputActionType: */
@@ -795,31 +798,38 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuInputA
 }
 
 /* UIExtraDataMetaDefs::RuntimeMenuInputActionType <= QString: */
-template<> UIExtraDataMetaDefs::RuntimeMenuInputActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(const QString &strRuntimeMenuInputActionType)
+template<> UIExtraDataMetaDefs::RuntimeMenuInputActionType
+fromInternalString<UIExtraDataMetaDefs::RuntimeMenuInputActionType>(const QString &strRuntimeMenuInputActionType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;             QList<UIExtraDataMetaDefs::RuntimeMenuInputActionType> values;
-    keys << "Keyboard";           values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard;
-    keys << "KeyboardSettings";   values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings;
-    keys << "SoftKeyboard";       values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_SoftKeyboard;
-    keys << "TypeCAD";            values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD;
+    if (strRuntimeMenuInputActionType.compare("Keyboard", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard;
+    if (strRuntimeMenuInputActionType.compare("KeyboardSettings", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings;
+    if (strRuntimeMenuInputActionType.compare("SoftKeyboard", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_SoftKeyboard;
+    if (strRuntimeMenuInputActionType.compare("TypeCAD", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD;
 #ifdef VBOX_WS_X11
-    keys << "TypeCABS";           values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS;
+    if (strRuntimeMenuInputActionType.compare("TypeCABS", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS;
 #endif /* VBOX_WS_X11 */
-    keys << "TypeCtrlBreak";      values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak;
-    keys << "TypeInsert";         values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert;
-    keys << "TypePrintScreen";    values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen;
-    keys << "TypeAltPrintScreen"; values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen;
-    keys << "Mouse";              values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse;
-    keys << "MouseIntegration";   values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration;
-    keys << "TypeHostKeyCombo";   values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeHostKeyCombo;
-    keys << "All";                values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strRuntimeMenuInputActionType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strRuntimeMenuInputActionType, Qt::CaseInsensitive)));
+    if (strRuntimeMenuInputActionType.compare("TypeCtrlBreak", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak;
+    if (strRuntimeMenuInputActionType.compare("TypeInsert", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert;
+    if (strRuntimeMenuInputActionType.compare("TypePrintScreen", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypePrintScreen;
+    if (strRuntimeMenuInputActionType.compare("TypeAltPrintScreen", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeAltPrintScreen;
+    if (strRuntimeMenuInputActionType.compare("Mouse", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse;
+    if (strRuntimeMenuInputActionType.compare("MouseIntegration", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration;
+    if (strRuntimeMenuInputActionType.compare("TypeHostKeyCombo", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeHostKeyCombo;
+    if (strRuntimeMenuInputActionType.compare("All", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuInputActionType_All;
+    return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::RuntimeMenuDevicesActionType: */
@@ -857,35 +867,48 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDevice
 }
 
 /* UIExtraDataMetaDefs::RuntimeMenuDevicesActionType <= QString: */
-template<> UIExtraDataMetaDefs::RuntimeMenuDevicesActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(const QString &strRuntimeMenuDevicesActionType)
+template<> UIExtraDataMetaDefs::RuntimeMenuDevicesActionType
+fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType>(const QString &strRuntimeMenuDevicesActionType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;                QList<UIExtraDataMetaDefs::RuntimeMenuDevicesActionType> values;
-    keys << "HardDrives";            values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives;
-    keys << "HardDrivesSettings";    values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings;
-    keys << "OpticalDevices";        values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices;
-    keys << "FloppyDevices";         values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices;
-    keys << "Audio";                 values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio;
-    keys << "AudioOutput";           values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput;
-    keys << "AudioInput";            values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput;
-    keys << "Network";               values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network;
-    keys << "NetworkSettings";       values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings;
-    keys << "USBDevices";            values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices;
-    keys << "USBDevicesSettings";    values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings;
-    keys << "WebCams";               values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams;
-    keys << "SharedClipboard";       values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard;
-    keys << "DragAndDrop";           values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop;
-    keys << "SharedFolders";         values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders;
-    keys << "SharedFoldersSettings"; values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings;
-    keys << "InstallGuestTools";     values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools;
-    keys << "Nothing";               values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing;
-    keys << "All";                   values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strRuntimeMenuDevicesActionType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strRuntimeMenuDevicesActionType, Qt::CaseInsensitive)));
+    if (strRuntimeMenuDevicesActionType.compare("HardDrives", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrives;
+    if (strRuntimeMenuDevicesActionType.compare("HardDrivesSettings", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_HardDrivesSettings;
+    if (strRuntimeMenuDevicesActionType.compare("OpticalDevices", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices;
+    if (strRuntimeMenuDevicesActionType.compare("FloppyDevices", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices;
+    if (strRuntimeMenuDevicesActionType.compare("Audio", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Audio;
+    if (strRuntimeMenuDevicesActionType.compare("AudioOutput", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioOutput;
+    if (strRuntimeMenuDevicesActionType.compare("AudioInput", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_AudioInput;
+    if (strRuntimeMenuDevicesActionType.compare("Network", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network;
+    if (strRuntimeMenuDevicesActionType.compare("NetworkSettings", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_NetworkSettings;
+    if (strRuntimeMenuDevicesActionType.compare("USBDevices", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices;
+    if (strRuntimeMenuDevicesActionType.compare("USBDevicesSettings", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings;
+    if (strRuntimeMenuDevicesActionType.compare("WebCams", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams;
+    if (strRuntimeMenuDevicesActionType.compare("SharedClipboard", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedClipboard;
+    if (strRuntimeMenuDevicesActionType.compare("DragAndDrop", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop;
+    if (strRuntimeMenuDevicesActionType.compare("SharedFolders", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders;
+    if (strRuntimeMenuDevicesActionType.compare("SharedFoldersSettings", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings;
+    if (strRuntimeMenuDevicesActionType.compare("InstallGuestTools", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools;
+    if (strRuntimeMenuDevicesActionType.compare("Nothing", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing;
+    if (strRuntimeMenuDevicesActionType.compare("All", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All;
+    return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -911,22 +934,22 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDebugg
 }
 
 /* UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType <= QString: */
-template<> UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(const QString &strRuntimeMenuDebuggerActionType)
+template<> UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType
+fromInternalString<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType>(const QString &strRuntimeMenuDebuggerActionType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType> values;
-    keys << "Statistics";           values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics;
-    keys << "CommandLine";          values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine;
-    keys << "Logging";              values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging;
-    keys << "LogDialog";            values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog;
-    keys << "GuestControlConsole";  values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_GuestControlConsole;
-    keys << "All";                  values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strRuntimeMenuDebuggerActionType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strRuntimeMenuDebuggerActionType, Qt::CaseInsensitive)));
+    if (strRuntimeMenuDebuggerActionType.compare("Statistics", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics;
+    if (strRuntimeMenuDebuggerActionType.compare("CommandLine", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine;
+    if (strRuntimeMenuDebuggerActionType.compare("Logging", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging;
+    if (strRuntimeMenuDebuggerActionType.compare("LogDialog", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog;
+    if (strRuntimeMenuDebuggerActionType.compare("GuestControlConsole", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_GuestControlConsole;
+    if (strRuntimeMenuDebuggerActionType.compare("All", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All;
+    return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid;
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
@@ -950,19 +973,16 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuWindowActionT
 }
 
 /* UIExtraDataMetaDefs::MenuWindowActionType <= QString: */
-template<> UIExtraDataMetaDefs::MenuWindowActionType fromInternalString<UIExtraDataMetaDefs::MenuWindowActionType>(const QString &strMenuWindowActionType)
+template<> UIExtraDataMetaDefs::MenuWindowActionType
+fromInternalString<UIExtraDataMetaDefs::MenuWindowActionType>(const QString &strMenuWindowActionType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;   QList<UIExtraDataMetaDefs::MenuWindowActionType> values;
-    keys << "Minimize"; values << UIExtraDataMetaDefs::MenuWindowActionType_Minimize;
-    keys << "Switch";   values << UIExtraDataMetaDefs::MenuWindowActionType_Switch;
-    keys << "All";      values << UIExtraDataMetaDefs::MenuWindowActionType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strMenuWindowActionType, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::MenuWindowActionType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strMenuWindowActionType, Qt::CaseInsensitive)));
+    if (strMenuWindowActionType.compare("Minimize", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuWindowActionType_Minimize;
+    if (strMenuWindowActionType.compare("Switch", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuWindowActionType_Switch;
+    if (strMenuWindowActionType.compare("All", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::MenuWindowActionType_All;
+    return UIExtraDataMetaDefs::MenuWindowActionType_Invalid;
 }
 #endif /* VBOX_WS_MAC */
 
@@ -1005,20 +1025,18 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>(const QString &strDetailsElementOptionTypeGeneral)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral>(const QString &strDetailsElementOptionTypeGeneral)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;   QList<UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral> values;
-    keys << "Name";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name;
-    keys << "OS";       values << UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS;
-    keys << "Location"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location;
-    keys << "Groups";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeGeneral, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeGeneral, Qt::CaseInsensitive)));
+    if (strDetailsElementOptionTypeGeneral.compare("Name", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name;
+    if (strDetailsElementOptionTypeGeneral.compare("OS", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_OS;
+    if (strDetailsElementOptionTypeGeneral.compare("Location", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Location;
+    if (strDetailsElementOptionTypeGeneral.compare("Groups", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Groups;
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSystem: */
@@ -1066,23 +1084,24 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeSystem <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSystem fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(const QString &strDetailsElementOptionTypeSystem)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSystem
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem>(const QString &strDetailsElementOptionTypeSystem)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;          QList<UIExtraDataMetaDefs::DetailsElementOptionTypeSystem> values;
-    keys << "RAM";             values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM;
-    keys << "CPUCount";        values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount;
-    keys << "CPUExecutionCap"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUExecutionCap;
-    keys << "BootOrder";       values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder;
-    keys << "ChipsetType";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType;
-    keys << "Firmware";        values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware;
-    keys << "Acceleration";    values << UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeSystem, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeSystem, Qt::CaseInsensitive)));
+    if (strDetailsElementOptionTypeSystem.compare("RAM", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_RAM;
+    if (strDetailsElementOptionTypeSystem.compare("CPUCount", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUCount;
+    if (strDetailsElementOptionTypeSystem.compare("CPUExecutionCap", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_CPUExecutionCap;
+    if (strDetailsElementOptionTypeSystem.compare("BootOrder", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_BootOrder;
+    if (strDetailsElementOptionTypeSystem.compare("ChipsetType", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_ChipsetType;
+    if (strDetailsElementOptionTypeSystem.compare("Firmware", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Firmware;
+    if (strDetailsElementOptionTypeSystem.compare("Acceleration", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Acceleration;
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay: */
@@ -1130,23 +1149,24 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>(const QString &strDetailsElementOptionTypeDisplay)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay>(const QString &strDetailsElementOptionTypeDisplay)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;             QList<UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay> values;
-    keys << "VRAM";               values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM;
-    keys << "ScreenCount";        values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount;
-    keys << "ScaleFactor";        values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor;
-    keys << "GraphicsController"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController;
-    keys << "Acceleration";       values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration;
-    keys << "VRDE";               values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE;
-    keys << "Recording";          values << UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeDisplay, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeDisplay, Qt::CaseInsensitive)));
+    if (strDetailsElementOptionTypeDisplay.compare("VRAM", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRAM;
+    if (strDetailsElementOptionTypeDisplay.compare("ScreenCount", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScreenCount;
+    if (strDetailsElementOptionTypeDisplay.compare("ScaleFactor", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_ScaleFactor;
+    if (strDetailsElementOptionTypeDisplay.compare("GraphicsController", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_GraphicsController;
+    if (strDetailsElementOptionTypeDisplay.compare("Acceleration", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Acceleration;
+    if (strDetailsElementOptionTypeDisplay.compare("VRDE", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_VRDE;
+    if (strDetailsElementOptionTypeDisplay.compare("Recording", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Recording;
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeStorage: */
@@ -1186,19 +1206,16 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeStorage <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeStorage fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>(const QString &strDetailsElementOptionTypeStorage)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeStorage
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage>(const QString &strDetailsElementOptionTypeStorage)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;         QList<UIExtraDataMetaDefs::DetailsElementOptionTypeStorage> values;
-    keys << "HardDisks";      values << UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks;
-    keys << "OpticalDevices"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_OpticalDevices;
-    keys << "FloppyDevices";  values << UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_FloppyDevices;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeStorage, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeStorage, Qt::CaseInsensitive)));
+    if (strDetailsElementOptionTypeStorage.compare("HardDisks", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_HardDisks;
+    if (strDetailsElementOptionTypeStorage.compare("OpticalDevices", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_OpticalDevices;
+    if (strDetailsElementOptionTypeStorage.compare("FloppyDevices", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_FloppyDevices;
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeAudio: */
@@ -1238,19 +1255,16 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeAudio <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeAudio fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>(const QString &strDetailsElementOptionTypeAudio)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeAudio
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio>(const QString &strDetailsElementOptionTypeAudio)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;     QList<UIExtraDataMetaDefs::DetailsElementOptionTypeAudio> values;
-    keys << "Driver";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver;
-    keys << "Controller"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller;
-    keys << "IO";         values << UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeAudio, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeAudio, Qt::CaseInsensitive)));
+    if (strDetailsElementOptionTypeAudio.compare("Driver", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Driver;
+    if (strDetailsElementOptionTypeAudio.compare("Controller", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Controller;
+    if (strDetailsElementOptionTypeAudio.compare("IO", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_IO;
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork: */
@@ -1310,29 +1324,32 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(const QString &strDetailsElementOptionTypeNetwork)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(const QString &strDetailsElementOptionTypeNetwork)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;          QList<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork> values;
-    keys << "NotAttached";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached;
-    keys << "NAT";             values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT;
-    keys << "BridgetAdapter";  values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter;
-    keys << "InternalNetwork"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork;
-    keys << "HostOnlyAdapter"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter;
-    keys << "GenericDriver";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver;
-    keys << "NATNetwork";      values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork;
+    if (strDetailsElementOptionTypeNetwork.compare("NotAttached", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached;
+    if (strDetailsElementOptionTypeNetwork.compare("NAT", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT;
+    if (strDetailsElementOptionTypeNetwork.compare("BridgetAdapter", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter;
+    if (strDetailsElementOptionTypeNetwork.compare("InternalNetwork", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork;
+    if (strDetailsElementOptionTypeNetwork.compare("HostOnlyAdapter", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter;
+    if (strDetailsElementOptionTypeNetwork.compare("GenericDriver", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver;
+    if (strDetailsElementOptionTypeNetwork.compare("NATNetwork", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork;
 #ifdef VBOX_WITH_CLOUD_NET
-    keys << "CloudNetwork";    values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_CloudNetwork;
+    if (strDetailsElementOptionTypeNetwork.compare("CloudNetwork", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_CloudNetwork;
 #endif
 #ifdef VBOX_WITH_VMNET
-    keys << "HostOnlyNetwork"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyNetwork;
+    if (strDetailsElementOptionTypeNetwork.compare("HostOnlyNetwork", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyNetwork;
 #endif
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeNetwork, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeNetwork, Qt::CaseInsensitive)));
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSerial: */
@@ -1376,21 +1393,20 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeSerial <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSerial fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>(const QString &strDetailsElementOptionTypeSerial)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSerial
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial>(const QString &strDetailsElementOptionTypeSerial)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;       QList<UIExtraDataMetaDefs::DetailsElementOptionTypeSerial> values;
-    keys << "Disconnected"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected;
-    keys << "HostPipe";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe;
-    keys << "HostDevice";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice;
-    keys << "RawFile";      values << UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile;
-    keys << "TCP";          values << UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeSerial, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeSerial, Qt::CaseInsensitive)));
+    if (strDetailsElementOptionTypeSerial.compare("Disconnected", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected;
+    if (strDetailsElementOptionTypeSerial.compare("HostPipe", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe;
+    if (strDetailsElementOptionTypeSerial.compare("HostDevice", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice;
+    if (strDetailsElementOptionTypeSerial.compare("RawFile", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile;
+    if (strDetailsElementOptionTypeSerial.compare("TCP", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP;
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeUsb: */
@@ -1428,18 +1444,14 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeUsb <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeUsb fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>(const QString &strDetailsElementOptionTypeUsb)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeUsb
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>(const QString &strDetailsElementOptionTypeUsb)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;        QList<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb> values;
-    keys << "Controller";    values << UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller;
-    keys << "DeviceFilters"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_DeviceFilters;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeUsb, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeUsb, Qt::CaseInsensitive)));
+    if (strDetailsElementOptionTypeUsb.compare("Controller", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Controller;
+    if (strDetailsElementOptionTypeUsb.compare("DeviceFilters", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_DeviceFilters;
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders: */
@@ -1473,16 +1485,11 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>(const QString &strDetailsElementOptionTypeSharedFolders)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>(const QString &strDetailsElementOptionTypeSharedFolders)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;  QList<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders> values;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeSharedFolders, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeSharedFolders, Qt::CaseInsensitive)));
+    RT_NOREF(strDetailsElementOptionTypeSharedFolders);
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface: */
@@ -1524,20 +1531,18 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>(const QString &strDetailsElementOptionTypeUserInterface)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>(const QString &strDetailsElementOptionTypeUserInterface)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface> values;
-    keys << "VisualState"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_VisualState;
-    keys << "MenuBar";     values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar;
-    keys << "StatusBar";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar;
-    keys << "MiniToolbar"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeUserInterface, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeUserInterface, Qt::CaseInsensitive)));
+    if (strDetailsElementOptionTypeUserInterface.compare("VisualState", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_VisualState;
+    if (strDetailsElementOptionTypeUserInterface.compare("MenuBar", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar;
+    if (strDetailsElementOptionTypeUserInterface.compare("StatusBar", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar;
+    if (strDetailsElementOptionTypeUserInterface.compare("MiniToolbar", Qt::CaseInsensitive) == 0)
+        return UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MiniToolbar;
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_Invalid;
 }
 
 /* QString <= UIExtraDataMetaDefs::DetailsElementOptionTypeDescription: */
@@ -1571,16 +1576,11 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeDescription <= QString: */
-template<> UIExtraDataMetaDefs::DetailsElementOptionTypeDescription fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(const QString &strDetailsElementOptionTypeDescription)
+template<> UIExtraDataMetaDefs::DetailsElementOptionTypeDescription
+fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(const QString &strDetailsElementOptionTypeDescription)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;  QList<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription> values;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementOptionTypeDescription, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementOptionTypeDescription, Qt::CaseInsensitive)));
+    RT_NOREF(strDetailsElementOptionTypeDescription);
+    return UIExtraDataMetaDefs::DetailsElementOptionTypeDescription_Invalid;
 }
 
 /* QString <= UIColorThemeType: */
@@ -1622,16 +1622,11 @@ template<> QString toInternalString(const UIColorThemeType &colorThemeType)
 /* UIColorThemeType <= QString: */
 template<> UIColorThemeType fromInternalString<UIColorThemeType>(const QString &strColorThemeType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys; QList<UIColorThemeType> values;
-    keys << "Light";  values << UIColorThemeType_Light;
-    keys << "Dark";   values << UIColorThemeType_Dark;
-    /* Auto type for unknown words: */
-    if (!keys.contains(strColorThemeType, Qt::CaseInsensitive))
-        return UIColorThemeType_Auto;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strColorThemeType, Qt::CaseInsensitive)));
+    if (strColorThemeType.compare("Light", Qt::CaseInsensitive) == 0)
+        return UIColorThemeType_Light;
+    if (strColorThemeType.compare("Dark", Qt::CaseInsensitive) == 0)
+        return UIColorThemeType_Dark;
+    return UIColorThemeType_Auto;
 }
 
 /* QString <= UIToolType: */
@@ -1664,26 +1659,31 @@ template<> QString toInternalString(const UIToolType &enmToolType)
 /* UIToolType <= QString: */
 template<> UIToolType fromInternalString<UIToolType>(const QString &strToolType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;       QList<UIToolType> values;
-    keys << "Welcome";       values << UIToolType_Welcome;
-    keys << "Extensions";    values << UIToolType_Extensions;
-    keys << "Media";         values << UIToolType_Media;
-    keys << "Network";       values << UIToolType_Network;
-    keys << "Cloud";         values << UIToolType_Cloud;
-    keys << "CloudConsole";  values << UIToolType_CloudConsole;
-    keys << "Activities";    values << UIToolType_VMActivityOverview;
-    keys << "Details";       values << UIToolType_Details;
-    keys << "Snapshots";     values << UIToolType_Snapshots;
-    keys << "Logs";          values << UIToolType_Logs;
-    keys << "Activity";      values << UIToolType_VMActivity;
-    keys << "FileManager";   values << UIToolType_FileManager;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strToolType, Qt::CaseInsensitive))
-        return UIToolType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strToolType, Qt::CaseInsensitive)));
+    if (strToolType.compare("Welcome", Qt::CaseInsensitive) == 0)
+        return UIToolType_Welcome;
+    if (strToolType.compare("Extensions", Qt::CaseInsensitive) == 0)
+        return UIToolType_Extensions;
+    if (strToolType.compare("Media", Qt::CaseInsensitive) == 0)
+        return UIToolType_Media;
+    if (strToolType.compare("Network", Qt::CaseInsensitive) == 0)
+        return UIToolType_Network;
+    if (strToolType.compare("Cloud", Qt::CaseInsensitive) == 0)
+        return UIToolType_Cloud;
+    if (strToolType.compare("CloudConsole", Qt::CaseInsensitive) == 0)
+        return UIToolType_CloudConsole;
+    if (strToolType.compare("Activities", Qt::CaseInsensitive) == 0)
+        return UIToolType_VMActivityOverview;
+    if (strToolType.compare("Details", Qt::CaseInsensitive) == 0)
+        return UIToolType_Details;
+    if (strToolType.compare("Snapshots", Qt::CaseInsensitive) == 0)
+        return UIToolType_Snapshots;
+    if (strToolType.compare("Logs", Qt::CaseInsensitive) == 0)
+        return UIToolType_Logs;
+    if (strToolType.compare("Activity", Qt::CaseInsensitive) == 0)
+        return UIToolType_VMActivity;
+    if (strToolType.compare("FileManager", Qt::CaseInsensitive) == 0)
+        return UIToolType_FileManager;
+    return UIToolType_Invalid;
 }
 
 /* QString <= UIVisualStateType: */
@@ -1728,19 +1728,17 @@ template<> QString toInternalString(const UIVisualStateType &visualStateType)
 /* UIVisualStateType <= QString: */
 template<> UIVisualStateType fromInternalString<UIVisualStateType>(const QString &strVisualStateType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;     QList<UIVisualStateType> values;
-    keys << "Normal";     values << UIVisualStateType_Normal;
-    keys << "Fullscreen"; values << UIVisualStateType_Fullscreen;
-    keys << "Seamless";   values << UIVisualStateType_Seamless;
-    keys << "Scale";      values << UIVisualStateType_Scale;
-    keys << "All";        values << UIVisualStateType_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strVisualStateType, Qt::CaseInsensitive))
-        return UIVisualStateType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strVisualStateType, Qt::CaseInsensitive)));
+    if (strVisualStateType.compare("Normal", Qt::CaseInsensitive) == 0)
+        return UIVisualStateType_Normal;
+    if (strVisualStateType.compare("Fullscreen", Qt::CaseInsensitive) == 0)
+        return UIVisualStateType_Fullscreen;
+    if (strVisualStateType.compare("Seamless", Qt::CaseInsensitive) == 0)
+        return UIVisualStateType_Seamless;
+    if (strVisualStateType.compare("Scale", Qt::CaseInsensitive) == 0)
+        return UIVisualStateType_Scale;
+    if (strVisualStateType.compare("All", Qt::CaseInsensitive) == 0)
+        return UIVisualStateType_All;
+    return UIVisualStateType_Invalid;
 }
 
 /* QString <= DetailsElementType: */
@@ -1773,26 +1771,31 @@ template<> QString toString(const DetailsElementType &detailsElementType)
 /* DetailsElementType <= QString: */
 template<> DetailsElementType fromString<DetailsElementType>(const QString &strDetailsElementType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;                                                                      QList<DetailsElementType> values;
-    keys << QApplication::translate("UICommon", "General", "DetailsElementType");        values << DetailsElementType_General;
-    keys << QApplication::translate("UICommon", "Preview", "DetailsElementType");        values << DetailsElementType_Preview;
-    keys << QApplication::translate("UICommon", "System", "DetailsElementType");         values << DetailsElementType_System;
-    keys << QApplication::translate("UICommon", "Display", "DetailsElementType");        values << DetailsElementType_Display;
-    keys << QApplication::translate("UICommon", "Storage", "DetailsElementType");        values << DetailsElementType_Storage;
-    keys << QApplication::translate("UICommon", "Audio", "DetailsElementType");          values << DetailsElementType_Audio;
-    keys << QApplication::translate("UICommon", "Network", "DetailsElementType");        values << DetailsElementType_Network;
-    keys << QApplication::translate("UICommon", "Serial ports", "DetailsElementType");   values << DetailsElementType_Serial;
-    keys << QApplication::translate("UICommon", "USB", "DetailsElementType");            values << DetailsElementType_USB;
-    keys << QApplication::translate("UICommon", "Shared folders", "DetailsElementType"); values << DetailsElementType_SF;
-    keys << QApplication::translate("UICommon", "User interface", "DetailsElementType"); values << DetailsElementType_UI;
-    keys << QApplication::translate("UICommon", "Description", "DetailsElementType");    values << DetailsElementType_Description;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementType, Qt::CaseInsensitive))
-        return DetailsElementType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementType, Qt::CaseInsensitive)));
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "General", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_General;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "Preview", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Preview;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "System", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_System;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "Display", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Display;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "Storage", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Storage;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "Audio", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Audio;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "Network", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Network;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "Serial ports", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Serial;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "USB", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_USB;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "Shared folders", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_SF;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "User interface", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_UI;
+    if (strDetailsElementType.compare(QApplication::translate("UICommon", "Description", "DetailsElementType"), Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Description;
+    return DetailsElementType_Invalid;
 }
 
 /* QString <= DetailsElementType: */
@@ -1825,26 +1828,31 @@ template<> QString toInternalString(const DetailsElementType &detailsElementType
 /* DetailsElementType <= QString: */
 template<> DetailsElementType fromInternalString<DetailsElementType>(const QString &strDetailsElementType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;        QList<DetailsElementType> values;
-    keys << "general";       values << DetailsElementType_General;
-    keys << "preview";       values << DetailsElementType_Preview;
-    keys << "system";        values << DetailsElementType_System;
-    keys << "display";       values << DetailsElementType_Display;
-    keys << "storage";       values << DetailsElementType_Storage;
-    keys << "audio";         values << DetailsElementType_Audio;
-    keys << "network";       values << DetailsElementType_Network;
-    keys << "serialPorts";   values << DetailsElementType_Serial;
-    keys << "usb";           values << DetailsElementType_USB;
-    keys << "sharedFolders"; values << DetailsElementType_SF;
-    keys << "userInterface"; values << DetailsElementType_UI;
-    keys << "description";   values << DetailsElementType_Description;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strDetailsElementType, Qt::CaseInsensitive))
-        return DetailsElementType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strDetailsElementType, Qt::CaseInsensitive)));
+    if (strDetailsElementType.compare("general", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_General;
+    if (strDetailsElementType.compare("preview", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Preview;
+    if (strDetailsElementType.compare("system", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_System;
+    if (strDetailsElementType.compare("display", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Display;
+    if (strDetailsElementType.compare("storage", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Storage;
+    if (strDetailsElementType.compare("audio", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Audio;
+    if (strDetailsElementType.compare("network", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Network;
+    if (strDetailsElementType.compare("serialPorts", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Serial;
+    if (strDetailsElementType.compare("usb", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_USB;
+    if (strDetailsElementType.compare("sharedFolders", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_SF;
+    if (strDetailsElementType.compare("userInterface", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_UI;
+    if (strDetailsElementType.compare("description", Qt::CaseInsensitive) == 0)
+        return DetailsElementType_Description;
+    return DetailsElementType_Invalid;
 }
 
 /* QIcon <= DetailsElementType: */
@@ -1894,20 +1902,20 @@ template<> QString toInternalString(const PreviewUpdateIntervalType &previewUpda
 /* PreviewUpdateIntervalType <= QString: */
 template<> PreviewUpdateIntervalType fromInternalString<PreviewUpdateIntervalType>(const QString &strPreviewUpdateIntervalType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;   QList<PreviewUpdateIntervalType> values;
-    keys << "disabled"; values << PreviewUpdateIntervalType_Disabled;
-    keys << "500";      values << PreviewUpdateIntervalType_500ms;
-    keys << "1000";     values << PreviewUpdateIntervalType_1000ms;
-    keys << "2000";     values << PreviewUpdateIntervalType_2000ms;
-    keys << "5000";     values << PreviewUpdateIntervalType_5000ms;
-    keys << "10000";    values << PreviewUpdateIntervalType_10000ms;
-    /* 1000ms type for unknown words: */
-    if (!keys.contains(strPreviewUpdateIntervalType, Qt::CaseInsensitive))
+    if (strPreviewUpdateIntervalType.compare("disabled", Qt::CaseInsensitive) == 0)
+        return PreviewUpdateIntervalType_Disabled;
+    if (strPreviewUpdateIntervalType.compare("500", Qt::CaseInsensitive) == 0)
+        return PreviewUpdateIntervalType_500ms;
+    if (strPreviewUpdateIntervalType.compare("1000", Qt::CaseInsensitive) == 0)
         return PreviewUpdateIntervalType_1000ms;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strPreviewUpdateIntervalType, Qt::CaseInsensitive)));
+    if (strPreviewUpdateIntervalType.compare("2000", Qt::CaseInsensitive) == 0)
+        return PreviewUpdateIntervalType_2000ms;
+    if (strPreviewUpdateIntervalType.compare("5000", Qt::CaseInsensitive) == 0)
+        return PreviewUpdateIntervalType_5000ms;
+    if (strPreviewUpdateIntervalType.compare("10000", Qt::CaseInsensitive) == 0)
+        return PreviewUpdateIntervalType_10000ms;
+    /* 1000ms type for unknown input: */
+    return PreviewUpdateIntervalType_1000ms;
 }
 
 /* int <= PreviewUpdateIntervalType: */
@@ -1971,21 +1979,18 @@ template<> QString toInternalString(const GUIFeatureType &guiFeatureType)
 /* GUIFeatureType <= QString: */
 template<> GUIFeatureType fromInternalString<GUIFeatureType>(const QString &strGuiFeatureType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;         QList<GUIFeatureType> values;
-    keys << "noSelector";     values << GUIFeatureType_NoSelector;
+    if (strGuiFeatureType.compare("noSelector", Qt::CaseInsensitive) == 0)
+        return GUIFeatureType_NoSelector;
 #ifdef VBOX_WS_MAC
-    keys << "noUserElements"; values << GUIFeatureType_NoUserElements;
+    if (strGuiFeatureType.compare("noUserElements", Qt::CaseInsensitive) == 0)
+        return GUIFeatureType_NoUserElements;
 #else
-    keys << "noMenuBar";      values << GUIFeatureType_NoMenuBar;
+    if (strGuiFeatureType.compare("noMenuBar", Qt::CaseInsensitive) == 0)
+        return GUIFeatureType_NoMenuBar;
 #endif
-    keys << "noStatusBar";    values << GUIFeatureType_NoStatusBar;
-    /* None type for unknown words: */
-    if (!keys.contains(strGuiFeatureType, Qt::CaseInsensitive))
-        return GUIFeatureType_None;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strGuiFeatureType, Qt::CaseInsensitive)));
+    if (strGuiFeatureType.compare("noStatusBar", Qt::CaseInsensitive) == 0)
+        return GUIFeatureType_NoStatusBar;
+    return GUIFeatureType_None;
 }
 
 /* QString <= GlobalSettingsPageType: */
@@ -2017,25 +2022,25 @@ template<> QString toInternalString(const GlobalSettingsPageType &globalSettings
 /* GlobalSettingsPageType <= QString: */
 template<> GlobalSettingsPageType fromInternalString<GlobalSettingsPageType>(const QString &strGlobalSettingsPageType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;     QList<GlobalSettingsPageType> values;
-    keys << "General";    values << GlobalSettingsPageType_General;
-    keys << "Input";      values << GlobalSettingsPageType_Input;
+    if (strGlobalSettingsPageType.compare("General", Qt::CaseInsensitive) == 0)
+        return GlobalSettingsPageType_General;
+    if (strGlobalSettingsPageType.compare("Input", Qt::CaseInsensitive) == 0)
+        return GlobalSettingsPageType_Input;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    keys << "Update";     values << GlobalSettingsPageType_Update;
+    if (strGlobalSettingsPageType.compare("Update", Qt::CaseInsensitive) == 0)
+        return GlobalSettingsPageType_Update;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-    keys << "Language";   values << GlobalSettingsPageType_Language;
-    keys << "Display";    values << GlobalSettingsPageType_Display;
+    if (strGlobalSettingsPageType.compare("Language", Qt::CaseInsensitive) == 0)
+        return GlobalSettingsPageType_Language;
+    if (strGlobalSettingsPageType.compare("Display", Qt::CaseInsensitive) == 0)
+        return GlobalSettingsPageType_Display;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    keys << "Proxy";      values << GlobalSettingsPageType_Proxy;
+    if (strGlobalSettingsPageType.compare("Proxy", Qt::CaseInsensitive) == 0)
+        return GlobalSettingsPageType_Proxy;
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-    keys << "Interface";  values << GlobalSettingsPageType_Interface;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strGlobalSettingsPageType, Qt::CaseInsensitive))
-        return GlobalSettingsPageType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strGlobalSettingsPageType, Qt::CaseInsensitive)));
+    if (strGlobalSettingsPageType.compare("Interface", Qt::CaseInsensitive) == 0)
+        return GlobalSettingsPageType_Interface;
+    return GlobalSettingsPageType_Invalid;
 }
 
 /* QPixmap <= GlobalSettingsPageType: */
@@ -2088,25 +2093,29 @@ template<> QString toInternalString(const MachineSettingsPageType &machineSettin
 /* MachineSettingsPageType <= QString: */
 template<> MachineSettingsPageType fromInternalString<MachineSettingsPageType>(const QString &strMachineSettingsPageType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;        QList<MachineSettingsPageType> values;
-    keys << "General";       values << MachineSettingsPageType_General;
-    keys << "System";        values << MachineSettingsPageType_System;
-    keys << "Display";       values << MachineSettingsPageType_Display;
-    keys << "Storage";       values << MachineSettingsPageType_Storage;
-    keys << "Audio";         values << MachineSettingsPageType_Audio;
-    keys << "Network";       values << MachineSettingsPageType_Network;
-    keys << "Ports";         values << MachineSettingsPageType_Ports;
-    keys << "Serial";        values << MachineSettingsPageType_Serial;
-    keys << "USB";           values << MachineSettingsPageType_USB;
-    keys << "SharedFolders"; values << MachineSettingsPageType_SF;
-    keys << "Interface";     values << MachineSettingsPageType_Interface;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strMachineSettingsPageType, Qt::CaseInsensitive))
-        return MachineSettingsPageType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strMachineSettingsPageType, Qt::CaseInsensitive)));
+    if (strMachineSettingsPageType.compare("General", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_General;
+    if (strMachineSettingsPageType.compare("System", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_System;
+    if (strMachineSettingsPageType.compare("Display", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_Display;
+    if (strMachineSettingsPageType.compare("Storage", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_Storage;
+    if (strMachineSettingsPageType.compare("Audio", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_Audio;
+    if (strMachineSettingsPageType.compare("Network", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_Network;
+    if (strMachineSettingsPageType.compare("Ports", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_Ports;
+    if (strMachineSettingsPageType.compare("Serial", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_Serial;
+    if (strMachineSettingsPageType.compare("USB", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_USB;
+    if (strMachineSettingsPageType.compare("SharedFolders", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_SF;
+    if (strMachineSettingsPageType.compare("Interface", Qt::CaseInsensitive) == 0)
+        return MachineSettingsPageType_Interface;
+    return MachineSettingsPageType_Invalid;
 }
 
 /* QPixmap <= MachineSettingsPageType: */
@@ -2156,22 +2165,23 @@ template<> QString toInternalString(const WizardType &wizardType)
 /* WizardType <= QString: */
 template<> WizardType fromInternalString<WizardType>(const QString &strWizardType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;          QList<WizardType> values;
-    keys << "NewVM";           values << WizardType_NewVM;
-    keys << "CloneVM";         values << WizardType_CloneVM;
-    keys << "ExportAppliance"; values << WizardType_ExportAppliance;
-    keys << "ImportAppliance"; values << WizardType_ImportAppliance;
-    keys << "NewCloudVM";      values << WizardType_NewCloudVM;
-    keys << "AddCloudVM";      values << WizardType_AddCloudVM;
-    keys << "NewVD";           values << WizardType_NewVD;
-    keys << "CloneVD";         values << WizardType_CloneVD;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strWizardType, Qt::CaseInsensitive))
-        return WizardType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strWizardType, Qt::CaseInsensitive)));
+    if (strWizardType.compare("NewVM", Qt::CaseInsensitive) == 0)
+        return WizardType_NewVM;
+    if (strWizardType.compare("CloneVM", Qt::CaseInsensitive) == 0)
+        return WizardType_CloneVM;
+    if (strWizardType.compare("ExportAppliance", Qt::CaseInsensitive) == 0)
+        return WizardType_ExportAppliance;
+    if (strWizardType.compare("ImportAppliance", Qt::CaseInsensitive) == 0)
+        return WizardType_ImportAppliance;
+    if (strWizardType.compare("NewCloudVM", Qt::CaseInsensitive) == 0)
+        return WizardType_NewCloudVM;
+    if (strWizardType.compare("AddCloudVM", Qt::CaseInsensitive) == 0)
+        return WizardType_AddCloudVM;
+    if (strWizardType.compare("NewVD", Qt::CaseInsensitive) == 0)
+        return WizardType_NewVD;
+    if (strWizardType.compare("CloneVD", Qt::CaseInsensitive) == 0)
+        return WizardType_CloneVD;
+    return WizardType_Invalid;
 }
 
 /* QString <= IndicatorType: */
@@ -2204,26 +2214,31 @@ template<> QString toInternalString(const IndicatorType &indicatorType)
 /* IndicatorType <= QString: */
 template<> IndicatorType fromInternalString<IndicatorType>(const QString &strIndicatorType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;        QList<IndicatorType> values;
-    keys << "HardDisks";     values << IndicatorType_HardDisks;
-    keys << "OpticalDisks";  values << IndicatorType_OpticalDisks;
-    keys << "FloppyDisks";   values << IndicatorType_FloppyDisks;
-    keys << "Audio";         values << IndicatorType_Audio;
-    keys << "Network";       values << IndicatorType_Network;
-    keys << "USB";           values << IndicatorType_USB;
-    keys << "SharedFolders"; values << IndicatorType_SharedFolders;
-    keys << "Display";       values << IndicatorType_Display;
-    keys << "Recording";     values << IndicatorType_Recording;
-    keys << "Features";      values << IndicatorType_Features;
-    keys << "Mouse";         values << IndicatorType_Mouse;
-    keys << "Keyboard";      values << IndicatorType_Keyboard;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strIndicatorType, Qt::CaseInsensitive))
-        return IndicatorType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strIndicatorType, Qt::CaseInsensitive)));
+    if (strIndicatorType.compare("HardDisks", Qt::CaseInsensitive) == 0)
+        return IndicatorType_HardDisks;
+    if (strIndicatorType.compare("OpticalDisks", Qt::CaseInsensitive) == 0)
+        return IndicatorType_OpticalDisks;
+    if (strIndicatorType.compare("FloppyDisks", Qt::CaseInsensitive) == 0)
+        return IndicatorType_FloppyDisks;
+    if (strIndicatorType.compare("Audio", Qt::CaseInsensitive) == 0)
+        return IndicatorType_Audio;
+    if (strIndicatorType.compare("Network", Qt::CaseInsensitive) == 0)
+        return IndicatorType_Network;
+    if (strIndicatorType.compare("USB", Qt::CaseInsensitive) == 0)
+        return IndicatorType_USB;
+    if (strIndicatorType.compare("SharedFolders", Qt::CaseInsensitive) == 0)
+        return IndicatorType_SharedFolders;
+    if (strIndicatorType.compare("Display", Qt::CaseInsensitive) == 0)
+        return IndicatorType_Display;
+    if (strIndicatorType.compare("Recording", Qt::CaseInsensitive) == 0)
+        return IndicatorType_Recording;
+    if (strIndicatorType.compare("Features", Qt::CaseInsensitive) == 0)
+        return IndicatorType_Features;
+    if (strIndicatorType.compare("Mouse", Qt::CaseInsensitive) == 0)
+        return IndicatorType_Mouse;
+    if (strIndicatorType.compare("Keyboard", Qt::CaseInsensitive) == 0)
+        return IndicatorType_Keyboard;
+    return IndicatorType_Invalid;
 }
 
 /* QString <= IndicatorType: */
@@ -2301,18 +2316,15 @@ template<> QString toInternalString(const MachineCloseAction &machineCloseAction
 /* MachineCloseAction <= QString: */
 template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QString &strMachineCloseAction)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;    QList<MachineCloseAction> values;
-    keys << "Detach";    values << MachineCloseAction_Detach;
-    keys << "SaveState"; values << MachineCloseAction_SaveState;
-    keys << "Shutdown";  values << MachineCloseAction_Shutdown;
-    keys << "PowerOff";  values << MachineCloseAction_PowerOff;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strMachineCloseAction, Qt::CaseInsensitive))
-        return MachineCloseAction_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strMachineCloseAction, Qt::CaseInsensitive)));
+    if (strMachineCloseAction.compare("Detach", Qt::CaseInsensitive) == 0)
+        return MachineCloseAction_Detach;
+    if (strMachineCloseAction.compare("SaveState", Qt::CaseInsensitive) == 0)
+        return MachineCloseAction_SaveState;
+    if (strMachineCloseAction.compare("Shutdown", Qt::CaseInsensitive) == 0)
+        return MachineCloseAction_Shutdown;
+    if (strMachineCloseAction.compare("PowerOff", Qt::CaseInsensitive) == 0)
+        return MachineCloseAction_PowerOff;
+    return MachineCloseAction_Invalid;
 }
 
 /* QString <= MouseCapturePolicy: */
@@ -2333,17 +2345,13 @@ template<> QString toInternalString(const MouseCapturePolicy &mouseCapturePolicy
 /* MouseCapturePolicy <= QString: */
 template<> MouseCapturePolicy fromInternalString<MouseCapturePolicy>(const QString &strMouseCapturePolicy)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;        QList<MouseCapturePolicy> values;
-    keys << "Default";       values << MouseCapturePolicy_Default;
-    keys << "HostComboOnly"; values << MouseCapturePolicy_HostComboOnly;
-    keys << "Disabled";      values << MouseCapturePolicy_Disabled;
-    /* Default type for unknown words: */
-    if (!keys.contains(strMouseCapturePolicy, Qt::CaseInsensitive))
+    if (strMouseCapturePolicy.compare("Default", Qt::CaseInsensitive) == 0)
         return MouseCapturePolicy_Default;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strMouseCapturePolicy, Qt::CaseInsensitive)));
+    if (strMouseCapturePolicy.compare("HostComboOnly", Qt::CaseInsensitive) == 0)
+        return MouseCapturePolicy_HostComboOnly;
+    if (strMouseCapturePolicy.compare("Disabled", Qt::CaseInsensitive) == 0)
+        return MouseCapturePolicy_Disabled;
+    return MouseCapturePolicy_Default;
 }
 
 /* QString <= GuruMeditationHandlerType: */
@@ -2367,17 +2375,13 @@ template<> QString toInternalString(const GuruMeditationHandlerType &guruMeditat
 /* GuruMeditationHandlerType <= QString: */
 template<> GuruMeditationHandlerType fromInternalString<GuruMeditationHandlerType>(const QString &strGuruMeditationHandlerType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;   QList<GuruMeditationHandlerType> values;
-    keys << "Default";  values << GuruMeditationHandlerType_Default;
-    keys << "PowerOff"; values << GuruMeditationHandlerType_PowerOff;
-    keys << "Ignore";   values << GuruMeditationHandlerType_Ignore;
-    /* Default type for unknown words: */
-    if (!keys.contains(strGuruMeditationHandlerType, Qt::CaseInsensitive))
+    if (strGuruMeditationHandlerType.compare("Default", Qt::CaseInsensitive) == 0)
         return GuruMeditationHandlerType_Default;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strGuruMeditationHandlerType, Qt::CaseInsensitive)));
+    if (strGuruMeditationHandlerType.compare("PowerOff", Qt::CaseInsensitive) == 0)
+        return GuruMeditationHandlerType_PowerOff;
+    if (strGuruMeditationHandlerType.compare("Ignore", Qt::CaseInsensitive) == 0)
+        return GuruMeditationHandlerType_Ignore;
+    return GuruMeditationHandlerType_Default;
 }
 
 /* QString <= ScalingOptimizationType: */
@@ -2400,19 +2404,15 @@ template<> QString toInternalString(const ScalingOptimizationType &optimizationT
 /* ScalingOptimizationType <= QString: */
 template<> ScalingOptimizationType fromInternalString<ScalingOptimizationType>(const QString &strOptimizationType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<ScalingOptimizationType> values;
-    keys << "None";        values << ScalingOptimizationType_None;
-    keys << "Performance"; values << ScalingOptimizationType_Performance;
-    /* 'None' type for empty/unknown words: */
-    if (!keys.contains(strOptimizationType, Qt::CaseInsensitive))
+    if (strOptimizationType.compare("None", Qt::CaseInsensitive) == 0)
         return ScalingOptimizationType_None;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strOptimizationType, Qt::CaseInsensitive)));
+    if (strOptimizationType.compare("Performance", Qt::CaseInsensitive) == 0)
+        return ScalingOptimizationType_Performance;
+    return ScalingOptimizationType_None;
 }
 
 #ifndef VBOX_WS_MAC
+
 /* QString <= MiniToolbarAlignment: */
 template<> QString toInternalString(const MiniToolbarAlignment &miniToolbarAlignment)
 {
@@ -2430,17 +2430,13 @@ template<> QString toInternalString(const MiniToolbarAlignment &miniToolbarAlign
 /* MiniToolbarAlignment <= QString: */
 template<> MiniToolbarAlignment fromInternalString<MiniToolbarAlignment>(const QString &strMiniToolbarAlignment)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys; QList<MiniToolbarAlignment> values;
-    keys << "Bottom"; values << MiniToolbarAlignment_Bottom;
-    keys << "Top";    values << MiniToolbarAlignment_Top;
-    /* Bottom type for unknown words: */
-    if (!keys.contains(strMiniToolbarAlignment, Qt::CaseInsensitive))
+    if (strMiniToolbarAlignment.compare("Bottom", Qt::CaseInsensitive) == 0)
         return MiniToolbarAlignment_Bottom;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strMiniToolbarAlignment, Qt::CaseInsensitive)));
+    if (strMiniToolbarAlignment.compare("Top", Qt::CaseInsensitive) == 0)
+        return MiniToolbarAlignment_Top;
+    return MiniToolbarAlignment_Bottom;
 }
+
 #endif /* !VBOX_WS_MAC */
 
 /* QString <= InformationElementType: */
@@ -2476,29 +2472,37 @@ template<> QString toString(const InformationElementType &informationElementType
 /* InformationElementType <= QString: */
 template<> InformationElementType fromString<InformationElementType>(const QString &strInformationElementType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;                                                                              QList<InformationElementType> values;
-    keys << QApplication::translate("UICommon", "General", "InformationElementType");            values << InformationElementType_General;
-    keys << QApplication::translate("UICommon", "Preview", "InformationElementType");            values << InformationElementType_Preview;
-    keys << QApplication::translate("UICommon", "System", "InformationElementType");             values << InformationElementType_System;
-    keys << QApplication::translate("UICommon", "Display", "InformationElementType");            values << InformationElementType_Display;
-    keys << QApplication::translate("UICommon", "Storage", "InformationElementType");            values << InformationElementType_Storage;
-    keys << QApplication::translate("UICommon", "Audio", "InformationElementType");              values << InformationElementType_Audio;
-    keys << QApplication::translate("UICommon", "Network", "InformationElementType");            values << InformationElementType_Network;
-    keys << QApplication::translate("UICommon", "Serial ports", "InformationElementType");       values << InformationElementType_Serial;
-    keys << QApplication::translate("UICommon", "USB", "InformationElementType");                values << InformationElementType_USB;
-    keys << QApplication::translate("UICommon", "Shared folders", "InformationElementType");     values << InformationElementType_SharedFolders;
-    keys << QApplication::translate("UICommon", "User interface", "InformationElementType");     values << InformationElementType_UI;
-    keys << QApplication::translate("UICommon", "Description", "InformationElementType");        values << InformationElementType_Description;
-    keys << QApplication::translate("UICommon", "Runtime attributes", "InformationElementType"); values << InformationElementType_RuntimeAttributes;
-    keys << QApplication::translate("UICommon", "Storage statistics", "InformationElementType"); values << InformationElementType_StorageStatistics;
-    keys << QApplication::translate("UICommon", "Network statistics", "InformationElementType"); values << InformationElementType_NetworkStatistics;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strInformationElementType, Qt::CaseInsensitive))
-        return InformationElementType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strInformationElementType, Qt::CaseInsensitive)));
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "General", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_General;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Preview", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_Preview;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "System", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_System;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Display", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_Display;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Storage", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_Storage;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Audio", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_Audio;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Network", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_Network;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Serial ports", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_Serial;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "USB", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_USB;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Shared folders", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_SharedFolders;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "User interface", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_UI;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Description", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_Description;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Runtime attributes", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_RuntimeAttributes;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Storage statistics", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_StorageStatistics;
+    if (strInformationElementType.compare(QApplication::translate("UICommon", "Network statistics", "InformationElementType"), Qt::CaseInsensitive) == 0)
+        return InformationElementType_NetworkStatistics;
+    return InformationElementType_Invalid;
 }
 
 /* QString <= InformationElementType: */
@@ -2532,27 +2536,33 @@ template<> QString toInternalString(const InformationElementType &informationEle
 /* InformationElementType <= QString: */
 template<> InformationElementType fromInternalString<InformationElementType>(const QString &strInformationElementType)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;             QList<InformationElementType> values;
-    keys << "general";            values << InformationElementType_General;
-    keys << "preview";            values << InformationElementType_Preview;
-    keys << "system";             values << InformationElementType_System;
-    keys << "display";            values << InformationElementType_Display;
-    keys << "storage";            values << InformationElementType_Storage;
-    keys << "audio";              values << InformationElementType_Audio;
-    keys << "network";            values << InformationElementType_Network;
-    keys << "serialPorts";        values << InformationElementType_Serial;
-    keys << "usb";                values << InformationElementType_USB;
-    keys << "sharedFolders";      values << InformationElementType_SharedFolders;
-    keys << "userInterface";      values << InformationElementType_UI;
-    keys << "description";        values << InformationElementType_Description;
-    keys << "runtime-attributes"; values << InformationElementType_RuntimeAttributes;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strInformationElementType, Qt::CaseInsensitive))
-        return InformationElementType_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strInformationElementType, Qt::CaseInsensitive)));
+    if (strInformationElementType.compare("general", Qt::CaseInsensitive) == 0)
+        return InformationElementType_General;
+    if (strInformationElementType.compare("preview", Qt::CaseInsensitive) == 0)
+        return InformationElementType_Preview;
+    if (strInformationElementType.compare("system", Qt::CaseInsensitive) == 0)
+        return InformationElementType_System;
+    if (strInformationElementType.compare("display", Qt::CaseInsensitive) == 0)
+        return InformationElementType_Display;
+    if (strInformationElementType.compare("storage", Qt::CaseInsensitive) == 0)
+        return InformationElementType_Storage;
+    if (strInformationElementType.compare("audio", Qt::CaseInsensitive) == 0)
+        return InformationElementType_Audio;
+    if (strInformationElementType.compare("network", Qt::CaseInsensitive) == 0)
+        return InformationElementType_Network;
+    if (strInformationElementType.compare("serialPorts", Qt::CaseInsensitive) == 0)
+        return InformationElementType_Serial;
+    if (strInformationElementType.compare("usb", Qt::CaseInsensitive) == 0)
+        return InformationElementType_USB;
+    if (strInformationElementType.compare("sharedFolders", Qt::CaseInsensitive) == 0)
+        return InformationElementType_SharedFolders;
+    if (strInformationElementType.compare("userInterface", Qt::CaseInsensitive) == 0)
+        return InformationElementType_UI;
+    if (strInformationElementType.compare("description", Qt::CaseInsensitive) == 0)
+        return InformationElementType_Description;
+    if (strInformationElementType.compare("runtime-attributes", Qt::CaseInsensitive) == 0)
+        return InformationElementType_RuntimeAttributes;
+    return InformationElementType_Invalid;
 }
 
 /* QIcon <= InformationElementType: */
@@ -2620,23 +2630,18 @@ template<> QString toInternalString(const MaximumGuestScreenSizePolicy &enmMaxim
 }
 
 /* MaximumGuestScreenSizePolicy <= QString: */
-template<> MaximumGuestScreenSizePolicy fromInternalString<MaximumGuestScreenSizePolicy>(const QString &strMaximumGuestScreenSizePolicy)
+template<> MaximumGuestScreenSizePolicy
+fromInternalString<MaximumGuestScreenSizePolicy>(const QString &strMaximumGuestScreenSizePolicy)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys; QList<MaximumGuestScreenSizePolicy> values;
-    keys << "auto";   values << MaximumGuestScreenSizePolicy_Automatic;
-    /* Auto type for empty value: */
-    if (strMaximumGuestScreenSizePolicy.isEmpty())
+    if (   strMaximumGuestScreenSizePolicy.isEmpty()
+        || strMaximumGuestScreenSizePolicy.compare("auto", Qt::CaseInsensitive) == 0)
         return MaximumGuestScreenSizePolicy_Automatic;
+    if (strMaximumGuestScreenSizePolicy.compare("any", Qt::CaseInsensitive) == 0)
+        return MaximumGuestScreenSizePolicy_Any;
     /* Fixed type for value which can be parsed: */
     if (QRegularExpression("[1-9]\\d*,[1-9]\\d*").match(strMaximumGuestScreenSizePolicy).hasMatch())
         return MaximumGuestScreenSizePolicy_Fixed;
-    /* Any type for unknown words: */
-    if (!keys.contains(strMaximumGuestScreenSizePolicy, Qt::CaseInsensitive))
-        return MaximumGuestScreenSizePolicy_Any;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strMaximumGuestScreenSizePolicy, Qt::CaseInsensitive)));
+    return MaximumGuestScreenSizePolicy_Any;
 }
 
 /* QString <= UIMediumFormat: */
@@ -2684,20 +2689,19 @@ template<> QString toInternalString(const UIMediumFormat &enmUIMediumFormat)
 /* UIMediumFormat <= QString: */
 template<> UIMediumFormat fromInternalString<UIMediumFormat>(const QString &strUIMediumFormat)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;    QList<UIMediumFormat> values;
-    keys << "VDI";       values << UIMediumFormat_VDI;
-    keys << "VMDK";      values << UIMediumFormat_VMDK;
-    keys << "VHD";       values << UIMediumFormat_VHD;
-    keys << "Parallels"; values << UIMediumFormat_Parallels;
-    keys << "QED";       values << UIMediumFormat_QED;
-    keys << "QCOW";      values << UIMediumFormat_QCOW;
-    /* VDI format for unknown words: */
-    if (!keys.contains(strUIMediumFormat, Qt::CaseInsensitive))
+    if (strUIMediumFormat.compare("VDI", Qt::CaseInsensitive) == 0)
         return UIMediumFormat_VDI;
-    /* Corresponding format for known words: */
-    return values.at(keys.indexOf(QRegExp(strUIMediumFormat, Qt::CaseInsensitive)));
+    if (strUIMediumFormat.compare("VMDK", Qt::CaseInsensitive) == 0)
+        return UIMediumFormat_VMDK;
+    if (strUIMediumFormat.compare("VHD", Qt::CaseInsensitive) == 0)
+        return UIMediumFormat_VHD;
+    if (strUIMediumFormat.compare("Parallels", Qt::CaseInsensitive) == 0)
+        return UIMediumFormat_Parallels;
+    if (strUIMediumFormat.compare("QED", Qt::CaseInsensitive) == 0)
+        return UIMediumFormat_QED;
+    if (strUIMediumFormat.compare("QCOW", Qt::CaseInsensitive) == 0)
+        return UIMediumFormat_QCOW;
+    return UIMediumFormat_VDI;
 }
 
 /* QString <= UISettingsDefs::RecordingMode: */
@@ -2721,17 +2725,13 @@ template<> QString toString(const UISettingsDefs::RecordingMode &enmRecordingMod
 /* UISettingsDefs::RecordingMode <= QString: */
 template<> UISettingsDefs::RecordingMode fromString<UISettingsDefs::RecordingMode>(const QString &strRecordingMode)
 {
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<UISettingsDefs::RecordingMode> values;
-    keys << "Video/Audio"; values << UISettingsDefs::RecordingMode_VideoAudio;
-    keys << "Video Only";  values << UISettingsDefs::RecordingMode_VideoOnly;
-    keys << "Audio Only";  values << UISettingsDefs::RecordingMode_AudioOnly;
-    /* Video/Audio for unknown words: */
-    if (!keys.contains(strRecordingMode, Qt::CaseInsensitive))
+    if (strRecordingMode.compare("Video/Audio", Qt::CaseInsensitive) == 0)
         return UISettingsDefs::RecordingMode_VideoAudio;
-    /* Corresponding format for known words: */
-    return values.at(keys.indexOf(QRegExp(strRecordingMode, Qt::CaseInsensitive)));
+    if (strRecordingMode.compare("Video Only", Qt::CaseInsensitive) == 0)
+        return UISettingsDefs::RecordingMode_VideoOnly;
+    if (strRecordingMode.compare("Audio Only", Qt::CaseInsensitive) == 0)
+        return UISettingsDefs::RecordingMode_AudioOnly;
+    return UISettingsDefs::RecordingMode_VideoAudio;
 }
 
 template<> QString toInternalString(const VMActivityOverviewColumn &enmVMActivityOverviewColumn)
@@ -2764,23 +2764,33 @@ template<> QString toInternalString(const VMActivityOverviewColumn &enmVMActivit
 
 template<> VMActivityOverviewColumn fromInternalString<VMActivityOverviewColumn>(const QString &strVMActivityOverviewColumn)
 {
-    QStringList keys;    QList<VMActivityOverviewColumn> values;
-    keys << "VMName";             values << VMActivityOverviewColumn_Name;
-    keys << "CPUGuestLoad";       values << VMActivityOverviewColumn_CPUGuestLoad;
-    keys << "CPUVMMLoad";         values << VMActivityOverviewColumn_CPUVMMLoad;
-    keys << "RAMUsedAndTotal";    values << VMActivityOverviewColumn_RAMUsedAndTotal;
-    keys << "RAMUsedPercentage";  values << VMActivityOverviewColumn_RAMUsedPercentage;
-    keys << "NetworkUpRate";      values << VMActivityOverviewColumn_NetworkUpRate;
-    keys << "NetworkDownRate";    values << VMActivityOverviewColumn_NetworkDownRate;
-    keys << "NetworkUpTotal";     values << VMActivityOverviewColumn_NetworkUpTotal;
-    keys << "NetworkDownTotal";   values << VMActivityOverviewColumn_NetworkDownTotal;
-    keys << "DiskIOReadRate";     values << VMActivityOverviewColumn_DiskIOReadRate;
-    keys << "DiskIOWriteRate";    values << VMActivityOverviewColumn_DiskIOWriteRate;
-    keys << "DiskIOReadTotal";    values << VMActivityOverviewColumn_DiskIOReadTotal;
-    keys << "DiskIOWriteTotal";   values << VMActivityOverviewColumn_DiskIOWriteTotal;
-    keys << "VMExits";            values << VMActivityOverviewColumn_VMExits;
-    if (!keys.contains(strVMActivityOverviewColumn, Qt::CaseInsensitive))
-        return VMActivityOverviewColumn_Max;
-    /* Corresponding format for known words: */
-    return values.at(keys.indexOf(QRegExp(strVMActivityOverviewColumn, Qt::CaseInsensitive)));
+    if (strVMActivityOverviewColumn.compare("VMName", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_Name;
+    if (strVMActivityOverviewColumn.compare("CPUGuestLoad", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_CPUGuestLoad;
+    if (strVMActivityOverviewColumn.compare("CPUVMMLoad", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_CPUVMMLoad;
+    if (strVMActivityOverviewColumn.compare("RAMUsedAndTotal", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_RAMUsedAndTotal;
+    if (strVMActivityOverviewColumn.compare("RAMUsedPercentage", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_RAMUsedPercentage;
+    if (strVMActivityOverviewColumn.compare("NetworkUpRate", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_NetworkUpRate;
+    if (strVMActivityOverviewColumn.compare("NetworkDownRate", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_NetworkDownRate;
+    if (strVMActivityOverviewColumn.compare("NetworkUpTotal", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_NetworkUpTotal;
+    if (strVMActivityOverviewColumn.compare("NetworkDownTotal", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_NetworkDownTotal;
+    if (strVMActivityOverviewColumn.compare("DiskIOReadRate", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_DiskIOReadRate;
+    if (strVMActivityOverviewColumn.compare("DiskIOWriteRate", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_DiskIOWriteRate;
+    if (strVMActivityOverviewColumn.compare("DiskIOReadTotal", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_DiskIOReadTotal;
+    if (strVMActivityOverviewColumn.compare("DiskIOWriteTotal", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_DiskIOWriteTotal;
+    if (strVMActivityOverviewColumn.compare("VMExits", Qt::CaseInsensitive) == 0)
+        return VMActivityOverviewColumn_VMExits;
+    return VMActivityOverviewColumn_Max;
 }
