@@ -3219,7 +3219,7 @@ void UIMachineSettingsStorage::putToCache()
             newAttachmentData.m_fTempEject = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttIsTempEject).toBool();
             newAttachmentData.m_fNonRotational = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttIsNonRotational).toBool();
             newAttachmentData.m_fHotPluggable = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttIsHotPluggable).toBool();
-            newAttachmentData.m_uMediumId = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttMediumId).toString();
+            newAttachmentData.m_uMediumId = QUuid(m_pModelStorage->data(attachmentIndex, StorageModel::R_AttMediumId).toString());
             const QString strAttachmentKey = QString("%1:%2").arg(newAttachmentData.m_iPort).arg(newAttachmentData.m_iDevice);
 
             /* Cache new attachment data: */
@@ -3290,13 +3290,13 @@ bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
             const QString key(m_pModelStorage->data(attachmentIndex, StorageModel::R_AttMediumId).toString());
             const QString value(QString("%1 (%2)").arg(ctrName, gpConverter->toString(attSlot)));
             /* Check for emptiness: */
-            if (uiCommon().medium(key).isNull() && enmDeviceType == KDeviceType_HardDisk)
+            if (uiCommon().medium(QUuid(key)).isNull() && enmDeviceType == KDeviceType_HardDisk)
             {
                 message.second << tr("No hard disk is selected for <i>%1</i>.").arg(value);
                 fPass = false;
             }
             /* Check for coincidence: */
-            if (!uiCommon().medium(key).isNull() && config.contains(key) && enmDeviceType != KDeviceType_DVD)
+            if (!uiCommon().medium(QUuid(key)).isNull() && config.contains(key) && enmDeviceType != KDeviceType_DVD)
             {
                 message.second << tr("<i>%1</i> is using a disk that is already attached to <i>%2</i>.")
                                      .arg(value).arg(config[key]);
@@ -3500,7 +3500,7 @@ void UIMachineSettingsStorage::sltHandleMediumEnumerated(const QUuid &uMediumId)
         for (int j = 0; j < m_pModelStorage->rowCount(controllerIndex); ++j)
         {
             const QModelIndex attachmentIndex = m_pModelStorage->index(j, 0, controllerIndex);
-            const QUuid attMediumId = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttMediumId).toString();
+            const QUuid attMediumId(m_pModelStorage->data(attachmentIndex, StorageModel::R_AttMediumId).toString());
             if (attMediumId == medium.id())
             {
                 m_pModelStorage->setData(attachmentIndex, attMediumId, StorageModel::R_AttMediumId);
@@ -3521,7 +3521,7 @@ void UIMachineSettingsStorage::sltHandleMediumDeleted(const QUuid &uMediumId)
         for (int j = 0; j < m_pModelStorage->rowCount(controllerIndex); ++j)
         {
             QModelIndex attachmentIndex = m_pModelStorage->index(j, 0, controllerIndex);
-            QUuid attMediumId = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttMediumId).toString();
+            QUuid attMediumId(m_pModelStorage->data(attachmentIndex, StorageModel::R_AttMediumId).toString());
             if (attMediumId == uMediumId)
             {
                 m_pModelStorage->setData(attachmentIndex, UIMedium().id(), StorageModel::R_AttMediumId);
@@ -3804,7 +3804,7 @@ void UIMachineSettingsStorage::sltGetInformation()
 
                 /* Fetch device-type, medium-id: */
                 m_pMediumIdHolder->setType(mediumTypeToLocal(enmDeviceType));
-                m_pMediumIdHolder->setId(m_pModelStorage->data(index, StorageModel::R_AttMediumId).toString());
+                m_pMediumIdHolder->setId(QUuid(m_pModelStorage->data(index, StorageModel::R_AttMediumId).toString()));
 
                 /* Get/fetch editable state: */
                 const bool fIsEditable =    (isMachineOffline())
@@ -4042,7 +4042,7 @@ void UIMachineSettingsStorage::sltChooseHostDrive()
     QAction *pChooseHostDriveAction = qobject_cast<QAction*>(sender());
     AssertMsg(pChooseHostDriveAction, ("Can't access choose-host-drive action!\n"));
     if (pChooseHostDriveAction)
-        m_pMediumIdHolder->setId(pChooseHostDriveAction->data().toString());
+        m_pMediumIdHolder->setId(QUuid(pChooseHostDriveAction->data().toString()));
 }
 
 void UIMachineSettingsStorage::sltChooseRecentMedium()
@@ -4457,7 +4457,7 @@ void UIMachineSettingsStorage::sltHandleDragMove(QDragMoveEvent *pEvent)
         return;
     /* Then make sure we support such attachment device type: */
     const DeviceTypeList devicesList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
-    if (!devicesList.contains(m_pModelStorage->attachmentDeviceType(strControllerId, strAttachmentId)))
+    if (!devicesList.contains(m_pModelStorage->attachmentDeviceType(QUuid(strControllerId), QUuid(strAttachmentId))))
         return;
     /* Also make sure there is enough place for new attachment: */
     const bool fIsMoreAttachmentsPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool();
@@ -4486,7 +4486,7 @@ void UIMachineSettingsStorage::sltHandleDragDrop(QDropEvent *pEvent)
         /* Get controller/attachment ids: */
         const QString strControllerId = pMimeData->data(UIMachineSettingsStorage::s_strControllerMimeType);
         const QString strAttachmentId = pMimeData->data(UIMachineSettingsStorage::s_strAttachmentMimeType);
-        m_pModelStorage->moveAttachment(strAttachmentId, strControllerId, pItemController->id());
+        m_pModelStorage->moveAttachment(QUuid(strAttachmentId), QUuid(strControllerId), pItemController->id());
     }
 }
 

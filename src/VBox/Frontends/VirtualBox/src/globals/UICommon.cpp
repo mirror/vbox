@@ -474,13 +474,13 @@ void UICommon::prepare()
         {
             enmOptType = OptType_VMRunner;
             if (++i < argc)
-                m_uFloppyImage = arguments.at(i);
+                m_uFloppyImage = QUuid(arguments.at(i));
         }
         else if (!::strcmp(arg, "--dvd") || !::strcmp(arg, "--cdrom"))
         {
             enmOptType = OptType_VMRunner;
             if (++i < argc)
-                m_uDvdImage = arguments.at(i);
+                m_uDvdImage = QUuid(arguments.at(i));
         }
         /* VMM Options: */
         else if (!::strcmp(arg, "--execute-all-in-iem"))
@@ -590,7 +590,7 @@ void UICommon::prepare()
         if (!uuid.isNull())
         {
             if (machine.isNull() && showStartVMErrors())
-                return msgCenter().cannotFindMachineById(m_comVBox, vmNameOrUuid);
+                return msgCenter().cannotFindMachineById(m_comVBox, uuid);
         }
         else
         {
@@ -1915,7 +1915,7 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
             }
             /* Use medium ID which was passed: */
             else if (!target.data.isNull() && target.data != uCurrentID.toString())
-                uNewID = target.data;
+                uNewID = QUuid(target.data);
 
             /* Should we mount or unmount? */
             fMount = !uNewID.isNull();

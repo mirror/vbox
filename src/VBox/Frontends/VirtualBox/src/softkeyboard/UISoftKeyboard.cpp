@@ -3302,7 +3302,7 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
         else if (m_xmlReader.name() == QLatin1String("name"))
             physicalLayout.setName(m_xmlReader.readElementText());
         else if (m_xmlReader.name() == QLatin1String("id"))
-            physicalLayout.setUid(m_xmlReader.readElementText());
+            physicalLayout.setUid(QUuid(m_xmlReader.readElementText()));
         else
             m_xmlReader.skipCurrentElement();
     }

@@ -520,7 +520,7 @@ QUuid UIVisoCreatorWidget::createViso(UIActionPool *pActionPool, QWidget *pParen
     UIVisoCreatorDialog *pVisoCreator = new UIVisoCreatorDialog(pActionPool, pDialogParent, strMachineName);
 
     if (!pVisoCreator)
-        return QString();
+        return QUuid();
     windowManager().registerNewParent(pVisoCreator, pDialogParent);
     pVisoCreator->setCurrentPath(gEDataManager->visoCreatorRecentFolder());
 
