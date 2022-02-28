@@ -524,12 +524,12 @@ QString UIChart::YAxisValueLabel(quint64 iValue) const
 {
     if (m_pMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
         return QString::number(iValue);
-    else if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
+    if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
         return UITranslator::formatSize(_1K * (quint64)iValue, g_iDecimalCount);
-    else if (m_pMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
-             m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
+    if (   m_pMetric->unit().compare("b", Qt::CaseInsensitive) == 0
+        || m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
         return UITranslator::formatSize(iValue, g_iDecimalCount);
-    else if (m_pMetric->unit().compare("times", Qt::CaseInsensitive) == 0)
+    if (m_pMetric->unit().compare("times", Qt::CaseInsensitive) == 0)
         return UITranslator::addMetricSuffixToNumber(iValue);
     return QString();
 }
