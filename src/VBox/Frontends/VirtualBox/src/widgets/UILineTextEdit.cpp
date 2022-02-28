@@ -37,7 +37,7 @@ UITextEditor::UITextEditor(QWidget *pParent /* = NULL */)
   : QIWithRetranslateUI<QIDialog>(pParent)
 {
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    pMainLayout->setMargin(12);
+    pMainLayout->setContentsMargins(12, 12, 12, 12);
 
     /* We need a text editor */
     m_pTextEdit = new QTextEdit(this);

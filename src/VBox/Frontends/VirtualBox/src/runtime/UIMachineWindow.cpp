@@ -490,7 +490,7 @@ void UIMachineWindow::prepareMainLayout()
 
     /* Create main-layout: */
     m_pMainLayout = new QGridLayout(centralWidget());
-    m_pMainLayout->setMargin(0);
+    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
     m_pMainLayout->setSpacing(0);
 
     /* Create shifting-spacers: */

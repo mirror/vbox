@@ -281,7 +281,7 @@ void UIProgressDialog::prepareWidgets()
         AssertPtrReturnVoid(pDescriptionLayout);
         {
             /* Configure layout: */
-            pDescriptionLayout->setMargin(0);
+            pDescriptionLayout->setContentsMargins(0, 0, 0, 0);
 
             /* Add stretch: */
             pDescriptionLayout->addStretch(1);
@@ -308,7 +308,7 @@ void UIProgressDialog::prepareWidgets()
             AssertPtrReturnVoid(pProgressLayout);
             {
                 /* Configure layout: */
-                pProgressLayout->setMargin(0);
+                pProgressLayout->setContentsMargins(0, 0, 0, 0);
 
                 /* Create progress-bar: */
                 m_pProgressBar = new QProgressBar;

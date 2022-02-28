@@ -240,9 +240,9 @@ void UIFilmContainer::setValue(const QVector<BOOL> &value)
         if (pWidgetLayout)
         {
             /* Configure widget-layout: */
-            pWidgetLayout->setMargin(0);
+            pWidgetLayout->setContentsMargins(0, 0, 0, 0);
 #ifdef VBOX_WS_MAC
-            pWidgetLayout->setSpacing(5);
+            pWidgetLayout->setContentsMargins(5, 5, 5, 5);
 #else
             pWidgetLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
 #endif
@@ -292,7 +292,7 @@ void UIFilmContainer::prepareLayout()
     if (m_pMainLayout)
     {
         /* Configure layout: */
-        m_pMainLayout->setMargin(0);
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
         m_pMainLayout->setSpacing(0);
     }
 }

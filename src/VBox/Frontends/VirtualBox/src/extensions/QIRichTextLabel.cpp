@@ -37,7 +37,7 @@ QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
     if (pMainLayout)
     {
         /* Configure layout: */
-        pMainLayout->setMargin(0);
+        pMainLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create text-browser: */
         m_pTextBrowser = new QTextBrowser;

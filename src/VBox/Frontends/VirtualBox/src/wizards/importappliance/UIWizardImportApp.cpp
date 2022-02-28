@@ -48,7 +48,7 @@ public:
     {
         /* Create widgets: */
         QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-            pMainLayout->setMargin(12);
+            pMainLayout->setContentsMargins(12, 12, 12, 12);
             m_pCaption = new QLabel(this);
                 m_pCaption->setWordWrap(true);
             m_pLicenseText = new QTextEdit(this);
