@@ -203,11 +203,6 @@ VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCC pVM, PVMCPUCC 
 
 #endif
 
-#ifdef IN_RING0
-/** @defgroup grp_hm_r0    The HM ring-0 Context API
- * @{
- */
-
 /** @name HMVMX_READ_XXX - Flags for reading auxiliary VM-exit VMCS fields.
  *
  * These flags allow reading VMCS fields that are not necessarily part of the
@@ -248,6 +243,10 @@ VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCC pVM, PVMCPUCC 
                                                      | HMVMX_READ_GUEST_PENDING_DBG_XCPTS)
 /** @} */
 
+#ifdef IN_RING0
+/** @defgroup grp_hm_r0    The HM ring-0 Context API
+ * @{
+ */
 /**
  * HM VM-exit auxiliary info.
  */
