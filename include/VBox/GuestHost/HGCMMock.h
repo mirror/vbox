@@ -397,7 +397,7 @@ static DECLCALLBACK(int) tstHgcmMockSvcCallComplete(VBOXHGCMCALLHANDLE callHandl
     PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
     size_t i = 0;
-    for (i; RT_ELEMENTS(pSvc->aHgcmClient); i++)
+    for (; RT_ELEMENTS(pSvc->aHgcmClient); i++)
     {
         PTSTHGCMMOCKCLIENT pClient = &pSvc->aHgcmClient[i];
         if (&pClient->hCall == callHandle) /* Slow, but works for now. */
@@ -704,7 +704,7 @@ VBGLR3DECL(int) VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo)
     PVBOXHGCMSVCPARM       paDstParms  = (PVBOXHGCMSVCPARM)RTMemAlloc(pInfo->cParms * sizeof(VBOXHGCMSVCPARM));
 
     uint16_t i = 0;
-    for (i; i < pInfo->cParms; i++)
+    for (; i < pInfo->cParms; i++)
     {
         switch (offSrcParms->type)
         {
@@ -747,8 +747,7 @@ VBGLR3DECL(int) VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo)
     {
         offSrcParms = VBGL_HGCM_GET_CALL_PARMS(pInfo);
 
-        uint16_t i = 0;
-        for (; i < pInfo->cParms; i++)
+        for (i = 0; i < pInfo->cParms; i++)
         {
             paDstParms[i].type = offSrcParms->type;
             switch (paDstParms[i].type)
