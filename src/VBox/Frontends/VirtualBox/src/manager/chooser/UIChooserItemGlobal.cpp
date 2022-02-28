@@ -498,7 +498,12 @@ void UIChooserItemGlobal::updateMinimumNameWidth()
     /* Calculate new minimum name width: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
     const QFontMetrics fm(m_nameFont, pPaintDevice);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    const int iMinimumNameWidth = fm.horizontalAdvance(compressText(m_nameFont, pPaintDevice, name(),
+                                                                    textWidth(m_nameFont, pPaintDevice, 15)));
+#else
     const int iMinimumNameWidth = fm.width(compressText(m_nameFont, pPaintDevice, name(), textWidth(m_nameFont, pPaintDevice, 15)));
+#endif
 
     /* Is there something changed? */
     if (m_iMinimumNameWidth == iMinimumNameWidth)

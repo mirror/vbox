@@ -2877,7 +2877,11 @@ void StorageDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
     QString strShortText(strText);
     QFont font = pModel->data(index, Qt::FontRole).value<QFont>();
     QFontMetrics fm(font);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    while ((strShortText.size() > 1) && (fm.horizontalAdvance(strShortText) + fm.horizontalAdvance("...") > iTextWidth))
+#else
     while ((strShortText.size() > 1) && (fm.width(strShortText) + fm.width("...") > iTextWidth))
+#endif
         strShortText.truncate(strShortText.size() - 1);
     if (strShortText != strText)
         strShortText += "...";

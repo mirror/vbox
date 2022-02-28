@@ -431,7 +431,11 @@ void UIMachineSettingsSerial::prepareWidgets()
                 {
                     if (m_pLabelIRQ)
                         m_pLabelIRQ->setBuddy(m_pLineEditIRQ);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+                    m_pLineEditIRQ->setFixedWidth(m_pLineEditIRQ->fontMetrics().horizontalAdvance("8888"));
+#else
                     m_pLineEditIRQ->setFixedWidth(m_pLineEditIRQ->fontMetrics().width("8888"));
+#endif
                     m_pLineEditIRQ->setValidator(new QIULongValidator(0, 255, this));
                     pLayoutPortSettings->addWidget(m_pLineEditIRQ, 0, 3);
                 }
@@ -445,7 +449,11 @@ void UIMachineSettingsSerial::prepareWidgets()
                 {
                     if (m_pLabelIOPort)
                         m_pLabelIOPort->setBuddy(m_pLineEditIOPort);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+                    m_pLineEditIOPort->setFixedWidth(m_pLineEditIOPort->fontMetrics().horizontalAdvance("8888888"));
+#else
                     m_pLineEditIOPort->setFixedWidth(m_pLineEditIOPort->fontMetrics().width("8888888"));
+#endif
                     m_pLineEditIOPort->setValidator(new QIULongValidator(0, 0xFFFF, this));
                     pLayoutPortSettings->addWidget(m_pLineEditIOPort, 0, 5);
                 }

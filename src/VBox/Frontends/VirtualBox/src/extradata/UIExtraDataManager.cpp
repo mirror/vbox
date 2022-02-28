@@ -328,8 +328,13 @@ QSize UIChooserPaneDelegate::sizeHint(const QStyleOptionViewItem &option, const 
     const int iWidth = m_iMargin +
                        pixmapSize.width() +
                        2 * m_iSpacing +
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+                       qMax(fm.horizontalAdvance(index.data(Field_Name).toString()),
+                            fm.horizontalAdvance(index.data(Field_ID).toString())) +
+#else
                        qMax(fm.width(index.data(Field_Name).toString()),
                             fm.width(index.data(Field_ID).toString())) +
+#endif
                        m_iMargin;
     /* Calculate height: */
     const int iHeight = m_iMargin +

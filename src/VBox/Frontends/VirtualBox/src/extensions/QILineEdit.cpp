@@ -171,8 +171,13 @@ QSize QILineEdit::featTextWidth(const QString &strText) const
     // WORKAROUND:
     // The margins are based on qlineedit.cpp of Qt.
     // Maybe they where changed at some time in the future.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    QSize sc(fontMetrics().horizontalAdvance(strText) + 2 * 2,
+             fontMetrics().xHeight()                  + 2 * 1);
+#else
     QSize sc(fontMetrics().width(strText) + 2 * 2,
              fontMetrics().xHeight()     + 2 * 1);
+#endif
     const QSize sa = style()->sizeFromContents(QStyle::CT_LineEdit, &sof, sc, this);
 
     return sa;

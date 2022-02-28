@@ -48,8 +48,13 @@ void UISearchLineEdit::paintEvent(QPaintEvent *pEvent)
     QPainter painter(this);
     QFont pfont = font();
     QString strText = QString("%1/%2").arg(QString::number(m_iScrollToIndex + 1)).arg(QString::number(m_iMatchCount));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    QSize textSize(QApplication::fontMetrics().horizontalAdvance(strText),
+                   QApplication::fontMetrics().height());
+#else
     QSize textSize(QApplication::fontMetrics().width(strText),
                    QApplication::fontMetrics().height());
+#endif
 
     /* Dont draw anything if we dont have enough space: */
     if (textSize.width() > 0.5 * width())

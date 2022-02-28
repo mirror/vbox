@@ -547,7 +547,11 @@ UIWizardImportAppPageSource::UIWizardImportAppPageSource(bool fImportFromOCIByDe
                     {
                         m_pProfileInstanceLabel->setBuddy(m_pProfileInstanceLabel);
                         const QFontMetrics fm(m_pProfileInstanceList->font());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+                        const int iFontWidth = fm.horizontalAdvance('x');
+#else
                         const int iFontWidth = fm.width('x');
+#endif
                         const int iTotalWidth = 50 * iFontWidth;
                         const int iFontHeight = fm.height();
                         const int iTotalHeight = 4 * iFontHeight;

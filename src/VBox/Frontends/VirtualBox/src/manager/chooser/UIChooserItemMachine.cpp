@@ -759,7 +759,12 @@ void UIChooserItemMachine::updateMinimumNameWidth()
     /* Calculate new minimum name width: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
     QFontMetrics fm(m_nameFont, pPaintDevice);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    int iMinimumNameWidth = fm.horizontalAdvance(compressText(m_nameFont, pPaintDevice, name(),
+                                                              textWidth(m_nameFont, pPaintDevice, 15)));
+#else
     int iMinimumNameWidth = fm.width(compressText(m_nameFont, pPaintDevice, name(), textWidth(m_nameFont, pPaintDevice, 15)));
+#endif
 
     /* Is there something changed? */
     if (m_iMinimumNameWidth == iMinimumNameWidth)
@@ -779,9 +784,15 @@ void UIChooserItemMachine::updateMinimumSnapshotNameWidth()
         && !cache()->toLocal()->snapshotName().isEmpty())
     {
         QFontMetrics fm(m_snapshotNameFont, model()->paintDevice());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+        int iBracketWidth = fm.horizontalAdvance("()"); /* bracket width */
+        int iActualTextWidth = fm.horizontalAdvance(cache()->toLocal()->snapshotName()); /* snapshot-name width */
+        int iMinimumTextWidth = fm.horizontalAdvance("..."); /* ellipsis width */
+#else
         int iBracketWidth = fm.width("()"); /* bracket width */
         int iActualTextWidth = fm.width(cache()->toLocal()->snapshotName()); /* snapshot-name width */
         int iMinimumTextWidth = fm.width("..."); /* ellipsis width */
+#endif
         iMinimumSnapshotNameWidth = iBracketWidth + qMin(iActualTextWidth, iMinimumTextWidth);
     }
 
@@ -868,7 +879,11 @@ void UIChooserItemMachine::updateVisibleSnapshotName()
     QPaintDevice *pPaintDevice = model()->paintDevice();
 
     /* Calculate new visible snapshot-name: */
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    int iBracketWidth = QFontMetrics(m_snapshotNameFont, pPaintDevice).horizontalAdvance("()");
+#else
     int iBracketWidth = QFontMetrics(m_snapshotNameFont, pPaintDevice).width("()");
+#endif
     QString strVisibleSnapshotName = compressText(m_snapshotNameFont, pPaintDevice, cache()->toLocal()->snapshotName(),
                                                   m_iMaximumSnapshotNameWidth - iBracketWidth);
     strVisibleSnapshotName = QString("(%1)").arg(strVisibleSnapshotName);

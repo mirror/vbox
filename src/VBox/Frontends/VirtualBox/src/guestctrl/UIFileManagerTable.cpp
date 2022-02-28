@@ -445,10 +445,18 @@ void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
 
         if (i < folderList.size() - 1)
         {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+            iWidth += fontMetrics().horizontalAdvance(" > ");
+#else
             iWidth += fontMetrics().width(" > ");
+#endif
             strWord.append("<b> > </b>");
         }
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+        iWidth += fontMetrics().horizontalAdvance(strFolder);
+#else
         iWidth += fontMetrics().width(strFolder);
+#endif
 
         if (iWidth < width())
             strLabelText.prepend(strWord);

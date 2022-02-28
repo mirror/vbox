@@ -747,7 +747,12 @@ QVariant UIPortForwardingModel::data(const QModelIndex &index, int iRole) const
             {
                 case UIPortForwardingDataType_HostIp:
                 case UIPortForwardingDataType_GuestIp:
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+                    return QSize(QApplication::fontMetrics().horizontalAdvance(" 888.888.888.888 "),
+                                 QApplication::fontMetrics().height());
+#else
                     return QSize(QApplication::fontMetrics().width(" 888.888.888.888 "), QApplication::fontMetrics().height());
+#endif
                 default: return QVariant();
             }
         }

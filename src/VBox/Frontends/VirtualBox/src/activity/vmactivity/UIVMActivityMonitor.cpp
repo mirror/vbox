@@ -494,8 +494,13 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                     painter.drawLine(cursorPosition.x(), 0,
                                      cursorPosition.x(), height() - m_iMarginBottom);
                     QString strValue = QString::number(data->at(data->size() - m_iDataIndexUnderCursor));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+                    painter.drawText(m_iMarginLeft - fontMetrics.horizontalAdvance(strValue) - iAverageFontWidth,
+                                     height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
+#else
                     painter.drawText(m_iMarginLeft - fontMetrics.width(strValue) - iAverageFontWidth,
                                      height() - (fHeight + m_iMarginBottom) + 0.5 * iFontHeight, strValue);
+#endif
 
                 }
             }
@@ -546,7 +551,11 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
     {
         int iTextX = m_lineChartRect.left() + i * m_lineChartRect.width() / (float) (iXSubAxisCount + 1);
         QString strCurrentSec = QString::number(iTotalSeconds - i * iTotalSeconds / (float)(iXSubAxisCount + 1));
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+        int iTextWidth = fontMetrics.horizontalAdvance(strCurrentSec);
+#else
         int iTextWidth = fontMetrics.width(strCurrentSec);
+#endif
         if (i == 0)
         {
             strCurrentSec += " " + m_strXAxisLabel;
@@ -647,7 +656,11 @@ void UIChart::drawDisabledChartRectangle(QPainter &painter)
     do {
         font.setPixelSize(iFontSize);
         --iFontSize;
-    }while(QFontMetrics(font).width(m_strGAWarning) >= 0.8 * m_lineChartRect.width());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    } while (QFontMetrics(font).horizontalAdvance(m_strGAWarning) >= 0.8 * m_lineChartRect.width());
+#else
+    } while (QFontMetrics(font).width(m_strGAWarning) >= 0.8 * m_lineChartRect.width());
+#endif
     font.setBold(true);
     painter.setFont(font);
     painter.drawText(m_lineChartRect, m_strGAWarning);
@@ -1020,7 +1033,11 @@ void UIVMActivityMonitor::retranslateUi()
         if (pLabel)
         {
             QFontMetrics labelFontMetric(pLabel->font());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+            int iWidth = iMaximum * labelFontMetric.horizontalAdvance('X');
+#else
             int iWidth = iMaximum * labelFontMetric.width('X');
+#endif
             foreach (QLabel *pInfoLabel, m_infoLabels)
                 pInfoLabel->setFixedWidth(iWidth);
         }

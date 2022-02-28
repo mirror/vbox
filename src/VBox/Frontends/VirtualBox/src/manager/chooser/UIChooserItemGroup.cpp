@@ -1552,7 +1552,11 @@ void UIChooserItemGroup::updateMinimumHeaderSize()
     QFontMetrics fm(m_nameFont, pPaintDevice);
     int iMaximumNameWidth = textWidth(m_nameFont, pPaintDevice, 20);
     QString strCompressedName = compressText(m_nameFont, pPaintDevice, name(), iMaximumNameWidth);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    int iMinimumNameWidth = fm.horizontalAdvance(strCompressedName);
+#else
     int iMinimumNameWidth = fm.width(strCompressedName);
+#endif
     int iMinimumNameHeight = fm.height();
 
     /* Calculate minimum width: */

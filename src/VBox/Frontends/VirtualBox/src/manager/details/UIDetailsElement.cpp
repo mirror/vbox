@@ -348,7 +348,11 @@ void UIDetailsElement::setName(const QString &strName)
     /* Cache name: */
     m_strName = strName;
     QFontMetrics fm(m_nameFont, model()->paintDevice());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    m_nameSize = QSize(fm.horizontalAdvance(m_strName), fm.height());
+#else
     m_nameSize = QSize(fm.width(m_strName), fm.height());
+#endif
 
     /* Update linked values: */
     updateMinimumHeaderWidth();

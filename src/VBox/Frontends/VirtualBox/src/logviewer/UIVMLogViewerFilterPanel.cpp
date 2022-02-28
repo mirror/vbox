@@ -109,7 +109,11 @@ UIVMFilterLineEdit::UIVMFilterLineEdit(QWidget *parent /*= 0*/)
     createButtons();
     /** Try to guess the width of the space between filter terms so that remove button
         we display when a term is selected does not hide the next/previous word: */
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    int spaceWidth = fontMetrics().horizontalAdvance(' ');
+#else
     int spaceWidth = fontMetrics().width(' ');
+#endif
     if (spaceWidth != 0)
         m_iTrailingSpaceCount = (m_iRemoveTermButtonSize / spaceWidth) + 1;
 }
@@ -162,7 +166,11 @@ void UIVMFilterLineEdit::paintEvent(QPaintEvent *event)
         //int deltaHeight = 0.5 * (height() - m_pClearAllButton->height());
         m_pRemoveTermButton->show();
         int buttonSize = m_iRemoveTermButtonSize;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+        int charWidth = fontMetrics().horizontalAdvance('x');
+#else
         int charWidth = fontMetrics().width('x');
+#endif
 #ifdef VBOX_WS_MAC
         int buttonLeft = cursorRect().left() + 1;
 #else

@@ -225,7 +225,11 @@ void UIInformationConfiguration::insertInfoRow(const QString strText1, const QSt
     int iRow = m_pTableWidget->rowCount();
     m_pTableWidget->insertRow(iRow);
     m_pTableWidget->setRowHeight(iRow, fontMetrics.height() + m_iRowTopMargin + m_iRowBottomMargin);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    iMaxColumn1Length = qMax(iMaxColumn1Length, fontMetrics.horizontalAdvance(strText1));
+#else
     iMaxColumn1Length = qMax(iMaxColumn1Length, fontMetrics.width(strText1));
+#endif
     m_pTableWidget->setItem(iRow, 1, new QTableWidgetItem(strText1));
     m_pTableWidget->setItem(iRow, 2, new QTableWidgetItem(strText2));
 }

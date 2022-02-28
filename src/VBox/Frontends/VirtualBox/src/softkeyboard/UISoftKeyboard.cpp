@@ -2058,7 +2058,11 @@ void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter
              painterFont.setBold(true);
              painter.setFont(painterFont);
              QFontMetrics fontMetrics = painter.fontMetrics();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+             int iMargin = 0.25 * fontMetrics.horizontalAdvance('X');
+#else
              int iMargin = 0.25 * fontMetrics.width('X');
+#endif
 
              int iTopWidth = 0;
              /* Some captions are multi line using \n as separator: */
@@ -2071,7 +2075,11 @@ void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter
                      << strShiftAltGrCaption.split("\n", QString::SkipEmptyParts);
 #endif
              foreach (const QString &strPart, strList)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+                 iTopWidth = qMax(iTopWidth, fontMetrics.horizontalAdvance(strPart));
+#else
                  iTopWidth = qMax(iTopWidth, fontMetrics.width(strPart));
+#endif
              strList.clear();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
              strList << strBottomleftString.split("\n", Qt::SkipEmptyParts)
@@ -2083,7 +2091,11 @@ void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter
 
              int iBottomWidth = 0;
              foreach (const QString &strPart, strList)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+                 iBottomWidth = qMax(iBottomWidth, fontMetrics.horizontalAdvance(strPart));
+#else
                  iBottomWidth = qMax(iBottomWidth, fontMetrics.width(strPart));
+#endif
              int iTextWidth =  2 * iMargin + qMax(iTopWidth, iBottomWidth);
              int iTextHeight = 0;
 
@@ -2109,7 +2121,11 @@ void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter
      }
 
      QFontMetrics fontMetrics = painter.fontMetrics();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+     int iMargin = 0.25 * fontMetrics.horizontalAdvance('X');
+#else
      int iMargin = 0.25 * fontMetrics.width('X');
+#endif
      QRect textRect;
      if (key.keyboardRegion() == KeyboardRegion_MultimediaKeys)
          textRect = QRect(2 * iMargin, iMargin,
