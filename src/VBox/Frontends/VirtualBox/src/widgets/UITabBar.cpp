@@ -801,7 +801,7 @@ bool UITabBar::removeTab(const QUuid &uuid)
         }
     }
     /* Flush wiped out items: */
-    m_aItems.removeAll(0);
+    m_aItems.removeAll((UITabBarItem *)0);
 
     /* If we had removed current item: */
     if (fMoveCurrent)

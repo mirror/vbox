@@ -308,7 +308,7 @@ void UIActionMenu::hideMenu()
 {
     /* Hide menu if necessary: */
     if (menu())
-        setMenu(0);
+        setMenu((QMenu *)0);
 }
 
 void UIActionMenu::prepare()
