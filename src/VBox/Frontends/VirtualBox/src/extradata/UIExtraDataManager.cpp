@@ -1278,19 +1278,23 @@ void UIExtraDataManagerWindow::sltLoad()
                 continue;
 
             /* Get the name of the current element: */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            const QStringView strElementName = stream.name();
+#else
             const QStringRef strElementName = stream.name();
+#endif
 
             /* Search for the scope ID: */
             QUuid uLoadingID;
-            if (strElementName == "Global")
+            if (strElementName == QLatin1String("Global"))
                 uLoadingID = UIExtraDataManager::GlobalID;
-            else if (strElementName == "Machine")
+            else if (strElementName == QLatin1String("Machine"))
             {
                 const QXmlStreamAttributes attributes = stream.attributes();
                 if (attributes.hasAttribute("uuid"))
                 {
                     const QString strUuid = attributes.value("uuid").toString();
-                    const QUuid uLoadingID = strUuid;
+                    const QUuid uLoadingID(strUuid);
                     if (uLoadingID.isNull())
                         msgCenter().alert(this, MessageType_Warning,
                                           QString("<p>Invalid extra-data ID:</p>"
@@ -1298,7 +1302,7 @@ void UIExtraDataManagerWindow::sltLoad()
                 }
             }
             /* Look particular extra-data entries: */
-            else if (strElementName == "ExtraDataItem")
+            else if (strElementName == QLatin1String("ExtraDataItem"))
             {
                 const QXmlStreamAttributes attributes = stream.attributes();
                 if (attributes.hasAttribute("name") && attributes.hasAttribute("value"))

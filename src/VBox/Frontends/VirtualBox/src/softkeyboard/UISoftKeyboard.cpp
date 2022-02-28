@@ -3285,7 +3285,7 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
 
     m_xmlReader.setDevice(&xmlFile);
 
-    if (!m_xmlReader.readNextStartElement() || m_xmlReader.name() != "physicallayout")
+    if (!m_xmlReader.readNextStartElement() || m_xmlReader.name() != QLatin1String("physicallayout"))
         return false;
     physicalLayout.setFileName(strFileName);
 
@@ -3297,11 +3297,11 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
 
     while (m_xmlReader.readNextStartElement())
     {
-        if (m_xmlReader.name() == "row")
+        if (m_xmlReader.name() == QLatin1String("row"))
             parseRow(iDefaultWidth, iDefaultHeight, rows);
-        else if (m_xmlReader.name() == "name")
+        else if (m_xmlReader.name() == QLatin1String("name"))
             physicalLayout.setName(m_xmlReader.readElementText());
-        else if (m_xmlReader.name() == "id")
+        else if (m_xmlReader.name() == QLatin1String("id"))
             physicalLayout.setUid(m_xmlReader.readElementText());
         else
             m_xmlReader.skipCurrentElement();
@@ -3327,9 +3327,9 @@ void UIPhysicalLayoutReader::parseRow(int iDefaultWidth, int iDefaultHeight, QVe
         row.setDefaultHeight(attributes.value("defaultHeight").toInt());
     while (m_xmlReader.readNextStartElement())
     {
-        if (m_xmlReader.name() == "key")
+        if (m_xmlReader.name() == QLatin1String("key"))
             parseKey(row);
-        else if (m_xmlReader.name() == "space")
+        else if (m_xmlReader.name() == QLatin1String("space"))
             parseKeySpace(row);
         else
             m_xmlReader.skipCurrentElement();
@@ -3345,17 +3345,17 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
     QString strKeyCap;
     while (m_xmlReader.readNextStartElement())
     {
-        if (m_xmlReader.name() == "width")
+        if (m_xmlReader.name() == QLatin1String("width"))
             key.setWidth(m_xmlReader.readElementText().toInt());
-        else if (m_xmlReader.name() == "height")
+        else if (m_xmlReader.name() == QLatin1String("height"))
             key.setHeight(m_xmlReader.readElementText().toInt());
-        else if (m_xmlReader.name() == "scancode")
+        else if (m_xmlReader.name() == QLatin1String("scancode"))
         {
             QString strCode = m_xmlReader.readElementText();
             bool fOk = false;
             key.setScanCode(strCode.toInt(&fOk, 16));
         }
-        else if (m_xmlReader.name() == "scancodeprefix")
+        else if (m_xmlReader.name() == QLatin1String("scancodeprefix"))
         {
             QString strCode = m_xmlReader.readElementText();
             QStringList strList;
@@ -3372,23 +3372,23 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
                     key.addScanCodePrefix(iCode);
             }
         }
-        else if (m_xmlReader.name() == "usageid")
+        else if (m_xmlReader.name() == QLatin1String("usageid"))
         {
             QString strCode = m_xmlReader.readElementText();
             bool fOk = false;
             key.setUsageId(strCode.toInt(&fOk, 16));
         }
-        else if (m_xmlReader.name() == "usagepage")
+        else if (m_xmlReader.name() == QLatin1String("usagepage"))
         {
             QString strCode = m_xmlReader.readElementText();
             bool fOk = false;
             key.setUsagePage(strCode.toInt(&fOk, 16));
         }
-        else if (m_xmlReader.name() == "cutout")
+        else if (m_xmlReader.name() == QLatin1String("cutout"))
             parseCutout(key);
-        else if (m_xmlReader.name() == "position")
+        else if (m_xmlReader.name() == QLatin1String("position"))
             key.setPosition(m_xmlReader.readElementText().toInt());
-        else if (m_xmlReader.name() == "type")
+        else if (m_xmlReader.name() == QLatin1String("type"))
         {
             QString strType = m_xmlReader.readElementText();
             if (strType == "modifier")
@@ -3396,12 +3396,12 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
             else if (strType == "lock")
                 key.setType(KeyType_Lock);
         }
-        else if (m_xmlReader.name() == "osmenukey")
+        else if (m_xmlReader.name() == QLatin1String("osmenukey"))
         {
             if (m_xmlReader.readElementText() == "true")
                 key.setIsOSMenuKey(true);
         }
-        else if (m_xmlReader.name() == "staticcaption")
+        else if (m_xmlReader.name() == QLatin1String("staticcaption"))
             key.setStaticCaption(m_xmlReader.readElementText());
         else
             m_xmlReader.skipCurrentElement();
@@ -3414,9 +3414,9 @@ void UIPhysicalLayoutReader::parseKeySpace(UISoftKeyboardRow &row)
     int iHeight = 0;
     while (m_xmlReader.readNextStartElement())
     {
-        if (m_xmlReader.name() == "width")
+        if (m_xmlReader.name() == QLatin1String("width"))
             iWidth = m_xmlReader.readElementText().toInt();
-        else if (m_xmlReader.name() == "height")
+        else if (m_xmlReader.name() == QLatin1String("height"))
             iHeight = m_xmlReader.readElementText().toInt();
         else
             m_xmlReader.skipCurrentElement();
@@ -3437,11 +3437,11 @@ void UIPhysicalLayoutReader::parseCutout(UISoftKeyboardKey &key)
     int iCorner = 0;
     while (m_xmlReader.readNextStartElement())
     {
-        if (m_xmlReader.name() == "width")
+        if (m_xmlReader.name() == QLatin1String("width"))
             iWidth = m_xmlReader.readElementText().toInt();
-        else if (m_xmlReader.name() == "height")
+        else if (m_xmlReader.name() == QLatin1String("height"))
             iHeight = m_xmlReader.readElementText().toInt();
-        else if (m_xmlReader.name() == "corner")
+        else if (m_xmlReader.name() == QLatin1String("corner"))
         {
             QString strCorner = m_xmlReader.readElementText();
             if (strCorner == "topLeft")
@@ -3511,7 +3511,7 @@ QVector<QPointF> UIPhysicalLayoutReader::computeKeyVertices(const UISoftKeyboard
 }
 
 /*********************************************************************************************************************************
-*   UIKeyboardLayoutReader implementation.                                                                                  *
+*   UIKeyboardLayoutReader implementation.                                                                                       *
 *********************************************************************************************************************************/
 
 bool UIKeyboardLayoutReader::parseFile(const QString &strFileName, UISoftKeyboardLayout &layout)
@@ -3528,20 +3528,20 @@ bool UIKeyboardLayoutReader::parseFile(const QString &strFileName, UISoftKeyboar
 
     m_xmlReader.setDevice(&xmlFile);
 
-    if (!m_xmlReader.readNextStartElement() || m_xmlReader.name() != "layout")
+    if (!m_xmlReader.readNextStartElement() || m_xmlReader.name() != QLatin1String("layout"))
         return false;
 
     while (m_xmlReader.readNextStartElement())
     {
-        if (m_xmlReader.name() == "key")
+        if (m_xmlReader.name() == QLatin1String("key"))
             parseKey(layout);
-        else if (m_xmlReader.name() == "name")
+        else if (m_xmlReader.name() == QLatin1String("name"))
             layout.setName(m_xmlReader.readElementText());
-        else if (m_xmlReader.name() == "nativename")
+        else if (m_xmlReader.name() == QLatin1String("nativename"))
             layout.setNativeName(m_xmlReader.readElementText());
-        else if (m_xmlReader.name() == "physicallayoutid")
+        else if (m_xmlReader.name() == QLatin1String("physicallayoutid"))
             layout.setPhysicalLayoutUuid(QUuid(m_xmlReader.readElementText()));
-        else if (m_xmlReader.name() == "id")
+        else if (m_xmlReader.name() == QLatin1String("id"))
             layout.setUid(QUuid(m_xmlReader.readElementText()));
         else
             m_xmlReader.skipCurrentElement();
@@ -3555,27 +3555,27 @@ void  UIKeyboardLayoutReader::parseKey(UISoftKeyboardLayout &layout)
     int iKeyPosition = 0;
     while (m_xmlReader.readNextStartElement())
     {
-        if (m_xmlReader.name() == "basecaption")
+        if (m_xmlReader.name() == QLatin1String("basecaption"))
         {
             keyCaptions.m_strBase = m_xmlReader.readElementText();
             keyCaptions.m_strBase.replace("\\n", "\n");
         }
-        else if (m_xmlReader.name() == "shiftcaption")
+        else if (m_xmlReader.name() == QLatin1String("shiftcaption"))
         {
             keyCaptions.m_strShift = m_xmlReader.readElementText();
             keyCaptions.m_strShift.replace("\\n", "\n");
         }
-        else if (m_xmlReader.name() == "altgrcaption")
+        else if (m_xmlReader.name() == QLatin1String("altgrcaption"))
         {
             keyCaptions.m_strAltGr = m_xmlReader.readElementText();
             keyCaptions.m_strAltGr.replace("\\n", "\n");
         }
-        else if (m_xmlReader.name() == "shiftaltgrcaption")
+        else if (m_xmlReader.name() == QLatin1String("shiftaltgrcaption"))
         {
             keyCaptions.m_strShiftAltGr = m_xmlReader.readElementText();
             keyCaptions.m_strShiftAltGr.replace("\\n", "\n");
         }
-        else if (m_xmlReader.name() == "position")
+        else if (m_xmlReader.name() == QLatin1String("position"))
             iKeyPosition = m_xmlReader.readElementText().toInt();
         else
             m_xmlReader.skipCurrentElement();
@@ -3585,7 +3585,7 @@ void  UIKeyboardLayoutReader::parseKey(UISoftKeyboardLayout &layout)
 
 
 /*********************************************************************************************************************************
-*   UISoftKeyboardStatusBarWidget  implementation.                                                                               *
+*   UISoftKeyboardStatusBarWidget implementation.                                                                                *
 *********************************************************************************************************************************/
 
 UISoftKeyboardStatusBarWidget::UISoftKeyboardStatusBarWidget(QWidget *pParent /* = 0*/ )

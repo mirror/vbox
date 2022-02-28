@@ -26,7 +26,11 @@ struct UIDebuggerMetricData
 {
     UIDebuggerMetricData()
         : m_counter(0){}
-    UIDebuggerMetricData(const QStringRef & strName, quint64 counter)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    UIDebuggerMetricData(const QStringView &strName, quint64 counter)
+#else
+    UIDebuggerMetricData(const QStringRef &strName, quint64 counter)
+#endif
         : m_strName(strName.toString())
         , m_counter(counter){}
     QString m_strName;

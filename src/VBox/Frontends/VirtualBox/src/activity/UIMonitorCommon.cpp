@@ -92,13 +92,13 @@ QVector<UIDebuggerMetricData> UIMonitorCommon::getAndParseStatsFromDebugger(CMac
     {
         while (xmlReader.readNextStartElement())
         {
-            if (xmlReader.name() == "Counter")
+            if (xmlReader.name() == QLatin1String("Counter"))
             {
                 QXmlStreamAttributes attributes = xmlReader.attributes();
                 quint64 iCounter = attributes.value("c").toULongLong();
                 xmlData.push_back(UIDebuggerMetricData(attributes.value("name"), iCounter));
             }
-            else if (xmlReader.name() == "U64")
+            else if (xmlReader.name() == QLatin1String("U64"))
             {
                 QXmlStreamAttributes attributes = xmlReader.attributes();
                 quint64 iCounter = attributes.value("val").toULongLong();
