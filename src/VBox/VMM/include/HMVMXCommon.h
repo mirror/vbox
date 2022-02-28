@@ -417,8 +417,6 @@ AssertCompileMemberAlignment(VMXVMCSINFO, hMemObj,         8);
 
 /** @} */
 
-/** @} */
-
 RT_C_DECLS_END
 
 #endif /* !VMM_INCLUDED_SRC_include_HMVMXCommon_h */
