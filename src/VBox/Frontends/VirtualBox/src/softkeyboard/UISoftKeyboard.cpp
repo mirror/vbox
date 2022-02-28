@@ -2063,13 +2063,23 @@ void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter
              int iTopWidth = 0;
              /* Some captions are multi line using \n as separator: */
              QStringList strList;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+             strList << strTopleftString.split("\n", Qt::SkipEmptyParts)
+                     << strShiftAltGrCaption.split("\n", Qt::SkipEmptyParts);
+#else
              strList << strTopleftString.split("\n", QString::SkipEmptyParts)
                      << strShiftAltGrCaption.split("\n", QString::SkipEmptyParts);
+#endif
              foreach (const QString &strPart, strList)
                  iTopWidth = qMax(iTopWidth, fontMetrics.width(strPart));
              strList.clear();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+             strList << strBottomleftString.split("\n", Qt::SkipEmptyParts)
+                     << strAltGrCaption.split("\n", Qt::SkipEmptyParts);
+#else
              strList << strBottomleftString.split("\n", QString::SkipEmptyParts)
                      << strAltGrCaption.split("\n", QString::SkipEmptyParts);
+#endif
 
              int iBottomWidth = 0;
              foreach (const QString &strPart, strList)
@@ -3349,7 +3359,11 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
         {
             QString strCode = m_xmlReader.readElementText();
             QStringList strList;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+            strList << strCode.split('-', Qt::SkipEmptyParts);
+#else
             strList << strCode.split('-', QString::SkipEmptyParts);
+#endif
             foreach (const QString &strPrefix, strList)
             {
                 bool fOk = false;

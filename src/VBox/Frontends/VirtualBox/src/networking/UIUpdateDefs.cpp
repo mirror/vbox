@@ -176,7 +176,11 @@ void VBoxUpdateData::decode()
     /* Parse other values: */
     else
     {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        QStringList parser(m_strData.split(", ", Qt::SkipEmptyParts));
+#else
         QStringList parser(m_strData.split(", ", QString::SkipEmptyParts));
+#endif
 
         /* Parse 'period' value: */
         if (parser.size() > 0)

@@ -603,7 +603,11 @@ void UIFileManagerGuestTable::goToHomeDirectory()
         emit sigLogOutput(UIErrorString::formatErrorInfo(m_comGuestSession), m_strTableName, FileManagerLogType_Error);
         return;
     }
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    QStringList pathList = userHome.split(UIPathOperations::delimiter, Qt::SkipEmptyParts);
+#else
     QStringList pathList = userHome.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+#endif
     goIntoDirectory(UIPathOperations::pathTrail(userHome));
 }
 

@@ -133,7 +133,11 @@ const QChar UIPathOperations::dosDelimiter = QChar('\\');
 
 /* static */ QStringList UIPathOperations::pathTrail(const QString &path)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    return path.split(UIPathOperations::delimiter, Qt::SkipEmptyParts);
+#else
     return path.split(UIPathOperations::delimiter, QString::SkipEmptyParts);
+#endif
 }
 
 /* static */ bool UIPathOperations::doesPathStartWithDriveLetter(const QString &path)

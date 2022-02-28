@@ -524,7 +524,11 @@ void UIPopupPane::prepareDetailsList(QStringPairList &aDetailsList) const
         return;
 
     /* Split details into paragraphs: */
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    QStringList aParagraphs(m_strDetails.split("<!--EOP-->", Qt::SkipEmptyParts));
+#else
     QStringList aParagraphs(m_strDetails.split("<!--EOP-->", QString::SkipEmptyParts));
+#endif
     /* Make sure details-text has at least one paragraph: */
     AssertReturnVoid(!aParagraphs.isEmpty());
 
@@ -532,7 +536,11 @@ void UIPopupPane::prepareDetailsList(QStringPairList &aDetailsList) const
     foreach (const QString &strParagraph, aParagraphs)
     {
         /* Split each paragraph into pairs: */
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        QStringList aParts(strParagraph.split("<!--EOM-->", Qt::KeepEmptyParts));
+#else
         QStringList aParts(strParagraph.split("<!--EOM-->", QString::KeepEmptyParts));
+#endif
         /* Make sure each paragraph consist of 2 parts: */
         AssertReturnVoid(aParts.size() == 2);
         /* Append each pair into details-list: */

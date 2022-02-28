@@ -1290,7 +1290,11 @@ bool UIVMActivityMonitor::guestAdditionsAvailable(int iMinimumMajorVersion)
     bool fGuestAdditionsStatus = m_comGuest.GetAdditionsStatus(m_comGuest.GetAdditionsRunLevel());
     if (fGuestAdditionsStatus)
     {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        QStringList versionStrings = m_comGuest.GetAdditionsVersion().split('.', Qt::SkipEmptyParts);
+#else
         QStringList versionStrings = m_comGuest.GetAdditionsVersion().split('.', QString::SkipEmptyParts);
+#endif
         if (!versionStrings.isEmpty())
         {
             bool fConvert = false;
