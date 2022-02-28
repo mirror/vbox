@@ -290,12 +290,6 @@ AssertCompileSizeAlignment(VUSBDEV, 8);
 
 int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilename);
 void vusbDevDestroy(PVUSBDEV pDev);
-
-DECLINLINE(bool) vusbDevIsRh(PVUSBDEV pDev)
-{
-    return (pDev->pHub == (PVUSBROOTHUB)pDev);
-}
-
 bool vusbDevDoSelectConfig(PVUSBDEV dev, PCVUSBDESCCONFIGEX pCfg);
 void vusbDevMapEndpoint(PVUSBDEV dev, PCVUSBDESCENDPOINTEX ep);
 int vusbDevDetach(PVUSBDEV pDev);
@@ -354,8 +348,6 @@ typedef struct VUSBROOTHUBLOAD *PVUSBROOTHUBLOAD;
  */
 typedef struct VUSBROOTHUB
 {
-    /** VUSB device data for the roothub @todo Remove. */
-    VUSBDEV                     Dev;
     /** Pointer to the driver instance. */
     PPDMDRVINS                  pDrvIns;
     /** Pointer to the root hub port interface we're attached to. */
@@ -372,12 +364,16 @@ typedef struct VUSBROOTHUB
     /** Structure after a saved state load to re-attach devices. */
     PVUSBROOTHUBLOAD            pLoad;
 
+    /** Roothub device state. */
+    VUSBDEVICESTATE             enmState;
     /** Number of ports this roothub offers. */
     uint16_t                    cPorts;
     /** Number of devices attached to this roothub currently. */
     uint16_t                    cDevices;
     /** Name of the roothub. Used for logging. */
     char                        *pszName;
+    /** URB pool for URBs from the roothub. */
+    VUSBURBPOOL                 UrbPool;
 
 #if HC_ARCH_BITS == 32
     uint32_t                   Alignment0;
@@ -675,12 +671,14 @@ DECLINLINE(bool) vusbDevSetStateCmp(PVUSBDEV pDev, VUSBDEVICESTATE enmStateNew, 
  *
  * @returns New reference count.
  * @param   pThis          The VUSB device pointer.
+ * @param   pszWho         Caller of the retaining.
  */
-DECLINLINE(uint32_t) vusbDevRetain(PVUSBDEV pThis)
+DECLINLINE(uint32_t) vusbDevRetain(PVUSBDEV pThis, const char *pszWho)
 {
     AssertPtrReturn(pThis, UINT32_MAX);
 
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    LogFlowFunc(("pThis=%p{.cRefs=%u}[%s]\n", pThis, cRefs, pszWho)); RT_NOREF(pszWho);
     AssertMsg(cRefs > 1 && cRefs < _1M, ("%#x %p\n", cRefs, pThis));
     return cRefs;
 }
@@ -690,12 +688,15 @@ DECLINLINE(uint32_t) vusbDevRetain(PVUSBDEV pThis)
  *
  * @returns New reference count.
  * @retval 0 if no onw is holding a reference anymore causing the device to be destroyed.
+ * @param   pThis          The VUSB device pointer.
+ * @param   pszWho         Caller of the retaining.
  */
-DECLINLINE(uint32_t) vusbDevRelease(PVUSBDEV pThis)
+DECLINLINE(uint32_t) vusbDevRelease(PVUSBDEV pThis, const char *pszWho)
 {
     AssertPtrReturn(pThis, UINT32_MAX);
 
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+    LogFlowFunc(("pThis=%p{.cRefs=%u}[%s]\n", pThis, cRefs, pszWho)); RT_NOREF(pszWho);
     AssertMsg(cRefs < _1M, ("%#x %p\n", cRefs, pThis));
     if (cRefs == 0)
         vusbDevDestroy(pThis);

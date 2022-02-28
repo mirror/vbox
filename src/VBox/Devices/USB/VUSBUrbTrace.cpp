@@ -146,7 +146,7 @@ DECLHIDDEN(const char *) vusbUrbTypeName(VUSBXFERTYPE enmType)
 DECLHIDDEN(void) vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
 {
     PVUSBDEV        pDev   = pUrb->pVUsb ? pUrb->pVUsb->pDev : NULL; /* Can be NULL when called from usbProxyConstruct and friends. */
-    PVUSBPIPE       pPipe  = &pDev->aPipes[pUrb->EndPt];
+    PVUSBPIPE       pPipe  = pDev ? &pDev->aPipes[pUrb->EndPt] : NULL;
     const uint8_t  *pbData = pUrb->abData;
     uint32_t        cbData = pUrb->cbData;
     PCVUSBSETUP     pSetup = NULL;

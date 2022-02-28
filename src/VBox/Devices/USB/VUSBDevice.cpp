@@ -1376,8 +1376,7 @@ static void vusbDevResetDone(PVUSBDEV pDev, int rc, PFNVUSBRESETDONE pfnDone, vo
     vusbDevSetState(pDev, VUSB_DEVICE_STATE_DEFAULT);
     pDev->u16Status = 0;
     vusbDevDoSelectConfig(pDev, &g_Config0);
-    if (!vusbDevIsRh(pDev))
-        vusbDevSetAddress(pDev, VUSB_DEFAULT_ADDRESS);
+    vusbDevSetAddress(pDev, VUSB_DEFAULT_ADDRESS);
     if (pfnDone)
         pfnDone(&pDev->IDevice, pDev->i16Port, rc, pvUser);
 }
@@ -1584,16 +1583,6 @@ static DECLCALLBACK(int) vusbIDevicePowerOff(PVUSBIDEVICE pInterface)
     {
         LogRel(("VUSB: %s: power off ignored, the device is resetting!\n", pDev->pUsbIns->pszName));
         return VERR_VUSB_DEVICE_IS_RESETTING;
-    }
-
-    /*
-     * If it's a root hub, we will have to cancel all URBs and reap them.
-     */
-    if (vusbDevIsRh(pDev))
-    {
-        PVUSBROOTHUB pRh = (PVUSBROOTHUB)pDev;
-        VUSBIRhCancelAllUrbs(&pRh->IRhConnector);
-        VUSBIRhReapAsyncUrbs(&pRh->IRhConnector, pDev->i16Port, 0);
     }
 
     vusbDevSetState(pDev, VUSB_DEVICE_STATE_ATTACHED);
