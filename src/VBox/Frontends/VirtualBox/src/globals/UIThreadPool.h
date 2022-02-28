@@ -55,7 +55,7 @@ public:
       *                               pool will wait for the worker-thread on cleanup. */
     UIThreadPool(ulong cMaxWorkers = 3, ulong cMsWorkerIdleTimeout = 5000);
     /** Destructs worker-thread pool. */
-    virtual ~UIThreadPool() /* override */;
+    virtual ~UIThreadPool() RT_OVERRIDE;
 
     /** Returns whether the 'termination sequence' is started. */
     bool isTerminating() const;

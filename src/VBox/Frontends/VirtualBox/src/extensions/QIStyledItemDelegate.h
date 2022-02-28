@@ -56,7 +56,7 @@ protected:
       * The @a pParent widget and style @a option are used to control how the editor widget appears. */
     virtual QWidget *createEditor(QWidget *pParent,
                                   const QStyleOptionViewItem &option,
-                                  const QModelIndex &index) const /* override */;
+                                  const QModelIndex &index) const RT_OVERRIDE;
 
 private:
 

@@ -60,33 +60,33 @@ public:
 protected:
 
     /** Returns whether the page content was changed. */
-    virtual bool changed() const /* override */;
+    virtual bool changed() const RT_OVERRIDE;
 
     /** Loads data into the cache from the corresponding external object(s).
       * @note This task COULD be performed in other than GUI thread. */
-    virtual void loadToCacheFrom(QVariant &data) /* override */;
+    virtual void loadToCacheFrom(QVariant &data) RT_OVERRIDE;
     /** Loads data into the corresponding widgets from the cache,
       * @note This task SHOULD be performed in GUI thread only! */
-    virtual void getFromCache() /* override */;
+    virtual void getFromCache() RT_OVERRIDE;
 
     /** Saves the data from the corresponding widgets into the cache,
       * @note This task SHOULD be performed in GUI thread only! */
-    virtual void putToCache() /* override */;
+    virtual void putToCache() RT_OVERRIDE;
     /** Save data from the cache into the corresponding external object(s).
       * @note This task COULD be performed in other than GUI thread. */
     virtual void saveFromCacheTo(QVariant &data) /* overrride */;
 
     /** Performs validation, updates @a messages list if something is wrong. */
-    virtual bool validate(QList<UIValidationMessage> &messages) /* override */;
+    virtual bool validate(QList<UIValidationMessage> &messages) RT_OVERRIDE;
 
     /** Defines TAB order for passed @a pWidget. */
-    virtual void setOrderAfter(QWidget *pWidget) /* override */;
+    virtual void setOrderAfter(QWidget *pWidget) RT_OVERRIDE;
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Performs final page polishing. */
-    virtual void polishPage() /* override */;
+    virtual void polishPage() RT_OVERRIDE;
 
 private slots:
 

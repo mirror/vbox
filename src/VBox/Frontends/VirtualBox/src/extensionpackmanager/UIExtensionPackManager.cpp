@@ -112,7 +112,7 @@ public:
 protected:
 
     /** Returns default text. */
-    virtual QString defaultText() const /* override */;
+    virtual QString defaultText() const RT_OVERRIDE;
 };
 
 

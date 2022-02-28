@@ -69,7 +69,7 @@ public:
     /** Construct popup-box passing @a pParent to the base-class. */
     UIPopupBox(QWidget *pParent);
     /** Destruct popup-box. */
-    virtual ~UIPopupBox() /* override */;
+    virtual ~UIPopupBox() RT_OVERRIDE;
 
     /** Defines title @a icon. */
     void setTitleIcon(const QIcon &icon);
@@ -113,19 +113,19 @@ public:
 protected:
 
     /** Handles any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) /* override */;
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
     /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
     /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
     /** Handles paint @a pEvent. */
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
 
     /** Handles mouse double-click @a pEvent. */
-    virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) RT_OVERRIDE;
 
 private:
 
@@ -194,7 +194,7 @@ public:
     /** Construct popup-box passing @a pParent to the base-class. */
     UIPopupBoxGroup(QObject *pParent);
     /** Destruct popup-box. */
-    virtual ~UIPopupBoxGroup() /* override */;
+    virtual ~UIPopupBoxGroup() RT_OVERRIDE;
 
     /** Adds @a pPopupBox into group. */
     void addPopupBox(UIPopupBox *pPopupBox);

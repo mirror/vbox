@@ -58,7 +58,7 @@ public:
     void removeWindow(QWidget *pWindow);
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 protected:
 
@@ -68,7 +68,7 @@ protected:
     ~UIWindowMenuManager();
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
 private:
 

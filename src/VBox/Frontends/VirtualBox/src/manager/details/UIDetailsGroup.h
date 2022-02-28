@@ -51,7 +51,7 @@ public:
     /** Constructs group item, passing pScene to the base-class. */
     UIDetailsGroup(QGraphicsScene *pScene);
     /** Destructs group item. */
-    virtual ~UIDetailsGroup() /* override */;
+    virtual ~UIDetailsGroup() RT_OVERRIDE;
 
     /** @name Item stuff.
       * @{ */
@@ -63,24 +63,24 @@ public:
         void stopBuildingGroup();
 
         /** Installs event-filter for @a pSource object. */
-        virtual void installEventFilterHelper(QObject *pSource) /* override */;
+        virtual void installEventFilterHelper(QObject *pSource) RT_OVERRIDE;
     /** @} */
 
     /** @name Children stuff.
       * @{ */
         /** Returns children items of certain @a enmType. */
-        virtual QList<UIDetailsItem*> items(UIDetailsItemType enmType = UIDetailsItemType_Set) const /* override */;
+        virtual QList<UIDetailsItem*> items(UIDetailsItemType enmType = UIDetailsItemType_Set) const RT_OVERRIDE;
     /** @} */
 
     /** @name Layout stuff.
       * @{ */
         /** Updates layout. */
-        virtual void updateLayout() /* override */;
+        virtual void updateLayout() RT_OVERRIDE;
 
         /** Returns minimum width-hint. */
-        virtual int minimumWidthHint() const /* override */;
+        virtual int minimumWidthHint() const RT_OVERRIDE;
         /** Returns minimum height-hint. */
-        virtual int minimumHeightHint() const /* override */;
+        virtual int minimumHeightHint() const RT_OVERRIDE;
     /** @} */
 
 protected slots:
@@ -91,36 +91,36 @@ protected slots:
           * @param  uStepId    Brings the step ID.
           * @param  iStepNumber  Brings the step number. */
     /** @} */
-    virtual void sltBuildStep(const QUuid &uStepId, int iStepNumber) /* override */;
+    virtual void sltBuildStep(const QUuid &uStepId, int iStepNumber) RT_OVERRIDE;
 
 protected:
 
     /** @name Item stuff.
       * @{ */
         /** Returns RTTI item type. */
-        virtual int type() const /* override */ { return Type; }
+        virtual int type() const RT_OVERRIDE { return Type; }
 
         /** Returns the description of the item. */
-        virtual QString description() const /* override */ { return QString(); }
+        virtual QString description() const RT_OVERRIDE { return QString(); }
     /** @} */
 
     /** @name Children stuff.
       * @{ */
         /** Adds child @a pItem. */
-        virtual void addItem(UIDetailsItem *pItem) /* override */;
+        virtual void addItem(UIDetailsItem *pItem) RT_OVERRIDE;
         /** Removes child @a pItem. */
-        virtual void removeItem(UIDetailsItem *pItem) /* override */;
+        virtual void removeItem(UIDetailsItem *pItem) RT_OVERRIDE;
 
         /** Returns whether there are children items of certain @a enmType. */
-        virtual bool hasItems(UIDetailsItemType enmType = UIDetailsItemType_Set) const /* override */;
+        virtual bool hasItems(UIDetailsItemType enmType = UIDetailsItemType_Set) const RT_OVERRIDE;
         /** Clears children items of certain @a enmType. */
-        virtual void clearItems(UIDetailsItemType enmType = UIDetailsItemType_Set) /* override */;
+        virtual void clearItems(UIDetailsItemType enmType = UIDetailsItemType_Set) RT_OVERRIDE;
     /** @} */
 
     /** @name Layout stuff.
       * @{ */
         /** Updates geometry. */
-        virtual void updateGeometry() /* override */;
+        virtual void updateGeometry() RT_OVERRIDE;
     /** @} */
 
 private:

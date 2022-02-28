@@ -39,26 +39,26 @@ public:
     /** Constructs Language settings page. */
     UIGlobalSettingsLanguage();
     /** Destructs Language settings page. */
-    virtual ~UIGlobalSettingsLanguage() /* override */;
+    virtual ~UIGlobalSettingsLanguage() RT_OVERRIDE;
 
 protected:
 
     /** Loads settings from external object(s) packed inside @a data to cache.
       * @note  This task WILL be performed in other than the GUI thread, no widget interactions! */
-    virtual void loadToCacheFrom(QVariant &data) /* override */;
+    virtual void loadToCacheFrom(QVariant &data) RT_OVERRIDE;
     /** Loads data from cache to corresponding widgets.
       * @note  This task WILL be performed in the GUI thread only, all widget interactions here! */
-    virtual void getFromCache() /* override */;
+    virtual void getFromCache() RT_OVERRIDE;
 
     /** Saves data from corresponding widgets to cache.
       * @note  This task WILL be performed in the GUI thread only, all widget interactions here! */
-    virtual void putToCache() /* override */;
+    virtual void putToCache() RT_OVERRIDE;
     /** Saves settings from cache to external object(s) packed inside @a data.
       * @note  This task WILL be performed in other than the GUI thread, no widget interactions! */
     virtual void saveFromCacheTo(QVariant &data) /* overrride */;
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private:
 

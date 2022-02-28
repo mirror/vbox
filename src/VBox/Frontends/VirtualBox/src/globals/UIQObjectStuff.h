@@ -50,7 +50,7 @@ public:
     UIQObjectPropertySetter(const QList<QObject*> &objects, const QString &strPropertyName, const QVariant &value);
 
     /** Destructs guard block clearing previously set property for good. */
-    virtual ~UIQObjectPropertySetter() /* override */;
+    virtual ~UIQObjectPropertySetter() RT_OVERRIDE;
 
 private:
 

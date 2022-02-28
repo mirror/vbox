@@ -68,7 +68,7 @@ public:
 protected:
 
     /** Used to filter-out files and show only directories. */
-    virtual bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const /* override */;
+    virtual bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const RT_OVERRIDE;
 };
 
 

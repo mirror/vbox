@@ -54,7 +54,7 @@ public:
 
 protected:
 
-    void retranslateUi() /* override */;
+    void retranslateUi() RT_OVERRIDE;
 
 private slots:
 

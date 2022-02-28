@@ -167,27 +167,27 @@ public:
     /** Returns the root index in the model. */
     virtual QModelIndex root() const;
     /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx. */
-    virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const /* override */;
+    virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const RT_OVERRIDE;
     /** Returns the parent of the model item with the given @a idx. */
-    virtual QModelIndex parent(const QModelIndex &idx) const /* override */;
+    virtual QModelIndex parent(const QModelIndex &idx) const RT_OVERRIDE;
 
     /** Returns the number of rows for the children of the given @a parentIdx. */
-    virtual int rowCount(const QModelIndex &parentIdx = QModelIndex()) const /* override */;
+    virtual int rowCount(const QModelIndex &parentIdx = QModelIndex()) const RT_OVERRIDE;
     /** Returns the number of columns for the children of the given @a parentIdx. */
-    virtual int columnCount(const QModelIndex &parentIdx = QModelIndex()) const /* override */;
+    virtual int columnCount(const QModelIndex &parentIdx = QModelIndex()) const RT_OVERRIDE;
 
     /** Returns the item flags for the given @a idx. */
-    virtual Qt::ItemFlags flags(const QModelIndex &idx) const /* override */;
+    virtual Qt::ItemFlags flags(const QModelIndex &idx) const RT_OVERRIDE;
     /** Returns the data for the given @a iRole and @a iSection in the header with the specified @a enmOrientation. */
-    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const /* override */;
+    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const RT_OVERRIDE;
 
     /** Defines the @a iRole data for the item at @a idx to @a value. */
-    virtual bool setData(const QModelIndex &idx, const QVariant &value, int iRole) /* override */;
+    virtual bool setData(const QModelIndex &idx, const QVariant &value, int iRole) RT_OVERRIDE;
     /** Returns the data stored under the given @a iRole for the item referred to by the @a idx. */
-    virtual QVariant data(const QModelIndex &idx, int iRole = Qt::DisplayRole) const /* override */;
+    virtual QVariant data(const QModelIndex &idx, int iRole = Qt::DisplayRole) const RT_OVERRIDE;
 
     /** Returns a model index for the buddy of the item represented by @a idx. */
-    virtual QModelIndex buddy(const QModelIndex &idx) const /* override */;
+    virtual QModelIndex buddy(const QModelIndex &idx) const RT_OVERRIDE;
 
     /** Restores the default values for the item with the given @a parentIdx. */
     void restoreDefaults(QModelIndex parentIdx = QModelIndex());
@@ -230,24 +230,24 @@ public:
     /** Returns the widget used to edit the item specified by @a idx for editing.
       * @param  pParent      Brings the parent to be assigned for newly created editor.
       * @param  styleOption  Bring the style option set for the newly created editor. */
-    virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const /* override */;
+    virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const RT_OVERRIDE;
 
     /** Defines the contents of the given @a pEditor to the data for the item at the given @a idx. */
-    virtual void setEditorData(QWidget *pEditor, const QModelIndex &idx) const /* override */;
+    virtual void setEditorData(QWidget *pEditor, const QModelIndex &idx) const RT_OVERRIDE;
     /** Defines the data for the item at the given @a idx in the @a pModel to the contents of the given @a pEditor. */
-    virtual void setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx) const /* override */;
+    virtual void setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx) const RT_OVERRIDE;
 
     /** Updates the geometry of the @a pEditor for the item with the given @a idx, according to the rectangle specified in the @a styleOption. */
-    virtual void updateEditorGeometry(QWidget *pEditor, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const /* override */;
+    virtual void updateEditorGeometry(QWidget *pEditor, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const RT_OVERRIDE;
 
     /** Returns the size hint for the item at the given @a idx and specified @a styleOption. */
-    virtual QSize sizeHint(const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const /* override */;
+    virtual QSize sizeHint(const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const RT_OVERRIDE;
 
 protected:
 
 #ifdef VBOX_WS_MAC
     /** Filters @a pEvent if this object has been installed as an event filter for the watched @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 #endif
 
 private:
@@ -270,11 +270,11 @@ public:
 protected:
 
     /** Returns whether item in the row indicated by the given @a iSourceRow and @a srcParenIdx should be included in the model. */
-    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &srcParenIdx) const /* override */;
+    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &srcParenIdx) const RT_OVERRIDE;
 
     /** Returns whether value of the item referred to by the given index @a leftIdx is less
       * than the value of the item referred to by the given index @a rightIdx. */
-    virtual bool lessThan(const QModelIndex &leftIdx, const QModelIndex &rightIdx) const /* override */;
+    virtual bool lessThan(const QModelIndex &leftIdx, const QModelIndex &rightIdx) const RT_OVERRIDE;
 
     /** Holds the array of sorted Virtual System Description types. */
     static KVirtualSystemDescriptionType s_aSortList[];
@@ -323,7 +323,7 @@ public slots:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Holds the currently set appliance reference. */
     CAppliance  m_comAppliance;

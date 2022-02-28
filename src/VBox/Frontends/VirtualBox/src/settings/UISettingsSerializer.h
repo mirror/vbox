@@ -97,7 +97,7 @@ public:
                          const QVariant &data, const UISettingsPageList &pages);
 
     /** Destructs serializer. */
-    virtual ~UISettingsSerializer() /* override */;
+    virtual ~UISettingsSerializer() RT_OVERRIDE;
 
     /** Returns the load/save direction. */
     SerializationDirection direction() const { return m_enmDirection; }

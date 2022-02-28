@@ -151,7 +151,7 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles close @a pEvent. */
-        virtual void closeEvent(QCloseEvent *pEvent) /* override */;
+        virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
 
         /** Returns whether the manager had emitted command to be closed. */
         bool closeEmitted() const { return m_fCloseEmitted; }

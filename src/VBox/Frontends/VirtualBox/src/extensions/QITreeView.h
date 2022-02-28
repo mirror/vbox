@@ -137,25 +137,25 @@ protected:
       * @param  pPainter  Brings the painter to draw branches.
       * @param  rect      Brings the rectangle embedding branches.
       * @param  index     Brings the index of the item for which branches will be painted. */
-    virtual void drawBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index) const /* override */;
+    virtual void drawBranches(QPainter *pPainter, const QRect &rect, const QModelIndex &index) const RT_OVERRIDE;
 
     /** Handles mouse move @a pEvent. */
-    virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mouseMoveEvent(QMouseEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse press @a pEvent. */
-    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse release @a pEvent. */
-    virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mouseReleaseEvent(QMouseEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse double-click @a pEvent. */
-    virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) RT_OVERRIDE;
 
     /** Handles mouse drag enter @a pEvent. */
-    virtual void dragEnterEvent(QDragEnterEvent *pEvent) /* override */;
+    virtual void dragEnterEvent(QDragEnterEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse drag move @a pEvent. */
-    virtual void dragMoveEvent(QDragMoveEvent *pEvent) /* override */;
+    virtual void dragMoveEvent(QDragMoveEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse drag leave @a pEvent. */
-    virtual void dragLeaveEvent(QDragLeaveEvent *pEvent) /* override */;
+    virtual void dragLeaveEvent(QDragLeaveEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse drop @a pEvent. */
-    virtual void dropEvent(QDropEvent *pEvent) /* override */;
+    virtual void dropEvent(QDropEvent *pEvent) RT_OVERRIDE;
 
 private:
 

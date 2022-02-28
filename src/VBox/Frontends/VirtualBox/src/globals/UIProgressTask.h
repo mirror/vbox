@@ -56,7 +56,7 @@ public:
     /** Creates progress task passing @a pParent to the base-class. */
     UIProgressTask(QObject *pParent);
     /** Creates progress task passing @a pParent to the base-class. */
-    virtual ~UIProgressTask() /* override */;
+    virtual ~UIProgressTask() RT_OVERRIDE;
 
     /** Returns whether task is scheduled. */
     bool isScheduled() const;

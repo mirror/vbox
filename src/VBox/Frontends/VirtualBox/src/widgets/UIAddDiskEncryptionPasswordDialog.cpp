@@ -82,7 +82,7 @@ public:
 protected:
 
     /** Handles key-press @a pEvent. */
-    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
@@ -163,7 +163,7 @@ public:
       * @param  encryptedMedia  Brings the lists of medium ids (values) encrypted with passwords with ids (keys). */
     UIEncryptionDataTable(const EncryptedMediumMap &encryptedMedia);
     /** Destructs table. */
-    virtual ~UIEncryptionDataTable() /* override */;
+    virtual ~UIEncryptionDataTable() RT_OVERRIDE;
 
     /** Returns the shallow copy of the encryption password map
       * acquired from the UIEncryptionDataModel instance. */

@@ -81,7 +81,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Holds the indicator type. */
     const IndicatorType m_enmType;
@@ -139,7 +139,7 @@ public:
     {}
 
     /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text /* enmTextRole */) const /* override */
+    virtual QString text(QAccessible::Text /* enmTextRole */) const RT_OVERRIDE
     {
         /* Sanity check: */
         AssertPtrReturn(indicator(), 0);
@@ -1009,7 +1009,7 @@ public:
 
 protected:
 
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE
     {
         UISessionStateStatusBarIndicator::paintEvent(pEvent);
         QPainter painter(this);

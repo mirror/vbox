@@ -225,7 +225,7 @@ public:
       * @param  enmType  Brings the action type. */
     UIAction(UIActionPool *pParent, UIActionType enmType, bool fMachineMenuAction = false);
     /** Destructs action. */
-    virtual ~UIAction() /* override */ { delete menu(); }
+    virtual ~UIAction() RT_OVERRIDE { delete menu(); }
 
     /** Returns action-pool this action belongs to. */
     UIActionPool *actionPool() const { return m_pActionPool; }
@@ -349,7 +349,7 @@ protected:
                  const QIcon &icon);
 
     /** Destructs menu action. */
-    virtual ~UIActionMenu() /* override */;
+    virtual ~UIActionMenu() RT_OVERRIDE;
 
     /** Defines whether tool-tip should be shown. */
     void setShowToolTip(bool fShowToolTip);
@@ -589,10 +589,10 @@ protected:
     virtual void updateShortcuts();
 
     /** Handles any Qt @a pEvent */
-    virtual bool event(QEvent *pEvent) /* override */;
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Adds action into corresponding menu. */
     bool addAction(UIMenu *pMenu, UIAction *pAction, bool fReallyAdd = true);

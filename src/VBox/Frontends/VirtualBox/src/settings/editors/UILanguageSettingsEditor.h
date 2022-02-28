@@ -48,12 +48,12 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** Handles polish @a pEvent. */
-    virtual void polishEvent(QShowEvent *pEvent) /* override */;
+    virtual void polishEvent(QShowEvent *pEvent);
 
 private slots:
 

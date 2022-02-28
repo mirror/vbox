@@ -79,29 +79,29 @@ protected:
     /** Constructs VirtualBox Manager. */
     UIVirtualBoxManager();
     /** Destructs VirtualBox Manager. */
-    virtual ~UIVirtualBoxManager() /* override */;
+    virtual ~UIVirtualBoxManager() RT_OVERRIDE;
 
     /** Returns whether the window should be maximized when geometry being restored. */
-    virtual bool shouldBeMaximized() const /* override */;
+    virtual bool shouldBeMaximized() const RT_OVERRIDE;
 
     /** @name Event handling stuff.
       * @{ */
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Preprocesses any @a pEvent for passed @a pObject. */
-        virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+        virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 #endif
 
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
 
         /** Handles any Qt @a pEvent. */
-        virtual bool event(QEvent *pEvent) /* override */;
+        virtual bool event(QEvent *pEvent) RT_OVERRIDE;
         /** Handles show @a pEvent. */
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
+        virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
         /** Handles first show @a pEvent. */
-        virtual void polishEvent(QShowEvent *pEvent) /* override */;
+        virtual void polishEvent(QShowEvent *pEvent);
         /** Handles close @a pEvent. */
-        virtual void closeEvent(QCloseEvent *pEvent) /* override */;
+        virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
     /** @} */
 
 private slots:

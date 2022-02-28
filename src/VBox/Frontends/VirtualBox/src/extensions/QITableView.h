@@ -104,7 +104,7 @@ public:
     /** Constructs table-view passing @a pParent to the base-class. */
     QITableView(QWidget *pParent = 0);
     /** Destructs table-view. */
-    virtual ~QITableView() /* override */;
+    virtual ~QITableView() RT_OVERRIDE;
 
     /** Returns the number of children. */
     virtual int childCount() const { return 0; }
@@ -124,7 +124,7 @@ protected slots:
 protected:
 
     /** Handles index change from @a previous to @a current. */
-    virtual void currentChanged(const QModelIndex &current, const QModelIndex &previous) /* override */;
+    virtual void currentChanged(const QModelIndex &current, const QModelIndex &previous) RT_OVERRIDE;
 
 private:
 

@@ -78,7 +78,7 @@ public:
       * @param  fOpened  Brings whether element is opened. */
     UIDetailsElement(UIDetailsSet *pParent, DetailsElementType enmType, bool fOpened);
     /** Destructs element item. */
-    virtual ~UIDetailsElement() /* override */;
+    virtual ~UIDetailsElement() RT_OVERRIDE;
 
     /** @name Item stuff.
       * @{ */
@@ -112,12 +112,12 @@ public:
     /** @name Layout stuff.
       * @{ */
         /** Updates layout. */
-        virtual void updateLayout() /* override */;
+        virtual void updateLayout() RT_OVERRIDE;
 
         /** Returns minimum width-hint. */
-        virtual int minimumWidthHint() const /* override */;
+        virtual int minimumWidthHint() const RT_OVERRIDE;
         /** Returns minimum height-hint. */
-        virtual int minimumHeightHint() const /* override */;
+        virtual int minimumHeightHint() const RT_OVERRIDE;
     /** @} */
 
 protected:
@@ -133,32 +133,32 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles show @a pEvent. */
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
+        virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
         /** This event handler is delivered after the widget has been resized. */
-        virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) /* override */;
+        virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) RT_OVERRIDE;
 
         /** Handles hover enter @a event. */
-        virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+        virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) RT_OVERRIDE;
         /** Handles hover leave @a event. */
-        virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+        virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) RT_OVERRIDE;
 
         /** Handles mouse press @a event. */
-        virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+        virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) RT_OVERRIDE;
         /** Handles mouse double-click @a event. */
-        virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+        virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *pEvent) RT_OVERRIDE;
 
         /** Performs painting using passed @a pPainter, @a pOptions and optionally specified @a pWidget. */
-        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) /* override */;
+        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) RT_OVERRIDE;
     /** @} */
 
     /** @name Item stuff.
       * @{ */
         /** Returns RTTI item type. */
-        virtual int type() const /* override */ { return Type; }
+        virtual int type() const RT_OVERRIDE { return Type; }
 
         /** Returns the description of the item. */
-        virtual QString description() const /* override */;
+        virtual QString description() const RT_OVERRIDE;
 
         /** Returns cached machine reference. */
         const CMachine &machine();
@@ -185,16 +185,16 @@ protected:
     /** @name Children stuff.
       * @{ */
         /** Adds child @a pItem. */
-        virtual void addItem(UIDetailsItem *pItem) /* override */;
+        virtual void addItem(UIDetailsItem *pItem) RT_OVERRIDE;
         /** Removes child @a pItem. */
-        virtual void removeItem(UIDetailsItem *pItem) /* override */;
+        virtual void removeItem(UIDetailsItem *pItem) RT_OVERRIDE;
 
         /** Returns children items of certain @a enmType. */
-        virtual QList<UIDetailsItem*> items(UIDetailsItemType enmType) const /* override */;
+        virtual QList<UIDetailsItem*> items(UIDetailsItemType enmType) const RT_OVERRIDE;
         /** Returns whether there are children items of certain @a enmType. */
-        virtual bool hasItems(UIDetailsItemType enmType) const /* override */;
+        virtual bool hasItems(UIDetailsItemType enmType) const RT_OVERRIDE;
         /** Clears children items of certain @a enmType. */
-        virtual void clearItems(UIDetailsItemType enmType) /* override */;
+        virtual void clearItems(UIDetailsItemType enmType) RT_OVERRIDE;
     /** @} */
 
     /** @name Layout stuff.

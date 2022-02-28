@@ -57,7 +57,7 @@ public:
     {}
 
     /** Returns the parent. */
-    virtual QAccessibleInterface *parent() const /* override */
+    virtual QAccessibleInterface *parent() const RT_OVERRIDE
     {
         /* Make sure item still alive: */
         AssertPtrReturn(item(), 0);
@@ -67,7 +67,7 @@ public:
     }
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */
+    virtual int childCount() const RT_OVERRIDE
     {
         /* Make sure item still alive: */
         AssertPtrReturn(item(), 0);
@@ -77,7 +77,7 @@ public:
     }
 
     /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int) const /* override */
+    virtual QAccessibleInterface *child(int) const RT_OVERRIDE
     {
         /* Make sure item still alive: */
         AssertPtrReturn(item(), 0);
@@ -87,7 +87,7 @@ public:
     }
 
     /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface *pChild) const /* override */
+    virtual int indexOfChild(const QAccessibleInterface *pChild) const RT_OVERRIDE
     {
         /* Search for corresponding child: */
         for (int i = 0; i < childCount(); ++i)
@@ -99,7 +99,7 @@ public:
     }
 
     /** Returns the rect. */
-    virtual QRect rect() const /* override */
+    virtual QRect rect() const RT_OVERRIDE
     {
         /* Now goes the mapping: */
         const QSize   itemSize         = item()->size().toSize();
@@ -111,7 +111,7 @@ public:
     }
 
     /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text enmTextRole) const /* override */
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
     {
         /* Make sure item still alive: */
         AssertPtrReturn(item(), QString());
@@ -129,7 +129,7 @@ public:
     }
 
     /** Returns the role. */
-    virtual QAccessible::Role role() const /* override */
+    virtual QAccessible::Role role() const RT_OVERRIDE
     {
         /* Make sure item still alive: */
         AssertPtrReturn(item(), QAccessible::NoRole);
@@ -139,7 +139,7 @@ public:
     }
 
     /** Returns the state. */
-    virtual QAccessible::State state() const /* override */
+    virtual QAccessible::State state() const RT_OVERRIDE
     {
         /* Make sure item still alive: */
         AssertPtrReturn(item(), QAccessible::State());

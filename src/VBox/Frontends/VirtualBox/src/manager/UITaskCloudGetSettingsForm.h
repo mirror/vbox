@@ -55,7 +55,7 @@ public:
 protected:
 
     /** Contains the task body. */
-    virtual void run() /* override */;
+    virtual void run() RT_OVERRIDE;
 
 private:
 

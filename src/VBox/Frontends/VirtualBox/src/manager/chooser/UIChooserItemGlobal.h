@@ -41,7 +41,7 @@ public:
     /** Build item for certain @a pNode, passing @a pParent to the base-class. */
     UIChooserItemGlobal(UIChooserItem *pParent, UIChooserNodeGlobal *pNode);
     /** Destructs global item. */
-    virtual ~UIChooserItemGlobal() /* override */;
+    virtual ~UIChooserItemGlobal() RT_OVERRIDE;
 
     /** @name Item stuff.
       * @{ */
@@ -67,90 +67,90 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
 
         /** Handles show @a pEvent. */
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
+        virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
         /** Handles resize @a pEvent. */
-        virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) /* override */;
+        virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) RT_OVERRIDE;
 
         /** Handles mouse press @a pEvent. */
-        virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+        virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) RT_OVERRIDE;
 
         /** Performs painting using passed @a pPainter, @a pOptions and optionally specified @a pWidget. */
-        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) /* override */;
+        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) RT_OVERRIDE;
     /** @} */
 
     /** @name Item stuff.
       * @{ */
         /** Returns RTTI item type. */
-        virtual int type() const /* override */ { return Type; }
+        virtual int type() const RT_OVERRIDE { return Type; }
 
         /** Defines whether item is @a fFavorite. */
-        virtual void setFavorite(bool fFavorite) /* override */;
+        virtual void setFavorite(bool fFavorite) RT_OVERRIDE;
 
         /** Starts item editing. */
-        virtual void startEditing() /* override */;
+        virtual void startEditing() RT_OVERRIDE;
 
         /** Updates item. */
-        virtual void updateItem() /* override */;
+        virtual void updateItem() RT_OVERRIDE;
         /** Updates item tool-tip. */
-        virtual void updateToolTip() /* override */;
+        virtual void updateToolTip() RT_OVERRIDE;
     /** @} */
 
     /** @name Children stuff.
       * @{ */
         /** Returns children items of certain @a enmType. */
-        virtual QList<UIChooserItem*> items(UIChooserNodeType enmType = UIChooserNodeType_Any) const /* override */;
+        virtual QList<UIChooserItem*> items(UIChooserNodeType enmType = UIChooserNodeType_Any) const RT_OVERRIDE;
 
         /** Adds possible @a fFavorite child @a pItem to certain @a iPosition. */
-        virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) /* override */;
+        virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) RT_OVERRIDE;
         /** Removes child @a pItem. */
-        virtual void removeItem(UIChooserItem *pItem) /* override */;
+        virtual void removeItem(UIChooserItem *pItem) RT_OVERRIDE;
 
         /** Searches for a first child item answering to specified @a strSearchTag and @a iSearchFlags. */
-        virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iSearchFlags) /* override */;
+        virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iSearchFlags) RT_OVERRIDE;
 
         /** Searches for a first machine child item. */
-        virtual UIChooserItem *firstMachineItem() /* override */;
+        virtual UIChooserItem *firstMachineItem() RT_OVERRIDE;
     /** @} */
 
     /** @name Layout stuff.
       * @{ */
         /** Updates layout. */
-        virtual void updateLayout() /* override */;
+        virtual void updateLayout() RT_OVERRIDE;
 
         /** Returns minimum width-hint. */
-        virtual int minimumWidthHint() const /* override */;
+        virtual int minimumWidthHint() const RT_OVERRIDE;
         /** Returns minimum height-hint. */
-        virtual int minimumHeightHint() const /* override */;
+        virtual int minimumHeightHint() const RT_OVERRIDE;
 
         /** Returns size-hint.
           * @param  enmWhich    Brings size-hint type.
           * @param  constraint  Brings size constraint. */
-        virtual QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const /* override */;
+        virtual QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const RT_OVERRIDE;
     /** @} */
 
     /** @name Navigation stuff.
       * @{ */
         /** Returns pixmap item representation. */
-        virtual QPixmap toPixmap() /* override */;
+        virtual QPixmap toPixmap() RT_OVERRIDE;
 
         /** Returns whether item drop is allowed.
           * @param  pEvent    Brings information about drop event.
           * @param  enmPlace  Brings the place of drag token to the drop moment. */
-        virtual bool isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UIChooserItemDragToken where) const /* override */;
+        virtual bool isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UIChooserItemDragToken where) const RT_OVERRIDE;
         /** Processes item drop.
           * @param  pEvent    Brings information about drop event.
           * @param  pFromWho  Brings the item according to which we choose drop position.
           * @param  enmPlace  Brings the place of drag token to the drop moment (according to item mentioned above). */
-        virtual void processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChooserItem *pFromWho, UIChooserItemDragToken where) /* override */;
+        virtual void processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChooserItem *pFromWho, UIChooserItemDragToken where) RT_OVERRIDE;
         /** Reset drag token. */
-        virtual void resetDragToken() /* override */;
+        virtual void resetDragToken() RT_OVERRIDE;
 
         /** Returns D&D mime data. */
-        virtual QMimeData *createMimeData() /* override */;
+        virtual QMimeData *createMimeData() RT_OVERRIDE;
     /** @} */
 
 private slots:

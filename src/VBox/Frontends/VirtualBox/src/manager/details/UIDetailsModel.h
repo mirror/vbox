@@ -70,7 +70,7 @@ public:
       * @param  pParent  Brings the details container to embed into. */
     UIDetailsModel(UIDetails *pParent);
     /** Destructs a details model. */
-    virtual ~UIDetailsModel() /* override */;
+    virtual ~UIDetailsModel() RT_OVERRIDE;
 
     /** Inits model. */
     void init();
@@ -178,7 +178,7 @@ public slots:
 protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

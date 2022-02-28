@@ -63,8 +63,8 @@ protected:
 
     /** @name Event-handling stuff.
       * @{ */
-        virtual void retranslateUi() /* override */;
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
+        virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** @} */
 
 private slots:

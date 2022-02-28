@@ -96,9 +96,9 @@ protected:
                          bool fCritical = true);
 
     /** Returns whether object is critical. */
-    virtual bool isCritical() const /* override */;
+    virtual bool isCritical() const RT_OVERRIDE;
     /** Returns whether object is done. */
-    virtual bool isDone() const /* override */;
+    virtual bool isDone() const RT_OVERRIDE;
     /** Returns object name. */
     virtual QString name() const /* override final */;
     /** Returns object details. */
@@ -160,9 +160,9 @@ public:
     QString error() const;
 
     /** Returns whether object is critical. */
-    virtual bool isCritical() const /* override */;
+    virtual bool isCritical() const RT_OVERRIDE;
     /** Returns whether object is done. */
-    virtual bool isDone() const /* override */;
+    virtual bool isDone() const RT_OVERRIDE;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
     /** Returns object help heyword. */
@@ -230,9 +230,9 @@ public:
     QString error() const;
 
     /** Returns whether object is critical. */
-    virtual bool isCritical() const /* override */;
+    virtual bool isCritical() const RT_OVERRIDE;
     /** Returns whether object is done. */
-    virtual bool isDone() const /* override */;
+    virtual bool isDone() const RT_OVERRIDE;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
     /** Returns object help heyword. */
@@ -299,9 +299,9 @@ public:
     QString error() const;
 
     /** Returns whether object is critical. */
-    virtual bool isCritical() const /* override */;
+    virtual bool isCritical() const RT_OVERRIDE;
     /** Returns whether object is done. */
-    virtual bool isDone() const /* override */;
+    virtual bool isDone() const RT_OVERRIDE;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
     /** Returns object help heyword. */

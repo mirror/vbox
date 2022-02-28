@@ -283,7 +283,7 @@ private:
     /** Icon-pool constructor. */
     UIIconPoolStorageSettings();
     /** Icon-pool destructor. */
-    virtual ~UIIconPoolStorageSettings() /* override */;
+    virtual ~UIIconPoolStorageSettings() RT_OVERRIDE;
 
     /** Icon-pool instance access method. */
     static UIIconPoolStorageSettings *instance();
@@ -322,7 +322,7 @@ public:
     /** Constructs sub-level item passing @a pParentItem to the base-class. */
     AbstractItem(AbstractItem *pParentItem);
     /** Destructs item. */
-    virtual ~AbstractItem() /* override */;
+    virtual ~AbstractItem() RT_OVERRIDE;
 
     /** Returns parent-item. */
     AbstractItem *parent() const;
@@ -378,7 +378,7 @@ public:
     /** Constructs top-level item passing @a pParentTree to the base-class. */
     RootItem(QITreeView *pParentTree);
     /** Destructs item. */
-    virtual ~RootItem() /* override */;
+    virtual ~RootItem() RT_OVERRIDE;
 
     /** Returns a number of children of certain @a enmBus type. */
     ULONG childCount(KStorageBus enmBus) const;
@@ -386,28 +386,28 @@ public:
 protected:
 
     /** Returns runtime type information. */
-    virtual ItemType rtti() const /* override */;
+    virtual ItemType rtti() const RT_OVERRIDE;
 
     /** Returns child item with specified @a iIndex. */
-    virtual AbstractItem *childItem(int iIndex) const /* override */;
+    virtual AbstractItem *childItem(int iIndex) const RT_OVERRIDE;
     /** Returns child item with specified @a uId. */
-    virtual AbstractItem *childItemById(const QUuid &uId) const /* override */;
+    virtual AbstractItem *childItemById(const QUuid &uId) const RT_OVERRIDE;
     /** Returns position of specified child @a pItem. */
-    virtual int posOfChild(AbstractItem *pItem) const /* override */;
+    virtual int posOfChild(AbstractItem *pItem) const RT_OVERRIDE;
     /** Returns the number of children. */
-    virtual int childCount() const /* override */;
+    virtual int childCount() const RT_OVERRIDE;
 
     /** Returns the item text. */
-    virtual QString text() const /* override */;
+    virtual QString text() const RT_OVERRIDE;
     /** Returns tool-tip information. */
-    virtual QString toolTip() const /* override */;
+    virtual QString toolTip() const RT_OVERRIDE;
     /** Returns pixmap information for specified @a enmState. */
-    virtual QPixmap pixmap(ItemState enmState) /* override */;
+    virtual QPixmap pixmap(ItemState enmState) RT_OVERRIDE;
 
     /** Adds a child @a pItem. */
-    virtual void addChild(AbstractItem *pItem) /* override */;
+    virtual void addChild(AbstractItem *pItem) RT_OVERRIDE;
     /** Removes the child @a pItem. */
-    virtual void delChild(AbstractItem *pItem) /* override */;
+    virtual void delChild(AbstractItem *pItem) RT_OVERRIDE;
 
 private:
 
@@ -430,7 +430,7 @@ public:
     ControllerItem(AbstractItem *pParentItem, const QString &strName,
                    KStorageBus enmBus, KStorageControllerType enmType);
     /** Destructs item. */
-    virtual ~ControllerItem() /* override */;
+    virtual ~ControllerItem() RT_OVERRIDE;
 
     /** Defines current @a strName. */
     void setName(const QString &strName);
@@ -482,28 +482,28 @@ public:
 private:
 
     /** Returns runtime type information. */
-    virtual ItemType rtti() const /* override */;
+    virtual ItemType rtti() const RT_OVERRIDE;
 
     /** Returns child item with specified @a iIndex. */
-    virtual AbstractItem *childItem(int iIndex) const /* override */;
+    virtual AbstractItem *childItem(int iIndex) const RT_OVERRIDE;
     /** Returns child item with specified @a uId. */
-    virtual AbstractItem *childItemById(const QUuid &uId) const /* override */;
+    virtual AbstractItem *childItemById(const QUuid &uId) const RT_OVERRIDE;
     /** Returns position of specified child @a pItem. */
-    virtual int posOfChild(AbstractItem *pItem) const /* override */;
+    virtual int posOfChild(AbstractItem *pItem) const RT_OVERRIDE;
     /** Returns the number of children. */
-    virtual int childCount() const /* override */;
+    virtual int childCount() const RT_OVERRIDE;
 
     /** Returns the item text. */
-    virtual QString text() const /* override */;
+    virtual QString text() const RT_OVERRIDE;
     /** Returns tool-tip information. */
-    virtual QString toolTip() const /* override */;
+    virtual QString toolTip() const RT_OVERRIDE;
     /** Returns pixmap information for specified @a enmState. */
-    virtual QPixmap pixmap(ItemState enmState) /* override */;
+    virtual QPixmap pixmap(ItemState enmState) RT_OVERRIDE;
 
     /** Adds a child @a pItem. */
-    virtual void addChild(AbstractItem *pItem) /* override */;
+    virtual void addChild(AbstractItem *pItem) RT_OVERRIDE;
     /** Removes the child @a pItem. */
-    virtual void delChild(AbstractItem *pItem) /* override */;
+    virtual void delChild(AbstractItem *pItem) RT_OVERRIDE;
 
     /** Updates possible buses. */
     void updateBusInfo();
@@ -613,28 +613,28 @@ private:
     void cache();
 
     /** Returns runtime type information. */
-    virtual ItemType rtti() const /* override */;
+    virtual ItemType rtti() const RT_OVERRIDE;
 
     /** Returns child item with specified @a iIndex. */
-    virtual AbstractItem *childItem(int iIndex) const /* override */;
+    virtual AbstractItem *childItem(int iIndex) const RT_OVERRIDE;
     /** Returns child item with specified @a uId. */
-    virtual AbstractItem *childItemById(const QUuid &uId) const /* override */;
+    virtual AbstractItem *childItemById(const QUuid &uId) const RT_OVERRIDE;
     /** Returns position of specified child @a pItem. */
-    virtual int posOfChild(AbstractItem *pItem) const /* override */;
+    virtual int posOfChild(AbstractItem *pItem) const RT_OVERRIDE;
     /** Returns the number of children. */
-    virtual int childCount() const /* override */;
+    virtual int childCount() const RT_OVERRIDE;
 
     /** Returns the item text. */
-    virtual QString text() const /* override */;
+    virtual QString text() const RT_OVERRIDE;
     /** Returns tool-tip information. */
-    virtual QString toolTip() const /* override */;
+    virtual QString toolTip() const RT_OVERRIDE;
     /** Returns pixmap information for specified @a enmState. */
-    virtual QPixmap pixmap(ItemState enmState) /* override */;
+    virtual QPixmap pixmap(ItemState enmState) RT_OVERRIDE;
 
     /** Adds a child @a pItem. */
-    virtual void addChild(AbstractItem *pItem) /* override */;
+    virtual void addChild(AbstractItem *pItem) RT_OVERRIDE;
     /** Removes the child @a pItem. */
-    virtual void delChild(AbstractItem *pItem) /* override */;
+    virtual void delChild(AbstractItem *pItem) RT_OVERRIDE;
 
     /** Holds the device type. */
     KDeviceType  m_enmDeviceType;
@@ -775,7 +775,7 @@ public:
     /** Constructs storage model passing @a pParentTree to the base-class. */
     StorageModel(QITreeView *pParentTree);
     /** Destructs storage model. */
-    virtual ~StorageModel() /* override */;
+    virtual ~StorageModel() RT_OVERRIDE;
 
     /** Returns row count for the passed @a parentIndex. */
     int rowCount(const QModelIndex &parentIndex = QModelIndex()) const;

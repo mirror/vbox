@@ -24,6 +24,9 @@
 /* Qt includes: */
 #include <QWidget>
 
+/* VBox includes: */
+#include <iprt/cdefs.h>
+
 /* Forward declarations: */
 class QHBoxLayout;
 class QLabel;
@@ -52,10 +55,10 @@ public:
 protected:
 
     /** Handles any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) /* override */;
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
     /** Handles paint @a pEvent. */
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
 
     /** Holds the notification-object this item created for. */
     UINotificationObject *m_pObject;

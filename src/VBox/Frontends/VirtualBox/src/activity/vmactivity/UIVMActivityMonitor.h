@@ -141,8 +141,8 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
-    virtual bool eventFilter(QObject *pObj, QEvent *pEvent) /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
+    virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

@@ -112,7 +112,7 @@ public:
     /** @name Layout stuff.
       * @{ */
         /** Updates geometry. */
-        virtual void updateGeometry() /* override */;
+        virtual void updateGeometry() RT_OVERRIDE;
 
         /** Updates layout. */
         virtual void updateLayout() = 0;
@@ -125,7 +125,7 @@ public:
         /** Returns size-hint.
           * @param  enmWhich    Brings size-hint type.
           * @param  constraint  Brings size constraint. */
-        virtual QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const /* override */;
+        virtual QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const RT_OVERRIDE;
     /** @} */
 
 public slots:
@@ -143,7 +143,7 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */ {}
+        virtual void retranslateUi() RT_OVERRIDE {}
     /** @} */
 
 private:

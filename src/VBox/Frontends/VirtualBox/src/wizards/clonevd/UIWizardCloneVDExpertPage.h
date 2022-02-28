@@ -60,16 +60,16 @@ private slots:
 private:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Prepares the page. */
-    virtual void initializePage() /* override */;
+    virtual void initializePage() RT_OVERRIDE;
 
     /** Returns whether the page is complete. */
-    virtual bool isComplete() const /* override */;
+    virtual bool isComplete() const RT_OVERRIDE;
 
     /** Returns whether the page is valid. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() RT_OVERRIDE;
 
     void prepare(KDeviceType enmDeviceType, qulonglong uSourceDiskLogicaSize);
 

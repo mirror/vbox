@@ -145,20 +145,20 @@ private:
     void prepareAnimation();
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
     /** Translats tool-tips. */
     void retranslateToolTips();
 
     /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
     /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent); /* override */;
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** Handles first show @a pEvent. */
     void polishEvent(QShowEvent *pEvent);
 
     /** Handles paint @a pEvent. */
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
 
     /** Assigns clipping of @a rect geometry for passed @a painter. */
     void configureClipping(const QRect &rect, QPainter &painter);

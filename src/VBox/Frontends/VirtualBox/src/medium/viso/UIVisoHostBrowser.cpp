@@ -36,12 +36,12 @@ class UIVisoHostBrowserModel : public QFileSystemModel
 
 public:
 
-    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const /* override */;
+    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const RT_OVERRIDE;
     UIVisoHostBrowserModel(QObject *pParent);
 
-    virtual QStringList mimeTypes() const /* override */;
+    virtual QStringList mimeTypes() const RT_OVERRIDE;
     /** Prepares the mime data  as a list of text consisting of dragged objects full file path. */
-    QMimeData *mimeData(const QModelIndexList &indexes) const /* override */;
+    QMimeData *mimeData(const QModelIndexList &indexes) const RT_OVERRIDE;
 
 protected:
 

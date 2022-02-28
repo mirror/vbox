@@ -75,18 +75,18 @@ protected:
     virtual QVariant data(int iKey) const;
 
     /** Returns size-hint of certain @a enmType, restricted by passed @a constraint. */
-    virtual QSizeF sizeHint(Qt::SizeHint enmType, const QSizeF &constraint = QSizeF()) const /* override */;
+    virtual QSizeF sizeHint(Qt::SizeHint enmType, const QSizeF &constraint = QSizeF()) const RT_OVERRIDE;
 
     /** Performs painting using passed @a pPainter, @a pOptions and optionally specified @a pWidget. */
-    virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0) /* override */;
+    virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOption, QWidget *pWidget = 0) RT_OVERRIDE;
 
     /** Handles mouse-press @a pEvent. */
-    virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse-release @a pEvent. */
-    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent) RT_OVERRIDE;
 
     /** Handles timer @a pEvent. */
-    virtual void timerEvent(QTimerEvent *pEvent) /* override */;
+    virtual void timerEvent(QTimerEvent *pEvent) RT_OVERRIDE;
 
     /** Updates button.
       * @todo rename to prepare() */

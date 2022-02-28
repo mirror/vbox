@@ -48,7 +48,7 @@ protected:
 
     /** Creates derived @a pDialog instance.
       * @param  pCenterWidget  Passes the widget to center wrt. pCenterWidget. */
-    virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
+    virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) RT_OVERRIDE;
 
     UIActionPool *m_pActionPool;
     CGuest        m_comGuest;
@@ -74,28 +74,28 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
     /** @} */
 
     /** @name Prepare/cleanup cascade.
      * @{ */
         /** Configures all. */
-        virtual void configure() /* override */;
+        virtual void configure() RT_OVERRIDE;
         /** Configures central-widget. */
-        virtual void configureCentralWidget() /* override */;
+        virtual void configureCentralWidget() RT_OVERRIDE;
         /** Perform final preparations. */
-        virtual void finalize() /* override */;
+        virtual void finalize() RT_OVERRIDE;
         /** Loads dialog setting from extradata. */
-        virtual void loadSettings() /* override */;
+        virtual void loadSettings() RT_OVERRIDE;
 
         /** Saves dialog setting into extradata. */
-        virtual void saveSettings() /* override */;
+        virtual void saveSettings() RT_OVERRIDE;
     /** @} */
 
     /** @name Functions related to geometry restoration.
      * @{ */
         /** Returns whether the window should be maximized when geometry being restored. */
-        virtual bool shouldBeMaximized() const /* override */;
+        virtual bool shouldBeMaximized() const RT_OVERRIDE;
     /** @} */
 
 private slots:

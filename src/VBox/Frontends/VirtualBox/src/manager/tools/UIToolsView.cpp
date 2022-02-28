@@ -52,7 +52,7 @@ public:
     {}
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */
+    virtual int childCount() const RT_OVERRIDE
     {
         /* Make sure view still alive: */
         AssertPtrReturn(view(), 0);
@@ -62,7 +62,7 @@ public:
     }
 
     /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int iIndex) const /* override */
+    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE
     {
         /* Make sure view still alive: */
         AssertPtrReturn(view(), 0);
@@ -74,7 +74,7 @@ public:
     }
 
     /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text enmTextRole) const /* override */
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
     {
         /* Make sure view still alive: */
         AssertPtrReturn(view(), QString());

@@ -55,21 +55,21 @@ public:
     /** Resets the search position and starts a new search. */
     void refresh();
     const QVector<float> &matchLocationVector() const;
-    virtual QString panelName() const /* override */;
+    virtual QString panelName() const RT_OVERRIDE;
     /** Returns the number of the matches to the current search. */
     int matchCount() const;
 
 protected:
 
-    virtual void prepareWidgets() /* override */;
-    virtual void prepareConnections() /* override */;
-    virtual void retranslateUi() /* override */;
+    virtual void prepareWidgets() RT_OVERRIDE;
+    virtual void prepareConnections() RT_OVERRIDE;
+    virtual void retranslateUi() RT_OVERRIDE;
     /** Handles Qt key-press @a pEevent. */
-    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
     /** Handles Qt @a pEvent, used for keyboard processing. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
-    virtual void hideEvent(QHideEvent* pEvent) /* override */;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
+    virtual void hideEvent(QHideEvent* pEvent) RT_OVERRIDE;
 
 private slots:
 

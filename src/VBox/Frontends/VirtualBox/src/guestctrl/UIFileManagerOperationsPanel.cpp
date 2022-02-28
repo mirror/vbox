@@ -64,9 +64,9 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
-    virtual void focusInEvent(QFocusEvent *pEvent) /* override */;
-    virtual void focusOutEvent(QFocusEvent *pEvent) /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void focusInEvent(QFocusEvent *pEvent) RT_OVERRIDE;
+    virtual void focusOutEvent(QFocusEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

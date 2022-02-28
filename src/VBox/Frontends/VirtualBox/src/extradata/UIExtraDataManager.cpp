@@ -530,7 +530,7 @@ private:
     /** @name General
       * @{ */
         /** Returns whether the window should be maximized when geometry being restored. */
-        virtual bool shouldBeMaximized() const /* override */;
+        virtual bool shouldBeMaximized() const RT_OVERRIDE;
     /** @} */
 
     /** @name Prepare/Cleanup

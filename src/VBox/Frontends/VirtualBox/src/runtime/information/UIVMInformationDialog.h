@@ -60,14 +60,14 @@ public:
     ~UIVMInformationDialog();
 
     /** Returns whether the dialog should be maximized when geometry being restored. */
-    virtual bool shouldBeMaximized() const /* override */;
+    virtual bool shouldBeMaximized() const RT_OVERRIDE;
 
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
-    virtual void closeEvent(QCloseEvent *pEvent) /* override */;
-    virtual bool event(QEvent *pEvent) /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

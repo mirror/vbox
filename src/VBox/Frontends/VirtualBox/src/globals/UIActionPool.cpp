@@ -433,23 +433,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuType_Application;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Application);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Application);
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
 #ifdef VBOX_WS_MAC
         setName(QApplication::translate("UIActionPool", "&VirtualBox"));
@@ -476,29 +476,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuApplicationActionType_Close;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Close);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Close);
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("Close");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const RT_OVERRIDE
     {
         switch (actionPoolType)
         {
@@ -509,7 +509,7 @@ protected:
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Close..."));
         setStatusTip(QApplication::translate("UIActionPool", "Close the virtual machine"));
@@ -532,23 +532,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuType_Window;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Window);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Window);
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Window"));
     }
@@ -569,29 +569,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuWindowActionType_Minimize;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuWindowActionType_Minimize);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType_Minimize);
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("Minimize");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Minimize"));
         setStatusTip(QApplication::translate("UIActionPool", "Minimize active window"));
@@ -616,23 +616,23 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuType_Help;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Help);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Help);
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Help"));
     }
@@ -655,29 +655,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuHelpActionType_Contents;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Contents);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Contents);
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("Help");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType actionPoolType) const RT_OVERRIDE
     {
         switch (actionPoolType)
         {
@@ -688,7 +688,7 @@ protected:
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Contents..."));
         setStatusTip(QApplication::translate("UIActionPool", "Show help contents"));
@@ -712,29 +712,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuHelpActionType_WebSite;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_WebSite);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_WebSite);
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("Web");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&VirtualBox Web Site..."));
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product web site"));
@@ -758,29 +758,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuHelpActionType_BugTracker;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_BugTracker);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_BugTracker);
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("BugTracker");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&VirtualBox Bug Tracker..."));
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product bug tracker"));
@@ -804,29 +804,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuHelpActionType_Forums;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Forums);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Forums);
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("Forums");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&VirtualBox Forums..."));
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product forums"));
@@ -850,29 +850,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuHelpActionType_Oracle;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Oracle);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Oracle);
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("Oracle");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Oracle Web Site..."));
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the Oracle web site"));
@@ -897,29 +897,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings);
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ResetWarnings");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Reset All Warnings"));
         setStatusTip(QApplication::translate("UIActionPool", "Go back to showing all suppressed warnings and messages"));
@@ -945,29 +945,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates);
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("Update");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "C&heck for Updates..."));
         setStatusTip(QApplication::translate("UIActionPool", "Check for a new VirtualBox version"));
@@ -993,7 +993,7 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
 #ifdef VBOX_WS_MAC
         return UIExtraDataMetaDefs::MenuApplicationActionType_About;
@@ -1002,7 +1002,7 @@ protected:
 #endif
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
 #ifdef VBOX_WS_MAC
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_About);
@@ -1011,7 +1011,7 @@ protected:
 #endif
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
 #ifdef VBOX_WS_MAC
         return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_About);
@@ -1021,13 +1021,13 @@ protected:
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("About");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&About VirtualBox..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display a window with product information"));
@@ -1055,29 +1055,29 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const /* override */
+    virtual int extraDataID() const RT_OVERRIDE
     {
         return UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
     }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const /* override */
+    virtual QString extraDataKey() const RT_OVERRIDE
     {
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
     }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const /* override */
+    virtual bool isAllowed() const RT_OVERRIDE
     {
         return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
     }
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("Preferences");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         switch (actionPool()->type())
         {
@@ -1088,7 +1088,7 @@ protected:
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Preferences...", "global preferences window"));
         setStatusTip(QApplication::translate("UIActionPool", "Display the global preferences window"));
@@ -1112,13 +1112,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("LogViewerMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Log"));
     }
@@ -1143,19 +1143,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleLogFind");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+F");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Find"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
@@ -1184,19 +1184,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleLogFilter");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+T");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Filter"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
@@ -1225,19 +1225,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleLogBookmark");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+D");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Bookmark"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
@@ -1266,19 +1266,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleLogOptions");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Options"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
@@ -1307,25 +1307,25 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RefreshLog");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+R");
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::Refresh);
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Refresh"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
@@ -1354,25 +1354,25 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ReloadAllLogs");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Reload"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
@@ -1401,19 +1401,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("SaveLog");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+S");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Save..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
@@ -1438,13 +1438,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "File Manager"));
     }
@@ -1464,13 +1464,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerHostSubmenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Host"));
     }
@@ -1490,13 +1490,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerGuestSubmenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Guest"));
     }
@@ -1518,19 +1518,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerCopyToGuest");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Copy to guest"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1556,19 +1556,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerCopyToHost");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Copy to host"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1597,19 +1597,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleFileManagerOptionsPanel");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Options"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1638,19 +1638,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleFileManagerLogPanel");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Log"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1679,19 +1679,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleFileManagerOperationsPanel");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Operations"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1720,19 +1720,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleFileManagerGuestSessionPanel");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Session"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1759,19 +1759,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerGoUp");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Go Up"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1798,19 +1798,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerGoHome");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Go Home"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1837,19 +1837,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerDelete");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Delete"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1876,19 +1876,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerRefresh");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Refresh"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1914,19 +1914,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerRename");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Rename"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1952,19 +1952,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerCreateNewDirectory");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Create New Directory"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -1990,19 +1990,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerCopy");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Copy"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -2028,19 +2028,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerCut");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Cut"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -2066,19 +2066,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerPaste");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Paste"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -2104,19 +2104,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerSelectAll");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Select All"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -2142,19 +2142,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerInvertSelection");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Invert Selection"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -2180,19 +2180,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("FileManagerShowProperties");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Show Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
@@ -2217,13 +2217,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VISOCreatorMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "VISO Creator"));
     }
@@ -2250,19 +2250,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleVISOCreatorConfigurationPanel");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Configuration"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
@@ -2293,19 +2293,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleVISOCreatorOptionsPanel");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence();
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Options"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
@@ -2334,13 +2334,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VISOAddItem");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Add"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
@@ -2369,13 +2369,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VISORemoveItem");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Remove"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
@@ -2404,13 +2404,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VISONewDirectory");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&New Directory"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
@@ -2439,13 +2439,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VISORenameItem");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Rename"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
@@ -2471,13 +2471,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VISOReset");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "R&eset"));
         setShortcutScope(QApplication::translate("UIActionPool", "VISO Creator"));
@@ -2502,13 +2502,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MediumSelector");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Medium Selector"));
     }
@@ -2532,13 +2532,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MediumSelectorAddHD");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Add..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
@@ -2566,13 +2566,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MediumSelectorAddCD");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Add..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
@@ -2600,13 +2600,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MediumSelectorAddFD");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Add..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
@@ -2634,13 +2634,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MediumSelectorCreateHD");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Create..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
@@ -2668,13 +2668,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MediumSelectorCreateCD");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Create..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
@@ -2702,13 +2702,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MediumSelectorCreateFD");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Create..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
@@ -2736,13 +2736,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MediumSelectorRefresh");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Refresh..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Medium Selector"));
@@ -2767,13 +2767,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VMActivityMonitorMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Activity"));
     }
@@ -2798,13 +2798,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VMActivityMonitorExportCharts");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Export..."));
         setShortcutScope(QApplication::translate("UIActionPool", "VM Activity Monitor"));
@@ -2833,13 +2833,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToVMActivityOverview");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Activity Overview..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Activity Monitor"));

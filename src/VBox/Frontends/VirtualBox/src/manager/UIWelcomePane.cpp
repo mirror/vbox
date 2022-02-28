@@ -54,16 +54,16 @@ public:
 protected:
 
     /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
     /** Returns whether the widget's preferred height depends on its width. */
-    virtual bool hasHeightForWidth() const /* override */;
+    virtual bool hasHeightForWidth() const RT_OVERRIDE;
 
     /** Holds the minimum widget size. */
-    virtual QSize minimumSizeHint() const /* override */;
+    virtual QSize minimumSizeHint() const RT_OVERRIDE;
 
     /** Holds the preferred widget size. */
-    virtual QSize sizeHint() const /* override */;
+    virtual QSize sizeHint() const RT_OVERRIDE;
 };
 
 
@@ -98,7 +98,7 @@ bool UIWrappableLabel::hasHeightForWidth() const
            : QLabel::hasHeightForWidth();
 }
 
-QSize UIWrappableLabel::minimumSizeHint() const /* override */
+QSize UIWrappableLabel::minimumSizeHint() const
 {
     // WORKAROUND:
     // We should calculate hint height on the basis of width,
@@ -108,7 +108,7 @@ QSize UIWrappableLabel::minimumSizeHint() const /* override */
            : QLabel::minimumSizeHint();
 }
 
-QSize UIWrappableLabel::sizeHint() const /* override */
+QSize UIWrappableLabel::sizeHint() const
 {
     // WORKAROUND:
     // Keep widget always minimal.

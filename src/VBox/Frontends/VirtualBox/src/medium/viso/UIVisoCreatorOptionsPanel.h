@@ -40,12 +40,12 @@ public:
 
     UIVisoCreatorOptionsPanel(QWidget *pParent = 0);
     ~UIVisoCreatorOptionsPanel();
-    virtual QString panelName() const /* override */;
+    virtual QString panelName() const RT_OVERRIDE;
     void setShowHiddenbjects(bool fShow);
 
 protected:
 
-    void retranslateUi() /* override */;
+    void retranslateUi() RT_OVERRIDE;
 
 
 private slots:

@@ -85,15 +85,15 @@ public slots:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Handles drop @a pEvent. */
-    virtual void dropEvent(QDropEvent *pEvent) /* override */;
+    virtual void dropEvent(QDropEvent *pEvent) RT_OVERRIDE;
 
     /** Returns a QModelIndex object pointing to the next object in the view,
       * based on the given @a cursorAction and keyboard @a fModifiers. */
     virtual QModelIndex moveCursor(QAbstractItemView::CursorAction cursorAction,
-                                   Qt::KeyboardModifiers fModifiers) /* override */;
+                                   Qt::KeyboardModifiers fModifiers) RT_OVERRIDE;
 
 private:
 

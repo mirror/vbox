@@ -69,9 +69,9 @@ protected:
     virtual void setTableRootIndex(QModelIndex index = QModelIndex()) = 0;
     virtual void setTreeCurrentIndex(QModelIndex index = QModelIndex()) = 0;
 
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-    virtual bool eventFilter(QObject *pObj, QEvent *pEvent) /* override */;
-    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
+    virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
 
     QTreeView          *m_pTreeView;
     QGridLayout        *m_pMainLayout;

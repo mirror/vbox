@@ -78,7 +78,7 @@ public:
 private:
 
     /** Contains medium-enumeration task body. */
-    virtual void run() /* override */
+    virtual void run() RT_OVERRIDE
     {
         /* Enumerate under a proper lock: */
         m_mutex.lock();

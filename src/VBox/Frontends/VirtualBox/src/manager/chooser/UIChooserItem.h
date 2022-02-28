@@ -182,7 +182,7 @@ public:
     /** @name Layout stuff.
       * @{ */
         /** Updates geometry. */
-        virtual void updateGeometry() /* override */;
+        virtual void updateGeometry() RT_OVERRIDE;
 
         /** Updates layout. */
         virtual void updateLayout() = 0;
@@ -224,21 +224,21 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles hover enter @a event. */
-        virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+        virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) RT_OVERRIDE;
         /** Handles hover leave @a event. */
-        virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+        virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) RT_OVERRIDE;
 
         /** Handles mouse press @a event. */
-        virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+        virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) RT_OVERRIDE;
         /** Handles mouse move @a event. */
-        virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+        virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *pEvent) RT_OVERRIDE;
 
         /** Handles drag move @a event. */
-        virtual void dragMoveEvent(QGraphicsSceneDragDropEvent *pEvent) /* override */;
+        virtual void dragMoveEvent(QGraphicsSceneDragDropEvent *pEvent) RT_OVERRIDE;
         /** Handles drag leave @a event. */
-        virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent) /* override */;
+        virtual void dragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent) RT_OVERRIDE;
         /** Handles drop @a event. */
-        virtual void dropEvent(QGraphicsSceneDragDropEvent *pEvent) /* override */;
+        virtual void dropEvent(QGraphicsSceneDragDropEvent *pEvent) RT_OVERRIDE;
     /** @} */
 
     /** @name Item stuff.
@@ -365,7 +365,7 @@ public:
     UIChooserItem *item() const { return m_pItem; }
 
     /** Constructs mime-data on the basis of passed @a pItem. */
-    virtual bool hasFormat(const QString &strMimeType) const /* override */;
+    virtual bool hasFormat(const QString &strMimeType) const RT_OVERRIDE;
 
 private:
 

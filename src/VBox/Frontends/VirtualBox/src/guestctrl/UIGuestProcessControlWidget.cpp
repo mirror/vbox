@@ -79,7 +79,7 @@ public:
 
 protected:
 
-    void contextMenuEvent(QContextMenuEvent *pEvent) /* override */;
+    void contextMenuEvent(QContextMenuEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

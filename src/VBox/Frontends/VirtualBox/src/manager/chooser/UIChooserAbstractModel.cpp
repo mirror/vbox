@@ -78,10 +78,10 @@ protected:
     /** Constructs group settings saving thread. */
     UIThreadGroupSettingsSave();
     /** Destructs group settings saving thread. */
-    virtual ~UIThreadGroupSettingsSave() /* override */;
+    virtual ~UIThreadGroupSettingsSave() RT_OVERRIDE;
 
     /** Contains a thread task to be executed. */
-    virtual void run() /* override */;
+    virtual void run() RT_OVERRIDE;
 
     /** Holds the singleton instance. */
     static UIThreadGroupSettingsSave *s_pInstance;
@@ -122,10 +122,10 @@ protected:
     /** Constructs group definitions saving thread. */
     UIThreadGroupDefinitionsSave();
     /** Destructs group definitions saving thread. */
-    virtual ~UIThreadGroupDefinitionsSave() /* override */;
+    virtual ~UIThreadGroupDefinitionsSave() RT_OVERRIDE;
 
     /** Contains a thread task to be executed. */
-    virtual void run() /* override */;
+    virtual void run() RT_OVERRIDE;
 
     /** Holds the singleton instance. */
     static UIThreadGroupDefinitionsSave *s_pInstance;

@@ -183,7 +183,7 @@ public:
 protected:
 
     /** Returns default text. */
-    virtual QString defaultText() const /* override */
+    virtual QString defaultText() const RT_OVERRIDE
     {
         return parentItem()
              ? tr("%1, %2: %3, %4: %5, %6: %7, %8: %9",

@@ -38,12 +38,12 @@ public:
 
     UIFileManagerLogPanel(QWidget *pParent = 0);
     void appendLog(const QString &str, const QString &strMachineName, FileManagerLogType eLogType);
-    virtual QString panelName() const /* override */;
+    virtual QString panelName() const RT_OVERRIDE;
 
 protected:
 
-    virtual void prepareWidgets() /* override */;
-    virtual void prepareConnections() /* override */;
+    virtual void prepareWidgets() RT_OVERRIDE;
+    virtual void prepareConnections() RT_OVERRIDE;
 
     /** Handles the translation event. */
     void retranslateUi();

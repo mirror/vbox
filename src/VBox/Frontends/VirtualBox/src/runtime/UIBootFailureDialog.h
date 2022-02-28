@@ -63,7 +63,7 @@ public:
 
 protected:
 
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
@@ -80,7 +80,7 @@ private:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
     /** @} */
 
     /** @name Prepare/cleanup cascade.

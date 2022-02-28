@@ -257,7 +257,7 @@ public:
     {}
 
     /** Returns the cell text. */
-    virtual QString text() const /* override */ { return m_strText; }
+    virtual QString text() const RT_OVERRIDE { return m_strText; }
 
 private:
 
@@ -363,14 +363,14 @@ public:
 protected:
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */
+    virtual int childCount() const RT_OVERRIDE
     {
         /* Return cell count: */
         return UIPortForwardingDataType_Max;
     }
 
     /** Returns the child item with @a iIndex. */
-    virtual QITableViewCell *childItem(int iIndex) const /* override */
+    virtual QITableViewCell *childItem(int iIndex) const RT_OVERRIDE
     {
         /* Make sure index within the bounds: */
         AssertReturn(iIndex >= 0 && iIndex < m_cells.size(), 0);
@@ -495,9 +495,9 @@ public:
 protected:
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */;
+    virtual int childCount() const RT_OVERRIDE;
     /** Returns the child item with @a iIndex. */
-    virtual QITableViewRow *childItem(int iIndex) const /* override */;
+    virtual QITableViewRow *childItem(int iIndex) const RT_OVERRIDE;
 };
 
 

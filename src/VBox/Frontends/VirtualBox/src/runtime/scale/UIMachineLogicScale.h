@@ -48,7 +48,7 @@ private slots:
 #endif /* !RT_OS_DARWIN */
 
     /** Handles host-screen available-area change. */
-    virtual void sltHostScreenAvailableAreaChange() /* override */;
+    virtual void sltHostScreenAvailableAreaChange() RT_OVERRIDE;
 
 private:
 

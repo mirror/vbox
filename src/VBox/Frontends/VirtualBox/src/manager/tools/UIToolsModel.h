@@ -79,7 +79,7 @@ public:
     /** Constructs Tools-model passing @a pParent to the base-class. */
     UIToolsModel(UITools *pParent);
     /** Destructs Tools-model. */
-    virtual ~UIToolsModel() /* override */;
+    virtual ~UIToolsModel() RT_OVERRIDE;
 
     /** @name General stuff.
       * @{ */
@@ -186,10 +186,10 @@ protected:
     /** @name Event handling stuff.
       * @{ */
         /** Preprocesses Qt @a pEvent for passed @a pObject. */
-        virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+        virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
     /** @} */
 
 private slots:

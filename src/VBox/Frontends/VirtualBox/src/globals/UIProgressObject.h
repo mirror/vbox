@@ -68,7 +68,7 @@ public:
       * @param  comProgress   Brings the progress reference. */
     UIProgressObject(CProgress &comProgress, QObject *pParent = 0);
     /** Destructs progress handler. */
-    virtual ~UIProgressObject() /* override */;
+    virtual ~UIProgressObject() RT_OVERRIDE;
 
     /** Returns whether progress is cancelable. */
     bool isCancelable() const { return m_fCancelable; }

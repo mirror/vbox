@@ -53,7 +53,7 @@ public:
     {}
 
     /** Returns the parent. */
-    virtual QAccessibleInterface *parent() const /* override */
+    virtual QAccessibleInterface *parent() const RT_OVERRIDE
     {
         /* Make sure line still alive: */
         AssertPtrReturn(line(), 0);
@@ -63,14 +63,14 @@ public:
     }
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */ { return 0; }
+    virtual int childCount() const RT_OVERRIDE { return 0; }
     /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int /* iIndex */) const /* override */ { return 0; }
+    virtual QAccessibleInterface *child(int /* iIndex */) const RT_OVERRIDE { return 0; }
     /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface * /* pChild */) const /* override */ { return -1; }
+    virtual int indexOfChild(const QAccessibleInterface * /* pChild */) const RT_OVERRIDE { return -1; }
 
     /** Returns the rect. */
-    virtual QRect rect() const /* override */
+    virtual QRect rect() const RT_OVERRIDE
     {
         /* Make sure parent still alive: */
         AssertPtrReturn(parent(), QRect());
@@ -81,7 +81,7 @@ public:
     }
 
     /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text enmTextRole) const /* override */
+    virtual QString text(QAccessible::Text enmTextRole) const RT_OVERRIDE
     {
         /* Make sure line still alive: */
         AssertPtrReturn(line(), QString());
@@ -95,9 +95,9 @@ public:
     }
 
     /** Returns the role. */
-    virtual QAccessible::Role role() const /* override */ { return QAccessible::StaticText; }
+    virtual QAccessible::Role role() const RT_OVERRIDE { return QAccessible::StaticText; }
     /** Returns the state. */
-    virtual QAccessible::State state() const /* override */ { return QAccessible::State(); }
+    virtual QAccessible::State state() const RT_OVERRIDE { return QAccessible::State(); }
 
 private:
 

@@ -49,9 +49,9 @@ public:
 protected:
 
     /** Creates and returns started progress-wrapper required to init UIProgressObject. */
-    virtual CProgress createProgress() /* override */;
+    virtual CProgress createProgress() RT_OVERRIDE;
     /** Handles finished @a comProgress wrapper. */
-    virtual void handleProgressFinished(CProgress &comProgress) /* override */;
+    virtual void handleProgressFinished(CProgress &comProgress) RT_OVERRIDE;
 
 private:
 

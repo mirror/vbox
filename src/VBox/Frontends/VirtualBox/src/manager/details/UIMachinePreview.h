@@ -62,7 +62,7 @@ public:
     /** Constructs preview element, passing pParent to the base-class. */
     UIMachinePreview(QIGraphicsWidget *pParent);
     /** Destructs preview element. */
-    virtual ~UIMachinePreview() /* override */;
+    virtual ~UIMachinePreview() RT_OVERRIDE;
 
     /** @name Item stuff.
       * @{ */
@@ -77,27 +77,27 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
 
         /** Handles resize @a pEvent. */
-        virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) /* override */;
+        virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) RT_OVERRIDE;
 
         /** Handles show @a pEvent. */
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
+        virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
         /** Handles hide @a pEvent. */
-        virtual void hideEvent(QHideEvent *pEvent) /* override */;
+        virtual void hideEvent(QHideEvent *pEvent) RT_OVERRIDE;
 
         /** Handles context-menu @a pEvent. */
-        virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent) /* override */;
+        virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent) RT_OVERRIDE;
 
         /** Performs painting using passed @a pPainter, @a pOptions and optionally specified @a pWidget. */
-        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) /* override */;
+        virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) RT_OVERRIDE;
     /** @} */
 
     /** @name Item stuff.
       * @{ */
         /** Returns RTTI item type. */
-        virtual int type() const /* override */ { return Type; }
+        virtual int type() const RT_OVERRIDE { return Type; }
     /** @} */
 
     /** @name Layout stuff.
@@ -105,7 +105,7 @@ protected:
         /** Returns size-hint.
           * @param  enmWhich    Brings size-hint type.
           * @param  constraint  Brings size constraint. */
-        virtual QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const /* override */;
+        virtual QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const RT_OVERRIDE;
     /** @} */
 
 private slots:

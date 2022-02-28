@@ -61,8 +61,8 @@ public:
 
 protected:
 
-    void retranslateUi() /* override */;
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    void retranslateUi() RT_OVERRIDE;
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

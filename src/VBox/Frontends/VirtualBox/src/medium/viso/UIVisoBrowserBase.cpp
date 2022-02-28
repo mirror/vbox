@@ -46,9 +46,9 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
-    virtual bool eventFilter(QObject *pObj, QEvent *pEvent) /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+    virtual bool eventFilter(QObject *pObj, QEvent *pEvent) RT_OVERRIDE;
 
 private:
 

@@ -93,7 +93,7 @@ protected:
 
     /** Read the directory with the path @p path recursively and collect #of objects and  total size */
     virtual void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics) = 0;
-    virtual void           run() /* override */;
+    virtual void           run() RT_OVERRIDE;
     /** Returns the m_fOkToContinue flag */
     bool                  isOkToContinue() const;
     /** Stores a list of paths whose statistics are accumulated, can be file, directory etc: */
@@ -213,7 +213,7 @@ protected:
     virtual void     determinePathSeparator() = 0;
     virtual void     prepareToolbar() = 0;
     virtual void     createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) = 0;
-    virtual bool     event(QEvent *pEvent) /* override */;
+    virtual bool     event(QEvent *pEvent) RT_OVERRIDE;
 
     /** @name Copy/Cut guest-to-guest (host-to-host) stuff.
      * @{ */
@@ -232,7 +232,7 @@ protected:
     /** Goes into directory pointed by the @p item */
     void             goIntoDirectory(UICustomFileSystemItem *item);
     UICustomFileSystemItem* indexData(const QModelIndex &index) const;
-    bool             eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    bool             eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
     void             setSelectionDependentActionsEnabled(bool fIsEnabled);
     UICustomFileSystemItem*   rootItem();

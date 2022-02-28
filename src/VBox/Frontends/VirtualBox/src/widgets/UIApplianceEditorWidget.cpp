@@ -65,18 +65,18 @@ public:
     /** Appends the passed @a pChildItem to the item's list of children. */
     void appendChild(UIApplianceModelItem *pChildItem);
     /** Returns the child specified by the @a iIndex. */
-    virtual UIApplianceModelItem *childItem(int iIndex) const /* override */;
+    virtual UIApplianceModelItem *childItem(int iIndex) const RT_OVERRIDE;
 
     /** Returns the row of the item in the parent. */
     int row() const;
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */;
+    virtual int childCount() const RT_OVERRIDE;
     /** Returns the number of columns. */
     int columnCount() const { return 3; }
 
     /** Returns the item text. */
-    virtual QString text() const /* override */;
+    virtual QString text() const RT_OVERRIDE;
 
     /** Returns the item flags for the given @a iColumn. */
     virtual Qt::ItemFlags itemFlags(int /* iColumn */) const { return Qt::ItemFlags(); }
@@ -126,10 +126,10 @@ public:
     UIVirtualSystemItem(int iNumber, CVirtualSystemDescription comDescription, UIApplianceModelItem *pParentItem);
 
     /** Returns the data stored under the given @a iRole for the item referred to by the @a iColumn. */
-    virtual QVariant data(int iColumn, int iRole) const /* override */;
+    virtual QVariant data(int iColumn, int iRole) const RT_OVERRIDE;
 
     /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
-    virtual void putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues) /* override */;
+    virtual void putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues) RT_OVERRIDE;
 
 private:
 
@@ -169,28 +169,28 @@ public:
                           UIApplianceModelItem *pParentItem);
 
     /** Returns the item flags for the given @a iColumn. */
-    virtual Qt::ItemFlags itemFlags(int iColumn) const /* override */;
+    virtual Qt::ItemFlags itemFlags(int iColumn) const RT_OVERRIDE;
 
     /** Defines the @a iRole data for the item at @a iColumn to @a value. */
-    virtual bool setData(int iColumn, const QVariant &value, int iRole) /* override */;
+    virtual bool setData(int iColumn, const QVariant &value, int iRole) RT_OVERRIDE;
     /** Returns the data stored under the given @a iRole for the item referred to by the @a iColumn. */
-    virtual QVariant data(int iColumn, int iRole) const /* override */;
+    virtual QVariant data(int iColumn, int iRole) const RT_OVERRIDE;
 
     /** Returns the widget used to edit the item specified by @a idx for editing.
       * @param  pParent      Brings the parent to be assigned for newly created editor.
       * @param  styleOption  Bring the style option set for the newly created editor. */
-    virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const /* override */;
+    virtual QWidget *createEditor(QWidget *pParent, const QStyleOptionViewItem &styleOption, const QModelIndex &idx) const RT_OVERRIDE;
 
     /** Defines the contents of the given @a pEditor to the data for the item at the given @a idx. */
-    virtual bool setEditorData(QWidget *pEditor, const QModelIndex &idx) const /* override */;
+    virtual bool setEditorData(QWidget *pEditor, const QModelIndex &idx) const RT_OVERRIDE;
     /** Defines the data for the item at the given @a idx in the @a pModel to the contents of the given @a pEditor. */
-    virtual bool setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx) /* override */;
+    virtual bool setModelData(QWidget *pEditor, QAbstractItemModel *pModel, const QModelIndex &idx) RT_OVERRIDE;
 
     /** Restores the default values. */
-    virtual void restoreDefaults() /* override */;
+    virtual void restoreDefaults() RT_OVERRIDE;
 
     /** Cache currently stored values, such as @a finalStates, @a finalValues and @a finalExtraValues. */
-    virtual void putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues) /* override */;
+    virtual void putBack(QVector<BOOL> &finalStates, QVector<QString> &finalValues, QVector<QString> &finalExtraValues) RT_OVERRIDE;
 
     KVirtualSystemDescriptionType  systemDescriptionType() const;
 

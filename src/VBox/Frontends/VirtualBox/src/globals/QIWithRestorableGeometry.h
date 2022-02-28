@@ -55,7 +55,7 @@ public:
 protected:
 
     /** Handles move @a pEvent. */
-    virtual void moveEvent(QMoveEvent *pEvent) /* override */
+    virtual void moveEvent(QMoveEvent *pEvent) RT_OVERRIDE
     {
         /* Call to base-class: */
         QMainWindow::moveEvent(pEvent);
@@ -80,7 +80,7 @@ protected:
     }
 
     /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE
     {
         /* Call to base-class: */
         QMainWindow::resizeEvent(pEvent);

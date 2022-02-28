@@ -69,7 +69,7 @@ public:
     /** Constructs tools pane passing @a pParent to the base-class. */
     UIToolPaneMachine(UIActionPool *pActionPool, QWidget *pParent = 0);
     /** Destructs tools pane. */
-    virtual ~UIToolPaneMachine() /* override */;
+    virtual ~UIToolPaneMachine() RT_OVERRIDE;
 
     /** Defines whether this pane is @a fActive. */
     void setActive(bool fActive);

@@ -210,7 +210,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
@@ -300,7 +300,7 @@ public:
     UIFormEditorCell(QITableViewRow *pParent, const QString &strText = QString());
 
     /** Returns the cell text. */
-    virtual QString text() const /* override */ { return m_strText; }
+    virtual QString text() const RT_OVERRIDE { return m_strText; }
 
     /** Defines the cell @a strText. */
     void setText(const QString &strText) { m_strText = strText; }
@@ -323,7 +323,7 @@ public:
       * @param  pFormEditorWidget  Brings the root form-editor widget reference. */
     UIFormEditorRow(QITableView *pParent, UIFormEditorWidget *pFormEditorWidget, const CFormValue &comValue);
     /** Destructs table row. */
-    virtual ~UIFormEditorRow() /* override */;
+    virtual ~UIFormEditorRow() RT_OVERRIDE;
 
     /** Returns value type. */
     KFormValueType valueType() const { return m_enmValueType; }
@@ -373,9 +373,9 @@ public:
 protected:
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */;
+    virtual int childCount() const RT_OVERRIDE;
     /** Returns the child item with @a iIndex. */
-    virtual QITableViewCell *childItem(int iIndex) const /* override */;
+    virtual QITableViewCell *childItem(int iIndex) const RT_OVERRIDE;
 
 private:
 
@@ -424,7 +424,7 @@ public:
     /** Constructs Form Editor model passing @a pParent to the base-class. */
     UIFormEditorModel(UIFormEditorWidget *pParent);
     /** Destructs Port Forwarding model. */
-    virtual ~UIFormEditorModel() /* override */;
+    virtual ~UIFormEditorModel() RT_OVERRIDE;
 
     /** Clears form. */
     void clearForm();
@@ -437,23 +437,23 @@ public:
     QITableViewRow *childItem(int iIndex) const;
 
     /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx. */
-    virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const /* override */;
+    virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const RT_OVERRIDE;
 
     /** Returns flags for item with certain @a index. */
-    virtual Qt::ItemFlags flags(const QModelIndex &index) const /* override */;
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE;
 
     /** Returns row count of certain @a parent. */
-    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const /* override */;
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
     /** Returns column count of certain @a parent. */
-    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
 
     /** Returns header data for @a iSection, @a enmOrientation and @a iRole specified. */
-    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const /* override */;
+    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const RT_OVERRIDE;
 
     /** Defines the @a iRole data for item with @a index as @a value. */
-    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) /* override */;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) RT_OVERRIDE;
     /** Returns the @a iRole data for item with @a index. */
-    virtual QVariant data(const QModelIndex &index, int iRole) const /* override */;
+    virtual QVariant data(const QModelIndex &index, int iRole) const RT_OVERRIDE;
 
     /** Creates actual TextData editor for specified @a index. */
     void createTextDataEditor(const QModelIndex &index);
@@ -501,7 +501,7 @@ public:
 protected:
 
     /** Returns whether item in the row indicated by the given @a iSourceRow and @a srcParenIdx should be included in the model. */
-    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &srcParenIdx) const /* override */;
+    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &srcParenIdx) const RT_OVERRIDE;
 };
 
 
@@ -518,9 +518,9 @@ public:
 protected:
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */;
+    virtual int childCount() const RT_OVERRIDE;
     /** Returns the child item with @a iIndex. */
-    virtual QITableViewRow *childItem(int iIndex) const /* override */;
+    virtual QITableViewRow *childItem(int iIndex) const RT_OVERRIDE;
 };
 
 

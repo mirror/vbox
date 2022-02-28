@@ -48,7 +48,7 @@ public:
     /** Constructs network customer passing @a pParent to the base-class. */
     UINetworkCustomer();
     /** Destructs network customer. */
-    virtual ~UINetworkCustomer() /* override */;
+    virtual ~UINetworkCustomer() RT_OVERRIDE;
 
     /** Returns description of the current network operation. */
     virtual QString description() const { return QString(); }

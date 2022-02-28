@@ -42,13 +42,13 @@ signals:
 public:
     UIVisoConfigurationPanel(QWidget *pParent = 0);
     ~UIVisoConfigurationPanel();
-    virtual QString panelName() const /* override */;
+    virtual QString panelName() const RT_OVERRIDE;
     void setVisoName(const QString& strVisoName);
     void setVisoCustomOptions(const QStringList& visoCustomOptions);
 
 protected:
 
-    void retranslateUi() /* override */;
+    void retranslateUi() RT_OVERRIDE;
 
 private slots:
 

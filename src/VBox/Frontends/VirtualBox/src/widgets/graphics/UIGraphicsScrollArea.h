@@ -42,7 +42,7 @@ public:
     UIGraphicsScrollArea(Qt::Orientation enmOrientation, QIGraphicsWidget *pParent = 0);
 
     /** Returns minimum size-hint. */
-    virtual QSizeF minimumSizeHint() const /* override */;
+    virtual QSizeF minimumSizeHint() const RT_OVERRIDE;
 
     /** Defines scroll-area @a pViewport. */
     void setViewport(QIGraphicsWidget *pViewport);
@@ -62,10 +62,10 @@ public:
 protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
 
     /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) /* override */;
+    virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

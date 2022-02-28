@@ -89,7 +89,7 @@ public:
 
 protected:
 
-    void retranslateUi() /* override */;
+    void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
@@ -125,8 +125,8 @@ public:
 
 protected:
 
-    void mouseDoubleClickEvent(QMouseEvent *event) /* override */;
-    void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    void mouseDoubleClickEvent(QMouseEvent *event) RT_OVERRIDE;
+    void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE;
 };
 
 
@@ -158,7 +158,7 @@ public:
 
 protected:
 
-    void retranslateUi() /* override */;
+    void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
@@ -233,7 +233,7 @@ private:
     void prepare(const QUrl &initialUrl);
     void prepareWidgets(const QUrl &initialUrl);
     void prepareToolBarAndAddressBar();
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
     void setActionTextAndToolTip(QAction *pAction, const QString &strText, const QString &strToolTip);
 
     QAction     *m_pHomeAction;

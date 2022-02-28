@@ -61,7 +61,7 @@ protected:
 
     virtual bool isComplete() const; /* override final */
     /** Validation stuff. */
-    virtual bool validatePage() /* override */;
+    virtual bool validatePage() RT_OVERRIDE;
 
 private slots:
 

@@ -116,10 +116,10 @@ public:
 protected:
 
     /** Handles polish @a pEvent. */
-    virtual void polishEvent(QShowEvent *pEvent) /* override */;
+    virtual void polishEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
     /** Handles close @a pEvent. */
-    virtual void closeEvent(QCloseEvent *pEvent) /* override */;
+    virtual void closeEvent(QCloseEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
@@ -130,7 +130,7 @@ private slots:
     void sltCopy() const;
 
     /** Closes dialog like user would press the Cancel button. */
-    virtual void reject() /* override */;
+    virtual void reject() RT_OVERRIDE;
 
     /** Closes dialog like user would press the 1st button. */
     void sltDone1() { m_fDone = true; done(m_iButton1 & AlertButtonMask); }

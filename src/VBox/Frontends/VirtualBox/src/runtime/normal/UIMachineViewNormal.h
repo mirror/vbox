@@ -56,9 +56,9 @@ private:
     //void cleanupCommon() {}
 
     /** Returns whether the guest-screen auto-resize is enabled. */
-    virtual bool isGuestAutoresizeEnabled() const /* override */ { return m_bIsGuestAutoresizeEnabled; }
+    virtual bool isGuestAutoresizeEnabled() const RT_OVERRIDE { return m_bIsGuestAutoresizeEnabled; }
     /** Defines whether the guest-screen auto-resize is @a fEnabled. */
-    virtual void setGuestAutoresizeEnabled(bool bEnabled) /* override */;
+    virtual void setGuestAutoresizeEnabled(bool bEnabled) RT_OVERRIDE;
 
     /** Resends guest size-hint. */
     void resendSizeHint();

@@ -84,7 +84,7 @@ public:
     {}
 
     /** Handles all native events. */
-    virtual bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult) /* override */
+    virtual bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult) RT_OVERRIDE
     {
         /* Redirect event to parent: */
         return m_pParent->nativeEvent(eventType, pMessage, pResult);

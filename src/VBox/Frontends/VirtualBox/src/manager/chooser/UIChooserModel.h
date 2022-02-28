@@ -90,12 +90,12 @@ public:
     /** Constructs Chooser-model passing @a pParent to the base-class. */
     UIChooserModel(UIChooser *pParent, UIActionPool *pActionPool);
     /** Destructs Chooser-model. */
-    virtual ~UIChooserModel() /* override */;
+    virtual ~UIChooserModel() RT_OVERRIDE;
 
     /** @name General stuff.
       * @{ */
         /** Inits model. */
-        virtual void init() /* override */;
+        virtual void init() RT_OVERRIDE;
 
         /** Returns the action-pool reference. */
         UIActionPool *actionPool() const;
@@ -195,10 +195,10 @@ public:
         UIChooserItem *searchItemByDefinition(const QString &strDefinition) const;
 
         /** Performs a search using @a strSearchTerm and @a iSearchFlags specified. */
-        virtual void performSearch(const QString &strSearchTerm, int iSearchFlags) /* override */;
+        virtual void performSearch(const QString &strSearchTerm, int iSearchFlags) RT_OVERRIDE;
         /** Resets the search result data members and disables item's visual effects.
           * Also returns a list of all nodes which may be utilized by the calling code. */
-        virtual QList<UIChooserNode*> resetSearch() /* override */;
+        virtual QList<UIChooserNode*> resetSearch() RT_OVERRIDE;
 
         /** Selects next/prev (wrt. @a fIsNext) search result. */
         void selectSearchResult(bool fIsNext);
@@ -262,7 +262,7 @@ protected:
     /** @name Event handling stuff.
       * @{ */
         /** Preprocesses Qt @a pEvent for passed @a pObject. */
-        virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+        virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
     /** @} */
 
 protected slots:
@@ -270,19 +270,19 @@ protected slots:
     /** @name Main event handling stuff.
       * @{ */
         /** Handles local machine registering/unregistering for machine with certain @a uMachineId. */
-        virtual void sltLocalMachineRegistrationChanged(const QUuid &uMachineId, const bool fRegistered) /* override */;
+        virtual void sltLocalMachineRegistrationChanged(const QUuid &uMachineId, const bool fRegistered) RT_OVERRIDE;
 
         /** Handles event about cloud provider with @a uProviderId being uninstalled. */
-        virtual void sltHandleCloudProviderUninstall(const QUuid &uProviderId) /* override */;
+        virtual void sltHandleCloudProviderUninstall(const QUuid &uProviderId) RT_OVERRIDE;
     /** @} */
 
     /** @name Children stuff.
       * @{ */
         /** Handles reload machine with certain @a uMachineId request. */
-        virtual void sltReloadMachine(const QUuid &uMachineId) /* override */;
+        virtual void sltReloadMachine(const QUuid &uMachineId) RT_OVERRIDE;
 
         /** Handles command to detach COM. */
-        virtual void sltDetachCOM() /* override */;
+        virtual void sltDetachCOM() RT_OVERRIDE;
     /** @} */
 
     /** @name Cloud stuff.
@@ -292,31 +292,31 @@ protected slots:
           * @param  strProfileName        Brings profile name. */
         virtual void sltCloudMachineUnregistered(const QString &strProviderShortName,
                                                  const QString &strProfileName,
-                                                 const QUuid &uId) /* override */;
+                                                 const QUuid &uId) RT_OVERRIDE;
         /** Handles cloud machine unregistering for a list of @a ids.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name. */
         virtual void sltCloudMachinesUnregistered(const QString &strProviderShortName,
                                                   const QString &strProfileName,
-                                                  const QList<QUuid> &ids) /* override */;
+                                                  const QList<QUuid> &ids) RT_OVERRIDE;
         /** Handles cloud machine registering for @a comMachine.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name. */
         virtual void sltCloudMachineRegistered(const QString &strProviderShortName,
                                                const QString &strProfileName,
-                                               const CCloudMachine &comMachine) /* override */;
+                                               const CCloudMachine &comMachine) RT_OVERRIDE;
         /** Handles cloud machine registering for a list of @a machines.
           * @param  strProviderShortName  Brings provider short name.
           * @param  strProfileName        Brings profile name. */
         virtual void sltCloudMachinesRegistered(const QString &strProviderShortName,
                                                 const QString &strProfileName,
-                                                const QVector<CCloudMachine> &machines) /* override */;
+                                                const QVector<CCloudMachine> &machines) RT_OVERRIDE;
 
         /** Handles read cloud machine list task complete signal. */
-        virtual void sltHandleReadCloudMachineListTaskComplete() /* override */;
+        virtual void sltHandleReadCloudMachineListTaskComplete() RT_OVERRIDE;
 
         /** Handles Cloud Profile Manager cumulative changes. */
-        virtual void sltHandleCloudProfileManagerCumulativeChange() /* override */;
+        virtual void sltHandleCloudProfileManagerCumulativeChange() RT_OVERRIDE;
     /** @} */
 
 private slots:

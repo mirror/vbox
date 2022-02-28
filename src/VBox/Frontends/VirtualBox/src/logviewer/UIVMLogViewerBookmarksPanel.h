@@ -48,7 +48,7 @@ public:
     void updateBookmarkList(const QVector<QPair<int, QString> > &bookmarkVector);
     /** Disable/enable all the widget except the close button */
     void disableEnableBookmarking(bool flag);
-    virtual QString panelName() const /* override */;
+    virtual QString panelName() const RT_OVERRIDE;
 signals:
 
     void sigDeleteBookmark(int bookmarkIndex);
@@ -57,8 +57,8 @@ signals:
 
 protected:
 
-    virtual void prepareWidgets() /* override */;
-    virtual void prepareConnections() /* override */;
+    virtual void prepareWidgets() RT_OVERRIDE;
+    virtual void prepareConnections() RT_OVERRIDE;
 
     /** Handles the translation event. */
     void retranslateUi();

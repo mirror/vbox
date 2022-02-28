@@ -59,7 +59,7 @@ public:
     /** Constructs settings dialog passing @a pParent to the base-class. */
     UISettingsDialog(QWidget *pParent);
     /** Destructs settings dialog. */
-    virtual ~UISettingsDialog() /* override */;
+    virtual ~UISettingsDialog() RT_OVERRIDE;
 
     /** Performs modal dialog call. */
     void execute();
@@ -67,9 +67,9 @@ public:
 protected slots:
 
     /** Hides the modal dialog and sets the result code to Accepted. */
-    virtual void accept() /* override */;
+    virtual void accept() RT_OVERRIDE;
     /** Hides the modal dialog and sets the result code to Rejected. */
-    virtual void reject() /* override */;
+    virtual void reject() RT_OVERRIDE;
 
     /** Handles category change to @a cId. */
     virtual void sltCategoryChanged(int cId);
@@ -87,11 +87,11 @@ protected slots:
 protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
     /** Handles first show @a pEvent. */
-    virtual void polishEvent(QShowEvent *pEvent) /* override */;
+    virtual void polishEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
     /** Returns the serialize process instance. */
     UISettingsSerializer *serializeProcess() const { return m_pSerializeProcess; }

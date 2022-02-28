@@ -107,7 +107,7 @@ public:
     /** Constructs VirtualBox Manager widget. */
     UIVirtualBoxManagerWidget(UIVirtualBoxManager *pParent);
     /** Destructs VirtualBox Manager widget. */
-    virtual ~UIVirtualBoxManagerWidget() /* override */;
+    virtual ~UIVirtualBoxManagerWidget() RT_OVERRIDE;
 
     /** @name Common stuff.
       * @{ */
@@ -230,7 +230,7 @@ protected:
     /** @name Event handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
     /** @} */
 
 private slots:

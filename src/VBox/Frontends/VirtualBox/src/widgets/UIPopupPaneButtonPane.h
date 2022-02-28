@@ -74,7 +74,7 @@ private:
     void cleanupButtons();
 
     /** Handles key-press @a pEvent. */
-    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
 
     /** Adds button with @a iButtonID and @a strToolTip. */
     static QIToolButton *addButton(int iButtonID, const QString &strToolTip);

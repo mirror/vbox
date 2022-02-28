@@ -67,12 +67,12 @@ public:
 protected:
 
     /* Delete mouseDoubleClick and mouseMoveEvent implementations of the base class */
-    virtual void        mouseDoubleClickEvent(QMouseEvent *) /* override */{}
-    virtual void        mouseMoveEvent(QMouseEvent *) /* override */{}
+    virtual void        mouseDoubleClickEvent(QMouseEvent *) RT_OVERRIDE {}
+    virtual void        mouseMoveEvent(QMouseEvent *) RT_OVERRIDE {}
     /* Override the mousePressEvent to control how selection is done: */
-    virtual void        mousePressEvent(QMouseEvent * event) /* override */;
+    virtual void        mousePressEvent(QMouseEvent * event) RT_OVERRIDE;
     virtual void        mouseReleaseEvent(QMouseEvent *){}
-    virtual void        paintEvent(QPaintEvent *event) /* override */;
+    virtual void        paintEvent(QPaintEvent *event) RT_OVERRIDE;
 
 private slots:
 

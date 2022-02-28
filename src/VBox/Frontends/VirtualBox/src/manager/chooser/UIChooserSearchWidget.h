@@ -61,10 +61,10 @@ public:
 
 protected:
 
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
-    virtual void hideEvent(QHideEvent *pEvent) /* override */;
-    virtual void retranslateUi() /* override */;
-    virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) /* override */;
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
+    virtual void hideEvent(QHideEvent *pEvent) RT_OVERRIDE;
+    virtual void retranslateUi() RT_OVERRIDE;
+    virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) RT_OVERRIDE;
 
 public slots:
 

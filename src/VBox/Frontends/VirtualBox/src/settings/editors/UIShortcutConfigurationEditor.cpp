@@ -62,7 +62,7 @@ public:
     {}
 
     /** Returns the cell text. */
-    virtual QString text() const /* override */ { return m_strText; }
+    virtual QString text() const RT_OVERRIDE { return m_strText; }
 
 private:
 
@@ -97,7 +97,7 @@ public:
     }
 
     /** Destructs table row. */
-    virtual ~UIShortcutTableViewRow() /* override */
+    virtual ~UIShortcutTableViewRow() RT_OVERRIDE
     {
         destroyCells();
     }
@@ -127,13 +127,13 @@ public:
 protected:
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */
+    virtual int childCount() const RT_OVERRIDE
     {
         return TableColumnIndex_Max;
     }
 
     /** Returns the child item with @a iIndex. */
-    virtual QITableViewCell *childItem(int iIndex) const /* override */
+    virtual QITableViewCell *childItem(int iIndex) const RT_OVERRIDE
     {
         switch (iIndex)
         {
@@ -258,21 +258,21 @@ public slots:
 protected:
 
     /** Returns the number of rows under the given @a parent. */
-    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const /* override */;
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
     /** Returns the number of columns under the given @a parent. */
-    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
 
     /** Returns the item flags for the given @a index. */
-    virtual Qt::ItemFlags flags(const QModelIndex &index) const /* override */;
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const RT_OVERRIDE;
     /** Returns the data for the given @a iRole and @a iSection in the header with the specified @a enmOrientation. */
-    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole = Qt::DisplayRole) const /* override */;
+    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole = Qt::DisplayRole) const RT_OVERRIDE;
     /** Returns the data stored under the given @a iRole for the item referred to by the @a index. */
-    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const /* override */;
+    virtual QVariant data(const QModelIndex &index, int iRole = Qt::DisplayRole) const RT_OVERRIDE;
     /** Sets the @a iRole data for the item at @a index to @a value. */
-    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) /* override */;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) RT_OVERRIDE;
 
     /** Sorts the model by @a iColumn in the given @a enmOrder. */
-    virtual void sort(int iColumn, Qt::SortOrder enmOrder = Qt::AscendingOrder) /* override */;
+    virtual void sort(int iColumn, Qt::SortOrder enmOrder = Qt::AscendingOrder) RT_OVERRIDE;
 
 private:
 
@@ -310,14 +310,14 @@ public:
       * @param  strObjectName  Brings the object name this table has, required for fast referencing. */
     UIShortcutConfigurationTable(QWidget *pParent, UIShortcutConfigurationModel *pModel, const QString &strObjectName);
     /** Destructs table. */
-    virtual ~UIShortcutConfigurationTable() /* override */;
+    virtual ~UIShortcutConfigurationTable() RT_OVERRIDE;
 
 protected:
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */;
+    virtual int childCount() const RT_OVERRIDE;
     /** Returns the child item with @a iIndex. */
-    virtual QITableViewRow *childItem(int iIndex) const /* override */;
+    virtual QITableViewRow *childItem(int iIndex) const RT_OVERRIDE;
 
 private slots:
 

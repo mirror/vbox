@@ -49,8 +49,8 @@ public:
 
 protected:
 
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
-    virtual QSize sizeHint() const /* override */;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+    virtual QSize sizeHint() const RT_OVERRIDE;
 
 private:
 
@@ -90,7 +90,7 @@ public:
 
 protected:
 
-    virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) /* override */;
+    virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) RT_OVERRIDE;
     virtual void retranslateUi() /* override final */;
 
 private slots:

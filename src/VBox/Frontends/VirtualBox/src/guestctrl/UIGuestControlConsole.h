@@ -44,10 +44,10 @@ public:
 
 protected:
 
-    void keyPressEvent(QKeyEvent *pEvent) /* override */;
-    void mousePressEvent(QMouseEvent *pEvent) /* override */;
-    void mouseDoubleClickEvent(QMouseEvent *pEvent) /* override */;
-    void contextMenuEvent(QContextMenuEvent *pEvent) /* override */;
+    void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
+    void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    void mouseDoubleClickEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    void contextMenuEvent(QContextMenuEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

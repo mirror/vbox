@@ -37,7 +37,7 @@ public:
     /** Constructs menu-helper on the basis of passed @a windows. */
     UIMenuHelper(const QList<QWidget*> &windows);
     /** Destructs menu-helper. */
-    virtual ~UIMenuHelper() /* override */;
+    virtual ~UIMenuHelper() RT_OVERRIDE;
 
     /** Returns 'Window' menu. */
     QMenu *menu() const { return m_pWindowMenu; }

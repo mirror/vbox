@@ -275,7 +275,7 @@ public:
 protected:
 
     /** Returns default text. */
-    virtual QString defaultText() const /* override */
+    virtual QString defaultText() const RT_OVERRIDE
     {
         return checkState(0) == Qt::Checked ?
                tr("%1, Active", "col.1 text, col.1 state").arg(text(0)) :

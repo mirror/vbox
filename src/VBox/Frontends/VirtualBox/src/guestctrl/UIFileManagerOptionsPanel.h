@@ -43,15 +43,15 @@ signals:
 public:
 
     UIFileManagerOptionsPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions);
-    virtual QString panelName() const /* override */;
+    virtual QString panelName() const RT_OVERRIDE;
     /** Reads the file manager options and updates the widget accordingly. This functions is typically called
      *  when file manager options have been changed by other means and this panel needs to adapt. */
     void update();
 
 protected:
 
-    virtual void prepareWidgets() /* override */;
-    virtual void prepareConnections() /* override */;
+    virtual void prepareWidgets() RT_OVERRIDE;
+    virtual void prepareConnections() RT_OVERRIDE;
 
     /** Handles the translation event. */
     void retranslateUi();

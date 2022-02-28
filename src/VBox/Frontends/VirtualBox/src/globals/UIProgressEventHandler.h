@@ -50,7 +50,7 @@ public:
     /** Constructs event proxy object on the basis of passed @a pParent. */
     UIProgressEventHandler(QObject *pParent, const CProgress &comProgress);
     /** Destructs event proxy object. */
-    virtual ~UIProgressEventHandler() /* override */;
+    virtual ~UIProgressEventHandler() RT_OVERRIDE;
 
 protected:
 

@@ -66,10 +66,10 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
-    virtual bool shouldBeMaximized() const /* override */;
-    virtual void closeEvent(QCloseEvent *event) /* override */;
-    bool event(QEvent *pEvent) /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
+    virtual bool shouldBeMaximized() const RT_OVERRIDE;
+    virtual void closeEvent(QCloseEvent *event) RT_OVERRIDE;
+    bool event(QEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

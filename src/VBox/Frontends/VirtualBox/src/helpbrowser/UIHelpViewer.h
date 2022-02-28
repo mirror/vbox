@@ -68,9 +68,9 @@ public:
     };
 
     UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent = 0);
-    virtual QVariant loadResource(int type, const QUrl &name) /* override */;
+    virtual QVariant loadResource(int type, const QUrl &name) RT_OVERRIDE;
     void emitHistoryChangedSignal();
-    virtual void setSource(const QUrl &url) /* override */;
+    virtual void setSource(const QUrl &url) RT_OVERRIDE;
     void setFont(const QFont &);
     bool isFindInPageWidgetVisible() const;
     void zoom(ZoomOperation enmZoomOperation);
@@ -89,16 +89,16 @@ public slots:
 
 protected:
 
-    virtual void contextMenuEvent(QContextMenuEvent *event) /* override */;
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-    virtual void wheelEvent(QWheelEvent *pEvent) /* override */;
-    virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
-    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
-    virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
-    virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) /* override */;
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
-    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
-    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+    virtual void contextMenuEvent(QContextMenuEvent *event) RT_OVERRIDE;
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
+    virtual void wheelEvent(QWheelEvent *pEvent) RT_OVERRIDE;
+    virtual void mouseReleaseEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    virtual void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    virtual void mouseMoveEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

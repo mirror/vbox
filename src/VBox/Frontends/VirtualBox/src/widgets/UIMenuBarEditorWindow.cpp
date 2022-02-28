@@ -66,34 +66,34 @@ public:
                                                             UIMenuBarEditorSegment enmIndex);
 
     /** Returns whether the interface is valid. */
-    virtual bool isValid() const /* override */ { return true; }
+    virtual bool isValid() const RT_OVERRIDE { return true; }
 
     /** Returns the wrapped object. */
-    virtual QObject *object() const /* override */ { return 0; }
+    virtual QObject *object() const RT_OVERRIDE { return 0; }
     /** Returns the parent. */
-    virtual QAccessibleInterface *parent() const /* override */;
+    virtual QAccessibleInterface *parent() const RT_OVERRIDE;
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */ { return 0; }
+    virtual int childCount() const RT_OVERRIDE { return 0; }
     /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int /* iIndex */) const /* override */ { return 0; }
+    virtual QAccessibleInterface *child(int /* iIndex */) const RT_OVERRIDE { return 0; }
     /** Returns the child at position QPoint(@a x, @a y). */
-    virtual QAccessibleInterface *childAt(int /* x */, int /* y */) const /* override */ { return 0; }
+    virtual QAccessibleInterface *childAt(int /* x */, int /* y */) const RT_OVERRIDE { return 0; }
     /** Returns the index of the passed @a pChild. */
-    virtual int indexOfChild(const QAccessibleInterface * /* pChild */) const /* override */ { return -1; }
+    virtual int indexOfChild(const QAccessibleInterface * /* pChild */) const RT_OVERRIDE { return -1; }
 
     /** Returns the rect. */
-    virtual QRect rect() const /* override */;
+    virtual QRect rect() const RT_OVERRIDE;
 
     /** Defines a @a strText for the passed @a enmTextRole. */
-    virtual void setText(QAccessible::Text /* enmTextRole */, const QString & /* strText */) /* override */ {}
+    virtual void setText(QAccessible::Text /* enmTextRole */, const QString & /* strText */) RT_OVERRIDE {}
     /** Returns a text for the passed @a enmTextRole. */
-    virtual QString text(QAccessible::Text /* enmTextRole */) const /* override */;
+    virtual QString text(QAccessible::Text /* enmTextRole */) const RT_OVERRIDE;
 
     /** Returns the role. */
-    virtual QAccessible::Role role() const /* override */ { return QAccessible::Button; }
+    virtual QAccessible::Role role() const RT_OVERRIDE { return QAccessible::Button; }
     /** Returns the state. */
-    virtual QAccessible::State state() const /* override */ { return QAccessible::State(); }
+    virtual QAccessible::State state() const RT_OVERRIDE { return QAccessible::State(); }
 
 private:
 
@@ -119,12 +119,12 @@ public:
     ~UIAccessibilityInterfaceForUIMenuBarEditorButton();
 
     /** Returns the number of children. */
-    virtual int childCount() const /* override */;
+    virtual int childCount() const RT_OVERRIDE;
     /** Returns the child with the passed @a iIndex. */
-    virtual QAccessibleInterface *child(int iIndex) const /* override */;
+    virtual QAccessibleInterface *child(int iIndex) const RT_OVERRIDE;
 
     /** Returns the role. */
-    virtual QAccessible::Role role() const /* override */;
+    virtual QAccessible::Role role() const RT_OVERRIDE;
 
     /** Returns the rect of sub-element @a enmSegment. */
     QRect subRect(UIMenuBarEditorSegment enmSegment) const;

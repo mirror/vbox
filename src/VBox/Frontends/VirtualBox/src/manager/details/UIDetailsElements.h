@@ -123,7 +123,7 @@ public:
     UIDetailsElementPreview(UIDetailsSet *pParent, bool fOpened);
 
     /** Updates layout. */
-    virtual void updateLayout() /* override */;
+    virtual void updateLayout() RT_OVERRIDE;
 
 private slots:
 
@@ -205,7 +205,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 
@@ -244,7 +244,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 
@@ -283,7 +283,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 
@@ -322,7 +322,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 
@@ -361,7 +361,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 
@@ -403,7 +403,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 
@@ -442,7 +442,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 
@@ -481,7 +481,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 
@@ -520,7 +520,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 
@@ -559,7 +559,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 
@@ -598,7 +598,7 @@ public:
 private:
 
     /** Creates update task for this element. */
-    virtual UITask *createUpdateTask() /* override */;
+    virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_details_UIDetailsElements_h */

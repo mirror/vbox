@@ -208,7 +208,7 @@ public:
     UIVirtualMachineItem *item() const { return m_pItem; }
 
     /** Returns supported format list. */
-    virtual QStringList formats() const /* override */;
+    virtual QStringList formats() const RT_OVERRIDE;
 
     /** Returns UIVirtualMachineItem mime data type. */
     static QString type() { return m_type; }

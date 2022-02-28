@@ -47,7 +47,7 @@ public:
     UIUpdateStepVirtualBox(bool fForcedCall);
 
     /** Executes the step. */
-    virtual void exec() /* override */;
+    virtual void exec() RT_OVERRIDE;
 
 private:
 
@@ -67,7 +67,7 @@ public:
     UIUpdateStepVirtualBoxExtensionPack();
 
     /** Executes the step. */
-    virtual void exec() /* override */;
+    virtual void exec() RT_OVERRIDE;
 
 private slots:
 

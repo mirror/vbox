@@ -53,7 +53,7 @@ public:
     /** Constructs the filter-panel by passing @a pParent to the QWidget base-class constructor.
       * @param  pViewer  Specifies reference to the VM Log-Viewer this filter-panel belongs to. */
     UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
-    virtual QString panelName() const /* override */;
+    virtual QString panelName() const RT_OVERRIDE;
 
 public slots:
 
@@ -62,14 +62,14 @@ public slots:
 
 protected:
 
-    virtual void prepareWidgets() /* override */;
-    virtual void prepareConnections() /* override */;
+    virtual void prepareWidgets() RT_OVERRIDE;
+    virtual void prepareConnections() RT_OVERRIDE;
 
-    void retranslateUi() /* override */;
+    void retranslateUi() RT_OVERRIDE;
     /** Handles Qt @a pEvent, used for keyboard processing. */
-    bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
-    void showEvent(QShowEvent *pEvent) /* override */;
-    void hideEvent(QHideEvent *pEvent) /* override */;
+    bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
+    void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
+    void hideEvent(QHideEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

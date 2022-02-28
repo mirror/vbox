@@ -92,7 +92,7 @@ public:
     /** Constructs event proxy object on the basis of passed @a pParent and @a pSession. */
     UIConsoleEventHandlerProxy(QObject *pParent, UISession *pSession);
     /** Destructs event proxy object. */
-    virtual ~UIConsoleEventHandlerProxy() /* override */;
+    virtual ~UIConsoleEventHandlerProxy() RT_OVERRIDE;
 
 private slots:
 

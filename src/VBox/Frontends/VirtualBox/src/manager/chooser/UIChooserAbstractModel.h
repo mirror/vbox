@@ -73,7 +73,7 @@ public:
     /** Constructs abstract Chooser-model passing @a pParent to the base-class. */
     UIChooserAbstractModel(UIChooser *pParent);
     /** Destructs abstract Chooser-model. */
-    virtual ~UIChooserAbstractModel() /* override */;
+    virtual ~UIChooserAbstractModel() RT_OVERRIDE;
 
     /** @name General stuff.
       * @{ */

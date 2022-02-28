@@ -57,7 +57,7 @@ public:
     /** Constructs tools pane passing @a pParent to the base-class. */
     UIToolPaneGlobal(UIActionPool *pActionPool, QWidget *pParent = 0);
     /** Destructs tools pane. */
-    virtual ~UIToolPaneGlobal() /* override */;
+    virtual ~UIToolPaneGlobal() RT_OVERRIDE;
 
     /** Defines whether this pane is @a fActive. */
     void setActive(bool fActive);

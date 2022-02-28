@@ -68,7 +68,7 @@ public:
     /** Constructs snapshot pane passing @a pParent to the base-class. */
     UISnapshotPane(UIActionPool *pActionPool, bool fShowToolbar = true, QWidget *pParent = 0);
     /** Destructs snapshot pane. */
-    virtual ~UISnapshotPane() /* override */;
+    virtual ~UISnapshotPane() RT_OVERRIDE;
 
     /** Defines the @a comMachine object to be parsed. */
     void setMachine(const CMachine &comMachine);
@@ -84,13 +84,13 @@ protected:
     /** @name Qt event handlers.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
 
         /** Handles resize @a pEvent. */
-        virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+        virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
         /** Handles show @a pEvent. */
-        virtual void showEvent(QShowEvent *pEvent) /* override */;
+        virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** @} */
 
 private slots:

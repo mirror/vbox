@@ -91,7 +91,7 @@ public:
       * @param  pActionPool  Brings the action-pool reference.  */
     UIChooser(QWidget *pParent, UIActionPool *pActionPool);
     /** Destructs Chooser-pane. */
-    virtual ~UIChooser() /* override */;
+    virtual ~UIChooser() RT_OVERRIDE;
 
     /** @name General stuff.
       * @{ */

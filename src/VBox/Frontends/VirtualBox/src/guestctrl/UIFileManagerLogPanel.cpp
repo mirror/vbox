@@ -44,7 +44,7 @@ public:
 
 protected:
 
-    virtual void contextMenuEvent(QContextMenuEvent * event) /* override */;
+    virtual void contextMenuEvent(QContextMenuEvent * event) RT_OVERRIDE;
 
 private slots:
 

@@ -182,9 +182,9 @@ public slots:
 protected:
 
     /* QOpenGLWidget methods, which must be reimplemented. */
-    void initializeGL() /* override */;
-    void paintGL() /* override */;
-    void resizeGL(int w, int h) /* override */;
+    void initializeGL() RT_OVERRIDE;
+    void paintGL() RT_OVERRIDE;
+    void resizeGL(int w, int h) RT_OVERRIDE;
 
 private:
 

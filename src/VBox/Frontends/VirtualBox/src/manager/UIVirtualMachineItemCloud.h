@@ -50,7 +50,7 @@ public:
     /** Constructs real cloud VM item on the basis of taken @a comCloudMachine. */
     UIVirtualMachineItemCloud(const CCloudMachine &comCloudMachine);
     /** Destructs cloud VM item. */
-    virtual ~UIVirtualMachineItemCloud() /* override */;
+    virtual ~UIVirtualMachineItemCloud() RT_OVERRIDE;
 
     /** @name Arguments.
       * @{ */
@@ -87,33 +87,33 @@ public:
     /** @name Update stuff.
       * @{ */
         /** Recaches machine data. */
-        virtual void recache() /* override */;
+        virtual void recache() RT_OVERRIDE;
         /** Recaches machine item pixmap. */
-        virtual void recachePixmap() /* override */;
+        virtual void recachePixmap() RT_OVERRIDE;
     /** @} */
 
     /** @name Validation stuff.
       * @{ */
         /** Returns whether this item is editable. */
-        virtual bool isItemEditable() const /* override */;
+        virtual bool isItemEditable() const RT_OVERRIDE;
         /** Returns whether this item is removable. */
-        virtual bool isItemRemovable() const /* override */;
+        virtual bool isItemRemovable() const RT_OVERRIDE;
         /** Returns whether this item is saved. */
-        virtual bool isItemSaved() const /* override */;
+        virtual bool isItemSaved() const RT_OVERRIDE;
         /** Returns whether this item is powered off. */
-        virtual bool isItemPoweredOff() const /* override */;
+        virtual bool isItemPoweredOff() const RT_OVERRIDE;
         /** Returns whether this item is started. */
-        virtual bool isItemStarted() const /* override */;
+        virtual bool isItemStarted() const RT_OVERRIDE;
         /** Returns whether this item is running. */
-        virtual bool isItemRunning() const /* override */;
+        virtual bool isItemRunning() const RT_OVERRIDE;
         /** Returns whether this item is running headless. */
-        virtual bool isItemRunningHeadless() const /* override */;
+        virtual bool isItemRunningHeadless() const RT_OVERRIDE;
         /** Returns whether this item is paused. */
-        virtual bool isItemPaused() const /* override */;
+        virtual bool isItemPaused() const RT_OVERRIDE;
         /** Returns whether this item is stuck. */
-        virtual bool isItemStuck() const /* override */;
+        virtual bool isItemStuck() const RT_OVERRIDE;
         /** Returns whether this item can be switched to. */
-        virtual bool isItemCanBeSwitchedTo() const /* override */;
+        virtual bool isItemCanBeSwitchedTo() const RT_OVERRIDE;
     /** @} */
 
 protected:
@@ -121,7 +121,7 @@ protected:
     /** @name Event handling.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
     /** @} */
 
 private slots:

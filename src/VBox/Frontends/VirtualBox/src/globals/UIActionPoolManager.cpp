@@ -51,7 +51,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
 #ifdef VBOX_WS_MAC
         setName(QApplication::translate("UIActionPool", "&File", "Mac OS X version"));
@@ -78,19 +78,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ImportAppliance");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+I");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Import"));
         setName(QApplication::translate("UIActionPool", "&Import Appliance..."));
@@ -116,19 +116,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ExportAppliance");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+E");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Export"));
         setName(QApplication::translate("UIActionPool", "&Export Appliance..."));
@@ -152,13 +152,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToolsGlobalMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Tools"));
     }
@@ -184,13 +184,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("WelcomeScreen");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Welcome Screen"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the Welcome Screen"));
@@ -217,19 +217,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ExtensionPackManager");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+T");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Extension Pack Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the Extension Pack Manager"));
@@ -256,19 +256,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VirtualMediaManager");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+D");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Virtual Media Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the Virtual Media Manager"));
@@ -295,19 +295,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("HostNetworkManager");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+H");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Network Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the Network Manager"));
@@ -334,19 +334,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("CloudProfileManager");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+P");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Cloud Profile Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the Cloud Profile Manager"));
@@ -373,13 +373,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToolsGlobalVMActivityOverview");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&VM Activity Overview"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the VM Activity Overview"));
@@ -402,19 +402,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ExtraDataManager");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+X");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "E&xtra Data Manager..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display the Extra Data Manager window"));
@@ -439,19 +439,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("Exit");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Q");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Quit"));
         setStatusTip(QApplication::translate("UIActionPool", "Close application"));
@@ -474,7 +474,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Group"));
     }
@@ -497,19 +497,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("NewVM");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+N");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         /// @todo replace that one with separate "New" before 6.2
         setIconText(QApplication::translate("UIActionPool", "&New...").remove('.'));
@@ -536,19 +536,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("AddVM");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+A");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         /// @todo replace that one with separate "Add" before 6.2
         setIconText(QApplication::translate("UIActionPool", "&Add...").remove('.'));
@@ -573,13 +573,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RenameVMGroup");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Rena&me Group..."));
         setStatusTip(QApplication::translate("UIActionPool", "Rename selected virtual machine group"));
@@ -601,13 +601,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("AddVMGroup");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Ungroup"));
         setStatusTip(QApplication::translate("UIActionPool", "Ungroup items of selected virtual machine group"));
@@ -629,13 +629,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("SortGroup");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Sort"));
         setStatusTip(QApplication::translate("UIActionPool", "Sort items of selected virtual machine group alphabetically"));
@@ -658,7 +658,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Machine"));
     }
@@ -681,19 +681,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("NewVM");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+N");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&New..."));
         setStatusTip(QApplication::translate("UIActionPool", "Create new virtual machine"));
@@ -718,19 +718,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("AddVM");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+A");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Add..."));
         setStatusTip(QApplication::translate("UIActionPool", "Add existing virtual machine"));
@@ -753,13 +753,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("AddVMGroup");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "[New]", "group"));
         setStatusTip(QApplication::translate("UIActionPool", "Add new group based on selected virtual machines"));
@@ -783,19 +783,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("SettingsVM");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+S");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window"));
@@ -818,19 +818,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("CloneVM");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+O");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Cl&one..."));
         setStatusTip(QApplication::translate("UIActionPool", "Clone selected virtual machine"));
@@ -852,13 +852,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MoveVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Move..."));
         setStatusTip(QApplication::translate("UIActionPool", "Move selected virtual machine"));
@@ -880,13 +880,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ExportLocally");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "E&xport Locally..."));
         setStatusTip(QApplication::translate("UIActionPool", "Export selected virtual machine locally"));
@@ -908,13 +908,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ExportToOCI");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "E&xport to OCI..."));
         setStatusTip(QApplication::translate("UIActionPool", "Export selected virtual machine to OCI"));
@@ -938,13 +938,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RemoveVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Remove..."));
         setStatusTip(QApplication::translate("UIActionPool", "Remove selected virtual machines"));
@@ -966,13 +966,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("SortGroup");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Sort"));
         setStatusTip(QApplication::translate("UIActionPool", "Sort group of first selected virtual machine alphabetically"));
@@ -995,7 +995,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Move to Gro&up"));
     }
@@ -1018,13 +1018,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("StartVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         switch (state())
         {
@@ -1048,7 +1048,7 @@ protected:
     }
 
     /** Handles state change. */
-    virtual void handleStateChange() /* override */
+    virtual void handleStateChange() RT_OVERRIDE
     {
         switch (state())
         {
@@ -1074,13 +1074,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("StartVMNormal");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Normal Start"));
         setStatusTip(QApplication::translate("UIActionPool", "Start selected virtual machines"));
@@ -1102,13 +1102,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("StartVMHeadless");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Headless Start"));
         setStatusTip(QApplication::translate("UIActionPool", "Start selected virtual machines in the background"));
@@ -1130,13 +1130,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("StartVMDetachable");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Detachable Start"));
         setStatusTip(QApplication::translate("UIActionPool", "Start selected virtual machines with option of continuing in background"));
@@ -1160,13 +1160,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("PauseVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Pause"));
         setStatusTip(QApplication::translate("UIActionPool", "Suspend execution of selected virtual machines"));
@@ -1188,13 +1188,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ResetVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Reset"));
         setStatusTip(QApplication::translate("UIActionPool", "Reset selected virtual machines"));
@@ -1218,13 +1218,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("DiscardVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Discard"));
         setName(QApplication::translate("UIActionPool", "D&iscard Saved State..."));
@@ -1252,19 +1252,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("LogViewer");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+L");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Show &Log..."));
         setStatusTip(QApplication::translate("UIActionPool", "Show log files of selected virtual machines"));
@@ -1288,13 +1288,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RefreshVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Re&fresh"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh accessibility state of selected virtual machines"));
@@ -1316,13 +1316,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ShowVMInFileManager");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
 #if defined(VBOX_WS_MAC)
         setName(QApplication::translate("UIActionPool", "S&how in Finder"));
@@ -1352,13 +1352,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("CreateVMAlias");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
 #if defined(VBOX_WS_MAC)
         setName(QApplication::translate("UIActionPool", "Cr&eate Alias on Desktop"));
@@ -1387,19 +1387,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("SearchVM");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+F");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "S&earch"));
         setStatusTip(QApplication::translate("UIActionPool", "Search virtual machines with respect to a search term"));
@@ -1422,7 +1422,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "C&onsole"));
     }
@@ -1445,13 +1445,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("CreateConsoleConnection");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Create Connection"));
         setStatusTip(QApplication::translate("UIActionPool", "Create console connection to be able to use ssh/vnc clients"));
@@ -1475,13 +1475,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("DeleteConsoleConnection");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Delete Connection"));
         setStatusTip(QApplication::translate("UIActionPool", "Delete console connection to disconnect ssh/vnc clients"));
@@ -1507,13 +1507,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ConfigureConsoleApplications");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Configure Console Applications"));
         setStatusTip(QApplication::translate("UIActionPool", "Open configuration dialog to edit console application settings"));
@@ -1544,7 +1544,7 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return   m_fSerial
                ? QString("CopyConsoleCommandSerial")
@@ -1552,7 +1552,7 @@ protected:
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         if (m_fSerial)
         {
@@ -1596,7 +1596,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Close"));
     }
@@ -1617,13 +1617,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("DetachUIVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Detach GUI"));
         setStatusTip(QApplication::translate("UIActionPool", "Detach the GUI from headless VM"));
@@ -1645,13 +1645,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("SaveVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Save State"));
         setStatusTip(QApplication::translate("UIActionPool", "Save state of selected virtual machines"));
@@ -1673,13 +1673,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("TerminateVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Terminate"));
         setName(QApplication::translate("UIActionPool", "&Terminate Cloud Instance..."));
@@ -1703,13 +1703,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ACPIShutdownVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "ACPI Sh&utdown"));
         setStatusTip(QApplication::translate("UIActionPool", "Send ACPI Shutdown signal to selected virtual machines"));
@@ -1731,13 +1731,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("PowerOffVM");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Po&wer Off"));
         setStatusTip(QApplication::translate("UIActionPool", "Power off selected virtual machines"));
@@ -1760,13 +1760,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToolsMachineMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Tools"));
     }
@@ -1792,13 +1792,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToolsMachineDetails");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Details"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the machine details pane"));
@@ -1825,13 +1825,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToolsMachineSnapshots");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Snapshots"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the machine snapshots pane"));
@@ -1858,13 +1858,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToolsMachineLogViewer");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Logs"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the machine logs pane"));
@@ -1891,13 +1891,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToolsMachineVMActivityMonitor");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Activity"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the machine activity monitor pane"));
@@ -1924,13 +1924,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToolsMachineFileManager");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open the File Manager"));
@@ -1953,13 +1953,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("SnapshotMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Snapshot"));
     }
@@ -1984,19 +1984,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("TakeSnapshot");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+T");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Take..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
@@ -2025,19 +2025,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("DeleteSnapshot");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+D");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Delete..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
@@ -2066,19 +2066,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RestoreSnapshot");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+R");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Restore..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
@@ -2108,19 +2108,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleSnapshotProperties");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
@@ -2149,19 +2149,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("CloneSnapshot");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+C");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Clone..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Snapshot Pane"));
@@ -2187,13 +2187,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ExtensionMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Extension"));
     }
@@ -2218,19 +2218,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("InstallExtension");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+I");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Install..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Extension Pack Manager"));
@@ -2259,19 +2259,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("UninstallExtension");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+U");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Uninstall..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Extension Pack Manager"));
@@ -2297,13 +2297,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MediumMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Medium"));
     }
@@ -2332,19 +2332,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("AddMedium");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+A");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Add..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
@@ -2377,19 +2377,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("CreateMedium");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Create..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
@@ -2422,19 +2422,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("CopyMedium");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+C");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Copy..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
@@ -2467,19 +2467,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("MoveMedium");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+M");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Move..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
@@ -2512,19 +2512,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RemoveMedium");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+R");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Remove..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
@@ -2557,19 +2557,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ReleaseMedium");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+L");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Re&lease..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
@@ -2603,19 +2603,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleMediumProperties");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
@@ -2649,19 +2649,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleMediumSearch");
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::Find);
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Search"));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
@@ -2690,25 +2690,25 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RefreshMedia");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+F");
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::Refresh);
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Re&fresh..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
@@ -2734,13 +2734,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("NetworkMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Network"));
     }
@@ -2765,19 +2765,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("CreateNetwork");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+C");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Create..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
@@ -2806,19 +2806,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RemoveNetwork");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+R");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Remove..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
@@ -2848,19 +2848,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleNetworkProperties");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
@@ -2889,25 +2889,25 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RefreshNetworks");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+F");
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::Refresh);
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Re&fresh..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Network Manager"));
@@ -2933,13 +2933,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("CloudProfileMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Cloud"));
     }
@@ -2964,19 +2964,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("AddCloudProfile");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+A");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Add"));
         setName(QApplication::translate("UIActionPool", "&Add Profile..."));
@@ -3006,19 +3006,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ImportCloudProfiles");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+I");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Import"));
         setName(QApplication::translate("UIActionPool", "&Import Profiles..."));
@@ -3048,19 +3048,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RemoveCloudProfile");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+R");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Remove"));
         setName(QApplication::translate("UIActionPool", "&Remove Profile..."));
@@ -3091,19 +3091,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleCloudProfileProperties");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Properties"));
         setName(QApplication::translate("UIActionPool", "Profile &Properties"));
@@ -3133,19 +3133,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ShowCloudProfileTryPage");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+T");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Try"));
         setName(QApplication::translate("UIActionPool", "&Try Oracle Cloud for Free..."));
@@ -3175,25 +3175,25 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ShowCloudProfileHelp");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+H");
     }
 
     /** Returns standard shortcut. */
-    virtual QKeySequence standardShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence standardShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return actionPool()->isTemporary() ? QKeySequence() : QKeySequence(QKeySequence::HelpContents);
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Help"));
         setName(QApplication::translate("UIActionPool", "&Show Help..."));
@@ -3220,13 +3220,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("CloudConsoleMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Console"));
     }
@@ -3251,13 +3251,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("AddCloudConsoleApplication");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Add Application..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Console Manager"));
@@ -3286,13 +3286,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RemoveCloudConsoleApplication");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Remove Application..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Console Manager"));
@@ -3321,13 +3321,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("AddCloudConsoleProfile");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Add Profile..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Console Manager"));
@@ -3356,13 +3356,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("RemoveCloudConsoleProfile");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Remove Profile..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Cloud Console Manager"));
@@ -3392,19 +3392,19 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("ToggleCloudConsoleProperties");
     }
 
     /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
     {
         return QKeySequence("Ctrl+Shift+P");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setIconText(QApplication::translate("UIActionPool", "Properties"));
         setName(QApplication::translate("UIActionPool", "Console &Properties"));
@@ -3431,13 +3431,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VMActivityOverviewMenu");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "&Resources"));
     }
@@ -3462,13 +3462,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VMActivityOverviewColumns");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "Columns"));
         setShortcutScope(QApplication::translate("UIActionPool", "VM Activity Overview"));
@@ -3497,13 +3497,13 @@ public:
 protected:
 
     /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
     {
         return QString("VMActivityOverviewSwitchToMachineActivity");
     }
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */
+    virtual void retranslateUi() RT_OVERRIDE
     {
         setName(QApplication::translate("UIActionPool", "VM Activity"));
         setShortcutScope(QApplication::translate("UIActionPool", "VM Activity Overview"));

@@ -53,17 +53,17 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Loads the data from the corresponding source. */
-    virtual void loadOwnData() /* override */;
+    virtual void loadOwnData() RT_OVERRIDE;
     /** Saves the data to the corresponding source. */
-    virtual void saveOwnData() /* override */;
+    virtual void saveOwnData() RT_OVERRIDE;
 
     /** Returns the dialog title extension. */
-    virtual QString titleExtension() const /* override */;
+    virtual QString titleExtension() const RT_OVERRIDE;
     /** Returns the dialog title. */
-    virtual QString title() const /* override */;
+    virtual QString title() const RT_OVERRIDE;
 
 private:
 
@@ -101,30 +101,30 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Loads the data from the corresponding source. */
-    virtual void loadOwnData() /* override */;
+    virtual void loadOwnData() RT_OVERRIDE;
     /** Saves the data to the corresponding source. */
-    virtual void saveOwnData() /* override */;
+    virtual void saveOwnData() RT_OVERRIDE;
 
     /** Returns the dialog title extension. */
-    virtual QString titleExtension() const /* override */;
+    virtual QString titleExtension() const RT_OVERRIDE;
     /** Returns the dialog title. */
-    virtual QString title() const /* override */;
+    virtual QString title() const RT_OVERRIDE;
 
     /** Verifies data integrity between certain @a pSettingsPage and other pages. */
-    virtual void recorrelate(UISettingsPage *pSettingsPage) /* override */;
+    virtual void recorrelate(UISettingsPage *pSettingsPage) RT_OVERRIDE;
 
 protected slots:
 
     /** Handles category change to @a cId. */
-    virtual void sltCategoryChanged(int cId) /* override */;
+    virtual void sltCategoryChanged(int cId) RT_OVERRIDE;
 
     /** Marks dialog loaded. */
-    virtual void sltMarkLoaded() /* override */;
+    virtual void sltMarkLoaded() RT_OVERRIDE;
     /** Marks dialog saved. */
-    virtual void sltMarkSaved() /* override */;
+    virtual void sltMarkSaved() RT_OVERRIDE;
 
 private slots:
 

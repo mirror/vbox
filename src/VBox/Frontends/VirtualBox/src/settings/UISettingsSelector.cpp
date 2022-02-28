@@ -56,7 +56,7 @@ public:
     {}
 
     /** Returns the role. */
-    virtual QAccessible::Role role() const /* override */
+    virtual QAccessible::Role role() const RT_OVERRIDE
     {
         /* Make sure button still alive: */
         AssertPtrReturn(button(), QAccessible::NoRole);
@@ -70,7 +70,7 @@ public:
     }
 
     /** Returns the state. */
-    virtual QAccessible::State state() const /* override */
+    virtual QAccessible::State state() const RT_OVERRIDE
     {
         /* Prepare the button state: */
         QAccessible::State state;

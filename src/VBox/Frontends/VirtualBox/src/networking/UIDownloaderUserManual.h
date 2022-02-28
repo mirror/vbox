@@ -43,12 +43,12 @@ public:
 private:
 
     /** Returns description of the current network operation. */
-    virtual QString description() const /* override */;
+    virtual QString description() const RT_OVERRIDE;
 
     /** Asks user for downloading confirmation for passed @a pReply. */
-    virtual bool askForDownloadingConfirmation(UINetworkReply *pReply) /* override */;
+    virtual bool askForDownloadingConfirmation(UINetworkReply *pReply) RT_OVERRIDE;
     /** Handles downloaded object for passed @a pReply. */
-    virtual void handleDownloadedObject(UINetworkReply *pReply) /* override */;
+    virtual void handleDownloadedObject(UINetworkReply *pReply) RT_OVERRIDE;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_networking_UIDownloaderUserManual_h */

@@ -134,7 +134,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
@@ -190,16 +190,16 @@ public slots:
 protected:
 
     /** Handles native events. */
-    virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult) /* override */;
+    virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult) RT_OVERRIDE;
 
     /** Handles key-press @a pEvent. */
-    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
     /** Handles key-release @a pEvent. */
-    virtual void keyReleaseEvent(QKeyEvent *pEvent) /* override */;
+    virtual void keyReleaseEvent(QKeyEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse-press @a pEvent. */
-    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse-release @a pEvent. */
-    virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mouseReleaseEvent(QMouseEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

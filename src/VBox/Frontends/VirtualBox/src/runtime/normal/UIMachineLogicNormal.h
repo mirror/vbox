@@ -67,12 +67,12 @@ private slots:
     void sltToggleStatusBar();
 
     /** Handles host-screen available-area change. */
-    virtual void sltHostScreenAvailableAreaChange() /* override */;
+    virtual void sltHostScreenAvailableAreaChange() RT_OVERRIDE;
 
 private:
 
     /* Prepare helpers: */
-    virtual void prepareActionGroups() /* override */;
+    virtual void prepareActionGroups() RT_OVERRIDE;
     void prepareActionConnections();
     void prepareMachineWindows();
 #ifndef VBOX_WS_MAC

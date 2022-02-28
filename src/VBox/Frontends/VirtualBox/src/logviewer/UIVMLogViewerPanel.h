@@ -44,7 +44,7 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /* Access functions for children classes. */
     UIVMLogViewerWidget        *viewer();

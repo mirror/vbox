@@ -24,6 +24,9 @@
 /* Qt includes: */
 #include <QWidget>
 
+/* Other VBox includes: */
+#include <iprt/cdefs.h>
+
 /* Forward declarations: */
 class QBoxLayout;
 class QRect;
@@ -79,10 +82,10 @@ public:
 protected:
 
     /** Handles any Qt @a pEvent. */
-    virtual bool event(QEvent *pEvent) /* override */;
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
     /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

@@ -143,9 +143,9 @@ public:
 
 protected:
 
-    virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const /* override */;
+    virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const RT_OVERRIDE;
     /** Currently filters out hidden objects if options is set to "not showing them". */
-    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const /* override */;
+    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const RT_OVERRIDE;
 
 private:
 
@@ -170,18 +170,18 @@ public:
     explicit UICustomFileSystemModel(QObject *parent = 0);
     ~UICustomFileSystemModel();
 
-    QVariant       data(const QModelIndex &index, int role) const /* override */;
+    QVariant       data(const QModelIndex &index, int role) const RT_OVERRIDE;
     bool           setData(const QModelIndex &index, const QVariant &value, int role);
 
-    Qt::ItemFlags  flags(const QModelIndex &index) const /* override */;
+    Qt::ItemFlags  flags(const QModelIndex &index) const RT_OVERRIDE;
     QVariant       headerData(int section, Qt::Orientation orientation,
-                              int role = Qt::DisplayRole) const /* override */;
+                              int role = Qt::DisplayRole) const RT_OVERRIDE;
     QModelIndex    index(int row, int column,
-                      const QModelIndex &parent = QModelIndex()) const /* override */;
+                      const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
     QModelIndex    index(UICustomFileSystemItem* item);
-    QModelIndex    parent(const QModelIndex &index) const /* override */;
-    int            rowCount(const QModelIndex &parent = QModelIndex()) const /* override */;
-    int            columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
+    QModelIndex    parent(const QModelIndex &index) const RT_OVERRIDE;
+    int            rowCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
+    int            columnCount(const QModelIndex &parent = QModelIndex()) const RT_OVERRIDE;
     void           signalUpdate();
     QModelIndex    rootIndex() const;
     void           beginReset();

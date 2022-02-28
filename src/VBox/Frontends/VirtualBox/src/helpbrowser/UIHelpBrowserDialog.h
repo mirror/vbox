@@ -42,19 +42,18 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
-    virtual bool event(QEvent *pEvent) /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
+    virtual bool event(QEvent *pEvent) RT_OVERRIDE;
 
     /** @name Prepare/cleanup cascade.
      * @{ */
-
-        virtual void prepareCentralWidget() /* override */;
-        virtual void loadSettings() /* override */;
-        virtual void saveDialogGeometry() /* override */;
+    virtual void prepareCentralWidget();
+    virtual void loadSettings();
+    virtual void saveDialogGeometry();
     /** @} */
 
     /** Returns whether the window should be maximized when geometry being restored. */
-    virtual bool shouldBeMaximized() const /* override */;
+    virtual bool shouldBeMaximized() const RT_OVERRIDE;
 
 private slots:
 

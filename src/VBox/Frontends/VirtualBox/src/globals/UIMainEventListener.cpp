@@ -89,12 +89,12 @@ public:
                                const CEventListener &comListener,
                                const QSet<KVBoxEventType> &escapeEventTypes);
     /** Destructs Main events listener thread. */
-    virtual ~UIMainEventListeningThread() /* override */;
+    virtual ~UIMainEventListeningThread() RT_OVERRIDE;
 
 protected:
 
     /** Contains the thread excution body. */
-    virtual void run() /* override */;
+    virtual void run() RT_OVERRIDE;
 
     /** Returns whether the thread asked to shutdown prematurely. */
     bool isShutdown() const;

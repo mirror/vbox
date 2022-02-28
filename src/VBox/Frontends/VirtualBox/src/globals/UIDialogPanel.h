@@ -58,12 +58,12 @@ protected:
     QHBoxLayout*               mainLayout();
 
     /** Handles the translation event. */
-    void retranslateUi() /* override */;
+    void retranslateUi() RT_OVERRIDE;
 
     /** Handles the Qt show @a pEvent. */
-    void showEvent(QShowEvent *pEvent) /* override */;
+    void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** Handles the Qt hide @a pEvent. */
-    void hideEvent(QHideEvent *pEvent) /* override */;
+    void hideEvent(QHideEvent *pEvent) RT_OVERRIDE;
     void addVerticalSeparator();
 
 private:

@@ -47,13 +47,13 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Handles paint @a pEvent. */
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
 
     /** Returns minimum size-hint. */
-    virtual QSize minimumSizeHint() const /* override */;
+    virtual QSize minimumSizeHint() const RT_OVERRIDE;
 
 private:
 

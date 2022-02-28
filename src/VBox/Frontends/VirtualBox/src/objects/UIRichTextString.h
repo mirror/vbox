@@ -53,7 +53,7 @@ public:
     UIRichTextString(const QString &strString, Type enmType = Type_None, const QString &strStringMeta = QString());
 
     /** Destructor rich text string. */
-    virtual ~UIRichTextString() /* override */;
+    virtual ~UIRichTextString();
 
     /** Returns the QString representation. */
     QString toString() const;

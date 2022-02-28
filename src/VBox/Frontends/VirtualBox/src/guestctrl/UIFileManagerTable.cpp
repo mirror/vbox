@@ -67,7 +67,7 @@ public:
 
     UIFileManagerHistoryComboBox(QWidget *pParent = 0);
     /** Emit sigHidePopup as the popup is hidded. */
-    virtual void hidePopup() /* override */;
+    virtual void hidePopup() RT_OVERRIDE;
 };
 
 
@@ -89,7 +89,7 @@ public:
 
 protected:
 
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual void resizeEvent(QResizeEvent *pEvent) RT_OVERRIDE;
 
 private:
 

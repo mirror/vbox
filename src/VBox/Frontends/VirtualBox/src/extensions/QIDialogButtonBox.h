@@ -70,7 +70,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Returns button layout. */
     QBoxLayout *boxLayout() const;

@@ -60,7 +60,7 @@ protected:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
     /** @} */
 
 private slots:
@@ -157,7 +157,7 @@ protected:
 
     /** Creates derived @a pDialog instance.
       * @param  pCenterWidget  Brings the widget reference to center according to. */
-    virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) /* override */;
+    virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) RT_OVERRIDE;
 
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
@@ -179,23 +179,23 @@ private:
     /** @name Event-handling stuff.
       * @{ */
         /** Handles translation event. */
-        virtual void retranslateUi() /* override */;
+        virtual void retranslateUi() RT_OVERRIDE;
     /** @} */
 
     /** @name Prepare/cleanup cascade.
       * @{ */
         /** Configures all. */
-        virtual void configure() /* override */;
+        virtual void configure() RT_OVERRIDE;
         /** Configures central-widget. */
-        virtual void configureCentralWidget() /* override */;
+        virtual void configureCentralWidget() RT_OVERRIDE;
         /** Perform final preparations. */
-        virtual void finalize() /* override */;
+        virtual void finalize() RT_OVERRIDE;
     /** @} */
 
     /** @name Widget stuff.
       * @{ */
         /** Returns the widget. */
-        virtual UIExtensionPackManagerWidget *widget() /* override */;
+        virtual UIExtensionPackManagerWidget *widget() RT_OVERRIDE;
     /** @} */
 
     /** @name Action related variables.

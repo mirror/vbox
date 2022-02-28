@@ -33,7 +33,7 @@ class UIStarter : public QObject
     /** Constructs UI starter. */
     UIStarter();
     /** Destructs UI starter. */
-    virtual ~UIStarter() /* override */;
+    virtual ~UIStarter();
 
 public:
 

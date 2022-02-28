@@ -53,12 +53,12 @@ public slots:
     virtual int execute(bool fShow = true, bool fApplicationModal = false);
 
     /** Shows the dialog as a modal one, blocking until the user closes it. */
-    virtual int exec() /* override */ { return execute(); }
+    virtual int exec() RT_OVERRIDE { return execute(); }
 
 protected:
 
     /** Handles show @a pEvent. */
-    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
     /** Handles show @a pEvent sent for the first time. */
     virtual void polishEvent(QShowEvent *pEvent);
 

@@ -74,7 +74,7 @@ protected:
 private:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
     void setMediumVariantPageVisibility();
 
     /** @name Parameters needed during medium cloning

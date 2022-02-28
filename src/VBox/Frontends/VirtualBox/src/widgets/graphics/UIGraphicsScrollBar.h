@@ -66,7 +66,7 @@ public:
     UIGraphicsScrollBar(Qt::Orientation enmOrientation, bool fAutoHideMode, QIGraphicsWidget *pParent = 0);
 
     /** Returns minimum size-hint. */
-    virtual QSizeF minimumSizeHint() const /* override */;
+    virtual QSizeF minimumSizeHint() const RT_OVERRIDE;
 
     /** Returns scrolling step. */
     int step() const;
@@ -94,23 +94,23 @@ public:
 protected:
 
     /** Handles resize @a pEvent. */
-    virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) /* override */;
+    virtual void resizeEvent(QGraphicsSceneResizeEvent *pEvent) RT_OVERRIDE;
 
     /** Performs painting using passed @a pPainter, @a pOptions and optionally specified @a pWidget. */
-    virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) /* override */;
+    virtual void paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *pWidget = 0) RT_OVERRIDE;
 
     /** Handles mouse-press @a pEvent. */
-    virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) RT_OVERRIDE;
     /** Handles mouse-release @a pEvent. */
-    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent) RT_OVERRIDE;
 
     /** Handles hover enter @a pEvent. */
-    virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+    virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) RT_OVERRIDE;
     /** Handles hover leave @a pEvent. */
-    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) RT_OVERRIDE;
 
     /** Handles timer @a pEvent. */
-    virtual void timerEvent(QTimerEvent *pEvent) /* override */;
+    virtual void timerEvent(QTimerEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 

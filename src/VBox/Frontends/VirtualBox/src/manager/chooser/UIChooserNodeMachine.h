@@ -63,47 +63,47 @@ public:
                          int iPosition,
                          UIChooserNodeMachine *pCopyFrom);
     /** Destructs chooser node. */
-    virtual ~UIChooserNodeMachine() /* override */;
+    virtual ~UIChooserNodeMachine() RT_OVERRIDE;
 
     /** Returns RTTI node type. */
-    virtual UIChooserNodeType type() const /* override */ { return UIChooserNodeType_Machine; }
+    virtual UIChooserNodeType type() const RT_OVERRIDE { return UIChooserNodeType_Machine; }
 
     /** Returns item name. */
-    virtual QString name() const /* override */;
+    virtual QString name() const RT_OVERRIDE;
     /** Returns item full-name. */
-    virtual QString fullName() const /* override */;
+    virtual QString fullName() const RT_OVERRIDE;
     /** Returns item description. */
-    virtual QString description() const /* override */;
+    virtual QString description() const RT_OVERRIDE;
     /** Returns item definition.
       * @param  fFull  Brings whether full definition is required
       *                which is used while saving group definitions,
       *                otherwise short definition will be returned,
       *                which is used while saving last chosen node. */
-    virtual QString definition(bool fFull = false) const /* override */;
+    virtual QString definition(bool fFull = false) const RT_OVERRIDE;
 
     /** Returns whether there are children of certain @a enmType. */
-    virtual bool hasNodes(UIChooserNodeType enmType = UIChooserNodeType_Any) const /* override */;
+    virtual bool hasNodes(UIChooserNodeType enmType = UIChooserNodeType_Any) const RT_OVERRIDE;
     /** Returns a list of nodes of certain @a enmType. */
-    virtual QList<UIChooserNode*> nodes(UIChooserNodeType enmType = UIChooserNodeType_Any) const /* override */;
+    virtual QList<UIChooserNode*> nodes(UIChooserNodeType enmType = UIChooserNodeType_Any) const RT_OVERRIDE;
 
     /** Adds passed @a pNode to specified @a iPosition. */
-    virtual void addNode(UIChooserNode *pNode, int iPosition) /* override */;
+    virtual void addNode(UIChooserNode *pNode, int iPosition) RT_OVERRIDE;
     /** Removes passed @a pNode. */
-    virtual void removeNode(UIChooserNode *pNode) /* override */;
+    virtual void removeNode(UIChooserNode *pNode) RT_OVERRIDE;
 
     /** Removes all children with specified @a uId recursively. */
-    virtual void removeAllNodes(const QUuid &uId) /* override */;
+    virtual void removeAllNodes(const QUuid &uId) RT_OVERRIDE;
     /** Updates all children with specified @a uId recursively. */
-    virtual void updateAllNodes(const QUuid &uId) /* override */;
+    virtual void updateAllNodes(const QUuid &uId) RT_OVERRIDE;
 
     /** Returns position of specified node inside this one. */
-    virtual int positionOf(UIChooserNode *pNode) /* override */;
+    virtual int positionOf(UIChooserNode *pNode) RT_OVERRIDE;
 
     /** Checks if this instance matches to search  wrt. @a strSearchTerm and @a iSearchFlags and updates @a matchedItems. */
-    virtual void searchForNodes(const QString &strSearchTerm, int iSearchFlags, QList<UIChooserNode*> &matchedItems) /* override */;
+    virtual void searchForNodes(const QString &strSearchTerm, int iSearchFlags, QList<UIChooserNode*> &matchedItems) RT_OVERRIDE;
 
     /** Performs sorting of children nodes. */
-    virtual void sortNodes() /* override */;
+    virtual void sortNodes() RT_OVERRIDE;
 
     /** Returns virtual machine cache instance. */
     UIVirtualMachineItem *cache() const;
@@ -118,7 +118,7 @@ public:
 protected:
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 

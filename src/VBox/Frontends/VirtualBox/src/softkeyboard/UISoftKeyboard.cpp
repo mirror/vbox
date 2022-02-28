@@ -248,7 +248,7 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
@@ -320,7 +320,7 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 
@@ -642,8 +642,8 @@ public:
 
     UISoftKeyboardWidget(QWidget *pParent = 0);
 
-    virtual QSize minimumSizeHint() const /* override */;
-    virtual QSize sizeHint() const  /* override */;
+    virtual QSize minimumSizeHint() const RT_OVERRIDE;
+    virtual QSize sizeHint() const  RT_OVERRIDE;
     void keyStateChange(UISoftKeyboardKey* pKey);
     void loadLayouts();
 
@@ -690,11 +690,11 @@ public:
 
 protected:
 
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
-    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
-    virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
-    virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
-    virtual void retranslateUi() /* override */;
+    virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
+    virtual void mousePressEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    virtual void mouseReleaseEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    virtual void mouseMoveEvent(QMouseEvent *pEvent) RT_OVERRIDE;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private:
 
@@ -823,7 +823,7 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private:
 
@@ -865,7 +865,7 @@ public:
 
 protected:
 
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
 private slots:
 

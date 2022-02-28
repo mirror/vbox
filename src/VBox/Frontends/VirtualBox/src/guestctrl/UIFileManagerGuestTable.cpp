@@ -78,9 +78,9 @@ public:
 
 protected:
 
-    void retranslateUi() /* override */;
-    void keyPressEvent(QKeyEvent * pEvent) /* override */;
-    void showEvent(QShowEvent *pEvent) /* override */;
+    void retranslateUi() RT_OVERRIDE;
+    void keyPressEvent(QKeyEvent * pEvent) RT_OVERRIDE;
+    void showEvent(QShowEvent *pEvent) RT_OVERRIDE;
 
 private slots:
 
@@ -319,8 +319,8 @@ public:
 
 protected:
 
-    virtual void run() /* override */;
-    virtual void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics) /* override */;
+    virtual void run() RT_OVERRIDE;
+    virtual void directoryStatisticsRecursive(const QString &path, UIDirectoryStatistics &statistics) RT_OVERRIDE;
 
 private:
 

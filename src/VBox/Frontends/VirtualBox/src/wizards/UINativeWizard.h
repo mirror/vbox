@@ -87,7 +87,7 @@ public:
                    WizardMode enmMode = WizardMode_Auto,
                    const QString &strHelpHashtag = QString());
     /** Destructs wizard. */
-    virtual ~UINativeWizard() /* override */;
+    virtual ~UINativeWizard() RT_OVERRIDE;
 
     /** Returns local notification-center reference. */
     UINotificationCenter *notificationCenter() const;
@@ -129,7 +129,7 @@ protected:
     virtual void populatePages() = 0;
 
     /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
+    virtual void retranslateUi() RT_OVERRIDE;
 
     /** Performs wizard-specific cleanup in case of wizard-mode change
       * such as folder deletion in New VM wizard etc. */

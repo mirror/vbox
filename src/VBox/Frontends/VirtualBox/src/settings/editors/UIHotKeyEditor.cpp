@@ -47,9 +47,9 @@ protected slots:
 protected:
 
     /** Handles key-press @a pEvent. */
-    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
     /** Handles key-release @a pEvent. */
-    virtual void keyReleaseEvent(QKeyEvent *pEvent) /* override */;
+    virtual void keyReleaseEvent(QKeyEvent *pEvent) RT_OVERRIDE;
 
 private:
 
