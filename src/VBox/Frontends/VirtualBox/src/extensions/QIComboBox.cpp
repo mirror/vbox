@@ -229,6 +229,13 @@ void QIComboBox::addItem(const QString &strText, const QVariant &userData /* = Q
     return m_pComboBox->addItem(strText, userData);
 }
 
+void QIComboBox::insertItems(int iIndex, const QStringList &items)
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturnVoid(m_pComboBox);
+    return m_pComboBox->insertItems(iIndex, items);
+}
+
 void QIComboBox::insertItem(int iIndex, const QString &strText, const QVariant &userData /* = QVariant() */) const
 {
     /* Redirect to combo-box: */

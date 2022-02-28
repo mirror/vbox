@@ -94,6 +94,8 @@ public:
     void addItems(const QStringList &items) const;
     /** Adds the @a strText and userData (stored in the Qt::UserRole) into the combo-box. */
     void addItem(const QString &strText, const QVariant &userData = QVariant()) const;
+    /** Inserts the @a items into the combo-box at the given @a iIndex. */
+    void insertItems(int iIndex, const QStringList &items);
     /** Inserts the @a strText and userData (stored in the Qt::UserRole) into the combo-box at the given @a iIndex. */
     void insertItem(int iIndex, const QString &strText, const QVariant &userData = QVariant()) const;
     /** Removes the item from the combo-box at the given @a iIndex. */

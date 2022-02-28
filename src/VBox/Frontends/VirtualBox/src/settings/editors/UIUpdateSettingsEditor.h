@@ -32,8 +32,8 @@
 class QAbstractButton;
 class QButtonGroup;
 class QCheckBox;
-class QComboBox;
 class QLabel;
+class QIComboBox;
 
 /** QWidget subclass used as a update settings editor. */
 class SHARED_LIBRARY_STUFF UIUpdateSettingsEditor : public QIWithRetranslateUI<QWidget>
@@ -88,7 +88,7 @@ private:
         /** Holds the update period label instance. */
         QLabel       *m_pLabelUpdatePeriod;
         /** Holds the update period combo instance. */
-        QComboBox    *m_pComboUpdatePeriod;
+        QIComboBox   *m_pComboUpdatePeriod;
         /** Holds the update date label instance. */
         QLabel       *m_pLabelUpdateDate;
         /** Holds the update date field instance. */
