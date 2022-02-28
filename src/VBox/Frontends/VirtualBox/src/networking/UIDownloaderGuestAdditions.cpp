@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QDir>
 #include <QFile>
+#include <QRegularExpression>
 #include <QVariant>
 
 /* GUI includes: */
@@ -142,7 +143,7 @@ void UIDownloaderGuestAdditions::handleVerifiedObject(UINetworkReply *pReply)
     /* Rename temporary file to target one.  This can require a number
      * of tries to let user choose the place to save file to. */
     QString strNetTarget = target();
-    strNetTarget.remove(QRegExp("\\.tmp$"));
+    strNetTarget.remove(QRegularExpression("\\.tmp$"));
     setTarget(strNetTarget);
     while (true)
     {

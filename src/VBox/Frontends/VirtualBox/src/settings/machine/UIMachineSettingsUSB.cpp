@@ -23,6 +23,7 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QRadioButton>
+#include <QRegExp>
 #include <QSpacerItem>
 #include <QToolTip>
 #include <QVBoxLayout>

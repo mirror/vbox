@@ -131,12 +131,12 @@ void UIItemExtensionPack::updateFields()
     setText(ExtensionPackColumn_Name, m_strName);
 
     /* Version, Revision, Edition: */
-    const QString strVersion(m_strVersion.section(QRegExp("[-_]"), 0, 0));
+    const QString strVersion(m_strVersion.section(QRegularExpression("[-_]"), 0, 0));
     // WORKAROUND:
     // for http://qt.gitorious.org/qt/qt/commit/7fc63dd0ff368a637dcd17e692b9d6b26278b538
     QString strAppend;
-    if (m_strVersion.contains(QRegExp("[-_]")))
-        strAppend = m_strVersion.section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep);
+    if (m_strVersion.contains(QRegularExpression("[-_]")))
+        strAppend = m_strVersion.section(QRegularExpression("[-_]"), 1, -1, QString::SectionIncludeLeadingSep);
     setText(ExtensionPackColumn_Version, QString("%1r%2%3").arg(strVersion).arg(m_uRevision).arg(strAppend));
 
     /* Tool-tip: */

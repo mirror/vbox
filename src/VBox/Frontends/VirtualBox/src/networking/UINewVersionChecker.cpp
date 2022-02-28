@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QRegularExpression>
 #include <QUrlQuery>
 
 /* GUI includes: */
@@ -102,7 +103,7 @@ void UINewVersionChecker::processNetworkReplyFinished(UINetworkReply *pReply)
     strResponseData = VBOX_NEW_VERSION_TEST;
 #endif
     /* Newer version of necessary package found: */
-    if (strResponseData.indexOf(QRegExp("^\\d+\\.\\d+\\.\\d+(_[0-9A-Z]+)? \\S+$")) == 0)
+    if (strResponseData.indexOf(QRegularExpression("^\\d+\\.\\d+\\.\\d+(_[0-9A-Z]+)? \\S+$")) == 0)
     {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         const QStringList response = strResponseData.split(" ", Qt::SkipEmptyParts);

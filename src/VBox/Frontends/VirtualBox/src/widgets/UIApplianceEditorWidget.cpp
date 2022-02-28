@@ -22,6 +22,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
+#include <QRegExp>
 #include <QSpinBox>
 #include <QTextEdit>
 #include <QVBoxLayout>

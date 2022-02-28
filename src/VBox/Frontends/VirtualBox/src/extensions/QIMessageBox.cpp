@@ -22,6 +22,8 @@
 #include <QLabel>
 #include <QMimeData>
 #include <QPushButton>
+#include <QRegExp>
+#include <QRegularExpression>
 #include <QStyle>
 #include <QVBoxLayout>
 
@@ -163,15 +165,15 @@ void QIMessageBox::sltCopy() const
     foreach (const QStringPair &pair, m_pDetailsContainer->details())
         strError += pair.first + pair.second + "<br>";
     strError += "</body></html>";
-    strError.remove(QRegExp("</+qt>"));
-    strError = strError.replace(QRegExp("&nbsp;"), " ");
+    strError.remove(QRegularExpression("</+qt>"));
+    strError = strError.replace(QRegularExpression("&nbsp;"), " ");
     /* Create a new mime data object holding both the html and the plain text version. */
     QMimeData *pMimeData = new QMimeData();
     pMimeData->setHtml(strError);
     /* Replace all the html entities. */
-    strError = strError.replace(QRegExp("<br>|</tr>"), "\n");
-    strError = strError.replace(QRegExp("</p>"), "\n\n");
-    strError = strError.remove(QRegExp("<[^>]*>"));
+    strError = strError.replace(QRegularExpression("<br>|</tr>"), "\n");
+    strError = strError.replace(QRegularExpression("</p>"), "\n\n");
+    strError = strError.remove(QRegularExpression("<[^>]*>"));
     pMimeData->setText(strError);
     /* Add the mime data to the global clipboard. */
     QClipboard *pClipboard = QApplication::clipboard();

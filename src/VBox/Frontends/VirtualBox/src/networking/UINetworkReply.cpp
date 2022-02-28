@@ -19,7 +19,6 @@
 #include <QDir>
 #include <QFile>
 #include <QThread>
-#include <QRegExp>
 #include <QVector>
 #include <QVariant>
 

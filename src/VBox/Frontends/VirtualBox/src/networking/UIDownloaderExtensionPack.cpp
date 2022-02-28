@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QDir>
 #include <QFile>
+#include <QRegularExpression>
 #include <QVariant>
 
 /* GUI includes: */
@@ -94,7 +95,7 @@ void UIDownloaderExtensionPack::handleVerifiedObject(UINetworkReply *pReply)
         /* Parse each record to tags, look for the required one: */
         foreach (const QString &strRecord, dictionary)
         {
-            QRegExp separator(" \\*|  ");
+            QRegularExpression separator(" \\*|  ");
             const QString strFileName = strRecord.section(separator, 1);
             const QString strDownloadedSumm = strRecord.section(separator, 0, 0);
             if (strFileName == source().fileName())

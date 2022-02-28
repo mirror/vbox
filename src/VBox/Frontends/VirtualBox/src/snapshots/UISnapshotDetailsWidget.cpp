@@ -24,6 +24,7 @@
 #include <QLineEdit>
 #include <QPainter>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QScrollArea>
 #include <QTabWidget>
 #include <QTextBrowser>
@@ -1853,7 +1854,7 @@ QStringList UISnapshotDetailsWidget::networkReport(CMachine comMachine)
         if (comAdapter.GetEnabled())
         {
             /* Use adapter type string as template: */
-            QString strInfo = gpConverter->toString(comAdapter.GetAdapterType()).replace(QRegExp("\\s\\(.+\\)"), " (%1)");
+            QString strInfo = gpConverter->toString(comAdapter.GetAdapterType()).replace(QRegularExpression("\\s\\(.+\\)"), " (%1)");
             /* Don't use the adapter type string for types that have an additional
              * symbolic network/interface name field, use this name instead: */
             const KNetworkAttachmentType enmType = comAdapter.GetAttachmentType();
@@ -1969,7 +1970,7 @@ QStringList UISnapshotDetailsWidget::usbReport(CMachine comMachine)
 /* static */
 QString UISnapshotDetailsWidget::wipeHtmlStuff(const QString &strString)
 {
-    return QString(strString).remove(QRegExp("<i>|</i>|<b>|</b>"));
+    return QString(strString).remove(QRegularExpression("<i>|</i>|<b>|</b>"));
 }
 
 /* static */

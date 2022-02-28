@@ -23,6 +23,7 @@
 #include <QItemEditorFactory>
 #include <QLineEdit>
 #include <QMenu>
+#include <QRegExp>
 #include <QSpinBox>
 #include <QStyledItemDelegate>
 
@@ -67,7 +68,7 @@ public:
     {
         setFrame(false);
         setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-        setValidator(new QRegExpValidator(QRegExp("[^,:]*"), this));
+        setValidator(new QRegularExpressionValidator(QRegularExpression("[^,:]*"), this));
     }
 
 private:

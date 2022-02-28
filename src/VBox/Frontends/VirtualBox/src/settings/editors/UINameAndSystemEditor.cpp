@@ -19,6 +19,7 @@
 #include <QComboBox>
 #include <QGridLayout>
 #include <QLabel>
+#include <QRegularExpressionValidator>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -266,7 +267,7 @@ void UINameAndSystemEditor::setNameFieldValidator(const QString &strValidator)
 {
     if (!m_pNameLineEdit)
         return;
-    m_pNameLineEdit->setValidator(new QRegExpValidator(QRegExp(strValidator), this));
+    m_pNameLineEdit->setValidator(new QRegularExpressionValidator(QRegularExpression(strValidator), this));
 }
 
 void UINameAndSystemEditor::markNameEditor(bool fError)

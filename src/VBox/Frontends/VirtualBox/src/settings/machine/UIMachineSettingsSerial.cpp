@@ -22,6 +22,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QRegularExpressionValidator>
 
 /* GUI includes: */
 #include "QITabWidget.h"
@@ -483,7 +484,7 @@ void UIMachineSettingsSerial::prepareWidgets()
                 {
                     if (m_pLabelPath)
                         m_pLabelPath->setBuddy(m_pEditorPath);
-                    m_pEditorPath->setValidator(new QRegExpValidator(QRegExp(".+"), this));
+                    m_pEditorPath->setValidator(new QRegularExpressionValidator(QRegularExpression(".+"), this));
                     pLayoutPortSettings->addWidget(m_pEditorPath, 3, 1, 1, 6);
                 }
             }

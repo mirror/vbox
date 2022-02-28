@@ -20,7 +20,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QRadioButton>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 
 /* GUI includes: */
 #include "QILineEdit.h"
@@ -304,7 +304,7 @@ void UIGlobalSettingsProxy::prepareWidgets()
                 {
                     if (m_pLabelHost)
                         m_pLabelHost->setBuddy(m_pEditorHost);
-                    m_pEditorHost->setValidator(new QRegExpValidator(QRegExp("\\S+"), m_pEditorHost));
+                    m_pEditorHost->setValidator(new QRegularExpressionValidator(QRegularExpression("\\S+"), m_pEditorHost));
 
                     pLayoutSettings->addWidget(m_pEditorHost);
                 }

@@ -22,6 +22,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QUuid>
 #include <QVBoxLayout>
 
@@ -550,7 +551,7 @@ void UICloudConsoleManagerWidget::sltAddCloudConsoleApplication()
     {
         if (pDialog->exec() == QDialog::Accepted)
         {
-            strId = QUuid::createUuid().toString().remove(QRegExp("[{}]"));
+            strId = QUuid::createUuid().toString().remove(QRegularExpression("[{}]"));
             strApplicationName = pDialog->name();
             strApplicationPath = pDialog->path();
             strApplicationArgument = pDialog->argument();
@@ -628,7 +629,7 @@ void UICloudConsoleManagerWidget::sltAddCloudConsoleProfile()
     {
         if (pDialog->exec() == QDialog::Accepted)
         {
-            strId = QUuid::createUuid().toString().remove(QRegExp("[{}]"));
+            strId = QUuid::createUuid().toString().remove(QRegularExpression("[{}]"));
             strProfileName = pDialog->name();
             strProfileArgument = pDialog->argument();
             fCancelled = false;

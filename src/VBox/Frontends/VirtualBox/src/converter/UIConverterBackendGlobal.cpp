@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QHash>
+#include <QRegExp>
 #include <QRegularExpression>
 
 /* GUI includes: */

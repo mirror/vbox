@@ -39,7 +39,7 @@
 
 
 /* static */
-const QRegExp QILabel::s_regExpCopy = QRegExp("<[^>]*>");
+const QRegularExpression QILabel::s_regExpCopy = QRegularExpression("<[^>]*>");
 QRegExp QILabel::s_regExpElide = QRegExp("(<compact\\s+elipsis=\"(start|middle|end)\"?>([^<]*)</compact>)");
 
 QILabel::QILabel(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = Qt::WindowFlags() */)
@@ -309,7 +309,7 @@ QString QILabel::compressText(const QString &strText) const
     QStringList result;
     QFontMetrics fm = fontMetrics();
     /* Split up any multi-line text: */
-    foreach (QString strLine, strText.split(QRegExp("<br */?>")))
+    foreach (QString strLine, strText.split(QRegularExpression("<br */?>")))
     {
         /* Search for the compact tag: */
         if (s_regExpElide.indexIn(strLine) > -1)

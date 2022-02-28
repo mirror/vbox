@@ -26,6 +26,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
+#include <QRegularExpression>
 #include <QTextCursor>
 #include <QRadioButton>
 #include <QScrollArea>
@@ -345,10 +346,12 @@ bool UIVMLogViewerFilterPanel::applyFilterTermsToString(const QString& string)
     for (QSet<QString>::const_iterator iterator = m_filterTermSet.begin();
         iterator != m_filterTermSet.end(); ++iterator)
     {
-        const QString& filterTerm = *iterator;
-        const QRegExp rxFilterExp(filterTerm, Qt::CaseInsensitive);
         /* Disregard empty and invalid filter terms: */
-        if (rxFilterExp.isEmpty() || !rxFilterExp.isValid())
+        const QString& filterTerm = *iterator;
+        if (filterTerm.isEmpty())
+            continue;
+        const QRegularExpression rxFilterExp(filterTerm, QRegularExpression::CaseInsensitiveOption);
+        if (!rxFilterExp.isValid())
             continue;
 
         if (string.contains(rxFilterExp))

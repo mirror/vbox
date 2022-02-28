@@ -22,6 +22,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QRegularExpressionValidator>
 #include <QSpinBox>
 #include <QStackedLayout>
 
@@ -1277,8 +1278,8 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
                     {
                         if (m_pLabelRemoteDisplayPort)
                             m_pLabelRemoteDisplayPort->setBuddy(m_pEditorRemoteDisplayPort);
-                        m_pEditorRemoteDisplayPort->setValidator(new QRegExpValidator(
-                            QRegExp("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
+                        m_pEditorRemoteDisplayPort->setValidator(new QRegularExpressionValidator(
+                            QRegularExpression("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
 
                         pLayoutRemoteDisplaySettings->addWidget(m_pEditorRemoteDisplayPort, 0, 1);
                     }

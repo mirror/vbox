@@ -19,6 +19,7 @@
 #include <QHeaderView>
 #include <QMenuBar>
 #include <QPushButton>
+#include <QRegExp>
 #include <QVBoxLayout>
 
 /* GUI includes: */

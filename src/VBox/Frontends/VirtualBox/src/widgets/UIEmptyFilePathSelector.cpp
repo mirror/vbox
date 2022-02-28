@@ -246,7 +246,7 @@ void UIEmptyFilePathSelector::choose()
     if (path.isEmpty())
         return;
 
-    path.remove (QRegExp ("[\\\\/]$"));
+    path.remove(QRegularExpression("[\\\\/]$"));
     setPath (path);
 }
 

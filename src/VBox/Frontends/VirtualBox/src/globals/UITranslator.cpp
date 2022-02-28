@@ -22,6 +22,8 @@
 #ifdef Q_OS_UNIX
 # include <QLibraryInfo>
 #endif
+#include <QRegularExpression>
+#include <QRegExp>
 
 /* GUI includes: */
 #include "UIConverter.h"
@@ -581,6 +583,17 @@ bool UITranslator::toCOMPortNumbers(const QString &strName, ulong &uIRQ, ulong &
     return false;
 }
 
+/* Regular expressions used by both highlight and emphasize.  They use the
+   same prefix and suffix expression.  Unfortunately, QRegularExpression isn't
+   thread safe, so we only store the string contstants here. */
+/** @todo qt6: Both these had bogus suffix sets '[:.-!);]', I've changed them to '[-:.!);]', hope that's correct. */
+static char const g_szRxSingleQuotes[] = "((?:^|\\s)[(]?)"
+                                         "'([^']*)'"
+                                         "(?=[-:.!);]?(?:\\s|$))";
+static const char g_szRxUuid[]         = "((?:^|\\s)[(]?)"
+                                         "(\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\})"
+                                         "(?=[-:.!);]?(?:\\s|$))";
+
 /* static */
 QString UITranslator::highlight(QString strText, bool fToolTip /* = false */)
 {
@@ -614,16 +627,10 @@ QString UITranslator::highlight(QString strText, bool fToolTip /* = false */)
     strText.replace('\"', "&quot;");
 
     /* Mark strings in single quotes with color: */
-    QRegExp rx = QRegExp("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
-    rx.setMinimal(true);
-    strText.replace(rx, QString("\\1%1<nobr>'\\2'</nobr>%2").arg(strFont).arg(endFont));
+    strText.replace(QRegularExpression(g_szRxSingleQuotes), QString("\\1%1<nobr>'\\2'</nobr>%2").arg(strFont).arg(endFont));
 
     /* Mark UUIDs with color: */
-    strText.replace(QRegExp(
-        "((?:^|\\s)[(]?)"
-        "(\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\})"
-        "(?=[:.-!);]?(?:\\s|$))"),
-        QString("\\1%1<nobr>\\2</nobr>%2").arg(uuidFont).arg(endFont));
+    strText.replace(QRegularExpression(g_szRxUuid), QString("\\1%1<nobr>\\2</nobr>%2").arg(uuidFont).arg(endFont));
 
     /* Split to paragraphs at \n chars: */
     if (!fToolTip)
@@ -659,16 +666,10 @@ QString UITranslator::emphasize(QString strText)
     strText.replace('\"', "&quot;");
 
     /* Mark strings in single quotes with bold style: */
-    QRegExp rx = QRegExp("((?:^|\\s)[(]?)'([^']*)'(?=[:.-!);]?(?:\\s|$))");
-    rx.setMinimal(true);
-    strText.replace(rx, QString("\\1%1<nobr>'\\2'</nobr>%2").arg(strEmphStart).arg(strEmphEnd));
+    strText.replace(QRegularExpression(g_szRxSingleQuotes), QString("\\1%1<nobr>'\\2'</nobr>%2").arg(strEmphStart).arg(strEmphEnd));
 
     /* Mark UUIDs with italic style: */
-    strText.replace(QRegExp(
-        "((?:^|\\s)[(]?)"
-        "(\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\})"
-        "(?=[:.-!);]?(?:\\s|$))"),
-        QString("\\1%1<nobr>\\2</nobr>%2").arg(uuidEmphStart).arg(uuidEmphEnd));
+    strText.replace(QRegularExpression(g_szRxUuid), QString("\\1%1<nobr>\\2</nobr>%2").arg(uuidEmphStart).arg(uuidEmphEnd));
 
     /* Split to paragraphs at \n chars: */
     strText.replace('\n', "</p><p>");

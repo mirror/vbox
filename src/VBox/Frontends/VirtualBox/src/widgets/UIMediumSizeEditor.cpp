@@ -18,7 +18,7 @@
 /* Qt includes: */
 #include <QGridLayout>
 #include <QLabel>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
 #include <QSlider>
 
 /* GUI includes: */
@@ -188,7 +188,7 @@ void UIMediumSizeEditor::prepare()
             m_pEditor->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
             m_pEditor->setFixedWidthByText("88888.88 MB");
             m_pEditor->setAlignment(Qt::AlignRight);
-            m_pEditor->setValidator(new QRegExpValidator(QRegExp(UITranslator::sizeRegexp()), this));
+            m_pEditor->setValidator(new QRegularExpressionValidator(QRegularExpression(UITranslator::sizeRegexp()), this));
             connect(m_pEditor, &QILineEdit::textChanged,
                     this, &UIMediumSizeEditor::sltSizeEditorTextChanged);
 

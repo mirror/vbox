@@ -26,6 +26,7 @@
 #ifdef VBOX_WS_WIN
 # include <QListView>
 #endif
+#include <QRegExp>
 
 /* GUI includes: */
 #include "QIFileDialog.h"
@@ -454,7 +455,7 @@ void UIFilePathSelector::selectPath()
         return;
 
     /* Wipe out excessive slashes: */
-    strSelPath.remove(QRegExp("[\\\\/]$"));
+    strSelPath.remove(QRegularExpression("[\\\\/]$"));
 
     /* Apply chosen path: */
     changePath(strSelPath);

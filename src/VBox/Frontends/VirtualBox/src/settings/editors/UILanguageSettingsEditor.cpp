@@ -19,6 +19,7 @@
 #include <QDir>
 #include <QHeaderView>
 #include <QPainter>
+#include <QRegExp>
 #include <QTranslator>
 #include <QVBoxLayout>
 

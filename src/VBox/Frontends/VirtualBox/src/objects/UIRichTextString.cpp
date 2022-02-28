@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QPalette>
+#include <QRegExp>
 
 /* GUI includes: */
 #include "UIRichTextString.h"

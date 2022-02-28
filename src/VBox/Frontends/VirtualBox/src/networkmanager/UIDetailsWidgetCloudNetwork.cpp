@@ -22,7 +22,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QRadioButton>
-#include <QRegExpValidator>
 #include <QStyleOption>
 #include <QVBoxLayout>
 

@@ -22,7 +22,6 @@
 #include <QGraphicsView>
 #include <QPropertyAnimation>
 #include <QScrollBar>
-#include <QRegExp>
 #include <QTimer>
 
 /* GUI includes: */

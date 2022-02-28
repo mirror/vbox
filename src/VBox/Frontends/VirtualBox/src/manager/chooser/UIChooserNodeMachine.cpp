@@ -15,6 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <qglobal.h>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+# include <QRegularExpression>
+#else
+# include <QRegExp>
+#endif
+
 /* GUI includes: */
 #include "UIChooserAbstractModel.h"
 #include "UIChooserNodeMachine.h"
@@ -222,7 +230,11 @@ void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iSea
         /* Otherwise check if name contains search term, including wildcards: */
         else
         {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) /* fromWildcard is 6.0+ */
+            QRegularExpression searchRegEx = QRegularExpression::fromWildcard(strSearchTerm, Qt::CaseInsensitive);
+#else
             QRegExp searchRegEx(strSearchTerm, Qt::CaseInsensitive, QRegExp::WildcardUnix);
+#endif
             if (name().contains(searchRegEx))
                 matchedItems << this;
         }

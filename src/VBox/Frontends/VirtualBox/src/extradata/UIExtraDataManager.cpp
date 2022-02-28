@@ -19,7 +19,9 @@
 #include <QFontDatabase>
 #include <QMetaEnum>
 #include <QMutex>
+#include <QRegExp>
 #include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 # include <QComboBox>
 # include <QHeaderView>
@@ -1018,7 +1020,8 @@ void UIExtraDataManagerWindow::sltAdd()
                                 pKeyPropertySetter, &QObjectPropertySetter::sltAssignProperty);
                     }
                     /* Create key-editor validator: */
-                    QObjectValidator *pKeyValidator = new QObjectValidator(new QRegExpValidator(QRegExp("[\\s\\S]+"), this));
+                    QObjectValidator *pKeyValidator
+                        = new QObjectValidator(new QRegularExpressionValidator(QRegularExpression("[\\s\\S]+"), this));
                     AssertPtrReturnVoid(pKeyValidator);
                     {
                         /* Configure key-editor validator: */
@@ -1052,7 +1055,8 @@ void UIExtraDataManagerWindow::sltAdd()
                                 pValuePropertySetter, &QObjectPropertySetter::sltAssignProperty);
                     }
                     /* Create value-editor validator: */
-                    QObjectValidator *pValueValidator = new QObjectValidator(new QRegExpValidator(QRegExp("[\\s\\S]+"), this));
+                    QObjectValidator *pValueValidator
+                        = new QObjectValidator(new QRegularExpressionValidator(QRegularExpression("[\\s\\S]+"), this));
                     AssertPtrReturnVoid(pValueValidator);
                     {
                         /* Configure value-editor validator: */
@@ -2184,9 +2188,9 @@ QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const
     /* Few old extra-data string-lists were separated with 'semicolon' symbol.
      * All new separated by 'comma'. We have to take that into account. */
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    return strValue.split(QRegExp("[;,]"), Qt::SkipEmptyParts);
+    return strValue.split(QRegularExpression("[;,]"), Qt::SkipEmptyParts);
 #else
-    return strValue.split(QRegExp("[;,]"), QString::SkipEmptyParts);
+    return strValue.split(QRegularExpression("[;,]"), QString::SkipEmptyParts);
 #endif
 }
 

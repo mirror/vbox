@@ -20,6 +20,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QRegularExpressionValidator>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
@@ -128,7 +129,7 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
         {
             if (m_pLabelName)
                 m_pLabelName->setBuddy(m_pEditorName);
-            m_pEditorName->setValidator(new QRegExpValidator(QRegExp(".+"), this));
+            m_pEditorName->setValidator(new QRegularExpressionValidator(QRegularExpression(".+"), this));
 
             pLayoutMain->addWidget(m_pEditorName, 0, 1);
         }
@@ -146,7 +147,7 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
         {
             if (m_pLabelVendorID)
                 m_pLabelVendorID->setBuddy(m_pEditorVendorID);
-            m_pEditorVendorID->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{0,4}"), this));
+            m_pEditorVendorID->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
 
             pLayoutMain->addWidget(m_pEditorVendorID, 1, 1);
         }
@@ -164,7 +165,7 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
         {
             if (m_pLabelProductID)
                 m_pLabelProductID->setBuddy(m_pEditorProductID);
-            m_pEditorProductID->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{0,4}"), this));
+            m_pEditorProductID->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
 
             pLayoutMain->addWidget(m_pEditorProductID, 2, 1);
         }
@@ -182,7 +183,7 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
         {
             if (m_pLabelRevision)
                 m_pLabelRevision->setBuddy(m_pEditorRevision);
-            m_pEditorRevision->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{0,4}"), this));
+            m_pEditorRevision->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9a-fA-F]{0,4}"), this));
 
             pLayoutMain->addWidget(m_pEditorRevision, 3, 1);
         }
@@ -248,7 +249,7 @@ void UIMachineSettingsUSBFilterDetails::prepareWidgets()
         {
             if (m_pLabelPort)
                 m_pLabelPort->setBuddy(m_pEditorPort);
-            m_pEditorPort->setValidator(new QRegExpValidator(QRegExp("[0-9]*"), this));
+            m_pEditorPort->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9]*"), this));
 
             pLayoutMain->addWidget(m_pEditorPort, 7, 1);
         }

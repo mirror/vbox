@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QHeaderView>
 #include <QMenu>
+#include <QRegExp>
 #include <QTimer>
 #include <QVBoxLayout>
 

@@ -16,6 +16,8 @@
  */
 
 /* Qt includes: */
+#include <QRegExp>
+#include <QRegularExpression>
 #include <QThread>
 
 /* GUI includes: */
@@ -541,7 +543,7 @@ bool UIChooserAbstractModel::isGroupSavingInProgress() const
 /* static */
 QString UIChooserAbstractModel::toOldStyleUuid(const QUuid &uId)
 {
-    return uId.toString().remove(QRegExp("[{}]"));
+    return uId.toString().remove(QRegularExpression("[{}]"));
 }
 
 /* static */

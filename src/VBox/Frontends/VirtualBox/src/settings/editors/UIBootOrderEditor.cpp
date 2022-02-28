@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QGridLayout>
 #include <QLabel>
+#include <QRegularExpression>
 #include <QScrollBar>
 
 /* GUI includes: */
@@ -403,7 +404,7 @@ UIBootItemDataList UIBootDataTools::bootItemsFromSerializedString(const QString 
     {
         UIBootItemData data;
         data.m_fEnabled = strArgument.startsWith('+');
-        strArgument.remove(QRegExp("[+-]"));
+        strArgument.remove(QRegularExpression("[+-]"));
         data.m_enmType = static_cast<KDeviceType>(strArgument.toInt());
         list << data;
     }

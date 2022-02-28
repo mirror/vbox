@@ -24,6 +24,7 @@
 #include <QMenu>
 #include <QPointer>
 #include <QReadWriteLock>
+#include <QRegExp>
 #include <QScrollBar>
 #include <QTimer>
 #include <QVBoxLayout>
