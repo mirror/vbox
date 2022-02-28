@@ -2184,8 +2184,8 @@ QString UICommon::usbDetails(const CUSBDevice &comDevice)
         {
             strDetails =
                 tr("Unknown device %1:%2", "USB device details")
-                   .arg(QString().sprintf("%04hX", comDevice.GetVendorId()))
-                   .arg(QString().sprintf("%04hX", comDevice.GetProductId()));
+                   .arg(QString::number(comDevice.GetVendorId(),  16).toUpper().rightJustified(4, '0'))
+                   .arg(QString::number(comDevice.GetProductId(), 16).toUpper().rightJustified(4, '0'));
         }
         else
         {
@@ -2196,7 +2196,11 @@ QString UICommon::usbDetails(const CUSBDevice &comDevice)
         }
         ushort iRev = comDevice.GetRevision();
         if (iRev != 0)
-            strDetails += QString().sprintf(" [%04hX]", iRev);
+        {
+            strDetails += " [";
+            strDetails += QString::number(iRev, 16).toUpper().rightJustified(4, '0');
+            strDetails += "]";
+        }
     }
 
     return strDetails.trimmed();
@@ -2209,9 +2213,9 @@ QString UICommon::usbToolTip(const CUSBDevice &comDevice)
         tr("<nobr>Vendor ID: %1</nobr><br>"
            "<nobr>Product ID: %2</nobr><br>"
            "<nobr>Revision: %3</nobr>", "USB device tooltip")
-           .arg(QString().sprintf("%04hX", comDevice.GetVendorId()))
-           .arg(QString().sprintf("%04hX", comDevice.GetProductId()))
-           .arg(QString().sprintf("%04hX", comDevice.GetRevision()));
+           .arg(QString::number(comDevice.GetVendorId(),  16).toUpper().rightJustified(4, '0'))
+           .arg(QString::number(comDevice.GetProductId(), 16).toUpper().rightJustified(4, '0'))
+           .arg(QString::number(comDevice.GetRevision(),  16).toUpper().rightJustified(4, '0'));
 
     const QString strSerial = comDevice.GetSerialNumber();
     if (!strSerial.isEmpty())

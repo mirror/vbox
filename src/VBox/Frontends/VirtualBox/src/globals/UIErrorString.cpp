@@ -52,9 +52,7 @@ QString UIErrorString::formatRC(HRESULT rc)
     const char *pszDefine = RTErrCOMGet(SUCCEEDED_WARNING(rc) ? rc | 0x80000000 : rc)->pszDefine;
     Assert(pszDefine);
 
-    QString str;
-    str.sprintf("%s", pszDefine);
-    return str;
+    return QString(pszDefine);
 #endif
 }
 
@@ -62,29 +60,25 @@ QString UIErrorString::formatRC(HRESULT rc)
 QString UIErrorString::formatRCFull(HRESULT rc)
 {
     /** @todo r=bird: See UIErrorString::formatRC for 31th bit discussion. */
+    char szHex[32];
+    RTStrPrintf(szHex, sizeof(szHex), "%#010X", rc);
+
 #ifdef RT_OS_WINDOWS
     char szDefine[80];
     ssize_t cchRet = RTErrWinQueryDefine(rc, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/);
     if (cchRet == VERR_NOT_FOUND && SUCCEEDED_WARNING(rc))
         cchRet = RTErrWinQueryDefine(rc | 0x80000000, szDefine, sizeof(szDefine), true /*fFailIfUnknown*/);
 
-    QString str;
     if (cchRet != VERR_NOT_FOUND)
-        str.sprintf("%s (0x%08x)", szDefine, rc);
-    else
-        str.sprintf("0x%08x", rc);
-    return str;
+        return QString(szDefine).append(" (").append(szHex).append(")");
 #else
     const char *pszDefine = RTErrCOMGet(SUCCEEDED_WARNING(rc) ? rc | 0x80000000 : rc)->pszDefine;
     Assert(pszDefine);
 
-    QString str;
     if (strncmp(pszDefine, RT_STR_TUPLE("Unknown ")))
-        str.sprintf("%s (0x%08X)", pszDefine, rc);
-    else
-        str.sprintf("0x%08X", rc);
-    return str;
+        return QString(pszDefine).append(" (").append(szHex).append(")");
 #endif
+    return QString(szHex);
 }
 
 /* static */
