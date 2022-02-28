@@ -342,9 +342,7 @@ static const char *vusbGetSpeedString(VUSBSPEED enmSpeed)
  */
 static int vusbHubAttach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
 {
-    LogFlow(("vusbHubAttach: pThis=%p[%s] pDev=%p[%s]\n", pThis, pThis->Hub.pszName, pDev, pDev->pUsbIns->pszName));
-
-    PVUSBHUB pHub = &pThis->Hub;
+    LogFlow(("vusbHubAttach: pThis=%p[%s] pDev=%p[%s]\n", pThis, pThis->pszName, pDev, pDev->pUsbIns->pszName));
 
     /*
      * Assign a port.
@@ -356,11 +354,11 @@ static int vusbHubAttach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
         return VERR_VUSB_NO_PORTS;
     }
     ASMBitClear(&pThis->Bitmap, iPort);
-    pHub->cDevices++;
+    pThis->cDevices++;
     pDev->i16Port = iPort;
 
     /* Call the device attach helper, so it can initialize its state. */
-    int rc = vusbDevAttach(pDev, pHub);
+    int rc = vusbDevAttach(pDev, pThis);
     if (RT_SUCCESS(rc))
     {
         RTCritSectEnter(&pThis->CritSectDevices);
@@ -377,7 +375,7 @@ static int vusbHubAttach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
         if (RT_SUCCESS(rc))
         {
             LogRel(("VUSB: Attached '%s' to port %d on %s (%sSpeed)\n", pDev->pUsbIns->pszName,
-                    iPort, pHub->pszName, vusbGetSpeedString(pDev->pUsbIns->enmSpeed)));
+                    iPort, pThis->pszName, vusbGetSpeedString(pDev->pUsbIns->enmSpeed)));
             return VINF_SUCCESS;
         }
 
@@ -391,7 +389,7 @@ static int vusbHubAttach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
     }
 
     ASMBitSet(&pThis->Bitmap, iPort);
-    pHub->cDevices--;
+    pThis->cDevices--;
     pDev->i16Port = -1;
     LogRel(("VUSB: Failed to attach '%s' to port %d, rc=%Rrc\n", pDev->pUsbIns->pszName, iPort, rc));
 
@@ -408,8 +406,6 @@ static int vusbHubAttach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
  */
 static int vusbHubDetach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
 {
-    PVUSBHUB pHub = &pThis->Hub;
-
     Assert(pDev->i16Port != -1);
 
     /* Cancel all in-flight URBs from this device. */
@@ -422,7 +418,7 @@ static int vusbHubDetach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
     pDev->i16Port = -1;
     pThis->pIRhPort->pfnDetach(pThis->pIRhPort, uPort);
     ASMBitSet(&pThis->Bitmap, uPort);
-    pHub->cDevices--;
+    pThis->cDevices--;
 
     /* Check that it's attached and remove it. */
     RTCritSectEnter(&pThis->CritSectDevices);
@@ -479,11 +475,10 @@ static DECLCALLBACK(int) vusbPDMHubDetachDevice(PPDMDRVINS pDrvIns, PPDMUSBINS p
 {
     RT_NOREF(iPort);
     PVUSBROOTHUB pThis = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
-    PVUSBHUB pHub = &pThis->Hub;
     PVUSBDEV pDev = (PVUSBDEV)pUsbIns->pvVUsbDev2;
     Assert(pDev);
 
-    LogRel(("VUSB: Detached '%s' from port %u on %s\n", pDev->pUsbIns->pszName, pDev->i16Port, pHub->pszName));
+    LogRel(("VUSB: Detached '%s' from port %u on %s\n", pDev->pUsbIns->pszName, pDev->i16Port, pThis->pszName));
 
     /*
      * Deal with pending async reset.
@@ -543,7 +538,7 @@ static DECLCALLBACK(void) vusbRhFreeUrb(PVUSBURB pUrb)
         vusbDevRelease(pDev);
     }
     else
-        vusbUrbPoolFree(&pRh->Hub.Dev.UrbPool, pUrb);
+        vusbUrbPoolFree(&pRh->Dev.UrbPool, pUrb);
 }
 
 
@@ -554,7 +549,7 @@ static PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, uint32_t uPor
                              VUSBDIRECTION enmDir, uint32_t cbData, uint32_t cTds, const char *pszTag)
 {
     RT_NOREF(pszTag);
-    PVUSBURBPOOL pUrbPool = &pRh->Hub.Dev.UrbPool;
+    PVUSBURBPOOL pUrbPool = &pRh->Dev.UrbPool;
 
     if (RT_UNLIKELY(cbData > (32 * _1M)))
     {
@@ -821,11 +816,11 @@ static DECLCALLBACK(int) vusbR3RhPowerOn(PVUSBIROOTHUBCONNECTOR pInterface)
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     LogFlow(("vusR3bRhPowerOn: pRh=%p\n", pRh));
 
-    Assert(     pRh->Hub.Dev.enmState != VUSB_DEVICE_STATE_DETACHED
-           &&   pRh->Hub.Dev.enmState != VUSB_DEVICE_STATE_RESET);
+    Assert(     pRh->Dev.enmState != VUSB_DEVICE_STATE_DETACHED
+           &&   pRh->Dev.enmState != VUSB_DEVICE_STATE_RESET);
 
-    if (pRh->Hub.Dev.enmState == VUSB_DEVICE_STATE_ATTACHED)
-        pRh->Hub.Dev.enmState = VUSB_DEVICE_STATE_POWERED;
+    if (pRh->Dev.enmState == VUSB_DEVICE_STATE_ATTACHED)
+        pRh->Dev.enmState = VUSB_DEVICE_STATE_POWERED;
 
     return VINF_SUCCESS;
 }
@@ -837,8 +832,8 @@ static DECLCALLBACK(int) vusbR3RhPowerOff(PVUSBIROOTHUBCONNECTOR pInterface)
     PVUSBROOTHUB pThis = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     LogFlow(("vusbR3RhDevPowerOff: pThis=%p\n", pThis));
 
-    Assert(     pThis->Hub.Dev.enmState != VUSB_DEVICE_STATE_DETACHED
-           &&   pThis->Hub.Dev.enmState != VUSB_DEVICE_STATE_RESET);
+    Assert(     pThis->Dev.enmState != VUSB_DEVICE_STATE_DETACHED
+           &&   pThis->Dev.enmState != VUSB_DEVICE_STATE_RESET);
 
     /*
      * Cancel all URBs and reap them.
@@ -847,7 +842,7 @@ static DECLCALLBACK(int) vusbR3RhPowerOff(PVUSBIROOTHUBCONNECTOR pInterface)
     for (uint32_t uPort = 0; uPort < RT_ELEMENTS(pThis->apDevByPort); uPort++)
         VUSBIRhReapAsyncUrbs(&pThis->IRhConnector, uPort, 0);
 
-    pThis->Hub.Dev.enmState = VUSB_DEVICE_STATE_ATTACHED;
+    pThis->Dev.enmState = VUSB_DEVICE_STATE_ATTACHED;
     return VINF_SUCCESS;
 }
 
@@ -948,8 +943,8 @@ static DECLCALLBACK(int) vusbRhSubmitUrb(PVUSBIROOTHUBCONNECTOR pInterface, PVUS
     }
     else
     {
-        vusbDevRetain(&pRh->Hub.Dev);
-        pUrb->pVUsb->pDev = &pRh->Hub.Dev;
+        vusbDevRetain(&pRh->Dev);
+        pUrb->pVUsb->pDev = &pRh->Dev;
         Log(("vusb: pRh=%p: SUBMIT: Address %i not found!!!\n", pRh, pUrb->DstAddress));
 
         pUrb->enmState = VUSBURBSTATE_REAPED;
@@ -1100,7 +1095,7 @@ static DECLCALLBACK(int) vusbRhAbortEp(PVUSBIROOTHUBCONNECTOR pInterface, uint32
     PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
     PVUSBDEV pDev = vusbR3RhGetVUsbDevByPortRetain(pRh, uPort);
 
-    if (&pRh->Hub != pDev->pHub)
+    if (pDev->pHub != pRh)
         AssertFailedReturn(VERR_INVALID_PARAMETER);
 
     vusbDevIoThreadExecSync(pDev, (PFNRT)vusbRhAbortEpWorker, 3, pDev, EndPt, enmDir);
@@ -1493,7 +1488,6 @@ static DECLCALLBACK(void *) vusbRhQueryInterface(PPDMIBASE pInterface, const cha
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, VUSBIROOTHUBCONNECTOR, &pRh->IRhConnector);
-    PDMIBASE_RETURN_INTERFACE(pszIID, VUSBIDEVICE, &pRh->Hub.Dev.IDevice);
     return NULL;
 }
 
@@ -1514,11 +1508,11 @@ static DECLCALLBACK(void) vusbRhDestruct(PPDMDRVINS pDrvIns)
     PVUSBROOTHUB pRh = PDMINS_2_DATA(pDrvIns, PVUSBROOTHUB);
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    vusbUrbPoolDestroy(&pRh->Hub.Dev.UrbPool);
-    if (pRh->Hub.pszName)
+    vusbUrbPoolDestroy(&pRh->Dev.UrbPool);
+    if (pRh->pszName)
     {
-        RTStrFree(pRh->Hub.pszName);
-        pRh->Hub.pszName = NULL;
+        RTStrFree(pRh->pszName);
+        pRh->pszName = NULL;
     }
     if (pRh->hSniffer != VUSBSNIFFER_NIL)
         VUSBSnifferDestroy(pRh->hSniffer);
@@ -1578,14 +1572,12 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      */
     pDrvIns->IBase.pfnQueryInterface    = vusbRhQueryInterface;
     /* the usb device */
-    pThis->Hub.Dev.enmState             = VUSB_DEVICE_STATE_ATTACHED;
-    pThis->Hub.Dev.cRefs                = 1;
-    /* the hub */
-    pThis->Hub.pRootHub                 = pThis;
+    pThis->Dev.enmState                 = VUSB_DEVICE_STATE_ATTACHED;
+    pThis->Dev.cRefs                    = 1;
     //pThis->hub.cPorts                - later
-    pThis->Hub.cDevices                 = 0;
-    pThis->Hub.Dev.pHub                 = &pThis->Hub;
-    RTStrAPrintf(&pThis->Hub.pszName, "RootHub#%d", pDrvIns->iInstance);
+    pThis->cDevices                     = 0;
+    pThis->Dev.pHub                     = pThis;
+    RTStrAPrintf(&pThis->pszName, "RootHub#%d", pDrvIns->iInstance);
     /* misc */
     pThis->pDrvIns                      = pDrvIns;
     /* the connector */
@@ -1626,8 +1618,8 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      * Get number of ports and the availability bitmap.
      * ASSUME that the number of ports reported now at creation time is the max number.
      */
-    pThis->Hub.cPorts = pThis->pIRhPort->pfnGetAvailablePorts(pThis->pIRhPort, &pThis->Bitmap);
-    Log(("vusbRhConstruct: cPorts=%d\n", pThis->Hub.cPorts));
+    pThis->cPorts = pThis->pIRhPort->pfnGetAvailablePorts(pThis->pIRhPort, &pThis->Bitmap);
+    Log(("vusbRhConstruct: cPorts=%d\n", pThis->cPorts));
 
     /*
      * Get the USB version of the attached HC.
@@ -1636,7 +1628,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->fHcVersions = pThis->pIRhPort->pfnGetUSBVersions(pThis->pIRhPort);
     Log(("vusbRhConstruct: fHcVersions=%u\n", pThis->fHcVersions));
 
-    rc = vusbUrbPoolInit(&pThis->Hub.Dev.UrbPool);
+    rc = vusbUrbPoolInit(&pThis->Dev.UrbPool);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1656,7 +1648,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
      * The current implementation uses the VUSBIRHCONFIG interface for communication.
      */
     PCPDMUSBHUBHLP pHlpUsb; /* not used currently */
-    rc = PDMDrvHlpUSBRegisterHub(pDrvIns, pThis->fHcVersions, pThis->Hub.cPorts, &g_vusbHubReg, &pHlpUsb);
+    rc = PDMDrvHlpUSBRegisterHub(pDrvIns, pThis->fHcVersions, pThis->cPorts, &g_vusbHubReg, &pHlpUsb);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1799,7 +1791,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatFramesProcessedClbk,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Processed frames in the URB completion callback",
                            "/VUSB/%d/FramesProcessedClbk",     pDrvIns->iInstance);
 #endif
-    PDMDrvHlpSTAMRegisterF(pDrvIns, (void *)&pThis->Hub.Dev.UrbPool.cUrbsInPool, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "The number of URBs in the pool.",
+    PDMDrvHlpSTAMRegisterF(pDrvIns, (void *)&pThis->Dev.UrbPool.cUrbsInPool, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "The number of URBs in the pool.",
                            "/VUSB/%d/cUrbsInPool",             pDrvIns->iInstance);
 
     return VINF_SUCCESS;
