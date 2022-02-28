@@ -22,6 +22,7 @@
 #include <QImageWriter>
 #include <QPainter>
 #include <QRegExp>
+#include <QRegularExpression>
 #include <QTimer>
 #ifdef VBOX_WS_MAC
 # include <QMenuBar>
