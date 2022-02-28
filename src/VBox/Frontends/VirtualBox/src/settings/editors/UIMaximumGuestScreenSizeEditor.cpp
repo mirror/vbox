@@ -52,9 +52,9 @@ bool UIMaximumGuestScreenSizeValue::equal(const UIMaximumGuestScreenSizeValue &o
 *   Class UIMaximumGuestScreenSizeEditor implementation.                                                                         *
 *********************************************************************************************************************************/
 
-UIMaximumGuestScreenSizeEditor::UIMaximumGuestScreenSizeEditor(QWidget *pParent /* = 0 */, bool fWithLabels /* = false */)
+UIMaximumGuestScreenSizeEditor::UIMaximumGuestScreenSizeEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabels(fWithLabels)
+    , m_pLayout(0)
     , m_pLabelPolicy(0)
     , m_pComboPolicy(0)
     , m_pLabelMaxWidth(0)
@@ -115,6 +115,21 @@ UIMaximumGuestScreenSizeValue UIMaximumGuestScreenSizeEditor::value() const
            : m_guiValue;
 }
 
+int UIMaximumGuestScreenSizeEditor::minimumLabelHorizontalHint() const
+{
+    int iMinimumHint = 0;
+    iMinimumHint = qMax(iMinimumHint, m_pLabelPolicy->minimumSizeHint().width());
+    iMinimumHint = qMax(iMinimumHint, m_pLabelMaxWidth->minimumSizeHint().width());
+    iMinimumHint = qMax(iMinimumHint, m_pLabelMaxHeight->minimumSizeHint().width());
+    return iMinimumHint;
+}
+
+void UIMaximumGuestScreenSizeEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
+}
+
 void UIMaximumGuestScreenSizeEditor::retranslateUi()
 {
     if (m_pLabelPolicy)
@@ -122,38 +137,19 @@ void UIMaximumGuestScreenSizeEditor::retranslateUi()
     if (m_pLabelMaxWidth)
         m_pLabelMaxWidth->setText(tr("&Width:"));
     if (m_pSpinboxMaxWidth)
-        m_pSpinboxMaxWidth->setWhatsThis(tr("Holds the maximum width which we would like the guest to use."));
+        m_pSpinboxMaxWidth->setToolTip(tr("Holds the maximum width which we would like the guest to use."));
     if (m_pLabelMaxHeight)
         m_pLabelMaxHeight->setText(tr("&Height:"));
     if (m_pSpinboxMaxHeight)
-        m_pSpinboxMaxHeight->setWhatsThis(tr("Holds the maximum height which we would like the guest to use."));
+        m_pSpinboxMaxHeight->setToolTip(tr("Holds the maximum height which we would like the guest to use."));
 
     if (m_pComboPolicy)
     {
+        m_pComboPolicy->setToolTip(tr("Selects maximum guest screen size policy."));
         for (int i = 0; i < m_pComboPolicy->count(); ++i)
         {
             const MaximumGuestScreenSizePolicy enmType = m_pComboPolicy->itemData(i).value<MaximumGuestScreenSizePolicy>();
             m_pComboPolicy->setItemText(i, gpConverter->toString(enmType));
-            switch (enmType)
-            {
-                case MaximumGuestScreenSizePolicy_Automatic:
-                    m_pComboPolicy->setItemData(i,
-                                                tr("Suggest a reasonable maximum screen size to the guest. The guest "
-                                                   "will only see this suggestion when guest additions are installed."),
-                                                Qt::ToolTipRole);
-                    break;
-                case MaximumGuestScreenSizePolicy_Any:
-                    m_pComboPolicy->setItemData(i,
-                                                tr("Do not attempt to limit the size of the guest screen."),
-                                                Qt::ToolTipRole);
-                    break;
-                case MaximumGuestScreenSizePolicy_Fixed:
-                    m_pComboPolicy->setItemData(i,
-                                                tr("Suggest a maximum screen size to the guest. The guest will only see "
-                                                   "this suggestion when guest additions are installed."),
-                                                Qt::ToolTipRole);
-                    break;
-            }
         }
     }
 }
@@ -197,25 +193,22 @@ void UIMaximumGuestScreenSizeEditor::sltHandleSizeChanged()
 void UIMaximumGuestScreenSizeEditor::prepare()
 {
     /* Create main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
-    if (pLayoutMain)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pLayoutMain->setContentsMargins(0, 0, 0, 0);
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
+        m_pLayout->setColumnStretch(1, 1);
 
         const int iMinWidth = 640;
         const int iMinHeight = 480;
         const int iMaxSize = 16 * _1K;
 
-        int iColumn = 0;
-        if (m_fWithLabels)
+        /* Prepare policy label: */
+        m_pLabelPolicy = new QLabel(this);
+        if (m_pLabelPolicy)
         {
-            /* Prepare policy label: */
-            m_pLabelPolicy = new QLabel(this);
-            if (m_pLabelPolicy)
-            {
-               m_pLabelPolicy->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-               pLayoutMain->addWidget(m_pLabelPolicy, 0, iColumn++);
-            }
+           m_pLabelPolicy->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+           m_pLayout->addWidget(m_pLabelPolicy, 0, 0);
         }
         /* Prepare policy combo: */
         m_pComboPolicy = new QIComboBox(this);
@@ -226,19 +219,15 @@ void UIMaximumGuestScreenSizeEditor::prepare()
             connect(m_pComboPolicy, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
                     this, &UIMaximumGuestScreenSizeEditor::sltHandleCurrentPolicyIndexChanged);
 
-            pLayoutMain->addWidget(m_pComboPolicy, 0, iColumn++);
+            m_pLayout->addWidget(m_pComboPolicy, 0, 1);
         }
 
-        iColumn = 0;
-        if (m_fWithLabels)
+        /* Prepare max width label: */
+        m_pLabelMaxWidth = new QLabel(this);
+        if (m_pLabelMaxWidth)
         {
-            /* Prepare max width label: */
-            m_pLabelMaxWidth = new QLabel(this);
-            if (m_pLabelMaxWidth)
-            {
-                m_pLabelMaxWidth->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutMain->addWidget(m_pLabelMaxWidth, 1, iColumn++);
-            }
+            m_pLabelMaxWidth->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabelMaxWidth, 1, 0);
         }
         /* Prepare max width spinbox: */
         m_pSpinboxMaxWidth = new QSpinBox(this);
@@ -251,19 +240,15 @@ void UIMaximumGuestScreenSizeEditor::prepare()
             connect(m_pSpinboxMaxWidth, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
                     this, &UIMaximumGuestScreenSizeEditor::sltHandleSizeChanged);
 
-            pLayoutMain->addWidget(m_pSpinboxMaxWidth, 1, iColumn++);
+            m_pLayout->addWidget(m_pSpinboxMaxWidth, 1, 1);
         }
 
-        iColumn = 0;
-        if (m_fWithLabels)
+        /* Prepare max height label: */
+        m_pLabelMaxHeight = new QLabel(this);
+        if (m_pLabelMaxHeight)
         {
-            /* Prepare max height label: */
-            m_pLabelMaxHeight = new QLabel(this);
-            if (m_pLabelMaxHeight)
-            {
-                m_pLabelMaxHeight->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutMain->addWidget(m_pLabelMaxHeight, 2, iColumn++);
-            }
+            m_pLabelMaxHeight->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabelMaxHeight, 2, 0);
         }
         /* Prepare max width spinbox: */
         m_pSpinboxMaxHeight = new QSpinBox(this);
@@ -276,7 +261,7 @@ void UIMaximumGuestScreenSizeEditor::prepare()
             connect(m_pSpinboxMaxHeight, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
                     this, &UIMaximumGuestScreenSizeEditor::sltHandleSizeChanged);
 
-            pLayoutMain->addWidget(m_pSpinboxMaxHeight, 2, iColumn++);
+            m_pLayout->addWidget(m_pSpinboxMaxHeight, 2, 1);
         }
     }
 

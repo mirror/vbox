@@ -42,8 +42,9 @@ class SHARED_LIBRARY_STUFF UIScaleFactorEditor : public QIWithRetranslateUI<QWid
 
 public:
 
-    /** Creates scale factor editor passing @a pParent to the base-class. */
-    UIScaleFactorEditor(QWidget *pParent);
+    /** Creates scale factor editor passing @a pParent to the base-class.
+      * @param  fWithLabels  Brings whether we should add labels ourselves. */
+    UIScaleFactorEditor(QWidget *pParent, bool fWithLabels = false);
 
     /** Defines @a iMonitorCount. */
     void setMonitorCount(int iMonitorCount);
@@ -58,6 +59,11 @@ public:
 
     /** Defines minimum width @a iHint for internal spin-box. */
     void setSpinBoxWidthHint(int iHint);
+
+    /** Returns minimum layout hint. */
+    int minimumLabelHorizontalHint() const;
+    /** Defines minimum layout @a iIndent. */
+    void setMinimumLayoutIndent(int iIndent);
 
 protected:
 
@@ -94,7 +100,9 @@ private:
 
     /** @name Member widgets.
       * @{ */
-        QGridLayout      *m_pMainLayout;
+        bool              m_fWithLabels;
+        QGridLayout      *m_pLayout;
+        QLabel           *m_pLabel;
         QComboBox        *m_pMonitorComboBox;
         QIAdvancedSlider *m_pScaleSlider;
         QSpinBox         *m_pScaleSpinBox;

@@ -32,9 +32,11 @@
 #include <math.h>
 
 
-UIScaleFactorEditor::UIScaleFactorEditor(QWidget *pParent)
+UIScaleFactorEditor::UIScaleFactorEditor(QWidget *pParent, bool fWithLabels /* = false */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_pMainLayout(0)
+    , m_fWithLabels(fWithLabels)
+    , m_pLayout(0)
+    , m_pLabel(0)
     , m_pMonitorComboBox(0)
     , m_pScaleSlider(0)
     , m_pScaleSpinBox(0)
@@ -160,18 +162,48 @@ void UIScaleFactorEditor::setSpinBoxWidthHint(int iHint)
     m_pScaleSpinBox->setMinimumWidth(iHint);
 }
 
+int UIScaleFactorEditor::minimumLabelHorizontalHint() const
+{
+    return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
+}
+
+void UIScaleFactorEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
+}
+
 void UIScaleFactorEditor::retranslateUi()
 {
-    if (m_pMonitorComboBox && m_pMonitorComboBox->count() > 0)
-    {
-        m_pMonitorComboBox->setItemText(0, tr("All Monitors"));
-        for (int i = 1; i < m_pMonitorComboBox->count(); ++i)
-            m_pMonitorComboBox->setItemText(i, tr("Monitor %1").arg(i));
-    }
-    setToolTip(tr("Controls the guest screen scale factor."));
+    if (m_pLabel)
+        m_pLabel->setText(tr("Scale &Factor:"));
 
-    m_pMinScaleLabel->setText(tr("%1%").arg(m_pScaleSlider->minimum()));
-    m_pMaxScaleLabel->setText(tr("%1%").arg(m_pScaleSlider->maximum()));
+    if (m_pMonitorComboBox)
+    {
+        if (m_pMonitorComboBox->count() > 0)
+        {
+            m_pMonitorComboBox->setItemText(0, tr("All Monitors"));
+            for (int i = 1; i < m_pMonitorComboBox->count(); ++i)
+                m_pMonitorComboBox->setItemText(i, tr("Monitor %1").arg(i));
+        }
+        m_pMonitorComboBox->setToolTip(tr("Selects the index of monitor guest screen scale factor being defined for."));
+    }
+
+    if (m_pScaleSlider)
+        m_pScaleSlider->setToolTip(tr("Holds the guest screen scale factor."));
+    if (m_pScaleSpinBox)
+        m_pScaleSpinBox->setToolTip(tr("Holds the guest screen scale factor."));
+
+    if (m_pMinScaleLabel)
+    {
+        m_pMinScaleLabel->setText(tr("%1%").arg(m_pScaleSlider->minimum()));
+        m_pMinScaleLabel->setToolTip(tr("Minimum possible scale factor."));
+    }
+    if (m_pMaxScaleLabel)
+    {
+        m_pMaxScaleLabel->setText(tr("%1%").arg(m_pScaleSlider->maximum()));
+        m_pMaxScaleLabel->setToolTip(tr("Maximum possible scale factor."));
+    }
 }
 
 void UIScaleFactorEditor::sltScaleSpinBoxValueChanged(int value)
@@ -195,58 +227,65 @@ void UIScaleFactorEditor::sltMonitorComboIndexChanged(int)
 
 void UIScaleFactorEditor::prepare()
 {
-    m_pMainLayout = new QGridLayout(this);
-    if (m_pMainLayout)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
+        m_pLayout->setColumnStretch(1, 1);
+        m_pLayout->setColumnStretch(2, 1);
 
-        m_pMonitorComboBox = new QComboBox;
+        /* Prepare label: */
+        if (m_fWithLabels)
+        {
+            m_pLabel = new QLabel(this);
+            if (m_pLabel)
+            {
+                m_pLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                m_pLayout->addWidget(m_pLabel, 0, 0);
+            }
+        }
+
+        m_pMonitorComboBox = new QComboBox(this);
         if (m_pMonitorComboBox)
         {
             m_pMonitorComboBox->insertItem(0, "All Monitors");
             connect(m_pMonitorComboBox ,static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                     this, &UIScaleFactorEditor::sltMonitorComboIndexChanged);
-            m_pMainLayout->addWidget(m_pMonitorComboBox, 0, 0);
+
+            m_pLayout->addWidget(m_pMonitorComboBox, 0, 1);
         }
 
-        QGridLayout *pSliderLayout = new QGridLayout;
-        if (pSliderLayout)
+        m_pScaleSlider = new QIAdvancedSlider(this);
         {
-            m_pScaleSlider = new QIAdvancedSlider;
-            {
-                m_pScaleSlider->setPageStep(10);
-                m_pScaleSlider->setSingleStep(1);
-                m_pScaleSlider->setTickInterval(10);
-                m_pScaleSlider->setSnappingEnabled(true);
-                connect(m_pScaleSlider, static_cast<void(QIAdvancedSlider::*)(int)>(&QIAdvancedSlider::valueChanged),
-                        this, &UIScaleFactorEditor::sltScaleSliderValueChanged);
-                pSliderLayout->addWidget(m_pScaleSlider, 0, 0, 1, 3);
-            }
+            if (m_pLabel)
+                m_pLabel->setBuddy(m_pScaleSlider);
+            m_pScaleSlider->setPageStep(10);
+            m_pScaleSlider->setSingleStep(1);
+            m_pScaleSlider->setTickInterval(10);
+            m_pScaleSlider->setSnappingEnabled(true);
+            connect(m_pScaleSlider, static_cast<void(QIAdvancedSlider::*)(int)>(&QIAdvancedSlider::valueChanged),
+                    this, &UIScaleFactorEditor::sltScaleSliderValueChanged);
 
-            m_pMinScaleLabel = new QLabel;
-            if (m_pMinScaleLabel)
-                pSliderLayout->addWidget(m_pMinScaleLabel, 1, 0);
-
-            QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-            if (pSpacer)
-                pSliderLayout->addItem(pSpacer, 1, 1);
-
-            m_pMaxScaleLabel = new QLabel;
-            if (m_pMaxScaleLabel)
-                pSliderLayout->addWidget(m_pMaxScaleLabel, 1, 2);
-
-            m_pMainLayout->addLayout(pSliderLayout, 0, 1, 2, 1);
+            m_pLayout->addWidget(m_pScaleSlider, 0, 2, 1, 2);
         }
 
-        m_pScaleSpinBox = new QSpinBox;
+        m_pScaleSpinBox = new QSpinBox(this);
         if (m_pScaleSpinBox)
         {
             setFocusProxy(m_pScaleSpinBox);
             m_pScaleSpinBox->setSuffix("%");
             connect(m_pScaleSpinBox ,static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
                     this, &UIScaleFactorEditor::sltScaleSpinBoxValueChanged);
-            m_pMainLayout->addWidget(m_pScaleSpinBox, 0, 3);
+            m_pLayout->addWidget(m_pScaleSpinBox, 0, 4);
         }
+
+        m_pMinScaleLabel = new QLabel(this);
+        if (m_pMinScaleLabel)
+            m_pLayout->addWidget(m_pMinScaleLabel, 1, 2);
+
+        m_pMaxScaleLabel = new QLabel(this);
+        if (m_pMaxScaleLabel)
+            m_pLayout->addWidget(m_pMaxScaleLabel, 1, 3);
     }
 
     prepareScaleFactorMinMaxValues();

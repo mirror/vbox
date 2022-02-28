@@ -30,6 +30,7 @@
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
+class QGridLayout;
 class QLabel;
 class QSpinBox;
 class QIComboBox;
@@ -69,9 +70,8 @@ signals:
 
 public:
 
-    /** Constructs maximum guest screen size editor passing @a pParent to the base-class.
-      * @param  fWithLabels  Brings whether we should add labels ourselves. */
-    UIMaximumGuestScreenSizeEditor(QWidget *pParent = 0, bool fWithLabels = false);
+    /** Constructs maximum guest screen size editor passing @a pParent to the base-class. */
+    UIMaximumGuestScreenSizeEditor(QWidget *pParent = 0);
 
     /** Returns focus proxy 1. */
     QWidget *focusProxy1() const;
@@ -84,6 +84,11 @@ public:
     void setValue(const UIMaximumGuestScreenSizeValue &guiValue);
     /** Returns editor value. */
     UIMaximumGuestScreenSizeValue value() const;
+
+    /** Returns minimum layout hint. */
+    int minimumLabelHorizontalHint() const;
+    /** Defines minimum layout @a iIndent. */
+    void setMinimumLayoutIndent(int iIndent);
 
 protected:
 
@@ -104,24 +109,23 @@ private:
     /** Populates combo. */
     void populateCombo();
 
-    /** Holds whether descriptive labels should be created. */
-    bool  m_fWithLabels;
-
     /** Holds the value to be selected. */
     UIMaximumGuestScreenSizeValue  m_guiValue;
 
+    /** Holds the main layout: */
+    QGridLayout *m_pLayout;
     /** Holds the policy label instance. */
-    QLabel     *m_pLabelPolicy;
+    QLabel      *m_pLabelPolicy;
     /** Holds the policy combo instance. */
-    QIComboBox *m_pComboPolicy;
+    QIComboBox  *m_pComboPolicy;
     /** Holds the max width label instance. */
-    QLabel     *m_pLabelMaxWidth;
+    QLabel      *m_pLabelMaxWidth;
     /** Holds the max width spinbox instance. */
-    QSpinBox   *m_pSpinboxMaxWidth;
+    QSpinBox    *m_pSpinboxMaxWidth;
     /** Holds the max height label instance. */
-    QLabel     *m_pLabelMaxHeight;
+    QLabel      *m_pLabelMaxHeight;
     /** Holds the max height spinbox instance. */
-    QSpinBox   *m_pSpinboxMaxHeight;
+    QSpinBox    *m_pSpinboxMaxHeight;
 };
 
 

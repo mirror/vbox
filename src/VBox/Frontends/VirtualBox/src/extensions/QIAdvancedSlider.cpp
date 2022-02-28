@@ -283,6 +283,11 @@ void QIAdvancedSlider::setErrorHint(int iMin, int iMax)
     update();
 }
 
+void QIAdvancedSlider::setToolTip(const QString &strToolTip)
+{
+    m_pSlider->setToolTip(strToolTip);
+}
+
 void QIAdvancedSlider::setOrientation(Qt::Orientation enmOrientation)
 {
     m_pSlider->setOrientation(enmOrientation);

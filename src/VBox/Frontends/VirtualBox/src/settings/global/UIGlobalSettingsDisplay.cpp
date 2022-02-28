@@ -75,13 +75,9 @@ struct UIDataSettingsGlobalDisplay
 
 UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     : m_pCache(0)
-    , m_pLabelMaximumGuestScreenSizePolicy(0)
-    , m_pLabelMaximumGuestScreenWidth(0)
-    , m_pLabelMaximumGuestScreenHeight(0)
     , m_pEditorMaximumGuestScreenSize(0)
-    , m_pLabelScaleFactor(0)
     , m_pEditorScaleFactor(0)
-    , m_pLabelMachineWindows(0)
+    , m_pLabelExtendedFeatures(0)
     , m_pCheckBoxActivateOnMouseHover(0)
     , m_pCheckBoxDisableHostScreenSaver(0)
 {
@@ -156,11 +152,7 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
 
 void UIGlobalSettingsDisplay::retranslateUi()
 {
-    m_pLabelMaximumGuestScreenSizePolicy->setText(tr("Maximum Guest Screen &Size:"));
-    m_pLabelMaximumGuestScreenWidth->setText(tr("&Width:"));
-    m_pLabelMaximumGuestScreenHeight->setText(tr("&Height:"));
-    m_pLabelScaleFactor->setText(tr("Scale &Factor:"));
-    m_pLabelMachineWindows->setText(tr("Extended Features:"));
+    m_pLabelExtendedFeatures->setText(tr("Extended Features:"));
     m_pCheckBoxActivateOnMouseHover->setToolTip(tr("When checked, machine windows will be raised "
                                                    "when the mouse pointer moves over them."));
     m_pCheckBoxActivateOnMouseHover->setText(tr("&Raise Window Under Mouse Pointer"));
@@ -169,6 +161,15 @@ void UIGlobalSettingsDisplay::retranslateUi()
         m_pCheckBoxDisableHostScreenSaver->setToolTip(tr("When checked, screen saver of the host OS is disabled."));
         m_pCheckBoxDisableHostScreenSaver->setText(tr("&Disable Host Screen Saver"));
     }
+
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMaximumGuestScreenSize->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorScaleFactor->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelExtendedFeatures->minimumSizeHint().width());
+    m_pEditorMaximumGuestScreenSize->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorScaleFactor->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pLayout->setColumnMinimumWidth(0, iMinimumLayoutHint);
 }
 
 void UIGlobalSettingsDisplay::prepare()
@@ -187,73 +188,33 @@ void UIGlobalSettingsDisplay::prepare()
 void UIGlobalSettingsDisplay::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
-    if (pLayoutMain)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pLayoutMain->setColumnStretch(1, 1);
-        pLayoutMain->setRowStretch(7, 1);
+        m_pLayout->setColumnStretch(1, 1);
+        m_pLayout->setRowStretch(4, 1);
 
-        /* Prepare maximum guest screen size label: */
-        m_pLabelMaximumGuestScreenSizePolicy = new QLabel(this);
-        if (m_pLabelMaximumGuestScreenSizePolicy)
-        {
-           m_pLabelMaximumGuestScreenSizePolicy->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-           pLayoutMain->addWidget(m_pLabelMaximumGuestScreenSizePolicy, 0, 0);
-        }
-        /* Prepare maximum guest screen width label: */
-        m_pLabelMaximumGuestScreenWidth = new QLabel(this);
-        if (m_pLabelMaximumGuestScreenWidth)
-        {
-            m_pLabelMaximumGuestScreenWidth->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelMaximumGuestScreenWidth, 1, 0);
-        }
-        /* Prepare maximum guest screen height label: */
-        m_pLabelMaximumGuestScreenHeight = new QLabel(this);
-        if (m_pLabelMaximumGuestScreenHeight)
-        {
-            m_pLabelMaximumGuestScreenHeight->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelMaximumGuestScreenHeight, 2, 0);
-        }
         /* Prepare maximum guest screen size editor: */
         m_pEditorMaximumGuestScreenSize = new UIMaximumGuestScreenSizeEditor(this);
         if (m_pEditorMaximumGuestScreenSize)
-        {
-            if (m_pLabelMaximumGuestScreenSizePolicy)
-                m_pLabelMaximumGuestScreenSizePolicy->setBuddy(m_pEditorMaximumGuestScreenSize->focusProxy1());
-            if (m_pLabelMaximumGuestScreenWidth)
-                m_pLabelMaximumGuestScreenWidth->setBuddy(m_pEditorMaximumGuestScreenSize->focusProxy2());
-            if (m_pLabelMaximumGuestScreenHeight)
-                m_pLabelMaximumGuestScreenHeight->setBuddy(m_pEditorMaximumGuestScreenSize->focusProxy3());
-            pLayoutMain->addWidget(m_pEditorMaximumGuestScreenSize, 0, 1, 3, 2);
-        }
+            m_pLayout->addWidget(m_pEditorMaximumGuestScreenSize, 0, 0, 1, 3);
 
-        /* Prepare scale-factor label: */
-        m_pLabelScaleFactor = new QLabel(this);
-        if (m_pLabelScaleFactor)
-        {
-            m_pLabelScaleFactor->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelScaleFactor, 3, 0);
-        }
         /* Prepare scale-factor editor: */
-        m_pEditorScaleFactor = new UIScaleFactorEditor(this);
+        m_pEditorScaleFactor = new UIScaleFactorEditor(this, true /* with label */);
         if (m_pEditorScaleFactor)
-        {
-            if (m_pLabelScaleFactor)
-                m_pLabelScaleFactor->setBuddy(m_pEditorScaleFactor->focusProxy());
-            pLayoutMain->addWidget(m_pEditorScaleFactor, 3, 1, 2, 2);
-        }
+            m_pLayout->addWidget(m_pEditorScaleFactor, 1, 0, 1, 3);
 
         /* Prepare 'machine-windows' label: */
-        m_pLabelMachineWindows = new QLabel(this);
-        if (m_pLabelMachineWindows)
+        m_pLabelExtendedFeatures = new QLabel(this);
+        if (m_pLabelExtendedFeatures)
         {
-            m_pLabelMachineWindows->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelMachineWindows, 5, 0);
+            m_pLabelExtendedFeatures->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabelExtendedFeatures, 2, 0);
         }
         /* Prepare 'activate on mouse hover' check-box: */
         m_pCheckBoxActivateOnMouseHover = new QCheckBox(this);
         if (m_pCheckBoxActivateOnMouseHover)
-            pLayoutMain->addWidget(m_pCheckBoxActivateOnMouseHover, 5, 1);
+            m_pLayout->addWidget(m_pCheckBoxActivateOnMouseHover, 2, 1);
 
         /* Prepare 'disable host screen saver' check-box: */
 #if defined(VBOX_WS_WIN)
@@ -261,10 +222,9 @@ void UIGlobalSettingsDisplay::prepareWidgets()
 #elif defined(VBOX_WS_X11)
         if (NativeWindowSubsystem::X11CheckDBusScreenSaverServices())
             m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
-#endif
+#endif /* VBOX_WS_X11 */
         if (m_pCheckBoxDisableHostScreenSaver)
-            pLayoutMain->addWidget(m_pCheckBoxDisableHostScreenSaver, 6, 1);
-
+            m_pLayout->addWidget(m_pCheckBoxDisableHostScreenSaver, 3, 1);
     }
 }
 

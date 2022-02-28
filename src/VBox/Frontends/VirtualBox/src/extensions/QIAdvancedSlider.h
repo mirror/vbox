@@ -103,6 +103,9 @@ public:
     /** Defines the error hint to be from @a iMin to @a iMax. */
     void setErrorHint(int iMin, int iMax);
 
+    /** Defines slider @a strToolTip. */
+    void setToolTip(const QString &strToolTip);
+
 public slots:
 
     /** Defines the slider @a enmOrientation. */

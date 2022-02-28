@@ -26,6 +26,7 @@
 
 /* Forward declarations: */
 class QCheckBox;
+class QGridLayout;
 class QLabel;
 class UIMaximumGuestScreenSizeEditor;
 class UIScaleFactorEditor;
@@ -80,24 +81,21 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the maximum guest screen size label instance. */
-        QLabel                         *m_pLabelMaximumGuestScreenSizePolicy;
-        /** Holds the maximum guest screen width label instance. */
-        QLabel                         *m_pLabelMaximumGuestScreenWidth;
-        /** Holds the maximum guest screen height label instance. */
-        QLabel                         *m_pLabelMaximumGuestScreenHeight;
+        /** Holds the main layout instance. */
+        QGridLayout *m_pLayout;
+
         /** Holds the maximum guest screen size editor instance. */
         UIMaximumGuestScreenSizeEditor *m_pEditorMaximumGuestScreenSize;
-        /** Holds the scale-factor label instance. */
-        QLabel                         *m_pLabelScaleFactor;
+
         /** Holds the scale-factor editor instance. */
-        UIScaleFactorEditor            *m_pEditorScaleFactor;
-        /** Holds the 'machine-windows' label instance. */
-        QLabel                         *m_pLabelMachineWindows;
+        UIScaleFactorEditor *m_pEditorScaleFactor;
+
+        /** Holds the 'extended features' label instance. */
+        QLabel    *m_pLabelExtendedFeatures;
         /** Holds the 'activate on mouse hover' check-box instance. */
-        QCheckBox                      *m_pCheckBoxActivateOnMouseHover;
+        QCheckBox *m_pCheckBoxActivateOnMouseHover;
         /** Holds the 'disable host screen saver' check-box instance. */
-        QCheckBox                      *m_pCheckBoxDisableHostScreenSaver;
+        QCheckBox *m_pCheckBoxDisableHostScreenSaver;
     /** @} */
 };
 
