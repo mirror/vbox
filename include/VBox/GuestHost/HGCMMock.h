@@ -30,8 +30,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef VBOX_INCLUDED_HGCMMock_h
-#define VBOX_INCLUDED_HGCMMock_h
+#ifndef VBOX_INCLUDED_GuestHost_HGCMMock_h
+#define VBOX_INCLUDED_GuestHost_HGCMMock_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -396,7 +396,8 @@ static DECLCALLBACK(int) tstHgcmMockSvcCallComplete(VBOXHGCMCALLHANDLE callHandl
 {
     PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
-    for (size_t i = 0; RT_ELEMENTS(pSvc->aHgcmClient); i++)
+    size_t i = 0;
+    for (i; RT_ELEMENTS(pSvc->aHgcmClient); i++)
     {
         PTSTHGCMMOCKCLIENT pClient = &pSvc->aHgcmClient[i];
         if (&pClient->hCall == callHandle) /* Slow, but works for now. */
@@ -693,13 +694,17 @@ VBGLR3DECL(int) VbglR3HGCMDisconnect(HGCMCLIENTID idClient)
  */
 VBGLR3DECL(int) VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo)
 {
+    RT_NOREF(cbInfo);
+
     AssertMsg(pInfo->Hdr.cbIn  == cbInfo, ("cbIn=%#x cbInfo=%#zx\n", pInfo->Hdr.cbIn, cbInfo));
     AssertMsg(pInfo->Hdr.cbOut == cbInfo, ("cbOut=%#x cbInfo=%#zx\n", pInfo->Hdr.cbOut, cbInfo));
     Assert(sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter) <= cbInfo);
 
     HGCMFunctionParameter *offSrcParms = VBGL_HGCM_GET_CALL_PARMS(pInfo);
     PVBOXHGCMSVCPARM       paDstParms  = (PVBOXHGCMSVCPARM)RTMemAlloc(pInfo->cParms * sizeof(VBOXHGCMSVCPARM));
-    for (uint16_t i = 0; i < pInfo->cParms; i++)
+
+    uint16_t i = 0;
+    for (i; i < pInfo->cParms; i++)
     {
         switch (offSrcParms->type)
         {
@@ -742,7 +747,8 @@ VBGLR3DECL(int) VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo)
     {
         offSrcParms = VBGL_HGCM_GET_CALL_PARMS(pInfo);
 
-        for (uint16_t i = 0; i < pInfo->cParms; i++)
+        uint16_t i = 0;
+        for (; i < pInfo->cParms; i++)
         {
             paDstParms[i].type = offSrcParms->type;
             switch (paDstParms[i].type)
@@ -780,4 +786,4 @@ VBGLR3DECL(int) VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo)
 
 #endif /* IN_RING3 */
 
-#endif /* !VBOX_INCLUDED_HGCMMock_h */
+#endif /* !VBOX_INCLUDED_GuestHost_HGCMMock_h */
