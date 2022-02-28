@@ -51,6 +51,7 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPUCC pVCpu);
 VMMR0DECL(int)          SVMR0ExportHostState(PVMCPUCC pVCpu);
 VMMR0DECL(int)          SVMR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat);
 VMMR0DECL(int)          SVMR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt);
+VMMR0DECL(int)          SVMR0GetExitAuxInfo(PVMCPUCC pVCpu, PSVMEXITAUX pSvmExitAux);
 
 /**
  * Executes INVLPGA.

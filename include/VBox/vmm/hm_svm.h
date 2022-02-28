@@ -1061,6 +1061,24 @@ typedef SVMMSRS *PSVMMSRS;
 typedef const SVMMSRS *PCSVMMSRS;
 
 /**
+ * SVM VM-exit auxiliary information.
+ *
+ * This includes information that isn't necessarily stored in the guest-CPU
+ * context but provided as part of \#VMEXITs.
+ */
+typedef struct
+{
+    uint64_t        u64ExitCode;
+    uint64_t        u64ExitInfo1;
+    uint64_t        u64ExitInfo2;
+    SVMEVENT        ExitIntInfo;
+} SVMEXITAUX;
+/** Pointer to a SVMEXITAUX struct. */
+typedef SVMEXITAUX *PSVMEXITAUX;
+/** Pointer to a const SVMEXITAUX struct. */
+typedef const SVMEXITAUX *PCSVMEXITAUX;
+
+/**
  * Segment attribute conversion between CPU and AMD-V VMCB format.
  *
  * The CPU format of the segment attribute is described in X86DESCATTRBITS

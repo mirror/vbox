@@ -3654,6 +3654,43 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_PENDING_DBG_XCPT_, UINT64_C(0), UINT64_M
 /** @} */
 
 
+/**
+ * VM-exit auxiliary information.
+ *
+ * This includes information that isn't necessarily stored in the guest-CPU
+ * context but provided as part of VM-exits.
+ */
+typedef struct
+{
+    /** The VM-exit reason. */
+    uint32_t                uReason;
+    /** The Exit qualification field. */
+    uint64_t                u64Qual;
+    /** The Guest-linear address field. */
+    uint64_t                u64GuestLinearAddr;
+    /** The Guest-physical address field. */
+    uint64_t                u64GuestPhysAddr;
+    /** The guest pending-debug exceptions. */
+    uint64_t                u64GuestPendingDbgXcpts;
+    /** The VM-exit instruction length. */
+    uint32_t                cbInstr;
+    /** The VM-exit instruction information. */
+    VMXEXITINSTRINFO        InstrInfo;
+    /** VM-exit interruption information. */
+    uint32_t                uExitIntInfo;
+    /** VM-exit interruption error code. */
+    uint32_t                uExitIntErrCode;
+    /** IDT-vectoring information. */
+    uint32_t                uIdtVectoringInfo;
+    /** IDT-vectoring error code. */
+    uint32_t                uIdtVectoringErrCode;
+} VMXEXITAUX;
+/** Pointer to a VMXEXITAUX struct. */
+typedef VMXEXITAUX *PVMXEXITAUX;
+/** Pointer to a const VMXEXITAUX struct. */
+typedef const VMXEXITAUX *PCVMXEXITAUX;
+
+
 /** @defgroup grp_hm_vmx_virt    VMX virtualization.
  * @{
  */

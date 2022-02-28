@@ -207,6 +207,62 @@ VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCC pVM, PVMCPUCC 
 /** @defgroup grp_hm_r0    The HM ring-0 Context API
  * @{
  */
+
+/** @name HMVMX_READ_XXX - Flags for reading auxiliary VM-exit VMCS fields.
+ *
+ * These flags allow reading VMCS fields that are not necessarily part of the
+ * guest-CPU state but are needed while handling VM-exits.
+ *
+ * @note If you add any fields here, make sure to update VMXR0GetExitAuxInfo.
+ *
+ * @{
+ */
+#define HMVMX_READ_IDT_VECTORING_INFO               RT_BIT_32(0)
+#define HMVMX_READ_IDT_VECTORING_ERROR_CODE         RT_BIT_32(1)
+#define HMVMX_READ_EXIT_QUALIFICATION               RT_BIT_32(2)
+#define HMVMX_READ_EXIT_INSTR_LEN                   RT_BIT_32(3)
+#define HMVMX_READ_EXIT_INTERRUPTION_INFO           RT_BIT_32(4)
+#define HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE     RT_BIT_32(5)
+#define HMVMX_READ_EXIT_INSTR_INFO                  RT_BIT_32(6)
+#define HMVMX_READ_GUEST_LINEAR_ADDR                RT_BIT_32(7)
+#define HMVMX_READ_GUEST_PHYSICAL_ADDR              RT_BIT_32(8)
+#define HMVMX_READ_GUEST_PENDING_DBG_XCPTS          RT_BIT_32(9)
+
+/** All the VMCS fields required for processing of exception/NMI VM-exits. */
+#define HMVMX_READ_XCPT_INFO                        (  HMVMX_READ_EXIT_INTERRUPTION_INFO        \
+                                                     | HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE  \
+                                                     | HMVMX_READ_EXIT_INSTR_LEN                \
+                                                     | HMVMX_READ_IDT_VECTORING_INFO            \
+                                                     | HMVMX_READ_IDT_VECTORING_ERROR_CODE)
+
+/** Mask of all valid HMVMX_READ_XXX flags. */
+#define HMVMX_READ_VALID_MASK                       (  HMVMX_READ_IDT_VECTORING_INFO           \
+                                                     | HMVMX_READ_IDT_VECTORING_ERROR_CODE     \
+                                                     | HMVMX_READ_EXIT_QUALIFICATION           \
+                                                     | HMVMX_READ_EXIT_INSTR_LEN               \
+                                                     | HMVMX_READ_EXIT_INTERRUPTION_INFO       \
+                                                     | HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE \
+                                                     | HMVMX_READ_EXIT_INSTR_INFO              \
+                                                     | HMVMX_READ_GUEST_LINEAR_ADDR            \
+                                                     | HMVMX_READ_GUEST_PHYSICAL_ADDR          \
+                                                     | HMVMX_READ_GUEST_PENDING_DBG_XCPTS)
+/** @} */
+
+/**
+ * HM VM-exit auxiliary info.
+ */
+typedef union
+{
+    /** VMX VM-exit auxiliary info. */
+    VMXEXITAUX     Vmx;
+    /** SVM \#VMEXIT auxiliary info. */
+    SVMEXITAUX     Svm;
+} HMEXITAUX;
+/** Pointer to HM-exit auxiliary info union. */
+typedef HMEXITAUX *PHMEXITAUX;
+/** Pointer to a const HM-exit auxiliary info union. */
+typedef const HMEXITAUX *PCHMEXITAUX;
+
 VMMR0_INT_DECL(int)             HMR0Init(void);
 VMMR0_INT_DECL(int)             HMR0Term(void);
 VMMR0_INT_DECL(int)             HMR0InitVM(PVMCC pVM);
@@ -227,7 +283,7 @@ VMMR0_INT_DECL(void)            HMR0NotifyCpumModifiedHostCr0(PVMCPUCC VCpu);
 VMMR0_INT_DECL(bool)            HMR0SuspendPending(void);
 VMMR0_INT_DECL(int)             HMR0InvalidatePage(PVMCPUCC pVCpu, RTGCPTR GCVirt);
 VMMR0_INT_DECL(int)             HMR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat);
-
+VMMR0_INT_DECL(int)             HMR0GetExitAuxInfo(PVMCPUCC pVCpu, PHMEXITAUX pHmExitAux, uint32_t fWhat);
 /** @} */
 #endif /* IN_RING0 */
 

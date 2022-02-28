@@ -192,8 +192,9 @@ struc HMR0CPUVMX
     .VmcsInfo                       resb    VMXVMCSINFO_size
     .VmcsInfoNstGst                 resb    VMXVMCSINFO_size
     .fSwitchedToNstGstVmcs          resb    1
-
     alignb 8
+    .pVmxTransient                  RTR0PTR_RES  1
+
     .u64HostMsrLStar                resq    1
     .u64HostMsrStar                 resq    1
     .u64HostMsrSfMask               resq    1
@@ -228,6 +229,7 @@ struc HMR0CPUSVM
     .fSyncVTpr                      resb    1
 
     alignb 8
+    .pSvmTransient                  RTR0PTR_RES  1
     .u64HostTscAux                  resq    1
 
     alignb 8

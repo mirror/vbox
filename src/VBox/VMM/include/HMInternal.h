@@ -37,7 +37,8 @@
 #include <iprt/avl.h>
 #include <iprt/string.h>
 
-#include "HMVMXCommon.h"
+#include "VMXInternal.h"
+#include "SVMInternal.h"
 
 #if HC_ARCH_BITS == 32
 # error "32-bit hosts are no longer supported. Go back to 6.0 or earlier!"
@@ -1047,6 +1048,8 @@ typedef struct HMR0PERVCPU
          * @see HMCPU::vmx.fSwitchedToNstGstVmcsCopyForRing3  */
         bool                        fSwitchedToNstGstVmcs;
         bool                        afAlignment0[7];
+        /** Pointer to the VMX transient info during VM-exit. */
+        PVMXTRANSIENT               pVmxTransient;
         /** @} */
 
         /** @name Host information.
@@ -1105,6 +1108,8 @@ typedef struct HMR0PERVCPU
         bool                        fSyncVTpr;
         bool                        afAlignment[7];
 
+        /** Pointer to the SVM transient info during VM-exit. */
+        PSVMTRANSIENT               pSvmTransient;
         /** Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
         uint64_t                    u64HostTscAux;
 

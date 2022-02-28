@@ -287,56 +287,6 @@ PHYSICAL_TABLE and AVIC LOGICAL_TABLE Pointers). */
                                                  | HMSVM_VMCB_CLEAN_AVIC)
 /** @} */
 
-/** @name SVM transient.
- *
- * A state structure for holding miscellaneous information across AMD-V
- * VMRUN/\#VMEXIT operation, restored after the transition.
- *
- * @{ */
-typedef struct SVMTRANSIENT
-{
-    /** The host's rflags/eflags. */
-    RTCCUINTREG     fEFlags;
-    /** The \#VMEXIT exit code (the EXITCODE field in the VMCB). */
-    uint64_t        u64ExitCode;
-
-    /** The guest's TPR value used for TPR shadowing. */
-    uint8_t         u8GuestTpr;
-    /** Alignment. */
-    uint8_t         abAlignment0[7];
-
-    /** Pointer to the currently executing VMCB. */
-    PSVMVMCB        pVmcb;
-
-    /** Whether we are currently executing a nested-guest. */
-    bool            fIsNestedGuest;
-    /** Whether the guest debug state was active at the time of \#VMEXIT. */
-    bool            fWasGuestDebugStateActive;
-    /** Whether the hyper debug state was active at the time of \#VMEXIT. */
-    bool            fWasHyperDebugStateActive;
-    /** Whether the TSC offset mode needs to be updated. */
-    bool            fUpdateTscOffsetting;
-    /** Whether the TSC_AUX MSR needs restoring on \#VMEXIT. */
-    bool            fRestoreTscAuxMsr;
-    /** Whether the \#VMEXIT was caused by a page-fault during delivery of a
-     *  contributary exception or a page-fault. */
-    bool            fVectoringDoublePF;
-    /** Whether the \#VMEXIT was caused by a page-fault during delivery of an
-     *  external interrupt or NMI. */
-    bool            fVectoringPF;
-    /** Padding. */
-    bool            afPadding0;
-} SVMTRANSIENT;
-/** Pointer to SVM transient state. */
-typedef SVMTRANSIENT *PSVMTRANSIENT;
-/** Pointer to a const SVM transient state. */
-typedef const SVMTRANSIENT *PCSVMTRANSIENT;
-
-AssertCompileSizeAlignment(SVMTRANSIENT, sizeof(uint64_t));
-AssertCompileMemberAlignment(SVMTRANSIENT, u64ExitCode, sizeof(uint64_t));
-AssertCompileMemberAlignment(SVMTRANSIENT, pVmcb,       sizeof(uint64_t));
-/** @}  */
-
 /**
  * MSRPM (MSR permission bitmap) read permissions (for guest RDMSR).
  */
@@ -2958,6 +2908,33 @@ VMMR0DECL(int) SVMR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 
 
 /**
+ * Gets SVM \#VMEXIT auxiliary information.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pSvmExitAux     Where to store the auxiliary info.
+ */
+VMMR0DECL(int) SVMR0GetExitAuxInfo(PVMCPUCC pVCpu, PSVMEXITAUX pSvmExitAux)
+{
+    PCSVMTRANSIENT pSvmTransient = pVCpu->hmr0.s.svm.pSvmTransient;
+    if (RT_LIKELY(pSvmTransient))
+    {
+        PCSVMVMCB pVmcb = pSvmTransient->pVmcb;
+        if (RT_LIKELY(pVmcb))
+        {
+            pSvmExitAux->u64ExitCode  = pVmcb->ctrl.u64ExitCode;
+            pSvmExitAux->u64ExitInfo1 = pVmcb->ctrl.u64ExitInfo1;
+            pSvmExitAux->u64ExitInfo2 = pVmcb->ctrl.u64ExitInfo2;
+            pSvmExitAux->ExitIntInfo  = pVmcb->ctrl.ExitIntInfo;
+            return VINF_SUCCESS;
+        }
+        return VERR_SVM_IPE_5;
+    }
+    return VERR_NOT_AVAILABLE;
+}
+
+
+/**
  * Does the necessary state syncing before returning to ring-3 for any reason
  * (longjmp, preemption, voluntary exits to ring-3) from AMD-V.
  *
@@ -4555,6 +4532,9 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
     SvmTransient.pVmcb = &pCtx->hwvirt.svm.Vmcb;
     SvmTransient.fIsNestedGuest = true;
 
+    /* Setup pointer so PGM/IEM can query #VMEXIT auxiliary info. on demand in ring-0. */
+    pVCpu->hmr0.s.svm.pSvmTransient = &SvmTransient;
+
     VBOXSTRICTRC rc = VERR_INTERNAL_ERROR_4;
     for (;;)
     {
@@ -4625,6 +4605,9 @@ static VBOXSTRICTRC hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
         break;
         /** @todo NSTSVM: handle single-stepping. */
     }
+
+    /* Ensure #VMEXIT auxiliary info. is no longer available. */
+    pVCpu->hmr0.s.svm.pSvmTransient = NULL;
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
     return rc;

@@ -4833,6 +4833,102 @@ VMMR0DECL(int) VMXR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
 
 
 /**
+ * Gets VMX VM-exit auxiliary information.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmxExitAux     Where to store the VM-exit auxiliary info.
+ * @param   fWhat           What to fetch, HMVMX_READ_XXX.
+ */
+VMMR0DECL(int) VMXR0GetExitAuxInfo(PVMCPUCC pVCpu, PVMXEXITAUX pVmxExitAux, uint32_t fWhat)
+{
+    PVMXTRANSIENT pVmxTransient = pVCpu->hmr0.s.vmx.pVmxTransient;
+    if (RT_LIKELY(pVmxTransient))
+    {
+        AssertCompile(sizeof(fWhat) == sizeof(pVmxTransient->fVmcsFieldsRead));
+        fWhat &= ~pVmxTransient->fVmcsFieldsRead;
+
+        /* The exit reason is always available. */
+        pVmxExitAux->uReason = pVmxTransient->uExitReason;
+
+        if (fWhat & HMVMX_READ_EXIT_QUALIFICATION)
+        {
+            vmxHCReadExitQualVmcs(pVCpu, pVmxTransient);
+            fWhat &= ~HMVMX_READ_EXIT_QUALIFICATION;
+            pVmxExitAux->u64Qual = pVmxTransient->uExitQual;
+        }
+
+        if (fWhat & HMVMX_READ_IDT_VECTORING_INFO)
+        {
+            vmxHCReadIdtVectoringInfoVmcs(pVCpu, pVmxTransient);
+            fWhat &= ~HMVMX_READ_IDT_VECTORING_INFO;
+            pVmxExitAux->uIdtVectoringInfo = pVmxTransient->uIdtVectoringInfo;
+        }
+
+        if (fWhat & HMVMX_READ_IDT_VECTORING_ERROR_CODE)
+        {
+            vmxHCReadIdtVectoringErrorCodeVmcs(pVCpu, pVmxTransient);
+            fWhat &= ~HMVMX_READ_IDT_VECTORING_ERROR_CODE;
+            pVmxExitAux->uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+        }
+
+        if (fWhat & HMVMX_READ_EXIT_INSTR_LEN)
+        {
+            vmxHCReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+            fWhat &= ~HMVMX_READ_EXIT_INSTR_LEN;
+            pVmxExitAux->cbInstr = pVmxTransient->cbExitInstr;
+        }
+
+        if (fWhat & HMVMX_READ_EXIT_INTERRUPTION_INFO)
+        {
+            vmxHCReadExitIntInfoVmcs(pVCpu, pVmxTransient);
+            fWhat &= ~HMVMX_READ_EXIT_INTERRUPTION_INFO;
+            pVmxExitAux->uExitIntInfo = pVmxTransient->uExitIntInfo;
+        }
+
+        if (fWhat & HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE)
+        {
+            vmxHCReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
+            fWhat &= ~HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE;
+            pVmxExitAux->uExitIntErrCode = pVmxTransient->uExitIntErrorCode;
+        }
+
+        if (fWhat & HMVMX_READ_EXIT_INSTR_INFO)
+        {
+            vmxHCReadExitInstrInfoVmcs(pVCpu, pVmxTransient);
+            fWhat &= ~HMVMX_READ_EXIT_INSTR_INFO;
+            pVmxExitAux->InstrInfo.u = pVmxTransient->ExitInstrInfo.u;
+        }
+
+        if (fWhat & HMVMX_READ_GUEST_LINEAR_ADDR)
+        {
+            vmxHCReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
+            fWhat &= ~HMVMX_READ_GUEST_LINEAR_ADDR;
+            pVmxExitAux->u64GuestLinearAddr = pVmxTransient->uGuestLinearAddr;
+        }
+
+        if (fWhat & HMVMX_READ_GUEST_PHYSICAL_ADDR)
+        {
+            vmxHCReadGuestPhysicalAddrVmcs(pVCpu, pVmxTransient);
+            fWhat &= ~HMVMX_READ_GUEST_PHYSICAL_ADDR;
+            pVmxExitAux->u64GuestPhysAddr = pVmxTransient->uGuestPhysicalAddr;
+        }
+
+        if (fWhat & HMVMX_READ_GUEST_PENDING_DBG_XCPTS)
+        {
+            vmxHCReadGuestPendingDbgXctps(pVCpu, pVmxTransient);
+            fWhat &= ~HMVMX_READ_GUEST_PENDING_DBG_XCPTS;
+            pVmxExitAux->u64GuestPendingDbgXcpts = pVmxTransient->uGuestPendingDbgXcpts;
+        }
+
+        AssertMsg(!fWhat, ("fWhat=%#RX32 fVmcsFieldsRead=%#RX32\n", fWhat, pVmxTransient->fVmcsFieldsRead));
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_AVAILABLE;
+}
+
+
+/**
  * Does the necessary state syncing before returning to ring-3 for any reason
  * (longjmp, preemption, voluntary exits to ring-3) from VT-x.
  *
@@ -6773,6 +6869,9 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
     /* Paranoia. */
     Assert(VmxTransient.pVmcsInfo == &pVCpu->hmr0.s.vmx.VmcsInfoNstGst);
 
+    /* Setup pointer so PGM/IEM can query VM-exit auxiliary info. on demand in ring-0. */
+    pVCpu->hmr0.s.vmx.pVmxTransient = &VmxTransient;
+
     VBOXSTRICTRC rcStrict = VERR_INTERNAL_ERROR_5;
     for (;;)
     {
@@ -6805,7 +6904,8 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
         {
             STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatPreExit, x);
             hmR0VmxReportWorldSwitchError(pVCpu, rcRun, &VmxTransient);
-            return rcRun;
+            rcStrict = rcRun;
+            break;
         }
 
         /*
@@ -6854,6 +6954,9 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
             Assert(rcStrict != VINF_VMX_VMEXIT);
         break;
     }
+
+    /* Ensure VM-exit auxiliary info. is no longer available. */
+    pVCpu->hmr0.s.vmx.pVmxTransient = NULL;
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
     return rcStrict;

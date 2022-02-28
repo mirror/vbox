@@ -38,28 +38,6 @@
 #define HMVMX_FLUSH_TAGGED_TLB_VPID                 2
 #define HMVMX_FLUSH_TAGGED_TLB_NONE                 3
 
-/**
- * Flags to skip redundant reads of some common VMCS fields that are not part of
- * the guest-CPU or VCPU state but are needed while handling VM-exits.
- */
-#define HMVMX_READ_IDT_VECTORING_INFO               RT_BIT_32(0)
-#define HMVMX_READ_IDT_VECTORING_ERROR_CODE         RT_BIT_32(1)
-#define HMVMX_READ_EXIT_QUALIFICATION               RT_BIT_32(2)
-#define HMVMX_READ_EXIT_INSTR_LEN                   RT_BIT_32(3)
-#define HMVMX_READ_EXIT_INTERRUPTION_INFO           RT_BIT_32(4)
-#define HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE     RT_BIT_32(5)
-#define HMVMX_READ_EXIT_INSTR_INFO                  RT_BIT_32(6)
-#define HMVMX_READ_GUEST_LINEAR_ADDR                RT_BIT_32(7)
-#define HMVMX_READ_GUEST_PHYSICAL_ADDR              RT_BIT_32(8)
-#define HMVMX_READ_GUEST_PENDING_DBG_XCPTS          RT_BIT_32(9)
-
-/** All the VMCS fields required for processing of exception/NMI VM-exits. */
-#define HMVMX_READ_XCPT_INFO         (  HMVMX_READ_EXIT_INTERRUPTION_INFO        \
-                                      | HMVMX_READ_EXIT_INTERRUPTION_ERROR_CODE  \
-                                      | HMVMX_READ_EXIT_INSTR_LEN                \
-                                      | HMVMX_READ_IDT_VECTORING_INFO            \
-                                      | HMVMX_READ_IDT_VECTORING_ERROR_CODE)
-
 /** Assert that all the given fields have been read from the VMCS. */
 #ifdef VBOX_STRICT
 # define HMVMX_ASSERT_READ(a_pVmxTransient, a_fReadFields) \
