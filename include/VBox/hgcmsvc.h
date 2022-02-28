@@ -75,8 +75,8 @@
  * 5.1->6.1 Because pfnCall got a new parameter. Also new helpers. (VBox 6.0)
  * 6.1->6.2 Because pfnCallComplete starts returning a status code (VBox 6.0).
  * 6.2->6.3 Because pfnGetRequestor was added (VBox 6.0).
- * 6.3->6.4 Bacause pfnConnect got an additional parameter (VBox 6.0).
- * 6.4->6.5 Bacause pfnGetVMMDevSessionId was added pfnLoadState got the version
+ * 6.3->6.4 Because pfnConnect got an additional parameter (VBox 6.0).
+ * 6.4->6.5 Because pfnGetVMMDevSessionId was added pfnLoadState got the version
  *          parameter (VBox 6.0).
  * 6.5->7.1 Because pfnNotify was added (VBox 6.0).
  * 7.1->8.1 Because pfnCancelled & pfnIsCallCancelled were added (VBox 6.0).
@@ -113,7 +113,7 @@ typedef struct VBOXHGCMSVCHELPERS
      * on a client passed to VBOXHGCMSVCFNTABLE::pfnDisconnect.)
      *
      * There will be no VBOXHGCMSVCFNTABLE::pfnDisconnect callback for a client
-     * diconnected in this manner.
+     * disconnected in this manner.
      *
      * @returns VBox status code.
      * @retval  VERR_NOT_FOUND if the client ID was not found.
@@ -733,4 +733,3 @@ typedef FNVBOXHGCMSVCLOAD *PFNVBOXHGCMSVCLOAD;
 #define VBOX_HGCM_SVCLOAD_NAME "VBoxHGCMSvcLoad"
 
 #endif /* !VBOX_INCLUDED_hgcmsvc_h */
-
