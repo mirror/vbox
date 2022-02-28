@@ -20,37 +20,48 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+#ifndef VBOX_INCLUDED_HGCMMock_h
+#define VBOX_INCLUDED_HGCMMock_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
+#include <iprt/types.h>
+
+#include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/initterm.h>
+#include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/rand.h>
 #include <iprt/semaphore.h>
-#include <iprt/stream.h>
-#include <iprt/string.h>
 #include <iprt/test.h>
+#include <iprt/time.h>
+#include <iprt/thread.h>
 #include <iprt/utf16.h>
 
+#include <VBox/err.h>
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/hgcmsvc.h>
 
 
 /*********************************************************************************************************************************
 *  Definitions.                                                                                                                  *
 *********************************************************************************************************************************/
 
-extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *ptable);
-
-typedef uint32_t HGCMCLIENTID;
-# define VBGLR3DECL(type) DECL_HIDDEN_NOTHROW(type) VBOXCALL
-
 RT_C_DECLS_BEGIN
 
+#if defined(IN_RING3) /* Only R3 parts implemented so far. */
+
+extern DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *ptable);
+
+# define VBGLR3DECL(type) DECL_HIDDEN_NOTHROW(type) VBOXCALL
+
 /** Simple call handle structure for the guest call completion callback. */
-struct VBOXHGCMCALLHANDLE_TYPEDEF
+typedef struct VBOXHGCMCALLHANDLE_TYPEDEF
 {
     /** Where to store the result code on call completion. */
     int32_t rc;
-};
+} VBOXHGCMCALLHANDLE_TYPEDEF;
 
 /**
  * Enumeration for a HGCM mock function type.
@@ -64,8 +75,8 @@ typedef enum TSTHGCMMOCKFNTYPE
     TSTHGCMMOCKFNTYPE_HOST_CALL
 } TSTHGCMMOCKFNTYPE;
 
-/** Forward declaration of the HGCM mock service. */
-struct TSTHGCMMOCKSVC;
+/** Pointer to a mock HGCM service. */
+typedef struct TSTHGCMMOCKSVC *PTSTHGCMMOCKSVC;
 
 /**
  * Structure for mocking a server-side HGCM client.
@@ -73,7 +84,7 @@ struct TSTHGCMMOCKSVC;
 typedef struct TSTHGCMMOCKCLIENT
 {
     /** Pointer to to mock service instance this client belongs to. */
-    TSTHGCMMOCKSVC            *pSvc;
+    PTSTHGCMMOCKSVC            pSvc;
     /** Assigned HGCM client ID. */
     uint32_t                   idClient;
     /** Opaque pointer to service-specific client data.
@@ -107,12 +118,6 @@ typedef struct TSTHGCMMOCKFN
      *  depending on \a enmType. */
     union
     {
-        struct
-        {
-        } Connect;
-        struct
-        {
-        } Disconnect;
         struct
         {
             int32_t             iFunc;
@@ -169,17 +174,27 @@ typedef struct TSTHGCMMOCKSVC
     /** Shutdown indicator flag. */
     volatile bool      fShutdown;
 } TSTHGCMMOCKSVC;
-/** Pointer to a mock HGCM service. */
-typedef TSTHGCMMOCKSVC *PTSTHGCMMOCKSVC;
 
 /** Static HGCM service to mock. */
 static TSTHGCMMOCKSVC s_tstHgcmSvc;
 
-
 /*********************************************************************************************************************************
 *  Prototypes.                                                                                                                   *
 *********************************************************************************************************************************/
-DECLINLINE(PTSTHGCMMOCKSVC) tstHgcmMockSvcInst(void);
+PTSTHGCMMOCKSVC    TstHgcmMockSvcInst(void);
+PTSTHGCMMOCKCLIENT TstHgcmMockSvcWaitForConnectEx(PTSTHGCMMOCKSVC pSvc, RTMSINTERVAL msTimeout);
+PTSTHGCMMOCKCLIENT TstHgcmMockSvcWaitForConnect(PTSTHGCMMOCKSVC pSvc);
+int                TstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc, size_t cbClient);
+int                TstHgcmMockSvcDestroy(PTSTHGCMMOCKSVC pSvc);
+int                TstHgcmMockSvcStart(PTSTHGCMMOCKSVC pSvc);
+int                TstHgcmMockSvcStop(PTSTHGCMMOCKSVC pSvc);
+
+int                TstHgcmMockSvcHostCall(PTSTHGCMMOCKSVC pSvc, void *pvService, int32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+
+VBGLR3DECL(int)    VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidClient);
+VBGLR3DECL(int)    VbglR3HGCMDisconnect(HGCMCLIENTID idClient);
+VBGLR3DECL(int)    VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo);
+
 
 
 /*********************************************************************************************************************************
@@ -327,7 +342,8 @@ static DECLCALLBACK(int) tstHgcmMockSvcCall(PTSTHGCMMOCKSVC pSvc, void *pvServic
 }
 
 /* @copydoc VBOXHGCMSVCFNTABLE::pfnHostCall */
-static DECLCALLBACK(int) tstHgcmMockSvcHostCall(PTSTHGCMMOCKSVC pSvc, void *pvService, int32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+/** Note: Public for also being able to test host calls via testcases. */
+int TstHgcmMockSvcHostCall(PTSTHGCMMOCKSVC pSvc, void *pvService, int32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     RT_NOREF(pvService);
     AssertReturn(pSvc->cHostCallers == 0, VERR_WRONG_ORDER); /* Only one host call at a time. */
@@ -370,7 +386,7 @@ static DECLCALLBACK(int) tstHgcmMockSvcHostCall(PTSTHGCMMOCKSVC pSvc, void *pvSe
  */
 static DECLCALLBACK(int) tstHgcmMockSvcCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
 {
-    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
     for (size_t i = 0; RT_ELEMENTS(pSvc->aHgcmClient); i++)
     {
@@ -500,9 +516,27 @@ static DECLCALLBACK(int) tstHgcmMockSvcThread(RTTHREAD hThread, void *pvUser)
  *
  * @return Pointer to HGCM mock service instance.
  */
-DECLINLINE(PTSTHGCMMOCKSVC) tstHgcmMockSvcInst(void)
+PTSTHGCMMOCKSVC TstHgcmMockSvcInst(void)
 {
     return &s_tstHgcmSvc;
+}
+
+/**
+ * Waits for a HGCM mock client to connect, extended version.
+ *
+ * @return VBox status code.
+ * @param  pSvc                 HGCM mock service instance.
+ * @param  msTimeout            Timeout (in ms) to wait for connection.
+ */
+PTSTHGCMMOCKCLIENT TstHgcmMockSvcWaitForConnectEx(PTSTHGCMMOCKSVC pSvc, RTMSINTERVAL msTimeout)
+{
+    int rc = RTSemEventWait(pSvc->hEventWait, msTimeout);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pSvc->uNextClientId);
+        return &pSvc->aHgcmClient[pSvc->uNextClientId - 1];
+    }
+    return NULL;
 }
 
 /**
@@ -511,15 +545,9 @@ DECLINLINE(PTSTHGCMMOCKSVC) tstHgcmMockSvcInst(void)
  * @return VBox status code.
  * @param  pSvc                 HGCM mock service instance.
  */
-static PTSTHGCMMOCKCLIENT tstHgcmMockSvcWaitForConnect(PTSTHGCMMOCKSVC pSvc)
+PTSTHGCMMOCKCLIENT TstHgcmMockSvcWaitForConnect(PTSTHGCMMOCKSVC pSvc)
 {
-    int rc = RTSemEventWait(pSvc->hEventWait, RT_MS_30SEC);
-    if (RT_SUCCESS(rc))
-    {
-        Assert(pSvc->uNextClientId);
-        return &pSvc->aHgcmClient[pSvc->uNextClientId - 1];
-    }
-    return NULL;
+    return TstHgcmMockSvcWaitForConnectEx(pSvc, RT_MS_30SEC);
 }
 
 /**
@@ -530,7 +558,7 @@ static PTSTHGCMMOCKCLIENT tstHgcmMockSvcWaitForConnect(PTSTHGCMMOCKSVC pSvc)
  * @param  cbClient             Size (in bytes) of service-specific client data to
  *                              allocate for a HGCM mock client.
  */
-static int tstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc, size_t cbClient)
+int TstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc, size_t cbClient)
 {
     AssertReturn(cbClient, VERR_INVALID_PARAMETER);
 
@@ -561,7 +589,7 @@ static int tstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc, size_t cbClient)
  * @return VBox status code.
  * @param  pSvc                 HGCM mock service instance to destroy.
  */
-static int tstHgcmMockSvcDestroy(PTSTHGCMMOCKSVC pSvc)
+int TstHgcmMockSvcDestroy(PTSTHGCMMOCKSVC pSvc)
 {
     int rc = RTSemEventDestroy(pSvc->hEventQueue);
     if (RT_SUCCESS(rc))
@@ -579,7 +607,7 @@ static int tstHgcmMockSvcDestroy(PTSTHGCMMOCKSVC pSvc)
  * @return VBox status code.
  * @param  pSvc                 HGCM mock service instance to start.
  */
-static int tstHgcmMockSvcStart(PTSTHGCMMOCKSVC pSvc)
+int TstHgcmMockSvcStart(PTSTHGCMMOCKSVC pSvc)
 {
     int rc = RTThreadCreate(&pSvc->hThread, tstHgcmMockSvcThread, pSvc, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
                             "MockSvc");
@@ -595,7 +623,7 @@ static int tstHgcmMockSvcStart(PTSTHGCMMOCKSVC pSvc)
  * @return VBox status code.
  * @param  pSvc                 HGCM mock service instance to stop.
  */
-static int tstHgcmMockSvcStop(PTSTHGCMMOCKSVC pSvc)
+int TstHgcmMockSvcStop(PTSTHGCMMOCKSVC pSvc)
 {
     ASMAtomicWriteBool(&pSvc->fShutdown, true);
 
@@ -628,7 +656,7 @@ VBGLR3DECL(int) VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidC
 {
     RT_NOREF(pszServiceName);
 
-    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
     return tstHgcmMockSvcConnect(pSvc, pSvc->fnTable.pvService, pidClient);
 }
@@ -641,7 +669,7 @@ VBGLR3DECL(int) VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidC
  */
 VBGLR3DECL(int) VbglR3HGCMDisconnect(HGCMCLIENTID idClient)
 {
-    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
     return tstHgcmMockSvcDisconnect(pSvc, pSvc->fnTable.pvService, idClient);
 }
@@ -697,7 +725,7 @@ VBGLR3DECL(int) VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo)
         offSrcParms++;
     }
 
-    PTSTHGCMMOCKSVC const pSvc = tstHgcmMockSvcInst();
+    PTSTHGCMMOCKSVC const pSvc = TstHgcmMockSvcInst();
 
     int rc2 = tstHgcmMockSvcCall(pSvc, pSvc->fnTable.pvService, &pSvc->aHgcmClient[pInfo->u32ClientID].hCall,
                                  pInfo->u32ClientID, pSvc->aHgcmClient[pInfo->u32ClientID].pvClient,
@@ -742,4 +770,8 @@ VBGLR3DECL(int) VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo)
     return rc2;
 }
 
+#endif /* IN_RING3 */
+
 RT_C_DECLS_END
+
+#endif /* !VBOX_INCLUDED_HGCMMock_h */
