@@ -1034,7 +1034,7 @@ void vusbDevSetAddress(PVUSBDEV pDev, uint8_t u8Address)
     /* Remove the device from the current address. */
     if (pDev->u8Address != VUSB_INVALID_ADDRESS)
     {
-        Assert(pRh->apDevByAddr[VUSB_DEFAULT_ADDRESS] == pDev);
+        Assert(pRh->apDevByAddr[pDev->u8Address] == pDev);
         pRh->apDevByAddr[pDev->u8Address] = NULL;
     }
 
