@@ -224,8 +224,6 @@ typedef struct VUSBDEV
     VUSBIDEVICE         IDevice;
     /** Pointer to the PDM USB device instance. */
     PPDMUSBINS          pUsbIns;
-    /** Next device in the chain of devices with the default address. */
-    PVUSBDEV            pNextDefAddr;
     /** Pointer to the hub this device is attached to. */
     PVUSBHUB            pHub;
     /** The device state. */

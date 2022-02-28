@@ -429,28 +429,7 @@ static int vusbHubDetach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
     Assert(pThis->apDevByPort[uPort] == pDev);
     pThis->apDevByPort[uPort]  = NULL;
 
-    if (pDev->u8Address == VUSB_DEFAULT_ADDRESS)
-    {
-        AssertPtr(pThis->apDevByAddr[VUSB_DEFAULT_ADDRESS]);
-
-        if (pDev == pThis->apDevByAddr[VUSB_DEFAULT_ADDRESS])
-            pThis->apDevByAddr[VUSB_DEFAULT_ADDRESS] = pDev->pNextDefAddr;
-        else
-        {
-            /* Search the list for the device and remove it. */
-            PVUSBDEV pDevPrev = pThis->apDevByAddr[VUSB_DEFAULT_ADDRESS];
-
-            while (   pDevPrev
-                   && pDevPrev->pNextDefAddr != pDev)
-                pDevPrev = pDevPrev->pNextDefAddr;
-
-            AssertPtr(pDevPrev);
-            pDevPrev->pNextDefAddr = pDev->pNextDefAddr;
-        }
-
-        pDev->pNextDefAddr = NULL;
-    }
-    else
+    if (pDev->u8Address != VUSB_INVALID_ADDRESS)
     {
         Assert(pThis->apDevByAddr[pDev->u8Address] == pDev);
         pThis->apDevByAddr[pDev->u8Address] = NULL;
