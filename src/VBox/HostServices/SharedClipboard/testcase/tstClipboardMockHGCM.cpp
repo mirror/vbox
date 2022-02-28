@@ -15,11 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <VBox/GuestHost/HGCMMock.h>
+
 #include "../VBoxSharedClipboardSvc-internal.h"
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/VBoxGuestLib.h>
-
 #ifdef RT_OS_LINUX
 # include <VBox/GuestHost/SharedClipboard-x11.h>
 #endif
@@ -33,96 +34,18 @@
 #include <iprt/test.h>
 #include <iprt/utf16.h>
 
-static RTTEST g_hTest;
 
-extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable);
+/*********************************************************************************************************************************
+*   Static globals                                                                                                               *
+*********************************************************************************************************************************/
 
+static RTTEST     g_hTest;
 static SHCLCLIENT g_Client;
 
-typedef uint32_t HGCMCLIENTID;
-# define VBGLR3DECL(type) DECL_HIDDEN_NOTHROW(type) VBOXCALL
 
-RT_C_DECLS_BEGIN
-
-/** Simple call handle structure for the guest call completion callback. */
-struct VBOXHGCMCALLHANDLE_TYPEDEF
-{
-    /** Where to store the result code on call completion. */
-    int32_t rc;
-};
-
-typedef enum TSTHGCMMOCKFNTYPE
-{
-    TSTHGCMMOCKFNTYPE_NONE = 0,
-    TSTHGCMMOCKFNTYPE_CONNECT,
-    TSTHGCMMOCKFNTYPE_DISCONNECT,
-    TSTHGCMMOCKFNTYPE_CALL,
-    TSTHGCMMOCKFNTYPE_HOST_CALL
-} TSTHGCMMOCKFNTYPE;
-
-struct TSTHGCMMOCKSVC;
-
-typedef struct TSTHGCMMOCKCLIENT
-{
-    TSTHGCMMOCKSVC            *pSvc;
-    uint32_t                   idClient;
-    SHCLCLIENT                 Client;
-    VBOXHGCMCALLHANDLE_TYPEDEF hCall;
-    bool                       fAsyncExec;
-    RTSEMEVENT                 hEvent;
-} TSTHGCMMOCKCLIENT;
-/** Pointer to a mock HGCM client. */
-typedef TSTHGCMMOCKCLIENT *PTSTHGCMMOCKCLIENT;
-
-typedef struct TSTHGCMMOCKFN
-{
-    RTLISTNODE         Node;
-    TSTHGCMMOCKFNTYPE  enmType;
-    PTSTHGCMMOCKCLIENT pClient;
-    union
-    {
-        struct
-        {
-        } Connect;
-        struct
-        {
-        } Disconnect;
-        struct
-        {
-            int32_t             iFunc;
-            uint32_t            cParms;
-            PVBOXHGCMSVCPARM    pParms;
-            VBOXHGCMCALLHANDLE  hCall;
-        } Call;
-        struct
-        {
-            int32_t             iFunc;
-            uint32_t            cParms;
-            PVBOXHGCMSVCPARM    pParms;
-        } HostCall;
-    } u;
-} TSTHGCMMOCKFN;
-typedef TSTHGCMMOCKFN *PTSTHGCMMOCKFN;
-
-typedef struct TSTHGCMMOCKSVC
-{
-    VBOXHGCMSVCHELPERS fnHelpers;
-    HGCMCLIENTID       uNextClientId;
-    TSTHGCMMOCKCLIENT  aHgcmClient[4];
-    VBOXHGCMSVCFNTABLE fnTable;
-    RTTHREAD           hThread;
-    RTSEMEVENT         hEventQueue;
-    RTSEMEVENT         hEventWait;
-    /** Event semaphore for host calls. */
-    RTSEMEVENT         hEventHostCall;
-    RTLISTANCHOR       lstCall;
-    volatile bool      fShutdown;
-} TSTHGCMMOCKSVC;
-/** Pointer to a mock HGCM service. */
-typedef TSTHGCMMOCKSVC *PTSTHGCMMOCKSVC;
-
-static TSTHGCMMOCKSVC    s_tstHgcmSvc;
-
+/*********************************************************************************************************************************
+*   Shared Clipboard testing                                                                                                     *
+*********************************************************************************************************************************/
 struct TESTDESC;
 /** Pointer to a test description. */
 typedef TESTDESC *PTESTDESC;
@@ -153,450 +76,6 @@ typedef FNTESTGSTTHREAD *PFNTESTGSTTHREAD;
 typedef DECLCALLBACKTYPE(int, FNTESTDESTROY,(PTESTPARMS pTstParms, void *pvCtx));
 /** Pointer to an test destroy callback. */
 typedef FNTESTDESTROY *PFNTESTDESTROY;
-
-static int tstHgcmMockClientInit(PTSTHGCMMOCKCLIENT pClient, uint32_t idClient)
-{
-    RT_BZERO(pClient, sizeof(TSTHGCMMOCKCLIENT));
-
-    pClient->idClient = idClient;
-
-    return RTSemEventCreate(&pClient->hEvent);
-}
-
-static int tstHgcmMockClientDestroy(PTSTHGCMMOCKCLIENT pClient)
-{
-    int rc = RTSemEventDestroy(pClient->hEvent);
-    if (RT_SUCCESS(rc))
-    {
-        pClient->hEvent = NIL_RTSEMEVENT;
-    }
-
-    return rc;
-}
-
-#if 0
-static void tstBackendWriteData(HGCMCLIENTID idClient, SHCLFORMAT uFormat, void *pvData, size_t cbData)
-{
-    ShClBackendSetClipboardData(&s_tstHgcmClient[idClient].Client, uFormat, pvData, cbData);
-}
-
-/** Adds a host data read request message to the client's message queue. */
-static int tstSvcMockRequestDataFromGuest(uint32_t idClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent)
-{
-    AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
-
-    int rc = ShClSvcGuestDataRequest(&s_tstHgcmClient[idClient].Client, fFormats, ppEvent);
-    RTTESTI_CHECK_RC_OK_RET(rc, rc);
-
-    return rc;
-}
-#endif
-
-static DECLCALLBACK(int) tstHgcmMockSvcConnect(PTSTHGCMMOCKSVC pSvc, void *pvService, uint32_t *pidClient)
-{
-    RT_NOREF(pvService);
-
-    PTSTHGCMMOCKFN pFn = (PTSTHGCMMOCKFN)RTMemAllocZ(sizeof(TSTHGCMMOCKFN));
-    AssertPtrReturn(pFn, VERR_NO_MEMORY);
-
-    PTSTHGCMMOCKCLIENT pClient = &pSvc->aHgcmClient[pSvc->uNextClientId];
-
-    int rc = tstHgcmMockClientInit(pClient, pSvc->uNextClientId);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pFn->enmType = TSTHGCMMOCKFNTYPE_CONNECT;
-    pFn->pClient = pClient;
-
-    RTListAppend(&pSvc->lstCall, &pFn->Node);
-    pFn = NULL; /* Thread takes ownership now. */
-
-    int rc2 = RTSemEventSignal(pSvc->hEventQueue);
-    AssertRCReturn(rc2, rc2);
-
-    rc2 = RTSemEventWait(pClient->hEvent, RT_MS_30SEC);
-    AssertRCReturn(rc2, rc2);
-
-    ASMAtomicIncU32(&pSvc->uNextClientId);
-
-    *pidClient = pClient->idClient;
-
-    return VINF_SUCCESS;
-}
-
-static DECLCALLBACK(int) tstHgcmMockSvcDisconnect(PTSTHGCMMOCKSVC pSvc, void *pvService, uint32_t idClient)
-{
-    RT_NOREF(pvService);
-
-    PTSTHGCMMOCKCLIENT pClient = &pSvc->aHgcmClient[idClient];
-
-    PTSTHGCMMOCKFN pFn = (PTSTHGCMMOCKFN)RTMemAllocZ(sizeof(TSTHGCMMOCKFN));
-    AssertPtrReturn(pFn, VERR_NO_MEMORY);
-
-    pFn->enmType = TSTHGCMMOCKFNTYPE_DISCONNECT;
-    pFn->pClient = pClient;
-
-    RTListAppend(&pSvc->lstCall, &pFn->Node);
-    pFn = NULL; /* Thread takes ownership now. */
-
-    int rc2 = RTSemEventSignal(pSvc->hEventQueue);
-    AssertRCReturn(rc2, rc2);
-
-    rc2 = RTSemEventWait(pClient->hEvent, RT_MS_30SEC);
-    AssertRCReturn(rc2, rc2);
-
-    return tstHgcmMockClientDestroy(pClient);
-}
-
-static DECLCALLBACK(int) tstHgcmMockSvcCall(PTSTHGCMMOCKSVC pSvc, void *pvService, VBOXHGCMCALLHANDLE callHandle, uint32_t idClient, void *pvClient,
-                                            int32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
-{
-    RT_NOREF(pvService, pvClient);
-
-    PTSTHGCMMOCKCLIENT pClient = &pSvc->aHgcmClient[idClient];
-
-    PTSTHGCMMOCKFN pFn = (PTSTHGCMMOCKFN)RTMemAllocZ(sizeof(TSTHGCMMOCKFN));
-    AssertPtrReturn(pFn, VERR_NO_MEMORY);
-
-    const size_t cbParms = cParms * sizeof(VBOXHGCMSVCPARM);
-
-    pFn->enmType         = TSTHGCMMOCKFNTYPE_CALL;
-    pFn->pClient         = pClient;
-
-    pFn->u.Call.hCall    = callHandle;
-    pFn->u.Call.iFunc    = function;
-    pFn->u.Call.pParms   = (PVBOXHGCMSVCPARM)RTMemDup(paParms, cbParms);
-    AssertPtrReturn(pFn->u.Call.pParms, VERR_NO_MEMORY);
-    pFn->u.Call.cParms   = cParms;
-
-    RTListAppend(&pSvc->lstCall, &pFn->Node);
-
-    int rc2 = RTSemEventSignal(pSvc->hEventQueue);
-    AssertRCReturn(rc2, rc2);
-
-    rc2 = RTSemEventWait(pSvc->aHgcmClient[idClient].hEvent, RT_INDEFINITE_WAIT);
-    AssertRCReturn(rc2, rc2);
-
-    memcpy(paParms, pFn->u.Call.pParms, cbParms);
-
-    return VINF_SUCCESS; /** @todo Return host call rc */
-}
-
-static DECLCALLBACK(int) tstHgcmMockSvcHostCall(PTSTHGCMMOCKSVC pSvc, void *pvService, int32_t function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
-{
-    RT_NOREF(pvService);
-
-    PTSTHGCMMOCKFN pFn = (PTSTHGCMMOCKFN)RTMemAllocZ(sizeof(TSTHGCMMOCKFN));
-    AssertPtrReturn(pFn, VERR_INVALID_POINTER);
-
-    pFn->enmType           = TSTHGCMMOCKFNTYPE_HOST_CALL;
-    pFn->u.HostCall.iFunc  = function;
-    pFn->u.HostCall.pParms = (PVBOXHGCMSVCPARM)RTMemDup(paParms, cParms * sizeof(VBOXHGCMSVCPARM));
-    AssertPtrReturn(pFn->u.HostCall.pParms, VERR_NO_MEMORY);
-    pFn->u.HostCall.cParms = cParms;
-
-    RTListAppend(&pSvc->lstCall, &pFn->Node);
-    pFn = NULL; /* Thread takes ownership now. */
-
-    int rc2 = RTSemEventSignal(pSvc->hEventQueue);
-    AssertRC(rc2);
-
-    rc2 = RTSemEventWait(pSvc->hEventHostCall, RT_INDEFINITE_WAIT);
-    AssertRCReturn(rc2, rc2);
-
-    return VINF_SUCCESS; /** @todo Return host call rc */
-}
-
-/** Call completion callback for guest calls. */
-static DECLCALLBACK(int) tstHgcmMockSvcCallComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
-{
-    PTSTHGCMMOCKSVC pSvc = &s_tstHgcmSvc;
-
-    for (size_t i = 0; RT_ELEMENTS(pSvc->aHgcmClient); i++)
-    {
-        PTSTHGCMMOCKCLIENT pClient = &pSvc->aHgcmClient[i];
-        if (&pClient->hCall == callHandle) /* Slow, but works for now. */
-        {
-            if (rc == VINF_HGCM_ASYNC_EXECUTE)
-            {
-                Assert(pClient->fAsyncExec == false);
-            }
-            else /* Complete call + notify client. */
-            {
-                callHandle->rc = rc;
-
-                int rc2 = RTSemEventSignal(pClient->hEvent);
-                AssertRCReturn(rc2, rc2);
-            }
-
-            return VINF_SUCCESS;
-        }
-    }
-
-    return VERR_NOT_FOUND;
-}
-
-static DECLCALLBACK(int) tstHgcmMockSvcThread(RTTHREAD hThread, void *pvUser)
-{
-    RT_NOREF(hThread);
-    PTSTHGCMMOCKSVC pSvc = (PTSTHGCMMOCKSVC)pvUser;
-
-    pSvc->uNextClientId  = 0;
-    pSvc->fnTable.cbSize     = sizeof(pSvc->fnTable);
-    pSvc->fnTable.u32Version = VBOX_HGCM_SVC_VERSION;
-
-    RT_ZERO(pSvc->fnHelpers);
-    pSvc->fnHelpers.pfnCallComplete = tstHgcmMockSvcCallComplete;
-    pSvc->fnTable.pHelpers          = &pSvc->fnHelpers;
-
-    int rc = VBoxHGCMSvcLoad(&pSvc->fnTable);
-    if (RT_SUCCESS(rc))
-    {
-        RTThreadUserSignal(hThread);
-
-        for (;;)
-        {
-            rc = RTSemEventWait(pSvc->hEventQueue, 10 /* ms */);
-            if (ASMAtomicReadBool(&pSvc->fShutdown))
-            {
-                rc = VINF_SUCCESS;
-                break;
-            }
-            if (rc == VERR_TIMEOUT)
-                continue;
-
-            PTSTHGCMMOCKFN pFn = RTListGetFirst(&pSvc->lstCall, TSTHGCMMOCKFN, Node);
-            if (pFn)
-            {
-                switch (pFn->enmType)
-                {
-                    case TSTHGCMMOCKFNTYPE_CONNECT:
-                    {
-                        rc = pSvc->fnTable.pfnConnect(pSvc->fnTable.pvService,
-                                                      pFn->pClient->idClient, &pFn->pClient->Client,
-                                                      VMMDEV_REQUESTOR_USR_NOT_GIVEN /* fRequestor */, false /* fRestoring */);
-
-                        int rc2 = RTSemEventSignal(pFn->pClient->hEvent);
-                        AssertRC(rc2);
-
-                        break;
-                    }
-
-                    case TSTHGCMMOCKFNTYPE_DISCONNECT:
-                    {
-                        rc = pSvc->fnTable.pfnDisconnect(pSvc->fnTable.pvService,
-                                                         pFn->pClient->idClient, &pFn->pClient->Client);
-                        break;
-                    }
-
-                    case TSTHGCMMOCKFNTYPE_CALL:
-                    {
-                        pSvc->fnTable.pfnCall(NULL, pFn->u.Call.hCall, pFn->pClient->idClient, &pFn->pClient->Client,
-                                              pFn->u.Call.iFunc, pFn->u.Call.cParms, pFn->u.Call.pParms, RTTimeMilliTS());
-
-                        /* Note: Call will be completed in the call completion callback. */
-                        break;
-                    }
-
-                    case TSTHGCMMOCKFNTYPE_HOST_CALL:
-                    {
-                        rc = pSvc->fnTable.pfnHostCall(NULL, pFn->u.HostCall.iFunc, pFn->u.HostCall.cParms, pFn->u.HostCall.pParms);
-
-                        int rc2 = RTSemEventSignal(pSvc->hEventHostCall);
-                        AssertRC(rc2);
-                        break;
-                    }
-
-                    default:
-                        AssertFailed();
-                        break;
-                }
-                RTListNodeRemove(&pFn->Node);
-                RTMemFree(pFn);
-            }
-        }
-    }
-
-    return rc;
-}
-
-static PTSTHGCMMOCKCLIENT tstHgcmMockSvcWaitForConnect(PTSTHGCMMOCKSVC pSvc)
-{
-    int rc = RTSemEventWait(pSvc->hEventWait, RT_MS_30SEC);
-    if (RT_SUCCESS(rc))
-    {
-        Assert(pSvc->uNextClientId);
-        return &pSvc->aHgcmClient[pSvc->uNextClientId - 1];
-    }
-    return NULL;
-}
-
-static int tstHgcmMockSvcCreate(PTSTHGCMMOCKSVC pSvc)
-{
-    RT_ZERO(pSvc->aHgcmClient);
-    pSvc->fShutdown = false;
-    int rc = RTSemEventCreate(&pSvc->hEventQueue);
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTSemEventCreate(&pSvc->hEventHostCall);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTSemEventCreate(&pSvc->hEventWait);
-            if (RT_SUCCESS(rc))
-                RTListInit(&pSvc->lstCall);
-        }
-    }
-
-    return rc;
-}
-
-static int tstHgcmMockSvcDestroy(PTSTHGCMMOCKSVC pSvc)
-{
-    int rc = RTSemEventDestroy(pSvc->hEventQueue);
-    if (RT_SUCCESS(rc))
-    {
-        rc = RTSemEventDestroy(pSvc->hEventHostCall);
-        if (RT_SUCCESS(rc))
-            RTSemEventDestroy(pSvc->hEventWait);
-    }
-    return rc;
-}
-
-static int tstHgcmMockSvcStart(PTSTHGCMMOCKSVC pSvc)
-{
-    int rc = RTThreadCreate(&pSvc->hThread, tstHgcmMockSvcThread, pSvc, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
-                            "MockSvc");
-    if (RT_SUCCESS(rc))
-        rc = RTThreadUserWait(pSvc->hThread, RT_MS_30SEC);
-
-    return rc;
-}
-
-static int tstHgcmMockSvcStop(PTSTHGCMMOCKSVC pSvc)
-{
-    ASMAtomicWriteBool(&pSvc->fShutdown, true);
-
-    int rcThread;
-    int rc = RTThreadWait(pSvc->hThread, RT_MS_30SEC, &rcThread);
-    if (RT_SUCCESS(rc))
-        rc = rcThread;
-    if (RT_FAILURE(rc))
-        RTTestFailed(g_hTest, "Shutting down mock service failed with %Rrc\n", rc);
-
-    pSvc->hThread = NIL_RTTHREAD;
-
-    return rc;
-}
-
-VBGLR3DECL(int) VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidClient)
-{
-    RT_NOREF(pszServiceName);
-
-    PTSTHGCMMOCKSVC pSvc = &s_tstHgcmSvc;
-
-    return tstHgcmMockSvcConnect(pSvc, pSvc->fnTable.pvService, pidClient);
-}
-
-VBGLR3DECL(int) VbglR3HGCMDisconnect(HGCMCLIENTID idClient)
-{
-    PTSTHGCMMOCKSVC pSvc = &s_tstHgcmSvc;
-
-    return tstHgcmMockSvcDisconnect(pSvc, pSvc->fnTable.pvService, idClient);
-}
-
-VBGLR3DECL(int) VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo)
-{
-    AssertMsg(pInfo->Hdr.cbIn  == cbInfo, ("cbIn=%#x cbInfo=%#zx\n", pInfo->Hdr.cbIn, cbInfo));
-    AssertMsg(pInfo->Hdr.cbOut == cbInfo, ("cbOut=%#x cbInfo=%#zx\n", pInfo->Hdr.cbOut, cbInfo));
-    Assert(sizeof(*pInfo) + pInfo->cParms * sizeof(HGCMFunctionParameter) <= cbInfo);
-
-    HGCMFunctionParameter *offSrcParms = VBGL_HGCM_GET_CALL_PARMS(pInfo);
-    PVBOXHGCMSVCPARM       paDstParms  = (PVBOXHGCMSVCPARM)RTMemAlloc(pInfo->cParms * sizeof(VBOXHGCMSVCPARM));
-    for (uint16_t i = 0; i < pInfo->cParms; i++)
-    {
-        switch (offSrcParms->type)
-        {
-            case VMMDevHGCMParmType_32bit:
-            {
-                paDstParms[i].type     = VBOX_HGCM_SVC_PARM_32BIT;
-                paDstParms[i].u.uint32 = offSrcParms->u.value32;
-                break;
-            }
-
-            case VMMDevHGCMParmType_64bit:
-            {
-                paDstParms[i].type     = VBOX_HGCM_SVC_PARM_64BIT;
-                paDstParms[i].u.uint64 = offSrcParms->u.value64;
-                break;
-            }
-
-            case VMMDevHGCMParmType_LinAddr:
-            {
-                paDstParms[i].type           = VBOX_HGCM_SVC_PARM_PTR;
-                paDstParms[i].u.pointer.addr = (void *)offSrcParms->u.LinAddr.uAddr;
-                paDstParms[i].u.pointer.size = offSrcParms->u.LinAddr.cb;
-                break;
-            }
-
-            default:
-                AssertFailed();
-                break;
-        }
-
-        offSrcParms++;
-    }
-
-    PTSTHGCMMOCKSVC const pSvc = &s_tstHgcmSvc;
-
-    int rc2 = tstHgcmMockSvcCall(pSvc, pSvc->fnTable.pvService, &pSvc->aHgcmClient[pInfo->u32ClientID].hCall,
-                                 pInfo->u32ClientID, &pSvc->aHgcmClient[pInfo->u32ClientID].Client,
-                                 pInfo->u32Function, pInfo->cParms, paDstParms);
-    if (RT_SUCCESS(rc2))
-    {
-        offSrcParms = VBGL_HGCM_GET_CALL_PARMS(pInfo);
-
-        for (uint16_t i = 0; i < pInfo->cParms; i++)
-        {
-            paDstParms[i].type = offSrcParms->type;
-            switch (paDstParms[i].type)
-            {
-                case VMMDevHGCMParmType_32bit:
-                    offSrcParms->u.value32 = paDstParms[i].u.uint32;
-                    break;
-
-                case VMMDevHGCMParmType_64bit:
-                    offSrcParms->u.value64 = paDstParms[i].u.uint64;
-                    break;
-
-                case VMMDevHGCMParmType_LinAddr:
-                {
-                    offSrcParms->u.LinAddr.cb = paDstParms[i].u.pointer.size;
-                    break;
-                }
-
-                default:
-                    AssertFailed();
-                    break;
-            }
-
-            offSrcParms++;
-        }
-    }
-
-    RTMemFree(paDstParms);
-
-    if (RT_SUCCESS(rc2))
-        rc2 = pSvc->aHgcmClient[pInfo->u32ClientID].hCall.rc;
-
-    return rc2;
-}
-
-RT_C_DECLS_END
-
-
-/*********************************************************************************************************************************
-*   Shared Clipboard testing                                                                                                     *
-*********************************************************************************************************************************/
 
 typedef struct TESTTASK
 {
@@ -660,6 +139,25 @@ typedef struct SHCLCONTEXT
 {
 } SHCLCONTEXT;
 
+
+#if 0
+static void tstBackendWriteData(HGCMCLIENTID idClient, SHCLFORMAT uFormat, void *pvData, size_t cbData)
+{
+    ShClBackendSetClipboardData(&s_tstHgcmClient[idClient].Client, uFormat, pvData, cbData);
+}
+
+/** Adds a host data read request message to the client's message queue. */
+static int tstSvcMockRequestDataFromGuest(uint32_t idClient, SHCLFORMATS fFormats, PSHCLEVENT *ppEvent)
+{
+    AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
+
+    int rc = ShClSvcGuestDataRequest(&s_tstHgcmClient[idClient].Client, fFormats, ppEvent);
+    RTTESTI_CHECK_RC_OK_RET(rc, rc);
+
+    return rc;
+}
+#endif
+
 static int tstSetModeRc(PTSTHGCMMOCKSVC pSvc, uint32_t uMode, int rc)
 {
     VBOXHGCMSVCPARM aParms[2];
@@ -691,7 +189,7 @@ static void tstOperationModes(void)
 
     RTTestISub("Testing VBOX_SHCL_HOST_FN_SET_MODE");
 
-    PTSTHGCMMOCKSVC pSvc = &s_tstHgcmSvc;
+    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
 
     /* Reset global variable which doesn't reset itself. */
     HGCMSvcSetU32(&parms[0], VBOX_SHCL_MODE_OFF);
@@ -720,7 +218,7 @@ static void testSetTransferMode(void)
 {
     RTTestISub("Testing VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE");
 
-    PTSTHGCMMOCKSVC pSvc = &s_tstHgcmSvc;
+    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
 
     /* Invalid parameter. */
     VBOXHGCMSVCPARM parms[2];
@@ -740,7 +238,7 @@ static void testSetTransferMode(void)
 
     /* Disable transfers again. */
     HGCMSvcSetU32(&parms[0], VBOX_SHCL_TRANSFER_MODE_DISABLED);
-    rc = s_tstHgcmSvc.fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
+    rc = tstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
     RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
@@ -750,23 +248,25 @@ static void testHostGetMsgOld(void)
 {
     RTTestISub("Setting up VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT test");
 
+    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+
     VBOXHGCMSVCPARM parms[2];
     RT_ZERO(parms);
 
     /* Unless we are bidirectional the host message requests will be dropped. */
     HGCMSvcSetU32(&parms[0], VBOX_SHCL_MODE_BIDIRECTIONAL);
-    int rc = s_tstHgcmSvc.fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
+    int rc = pSvc->fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
     RTTESTI_CHECK_RC_OK(rc);
 
     RTTestISub("Testing one format, waiting guest u.Call.");
     RT_ZERO(g_Client);
     VBOXHGCMCALLHANDLE_TYPEDEF call;
     rc = VERR_IPE_UNINITIALIZED_STATUS;
-    s_tstHgcmSvc.fnTable.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
+    pSvc->fnTable.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
 
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
-    s_tstHgcmSvc.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
+    pSvc->fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
     RTTESTI_CHECK_RC_OK(rc);
 
     //testMsgAddReadData(&g_Client, VBOX_SHCL_FMT_UNICODETEXT);
@@ -837,14 +337,14 @@ static void testHostGetMsgOld(void)
     s_tstHgcmSrv.fnTable.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT, 2, parms, 0);
     RTTESTI_CHECK_RC(u.Call.rc, VERR_IPE_UNINITIALIZED_STATUS);  /* This call should not complete yet. */
 #endif
-    s_tstHgcmSvc.fnTable.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
+    pSvc->fnTable.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
 }
 
 static void testGuestSimple(void)
 {
     RTTestISub("Testing client (guest) API - Simple");
 
-    PTSTHGCMMOCKSVC pSvc = &s_tstHgcmSvc;
+    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
 
     /* Preparations. */
     VBGLR3SHCLCMDCTX Ctx;
@@ -1022,26 +522,28 @@ static void testSetHeadless(void)
 {
     RTTestISub("Testing HOST_FN_SET_HEADLESS");
 
+    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+
     VBOXHGCMSVCPARM parms[2];
     HGCMSvcSetU32(&parms[0], false);
-    int rc = s_tstHgcmSvc.fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, parms);
+    int rc = pSvc->fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, parms);
     RTTESTI_CHECK_RC_OK(rc);
     bool fHeadless = ShClSvcGetHeadless();
     RTTESTI_CHECK_MSG(fHeadless == false, ("fHeadless=%RTbool\n", fHeadless));
-    rc = s_tstHgcmSvc.fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 0, parms);
+    rc = pSvc->fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 0, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
-    rc = s_tstHgcmSvc.fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 2, parms);
+    rc = pSvc->fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 2, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
     HGCMSvcSetU64(&parms[0], 99);
-    rc = s_tstHgcmSvc.fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, parms);
+    rc = pSvc->fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
     HGCMSvcSetU32(&parms[0], true);
-    rc = s_tstHgcmSvc.fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, parms);
+    rc = pSvc->fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, parms);
     RTTESTI_CHECK_RC_OK(rc);
     fHeadless = ShClSvcGetHeadless();
     RTTESTI_CHECK_MSG(fHeadless == true, ("fHeadless=%RTbool\n", fHeadless));
     HGCMSvcSetU32(&parms[0], 99);
-    rc = s_tstHgcmSvc.fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, parms);
+    rc = pSvc->fnTable.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, parms);
     RTTESTI_CHECK_RC_OK(rc);
     fHeadless = ShClSvcGetHeadless();
     RTTESTI_CHECK_MSG(fHeadless == true, ("fHeadless=%RTbool\n", fHeadless));
@@ -1284,6 +786,7 @@ static DECLCALLBACK(int) tstTestReadFromHostThreadGuest(PTESTCTX pCtx, void *pvC
     RT_NOREF(pvCtx);
 
     RTThreadSleep(5000);
+RT_BREAKPOINT();
 
     RT_ZERO(pCtx->Guest.CmdCtx);
     RTTEST_CHECK_RC_OK(g_hTest, VbglR3ClipboardConnectEx(&pCtx->Guest.CmdCtx, VBOX_SHCL_GF_0_CONTEXT_ID));
@@ -1335,8 +838,9 @@ static DECLCALLBACK(int) tstTestReadFromHostExec(PTESTPARMS pTstParms, void *pvC
     pTask->cbData    = strlen((char *)pTask->pvData) + 1;
     pTask->cbChunk   = pTask->cbData;
 
-    PTSTHGCMMOCKSVC    pSvc        = &s_tstHgcmSvc;
+    PTSTHGCMMOCKSVC    pSvc        = tstHgcmMockSvcInst();
     PTSTHGCMMOCKCLIENT pMockClient = tstHgcmMockSvcWaitForConnect(pSvc);
+RT_BREAKPOINT();
     AssertPtrReturn(pMockClient, VERR_INVALID_POINTER);
 
     bool fUseMock = false;
@@ -1349,7 +853,7 @@ static DECLCALLBACK(int) tstTestReadFromHostExec(PTESTPARMS pTstParms, void *pvC
 #if 1
     PSHCLBACKEND pBackend = ShClSvcGetBackend();
 
-    ShClBackendReportFormats(pBackend, &pMockClient->Client, pTask->enmFmtHst);
+    ShClBackendReportFormats(pBackend, (PSHCLCLIENT)pMockClient->pvClient, pTask->enmFmtHst);
     tstTaskWait(pTask, RT_MS_30SEC);
 #endif
 
@@ -1458,18 +962,21 @@ int main(int argc, char *argv[])
     /* Don't let assertions in the host service panic (core dump) the test cases. */
     RTAssertSetMayPanic(false);
 
+    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+
+    tstHgcmMockSvcCreate(pSvc, sizeof(SHCLCLIENT));
+    tstHgcmMockSvcStart(pSvc);
+
     /*
      * Run the tests.
      */
-    testGuestSimple();
-    testGuestWrite();
-    testHostCall();
-    testHostGetMsgOld();
-
-    PTSTHGCMMOCKSVC pSvc = &s_tstHgcmSvc;
-
-    tstHgcmMockSvcCreate(pSvc);
-    tstHgcmMockSvcStart(pSvc);
+    if (1)
+    {
+        testGuestSimple();
+        testGuestWrite();
+        testHostCall();
+        testHostGetMsgOld();
+    }
 
     RT_ZERO(g_TstCtx);
     tstTaskInit(&g_TstCtx.Task);
@@ -1485,4 +992,3 @@ int main(int argc, char *argv[])
      */
     return RTTestSummaryAndDestroy(g_hTest);
 }
-
