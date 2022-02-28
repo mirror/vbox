@@ -65,7 +65,7 @@ VBGLR3DECL(int) VbglR3HGCMConnect(const char *pszServiceName, HGCMCLIENTID *pidC
  * Disconnect from an HGCM service.
  *
  * @returns VBox status code.
- * @param   idClient        The client id returned by VbglR3InfoSvcConnect().
+ * @param   idClient        The client id returned by VbglR3HGCMConnect().
  */
 VBGLR3DECL(int) VbglR3HGCMDisconnect(HGCMCLIENTID idClient)
 {
@@ -96,4 +96,3 @@ VBGLR3DECL(int) VbglR3HGCMCall(PVBGLIOCHGCMCALL pInfo, size_t cbInfo)
 
     return vbglR3DoIOCtl(VBGL_IOCTL_HGCM_CALL(cbInfo), &pInfo->Hdr, cbInfo);
 }
-
