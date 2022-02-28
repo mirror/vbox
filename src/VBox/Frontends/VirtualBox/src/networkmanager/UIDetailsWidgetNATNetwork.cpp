@@ -21,7 +21,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QRadioButton>
-#include <QRegExpValidator>
 #include <QStyleOption>
 #include <QVBoxLayout>
 
@@ -401,7 +400,7 @@ void UIDetailsWidgetNATNetwork::prepareTabOptions()
             /* Prepare shifting spacer: */
             QSpacerItem *pSpacer = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
             if (pSpacer)
-                pLayoutOptions->addWidget(m_pLabelNetworkIPv6Prefix, 4, 0);
+                pLayoutOptions->addItem(pSpacer, 4, 0);
             /* Prepare network IPv6 prefix label: */
             m_pLabelNetworkIPv6Prefix = new QLabel(pTabOptions);
             if (m_pLabelNetworkIPv6Prefix)
