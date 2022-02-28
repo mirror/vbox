@@ -16459,14 +16459,20 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
 {
     RT_NOREF4(pVM, pRegFrame, pvFault, uUser);
 
-    /** @todo We lack information about such as the current instruction length, IDT
-     *        vectoring info etc. These need to be queried from HMR0. */
+    /*
+     * Handle the VMX APIC-access page only when the guest is in VMX non-root mode.
+     * Otherwise we must deregister the page and allow regular RAM access.
+     * Failing to do so lands us with endless EPT misconfiguration VM-exits.
+     */
     RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)GUEST_PAGE_OFFSET_MASK;
     if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
     {
         Assert(CPUMIsGuestVmxProcCtls2Set(IEM_GET_CTX(pVCpu), VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
         Assert(CPUMGetGuestVmxApicAccessPageAddrEx(IEM_GET_CTX(pVCpu)) == GCPhysAccessBase);
 
+        /*
+         * Check if the access causes an APIC-access VM-exit.
+         */
         uint32_t fAccess;
         if (uErr & X86_TRAP_PF_ID)
             fAccess = IEM_ACCESS_INSTRUCTION;
@@ -16479,13 +16485,82 @@ DECLCALLBACK(VBOXSTRICTRC) iemVmxApicAccessPagePfHandler(PVMCC pVM, PVMCPUCC pVC
         bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, 0 /* cbAccess */, fAccess);
         if (fIntercept)
         {
-            /** @todo Once HMR0 interface for querying VMXTRANSIENT info is available, use
-             *        iemVmxVmexitApicAccessWithInfo instead. This is R0-only code anyway. */
-            VBOXSTRICTRC rcStrict = iemVmxVmexitApicAccess(pVCpu, offAccess, fAccess);
+            /*
+             * Query the source VM-exit (from the execution engine) that caused this access
+             * within the APIC-access page. Currently only HM is supported.
+             */
+            AssertMsgReturn(VM_IS_HM_ENABLED(pVM),
+                            ("VM-exit auxiliary info. fetching not supported for execution engine %d\n",
+                             pVM->bMainExecutionEngine), VERR_IEM_ASPECT_NOT_IMPLEMENTED);
+            HMEXITAUX HmExitAux;
+            RT_ZERO(HmExitAux);
+            int const rc = HMR0GetExitAuxInfo(pVCpu, &HmExitAux, HMVMX_READ_EXIT_INSTR_LEN
+                                                               | HMVMX_READ_EXIT_QUALIFICATION
+                                                               | HMVMX_READ_IDT_VECTORING_INFO
+                                                               | HMVMX_READ_IDT_VECTORING_ERROR_CODE);
+            AssertRCReturn(rc, rc);
+
+            /*
+             * Verify the VM-exit reason must be an EPT violation.
+             * Other accesses should go through the other handler (iemVmxApicAccessPageHandler).
+             */
+            AssertLogRelMsgReturn(HmExitAux.Vmx.uReason == VMX_EXIT_EPT_VIOLATION,
+                                  ("Unexpected call to the VMX APIC-access page #PF handler for %#RGp (off=%u) uReason=%#RX32\n",
+                                   GCPhysAccessBase, offAccess, HmExitAux.Vmx.uReason), VERR_IEM_IPE_9);
+
+            /*
+             * Construct the virtual APIC-access VM-exit.
+             */
+            VMXAPICACCESS enmAccess;
+            if (HmExitAux.Vmx.u64Qual & VMX_EXIT_QUAL_EPT_LINEAR_ADDR_VALID)
+            {
+                if (VMX_IDT_VECTORING_INFO_IS_VALID(HmExitAux.Vmx.uIdtVectoringInfo))
+                    enmAccess = VMXAPICACCESS_LINEAR_EVENT_DELIVERY;
+                else if (fAccess == IEM_ACCESS_INSTRUCTION)
+                    enmAccess = VMXAPICACCESS_LINEAR_INSTR_FETCH;
+                else if (fAccess & IEM_ACCESS_TYPE_WRITE)
+                    enmAccess = VMXAPICACCESS_LINEAR_WRITE;
+                else
+                    enmAccess = VMXAPICACCESS_LINEAR_READ;
+            }
+            else
+            {
+                if (VMX_IDT_VECTORING_INFO_IS_VALID(HmExitAux.Vmx.uIdtVectoringInfo))
+                    enmAccess = VMXAPICACCESS_PHYSICAL_EVENT_DELIVERY;
+                else
+                {
+                    /** @todo How to distinguish between monitoring/trace vs other instructions
+                     *        here? */
+                    enmAccess = VMXAPICACCESS_PHYSICAL_INSTR;
+                }
+            }
+
+            VMXVEXITINFO ExitInfo;
+            RT_ZERO(ExitInfo);
+            ExitInfo.uReason = VMX_EXIT_APIC_ACCESS;
+            ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_OFFSET, offAccess)
+                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_APIC_ACCESS_TYPE,   enmAccess);
+            ExitInfo.cbInstr = HmExitAux.Vmx.cbInstr;
+
+            VMXVEXITEVENTINFO ExitEventInfo;
+            RT_ZERO(ExitEventInfo);
+            ExitEventInfo.uIdtVectoringInfo    = HmExitAux.Vmx.uIdtVectoringInfo;
+            ExitEventInfo.uIdtVectoringErrCode = HmExitAux.Vmx.uIdtVectoringErrCode;
+
+            /*
+             * Raise the APIC-access VM-exit.
+             */
+            VBOXSTRICTRC rcStrict = iemVmxVmexitApicAccessWithInfo(pVCpu, &ExitInfo, &ExitEventInfo);
             return iemExecStatusCodeFiddling(pVCpu, rcStrict);
         }
 
-        /* The access isn't intercepted, which means it needs to be virtualized. */
+        /*
+         * The access isn't intercepted, which means it needs to be virtualized.
+         *
+         * This requires emulating the instruction because we need the bytes being
+         * read/written by the instruction not just the offset being accessed within
+         * the APIC-access (which we derive from the faulting address).
+         */
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
