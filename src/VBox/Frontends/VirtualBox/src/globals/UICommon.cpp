@@ -221,7 +221,9 @@ UICommon::~UICommon()
 void UICommon::prepare()
 {
     /* Make sure QApplication cleanup us on exit: */
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     qApp->setFallbackSessionManagementEnabled(false);
+#endif
     connect(qApp, &QGuiApplication::aboutToQuit,
             this, &UICommon::sltCleanup);
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
