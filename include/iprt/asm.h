@@ -216,7 +216,7 @@
                          modify64 \
                          "stlxr     %w[rc], %w[uNew], %[pMem]\n\t" \
                          "cbnz      %w[rc], .Ltry_again_" #name "_%=\n\t" \
-                         : [pMem] "+m"  (*a_pu32Mem) \
+                         : [pMem] "+Q"  (*a_pu32Mem) \
                          , [uNew] "=&r" (u32NewRet) \
                          , [rc]   "=&r" (rcSpill) \
                          : in_reg \
@@ -231,7 +231,7 @@
                          modify64 \
                          "stlxr     %w[rc], %w[uNew], %[pMem]\n\t" \
                          "cbnz      %w[rc], .Ltry_again_" #name "_%=\n\t" \
-                         : [pMem] "+m"  (*a_pu32Mem) \
+                         : [pMem] "+Q"  (*a_pu32Mem) \
                          , [uOld] "=&r" (u32OldRet) \
                          , [uNew] "=&r" (u32NewSpill) \
                          , [rc]   "=&r" (rcSpill) \
@@ -246,7 +246,7 @@
                          modify64 \
                          "stlxr     %w[rc], %[uNew], %[pMem]\n\t" \
                          "cbnz      %w[rc], .Ltry_again_" #name "_%=\n\t" \
-                         : [pMem] "+m"  (*a_pu64Mem) \
+                         : [pMem] "+Q"  (*a_pu64Mem) \
                          , [uNew] "=&r" (u64NewRet) \
                          , [rc]   "=&r" (rcSpill) \
                          : in_reg \
@@ -261,7 +261,7 @@
                          modify64 \
                          "stlxr     %w[rc], %[uNew], %[pMem]\n\t" \
                          "cbnz      %w[rc], .Ltry_again_" #name "_%=\n\t" \
-                         : [pMem] "+m"  (*a_pu64Mem) \
+                         : [pMem] "+Q"  (*a_pu64Mem) \
                          , [uOld] "=&r" (u64OldRet) \
                          , [uNew] "=&r" (u64NewSpill) \
                          , [rc]   "=&r" (rcSpill) \
@@ -519,7 +519,7 @@ DECLINLINE(uint8_t) ASMAtomicXchgU8(volatile uint8_t RT_FAR *pu8, uint8_t u8) RT
                          "cmp       %[rc], #0\n\t"
                          "bne       .Ltry_again_ASMAtomicXchgU8_%=\n\t"
 #  endif
-                         : [pMem] "+m" (*pu8)
+                         : [pMem] "+Q" (*pu8)
                          , [uOld] "=&r" (uOld)
                          , [rc]   "=&r" (rcSpill)
                          : [uNew] "r" ((uint32_t)u8)
@@ -616,7 +616,7 @@ DECLINLINE(uint16_t) ASMAtomicXchgU16(volatile uint16_t RT_FAR *pu16, uint16_t u
                          "cmp       %[rc], #0\n\t"
                          "bne       .Ltry_again_ASMAtomicXchgU16_%=\n\t"
 #  endif
-                         : [pMem] "+m" (*pu16)
+                         : [pMem] "+Q" (*pu16)
                          , [uOld] "=&r" (uOld)
                          , [rc]   "=&r" (rcSpill)
                          : [uNew] "r" ((uint32_t)u16)
@@ -702,7 +702,7 @@ DECLINLINE(uint32_t) ASMAtomicXchgU32(volatile uint32_t RT_FAR *pu32, uint32_t u
                          "cmp       %[rc], #0\n\t"
                          "bne       .Ltry_again_ASMAtomicXchgU32_%=\n\t"
 #  endif
-                         : [pMem] "+m"  (*pu32)
+                         : [pMem] "+Q"  (*pu32)
                          , [uOld] "=&r" (uOld)
                          , [rc]   "=&r" (rcSpill)
                          : [uNew] "r"   (u32)
@@ -828,7 +828,7 @@ DECLINLINE(uint64_t) ASMAtomicXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u
                          "cmp       %[rc], #0\n\t"
                          "bne       .Ltry_again_ASMAtomicXchgU64_%=\n\t"
 #  endif
-                         : [pMem] "+m"  (*pu64)
+                         : [pMem] "+Q"  (*pu64)
                          , [uOld] "=&r" (uOld)
                          , [rc]   "=&r" (rcSpill)
                          : [uNew] "r"   (u64)
@@ -1093,7 +1093,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU8(volatile uint8_t RT_FAR *pu8, const uint8_t 
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
-                         : [pMem]   "+m"  (*pu8)
+                         : [pMem]   "+Q"  (*pu8)
                          , [uOld]   "=&r" (u32Spill)
                          , [rc]     "=&r" (rcSpill)
                          , [fXchg]  "=&r" (fXchg.u)
@@ -1230,7 +1230,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t RT_FAR *pu32, const uint3
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
-                         : [pMem]   "+m"  (*pu32)
+                         : [pMem]   "+Q"  (*pu32)
                          , [uOld]   "=&r" (u32Spill)
                          , [rc]     "=&r" (rcSpill)
                          , [fXchg]  "=&r" (fXchg.u)
@@ -1393,7 +1393,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t RT_FAR *pu64, uint64_t u6
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
-                         : [pMem]   "+m"  (*pu64)
+                         : [pMem]   "+Q"  (*pu64)
                          , [uOld]   "=&r" (u64Spill)
                          , [rc]     "=&r" (rcSpill)
                          , [fXchg]  "=&r" (fXchg.u)
@@ -1737,7 +1737,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU8(volatile uint8_t RT_FAR *pu8, const uint8_
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
-                         : [pMem]   "+m"  (*pu8)
+                         : [pMem]   "+Q"  (*pu8)
                          , [uOld]   "=&r" (u8ActualOld)
                          , [rc]     "=&r" (rcSpill)
                          , [fXchg]  "=&r" (fXchg.u)
@@ -1862,7 +1862,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU16(volatile uint16_t RT_FAR *pu16, const uin
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
-                         : [pMem]   "+m"  (*pu16)
+                         : [pMem]   "+Q"  (*pu16)
                          , [uOld]   "=&r" (u16ActualOld)
                          , [rc]     "=&r" (rcSpill)
                          , [fXchg]  "=&r" (fXchg.u)
@@ -1987,7 +1987,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU32(volatile uint32_t RT_FAR *pu32, const uin
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
-                         : [pMem]   "+m"  (*pu32)
+                         : [pMem]   "+Q"  (*pu32)
                          , [uOld]   "=&r" (u32ActualOld)
                          , [rc]     "=&r" (rcSpill)
                          , [fXchg]  "=&r" (fXchg.u)
@@ -2153,7 +2153,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgExU64(volatile uint64_t RT_FAR *pu64, const uin
                          "mov       %[fXchg], #1\n\t"
 #  endif
                          "1:\n\t"
-                         : [pMem]   "+m"  (*pu64)
+                         : [pMem]   "+Q"  (*pu64)
                          , [uOld]   "=&r" (u64ActualOld)
                          , [rc]     "=&r" (rcSpill)
                          , [fXchg]  "=&r" (fXchg.u)
