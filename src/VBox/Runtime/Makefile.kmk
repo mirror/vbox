@@ -1598,17 +1598,21 @@ RuntimeR3_SOURCES.solaris = \
 	r3/solaris/thread-affinity-solaris.cpp
 RuntimeR3_SOURCES.solaris.amd64 = \
 	common/string/memrchr.asm \
+	common/string/mempcpy.asm \
 	r3/solaris/coredumper-solaris.cpp \
 	r3/solaris/RTSystemQueryDmiString-solaris.cpp
 RuntimeR3_SOURCES.solaris.x86 = \
 	common/string/memrchr.asm \
+	common/string/mempcpy.asm \
 	r3/solaris/coredumper-solaris.cpp \
 	r3/solaris/RTSystemQueryDmiString-solaris.cpp
 RuntimeR3_SOURCES.solaris.sparc32 = \
 	common/string/memrchr.cpp \
+	common/string/mempcpy.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp
 RuntimeR3_SOURCES.solaris.sparc64 = \
 	common/string/memrchr.cpp \
+	common/string/mempcpy.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp
 
 RuntimeR3_SOURCES.haiku = \
