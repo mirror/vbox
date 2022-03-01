@@ -284,6 +284,7 @@ else ifdef VBOX_WITH_VALIDATIONKIT_PACKING.win.amd64
  VBOX_VALIDATIONKIT_FILESPEC += $(abspath $(VBOX_PATH_VALIDATIONKIT.win.amd64)/../vboxtxs-nat.reg)
 endif
 
+#
 # If enabled, this includes the unit tests located in the out/testcase directory.
 # This is useful if we want to run those on platforms where we don't have / support
 # any host support anymore (like Windows XP, for instance).
@@ -292,21 +293,23 @@ endif
 # which runs as part of the Validation Kit.
 #
 # See @bugref{10195}
+#
 ifdef VBOX_WITH_VALIDATIONKIT_UNITTESTS_PACKING
  define def_vbox_validationkit_unittests
-  VBOX_VALIDATIONKIT_PATH_UNITTESTS:=$(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/bin
+  VBOX_VALIDATIONKIT_PATH_UNITTESTS     := $(PATH_OUT_BASE)/$(os).$(arch)/$(KBUILD_TYPE)/bin
   VBOX_VALIDATIONKIT_FILESPEC_UNITTESTS += $$(wildcard $(VBOX_VALIDATIONKIT_PATH_UNITTESTS)/testcase/tst*$(TMP_SUFF_EXE))
  endef
 
- TMP_SUFF_EXE=.exe
-  $(foreach os, win,$(foreach arch, x86 amd64, \
-	$(eval $(def_vbox_validationkit_unittests)) \
-))
-  TMP_SUFF_EXE=
-  $(foreach os, darwin freebsd linux solaris,$(foreach arch, x86 amd64, \
-	$(eval $(def_vbox_validationkit_unittests)) \
-))
+ TMP_SUFF_EXE := .exe
+ $(foreach os, os2 win,$(foreach arch, x86 amd64, \
+ 	$(eval $(def_vbox_validationkit_unittests)) \
+ ))
+ TMP_SUFF_EXE :=
+ $(foreach os, darwin freebsd linux solaris,$(foreach arch, x86 amd64, \
+ 	$(eval $(def_vbox_validationkit_unittests)) \
+ ))
 endif
+
 
 #
 # Build the Validation Kit guest ISO.
@@ -315,7 +318,7 @@ $(VBOX_PATH_VALIDATIONKIT)/VBoxValidationKit.iso: \
 		$(filter-out %=deleteme=, $(subst =,=deleteme= , $(VBOX_VALIDATIONKIT_FILESPEC))) \
 		$(VBOX_SVN_REV_KMK) \
 		$(VBOX_PATH_VALIDATIONKIT_SRC)/Makefile.kmk \
-               | $(if-expr defined(VBOX_USE_RTISOMAKER),$(VBOX_RTISOMAKER),)
+		| $(if-expr defined(VBOX_USE_RTISOMAKER),$(VBOX_RTISOMAKER),)
 	$(call MSG_TOOL,RTIsoMaker,,$@)
 	$(QUIET)$(MKDIR) -p $(@D)
 ifneq ($(KBUILD_TARGET),os2)
