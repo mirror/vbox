@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QActionGroup>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QMenu>
 #include <QPainter>

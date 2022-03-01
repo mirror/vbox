@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QAccessibleWidget>
 #include <QAction>
+#include <QActionGroup>
 #include <QHeaderView>
 #include <QLayout>
 #include <QTabWidget>

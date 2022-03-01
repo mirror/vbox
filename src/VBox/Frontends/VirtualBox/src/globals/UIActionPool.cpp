@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QActionGroup>
 #include <QHelpEvent>
 #include <QToolTip>
 

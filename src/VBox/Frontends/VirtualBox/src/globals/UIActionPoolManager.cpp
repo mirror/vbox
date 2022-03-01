@@ -15,6 +15,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QActionGroup>
+
 /* GUI includes: */
 #include "UICommon.h"
 #include "UIActionPoolManager.h"

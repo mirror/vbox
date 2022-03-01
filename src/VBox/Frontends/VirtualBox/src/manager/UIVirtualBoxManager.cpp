@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QActionGroup>
 #include <QClipboard>
 #include <QFile>
 #include <QGuiApplication>
@@ -29,7 +30,7 @@
 #ifndef VBOX_WS_WIN
 # include <QRegExp>
 #endif
-# include <QVBoxLayout>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"

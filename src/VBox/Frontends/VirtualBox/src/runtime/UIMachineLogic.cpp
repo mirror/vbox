@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QActionGroup>
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
