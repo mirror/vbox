@@ -21,6 +21,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QFileDevice>
+
 /* GUI includes: */
 #include "UIFileManagerTable.h"
 
