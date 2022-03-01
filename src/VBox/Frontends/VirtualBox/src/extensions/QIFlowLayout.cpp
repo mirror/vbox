@@ -88,7 +88,9 @@ QSize QIFlowLayout::minimumSize() const
         size = size.expandedTo(pItem->minimumSize());
 
     /* Do not forget the margins: */
-    size += QSize(2 * margin(), 2 * margin());
+    int iLeft, iTop, iRight, iBottom;
+    getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+    size += QSize(iLeft + iRight, iTop + iBottom);
 
     /* Return resulting size: */
     return size;
