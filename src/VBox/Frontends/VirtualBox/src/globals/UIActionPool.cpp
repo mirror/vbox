@@ -3164,7 +3164,12 @@ void UIActionPool::preparePool()
     m_menuUpdateHandlers[UIActionIndex_M_FileManager].ptf = &UIActionPool::updateMenuFileManager;
 
     /* Invalidate all known menus: */
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    QList<int> const updateHandlerKeys = m_menuUpdateHandlers.keys();
+    m_invalidations.unite(QSet<int>(updateHandlerKeys.begin(), updateHandlerKeys.end()));
+#else
     m_invalidations.unite(m_menuUpdateHandlers.keys().toSet());
+#endif
 
     /* Apply language settings: */
     retranslateUi();

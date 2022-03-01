@@ -211,10 +211,18 @@ void UIThreadGroupSettingsSave::run()
     {
         /* Get new group list/set: */
         const QStringList &newGroupList = m_newLists.value(strId);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        const UIStringSet newGroupSet(newGroupList.begin(), newGroupList.end());
+#else
         const UIStringSet &newGroupSet = UIStringSet::fromList(newGroupList);
+#endif
         /* Get old group list/set: */
         const QStringList &oldGroupList = m_oldLists.value(strId);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        const UIStringSet oldGroupSet(oldGroupList.begin(), oldGroupList.end());
+#else
         const UIStringSet &oldGroupSet = UIStringSet::fromList(oldGroupList);
+#endif
         /* Make sure group set changed: */
         if (newGroupSet == oldGroupSet)
             continue;
@@ -898,9 +906,16 @@ void UIChooserAbstractModel::sltHandleReadCloudMachineListTaskComplete()
 
             /* Remove unregistered cloud VM nodes: */
             if (!unregisteredIDs.isEmpty())
+            {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+                QList<QUuid> listUnregisteredIDs(unregisteredIDs.begin(), unregisteredIDs.end());
+#else
+                QList<QUuid> listUnregisteredIDs = unregisteredIDs.toList();
+#endif
                 sltCloudMachinesUnregistered(guiCloudProfileKey.m_strProviderShortName,
                                              guiCloudProfileKey.m_strProfileName,
-                                             unregisteredIDs.toList());
+                                             listUnregisteredIDs);
+            }
             /* Add registered cloud VM nodes: */
             if (!registeredMachines.isEmpty())
                 sltCloudMachinesRegistered(guiCloudProfileKey.m_strProviderShortName,

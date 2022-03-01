@@ -1435,8 +1435,6 @@ bool UIKeyboardHandler::keyEventCADHandled(uint8_t uScan)
  */
 bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags, LONG *pCodes, uint *puCodesCount)
 {
-    /* Get host-combo key list: */
-    QSet<int> allHostComboKeys = UIHostCombo::toKeyCodeList(gEDataManager->hostKeyCombination()).toSet();
     /* Get the type of key - simple or extended: */
     uint8_t uWhatPressed = fFlags & KeyExtended ? IsExtKeyPressed : IsKeyPressed;
 
@@ -1477,8 +1475,13 @@ bool UIKeyboardHandler::keyEventHandleNormal(int iKey, uint8_t uScan, int fFlags
     }
     /* Ignore key-release if that key was NOT pressed before,
      * but only if thats not one of the host-combination keys: */
-    else if (!allHostComboKeys.contains(iKey))
-        return true;
+    else
+    {
+        /* Get host-combo key list: */
+        QList<int> lstAllHostComboKey = UIHostCombo::toKeyCodeList(gEDataManager->hostKeyCombination());
+        if (!lstAllHostComboKey.contains(iKey))
+            return true;
+    }
     return false;
 }
 
@@ -1613,7 +1616,7 @@ void UIKeyboardHandler::keyEventReleaseHostComboKeys(const CKeyboard &constKeybo
 bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScreenId, wchar_t *pUniKey /* = 0 */)
 {
     /* Get host-combo key list: */
-    QSet<int> allHostComboKeys = UIHostCombo::toKeyCodeList(gEDataManager->hostKeyCombination()).toSet();
+    QList<int> allHostComboKeys = UIHostCombo::toKeyCodeList(gEDataManager->hostKeyCombination());
 
     /* Update the map of pressed host-combo keys: */
     if (allHostComboKeys.contains(iKey))
@@ -1631,8 +1634,16 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
                 m_pressedHostComboKeys.remove(iKey);
         }
     }
+
     /* Check if we are currently holding FULL host-combo: */
-    bool fIsFullHostComboPresent = !allHostComboKeys.isEmpty() && allHostComboKeys == m_pressedHostComboKeys.keys().toSet();
+    bool fIsFullHostComboPresent = false;
+    if (!allHostComboKeys.isEmpty())
+    {
+        const QList<int> &pressedKeyList = m_pressedHostComboKeys.keys();
+        fIsFullHostComboPresent =    QSet<int>(allHostComboKeys.begin(), allHostComboKeys.end())
+                                  == QSet<int>(pressedKeyList.begin(), pressedKeyList.end());
+    }
+
     /* Check if currently pressed/released key had changed host-combo state: */
     const bool isHostComboStateChanged = (!m_bIsHostComboPressed &&  fIsFullHostComboPresent) ||
                                          ( m_bIsHostComboPressed && !fIsFullHostComboPresent);
@@ -1727,8 +1738,15 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
         if (uCodesCount)
         {
             /* Send prepared scan-codes to the guest: */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            QVector<LONG> scancodes;
+            for (uint i = 0; i < uCodesCount; i++)
+                scancodes.push_back(pCodes[i]);
+            keyboard().PutScancodes(scancodes);
+#else
             std::vector<LONG> scancodes(pCodes, &pCodes[uCodesCount]);
             keyboard().PutScancodes(QVector<LONG>::fromStdVector(scancodes));
+#endif
         }
 
         /* If full host-key sequence was just finalized: */
