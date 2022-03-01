@@ -25,8 +25,8 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class QComboBox;
 class QTreeWidgetItem;
-class QIComboBox;
 class QIToolButton;
 class QITreeWidget;
 class UISearchLineEdit;
@@ -81,7 +81,7 @@ private:
     /** Updates the feedback text of th line edit that shows # of matches. */
     void    updateSearchLineEdit(int iMatchCount, int iScrollToIndex);
 
-    QIComboBox       *m_pSearchComboxBox;
+    QComboBox        *m_pSearchComboxBox;
     UISearchLineEdit *m_pSearchTermLineEdit;
     QIToolButton     *m_pShowNextMatchButton;
     QIToolButton     *m_pShowPreviousMatchButton;

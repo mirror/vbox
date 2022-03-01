@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QCheckBox>
+#include <QComboBox>
 #include <QFontMetrics>
 #include <QGroupBox>
 #include <QLabel>
@@ -26,7 +27,6 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "QIDialogButtonBox.h"
 #include "QILineEdit.h"
 #include "QITabWidget.h"
@@ -393,12 +393,12 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
             pLayout->addWidget(m_pLabelProviderName, 1, 0);
         }
         /* Prepare cloud provider name combo: */
-        m_pComboProviderName = new QIComboBox(this);
+        m_pComboProviderName = new QComboBox(this);
         if (m_pComboProviderName)
         {
             if (m_pLabelProviderName)
                 m_pLabelProviderName->setBuddy(m_pComboProviderName);
-            connect(m_pComboProviderName, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            connect(m_pComboProviderName, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                     this, &UIDetailsWidgetCloudNetwork::sltCloudProviderNameChanged);
 
             pLayout->addWidget(m_pComboProviderName, 1, 1, 1, 2);
@@ -412,12 +412,12 @@ void UIDetailsWidgetCloudNetwork::prepareThis()
             pLayout->addWidget(m_pLabelProfileName, 2, 0);
         }
         /* Prepare cloud profile name combo: */
-        m_pComboProfileName = new QIComboBox(this);
+        m_pComboProfileName = new QComboBox(this);
         if (m_pComboProfileName)
         {
             if (m_pLabelProfileName)
                 m_pLabelProfileName->setBuddy(m_pComboProfileName);
-            connect(m_pComboProfileName, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            connect(m_pComboProfileName, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                     this, &UIDetailsWidgetCloudNetwork::sltCloudProfileNameChanged);
 
             pLayout->addWidget(m_pComboProfileName, 2, 1, 1, 2);

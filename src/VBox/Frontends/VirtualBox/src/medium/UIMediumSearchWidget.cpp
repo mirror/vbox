@@ -16,13 +16,13 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QPainter>
 #include <QHBoxLayout>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "QIToolButton.h"
 #include "QITreeWidget.h"
 #include "UIIconPool.h"
@@ -97,7 +97,7 @@ void UIMediumSearchWidget::prepareWidgets()
     pLayout->setContentsMargins(0, 0, 0, 0);
     pLayout->setSpacing(0);
 
-    m_pSearchComboxBox = new QIComboBox;
+    m_pSearchComboxBox = new QComboBox;
     if (m_pSearchComboxBox)
     {
         m_pSearchComboxBox->setEditable(false);
@@ -105,7 +105,7 @@ void UIMediumSearchWidget::prepareWidgets()
         m_pSearchComboxBox->insertItem(SearchByUUID, "Search By UUID");
         pLayout->addWidget(m_pSearchComboxBox);
 
-        connect(m_pSearchComboxBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+        connect(m_pSearchComboxBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                 this, &UIMediumSearchWidget::sigPerformSearch);
 
     }

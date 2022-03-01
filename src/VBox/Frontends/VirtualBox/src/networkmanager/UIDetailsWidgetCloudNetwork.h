@@ -36,12 +36,12 @@
 /* Forward declarations: */
 class QAbstractButton;
 class QCheckBox;
+class QComboBox;
 class QGridLayout;
 class QGroupBox;
 class QLabel;
 class QLineEdit;
 class QRadioButton;
-class QIComboBox;
 class QIDialogButtonBox;
 class QILineEdit;
 class QITabWidget;
@@ -269,11 +269,11 @@ private:
         /** Holds the cloud provider name label instance. */
         QLabel       *m_pLabelProviderName;
         /** Holds the cloud provider name combo instance. */
-        QIComboBox   *m_pComboProviderName;
+        QComboBox    *m_pComboProviderName;
         /** Holds the cloud profile name label instance. */
         QLabel       *m_pLabelProfileName;
         /** Holds the cloud profile name combo instance. */
-        QIComboBox   *m_pComboProfileName;
+        QComboBox    *m_pComboProfileName;
         /** Holds the network id label instance. */
         QLabel       *m_pLabelNetworkId;
         /** Holds the network id editor instance. */
