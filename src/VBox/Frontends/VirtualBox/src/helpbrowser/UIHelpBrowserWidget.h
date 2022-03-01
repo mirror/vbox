@@ -109,7 +109,11 @@ private slots:
     void sltFindNextInPage();
     void sltFindPreviousInPage();
     void sltHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    void sltLinkHighlighted(const QUrl &url);
+#else
     void sltLinkHighlighted(const QString &strLink);
+#endif
     void sltMouseOverImage(const QString &strImageName);
 
 private:

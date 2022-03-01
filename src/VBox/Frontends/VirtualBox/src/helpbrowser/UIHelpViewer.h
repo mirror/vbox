@@ -70,7 +70,9 @@ public:
     UIHelpViewer(const QHelpEngine *pHelpEngine, QWidget *pParent = 0);
     virtual QVariant loadResource(int type, const QUrl &name) RT_OVERRIDE;
     void emitHistoryChangedSignal();
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0) /* must override doSetSource in 6.0 */
     virtual void setSource(const QUrl &url) RT_OVERRIDE;
+#endif
     void setFont(const QFont &);
     bool isFindInPageWidgetVisible() const;
     void zoom(ZoomOperation enmZoomOperation);
@@ -99,6 +101,9 @@ protected:
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent) RT_OVERRIDE;
     virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    virtual void doSetSource(const QUrl &url, QTextDocument::ResourceType type = QTextDocument::UnknownResource) RT_OVERRIDE;
+#endif
 
 private slots:
 

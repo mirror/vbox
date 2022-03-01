@@ -20,12 +20,15 @@
 #include <QComboBox>
 #include <QtGlobal>
 #ifdef VBOX_WITH_QHELP_VIEWER
- #include <QtHelp/QHelpEngine>
- #include <QtHelp/QHelpContentWidget>
- #include <QtHelp/QHelpIndexWidget>
- #include <QtHelp/QHelpSearchEngine>
- #include <QtHelp/QHelpSearchQueryWidget>
- #include <QtHelp/QHelpSearchResultWidget>
+# include <QtHelp/QHelpEngine>
+# include <QtHelp/QHelpContentWidget>
+# include <QtHelp/QHelpIndexWidget>
+# include <QtHelp/QHelpSearchEngine>
+# include <QtHelp/QHelpSearchQueryWidget>
+# include <QtHelp/QHelpSearchResultWidget>
+# if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+#  include <QtHelp/QHelpLink>
+# endif
 #endif
 #include <QLabel>
 #include <QListWidget>
@@ -70,8 +73,9 @@ Q_DECLARE_METATYPE(HelpBrowserTabs);
 
 static const int iBookmarkUrlDataType = 6;
 
+
 /*********************************************************************************************************************************
-*   UIZoomMenuAction definition.                                                                                    *
+*   UIZoomMenuAction definition.                                                                                                 *
 *********************************************************************************************************************************/
 class UIZoomMenuAction : public QIWithRetranslateUI<QWidgetAction>
 {
@@ -186,7 +190,11 @@ signals:
     void sigTitleUpdate(const QString &strTitle);
     void sigOpenLinkInNewTab(const QUrl &url, bool fBackground);
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    void sigLinkHighlighted(const QUrl &url);
+#else
     void sigLinkHighlighted(const QString &strLink);
+#endif
     void sigZoomPercentageChanged(int iPercentage);
     void sigFindInPageWidgetVisibilityChanged(bool fVisible);
     void sigHistoryChanged(bool fBackwardAvailable, bool fForwardAvailable);
@@ -266,7 +274,11 @@ signals:
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
     /** list.first is tab title and list.second is tab's index. */
     void sigTabsListChanged(const QStringList &titleList);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    void sigLinkHighlighted(const QUrl &url);
+#else
     void sigLinkHighlighted(const QString &strLink);
+#endif
     void sigZoomPercentageChanged(int iPercentage);
     void sigCopyAvailableChanged(bool fAvailable);
     void sigFindInPageWidgetVisibilityChanged(bool fVisible);
@@ -703,8 +715,13 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
             this, &UIHelpBrowserTab::sltHomeAction);
     connect(m_pContentViewer, &UIHelpViewer::sigAddBookmark,
             this, &UIHelpBrowserTab::sltAddBookmarkAction);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    connect(m_pContentViewer, static_cast<void(UIHelpViewer::*)(const QUrl&)>(&UIHelpViewer::highlighted),
+            this, &UIHelpBrowserTab::sigLinkHighlighted);
+#else
     connect(m_pContentViewer, static_cast<void(UIHelpViewer::*)(const QString&)>(&UIHelpViewer::highlighted),
             this, &UIHelpBrowserTab::sigLinkHighlighted);
+#endif
     connect(m_pContentViewer, &UIHelpViewer::sigZoomPercentageChanged,
             this, &UIHelpBrowserTab::sigZoomPercentageChanged);
     connect(m_pContentViewer, &UIHelpViewer::copyAvailable,
@@ -1864,6 +1881,14 @@ void UIHelpBrowserWidget::keyPressEvent(QKeyEvent *pEvent)
 
 void UIHelpBrowserWidget::findAndShowUrlForKeyword(const QString &strKeyword)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    QList<QHelpLink> links = m_pHelpEngine->documentsForIdentifier(strKeyword);
+    if (!links.isEmpty())
+    {
+        /* We have to a have a single url per keyword in this case: */
+        m_pTabManager->setSource(links.first().url, true /* new tab */);
+    }
+#else
     QMap<QString, QUrl> map = m_pHelpEngine->linksForIdentifier(strKeyword);
     if (!map.isEmpty())
     {
@@ -1871,6 +1896,7 @@ void UIHelpBrowserWidget::findAndShowUrlForKeyword(const QString &strKeyword)
         QUrl keywordUrl = map.first();
         m_pTabManager->setSource(keywordUrl, true /* new tab */);
     }
+#endif
 }
 
 void UIHelpBrowserWidget::sltWidgetVisibilityToggle(bool fToggled)
@@ -1921,10 +1947,17 @@ void UIHelpBrowserWidget::sltHistoryChanged(bool fBackwardAvailable, bool fForwa
         m_pForwardAction->setEnabled(fForwardAvailable);
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void UIHelpBrowserWidget::sltLinkHighlighted(const QUrl &url)
+{
+    emit sigStatusBarMessage(url.url(), 0); /** @todo qt6: ??? */
+}
+#else
 void UIHelpBrowserWidget::sltLinkHighlighted(const QString &strLink)
 {
     emit sigStatusBarMessage(strLink, 0);
 }
+#endif
 
 void UIHelpBrowserWidget::sltMouseOverImage(const QString &strImageName)
 {

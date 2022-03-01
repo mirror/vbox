@@ -411,10 +411,18 @@ void UIHelpViewer::emitHistoryChangedSignal()
     emit backwardAvailable(true);
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void UIHelpViewer::doSetSource(const QUrl &url, QTextDocument::ResourceType type)
+#else
 void UIHelpViewer::setSource(const QUrl &url)
+#endif
 {
     clearOverlay();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QTextBrowser::doSetSource(url, type);
+#else
     QTextBrowser::setSource(url);
+#endif
     QTextDocument *pDocument = document();
     if (!pDocument || pDocument->isEmpty())
         setText(tr("<div><p><h3>404. Not found.</h3>The page <b>%1</b> could not be found.</p></div>").arg(url.toString()));
