@@ -105,9 +105,12 @@ void UINotificationModel::sltHandleAboutToClose(bool fDismiss)
     /* Dismiss message if requested: */
     if (fDismiss && !pSender->internalName().isEmpty())
     {
-        QSet<QString> suppressedMessages = gEDataManager->suppressedMessages().toSet();
-        suppressedMessages << pSender->internalName();
-        gEDataManager->setSuppressedMessages(suppressedMessages.toList());
+        QStringList suppressedMessages = gEDataManager->suppressedMessages();
+        if (!suppressedMessages.contains(pSender->internalName()))
+        {
+            suppressedMessages.push_back(pSender->internalName());
+            gEDataManager->setSuppressedMessages(suppressedMessages);
+        }
     }
 
     /* Revoke it from internal storage: */
