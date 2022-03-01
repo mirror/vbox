@@ -619,7 +619,11 @@ void UIHostComboEditorPrivate::sltClear()
     emit sigDataChanged();
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, qintptr *pResult)
+#else
 bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)
+#endif
 {
 # if defined(VBOX_WS_MAC)
 

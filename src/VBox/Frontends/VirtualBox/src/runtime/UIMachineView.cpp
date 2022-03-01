@@ -102,7 +102,11 @@ public:
     {}
 
     /** Redirects all the native events to parent. */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    bool nativeEventFilter(const QByteArray &eventType, void *pMessage, qintptr * /* pResult */)
+#else
     bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long * /* pResult */)
+#endif
     {
         return m_pParent->nativeEventPreprocessor(eventType, pMessage);
     }

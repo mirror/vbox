@@ -190,7 +190,11 @@ public slots:
 protected:
 
     /** Handles native events. */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, qintptr *pResult) RT_OVERRIDE;
+#else
     virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult) RT_OVERRIDE;
+#endif
 
     /** Handles key-press @a pEvent. */
     virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE;
