@@ -428,6 +428,9 @@ static int vusbHubDetach(PVUSBROOTHUB pThis, PVUSBDEV pDev)
     {
         Assert(pThis->apDevByAddr[pDev->u8Address] == pDev);
         pThis->apDevByAddr[pDev->u8Address] = NULL;
+
+        pDev->u8Address    = VUSB_INVALID_ADDRESS;
+        pDev->u8NewAddress = VUSB_INVALID_ADDRESS;
     }
     RTCritSectLeave(&pThis->CritSectDevices);
 
