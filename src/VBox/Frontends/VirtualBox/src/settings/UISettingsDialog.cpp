@@ -746,7 +746,11 @@ void UISettingsDialog::prepareWidgets()
                 fnt.setFamily(QStringLiteral("Sans Serif"));
                 fnt.setPointSize(11);
                 fnt.setBold(true);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                fnt.setWeight(QFont::ExtraBold);
+#else
                 fnt.setWeight(75);
+#endif
                 m_pLabelTitle->setFont(fnt);
                 m_pLabelTitle->setAutoFillBackground(true);
                 m_pLabelTitle->setFrameShadow(QFrame::Sunken);
