@@ -32,11 +32,11 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CCloudMachine.h" /* required for Qt6 / c++17 */
 
 /* Forward declaration: */
 class UIChooser;
 class UIChooserNode;
-class CCloudMachine;
 class CMachine;
 
 /** QObject extension used as VM Chooser-pane abstract model.
