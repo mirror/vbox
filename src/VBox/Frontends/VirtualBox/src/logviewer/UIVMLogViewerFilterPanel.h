@@ -28,6 +28,7 @@
 #include "UIVMLogViewerPanel.h"
 
 /* Forward declarations: */
+class QAbstractButton;
 class QButtonGroup;
 class QComboBox;
 class QFrame;
@@ -78,7 +79,7 @@ private slots:
     /** Clear all the filter terms and reset the filtering. */
     void sltClearFilterTerms();
     /** Executes the necessary code to handle filter's boolean operator change ('And', 'Or'). */
-    void sltOperatorButtonChanged(int buttonId);
+    void sltOperatorButtonChanged(QAbstractButton *pButton);
     void sltRemoveFilterTerm(const QString &termString);
 
 private:

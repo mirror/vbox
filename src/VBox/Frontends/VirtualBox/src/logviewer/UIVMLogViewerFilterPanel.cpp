@@ -412,8 +412,9 @@ void UIVMLogViewerFilterPanel::sltClearFilterTerms()
         m_pFilterTermsLineEdit->clearAll();
 }
 
-void UIVMLogViewerFilterPanel::sltOperatorButtonChanged(int buttonId)
+void UIVMLogViewerFilterPanel::sltOperatorButtonChanged(QAbstractButton *pButton)
 {
+    int buttonId = m_pButtonGroup->id(pButton);
     if (buttonId < 0 || buttonId >= ButtonEnd)
         return;
     m_eFilterOperatorButton = static_cast<FilterOperatorButton>(buttonId);
@@ -552,7 +553,7 @@ void UIVMLogViewerFilterPanel::prepareRadioButtonGroup()
 void UIVMLogViewerFilterPanel::prepareConnections()
 {
     connect(m_pAddFilterTermButton, &QIToolButton::clicked, this,  &UIVMLogViewerFilterPanel::sltAddFilterTerm);
-    connect(m_pButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked),
+    connect(m_pButtonGroup, static_cast<void (QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
             this, &UIVMLogViewerFilterPanel::sltOperatorButtonChanged);
     connect(m_pFilterComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIVMLogViewerFilterPanel::sltAddFilterTerm);

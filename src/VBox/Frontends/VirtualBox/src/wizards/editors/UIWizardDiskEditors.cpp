@@ -625,12 +625,18 @@ void UIDiskFormatsGroupBox::createFormatWidgets()
     }
 
     setMediumFormat(m_formatList[0].m_comFormat);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked),
+            this, &UIDiskFormatsGroupBox::sigMediumFormatChanged);
+#else
     connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked),
             this, &UIDiskFormatsGroupBox::sigMediumFormatChanged);
+#endif
 }
 
+
 /*********************************************************************************************************************************
-*   UIDiskFormatsGroupBox implementation.                                                                                   *
+*   UIDiskFormatsGroupBox implementation.                                                                                        *
 *********************************************************************************************************************************/
 
 UIDiskFormatsComboBox::UIDiskFormatsComboBox(bool fExpertMode, KDeviceType enmDeviceType, QWidget *pParent /* = 0 */)
