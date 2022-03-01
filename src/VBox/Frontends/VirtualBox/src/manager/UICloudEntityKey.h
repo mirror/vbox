@@ -57,7 +57,11 @@ struct UICloudEntityKey
     QUuid m_uMachineId;
 };
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+inline size_t qHash(const UICloudEntityKey &key, size_t uSeed)
+#else
 inline uint qHash(const UICloudEntityKey &key, uint uSeed)
+#endif
 {
     return qHash(key.toString(), uSeed);
 }
