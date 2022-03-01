@@ -256,14 +256,14 @@ const char *UIExtraDataDefs::GUI_VMActivityOverview_ShowAllMachines = "GUI/VMAct
 const char *UIExtraDataDefs::GUI_MediumSelector_DialogGeometry = "GUI/MediumSelector/DialogGeometry";
 
 /* Obsolete keys: */
-QMap<QString, QString> UIExtraDataDefs::prepareObsoleteKeysMap()
+QMultiMap<QString, QString> UIExtraDataDefs::prepareObsoleteKeysMap()
 {
-    QMap<QString, QString> map;
-    map.insertMulti(GUI_Details_Elements, GUI_DetailsPageBoxes);
-    map.insertMulti(GUI_Details_Elements_Preview_UpdateInterval, GUI_PreviewUpdate);
+    QMultiMap<QString, QString> map;
+    map.insert(GUI_Details_Elements, GUI_DetailsPageBoxes);
+    map.insert(GUI_Details_Elements_Preview_UpdateInterval, GUI_PreviewUpdate);
     return map;
 }
-QMap<QString, QString> UIExtraDataDefs::g_mapOfObsoleteKeys = UIExtraDataDefs::prepareObsoleteKeysMap();
+QMultiMap<QString, QString> UIExtraDataDefs::g_mapOfObsoleteKeys = UIExtraDataDefs::prepareObsoleteKeysMap();
 
 
 bool UIToolStuff::isTypeOfClass(UIToolType enmType, UIToolClass enmClass)

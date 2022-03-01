@@ -469,10 +469,10 @@ namespace UIExtraDataDefs
     /** @name Old key support stuff.
       * @{ */
         /** Prepares obsolete keys map. */
-        SHARED_LIBRARY_STUFF QMap<QString, QString> prepareObsoleteKeysMap();
+        SHARED_LIBRARY_STUFF QMultiMap<QString, QString> prepareObsoleteKeysMap();
 
         /** Holds the obsolete keys map. */
-        SHARED_LIBRARY_STUFF extern QMap<QString, QString> g_mapOfObsoleteKeys;
+        SHARED_LIBRARY_STUFF extern QMultiMap<QString, QString> g_mapOfObsoleteKeys;
     /** @} */
 }
 

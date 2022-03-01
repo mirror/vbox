@@ -404,7 +404,7 @@ void UIShortcutConfigurationModel::save(UIShortcutConfigurationList &list)
 bool UIShortcutConfigurationModel::isAllShortcutsUnique()
 {
     /* Enumerate all the sequences: */
-    QMap<QString, QString> usedSequences;
+    QMultiMap<QString, QString> usedSequences;
     foreach (const UIShortcutTableViewRow &item, m_shortcuts)
     {
         QString strKey = item.currentSequence();
@@ -412,14 +412,17 @@ bool UIShortcutConfigurationModel::isAllShortcutsUnique()
         {
             const QString strScope = item.scope();
             strKey = strScope.isNull() ? strKey : QString("%1: %2").arg(strScope, strKey);
-            usedSequences.insertMulti(strKey, item.key());
+            usedSequences.insert(strKey, item.key());
         }
     }
     /* Enumerate all the duplicated sequences: */
     QSet<QString> duplicatedSequences;
     foreach (const QString &strKey, usedSequences.keys())
         if (usedSequences.count(strKey) > 1)
-            duplicatedSequences.unite(usedSequences.values(strKey).toSet());
+        {
+            foreach (const QString &strValue, usedSequences.values(strKey))
+                duplicatedSequences |= strValue;
+        }
     /* Is there something changed? */
     if (m_duplicatedSequences != duplicatedSequences)
     {
