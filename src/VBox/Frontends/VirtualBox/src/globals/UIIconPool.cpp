@@ -441,9 +441,11 @@ QIcon UIIconPoolGeneral::userMachineIcon(const CMachine &comMachine) const
 
     /* 1. First, load icon from IMachine extra-data: */
     if (icon.isNull())
+    {
         foreach (const QString &strIconName, gEDataManager->machineWindowIconNames(uMachineId))
             if (!strIconName.isEmpty() && QFile::exists(strIconName))
                 icon.addFile(strIconName);
+    }
 
     /* 2. Otherwise, load icon from IMachine interface itself: */
     if (icon.isNull())

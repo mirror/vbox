@@ -1791,8 +1791,10 @@ void UIChooserModel::buildTreeForMainRoot(bool fPreserveSelection /* = false */)
     /* Remember all selected items if requested: */
     QStringList selectedItemDefinitions;
     if (fPreserveSelection && !selectedItems().isEmpty())
+    {
         foreach (UIChooserItem *pSelectedItem, selectedItems())
             selectedItemDefinitions << pSelectedItem->definition();
+    }
 
     /* Clean tree for main root: */
     clearTreeForMainRoot();

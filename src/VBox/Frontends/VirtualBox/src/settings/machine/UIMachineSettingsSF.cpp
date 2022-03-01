@@ -337,12 +337,16 @@ void UIMachineSettingsSF::loadToCacheFrom(QVariant &data)
     QMap<UISharedFolderType, CSharedFolder> folders;
     /* Load machine (permanent) folders if allowed: */
     if (isSharedFolderTypeSupported(MachineType))
+    {
         foreach (const CSharedFolder &folder, getSharedFolders(MachineType))
             folders.insertMulti(MachineType, folder);
+    }
     /* Load console (temporary) folders if allowed: */
     if (isSharedFolderTypeSupported(ConsoleType))
+    {
         foreach (const CSharedFolder &folder, getSharedFolders(ConsoleType))
             folders.insertMulti(ConsoleType, folder);
+    }
 
     /* For each folder type: */
     foreach (const UISharedFolderType &enmFolderType, folders.keys())

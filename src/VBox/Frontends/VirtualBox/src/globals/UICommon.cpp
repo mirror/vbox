@@ -1787,6 +1787,7 @@ void UICommon::prepareStorageMenu(QMenu &menu,
         /* Make sure recent-medium usage is unique: */
         bool fIsRecentMediumUsed = false;
         if (enmMediumType != UIMediumDeviceType_DVD)
+        {
             foreach (const CMediumAttachment &otherAttachment, comAttachments)
             {
                 if (otherAttachment != comCurrentAttachment)
@@ -1799,6 +1800,7 @@ void UICommon::prepareStorageMenu(QMenu &menu,
                     }
                 }
             }
+        }
         /* If recent-medium usage is unique: */
         if (!fIsRecentMediumUsed)
         {
