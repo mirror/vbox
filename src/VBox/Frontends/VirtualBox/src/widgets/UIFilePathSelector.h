@@ -200,8 +200,6 @@ private:
     QString  m_strNoneText;
     /** Holds the cached tool-tip for empty path. */
     QString  m_strNoneToolTip;
-    /** Holds the cached tool-tip for empty path in focused case. */
-    QString  m_strNoneToolTipFocused;
 
     /** Holds whether editor has Reset action. */
     bool     m_fResetEnabled;
