@@ -7229,7 +7229,7 @@ VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</screen>
       devices:
     </para>
 
-<screen>VBoxManage usbdevsource add <replaceable>unique-name</replaceable> --backend <replaceable>USB-IP</replaceable> --address <replaceable>device-server</replaceable>[:<replaceable>port</replaceable>]</screen>
+<screen>VBoxManage usbdevsource add <replaceable>unique-name</replaceable> --backend <replaceable>USBIP</replaceable> --address <replaceable>device-server</replaceable>[:<replaceable>port</replaceable>]</screen>
 
     <para>
       USB devices exported on the device server are then accessible
