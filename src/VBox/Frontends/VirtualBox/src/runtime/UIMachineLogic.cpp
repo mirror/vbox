@@ -27,9 +27,6 @@
 #ifdef VBOX_WS_MAC
 # include <QMenuBar>
 #endif /* VBOX_WS_MAC */
-#ifdef VBOX_WS_X11
-# include <QX11Info>
-#endif /* VBOX_WS_X11 */
 
 /* GUI includes: */
 #include "QIFileDialog.h"
@@ -70,6 +67,9 @@
 #endif
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 # include "UINetworkRequestManager.h"
+#endif
+#ifdef VBOX_WS_X11
+# include "VBoxUtils-x11.h"
 #endif
 
 /* COM includes: */
@@ -564,7 +564,7 @@ void UIMachineLogic::sltMachineStateChanged()
         {
             /* The keyboard handler may wish to do some release logging on startup.
              * Tell it that the logger is now active. */
-            doXKeyboardLogging(QX11Info::display());
+            doXKeyboardLogging(NativeWindowSubsystem::X11GetDisplay());
             break;
         }
 #endif

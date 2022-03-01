@@ -35,6 +35,9 @@
 #ifdef VBOX_WITH_MASKED_SEAMLESS
 # include "UIMachineWindow.h"
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
+#ifdef VBOX_WS_X11
+# include "VBoxUtils-x11.h"
+#endif
 
 /* COM includes: */
 #include "CConsole.h"
@@ -54,7 +57,6 @@
 
 #ifdef VBOX_WS_X11
 /* X11 includes: */
-# include <QX11Info>
 # include <X11/Xlib.h>
 # undef Bool // Qt5 vs Xlib gift..
 #endif /* VBOX_WS_X11 */
@@ -1120,7 +1122,7 @@ HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
 
 #ifdef VBOX_WS_X11
     /* Sync Qt and X11 Server (see xTracker #7547). */
-    XSync(QX11Info::display(), false);
+    XSync(NativeWindowSubsystem::X11GetDisplay(), false);
 #endif
 
     /* Assign display: */
@@ -1175,7 +1177,7 @@ void UIFrameBufferPrivate::setView(UIMachineView *pMachineView)
 
 #ifdef VBOX_WS_X11
     /* Sync Qt and X11 Server (see xTracker #7547). */
-    XSync(QX11Info::display(), false);
+    XSync(NativeWindowSubsystem::X11GetDisplay(), false);
 #endif
 
     /* Connect new handlers: */

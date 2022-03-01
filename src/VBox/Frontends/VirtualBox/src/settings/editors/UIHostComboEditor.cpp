@@ -22,9 +22,6 @@
 #include <QStyleOption>
 #include <QStylePainter>
 #include <QTimer>
-#ifdef VBOX_WS_X11
-# include <QX11Info>
-#endif
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
 # include <QAbstractNativeEventFilter>
 #endif
@@ -43,6 +40,7 @@
 # include "WinKeyboard.h"
 #elif defined(VBOX_WS_X11)
 # include "XKeyboard.h"
+# include "VBoxUtils-x11.h"
 #endif
 
 /* Other VBox includes: */
@@ -560,7 +558,7 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     m_pAltGrMonitor = new WinAltGrMonitor;
 #elif defined(VBOX_WS_X11)
     /* Initialize the X keyboard subsystem: */
-    initMappedX11Keyboard(QX11Info::display(), gEDataManager->remappedScanCodes());
+    initMappedX11Keyboard(NativeWindowSubsystem::X11GetDisplay(), gEDataManager->remappedScanCodes());
 #endif /* VBOX_WS_X11 */
 }
 
@@ -747,7 +745,7 @@ bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pM
             /* Parse key-event: */
             xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
             RT_GCC_NO_WARN_DEPRECATED_BEGIN
-            const KeySym ks = ::XKeycodeToKeysym(QX11Info::display(), pKeyEvent->detail, 0);
+            const KeySym ks = ::XKeycodeToKeysym(NativeWindowSubsystem::X11GetDisplay(), pKeyEvent->detail, 0);
             RT_GCC_NO_WARN_DEPRECATED_END
             const int iKeySym = static_cast<int>(ks);
 

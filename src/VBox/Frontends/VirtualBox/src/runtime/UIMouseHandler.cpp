@@ -19,9 +19,6 @@
 #include <QMouseEvent>
 #include <QTimer>
 #include <QTouchEvent>
-#ifdef VBOX_WS_X11
-# include <QX11Info>
-#endif
 
 /* GUI includes: */
 #include "UICursor.h"
@@ -43,6 +40,9 @@
 #ifdef VBOX_WS_WIN
 # include "VBoxUtils-win.h"
 #endif
+#ifdef VBOX_WS_X11
+# include "VBoxUtils-x11.h"
+#endif
 
 /* COM includes: */
 #include "CDisplay.h"
@@ -50,11 +50,6 @@
 
 /* Other VBox includes: */
 #include <iprt/time.h>
-
-/* External includes: */
-#ifdef VBOX_WS_X11
-#include "VBoxUtils-x11.h"
-#endif
 
 
 /* Factory function to create mouse-handler: */
@@ -340,7 +335,7 @@ bool UIMouseHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
                   *       handler to avoid avoidable races if the event was not for us. */
                 machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
                 /* Re-send the event so that the window which it was meant for gets it: */
-                xcb_allow_events_checked(QX11Info::connection(), XCB_ALLOW_REPLAY_POINTER, pButtonEvent->time);
+                xcb_allow_events_checked(NativeWindowSubsystem::X11GetConnection(), XCB_ALLOW_REPLAY_POINTER, pButtonEvent->time);
                 /* Do not let Qt see the event: */
                 return true;
             }

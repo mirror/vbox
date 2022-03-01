@@ -18,13 +18,13 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QWidget>
 #include <QScreen>
 #ifdef VBOX_WS_WIN
 # include <QLibrary>
 #endif
 #ifdef VBOX_WS_X11
 # include <QTimer>
-# include <QX11Info>
 #endif
 
 /* GUI includes: */
@@ -737,7 +737,7 @@ void UIDesktopWidgetWatchdog::setTopLevelGeometry(QWidget *pWidget, int x, int y
         uint16_t fMask =   XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
                          | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
         uint32_t values[] = { (uint32_t)(x * dDPR), (uint32_t)(y * dDPR), (uint32_t)(w * dDPR), (uint32_t)(h * dDPR) };
-        xcb_configure_window(QX11Info::connection(), (xcb_window_t)pWidget->winId(),
+        xcb_configure_window(NativeWindowSubsystem::X11GetConnection(), (xcb_window_t)pWidget->winId(),
                              fMask, values);
         xcb_size_hints_t hints;
         hints.flags =   1 /* XCB_ICCCM_SIZE_HINT_US_POSITION */
@@ -763,10 +763,10 @@ void UIDesktopWidgetWatchdog::setTopLevelGeometry(QWidget *pWidget, int x, int y
         if (hints.width_inc > 0 || hints.height_inc)
             hints.flags |=   64 /* XCB_ICCCM_SIZE_HINT_P_MIN_SIZE */
                            | 256 /* XCB_ICCCM_SIZE_HINT_BASE_SIZE */;
-        xcb_change_property(QX11Info::connection(), XCB_PROP_MODE_REPLACE,
+        xcb_change_property(NativeWindowSubsystem::X11GetConnection(), XCB_PROP_MODE_REPLACE,
                             (xcb_window_t)pWidget->winId(), XCB_ATOM_WM_NORMAL_HINTS,
                             XCB_ATOM_WM_SIZE_HINTS, 32, sizeof(hints) >> 2, &hints);
-        xcb_flush(QX11Info::connection());
+        xcb_flush(NativeWindowSubsystem::X11GetConnection());
     }
     else
         // WORKAROUND:

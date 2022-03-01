@@ -33,9 +33,6 @@
 /* Qt includes: */
 #include <QKeyEvent>
 #include <QTimer>
-#ifdef VBOX_WS_X11
-# include <QX11Info>
-#endif
 
 /* GUI includes: */
 #include "UICommon.h"
@@ -63,6 +60,7 @@
 #endif
 #ifdef VBOX_WS_X11
 # include "XKeyboard.h"
+# include "VBoxUtils-x11.h"
 #endif
 
 /* COM includes: */
@@ -274,8 +272,9 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
          * reporting it with delay, so ask the X server directly.  We could remove the
          * version check some time in the future.  If we do, remove the comment above
          * about the focus notification dance, as it will no longer be relevant. */
-        xcb_get_input_focus_cookie_t xcbFocusCookie = xcb_get_input_focus(QX11Info::connection());
-        xcb_get_input_focus_reply_t *pFocusReply = xcb_get_input_focus_reply(QX11Info::connection(), xcbFocusCookie, 0);
+        xcb_get_input_focus_cookie_t xcbFocusCookie = xcb_get_input_focus(NativeWindowSubsystem::X11GetConnection());
+        xcb_get_input_focus_reply_t *pFocusReply = xcb_get_input_focus_reply(NativeWindowSubsystem::X11GetConnection(),
+                                                                             xcbFocusCookie, 0);
         xcb_window_t xcbFocusWindow = pFocusReply->focus;
         free(pFocusReply);
         if (xcbFocusWindow != m_windows[m_iKeyboardCaptureViewIndex]->winId())
@@ -286,21 +285,23 @@ bool UIKeyboardHandler::finaliseCaptureKeyboard()
          * We do not check for failure as we do not currently implement a back-up plan. */
         /* If any previous grab is still in process, release it. */
         if (m_hButtonGrabWindow != 0)
-            xcb_ungrab_button_checked(QX11Info::connection(), XCB_BUTTON_INDEX_ANY,
+            xcb_ungrab_button_checked(NativeWindowSubsystem::X11GetConnection(), XCB_BUTTON_INDEX_ANY,
                                       m_hButtonGrabWindow, XCB_MOD_MASK_ANY);
-        m_hButtonGrabWindow = QX11Info::appRootWindow();
-        xcb_grab_button_checked(QX11Info::connection(), 0, m_hButtonGrabWindow,
+        m_hButtonGrabWindow = NativeWindowSubsystem::X11GetAppRootWindow();
+        xcb_grab_button_checked(NativeWindowSubsystem::X11GetConnection(), 0, m_hButtonGrabWindow,
                                 XCB_EVENT_MASK_BUTTON_PRESS, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_ASYNC,
                                 XCB_NONE, XCB_NONE, XCB_BUTTON_INDEX_ANY, XCB_MOD_MASK_ANY);
         /* And grab the keyboard, using XCB directly, as Qt does not report failure. */
-        xcb_grab_keyboard_cookie_t xcbGrabCookie = xcb_grab_keyboard(QX11Info::connection(), false, m_views[m_iKeyboardCaptureViewIndex]->winId(),
+        xcb_grab_keyboard_cookie_t xcbGrabCookie = xcb_grab_keyboard(NativeWindowSubsystem::X11GetConnection(), false,
+                                                                     m_views[m_iKeyboardCaptureViewIndex]->winId(),
                                                                      XCB_TIME_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
-        xcb_grab_keyboard_reply_t *pGrabReply = xcb_grab_keyboard_reply(QX11Info::connection(), xcbGrabCookie, NULL);
+        xcb_grab_keyboard_reply_t *pGrabReply = xcb_grab_keyboard_reply(NativeWindowSubsystem::X11GetConnection(),
+                                                                        xcbGrabCookie, NULL);
         if (pGrabReply == NULL || pGrabReply->status != XCB_GRAB_STATUS_SUCCESS)
         {
             /* Release the mouse button grab.
              * We do not check for failure as we do not currently implement a back-up plan. */
-            xcb_ungrab_button_checked(QX11Info::connection(), XCB_BUTTON_INDEX_ANY,
+            xcb_ungrab_button_checked(NativeWindowSubsystem::X11GetConnection(), XCB_BUTTON_INDEX_ANY,
                                       m_hButtonGrabWindow, XCB_MOD_MASK_ANY);
             m_hButtonGrabWindow = 0;
             /* Try again later: */
@@ -369,10 +370,10 @@ void UIKeyboardHandler::releaseKeyboard()
          * to allow further user interactions. */
 
         /* Ungrab using XCB: */
-        xcb_ungrab_keyboard(QX11Info::connection(), XCB_TIME_CURRENT_TIME);
+        xcb_ungrab_keyboard(NativeWindowSubsystem::X11GetConnection(), XCB_TIME_CURRENT_TIME);
         /* Release the mouse button grab.
          * We do not check for failure as we do not currently implement a back-up plan. */
-        xcb_ungrab_button_checked(QX11Info::connection(), XCB_BUTTON_INDEX_ANY,
+        xcb_ungrab_button_checked(NativeWindowSubsystem::X11GetConnection(), XCB_BUTTON_INDEX_ANY,
                                   m_hButtonGrabWindow, XCB_MOD_MASK_ANY);
         m_hButtonGrabWindow = 0;
 
@@ -822,7 +823,7 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
             xcb_key_press_event_t *pKeyEvent = static_cast<xcb_key_press_event_t*>(pMessage);
 
             /* Translate the keycode to a PC scan code: */
-            unsigned uScan = handleXKeyEvent(QX11Info::display(), pKeyEvent->detail);
+            unsigned uScan = handleXKeyEvent(NativeWindowSubsystem::X11GetDisplay(), pKeyEvent->detail);
 
             /* Scan codes 0x00 (no valid translation) and 0x80 (extended flag) are ignored: */
             if (!(uScan & 0x7F))
@@ -855,7 +856,7 @@ bool UIKeyboardHandler::nativeEventFilter(void *pMessage, ulong uScreenId)
             }
 
             /* Translate the keycode to a keysym: */
-            KeySym ks = ::wrapXkbKeycodeToKeysym(QX11Info::display(), pKeyEvent->detail, 0, 0);
+            KeySym ks = ::wrapXkbKeycodeToKeysym(NativeWindowSubsystem::X11GetDisplay(), pKeyEvent->detail, 0, 0);
 
             /* Update special flags: */
             switch (ks)
@@ -1019,12 +1020,12 @@ void UIKeyboardHandler::loadSettings()
     /* Global settings: */
 #ifdef VBOX_WS_X11
     /* Initialize the X keyboard subsystem: */
-    initMappedX11Keyboard(QX11Info::display(), gEDataManager->remappedScanCodes());
+    initMappedX11Keyboard(NativeWindowSubsystem::X11GetDisplay(), gEDataManager->remappedScanCodes());
     /* Fix for http://www.virtualbox.org/ticket/1296:
      * when X11 sends events for repeated keys, it always inserts an XKeyRelease
      * before the XKeyPress. */
     /* Disable key release events during key auto-repeat: */
-    XkbSetDetectableAutoRepeat(QX11Info::display(), True, NULL);
+    XkbSetDetectableAutoRepeat(NativeWindowSubsystem::X11GetDisplay(), True, NULL);
 #endif /* VBOX_WS_X11 */
 
     /* Extra data settings: */
@@ -1773,7 +1774,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
 #elif defined(VBOX_WS_X11)
 
     Q_UNUSED(pHotKey);
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     KeyCode keyCode = XKeysymToKeycode(pDisplay, iHotKey);
     for (int i = 0; i < 4 && !fWasProcessed; ++i) /* Up to four groups. */
     {
@@ -1851,15 +1852,16 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
     int      iDummy3, iDummy4, iDummy5, iDummy6;
     unsigned uMask;
     unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0;
+    Display * const pDisplay = NativeWindowSubsystem::X11GetDisplay();
 
     uKeyMaskCaps          = LockMask;
-    XModifierKeymap* map  = XGetModifierMapping(QX11Info::display());
-    KeyCode keyCodeNum    = XKeysymToKeycode(QX11Info::display(), XK_Num_Lock);
+    XModifierKeymap* map  = XGetModifierMapping(pDisplay);
+    KeyCode keyCodeNum    = XKeysymToKeycode(pDisplay, XK_Num_Lock);
 
     for (int i = 0; i < 8; ++ i)
         if (keyCodeNum != NoSymbol && map->modifiermap[map->max_keypermod * i] == keyCodeNum)
             uKeyMaskNum = 1 << i;
-    XQueryPointer(QX11Info::display(), DefaultRootWindow(QX11Info::display()), &wDummy1, &wDummy2,
+    XQueryPointer(pDisplay, DefaultRootWindow(pDisplay), &wDummy1, &wDummy2,
                   &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
     XFreeModifiermap(map);
 

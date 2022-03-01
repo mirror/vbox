@@ -22,8 +22,12 @@
 #include <QtDBus/QDBusReply>
 #include <QtXml/QDomDocument>
 #include <QtXml/QDomElement>
-#include <QX11Info>
 #include <QWidget>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+# include <QGuiApplication>
+#else
+# include <QX11Info>
+#endif
 
 /* GUI includes: */
 #include "VBoxUtils-x11.h"
@@ -50,7 +54,7 @@ bool NativeWindowSubsystem::X11IsCompositingManagerRunning()
 {
     /* For each screen it manage, compositing manager MUST acquire ownership
      * of a selection named _NET_WM_CM_Sn, where n is the screen number. */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     Atom atom_property_name = XInternAtom(pDisplay, "_NET_WM_CM_S0", True);
     return XGetSelectionOwner(pDisplay, atom_property_name);
 }
@@ -58,7 +62,7 @@ bool NativeWindowSubsystem::X11IsCompositingManagerRunning()
 X11WMType NativeWindowSubsystem::X11WindowManagerType()
 {
     /* Ask if root-window supports check for WM name: */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     Atom atom_property_name;
     Atom atom_returned_type;
     int iReturnedFormat;
@@ -67,7 +71,7 @@ X11WMType NativeWindowSubsystem::X11WindowManagerType()
     unsigned char *pcData = 0;
     X11WMType wmType = X11WMType_Unknown;
     atom_property_name = XInternAtom(pDisplay, "_NET_SUPPORTING_WM_CHECK", True);
-    if (XGetWindowProperty(pDisplay, QX11Info::appRootWindow(), atom_property_name,
+    if (XGetWindowProperty(pDisplay, NativeWindowSubsystem::X11GetAppRootWindow(), atom_property_name,
                            0, 512, False, XA_WINDOW, &atom_returned_type,
                            &iReturnedFormat, &ulReturnedItemCount, &ulDummy, &pcData) == Success)
     {
@@ -85,6 +89,7 @@ X11WMType NativeWindowSubsystem::X11WindowManagerType()
                                    0, 512, False, utf8Atom, &atom_returned_type,
                                    &iReturnedFormat, &ulReturnedItemCount, &ulDummy, &pcData) == Success)
             {
+                /** @todo r=bird: 6 QString conversions cannot be very efficient. */
                 if (QString((const char*)pcData).contains("Compiz", Qt::CaseInsensitive))
                     wmType = X11WMType_Compiz;
                 else
@@ -118,7 +123,7 @@ static BOOL gX11DpmsState;
 void NativeWindowSubsystem::X11ScreenSaverSettingsInit()
 {
     /* Init screen-save availability: */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     int dummy;
     gX11ScreenSaverDpmsAvailable = DPMSQueryExtension(pDisplay, &dummy, &dummy);
 }
@@ -134,7 +139,7 @@ void NativeWindowSubsystem::X11ScreenSaverSettingsSave()
      * SDL_QuitSubSystem()! So the only solution to overcome this problem is to
      * save and restore the state prior and after each of these function calls. */
 
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     int dummy;
     CARD16 dummy2;
     XGetScreenSaver(pDisplay, &gX11ScreenSaverTimeout, &dummy, &dummy, &dummy);
@@ -145,7 +150,7 @@ void NativeWindowSubsystem::X11ScreenSaverSettingsSave()
 void NativeWindowSubsystem::X11ScreenSaverSettingsRestore()
 {
     /* Restore screen-saver settings: */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     int iTimeout, iInterval, iPreferBlank, iAllowExp;
     XGetScreenSaver(pDisplay, &iTimeout, &iInterval, &iPreferBlank, &iAllowExp);
     iTimeout = gX11ScreenSaverTimeout;
@@ -158,7 +163,7 @@ void NativeWindowSubsystem::X11ScreenSaverSettingsRestore()
 bool NativeWindowSubsystem::X11CheckExtension(const char *pExtensionName)
 {
     /* Check extension: */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     int major_opcode;
     int first_event;
     int first_error;
@@ -393,7 +398,7 @@ bool XXSendClientMessage(Display *pDpy, Window windowHandle, const char *pszMsg,
 bool NativeWindowSubsystem::X11ActivateWindow(WId wId, bool fSwitchDesktop)
 {
     bool fResult = true;
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
 
     if (fSwitchDesktop)
     {
@@ -441,7 +446,7 @@ bool NativeWindowSubsystem::X11SupportsFullScreenMonitorsProtocol()
      * All three strings should be found under a property called "_NET_SUPPORTED(ATOM)". */
 
     /* Using a global to get at the display does not feel right, but that is how it is done elsewhere in the code. */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
     Atom atomSupported            = XInternAtom(pDisplay, "_NET_SUPPORTED",
                                                 True /* only_if_exists */);
     Atom atomWMFullScreenMonitors = XInternAtom(pDisplay,
@@ -493,7 +498,7 @@ bool NativeWindowSubsystem::X11SupportsFullScreenMonitorsProtocol()
 
 bool NativeWindowSubsystem::X11SetFullScreenMonitor(QWidget *pWidget, ulong uScreenId)
 {
-    return XXSendClientMessage(QX11Info::display(),
+    return XXSendClientMessage(NativeWindowSubsystem::X11GetDisplay(),
                                pWidget->window()->winId(),
                                "_NET_WM_FULLSCREEN_MONITORS",
                                uScreenId, uScreenId, uScreenId, uScreenId,
@@ -503,7 +508,7 @@ bool NativeWindowSubsystem::X11SetFullScreenMonitor(QWidget *pWidget, ulong uScr
 QVector<Atom> flagsNetWmState(QWidget *pWidget)
 {
     /* Get display: */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
 
     /* Prepare atoms: */
     QVector<Atom> resultNetWmState;
@@ -547,7 +552,7 @@ QVector<Atom> flagsNetWmState(QWidget *pWidget)
 bool NativeWindowSubsystem::isFullScreenFlagSet(QWidget *pWidget)
 {
     /* Get display: */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
 
     /* Prepare atoms: */
     Atom net_wm_state_fullscreen = XInternAtom(pDisplay, "_NET_WM_STATE_FULLSCREEN", True /* only if exists */);
@@ -559,7 +564,7 @@ bool NativeWindowSubsystem::isFullScreenFlagSet(QWidget *pWidget)
 void NativeWindowSubsystem::setFullScreenFlag(QWidget *pWidget)
 {
     /* Get display: */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
 
     /* Prepare atoms: */
     QVector<Atom> resultNetWmState = flagsNetWmState(pWidget);
@@ -581,7 +586,7 @@ void NativeWindowSubsystem::setFullScreenFlag(QWidget *pWidget)
 void NativeWindowSubsystem::X11SetSkipTaskBarFlag(QWidget *pWidget)
 {
     /* Get display: */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
 
     /* Prepare atoms: */
     QVector<Atom> resultNetWmState = flagsNetWmState(pWidget);
@@ -602,7 +607,7 @@ void NativeWindowSubsystem::X11SetSkipTaskBarFlag(QWidget *pWidget)
 void NativeWindowSubsystem::X11SetSkipPagerFlag(QWidget *pWidget)
 {
     /* Get display: */
-    Display *pDisplay = QX11Info::display();
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
 
     /* Prepare atoms: */
     QVector<Atom> resultNetWmState = flagsNetWmState(pWidget);
@@ -641,11 +646,57 @@ void NativeWindowSubsystem::X11SetWMClass(QWidget *pWidget, const QString &strNa
     windowClass.res_name = nameByteArray.data();
     windowClass.res_class = classByteArray.data();
     /* Set WM_CLASS of the window to passed name and class strings: */
-    XSetClassHint(QX11Info::display(), pWidget->window()->winId(), &windowClass);
+    XSetClassHint(NativeWindowSubsystem::X11GetDisplay(), pWidget->window()->winId(), &windowClass);
 }
 
 void NativeWindowSubsystem::X11SetXwaylandMayGrabKeyboardFlag(QWidget *pWidget)
 {
-    XXSendClientMessage(QX11Info::display(), pWidget->window()->winId(),
+    XXSendClientMessage(NativeWindowSubsystem::X11GetDisplay(), pWidget->window()->winId(),
                         "_XWAYLAND_MAY_GRAB_KEYBOARD", 1);
 }
+
+Display *NativeWindowSubsystem::X11GetDisplay(void)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    Display *pDisplay = nullptr;
+    if (qApp)
+    {
+        QNativeInterface::QX11Application *pX11App = qApp->nativeInterface<QNativeInterface::QX11Application>();
+        if (pX11App)
+            pDisplay = pX11App->display();
+    }
+#else
+    Display *pDisplay = QX11Info::display();
+#endif
+    Assert(pDisplay);
+    return pDisplay;
+}
+
+xcb_connection_t *NativeWindowSubsystem::X11GetConnection(void)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    if (qApp)
+    {
+        QNativeInterface::QX11Application *pX11App = qApp->nativeInterface<QNativeInterface::QX11Application>();
+        if (pX11App)
+            return pX11App->connection();
+    }
+    return NULL;
+#else
+    return QX11Info::connection();
+#endif
+}
+
+uint32_t NativeWindowSubsystem::X11GetAppRootWindow(void)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    Window idWindow = 0;
+    Display *pDisplay = NativeWindowSubsystem::X11GetDisplay();
+    if (pDisplay)
+        idWindow = DefaultRootWindow(pDisplay); /** @todo qt6: ?? */
+    return idWindow;
+#else
+    return QX11Info::appRootWindow();
+#endif
+}
+

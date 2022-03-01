@@ -27,9 +27,6 @@
 # include <iprt/win/windows.h> /* Workaround for compile errors if included directly by QtWin. */
 # include <QtWin>
 #endif
-#ifdef VBOX_WS_X11
-# include <QX11Info>
-#endif
 
 /* GUI includes: */
 #include "UICommon.h"
