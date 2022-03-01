@@ -32,8 +32,9 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
+class QComboBox;
+class QGridLayout;
 class QLabel;
-class QIComboBox;
 
 /** QWidget subclass used as an audio controller editor. */
 class SHARED_LIBRARY_STUFF UIAudioControllerEditor : public QIWithRetranslateUI<QWidget>
@@ -47,9 +48,8 @@ signals:
 
 public:
 
-    /** Constructs audio controller editor passing @a pParent to the base-class.
-      * @param  fWithLabel  Brings whether we should add label ourselves. */
-    UIAudioControllerEditor(QWidget *pParent = 0, bool fWithLabel = false);
+    /** Constructs audio controller editor passing @a pParent to the base-class. */
+    UIAudioControllerEditor(QWidget *pParent = 0);
 
     /** Defines editor @a enmValue. */
     void setValue(KAudioControllerType enmValue);
@@ -58,6 +58,11 @@ public:
 
     /** Returns the vector of supported values. */
     QVector<KAudioControllerType> supportedValues() const { return m_supportedValues; }
+
+    /** Returns minimum layout hint. */
+    int minimumLabelHorizontalHint() const;
+    /** Defines minimum layout @a iIndent. */
+    void setMinimumLayoutIndent(int iIndent);
 
 protected:
 
@@ -76,19 +81,18 @@ private:
     /** Populates combo. */
     void populateCombo();
 
-    /** Holds whether descriptive label should be created. */
-    bool  m_fWithLabel;
-
     /** Holds the value to be selected. */
     KAudioControllerType  m_enmValue;
 
     /** Holds the vector of supported values. */
     QVector<KAudioControllerType>  m_supportedValues;
 
+    /** Holds the main layout instance. */
+    QGridLayout *m_pLayout;
     /** Holds the label instance. */
-    QLabel     *m_pLabel;
+    QLabel      *m_pLabel;
     /** Holds the combo instance. */
-    QIComboBox *m_pCombo;
+    QComboBox   *m_pCombo;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIAudioControllerEditor_h */

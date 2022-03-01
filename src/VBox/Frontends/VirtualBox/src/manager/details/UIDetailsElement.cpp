@@ -1080,7 +1080,7 @@ void UIDetailsElement::popupAudioHostDriverTypeEditor(const QString &strValue)
     if (pPopup)
     {
         /* Prepare editor: */
-        UIAudioHostDriverEditor *pEditor = new UIAudioHostDriverEditor(pPopup, true /* with label */);
+        UIAudioHostDriverEditor *pEditor = new UIAudioHostDriverEditor(pPopup);
         if (pEditor)
         {
             pEditor->setValue(static_cast<KAudioDriverType>(strValue.toInt()));
@@ -1112,7 +1112,7 @@ void UIDetailsElement::popupAudioControllerTypeEditor(const QString &strValue)
     if (pPopup)
     {
         /* Prepare editor: */
-        UIAudioControllerEditor *pEditor = new UIAudioControllerEditor(pPopup, true /* with label */);
+        UIAudioControllerEditor *pEditor = new UIAudioControllerEditor(pPopup);
         if (pEditor)
         {
             pEditor->setValue(static_cast<KAudioControllerType>(strValue.toInt()));
