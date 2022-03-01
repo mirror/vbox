@@ -397,18 +397,30 @@ void QIComboBox::prepare()
             setFocusProxy(m_pComboBox);
             connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
                     this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) /** @todo qt6: textActivated was added in 5.14 actually */
+            connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::textActivated),
+                    this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::textActivated));
+#else
             connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated),
                     this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::activated));
+#endif
             connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                     this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged));
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
             connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::currentIndexChanged),
                     this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::currentIndexChanged));
+#endif
             connect(m_pComboBox, &QComboBox::currentTextChanged, this, &QIComboBox::currentTextChanged);
             connect(m_pComboBox, &QComboBox::editTextChanged, this, &QIComboBox::editTextChanged);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) /** @todo qt6: textHighlighted was added in 5.14 actually */
+            connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::textHighlighted),
+                    this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::textHighlighted));
+#else
             connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::highlighted),
                     this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::highlighted));
             connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::highlighted),
                     this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::highlighted));
+#endif
             /* Add combo-box into layout: */
             pLayout->addWidget(m_pComboBox);
         }

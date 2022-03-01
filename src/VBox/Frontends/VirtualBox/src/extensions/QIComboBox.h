@@ -42,12 +42,18 @@ signals:
     /** Notifies listeners about user chooses an item with @a iIndex in the combo-box. */
     void activated(int iIndex);
     /** Notifies listeners about user chooses an item with @a strText in the combo-box. */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) /** @todo qt6: textHighlighted was added in 5.14 actually */
+    void textActivated(const QString &strText);
+#else
     void activated(const QString &strText);
+#endif
 
     /** Notifies listeners about current item changed to item with @a iIndex. */
     void currentIndexChanged(int iIndex);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     /** Notifies listeners about current item changed to item with @a strText. */
     void currentIndexChanged(const QString &strText);
+#endif
 
     /** Notifies listeners about current combo-box text is changed to @a strText. */
     void currentTextChanged(const QString &strText);
@@ -57,7 +63,11 @@ signals:
     /** Notifies listeners about user highlighted an item with @a iIndex in the popup list-view. */
     void highlighted(int iIndex);
     /** Notifies listeners about user highlighted an item with @a strText in the popup list-view. */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) /** @todo qt6: textHighlighted was added in 5.14 actually */
+    void textHighlighted(const QString &strText);
+#else
     void highlighted(const QString &strText);
+#endif
 
 public:
 

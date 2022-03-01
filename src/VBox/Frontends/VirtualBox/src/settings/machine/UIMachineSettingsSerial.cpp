@@ -505,8 +505,13 @@ void UIMachineSettingsSerial::prepareWidgets()
 void UIMachineSettingsSerial::prepareConnections()
 {
     connect(m_pCheckBoxPort, &QCheckBox::toggled, this, &UIMachineSettingsSerial::sltGbSerialToggled);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    connect(m_pComboNumber, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::textActivated),
+            this, &UIMachineSettingsSerial::sltCbNumberActivated);
+#else
     connect(m_pComboNumber, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::activated),
             this, &UIMachineSettingsSerial::sltCbNumberActivated);
+#endif
     connect(m_pLineEditIRQ, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
     connect(m_pLineEditIOPort, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
     connect(m_pComboMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),

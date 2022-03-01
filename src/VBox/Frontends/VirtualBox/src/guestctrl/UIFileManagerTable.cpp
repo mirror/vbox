@@ -290,11 +290,19 @@ void UIFileManagerNavigationWidget::reset()
 {
     if (m_pHistoryComboBox)
     {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        disconnect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentTextChanged),
+                   this, &UIFileManagerNavigationWidget::sltHandlePathChange);
+        m_pHistoryComboBox->clear();
+        connect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentTextChanged),
+                this, &UIFileManagerNavigationWidget::sltHandlePathChange);
+#else
         disconnect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
                    this, &UIFileManagerNavigationWidget::sltHandlePathChange);
         m_pHistoryComboBox->clear();
         connect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
                 this, &UIFileManagerNavigationWidget::sltHandlePathChange);
+#endif
     }
 
     if (m_pBreadCrumbs)
@@ -329,8 +337,13 @@ void UIFileManagerNavigationWidget::prepare()
                     this, &UIFileManagerNavigationWidget::sltHandlePathChange);
             connect(m_pHistoryComboBox, &UIFileManagerHistoryComboBox::sigHidePopup,
                     this, &UIFileManagerNavigationWidget::sltHandleHidePopup);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            connect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentTextChanged),
+                    this, &UIFileManagerNavigationWidget::sltHandlePathChange);
+#else
             connect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
                     this, &UIFileManagerNavigationWidget::sltHandlePathChange);
+#endif
 
             m_pContainer->addWidget(m_pBreadCrumbs);
             m_pContainer->addWidget(m_pHistoryComboBox);
