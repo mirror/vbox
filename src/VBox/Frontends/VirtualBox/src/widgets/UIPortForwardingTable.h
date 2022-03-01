@@ -175,7 +175,7 @@ struct UIPortForwardingDataUnique
     {}
 
     /** Returns whether this port data is equal to @a another. */
-    bool operator==(const UIPortForwardingDataUnique &another)
+    bool operator==(const UIPortForwardingDataUnique &another) const
     {
         return    protocol == another.protocol
                && hostPort == another.hostPort

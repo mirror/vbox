@@ -35,7 +35,7 @@ struct VBoxUpdateDay
     VBoxUpdateDay(const QString &strVal, const QString &strKey)
         : val(strVal), key(strKey) {}
 
-    bool operator==(const VBoxUpdateDay &other) { return val == other.val || key == other.key; }
+    bool operator==(const VBoxUpdateDay &other) const { return val == other.val || key == other.key; }
 
     QString val;
     QString key;
