@@ -1640,8 +1640,12 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
     if (!allHostComboKeys.isEmpty())
     {
         const QList<int> &pressedKeyList = m_pressedHostComboKeys.keys();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         fIsFullHostComboPresent =    QSet<int>(allHostComboKeys.begin(), allHostComboKeys.end())
                                   == QSet<int>(pressedKeyList.begin(), pressedKeyList.end());
+#else
+        fIsFullHostComboPresent = allHostComboKeys.toSet() == pressedKeyList.toSet();
+#endif
     }
 
     /* Check if currently pressed/released key had changed host-combo state: */
