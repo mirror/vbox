@@ -53,8 +53,8 @@ QByteArray QIProcess::singleShot(const QString &strProcessName, int iTimeout /* 
     process.setProcessState(QProcess::NotRunning);
 #ifdef VBOX_WS_X11
     int iStatus;
-    if (process.pid() > 0)
-        waitpid(process.pid(), &iStatus, 0);
+    if (process.processId() > 0)
+        waitpid(process.processId(), &iStatus, 0);
 #endif /* VBOX_WS_X11 */
     return result;
 }
