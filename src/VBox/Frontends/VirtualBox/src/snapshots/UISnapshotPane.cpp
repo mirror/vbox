@@ -360,31 +360,35 @@ SnapshotAgeFormat UISnapshotItem::updateAge()
         then = now; /* can happen if the host time is wrong */
     if (then.daysTo(now) > 30)
     {
-        strAge = then.toString(Qt::LocalDate);
+        strAge = QLocale::system().toString(then, QLocale::ShortFormat);
         enmAgeFormat = SnapshotAgeFormat_Max;
     }
     else if (then.secsTo(now) > 60 * 60 * 24)
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), UITranslator::daysToString(then.secsTo(now) / 60 / 60 / 24));
+                    .arg(QLocale::system().toString(then, QLocale::ShortFormat),
+                         UITranslator::daysToString(then.secsTo(now) / 60 / 60 / 24));
         enmAgeFormat = SnapshotAgeFormat_InDays;
     }
     else if (then.secsTo(now) > 60 * 60)
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), UITranslator::hoursToString(then.secsTo(now) / 60 / 60));
+                    .arg(QLocale::system().toString(then, QLocale::ShortFormat),
+                         UITranslator::hoursToString(then.secsTo(now) / 60 / 60));
         enmAgeFormat = SnapshotAgeFormat_InHours;
     }
     else if (then.secsTo(now) > 60)
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), UITranslator::minutesToString(then.secsTo(now) / 60));
+                    .arg(QLocale::system().toString(then, QLocale::ShortFormat),
+                         UITranslator::minutesToString(then.secsTo(now) / 60));
         enmAgeFormat = SnapshotAgeFormat_InMinutes;
     }
     else
     {
         strAge = tr("%1 (%2 ago)", "date time (how long ago)")
-                    .arg(then.toString(Qt::LocalDate), UITranslator::secondsToString(then.secsTo(now)));
+                    .arg(QLocale::system().toString(then, QLocale::ShortFormat),
+                         UITranslator::secondsToString(then.secsTo(now)));
         enmAgeFormat = SnapshotAgeFormat_InSeconds;
     }
 
@@ -403,8 +407,8 @@ void UISnapshotItem::recacheToolTip()
 
     /* Compose date time: */
     QString strDateTime = fDateTimeToday
-                        ? m_timestamp.time().toString(Qt::LocalDate)
-                        : m_timestamp.toString(Qt::LocalDate);
+                        ? QLocale::system().toString(m_timestamp.time(), QLocale::ShortFormat)
+                        : QLocale::system().toString(m_timestamp, QLocale::ShortFormat);
 
     /* Prepare details: */
     QString strDetails;

@@ -257,9 +257,15 @@ bool UIVirtualMachineItemLocal::isItemCanBeSwitchedTo() const
 void UIVirtualMachineItemLocal::retranslateUi()
 {
     /* This is used in tool-tip generation: */
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    const QString strDateTime = m_lastStateChange.date() == QDate::currentDate()
+                              ? QLocale::system().toString(m_lastStateChange.time(), QLocale::ShortFormat)
+                              : QLocale::system().toString(m_lastStateChange, QLocale::ShortFormat);
+#else
     const QString strDateTime = (m_lastStateChange.date() == QDate::currentDate())
                               ? m_lastStateChange.time().toString(Qt::LocalDate)
                               : m_lastStateChange.toString(Qt::LocalDate);
+#endif
 
     /* If machine is accessible: */
     if (m_fAccessible)
