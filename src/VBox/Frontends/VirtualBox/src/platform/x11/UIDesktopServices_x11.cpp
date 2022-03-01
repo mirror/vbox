@@ -34,26 +34,35 @@ bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, 
     {
         const QString strVBox = QDir::toNativeSeparators(QCoreApplication::applicationDirPath() + "/" + VBOX_GUI_VMRUNNER_IMAGE);
         QTextStream out(&link);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0) /* defaults to UTF-8 in qt6 */
         out.setCodec("UTF-8");
+#endif
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+# define QT_ENDL Qt::endl
+#else
+# define QT_ENDL endl
+#endif
         /* Create a link which starts VirtualBox with the machine uuid. */
-        out << "[Desktop Entry]" << endl
-            << "Encoding=UTF-8" << endl
-            << "Version=1.0" << endl
-            << "Name=" << strName << endl
-            << "Comment=Starts the VirtualBox machine " << strName << endl
-            << "Type=Application" << endl
-            << "Exec=" << strVBox << " --comment \"" << strName << "\" --startvm \"" << uUuid.toString() << "\"" << endl
-            << "Icon=virtualbox-vbox.png" << endl;
+        out << "[Desktop Entry]" << QT_ENDL
+            << "Encoding=UTF-8" << QT_ENDL
+            << "Version=1.0" << QT_ENDL
+            << "Name=" << strName << QT_ENDL
+            << "Comment=Starts the VirtualBox machine " << strName << QT_ENDL
+            << "Type=Application" << QT_ENDL
+            << "Exec=" << strVBox << " --comment \"" << strName << "\" --startvm \"" << uUuid.toString() << "\"" << QT_ENDL
+            << "Icon=virtualbox-vbox.png" << QT_ENDL;
         /* This would be a real file link entry, but then we could also simply
          * use a soft link (on most UNIX fs):
-        out << "[Desktop Entry]" << endl
-            << "Encoding=UTF-8" << endl
-            << "Version=1.0" << endl
-            << "Name=" << strName << endl
-            << "Type=Link" << endl
-            << "Icon=virtualbox-vbox.png" << endl
+        out << "[Desktop Entry]" << QT_ENDL
+            << "Encoding=UTF-8" << QT_ENDL
+            << "Version=1.0" << QT_ENDL
+            << "Name=" << strName << QT_ENDL
+            << "Type=Link" << QT_ENDL
+            << "Icon=virtualbox-vbox.png" << QT_ENDL
         */
         link.setPermissions(link.permissions() | QFile::ExeOwner);
+        /** @todo r=bird: check status here perhaps, might've run out of disk space or
+         *        some such thing... */
         return true;
     }
     return false;
