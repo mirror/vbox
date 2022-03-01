@@ -6634,9 +6634,6 @@ static void hmR0VmxPostRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, int
     /*
      * Check if VMLAUNCH/VMRESUME succeeded.
      * If this failed, we cause a guru meditation and cease further execution.
-     *
-     * However, if we are executing a nested-guest we might fail if we use the
-     * fast path rather than fully emulating VMLAUNCH/VMRESUME instruction in IEM.
      */
     if (RT_LIKELY(rcVMRun == VINF_SUCCESS))
     {
