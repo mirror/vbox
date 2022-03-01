@@ -2014,7 +2014,7 @@ static int scmSettingsStackPushDir(PSCMSETTINGS *ppSettingsStack, const char *ps
 /**
  * Pops a settings set off the stack.
  *
- * @returns The popped setttings.
+ * @returns The popped settings.
  * @param   ppSettingsStack     The pointer to the pointer to the top stack
  *                              element.  This will be used as input and output.
  */
