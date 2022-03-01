@@ -36,7 +36,6 @@
 class QComboBox;
 class QGridLayout;
 class QLabel;
-class QIComboBox;
 class QILineEdit;
 class QString;
 class UIFilePathSelector;
@@ -203,16 +202,16 @@ private:
     bool  m_fSupportsLongMode;
 
     /** Holds the main layout instance. */
-    QGridLayout *m_pMainLayout;
+    QGridLayout *m_pLayout;
 
     /** Holds the VM name label instance. */
-    QLabel *m_pNameLabel;
+    QLabel *m_pLabelName;
     /** Holds the VM path label instance. */
-    QLabel *m_pPathLabel;
+    QLabel *m_pLabelPath;
     /** Holds the ISO image label instance. */
-    QLabel *m_pImageLabel;
+    QLabel *m_pLabelImage;
     /** Holds the edition label instance. */
-    QLabel *m_pEditionLabel;
+    QLabel *m_pLabelEdition;
     /** Holds the VM OS family label instance. */
     QLabel *m_pLabelFamily;
     /** Holds the VM OS type label instance. */
@@ -221,13 +220,13 @@ private:
     QLabel *m_pIconType;
 
     /** Holds the VM name editor instance. */
-    QILineEdit         *m_pNameLineEdit;
+    QILineEdit         *m_pEditorName;
     /** Holds the VM path editor instance. */
-    UIFilePathSelector *m_pPathSelector;
+    UIFilePathSelector *m_pSelectorPath;
     /** Holds the file selector for ISO image (either for unattended install or to be attached to vm). */
-    UIFilePathSelector *m_pImageSelector;
-    /** Combobox to select an image out of selected ISO image (currently only Windows ISO have this). */
-    QIComboBox *m_pEditionSelector;
+    UIFilePathSelector *m_pSelectorImage;
+    /** Holds the VM OS edition combo (currently only Windows ISO have this). */
+    QComboBox          *m_pComboEdition;
     /** Holds the VM OS family combo instance. */
     QComboBox          *m_pComboFamily;
     /** Holds the VM OS type combo instance. */
