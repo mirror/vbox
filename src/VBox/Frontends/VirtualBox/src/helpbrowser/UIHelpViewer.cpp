@@ -649,7 +649,7 @@ void UIHelpViewer::mousePressEvent(QMouseEvent *pEvent)
     if (!strAnchor.isEmpty())
     {
         if ((pEvent->modifiers() & Qt::ControlModifier) ||
-            pEvent->button() == Qt::MidButton)
+            pEvent->button() == Qt::MiddleButton)
         {
             QString strLink = source().resolved(strAnchor).toString();
             emit sigOpenLinkInNewTab(strLink, true);

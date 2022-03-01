@@ -915,7 +915,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
         iMouseButtonsState |= KMouseButtonState_LeftButton;
     if (mouseButtons & Qt::RightButton)
         iMouseButtonsState |= KMouseButtonState_RightButton;
-    if (mouseButtons & Qt::MidButton)
+    if (mouseButtons & Qt::MiddleButton)
         iMouseButtonsState |= KMouseButtonState_MiddleButton;
     if (mouseButtons & Qt::XButton1)
         iMouseButtonsState |= KMouseButtonState_XButton1;
