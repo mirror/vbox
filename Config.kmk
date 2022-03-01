@@ -7589,13 +7589,24 @@ ifdef VBOX_WITH_QTGUI
  # Template for building Qt GUI executables.
  #
  TEMPLATE_VBOXQTGUIEXE = VBox Qt GUI Executable
- TEMPLATE_VBOXQTGUIEXE_USES = qt5
- TEMPLATE_VBOXQTGUIEXE_QTTOOL = QT5
- TEMPLATE_VBOXQTGUIEXE_MOCTOOL = QT5
- TEMPLATE_VBOXQTGUIEXE_UICTOOL = QT5
- TEMPLATE_VBOXQTGUIEXE_RCCTOOL = QT5
- TEMPLATE_VBOXQTGUIEXE_LRCTOOL = QT5
- TEMPLATE_VBOXQTGUIEXE_SDKS = QT5
+ ifndef VBOX_WITH_QT6
+  TEMPLATE_VBOXQTGUIEXE_USES    := qt5
+  TEMPLATE_VBOXQTGUIEXE_QTTOOL  := QT5
+  TEMPLATE_VBOXQTGUIEXE_MOCTOOL := QT5
+  TEMPLATE_VBOXQTGUIEXE_UICTOOL := QT5
+  TEMPLATE_VBOXQTGUIEXE_RCCTOOL := QT5
+  TEMPLATE_VBOXQTGUIEXE_LRCTOOL := QT5
+  TEMPLATE_VBOXQTGUIEXE_SDKS    := QT5
+ else
+  TEMPLATE_VBOXQTGUIEXE_USES    := qt6
+  TEMPLATE_VBOXQTGUIEXE_QTTOOL  := QT6
+  TEMPLATE_VBOXQTGUIEXE_MOCTOOL := QT6
+  TEMPLATE_VBOXQTGUIEXE_UICTOOL := QT6
+  TEMPLATE_VBOXQTGUIEXE_RCCTOOL := QT6
+  TEMPLATE_VBOXQTGUIEXE_LRCTOOL := QT6
+  TEMPLATE_VBOXQTGUIEXE_SDKS    := QT6
+  TEMPLATE_VBOXQTGUIEXE_QT_MODULES := Core5Compat
+ endif
  TEMPLATE_VBOXQTGUIEXE_QT_INFIX = $(VBOX_QT_INFIX)
  TEMPLATE_VBOXQTGUIEXE_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS)
  TEMPLATE_VBOXQTGUIEXE_RCDEFS = $(TEMPLATE_VBOXR3EXE_RCDEFS)
@@ -7707,6 +7718,9 @@ ifdef VBOX_WITH_QTGUI
   endif
   ifn1of ($(USERNAME),dsen serkan) # Bunch of stuff deprecated after 5.6.*. These guys knows how to deal with it. :)
    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += $(VBOX_GCC_Wno-deprecated-declarations)
+  endif
+  ifdef VBOX_WITH_QT6
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -std=gnu++17
   endif
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.x86 = -m32
   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.amd64 = -m64
@@ -7822,10 +7836,17 @@ ifdef VBOX_WITH_QTGUI
  endif # not darwin, os2 or win
 
  ifeq ($(KBUILD_TARGET),darwin)
-  TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(QUIET)install_name_tool $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
+  ifndef VBOX_WITH_QT6
+   TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(QUIET)install_name_tool $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
 	$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT5)/, \
 		-change "$(prefix)$(qtmod).framework/Versions/5/$(qtmod)" \
 			"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/5/$(qtmod)" ) ) "$(out)"
+  else
+   TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(QUIET)install_name_tool $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
+	$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT6)/, \
+		-change "$(prefix)$(qtmod).framework/Versions/6/$(qtmod)" \
+			"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/5/$(qtmod)" ) ) "$(out)"
+  endif
  endif
 
  #
@@ -7857,8 +7878,13 @@ ifdef VBOX_WITH_NLS
  #
  TEMPLATE_VBoxNLS = VBox NLS template for installing translation files
  TEMPLATE_VBoxNLS_EXTENDS = VBoxR3Static
- TEMPLATE_VBoxNLS_USES = qt5
- TEMPLATE_VBoxNLS_QTTOOL = QT5
+ ifndef VBOX_WITH_QT6
+  TEMPLATE_VBoxNLS_USES   := qt5
+  TEMPLATE_VBoxNLS_QTTOOL := QT5
+ else
+  TEMPLATE_VBoxNLS_USES   := qt6
+  TEMPLATE_VBoxNLS_QTTOOL := QT6
+ endif
  TEMPLATE_VBoxNLS_QT_INFIX = $(VBOX_QT_INFIX)
  TEMPLATE_VBoxNLS_INSTTYPE = none
  TEMPLATE_VBoxNLS_LRCFLAGS += -silent

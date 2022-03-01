@@ -95,7 +95,11 @@ if defined(VBOX_WITH_QTGUI) && defined(VBOX_WITH_DEBUGGER_GUI)
 #
 # Debugger GUI component (Qt).
 #
+ ifndef VBOX_WITH_QT6
 USES += qt5
+ else
+USES += qt6
+ endif
 DLLS += VBoxDbg
 VBoxDbg_TEMPLATE = VBOXQTGUI
 VBoxDbg_DEFS = IN_DBG_R3
