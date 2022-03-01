@@ -41,8 +41,13 @@ UIGuestOSTypeSelectionButton::UIGuestOSTypeSelectionButton(QWidget *pParent)
      * every single menu activation ourself: */
     m_pSignalMapper = new QSignalMapper(this);
     if (m_pSignalMapper)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+        connect(m_pSignalMapper, static_cast<void(QSignalMapper::*)(const QString &)>(&QSignalMapper::mappedString),
+                this, &UIGuestOSTypeSelectionButton::setOSTypeId);
+#else
         connect(m_pSignalMapper, static_cast<void(QSignalMapper::*)(const QString &)>(&QSignalMapper::mapped),
                 this, &UIGuestOSTypeSelectionButton::setOSTypeId);
+#endif
 
     /* Create main menu: */
     m_pMainMenu = new QMenu(pParent);
