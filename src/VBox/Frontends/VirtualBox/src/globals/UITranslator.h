@@ -68,7 +68,7 @@ public:
     static QString secondsToString(uint32_t cVal);
 
     /** Returns the decimal separator for the current locale. */
-    static QChar decimalSep();
+    static QString decimalSep();
     /** Returns the regexp string that defines the format of the human-readable size representation. */
     static QString sizeRegexp();
     /** Parses the given size strText and returns the size value in bytes. */

@@ -291,9 +291,9 @@ QString UITranslator::secondsToString(uint32_t cVal)
 }
 
 /* static */
-QChar UITranslator::decimalSep()
+QString UITranslator::decimalSep()
 {
-    return QLocale::system().decimalPoint();
+    return QString(QLocale::system().decimalPoint());
 }
 
 /* static */
