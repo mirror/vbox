@@ -757,7 +757,14 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                      * over the speed acceleration & enables such devices to send a valid wheel event to our
                      * guest mouse device at all: */
                     int iDelta = 0;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                    Qt::Orientation const enmOrientation = RT_ABS(pWheelEvent->pixelDelta().x())
+                                                         > RT_ABS(pWheelEvent->pixelDelta().y()) ? Qt::Horizontal : Qt::Vertical;
+                    m_iLastMouseWheelDelta += enmOrientation == Qt::Horizontal
+                                            ? pWheelEvent->pixelDelta().x() : pWheelEvent->pixelDelta().y();
+#else
                     m_iLastMouseWheelDelta += pWheelEvent->delta();
+#endif
                     if (qAbs(m_iLastMouseWheelDelta) >= 120)
                     {
                         /* Rounding iDelta to the nearest multiple of 120: */
@@ -766,7 +773,11 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                         m_iLastMouseWheelDelta = m_iLastMouseWheelDelta % 120;
                     }
                     if (mouseEvent(pWheelEvent->type(), uScreenId,
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) /** @todo .... */
+                                   pWheelEvent->position().toPoint(), pWheelEvent->globalPosition().toPoint(),
+#else
                                    pWheelEvent->pos(), pWheelEvent->globalPos(),
+#endif
 #ifdef VBOX_WS_MAC
                                    /* Qt Cocoa is buggy. It always reports a left button pressed when the
                                     * mouse wheel event occurs. A workaround is to ask the application which
@@ -775,7 +786,13 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
 #else /* !VBOX_WS_MAC */
                                    pWheelEvent->buttons(),
 #endif /* !VBOX_WS_MAC */
-                                   iDelta, pWheelEvent->orientation()))
+                                   iDelta,
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                                   enmOrientation)
+#else
+                                   pWheelEvent->orientation())
+#endif
+                                   )
                         return true;
                     break;
                 }
