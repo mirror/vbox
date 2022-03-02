@@ -32,8 +32,8 @@
 class QAbstractButton;
 class QButtonGroup;
 class QCheckBox;
+class QComboBox;
 class QLabel;
-class QIComboBox;
 
 /** QWidget subclass used as a update settings editor. */
 class SHARED_LIBRARY_STUFF UIUpdateSettingsEditor : public QIWithRetranslateUI<QWidget>
@@ -82,19 +82,19 @@ private:
     /** @name Widgets
      * @{ */
         /** Holds the update check-box instance. */
-        QCheckBox    *m_pCheckBox;
+        QCheckBox *m_pCheckBox;
         /** Holds the update settings widget instance. */
-        QWidget      *m_pWidgetUpdateSettings;
+        QWidget   *m_pWidgetUpdateSettings;
         /** Holds the update period label instance. */
-        QLabel       *m_pLabelUpdatePeriod;
+        QLabel    *m_pLabelUpdatePeriod;
         /** Holds the update period combo instance. */
-        QIComboBox   *m_pComboUpdatePeriod;
+        QComboBox *m_pComboUpdatePeriod;
         /** Holds the update date label instance. */
-        QLabel       *m_pLabelUpdateDate;
+        QLabel    *m_pLabelUpdateDate;
         /** Holds the update date field instance. */
-        QLabel       *m_pFieldUpdateDate;
+        QLabel    *m_pFieldUpdateDate;
         /** Holds the update filter label instance. */
-        QLabel       *m_pLabelUpdateFilter;
+        QLabel    *m_pLabelUpdateFilter;
 
         /** Holds the radio button group instance. */
         QButtonGroup                                       *m_pRadioButtonGroup;

@@ -18,12 +18,12 @@
 /* Qt includes: */
 #include <QButtonGroup>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QGridLayout>
 #include <QLabel>
 #include <QRadioButton>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "UIUpdateSettingsEditor.h"
 
 
@@ -197,7 +197,7 @@ void UIUpdateSettingsEditor::prepareWidgets()
                     pLayoutUpdateSettings->addWidget(m_pLabelUpdatePeriod, 0, 0);
                 }
                 /* Prepare update period combo: */
-                m_pComboUpdatePeriod = new QIComboBox(m_pWidgetUpdateSettings);
+                m_pComboUpdatePeriod = new QComboBox(m_pWidgetUpdateSettings);
                 if (m_pComboUpdatePeriod)
                 {
                     if (m_pLabelUpdatePeriod)
@@ -265,7 +265,7 @@ void UIUpdateSettingsEditor::prepareConnections()
     if (m_pCheckBox)
         connect(m_pCheckBox, &QCheckBox::toggled, this, &UIUpdateSettingsEditor::sltHandleUpdateToggle);
     if (m_pComboUpdatePeriod)
-        connect(m_pComboUpdatePeriod, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
+        connect(m_pComboUpdatePeriod, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
                 this, &UIUpdateSettingsEditor::sltHandleUpdatePeriodChange);
 }
 
