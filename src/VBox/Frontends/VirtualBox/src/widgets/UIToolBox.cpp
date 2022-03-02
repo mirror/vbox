@@ -116,6 +116,7 @@ private:
     bool         m_fExpandCollapseIconVisible;
     QIcon        m_expandCollapseIcon;
     UIToolPageButton *m_pTitleButton;
+    QString      m_strTitle;
     friend class UIToolBox;
 };
 
@@ -180,9 +181,11 @@ UIToolBoxPage::UIToolBoxPage(bool fEnableCheckBoxEnabled /* = false */, QWidget 
 
 void UIToolBoxPage::setTitle(const QString &strTitle)
 {
+    m_strTitle = strTitle;
     if (!m_pTitleLabel)
         return;
     m_pTitleLabel->setText(strTitle);
+    retranslateUi();
 }
 
 void UIToolBoxPage::prepare(bool fEnableCheckBoxEnabled)
@@ -342,7 +345,7 @@ void UIToolBoxPage::setExpandCollapseIcon()
 void UIToolBoxPage::retranslateUi()
 {
     if (m_pTitleButton)
-        m_pTitleButton->setToolTip(tr("Expands and hides the page"));
+        m_pTitleButton->setToolTip(tr("Expands the page \"%1\"").arg(m_strTitle.remove('&')));
 }
 
 
