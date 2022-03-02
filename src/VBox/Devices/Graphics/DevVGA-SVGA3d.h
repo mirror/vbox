@@ -320,6 +320,7 @@ typedef struct
     DECLCALLBACKMEMBER(int,  pfnChangeMode,               (PVGASTATECC pThisCC));
     DECLCALLBACKMEMBER(int,  pfnCreateTexture,            (PVGASTATECC pThisCC, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext, PVMSVGA3DSURFACE pSurface));
     DECLCALLBACKMEMBER(void, pfnSurfaceDestroy,           (PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface));
+    DECLCALLBACKMEMBER(void, pfnSurfaceInvalidateImage,   (PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface, uint32_t uFace, uint32_t uMipmap));
     DECLCALLBACKMEMBER(int,  pfnSurfaceCopy,              (PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSurfaceImageId src, uint32_t cCopyBoxes, SVGA3dCopyBox *pBox));
     DECLCALLBACKMEMBER(int,  pfnSurfaceDMACopyBox,        (PVGASTATE pThis, PVGASTATECC pThisCC, PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface,
                                                            PVMSVGA3DMIPMAPLEVEL pMipLevel, uint32_t uHostFace, uint32_t uHostMipmap,

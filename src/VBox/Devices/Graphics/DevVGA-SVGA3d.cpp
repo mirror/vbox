@@ -1147,6 +1147,11 @@ int vmsvga3dSurfaceInvalidate(PVGASTATECC pThisCC, uint32_t sid, uint32_t face, 
         rc = vmsvga3dMipmapLevel(pSurface, face, mipmap, &pMipmapLevel);
         AssertRCReturn(rc, rc);
 
+        /* Invalidate views, etc. */
+        PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
+        if (pSvgaR3State->pFuncs3D)
+            pSvgaR3State->pFuncs3D->pfnSurfaceInvalidateImage(pThisCC, pSurface, face, mipmap);
+
         pMipmapLevel->fDirty = true;
     }
     pSurface->fDirty = true;

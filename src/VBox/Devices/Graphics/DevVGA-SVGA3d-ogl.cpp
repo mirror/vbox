@@ -2070,6 +2070,12 @@ static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, PVMSVG
 }
 
 
+static DECLCALLBACK(void) vmsvga3dBackSurfaceInvalidateImage(PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface, uint32_t uFace, uint32_t uMipmap)
+{
+    RT_NOREF(pThisCC, pSurface, uFace, uMipmap);
+}
+
+
 static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSurfaceImageId src,
                                    uint32_t cCopyBoxes, SVGA3dCopyBox *pBox)
 {
@@ -7890,6 +7896,7 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnChangeMode               = vmsvga3dBackChangeMode;
                 p->pfnCreateTexture            = vmsvga3dBackCreateTexture;
                 p->pfnSurfaceDestroy           = vmsvga3dBackSurfaceDestroy;
+                p->pfnSurfaceInvalidateImage   = vmsvga3dBackSurfaceInvalidateImage;
                 p->pfnSurfaceCopy              = vmsvga3dBackSurfaceCopy;
                 p->pfnSurfaceDMACopyBox        = vmsvga3dBackSurfaceDMACopyBox;
                 p->pfnSurfaceStretchBlt        = vmsvga3dBackSurfaceStretchBlt;
