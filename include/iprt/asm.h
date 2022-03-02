@@ -2673,7 +2673,7 @@ DECLINLINE(uint8_t) ASMAtomicReadU8(volatile uint8_t RT_FAR *pu8) RT_NOTHROW_DEF
                          "ldrexb    %[uDst], %[pMem]\n\t"
 # endif
                          : [uDst] "=&r" (u32)
-                         : [pMem] "m" (*pu8)
+                         : [pMem] "Q" (*pu8)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
     return (uint8_t)u32;
 #else
@@ -2700,7 +2700,7 @@ DECLINLINE(uint8_t) ASMAtomicUoReadU8(volatile uint8_t RT_FAR *pu8) RT_NOTHROW_D
                          "ldrexb    %[uDst], %[pMem]\n\t"
 # endif
                          : [uDst] "=&r" (u32)
-                         : [pMem] "m" (*pu8));
+                         : [pMem] "Q" (*pu8));
     return (uint8_t)u32;
 #else
     return *pu8;    /* byte reads are atomic on x86 */
@@ -2727,7 +2727,7 @@ DECLINLINE(int8_t) ASMAtomicReadS8(volatile int8_t RT_FAR *pi8) RT_NOTHROW_DEF
                          "ldrexb    %[iDst], %[pMem]\n\t"
 # endif
                          : [iDst] "=&r" (i32)
-                         : [pMem] "m" (*pi8)
+                         : [pMem] "Q" (*pi8)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
     return (int8_t)i32;
 #else
@@ -2753,7 +2753,7 @@ DECLINLINE(int8_t) ASMAtomicUoReadS8(volatile int8_t RT_FAR *pi8) RT_NOTHROW_DEF
                          "ldrexb    %[iDst], %[pMem]\n\t"
 # endif
                          : [iDst] "=&r" (i32)
-                         : [pMem] "m" (*pi8));
+                         : [pMem] "Q" (*pi8));
     return (int8_t)i32;
 #else
     return *pi8;    /* byte reads are atomic on x86 */
@@ -2780,7 +2780,7 @@ DECLINLINE(uint16_t) ASMAtomicReadU16(volatile uint16_t RT_FAR *pu16) RT_NOTHROW
                          "ldrexh    %[uDst], %[pMem]\n\t"
 # endif
                          : [uDst] "=&r" (u32)
-                         : [pMem] "m" (*pu16)
+                         : [pMem] "Q" (*pu16)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
     return (uint16_t)u32;
 #else
@@ -2808,7 +2808,7 @@ DECLINLINE(uint16_t) ASMAtomicUoReadU16(volatile uint16_t RT_FAR *pu16) RT_NOTHR
                          "ldrexh    %[uDst], %[pMem]\n\t"
 # endif
                          : [uDst] "=&r" (u32)
-                         : [pMem] "m" (*pu16));
+                         : [pMem] "Q" (*pu16));
     return (uint16_t)u32;
 #else
     return *pu16;
@@ -2835,7 +2835,7 @@ DECLINLINE(int16_t) ASMAtomicReadS16(volatile int16_t RT_FAR *pi16) RT_NOTHROW_D
                          "ldrexh    %[iDst], %[pMem]\n\t"
 # endif
                          : [iDst] "=&r" (i32)
-                         : [pMem] "m" (*pi16)
+                         : [pMem] "Q" (*pi16)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
     return (int16_t)i32;
 #else
@@ -2863,7 +2863,7 @@ DECLINLINE(int16_t) ASMAtomicUoReadS16(volatile int16_t RT_FAR *pi16) RT_NOTHROW
                          "ldrexh    %[iDst], %[pMem]\n\t"
 # endif
                          : [iDst] "=&r" (i32)
-                         : [pMem] "m" (*pi16));
+                         : [pMem] "Q" (*pi16));
     return (int16_t)i32;
 #else
     return *pi16;
@@ -2890,7 +2890,7 @@ DECLINLINE(uint32_t) ASMAtomicReadU32(volatile uint32_t RT_FAR *pu32) RT_NOTHROW
                          "ldrex    %[uDst], %[pMem]\n\t"
 # endif
                          : [uDst] "=&r" (u32)
-                         : [pMem] "m" (*pu32)
+                         : [pMem] "Q" (*pu32)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
     return u32;
 #else
@@ -2921,7 +2921,7 @@ DECLINLINE(uint32_t) ASMAtomicUoReadU32(volatile uint32_t RT_FAR *pu32) RT_NOTHR
                          "ldrex    %[uDst], %[pMem]\n\t"
 # endif
                          : [uDst] "=&r" (u32)
-                         : [pMem] "m" (*pu32));
+                         : [pMem] "Q" (*pu32));
     return u32;
 #else
 # if ARCH_BITS == 16
@@ -2951,7 +2951,7 @@ DECLINLINE(int32_t) ASMAtomicReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW_D
                          "ldrex    %[iDst], %[pMem]\n\t"
 # endif
                          : [iDst] "=&r" (i32)
-                         : [pMem] "m" (*pi32)
+                         : [pMem] "Q" (*pi32)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
     return i32;
 #else
@@ -2982,7 +2982,7 @@ DECLINLINE(int32_t) ASMAtomicUoReadS32(volatile int32_t RT_FAR *pi32) RT_NOTHROW
                          "ldrex    %[iDst], %[pMem]\n\t"
 # endif
                          : [iDst] "=&r" (i32)
-                         : [pMem] "m" (*pi32));
+                         : [pMem] "Q" (*pi32));
     return i32;
 
 #else
@@ -3083,7 +3083,7 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHROW
                          "ldrexd    %[uDst], %H[uDst], %[pMem]\n\t"
 # endif
                          : [uDst] "=&r" (u64)
-                         : [pMem] "m" (*pu64)
+                         : [pMem] "Q" (*pu64)
                            RTASM_ARM_DMB_SY_COMMA_IN_REG);
 
 # else
@@ -3184,7 +3184,7 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t RT_FAR *pu64) RT_NOTHR
                          "ldrexd    %[uDst], %H[uDst], %[pMem]\n\t"
 # endif
                          : [uDst] "=&r" (u64)
-                         : [pMem] "m" (*pu64));
+                         : [pMem] "Q" (*pu64));
 
 # else
 #  error "Port me"
@@ -5935,7 +5935,7 @@ DECLINLINE(uint8_t) ASMProbeReadByte(const void RT_FAR *pvByte) RT_NOTHROW_DEF
                          "ldrexb    %[uDst], %[pMem]\n\t"
 #  endif
                          : [uDst] "=&r" (u32)
-                         : [pMem] "m" (*(uint8_t const *)pvByte));
+                         : [pMem] "Q" (*(uint8_t const *)pvByte));
     return (uint8_t)u32;
 
 # else
