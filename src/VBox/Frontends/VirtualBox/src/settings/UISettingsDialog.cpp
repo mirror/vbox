@@ -746,7 +746,7 @@ void UISettingsDialog::prepareWidgets()
                 fnt.setFamily(QStringLiteral("Sans Serif"));
                 fnt.setPointSize(11);
                 fnt.setBold(true);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
                 fnt.setWeight(QFont::ExtraBold);
 #else
                 fnt.setWeight(75);

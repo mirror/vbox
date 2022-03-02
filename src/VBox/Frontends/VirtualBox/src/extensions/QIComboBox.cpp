@@ -397,7 +397,7 @@ void QIComboBox::prepare()
             setFocusProxy(m_pComboBox);
             connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
                     this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated));
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) /** @todo qt6: textActivated was added in 5.14 actually */
+#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: textActivated was added in 5.14 actually */
             connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::textActivated),
                     this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::textActivated));
 #else
@@ -406,13 +406,13 @@ void QIComboBox::prepare()
 #endif
             connect(m_pComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                     this, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged));
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#ifndef VBOX_IS_QT6_OR_LATER
             connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::currentIndexChanged),
                     this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::currentIndexChanged));
 #endif
             connect(m_pComboBox, &QComboBox::currentTextChanged, this, &QIComboBox::currentTextChanged);
             connect(m_pComboBox, &QComboBox::editTextChanged, this, &QIComboBox::editTextChanged);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) /** @todo qt6: textHighlighted was added in 5.14 actually */
+#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: textHighlighted was added in 5.14 actually */
             connect(m_pComboBox, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::textHighlighted),
                     this, static_cast<void(QIComboBox::*)(const QString &)>(&QIComboBox::textHighlighted));
 #else

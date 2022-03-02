@@ -17,7 +17,7 @@
 
 /* Qt includes: */
 #include <qglobal.h>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
 # include <QRegularExpression>
 #else
 # include <QRegExp>
@@ -230,7 +230,7 @@ void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iSea
         /* Otherwise check if name contains search term, including wildcards: */
         else
         {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) /* fromWildcard is 6.0+ */
+#ifdef VBOX_IS_QT6_OR_LATER /* fromWildcard is 6.0+ */
             QRegularExpression searchRegEx = QRegularExpression::fromWildcard(strSearchTerm, Qt::CaseInsensitive);
 #else
             QRegExp searchRegEx(strSearchTerm, Qt::CaseInsensitive, QRegExp::WildcardUnix);

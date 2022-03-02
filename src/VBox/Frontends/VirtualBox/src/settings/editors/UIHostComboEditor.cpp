@@ -82,7 +82,11 @@ public:
     {}
 
     /** Handles all native events. */
+# ifdef VBOX_IS_QT6_OR_LATER
+    virtual bool nativeEventFilter(const QByteArray &eventType, void *pMessage, qintptr *pResult) RT_OVERRIDE
+# else
     virtual bool nativeEventFilter(const QByteArray &eventType, void *pMessage, long *pResult) RT_OVERRIDE
+# endif
     {
         /* Redirect event to parent: */
         return m_pParent->nativeEvent(eventType, pMessage, pResult);
@@ -619,7 +623,7 @@ void UIHostComboEditorPrivate::sltClear()
     emit sigDataChanged();
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
 bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, qintptr *pResult)
 #else
 bool UIHostComboEditorPrivate::nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult)

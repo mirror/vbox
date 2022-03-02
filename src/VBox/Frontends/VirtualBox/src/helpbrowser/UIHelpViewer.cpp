@@ -411,14 +411,14 @@ void UIHelpViewer::emitHistoryChangedSignal()
     emit backwardAvailable(true);
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
 void UIHelpViewer::doSetSource(const QUrl &url, QTextDocument::ResourceType type)
 #else
 void UIHelpViewer::setSource(const QUrl &url)
 #endif
 {
     clearOverlay();
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     QTextBrowser::doSetSource(url, type);
 #else
     QTextBrowser::setSource(url);

@@ -190,7 +190,7 @@ signals:
     void sigTitleUpdate(const QString &strTitle);
     void sigOpenLinkInNewTab(const QUrl &url, bool fBackground);
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     void sigLinkHighlighted(const QUrl &url);
 #else
     void sigLinkHighlighted(const QString &strLink);
@@ -274,7 +274,7 @@ signals:
     void sigAddBookmark(const QUrl &url, const QString &strTitle);
     /** list.first is tab title and list.second is tab's index. */
     void sigTabsListChanged(const QStringList &titleList);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     void sigLinkHighlighted(const QUrl &url);
 #else
     void sigLinkHighlighted(const QString &strLink);
@@ -715,7 +715,7 @@ void UIHelpBrowserTab::prepareWidgets(const QUrl &initialUrl)
             this, &UIHelpBrowserTab::sltHomeAction);
     connect(m_pContentViewer, &UIHelpViewer::sigAddBookmark,
             this, &UIHelpBrowserTab::sltAddBookmarkAction);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     connect(m_pContentViewer, static_cast<void(UIHelpViewer::*)(const QUrl&)>(&UIHelpViewer::highlighted),
             this, &UIHelpBrowserTab::sigLinkHighlighted);
 #else
@@ -1947,7 +1947,7 @@ void UIHelpBrowserWidget::sltHistoryChanged(bool fBackwardAvailable, bool fForwa
         m_pForwardAction->setEnabled(fForwardAvailable);
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
 void UIHelpBrowserWidget::sltLinkHighlighted(const QUrl &url)
 {
     emit sigStatusBarMessage(url.url(), 0); /** @todo qt6: ??? */

@@ -100,6 +100,9 @@ VirtualBox_NAME           = VirtualBox
 VirtualBox_DEPS           = $(UICommon_0_OUTDIR)/include/COMWrappers
 VirtualBox_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VirtualBox_DEFS           =
+ifdef VBOX_WITH_QT6 # moc is too stupid to parse #if QT_VERSION > xxx, '#ifdef VBOX_IS_QT6_OR_LATER' works though (no spaces).
+ VirtualBox_DEFS         += VBOX_IS_QT6_OR_LATER
+endif
 VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBox_DEFS.linux     = VBOX_WS_X11 QT_NO_DEPRECATED_WARNINGS
 VirtualBox_DEFS.solaris   = VBOX_WS_X11
@@ -156,7 +159,10 @@ VirtualBoxVM_INST.darwin    = $(INST_VIRTUALBOX)Contents/Resources/VirtualBoxVM.
 endif
 VirtualBoxVM_DEPS           = $(UICommon_0_OUTDIR)/include/COMWrappers
 VirtualBoxVM_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
-VirtualBoxVM_DEFS           += VBOX_RUNTIME_UI
+VirtualBoxVM_DEFS           = VBOX_RUNTIME_UI
+ifdef VBOX_WITH_QT6 # moc is too stupid to parse #if QT_VERSION > xxx, '#ifdef VBOX_IS_QT6_OR_LATER' works though (no spaces).
+ VirtualBoxVM_DEFS         += VBOX_IS_QT6_OR_LATER
+endif
 VirtualBoxVM_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBoxVM_DEFS.linux     = VBOX_WS_X11 QT_NO_DEPRECATED_WARNINGS
 VirtualBoxVM_DEFS.solaris   = VBOX_WS_X11
@@ -213,8 +219,10 @@ endif
 #
 UICommon_TEMPLATE = VBOXQTGUI
 UICommon_NAME = UICommon
-UICommon_DEFS         =
-UICommon_DEFS        += VBOX_GUI_LIBRARY
+UICommon_DEFS         = VBOX_GUI_LIBRARY
+ifdef VBOX_WITH_QT6 # moc is too stupid to parse #if QT_VERSION > xxx, '#ifdef VBOX_IS_QT6_OR_LATER' works though (no spaces).
+ UICommon_DEFS       += VBOX_IS_QT6_OR_LATER
+endif
 UICommon_DEFS.darwin  = VBOX_WS_MAC
 UICommon_DEFS.freebsd = VBOX_WS_X11
 UICommon_DEFS.linux   = VBOX_WS_X11 QT_NO_DEPRECATED_WARNINGS

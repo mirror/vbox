@@ -190,7 +190,7 @@ public slots:
 protected:
 
     /** Handles native events. */
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, qintptr *pResult) RT_OVERRIDE;
 #else
     virtual bool nativeEvent(const QByteArray &eventType, void *pMessage, long *pResult) RT_OVERRIDE;

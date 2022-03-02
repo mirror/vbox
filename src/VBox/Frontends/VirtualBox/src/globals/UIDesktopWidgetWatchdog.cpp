@@ -17,7 +17,7 @@
 
 /* Qt includes: */
 #include <QApplication>
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#ifndef VBOX_IS_QT6_OR_LATER
 # include <QDesktopWidget>
 #endif
 #include <QWidget>
@@ -286,7 +286,7 @@ UIDesktopWidgetWatchdog::~UIDesktopWidgetWatchdog()
 
 int UIDesktopWidgetWatchdog::overallDesktopWidth() const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     /** @todo bird: Not sure if this is entirely correct. */
     return QGuiApplication::primaryScreen()->geometry().width();
 #else
@@ -297,7 +297,7 @@ int UIDesktopWidgetWatchdog::overallDesktopWidth() const
 
 int UIDesktopWidgetWatchdog::overallDesktopHeight() const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     /** @todo bird: Not sure if this is entirely correct. */
     return QGuiApplication::primaryScreen()->geometry().height();
 #else
@@ -308,7 +308,7 @@ int UIDesktopWidgetWatchdog::overallDesktopHeight() const
 
 int UIDesktopWidgetWatchdog::screenCount() const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     return QGuiApplication::screens().size();
 #else
     /* Redirect call to desktop-widget: */
@@ -316,7 +316,7 @@ int UIDesktopWidgetWatchdog::screenCount() const
 #endif
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
 
 /** Helper for generating qt5 screen indexes as best as we can. */
 static int screenToIndex(QScreen *pScreen)
@@ -351,11 +351,11 @@ static QScreen *indexToScreen(int idxScreen)
     return screenList.value(idxScreen);
 }
 
-#endif
+#endif /* VBOX_IS_QT6_OR_LATER */
 
 int UIDesktopWidgetWatchdog::primaryScreen() const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     return screenToIndex(QGuiApplication::primaryScreen());
 #else
     /* Redirect call to desktop-widget: */
@@ -365,7 +365,7 @@ int UIDesktopWidgetWatchdog::primaryScreen() const
 
 int UIDesktopWidgetWatchdog::screenNumber(const QWidget *pWidget) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     if (pWidget)
         return screenToIndex(pWidget->screen());
     return -1;
@@ -377,7 +377,7 @@ int UIDesktopWidgetWatchdog::screenNumber(const QWidget *pWidget) const
 
 int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     return screenToIndex(QGuiApplication::screenAt(point));
 #else
     /* Redirect call to desktop-widget: */
@@ -387,7 +387,7 @@ int UIDesktopWidgetWatchdog::screenNumber(const QPoint &point) const
 
 const QRect UIDesktopWidgetWatchdog::screenGeometry(int iHostScreenIndex /* = -1 */) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     return indexToScreen(iHostScreenIndex)->geometry();
 #else
     /* Make sure index is valid: */
@@ -414,7 +414,7 @@ const QRect UIDesktopWidgetWatchdog::screenGeometry(const QPoint &point) const
 
 const QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* = -1 */) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     /** @todo needs X11 work, see 5.x version of code! */
     return indexToScreen(iHostScreenIndex)->availableGeometry();
 #else /* < 6.0.0 */
@@ -445,7 +445,7 @@ const QRect UIDesktopWidgetWatchdog::availableGeometry(int iHostScreenIndex /* =
 
 const QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     if (pWidget && pWidget->screen())
         return pWidget->screen()->availableGeometry();
     return QRect();
@@ -457,7 +457,7 @@ const QRect UIDesktopWidgetWatchdog::availableGeometry(const QWidget *pWidget) c
 
 const QRect UIDesktopWidgetWatchdog::availableGeometry(const QPoint &point) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     QScreen *pScreen = QGuiApplication::screenAt(point);
     if (pScreen)
         return pScreen->availableGeometry();

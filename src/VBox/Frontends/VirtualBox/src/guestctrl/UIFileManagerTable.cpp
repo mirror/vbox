@@ -290,7 +290,7 @@ void UIFileManagerNavigationWidget::reset()
 {
     if (m_pHistoryComboBox)
     {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
         disconnect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentTextChanged),
                    this, &UIFileManagerNavigationWidget::sltHandlePathChange);
         m_pHistoryComboBox->clear();
@@ -337,7 +337,7 @@ void UIFileManagerNavigationWidget::prepare()
                     this, &UIFileManagerNavigationWidget::sltHandlePathChange);
             connect(m_pHistoryComboBox, &UIFileManagerHistoryComboBox::sigHidePopup,
                     this, &UIFileManagerNavigationWidget::sltHandleHidePopup);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
             connect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentTextChanged),
                     this, &UIFileManagerNavigationWidget::sltHandlePathChange);
 #else

@@ -46,7 +46,7 @@ bool QIGraphicsView::event(QEvent *pEvent)
             QTouchEvent *pTouchEvent = static_cast<QTouchEvent*>(pEvent);
             AssertPtrReturn(pTouchEvent, QGraphicsView::event(pEvent));
             /* For touch-screen event we have something special: */
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
             if (pTouchEvent->device()->type() == QInputDevice::DeviceType::TouchScreen)
 #else
             if (pTouchEvent->device()->type() == QTouchDevice::TouchScreen)
@@ -67,7 +67,7 @@ bool QIGraphicsView::event(QEvent *pEvent)
             QTouchEvent *pTouchEvent = static_cast<QTouchEvent*>(pEvent);
             AssertPtrReturn(pTouchEvent, QGraphicsView::event(pEvent));
             /* For touch-screen event we have something special: */
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
             if (pTouchEvent->device()->type() == QInputDevice::DeviceType::TouchScreen)
 #else
             if (pTouchEvent->device()->type() == QTouchDevice::TouchScreen)
@@ -94,7 +94,7 @@ bool QIGraphicsView::event(QEvent *pEvent)
             QTouchEvent *pTouchEvent = static_cast<QTouchEvent*>(pEvent);
             AssertPtrReturn(pTouchEvent, QGraphicsView::event(pEvent));
             /* For touch-screen event we have something special: */
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
             if (pTouchEvent->device()->type() == QInputDevice::DeviceType::TouchScreen)
 #else
             if (pTouchEvent->device()->type() == QTouchDevice::TouchScreen)

@@ -1742,7 +1742,7 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
         if (uCodesCount)
         {
             /* Send prepared scan-codes to the guest: */
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
             QVector<LONG> scancodes;
             for (uint i = 0; i < uCodesCount; i++)
                 scancodes.push_back(pCodes[i]);
@@ -1773,7 +1773,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
 
     Q_UNUSED(iHotKey);
     if (pHotKey && pHotKey[0] && !pHotKey[1])
-# if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+# ifdef VBOX_IS_QT6_OR_LATER
         fWasProcessed = actionPool()->processHotKey(QKeySequence(QChar(pHotKey[0]).toUpper().unicode()));
 # else
         fWasProcessed = actionPool()->processHotKey(QKeySequence(Qt::UNICODE_ACCEL + QChar(pHotKey[0]).toUpper().unicode()));
@@ -1811,7 +1811,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
         if (symbol)
         {
             QChar qtSymbol = QString::fromLocal8Bit(&symbol, 1)[0];
-# if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+# ifdef VBOX_IS_QT6_OR_LATER
             fWasProcessed = actionPool()->processHotKey(QKeySequence(qtSymbol.toUpper().unicode()));
 # else
             fWasProcessed = actionPool()->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + qtSymbol.toUpper().unicode())));

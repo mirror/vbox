@@ -757,7 +757,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                      * over the speed acceleration & enables such devices to send a valid wheel event to our
                      * guest mouse device at all: */
                     int iDelta = 0;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
                     Qt::Orientation const enmOrientation = RT_ABS(pWheelEvent->pixelDelta().x())
                                                          > RT_ABS(pWheelEvent->pixelDelta().y()) ? Qt::Horizontal : Qt::Vertical;
                     m_iLastMouseWheelDelta += enmOrientation == Qt::Horizontal
@@ -773,7 +773,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                         m_iLastMouseWheelDelta = m_iLastMouseWheelDelta % 120;
                     }
                     if (mouseEvent(pWheelEvent->type(), uScreenId,
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0) /** @todo .... */
+#ifdef VBOX_IS_QT6_OR_LATER /** @todo qt6: ... */
                                    pWheelEvent->position().toPoint(), pWheelEvent->globalPosition().toPoint(),
 #else
                                    pWheelEvent->pos(), pWheelEvent->globalPos(),
@@ -787,7 +787,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                                    pWheelEvent->buttons(),
 #endif /* !VBOX_WS_MAC */
                                    iDelta,
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
                                    enmOrientation)
 #else
                                    pWheelEvent->orientation())

@@ -1287,7 +1287,7 @@ void UIExtraDataManagerWindow::sltLoad()
                 continue;
 
             /* Get the name of the current element: */
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
             const QStringView strElementName = stream.name();
 #else
             const QStringRef strElementName = stream.name();

@@ -26,7 +26,7 @@ struct UIDebuggerMetricData
 {
     UIDebuggerMetricData()
         : m_counter(0){}
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifdef VBOX_IS_QT6_OR_LATER
     UIDebuggerMetricData(const QStringView &strName, quint64 counter)
 #else
     UIDebuggerMetricData(const QStringRef &strName, quint64 counter)
