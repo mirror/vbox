@@ -16,12 +16,12 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIGraphicsControllerEditor.h"
@@ -75,6 +75,7 @@ void UIGraphicsControllerEditor::retranslateUi()
             const KGraphicsControllerType enmType = m_pCombo->itemData(i).value<KGraphicsControllerType>();
             m_pCombo->setItemText(i, gpConverter->toString(enmType));
         }
+        m_pCombo->setToolTip(tr("Selects the graphics adapter type the virtual machine will use."));
     }
 }
 
@@ -104,15 +105,14 @@ void UIGraphicsControllerEditor::prepare()
         if (pComboLayout)
         {
             /* Create combo: */
-            m_pCombo = new QIComboBox(this);
+            m_pCombo = new QComboBox(this);
             if (m_pCombo)
             {
-                setFocusProxy(m_pCombo->focusProxy());
                 /* This is necessary since contents is dynamical now: */
                 m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
-                    m_pLabel->setBuddy(m_pCombo->focusProxy());
-                connect(m_pCombo, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+                    m_pLabel->setBuddy(m_pCombo);
+                connect(m_pCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                         this, &UIGraphicsControllerEditor::sltHandleCurrentIndexChanged);
                 pComboLayout->addWidget(m_pCombo);
             }

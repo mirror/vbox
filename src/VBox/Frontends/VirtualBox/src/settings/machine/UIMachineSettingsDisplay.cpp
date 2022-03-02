@@ -785,7 +785,6 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pLabelScaleFactor->setText(tr("Scale &Factor:"));
     m_pEditorScaleFactor->setToolTip(tr("Controls the guest screen scale factor."));
     m_pLabelGraphicsController->setText(tr("&Graphics Controller:"));
-    m_pEditorGraphicsController->setToolTip(tr("Selects the graphics adapter type the virtual machine will use."));
     m_pLabelAcceleration->setText(tr("Acceleration:"));
     m_pCheckbox3D->setToolTip(tr("When checked, the virtual machine will be given access "
                                  "to the 3D graphics capabilities available on the host."));
@@ -1212,7 +1211,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             if (m_pEditorGraphicsController)
             {
                 if (m_pLabelGraphicsController)
-                    m_pLabelGraphicsController->setBuddy(m_pEditorGraphicsController->focusProxy());
+                    m_pLabelGraphicsController->setBuddy(m_pEditorGraphicsController);
                 pLayoutScreen->addWidget(m_pEditorGraphicsController, 6, 1, 1, 2);
             }
 
