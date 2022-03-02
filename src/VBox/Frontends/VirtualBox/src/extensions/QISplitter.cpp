@@ -311,12 +311,6 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                     if (   pHandle
                         && pHandle != pWatched)
                     {
-                        /* Create new mouse event with translated mouse positions. */
-                        QMouseEvent newME(pMouseEvent->type(),
-                                          pHandle->mapFromGlobal(pMouseEvent->globalPos()),
-                                          pMouseEvent->button(),
-                                          pMouseEvent->buttons(),
-                                          pMouseEvent->modifiers());
                         /* Check if we hit the handle */
                         bool fMarginHit = QRect(pHandle->mapToGlobal(QPoint(0, 0)), pHandle->size()).adjusted(-margin, 0, margin, 0).contains(pMouseEvent->globalPos());
                         if (pEvent->type() == QEvent::MouseButtonPress)
@@ -327,7 +321,11 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                             {
                                 m_fHandleGrabbed = true;
                                 UICursor::setCursor(this, Qt::SplitHCursor);
-                                qApp->postEvent(pHandle, new QMouseEvent(newME));
+                                qApp->postEvent(pHandle, new QMouseEvent(pMouseEvent->type(),
+                                                                         pHandle->mapFromGlobal(pMouseEvent->globalPos()),
+                                                                         pMouseEvent->button(),
+                                                                         pMouseEvent->buttons(),
+                                                                         pMouseEvent->modifiers()));
                                 return true;
                             }
                         }
@@ -339,15 +337,17 @@ bool QISplitter::eventFilter(QObject *pWatched, QEvent *pEvent)
                                     && pMouseEvent->buttons().testFlag(Qt::LeftButton)))
                             {
                                 UICursor::setCursor(this, Qt::SplitHCursor);
-                                qApp->postEvent(pHandle, new QMouseEvent(newME));
+                                qApp->postEvent(pHandle, new QMouseEvent(pMouseEvent->type(),
+                                                                         pHandle->mapFromGlobal(pMouseEvent->globalPos()),
+                                                                         pMouseEvent->button(),
+                                                                         pMouseEvent->buttons(),
+                                                                         pMouseEvent->modifiers()));
                                 return true;
                             }
-                            else
-                            {
-                                /* If not, reset the state. */
-                                m_fHandleGrabbed = false;
-                                UICursor::setCursor(this, Qt::ArrowCursor);
-                            }
+
+                            /* If not, reset the state. */
+                            m_fHandleGrabbed = false;
+                            UICursor::setCursor(this, Qt::ArrowCursor);
                         }
                     }
                 }
