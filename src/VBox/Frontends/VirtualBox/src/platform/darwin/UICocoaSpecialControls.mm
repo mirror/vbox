@@ -15,6 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
+
 /* Qt includes: */
 #include <QMacCocoaViewContainer>
 
@@ -162,4 +164,6 @@ void UICocoaButton::onClicked()
 {
     emit clicked(false);
 }
+
+#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
 

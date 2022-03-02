@@ -114,7 +114,9 @@ VirtualBox_DEFS.solaris   += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEA
 VirtualBox_DEFS.freebsd   += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
 VirtualBox_DEFS.darwin    += VBOX_WITH_TRANSLUCENT_SEAMLESS # VBOX_WITH_MASKED_SEAMLESS
 VirtualBox_DEFS.win       += VBOX_WITH_MASKED_SEAMLESS # VBOX_WITH_TRANSLUCENT_SEAMLESS
-VirtualBox_DEFS.darwin    += VBOX_DARWIN_USE_NATIVE_CONTROLS
+ifn1of ($(KBUILD_TARGET_ARCH), arm64) # qt6: The UICocoaSpecialControls needs restructuring because QMacCocoaViewContainer is gone. Too lazy for now.
+ VirtualBox_DEFS.darwin   += VBOX_DARWIN_USE_NATIVE_CONTROLS
+endif
 VirtualBox_DEFS.win       += UNICODE QT_DLL
 VirtualBox_DEFS           += \
 	$(if $(VBOX_WITH_ADDITIONS_AUTOUPDATE_UI),VBOX_WITH_ADDITIONS_AUTOUPDATE_UI) \
@@ -174,9 +176,12 @@ VirtualBoxVM_DEFS.solaris   += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_S
 VirtualBoxVM_DEFS.freebsd   += VBOX_WITH_MASKED_SEAMLESS VBOX_WITH_TRANSLUCENT_SEAMLESS
 VirtualBoxVM_DEFS.darwin    += VBOX_WITH_TRANSLUCENT_SEAMLESS # VBOX_WITH_MASKED_SEAMLESS
 VirtualBoxVM_DEFS.win       += VBOX_WITH_MASKED_SEAMLESS # VBOX_WITH_TRANSLUCENT_SEAMLESS
-VirtualBoxVM_DEFS.darwin    += \
-	VBOX_DARWIN_USE_NATIVE_CONTROLS \
-	$(if $(VBOX_WITH_VMNET),VBOX_WITH_VMNET)
+ifdef VBOX_WITH_VMNET
+ VirtualBoxVM_DEFS.darwin   += VBOX_WITH_VMNET
+endif
+ifn1of ($(KBUILD_TARGET_ARCH), arm64) # qt6: The UICocoaSpecialControls needs restructuring because QMacCocoaViewContainer is gone. Too lazy for now.
+ VirtualBoxVM_DEFS.darwin   += VBOX_DARWIN_USE_NATIVE_CONTROLS
+endif
 VirtualBoxVM_DEFS.win       += UNICODE QT_DLL
 VirtualBoxVM_DEFS           += \
 	$(if $(VBOX_WITH_ADDITIONS_AUTOUPDATE_UI),VBOX_WITH_ADDITIONS_AUTOUPDATE_UI) \
@@ -229,9 +234,12 @@ UICommon_DEFS.linux   = VBOX_WS_X11 QT_NO_DEPRECATED_WARNINGS
 UICommon_DEFS.solaris = VBOX_WS_X11
 UICommon_DEFS.win     = VBOX_WS_WIN
 UICommon_DEFS.debug   = VBOX_CHECK_STATE # QT_FATAL_ASSERT
-UICommon_DEFS.darwin  += \
-	VBOX_DARWIN_USE_NATIVE_CONTROLS \
-	$(if $(VBOX_WITH_VMNET),VBOX_WITH_VMNET)
+ifdef VBOX_WITH_VMNET
+ UICommon_DEFS.darwin += VBOX_WITH_VMNET
+endif
+ifn1of ($(KBUILD_TARGET_ARCH), arm64) # qt6: The UICocoaSpecialControls needs restructuring because QMacCocoaViewContainer is gone. Too lazy for now.
+ UICommon_DEFS.darwin += VBOX_DARWIN_USE_NATIVE_CONTROLS
+endif
 #UICommon_DEFS.win     += UNICODE QT_DLL
 UICommon_DEFS         += \
 	$(if $(VBOX_WITH_UPDATE_REQUEST),VBOX_WITH_UPDATE_REQUEST) \
@@ -1582,8 +1590,8 @@ ifndef VBOX_WITH_QT6
  VirtualBox_QT_MODULES.linux   += X11Extras
  VirtualBox_QT_MODULES.solaris += X11Extras
  VirtualBox_QT_MODULES.freebsd += X11Extras
+ VirtualBox_QT_MODULES.darwin  += MacExtras
 endif
-VirtualBox_QT_MODULES.darwin  += MacExtras
 VirtualBox_QT_MODULES.win     += WinExtras
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBox_QT_MODULES += OpenGL
@@ -1603,8 +1611,8 @@ ifndef VBOX_WITH_QT6
  VirtualBoxVM_QT_MODULES.linux   += X11Extras
  VirtualBoxVM_QT_MODULES.solaris += X11Extras
  VirtualBoxVM_QT_MODULES.freebsd += X11Extras
+ VirtualBoxVM_QT_MODULES.darwin  += MacExtras
 endif
-VirtualBoxVM_QT_MODULES.darwin  += MacExtras
 VirtualBoxVM_QT_MODULES.win     += WinExtras
 ifdef VBOX_GUI_WITH_QTGLFRAMEBUFFER
  VirtualBoxVM_QT_MODULES += OpenGL
@@ -1635,7 +1643,9 @@ ifndef VBOX_WITH_QT6
 endif
 UICommon_QT_MODULES.freebsd  += DBus
 UICommon_QT_MODULES.freebsd  += Xml
-UICommon_QT_MODULES.darwin   += MacExtras
+ifndef VBOX_WITH_QT6
+ UICommon_QT_MODULES.darwin  += MacExtras
+endif
 UICommon_QT_MODULES.win      += WinExtras
 
 ifdef VBOX_WITH_QHELP_VIEWER
@@ -1960,8 +1970,7 @@ ifdef VBOX_WITH_TESTCASES
  	$(VBOX_GUI_INC_DIRS)
  tstDarwinKeyboard_SOURCES = \
  	src/platform/darwin/tstDarwinKeyboard.cpp \
- 	src/platform/darwin/DarwinKeyboard.cpp
- tstDarwinKeyboard_SOURCES.amd64 = \
+ 	src/platform/darwin/DarwinKeyboard.cpp \
  	src/platform/darwin/CocoaEventHelper.mm
  tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
  tstDarwinKeyboard_LIBS = \

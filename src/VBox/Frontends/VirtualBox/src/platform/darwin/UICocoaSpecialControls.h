@@ -20,10 +20,13 @@
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
+#ifdef VBOX_DARWIN_USE_NATIVE_CONTROLS
 
 /* Qt includes: */
-#include <QMacCocoaViewContainer>
 #include <QWidget>
+#ifndef VBOX_IS_QT6_OR_LATER
+# include <QMacCocoaViewContainer>
+#endif
 
 /* GUI includes: */
 #include "VBoxCocoaHelper.h"
@@ -34,7 +37,12 @@ ADD_COCOA_NATIVE_REF(NSButton);
 
 /** QMacCocoaViewContainer extension,
   * used as cocoa button container. */
-class SHARED_LIBRARY_STUFF UICocoaButton : public QMacCocoaViewContainer
+class SHARED_LIBRARY_STUFF UICocoaButton
+#ifdef VBOX_IS_QT6_OR_LATER
+    : public QWidget
+#else
+    : public QMacCocoaViewContainer
+#endif
 {
     Q_OBJECT
 
@@ -76,5 +84,6 @@ private:
     NativeNSButtonRef nativeRef() const { return static_cast<NativeNSButtonRef>(cocoaView()); }
 };
 
+#endif /* VBOX_DARWIN_USE_NATIVE_CONTROLS */
 #endif /* !FEQT_INCLUDED_SRC_platform_darwin_UICocoaSpecialControls_h */
 
