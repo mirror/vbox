@@ -15,13 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VBoxUtils-darwin.h"
-#include "VBoxCocoaHelper.h"
-#include "UICocoaApplication.h"
-
-#include <iprt/mem.h>
-#include <iprt/assert.h>
-
+/* Qt includes: */
 #include <QMainWindow>
 #include <QApplication>
 #include <QWidget>
@@ -29,8 +23,17 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QContextMenuEvent>
-#include <QtMac>
 
+/* GUI includes: */
+#include "VBoxUtils-darwin.h"
+#include "VBoxCocoaHelper.h"
+#include "UICocoaApplication.h"
+
+/* Other VBox includes: */
+#include <iprt/mem.h>
+#include <iprt/assert.h>
+
+/* System includes: */
 #include <Carbon/Carbon.h>
 
 NativeNSViewRef darwinToNativeView(QWidget *pWidget)
@@ -282,7 +285,8 @@ CGImageRef darwinToCGImageRef(const QImage *pImage)
     Assert(!imageCopy->isNull());
 
     CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-    CGDataProviderRef dp = CGDataProviderCreateWithData(imageCopy, pImage->bits(), pImage->byteCount(), darwinDataProviderReleaseQImage);
+    CGDataProviderRef dp = CGDataProviderCreateWithData(imageCopy, pImage->bits(), pImage->sizeInBytes(),
+                                                        darwinDataProviderReleaseQImage);
 
     CGBitmapInfo bmpInfo = kCGImageAlphaFirst | kCGBitmapByteOrder32Host;
     CGImageRef ir = CGImageCreate(imageCopy->width(), imageCopy->height(), 8, 32, imageCopy->bytesPerLine(), cs,
@@ -321,7 +325,7 @@ CGImageRef darwinToCGImageRef(const QPixmap *pPixmap)
                                               cs,
                                               kCGImageAlphaPremultipliedFirst);
     /* Get the CGImageRef from Qt */
-    CGImageRef qtPixmap = QtMac::toCGImageRef(*pPixmap);
+    CGImageRef qtPixmap = pPixmap->toImage().toCGImage();
     /* Draw the image from Qt & convert the context back to a new CGImageRef. */
     CGContextDrawImage(ctx, CGRectMake(0, 0, pPixmap->width(), pPixmap->height()), qtPixmap);
     CGImageRef newImage = CGBitmapContextCreateImage(ctx);
@@ -406,7 +410,7 @@ void darwinSendMouseGrabEvents(QWidget *pWidget, int type, int button, int butto
     else if (button == 1)
         qtExtraButton = Qt::RightButton;
     else if (button == 2)
-        qtExtraButton = Qt::MidButton;
+        qtExtraButton = Qt::MiddleButton;
     else if (button == 3)
         qtExtraButton = Qt::XButton1;
     else if (button == 4)
@@ -497,7 +501,7 @@ void darwinSendMouseGrabEvents(QWidget *pWidget, int type, int button, int butto
     if ((buttons & RT_BIT_32(1)) == RT_BIT_32(1))
         qtButtons |= Qt::RightButton;
     if ((buttons & RT_BIT_32(2)) == RT_BIT_32(2))
-        qtButtons |= Qt::MidButton;
+        qtButtons |= Qt::MiddleButton;
     if ((buttons & RT_BIT_32(3)) == RT_BIT_32(3))
         qtButtons |= Qt::XButton1;
     if ((buttons & RT_BIT_32(4)) == RT_BIT_32(4))
@@ -547,7 +551,7 @@ QString darwinResolveAlias(const QString &strFile)
 
 /********************************************************************************
  *
- * Old carbon stuff. Have to converted soon!
+ * Old carbon stuff. Have to convert soon!
  *
  ********************************************************************************/
 
