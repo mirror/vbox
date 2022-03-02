@@ -180,7 +180,6 @@
  *  VMX_EXIT_RSM
  *  VMX_EXIT_MONITOR (APIC access VM-exit caused by MONITOR pending)
  *  VMX_EXIT_ERR_MACHINE_CHECK (we never need to raise this?)
- *  VMX_EXIT_INVEPT
  *  VMX_EXIT_RDRAND
  *  VMX_EXIT_VMFUNC
  *  VMX_EXIT_ENCLS
@@ -2464,9 +2463,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
     pVmcs->u32RoExitReason = uExitReason;
     pVmcs->u64RoExitQual.u = u64ExitQual;
 
-    Log3(("vmexit: reason=%#RX32 qual=%#RX64 cs:rip=%04x:%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64\n", uExitReason,
-          pVmcs->u64RoExitQual.u, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
-          pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4));
+    LogFlow(("vmexit: reason=%#RX32 qual=%#RX64 cs:rip=%04x:%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64\n", uExitReason,
+             pVmcs->u64RoExitQual.u, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
+             pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4));
 
     /*
      * Update the IDT-vectoring information fields if the VM-exit is triggered during delivery of an event.
@@ -4301,17 +4300,19 @@ IEM_STATIC bool iemVmxVirtApicIsMemAccessIntercepted(PVMCPUCC pVCpu, uint16_t of
 
 
 /**
- * Virtualizes a memory-based APIC access where the address is not used to access
- * memory.
+ * Virtualizes a memory-based APIC access by certain instructions even though they
+ * do not use the address to access memory.
  *
  * This is for instructions like MONITOR, CLFLUSH, CLFLUSHOPT, ENTER which may cause
  * page-faults but do not use the address to access memory.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pGCPhysAccess   Pointer to the guest-physical address accessed.
+ * @param   cbAccess        The size of the access in bytes.
  * @param   fAccess         The type of access, see IEM_ACCESS_XXX.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPUCC pVCpu, PRTGCPHYS pGCPhysAccess, uint32_t fAccess)
+IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPUCC pVCpu, PRTGCPHYS pGCPhysAccess, size_t cbAccess,
+                                                   uint32_t fAccess)
 {
     Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.Vmcs.u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
     Assert(pGCPhysAccess);
@@ -4323,7 +4324,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessUnused(PVMCPUCC pVCpu, PRTGCPHYS pGC
     if (GCPhysAccess == GCPhysApic)
     {
         uint16_t const offAccess = *pGCPhysAccess & GUEST_PAGE_OFFSET_MASK;
-        uint16_t const cbAccess  = 1;
         bool const fIntercept = iemVmxVirtApicIsMemAccessIntercepted(pVCpu, offAccess, cbAccess, fAccess);
         if (fIntercept)
             return iemVmxVmexitApicAccess(pVCpu, offAccess, fAccess);
@@ -7640,17 +7640,17 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
 
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
                         /* Reschedule to IEM-only execution of the nested-guest. */
-                        Log(("%s: Enabling IEM-only EM execution policy!\n", pszInstr));
+                        LogFlow(("%s: Enabling IEM-only EM execution policy!\n", pszInstr));
                         int rcSched = EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
                         if (rcSched != VINF_SUCCESS)
                             iemSetPassUpStatus(pVCpu, rcSched);
 # endif
 
                         /* Finally, done. */
-                        Log3(("%s: cs:rip=%#04x:%#RX64 cr0=%#RX64 (%#RX64) cr4=%#RX64 (%#RX64) efer=%#RX64\n",
-                              pszInstr, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
-                              pVmcs->u64Cr0ReadShadow.u, pVCpu->cpum.GstCtx.cr4, pVmcs->u64Cr4ReadShadow.u,
-                              pVCpu->cpum.GstCtx.msrEFER));
+                        LogFlow(("%s: cs:rip=%#04x:%#RX64 cr0=%#RX64 (%#RX64) cr4=%#RX64 (%#RX64) efer=%#RX64 (%#RX64)\n",
+                                 pszInstr, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
+                                 pVmcs->u64Cr0ReadShadow.u, pVCpu->cpum.GstCtx.cr4, pVmcs->u64Cr4ReadShadow.u,
+                                 pVCpu->cpum.GstCtx.msrEFER, pVmcs->u64GuestEferMsr.u));
                         return VINF_SUCCESS;
                     }
                     return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED, pVmcs->u64RoExitQual.u);

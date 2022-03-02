@@ -2756,6 +2756,7 @@ IEM_CIMPL_DEF_3(iemCImpl_enter, IEMMODE, enmEffOpSize, uint16_t, cbFrame, uint8_
     iemRegSubFromRspEx(pVCpu, &NewRsp, cbFrame);
 
     /** @todo Should probe write access at the new RSP according to AMD. */
+    /** @todo Should handle accesses to the VMX APIC-access page. */
 
     /* Commit it. */
     pVCpu->cpum.GstCtx.rbp = NewRbp.u;
@@ -7559,7 +7560,7 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
          *
          * See Intel spec. 29.4.4 "Instruction-Specific Considerations".
          */
-        rcStrict = iemVmxVirtApicAccessUnused(pVCpu, &GCPhysMem, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA);
+        rcStrict = iemVmxVirtApicAccessUnused(pVCpu, &GCPhysMem, 1, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA);
         if (   rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE
             && rcStrict != VINF_VMX_MODIFIES_BEHAVIOR)
                 return rcStrict;
@@ -8217,7 +8218,7 @@ IEM_CIMPL_DEF_2(iemCImpl_clflush_clflushopt, uint8_t, iEffSeg, RTGCPTR, GCPtrEff
                  *
                  * See Intel spec. 29.4.4 "Instruction-Specific Considerations".
                  */
-                rcStrict = iemVmxVirtApicAccessUnused(pVCpu, &GCPhysMem, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA);
+                rcStrict = iemVmxVirtApicAccessUnused(pVCpu, &GCPhysMem, 1, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA);
                 if (   rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE
                     && rcStrict != VINF_VMX_MODIFIES_BEHAVIOR)
                         return rcStrict;
