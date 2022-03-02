@@ -31,8 +31,8 @@
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
+class QComboBox;
 class QLabel;
-class QIComboBox;
 
 /** QWidget subclass used as a visual state editor. */
 class SHARED_LIBRARY_STUFF UIVisualStateEditor : public QIWithRetranslateUI<QWidget>
@@ -91,9 +91,9 @@ private:
     QVector<UIVisualStateType>  m_supportedValues;
 
     /** Holds the label instance. */
-    QLabel     *m_pLabel;
+    QLabel    *m_pLabel;
     /** Holds the combo instance. */
-    QIComboBox *m_pCombo;
+    QComboBox *m_pCombo;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIVisualStateEditor_h */

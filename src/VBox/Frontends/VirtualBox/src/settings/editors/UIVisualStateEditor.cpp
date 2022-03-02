@@ -16,12 +16,12 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
@@ -78,6 +78,8 @@ void UIVisualStateEditor::retranslateUi()
             const UIVisualStateType enmType = m_pCombo->itemData(i).value<UIVisualStateType>();
             m_pCombo->setItemText(i, gpConverter->toString(enmType));
         }
+        m_pCombo->setToolTip(tr("Selects the visual state. If machine is running it will be applied "
+                                "as soon as possible, otherwise desired one will be defined."));
     }
 }
 
@@ -107,15 +109,14 @@ void UIVisualStateEditor::prepare()
         if (pComboLayout)
         {
             /* Create combo: */
-            m_pCombo = new QIComboBox(this);
+            m_pCombo = new QComboBox(this);
             if (m_pCombo)
             {
-                setFocusProxy(m_pCombo->focusProxy());
                 /* This is necessary since contents is dynamical now: */
                 m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
-                    m_pLabel->setBuddy(m_pCombo->focusProxy());
-                connect(m_pCombo, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+                    m_pLabel->setBuddy(m_pCombo);
+                connect(m_pCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                         this, &UIVisualStateEditor::sltHandleCurrentIndexChanged);
                 pComboLayout->addWidget(m_pCombo);
             }
