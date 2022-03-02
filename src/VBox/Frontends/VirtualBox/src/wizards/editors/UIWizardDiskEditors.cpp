@@ -202,12 +202,12 @@ void UIDiskVariantWidget::retranslateUi()
     if (m_pFixedCheckBox)
     {
         m_pFixedCheckBox->setText(tr("Pre-allocate &Full Size"));
-        m_pFixedCheckBox->setToolTip(tr("<p>Allocates the virtual disk image during VM creation."));
+        m_pFixedCheckBox->setToolTip(tr("Allocates the virtual disk image during VM creation."));
     }
     if (m_pSplitBox)
     {
         m_pSplitBox->setText(tr("&Split into 2GB parts"));
-        m_pSplitBox->setToolTip(tr("<p>Splits hard disk file into 2GB parts in the host storage.</p>"));
+        m_pSplitBox->setToolTip(tr("Splits hard disk file into 2GB parts in the host storage."));
     }
 }
 

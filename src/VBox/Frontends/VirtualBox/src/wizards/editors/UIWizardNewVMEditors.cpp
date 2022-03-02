@@ -162,8 +162,8 @@ void UIGAInstallationGroupBox::retranslateUi()
     if (m_pGAISOPathLabel)
         m_pGAISOPathLabel->setText(UIWizardNewVM::tr("GA I&nstallation ISO:"));
     setTitle(UIWizardNewVM::tr("Gu&est Additions"));
-    setToolTip(UIWizardNewVM::tr("<p>Enables installation of the guest additions  "
-                                 "after the guest OS install.</p>"));
+    setToolTip(UIWizardNewVM::tr("Enables installation of the guest additions  "
+                                 "after the guest OS install."));
 }
 
 QString UIGAInstallationGroupBox::path() const
@@ -269,8 +269,8 @@ void UIAdditionalUnattendedOptions::retranslateUi()
     if (m_pStartHeadlessCheckBox)
     {
         m_pStartHeadlessCheckBox->setText(UIWizardNewVM::tr("&Install in Background"));
-        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("<p>Enables headless boot (with no GUI) of the newly created virtual machine "
-                                                               "for the unattended guest OS install.</p>"));
+        m_pStartHeadlessCheckBox->setToolTip(UIWizardNewVM::tr("Enables headless boot (with no GUI) of the newly created virtual machine "
+                                                               "for the unattended guest OS install."));
     }
 
     int iMaxWidth = 0;
@@ -410,7 +410,7 @@ void UINewVMHardwareContainer::retranslateUi()
     if (m_pEFICheckBox)
     {
         m_pEFICheckBox->setText(UIWizardNewVM::tr("&Enable EFI (special OSes only)"));
-        m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("<p>Enables Extended Firmware Interface (EFI), which is required to boot certain "
-                                                     "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</p>"));
+        m_pEFICheckBox->setToolTip(UIWizardNewVM::tr("Enables Extended Firmware Interface (EFI), which is required to boot certain "
+                                                     "guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated."));
     }
 }

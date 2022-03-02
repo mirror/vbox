@@ -223,7 +223,7 @@ void UIWizardNewVMDiskPage::retranslateUi()
     if (m_pFixedCheckBox)
     {
         m_pFixedCheckBox->setText(UIWizardNewVM::tr("Pre-allocate &Full Size"));
-        m_pFixedCheckBox->setToolTip(UIWizardNewVM::tr("<p>Allocates the virtual disk image at VM creation time"));
+        m_pFixedCheckBox->setToolTip(UIWizardNewVM::tr("Allocates the virtual disk image at VM creation time"));
     }
 
     /* Translate rich text labels: */

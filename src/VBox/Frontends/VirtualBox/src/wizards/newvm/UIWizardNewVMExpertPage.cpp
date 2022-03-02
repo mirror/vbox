@@ -198,7 +198,7 @@ void UIWizardNewVMExpertPage::retranslateUi()
     if (m_pSkipUnattendedCheckBox)
     {
         m_pSkipUnattendedCheckBox->setText(UIWizardNewVM::tr("&Skip Unattended Installation"));
-        m_pSkipUnattendedCheckBox->setToolTip(UIWizardNewVM::tr("<p>Disables the unattended install and just mounts the ISO.</p>"));
+        m_pSkipUnattendedCheckBox->setToolTip(UIWizardNewVM::tr("Disables the unattended install and just mounts the ISO."));
     }
 
     if (m_pToolBox)
