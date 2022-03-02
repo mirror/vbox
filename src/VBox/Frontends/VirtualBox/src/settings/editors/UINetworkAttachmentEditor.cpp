@@ -16,12 +16,12 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIExtraDataManager.h"
@@ -53,16 +53,6 @@ UINetworkAttachmentEditor::UINetworkAttachmentEditor(QWidget *pParent /* = 0 */,
     , m_pComboName(0)
 {
     prepare();
-}
-
-QWidget *UINetworkAttachmentEditor::focusProxy1() const
-{
-    return m_pComboType->focusProxy();
-}
-
-QWidget *UINetworkAttachmentEditor::focusProxy2() const
-{
-    return m_pComboName->focusProxy();
 }
 
 void UINetworkAttachmentEditor::setValueType(KNetworkAttachmentType enmType)
@@ -207,7 +197,12 @@ void UINetworkAttachmentEditor::retranslateUi()
             m_pComboType->setItemData(i, strName, Qt::ToolTipRole);
             m_pComboType->setItemText(i, strName);
         }
+        m_pComboType->setToolTip(tr("Selects how this virtual adapter is attached to the real network of the Host OS."));
     }
+
+    /* Translate name combo: */
+    if (m_pComboName)
+        m_pComboName->setToolTip(tr("Selects the network or adapter name associated with this virtual adapter."));
 
     /* Translate name combo: */
     retranslateNameDescription();
@@ -293,13 +288,12 @@ void UINetworkAttachmentEditor::prepare()
         if (pComboLayout)
         {
             /* Create type combo: */
-            m_pComboType = new QIComboBox(this);
+            m_pComboType = new QComboBox(this);
             if (m_pComboType)
             {
-                setFocusProxy(m_pComboType->focusProxy());
                 if (m_pLabelType)
-                    m_pLabelType->setBuddy(m_pComboType->focusProxy());
-                connect(m_pComboType, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+                    m_pLabelType->setBuddy(m_pComboType);
+                connect(m_pComboType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                         this, &UINetworkAttachmentEditor::sltHandleCurrentTypeChanged);
                 pComboLayout->addWidget(m_pComboType);
             }
@@ -323,15 +317,15 @@ void UINetworkAttachmentEditor::prepare()
             pMainLayout->addWidget(m_pLabelName, 1, iColumn++);
 
         /* Create name combo: */
-        m_pComboName = new QIComboBox(this);
+        m_pComboName = new QComboBox(this);
         if (m_pComboName)
         {
             if (m_pLabelName)
-                m_pLabelName->setBuddy(m_pComboName->focusProxy());
+                m_pLabelName->setBuddy(m_pComboName);
             m_pComboName->setInsertPolicy(QComboBox::NoInsert);
-            connect(m_pComboName, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+            connect(m_pComboName, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                     this, &UINetworkAttachmentEditor::sltHandleCurrentNameChanged);
-            connect(m_pComboName, &QIComboBox::editTextChanged,
+            connect(m_pComboName, &QComboBox::editTextChanged,
                     this, &UINetworkAttachmentEditor::sltHandleCurrentNameChanged);
             pMainLayout->addWidget(m_pComboName, 1, iColumn++);
         }

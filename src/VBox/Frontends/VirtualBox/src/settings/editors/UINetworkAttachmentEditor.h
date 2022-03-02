@@ -33,8 +33,8 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
+class QComboBox;
 class QLabel;
-class QIComboBox;
 
 /** QWidget subclass used as a network attachment editor. */
 class SHARED_LIBRARY_STUFF UINetworkAttachmentEditor : public QIWithRetranslateUI<QWidget>
@@ -56,11 +56,6 @@ public:
     /** Constructs network attachment editor passing @a pParent to the base-class.
       * @param  fWithLabels  Brings whether we should add labels ourselves. */
     UINetworkAttachmentEditor(QWidget *pParent = 0, bool fWithLabels = false);
-
-    /** Returns focus proxy 1. */
-    QWidget *focusProxy1() const;
-    /** Returns focus proxy 2. */
-    QWidget *focusProxy2() const;
 
     /** Defines value @a enmType. */
     void setValueType(KNetworkAttachmentType enmType);
@@ -141,13 +136,13 @@ private:
     KNetworkAttachmentType  m_enmType;
 
     /** Holds the type label instance. */
-    QLabel     *m_pLabelType;
+    QLabel    *m_pLabelType;
     /** Holds the type combo instance. */
-    QIComboBox *m_pComboType;
+    QComboBox *m_pComboType;
     /** Holds the name label instance. */
-    QLabel     *m_pLabelName;
+    QLabel    *m_pLabelName;
     /** Holds the name combo instance. */
-    QIComboBox *m_pComboName;
+    QComboBox *m_pComboName;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UINetworkAttachmentEditor_h */
