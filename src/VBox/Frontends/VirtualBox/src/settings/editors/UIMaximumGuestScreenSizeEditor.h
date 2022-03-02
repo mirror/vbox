@@ -33,7 +33,7 @@
 class QGridLayout;
 class QLabel;
 class QSpinBox;
-class QIComboBox;
+class QComboBox;
 
 
 /** Maximum guest screen size value. */
@@ -117,7 +117,7 @@ private:
     /** Holds the policy label instance. */
     QLabel      *m_pLabelPolicy;
     /** Holds the policy combo instance. */
-    QIComboBox  *m_pComboPolicy;
+    QComboBox   *m_pComboPolicy;
     /** Holds the max width label instance. */
     QLabel      *m_pLabelMaxWidth;
     /** Holds the max width spinbox instance. */

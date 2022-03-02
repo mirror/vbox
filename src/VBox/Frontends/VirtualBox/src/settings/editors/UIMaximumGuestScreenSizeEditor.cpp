@@ -16,13 +16,13 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QSpinBox>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "UICommon.h"
 #include "UIConverter.h"
 #include "UIMaximumGuestScreenSizeEditor.h"
@@ -145,12 +145,12 @@ void UIMaximumGuestScreenSizeEditor::retranslateUi()
 
     if (m_pComboPolicy)
     {
-        m_pComboPolicy->setToolTip(tr("Selects maximum guest screen size policy."));
         for (int i = 0; i < m_pComboPolicy->count(); ++i)
         {
             const MaximumGuestScreenSizePolicy enmType = m_pComboPolicy->itemData(i).value<MaximumGuestScreenSizePolicy>();
             m_pComboPolicy->setItemText(i, gpConverter->toString(enmType));
         }
+        m_pComboPolicy->setToolTip(tr("Selects maximum guest screen size policy."));
     }
 }
 
@@ -211,12 +211,12 @@ void UIMaximumGuestScreenSizeEditor::prepare()
            m_pLayout->addWidget(m_pLabelPolicy, 0, 0);
         }
         /* Prepare policy combo: */
-        m_pComboPolicy = new QIComboBox(this);
+        m_pComboPolicy = new QComboBox(this);
         if (m_pComboPolicy)
         {
             if (m_pLabelPolicy)
                 m_pLabelPolicy->setBuddy(m_pComboPolicy);
-            connect(m_pComboPolicy, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
+            connect(m_pComboPolicy, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
                     this, &UIMaximumGuestScreenSizeEditor::sltHandleCurrentPolicyIndexChanged);
 
             m_pLayout->addWidget(m_pComboPolicy, 0, 1);
