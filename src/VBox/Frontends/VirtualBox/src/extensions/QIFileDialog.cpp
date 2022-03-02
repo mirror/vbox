@@ -49,8 +49,10 @@ QString QIFileDialog::getExistingDirectory(const QString &strDir,
     windowManager().registerNewParent(&dlg, pRealParent);
     dlg.setWindowTitle(strCaption);
     dlg.setDirectory(strDir);
-    dlg.setResolveSymlinks(fResolveSymLinks);
-    dlg.setFileMode(fDirOnly ? QFileDialog::DirectoryOnly : QFileDialog::Directory);
+    dlg.setOption(DontResolveSymlinks, !fResolveSymLinks);
+    dlg.setFileMode(QFileDialog::Directory);
+    if (fDirOnly)
+        dlg.setOption(ShowDirsOnly, true);
 
     QEventLoop eventLoop;
     QObject::connect(&dlg, &QFileDialog::finished,
@@ -108,8 +110,8 @@ QString QIFileDialog::getSaveFileName(const QString &strStartWith,
     dlg.setAcceptMode(QFileDialog::AcceptSave);
     if (pStrSelectedFilter)
         dlg.selectNameFilter(*pStrSelectedFilter);
-    dlg.setResolveSymlinks(fResolveSymLinks);
-    dlg.setConfirmOverwrite(fConfirmOverwrite);
+    dlg.setOption(DontResolveSymlinks, !fResolveSymLinks);
+    dlg.setOption(DontConfirmOverwrite, !fConfirmOverwrite);
 
     QEventLoop eventLoop;
     QObject::connect(&dlg, &QFileDialog::finished,
@@ -187,7 +189,7 @@ QStringList QIFileDialog::getOpenFileNames(const QString &strStartWith,
         dlg.setFileMode(QFileDialog::ExistingFiles);
     if (pStrSelectedFilter)
         dlg.selectNameFilter(*pStrSelectedFilter);
-    dlg.setResolveSymlinks(fResolveSymLinks);
+    dlg.setOption(DontResolveSymlinks, !fResolveSymLinks);
 
     QEventLoop eventLoop;
     QObject::connect(&dlg, &QFileDialog::finished,
