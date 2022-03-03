@@ -3,6 +3,7 @@
 .align	4
 _OPENSSL_ia32_cpuid:
 L_OPENSSL_ia32_cpuid_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -145,6 +146,7 @@ L000nocpuid:
 .align	4
 _OPENSSL_rdtsc:
 L_OPENSSL_rdtsc_begin:
+.byte	243,15,30,251
 	xorl	%eax,%eax
 	xorl	%edx,%edx
 	call	L009PIC_me_up
@@ -160,6 +162,7 @@ L010notsc:
 .align	4
 _OPENSSL_instrument_halt:
 L_OPENSSL_instrument_halt_begin:
+.byte	243,15,30,251
 	call	L011PIC_me_up
 L011PIC_me_up:
 	popl	%ecx
@@ -190,6 +193,7 @@ L012nohalt:
 .align	4
 _OPENSSL_far_spin:
 L_OPENSSL_far_spin_begin:
+.byte	243,15,30,251
 	pushfl
 	popl	%eax
 	btl	$9,%eax
@@ -215,6 +219,7 @@ L013nospin:
 .align	4
 _OPENSSL_wipe_cpu:
 L_OPENSSL_wipe_cpu_begin:
+.byte	243,15,30,251
 	xorl	%eax,%eax
 	xorl	%edx,%edx
 	call	L015PIC_me_up
@@ -232,6 +237,7 @@ L016no_x87:
 .align	4
 _OPENSSL_atomic_add:
 L_OPENSSL_atomic_add_begin:
+.byte	243,15,30,251
 	movl	4(%esp),%edx
 	movl	8(%esp),%ecx
 	pushl	%ebx
@@ -249,6 +255,7 @@ L017spin:
 .align	4
 _OPENSSL_cleanse:
 L_OPENSSL_cleanse_begin:
+.byte	243,15,30,251
 	movl	4(%esp),%edx
 	movl	8(%esp),%ecx
 	xorl	%eax,%eax
@@ -284,6 +291,7 @@ L021aligned:
 .align	4
 _CRYPTO_memcmp:
 L_CRYPTO_memcmp_begin:
+.byte	243,15,30,251
 	pushl	%esi
 	pushl	%edi
 	movl	12(%esp),%esi
@@ -311,6 +319,7 @@ L022no_data:
 .align	4
 _OPENSSL_instrument_bus:
 L_OPENSSL_instrument_bus_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -325,6 +334,7 @@ L_OPENSSL_instrument_bus_begin:
 .align	4
 _OPENSSL_instrument_bus2:
 L_OPENSSL_instrument_bus2_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -339,6 +349,7 @@ L_OPENSSL_instrument_bus2_begin:
 .align	4
 _OPENSSL_ia32_rdrand_bytes:
 L_OPENSSL_ia32_rdrand_bytes_begin:
+.byte	243,15,30,251
 	pushl	%edi
 	pushl	%ebx
 	xorl	%eax,%eax
@@ -380,6 +391,7 @@ L024done:
 .align	4
 _OPENSSL_ia32_rdseed_bytes:
 L_OPENSSL_ia32_rdseed_bytes_begin:
+.byte	243,15,30,251
 	pushl	%edi
 	pushl	%ebx
 	xorl	%eax,%eax

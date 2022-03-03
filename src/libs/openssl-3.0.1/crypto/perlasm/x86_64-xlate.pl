@@ -105,6 +105,7 @@ elsif (!$gas)
     $decor="\$L\$";
 }
 # Find out if we're using GNU as
+=pod VBOX: Begin commenting out
 elsif (`$ENV{CC} -Wa,-v -c -o /dev/null -x assembler /dev/null 2>&1`
 		=~ /GNU assembler version ([2-9]\.[0-9]+)/)
 {
@@ -115,6 +116,7 @@ elsif (`$ENV{CC} --version 2>/dev/null`
 {
     $gnuas=1;
 }
+=cut
 
 my $cet_property;
 if ($flavour =~ /elf/) {

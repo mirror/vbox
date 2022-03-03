@@ -2,6 +2,7 @@
 
 .p2align	4
 _x86_64_AES_encrypt:
+
 	xorl	0(%r15),%eax
 	xorl	4(%r15),%ebx
 	xorl	8(%r15),%ecx
@@ -151,6 +152,7 @@ L$enc_loop:
 	xorl	%r12d,%ecx
 	xorl	%r8d,%edx
 .byte	0xf3,0xc3
+
 
 
 .p2align	4
@@ -335,6 +337,7 @@ L$enc_compact_done:
 _asm_AES_encrypt:
 _AES_encrypt:
 
+.byte	243,15,30,250
 	movq	%rsp,%rax
 
 	pushq	%rbx
@@ -415,6 +418,7 @@ L$enc_epilogue:
 
 .p2align	4
 _x86_64_AES_decrypt:
+
 	xorl	0(%r15),%eax
 	xorl	4(%r15),%ebx
 	xorl	8(%r15),%ecx
@@ -566,6 +570,7 @@ L$dec_loop:
 	xorl	%r12d,%ecx
 	xorl	%r8d,%edx
 .byte	0xf3,0xc3
+
 
 
 .p2align	4
@@ -802,6 +807,7 @@ L$dec_compact_done:
 _asm_AES_decrypt:
 _AES_decrypt:
 
+.byte	243,15,30,250
 	movq	%rsp,%rax
 
 	pushq	%rbx
@@ -886,6 +892,7 @@ L$dec_epilogue:
 .p2align	4
 _AES_set_encrypt_key:
 
+.byte	243,15,30,250
 	pushq	%rbx
 
 	pushq	%rbp
@@ -1161,6 +1168,7 @@ L$exit:
 .p2align	4
 _AES_set_decrypt_key:
 
+.byte	243,15,30,250
 	pushq	%rbx
 
 	pushq	%rbp
@@ -1368,6 +1376,7 @@ L$dec_key_epilogue:
 _asm_AES_cbc_encrypt:
 _AES_cbc_encrypt:
 
+.byte	243,15,30,250
 	cmpq	$0,%rdx
 	je	L$cbc_epilogue
 	pushfq

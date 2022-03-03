@@ -6,6 +6,7 @@
 .p2align	4
 _gcm_gmult_4bit:
 
+.byte	243,15,30,250
 	pushq	%rbx
 
 	pushq	%rbp
@@ -111,6 +112,7 @@ L$gmult_epilogue:
 .p2align	4
 _gcm_ghash_4bit:
 
+.byte	243,15,30,250
 	pushq	%rbx
 
 	pushq	%rbp
@@ -852,6 +854,7 @@ L$_init_clmul:
 .p2align	4
 _gcm_gmult_clmul:
 
+.byte	243,15,30,250
 L$_gmult_clmul:
 	movdqu	(%rdi),%xmm0
 	movdqa	L$bswap_mask(%rip),%xmm5
@@ -905,6 +908,7 @@ L$_gmult_clmul:
 .p2align	5
 _gcm_ghash_clmul:
 
+.byte	243,15,30,250
 L$_ghash_clmul:
 	movdqa	L$bswap_mask(%rip),%xmm10
 
@@ -1298,6 +1302,7 @@ _gcm_init_avx:
 .p2align	5
 _gcm_gmult_avx:
 
+.byte	243,15,30,250
 	jmp	L$_gmult_clmul
 
 
@@ -1306,6 +1311,7 @@ _gcm_gmult_avx:
 .p2align	5
 _gcm_ghash_avx:
 
+.byte	243,15,30,250
 	jmp	L$_ghash_clmul
 
 

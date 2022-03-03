@@ -28,28 +28,36 @@ sha256_multi_block:
 .Loop_grande:
 	movl	%edx,280(%rsp)
 	xorl	%edx,%edx
+
 	movq	0(%rsi),%r8
+
 	movl	8(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
 	movl	%ecx,0(%rbx)
 	cmovleq	%rbp,%r8
+
 	movq	16(%rsi),%r9
+
 	movl	24(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
 	movl	%ecx,4(%rbx)
 	cmovleq	%rbp,%r9
+
 	movq	32(%rsi),%r10
+
 	movl	40(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
 	movl	%ecx,8(%rbx)
 	cmovleq	%rbp,%r10
+
 	movq	48(%rsi),%r11
+
 	movl	56(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
@@ -2652,14 +2660,18 @@ _shaext_shortcut:
 .Loop_grande_shaext:
 	movl	%edx,280(%rsp)
 	xorl	%edx,%edx
+
 	movq	0(%rsi),%r8
+
 	movl	8(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
 	movl	%ecx,0(%rbx)
 	cmovleq	%rsp,%r8
+
 	movq	16(%rsi),%r9
+
 	movl	24(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
@@ -3274,3 +3286,24 @@ K256_shaext:
 .long	0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208
 .long	0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
 .byte	83,72,65,50,53,54,32,109,117,108,116,105,45,98,108,111,99,107,32,116,114,97,110,115,102,111,114,109,32,102,111,114,32,120,56,54,95,54,52,44,32,67,82,89,80,84,79,71,65,77,83,32,98,121,32,60,97,112,112,114,111,64,111,112,101,110,115,115,108,46,111,114,103,62,0
+	.section .note.gnu.property, #alloc
+	.p2align 3
+	.long 1f - 0f
+	.long 4f - 1f
+	.long 5
+0:
+	# "GNU" encoded with .byte, since .asciz isn't supported
+	# on Solaris.
+	.byte 0x47
+	.byte 0x4e
+	.byte 0x55
+	.byte 0
+1:
+	.p2align 3
+	.long 0xc0000002
+	.long 3f - 2f
+2:
+	.long 3
+3:
+	.p2align 3
+4:

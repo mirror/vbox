@@ -4,6 +4,7 @@
 .align	16
 gcm_gmult_4bit_x86:
 .L_gcm_gmult_4bit_x86_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -98,6 +99,7 @@ gcm_gmult_4bit_x86:
 .align	16
 gcm_ghash_4bit_x86:
 .L_gcm_ghash_4bit_x86_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -205,6 +207,7 @@ gcm_ghash_4bit_x86:
 .type	_mmx_gmult_4bit_inner,@function
 .align	16
 _mmx_gmult_4bit_inner:
+.byte	243,15,30,251
 	xorl	%ecx,%ecx
 	movl	%ebx,%edx
 	movb	%dl,%cl
@@ -601,6 +604,7 @@ _mmx_gmult_4bit_inner:
 .align	16
 gcm_gmult_4bit_mmx:
 .L_gcm_gmult_4bit_mmx_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -630,6 +634,7 @@ gcm_gmult_4bit_mmx:
 .align	16
 gcm_ghash_4bit_mmx:
 .L_gcm_ghash_4bit_mmx_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -691,3 +696,20 @@ gcm_ghash_4bit_mmx:
 .byte	82,89,80,84,79,71,65,77,83,32,98,121,32,60,97,112
 .byte	112,114,111,64,111,112,101,110,115,115,108,46,111,114,103,62
 .byte	0
+
+	.section ".note.gnu.property", "a"
+	.p2align 2
+	.long 1f - 0f
+	.long 4f - 1f
+	.long 5
+0:
+	.asciz "GNU"
+1:
+	.p2align 2
+	.long 0xc0000002
+	.long 3f - 2f
+2:
+	.long 3
+3:
+	.p2align 2
+4:

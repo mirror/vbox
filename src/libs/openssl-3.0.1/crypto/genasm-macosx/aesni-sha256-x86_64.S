@@ -5,12 +5,14 @@
 
 .p2align	4
 _aesni_cbc_sha256_enc:
+
 	xorl	%eax,%eax
 	cmpq	$0,%rdi
 	je	L$probe
 	ud2
 L$probe:
 	.byte	0xf3,0xc3
+
 
 
 .p2align	6

@@ -1069,11 +1069,12 @@ _bsaes_key_convert:
 .cfi_endproc	
 .size	_bsaes_key_convert,.-_bsaes_key_convert
 
-.globl	bsaes_cbc_encrypt
-.type	bsaes_cbc_encrypt,@function
+.globl	ossl_bsaes_cbc_encrypt
+.type	ossl_bsaes_cbc_encrypt,@function
 .align	16
-bsaes_cbc_encrypt:
+ossl_bsaes_cbc_encrypt:
 .cfi_startproc	
+.byte	243,15,30,250
 	cmpl	$0,%r9d
 	jne	asm_AES_cbc_encrypt
 	cmpq	$128,%rdx
@@ -1340,13 +1341,14 @@ bsaes_cbc_encrypt:
 .Lcbc_dec_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	bsaes_cbc_encrypt,.-bsaes_cbc_encrypt
+.size	ossl_bsaes_cbc_encrypt,.-ossl_bsaes_cbc_encrypt
 
-.globl	bsaes_ctr32_encrypt_blocks
-.type	bsaes_ctr32_encrypt_blocks,@function
+.globl	ossl_bsaes_ctr32_encrypt_blocks
+.type	ossl_bsaes_ctr32_encrypt_blocks,@function
 .align	16
-bsaes_ctr32_encrypt_blocks:
+ossl_bsaes_ctr32_encrypt_blocks:
 .cfi_startproc	
+.byte	243,15,30,250
 	movq	%rsp,%rax
 .Lctr_enc_prologue:
 	pushq	%rbp
@@ -1563,11 +1565,11 @@ bsaes_ctr32_encrypt_blocks:
 .Lctr_enc_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	bsaes_ctr32_encrypt_blocks,.-bsaes_ctr32_encrypt_blocks
-.globl	bsaes_xts_encrypt
-.type	bsaes_xts_encrypt,@function
+.size	ossl_bsaes_ctr32_encrypt_blocks,.-ossl_bsaes_ctr32_encrypt_blocks
+.globl	ossl_bsaes_xts_encrypt
+.type	ossl_bsaes_xts_encrypt,@function
 .align	16
-bsaes_xts_encrypt:
+ossl_bsaes_xts_encrypt:
 .cfi_startproc	
 	movq	%rsp,%rax
 .Lxts_enc_prologue:
@@ -2037,12 +2039,12 @@ bsaes_xts_encrypt:
 .Lxts_enc_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	bsaes_xts_encrypt,.-bsaes_xts_encrypt
+.size	ossl_bsaes_xts_encrypt,.-ossl_bsaes_xts_encrypt
 
-.globl	bsaes_xts_decrypt
-.type	bsaes_xts_decrypt,@function
+.globl	ossl_bsaes_xts_decrypt
+.type	ossl_bsaes_xts_decrypt,@function
 .align	16
-bsaes_xts_decrypt:
+ossl_bsaes_xts_decrypt:
 .cfi_startproc	
 	movq	%rsp,%rax
 .Lxts_dec_prologue:
@@ -2537,7 +2539,7 @@ bsaes_xts_decrypt:
 .Lxts_dec_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	bsaes_xts_decrypt,.-bsaes_xts_decrypt
+.size	ossl_bsaes_xts_decrypt,.-ossl_bsaes_xts_decrypt
 .type	_bsaes_const,@object
 .align	64
 _bsaes_const:
@@ -2593,3 +2595,24 @@ _bsaes_const:
 .byte	66,105,116,45,115,108,105,99,101,100,32,65,69,83,32,102,111,114,32,120,56,54,95,54,52,47,83,83,83,69,51,44,32,69,109,105,108,105,97,32,75,195,164,115,112,101,114,44,32,80,101,116,101,114,32,83,99,104,119,97,98,101,44,32,65,110,100,121,32,80,111,108,121,97,107,111,118,0
 .align	64
 .size	_bsaes_const,.-_bsaes_const
+	.section .note.gnu.property, #alloc
+	.p2align 3
+	.long 1f - 0f
+	.long 4f - 1f
+	.long 5
+0:
+	# "GNU" encoded with .byte, since .asciz isn't supported
+	# on Solaris.
+	.byte 0x47
+	.byte 0x4e
+	.byte 0x55
+	.byte 0
+1:
+	.p2align 3
+	.long 0xc0000002
+	.long 3f - 2f
+2:
+	.long 3
+3:
+	.p2align 3
+4:

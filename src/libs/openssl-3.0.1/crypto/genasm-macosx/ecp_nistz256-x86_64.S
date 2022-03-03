@@ -3386,8 +3386,10 @@ L$ord_sqr_epilogue:
 
 .p2align	5
 _ecp_nistz256_to_mont:
+
 	leaq	L$RR(%rip),%rdx
 	jmp	L$mul_mont
+
 
 
 
@@ -3987,6 +3989,7 @@ L$from_epilogue:
 
 .p2align	5
 _ecp_nistz256_scatter_w5:
+
 	leal	-3(%rdx,%rdx,2),%edx
 	movdqa	0(%rsi),%xmm0
 	shll	$5,%edx
@@ -4003,6 +4006,7 @@ _ecp_nistz256_scatter_w5:
 	movdqa	%xmm5,80(%rdi,%rdx,1)
 
 	.byte	0xf3,0xc3
+
 
 
 
@@ -4073,6 +4077,7 @@ L$SEH_end_ecp_nistz256_gather_w5:
 
 .p2align	5
 _ecp_nistz256_scatter_w7:
+
 	movdqu	0(%rsi),%xmm0
 	shll	$6,%edx
 	movdqu	16(%rsi),%xmm1
@@ -4084,6 +4089,7 @@ _ecp_nistz256_scatter_w7:
 	movdqa	%xmm3,48(%rdi,%rdx,1)
 
 	.byte	0xf3,0xc3
+
 
 
 
@@ -4140,8 +4146,10 @@ L$SEH_end_ecp_nistz256_gather_w7:
 
 .p2align	5
 _ecp_nistz256_avx2_gather_w7:
+
 .byte	0x0f,0x0b
 	.byte	0xf3,0xc3
+
 
 
 .p2align	5
@@ -4659,26 +4667,16 @@ L$point_addq_body:
 	orq	%r8,%r12
 	orq	%r9,%r12
 
-.byte	0x3e
-	jnz	L$add_proceedq
 .byte	102,73,15,126,208
 .byte	102,73,15,126,217
-	testq	%r8,%r8
+
+	orq	%r8,%r12
+	orq	%r9,%r12
+
+
+.byte	0x3e
 	jnz	L$add_proceedq
-	testq	%r9,%r9
-	jz	L$add_doubleq
 
-.byte	102,72,15,126,199
-	pxor	%xmm0,%xmm0
-	movdqu	%xmm0,0(%rdi)
-	movdqu	%xmm0,16(%rdi)
-	movdqu	%xmm0,32(%rdi)
-	movdqu	%xmm0,48(%rdi)
-	movdqu	%xmm0,64(%rdi)
-	movdqu	%xmm0,80(%rdi)
-	jmp	L$add_doneq
-
-.p2align	5
 L$add_doubleq:
 .byte	102,72,15,126,206
 .byte	102,72,15,126,199

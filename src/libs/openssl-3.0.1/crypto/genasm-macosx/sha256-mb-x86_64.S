@@ -28,28 +28,36 @@ L$body:
 L$oop_grande:
 	movl	%edx,280(%rsp)
 	xorl	%edx,%edx
+
 	movq	0(%rsi),%r8
+
 	movl	8(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
 	movl	%ecx,0(%rbx)
 	cmovleq	%rbp,%r8
+
 	movq	16(%rsi),%r9
+
 	movl	24(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
 	movl	%ecx,4(%rbx)
 	cmovleq	%rbp,%r9
+
 	movq	32(%rsi),%r10
+
 	movl	40(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
 	movl	%ecx,8(%rbx)
 	cmovleq	%rbp,%r10
+
 	movq	48(%rsi),%r11
+
 	movl	56(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
@@ -2652,14 +2660,18 @@ L$body_shaext:
 L$oop_grande_shaext:
 	movl	%edx,280(%rsp)
 	xorl	%edx,%edx
+
 	movq	0(%rsi),%r8
+
 	movl	8(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
 	movl	%ecx,0(%rbx)
 	cmovleq	%rsp,%r8
+
 	movq	16(%rsi),%r9
+
 	movl	24(%rsi),%ecx
 	cmpl	%edx,%ecx
 	cmovgl	%ecx,%edx

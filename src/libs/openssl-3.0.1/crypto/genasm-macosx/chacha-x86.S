@@ -3,6 +3,7 @@
 .align	4
 _ChaCha20_ctr32:
 L_ChaCha20_ctr32_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi

@@ -40,39 +40,47 @@ L$enc4x_body:
 L$enc4x_loop_grande:
 	movl	%edx,24(%rsp)
 	xorl	%edx,%edx
+
 	movl	-64(%rdi),%ecx
 	movq	-80(%rdi),%r8
 	cmpl	%edx,%ecx
 	movq	-72(%rdi),%r12
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	-56(%rdi),%xmm2
 	movl	%ecx,32(%rsp)
 	cmovleq	%rsp,%r8
+
 	movl	-24(%rdi),%ecx
 	movq	-40(%rdi),%r9
 	cmpl	%edx,%ecx
 	movq	-32(%rdi),%r13
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	-16(%rdi),%xmm3
 	movl	%ecx,36(%rsp)
 	cmovleq	%rsp,%r9
+
 	movl	16(%rdi),%ecx
 	movq	0(%rdi),%r10
 	cmpl	%edx,%ecx
 	movq	8(%rdi),%r14
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	24(%rdi),%xmm4
 	movl	%ecx,40(%rsp)
 	cmovleq	%rsp,%r10
+
 	movl	56(%rdi),%ecx
 	movq	40(%rdi),%r11
 	cmpl	%edx,%ecx
 	movq	48(%rdi),%r15
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	64(%rdi),%xmm5
 	movl	%ecx,44(%rsp)
 	cmovleq	%rsp,%r11
@@ -252,6 +260,7 @@ L$enc4x_tail:
 
 
 
+
 	leaq	160(%rdi),%rdi
 	decl	%edx
 	jnz	L$enc4x_loop_grande
@@ -314,39 +323,47 @@ L$dec4x_body:
 L$dec4x_loop_grande:
 	movl	%edx,24(%rsp)
 	xorl	%edx,%edx
+
 	movl	-64(%rdi),%ecx
 	movq	-80(%rdi),%r8
 	cmpl	%edx,%ecx
 	movq	-72(%rdi),%r12
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	-56(%rdi),%xmm6
 	movl	%ecx,32(%rsp)
 	cmovleq	%rsp,%r8
+
 	movl	-24(%rdi),%ecx
 	movq	-40(%rdi),%r9
 	cmpl	%edx,%ecx
 	movq	-32(%rdi),%r13
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	-16(%rdi),%xmm7
 	movl	%ecx,36(%rsp)
 	cmovleq	%rsp,%r9
+
 	movl	16(%rdi),%ecx
 	movq	0(%rdi),%r10
 	cmpl	%edx,%ecx
 	movq	8(%rdi),%r14
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	24(%rdi),%xmm8
 	movl	%ecx,40(%rsp)
 	cmovleq	%rsp,%r10
+
 	movl	56(%rdi),%ecx
 	movq	40(%rdi),%r11
 	cmpl	%edx,%ecx
 	movq	48(%rdi),%r15
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	64(%rdi),%xmm9
 	movl	%ecx,44(%rsp)
 	cmovleq	%rsp,%r11

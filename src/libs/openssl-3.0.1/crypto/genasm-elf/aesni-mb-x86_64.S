@@ -40,39 +40,47 @@ aesni_multi_cbc_encrypt:
 .Lenc4x_loop_grande:
 	movl	%edx,24(%rsp)
 	xorl	%edx,%edx
+
 	movl	-64(%rdi),%ecx
 	movq	-80(%rdi),%r8
 	cmpl	%edx,%ecx
 	movq	-72(%rdi),%r12
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	-56(%rdi),%xmm2
 	movl	%ecx,32(%rsp)
 	cmovleq	%rsp,%r8
+
 	movl	-24(%rdi),%ecx
 	movq	-40(%rdi),%r9
 	cmpl	%edx,%ecx
 	movq	-32(%rdi),%r13
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	-16(%rdi),%xmm3
 	movl	%ecx,36(%rsp)
 	cmovleq	%rsp,%r9
+
 	movl	16(%rdi),%ecx
 	movq	0(%rdi),%r10
 	cmpl	%edx,%ecx
 	movq	8(%rdi),%r14
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	24(%rdi),%xmm4
 	movl	%ecx,40(%rsp)
 	cmovleq	%rsp,%r10
+
 	movl	56(%rdi),%ecx
 	movq	40(%rdi),%r11
 	cmpl	%edx,%ecx
 	movq	48(%rdi),%r15
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	64(%rdi),%xmm5
 	movl	%ecx,44(%rsp)
 	cmovleq	%rsp,%r11
@@ -252,6 +260,7 @@ aesni_multi_cbc_encrypt:
 
 
 
+
 	leaq	160(%rdi),%rdi
 	decl	%edx
 	jnz	.Lenc4x_loop_grande
@@ -314,39 +323,47 @@ aesni_multi_cbc_decrypt:
 .Ldec4x_loop_grande:
 	movl	%edx,24(%rsp)
 	xorl	%edx,%edx
+
 	movl	-64(%rdi),%ecx
 	movq	-80(%rdi),%r8
 	cmpl	%edx,%ecx
 	movq	-72(%rdi),%r12
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	-56(%rdi),%xmm6
 	movl	%ecx,32(%rsp)
 	cmovleq	%rsp,%r8
+
 	movl	-24(%rdi),%ecx
 	movq	-40(%rdi),%r9
 	cmpl	%edx,%ecx
 	movq	-32(%rdi),%r13
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	-16(%rdi),%xmm7
 	movl	%ecx,36(%rsp)
 	cmovleq	%rsp,%r9
+
 	movl	16(%rdi),%ecx
 	movq	0(%rdi),%r10
 	cmpl	%edx,%ecx
 	movq	8(%rdi),%r14
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	24(%rdi),%xmm8
 	movl	%ecx,40(%rsp)
 	cmovleq	%rsp,%r10
+
 	movl	56(%rdi),%ecx
 	movq	40(%rdi),%r11
 	cmpl	%edx,%ecx
 	movq	48(%rdi),%r15
 	cmovgl	%ecx,%edx
 	testl	%ecx,%ecx
+
 	movdqu	64(%rdi),%xmm9
 	movl	%ecx,44(%rsp)
 	cmovleq	%rsp,%r11
@@ -540,3 +557,24 @@ aesni_multi_cbc_decrypt:
 	.byte	0xf3,0xc3
 .cfi_endproc	
 .size	aesni_multi_cbc_decrypt,.-aesni_multi_cbc_decrypt
+	.section .note.gnu.property, #alloc
+	.p2align 3
+	.long 1f - 0f
+	.long 4f - 1f
+	.long 5
+0:
+	# "GNU" encoded with .byte, since .asciz isn't supported
+	# on Solaris.
+	.byte 0x47
+	.byte 0x4e
+	.byte 0x55
+	.byte 0
+1:
+	.p2align 3
+	.long 0xc0000002
+	.long 3f - 2f
+2:
+	.long 3
+3:
+	.p2align 3
+4:

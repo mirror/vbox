@@ -7,6 +7,7 @@ section	.text code align=64
 
 ALIGN	16
 _x86_64_AES_encrypt:
+
 	xor	eax,DWORD[r15]
 	xor	ebx,DWORD[4+r15]
 	xor	ecx,DWORD[8+r15]
@@ -156,6 +157,7 @@ $L$enc_loop:
 	xor	ecx,r12d
 	xor	edx,r8d
 DB	0xf3,0xc3
+
 
 
 ALIGN	16
@@ -349,6 +351,7 @@ $L$SEH_begin_AES_encrypt:
 
 
 
+DB	243,15,30,250
 	mov	rax,rsp
 
 	push	rbx
@@ -431,6 +434,7 @@ $L$SEH_end_AES_encrypt:
 
 ALIGN	16
 _x86_64_AES_decrypt:
+
 	xor	eax,DWORD[r15]
 	xor	ebx,DWORD[4+r15]
 	xor	ecx,DWORD[8+r15]
@@ -582,6 +586,7 @@ $L$dec_loop:
 	xor	ecx,r12d
 	xor	edx,r8d
 DB	0xf3,0xc3
+
 
 
 ALIGN	16
@@ -827,6 +832,7 @@ $L$SEH_begin_AES_decrypt:
 
 
 
+DB	243,15,30,250
 	mov	rax,rsp
 
 	push	rbx
@@ -922,6 +928,7 @@ $L$SEH_begin_AES_set_encrypt_key:
 
 
 
+DB	243,15,30,250
 	push	rbx
 
 	push	rbp
@@ -1208,6 +1215,7 @@ $L$SEH_begin_AES_set_decrypt_key:
 
 
 
+DB	243,15,30,250
 	push	rbx
 
 	push	rbp
@@ -1429,6 +1437,7 @@ $L$SEH_begin_AES_cbc_encrypt:
 
 
 
+DB	243,15,30,250
 	cmp	rdx,0
 	je	NEAR $L$cbc_epilogue
 	pushfq

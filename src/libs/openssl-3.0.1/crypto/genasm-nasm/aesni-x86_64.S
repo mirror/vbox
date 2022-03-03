@@ -10,6 +10,7 @@ global	aesni_encrypt
 ALIGN	16
 aesni_encrypt:
 
+DB	243,15,30,250
 	movups	xmm2,XMMWORD[rcx]
 	mov	eax,DWORD[240+r8]
 	movups	xmm0,XMMWORD[r8]
@@ -36,6 +37,7 @@ global	aesni_decrypt
 ALIGN	16
 aesni_decrypt:
 
+DB	243,15,30,250
 	movups	xmm2,XMMWORD[rcx]
 	mov	eax,DWORD[240+r8]
 	movups	xmm0,XMMWORD[r8]
@@ -534,6 +536,7 @@ $L$SEH_begin_aesni_ecb_encrypt:
 
 
 
+DB	243,15,30,250
 	lea	rsp,[((-88))+rsp]
 	movaps	XMMWORD[rsp],xmm6
 	movaps	XMMWORD[16+rsp],xmm7
@@ -907,6 +910,8 @@ $L$SEH_begin_aesni_ccm64_encrypt_blocks:
 	mov	r9,QWORD[48+rsp]
 
 
+
+DB	243,15,30,250
 	lea	rsp,[((-88))+rsp]
 	movaps	XMMWORD[rsp],xmm6
 	movaps	XMMWORD[16+rsp],xmm7
@@ -983,6 +988,7 @@ $L$ccm64_enc_ret:
 	mov	rdi,QWORD[8+rsp]	;WIN64 epilogue
 	mov	rsi,QWORD[16+rsp]
 	DB	0F3h,0C3h		;repret
+
 $L$SEH_end_aesni_ccm64_encrypt_blocks:
 global	aesni_ccm64_decrypt_blocks
 
@@ -1000,6 +1006,8 @@ $L$SEH_begin_aesni_ccm64_decrypt_blocks:
 	mov	r9,QWORD[48+rsp]
 
 
+
+DB	243,15,30,250
 	lea	rsp,[((-88))+rsp]
 	movaps	XMMWORD[rsp],xmm6
 	movaps	XMMWORD[16+rsp],xmm7
@@ -1110,6 +1118,7 @@ $L$ccm64_dec_ret:
 	mov	rdi,QWORD[8+rsp]	;WIN64 epilogue
 	mov	rsi,QWORD[16+rsp]
 	DB	0F3h,0C3h		;repret
+
 $L$SEH_end_aesni_ccm64_decrypt_blocks:
 global	aesni_ctr32_encrypt_blocks
 
@@ -1127,6 +1136,7 @@ $L$SEH_begin_aesni_ctr32_encrypt_blocks:
 
 
 
+DB	243,15,30,250
 	cmp	rdx,1
 	jne	NEAR $L$ctr32_bulk
 
@@ -1740,6 +1750,7 @@ $L$SEH_begin_aesni_xts_encrypt:
 
 
 
+DB	243,15,30,250
 	lea	r11,[rsp]
 
 	push	rbp
@@ -2245,6 +2256,7 @@ $L$SEH_begin_aesni_xts_decrypt:
 
 
 
+DB	243,15,30,250
 	lea	r11,[rsp]
 
 	push	rbp
@@ -2787,6 +2799,7 @@ $L$SEH_begin_aesni_ocb_encrypt:
 
 
 
+DB	243,15,30,250
 	lea	rax,[rsp]
 	push	rbx
 
@@ -3019,6 +3032,7 @@ $L$SEH_end_aesni_ocb_encrypt:
 
 ALIGN	32
 __ocb_encrypt6:
+
 	pxor	xmm15,xmm9
 	movdqu	xmm11,XMMWORD[r12*1+rbx]
 	movdqa	xmm12,xmm10
@@ -3119,8 +3133,10 @@ DB	102,65,15,56,221,255
 
 
 
+
 ALIGN	32
 __ocb_encrypt4:
+
 	pxor	xmm15,xmm9
 	movdqu	xmm11,XMMWORD[r12*1+rbx]
 	movdqa	xmm12,xmm10
@@ -3188,8 +3204,10 @@ DB	102,65,15,56,221,237
 
 
 
+
 ALIGN	32
 __ocb_encrypt1:
+
 	pxor	xmm7,xmm15
 	pxor	xmm7,xmm9
 	pxor	xmm8,xmm2
@@ -3222,6 +3240,7 @@ DB	102,15,56,221,215
 	DB	0F3h,0C3h		;repret
 
 
+
 global	aesni_ocb_decrypt
 
 ALIGN	32
@@ -3239,6 +3258,7 @@ $L$SEH_begin_aesni_ocb_decrypt:
 
 
 
+DB	243,15,30,250
 	lea	rax,[rsp]
 	push	rbx
 
@@ -3493,6 +3513,7 @@ $L$SEH_end_aesni_ocb_decrypt:
 
 ALIGN	32
 __ocb_decrypt6:
+
 	pxor	xmm15,xmm9
 	movdqu	xmm11,XMMWORD[r12*1+rbx]
 	movdqa	xmm12,xmm10
@@ -3587,8 +3608,10 @@ DB	102,65,15,56,223,255
 
 
 
+
 ALIGN	32
 __ocb_decrypt4:
+
 	pxor	xmm15,xmm9
 	movdqu	xmm11,XMMWORD[r12*1+rbx]
 	movdqa	xmm12,xmm10
@@ -3652,8 +3675,10 @@ DB	102,65,15,56,223,237
 
 
 
+
 ALIGN	32
 __ocb_decrypt1:
+
 	pxor	xmm7,xmm15
 	pxor	xmm7,xmm9
 	pxor	xmm2,xmm7
@@ -3684,6 +3709,7 @@ DB	102,15,56,222,209
 DB	102,15,56,223,215
 	DB	0F3h,0C3h		;repret
 
+
 global	aesni_cbc_encrypt
 
 ALIGN	16
@@ -3701,6 +3727,7 @@ $L$SEH_begin_aesni_cbc_encrypt:
 
 
 
+DB	243,15,30,250
 	test	rdx,rdx
 	jz	NEAR $L$cbc_ret
 
@@ -4662,7 +4689,6 @@ $L$enc_key_ret:
 	add	rsp,8
 
 	DB	0F3h,0C3h		;repret
-
 $L$SEH_end_set_encrypt_key:
 
 ALIGN	16
@@ -4733,6 +4759,7 @@ $L$key_expansion_256b:
 	shufps	xmm1,xmm1,170
 	xorps	xmm2,xmm1
 	DB	0F3h,0C3h		;repret
+
 
 
 ALIGN	64

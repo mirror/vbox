@@ -4,11 +4,13 @@
 .globl	_RC4
 
 .p2align	4
-_RC4:	orq	%rsi,%rsi
+_RC4:
+
+.byte	243,15,30,250
+	orq	%rsi,%rsi
 	jne	L$entry
 	.byte	0xf3,0xc3
 L$entry:
-
 	pushq	%rbx
 
 	pushq	%r12
@@ -530,6 +532,8 @@ L$epilogue:
 
 .p2align	4
 _RC4_set_key:
+
+.byte	243,15,30,250
 	leaq	8(%rdi),%rdi
 	leaq	(%rdx,%rsi,1),%rdx
 	negq	%rsi
@@ -598,10 +602,13 @@ L$exit_key:
 	.byte	0xf3,0xc3
 
 
+
 .globl	_RC4_options
 
 .p2align	4
 _RC4_options:
+
+.byte	243,15,30,250
 	leaq	L$opts(%rip),%rax
 	movl	_OPENSSL_ia32cap_P(%rip),%edx
 	btl	$20,%edx
@@ -614,6 +621,7 @@ L$8xchar:
 	addq	$12,%rax
 L$done:
 	.byte	0xf3,0xc3
+
 .p2align	6
 L$opts:
 .byte	114,99,52,40,56,120,44,105,110,116,41,0

@@ -546,6 +546,7 @@ bn_mul4x_mont_gather5:
 .type	mul4x_internal,@function
 .align	32
 mul4x_internal:
+.cfi_startproc	
 	shlq	$5,%r9
 	movd	8(%rax),%xmm5
 	leaq	.Linc(%rip),%rax
@@ -1067,6 +1068,7 @@ mul4x_internal:
 	movq	16(%rbp),%r14
 	movq	24(%rbp),%r15
 	jmp	.Lsqr4x_sub_entry
+.cfi_endproc	
 .size	mul4x_internal,.-mul4x_internal
 .globl	bn_power5
 .type	bn_power5,@function
@@ -1205,6 +1207,7 @@ bn_power5:
 .align	32
 bn_sqr8x_internal:
 __bn_sqr8x_internal:
+.cfi_startproc	
 
 
 
@@ -1979,10 +1982,12 @@ __bn_sqr8x_reduction:
 	cmpq	%rdx,%rdi
 	jb	.L8x_reduction_loop
 	.byte	0xf3,0xc3
+.cfi_endproc	
 .size	bn_sqr8x_internal,.-bn_sqr8x_internal
 .type	__bn_post4x_internal,@function
 .align	32
 __bn_post4x_internal:
+.cfi_startproc	
 	movq	0(%rbp),%r12
 	leaq	(%rdi,%r9,1),%rbx
 	movq	%r9,%rcx
@@ -2033,15 +2038,18 @@ __bn_post4x_internal:
 	movq	%r9,%r10
 	negq	%r9
 	.byte	0xf3,0xc3
+.cfi_endproc	
 .size	__bn_post4x_internal,.-__bn_post4x_internal
 .globl	bn_from_montgomery
 .type	bn_from_montgomery,@function
 .align	32
 bn_from_montgomery:
+.cfi_startproc	
 	testl	$7,%r9d
 	jz	bn_from_mont8x
 	xorl	%eax,%eax
 	.byte	0xf3,0xc3
+.cfi_endproc	
 .size	bn_from_montgomery,.-bn_from_montgomery
 
 .type	bn_from_mont8x,@function
@@ -2200,6 +2208,7 @@ bn_from_mont8x:
 .type	bn_get_bits5,@function
 .align	16
 bn_get_bits5:
+.cfi_startproc	
 	leaq	0(%rdi),%r10
 	leaq	1(%rdi),%r11
 	movl	%esi,%ecx
@@ -2213,12 +2222,14 @@ bn_get_bits5:
 	shrl	%cl,%eax
 	andl	$31,%eax
 	.byte	0xf3,0xc3
+.cfi_endproc	
 .size	bn_get_bits5,.-bn_get_bits5
 
 .globl	bn_scatter5
 .type	bn_scatter5,@function
 .align	16
 bn_scatter5:
+.cfi_startproc	
 	cmpl	$0,%esi
 	jz	.Lscatter_epilogue
 	leaq	(%rdx,%rcx,8),%rdx
@@ -2231,6 +2242,7 @@ bn_scatter5:
 	jnz	.Lscatter
 .Lscatter_epilogue:
 	.byte	0xf3,0xc3
+.cfi_endproc	
 .size	bn_scatter5,.-bn_scatter5
 
 .globl	bn_gather5
@@ -2238,6 +2250,7 @@ bn_scatter5:
 .align	32
 bn_gather5:
 .LSEH_begin_bn_gather5:
+.cfi_startproc	
 
 .byte	0x4c,0x8d,0x14,0x24
 .byte	0x48,0x81,0xec,0x08,0x01,0x00,0x00
@@ -2395,9 +2408,31 @@ bn_gather5:
 	leaq	(%r10),%rsp
 	.byte	0xf3,0xc3
 .LSEH_end_bn_gather5:
+.cfi_endproc	
 .size	bn_gather5,.-bn_gather5
 .align	64
 .Linc:
 .long	0,0, 1,1
 .long	2,2, 2,2
 .byte	77,111,110,116,103,111,109,101,114,121,32,77,117,108,116,105,112,108,105,99,97,116,105,111,110,32,119,105,116,104,32,115,99,97,116,116,101,114,47,103,97,116,104,101,114,32,102,111,114,32,120,56,54,95,54,52,44,32,67,82,89,80,84,79,71,65,77,83,32,98,121,32,60,97,112,112,114,111,64,111,112,101,110,115,115,108,46,111,114,103,62,0
+	.section .note.gnu.property, #alloc
+	.p2align 3
+	.long 1f - 0f
+	.long 4f - 1f
+	.long 5
+0:
+	# "GNU" encoded with .byte, since .asciz isn't supported
+	# on Solaris.
+	.byte 0x47
+	.byte 0x4e
+	.byte 0x55
+	.byte 0
+1:
+	.p2align 3
+	.long 0xc0000002
+	.long 3f - 2f
+2:
+	.long 3
+3:
+	.p2align 3
+4:

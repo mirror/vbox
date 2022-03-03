@@ -1,6 +1,7 @@
 .text
 .align	4
 __x86_AES_encrypt_compact:
+.byte	243,15,30,251
 	movl	%edi,20(%esp)
 	xorl	(%edi),%eax
 	xorl	4(%edi),%ebx
@@ -258,6 +259,7 @@ L000loop:
 	ret
 .align	4
 __sse_AES_encrypt_compact:
+.byte	243,15,30,251
 	pxor	(%edi),%mm0
 	pxor	8(%edi),%mm4
 	movl	240(%edi),%esi
@@ -413,6 +415,7 @@ L002out:
 	ret
 .align	4
 __x86_AES_encrypt:
+.byte	243,15,30,251
 	movl	%edi,20(%esp)
 	xorl	(%edi),%eax
 	xorl	4(%edi),%ebx
@@ -961,6 +964,7 @@ LAES_Te:
 .align	4
 _AES_encrypt:
 L_AES_encrypt_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -1022,6 +1026,7 @@ L005x86:
 	ret
 .align	4
 __x86_AES_decrypt_compact:
+.byte	243,15,30,251
 	movl	%edi,20(%esp)
 	xorl	(%edi),%eax
 	xorl	4(%edi),%ebx
@@ -1375,6 +1380,7 @@ L006loop:
 	ret
 .align	4
 __sse_AES_decrypt_compact:
+.byte	243,15,30,251
 	pxor	(%edi),%mm0
 	pxor	8(%edi),%mm4
 	movl	240(%edi),%esi
@@ -1589,6 +1595,7 @@ L008out:
 	ret
 .align	4
 __x86_AES_decrypt:
+.byte	243,15,30,251
 	movl	%edi,20(%esp)
 	xorl	(%edi),%eax
 	xorl	4(%edi),%ebx
@@ -2141,6 +2148,7 @@ LAES_Td:
 .align	4
 _AES_decrypt:
 L_AES_decrypt_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -2204,6 +2212,7 @@ L011x86:
 .align	4
 _AES_cbc_encrypt:
 L_AES_cbc_encrypt_begin:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -2733,6 +2742,7 @@ L039slow_dec_partial_x86:
 	ret
 .align	4
 __x86_AES_set_encrypt_key:
+.byte	243,15,30,251
 	pushl	%ebp
 	pushl	%ebx
 	pushl	%esi
@@ -2963,12 +2973,14 @@ L045exit:
 .align	4
 _AES_set_encrypt_key:
 L_AES_set_encrypt_key_begin:
+.byte	243,15,30,251
 	call	__x86_AES_set_encrypt_key
 	ret
 .globl	_AES_set_decrypt_key
 .align	4
 _AES_set_decrypt_key:
 L_AES_set_decrypt_key_begin:
+.byte	243,15,30,251
 	call	__x86_AES_set_encrypt_key
 	cmpl	$0,%eax
 	je	L054proceed
