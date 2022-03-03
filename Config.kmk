@@ -7542,7 +7542,13 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
  endif
 
  ifeq ($(KBUILD_TARGET), darwin)
-  VBOX_QT_MOD = QtCore QtGui QtWidgets QtPrintSupport QtMacExtras $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
+  VBOX_QT_MOD := QtCore QtGui QtWidgets QtPrintSupport
+  ifndef VBOX_WITH_QT6
+   VBOX_QT_MOD += QtMacExtras
+  endif
+  ifdef VBOX_GUI_USE_QGL
+   VBOX_QT_MOD += QtOpenGL
+  endif
  else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
   VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
   if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
@@ -7853,8 +7859,8 @@ ifdef VBOX_WITH_QTGUI
   else
    TEMPLATE_VBOXQTGUIEXE_POST_CMDS = $(QUIET)install_name_tool $(foreach qtmod, $(VBOX_QT_MOD_NAMES), \
 	$(foreach prefix, @executable_path/../Frameworks/ $(VBOX_PATH_QT)/Frameworks/ $(PATH_SDK_QT6)/, \
-		-change "$(prefix)$(qtmod).framework/Versions/6/$(qtmod)" \
-			"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/5/$(qtmod)" ) ) "$(out)"
+		-change "$(prefix)$(qtmod).framework/Versions/A/$(qtmod)" \
+			"$(if $(VBOX_WITH_HARDENING),/Applications/VirtualBox.app/Contents/Frameworks,@rpath)/$(qtmod).framework/Versions/A/$(qtmod)" ) ) "$(out)"
   endif
  endif
 
