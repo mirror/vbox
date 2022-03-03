@@ -7543,7 +7543,9 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
 
  ifeq ($(KBUILD_TARGET), darwin)
   VBOX_QT_MOD := QtCore QtGui QtWidgets QtPrintSupport
-  ifndef VBOX_WITH_QT6
+  ifdef VBOX_WITH_QT6
+   VBOX_QT_MOD += QtStateMachine QtCore5Compat
+  else
    VBOX_QT_MOD += QtMacExtras
   endif
   ifdef VBOX_GUI_USE_QGL
