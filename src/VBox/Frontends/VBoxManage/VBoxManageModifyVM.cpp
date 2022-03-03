@@ -135,6 +135,9 @@ enum
     MODIFYVM_NIC,
     MODIFYVM_CABLECONNECTED,
     MODIFYVM_BRIDGEADAPTER,
+#ifdef VBOX_WITH_CLOUD_NET
+    MODIFYVM_CLOUDNET,
+#endif /* VBOX_WITH_CLOUD_NET */
     MODIFYVM_HOSTONLYADAPTER,
 #ifdef VBOX_WITH_VMNET
     MODIFYVM_HOSTONLYNET,
@@ -340,6 +343,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     OPT1("--nic",                                                       MODIFYVM_NIC,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
     OPT2("--cable-connected",               "--cableconnected",         MODIFYVM_CABLECONNECTED,            RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX),
     OPT2("--bridge-adapter",                "--bridgeadapter",          MODIFYVM_BRIDGEADAPTER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+#ifdef VBOX_WITH_CLOUD_NET
+    OPT2("--cloud-network",                 "--cloudnetwork",           MODIFYVM_CLOUDNET,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
+#endif /* VBOX_WITH_CLOUD_NET */
     OPT2("--host-only-adapter",             "--hostonlyadapter",        MODIFYVM_HOSTONLYADAPTER,           RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
 #ifdef VBOX_WITH_VMNET
     OPT2("--host-only-net",                 "--hostonlynet",            MODIFYVM_HOSTONLYNET,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX),
@@ -1773,6 +1779,14 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                         CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
                     CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_NATNetwork));
                 }
+#ifdef VBOX_WITH_CLOUD_NET
+                else if (!RTStrICmp(ValueUnion.psz, "cloud"))
+                {
+                    if (!fEnabled)
+                        CHECK_ERROR(nic, COMSETTER(Enabled)(TRUE));
+                    CHECK_ERROR(nic, COMSETTER(AttachmentType)(NetworkAttachmentType_Cloud));
+                }
+#endif /* VBOX_WITH_CLOUD_NET */
                 else
                 {
                     errorArgument(ModifyVM::tr("Invalid type '%s' specfied for NIC %u"), ValueUnion.psz, GetOptState.uIndex);
@@ -1816,6 +1830,29 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 break;
             }
+
+#ifdef VBOX_WITH_CLOUD_NET
+            case MODIFYVM_CLOUDNET:
+            {
+                if (!parseNum(GetOptState.uIndex, NetworkAdapterCount, "NIC"))
+                    break;
+
+                ComPtr<INetworkAdapter> nic;
+                CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                /* remove it? */
+                if (!RTStrICmp(ValueUnion.psz, "none"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(CloudNetwork)(Bstr().raw()));
+                }
+                else
+                {
+                    CHECK_ERROR(nic, COMSETTER(CloudNetwork)(Bstr(ValueUnion.psz).raw()));
+                }
+                break;
+            }
+#endif /* VBOX_WITH_CLOUD_NET */
 
             case MODIFYVM_HOSTONLYADAPTER:
             {

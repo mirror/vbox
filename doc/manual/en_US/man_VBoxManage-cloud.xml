@@ -181,13 +181,11 @@
       <arg choice="req">--profile=<replaceable>name</replaceable></arg>
       <sbr/>
       <arg choice="plain">network setup</arg>
-      <arg choice="req">--local-gateway-iso=<replaceable>path</replaceable></arg>
       <arg>--gateway-os-name=<replaceable>string</replaceable></arg>
       <arg>--gateway-os-version=<replaceable>string</replaceable></arg>
       <arg>--gateway-shape=<replaceable>string</replaceable></arg>
       <arg>--tunnel-network-name=<replaceable>string</replaceable></arg>
       <arg>--tunnel-network-range=<replaceable>string</replaceable></arg>
-      <arg>--guest-additions-iso=<replaceable>path</replaceable></arg>
       <arg>--proxy=<replaceable>string</replaceable></arg>
       <arg>--compartment-id=<replaceable>string</replaceable></arg>
     </cmdsynopsis>
@@ -540,9 +538,6 @@
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--local-gateway-iso</option></term><listitem><para>The local path to an installation media for a local gateway.</para></listitem>
-        </varlistentry>
-        <varlistentry>
           <term><option>--gateway-os-name</option></term><listitem><para>The name of OS to use for a cloud gateway.</para></listitem>
         </varlistentry>
         <varlistentry>
@@ -556,9 +551,6 @@
         </varlistentry>
         <varlistentry>
           <term><option>--tunnel-network-range</option></term><listitem><para>The IP address range to use for tunneling. </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><option>--guest-additions-iso</option></term><listitem><para>The local path to an installation media for VirtualBox guest additions.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--proxy</option></term><listitem><para>The proxy URL to be used in local gateway installation.</para></listitem>
