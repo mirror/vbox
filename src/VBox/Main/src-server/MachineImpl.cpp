@@ -4516,6 +4516,9 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
                                   this->lockHandle(),
                                   &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
+    HRESULT hrc = i_checkStateDependency(MutableOrRunningStateDep);
+    if (FAILED(hrc)) return hrc;
+
     ComObjPtr<MediumAttachment> pAttach = i_findAttachment(*mMediumAttachments.data(),
                                                            aName,
                                                            aControllerPort,
