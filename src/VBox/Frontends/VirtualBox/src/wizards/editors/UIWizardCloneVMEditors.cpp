@@ -476,10 +476,15 @@ void UICloneVMCloneTypeGroupBox::prepare()
 void UICloneVMCloneTypeGroupBox::retranslateUi()
 {
     if (m_pFullCloneRadio)
+    {
         m_pFullCloneRadio->setText(tr("&Full clone"));
+        m_pFullCloneRadio->setToolTip(tr("When chosen, all the virtual disks of the source vm are also cloned."));
+    }
     if (m_pLinkedCloneRadio)
+    {
         m_pLinkedCloneRadio->setText(tr("&Linked clone"));
-
+        m_pLinkedCloneRadio->setToolTip(tr("When chosen, the cloned vm will save space by sharing the source VM's disk images."));
+    }
 }
 
 void UICloneVMCloneTypeGroupBox::sltButtonClicked(QAbstractButton *)
@@ -541,11 +546,17 @@ void UICloneVMCloneModeGroupBox::prepare()
 void UICloneVMCloneModeGroupBox::retranslateUi()
 {
     if (m_pMachineRadio)
+    {
         m_pMachineRadio->setText(tr("Current &machine state"));
+        m_pMachineRadio->setToolTip(tr("When chosen, only the current state of the source vm is cloned."));
+    }
     if (m_pMachineAndChildsRadio)
         m_pMachineAndChildsRadio->setText(tr("Current &snapshot tree branch"));
     if (m_pAllRadio)
+    {
         m_pAllRadio->setText(tr("&Everything"));
+        m_pAllRadio->setToolTip(tr("When chosen, all the saved states of the source vm are also cloned."));
+    }
 }
 
 
