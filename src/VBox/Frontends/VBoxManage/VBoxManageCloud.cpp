@@ -2144,41 +2144,8 @@ static RTEXITCODE deleteCloudNetwork(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
 }
 
 
-static bool errorOccured(HRESULT hrc, const char *pszFormat, ...)
-{
-    if (FAILED(hrc))
-    {
-        va_list va;
-        va_start(va, pszFormat);
-        Utf8Str strError(pszFormat, va);
-        va_end(va);
-        RTStrmPrintf(g_pStdErr, "%s (rc=%x)\n", strError.c_str(), hrc);
-        RTStrmFlush(g_pStdErr);
-        return true;
-    }
-    return false;
-}
-
-
-static int composeTemplatePath(const char *pcszTemplate, Bstr& strFullPath)
-{
-    com::Utf8Str strTemplatePath;
-    int rc = RTPathAppPrivateNoArchCxx(strTemplatePath);
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppendCxx(strTemplatePath, "UnattendedTemplates");
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppendCxx(strTemplatePath, pcszTemplate);
-    if (RT_FAILURE(rc))
-    {
-        RTStrmPrintf(g_pStdErr, Cloud::tr("Failed to compose path to the unattended installer script templates (%Rrc)"), rc);
-        RTStrmFlush(g_pStdErr);
-    }
-    else
-        strFullPath = strTemplatePath;
-
-    return rc;
-}
-
+/* Disabled temporarily until proxy support is implemented in libssh */
+#if 0
 /**
  * @returns COM status code.
  * @retval  S_OK if url needs proxy.
@@ -2258,18 +2225,8 @@ static HRESULT getSystemProxyForUrl(const com::Utf8Str &strUrl, Bstr &strProxy)
     return hrc;
 #endif /* VBOX_WITH_PROXY_INFO */
 }
+#endif
 
-static HRESULT localGatewayImagePath(const Bstr &aDefaultMachineFolder, Bstr &aLgwImage)
-{
-    com::Utf8Str strPath(aDefaultMachineFolder);
-    int rc = RTPathAppendCxx(strPath, "gateways");
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppendCxx(strPath, "lgw.vdi");
-    if (RT_SUCCESS(rc))
-        aLgwImage = strPath;
-
-    return rc;
-}
 
 static RTEXITCODE setupCloudNetworkEnv(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
