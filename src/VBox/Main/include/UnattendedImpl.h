@@ -46,6 +46,7 @@ struct WIMImage
     VBOXOSTYPE mOSType;
     WIMImage() : mImageIndex(0), mOSType(VBOXOSTYPE_Unknown) { }
     const Utf8Str &formatName(Utf8Str &r_strName) const;
+    VBOXOSTYPE mEnmOsType;
 };
 
 /**
@@ -142,6 +143,7 @@ private:
     Utf8Str         mStrDetectedOSTypeId;
     Utf8Str         mStrDetectedOSVersion;
     Utf8Str         mStrDetectedOSFlavor;
+    VBOXOSTYPE      mEnmOsType;
     RTCList<RTCString, RTCString *> mDetectedOSLanguages; /**< (only relevant for windows at the moment) */
     Utf8Str         mStrDetectedOSHints;
     RTCList<WIMImage> mDetectedImages;
@@ -248,9 +250,9 @@ private:
         uint8_t     ab[4096];
         uint32_t    au32[1024];
     } DETECTBUFFER;
-    HRESULT i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *puBuf, VBOXOSTYPE *penmOsType);
-    HRESULT i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *puBuf, VBOXOSTYPE *penmOsType);
-    HRESULT i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *puBuf, VBOXOSTYPE *penmOsType);
+    HRESULT i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *puBuf);
+    HRESULT i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *puBuf);
+    HRESULT i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *puBuf);
 
     /**
      * Worker for reconfigureVM().

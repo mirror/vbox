@@ -441,15 +441,15 @@ HRESULT Unattended::detectIsoOS()
 HRESULT Unattended::i_innerDetectIsoOS(RTVFS hVfsIso)
 {
     DETECTBUFFER uBuf;
-    VBOXOSTYPE enmOsType = VBOXOSTYPE_Unknown;
-    HRESULT hrc = i_innerDetectIsoOSWindows(hVfsIso, &uBuf, &enmOsType);
-    if (hrc == S_FALSE && enmOsType == VBOXOSTYPE_Unknown)
-        hrc = i_innerDetectIsoOSLinux(hVfsIso, &uBuf, &enmOsType);
-    if (hrc == S_FALSE && enmOsType == VBOXOSTYPE_Unknown)
-        hrc = i_innerDetectIsoOSOs2(hVfsIso, &uBuf, &enmOsType);
-    if (enmOsType != VBOXOSTYPE_Unknown)
+    mEnmOsType = VBOXOSTYPE_Unknown;
+    HRESULT hrc = i_innerDetectIsoOSWindows(hVfsIso, &uBuf);
+    if (hrc == S_FALSE && mEnmOsType == VBOXOSTYPE_Unknown)
+        hrc = i_innerDetectIsoOSLinux(hVfsIso, &uBuf);
+    if (hrc == S_FALSE && mEnmOsType == VBOXOSTYPE_Unknown)
+        hrc = i_innerDetectIsoOSOs2(hVfsIso, &uBuf);
+    if (mEnmOsType != VBOXOSTYPE_Unknown)
     {
-        try {  mStrDetectedOSTypeId = Global::OSTypeId(enmOsType); }
+        try {  mStrDetectedOSTypeId = Global::OSTypeId(mEnmOsType); }
         catch (std::bad_alloc &) { hrc = E_OUTOFMEMORY; }
     }
     return hrc;
@@ -570,7 +570,7 @@ static void parseArchElement(const xml::ElementNode *pElmArch, WIMImage &rImage)
  * </VERSION>
  * @endverbatim
  *
- * Will update mOSType as well as setting mVersion on success.
+ * Will update mOSType, mEnmOsType as well as setting mVersion on success.
  *
  * @param   pNode          Points to the vesion XML node,
  * @param   image          Out reference to an WIMImage instance.
@@ -620,35 +620,35 @@ static void parseVersionElement(const xml::ElementNode *pNode, WIMImage &image)
                             /*
                              * Convert that to a version windows OS ID (newest first!).
                              */
-                            VBOXOSTYPE enmVersion = VBOXOSTYPE_Unknown;
+                            image.mEnmOsType = VBOXOSTYPE_Unknown;
                             if (RTStrVersionCompare(image.mVersion.c_str(), "10.0.22000.0") >= 0)
-                                enmVersion = VBOXOSTYPE_Win11_x64;
+                                image.mEnmOsType = VBOXOSTYPE_Win11_x64;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "10.0") >= 0)
-                                enmVersion = VBOXOSTYPE_Win10;
+                                image.mEnmOsType = VBOXOSTYPE_Win10;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "6.3") >= 0)
-                                enmVersion = VBOXOSTYPE_Win81;
+                                image.mEnmOsType = VBOXOSTYPE_Win81;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "6.2") >= 0)
-                                enmVersion = VBOXOSTYPE_Win8;
+                                image.mEnmOsType = VBOXOSTYPE_Win8;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "6.1") >= 0)
-                                enmVersion = VBOXOSTYPE_Win7;
+                                image.mEnmOsType = VBOXOSTYPE_Win7;
                             else if (RTStrVersionCompare(image.mVersion.c_str(), "6.0") >= 0)
-                                enmVersion = VBOXOSTYPE_WinVista;
+                                image.mEnmOsType = VBOXOSTYPE_WinVista;
                             if (image.mFlavor.contains("server", Utf8Str::CaseInsensitive))
                             {
                                 if (RTStrVersionCompare(image.mVersion.c_str(), "10.0.20348") >= 0)
-                                    enmVersion = VBOXOSTYPE_Win2k22_x64;
+                                    image.mEnmOsType = VBOXOSTYPE_Win2k22_x64;
                                 else if (RTStrVersionCompare(image.mVersion.c_str(), "10.0.17763") >= 0)
-                                    enmVersion = VBOXOSTYPE_Win2k19_x64;
+                                    image.mEnmOsType = VBOXOSTYPE_Win2k19_x64;
                                 else if (RTStrVersionCompare(image.mVersion.c_str(), "10.0") >= 0)
-                                    enmVersion = VBOXOSTYPE_Win2k16_x64;
+                                    image.mEnmOsType = VBOXOSTYPE_Win2k16_x64;
                                 else if (RTStrVersionCompare(image.mVersion.c_str(), "6.2") >= 0)
-                                    enmVersion = VBOXOSTYPE_Win2k12_x64;
+                                    image.mEnmOsType = VBOXOSTYPE_Win2k12_x64;
                                 else if (RTStrVersionCompare(image.mVersion.c_str(), "6.0") >= 0)
-                                    enmVersion = VBOXOSTYPE_Win2k8;
+                                    image.mEnmOsType = VBOXOSTYPE_Win2k8;
                             }
-                            if (enmVersion != VBOXOSTYPE_Unknown)
+                            if (image.mEnmOsType != VBOXOSTYPE_Unknown)
                                 image.mOSType = (VBOXOSTYPE)(  (image.mOSType & VBOXOSTYPE_ArchitectureMask)
-                                                             | (enmVersion & VBOXOSTYPE_OsTypeMask));
+                                                             | (image.mEnmOsType & VBOXOSTYPE_OsTypeMask));
                             return;
                         }
                     }
@@ -784,10 +784,8 @@ static void parseWimXMLData(const xml::ElementNode *pElmRoot, RTCList<WIMImage> 
  *
  * @param   hVfsIso     The ISO file system.
  * @param   pBuf        Read buffer.
- * @param   penmOsType  Where to return the OS type.  This is initialized to
- *                      VBOXOSTYPE_Unknown.
  */
-HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBOXOSTYPE *penmOsType)
+HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf)
 {
     /** @todo The 'sources/' path can differ. */
 
@@ -879,7 +877,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                                     if (i_updateDetectedAttributeForImage(mDetectedImages[i]))
                                     {
                                         LogRel2(("Unattended: happy with mDetectedImages[%u]\n", i));
-                                        *penmOsType = mDetectedImages[i].mOSType;
+                                        mEnmOsType = mDetectedImages[i].mOSType;
                                         return S_OK;
                                     }
                                 }
@@ -919,7 +917,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
     vrc = RTVfsFileOpen(hVfsIso, "sources/idwbinfo.txt", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))
     {
-        *penmOsType = VBOXOSTYPE_WinNT_x64;
+        mEnmOsType = VBOXOSTYPE_WinNT_x64;
 
         RTINIFILE hIniFile;
         vrc = RTIniFileCreateFromVfsFile(&hIniFile, hVfsFile, RTINIFILE_F_READONLY);
@@ -932,13 +930,13 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                 LogRelFlow(("Unattended: sources/idwbinfo.txt: BuildArch=%s\n", pBuf->sz));
                 if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("amd64")) == 0
                     || RTStrNICmp(pBuf->sz, RT_STR_TUPLE("x64"))   == 0 /* just in case */ )
-                    *penmOsType = VBOXOSTYPE_WinNT_x64;
+                    mEnmOsType = VBOXOSTYPE_WinNT_x64;
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("x86")) == 0)
-                    *penmOsType = VBOXOSTYPE_WinNT;
+                    mEnmOsType = VBOXOSTYPE_WinNT;
                 else
                 {
                     LogRel(("Unattended: sources/idwbinfo.txt: Unknown: BuildArch=%s\n", pBuf->sz));
-                    *penmOsType = VBOXOSTYPE_WinNT_x64;
+                    mEnmOsType = VBOXOSTYPE_WinNT_x64;
                 }
             }
 
@@ -948,100 +946,100 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                 LogRelFlow(("Unattended: sources/idwbinfo.txt: BuildBranch=%s\n", pBuf->sz));
                 if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("vista")) == 0
                     || RTStrNICmp(pBuf->sz, RT_STR_TUPLE("winmain_beta")) == 0)
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinVista);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinVista);
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("lh_sp2rtm")) == 0)
                 {
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinVista);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinVista);
                     pszVersion = "sp2";
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("longhorn_rtm")) == 0)
                 {
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinVista);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinVista);
                     pszVersion = "sp1";
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("win7")) == 0)
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win7);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win7);
                 else if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("winblue")) == 0
                          || RTStrNICmp(pBuf->sz, RT_STR_TUPLE("winmain_blue")) == 0
                          || RTStrNICmp(pBuf->sz, RT_STR_TUPLE("win81")) == 0 /* not seen, but just in case its out there */ )
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win81);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win81);
                 else if (   RTStrNICmp(pBuf->sz, RT_STR_TUPLE("win8")) == 0
                          || RTStrNICmp(pBuf->sz, RT_STR_TUPLE("winmain_win8")) == 0 )
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win8);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win8);
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("th1")) == 0)
                 {
                     pszVersion = "1507";    // aka. GA, retroactively 1507
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("th2")) == 0)
                 {
                     pszVersion = "1511";    // aka. threshold 2
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs1_release")) == 0)
                 {
                     pszVersion = "1607";    // aka. anniversay update; rs=redstone
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs2_release")) == 0)
                 {
                     pszVersion = "1703";    // aka. creators update
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs3_release")) == 0)
                 {
                     pszVersion = "1709";    // aka. fall creators update
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs4_release")) == 0)
                 {
                     pszVersion = "1803";
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("rs5_release")) == 0)
                 {
                     pszVersion = "1809";
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("19h1_release")) == 0)
                 {
                     pszVersion = "1903";
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("19h2_release")) == 0)
                 {
                     pszVersion = "1909";    // ??
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("20h1_release")) == 0)
                 {
                     pszVersion = "2003";    // ??
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("vb_release")) == 0)
                 {
                     pszVersion = "2004";    // ?? vb=Vibranium
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("20h2_release")) == 0)
                 {
                     pszVersion = "2009";    // ??
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("21h1_release")) == 0)
                 {
                     pszVersion = "2103";    // ??
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("21h2_release")) == 0)
                 {
                     pszVersion = "2109";    // ??
-                    *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
+                    mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win10);
                 }
                 else if (RTStrNICmp(pBuf->sz, RT_STR_TUPLE("co_release")) == 0)
                 {
                     pszVersion = "21H2";    // ??
-                    *penmOsType = VBOXOSTYPE_Win11_x64;
+                    mEnmOsType = VBOXOSTYPE_Win11_x64;
                 }
                 else
                     LogRel(("Unattended: sources/idwbinfo.txt: Unknown: BuildBranch=%s\n", pBuf->sz));
@@ -1058,12 +1056,12 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
          */
         vrc = RTVfsFileOpen(hVfsIso, "AMD64/HIVESYS.INF", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
         if (RT_SUCCESS(vrc))
-            *penmOsType = VBOXOSTYPE_WinNT_x64;
+            mEnmOsType = VBOXOSTYPE_WinNT_x64;
         else
         {
             vrc = RTVfsFileOpen(hVfsIso, "I386/HIVESYS.INF", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
             if (RT_SUCCESS(vrc))
-                *penmOsType = VBOXOSTYPE_WinNT;
+                mEnmOsType = VBOXOSTYPE_WinNT;
         }
         if (RT_SUCCESS(vrc))
         {
@@ -1083,7 +1081,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                     else if (RTStrVersionCompare(psz, "5.2.0") >= 0) /* W2K3, XP64 */
                     {
                         fClarifyProd = true;
-                        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k3);
+                        mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k3);
                         if (RTStrVersionCompare(psz, "5.2.3790.3959") >= 0)
                             pszVersion = "sp2";
                         else if (RTStrVersionCompare(psz, "5.2.3790.1830") >= 0)
@@ -1091,7 +1089,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                     }
                     else if (RTStrVersionCompare(psz, "5.1.0") >= 0) /* XP */
                     {
-                        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinXP);
+                        mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinXP);
                         if (RTStrVersionCompare(psz, "5.1.2600.5512") >= 0)
                             pszVersion = "sp3";
                         else if (RTStrVersionCompare(psz, "5.1.2600.2180") >= 0)
@@ -1101,7 +1099,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                     }
                     else if (RTStrVersionCompare(psz, "5.0.0") >= 0)
                     {
-                        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k);
+                        mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k);
                         if (RTStrVersionCompare(psz, "5.0.2195.6717") >= 0)
                             pszVersion = "sp4";
                         else if (RTStrVersionCompare(psz, "5.0.2195.5438") >= 0)
@@ -1124,12 +1122,12 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
          */
         vrc = RTVfsFileOpen(hVfsIso, "AMD64/PRODSPEC.INI", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
         if (RT_SUCCESS(vrc))
-            *penmOsType = VBOXOSTYPE_WinNT_x64;
+            mEnmOsType = VBOXOSTYPE_WinNT_x64;
         else
         {
             vrc = RTVfsFileOpen(hVfsIso, "I386/PRODSPEC.INI", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
             if (RT_SUCCESS(vrc))
-                *penmOsType = VBOXOSTYPE_WinNT;
+                mEnmOsType = VBOXOSTYPE_WinNT;
         }
         if (RT_SUCCESS(vrc))
         {
@@ -1149,17 +1147,17 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                     {
                         vrc = RTIniFileQueryValue(hIniFile, "Product Specification", "Product", pBuf->sz, sizeof(*pBuf), NULL);
                         if (RT_SUCCESS(vrc) && RTStrNICmp(pBuf->sz, RT_STR_TUPLE("Windows XP")) == 0)
-                            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinXP);
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_WinXP);
                         else if (RT_SUCCESS(vrc) && RTStrNICmp(pBuf->sz, RT_STR_TUPLE("Windows Server 2003")) == 0)
-                            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k3);
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k3);
                         else
-                            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k);
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Win2k);
 
                         if (RT_SUCCESS(vrc) && (strstr(pBuf->sz, "Server") || strstr(pBuf->sz, "server")))
                             pszProduct = "Server";
                     }
                     else if (RTStrVersionCompare(pBuf->sz, "4.0") >= 0) /* NT4 */
-                        *penmOsType = VBOXOSTYPE_WinNT4;
+                        mEnmOsType = VBOXOSTYPE_WinNT4;
                     else
                         LogRel(("Unattended: PRODSPEC.INI: unknown: DriverVer=%s\n", pBuf->sz));
 
@@ -1183,7 +1181,7 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
             vrc = RTVfsFileOpen(hVfsIso, "I386/TXTSETUP.INF", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
         if (RT_SUCCESS(vrc))
         {
-            *penmOsType = VBOXOSTYPE_WinNT;
+            mEnmOsType = VBOXOSTYPE_WinNT;
 
             RTINIFILE hIniFile;
             vrc = RTIniFileCreateFromVfsFile(&hIniFile, hVfsFile, RTINIFILE_F_READONLY);
@@ -1208,10 +1206,10 @@ HRESULT Unattended::i_innerDetectIsoOSWindows(RTVFS hVfsIso, DETECTBUFFER *pBuf,
                     if (RTStrVersionCompare(psz, "6.0") >= 0)
                         LogRel(("Unattended: TXTSETUP.SIF: unknown: LoadIdentifier=%s\n", pBuf->sz));
                     else if (RTStrVersionCompare(psz, "4.0") >= 0)
-                        *penmOsType = VBOXOSTYPE_WinNT4;
+                        mEnmOsType = VBOXOSTYPE_WinNT4;
                     else if (RTStrVersionCompare(psz, "3.1") >= 0)
                     {
-                        *penmOsType = VBOXOSTYPE_WinNT3x;
+                        mEnmOsType = VBOXOSTYPE_WinNT3x;
                         pszVersion = psz;
                     }
                     else
@@ -1433,10 +1431,8 @@ static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmO
  *
  * @param   hVfsIso     The ISO file system.
  * @param   pBuf        Read buffer.
- * @param   penmOsType  Where to return the OS type.  This is initialized to
- *                      VBOXOSTYPE_Unknown.
  */
-HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBOXOSTYPE *penmOsType)
+HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
 {
     /*
      * Redhat and derivatives may have a .treeinfo (ini-file style) with useful info
@@ -1464,7 +1460,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
             else
             {
                 LogRelFlow(("Unattended: .treeinfo: arch=%s\n", pBuf->sz));
-                if (detectLinuxArch(pBuf->sz, penmOsType, VBOXOSTYPE_RedHat))
+                if (detectLinuxArch(pBuf->sz, &mEnmOsType, VBOXOSTYPE_RedHat))
                 {
                     /* Try figure the release name, it doesn't have to be redhat. */
                     vrc = RTIniFileQueryValue(hIniFile, "release", "name", pBuf->sz, sizeof(*pBuf), NULL);
@@ -1475,10 +1471,10 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
                     if (RT_SUCCESS(vrc))
                     {
                         LogRelFlow(("Unattended: .treeinfo: name/family=%s\n", pBuf->sz));
-                        if (!detectLinuxDistroName(pBuf->sz, penmOsType, NULL))
+                        if (!detectLinuxDistroName(pBuf->sz, &mEnmOsType, NULL))
                         {
                             LogRel(("Unattended: .treeinfo: Unknown: name/family='%s', assuming Red Hat\n", pBuf->sz));
-                            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+                            mEnmOsType = (VBOXOSTYPE)((mEnmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
                         }
                     }
 
@@ -1502,7 +1498,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
             RTIniFileRelease(hIniFile);
         }
 
-        if (*penmOsType != VBOXOSTYPE_Unknown)
+        if (mEnmOsType != VBOXOSTYPE_Unknown)
             return S_FALSE;
     }
 
@@ -1540,12 +1536,12 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
 
         /* Do we recognize the architecture? */
         LogRelFlow(("Unattended: .discinfo: arch=%s\n", apszLines[2]));
-        if (detectLinuxArch(apszLines[2], penmOsType, VBOXOSTYPE_RedHat))
+        if (detectLinuxArch(apszLines[2], &mEnmOsType, VBOXOSTYPE_RedHat))
         {
             /* Do we recognize the release string? */
             LogRelFlow(("Unattended: .discinfo: product+version=%s\n", apszLines[1]));
             const char *pszVersion = NULL;
-            if (!detectLinuxDistroName(apszLines[1], penmOsType, &pszVersion))
+            if (!detectLinuxDistroName(apszLines[1], &mEnmOsType, &pszVersion))
                 LogRel(("Unattended: .discinfo: Unknown: release='%s'\n", apszLines[1]));
 
             if (*pszVersion)
@@ -1629,7 +1625,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
         else
             LogRel(("Unattended: .discinfo: Unknown: arch='%s'\n", apszLines[2]));
 
-        if (*penmOsType != VBOXOSTYPE_Unknown)
+        if (mEnmOsType != VBOXOSTYPE_Unknown)
             return S_FALSE;
     }
 
@@ -1720,10 +1716,10 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
         /* Did we find both of them? */
         if (pszDiskName && pszArch)
         {
-            if (detectLinuxArch(pszArch, penmOsType, VBOXOSTYPE_Ubuntu))
+            if (detectLinuxArch(pszArch, &mEnmOsType, VBOXOSTYPE_Ubuntu))
             {
                 const char *pszVersion = NULL;
-                if (detectLinuxDistroName(pszDiskName, penmOsType, &pszVersion))
+                if (detectLinuxDistroName(pszDiskName, &mEnmOsType, &pszVersion))
                 {
                     LogRelFlow(("Unattended: README.diskdefines: version=%s\n", pszVersion));
                     try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
@@ -1738,7 +1734,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
         else
             LogRel(("Unattended: README.diskdefines: Did not find both DISKNAME and ARCH. :-/\n"));
 
-        if (*penmOsType != VBOXOSTYPE_Unknown)
+        if (mEnmOsType != VBOXOSTYPE_Unknown)
             return S_FALSE;
     }
 
@@ -1782,11 +1778,11 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
 
         if (pszDiskName && pszArch)
         {
-            if (!detectLinuxArchII(pszArch, penmOsType, VBOXOSTYPE_Ubuntu))
+            if (!detectLinuxArchII(pszArch, &mEnmOsType, VBOXOSTYPE_Ubuntu))
                 LogRel(("Unattended: README.diskdefines: Unknown: arch='%s'\n", pszArch));
 
             const char *pszVersion = NULL;
-            if (detectLinuxDistroName(pszDiskName, penmOsType, &pszVersion))
+            if (detectLinuxDistroName(pszDiskName, &mEnmOsType, &pszVersion))
             {
                 LogRelFlow(("Unattended: README.diskdefines: version=%s\n", pszVersion));
                 try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
@@ -1798,7 +1794,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
         else
             LogRel(("Unattended: README.diskdefines: Did not find both DISKNAME and ARCH. :-/\n"));
 
-        if (*penmOsType != VBOXOSTYPE_Unknown)
+        if (mEnmOsType != VBOXOSTYPE_Unknown)
             return S_FALSE;
     }
 
@@ -1817,10 +1813,8 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf, V
  *
  * @param   hVfsIso     The ISO file system.
  * @param   pBuf        Read buffer.
- * @param   penmOsType  Where to return the OS type.  This is initialized to
- *                      VBOXOSTYPE_Unknown.
  */
-HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBOXOSTYPE *penmOsType)
+HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf)
 {
     /*
      * The OS2SE20.SRC contains the location of the tree with the diskette
@@ -1878,7 +1872,7 @@ HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBO
     /*
      * So, it's some kind of OS/2 2.x or later ISO alright.
      */
-    *penmOsType = VBOXOSTYPE_OS2;
+    mEnmOsType = VBOXOSTYPE_OS2;
     mStrDetectedOSHints.printf("OS2SE20.SRC=%.*s", cchOs2Image, pBuf->sz);
 
     /*
@@ -1886,7 +1880,7 @@ HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBO
      * This contains a ARCANOAE.FLG file with content we can use for the version:
      *      ArcaOS 5.0.7 EN
      *      Built 2021-12-07 18:34:34
-     * We drop the "ArcaOS" bit, as it's covered by penmOsType.  Then we pull up
+     * We drop the "ArcaOS" bit, as it's covered by mEnmOsType.  Then we pull up
      * the second line.
      *
      * Note! Yet to find a way to do unattended install of ArcaOS, as it comes
@@ -1900,7 +1894,7 @@ HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBO
     if (   RT_SUCCESS(vrc)
         && RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
     {
-        *penmOsType = VBOXOSTYPE_ArcaOS;
+        mEnmOsType = VBOXOSTYPE_ArcaOS;
 
         /* Read the version file:  */
         vrc = RTVfsFileOpen(hVfsIso, "SYS/ARCANOAE.FLG", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
@@ -1965,7 +1959,7 @@ HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBO
         if (   RT_SUCCESS(vrc)
             && RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
         {
-            *penmOsType = VBOXOSTYPE_ECS;
+            mEnmOsType = VBOXOSTYPE_ECS;
 
             /* Read the version file:  */
             vrc = RTVfsFileOpen(hVfsIso, "ECS/ECS_INST.FLG", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
@@ -2062,11 +2056,11 @@ HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBO
                                     mStrDetectedOSVersion.append(pszCsd);
                                 }
                                 if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "4.50") >= 0)
-                                    *penmOsType = VBOXOSTYPE_OS2Warp45;
+                                    mEnmOsType = VBOXOSTYPE_OS2Warp45;
                                 else if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "4.00") >= 0)
-                                    *penmOsType = VBOXOSTYPE_OS2Warp4;
+                                    mEnmOsType = VBOXOSTYPE_OS2Warp4;
                                 else if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "3.00") >= 0)
-                                    *penmOsType = VBOXOSTYPE_OS2Warp3;
+                                    mEnmOsType = VBOXOSTYPE_OS2Warp3;
                             }
                             else
                                 LogRel(("Unattended: bogus SYSLEVEL.OS2 file entry: %.128Rhxd\n", pEntry));
@@ -2089,7 +2083,7 @@ HRESULT Unattended::i_innerDetectIsoOSOs2(RTVFS hVfsIso, DETECTBUFFER *pBuf, VBO
     /*
      * Only tested ACP2, so only return S_OK for it.
      */
-    if (   *penmOsType == VBOXOSTYPE_OS2Warp45
+    if (   mEnmOsType == VBOXOSTYPE_OS2Warp45
         && RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "4.52") >= 0
         && mStrDetectedOSFlavor.contains("Server", RTCString::CaseInsensitive))
         return S_OK;
@@ -3568,6 +3562,16 @@ HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSu
         *aIsUnattendedInstallSupported = false;
         return S_OK;
     }
+    /* We cannot install Ubuntus older than 11.04. */
+    if (mEnmOsType == VBOXOSTYPE_Ubuntu || mEnmOsType == VBOXOSTYPE_Ubuntu_x64)
+    {
+        if (RTStrVersionCompare(mStrDetectedOSVersion.c_str(), "11.04") < 0)
+        {
+            *aIsUnattendedInstallSupported = false;
+            return S_OK;
+        }
+    }
+    *aIsUnattendedInstallSupported = true;
     return S_OK;
 }
 
@@ -3829,6 +3833,8 @@ bool Unattended::i_updateDetectedAttributeForImage(WIMImage const &rImage)
         mDetectedOSLanguages  = rImage.mLanguages;
     else
         fRet = false;
+
+    mEnmOsType = rImage.mEnmOsType;
 
     return fRet;
 }
