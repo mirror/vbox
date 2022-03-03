@@ -189,12 +189,12 @@ void UINativeWizard::retranslateUi()
     {
         case WizardMode_Basic:
             pButtonExpert->setText(tr("&Expert Mode"));
-            pButtonExpert->setToolTip(tr("Switch to <nobr><b>Expert Mode</b></nobr>, "
+            pButtonExpert->setToolTip(tr("Switch to the Expert Mode, "
                                          "a one-page dialog for experienced users."));
             break;
         case WizardMode_Expert:
             pButtonExpert->setText(tr("&Guided Mode"));
-            pButtonExpert->setToolTip(tr("Switch to <nobr><b>Guided Mode</b></nobr>, "
+            pButtonExpert->setToolTip(tr("Switch to the Guided Mode, "
                                          "a step-by-step dialog with detailed explanations."));
             break;
         default:
