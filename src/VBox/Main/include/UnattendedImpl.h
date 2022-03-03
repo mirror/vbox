@@ -228,6 +228,7 @@ private:
     HRESULT getDetectedOSHints(com::Utf8Str &aDetectedOSHints);
     HRESULT getDetectedImageNames(std::vector<com::Utf8Str> &aDetectedImageNames);
     HRESULT getDetectedImageIndices(std::vector<ULONG> &aDetectedImageIndices);
+    HRESULT getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSupported);
     //internal functions
 
     /**

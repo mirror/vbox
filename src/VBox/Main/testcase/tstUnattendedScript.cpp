@@ -450,6 +450,12 @@ HRESULT Unattended::getDetectedImageIndices(std::vector<ULONG> &aDetectedImageIn
     return E_NOTIMPL;
 }
 
+HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSupported)
+{
+    RT_NOREF(aIsUnattendedInstallSupported);
+    return E_NOTIMPL;
+}
+
 /*
  * Getters that the installer and script classes can use.
  */

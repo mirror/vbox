@@ -3560,6 +3560,12 @@ HRESULT Unattended::getDetectedImageIndices(std::vector<ULONG> &aDetectedImageIn
     return S_OK;
 }
 
+HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSupported)
+{
+    *aIsUnattendedInstallSupported = true;
+    return S_OK;
+}
+
 /*
  * Getters that the installer and script classes can use.
  */
@@ -3821,4 +3827,3 @@ bool Unattended::i_updateDetectedAttributeForImage(WIMImage const &rImage)
 
     return fRet;
 }
-
