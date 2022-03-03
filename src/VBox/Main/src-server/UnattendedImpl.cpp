@@ -3562,7 +3562,12 @@ HRESULT Unattended::getDetectedImageIndices(std::vector<ULONG> &aDetectedImageIn
 
 HRESULT Unattended::getIsUnattendedInstallSupported(BOOL *aIsUnattendedInstallSupported)
 {
-    *aIsUnattendedInstallSupported = true;
+    /* Unattended is disabled by default if we could not detect OS type. */
+    if (mStrDetectedOSTypeId.isEmpty() || mStrDetectedOSVersion.isEmpty())
+    {
+        *aIsUnattendedInstallSupported = false;
+        return S_OK;
+    }
     return S_OK;
 }
 

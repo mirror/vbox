@@ -925,19 +925,15 @@ bool UIWizardNewVM::isUnattendedEnabled() const
         return false;
     if (m_fSkipUnattendedInstall)
         return false;
-    if (!isOSTypeDetectionOK())
+    if (!isUnattendedInstallSupported())
         return false;
     return true;
 }
 
-bool UIWizardNewVM::isOSTypeDetectionOK() const
+bool UIWizardNewVM::isUnattendedInstallSupported() const
 {
-    QString strDetectedOSTypeId = detectedOSTypeId();
-    if (strDetectedOSTypeId.isEmpty())
-        return false;
-    if (strDetectedOSTypeId.contains("other", Qt::CaseInsensitive))
-        return false;
-    return true;
+    AssertReturn(!m_comUnattended.isNull(), false);
+    return m_comUnattended.GetIsUnattendedInstallSupported();
 }
 
 bool UIWizardNewVM::isGuestOSTypeWindows() const

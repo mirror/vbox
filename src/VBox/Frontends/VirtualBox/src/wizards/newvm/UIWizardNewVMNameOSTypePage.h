@@ -86,7 +86,7 @@ private:
     void markWidgets() const;
     void setSkipCheckBoxEnable();
     bool isUnattendedEnabled() const;
-    bool isOSTypeDetectionOK() const;
+    bool isUnattendedInstallSupported() const;
     void setEditionSelectorEnabled();
 
     /** @name Widgets

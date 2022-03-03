@@ -123,7 +123,7 @@ private:
     void setEnableNewDiskWidgets(bool fEnable);
     void setSkipCheckBoxEnable();
     bool isUnattendedEnabled() const;
-    bool isOSTypeDetectionOK() const;
+    bool isUnattendedInstallSupported() const;
     void setEnableDiskSelectionWidgets(bool fEnabled);
 
     /** @name Variables

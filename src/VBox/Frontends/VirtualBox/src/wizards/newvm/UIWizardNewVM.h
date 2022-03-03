@@ -52,7 +52,7 @@ public:
     UIWizardNewVM(QWidget *pParent, UIActionPool *pActionPool,
                   const QString &strMachineGroup, const QString &strHelpHashtag, CUnattended &comUnattended);
     bool isUnattendedEnabled() const;
-    bool isOSTypeDetectionOK() const;
+    bool isUnattendedInstallSupported() const;
     bool isGuestOSTypeWindows() const;
 
     bool createVM();

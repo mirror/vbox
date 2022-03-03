@@ -560,7 +560,7 @@ void UIWizardNewVMNameOSTypePage::setSkipCheckBoxEnable()
         m_pSkipUnattendedCheckBox->setEnabled(false);
         return;
     }
-    if (!isOSTypeDetectionOK())
+    if (!isUnattendedInstallSupported())
     {
         m_pSkipUnattendedCheckBox->setEnabled(false);
         return;
@@ -576,11 +576,11 @@ bool UIWizardNewVMNameOSTypePage::isUnattendedEnabled() const
     return pWizard->isUnattendedEnabled();
 }
 
-bool UIWizardNewVMNameOSTypePage::isOSTypeDetectionOK() const
+bool UIWizardNewVMNameOSTypePage::isUnattendedInstallSupported() const
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
-    return pWizard->isOSTypeDetectionOK();
+    return pWizard->isUnattendedInstallSupported();
 }
 
 

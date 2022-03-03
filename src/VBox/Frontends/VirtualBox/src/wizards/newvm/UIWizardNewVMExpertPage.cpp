@@ -940,7 +940,7 @@ void UIWizardNewVMExpertPage::setSkipCheckBoxEnable()
         m_pSkipUnattendedCheckBox->setEnabled(false);
         return;
     }
-    if (!isOSTypeDetectionOK())
+    if (!isUnattendedInstallSupported())
     {
         m_pSkipUnattendedCheckBox->setEnabled(false);
         return;
@@ -973,11 +973,11 @@ bool UIWizardNewVMExpertPage::isUnattendedEnabled() const
     return pWizard->isUnattendedEnabled();
 }
 
-bool UIWizardNewVMExpertPage::isOSTypeDetectionOK() const
+bool UIWizardNewVMExpertPage::isUnattendedInstallSupported() const
 {
     UIWizardNewVM *pWizard = wizardWindow<UIWizardNewVM>();
     AssertReturn(pWizard, false);
-    return pWizard->isOSTypeDetectionOK();
+    return pWizard->isUnattendedInstallSupported();
 }
 
 void UIWizardNewVMExpertPage::setEnableDiskSelectionWidgets(bool fEnabled)
