@@ -79,8 +79,9 @@
  * #g_ipcClientConnectionsListCritSect - protects access to list of IPC client connections.
  *     It is used by each thread - DrmResizeThread, DrmIpcSRV and IpcCLT-XXX.
  *
- * #g_monitorPositionsCritSect - serializes access to host interface when guest Desktop
- *     Environment reports display layout changes.
+ * #g_monitorPositionsCritSect - protects access to display layout data cache and vmwgfx driver
+ *      handle, serializes access to host interface and vmwgfx driver handle between
+ *      DrmResizeThread and IpcCLT-%u.
  */
 
 #include "VBoxClient.h"
@@ -148,6 +149,9 @@ static volatile uint32_t g_cDrmIpcConnections = 0;
  * client connects to server. This flag is updated each time when property is
  * changed on the host side. */
 static volatile bool g_fDrmIpcRestricted;
+
+/** Global handle to vmwgfx file descriptor (protected by #g_monitorPositionsCritSect). */
+static RTFILE g_hDevice = NIL_RTFILE;
 
 /** DRM version structure. */
 struct DRMVERSION
@@ -310,7 +314,8 @@ static RTFILE vbDrmOpenVmwgfx(void)
 
 /**
  * This function converts input monitors layout array passed from DevVMM
- * into monitors layout array to be passed to DRM stack.
+ * into monitors layout array to be passed to DRM stack. Last validation
+ * request is cached.
  *
  * @return  VINF_SUCCESS on success, VERR_DUPLICATE if monitors layout was not changed, IPRT error code otherwise.
  * @param   aDisplaysIn         Input displays array.
@@ -319,10 +324,13 @@ static RTFILE vbDrmOpenVmwgfx(void)
  * @param   cDisplaysOutMax     Number of elements in output displays array.
  * @param   pu32PrimaryDisplay  ID of a display which marked as primary.
  * @param   pcActualDisplays    Number of displays to report to DRM stack (number of enabled displays).
+ * @param   fPartialLayout      Whether aDisplaysIn array contains complete display layout information or not.
+ *                              When layout is reported by Desktop Environment helper, aDisplaysIn does not have
+ *                              idDisplay, fDisplayFlags and cBitsPerPixel data (guest has no info about them).
  */
 static int vbDrmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn,
-                             struct VBOX_DRMIPC_VMWRECT *aDisplaysOut, uint32_t *pu32PrimaryDisplay,
-                             uint32_t cDisplaysOutMax, uint32_t *pcActualDisplays)
+                               struct VBOX_DRMIPC_VMWRECT *aDisplaysOut, uint32_t *pu32PrimaryDisplay,
+                               uint32_t cDisplaysOutMax, uint32_t *pcActualDisplays, bool fPartialLayout)
 {
     /* This array is a cache of what was received from DevVMM so far.
      * DevVMM may send to us partial information bout scree layout. This
@@ -360,12 +368,16 @@ static int vbDrmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplays
     /* Update cache. */
     for (uint32_t i = 0; i < cDisplaysIn; i++)
     {
-        uint32_t idDisplay = aDisplaysIn[i].idDisplay;
+        uint32_t idDisplay = !fPartialLayout ? aDisplaysIn[i].idDisplay : i;
         if (idDisplay < VBOX_DRMIPC_MONITORS_MAX)
         {
-            aVmMonitorsCache[idDisplay].idDisplay = idDisplay;
-            aVmMonitorsCache[idDisplay].fDisplayFlags = aDisplaysIn[i].fDisplayFlags;
-            aVmMonitorsCache[idDisplay].cBitsPerPixel = aDisplaysIn[i].cBitsPerPixel;
+            if (!fPartialLayout)
+            {
+                aVmMonitorsCache[idDisplay].idDisplay = idDisplay;
+                aVmMonitorsCache[idDisplay].fDisplayFlags = aDisplaysIn[i].fDisplayFlags;
+                aVmMonitorsCache[idDisplay].cBitsPerPixel = aDisplaysIn[i].cBitsPerPixel;
+            }
+
             aVmMonitorsCache[idDisplay].cx = aDisplaysIn[i].cx;
             aVmMonitorsCache[idDisplay].cy = aDisplaysIn[i].cy;
             aVmMonitorsCache[idDisplay].xOrigin = aDisplaysIn[i].xOrigin;
@@ -437,7 +449,7 @@ static int vbDrmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplays
             }
 
             VBClLogVerbose(1, "update monitor %u parameters: %dx%d, (%d, %d)\n",
-                               i, aDisplaysOut[i].w, aDisplaysOut[i].h, aDisplaysOut[i].x, aDisplaysOut[i].y);
+                           i, aDisplaysOut[i].w, aDisplaysOut[i].h, aDisplaysOut[i].x, aDisplaysOut[i].y);
         }
 
         *pu32PrimaryDisplay = u32PrimaryDisplay;
@@ -449,6 +461,9 @@ static int vbDrmValidateLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplays
 
 /**
  * This function sends screen layout data to DRM stack.
+ *
+ * Helper function for vbDrmPushScreenLayout(). Should be called
+ * under g_monitorPositionsCritSect lock.
  *
  * @return  VINF_SUCCESS on success, IPRT error code otherwise.
  * @param   hDevice     Handle to opened DRM device.
@@ -491,33 +506,6 @@ static int vbDrmSendHints(RTFILE hDevice, struct VBOX_DRMIPC_VMWRECT *paRects, u
 }
 
 /**
- * Send monitor positions to host (thread safe).
- *
- * This function is accessed from DRMResize thread and from IPC Client thread.
- *
- * @return  IPRT status code.
- * @param   cDisplays   Number of displays (elements in pDisplays).
- * @param   pDisplays   Displays parameters as it was sent to vmwgfx driver.
- */
-static int vbDrmSendMonitorPositionsSync(uint32_t cDisplays, struct RTPOINT *pDisplays)
-{
-    int rc;
-
-    rc = RTCritSectEnter(&g_monitorPositionsCritSect);
-    if (RT_SUCCESS(rc))
-    {
-        rc = VbglR3SeamlessSendMonitorPositions(cDisplays, pDisplays);
-        int rc2 = RTCritSectLeave(&g_monitorPositionsCritSect);
-        if (RT_FAILURE(rc2))
-            VBClLogError("vbDrmSendMonitorPositionsSync: unable to leave critical section, rc=%Rrc\n", rc);
-    }
-    else
-        VBClLogError("vbDrmSendMonitorPositionsSync: unable to enter critical section, rc=%Rrc\n", rc);
-
-    return rc;
-}
-
-/**
  * This function converts vmwgfx monitors layout data into an array of monitor offsets
  * and sends it back to the host in order to ensure that host and guest have the same
  * monitors layout representation.
@@ -542,18 +530,93 @@ static int drmSendMonitorPositions(uint32_t cDisplays, struct VBOX_DRMIPC_VMWREC
         aPositions[i].y = pDisplays[i].y;
     }
 
-    return vbDrmSendMonitorPositionsSync(cDisplays, aPositions);
+    return VbglR3SeamlessSendMonitorPositions(cDisplays, aPositions);
+}
+
+/**
+ * Validate and apply screen layout data.
+ *
+ * @return  IPRT status code.
+ * @param   aDisplaysIn     An array with screen layout data.
+ * @param   cDisplaysIn     Number of elements in aDisplaysIn.
+ * @param   fPartialLayout  Whether aDisplaysIn array contains complete display layout information or not.
+ *                          When layout is reported by Desktop Environment helper, aDisplaysIn does not have
+ *                          idDisplay, fDisplayFlags and cBitsPerPixel data (guest has no info about them).
+ * @param   fApply          Whether to apply provided display layout data to the DRM stack or send display offsets only.
+ */
+static int vbDrmPushScreenLayout(VMMDevDisplayDef *aDisplaysIn, uint32_t cDisplaysIn, bool fPartialLayout, bool fApply)
+{
+    int rc;
+
+    struct VBOX_DRMIPC_VMWRECT aDisplaysOut[VBOX_DRMIPC_MONITORS_MAX];
+    uint32_t cDisplaysOut = 0;
+
+    uint32_t u32PrimaryDisplay = VBOX_DRMIPC_MONITORS_MAX;
+
+    rc = RTCritSectEnter(&g_monitorPositionsCritSect);
+    if (RT_FAILURE(rc))
+    {
+        VBClLogError("unable to lock monitor data cache, rc=%Rrc\n", rc);
+        return rc;
+    }
+
+    static uint32_t u32PrimaryDisplayLast = VBOX_DRMIPC_MONITORS_MAX;
+
+    RT_ZERO(aDisplaysOut);
+
+    /* Validate displays layout and push it to DRM stack if valid. */
+    rc = vbDrmValidateLayout(aDisplaysIn, cDisplaysIn, aDisplaysOut, &u32PrimaryDisplay,
+                             sizeof(aDisplaysOut), &cDisplaysOut, fPartialLayout);
+    if (RT_SUCCESS(rc))
+    {
+        if (fApply)
+        {
+            rc = vbDrmSendHints(g_hDevice, aDisplaysOut, cDisplaysOut);
+            VBClLogInfo("push screen layout data of %u display(s) to DRM stack, fPartialLayout=%RTbool, rc=%Rrc\n",
+                        cDisplaysOut, fPartialLayout, rc);
+        }
+
+        /* In addition, notify host that configuration was successfully applied to the guest vmwgfx driver. */
+        if (RT_SUCCESS(rc))
+        {
+            rc = drmSendMonitorPositions(cDisplaysOut, aDisplaysOut);
+            if (RT_FAILURE(rc))
+                VBClLogError("cannot send host notification: %Rrc\n", rc);
+
+            /* If information about primary display is present in display layout, send it to DE over IPC. */
+            if (u32PrimaryDisplay != VBOX_DRMIPC_MONITORS_MAX
+                && u32PrimaryDisplayLast != u32PrimaryDisplay)
+            {
+                rc = vbDrmIpcBroadcastPrimaryDisplay(u32PrimaryDisplay);
+
+                /* Cache last value in order to avoid sending duplicate data over IPC. */
+                u32PrimaryDisplayLast = u32PrimaryDisplay;
+
+                VBClLogVerbose(2, "DE was notified that display %u is now primary, rc=%Rrc\n", u32PrimaryDisplay, rc);
+            }
+            else
+                VBClLogVerbose(2, "do not notify DE second time that display %u is now primary, rc=%Rrc\n", u32PrimaryDisplay, rc);
+        }
+    }
+    else if (rc == VERR_DUPLICATE)
+        VBClLogVerbose(2, "do not notify DRM stack about monitors layout change twice, rc=%Rrc\n", rc);
+    else
+        VBClLogError("displays layout is invalid, will not notify guest driver, rc=%Rrc\n", rc);
+
+    int rc2 = RTCritSectLeave(&g_monitorPositionsCritSect);
+    if (RT_FAILURE(rc2))
+        VBClLogError("unable to unlock monitor data cache, rc=%Rrc\n", rc);
+
+    return rc;
 }
 
 /** Worker thread for resize task. */
 static DECLCALLBACK(int) vbDrmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
     int rc = VERR_GENERAL_FAILURE;
-    RTFILE hDevice = (RTFILE)pvUser;
 
-    RT_NOREF1(ThreadSelf);
-
-    AssertReturn(hDevice, VERR_INVALID_PARAMETER);
+    RT_NOREF(ThreadSelf);
+    RT_NOREF(pvUser);
 
     for (;;)
     {
@@ -566,11 +629,7 @@ static DECLCALLBACK(int) vbDrmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
         VMMDevDisplayDef aDisplaysIn[VBOX_DRMIPC_MONITORS_MAX];
         uint32_t cDisplaysIn = 0;
 
-        struct VBOX_DRMIPC_VMWRECT aDisplaysOut[VBOX_DRMIPC_MONITORS_MAX];
-        uint32_t cDisplaysOut = 0;
-
         RT_ZERO(aDisplaysIn);
-        RT_ZERO(aDisplaysOut);
 
         /* Query the first size without waiting.  This lets us e.g. pick up
          * the last event before a guest reboot when we start again after. */
@@ -578,42 +637,9 @@ static DECLCALLBACK(int) vbDrmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
         fAck = true;
         if (RT_SUCCESS(rc))
         {
-            uint32_t u32PrimaryDisplay = VBOX_DRMIPC_MONITORS_MAX;
-            static uint32_t u32PrimaryDisplayLast = VBOX_DRMIPC_MONITORS_MAX;
-
-            /* Validate displays layout and push it to DRM stack if valid. */
-            rc = vbDrmValidateLayout(aDisplaysIn, cDisplaysIn, aDisplaysOut, &u32PrimaryDisplay, sizeof(aDisplaysOut), &cDisplaysOut);
-            if (RT_SUCCESS(rc))
-            {
-                rc = vbDrmSendHints(hDevice, aDisplaysOut, cDisplaysOut);
-                VBClLogInfo("push screen layout data of %u display(s) to DRM stack has %s (%Rrc)\n",
-                                cDisplaysOut, RT_SUCCESS(rc) ? "succeeded" : "failed", rc);
-                /* In addition, notify host that configuration was successfully applied to the guest vmwgfx driver. */
-                if (RT_SUCCESS(rc))
-                {
-                    rc = drmSendMonitorPositions(cDisplaysOut, aDisplaysOut);
-                    if (RT_FAILURE(rc))
-                        VBClLogError("cannot send host notification: %Rrc\n", rc);
-
-                    /* If information about primary display is present in display layout, send it to DE over IPC. */
-                    if (u32PrimaryDisplay != VBOX_DRMIPC_MONITORS_MAX
-                        && u32PrimaryDisplayLast != u32PrimaryDisplay)
-                    {
-                        rc = vbDrmIpcBroadcastPrimaryDisplay(u32PrimaryDisplay);
-
-                        /* Cache last value in order to avoid sending duplicate data over IPC. */
-                        u32PrimaryDisplayLast = u32PrimaryDisplay;
-
-                        VBClLogVerbose(2, "DE was notified that display %u is now primary, rc=%Rrc\n", u32PrimaryDisplay, rc);
-                    }
-                    else
-                        VBClLogVerbose(2, "do not notify DE that display %u is now primary, rc=%Rrc\n", u32PrimaryDisplay, rc);
-                }
-            }
-            else if (rc == VERR_DUPLICATE)
-                VBClLogVerbose(2, "do not notify DRM stack about monitors layout change, rc=%Rrc\n", rc);
-            else
-                VBClLogError("displays layout is invalid, will not notify guest driver, rc=%Rrc\n", rc);
+            rc = vbDrmPushScreenLayout(aDisplaysIn, cDisplaysIn, false, true);
+            if (RT_FAILURE(rc))
+                VBClLogError("Failed to push display change as requested by host, rc=%Rrc\n", rc);
         }
         else
             VBClLogError("Failed to get display change request, rc=%Rrc\n", rc);
@@ -621,7 +647,7 @@ static DECLCALLBACK(int) vbDrmResizeWorker(RTTHREAD ThreadSelf, void *pvUser)
         do
         {
             rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, VBOX_DRMIPC_RX_TIMEOUT_MS, &events);
-        } while (rc == VERR_TIMEOUT && !ASMAtomicReadBool(&g_fShutdown));
+        } while ((rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED) && !ASMAtomicReadBool(&g_fShutdown));
 
         if (ASMAtomicReadBool(&g_fShutdown))
         {
@@ -790,6 +816,45 @@ static int vbDrmIpcClientsListRemove(PVBOX_DRMIPC_CLIENT_CONNECTION_LIST_NODE pC
 }
 
 /**
+ * Convert VBOX_DRMIPC_VMWRECT into VMMDevDisplayDef and check layout correctness.
+ *
+ * VBOX_DRMIPC_VMWRECT does not represent enough information needed for
+ * VMMDevDisplayDef. Missing fields (fDisplayFlags, idDisplay, cBitsPerPixel)
+ * are initialized with default (invalid) values due to this.
+ *
+ * @return  True if given screen layout is correct (i.e., has no displays which overlap), False
+ *          if it needs to be adjusted before injecting into DRM stack.
+ * @param   cDisplays Number of displays in configuration data.
+ * @param   pIn       A pointer to display configuration data array in form of VBOX_DRMIPC_VMWRECT (input).
+ * @param   pOut      A pointer to display configuration data array in form of VMMDevDisplayDef (output).
+ */
+static bool vbDrmVmwRectToDisplayDef(uint32_t cDisplays, struct VBOX_DRMIPC_VMWRECT *pIn, VMMDevDisplayDef *pOut)
+{
+    bool fCorrect = true;
+
+    for (uint32_t i = 0; i < cDisplays; i++)
+    {
+        /* VBOX_DRMIPC_VMWRECT has no information about this fields. */
+        pOut[i].fDisplayFlags = 0;
+        pOut[i].idDisplay = VBOX_DRMIPC_MONITORS_MAX;
+        pOut[i].cBitsPerPixel = 0;
+
+        pOut[i].xOrigin = pIn[i].x;
+        pOut[i].yOrigin = pIn[i].y;
+        pOut[i].cx = pIn[i].w;
+        pOut[i].cy = pIn[i].h;
+
+        /* Make sure that displays do not overlap within reported screen layout. Ask IPC server to fix layout otherwise. */
+        fCorrect =    i > 0
+                  && pIn[i].x != (int32_t)pIn[i - 1].w + pIn[i - 1].x
+                  ?  false
+                  :  fCorrect;
+    }
+
+    return fCorrect;
+}
+
+/**
  * @interface_method_impl{VBOX_DRMIPC_CLIENT,pfnRxCb}
  */
 static DECLCALLBACK(int) vbDrmIpcClientRxCallBack(uint8_t idCmd, void *pvData, uint32_t cbData)
@@ -803,9 +868,21 @@ static DECLCALLBACK(int) vbDrmIpcClientRxCallBack(uint8_t idCmd, void *pvData, u
     {
         case VBOXDRMIPCSRVCMD_REPORT_DISPLAY_OFFSETS:
         {
+            VMMDevDisplayDef aDisplays[VBOX_DRMIPC_MONITORS_MAX];
+            bool fCorrect;
+
             PVBOX_DRMIPC_COMMAND_REPORT_DISPLAY_OFFSETS pCmd = (PVBOX_DRMIPC_COMMAND_REPORT_DISPLAY_OFFSETS)pvData;
             AssertReturn(cbData == sizeof(VBOX_DRMIPC_COMMAND_REPORT_DISPLAY_OFFSETS), VERR_INVALID_PARAMETER);
-            rc = vbDrmSendMonitorPositionsSync(pCmd->cOffsets, pCmd->paOffsets);
+            AssertReturn(pCmd->cDisplays < VBOX_DRMIPC_MONITORS_MAX, VERR_INVALID_PARAMETER);
+
+            /* Convert input display config into VMMDevDisplayDef representation. */
+            RT_ZERO(aDisplays);
+            fCorrect = vbDrmVmwRectToDisplayDef(pCmd->cDisplays, pCmd->aDisplays, aDisplays);
+
+            rc = vbDrmPushScreenLayout(aDisplays, pCmd->cDisplays, true, !fCorrect);
+            if (RT_FAILURE(rc))
+                VBClLogError("Failed to push display change as requested by Desktop Environment helper, rc=%Rrc\n", rc);
+
             break;
         }
 
@@ -1058,7 +1135,8 @@ static void vbDrmPollIpcServerAccessMode(RTLOCALIPCSERVER hIpcServer)
                                      VBOX_DRMIPC_RX_TIMEOUT_MS, NULL, NULL, &u64Timestamp, NULL, NULL);
             if (RT_SUCCESS(rc))
                 vbDrmSetIpcServerAccessPermissions(hIpcServer);
-            else if (rc != VERR_TIMEOUT)
+            else if (   rc != VERR_TIMEOUT
+                     && rc != VERR_INTERRUPTED)
             {
                 VBClLogError("error on waiting guest property notification, rc=%Rrc\n", rc);
                 RTThreadSleep(VBOX_DRMIPC_RX_RELAX_MS);
@@ -1082,7 +1160,6 @@ int main(int argc, char *argv[])
     RTGETOPTSTATE GetState;
     int ch;
 
-    RTFILE hDevice = NIL_RTFILE;
     RTFILE hPidFile;
 
     RTLOCALIPCSERVER hIpcServer;
@@ -1145,8 +1222,8 @@ int main(int argc, char *argv[])
         return RTEXITCODE_FAILURE;
     }
 
-    hDevice = vbDrmOpenVmwgfx();
-    if (hDevice == NIL_RTFILE)
+    g_hDevice = vbDrmOpenVmwgfx();
+    if (g_hDevice == NIL_RTFILE)
         return RTEXITCODE_FAILURE;
 
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
@@ -1199,7 +1276,7 @@ int main(int argc, char *argv[])
     vbDrmSetIpcServerAccessPermissions(hIpcServer);
 
     /* Attempt to start DRM resize task. */
-    rc = RTThreadCreate(&drmResizeThread, vbDrmResizeWorker, (void *)hDevice, 0,
+    rc = RTThreadCreate(&drmResizeThread, vbDrmResizeWorker, NULL, 0,
                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, DRM_RESIZE_THREAD_NAME);
     if (RT_SUCCESS(rc))
     {
@@ -1247,7 +1324,7 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc2))
         VBClLogError("unable to destroy g_ipcClientConnectionsListCritSect critsect, rc=%Rrc\n", rc2);
 
-    RTFileClose(hDevice);
+    RTFileClose(g_hDevice);
 
     VBClLogInfo("releasing PID file lock\n");
     VbglR3ClosePidFile(g_pszPidFile, hPidFile);

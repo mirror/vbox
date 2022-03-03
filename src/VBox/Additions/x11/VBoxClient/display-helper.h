@@ -30,10 +30,10 @@
  * Display offsets change notification callback.
  *
  * @returns IPRT status code.
- * @param   cOffsets    Number of displays which have changed their offset.
- * @param   paOffsets   Displays offset data.
+ * @param   cDisplays   Number of displays which have changed their offset.
+ * @param   aDisplays   Displays offset data.
  */
-typedef DECLCALLBACKTYPE(int, FNDISPLAYOFFSETCHANGE, (uint32_t cOffsets, struct RTPOINT *paOffsets));
+typedef DECLCALLBACKTYPE(int, FNDISPLAYOFFSETCHANGE, (uint32_t cDisplays, struct VBOX_DRMIPC_VMWRECT *aDisplays));
 
 /**
  * Desktop Environment helper definition structure.

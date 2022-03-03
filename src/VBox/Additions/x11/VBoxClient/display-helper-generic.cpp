@@ -171,7 +171,7 @@ static void vbcl_hlp_generic_process_display_change_event(Display *pDisplay)
     {
         int rc;
         vbcl_hlp_generic_monitor_list_t pMonitorsInfoList, *pIter;
-        static RTPOINT aDisplayOffsets[VBOX_DRMIPC_MONITORS_MAX];
+        struct VBOX_DRMIPC_VMWRECT aDisplays[VBOX_DRMIPC_MONITORS_MAX];
 
         RTListInit(&pMonitorsInfoList.Node);
 
@@ -196,8 +196,11 @@ static void vbcl_hlp_generic_process_display_change_event(Display *pDisplay)
 
             XFree((void *)pszMonitorName);
 
-            aDisplayOffsets[idxDisplay].x = pIter->pMonitorInfo->x;
-            aDisplayOffsets[idxDisplay].y = pIter->pMonitorInfo->y;
+            aDisplays[idxDisplay].x = pIter->pMonitorInfo->x;
+            aDisplays[idxDisplay].y = pIter->pMonitorInfo->y;
+            aDisplays[idxDisplay].w = pIter->pMonitorInfo->width;
+            aDisplays[idxDisplay].h = pIter->pMonitorInfo->height;
+
             idxDisplay++;
         }
 
@@ -207,7 +210,7 @@ static void vbcl_hlp_generic_process_display_change_event(Display *pDisplay)
 
         if (g_pfnDisplayOffsetChangeCb)
         {
-            rc = g_pfnDisplayOffsetChangeCb(idxDisplay, aDisplayOffsets);
+            rc = g_pfnDisplayOffsetChangeCb(idxDisplay, aDisplays);
             if (RT_FAILURE(rc))
                 VBClLogError("unable to notify subscriber about monitors info change, rc=%Rrc\n", rc);
         }

@@ -297,10 +297,10 @@ RTDECL(int) vbDrmIpcSetPrimaryDisplay(PVBOX_DRMIPC_CLIENT pClient, uint32_t idDi
  *
  * @return  IPRT status code.
  * @param   pClient     IPC session private data.
- * @param   cOffsets    Number of monitors which have offsets changed.
- * @param   paOffsets   Offsets data.
+ * @param   cDisplays   Number of monitors which have offsets changed.
+ * @param   aDisplays   Offsets data.
  */
-RTDECL(int) vbDrmIpcReportDisplayOffsets(PVBOX_DRMIPC_CLIENT pClient, uint32_t cOffsets, RTPOINT *paOffsets)
+RTDECL(int) vbDrmIpcReportDisplayOffsets(PVBOX_DRMIPC_CLIENT pClient, uint32_t cDisplays, struct VBOX_DRMIPC_VMWRECT *aDisplays)
 {
     int rc = VERR_GENERAL_FAILURE;
 
@@ -314,8 +314,8 @@ RTDECL(int) vbDrmIpcReportDisplayOffsets(PVBOX_DRMIPC_CLIENT pClient, uint32_t c
 
         pCmd->Hdr.idCmd = VBOXDRMIPCSRVCMD_REPORT_DISPLAY_OFFSETS;
         pCmd->Hdr.cbData = sizeof(VBOX_DRMIPC_COMMAND_REPORT_DISPLAY_OFFSETS);
-        pCmd->cOffsets = cOffsets;
-        memcpy(pCmd->paOffsets, paOffsets, cOffsets * sizeof(RTPOINT));
+        pCmd->cDisplays = cDisplays;
+        memcpy(pCmd->aDisplays, aDisplays, cDisplays * sizeof(struct VBOX_DRMIPC_VMWRECT));
         pCmd->Hdr.u64Crc = RTCrc64(pCmd, pCmd->Hdr.cbData);
         Assert(pCmd->Hdr.u64Crc);
 

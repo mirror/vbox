@@ -113,10 +113,9 @@ typedef struct VBOX_DRMIPC_COMMAND_REPORT_DISPLAY_OFFSETS
     /* IPC command header. */
     VBOX_DRMIPC_COMMAND_HEADER Hdr;
     /** Number of displays which have changed offsets. */
-    uint32_t cOffsets;
+    uint32_t cDisplays;
     /** Offsets data. */
-    RTPOINT paOffsets[VBOX_DRMIPC_MONITORS_MAX];
-
+    struct VBOX_DRMIPC_VMWRECT aDisplays[VBOX_DRMIPC_MONITORS_MAX];
 } VBOX_DRMIPC_COMMAND_REPORT_DISPLAY_OFFSETS;
 
 /** Pointer to IPC command DRMIPCCOMMAND_SET_PRIMARY_DISPLAY payload. */
@@ -225,9 +224,9 @@ RTDECL(int) vbDrmIpcSetPrimaryDisplay(PVBOX_DRMIPC_CLIENT pClient, uint32_t idDi
  *
  * @return  IPRT status code.
  * @param   pClient     IPC session private data.
- * @param   cOffsets    Number of monitors which have offsets changed.
- * @param   paOffsets   Offsets data.
+ * @param   cDisplays   Number of monitors which have offsets changed.
+ * @param   aDisplays   Offsets data.
  */
-RTDECL(int) vbDrmIpcReportDisplayOffsets(PVBOX_DRMIPC_CLIENT pClient, uint32_t cOffsets, RTPOINT *paOffsets);
+RTDECL(int) vbDrmIpcReportDisplayOffsets(PVBOX_DRMIPC_CLIENT pClient, uint32_t cDisplays, struct VBOX_DRMIPC_VMWRECT *aDisplays);
 
 #endif /* !GA_INCLUDED_SRC_x11_VBoxClient_display_ipc_h */
