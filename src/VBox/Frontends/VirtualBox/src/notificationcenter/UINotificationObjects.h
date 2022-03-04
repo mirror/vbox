@@ -34,6 +34,7 @@
 #include "CCloudClient.h"
 #include "CCloudMachine.h"
 #include "CConsole.h"
+#include "CDataStream.h"
 #include "CExtPackFile.h"
 #include "CExtPackManager.h"
 #include "CForm.h"
@@ -1942,6 +1943,46 @@ private:
     CCloudMachine  m_comMachine;
     /** Holds the cloud machine name. */
     QString        m_strName;
+};
+
+/** UINotificationProgress extension for cloud console log acquire functionality. */
+class SHARED_LIBRARY_STUFF UINotificationProgressCloudConsoleLogAcquire : public UINotificationProgress
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listeners about console @a strLog for cloud VM with @a strName read. */
+    void sigLogRead(const QString &strName, const QString &strLog);
+
+public:
+
+    /** Constructs cloud console log acquire notification-progress.
+      * @param  comMachine  Brings the cloud machine for which console log being acquired. */
+    UINotificationProgressCloudConsoleLogAcquire(const CCloudMachine &comMachine);
+
+protected:
+
+    /** Returns object name. */
+    virtual QString name() const /* override final */;
+    /** Returns object details. */
+    virtual QString details() const /* override final */;
+    /** Creates and returns started progress-wrapper. */
+    virtual CProgress createProgress(COMResult &comResult) /* override final */;
+
+private slots:
+
+    /** Handles signal about progress being finished. */
+    void sltHandleProgressFinished();
+
+private:
+
+    /** Holds the cloud machine for which console log being acquired. */
+    CCloudMachine  m_comMachine;
+    /** Holds the cloud machine name. */
+    QString        m_strName;
+    /** Holds the stream log being read to. */
+    CDataStream    m_comStream;
 };
 
 /** UINotificationProgress extension for snapshot take functionality. */

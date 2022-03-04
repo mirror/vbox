@@ -1499,6 +1499,49 @@ void UIVirtualBoxManager::sltPerformCopyCommandVNCWindows()
     pClipboard->setText(comMachine.GetVNCConsoleCommandWindows());
 }
 
+void UIVirtualBoxManager::sltPerformShowLog()
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
+    UIVirtualMachineItemCloud *pCloudItem = pItem->toCloud();
+    AssertPtrReturnVoid(pCloudItem);
+
+    /* Acquire cloud machine: */
+    CCloudMachine comMachine = pCloudItem->machine();
+
+    /* Requesting cloud console log: */
+    UINotificationProgressCloudConsoleLogAcquire *pNotification = new UINotificationProgressCloudConsoleLogAcquire(comMachine);
+    connect(pNotification, &UINotificationProgressCloudConsoleLogAcquire::sigLogRead,
+            this, &UIVirtualBoxManager::sltHandleConsoleLogRead);
+    gpNotificationCenter->append(pNotification);
+}
+
+void UIVirtualBoxManager::sltHandleConsoleLogRead(const QString &strName, const QString &strLog)
+{
+    /* Prepare dialog: */
+    QDialog *pDialog = new QDialog(this);
+    if (pDialog)
+    {
+        pDialog->setAttribute(Qt::WA_DeleteOnClose);
+        pDialog->setWindowTitle(QString("%1 - Console Log").arg(strName));
+
+        QVBoxLayout *pLayout = new QVBoxLayout(pDialog);
+        if (pLayout)
+        {
+            QTextEdit *pTextEdit = new QTextEdit(pDialog);
+            if (pTextEdit)
+            {
+                pTextEdit->setText(strLog);
+                pLayout->addWidget(pTextEdit);
+            }
+        }
+    }
+
+    /* Show dialog: */
+    pDialog->show();
+}
+
 void UIVirtualBoxManager::sltPerformDiscardMachineState()
 {
     /* Get selected items: */
@@ -2275,6 +2318,8 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltPerformCopyCommandVNCWindows);
     connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenManagerWindowDefault);
+    connect(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ShowLog), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltPerformShowLog);
 
     /* 'Group/Close' menu connections: */
     connect(actionPool()->action(UIActionIndexMN_M_Group_M_Close_S_Detach), &UIAction::triggered,
@@ -2945,6 +2990,10 @@ void UIVirtualBoxManager::updateMenuMachineConsole(QMenu *pMenu)
         /* Delete connection action finally: */
         pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_DeleteConnection));
     }
+
+    /* Show console log action: */
+    pMenu->addSeparator();
+    pMenu->addAction(actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ShowLog));
 }
 
 void UIVirtualBoxManager::updateMenuMachineClose(QMenu *pMenu)
@@ -3110,6 +3159,7 @@ void UIVirtualBoxManager::updateActionsAppearance()
     actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix, items));
     actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows, items));
     actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications, items));
+    actionPool()->action(UIActionIndexMN_M_Machine_M_Console_S_ShowLog)->setEnabled(isActionEnabled(UIActionIndexMN_M_Machine_M_Console_S_ShowLog, items));
 
     /* Enable/disable group-close actions: */
     actionPool()->action(UIActionIndexMN_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexMN_M_Group_M_Close, items));
@@ -3381,6 +3431,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         case UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix:
         case UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows:
         case UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications:
+        case UIActionIndexMN_M_Machine_M_Console_S_ShowLog:
         {
             return isAtLeastOneItemStarted(items);
         }

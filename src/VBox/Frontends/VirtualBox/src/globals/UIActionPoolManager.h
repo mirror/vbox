@@ -117,6 +117,7 @@ enum UIActionIndexMN
     UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCUnix,
     UIActionIndexMN_M_Machine_M_Console_S_CopyCommandVNCWindows,
     UIActionIndexMN_M_Machine_M_Console_S_ConfigureApplications,
+    UIActionIndexMN_M_Machine_M_Console_S_ShowLog,
     UIActionIndexMN_M_Machine_M_Close,
     UIActionIndexMN_M_Machine_M_Close_S_Detach,
     UIActionIndexMN_M_Machine_M_Close_S_SaveState,

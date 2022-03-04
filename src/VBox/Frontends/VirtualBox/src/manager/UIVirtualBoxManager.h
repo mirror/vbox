@@ -248,6 +248,10 @@ private slots:
         void sltPerformCopyCommandVNCUnix();
         /** Handles call to copy VNC console command for Windows. */
         void sltPerformCopyCommandVNCWindows();
+        /** Handles call to show console log. */
+        void sltPerformShowLog();
+        /** Handles call about console @a strLog for cloud VM with @a strName read. */
+        void sltHandleConsoleLogRead(const QString &strName, const QString &strLog);
         /** Handles call to execute external application. */
         void sltExecuteExternalApplication();
 
