@@ -757,12 +757,12 @@ void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
 
 void UIChooserAbstractModel::sltDetachCOM()
 {
+    /* Finally, stop all cloud updates: */
+    stopCloudUpdates(true /* forced? */);
+
     /* Delete tree: */
     delete m_pInvisibleRootNode;
     m_pInvisibleRootNode = 0;
-
-    /* Finally, stop all cloud updates: */
-    stopCloudUpdates(true /* forced? */);
 }
 
 void UIChooserAbstractModel::sltCloudMachineUnregistered(const QString &strProviderShortName,
