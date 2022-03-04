@@ -5552,6 +5552,9 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
         if (aFlags.length() && RT_FAILURE(GuestPropValidateFlags(aFlags.c_str(), &fFlags)))
             return setError(E_INVALIDARG, tr("Invalid guest property flag values: '%s'"), aFlags.c_str());
 
+        if (fFlags & (GUEST_PROP_F_TRANSIENT | GUEST_PROP_F_TRANSRESET))
+            return setError(E_INVALIDARG, tr("Properties with TRANSIENT or TRANSRESET flag cannot be set or modified if VM is not running"));
+
         HWData::GuestPropertyMap::iterator it = mHWData->mGuestProperties.find(aName);
         if (it == mHWData->mGuestProperties.end())
         {
