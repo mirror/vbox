@@ -322,11 +322,11 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
     int aiMib[2];
     aiMib[0] = CTL_HW;
     aiMib[1] = HW_CPU_FREQ;
-    int cCpus = -1;
-    cb = sizeof(cCpus);
-    rc = sysctl(aiMib, RT_ELEMENTS(aiMib), &cCpus, &cb, NULL, 0);
-    if (rc != -1 && cCpus >= 1)
-        return cCpus;
+    int iDeprecatedFrequency = -1;
+    cb = sizeof(iDeprecatedFrequency);
+    rc = sysctl(aiMib, RT_ELEMENTS(aiMib), &iDeprecatedFrequency, &cb, NULL, 0);
+    if (rc != -1 && iDeprecatedFrequency >= 1)
+        return iDeprecatedFrequency;
 
     /*
      * The above does not work for Apple M1 / xnu 20.1.0, so go look at the I/O registry instead.
