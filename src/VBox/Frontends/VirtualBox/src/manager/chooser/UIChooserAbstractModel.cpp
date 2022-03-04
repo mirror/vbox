@@ -755,11 +755,14 @@ void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
     }
 }
 
-void UIChooserAbstractModel::sltDetachCOM()
+void UIChooserAbstractModel::sltCommitData()
 {
     /* Finally, stop all cloud updates: */
     stopCloudUpdates(true /* forced? */);
+}
 
+void UIChooserAbstractModel::sltDetachCOM()
+{
     /* Delete tree: */
     delete m_pInvisibleRootNode;
     m_pInvisibleRootNode = 0;
@@ -986,6 +989,8 @@ void UIChooserAbstractModel::prepare()
 void UIChooserAbstractModel::prepareConnections()
 {
     /* UICommon connections: */
+    connect(&uiCommon(), &UICommon::sigAskToCommitData,
+            this, &UIChooserAbstractModel::sltCommitData);
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM,
             this, &UIChooserAbstractModel::sltDetachCOM);
     connect(&uiCommon(), &UICommon::sigCloudMachineUnregistered,
