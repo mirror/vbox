@@ -53,8 +53,8 @@
 #include <paths.h>*/
 
 #include <iprt/mp.h>
-#include <iprt/cpuset.h>
 #include <iprt/assert.h>
+#include <iprt/cpuset.h>
 #include <iprt/log.h>
 #include <iprt/string.h>
 
@@ -173,15 +173,15 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
     return RTMpIsCpuPossible(idCpu);
 #else
     /** @todo proper ring-3 support on darwin, see @bugref{3014}. */
-    natural_t nCpus;
-    processor_basic_info_t pinfo;
-    mach_msg_type_number_t count;
-    kern_return_t krc = host_processor_info(mach_host_self(),
-        PROCESSOR_BASIC_INFO, &nCpus, (processor_info_array_t*)&pinfo, &count);
-    AssertReturn (krc == KERN_SUCCESS, true);
-    bool isOnline = idCpu < nCpus ? pinfo[idCpu].running : false;
-    vm_deallocate(mach_task_self(), (vm_address_t)pinfo, count * sizeof(*pinfo));
-    return isOnline;
+    natural_t              cCpus;
+    processor_basic_info_t paInfo;
+    mach_msg_type_number_t cInfo;
+    kern_return_t krc = host_processor_info(mach_host_self(), PROCESSOR_BASIC_INFO,
+                                            &cCpus, (processor_info_array_t*)&paInfo, &cInfo);
+    AssertReturn(krc == KERN_SUCCESS, true);
+    bool const fIsOnline = idCpu < cCpus ? paInfo[idCpu].running : false;
+    vm_deallocate(mach_task_self(), (vm_address_t)paInfo, cInfo * sizeof(paInfo[0]));
+    return fIsOnline;
 #endif
 }
 
@@ -224,16 +224,28 @@ RTDECL(RTCPUID) RTMpGetCoreCount(void)
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
-#if 0
-    return RTMpGetSet(pSet);
-#else
     RTCpuSetEmpty(pSet);
+#if 0
     RTCPUID cMax = rtMpDarwinMaxLogicalCpus();
     for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
         if (RTMpIsCpuOnline(idCpu))
             RTCpuSetAdd(pSet, idCpu);
-    return pSet;
+#else
+    natural_t              cCpus  = 0;
+    processor_basic_info_t paInfo = NULL;
+    mach_msg_type_number_t cInfo  = 0;
+    kern_return_t krc = host_processor_info(mach_host_self(), PROCESSOR_BASIC_INFO,
+                                            &cCpus, (processor_info_array_t *)&paInfo, &cInfo);
+    AssertReturn(krc == KERN_SUCCESS, pSet);
+
+    AssertStmt(cCpus <= RTCPUSET_MAX_CPUS, cCpus = RTCPUSET_MAX_CPUS);
+    for (natural_t idCpu = 0; idCpu < cCpus; idCpu++)
+        if (paInfo[idCpu].running)
+            RTCpuSetAdd(pSet, idCpu);
+
+    vm_deallocate(mach_task_self(), (vm_address_t)paInfo, cInfo * sizeof(paInfo[0]));
 #endif
+    return pSet;
 }
 
 
@@ -253,7 +265,11 @@ RTDECL(RTCPUID) RTMpGetOnlineCoreCount(void)
 
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
 {
-    /** @todo figure out how to get the current cpu speed on darwin. Have to check what powermanagement does. */
+    /** @todo figure out how to get the current cpu speed on darwin. Have to
+     *  check what powermanagement does.  The powermetrics uses a private
+     *  IOReportXxxx interface and *seems* (guessing) to calculate the frequency
+     *  based on the frequency distribution over the last report period...  This
+     *  means that it's not really an suitable API for here.  */
     NOREF(idCpu);
     return 0;
 }
