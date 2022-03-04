@@ -350,6 +350,25 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
      *
      */
 
+#if 1 /* simpler way to get at it inspired by powermetrics, this is also used
+         in the arm version of RTMpGetDescription. */
+    /* Assume names on the form "cpu<N>" are only for CPUs. */
+    char szCpuPath[64];
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    RTStrPrintf(szCpuPath, sizeof(szCpuPath), "IODeviceTree:/cpus/CPU%X", idCpu);
+# else
+    RTStrPrintf(szCpuPath, sizeof(szCpuPath), "IODeviceTree:/cpus/cpu%x", idCpu); /** @todo Hex? M1 Max only has 10 cores... */
+# endif
+    io_registry_entry_t hIoRegEntry = IORegistryEntryFromPath(kIOMasterPortDefault, szCpuPath);
+    if (hIoRegEntry != MACH_PORT_NULL)
+    {
+        uint32_t uCpuFrequency = rtMpDarwinGetMaxFrequencyFromIOService(hIoRegEntry);
+        IOObjectRelease(hIoRegEntry);
+        if (uCpuFrequency)
+            return uCpuFrequency;
+    }
+
+#else
     /* Assume names on the form "cpu<N>" are only for CPUs. */
     char szCpuName[32];
     RTStrPrintf(szCpuName, sizeof(szCpuName), "cpu%u", idCpu);
@@ -366,15 +385,15 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
             return uCpuFrequency;
     }
 
-#if 1 /* Just in case... */
+# if 1 /* Just in case... */
     /* Create a matching dictionary for searching for CPU services in the IOKit. */
-# if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
+#  if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
     hMatchingDict = IOServiceMatching("AppleARMCPU");
-# elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  elif defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     hMatchingDict = IOServiceMatching("AppleACPICPU");
-# else
-#  error "Port me!"
-# endif
+#  else
+#   error "Port me!"
+#  endif
     AssertReturn(hMatchingDict, 0);
 
     /* Perform the search and get a collection of Apple CPU services. */
@@ -398,8 +417,8 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
         IOObjectRelease(hCurCpu);
     }
     IOObjectRelease(hCpuServices);
+# endif
 #endif
-
     AssertFailed();
     return 0;
 }
