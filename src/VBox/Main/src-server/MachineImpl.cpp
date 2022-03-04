@@ -1599,6 +1599,9 @@ HRESULT Machine::setCPUExecutionCap(ULONG aCPUExecutionCap)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    rc = i_checkStateDependency(MutableOrRunningStateDep);
+    if (FAILED(rc)) return rc;
+
     alock.release();
     rc = i_onCPUExecutionCapChange(aCPUExecutionCap);
     alock.acquire();
@@ -1811,6 +1814,9 @@ HRESULT Machine::setMemoryBalloonSize(ULONG aMemoryBalloonSize)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    HRESULT rc = i_checkStateDependency(MutableOrRunningStateDep);
+    if (FAILED(rc)) return rc;
+
     i_setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mMemoryBalloonSize = aMemoryBalloonSize;
@@ -1834,6 +1840,9 @@ HRESULT Machine::setPageFusionEnabled(BOOL aPageFusionEnabled)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
 
     /** @todo must support changes for running vms and keep this in sync with IGuest. */
     i_setModified(IsModified_MachineData);
@@ -2650,6 +2659,9 @@ HRESULT Machine::setClipboardMode(ClipboardMode_T aClipboardMode)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    rc = i_checkStateDependency(MutableOrRunningStateDep);
+    if (FAILED(rc)) return rc;
+
     alock.release();
     rc = i_onClipboardModeChange(aClipboardMode);
     alock.acquire();
@@ -2681,6 +2693,9 @@ HRESULT Machine::setClipboardFileTransfersEnabled(BOOL aEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    rc = i_checkStateDependency(MutableOrRunningStateDep);
+    if (FAILED(rc)) return rc;
+
     alock.release();
     rc = i_onClipboardFileTransferModeChange(aEnabled);
     alock.acquire();
@@ -2711,6 +2726,9 @@ HRESULT Machine::setDnDMode(DnDMode_T aDnDMode)
     HRESULT rc = S_OK;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    rc = i_checkStateDependency(MutableOrRunningStateDep);
+    if (FAILED(rc)) return rc;
 
     alock.release();
     rc = i_onDnDModeChange(aDnDMode);
@@ -6409,6 +6427,9 @@ HRESULT Machine::hotPlugCPU(ULONG aCpu)
     if (mHWData->mCPUAttached[aCpu])
         return setError(VBOX_E_OBJECT_IN_USE, tr("CPU %lu is already attached"), aCpu);
 
+    rc = i_checkStateDependency(MutableOrRunningStateDep);
+    if (FAILED(rc)) return rc;
+
     alock.release();
     rc = i_onCPUChange(aCpu, false);
     alock.acquire();
@@ -6445,6 +6466,9 @@ HRESULT Machine::hotUnplugCPU(ULONG aCpu)
     /* CPU 0 can't be detached */
     if (aCpu == 0)
         return setError(E_INVALIDARG, tr("It is not possible to detach CPU 0"));
+
+    rc = i_checkStateDependency(MutableOrRunningStateDep);
+    if (FAILED(rc)) return rc;
 
     alock.release();
     rc = i_onCPUChange(aCpu, true);
