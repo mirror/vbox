@@ -129,10 +129,18 @@ int CollectorHAL::getHostCpuMHz(ULONG *mhz)
         }
     }
 
-    AssertReturn(cCpus, VERR_NOT_IMPLEMENTED);
-    *mhz = (ULONG)(u64TotalMHz / cCpus);
+    if (cCpus)
+    {
+        *mhz = (ULONG)(u64TotalMHz / cCpus);
+        return VINF_SUCCESS;
+    }
 
-    return VINF_SUCCESS;
+    /* This is always the case on darwin, so don't assert there. */
+#ifndef RT_OS_DARWIN
+    AssertFailed();
+#endif
+    *mhz = 0;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 #ifndef VBOX_COLLECTOR_TEST_CASE
