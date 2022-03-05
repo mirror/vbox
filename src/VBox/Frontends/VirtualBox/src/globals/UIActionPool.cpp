@@ -285,8 +285,11 @@ UIActionMenu::UIActionMenu(UIActionPool *pParent,
 
 UIActionMenu::~UIActionMenu()
 {
+#if !defined(VBOX_IS_QT6_OR_LATER) || !defined(RT_OS_DARWIN) /** @todo qt6: Tcrashes in QCocoaMenuBar::menuForTag during GUI
+                                                              * termination, so disabled it for now and hope it isn't needed. */
     /* Hide menu: */
     hideMenu();
+#endif
     /* Delete menu: */
     delete m_pMenu;
     m_pMenu = 0;
