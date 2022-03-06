@@ -39,7 +39,7 @@ VBOX_PATH_CRYPTO_RC4        := $(VBOX_PATH_CRYPTO)/rc4
 VBOX_PATH_CRYPTO_SHA        := $(VBOX_PATH_CRYPTO)/sha
 VBOX_PATH_CRYPTO_DES        := $(VBOX_PATH_CRYPTO)/des
 VBOX_PATH_CRYPTO_CAMELLIA   := $(VBOX_PATH_CRYPTO)/camellia
-VBOX_INST_CRYPTO_HEADERS    := obj/$(if-expr "$(CURSUBDIR)" == ".",,$(CURSUBDIR)/)crypto-1.1.1-headers/include/openssl/
+VBOX_INST_CRYPTO_HEADERS    := obj/$(if-expr "$(CURSUBDIR)" == ".",,$(CURSUBDIR)/)crypto-3.0.1-headers/include/openssl/
 VBOX_PATH_CRYPTO_HEADERS    := $(abspath $(PATH_OUT))/$(patsubst %/,%,$(VBOX_INST_CRYPTO_HEADERS))
 
 # Enable asm implementation of crypto.
@@ -62,13 +62,10 @@ crypto-headers_MODE    = a+r,u+w
 crypto-headers_DEFPATH = $(VBOX_PATH_OPENSSL)
 crypto-headers_SOURCES = \
 	include/openssl/aes.h=>aes.h \
-	include/openssl/asn1.h=>asn1.h \
 	include/openssl/asn1err.h=>asn1err.h \
-	include/openssl/asn1t.h=>asn1t.h \
 	include/openssl/asn1_mac.h=>asn1_mac.h \
 	include/openssl/async.h=>async.h \
 	include/openssl/asyncerr.h=>asyncerr.h \
-	include/openssl/bio.h=>bio.h \
 	include/openssl/bioerr.h=>bioerr.h \
 	include/openssl/blowfish.h=>blowfish.h \
 	include/openssl/bn.h=>bn.h \
@@ -78,16 +75,12 @@ crypto-headers_SOURCES = \
 	include/openssl/camellia.h=>camellia.h \
 	include/openssl/cast.h=>cast.h \
 	include/openssl/cmac.h=>cmac.h \
-	include/openssl/cms.h=>cms.h \
 	include/openssl/cmserr.h=>cmserr.h \
 	include/openssl/comp.h=>comp.h \
 	include/openssl/comperr.h=>comperr.h \
-	include/openssl/conf.h=>conf.h \
 	include/openssl/conferr.h=>conferr.h \
 	include/openssl/conf_api.h=>conf_api.h \
-	include/openssl/crypto.h=>crypto.h \
 	include/openssl/cryptoerr.h=>cryptoerr.h \
-	include/openssl/ct.h=>ct.h \
 	include/openssl/cterr.h=>cterr.h \
 	include/openssl/des.h=>des.h \
 	include/openssl/dh.h=>dh.h \
@@ -101,13 +94,11 @@ crypto-headers_SOURCES = \
 	include/openssl/ecdh.h=>ecdh.h \
 	include/openssl/ecdsa.h=>ecdsa.h \
 	include/openssl/engine.h=>engine.h \
-	include/openssl/err.h=>err.h \
 	include/openssl/evp.h=>evp.h \
 	include/openssl/evperr.h=>evperr.h \
 	include/openssl/e_os2.h=>e_os2.h \
 	include/openssl/hmac.h=>hmac.h \
 	include/openssl/idea.h=>idea.h \
-	include/openssl/lhash.h=>lhash.h \
 	include/openssl/md2.h=>md2.h \
 	include/openssl/md4.h=>md4.h \
 	include/openssl/md5.h=>md5.h \
@@ -116,18 +107,13 @@ crypto-headers_SOURCES = \
 	include/openssl/objects.h=>objects.h \
 	include/openssl/objectserr.h=>objectserr.h \
 	include/openssl/obj_mac.h=>obj_mac.h \
-	include/openssl/ocsp.h=>ocsp.h \
-	include/openssl/ocsperr.h=>ocsperr.h \
 	openssl-mangling.h=>openssl-mangling.h \
 	include/openssl/opensslconf.h=>opensslconf.h \
-	include/openssl/opensslv.h=>opensslv.h \
 	include/openssl/ossl_typ.h=>ossl_typ.h \
 	include/openssl/pem.h=>pem.h \
 	include/openssl/pemerr.h=>pemerr.h \
 	include/openssl/pem2.h=>pem2.h \
-	include/openssl/pkcs12.h=>pkcs12.h \
 	include/openssl/pkcs12err.h=>pkcs12err.h \
-	include/openssl/pkcs7.h=>pkcs7.h \
 	include/openssl/pkcs7err.h=>pkcs7err.h \
 	include/openssl/rand.h=>rand.h \
 	include/openssl/randerr.h=>randerr.h \
@@ -136,12 +122,9 @@ crypto-headers_SOURCES = \
 	include/openssl/ripemd.h=>ripemd.h \
 	include/openssl/rsa.h=>rsa.h \
 	include/openssl/rsaerr.h=>rsaerr.h \
-	include/openssl/safestack.h=>safestack.h \
 	include/openssl/seed.h=>seed.h \
 	include/openssl/sha.h=>sha.h \
-	include/openssl/srp.h=>srp.h \
 	include/openssl/srtp.h=>srtp.h \
-	include/openssl/ssl.h=>ssl.h \
 	include/openssl/sslerr.h=>sslerr.h \
 	include/openssl/ssl2.h=>ssl2.h \
 	include/openssl/ssl3.h=>ssl3.h \
@@ -150,14 +133,33 @@ crypto-headers_SOURCES = \
 	include/openssl/tls1.h=>tls1.h \
 	include/openssl/ts.h=>ts.h \
 	include/openssl/txt_db.h=>txt_db.h \
-	include/openssl/ui.h=>ui.h \
-	include/openssl/x509.h=>x509.h \
 	include/openssl/x509err.h=>x509err.h \
-	include/openssl/x509v3.h=>x509v3.h \
 	include/openssl/x509v3err.h=>x509v3err.h \
-	include/openssl/x509_vfy.h=>x509_vfy.h
-
-
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/asn1.h=>asn1.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/asn1t.h=>asn1t.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/bio.h=>bio.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/cmp.h=>cmp.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/cms.h=>cms.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/conf.h=>conf.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/configuration.h=>configuration.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/crmf.h=>crmf.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/crypto.h=>crypto.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/ct.h=>ct.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/err.h=>err.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/ess.h=>ess.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/fipskey.h=>fipskey.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/lhash.h=>lhash.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/ocsp.h=>ocsp.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/opensslv.h=>opensslv.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/pkcs12.h=>pkcs12.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/pkcs7.h=>pkcs7.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/safestack.h=>safestack.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/srp.h=>srp.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/ssl.h=>ssl.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/ui.h=>ui.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/x509.h=>x509.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/x509_vfy.h=>x509_vfy.h \
+	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/x509v3.h=>x509v3.h
 
 #
 # The templates used for the crypo lib and all its sublibraries.
@@ -181,7 +183,8 @@ TEMPLATE_LIBCRYPTO_DEFS = \
 	DSO_NONE \
 	OPENSSL_USE_NODELETE \
 	OPENSSL_PIC \
-	OPENSSL_IA32_SSE2
+	OPENSSL_IA32_SSE2 \
+	OPENSSL_BUILDING_OPENSSL
 ifdef VBOX_WITH_CRYPTO_ASM
 TEMPLATE_LIBCRYPTO_DEFS += \
 	OPENSSL_BN_ASM_MONT \
@@ -265,6 +268,8 @@ TEMPLATE_LIBCRYPTO_CFLAGS.freebsd = -std=gnu99
 TEMPLATE_LIBCRYPTO_INCS := \
 	$(VBOX_PATH_OPENSSL) \
 	$(VBOX_PATH_OPENSSL)/include \
+	$(VBOX_PATH_OPENSSL)/providers/common/include \
+	$(VBOX_PATH_OPENSSL)/providers/implementations/include \
 	$(VBOX_PATH_CRYPTO)/include \
 	$(VBOX_PATH_CRYPTO_MODES) \
 	$(VBOX_PATH_CRYPTO)/ec/curve448 \
