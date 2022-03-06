@@ -18,8 +18,10 @@ crypto_bn_TEMPLATE = SUBLIBCRYPTO
 crypto_bn_DEFS = OPENSSL_NO_DEPRECATED
 crypto_bn_SOURCES = \
 	bn_add.c \
+	bn_asm.c \
 	bn_blind.c \
 	bn_const.c \
+	bn_conv.c \
 	bn_ctx.c \
 	bn_depr.c \
 	bn_dh.c \
@@ -57,6 +59,7 @@ ifdef VBOX_WITH_CRYPTO_ASM
  crypto_bn_SOURCES.amd64 += \
 	asm/x86_64-gcc.c \
 	$(VBOX_PATH_CRYPTO_GENASM)/rsaz-avx2.S \
+	$(VBOX_PATH_CRYPTO_GENASM)/rsaz-avx512.S \
 	$(VBOX_PATH_CRYPTO_GENASM)/rsaz-x86_64.S \
 	$(VBOX_PATH_CRYPTO_GENASM)/x86_64-gf2m.S \
 	$(VBOX_PATH_CRYPTO_GENASM)/x86_64-mont.S \
@@ -74,6 +77,7 @@ recreate-bn-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
 	$(VBOX_PATH_CRYPTO_BN)/asm/x86-mont.pl \
 	$(VBOX_PATH_CRYPTO_BN)/asm/x86-gf2m.pl \
 	$(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx2.pl \
+	$(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx512.pl \
 	$(VBOX_PATH_CRYPTO_BN)/asm/rsaz-x86_64.pl \
 	$(VBOX_PATH_CRYPTO_BN)/asm/x86_64-gf2m.pl \
 	$(VBOX_PATH_CRYPTO_BN)/asm/x86_64-mont.pl \
@@ -83,6 +87,7 @@ recreate-bn-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86-mont.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/x86-mont.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86-gf2m.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/x86-gf2m.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx2.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/rsaz-avx2.S
+	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-avx512.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/rsaz-avx512.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/rsaz-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/rsaz-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86_64-gf2m.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/x86_64-gf2m.S
 	perl $(VBOX_PATH_CRYPTO_BN)/asm/x86_64-mont.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/x86_64-mont.S
