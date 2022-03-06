@@ -3441,6 +3441,21 @@ static SVGACBStatus vmsvgaR3CmdBufProcessCommands(PPDMDEVINS pDevIns, PVGASTATE 
     SVGACBStatus CBstatus = SVGA_CB_STATUS_COMPLETED;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
+# ifdef VBOX_WITH_VMSVGA3D
+#  ifdef VMSVGA3D_DX
+    /* Commands submitted for the SVGA3D_INVALID_ID context do not affect pipeline. So ignore them. */
+    if (idDXContext != SVGA3D_INVALID_ID)
+    {
+        if (pSvgaR3State->idDXContextCurrent != idDXContext)
+        {
+            LogFlow(("DXCTX: buffer %d->%d\n", pSvgaR3State->idDXContextCurrent, idDXContext));
+            vmsvga3dDXSwitchContext(pThisCC, idDXContext);
+            pSvgaR3State->idDXContextCurrent = idDXContext;
+        }
+    }
+#  endif
+# endif
+
     uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO = pThisCC->svga.pau32FIFO;
 
     uint8_t const *pu8Cmd = (uint8_t *)pvCommands;
@@ -5811,6 +5826,11 @@ static int vmsvgaR3StateInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVMSVGAR3STATE
     vmsvgaR3CmdBufCtxInit(&pSVGAState->CmdBufCtxDC);
 
     RTListInit(&pSVGAState->MOBLRUList);
+# ifdef VBOX_WITH_VMSVGA3D
+#  ifdef VMSVGA3D_DX
+    pSVGAState->idDXContextCurrent = SVGA3D_INVALID_ID;
+#  endif
+# endif
     return rc;
 }
 

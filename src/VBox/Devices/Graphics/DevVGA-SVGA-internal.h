@@ -142,6 +142,11 @@ typedef struct VMSVGAR3STATE
     RTLISTANCHOR            MOBLRUList;
 
 # ifdef VBOX_WITH_VMSVGA3D
+#  ifdef VMSVGA3D_DX
+    /** DX context of the currently processed command buffer */
+    uint32_t                 idDXContextCurrent;
+    uint32_t                 u32Reserved;
+#  endif
     VMSVGA3DBACKENDFUNCS3D  *pFuncs3D;
     VMSVGA3DBACKENDFUNCSVGPU9 *pFuncsVGPU9;
     VMSVGA3DBACKENDFUNCSMAP *pFuncsMap;

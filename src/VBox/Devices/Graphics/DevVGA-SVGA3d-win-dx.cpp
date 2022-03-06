@@ -50,6 +50,8 @@
 # define VBOX_D3D11_LIBRARY_NAME "VBoxDxVk"
 #endif
 
+//#define DX_FORCE_SINGLE_DEVICE
+
 /* This is not available on non Windows hosts. */
 #ifndef D3D_RELEASE
 # define D3D_RELEASE(a_Ptr) do { if ((a_Ptr)) (a_Ptr)->Release(); (a_Ptr) = NULL; } while (0)
@@ -262,8 +264,11 @@ typedef struct VMSVGA3DBACKEND
     RTLDRMOD                   hD3DCompiler;
     PFN_D3D_DISASSEMBLE        pfnD3DDisassemble;
 
-    /** @todo This device will be used for all rendering for "single DX device" mode. */
     DXDEVICE                   dxDevice;               /* Device for the VMSVGA3D context independent operation. */
+
+    bool                       fSingleDevice;          /* Whether to use one DX device for all guest contexts. */
+
+    /** @todo Here a set of functions which do different job in single and multiple device modes. */
 } VMSVGA3DBACKEND;
 
 
@@ -786,6 +791,25 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDevice)
 {
     int rc = VINF_SUCCESS;
 
+    if (pBackend->fSingleDevice && pBackend->dxDevice.pDevice)
+    {
+        pDevice->pDevice = pBackend->dxDevice.pDevice;
+        pDevice->pDevice->AddRef();
+
+        pDevice->pImmediateContext = pBackend->dxDevice.pImmediateContext;
+        pDevice->pImmediateContext->AddRef();
+
+        pDevice->pDxgiFactory = pBackend->dxDevice.pDxgiFactory;
+        pDevice->pDxgiFactory->AddRef();
+
+        pDevice->FeatureLevel = pBackend->dxDevice.FeatureLevel;
+
+        pDevice->pStagingBuffer = 0;
+        pDevice->cbStagingBuffer = 0;
+
+        return rc;
+    }
+
     IDXGIAdapter *pAdapter = NULL; /* Default adapter. */
     static D3D_FEATURE_LEVEL const s_aFeatureLevels[] =
     {
@@ -987,6 +1011,9 @@ static DXDEVICE *dxDeviceFromCid(uint32_t cid, PVMSVGA3DSTATE pState)
 {
     if (cid != DX_CID_BACKEND)
     {
+        if (pState->pBackend->fSingleDevice)
+            return &pState->pBackend->dxDevice;
+
         VMSVGA3DDXCONTEXT *pDXContext;
         int rc = vmsvga3dDXContextFromCid(pState, cid, &pDXContext);
         if (RT_SUCCESS(rc))
@@ -1002,7 +1029,7 @@ static DXDEVICE *dxDeviceFromCid(uint32_t cid, PVMSVGA3DSTATE pState)
 
 static DXDEVICE *dxDeviceFromContext(PVMSVGA3DSTATE p3dState, VMSVGA3DDXCONTEXT *pDXContext)
 {
-    if (pDXContext)
+    if (pDXContext && !p3dState->pBackend->fSingleDevice)
         return &pDXContext->pBackendDXContext->dxDevice;
 
     return &p3dState->pBackend->dxDevice;
@@ -1035,6 +1062,9 @@ static int dxDeviceFlush(DXDEVICE *pDevice)
 
 static int dxContextWait(uint32_t cidDrawing, PVMSVGA3DSTATE pState)
 {
+    if (pState->pBackend->fSingleDevice)
+      return VINF_SUCCESS;
+
     /* Flush cidDrawing context and issue a query. */
     DXDEVICE *pDXDevice = dxDeviceFromCid(cidDrawing, pState);
     if (pDXDevice)
@@ -1046,6 +1076,9 @@ static int dxContextWait(uint32_t cidDrawing, PVMSVGA3DSTATE pState)
 
 static int dxSurfaceWait(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface, uint32_t cidRequesting)
 {
+    if (pState->pBackend->fSingleDevice)
+        return VINF_SUCCESS;
+
     VMSVGA3DBACKENDSURFACE *pBackendSurface = pSurface->pBackendSurface;
     if (!pBackendSurface)
         AssertFailedReturn(VERR_INVALID_STATE);
@@ -1075,7 +1108,7 @@ static ID3D11Resource *dxResource(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurfa
     ID3D11Resource *pResource;
 
     uint32_t const cidRequesting = pDXContext ? pDXContext->cid : DX_CID_BACKEND;
-    if (cidRequesting == pSurface->idAssociatedContext)
+    if (cidRequesting == pSurface->idAssociatedContext || pState->pBackend->fSingleDevice)
         pResource = pBackendSurface->u.pResource;
     else
     {
@@ -1831,6 +1864,12 @@ static UINT dxBindFlags(SVGA3dSurfaceAllFlags surfaceFlags)
 
 static DXDEVICE *dxSurfaceDevice(PVMSVGA3DSTATE p3dState, PVMSVGA3DSURFACE pSurface, PVMSVGA3DDXCONTEXT pDXContext, UINT *pMiscFlags)
 {
+    if (p3dState->pBackend->fSingleDevice)
+    {
+        *pMiscFlags = 0;
+        return &p3dState->pBackend->dxDevice;
+    }
+
     if (dxIsSurfaceShareable(pSurface))
     {
         *pMiscFlags = D3D11_RESOURCE_MISC_SHARED;
@@ -2219,7 +2258,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         LogFunc(("sid = %u\n", pSurface->id));
         pBackendSurface->enmDxgiFormat = dxgiFormat;
         pSurface->pBackendSurface = pBackendSurface;
-        if (RT_BOOL(MiscFlags & D3D11_RESOURCE_MISC_SHARED))
+        if (p3dState->pBackend->fSingleDevice || RT_BOOL(MiscFlags & D3D11_RESOURCE_MISC_SHARED))
             pSurface->idAssociatedContext = DX_CID_BACKEND;
         else
             pSurface->idAssociatedContext = pDXContext->cid;
@@ -2805,6 +2844,13 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
         }
         Log6Func(("Load D3DDisassemble: %Rrc\n", rc2));
     }
+
+#if !defined(RT_OS_WINDOWS) || defined(DX_FORCE_SINGLE_DEVICE)
+    pBackend->fSingleDevice = true;
+#endif
+
+    LogRelMax(1, ("VMSVGA: Single DX device mode: %s\n", pBackend->fSingleDevice ? "enabled" : "disabled"));
+
 //DEBUG_BREAKPOINT_TEST();
     return rc;
 }
@@ -4202,7 +4248,7 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurf
         if (pDstSurface->pBackendSurface == NULL)
         {
             /* Create the target if it can be used as a device context shared resource (render or screen target). */
-            if (dxIsSurfaceShareable(pDstSurface))
+            if (pBackend->fSingleDevice || dxIsSurfaceShareable(pDstSurface))
             {
                 rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, NULL, pDstSurface);
                 AssertRCReturn(rc, rc);
@@ -5090,6 +5136,18 @@ static DECLCALLBACK(int) vmsvga3dBackDXBindContext(PVGASTATECC pThisCC, PVMSVGA3
 }
 
 
+static DECLCALLBACK(int) vmsvga3dBackDXSwitchContext(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContextNew)
+{
+    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    if (!pBackend->fSingleDevice)
+        return VINF_NOT_IMPLEMENTED; /* Not required. */
+
+    /* The new context state will be applied by the generic DX code. */
+    RT_NOREF(pDXContextNew);
+    return VINF_SUCCESS;
+}
+
+
 static DECLCALLBACK(int) vmsvga3dBackDXReadbackContext(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
@@ -5227,8 +5285,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetShader(PVGASTATECC pThisCC, PVMSVGA3DD
         pDXShader = &pDXContext->pBackendDXContext->paShader[pShader->id];
         Assert(pDXShader->pShader);
         Assert(pDXShader->enmShaderType >= SVGA3D_SHADERTYPE_MIN && pDXShader->enmShaderType < SVGA3D_SHADERTYPE_MAX);
-        uint32_t const idxShaderState = pDXShader->enmShaderType - SVGA3D_SHADERTYPE_MIN;
-        pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId = pShader->id;
     }
     else
         pDXShader = NULL;
@@ -5246,7 +5302,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSamplers(PVGASTATECC pThisCC, PVMSVGA3
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 
-    uint32_t const idxShaderState = type - SVGA3D_SHADERTYPE_MIN;
     ID3D11SamplerState *papSamplerState[SVGA3D_DX_MAX_SAMPLERS];
     for (uint32_t i = 0; i < cSamplerId; ++i)
     {
@@ -5258,8 +5313,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSamplers(PVGASTATECC pThisCC, PVMSVGA3
         }
         else
             papSamplerState[i] = NULL;
-
-        pDXContext->svgaDXContext.shaderState[idxShaderState].samplers[startSampler + i] = samplerId;
     }
 
     dxSamplerSet(pDevice, type, startSampler, cSamplerId, papSamplerState);
@@ -5721,29 +5774,33 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetInputLayout(PVGASTATECC pThisCC, PVMSV
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 
-    pDXContext->svgaDXContext.inputAssembly.layoutId = elementLayoutId;
-
-    DXELEMENTLAYOUT *pDXElementLayout = &pDXContext->pBackendDXContext->paElementLayout[elementLayoutId];
-    if (!pDXElementLayout->pElementLayout)
+    ID3D11InputLayout *pInputLayout = NULL;
+    if (elementLayoutId != SVGA3D_INVALID_ID)
     {
-        uint32_t const idxShaderState = SVGA3D_SHADERTYPE_VS - SVGA3D_SHADERTYPE_MIN;
-        uint32_t const shid = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId;
-        AssertReturnStmt(shid < pDXContext->pBackendDXContext->cShader,
-                         LogRelMax(16, ("VMSVGA: DX shader is not set in DXSetInputLayout: shid = 0x%x\n", shid)),
-                         VERR_INVALID_STATE);
-        DXSHADER *pDXShader = &pDXContext->pBackendDXContext->paShader[shid];
-        AssertReturnStmt(pDXShader->pvDXBC,
-                         LogRelMax(16, ("VMSVGA: DX shader bytecode is not available in DXSetInputLayout: shid = %u\n", shid)),
-                         VERR_INVALID_STATE);
-        HRESULT hr = pDevice->pDevice->CreateInputLayout(pDXElementLayout->aElementDesc,
-                                                         pDXElementLayout->cElementDesc,
-                                                         pDXShader->pvDXBC,
-                                                         pDXShader->cbDXBC,
-                                                         &pDXElementLayout->pElementLayout);
-        AssertReturn(SUCCEEDED(hr), VERR_NO_MEMORY);
+        DXELEMENTLAYOUT *pDXElementLayout = &pDXContext->pBackendDXContext->paElementLayout[elementLayoutId];
+        if (!pDXElementLayout->pElementLayout)
+        {
+            uint32_t const idxShaderState = SVGA3D_SHADERTYPE_VS - SVGA3D_SHADERTYPE_MIN;
+            uint32_t const shid = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId;
+            AssertReturnStmt(shid < pDXContext->pBackendDXContext->cShader,
+                             LogRelMax(16, ("VMSVGA: DX shader is not set in DXSetInputLayout: shid = 0x%x\n", shid)),
+                             VERR_INVALID_STATE);
+            DXSHADER *pDXShader = &pDXContext->pBackendDXContext->paShader[shid];
+            AssertReturnStmt(pDXShader->pvDXBC,
+                             LogRelMax(16, ("VMSVGA: DX shader bytecode is not available in DXSetInputLayout: shid = %u\n", shid)),
+                             VERR_INVALID_STATE);
+            HRESULT hr = pDevice->pDevice->CreateInputLayout(pDXElementLayout->aElementDesc,
+                                                             pDXElementLayout->cElementDesc,
+                                                             pDXShader->pvDXBC,
+                                                             pDXShader->cbDXBC,
+                                                             &pDXElementLayout->pElementLayout);
+            AssertReturn(SUCCEEDED(hr), VERR_NO_MEMORY);
+        }
+
+        pInputLayout = pDXElementLayout->pElementLayout;
     }
 
-    pDevice->pImmediateContext->IASetInputLayout(pDXElementLayout->pElementLayout);
+    pDevice->pImmediateContext->IASetInputLayout(pInputLayout);
     return VINF_SUCCESS;
 }
 
@@ -7747,6 +7804,7 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnDXDefineContext             = vmsvga3dBackDXDefineContext;
                 p->pfnDXDestroyContext            = vmsvga3dBackDXDestroyContext;
                 p->pfnDXBindContext               = vmsvga3dBackDXBindContext;
+                p->pfnDXSwitchContext             = vmsvga3dBackDXSwitchContext;
                 p->pfnDXReadbackContext           = vmsvga3dBackDXReadbackContext;
                 p->pfnDXInvalidateContext         = vmsvga3dBackDXInvalidateContext;
                 p->pfnDXSetSingleConstantBuffer   = vmsvga3dBackDXSetSingleConstantBuffer;
