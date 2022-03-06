@@ -138,6 +138,25 @@ int CRYPTO_atomic_add(int *val, int amount, int *ret, CRYPTO_RWLOCK *lock)
     return 1;
 }
 
+int CRYPTO_atomic_or(uint64_t *val, uint64_t op, uint64_t *ret,
+                     CRYPTO_RWLOCK *lock)
+{
+    uint64_t u64RetOld = ASMAtomicUoReadU64(val);
+    uint64_t u64New;
+    do
+        u64New = u64RetOld | op;
+    while (!ASMAtomicCmpXchgExU64(val, u64New, u64RetOld, &u64RetOld));
+    *ret = u64RetOld;
+
+    return 1;
+}
+
+int CRYPTO_atomic_load(uint64_t *val, uint64_t *ret, CRYPTO_RWLOCK *lock)
+{
+    *ret = ASMAtomicReadU64((uint64_t volatile *)val);
+    return 1;
+}
+
 #endif
 
 int openssl_init_fork_handlers(void)

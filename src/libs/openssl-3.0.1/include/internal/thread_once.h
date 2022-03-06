@@ -123,8 +123,20 @@
  * return 1 for success and 0 for failure. We need to translate between
  * these errors back (here) and force (in RUN_ONCE()).
  */
-#  undef DEFINE_RUN_ONCE              /* currently unused */
-#  undef DECLARE_RUN_ONCE             /* currently unused */
+#  define DEFINE_RUN_ONCE(init)                                       \
+    static int init(void);                                            \
+    int init##_ossl_ret_ = 0;                                         \
+    DECLCALLBACK(int) init##_ossl_(void *pvUser)               \
+    {                                                                 \
+        init##_ossl_ret_ = init();                                    \
+        return init##_ossl_ret_ ? VINF_SUCCESS : VERR_INTERNAL_ERROR; \
+    }                                                                 \
+    static int init(void)
+
+#  define DECLARE_RUN_ONCE(init)                \
+    extern int init##_ossl_ret_;                \
+    extern DECLCALLBACK(int) init##_ossl_(void *pvUser);
+
 #  undef DEFINE_RUN_ONCE_STATIC_ALT  /* currently unused */
 
 #  define DEFINE_RUN_ONCE_STATIC(init)            \
