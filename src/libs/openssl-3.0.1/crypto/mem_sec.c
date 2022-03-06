@@ -21,6 +21,9 @@
 #include <string.h>
 
 #ifndef OPENSSL_NO_SECURE_MEMORY
+# if defined(VBOX)
+#  include <iprt/memsafer.h>
+# else
 # if defined(_WIN32)
 #  include <windows.h>
 # endif
@@ -49,8 +52,7 @@
 # endif
 # include <sys/stat.h>
 # include <fcntl.h>
-#elif defined(VBOX)
-# include <iprt/memsafer.h>
+# endif /* !VBOX */
 #endif
 
 #define CLEAR(p, s) OPENSSL_cleanse(p, s)
@@ -81,6 +83,7 @@ static int sh_allocated(const char *ptr);
 
 int CRYPTO_secure_malloc_init(size_t size, size_t minsize)
 {
+#ifndef VBOX
 #ifndef OPENSSL_NO_SECURE_MEMORY
     int ret = 0;
 
@@ -100,10 +103,14 @@ int CRYPTO_secure_malloc_init(size_t size, size_t minsize)
 #else
     return 0;
 #endif /* OPENSSL_NO_SECURE_MEMORY */
+#else
+    return 0;
+#endif /* VBOX */
 }
 
 int CRYPTO_secure_malloc_done(void)
 {
+#ifndef VBOX
 #ifndef OPENSSL_NO_SECURE_MEMORY
     if (secure_mem_used == 0) {
         sh_done();
@@ -113,20 +120,26 @@ int CRYPTO_secure_malloc_done(void)
         return 1;
     }
 #endif /* OPENSSL_NO_SECURE_MEMORY */
+#endif /* VBOX */
     return 0;
 }
 
 int CRYPTO_secure_malloc_initialized(void)
 {
+#ifndef VBOX
 #ifndef OPENSSL_NO_SECURE_MEMORY
     return secure_mem_initialized;
 #else
     return 0;
 #endif /* OPENSSL_NO_SECURE_MEMORY */
+#else
+    return 0;
+#endif /* VBOX */
 }
 
 void *CRYPTO_secure_malloc(size_t num, const char *file, int line)
 {
+#ifndef VBOX
 #ifndef OPENSSL_NO_SECURE_MEMORY
     void *ret;
     size_t actual_size;
@@ -141,12 +154,13 @@ void *CRYPTO_secure_malloc(size_t num, const char *file, int line)
     secure_mem_used += actual_size;
     CRYPTO_THREAD_unlock(sec_malloc_lock);
     return ret;
-#elif defined(VBOX)
-    RT_NOREF(line);
-    return RTMemSaferAllocZTag(num, file);
 #else
     return CRYPTO_malloc(num, file, line);
 #endif /* OPENSSL_NO_SECURE_MEMORY */
+#else
+    RT_NOREF(line);
+    return RTMemSaferAllocZTag(num, file);
+#endif /* VBOX */
 }
 
 void *CRYPTO_secure_zalloc(size_t num, const char *file, int line)
@@ -156,7 +170,7 @@ void *CRYPTO_secure_zalloc(size_t num, const char *file, int line)
         /* CRYPTO_secure_malloc() zeroes allocations when it is implemented */
         return CRYPTO_secure_malloc(num, file, line);
 #endif
-#if !defined(OPENSSL_SECURE_MEMORY) && defined(VBOX)
+#if defined(OPENSSL_NO_SECURE_MEMORY) && defined(VBOX)
     RT_NOREF(line);
     return RTMemSaferAllocZTag(num, file);
 #else
@@ -166,6 +180,7 @@ void *CRYPTO_secure_zalloc(size_t num, const char *file, int line)
 
 void CRYPTO_secure_free(void *ptr, const char *file, int line)
 {
+#ifndef VBOX
 #ifndef OPENSSL_NO_SECURE_MEMORY
     size_t actual_size;
 
@@ -182,17 +197,19 @@ void CRYPTO_secure_free(void *ptr, const char *file, int line)
     secure_mem_used -= actual_size;
     sh_free(ptr);
     CRYPTO_THREAD_unlock(sec_malloc_lock);
-#elif defined(VBOX)
-    RT_NOREF(line);
-    RTMemSaferFree(ptr, 0);
 #else
     CRYPTO_free(ptr, file, line);
 #endif /* OPENSSL_NO_SECURE_MEMORY */
+#else
+    RT_NOREF(line);
+    RTMemSaferFree(ptr, 0);
+#endif /* VBOX */
 }
 
 void CRYPTO_secure_clear_free(void *ptr, size_t num,
                               const char *file, int line)
 {
+#ifndef VBOX
 #ifndef OPENSSL_NO_SECURE_MEMORY
     size_t actual_size;
 
@@ -210,19 +227,21 @@ void CRYPTO_secure_clear_free(void *ptr, size_t num,
     secure_mem_used -= actual_size;
     sh_free(ptr);
     CRYPTO_THREAD_unlock(sec_malloc_lock);
-#elif defined(VBOX)
-    RT_NOREF(line);
-    RTMemSaferFree(ptr, 0);
 #else
     if (ptr == NULL)
         return;
     OPENSSL_cleanse(ptr, num);
     CRYPTO_free(ptr, file, line);
 #endif /* OPENSSL_NO_SECURE_MEMORY */
+#else
+    RT_NOREF(line);
+    RTMemSaferFree(ptr, 0);
+#endif /* VBOX */
 }
 
 int CRYPTO_secure_allocated(const void *ptr)
 {
+#ifndef VBOX
 #ifndef OPENSSL_NO_SECURE_MEMORY
     if (!secure_mem_initialized)
         return 0;
@@ -232,24 +251,30 @@ int CRYPTO_secure_allocated(const void *ptr)
      * locked.  Hence, it is safe to make this check without a lock too.
      */
     return sh_allocated(ptr);
-#elif defined(VBOX)
-    return RTMemSaferGetSize(ptr) > 0;
 #else
     return 0;
 #endif /* OPENSSL_NO_SECURE_MEMORY */
+#else
+    return RTMemSaferGetSize((void *)ptr) > 0;
+#endif /* VBOX */
 }
 
 size_t CRYPTO_secure_used(void)
 {
+#ifndef VBOX
 #ifndef OPENSSL_NO_SECURE_MEMORY
     return secure_mem_used;
 #else
     return 0;
 #endif /* OPENSSL_NO_SECURE_MEMORY */
+#else
+    return 0;
+#endif /* VBOX */
 }
 
 size_t CRYPTO_secure_actual_size(void *ptr)
 {
+#ifndef VBOX
 #ifndef OPENSSL_NO_SECURE_MEMORY
     size_t actual_size;
 
@@ -258,13 +283,15 @@ size_t CRYPTO_secure_actual_size(void *ptr)
     actual_size = sh_actual_size(ptr);
     CRYPTO_THREAD_unlock(sec_malloc_lock);
     return actual_size;
-#elif defined(VBOX)
-    return RTMemSaferGetSize(ptr);
 #else
     return 0;
 #endif
+#else
+    return RTMemSaferGetSize(ptr);
+#endif /* VBOX */
 }
 
+#ifndef VBOX
 /*
  * SECURE HEAP IMPLEMENTATION
  */
@@ -726,3 +753,4 @@ static size_t sh_actual_size(char *ptr)
     return sh.arena_size / (ONE << list);
 }
 #endif /* OPENSSL_NO_SECURE_MEMORY */
+#endif /* VBOX */

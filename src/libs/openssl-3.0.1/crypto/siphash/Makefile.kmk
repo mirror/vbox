@@ -17,9 +17,7 @@ LIBRARIES += crypto_siphash
 crypto_siphash_TEMPLATE = SUBLIBCRYPTO
 crypto_siphash_DEFS = OPENSSL_NO_DEPRECATED
 crypto_siphash_SOURCES = \
-	siphash.c \
-	siphash_ameth.c \
-	siphash_pmeth.c
+	siphash.c
 $(evalcall VBOX_OPENSSL_X86,crypto_siphash)
 
 include $(FILE_KBUILD_SUB_FOOTER)

@@ -29,8 +29,7 @@ crypto_dh_SOURCES = \
 	dh_meth.c \
 	dh_pmeth.c \
 	dh_prn.c \
-	dh_rfc5114.c \
-	dh_rfc7919.c
+	dh_rfc5114.c
 $(evalcall VBOX_OPENSSL_X86,crypto_dh)
 
 include $(FILE_KBUILD_SUB_FOOTER)

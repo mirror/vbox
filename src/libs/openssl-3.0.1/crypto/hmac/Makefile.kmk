@@ -17,8 +17,6 @@ LIBRARIES += crypto_hmac
 crypto_hmac_TEMPLATE = SUBLIBCRYPTO
 crypto_hmac_DEFS = OPENSSL_NO_DEPRECATED
 crypto_hmac_SOURCES = \
-	hm_ameth.c \
-	hm_pmeth.c \
 	hmac.c
 $(evalcall VBOX_OPENSSL_X86,crypto_hmac)
 

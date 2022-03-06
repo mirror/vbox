@@ -17,8 +17,6 @@ LIBRARIES += crypto_cmac
 crypto_cmac_TEMPLATE = SUBLIBCRYPTO
 crypto_cmac_DEFS = OPENSSL_NO_DEPRECATED
 crypto_cmac_SOURCES = \
-	cm_ameth.c \
-	cm_pmeth.c \
 	cmac.c
 $(evalcall VBOX_OPENSSL_X86,crypto_cmac)
 

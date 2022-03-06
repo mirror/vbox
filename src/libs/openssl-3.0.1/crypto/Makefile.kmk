@@ -52,16 +52,30 @@ VBox-libcrypto_SOURCES  = \
 	getenv.c \
 	init.c \
 	mem.c \
-	mem_dbg.c \
+	mem_clr.c \
 	mem_sec.c \
 	o_dir.c \
-	o_fips.c \
 	o_fopen.c \
 	o_init.c \
 	o_str.c \
 	o_time.c \
-	uid.c \
-	threads_iprt.c
+	packet.c \
+	param_build.c \
+	param_build_set.c \
+	params.c \
+	params_dup.c \
+	params_from_text.c \
+	passphrase.c \
+	provider.c \
+	provider_child.c \
+	provider_conf.c \
+	provider_core.c \
+	provider_predefined.c \
+	punycode.c \
+	sparse_array.c \
+	threads_iprt.c \
+	trace.c \
+	uid.c
 
 ifdef VBOX_WITH_CRYPTO_ASM
  VBox-libcrypto_DEFS.x86 += OPENSSL_CPUID_OBJ=x86cpuid.o

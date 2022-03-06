@@ -17,7 +17,7 @@ LIBRARIES += crypto_sm3
 crypto_sm3_TEMPLATE = SUBLIBCRYPTO
 crypto_sm3_DEFS = OPENSSL_NO_DEPRECATED
 crypto_sm3_SOURCES = \
-	m_sm3.c \
+	legacy_sm3.c \
 	sm3.c
 $(evalcall VBOX_OPENSSL_X86,crypto_sm3)
 

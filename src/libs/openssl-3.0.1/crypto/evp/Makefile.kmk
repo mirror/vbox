@@ -52,17 +52,16 @@ crypto_evp_SOURCES = \
 	evp_lib.c \
 	evp_pbe.c \
 	evp_pkey.c \
-	m_md2.c \
-	m_md4.c \
-	m_md5.c \
-	m_md5_sha1.c \
-	m_mdc2.c \
+	legacy_md2.c \
+	legacy_md4.c \
+	legacy_md5.c \
+	legacy_md5_sha1.c \
+	legacy_mdc2.c \
+	legacy_ripemd.c \
+	legacy_sha.c \
+	legacy_wp.c \
 	m_null.c \
-	m_ripemd.c \
-	m_sha1.c \
-	m_sha3.c \
 	m_sigver.c \
-	m_wp.c \
 	names.c \
 	p5_crpt.c \
 	p5_crpt2.c \
@@ -74,9 +73,10 @@ crypto_evp_SOURCES = \
 	p_sign.c \
 	p_verify.c \
 	pbe_scrypt.c \
-	pmeth_fn.c \
+	pmeth_check.c \
 	pmeth_gn.c \
-	pmeth_lib.c
+	pmeth_lib.c \
+	signature.c
 $(evalcall VBOX_OPENSSL_X86,crypto_evp)
 
 include $(FILE_KBUILD_SUB_FOOTER)

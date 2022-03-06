@@ -17,11 +17,11 @@ LIBRARIES += crypto_bio
 crypto_bio_TEMPLATE = SUBLIBCRYPTO
 crypto_bio_DEFS = OPENSSL_NO_DEPRECATED
 crypto_bio_SOURCES = \
-	b_addr.c \
-	b_dump.c \
-	b_print.c \
-	b_sock.c \
-	b_sock2.c \
+	bio_addr.c \
+	bio_dump.c \
+	bio_print.c \
+	bio_sock.c \
+	bio_sock2.c \
 	bf_buff.c \
 	bf_lbuf.c \
 	bf_nbio.c \

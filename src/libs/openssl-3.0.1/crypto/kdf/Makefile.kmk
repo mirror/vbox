@@ -17,10 +17,7 @@ LIBRARIES += crypto_kdf
 crypto_kdf_TEMPLATE = SUBLIBCRYPTO
 crypto_kdf_DEFS = OPENSSL_NO_DEPRECATED
 crypto_kdf_SOURCES = \
-	hkdf.c \
-	kdf_err.c \
-	scrypt.c \
-	tls1_prf.c
+	kdf_err.c
 $(evalcall VBOX_OPENSSL_X86,crypto_kdf)
 
 include $(FILE_KBUILD_SUB_FOOTER)

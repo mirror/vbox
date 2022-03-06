@@ -17,11 +17,12 @@ LIBRARIES += crypto_store
 crypto_store_TEMPLATE = SUBLIBCRYPTO
 crypto_store_DEFS = OPENSSL_NO_DEPRECATED
 crypto_store_SOURCES = \
-	loader_file.c \
 	store_err.c \
 	store_init.c \
 	store_lib.c \
+	store_meth.c \
 	store_register.c \
+	store_result.c \
 	store_strings.c
 $(evalcall VBOX_OPENSSL_X86,crypto_store)
 

@@ -18,7 +18,8 @@ crypto_ec_TEMPLATE = SUBLIBCRYPTO
 crypto_ec_DEFS = OPENSSL_NO_DEPRECATED
 crypto_ec_SOURCES = \
 	curve25519.c \
-	curve448/arch_32/f_impl.c \
+	curve448/arch_32/f_impl32.c \
+	curve448/arch_64/f_impl64.c \
 	curve448/curve448.c \
 	curve448/curve448_tables.c \
 	curve448/eddsa.c \

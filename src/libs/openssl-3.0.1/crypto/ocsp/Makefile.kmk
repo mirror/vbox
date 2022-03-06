@@ -21,7 +21,7 @@ crypto_ocsp_SOURCES = \
 	ocsp_cl.c \
 	ocsp_err.c \
 	ocsp_ext.c \
-	ocsp_ht.c \
+	ocsp_http.c \
 	ocsp_lib.c \
 	ocsp_prn.c \
 	ocsp_srv.c \

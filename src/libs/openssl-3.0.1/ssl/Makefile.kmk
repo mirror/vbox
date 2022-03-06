@@ -28,7 +28,6 @@ VBox-libssl_SOURCES  = \
 	d1_msg.c \
 	d1_srtp.c \
 	methods.c \
-	packet.c \
 	pqueue.c \
 	record/dtls1_bitmap.c \
 	record/rec_layer_d1.c \

@@ -17,13 +17,13 @@ LIBRARIES += crypto_rand
 crypto_rand_TEMPLATE = SUBLIBCRYPTO
 crypto_rand_DEFS = OPENSSL_NO_DEPRECATED
 crypto_rand_SOURCES = \
-	drbg_ctr.c \
-	drbg_lib.c \
+	prov_seed.c \
+	rand_deprecated.c \
+	rand_egd.c \
 	rand_err.c \
 	rand_lib.c \
-	rand_unix.c \
-	rand_vms.c \
-	rand_win.c \
+	rand_meth.c \
+	rand_pool.c \
 	randfile.c
 $(evalcall VBOX_OPENSSL_X86,crypto_rand)
 
