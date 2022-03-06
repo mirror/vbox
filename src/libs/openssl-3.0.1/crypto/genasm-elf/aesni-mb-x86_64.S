@@ -557,7 +557,7 @@ aesni_multi_cbc_decrypt:
 	.byte	0xf3,0xc3
 .cfi_endproc	
 .size	aesni_multi_cbc_decrypt,.-aesni_multi_cbc_decrypt
-	.section .note.gnu.property, #alloc
+	.section ".note.gnu.property", "a"
 	.p2align 3
 	.long 1f - 0f
 	.long 4f - 1f

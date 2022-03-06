@@ -117,6 +117,10 @@ elsif (`$ENV{CC} --version 2>/dev/null`
     $gnuas=1;
 }
 =cut
+else
+{
+	$gnuas=1;
+}
 
 my $cet_property;
 if ($flavour =~ /elf/) {
