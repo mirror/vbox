@@ -65,6 +65,7 @@ VBox-libssl_SOURCES  = \
 	t1_lib.c \
 	t1_trce.c \
 	tls13_enc.c \
+	tls_depr.c \
 	tls_srp.c
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.

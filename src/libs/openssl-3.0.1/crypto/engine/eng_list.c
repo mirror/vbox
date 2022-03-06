@@ -409,6 +409,7 @@ ENGINE *ENGINE_by_id(const char *id)
     CRYPTO_THREAD_unlock(global_engine_lock);
     if (iterator != NULL)
         return iterator;
+#ifndef VBOX
     /*
      * Prevent infinite recursion if we're looking for the dynamic engine.
      */
@@ -425,6 +426,7 @@ ENGINE *ENGINE_by_id(const char *id)
             goto notfound;
         return iterator;
     }
+#endif
  notfound:
     ENGINE_free(iterator);
     ERR_raise_data(ERR_LIB_ENGINE, ENGINE_R_NO_SUCH_ENGINE, "id=%s", id);

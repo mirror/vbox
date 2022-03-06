@@ -18,7 +18,8 @@ crypto_md5_TEMPLATE = SUBLIBCRYPTO
 crypto_md5_DEFS = OPENSSL_NO_DEPRECATED
 crypto_md5_SOURCES = \
 	md5_dgst.c \
-	md5_one.c
+	md5_one.c \
+	md5_sha1.c
 ifdef VBOX_WITH_CRYPTO_ASM
  crypto_ec_SOURCES.x86 += \
 	$(VBOX_PATH_CRYPTO_GENASM)/md5-586.S

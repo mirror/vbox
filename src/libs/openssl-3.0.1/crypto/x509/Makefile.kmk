@@ -32,6 +32,7 @@ crypto_x509_SOURCES = \
 	v3_addr.c \
 	v3_admis.c \
 	v3_akeya.c \
+	v3_akid.c \
 	v3_asid.c \
 	v3_bcons.c \
 	v3_bitst.c \
@@ -44,6 +45,7 @@ crypto_x509_SOURCES = \
 	v3_ia5.c \
 	v3_info.c \
 	v3_int.c \
+	v3_ist.c \
 	v3_lib.c \
 	v3_ncons.c \
 	v3_pci.c \

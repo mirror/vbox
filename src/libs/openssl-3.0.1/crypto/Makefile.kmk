@@ -43,14 +43,24 @@ LIBRARIES += VBox-libcrypto
 VBox-libcrypto_TEMPLATE = LIBCRYPTO
 VBox-libcrypto_INCS     = $(VBox-libcrypto_0_OUTDIR)
 VBox-libcrypto_SOURCES  = \
+	asn1_dsa.c \
+	bsearch.c \
+	context.c \
+	core_algorithm.c \
+	core_fetch.c \
+	core_namemap.c \
 	cpt_err.c \
+	cpuid.c \
 	cryptlib.c \
 	ctype.c \
 	cversion.c \
+	der_writer.c \
 	ebcdic.c \
 	ex_data.c \
 	getenv.c \
+	info.c \
 	init.c \
+	initthread.c \
 	mem.c \
 	mem_clr.c \
 	mem_sec.c \
@@ -72,6 +82,7 @@ VBox-libcrypto_SOURCES  = \
 	provider_core.c \
 	provider_predefined.c \
 	punycode.c \
+	self_test_core.c \
 	sparse_array.c \
 	threads_iprt.c \
 	trace.c \
