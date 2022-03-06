@@ -25,6 +25,48 @@ include $(PATH_SUB_CURRENT)/ssl/Makefile.kmk
 # Let kBuild generate the rules.
 include $(FILE_KBUILD_SUB_FOOTER)
 
+#
+# Re-creates certain openssl headers which exist as templates.
+#
+OSSL_HDR_TEMPLATES := \
+	$(PATH_SUB_CURRENT)/include/openssl/asn1.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/asn1t.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/bio.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/cmp.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/cms.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/conf.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/configuration.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/crmf.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/crypto.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/ct.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/err.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/ess.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/fipskey.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/lhash.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/opensslv.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/ocsp.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/pkcs12.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/pkcs7.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/safestack.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/srp.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/ssl.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/ui.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/x509.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/x509_vfy.h.in \
+	$(PATH_SUB_CURRENT)/include/openssl/x509v3.h.in
+
+#
+# Big fat @todo:
+#  I'm too stupid atm to figure out how to get this executed sequentially
+#  instead of getting it expanded and executed at once...
+#
+recreate-headers: $(PATH_SUB_CURRENT)/util/dofile.pl \
+	$(OSSL_HDR_TEMPLATES)
+	$(foreach target, linux.amd64, \
+		$(foreach header, $(OSSL_HDR_TEMPLATES), \
+		    perl -I$(PATH_SUB_CURRENT)/gen-includes/$(target) \
+		     -Mconfigdata $(PATH_SUB_CURRENT)/util/dofile.pl -oMakefile \
+		     $(header) > $(PATH_SUB_CURRENT)/gen-includes/$(target)/openssl/$(basename $(notdir $(header)));))
 
 #
 # How to regenerate the openssl-mangling.h
