@@ -110,7 +110,7 @@
 #    ifdef VBOX
 #     include <iprt/win/winsock2.h>
 #     include <iprt/win/ws2tcpip.h>
-#    else
+#    endif
 #    include <winsock2.h>
 #    include <ws2tcpip.h>
        /*
