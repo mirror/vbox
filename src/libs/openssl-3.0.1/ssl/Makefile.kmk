@@ -35,6 +35,7 @@ VBox-libssl_SOURCES  = \
 	record/ssl3_buffer.c \
 	record/ssl3_record.c \
 	record/ssl3_record_tls13.c \
+	record/tls_pad.c \
 	s3_cbc.c \
 	s3_enc.c \
 	s3_lib.c \
