@@ -6008,10 +6008,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetTopology(PVGASTATECC pThisCC, PVMSVGA3
 
 static int dxSetRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
-    //pDXContext->svgaDXContext.renderState.depthStencilViewId = depthStencilViewId;
-    //for (uint32_t i = 0; i < cRenderTargetViewId; ++i)
-    //    pDXContext->svgaDXContext.renderState.renderTargetViewIds[i] = paRenderTargetViewId[i];
-
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 

@@ -109,6 +109,9 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
         return rc;
 
     /** @todo Keep track of changes in the pipeline and apply only modified state. */
+    /* It is not necessary to restore SVGADXContextMobFormat::shaderState::shaderResources
+     * because they are applied by the backend before each Draw call.
+     */
     #define DX_STATE_VS                0x00000001
     #define DX_STATE_PS                0x00000002
     #define DX_STATE_SAMPLERS          0x00000004
@@ -121,6 +124,10 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
     #define DX_STATE_SOTARGETS         0x00000200
     #define DX_STATE_VIEWPORTS         0x00000400
     #define DX_STATE_SCISSORRECTS      0x00000800
+    #define DX_STATE_RASTERIZERSTATE   0x00001000
+    #define DX_STATE_RENDERTARGETS     0x00002000
+    #define DX_STATE_GS                0x00004000
+    #define DX_STATE_CONSTANTBUFFERS   0x00008000
     uint32_t u32TrackedState = 0
         | DX_STATE_VS
         | DX_STATE_PS
@@ -134,7 +141,12 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
         | DX_STATE_SOTARGETS
         | DX_STATE_VIEWPORTS
         | DX_STATE_SCISSORRECTS
+        | DX_STATE_RASTERIZERSTATE
+        | DX_STATE_RENDERTARGETS
+        | DX_STATE_GS
+        | DX_STATE_CONSTANTBUFFERS
         ;
+
 
     if (u32TrackedState & DX_STATE_VS)
     {
@@ -149,6 +161,7 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
         AssertRC(rc);
     }
 
+
     if (u32TrackedState & DX_STATE_PS)
     {
         u32TrackedState &= ~DX_STATE_PS;
@@ -161,6 +174,21 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
         rc = dxSetShader(pThisCC, pDXContext, shaderType, shaderId);
         AssertRC(rc);
     }
+
+
+    if (u32TrackedState & DX_STATE_GS)
+    {
+        u32TrackedState &= ~DX_STATE_GS;
+
+        SVGA3dShaderType const shaderType = SVGA3D_SHADERTYPE_GS;
+
+        uint32_t const idxShaderState = shaderType - SVGA3D_SHADERTYPE_MIN;
+        SVGA3dShaderId shaderId = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId;
+
+        rc = dxSetShader(pThisCC, pDXContext, shaderType, shaderId);
+        AssertRC(rc);
+    }
+
 
     if (u32TrackedState & DX_STATE_SAMPLERS)
     {
@@ -305,6 +333,55 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
 
         rc = pSvgaR3State->pFuncsDX->pfnDXSetScissorRects(pThisCC, pDXContext, cRect, paRect);
         AssertRC(rc);
+    }
+
+
+    if (u32TrackedState & DX_STATE_RASTERIZERSTATE)
+    {
+        u32TrackedState &= ~DX_STATE_RASTERIZERSTATE;
+
+        SVGA3dRasterizerStateId const rasterizerId = pDXContext->svgaDXContext.renderState.rasterizerStateId;
+
+        rc = pSvgaR3State->pFuncsDX->pfnDXSetRasterizerState(pThisCC, pDXContext, rasterizerId);
+        AssertRC(rc);
+    }
+
+
+    if (u32TrackedState & DX_STATE_RENDERTARGETS)
+    {
+        u32TrackedState &= ~DX_STATE_RENDERTARGETS;
+
+        SVGA3dDepthStencilViewId const depthStencilViewId = (SVGA3dRenderTargetViewId)pDXContext->svgaDXContext.renderState.depthStencilViewId;
+        uint32_t const cRenderTargetViewId = SVGA3D_MAX_SIMULTANEOUS_RENDER_TARGETS;
+        SVGA3dRenderTargetViewId const *paRenderTargetViewId = (SVGA3dRenderTargetViewId *)&pDXContext->svgaDXContext.renderState.renderTargetViewIds[0];
+
+        rc = pSvgaR3State->pFuncsDX->pfnDXSetRenderTargets(pThisCC, pDXContext, depthStencilViewId, cRenderTargetViewId, paRenderTargetViewId);
+        AssertRC(rc);
+    }
+
+
+    if (u32TrackedState & DX_STATE_CONSTANTBUFFERS)
+    {
+        u32TrackedState &= ~DX_STATE_CONSTANTBUFFERS;
+
+        for (int i = SVGA3D_SHADERTYPE_MIN; i < SVGA3D_SHADERTYPE_DX10_MAX; ++i) /** @todo SVGA3D_SHADERTYPE_MAX */
+        {
+            SVGA3dShaderType const shaderType = (SVGA3dShaderType)i;
+            uint32_t const idxShaderState = shaderType - SVGA3D_SHADERTYPE_MIN;
+
+            /** @todo Track which constant buffers were modified and update only the corresponding slots.
+             * 32 bit mask is enough.
+             */
+            for (int iSlot = 0; iSlot < SVGA3D_DX_MAX_CONSTBUFFERS; ++iSlot)
+            {
+                SVGA3dConstantBufferBinding *pCBB = &pDXContext->svgaDXContext.shaderState[idxShaderState].constantBuffers[iSlot];
+                if (pCBB->sid == SVGA3D_INVALID_ID) // This will not be necessary when constant buffers slots will be tracked.
+                    continue;
+
+                rc = pSvgaR3State->pFuncsDX->pfnDXSetSingleConstantBuffer(pThisCC, pDXContext, iSlot, shaderType, pCBB->sid, pCBB->offsetInBytes, pCBB->sizeInBytes);
+                AssertRC(rc);
+            }
+        }
     }
 
     Assert(u32TrackedState == 0);
@@ -914,6 +991,8 @@ int vmsvga3dDXSetRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA
 
     ASSERT_GUEST_RETURN(rasterizerId < pDXContext->cot.cRasterizerState, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
+
+    pDXContext->svgaDXContext.renderState.rasterizerStateId = rasterizerId;
 
     rc = pSvgaR3State->pFuncsDX->pfnDXSetRasterizerState(pThisCC, pDXContext, rasterizerId);
     return rc;
