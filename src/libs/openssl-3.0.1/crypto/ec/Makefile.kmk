@@ -50,10 +50,6 @@ crypto_ec_SOURCES = \
 	eck_prn.c \
 	ecp_mont.c \
 	ecp_nist.c \
-	ecp_nistp224.c \
-	ecp_nistp256.c \
-	ecp_nistp521.c \
-	ecp_nistputil.c \
 	ecp_nistz256.c \
 	ecp_oct.c \
 	ecp_smpl.c \
