@@ -2700,13 +2700,13 @@ void UICommon::retranslateUi()
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
 void UICommon::sltHandleCommitDataRequest(QSessionManager &manager)
 {
-    LogRel(("GUI: UICommon: Commit data request..\n"));
+    LogRel(("GUI: UICommon: Commit data request...\n"));
 
     /* Ask listener to commit data: */
     emit sigAskToCommitData();
-#ifdef VBOX_WS_WIN
+# ifdef VBOX_WS_WIN
     m_fDataCommitted = true;
-#endif
+# endif
 
     /* Depending on UI type: */
     switch (uiType())
@@ -2718,17 +2718,28 @@ void UICommon::sltHandleCommitDataRequest(QSessionManager &manager)
              * but for fat clients: */
             if (!isSeparateProcess())
             {
+# if defined(VBOX_WS_MAC) && defined(VBOX_IS_QT6_OR_LATER)
+                /* This code prevents QWindowSystemInterface::handleApplicationTermination
+                   for running, so among other things QApplication::closeAllWindows isn't
+                   called and we're somehow stuck in a half closed down state.  That said,
+                   just disabling this isn't sufficent, there we also have to accept() the
+                   QCloseEvent in UIMachineWindow. */
+                /** @todo qt6: This isn't quite the right fix, I bet...  I'm sure I haven't
+                 *  quite understood all that's going on here.  So, leaving this for
+                 *  the real GUI experts to look into... :-)   */
+# else
                 // WORKAROUND:
                 // We can't save VM state in one go for fat clients, so we have to ask session manager to cancel shutdown.
                 // To next major release this should be removed in any case, since there will be no fat clients after all.
                 manager.cancel();
 
-#ifdef VBOX_WS_WIN
+#  ifdef VBOX_WS_WIN
                 // WORKAROUND:
                 // In theory that's Qt5 who should allow us to provide canceling reason as well, but that functionality
                 // seems to be missed in Windows platform plugin, so we are making that ourselves.
                 NativeWindowSubsystem::ShutdownBlockReasonCreateAPI((HWND)windowManager().mainWindowShown()->winId(), L"VM is still running.");
-#endif
+#  endif
+# endif
             }
 
             break;
@@ -2737,7 +2748,7 @@ void UICommon::sltHandleCommitDataRequest(QSessionManager &manager)
             break;
     }
 }
-#endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+#endif /* !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 
 void UICommon::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
 {
