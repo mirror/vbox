@@ -165,16 +165,16 @@ void *CRYPTO_secure_malloc(size_t num, const char *file, int line)
 
 void *CRYPTO_secure_zalloc(size_t num, const char *file, int line)
 {
+#ifndef VBOX
 #ifndef OPENSSL_NO_SECURE_MEMORY
     if (secure_mem_initialized)
         /* CRYPTO_secure_malloc() zeroes allocations when it is implemented */
         return CRYPTO_secure_malloc(num, file, line);
 #endif
-#if defined(OPENSSL_NO_SECURE_MEMORY) && defined(VBOX)
+    return CRYPTO_zalloc(num, file, line);
+#else
     RT_NOREF(line);
     return RTMemSaferAllocZTag(num, file);
-#else
-    return CRYPTO_zalloc(num, file, line);
 #endif
 }
 
