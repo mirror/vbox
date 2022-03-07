@@ -20,6 +20,8 @@ use OpenSSL::fallback "$FindBin::Bin/../external/perl/MODULES.txt";
 use Getopt::Std;
 use OpenSSL::Template;
 
+use File::Basename; # VBOX addition for basename
+
 # We expect to get a lot of information from configdata, so check that
 # it was part of our commandline.
 die "You must run this script with -Mconfigdata\n"
@@ -37,7 +39,7 @@ my @autowarntext = (
     "WARNING: do not edit!",
     "Generated"
         . (defined($opts{o}) ? " by $opts{o}" : "")
-        . (scalar(@ARGV) > 0 ? " from " .join(", ", @ARGV) : "")
+        . (scalar(@ARGV) > 0 ? " from " .join(", ", basename(@ARGV)) : "") # VBOX modified: added basename()
 );
 
 if (defined($opts{s})) {
