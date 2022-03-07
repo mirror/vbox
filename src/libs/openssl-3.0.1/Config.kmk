@@ -41,6 +41,7 @@ VBOX_PATH_CRYPTO_DES        := $(VBOX_PATH_CRYPTO)/des
 VBOX_PATH_CRYPTO_CAMELLIA   := $(VBOX_PATH_CRYPTO)/camellia
 VBOX_INST_CRYPTO_HEADERS    := obj/$(if-expr "$(CURSUBDIR)" == ".",,$(CURSUBDIR)/)crypto-3.0.1-headers/include/openssl/
 VBOX_PATH_CRYPTO_HEADERS    := $(abspath $(PATH_OUT))/$(patsubst %/,%,$(VBOX_INST_CRYPTO_HEADERS))
+VBOX_PATH_CRYPTO_PROVIDERS  := $(VBOX_PATH_OPENSSL)/providers
 
 # Enable asm implementation of crypto.
 if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
@@ -207,8 +208,8 @@ TEMPLATE_LIBCRYPTO_DEFS += \
 	AES_ASM \
 	VPAES_ASM \
 	ECP_NISTZ256_ASM \
-	PADLOCK_ASM \
-	POLY1305_ASM
+	PADLOCK_ASM
+#	POLY1305_ASM @todo Later
 TEMPLATE_LIBCRYPTO_DEFS.amd64 = \
 	BSAES_ASM \
 	GHASH_ASM \
@@ -280,6 +281,7 @@ TEMPLATE_LIBCRYPTO_INCS := \
 	$(VBOX_PATH_OPENSSL)/include \
 	$(VBOX_PATH_OPENSSL)/providers/common/include \
 	$(VBOX_PATH_OPENSSL)/providers/implementations/include \
+	$(VBOX_PATH_OPENSSL)/gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) \
 	$(VBOX_PATH_CRYPTO)/include \
 	$(VBOX_PATH_CRYPTO_MODES) \
 	$(VBOX_PATH_CRYPTO)/ec/curve448 \

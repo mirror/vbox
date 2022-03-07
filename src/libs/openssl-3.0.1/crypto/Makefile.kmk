@@ -101,6 +101,8 @@ ifdef VBOX_WITH_OPENSSL_FIPS
  VBox-libcrypto_SOURCES += o_fips.c fips_ers.c
 endif
 
+VBox-libcrypto_SOURCES += $(PATH_STAGE_LIB)/VBox-libproviders$(VBOX_SUFF_LIB)
+
 if defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
  VBox-libcrypto_SOURCES += $(crypto_sha_1_TARGET)
 else if "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
@@ -116,6 +118,7 @@ ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.
  VBox-libcrypto-x86_TEMPLATE = VBoxLibCrypto-x86
  VBox-libcrypto-x86_EXTENDS = VBox-libcrypto
  VBox-libcrypto-x86_SOURCES = $(filter %.c %.cpp,$(VBox-libcrypto_SOURCES)) \
+	$(PATH_STAGE_LIB)/VBox-libproviders-x86$(VBOX_SUFF_LIB)
 	$(foreach sublib,$(VBOX_CRYPTO_SUBLIBS_X86), $($(sublib)_1_TARGET))
 endif
 

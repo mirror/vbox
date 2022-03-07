@@ -18,7 +18,10 @@ ifndef VBOX_PATH_CRYPTO
  include $(PATH_SUB_CURRENT)/Config.kmk
 endif
 
+VBOX_OSSL_TARGETS := linux.amd64
+
 # Include sub-makefiles.
+include $(PATH_SUB_CURRENT)/providers/Makefile.kmk
 include $(PATH_SUB_CURRENT)/crypto/Makefile.kmk
 include $(PATH_SUB_CURRENT)/ssl/Makefile.kmk
 
@@ -61,8 +64,9 @@ OSSL_HDR_TEMPLATES := \
 #  instead of getting it expanded and executed at once...
 #
 recreate-headers: $(PATH_SUB_CURRENT)/util/dofile.pl \
-	$(OSSL_HDR_TEMPLATES)
-	$(foreach target, linux.amd64, \
+	$(OSSL_HDR_TEMPLATES) \
+	recreate-providers-headers
+	$(foreach target, $(VBOX_OSSL_TARGETS), \
 		$(foreach header, $(OSSL_HDR_TEMPLATES), \
 		    perl -I$(PATH_SUB_CURRENT)/gen-includes/$(target) \
 		     -Mconfigdata $(PATH_SUB_CURRENT)/util/dofile.pl -oMakefile \
