@@ -5136,14 +5136,14 @@ static DECLCALLBACK(int) vmsvga3dBackDXBindContext(PVGASTATECC pThisCC, PVMSVGA3
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXSwitchContext(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContextNew)
+static DECLCALLBACK(int) vmsvga3dBackDXSwitchContext(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
     if (!pBackend->fSingleDevice)
         return VINF_NOT_IMPLEMENTED; /* Not required. */
 
     /* The new context state will be applied by the generic DX code. */
-    RT_NOREF(pDXContextNew);
+    RT_NOREF(pDXContext);
     return VINF_SUCCESS;
 }
 
@@ -5379,7 +5379,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturnVoid(pDevice->pDevice);
 
-    /** @todo Make sure that the render target views exist. Similar to SRVs. */
+    /* Make sure that the render target views exist. Similar to SRVs. */
     if (pDXContext->svgaDXContext.renderState.depthStencilViewId != SVGA3D_INVALID_ID)
     {
         uint32_t const viewId = pDXContext->svgaDXContext.renderState.depthStencilViewId;
@@ -5873,10 +5873,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetVertexBuffers(PVGASTATECC pThisCC, PVM
             paStride[idxVertexBuffer] = 0;
             paOffset[idxVertexBuffer] = 0;
         }
-
-        pDXContext->svgaDXContext.inputAssembly.vertexBuffers[idxVertexBuffer].bufferId = paVertexBuffer[i].sid;
-        pDXContext->svgaDXContext.inputAssembly.vertexBuffers[idxVertexBuffer].stride = paVertexBuffer[i].stride;
-        pDXContext->svgaDXContext.inputAssembly.vertexBuffers[idxVertexBuffer].offset = paVertexBuffer[i].offset;
     }
 
     pDevice->pImmediateContext->IASetVertexBuffers(startBuffer, cVertexBuffer,
@@ -6065,15 +6061,13 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetBlendState(PVGASTATECC pThisCC, PVMSVG
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 
-    ID3D11BlendState *pBlendState = pDXContext->pBackendDXContext->papBlendState[blendId];
-    pDevice->pImmediateContext->OMSetBlendState(pBlendState, blendFactor, sampleMask);
-
-    pDXContext->svgaDXContext.renderState.blendStateId = blendId;
-    pDXContext->svgaDXContext.renderState.blendFactor[0] = blendFactor[0];
-    pDXContext->svgaDXContext.renderState.blendFactor[1] = blendFactor[1];
-    pDXContext->svgaDXContext.renderState.blendFactor[2] = blendFactor[2];
-    pDXContext->svgaDXContext.renderState.blendFactor[3] = blendFactor[3];
-    pDXContext->svgaDXContext.renderState.sampleMask = sampleMask;
+    if (blendId != SVGA3D_INVALID_ID)
+    {
+        ID3D11BlendState *pBlendState = pDXContext->pBackendDXContext->papBlendState[blendId];
+        pDevice->pImmediateContext->OMSetBlendState(pBlendState, blendFactor, sampleMask);
+    }
+    else
+        pDevice->pImmediateContext->OMSetBlendState(NULL, NULL, 0);
 
     return VINF_SUCCESS;
 }
@@ -6087,11 +6081,13 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetDepthStencilState(PVGASTATECC pThisCC,
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 
-    ID3D11DepthStencilState *pDepthStencilState = pDXContext->pBackendDXContext->papDepthStencilState[depthStencilId];
-    pDevice->pImmediateContext->OMSetDepthStencilState(pDepthStencilState, stencilRef);
-
-    pDXContext->svgaDXContext.renderState.depthStencilStateId = depthStencilId;
-    pDXContext->svgaDXContext.renderState.stencilRef = stencilRef;
+    if (depthStencilId != SVGA3D_INVALID_ID)
+    {
+        ID3D11DepthStencilState *pDepthStencilState = pDXContext->pBackendDXContext->papDepthStencilState[depthStencilId];
+        pDevice->pImmediateContext->OMSetDepthStencilState(pDepthStencilState, stencilRef);
+    }
+    else
+        pDevice->pImmediateContext->OMSetDepthStencilState(NULL, 0);
 
     return VINF_SUCCESS;
 }
@@ -6105,7 +6101,14 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetRasterizerState(PVGASTATECC pThisCC, P
 
     RT_NOREF(pBackend);
 
-    pDevice->pImmediateContext->RSSetState(pDXContext->pBackendDXContext->papRasterizerState[rasterizerId]);
+    if (rasterizerId != SVGA3D_INVALID_ID)
+    {
+        ID3D11RasterizerState *pRasterizerState = pDXContext->pBackendDXContext->papRasterizerState[rasterizerId];
+        pDevice->pImmediateContext->RSSetState(pRasterizerState);
+    }
+    else
+        pDevice->pImmediateContext->RSSetState(NULL);
+
     return VINF_SUCCESS;
 }
 
@@ -6227,17 +6230,11 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSOTargets(PVGASTATECC pThisCC, PVMSVGA
             /** @todo How paSoTarget[i].sizeInBytes is used? Maybe when the buffer is created? */
             paResource[i] = pSurface->pBackendSurface->u.pBuffer;
             paOffset[i] = paSoTarget[i].offset;
-
-            /** @todo This should be in the caller. */
-            pDXContext->svgaDXContext.streamOut.targets[i] = paSoTarget[i].sid;
         }
         else
         {
             paResource[i] = NULL;
             paOffset[i] = 0;
-
-            /** @todo This should be in the caller. */
-            pDXContext->svgaDXContext.streamOut.targets[i] = SVGA_ID_INVALID;
         }
     }
 
