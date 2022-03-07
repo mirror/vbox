@@ -39,6 +39,8 @@ crypto_rsa_SOURCES = \
 	rsa_saos.c \
 	rsa_schemes.c \
 	rsa_sign.c \
+	rsa_sp800_56b_check.c \
+	rsa_sp800_56b_gen.c \
 	rsa_x931.c \
 	rsa_x931g.c
 $(evalcall VBOX_OPENSSL_X86,crypto_rsa)

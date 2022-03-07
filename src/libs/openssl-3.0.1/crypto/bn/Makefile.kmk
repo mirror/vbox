@@ -43,13 +43,15 @@ crypto_bn_SOURCES = \
 	bn_print.c \
 	bn_rand.c \
 	bn_recp.c \
+	bn_rsa_fips186_4.c \
 	bn_shift.c \
 	bn_sqr.c \
 	bn_sqrt.c \
 	bn_srp.c \
 	bn_word.c \
 	bn_x931p.c \
-	rsaz_exp.c
+	rsaz_exp.c \
+	rsaz_exp_x2.c
 ifdef VBOX_WITH_CRYPTO_ASM
  crypto_bn_SOURCES.x86 += \
 	$(VBOX_PATH_CRYPTO_GENASM)/bn-586.S \

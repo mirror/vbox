@@ -43,12 +43,9 @@ crypto_evp_SOURCES = \
 	e_idea.c \
 	e_null.c \
 	e_old.c \
-	e_rc2.c \
 	e_rc4.c \
 	e_rc4_hmac_md5.c \
-	e_rc5.c \
 	e_seed.c \
-	e_sm4.c \
 	e_xcbc_d.c \
 	ec_ctrl.c \
 	ec_support.c \
@@ -71,13 +68,10 @@ crypto_evp_SOURCES = \
 	keymgmt_meth.c \
 	legacy_blake2.c \
 	legacy_md2.c \
-	legacy_md4.c \
 	legacy_md5.c \
 	legacy_md5_sha1.c \
 	legacy_mdc2.c \
-	legacy_ripemd.c \
 	legacy_sha.c \
-	legacy_wp.c \
 	m_null.c \
 	m_sigver.c \
 	mac_lib.c \

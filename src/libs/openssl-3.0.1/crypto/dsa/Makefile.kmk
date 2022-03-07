@@ -20,6 +20,7 @@ crypto_dsa_SOURCES = \
 	dsa_ameth.c \
 	dsa_asn1.c \
 	dsa_backend.c \
+	dsa_check.c \
 	dsa_depr.c \
 	dsa_err.c \
 	dsa_gen.c \

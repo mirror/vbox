@@ -25,6 +25,7 @@ crypto_modes_SOURCES = \
 	gcm128.c \
 	ocb128.c \
 	ofb128.c \
+	siv128.c \
 	wrap128.c \
 	xts128.c
 ifdef VBOX_WITH_CRYPTO_ASM
