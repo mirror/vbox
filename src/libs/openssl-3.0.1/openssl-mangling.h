@@ -11653,33 +11653,6 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef EC_GFp_nistp224_method
-#  define EC_GFp_nistp224_method OPENSSL_MANGLER(EC_GFp_nistp224_method)
-# endif
-#else
-# ifndef _EC_GFp_nistp224_method
-#  define _EC_GFp_nistp224_method OPENSSL_MANGLER_ASM(EC_GFp_nistp224_method)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef EC_GFp_nistp256_method
-#  define EC_GFp_nistp256_method OPENSSL_MANGLER(EC_GFp_nistp256_method)
-# endif
-#else
-# ifndef _EC_GFp_nistp256_method
-#  define _EC_GFp_nistp256_method OPENSSL_MANGLER_ASM(EC_GFp_nistp256_method)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef EC_GFp_nistp521_method
-#  define EC_GFp_nistp521_method OPENSSL_MANGLER(EC_GFp_nistp521_method)
-# endif
-#else
-# ifndef _EC_GFp_nistp521_method
-#  define _EC_GFp_nistp521_method OPENSSL_MANGLER_ASM(EC_GFp_nistp521_method)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef EC_GFp_nistz256_method
 #  define EC_GFp_nistz256_method OPENSSL_MANGLER(EC_GFp_nistz256_method)
 # endif
@@ -13036,60 +13009,6 @@
 #else
 # ifndef _EC_get_builtin_curves
 #  define _EC_get_builtin_curves OPENSSL_MANGLER_ASM(EC_get_builtin_curves)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef EC_nistp224_pre_comp_dup
-#  define EC_nistp224_pre_comp_dup OPENSSL_MANGLER(EC_nistp224_pre_comp_dup)
-# endif
-#else
-# ifndef _EC_nistp224_pre_comp_dup
-#  define _EC_nistp224_pre_comp_dup OPENSSL_MANGLER_ASM(EC_nistp224_pre_comp_dup)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef EC_nistp224_pre_comp_free
-#  define EC_nistp224_pre_comp_free OPENSSL_MANGLER(EC_nistp224_pre_comp_free)
-# endif
-#else
-# ifndef _EC_nistp224_pre_comp_free
-#  define _EC_nistp224_pre_comp_free OPENSSL_MANGLER_ASM(EC_nistp224_pre_comp_free)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef EC_nistp256_pre_comp_dup
-#  define EC_nistp256_pre_comp_dup OPENSSL_MANGLER(EC_nistp256_pre_comp_dup)
-# endif
-#else
-# ifndef _EC_nistp256_pre_comp_dup
-#  define _EC_nistp256_pre_comp_dup OPENSSL_MANGLER_ASM(EC_nistp256_pre_comp_dup)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef EC_nistp256_pre_comp_free
-#  define EC_nistp256_pre_comp_free OPENSSL_MANGLER(EC_nistp256_pre_comp_free)
-# endif
-#else
-# ifndef _EC_nistp256_pre_comp_free
-#  define _EC_nistp256_pre_comp_free OPENSSL_MANGLER_ASM(EC_nistp256_pre_comp_free)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef EC_nistp521_pre_comp_dup
-#  define EC_nistp521_pre_comp_dup OPENSSL_MANGLER(EC_nistp521_pre_comp_dup)
-# endif
-#else
-# ifndef _EC_nistp521_pre_comp_dup
-#  define _EC_nistp521_pre_comp_dup OPENSSL_MANGLER_ASM(EC_nistp521_pre_comp_dup)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef EC_nistp521_pre_comp_free
-#  define EC_nistp521_pre_comp_free OPENSSL_MANGLER(EC_nistp521_pre_comp_free)
-# endif
-#else
-# ifndef _EC_nistp521_pre_comp_free
-#  define _EC_nistp521_pre_comp_free OPENSSL_MANGLER_ASM(EC_nistp521_pre_comp_free)
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
@@ -64987,186 +64906,6 @@
 # endif
 #endif
 #ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp224_group_init
-#  define ossl_ec_GFp_nistp224_group_init OPENSSL_MANGLER(ossl_ec_GFp_nistp224_group_init)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp224_group_init
-#  define _ossl_ec_GFp_nistp224_group_init OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp224_group_init)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp224_group_set_curve
-#  define ossl_ec_GFp_nistp224_group_set_curve OPENSSL_MANGLER(ossl_ec_GFp_nistp224_group_set_curve)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp224_group_set_curve
-#  define _ossl_ec_GFp_nistp224_group_set_curve OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp224_group_set_curve)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp224_have_precompute_mult
-#  define ossl_ec_GFp_nistp224_have_precompute_mult OPENSSL_MANGLER(ossl_ec_GFp_nistp224_have_precompute_mult)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp224_have_precompute_mult
-#  define _ossl_ec_GFp_nistp224_have_precompute_mult OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp224_have_precompute_mult)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp224_point_get_affine_coordinates
-#  define ossl_ec_GFp_nistp224_point_get_affine_coordinates OPENSSL_MANGLER(ossl_ec_GFp_nistp224_point_get_affine_coordinates)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp224_point_get_affine_coordinates
-#  define _ossl_ec_GFp_nistp224_point_get_affine_coordinates OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp224_point_get_affine_coordinates)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp224_points_mul
-#  define ossl_ec_GFp_nistp224_points_mul OPENSSL_MANGLER(ossl_ec_GFp_nistp224_points_mul)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp224_points_mul
-#  define _ossl_ec_GFp_nistp224_points_mul OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp224_points_mul)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp224_precompute_mult
-#  define ossl_ec_GFp_nistp224_precompute_mult OPENSSL_MANGLER(ossl_ec_GFp_nistp224_precompute_mult)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp224_precompute_mult
-#  define _ossl_ec_GFp_nistp224_precompute_mult OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp224_precompute_mult)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp256_group_init
-#  define ossl_ec_GFp_nistp256_group_init OPENSSL_MANGLER(ossl_ec_GFp_nistp256_group_init)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp256_group_init
-#  define _ossl_ec_GFp_nistp256_group_init OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp256_group_init)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp256_group_set_curve
-#  define ossl_ec_GFp_nistp256_group_set_curve OPENSSL_MANGLER(ossl_ec_GFp_nistp256_group_set_curve)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp256_group_set_curve
-#  define _ossl_ec_GFp_nistp256_group_set_curve OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp256_group_set_curve)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp256_have_precompute_mult
-#  define ossl_ec_GFp_nistp256_have_precompute_mult OPENSSL_MANGLER(ossl_ec_GFp_nistp256_have_precompute_mult)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp256_have_precompute_mult
-#  define _ossl_ec_GFp_nistp256_have_precompute_mult OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp256_have_precompute_mult)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp256_point_get_affine_coordinates
-#  define ossl_ec_GFp_nistp256_point_get_affine_coordinates OPENSSL_MANGLER(ossl_ec_GFp_nistp256_point_get_affine_coordinates)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp256_point_get_affine_coordinates
-#  define _ossl_ec_GFp_nistp256_point_get_affine_coordinates OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp256_point_get_affine_coordinates)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp256_points_mul
-#  define ossl_ec_GFp_nistp256_points_mul OPENSSL_MANGLER(ossl_ec_GFp_nistp256_points_mul)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp256_points_mul
-#  define _ossl_ec_GFp_nistp256_points_mul OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp256_points_mul)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp256_precompute_mult
-#  define ossl_ec_GFp_nistp256_precompute_mult OPENSSL_MANGLER(ossl_ec_GFp_nistp256_precompute_mult)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp256_precompute_mult
-#  define _ossl_ec_GFp_nistp256_precompute_mult OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp256_precompute_mult)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp521_group_init
-#  define ossl_ec_GFp_nistp521_group_init OPENSSL_MANGLER(ossl_ec_GFp_nistp521_group_init)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp521_group_init
-#  define _ossl_ec_GFp_nistp521_group_init OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp521_group_init)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp521_group_set_curve
-#  define ossl_ec_GFp_nistp521_group_set_curve OPENSSL_MANGLER(ossl_ec_GFp_nistp521_group_set_curve)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp521_group_set_curve
-#  define _ossl_ec_GFp_nistp521_group_set_curve OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp521_group_set_curve)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp521_have_precompute_mult
-#  define ossl_ec_GFp_nistp521_have_precompute_mult OPENSSL_MANGLER(ossl_ec_GFp_nistp521_have_precompute_mult)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp521_have_precompute_mult
-#  define _ossl_ec_GFp_nistp521_have_precompute_mult OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp521_have_precompute_mult)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp521_point_get_affine_coordinates
-#  define ossl_ec_GFp_nistp521_point_get_affine_coordinates OPENSSL_MANGLER(ossl_ec_GFp_nistp521_point_get_affine_coordinates)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp521_point_get_affine_coordinates
-#  define _ossl_ec_GFp_nistp521_point_get_affine_coordinates OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp521_point_get_affine_coordinates)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp521_points_mul
-#  define ossl_ec_GFp_nistp521_points_mul OPENSSL_MANGLER(ossl_ec_GFp_nistp521_points_mul)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp521_points_mul
-#  define _ossl_ec_GFp_nistp521_points_mul OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp521_points_mul)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp521_precompute_mult
-#  define ossl_ec_GFp_nistp521_precompute_mult OPENSSL_MANGLER(ossl_ec_GFp_nistp521_precompute_mult)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp521_precompute_mult
-#  define _ossl_ec_GFp_nistp521_precompute_mult OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp521_precompute_mult)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp_points_make_affine_internal
-#  define ossl_ec_GFp_nistp_points_make_affine_internal OPENSSL_MANGLER(ossl_ec_GFp_nistp_points_make_affine_internal)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp_points_make_affine_internal
-#  define _ossl_ec_GFp_nistp_points_make_affine_internal OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp_points_make_affine_internal)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
-# ifndef ossl_ec_GFp_nistp_recode_scalar_bits
-#  define ossl_ec_GFp_nistp_recode_scalar_bits OPENSSL_MANGLER(ossl_ec_GFp_nistp_recode_scalar_bits)
-# endif
-#else
-# ifndef _ossl_ec_GFp_nistp_recode_scalar_bits
-#  define _ossl_ec_GFp_nistp_recode_scalar_bits OPENSSL_MANGLER_ASM(ossl_ec_GFp_nistp_recode_scalar_bits)
-# endif
-#endif
-#ifndef OPENSSL_MANGLE_ASM
 # ifndef ossl_ec_GFp_simple_add
 #  define ossl_ec_GFp_simple_add OPENSSL_MANGLER(ossl_ec_GFp_simple_add)
 # endif
@@ -77746,6 +77485,24 @@
 #else
 # ifndef _x509v3_add_len_value_uchar
 #  define _x509v3_add_len_value_uchar OPENSSL_MANGLER_ASM(x509v3_add_len_value_uchar)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef xor128_decrypt_n_pad
+#  define xor128_decrypt_n_pad OPENSSL_MANGLER(xor128_decrypt_n_pad)
+# endif
+#else
+# ifndef _xor128_decrypt_n_pad
+#  define _xor128_decrypt_n_pad OPENSSL_MANGLER_ASM(xor128_decrypt_n_pad)
+# endif
+#endif
+#ifndef OPENSSL_MANGLE_ASM
+# ifndef xor128_encrypt_n_pad
+#  define xor128_encrypt_n_pad OPENSSL_MANGLER(xor128_encrypt_n_pad)
+# endif
+#else
+# ifndef _xor128_encrypt_n_pad
+#  define _xor128_encrypt_n_pad OPENSSL_MANGLER_ASM(xor128_encrypt_n_pad)
 # endif
 #endif
 #endif

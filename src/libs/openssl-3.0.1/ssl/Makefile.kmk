@@ -21,7 +21,7 @@ if "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
 endif
 VBox-libssl_TEMPLATE = LIBCRYPTO
 VBox-libssl_DEFS.win = NOCRYPT # Exclude WinCrypt.h
-VBox-libssl_DEFS = OPENSSL_NO_DEPRECATED
+#VBox-libssl_DEFS = OPENSSL_NO_DEPRECATED This removes TLSv1_1_client_method required for rdesktop-vrdp
 VBox-libssl_SOURCES  = \
 	bio_ssl.c \
 	d1_lib.c \
