@@ -18,8 +18,6 @@ ifndef VBOX_PATH_CRYPTO
  include $(PATH_SUB_CURRENT)/Config.kmk
 endif
 
-VBOX_OSSL_TARGETS := linux.amd64
-
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/providers/Makefile.kmk
 include $(PATH_SUB_CURRENT)/crypto/Makefile.kmk
@@ -66,11 +64,10 @@ OSSL_HDR_TEMPLATES := \
 recreate-headers: $(PATH_SUB_CURRENT)/util/dofile.pl \
 	$(OSSL_HDR_TEMPLATES) \
 	recreate-providers-headers
-	$(foreach target, $(VBOX_OSSL_TARGETS), \
-		$(foreach header, $(OSSL_HDR_TEMPLATES), \
-		    perl -I$(PATH_SUB_CURRENT)/gen-includes/$(target) \
-		     -Mconfigdata $(PATH_SUB_CURRENT)/util/dofile.pl -oMakefile \
-		     $(header) > $(PATH_SUB_CURRENT)/gen-includes/$(target)/openssl/$(basename $(notdir $(header)));))
+	$(foreach header, $(OSSL_HDR_TEMPLATES), \
+	    perl -I$(PATH_SUB_CURRENT) \
+	     -Mconfigdata $(PATH_SUB_CURRENT)/util/dofile.pl -oMakefile \
+	     $(header) > $(PATH_SUB_CURRENT)/gen-includes/openssl/$(basename $(notdir $(header)));))
 
 #
 # How to regenerate the openssl-mangling.h

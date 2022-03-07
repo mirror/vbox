@@ -99,6 +99,7 @@ crypto-headers_SOURCES = \
 	include/openssl/ecdh.h=>ecdh.h \
 	include/openssl/ecdsa.h=>ecdsa.h \
 	include/openssl/engine.h=>engine.h \
+	include/openssl/engineerr.h=>engineerr.h \
 	include/openssl/evp.h=>evp.h \
 	include/openssl/evperr.h=>evperr.h \
 	include/openssl/e_os2.h=>e_os2.h \
@@ -114,6 +115,7 @@ crypto-headers_SOURCES = \
 	include/openssl/objects.h=>objects.h \
 	include/openssl/objectserr.h=>objectserr.h \
 	include/openssl/obj_mac.h=>obj_mac.h \
+	include/openssl/ocsperr.h=>ocsperr.h \
 	openssl-mangling.h=>openssl-mangling.h \
 	include/openssl/opensslconf.h=>opensslconf.h \
 	include/openssl/ossl_typ.h=>ossl_typ.h \
@@ -144,33 +146,34 @@ crypto-headers_SOURCES = \
 	include/openssl/ts.h=>ts.h \
 	include/openssl/txt_db.h=>txt_db.h \
 	include/openssl/types.h=>types.h \
+	include/openssl/uierr.h=>uierr.h \
 	include/openssl/x509err.h=>x509err.h \
 	include/openssl/x509v3err.h=>x509v3err.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/asn1.h=>asn1.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/asn1t.h=>asn1t.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/bio.h=>bio.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/cmp.h=>cmp.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/cms.h=>cms.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/conf.h=>conf.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/configuration.h=>configuration.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/crmf.h=>crmf.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/crypto.h=>crypto.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/ct.h=>ct.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/err.h=>err.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/ess.h=>ess.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/fipskey.h=>fipskey.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/lhash.h=>lhash.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/ocsp.h=>ocsp.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/opensslv.h=>opensslv.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/pkcs12.h=>pkcs12.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/pkcs7.h=>pkcs7.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/safestack.h=>safestack.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/srp.h=>srp.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/ssl.h=>ssl.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/ui.h=>ui.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/x509.h=>x509.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/x509_vfy.h=>x509_vfy.h \
-	gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/openssl/x509v3.h=>x509v3.h
+	gen-includes/openssl/asn1.h=>asn1.h \
+	gen-includes/openssl/asn1t.h=>asn1t.h \
+	gen-includes/openssl/bio.h=>bio.h \
+	gen-includes/openssl/cmp.h=>cmp.h \
+	gen-includes/openssl/cms.h=>cms.h \
+	gen-includes/openssl/conf.h=>conf.h \
+	gen-includes/openssl/configuration.h=>configuration.h \
+	gen-includes/openssl/crmf.h=>crmf.h \
+	gen-includes/openssl/crypto.h=>crypto.h \
+	gen-includes/openssl/ct.h=>ct.h \
+	gen-includes/openssl/err.h=>err.h \
+	gen-includes/openssl/ess.h=>ess.h \
+	gen-includes/openssl/fipskey.h=>fipskey.h \
+	gen-includes/openssl/lhash.h=>lhash.h \
+	gen-includes/openssl/ocsp.h=>ocsp.h \
+	gen-includes/openssl/opensslv.h=>opensslv.h \
+	gen-includes/openssl/pkcs12.h=>pkcs12.h \
+	gen-includes/openssl/pkcs7.h=>pkcs7.h \
+	gen-includes/openssl/safestack.h=>safestack.h \
+	gen-includes/openssl/srp.h=>srp.h \
+	gen-includes/openssl/ssl.h=>ssl.h \
+	gen-includes/openssl/ui.h=>ui.h \
+	gen-includes/openssl/x509.h=>x509.h \
+	gen-includes/openssl/x509_vfy.h=>x509_vfy.h \
+	gen-includes/openssl/x509v3.h=>x509v3.h
 
 #
 # The templates used for the crypo lib and all its sublibraries.
@@ -281,7 +284,7 @@ TEMPLATE_LIBCRYPTO_INCS := \
 	$(VBOX_PATH_OPENSSL)/include \
 	$(VBOX_PATH_OPENSSL)/providers/common/include \
 	$(VBOX_PATH_OPENSSL)/providers/implementations/include \
-	$(VBOX_PATH_OPENSSL)/gen-includes/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) \
+	$(VBOX_PATH_OPENSSL)/gen-includes \
 	$(VBOX_PATH_CRYPTO)/include \
 	$(VBOX_PATH_CRYPTO_MODES) \
 	$(VBOX_PATH_CRYPTO)/ec/curve448 \
