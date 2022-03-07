@@ -426,8 +426,9 @@ ENGINE *ENGINE_by_id(const char *id)
             goto notfound;
         return iterator;
     }
-#endif
+
  notfound:
+#endif
     ENGINE_free(iterator);
     ERR_raise_data(ERR_LIB_ENGINE, ENGINE_R_NO_SUCH_ENGINE, "id=%s", id);
     return NULL;

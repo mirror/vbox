@@ -160,6 +160,7 @@ recreate-openssl-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
 	recreate-ec-asm \
 	recreate-md5-asm \
 	recreate-modes-asm \
+	recreate-poly1305-asm \
 	recreate-rc4-asm \
 	recreate-sha-asm
 	perl $(VBOX_PATH_CRYPTO)/x86cpuid.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/x86cpuid.S

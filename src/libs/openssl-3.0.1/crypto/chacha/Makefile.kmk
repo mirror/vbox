@@ -16,14 +16,14 @@ include $(KBUILD_PATH)/subheader.kmk
 LIBRARIES += crypto_chacha
 crypto_chacha_TEMPLATE = SUBLIBCRYPTO
 crypto_chacha_DEFS = OPENSSL_NO_DEPRECATED
-ifdef VBOX_WITH_CRYPTO_ASM
- crypto_chacha_SOURCES.x86 += \
-	$(VBOX_PATH_CRYPTO_GENASM)/chacha-x86.S
- crypto_chacha_SOURCES.amd64 += \
-	$(VBOX_PATH_CRYPTO_GENASM)/chacha-x86_64.S
-else
+#ifdef VBOX_WITH_CRYPTO_ASM
+# crypto_chacha_SOURCES.x86 += \
+#	$(VBOX_PATH_CRYPTO_GENASM)/chacha-x86.S
+# crypto_chacha_SOURCES.amd64 += \
+#	$(VBOX_PATH_CRYPTO_GENASM)/chacha-x86_64.S
+#else
  crypto_chacha_SOURCES += chacha_enc.c
-endif
+#endif
 $(evalcall VBOX_OPENSSL_X86,crypto_chacha)
 
 

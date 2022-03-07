@@ -457,6 +457,12 @@ void Poly1305_Init(POLY1305 *ctx, const unsigned char key[32])
 }
 
 #ifdef POLY1305_ASM
+
+#ifdef ___openssl_mangling_h___        /* aeichner */
+# undef poly1305_blocks
+# undef poly1305_emit
+#endif /* !___openssl_mangling_h___*/   /* aeichner */
+
 /*
  * This "eclipses" poly1305_blocks and poly1305_emit, but it's
  * conscious choice imposed by -Wshadow compiler warnings.
