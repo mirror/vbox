@@ -48,6 +48,9 @@
 # undef EVP_camellia_256_cfb
 # undef EVP_seed_cfb
 # undef EVP_sm4_cfb
+# undef EVP_des_cfb
+# undef EVP_des_ede_cfb
+# undef EVP_des_ede3_cfb
 #endif /* ___openssl_mangling_h___ */
 
 # define EVP_MAX_MD_SIZE                 64/* longest known is SHA512 */

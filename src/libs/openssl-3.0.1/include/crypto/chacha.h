@@ -11,6 +11,9 @@
 #define OSSL_CRYPTO_CHACHA_H
 # pragma once
 
+#ifdef VBOX
+# include "openssl-mangling.h"
+#endif
 #include <stddef.h>
 
 /*
