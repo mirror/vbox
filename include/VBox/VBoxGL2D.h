@@ -238,6 +238,25 @@ extern PFNVBOXVHWA_FRAMEBUFFER_TEXTURE3D vboxglFramebufferTexture3D;
 extern PFNVBOXVHWA_GET_FRAMEBUFFER_ATTACHMENT_PARAMETRIV vboxglGetFramebufferAttachmentParameteriv;
 
 
+/*
+ * Glossing over qt 5 vs 6 differences.
+ *
+ * Note! We could use the qt6 classes in 5, but we probably don't have the
+ *       necessary modules in our current qt builds.
+ */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+class QOpenGLWidget;
+class QOpenGLContext;
+# define MY_QOpenGLWidget   QOpenGLWidget
+# define MY_QOpenGLContext  QOpenGLContext
+#else
+class QGLWidget;
+class QGLContext;
+# define MY_QOpenGLWidget   QGLWidget
+# define MY_QOpenGLContext  QGLContext
+#endif
+
+
 class VBoxGLInfo
 {
 public:
@@ -261,7 +280,7 @@ public:
         mInitialized(false)
     {}
 
-    void init(const class QGLContext * pContext);
+    void init(const MY_QOpenGLContext *pContext);
 
     bool isInitialized() const { return mInitialized; }
 
@@ -279,7 +298,7 @@ public:
 
     static int parseVersion(const GLubyte * ver);
 private:
-    void initExtSupport(const class QGLContext & context);
+    void initExtSupport(const MY_QOpenGLContext &context);
 
     int mGLVersion;
     bool mFragmentShaderSupported;
@@ -308,9 +327,9 @@ public:
     VBoxGLTmpContext();
     ~VBoxGLTmpContext();
 
-    const class QGLContext * makeCurrent();
+    const MY_QOpenGLContext *makeCurrent();
 private:
-    class QGLWidget * mWidget;
+    MY_QOpenGLWidget *mWidget;
 };
 
 
@@ -338,7 +357,7 @@ public:
         mInitialized(false)
     {}
 
-    void init(const class QGLContext * pContext);
+    void init(const MY_QOpenGLContext *pContext);
 
     bool isInitialized() const { return mInitialized; }
 

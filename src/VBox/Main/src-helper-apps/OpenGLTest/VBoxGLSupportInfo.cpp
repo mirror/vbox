@@ -19,7 +19,15 @@
 # include <iprt/win/windows.h> /* QGLWidget drags in Windows.h; -Wall forces us to use wrapper. */
 # include <iprt/stdint.h>      /* QGLWidget drags in stdint.h; -Wall forces us to use wrapper. */
 #endif
-#include <QGLWidget>
+
+#include <QGuiApplication> /* For QT_VERSION */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+# include <QMainWindow>
+# include <QOpenGLWidget>
+# include <QOpenGLContext>
+#else
+# include <QGLWidget>
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/log.h>
@@ -34,8 +42,6 @@
 #include <VBox/VBoxGL2D.h>
 #include "VBoxFBOverlayCommon.h"
 #include <iprt/err.h>
-
-#include <QGLContext>
 
 
 /*****************/
@@ -97,7 +103,7 @@ PFNVBOXVHWA_FRAMEBUFFER_TEXTURE2D vboxglFramebufferTexture2D = NULL;
 PFNVBOXVHWA_FRAMEBUFFER_TEXTURE3D vboxglFramebufferTexture3D = NULL;
 PFNVBOXVHWA_GET_FRAMEBUFFER_ATTACHMENT_PARAMETRIV vboxglGetFramebufferAttachmentParameteriv = NULL;
 
-#define VBOXVHWA_GETPROCADDRESS(_c, _t, _n) ((_t)(uintptr_t)(_c).getProcAddress(QString(_n)))
+#define VBOXVHWA_GETPROCADDRESS(_c, _t, _n) ((_t)(uintptr_t)(_c).getProcAddress(_n))
 
 #define VBOXVHWA_PFNINIT_SAME(_c, _t, _v, _rc) \
     do { \
@@ -250,18 +256,20 @@ int VBoxGLInfo::parseVersion(const GLubyte * ver)
     return iVer;
 }
 
-void VBoxGLInfo::init(const QGLContext * pContext)
+void VBoxGLInfo::init(const MY_QOpenGLContext *pContext)
 {
-    if(mInitialized)
+    if (mInitialized)
         return;
 
     mInitialized = true;
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     if (!QGLFormat::hasOpenGL())
     {
         VBOXQGLLOGREL (("no gl support available\n"));
         return;
     }
+#endif
 
 //    pContext->makeCurrent();
 
@@ -270,7 +278,7 @@ void VBoxGLInfo::init(const QGLContext * pContext)
             str = glGetString(GL_VERSION);
             );
 
-    if(str)
+    if (str)
     {
         VBOXQGLLOGREL (("gl version string: 0%s\n", str));
 
@@ -335,7 +343,7 @@ void VBoxGLInfo::init(const QGLContext * pContext)
     }
 }
 
-void VBoxGLInfo::initExtSupport(const QGLContext & context)
+void VBoxGLInfo::initExtSupport(const MY_QOpenGLContext &context)
 {
     int rc = 0;
     do
@@ -531,7 +539,7 @@ void VBoxGLInfo::initExtSupport(const QGLContext & context)
     mTextureNP2Supported = m_GL_ARB_texture_non_power_of_two;
 }
 
-void VBoxVHWAInfo::init(const QGLContext * pContext)
+void VBoxVHWAInfo::init(const MY_QOpenGLContext *pContext)
 {
     if(mInitialized)
         return;
@@ -661,9 +669,9 @@ bool VBoxVHWAInfo::checkVHWASupport()
 #else
     /** @todo test & enable external app approach*/
     VBoxGLTmpContext ctx;
-    const QGLContext *pContext = ctx.makeCurrent();
+    const MY_QOpenGLContext *pContext = ctx.makeCurrent();
     Assert(pContext);
-    if(pContext)
+    if (pContext)
     {
         VBoxVHWAInfo info;
         info.init(pContext);
@@ -675,26 +683,32 @@ bool VBoxVHWAInfo::checkVHWASupport()
 
 VBoxGLTmpContext::VBoxGLTmpContext()
 {
-    if(QGLFormat::hasOpenGL())
-    {
-        mWidget = new QGLWidget();
-    }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    mWidget = new MY_QOpenGLWidget(/*new QMainWindow()*/);
+#else
+    if (QGLFormat::hasOpenGL())
+        mWidget = new MY_QOpenGLWidget();
     else
-    {
         mWidget = NULL;
-    }
+#endif
 }
 
 VBoxGLTmpContext::~VBoxGLTmpContext()
 {
-    if(mWidget)
+    if (mWidget)
+    {
         delete mWidget;
+        mWidget = NULL;
+    }
 }
 
-const class QGLContext * VBoxGLTmpContext::makeCurrent()
+const MY_QOpenGLContext *VBoxGLTmpContext::makeCurrent()
 {
-    if(mWidget)
+    if (mWidget)
     {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        mWidget->grabFramebuffer(); /* This is a hack to trigger GL initialization or context() will return NULL. */
+#endif
         mWidget->makeCurrent();
         return mWidget->context();
     }
