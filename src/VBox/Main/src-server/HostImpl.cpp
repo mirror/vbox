@@ -170,6 +170,9 @@ typedef SOLARISFIXEDDISK *PSOLARISFIXEDDISK;
 #include <VBox/err.h>
 #include <VBox/settings.h>
 #include <VBox/sup.h>
+#ifdef VBOX_WITH_3D_ACCELERATION
+# include <VBox/VBoxOGL.h>
+#endif
 #include <iprt/x86.h>
 
 #include "VBox/com/MultiResult.h"
