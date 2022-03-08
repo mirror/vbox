@@ -253,7 +253,7 @@ static RTFILE vbDrmTryDevice(const char *szPathPattern, uint8_t uInstance)
             rc = RTFileIoCtl(hDevice, DRM_IOCTL_VERSION, &vmwgfxVersion, sizeof(vmwgfxVersion), NULL);
             if (   RT_SUCCESS(rc)
                 && strncmp(szVmwgfxDriverName, DRM_DRIVER_NAME, sizeof(DRM_DRIVER_NAME) - 1) == 0
-                && (   vmwgfxVersion.cMajor >= DRM_DRIVER_VERSION_MAJOR_MIN
+                && (   vmwgfxVersion.cMajor > DRM_DRIVER_VERSION_MAJOR_MIN
                     || (   vmwgfxVersion.cMajor == DRM_DRIVER_VERSION_MAJOR_MIN
                         && vmwgfxVersion.cMinor >= DRM_DRIVER_VERSION_MINOR_MIN)))
             {
