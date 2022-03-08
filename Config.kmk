@@ -942,6 +942,10 @@ VBOX_WITH_EXTPACK_VBOXDTRACE = 1
 ## @{
 # Enable to compile with OpenSSL 1.0 (only relevant for Windows, see src/VBox/Runtime/Makefile.kmk)
 #VBOX_WITH_OPENSSL_PRE_1_1 = 1
+# Enable openssl 3.0.1 (temporary to not break everything at once @bugref{10128}).
+if1of ($(KBUILD_TARGET), solaris)
+ VBOX_WITH_OPENSSL3 = 1
+endif
 # Enables all the doxgen bits.
 VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # Set this to skip installing the redistributable compiler runtime.
