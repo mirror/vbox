@@ -39,9 +39,9 @@ import uuid;
 import zipfile
 
 # Validation Kit imports.
+from common        import utils;
 import testboxcommons
 from testboxscript import TBS_EXITCODE_SYNTAX;
-from common import utils;
 
 # Figure where we are.
 try:    __file__
@@ -126,7 +126,8 @@ def _doUpgradeTestRun(sUpgradeDir):
     testboxcommons.log('Testing the new testbox script (%s)...' % (asArgs[0],));
     if sys.executable:
         asArgs.insert(0, sys.executable);
-    oChild = subprocess.Popen(asArgs, shell = False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT);
+    oChild = subprocess.Popen(asArgs, shell = False,                                        # pylint: disable=consider-using-with
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT);
 
     asBuf = []
     oThread = threading.Thread(target=_doUpgradeThreadProc, args=(oChild.stdout, asBuf));
@@ -299,7 +300,7 @@ def upgradeFromZip(sZipFile):
     #       they'll be restricted to the one zip and the one upgrade dir.
     #       We'll remove them next time we upgrade.
     #
-    oZip = zipfile.ZipFile(sZipFile, 'r');
+    oZip = zipfile.ZipFile(sZipFile, 'r');                  # No 'with' support in 2.6 class: pylint: disable=consider-using-with
     asMembers = _doUpgradeCheckZip(oZip);
     if asMembers is None:
         return False;

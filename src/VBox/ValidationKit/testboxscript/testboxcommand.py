@@ -128,12 +128,9 @@ class TestBoxCommand(object):
         self._oTestBoxScript.mountShares(); # Raises exception on failure.
 
         # Kick off the task and ACK the command.
-        self._oCurTaskLock.acquire();
-        try:
+        with self._oCurTaskLock:
             self._oCurTask = TestBoxExecTask(self._oTestBoxScript, idResult = idResult, sScriptZips = sScriptZips,
                                              sScriptCmdLine = sScriptCmdLine, cSecTimeout = cSecTimeout);
-        finally:
-            self._oCurTaskLock.release();
         oConnection.sendAckAndClose(constants.tbresp.CMD_EXEC);
         return True;
 
@@ -326,9 +323,8 @@ class TestBoxCommand(object):
         except:
             return (-1, '', False);
 
-        self._oCurTaskLock.acquire();
-        self._oCurTask = oTask;
-        self._oCurTaskLock.release();
+        with self._oCurTaskLock:
+            self._oCurTask = oTask;
 
         return (oTask.idTestBox, oTask.sTestBoxName, True);
 
@@ -350,8 +346,7 @@ class TestBoxCommand(object):
 
     def _getCurTask(self):
         """ Gets the current task in a paranoidly safe manny. """
-        self._oCurTaskLock.acquire();
-        oCurTask = self._oCurTask;
-        self._oCurTaskLock.release();
+        with self._oCurTaskLock:
+            oCurTask = self._oCurTask;
         return oCurTask;
 

@@ -181,14 +181,14 @@ class TestBoxScript(object):
             constants.tbreq.SIGNON_PARAM_MEM_SIZE:         { self.VALUE: None,     self.FN: self._getHostMemSize },
             constants.tbreq.SIGNON_PARAM_SCRATCH_SIZE:     { self.VALUE: None,     self.FN: self._getFreeScratchSpace },
         }
-        for sItem in self._ddSignOnParams:
+        for sItem in self._ddSignOnParams:                      # pylint: disable=consider-using-dict-items
             if self._ddSignOnParams[sItem][self.FN] is not None:
                 self._ddSignOnParams[sItem][self.VALUE] = self._ddSignOnParams[sItem][self.FN]()
 
         testboxcommons.log('Starting Test Box script (%s)' % (self._getScriptRev(),));
         testboxcommons.log('Test Manager URL: %s' % self._oOptions.sTestManagerUrl,)
         testboxcommons.log('Scratch root path: %s' % self._oOptions.sScratchRoot,)
-        for sItem in self._ddSignOnParams:
+        for sItem in self._ddSignOnParams:                      # pylint: disable=consider-using-dict-items
             testboxcommons.log('Sign-On value %18s: %s' % (sItem, self._ddSignOnParams[sItem][self.VALUE]));
 
         #
@@ -322,7 +322,7 @@ class TestBoxScript(object):
             utils.sudoProcessCall(['/bin/mkdir', '-p', sMountPoint]);
             if sType == 'cifs':
                 ## @todo This stuff doesn't work on wei01-x4600b.de.oracle.com running 11.1. FIXME!
-                oPasswdFile = tempfile.TemporaryFile();
+                oPasswdFile = tempfile.TemporaryFile();     # pylint: disable=consider-using-with
                 oPasswdFile.write(sPassword + '\n');
                 oPasswdFile.flush();
                 utils.sudoProcessOutputChecked(['/sbin/mount', '-F', 'smbfs',
@@ -794,7 +794,7 @@ class TestBoxScript(object):
 
         # Assemble SIGN-ON request parameters and send the request.
         dParams = {};
-        for sParam in self._ddSignOnParams:
+        for sParam in self._ddSignOnParams:                     # pylint: disable=consider-using-dict-items
             dParams[sParam] = self._ddSignOnParams[sParam][self.VALUE];
         oResponse = TestBoxConnection.sendSignOn(self._oOptions.sTestManagerUrl, dParams);
 
@@ -847,16 +847,16 @@ class TestBoxScript(object):
 
         # Refresh sign-on parameters, changes triggers sign-on.
         fNeedSignOn = not self._fSignedOn or self._fNeedReSignOn;
-        for item in self._ddSignOnParams:
-            if self._ddSignOnParams[item][self.FN] is None:
+        for sItem in self._ddSignOnParams:                      # pylint: disable=consider-using-dict-items
+            if self._ddSignOnParams[sItem][self.FN] is None:
                 continue
 
-            sOldValue = self._ddSignOnParams[item][self.VALUE]
-            self._ddSignOnParams[item][self.VALUE] = self._ddSignOnParams[item][self.FN]()
-            if sOldValue != self._ddSignOnParams[item][self.VALUE]:
+            sOldValue = self._ddSignOnParams[sItem][self.VALUE]
+            self._ddSignOnParams[sItem][self.VALUE] = self._ddSignOnParams[sItem][self.FN]()
+            if sOldValue != self._ddSignOnParams[sItem][self.VALUE]:
                 fNeedSignOn = True
-                testboxcommons.log('Detected %s parameter change: %s -> %s' %
-                                   (item, sOldValue, self._ddSignOnParams[item][self.VALUE]))
+                testboxcommons.log('Detected %s parameter change: %s -> %s'
+                                   % (sItem, sOldValue, self._ddSignOnParams[sItem][self.VALUE],))
 
         if fNeedSignOn:
             self._doSignOn();
