@@ -33,7 +33,6 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os;
 import sys;
-import zlib;
 
 # Only the main script needs to modify the path.
 try:    __file__
