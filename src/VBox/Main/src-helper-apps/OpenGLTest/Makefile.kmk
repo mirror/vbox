@@ -20,17 +20,18 @@ include $(KBUILD_PATH)/subheader.kmk
 
 
 #
-# Target lists.
+# VBoxOGLTest - Library that VBoxSVC is linked with.
+#
+# On darwin this does the whole job, while on the other platforms it just
+# starts VBoxTestOGL.
 #
 LIBRARIES += VBoxOGLTest
+VBoxOGLTest_TEMPLATE         := VBOXR3
 ifneq ($(KBUILD_TARGET),darwin)
-## @todo r=bird: Why VBOXR3NP?
-VBoxOGLTest_TEMPLATE        = VBOXR3NP
-VBoxOGLTest_SOURCES         = OpenGLTest.cpp
+ VBoxOGLTest_SOURCES         := OpenGLTest.cpp
 else
-VBoxOGLTest_TEMPLATE        = VBoxR3Dll
-VBoxOGLTest_SOURCES.darwin  = OpenGLTestDarwin.cpp
-VBoxOGLTest_CXXFLAGS.darwin = $(VBOX_GCC_Wno-deprecated-declarations)
+ VBoxOGLTest_SOURCES.darwin  := OpenGLTestDarwin.cpp
+ VBoxOGLTest_CXXFLAGS.darwin  = $(VBOX_GCC_Wno-deprecated-declarations)
 endif
 
 

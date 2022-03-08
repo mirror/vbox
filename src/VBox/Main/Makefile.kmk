@@ -1044,11 +1044,6 @@ ifdef VBOX_WITH_NETFLT
   	/DELAYLOAD:iphlpapi.dll
 endif
 
-ifdef VBOX_WITH_3D_ACCELERATION
- VBoxC_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
- VBoxC_LDFLAGS.darwin += -framework OpenGL
-endif
-
 ifdef VBOX_WITH_DRAG_AND_DROP
  VBoxC_LIBS += $(PATH_STAGE_LIB)/VBoxDnDHostR3Lib$(VBOX_SUFF_LIB)
 endif
