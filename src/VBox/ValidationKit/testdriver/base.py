@@ -285,7 +285,7 @@ def processCheckPidAndName(uPid, sName):
 
         if asPsCmd is not None:
             try:
-                oPs = subprocess.Popen(asPsCmd, stdout=subprocess.PIPE);
+                oPs = subprocess.Popen(asPsCmd, stdout=subprocess.PIPE); # pylint: disable=consider-using-with
                 sCurName = oPs.communicate()[0];
                 iExitCode = oPs.wait();
             except:
@@ -546,8 +546,7 @@ class TdTaskBase(object):
                     break;
 
                 cMsWait = cMsTimeout - cMsElapsed
-                if cMsWait > 1000:
-                    cMsWait = 1000;
+                cMsWait = min(cMsWait, 1000);
                 try:
                     self.oCv.wait(cMsWait / 1000.0);
                 except:
@@ -1133,8 +1132,7 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
                     if cMsElapsed > cMsTimeout: # not ==, we want the final waitForEvents.
                         break;
                     cMsSleep = cMsTimeout - cMsElapsed;
-                    if cMsSleep > 1000:
-                        cMsSleep = 1000;
+                    cMsSleep = min(cMsSleep, 1000);
                     fMore = self.waitForTasksSleepWorker(cMsSleep);
         except KeyboardInterrupt:
             self.fInterrupted = True;
@@ -1208,8 +1206,8 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
         del dPids[iPid];
 
         sPid = '';
-        for iPid2 in dPids:
-            sPid += '%s:%s:%s\n' % (iPid2, 'sudo' if dPids[iPid2][1] else 'normal', dPids[iPid2][0]);
+        for iPid2, tNameSudo in dPids.items():
+            sPid += '%s:%s:%s\n' % (iPid2, 'sudo' if tNameSudo[1] else 'normal', tNameSudo[0]);
 
         try:
             oFile = utils.openNoInherit(self.sPidFile, 'w');
@@ -1581,8 +1579,8 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
         else:
             afnMethods = [ sendUserSignal1, processInterrupt, processTerminate, processKill ];
         for fnMethod in afnMethods:
-            for iPid in dPids:
-                fnMethod(iPid, fSudo = dPids[iPid][1]);
+            for iPid, tNameSudo in dPids.items():
+                fnMethod(iPid, fSudo = tNameSudo[1]);
 
             for i in range(10):
                 if i > 0:
@@ -1590,9 +1588,9 @@ class TestDriverBase(object): # pylint: disable=too-many-instance-attributes
 
                 dPidsToRemove = []; # Temporary dict to append PIDs to remove later.
 
-                for iPid in dPids:
+                for iPid, tNameSudo in dPids.items():
                     if not processExists(iPid):
-                        reporter.log('%s (%s) terminated' % (dPids[iPid][0], iPid,));
+                        reporter.log('%s (%s) terminated' % (tNameSudo[0], iPid,));
                         self.pidFileRemove(iPid, fQuiet = True);
                         dPidsToRemove.append(iPid);
                         continue;
