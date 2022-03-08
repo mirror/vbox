@@ -223,18 +223,16 @@ class SerialLoopback(object):
         """
         Shutdown any connection and wait for it to become idle.
         """
-        self.oLock.acquire();
-        self.fShutdown = True;
-        self.oLock.release();
+        with self.oLock:
+            self.fShutdown = True;
         self.oIoPumper.shutdown();
 
     def isShutdown(self):
         """
         Returns whether the I/O pumping thread should shut down.
         """
-        self.oLock.acquire();
-        fShutdown = self.fShutdown;
-        self.oLock.release();
+        with self.oLock:
+            fShutdown = self.fShutdown;
 
         return fShutdown;
 

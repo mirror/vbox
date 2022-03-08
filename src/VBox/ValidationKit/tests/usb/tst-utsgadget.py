@@ -35,9 +35,9 @@ import sys
 sys.path.insert(0, '.');
 sys.path.insert(0, '..');
 sys.path.insert(0, '../..');
-import usbgadget;
-import testdriver.reporter as reporter
 from common import utils;
+from testdriver import reporter;
+import usbgadget;
 
 
 # Python 3 hacks:

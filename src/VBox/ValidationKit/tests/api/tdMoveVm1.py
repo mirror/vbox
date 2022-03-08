@@ -396,7 +396,7 @@ class SubTstDrvMoveVm1(base.SubTestDriverBase):
 
         fRc = self.oTstDrv.terminateVmBySession(oSession)
 
-        if fRc is True or False:
+        if fRc is True:
             # Create a new Session object for moving VM.
             oSession = self.oTstDrv.openSession(oMachine)
 

@@ -160,7 +160,7 @@ class SubTstDrvAppliance1(base.SubTestDriverBase):
         #
         try:
             os.mkdir(sTmpDir, 0o755);
-            oTarFile = tarfile.open(sOva, 'r:*');
+            oTarFile = tarfile.open(sOva, 'r:*'); # No 'with' support in 2.6.   pylint: disable=consider-using-with
             oTarFile.extractall(sTmpDir);
             oTarFile.close();
         except:

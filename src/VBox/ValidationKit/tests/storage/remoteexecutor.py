@@ -242,9 +242,8 @@ class RemoteExecutor(object):
         else:
             sFileId = self.sScratchPath + '/' + sFilename;
             try:
-                oFile = open(sFileId, 'wb');
-                oFile.write(sContent);
-                oFile.close();
+                with open(sFileId, 'wb') as oFile:
+                    oFile.write(sContent);
             except:
                 sFileId = None;
 

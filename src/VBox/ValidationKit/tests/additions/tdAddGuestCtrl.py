@@ -150,9 +150,8 @@ class tdTestGuestCtrlBase(object):
         reporter.log('Creating + uploading log data file "%s"' % sFileName);
         sHstFileName = os.path.join(oTstDrv.sScratchPath, sFileName);
         try:
-            oCurTestFile = open(sHstFileName, "wb");
-            oCurTestFile.write(aData);
-            oCurTestFile.close();
+            with open(sHstFileName, "wb") as oCurTestFile:
+                oCurTestFile.write(aData);
         except:
             return reporter.error('Unable to create temporary file for "%s"' % (sDesc,));
         return reporter.addLogFile(sHstFileName, 'misc/other', sDesc);
@@ -1771,7 +1770,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if os.path.isdir(sDst):
                 sDst = os.path.join(sDst, oTest.oSrc.sName);
             try:
-                oFile = open(sDst, 'rb');
+                oFile = open(sDst, 'rb');                       # pylint: disable=consider-using-with
             except:
                 return reporter.errorXcpt('open(%s) failed during verfication' % (sDst,));
             fEqual = oTest.oSrc.equalFile(oFile);
@@ -1810,7 +1809,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 if isinstance(oFsObj, testfileset.TestFile):
                     sFilePath = os.path.join(sHostPath, oFsObj.sName);
                     try:
-                        oFile = open(sFilePath, 'rb');
+                        oFile = open(sFilePath, 'rb');          # pylint: disable=consider-using-with
                     except:
                         fRc = reporter.errorXcpt('open(%s) failed during verfication' % (sFilePath,));
                     else:
@@ -4029,8 +4028,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if fRc2 is not True:
             return (False, oTxsSession);
 
-        for sPath in self.oTestFiles.dPaths:
-            oFsObj = self.oTestFiles.dPaths[sPath];
+        for oFsObj in self.oTestFiles.dPaths.values():
             reporter.log2('testGuestCtrlFileStat: %s sPath=%s'
                           % ('file' if isinstance(oFsObj, testfileset.TestFile) else 'dir ', limitString(oFsObj.sPath),));
 
@@ -4695,12 +4693,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     @staticmethod
     def __generateFile(sName, cbFile):
         """ Helper for generating a file with a given size. """
-        oFile = open(sName, 'wb');
-        while cbFile > 0:
-            cb = cbFile if cbFile < 256*1024 else 256*1024;
-            oFile.write(bytearray(random.getrandbits(8) for _ in xrange(cb)));
-            cbFile -= cb;
-        oFile.close();
+        with open(sName, 'wb') as oFile:
+            while cbFile > 0:
+                cb = cbFile if cbFile < 256*1024 else 256*1024;
+                oFile.write(bytearray(random.getrandbits(8) for _ in xrange(cb)));
+                cbFile -= cb;
+        return True;
 
     def testGuestCtrlCopyTo(self, oSession, oTxsSession, oTestVm): # pylint: disable=too-many-locals
         """
@@ -4769,8 +4767,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         # Generate an empty file on the host that we can use to save space in the guest.
         sEmptyFileHst = os.path.join(self.oTstDrv.sScratchPath, 'gctrl-empty.data');
         try:
-            oFile = open(sEmptyFileHst, "wb");
-            oFile.close();
+            open(sEmptyFileHst, "wb").close();                  # pylint: disable=consider-using-with
         except:
             return reporter.errorXcpt('sEmptyFileHst=%s' % (sEmptyFileHst,));
 

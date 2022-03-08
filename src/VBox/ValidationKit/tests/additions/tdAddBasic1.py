@@ -141,9 +141,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                            '--pop ' \
                           % (uuid.uuid4(), self.sVBoxValidationKitIso, sGaIso);
             reporter.log2('Using VISO combining ValKit and GAs "%s": %s' % (sVisoContent, sGaViso));
-            oGaViso = open(sGaViso, 'w');
-            oGaViso.write(sVisoContent);
-            oGaViso.close();
+            with open(sGaViso, 'w') as oGaViso:
+                oGaViso.write(sVisoContent);
             sGaIso = sGaViso;
 
             self.sGstPathGaPrefix = 'vboxadditions';
