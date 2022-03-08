@@ -62,7 +62,6 @@ VBox-libcrypto_SOURCES  = \
 	init.c \
 	initthread.c \
 	mem.c \
-	mem_clr.c \
 	mem_sec.c \
 	o_dir.c \
 	o_fopen.c \
