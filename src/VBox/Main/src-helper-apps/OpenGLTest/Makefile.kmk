@@ -25,86 +25,71 @@ include $(KBUILD_PATH)/subheader.kmk
 LIBRARIES += VBoxOGLTest
 ifneq ($(KBUILD_TARGET),darwin)
 ## @todo r=bird: Why VBOXR3NP?
-VBoxOGLTest_TEMPLATE = VBOXR3NP
-VBoxOGLTest_SOURCES = OpenGLTest.cpp
+VBoxOGLTest_TEMPLATE        = VBOXR3NP
+VBoxOGLTest_SOURCES         = OpenGLTest.cpp
 else
-VBoxOGLTest_TEMPLATE = VBoxR3Dll
-VBoxOGLTest_SOURCES.darwin = OpenGLTestDarwin.cpp
+VBoxOGLTest_TEMPLATE        = VBoxR3Dll
+VBoxOGLTest_SOURCES.darwin  = OpenGLTestDarwin.cpp
 VBoxOGLTest_CXXFLAGS.darwin = $(VBOX_GCC_Wno-deprecated-declarations)
 endif
+
 
 #
 # VBoxTestOGL - OpenGL support test app.
 # Note! Doesn't link with VBOX_WITH_DEBUG_VCC_CRT defined because it uses Qt.
 #
-if (   defined(VBOX_WITH_QTGUI) \
-    && (defined(VBOX_WITH_VMSVGA3D) || defined(VBOX_WITH_VIDEOHWACCEL)) \
-    && !defined(VBOX_WITH_DEBUG_VCC_CRT))
- ifneq ($(KBUILD_TARGET),darwin)
-
-  ifdef VBOX_WITH_VIDEOHWACCEL
-   ifndef VBOX_WITH_QT6
-    USES += qt5
-   else
-    USES += qt6
-   endif
-  endif
-  PROGRAMS += VBoxTestOGL
-  VBoxTestOGL_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE),VBOXMAINEXE)
-  VBoxTestOGL_DEFS.win         = _WIN32_WINNT=0x0500 WINDOWS=1
-  VBoxTestOGL_DEFS.linux       = Linux=1 _GNU_SOURCE
-  VBoxTestOGL_DEFS.solaris     = SunOS=1 _GNU_SOURCE #GLEXT_64_TYPES_DEFINED
-  VBoxTestOGL_DEFS.freebsd     = FreeBSD=1 _GNU_SOURCE
-  ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
-   VBoxTestOGL_DEFS = VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
+if    defined(VBOX_WITH_QTGUI) \
+   && (defined(VBOX_WITH_VMSVGA3D) || defined(VBOX_WITH_VIDEOHWACCEL)) \
+   && !defined(VBOX_WITH_DEBUG_VCC_CRT) \
+   && "$(KBUILD_TARGET)" != "darwin"
+ ifdef VBOX_WITH_VIDEOHWACCEL
+  ifndef VBOX_WITH_QT6
+   USES += qt5
   else
-   VBoxTestOGL_DEFS = VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+   USES += qt6
   endif
-  VBoxTestOGL_SOURCES = OpenGLTestApp.cpp
-  VBoxTestOGL_SOURCES.win = VBoxTestOGL.rc
-  VBoxTestOGL_LIBS = $(LIB_RUNTIME)
-  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # the X11 gang
-   VBoxTestOGL_LIBS += \
+ endif
+ PROGRAMS += VBoxTestOGL
+ VBoxTestOGL_TEMPLATE         = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE),VBOXMAINEXE)
+ VBoxTestOGL_DEFS.win         = _WIN32_WINNT=0x0500 WINDOWS=1
+ VBoxTestOGL_DEFS.linux       = Linux=1 _GNU_SOURCE
+ VBoxTestOGL_DEFS.solaris     = SunOS=1 _GNU_SOURCE #GLEXT_64_TYPES_DEFINED
+ VBoxTestOGL_DEFS.freebsd     = FreeBSD=1 _GNU_SOURCE
+ ifdef VBOX_WITH_AUTOMATIC_DEFS_QUOTING
+  VBoxTestOGL_DEFS            = VBOX_BUILD_TARGET="$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)"
+ else
+  VBoxTestOGL_DEFS            = VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+ endif
+ VBoxTestOGL_SOURCES          = OpenGLTestApp.cpp
+ VBoxTestOGL_SOURCES.win      = VBoxTestOGL.rc
+ VBoxTestOGL_LIBS             = \
+ 	$(LIB_RUNTIME)
+ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # the X11 gang
+  VBoxTestOGL_LIBS += \
   	X11 \
   	Xext
-   VBoxTestOGL_LIBPATH = \
-	$(VBOX_LIBPATH_X11)
+  VBoxTestOGL_LIBPATH = \
+  	$(VBOX_LIBPATH_X11)
+ endif
+
+ ifdef VBOX_WITH_VIDEOHWACCEL
+  VBoxTestOGL_DEFS           += VBOX_WITH_VIDEOHWACCEL
+  VBoxTestOGL_QT_MODULES      = Core Gui OpenGL Widgets
+  ifdef VBOX_WITH_QT6
+   VBoxTestOGL_QT_MODULES    += OpenGLWidgets
   endif
-
-  ifdef VBOX_WITH_VIDEOHWACCEL
-   VBoxTestOGL_DEFS += VBOX_WITH_VIDEOHWACCEL
-   VBoxTestOGL_LIBS <= $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB)
-   VBoxTestOGL_QT_MODULES      = Core Gui OpenGL Widgets
-   ifdef VBOX_WITH_QT6
-    VBoxTestOGL_QT_MODULES    += OpenGLWidgets
-   endif
-   VBoxTestOGL_LIBS.linux     += xcb
-   VBoxTestOGL_LIBS.solaris   += xcb
-   VBoxTestOGL_LIBS.freebsd   += xcb
-   VBoxTestOGL_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
-   if1of ($(KBUILD_TARGET), solaris linux freebsd)
-    # must come after VBoxOGL2D, therefore don't set the arch-specific LIBS variable here!
-    VBoxTestOGL_LIBS += GL pthread dl
-   endif
-
-   ## @todo bird: not sure WTF this is a separate library. Makes no sense...
-   LIBRARIES += VBoxOGL2D
-   VBoxOGL2D_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE),VBOXMAINEXE)
-   VBoxOGL2D_DEFS = QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
-   VBoxOGL2D_QT_MODULES = Gui OpenGL
-   ifdef VBOX_WITH_QT6
-    VBoxOGL2D_QT_MODULES += Widgets OpenGLWidgets
-   endif
-   VBoxOGL2D_SOURCES = VBoxGLSupportInfo.cpp
+  if1of ($(KBUILD_TARGET), solaris linux freebsd)
+   VBoxTestOGL_LIBS          += xcb GL pthread dl
   endif
+  VBoxTestOGL_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
+  VBoxTestOGL_SOURCES        += VBoxGLSupportInfo.cpp
+ endif
 
-  # Don't let ld strip out explicitly linked libraries even when they are not needed.
-  # This was causing some dynamic library loading problems in case of indirect dependencies
-  # in systems where RUNPATH instead of RPATH is utilized.
-  VBoxTestOGL_LDFLAGS.linux = -Wl,--no-as-needed
-  VBoxTestOGL_LDFLAGS.win = /SUBSYSTEM:windows
-
- endif # KBUILD_TARGET != darwin
+ # Don't let ld strip out explicitly linked libraries even when they are not needed.
+ # This was causing some dynamic library loading problems in case of indirect dependencies
+ # in systems where RUNPATH instead of RPATH is utilized.
+ VBoxTestOGL_LDFLAGS.linux    = -Wl,--no-as-needed
+ VBoxTestOGL_LDFLAGS.win      = /SUBSYSTEM:windows
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
