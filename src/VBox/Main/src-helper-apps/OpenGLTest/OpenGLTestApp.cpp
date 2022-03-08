@@ -56,8 +56,8 @@
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include <QApplication>
-# if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-#  include <QSurfaceFormat>
+# if QT_VERSION < QT_VERSION_CHECK(6, 0, 0) && defined(RT_OS_WINDOWS)
+#  include <QGLWidget> /* for GL headers on windows */
 # endif
 # include <VBox/VBoxGL2D.h>
 #endif
