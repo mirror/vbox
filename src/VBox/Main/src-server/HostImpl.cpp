@@ -1452,7 +1452,7 @@ HRESULT Host::getAcceleration3DAvailable(BOOL *aSupported)
 #ifdef VBOX_WITH_3D_ACCELERATION
         bool fSupported = VBoxOglIs3DAccelerationSupported();
 #else
-        bool fSupported = false; /* shoudn't get here, but just in case. */
+        bool fSupported = false; /* shouldn't get here, but just in case. */
 #endif
         AutoWriteLock alock2(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1492,6 +1492,7 @@ HRESULT Host::createHostOnlyNetworkInterface(ComPtr<IHostNetworkInterface> &aHos
         ComAssertComRCRet(hrc, hrc);
         hrc = aHostInterface->COMGETTER(NetworkMask)(tmpMask.asOutParam());
         ComAssertComRCRet(hrc, hrc);
+
         /*
          * We need to write the default IP address and mask to extra data now,
          * so the interface gets re-created after vboxnetadp.ko reload.
@@ -1499,14 +1500,12 @@ HRESULT Host::createHostOnlyNetworkInterface(ComPtr<IHostNetworkInterface> &aHos
          * change the address on host's interface as well and we want to
          * postpone the change until VM actually starts.
          */
-        hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress",
-                                               tmpName.raw()).raw(),
-                                               tmpAddr.raw());
+        hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", tmpName.raw()).raw(),
+                                       tmpAddr.raw());
         ComAssertComRCRet(hrc, hrc);
 
-        hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask",
-                                               tmpName.raw()).raw(),
-                                               tmpMask.raw());
+        hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", tmpName.raw()).raw(),
+                                       tmpMask.raw());
         ComAssertComRCRet(hrc, hrc);
 # endif /* !defined(RT_OS_WINDOWS) */
     }
