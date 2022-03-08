@@ -30,9 +30,8 @@ __version__ = "$Id$"
 
 # Standard Python imports.
 import os;
-import sys;
 import re;
-import zlib;
+import sys;
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -41,6 +40,7 @@ g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.a
 sys.path.append(g_ksValidationKitDir);
 
 # Validation Kit imports.
+from common     import utils;
 from testdriver import reporter;
 from testdriver import base;
 from testdriver import vbox;
@@ -48,19 +48,6 @@ from testdriver import vboxcon;
 from testdriver import vboxtestvms;
 from testdriver import vboxwrappers;
 
-
-def crc32_of_file(filepath):
-    fileobj = open(filepath,'rb');
-    current = 0;
-
-    while True:
-        buf = fileobj.read(1024 * 1024);
-        if not buf:
-            break
-        current = zlib.crc32(buf, current);
-
-    fileobj.close();
-    return current % 2**32;
 
 class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
     """
@@ -1211,7 +1198,7 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
                                     if not fRc:
                                         reporter.error('Download vmdktest-pt.vmdk from guest to host failed');
                                     else:
-                                        uResCrc32 = crc32_of_file(sDstFile);
+                                        uResCrc32 = utils.calcCrc32OfFile(sDstFile);
                                         if uResCrc32 != action['data-crc'][sHdd]:
                                             fRc = reporter.error('vmdktest-pt.vmdk does not match what was expected');
                     (fRc1, _, _, _) = self._callVBoxManage(oGuestSession, 'Delete VMDK disk', 60 * 1000,

@@ -213,11 +213,11 @@ def getHostOsVersion():
         sDist = '';
         try:
             # try /etc/lsb-release first to distinguish between Debian and Ubuntu
-            oFile = open('/etc/lsb-release');
-            for sLine in oFile:
-                oMatch = re.search(r'(?:DISTRIB_DESCRIPTION\s*=)\s*"*(.*)"', sLine);
-                if oMatch is not None:
-                    sDist = oMatch.group(1).strip();
+            with open('/etc/lsb-release') as oFile:
+                for sLine in oFile:
+                    oMatch = re.search(r'(?:DISTRIB_DESCRIPTION\s*=)\s*"*(.*)"', sLine);
+                    if oMatch is not None:
+                        sDist = oMatch.group(1).strip();
         except:
             pass;
         if sDist:
@@ -234,9 +234,8 @@ def getHostOsVersion():
             for sFile, sPrefix in asFiles:
                 if os.path.isfile(sFile):
                     try:
-                        oFile = open(sFile);
-                        sLine = oFile.readline();
-                        oFile.close();
+                        with open(sFile) as oFile:
+                            sLine = oFile.readline();
                     except:
                         continue;
                     sLine = sLine.strip()
@@ -248,9 +247,8 @@ def getHostOsVersion():
         sVersion = platform.version();
         if os.path.isfile('/etc/release'):
             try:
-                oFile = open('/etc/release');
-                sLast = oFile.readlines()[-1];
-                oFile.close();
+                with open('/etc/release') as oFile:
+                    sLast = oFile.readlines()[-1];
                 sLast = sLast.strip();
                 if sLast:
                     sVersion += ' (' + sLast + ')';
@@ -363,7 +361,7 @@ def openNoInherit(sFile, sMode = 'r'):
     # Python 3.4 and later automatically creates non-inherit handles. See PEP-0446.
     uPythonVer = (sys.version_info[0] << 16) | (sys.version_info[1] & 0xffff);
     if uPythonVer >= ((3 << 16) | 4):
-        oFile = open(sFile, sMode);
+        oFile = open(sFile, sMode);                             # pylint: disable=consider-using-with
     else:
         try:
             from fcntl import FD_CLOEXEC, F_GETFD, F_SETFD, fcntl; # pylint: disable=import-error
@@ -373,13 +371,14 @@ def openNoInherit(sFile, sMode = 'r'):
                 if uPythonVer < (3 << 16):
                     offComma = sMode.find(',');
                     if offComma < 0:
-                        return open(sFile, sMode + 'N');
-                    return open(sFile, sMode[:offComma] + 'N' + sMode[offComma:]); # pylint: disable=bad-open-mode
+                        return open(sFile, sMode + 'N');        # pylint: disable=consider-using-with
+                    return open(sFile,                          # pylint: disable=consider-using-with,bad-open-mode
+                                sMode[:offComma] + 'N' + sMode[offComma:]);
 
             # Just in case.
-            return open(sFile, sMode);
+            return open(sFile, sMode);                          # pylint: disable=consider-using-with
 
-        oFile = open(sFile, sMode);
+        oFile = open(sFile, sMode);                             # pylint: disable=consider-using-with
         #try:
         fcntl(oFile, F_SETFD, fcntl(oFile, F_GETFD) | FD_CLOEXEC);
         #except:
@@ -433,19 +432,19 @@ def openNoDenyDeleteNoInherit(sFile, sMode = 'r'):
         if 'a' in sMode:
             fOpen |= os.O_APPEND;
         if 'b' in sMode or 't' in sMode:
-            fOpen |= os.O_TEXT;                                                                 # pylint: disable=no-member
+            fOpen |= os.O_TEXT;                                         # pylint: disable=no-member
         fdFile = msvcrt.open_osfhandle(hDetachedFile, fOpen);
 
         # Tell python to use this handle.
         oFile = os.fdopen(fdFile, sMode);
     else:
-        oFile = open(sFile, sMode);
+        oFile = open(sFile, sMode);                                     # pylint: disable=consider-using-with
 
         # Python 3.4 and later automatically creates non-inherit handles. See PEP-0446.
         uPythonVer = (sys.version_info[0] << 16) | (sys.version_info[1] & 0xffff);
         if uPythonVer < ((3 << 16) | 4):
             try:
-                from fcntl import FD_CLOEXEC, F_GETFD, F_SETFD, fcntl; # pylint: disable=import-error
+                from fcntl import FD_CLOEXEC, F_GETFD, F_SETFD, fcntl;  # pylint: disable=import-error
             except:
                 pass;
             else:
@@ -468,9 +467,8 @@ def readFile(sFile, sMode = 'rb'):
     """
     Reads the entire file.
     """
-    oFile = open(sFile, sMode);
-    sRet = oFile.read();
-    oFile.close();
+    with open(sFile, sMode) as oFile:
+        sRet = oFile.read();
     return sRet;
 
 def noxcptReadFile(sFile, sXcptRet, sMode = 'rb', sEncoding = 'utf-8'):
@@ -674,7 +672,7 @@ def processPopenSafe(*aPositionalArgs, **dKeywordArgs):
     if getHostOs() == 'win':
         if dKeywordArgs.get('creationflags', 0) == 0:
             dKeywordArgs['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP;
-    return subprocess.Popen(*aPositionalArgs, **dKeywordArgs);
+    return subprocess.Popen(*aPositionalArgs, **dKeywordArgs);  # pylint: disable=consider-using-with
 
 def processCall(*aPositionalArgs, **dKeywordArgs):
     """
@@ -777,7 +775,7 @@ def _sudoFixArguments(aPositionalArgs, dKeywordArgs, fInitialEnv = True):
                 sVersion = str(processOutputChecked(['sudo', '-V']));
             except:
                 sVersion = '1.7.0';
-            sVersion = sVersion.strip().split('\n')[0];
+            sVersion = sVersion.strip().split('\n', 1)[0];
             sVersion = sVersion.replace('Sudo version', '').strip();
             g_fOldSudo = len(sVersion) >= 4 \
                      and sVersion[0] == '1' \
@@ -1038,7 +1036,7 @@ def processCheckPidAndName(uPid, sName):
 
         if asPsCmd is not None:
             try:
-                oPs = subprocess.Popen(asPsCmd, stdout=subprocess.PIPE);
+                oPs = subprocess.Popen(asPsCmd, stdout=subprocess.PIPE);    # pylint: disable=consider-using-with
                 sCurName = oPs.communicate()[0];
                 iExitCode = oPs.wait();
             except:
@@ -1340,9 +1338,8 @@ def processCollectCrashInfo(uPid, fnLog, fnCrashFile):
                 # The pid can be found at the end of the first line.
                 sFull = os.path.join(sDir, sEntry);
                 try:
-                    oFile = open(sFull, 'r');
-                    sFirstLine = oFile.readline();
-                    oFile.close();
+                    with open(sFull, 'r') as oFile:
+                        sFirstLine = oFile.readline();
                 except:
                     continue;
                 if len(sFirstLine) <= 4 or sFirstLine[-2] != ']':
@@ -2126,7 +2123,7 @@ def unpackZipFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
     fnLog('Unzipping "%s" to "%s"...' % (sArchive, sDstDir));
 
     # Open it.
-    try: oZipFile = zipfile.ZipFile(sArchive, 'r')
+    try: oZipFile = zipfile.ZipFile(sArchive, 'r');             # pylint: disable=consider-using-with
     except Exception as oXcpt:
         fnError('Error opening "%s" for unpacking into "%s": %s' % (sArchive, sDstDir, oXcpt,));
         return None;
@@ -2209,9 +2206,10 @@ def unpackTarFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
     #
     try:
         if sys.hexversion >= 0x03060000:
-            oTarFile = tarfile.open(sArchive, 'r|*', bufsize = g_cbGoodBufferSize, copybufsize = g_cbGoodBufferSize);
+            oTarFile = tarfile.open(sArchive, 'r|*',                                # pylint: disable=consider-using-with
+                                    bufsize = g_cbGoodBufferSize, copybufsize = g_cbGoodBufferSize);
         else:
-            oTarFile = tarfile.open(sArchive, 'r|*', bufsize = g_cbGoodBufferSize);
+            oTarFile = tarfile.open(sArchive, 'r|*', bufsize = g_cbGoodBufferSize); # pylint: disable=consider-using-with
     except Exception as oXcpt:
         fnError('Error opening "%s" for unpacking into "%s": %s' % (sArchive, sDstDir, oXcpt,));
         return None;
@@ -2401,6 +2399,25 @@ def areBytesEqual(oLeft, oRight):
             #print('element %d differs: %x %x' % (i, iElmLeft, iElmRight,));
             return False;
     return True;
+
+
+def calcCrc32OfFile(sFile):
+    """
+    Simple helper for calculating the CRC32 of a file.
+
+    Throws stuff if the file cannot be opened or read successfully.
+    """
+    import zlib;
+
+    uCrc32 = 0;
+    with open(sFile, 'rb') as oFile:
+        while True:
+            oBuf = oFile.read(1024 * 1024);
+            if not oBuf:
+                break
+            uCrc32 = zlib.crc32(oBuf, uCrc32);
+
+    return uCrc32 % 2**32;
 
 
 #

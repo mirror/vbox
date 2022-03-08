@@ -42,6 +42,7 @@ g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.a
 sys.path.append(g_ksValidationKitDir);
 
 # Validation Kit imports.
+from common     import utils;
 from testdriver import reporter;
 from testdriver import base;
 from testdriver import vbox;
@@ -51,20 +52,6 @@ from testdriver import vboxwrappers;
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
     long = int;     # pylint: disable=redefined-builtin,invalid-name
-
-
-def crc32_of_file(filepath):
-    fileobj = open(filepath,'rb');
-    current = 0;
-
-    while True:
-        buf = fileobj.read(1024 * 1024);
-        if not buf:
-            break
-        current = zlib.crc32(buf, current);
-
-    fileobj.close();
-    return current % 2**32;
 
 
 class tdStorageSnapshot(vbox.TestDriver):                                      # pylint: disable=too-many-instance-attributes
@@ -348,7 +335,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
 
                     uResCrc32 = long(0);
                     if fRc:
-                        uResCrc32 = long(crc32_of_file(sResFilePathRaw));
+                        uResCrc32 = long(utils.calcCrc32OfFile(sResFilePathRaw));
                         if uResCrc32 == uOrigCrc:
                             reporter.log('Snapshot merged successfully. Crc32 is correct');
                             fRc = True;
