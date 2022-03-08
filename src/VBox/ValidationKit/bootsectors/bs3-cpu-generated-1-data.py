@@ -629,7 +629,7 @@ class Bs3CpuGenerated1Generator(object):
                 oOut = sys.stdout;
             else:
                 try:
-                    oOut = open(sOutFile, 'w');
+                    oOut = open(sOutFile, 'w');                 # pylint: disable=consider-using-with
                 except Exception as oXcpt:
                     print('error! Failed open "%s" for writing: %s' % (sOutFile, oXcpt,));
                     return 1;
