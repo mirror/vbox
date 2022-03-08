@@ -238,10 +238,9 @@ class VBoxInstallerTestDriver(TestDriverBase):
         """
         sFull = self.__persistentVarCalcName(sVar);
         try:
-            oFile = open(sFull, 'w');
-            if sValue:
-                oFile.write(sValue.encode('utf-8'));
-            oFile.close();
+            with open(sFull, 'w') as oFile:
+                if sValue:
+                    oFile.write(sValue.encode('utf-8'));
         except:
             reporter.errorXcpt('Error creating "%s"' % (sFull,));
             return False;
@@ -291,9 +290,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
         if not os.path.exists(sFull):
             return None;
         try:
-            oFile = open(sFull, 'r');
-            sValue = oFile.read().decode('utf-8');
-            oFile.close();
+            with open(sFull, 'r') as oFile:
+                sValue = oFile.read().decode('utf-8');
         except:
             reporter.errorXcpt('Error creating "%s"' % (sFull,));
             return None;
@@ -491,9 +489,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
         #
         # Download the build files.
         #
-        for i in range(len(self._asBuildUrls)):
-            if webutils.downloadFile(self._asBuildUrls[i], self._asBuildFiles[i],
-                                     self.sBuildPath, reporter.log, reporter.log) is not True:
+        for i, sBuildUrl in enumerate(self._asBuildUrls):
+            if webutils.downloadFile(sBuildUrl, self._asBuildFiles[i], self.sBuildPath, reporter.log, reporter.log) is not True:
                 reporter.testDone(fSkipped = True);
                 return None; # Failed to get binaries, probably deleted. Skip the test run.
 

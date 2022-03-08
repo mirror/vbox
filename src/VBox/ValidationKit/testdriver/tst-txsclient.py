@@ -37,9 +37,9 @@ import sys
 # Validation Kit imports.
 sys.path.insert(0, '.');
 sys.path.insert(0, '..');
-import testdriver.txsclient as txsclient
-import testdriver.reporter as reporter
-from common import utils;
+from common     import utils;
+from testdriver import txsclient;
+from testdriver import reporter;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:

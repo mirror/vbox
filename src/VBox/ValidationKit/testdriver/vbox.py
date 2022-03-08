@@ -3794,8 +3794,7 @@ class TestDriver(base.TestDriver):                                              
 
                 # resubmit the task.
                 cMsTimeout2 = msStart + cMsTimeout - base.timestampMilli();
-                if cMsTimeout2 < 500:
-                    cMsTimeout2 = 500;
+                cMsTimeout2 = max(cMsTimeout2, 500);
                 fRc = oTxsSession.asyncIsFile('${CDROM}/%s' % (sFile,), cMsTimeout2);
                 if fRc is not True:
                     reporter.error('txsCdWait: asyncIsFile failed');

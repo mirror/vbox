@@ -598,7 +598,8 @@ class BacktraceResolver(object):
                         asArgs.append(sDbgSymPath);
                         asArgs.append(sLoadAddr);
 
-                oRTLdrFltProc = subprocess.Popen(asArgs, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=0);
+                oRTLdrFltProc = subprocess.Popen(asArgs, stdin=subprocess.PIPE,         # pylint: disable=consider-using-with
+                                                 stdout=subprocess.PIPE, bufsize=0);
                 if oRTLdrFltProc is not None:
                     sReportAn, _ = oRTLdrFltProc.communicate(sReport);
                 else:

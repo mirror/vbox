@@ -70,7 +70,7 @@ class ReporterLock(object):
         oSelf = threading.current_thread();
 
         # Take the lock.
-        if not self.oLock.acquire():
+        if not self.oLock.acquire():                            # pylint: disable=consider-using-with
             return False;
 
         self.oOwner      = oSelf;

@@ -38,11 +38,11 @@ import string;
 import uuid;
 
 # Validation Kit imports.
+from common     import pathutils;
+from common     import utils;
 from testdriver import base;
 from testdriver import reporter;
 from testdriver import vboxcon;
-from common import pathutils;
-from common import utils;
 
 
 # All virtualization modes.
