@@ -42,7 +42,7 @@ g_ksTestManagerDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abs
 sys.path.append(g_ksTestManagerDir);
 
 # Test Manager imports
-from testmanager.config                 import g_kaBugTrackers;
+from testmanager.config                 import g_kdBugTrackers;
 from testmanager.core.db                import TMDatabaseConnection;
 from testmanager.core.vcsrevisions      import VcsRevisionData, VcsRevisionLogic;
 from testmanager.core.vcsbugreference   import VcsBugReferenceData, VcsBugReferenceLogic;
@@ -157,8 +157,7 @@ class VcsImport(object): # pylint: disable=too-few-public-methods
                 oLogic.addVcsRevision(oData);
 
             # Analyze the raw message looking for bug tracker references.
-            for sBugTrackerKey in g_kaBugTrackers:
-                oBugTracker = g_kaBugTrackers[sBugTrackerKey];
+            for oBugTracker in g_kdBugTrackers.values():
                 for sTag in oBugTracker.asCommitTags:
                     off = sRawMsg.find(sTag);
                     while off >= 0:

@@ -1114,7 +1114,7 @@ class WuiListContentBase(WuiContentBase):
         """
         if len(aiColumns) <= len(self._aiSelectedSortColumns):
             aiColumns    = list(aiColumns);
-            aiNegColumns = list([-i for i in aiColumns]);
+            aiNegColumns = list([-i for i in aiColumns]);   # pylint: disable=consider-using-generator
             i = 0;
             while i + len(aiColumns) <= len(self._aiSelectedSortColumns):
                 aiSub = list(self._aiSelectedSortColumns[i : i + len(aiColumns)]);

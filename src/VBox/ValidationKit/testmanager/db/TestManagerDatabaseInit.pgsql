@@ -1329,7 +1329,7 @@ CREATE TABLE VcsBugReferences (
     sRepository         TEXT        NOT NULL,
     --- The version control tree revision number.
     iRevision           INTEGER     NOT NULL,
-    --- The bug tracker identifier - see g_kaBugTrackers in config.py.
+    --- The bug tracker identifier - see g_kdBugTrackers in config.py.
     sBugTracker         CHAR(4)     NOT NULL,
     --- The bug number in the bug tracker.
     lBugNo              BIGINT      NOT NULL,

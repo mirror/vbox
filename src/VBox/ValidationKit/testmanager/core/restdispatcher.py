@@ -219,23 +219,21 @@ class RestMain(object): # pylint: disable=too-few-public-methods
         sFile = os.path.join(config.g_ksFileAreaRootDir, oTestSet.sBaseFilename + '-main.log');
         if not os.path.exists(os.path.dirname(sFile)):
             os.makedirs(os.path.dirname(sFile), 0o755);
-        oFile = open(sFile, 'ab');
 
-        # Check the size.
-        fSizeOk = True;
-        if not fIgnoreSizeCheck:
-            oStat = os.fstat(oFile.fileno());
-            fSizeOk = oStat.st_size / (1024 * 1024) < config.g_kcMbMaxMainLog;
+        with open(sFile, 'ab') as oFile:
+            # Check the size.
+            fSizeOk = True;
+            if not fIgnoreSizeCheck:
+                oStat = os.fstat(oFile.fileno());
+                fSizeOk = oStat.st_size / (1024 * 1024) < config.g_kcMbMaxMainLog;
 
-        # Write the text.
-        if fSizeOk:
-            if sys.version_info[0] >= 3:
-                oFile.write(bytes(sText, 'utf-8'));
-            else:
-                oFile.write(sText);
+            # Write the text.
+            if fSizeOk:
+                if sys.version_info[0] >= 3:
+                    oFile.write(bytes(sText, 'utf-8'));
+                else:
+                    oFile.write(sText);
 
-        # Done
-        oFile.close();
         return fSizeOk;
 
     def _getNextPathElementString(self, sName, oDefault = None):

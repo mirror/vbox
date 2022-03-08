@@ -736,8 +736,7 @@ class WuiHlpForm(object):
 
             # Argument variations.
             aidTestCaseArgs = [] if oMember is None or oMember.aidTestCaseArgs is None else oMember.aidTestCaseArgs;
-            for iVar in range(len(oTestCase.aoTestCaseArgs)):
-                oVar = oTestCase.aoTestCaseArgs[iVar];
+            for iVar, oVar in enumerate(oTestCase.aoTestCaseArgs):
                 if iVar > 0:
                     self._add('  <tr class="%s">\n' % ('tmodd' if iTestCase & 1 else 'tmeven',));
                 self._add(u'   <td align="center">\n'

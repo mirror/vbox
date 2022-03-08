@@ -159,7 +159,7 @@ class BugTrackerConfig(object):
         self.asCommitTags = asCommitTags;
 
 ## The key is the database table
-g_kaBugTrackers = {
+g_kdBugTrackers = {
     'xtrk': BugTrackerConfig('xtrk', 'xTracker',        'https://linserv.de.oracle.com/vbox/xTracker/index.php?bug=',
                              ['bugref:',    '@bugref{',    'bugef:', 'bugrf:', ], ),
     'bgdb': BugTrackerConfig('bgdb', 'BugDB',           'https://bug.oraclecorp.com/pls/bug/webbug_edit.edit_info_top?rptno=',

@@ -137,7 +137,7 @@ class WebServerGlueBase(object):
         self._fHtmlDebugOutput = fHtmlDebugOutput; # For trace
         self._oDbgFile         = sys.stderr;
         if config.g_ksSrvGlueDebugLogDst is not None and config.g_kfSrvGlueDebug is True:
-            self._oDbgFile = open(config.g_ksSrvGlueDebugLogDst, 'a');
+            self._oDbgFile = open(config.g_ksSrvGlueDebugLogDst, 'a');  # pylint: disable=consider-using-with
             if config.g_kfSrvGlueCgiDumpArgs:
                 self._oDbgFile.write('Arguments: %s\nEnvironment:\n' % (sys.argv,));
             if config.g_kfSrvGlueCgiDumpEnv:
@@ -302,8 +302,8 @@ class WebServerGlueBase(object):
         Flushes the HTTP header.
         """
         if self._fHeaderWrittenOut is False:
-            for sKey in self._dHeaderFields:
-                self._writeHeader('%s: %s\n' % (sKey, self._dHeaderFields[sKey]));
+            for sKey, sValue in self._dHeaderFields.items():
+                self._writeHeader('%s: %s\n' % (sKey, sValue,));
             self._fHeaderWrittenOut = True;
             self._writeHeader('\n'); # End of header indicator.
         return None;
@@ -461,20 +461,18 @@ class WebServerGlueBase(object):
         fSaved = self._fHtmlDebugOutput;
 
         try:
-            oFile = open(sLogFile, 'w');
-            oFile.write(sError + '\n\n');
-            if aXcptInfo[0] is not None:
-                oFile.write(' B a c k t r a c e\n');
-                oFile.write('===================\n');
-                oFile.write(cgitb.text(aXcptInfo, 5));
-                oFile.write('\n\n');
+            with open(sLogFile, 'w') as oFile:
+                oFile.write(sError + '\n\n');
+                if aXcptInfo[0] is not None:
+                    oFile.write(' B a c k t r a c e\n');
+                    oFile.write('===================\n');
+                    oFile.write(cgitb.text(aXcptInfo, 5));
+                    oFile.write('\n\n');
 
-            oFile.write(' D e b u g   I n f o\n');
-            oFile.write('=====================\n\n');
-            self._fHtmlDebugOutput = False;
-            self.debugDumpStuff(oFile.write);
-
-            oFile.close();
+                oFile.write(' D e b u g   I n f o\n');
+                oFile.write('=====================\n\n');
+                self._fHtmlDebugOutput = False;
+                self.debugDumpStuff(oFile.write);
         except:
             fRc = False;
 

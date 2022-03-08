@@ -122,19 +122,16 @@ class FileArchiverBatchJob(object): # pylint: disable=too-few-public-methods
                         os.makedirs(sDstDirPath, 0o755);
 
                     utils.noxcptDeleteFile(sZipFileNm + '.tmp');
-                    oZipFile = zipfile.ZipFile(sZipFileNm + '.tmp', 'w', zipfile.ZIP_DEFLATED, allowZip64 = True);
-
-                    for sFile in asFiles:
-                        sSuff = os.path.splitext(sFile)[1];
-                        if sSuff in [ '.png', '.webm', '.gz', '.bz2', '.zip', '.mov', '.avi', '.mpg', '.gif', '.jpg' ]:
-                            ## @todo Consider storing these files outside the zip if they are a little largish.
-                            self.dprint('TestSet %d: Storing   %s...' % (idTestSet, sFile));
-                            oZipFile.write(sSrcFileBase + sFile, sFile, zipfile.ZIP_STORED);
-                        else:
-                            self.dprint('TestSet %d: Deflating %s...' % (idTestSet, sFile));
-                            oZipFile.write(sSrcFileBase + sFile, sFile, zipfile.ZIP_DEFLATED);
-
-                    oZipFile.close();
+                    with zipfile.ZipFile(sZipFileNm + '.tmp', 'w', zipfile.ZIP_DEFLATED, allowZip64 = True) as oZipFile:
+                        for sFile in asFiles:
+                            sSuff = os.path.splitext(sFile)[1];
+                            if sSuff in [ '.png', '.webm', '.gz', '.bz2', '.zip', '.mov', '.avi', '.mpg', '.gif', '.jpg' ]:
+                                ## @todo Consider storing these files outside the zip if they are a little largish.
+                                self.dprint('TestSet %d: Storing   %s...' % (idTestSet, sFile));
+                                oZipFile.write(sSrcFileBase + sFile, sFile, zipfile.ZIP_STORED);
+                            else:
+                                self.dprint('TestSet %d: Deflating %s...' % (idTestSet, sFile));
+                                oZipFile.write(sSrcFileBase + sFile, sFile, zipfile.ZIP_DEFLATED);
 
                     #
                     # .zip.tmp -> .zip.
@@ -215,9 +212,9 @@ class FileArchiverBatchJob(object): # pylint: disable=too-few-public-methods
         # Test sets.
         #
         fRc = True;
-        for idTestSet in dTestSets:
+        for idTestSet, oTestSet in dTestSets.items():
             try:
-                if self._processTestSet(idTestSet, dTestSets[idTestSet], sCurDir) is not True:
+                if self._processTestSet(idTestSet, oTestSet, sCurDir) is not True:
                     fRc = False;
             except:
                 self.warning('TestSet %d: Exception in _processTestSet:\n%s' % (idTestSet, '\n'.join(utils.getXcptInfo()),));

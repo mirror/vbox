@@ -339,7 +339,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         (self.oConfig, _) = oParser.parse_args();
 
         if self.oConfig.sLogFile:
-            self.oLogFile = open(self.oConfig.sLogFile, "a");
+            self.oLogFile = open(self.oConfig.sLogFile, "a");   # pylint: disable=consider-using-with
             self.oLogFile.write('VirtualTestSheriff: $Revision$ \n');
 
 
@@ -517,8 +517,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                         # This is an okay test result then.
                         ## @todo maybe check the elapsed time here, it could still be a bad run?
                         cOkay += 1;
-                        if iFirstOkay > iSet:
-                            iFirstOkay = iSet;
+                        iFirstOkay = min(iFirstOkay, iSet);
                 if iSet > 10:
                     break;
 
@@ -1029,8 +1028,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             # one of the first three entries.
             #
             cHits = 0;
-            for iCpu in dStacks:
-                asBacktrace = dStacks[iCpu];
+            for asBacktrace in dStacks.values():
                 for iFrame in xrange(min(3, len(asBacktrace))):
                     if asBacktrace[iFrame].find('kvm_lock_spinning') >= 0:
                         cHits += 1;

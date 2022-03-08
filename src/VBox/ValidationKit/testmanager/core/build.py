@@ -738,11 +738,11 @@ class BuildLogic(ModelLogicBase): # pylint: disable=too-few-public-methods
 
         asOsAgnosticArch = [];
         asOsNoArch       = [];
-        for i in range(len(oBuildEx.oCat.asOsArches)):
-            asParts = oBuildEx.oCat.asOsArches[i].split('.');
+        for sOsArch in oBuildEx.oCat.asOsArches:
+            asParts = sOsArch.split('.');
             if len(asParts) != 2 or not asParts[0] or not asParts[1]:
                 raise self._oDb.integrityException('Bad build asOsArches value: %s (idBuild=%s idBuildCategory=%s)'
-                                                   % (oBuildEx.asOsArches[i], oBuildEx.idBuild, oBuildEx.idBuildCategory));
+                                                   % (sOsArch, oBuildEx.idBuild, oBuildEx.idBuildCategory));
             asOsNoArch.append(asParts[0] + '.noarch');
             asOsNoArch.append('os-agnostic.' + asParts[1]);
 

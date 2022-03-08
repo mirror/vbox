@@ -1221,8 +1221,8 @@ class ReportGraphModel(ReportModelBase): # pylint: disable=too-few-public-method
             # Look up the VCS revision details.
             #
             for oSeries in oCollection.aoSeries:
-                for i in range(len(oSeries.aiRevisions)):
-                    oSeries.aoRevInfo.append(self.oCache.getVcsRevInfo(sCurRepository, oSeries.aiRevisions[i]));
+                for iRevision in oSeries.aiRevisions:
+                    oSeries.aoRevInfo.append(self.oCache.getVcsRevInfo(sCurRepository, iRevision));
             aoRet.append(oCollection);
 
         return aoRet;

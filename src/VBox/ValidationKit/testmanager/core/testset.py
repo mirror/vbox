@@ -193,14 +193,14 @@ class TestSetData(ModelDataBase):
         # Try raw file first.
         sFile1 = os.path.join(config.g_ksFileAreaRootDir, self.sBaseFilename + '-' + sFilename);
         try:
-            oFile = open(sFile1, sMode);
+            oFile = open(sFile1, sMode);                        # pylint: disable=consider-using-with
             return (oFile, os.fstat(oFile.fileno()).st_size, False);
         except Exception as oXcpt1:
             # Try the zip archive next.
             sFile2 = os.path.join(config.g_ksZipFileAreaRootDir, self.sBaseFilename + '.zip');
             try:
-                oZipFile    = zipfile.ZipFile(sFile2, 'r');
-                oFile       = oZipFile.open(sFilename, sMode if sMode != 'rb' else 'r');
+                oZipFile    = zipfile.ZipFile(sFile2, 'r');                              # pylint: disable=consider-using-with
+                oFile       = oZipFile.open(sFilename, sMode if sMode != 'rb' else 'r'); # pylint: disable=consider-using-with
                 cbFile      = oZipFile.getinfo(sFilename).file_size;
                 return (oFile, cbFile, True);
             except Exception as oXcpt2:
@@ -229,7 +229,7 @@ class TestSetData(ModelDataBase):
         try:
             if not os.path.exists(os.path.dirname(sFile1)):
                 os.makedirs(os.path.dirname(sFile1), 0o755);
-            oFile = open(sFile1, sMode);
+            oFile = open(sFile1, sMode);                        # pylint: disable=consider-using-with
         except Exception as oXcpt1:
             return str(oXcpt1);
         return oFile;

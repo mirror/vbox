@@ -51,8 +51,7 @@ def main():
     sUserAgent = oSrvGlue.getUserAgent();
     oSrvGlue.setHeaderField('Status', '401 Unauthorized to access the document');
     oSrvGlue.setHeaderField('WWW-authenticate', 'Basic realm="Test Manager"');
-    if  (sUserAgent.startswith('Mozilla/') and sUserAgent.find('AppleWebKit/') > 0) \
-     or False:
+    if sUserAgent.startswith('Mozilla/') and sUserAgent.find('AppleWebKit/') > 0:
         oSrvGlue.write('<p>Attempting to log out an Apple browser...</p>');
     else:
         oSrvGlue.write('<p>Sorry, not sure this will work...</p>');

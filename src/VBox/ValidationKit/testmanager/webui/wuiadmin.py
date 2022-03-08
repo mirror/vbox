@@ -497,7 +497,7 @@ class WuiAdmin(WuiDispatcherBase):
             #
             # Open and send the dump.
             #
-            oFile = open(sOutFile, 'rb');
+            oFile = open(sOutFile, 'rb');                       # pylint: disable=consider-using-with
             cbFile = os.fstat(oFile.fileno()).st_size;
 
             self._oSrvGlue.setHeaderField('Content-Type', 'application/zip');

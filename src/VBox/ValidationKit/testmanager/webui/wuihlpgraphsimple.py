@@ -82,8 +82,7 @@ class WuiHlpBarGraph(WuiHlpGraphBase):
                        '      <table class="tmbargraphl2" height="100%%" width="100%%" ' \
                                     'border="0" cellspacing="0" cellpadding="0">\n' \
                      % (escapeElem(oRow.sName), escapeAttr(str(self.cxMaxBar + 2)));
-            for j in range(len(oRow.aoValues)):
-                oValue = oRow.aoValues[j];
+            for j, oValue in enumerate(oRow.aoValues):
                 cPct   = int(float(oValue) * 100 / fpMax);
                 cxBar  = int(float(oValue) * self.cxMaxBar / fpMax);
                 sValue = escapeElem(oRow.asValues[j]);
@@ -124,10 +123,9 @@ class WuiHlpBarGraph(WuiHlpGraphBase):
 
         sReport += '<div class="tmgraphlegend">\n' \
                    '  <p>Legend:\n';
-        for j in range(len(aoTable[0].asValues)):
+        for j, sValue in enumerate(aoTable[0].asValues):
             sColor = self.kasColors[j % len(self.kasColors)];
-            sReport += '    <font color="%s">&#x25A0; %s</font>\n' \
-                     % (sColor, escapeElem(aoTable[0].asValues[j]));
+            sReport += '    <font color="%s">&#x25A0; %s</font>\n' % (sColor, escapeElem(sValue),);
         sReport += '  </p>\n' \
                    '</div>\n';
 

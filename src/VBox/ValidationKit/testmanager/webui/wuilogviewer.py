@@ -149,8 +149,7 @@ class WuiLogViewer(WuiContentBase):
 
         # Figure the end offset.
         offEnd = offFile + self._cbChunk;
-        if offEnd > cbFile:
-            offEnd = cbFile;
+        offEnd = min(offEnd, cbFile);
 
         #
         # Here is an annoying thing, we cannot seek in zip file members. So,

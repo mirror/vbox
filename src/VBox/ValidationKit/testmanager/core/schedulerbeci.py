@@ -74,8 +74,7 @@ class SchdulerBeci(SchedulerBase): # pylint: disable=too-few-public-methods
         # Generate the
         #
         cMaxItems = len(oData.aoArgsVariations) * 64;
-        if cMaxItems > 1048576:
-            cMaxItems = 1048576;
+        cMaxItems = min(cMaxItems, 1048576);
 
         aoItems   = list();
         cNotAtEnd = len(oData.aoTestCases);

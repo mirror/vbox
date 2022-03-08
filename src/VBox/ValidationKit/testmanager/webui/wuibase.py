@@ -237,14 +237,12 @@ class WuiDispatcherBase(object):
 
         # Provide basic auth log out for browsers that supports it.
         sUserAgent = self._oSrvGlue.getUserAgent();
-        if   (sUserAgent.startswith('Mozilla/') and sUserAgent.find('Firefox') > 0) \
-          or False:
+        if sUserAgent.startswith('Mozilla/') and sUserAgent.find('Firefox') > 0:
             # Log in as the logout user in the same realm, the browser forgets
             # the old login and the job is done. (see apache sample conf)
             sLogOut = ' (<a href="%s://logout:logout@%s%slogout.py">logout</a>)' \
                 % (self._oSrvGlue.getUrlScheme(), self._oSrvGlue.getUrlNetLoc(), self._oSrvGlue.getUrlBasePath());
-        elif (sUserAgent.startswith('Mozilla/') and sUserAgent.find('Safari') > 0) \
-          or False:
+        elif sUserAgent.startswith('Mozilla/') and sUserAgent.find('Safari') > 0:
             # For a 401, causing the browser to forget the old login. Works
             # with safari as well as the two above. Since safari consider the
             # above method a phishing attempt and displays a warning to that
@@ -253,8 +251,7 @@ class WuiDispatcherBase(object):
             # till he/she/it hits escape, because it always works.
             sLogOut = ' (<a href="logout2.py">logout</a>)'
         elif (sUserAgent.startswith('Mozilla/') and sUserAgent.find('MSIE') > 0) \
-          or (sUserAgent.startswith('Mozilla/') and sUserAgent.find('Chrome') > 0) \
-          or False:
+          or (sUserAgent.startswith('Mozilla/') and sUserAgent.find('Chrome') > 0):
             ## There doesn't seem to be any way to make IE really log out
             # without using a cookie and systematically 401 accesses based on
             # some logout state associated with it.  Not sure how secure that
@@ -314,9 +311,8 @@ class WuiDispatcherBase(object):
         #
         # Load the template.
         #
-        oFile = open(os.path.join(self._oSrvGlue.pathTmWebUI(), self._sTemplate));
-        sTmpl = oFile.read();
-        oFile.close();
+        with open(os.path.join(self._oSrvGlue.pathTmWebUI(), self._sTemplate)) as oFile:
+            sTmpl = oFile.read();
 
         #
         # Process the template, outputting each part we process.
@@ -1235,5 +1231,5 @@ class WuiDispatcherBase(object):
 
     def dprint(self, sText):
         """ Debug printing. """
-        if config.g_kfWebUiDebug and True:
+        if config.g_kfWebUiDebug:
             self._oSrvGlue.dprint(sText);
