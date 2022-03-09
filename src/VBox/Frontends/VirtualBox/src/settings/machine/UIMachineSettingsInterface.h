@@ -26,6 +26,7 @@
 
 /* Forward declarations: */
 class QCheckBox;
+class QGridLayout;
 class QLabel;
 class UIActionPool;
 class UIMenuBarEditorWidget;
@@ -103,11 +104,11 @@ private:
 
     /** @name Widgets
      * @{ */
+        /** Holds the main layout instance. */
+        QGridLayout             *m_pLayout;
         /** Holds the menu-bar editor instance. */
         UIMenuBarEditorWidget   *m_pEditorMenuBar;
-        /** Holds the visual state label instance. */
-        QLabel                  *m_pLabelVisualState;
-        /** Holds the visual state label instance. */
+        /** Holds the visual state editor instance. */
         UIVisualStateEditor     *m_pEditorVisualState;
         /** Holds the mini-toolbar label instance. */
         QLabel                  *m_pLabelMiniToolBar;

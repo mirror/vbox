@@ -28,10 +28,10 @@
 #include "UIVisualStateEditor.h"
 
 
-UIVisualStateEditor::UIVisualStateEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+UIVisualStateEditor::UIVisualStateEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabel(fWithLabel)
     , m_enmValue(UIVisualStateType_Invalid)
+    , m_pLayout(0)
     , m_pLabel(0)
     , m_pCombo(0)
 {
@@ -67,6 +67,17 @@ UIVisualStateType UIVisualStateEditor::value() const
     return m_pCombo ? m_pCombo->currentData().value<UIVisualStateType>() : m_enmValue;
 }
 
+int UIVisualStateEditor::minimumLabelHorizontalHint() const
+{
+    return m_pLabel->minimumSizeHint().width();
+}
+
+void UIVisualStateEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
+}
+
 void UIVisualStateEditor::retranslateUi()
 {
     if (m_pLabel)
@@ -92,17 +103,18 @@ void UIVisualStateEditor::sltHandleCurrentIndexChanged()
 void UIVisualStateEditor::prepare()
 {
     /* Create main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-        int iRow = 0;
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create label: */
-        if (m_fWithLabel)
-            m_pLabel = new QLabel(this);
+        m_pLabel = new QLabel(this);
         if (m_pLabel)
-            pMainLayout->addWidget(m_pLabel, 0, iRow++, 1, 1);
+        {
+            m_pLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabel, 0, 0);
+        }
 
         /* Create combo layout: */
         QHBoxLayout *pComboLayout = new QHBoxLayout;
@@ -125,7 +137,7 @@ void UIVisualStateEditor::prepare()
             pComboLayout->addStretch();
 
             /* Add combo-layout into main-layout: */
-            pMainLayout->addLayout(pComboLayout, 0, iRow++, 1, 1);
+            m_pLayout->addLayout(pComboLayout, 0, 1);
         }
     }
 

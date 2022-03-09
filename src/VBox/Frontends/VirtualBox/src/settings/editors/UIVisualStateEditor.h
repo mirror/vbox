@@ -32,6 +32,7 @@
 
 /* Forward declarations: */
 class QComboBox;
+class QGridLayout;
 class QLabel;
 
 /** QWidget subclass used as a visual state editor. */
@@ -46,9 +47,8 @@ signals:
 
 public:
 
-    /** Constructs visual state editor passing @a pParent to the base-class.
-      * @param  fWithLabel  Brings whether we should add label ourselves. */
-    UIVisualStateEditor(QWidget *pParent = 0, bool fWithLabel = false);
+    /** Constructs visual state editor passing @a pParent to the base-class. */
+    UIVisualStateEditor(QWidget *pParent = 0);
 
     /** Defines editor @a uMachineId. */
     void setMachineId(const QUuid &uMachineId);
@@ -60,6 +60,11 @@ public:
 
     /** Returns the vector of supported values. */
     QVector<UIVisualStateType> supportedValues() const { return m_supportedValues; }
+
+    /** Returns minimum layout hint. */
+    int minimumLabelHorizontalHint() const;
+    /** Defines minimum layout @a iIndent. */
+    void setMinimumLayoutIndent(int iIndent);
 
 protected:
 
@@ -81,19 +86,18 @@ private:
     /** Holds the machine id. */
     QUuid  m_uMachineId;
 
-    /** Holds whether descriptive label should be created. */
-    bool  m_fWithLabel;
-
     /** Holds the value to be selected. */
     UIVisualStateType  m_enmValue;
 
     /** Holds the vector of supported values. */
     QVector<UIVisualStateType>  m_supportedValues;
 
+    /** Holds the main layout instance. */
+    QGridLayout *m_pLayout;
     /** Holds the label instance. */
-    QLabel    *m_pLabel;
+    QLabel      *m_pLabel;
     /** Holds the combo instance. */
-    QComboBox *m_pCombo;
+    QComboBox   *m_pCombo;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIVisualStateEditor_h */

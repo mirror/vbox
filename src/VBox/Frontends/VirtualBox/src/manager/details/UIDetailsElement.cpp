@@ -1241,7 +1241,7 @@ void UIDetailsElement::popupVisualStateTypeEditor(const QString &strValue)
     if (pPopup)
     {
         /* Prepare editor: */
-        UIVisualStateEditor *pEditor = new UIVisualStateEditor(pPopup, true /* with label */);
+        UIVisualStateEditor *pEditor = new UIVisualStateEditor(pPopup);
         if (pEditor)
         {
             pEditor->setMachineId(machine().GetId());

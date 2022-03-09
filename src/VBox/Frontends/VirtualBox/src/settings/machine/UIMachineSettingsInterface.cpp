@@ -143,21 +143,19 @@ UIMachineSettingsInterface::UIMachineSettingsInterface(const QUuid &uMachineId)
     : m_uMachineId(uMachineId)
     , m_pActionPool(0)
     , m_pCache(0)
+    , m_pLayout(0)
     , m_pEditorMenuBar(0)
-    , m_pLabelVisualState(0)
     , m_pEditorVisualState(0)
     , m_pLabelMiniToolBar(0)
     , m_pCheckBoxShowMiniToolBar(0)
     , m_pCheckBoxMiniToolBarAlignment(0)
     , m_pEditorStatusBar(0)
 {
-    /* Prepare: */
     prepare();
 }
 
 UIMachineSettingsInterface::~UIMachineSettingsInterface()
 {
-    /* Cleanup: */
     cleanup();
 }
 
@@ -299,14 +297,20 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
 void UIMachineSettingsInterface::retranslateUi()
 {
     m_pEditorMenuBar->setToolTip(tr("Allows to modify VM menu-bar contents."));
-    m_pLabelVisualState->setText(tr("&Visual State:"));
     m_pLabelMiniToolBar->setText(tr("Mini ToolBar:"));
-    m_pCheckBoxShowMiniToolBar->setToolTip(tr("When checked, show the Mini ToolBar in full-screen and seamless modes."));
     m_pCheckBoxShowMiniToolBar->setText(tr("Show in &Full-screen/Seamless"));
+    m_pCheckBoxShowMiniToolBar->setToolTip(tr("When checked, show the Mini ToolBar in full-screen and seamless modes."));
+    m_pCheckBoxMiniToolBarAlignment->setText(tr("Show at &Top of Screen"));
     m_pCheckBoxMiniToolBarAlignment->setToolTip(tr("When checked, show the Mini ToolBar at the top of the screen, rather than in "
                                                    "its default position at the bottom of the screen."));
-    m_pCheckBoxMiniToolBarAlignment->setText(tr("Show at &Top of Screen"));
     m_pEditorStatusBar->setToolTip(tr("Allows to modify VM status-bar contents."));
+
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVisualState->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelMiniToolBar->minimumSizeHint().width());
+    m_pEditorVisualState->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pLayout->setColumnMinimumWidth(0, iMinimumLayoutHint);
 }
 
 void UIMachineSettingsInterface::polishPage()
@@ -345,11 +349,11 @@ void UIMachineSettingsInterface::prepare()
 void UIMachineSettingsInterface::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
-    if (pLayoutMain)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pLayoutMain->setColumnStretch(1, 1);
-        pLayoutMain->setRowStretch(4, 1);
+        m_pLayout->setColumnStretch(1, 1);
+        m_pLayout->setRowStretch(4, 1);
 
         /* Prepare menu-bar editor: */
         m_pEditorMenuBar = new UIMenuBarEditorWidget(this);
@@ -358,47 +362,36 @@ void UIMachineSettingsInterface::prepareWidgets()
             m_pEditorMenuBar->setActionPool(m_pActionPool);
             m_pEditorMenuBar->setMachineID(m_uMachineId);
 
-            pLayoutMain->addWidget(m_pEditorMenuBar, 0, 0, 1, 3);
+            m_pLayout->addWidget(m_pEditorMenuBar, 0, 0, 1, 3);
         }
 
-        /* Prepare visual-state label: */
-        m_pLabelVisualState = new QLabel(this);
-        if (m_pLabelVisualState)
-        {
-            m_pLabelVisualState->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelVisualState, 1, 0);
-        }
         /* Prepare visual-state editor: */
         m_pEditorVisualState = new UIVisualStateEditor(this);
         if (m_pEditorVisualState)
-        {
-            if (m_pLabelVisualState)
-                m_pLabelVisualState->setBuddy(m_pEditorVisualState);
-            pLayoutMain->addWidget(m_pEditorVisualState, 1, 1);
-        }
+            m_pLayout->addWidget(m_pEditorVisualState, 1, 0, 1, 3);
 
         /* Prepare mini-toolbar label: */
         m_pLabelMiniToolBar = new QLabel(this);
         if (m_pLabelMiniToolBar)
         {
             m_pLabelMiniToolBar->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelMiniToolBar, 2, 0);
+            m_pLayout->addWidget(m_pLabelMiniToolBar, 2, 0);
         }
         /* Prepare 'show mini-toolbar' check-box: */
         m_pCheckBoxShowMiniToolBar = new QCheckBox(this);
         if (m_pCheckBoxShowMiniToolBar)
-            pLayoutMain->addWidget(m_pCheckBoxShowMiniToolBar, 2, 1);
+            m_pLayout->addWidget(m_pCheckBoxShowMiniToolBar, 2, 1);
         /* Prepare 'mini-toolbar alignment' check-box: */
         m_pCheckBoxMiniToolBarAlignment = new QCheckBox(this);
         if (m_pCheckBoxMiniToolBarAlignment)
-            pLayoutMain->addWidget(m_pCheckBoxMiniToolBarAlignment, 3, 1);
+            m_pLayout->addWidget(m_pCheckBoxMiniToolBarAlignment, 3, 1);
 
         /* Prepare status-bar editor: */
         m_pEditorStatusBar = new UIStatusBarEditorWidget(this);
         if (m_pEditorStatusBar)
         {
             m_pEditorStatusBar->setMachineID(m_uMachineId);
-            pLayoutMain->addWidget(m_pEditorStatusBar, 5, 0, 1, 3);
+            m_pLayout->addWidget(m_pEditorStatusBar, 5, 0, 1, 3);
         }
     }
 }
