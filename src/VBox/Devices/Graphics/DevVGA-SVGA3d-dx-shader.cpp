@@ -1936,6 +1936,8 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
     int rc = VINF_SUCCESS;
     while (dxbcTokenReaderCanRead(r, 1))
     {
+        uint32_t const offOpcode = dxbcByteWriterSize(w);
+
         VGPUOpcode opcode;
         rc = dxbcParseOpcode(r, &opcode);
         ASSERT_GUEST_STMT_BREAK(RT_SUCCESS(rc), rc = VERR_INVALID_PARAMETER);
@@ -1945,6 +1947,16 @@ int DXShaderParse(void const *pvShaderCode, uint32_t cbShaderCode, DXShaderInfo 
 
         if (pInfo)
         {
+            /* Remember offsets of DCL_RESOURCE instructions. */
+            if (   outctx.programToken.programType == VGPU10_PIXEL_SHADER
+                && opcode.opcodeType == VGPU10_OPCODE_DCL_RESOURCE)
+            {
+                ASSERT_GUEST_STMT_BREAK(pInfo->cDclResource <= SVGA3D_DX_MAX_SRVIEWS,
+                                        rc = VERR_NOT_SUPPORTED);
+
+                pInfo->aOffDclResource[pInfo->cDclResource++] = offOpcode;
+            }
+
             /* Fetch signatures. */
             SVGA3dDXSignatureEntry *pSignatureEntry = NULL;
             switch (opcode.opcodeType)
@@ -2352,6 +2364,57 @@ char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t id
     return dxbcGetOutputSemanticName(pInfo, idxRegister, DXBC_BLOB_TYPE_OSGN, pInfo->cOutputSignature, &pInfo->aOutputSignature[0]);
 }
 
+int DXShaderUpdateResourceTypes(DXShaderInfo const *pInfo, SVGA3dResourceType *paResourceType, uint32_t cResourceType)
+{
+    for (uint32_t i = 0; i < pInfo->cDclResource; ++i)
+    {
+        SVGA3dResourceType const resourceType = i < cResourceType ? paResourceType[i] : SVGA3D_RESOURCE_TEXTURE2D;
+        AssertContinue(resourceType < SVGA3D_RESOURCE_TYPE_MAX);
+
+        uint32_t const offToken = pInfo->aOffDclResource[i];
+        AssertContinue(offToken < pInfo->cbBytecode);
+        uint32_t *paToken = (uint32_t *)((uintptr_t)pInfo->pvBytecode + offToken);
+
+        uint8_t resourceDimension;
+        uint32_t returnType;
+        switch (resourceType)
+        {
+            case SVGA3D_RESOURCE_BUFFER:
+                resourceDimension = VGPU10_RESOURCE_DIMENSION_BUFFER;
+                returnType = 0x5555; /* float */
+                break;
+            case SVGA3D_RESOURCE_TEXTURE1D:
+                resourceDimension = VGPU10_RESOURCE_DIMENSION_TEXTURE1D;
+                returnType = 0x5555; /* float */
+                break;
+            default:
+            case SVGA3D_RESOURCE_TEXTURE2D:
+                resourceDimension = VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
+                returnType = 0x5555; /* float */
+                break;
+            case SVGA3D_RESOURCE_TEXTURE3D:
+                resourceDimension = VGPU10_RESOURCE_DIMENSION_TEXTURE3D;
+                returnType = 0x5555; /* float */
+                break;
+            case SVGA3D_RESOURCE_TEXTURECUBE:
+                resourceDimension = VGPU10_RESOURCE_DIMENSION_TEXTURECUBE;
+                returnType = 0x5555; /* float */
+                break;
+            case SVGA3D_RESOURCE_BUFFEREX:
+                resourceDimension = VGPU10_RESOURCE_DIMENSION_BUFFER;
+                returnType = 0x5555; /* float */
+                break;
+        }
+
+        VGPU10OpcodeToken0 *pOpcode = (VGPU10OpcodeToken0 *)&paToken[0];
+        pOpcode->resourceDimension = resourceDimension;
+        // paToken[1] unmodified
+        // paToken[2] unmodified
+        paToken[3] = returnType;
+    }
+
+    return VINF_SUCCESS;
+}
 
 #ifdef DXBC_STANDALONE_TEST
 static int dxbcCreateFromBytecode(void const *pvShaderCode, uint32_t cbShaderCode, void **ppvDXBC, uint32_t *pcbDXBC)

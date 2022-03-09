@@ -42,13 +42,16 @@ typedef struct DXShaderInfo
     uint32_t cInputSignature;
     uint32_t cOutputSignature;
     uint32_t cPatchConstantSignature;
+    uint32_t cDclResource;
     SVGA3dDXSignatureEntry aInputSignature[32];
     SVGA3dDXSignatureEntry aOutputSignature[32];
     SVGA3dDXSignatureEntry aPatchConstantSignature[32];
+    uint32_t aOffDclResource[SVGA3D_DX_MAX_SRVIEWS];
 } DXShaderInfo;
 
 int DXShaderParse(void const *pvCode, uint32_t cbCode, DXShaderInfo *pInfo);
 void DXShaderFree(DXShaderInfo *pInfo);
+int DXShaderUpdateResourceTypes(DXShaderInfo const *pInfo, SVGA3dResourceType *paResourceType, uint32_t cResourceType);
 int DXShaderCreateDXBC(DXShaderInfo const *pInfo, void **ppvDXBC, uint32_t *pcbDXBC);
 char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t idxRegister);
 

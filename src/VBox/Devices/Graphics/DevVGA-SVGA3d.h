@@ -389,6 +389,7 @@ typedef struct
 
 typedef struct VMSVGA3DSHADER *PVMSVGA3DSHADER;
 typedef struct VMSVGA3DDXCONTEXT *PVMSVGA3DDXCONTEXT;
+struct DXShaderInfo;
 #define VMSVGA3D_BACKEND_INTERFACE_NAME_DX "DX"
 typedef struct
 {
@@ -400,7 +401,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXInvalidateContext,         (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXSetSingleConstantBuffer,   (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t slot, SVGA3dShaderType type, SVGA3dSurfaceId sid, uint32_t offsetInBytes, uint32_t sizeInBytes));
     DECLCALLBACKMEMBER(int, pfnDXSetShaderResources,        (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t startView, SVGA3dShaderType type, uint32_t cShaderResourceViewId, SVGA3dShaderResourceViewId const *paShaderResourceViewId));
-    DECLCALLBACKMEMBER(int, pfnDXSetShader,                 (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderType type, PVMSVGA3DSHADER pShader));
+    DECLCALLBACKMEMBER(int, pfnDXSetShader,                 (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderId shaderId, SVGA3dShaderType type));
     DECLCALLBACKMEMBER(int, pfnDXSetSamplers,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t startSampler, SVGA3dShaderType type, uint32_t cSamplerId, SVGA3dSamplerId const *paSamplerId));
     DECLCALLBACKMEMBER(int, pfnDXDraw,                      (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t vertexCount, uint32_t startVertexLocation));
     DECLCALLBACKMEMBER(int, pfnDXDrawIndexed,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, uint32_t indexCount, uint32_t startIndexLocation, int32_t baseVertexLocation));
@@ -450,7 +451,7 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnDXDestroySamplerState,       (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXDefineShader,              (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderId shaderId, SVGACOTableDXShaderEntry const *pEntry));
     DECLCALLBACKMEMBER(int, pfnDXDestroyShader,             (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderId shaderId));
-    DECLCALLBACKMEMBER(int, pfnDXBindShader,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSHADER pShader, void const *pvShaderBytecode));
+    DECLCALLBACKMEMBER(int, pfnDXBindShader,                (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderId shaderId, DXShaderInfo const *pShaderInfo));
     DECLCALLBACKMEMBER(int, pfnDXDefineStreamOutput,        (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid, SVGACOTableDXStreamOutputEntry const *pEntry));
     DECLCALLBACKMEMBER(int, pfnDXDestroyStreamOutput,       (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid));
     DECLCALLBACKMEMBER(int, pfnDXSetStreamOutput,           (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutputId soid));

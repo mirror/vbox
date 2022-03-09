@@ -1505,8 +1505,7 @@ static int vmsvgaR3TransferSurfaceLevel(PVGASTATECC pThisCC,
                     rc = vmsvgaR3GboWrite(pSvgaR3State, &pMob->Gbo, offMob, pu8Map, dims.cbRow);
                 else
                     rc = vmsvgaR3GboRead(pSvgaR3State, &pMob->Gbo, offMob, pu8Map, dims.cbRow);
-                if (RT_FAILURE(rc))
-                    break;
+                AssertRCBreak(rc);
 
                 pu8Map += map.cbRowPitch;
                 offMob += dims.cbPitch;

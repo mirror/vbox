@@ -213,6 +213,8 @@ typedef struct DXSHADER
     uint32_t                    cbDXBC;
 
     uint32_t                    soid;               /* Stream output declarations for geometry shaders. */
+
+    DXShaderInfo                shaderInfo;
 } DXSHADER;
 
 typedef struct DXSTREAMOUTPUT
@@ -279,6 +281,7 @@ static int dxDefineRenderTargetView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXC
 static int dxDefineDepthStencilView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dDepthStencilViewId depthStencilViewId, SVGACOTableDXDSViewEntry const *pEntry);
 static int dxSetRenderTargets(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext);
 static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface);
+static int dxDestroyShader(DXSHADER *pDXShader);
 
 
 /* This is not available with the DXVK headers for some reason. */
@@ -1584,13 +1587,13 @@ static HRESULT dxDepthStencilViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
 }
 
 
-static HRESULT dxShaderCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSHADER pShader, DXSHADER *pDXShader)
+static HRESULT dxShaderCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, DXSHADER *pDXShader)
 {
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
 
     HRESULT hr = S_OK;
 
-    switch (pShader->type)
+    switch (pDXShader->enmShaderType)
     {
         case SVGA3D_SHADERTYPE_VS:
             hr = pDevice->pDevice->CreateVertexShader(pDXShader->pvDXBC, pDXShader->cbDXBC, NULL, &pDXShader->pVertexShader);
@@ -1617,7 +1620,7 @@ static HRESULT dxShaderCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
                 {
                     D3D11_SO_DECLARATION_ENTRY *p = &pDXStreamOutput->aDeclarationEntry[i];
                     SVGA3dStreamOutputDeclarationEntry const *decl = &pEntry->decl[i];
-                    p->SemanticName = DXShaderGetOutputSemanticName(&pShader->shaderInfo, decl->registerIndex);
+                    p->SemanticName = DXShaderGetOutputSemanticName(&pDXShader->shaderInfo, decl->registerIndex);
                 }
 
                 hr = pDevice->pDevice->CreateGeometryShaderWithStreamOutput(pDXShader->pvDXBC, pDXShader->cbDXBC,
@@ -2851,7 +2854,7 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
 
     LogRelMax(1, ("VMSVGA: Single DX device mode: %s\n", pBackend->fSingleDevice ? "enabled" : "disabled"));
 
-//DEBUG_BREAKPOINT_TEST();
+DEBUG_BREAKPOINT_TEST();
     return rc;
 }
 
@@ -3232,7 +3235,7 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfa
                                + pMap->box.z * pMap->cbDepthPitch;
         }
         else
-            rc = VERR_NOT_SUPPORTED;
+            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
     }
     else if (   pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_2D
              || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_CUBE
@@ -3305,7 +3308,7 @@ if (!(   (pBackendSurface->pStagingTexture && pBackendSurface->pDynamicTexture)
                                + pMap->box.z * pMap->cbDepthPitch;
         }
         else
-            rc = VERR_NOT_SUPPORTED;
+            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
     }
     else if (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_BUFFER)
     {
@@ -3350,7 +3353,7 @@ if (!(   (pBackendSurface->pStagingTexture && pBackendSurface->pDynamicTexture)
                                    + pMap->box.z * pMap->cbDepthPitch;
             }
             else
-                rc = VERR_NOT_SUPPORTED;
+                AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
         }
     }
     else
@@ -5070,7 +5073,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyContext(PVGASTATECC pThisCC, PVMSV
         if (pBackendDXContext->paShader)
         {
             for (uint32_t i = 0; i < pBackendDXContext->cShader; ++i)
-                D3D_RELEASE(pBackendDXContext->paShader[i].pShader); /// @todo dxDestroyShader
+                dxDestroyShader(&pBackendDXContext->paShader[i]);
         }
         if (pBackendDXContext->paStreamOutput)
         {
@@ -5271,7 +5274,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetShaderResources(PVGASTATECC pThisCC, P
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXSetShader(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderType type, PVMSVGA3DSHADER pShader)
+static DECLCALLBACK(int) vmsvga3dBackDXSetShader(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderId shaderId, SVGA3dShaderType type)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
     RT_NOREF(pBackend);
@@ -5279,17 +5282,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetShader(PVGASTATECC pThisCC, PVMSVGA3DD
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 
-    DXSHADER *pDXShader;
-    if (pShader)
-    {
-        pDXShader = &pDXContext->pBackendDXContext->paShader[pShader->id];
-        Assert(pDXShader->pShader);
-        Assert(pDXShader->enmShaderType >= SVGA3D_SHADERTYPE_MIN && pDXShader->enmShaderType < SVGA3D_SHADERTYPE_MAX);
-    }
-    else
-        pDXShader = NULL;
+    RT_NOREF(shaderId, type);
 
-    dxShaderSet(pThisCC, pDXContext, type, pDXShader);
     return VINF_SUCCESS;
 }
 
@@ -5331,6 +5325,10 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
     /* Unbind render target views because they mught be (re-)used as shader resource views. */
     DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     pDXDevice->pImmediateContext->OMSetRenderTargets(0, NULL, NULL);
+
+    /*
+     * Shader resources
+     */
 
     /* Make sure that the shader resource views exist. */
     for (uint32_t idxShaderState = 0; idxShaderState < SVGA3D_NUM_SHADERTYPE_DX10 /** @todo SVGA3D_NUM_SHADERTYPE*/; ++idxShaderState)
@@ -5375,6 +5373,9 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
         AssertRC(rc);
     }
 
+    /*
+     * Render targets
+     */
 
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturnVoid(pDevice->pDevice);
@@ -5432,6 +5433,118 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
     /* Set render targets. */
     rc = dxSetRenderTargets(pThisCC, pDXContext);
     AssertRC(rc);
+
+    /*
+     * Shaders
+     */
+
+    for (uint32_t idxShaderState = 0; idxShaderState < SVGA3D_NUM_SHADERTYPE_DX10 /** @todo SVGA3D_NUM_SHADERTYPE*/; ++idxShaderState)
+    {
+        DXSHADER *pDXShader;
+        SVGA3dShaderType const shaderType = (SVGA3dShaderType)(idxShaderState + SVGA3D_SHADERTYPE_MIN);
+        SVGA3dShaderId const shaderId = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId;
+
+        if (shaderId != SVGA3D_INVALID_ID)
+        {
+            pDXShader = &pDXContext->pBackendDXContext->paShader[shaderId];
+            if (pDXShader->pShader == NULL)
+            {
+                /* Create a new shader. */
+                Log(("Shader: cid=%u shid=%u type=%d\n", pDXContext->cid, shaderId, pDXShader->enmShaderType));
+
+                /* Apply resource types to a pixel shader. */
+                if (shaderType == SVGA3D_SHADERTYPE_PS)
+                {
+                    SVGA3dResourceType aResourceType[SVGA3D_DX_MAX_SRVIEWS];
+                    RT_ZERO(aResourceType);
+                    uint32_t cResourceType = 0;
+
+                    for (uint32_t idxSR = 0; idxSR < SVGA3D_DX_MAX_SRVIEWS; ++idxSR)
+                    {
+                        SVGA3dShaderResourceViewId const shaderResourceViewId = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderResources[idxSR];
+                        if (shaderResourceViewId != SVGA3D_INVALID_ID)
+                        {
+                            SVGACOTableDXSRViewEntry const *pSRViewEntry = dxGetShaderResourceViewEntry(pDXContext, shaderResourceViewId);
+                            AssertContinue(pSRViewEntry != NULL);
+
+                            aResourceType[idxSR] = pSRViewEntry->resourceDimension;
+                            cResourceType = idxSR + 1;
+                        }
+                    }
+
+                    rc = DXShaderUpdateResourceTypes(&pDXShader->shaderInfo, aResourceType, cResourceType);
+                    AssertRC(rc); /* Ignore rc because the shader will most likely work anyway. */
+                }
+
+                rc = DXShaderCreateDXBC(&pDXShader->shaderInfo, &pDXShader->pvDXBC, &pDXShader->cbDXBC);
+                if (RT_SUCCESS(rc))
+                {
+#ifdef LOG_ENABLED
+                    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+                    if (pBackend->pfnD3DDisassemble && LogIs6Enabled())
+                    {
+                        ID3D10Blob *pBlob = 0;
+                        HRESULT hr2 = pBackend->pfnD3DDisassemble(pDXShader->pvDXBC, pDXShader->cbDXBC, 0, NULL, &pBlob);
+                        if (SUCCEEDED(hr2) && pBlob && pBlob->GetBufferSize())
+                            Log6(("%s\n", pBlob->GetBufferPointer()));
+                        else
+                            AssertFailed();
+                        D3D_RELEASE(pBlob);
+                    }
+#endif
+
+                    HRESULT hr = dxShaderCreate(pThisCC, pDXContext, pDXShader);
+                    if (FAILED(hr))
+                        rc = VERR_INVALID_STATE;
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+        }
+        else
+            pDXShader = NULL;
+
+        if (RT_SUCCESS(rc))
+            dxShaderSet(pThisCC, pDXContext, shaderType, pDXShader);
+
+        AssertRC(rc);
+    }
+
+    /*
+     * InputLayout
+     */
+    SVGA3dElementLayoutId const elementLayoutId = pDXContext->svgaDXContext.inputAssembly.layoutId;
+    ID3D11InputLayout *pInputLayout = NULL;
+    if (elementLayoutId != SVGA3D_INVALID_ID)
+    {
+        DXELEMENTLAYOUT *pDXElementLayout = &pDXContext->pBackendDXContext->paElementLayout[elementLayoutId];
+        if (!pDXElementLayout->pElementLayout)
+        {
+            uint32_t const idxShaderState = SVGA3D_SHADERTYPE_VS - SVGA3D_SHADERTYPE_MIN;
+            uint32_t const shid = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId;
+            if (shid < pDXContext->pBackendDXContext->cShader)
+            {
+                DXSHADER *pDXShader = &pDXContext->pBackendDXContext->paShader[shid];
+                if (pDXShader->pvDXBC)
+                {
+                    HRESULT hr = pDevice->pDevice->CreateInputLayout(pDXElementLayout->aElementDesc,
+                                                                     pDXElementLayout->cElementDesc,
+                                                                     pDXShader->pvDXBC,
+                                                                     pDXShader->cbDXBC,
+                                                                     &pDXElementLayout->pElementLayout);
+                    Assert(SUCCEEDED(hr));
+                }
+                else
+                    LogRelMax(16, ("VMSVGA: DX shader bytecode is not available in DXSetInputLayout: shid = %u\n", shid));
+            }
+            else
+                LogRelMax(16, ("VMSVGA: DX shader is not set in DXSetInputLayout: shid = 0x%x\n", shid));
+        }
+
+        pInputLayout = pDXElementLayout->pElementLayout;
+    }
+
+    pDevice->pImmediateContext->IASetInputLayout(pInputLayout);
 }
 
 
@@ -5774,33 +5887,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetInputLayout(PVGASTATECC pThisCC, PVMSV
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 
-    ID3D11InputLayout *pInputLayout = NULL;
-    if (elementLayoutId != SVGA3D_INVALID_ID)
-    {
-        DXELEMENTLAYOUT *pDXElementLayout = &pDXContext->pBackendDXContext->paElementLayout[elementLayoutId];
-        if (!pDXElementLayout->pElementLayout)
-        {
-            uint32_t const idxShaderState = SVGA3D_SHADERTYPE_VS - SVGA3D_SHADERTYPE_MIN;
-            uint32_t const shid = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId;
-            AssertReturnStmt(shid < pDXContext->pBackendDXContext->cShader,
-                             LogRelMax(16, ("VMSVGA: DX shader is not set in DXSetInputLayout: shid = 0x%x\n", shid)),
-                             VERR_INVALID_STATE);
-            DXSHADER *pDXShader = &pDXContext->pBackendDXContext->paShader[shid];
-            AssertReturnStmt(pDXShader->pvDXBC,
-                             LogRelMax(16, ("VMSVGA: DX shader bytecode is not available in DXSetInputLayout: shid = %u\n", shid)),
-                             VERR_INVALID_STATE);
-            HRESULT hr = pDevice->pDevice->CreateInputLayout(pDXElementLayout->aElementDesc,
-                                                             pDXElementLayout->cElementDesc,
-                                                             pDXShader->pvDXBC,
-                                                             pDXShader->cbDXBC,
-                                                             &pDXElementLayout->pElementLayout);
-            AssertReturn(SUCCEEDED(hr), VERR_NO_MEMORY);
-        }
+    RT_NOREF(elementLayoutId);
 
-        pInputLayout = pDXElementLayout->pElementLayout;
-    }
-
-    pDevice->pImmediateContext->IASetInputLayout(pInputLayout);
     return VINF_SUCCESS;
 }
 
@@ -6484,6 +6572,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXDefineShaderResourceView(PVGASTATECC pThi
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDevice->pDevice, VERR_INVALID_STATE);
 
+    /** @todo Probably not necessary because SRVs are defined in setupPipeline. */
     return dxDefineShaderResourceView(pThisCC, pDXContext, shaderResourceViewId, pEntry);
 }
 
@@ -6788,15 +6877,12 @@ static int dxDefineShader(PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderId shaderId
 {
     /** @todo A common approach for creation of COTable backend objects: runtime, empty DX COTable, live DX COTable. */
     DXSHADER *pDXShader = &pDXContext->pBackendDXContext->paShader[shaderId];
-    if (pDXShader->enmShaderType == SVGA3D_SHADERTYPE_INVALID)
-    {
-        /* Init the shader structure. */
-        pDXShader->enmShaderType = pEntry->type;
-        pDXShader->soid = SVGA_ID_INVALID;
-    }
+    Assert(pDXShader->enmShaderType == SVGA3D_SHADERTYPE_INVALID);
 
-    PVMSVGA3DSHADER pShader = &pDXContext->paShader[shaderId];
-    pShader->u.pvBackendShader = pDXShader;
+    /* Init the backend shader structure, if the shader has not been created yet. */
+    pDXShader->enmShaderType = pEntry->type;
+    pDXShader->pShader = NULL;
+    pDXShader->soid = SVGA_ID_INVALID;
 
     return VINF_SUCCESS;
 }
@@ -6819,9 +6905,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXDefineShader(PVGASTATECC pThisCC, PVMSVGA
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
     RT_NOREF(pBackend);
 
-    DXSHADER *pDXShader = &pDXContext->pBackendDXContext->paShader[shaderId];
-    dxDestroyShader(pDXShader);
-
     return dxDefineShader(pDXContext, shaderId, pEntry);
 }
 
@@ -6838,7 +6921,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXDestroyShader(PVGASTATECC pThisCC, PVMSVG
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXBindShader(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSHADER pShader, void const *pvShaderBytecode)
+static DECLCALLBACK(int) vmsvga3dBackDXBindShader(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderId shaderId, DXShaderInfo const *pShaderInfo)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
     DXDEVICE *pDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
@@ -6846,50 +6929,19 @@ static DECLCALLBACK(int) vmsvga3dBackDXBindShader(PVGASTATECC pThisCC, PVMSVGA3D
 
     RT_NOREF(pBackend);
 
-    int rc = VINF_SUCCESS;
-
-    DXSHADER *pDXShader = &pDXContext->pBackendDXContext->paShader[pShader->id];
-    Assert(pDXShader->enmShaderType == pShader->type);
-
+    DXSHADER *pDXShader = &pDXContext->pBackendDXContext->paShader[shaderId];
     if (pDXShader->pvDXBC)
     {
+        /* New DXBC code and new shader must be created. */
+        D3D_RELEASE(pDXShader->pShader);
         RTMemFree(pDXShader->pvDXBC);
         pDXShader->pvDXBC = NULL;
         pDXShader->cbDXBC = 0;
     }
 
-    if (pvShaderBytecode)
-    {
-        Log(("Shader: cid=%u shid=%u type=%d\n", pDXContext->cid, pShader->id, pDXShader->enmShaderType));
+    pDXShader->shaderInfo = *pShaderInfo;
 
-        rc = DXShaderCreateDXBC(&pShader->shaderInfo, &pDXShader->pvDXBC, &pDXShader->cbDXBC);
-        if (RT_SUCCESS(rc))
-        {
-#ifdef LOG_ENABLED
-            if (pBackend->pfnD3DDisassemble && LogIs6Enabled())
-            {
-                ID3D10Blob *pBlob = 0;
-                HRESULT hr2 = pBackend->pfnD3DDisassemble(pDXShader->pvDXBC, pDXShader->cbDXBC, 0, NULL, &pBlob);
-                if (SUCCEEDED(hr2) && pBlob && pBlob->GetBufferSize())
-                    Log6(("%s\n", pBlob->GetBufferPointer()));
-                else
-                    AssertFailed();
-                D3D_RELEASE(pBlob);
-            }
-#endif
-
-            HRESULT hr = dxShaderCreate(pThisCC, pDXContext, pShader, pDXShader);
-            if (SUCCEEDED(hr))
-            {
-            }
-            else
-                rc = VERR_INVALID_STATE;
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -7221,16 +7273,14 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetCOTable(PVGASTATECC pThisCC, PVMSVGA3D
                 if (ASMMemFirstNonZero(pEntry, sizeof(*pEntry)) == NULL)
                     continue; /* Skip uninitialized entry. */
 
-                /** @todo this should be in the common DX code (the caller). */
-                PVMSVGA3DSHADER pShader = &pDXContext->paShader[i];
-                pShader->id                = i;
-                pShader->cid               = pDXContext->cid;
-                pShader->type              = pEntry->type;
-                pShader->cbData            = pEntry->sizeInBytes;
-                pShader->pShaderProgram    = NULL;
-                pShader->u.pvBackendShader = NULL;
+                /* Define shaders which were not defined yet in backend. */
+                DXSHADER *pDXShader = &pBackendDXContext->paShader[i];
+                if (   pEntry->type != SVGA3D_SHADERTYPE_INVALID
+                    && pDXShader->enmShaderType == SVGA3D_SHADERTYPE_INVALID)
+                    dxDefineShader(pDXContext, i, pEntry);
+                else
+                    Assert(pEntry->type == pDXShader->enmShaderType);
 
-                dxDefineShader(pDXContext, i, pEntry);
             }
             break;
         case SVGA_COTABLE_UAVIEW:

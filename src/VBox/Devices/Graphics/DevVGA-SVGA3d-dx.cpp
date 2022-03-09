@@ -41,33 +41,6 @@
 
 /*
  *
- * 3D backend entry points. These functions are used from vmsvga3dDXSwitchContext and command handlers.
- *
- */
-
-static int dxSetShader(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext,
-                       SVGA3dShaderType shaderType, SVGA3dShaderId shaderId)
-{
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-
-    PVMSVGA3DSHADER pShader;
-    if (shaderId != SVGA_ID_INVALID)
-    {
-        SVGACOTableDXShaderEntry *pEntry = &pDXContext->cot.paShader[shaderId];
-        ASSERT_GUEST_RETURN(pEntry->type == shaderType, VERR_INVALID_PARAMETER);
-        RT_UNTRUSTED_VALIDATED_FENCE();
-
-        pShader = &pDXContext->paShader[shaderId];
-    }
-    else
-        pShader = NULL;
-
-    return pSvgaR3State->pFuncsDX->pfnDXSetShader(pThisCC, pDXContext, shaderType, pShader);
-}
-
-
-/*
- *
  * Command handlers.
  *
  */
@@ -157,7 +130,7 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
         uint32_t const idxShaderState = shaderType - SVGA3D_SHADERTYPE_MIN;
         SVGA3dShaderId shaderId = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId;
 
-        rc = dxSetShader(pThisCC, pDXContext, shaderType, shaderId);
+        rc = pSvgaR3State->pFuncsDX->pfnDXSetShader(pThisCC, pDXContext, shaderId, shaderType);
         AssertRC(rc);
     }
 
@@ -171,7 +144,7 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
         uint32_t const idxShaderState = shaderType - SVGA3D_SHADERTYPE_MIN;
         SVGA3dShaderId shaderId = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId;
 
-        rc = dxSetShader(pThisCC, pDXContext, shaderType, shaderId);
+        rc = pSvgaR3State->pFuncsDX->pfnDXSetShader(pThisCC, pDXContext, shaderId, shaderType);
         AssertRC(rc);
     }
 
@@ -185,7 +158,7 @@ int vmsvga3dDXSwitchContext(PVGASTATECC pThisCC, uint32_t cid)
         uint32_t const idxShaderState = shaderType - SVGA3D_SHADERTYPE_MIN;
         SVGA3dShaderId shaderId = pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId;
 
-        rc = dxSetShader(pThisCC, pDXContext, shaderType, shaderId);
+        rc = pSvgaR3State->pFuncsDX->pfnDXSetShader(pThisCC, pDXContext, shaderId, shaderType);
         AssertRC(rc);
     }
 
@@ -604,7 +577,7 @@ int vmsvga3dDXSetShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSe
     uint32_t const idxShaderState = pCmd->type - SVGA3D_SHADERTYPE_MIN;
     pDXContext->svgaDXContext.shaderState[idxShaderState].shaderId = pCmd->shaderId;
 
-    rc = dxSetShader(pThisCC, pDXContext, pCmd->type, pCmd->shaderId);
+    rc = pSvgaR3State->pFuncsDX->pfnDXSetShader(pThisCC, pDXContext, pCmd->shaderId, pCmd->type);
     return rc;
 }
 
@@ -1171,7 +1144,7 @@ int vmsvga3dDXSetViewports(PVGASTATECC pThisCC, uint32_t idDXContext, uint32_t c
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    ASSERT_GUEST_RETURN(cViewport < SVGA3D_DX_MAX_VIEWPORTS, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(cViewport <= SVGA3D_DX_MAX_VIEWPORTS, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     pDXContext->svgaDXContext.numViewports = (uint8_t)cViewport;
@@ -1195,7 +1168,7 @@ int vmsvga3dDXSetScissorRects(PVGASTATECC pThisCC, uint32_t idDXContext, uint32_
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    ASSERT_GUEST_RETURN(cRect < SVGA3D_DX_MAX_SCISSORRECTS, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(cRect <= SVGA3D_DX_MAX_SCISSORRECTS, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
     pDXContext->svgaDXContext.numScissorRects = (uint8_t)cRect;
@@ -1790,8 +1763,6 @@ int vmsvga3dDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdD
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    AssertReturn(pDXContext->paShader, VERR_INVALID_STATE);
-
     SVGA3dShaderId const shaderId = pCmd->shaderId;
 
     ASSERT_GUEST_RETURN(pDXContext->cot.paShader, VERR_INVALID_STATE);
@@ -1800,26 +1771,14 @@ int vmsvga3dDXDefineShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdD
     ASSERT_GUEST_RETURN(pCmd->sizeInBytes >= 8, VERR_INVALID_PARAMETER); /* Version Token + Length Token. */
     RT_UNTRUSTED_VALIDATED_FENCE();
 
+    /* Cleanup the current shader. */
+    pSvgaR3State->pFuncsDX->pfnDXDestroyShader(pThisCC, pDXContext, shaderId);
+
     SVGACOTableDXShaderEntry *pEntry = &pDXContext->cot.paShader[shaderId];
     pEntry->type          = pCmd->type;
     pEntry->sizeInBytes   = pCmd->sizeInBytes;
     pEntry->offsetInBytes = 0;
     pEntry->mobid         = SVGA_ID_INVALID;
-
-    PVMSVGA3DSHADER pShader = &pDXContext->paShader[shaderId];
-    if (pShader->id != SVGA_ID_INVALID)
-    {
-        /* Cleanup the current shader. */
-        pSvgaR3State->pFuncsDX->pfnDXDestroyShader(pThisCC, pDXContext, shaderId);
-        RTMemFree(pShader->pShaderProgram);
-    }
-
-    pShader->id                = shaderId;
-    pShader->cid               = idDXContext;
-    pShader->type              = pEntry->type;
-    pShader->cbData            = pEntry->sizeInBytes;
-    pShader->pShaderProgram    = NULL;
-    pShader->u.pvBackendShader = NULL;
 
     rc = pSvgaR3State->pFuncsDX->pfnDXDefineShader(pThisCC, pDXContext, shaderId, pEntry);
     return rc;
@@ -1838,15 +1797,13 @@ int vmsvga3dDXDestroyShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmd
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    AssertReturn(pDXContext->paShader, VERR_INVALID_STATE);
-
     SVGA3dShaderId const shaderId = pCmd->shaderId;
 
     ASSERT_GUEST_RETURN(pDXContext->cot.paShader, VERR_INVALID_STATE);
     ASSERT_GUEST_RETURN(shaderId < pDXContext->cot.cShader, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDestroyShader(pThisCC, pDXContext, shaderId);
+    pSvgaR3State->pFuncsDX->pfnDXDestroyShader(pThisCC, pDXContext, shaderId);
 
     /* Cleanup COTable entries.*/
     SVGACOTableDXShaderEntry *pEntry = &pDXContext->cot.paShader[shaderId];
@@ -1856,28 +1813,18 @@ int vmsvga3dDXDestroyShader(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmd
     pEntry->mobid         = SVGA_ID_INVALID;
 
     /** @todo Destroy shaders on context and backend deletion. */
-    PVMSVGA3DSHADER pShader = &pDXContext->paShader[shaderId];
-    DXShaderFree(&pShader->shaderInfo);
-    pShader->id                = SVGA_ID_INVALID;
-    pShader->cid               = SVGA_ID_INVALID;
-    pShader->type              = SVGA3D_SHADERTYPE_INVALID;
-    pShader->cbData            = 0;
-    RTMemFree(pShader->pShaderProgram);
-    pShader->pShaderProgram    = NULL;
-    pShader->u.pvBackendShader = NULL;
-
     return rc;
 }
 
 
-static int dxBindShader(PVMSVGA3DSHADER pShader, PVMSVGAMOB pMob, SVGACOTableDXShaderEntry const *pEntry, void const *pvShaderBytecode)
+static int dxBindShader(DXShaderInfo *pShaderInfo, PVMSVGAMOB pMob, SVGACOTableDXShaderEntry const *pEntry, void const *pvShaderBytecode)
 {
     /* How many bytes the MOB can hold. */
     uint32_t const cbMob = vmsvgaR3MobSize(pMob) - pEntry->offsetInBytes;
     ASSERT_GUEST_RETURN(cbMob >= pEntry->sizeInBytes, VERR_INVALID_PARAMETER);
     AssertReturn(pEntry->sizeInBytes >= 8, VERR_INTERNAL_ERROR); /* Host ensures this in DefineShader. */
 
-    int rc = DXShaderParse(pvShaderBytecode, pEntry->sizeInBytes, &pShader->shaderInfo);
+    int rc = DXShaderParse(pvShaderBytecode, pEntry->sizeInBytes, pShaderInfo);
     if (RT_SUCCESS(rc))
     {
         /* Get the length of the shader bytecode. */
@@ -1885,22 +1832,20 @@ static int dxBindShader(PVMSVGA3DSHADER pShader, PVMSVGAMOB pMob, SVGACOTableDXS
         uint32_t const cToken = pau32Token[1]; /* Length of the shader in tokens. */
         ASSERT_GUEST_RETURN(cToken <= pEntry->sizeInBytes / 4, VERR_INVALID_PARAMETER);
 
-        pShader->cbData = cToken * 4;
-
         /* Check if the MOB contains SVGA3dDXSignatureHeader and signature entries.
          * If they are not there (Linux guest driver does not provide them), then it is fine
          * and the signatures generated by DXShaderParse will be used.
          */
-        uint32_t const cbSignaturesMax = cbMob - pShader->cbData; /* How many bytes for signatures are available. */
+        uint32_t const cbSignaturesMax = cbMob - cToken * 4; /* How many bytes for signatures are available. */
         if (cbSignaturesMax > sizeof(SVGA3dDXSignatureHeader))
         {
-            SVGA3dDXSignatureHeader const *pSignatureHeader = (SVGA3dDXSignatureHeader *)((uint8_t *)pvShaderBytecode + pShader->cbData);
+            SVGA3dDXSignatureHeader const *pSignatureHeader = (SVGA3dDXSignatureHeader *)((uint8_t *)pvShaderBytecode + cToken * 4);
             if (pSignatureHeader->headerVersion == SVGADX_SIGNATURE_HEADER_VERSION_0)
             {
                 DEBUG_BREAKPOINT_TEST();
-                ASSERT_GUEST_RETURN(   pSignatureHeader->numInputSignatures <= RT_ELEMENTS(pShader->shaderInfo.aInputSignature)
-                                    && pSignatureHeader->numOutputSignatures <= RT_ELEMENTS(pShader->shaderInfo.aOutputSignature)
-                                    && pSignatureHeader->numPatchConstantSignatures <= RT_ELEMENTS(pShader->shaderInfo.aPatchConstantSignature),
+                ASSERT_GUEST_RETURN(   pSignatureHeader->numInputSignatures <= RT_ELEMENTS(pShaderInfo->aInputSignature)
+                                    && pSignatureHeader->numOutputSignatures <= RT_ELEMENTS(pShaderInfo->aOutputSignature)
+                                    && pSignatureHeader->numPatchConstantSignatures <= RT_ELEMENTS(pShaderInfo->aPatchConstantSignature),
                                     VERR_INVALID_PARAMETER);
 
                 uint32_t const cSignature = pSignatureHeader->numInputSignatures
@@ -1911,16 +1856,16 @@ static int dxBindShader(PVMSVGA3DSHADER pShader, PVMSVGAMOB pMob, SVGACOTableDXS
 
                 /* Copy to DXShaderInfo. */
                 uint8_t const *pu8Signatures = (uint8_t *)&pSignatureHeader[1];
-                pShader->shaderInfo.cInputSignature = pSignatureHeader->numInputSignatures;
-                memcpy(pShader->shaderInfo.aInputSignature, pu8Signatures, pSignatureHeader->numInputSignatures * sizeof(SVGA3dDXSignatureEntry));
+                pShaderInfo->cInputSignature = pSignatureHeader->numInputSignatures;
+                memcpy(pShaderInfo->aInputSignature, pu8Signatures, pSignatureHeader->numInputSignatures * sizeof(SVGA3dDXSignatureEntry));
 
                 pu8Signatures += pSignatureHeader->numInputSignatures * sizeof(SVGA3dDXSignatureEntry);
-                pShader->shaderInfo.cOutputSignature = pSignatureHeader->numOutputSignatures;
-                memcpy(pShader->shaderInfo.aOutputSignature, pu8Signatures, pSignatureHeader->numOutputSignatures * sizeof(SVGA3dDXSignatureEntry));
+                pShaderInfo->cOutputSignature = pSignatureHeader->numOutputSignatures;
+                memcpy(pShaderInfo->aOutputSignature, pu8Signatures, pSignatureHeader->numOutputSignatures * sizeof(SVGA3dDXSignatureEntry));
 
                 pu8Signatures += pSignatureHeader->numOutputSignatures * sizeof(SVGA3dDXSignatureEntry);
-                pShader->shaderInfo.cPatchConstantSignature = pSignatureHeader->numPatchConstantSignatures;
-                memcpy(pShader->shaderInfo.aPatchConstantSignature, pu8Signatures, pSignatureHeader->numPatchConstantSignatures * sizeof(SVGA3dDXSignatureEntry));
+                pShaderInfo->cPatchConstantSignature = pSignatureHeader->numPatchConstantSignatures;
+                memcpy(pShaderInfo->aPatchConstantSignature, pu8Signatures, pSignatureHeader->numPatchConstantSignatures * sizeof(SVGA3dDXSignatureEntry));
             }
         }
     }
@@ -1944,6 +1889,7 @@ int vmsvga3dDXBindShader(PVGASTATECC pThisCC, SVGA3dCmdDXBindShader const *pCmd,
     ASSERT_GUEST_RETURN(pCmd->shid < pDXContext->cot.cShader, VERR_INVALID_PARAMETER);
     RT_UNTRUSTED_VALIDATED_FENCE();
 
+    /* 'type' and 'sizeInBytes' has been already initialized by DefineShader. */
     SVGACOTableDXShaderEntry *pEntry = &pDXContext->cot.paShader[pCmd->shid];
     //pEntry->type;
     //pEntry->sizeInBytes;
@@ -1962,18 +1908,22 @@ int vmsvga3dDXBindShader(PVGASTATECC pThisCC, SVGA3dCmdDXBindShader const *pCmd,
             void const *pvShaderBytecode = vmsvgaR3MobBackingStorePtr(pMob, pEntry->offsetInBytes);
             ASSERT_GUEST_RETURN(pvShaderBytecode, VERR_INVALID_PARAMETER);
 
-            PVMSVGA3DSHADER pShader = &pDXContext->paShader[pCmd->shid];
-            Assert(   pShader->id == pCmd->shid
-                   && pShader->type == pEntry->type); /* The host ensures this. */
-
             /* Get the shader and optional signatures from the MOB. */
-            rc = dxBindShader(pShader, pMob, pEntry, pvShaderBytecode);
+            DXShaderInfo shaderInfo;
+            RT_ZERO(shaderInfo);
+            rc = dxBindShader(&shaderInfo, pMob, pEntry, pvShaderBytecode);
             if (RT_SUCCESS(rc))
-                rc = pSvgaR3State->pFuncsDX->pfnDXBindShader(pThisCC, pDXContext, pShader, pvShaderBytecode);
+            {
+                /* pfnDXBindShader makes a copy of shaderInfo on success. */
+                rc = pSvgaR3State->pFuncsDX->pfnDXBindShader(pThisCC, pDXContext, pCmd->shid, &shaderInfo);
+            }
+            AssertRC(rc);
 
+            /** @todo Backing store is not needed anymore in any case? */
             if (RT_FAILURE(rc))
             {
-                /** @todo Any cleanup? */
+                DXShaderFree(&shaderInfo);
+
                 vmsvgaR3MobBackingStoreDelete(pSvgaR3State, pMob);
             }
         }
@@ -2192,18 +2142,6 @@ int vmsvga3dDXSetCOTable(PVGASTATECC pThisCC, SVGA3dCmdDXSetCOTable const *pCmd,
             case SVGA_COTABLE_DXSHADER:
                 pDXContext->cot.paShader          = (SVGACOTableDXShaderEntry *)pvCOT;
                 pDXContext->cot.cShader           = cEntries;
-
-                /* Create host array for information about shaders. */
-                RTMemFree(pDXContext->paShader);
-                pDXContext->paShader = NULL;
-
-                if (pDXContext->cot.cShader)
-                {
-                    pDXContext->paShader = (PVMSVGA3DSHADER)RTMemAllocZ(pDXContext->cot.cShader * sizeof(VMSVGA3DSHADER));
-                    AssertReturn(pDXContext->paShader, VERR_NO_MEMORY);
-                    for (uint32_t i = 0; i < pDXContext->cot.cShader; ++i)
-                        pDXContext->paShader[i].id = SVGA_ID_INVALID;
-                }
                 break;
             case SVGA_COTABLE_UAVIEW:
                 pDXContext->cot.paUAView          = (SVGACOTableDXUAViewEntry *)pvCOT;
