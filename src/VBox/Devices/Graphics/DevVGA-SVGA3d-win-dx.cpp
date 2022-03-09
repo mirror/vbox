@@ -41,7 +41,11 @@
 #include "DevVGA-SVGA3d-internal.h"
 #include "DevVGA-SVGA3d-dx-shader.h"
 
-#include <d3d11.h>
+/* d3d11_1.h has a structure field named 'Status' but Status is defined as int on Linux host */
+#if defined(Status)
+#undef Status
+#endif
+#include <d3d11_1.h>
 
 
 #ifdef RT_OS_WINDOWS
@@ -816,7 +820,7 @@ static int dxDeviceCreate(PVMSVGA3DBACKEND pBackend, DXDEVICE *pDevice)
     IDXGIAdapter *pAdapter = NULL; /* Default adapter. */
     static D3D_FEATURE_LEVEL const s_aFeatureLevels[] =
     {
-        /// @todo Requires a Windows 8+ _SDKS: D3D_FEATURE_LEVEL_11_1,
+        D3D_FEATURE_LEVEL_11_1,
         D3D_FEATURE_LEVEL_11_0
     };
     UINT Flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
