@@ -30,8 +30,8 @@
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
+class QComboBox;
 class QLabel;
-class QIComboBox;
 
 /** QWidget subclass used as a color theme editor. */
 class SHARED_LIBRARY_STUFF UIColorThemeEditor : public QIWithRetranslateUI<QWidget>
@@ -80,7 +80,7 @@ private:
     /** Holds the label instance. */
     QLabel     *m_pLabel;
     /** Holds the combo instance. */
-    QIComboBox *m_pCombo;
+    QComboBox  *m_pCombo;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIColorThemeEditor_h */

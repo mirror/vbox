@@ -16,12 +16,12 @@
  */
 
 /* Qt includes: */
+#include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 
 /* GUI includes: */
-#include "QIComboBox.h"
 #include "UIColorThemeEditor.h"
 #include "UIConverter.h"
 
@@ -100,7 +100,7 @@ void UIColorThemeEditor::prepare()
         if (pComboLayout)
         {
             /* Create combo: */
-            m_pCombo = new QIComboBox(this);
+            m_pCombo = new QComboBox(this);
             if (m_pCombo)
             {
                 setFocusProxy(m_pCombo->focusProxy());
@@ -108,7 +108,7 @@ void UIColorThemeEditor::prepare()
                 m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pCombo->focusProxy());
-                connect(m_pCombo, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
+                connect(m_pCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                         this, &UIColorThemeEditor::sltHandleCurrentIndexChanged);
                 pComboLayout->addWidget(m_pCombo);
             }
