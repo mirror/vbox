@@ -54,7 +54,7 @@
 # define VBOX_D3D11_LIBRARY_NAME "VBoxDxVk"
 #endif
 
-//#define DX_FORCE_SINGLE_DEVICE
+#define DX_FORCE_SINGLE_DEVICE
 
 /* This is not available on non Windows hosts. */
 #ifndef D3D_RELEASE
@@ -2858,7 +2858,7 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
 
     LogRelMax(1, ("VMSVGA: Single DX device mode: %s\n", pBackend->fSingleDevice ? "enabled" : "disabled"));
 
-DEBUG_BREAKPOINT_TEST();
+//DEBUG_BREAKPOINT_TEST();
     return rc;
 }
 
