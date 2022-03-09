@@ -3316,6 +3316,10 @@ if (!(   (pBackendSurface->pStagingTexture && pBackendSurface->pDynamicTexture)
         rc = dxStagingBufferRealloc(pDevice, pMipLevel->cbSurface);
         if (RT_SUCCESS(rc))
         {
+            /* The staging buffer does not allow D3D11_MAP_WRITE_DISCARD, so replace it.  */
+            if (d3d11MapType == D3D11_MAP_WRITE_DISCARD)
+                d3d11MapType = D3D11_MAP_WRITE;
+
             if (enmMapType == VMSVGA3D_SURFACE_MAP_READ)
             {
                 /* Copy from the buffer to the staging buffer. */
