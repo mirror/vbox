@@ -26,9 +26,8 @@
 #include "UIConverter.h"
 
 
-UIColorThemeEditor::UIColorThemeEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+UIColorThemeEditor::UIColorThemeEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabel(fWithLabel)
     , m_enmValue(UIColorThemeType_Auto)
     , m_pLabel(0)
     , m_pCombo(0)
@@ -71,6 +70,7 @@ void UIColorThemeEditor::retranslateUi()
             const UIColorThemeType enmType = m_pCombo->itemData(i).value<UIColorThemeType>();
             m_pCombo->setItemText(i, gpConverter->toString(enmType));
         }
+        m_pCombo->setToolTip(tr("Selects the color theme. It can be Light, Dark or automatically detected (default)."));
     }
 }
 
@@ -87,13 +87,11 @@ void UIColorThemeEditor::prepare()
     if (pMainLayout)
     {
         pMainLayout->setContentsMargins(0, 0, 0, 0);
-        int iRow = 0;
 
         /* Create label: */
-        if (m_fWithLabel)
-            m_pLabel = new QLabel(this);
+        m_pLabel = new QLabel(this);
         if (m_pLabel)
-            pMainLayout->addWidget(m_pLabel, 0, iRow++, 1, 1);
+            pMainLayout->addWidget(m_pLabel, 0, 0);
 
         /* Create combo layout: */
         QHBoxLayout *pComboLayout = new QHBoxLayout;
@@ -103,11 +101,10 @@ void UIColorThemeEditor::prepare()
             m_pCombo = new QComboBox(this);
             if (m_pCombo)
             {
-                setFocusProxy(m_pCombo->focusProxy());
                 /* This is necessary since contents is dynamical now: */
                 m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
-                    m_pLabel->setBuddy(m_pCombo->focusProxy());
+                    m_pLabel->setBuddy(m_pCombo);
                 connect(m_pCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                         this, &UIColorThemeEditor::sltHandleCurrentIndexChanged);
                 pComboLayout->addWidget(m_pCombo);
@@ -117,7 +114,7 @@ void UIColorThemeEditor::prepare()
             pComboLayout->addStretch();
 
             /* Add combo-layout into main-layout: */
-            pMainLayout->addLayout(pComboLayout, 0, iRow++, 1, 1);
+            pMainLayout->addLayout(pComboLayout, 0, 1);
         }
     }
 

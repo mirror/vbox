@@ -45,9 +45,8 @@ signals:
 
 public:
 
-    /** Constructs color theme editor passing @a pParent to the base-class.
-      * @param  fWithLabel  Brings whether we should add label ourselves. */
-    UIColorThemeEditor(QWidget *pParent = 0, bool fWithLabel = false);
+    /** Constructs color theme editor passing @a pParent to the base-class. */
+    UIColorThemeEditor(QWidget *pParent = 0);
 
     /** Defines editor @a enmValue. */
     void setValue(UIColorThemeType enmValue);

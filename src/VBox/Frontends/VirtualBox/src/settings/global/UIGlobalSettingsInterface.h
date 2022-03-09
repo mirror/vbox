@@ -79,8 +79,6 @@ private:
     /** @name Widgets
      * @{ */
         /** Holds the color theme label instance. */
-        QLabel             *m_pLabelColorTheme;
-        /** Holds the color theme label instance. */
         UIColorThemeEditor *m_pEditorColorTheme;
     /** @} */
 };

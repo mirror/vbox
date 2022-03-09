@@ -56,7 +56,6 @@ struct UIDataSettingsGlobalInterface
 
 UIGlobalSettingsInterface::UIGlobalSettingsInterface()
     : m_pCache(0)
-    , m_pLabelColorTheme(0)
     , m_pEditorColorTheme(0)
 {
     prepare();
@@ -118,8 +117,6 @@ void UIGlobalSettingsInterface::saveFromCacheTo(QVariant &data)
 
 void UIGlobalSettingsInterface::retranslateUi()
 {
-    m_pLabelColorTheme->setText(tr("Color &Theme:"));
-    m_pEditorColorTheme->setToolTip(tr("Selects the color theme. It can be Light, Dark or automatically detected (default)."));
 }
 
 void UIGlobalSettingsInterface::prepare()
@@ -141,23 +138,12 @@ void UIGlobalSettingsInterface::prepareWidgets()
     QGridLayout *pLayoutMain = new QGridLayout(this);
     if (pLayoutMain)
     {
-        pLayoutMain->setColumnStretch(1, 1);
         pLayoutMain->setRowStretch(1, 1);
 
-        /* Prepare color-theme label: */
-        m_pLabelColorTheme = new QLabel(this);
-        if (m_pLabelColorTheme)
-        {
-            m_pLabelColorTheme->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            pLayoutMain->addWidget(m_pLabelColorTheme, 0, 0);
-        }
         /* Prepare color-theme editor: */
         m_pEditorColorTheme = new UIColorThemeEditor(this);
         if (m_pEditorColorTheme)
-        {
-            m_pLabelColorTheme->setBuddy(m_pEditorColorTheme->focusProxy());
-            pLayoutMain->addWidget(m_pEditorColorTheme, 0, 1);
-        }
+            pLayoutMain->addWidget(m_pEditorColorTheme, 0, 0);
     }
 }
 
