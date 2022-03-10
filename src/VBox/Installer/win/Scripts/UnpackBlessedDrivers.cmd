@@ -25,7 +25,7 @@ rem Globals and Check for environment variables we need.
 rem
 if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & goto end_failed)
 set _MY_DRIVER_BASE_NAMES=VBoxSup VBoxNetAdp6 VBoxNetLwf VBoxUSB VBoxUSBMon
-set _MY_DRIVER_BASE_NAMES=VBoxSup VBoxNetAdp6 VBoxNetLwf VBoxUSB VBoxUSBMon
+set _MY_GUEST_ADDITIONS_DRIVER_BASE_NAMES=VBoxVideo VBoxWddm VBoxGuest VBoxMouse
 set _MY_UNZIP=%KBUILD_DEVTOOLS%\win.x86\bin\unzip.exe
 if not exist "%_MY_UNZIP%" (echo "%_MY_UNZIP%" does not exist & goto end_failed)
 
@@ -56,6 +56,7 @@ if ".%1" == ".-n"           goto opt_n
 if ".%1" == ".--no-sign-cat" goto opt_n
 if ".%1" == ".-v"           goto opt_v
 if ".%1" == ".--no-sign-verify" goto opt_v
+if ".%1" == ".--guest-additions" goto opt_ga
 
 echo syntax error: Unknown option: %1
 echo               Try --help to list valid options.
@@ -93,6 +94,11 @@ goto argument_loop
 
 :opt_v
 set _MY_OPT_SIGN_VERIFY=0
+shift
+goto argument_loop
+
+:opt_ga
+set _MY_DRIVER_BASE_NAMES=%_MY_GUEST_ADDITIONS_DRIVER_BASE_NAMES%
 shift
 goto argument_loop
 
