@@ -202,14 +202,14 @@ echo **************************************************************************
 echo * AMD64: Unpacking signed drivers...
 echo **************************************************************************
 cd /d "%_MY_REPACK_DIR_AMD64%" || goto end_failed
-call "%_MY_REPACK_DIR_AMD64%\UnpackBlessedDrivers.cmd" -b "%_MY_BINDIR_AMD64%" -i "%_MY_OPT_SIGNED_AMD64%" || goto end_failed
+call "%_MY_REPACK_DIR_AMD64%\UnpackBlessedDrivers.cmd" -n -b "%_MY_BINDIR_AMD64%" -i "%_MY_OPT_SIGNED_AMD64%" || goto end_failed
 echo .
 
 echo **************************************************************************
 echo * X86: Unpacking signed drivers...
 echo **************************************************************************
 cd /d "%_MY_REPACK_DIR_X86%" || goto end_failed
-call "%_MY_REPACK_DIR_X86%\UnpackBlessedDrivers.cmd" -b "%_MY_BINDIR_X86%" -i "%_MY_OPT_SIGNED_X86%" || goto end_failed
+call "%_MY_REPACK_DIR_X86%\UnpackBlessedDrivers.cmd" -n -b "%_MY_BINDIR_X86%" -i "%_MY_OPT_SIGNED_X86%" || goto end_failed
 echo .
 
 
