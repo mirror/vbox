@@ -24,6 +24,7 @@
 #include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
 #include <iprt/mp.h>
@@ -52,9 +53,11 @@ typedef struct BINU8_T
 {
     const char             *pszName;
     PFNIEMAIMPLBINU8        pfn;
+    PFNIEMAIMPLBINU8        pfnNative;
     BINU8_TEST_T const     *paTests;
     uint32_t                cTests;
     uint32_t                uExtra;
+    uint8_t                 idxCpuEflFlavour;
 } BINU8_T;
 /** @} */
 
@@ -75,9 +78,11 @@ typedef struct BINU16_T
 {
     const char             *pszName;
     PFNIEMAIMPLBINU16       pfn;
+    PFNIEMAIMPLBINU16       pfnNative;
     BINU16_TEST_T const    *paTests;
     uint32_t                cTests;
     uint32_t                uExtra;
+    uint8_t                 idxCpuEflFlavour;
 } BINU16_T;
 /** @} */
 
@@ -98,9 +103,11 @@ typedef struct BINU32_T
 {
     const char             *pszName;
     PFNIEMAIMPLBINU32       pfn;
+    PFNIEMAIMPLBINU32       pfnNative;
     BINU32_TEST_T const    *paTests;
     uint32_t                cTests;
     uint32_t                uExtra;
+    uint8_t                 idxCpuEflFlavour;
 } BINU32_T;
 /** @} */
 
@@ -121,9 +128,11 @@ typedef struct BINU64_T
 {
     const char             *pszName;
     PFNIEMAIMPLBINU64       pfn;
+    PFNIEMAIMPLBINU64       pfnNative;
     BINU64_TEST_T const    *paTests;
     uint32_t                cTests;
     uint32_t                uExtra;
+    uint8_t                 idxCpuEflFlavour;
 } BINU64_T;
 /** @} */
 
@@ -183,24 +192,32 @@ typedef struct MULDIVU64_TEST_T
 *********************************************************************************************************************************/
 #define ENTRY(a_Name)       ENTRY_EX(a_Name, 0)
 #define ENTRY_EX(a_Name, a_uExtra) \
-    { #a_Name, iemAImpl_ ## a_Name, g_aTests_ ## a_Name, RT_ELEMENTS(g_aTests_ ## a_Name), a_uExtra }
+    { #a_Name, iemAImpl_ ## a_Name, NULL, \
+      g_aTests_ ## a_Name, RT_ELEMENTS(g_aTests_ ## a_Name), \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
 
+#define ENTRY_INTEL(a_Name, a_fEflUndef) ENTRY_INTEL_EX(a_Name, a_fEflUndef, 0)
+#define ENTRY_INTEL_EX(a_Name, a_fEflUndef, a_uExtra) \
+    { #a_Name "_intel", iemAImpl_ ## a_Name ## _intel, iemAImpl_ ## a_Name, \
+      g_aTests_ ## a_Name ## _intel, RT_ELEMENTS(g_aTests_ ## a_Name ## _intel), \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_INTEL }
 
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-static uint32_t     RandEFlags(void);
-static uint8_t      RandU8(void);
-static uint16_t     RandU16(void);
-static uint32_t     RandU32(void);
-static uint64_t     RandU64(void);
-static RTUINT128U   RandU128(void);
+#define ENTRY_AMD(a_Name, a_fEflUndef)   ENTRY_AMD_EX(a_Name, a_fEflUndef, 0)
+#define ENTRY_AMD_EX(a_Name, a_fEflUndef, a_uExtra) \
+    { #a_Name "_amd", iemAImpl_ ## a_Name ## _amd,   iemAImpl_ ## a_Name, \
+      g_aTests_ ## a_Name ## _amd, RT_ELEMENTS(g_aTests_ ## a_Name ## _amd), \
+      a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_AMD }
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 static RTTEST       g_hTest;
+static uint8_t      g_idxCpuEflFlavour = IEMTARGETCPU_EFL_BEHAVIOR_INTEL;
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static uint32_t     g_cZeroDstTests = 2;
+static uint32_t     g_cZeroSrcTests = 4;
+#endif
 static uint8_t     *g_pu8,   *g_pu8Two;
 static uint16_t    *g_pu16,  *g_pu16Two;
 static uint32_t    *g_pu32,  *g_pu32Two,  *g_pfEfl;
@@ -209,6 +226,172 @@ static RTUINT128U  *g_pu128, *g_pu128Two;
 
 
 #include "tstIEMAImplData.h"
+#include "tstIEMAImplData-Intel.h"
+#include "tstIEMAImplData-Amd.h"
+
+
+/*
+ * Random helpers.
+ */
+
+static uint32_t RandEFlags(void)
+{
+    uint32_t fEfl = RTRandU32();
+    return (fEfl & X86_EFL_LIVE_MASK) | X86_EFL_RA1_MASK;
+}
+
+
+static uint8_t  RandU8(void)
+{
+    return RTRandU32Ex(0, 0xff);
+}
+
+
+static uint16_t  RandU16(void)
+{
+    return RTRandU32Ex(0, 0xffff);
+}
+
+
+static uint32_t  RandU32(void)
+{
+    return RTRandU32();
+}
+
+
+static uint64_t  RandU64(void)
+{
+    return RTRandU64();
+}
+
+
+static RTUINT128U RandU128(void)
+{
+    RTUINT128U Ret;
+    Ret.s.Hi = RTRandU64();
+    Ret.s.Lo = RTRandU64();
+    return Ret;
+}
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+
+static uint8_t  RandU8Dst(uint32_t iTest)
+{
+    if (iTest < g_cZeroDstTests)
+        return 0;
+    return RandU8();
+}
+
+
+static uint8_t  RandU8Src(uint32_t iTest)
+{
+    if (iTest < g_cZeroSrcTests)
+        return 0;
+    return RandU8();
+}
+
+
+static uint16_t  RandU16Dst(uint32_t iTest)
+{
+    if (iTest < g_cZeroDstTests)
+        return 0;
+    return RandU16();
+}
+
+
+static uint16_t  RandU16Src(uint32_t iTest)
+{
+    if (iTest < g_cZeroSrcTests)
+        return 0;
+    return RandU16();
+}
+
+
+static uint32_t  RandU32Dst(uint32_t iTest)
+{
+    if (iTest < g_cZeroDstTests)
+        return 0;
+    return RandU32();
+}
+
+
+static uint32_t  RandU32Src(uint32_t iTest)
+{
+    if (iTest < g_cZeroSrcTests)
+        return 0;
+    return RandU32();
+}
+
+
+static uint64_t  RandU64Dst(uint32_t iTest)
+{
+    if (iTest < g_cZeroDstTests)
+        return 0;
+    return RandU64();
+}
+
+
+static uint64_t  RandU64Src(uint32_t iTest)
+{
+    if (iTest < g_cZeroSrcTests)
+        return 0;
+    return RandU64();
+}
+
+
+static void GenerateHeader(PRTSTREAM pOut, const char *pszCpuDesc, const char *pszCpuType, const char *pszCpuSuffU)
+{
+    /* We want to tag the generated source code with the revision that produced it. */
+    static char s_szRev[] = "$Revision$";
+    const char *pszRev = RTStrStripL(strchr(s_szRev, ':') + 1);
+    size_t      cchRev = 0;
+    while (RT_C_IS_DIGIT(pszRev[cchRev]))
+        cchRev++;
+
+    RTStrmPrintf(pOut,
+                 "/* $Id$ */\n"
+                 "/** @file\n"
+                 " * IEM Assembly Instruction Helper Testcase Data%s%s - r%.*s on %s.\n"
+                 " */\n"
+                 "\n"
+                 "/*\n"
+                 " * Copyright (C) 2022 Oracle Corporation\n"
+                 " *\n"
+                 " * This file is part of VirtualBox Open Source Edition (OSE), as\n"
+                 " * available from http://www.virtualbox.org. This file is free software;\n"
+                 " * you can redistribute it and/or modify it under the terms of the GNU\n"
+                 " * General Public License (GPL) as published by the Free Software\n"
+                 " * Foundation, in version 2 as it comes in the \"COPYING\" file of the\n"
+                 " * VirtualBox OSE distribution. VirtualBox OSE is distributed in the\n"
+                 " * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.\n"
+                 " */\n"
+                 "\n"
+                 "#ifndef VMM_INCLUDE_SRC_testcase_tstIEMAImplData%s_h\n"
+                 "#define VMM_INCLUDE_SRC_testcase_tstIEMAImplData%s_h\n"
+                 "#ifndef RT_WITHOUT_PRAGMA_ONCE\n"
+                 "# pragma once\n"
+                 "#endif\n"
+                 ,
+                 pszCpuType ? " " : "", pszCpuType ? pszCpuType : "", cchRev, pszRev, pszCpuDesc,
+                 pszCpuSuffU,
+                 pszCpuSuffU);
+}
+
+
+static RTEXITCODE GenerateFooterAndClose(PRTSTREAM pOut, const char *pszCpuType, const char *pszCpuSuff, RTEXITCODE rcExit)
+{
+    RTStrmPrintf(pOut,
+                 "\n"
+                 "#endif /* !VMM_INCLUDE_SRC_testcase_tstIEMAImplData%s_h */\n", pszCpuSuff);
+    int rc = RTStrmClose(pOut);
+    if (RT_SUCCESS(rc))
+        return rcExit;
+    return RTMsgErrorExitFailure("RTStrmClose failed on tstIEMAImplData%s%s.h: %Rrc",
+                                 pszCpuType ? "-" : "", pszCpuType ? pszCpuType : "", rc);
+}
+
+#endif
+
 
 /*
  * Test helpers.
@@ -257,6 +440,94 @@ static const char *EFlagsDiff(uint32_t fActual, uint32_t fExpected)
 
 
 /*
+ * Binary operations.
+ */
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+# define GEN_BINARY_TESTS(a_cBits, a_Fmt) \
+static void BinU ## a_cBits ## Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, const char *pszCpuSuffU, uint32_t cTests) \
+{ \
+    RTStrmPrintf(pOut, "\n\n#define HAVE_BINU%u_TESTS\n", a_cBits); \
+    RTStrmPrintf(pOutCpu, "\n\n#define HAVE_BINU%u_TESTS%s\n", a_cBits, pszCpuSuffU); \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU ## a_cBits); iFn++) \
+    { \
+        PFNIEMAIMPLBINU ## a_cBits const pfn    = g_aBinU ## a_cBits[iFn].pfnNative \
+                                                ? g_aBinU ## a_cBits[iFn].pfnNative : g_aBinU ## a_cBits[iFn].pfn; \
+        PRTSTREAM                        pOutFn = pOut; \
+        if (g_aBinU ## a_cBits[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE) \
+        { \
+            if (g_aBinU ## a_cBits[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
+                continue; \
+            pOutFn = pOutCpu; \
+        } \
+        \
+        RTStrmPrintf(pOutFn, "static const BINU%u_TEST_T g_aTests_%s[] =\n{\n", a_cBits, g_aBinU ## a_cBits[iFn].pszName); \
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+        { \
+            BINU ## a_cBits ## _TEST_T Test; \
+            Test.fEflIn    = RandEFlags(); \
+            Test.fEflOut   = Test.fEflIn; \
+            Test.uDstIn    = RandU ## a_cBits ## Dst(iTest); \
+            Test.uDstOut   = Test.uDstIn; \
+            Test.uSrcIn    = RandU ## a_cBits ## Src(iTest); \
+            if (g_aBinU ## a_cBits[iFn].uExtra) \
+                Test.uSrcIn &= a_cBits - 1; /* Restrict bit index according to operand width */ \
+            Test.uMisc     = 0; \
+            pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut); \
+            RTStrmPrintf(pOutFn, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %#x }, /* #%u */\n", \
+                         Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
+        } \
+        RTStrmPrintf(pOutFn, "};\n"); \
+    } \
+}
+#else
+# define GEN_BINARY_TESTS(a_cBits, a_Fmt)
+#endif
+
+#define TEST_BINARY_OPS(a_cBits, a_uType, a_Fmt, a_aSubTests) \
+GEN_BINARY_TESTS(a_cBits, a_Fmt) \
+\
+static void BinU ## a_cBits ## Test(void) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
+            && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
+            continue; \
+        \
+        RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
+        BINU ## a_cBits ## _TEST_T const * const paTests = a_aSubTests[iFn].paTests; \
+        uint32_t const                           cTests  = a_aSubTests[iFn].cTests; \
+        PFNIEMAIMPLBINU ## a_cBits               pfn     = a_aSubTests[iFn].pfn; \
+        for (uint32_t iCpu = 0; iCpu < 2 && pfn; iCpu++) \
+        { \
+            for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+            { \
+                uint32_t fEfl = paTests[iTest].fEflIn; \
+                a_uType  uDst = paTests[iTest].uDstIn; \
+                pfn(&uDst, paTests[iTest].uSrcIn, &fEfl); \
+                if (   uDst != paTests[iTest].uDstOut \
+                    || fEfl != paTests[iTest].fEflOut) \
+                    RTTestFailed(g_hTest, "#%u%s: efl=%#08x dst=" a_Fmt " src=" a_Fmt " -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s - %s\n", \
+                                 iTest, !iCpu ? "" : "/n", paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn, \
+                                 fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut, \
+                                 EFlagsDiff(fEfl, paTests[iTest].fEflOut), \
+                                 uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both"); \
+                else \
+                { \
+                     *g_pu ## a_cBits  = paTests[iTest].uDstIn; \
+                     *g_pfEfl = paTests[iTest].fEflIn; \
+                     pfn(g_pu ## a_cBits, paTests[iTest].uSrcIn, g_pfEfl); \
+                     RTTEST_CHECK(g_hTest, *g_pu ## a_cBits == paTests[iTest].uDstOut); \
+                     RTTEST_CHECK(g_hTest, *g_pfEfl         == paTests[iTest].fEflOut); \
+                } \
+            } \
+            pfn = a_aSubTests[iFn].pfnNative; \
+        } \
+    } \
+}
+
+
+/*
  * 8-bit binary operations.
  */
 
@@ -299,61 +570,7 @@ static const BINU8_T g_aBinU8[] =
     ENTRY(test_u8),
 };
 
-
-static void BinU8Generate(uint32_t cTests)
-{
-    RTPrintf("\n\n#define HAVE_BINU8_TESTS\n");
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU8); iFn++)
-    {
-        RTPrintf("static const BINU8_TEST_T g_aTests_%s[] =\n{\n", g_aBinU8[iFn].pszName);
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
-        {
-            BINU8_TEST_T Test;
-            Test.fEflIn    = RandEFlags();
-            Test.fEflOut   = Test.fEflIn;
-            Test.uDstIn    = RandU8();
-            Test.uDstOut   = Test.uDstIn;
-            Test.uSrcIn    = RandU8();
-            Test.uMisc     = 0;
-            g_aBinU8[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
-            RTPrintf("    { %#08x, %#08x, %#04x, %#04x, %#04x, %#x }, /* #%u */\n",
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest);
-        }
-        RTPrintf("};\n");
-    }
-}
-
-static void BinU8Test(void)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU8); iFn++)
-    {
-        RTTestSub(g_hTest, g_aBinU8[iFn].pszName);
-
-        BINU8_TEST_T const * const paTests = g_aBinU8[iFn].paTests;
-        uint32_t const             cTests  = g_aBinU8[iFn].cTests;
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
-        {
-            uint32_t fEfl = paTests[iTest].fEflIn;
-            uint8_t  uDst = paTests[iTest].uDstIn;
-            g_aBinU8[iFn].pfn(&uDst, paTests[iTest].uSrcIn, &fEfl);
-            if (   uDst != paTests[iTest].uDstOut
-                || fEfl != paTests[iTest].fEflOut)
-                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=%#04x src=%#04x -> efl=%#08x dst=%#04x, expected %#08x & %#04x%s - %s\n",
-                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn,
-                             fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut,
-                             EFlagsDiff(fEfl, paTests[iTest].fEflOut),
-                             uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both");
-            else
-            {
-                 *g_pu8   = paTests[iTest].uDstIn;
-                 *g_pfEfl = paTests[iTest].fEflIn;
-                 g_aBinU8[iFn].pfn(g_pu8, paTests[iTest].uSrcIn, g_pfEfl);
-                 RTTEST_CHECK(g_hTest, *g_pu8   == paTests[iTest].uDstOut);
-                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut);
-            }
-        }
-    }
-}
+TEST_BINARY_OPS(8, uint8_t, "%#04x", g_aBinU8)
 
 
 /*
@@ -384,10 +601,17 @@ static const BINU16_TEST_T g_aTests_btr_u16[]        = { {0} };
 static const BINU16_TEST_T g_aTests_btr_u16_locked[] = { {0} };
 static const BINU16_TEST_T g_aTests_bts_u16[]        = { {0} };
 static const BINU16_TEST_T g_aTests_bts_u16_locked[] = { {0} };
-static const BINU16_TEST_T g_aTests_bsf_u16[]        = { {0} };
-static const BINU16_TEST_T g_aTests_bsr_u16[]        = { {0} };
-static const BINU16_TEST_T g_aTests_imul_two_u16[]   = { {0} };
 static const BINU16_TEST_T g_aTests_arpl[]           = { {0} };
+#endif
+#ifndef HAVE_BINU16_TESTS_AMD
+static const BINU16_TEST_T g_aTests_bsf_u16_amd[]           = { {0} };
+static const BINU16_TEST_T g_aTests_bsr_u16_amd[]           = { {0} };
+static const BINU16_TEST_T g_aTests_imul_two_u16_amd[]      = { {0} };
+#endif
+#ifndef HAVE_BINU16_TESTS_INTEL
+static const BINU16_TEST_T g_aTests_bsf_u16_intel[]         = { {0} };
+static const BINU16_TEST_T g_aTests_bsr_u16_intel[]         = { {0} };
+static const BINU16_TEST_T g_aTests_imul_two_u16_intel[]    = { {0} };
 #endif
 
 static const BINU16_T g_aBinU16[] =
@@ -415,68 +639,16 @@ static const BINU16_T g_aBinU16[] =
     ENTRY_EX(btr_u16_locked, 1),
     ENTRY_EX(bts_u16, 1),
     ENTRY_EX(bts_u16_locked, 1),
-    ENTRY(bsf_u16),
-    ENTRY(bsr_u16),
-    ENTRY(imul_two_u16),
+    ENTRY_AMD(  bsf_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_INTEL(bsf_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_AMD(  bsr_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_INTEL(bsr_u16, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_AMD(  imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+    ENTRY_INTEL(imul_two_u16, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
     ENTRY(arpl),
 };
 
-static void BinU16Generate(uint32_t cTests)
-{
-    RTPrintf("\n\n#define HAVE_BINU16_TESTS\n");
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU16); iFn++)
-    {
-        RTPrintf("static const BINU16_TEST_T g_aTests_%s[] =\n{\n", g_aBinU16[iFn].pszName);
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
-        {
-            BINU16_TEST_T Test;
-            Test.fEflIn    = RandEFlags();
-            Test.fEflOut   = Test.fEflIn;
-            Test.uDstIn    = RandU16();
-            Test.uDstOut   = Test.uDstIn;
-            Test.uSrcIn    = RandU16();
-            if (g_aBinU16[iFn].uExtra)
-                Test.uSrcIn &= 0xf; /* Restrict bit index to a word */
-            Test.uMisc     = 0;
-            g_aBinU16[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
-            RTPrintf("    { %#08x, %#08x, %#06x, %#06x, %#06x, %#x }, /* #%u */\n",
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest);
-        }
-        RTPrintf("};\n");
-    }
-}
-
-static void BinU16Test(void)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU16); iFn++)
-    {
-        RTTestSub(g_hTest, g_aBinU16[iFn].pszName);
-
-        BINU16_TEST_T const * const paTests = g_aBinU16[iFn].paTests;
-        uint32_t const              cTests  = g_aBinU16[iFn].cTests;
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
-        {
-            uint32_t fEfl = paTests[iTest].fEflIn;
-            uint16_t uDst = paTests[iTest].uDstIn;
-            g_aBinU16[iFn].pfn(&uDst, paTests[iTest].uSrcIn, &fEfl);
-            if (   uDst != paTests[iTest].uDstOut
-                || fEfl != paTests[iTest].fEflOut)
-                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=%#06x src=%#06x -> efl=%#08x dst=%#06x, expected %#08x & %#06x%s - %s\n",
-                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn,
-                             fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut,
-                             EFlagsDiff(fEfl, paTests[iTest].fEflOut),
-                             uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both");
-            else
-            {
-                 *g_pu16  = paTests[iTest].uDstIn;
-                 *g_pfEfl = paTests[iTest].fEflIn;
-                 g_aBinU16[iFn].pfn(g_pu16, paTests[iTest].uSrcIn, g_pfEfl);
-                 RTTEST_CHECK(g_hTest, *g_pu16== paTests[iTest].uDstOut);
-                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut);
-            }
-        }
-    }
-}
+TEST_BINARY_OPS(16, uint16_t, "%#06x", g_aBinU16)
 
 
 /*
@@ -507,9 +679,16 @@ static const BINU32_TEST_T g_aTests_btr_u32[]        = { {0} };
 static const BINU32_TEST_T g_aTests_btr_u32_locked[] = { {0} };
 static const BINU32_TEST_T g_aTests_bts_u32[]        = { {0} };
 static const BINU32_TEST_T g_aTests_bts_u32_locked[] = { {0} };
-static const BINU32_TEST_T g_aTests_bsf_u32[]        = { {0} };
-static const BINU32_TEST_T g_aTests_bsr_u32[]        = { {0} };
-static const BINU32_TEST_T g_aTests_imul_two_u32[]   = { {0} };
+#endif
+#ifndef HAVE_BINU32_TESTS_AMD
+static const BINU32_TEST_T g_aTests_bsf_u32_amd[]           = { {0} };
+static const BINU32_TEST_T g_aTests_bsr_u32_amd[]           = { {0} };
+static const BINU32_TEST_T g_aTests_imul_two_u32_amd[]      = { {0} };
+#endif
+#ifndef HAVE_BINU32_TESTS_INTEL
+static const BINU32_TEST_T g_aTests_bsf_u32_intel[]         = { {0} };
+static const BINU32_TEST_T g_aTests_bsr_u32_intel[]         = { {0} };
+static const BINU32_TEST_T g_aTests_imul_two_u32_intel[]    = { {0} };
 #endif
 
 static const BINU32_T g_aBinU32[] =
@@ -537,67 +716,15 @@ static const BINU32_T g_aBinU32[] =
     ENTRY_EX(btr_u32_locked, 1),
     ENTRY_EX(bts_u32, 1),
     ENTRY_EX(bts_u32_locked, 1),
-    ENTRY(bsf_u32),
-    ENTRY(bsr_u32),
-    ENTRY(imul_two_u32),
+    ENTRY_AMD(  bsf_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_INTEL(bsf_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_AMD(  bsr_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_INTEL(bsr_u32, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_AMD(  imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+    ENTRY_INTEL(imul_two_u32, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
 };
 
-static void BinU32Generate(uint32_t cTests)
-{
-    RTPrintf("\n\n#define HAVE_BINU32_TESTS\n");
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU32); iFn++)
-    {
-        RTPrintf("static const BINU32_TEST_T g_aTests_%s[] =\n{\n", g_aBinU32[iFn].pszName);
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
-        {
-            BINU32_TEST_T Test;
-            Test.fEflIn    = RandEFlags();
-            Test.fEflOut   = Test.fEflIn;
-            Test.uDstIn    = RandU32();
-            Test.uDstOut   = Test.uDstIn;
-            Test.uSrcIn    = RandU32();
-            if (g_aBinU32[iFn].uExtra)
-                Test.uSrcIn &= 0x1f; /* Restrict bit index to a word */
-            Test.uMisc     = 0;
-            g_aBinU32[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
-            RTPrintf("    { %#08x, %#08x, %#010RX32, %#010RX32, %#010RX32, %#x }, /* #%u */\n",
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest);
-        }
-        RTPrintf("};\n");
-    }
-}
-
-static void BinU32Test(void)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU32); iFn++)
-    {
-        RTTestSub(g_hTest, g_aBinU32[iFn].pszName);
-
-        BINU32_TEST_T const * const paTests = g_aBinU32[iFn].paTests;
-        uint32_t const              cTests  = g_aBinU32[iFn].cTests;
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
-        {
-            uint32_t fEfl = paTests[iTest].fEflIn;
-            uint32_t uDst = paTests[iTest].uDstIn;
-            g_aBinU32[iFn].pfn(&uDst, paTests[iTest].uSrcIn, &fEfl);
-            if (   uDst != paTests[iTest].uDstOut
-                || fEfl != paTests[iTest].fEflOut)
-                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=%#010RX32 src=%#010RX32 -> efl=%#08x dst=%#010RX32, expected %#08x & %#010RX32%s - %s\n",
-                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn,
-                             fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut,
-                             EFlagsDiff(fEfl, paTests[iTest].fEflOut),
-                             uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both");
-            else
-            {
-                 *g_pu32  = paTests[iTest].uDstIn;
-                 *g_pfEfl = paTests[iTest].fEflIn;
-                 g_aBinU32[iFn].pfn(g_pu32, paTests[iTest].uSrcIn, g_pfEfl);
-                 RTTEST_CHECK(g_hTest, *g_pu32  == paTests[iTest].uDstOut);
-                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut);
-            }
-        }
-    }
-}
+TEST_BINARY_OPS(32, uint32_t, "%#010RX32", g_aBinU32)
 
 
 /*
@@ -628,9 +755,16 @@ static const BINU64_TEST_T g_aTests_btr_u64[]        = { {0} };
 static const BINU64_TEST_T g_aTests_btr_u64_locked[] = { {0} };
 static const BINU64_TEST_T g_aTests_bts_u64[]        = { {0} };
 static const BINU64_TEST_T g_aTests_bts_u64_locked[] = { {0} };
-static const BINU64_TEST_T g_aTests_bsf_u64[]        = { {0} };
-static const BINU64_TEST_T g_aTests_bsr_u64[]        = { {0} };
-static const BINU64_TEST_T g_aTests_imul_two_u64[]   = { {0} };
+#endif
+#ifndef HAVE_BINU64_TESTS_AMD
+static const BINU64_TEST_T g_aTests_bsf_u64_amd[]           = { {0} };
+static const BINU64_TEST_T g_aTests_bsr_u64_amd[]           = { {0} };
+static const BINU64_TEST_T g_aTests_imul_two_u64_amd[]      = { {0} };
+#endif
+#ifndef HAVE_BINU64_TESTS_INTEL
+static const BINU64_TEST_T g_aTests_bsf_u64_intel[]         = { {0} };
+static const BINU64_TEST_T g_aTests_bsr_u64_intel[]         = { {0} };
+static const BINU64_TEST_T g_aTests_imul_two_u64_intel[]    = { {0} };
 #endif
 
 static const BINU64_T g_aBinU64[] =
@@ -658,67 +792,15 @@ static const BINU64_T g_aBinU64[] =
     ENTRY_EX(btr_u64_locked, 1),
     ENTRY_EX(bts_u64, 1),
     ENTRY_EX(bts_u64_locked, 1),
-    ENTRY(bsf_u64),
-    ENTRY(bsr_u64),
-    ENTRY(imul_two_u64),
+    ENTRY_AMD(  bsf_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_INTEL(bsf_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_AMD(  bsr_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_INTEL(bsr_u64, X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF),
+    ENTRY_AMD(  imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
+    ENTRY_INTEL(imul_two_u64, X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF),
 };
 
-static void BinU64Generate(uint32_t cTests)
-{
-    RTPrintf("\n\n#define HAVE_BINU64_TESTS\n");
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU64); iFn++)
-    {
-        RTPrintf("static const BINU64_TEST_T g_aTests_%s[] =\n{\n", g_aBinU64[iFn].pszName);
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
-        {
-            BINU64_TEST_T Test;
-            Test.fEflIn    = RandEFlags();
-            Test.fEflOut   = Test.fEflIn;
-            Test.uDstIn    = RandU64();
-            Test.uDstOut   = Test.uDstIn;
-            Test.uSrcIn    = RandU64();
-            if (g_aBinU64[iFn].uExtra)
-                Test.uSrcIn &= 0x3f; /* Restrict bit index to a word */
-            Test.uMisc     = 0;
-            g_aBinU64[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
-            RTPrintf("    { %#08x, %#08x, %#018RX64, %#018RX64, %#018RX64, %#x }, /* #%u */\n",
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest);
-        }
-        RTPrintf("};\n");
-    }
-}
-
-static void BinU64Test(void)
-{
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aBinU64); iFn++)
-    {
-        RTTestSub(g_hTest, g_aBinU64[iFn].pszName);
-
-        BINU64_TEST_T const * const paTests = g_aBinU64[iFn].paTests;
-        uint32_t const              cTests  = g_aBinU64[iFn].cTests;
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
-        {
-            uint32_t fEfl = paTests[iTest].fEflIn;
-            uint64_t uDst = paTests[iTest].uDstIn;
-            g_aBinU64[iFn].pfn(&uDst, paTests[iTest].uSrcIn, &fEfl);
-            if (   uDst != paTests[iTest].uDstOut
-                || fEfl != paTests[iTest].fEflOut)
-                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=%#018RX64 src=%#018RX64 -> efl=%#08x dst=%#018RX64, expected %#08x & %#018RX64%s - %s\n",
-                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn,
-                             fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut,
-                             EFlagsDiff(fEfl, paTests[iTest].fEflOut),
-                             uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both");
-            else
-            {
-                 *g_pu64  = paTests[iTest].uDstIn;
-                 *g_pfEfl = paTests[iTest].fEflIn;
-                 g_aBinU64[iFn].pfn(g_pu64, paTests[iTest].uSrcIn, g_pfEfl);
-                 RTTEST_CHECK(g_hTest, *g_pu64  == paTests[iTest].uDstOut);
-                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut);
-            }
-        }
-    }
-}
+TEST_BINARY_OPS(64, uint64_t, "%#018RX64", g_aBinU64)
 
 
 /*
@@ -1057,19 +1139,21 @@ static const struct \
 { \
     const char                       *pszName; \
     PFNIEMAIMPLSHIFTDBLU ## a_cBits   pfn; \
+    PFNIEMAIMPLSHIFTDBLU ## a_cBits   pfnNative; \
     BINU ## a_cBits ## _TEST_T const *paTests; \
     uint32_t                          cTests, uExtra; \
+    uint8_t                           idxCpuEflFlavour; \
 } g_aShiftDblU ## a_cBits [] = \
 { \
     ENTRY(shld_u ## a_cBits), \
     ENTRY(shrd_u ## a_cBits), \
 }; \
 \
-static void ShiftDblU ## a_cBits ## Generate(uint32_t cTests) \
+void ShiftDblU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aShiftDblU ## a_cBits); iFn++) \
     { \
-        RTPrintf("static const BINU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aShiftDblU ## a_cBits[iFn].pszName); \
+        RTStrmPrintf(pOut, "static const BINU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aShiftDblU ## a_cBits[iFn].pszName); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
             BINU ## a_cBits ## _TEST_T Test; \
@@ -1080,10 +1164,10 @@ static void ShiftDblU ## a_cBits ## Generate(uint32_t cTests) \
             Test.uSrcIn    = RandU ## a_cBits(); \
             Test.uMisc     = RandU8() & (a_cBits - 1); \
             g_aShiftDblU ## a_cBits[iFn].pfn(&Test.uDstOut, Test.uSrcIn, Test.uMisc, &Test.fEflOut); \
-            RTPrintf("    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %2u }, /* #%u */\n", \
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
+            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %2u }, /* #%u */\n", \
+                        Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
         } \
-        RTPrintf("};\n"); \
+        RTStrmPrintf(pOut, "};\n"); \
     } \
 } \
 \
@@ -1120,13 +1204,15 @@ TEST_SHIFT_DBL(16, uint16_t, "%#06RX16")
 TEST_SHIFT_DBL(32, uint32_t, "%#010RX32")
 TEST_SHIFT_DBL(64, uint64_t, "%#018RX64")
 
-static void ShiftDblGenerate(uint32_t cTests)
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static void ShiftDblGenerate(PRTSTREAM pOut, uint32_t cTests)
 {
-    RTPrintf("\n\n#define HAVE_SHIFT_DBL_TESTS\n");
-    ShiftDblU16Generate(cTests);
-    ShiftDblU32Generate(cTests);
-    ShiftDblU64Generate(cTests);
+    RTStrmPrintf(pOut, "\n\n#define HAVE_SHIFT_DBL_TESTS\n");
+    ShiftDblU16Generate(pOut, cTests);
+    ShiftDblU32Generate(pOut, cTests);
+    ShiftDblU64Generate(pOut, cTests);
 }
+#endif
 
 static void ShiftDblTest(void)
 {
@@ -1163,8 +1249,10 @@ static const struct \
 { \
     const char                  *pszName; \
     PFNIEMAIMPLUNARYU ## a_cBits pfn; \
+    PFNIEMAIMPLUNARYU ## a_cBits pfnNative; \
     a_TestType const            *paTests; \
     uint32_t                     cTests, uExtra; \
+    uint8_t                      idxCpuEflFlavour; \
 } g_aUnaryU ## a_cBits [] = \
 { \
     ENTRY(inc_u ## a_cBits), \
@@ -1177,11 +1265,11 @@ static const struct \
     ENTRY(neg_u ## a_cBits ## _locked), \
 }; \
 \
-static void UnaryU ## a_cBits ## Generate(uint32_t cTests) \
+void UnaryU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aUnaryU ## a_cBits); iFn++) \
     { \
-        RTPrintf("static const BINU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aUnaryU ## a_cBits[iFn].pszName); \
+        RTStrmPrintf(pOut, "static const BINU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aUnaryU ## a_cBits[iFn].pszName); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
             a_TestType Test; \
@@ -1192,10 +1280,10 @@ static void UnaryU ## a_cBits ## Generate(uint32_t cTests) \
             Test.uSrcIn    = 0; \
             Test.uMisc     = 0; \
             g_aUnaryU ## a_cBits[iFn].pfn(&Test.uDstOut, &Test.fEflOut); \
-            RTPrintf("    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", 0, 0 }, /* #%u */\n", \
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, iTest); \
+            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", 0, 0 }, /* #%u */\n", \
+                        Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, iTest); \
         } \
-        RTPrintf("};\n"); \
+        RTStrmPrintf(pOut, "};\n"); \
     } \
 } \
 \
@@ -1233,14 +1321,16 @@ TEST_UNARY(16, uint16_t, "%#06RX16",  BINU16_TEST_T)
 TEST_UNARY(32, uint32_t, "%#010RX32", BINU32_TEST_T)
 TEST_UNARY(64, uint64_t, "%#018RX64", BINU64_TEST_T)
 
-static void UnaryGenerate(uint32_t cTests)
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static void UnaryGenerate(PRTSTREAM pOut, uint32_t cTests)
 {
-    RTPrintf("\n\n#define HAVE_UNARY_TESTS\n");
-    UnaryU8Generate(cTests);
-    UnaryU16Generate(cTests);
-    UnaryU32Generate(cTests);
-    UnaryU64Generate(cTests);
+    RTStrmPrintf(pOut, "\n\n#define HAVE_UNARY_TESTS\n");
+    UnaryU8Generate(pOut, cTests);
+    UnaryU16Generate(pOut, cTests);
+    UnaryU32Generate(pOut, cTests);
+    UnaryU64Generate(pOut, cTests);
 }
+#endif
 
 static void UnaryTest(void)
 {
@@ -1277,8 +1367,10 @@ static const struct \
 { \
     const char                  *pszName; \
     PFNIEMAIMPLSHIFTU ## a_cBits pfn; \
+    PFNIEMAIMPLSHIFTU ## a_cBits pfnNative; \
     a_TestType const            *paTests; \
     uint32_t                     cTests, uExtra; \
+    uint8_t                      idxCpuEflFlavour; \
 } g_aShiftU ## a_cBits [] = \
 { \
     ENTRY(rol_u ## a_cBits), \
@@ -1290,11 +1382,11 @@ static const struct \
     ENTRY(sar_u ## a_cBits), \
 }; \
 \
-static void ShiftU ## a_cBits ## Generate(uint32_t cTests) \
+void ShiftU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aShiftU ## a_cBits); iFn++) \
     { \
-        RTPrintf("static const BINU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aShiftU ## a_cBits[iFn].pszName); \
+        RTStrmPrintf(pOut, "static const BINU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aShiftU ## a_cBits[iFn].pszName); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
             a_TestType Test; \
@@ -1305,10 +1397,10 @@ static void ShiftU ## a_cBits ## Generate(uint32_t cTests) \
             Test.uSrcIn    = 0; \
             Test.uMisc     = RandU8() & (a_cBits - 1); \
             g_aShiftU ## a_cBits[iFn].pfn(&Test.uDstOut, Test.uMisc, &Test.fEflOut); \
-            RTPrintf("    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", 0, %-2u }, /* #%u */\n", \
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uMisc, iTest); \
+            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", 0, %-2u }, /* #%u */\n", \
+                        Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uMisc, iTest); \
         } \
-        RTPrintf("};\n"); \
+        RTStrmPrintf(pOut, "};\n"); \
     } \
 } \
 \
@@ -1346,14 +1438,16 @@ TEST_SHIFT(16, uint16_t, "%#06RX16",  BINU16_TEST_T)
 TEST_SHIFT(32, uint32_t, "%#010RX32", BINU32_TEST_T)
 TEST_SHIFT(64, uint64_t, "%#018RX64", BINU64_TEST_T)
 
-static void ShiftGenerate(uint32_t cTests)
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static void ShiftGenerate(PRTSTREAM pOut, uint32_t cTests)
 {
-    RTPrintf("\n\n#define HAVE_SHIFT_TESTS\n");
-    ShiftU8Generate(cTests);
-    ShiftU16Generate(cTests);
-    ShiftU32Generate(cTests);
-    ShiftU64Generate(cTests);
+    RTStrmPrintf(pOut, "\n\n#define HAVE_SHIFT_TESTS\n");
+    ShiftU8Generate(pOut, cTests);
+    ShiftU16Generate(pOut, cTests);
+    ShiftU32Generate(pOut, cTests);
+    ShiftU64Generate(pOut, cTests);
 }
+#endif
 
 static void ShiftTest(void)
 {
@@ -1371,16 +1465,24 @@ static void ShiftTest(void)
  * Note! Currently ignoring undefined bits.
  */
 
-#ifndef HAVE_MULDIV_TESTS
-# define DUMMY_MULDIV_TESTS(a_cBits, a_Type) \
-    static const a_Type g_aTests_mul_u ## a_cBits[]  = { {0} }; \
-    static const a_Type g_aTests_imul_u ## a_cBits[] = { {0} }; \
-    static const a_Type g_aTests_div_u ## a_cBits[]  = { {0} }; \
-    static const a_Type g_aTests_idiv_u ## a_cBits[] = { {0} }
-DUMMY_MULDIV_TESTS(8,  MULDIVU8_TEST_T);
-DUMMY_MULDIV_TESTS(16, MULDIVU16_TEST_T);
-DUMMY_MULDIV_TESTS(32, MULDIVU32_TEST_T);
-DUMMY_MULDIV_TESTS(64, MULDIVU64_TEST_T);
+# define DUMMY_MULDIV_TESTS(a_cBits, a_Type, a_Vendor) \
+    static const a_Type g_aTests_mul_u ## a_cBits ## a_Vendor[]  = { {0} }; \
+    static const a_Type g_aTests_imul_u ## a_cBits ## a_Vendor[] = { {0} }; \
+    static const a_Type g_aTests_div_u ## a_cBits ## a_Vendor[]  = { {0} }; \
+    static const a_Type g_aTests_idiv_u ## a_cBits ## a_Vendor[] = { {0} }
+
+#ifndef HAVE_MULDIV_TESTS_AMD
+DUMMY_MULDIV_TESTS(8,  MULDIVU8_TEST_T,  _amd);
+DUMMY_MULDIV_TESTS(16, MULDIVU16_TEST_T, _amd);
+DUMMY_MULDIV_TESTS(32, MULDIVU32_TEST_T, _amd);
+DUMMY_MULDIV_TESTS(64, MULDIVU64_TEST_T, _amd);
+#endif
+
+#ifndef HAVE_MULDIV_TESTS_INTEL
+DUMMY_MULDIV_TESTS(8,  MULDIVU8_TEST_T,  _intel);
+DUMMY_MULDIV_TESTS(16, MULDIVU16_TEST_T, _intel);
+DUMMY_MULDIV_TESTS(32, MULDIVU32_TEST_T, _intel);
+DUMMY_MULDIV_TESTS(64, MULDIVU64_TEST_T, _intel);
 #endif
 
 /* U8 */
@@ -1388,41 +1490,60 @@ static const struct
 {
     const char                     *pszName;
     PFNIEMAIMPLMULDIVU8             pfn;
+    PFNIEMAIMPLMULDIVU8             pfnNative;
     MULDIVU8_TEST_T const          *paTests;
     uint32_t                        cTests, uExtra;
+    uint8_t                         idxCpuEflFlavour;
 } g_aMulDivU8[] =
 {
-    ENTRY_EX(mul_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
-    ENTRY_EX(imul_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
-    ENTRY_EX(div_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF),
-    ENTRY_EX(idiv_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF),
+    ENTRY_AMD_EX(mul_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
+                            X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
+    ENTRY_INTEL_EX(mul_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
+    ENTRY_AMD_EX(imul_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
+                            X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
+    ENTRY_INTEL_EX(imul_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
+    ENTRY_AMD_EX(div_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF,
+                            X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF),
+    ENTRY_INTEL_EX(div_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
+    ENTRY_AMD_EX(idiv_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF,
+                            X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF),
+    ENTRY_INTEL_EX(idiv_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
 };
 
-static void MulDivU8Generate(uint32_t cTests)
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static void MulDivU8Generate(PRTSTREAM pOut, uint32_t cTests)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
     {
-        RTPrintf("static const MULDIVU8_TEST_T g_aTests_%s[] =\n{\n", g_aMulDivU8[iFn].pszName);
+        if (   g_aMulDivU8[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE
+            && g_aMulDivU8[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour)
+            continue;
+        RTStrmPrintf(pOut, "static const MULDIVU8_TEST_T g_aTests_%s[] =\n{\n", g_aMulDivU8[iFn].pszName);
         for (uint32_t iTest = 0; iTest < cTests; iTest++ )
         {
             MULDIVU8_TEST_T Test;
             Test.fEflIn    = RandEFlags();
             Test.fEflOut   = Test.fEflIn;
-            Test.uDstIn    = RandU16();
+            Test.uDstIn    = RandU16Dst(iTest);
             Test.uDstOut   = Test.uDstIn;
-            Test.uSrcIn    = RandU8();
-            Test.rc        = g_aMulDivU8[iFn].pfn(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
-            RTPrintf("    { %#08x, %#08x, %#06RX16, %#06RX16, %#04RX8, %d }, /* #%u */\n",
-                     Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.rc, iTest);
+            Test.uSrcIn    = RandU8Src(iTest);
+            Test.rc        = g_aMulDivU8[iFn].pfnNative(&Test.uDstOut, Test.uSrcIn, &Test.fEflOut);
+            RTStrmPrintf(pOut, "    { %#08x, %#08x, %#06RX16, %#06RX16, %#04RX8, %d }, /* #%u */\n",
+                         Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.rc, iTest);
         }
-        RTPrintf("};\n");
+        RTStrmPrintf(pOut, "};\n");
     }
 }
+#endif
 
 static void MulDivU8Test(void)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
     {
+        if (   g_aMulDivU8[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE
+            && g_aMulDivU8[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour)
+            continue;
+
         RTTestSub(g_hTest, g_aMulDivU8[iFn].pszName);
         MULDIVU8_TEST_T const * const paTests = g_aMulDivU8[iFn].paTests;
         uint32_t const                cTests  = g_aMulDivU8[iFn].cTests;
@@ -1454,98 +1575,130 @@ static void MulDivU8Test(void)
     }
 }
 
-#define TEST_MULDIV(a_cBits, a_Type, a_Fmt, a_TestType) \
-static const struct \
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+# define GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
+void MulDivU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
-    const char                     *pszName; \
-    PFNIEMAIMPLMULDIVU ## a_cBits   pfn; \
-    a_TestType const               *paTests; \
-    uint32_t                        cTests, uExtra; \
-} g_aMulDivU ## a_cBits [] = \
-{ \
-    ENTRY_EX(mul_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF), \
-    ENTRY_EX(imul_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF), \
-    ENTRY_EX(div_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF), \
-    ENTRY_EX(idiv_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF), \
-}; \
-\
-static void MulDivU ## a_cBits ## Generate(uint32_t cTests) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU ## a_cBits); iFn++) \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        RTPrintf("static const MULDIVU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aMulDivU ## a_cBits[iFn].pszName); \
+        if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
+            && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
+            continue; \
+        RTStrmPrintf(pOut, "static const MULDIVU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", a_aSubTests[iFn].pszName); \
         for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
         { \
             a_TestType Test; \
             Test.fEflIn    = RandEFlags(); \
             Test.fEflOut   = Test.fEflIn; \
-            Test.uDst1In   = RandU ## a_cBits(); \
+            Test.uDst1In   = RandU ## a_cBits ## Dst(iTest); \
             Test.uDst1Out  = Test.uDst1In; \
-            Test.uDst2In   = RandU ## a_cBits(); \
+            Test.uDst2In   = RandU ## a_cBits ## Dst(iTest); \
             Test.uDst2Out  = Test.uDst2In; \
-            Test.uSrcIn    = RandU ## a_cBits(); \
-            Test.rc        = g_aMulDivU ## a_cBits[iFn].pfn(&Test.uDst1Out, &Test.uDst2Out, Test.uSrcIn, &Test.fEflOut); \
-            RTPrintf("    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", " a_Fmt ", " a_Fmt ", %d }, /* #%u */\n", \
-                     Test.fEflIn, Test.fEflOut, Test.uDst1In, Test.uDst1Out, Test.uDst2In, Test.uDst2Out, Test.uSrcIn, \
-                     Test.rc, iTest); \
+            Test.uSrcIn    = RandU ## a_cBits ## Src(iTest); \
+            Test.rc        = a_aSubTests[iFn].pfnNative(&Test.uDst1Out, &Test.uDst2Out, Test.uSrcIn, &Test.fEflOut); \
+            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", " a_Fmt ", " a_Fmt ", %d }, /* #%u */\n", \
+                        Test.fEflIn, Test.fEflOut, Test.uDst1In, Test.uDst1Out, Test.uDst2In, Test.uDst2Out, Test.uSrcIn, \
+                        Test.rc, iTest); \
         } \
-        RTPrintf("};\n"); \
+        RTStrmPrintf(pOut, "};\n"); \
     } \
-} \
+}
+#else
+# define GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests)
+#endif
+
+#define TEST_MULDIV(a_cBits, a_Type, a_Fmt, a_TestType, a_aSubTests) \
+static const struct \
+{ \
+    const char                     *pszName; \
+    PFNIEMAIMPLMULDIVU ## a_cBits   pfn; \
+    PFNIEMAIMPLMULDIVU ## a_cBits   pfnNative; \
+    a_TestType const               *paTests; \
+    uint32_t                        cTests, uExtra; \
+    uint8_t                         idxCpuEflFlavour; \
+} a_aSubTests [] = \
+{ \
+    ENTRY_AMD_EX(mul_u ## a_cBits,       X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, \
+                                         X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF /** @todo check out AMD flags */ ), \
+    ENTRY_INTEL_EX(mul_u ## a_cBits,     X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_AMD_EX(imul_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, \
+                                      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF), \
+    ENTRY_INTEL_EX(imul_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_AMD_EX(div_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF,  \
+                                      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF), \
+    ENTRY_INTEL_EX(div_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
+    ENTRY_AMD_EX(idiv_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, \
+                                      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF), \
+    ENTRY_INTEL_EX(idiv_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
+}; \
+\
+GEN_MULDIV(a_cBits, a_Fmt, a_TestType, a_aSubTests) \
 \
 static void MulDivU ## a_cBits ## Test(void) \
 { \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU ## a_cBits); iFn++) \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        RTTestSub(g_hTest, g_aMulDivU ## a_cBits[iFn].pszName); \
-        a_TestType const * const paTests = g_aMulDivU ## a_cBits[iFn].paTests; \
-        uint32_t const           cTests  = g_aMulDivU ## a_cBits[iFn].cTests; \
-        uint32_t const           fEflIgn = g_aMulDivU ## a_cBits[iFn].uExtra; \
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+        if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
+            && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
+            continue; \
+        \
+        RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
+        a_TestType const * const      paTests = a_aSubTests[iFn].paTests; \
+        uint32_t const                cTests  = a_aSubTests[iFn].cTests; \
+        uint32_t const                fEflIgn = a_aSubTests[iFn].uExtra; \
+        PFNIEMAIMPLMULDIVU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
+        for (uint32_t iCpu = 0; iCpu < 2 && pfn; iCpu++) \
         { \
-            uint32_t fEfl  = paTests[iTest].fEflIn; \
-            a_Type   uDst1 = paTests[iTest].uDst1In; \
-            a_Type   uDst2 = paTests[iTest].uDst2In; \
-            int rc = g_aMulDivU ## a_cBits[iFn].pfn(&uDst1, &uDst2, paTests[iTest].uSrcIn, &fEfl); \
-            if (   uDst1 != paTests[iTest].uDst1Out \
-                || uDst2 != paTests[iTest].uDst2Out \
-                || (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn)\
-                || rc    != paTests[iTest].rc) \
-                RTTestFailed(g_hTest, "#%02u: efl=%#08x dst1=" a_Fmt " dst2=" a_Fmt " src=" a_Fmt "\n" \
-                                       "  -> efl=%#08x dst1=" a_Fmt  " dst2=" a_Fmt " rc=%d\n" \
-                                       "expected %#08x      " a_Fmt  "      " a_Fmt "    %d%s -%s%s%s\n", \
-                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDst1In, paTests[iTest].uDst2In, paTests[iTest].uSrcIn, \
-                             fEfl, uDst1, uDst2, rc, \
-                             paTests[iTest].fEflOut, paTests[iTest].uDst1Out, paTests[iTest].uDst2Out, paTests[iTest].rc, \
-                             EFlagsDiff(fEfl | fEflIgn, paTests[iTest].fEflOut | fEflIgn), \
-                             uDst1 != paTests[iTest].uDst1Out ? " dst1" : "", uDst2 != paTests[iTest].uDst2Out ? " dst2" : "", \
-                             (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn) ? " eflags" : ""); \
-            else \
+            for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
             { \
-                 *g_pu ## a_cBits        = paTests[iTest].uDst1In; \
-                 *g_pu ## a_cBits ## Two = paTests[iTest].uDst2In; \
-                 *g_pfEfl                = paTests[iTest].fEflIn; \
-                 rc  = g_aMulDivU ## a_cBits[iFn].pfn(g_pu ## a_cBits, g_pu ## a_cBits ## Two, paTests[iTest].uSrcIn, g_pfEfl); \
-                 RTTEST_CHECK(g_hTest, *g_pu ## a_cBits        == paTests[iTest].uDst1Out); \
-                 RTTEST_CHECK(g_hTest, *g_pu ## a_cBits ## Two == paTests[iTest].uDst2Out); \
-                 RTTEST_CHECK(g_hTest, (*g_pfEfl | fEflIgn)    == (paTests[iTest].fEflOut | fEflIgn)); \
-                 RTTEST_CHECK(g_hTest, rc                      == paTests[iTest].rc); \
+                uint32_t fEfl  = paTests[iTest].fEflIn; \
+                a_Type   uDst1 = paTests[iTest].uDst1In; \
+                a_Type   uDst2 = paTests[iTest].uDst2In; \
+                int rc = a_aSubTests[iFn].pfn(&uDst1, &uDst2, paTests[iTest].uSrcIn, &fEfl); \
+                if (   uDst1 != paTests[iTest].uDst1Out \
+                    || uDst2 != paTests[iTest].uDst2Out \
+                    || (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn)\
+                    || rc    != paTests[iTest].rc) \
+                    RTTestFailed(g_hTest, "#%02u%s: efl=%#08x dst1=" a_Fmt " dst2=" a_Fmt " src=" a_Fmt "\n" \
+                                           "  -> efl=%#08x dst1=" a_Fmt  " dst2=" a_Fmt " rc=%d\n" \
+                                           "expected %#08x      " a_Fmt  "      " a_Fmt "    %d%s -%s%s%s\n", \
+                                 iTest, iCpu == 0 ? "" : "/n", \
+                                 paTests[iTest].fEflIn, paTests[iTest].uDst1In, paTests[iTest].uDst2In, paTests[iTest].uSrcIn, \
+                                 fEfl, uDst1, uDst2, rc, \
+                                 paTests[iTest].fEflOut, paTests[iTest].uDst1Out, paTests[iTest].uDst2Out, paTests[iTest].rc, \
+                                 EFlagsDiff(fEfl | fEflIgn, paTests[iTest].fEflOut | fEflIgn), \
+                                 uDst1 != paTests[iTest].uDst1Out ? " dst1" : "", uDst2 != paTests[iTest].uDst2Out ? " dst2" : "", \
+                                 (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn) ? " eflags" : ""); \
+                else \
+                { \
+                     *g_pu ## a_cBits        = paTests[iTest].uDst1In; \
+                     *g_pu ## a_cBits ## Two = paTests[iTest].uDst2In; \
+                     *g_pfEfl                = paTests[iTest].fEflIn; \
+                     rc  = a_aSubTests[iFn].pfn(g_pu ## a_cBits, g_pu ## a_cBits ## Two, paTests[iTest].uSrcIn, g_pfEfl); \
+                     RTTEST_CHECK(g_hTest, *g_pu ## a_cBits        == paTests[iTest].uDst1Out); \
+                     RTTEST_CHECK(g_hTest, *g_pu ## a_cBits ## Two == paTests[iTest].uDst2Out); \
+                     RTTEST_CHECK(g_hTest, (*g_pfEfl | fEflIgn)    == (paTests[iTest].fEflOut | fEflIgn)); \
+                     RTTEST_CHECK(g_hTest, rc                      == paTests[iTest].rc); \
+                } \
             } \
+            pfn = a_aSubTests[iFn].pfnNative; \
         } \
     } \
 }
-TEST_MULDIV(16, uint16_t, "%#06RX16",  MULDIVU16_TEST_T)
-TEST_MULDIV(32, uint32_t, "%#010RX32", MULDIVU32_TEST_T)
-TEST_MULDIV(64, uint64_t, "%#018RX64", MULDIVU64_TEST_T)
+TEST_MULDIV(16, uint16_t, "%#06RX16",  MULDIVU16_TEST_T, g_aMulDivU16)
+TEST_MULDIV(32, uint32_t, "%#010RX32", MULDIVU32_TEST_T, g_aMulDivU32)
+TEST_MULDIV(64, uint64_t, "%#018RX64", MULDIVU64_TEST_T, g_aMulDivU64)
 
-static void MulDivGenerate(uint32_t cTests)
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static void MulDivGenerate(PRTSTREAM pOut, const char *pszCpuSuffU, uint32_t cTests)
 {
-    RTPrintf("\n\n#define HAVE_MULDIV_TESTS\n");
-    MulDivU8Generate(cTests);
-    MulDivU16Generate(cTests);
-    MulDivU32Generate(cTests);
-    MulDivU64Generate(cTests);
+    RTStrmPrintf(pOut, "\n\n#define HAVE_MULDIV_TESTS%s\n", pszCpuSuffU);
+    MulDivU8Generate(pOut, cTests);
+    MulDivU16Generate(pOut, cTests);
+    MulDivU32Generate(pOut, cTests);
+    MulDivU64Generate(pOut, cTests);
 }
+#endif
 
 static void MulDivTest(void)
 {
@@ -1589,49 +1742,6 @@ static void BswapTest(void)
 }
 
 
-/*
- * Random helpers.
- */
-
-static uint32_t RandEFlags(void)
-{
-    uint32_t fEfl = RTRandU32();
-    return (fEfl & X86_EFL_LIVE_MASK) | X86_EFL_RA1_MASK;
-}
-
-static uint8_t  RandU8(void)
-{
-    return RTRandU32Ex(0, 0xff);
-}
-
-
-static uint16_t  RandU16(void)
-{
-    return RTRandU32Ex(0, 0xffff);
-}
-
-
-static uint32_t  RandU32(void)
-{
-    return RTRandU32();
-}
-
-
-static uint64_t  RandU64(void)
-{
-    return RTRandU64();
-}
-
-
-static RTUINT128U RandU128(void)
-{
-    RTUINT128U Ret;
-    Ret.s.Hi = RTRandU64();
-    Ret.s.Lo = RTRandU64();
-    return Ret;
-}
-
-
 int main(int argc, char **argv)
 {
     int rc = RTR3InitExe(argc, &argv, 0);
@@ -1639,41 +1749,59 @@ int main(int argc, char **argv)
         return RTMsgInitFailure(rc);
 
     /*
+     * Determin the host CPU.
+     */
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+    g_idxCpuEflFlavour = ASMIsAmdCpu() || ASMIsHygonCpu()
+                       ? IEMTARGETCPU_EFL_BEHAVIOR_AMD
+                       : IEMTARGETCPU_EFL_BEHAVIOR_INTEL;
+#endif
+
+    /*
      * Generate data?
      */
     if (argc > 2)
     {
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
         char szCpuDesc[256] = {0};
         RTMpGetDescription(NIL_RTCPUID, szCpuDesc, sizeof(szCpuDesc));
+        const char * const pszCpuType  = g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD ? "Amd" : "Intel";
+        //const char * const pszCpuTypeU = g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD ? "AMD" : "INTEL";
+        const char * const pszCpuSuff  = g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD ? "_Amd" : "_Intel";
+        //const char * const pszCpuSuffL = g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD ? "_amd" : "_intel";
+        const char * const pszCpuSuffU = g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD ? "_AMD" : "_INTEL";
 
-        RTPrintf("/* $Id$ */\n"
-                 "/** @file\n"
-                 " * IEM Assembly Instruction Helper Testcase Data - %s.\n"
-                 " */\n"
-                 "\n"
-                 "/*\n"
-                 " * Copyright (C) 2022 Oracle Corporation\n"
-                 " *\n"
-                 " * This file is part of VirtualBox Open Source Edition (OSE), as\n"
-                 " * available from http://www.virtualbox.org. This file is free software;\n"
-                 " * you can redistribute it and/or modify it under the terms of the GNU\n"
-                 " * General Public License (GPL) as published by the Free Software\n"
-                 " * Foundation, in version 2 as it comes in the \"COPYING\" file of the\n"
-                 " * VirtualBox OSE distribution. VirtualBox OSE is distributed in the\n"
-                 " * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.\n"
-                 " */\n"
-                 "\n"
-                 , szCpuDesc);
+        PRTSTREAM pStrmData = NULL;
+        rc = RTStrmOpen("tstIEMAImplData.h", "w", &pStrmData);
+        if (!pStrmData)
+            return RTMsgErrorExitFailure("Failed to open tstIEMAImplData.h for writing: %Rrc", rc);
+
+        PRTSTREAM pStrmDataCpu = NULL;
+        rc = RTStrmOpenF("w", &pStrmDataCpu, "tstIEMAImplData-%s.h", pszCpuType);
+        if (!pStrmData)
+            return RTMsgErrorExitFailure("Failed to open tstIEMAImplData-%s.h for writing: %Rrc", pszCpuType, rc);
+
+        GenerateHeader(pStrmData, szCpuDesc, NULL, "");
+        GenerateHeader(pStrmDataCpu, szCpuDesc, pszCpuType, pszCpuSuff);
+
         uint32_t cTests = 64;
-        BinU8Generate(cTests);
-        BinU16Generate(cTests);
-        BinU32Generate(cTests);
-        BinU64Generate(cTests);
-        ShiftDblGenerate(cTests);
-        UnaryGenerate(cTests);
-        ShiftGenerate(cTests);
-        MulDivGenerate(cTests);
-        return RTEXITCODE_SUCCESS;
+        g_cZeroDstTests = RT_MIN(cTests / 16, 32);
+        g_cZeroSrcTests = g_cZeroDstTests * 2;
+
+        BinU8Generate( pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
+        BinU16Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
+        BinU32Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
+        BinU64Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
+        ShiftDblGenerate(pStrmData, cTests);
+        UnaryGenerate(pStrmData, cTests);
+        ShiftGenerate(pStrmData, cTests);
+        MulDivGenerate(pStrmDataCpu, pszCpuSuffU, cTests);
+
+        return GenerateFooterAndClose(pStrmDataCpu, pszCpuType, pszCpuSuff,
+                                      GenerateFooterAndClose(pStrmData, NULL, "", RTEXITCODE_SUCCESS));
+#else
+        return RTMsgErrorExitFailure("Test data generator not compiled in!");
+#endif
     }
 
     /*

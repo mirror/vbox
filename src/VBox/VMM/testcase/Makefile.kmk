@@ -251,7 +251,7 @@ tstIEMAImpl_SOURCES   = \
 
 # This variant mainly for generating data.
 tstIEMAImplAsm_TEMPLATE  = VBOXR3TSTEXE
-tstIEMAImplAsm_DEFS      = $(VMM_COMMON_DEFS) IEM_WITH_ASSEMBLY IN_TSTVMSTRUCT
+tstIEMAImplAsm_DEFS      = $(VMM_COMMON_DEFS) IEM_WITH_ASSEMBLY IN_TSTVMSTRUCT TSTIEMAIMPL_WITH_GENERATOR
 tstIEMAImplAsm_INCS      = ../include
 tstIEMAImplAsm_SOURCES   = \
 	tstIEMAImpl.cpp \

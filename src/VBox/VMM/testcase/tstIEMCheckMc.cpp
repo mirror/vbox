@@ -196,7 +196,6 @@ IEMOPBINSIZES g_iemAImpl_btr;
 IEMOPBINSIZES g_iemAImpl_bts;
 IEMOPBINSIZES g_iemAImpl_bsf;
 IEMOPBINSIZES g_iemAImpl_bsr;
-IEMOPBINSIZES g_iemAImpl_imul_two;
 PCIEMOPBINSIZES g_apIemImplGrp1[8];
 IEMOPUNARYSIZES g_iemAImpl_inc;
 IEMOPUNARYSIZES g_iemAImpl_dec;
@@ -209,10 +208,6 @@ IEMOPSHIFTSIZES g_iemAImpl_rcr;
 IEMOPSHIFTSIZES g_iemAImpl_shl;
 IEMOPSHIFTSIZES g_iemAImpl_shr;
 IEMOPSHIFTSIZES g_iemAImpl_sar;
-IEMOPMULDIVSIZES g_iemAImpl_mul;
-IEMOPMULDIVSIZES g_iemAImpl_imul;
-IEMOPMULDIVSIZES g_iemAImpl_div;
-IEMOPMULDIVSIZES g_iemAImpl_idiv;
 IEMOPSHIFTDBLSIZES g_iemAImpl_shld;
 IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 IEMOPMEDIAF1L1 g_iemAImpl_punpcklbw;
@@ -228,11 +223,8 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqb;
 IEMOPMEDIAF2 g_iemAImpl_pcmpeqw;
 IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 
-
-#define iemAImpl_idiv_u8    ((PFNIEMAIMPLMULDIVU8)0)
-#define iemAImpl_div_u8     ((PFNIEMAIMPLMULDIVU8)0)
-#define iemAImpl_imul_u8    ((PFNIEMAIMPLMULDIVU8)0)
-#define iemAImpl_mul_u8     ((PFNIEMAIMPLMULDIVU8)0)
+#undef  IEMTARGETCPU_EFL_BEHAVIOR_SELECT
+#define IEMTARGETCPU_EFL_BEHAVIOR_SELECT(a_aArray) NULL
 
 #define iemAImpl_fpu_r32_to_r80         NULL
 #define iemAImpl_fcom_r80_by_r32        NULL
