@@ -1412,6 +1412,8 @@ IEMIMPL_SHIFT_OP sar, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | X86_E
 ;
 %macro IEMIMPL_SHIFT_DBL_OP 3
 BEGINCODE
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_intel, 16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_amd, 16
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
@@ -1427,6 +1429,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u16
 
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_intel, 16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_amd, 16
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
@@ -1443,6 +1447,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
  %ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_intel, 20
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_amd, 20
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3

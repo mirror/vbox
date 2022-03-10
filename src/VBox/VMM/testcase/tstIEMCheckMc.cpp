@@ -208,8 +208,6 @@ IEMOPSHIFTSIZES g_iemAImpl_rcr;
 IEMOPSHIFTSIZES g_iemAImpl_shl;
 IEMOPSHIFTSIZES g_iemAImpl_shr;
 IEMOPSHIFTSIZES g_iemAImpl_sar;
-IEMOPSHIFTDBLSIZES g_iemAImpl_shld;
-IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 IEMOPMEDIAF1L1 g_iemAImpl_punpcklbw;
 IEMOPMEDIAF1L1 g_iemAImpl_punpcklwd;
 IEMOPMEDIAF1L1 g_iemAImpl_punpckldq;

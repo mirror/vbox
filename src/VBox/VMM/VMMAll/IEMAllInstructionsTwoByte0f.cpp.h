@@ -6725,7 +6725,7 @@ FNIEMOP_DEF(iemOp_shld_Ev_Gv_Ib)
 {
     IEMOP_MNEMONIC(shld_Ev_Gv_Ib, "shld Ev,Gv,Ib");
     IEMOP_HLP_MIN_386();
-    return FNIEMOP_CALL_1(iemOpCommonShldShrd_Ib, &g_iemAImpl_shld);
+    return FNIEMOP_CALL_1(iemOpCommonShldShrd_Ib, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shld_eflags));
 }
 
 
@@ -6734,7 +6734,7 @@ FNIEMOP_DEF(iemOp_shld_Ev_Gv_CL)
 {
     IEMOP_MNEMONIC(shld_Ev_Gv_CL, "shld Ev,Gv,CL");
     IEMOP_HLP_MIN_386();
-    return FNIEMOP_CALL_1(iemOpCommonShldShrd_CL, &g_iemAImpl_shld);
+    return FNIEMOP_CALL_1(iemOpCommonShldShrd_CL, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shld_eflags));
 }
 
 
@@ -6783,7 +6783,7 @@ FNIEMOP_DEF(iemOp_shrd_Ev_Gv_Ib)
 {
     IEMOP_MNEMONIC(shrd_Ev_Gv_Ib, "shrd Ev,Gv,Ib");
     IEMOP_HLP_MIN_386();
-    return FNIEMOP_CALL_1(iemOpCommonShldShrd_Ib, &g_iemAImpl_shrd);
+    return FNIEMOP_CALL_1(iemOpCommonShldShrd_Ib, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shrd_eflags));
 }
 
 
@@ -6792,7 +6792,7 @@ FNIEMOP_DEF(iemOp_shrd_Ev_Gv_CL)
 {
     IEMOP_MNEMONIC(shrd_Ev_Gv_CL, "shrd Ev,Gv,CL");
     IEMOP_HLP_MIN_386();
-    return FNIEMOP_CALL_1(iemOpCommonShldShrd_CL, &g_iemAImpl_shrd);
+    return FNIEMOP_CALL_1(iemOpCommonShldShrd_CL, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shrd_eflags));
 }
 
 

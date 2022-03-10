@@ -1134,7 +1134,7 @@ IEM_STATIC PFNIEMAIMPLMULDIVU8 const g_iemAImpl_idiv_u8_eflags[] =
 };
 
 
-/** Function table for the SHLD instruction */
+/** Function table for the SHLD instruction. */
 IEM_STATIC const IEMOPSHIFTDBLSIZES g_iemAImpl_shld =
 {
     iemAImpl_shld_u16,
@@ -1142,12 +1142,62 @@ IEM_STATIC const IEMOPSHIFTDBLSIZES g_iemAImpl_shld =
     iemAImpl_shld_u64,
 };
 
-/** Function table for the SHRD instruction */
+/** Function table for the SHLD instruction, AMD EFLAGS variation. */
+IEM_STATIC const IEMOPSHIFTDBLSIZES g_iemAImpl_shld_amd =
+{
+    iemAImpl_shld_u16_amd,
+    iemAImpl_shld_u32_amd,
+    iemAImpl_shld_u64_amd
+};
+
+/** Function table for the SHLD instruction, Intel EFLAGS variation. */
+IEM_STATIC const IEMOPSHIFTDBLSIZES g_iemAImpl_shld_intel =
+{
+    iemAImpl_shld_u16_intel,
+    iemAImpl_shld_u32_intel,
+    iemAImpl_shld_u64_intel
+};
+
+/** EFLAGS variation selection table for the SHLD instruction. */
+IEM_STATIC const IEMOPSHIFTDBLSIZES * const g_iemAImpl_shld_eflags[] =
+{
+    &g_iemAImpl_shld,
+    &g_iemAImpl_shld_intel,
+    &g_iemAImpl_shld_amd,
+    &g_iemAImpl_shld
+};
+
+/** Function table for the SHRD instruction. */
 IEM_STATIC const IEMOPSHIFTDBLSIZES g_iemAImpl_shrd =
 {
     iemAImpl_shrd_u16,
     iemAImpl_shrd_u32,
-    iemAImpl_shrd_u64,
+    iemAImpl_shrd_u64
+};
+
+/** Function table for the SHRD instruction, AMD EFLAGS variation. */
+IEM_STATIC const IEMOPSHIFTDBLSIZES g_iemAImpl_shrd_amd =
+{
+    iemAImpl_shrd_u16_amd,
+    iemAImpl_shrd_u32_amd,
+    iemAImpl_shrd_u64_amd
+};
+
+/** Function table for the SHRD instruction, Intel EFLAGS variation. */
+IEM_STATIC const IEMOPSHIFTDBLSIZES g_iemAImpl_shrd_intel =
+{
+    iemAImpl_shrd_u16_intel,
+    iemAImpl_shrd_u32_intel,
+    iemAImpl_shrd_u64_intel
+};
+
+/** EFLAGS variation selection table for the SHRD instruction. */
+IEM_STATIC const IEMOPSHIFTDBLSIZES * const g_iemAImpl_shrd_eflags[] =
+{
+    &g_iemAImpl_shrd,
+    &g_iemAImpl_shrd_intel,
+    &g_iemAImpl_shrd_amd,
+    &g_iemAImpl_shrd
 };
 
 

@@ -366,8 +366,8 @@ static void GenerateHeader(PRTSTREAM pOut, const char *pszCpuDesc, const char *p
                  " * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.\n"
                  " */\n"
                  "\n"
-                 "#ifndef VMM_INCLUDE_SRC_testcase_tstIEMAImplData%s_h\n"
-                 "#define VMM_INCLUDE_SRC_testcase_tstIEMAImplData%s_h\n"
+                 "#ifndef VMM_INCLUDED_SRC_testcase_tstIEMAImplData%s_h\n"
+                 "#define VMM_INCLUDED_SRC_testcase_tstIEMAImplData%s_h\n"
                  "#ifndef RT_WITHOUT_PRAGMA_ONCE\n"
                  "# pragma once\n"
                  "#endif\n"
@@ -382,7 +382,7 @@ static RTEXITCODE GenerateFooterAndClose(PRTSTREAM pOut, const char *pszCpuType,
 {
     RTStrmPrintf(pOut,
                  "\n"
-                 "#endif /* !VMM_INCLUDE_SRC_testcase_tstIEMAImplData%s_h */\n", pszCpuSuff);
+                 "#endif /* !VMM_INCLUDED_SRC_testcase_tstIEMAImplData%s_h */\n", pszCpuSuff);
     int rc = RTStrmClose(pOut);
     if (RT_SUCCESS(rc))
         return rcExit;
@@ -1125,16 +1125,54 @@ static void CmpXchg16bTest(void)
  * Note! We use BINUxx_TEST_T with the shift value in the uMisc field.
  */
 
-#ifndef HAVE_SHIFT_DBL_TESTS
-static const BINU16_TEST_T g_aTests_shrd_u16[] = { {0} };
-static const BINU16_TEST_T g_aTests_shld_u16[] = { {0} };
-static const BINU32_TEST_T g_aTests_shrd_u32[] = { {0} };
-static const BINU32_TEST_T g_aTests_shld_u32[] = { {0} };
-static const BINU64_TEST_T g_aTests_shrd_u64[] = { {0} };
-static const BINU64_TEST_T g_aTests_shld_u64[] = { {0} };
+#ifndef HAVE_SHIFT_DBL_TESTS_AMD
+static const BINU16_TEST_T g_aTests_shrd_u16_amd[] = { {0} };
+static const BINU16_TEST_T g_aTests_shld_u16_amd[] = { {0} };
+static const BINU32_TEST_T g_aTests_shrd_u32_amd[] = { {0} };
+static const BINU32_TEST_T g_aTests_shld_u32_amd[] = { {0} };
+static const BINU64_TEST_T g_aTests_shrd_u64_amd[] = { {0} };
+static const BINU64_TEST_T g_aTests_shld_u64_amd[] = { {0} };
+#endif
+#ifndef HAVE_SHIFT_DBL_TESTS_INTEL
+static const BINU16_TEST_T g_aTests_shrd_u16_intel[] = { {0} };
+static const BINU16_TEST_T g_aTests_shld_u16_intel[] = { {0} };
+static const BINU32_TEST_T g_aTests_shrd_u32_intel[] = { {0} };
+static const BINU32_TEST_T g_aTests_shld_u32_intel[] = { {0} };
+static const BINU64_TEST_T g_aTests_shrd_u64_intel[] = { {0} };
+static const BINU64_TEST_T g_aTests_shld_u64_intel[] = { {0} };
 #endif
 
-#define TEST_SHIFT_DBL(a_cBits, a_Type, a_Fmt) \
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+# define GEN_SHIFT_DBL(a_cBits, a_Fmt, a_aSubTests) \
+void ShiftDblU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+{ \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
+            && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
+            continue; \
+        RTStrmPrintf(pOut, "static const BINU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", a_aSubTests[iFn].pszName); \
+        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+        { \
+            BINU ## a_cBits ## _TEST_T Test; \
+            Test.fEflIn    = RandEFlags(); \
+            Test.fEflOut   = Test.fEflIn; \
+            Test.uDstIn    = RandU ## a_cBits ## Dst(iTest); \
+            Test.uDstOut   = Test.uDstIn; \
+            Test.uSrcIn    = RandU ## a_cBits ## Src(iTest); \
+            Test.uMisc     = RandU8() & (a_cBits - 1); /** @todo wrong for 16-bit, can shift up to 31 rounds! */ \
+            a_aSubTests[iFn].pfnNative(&Test.uDstOut, Test.uSrcIn, Test.uMisc, &Test.fEflOut); \
+            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %2u }, /* #%u */\n", \
+                        Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
+        } \
+        RTStrmPrintf(pOut, "};\n"); \
+    } \
+}
+#else
+# define GEN_SHIFT_DBL(a_cBits, a_Fmt, a_aSubTests)
+#endif
+
+#define TEST_SHIFT_DBL(a_cBits, a_Type, a_Fmt, a_aSubTests) \
 static const struct \
 { \
     const char                       *pszName; \
@@ -1143,71 +1181,63 @@ static const struct \
     BINU ## a_cBits ## _TEST_T const *paTests; \
     uint32_t                          cTests, uExtra; \
     uint8_t                           idxCpuEflFlavour; \
-} g_aShiftDblU ## a_cBits [] = \
+} a_aSubTests[] = \
 { \
-    ENTRY(shld_u ## a_cBits), \
-    ENTRY(shrd_u ## a_cBits), \
+    ENTRY_AMD(shld_u ## a_cBits,   X86_EFL_OF | X86_EFL_CF), \
+    ENTRY_INTEL(shld_u ## a_cBits, X86_EFL_OF | X86_EFL_CF), \
+    ENTRY_AMD(shrd_u ## a_cBits,   X86_EFL_OF | X86_EFL_CF), \
+    ENTRY_INTEL(shrd_u ## a_cBits, X86_EFL_OF | X86_EFL_CF), \
 }; \
 \
-void ShiftDblU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
-{ \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aShiftDblU ## a_cBits); iFn++) \
-    { \
-        RTStrmPrintf(pOut, "static const BINU" #a_cBits "_TEST_T g_aTests_%s[] =\n{\n", g_aShiftDblU ## a_cBits[iFn].pszName); \
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
-        { \
-            BINU ## a_cBits ## _TEST_T Test; \
-            Test.fEflIn    = RandEFlags(); \
-            Test.fEflOut   = Test.fEflIn; \
-            Test.uDstIn    = RandU ## a_cBits(); \
-            Test.uDstOut   = Test.uDstIn; \
-            Test.uSrcIn    = RandU ## a_cBits(); \
-            Test.uMisc     = RandU8() & (a_cBits - 1); \
-            g_aShiftDblU ## a_cBits[iFn].pfn(&Test.uDstOut, Test.uSrcIn, Test.uMisc, &Test.fEflOut); \
-            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", " a_Fmt ", %2u }, /* #%u */\n", \
-                        Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uSrcIn, Test.uMisc, iTest); \
-        } \
-        RTStrmPrintf(pOut, "};\n"); \
-    } \
-} \
+GEN_SHIFT_DBL(a_cBits, a_Fmt, a_aSubTests) \
 \
 static void ShiftDblU ## a_cBits ## Test(void) \
 { \
-    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aShiftDblU ## a_cBits); iFn++) \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        RTTestSub(g_hTest, g_aShiftDblU ## a_cBits[iFn].pszName); \
-        BINU ## a_cBits ## _TEST_T const * const paTests = g_aShiftDblU ## a_cBits[iFn].paTests; \
-        uint32_t const                           cTests  = g_aShiftDblU ## a_cBits[iFn].cTests; \
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
+        if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
+            && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
+            continue; \
+        \
+        RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
+        BINU ## a_cBits ## _TEST_T const * const paTests = a_aSubTests[iFn].paTests; \
+        uint32_t const                           cTests  = a_aSubTests[iFn].cTests; \
+        PFNIEMAIMPLSHIFTDBLU ## a_cBits          pfn     = a_aSubTests[iFn].pfn; \
+        for (uint32_t iCpu = 0; iCpu < 2 && pfn; iCpu++) \
         { \
-            uint32_t fEfl = paTests[iTest].fEflIn; \
-            a_Type   uDst = paTests[iTest].uDstIn; \
-            g_aShiftDblU ## a_cBits[iFn].pfn(&uDst, paTests[iTest].uSrcIn, paTests[iTest].uMisc, &fEfl); \
-            if (   uDst != paTests[iTest].uDstOut \
-                || (fEfl /*| X86_EFL_AF*/) != (paTests[iTest].fEflOut /*| X86_EFL_AF*/)) \
-                RTTestFailed(g_hTest, "#%u: efl=%#08x dst=" a_Fmt " src=" a_Fmt " shift=%-2u -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s\n", \
-                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn, (unsigned)paTests[iTest].uMisc, \
-                             fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut, \
-                             EFlagsDiff(fEfl /*| X86_EFL_AF*/, paTests[iTest].fEflOut /*| X86_EFL_AF*/)); \
-            else \
+            for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
             { \
-                 *g_pu ## a_cBits  = paTests[iTest].uDstIn; \
-                 *g_pfEfl          = paTests[iTest].fEflIn; \
-                 g_aShiftDblU ## a_cBits[iFn].pfn(g_pu ## a_cBits, paTests[iTest].uSrcIn, paTests[iTest].uMisc, g_pfEfl); \
-                 RTTEST_CHECK(g_hTest, *g_pu ## a_cBits == paTests[iTest].uDstOut); \
-                 RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut); \
+                uint32_t fEfl = paTests[iTest].fEflIn; \
+                a_Type   uDst = paTests[iTest].uDstIn; \
+                pfn(&uDst, paTests[iTest].uSrcIn, paTests[iTest].uMisc, &fEfl); \
+                if (   uDst != paTests[iTest].uDstOut \
+                    || fEfl!= paTests[iTest].fEflOut) \
+                    RTTestFailed(g_hTest, "#%u%s: efl=%#08x dst=" a_Fmt " src=" a_Fmt " shift=%-2u -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s\n", \
+                                 iTest, iCpu == 0 ? "" : "/n", paTests[iTest].fEflIn, \
+                                 paTests[iTest].uDstIn, paTests[iTest].uSrcIn, (unsigned)paTests[iTest].uMisc, \
+                                 fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut, \
+                                 EFlagsDiff(fEfl, paTests[iTest].fEflOut)); \
+                else \
+                { \
+                     *g_pu ## a_cBits  = paTests[iTest].uDstIn; \
+                     *g_pfEfl          = paTests[iTest].fEflIn; \
+                     pfn(g_pu ## a_cBits, paTests[iTest].uSrcIn, paTests[iTest].uMisc, g_pfEfl); \
+                     RTTEST_CHECK(g_hTest, *g_pu ## a_cBits == paTests[iTest].uDstOut); \
+                     RTTEST_CHECK(g_hTest, *g_pfEfl == paTests[iTest].fEflOut); \
+                } \
             } \
+            pfn = a_aSubTests[iFn].pfnNative; \
         } \
     } \
 }
-TEST_SHIFT_DBL(16, uint16_t, "%#06RX16")
-TEST_SHIFT_DBL(32, uint32_t, "%#010RX32")
-TEST_SHIFT_DBL(64, uint64_t, "%#018RX64")
+TEST_SHIFT_DBL(16, uint16_t, "%#06RX16",  g_aShiftDblU16)
+TEST_SHIFT_DBL(32, uint32_t, "%#010RX32", g_aShiftDblU32)
+TEST_SHIFT_DBL(64, uint64_t, "%#018RX64", g_aShiftDblU64)
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static void ShiftDblGenerate(PRTSTREAM pOut, uint32_t cTests)
+static void ShiftDblGenerate(PRTSTREAM pOut, const char *pszCpuSuffU, uint32_t cTests)
 {
-    RTStrmPrintf(pOut, "\n\n#define HAVE_SHIFT_DBL_TESTS\n");
+    RTStrmPrintf(pOut, "\n\n#define HAVE_SHIFT_DBL_TESTS%s\n", pszCpuSuffU);
     ShiftDblU16Generate(pOut, cTests);
     ShiftDblU32Generate(pOut, cTests);
     ShiftDblU64Generate(pOut, cTests);
@@ -1792,7 +1822,7 @@ int main(int argc, char **argv)
         BinU16Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
         BinU32Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
         BinU64Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
-        ShiftDblGenerate(pStrmData, cTests);
+        ShiftDblGenerate(pStrmDataCpu, pszCpuSuffU, RT_MIN(cTests, 128));
         UnaryGenerate(pStrmData, cTests);
         ShiftGenerate(pStrmData, cTests);
         MulDivGenerate(pStrmDataCpu, pszCpuSuffU, cTests);

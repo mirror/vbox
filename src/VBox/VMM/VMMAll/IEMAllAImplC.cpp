@@ -2677,36 +2677,61 @@ EMIT_SAR(8)
 
 /*
  * SHLD
+ *
+ *  - CF is the last bit shifted out of puDst.
+ *  - AF is always cleared by Intel 10980XE.
+ *  - AF is always set by AMD 3990X.
+ *  - OF is set according to the first shift on Intel 10980XE, it seems.
+ *  - OF is set according to the last sub-shift on AMD 3990X.
+ *  - ZF, SF and PF are calculated according to the result by both vendors.
  */
 #define EMIT_SHLD(a_cBitsWidth) \
 IEM_DECL_IMPL_DEF(void, iemAImpl_shld_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## _t *puDst, \
                                                          uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
 { \
+    /** @todo this ain't right for 16-bit. Apparently it should use 0x1f instead \
+     *        of 0xf for masking and use uSrc in repetitive fashion...  */ \
     cShift &= a_cBitsWidth - 1; \
     if (cShift) \
     { \
-        uint ## a_cBitsWidth ## _t const uDst = *puDst; \
+        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
         uint ## a_cBitsWidth ## _t       uResult = uDst << cShift; \
         uResult |= uSrc >> (a_cBitsWidth - cShift); \
         *puDst = uResult; \
         \
-        /* Calc EFLAGS.  CF is the last bit shifted out of puDst. The OF flag \
-           indicates a sign change for a single shift, whereas intel documents \
-           setting it to zero for higher shift counts and AMD just says it's \
-           undefined, however AMD x3990 sets it according to the last sub-shift. \
-           On AMD x3990 the AF flag is always set. */ \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
-        if (true /*AMD*/) \
-        { \
-            fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth((uDst << (cShift - 1)) ^ uResult); /* Set according to last shift. */ \
-            fEfl |= X86_EFL_AF; \
-        } \
-        else \
-        { \
-            if (cShift == 1) \
-                fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth((uDst ^ uResult)); \
-            fEfl |= X86_EFL_AF; /* ? */ \
-        } \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ (uDst << 1)); /* Set according to the first shift. */ \
+        fEfl |= (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF; /* CF = last bit shifted out */ \
+        fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
+        fEfl |= X86_EFL_CALC_ZF(uResult); \
+        *pfEFlags = fEfl; \
+    } \
+}\
+\
+IEM_DECL_IMPL_DEF(void, iemAImpl_shld_u ## a_cBitsWidth ## _intel,(uint ## a_cBitsWidth ## _t *puDst, \
+                                                                   uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, \
+                                                                   uint32_t *pfEFlags)) \
+{ \
+    iemAImpl_shld_u ## a_cBitsWidth(puDst, uSrc, cShift, pfEFlags); \
+} \
+\
+IEM_DECL_IMPL_DEF(void, iemAImpl_shld_u ## a_cBitsWidth ## _amd,(uint ## a_cBitsWidth ## _t *puDst, \
+                                                                 uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, \
+                                                                 uint32_t *pfEFlags)) \
+{ \
+    cShift &= a_cBitsWidth - 1; \
+    if (cShift) \
+    { \
+        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
+        uint ## a_cBitsWidth ## _t       uResult = uDst << cShift; \
+        uResult |= uSrc >> (a_cBitsWidth - cShift); \
+        *puDst = uResult; \
+        \
+        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth((uDst << (cShift - 1)) ^ uResult); /* Set according to last shift. */ \
+        fEfl |= X86_EFL_AF; \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         fEfl |= (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF; /* CF = last bit shifted out */ \
         fEfl |= g_afParity[uResult & 0xff]; \
@@ -2715,6 +2740,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_shld_u ## a_cBitsWidth,(uint ## a_cBitsWidth ##
         *pfEFlags = fEfl; \
     } \
 }
+
 EMIT_SHLD(64)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHLD(32)
@@ -2724,10 +2750,50 @@ EMIT_SHLD(16)
 
 /*
  * SHRD
+ *
+ * EFLAGS behaviour seems to be the same as with SHLD:
+ *  - CF is the last bit shifted out of puDst.
+ *  - AF is always cleared by Intel 10980XE.
+ *  - AF is always set by AMD 3990X.
+ *  - OF is set according to the first shift on Intel 10980XE, it seems.
+ *  - OF is set according to the last sub-shift on AMD 3990X.
+ *  - ZF, SF and PF are calculated according to the result by both vendors.
  */
 #define EMIT_SHRD(a_cBitsWidth) \
 IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## _t *puDst, \
                                                          uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
+{ \
+    /** @todo this is wrong for 16-bit, where it should be 0x1f not 0xf and \
+     *        source used twice or something like that. */ \
+    cShift &= a_cBitsWidth - 1; \
+    if (cShift) \
+    { \
+        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
+        uint ## a_cBitsWidth ## _t       uResult = uDst >> cShift; \
+        uResult |= uSrc << (a_cBitsWidth - cShift); \
+        *puDst = uResult; \
+        \
+        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ (uSrc << (a_cBitsWidth - 1))); \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
+        fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
+        fEfl |= X86_EFL_CALC_ZF(uResult); \
+        fEfl |= g_afParity[uResult & 0xff]; \
+        *pfEFlags = fEfl; \
+    } \
+} \
+\
+IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u ## a_cBitsWidth ## _intel,(uint ## a_cBitsWidth ## _t *puDst, \
+                                                                   uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, \
+                                                                   uint32_t *pfEFlags)) \
+{ \
+    iemAImpl_shrd_u ## a_cBitsWidth(puDst, uSrc, cShift, pfEFlags); \
+} \
+\
+IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u ## a_cBitsWidth ## _amd,(uint ## a_cBitsWidth ## _t *puDst, \
+                                                                 uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, \
+                                                                 uint32_t *pfEFlags)) \
 { \
     cShift &= a_cBitsWidth - 1; \
     if (cShift) \
@@ -2737,26 +2803,12 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u ## a_cBitsWidth,(uint ## a_cBitsWidth ##
         uResult |= uSrc << (a_cBitsWidth - cShift); \
         *puDst = uResult; \
         \
-        /* Calc EFLAGS.  CF is the last bit shifted out of puDst. The OF flag \
-           indicates a sign change for a single shift, whereas intel documents \
-           setting it to zero for higher shift counts and AMD just says it's \
-           undefined, however AMD x3990 sets it according to the last sub-shift. \
-           On AMD x3990 the AF flag is always set. */ \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
-        if (true /*AMD*/) \
-        { \
-            if (cShift > 1) /* Set according to last shift. */ \
-                fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth((uSrc << (a_cBitsWidth - cShift + 1)) ^ uResult); \
-            else \
-                fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ uResult); \
-            fEfl |= X86_EFL_AF; \
-        } \
+        if (cShift > 1) /* Set according to last shift. */ \
+            fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth((uSrc << (a_cBitsWidth - cShift + 1)) ^ uResult); \
         else \
-        { \
-            if (cShift == 1) \
-                fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth((uDst >> (a_cBitsWidth - 1)) ^ (uint32_t)(uResult >> (a_cBitsWidth - 1))); \
-            fEfl |= X86_EFL_AF; /* ? */ \
-        } \
+            fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ uResult); \
+        fEfl |= X86_EFL_AF; \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
