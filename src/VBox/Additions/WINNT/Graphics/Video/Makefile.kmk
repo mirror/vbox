@@ -32,19 +32,19 @@ VBoxVideo-inf_INST = $(INST_ADDITIONS)
 VBoxVideo-inf_MODE = a+r,u+w
 VBoxVideo-inf_SOURCES = \
 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf
-ifdef VBOX_SIGN_ADDITIONS
- VBoxVideo-inf_SOURCES += \
- 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
- 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll \
- 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat
-endif
 VBoxVideo-inf_CLEAN = $(VBoxVideo-inf_SOURCES)
-VBoxVideo-inf_BLDDIRS = \
-	$(PATH_TARGET)/VBoxVideoCat.dir
+VBoxVideo-inf_BLDDIRS = $(PATH_TARGET)/VBoxVideoCat.dir
 
 $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf: $(PATH_SUB_CURRENT)/mp/xpdm/VBoxVideo.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,VBoxVideo-inf,$@,$<)
 	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+if defined(VBOX_SIGN_ADDITIONS) && defined(VBOX_SIGN_ADDITIONS)
+ VBoxVideo-inf_SOURCES += \
+ 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat \
+ 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat=>VBoxVideo-PreW10.cat \
+ 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
+ 	$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll
 
 $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys: $$(VBoxVideo_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
@@ -52,12 +52,13 @@ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys: $$(VBoxVideo_1_TARGET) | $$(dir $
 $(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll: $$(VBoxDisp_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
-		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf \
-		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
-		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll
+ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
+ 		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.inf \
+ 		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.sys \
+ 		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll
 	$(call MSG_TOOL,Inf2Cat,VBoxVideo-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+endif # signing
 
 ifdef VBOX_WITH_WDDM
  VBOXWDDM_WITH_DISPD3D = 1
@@ -72,10 +73,23 @@ ifdef VBOX_WITH_WDDM
  VBoxWddm-inf_MODE = a+r,u+w
  VBoxWddm-inf_SOURCES = \
  	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.inf
- ifdef VBOX_SIGN_ADDITIONS
+ VBoxWddm-inf_CLEAN = $(VBoxWddm-inf_SOURCES)
+ VBoxWddm-inf_CLEAN.amd64 = $(VBoxWddm-inf_SOURCES.amd64)
+ VBoxWddm-inf_BLDDIRS = $(PATH_TARGET)/VBoxWddmCat.dir
+
+ VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG = $(if $(VBOXWDDM_WITH_DISPD3D),-e 's/^;dispd3d  *//', -e '/^;dispd3d /d')
+ VBOXWDDM_EDIT_INF_MESA3D_FN_ARG = $(if $(VBOX_WITH_MESA3D),-e 's/^;mesa3d  *//', -e '/^;mesa3d /d')
+
+ $(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.inf: \
+		$(PATH_SUB_CURRENT)/mp/wddm/VBoxWddm.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,VBoxWddm-inf,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@ $(VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG) $(VBOXWDDM_EDIT_INF_MESA3D_FN_ARG))
+
+ if defined(VBOX_SIGNING_MODE) && defined(VBOX_SIGN_ADDITIONS)
   VBoxWddm-inf_SOURCES += \
-  	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.sys \
-  	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.cat
+  	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.cat \
+  	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.cat=>VBoxWddm-PreW10.cat \
+  	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.sys
 
   ifdef VBOXWDDM_WITH_DISPD3D
    VBoxWddm-inf_SOURCES += \
@@ -97,57 +111,48 @@ ifdef VBOX_WITH_WDDM
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll
   endif
 
- endif # VBOX_SIGN_ADDITIONS
-
- VBoxWddm-inf_CLEAN = $(VBoxWddm-inf_SOURCES)
- VBoxWddm-inf_CLEAN.amd64 = $(VBoxWddm-inf_SOURCES.amd64)
- VBoxWddm-inf_BLDDIRS = \
- 	$(PATH_TARGET)/VBoxWddmCat.dir
-
- VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG = $(if $(VBOXWDDM_WITH_DISPD3D),-e 's/^;dispd3d  *//', -e '/^;dispd3d /d')
- VBOXWDDM_EDIT_INF_MESA3D_FN_ARG = $(if $(VBOX_WITH_MESA3D),-e 's/^;mesa3d  *//', -e '/^;mesa3d /d')
-
- $(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.inf: \
-		$(PATH_SUB_CURRENT)/mp/wddm/VBoxWddm.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,VBoxWddm-inf,$@,$<)
-	$(call VBOX_EDIT_INF_FN,$<,$@ $(VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG) $(VBOXWDDM_EDIT_INF_MESA3D_FN_ARG))
-
- $(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.sys: $$(VBoxWddm_1_TARGET) | $$(dir $$@)
+  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.sys: $$(VBoxWddm_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
- ifdef VBOXWDDM_WITH_DISPD3D
-  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D.dll: $$(VBoxDispD3D_1_TARGET) | $$(dir $$@)
+  ifdef VBOXWDDM_WITH_DISPD3D
+   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D.dll: $$(VBoxDispD3D_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-  ifeq ($(KBUILD_TARGET_ARCH),amd64)
-   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D-x86.dll: $$(VBoxDispD3D-x86_1_TARGET) | $$(dir $$@)
+   ifeq ($(KBUILD_TARGET_ARCH),amd64)
+    $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D-x86.dll: $$(VBoxDispD3D-x86_1_TARGET) | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
+   endif
+  endif # VBOXWDDM_WITH_DISPD3D
+
+  ifdef VBOX_WITH_MESA3D
+   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll: $$(VBoxNine_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 "$<" "$(@D)"
+
+   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll: $$(VBoxSVGA_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 "$<" "$(@D)"
+
+   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD.dll: $$(VBoxICD_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 "$<" "$(@D)"
+
+   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll: $$(VBoxGL_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 "$<" "$(@D)"
+
+   ifeq ($(KBUILD_TARGET_ARCH),amd64)
+    $(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll: $$(VBoxNine-x86_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+
+    $(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll: $$(VBoxSVGA-x86_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+
+    $(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD-x86.dll: $$(VBoxICD-x86_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+
+    $(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll: $$(VBoxGL-x86_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+   endif
   endif
- endif # VBOXWDDM_WITH_DISPD3D
 
- ifdef VBOX_WITH_MESA3D
-  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine.dll: $$(VBoxNine_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 "$<" "$(@D)"
-  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA.dll: $$(VBoxSVGA_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 "$<" "$(@D)"
-  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD.dll: $$(VBoxICD_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 "$<" "$(@D)"
-  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL.dll: $$(VBoxGL_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 "$<" "$(@D)"
-
-  ifeq ($(KBUILD_TARGET_ARCH),amd64)
-   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxNine-x86.dll: $$(VBoxNine-x86_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxSVGA-x86.dll: $$(VBoxSVGA-x86_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxICD-x86.dll: $$(VBoxICD-x86_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll: $$(VBoxGL-x86_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-  endif
- endif
-
- $(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.cat: \
+  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.cat: \
 		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.inf \
 		$(PATH_TARGET)/VBoxWddmCat.dir/VBoxWddm.sys \
 		$(if $(VBOXWDDM_WITH_DISPD3D), $(PATH_TARGET)/VBoxWddmCat.dir/VBoxDispD3D.dll, ) \
@@ -164,7 +169,7 @@ ifdef VBOX_WITH_WDDM
 				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll, ), )
 	$(call MSG_TOOL,Inf2Cat,VBoxWddm-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
-
+ endif # signing
 endif # VBOX_WITH_WDDM
 
 include $(FILE_KBUILD_SUB_FOOTER)

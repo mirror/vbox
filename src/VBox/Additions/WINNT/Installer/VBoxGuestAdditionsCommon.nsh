@@ -30,7 +30,11 @@ Function Common_CopyFiles
 
   FILE "$%PATH_OUT%\bin\additions\VBoxVideo.inf"
 !ifdef VBOX_SIGN_ADDITIONS
-  FILE "$%PATH_OUT%\bin\additions\VBoxVideo.cat"
+  ${If} $g_strWinVersion == "10"
+    FILE "$%PATH_OUT%\bin\additions\VBoxVideo.cat"
+  ${Else}
+    FILE "/oname=VBoxVideo.cat" "$%PATH_OUT%\bin\additions\VBoxVideo-PreW10.cat"
+  ${EndIf}
 !endif
 
   FILE "iexplore.ico"
@@ -57,7 +61,11 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxVideo.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxVideo.inf"
 !ifdef VBOX_SIGN_ADDITIONS
-  FILE "$%PATH_OUT%\bin\additions\VBoxVideo.cat"
+  ${If} $g_strWinVersion == "10"
+    FILE "$%PATH_OUT%\bin\additions\VBoxVideo.cat"
+  ${Else}
+    FILE "/oname=VBoxVideo.cat" "$%PATH_OUT%\bin\additions\VBoxVideo-PreW10.cat"
+  ${EndIf}
 !endif
   FILE "$%PATH_OUT%\bin\additions\VBoxDisp.dll"
 
@@ -66,7 +74,11 @@ Function ExtractFiles
   SetOutPath "$0\VBoxWddm"
 
   !ifdef VBOX_SIGN_ADDITIONS
-    FILE "$%PATH_OUT%\bin\additions\VBoxWddm.cat"
+    ${If} $g_strWinVersion == "10"
+      FILE "$%PATH_OUT%\bin\additions\VBoxWddm.cat"
+    ${Else}
+      FILE "/oname=VBoxWddm.cat" "$%PATH_OUT%\bin\additions\VBoxWddm-PreW10.cat"
+    ${EndIf}
   !endif
   FILE "$%PATH_OUT%\bin\additions\VBoxWddm.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
@@ -95,7 +107,11 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxMouse.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxMouse.inf"
 !ifdef VBOX_SIGN_ADDITIONS
-  FILE "$%PATH_OUT%\bin\additions\VBoxMouse.cat"
+  ${If} $g_strWinVersion == "10"
+    FILE "$%PATH_OUT%\bin\additions\VBoxMouse.cat"
+  ${Else}
+    FILE "/oname=VBoxMouse.cat" "$%PATH_OUT%\bin\additions\VBoxMouse-PreW10.cat"
+  ${EndIf}
 !endif
 
 !if $%KBUILD_TARGET_ARCH% == "x86"
@@ -108,7 +124,11 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxGuest.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxGuest.inf"
 !ifdef VBOX_SIGN_ADDITIONS
-  FILE "$%PATH_OUT%\bin\additions\VBoxGuest.cat"
+  ${If} $g_strWinVersion == "10"
+    FILE "$%PATH_OUT%\bin\additions\VBoxGuest.cat"
+  ${Else}
+    FILE "/oname=VBoxGuest.cat" "$%PATH_OUT%\bin\additions\VBoxGuest-PreW10.cat"
+  ${EndIf}
 !endif
   FILE "$%PATH_OUT%\bin\additions\VBoxTray.exe"
   FILE "$%PATH_OUT%\bin\additions\VBoxHook.dll"

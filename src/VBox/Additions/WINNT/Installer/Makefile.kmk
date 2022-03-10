@@ -96,11 +96,16 @@ DRIVER_FILES += \
 endif
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxVideo.inf \
-	$(PATH_STAGE_BIN)/additions/VBoxGuest.inf
+	$(PATH_STAGE_BIN)/additions/VBoxGuest.inf \
+	$(PATH_STAGE_BIN)/additions/VBoxMouse.inf
 ifdef VBOX_SIGN_ADDITIONS
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxVideo.cat \
-	$(PATH_STAGE_BIN)/additions/VBoxGuest.cat
+	$(PATH_STAGE_BIN)/additions/VBoxVideo-PreW10.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxGuest.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxGuest-PreW10.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxMouse.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxMouse-PreW10.cat
 endif
 ifdef VBOX_WITH_WDDM
 DRIVER_FILES += \
@@ -116,7 +121,8 @@ DRIVER_FILES += \
  endif
  ifdef VBOX_SIGN_ADDITIONS
 DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/VBoxWddm.cat
+	$(PATH_STAGE_BIN)/additions/VBoxWddm.cat \
+	$(PATH_STAGE_BIN)/additions/VBoxWddm-PreW10.cat
  endif
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
 DRIVER_FILES += \
@@ -244,7 +250,7 @@ $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(if $(VBOX_SIGNING_MODE),$(PATH_TARGET)/uninst.exe) \
 		$(if $(VBOX_GA_ATTESTATION_SIGNING),$(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME)) \
 		$(VBOX_VERSION_STAMP) \
-               $$(VBoxDrvInst_1_STAGE_TARGET)
+		$$(VBoxDrvInst_1_STAGE_TARGET)
 	$(call MSG_L1,Creating $@, from $<)
 ifdef VBOX_GA_ATTESTATION_SIGNING
 	$(TOOL_ZIP_UNPACK) -oj $(PATH_OUT)/repackadd/$(VBOX_SIGNED_DRIVERS_ZIP_NAME) -d $(PATH_STAGE_BIN)/additions/
