@@ -142,9 +142,10 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 /**
  * Parity calculation table.
+ *
+ * This is also used by iemAllAImpl.asm.
  *
  * The generator code:
  * @code
@@ -179,7 +180,7 @@
  * }
  * @endcode
  */
-static uint8_t const g_afParity[256] =
+uint8_t const g_afParity[256] =
 {
     /* 0000 = 00000000b */ X86_EFL_PF,
     /* 0x01 = 00000001b */ 0,
@@ -438,8 +439,6 @@ static uint8_t const g_afParity[256] =
     /* 0xfe = 11111110b */ 0,
     /* 0xff = 11111111b */ X86_EFL_PF,
 };
-#endif /* !RT_ARCH_AMD64 || IEM_WITHOUT_ASSEMBLY */
-
 
 
 /*
@@ -1163,103 +1162,140 @@ EMIT_LOCKED_BIN_OP(bts, 16)
 
 
 /*
+ * Helpers for BSR and BSF.
+ *
+ * Note! "undefined" flags: OF, SF, AF, PF, CF.
+ *       Intel behavior modelled on 10980xe, AMD on 3990X.  Other marchs may
+ *       produce different result (see https://www.sandpile.org/x86/flags.htm),
+ *       but we restrict ourselves to emulating these recent marchs.
+ */
+#define SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlag, a_iBit) do { \
+        unsigned iBit = (a_iBit); \
+        uint32_t fEfl = *pfEFlags & ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF); \
+        if (iBit) \
+        { \
+            *puDst    = --iBit; \
+            fEfl     |= g_afParity[iBit]; \
+        } \
+        else \
+            fEfl     |= X86_EFL_ZF | X86_EFL_PF; \
+        *pfEFlags = fEfl; \
+    } while (0)
+#define SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlag, a_iBit) do { \
+        unsigned const iBit = (a_iBit); \
+        if (iBit) \
+        { \
+            *puDst     = iBit - 1; \
+            *pfEFlags &= ~X86_EFL_ZF; \
+        } \
+        else \
+            *pfEFlags |= X86_EFL_ZF; \
+    } while (0)
+
+
+/*
  * BSF - first (least significant) bit set
  */
-
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /* Intel & AMD differs here. This is is the AMD behaviour. */
-    unsigned iBit = ASMBitFirstSetU64(uSrc);
-    if (iBit)
-    {
-        *puDst     = iBit - 1;
-        *pfEFlags &= ~X86_EFL_ZF;
-    }
-    else
-        *pfEFlags |= X86_EFL_ZF;
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU64(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u64_intel,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU64(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u64_amd,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitFirstSetU64(uSrc));
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /* Intel & AMD differs here. This is is the AMD behaviour. */
-    unsigned iBit = ASMBitFirstSetU32(uSrc);
-    if (iBit)
-    {
-        *puDst     = iBit - 1;
-        *pfEFlags &= ~X86_EFL_ZF;
-    }
-    else
-        *pfEFlags |= X86_EFL_ZF;
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU32(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u32_intel,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU32(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u32_amd,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitFirstSetU32(uSrc));
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /* Intel & AMD differs here. This is is the AMD behaviour. */
-    unsigned iBit = ASMBitFirstSetU16(uSrc);
-    if (iBit)
-    {
-        *puDst     = iBit - 1;
-        *pfEFlags &= ~X86_EFL_ZF;
-    }
-    else
-        *pfEFlags |= X86_EFL_ZF;
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU16(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u16_intel,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitFirstSetU16(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsf_u16_amd,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitFirstSetU16(uSrc));
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
+
 /*
  * BSR - last (most significant) bit set
  */
-
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /* Intel & AMD differs here. This is is the AMD behaviour. */
-    unsigned iBit = ASMBitLastSetU64(uSrc);
-    if (uSrc)
-    {
-        *puDst     = iBit - 1;
-        *pfEFlags &= ~X86_EFL_ZF;
-    }
-    else
-        *pfEFlags |= X86_EFL_ZF;
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU64(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64_intel,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU64(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64_amd,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitLastSetU64(uSrc));
 }
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /* Intel & AMD differs here. This is is the AMD behaviour. */
-    unsigned iBit = ASMBitLastSetU32(uSrc);
-    if (uSrc)
-    {
-        *puDst     = iBit - 1;
-        *pfEFlags &= ~X86_EFL_ZF;
-    }
-    else
-        *pfEFlags |= X86_EFL_ZF;
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU32(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u32_intel,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU32(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u32_amd,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitLastSetU32(uSrc));
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
 {
-    /* Note! "undefined" flags: OF, SF, AF, PF, CF. */
-    /* Intel & AMD differs here. This is is the AMD behaviour. */
-    unsigned iBit = ASMBitLastSetU16(uSrc);
-    if (uSrc)
-    {
-        *puDst     = iBit - 1;
-        *pfEFlags &= ~X86_EFL_ZF;
-    }
-    else
-        *pfEFlags |= X86_EFL_ZF;
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU16(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u16_intel,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_INTEL(puDst, pfEFlags, ASMBitLastSetU16(uSrc));
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u16_amd,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
+{
+    SET_BIT_SEARCH_RESULT_AMD(puDst, pfEFlags, ASMBitLastSetU16(uSrc));
 }
 
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
@@ -1594,8 +1630,28 @@ DECLINLINE(void) RTUInt128DivRemByU64(PRTUINT128U pQuotient, PRTUINT128U pRemain
 /*
  * MUL
  */
-# define EMIT_MUL(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_fnLoadF1, a_fnStore, a_fnMul) \
+# define EMIT_MUL(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_CallArgs, a_fnLoadF1, a_fnStore, a_fnMul) \
 IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u ## a_cBitsWidth, a_Args) \
+{ \
+    RTUINT ## a_cBitsWidth2x ## U Result; \
+    a_fnMul(Result, a_fnLoadF1(), uFactor, a_cBitsWidth2x); \
+    a_fnStore(Result); \
+    \
+    /* MUL EFLAGS according to Skylake (similar to IMUL). */ \
+    uint32_t fEfl = *pfEFlags & ~(X86_EFL_SF | X86_EFL_CF | X86_EFL_OF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF); \
+    if (Result.s.Lo & RT_BIT_64(a_cBitsWidth - 1)) \
+        fEfl |= X86_EFL_SF; \
+    fEfl |= g_afParity[Result.s.Lo & 0xff]; \
+    if (Result.s.Hi != 0) \
+        fEfl |= X86_EFL_CF | X86_EFL_OF; \
+    *pfEFlags = fEfl; \
+    return 0; \
+} \
+IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u ## a_cBitsWidth ## _intel, a_Args) \
+{ \
+    return iemAImpl_mul_u ## a_cBitsWidth a_CallArgs; \
+} \
+IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u ## a_cBitsWidth ## _amd, a_Args) \
 { \
     RTUINT ## a_cBitsWidth2x ## U Result; \
     a_fnMul(Result, a_fnLoadF1(), uFactor, a_cBitsWidth2x); \
@@ -1611,19 +1667,86 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u ## a_cBitsWidth, a_Args) \
     *pfEFlags = fEfl; \
     return 0; \
 }
-EMIT_MUL(64, 128, (uint64_t *puA, uint64_t *puD, uint64_t uFactor, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_MUL_U128)
+
+EMIT_MUL(64, 128, (uint64_t *puA, uint64_t *puD, uint64_t uFactor, uint32_t *pfEFlags), (puA, puD, uFactor, pfEFlags),
+         MUL_LOAD_F1, MUL_STORE, MULDIV_MUL_U128)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_MUL(32, 64, (uint32_t *puA, uint32_t *puD, uint32_t uFactor, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_MUL)
-EMIT_MUL(16, 32, (uint16_t *puA, uint16_t *puD, uint16_t uFactor, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_MUL)
-EMIT_MUL(8, 16, (uint16_t *puAX, uint8_t uFactor, uint32_t *pfEFlags), MUL_LOAD_F1_U8, MUL_STORE_U8, MULDIV_MUL)
+EMIT_MUL(32, 64, (uint32_t *puA, uint32_t *puD, uint32_t uFactor, uint32_t *pfEFlags),  (puA, puD, uFactor, pfEFlags),
+         MUL_LOAD_F1, MUL_STORE, MULDIV_MUL)
+EMIT_MUL(16, 32, (uint16_t *puA, uint16_t *puD, uint16_t uFactor, uint32_t *pfEFlags),  (puA, puD, uFactor, pfEFlags),
+         MUL_LOAD_F1, MUL_STORE, MULDIV_MUL)
+EMIT_MUL(8, 16, (uint16_t *puAX, uint8_t uFactor, uint32_t *pfEFlags),                  (puAX,     uFactor, pfEFlags),
+         MUL_LOAD_F1_U8, MUL_STORE_U8, MULDIV_MUL)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
 /*
  * IMUL
+ *
+ * The SF, ZF, AF and PF flags are "undefined". AMD (3990x) leaves these
+ * flags as is - at least for the two op version. Whereas Intel skylake (6700K
+ * and 10980X (Cascade Lake)) always clear AF and ZF and calculates SF and PF
+ * as per the lower half of the result.
  */
-# define EMIT_IMUL(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_fnLoadF1, a_fnStore, a_fnNeg, a_fnMul) \
+# define EMIT_IMUL(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_CallArgs, a_fnLoadF1, a_fnStore, a_fnNeg, a_fnMul) \
 IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u ## a_cBitsWidth,a_Args) \
+{ \
+    RTUINT ## a_cBitsWidth2x ## U Result; \
+    uint32_t fEfl = *pfEFlags & ~(X86_EFL_CF | X86_EFL_OF); \
+    \
+    uint ## a_cBitsWidth ## _t const uFactor1 = a_fnLoadF1(); \
+    if (!(uFactor1 & RT_BIT_64(a_cBitsWidth - 1))) \
+    { \
+        if (!(uFactor2 & RT_BIT_64(a_cBitsWidth - 1))) \
+        { \
+            a_fnMul(Result, uFactor1, uFactor2, a_cBitsWidth2x); \
+            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_64(a_cBitsWidth - 1)) \
+                fEfl |= X86_EFL_CF | X86_EFL_OF; \
+        } \
+        else \
+        { \
+            uint ## a_cBitsWidth ## _t const uPositiveFactor2 = UINT ## a_cBitsWidth ## _C(0) - uFactor2; \
+            a_fnMul(Result, uFactor1, uPositiveFactor2, a_cBitsWidth2x); \
+            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_64(a_cBitsWidth - 1)) \
+                fEfl |= X86_EFL_CF | X86_EFL_OF; \
+            a_fnNeg(Result, a_cBitsWidth2x); \
+        } \
+    } \
+    else \
+    { \
+        if (!(uFactor2 & RT_BIT_64(a_cBitsWidth - 1))) \
+        { \
+            uint ## a_cBitsWidth ## _t const uPositiveFactor1 = UINT ## a_cBitsWidth ## _C(0) - uFactor1; \
+            a_fnMul(Result, uPositiveFactor1, uFactor2, a_cBitsWidth2x); \
+            if (Result.s.Hi != 0 || Result.s.Lo > RT_BIT_64(a_cBitsWidth - 1)) \
+                fEfl |= X86_EFL_CF | X86_EFL_OF; \
+            a_fnNeg(Result, a_cBitsWidth2x); \
+        } \
+        else \
+        { \
+            uint ## a_cBitsWidth ## _t const uPositiveFactor1 = UINT ## a_cBitsWidth ## _C(0) - uFactor1; \
+            uint ## a_cBitsWidth ## _t const uPositiveFactor2 = UINT ## a_cBitsWidth ## _C(0) - uFactor2; \
+            a_fnMul(Result, uPositiveFactor1, uPositiveFactor2, a_cBitsWidth2x); \
+            if (Result.s.Hi != 0 || Result.s.Lo >= RT_BIT_64(a_cBitsWidth - 1)) \
+                fEfl |= X86_EFL_CF | X86_EFL_OF; \
+        } \
+    } \
+    a_fnStore(Result); \
+    \
+    fEfl &= ~(X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_PF); \
+    if (Result.s.Lo & RT_BIT_64(a_cBitsWidth - 1)) \
+        fEfl |= X86_EFL_SF;  \
+    fEfl |= g_afParity[Result.s.Lo & 0xff]; \
+    *pfEFlags = fEfl; \
+    return 0; \
+} \
+\
+IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u ## a_cBitsWidth ## _intel,a_Args) \
+{ \
+    return iemAImpl_imul_u ## a_cBitsWidth a_CallArgs; \
+} \
+\
+IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u ## a_cBitsWidth ## _amd,a_Args) \
 { \
     RTUINT ## a_cBitsWidth2x ## U Result; \
     /* The SF, ZF, AF and PF flags are "undefined". AMD (3990x) leaves these \
@@ -1670,52 +1793,50 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u ## a_cBitsWidth,a_Args) \
         } \
     } \
     a_fnStore(Result); \
-    if (false) \
-    {   /* Intel (skylake) flags "undefined" behaviour: */  \
-        fEfl &= ~(X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_PF); \
-        if (Result.s.Lo & RT_BIT_64(a_cBitsWidth - 1)) \
-            fEfl |= X86_EFL_SF;  \
-        fEfl |= g_afParity[Result.s.Lo & 0xff]; \
-    } \
     *pfEFlags = fEfl; \
     return 0; \
 }
-/** @todo Testcase: IMUL 2 and 3 operands. */
-EMIT_IMUL(64, 128, (uint64_t *puA, uint64_t *puD, uint64_t uFactor2, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_NEG_U128, MULDIV_MUL_U128)
+EMIT_IMUL(64, 128, (uint64_t *puA, uint64_t *puD, uint64_t uFactor2, uint32_t *pfEFlags), (puA, puD, uFactor2, pfEFlags),
+          MUL_LOAD_F1, MUL_STORE, MULDIV_NEG_U128, MULDIV_MUL_U128)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_IMUL(32, 64, (uint32_t *puA, uint32_t *puD, uint32_t uFactor2, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_NEG, MULDIV_MUL)
-EMIT_IMUL(16, 32, (uint16_t *puA, uint16_t *puD, uint16_t uFactor2, uint32_t *pfEFlags), MUL_LOAD_F1, MUL_STORE, MULDIV_NEG, MULDIV_MUL)
-EMIT_IMUL(8, 16, (uint16_t *puAX, uint8_t uFactor2, uint32_t *pfEFlags), MUL_LOAD_F1_U8, MUL_STORE_U8, MULDIV_NEG, MULDIV_MUL)
+EMIT_IMUL(32, 64, (uint32_t *puA, uint32_t *puD, uint32_t uFactor2, uint32_t *pfEFlags),  (puA, puD, uFactor2, pfEFlags),
+          MUL_LOAD_F1, MUL_STORE, MULDIV_NEG, MULDIV_MUL)
+EMIT_IMUL(16, 32, (uint16_t *puA, uint16_t *puD, uint16_t uFactor2, uint32_t *pfEFlags),  (puA, puD, uFactor2, pfEFlags),
+          MUL_LOAD_F1, MUL_STORE, MULDIV_NEG, MULDIV_MUL)
+EMIT_IMUL(8, 16, (uint16_t *puAX, uint8_t uFactor2, uint32_t *pfEFlags),                  (puAX,     uFactor2, pfEFlags),
+          MUL_LOAD_F1_U8, MUL_STORE_U8, MULDIV_NEG, MULDIV_MUL)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
-{
-    uint64_t uIgn;
-    iemAImpl_imul_u64(puDst, &uIgn, uSrc, pfEFlags);
+# define EMIT_IMUL_TWO(a_cBits, a_uType) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u ## a_cBits,(a_uType *puDst, a_uType uSrc, uint32_t *pfEFlags)) \
+{ \
+    a_uType uIgn; \
+    iemAImpl_imul_u ## a_cBits(puDst, &uIgn, uSrc, pfEFlags); \
+} \
+\
+IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u ## a_cBits ## _intel,(a_uType *puDst, a_uType uSrc, uint32_t *pfEFlags)) \
+{ \
+    a_uType uIgn; \
+    iemAImpl_imul_u ## a_cBits(puDst, &uIgn, uSrc, pfEFlags); \
+} \
+\
+IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u ## a_cBits ## _amd,(a_uType *puDst, a_uType uSrc, uint32_t *pfEFlags)) \
+{ \
+    a_uType uIgn; \
+    iemAImpl_imul_u ## a_cBits(puDst, &uIgn, uSrc, pfEFlags); \
 }
 
+EMIT_IMUL_TWO(64, uint64_t)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u32,(uint32_t *puDst, uint32_t uSrc, uint32_t *pfEFlags))
-{
-    uint32_t uIgn;
-    iemAImpl_imul_u32(puDst, &uIgn, uSrc, pfEFlags);
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u16,(uint16_t *puDst, uint16_t uSrc, uint32_t *pfEFlags))
-{
-    uint16_t uIgn;
-    iemAImpl_imul_u16(puDst, &uIgn, uSrc, pfEFlags);
-}
-
-#endif
+EMIT_IMUL_TWO(32, uint32_t)
+EMIT_IMUL_TWO(16, uint16_t)
+# endif
 
 /*
  * DIV
  */
-# define EMIT_DIV(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_fnLoad, a_fnStore, a_fnDivRem) \
+# define EMIT_DIV(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_CallArgs, a_fnLoad, a_fnStore, a_fnDivRem) \
 IEM_DECL_IMPL_DEF(int, iemAImpl_div_u ## a_cBitsWidth,a_Args) \
 { \
     /* Note! Skylake leaves all flags alone. */ \
@@ -1734,19 +1855,48 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_div_u ## a_cBitsWidth,a_Args) \
     } \
     /* #DE */ \
     return -1; \
+} \
+\
+IEM_DECL_IMPL_DEF(int, iemAImpl_div_u ## a_cBitsWidth ## _intel,a_Args) \
+{ \
+    return iemAImpl_div_u ## a_cBitsWidth a_CallArgs; \
+} \
+\
+IEM_DECL_IMPL_DEF(int, iemAImpl_div_u ## a_cBitsWidth ## _amd,a_Args) \
+{ \
+    /* Note! Skylake leaves all flags alone. */ \
+    RT_NOREF_PV(pfEFlags); \
+    \
+    RTUINT ## a_cBitsWidth2x ## U Dividend; \
+    a_fnLoad(Dividend); \
+    if (   uDivisor != 0 \
+        && Dividend.s.Hi < uDivisor) \
+    { \
+        RTUINT ## a_cBitsWidth2x ## U Remainder, Quotient; \
+        a_fnDivRem(Quotient, Remainder, Dividend, uDivisor); \
+        a_fnStore(Quotient.s.Lo, Remainder.s.Lo); \
+        /** @todo research the undefined DIV flags. */ \
+        return 0; \
+    } \
+    /* #DE */ \
+    return -1; \
 }
-EMIT_DIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_MODDIV_U128)
+EMIT_DIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), (puA, puD, uDivisor, pfEFlags),
+         DIV_LOAD, DIV_STORE, MULDIV_MODDIV_U128)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_DIV(32,64, (uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_MODDIV)
-EMIT_DIV(16,32, (uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_MODDIV)
-EMIT_DIV(8,16,  (uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags), DIV_LOAD_U8, DIV_STORE_U8, MULDIV_MODDIV)
+EMIT_DIV(32,64, (uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), (puA, puD, uDivisor, pfEFlags),
+         DIV_LOAD, DIV_STORE, MULDIV_MODDIV)
+EMIT_DIV(16,32, (uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), (puA, puD, uDivisor, pfEFlags),
+         DIV_LOAD, DIV_STORE, MULDIV_MODDIV)
+EMIT_DIV(8,16,  (uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags),                (puAX,     uDivisor, pfEFlags),
+         DIV_LOAD_U8, DIV_STORE_U8, MULDIV_MODDIV)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
 /*
  * IDIV
  */
-# define EMIT_IDIV(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_fnLoad, a_fnStore, a_fnNeg, a_fnDivRem) \
+# define EMIT_IDIV(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_CallArgs, a_fnLoad, a_fnStore, a_fnNeg, a_fnDivRem) \
 IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u ## a_cBitsWidth,a_Args) \
 { \
     /* Note! Skylake leaves all flags alone. */ \
@@ -1821,12 +1971,98 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u ## a_cBitsWidth,a_Args) \
     } \
     /* #DE */ \
     return -1; \
+} \
+\
+IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u ## a_cBitsWidth ## _intel,a_Args) \
+{ \
+    return iemAImpl_idiv_u ## a_cBitsWidth a_CallArgs; \
+} \
+\
+IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u ## a_cBitsWidth ## _amd,a_Args) \
+{ \
+    /* Note! Skylake leaves all flags alone. */ \
+    RT_NOREF_PV(pfEFlags); \
+    \
+    /** @todo overflow checks */ \
+    if (uDivisor != 0) \
+    { \
+        /* \
+         * Convert to unsigned division. \
+         */ \
+        RTUINT ## a_cBitsWidth2x ## U Dividend; \
+        a_fnLoad(Dividend); \
+        bool const fSignedDividend = RT_BOOL(Dividend.s.Hi & RT_BIT_64(a_cBitsWidth - 1)); \
+        if (fSignedDividend) \
+            a_fnNeg(Dividend, a_cBitsWidth2x); \
+        \
+        uint ## a_cBitsWidth ## _t uDivisorPositive; \
+        if (!(uDivisor & RT_BIT_64(a_cBitsWidth - 1))) \
+            uDivisorPositive = uDivisor; \
+        else \
+            uDivisorPositive = UINT ## a_cBitsWidth ## _C(0) - uDivisor; \
+        \
+        RTUINT ## a_cBitsWidth2x ## U Remainder, Quotient; \
+        a_fnDivRem(Quotient, Remainder, Dividend, uDivisorPositive); \
+        \
+        /* \
+         * Setup the result, checking for overflows. \
+         */ \
+        if (!(uDivisor & RT_BIT_64(a_cBitsWidth - 1))) \
+        { \
+            if (!fSignedDividend) \
+            { \
+                /* Positive divisor, positive dividend => result positive. */ \
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint ## a_cBitsWidth ## _t)INT ## a_cBitsWidth ## _MAX) \
+                { \
+                    a_fnStore(Quotient.s.Lo, Remainder.s.Lo); \
+                    return 0; \
+                } \
+            } \
+            else \
+            { \
+                /* Positive divisor, negative dividend => result negative. */ \
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_64(a_cBitsWidth - 1)) \
+                { \
+                    a_fnStore(UINT ## a_cBitsWidth ## _C(0) - Quotient.s.Lo, UINT ## a_cBitsWidth ## _C(0) - Remainder.s.Lo); \
+                    return 0; \
+                } \
+            } \
+        } \
+        else \
+        { \
+            if (!fSignedDividend) \
+            { \
+                /* Negative divisor, positive dividend => negative quotient, positive remainder. */ \
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= RT_BIT_64(a_cBitsWidth - 1)) \
+                { \
+                    a_fnStore(UINT ## a_cBitsWidth ## _C(0) - Quotient.s.Lo, Remainder.s.Lo); \
+                    return 0; \
+                } \
+            } \
+            else \
+            { \
+                /* Negative divisor, negative dividend => positive quotient, negative remainder. */ \
+                if (Quotient.s.Hi == 0 && Quotient.s.Lo <= (uint ## a_cBitsWidth ## _t)INT ## a_cBitsWidth ## _MAX) \
+                { \
+                    a_fnStore(Quotient.s.Lo, UINT ## a_cBitsWidth ## _C(0) - Remainder.s.Lo); \
+                    return 0; \
+                } \
+            } \
+        } \
+    } \
+    /* #DE */ \
+    return -1; \
 }
-EMIT_IDIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_NEG_U128, MULDIV_MODDIV_U128)
+
+EMIT_IDIV(64,128,(uint64_t *puA, uint64_t *puD, uint64_t uDivisor, uint32_t *pfEFlags), (puA, puD, uDivisor, pfEFlags),
+          DIV_LOAD, DIV_STORE, MULDIV_NEG_U128, MULDIV_MODDIV_U128)
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_IDIV(32,64,(uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_NEG, MULDIV_MODDIV)
-EMIT_IDIV(16,32,(uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags), DIV_LOAD, DIV_STORE, MULDIV_NEG, MULDIV_MODDIV)
-EMIT_IDIV(8,16,(uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags),           DIV_LOAD_U8, DIV_STORE_U8, MULDIV_NEG, MULDIV_MODDIV)
+EMIT_IDIV(32,64,(uint32_t *puA, uint32_t *puD, uint32_t uDivisor, uint32_t *pfEFlags),  (puA, puD, uDivisor, pfEFlags),
+          DIV_LOAD, DIV_STORE, MULDIV_NEG, MULDIV_MODDIV)
+EMIT_IDIV(16,32,(uint16_t *puA, uint16_t *puD, uint16_t uDivisor, uint32_t *pfEFlags),  (puA, puD, uDivisor, pfEFlags),
+          DIV_LOAD, DIV_STORE, MULDIV_NEG, MULDIV_MODDIV)
+EMIT_IDIV(8,16,(uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags),                  (puAX,     uDivisor, pfEFlags),
+          DIV_LOAD_U8, DIV_STORE_U8, MULDIV_NEG, MULDIV_MODDIV)
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 

@@ -7267,7 +7267,7 @@ FNIEMOP_DEF(iemOp_imul_Gv_Ev)
     IEMOP_MNEMONIC(imul_Gv_Ev, "imul Gv,Ev");
     IEMOP_HLP_MIN_386();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
-    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, &g_iemAImpl_imul_two);
+    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_imul_two_eflags));
 }
 
 
@@ -8009,7 +8009,7 @@ FNIEMOP_DEF(iemOp_bsf_Gv_Ev)
     IEMOP_MNEMONIC(bsf_Gv_Ev, "bsf Gv,Ev");
     IEMOP_HLP_MIN_386();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF);
-    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, &g_iemAImpl_bsf);
+    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_bsf_eflags));
 }
 
 
@@ -8023,7 +8023,7 @@ FNIEMOP_DEF(iemOp_bsr_Gv_Ev)
     IEMOP_MNEMONIC(bsr_Gv_Ev, "bsr Gv,Ev");
     IEMOP_HLP_MIN_386();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF);
-    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, &g_iemAImpl_bsr);
+    return FNIEMOP_CALL_1(iemOpHlpBinaryOperator_rv_rm, IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_bsr_eflags));
 }
 
 

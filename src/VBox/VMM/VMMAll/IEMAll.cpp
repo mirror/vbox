@@ -710,6 +710,33 @@ IEM_STATIC const IEMOPBINSIZES g_iemAImpl_bsf =
     iemAImpl_bsf_u64, NULL
 };
 
+/** Function table for the BSF instruction, AMD EFLAGS variant. */
+IEM_STATIC const IEMOPBINSIZES g_iemAImpl_bsf_amd =
+{
+    NULL,  NULL,
+    iemAImpl_bsf_u16_amd, NULL,
+    iemAImpl_bsf_u32_amd, NULL,
+    iemAImpl_bsf_u64_amd, NULL
+};
+
+/** Function table for the BSF instruction, Intel EFLAGS variant. */
+IEM_STATIC const IEMOPBINSIZES g_iemAImpl_bsf_intel =
+{
+    NULL,  NULL,
+    iemAImpl_bsf_u16_intel, NULL,
+    iemAImpl_bsf_u32_intel, NULL,
+    iemAImpl_bsf_u64_intel, NULL
+};
+
+/** EFLAGS variation selection table for the BSF instruction. */
+IEM_STATIC const IEMOPBINSIZES * const g_iemAImpl_bsf_eflags[] =
+{
+    &g_iemAImpl_bsf,
+    &g_iemAImpl_bsf_intel,
+    &g_iemAImpl_bsf_amd,
+    &g_iemAImpl_bsf,
+};
+
 /** Function table for the BSR instruction. */
 IEM_STATIC const IEMOPBINSIZES g_iemAImpl_bsr =
 {
@@ -719,6 +746,33 @@ IEM_STATIC const IEMOPBINSIZES g_iemAImpl_bsr =
     iemAImpl_bsr_u64, NULL
 };
 
+/** Function table for the BSR instruction, AMD EFLAGS variant. */
+IEM_STATIC const IEMOPBINSIZES g_iemAImpl_bsr_amd =
+{
+    NULL,  NULL,
+    iemAImpl_bsr_u16_amd, NULL,
+    iemAImpl_bsr_u32_amd, NULL,
+    iemAImpl_bsr_u64_amd, NULL
+};
+
+/** Function table for the BSR instruction, Intel EFLAGS variant. */
+IEM_STATIC const IEMOPBINSIZES g_iemAImpl_bsr_intel =
+{
+    NULL,  NULL,
+    iemAImpl_bsr_u16_intel, NULL,
+    iemAImpl_bsr_u32_intel, NULL,
+    iemAImpl_bsr_u64_intel, NULL
+};
+
+/** EFLAGS variation selection table for the BSR instruction. */
+IEM_STATIC const IEMOPBINSIZES * const g_iemAImpl_bsr_eflags[] =
+{
+    &g_iemAImpl_bsr,
+    &g_iemAImpl_bsr_intel,
+    &g_iemAImpl_bsr_amd,
+    &g_iemAImpl_bsr,
+};
+
 /** Function table for the IMUL instruction. */
 IEM_STATIC const IEMOPBINSIZES g_iemAImpl_imul_two =
 {
@@ -726,6 +780,60 @@ IEM_STATIC const IEMOPBINSIZES g_iemAImpl_imul_two =
     iemAImpl_imul_two_u16, NULL,
     iemAImpl_imul_two_u32, NULL,
     iemAImpl_imul_two_u64, NULL
+};
+
+/** Function table for the IMUL instruction, AMD EFLAGS variant. */
+IEM_STATIC const IEMOPBINSIZES g_iemAImpl_imul_two_amd =
+{
+    NULL,  NULL,
+    iemAImpl_imul_two_u16_amd, NULL,
+    iemAImpl_imul_two_u32_amd, NULL,
+    iemAImpl_imul_two_u64_amd, NULL
+};
+
+/** Function table for the IMUL instruction, Intel EFLAGS variant. */
+IEM_STATIC const IEMOPBINSIZES g_iemAImpl_imul_two_intel =
+{
+    NULL,  NULL,
+    iemAImpl_imul_two_u16_intel, NULL,
+    iemAImpl_imul_two_u32_intel, NULL,
+    iemAImpl_imul_two_u64_intel, NULL
+};
+
+/** EFLAGS variation selection table for the IMUL instruction. */
+IEM_STATIC const IEMOPBINSIZES * const g_iemAImpl_imul_two_eflags[] =
+{
+    &g_iemAImpl_imul_two,
+    &g_iemAImpl_imul_two_intel,
+    &g_iemAImpl_imul_two_amd,
+    &g_iemAImpl_imul_two,
+};
+
+/** EFLAGS variation selection table for the 16-bit IMUL instruction. */
+IEM_STATIC PFNIEMAIMPLBINU16 const g_iemAImpl_imul_two_u16_eflags[] =
+{
+    iemAImpl_imul_two_u16,
+    iemAImpl_imul_two_u16_intel,
+    iemAImpl_imul_two_u16_amd,
+    iemAImpl_imul_two_u16,
+};
+
+/** EFLAGS variation selection table for the 32-bit IMUL instruction. */
+IEM_STATIC PFNIEMAIMPLBINU32 const g_iemAImpl_imul_two_u32_eflags[] =
+{
+    iemAImpl_imul_two_u32,
+    iemAImpl_imul_two_u32_intel,
+    iemAImpl_imul_two_u32_amd,
+    iemAImpl_imul_two_u32,
+};
+
+/** EFLAGS variation selection table for the 64-bit IMUL instruction. */
+IEM_STATIC PFNIEMAIMPLBINU64 const g_iemAImpl_imul_two_u64_eflags[] =
+{
+    iemAImpl_imul_two_u64,
+    iemAImpl_imul_two_u64_intel,
+    iemAImpl_imul_two_u64_amd,
+    iemAImpl_imul_two_u64,
 };
 
 /** Group 1 /r lookup table. */
@@ -851,6 +959,43 @@ IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_mul =
     iemAImpl_mul_u64
 };
 
+/** Function table for the MUL instruction, AMD EFLAGS variation. */
+IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_mul_amd =
+{
+    iemAImpl_mul_u8_amd,
+    iemAImpl_mul_u16_amd,
+    iemAImpl_mul_u32_amd,
+    iemAImpl_mul_u64_amd
+};
+
+/** Function table for the MUL instruction, Intel EFLAGS variation. */
+IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_mul_intel =
+{
+    iemAImpl_mul_u8_intel,
+    iemAImpl_mul_u16_intel,
+    iemAImpl_mul_u32_intel,
+    iemAImpl_mul_u64_intel
+};
+
+/** EFLAGS variation selection table for the MUL instruction. */
+IEM_STATIC const IEMOPMULDIVSIZES * const g_iemAImpl_mul_eflags[] =
+{
+    &g_iemAImpl_mul,
+    &g_iemAImpl_mul_intel,
+    &g_iemAImpl_mul_amd,
+    &g_iemAImpl_mul,
+};
+
+/** EFLAGS variation selection table for the 8-bit MUL instruction. */
+IEM_STATIC PFNIEMAIMPLMULDIVU8 const g_iemAImpl_mul_u8_eflags[] =
+{
+    iemAImpl_mul_u8,
+    iemAImpl_mul_u8_intel,
+    iemAImpl_mul_u8_amd,
+    iemAImpl_mul_u8
+};
+
+
 /** Function table for the IMUL instruction working implicitly on rAX. */
 IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_imul =
 {
@@ -859,6 +1004,43 @@ IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_imul =
     iemAImpl_imul_u32,
     iemAImpl_imul_u64
 };
+
+/** Function table for the IMUL instruction working implicitly on rAX, AMD EFLAGS variation. */
+IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_imul_amd =
+{
+    iemAImpl_imul_u8_amd,
+    iemAImpl_imul_u16_amd,
+    iemAImpl_imul_u32_amd,
+    iemAImpl_imul_u64_amd
+};
+
+/** Function table for the IMUL instruction working implicitly on rAX, Intel EFLAGS variation. */
+IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_imul_intel =
+{
+    iemAImpl_imul_u8_intel,
+    iemAImpl_imul_u16_intel,
+    iemAImpl_imul_u32_intel,
+    iemAImpl_imul_u64_intel
+};
+
+/** EFLAGS variation selection table for the IMUL instruction. */
+IEM_STATIC const IEMOPMULDIVSIZES * const g_iemAImpl_imul_eflags[] =
+{
+    &g_iemAImpl_imul,
+    &g_iemAImpl_imul_intel,
+    &g_iemAImpl_imul_amd,
+    &g_iemAImpl_imul,
+};
+
+/** EFLAGS variation selection table for the 8-bit IMUL instruction. */
+IEM_STATIC PFNIEMAIMPLMULDIVU8 const g_iemAImpl_imul_u8_eflags[] =
+{
+    iemAImpl_imul_u8,
+    iemAImpl_imul_u8_intel,
+    iemAImpl_imul_u8_amd,
+    iemAImpl_imul_u8
+};
+
 
 /** Function table for the DIV instruction. */
 IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_div =
@@ -869,7 +1051,44 @@ IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_div =
     iemAImpl_div_u64
 };
 
-/** Function table for the MUL instruction. */
+/** Function table for the DIV instruction, AMD EFLAGS variation. */
+IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_div_amd =
+{
+    iemAImpl_div_u8_amd,
+    iemAImpl_div_u16_amd,
+    iemAImpl_div_u32_amd,
+    iemAImpl_div_u64_amd
+};
+
+/** Function table for the DIV instruction, Intel EFLAGS variation. */
+IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_div_intel =
+{
+    iemAImpl_div_u8_intel,
+    iemAImpl_div_u16_intel,
+    iemAImpl_div_u32_intel,
+    iemAImpl_div_u64_intel
+};
+
+/** EFLAGS variation selection table for the DIV instruction. */
+IEM_STATIC const IEMOPMULDIVSIZES * const g_iemAImpl_div_eflags[] =
+{
+    &g_iemAImpl_div,
+    &g_iemAImpl_div_intel,
+    &g_iemAImpl_div_amd,
+    &g_iemAImpl_div,
+};
+
+/** EFLAGS variation selection table for the 8-bit DIV instruction. */
+IEM_STATIC PFNIEMAIMPLMULDIVU8 const g_iemAImpl_div_u8_eflags[] =
+{
+    iemAImpl_div_u8,
+    iemAImpl_div_u8_intel,
+    iemAImpl_div_u8_amd,
+    iemAImpl_div_u8
+};
+
+
+/** Function table for the IDIV instruction. */
 IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_idiv =
 {
     iemAImpl_idiv_u8,
@@ -877,6 +1096,43 @@ IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_idiv =
     iemAImpl_idiv_u32,
     iemAImpl_idiv_u64
 };
+
+/** Function table for the IDIV instruction, AMD EFLAGS variation. */
+IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_idiv_amd =
+{
+    iemAImpl_idiv_u8_amd,
+    iemAImpl_idiv_u16_amd,
+    iemAImpl_idiv_u32_amd,
+    iemAImpl_idiv_u64_amd
+};
+
+/** Function table for the IDIV instruction, Intel EFLAGS variation. */
+IEM_STATIC const IEMOPMULDIVSIZES g_iemAImpl_idiv_intel =
+{
+    iemAImpl_idiv_u8_intel,
+    iemAImpl_idiv_u16_intel,
+    iemAImpl_idiv_u32_intel,
+    iemAImpl_idiv_u64_intel
+};
+
+/** EFLAGS variation selection table for the IDIV instruction. */
+IEM_STATIC const IEMOPMULDIVSIZES * const g_iemAImpl_idiv_eflags[] =
+{
+    &g_iemAImpl_idiv,
+    &g_iemAImpl_idiv_intel,
+    &g_iemAImpl_idiv_amd,
+    &g_iemAImpl_idiv,
+};
+
+/** EFLAGS variation selection table for the 8-bit IDIV instruction. */
+IEM_STATIC PFNIEMAIMPLMULDIVU8 const g_iemAImpl_idiv_u8_eflags[] =
+{
+    iemAImpl_idiv_u8,
+    iemAImpl_idiv_u8_intel,
+    iemAImpl_idiv_u8_amd,
+    iemAImpl_idiv_u8
+};
+
 
 /** Function table for the SHLD instruction */
 IEM_STATIC const IEMOPSHIFTDBLSIZES g_iemAImpl_shld =

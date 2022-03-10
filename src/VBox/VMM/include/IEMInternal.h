@@ -101,6 +101,20 @@ typedef RTFLOAT32U *PRTFLOAT32U;
 typedef RTFLOAT32U const *PCRTFLOAT32U;
 
 
+/** @name IEMTARGETCPU_EFL_BEHAVIOR_XXX - IEMCPU::idxTargetCpuEflFlavour
+ * @{ */
+#define IEMTARGETCPU_EFL_BEHAVIOR_NATIVE      0     /**< Native x86 EFLAGS result; Intel EFLAGS when on non-x86 hosts. */
+#define IEMTARGETCPU_EFL_BEHAVIOR_INTEL       1     /**< Intel EFLAGS result. */
+#define IEMTARGETCPU_EFL_BEHAVIOR_AMD         2     /**< AMD EFLAGS result */
+#define IEMTARGETCPU_EFL_BEHAVIOR_RESERVED    3     /**< Reserved/dummy entry slot that's the same as 0. */
+#define IEMTARGETCPU_EFL_BEHAVIOR_MASK        3     /**< For masking the index before use. */
+/** Selects the right variant from a_aArray.
+ * pVCpu is implicit in the caller context. */
+#define IEMTARGETCPU_EFL_BEHAVIOR_SELECT(a_aArray) \
+    (a_aArray[pVCpu->iem.s.idxTargetCpuEflFlavour & IEMTARGETCPU_EFL_BEHAVIOR_MASK])
+/** @} */
+
+
 /**
  * Extended operand mode that includes a representation of 8-bit.
  *
@@ -581,10 +595,15 @@ typedef struct IEMCPU
      * @{ */
 #if IEM_CFG_TARGET_CPU == IEMTARGETCPU_DYNAMIC
     /** The target CPU. */
-    uint32_t                uTargetCpu;
+    uint8_t                 uTargetCpu;
 #else
-    uint32_t                u32TargetCpuPadding;
+    uint8_t                 bTargetCpuPadding;
 #endif
+    /** For selecting assembly works matching the target CPU EFLAGS behaviour, see
+     *  IEMTARGETCPU_EFL_BEHAVIOR_XXX for values.  This is for instance used for the
+     *  BSF & BSR instructions where AMD and Intel CPUs produce different EFLAGS. */
+    uint8_t                 idxTargetCpuEflFlavour;
+
     /** The CPU vendor. */
     CPUMCPUVENDOR           enmCpuVendor;
     /** @} */
@@ -1000,6 +1019,12 @@ DECLCALLBACK(FNPGMRZPHYSPFHANDLER)  iemVmxApicAccessPagePfHandler;
 
 #endif
 
+/** Defined in IEMAllAImplC.cpp but also used by IEMAllAImplA.asm. */
+RT_C_DECLS_BEGIN
+extern uint8_t const g_afParity[256];
+RT_C_DECLS_END
+
+
 /** @name Arithmetic assignment operations on bytes (binary).
  * @{ */
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLBINU8,  (uint8_t  *pu8Dst,  uint8_t  u8Src,  uint32_t *pEFlags));
@@ -1168,19 +1193,19 @@ FNIEMAIMPLSHIFTDBLU64 iemAImpl_shrd_u64;
 
 /** @name Bit search operations (thrown in with the binary ops).
  * @{ */
-FNIEMAIMPLBINU16 iemAImpl_bsf_u16;
-FNIEMAIMPLBINU32 iemAImpl_bsf_u32;
-FNIEMAIMPLBINU64 iemAImpl_bsf_u64;
-FNIEMAIMPLBINU16 iemAImpl_bsr_u16;
-FNIEMAIMPLBINU32 iemAImpl_bsr_u32;
-FNIEMAIMPLBINU64 iemAImpl_bsr_u64;
+FNIEMAIMPLBINU16 iemAImpl_bsf_u16, iemAImpl_bsf_u16_amd, iemAImpl_bsf_u16_intel;
+FNIEMAIMPLBINU32 iemAImpl_bsf_u32, iemAImpl_bsf_u32_amd, iemAImpl_bsf_u32_intel;
+FNIEMAIMPLBINU64 iemAImpl_bsf_u64, iemAImpl_bsf_u64_amd, iemAImpl_bsf_u64_intel;
+FNIEMAIMPLBINU16 iemAImpl_bsr_u16, iemAImpl_bsr_u16_amd, iemAImpl_bsr_u16_intel;
+FNIEMAIMPLBINU32 iemAImpl_bsr_u32, iemAImpl_bsr_u32_amd, iemAImpl_bsr_u32_intel;
+FNIEMAIMPLBINU64 iemAImpl_bsr_u64, iemAImpl_bsr_u64_amd, iemAImpl_bsr_u64_intel;
 /** @}  */
 
 /** @name Signed multiplication operations (thrown in with the binary ops).
  * @{ */
-FNIEMAIMPLBINU16 iemAImpl_imul_two_u16;
-FNIEMAIMPLBINU32 iemAImpl_imul_two_u32;
-FNIEMAIMPLBINU64 iemAImpl_imul_two_u64;
+FNIEMAIMPLBINU16 iemAImpl_imul_two_u16, iemAImpl_imul_two_u16_amd, iemAImpl_imul_two_u16_intel;
+FNIEMAIMPLBINU32 iemAImpl_imul_two_u32, iemAImpl_imul_two_u32_amd, iemAImpl_imul_two_u32_intel;
+FNIEMAIMPLBINU64 iemAImpl_imul_two_u64, iemAImpl_imul_two_u64_amd, iemAImpl_imul_two_u64_intel;
 /** @}  */
 
 /** @name Arithmetic assignment operations on bytes (unary).
@@ -1280,23 +1305,31 @@ FNIEMAIMPLSHIFTU64 iemAImpl_sar_u64;
  * @{ */
 typedef IEM_DECL_IMPL_TYPE(int, FNIEMAIMPLMULDIVU8,(uint16_t *pu16AX, uint8_t u8FactorDivisor, uint32_t *pEFlags));
 typedef FNIEMAIMPLMULDIVU8  *PFNIEMAIMPLMULDIVU8;
-FNIEMAIMPLMULDIVU8 iemAImpl_mul_u8, iemAImpl_imul_u8;
-FNIEMAIMPLMULDIVU8 iemAImpl_div_u8, iemAImpl_idiv_u8;
+FNIEMAIMPLMULDIVU8 iemAImpl_mul_u8,  iemAImpl_mul_u8_amd,  iemAImpl_mul_u8_intel;
+FNIEMAIMPLMULDIVU8 iemAImpl_imul_u8, iemAImpl_imul_u8_amd, iemAImpl_imul_u8_intel;
+FNIEMAIMPLMULDIVU8 iemAImpl_div_u8,  iemAImpl_div_u8_amd,  iemAImpl_div_u8_intel;
+FNIEMAIMPLMULDIVU8 iemAImpl_idiv_u8, iemAImpl_idiv_u8_amd, iemAImpl_idiv_u8_intel;
 
 typedef IEM_DECL_IMPL_TYPE(int, FNIEMAIMPLMULDIVU16,(uint16_t *pu16AX, uint16_t *pu16DX, uint16_t u16FactorDivisor, uint32_t *pEFlags));
 typedef FNIEMAIMPLMULDIVU16  *PFNIEMAIMPLMULDIVU16;
-FNIEMAIMPLMULDIVU16 iemAImpl_mul_u16, iemAImpl_imul_u16;
-FNIEMAIMPLMULDIVU16 iemAImpl_div_u16, iemAImpl_idiv_u16;
+FNIEMAIMPLMULDIVU16 iemAImpl_mul_u16,  iemAImpl_mul_u16_amd,  iemAImpl_mul_u16_intel;
+FNIEMAIMPLMULDIVU16 iemAImpl_imul_u16, iemAImpl_imul_u16_amd, iemAImpl_imul_u16_intel;
+FNIEMAIMPLMULDIVU16 iemAImpl_div_u16,  iemAImpl_div_u16_amd,  iemAImpl_div_u16_intel;
+FNIEMAIMPLMULDIVU16 iemAImpl_idiv_u16, iemAImpl_idiv_u16_amd, iemAImpl_idiv_u16_intel;
 
 typedef IEM_DECL_IMPL_TYPE(int, FNIEMAIMPLMULDIVU32,(uint32_t *pu32EAX, uint32_t *pu32EDX, uint32_t u32FactorDivisor, uint32_t *pEFlags));
 typedef FNIEMAIMPLMULDIVU32  *PFNIEMAIMPLMULDIVU32;
-FNIEMAIMPLMULDIVU32 iemAImpl_mul_u32, iemAImpl_imul_u32;
-FNIEMAIMPLMULDIVU32 iemAImpl_div_u32, iemAImpl_idiv_u32;
+FNIEMAIMPLMULDIVU32 iemAImpl_mul_u32,  iemAImpl_mul_u32_amd,  iemAImpl_mul_u32_intel;
+FNIEMAIMPLMULDIVU32 iemAImpl_imul_u32, iemAImpl_imul_u32_amd, iemAImpl_imul_u32_intel;
+FNIEMAIMPLMULDIVU32 iemAImpl_div_u32,  iemAImpl_div_u32_amd,  iemAImpl_div_u32_intel;
+FNIEMAIMPLMULDIVU32 iemAImpl_idiv_u32, iemAImpl_idiv_u32_amd, iemAImpl_idiv_u32_intel;
 
 typedef IEM_DECL_IMPL_TYPE(int, FNIEMAIMPLMULDIVU64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64FactorDivisor, uint32_t *pEFlags));
 typedef FNIEMAIMPLMULDIVU64  *PFNIEMAIMPLMULDIVU64;
-FNIEMAIMPLMULDIVU64 iemAImpl_mul_u64, iemAImpl_imul_u64;
-FNIEMAIMPLMULDIVU64 iemAImpl_div_u64, iemAImpl_idiv_u64;
+FNIEMAIMPLMULDIVU64 iemAImpl_mul_u64,  iemAImpl_mul_u64_amd,  iemAImpl_mul_u64_intel;
+FNIEMAIMPLMULDIVU64 iemAImpl_imul_u64, iemAImpl_imul_u64_amd, iemAImpl_imul_u64_intel;
+FNIEMAIMPLMULDIVU64 iemAImpl_div_u64,  iemAImpl_div_u64_amd,  iemAImpl_div_u64_intel;
+FNIEMAIMPLMULDIVU64 iemAImpl_idiv_u64, iemAImpl_idiv_u64_amd, iemAImpl_idiv_u64_intel;
 /** @} */
 
 /** @name Byte Swap.
