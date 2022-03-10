@@ -18,7 +18,6 @@ crypto_bn_TEMPLATE = SUBLIBCRYPTO
 crypto_bn_DEFS = OPENSSL_NO_DEPRECATED
 crypto_bn_SOURCES = \
 	bn_add.c \
-	bn_asm.c \
 	bn_blind.c \
 	bn_const.c \
 	bn_conv.c \
