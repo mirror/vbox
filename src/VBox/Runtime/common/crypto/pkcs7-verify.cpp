@@ -117,8 +117,10 @@ static int rtCrPkcs7VerifySignedDataUsingOpenSsl(PCRTCRPKCS7CONTENTINFO pContent
             }
             else
                 rcOssl = RTErrInfoSet(pErrInfo, rcOssl, "RTCrStoreConvertToOpenSslCertStack failed");
+#include "internal/openssl-pre.h" /* Need to disable C5039 warning here. */
             if (pAddCerts)
                 sk_X509_pop_free(pAddCerts, X509_free);
+#include "internal/openssl-post.h"
         }
         else
             rcOssl = RTErrInfoSet(pErrInfo, rcOssl, "RTCrStoreConvertToOpenSslCertStack failed");

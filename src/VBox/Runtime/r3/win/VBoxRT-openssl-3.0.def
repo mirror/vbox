@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - Windows OpenSSL v1.0.x exports we use outside VBoxRT (keep them few!).
+; IPRT - Windows OpenSSL exports we use outside VBoxRT (keep them few!).
 ;
 ; This file is appended to the architecture specific .def file.
 ;
@@ -26,9 +26,6 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-    ; ConsoleImpl.cpp uses this when VBOX_OPENSSL_FIPS is enabled.
-    FIPS_mode
-
     ; VBoxVRDP.dll - secure.cpp
     BIO_free
     BIO_new_file
@@ -41,7 +38,7 @@
     BN_new
     BN_num_bits
     BN_set_word
-    ;1.1.0: EVP_PKEY_get0_RSA
+    EVP_PKEY_get0_RSA
     i2d_X509
     MD5_Final
     MD5_Init
@@ -54,22 +51,19 @@
     RC4_set_key
     RSA_free
     RSA_generate_key_ex
-    ;1.1.0: RSA_get0_key
+    RSA_get0_key
     RSA_new
     SHA1_Final
     SHA1_Init
     SHA1_Update
     X509_free
-    ;1.1.0: X509_get_X509_PUBKEY
+    X509_get_X509_PUBKEY
     X509_PUBKEY_get0_param
-
-    ; VBoxVRDP.dll - secure.cpp - 1.0.1 additions:
-    BN_init
 
     ; VBoxVRDP.dll - tcp_vrdp.cpp
     BIO_new_socket
     BIO_test_flags
-    ;1.1.0: OPENSSL_init_ssl
+    OPENSSL_init_ssl
     SSL_accept
     SSL_CTX_free
     SSL_CTX_load_verify_locations
@@ -100,7 +94,7 @@
     EVP_EncryptFinal
     EVP_EncryptInit
     EVP_EncryptUpdate
-    EVP_MD_size
+    EVP_MD_get_size
     EVP_sha1
     EVP_sha256
     EVP_sha512
@@ -121,7 +115,7 @@
     ;exported above: RAND_bytes
 
     ; vboxwebsrv needs SSL support.
-    ASN1_STRING_data
+    ASN1_STRING_get0_data
     ASN1_STRING_to_UTF8
     ;exported above: BIO_free
     ;exported above: BIO_new_file
@@ -132,6 +126,8 @@
     DH_check
     DH_free
     DH_generate_parameters
+    DH_generate_parameters_ex
+    DH_new
     ERR_clear_error
     ERR_error_string
     ERR_error_string_n
@@ -139,14 +135,14 @@
     ERR_peek_error
     GENERAL_NAME_free
     i2v_GENERAL_NAMES
-    ;1.1.0: OPENSSL_init_crypto
+    OpenSSL_version_num
+    OPENSSL_init_crypto
     ;exported above: OPENSSL_init_ssl
-    ;1.1.0: OPENSSL_sk_num
-    ;1.1.0: OPENSSL_sk_pop_free
-    ;1.1.0: OPENSSL_sk_value
+    OPENSSL_sk_num
+    OPENSSL_sk_pop_free
+    OPENSSL_sk_value
     PEM_read_bio_DHparams
     RAND_load_file
-    RAND_pseudo_bytes
     RAND_seed
     RAND_status
     ;exported above: RSA_free
@@ -164,7 +160,7 @@
     SSL_CTX_set_default_passwd_cb
     SSL_CTX_set_default_passwd_cb_userdata
     SSL_CTX_set_default_verify_paths
-    ;1.1.0: SSL_CTX_set_options
+    SSL_CTX_set_options
     SSL_CTX_set_session_id_context
     ;exported above: SSL_CTX_set_verify
     SSL_CTX_set_verify_depth
@@ -172,10 +168,10 @@
     ;exported above: SSL_CTX_use_PrivateKey_file
     ;exported above: SSL_free
     SSL_get_error
-    SSL_get_peer_certificate
+    SSL_get1_peer_certificate
     SSL_get_verify_result
     SSL_get1_session
-    ;1.1.0: SSL_is_init_finished
+    SSL_is_init_finished
     SSL_load_client_CA_file
     ;exported above: SSL_new
     SSL_peek
@@ -186,7 +182,7 @@
     SSL_shutdown
     SSL_want
     ;exported above: SSL_write
-    ;1.1.0: TLS_method
+    TLS_method
     ;exported above: X509_free
     X509_get_ext_d2i
     ;exported above: X509_get_issuer_name
@@ -210,34 +206,177 @@
     X509_VERIFY_PARAM_set_flags
     X509V3_conf_free
 
-    ; vboxwebsrv - 1.0.1 additions
-    CRYPTO_set_dynlock_destroy_callback
-    CRYPTO_set_dynlock_lock_callback
-    CRYPTO_set_dynlock_create_callback
-    CRYPTO_set_locking_callback
-    CRYPTO_set_id_callback
-    CRYPTO_num_locks
-    ERR_remove_state
-    OPENSSL_add_all_algorithms_noconf
-    sk_value
-    sk_num
-    sk_pop_free
-    SSL_load_error_strings
-    SSL_library_init
-    SSL_state
-    SSLv23_method
-
-    ; vboxwebsrv - 1.0.1 additions for older gsoap version.
-    ASN1_item_d2i
-    OBJ_nid2sn
-    X509_EXTENSION_get_object
-    X509_get_ext
-    X509_get_ext_count
-    X509V3_EXT_get
-
     ; tstRTBigNum.cpp
     BN_div
     BN_mul
     BN_mod_exp_simple
     BN_ucmp
 
+    ; VBox-libtpms
+    BN_set_flags
+    BN_clear_free
+    BN_cmp
+    BN_dup
+    BN_sub
+    BN_add
+    BN_copy
+    RAND_add
+    BN_is_zero
+    BN_is_one
+    BN_value_one
+    BN_CTX_start
+    BN_CTX_get
+    BN_CTX_end
+    BN_mod_add
+    BN_mod_mul
+    BN_lshift
+    BN_mask_bits
+    BN_rshift
+    BN_mod_inverse
+    RSA_size
+    RSA_set0_key
+    RSA_get0_factors
+    RSA_public_encrypt
+    RSA_private_encrypt
+    RSA_private_decrypt
+    RSA_sign
+    RSA_verify
+    RSA_padding_add_PKCS1_type_1
+    RSA_padding_add_PKCS1_type_2
+    RSA_padding_check_PKCS1_type_1
+    RSA_padding_check_PKCS1_type_2
+    RSA_padding_add_PKCS1_OAEP
+    RSA_padding_check_PKCS1_OAEP
+    ERR_get_error_line_data
+    AES_set_encrypt_key
+    AES_set_decrypt_key
+    AES_decrypt
+    AES_encrypt
+    AES_cbc_encrypt
+    AES_ofb128_encrypt
+    SHA256_Init
+    SHA256_Update
+    SHA256_Final
+    SHA384_Init
+    SHA384_Update
+    SHA384_Final
+    SHA512_Init
+    SHA512_Update
+    SHA512_Final
+    EC_GROUP_free
+    EC_GROUP_set_generator
+    EC_GROUP_new_curve_GFp
+    EC_POINT_new
+    EC_POINT_free
+    EC_POINT_clear_free
+    EC_POINT_set_affine_coordinates
+    EC_POINT_get_affine_coordinates
+    EC_POINT_add
+    EC_POINTs_mul
+    EC_POINT_mul
+    Camellia_set_key
+    Camellia_encrypt
+    Camellia_decrypt
+    DES_ecb3_encrypt
+    DES_set_key_unchecked
+
+    ; VBox-libssh
+    BIO_ctrl
+    BIO_new
+    BIO_new_mem_buf
+    BIO_s_mem
+    BN_bn2hex
+    BN_is_bit_set
+    d2i_DSA_SIG
+    d2i_ECDSA_SIG
+    DH_compute_key
+    DH_generate_key
+    DH_get0_key
+    DH_get0_pqg
+    DH_set0_key
+    DH_set0_pqg
+    DH_size
+    DSA_free
+    DSA_generate_key
+    DSA_generate_parameters_ex
+    DSA_get0_key
+    DSA_get0_pqg
+    DSA_new
+    DSA_set0_key
+    DSA_set0_pqg
+    DSA_SIG_free
+    DSA_SIG_get0
+    DSA_SIG_new
+    DSA_SIG_set0
+    DSA_size
+    EC_GROUP_cmp
+    EC_GROUP_get_curve_name
+    EC_GROUP_get_degree
+    EC_KEY_dup
+    EC_KEY_free
+    EC_KEY_generate_key
+    EC_KEY_get0_group
+    EC_KEY_get0_private_key
+    EC_KEY_get0_public_key
+    EC_KEY_new_by_curve_name
+    EC_KEY_set_asn1_flag
+    EC_KEY_set_private_key
+    EC_KEY_set_public_key
+    EC_POINT_cmp
+    EC_POINT_oct2point
+    EC_POINT_point2oct
+    ECDH_compute_key
+    ECDSA_SIG_free
+    ECDSA_SIG_get0
+    ECDSA_SIG_new
+    ECDSA_SIG_set0
+    EVP_aes_128_cbc
+    EVP_aes_128_ctr
+    EVP_aes_128_gcm
+    EVP_aes_192_cbc
+    EVP_aes_192_ctr
+    EVP_aes_256_cbc
+    EVP_aes_256_ctr
+    EVP_aes_256_gcm
+    EVP_CIPHER_CTX_ctrl
+    EVP_CIPHER_CTX_reset
+    EVP_CIPHER_CTX_set_padding
+    EVP_DecryptInit_ex
+    EVP_DigestFinal
+    EVP_DigestInit
+    EVP_DigestInit_ex
+    EVP_DigestSignFinal
+    EVP_DigestSignInit
+    EVP_DigestSignUpdate
+    EVP_DigestUpdate
+    EVP_DigestVerifyFinal
+    EVP_DigestVerifyInit
+    EVP_DigestVerifyUpdate
+    EVP_EncryptInit_ex
+    EVP_MD_CTX_free
+    EVP_MD_CTX_new
+    EVP_MD_CTX_reset
+    EVP_md5
+    EVP_PKEY_get_base_id
+    EVP_PKEY_free
+    EVP_PKEY_get1_DSA
+    EVP_PKEY_get1_EC_KEY
+    EVP_PKEY_get1_RSA
+    EVP_PKEY_new
+    EVP_PKEY_set1_DSA
+    EVP_PKEY_set1_EC_KEY
+    EVP_PKEY_set1_RSA
+    EVP_PKEY_get_size
+    EVP_sha384
+    HMAC_CTX_free
+    HMAC_CTX_new
+    HMAC_Final
+    HMAC_Init_ex
+    HMAC_Update
+    i2d_DSA_SIG
+    i2d_ECDSA_SIG
+    OpenSSL_version
+    PEM_write_bio_PrivateKey
+    RSA_get0_crt_params
+    RSA_set0_crt_params
+    RSA_set0_factors

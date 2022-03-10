@@ -512,7 +512,9 @@ RTDECL(int) RTCrStoreConvertToOpenSslCertStack(RTCRSTORE hStore, uint32_t fFlags
                 return VINF_SUCCESS;
             }
         }
+#include "internal/openssl-pre.h"  /* Need to disable C5039 warning here. */
         sk_X509_pop_free(pOsslStack, X509_free);
+#include "internal/openssl-post.h"
     }
     else
         rc = VERR_NO_MEMORY;
