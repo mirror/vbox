@@ -1555,11 +1555,9 @@ static const struct
     ENTRY_AMD_EX(imul_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,
                             X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),
     ENTRY_INTEL_EX(imul_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0),
-    ENTRY_AMD_EX(div_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF,
-                            X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF),
+    ENTRY_AMD_EX(div_u8,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
     ENTRY_INTEL_EX(div_u8,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
-    ENTRY_AMD_EX(idiv_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF,
-                            X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF),
+    ENTRY_AMD_EX(idiv_u8,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
     ENTRY_INTEL_EX(idiv_u8, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0),
 };
 
@@ -1593,37 +1591,40 @@ static void MulDivU8Test(void)
 {
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aMulDivU8); iFn++)
     {
-        if (   g_aMulDivU8[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE
-            && g_aMulDivU8[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour)
-            continue;
-
         RTTestSub(g_hTest, g_aMulDivU8[iFn].pszName);
         MULDIVU8_TEST_T const * const paTests = g_aMulDivU8[iFn].paTests;
         uint32_t const                cTests  = g_aMulDivU8[iFn].cTests;
         uint32_t const                fEflIgn = g_aMulDivU8[iFn].uExtra;
-        for (uint32_t iTest = 0; iTest < cTests; iTest++ )
+        PFNIEMAIMPLMULDIVU8           pfn     = g_aMulDivU8[iFn].pfn;
+        uint32_t const cVars = 1 + (g_aMulDivU8[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && g_aMulDivU8[iFn].pfnNative);
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
         {
-            uint32_t fEfl  = paTests[iTest].fEflIn;
-            uint16_t uDst  = paTests[iTest].uDstIn;
-            int      rc    = g_aMulDivU8[iFn].pfn(&uDst, paTests[iTest].uSrcIn, &fEfl);
-            if (   uDst != paTests[iTest].uDstOut
-                || (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn)
-                || rc != paTests[iTest].rc)
-                RTTestFailed(g_hTest, "#%02u: efl=%#08x dst=%#06RX16 src=%#04RX8\n"
-                                      "  -> efl=%#08x dst=%#06RX16 rc=%d\n"
-                                      "expected %#08x     %#06RX16    %d%s\n",
-                             iTest, paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn,
-                             fEfl, uDst, rc, paTests[iTest].fEflOut, paTests[iTest].uDstOut, paTests[iTest].rc,
-                             EFlagsDiff(fEfl | fEflIgn, paTests[iTest].fEflOut | fEflIgn));
-            else
+            for (uint32_t iTest = 0; iTest < cTests; iTest++ )
             {
-                 *g_pu16  = paTests[iTest].uDstIn;
-                 *g_pfEfl = paTests[iTest].fEflIn;
-                 rc = g_aMulDivU8[iFn].pfn(g_pu16, paTests[iTest].uSrcIn, g_pfEfl);
-                 RTTEST_CHECK(g_hTest, *g_pu16  == paTests[iTest].uDstOut);
-                 RTTEST_CHECK(g_hTest, (*g_pfEfl | fEflIgn) == (paTests[iTest].fEflOut | fEflIgn));
-                 RTTEST_CHECK(g_hTest, rc  == paTests[iTest].rc);
+                uint32_t fEfl  = paTests[iTest].fEflIn;
+                uint16_t uDst  = paTests[iTest].uDstIn;
+                int      rc    = g_aMulDivU8[iFn].pfn(&uDst, paTests[iTest].uSrcIn, &fEfl);
+                if (   uDst != paTests[iTest].uDstOut
+                    || (fEfl | fEflIgn) != (paTests[iTest].fEflOut | fEflIgn)
+                    || rc != paTests[iTest].rc)
+                    RTTestFailed(g_hTest, "#%02u%s: efl=%#08x dst=%#06RX16 src=%#04RX8\n"
+                                          "  %s-> efl=%#08x dst=%#06RX16 rc=%d\n"
+                                          "%sexpected %#08x     %#06RX16    %d%s\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn,
+                                 iVar ? "  " : "", fEfl, uDst, rc,
+                                 iVar ? "  " : "", paTests[iTest].fEflOut, paTests[iTest].uDstOut, paTests[iTest].rc,
+                                 EFlagsDiff(fEfl | fEflIgn, paTests[iTest].fEflOut | fEflIgn));
+                else
+                {
+                     *g_pu16  = paTests[iTest].uDstIn;
+                     *g_pfEfl = paTests[iTest].fEflIn;
+                     rc = g_aMulDivU8[iFn].pfn(g_pu16, paTests[iTest].uSrcIn, g_pfEfl);
+                     RTTEST_CHECK(g_hTest, *g_pu16  == paTests[iTest].uDstOut);
+                     RTTEST_CHECK(g_hTest, (*g_pfEfl | fEflIgn) == (paTests[iTest].fEflOut | fEflIgn));
+                     RTTEST_CHECK(g_hTest, rc  == paTests[iTest].rc);
+                }
             }
+            pfn = g_aMulDivU8[iFn].pfnNative;
         }
     }
 }
@@ -1671,17 +1672,13 @@ static const struct \
     uint8_t                         idxCpuEflFlavour; \
 } a_aSubTests [] = \
 { \
-    ENTRY_AMD_EX(mul_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, \
-                                      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF /** @todo check out AMD flags */ ), \
+    ENTRY_AMD_EX(mul_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
     ENTRY_INTEL_EX(mul_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
-    ENTRY_AMD_EX(imul_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, \
-                                      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF), \
+    ENTRY_AMD_EX(imul_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
     ENTRY_INTEL_EX(imul_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
-    ENTRY_AMD_EX(div_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF,  \
-                                      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF), \
+    ENTRY_AMD_EX(div_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
     ENTRY_INTEL_EX(div_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
-    ENTRY_AMD_EX(idiv_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, \
-                                      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF), \
+    ENTRY_AMD_EX(idiv_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
     ENTRY_INTEL_EX(idiv_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF | X86_EFL_OF, 0), \
 }; \
 \
