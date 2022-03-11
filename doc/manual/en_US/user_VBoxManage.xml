@@ -336,19 +336,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
 
   <xi:include href="user_man_VBoxManage-unattended.xml"     xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <sect1 id="vboxmanage-discardstate">
-
-    <title>VBoxManage discardstate</title>
-
-    <para>
-      This command discards the saved state of a virtual machine which
-      is not currently running. This will cause the VM's operating
-      system to restart next time you start it. This is the equivalent
-      of pulling out the power cable on a physical machine, and should
-      be avoided if possible.
-    </para>
-
-  </sect1>
+  <xi:include href="user_man_VBoxManage-discardstate.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <sect1 id="vboxmanage-adoptstate">
 

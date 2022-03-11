@@ -759,7 +759,7 @@ RTEXITCODE handleDiscardState(HandlerArg *a)
     HRESULT rc;
 
     if (a->argc != 1)
-        return errorSyntax(USAGE_DISCARDSTATE, Misc::tr("Incorrect number of parameters"));
+        return errorSyntax(Misc::tr("Incorrect number of parameters"));
 
     ComPtr<IMachine> machine;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),

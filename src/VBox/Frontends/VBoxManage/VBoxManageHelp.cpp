@@ -591,11 +591,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
 
 #define SEP pcszSep1, pcszSep2
 
-    if (enmCommand == USAGE_DISCARDSTATE || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s discardstate %s    <uuid|vmname>\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_ADOPTSTATE || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s adoptstate %s      <uuid|vmname> <state_file>\n"
