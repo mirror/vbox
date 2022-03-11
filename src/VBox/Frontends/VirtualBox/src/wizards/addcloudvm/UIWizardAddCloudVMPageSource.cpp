@@ -362,7 +362,7 @@ UIWizardAddCloudVMPageSource::UIWizardAddCloudVMPageSource()
             this, &UIWizardAddCloudVMPageSource::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardAddCloudVMPageSource::sltHandleProfileButtonClick);
-    connect(m_pSourceInstanceList, &QListWidget::currentRowChanged,
+    connect(m_pSourceInstanceList, &QListWidget::itemSelectionChanged,
             this, &UIWizardAddCloudVMPageSource::sltHandleSourceInstanceChange);
 }
 

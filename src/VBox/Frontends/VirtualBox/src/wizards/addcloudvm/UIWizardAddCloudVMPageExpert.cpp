@@ -144,8 +144,8 @@ UIWizardAddCloudVMPageExpert::UIWizardAddCloudVMPageExpert()
             this, &UIWizardAddCloudVMPageExpert::sltHandleProfileComboChange);
     connect(m_pProfileToolButton, &QIToolButton::clicked,
             this, &UIWizardAddCloudVMPageExpert::sltHandleProfileButtonClick);
-    connect(m_pSourceInstanceList, &QListWidget::currentRowChanged,
-            this, &UIWizardAddCloudVMPageExpert::completeChanged);
+    connect(m_pSourceInstanceList, &QListWidget::itemSelectionChanged,
+            this, &UIWizardAddCloudVMPageExpert::sltHandleSourceInstanceChange);
 }
 
 UIWizardAddCloudVM *UIWizardAddCloudVMPageExpert::wizard() const
