@@ -216,7 +216,7 @@ static const VBMGCMD g_aCommands[] =
     { "controlvm",          USAGE_S_NEWCMD,    HELP_CMD_CONTROLVM, handleControlVM,            0 },
     { "unattended",         USAGE_S_NEWCMD,   HELP_CMD_UNATTENDED, handleUnattended,           0 },
     { "discardstate",       USAGE_S_NEWCMD, HELP_CMD_DISCARDSTATE, handleDiscardState,         0 },
-    { "adoptstate",         USAGE_ADOPTSTATE,       VBMG_CMD_TODO, handleAdoptState,           0 },
+    { "adoptstate",         USAGE_S_NEWCMD,   HELP_CMD_ADOPTSTATE, handleAdoptState,           0 },
     { "snapshot",           USAGE_S_NEWCMD,     HELP_CMD_SNAPSHOT, handleSnapshot,             0 },
     { "closemedium",        USAGE_CLOSEMEDIUM,      VBMG_CMD_TODO, handleCloseMedium,          0 },
     { "storageattach",      USAGE_STORAGEATTACH,    VBMG_CMD_TODO, handleStorageAttach,        0 },

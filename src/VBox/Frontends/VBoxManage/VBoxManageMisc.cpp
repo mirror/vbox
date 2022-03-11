@@ -788,7 +788,7 @@ RTEXITCODE handleAdoptState(HandlerArg *a)
     HRESULT rc;
 
     if (a->argc != 2)
-        return errorSyntax(USAGE_ADOPTSTATE, Misc::tr("Incorrect number of parameters"));
+        return errorSyntax(Misc::tr("Incorrect number of parameters"));
 
     ComPtr<IMachine> machine;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),

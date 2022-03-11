@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-adoptstate" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage adoptstate</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-adoptstate</refname>
     <refpurpose>change a virtual machine's state based on a saved state file</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
@@ -84,8 +84,10 @@
     <title>Examples</title>
     <remark role="help-scope" condition="GLOBAL" />
     <para>
-      The following command starts a VM called <literal>vm2</literal>
-      using a saved state file called <filename>mystate.sav</filename>.
+      The following command adopts a saved state file called
+      <filename>mystate.sav</filename> by a VM called <literal>vm2</literal>.
+      A subsequent start of the VM called <literal>vm2</literal> restores the
+      state from the saved state file <filename>mystate.sav</filename>.
     </para>
 <screen>$ VBoxManage adoptstate vm2 /home/user/mystate.sav</screen>
   </refsect1>
