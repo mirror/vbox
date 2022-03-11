@@ -335,6 +335,60 @@ NAME_FASTCALL(%1,%2,@):
 %endmacro
 
 ;;
+; Calculates the new EFLAGS based on the CPU EFLAGS (%2), a clear mask (%3),
+; signed input (%4[%5]) and parity index (%6).
+;
+; This is used by MUL and IMUL, where we got result (%4 & %6) in xAX which is
+; also T0. So, we have to use T1 for the EFLAGS calculation and save T0/xAX
+; while we extract the %2 flags from the CPU EFLAGS or use T2 (only AMD64).
+;
+; @remarks  Clobbers T0, T1, stack, %6, EFLAGS.
+; @param        1       The register pointing to the EFLAGS.
+; @param        2       The mask of modified flags to save.
+; @param        3       Mask of additional flags to always clear
+; @param        4       The result register to set SF by.
+; @param        5       The width of the %4 register in bits (8, 16, 32, or 64).
+; @param        6       The (full) register containing the parity table index. Will be modified!
+
+%macro IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF 6
+ %ifdef RT_ARCH_AMD64
+        pushf
+        pop     T2
+ %else
+        push    T0
+        pushf
+        pop     T0
+ %endif
+        mov     T1_32, [%1]             ; load flags.
+        and     T1_32, ~(%2 | %3 | X86_EFL_PF | X86_EFL_SF)  ; clear the modified, always cleared flags and the two flags we calc.
+ %ifdef RT_ARCH_AMD64
+        and     T2_32, (%2)             ; select the modified flags.
+        or      T1_32, T2_32            ; combine the flags.
+ %else
+        and     T0_32, (%2)             ; select the modified flags.
+        or      T1_32, T0_32            ; combine the flags.
+        pop     T0
+ %endif
+
+        ; First calculate SF as it's likely to be refereing to the same register as %6 does.
+        bt      %4, %5 - 1
+        jnc     %%sf_clear
+        or      T1_32, X86_EFL_SF
+ %%sf_clear:
+
+        ; Parity last.
+        and     %6, 0xff
+ %ifdef RT_ARCH_AMD64
+        lea     T2, [NAME(g_afParity) xWrtRIP]
+        or      T1_8, [T2 + %6]
+ %else
+        or      T1_8, [NAME(g_afParity) + %6]
+ %endif
+
+        mov     [%1], T1_32             ; save the result.
+%endmacro
+
+;;
 ; Calculates the new EFLAGS using fixed clear and set bit masks.
 ;
 ; @remarks  Clobbers T0.
@@ -358,7 +412,7 @@ NAME_FASTCALL(%1,%2,@):
 ;;
 ; Calculates the new EFLAGS using fixed clear and set bit masks.
 ;
-; @remarks  Clobbers T0, %4.
+; @remarks  Clobbers T0, %4, EFLAGS.
 ; @param        1       The register pointing to the EFLAGS.
 ; @param        2       Mask of additional flags to always clear
 ; @param        3       Mask of additional flags to always set.
@@ -1495,29 +1549,31 @@ IEMIMPL_SHIFT_DBL_OP shrd, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF | 
 ; @param        1       The instruction mnemonic.
 ; @param        2       The modified flags.
 ; @param        3       The undefined flags.
+; @param        4       Name suffix.
+; @param        5       EFLAGS behaviour: 0 for native, 1 for intel and 2 for AMD.
 ;
 ; Makes ASSUMPTIONS about A0, A1, A2, A3, T0 and T1 assignments.
 ;
-%macro IEMIMPL_MUL_OP 3
+%macro IEMIMPL_MUL_OP 5
 BEGINCODE
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_intel, 12
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_amd, 12
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8 %+ %4, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, %2, %3
+        IEM_MAYBE_LOAD_FLAGS                     A2, %2, %3
         mov     al, [A0]
         %1      A1_8
         mov     [A0], ax
-        IEM_SAVE_FLAGS       A2, %2, %3
+ %if %5 != 1
+        IEM_SAVE_FLAGS                           A2, %2, %3
+ %else
+        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF     A2, %2, X86_EFL_AF | X86_EFL_ZF, ax, 8, xAX
+ %endif
         xor     eax, eax
         EPILOGUE_3_ARGS
-ENDPROC iemAImpl_ %+ %1 %+ _u8
+ENDPROC iemAImpl_ %+ %1 %+ _u8 %+ %4
 
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_intel, 16
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_amd, 16
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16 %+ %4, 16
         PROLOGUE_4_ARGS
-        IEM_MAYBE_LOAD_FLAGS A3, %2, %3
+        IEM_MAYBE_LOAD_FLAGS                     A3, %2, %3
         mov     ax, [A0]
  %ifdef ASM_CALL64_GCC
         %1      A2_16
@@ -1529,16 +1585,18 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         mov     [A0], ax
         mov     [T1], dx
  %endif
-        IEM_SAVE_FLAGS       A3, %2, %3
+ %if %5 != 1
+        IEM_SAVE_FLAGS                           A3, %2, %3
+ %else
+        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF     A3, %2, X86_EFL_AF | X86_EFL_ZF, ax, 16, xAX
+ %endif
         xor     eax, eax
         EPILOGUE_4_ARGS
-ENDPROC iemAImpl_ %+ %1 %+ _u16
+ENDPROC iemAImpl_ %+ %1 %+ _u16 %+ %4
 
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_intel, 16
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_amd, 16
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32 %+ %4, 16
         PROLOGUE_4_ARGS
-        IEM_MAYBE_LOAD_FLAGS A3, %2, %3
+        IEM_MAYBE_LOAD_FLAGS                     A3, %2, %3
         mov     eax, [A0]
  %ifdef ASM_CALL64_GCC
         %1      A2_32
@@ -1550,17 +1608,19 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         mov     [A0], eax
         mov     [T1], edx
  %endif
-        IEM_SAVE_FLAGS       A3, %2, %3
+ %if %5 != 1
+        IEM_SAVE_FLAGS                           A3, %2, %3
+ %else
+        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF     A3, %2, X86_EFL_AF | X86_EFL_ZF, eax, 32, xAX
+ %endif
         xor     eax, eax
         EPILOGUE_4_ARGS
-ENDPROC iemAImpl_ %+ %1 %+ _u32
+ENDPROC iemAImpl_ %+ %1 %+ _u32 %+ %4
 
  %ifdef RT_ARCH_AMD64 ; The 32-bit host version lives in IEMAllAImplC.cpp.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_intel, 20
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_amd, 20
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64 %+ %4, 20
         PROLOGUE_4_ARGS
-        IEM_MAYBE_LOAD_FLAGS A3, %2, %3
+        IEM_MAYBE_LOAD_FLAGS                     A3, %2, %3
         mov     rax, [A0]
   %ifdef ASM_CALL64_GCC
         %1      A2
@@ -1572,16 +1632,24 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         mov     [A0], rax
         mov     [T1], rdx
   %endif
-        IEM_SAVE_FLAGS       A3, %2, %3
+  %if %5 != 1
+        IEM_SAVE_FLAGS                           A3, %2, %3
+  %else
+        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF     A3, %2, X86_EFL_AF | X86_EFL_ZF, rax, 64, xAX
+  %endif
         xor     eax, eax
         EPILOGUE_4_ARGS_EX 12
-ENDPROC iemAImpl_ %+ %1 %+ _u64
+ENDPROC iemAImpl_ %+ %1 %+ _u64 %+ %4
  %endif ; !RT_ARCH_AMD64
 
 %endmacro
 
-IEMIMPL_MUL_OP mul,  (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
-IEMIMPL_MUL_OP imul, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+IEMIMPL_MUL_OP mul,  (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),       , 0
+IEMIMPL_MUL_OP mul,  (X86_EFL_OF | X86_EFL_CF), 0,                                                   _intel, 1
+IEMIMPL_MUL_OP mul,  (X86_EFL_OF | X86_EFL_CF), 0,                                                   _amd,   2
+IEMIMPL_MUL_OP imul, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF),       , 0
+IEMIMPL_MUL_OP imul, (X86_EFL_OF | X86_EFL_CF), 0,                                                   _intel, 1
+IEMIMPL_MUL_OP imul, (X86_EFL_OF | X86_EFL_CF), 0,                                                   _amd,   2
 
 
 BEGINCODE
@@ -1633,14 +1701,15 @@ ENDPROC     iemAImpl_negate_T0_T1_u64
 ; @param        2       The modified flags.
 ; @param        3       The undefined flags.
 ; @param        4       1 if signed, 0 if unsigned.
+; @param        5       Function suffix.
+; @param        6       EFLAGS variation: 0 for native, 1 for intel (ignored),
+;                       2 for AMD (set AF, clear PF, ZF and SF).
 ;
 ; Makes ASSUMPTIONS about A0, A1, A2, A3, T0 and T1 assignments.
 ;
-%macro IEMIMPL_DIV_OP 4
+%macro IEMIMPL_DIV_OP 6
 BEGINCODE
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_intel, 12
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8_amd, 12
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8 %+ %5, 12
         PROLOGUE_3_ARGS
 
         ; div by chainsaw check.
@@ -1689,7 +1758,11 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         mov     ax, [A0]
         %1      A1_8
         mov     [A0], ax
-        IEM_SAVE_FLAGS       A2, %2, %3
+ %if %6 == 2 ; AMD64 3990X: Set AF and clear PF, ZF and SF.
+        IEM_ADJUST_FLAGS    A2, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, X86_EFL_AF
+ %else
+        IEM_SAVE_FLAGS      A2, %2, %3
+ %endif
         xor     eax, eax
 
 .return:
@@ -1699,11 +1772,9 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
 .div_overflow:
         mov     eax, -1
         jmp     .return
-ENDPROC iemAImpl_ %+ %1 %+ _u8
+ENDPROC iemAImpl_ %+ %1 %+ _u8 %+ %5
 
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_intel, 16
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16_amd, 16
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16 %+ %5, 16
         PROLOGUE_4_ARGS
 
         ; div by chainsaw check.
@@ -1765,7 +1836,11 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         mov     [A0], ax
         mov     [T1], dx
  %endif
-        IEM_SAVE_FLAGS       A3, %2, %3
+ %if %6 == 2 ; AMD64 3990X: Set AF and clear PF, ZF and SF.
+        IEM_ADJUST_FLAGS    A3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, X86_EFL_AF
+ %else
+        IEM_SAVE_FLAGS      A3, %2, %3
+ %endif
         xor     eax, eax
 
 .return:
@@ -1775,11 +1850,9 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
 .div_overflow:
         mov     eax, -1
         jmp     .return
-ENDPROC iemAImpl_ %+ %1 %+ _u16
+ENDPROC iemAImpl_ %+ %1 %+ _u16 %+ %5
 
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_intel, 16
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32_amd, 16
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32 %+ %5, 16
         PROLOGUE_4_ARGS
 
         ; div by chainsaw check.
@@ -1846,7 +1919,11 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         mov     [A0], eax
         mov     [T1], edx
  %endif
-        IEM_SAVE_FLAGS       A3, %2, %3
+ %if %6 == 2 ; AMD64 3990X: Set AF and clear PF, ZF and SF.
+        IEM_ADJUST_FLAGS    A3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, X86_EFL_AF
+ %else
+        IEM_SAVE_FLAGS      A3, %2, %3
+ %endif
         xor     eax, eax
 
 .return:
@@ -1859,12 +1936,10 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
 .div_zero:
         mov     eax, -1
         jmp     .return
-ENDPROC iemAImpl_ %+ %1 %+ _u32
+ENDPROC iemAImpl_ %+ %1 %+ _u32 %+ %5
 
  %ifdef RT_ARCH_AMD64 ; The 32-bit host version lives in IEMAllAImplC.cpp.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_intel, 20
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_amd, 20
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64 %+ %5, 20
         PROLOGUE_4_ARGS
 
         test    A2, A2
@@ -1928,7 +2003,11 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         mov     [A0], rax
         mov     [T1], rdx
   %endif
-        IEM_SAVE_FLAGS       A3, %2, %3
+  %if %6 == 2 ; AMD64 3990X: Set AF and clear PF, ZF and SF.
+        IEM_ADJUST_FLAGS    A3, X86_EFL_PF | X86_EFL_ZF | X86_EFL_SF, X86_EFL_AF
+  %else
+        IEM_SAVE_FLAGS      A3, %2, %3
+  %endif
         xor     eax, eax
 
 .return:
@@ -1941,13 +2020,17 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
 .div_zero:
         mov     eax, -1
         jmp     .return
-ENDPROC iemAImpl_ %+ %1 %+ _u64
+ENDPROC iemAImpl_ %+ %1 %+ _u64 %+ %5
  %endif ; !RT_ARCH_AMD64
 
 %endmacro
 
-IEMIMPL_DIV_OP div,  0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
-IEMIMPL_DIV_OP idiv, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 1
+IEMIMPL_DIV_OP div,  0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0,       , 0
+IEMIMPL_DIV_OP div,  0, 0,                                                                             0, _intel, 1
+IEMIMPL_DIV_OP div,  0, 0,                                                                             0, _amd,   2
+IEMIMPL_DIV_OP idiv, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 1,       , 0
+IEMIMPL_DIV_OP idiv, 0, 0,                                                                             1, _intel, 1
+IEMIMPL_DIV_OP idiv, 0, 0,                                                                             1, _amd,   2
 
 
 ;;
