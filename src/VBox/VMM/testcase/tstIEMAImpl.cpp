@@ -1852,7 +1852,7 @@ int main(int argc, char **argv)
         BinU16Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
         BinU32Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
         BinU64Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
-        ShiftDblGenerate(pStrmDataCpu, pszCpuSuffU, RT_MIN(cTests, 128));
+        ShiftDblGenerate(pStrmDataCpu, pszCpuSuffU, RT_MAX(cTests, 128));
         UnaryGenerate(pStrmData, cTests);
         ShiftGenerate(pStrmDataCpu, pszCpuSuffU, cTests);
         MulDivGenerate(pStrmDataCpu, pszCpuSuffU, cTests);
