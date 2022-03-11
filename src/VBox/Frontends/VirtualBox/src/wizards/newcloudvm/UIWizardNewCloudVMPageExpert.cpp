@@ -213,8 +213,8 @@ void UIWizardNewCloudVMPageExpert::retranslateUi()
     /* Translate source tab-bar: */
     if (m_pSourceTabBar)
     {
-        m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Boot Volumes"));
-        m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Images"));
+        m_pSourceTabBar->setTabText(0, UIWizardNewCloudVM::tr("&Images"));
+        m_pSourceTabBar->setTabText(1, UIWizardNewCloudVM::tr("&Boot Volumes"));
     }
 
     /* Translate profile stuff: */
