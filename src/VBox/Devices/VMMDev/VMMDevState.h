@@ -553,7 +553,9 @@ void VMMDevCtlSetGuestFilterMask(PPDMDEVINS pDevIns, PVMMDEV pThis, PVMMDEVCC pT
 
 
 /** The saved state version. */
-#define VMMDEV_SAVED_STATE_VERSION                              VMMDEV_SAVED_STATE_VERSION_HGCM_PARAMS
+#define VMMDEV_SAVED_STATE_VERSION                              VMMDEV_SAVED_STATE_VERSION_DISPLAY_CHANGE_DATA
+/** The saved state version with display change data state. */
+#define VMMDEV_SAVED_STATE_VERSION_DISPLAY_CHANGE_DATA          18
 /** Updated HGCM commands. */
 #define VMMDEV_SAVED_STATE_VERSION_HGCM_PARAMS                  17
 /** The saved state version with heartbeat state. */

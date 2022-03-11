@@ -155,6 +155,16 @@
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 #ifdef IN_RING3
 
+/** DISPLAYCHANGEDATA field descriptors for the v18+ saved state. */
+static SSMFIELD const g_aSSMDISPLAYCHANGEDATAStateFields[] =
+{
+    SSMFIELD_ENTRY(DISPLAYCHANGEDATA, iCurrentMonitor),
+    SSMFIELD_ENTRY(DISPLAYCHANGEDATA, fGuestSentChangeEventAck),
+    SSMFIELD_ENTRY(DISPLAYCHANGEDATA, afAlignment),
+    SSMFIELD_ENTRY(DISPLAYCHANGEDATA, aRequests),
+    SSMFIELD_ENTRY_TERM()
+};
+
 /* -=-=-=-=- Misc Helpers -=-=-=-=- */
 
 /**
@@ -4034,6 +4044,9 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutU64(pSSM, pThis->nsLastHeartbeatTS);
     PDMDevHlpTimerSave(pDevIns, pThis->hFlatlinedTimer, pSSM);
 
+    pHlp->pfnSSMPutStructEx(pSSM, &pThis->displayChangeData, sizeof(pThis->displayChangeData), 0,
+                            g_aSSMDISPLAYCHANGEDATAStateFields, NULL);
+
     PDMDevHlpCritSectLeave(pDevIns, &pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -4169,6 +4182,12 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         if (pThis->fFlatlined)
             LogRel(("vmmdevLoadState: Guest has flatlined. Last heartbeat %'RU64 ns before state was saved.\n",
                     PDMDevHlpTimerGetNano(pDevIns, pThis->hFlatlinedTimer) - pThis->nsLastHeartbeatTS));
+    }
+
+    if (uVersion >= VMMDEV_SAVED_STATE_VERSION_DISPLAY_CHANGE_DATA)
+    {
+        pHlp->pfnSSMGetStructEx(pSSM, &pThis->displayChangeData, sizeof(pThis->displayChangeData), 0,
+                                g_aSSMDISPLAYCHANGEDATAStateFields, NULL);
     }
 
     /*
