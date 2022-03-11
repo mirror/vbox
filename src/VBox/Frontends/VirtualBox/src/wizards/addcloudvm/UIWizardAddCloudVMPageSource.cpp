@@ -20,6 +20,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QListWidget>
+#include <QPushButton>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -477,7 +478,9 @@ void UIWizardAddCloudVMPageSource::sltHandleProfileComboChange()
     wizard()->setClient(cloudClientByName(wizard()->providerShortName(), wizard()->profileName(), wizard()->notificationCenter()));
 
     /* Update profile instances: */
+    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(false);
     populateProfileInstances(m_pSourceInstanceList, wizard()->notificationCenter(), wizard()->client());
+    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(true);
     sltHandleSourceInstanceChange();
 
     /* Notify about changes: */

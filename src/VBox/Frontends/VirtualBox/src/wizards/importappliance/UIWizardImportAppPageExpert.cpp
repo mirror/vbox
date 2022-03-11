@@ -22,6 +22,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QListWidget>
+#include <QPushButton>
 #include <QStackedWidget>
 #include <QTableWidget>
 #include <QVBoxLayout>
@@ -569,11 +570,13 @@ void UIWizardImportAppPageExpert::sltHandleImportedFileSelectorChange()
 void UIWizardImportAppPageExpert::sltHandleProfileComboChange()
 {
     /* Refresh profile instances: */
+    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(false);
     refreshCloudProfileInstances(m_pProfileInstanceList,
                                  wizard()->notificationCenter(),
                                  source(m_pSourceComboBox),
                                  profileName(m_pProfileComboBox),
                                  wizard()->isSourceCloudOne());
+    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(true);
     sltHandleInstanceListChange();
 
     /* Notify about changes: */
@@ -592,6 +595,7 @@ void UIWizardImportAppPageExpert::sltHandleInstanceListChange()
     /* Create cloud appliance and VSD import form: */
     CAppliance comAppliance;
     CVirtualSystemDescriptionForm comForm;
+    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(false);
     refreshCloudStuff(comAppliance,
                       comForm,
                       wizard(),
@@ -599,6 +603,7 @@ void UIWizardImportAppPageExpert::sltHandleInstanceListChange()
                       source(m_pSourceComboBox),
                       profileName(m_pProfileComboBox),
                       wizard()->isSourceCloudOne());
+    wizard()->wizardButton(WizardButtonType_Expert)->setEnabled(true);
     wizard()->setCloudAppliance(comAppliance);
     wizard()->setVsdImportForm(comForm);
 

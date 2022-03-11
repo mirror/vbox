@@ -94,6 +94,9 @@ public:
     /** Immediately handles notification @a pProgress object. */
     bool handleNotificationProgressNow(UINotificationProgress *pProgress);
 
+    /** Returns wizard button of specified @a enmType. */
+    QPushButton *wizardButton(const WizardButtonType &enmType) const;
+
 public slots:
 
     /** Executes wizard in window modal mode.
@@ -106,9 +109,6 @@ protected:
     WizardType type() const { return m_enmType; }
     /** Returns wizard mode. */
     WizardMode mode() const { return m_enmMode; }
-
-    /** Returns wizard button of specified @a enmType. */
-    QPushButton *wizardButton(const WizardButtonType &enmType) const;
     /** Defines @a strName for wizard button of specified @a enmType. */
     void setWizardButtonName(const WizardButtonType &enmType, const QString &strName);
 
