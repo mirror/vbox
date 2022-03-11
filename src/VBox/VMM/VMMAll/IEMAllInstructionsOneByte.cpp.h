@@ -6013,13 +6013,13 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_Ib)
     PCIEMOPSHIFTSIZES pImpl;
     switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
     {
-        case 0: pImpl = &g_iemAImpl_rol; IEMOP_MNEMONIC(rol_Eb_Ib, "rol Eb,Ib"); break;
-        case 1: pImpl = &g_iemAImpl_ror; IEMOP_MNEMONIC(ror_Eb_Ib, "ror Eb,Ib"); break;
-        case 2: pImpl = &g_iemAImpl_rcl; IEMOP_MNEMONIC(rcl_Eb_Ib, "rcl Eb,Ib"); break;
-        case 3: pImpl = &g_iemAImpl_rcr; IEMOP_MNEMONIC(rcr_Eb_Ib, "rcr Eb,Ib"); break;
-        case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC(shl_Eb_Ib, "shl Eb,Ib"); break;
-        case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC(shr_Eb_Ib, "shr Eb,Ib"); break;
-        case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC(sar_Eb_Ib, "sar Eb,Ib"); break;
+        case 0: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags); IEMOP_MNEMONIC(rol_Eb_Ib, "rol Eb,Ib"); break;
+        case 1: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags); IEMOP_MNEMONIC(ror_Eb_Ib, "ror Eb,Ib"); break;
+        case 2: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags); IEMOP_MNEMONIC(rcl_Eb_Ib, "rcl Eb,Ib"); break;
+        case 3: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags); IEMOP_MNEMONIC(rcr_Eb_Ib, "rcr Eb,Ib"); break;
+        case 4: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags); IEMOP_MNEMONIC(shl_Eb_Ib, "shl Eb,Ib"); break;
+        case 5: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags); IEMOP_MNEMONIC(shr_Eb_Ib, "shr Eb,Ib"); break;
+        case 7: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags); IEMOP_MNEMONIC(sar_Eb_Ib, "sar Eb,Ib"); break;
         case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe stupid */
     }
@@ -6076,13 +6076,13 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
     PCIEMOPSHIFTSIZES pImpl;
     switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
     {
-        case 0: pImpl = &g_iemAImpl_rol; IEMOP_MNEMONIC(rol_Ev_Ib, "rol Ev,Ib"); break;
-        case 1: pImpl = &g_iemAImpl_ror; IEMOP_MNEMONIC(ror_Ev_Ib, "ror Ev,Ib"); break;
-        case 2: pImpl = &g_iemAImpl_rcl; IEMOP_MNEMONIC(rcl_Ev_Ib, "rcl Ev,Ib"); break;
-        case 3: pImpl = &g_iemAImpl_rcr; IEMOP_MNEMONIC(rcr_Ev_Ib, "rcr Ev,Ib"); break;
-        case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC(shl_Ev_Ib, "shl Ev,Ib"); break;
-        case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC(shr_Ev_Ib, "shr Ev,Ib"); break;
-        case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC(sar_Ev_Ib, "sar Ev,Ib"); break;
+        case 0: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags); IEMOP_MNEMONIC(rol_Ev_Ib, "rol Ev,Ib"); break;
+        case 1: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags); IEMOP_MNEMONIC(ror_Ev_Ib, "ror Ev,Ib"); break;
+        case 2: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags); IEMOP_MNEMONIC(rcl_Ev_Ib, "rcl Ev,Ib"); break;
+        case 3: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags); IEMOP_MNEMONIC(rcr_Ev_Ib, "rcr Ev,Ib"); break;
+        case 4: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags); IEMOP_MNEMONIC(shl_Ev_Ib, "shl Ev,Ib"); break;
+        case 5: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags); IEMOP_MNEMONIC(shr_Ev_Ib, "shr Ev,Ib"); break;
+        case 7: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags); IEMOP_MNEMONIC(sar_Ev_Ib, "sar Ev,Ib"); break;
         case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe stupid */
     }
@@ -6590,13 +6590,13 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_1)
     PCIEMOPSHIFTSIZES pImpl;
     switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
     {
-        case 0: pImpl = &g_iemAImpl_rol; IEMOP_MNEMONIC(rol_Eb_1, "rol Eb,1"); break;
-        case 1: pImpl = &g_iemAImpl_ror; IEMOP_MNEMONIC(ror_Eb_1, "ror Eb,1"); break;
-        case 2: pImpl = &g_iemAImpl_rcl; IEMOP_MNEMONIC(rcl_Eb_1, "rcl Eb,1"); break;
-        case 3: pImpl = &g_iemAImpl_rcr; IEMOP_MNEMONIC(rcr_Eb_1, "rcr Eb,1"); break;
-        case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC(shl_Eb_1, "shl Eb,1"); break;
-        case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC(shr_Eb_1, "shr Eb,1"); break;
-        case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC(sar_Eb_1, "sar Eb,1"); break;
+        case 0: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags); IEMOP_MNEMONIC(rol_Eb_1, "rol Eb,1"); break;
+        case 1: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags); IEMOP_MNEMONIC(ror_Eb_1, "ror Eb,1"); break;
+        case 2: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags); IEMOP_MNEMONIC(rcl_Eb_1, "rcl Eb,1"); break;
+        case 3: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags); IEMOP_MNEMONIC(rcr_Eb_1, "rcr Eb,1"); break;
+        case 4: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags); IEMOP_MNEMONIC(shl_Eb_1, "shl Eb,1"); break;
+        case 5: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags); IEMOP_MNEMONIC(shr_Eb_1, "shr Eb,1"); break;
+        case 7: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags); IEMOP_MNEMONIC(sar_Eb_1, "sar Eb,1"); break;
         case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe, well... */
     }
@@ -6650,13 +6650,13 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_1)
     PCIEMOPSHIFTSIZES pImpl;
     switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
     {
-        case 0: pImpl = &g_iemAImpl_rol; IEMOP_MNEMONIC(rol_Ev_1, "rol Ev,1"); break;
-        case 1: pImpl = &g_iemAImpl_ror; IEMOP_MNEMONIC(ror_Ev_1, "ror Ev,1"); break;
-        case 2: pImpl = &g_iemAImpl_rcl; IEMOP_MNEMONIC(rcl_Ev_1, "rcl Ev,1"); break;
-        case 3: pImpl = &g_iemAImpl_rcr; IEMOP_MNEMONIC(rcr_Ev_1, "rcr Ev,1"); break;
-        case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC(shl_Ev_1, "shl Ev,1"); break;
-        case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC(shr_Ev_1, "shr Ev,1"); break;
-        case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC(sar_Ev_1, "sar Ev,1"); break;
+        case 0: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags); IEMOP_MNEMONIC(rol_Ev_1, "rol Ev,1"); break;
+        case 1: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags); IEMOP_MNEMONIC(ror_Ev_1, "ror Ev,1"); break;
+        case 2: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags); IEMOP_MNEMONIC(rcl_Ev_1, "rcl Ev,1"); break;
+        case 3: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags); IEMOP_MNEMONIC(rcr_Ev_1, "rcr Ev,1"); break;
+        case 4: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags); IEMOP_MNEMONIC(shl_Ev_1, "shl Ev,1"); break;
+        case 5: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags); IEMOP_MNEMONIC(shr_Ev_1, "shr Ev,1"); break;
+        case 7: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags); IEMOP_MNEMONIC(sar_Ev_1, "sar Ev,1"); break;
         case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe, well... */
     }
@@ -6785,13 +6785,13 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_CL)
     PCIEMOPSHIFTSIZES pImpl;
     switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
     {
-        case 0: pImpl = &g_iemAImpl_rol; IEMOP_MNEMONIC(rol_Eb_CL, "rol Eb,CL"); break;
-        case 1: pImpl = &g_iemAImpl_ror; IEMOP_MNEMONIC(ror_Eb_CL, "ror Eb,CL"); break;
-        case 2: pImpl = &g_iemAImpl_rcl; IEMOP_MNEMONIC(rcl_Eb_CL, "rcl Eb,CL"); break;
-        case 3: pImpl = &g_iemAImpl_rcr; IEMOP_MNEMONIC(rcr_Eb_CL, "rcr Eb,CL"); break;
-        case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC(shl_Eb_CL, "shl Eb,CL"); break;
-        case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC(shr_Eb_CL, "shr Eb,CL"); break;
-        case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC(sar_Eb_CL, "sar Eb,CL"); break;
+        case 0: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags); IEMOP_MNEMONIC(rol_Eb_CL, "rol Eb,CL"); break;
+        case 1: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags); IEMOP_MNEMONIC(ror_Eb_CL, "ror Eb,CL"); break;
+        case 2: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags); IEMOP_MNEMONIC(rcl_Eb_CL, "rcl Eb,CL"); break;
+        case 3: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags); IEMOP_MNEMONIC(rcr_Eb_CL, "rcr Eb,CL"); break;
+        case 4: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags); IEMOP_MNEMONIC(shl_Eb_CL, "shl Eb,CL"); break;
+        case 5: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags); IEMOP_MNEMONIC(shr_Eb_CL, "shr Eb,CL"); break;
+        case 7: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags); IEMOP_MNEMONIC(sar_Eb_CL, "sar Eb,CL"); break;
         case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc, grr. */
     }
@@ -6846,13 +6846,13 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
     PCIEMOPSHIFTSIZES pImpl;
     switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
     {
-        case 0: pImpl = &g_iemAImpl_rol; IEMOP_MNEMONIC(rol_Ev_CL, "rol Ev,CL"); break;
-        case 1: pImpl = &g_iemAImpl_ror; IEMOP_MNEMONIC(ror_Ev_CL, "ror Ev,CL"); break;
-        case 2: pImpl = &g_iemAImpl_rcl; IEMOP_MNEMONIC(rcl_Ev_CL, "rcl Ev,CL"); break;
-        case 3: pImpl = &g_iemAImpl_rcr; IEMOP_MNEMONIC(rcr_Ev_CL, "rcr Ev,CL"); break;
-        case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC(shl_Ev_CL, "shl Ev,CL"); break;
-        case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC(shr_Ev_CL, "shr Ev,CL"); break;
-        case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC(sar_Ev_CL, "sar Ev,CL"); break;
+        case 0: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rol_eflags); IEMOP_MNEMONIC(rol_Ev_CL, "rol Ev,CL"); break;
+        case 1: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_ror_eflags); IEMOP_MNEMONIC(ror_Ev_CL, "ror Ev,CL"); break;
+        case 2: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcl_eflags); IEMOP_MNEMONIC(rcl_Ev_CL, "rcl Ev,CL"); break;
+        case 3: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_rcr_eflags); IEMOP_MNEMONIC(rcr_Ev_CL, "rcr Ev,CL"); break;
+        case 4: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shl_eflags); IEMOP_MNEMONIC(shl_Ev_CL, "shl Ev,CL"); break;
+        case 5: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_shr_eflags); IEMOP_MNEMONIC(shr_Ev_CL, "shr Ev,CL"); break;
+        case 7: pImpl = IEMTARGETCPU_EFL_BEHAVIOR_SELECT(g_iemAImpl_sar_eflags); IEMOP_MNEMONIC(sar_Ev_CL, "sar Ev,CL"); break;
         case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe stupid */
     }

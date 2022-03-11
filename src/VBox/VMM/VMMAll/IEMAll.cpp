@@ -895,6 +895,34 @@ IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rol =
     iemAImpl_rol_u64
 };
 
+/** Function table for the ROL instruction, AMD EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rol_amd =
+{
+    iemAImpl_rol_u8_amd,
+    iemAImpl_rol_u16_amd,
+    iemAImpl_rol_u32_amd,
+    iemAImpl_rol_u64_amd
+};
+
+/** Function table for the ROL instruction, Intel EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rol_intel =
+{
+    iemAImpl_rol_u8_intel,
+    iemAImpl_rol_u16_intel,
+    iemAImpl_rol_u32_intel,
+    iemAImpl_rol_u64_intel
+};
+
+/** EFLAGS variation selection table for the ROL instruction. */
+IEM_STATIC const IEMOPSHIFTSIZES * const g_iemAImpl_rol_eflags[] =
+{
+    &g_iemAImpl_rol,
+    &g_iemAImpl_rol_intel,
+    &g_iemAImpl_rol_amd,
+    &g_iemAImpl_rol,
+};
+
+
 /** Function table for the ROR instruction. */
 IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_ror =
 {
@@ -903,6 +931,34 @@ IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_ror =
     iemAImpl_ror_u32,
     iemAImpl_ror_u64
 };
+
+/** Function table for the ROR instruction, AMD EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_ror_amd =
+{
+    iemAImpl_ror_u8_amd,
+    iemAImpl_ror_u16_amd,
+    iemAImpl_ror_u32_amd,
+    iemAImpl_ror_u64_amd
+};
+
+/** Function table for the ROR instruction, Intel EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_ror_intel =
+{
+    iemAImpl_ror_u8_intel,
+    iemAImpl_ror_u16_intel,
+    iemAImpl_ror_u32_intel,
+    iemAImpl_ror_u64_intel
+};
+
+/** EFLAGS variation selection table for the ROR instruction. */
+IEM_STATIC const IEMOPSHIFTSIZES * const g_iemAImpl_ror_eflags[] =
+{
+    &g_iemAImpl_ror,
+    &g_iemAImpl_ror_intel,
+    &g_iemAImpl_ror_amd,
+    &g_iemAImpl_ror,
+};
+
 
 /** Function table for the RCL instruction. */
 IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rcl =
@@ -913,6 +969,34 @@ IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rcl =
     iemAImpl_rcl_u64
 };
 
+/** Function table for the RCL instruction, AMD EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rcl_amd =
+{
+    iemAImpl_rcl_u8_amd,
+    iemAImpl_rcl_u16_amd,
+    iemAImpl_rcl_u32_amd,
+    iemAImpl_rcl_u64_amd
+};
+
+/** Function table for the RCL instruction, Intel EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rcl_intel =
+{
+    iemAImpl_rcl_u8_intel,
+    iemAImpl_rcl_u16_intel,
+    iemAImpl_rcl_u32_intel,
+    iemAImpl_rcl_u64_intel
+};
+
+/** EFLAGS variation selection table for the RCL instruction. */
+IEM_STATIC const IEMOPSHIFTSIZES * const g_iemAImpl_rcl_eflags[] =
+{
+    &g_iemAImpl_rcl,
+    &g_iemAImpl_rcl_intel,
+    &g_iemAImpl_rcl_amd,
+    &g_iemAImpl_rcl,
+};
+
+
 /** Function table for the RCR instruction. */
 IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rcr =
 {
@@ -921,6 +1005,34 @@ IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rcr =
     iemAImpl_rcr_u32,
     iemAImpl_rcr_u64
 };
+
+/** Function table for the RCR instruction, AMD EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rcr_amd =
+{
+    iemAImpl_rcr_u8_amd,
+    iemAImpl_rcr_u16_amd,
+    iemAImpl_rcr_u32_amd,
+    iemAImpl_rcr_u64_amd
+};
+
+/** Function table for the RCR instruction, Intel EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_rcr_intel =
+{
+    iemAImpl_rcr_u8_intel,
+    iemAImpl_rcr_u16_intel,
+    iemAImpl_rcr_u32_intel,
+    iemAImpl_rcr_u64_intel
+};
+
+/** EFLAGS variation selection table for the RCR instruction. */
+IEM_STATIC const IEMOPSHIFTSIZES * const g_iemAImpl_rcr_eflags[] =
+{
+    &g_iemAImpl_rcr,
+    &g_iemAImpl_rcr_intel,
+    &g_iemAImpl_rcr_amd,
+    &g_iemAImpl_rcr,
+};
+
 
 /** Function table for the SHL instruction. */
 IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_shl =
@@ -931,6 +1043,34 @@ IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_shl =
     iemAImpl_shl_u64
 };
 
+/** Function table for the SHL instruction, AMD EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_shl_amd =
+{
+    iemAImpl_shl_u8_amd,
+    iemAImpl_shl_u16_amd,
+    iemAImpl_shl_u32_amd,
+    iemAImpl_shl_u64_amd
+};
+
+/** Function table for the SHL instruction, Intel EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_shl_intel =
+{
+    iemAImpl_shl_u8_intel,
+    iemAImpl_shl_u16_intel,
+    iemAImpl_shl_u32_intel,
+    iemAImpl_shl_u64_intel
+};
+
+/** EFLAGS variation selection table for the SHL instruction. */
+IEM_STATIC const IEMOPSHIFTSIZES * const g_iemAImpl_shl_eflags[] =
+{
+    &g_iemAImpl_shl,
+    &g_iemAImpl_shl_intel,
+    &g_iemAImpl_shl_amd,
+    &g_iemAImpl_shl,
+};
+
+
 /** Function table for the SHR instruction. */
 IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_shr =
 {
@@ -940,6 +1080,34 @@ IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_shr =
     iemAImpl_shr_u64
 };
 
+/** Function table for the SHR instruction, AMD EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_shr_amd =
+{
+    iemAImpl_shr_u8_amd,
+    iemAImpl_shr_u16_amd,
+    iemAImpl_shr_u32_amd,
+    iemAImpl_shr_u64_amd
+};
+
+/** Function table for the SHR instruction, Intel EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_shr_intel =
+{
+    iemAImpl_shr_u8_intel,
+    iemAImpl_shr_u16_intel,
+    iemAImpl_shr_u32_intel,
+    iemAImpl_shr_u64_intel
+};
+
+/** EFLAGS variation selection table for the SHR instruction. */
+IEM_STATIC const IEMOPSHIFTSIZES * const g_iemAImpl_shr_eflags[] =
+{
+    &g_iemAImpl_shr,
+    &g_iemAImpl_shr_intel,
+    &g_iemAImpl_shr_amd,
+    &g_iemAImpl_shr,
+};
+
+
 /** Function table for the SAR instruction. */
 IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_sar =
 {
@@ -947,6 +1115,33 @@ IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_sar =
     iemAImpl_sar_u16,
     iemAImpl_sar_u32,
     iemAImpl_sar_u64
+};
+
+/** Function table for the SAR instruction, AMD EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_sar_amd =
+{
+    iemAImpl_sar_u8_amd,
+    iemAImpl_sar_u16_amd,
+    iemAImpl_sar_u32_amd,
+    iemAImpl_sar_u64_amd
+};
+
+/** Function table for the SAR instruction, Intel EFLAGS variant. */
+IEM_STATIC const IEMOPSHIFTSIZES g_iemAImpl_sar_intel =
+{
+    iemAImpl_sar_u8_intel,
+    iemAImpl_sar_u16_intel,
+    iemAImpl_sar_u32_intel,
+    iemAImpl_sar_u64_intel
+};
+
+/** EFLAGS variation selection table for the SAR instruction. */
+IEM_STATIC const IEMOPSHIFTSIZES * const g_iemAImpl_sar_eflags[] =
+{
+    &g_iemAImpl_sar,
+    &g_iemAImpl_sar_intel,
+    &g_iemAImpl_sar_amd,
+    &g_iemAImpl_sar,
 };
 
 
