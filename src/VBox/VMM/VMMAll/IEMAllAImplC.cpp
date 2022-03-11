@@ -2545,6 +2545,8 @@ EMIT_SAR(8,  _intel,     1)
 EMIT_SAR(8,  _amd,       0)
 # endif
 
+#endif /* !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY) */
+
 
 /*
  * SHLD
@@ -2556,53 +2558,30 @@ EMIT_SAR(8,  _amd,       0)
  *  - OF is set according to the last sub-shift on AMD 3990X.
  *  - ZF, SF and PF are calculated according to the result by both vendors.
  */
-#define EMIT_SHLD(a_cBitsWidth) \
-IEM_DECL_IMPL_DEF(void, iemAImpl_shld_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## _t *puDst, \
-                                                         uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
+#define EMIT_SHLD(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shld_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, a_uType uSrc, uint8_t cShift, \
+                                                                           uint32_t *pfEFlags)) \
 { \
     /** @todo this ain't right for 16-bit. Apparently it should use 0x1f instead \
      *        of 0xf for masking and use uSrc in repetitive fashion...  */ \
     cShift &= a_cBitsWidth - 1; \
     if (cShift) \
     { \
-        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
-        uint ## a_cBitsWidth ## _t       uResult = uDst << cShift; \
+        a_uType const uDst    = *puDst; \
+        a_uType       uResult = uDst << cShift; \
         uResult |= uSrc >> (a_cBitsWidth - cShift); \
         *puDst = uResult; \
         \
+        /* CALC EFLAGS: */ \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
-        AssertCompile(X86_EFL_CF_BIT == 0); \
-        fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ (uDst << 1)); /* Set according to the first shift. */ \
-        fEfl |= (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF; /* CF = last bit shifted out */ \
-        fEfl |= g_afParity[uResult & 0xff]; \
-        fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
-        fEfl |= X86_EFL_CALC_ZF(uResult); \
-        *pfEFlags = fEfl; \
-    } \
-}\
-\
-IEM_DECL_IMPL_DEF(void, iemAImpl_shld_u ## a_cBitsWidth ## _intel,(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                   uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, \
-                                                                   uint32_t *pfEFlags)) \
-{ \
-    iemAImpl_shld_u ## a_cBitsWidth(puDst, uSrc, cShift, pfEFlags); \
-} \
-\
-IEM_DECL_IMPL_DEF(void, iemAImpl_shld_u ## a_cBitsWidth ## _amd,(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                 uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, \
-                                                                 uint32_t *pfEFlags)) \
-{ \
-    cShift &= a_cBitsWidth - 1; \
-    if (cShift) \
-    { \
-        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
-        uint ## a_cBitsWidth ## _t       uResult = uDst << cShift; \
-        uResult |= uSrc >> (a_cBitsWidth - cShift); \
-        *puDst = uResult; \
-        \
-        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
-        fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth((uDst << (cShift - 1)) ^ uResult); /* Set according to last shift. */ \
-        fEfl |= X86_EFL_AF; \
+        if (a_fIntelFlags) \
+            /* Intel 6700K & 10980XE: Set according to the first shift. AF always cleared. */ \
+            fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ (uDst << 1));  \
+        else \
+        {   /* AMD 3990X: Set according to last shift. AF always set. */ \
+            fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth((uDst << (cShift - 1)) ^ uResult); \
+            fEfl |= X86_EFL_AF; \
+        } \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         fEfl |= (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF; /* CF = last bit shifted out */ \
         fEfl |= g_afParity[uResult & 0xff]; \
@@ -2611,12 +2590,21 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_shld_u ## a_cBitsWidth ## _amd,(uint ## a_cBits
         *pfEFlags = fEfl; \
     } \
 }
-
-EMIT_SHLD(64)
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHLD(32)
-EMIT_SHLD(16)
-# endif
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SHLD(64, uint64_t, RT_NOTHING, 1)
+#endif /* !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY) */
+EMIT_SHLD(64, uint64_t, _intel,     1)
+EMIT_SHLD(64, uint64_t, _amd,       0)
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SHLD(32, uint32_t, RT_NOTHING, 1)
+#endif
+EMIT_SHLD(32, uint32_t, _intel,     1)
+EMIT_SHLD(32, uint32_t, _amd,       0)
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SHLD(16, uint16_t, RT_NOTHING, 1)
+#endif
+EMIT_SHLD(16, uint16_t, _intel,     1)
+EMIT_SHLD(16, uint16_t, _amd,       0)
 
 
 /*
@@ -2630,56 +2618,31 @@ EMIT_SHLD(16)
  *  - OF is set according to the last sub-shift on AMD 3990X.
  *  - ZF, SF and PF are calculated according to the result by both vendors.
  */
-#define EMIT_SHRD(a_cBitsWidth) \
-IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u ## a_cBitsWidth,(uint ## a_cBitsWidth ## _t *puDst, \
-                                                         uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
+#define EMIT_SHRD(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shrd_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, a_uType uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
 { \
     /** @todo this is wrong for 16-bit, where it should be 0x1f not 0xf and \
      *        source used twice or something like that. */ \
     cShift &= a_cBitsWidth - 1; \
     if (cShift) \
     { \
-        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
-        uint ## a_cBitsWidth ## _t       uResult = uDst >> cShift; \
+        a_uType const uDst    = *puDst; \
+        a_uType       uResult = uDst >> cShift; \
         uResult |= uSrc << (a_cBitsWidth - cShift); \
         *puDst = uResult; \
         \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
-        fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ (uSrc << (a_cBitsWidth - 1))); \
-        AssertCompile(X86_EFL_CF_BIT == 0); \
-        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
-        fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
-        fEfl |= X86_EFL_CALC_ZF(uResult); \
-        fEfl |= g_afParity[uResult & 0xff]; \
-        *pfEFlags = fEfl; \
-    } \
-} \
-\
-IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u ## a_cBitsWidth ## _intel,(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                   uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, \
-                                                                   uint32_t *pfEFlags)) \
-{ \
-    iemAImpl_shrd_u ## a_cBitsWidth(puDst, uSrc, cShift, pfEFlags); \
-} \
-\
-IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u ## a_cBitsWidth ## _amd,(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                 uint ## a_cBitsWidth ## _t uSrc, uint8_t cShift, \
-                                                                 uint32_t *pfEFlags)) \
-{ \
-    cShift &= a_cBitsWidth - 1; \
-    if (cShift) \
-    { \
-        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
-        uint ## a_cBitsWidth ## _t       uResult = uDst >> cShift; \
-        uResult |= uSrc << (a_cBitsWidth - cShift); \
-        *puDst = uResult; \
-        \
-        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
-        if (cShift > 1) /* Set according to last shift. */ \
-            fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth((uSrc << (a_cBitsWidth - cShift + 1)) ^ uResult); \
+        if (a_fIntelFlags) \
+            /* Intel 6700K & 10980XE: Set according to the first shift. AF always cleared. */ \
+            fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ (uSrc << (a_cBitsWidth - 1))); \
         else \
-            fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ uResult); \
-        fEfl |= X86_EFL_AF; \
+        {   /* AMD 3990X: Set according to last shift. AF always set. */ \
+            if (cShift > 1) /* Set according to last shift. */ \
+                fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth((uSrc << (a_cBitsWidth - cShift + 1)) ^ uResult); \
+            else \
+                fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ uResult); \
+            fEfl |= X86_EFL_AF; \
+        } \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
@@ -2688,12 +2651,24 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u ## a_cBitsWidth ## _amd,(uint ## a_cBits
         *pfEFlags = fEfl; \
     } \
 }
-EMIT_SHRD(64)
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHRD(32)
-EMIT_SHRD(16)
-# endif
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SHRD(64, uint64_t, RT_NOTHING, 1)
+#endif /* !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY) */
+EMIT_SHRD(64, uint64_t, _intel,     1)
+EMIT_SHRD(64, uint64_t, _amd,       0)
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SHRD(32, uint32_t, RT_NOTHING, 1)
+#endif
+EMIT_SHRD(32, uint32_t, _intel,     1)
+EMIT_SHRD(32, uint32_t, _amd,       0)
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_SHRD(16, uint16_t, RT_NOTHING, 1)
+#endif
+EMIT_SHRD(16, uint16_t, _intel,     1)
+EMIT_SHRD(16, uint16_t, _amd,       0)
 
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 
 # if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
 /*
