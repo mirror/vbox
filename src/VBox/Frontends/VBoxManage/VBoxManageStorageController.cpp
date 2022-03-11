@@ -989,7 +989,7 @@ RTEXITCODE handleStorageController(HandlerArg *a)
     RTGETOPTSTATE     GetState;
 
     if (a->argc < 4)
-        return errorSyntax(USAGE_STORAGECONTROLLER, Storage::tr("Too few parameters"));
+        return errorSyntax(Storage::tr("Too few parameters"));
 
     RTGetOptInit (&GetState, a->argc, a->argv, g_aStorageControllerOptions,
                   RT_ELEMENTS(g_aStorageControllerOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
@@ -1035,7 +1035,7 @@ RTEXITCODE handleStorageController(HandlerArg *a)
                 break;
 
             default:
-                return errorGetOpt(USAGE_STORAGECONTROLLER, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
@@ -1055,7 +1055,7 @@ RTEXITCODE handleStorageController(HandlerArg *a)
     {
         /* it's important to always close sessions */
         a->session->UnlockMachine();
-        return errorSyntax(USAGE_STORAGECONTROLLER, Storage::tr("Storage controller name not specified\n"));
+        return errorSyntax(Storage::tr("Storage controller name not specified\n"));
     }
 
     if (fRemoveCtl)

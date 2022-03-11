@@ -624,21 +624,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--intnet]\n"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_STORAGECONTROLLER || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s storagectl %s      <uuid|vmname>\n"
-                     "                            --name <name>\n"
-                     "                            [--add ide|sata|scsi|floppy|sas|usb|pcie|virtio]\n"
-                     "                            [--controller LSILogic|LSILogicSAS|BusLogic|\n"
-                     "                                          IntelAHCI|PIIX3|PIIX4|ICH6|I82078|\n"
-                     "                            [             USB|NVMe|VirtIO]\n"
-                     "                            [--portcount <1-n>]\n"
-                     "                            [--hostiocache on|off]\n"
-                     "                            [--bootable on|off]\n"
-                     "                            [--rename <name>]\n"
-                     "                            [--remove]\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_BANDWIDTHCONTROL || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s bandwidthctl %s    <uuid|vmname>\n"
