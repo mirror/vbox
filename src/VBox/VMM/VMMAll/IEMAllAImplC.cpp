@@ -2201,6 +2201,8 @@ EMIT_LOCKED_UNARY_OP(not, 8)
 EMIT_LOCKED_UNARY_OP(neg, 8)
 # endif
 
+#endif /* !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY) */
+
 
 /*********************************************************************************************************************************
 *   Shifting and Rotating                                                                                                        *
@@ -2235,11 +2237,16 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rol_u,a_cBitsWidth,a_Suffix),(uint #
         *pfEFlags = fEfl; \
     } \
 }
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROL(64, RT_NOTHING, 1, ASMRotateLeftU64)
+#endif
 EMIT_ROL(64, _intel,     1, ASMRotateLeftU64)
 EMIT_ROL(64, _amd,       0, ASMRotateLeftU64)
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROL(32, RT_NOTHING, 1, ASMRotateLeftU32)
+#endif
 EMIT_ROL(32, _intel,     1, ASMRotateLeftU32)
 EMIT_ROL(32, _amd,       0, ASMRotateLeftU32)
 
@@ -2247,7 +2254,9 @@ DECL_FORCE_INLINE(uint16_t) iemAImpl_rol_u16_hlp(uint16_t uValue, uint8_t cShift
 {
     return (uValue << cShift) | (uValue >> (16 - cShift));
 }
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROL(16, RT_NOTHING, 1, iemAImpl_rol_u16_hlp)
+#endif
 EMIT_ROL(16, _intel,     1, iemAImpl_rol_u16_hlp)
 EMIT_ROL(16, _amd,       0, iemAImpl_rol_u16_hlp)
 
@@ -2255,10 +2264,11 @@ DECL_FORCE_INLINE(uint8_t) iemAImpl_rol_u8_hlp(uint8_t uValue, uint8_t cShift)
 {
     return (uValue << cShift) | (uValue >> (8 - cShift));
 }
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROL(8, RT_NOTHING, 1, iemAImpl_rol_u8_hlp)
+#endif
 EMIT_ROL(8, _intel,     1, iemAImpl_rol_u8_hlp)
 EMIT_ROL(8, _amd,       0, iemAImpl_rol_u8_hlp)
-# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
 /*
@@ -2288,11 +2298,16 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_ror_u,a_cBitsWidth,a_Suffix),(uint #
         *pfEFlags = fEfl; \
     } \
 }
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROR(64, RT_NOTHING, 1, ASMRotateRightU64)
+#endif
 EMIT_ROR(64, _intel,     1, ASMRotateRightU64)
 EMIT_ROR(64, _amd,       0, ASMRotateRightU64)
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROR(32, RT_NOTHING, 1, ASMRotateRightU32)
+#endif
 EMIT_ROR(32, _intel,     1, ASMRotateRightU32)
 EMIT_ROR(32, _amd,       0, ASMRotateRightU32)
 
@@ -2300,7 +2315,9 @@ DECL_FORCE_INLINE(uint16_t) iemAImpl_ror_u16_hlp(uint16_t uValue, uint8_t cShift
 {
     return (uValue >> cShift) | (uValue << (16 - cShift));
 }
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROR(16, RT_NOTHING, 1, iemAImpl_ror_u16_hlp)
+#endif
 EMIT_ROR(16, _intel,     1, iemAImpl_ror_u16_hlp)
 EMIT_ROR(16, _amd,       0, iemAImpl_ror_u16_hlp)
 
@@ -2308,10 +2325,11 @@ DECL_FORCE_INLINE(uint8_t) iemAImpl_ror_u8_hlp(uint8_t uValue, uint8_t cShift)
 {
     return (uValue >> cShift) | (uValue << (8 - cShift));
 }
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_ROR(8, RT_NOTHING, 1, iemAImpl_ror_u8_hlp)
+#endif
 EMIT_ROR(8, _intel,     1, iemAImpl_ror_u8_hlp)
 EMIT_ROR(8, _amd,       0, iemAImpl_ror_u8_hlp)
-# endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
 /*
@@ -2347,20 +2365,30 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rcl_u,a_cBitsWidth,a_Suffix),(uint #
         *pfEFlags = fEfl; \
     } \
 }
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCL(64, RT_NOTHING, 1)
+#endif
 EMIT_RCL(64, _intel,     1)
 EMIT_RCL(64, _amd,       0)
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCL(32, RT_NOTHING, 1)
+#endif
 EMIT_RCL(32, _intel,     1)
 EMIT_RCL(32, _amd,       0)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCL(16, RT_NOTHING, 1)
+#endif
 EMIT_RCL(16, _intel,     1)
 EMIT_RCL(16, _amd,       0)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCL(8,  RT_NOTHING, 1)
+#endif
 EMIT_RCL(8,  _intel,     1)
 EMIT_RCL(8,  _amd,       0)
-# endif
 
 
 /*
@@ -2396,20 +2424,30 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rcr_u,a_cBitsWidth,a_Suffix),(uint #
         *pfEFlags = fEfl; \
     } \
 }
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCR(64, RT_NOTHING, 1)
+#endif
 EMIT_RCR(64, _intel,     1)
 EMIT_RCR(64, _amd,       0)
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCR(32, RT_NOTHING, 1)
+#endif
 EMIT_RCR(32, _intel,     1)
 EMIT_RCR(32, _amd,       0)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCR(16, RT_NOTHING, 1)
+#endif
 EMIT_RCR(16, _intel,     1)
 EMIT_RCR(16, _amd,       0)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_RCR(8,  RT_NOTHING, 1)
+#endif
 EMIT_RCR(8,  _intel,     1)
 EMIT_RCR(8,  _amd,       0)
-# endif
 
 
 /*
@@ -2443,20 +2481,30 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shl_u,a_cBitsWidth,a_Suffix),(uint #
         *pfEFlags = fEfl; \
     } \
 }
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHL(64, RT_NOTHING, 1)
+#endif
 EMIT_SHL(64, _intel,     1)
 EMIT_SHL(64, _amd,       0)
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHL(32, RT_NOTHING, 1)
+#endif
 EMIT_SHL(32, _intel,     1)
 EMIT_SHL(32, _amd,       0)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHL(16, RT_NOTHING, 1)
+#endif
 EMIT_SHL(16, _intel,     1)
 EMIT_SHL(16, _amd,       0)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHL(8,  RT_NOTHING, 1)
+#endif
 EMIT_SHL(8,  _intel,     1)
 EMIT_SHL(8,  _amd,       0)
-# endif
 
 
 /*
@@ -2487,20 +2535,30 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shr_u,a_cBitsWidth,a_Suffix),(uint #
         *pfEFlags = fEfl; \
     } \
 }
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHR(64, RT_NOTHING, 1)
+#endif
 EMIT_SHR(64, _intel,     1)
 EMIT_SHR(64, _amd,       0)
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHR(32, RT_NOTHING, 1)
+#endif
 EMIT_SHR(32, _intel,     1)
 EMIT_SHR(32, _amd,       0)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHR(16, RT_NOTHING, 1)
+#endif
 EMIT_SHR(16, _intel,     1)
 EMIT_SHR(16, _amd,       0)
+
+#if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHR(8,  RT_NOTHING, 1)
+#endif
 EMIT_SHR(8,  _intel,     1)
 EMIT_SHR(8,  _amd,       0)
-# endif
 
 
 /*
@@ -2530,22 +2588,30 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_sar_u,a_cBitsWidth,a_Suffix),(uint #
         *pfEFlags = fEfl; \
     } \
 }
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SAR(64, RT_NOTHING, 1)
+#endif
 EMIT_SAR(64, _intel,     1)
 EMIT_SAR(64, _amd,       0)
-# if !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY)
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SAR(32, RT_NOTHING, 1)
+#endif
 EMIT_SAR(32, _intel,     1)
 EMIT_SAR(32, _amd,       0)
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SAR(16, RT_NOTHING, 1)
+#endif
 EMIT_SAR(16, _intel,     1)
 EMIT_SAR(16, _amd,       0)
+
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SAR(8,  RT_NOTHING, 1)
+#endif
 EMIT_SAR(8,  _intel,     1)
 EMIT_SAR(8,  _amd,       0)
-# endif
-
-#endif /* !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
 /*
@@ -2590,16 +2656,19 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shld_u,a_cBitsWidth,a_Suffix),(a_uTy
         *pfEFlags = fEfl; \
     } \
 }
+
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHLD(64, uint64_t, RT_NOTHING, 1)
-#endif /* !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY) */
+#endif
 EMIT_SHLD(64, uint64_t, _intel,     1)
 EMIT_SHLD(64, uint64_t, _amd,       0)
+
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHLD(32, uint32_t, RT_NOTHING, 1)
 #endif
 EMIT_SHLD(32, uint32_t, _intel,     1)
 EMIT_SHLD(32, uint32_t, _amd,       0)
+
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHLD(16, uint16_t, RT_NOTHING, 1)
 #endif
@@ -2651,16 +2720,19 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shrd_u,a_cBitsWidth,a_Suffix),(a_uTy
         *pfEFlags = fEfl; \
     } \
 }
+
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHRD(64, uint64_t, RT_NOTHING, 1)
-#endif /* !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY) */
+#endif
 EMIT_SHRD(64, uint64_t, _intel,     1)
 EMIT_SHRD(64, uint64_t, _amd,       0)
+
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHRD(32, uint32_t, RT_NOTHING, 1)
 #endif
 EMIT_SHRD(32, uint32_t, _intel,     1)
 EMIT_SHRD(32, uint32_t, _amd,       0)
+
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
 EMIT_SHRD(16, uint16_t, RT_NOTHING, 1)
 #endif
