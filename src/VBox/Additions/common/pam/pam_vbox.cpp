@@ -528,7 +528,7 @@ static int pam_vbox_wait_prop(pam_handle_t *hPAM, uint32_t uClientID,
             rc = VbglR3GuestPropWait(uClientID, pszKey, pvBuf, cbBuf,
                                      0 /* Last timestamp; just wait for next event */, uTimeoutMS,
                                      &pszName, &pszValue, &u64TimestampOut,
-                                     &pszFlags, &cbBuf);
+                                     &pszFlags, &cbBuf, NULL /* pfWasDeleted */);
         }
         else
             rc = VERR_NO_MEMORY;

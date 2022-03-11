@@ -176,7 +176,8 @@ VBGLR3DECL(int)     VbglR3GuestPropWait(HGCMCLIENTID idClient,
                                         char **ppszValue,
                                         uint64_t *pu64Timestamp,
                                         char **ppszFlags,
-                                        uint32_t *pcbBufActual)
+                                        uint32_t *pcbBufActual,
+                                        bool *pfWasDeleted)
 {
     RT_NOREF2(pvBuf, cbBuf);
     if (u32Timeout == RT_INDEFINITE_WAIT)
@@ -200,6 +201,8 @@ VBGLR3DECL(int)     VbglR3GuestPropWait(HGCMCLIENTID idClient,
         *ppszFlags = szFlags;
     if (pcbBufActual)
         *pcbBufActual = 256;
+    if (pfWasDeleted)
+        *pfWasDeleted = false;
     return VINF_SUCCESS;
 }
 

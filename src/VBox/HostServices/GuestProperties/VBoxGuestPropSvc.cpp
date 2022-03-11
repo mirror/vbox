@@ -424,7 +424,7 @@ private:
     int enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int getOldNotificationInternal(const char *pszPattern, uint64_t nsTimestamp, Property *pProp);
-    int getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[], Property const &prop);
+    int getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[], Property const &prop, bool fWasDeleted);
     int doNotifications(const char *pszProperty, uint64_t nsTimestamp);
     int notifyHost(const char *pszName, const char *pszValue, uint64_t nsTimestamp, const char *pszFlags);
 
@@ -1039,7 +1039,7 @@ int Service::getOldNotificationInternal(const char *pszPatterns, uint64_t nsTime
 
 
 /** Helper query used by getNotification */
-int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[], Property const &rProp)
+int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[], Property const &rProp, bool fWasDeleted)
 {
     AssertReturn(cParms == 4, VERR_INVALID_PARAMETER); /* Basic sanity checking. */
 
@@ -1050,6 +1050,8 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     if (RT_SUCCESS(rc))
     {
         char szFlags[GUEST_PROP_MAX_FLAGS_LEN];
+        char szWasDeleted[2] = { fWasDeleted ? '1' : '0', '\0' };
+
         rc = GuestPropWriteFlags(rProp.mFlags, szFlags);
         if (RT_SUCCESS(rc))
         {
@@ -1058,15 +1060,19 @@ int Service::getNotificationWriteOut(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
             size_t const cbFlags  = strlen(szFlags) + 1;
             size_t const cbName   = rProp.mName.length() + 1;
             size_t const cbValue  = rProp.mValue.length() + 1;
-            size_t const cbNeeded = cbName + cbValue + cbFlags;
+            size_t const cbWasDeleted  = strlen(szWasDeleted) + 1;
+            size_t const cbNeeded = cbName + cbValue + cbFlags + cbWasDeleted;
             HGCMSvcSetU32(&paParms[3], (uint32_t)cbNeeded);
             if (cbNeeded <= cbBuf)
             {
+                /* Buffer layout: Name\0Value\0Flags\0fWasDeleted\0. */
                 memcpy(pchBuf, rProp.mName.c_str(), cbName);
                 pchBuf += cbName;
                 memcpy(pchBuf, rProp.mValue.c_str(), cbValue);
                 pchBuf += cbValue;
                 memcpy(pchBuf, szFlags, cbFlags);
+                pchBuf += cbFlags;
+                memcpy(pchBuf, szWasDeleted, cbWasDeleted);
             }
             else
                 rc = VERR_BUFFER_OVERFLOW;
@@ -1184,7 +1190,7 @@ int Service::getNotification(uint32_t u32ClientId, VBOXHGCMCALLHANDLE callHandle
              */
             else
             {
-                int rc2 = getNotificationWriteOut(cParms, paParms, prop);
+                int rc2 = getNotificationWriteOut(cParms, paParms, prop, !getPropertyInternal(prop.mName.c_str()));
                 if (RT_FAILURE(rc2))
                     rc = rc2;
             }
@@ -1251,7 +1257,7 @@ int Service::doNotifications(const char *pszProperty, uint64_t nsTimestamp)
         {
             if (prop.Matches(pszPatterns))
             {
-                int rc2 = getNotificationWriteOut(it->mParmsCnt, it->mParms, prop);
+                int rc2 = getNotificationWriteOut(it->mParmsCnt, it->mParms, prop, !pProp);
                 if (RT_SUCCESS(rc2))
                     rc2 = it->mRc;
                 mpHelpers->pfnCallComplete(it->mHandle, rc2);

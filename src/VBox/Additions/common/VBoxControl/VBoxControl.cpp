@@ -1514,6 +1514,7 @@ static RTEXITCODE waitGuestProperty(int argc, char **argv)
     char *pszValue = NULL;
     uint64_t u64TimestampOut = 0;
     char *pszFlags = NULL;
+    bool fWasDeleted = false;
     /* The buffer for storing the data and its initial size.  We leave a bit
      * of space here in case the maximum values are raised. */
     void *pvBuf = NULL;
@@ -1537,7 +1538,7 @@ static RTEXITCODE waitGuestProperty(int argc, char **argv)
             rc = VbglR3GuestPropWait(u32ClientId, pszPatterns, pvBuf, cbBuf,
                                      u64TimestampIn, u32Timeout,
                                      &pszName, &pszValue, &u64TimestampOut,
-                                     &pszFlags, &cbBuf);
+                                     &pszFlags, &cbBuf, &fWasDeleted);
         }
         if (VERR_BUFFER_OVERFLOW == rc)
             /* Leave a bit of extra space to be safe */
@@ -1561,10 +1562,17 @@ static RTEXITCODE waitGuestProperty(int argc, char **argv)
         RTPrintf("Internal error: unable to determine the size of the data!\n");
     else if (RT_SUCCESS(rc))
     {
-        RTPrintf("Name: %s\n", pszName);
-        RTPrintf("Value: %s\n", pszValue);
-        RTPrintf("Timestamp: %lld ns\n", u64TimestampOut);
-        RTPrintf("Flags: %s\n", pszFlags);
+        if (fWasDeleted)
+        {
+            RTPrintf("Property %s was deleted\n", pszName);
+        }
+        else
+        {
+            RTPrintf("Name: %s\n", pszName);
+            RTPrintf("Value: %s\n", pszValue);
+            RTPrintf("Timestamp: %lld ns\n", u64TimestampOut);
+            RTPrintf("Flags: %s\n", pszFlags);
+        }
     }
 
     if (u32ClientId != 0)

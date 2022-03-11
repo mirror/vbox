@@ -830,7 +830,8 @@ static int laWaitProperties(uint32_t u32GuestPropHandle,
                                  NULL /* ppszValue */,
                                  pu64Timestamp,
                                  NULL /* ppszFlags */,
-                                 &cbBuf);
+                                 &cbBuf,
+                                 NULL /* pfWasDeleted */);
 
         if (rc != VERR_BUFFER_OVERFLOW)
             break;

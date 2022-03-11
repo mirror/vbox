@@ -5621,7 +5621,7 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
         {
             alock.release();
 
-            mParent->i_onGuestPropertyChanged(mData->mUuid, aName, aValue, aFlags);
+            mParent->i_onGuestPropertyChanged(mData->mUuid, aName, aValue, aFlags, fDelete);
         }
     }
     catch (std::bad_alloc &)
@@ -13676,7 +13676,7 @@ HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
 
         alock.release();
 
-        mParent->i_onGuestPropertyChanged(mData->mUuid, aName, aValue, aFlags);
+        mParent->i_onGuestPropertyChanged(mData->mUuid, aName, aValue, aFlags, fWasDeleted);
     }
     catch (...)
     {

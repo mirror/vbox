@@ -327,7 +327,7 @@ static int vbox_wait_prop(uint32_t uClientID,
             rc = VbglR3GuestPropWait(uClientID, pszKey, pvBuf, cbBuf,
                                      0 /* Last timestamp; just wait for next event */, uTimeoutMS,
                                      &pszName, &pszValue, &u64TimestampOut,
-                                     &pszFlags, &cbBuf);
+                                     &pszFlags, &cbBuf, NULL);
         }
         else
             rc = VERR_NO_MEMORY;

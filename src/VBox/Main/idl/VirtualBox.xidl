@@ -25868,7 +25868,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IGuestPropertyChangedEvent" extends="IMachineEvent"
-    uuid="3f63597a-26f1-4edb-8dd2-6bddd0912368"
+    uuid="2d0f4c6f-a77e-45c5-96d2-7ca7daae63a9"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestPropertyChanged"
     >
     <desc>
@@ -25890,6 +25890,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="flags" readonly="yes" type="wstring">
       <desc>
         The new property flags.
+      </desc>
+    </attribute>
+
+    <attribute name="fWasDeleted" readonly="yes" type="boolean">
+      <desc>
+        A flag which indicates that property was deleted.
       </desc>
     </attribute>
 

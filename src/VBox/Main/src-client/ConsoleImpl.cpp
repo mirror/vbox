@@ -1844,15 +1844,17 @@ DECLCALLBACK(int) Console::i_doGuestPropNotification(void *pvExtension,
     Bstr name(pCBData->pcszName);
     Bstr value(pCBData->pcszValue);
     Bstr flags(pCBData->pcszFlags);
+    BOOL fWasDeleted = !pCBData->pcszValue;
     ComObjPtr<Console> pConsole = reinterpret_cast<Console *>(pvExtension);
     HRESULT hrc = pConsole->mControl->PushGuestProperty(name.raw(),
                                                         value.raw(),
                                                         pCBData->u64Timestamp,
                                                         flags.raw(),
-                                                        !pCBData->pcszValue);
+                                                        fWasDeleted);
     if (SUCCEEDED(hrc))
     {
-        ::FireGuestPropertyChangedEvent(pConsole->mEventSource, pConsole->i_getId().raw(), name.raw(), value.raw(), flags.raw());
+        ::FireGuestPropertyChangedEvent(pConsole->mEventSource, pConsole->i_getId().raw(), name.raw(), value.raw(), flags.raw(),
+                                        fWasDeleted);
         rc = VINF_SUCCESS;
     }
     else

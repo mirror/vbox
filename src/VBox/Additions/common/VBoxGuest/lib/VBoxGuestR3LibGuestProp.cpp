@@ -936,6 +936,8 @@ VBGLR3DECL(int) VbglR3GuestPropDelSet(HGCMCLIENTID idClient,
  * @param   ppszFlags       Where to store the pointer to the flags.  Optional.
  * @param   pcbBufActual    If @a pcBuf is not large enough, the size needed.
  *                          Optional.
+ * @param   pfWasDeleted    A flag which indicates that property was deleted.
+ *                          Optional.
  */
 VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
                                     const char *pszPatterns,
@@ -943,7 +945,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
                                     uint64_t u64Timestamp, uint32_t cMillies,
                                     char ** ppszName, char **ppszValue,
                                     uint64_t *pu64Timestamp, char **ppszFlags,
-                                    uint32_t *pcbBufActual)
+                                    uint32_t *pcbBufActual, bool *pfWasDeleted)
 {
     /*
      * Create the GET_NOTIFICATION message and call the host.
@@ -972,13 +974,13 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
         return rc;
 
     /*
-     * Buffer layout: Name\0Value\0Flags\0.
+     * Buffer layout: Name\0Value\0Flags\0fWasDeleted\0.
      *
      * If the caller cares about any of these strings, make sure things are
      * properly terminated (paranoia).
      */
     if (    RT_SUCCESS(rc)
-        &&  (ppszName != NULL || ppszValue != NULL || ppszFlags != NULL))
+        &&  (ppszName != NULL || ppszValue != NULL || ppszFlags != NULL || pfWasDeleted != NULL))
     {
         /* Validate / skip 'Name'. */
         char *pszValue = RTStrEnd((char *)pvBuf, cbBuf) + 1;
@@ -993,12 +995,20 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
             *ppszValue = pszValue;
 
         if (ppszFlags)
-        {
-            /* Validate 'Flags'. */
-            char *pszEos = RTStrEnd(pszFlags, cbBuf - (pszFlags - (char *)pvBuf));
-            AssertPtrReturn(pszEos, VERR_TOO_MUCH_DATA);
             *ppszFlags = pszFlags;
+
+        /* Validate / skip 'Flags'. */
+        char *pszWasDeleted = RTStrEnd(pszFlags, cbBuf - (pszFlags - (char *)pvBuf)) + 1;
+        AssertPtrReturn(pszWasDeleted, VERR_TOO_MUCH_DATA);
+        if (pfWasDeleted)
+        {
+            AssertReturn(pszWasDeleted[0] == '0' || pszWasDeleted[0] == '1', VERR_PARSE_ERROR);
+            *pfWasDeleted = pszWasDeleted[0] == '0' ? false : true;
         }
+
+        /* Validate end of buffer string. */
+        char *pszEos = RTStrEnd(pszWasDeleted, cbBuf - (pszWasDeleted - (char *)pvBuf));
+        AssertPtrReturn(pszEos, VERR_TOO_MUCH_DATA);
     }
 
     /* And the timestamp, if requested. */

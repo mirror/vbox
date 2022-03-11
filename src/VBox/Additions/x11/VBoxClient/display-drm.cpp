@@ -899,7 +899,7 @@ static DECLCALLBACK(int) vbDrmIpcClientRxCallBack(uint8_t idCmd, void *pvData, u
 /** Worker thread for IPC client task. */
 static DECLCALLBACK(int) vbDrmIpcClientWorker(RTTHREAD ThreadSelf, void *pvUser)
 {
-    VBOX_DRMIPC_CLIENT        hClient  = VBOX_DRMIPC_CLIENT_INITIALIZER;
+    VBOX_DRMIPC_CLIENT  hClient  = VBOX_DRMIPC_CLIENT_INITIALIZER;
     RTLOCALIPCSESSION   hSession = (RTLOCALIPCSESSION)pvUser;
     int                 rc;
 
@@ -1132,7 +1132,7 @@ static void vbDrmPollIpcServerAccessMode(RTLOCALIPCSERVER hIpcServer)
             uint64_t u64Timestamp = 0;
 
             rc = VbglR3GuestPropWait(idClient, VBGLR3DRMIPCPROPRESTRICT, achBuf, sizeof(achBuf), u64Timestamp,
-                                     VBOX_DRMIPC_RX_TIMEOUT_MS, NULL, NULL, &u64Timestamp, NULL, NULL);
+                                     VBOX_DRMIPC_RX_TIMEOUT_MS, NULL, NULL, &u64Timestamp, NULL, NULL, NULL);
             if (RT_SUCCESS(rc))
                 vbDrmSetIpcServerAccessPermissions(hIpcServer);
             else if (   rc != VERR_TIMEOUT

@@ -364,7 +364,11 @@ def monitorSource(ctx, eventSource, active, dur):
         elif  evtype == ctx['global'].constants.VBoxEventType_OnGuestPropertyChanged:
             gpcev = ctx['global'].queryInterface(event, 'IGuestPropertyChangedEvent')
             if gpcev:
-                print("guest property change: name=%s value=%s" % (gpcev.name, gpcev.value))
+                if (gpcev.fWasDeleted)
+                    print("property %s was deleted" % (gpcev.name))
+                else
+                    print("guest property change: name=%s value=%s flags='%s'" %
+                          (gpcev.name, gpcev.value, gpcev.flags))
         elif  evtype == ctx['global'].constants.VBoxEventType_OnMousePointerShapeChanged:
             psev = ctx['global'].queryInterface(event, 'IMousePointerShapeChangedEvent')
             if psev:
