@@ -782,7 +782,7 @@ class VirtualBoxEventHandlerBase(EventHandlerBase):
         pass;
     def onSnapshotChange(self, sMachineId, sSnapshotId):
         pass;
-    def onGuestPropertyChange(self, sMachineId, sName, sValue, sFlags):
+    def onGuestPropertyChange(self, sMachineId, sName, sValue, sFlags, fWasDeleted):
         pass;
     # pylint: enable=missing-docstring,unused-argument
 

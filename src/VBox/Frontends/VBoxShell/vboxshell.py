@@ -364,7 +364,7 @@ def monitorSource(ctx, eventSource, active, dur):
         elif  evtype == ctx['global'].constants.VBoxEventType_OnGuestPropertyChanged:
             gpcev = ctx['global'].queryInterface(event, 'IGuestPropertyChangedEvent')
             if gpcev:
-                if (gpcev.fWasDeleted)
+                if gpcev.fWasDeleted is True:
                     print("property %s was deleted" % (gpcev.name))
                 else
                     print("guest property change: name=%s value=%s flags='%s'" %
