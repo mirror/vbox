@@ -1060,8 +1060,8 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg16b, 16
 
         lock cmpxchg16b [rdi]
 
-        mov     [rsi], eax
-        mov     [rsi + 8], edx
+        mov     [rsi], rax
+        mov     [rsi + 8], rdx
         IEM_SAVE_FLAGS       r10, (X86_EFL_ZF), 0 ; clobbers T0+T1 (eax, r11)
 
         pop     rbx
@@ -1071,7 +1071,7 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg16b, 16
 ENDPROC iemAImpl_cmpxchg16b
 
 BEGINPROC_FASTCALL iemAImpl_cmpxchg16b_locked, 16
-        ; Lazy bird always lock prefixes cmpxchg8b.
+        ; Lazy bird always lock prefixes cmpxchg16b.
         jmp     NAME_FASTCALL(iemAImpl_cmpxchg16b,16,$@)
 ENDPROC iemAImpl_cmpxchg16b_locked
 
