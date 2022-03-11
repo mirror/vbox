@@ -1680,9 +1680,8 @@ EMIT_MUL(8, 16, (uint16_t *puAX, uint8_t uFactor, uint32_t *pfEFlags),          
  * IMUL
  *
  * The SF, ZF, AF and PF flags are "undefined". AMD (3990x) leaves these
- * flags as is - at least for the two op version. Whereas Intel skylake (6700K
- * and 10980X (Cascade Lake)) always clear AF and ZF and calculates SF and PF
- * as per the lower half of the result.
+ * flags as is.  Whereas Intel skylake (6700K and 10980X (Cascade Lake)) always
+ * clear AF and ZF and calculates SF and PF as per the lower half of the result.
  */
 # define EMIT_IMUL_INNER(a_cBitsWidth, a_cBitsWidth2x, a_Args, a_CallArgs, a_fnLoadF1, a_fnStore, a_fnNeg, a_fnMul, \
                          a_Suffix, a_fIntelFlags) \

@@ -756,40 +756,56 @@ IEMIMPL_BIT_OP bsr, (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EF
 ; The rDX:rAX variant of imul is handled together with mul further down.
 ;
 BEGINCODE
-BEGINPROC_FASTCALL iemAImpl_imul_two_u16_intel, 12
-BEGINPROC_FASTCALL iemAImpl_imul_two_u16_amd, 12
-BEGINPROC_FASTCALL iemAImpl_imul_two_u16, 12
+; @param        1       EFLAGS that are modified.
+; @param        2       Undefined EFLAGS.
+; @param        3       Function suffix.
+; @param        4       EFLAGS variation: 0 for native, 1 for intel (ignored),
+;                       2 for AMD (set AF, clear PF, ZF and SF).
+%macro IEMIMPL_IMUL_TWO 4
+BEGINPROC_FASTCALL iemAImpl_imul_two_u16 %+ %3, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+        IEM_MAYBE_LOAD_FLAGS                    A2, %1, %2
         imul    A1_16, word [A0]
         mov     [A0], A1_16
-        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+ %if %4 != 1
+        IEM_SAVE_FLAGS                          A2, %1, %2
+ %else
+        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF    A2, %1, X86_EFL_AF | X86_EFL_ZF, A1_16, 16, A1
+ %endif
         EPILOGUE_3_ARGS
-ENDPROC iemAImpl_imul_two_u16
+ENDPROC iemAImpl_imul_two_u16 %+ %3
 
-BEGINPROC_FASTCALL iemAImpl_imul_two_u32_intel, 12
-BEGINPROC_FASTCALL iemAImpl_imul_two_u32_amd, 12
-BEGINPROC_FASTCALL iemAImpl_imul_two_u32, 12
+BEGINPROC_FASTCALL iemAImpl_imul_two_u32 %+ %3, 12
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+        IEM_MAYBE_LOAD_FLAGS                    A2, %1, %2
         imul    A1_32, dword [A0]
         mov     [A0], A1_32
-        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+ %if %4 != 1
+        IEM_SAVE_FLAGS                          A2, %1, %2
+ %else
+        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF    A2, %1, X86_EFL_AF | X86_EFL_ZF, A1_32, 32, A1
+ %endif
         EPILOGUE_3_ARGS
-ENDPROC iemAImpl_imul_two_u32
+ENDPROC iemAImpl_imul_two_u32 %+ %3
 
-%ifdef RT_ARCH_AMD64
-BEGINPROC_FASTCALL iemAImpl_imul_two_u64_intel, 16
-BEGINPROC_FASTCALL iemAImpl_imul_two_u64_amd, 16
-BEGINPROC_FASTCALL iemAImpl_imul_two_u64, 16
+ %ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_imul_two_u64 %+ %3, 16
         PROLOGUE_3_ARGS
-        IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+        IEM_MAYBE_LOAD_FLAGS                    A2, %1, %2
         imul    A1, qword [A0]
         mov     [A0], A1
-        IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+ %if %4 != 1
+        IEM_SAVE_FLAGS                          A2, %1, %2
+ %else
+        IEM_SAVE_FLAGS_ADJUST_AND_CALC_SF_PF    A2, %1, X86_EFL_AF | X86_EFL_ZF, A1, 64, A1
+ %endif
         EPILOGUE_3_ARGS_EX 8
-ENDPROC iemAImpl_imul_two_u64
-%endif ; RT_ARCH_AMD64
+ENDPROC iemAImpl_imul_two_u64 %+ %3
+ %endif ; RT_ARCH_AMD64
+%endmacro
+IEMIMPL_IMUL_TWO X86_EFL_OF | X86_EFL_CF, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF,       , 0
+IEMIMPL_IMUL_TWO X86_EFL_OF | X86_EFL_CF, 0,                                                 _intel, 1
+IEMIMPL_IMUL_TWO X86_EFL_OF | X86_EFL_CF, 0,                                                 _amd,   2
 
 
 ;
