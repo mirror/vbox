@@ -490,15 +490,12 @@ static void BinU ## a_cBits ## Test(void) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
-            && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
-            continue; \
-        \
         RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
         BINU ## a_cBits ## _TEST_T const * const paTests = a_aSubTests[iFn].paTests; \
         uint32_t const                           cTests  = a_aSubTests[iFn].cTests; \
         PFNIEMAIMPLBINU ## a_cBits               pfn     = a_aSubTests[iFn].pfn; \
-        for (uint32_t iCpu = 0; iCpu < 2 && pfn; iCpu++) \
+        uint32_t const cVars = 1 + (a_aSubTests[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && a_aSubTests[iFn].pfnNative); \
+        for (uint32_t iVar = 0; iVar < cVars; iVar++) \
         { \
             for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
             { \
@@ -508,7 +505,7 @@ static void BinU ## a_cBits ## Test(void) \
                 if (   uDst != paTests[iTest].uDstOut \
                     || fEfl != paTests[iTest].fEflOut) \
                     RTTestFailed(g_hTest, "#%u%s: efl=%#08x dst=" a_Fmt " src=" a_Fmt " -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s - %s\n", \
-                                 iTest, !iCpu ? "" : "/n", paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn, \
+                                 iTest, !iVar ? "" : "/n", paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uSrcIn, \
                                  fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut, \
                                  EFlagsDiff(fEfl, paTests[iTest].fEflOut), \
                                  uDst == paTests[iTest].uDstOut ? "eflags" : fEfl == paTests[iTest].fEflOut ? "dst" : "both"); \
@@ -1195,15 +1192,12 @@ static void ShiftDblU ## a_cBits ## Test(void) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
-            && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
-            continue; \
-        \
         RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
         BINU ## a_cBits ## _TEST_T const * const paTests = a_aSubTests[iFn].paTests; \
         uint32_t const                           cTests  = a_aSubTests[iFn].cTests; \
         PFNIEMAIMPLSHIFTDBLU ## a_cBits          pfn     = a_aSubTests[iFn].pfn; \
-        for (uint32_t iCpu = 0; iCpu < 2 && pfn; iCpu++) \
+        uint32_t const cVars = 1 + (a_aSubTests[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && a_aSubTests[iFn].pfnNative); \
+        for (uint32_t iVar = 0; iVar < cVars; iVar++) \
         { \
             for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
             { \
@@ -1213,7 +1207,7 @@ static void ShiftDblU ## a_cBits ## Test(void) \
                 if (   uDst != paTests[iTest].uDstOut \
                     || fEfl!= paTests[iTest].fEflOut) \
                     RTTestFailed(g_hTest, "#%u%s: efl=%#08x dst=" a_Fmt " src=" a_Fmt " shift=%-2u -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s\n", \
-                                 iTest, iCpu == 0 ? "" : "/n", paTests[iTest].fEflIn, \
+                                 iTest, iVar == 0 ? "" : "/n", paTests[iTest].fEflIn, \
                                  paTests[iTest].uDstIn, paTests[iTest].uSrcIn, (unsigned)paTests[iTest].uMisc, \
                                  fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut, \
                                  EFlagsDiff(fEfl, paTests[iTest].fEflOut)); \
@@ -1460,15 +1454,12 @@ static void ShiftU ## a_cBits ## Test(void) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
-            && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
-            continue; \
-        \
         RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
         a_TestType const * const     paTests = a_aSubTests[iFn].paTests; \
         uint32_t const               cTests  = a_aSubTests[iFn].cTests; \
         PFNIEMAIMPLSHIFTU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
-        for (uint32_t iCpu = 0; iCpu < 2 && pfn; iCpu++) \
+        uint32_t const cVars = 1 + (a_aSubTests[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && a_aSubTests[iFn].pfnNative); \
+        for (uint32_t iVar = 0; iVar < cVars; iVar++) \
         { \
             for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
             { \
@@ -1478,7 +1469,7 @@ static void ShiftU ## a_cBits ## Test(void) \
                 if (   uDst != paTests[iTest].uDstOut \
                     || fEfl != paTests[iTest].fEflOut) \
                     RTTestFailed(g_hTest, "#%u%s: efl=%#08x dst=" a_Fmt " shift=%2u -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s\n", \
-                                 iTest, iCpu == 0 ? "" : "/n", \
+                                 iTest, iVar == 0 ? "" : "/n", \
                                  paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uMisc, \
                                  fEfl, uDst, paTests[iTest].fEflOut, paTests[iTest].uDstOut, \
                                  EFlagsDiff(fEfl, paTests[iTest].fEflOut)); \
@@ -1680,9 +1671,9 @@ static const struct \
     uint8_t                         idxCpuEflFlavour; \
 } a_aSubTests [] = \
 { \
-    ENTRY_AMD_EX(mul_u ## a_cBits,       X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, \
-                                         X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF /** @todo check out AMD flags */ ), \
-    ENTRY_INTEL_EX(mul_u ## a_cBits,     X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
+    ENTRY_AMD_EX(mul_u ## a_cBits,    X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, \
+                                      X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF /** @todo check out AMD flags */ ), \
+    ENTRY_INTEL_EX(mul_u ## a_cBits,  X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
     ENTRY_AMD_EX(imul_u ## a_cBits,   X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, \
                                       X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF), \
     ENTRY_INTEL_EX(imul_u ## a_cBits, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF, 0), \
@@ -1700,16 +1691,13 @@ static void MulDivU ## a_cBits ## Test(void) \
 { \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        if (   a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE \
-            && a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
-            continue; \
-        \
         RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
         a_TestType const * const      paTests = a_aSubTests[iFn].paTests; \
         uint32_t const                cTests  = a_aSubTests[iFn].cTests; \
         uint32_t const                fEflIgn = a_aSubTests[iFn].uExtra; \
         PFNIEMAIMPLMULDIVU ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
-        for (uint32_t iCpu = 0; iCpu < 2 && pfn; iCpu++) \
+        uint32_t const cVars = 1 + (a_aSubTests[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && a_aSubTests[iFn].pfnNative); \
+        for (uint32_t iVar = 0; iVar < cVars; iVar++) \
         { \
             for (uint32_t iTest = 0; iTest < cTests; iTest++ ) \
             { \
@@ -1724,7 +1712,7 @@ static void MulDivU ## a_cBits ## Test(void) \
                     RTTestFailed(g_hTest, "#%02u%s: efl=%#08x dst1=" a_Fmt " dst2=" a_Fmt " src=" a_Fmt "\n" \
                                            "  -> efl=%#08x dst1=" a_Fmt  " dst2=" a_Fmt " rc=%d\n" \
                                            "expected %#08x      " a_Fmt  "      " a_Fmt "    %d%s -%s%s%s\n", \
-                                 iTest, iCpu == 0 ? "" : "/n", \
+                                 iTest, iVar == 0 ? "" : "/n", \
                                  paTests[iTest].fEflIn, paTests[iTest].uDst1In, paTests[iTest].uDst2In, paTests[iTest].uSrcIn, \
                                  fEfl, uDst1, uDst2, rc, \
                                  paTests[iTest].fEflOut, paTests[iTest].uDst1Out, paTests[iTest].uDst2Out, paTests[iTest].rc, \
@@ -1812,11 +1800,14 @@ int main(int argc, char **argv)
 
     /*
      * Determin the host CPU.
+     * If not using the IEMAllAImpl.asm code, this will be set to Intel.
      */
-#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+#if (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)) && !defined(IEM_WITHOUT_ASSEMBLY)
     g_idxCpuEflFlavour = ASMIsAmdCpu() || ASMIsHygonCpu()
                        ? IEMTARGETCPU_EFL_BEHAVIOR_AMD
                        : IEMTARGETCPU_EFL_BEHAVIOR_INTEL;
+#else
+    g_idxCpuEflFlavour = IEMTARGETCPU_EFL_BEHAVIOR_INTEL;
 #endif
 
     /*

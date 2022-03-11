@@ -1808,6 +1808,10 @@ EMIT_IMUL(8, 16, (uint16_t *puAX, uint8_t uFactor2, uint32_t *pfEFlags),        
 # endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 
 
+/*
+ * IMUL with two operands are mapped onto the three operand variant, ignoring
+ * the high part of the product.
+ */
 # define EMIT_IMUL_TWO(a_cBits, a_uType) \
 IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u ## a_cBits,(a_uType *puDst, a_uType uSrc, uint32_t *pfEFlags)) \
 { \
@@ -1818,13 +1822,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u ## a_cBits,(a_uType *puDst, a_uType 
 IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u ## a_cBits ## _intel,(a_uType *puDst, a_uType uSrc, uint32_t *pfEFlags)) \
 { \
     a_uType uIgn; \
-    iemAImpl_imul_u ## a_cBits(puDst, &uIgn, uSrc, pfEFlags); \
+    iemAImpl_imul_u ## a_cBits ## _intel(puDst, &uIgn, uSrc, pfEFlags); \
 } \
 \
 IEM_DECL_IMPL_DEF(void, iemAImpl_imul_two_u ## a_cBits ## _amd,(a_uType *puDst, a_uType uSrc, uint32_t *pfEFlags)) \
 { \
     a_uType uIgn; \
-    iemAImpl_imul_u ## a_cBits(puDst, &uIgn, uSrc, pfEFlags); \
+    iemAImpl_imul_u ## a_cBits ## _amd(puDst, &uIgn, uSrc, pfEFlags); \
 }
 
 EMIT_IMUL_TWO(64, uint64_t)
@@ -1832,6 +1836,7 @@ EMIT_IMUL_TWO(64, uint64_t)
 EMIT_IMUL_TWO(32, uint32_t)
 EMIT_IMUL_TWO(16, uint16_t)
 # endif
+
 
 /*
  * DIV
