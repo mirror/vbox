@@ -104,7 +104,7 @@ struct XRRScreenResources
 };
 typedef struct XRRScreenResources XRRScreenResources;
 
-/* Declarations of the functions that we need from libXrandr */
+/* Declarations of the functions that we need from libXrandr. */
 #define VBOX_XRANDR_GENERATE_HEADER
 
 #include <VBox/xrandr-calls.h>

@@ -24,10 +24,10 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/** The file name of the DBus library */
+/** The file name of the libXrandr library. */
 #define RT_RUNTIME_LOADER_LIB_NAME  "libXrandr.so.2"
 
-/** The name of the loader function */
+/** The name of the loader function. */
 #define RT_RUNTIME_LOADER_FUNCTION  RTXrandrLoadLib
 
 /** The following are the symbols which we need from the Xrandr library. */
