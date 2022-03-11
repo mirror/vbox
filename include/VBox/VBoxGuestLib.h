@@ -833,6 +833,7 @@ VBGLR3DECL(bool)    VbglR3DrmRestrictedIpcAccessIsNeeded(void);
 VBGLR3DECL(bool)    VbglR3DrmClientIsRunning(void);
 VBGLR3DECL(int)     VbglR3DrmClientStart(void);
 VBGLR3DECL(int)     VbglR3DrmLegacyClientStart(void);
+VBGLR3DECL(int)     VbglR3DrmLegacyX11AgentStart(void);
 /** @}  */
 
 # ifdef VBOX_WITH_GUEST_PROPS
@@ -871,7 +872,7 @@ VBGLR3DECL(int)     VbglR3GuestPropDelete(HGCMCLIENTID idClient, const char *psz
 VBGLR3DECL(int)     VbglR3GuestPropDelSet(HGCMCLIENTID idClient, char const * const *papszPatterns, uint32_t cPatterns);
 VBGLR3DECL(int)     VbglR3GuestPropWait(HGCMCLIENTID idClient, const char *pszPatterns, void *pvBuf, uint32_t cbBuf,
                                         uint64_t u64Timestamp, uint32_t cMillies, char ** ppszName, char **ppszValue,
-                                        uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
+                                        uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual, bool *pfWasDeleted);
 /** @}  */
 
 /** @name Guest user handling / reporting.
