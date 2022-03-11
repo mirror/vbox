@@ -874,6 +874,18 @@ HRESULT UnattendedLinuxInstaller::editIsoLinuxCfg(GeneralTextScript *pEditor)
                     return hrc;
             }
 
+        /* Don't include menu.cfg which may default (as most Debians do) to some vanilla menu item. txt.cfg has command
+         * kernel line options pointing to our preseed file. */
+        vecLineNumbers = pEditor->findTemplate("include", RTCString::CaseInsensitive);
+        for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+            if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("include", RTCString::CaseInsensitive))
+            {
+                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "include txt.cfg");
+                if (FAILED(hrc))
+                    return hrc;
+            }
+
+
         /* Comment out 'display <filename>' directives that's used for displaying files at boot time. */
         vecLineNumbers = pEditor->findTemplate("display", RTCString::CaseInsensitive);
         for (size_t i = 0; i < vecLineNumbers.size(); ++i)
@@ -1320,4 +1332,3 @@ HRESULT UnattendedSuseInstaller::setupScriptOnAuxiliaryCD(const Utf8Str &path)
     return rc;
 }
 #endif
-
