@@ -624,19 +624,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--intnet]\n"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_BANDWIDTHCONTROL || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s bandwidthctl %s    <uuid|vmname>\n"
-                     "                            add <name> --type disk|network\n"
-                     "                                --limit <megabytes per second>[k|m|g|K|M|G] |\n"
-                     "                            set <name>\n"
-                     "                                --limit <megabytes per second>[k|m|g|K|M|G] |\n"
-                     "                            remove <name> |\n"
-                     "                            list [--machinereadable]\n"
-                     "                            (limit units: k=kilobit, m=megabit, g=gigabit,\n"
-                     "                                          K=kilobyte, M=megabyte, G=gigabyte)\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_SHOWMEDIUMINFO || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s showmediuminfo %s  [disk|dvd|floppy] <uuid|filename>\n"

@@ -108,6 +108,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
             { "--limit",  'l', RTGETOPT_REQ_STRING }
         };
 
+    setCurrentSubcommand(HELP_SCOPE_BANDWIDTHCTL_ADD);
 
     Bstr name(a->argv[2]);
     if (name.isEmpty())
@@ -157,7 +158,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
 
             default:
             {
-                errorGetOpt(USAGE_BANDWIDTHCONTROL, c, &ValueUnion);
+                errorGetOpt(c, &ValueUnion);
                 rc = E_FAIL;
                 break;
             }
@@ -195,6 +196,7 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
             { "--limit",  'l', RTGETOPT_REQ_STRING }
         };
 
+    setCurrentSubcommand(HELP_SCOPE_BANDWIDTHCTL_SET);
 
     Bstr name(a->argv[2]);
     int64_t cMaxBytesPerSec = INT64_MAX;
@@ -228,7 +230,7 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
 
             default:
             {
-                errorGetOpt(USAGE_BANDWIDTHCONTROL, c, &ValueUnion);
+                errorGetOpt(c, &ValueUnion);
                 rc = E_FAIL;
                 break;
             }
@@ -257,6 +259,8 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
  */
 static RTEXITCODE handleBandwidthControlRemove(HandlerArg *a, ComPtr<IBandwidthControl> &bwCtrl)
 {
+    setCurrentSubcommand(HELP_SCOPE_BANDWIDTHCTL_REMOVE);
+
     Bstr name(a->argv[2]);
     CHECK_ERROR2I_RET(bwCtrl, DeleteBandwidthGroup(name.raw()), RTEXITCODE_FAILURE);
     return RTEXITCODE_SUCCESS;
@@ -275,6 +279,7 @@ static RTEXITCODE handleBandwidthControlList(HandlerArg *pArgs, ComPtr<IBandwidt
         { "--machinereadable",  'M', RTGETOPT_REQ_NOTHING },
     };
 
+    setCurrentSubcommand(HELP_SCOPE_BANDWIDTHCTL_LIST);
     VMINFO_DETAILS enmDetails = VMINFO_STANDARD;
 
     int c;
@@ -289,7 +294,7 @@ static RTEXITCODE handleBandwidthControlList(HandlerArg *pArgs, ComPtr<IBandwidt
                 enmDetails = VMINFO_MACHINEREADABLE;
                 break;
             default:
-                return errorGetOpt(USAGE_BANDWIDTHCONTROL, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
@@ -312,9 +317,9 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a)
     ComPtr<IBandwidthControl> bwCtrl;
 
     if (a->argc < 2)
-        return errorSyntax(USAGE_BANDWIDTHCONTROL, BWControl::tr("Too few parameters"));
+        return errorSyntax(BWControl::tr("Too few parameters"));
     else if (a->argc > 7)
-        return errorSyntax(USAGE_BANDWIDTHCONTROL, BWControl::tr("Too many parameters"));
+        return errorSyntax(BWControl::tr("Too many parameters"));
 
     /* try to find the given machine */
     CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
@@ -355,7 +360,7 @@ RTEXITCODE handleBandwidthControl(HandlerArg *a)
         rc = handleBandwidthControlList(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     else
     {
-        errorSyntax(USAGE_BANDWIDTHCONTROL, BWControl::tr("Invalid parameter '%s'"), a->argv[1]);
+        errorSyntax(BWControl::tr("Invalid parameter '%s'"), a->argv[1]);
         rc = E_FAIL;
     }
 
