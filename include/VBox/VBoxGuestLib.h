@@ -833,7 +833,6 @@ VBGLR3DECL(bool)    VbglR3DrmRestrictedIpcAccessIsNeeded(void);
 VBGLR3DECL(bool)    VbglR3DrmClientIsRunning(void);
 VBGLR3DECL(int)     VbglR3DrmClientStart(void);
 VBGLR3DECL(int)     VbglR3DrmLegacyClientStart(void);
-VBGLR3DECL(int)     VbglR3DrmLegacyX11AgentStart(void);
 /** @}  */
 
 # ifdef VBOX_WITH_GUEST_PROPS
