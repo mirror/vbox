@@ -2211,16 +2211,16 @@ EMIT_LOCKED_UNARY_OP(neg, 8)
 /*
  * ROL
  */
-
-#define EMIT_ROL(a_cBitsWidth, a_Suffix, a_fIntelFlags, a_fnHlp) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rol_u,a_cBitsWidth,a_Suffix),(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                          uint8_t cShift, uint32_t *pfEFlags)) \
+#define EMIT_ROL(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags, a_fnHlp) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rol_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
 { \
-    cShift &= a_cBitsWidth - 1; \
+    cShift &= a_cBitsWidth >= 32 ? a_cBitsWidth - 1 : 31; \
     if (cShift) \
     { \
-        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
-        uint ## a_cBitsWidth ## _t const uResult = a_fnHlp(uDst, cShift); \
+        if (a_cBitsWidth < 32) \
+            cShift &= a_cBitsWidth - 1; \
+        a_uType const uDst    = *puDst; \
+        a_uType const uResult = a_fnHlp(uDst, cShift); \
         *puDst = uResult; \
         \
         /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
@@ -2239,50 +2239,51 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rol_u,a_cBitsWidth,a_Suffix),(uint #
 }
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_ROL(64, RT_NOTHING, 1, ASMRotateLeftU64)
+EMIT_ROL(64, uint64_t, RT_NOTHING, 1, ASMRotateLeftU64)
 #endif
-EMIT_ROL(64, _intel,     1, ASMRotateLeftU64)
-EMIT_ROL(64, _amd,       0, ASMRotateLeftU64)
+EMIT_ROL(64, uint64_t, _intel,     1, ASMRotateLeftU64)
+EMIT_ROL(64, uint64_t, _amd,       0, ASMRotateLeftU64)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_ROL(32, RT_NOTHING, 1, ASMRotateLeftU32)
+EMIT_ROL(32, uint32_t, RT_NOTHING, 1, ASMRotateLeftU32)
 #endif
-EMIT_ROL(32, _intel,     1, ASMRotateLeftU32)
-EMIT_ROL(32, _amd,       0, ASMRotateLeftU32)
+EMIT_ROL(32, uint32_t, _intel,     1, ASMRotateLeftU32)
+EMIT_ROL(32, uint32_t, _amd,       0, ASMRotateLeftU32)
 
 DECL_FORCE_INLINE(uint16_t) iemAImpl_rol_u16_hlp(uint16_t uValue, uint8_t cShift)
 {
     return (uValue << cShift) | (uValue >> (16 - cShift));
 }
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_ROL(16, RT_NOTHING, 1, iemAImpl_rol_u16_hlp)
+EMIT_ROL(16, uint16_t, RT_NOTHING, 1, iemAImpl_rol_u16_hlp)
 #endif
-EMIT_ROL(16, _intel,     1, iemAImpl_rol_u16_hlp)
-EMIT_ROL(16, _amd,       0, iemAImpl_rol_u16_hlp)
+EMIT_ROL(16, uint16_t, _intel,     1, iemAImpl_rol_u16_hlp)
+EMIT_ROL(16, uint16_t, _amd,       0, iemAImpl_rol_u16_hlp)
 
 DECL_FORCE_INLINE(uint8_t) iemAImpl_rol_u8_hlp(uint8_t uValue, uint8_t cShift)
 {
     return (uValue << cShift) | (uValue >> (8 - cShift));
 }
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_ROL(8, RT_NOTHING, 1, iemAImpl_rol_u8_hlp)
+EMIT_ROL(8,  uint8_t,  RT_NOTHING, 1, iemAImpl_rol_u8_hlp)
 #endif
-EMIT_ROL(8, _intel,     1, iemAImpl_rol_u8_hlp)
-EMIT_ROL(8, _amd,       0, iemAImpl_rol_u8_hlp)
+EMIT_ROL(8,  uint8_t,  _intel,     1, iemAImpl_rol_u8_hlp)
+EMIT_ROL(8,  uint8_t,  _amd,       0, iemAImpl_rol_u8_hlp)
 
 
 /*
  * ROR
  */
-#define EMIT_ROR(a_cBitsWidth, a_Suffix, a_fIntelFlags, a_fnHlp) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_ror_u,a_cBitsWidth,a_Suffix),(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                          uint8_t cShift, uint32_t *pfEFlags)) \
+#define EMIT_ROR(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags, a_fnHlp) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_ror_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
 { \
-    cShift &= a_cBitsWidth - 1; \
+    cShift &= a_cBitsWidth >= 32 ? a_cBitsWidth - 1 : 31; \
     if (cShift) \
     { \
-        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
-        uint ## a_cBitsWidth ## _t const uResult = a_fnHlp(uDst, cShift); \
+        if (a_cBitsWidth < 32) \
+            cShift &= a_cBitsWidth - 1; \
+        a_uType const uDst    = *puDst; \
+        a_uType const uResult = a_fnHlp(uDst, cShift); \
         *puDst = uResult; \
         \
         /* Calc EFLAGS:  */ \
@@ -2300,63 +2301,65 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_ror_u,a_cBitsWidth,a_Suffix),(uint #
 }
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_ROR(64, RT_NOTHING, 1, ASMRotateRightU64)
+EMIT_ROR(64, uint64_t, RT_NOTHING, 1, ASMRotateRightU64)
 #endif
-EMIT_ROR(64, _intel,     1, ASMRotateRightU64)
-EMIT_ROR(64, _amd,       0, ASMRotateRightU64)
+EMIT_ROR(64, uint64_t, _intel,     1, ASMRotateRightU64)
+EMIT_ROR(64, uint64_t, _amd,       0, ASMRotateRightU64)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_ROR(32, RT_NOTHING, 1, ASMRotateRightU32)
+EMIT_ROR(32, uint32_t, RT_NOTHING, 1, ASMRotateRightU32)
 #endif
-EMIT_ROR(32, _intel,     1, ASMRotateRightU32)
-EMIT_ROR(32, _amd,       0, ASMRotateRightU32)
+EMIT_ROR(32, uint32_t, _intel,     1, ASMRotateRightU32)
+EMIT_ROR(32, uint32_t, _amd,       0, ASMRotateRightU32)
 
 DECL_FORCE_INLINE(uint16_t) iemAImpl_ror_u16_hlp(uint16_t uValue, uint8_t cShift)
 {
     return (uValue >> cShift) | (uValue << (16 - cShift));
 }
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_ROR(16, RT_NOTHING, 1, iemAImpl_ror_u16_hlp)
+EMIT_ROR(16, uint16_t, RT_NOTHING, 1, iemAImpl_ror_u16_hlp)
 #endif
-EMIT_ROR(16, _intel,     1, iemAImpl_ror_u16_hlp)
-EMIT_ROR(16, _amd,       0, iemAImpl_ror_u16_hlp)
+EMIT_ROR(16, uint16_t, _intel,     1, iemAImpl_ror_u16_hlp)
+EMIT_ROR(16, uint16_t, _amd,       0, iemAImpl_ror_u16_hlp)
 
 DECL_FORCE_INLINE(uint8_t) iemAImpl_ror_u8_hlp(uint8_t uValue, uint8_t cShift)
 {
     return (uValue >> cShift) | (uValue << (8 - cShift));
 }
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_ROR(8, RT_NOTHING, 1, iemAImpl_ror_u8_hlp)
+EMIT_ROR(8,  uint8_t,  RT_NOTHING, 1, iemAImpl_ror_u8_hlp)
 #endif
-EMIT_ROR(8, _intel,     1, iemAImpl_ror_u8_hlp)
-EMIT_ROR(8, _amd,       0, iemAImpl_ror_u8_hlp)
+EMIT_ROR(8,  uint8_t,  _intel,     1, iemAImpl_ror_u8_hlp)
+EMIT_ROR(8,  uint8_t,  _amd,       0, iemAImpl_ror_u8_hlp)
 
 
 /*
  * RCL
  */
-#define EMIT_RCL(a_cBitsWidth, a_Suffix, a_fIntelFlags) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rcl_u,a_cBitsWidth,a_Suffix),(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                          uint8_t cShift, uint32_t *pfEFlags)) \
+#define EMIT_RCL(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rcl_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
 { \
-    cShift &= a_cBitsWidth - 1; \
+    cShift &= a_cBitsWidth >= 32 ? a_cBitsWidth - 1 : 31; \
     if (cShift) \
     { \
-        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
-        uint ## a_cBitsWidth ## _t       uResult = uDst << cShift; \
+        if (a_cBitsWidth < 32) \
+            cShift %= a_cBitsWidth + 1; \
+        a_uType const uDst    = *puDst; \
+        a_uType       uResult = uDst << cShift; \
         if (cShift > 1) \
             uResult |= uDst >> (a_cBitsWidth + 1 - cShift); \
         \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         uint32_t fEfl     = *pfEFlags; \
         uint32_t fInCarry = fEfl & X86_EFL_CF; \
-        uResult |= (uint ## a_cBitsWidth ## _t)fInCarry << (cShift - 1); \
+        uResult |= (a_uType)fInCarry << (cShift - 1); \
         \
         *puDst = uResult; \
         \
         /* Calc EFLAGS. */ \
         fEfl &= ~(X86_EFL_CF | X86_EFL_OF); \
-        uint32_t const fOutCarry = (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF; \
+        uint32_t const fOutCarry = a_cBitsWidth >= 32 || cShift \
+                                 ? (uDst >> (a_cBitsWidth - cShift)) & X86_EFL_CF : fInCarry; \
         fEfl |= fOutCarry; \
         if (!a_fIntelFlags) /* AMD 3990X: According to the last sub-shift: */ \
             fEfl |= ((uResult >> (a_cBitsWidth - 1)) ^ fOutCarry) << X86_EFL_OF_BIT; \
@@ -2367,49 +2370,50 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rcl_u,a_cBitsWidth,a_Suffix),(uint #
 }
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_RCL(64, RT_NOTHING, 1)
+EMIT_RCL(64, uint64_t, RT_NOTHING, 1)
 #endif
-EMIT_RCL(64, _intel,     1)
-EMIT_RCL(64, _amd,       0)
+EMIT_RCL(64, uint64_t, _intel,     1)
+EMIT_RCL(64, uint64_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_RCL(32, RT_NOTHING, 1)
+EMIT_RCL(32, uint32_t, RT_NOTHING, 1)
 #endif
-EMIT_RCL(32, _intel,     1)
-EMIT_RCL(32, _amd,       0)
+EMIT_RCL(32, uint32_t, _intel,     1)
+EMIT_RCL(32, uint32_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_RCL(16, RT_NOTHING, 1)
+EMIT_RCL(16, uint16_t, RT_NOTHING, 1)
 #endif
-EMIT_RCL(16, _intel,     1)
-EMIT_RCL(16, _amd,       0)
+EMIT_RCL(16, uint16_t, _intel,     1)
+EMIT_RCL(16, uint16_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_RCL(8,  RT_NOTHING, 1)
+EMIT_RCL(8,  uint8_t,  RT_NOTHING, 1)
 #endif
-EMIT_RCL(8,  _intel,     1)
-EMIT_RCL(8,  _amd,       0)
+EMIT_RCL(8,  uint8_t,  _intel,     1)
+EMIT_RCL(8,  uint8_t,  _amd,       0)
 
 
 /*
  * RCR
  */
-#define EMIT_RCR(a_cBitsWidth, a_Suffix, a_fIntelFlags) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rcr_u,a_cBitsWidth,a_Suffix),(uint ## a_cBitsWidth ##_t *puDst, \
-                                                                          uint8_t cShift, uint32_t *pfEFlags)) \
+#define EMIT_RCR(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rcr_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
 { \
-    cShift &= a_cBitsWidth - 1; \
+    cShift &= a_cBitsWidth >= 32 ? a_cBitsWidth - 1 : 31; \
     if (cShift) \
     { \
-        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
-        uint ## a_cBitsWidth ## _t       uResult = uDst >> cShift; \
+        if (a_cBitsWidth < 32) \
+            cShift %= a_cBitsWidth + 1; \
+        a_uType const uDst    = *puDst; \
+        a_uType       uResult = uDst >> cShift; \
         if (cShift > 1) \
             uResult |= uDst << (a_cBitsWidth + 1 - cShift); \
         \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         uint32_t fEfl     = *pfEFlags; \
         uint32_t fInCarry = fEfl & X86_EFL_CF; \
-        uResult |= (uint ## a_cBitsWidth ## _t)fInCarry << (a_cBitsWidth - cShift); \
+        uResult |= (a_uType)fInCarry << (a_cBitsWidth - cShift); \
         *puDst = uResult; \
         \
         /* Calc EFLAGS.  The OF bit is undefined if cShift > 1, we implement \
@@ -2426,42 +2430,41 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_rcr_u,a_cBitsWidth,a_Suffix),(uint #
 }
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_RCR(64, RT_NOTHING, 1)
+EMIT_RCR(64, uint64_t, RT_NOTHING, 1)
 #endif
-EMIT_RCR(64, _intel,     1)
-EMIT_RCR(64, _amd,       0)
+EMIT_RCR(64, uint64_t, _intel,     1)
+EMIT_RCR(64, uint64_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_RCR(32, RT_NOTHING, 1)
+EMIT_RCR(32, uint32_t, RT_NOTHING, 1)
 #endif
-EMIT_RCR(32, _intel,     1)
-EMIT_RCR(32, _amd,       0)
+EMIT_RCR(32, uint32_t, _intel,     1)
+EMIT_RCR(32, uint32_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_RCR(16, RT_NOTHING, 1)
+EMIT_RCR(16, uint16_t, RT_NOTHING, 1)
 #endif
-EMIT_RCR(16, _intel,     1)
-EMIT_RCR(16, _amd,       0)
+EMIT_RCR(16, uint16_t, _intel,     1)
+EMIT_RCR(16, uint16_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_RCR(8,  RT_NOTHING, 1)
+EMIT_RCR(8,  uint8_t,  RT_NOTHING, 1)
 #endif
-EMIT_RCR(8,  _intel,     1)
-EMIT_RCR(8,  _amd,       0)
+EMIT_RCR(8,  uint8_t,  _intel,     1)
+EMIT_RCR(8,  uint8_t,  _amd,       0)
 
 
 /*
  * SHL
  */
-#define EMIT_SHL(a_cBitsWidth, a_Suffix, a_fIntelFlags) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shl_u,a_cBitsWidth,a_Suffix),(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                          uint8_t cShift, uint32_t *pfEFlags)) \
+#define EMIT_SHL(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shl_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
 { \
-    cShift &= a_cBitsWidth - 1; \
+    cShift &= a_cBitsWidth >= 32 ? a_cBitsWidth - 1 : 31; \
     if (cShift) \
     { \
-        uint ## a_cBitsWidth ##_t const uDst  = *puDst; \
-        uint ## a_cBitsWidth ##_t       uResult = uDst << cShift; \
+        a_uType const uDst  = *puDst; \
+        a_uType       uResult = uDst << cShift; \
         *puDst = uResult; \
         \
         /* Calc EFLAGS. */ \
@@ -2483,42 +2486,41 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shl_u,a_cBitsWidth,a_Suffix),(uint #
 }
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHL(64, RT_NOTHING, 1)
+EMIT_SHL(64, uint64_t, RT_NOTHING, 1)
 #endif
-EMIT_SHL(64, _intel,     1)
-EMIT_SHL(64, _amd,       0)
+EMIT_SHL(64, uint64_t, _intel,     1)
+EMIT_SHL(64, uint64_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHL(32, RT_NOTHING, 1)
+EMIT_SHL(32, uint32_t, RT_NOTHING, 1)
 #endif
-EMIT_SHL(32, _intel,     1)
-EMIT_SHL(32, _amd,       0)
+EMIT_SHL(32, uint32_t, _intel,     1)
+EMIT_SHL(32, uint32_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHL(16, RT_NOTHING, 1)
+EMIT_SHL(16, uint16_t, RT_NOTHING, 1)
 #endif
-EMIT_SHL(16, _intel,     1)
-EMIT_SHL(16, _amd,       0)
+EMIT_SHL(16, uint16_t, _intel,     1)
+EMIT_SHL(16, uint16_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHL(8,  RT_NOTHING, 1)
+EMIT_SHL(8,  uint8_t,  RT_NOTHING, 1)
 #endif
-EMIT_SHL(8,  _intel,     1)
-EMIT_SHL(8,  _amd,       0)
+EMIT_SHL(8,  uint8_t,  _intel,     1)
+EMIT_SHL(8,  uint8_t,  _amd,       0)
 
 
 /*
  * SHR
  */
-#define EMIT_SHR(a_cBitsWidth, a_Suffix, a_fIntelFlags) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shr_u,a_cBitsWidth,a_Suffix),(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                          uint8_t cShift, uint32_t *pfEFlags)) \
+#define EMIT_SHR(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shr_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
 { \
-    cShift &= a_cBitsWidth - 1; \
+    cShift &= a_cBitsWidth >= 32 ? a_cBitsWidth - 1 : 31; \
     if (cShift) \
     { \
-        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
-        uint ## a_cBitsWidth ## _t       uResult = uDst >> cShift; \
+        a_uType const uDst    = *puDst; \
+        a_uType       uResult = uDst >> cShift; \
         *puDst = uResult; \
         \
         /* Calc EFLAGS. */ \
@@ -2537,49 +2539,48 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shr_u,a_cBitsWidth,a_Suffix),(uint #
 }
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHR(64, RT_NOTHING, 1)
+EMIT_SHR(64, uint64_t, RT_NOTHING, 1)
 #endif
-EMIT_SHR(64, _intel,     1)
-EMIT_SHR(64, _amd,       0)
+EMIT_SHR(64, uint64_t, _intel,     1)
+EMIT_SHR(64, uint64_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHR(32, RT_NOTHING, 1)
+EMIT_SHR(32, uint32_t, RT_NOTHING, 1)
 #endif
-EMIT_SHR(32, _intel,     1)
-EMIT_SHR(32, _amd,       0)
+EMIT_SHR(32, uint32_t, _intel,     1)
+EMIT_SHR(32, uint32_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHR(16, RT_NOTHING, 1)
+EMIT_SHR(16, uint16_t, RT_NOTHING, 1)
 #endif
-EMIT_SHR(16, _intel,     1)
-EMIT_SHR(16, _amd,       0)
+EMIT_SHR(16, uint16_t, _intel,     1)
+EMIT_SHR(16, uint16_t, _amd,       0)
 
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHR(8,  RT_NOTHING, 1)
+EMIT_SHR(8,  uint8_t,  RT_NOTHING, 1)
 #endif
-EMIT_SHR(8,  _intel,     1)
-EMIT_SHR(8,  _amd,       0)
+EMIT_SHR(8,  uint8_t,  _intel,     1)
+EMIT_SHR(8,  uint8_t,  _amd,       0)
 
 
 /*
  * SAR
  */
-#define EMIT_SAR(a_cBitsWidth, a_Suffix, a_fIntelFlags) \
-IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_sar_u,a_cBitsWidth,a_Suffix),(uint ## a_cBitsWidth ## _t *puDst, \
-                                                                          uint8_t cShift, uint32_t *pfEFlags)) \
+#define EMIT_SAR(a_cBitsWidth, a_uType, a_iType, a_Suffix, a_fIntelFlags) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_sar_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, uint8_t cShift, uint32_t *pfEFlags)) \
 { \
-    cShift &= a_cBitsWidth - 1; \
+    cShift &= a_cBitsWidth >= 32 ? a_cBitsWidth - 1 : 31; \
     if (cShift) \
     { \
-        uint ## a_cBitsWidth ## _t const uDst    = *puDst; \
-        uint ## a_cBitsWidth ## _t       uResult = (int ## a_cBitsWidth ## _t)uDst >> cShift; \
+        a_iType const iDst    = (a_iType)*puDst; \
+        a_uType       uResult = iDst >> cShift; \
         *puDst = uResult; \
         \
         /* Calc EFLAGS. \
            Note! The OF flag is always zero because the result never differs from the input. */ \
         AssertCompile(X86_EFL_CF_BIT == 0); \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
-        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
+        fEfl |= (iDst >> (cShift - 1)) & X86_EFL_CF; \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
         fEfl |= g_afParity[uResult & 0xff]; \
@@ -2590,28 +2591,28 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_sar_u,a_cBitsWidth,a_Suffix),(uint #
 }
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SAR(64, RT_NOTHING, 1)
+EMIT_SAR(64, uint64_t, int64_t, RT_NOTHING, 1)
 #endif
-EMIT_SAR(64, _intel,     1)
-EMIT_SAR(64, _amd,       0)
+EMIT_SAR(64, uint64_t, int64_t, _intel,     1)
+EMIT_SAR(64, uint64_t, int64_t, _amd,       0)
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SAR(32, RT_NOTHING, 1)
+EMIT_SAR(32, uint32_t, int32_t, RT_NOTHING, 1)
 #endif
-EMIT_SAR(32, _intel,     1)
-EMIT_SAR(32, _amd,       0)
+EMIT_SAR(32, uint32_t, int32_t, _intel,     1)
+EMIT_SAR(32, uint32_t, int32_t, _amd,       0)
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SAR(16, RT_NOTHING, 1)
+EMIT_SAR(16, uint16_t, int16_t, RT_NOTHING, 1)
 #endif
-EMIT_SAR(16, _intel,     1)
-EMIT_SAR(16, _amd,       0)
+EMIT_SAR(16, uint16_t, int16_t, _intel,     1)
+EMIT_SAR(16, uint16_t, int16_t, _amd,       0)
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SAR(8,  RT_NOTHING, 1)
+EMIT_SAR(8,  uint8_t,  int8_t,  RT_NOTHING, 1)
 #endif
-EMIT_SAR(8,  _intel,     1)
-EMIT_SAR(8,  _amd,       0)
+EMIT_SAR(8,  uint8_t,  int8_t,  _intel,     1)
+EMIT_SAR(8,  uint8_t,  int8_t,  _amd,       0)
 
 
 /*
