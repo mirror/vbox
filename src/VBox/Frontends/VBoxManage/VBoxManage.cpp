@@ -218,7 +218,7 @@ static const VBMGCMD g_aCommands[] =
     { "discardstate",       USAGE_S_NEWCMD, HELP_CMD_DISCARDSTATE, handleDiscardState,         0 },
     { "adoptstate",         USAGE_S_NEWCMD,   HELP_CMD_ADOPTSTATE, handleAdoptState,           0 },
     { "snapshot",           USAGE_S_NEWCMD,     HELP_CMD_SNAPSHOT, handleSnapshot,             0 },
-    { "closemedium",        USAGE_CLOSEMEDIUM,      VBMG_CMD_TODO, handleCloseMedium,          0 },
+    { "closemedium",        USAGE_S_NEWCMD,  HELP_CMD_CLOSEMEDIUM, handleCloseMedium,          0 },
     { "storageattach",      USAGE_STORAGEATTACH,    VBMG_CMD_TODO, handleStorageAttach,        0 },
     { "storagectl",         USAGE_STORAGECONTROLLER,VBMG_CMD_TODO, handleStorageController,    0 },
     { "showmediuminfo",     USAGE_SHOWMEDIUMINFO,   VBMG_CMD_TODO, handleShowMediumInfo,       0 },

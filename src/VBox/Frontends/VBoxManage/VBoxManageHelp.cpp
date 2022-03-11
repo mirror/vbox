@@ -591,12 +591,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
 
 #define SEP pcszSep1, pcszSep2
 
-    if (enmCommand == USAGE_CLOSEMEDIUM || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s closemedium %s     [disk|dvd|floppy] <uuid|filename>\n"
-                     "                            [--delete]\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_STORAGEATTACH || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s storageattach %s   <uuid|vmname>\n"

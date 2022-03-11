@@ -342,25 +342,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
 
   <xi:include href="user_man_VBoxManage-snapshot.xml"       xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <sect1 id="vboxmanage-closemedium">
-
-    <title>VBoxManage closemedium</title>
-
-    <para>
-      This command removes a hard disk, DVD, or floppy image from a
-      &product-name; media registry.
-    </para>
-
-<screen>VBoxManage closemedium      [disk|dvd|floppy] &lt;uuid|filename&gt;
-                            [--delete]</screen>
-
-    <para>
-      Optionally, you can request that the image be deleted. You will
-      get appropriate diagnostics that the deletion failed, however the
-      image will become unregistered in any case.
-    </para>
-
-  </sect1>
+  <xi:include href="user_man_VBoxManage-closemedium.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <sect1 id="vboxmanage-storageattach">
 
