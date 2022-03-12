@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-checkmediumpwd" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage checkmediumpwd</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-checkmediumpwd</refname>
     <refpurpose>check encryption password on a DEK-encrypted medium or a disk image</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
@@ -68,8 +68,8 @@
       <varlistentry>
         <term><replaceable>password-file</replaceable></term>
         <listitem><para>
-            Specifies the password identifier to check. The password
-            identifier can be the absolute path name of a password file
+            Specifies the password to check. The password
+            can be the absolute path name of a password file
             on the host OS or the dash character (<literal>-</literal>)
             to prompt you for the password on the command line.
           </para></listitem>
@@ -83,7 +83,7 @@
     <para>
       The following example checks the encryption password for the
       <filename>ol7u4-1.vdi</filename> disk image. The password
-      identifier is a file called <filename>pwfile</filename>.
+      is contained in a file called <filename>pwfile</filename>.
     </para>
     <para>
       The command returns a message indicating that the specified

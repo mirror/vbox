@@ -2115,7 +2115,7 @@ RTEXITCODE handleCheckMediumPassword(HandlerArg *a)
     Utf8Str strPassword;
 
     if (a->argc != 2)
-        return errorSyntax(USAGE_MEDIUMENCCHKPWD, Disk::tr("Invalid number of arguments: %d"), a->argc);
+        return errorSyntax(Disk::tr("Invalid number of arguments: %d"), a->argc);
 
     pszFilenameOrUuid = a->argv[0];
 

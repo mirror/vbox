@@ -638,12 +638,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--description <description string>]"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_MEDIUMENCCHKPWD || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s checkmediumpwd %s  <uuid|filename>\n"
-                     "                            <pwd file>|-\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_CONVERTFROMRAW || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s convertfromraw %s  <filename> <outputfile>\n"

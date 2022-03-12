@@ -131,7 +131,6 @@ typedef enum
     USAGE_I_GUESTSTATS,
     USAGE_I_REPAIRHD,
     USAGE_NATNETWORK,
-    USAGE_MEDIUMENCCHKPWD,
     USAGE_USBDEVSOURCE,
     /* Insert new entries before this line, but only if it is not an option
      * to go for the new style command and help handling (see e.g. extpack,

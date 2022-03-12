@@ -209,7 +209,7 @@ static const VBMGCMD g_aCommands[] =
     { "clonehd",            USAGE_S_NEWCMD,  HELP_CMD_CLONEMEDIUM, handleCloneMedium,          0 }, /* backward compatibility */
     { "clonevdi",           USAGE_S_NEWCMD,  HELP_CMD_CLONEMEDIUM, handleCloneMedium,          0 }, /* backward compatibility */
     { "encryptmedium",      USAGE_S_NEWCMD,HELP_CMD_ENCRYPTMEDIUM, handleEncryptMedium,        0 },
-    { "checkmediumpwd",     USAGE_MEDIUMENCCHKPWD,  VBMG_CMD_TODO, handleCheckMediumPassword,  0 },
+    { "checkmediumpwd",     USAGE_S_NEWCMD,HELP_CMD_CHECKMEDIUMPWD, handleCheckMediumPassword,  0 },
     { "createvm",           USAGE_S_NEWCMD,     HELP_CMD_CREATEVM, handleCreateVM,             0 },
     { "modifyvm",           USAGE_S_NEWCMD,     HELP_CMD_MODIFYVM, handleModifyVM,             0 },
     { "startvm",            USAGE_S_NEWCMD,      HELP_CMD_STARTVM, handleStartVM,              0 },
