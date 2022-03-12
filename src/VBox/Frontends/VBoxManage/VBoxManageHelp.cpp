@@ -638,14 +638,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--description <description string>]"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_CLONEMEDIUM || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s clonemedium %s     [disk|dvd|floppy] <uuid|inputfile> <uuid|outputfile>\n"
-                     "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
-                     "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
-                     "                            [--existing]\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_MEDIUMPROPERTY || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s mediumproperty %s  [disk|dvd|floppy] set <uuid|filename>\n"

@@ -1024,19 +1024,19 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
         {
             case 'd':   // disk
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DISK;
                 break;
 
             case 'D':   // DVD
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DVD;
                 break;
 
             case 'f':   // floppy
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_FLOPPY;
                 break;
 
@@ -1068,34 +1068,34 @@ RTEXITCODE handleCloneMedium(HandlerArg *a)
                 else if (!pszDst)
                     pszDst = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_GRAPH(c))
-                        return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("unhandled option: -%c"), c);
+                        return errorSyntax(Disk::tr("unhandled option: -%c"), c);
                     else
-                        return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("unhandled option: %i"), c);
+                        return errorSyntax(Disk::tr("unhandled option: %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("unknown option: %s"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("unknown option: %s"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_CLONEMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                    return errorSyntax("%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("error: %Rrs"), c);
+                    return errorSyntax(Disk::tr("error: %Rrs"), c);
         }
     }
 
     if (cmd == CMD_NONE)
         cmd = CMD_DISK;
     if (!pszSrc)
-        return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Mandatory UUID or input file parameter missing"));
+        return errorSyntax(Disk::tr("Mandatory UUID or input file parameter missing"));
     if (!pszDst)
-        return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Mandatory output file parameter missing"));
+        return errorSyntax(Disk::tr("Mandatory output file parameter missing"));
     if (fExisting && (!format.isEmpty() || enmMediumVariant != MediumVariant_Standard))
-        return errorSyntax(USAGE_CLONEMEDIUM, Disk::tr("Specified options which cannot be used with --existing"));
+        return errorSyntax(Disk::tr("Specified options which cannot be used with --existing"));
 
     ComPtr<IMedium> pSrcMedium;
     ComPtr<IMedium> pDstMedium;
