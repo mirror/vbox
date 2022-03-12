@@ -408,6 +408,11 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, u8FIFOExtCommand),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, fFifoExtCommandWakeup),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, cGMR),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, au32DevCaps, VGA_SAVEDSTATE_VERSION_VMSVGA_DX),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, u32DevCapIndex, VGA_SAVEDSTATE_VERSION_VMSVGA_DX),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, u32RegCommandLow, VGA_SAVEDSTATE_VERSION_VMSVGA_DX),
+    SSMFIELD_ENTRY_VER(             VMSVGAState, u32RegCommandHigh, VGA_SAVEDSTATE_VERSION_VMSVGA_DX),
+
     SSMFIELD_ENTRY_TERM()
 };
 #endif /* IN_RING3 */
@@ -3954,7 +3959,12 @@ static void vmsvgaR3FifoHandleExtCmd(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGAST
             vmsvgaR3SaveExecFifo(pDevIns->pHlpR3, pThisCC, pSSM);
 # ifdef VBOX_WITH_VMSVGA3D
             if (pThis->svga.f3DEnabled)
-                vmsvga3dSaveExec(pDevIns, pThisCC, pSSM);
+            {
+                if (vmsvga3dIsLegacyBackend(pThisCC))
+                    vmsvga3dSaveExec(pDevIns, pThisCC, pSSM);
+                else
+                    vmsvga3dDXSaveExec(pDevIns, pThisCC, pSSM);
+            }
 # endif
             break;
         }
@@ -3975,7 +3985,10 @@ static void vmsvgaR3FifoHandleExtCmd(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGAST
                 pSVGAState->pFuncs3D->pfnPowerOn(pDevIns, pThis, pThisCC);
 #  endif
 
-                vmsvga3dLoadExec(pDevIns, pThis, pThisCC, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
+                if (vmsvga3dIsLegacyBackend(pThisCC))
+                    vmsvga3dLoadExec(pDevIns, pThis, pThisCC, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
+                else
+                    vmsvga3dDXLoadExec(pDevIns, pThis, pThisCC, pLoadState->pSSM, pLoadState->uVersion, pLoadState->uPass);
             }
 # endif
             break;
@@ -5440,6 +5453,73 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 
 }
 
+static int vmsvgaR3LoadBufCtx(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PVMSVGACMDBUFCTX pBufCtx)
+{
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
+    int rc = pHlp->pfnSSMGetU32(pSSM, &pBufCtx->cSubmitted);
+    AssertLogRelRCReturn(rc, rc);
+
+    for (uint32_t i = 0; i < pBufCtx->cSubmitted; ++i)
+    {
+        PVMSVGACMDBUF pCmdBuf = vmsvgaR3CmdBufAlloc(pBufCtx);
+        AssertPtrReturn(pCmdBuf, VERR_NO_MEMORY);
+
+        pHlp->pfnSSMGetGCPhys(pSSM, &pCmdBuf->GCPhysCB);
+
+        uint32_t u32;
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+        AssertRCReturn(rc, rc);
+        AssertReturn(u32 == sizeof(SVGACBHeader), VERR_INVALID_STATE);
+        pHlp->pfnSSMGetMem(pSSM, &pCmdBuf->hdr, sizeof(SVGACBHeader));
+
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+        AssertRCReturn(rc, rc);
+        AssertReturn(u32 == pCmdBuf->hdr.length, VERR_INVALID_STATE);
+
+        pCmdBuf->pvCommands = RTMemAlloc(pCmdBuf->hdr.length);
+        AssertPtrReturn(pCmdBuf->pvCommands, VERR_NO_MEMORY);
+
+        rc = pHlp->pfnSSMGetMem(pSSM, pCmdBuf->pvCommands, pCmdBuf->hdr.length);
+        AssertRCReturn(rc, rc);
+    }
+    return rc;
+}
+
+static int vmsvgaR3LoadGbo(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, VMSVGAGBO *pGbo)
+{
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
+    int rc;
+    pHlp->pfnSSMGetU32(pSSM, &pGbo->fGboFlags);
+    pHlp->pfnSSMGetU32(pSSM, &pGbo->cTotalPages);
+    pHlp->pfnSSMGetU32(pSSM, &pGbo->cbTotal);
+    rc = pHlp->pfnSSMGetU32(pSSM, &pGbo->cDescriptors);
+    AssertRCReturn(rc, rc);
+
+    if (pGbo->cDescriptors)
+    {
+        pGbo->paDescriptors = (PVMSVGAGBODESCRIPTOR)RTMemAllocZ(pGbo->cDescriptors * sizeof(VMSVGAGBODESCRIPTOR));
+        AssertPtrReturn(pGbo->paDescriptors, VERR_NO_MEMORY);
+    }
+
+    for (uint32_t iDesc = 0; iDesc < pGbo->cDescriptors; ++iDesc)
+    {
+        PVMSVGAGBODESCRIPTOR pDesc = &pGbo->paDescriptors[iDesc];
+        pHlp->pfnSSMGetGCPhys(pSSM, &pDesc->GCPhys);
+        rc = pHlp->pfnSSMGetU64(pSSM, &pDesc->cPages);
+    }
+
+    if (pGbo->fGboFlags & VMSVGAGBO_F_HOST_BACKED)
+    {
+        pGbo->pvHost = RTMemAlloc(pGbo->cbTotal);
+        AssertPtrReturn(pGbo->pvHost, VERR_NO_MEMORY);
+        rc = pHlp->pfnSSMGetMem(pSSM, pGbo->pvHost, pGbo->cbTotal);
+    }
+
+    return rc;
+}
+
 /**
  * Portion of VMSVGA state which must be loaded oin the FIFO thread.
  */
@@ -5473,6 +5553,20 @@ static int vmsvgaR3LoadExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATE pThis, PVGASTATECC
                 VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[screen.idScreen];
                 *pScreen = screen;
                 pScreen->fModified = true;
+
+                if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_DX)
+                {
+                    uint32_t u32;
+                    pHlp->pfnSSMGetU32(pSSM, &u32); /* Size of screen bitmap. */
+                    AssertLogRelRCReturn(rc, rc);
+                    if (u32)
+                    {
+                        pScreen->pvScreenBitmap = RTMemAlloc(u32);
+                        AssertPtrReturn(pScreen->pvScreenBitmap, VERR_NO_MEMORY);
+
+                        pHlp->pfnSSMGetMem(pSSM, pScreen->pvScreenBitmap, u32);
+                    }
+                }
             }
             else
             {
@@ -5593,6 +5687,89 @@ int vmsvgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uin
         }
     }
 
+    if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_DX)
+    {
+        bool f;
+        uint32_t u32;
+
+        rc = pHlp->pfnSSMGetBool(pSSM, &f);
+        AssertLogRelRCReturn(rc, rc);
+        AssertReturn(f == pThis->fVMSVGA10, VERR_INVALID_STATE);
+
+        if (pThis->fVMSVGA10)
+        {
+            /* Device context command buffers. */
+            rc = vmsvgaR3LoadBufCtx(pDevIns, pSSM, &pSVGAState->CmdBufCtxDC);
+            AssertLogRelRCReturn(rc, rc);
+
+            /* DX contexts command buffers. */
+            uint32_t cBufCtx;
+            rc = pHlp->pfnSSMGetU32(pSSM, &cBufCtx);
+            AssertLogRelRCReturn(rc, rc);
+            AssertReturn(cBufCtx == RT_ELEMENTS(pSVGAState->apCmdBufCtxs), VERR_INVALID_STATE);
+            for (uint32_t j = 0; j < cBufCtx; ++j)
+            {
+                rc = pHlp->pfnSSMGetBool(pSSM, &f);
+                AssertLogRelRCReturn(rc, rc);
+                if (f)
+                {
+                    pSVGAState->apCmdBufCtxs[j] = (PVMSVGACMDBUFCTX)RTMemAlloc(sizeof(VMSVGACMDBUFCTX));
+                    AssertPtrReturn(pSVGAState->apCmdBufCtxs[j], VERR_NO_MEMORY);
+                    vmsvgaR3CmdBufCtxInit(pSVGAState->apCmdBufCtxs[j]);
+
+                    rc = vmsvgaR3LoadBufCtx(pDevIns, pSSM, pSVGAState->apCmdBufCtxs[j]);
+                    AssertLogRelRCReturn(rc, rc);
+                }
+            }
+
+            rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+            pSVGAState->fCmdBuf = u32;
+
+            /*
+             * OTables GBOs.
+             */
+            rc = pHlp->pfnSSMGetU32(pSSM, &u32);
+            AssertLogRelRCReturn(rc, rc);
+            AssertReturn(u32 == SVGA_OTABLE_MAX, VERR_INVALID_STATE);
+            for (int i = 0; i < SVGA_OTABLE_MAX; ++i)
+            {
+                VMSVGAGBO *pGbo = &pSVGAState->aGboOTables[i];
+                rc = vmsvgaR3LoadGbo(pDevIns, pSSM, pGbo);
+                AssertRCReturn(rc, rc);
+            }
+
+            /*
+             * MOBs.
+             */
+            for (;;)
+            {
+                rc = pHlp->pfnSSMGetU32(pSSM, &u32); /* MOB id. */
+                AssertRCReturn(rc, rc);
+                if (u32 == SVGA_ID_INVALID)
+                    break;
+
+                PVMSVGAMOB pMob = (PVMSVGAMOB)RTMemAllocZ(sizeof(*pMob));
+                AssertPtrReturn(pMob, VERR_NO_MEMORY);
+
+                rc = vmsvgaR3LoadGbo(pDevIns, pSSM, &pMob->Gbo);
+                AssertRCReturn(rc, rc);
+
+                pMob->Core.Key = u32;
+                if (RTAvlU32Insert(&pSVGAState->MOBTree, &pMob->Core))
+                    RTListPrepend(&pSVGAState->MOBLRUList, &pMob->nodeLRU);
+                else
+                    AssertFailedReturn(VERR_NO_MEMORY);
+            }
+
+# ifdef VMSVGA3D_DX
+            if (pThis->svga.f3DEnabled)
+            {
+                pHlp->pfnSSMGetU32(pSSM, &pSVGAState->idDXContextCurrent);
+            }
+# endif
+        }
+    }
+
 #  ifdef RT_OS_DARWIN  /** @todo r=bird: this is normally done on the EMT, so for DARWIN we do that when loading saved state too now. See DevVGA-SVGA3d-shared.h. */
     if (pThis->svga.f3DEnabled)
         pSVGAState->pFuncs3D->pfnPowerOn(pDevIns, pThis, pThisCC);
@@ -5661,6 +5838,48 @@ int vmsvgaR3LoadDone(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
+static int vmsvgaR3SaveBufCtx(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PVMSVGACMDBUFCTX pBufCtx)
+{
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
+    int rc = pHlp->pfnSSMPutU32(pSSM, pBufCtx->cSubmitted);
+    AssertLogRelRCReturn(rc, rc);
+    if (pBufCtx->cSubmitted)
+    {
+        PVMSVGACMDBUF pIter;
+        RTListForEach(&pBufCtx->listSubmitted, pIter, VMSVGACMDBUF, nodeBuffer)
+        {
+            pHlp->pfnSSMPutGCPhys(pSSM, pIter->GCPhysCB);
+            pHlp->pfnSSMPutU32(pSSM, sizeof(SVGACBHeader));
+            pHlp->pfnSSMPutMem(pSSM, &pIter->hdr, sizeof(SVGACBHeader));
+            pHlp->pfnSSMPutU32(pSSM, pIter->hdr.length);
+            rc = pHlp->pfnSSMPutMem(pSSM, pIter->pvCommands, pIter->hdr.length);
+            AssertLogRelRCReturn(rc, rc);
+        }
+    }
+    return rc;
+}
+
+static int vmsvgaR3SaveGbo(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, VMSVGAGBO *pGbo)
+{
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
+    int rc;
+    pHlp->pfnSSMPutU32(pSSM, pGbo->fGboFlags);
+    pHlp->pfnSSMPutU32(pSSM, pGbo->cTotalPages);
+    pHlp->pfnSSMPutU32(pSSM, pGbo->cbTotal);
+    rc =  pHlp->pfnSSMPutU32(pSSM, pGbo->cDescriptors);
+    for (uint32_t iDesc = 0; iDesc < pGbo->cDescriptors; ++iDesc)
+    {
+        PVMSVGAGBODESCRIPTOR pDesc = &pGbo->paDescriptors[iDesc];
+        pHlp->pfnSSMPutGCPhys(pSSM, pDesc->GCPhys);
+        rc = pHlp->pfnSSMPutU64(pSSM, pDesc->cPages);
+    }
+    if (pGbo->fGboFlags & VMSVGAGBO_F_HOST_BACKED)
+        rc = pHlp->pfnSSMPutMem(pSSM, pGbo->pvHost, pGbo->cbTotal);
+    return rc;
+}
+
 /**
  * Portion of SVGA state which must be saved in the FIFO thread.
  */
@@ -5681,12 +5900,26 @@ static int vmsvgaR3SaveExecFifo(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHAN
     rc = pHlp->pfnSSMPutU32(pSSM, cScreens);
     AssertLogRelRCReturn(rc, rc);
 
-    for (uint32_t i = 0; i < cScreens; ++i)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pSVGAState->aScreens); ++i)
     {
         VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[i];
+        if (!pScreen->fDefined)
+            continue;
 
         rc = pHlp->pfnSSMPutStructEx(pSSM, pScreen, sizeof(*pScreen), 0, g_aVMSVGASCREENOBJECTFields, NULL);
         AssertLogRelRCReturn(rc, rc);
+
+        /*
+         * VGA_SAVEDSTATE_VERSION_VMSVGA_DX
+         */
+        if (pScreen->pvScreenBitmap)
+        {
+            uint32_t const cbScreenBitmap = pScreen->cHeight * pScreen->cbPitch;
+            pHlp->pfnSSMPutU32(pSSM, cbScreenBitmap);
+            pHlp->pfnSSMPutMem(pSSM, pScreen->pvScreenBitmap, cbScreenBitmap);
+        }
+        else
+            pHlp->pfnSSMPutU32(pSSM, 0);
     }
     return VINF_SUCCESS;
 }
@@ -5737,6 +5970,69 @@ int vmsvgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             rc = pHlp->pfnSSMPutStructEx(pSSM, &pGMR->paDesc[j], sizeof(pGMR->paDesc[j]), 0, g_aVMSVGAGMRDESCRIPTORFields, NULL);
             AssertLogRelRCReturn(rc, rc);
         }
+    }
+
+    /*
+     * VGA_SAVEDSTATE_VERSION_VMSVGA_DX
+     */
+
+    rc = pHlp->pfnSSMPutBool(pSSM, pThis->fVMSVGA10);
+    AssertLogRelRCReturn(rc, rc);
+
+    if (pThis->fVMSVGA10)
+    {
+        /* Device context command buffers. */
+        rc = vmsvgaR3SaveBufCtx(pDevIns, pSSM, &pSVGAState->CmdBufCtxDC);
+        AssertRCReturn(rc, rc);
+
+        /* DX contexts command buffers. */
+        rc = pHlp->pfnSSMPutU32(pSSM, RT_ELEMENTS(pSVGAState->apCmdBufCtxs));
+        AssertLogRelRCReturn(rc, rc);
+        for (unsigned i = 0; i < RT_ELEMENTS(pSVGAState->apCmdBufCtxs); ++i)
+        {
+            if (pSVGAState->apCmdBufCtxs[i])
+            {
+                pHlp->pfnSSMPutBool(pSSM, true);
+                rc = vmsvgaR3SaveBufCtx(pDevIns, pSSM, pSVGAState->apCmdBufCtxs[i]);
+                AssertRCReturn(rc, rc);
+            }
+            else
+                pHlp->pfnSSMPutBool(pSSM, false);
+        }
+
+        rc = pHlp->pfnSSMPutU32(pSSM, pSVGAState->fCmdBuf);
+        AssertRCReturn(rc, rc);
+
+        /*
+         * OTables GBOs.
+         */
+        pHlp->pfnSSMPutU32(pSSM, SVGA_OTABLE_MAX);
+        for (int i = 0; i < SVGA_OTABLE_MAX; ++i)
+        {
+            VMSVGAGBO *pGbo = &pSVGAState->aGboOTables[i];
+            rc = vmsvgaR3SaveGbo(pDevIns, pSSM, pGbo);
+            AssertRCReturn(rc, rc);
+        }
+
+        /*
+         * MOBs.
+         */
+        PVMSVGAMOB pIter;
+        RTListForEach(&pSVGAState->MOBLRUList, pIter, VMSVGAMOB, nodeLRU)
+        {
+            pHlp->pfnSSMPutU32(pSSM, pIter->Core.Key); /* MOB id. */
+            rc = vmsvgaR3SaveGbo(pDevIns, pSSM, &pIter->Gbo);
+            AssertRCReturn(rc, rc);
+        }
+
+        pHlp->pfnSSMPutU32(pSSM, SVGA_ID_INVALID); /* End marker. */
+
+# ifdef VMSVGA3D_DX
+        if (pThis->svga.f3DEnabled)
+        {
+            pHlp->pfnSSMPutU32(pSSM, pSVGAState->idDXContextCurrent);
+        }
+# endif
     }
 
     /*

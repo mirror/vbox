@@ -393,6 +393,8 @@ struct DXShaderInfo;
 #define VMSVGA3D_BACKEND_INTERFACE_NAME_DX "DX"
 typedef struct
 {
+    DECLCALLBACKMEMBER(int, pfnDXSaveState,                 (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM));
+    DECLCALLBACKMEMBER(int, pfnDXLoadState,                 (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM));
     DECLCALLBACKMEMBER(int, pfnDXDefineContext,             (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXDestroyContext,            (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
     DECLCALLBACKMEMBER(int, pfnDXBindContext,               (PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext));
@@ -641,6 +643,8 @@ int vmsvga3dDXSetShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXBindStreamOutput(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dSurfaceStretchBltNonMSToMS(PVGASTATECC pThisCC, uint32_t idDXContext);
 int vmsvga3dDXBindShaderIface(PVGASTATECC pThisCC, uint32_t idDXContext);
+int vmsvga3dDXLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+int vmsvga3dDXSaveExec(PPDMDEVINS pDevIns, PVGASTATECC pThisCC, PSSMHANDLE pSSM);
 #endif /* VMSVGA3D_DX */
 
 

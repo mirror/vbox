@@ -46,7 +46,8 @@
         } \
     } while (0)
 
-#define VGA_SAVEDSTATE_VERSION                   23
+#define VGA_SAVEDSTATE_VERSION                   24
+#define VGA_SAVEDSTATE_VERSION_VMSVGA_DX         24 /* VGPU10. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_MIPLEVELS  23 /* Surface struct with number of miplevels. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_CURSOR     22 /* Legacy cursor registers. */
 #define VGA_SAVEDSTATE_VERSION_VMSVGA_SCREENS    21 /* Screen objects. */

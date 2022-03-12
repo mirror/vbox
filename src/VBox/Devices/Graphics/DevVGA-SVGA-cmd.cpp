@@ -814,6 +814,13 @@ static int vmsvgaR3OTableWrite(PVMSVGAR3STATE pSvgaR3State, PVMSVGAGBO pGboOTabl
 }
 
 
+int vmsvgaR3OTableReadSurface(PVMSVGAR3STATE pSvgaR3State, uint32_t sid, SVGAOTableSurfaceEntry *pEntrySurface)
+{
+    return vmsvgaR3OTableRead(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
+                              sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, pEntrySurface, sizeof(SVGAOTableSurfaceEntry));
+}
+
+
 /*
  *
  * The guest's Memory OBjects (MOB).
@@ -876,7 +883,7 @@ static int vmsvgaR3MobDestroy(PVMSVGAR3STATE pSvgaR3State, SVGAMobId mobid)
 }
 
 
-static PVMSVGAMOB vmsvgaR3MobGet(PVMSVGAR3STATE pSvgaR3State, SVGAMobId RT_UNTRUSTED_GUEST mobid)
+PVMSVGAMOB vmsvgaR3MobGet(PVMSVGAR3STATE pSvgaR3State, SVGAMobId RT_UNTRUSTED_GUEST mobid)
 {
     if (mobid == SVGA_ID_INVALID)
         return NULL;
@@ -1510,6 +1517,7 @@ static int vmsvgaR3TransferSurfaceLevel(PVGASTATECC pThisCC,
                 pu8Map += map.cbRowPitch;
                 offMob += dims.cbPitch;
             }
+            /** @todo Take into account map.cbDepthPitch */
         }
 
         // vmsvga3dMapWriteBmpFile(&map, "Dynamic");

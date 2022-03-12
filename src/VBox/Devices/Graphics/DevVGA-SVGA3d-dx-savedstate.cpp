@@ -133,7 +133,7 @@ static int vmsvga3dDXLoadContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
     AssertLogRelRCReturn(rc, rc);
     AssertReturn(u32 == RT_ELEMENTS(pDXContext->aCOTMobs), VERR_INVALID_STATE);
 
-    for (int i = 0; i < RT_ELEMENTS(pDXContext->aCOTMobs); ++i)
+    for (unsigned i = 0; i < RT_ELEMENTS(pDXContext->aCOTMobs); ++i)
     {
         rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         AssertLogRelRCReturn(rc, rc);
@@ -164,7 +164,7 @@ static int vmsvga3dDXLoadContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
     };
 
     AssertCompile(RT_ELEMENTS(cot) == RT_ELEMENTS(pDXContext->aCOTMobs));
-    for (int i = 0; i < RT_ELEMENTS(cot); ++i)
+    for (unsigned i = 0; i < RT_ELEMENTS(cot); ++i)
     {
         uint32_t cEntries;
         pHlp->pfnSSMGetU32(pSSM, &cEntries);
@@ -366,7 +366,7 @@ static int vmsvga3dDXSaveContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
 
     rc = pHlp->pfnSSMPutU32(pSSM, RT_ELEMENTS(pDXContext->aCOTMobs));
     AssertLogRelRCReturn(rc, rc);
-    for (int i = 0; i < RT_ELEMENTS(pDXContext->aCOTMobs); ++i)
+    for (unsigned i = 0; i < RT_ELEMENTS(pDXContext->aCOTMobs); ++i)
     {
         uint32_t const mobId = vmsvgaR3MobId(pDXContext->aCOTMobs[i]);
         rc = pHlp->pfnSSMPutU32(pSSM, mobId);
@@ -395,7 +395,7 @@ static int vmsvga3dDXSaveContext(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
     };
 
     AssertCompile(RT_ELEMENTS(cot) == RT_ELEMENTS(pDXContext->aCOTMobs));
-    for (int i = 0; i < RT_ELEMENTS(cot); ++i)
+    for (unsigned i = 0; i < RT_ELEMENTS(cot); ++i)
     {
         pHlp->pfnSSMPutU32(pSSM, cot[i].cEntries);
         rc = pHlp->pfnSSMPutU32(pSSM, cot[i].cbEntry);
