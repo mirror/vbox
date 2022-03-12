@@ -1504,10 +1504,10 @@ static void ShiftGenerate(PRTSTREAM pOut, const char *pszCpuSuffU, uint32_t cTes
 
 static void ShiftTest(void)
 {
-//    ShiftU8Test();
+    ShiftU8Test();
     ShiftU16Test();
-//    ShiftU32Test();
-//    ShiftU64Test();
+    ShiftU32Test();
+    ShiftU64Test();
 }
 
 
