@@ -638,18 +638,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--description <description string>]"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_CONVERTFROMRAW || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s convertfromraw %s  <filename> <outputfile>\n"
-                     "                            [--format VDI|VMDK|VHD]\n"
-                     "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
-                     "                            [--uuid <uuid>]\n"
-                           "%s convertfromraw %s  stdin <outputfile> <bytes>\n"
-                     "                            [--format VDI|VMDK|VHD]\n"
-                     "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
-                     "                            [--uuid <uuid>]\n"
-                     "\n", SEP, SEP);
-
     if (enmCommand == USAGE_GETEXTRADATA || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s getextradata %s    global|<uuid|vmname>\n"

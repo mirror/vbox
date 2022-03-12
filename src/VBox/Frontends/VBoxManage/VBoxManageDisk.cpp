@@ -1232,7 +1232,7 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
         {
             case 'u':   // --uuid
                 if (RT_FAILURE(RTUuidFromStr(&uuid, ValueUnion.psz)))
-                    return errorSyntax(USAGE_CONVERTFROMRAW, Disk::tr("Invalid UUID '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Invalid UUID '%s'"), ValueUnion.psz);
                 pUuid = &uuid;
                 break;
             case 'o':   // --format
@@ -1260,16 +1260,16 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
                 else if (fReadFromStdIn && !filesize)
                     filesize = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_CONVERTFROMRAW, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
-                return errorGetOpt(USAGE_CONVERTFROMRAW, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
     if (!srcfilename || !dstfilename || (fReadFromStdIn && !filesize))
-        return errorSyntax(USAGE_CONVERTFROMRAW, Disk::tr("Incorrect number of parameters"));
+        return errorSyntax(Disk::tr("Incorrect number of parameters"));
     RTStrmPrintf(g_pStdErr, Disk::tr("Converting from raw image file=\"%s\" to file=\"%s\"...\n"),
                  srcfilename, dstfilename);
 
