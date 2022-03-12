@@ -2629,8 +2629,6 @@ EMIT_SAR(8,  uint8_t,  int8_t,  _amd,       0)
 IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shld_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, a_uType uSrc, uint8_t cShift, \
                                                                            uint32_t *pfEFlags)) \
 { \
-    /** @todo this ain't right for 16-bit. Apparently it should use 0x1f instead \
-     *        of 0xf for masking and use uSrc in repetitive fashion...  */ \
     cShift &= a_cBitsWidth - 1; \
     if (cShift) \
     { \
@@ -2670,11 +2668,44 @@ EMIT_SHLD(32, uint32_t, RT_NOTHING, 1)
 EMIT_SHLD(32, uint32_t, _intel,     1)
 EMIT_SHLD(32, uint32_t, _amd,       0)
 
+#define EMIT_SHLD_16(a_Suffix, a_fIntelFlags) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT(iemAImpl_shld_u16,a_Suffix),(uint16_t *puDst, uint16_t uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
+{ \
+    cShift &= 31; \
+    if (cShift) \
+    { \
+        uint16_t const uDst    = *puDst; \
+        uint64_t const uTmp    = ((uint64_t)uDst << 32) | ((uint32_t)uSrc << 16) | uSrc; \
+        uint16_t const uResult = (uint16_t)((uTmp << cShift) >> 32); \
+        *puDst = uResult; \
+        \
+        /* CALC EFLAGS: */ \
+        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        if (a_fIntelFlags) \
+            /* Intel 6700K & 10980XE: Set according to the first shift. AF always cleared. */ \
+            fEfl |= X86_EFL_GET_OF_16(uDst ^ (uDst << 1));  \
+        else \
+        {   /* AMD 3990X: Set according to last shift, with some weirdness. AF always set. */ \
+            if (cShift < 16) \
+                fEfl |= X86_EFL_GET_OF_16((uDst << (cShift - 1)) ^ uResult); \
+            else \
+                fEfl |= X86_EFL_GET_OF_16((uDst << (cShift - 1)) ^ 0); \
+            fEfl |= X86_EFL_AF; \
+        } \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        fEfl |= (uDst >> (16 - cShift)) & X86_EFL_CF; /* CF = last bit shifted out */ \
+        fEfl |= g_afParity[uResult & 0xff]; \
+        fEfl |= X86_EFL_CALC_SF(uResult, 16); \
+        fEfl |= X86_EFL_CALC_ZF(uResult); \
+        *pfEFlags = fEfl; \
+    } \
+}
+
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHLD(16, uint16_t, RT_NOTHING, 1)
+EMIT_SHLD_16(RT_NOTHING, 1)
 #endif
-EMIT_SHLD(16, uint16_t, _intel,     1)
-EMIT_SHLD(16, uint16_t, _amd,       0)
+EMIT_SHLD_16(_intel,     1)
+EMIT_SHLD_16(_amd,       0)
 
 
 /*
@@ -2691,8 +2722,6 @@ EMIT_SHLD(16, uint16_t, _amd,       0)
 #define EMIT_SHRD(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags) \
 IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shrd_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, a_uType uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
 { \
-    /** @todo this is wrong for 16-bit, where it should be 0x1f not 0xf and \
-     *        source used twice or something like that. */ \
     cShift &= a_cBitsWidth - 1; \
     if (cShift) \
     { \
@@ -2702,6 +2731,8 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shrd_u,a_cBitsWidth,a_Suffix),(a_uTy
         *puDst = uResult; \
         \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
         if (a_fIntelFlags) \
             /* Intel 6700K & 10980XE: Set according to the first shift. AF always cleared. */ \
             fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ (uSrc << (a_cBitsWidth - 1))); \
@@ -2713,8 +2744,6 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shrd_u,a_cBitsWidth,a_Suffix),(a_uTy
                 fEfl |= X86_EFL_GET_OF_ ## a_cBitsWidth(uDst ^ uResult); \
             fEfl |= X86_EFL_AF; \
         } \
-        AssertCompile(X86_EFL_CF_BIT == 0); \
-        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
         fEfl |= X86_EFL_CALC_SF(uResult, a_cBitsWidth); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
         fEfl |= g_afParity[uResult & 0xff]; \
@@ -2734,11 +2763,44 @@ EMIT_SHRD(32, uint32_t, RT_NOTHING, 1)
 EMIT_SHRD(32, uint32_t, _intel,     1)
 EMIT_SHRD(32, uint32_t, _amd,       0)
 
+#define EMIT_SHRD_16(a_Suffix, a_fIntelFlags) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT(iemAImpl_shrd_u16,a_Suffix),(uint16_t *puDst, uint16_t uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
+{ \
+    cShift &= 31; \
+    if (cShift) \
+    { \
+        uint16_t const uDst    = *puDst; \
+        uint64_t const uTmp    = uDst | ((uint32_t)uSrc << 16) | ((uint64_t)uSrc << 32); \
+        uint16_t const uResult = (uint16_t)(uTmp >> cShift); \
+        *puDst = uResult; \
+        \
+        uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
+        /* AMD 3990X: CF flag seems to be last bit shifted out of uDst, not the combined uSrc:uSrc:uDst operand. */ \
+        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
+        if (a_fIntelFlags) \
+            /* Intel 6700K & 10980XE: Set according to the first shift. AF always cleared. */ \
+            fEfl |= X86_EFL_GET_OF_16(uDst ^ (uSrc << 15)); \
+        else \
+        {   /* AMD 3990X: Set according to last shift. AF always set. */ \
+            if (cShift > 1) /* Set according to last shift. */ \
+                fEfl |= X86_EFL_GET_OF_16((uint16_t)(uTmp >> (cShift - 1)) ^ uResult); \
+            else \
+                fEfl |= X86_EFL_GET_OF_16(uDst ^ uResult); \
+            fEfl |= X86_EFL_AF; \
+        } \
+        fEfl |= X86_EFL_CALC_SF(uResult, 16); \
+        fEfl |= X86_EFL_CALC_ZF(uResult); \
+        fEfl |= g_afParity[uResult & 0xff]; \
+        *pfEFlags = fEfl; \
+    } \
+}
+
 #if (!defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)) || defined(IEM_WITHOUT_ASSEMBLY)
-EMIT_SHRD(16, uint16_t, RT_NOTHING, 1)
+EMIT_SHRD_16(RT_NOTHING, 1)
 #endif
-EMIT_SHRD(16, uint16_t, _intel,     1)
-EMIT_SHRD(16, uint16_t, _amd,       0)
+EMIT_SHRD_16(_intel,     1)
+EMIT_SHRD_16(_amd,       0)
 
 
 #if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
