@@ -2624,6 +2624,12 @@ EMIT_SAR(8,  uint8_t,  int8_t,  _amd,       0)
  *  - OF is set according to the first shift on Intel 10980XE, it seems.
  *  - OF is set according to the last sub-shift on AMD 3990X.
  *  - ZF, SF and PF are calculated according to the result by both vendors.
+ *
+ * For 16-bit shifts the count mask isn't 15, but 31, and the CPU will
+ * pick either the source register or the destination register for input bits
+ * when going beyond 16.  According to https://www.sandpile.org/x86/flags.htm
+ * intel has changed behaviour here several times.  We implement what current
+ * skylake based does for now, we can extend this later as needed.
  */
 #define EMIT_SHLD(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags) \
 IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shld_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, a_uType uSrc, uint8_t cShift, \
@@ -2675,25 +2681,33 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT(iemAImpl_shld_u16,a_Suffix),(uint16_t *puDst, 
     if (cShift) \
     { \
         uint16_t const uDst    = *puDst; \
-        uint64_t const uTmp    = ((uint64_t)uDst << 32) | ((uint32_t)uSrc << 16) | uSrc; \
+        uint64_t const uTmp    = a_fIntelFlags \
+                               ? ((uint64_t)uDst << 32) | ((uint32_t)uSrc << 16) | uDst \
+                               : ((uint64_t)uDst << 32) | ((uint32_t)uSrc << 16) | uSrc; \
         uint16_t const uResult = (uint16_t)((uTmp << cShift) >> 32); \
         *puDst = uResult; \
         \
         /* CALC EFLAGS: */ \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
+        AssertCompile(X86_EFL_CF_BIT == 0); \
         if (a_fIntelFlags) \
-            /* Intel 6700K & 10980XE: Set according to the first shift. AF always cleared. */ \
+        { \
+            fEfl |= (uTmp >> (48 - cShift)) & X86_EFL_CF; /* CF = last bit shifted out of the combined operand */ \
+            /* Intel 6700K & 10980XE: OF is et according to the first shift. AF always cleared. */ \
             fEfl |= X86_EFL_GET_OF_16(uDst ^ (uDst << 1));  \
+        } \
         else \
-        {   /* AMD 3990X: Set according to last shift, with some weirdness. AF always set. */ \
+        { \
+            /* AMD 3990X: OF is set according to last shift, with some weirdness. AF always set. CF = last bit shifted out of uDst. */ \
             if (cShift < 16) \
+            { \
+                fEfl |= (uDst >> (16 - cShift)) & X86_EFL_CF;  \
                 fEfl |= X86_EFL_GET_OF_16((uDst << (cShift - 1)) ^ uResult); \
+            } \
             else \
                 fEfl |= X86_EFL_GET_OF_16((uDst << (cShift - 1)) ^ 0); \
             fEfl |= X86_EFL_AF; \
         } \
-        AssertCompile(X86_EFL_CF_BIT == 0); \
-        fEfl |= (uDst >> (16 - cShift)) & X86_EFL_CF; /* CF = last bit shifted out */ \
         fEfl |= g_afParity[uResult & 0xff]; \
         fEfl |= X86_EFL_CALC_SF(uResult, 16); \
         fEfl |= X86_EFL_CALC_ZF(uResult); \
@@ -2718,6 +2732,12 @@ EMIT_SHLD_16(_amd,       0)
  *  - OF is set according to the first shift on Intel 10980XE, it seems.
  *  - OF is set according to the last sub-shift on AMD 3990X.
  *  - ZF, SF and PF are calculated according to the result by both vendors.
+ *
+ * For 16-bit shifts the count mask isn't 15, but 31, and the CPU will
+ * pick either the source register or the destination register for input bits
+ * when going beyond 16.  According to https://www.sandpile.org/x86/flags.htm
+ * intel has changed behaviour here several times.  We implement what current
+ * skylake based does for now, we can extend this later as needed.
  */
 #define EMIT_SHRD(a_cBitsWidth, a_uType, a_Suffix, a_fIntelFlags) \
 IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_shrd_u,a_cBitsWidth,a_Suffix),(a_uType *puDst, a_uType uSrc, uint8_t cShift, uint32_t *pfEFlags)) \
@@ -2770,19 +2790,26 @@ IEM_DECL_IMPL_DEF(void, RT_CONCAT(iemAImpl_shrd_u16,a_Suffix),(uint16_t *puDst, 
     if (cShift) \
     { \
         uint16_t const uDst    = *puDst; \
-        uint64_t const uTmp    = uDst | ((uint32_t)uSrc << 16) | ((uint64_t)uSrc << 32); \
+        uint64_t const uTmp    = a_fIntelFlags \
+                               ? uDst | ((uint32_t)uSrc << 16) | ((uint64_t)uDst << 32) \
+                               : uDst | ((uint32_t)uSrc << 16) | ((uint64_t)uSrc << 32); \
         uint16_t const uResult = (uint16_t)(uTmp >> cShift); \
         *puDst = uResult; \
         \
         uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS; \
         AssertCompile(X86_EFL_CF_BIT == 0); \
-        /* AMD 3990X: CF flag seems to be last bit shifted out of uDst, not the combined uSrc:uSrc:uDst operand. */ \
-        fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
         if (a_fIntelFlags) \
+        { \
+            /* Intel 10980XE: The CF is the last shifted out of the combined uTmp operand. */ \
+            fEfl |= (uTmp >> (cShift - 1)) & X86_EFL_CF; \
             /* Intel 6700K & 10980XE: Set according to the first shift. AF always cleared. */ \
             fEfl |= X86_EFL_GET_OF_16(uDst ^ (uSrc << 15)); \
+        } \
         else \
-        {   /* AMD 3990X: Set according to last shift. AF always set. */ \
+        { \
+            /* AMD 3990X: CF flag seems to be last bit shifted out of uDst, not the combined uSrc:uSrc:uDst operand. */ \
+            fEfl |= (uDst >> (cShift - 1)) & X86_EFL_CF; \
+            /* AMD 3990X: Set according to last shift. AF always set. */ \
             if (cShift > 1) /* Set according to last shift. */ \
                 fEfl |= X86_EFL_GET_OF_16((uint16_t)(uTmp >> (cShift - 1)) ^ uResult); \
             else \
