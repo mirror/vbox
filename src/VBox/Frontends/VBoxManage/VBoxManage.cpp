@@ -221,9 +221,9 @@ static const VBMGCMD g_aCommands[] =
     { "closemedium",        USAGE_S_NEWCMD,  HELP_CMD_CLOSEMEDIUM, handleCloseMedium,          0 },
     { "storageattach",      USAGE_STORAGEATTACH,    VBMG_CMD_TODO, handleStorageAttach,        0 },
     { "storagectl",         USAGE_S_NEWCMD,   HELP_CMD_STORAGECTL, handleStorageController,    0 },
-    { "showmediuminfo",     USAGE_SHOWMEDIUMINFO,   VBMG_CMD_TODO, handleShowMediumInfo,       0 },
-    { "showhdinfo",         USAGE_SHOWMEDIUMINFO,   VBMG_CMD_TODO, handleShowMediumInfo,       0 }, /* backward compatibility */
-    { "showvdiinfo",        USAGE_SHOWMEDIUMINFO,   VBMG_CMD_TODO, handleShowMediumInfo,       0 }, /* backward compatibility */
+    { "showmediuminfo",     USAGE_S_NEWCMD,HELP_CMD_SHOWMEDIUMINFO, handleShowMediumInfo,       0 },
+    { "showhdinfo",         USAGE_S_NEWCMD,HELP_CMD_SHOWMEDIUMINFO, handleShowMediumInfo,       0 }, /* backward compatibility */
+    { "showvdiinfo",        USAGE_S_NEWCMD,HELP_CMD_SHOWMEDIUMINFO, handleShowMediumInfo,       0 }, /* backward compatibility */
     { "mediumio",           USAGE_S_NEWCMD,     HELP_CMD_MEDIUMIO, handleMediumIO,             0 },
     { "getextradata",       USAGE_GETEXTRADATA,     VBMG_CMD_TODO, handleGetExtraData,         0 },
     { "setextradata",       USAGE_SETEXTRADATA,     VBMG_CMD_TODO, handleSetExtraData,         0 },

@@ -624,11 +624,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--intnet]\n"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_SHOWMEDIUMINFO || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s showmediuminfo %s  [disk|dvd|floppy] <uuid|filename>\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_CREATEMEDIUM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s createmedium %s    [disk|dvd|floppy] --filename <filename>\n"

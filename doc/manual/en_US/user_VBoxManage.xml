@@ -928,36 +928,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
 
   <xi:include href="user_man_VBoxManage-bandwidthctl.xml"  xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <sect1 id="vboxmanage-showmediuminfo">
-
-    <title>VBoxManage showmediuminfo</title>
-
-    <para>
-      This command shows information about a medium, notably its size,
-      its size on disk, its type, and the virtual machines which use it.
-    </para>
-
-    <note>
-      <para>
-        For compatibility with earlier versions of &product-name;, the
-        <command>showvdiinfo</command> command is also supported and
-        mapped internally to the <command>showmediuminfo</command>
-        command.
-      </para>
-    </note>
-
-<screen>VBoxManage showmediuminfo     [disk|dvd|floppy] &lt;uuid|filename&gt;</screen>
-
-    <para>
-      The medium must be specified either by its UUID, if the medium is
-      registered, or by its filename. Registered images can be listed
-      using <command>VBoxManage list hdds</command>, <command>VBoxManage
-      list dvds</command>, or <command>VBoxManage list
-      floppies</command>, as appropriate. See
-      <xref linkend="vboxmanage-list" />.
-    </para>
-
-  </sect1>
+  <xi:include href="user_man_VBoxManage-showmediuminfo.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <sect1 id="vboxmanage-createmedium">
 

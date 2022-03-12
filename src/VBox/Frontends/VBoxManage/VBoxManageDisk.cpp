@@ -1659,19 +1659,19 @@ RTEXITCODE handleShowMediumInfo(HandlerArg *a)
         {
             case 'd':   // disk
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DISK;
                 break;
 
             case 'D':   // DVD
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DVD;
                 break;
 
             case 'f':   // floppy
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_FLOPPY;
                 break;
 
@@ -1679,23 +1679,23 @@ RTEXITCODE handleShowMediumInfo(HandlerArg *a)
                 if (!pszFilenameOrUuid)
                     pszFilenameOrUuid = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Invalid option -%c"), c);
+                        return errorSyntax(Disk::tr("Invalid option -%c"), c);
                     else
-                        return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Invalid option case %i"), c);
+                        return errorSyntax(Disk::tr("Invalid option case %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("unknown option: %s\n"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("unknown option: %s\n"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                    return errorSyntax("%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("error: %Rrs"), c);
+                    return errorSyntax(Disk::tr("error: %Rrs"), c);
         }
     }
 
@@ -1704,7 +1704,7 @@ RTEXITCODE handleShowMediumInfo(HandlerArg *a)
 
     /* check for required options */
     if (!pszFilenameOrUuid)
-        return errorSyntax(USAGE_SHOWMEDIUMINFO, Disk::tr("Medium name or UUID required"));
+        return errorSyntax(Disk::tr("Medium name or UUID required"));
 
     HRESULT rc = S_OK; /* Prevents warning. */
 
