@@ -225,8 +225,8 @@ static const VBMGCMD g_aCommands[] =
     { "showhdinfo",         USAGE_S_NEWCMD,HELP_CMD_SHOWMEDIUMINFO, handleShowMediumInfo,       0 }, /* backward compatibility */
     { "showvdiinfo",        USAGE_S_NEWCMD,HELP_CMD_SHOWMEDIUMINFO, handleShowMediumInfo,       0 }, /* backward compatibility */
     { "mediumio",           USAGE_S_NEWCMD,     HELP_CMD_MEDIUMIO, handleMediumIO,             0 },
-    { "getextradata",       USAGE_GETEXTRADATA,     VBMG_CMD_TODO, handleGetExtraData,         0 },
-    { "setextradata",       USAGE_SETEXTRADATA,     VBMG_CMD_TODO, handleSetExtraData,         0 },
+    { "getextradata",       USAGE_S_NEWCMD, HELP_CMD_GETEXTRADATA, handleGetExtraData,         0 },
+    { "setextradata",       USAGE_S_NEWCMD, HELP_CMD_SETEXTRADATA, handleSetExtraData,         0 },
     { "setproperty",        USAGE_SETPROPERTY,      VBMG_CMD_TODO, handleSetProperty,          0 },
     { "usbfilter",          USAGE_USBFILTER,        VBMG_CMD_TODO, handleUSBFilter,            0 },
     { "sharedfolder",       USAGE_S_NEWCMD, HELP_CMD_SHAREDFOLDER, handleSharedFolder,         0 },

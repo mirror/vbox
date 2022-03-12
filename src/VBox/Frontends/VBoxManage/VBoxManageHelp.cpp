@@ -638,19 +638,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--description <description string>]"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_GETEXTRADATA || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s getextradata %s    global|<uuid|vmname>\n"
-                     "                            <key>|[enumerate]\n"
-                     "\n", SEP);
-
-    if (enmCommand == USAGE_SETEXTRADATA || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s setextradata %s    global|<uuid|vmname>\n"
-                     "                            <key>\n"
-                     "                            [<value>] (no value deletes key)\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_SETPROPERTY || enmCommand == USAGE_S_ALL)
     {
         RTStrmPrintf(pStrm,

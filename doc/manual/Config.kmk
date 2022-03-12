@@ -72,7 +72,9 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-mediumproperty.xml \
 	man_VBoxManage-encryptmedium.xml \
 	man_VBoxManage-checkmediumpwd.xml \
-	man_VBoxManage-convertfromraw.xml
+	man_VBoxManage-convertfromraw.xml \
+	man_VBoxManage-setextradata.xml \
+	man_VBoxManage-getextradata.xml
 
 ## List of user manual XML files.
 VBOX_MANUAL_XML_FILES = \

@@ -32,7 +32,7 @@
     <refname>VBoxManage-getextradata</refname>
     <refpurpose>view keyword values that are associated with a virtual machine or
       configuration</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

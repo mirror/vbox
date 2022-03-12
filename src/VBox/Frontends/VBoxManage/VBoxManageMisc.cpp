@@ -823,7 +823,7 @@ RTEXITCODE handleGetExtraData(HandlerArg *a)
     HRESULT rc = S_OK;
 
     if (a->argc > 2 || a->argc < 1)
-        return errorSyntax(USAGE_GETEXTRADATA, Misc::tr("Incorrect number of parameters"));
+        return errorSyntax(Misc::tr("Incorrect number of parameters"));
 
     /* global data? */
     if (!strcmp(a->argv[0], "global"))
@@ -902,7 +902,7 @@ RTEXITCODE handleSetExtraData(HandlerArg *a)
     HRESULT rc = S_OK;
 
     if (a->argc < 2)
-        return errorSyntax(USAGE_SETEXTRADATA, Misc::tr("Not enough parameters"));
+        return errorSyntax(Misc::tr("Not enough parameters"));
 
     /* global data? */
     if (!strcmp(a->argv[0], "global"))
@@ -915,7 +915,7 @@ RTEXITCODE handleSetExtraData(HandlerArg *a)
             CHECK_ERROR(a->virtualBox, SetExtraData(Bstr(a->argv[1]).raw(),
                                                     Bstr(a->argv[2]).raw()));
         else
-            return errorSyntax(USAGE_SETEXTRADATA, Misc::tr("Too many parameters"));
+            return errorSyntax(Misc::tr("Too many parameters"));
     }
     else
     {
@@ -937,7 +937,7 @@ RTEXITCODE handleSetExtraData(HandlerArg *a)
                 CHECK_ERROR(sessionMachine, SetExtraData(Bstr(a->argv[1]).raw(),
                                                          Bstr(a->argv[2]).raw()));
             else
-                return errorSyntax(USAGE_SETEXTRADATA, Misc::tr("Too many parameters"));
+                return errorSyntax(Misc::tr("Too many parameters"));
         }
     }
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;

@@ -1100,56 +1100,9 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
 
   <xi:include href="user_man_VBoxManage-mediumio.xml"       xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <sect1 id="vboxmanage-extradata">
+  <xi:include href="user_man_VBoxManage-setextradata.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-    <title>VBoxManage getextradata/setextradata</title>
-
-    <para>
-      These commands enable you to attach and retrieve string data for a
-      virtual machine or for an &product-name; configuration, by
-      specifying <computeroutput>global</computeroutput> instead of a
-      virtual machine name. You must specify a keyword as a text string
-      to associate the data with, which you can later use to retrieve
-      it. For example:
-    </para>
-
-<screen>VBoxManage setextradata Fedora5 installdate 2006.01.01
-VBoxManage setextradata SUSE10 installdate 2006.02.02</screen>
-
-    <para>
-      This example would associate the string "2006.01.01" with the
-      keyword installdate for the virtual machine Fedora5, and
-      "2006.02.02" on the machine SUSE10. You could then retrieve the
-      information as follows:
-    </para>
-
-<screen>VBoxManage getextradata Fedora5 installdate</screen>
-
-    <para>
-      This would return the following:
-    </para>
-
-<screen>VirtualBox Command Line Management Interface Version <replaceable>version-number</replaceable>
-(C) 2005-2018 Oracle Corporation
-All rights reserved.
-
-Value: 2006.01.01</screen>
-
-    <para>
-      You could retrieve the information for all keywords as follows:
-    </para>
-
-<screen>VBoxManage getextradata Fedora5 enumerate</screen>
-
-    <para>
-      To remove a keyword, the <command>setextradata</command> command
-      must be run without specifying data, only the keyword. For
-      example:
-    </para>
-
-<screen>VBoxManage setextradata Fedora5 installdate</screen>
-
-  </sect1>
+  <xi:include href="user_man_VBoxManage-getextradata.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <sect1 id="vboxmanage-setproperty">
 
