@@ -1896,19 +1896,19 @@ RTEXITCODE handleMediumProperty(HandlerArg *a)
     }
 
     if (a->argc == 0)
-        return errorSyntax(USAGE_MEDIUMPROPERTY, Disk::tr("Missing action"));
+        return errorSyntax(Disk::tr("Missing action"));
 
     pszAction = a->argv[0];
     if (   RTStrICmp(pszAction, "set")
         && RTStrICmp(pszAction, "get")
         && RTStrICmp(pszAction, "delete"))
-        return errorSyntax(USAGE_MEDIUMPROPERTY, Disk::tr("Invalid action given: %s"), pszAction);
+        return errorSyntax(Disk::tr("Invalid action given: %s"), pszAction);
 
     if (   (   !RTStrICmp(pszAction, "set")
             && a->argc != 4)
         || (   RTStrICmp(pszAction, "set")
             && a->argc != 3))
-        return errorSyntax(USAGE_MEDIUMPROPERTY, Disk::tr("Invalid number of arguments given for action: %s"), pszAction);
+        return errorSyntax(Disk::tr("Invalid number of arguments given for action: %s"), pszAction);
 
     pszFilenameOrUuid = a->argv[1];
     pszProperty       = a->argv[2];

@@ -638,18 +638,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--description <description string>]"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_MEDIUMPROPERTY || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s mediumproperty %s  [disk|dvd|floppy] set <uuid|filename>\n"
-                     "                            <property> <value>\n"
-                     "\n"
-                     "                            [disk|dvd|floppy] get <uuid|filename>\n"
-                     "                            <property>\n"
-                     "\n"
-                     "                            [disk|dvd|floppy] delete <uuid|filename>\n"
-                     "                            <property>\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_ENCRYPTMEDIUM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s encryptmedium %s   <uuid|filename>\n"

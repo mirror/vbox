@@ -197,8 +197,8 @@ static const VBMGCMD g_aCommands[] =
     { "unregistervm",       USAGE_S_NEWCMD, HELP_CMD_UNREGISTERVM, handleUnregisterVM,         0 },
     { "clonevm",            USAGE_S_NEWCMD,      HELP_CMD_CLONEVM, handleCloneVM,              0 },
     { "movevm",             USAGE_S_NEWCMD,       HELP_CMD_MOVEVM, handleMoveVM,               0 },
-    { "mediumproperty",     USAGE_MEDIUMPROPERTY,   VBMG_CMD_TODO, handleMediumProperty,       0 },
-    { "hdproperty",         USAGE_MEDIUMPROPERTY,   VBMG_CMD_TODO, handleMediumProperty,       0 }, /* backward compatibility */
+    { "mediumproperty",     USAGE_S_NEWCMD,HELP_CMD_MEDIUMPROPERTY, handleMediumProperty,       0 },
+    { "hdproperty",         USAGE_S_NEWCMD,HELP_CMD_MEDIUMPROPERTY, handleMediumProperty,       0 }, /* backward compatibility */
     { "createmedium",       USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 },
     { "createhd",           USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 }, /* backward compatibility */
     { "createvdi",          USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 }, /* backward compatibility */
