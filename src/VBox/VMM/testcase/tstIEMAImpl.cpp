@@ -1241,8 +1241,8 @@ static void ShiftDblGenerate(PRTSTREAM pOut, const char *pszCpuSuffU, uint32_t c
 static void ShiftDblTest(void)
 {
     ShiftDblU16Test();
-//    ShiftDblU32Test();
-//    ShiftDblU64Test();
+    ShiftDblU32Test();
+    ShiftDblU64Test();
 }
 
 
