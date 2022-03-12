@@ -2007,36 +2007,35 @@ RTEXITCODE handleEncryptMedium(HandlerArg *a)
                 if (!pszFilenameOrUuid)
                     pszFilenameOrUuid = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("Invalid option -%c"), c);
+                        return errorSyntax(Disk::tr("Invalid option -%c"), c);
                     else
-                        return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("Invalid option case %i"), c);
+                        return errorSyntax(Disk::tr("Invalid option case %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("unknown option: %s\n"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("unknown option: %s\n"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_ENCRYPTMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                    return errorSyntax("%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("error: %Rrs"), c);
+                    return errorSyntax(Disk::tr("error: %Rrs"), c);
         }
     }
 
     if (!pszFilenameOrUuid)
-        return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("Disk name or UUID required"));
+        return errorSyntax(Disk::tr("Disk name or UUID required"));
 
     if (!pszPasswordNew && !pszPasswordOld)
-        return errorSyntax(USAGE_ENCRYPTMEDIUM, Disk::tr("No password specified"));
+        return errorSyntax(Disk::tr("No password specified"));
 
     if (   (pszPasswordNew && !pszNewPasswordId)
         || (!pszPasswordNew && pszNewPasswordId))
-        return errorSyntax(USAGE_ENCRYPTMEDIUM,
-                           Disk::tr("A new password must always have a valid identifier set at the same time"));
+        return errorSyntax(Disk::tr("A new password must always have a valid identifier set at the same time"));
 
     if (pszPasswordNew)
     {

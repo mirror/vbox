@@ -69,7 +69,8 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-showmediuminfo.xml \
 	man_VBoxManage-createmedium.xml \
 	man_VBoxManage-clonemedium.xml \
-	man_VBoxManage-mediumproperty.xml
+	man_VBoxManage-mediumproperty.xml \
+	man_VBoxManage-encryptmedium.xml
 
 ## List of user manual XML files.
 VBOX_MANUAL_XML_FILES = \

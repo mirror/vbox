@@ -638,15 +638,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--description <description string>]"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_ENCRYPTMEDIUM || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s encryptmedium %s   <uuid|filename>\n"
-                     "                            [--newpassword <file>|-]\n"
-                     "                            [--oldpassword <file>|-]\n"
-                     "                            [--cipher <cipher identifier>]\n"
-                     "                            [--newpasswordid <password identifier>]\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_MEDIUMENCCHKPWD || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s checkmediumpwd %s  <uuid|filename>\n"
