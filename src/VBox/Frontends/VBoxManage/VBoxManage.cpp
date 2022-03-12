@@ -199,9 +199,9 @@ static const VBMGCMD g_aCommands[] =
     { "movevm",             USAGE_S_NEWCMD,       HELP_CMD_MOVEVM, handleMoveVM,               0 },
     { "mediumproperty",     USAGE_MEDIUMPROPERTY,   VBMG_CMD_TODO, handleMediumProperty,       0 },
     { "hdproperty",         USAGE_MEDIUMPROPERTY,   VBMG_CMD_TODO, handleMediumProperty,       0 }, /* backward compatibility */
-    { "createmedium",       USAGE_CREATEMEDIUM,     VBMG_CMD_TODO, handleCreateMedium,         0 },
-    { "createhd",           USAGE_CREATEMEDIUM,     VBMG_CMD_TODO, handleCreateMedium,         0 }, /* backward compatibility */
-    { "createvdi",          USAGE_CREATEMEDIUM,     VBMG_CMD_TODO, handleCreateMedium,         0 }, /* backward compatibility */
+    { "createmedium",       USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 },
+    { "createhd",           USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 }, /* backward compatibility */
+    { "createvdi",          USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 }, /* backward compatibility */
     { "modifymedium",       USAGE_MODIFYMEDIUM,     VBMG_CMD_TODO, handleModifyMedium,         0 },
     { "modifyhd",           USAGE_MODIFYMEDIUM,     VBMG_CMD_TODO, handleModifyMedium,         0 }, /* backward compatibility */
     { "modifyvdi",          USAGE_MODIFYMEDIUM,     VBMG_CMD_TODO, handleModifyMedium,         0 }, /* backward compatibility */

@@ -624,18 +624,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--intnet]\n"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_CREATEMEDIUM || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s createmedium %s    [disk|dvd|floppy] --filename <filename>\n"
-                     "                            [--size <megabytes>|--sizebyte <bytes>]\n"
-                     "                            [--diffparent <uuid>|<filename>]\n"
-                     "                            [--format VDI|VMDK|VHD] (default: VDI)]\n"
-                     "                            [--variant Standard,Fixed,Split2G,Stream,ESX,\n"
-                     "                                       Formatted,RawDisk]\n"
-                     "                            [[--property <name>=<value>] --property <name>=<value>\n"
-                     "                              --property-file <name>=</path/to/file/with/value>]...\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_MODIFYMEDIUM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s modifymedium %s    [disk|dvd|floppy] <uuid|filename>\n"

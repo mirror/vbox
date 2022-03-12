@@ -327,19 +327,19 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
         {
             case 'H':   // disk
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DISK;
                 break;
 
             case 'D':   // DVD
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DVD;
                 break;
 
             case 'L':   // floppy
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_FLOPPY;
                 break;
 
@@ -436,22 +436,22 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
+                return errorSyntax(Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Invalid option -%c"), c);
+                        return errorSyntax(Disk::tr("Invalid option -%c"), c);
                     else
-                        return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Invalid option case %i"), c);
+                        return errorSyntax(Disk::tr("Invalid option case %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("unknown option: %s\n"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("unknown option: %s\n"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_CREATEMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                    return errorSyntax("%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("error: %Rrs"), c);
+                    return errorSyntax(Disk::tr("error: %Rrs"), c);
         }
     }
 
@@ -462,9 +462,9 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
     if (fBase)
     {
         if (!filename || !*filename)
-            return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Parameters --filename is required"));
+            return errorSyntax(Disk::tr("Parameters --filename is required"));
         if ((enmMediumVariant & MediumVariant_VmdkRawDisk) == 0 && size == 0)
-            return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Parameters --size is required"));
+            return errorSyntax(Disk::tr("Parameters --size is required"));
         if (!format || !*format)
         {
             if (cmd == CMD_DISK)
@@ -482,10 +482,10 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
     {
         if (   !filename
             || !*filename)
-            return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Parameters --filename is required"));
+            return errorSyntax(Disk::tr("Parameters --filename is required"));
         size = 0;
         if (cmd != CMD_DISK)
-            return errorSyntax(USAGE_CREATEMEDIUM, Disk::tr("Creating a differencing medium is only supported for hard disks"));
+            return errorSyntax(Disk::tr("Creating a differencing medium is only supported for hard disks"));
         enmMediumVariant = MediumVariant_Diff;
         if (!format || !*format)
         {

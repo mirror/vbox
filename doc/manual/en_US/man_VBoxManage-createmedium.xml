@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-createmedium</refname>
     <refpurpose>create a new medium</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

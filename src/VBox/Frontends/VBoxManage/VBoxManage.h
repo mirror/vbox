@@ -97,7 +97,6 @@ struct a_CtxName \
 typedef enum
 {
     USAGE_INVALID = 0,
-    USAGE_CREATEMEDIUM,
     USAGE_MODIFYMEDIUM,
     USAGE_CLONEMEDIUM,
     USAGE_CREATEHOSTIF,
