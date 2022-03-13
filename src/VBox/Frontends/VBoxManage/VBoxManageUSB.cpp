@@ -568,15 +568,17 @@ RTEXITCODE handleUSBDevSource(HandlerArg *a)
 
     /* at least: 0: command, 1: source id */
     if (a->argc < 2)
-        return errorSyntax(USAGE_USBDEVSOURCE, Usb::tr("Not enough parameters"));
+        return errorSyntax(Usb::tr("Not enough parameters"));
 
     ComPtr<IHost> host;
     if (!strcmp(a->argv[0], "add"))
     {
+        setCurrentSubcommand(HELP_SCOPE_USBDEVSOURCE_ADD);
+
         Bstr strBackend;
         Bstr strAddress;
         if (a->argc != 6)
-            return errorSyntax(USAGE_USBDEVSOURCE, Usb::tr("Invalid number of parameters"));
+            return errorSyntax(Usb::tr("Invalid number of parameters"));
 
         for (int i = 2; i < a->argc; i++)
         {
@@ -591,7 +593,7 @@ RTEXITCODE handleUSBDevSource(HandlerArg *a)
                 strAddress = a->argv[i];
             }
             else
-                return errorSyntax(USAGE_USBDEVSOURCE, Usb::tr("Parameter \"%s\" is invalid"), a->argv[i]);
+                return errorSyntax(Usb::tr("Parameter \"%s\" is invalid"), a->argv[i]);
         }
 
         SafeArray<BSTR> usbSourcePropNames;
@@ -604,6 +606,7 @@ RTEXITCODE handleUSBDevSource(HandlerArg *a)
     }
     else if (!strcmp(a->argv[0], "remove"))
     {
+        setCurrentSubcommand(HELP_SCOPE_USBDEVSOURCE_REMOVE);
         CHECK_ERROR_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), RTEXITCODE_FAILURE);
         CHECK_ERROR_RET(host, RemoveUSBDeviceSource(Bstr(a->argv[1]).raw()), RTEXITCODE_FAILURE);
     }

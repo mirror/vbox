@@ -19,19 +19,19 @@
 ]>
 <refentry id="vboxmanage-usbdevsource" lang="en">
   <refentryinfo>
-    <pubdate>September 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage usbdevsource</title>
   </refentryinfo>
 
   <refmeta>
-    <refentrytitle>VBoxManage-usbdevsource</refentrytitle>
+    <refentrytitle>vboxmanage-usbdevsource</refentrytitle>
     <manvolnum>1</manvolnum>
   </refmeta>
 
   <refnamediv>
     <refname>vboxmanage-usbdevsource</refname>
     <refpurpose>add and remove USB device sources</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
@@ -81,10 +81,10 @@
           <term>--backend=<replaceable>backend</replaceable></term>
           <listitem><para>
               Specifies the USB proxy service backend to use.
-            </para><remark>
-              What is the USB proxy service? How do you
-              determine the backend to use?
-            </remark></listitem>
+            </para><para>
+              For now only USBIP is supported to specify a remote
+              server using the USB/IP protocol.
+            </para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
