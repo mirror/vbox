@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-natnetwork" lang="en">
   <refentryinfo>
-    <pubdate>September 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage natnetwork</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-natnetwork</refname>
     <refpurpose>create, modify, and manage a NAT network</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

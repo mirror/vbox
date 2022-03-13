@@ -640,38 +640,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--description <description string>]"
                      "\n", SEP);
 
-#if defined(VBOX_WITH_NAT_SERVICE)
-    if (enmCommand == USAGE_NATNETWORK || enmCommand == USAGE_S_ALL)
-    {
-        RTStrmPrintf(pStrm,
-                           "%s natnetwork %s      add --netname <name>\n"
-                     "                            --network <network>\n"
-                     "                            [--enable|--disable]\n"
-                     "                            [--dhcp on|off]\n"
-                     "                            [--port-forward-4 <rule>]\n"
-                     "                            [--loopback-4 <rule>]\n"
-                     "                            [--ipv6 on|off]\n"
-                     "                            [--port-forward-6 <rule>]\n"
-                     "                            [--loopback-6 <rule>]\n\n"
-                           "%s natnetwork %s      remove --netname <name>\n\n"
-                           "%s natnetwork %s      modify --netname <name>\n"
-                     "                            [--network <network>]\n"
-                     "                            [--enable|--disable]\n"
-                     "                            [--dhcp on|off]\n"
-                     "                            [--port-forward-4 <rule>]\n"
-                     "                            [--loopback-4 <rule>]\n"
-                     "                            [--ipv6 on|off]\n"
-                     "                            [--port-forward-6 <rule>]\n"
-                     "                            [--loopback-6 <rule>]\n\n"
-                           "%s natnetwork %s      start --netname <name>\n\n"
-                           "%s natnetwork %s      stop --netname <name>\n\n"
-                           "%s natnetwork %s      list [<pattern>]\n"
-                     "\n", SEP, SEP, SEP, SEP, SEP, SEP);
-
-
-    }
-#endif
-
 #if defined(VBOX_WITH_NETFLT)
     if (enmCommand == USAGE_HOSTONLYIFS || enmCommand == USAGE_S_ALL)
     {
