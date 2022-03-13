@@ -234,7 +234,7 @@ static const VBMGCMD g_aCommands[] =
     { "guestproperty",      USAGE_S_NEWCMD,HELP_CMD_GUESTPROPERTY, handleGuestProperty,        0 },
 #endif
 #ifdef VBOX_WITH_GUEST_CONTROL
-    { "guestcontrol",       USAGE_GUESTCONTROL,     VBMG_CMD_TODO, handleGuestControl,         0 },
+    { "guestcontrol",       USAGE_S_NEWCMD, HELP_CMD_GUESTCONTROL, handleGuestControl,         0 },
 #endif
     { "metrics",            USAGE_METRICS,          VBMG_CMD_TODO, handleMetrics,              0 },
     { "import",             USAGE_S_NEWCMD,       HELP_CMD_IMPORT, handleImportAppliance,      0 },

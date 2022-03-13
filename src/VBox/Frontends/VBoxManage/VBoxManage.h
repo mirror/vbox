@@ -114,9 +114,6 @@ typedef enum
     USAGE_HOSTONLYIFS,
     USAGE_I_DUMPHDINFO,
     USAGE_STORAGEATTACH,
-#ifdef VBOX_WITH_GUEST_CONTROL
-    USAGE_GUESTCONTROL,
-#endif  /* VBOX_WITH_GUEST_CONTROL defined */
     USAGE_I_DEBUGLOG,
     USAGE_I_SETHDPARENTUUID,
     USAGE_I_PASSWORDHASH,
@@ -133,25 +130,6 @@ typedef enum
 } USAGECATEGORY;
 /** @} */
 
-
-#ifdef VBOX_WITH_GUEST_CONTROL
-# define HELP_SCOPE_GSTCTRL_RUN             RT_BIT(0)
-# define HELP_SCOPE_GSTCTRL_START           RT_BIT(1)
-# define HELP_SCOPE_GSTCTRL_COPYFROM        RT_BIT(2)
-# define HELP_SCOPE_GSTCTRL_COPYTO          RT_BIT(3)
-# define HELP_SCOPE_GSTCTRL_MKDIR           RT_BIT(4)
-# define HELP_SCOPE_GSTCTRL_RMDIR           RT_BIT(5)
-# define HELP_SCOPE_GSTCTRL_RM              RT_BIT(6)
-# define HELP_SCOPE_GSTCTRL_MV              RT_BIT(7)
-# define HELP_SCOPE_GSTCTRL_MKTEMP          RT_BIT(8)
-# define HELP_SCOPE_GSTCTRL_LIST            RT_BIT(9)
-# define HELP_SCOPE_GSTCTRL_CLOSEPROCESS    RT_BIT(10)
-# define HELP_SCOPE_GSTCTRL_CLOSESESSION    RT_BIT(11)
-# define HELP_SCOPE_GSTCTRL_STAT            RT_BIT(12)
-# define HELP_SCOPE_GSTCTRL_UPDATEGA        RT_BIT(13)
-# define HELP_SCOPE_GSTCTRL_WATCH           RT_BIT(14)
-# define HELP_SCOPE_GSTCTRL_WAITRUNLEVEL    RT_BIT(15)
-#endif
 
 /** command handler argument */
 struct HandlerArg
@@ -250,9 +228,6 @@ RTEXITCODE handleModifyVM(HandlerArg *a);
 
 /* VBoxManageDebugVM.cpp */
 RTEXITCODE handleDebugVM(HandlerArg *a);
-
-/* VBoxManageGuestCtrl.cpp */
-extern void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2, uint64_t fSubcommandScope);
 
 #ifndef VBOX_ONLY_DOCS
 /* VBoxManageGuestProp.cpp */

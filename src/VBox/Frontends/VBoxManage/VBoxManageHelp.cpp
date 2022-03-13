@@ -638,11 +638,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--description <description string>]"
                      "\n", SEP);
 
-#ifdef VBOX_WITH_GUEST_CONTROL
-    if (enmCommand == USAGE_GUESTCONTROL || enmCommand == USAGE_S_ALL)
-        usageGuestControl(pStrm, SEP, fSubcommandScope);
-#endif /* VBOX_WITH_GUEST_CONTROL defined */
-
     if (enmCommand == USAGE_METRICS || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s metrics %s         list [*|host|<vmname> [<metric_list>]]\n"

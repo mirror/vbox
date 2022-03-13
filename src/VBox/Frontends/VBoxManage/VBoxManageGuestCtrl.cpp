@@ -220,145 +220,6 @@ enum kStreamTransform
 
 DECLARE_TRANSLATION_CONTEXT(GuestCtrl);
 
-void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2, uint64_t fSubcommandScope)
-{
-    const uint64_t fAnonSubCmds = HELP_SCOPE_GSTCTRL_CLOSESESSION
-                                | HELP_SCOPE_GSTCTRL_LIST
-                                | HELP_SCOPE_GSTCTRL_CLOSEPROCESS
-                                | HELP_SCOPE_GSTCTRL_CLOSESESSION
-                                | HELP_SCOPE_GSTCTRL_UPDATEGA
-                                | HELP_SCOPE_GSTCTRL_WATCH
-                                | HELP_SCOPE_GSTCTRL_WAITRUNLEVEL;
-
-    /*                0         1         2         3         4         5         6         7         8XXXXXXXXXX */
-    /*                0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 */
-    if (~fAnonSubCmds & fSubcommandScope)
-        RTStrmPrintf(pStrm,
-                             "%s guestcontrol %s    <uuid|vmname> [--verbose|-v] [--quiet|-q]\n"
-                     "                              [--user[name] <name>] [--domain <domain>]\n"
-                     "                              [--passwordfile <file> | --password <password>]\n%s",
-                     pcszSep1, pcszSep2, (fSubcommandScope & RTMSGREFENTRYSTR_SCOPE_MASK) == RTMSGREFENTRYSTR_SCOPE_GLOBAL ? "\n" : "");
-    if (fSubcommandScope & HELP_SCOPE_GSTCTRL_RUN)
-        RTStrmPrintf(pStrm,
-                     "                              run [common-options]\n"
-                     "                              [--exe <path to executable>] [--timeout <msec>]\n"
-                     "                              [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
-                     "                              [--ignore-operhaned-processes] [--profile]\n"
-                     "                              [--no-wait-stdout|--wait-stdout]\n"
-                     "                              [--no-wait-stderr|--wait-stderr]\n"
-                     "                              [--dos2unix] [--unix2dos]\n"
-                     "                              -- <program/arg0> [argument1] ... [argumentN]]\n"
-                     "\n");
-    if (fSubcommandScope & HELP_SCOPE_GSTCTRL_START)
-        RTStrmPrintf(pStrm,
-                     "                              start [common-options]\n"
-                     "                              [--exe <path to executable>] [--timeout <msec>]\n"
-                     "                              [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
-                     "                              [--ignore-operhaned-processes] [--profile]\n"
-                     "                              -- <program/arg0> [argument1] ... [argumentN]]\n"
-                     "\n");
-    if (fSubcommandScope & HELP_SCOPE_GSTCTRL_COPYFROM)
-        RTStrmPrintf(pStrm,
-                     "                              copyfrom [common-options]\n"
-                     "                              [-L|--dereference] [-R|--recursive]\n"
-                     "                              <guest-src0> [guest-src1 [...]] <host-dst>\n"
-                     "\n"
-                     "                              copyfrom [common-options]\n"
-                     "                              [-L|--dereference] [-R|--recursive]\n"
-                     "                              [-t|--target-directory <host-dst-dir>]\n"
-                     "                              <guest-src0> [guest-src1 [...]]\n"
-                     "\n");
-    if (fSubcommandScope & HELP_SCOPE_GSTCTRL_COPYTO)
-        RTStrmPrintf(pStrm,
-                     "                              copyto [common-options]\n"
-                     "                              [-L|--dereference] [-R|--recursive]\n"
-                     "                              <host-src0> [host-src1 [...]] <guest-dst>\n"
-                     "\n"
-                     "                              copyto [common-options]\n"
-                     "                              [-L|--dereference] [-R|--recursive]\n"
-                     "                              [-t|--target-directory <guest-dst>]\n"
-                     "                              <host-src0> [host-src1 [...]]\n"
-                     "\n");
-    if (fSubcommandScope & HELP_SCOPE_GSTCTRL_MKDIR)
-        RTStrmPrintf(pStrm,
-                     "                              mkdir|createdir[ectory] [common-options]\n"
-                     "                              [--parents] [--mode <mode>]\n"
-                     "                              <guest directory> [...]\n"
-                     "\n");
-    if (fSubcommandScope & HELP_SCOPE_GSTCTRL_RMDIR)
-        RTStrmPrintf(pStrm,
-                     "                              rmdir|removedir[ectory] [common-options]\n"
-                     "                              [-R|--recursive]\n"
-                     "                              <guest directory> [...]\n"
-                     "\n");
-    if (fSubcommandScope & HELP_SCOPE_GSTCTRL_RM)
-        RTStrmPrintf(pStrm,
-                     "                              removefile|rm [common-options] [-f|--force]\n"
-                     "                              <guest file> [...]\n"
-                     "\n");
-    if (fSubcommandScope & HELP_SCOPE_GSTCTRL_MV)
-        RTStrmPrintf(pStrm,
-                     "                              mv|move|ren[ame] [common-options]\n"
-                     "                              <source> [source1 [...]] <dest>\n"
-                     "\n");
-    if (fSubcommandScope & HELP_SCOPE_GSTCTRL_MKTEMP)
-        RTStrmPrintf(pStrm,
-                     "                              mktemp|createtemp[orary] [common-options]\n"
-                     "                              [--secure] [--mode <mode>] [--tmpdir <directory>]\n"
-                     "                              <template>\n"
-                     "\n");
-    if (fSubcommandScope & HELP_SCOPE_GSTCTRL_STAT)
-        RTStrmPrintf(pStrm,
-                     "                              stat [common-options]\n"
-                     "                              <file> [...]\n"
-                     "\n");
-
-    /*
-     * Command not requiring authentication.
-     */
-    if (fAnonSubCmds & fSubcommandScope)
-    {
-        /*                0         1         2         3         4         5         6         7         8XXXXXXXXXX */
-        /*                0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 */
-        RTStrmPrintf(pStrm,
-                     "%s guestcontrol %s    <uuid|vmname> [--verbose|-v] [--quiet|-q]\n%s",
-                     pcszSep1, pcszSep2, (fSubcommandScope & RTMSGREFENTRYSTR_SCOPE_MASK) == RTMSGREFENTRYSTR_SCOPE_GLOBAL ? "\n" : "");
-        if (fSubcommandScope & HELP_SCOPE_GSTCTRL_LIST)
-            RTStrmPrintf(pStrm,
-                         "                              list <all|sessions|processes|files> [common-opts]\n"
-                         "\n");
-        if (fSubcommandScope & HELP_SCOPE_GSTCTRL_CLOSEPROCESS)
-            RTStrmPrintf(pStrm,
-                         "                              closeprocess [common-options]\n"
-                         "                              <   --session-id <ID>\n"
-                         "                                | --session-name <name or pattern>\n"
-                         "                              <PID1> [PID1 [...]]\n"
-                         "\n");
-        if (fSubcommandScope & HELP_SCOPE_GSTCTRL_CLOSESESSION)
-            RTStrmPrintf(pStrm,
-                         "                              closesession [common-options]\n"
-                         "                              <  --all | --session-id <ID>\n"
-                         "                                | --session-name <name or pattern> >\n"
-                         "\n");
-        if (fSubcommandScope & HELP_SCOPE_GSTCTRL_UPDATEGA)
-            RTStrmPrintf(pStrm,
-                         "                              updatega|updateguestadditions|updateadditions\n"
-                         "                              [--source <guest additions .ISO>]\n"
-                         "                              [--wait-start] [common-options]\n"
-                         "                              [-- [<argument1>] ... [<argumentN>]]\n"
-                         "\n");
-        if (fSubcommandScope & HELP_SCOPE_GSTCTRL_WATCH)
-            RTStrmPrintf(pStrm,
-                         "                              watch [--timeout <msec>] [common-options]\n"
-                         "\n");
-        if (fSubcommandScope & HELP_SCOPE_GSTCTRL_WAITRUNLEVEL)
-            RTStrmPrintf(pStrm,
-                         "                              waitrunlevel [--timeout <msec>] [common-options]\n"
-                         "                              <system|userland|desktop>\n"
-                         "\n");
-    }
-}
-
 #ifndef VBOX_ONLY_DOCS
 
 
@@ -991,7 +852,7 @@ static RTEXITCODE gctlCtxPostOptionParsingInit(PGCTLCMDCTX pCtx)
         }
     }
     else
-        rcExit = errorSyntaxEx(USAGE_GUESTCONTROL, pCtx->pCmdDef->fSubcommandScope, GuestCtrl::tr("No user name specified!"));
+        rcExit = errorSyntax(GuestCtrl::tr("No user name specified!"));
 
     pCtx->fPostOptionParsingInited = rcExit == RTEXITCODE_SUCCESS;
     return rcExit;
@@ -1279,11 +1140,9 @@ static RTMSINTERVAL gctlRunGetRemainingTime(uint64_t u64StartMs, RTMSINTERVAL cM
  * @param   argc        The argument count.
  * @param   argv        The argument vector for this command.
  * @param   fRunCmd     Set if it's 'run' clear if 'start'.
- * @param   fHelp       The help flag for the command.
  */
-static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, bool fRunCmd, uint32_t fHelp)
+static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, bool fRunCmd)
 {
-    RT_NOREF(fHelp);
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     /*
@@ -1358,8 +1217,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                 case 'E':
                     if (   ValueUnion.psz[0] == '\0'
                         || ValueUnion.psz[0] == '=')
-                        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_RUN,
-                                             GuestCtrl::tr("Invalid argument variable[=value]: '%s'"), ValueUnion.psz);
+                        return errorSyntax(GuestCtrl::tr("Invalid argument variable[=value]: '%s'"), ValueUnion.psz);
                     aEnv.push_back(Bstr(ValueUnion.psz).raw());
                     break;
 
@@ -1428,14 +1286,14 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
                     break;
 
                 default:
-                    return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_RUN, ch, &ValueUnion);
+                    return errorGetOpt(ch, &ValueUnion);
 
             } /* switch */
         } /* while RTGetOpt */
 
         /* Must have something to execute. */
         if (!pszImage || !*pszImage)
-            return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_RUN, GuestCtrl::tr("No executable specified!"));
+            return errorSyntax(GuestCtrl::tr("No executable specified!"));
 
         /*
          * Finalize process creation and wait flags and input/output streams.
@@ -1713,13 +1571,13 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, b
 
 static DECLCALLBACK(RTEXITCODE) gctlHandleRun(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
-    return gctlHandleRunCommon(pCtx, argc, argv, true /*fRunCmd*/, HELP_SCOPE_GSTCTRL_RUN);
+    return gctlHandleRunCommon(pCtx, argc, argv, true /*fRunCmd*/);
 }
 
 
 static DECLCALLBACK(RTEXITCODE) gctlHandleStart(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
-    return gctlHandleRunCommon(pCtx, argc, argv, false /*fRunCmd*/, HELP_SCOPE_GSTCTRL_START);
+    return gctlHandleRunCommon(pCtx, argc, argv, false /*fRunCmd*/);
 }
 
 
@@ -1750,7 +1608,6 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     const char *pszDst = NULL;
     bool fFollow = false;
     bool fRecursive = false;
-    uint64_t uUsage = fHostToGuest ? HELP_SCOPE_GSTCTRL_COPYTO : HELP_SCOPE_GSTCTRL_COPYFROM;
 
     int vrc = VINF_SUCCESS;
     while (  (ch = RTGetOpt(&GetState, &ValueUnion)) != 0
@@ -1777,7 +1634,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                 break;
 
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, uUsage, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
@@ -1785,7 +1642,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
     size_t cSources = &argv[argc] - papszSources;
 
     if (!cSources)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, uUsage, GuestCtrl::tr("No sources specified!"));
+        return errorSyntax(GuestCtrl::tr("No sources specified!"));
 
     /* Unless a --target-directory is given, the last argument is the destination, so
        bump it from the source list. */
@@ -1793,7 +1650,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
         pszDst = papszSources[--cSources];
 
     if (pszDst == NULL)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, uUsage, GuestCtrl::tr("No destination specified!"));
+        return errorSyntax(GuestCtrl::tr("No destination specified!"));
 
     char szAbsDst[RTPATH_MAX];
     if (!fHostToGuest)
@@ -2071,12 +1928,12 @@ static DECLCALLBACK(RTEXITCODE) gctrlHandleMkDir(PGCTLCMDCTX pCtx, int argc, cha
                 break;
 
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_MKDIR, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
     if (!cDirsCreated)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_MKDIR, GuestCtrl::tr("No directory to create specified!"));
+        return errorSyntax(GuestCtrl::tr("No directory to create specified!"));
     return rcExit;
 }
 
@@ -2199,12 +2056,12 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx, int argc, char
             }
 
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_RMDIR, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
     if (!cDirRemoved)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_RMDIR, GuestCtrl::tr("No directory to remove specified!"));
+        return errorSyntax(GuestCtrl::tr("No directory to remove specified!"));
     return rcExit;
 }
 
@@ -2276,12 +2133,12 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRm(PGCTLCMDCTX pCtx, int argc, char **
                 break;
 
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_RM, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
     if (!cFilesDeleted && !fForce)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_RM, GuestCtrl::tr("No file to remove specified!"));
+        return errorSyntax(GuestCtrl::tr("No file to remove specified!"));
     return rcExit;
 }
 
@@ -2329,7 +2186,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
                     break;
 
                 default:
-                    return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_MV, ch, &ValueUnion);
+                    return errorGetOpt(ch, &ValueUnion);
             }
         }
     }
@@ -2343,11 +2200,9 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
 
     size_t cSources = vecSources.size();
     if (!cSources)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_MV,
-                             GuestCtrl::tr("No source(s) to move specified!"));
+        return errorSyntax(GuestCtrl::tr("No source(s) to move specified!"));
     if (cSources < 2)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_MV,
-                             GuestCtrl::tr("No destination specified!"));
+        return errorSyntax(GuestCtrl::tr("No destination specified!"));
 
     RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
@@ -2501,22 +2356,19 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx, int argc, cha
                 if (strTemplate.isEmpty())
                     strTemplate = ValueUnion.psz;
                 else
-                    return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_MKTEMP,
-                                         GuestCtrl::tr("More than one template specified!\n"));
+                    return errorSyntax(GuestCtrl::tr("More than one template specified!\n"));
                 break;
 
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_MKTEMP, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
     if (strTemplate.isEmpty())
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_MKTEMP,
-                             GuestCtrl::tr("No template specified!"));
+        return errorSyntax(GuestCtrl::tr("No template specified!"));
 
     if (!fDirectory)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_MKTEMP,
-                             GuestCtrl::tr("Creating temporary files is currently not supported!"));
+        return errorSyntax(GuestCtrl::tr("Creating temporary files is currently not supported!"));
 
     RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
@@ -2593,16 +2445,15 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
             case 'f': /* File-system */
             case 'c': /* Format */
             case 't': /* Terse */
-                return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_STAT,
-                                     GuestCtrl::tr("Command \"%s\" not implemented yet!"), ValueUnion.psz);
+                return errorSyntax(GuestCtrl::tr("Command \"%s\" not implemented yet!"), ValueUnion.psz);
 
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_STAT, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
     if (ch != VINF_GETOPT_NOT_OPTION)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_STAT, GuestCtrl::tr("Nothing to stat!"));
+        return errorSyntax(GuestCtrl::tr("Nothing to stat!"));
 
     RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
@@ -2890,7 +2741,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int 
                 break;
 
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_UPDATEGA, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
@@ -3155,13 +3006,12 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWaitRunLevel(PGCTLCMDCTX pCtx, int arg
             {
                 enmRunLevel = gctlGetRunLevelFromStr(ValueUnion.psz);
                 if (enmRunLevel == AdditionsRunLevelType_None)
-                    return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_WAITRUNLEVEL,
-                                         GuestCtrl::tr("Invalid run level specified. Valid values are: system, userland, desktop"));
+                    return errorSyntax(GuestCtrl::tr("Invalid run level specified. Valid values are: system, userland, desktop"));
                 break;
             }
 
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_WAITRUNLEVEL, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
@@ -3170,7 +3020,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWaitRunLevel(PGCTLCMDCTX pCtx, int arg
         return rcExit;
 
     if (enmRunLevel == AdditionsRunLevelType_None)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_WAITRUNLEVEL, GuestCtrl::tr("Missing run level to wait for"));
+        return errorSyntax(GuestCtrl::tr("Missing run level to wait for"));
 
     vrc = gctlWaitForRunLevel(pCtx, enmRunLevel, cMsTimeout);
 
@@ -3217,18 +3067,17 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleList(PGCTLCMDCTX pCtx, int argc, char 
                 else if (!RTStrICmp(ValueUnion.psz, "all"))
                     fListAll = true;
                 else
-                    return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_LIST,
-                                         GuestCtrl::tr("Unknown list: '%s'"), ValueUnion.psz);
+                    return errorSyntax(GuestCtrl::tr("Unknown list: '%s'"), ValueUnion.psz);
                 fSeenListArg = true;
                 break;
 
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_UPDATEGA, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
     if (!fSeenListArg)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_LIST, GuestCtrl::tr("Missing list name"));
+        return errorSyntax(GuestCtrl::tr("Missing list name"));
     Assert(fListAll || fListSessions);
 
     RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
@@ -3403,32 +3252,28 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx, int arg
                         }
                     }
                     else
-                        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_CLOSEPROCESS,
-                                             GuestCtrl::tr("Invalid PID value: 0"));
+                        return errorSyntax(GuestCtrl::tr("Invalid PID value: 0"));
                 }
                 else
-                    return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_CLOSEPROCESS,
-                                         GuestCtrl::tr("Error parsing PID value: %Rrc"), rc);
+                    return errorSyntax(GuestCtrl::tr("Error parsing PID value: %Rrc"), rc);
                 break;
             }
 
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_CLOSEPROCESS, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
     if (vecPID.empty())
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_CLOSEPROCESS,
-                             GuestCtrl::tr("At least one PID must be specified to kill!"));
+        return errorSyntax(GuestCtrl::tr("At least one PID must be specified to kill!"));
 
     if (   strSessionName.isEmpty()
         && idSession == UINT32_MAX)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_CLOSEPROCESS, GuestCtrl::tr("No session ID specified!"));
+        return errorSyntax(GuestCtrl::tr("No session ID specified!"));
 
     if (   strSessionName.isNotEmpty()
         && idSession != UINT32_MAX)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_CLOSEPROCESS,
-                             GuestCtrl::tr("Either session ID or name (pattern) must be specified"));
+        return errorSyntax(GuestCtrl::tr("Either session ID or name (pattern) must be specified"));
 
     RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
@@ -3572,19 +3417,17 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseSession(PGCTLCMDCTX pCtx, int arg
                 /** @todo Supply a CSV list of IDs or patterns to close?
                  *  break; */
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_CLOSESESSION, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
     if (   strSessionName.isEmpty()
         && idSession == UINT32_MAX)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_CLOSESESSION,
-                             GuestCtrl::tr("No session ID specified!"));
+        return errorSyntax(GuestCtrl::tr("No session ID specified!"));
 
     if (   !strSessionName.isEmpty()
         && idSession != UINT32_MAX)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_CLOSESESSION,
-                             GuestCtrl::tr("Either session ID or name (pattern) must be specified"));
+        return errorSyntax(GuestCtrl::tr("Either session ID or name (pattern) must be specified"));
 
     RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
@@ -3677,7 +3520,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
 
             case VINF_GETOPT_NOT_OPTION:
             default:
-                return errorGetOptEx(USAGE_GUESTCONTROL, HELP_SCOPE_GSTCTRL_WATCH, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     }
 
@@ -3772,48 +3615,48 @@ RTEXITCODE handleGuestControl(HandlerArg *pArg)
      */
     static const GCTLCMDDEF s_aCmdDefs[] =
     {
-        { "run",                gctlHandleRun,              HELP_SCOPE_GSTCTRL_RUN,       0 },
-        { "start",              gctlHandleStart,            HELP_SCOPE_GSTCTRL_START,     0 },
-        { "copyfrom",           gctlHandleCopyFrom,         HELP_SCOPE_GSTCTRL_COPYFROM,  0 },
-        { "copyto",             gctlHandleCopyTo,           HELP_SCOPE_GSTCTRL_COPYTO,    0 },
+        { "run",                gctlHandleRun,              HELP_SCOPE_GUESTCONTROL_RUN,       0 },
+        { "start",              gctlHandleStart,            HELP_SCOPE_GUESTCONTROL_START,     0 },
+        { "copyfrom",           gctlHandleCopyFrom,         HELP_SCOPE_GUESTCONTROL_COPYFROM_HOSTDEST,  0 },
+        { "copyto",             gctlHandleCopyTo,           HELP_SCOPE_GUESTCONTROL_COPYTO_HOSTDEST,    0 },
 
-        { "mkdir",              gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0 },
-        { "md",                 gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0 },
-        { "createdirectory",    gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0 },
-        { "createdir",          gctrlHandleMkDir,           HELP_SCOPE_GSTCTRL_MKDIR,     0 },
+        { "mkdir",              gctrlHandleMkDir,           HELP_SCOPE_GUESTCONTROL_MKDIR,     0 },
+        { "md",                 gctrlHandleMkDir,           HELP_SCOPE_GUESTCONTROL_MKDIR,     0 },
+        { "createdirectory",    gctrlHandleMkDir,           HELP_SCOPE_GUESTCONTROL_MKDIR,     0 },
+        { "createdir",          gctrlHandleMkDir,           HELP_SCOPE_GUESTCONTROL_MKDIR,     0 },
 
-        { "rmdir",              gctlHandleRmDir,            HELP_SCOPE_GSTCTRL_RMDIR,     0 },
-        { "removedir",          gctlHandleRmDir,            HELP_SCOPE_GSTCTRL_RMDIR,     0 },
-        { "removedirectory",    gctlHandleRmDir,            HELP_SCOPE_GSTCTRL_RMDIR,     0 },
+        { "rmdir",              gctlHandleRmDir,            HELP_SCOPE_GUESTCONTROL_RMDIR,     0 },
+        { "removedir",          gctlHandleRmDir,            HELP_SCOPE_GUESTCONTROL_RMDIR,     0 },
+        { "removedirectory",    gctlHandleRmDir,            HELP_SCOPE_GUESTCONTROL_RMDIR,     0 },
 
-        { "rm",                 gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0 },
-        { "removefile",         gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0 },
-        { "erase",              gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0 },
-        { "del",                gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0 },
-        { "delete",             gctlHandleRm,               HELP_SCOPE_GSTCTRL_RM,        0 },
+        { "rm",                 gctlHandleRm,               HELP_SCOPE_GUESTCONTROL_RM,        0 },
+        { "removefile",         gctlHandleRm,               HELP_SCOPE_GUESTCONTROL_RM,        0 },
+        { "erase",              gctlHandleRm,               HELP_SCOPE_GUESTCONTROL_RM,        0 },
+        { "del",                gctlHandleRm,               HELP_SCOPE_GUESTCONTROL_RM,        0 },
+        { "delete",             gctlHandleRm,               HELP_SCOPE_GUESTCONTROL_RM,        0 },
 
-        { "mv",                 gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0 },
-        { "move",               gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0 },
-        { "ren",                gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0 },
-        { "rename",             gctlHandleMv,               HELP_SCOPE_GSTCTRL_MV,        0 },
+        { "mv",                 gctlHandleMv,               HELP_SCOPE_GUESTCONTROL_MV,        0 },
+        { "move",               gctlHandleMv,               HELP_SCOPE_GUESTCONTROL_MV,        0 },
+        { "ren",                gctlHandleMv,               HELP_SCOPE_GUESTCONTROL_MV,        0 },
+        { "rename",             gctlHandleMv,               HELP_SCOPE_GUESTCONTROL_MV,        0 },
 
-        { "mktemp",             gctlHandleMkTemp,           HELP_SCOPE_GSTCTRL_MKTEMP,    0 },
-        { "createtemp",         gctlHandleMkTemp,           HELP_SCOPE_GSTCTRL_MKTEMP,    0 },
-        { "createtemporary",    gctlHandleMkTemp,           HELP_SCOPE_GSTCTRL_MKTEMP,    0 },
+        { "mktemp",             gctlHandleMkTemp,           HELP_SCOPE_GUESTCONTROL_MKTEMP,    0 },
+        { "createtemp",         gctlHandleMkTemp,           HELP_SCOPE_GUESTCONTROL_MKTEMP,    0 },
+        { "createtemporary",    gctlHandleMkTemp,           HELP_SCOPE_GUESTCONTROL_MKTEMP,    0 },
 
-        { "stat",               gctlHandleStat,             HELP_SCOPE_GSTCTRL_STAT,      0 },
+        { "stat",               gctlHandleStat,             HELP_SCOPE_GUESTCONTROL_STAT,      0 },
 
-        { "closeprocess",       gctlHandleCloseProcess,     HELP_SCOPE_GSTCTRL_CLOSEPROCESS, GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
-        { "closesession",       gctlHandleCloseSession,     HELP_SCOPE_GSTCTRL_CLOSESESSION, GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
-        { "list",               gctlHandleList,             HELP_SCOPE_GSTCTRL_LIST,         GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
-        { "watch",              gctlHandleWatch,            HELP_SCOPE_GSTCTRL_WATCH,        GCTLCMDCTX_F_SESSION_ANONYMOUS },
+        { "closeprocess",       gctlHandleCloseProcess,     HELP_SCOPE_GUESTCONTROL_CLOSEPROCESS, GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
+        { "closesession",       gctlHandleCloseSession,     HELP_SCOPE_GUESTCONTROL_CLOSESESSION, GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
+        { "list",               gctlHandleList,             HELP_SCOPE_GUESTCONTROL_LIST,         GCTLCMDCTX_F_SESSION_ANONYMOUS | GCTLCMDCTX_F_NO_SIGNAL_HANDLER },
+        { "watch",              gctlHandleWatch,            HELP_SCOPE_GUESTCONTROL_WATCH,        GCTLCMDCTX_F_SESSION_ANONYMOUS },
 
-        {"updateguestadditions",gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
-        { "updateadditions",    gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
-        { "updatega",           gctlHandleUpdateAdditions,  HELP_SCOPE_GSTCTRL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
+        {"updateguestadditions",gctlHandleUpdateAdditions,  HELP_SCOPE_GUESTCONTROL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
+        { "updateadditions",    gctlHandleUpdateAdditions,  HELP_SCOPE_GUESTCONTROL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
+        { "updatega",           gctlHandleUpdateAdditions,  HELP_SCOPE_GUESTCONTROL_UPDATEGA,     GCTLCMDCTX_F_SESSION_ANONYMOUS },
 
-        { "waitrunlevel",       gctlHandleWaitRunLevel,     HELP_SCOPE_GSTCTRL_WAITRUNLEVEL, GCTLCMDCTX_F_SESSION_ANONYMOUS },
-        { "waitforrunlevel",    gctlHandleWaitRunLevel,     HELP_SCOPE_GSTCTRL_WAITRUNLEVEL, GCTLCMDCTX_F_SESSION_ANONYMOUS },
+        { "waitrunlevel",       gctlHandleWaitRunLevel,     HELP_SCOPE_GUESTCONTROL_WAITRUNLEVEL, GCTLCMDCTX_F_SESSION_ANONYMOUS },
+        { "waitforrunlevel",    gctlHandleWaitRunLevel,     HELP_SCOPE_GUESTCONTROL_WAITRUNLEVEL, GCTLCMDCTX_F_SESSION_ANONYMOUS },
     };
 
     /*
@@ -3860,24 +3703,25 @@ RTEXITCODE handleGuestControl(HandlerArg *pArg)
                             {
                                 CmdCtx.pCmdDef = &s_aCmdDefs[iCmd];
 
+                                setCurrentSubcommand(s_aCmdDefs[iCmd].fSubcommandScope);
                                 rcExit = s_aCmdDefs[iCmd].pfnHandler(&CmdCtx, pArg->argc - GetState.iNext + 1,
                                                                      &pArg->argv[GetState.iNext - 1]);
 
                                 gctlCtxTerm(&CmdCtx);
                                 return rcExit;
                             }
-                        return errorSyntax(USAGE_GUESTCONTROL, GuestCtrl::tr("Unknown sub-command: '%s'"), pszCmd);
+                        return errorSyntax(GuestCtrl::tr("Unknown sub-command: '%s'"), pszCmd);
                     }
                     break;
 
                 default:
-                    return errorGetOpt(USAGE_GUESTCONTROL, ch, &ValueUnion);
+                    return errorGetOpt(ch, &ValueUnion);
             }
         }
         if (CmdCtx.pszVmNameOrUuid)
-            rcExit = errorSyntax(USAGE_GUESTCONTROL, GuestCtrl::tr("Missing sub-command"));
+            rcExit = errorSyntax(GuestCtrl::tr("Missing sub-command"));
         else
-            rcExit = errorSyntax(USAGE_GUESTCONTROL, GuestCtrl::tr("Missing VM name and sub-command"));
+            rcExit = errorSyntax(GuestCtrl::tr("Missing VM name and sub-command"));
     }
     return rcExit;
 }

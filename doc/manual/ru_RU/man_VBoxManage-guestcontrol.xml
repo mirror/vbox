@@ -1324,7 +1324,7 @@ $ VBoxManage --nologo guestcontrol "My Win VM" run \
 --username user1 --passwordfile pw.txt --wait-stdout
 </screen>
     <para>
-      Опция <option>--exe</option задает абсолютный путь команды для
+      Опция <option>--exe</option> задает абсолютный путь команды для
       запуска в гостевой ВМ,
       <filename>c:\windows\system32\ipconfig.exe</filename>. Двойные
       слеши показанные в этом примере требуются только в UNIX
