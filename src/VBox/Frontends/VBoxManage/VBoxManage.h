@@ -108,9 +108,6 @@ typedef enum
     USAGE_I_MODINSTALL,
     USAGE_I_MODUNINSTALL,
     USAGE_I_RENAMEVMDK,
-#ifdef VBOX_WITH_GUEST_PROPS
-    USAGE_GUESTPROPERTY,
-#endif  /* VBOX_WITH_GUEST_PROPS defined */
     USAGE_I_CONVERTTORAW,
     USAGE_METRICS,
     USAGE_I_CONVERTHD,
@@ -253,9 +250,6 @@ RTEXITCODE handleModifyVM(HandlerArg *a);
 
 /* VBoxManageDebugVM.cpp */
 RTEXITCODE handleDebugVM(HandlerArg *a);
-
-/* VBoxManageGuestProp.cpp */
-extern void usageGuestProperty(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2);
 
 /* VBoxManageGuestCtrl.cpp */
 extern void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2, uint64_t fSubcommandScope);

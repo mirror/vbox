@@ -231,7 +231,7 @@ static const VBMGCMD g_aCommands[] =
     { "usbfilter",          USAGE_S_NEWCMD,    HELP_CMD_USBFILTER, handleUSBFilter,            0 },
     { "sharedfolder",       USAGE_S_NEWCMD, HELP_CMD_SHAREDFOLDER, handleSharedFolder,         0 },
 #ifdef VBOX_WITH_GUEST_PROPS
-    { "guestproperty",      USAGE_GUESTPROPERTY,    VBMG_CMD_TODO, handleGuestProperty,        0 },
+    { "guestproperty",      USAGE_S_NEWCMD,HELP_CMD_GUESTPROPERTY, handleGuestProperty,        0 },
 #endif
 #ifdef VBOX_WITH_GUEST_CONTROL
     { "guestcontrol",       USAGE_GUESTCONTROL,     VBMG_CMD_TODO, handleGuestControl,         0 },

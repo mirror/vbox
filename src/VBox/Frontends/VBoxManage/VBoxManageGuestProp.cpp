@@ -53,30 +53,13 @@ using namespace com;
 DECLARE_TRANSLATION_CONTEXT(GuestProp);
 
 
-void usageGuestProperty(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2)
-{
-    RTStrmPrintf(pStrm, "%s guestproperty %s   get <uuid|vmname>\n"
-                  "                            <property> [--verbose]\n"
-                  "\n", pcszSep1, pcszSep2);
-    RTStrmPrintf(pStrm, "%s guestproperty %s   set <uuid|vmname>\n"
-                  "                            <property> [<value> [--flags <flags>]]\n"
-                  "\n", pcszSep1, pcszSep2);
-    RTStrmPrintf(pStrm, "%s guestproperty %s   delete|unset <uuid|vmname>\n"
-                  "                            <property>\n"
-                  "\n", pcszSep1, pcszSep2);
-    RTStrmPrintf(pStrm, "%s guestproperty %s   enumerate <uuid|vmname>\n"
-                  "                            [--patterns <patterns>]\n"
-                  "\n", pcszSep1, pcszSep2);
-    RTStrmPrintf(pStrm, "%s guestproperty %s   wait <uuid|vmname> <patterns>\n"
-                  "                            [--timeout <msec>] [--fail-on-timeout]\n"
-                  "\n", pcszSep1, pcszSep2);
-}
-
 #ifndef VBOX_ONLY_DOCS
 
 static RTEXITCODE handleGetGuestProperty(HandlerArg *a)
 {
     HRESULT rc = S_OK;
+
+    setCurrentSubcommand(HELP_SCOPE_GUESTPROPERTY_GET);
 
     bool verbose = false;
     if (    a->argc == 3
@@ -84,7 +67,7 @@ static RTEXITCODE handleGetGuestProperty(HandlerArg *a)
              || !strcmp(a->argv[2], "-verbose")))
         verbose = true;
     else if (a->argc != 2)
-        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
+        return errorSyntax(GuestProp::tr("Incorrect parameters"));
 
     ComPtr<IMachine> machine;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
@@ -120,6 +103,8 @@ static RTEXITCODE handleSetGuestProperty(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
+    setCurrentSubcommand(HELP_SCOPE_GUESTPROPERTY_SET);
+
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
      * arguments.
@@ -143,7 +128,7 @@ static RTEXITCODE handleSetGuestProperty(HandlerArg *a)
     else if (a->argc != 2)
         usageOK = false;
     if (!usageOK)
-        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
+        return errorSyntax(GuestProp::tr("Incorrect parameters"));
     /* This is always needed. */
     pszName = a->argv[1];
 
@@ -178,6 +163,8 @@ static RTEXITCODE handleDeleteGuestProperty(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
+    setCurrentSubcommand(HELP_SCOPE_GUESTPROPERTY_UNSET);
+
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
      * arguments.
@@ -187,7 +174,7 @@ static RTEXITCODE handleDeleteGuestProperty(HandlerArg *a)
     if (a->argc != 2)
         usageOK = false;
     if (!usageOK)
-        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
+        return errorSyntax(GuestProp::tr("Incorrect parameters"));
     /* This is always needed. */
     pszName = a->argv[1];
 
@@ -220,6 +207,8 @@ static RTEXITCODE handleDeleteGuestProperty(HandlerArg *a)
  */
 static RTEXITCODE handleEnumGuestProperty(HandlerArg *a)
 {
+    setCurrentSubcommand(HELP_SCOPE_GUESTPROPERTY_ENUMERATE);
+
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
      * arguments.
@@ -229,7 +218,7 @@ static RTEXITCODE handleEnumGuestProperty(HandlerArg *a)
         ||  (   a->argc > 3
              && strcmp(a->argv[1], "--patterns")
              && strcmp(a->argv[1], "-patterns")))
-        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
+        return errorSyntax(GuestProp::tr("Incorrect parameters"));
 
     /*
      * Pack the patterns
@@ -282,6 +271,8 @@ static RTEXITCODE handleEnumGuestProperty(HandlerArg *a)
  */
 static RTEXITCODE handleWaitGuestProperty(HandlerArg *a)
 {
+    setCurrentSubcommand(HELP_SCOPE_GUESTPROPERTY_WAIT);
+
     /*
      * Handle arguments
      */
@@ -316,7 +307,7 @@ static RTEXITCODE handleWaitGuestProperty(HandlerArg *a)
             usageOK = false;
     }
     if (!usageOK)
-        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
+        return errorSyntax(GuestProp::tr("Incorrect parameters"));
 
     /*
      * Set up the event listener and wait until found match or timeout.
@@ -419,7 +410,7 @@ RTEXITCODE handleGuestProperty(HandlerArg *a)
      */
 
     if (a->argc == 0)
-        return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
+        return errorSyntax(GuestProp::tr("Incorrect parameters"));
 
     /* switch (cmd) */
     if (strcmp(a->argv[0], "get") == 0)
@@ -434,7 +425,7 @@ RTEXITCODE handleGuestProperty(HandlerArg *a)
         return handleWaitGuestProperty(&arg);
 
     /* default: */
-    return errorSyntax(USAGE_GUESTPROPERTY, GuestProp::tr("Incorrect parameters"));
+    return errorSyntax(GuestProp::tr("Incorrect parameters"));
 }
 
 #endif /* !VBOX_ONLY_DOCS */

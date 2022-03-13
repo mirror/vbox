@@ -638,11 +638,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--description <description string>]"
                      "\n", SEP);
 
-#ifdef VBOX_WITH_GUEST_PROPS
-    if (enmCommand == USAGE_GUESTPROPERTY || enmCommand == USAGE_S_ALL)
-        usageGuestProperty(pStrm, SEP);
-#endif /* VBOX_WITH_GUEST_PROPS defined */
-
 #ifdef VBOX_WITH_GUEST_CONTROL
     if (enmCommand == USAGE_GUESTCONTROL || enmCommand == USAGE_S_ALL)
         usageGuestControl(pStrm, SEP, fSubcommandScope);
