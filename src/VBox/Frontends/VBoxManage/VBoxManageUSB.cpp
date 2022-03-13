@@ -175,20 +175,32 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
 
     /* at least: 0: command, 1: index, 2: --target, 3: <target value> */
     if (a->argc < 4)
-        return errorSyntax(USAGE_USBFILTER, Usb::tr("Not enough parameters"));
+        return errorSyntax(Usb::tr("Not enough parameters"));
 
     /* which command? */
     cmd.mAction = USBFilterCmd::Invalid;
-    if      (!strcmp(a->argv[0], "add"))     cmd.mAction = USBFilterCmd::Add;
-    else if (!strcmp(a->argv[0], "modify"))  cmd.mAction = USBFilterCmd::Modify;
-    else if (!strcmp(a->argv[0], "remove"))  cmd.mAction = USBFilterCmd::Remove;
+    if      (!strcmp(a->argv[0], "add"))
+    {
+        cmd.mAction = USBFilterCmd::Add;
+        setCurrentSubcommand(HELP_SCOPE_USBFILTER_ADD);
+    }
+    else if (!strcmp(a->argv[0], "modify"))
+    {
+        cmd.mAction = USBFilterCmd::Modify;
+        setCurrentSubcommand(HELP_SCOPE_USBFILTER_MODIFY);
+    }
+    else if (!strcmp(a->argv[0], "remove"))
+    {
+        cmd.mAction = USBFilterCmd::Remove;
+        setCurrentSubcommand(HELP_SCOPE_USBFILTER_REMOVE);
+    }
 
     if (cmd.mAction == USBFilterCmd::Invalid)
-        return errorSyntax(USAGE_USBFILTER, Usb::tr("Invalid parameter '%s'"), a->argv[0]);
+        return errorSyntax(Usb::tr("Invalid parameter '%s'"), a->argv[0]);
 
     /* which index? */
     if (VINF_SUCCESS !=  RTStrToUInt32Full(a->argv[1], 10, &cmd.mIndex))
-        return errorSyntax(USAGE_USBFILTER, Usb::tr("Invalid index '%s'"), a->argv[1]);
+        return errorSyntax(Usb::tr("Invalid index '%s'"), a->argv[1]);
 
     switch (cmd.mAction)
     {
@@ -199,9 +211,9 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
             if (a->argc < 6)
             {
                 if (cmd.mAction == USBFilterCmd::Add)
-                    return errorSyntaxEx(USAGE_USBFILTER, HELP_SCOPE_USBFILTER_ADD, Usb::tr("Not enough parameters"));
+                    return errorSyntax(Usb::tr("Not enough parameters"));
 
-                return errorSyntaxEx(USAGE_USBFILTER, HELP_SCOPE_USBFILTER_MODIFY, Usb::tr("Not enough parameters"));
+                return errorSyntax(Usb::tr("Not enough parameters"));
             }
 
             // set Active to true by default
@@ -331,8 +343,7 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
                         return errorArgument(Usb::tr("Invalid USB filter action '%s'"), a->argv[i]);
                 }
                 else
-                    return errorSyntaxEx(USAGE_USBFILTER, cmd.mAction == USBFilterCmd::Add ? HELP_SCOPE_USBFILTER_ADD : HELP_SCOPE_USBFILTER_MODIFY,
-                                         Usb::tr("Unknown option '%s'"), a->argv[i]);
+                    return errorSyntax(Usb::tr("Unknown option '%s'"), a->argv[i]);
             }
 
             if (cmd.mAction == USBFilterCmd::Add)
@@ -349,7 +360,7 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
                         && !cmd.mFilter.mRemote.isEmpty())
                    )
                 {
-                    return errorSyntaxEx(USAGE_USBFILTER, HELP_SCOPE_USBFILTER_ADD, Usb::tr("Mandatory options not supplied"));
+                    return errorSyntax(Usb::tr("Mandatory options not supplied"));
                 }
             }
             break;
@@ -359,7 +370,7 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
         {
             /* at least: 0: command, 1: index, 2: --target, 3: <target value> */
             if (a->argc < 4)
-                return errorSyntaxEx(USAGE_USBFILTER, HELP_SCOPE_USBFILTER_REMOVE, Usb::tr("Not enough parameters"));
+                return errorSyntax(Usb::tr("Not enough parameters"));
 
             for (int i = 2; i < a->argc; i++)
             {
@@ -381,7 +392,7 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
 
             // mandatory options
             if (!cmd.mGlobal && !cmd.mMachine)
-                return errorSyntaxEx(USAGE_USBFILTER, HELP_SCOPE_USBFILTER_REMOVE, Usb::tr("Mandatory options not supplied"));
+                return errorSyntax(Usb::tr("Mandatory options not supplied"));
 
             break;
         }

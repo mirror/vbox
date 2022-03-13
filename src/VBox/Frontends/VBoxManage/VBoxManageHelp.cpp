@@ -638,49 +638,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--description <description string>]"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_USBFILTER || enmCommand == USAGE_S_ALL)
-    {
-        if (fSubcommandScope & HELP_SCOPE_USBFILTER_ADD)
-            RTStrmPrintf(pStrm,
-                               "%s usbfilter %s       add <index,0-N>\n"
-                         "                            --target <uuid|vmname>|global\n"
-                         "                            --name <string>\n"
-                         "                            --action ignore|hold (global filters only)\n"
-                         "                            [--active yes|no] (yes)\n"
-                         "                            [--vendorid <XXXX>] (null)\n"
-                         "                            [--productid <XXXX>] (null)\n"
-                         "                            [--revision <IIFF>] (null)\n"
-                         "                            [--manufacturer <string>] (null)\n"
-                         "                            [--product <string>] (null)\n"
-                         "                            [--remote yes|no] (null, VM filters only)\n"
-                         "                            [--serialnumber <string>] (null)\n"
-                         "                            [--maskedinterfaces <XXXXXXXX>]\n"
-                         "\n", SEP);
-
-        if (fSubcommandScope & HELP_SCOPE_USBFILTER_MODIFY)
-            RTStrmPrintf(pStrm,
-                               "%s usbfilter %s       modify <index,0-N>\n"
-                         "                            --target <uuid|vmname>|global\n"
-                         "                            [--name <string>]\n"
-                         "                            [--action ignore|hold] (global filters only)\n"
-                         "                            [--active yes|no]\n"
-                         "                            [--vendorid <XXXX>|\"\"]\n"
-                         "                            [--productid <XXXX>|\"\"]\n"
-                         "                            [--revision <IIFF>|\"\"]\n"
-                         "                            [--manufacturer <string>|\"\"]\n"
-                         "                            [--product <string>|\"\"]\n"
-                         "                            [--remote yes|no] (null, VM filters only)\n"
-                         "                            [--serialnumber <string>|\"\"]\n"
-                         "                            [--maskedinterfaces <XXXXXXXX>]\n"
-                         "\n", SEP);
-
-        if (fSubcommandScope & HELP_SCOPE_USBFILTER_REMOVE)
-            RTStrmPrintf(pStrm,
-                               "%s usbfilter %s       remove <index,0-N>\n"
-                         "                            --target <uuid|vmname>|global\n"
-                         "\n", SEP);
-    }
-
 #ifdef VBOX_WITH_GUEST_PROPS
     if (enmCommand == USAGE_GUESTPROPERTY || enmCommand == USAGE_S_ALL)
         usageGuestProperty(pStrm, SEP);

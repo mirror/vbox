@@ -75,7 +75,8 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-convertfromraw.xml \
 	man_VBoxManage-setextradata.xml \
 	man_VBoxManage-getextradata.xml \
-	man_VBoxManage-setproperty.xml
+	man_VBoxManage-setproperty.xml \
+	man_VBoxManage-usbfilter.xml
 
 ## List of user manual XML files.
 VBOX_MANUAL_XML_FILES = \
