@@ -544,6 +544,8 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
     bool fVBoxSDL = false;
 #endif
 
+    RT_NOREF(fSubcommandScope);
+
     Assert(enmCommand != USAGE_INVALID);
     Assert(enmCommand != USAGE_S_NEWCMD);
 
@@ -637,30 +639,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--setlocation <path>]\n"
                      "                            [--description <description string>]"
                      "\n", SEP);
-
-    if (enmCommand == USAGE_METRICS || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s metrics %s         list [*|host|<vmname> [<metric_list>]]\n"
-                     "                                                 (comma-separated)\n\n"
-                           "%s metrics %s         setup\n"
-                     "                            [--period <seconds>] (default: 1)\n"
-                     "                            [--samples <count>] (default: 1)\n"
-                     "                            [--list]\n"
-                     "                            [*|host|<vmname> [<metric_list>]]\n\n"
-                           "%s metrics %s         query [*|host|<vmname> [<metric_list>]]\n\n"
-                           "%s metrics %s         enable\n"
-                     "                            [--list]\n"
-                     "                            [*|host|<vmname> [<metric_list>]]\n\n"
-                           "%s metrics %s         disable\n"
-                     "                            [--list]\n"
-                     "                            [*|host|<vmname> [<metric_list>]]\n\n"
-                           "%s metrics %s         collect\n"
-                     "                            [--period <seconds>] (default: 1)\n"
-                     "                            [--samples <count>] (default: 1)\n"
-                     "                            [--list]\n"
-                     "                            [--detach]\n"
-                     "                            [*|host|<vmname> [<metric_list>]]\n"
-                     "\n", SEP, SEP, SEP, SEP, SEP, SEP);
 
 #if defined(VBOX_WITH_NAT_SERVICE)
     if (enmCommand == USAGE_NATNETWORK || enmCommand == USAGE_S_ALL)

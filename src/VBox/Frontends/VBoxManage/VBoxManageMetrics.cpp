@@ -177,6 +177,8 @@ static RTEXITCODE handleMetricsList(int argc, char *argv[],
     com::SafeArray<BSTR>          metrics;
     com::SafeIfaceArray<IUnknown> objects;
 
+    setCurrentSubcommand(HELP_SCOPE_METRICS_LIST);
+
     rc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
                                ComSafeArrayAsOutParam(objects));
@@ -228,6 +230,8 @@ static RTEXITCODE handleMetricsSetup(int argc, char *argv[],
     uint32_t period = 1, samples = 1;
     bool listMatches = false;
     int i;
+
+    setCurrentSubcommand(HELP_SCOPE_METRICS_SETUP);
 
     for (i = 1; i < argc; i++)
     {
@@ -286,6 +290,8 @@ static RTEXITCODE handleMetricsQuery(int argc, char *argv[],
     HRESULT rc;
     com::SafeArray<BSTR>          metrics;
     com::SafeIfaceArray<IUnknown> objects;
+
+    setCurrentSubcommand(HELP_SCOPE_METRICS_QUERY);
 
     rc = parseFilterParameters(argc - 1, &argv[1], aVirtualBox,
                                ComSafeArrayAsOutParam(metrics),
@@ -396,6 +402,9 @@ static RTEXITCODE handleMetricsCollect(int argc, char *argv[],
     uint32_t period = 1, samples = 1;
     bool isDetached = false, listMatches = false;
     int i;
+
+    setCurrentSubcommand(HELP_SCOPE_METRICS_COLLECT);
+
     for (i = 1; i < argc; i++)
     {
         if (   !strcmp(argv[i], "--period")
@@ -549,6 +558,8 @@ static RTEXITCODE handleMetricsEnable(int argc, char *argv[],
     bool listMatches = false;
     int i;
 
+    setCurrentSubcommand(HELP_SCOPE_METRICS_ENABLE);
+
     for (i = 1; i < argc; i++)
     {
         if (   !strcmp(argv[i], "--list")
@@ -591,6 +602,8 @@ static RTEXITCODE handleMetricsDisable(int argc, char *argv[],
     bool listMatches = false;
     int i;
 
+    setCurrentSubcommand(HELP_SCOPE_METRICS_DISABLE);
+
     for (i = 1; i < argc; i++)
     {
         if (   !strcmp(argv[i], "--list")
@@ -625,7 +638,7 @@ RTEXITCODE handleMetrics(HandlerArg *a)
 {
     /* at least one option: subcommand name */
     if (a->argc < 1)
-        return errorSyntax(USAGE_METRICS, Metrics::tr("Subcommand missing"));
+        return errorSyntax(Metrics::tr("Subcommand missing"));
 
     ComPtr<IPerformanceCollector> performanceCollector;
     CHECK_ERROR2I_RET(a->virtualBox, COMGETTER(PerformanceCollector)(performanceCollector.asOutParam()), RTEXITCODE_FAILURE);
@@ -644,7 +657,7 @@ RTEXITCODE handleMetrics(HandlerArg *a)
     else if (!strcmp(a->argv[0], "disable"))
         rcExit = handleMetricsDisable(a->argc, a->argv, a->virtualBox, performanceCollector);
     else
-        return errorSyntax(USAGE_METRICS, Metrics::tr("Invalid subcommand '%s'"), a->argv[0]);
+        return errorSyntax(Metrics::tr("Invalid subcommand '%s'"), a->argv[0]);
 
     return rcExit;
 }

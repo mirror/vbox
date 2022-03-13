@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-metrics" lang="en">
   <refentryinfo>
-    <pubdate>September 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage metrics</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-metrics</refname>
     <refpurpose>monitor system resource usage</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
