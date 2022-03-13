@@ -949,7 +949,7 @@ RTEXITCODE handleSetProperty(HandlerArg *a)
 
     /* there must be two arguments: property name and value */
     if (a->argc != 2)
-        return errorSyntax(USAGE_SETPROPERTY, Misc::tr("Incorrect number of parameters"));
+        return errorSyntax(Misc::tr("Incorrect number of parameters"));
 
     ComPtr<ISystemProperties> systemProperties;
     a->virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
@@ -1074,7 +1074,7 @@ RTEXITCODE handleSetProperty(HandlerArg *a)
     }
 #endif
     else
-        return errorSyntax(USAGE_SETPROPERTY, Misc::tr("Invalid parameter '%s'"), a->argv[0]);
+        return errorSyntax(Misc::tr("Invalid parameter '%s'"), a->argv[0]);
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
