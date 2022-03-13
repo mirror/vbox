@@ -1120,66 +1120,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
 
   <xi:include href="user_man_VBoxManage-natnetwork.xml"     xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <sect1 id="vboxmanage-hostonlyif">
-
-    <title>VBoxManage hostonlyif</title>
-
-    <para>
-      The <command>hostonlyif</command> command enables you to change
-      the IP configuration of a host-only network interface. For a
-      description of host-only networking, see
-      <xref linkend="network_hostonly" />. Each host-only interface is
-      identified by a name and can either use the internal DHCP server
-      or a manual IP configuration, both IP4 and IP6.
-    </para>
-
-    <para>
-      The following list summarizes the available subcommands:
-    </para>
-
-    <variablelist>
-
-      <varlistentry>
-        <term>
-          <computeroutput>ipconfig "&lt;name&gt;"</computeroutput>
-        </term>
-
-        <listitem>
-          <para>
-            Configures a host-only interface.
-          </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term>
-          <computeroutput>create</computeroutput>
-        </term>
-
-        <listitem>
-          <para>
-            Creates a new vboxnet&lt;N&gt; interface on the host OS.
-            This command is essential before you can attach VMs to a
-            host-only network.
-          </para>
-        </listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term>
-          <computeroutput>remove vboxnet&lt;N&gt;</computeroutput>
-        </term>
-
-        <listitem>
-          <para>
-            Removes a vboxnet&lt;N&gt; interface from the host OS.
-          </para>
-        </listitem>
-      </varlistentry>
-
-    </variablelist>
-
-  </sect1>
+  <xi:include href="user_man_VBoxManage-hostonlyif.xml"     xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <xi:include href="user_man_VBoxManage-hostonlynet.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 

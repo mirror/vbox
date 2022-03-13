@@ -71,7 +71,7 @@ static RTEXITCODE handleCreate(HandlerArg *a)
                 break;
 
             default:
-                return errorGetOpt(USAGE_HOSTONLYIFS, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
@@ -122,15 +122,15 @@ static RTEXITCODE  handleRemove(HandlerArg *a)
         {
             case VINF_GETOPT_NOT_OPTION:
                 if (pszName)
-                    return errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("Only one interface name can be specified"));
+                    return errorSyntax(HostOnly::tr("Only one interface name can be specified"));
                 pszName = ValueUnion.psz;
                 break;
 
             default:
-                return errorGetOpt(USAGE_HOSTONLYIFS, ch, &ValueUnion);
+                return errorGetOpt(ch, &ValueUnion);
         }
     if (!pszName)
-        return errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("No interface name was specified"));
+        return errorSyntax(HostOnly::tr("No interface name was specified"));
 
     /*
      * Do the work.
@@ -213,21 +213,19 @@ static RTEXITCODE handleIpConfig(HandlerArg *a)
                 break;
             case VINF_GETOPT_NOT_OPTION:
                 if (pszName)
-                    return errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("Only one interface name can be specified"));
+                    return errorSyntax(HostOnly::tr("Only one interface name can be specified"));
                 pszName = ValueUnion.psz;
                 break;
             default:
-                return errorGetOpt(USAGE_HOSTONLYIFS, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
     /* parameter sanity check */
     if (fDhcp && (fNetmasklengthv6 || pszIpv6 || pszIp || pszNetmask))
-        return errorSyntax(USAGE_HOSTONLYIFS,
-                           HostOnly::tr("You can not use --dhcp with static ip configuration parameters: --ip, --netmask, --ipv6 and --netmasklengthv6."));
+        return errorSyntax(HostOnly::tr("You can not use --dhcp with static ip configuration parameters: --ip, --netmask, --ipv6 and --netmasklengthv6."));
     if ((pszIp || pszNetmask) && (fNetmasklengthv6 || pszIpv6))
-        return errorSyntax(USAGE_HOSTONLYIFS,
-                           HostOnly::tr("You can not use ipv4 configuration (--ip and --netmask) with ipv6 (--ipv6 and --netmasklengthv6) simultaneously."));
+        return errorSyntax(HostOnly::tr("You can not use ipv4 configuration (--ip and --netmask) with ipv6 (--ipv6 and --netmasklengthv6) simultaneously."));
 
     ComPtr<IHost> host;
     CHECK_ERROR2I_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), RTEXITCODE_FAILURE);
@@ -260,7 +258,7 @@ static RTEXITCODE handleIpConfig(HandlerArg *a)
         CHECK_ERROR2I_RET(hif, EnableStaticIPConfigV6(Bstr(pszIpv6).raw(), (ULONG)uNetmasklengthv6), RTEXITCODE_FAILURE);
     }
     else
-        return errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("Neither -dhcp nor -ip nor -ipv6 was specfified"));
+        return errorSyntax(HostOnly::tr("Neither -dhcp nor -ip nor -ipv6 was specfified"));
 
     return RTEXITCODE_SUCCESS;
 }
@@ -269,19 +267,28 @@ static RTEXITCODE handleIpConfig(HandlerArg *a)
 RTEXITCODE handleHostonlyIf(HandlerArg *a)
 {
     if (a->argc < 1)
-        return errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("No sub-command specified"));
+        return errorSyntax(HostOnly::tr("No sub-command specified"));
 
     RTEXITCODE rcExit;
     if (!strcmp(a->argv[0], "ipconfig"))
+    {
+        setCurrentSubcommand(HELP_SCOPE_HOSTONLYIF_IPCONFIG);
         rcExit = handleIpConfig(a);
+    }
 #if defined(VBOX_WITH_NETFLT) && !defined(RT_OS_SOLARIS)
     else if (!strcmp(a->argv[0], "create"))
+    {
+        setCurrentSubcommand(HELP_SCOPE_HOSTONLYIF_CREATE);
         rcExit = handleCreate(a);
+    }
     else if (!strcmp(a->argv[0], "remove"))
+    {
+        setCurrentSubcommand(HELP_SCOPE_HOSTONLYIF_REMOVE);
         rcExit = handleRemove(a);
+    }
 #endif
     else
-        rcExit = errorSyntax(USAGE_HOSTONLYIFS, HostOnly::tr("Unknown sub-command '%s'"), a->argv[0]);
+        rcExit = errorSyntax(HostOnly::tr("Unknown sub-command '%s'"), a->argv[0]);
     return rcExit;
 }
 

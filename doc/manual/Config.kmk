@@ -80,7 +80,8 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-guestproperty.xml \
 	man_VBoxManage-guestcontrol.xml \
 	man_VBoxManage-metrics.xml \
-	man_VBoxManage-natnetwork.xml
+	man_VBoxManage-natnetwork.xml \
+	man_VBoxManage-hostonlyif.xml
 
 ## List of user manual XML files.
 VBOX_MANUAL_XML_FILES = \
