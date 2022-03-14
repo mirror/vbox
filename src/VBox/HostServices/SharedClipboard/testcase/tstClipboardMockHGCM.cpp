@@ -15,8 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <VBox/GuestHost/HGCMMock.h>
-
 #include "../VBoxSharedClipboardSvc-internal.h"
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
@@ -24,6 +22,8 @@
 #ifdef RT_OS_LINUX
 # include <VBox/GuestHost/SharedClipboard-x11.h>
 #endif
+
+#include <VBox/GuestHost/HGCMMock.h>
 
 #include <iprt/assert.h>
 #include <iprt/initterm.h>
@@ -38,7 +38,6 @@
 /*********************************************************************************************************************************
 *   Static globals                                                                                                               *
 *********************************************************************************************************************************/
-
 static RTTEST     g_hTest;
 static SHCLCLIENT g_Client;
 
@@ -162,7 +161,7 @@ static int tstSetModeRc(PTSTHGCMMOCKSVC pSvc, uint32_t uMode, int rc)
 {
     VBOXHGCMSVCPARM aParms[2];
     HGCMSvcSetU32(&aParms[0], uMode);
-    int rc2 = tstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, aParms);
+    int rc2 = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, aParms);
     RTTESTI_CHECK_MSG_RET(rc == rc2, ("Expected %Rrc, got %Rrc\n", rc, rc2), rc2);
     uint32_t const uModeRet = ShClSvcGetMode();
     RTTESTI_CHECK_MSG_RET(uMode == uModeRet, ("Expected mode %RU32, got %RU32\n", uMode, uModeRet), VERR_WRONG_TYPE);
@@ -189,23 +188,23 @@ static void tstOperationModes(void)
 
     RTTestISub("Testing VBOX_SHCL_HOST_FN_SET_MODE");
 
-    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
     /* Reset global variable which doesn't reset itself. */
     HGCMSvcSetU32(&parms[0], VBOX_SHCL_MODE_OFF);
-    rc = tstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
+    rc = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
     RTTESTI_CHECK_RC_OK(rc);
     u32Mode = ShClSvcGetMode();
     RTTESTI_CHECK_MSG(u32Mode == VBOX_SHCL_MODE_OFF, ("u32Mode=%u\n", (unsigned) u32Mode));
 
-    rc = tstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 0, parms);
+    rc = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 0, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
 
-    rc = tstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 2, parms);
+    rc = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 2, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
 
     HGCMSvcSetU64(&parms[0], 99);
-    rc = tstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
+    rc = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
 
     tstSetMode(pSvc, VBOX_SHCL_MODE_HOST_TO_GUEST);
@@ -218,27 +217,27 @@ static void testSetTransferMode(void)
 {
     RTTestISub("Testing VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE");
 
-    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
     /* Invalid parameter. */
     VBOXHGCMSVCPARM parms[2];
     HGCMSvcSetU64(&parms[0], 99);
-    int rc = tstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
+    int rc = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
 
     /* Invalid mode. */
     HGCMSvcSetU32(&parms[0], 99);
-    rc = tstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
+    rc = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_FLAGS);
 
     /* Enable transfers. */
     HGCMSvcSetU32(&parms[0], VBOX_SHCL_TRANSFER_MODE_ENABLED);
-    rc = tstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
+    rc = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
     RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
 
     /* Disable transfers again. */
     HGCMSvcSetU32(&parms[0], VBOX_SHCL_TRANSFER_MODE_DISABLED);
-    rc = tstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
+    rc = TstHgcmMockSvcHostCall(pSvc, NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
     RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
@@ -248,7 +247,7 @@ static void testHostGetMsgOld(void)
 {
     RTTestISub("Setting up VBOX_SHCL_GUEST_FN_MSG_OLD_GET_WAIT test");
 
-    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
     VBOXHGCMSVCPARM parms[2];
     RT_ZERO(parms);
@@ -344,7 +343,7 @@ static void testGuestSimple(void)
 {
     RTTestISub("Testing client (guest) API - Simple");
 
-    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
     /* Preparations. */
     VBGLR3SHCLCMDCTX Ctx;
@@ -522,7 +521,7 @@ static void testSetHeadless(void)
 {
     RTTestISub("Testing HOST_FN_SET_HEADLESS");
 
-    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
     VBOXHGCMSVCPARM parms[2];
     HGCMSvcSetU32(&parms[0], false);
@@ -838,9 +837,9 @@ static DECLCALLBACK(int) tstTestReadFromHostExec(PTESTPARMS pTstParms, void *pvC
     pTask->cbData    = strlen((char *)pTask->pvData) + 1;
     pTask->cbChunk   = pTask->cbData;
 
-    PTSTHGCMMOCKSVC    pSvc        = tstHgcmMockSvcInst();
-    PTSTHGCMMOCKCLIENT pMockClient = tstHgcmMockSvcWaitForConnect(pSvc);
-RT_BREAKPOINT();
+    PTSTHGCMMOCKSVC    pSvc        = TstHgcmMockSvcInst();
+    PTSTHGCMMOCKCLIENT pMockClient = TstHgcmMockSvcWaitForConnect(pSvc);
+
     AssertPtrReturn(pMockClient, VERR_INVALID_POINTER);
 
     bool fUseMock = false;
@@ -962,10 +961,10 @@ int main(int argc, char *argv[])
     /* Don't let assertions in the host service panic (core dump) the test cases. */
     RTAssertSetMayPanic(false);
 
-    PTSTHGCMMOCKSVC pSvc = tstHgcmMockSvcInst();
+    PTSTHGCMMOCKSVC pSvc = TstHgcmMockSvcInst();
 
-    tstHgcmMockSvcCreate(pSvc, sizeof(SHCLCLIENT));
-    tstHgcmMockSvcStart(pSvc);
+    TstHgcmMockSvcCreate(pSvc, sizeof(SHCLCLIENT));
+    TstHgcmMockSvcStart(pSvc);
 
     /*
      * Run the tests.
@@ -984,8 +983,11 @@ int main(int argc, char *argv[])
         tstOne(pSvc, &g_aTests[i]);
     tstTaskDestroy(&g_TstCtx.Task);
 
-    tstHgcmMockSvcStop(pSvc);
-    tstHgcmMockSvcDestroy(pSvc);
+    TstHgcmMockSvcStop(pSvc);
+    TstHgcmMockSvcDestroy(pSvc);
+
+    VBOXHGCMSVCFNTABLE fn;
+    VBoxHGCMSvcLoad(&fn);
 
     /*
      * Summary

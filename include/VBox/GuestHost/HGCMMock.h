@@ -60,7 +60,7 @@
 
 #if defined(IN_RING3) /* Only R3 parts implemented so far. */
 
-extern DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *ptable);
+extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable);
 
 # define VBGLR3DECL(type) DECL_HIDDEN_NOTHROW(type) VBOXCALL
 
