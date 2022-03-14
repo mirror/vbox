@@ -276,7 +276,7 @@ static int vmsvga3dDXSaveSurface(PCPDMDEVHLPR3 pHlp, PVGASTATECC pThisCC, PSSMHA
 
             if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
             {
-                if (pMipmapLevel->fDirty && pMipmapLevel->pSurfaceData)
+                if (pMipmapLevel->pSurfaceData)
                 {
                     /* Data follows */
                     rc = pHlp->pfnSSMPutBool(pSSM, true);

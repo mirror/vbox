@@ -5453,14 +5453,16 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 
 }
 
-static int vmsvgaR3LoadBufCtx(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PVMSVGACMDBUFCTX pBufCtx)
+static int vmsvgaR3LoadBufCtx(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM, PVMSVGACMDBUFCTX pBufCtx, SVGACBContext CBCtx)
 {
     PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+    PVMSVGAR3STATE pSvgaR3State = pThisCC->svga.pSvgaR3State;
 
-    int rc = pHlp->pfnSSMGetU32(pSSM, &pBufCtx->cSubmitted);
+    uint32_t cSubmitted;
+    int rc = pHlp->pfnSSMGetU32(pSSM, &cSubmitted);
     AssertLogRelRCReturn(rc, rc);
 
-    for (uint32_t i = 0; i < pBufCtx->cSubmitted; ++i)
+    for (uint32_t i = 0; i < cSubmitted; ++i)
     {
         PVMSVGACMDBUF pCmdBuf = vmsvgaR3CmdBufAlloc(pBufCtx);
         AssertPtrReturn(pCmdBuf, VERR_NO_MEMORY);
@@ -5477,11 +5479,27 @@ static int vmsvgaR3LoadBufCtx(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PVMSVGACMDBUF
         AssertRCReturn(rc, rc);
         AssertReturn(u32 == pCmdBuf->hdr.length, VERR_INVALID_STATE);
 
-        pCmdBuf->pvCommands = RTMemAlloc(pCmdBuf->hdr.length);
-        AssertPtrReturn(pCmdBuf->pvCommands, VERR_NO_MEMORY);
+        if (pCmdBuf->hdr.length)
+        {
+            pCmdBuf->pvCommands = RTMemAlloc(pCmdBuf->hdr.length);
+            AssertPtrReturn(pCmdBuf->pvCommands, VERR_NO_MEMORY);
 
-        rc = pHlp->pfnSSMGetMem(pSSM, pCmdBuf->pvCommands, pCmdBuf->hdr.length);
-        AssertRCReturn(rc, rc);
+            rc = pHlp->pfnSSMGetMem(pSSM, pCmdBuf->pvCommands, pCmdBuf->hdr.length);
+            AssertRCReturn(rc, rc);
+        }
+
+        if (RT_LIKELY(CBCtx < RT_ELEMENTS(pSvgaR3State->apCmdBufCtxs)))
+        {
+            vmsvgaR3CmdBufSubmitCtx(pDevIns, pThis, pThisCC, &pCmdBuf);
+        }
+        else
+        {
+            uint32_t offNextCmd = 0;
+            vmsvgaR3CmdBufSubmitDC(pDevIns, pThisCC, &pCmdBuf, &offNextCmd);
+        }
+
+        /* Free the buffer if CmdBufSubmit* did not consume it. */
+        vmsvgaR3CmdBufFree(pCmdBuf);
     }
     return rc;
 }
@@ -5699,7 +5717,7 @@ int vmsvgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uin
         if (pThis->fVMSVGA10)
         {
             /* Device context command buffers. */
-            rc = vmsvgaR3LoadBufCtx(pDevIns, pSSM, &pSVGAState->CmdBufCtxDC);
+            rc = vmsvgaR3LoadBufCtx(pDevIns, pThis, pThisCC, pSSM, &pSVGAState->CmdBufCtxDC, SVGA_CB_CONTEXT_MAX);
             AssertLogRelRCReturn(rc, rc);
 
             /* DX contexts command buffers. */
@@ -5717,7 +5735,7 @@ int vmsvgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uin
                     AssertPtrReturn(pSVGAState->apCmdBufCtxs[j], VERR_NO_MEMORY);
                     vmsvgaR3CmdBufCtxInit(pSVGAState->apCmdBufCtxs[j]);
 
-                    rc = vmsvgaR3LoadBufCtx(pDevIns, pSSM, pSVGAState->apCmdBufCtxs[j]);
+                    rc = vmsvgaR3LoadBufCtx(pDevIns, pThis, pThisCC, pSSM, pSVGAState->apCmdBufCtxs[j], (SVGACBContext)j);
                     AssertLogRelRCReturn(rc, rc);
                 }
             }
@@ -5853,7 +5871,8 @@ static int vmsvgaR3SaveBufCtx(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PVMSVGACMDBUF
             pHlp->pfnSSMPutU32(pSSM, sizeof(SVGACBHeader));
             pHlp->pfnSSMPutMem(pSSM, &pIter->hdr, sizeof(SVGACBHeader));
             pHlp->pfnSSMPutU32(pSSM, pIter->hdr.length);
-            rc = pHlp->pfnSSMPutMem(pSSM, pIter->pvCommands, pIter->hdr.length);
+            if (pIter->hdr.length)
+                rc = pHlp->pfnSSMPutMem(pSSM, pIter->pvCommands, pIter->hdr.length);
             AssertLogRelRCReturn(rc, rc);
         }
     }

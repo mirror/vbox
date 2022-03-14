@@ -2451,7 +2451,7 @@ static int vmsvga3dBackSurfaceCreateDepthStencilTexture(PVGASTATECC pThisCC, PVM
             td.CPUAccessFlags     = 0;
             td.MiscFlags          = 0;
 
-            hr = pDXDevice->pDevice->CreateTexture2D(&td, 0, &pBackendSurface->u.pTexture2D);
+            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->u.pTexture2D);
             Assert(SUCCEEDED(hr));
             if (SUCCEEDED(hr))
             {
@@ -2528,6 +2528,8 @@ static int vmsvga3dBackSurfaceCreateBuffer(PVGASTATECC pThisCC, PVMSVGA3DDXCONTE
     PVMSVGA3DBACKENDSURFACE pBackendSurface;
     rc = dxBackendSurfaceAlloc(&pBackendSurface);
     AssertRCReturn(rc, rc);
+
+    LogFunc(("sid = %u, size = %u\n", pSurface->id, pMipLevel->cbSurface));
 
     /* Upload the current data, if any. */
     D3D11_SUBRESOURCE_DATA *pInitialData = NULL;
@@ -4699,7 +4701,8 @@ static DECLCALLBACK(void) vmsvga3dBackSurfaceInvalidateImage(PVGASTATECC pThisCC
     if (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_BUFFER)
     {
         Assert(uFace == 0 && uMipmap == 0); /* The caller ensures this. */
-        vmsvga3dBackSurfaceDestroy(pThisCC, pSurface);
+        /** @todo This causes flickering when a buffer is invalidated and re-created right before a draw call. */
+        //vmsvga3dBackSurfaceDestroy(pThisCC, pSurface);
     }
     else
     {
@@ -5383,6 +5386,8 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                     rc = dxDefineShaderResourceView(pThisCC, pDXContext, shaderResourceViewId, pSRViewEntry);
                     AssertContinue(RT_SUCCESS(rc));
                 }
+
+                LogFunc(("srv[%d][%d] sid = %u, srvid = %u\n", idxShaderState, idxSR, sid, shaderResourceViewId));
             }
         }
 
@@ -7848,29 +7853,36 @@ static DECLCALLBACK(int) vmsvga3dBackDXLoadState(PVGASTATECC pThisCC, PVMSVGA3DD
         AssertLogRelRCReturn(rc, rc);
         AssertLogRelReturn(pDXShader->shaderInfo.cbBytecode <= 2 * SVGA3D_MAX_SHADER_MEMORY_BYTES, VERR_INVALID_STATE);
 
-        pDXShader->shaderInfo.pvBytecode = RTMemAlloc(pDXShader->shaderInfo.cbBytecode);
-        AssertPtrReturn(pDXShader->shaderInfo.pvBytecode, VERR_NO_MEMORY);
-        pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.pvBytecode, pDXShader->shaderInfo.cbBytecode);
+        if (pDXShader->shaderInfo.cbBytecode)
+        {
+            pDXShader->shaderInfo.pvBytecode = RTMemAlloc(pDXShader->shaderInfo.cbBytecode);
+            AssertPtrReturn(pDXShader->shaderInfo.pvBytecode, VERR_NO_MEMORY);
+            pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.pvBytecode, pDXShader->shaderInfo.cbBytecode);
+        }
 
         rc = pHlp->pfnSSMGetU32(pSSM, &pDXShader->shaderInfo.cInputSignature);
         AssertLogRelRCReturn(rc, rc);
         AssertLogRelReturn(pDXShader->shaderInfo.cInputSignature <= 32, VERR_INVALID_STATE);
-        pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.aInputSignature, pDXShader->shaderInfo.cInputSignature * sizeof(SVGA3dDXSignatureEntry));
+        if (pDXShader->shaderInfo.cInputSignature)
+            pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.aInputSignature, pDXShader->shaderInfo.cInputSignature * sizeof(SVGA3dDXSignatureEntry));
 
         rc = pHlp->pfnSSMGetU32(pSSM, &pDXShader->shaderInfo.cOutputSignature);
         AssertLogRelRCReturn(rc, rc);
         AssertLogRelReturn(pDXShader->shaderInfo.cOutputSignature <= 32, VERR_INVALID_STATE);
-        pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.aOutputSignature, pDXShader->shaderInfo.cOutputSignature * sizeof(SVGA3dDXSignatureEntry));
+        if (pDXShader->shaderInfo.cOutputSignature)
+            pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.aOutputSignature, pDXShader->shaderInfo.cOutputSignature * sizeof(SVGA3dDXSignatureEntry));
 
         rc = pHlp->pfnSSMGetU32(pSSM, &pDXShader->shaderInfo.cPatchConstantSignature);
         AssertLogRelRCReturn(rc, rc);
         AssertLogRelReturn(pDXShader->shaderInfo.cPatchConstantSignature <= 32, VERR_INVALID_STATE);
-        pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.aPatchConstantSignature, pDXShader->shaderInfo.cPatchConstantSignature * sizeof(SVGA3dDXSignatureEntry));
+        if (pDXShader->shaderInfo.cPatchConstantSignature)
+            pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.aPatchConstantSignature, pDXShader->shaderInfo.cPatchConstantSignature * sizeof(SVGA3dDXSignatureEntry));
 
         rc = pHlp->pfnSSMGetU32(pSSM, &pDXShader->shaderInfo.cDclResource);
         AssertLogRelRCReturn(rc, rc);
         AssertLogRelReturn(pDXShader->shaderInfo.cDclResource <= SVGA3D_DX_MAX_SRVIEWS, VERR_INVALID_STATE);
-        pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.aOffDclResource, pDXShader->shaderInfo.cDclResource * sizeof(uint32_t));
+        if (pDXShader->shaderInfo.cDclResource)
+            pHlp->pfnSSMGetMem(pSSM, pDXShader->shaderInfo.aOffDclResource, pDXShader->shaderInfo.cDclResource * sizeof(uint32_t));
     }
 
     rc = pHlp->pfnSSMGetU32(pSSM, &pDXContext->pBackendDXContext->cSOTarget);
@@ -7897,16 +7909,26 @@ static DECLCALLBACK(int) vmsvga3dBackDXSaveState(PVGASTATECC pThisCC, PVMSVGA3DD
         pHlp->pfnSSMPutU32(pSSM, pDXShader->soid);
 
         pHlp->pfnSSMPutU32(pSSM, (uint32_t)pDXShader->shaderInfo.enmProgramType);
+
         pHlp->pfnSSMPutU32(pSSM, pDXShader->shaderInfo.cbBytecode);
-        pHlp->pfnSSMPutMem(pSSM, pDXShader->shaderInfo.pvBytecode, pDXShader->shaderInfo.cbBytecode);
+        if (pDXShader->shaderInfo.cbBytecode)
+            pHlp->pfnSSMPutMem(pSSM, pDXShader->shaderInfo.pvBytecode, pDXShader->shaderInfo.cbBytecode);
+
         pHlp->pfnSSMPutU32(pSSM, pDXShader->shaderInfo.cInputSignature);
-        pHlp->pfnSSMPutMem(pSSM, pDXShader->shaderInfo.aInputSignature, pDXShader->shaderInfo.cInputSignature * sizeof(SVGA3dDXSignatureEntry));
+        if (pDXShader->shaderInfo.cInputSignature)
+            pHlp->pfnSSMPutMem(pSSM, pDXShader->shaderInfo.aInputSignature, pDXShader->shaderInfo.cInputSignature * sizeof(SVGA3dDXSignatureEntry));
+
         pHlp->pfnSSMPutU32(pSSM, pDXShader->shaderInfo.cOutputSignature);
-        pHlp->pfnSSMPutMem(pSSM, pDXShader->shaderInfo.aOutputSignature, pDXShader->shaderInfo.cOutputSignature * sizeof(SVGA3dDXSignatureEntry));
+        if (pDXShader->shaderInfo.cOutputSignature)
+            pHlp->pfnSSMPutMem(pSSM, pDXShader->shaderInfo.aOutputSignature, pDXShader->shaderInfo.cOutputSignature * sizeof(SVGA3dDXSignatureEntry));
+
         pHlp->pfnSSMPutU32(pSSM, pDXShader->shaderInfo.cPatchConstantSignature);
-        pHlp->pfnSSMPutMem(pSSM, pDXShader->shaderInfo.aPatchConstantSignature, pDXShader->shaderInfo.cPatchConstantSignature * sizeof(SVGA3dDXSignatureEntry));
+        if (pDXShader->shaderInfo.cPatchConstantSignature)
+            pHlp->pfnSSMPutMem(pSSM, pDXShader->shaderInfo.aPatchConstantSignature, pDXShader->shaderInfo.cPatchConstantSignature * sizeof(SVGA3dDXSignatureEntry));
+
         pHlp->pfnSSMPutU32(pSSM, pDXShader->shaderInfo.cDclResource);
-        pHlp->pfnSSMPutMem(pSSM, pDXShader->shaderInfo.aOffDclResource, pDXShader->shaderInfo.cDclResource * sizeof(uint32_t));
+        if (pDXShader->shaderInfo.cDclResource)
+            pHlp->pfnSSMPutMem(pSSM, pDXShader->shaderInfo.aOffDclResource, pDXShader->shaderInfo.cDclResource * sizeof(uint32_t));
     }
     rc = pHlp->pfnSSMPutU32(pSSM, pDXContext->pBackendDXContext->cSOTarget);
     AssertLogRelRCReturn(rc, rc);
