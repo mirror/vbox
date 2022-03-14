@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-createvm</refname>
     <refpurpose>создает новую виртуальную машину</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

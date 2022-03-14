@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-showvminfo</refname>
     <refpurpose>отображает информацию о конфигурации или содержимое файла журнала виртуальной машины</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

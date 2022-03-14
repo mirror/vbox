@@ -31,7 +31,7 @@
     <refname>VBoxManage-cloudlist</refname>
     <refpurpose>Команда cloud list дает информацию о некоторых стандартных сущностях в каждом облаке
      и которая может быть представлена списком, например, списки экземпляров, образов дисков, сетей, т.д.</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

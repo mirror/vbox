@@ -28,7 +28,7 @@
   <refnamediv>
     <refname>VBoxManage-extpack</refname>
     <refpurpose>управление пакетами расширения</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage</refname>
     <refpurpose>&product-name; интерфейс командной строки</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

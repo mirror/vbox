@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-movevm</refname>
     <refpurpose>перемещает виртуальную машину в новое расположение в хост-системе</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

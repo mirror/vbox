@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-discardstate" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage discardstate</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-discardstate</refname>
     <refpurpose>удаление сохраненного состояния виртуальной машины</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

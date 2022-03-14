@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-checkmediumpwd" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage checkmediumpwd</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-checkmediumpwd</refname>
     <refpurpose>проверка пароля носителя или образа диска, зашифрованного DEK</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

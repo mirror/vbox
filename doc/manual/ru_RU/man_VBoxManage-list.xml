@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-list</refname>
     <refpurpose>просмотр системной информации и детали конфигурации ВМ</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

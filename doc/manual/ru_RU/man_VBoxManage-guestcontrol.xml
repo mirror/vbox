@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-guestcontrol" lang="en">
   <refentryinfo>
-    <pubdate>September 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage guestcontrol</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-guestcontrol</refname>
     <refpurpose>управляет виртуальной машиной из хост-системы</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

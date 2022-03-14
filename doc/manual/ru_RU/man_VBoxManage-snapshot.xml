@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-snapshot</refname>
     <refpurpose>управляет снимками виртуальной машины &product-name;</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

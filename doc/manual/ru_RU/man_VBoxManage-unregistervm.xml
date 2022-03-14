@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-unregistervm</refname>
     <refpurpose>отмена регистрации виртуальной машины</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

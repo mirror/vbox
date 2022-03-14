@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-encryptmedium" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage encryptmedium</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-encryptmedium</refname>
     <refpurpose>управляет образом или носителем, зашифрованными DEK</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

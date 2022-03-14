@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-modifyvm</refname>
     <refpurpose>изменение настроек остановленной виртуальной машины</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

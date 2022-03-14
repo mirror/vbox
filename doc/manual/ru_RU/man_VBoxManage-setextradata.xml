@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-setextradata" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage setextradata</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-setextradata</refname>
     <refpurpose>устанавливает значение ключа связанного с виртуальной машиной или конфигурацией</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

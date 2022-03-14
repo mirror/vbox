@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-signova" lang="en">
   <refentryinfo>
-    <pubdate>May 2020</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage signova</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-signova</refname>
     <refpurpose>цифровая подпись OVA</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

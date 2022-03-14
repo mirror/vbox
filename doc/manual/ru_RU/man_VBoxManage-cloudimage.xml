@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-cloudimage</refname>
     <refpurpose>Управление облачными образами</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

@@ -32,7 +32,7 @@
   <refnamediv>
     <refname>VBoxManage-cloud</refname>
     <refpurpose>Управление облачными сущностями</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

@@ -28,7 +28,7 @@
   <refnamediv>
     <refname>VBoxManage-cloudprofile</refname>
     <refpurpose>Управление облачными профилями</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

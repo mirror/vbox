@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-import</refname>
     <refpurpose>импорт виртуальной конфигурации в формате OVF или из облачной службы и создание виртуальной машины</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

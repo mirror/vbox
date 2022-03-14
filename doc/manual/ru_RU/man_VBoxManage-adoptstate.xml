@@ -19,7 +19,7 @@
 ]>
 <refentry id="vboxmanage-adoptstate" lang="en">
   <refentryinfo>
-    <pubdate>August 2019</pubdate>
+    <pubdate>$Date$</pubdate>
     <title>VBoxManage adoptstate</title>
   </refentryinfo>
 
@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-adoptstate</refname>
     <refpurpose>изменение состояния виртуальной машины на основе файла сохраненного состояния</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
