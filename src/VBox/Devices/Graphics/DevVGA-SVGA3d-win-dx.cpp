@@ -3239,6 +3239,7 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfa
         if (SUCCEEDED(hr))
         {
             pMap->enmMapType   = enmMapType;
+            pMap->format       = pSurface->format;
             pMap->box          = clipBox;
             pMap->cbPixel      = pSurface->cbBlock;
             pMap->cbRowPitch   = mappedResource.RowPitch;
@@ -3312,6 +3313,7 @@ if (!(   (pBackendSurface->pStagingTexture && pBackendSurface->pDynamicTexture)
         if (SUCCEEDED(hr))
         {
             pMap->enmMapType   = enmMapType;
+            pMap->format       = pSurface->format;
             pMap->box          = clipBox;
             pMap->cbPixel      = pSurface->cbBlock;
             pMap->cbRowPitch   = mappedResource.RowPitch;
@@ -3361,6 +3363,7 @@ if (!(   (pBackendSurface->pStagingTexture && pBackendSurface->pDynamicTexture)
             if (SUCCEEDED(hr))
             {
                 pMap->enmMapType   = enmMapType;
+                pMap->format       = pSurface->format;
                 pMap->box          = clipBox;
                 pMap->cbPixel      = pSurface->cbBlock;
                 pMap->cbRowPitch   = mappedResource.RowPitch;
@@ -5388,6 +5391,22 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                 }
 
                 LogFunc(("srv[%d][%d] sid = %u, srvid = %u\n", idxShaderState, idxSR, sid, shaderResourceViewId));
+
+#ifdef DUMP_BITMAPS
+                SVGA3dSurfaceImageId image;
+                image.sid = sid;
+                image.face = 0;
+                image.mipmap = 0;
+                VMSVGA3D_MAPPED_SURFACE map;
+                int rc2 = vmsvga3dSurfaceMap(pThisCC, &image, NULL, VMSVGA3D_SURFACE_MAP_READ, &map);
+                if (RT_SUCCESS(rc2))
+                {
+                    vmsvga3dMapWriteBmpFile(&map, "sr-");
+                    vmsvga3dSurfaceUnmap(pThisCC, &image, &map, /* fWritten =  */ false);
+                }
+                else
+                    Log(("Map failed %Rrc\n", rc));
+#endif
             }
         }
 

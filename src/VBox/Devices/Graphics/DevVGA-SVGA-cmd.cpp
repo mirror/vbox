@@ -1414,9 +1414,59 @@ static void vmsvga3dCmdBindGBSurface(PVGASTATECC pThisCC, SVGA3dCmdBindGBSurface
 }
 
 
+typedef union
+{
+    float f;
+    uint32_t u;
+} Unsigned2Float;
+
+float float16ToFloat(uint16_t f16)
+{
+    /* Format specs from Wiki: [15] = sign, [14:10] = exponent, [9:0] = fraction */
+    uint16_t const f = f16 & 0x3FF;
+    uint16_t const e = (f16 >> 10) & 0x1F;
+    uint16_t const s = (f16 >> 15) & 0x1;
+    Unsigned2Float u2f;
+
+    if (e == 0)
+    {
+        if (f == 0)
+        {
+            /* zero, -0 */
+            u2f.u = (s << 31) | (0 << 23) | 0;
+            return u2f.f;
+        }
+
+        /* subnormal numbers: (-1)^signbit * 2^-14 * 0.significantbits */
+        float const k = 1.0f / 16384.0f; /* 2^-14 */
+        return (s ? -1.0f : 1.0f) * k * (float)f / 1024.0f;
+    }
+
+    if (e == 31)
+    {
+        if (f == 0)
+        {
+            /* +-infinity */
+            u2f.u = (s << 31) | (0xFF << 23) | 0;
+            return u2f.f;
+        }
+
+        /* NaN */
+        u2f.u = (s << 31) | (0xFF << 23) | 1;
+        return u2f.f;
+    }
+
+    /* normalized value: (-1)^signbit * 2^(exponent - 15) * 1.significantbits */
+    /* Build the float, adjusting for exponent bias (float32 bias is 127, float16 is 15)
+     * and number of bits in the fraction (float32 has 23, float16 has 10). */
+    u2f.u = (s << 31) | ((e + 127 - 15) << 23) | (f << (23 - 10));
+    return u2f.f;
+}
+
+
 static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE const *pMap)
 {
-    if (pMap->cbPixel != 4)
+    if (pMap->cbPixel != 4 && pMap->format != SVGA3D_R16G16B16A16_FLOAT)
         return VERR_NOT_SUPPORTED;
 
     int const w = pMap->box.w;
@@ -1454,6 +1504,25 @@ static int vmsvga3dBmpWrite(const char *pszFilename, VMSVGA3D_MAPPED_SURFACE con
         for (int32_t y = 0; y < h; ++y)
         {
             fwrite(s, 1, w * pMap->cbPixel, f);
+
+            s += pMap->cbRowPitch;
+        }
+    }
+    else if (pMap->format == SVGA3D_R16G16B16A16_FLOAT)
+    {
+        const uint8_t *s = (uint8_t *)pMap->pvData;
+        for (int32_t y = 0; y < h; ++y)
+        {
+            for (int32_t x = 0; x < w; ++x)
+            {
+                uint16_t const *pu16Pixel = (uint16_t *)(s + x * 8);
+                uint8_t r = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[0]));
+                uint8_t g = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[1]));
+                uint8_t b = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[2]));
+                uint8_t a = (uint8_t)(255.0 * float16ToFloat(pu16Pixel[3]));
+                uint32_t u32Pixel = b + (g << 8) + (r << 16) + (a << 24);
+                fwrite(&u32Pixel, 1, 4, f);
+            }
 
             s += pMap->cbRowPitch;
         }

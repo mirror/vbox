@@ -52,6 +52,7 @@ typedef enum VMSVGA3D_SURFACE_MAP
 typedef struct VMSVGA3D_MAPPED_SURFACE
 {
     VMSVGA3D_SURFACE_MAP enmMapType;
+    SVGA3dSurfaceFormat format;
     SVGA3dBox box;
     uint32_t cbPixel;
     uint32_t cbRowPitch;

@@ -1427,6 +1427,7 @@ int vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, 
     //    RT_BZERO(.);
 
     pMap->enmMapType   = enmMapType;
+    pMap->format       = pSurface->format;
     pMap->box          = clipBox;
     pMap->cbPixel      = pSurface->cbBlock;
     pMap->cbRowPitch   = pMipLevel->cbSurfacePitch;
