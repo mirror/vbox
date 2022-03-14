@@ -1413,6 +1413,13 @@ void ShiftU ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
             a_aSubTests[iFn].pfnNative(&Test.uDstOut, Test.uMisc, &Test.fEflOut); \
             RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", 0, %-2u }, /* #%u */\n", \
                          Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uMisc, iTest); \
+            \
+            Test.fEflIn    = (~Test.fEflIn & X86_EFL_LIVE_MASK) | X86_EFL_RA1_MASK; \
+            Test.fEflOut   = Test.fEflIn; \
+            Test.uDstOut   = Test.uDstIn; \
+            a_aSubTests[iFn].pfnNative(&Test.uDstOut, Test.uMisc, &Test.fEflOut); \
+            RTStrmPrintf(pOut, "    { %#08x, %#08x, " a_Fmt ", " a_Fmt ", 0, %-2u }, /* #%u b */\n", \
+                         Test.fEflIn, Test.fEflOut, Test.uDstIn, Test.uDstOut, Test.uMisc, iTest); \
         } \
         RTStrmPrintf(pOut, "};\n"); \
     } \
@@ -1467,7 +1474,7 @@ static void ShiftU ## a_cBits ## Test(void) \
                 a_Type   uDst = paTests[iTest].uDstIn; \
                 pfn(&uDst, paTests[iTest].uMisc, &fEfl); \
                 if (   uDst != paTests[iTest].uDstOut \
-                    || fEfl != paTests[iTest].fEflOut) \
+                    || fEfl != paTests[iTest].fEflOut ) \
                     RTTestFailed(g_hTest, "#%u%s: efl=%#08x dst=" a_Fmt " shift=%2u -> efl=%#08x dst=" a_Fmt ", expected %#08x & " a_Fmt "%s\n", \
                                  iTest, iVar == 0 ? "" : "/n", \
                                  paTests[iTest].fEflIn, paTests[iTest].uDstIn, paTests[iTest].uMisc, \
