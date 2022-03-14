@@ -31,7 +31,7 @@
   <refnamediv>
     <refname>VBoxManage-storageattach</refname>
     <refpurpose>attach, remove, and modify storage media used by a virtual machine</refpurpose>
-    <refclass>Oracle VM VirtualBox</refclass>
+    <refclass>&product-name;</refclass>
   </refnamediv>
 
   <refsynopsisdiv>

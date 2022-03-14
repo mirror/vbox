@@ -593,39 +593,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
 
 #define SEP pcszSep1, pcszSep2
 
-    if (enmCommand == USAGE_STORAGEATTACH || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s storageattach %s   <uuid|vmname>\n"
-                     "                            --storagectl <name>\n"
-                     "                            [--port <number>]\n"
-                     "                            [--device <number>]\n"
-                     "                            [--type dvddrive|hdd|fdd]\n"
-                     "                            [--medium none|emptydrive|additions|\n"
-                     "                                      <uuid|filename>|host:<drive>|iscsi]\n"
-                     "                            [--mtype normal|writethrough|immutable|shareable|\n"
-                     "                                     readonly|multiattach]\n"
-                     "                            [--comment <text>]\n"
-                     "                            [--setuuid <uuid>]\n"
-                     "                            [--setparentuuid <uuid>]\n"
-                     "                            [--passthrough on|off]\n"
-                     "                            [--tempeject on|off]\n"
-                     "                            [--nonrotational on|off]\n"
-                     "                            [--discard on|off]\n"
-                     "                            [--hotpluggable on|off]\n"
-                     "                            [--bandwidthgroup <name>]\n"
-                     "                            [--forceunmount]\n"
-                     "                            [--server <name>|<ip>]\n"
-                     "                            [--target <target>]\n"
-                     "                            [--tport <port>]\n"
-                     "                            [--lun <lun>]\n"
-                     "                            [--encodedlun <lun>]\n"
-                     "                            [--username <username>]\n"
-                     "                            [--password <password>]\n"
-                     "                            [--passwordfile <file>]\n"
-                     "                            [--initiator <initiator>]\n"
-                     "                            [--intnet]\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_MODIFYMEDIUM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s modifymedium %s    [disk|dvd|floppy] <uuid|filename>\n"

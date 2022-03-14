@@ -315,7 +315,7 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
 
             default:
             {
-                errorGetOpt(USAGE_STORAGEATTACH, c, &ValueUnion);
+                errorGetOpt(c, &ValueUnion);
                 rc = E_FAIL;
                 break;
             }
@@ -326,7 +326,7 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
         return RTEXITCODE_FAILURE;
 
     if (!pszCtl)
-        return errorSyntax(USAGE_STORAGEATTACH, Storage::tr("Storage controller name not specified"));
+        return errorSyntax(Storage::tr("Storage controller name not specified"));
 
     /* get the virtualbox system properties */
     CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), RTEXITCODE_FAILURE);
@@ -369,14 +369,14 @@ RTEXITCODE handleStorageAttach(HandlerArg *a)
             if (maxPorts == 1)
                 port = 0;
             else
-                return errorSyntax(USAGE_STORAGEATTACH, Storage::tr("Port not specified"));
+                return errorSyntax(Storage::tr("Port not specified"));
         }
         if (device == ~0U)
         {
             if (maxDevices == 1)
                 device = 0;
             else
-                return errorSyntax(USAGE_STORAGEATTACH, Storage::tr("Device not specified"));
+                return errorSyntax(Storage::tr("Device not specified"));
         }
 
         /* for sata controller check if the port count is big enough

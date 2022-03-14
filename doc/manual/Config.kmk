@@ -64,6 +64,7 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-discardstate.xml \
 	man_VBoxManage-adoptstate.xml \
 	man_VBoxManage-closemedium.xml \
+	man_VBoxManage-storageattach.xml \
 	man_VBoxManage-storagectl.xml \
 	man_VBoxManage-bandwidthctl.xml \
 	man_VBoxManage-showmediuminfo.xml \
