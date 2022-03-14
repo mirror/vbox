@@ -698,19 +698,19 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         {
             case 'H':   // disk
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DISK;
                 break;
 
             case 'D':   // DVD
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_DVD;
                 break;
 
             case 'L':   // floppy
                 if (cmd != CMD_NONE)
-                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Only one command can be specified: '%s'"), ValueUnion.psz);
                 cmd = CMD_FLOPPY;
                 break;
 
@@ -798,23 +798,23 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
                 if (!pszFilenameOrUuid)
                     pszFilenameOrUuid = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("Invalid parameter '%s'"), ValueUnion.psz);
                 break;
 
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Invalid option -%c"), c);
+                        return errorSyntax(Disk::tr("Invalid option -%c"), c);
                     else
-                        return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Invalid option case %i"), c);
+                        return errorSyntax(Disk::tr("Invalid option case %i"), c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("unknown option: %s\n"), ValueUnion.psz);
+                    return errorSyntax(Disk::tr("unknown option: %s\n"), ValueUnion.psz);
                 else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_MODIFYMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                    return errorSyntax("%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
-                    return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("error: %Rrs"), c);
+                    return errorSyntax(Disk::tr("error: %Rrs"), c);
         }
     }
 
@@ -822,7 +822,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         cmd = CMD_DISK;
 
     if (!pszFilenameOrUuid)
-        return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("Medium name or UUID required"));
+        return errorSyntax(Disk::tr("Medium name or UUID required"));
 
     if (!fModifyMediumType
         && !fModifyAutoReset
@@ -833,7 +833,7 @@ RTEXITCODE handleModifyMedium(HandlerArg *a)
         && !fSetNewLocation
         && !fModifyDescription
         )
-        return errorSyntax(USAGE_MODIFYMEDIUM, Disk::tr("No operation specified"));
+        return errorSyntax(Disk::tr("No operation specified"));
 
     /* Always open the medium if necessary, there is no other way. */
     if (cmd == CMD_DISK)

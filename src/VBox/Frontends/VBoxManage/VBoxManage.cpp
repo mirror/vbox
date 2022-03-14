@@ -202,9 +202,9 @@ static const VBMGCMD g_aCommands[] =
     { "createmedium",       USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 },
     { "createhd",           USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 }, /* backward compatibility */
     { "createvdi",          USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 }, /* backward compatibility */
-    { "modifymedium",       USAGE_MODIFYMEDIUM,     VBMG_CMD_TODO, handleModifyMedium,         0 },
-    { "modifyhd",           USAGE_MODIFYMEDIUM,     VBMG_CMD_TODO, handleModifyMedium,         0 }, /* backward compatibility */
-    { "modifyvdi",          USAGE_MODIFYMEDIUM,     VBMG_CMD_TODO, handleModifyMedium,         0 }, /* backward compatibility */
+    { "modifymedium",       USAGE_S_NEWCMD, HELP_CMD_MODIFYMEDIUM, handleModifyMedium,         0 },
+    { "modifyhd",           USAGE_S_NEWCMD, HELP_CMD_MODIFYMEDIUM, handleModifyMedium,         0 }, /* backward compatibility */
+    { "modifyvdi",          USAGE_S_NEWCMD, HELP_CMD_MODIFYMEDIUM, handleModifyMedium,         0 }, /* backward compatibility */
     { "clonemedium",        USAGE_S_NEWCMD,  HELP_CMD_CLONEMEDIUM, handleCloneMedium,          0 },
     { "clonehd",            USAGE_S_NEWCMD,  HELP_CMD_CLONEMEDIUM, handleCloneMedium,          0 }, /* backward compatibility */
     { "clonevdi",           USAGE_S_NEWCMD,  HELP_CMD_CLONEMEDIUM, handleCloneMedium,          0 }, /* backward compatibility */

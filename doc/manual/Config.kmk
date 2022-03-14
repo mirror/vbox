@@ -69,6 +69,7 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-bandwidthctl.xml \
 	man_VBoxManage-showmediuminfo.xml \
 	man_VBoxManage-createmedium.xml \
+	man_VBoxManage-modifymedium.xml \
 	man_VBoxManage-clonemedium.xml \
 	man_VBoxManage-mediumproperty.xml \
 	man_VBoxManage-encryptmedium.xml \
