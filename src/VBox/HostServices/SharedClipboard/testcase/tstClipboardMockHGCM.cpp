@@ -986,9 +986,6 @@ int main(int argc, char *argv[])
     TstHgcmMockSvcStop(pSvc);
     TstHgcmMockSvcDestroy(pSvc);
 
-    VBOXHGCMSVCFNTABLE fn;
-    VBoxHGCMSvcLoad(&fn);
-
     /*
      * Summary
      */
