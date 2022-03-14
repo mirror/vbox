@@ -1367,10 +1367,18 @@ static HRESULT dxSamplerStateCreate(DXDEVICE *pDevice, SVGACOTableDXSamplerEntry
 }
 
 
+static D3D11_FILL_MODE dxFillMode(uint8_t svgaFillMode)
+{
+    if (svgaFillMode == SVGA3D_FILLMODE_POINT)
+        return D3D11_FILL_WIREFRAME;
+    return (D3D11_FILL_MODE)svgaFillMode;
+}
+
+
 static HRESULT dxRasterizerStateCreate(DXDEVICE *pDevice, SVGACOTableDXRasterizerStateEntry const *pEntry, ID3D11RasterizerState **pp)
 {
     D3D11_RASTERIZER_DESC desc;
-    desc.FillMode              = (D3D11_FILL_MODE)pEntry->fillMode;
+    desc.FillMode              = dxFillMode(pEntry->fillMode);
     desc.CullMode              = (D3D11_CULL_MODE)pEntry->cullMode;
     desc.FrontCounterClockwise = pEntry->frontCounterClockwise;
     /** @todo provokingVertexLast */
@@ -3319,8 +3327,8 @@ if (!(   (pBackendSurface->pStagingTexture && pBackendSurface->pDynamicTexture)
             pMap->cbRowPitch   = mappedResource.RowPitch;
             pMap->cbDepthPitch = mappedResource.DepthPitch;
             pMap->pvData       = (uint8_t *)mappedResource.pData
-                               + pMap->box.x * pMap->cbPixel
-                               + pMap->box.y * pMap->cbRowPitch
+                               + (pMap->box.x / pSurface->cxBlock) * pMap->cbPixel
+                               + (pMap->box.y / pSurface->cyBlock) * pMap->cbRowPitch
                                + pMap->box.z * pMap->cbDepthPitch;
         }
         else
@@ -4865,8 +4873,6 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTAT
              || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
     {
         /** @todo This is generic code and should be in DevVGA-SVGA3d.cpp for backends which support Map/Unmap. */
-        AssertReturn(uHostFace == 0 && uHostMipmap == 0, VERR_INVALID_PARAMETER);
-
         uint32_t const u32GuestBlockX = pBox->srcx / pSurface->cxBlock;
         uint32_t const u32GuestBlockY = pBox->srcy / pSurface->cyBlock;
         Assert(u32GuestBlockX * pSurface->cxBlock == pBox->srcx);
