@@ -372,8 +372,8 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
 
   <xsl:template match="varlistentry/listitem">
     <xsl:call-template name="check-children">
-      <xsl:with-param name="UnsupportedNodes" select="*[not(self::para or self::itemizedlist or self::orderedlist or self::variablelist)]|text()"/>
-      <xsl:with-param name="SupportedNames">para, itemizedlist and orderedlist</xsl:with-param>
+      <xsl:with-param name="UnsupportedNodes" select="*[not(self::para or self::itemizedlist or self::orderedlist or self::variablelist or self::note)]|text()"/>
+      <xsl:with-param name="SupportedNames">para, itemizedlist, orderedlist and note</xsl:with-param>
     </xsl:call-template>
 
     <xsl:apply-templates select="*"/>
