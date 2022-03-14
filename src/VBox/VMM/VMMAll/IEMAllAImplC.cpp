@@ -1939,7 +1939,7 @@ EMIT_IDIV(8,16,(uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags),          
 *   Unary operations.                                                                                                            *
 *********************************************************************************************************************************/
 
-/**
+/** @def IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC
  * Updates the status bits (CF, PF, AF, ZF, SF, and OF) for an INC or DEC instruction.
  *
  * CF is NOT modified for hysterical raisins (allegedly for carrying and
