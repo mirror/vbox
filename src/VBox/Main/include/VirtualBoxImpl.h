@@ -175,7 +175,7 @@ public:
     void i_onSnapshotChanged(const Guid &aMachineId, const Guid &aSnapshotId);
 
     void i_onGuestPropertyChanged(const Guid &aMachineId, const Utf8Str &aName, const Utf8Str &aValue, const Utf8Str &aFlags,
-                                  const BOOL &fWasDeleted);
+                                  const BOOL fWasDeleted);
     void i_onNatRedirectChanged(const Guid &aMachineId, ULONG ulSlot, bool fRemove, const Utf8Str &aName,
                                 NATProtocol_T aProto, const Utf8Str &aHostIp, uint16_t aHostPort,
                                 const Utf8Str &aGuestIp, uint16_t aGuestPort);

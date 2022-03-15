@@ -3608,7 +3608,7 @@ void VirtualBox::i_onSnapshotChanged(const Guid &aMachineId, const Guid &aSnapsh
  *  @note Doesn't lock any object.
  */
 void VirtualBox::i_onGuestPropertyChanged(const Guid &aMachineId, const Utf8Str &aName, const Utf8Str &aValue,
-                                          const Utf8Str &aFlags, const BOOL &fWasDeleted)
+                                          const Utf8Str &aFlags, const BOOL fWasDeleted)
 {
     ComPtr<IEvent> ptrEvent;
     HRESULT hrc = ::CreateGuestPropertyChangedEvent(ptrEvent.asOutParam(), m->pEventSource,

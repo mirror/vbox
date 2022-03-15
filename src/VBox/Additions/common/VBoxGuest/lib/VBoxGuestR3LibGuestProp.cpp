@@ -997,14 +997,16 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
         if (ppszFlags)
             *ppszFlags = pszFlags;
 
-        /* Validate / skip 'Flags'. */
+        /* Skip 'Flags' and deal with 'fWasDeleted' if it's present. */
         char *pszWasDeleted = RTStrEnd(pszFlags, cbBuf - (pszFlags - (char *)pvBuf)) + 1;
         AssertPtrReturn(pszWasDeleted, VERR_TOO_MUCH_DATA);
+        char chWasDeleted = 0;
+        if (   (size_t)pszWasDeleted - (size_t)pvBuf < cbBuf
+            && (chWasDeleted = *pszWasDeleted) != '\0')
+            AssertMsgReturn((chWasDeleted == '0' || chWasDeleted == '1') && pszWasDeleted[1] == '\0',
+                            ("'%s'\n", pszWasDeleted), VERR_PARSE_ERROR);
         if (pfWasDeleted)
-        {
-            AssertReturn(pszWasDeleted[0] == '0' || pszWasDeleted[0] == '1', VERR_PARSE_ERROR);
-            *pfWasDeleted = pszWasDeleted[0] == '0' ? false : true;
-        }
+            *pfWasDeleted = chWasDeleted == '1';
 
         /* Validate end of buffer string. */
         char *pszEos = RTStrEnd(pszWasDeleted, cbBuf - (pszWasDeleted - (char *)pvBuf));
