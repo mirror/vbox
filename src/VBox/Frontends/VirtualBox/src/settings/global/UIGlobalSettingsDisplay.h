@@ -26,8 +26,8 @@
 
 /* Forward declarations: */
 class QCheckBox;
-class QGridLayout;
 class QLabel;
+class UIGlobalDisplayFeaturesEditor;
 class UIMaximumGuestScreenSizeEditor;
 class UIScaleFactorEditor;
 struct UIDataSettingsGlobalDisplay;
@@ -81,21 +81,12 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the main layout instance. */
-        QGridLayout *m_pLayout;
-
         /** Holds the maximum guest screen size editor instance. */
         UIMaximumGuestScreenSizeEditor *m_pEditorMaximumGuestScreenSize;
-
         /** Holds the scale-factor editor instance. */
-        UIScaleFactorEditor *m_pEditorScaleFactor;
-
-        /** Holds the 'extended features' label instance. */
-        QLabel    *m_pLabelExtendedFeatures;
-        /** Holds the 'activate on mouse hover' check-box instance. */
-        QCheckBox *m_pCheckBoxActivateOnMouseHover;
-        /** Holds the 'disable host screen saver' check-box instance. */
-        QCheckBox *m_pCheckBoxDisableHostScreenSaver;
+        UIScaleFactorEditor            *m_pEditorScaleFactor;
+        /** Holds the global display features editor instance. */
+        UIGlobalDisplayFeaturesEditor  *m_pEditorGlobalDisplayFeatures;
     /** @} */
 };
 

@@ -17,19 +17,17 @@
 
 /* Qt includes: */
 #include <QCheckBox>
-#include <QGridLayout>
 #include <QLabel>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
+#include "UIGlobalDisplayFeaturesEditor.h"
 #include "UIGlobalSettingsDisplay.h"
 #include "UIMaximumGuestScreenSizeEditor.h"
 #include "UIMessageCenter.h"
 #include "UIScaleFactorEditor.h"
-#ifdef VBOX_WS_X11
-# include "VBoxUtils-x11.h"
-#endif
 
 
 /** Global settings: Display page data structure. */
@@ -46,9 +44,9 @@ struct UIDataSettingsGlobalDisplay
     {
         return    true
                && (m_guiMaximumGuestScreenSizeValue == other.m_guiMaximumGuestScreenSizeValue)
+               && (m_scaleFactors == other.m_scaleFactors)
                && (m_fActivateHoveredMachineWindow == other.m_fActivateHoveredMachineWindow)
                && (m_fDisableHostScreenSaver == other.m_fDisableHostScreenSaver)
-               && (m_scaleFactors == other.m_scaleFactors)
                   ;
     }
 
@@ -59,13 +57,12 @@ struct UIDataSettingsGlobalDisplay
 
     /** Holds the maximum guest-screen size value. */
     UIMaximumGuestScreenSizeValue  m_guiMaximumGuestScreenSizeValue;
+    /** Holds the guest screen scale-factor. */
+    QList<double>                  m_scaleFactors;
     /** Holds whether we should automatically activate machine window under the mouse cursor. */
     bool                           m_fActivateHoveredMachineWindow;
     /** Holds whether we should disable host sceen saver on a vm is running. */
     bool                           m_fDisableHostScreenSaver;
-
-    /** Holds the guest screen scale-factor. */
-    QList<double>                  m_scaleFactors;
 };
 
 
@@ -77,9 +74,7 @@ UIGlobalSettingsDisplay::UIGlobalSettingsDisplay()
     : m_pCache(0)
     , m_pEditorMaximumGuestScreenSize(0)
     , m_pEditorScaleFactor(0)
-    , m_pLabelExtendedFeatures(0)
-    , m_pCheckBoxActivateOnMouseHover(0)
-    , m_pCheckBoxDisableHostScreenSaver(0)
+    , m_pEditorGlobalDisplayFeatures(0)
 {
     prepare();
 }
@@ -101,11 +96,11 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     UIDataSettingsGlobalDisplay oldData;
     oldData.m_guiMaximumGuestScreenSizeValue = UIMaximumGuestScreenSizeValue(gEDataManager->maxGuestResolutionPolicy(),
                                                                              gEDataManager->maxGuestResolutionForPolicyFixed());
+    oldData.m_scaleFactors = gEDataManager->scaleFactors(UIExtraDataManager::GlobalID);
     oldData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     oldData.m_fDisableHostScreenSaver = gEDataManager->disableHostScreenSaver();
-#endif
-    oldData.m_scaleFactors = gEDataManager->scaleFactors(UIExtraDataManager::GlobalID);
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties to data: */
@@ -117,11 +112,10 @@ void UIGlobalSettingsDisplay::getFromCache()
     /* Load old data from cache: */
     const UIDataSettingsGlobalDisplay &oldData = m_pCache->base();
     m_pEditorMaximumGuestScreenSize->setValue(oldData.m_guiMaximumGuestScreenSizeValue);
-    m_pCheckBoxActivateOnMouseHover->setChecked(oldData.m_fActivateHoveredMachineWindow);
-    if (m_pCheckBoxDisableHostScreenSaver)
-        m_pCheckBoxDisableHostScreenSaver->setChecked(oldData.m_fDisableHostScreenSaver);
     m_pEditorScaleFactor->setScaleFactors(oldData.m_scaleFactors);
     m_pEditorScaleFactor->setMonitorCount(gpDesktop->screenCount());
+    m_pEditorGlobalDisplayFeatures->setActivateOnMouseHover(oldData.m_fActivateHoveredMachineWindow);
+    m_pEditorGlobalDisplayFeatures->setDisableHostScreenSaver(oldData.m_fDisableHostScreenSaver);
 }
 
 void UIGlobalSettingsDisplay::putToCache()
@@ -131,10 +125,9 @@ void UIGlobalSettingsDisplay::putToCache()
 
     /* Cache new data: */
     newData.m_guiMaximumGuestScreenSizeValue = m_pEditorMaximumGuestScreenSize->value();
-    newData.m_fActivateHoveredMachineWindow = m_pCheckBoxActivateOnMouseHover->isChecked();
-    if (m_pCheckBoxDisableHostScreenSaver)
-        newData.m_fDisableHostScreenSaver = m_pCheckBoxDisableHostScreenSaver->isChecked();
     newData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
+    newData.m_fActivateHoveredMachineWindow = m_pEditorGlobalDisplayFeatures->activateOnMouseHover();
+    newData.m_fDisableHostScreenSaver = m_pEditorGlobalDisplayFeatures->disableHostScreenSaver();
     m_pCache->cacheCurrentData(newData);
 }
 
@@ -152,24 +145,14 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
 
 void UIGlobalSettingsDisplay::retranslateUi()
 {
-    m_pLabelExtendedFeatures->setText(tr("Extended Features:"));
-    m_pCheckBoxActivateOnMouseHover->setToolTip(tr("When checked, machine windows will be raised "
-                                                   "when the mouse pointer moves over them."));
-    m_pCheckBoxActivateOnMouseHover->setText(tr("&Raise Window Under Mouse Pointer"));
-    if (m_pCheckBoxDisableHostScreenSaver)
-    {
-        m_pCheckBoxDisableHostScreenSaver->setToolTip(tr("When checked, screen saver of the host OS is disabled."));
-        m_pCheckBoxDisableHostScreenSaver->setText(tr("&Disable Host Screen Saver"));
-    }
-
     /* These editors have own labels, but we want them to be properly layouted according to each other: */
     int iMinimumLayoutHint = 0;
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMaximumGuestScreenSize->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorScaleFactor->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelExtendedFeatures->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorGlobalDisplayFeatures->minimumLabelHorizontalHint());
     m_pEditorMaximumGuestScreenSize->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorScaleFactor->setMinimumLayoutIndent(iMinimumLayoutHint);
-    m_pLayout->setColumnMinimumWidth(0, iMinimumLayoutHint);
+    m_pEditorGlobalDisplayFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 }
 
 void UIGlobalSettingsDisplay::prepare()
@@ -188,43 +171,26 @@ void UIGlobalSettingsDisplay::prepare()
 void UIGlobalSettingsDisplay::prepareWidgets()
 {
     /* Prepare main layout: */
-    m_pLayout = new QGridLayout(this);
-    if (m_pLayout)
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    if (pLayout)
     {
-        m_pLayout->setColumnStretch(1, 1);
-        m_pLayout->setRowStretch(4, 1);
-
         /* Prepare maximum guest screen size editor: */
         m_pEditorMaximumGuestScreenSize = new UIMaximumGuestScreenSizeEditor(this);
         if (m_pEditorMaximumGuestScreenSize)
-            m_pLayout->addWidget(m_pEditorMaximumGuestScreenSize, 0, 0, 1, 3);
+            pLayout->addWidget(m_pEditorMaximumGuestScreenSize);
 
         /* Prepare scale-factor editor: */
         m_pEditorScaleFactor = new UIScaleFactorEditor(this, true /* with label */);
         if (m_pEditorScaleFactor)
-            m_pLayout->addWidget(m_pEditorScaleFactor, 1, 0, 1, 3);
+            pLayout->addWidget(m_pEditorScaleFactor);
 
-        /* Prepare 'machine-windows' label: */
-        m_pLabelExtendedFeatures = new QLabel(this);
-        if (m_pLabelExtendedFeatures)
-        {
-            m_pLabelExtendedFeatures->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-            m_pLayout->addWidget(m_pLabelExtendedFeatures, 2, 0);
-        }
-        /* Prepare 'activate on mouse hover' check-box: */
-        m_pCheckBoxActivateOnMouseHover = new QCheckBox(this);
-        if (m_pCheckBoxActivateOnMouseHover)
-            m_pLayout->addWidget(m_pCheckBoxActivateOnMouseHover, 2, 1);
+        /* Prepare global display features editor: */
+        m_pEditorGlobalDisplayFeatures = new UIGlobalDisplayFeaturesEditor(this);
+        if (m_pEditorGlobalDisplayFeatures)
+            pLayout->addWidget(m_pEditorGlobalDisplayFeatures);
 
-        /* Prepare 'disable host screen saver' check-box: */
-#if defined(VBOX_WS_WIN)
-        m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
-#elif defined(VBOX_WS_X11)
-        if (NativeWindowSubsystem::X11CheckDBusScreenSaverServices())
-            m_pCheckBoxDisableHostScreenSaver = new QCheckBox(this);
-#endif /* VBOX_WS_X11 */
-        if (m_pCheckBoxDisableHostScreenSaver)
-            m_pLayout->addWidget(m_pCheckBoxDisableHostScreenSaver, 3, 1);
+        /* Add stretch to the end: */
+        pLayout->addStretch();
     }
 }
 
@@ -253,6 +219,10 @@ bool UIGlobalSettingsDisplay::saveData()
             && newData.m_guiMaximumGuestScreenSizeValue != oldData.m_guiMaximumGuestScreenSizeValue)
             /* fSuccess = */ gEDataManager->setMaxGuestScreenResolution(newData.m_guiMaximumGuestScreenSizeValue.m_enmPolicy,
                                                                         newData.m_guiMaximumGuestScreenSizeValue.m_size);
+        /* Save guest-screen scale-factor: */
+        if (   fSuccess
+            && newData.m_scaleFactors != oldData.m_scaleFactors)
+            /* fSuccess = */ gEDataManager->setScaleFactors(newData.m_scaleFactors, UIExtraDataManager::GlobalID);
         /* Save whether hovered machine-window should be activated automatically: */
         if (   fSuccess
             && newData.m_fActivateHoveredMachineWindow != oldData.m_fActivateHoveredMachineWindow)
@@ -262,11 +232,7 @@ bool UIGlobalSettingsDisplay::saveData()
         if (   fSuccess
             && newData.m_fDisableHostScreenSaver != oldData.m_fDisableHostScreenSaver)
             /* fSuccess = */ gEDataManager->setDisableHostScreenSaver(newData.m_fDisableHostScreenSaver);
-#endif
-        /* Save guest-screen scale-factor: */
-        if (   fSuccess
-            && newData.m_scaleFactors != oldData.m_scaleFactors)
-            /* fSuccess = */ gEDataManager->setScaleFactors(newData.m_scaleFactors, UIExtraDataManager::GlobalID);
+#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
     }
     /* Return result: */
     return fSuccess;
