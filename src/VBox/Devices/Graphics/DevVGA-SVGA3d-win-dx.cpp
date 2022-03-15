@@ -146,10 +146,23 @@ typedef struct VMSVGA3DBACKENDSURFACE
         ID3D11Buffer       *pBuffer;
     } u;
 
-    ID3D11Texture2D    *pDynamicTexture;  /* For screen updates from memory. */ /** @todo One for all screens. */
-    ID3D11Texture2D    *pStagingTexture;  /* For Reading the screen content. */ /** @todo One for all screens. */
-    ID3D11Texture3D    *pDynamicTexture3D;  /* For screen updates from memory. */ /** @todo One for all screens. */
-    ID3D11Texture3D    *pStagingTexture3D;  /* For Reading the screen content. */ /** @todo One for all screens. */
+    /* For updates from memory. */
+    union /** @todo One per format. */
+    {
+        ID3D11Resource     *pResource;
+        ID3D11Texture1D    *pTexture1D;
+        ID3D11Texture2D    *pTexture2D;
+        ID3D11Texture3D    *pTexture3D;
+    } dynamic;
+
+    /* For reading the texture content. */
+    union /** @todo One per format. */
+    {
+        ID3D11Resource     *pResource;
+        ID3D11Texture1D    *pTexture1D;
+        ID3D11Texture2D    *pTexture2D;
+        ID3D11Texture3D    *pTexture3D;
+    } staging;
 
     /* Screen targets are created as shared surfaces. */
     HANDLE              SharedHandle;     /* The shared handle of this structure. */
@@ -1818,7 +1831,7 @@ static int vmsvga3dBackSurfaceCreateScreenTarget(PVGASTATECC pThisCC, PVMSVGA3DS
         td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
         td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         td.MiscFlags      = 0;
-        hr = pDXDevice->pDevice->CreateTexture2D(&td, 0, &pBackendSurface->pDynamicTexture);
+        hr = pDXDevice->pDevice->CreateTexture2D(&td, 0, &pBackendSurface->dynamic.pTexture2D);
         Assert(SUCCEEDED(hr));
     }
 
@@ -1828,7 +1841,7 @@ static int vmsvga3dBackSurfaceCreateScreenTarget(PVGASTATECC pThisCC, PVMSVGA3DS
         td.Usage          = D3D11_USAGE_STAGING;
         td.BindFlags      = 0; /* No flags allowed. */
         td.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-        hr = pDXDevice->pDevice->CreateTexture2D(&td, 0, &pBackendSurface->pStagingTexture);
+        hr = pDXDevice->pDevice->CreateTexture2D(&td, 0, &pBackendSurface->staging.pTexture2D);
         Assert(SUCCEEDED(hr));
     }
 
@@ -1859,8 +1872,8 @@ static int vmsvga3dBackSurfaceCreateScreenTarget(PVGASTATECC pThisCC, PVMSVGA3DS
     }
 
     /* Failure. */
-    D3D_RELEASE(pBackendSurface->pStagingTexture);
-    D3D_RELEASE(pBackendSurface->pDynamicTexture);
+    D3D_RELEASE(pBackendSurface->staging.pTexture2D);
+    D3D_RELEASE(pBackendSurface->dynamic.pTexture2D);
     D3D_RELEASE(pBackendSurface->u.pTexture2D);
     RTMemFree(pBackendSurface);
     return VERR_NO_MEMORY;
@@ -1986,7 +1999,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
             td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
             td.MiscFlags      = 0;
-            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->pDynamicTexture);
+            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->dynamic.pTexture2D);
             Assert(SUCCEEDED(hr));
         }
 
@@ -1996,7 +2009,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             td.Usage          = D3D11_USAGE_STAGING;
             td.BindFlags      = 0; /* No flags allowed. */
             td.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->pStagingTexture);
+            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->staging.pTexture2D);
             Assert(SUCCEEDED(hr));
         }
 
@@ -2054,7 +2067,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
             td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
             td.MiscFlags      = 0;
-            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->pDynamicTexture);
+            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->dynamic.pTexture2D);
             Assert(SUCCEEDED(hr));
         }
 
@@ -2065,7 +2078,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             td.BindFlags      = 0; /* No flags allowed. */
             td.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
             td.MiscFlags      = 0;
-            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->pStagingTexture);
+            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->staging.pTexture2D);
             Assert(SUCCEEDED(hr));
         }
 
@@ -2091,8 +2104,70 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
     }
     else if (pSurface->surfaceFlags & SVGA3D_SURFACE_1D)
     {
-        AssertFailed(); /** @todo implement */
-        hr = E_FAIL;
+        /*
+         * 1D texture.
+         */
+        Assert(pSurface->cFaces == 1);
+
+        D3D11_TEXTURE1D_DESC td;
+        RT_ZERO(td);
+        td.Width              = cWidth;
+        td.MipLevels          = numMipLevels;
+        td.ArraySize          = pSurface->surfaceDesc.numArrayElements;
+        td.Format             = dxgiFormat;
+        td.Usage              = D3D11_USAGE_DEFAULT;
+        td.BindFlags          = dxBindFlags(pSurface->surfaceFlags);
+        td.CPUAccessFlags     = 0;
+        td.MiscFlags          = MiscFlags; /** @todo */
+        if (   numMipLevels > 1
+            && (td.BindFlags & (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET)) == (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET))
+            td.MiscFlags     |= D3D11_RESOURCE_MISC_GENERATE_MIPS; /* Required for GenMips. */
+
+        hr = pDXDevice->pDevice->CreateTexture1D(&td, paInitialData, &pBackendSurface->u.pTexture1D);
+        Assert(SUCCEEDED(hr));
+        if (SUCCEEDED(hr))
+        {
+            /* Map-able texture. */
+            td.MipLevels      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
+            td.ArraySize      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
+            td.Usage          = D3D11_USAGE_DYNAMIC;
+            td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
+            td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            td.MiscFlags      = 0;
+            hr = pDXDevice->pDevice->CreateTexture1D(&td, paInitialData, &pBackendSurface->dynamic.pTexture1D);
+            Assert(SUCCEEDED(hr));
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            /* Staging texture. */
+            td.Usage          = D3D11_USAGE_STAGING;
+            td.BindFlags      = 0; /* No flags allowed. */
+            td.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
+            td.MiscFlags      = 0;
+            hr = pDXDevice->pDevice->CreateTexture1D(&td, paInitialData, &pBackendSurface->staging.pTexture1D);
+            Assert(SUCCEEDED(hr));
+        }
+
+        if (   SUCCEEDED(hr)
+            && MiscFlags == D3D11_RESOURCE_MISC_SHARED)
+        {
+            /* Get the shared handle. */
+            IDXGIResource *pDxgiResource = NULL;
+            hr = pBackendSurface->u.pTexture1D->QueryInterface(__uuidof(IDXGIResource), (void**)&pDxgiResource);
+            Assert(SUCCEEDED(hr));
+            if (SUCCEEDED(hr))
+            {
+                hr = pDxgiResource->GetSharedHandle(&pBackendSurface->SharedHandle);
+                Assert(SUCCEEDED(hr));
+                D3D_RELEASE(pDxgiResource);
+            }
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            pBackendSurface->enmResType = VMSVGA3D_RESTYPE_TEXTURE_1D;
+        }
     }
     else
     {
@@ -2129,7 +2204,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
                 td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
                 td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
                 td.MiscFlags      = 0;
-                hr = pDXDevice->pDevice->CreateTexture3D(&td, paInitialData, &pBackendSurface->pDynamicTexture3D);
+                hr = pDXDevice->pDevice->CreateTexture3D(&td, paInitialData, &pBackendSurface->dynamic.pTexture3D);
                 Assert(SUCCEEDED(hr));
             }
 
@@ -2140,7 +2215,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
                 td.BindFlags      = 0; /* No flags allowed. */
                 td.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
                 td.MiscFlags      = 0;
-                hr = pDXDevice->pDevice->CreateTexture3D(&td, paInitialData, &pBackendSurface->pStagingTexture3D);
+                hr = pDXDevice->pDevice->CreateTexture3D(&td, paInitialData, &pBackendSurface->staging.pTexture3D);
                 Assert(SUCCEEDED(hr));
             }
 
@@ -2199,7 +2274,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
                 td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
                 td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
                 td.MiscFlags      = 0;
-                hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->pDynamicTexture);
+                hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->dynamic.pTexture2D);
                 Assert(SUCCEEDED(hr));
             }
 
@@ -2210,7 +2285,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
                 td.BindFlags      = 0; /* No flags allowed. */
                 td.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
                 td.MiscFlags      = 0;
-                hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->pStagingTexture);
+                hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->staging.pTexture2D);
                 Assert(SUCCEEDED(hr));
             }
 
@@ -2259,10 +2334,9 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         return VINF_SUCCESS;
     }
 
-    /** @todo different enmResType Failure. */
-    D3D_RELEASE(pBackendSurface->pStagingTexture);
-    D3D_RELEASE(pBackendSurface->pDynamicTexture);
-    D3D_RELEASE(pBackendSurface->u.pTexture2D);
+    D3D_RELEASE(pBackendSurface->staging.pResource);
+    D3D_RELEASE(pBackendSurface->dynamic.pResource);
+    D3D_RELEASE(pBackendSurface->u.pResource);
     RTMemFree(pBackendSurface);
     return VERR_NO_MEMORY;
 }
@@ -2988,15 +3062,15 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfa
         ID3D11Texture2D *pMappedTexture;
         if (enmMapType == VMSVGA3D_SURFACE_MAP_READ)
         {
-            pMappedTexture = pBackendSurface->pStagingTexture;
+            pMappedTexture = pBackendSurface->staging.pTexture2D;
 
             /* Copy the texture content to the staging texture. */
-            pDevice->pImmediateContext->CopyResource(pBackendSurface->pStagingTexture, pBackendSurface->u.pTexture2D);
+            pDevice->pImmediateContext->CopyResource(pBackendSurface->staging.pTexture2D, pBackendSurface->u.pTexture2D);
         }
         else if (enmMapType == VMSVGA3D_SURFACE_MAP_WRITE)
-            pMappedTexture = pBackendSurface->pStagingTexture;
+            pMappedTexture = pBackendSurface->staging.pTexture2D;
         else
-            pMappedTexture = pBackendSurface->pDynamicTexture;
+            pMappedTexture = pBackendSurface->dynamic.pTexture2D;
 
         UINT const Subresource = 0; /* Screen target surfaces have only one subresource. */
         HRESULT hr = pDevice->pImmediateContext->Map(pMappedTexture, Subresource,
@@ -3017,28 +3091,17 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfa
         else
             AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
     }
-    else if (   pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_2D
+    else if (   pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_1D
+             || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_2D
              || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_CUBE
              || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
     {
-//Assert(pImage->face == 0 && pImage->mipmap == 0);
-if (!(   (pBackendSurface->pStagingTexture && pBackendSurface->pDynamicTexture)
-      || (pBackendSurface->pStagingTexture3D && pBackendSurface->pDynamicTexture3D)
-     )
-   )
-{
-    AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
-}
-
         dxSurfaceWait(pState, pSurface, pSurface->idAssociatedContext);
 
         ID3D11Resource *pMappedResource;
         if (enmMapType == VMSVGA3D_SURFACE_MAP_READ)
         {
-            pMappedResource = (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
-                            ? (ID3D11Resource *)pBackendSurface->pStagingTexture3D
-                            : (ID3D11Resource *)pBackendSurface->pStagingTexture;
+            pMappedResource = pBackendSurface->staging.pResource;
 
             /* Copy the texture content to the staging texture.
              * The requested miplevel of the texture is copied to the miplevel 0 of the staging texture,
@@ -3064,13 +3127,9 @@ if (!(   (pBackendSurface->pStagingTexture && pBackendSurface->pDynamicTexture)
                                                               pSrcResource, SrcSubresource, pSrcBox);
         }
         else if (enmMapType == VMSVGA3D_SURFACE_MAP_WRITE)
-            pMappedResource = (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
-                            ? (ID3D11Resource *)pBackendSurface->pStagingTexture3D
-                            : (ID3D11Resource *)pBackendSurface->pStagingTexture;
+            pMappedResource = pBackendSurface->staging.pResource;
         else
-            pMappedResource = (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
-                            ? (ID3D11Resource *)pBackendSurface->pDynamicTexture3D
-                            : (ID3D11Resource *)pBackendSurface->pDynamicTexture;
+            pMappedResource = pBackendSurface->dynamic.pResource;
 
         UINT const Subresource = 0;
         HRESULT hr = pDevice->pImmediateContext->Map(pMappedResource, Subresource,
@@ -3182,11 +3241,11 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSur
     {
         ID3D11Texture2D *pMappedTexture;
         if (pMap->enmMapType == VMSVGA3D_SURFACE_MAP_READ)
-            pMappedTexture = pBackendSurface->pStagingTexture;
+            pMappedTexture = pBackendSurface->staging.pTexture2D;
         else if (pMap->enmMapType == VMSVGA3D_SURFACE_MAP_WRITE)
-            pMappedTexture = pBackendSurface->pStagingTexture;
+            pMappedTexture = pBackendSurface->staging.pTexture2D;
         else
-            pMappedTexture = pBackendSurface->pDynamicTexture;
+            pMappedTexture = pBackendSurface->dynamic.pTexture2D;
 
         UINT const Subresource = 0; /* Screen target surfaces have only one subresource. */
         pDevice->pImmediateContext->Unmap(pMappedTexture, Subresource);
@@ -3217,23 +3276,18 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSur
             pBackendSurface->cidDrawing = pSurface->idAssociatedContext;
         }
     }
-    else if (   pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_2D
+    else if (   pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_1D
+             || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_2D
              || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_CUBE
              || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
     {
         ID3D11Resource *pMappedResource;
         if (pMap->enmMapType == VMSVGA3D_SURFACE_MAP_READ)
-            pMappedResource = (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
-                            ? (ID3D11Resource *)pBackendSurface->pStagingTexture3D
-                            : (ID3D11Resource *)pBackendSurface->pStagingTexture;
+            pMappedResource = pBackendSurface->staging.pResource;
         else if (pMap->enmMapType == VMSVGA3D_SURFACE_MAP_WRITE)
-            pMappedResource = (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
-                            ? (ID3D11Resource *)pBackendSurface->pStagingTexture3D
-                            : (ID3D11Resource *)pBackendSurface->pStagingTexture;
+            pMappedResource = pBackendSurface->staging.pResource;
         else
-            pMappedResource = (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
-                            ? (ID3D11Resource *)pBackendSurface->pDynamicTexture3D
-                            : (ID3D11Resource *)pBackendSurface->pDynamicTexture;
+            pMappedResource = pBackendSurface->dynamic.pResource;
 
         UINT const Subresource = 0; /* Staging or dynamic textures have one subresource. */
         pDevice->pImmediateContext->Unmap(pMappedResource, Subresource);
@@ -4419,24 +4473,15 @@ static DECLCALLBACK(void) vmsvga3dBackSurfaceDestroy(PVGASTATECC pThisCC, PVMSVG
         dxViewDestroy(pIter);
     }
 
-    if (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_SCREEN_TARGET)
+    if (   pBackendSurface->enmResType == VMSVGA3D_RESTYPE_SCREEN_TARGET
+        || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_1D
+        || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_2D
+        || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_CUBE
+        || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
     {
-        D3D_RELEASE(pBackendSurface->pStagingTexture);
-        D3D_RELEASE(pBackendSurface->pDynamicTexture);
-        D3D_RELEASE(pBackendSurface->u.pTexture2D);
-    }
-    else if (   pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_2D
-             || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_CUBE)
-    {
-        D3D_RELEASE(pBackendSurface->pStagingTexture);
-        D3D_RELEASE(pBackendSurface->pDynamicTexture);
-        D3D_RELEASE(pBackendSurface->u.pTexture2D);
-    }
-    else if (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
-    {
-        D3D_RELEASE(pBackendSurface->pStagingTexture3D);
-        D3D_RELEASE(pBackendSurface->pDynamicTexture3D);
-        D3D_RELEASE(pBackendSurface->u.pTexture3D);
+        D3D_RELEASE(pBackendSurface->staging.pResource);
+        D3D_RELEASE(pBackendSurface->dynamic.pResource);
+        D3D_RELEASE(pBackendSurface->u.pResource);
     }
     else if (pBackendSurface->enmResType == VMSVGA3D_RESTYPE_BUFFER)
     {
@@ -4626,7 +4671,8 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVGASTAT
             }
 #endif
     }
-    else if (   pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_2D
+    else if (   pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_1D
+             || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_2D
              || pBackendSurface->enmResType == VMSVGA3D_RESTYPE_TEXTURE_3D)
     {
         /** @todo This is generic code and should be in DevVGA-SVGA3d.cpp for backends which support Map/Unmap. */
