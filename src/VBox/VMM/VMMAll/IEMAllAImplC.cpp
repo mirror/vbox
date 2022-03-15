@@ -3272,50 +3272,87 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r80_from_r80,(PCX86FXSTATE pFpuState, PIEMF
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fld1,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes))
 {
-    RT_NOREF(pFpuState, pFpuRes);
-    AssertReleaseFailed();
+    pFpuRes->r80Result.sj64.fSign       = 0;
+    pFpuRes->r80Result.sj64.uExponent   = 0 + 16383;
+    pFpuRes->r80Result.sj64.fInteger    = 1;
+    pFpuRes->r80Result.sj64.u63Fraction = 0;
+
+    /*
+     * FPU status word:
+     *      - TOP is irrelevant, but we must match x86 assembly version.
+     *      - C1 is always cleared as we don't have any stack overflows.
+     *      - C0, C2, and C3 are undefined and Intel 10980XE does not touch them.
+     */
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3));
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fldl2e,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes))
 {
-    RT_NOREF(pFpuState, pFpuRes);
-    AssertReleaseFailed();
+    pFpuRes->r80Result.sj64.fSign       = 0;
+    pFpuRes->r80Result.sj64.uExponent   = 0 + 16383;
+    pFpuRes->r80Result.sj64.fInteger    = 1;
+    pFpuRes->r80Result.sj64.u63Fraction =    (pFpuState->FCW & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
+                                          || (pFpuState->FCW & X86_FCW_RC_MASK) == X86_FCW_RC_UP
+                                        ? UINT64_C(0x38aa3b295c17f0bc) : UINT64_C(0x38aa3b295c17f0bb);
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fldl2t,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes))
 {
-    RT_NOREF(pFpuState, pFpuRes);
-    AssertReleaseFailed();
+    pFpuRes->r80Result.sj64.fSign       = 0;
+    pFpuRes->r80Result.sj64.uExponent   = 1 + 16383;
+    pFpuRes->r80Result.sj64.fInteger    = 1;
+    pFpuRes->r80Result.sj64.u63Fraction = (pFpuState->FCW & X86_FCW_RC_MASK) != X86_FCW_RC_UP
+                                        ? UINT64_C(0x549a784bcd1b8afe) : UINT64_C(0x549a784bcd1b8aff);
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fldlg2,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes))
 {
-    RT_NOREF(pFpuState, pFpuRes);
-    AssertReleaseFailed();
+    pFpuRes->r80Result.sj64.fSign       = 0;
+    pFpuRes->r80Result.sj64.uExponent   = -2 + 16383;
+    pFpuRes->r80Result.sj64.fInteger    = 1;
+    pFpuRes->r80Result.sj64.u63Fraction =    (pFpuState->FCW & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
+                                          || (pFpuState->FCW & X86_FCW_RC_MASK) == X86_FCW_RC_UP
+                                        ? UINT64_C(0x1a209a84fbcff799) : UINT64_C(0x1a209a84fbcff798);
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fldln2,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes))
 {
-    RT_NOREF(pFpuState, pFpuRes);
-    AssertReleaseFailed();
+    pFpuRes->r80Result.sj64.fSign       = 0;
+    pFpuRes->r80Result.sj64.uExponent   = -1 + 16383;
+    pFpuRes->r80Result.sj64.fInteger    = 1;
+    pFpuRes->r80Result.sj64.u63Fraction =    (pFpuState->FCW & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
+                                          || (pFpuState->FCW & X86_FCW_RC_MASK) == X86_FCW_RC_UP
+                                        ? UINT64_C(0x317217f7d1cf79ac) : UINT64_C(0x317217f7d1cf79ab);
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fldpi,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes))
 {
-    RT_NOREF(pFpuState, pFpuRes);
-    AssertReleaseFailed();
+    pFpuRes->r80Result.sj64.fSign       = 0;
+    pFpuRes->r80Result.sj64.uExponent   = 1 + 16383;
+    pFpuRes->r80Result.sj64.fInteger    = 1;
+    pFpuRes->r80Result.sj64.u63Fraction =    (pFpuState->FCW & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
+                                          || (pFpuState->FCW & X86_FCW_RC_MASK) == X86_FCW_RC_UP
+                                        ? UINT64_C(0x490fdaa22168c235) : UINT64_C(0x490fdaa22168c234);
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fldz,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes))
 {
-    RT_NOREF(pFpuState, pFpuRes);
-    AssertReleaseFailed();
+    pFpuRes->r80Result.sj64.fSign       = 0;
+    pFpuRes->r80Result.sj64.uExponent   = 0;
+    pFpuRes->r80Result.sj64.fInteger    = 0;
+    pFpuRes->r80Result.sj64.u63Fraction = 0;
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
 }
 
 

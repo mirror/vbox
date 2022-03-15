@@ -25,6 +25,7 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
 #include <iprt/mp.h>
@@ -339,7 +340,8 @@ static uint64_t  RandU64Src(uint32_t iTest)
 }
 
 
-static void GenerateHeader(PRTSTREAM pOut, const char *pszCpuDesc, const char *pszCpuType, const char *pszCpuSuffU)
+static void GenerateHeader(PRTSTREAM pOut, const char *pszFileInfix,
+                           const char *pszCpuDesc, const char *pszCpuType, const char *pszCpuSuffU)
 {
     /* We want to tag the generated source code with the revision that produced it. */
     static char s_szRev[] = "$Revision$";
@@ -366,28 +368,28 @@ static void GenerateHeader(PRTSTREAM pOut, const char *pszCpuDesc, const char *p
                  " * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.\n"
                  " */\n"
                  "\n"
-                 "#ifndef VMM_INCLUDED_SRC_testcase_tstIEMAImplData%s_h\n"
-                 "#define VMM_INCLUDED_SRC_testcase_tstIEMAImplData%s_h\n"
+                 "#ifndef VMM_INCLUDED_SRC_testcase_tstIEMAImplData%s%s_h\n"
+                 "#define VMM_INCLUDED_SRC_testcase_tstIEMAImplData%s%s_h\n"
                  "#ifndef RT_WITHOUT_PRAGMA_ONCE\n"
                  "# pragma once\n"
                  "#endif\n"
                  ,
                  pszCpuType ? " " : "", pszCpuType ? pszCpuType : "", cchRev, pszRev, pszCpuDesc,
-                 pszCpuSuffU,
-                 pszCpuSuffU);
+                 pszFileInfix, pszCpuSuffU,
+                 pszFileInfix, pszCpuSuffU);
 }
 
 
-static RTEXITCODE GenerateFooterAndClose(PRTSTREAM pOut, const char *pszCpuType, const char *pszCpuSuff, RTEXITCODE rcExit)
+static RTEXITCODE GenerateFooterAndClose(PRTSTREAM pOut, const char *pszFilename, const char *pszFileInfix,
+                                         const char *pszCpuSuff, RTEXITCODE rcExit)
 {
     RTStrmPrintf(pOut,
                  "\n"
-                 "#endif /* !VMM_INCLUDED_SRC_testcase_tstIEMAImplData%s_h */\n", pszCpuSuff);
+                 "#endif /* !VMM_INCLUDED_SRC_testcase_tstIEMAImplData%s%s_h */\n", pszFileInfix, pszCpuSuff);
     int rc = RTStrmClose(pOut);
     if (RT_SUCCESS(rc))
         return rcExit;
-    return RTMsgErrorExitFailure("RTStrmClose failed on tstIEMAImplData%s%s.h: %Rrc",
-                                 pszCpuType ? "-" : "", pszCpuType ? pszCpuType : "", rc);
+    return RTMsgErrorExitFailure("RTStrmClose failed on %s: %Rrc", pszFilename, rc);
 }
 
 #endif
@@ -396,14 +398,18 @@ static RTEXITCODE GenerateFooterAndClose(PRTSTREAM pOut, const char *pszCpuType,
 /*
  * Test helpers.
  */
+static char     g_szBuf[16][256];
+static unsigned g_idxBuf = 0;
+
+
 static const char *EFlagsDiff(uint32_t fActual, uint32_t fExpected)
 {
     if (fActual == fExpected)
         return "";
 
     uint32_t const fXor = fActual ^ fExpected;
-    static char    s_szBuf[256];
-    size_t cch = RTStrPrintf(s_szBuf, sizeof(s_szBuf), " - %#x", fXor);
+    char *pszBuf = g_szBuf[g_idxBuf++ % RT_ELEMENTS(g_szBuf)];
+    size_t cch = RTStrPrintf(pszBuf, sizeof(g_szBuf[0]), " - %#x", fXor);
 
     static struct
     {
@@ -432,10 +438,107 @@ static const char *EFlagsDiff(uint32_t fActual, uint32_t fExpected)
     };
     for (size_t i = 0; i < RT_ELEMENTS(s_aFlags); i++)
         if (s_aFlags[i].fFlag & fXor)
-            cch += RTStrPrintf(&s_szBuf[cch], sizeof(s_szBuf) - cch,
+            cch += RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch,
                                s_aFlags[i].fFlag & fActual ? "/%s" : "/!%s", s_aFlags[i].pszName);
-    RTStrPrintf(&s_szBuf[cch], sizeof(s_szBuf) - cch, "");
-    return s_szBuf;
+    RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch, "");
+    return pszBuf;
+}
+
+
+static const char *FswDiff(uint16_t fActual, uint16_t fExpected)
+{
+    if (fActual == fExpected)
+        return "";
+
+    uint16_t const fXor = fActual ^ fExpected;
+    char *pszBuf = g_szBuf[g_idxBuf++ % RT_ELEMENTS(g_szBuf)];
+    size_t cch = RTStrPrintf(pszBuf, sizeof(g_szBuf[0]), " - %#x", fXor);
+
+    static struct
+    {
+        const char *pszName;
+        uint32_t    fFlag;
+    } const s_aFlags[] =
+    {
+#define FSW_ENTRY(a_Flags) { #a_Flags, X86_FSW_ ## a_Flags }
+        FSW_ENTRY(IE),
+        FSW_ENTRY(DE),
+        FSW_ENTRY(ZE),
+        FSW_ENTRY(OE),
+        FSW_ENTRY(UE),
+        FSW_ENTRY(PE),
+        FSW_ENTRY(SF),
+        FSW_ENTRY(ES),
+        FSW_ENTRY(C0),
+        FSW_ENTRY(C1),
+        FSW_ENTRY(C2),
+        FSW_ENTRY(C3),
+        FSW_ENTRY(B),
+    };
+    for (size_t i = 0; i < RT_ELEMENTS(s_aFlags); i++)
+        if (s_aFlags[i].fFlag & fXor)
+            cch += RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch,
+                               s_aFlags[i].fFlag & fActual ? "/%s" : "/!%s", s_aFlags[i].pszName);
+    if (fXor & X86_FSW_TOP_MASK)
+        cch += RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch, "/TOP%u!%u",
+                           X86_FSW_TOP_GET(fActual), X86_FSW_TOP_GET(fExpected));
+    RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch, "");
+    return pszBuf;
+}
+
+
+static const char *FormatFcw(uint16_t fFcw)
+{
+    char *pszBuf = g_szBuf[g_idxBuf++ % RT_ELEMENTS(g_szBuf)];
+
+    const char *pszPC;
+    switch (fFcw & X86_FCW_PC_MASK)
+    {
+        case X86_FCW_PC_24:     pszPC = "PC24"; break;
+        case X86_FCW_PC_RSVD:   pszPC = "PCRSVD!"; break;
+        case X86_FCW_PC_53:     pszPC = "PC53"; break;
+        case X86_FCW_PC_64:     pszPC = "PC64"; break;
+    }
+
+    const char *pszRC;
+    switch (fFcw & X86_FCW_RC_MASK)
+    {
+        case X86_FCW_RC_NEAREST:    pszRC = "NEAR"; break;
+        case X86_FCW_RC_DOWN:       pszRC = "DOWN"; break;
+        case X86_FCW_RC_UP:         pszRC = "UP"; break;
+        case X86_FCW_RC_ZERO:       pszRC = "ZERO"; break;
+    }
+    size_t cch = RTStrPrintf(&pszBuf[0], sizeof(g_szBuf[0]), "%s %s", pszPC, pszRC);
+
+    static struct
+    {
+        const char *pszName;
+        uint32_t    fFlag;
+    } const s_aFlags[] =
+    {
+#define FCW_ENTRY(a_Flags) { #a_Flags, X86_FCW_ ## a_Flags }
+        FCW_ENTRY(IM),
+        FCW_ENTRY(DM),
+        FCW_ENTRY(ZM),
+        FCW_ENTRY(OM),
+        FCW_ENTRY(UM),
+        FCW_ENTRY(PM),
+        { "6M", 64 },
+    };
+    for (size_t i = 0; i < RT_ELEMENTS(s_aFlags); i++)
+        if (fFcw & s_aFlags[i].fFlag)
+            cch += RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch, " %s", s_aFlags[i].pszName);
+
+    RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch, "");
+    return pszBuf;
+}
+
+
+static const char *FormatR80(PCRTFLOAT80U pr80)
+{
+    char *pszBuf = g_szBuf[g_idxBuf++ % RT_ELEMENTS(g_szBuf)];
+    RTStrFormatR80(pszBuf, sizeof(g_szBuf[0]), pr80, 0, 0, RTSTR_F_SPECIAL);
+    return pszBuf;
 }
 
 
@@ -1796,6 +1899,125 @@ static void BswapTest(void)
 }
 
 
+/*
+ * FPU constant loading.
+ */
+
+typedef struct FPU_LD_CONST_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              rdResult;
+} FPU_LD_CONST_TEST_T;
+
+typedef struct FPU_LD_CONST_T
+{
+    const char                 *pszName;
+    PFNIEMAIMPLFPUR80LDCONST    pfn;
+    PFNIEMAIMPLFPUR80LDCONST    pfnNative;
+    FPU_LD_CONST_TEST_T const  *paTests;
+    uint32_t                    cTests;
+    uint32_t                    uExtra;
+    uint8_t                     idxCpuEflFlavour;
+} FPU_LD_CONST_T;
+
+#include "tstIEMAImplDataFpu.h"
+
+#ifndef HAVE_FPU_LOAD_CONST_TESTS
+static const FPU_LD_CONST_TEST_T g_aTests_fld1[]   = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldl2t[] = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldl2e[] = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldpi[]  = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldlg2[] = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldln2[] = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldz[]   = { {0} };
+#endif
+
+static const FPU_LD_CONST_T g_aFpuLdConst[] =
+{
+    ENTRY(fld1),
+    ENTRY(fldl2t),
+    ENTRY(fldl2e),
+    ENTRY(fldpi),
+    ENTRY(fldlg2),
+    ENTRY(fldln2),
+    ENTRY(fldz),
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static void FpuLoadConstGenerate(PRTSTREAM pOut, uint32_t cTests)
+{
+    RTStrmPrintf(pOut, "\n\n#define HAVE_FPU_LOAD_CONST_TESTS\n");
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuLdConst); iFn++)
+    {
+        RTStrmPrintf(pOut, "static const FPU_LD_CONST_TEST_T g_aTests_%s[] =\n{\n", g_aFpuLdConst[iFn].pszName);
+        for (size_t iTest = 0; iTest < cTests; iTest += 4)
+        {
+            State.FCW = RandU16() & (X86_FCW_MASK_ALL | X86_FCW_PC_MASK);
+            State.FSW = RandU16() & (X86_FSW_C_MASK | X86_FSW_XCPT_ES_MASK | X86_FSW_TOP_MASK | X86_FSW_B);
+
+            for (size_t iRounding = 0; iRounding < 4; iRounding++)
+            {
+                IEMFPURESULT Res;
+                State.FCW = (State.FCW & ~X86_FCW_RC_MASK) | (iRounding << X86_FCW_RC_SHIFT);
+                g_aFpuLdConst[iFn].pfn(&State, &Res);
+                RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, RTFLOAT80U_INIT_C(%d,%u,%#RX64) }, /* #%u */\n",
+                             State.FCW, State.FSW, Res.FSW,
+                             Res.r80Result.s.fSign, Res.r80Result.s.uExponent, Res.r80Result.s.u64Mantissa, iTest + iRounding);
+            }
+        }
+        RTStrmPrintf(pOut, "};\n");
+    }
+}
+#endif
+
+static void FpuLoadConstTest(void)
+{
+    /*
+     * Inputs:
+     *      - FSW: C0, C1, C2, C3
+     *      - FCW: Exception masks, Precision control, Rounding control.
+     *
+     * C1 set to 1 on stack overflow, zero otherwise.  C0, C2, and C3 are "undefined".
+     */
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuLdConst); iFn++)
+    {
+        RTTestSub(g_hTest, g_aFpuLdConst[iFn].pszName);
+
+        uint32_t const              cTests  = g_aFpuLdConst[iFn].cTests;
+        FPU_LD_CONST_TEST_T const  *paTests = g_aFpuLdConst[iFn].paTests;
+        PFNIEMAIMPLFPUR80LDCONST    pfn     = g_aFpuLdConst[iFn].pfn;
+        uint32_t const cVars = 1 + (g_aFpuLdConst[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && g_aFpuLdConst[iFn].pfnNative);
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests; iTest++)
+            {
+                State.FCW = paTests[iTest].fFcw;
+                State.FSW = paTests[iTest].fFswIn;
+                IEMFPURESULT Res;
+                pfn(&State, &Res);
+                if (   Res.FSW != paTests[iTest].fFswOut
+                    || !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].rdResult))
+                    RTTestFailed(g_hTest, "#%u%s: fcw=%#06x fsw=%#06x -> fsw=%#06x %s, expected %#06x %s%s%s (%s)\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fFcw, paTests[iTest].fFswIn,
+                                 Res.FSW, FormatR80(&Res.r80Result),
+                                 paTests[iTest].fFswOut, FormatR80(&paTests[iTest].rdResult),
+                                 FswDiff(Res.FSW, paTests[iTest].fFswOut),
+                                 !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].rdResult) ? " - val" : "",
+                                 FormatFcw(paTests[iTest].fFcw) );
+            }
+            pfn = g_aFpuLdConst[iFn].pfnNative;
+        }
+    }
+}
+
+
+
 int main(int argc, char **argv)
 {
     int rc = RTR3InitExe(argc, &argv, 0);
@@ -1815,45 +2037,172 @@ int main(int argc, char **argv)
 #endif
 
     /*
+     * Parse arguments.
+     */
+    enum { kModeNotSet, kModeTest, kModeGenerate }
+         enmMode       = kModeNotSet;
+    bool fInt          = true;
+    bool fFpu          = true;
+    bool fCpuData      = true;
+    bool fCommonData   = true;
+    RTGETOPTDEF const s_aOptions[] =
+    {
+        { "--generate",     'g', RTGETOPT_REQ_NOTHING },
+        { "--test",         't', RTGETOPT_REQ_NOTHING },
+        { "--all",          'a', RTGETOPT_REQ_NOTHING },
+        { "--only-fpu",     'f', RTGETOPT_REQ_NOTHING },
+        { "--only-int",     'i', RTGETOPT_REQ_NOTHING },
+        { "--only-common",  'm', RTGETOPT_REQ_NOTHING },
+        { "--only-cpu",     'c', RTGETOPT_REQ_NOTHING },
+    };
+
+    RTGETOPTSTATE State;
+    rc = RTGetOptInit(&State, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+
+    RTGETOPTUNION ValueUnion;
+    while ((rc = RTGetOpt(&State, &ValueUnion)))
+    {
+        switch (rc)
+        {
+            case 'g':
+                enmMode     = kModeGenerate;
+                break;
+            case 't':
+                enmMode     = kModeTest;
+                break;
+            case 'a':
+                fCpuData    = true;
+                fCommonData = true;
+                fInt        = true;
+                fFpu        = true;
+                break;
+            case 'f':
+                fFpu        = true;
+                fInt        = false;
+                break;
+            case 'i':
+                fInt        = true;
+                fFpu        = false;
+                break;
+            case 'm':
+                fCommonData = true;
+                fCpuData    = false;
+                break;
+            case 'c':
+                fCpuData    = true;
+                fCommonData = false;
+                break;
+            case 'h':
+                RTPrintf("usage: %s <-g|-t> [options]\n"
+                         "\n"
+                         "Mode:\n"
+                         "  -g, --generate\n"
+                         "    Generate test data.\n"
+                         "  -t, --test\n"
+                         "    Execute tests.\n"
+                         "\n"
+                         "Options:\n"
+                         "  -a, --all\n"
+                         "    Include all tests and generates common + CPU test data. (default)\n"
+                         "  -i, --only-int\n"
+                         "    Only non-FPU tests.\n"
+                         "  -f, --only-fpu\n"
+                         "    Only FPU tests.\n"
+                         "  -m, --only-common\n"
+                         "    Only generate common test data.\n"
+                         "  -c, --only-cpu\n"
+                         "    Only generate CPU specific test data.\n"
+                         , argv[0]);
+                return RTEXITCODE_SUCCESS;
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
+    /*
      * Generate data?
      */
-    if (argc > 2)
+    if (enmMode == kModeGenerate)
     {
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
+
         char szCpuDesc[256] = {0};
         RTMpGetDescription(NIL_RTCPUID, szCpuDesc, sizeof(szCpuDesc));
         const char * const pszCpuType  = g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD ? "Amd"  : "Intel";
         const char * const pszCpuSuff  = g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD ? "_Amd" : "_Intel";
         const char * const pszCpuSuffU = g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD ? "_AMD" : "_INTEL";
-
-        PRTSTREAM pStrmData = NULL;
-        rc = RTStrmOpen("tstIEMAImplData.h", "w", &pStrmData);
-        if (!pStrmData)
-            return RTMsgErrorExitFailure("Failed to open tstIEMAImplData.h for writing: %Rrc", rc);
-
-        PRTSTREAM pStrmDataCpu = NULL;
-        rc = RTStrmOpenF("w", &pStrmDataCpu, "tstIEMAImplData-%s.h", pszCpuType);
-        if (!pStrmData)
-            return RTMsgErrorExitFailure("Failed to open tstIEMAImplData-%s.h for writing: %Rrc", pszCpuType, rc);
-
-        GenerateHeader(pStrmData, szCpuDesc, NULL, "");
-        GenerateHeader(pStrmDataCpu, szCpuDesc, pszCpuType, pszCpuSuff);
+# if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+        const char * const pszBitBucket = "NUL";
+# else
+        const char * const pszBitBucket = "/dev/null";
+# endif
 
         uint32_t cTests = 96;
         g_cZeroDstTests = RT_MIN(cTests / 16, 32);
         g_cZeroSrcTests = g_cZeroDstTests * 2;
 
-        BinU8Generate( pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
-        BinU16Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
-        BinU32Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
-        BinU64Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
-        ShiftDblGenerate(pStrmDataCpu, pszCpuSuffU, RT_MAX(cTests, 128));
-        UnaryGenerate(pStrmData, cTests);
-        ShiftGenerate(pStrmDataCpu, pszCpuSuffU, cTests);
-        MulDivGenerate(pStrmDataCpu, pszCpuSuffU, cTests);
+        if (fInt)
+        {
+            const char *pszDataFile = fCommonData ? "tstIEMAImplData.h" : pszBitBucket;
+            PRTSTREAM   pStrmData   = NULL;
+            rc = RTStrmOpen(pszDataFile, "w", &pStrmData);
+            if (!pStrmData)
+                return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataFile, rc);
 
-        return GenerateFooterAndClose(pStrmDataCpu, pszCpuType, pszCpuSuff,
-                                      GenerateFooterAndClose(pStrmData, NULL, "", RTEXITCODE_SUCCESS));
+            const char *pszDataCpuFile = !fCpuData ? pszBitBucket : g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD
+                                       ? "tstIEMAImplData-Amd.h" : "tstIEMAImplData-Intel.h";
+            PRTSTREAM   pStrmDataCpu   = NULL;
+            rc = RTStrmOpen(pszDataCpuFile, "w", &pStrmDataCpu);
+            if (!pStrmData)
+                return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataCpuFile, rc);
+
+            GenerateHeader(pStrmData, "", szCpuDesc, NULL, "");
+            GenerateHeader(pStrmDataCpu, "", szCpuDesc, pszCpuType, pszCpuSuff);
+
+            BinU8Generate( pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
+            BinU16Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
+            BinU32Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
+            BinU64Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
+            ShiftDblGenerate(pStrmDataCpu, pszCpuSuffU, RT_MAX(cTests, 128));
+            UnaryGenerate(pStrmData, cTests);
+            ShiftGenerate(pStrmDataCpu, pszCpuSuffU, cTests);
+            MulDivGenerate(pStrmDataCpu, pszCpuSuffU, cTests);
+
+            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "", pszCpuSuff,
+                                                       GenerateFooterAndClose(pStrmData, pszDataFile, "", "",
+                                                                              RTEXITCODE_SUCCESS));
+            if (rcExit != RTEXITCODE_SUCCESS)
+                return rcExit;
+        }
+
+        if (fFpu)
+        {
+            const char *pszDataFile = fCommonData ? "tstIEMAImplDataFpu.h" : pszBitBucket;
+            PRTSTREAM   pStrmData   = NULL;
+            rc = RTStrmOpen(pszDataFile, "w", &pStrmData);
+            if (!pStrmData)
+                return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataFile, rc);
+
+            const char *pszDataCpuFile = !fCpuData ? pszBitBucket : g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD
+                                       ? "tstIEMAImplDataFpu-Amd.h" : "tstIEMAImplDataFpu-Intel.h";
+            PRTSTREAM   pStrmDataCpu   = NULL;
+            rc = RTStrmOpen(pszDataCpuFile, "w", &pStrmDataCpu);
+            if (!pStrmData)
+                return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataCpuFile, rc);
+
+            GenerateHeader(pStrmData, "Fpu", szCpuDesc, NULL, "");
+            GenerateHeader(pStrmDataCpu, "Fpu", szCpuDesc, pszCpuType, pszCpuSuff);
+
+            FpuLoadConstGenerate(pStrmData, cTests);
+
+            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "Fpu", pszCpuSuff,
+                                                       GenerateFooterAndClose(pStrmData, pszDataFile, "Fpu", "",
+                                                                              RTEXITCODE_SUCCESS));
+            if (rcExit != RTEXITCODE_SUCCESS)
+                return rcExit;
+        }
+        return RTEXITCODE_SUCCESS;
 #else
         return RTMsgErrorExitFailure("Test data generator not compiled in!");
 #endif
@@ -1865,7 +2214,7 @@ int main(int argc, char **argv)
      */
     rc = RTTestCreate("tstIEMAimpl", &g_hTest);
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
-    if (argc > 1)
+    if (enmMode == kModeTest)
     {
         /* Allocate guarded memory for use in the tests. */
 #define ALLOC_GUARDED_VAR(a_puVar) do { \
@@ -1885,20 +2234,28 @@ int main(int argc, char **argv)
         ALLOC_GUARDED_VAR(g_pfEfl);
         if (RTTestErrorCount(g_hTest) == 0)
         {
-            BinU8Test();
-            BinU16Test();
-            BinU32Test();
-            BinU64Test();
-            XchgTest();
-            XaddTest();
-            CmpXchgTest();
-            CmpXchg8bTest();
-            CmpXchg16bTest();
-            ShiftDblTest();
-            UnaryTest();
-            ShiftTest();
-            MulDivTest();
-            BswapTest();
+            if (fInt)
+            {
+                BinU8Test();
+                BinU16Test();
+                BinU32Test();
+                BinU64Test();
+                XchgTest();
+                XaddTest();
+                CmpXchgTest();
+                CmpXchg8bTest();
+                CmpXchg16bTest();
+                ShiftDblTest();
+                UnaryTest();
+                ShiftTest();
+                MulDivTest();
+                BswapTest();
+            }
+
+            if (fFpu)
+            {
+                FpuLoadConstTest();
+            }
         }
         return RTTestSummaryAndDestroy(g_hTest);
     }
