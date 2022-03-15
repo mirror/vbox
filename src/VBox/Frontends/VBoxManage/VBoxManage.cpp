@@ -757,7 +757,7 @@ int main(int argc, char *argv[])
                     RTPrintf("    %s\n", g_aCommands[i].pszCommand);
             return RTEXITCODE_SUCCESS;
         }
-        return errorSyntax(USAGE_S_ALL, VBoxManage::tr("Invalid command '%s'"), argv[iCmd]);
+        return errorSyntax(VBoxManage::tr("Invalid command '%s'"), argv[iCmd]);
     }
 
     RTEXITCODE rcExit;
