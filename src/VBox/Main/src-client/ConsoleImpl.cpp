@@ -2414,7 +2414,7 @@ HRESULT Console::i_doCPURemove(ULONG aCpu, PUVM pUVM, PCVMMR3VTABLE pVMM)
     if (RT_SUCCESS(vrc) && !fLocked)
     {
         /*
-         * Call worker in EMT, that's faster and safer than doing everything
+         * Call worker on EMT #0, that's faster and safer than doing everything
          * using VMR3ReqCall.
          */
         PVMREQ pReq;
@@ -2516,7 +2516,7 @@ HRESULT Console::i_doCPUAdd(ULONG aCpu, PUVM pUVM, PCVMMR3VTABLE pVMM)
                         tr("CPU %d is already attached"), aCpu);
 
     /*
-     * Call worker in EMT, that's faster and safer than doing everything
+     * Call worker on EMT #0, that's faster and safer than doing everything
      * using VMR3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
      * here to make requests from under the lock in order to serialize them.
      */
@@ -3541,12 +3541,12 @@ HRESULT Console::i_doMediumChange(IMediumAttachment *aMediumAttachment, bool fFo
         return rc;
 
     /*
-     * Call worker in EMT, that's faster and safer than doing everything
+     * Call worker on EMT #0, that's faster and safer than doing everything
      * using VMR3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                                     (PFNRT)i_changeRemovableMedium, 9,
                                     this, pUVM, pVMM, pszDevice, uInstance, enmBus, fUseHostIOCache, aMediumAttachment, fForce);
 
@@ -3717,12 +3717,12 @@ HRESULT Console::i_doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, P
         return rc;
 
     /*
-     * Call worker in EMT, that's faster and safer than doing everything
+     * Call worker on EMT #0, that's faster and safer than doing everything
      * using VMR3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                                     (PFNRT)i_attachStorageDevice, 9,
                                     this, pUVM, pVMM, pszDevice, uInstance, enmBus, fUseHostIOCache, aMediumAttachment, fSilent);
 
@@ -3890,12 +3890,12 @@ HRESULT Console::i_doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, P
         return rc;
 
     /*
-     * Call worker in EMT, that's faster and safer than doing everything
+     * Call worker on EMT #0, that's faster and safer than doing everything
      * using VMR3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+    int vrc = pVMM->pfnVMR3ReqCallU(pUVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                                     (PFNRT)i_detachStorageDevice, 8,
                                     this, pUVM, pVMM, pszDevice, uInstance, enmBus, aMediumAttachment, fSilent);
 
