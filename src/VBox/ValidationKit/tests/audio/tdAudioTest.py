@@ -36,9 +36,9 @@ __version__ = "$Revision$"
 from datetime import datetime
 import os
 import sys
-import signal
 import subprocess
 import time
+import threading
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -90,6 +90,10 @@ class tdAudioTest(vbox.TestDriver):
         self.asVkatTestArgs   = [];
         # Optional arguments passing to VKAT when verifying audio test sets.
         self.asVkatVerifyArgs = [];
+
+        # Exit code of last host process execution, shared between exeuction thread and main thread.
+        # This ASSUMES that we only have one thread running at a time. Rather hacky, but does the job for now.
+        self.iThreadHstProcRc = 0;
 
         # Enable audio debug mode.
         #
@@ -284,18 +288,10 @@ class tdAudioTest(vbox.TestDriver):
     def executeHstLoop(self, sWhat, asArgs, asEnv = None, fAsAdmin = False):
         """
         Inner loop which handles the execution of a host binary.
+
+        Might be called synchronously in main thread or via the thread exeuction helper (asynchronous).
         """
         fRc = False;
-
-        ## @todo r=bird: From what I can tell this is running on the main thread.
-        ##               So, you're blocking event handling till the process
-        ##               finishes.  Not a great idea.
-        ##
-        ##               Also, use the base API base.testdriver.pidFileAdd API
-        ##               and you can kick out the fAsAdmin and killHstProcessByName
-        ##               fun.  (If you need to kill stuff, check what pidFileRead,
-        ##               or better add some name based killer around it to the
-        ##               base class.)
 
         asEnvTmp = os.environ.copy();
         if asEnv:
@@ -306,33 +302,65 @@ class tdAudioTest(vbox.TestDriver):
                 asEnvTmp[sKey]   = sValue;
 
         try:
+            # Spawn process.
             if  fAsAdmin \
             and utils.getHostOs() != 'win':
-                sStdOut = utils.sudoProcessOutputChecked(asArgs, env = asEnvTmp);
-                if sStdOut:
-                    sStdOut = sStdOut.strip();
-                    reporter.log("stdout:\n" + sStdOut);
+                oProcess = utils.sudoProcessStart(asArgs, env = asEnvTmp, stdout=subprocess.PIPE, stderr=subprocess.STDOUT);
             else:
-                (iExit, sStdOut, sStdErr) = utils.processOutputUnchecked(asArgs, env = asEnvTmp);
+                oProcess = utils.processStart(asArgs, env = asEnvTmp, stdout=subprocess.PIPE, stderr=subprocess.STDOUT);
 
+            if not oProcess:
+                reporter.error('Starting process for "%s" failed!' % (sWhat));
+                return False;
+
+            iPid = oProcess.pid;
+            self.pidFileAdd(iPid);
+
+            iRc  = 0;
+
+            # For Python 3.x we provide "real-time" output.
+            if sys.version_info[0] >= 3:
+                while oProcess.stdout.readable():
+                    sStdOut = oProcess.stdout.readline();
+                    if sStdOut:
+                        sStdOut = sStdOut.strip();
+                        reporter.log('%s: %s' % (sWhat, sStdOut));
+                    iRc = oProcess.poll();
+                    if iRc is not None:
+                        break;
+            else:
+                # For Python 2.x it's too much hassle to set the file descriptor options (O_NONBLOCK) and stuff,
+                # so just use communicate() here and dump everythiong all at once when finished.
+                sStdOut = oProcess.communicate();
                 if sStdOut:
-                    sStdOut = sStdOut.strip();
-                    reporter.log("stdout:\n" + sStdOut);
+                    reporter.log('%s: %s' % (sWhat, sStdOut));
+                iRc = oProcess.poll();
 
-                if sStdErr:
-                    sStdErr = sStdErr.strip();
-                    reporter.log("stderr:\n" + sStdErr);
+            if iRc == 0:
+                reporter.log('*** %s: exit code %d' % (sWhat, iRc));
+                fRc = True;
+            else:
+                reporter.log('!*! %s: exit code %d' % (sWhat, iRc));
 
-                if iExit == 0:
-                    reporter.log('*** %s: exit code %d' % (sWhat, iExit));
-                    fRc = True;
-                else:
-                    reporter.log('!*! %s: exit code %d' % (sWhat, iExit));
+            self.pidFileRemove(iPid);
+
+            # Save thread result code.
+            self.iThreadHstProcRc = iRc;
 
         except:
             reporter.logXcpt('Executing "%s" failed!' % (sWhat));
 
         return fRc;
+
+    def executeHstThread(self, sWhat, asArgs, asEnv = None, fAsAdmin = False):
+        """
+        Thread execution helper to run a process on the host.
+        """
+        fRc = self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
+        if fRc:
+            reporter.log('Executing \"%s\" on host done' % (sWhat,));
+        else:
+            reporter.log('Executing \"%s\" on host failed' % (sWhat,));
 
     def executeHst(self, sWhat, asArgs, asEnv = None, fAsAdmin = False):
         """
@@ -350,53 +378,21 @@ class tdAudioTest(vbox.TestDriver):
         try:    sys.stderr.flush();
         except: pass;
 
-        fRc = self.executeHstLoop(sWhat, asArgs, asEnv, fAsAdmin);
-        if fRc:
-            reporter.log('Executing \"%s\" on host done' % (sWhat,));
-        else:
-            reporter.log('Executing \"%s\" on host failed' % (sWhat,));
+        # Initialize thread rc.
+        self.iThreadHstProcRc = -42;
 
-        return fRc;
+        try:
+            oThread = threading.Thread(target = self.executeHstThread, args = [ sWhat, asArgs, asEnv, fAsAdmin ]);
+            oThread.start();
+            while oThread.join(0.1):
+                if not oThread.is_alive():
+                    break;
+                self.wait(1);
+            reporter.log2('Thread returned exit code for "%s": %d' % (sWhat, self.iThreadHstProcRc));
+        except:
+            self.logXcpt('Starting thread for "%s" failed' % (sWhat,));
 
-    def killHstProcessByName(self, sProcName):
-        """
-        Kills processes by their name.
-        """
-
-        ##
-        ## @todo r=bird: This doesn't belong here and probably won't work right everywhere anyway.
-        ##               See alternative approach outlined in executeHstLoop.
-        ##
-
-        reporter.log('Trying to kill processes named "%s"' % (sProcName,));
-        if sys.platform == 'win32':
-            sArgProcName = '\"%s.exe\"' % sProcName;
-            asArgs       = [ 'taskkill', '/IM', sArgProcName, '/F' ];
-            self.executeHst('Killing process', asArgs);
-        else: # Note: killall is not available on older Debians (requires psmisc).
-            # Using the BSD syntax here; MacOS also should understand this.
-            procPs = subprocess.Popen(['ps', 'ax'], stdout=subprocess.PIPE); # pylint: disable=consider-using-with
-            out, err = procPs.communicate();
-            if err:
-                reporter.log('PS stderr:');
-                for sLine in err.decode('utf-8').splitlines():
-                    reporter.log(sLine);
-            if out:
-                reporter.log4('PS stdout:');
-                for sLine in out.decode('utf-8').splitlines():
-                    reporter.log4(sLine);
-                    if sProcName in sLine: ## @todo r=bird: This just isn't good enough for short stuff like 'vkat'!
-                        pid = int(sLine.split(None, 1)[0]);
-                        reporter.log('Killing PID %d' % (pid,));
-                        os.kill(pid, signal.SIGKILL); # pylint: disable=no-member
-
-    def killHstVkat(self):
-        """
-        Kills VKAT (VBoxAudioTest) on the host side.
-        """
-        reporter.log('Killing stale/old VKAT processes ...');
-        self.killHstProcessByName("vkat");
-        self.killHstProcessByName("VBoxAudioTest");
+        return self.iThreadHstProcRc == 0;
 
     def getWinFirewallArgsDisable(self, sOsType):
         """
@@ -659,10 +655,6 @@ class tdAudioTest(vbox.TestDriver):
 
         if not fRc:
             return False;
-
-        # First try to kill any old VKAT / VBoxAudioTest processes lurking around on the host.
-        # Might happen because of former (aborted) runs.
-        self.killHstVkat();
 
         reporter.log("Active tests: %s" % (self.asTests,));
 
