@@ -3292,9 +3292,11 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
  * @remarks This includes reserved bit 6.  */
 #define X86_FCW_MASK_ALL    UINT16_C(0x007f)
 /** Mask all exceptions. Same as X86_FSW_XCPT_MASK. */
-#define X86_FCW_XCPT_MASK    UINT16_C(0x003f)
+#define X86_FCW_XCPT_MASK   UINT16_C(0x003f)
 /** Precision control mask. */
 #define X86_FCW_PC_MASK     UINT16_C(0x0300)
+/** Precision control shift. */
+#define X86_FCW_PC_SHIFT    8
 /** Precision control: 24-bit. */
 #define X86_FCW_PC_24       UINT16_C(0x0000)
 /** Precision control: Reserved. */
@@ -3305,6 +3307,8 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 #define X86_FCW_PC_64       UINT16_C(0x0300)
 /** Rounding control mask. */
 #define X86_FCW_RC_MASK     UINT16_C(0x0c00)
+/** Rounding control shift. */
+#define X86_FCW_RC_SHIFT    10
 /** Rounding control: To nearest. */
 #define X86_FCW_RC_NEAREST  UINT16_C(0x0000)
 /** Rounding control: Down. */
