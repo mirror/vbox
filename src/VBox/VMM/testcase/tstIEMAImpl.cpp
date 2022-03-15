@@ -491,7 +491,7 @@ static const char *FormatFcw(uint16_t fFcw)
 {
     char *pszBuf = g_szBuf[g_idxBuf++ % RT_ELEMENTS(g_szBuf)];
 
-    const char *pszPC;
+    const char *pszPC = NULL; /* (msc is too stupid) */
     switch (fFcw & X86_FCW_PC_MASK)
     {
         case X86_FCW_PC_24:     pszPC = "PC24"; break;
@@ -500,7 +500,7 @@ static const char *FormatFcw(uint16_t fFcw)
         case X86_FCW_PC_64:     pszPC = "PC64"; break;
     }
 
-    const char *pszRC;
+    const char *pszRC = NULL; /* (msc is too stupid) */
     switch (fFcw & X86_FCW_RC_MASK)
     {
         case X86_FCW_RC_NEAREST:    pszRC = "NEAR"; break;
