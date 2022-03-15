@@ -314,7 +314,7 @@ class tdAudioTest(vbox.TestDriver):
                 return False;
 
             iPid = oProcess.pid;
-            self.pidFileAdd(sWhat, iPid);
+            self.pidFileAdd(iPid, sWhat);
 
             iRc  = 0;
 
