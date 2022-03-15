@@ -314,7 +314,7 @@ class tdAudioTest(vbox.TestDriver):
                 return False;
 
             iPid = oProcess.pid;
-            self.pidFileAdd(iPid);
+            self.pidFileAdd(sWhat, iPid);
 
             iRc  = 0;
 
@@ -390,7 +390,7 @@ class tdAudioTest(vbox.TestDriver):
                 self.wait(1);
             reporter.log2('Thread returned exit code for "%s": %d' % (sWhat, self.iThreadHstProcRc));
         except:
-            self.logXcpt('Starting thread for "%s" failed' % (sWhat,));
+            reporter.logXcpt('Starting thread for "%s" failed' % (sWhat,));
 
         return self.iThreadHstProcRc == 0;
 
