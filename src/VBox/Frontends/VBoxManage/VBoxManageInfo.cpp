@@ -15,9 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_ONLY_DOCS
-
-
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -3107,5 +3104,4 @@ RTEXITCODE handleShowVMInfo(HandlerArg *a)
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-#endif /* !VBOX_ONLY_DOCS */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -19,14 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#ifndef VBOX_ONLY_DOCS
-
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/com/VirtualBox.h>
-#endif /* !VBOX_ONLY_DOCS */
 
 #ifndef RT_OS_WINDOWS
 # include <netinet/in.h>
@@ -56,7 +53,6 @@
 #include "VBoxManage.h"
 #include "VBoxPortForwardString.h"
 
-#ifndef VBOX_ONLY_DOCS
 
 DECLARE_TRANSLATION_CONTEXT(Nat);
 
@@ -694,5 +690,3 @@ RTEXITCODE listNATNetworks(bool fLong, bool fSorted,
 
     return RTEXITCODE_SUCCESS;
 }
-
-#endif /* !VBOX_ONLY_DOCS */

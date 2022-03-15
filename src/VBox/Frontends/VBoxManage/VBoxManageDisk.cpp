@@ -15,9 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_ONLY_DOCS
-
-
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -2729,5 +2726,3 @@ RTEXITCODE handleMediumIO(HandlerArg *a)
     }
     return errorNoSubcommand();
 }
-
-#endif /* !VBOX_ONLY_DOCS */

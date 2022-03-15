@@ -21,23 +21,19 @@
 # pragma once
 #endif
 
-#ifndef VBOX_ONLY_DOCS
 #include <VBox/com/com.h>
 #include <VBox/com/ptr.h>
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/string.h>
 #include <VBox/com/array.h>
-#endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/types.h>
 #include <iprt/message.h>
 #include <iprt/stream.h>
 #include <iprt/getopt.h>
 
-#ifndef VBOX_ONLY_DOCS
-# include "VBoxManageBuiltInHelp.h"
-# include "PasswordInput.h"
-#endif
+#include "VBoxManageBuiltInHelp.h"
+#include "PasswordInput.h"
 
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
 # include "VirtualBoxTranslator.h"
@@ -129,10 +125,8 @@ struct HandlerArg
     int argc;
     char **argv;
 
-#ifndef VBOX_ONLY_DOCS
     ComPtr<IVirtualBox> virtualBox;
     ComPtr<ISession> session;
-#endif
 };
 
 /** flag whether we're in internal mode */
@@ -175,7 +169,6 @@ RTEXITCODE errorGetOptEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, in
 
 void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm);
 
-#ifndef VBOX_ONLY_DOCS
 void        setCurrentCommand(enum HELP_CMD_VBOXMANAGE enmCommand);
 void        setCurrentSubcommand(uint64_t fCurSubcommandScope);
 
@@ -197,31 +190,25 @@ HRESULT     errorArgumentHr(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2
 # define SHOW_PROGRESS          RT_BIT_32(1)
 # define SHOW_PROGRESS_DETAILS  RT_BIT_32(2)
 HRESULT showProgress(ComPtr<IProgress> progress, uint32_t fFlags = SHOW_PROGRESS);
-#endif
 
 /* VBoxManage.cpp */
 void showLogo(PRTSTREAM pStrm);
 
-#ifndef VBOX_ONLY_DOCS
 RTEXITCODE handleInternalCommands(HandlerArg *a);
-#endif /* !VBOX_ONLY_DOCS */
 
 /* VBoxManageControlVM.cpp */
 RTEXITCODE handleControlVM(HandlerArg *a);
 
 /* VBoxManageModifyVM.cpp */
-#ifndef VBOX_ONLY_DOCS
 void parseGroups(const char *pcszGroups, com::SafeArray<BSTR> *pGroups);
-# ifdef VBOX_WITH_RECORDING
+#ifdef VBOX_WITH_RECORDING
 int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens);
-# endif
 #endif
 RTEXITCODE handleModifyVM(HandlerArg *a);
 
 /* VBoxManageDebugVM.cpp */
 RTEXITCODE handleDebugVM(HandlerArg *a);
 
-#ifndef VBOX_ONLY_DOCS
 /* VBoxManageGuestProp.cpp */
 RTEXITCODE handleGuestProperty(HandlerArg *a);
 
@@ -348,7 +335,5 @@ RTEXITCODE handleUpdateCheck(HandlerArg *a);
 
 /* VBoxManageModifyNvram.cpp */
 RTEXITCODE handleModifyNvram(HandlerArg *a);
-
-#endif /* !VBOX_ONLY_DOCS */
 
 #endif /* !VBOX_INCLUDED_SRC_VBoxManage_VBoxManage_h */

@@ -19,13 +19,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#ifndef VBOX_ONLY_DOCS
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/com/VirtualBox.h>
-#endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/cidr.h>
 #include <iprt/ctype.h>
@@ -41,7 +39,6 @@
 
 DECLARE_TRANSLATION_CONTEXT(ModifyVM);
 
-#ifndef VBOX_ONLY_DOCS
 using namespace com;
 /** @todo refine this after HDD changes; MSC 8.0/64 has trouble with handleModifyVM.  */
 #if defined(_MSC_VER)
@@ -3541,5 +3538,3 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
-
-#endif /* !VBOX_ONLY_DOCS */

@@ -15,9 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_ONLY_DOCS
-
-
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -366,5 +363,4 @@ RTEXITCODE handleUpdateCheck(HandlerArg *a)
     return errorUnknownSubcommand(a->argv[0]);
 }
 
-#endif /* !VBOX_ONLY_DOCS */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

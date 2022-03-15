@@ -21,8 +21,6 @@
 # pragma once
 #endif
 
-#ifndef VBOX_ONLY_DOCS
-
 #include <VBox/com/com.h>
 #include <VBox/com/listeners.h>
 #include <VBox/com/VirtualBox.h>
@@ -258,7 +256,5 @@ protected:
     /** The run level target we're waiting for. */
     AdditionsRunLevelType_T mRunLevelTarget;
 };
-#endif /* !VBOX_ONLY_DOCS */
 
 #endif /* !VBOX_INCLUDED_SRC_VBoxManage_VBoxManageGuestCtrl_h */
-

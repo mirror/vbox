@@ -22,8 +22,6 @@
 #include "VBoxManage.h"
 #include "VBoxManageGuestCtrl.h"
 
-#ifndef VBOX_ONLY_DOCS
-
 #include <VBox/com/com.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
@@ -568,5 +566,3 @@ STDMETHODIMP GuestAdditionsRunlevelListener::HandleEvent(VBoxEventType_T aType, 
 
     return S_OK;
 }
-
-#endif /* !VBOX_ONLY_DOCS */

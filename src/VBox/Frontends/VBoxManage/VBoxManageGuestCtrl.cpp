@@ -22,8 +22,6 @@
 #include "VBoxManage.h"
 #include "VBoxManageGuestCtrl.h"
 
-#ifndef VBOX_ONLY_DOCS
-
 #include <VBox/com/array.h>
 #include <VBox/com/com.h>
 #include <VBox/com/ErrorInfo.h>
@@ -216,11 +214,9 @@ enum kStreamTransform
     kStreamTransform_Dos2Unix,
     kStreamTransform_Unix2Dos
 };
-#endif /* VBOX_ONLY_DOCS */
+
 
 DECLARE_TRANSLATION_CONTEXT(GuestCtrl);
-
-#ifndef VBOX_ONLY_DOCS
 
 
 #ifdef RT_OS_WINDOWS
@@ -3725,4 +3721,3 @@ RTEXITCODE handleGuestControl(HandlerArg *pArg)
     }
     return rcExit;
 }
-#endif /* !VBOX_ONLY_DOCS */

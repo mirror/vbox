@@ -19,17 +19,15 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#ifndef VBOX_ONLY_DOCS
-# include <VBox/com/com.h>
-# include <VBox/com/string.h>
-# include <VBox/com/Guid.h>
-# include <VBox/com/array.h>
-# include <VBox/com/ErrorInfo.h>
-# include <VBox/com/errorprint.h>
-# include <VBox/com/NativeEventQueue.h>
+#include <VBox/com/com.h>
+#include <VBox/com/string.h>
+#include <VBox/com/Guid.h>
+#include <VBox/com/array.h>
+#include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint.h>
+#include <VBox/com/NativeEventQueue.h>
 
-# include <VBox/com/VirtualBox.h>
-#endif /* !VBOX_ONLY_DOCS */
+#include <VBox/com/VirtualBox.h>
 
 #ifdef VBOX_WITH_VBOXMANAGE_NLS
 # include <VBox/com/AutoLock.h>
@@ -67,7 +65,7 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-#ifndef VBOX_ONLY_DOCS
+
 /**
  * VBoxManage command descriptor.
  */
@@ -84,7 +82,7 @@ typedef struct VBMGCMD
 } VBMGCMD;
 /** Pointer to a const VBoxManage command descriptor. */
 typedef VBMGCMD const *PCVBMGCMD;
-#endif
+
 
 DECLARE_TRANSLATION_CONTEXT(VBoxManage);
 
@@ -177,8 +175,6 @@ VBOX_LISTENER_DECLARE(VBoxEventListenerImpl)
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /*extern*/ bool         g_fDetailedProgress = false;
-
-#ifndef VBOX_ONLY_DOCS
 /** Set by the signal handler. */
 static volatile bool    g_fCanceled = false;
 
@@ -500,8 +496,6 @@ HRESULT showProgress(ComPtr<IProgress> progress, uint32_t fFlags)
     return hrc;
 }
 
-#endif /* !VBOX_ONLY_DOCS */
-
 
 void setBuiltInHelpLanguage(const char *pszLang)
 {
@@ -555,7 +549,7 @@ int main(int argc, char *argv[])
     int vrc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(vrc))
         return RTMsgInitFailure(vrc);
-#if defined(RT_OS_WINDOWS) && !defined(VBOX_ONLY_DOCS)
+#if defined(RT_OS_WINDOWS)
     ATL::CComModule _Module; /* Required internally by ATL (constructor records instance in global variable). */
 #endif
 
@@ -604,11 +598,10 @@ int main(int argc, char *argv[])
     int  iCmdArg;
     const char *pszSettingsPw = NULL;
     const char *pszSettingsPwFile = NULL;
-#ifndef VBOX_ONLY_DOCS
     int         cResponseFileArgs     = 0;
     char      **papszResponseFileArgs = NULL;
     char      **papszNewArgv          = NULL;
-#endif
+
     for (int i = 1; i < argc || argc <= iCmd; i++)
     {
         if (    argc <= iCmd
@@ -630,7 +623,6 @@ int main(int argc, char *argv[])
             continue;
         }
 
-#ifndef VBOX_ONLY_DOCS
         if (   !strcmp(argv[i], "-V")
             || !strcmp(argv[i], "--version")
             || !strcmp(argv[i], "-v")       /* deprecated */
@@ -647,7 +639,6 @@ int main(int argc, char *argv[])
             RTPrintf("%s\n", RTBldCfgType());
             return 0;
         }
-#endif
 
         if (   !strcmp(argv[i], "--dumpopts")
             || !strcmp(argv[i], "-dumpopts") /* deprecated */)
@@ -688,7 +679,6 @@ int main(int argc, char *argv[])
             pszSettingsPwFile = argv[i+1];
             iCmd += 2;
         }
-#ifndef VBOX_ONLY_DOCS
         else if (argv[i][0] == '@')
         {
             if (papszResponseFileArgs)
@@ -728,7 +718,6 @@ int main(int argc, char *argv[])
 
             iCmd++;
         }
-#endif
         else
             break;
     }
@@ -741,7 +730,6 @@ int main(int argc, char *argv[])
     if (fShowLogo)
         showLogo(g_pStdOut);
 
-#ifndef VBOX_ONLY_DOCS
     PCVBMGCMD pCmd = lookupCommand(argv[iCmd]);
     if (pCmd && pCmd->enmCmdHelp != VBMG_CMD_INTERNAL)
         setCurrentCommand(pCmd->enmCmdHelp);
@@ -944,7 +932,4 @@ int main(int argc, char *argv[])
     }
 
     return rcExit;
-#else  /* VBOX_ONLY_DOCS */
-    return RTEXITCODE_SUCCESS;
-#endif /* VBOX_ONLY_DOCS */
 }

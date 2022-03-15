@@ -15,9 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_ONLY_DOCS
-
-
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -661,5 +658,3 @@ RTEXITCODE handleMetrics(HandlerArg *a)
 
     return rcExit;
 }
-
-#endif /* !VBOX_ONLY_DOCS */

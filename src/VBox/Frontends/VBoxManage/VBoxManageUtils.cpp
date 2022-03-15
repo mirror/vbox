@@ -15,7 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef VBOX_ONLY_DOCS
 #include "VBoxManageUtils.h"
 #include "VBoxManage.h"
 
@@ -120,5 +119,3 @@ void verifyHostNetworkInterfaceName(const ComPtr<IVirtualBox> &pVirtualBox,
 
     RTMsgWarning(Utils::tr("Interface \"%s\" doesn't seem to exist"), pszTargetName);
 }
-
-#endif  /* !VBOX_ONLY_DOCS */

@@ -21,11 +21,9 @@
 # pragma once
 #endif
 
-#ifndef VBOX_ONLY_DOCS
 #include <VBox/com/com.h>
 #include <VBox/com/ptr.h>
 #include <VBox/com/VirtualBox.h>
-#endif
 
 unsigned int getMaxNics(const ComPtr<IVirtualBox> &pVirtualBox,
                         const ComPtr<IMachine> &pMachine);

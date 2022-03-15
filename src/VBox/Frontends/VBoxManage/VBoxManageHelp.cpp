@@ -48,7 +48,6 @@
 *********************************************************************************************************************************/
 DECLARE_TRANSLATION_CONTEXT(Help);
 
-#ifndef VBOX_ONLY_DOCS
 static enum HELP_CMD_VBOXMANAGE    g_enmCurCommand = HELP_CMD_VBOXMANAGE_INVALID;
 /** The scope mask for the current subcommand. */
 static uint64_t                    g_fCurSubcommandScope = RTMSGREFENTRYSTR_SCOPE_GLOBAL;
@@ -488,9 +487,6 @@ RTEXITCODE errorGetOpt(int rcGetOpt, union RTGETOPTUNION const *pValueUnion)
     return RTEXITCODE_SYNTAX;
 }
 
-#endif /* !VBOX_ONLY_DOCS */
-
-
 
 void showLogo(PRTSTREAM pStrm)
 {
@@ -583,7 +579,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "Commands:\n"
                      "\n");
 
-#ifndef VBOX_ONLY_DOCS /* Converted to man page, not needed. */
     if (enmCommand == USAGE_S_ALL)
     {
         uint32_t            cPendingBlankLines = 0;
@@ -605,7 +600,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
             cPendingBlankLines = RT_MAX(cPendingBlankLines, 1);
         }
     }
-#endif
 }
 
 /**
@@ -616,16 +610,14 @@ RTEXITCODE errorSyntax(USAGECATEGORY enmCommand, const char *pszFormat, ...)
 {
     va_list args;
     showLogo(g_pStdErr); // show logo even if suppressed
-#ifndef VBOX_ONLY_DOCS
+
     if (g_fInternalMode)
         printUsageInternal(enmCommand, g_pStdErr);
     else if (g_enmCurCommand == HELP_CMD_VBOXMANAGE_INVALID)
         printUsage(enmCommand, RTMSGREFENTRYSTR_SCOPE_GLOBAL, g_pStdErr);
     else
         printUsage(g_pStdErr);
-#else
-    RT_NOREF_PV(enmCommand);
-#endif
+
     va_start(args, pszFormat);
     RTStrmPrintf(g_pStdErr, Help::tr("\nSyntax error: %N\n"), pszFormat, &args);
     va_end(args);
@@ -640,16 +632,14 @@ RTEXITCODE errorSyntaxEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, co
 {
     va_list args;
     showLogo(g_pStdErr); // show logo even if suppressed
-#ifndef VBOX_ONLY_DOCS
+
     if (g_fInternalMode)
         printUsageInternal(enmCommand, g_pStdErr);
     else if (g_enmCurCommand == HELP_CMD_VBOXMANAGE_INVALID)
         printUsage(enmCommand, fSubcommandScope, g_pStdErr);
     else
         printUsage(g_pStdErr);
-#else
-    RT_NOREF2(enmCommand, fSubcommandScope);
-#endif
+
     va_start(args, pszFormat);
     RTStrmPrintf(g_pStdErr, Help::tr("\nSyntax error: %N\n"), pszFormat, &args);
     va_end(args);
@@ -672,25 +662,23 @@ RTEXITCODE errorGetOptEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, in
     /*
      * Check if it is an unhandled standard option.
      */
-#ifndef VBOX_ONLY_DOCS
     if (rc == 'V')
     {
         RTPrintf("%sr%d\n", VBOX_VERSION_STRING, RTBldCfgRevision());
         return RTEXITCODE_SUCCESS;
     }
-#endif
 
     if (rc == 'h')
     {
         showLogo(g_pStdErr);
-#ifndef VBOX_ONLY_DOCS
+
         if (g_fInternalMode)
             printUsageInternal(enmCommand, g_pStdOut);
         else if (g_enmCurCommand == HELP_CMD_VBOXMANAGE_INVALID)
             printUsage(enmCommand, fSubcommandScope, g_pStdOut);
         else
             printUsage(g_pStdErr);
-#endif
+
         return RTEXITCODE_SUCCESS;
     }
 
@@ -698,16 +686,13 @@ RTEXITCODE errorGetOptEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, in
      * General failure.
      */
     showLogo(g_pStdErr); // show logo even if suppressed
-#ifndef VBOX_ONLY_DOCS
+
     if (g_fInternalMode)
         printUsageInternal(enmCommand, g_pStdErr);
     else if (g_enmCurCommand == HELP_CMD_VBOXMANAGE_INVALID)
         printUsage(enmCommand, fSubcommandScope, g_pStdErr);
     else
         printUsage(g_pStdErr);
-#else
-    RT_NOREF2(enmCommand, fSubcommandScope);
-#endif
 
     if (rc == VINF_GETOPT_NOT_OPTION)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, Help::tr("Invalid parameter '%s'"), pValueUnion->psz);

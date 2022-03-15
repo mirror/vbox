@@ -21,8 +21,6 @@
 *********************************************************************************************************************************/
 #include "VBoxManage.h"
 
-#ifndef VBOX_ONLY_DOCS
-
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
 #include <VBox/com/array.h>
@@ -48,12 +46,8 @@
 
 using namespace com;
 
-#endif /* !VBOX_ONLY_DOCS */
-
 DECLARE_TRANSLATION_CONTEXT(GuestProp);
 
-
-#ifndef VBOX_ONLY_DOCS
 
 static RTEXITCODE handleGetGuestProperty(HandlerArg *a)
 {
@@ -427,5 +421,3 @@ RTEXITCODE handleGuestProperty(HandlerArg *a)
     /* default: */
     return errorSyntax(GuestProp::tr("Incorrect parameters"));
 }
-
-#endif /* !VBOX_ONLY_DOCS */
