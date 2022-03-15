@@ -61,7 +61,7 @@
 /** The command doesn't need the COM stuff. */
 #define VBMG_CMD_F_NO_COM       RT_BIT_32(0)
 
-#define VBMG_CMD_TODO HELP_CMD_VBOXMANAGE_INVALID
+#define VBMG_CMD_INTERNAL       HELP_CMD_VBOXMANAGE_INVALID
 
 
 /*********************************************************************************************************************************
@@ -75,8 +75,6 @@ typedef struct VBMGCMD
 {
     /** The command.   */
     const char                 *pszCommand;
-    /** The help category. */
-    USAGECATEGORY               enmHelpCat;
     /** The new help command. */
     enum HELP_CMD_VBOXMANAGE    enmCmdHelp;
     /** The handler. */
@@ -190,76 +188,76 @@ static volatile bool    g_fCanceled = false;
  */
 static const VBMGCMD g_aCommands[] =
 {
-    { "internalcommands",   USAGE_INVALID,          VBMG_CMD_TODO, handleInternalCommands,     0 },
-    { "list",               USAGE_S_NEWCMD,         HELP_CMD_LIST, handleList,                 0 },
-    { "showvminfo",         USAGE_S_NEWCMD,   HELP_CMD_SHOWVMINFO, handleShowVMInfo,           0 },
-    { "registervm",         USAGE_S_NEWCMD,   HELP_CMD_REGISTERVM, handleRegisterVM,           0 },
-    { "unregistervm",       USAGE_S_NEWCMD, HELP_CMD_UNREGISTERVM, handleUnregisterVM,         0 },
-    { "clonevm",            USAGE_S_NEWCMD,      HELP_CMD_CLONEVM, handleCloneVM,              0 },
-    { "movevm",             USAGE_S_NEWCMD,       HELP_CMD_MOVEVM, handleMoveVM,               0 },
-    { "mediumproperty",     USAGE_S_NEWCMD,HELP_CMD_MEDIUMPROPERTY, handleMediumProperty,       0 },
-    { "hdproperty",         USAGE_S_NEWCMD,HELP_CMD_MEDIUMPROPERTY, handleMediumProperty,       0 }, /* backward compatibility */
-    { "createmedium",       USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 },
-    { "createhd",           USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 }, /* backward compatibility */
-    { "createvdi",          USAGE_S_NEWCMD, HELP_CMD_CREATEMEDIUM, handleCreateMedium,         0 }, /* backward compatibility */
-    { "modifymedium",       USAGE_S_NEWCMD, HELP_CMD_MODIFYMEDIUM, handleModifyMedium,         0 },
-    { "modifyhd",           USAGE_S_NEWCMD, HELP_CMD_MODIFYMEDIUM, handleModifyMedium,         0 }, /* backward compatibility */
-    { "modifyvdi",          USAGE_S_NEWCMD, HELP_CMD_MODIFYMEDIUM, handleModifyMedium,         0 }, /* backward compatibility */
-    { "clonemedium",        USAGE_S_NEWCMD,  HELP_CMD_CLONEMEDIUM, handleCloneMedium,          0 },
-    { "clonehd",            USAGE_S_NEWCMD,  HELP_CMD_CLONEMEDIUM, handleCloneMedium,          0 }, /* backward compatibility */
-    { "clonevdi",           USAGE_S_NEWCMD,  HELP_CMD_CLONEMEDIUM, handleCloneMedium,          0 }, /* backward compatibility */
-    { "encryptmedium",      USAGE_S_NEWCMD,HELP_CMD_ENCRYPTMEDIUM, handleEncryptMedium,        0 },
-    { "checkmediumpwd",     USAGE_S_NEWCMD,HELP_CMD_CHECKMEDIUMPWD, handleCheckMediumPassword,  0 },
-    { "createvm",           USAGE_S_NEWCMD,     HELP_CMD_CREATEVM, handleCreateVM,             0 },
-    { "modifyvm",           USAGE_S_NEWCMD,     HELP_CMD_MODIFYVM, handleModifyVM,             0 },
-    { "startvm",            USAGE_S_NEWCMD,      HELP_CMD_STARTVM, handleStartVM,              0 },
-    { "controlvm",          USAGE_S_NEWCMD,    HELP_CMD_CONTROLVM, handleControlVM,            0 },
-    { "unattended",         USAGE_S_NEWCMD,   HELP_CMD_UNATTENDED, handleUnattended,           0 },
-    { "discardstate",       USAGE_S_NEWCMD, HELP_CMD_DISCARDSTATE, handleDiscardState,         0 },
-    { "adoptstate",         USAGE_S_NEWCMD,   HELP_CMD_ADOPTSTATE, handleAdoptState,           0 },
-    { "snapshot",           USAGE_S_NEWCMD,     HELP_CMD_SNAPSHOT, handleSnapshot,             0 },
-    { "closemedium",        USAGE_S_NEWCMD,  HELP_CMD_CLOSEMEDIUM, handleCloseMedium,          0 },
-    { "storageattach",      USAGE_S_NEWCMD,HELP_CMD_STORAGEATTACH, handleStorageAttach,        0 },
-    { "storagectl",         USAGE_S_NEWCMD,   HELP_CMD_STORAGECTL, handleStorageController,    0 },
-    { "showmediuminfo",     USAGE_S_NEWCMD,HELP_CMD_SHOWMEDIUMINFO, handleShowMediumInfo,       0 },
-    { "showhdinfo",         USAGE_S_NEWCMD,HELP_CMD_SHOWMEDIUMINFO, handleShowMediumInfo,       0 }, /* backward compatibility */
-    { "showvdiinfo",        USAGE_S_NEWCMD,HELP_CMD_SHOWMEDIUMINFO, handleShowMediumInfo,       0 }, /* backward compatibility */
-    { "mediumio",           USAGE_S_NEWCMD,     HELP_CMD_MEDIUMIO, handleMediumIO,             0 },
-    { "getextradata",       USAGE_S_NEWCMD, HELP_CMD_GETEXTRADATA, handleGetExtraData,         0 },
-    { "setextradata",       USAGE_S_NEWCMD, HELP_CMD_SETEXTRADATA, handleSetExtraData,         0 },
-    { "setproperty",        USAGE_S_NEWCMD,  HELP_CMD_SETPROPERTY, handleSetProperty,          0 },
-    { "usbfilter",          USAGE_S_NEWCMD,    HELP_CMD_USBFILTER, handleUSBFilter,            0 },
-    { "sharedfolder",       USAGE_S_NEWCMD, HELP_CMD_SHAREDFOLDER, handleSharedFolder,         0 },
+    { "internalcommands",   VBMG_CMD_INTERNAL,          handleInternalCommands,     0 },
+    { "list",               HELP_CMD_LIST,              handleList,                 0 },
+    { "showvminfo",         HELP_CMD_SHOWVMINFO,        handleShowVMInfo,           0 },
+    { "registervm",         HELP_CMD_REGISTERVM,        handleRegisterVM,           0 },
+    { "unregistervm",       HELP_CMD_UNREGISTERVM,      handleUnregisterVM,         0 },
+    { "clonevm",            HELP_CMD_CLONEVM,           handleCloneVM,              0 },
+    { "movevm",             HELP_CMD_MOVEVM,            handleMoveVM,               0 },
+    { "mediumproperty",     HELP_CMD_MEDIUMPROPERTY,    handleMediumProperty,       0 },
+    { "hdproperty",         HELP_CMD_MEDIUMPROPERTY,    handleMediumProperty,       0 }, /* backward compatibility */
+    { "createmedium",       HELP_CMD_CREATEMEDIUM,      handleCreateMedium,         0 },
+    { "createhd",           HELP_CMD_CREATEMEDIUM,      handleCreateMedium,         0 }, /* backward compatibility */
+    { "createvdi",          HELP_CMD_CREATEMEDIUM,      handleCreateMedium,         0 }, /* backward compatibility */
+    { "modifymedium",       HELP_CMD_MODIFYMEDIUM,      handleModifyMedium,         0 },
+    { "modifyhd",           HELP_CMD_MODIFYMEDIUM,      handleModifyMedium,         0 }, /* backward compatibility */
+    { "modifyvdi",          HELP_CMD_MODIFYMEDIUM,      handleModifyMedium,         0 }, /* backward compatibility */
+    { "clonemedium",        HELP_CMD_CLONEMEDIUM,       handleCloneMedium,          0 },
+    { "clonehd",            HELP_CMD_CLONEMEDIUM,       handleCloneMedium,          0 }, /* backward compatibility */
+    { "clonevdi",           HELP_CMD_CLONEMEDIUM,       handleCloneMedium,          0 }, /* backward compatibility */
+    { "encryptmedium",      HELP_CMD_ENCRYPTMEDIUM,     handleEncryptMedium,        0 },
+    { "checkmediumpwd",     HELP_CMD_CHECKMEDIUMPWD,    handleCheckMediumPassword,  0 },
+    { "createvm",           HELP_CMD_CREATEVM,          handleCreateVM,             0 },
+    { "modifyvm",           HELP_CMD_MODIFYVM,          handleModifyVM,             0 },
+    { "startvm",            HELP_CMD_STARTVM,           handleStartVM,              0 },
+    { "controlvm",          HELP_CMD_CONTROLVM,         handleControlVM,            0 },
+    { "unattended",         HELP_CMD_UNATTENDED,        handleUnattended,           0 },
+    { "discardstate",       HELP_CMD_DISCARDSTATE,      handleDiscardState,         0 },
+    { "adoptstate",         HELP_CMD_ADOPTSTATE,        handleAdoptState,           0 },
+    { "snapshot",           HELP_CMD_SNAPSHOT,          handleSnapshot,             0 },
+    { "closemedium",        HELP_CMD_CLOSEMEDIUM,       handleCloseMedium,          0 },
+    { "storageattach",      HELP_CMD_STORAGEATTACH,     handleStorageAttach,        0 },
+    { "storagectl",         HELP_CMD_STORAGECTL,        handleStorageController,    0 },
+    { "showmediuminfo",     HELP_CMD_SHOWMEDIUMINFO,    handleShowMediumInfo,       0 },
+    { "showhdinfo",         HELP_CMD_SHOWMEDIUMINFO,    handleShowMediumInfo,       0 }, /* backward compatibility */
+    { "showvdiinfo",        HELP_CMD_SHOWMEDIUMINFO,    handleShowMediumInfo,       0 }, /* backward compatibility */
+    { "mediumio",           HELP_CMD_MEDIUMIO,          handleMediumIO,             0 },
+    { "getextradata",       HELP_CMD_GETEXTRADATA,      handleGetExtraData,         0 },
+    { "setextradata",       HELP_CMD_SETEXTRADATA,      handleSetExtraData,         0 },
+    { "setproperty",        HELP_CMD_SETPROPERTY,       handleSetProperty,          0 },
+    { "usbfilter",          HELP_CMD_USBFILTER,         handleUSBFilter,            0 },
+    { "sharedfolder",       HELP_CMD_SHAREDFOLDER,      handleSharedFolder,         0 },
 #ifdef VBOX_WITH_GUEST_PROPS
-    { "guestproperty",      USAGE_S_NEWCMD,HELP_CMD_GUESTPROPERTY, handleGuestProperty,        0 },
+    { "guestproperty",      HELP_CMD_GUESTPROPERTY,     handleGuestProperty,        0 },
 #endif
 #ifdef VBOX_WITH_GUEST_CONTROL
-    { "guestcontrol",       USAGE_S_NEWCMD, HELP_CMD_GUESTCONTROL, handleGuestControl,         0 },
+    { "guestcontrol",       HELP_CMD_GUESTCONTROL,      handleGuestControl,         0 },
 #endif
-    { "metrics",            USAGE_S_NEWCMD,      HELP_CMD_METRICS, handleMetrics,              0 },
-    { "import",             USAGE_S_NEWCMD,       HELP_CMD_IMPORT, handleImportAppliance,      0 },
-    { "export",             USAGE_S_NEWCMD,       HELP_CMD_EXPORT, handleExportAppliance,      0 },
-    { "signova",            USAGE_S_NEWCMD,      HELP_CMD_SIGNOVA, handleSignAppliance,        VBMG_CMD_F_NO_COM },
+    { "metrics",            HELP_CMD_METRICS,           handleMetrics,              0 },
+    { "import",             HELP_CMD_IMPORT,            handleImportAppliance,      0 },
+    { "export",             HELP_CMD_EXPORT,            handleExportAppliance,      0 },
+    { "signova",            HELP_CMD_SIGNOVA,           handleSignAppliance,        VBMG_CMD_F_NO_COM },
 #ifdef VBOX_WITH_NETFLT
-    { "hostonlyif",         USAGE_S_NEWCMD,   HELP_CMD_HOSTONLYIF, handleHostonlyIf,           0 },
+    { "hostonlyif",         HELP_CMD_HOSTONLYIF,        handleHostonlyIf,           0 },
 #endif
 #ifdef VBOX_WITH_VMNET
-    { "hostonlynet",        USAGE_S_NEWCMD,  HELP_CMD_HOSTONLYNET, handleHostonlyNet,          0 },
+    { "hostonlynet",        HELP_CMD_HOSTONLYNET,       handleHostonlyNet,          0 },
 #endif
-    { "dhcpserver",         USAGE_S_NEWCMD,   HELP_CMD_DHCPSERVER, handleDHCPServer,           0 },
+    { "dhcpserver",         HELP_CMD_DHCPSERVER,        handleDHCPServer,           0 },
 #ifdef VBOX_WITH_NAT_SERVICE
-    { "natnetwork",         USAGE_S_NEWCMD,   HELP_CMD_NATNETWORK, handleNATNetwork,           0 },
+    { "natnetwork",         HELP_CMD_NATNETWORK,        handleNATNetwork,           0 },
 #endif
-    { "extpack",            USAGE_S_NEWCMD,      HELP_CMD_EXTPACK, handleExtPack,              0 },
-    { "bandwidthctl",       USAGE_S_NEWCMD, HELP_CMD_BANDWIDTHCTL, handleBandwidthControl,     0 },
-    { "debugvm",            USAGE_S_NEWCMD,      HELP_CMD_DEBUGVM, handleDebugVM,              0 },
-    { "convertfromraw",     USAGE_S_NEWCMD,HELP_CMD_CONVERTFROMRAW, handleConvertFromRaw,       VBMG_CMD_F_NO_COM },
-    { "convertdd",          USAGE_S_NEWCMD,HELP_CMD_CONVERTFROMRAW, handleConvertFromRaw,       VBMG_CMD_F_NO_COM },
-    { "usbdevsource",       USAGE_S_NEWCMD,  HELP_CMD_USBDEVSOURCE, handleUSBDevSource,         0 },
-    { "cloudprofile",       USAGE_S_NEWCMD,      HELP_CMD_CLOUDPROFILE, handleCloudProfile,         0 },
-    { "cloud",              USAGE_S_NEWCMD,         HELP_CMD_CLOUD, handleCloud,               0 },
-    { "updatecheck",        USAGE_S_NEWCMD,   HELP_CMD_UPDATECHECK, handleUpdateCheck,         0 },
-    { "modifynvram",        USAGE_S_NEWCMD,   HELP_CMD_MODIFYNVRAM, handleModifyNvram,          0 },
+    { "extpack",            HELP_CMD_EXTPACK,           handleExtPack,              0 },
+    { "bandwidthctl",       HELP_CMD_BANDWIDTHCTL,      handleBandwidthControl,     0 },
+    { "debugvm",            HELP_CMD_DEBUGVM,           handleDebugVM,              0 },
+    { "convertfromraw",     HELP_CMD_CONVERTFROMRAW,    handleConvertFromRaw,       VBMG_CMD_F_NO_COM },
+    { "convertdd",          HELP_CMD_CONVERTFROMRAW,    handleConvertFromRaw,       VBMG_CMD_F_NO_COM },
+    { "usbdevsource",       HELP_CMD_USBDEVSOURCE,      handleUSBDevSource,         0 },
+    { "cloudprofile",       HELP_CMD_CLOUDPROFILE,      handleCloudProfile,         0 },
+    { "cloud",              HELP_CMD_CLOUD,             handleCloud,                0 },
+    { "updatecheck",        HELP_CMD_UPDATECHECK,       handleUpdateCheck,          0 },
+    { "modifynvram",        HELP_CMD_MODIFYNVRAM,       handleModifyNvram,          0 },
 };
 
 /**
@@ -745,16 +743,15 @@ int main(int argc, char *argv[])
 
 #ifndef VBOX_ONLY_DOCS
     PCVBMGCMD pCmd = lookupCommand(argv[iCmd]);
-    if (pCmd && pCmd->enmCmdHelp != VBMG_CMD_TODO)
+    if (pCmd && pCmd->enmCmdHelp != VBMG_CMD_INTERNAL)
         setCurrentCommand(pCmd->enmCmdHelp);
 
     if (   pCmd
         && (   fShowHelp
-            || (   argc - iCmdArg == 0
-                && pCmd->enmHelpCat != USAGE_INVALID)))
+            || argc - iCmdArg == 0))
     {
-        if (pCmd->enmCmdHelp == VBMG_CMD_TODO)
-            printUsage(pCmd->enmHelpCat, RTMSGREFENTRYSTR_SCOPE_GLOBAL, g_pStdOut);
+        if (pCmd->enmCmdHelp == VBMG_CMD_INTERNAL)
+            printUsage(USAGE_INVALID, RTMSGREFENTRYSTR_SCOPE_GLOBAL, g_pStdOut);
         else if (fShowHelp)
             printHelp(g_pStdOut);
         else
@@ -768,9 +765,7 @@ int main(int argc, char *argv[])
             RTPrintf(VBoxManage::tr("commands:\n"));
             for (unsigned i = 0; i < RT_ELEMENTS(g_aCommands); i++)
                 if (   i == 0  /* skip backwards compatibility entries */
-                    || (g_aCommands[i].enmHelpCat != USAGE_S_NEWCMD
-                        ? g_aCommands[i].enmHelpCat != g_aCommands[i - 1].enmHelpCat
-                        : g_aCommands[i].enmCmdHelp != g_aCommands[i - 1].enmCmdHelp))
+                    || (g_aCommands[i].enmCmdHelp != g_aCommands[i - 1].enmCmdHelp))
                     RTPrintf("    %s\n", g_aCommands[i].pszCommand);
             return RTEXITCODE_SUCCESS;
         }
