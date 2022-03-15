@@ -26,10 +26,7 @@
 #include "VBoxUtils.h"
 
 /* Forward declarations: */
-class QButtonGroup;
-class QLabel;
-class QRadioButton;
-class QILineEdit;
+class UIGlobalProxyFeaturesEditor;
 struct UIDataSettingsGlobalProxy;
 typedef UISettingsCache<UIDataSettingsGlobalProxy> UISettingsCacheGlobalProxy;
 
@@ -67,11 +64,6 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
-private slots:
-
-    /** Handles proxy toggling. */
-    void sltHandleProxyToggle();
-
 private:
 
     /** Prepares all. */
@@ -91,20 +83,8 @@ private:
 
     /** @name Widgets
      * @{ */
-        /** Holds the button-group instance. */
-        QButtonGroup *m_pButtonGroup;
-        /** Holds the 'proxy auto' radio-button instance. */
-        QRadioButton *m_pRadioButtonProxyAuto;
-        /** Holds the 'proxy disabled' radio-button instance. */
-        QRadioButton *m_pRadioButtonProxyDisabled;
-        /** Holds the 'proxy enabled' radio-button instance. */
-        QRadioButton *m_pRadioButtonProxyEnabled;
-        /** Holds the settings widget instance. */
-        QWidget      *m_pWidgetSettings;
-        /** Holds the host label instance. */
-        QLabel       *m_pLabelHost;
-        /** Holds the host editor instance. */
-        QILineEdit   *m_pEditorHost;
+        /** Holds the global proxy features editor instance. */
+        UIGlobalProxyFeaturesEditor *m_pEditorGlobalProxyFeatures;
     /** @} */
 };
 
