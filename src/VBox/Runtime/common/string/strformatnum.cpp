@@ -235,117 +235,139 @@ RTDECL(ssize_t) RTStrFormatU512(char *pszBuf, size_t cbBuf, PCRTUINT512U pu512, 
 }
 
 
-RTDECL(ssize_t) RTStrFormatR80u2(char *pszBuf, size_t cbBuf, PCRTFLOAT80U2 pr80Value, signed int cchWidth,
-                                 signed int cchPrecision, uint32_t fFlags)
+/**
+ * Helper for rtStrFormatR80Worker that copies out the resulting string.
+ */
+static ssize_t rtStrFormatR80CopyOutStr(char *pszBuf, size_t cbBuf, const char *pszSrc, size_t cchSrc)
 {
-    NOREF(cchWidth); NOREF(cchPrecision); NOREF(fFlags);
+    if (cchSrc < cbBuf)
+    {
+        memcpy(pszBuf, pszSrc, cchSrc);
+        pszBuf[cchSrc] = '\0';
+        return cchSrc;
+    }
+    if (cbBuf)
+    {
+        memcpy(pszBuf, pszSrc, cbBuf - 1);
+        pszBuf[cbBuf - 1] = '\0';
+    }
+    return VERR_BUFFER_OVERFLOW;
+}
+
+
+/**
+ * Common worker for RTStrFormatR80 and RTStrFormatR80u2.
+ */
+static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign, bool const fInteger,
+                                    uint64_t const uFraction, uint16_t const uExponent, uint32_t fFlags)
+{
     char szTmp[160];
 
+    /*
+     * Output sign first.
+     */
     char *pszTmp = szTmp;
-    if (pr80Value->s.fSign)
+    if (fSign)
         *pszTmp++ = '-';
     else
         *pszTmp++ = '+';
 
-    if (pr80Value->s.uExponent == 0)
+    /*
+     * Then check for special numbers (indicated by expontent).
+     */
+    bool fDenormal = false;
+    if (uExponent == 0)
     {
-#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
-        if (   !pr80Value->sj64.u63Fraction
-            && pr80Value->sj64.fInteger)
-#else
-        if (   !pr80Value->sj.u32FractionLow
-            && !pr80Value->sj.u31FractionHigh
-            && pr80Value->sj.fInteger)
-#endif
-            *pszTmp++ = '0';
-        /* else: Denormal, handled way below. */
+        /* Zero? */
+        if (   !uFraction
+            && !fInteger)
+            return fSign
+                 ? rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+0"))
+                 : rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-0"));
+        fDenormal = true;
     }
-#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
-    else if (pr80Value->sj64.uExponent == UINT16_C(0x7fff))
-#else
-    else if (pr80Value->sj.uExponent == UINT16_C(0x7fff))
-#endif
+    else if (uExponent == UINT16_C(0x7fff))
     {
-        /** @todo Figure out Pseudo inf/nan... */
-#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
-        if (pr80Value->sj64.fInteger)
-#else
-        if (pr80Value->sj.fInteger)
-#endif
-            *pszTmp++ = 'P';
-#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
-        if (pr80Value->sj64.u63Fraction == 0)
-#else
-        if (   pr80Value->sj.u32FractionLow == 0
-            && pr80Value->sj.u31FractionHigh == 0)
-#endif
+        if (!fInteger)
         {
-            *pszTmp++ = 'I';
-            *pszTmp++ = 'n';
-            *pszTmp++ = 'f';
+            if (!uFraction)
+                return fSign
+                     ? rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+PseudoInf"))
+                     : rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-PseudoInf"));
+            if (!(fFlags & RTSTR_F_SPECIAL))
+                return fSign
+                     ? rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+PseudoNan"))
+                     : rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-PseudoNan"));
+            pszTmp = (char *)memcpy(pszTmp, RT_STR_TUPLE("PseudoNan[")) + 10;
+        }
+        else if (!(uFraction & RT_BIT_64(62)))
+        {
+            if (!(uFraction & (RT_BIT_64(62) - 1)))
+                return fSign
+                     ? rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+Inf"))
+                     : rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Inf"));
+            if (!(fFlags & RTSTR_F_SPECIAL))
+                return rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("Nan"));
+            pszTmp = (char *)memcpy(pszTmp, RT_STR_TUPLE("Nan[")) + 4;
         }
         else
         {
-            *pszTmp++ = 'N';
-            *pszTmp++ = 'a';
-            *pszTmp++ = 'N';
+            if (!(uFraction & (RT_BIT_64(62) - 1)))
+                return fSign
+                     ? rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+Ind"))
+                     : rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Ind"));
+            if (!(fFlags & RTSTR_F_SPECIAL))
+                return rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("QNan"));
+            pszTmp = (char *)memcpy(pszTmp, RT_STR_TUPLE("QNan[")) + 4;
         }
-    }
-    if (pszTmp != &szTmp[1])
-        *pszTmp = '\0';
-    else
-    {
-#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
-        *pszTmp++ = pr80Value->sj64.fInteger ? '1' : '0';
-#else
-        *pszTmp++ = pr80Value->sj.fInteger ? '1' : '0';
-#endif
-        *pszTmp++ = 'm';
-#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
-        pszTmp += RTStrFormatNumber(pszTmp, pr80Value->sj64.u63Fraction, 16, 2+16, 0,
+        pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + 16, 0,
                                     RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-#else
-        pszTmp += RTStrFormatNumber(pszTmp, RT_MAKE_U64(pr80Value->sj.u32FractionLow, pr80Value->sj.u31FractionHigh), 16, 2+16, 0,
-                                    RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
-#endif
-
-        *pszTmp++ = 'e';
-#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
-        pszTmp += RTStrFormatNumber(pszTmp, (int32_t)pr80Value->sj64.uExponent - 16383, 10, 0, 0,
-                                    RTSTR_F_ZEROPAD | RTSTR_F_32BIT | RTSTR_F_VALSIGNED);
-#else
-        pszTmp += RTStrFormatNumber(pszTmp, (int32_t)pr80Value->sj.uExponent - 16383, 10, 0, 0,
-                                    RTSTR_F_ZEROPAD | RTSTR_F_32BIT | RTSTR_F_VALSIGNED);
-#endif
+        *pszTmp++ = ']';
+        return rtStrFormatR80CopyOutStr(pszBuf, cbBuf, szTmp, pszTmp - &szTmp[0]);
     }
 
     /*
-     * Copy out the result.
+     * Format the mantissa and exponent.
      */
-    ssize_t cchRet = pszTmp - &szTmp[0];
-    if ((size_t)cchRet < cbBuf)
-        memcpy(pszBuf, szTmp, cchRet + 1);
-    else
+    *pszTmp++ = fInteger ? '1' : '0';
+    *pszTmp++ = 'm';
+    pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2+16, 0,
+                                RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
+
+    *pszTmp++ = '^';
+    pszTmp += RTStrFormatNumber(pszTmp, (int32_t)uExponent - 16383, 10, 0, 0,
+                                RTSTR_F_ZEROPAD | RTSTR_F_32BIT | RTSTR_F_VALSIGNED);
+    if (fDenormal && (fFlags & RTSTR_F_SPECIAL))
     {
-        if (cbBuf)
-        {
-            memcpy(pszBuf, szTmp, cbBuf - 1);
-            pszBuf[cbBuf - 1] = '\0';
-        }
-        cchRet = VERR_BUFFER_OVERFLOW;
+        if (fInteger)
+            pszTmp = (char *)memcpy(pszTmp, RT_STR_TUPLE("[PDn]")) + 5;
+        else
+            pszTmp = (char *)memcpy(pszTmp, RT_STR_TUPLE("[Den]")) + 5;
     }
-    return cchRet;
+    return rtStrFormatR80CopyOutStr(pszBuf, cbBuf, szTmp, pszTmp - &szTmp[0]);
+}
+
+
+RTDECL(ssize_t) RTStrFormatR80u2(char *pszBuf, size_t cbBuf, PCRTFLOAT80U2 pr80Value, signed int cchWidth,
+                                 signed int cchPrecision, uint32_t fFlags)
+{
+    RT_NOREF(cchWidth, cchPrecision);
+#ifdef RT_COMPILER_GROKS_64BIT_BITFIELDS
+    return rtStrFormatR80Worker(pszBuf, cbBuf, pr80Value->sj64.fSign, pr80Value->sj64.fInteger,
+                                pr80Value->sj64.u63Fraction, pr80Value->sj64.uExponent, fFlags);
+#else
+    return rtStrFormatR80Worker(pszBuf, cbBuf, pr80Value->sj.fSign, pr80Value->sj.fInteger,
+                                RT_MAKE_U64(pr80Value->sj.u32FractionLow, pr80Value->sj.u31FractionHigh),
+                                pr80Value->sj.uExponent, fFlags);
+#endif
 }
 
 
 RTDECL(ssize_t) RTStrFormatR80(char *pszBuf, size_t cbBuf, PCRTFLOAT80U pr80Value, signed int cchWidth,
                                signed int cchPrecision, uint32_t fFlags)
 {
-    RTFLOAT80U2 r80ValueU2;
-    RT_ZERO(r80ValueU2);
-    r80ValueU2.s.fSign       = pr80Value->s.fSign;
-    r80ValueU2.s.uExponent   = pr80Value->s.uExponent;
-    r80ValueU2.s.u64Mantissa = pr80Value->s.u64Mantissa;
-    return RTStrFormatR80u2(pszBuf, cbBuf, &r80ValueU2, cchWidth, cchPrecision, fFlags);
+    RT_NOREF(cchWidth, cchPrecision);
+    return rtStrFormatR80Worker(pszBuf, cbBuf, pr80Value->s.fSign, pr80Value->s.u64Mantissa >> 63,
+                                pr80Value->s.u64Mantissa & (RT_BIT_64(63) - 1), pr80Value->s.uExponent, fFlags);
 }
 
