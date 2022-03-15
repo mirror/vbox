@@ -2364,53 +2364,22 @@ char const *DXShaderGetOutputSemanticName(DXShaderInfo const *pInfo, uint32_t id
     return dxbcGetOutputSemanticName(pInfo, idxRegister, DXBC_BLOB_TYPE_OSGN, pInfo->cOutputSignature, &pInfo->aOutputSignature[0]);
 }
 
-int DXShaderUpdateResourceTypes(DXShaderInfo const *pInfo, SVGA3dResourceType *paResourceType, uint32_t cResourceType)
+int DXShaderUpdateResourceTypes(DXShaderInfo const *pInfo, VGPU10_RESOURCE_DIMENSION *paResourceType, uint32_t cResourceType)
 {
     for (uint32_t i = 0; i < pInfo->cDclResource; ++i)
     {
-        SVGA3dResourceType const resourceType = i < cResourceType ? paResourceType[i] : SVGA3D_RESOURCE_TEXTURE2D;
-        AssertContinue(resourceType < SVGA3D_RESOURCE_TYPE_MAX);
+        VGPU10_RESOURCE_DIMENSION const resourceType = i < cResourceType ? paResourceType[i] : VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
+        AssertContinue(resourceType <= VGPU10_RESOURCE_DIMENSION_TEXTURECUBEARRAY);
 
         uint32_t const offToken = pInfo->aOffDclResource[i];
         AssertContinue(offToken < pInfo->cbBytecode);
         uint32_t *paToken = (uint32_t *)((uintptr_t)pInfo->pvBytecode + offToken);
 
-        uint8_t resourceDimension;
-        uint32_t returnType;
-        switch (resourceType)
-        {
-            case SVGA3D_RESOURCE_BUFFER:
-                resourceDimension = VGPU10_RESOURCE_DIMENSION_BUFFER;
-                returnType = 0x5555; /* float */
-                break;
-            case SVGA3D_RESOURCE_TEXTURE1D:
-                resourceDimension = VGPU10_RESOURCE_DIMENSION_TEXTURE1D;
-                returnType = 0x5555; /* float */
-                break;
-            default:
-            case SVGA3D_RESOURCE_TEXTURE2D:
-                resourceDimension = VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
-                returnType = 0x5555; /* float */
-                break;
-            case SVGA3D_RESOURCE_TEXTURE3D:
-                resourceDimension = VGPU10_RESOURCE_DIMENSION_TEXTURE3D;
-                returnType = 0x5555; /* float */
-                break;
-            case SVGA3D_RESOURCE_TEXTURECUBE:
-                resourceDimension = VGPU10_RESOURCE_DIMENSION_TEXTURECUBE;
-                returnType = 0x5555; /* float */
-                break;
-            case SVGA3D_RESOURCE_BUFFEREX:
-                resourceDimension = VGPU10_RESOURCE_DIMENSION_BUFFER;
-                returnType = 0x5555; /* float */
-                break;
-        }
-
         VGPU10OpcodeToken0 *pOpcode = (VGPU10OpcodeToken0 *)&paToken[0];
-        pOpcode->resourceDimension = resourceDimension;
+        pOpcode->resourceDimension = resourceType;
         // paToken[1] unmodified
         // paToken[2] unmodified
-        paToken[3] = returnType;
+        paToken[3] = 0x5555; /* float */;
     }
 
     return VINF_SUCCESS;

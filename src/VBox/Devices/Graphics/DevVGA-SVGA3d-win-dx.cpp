@@ -1415,7 +1415,7 @@ static HRESULT dxRenderTargetViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
             desc.Buffer.NumElements = pEntry->desc.buffer.numElements;
             break;
         case SVGA3D_RESOURCE_TEXTURE1D:
-            if (pEntry->desc.tex.arraySize <= 1)
+            if (pSurface->surfaceDesc.numArrayElements <= 1)
             {
                 desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE1D;
                 desc.Texture1D.MipSlice = pEntry->desc.tex.mipSlice;
@@ -1429,7 +1429,7 @@ static HRESULT dxRenderTargetViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
             }
             break;
         case SVGA3D_RESOURCE_TEXTURE2D:
-            if (pEntry->desc.tex.arraySize <= 1)
+            if (pSurface->surfaceDesc.numArrayElements <= 1)
             {
                 desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
                 desc.Texture2D.MipSlice = pEntry->desc.tex.mipSlice;
@@ -1490,7 +1490,7 @@ static HRESULT dxShaderResourceViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEX
             desc.Buffer.NumElements = pEntry->desc.buffer.numElements;
             break;
         case SVGA3D_RESOURCE_TEXTURE1D:
-            if (pEntry->desc.tex.arraySize <= 1)
+            if (pSurface->surfaceDesc.numArrayElements <= 1)
             {
                 desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D;
                 desc.Texture1D.MostDetailedMip = pEntry->desc.tex.mostDetailedMip;
@@ -1506,7 +1506,7 @@ static HRESULT dxShaderResourceViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEX
             }
             break;
         case SVGA3D_RESOURCE_TEXTURE2D:
-            if (pEntry->desc.tex.arraySize <= 1)
+            if (pSurface->surfaceDesc.numArrayElements <= 1)
             {
                 desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
                 desc.Texture2D.MostDetailedMip = pEntry->desc.tex.mostDetailedMip;
@@ -1527,9 +1527,20 @@ static HRESULT dxShaderResourceViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEX
             desc.Texture3D.MipLevels = pEntry->desc.tex.mipLevels;
             break;
         case SVGA3D_RESOURCE_TEXTURECUBE:
-            desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-            desc.TextureCube.MostDetailedMip = pEntry->desc.tex.mostDetailedMip;
-            desc.TextureCube.MipLevels = pEntry->desc.tex.mipLevels;
+            if (pSurface->surfaceDesc.numArrayElements <= 6)
+            {
+                desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+                desc.TextureCube.MostDetailedMip = pEntry->desc.tex.mostDetailedMip;
+                desc.TextureCube.MipLevels = pEntry->desc.tex.mipLevels;
+            }
+            else
+            {
+                desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+                desc.TextureCubeArray.MostDetailedMip = pEntry->desc.tex.mostDetailedMip;
+                desc.TextureCubeArray.MipLevels = pEntry->desc.tex.mipLevels;
+                desc.TextureCubeArray.First2DArrayFace = pEntry->desc.tex.firstArraySlice;
+                desc.TextureCubeArray.NumCubes = pEntry->desc.tex.arraySize / 6;
+            }
             break;
         case SVGA3D_RESOURCE_BUFFEREX:
             AssertFailed(); /** @todo test. */
@@ -1562,7 +1573,7 @@ static HRESULT dxDepthStencilViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
     switch (pEntry->resourceDimension)
     {
         case SVGA3D_RESOURCE_TEXTURE1D:
-            if (pEntry->arraySize <= 1)
+            if (pSurface->surfaceDesc.numArrayElements <= 1)
             {
                 desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1D;
                 desc.Texture1D.MipSlice = pEntry->mipSlice;
@@ -1576,7 +1587,7 @@ static HRESULT dxDepthStencilViewCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT 
             }
             break;
         case SVGA3D_RESOURCE_TEXTURE2D:
-            if (pEntry->arraySize <= 1)
+            if (pSurface->surfaceDesc.numArrayElements <= 1)
             {
                 desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
                 desc.Texture2D.MipSlice = pEntry->mipSlice;
@@ -2018,11 +2029,11 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         {
             /** @todo Can happen for a non GBO surface or if GBO texture was updated prior to creation if the hardware resource. Test this. */
             /** @todo for (i = 0; i < pSurface->cFaces * numMipLevels; ++i) */
-            for (uint32_t iFace = 0; iFace < 6; ++iFace)
+            for (uint32_t iArray = 0; iArray < pSurface->surfaceDesc.numArrayElements; ++iArray)
             {
                 for (uint32_t i = 0; i < numMipLevels; ++i)
                 {
-                    uint32_t const iSubresource = vmsvga3dCalcSubresource(i, iFace, numMipLevels);
+                    uint32_t const iSubresource = vmsvga3dCalcSubresource(i, iArray, numMipLevels);
 
                     PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iSubresource];
                     D3D11_SUBRESOURCE_DATA *p = &aInitialData[iSubresource];
@@ -2039,7 +2050,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         td.Width              = cWidth;
         td.Height             = cHeight;
         td.MipLevels          = numMipLevels;
-        td.ArraySize          = 6;
+        td.ArraySize          = pSurface->surfaceDesc.numArrayElements; /* This is 6 * numCubes */
         td.Format             = dxgiFormat;
         td.SampleDesc.Count   = 1;
         td.SampleDesc.Quality = 0;
@@ -2215,7 +2226,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             td.Width              = cWidth;
             td.Height             = cHeight;
             td.MipLevels          = numMipLevels;
-            td.ArraySize          = 1; /** @todo */
+            td.ArraySize          = pSurface->surfaceDesc.numArrayElements;
             td.Format             = dxgiFormat;
             td.SampleDesc.Count   = 1;
             td.SampleDesc.Quality = 0;
@@ -2233,6 +2244,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             {
                 /* Map-able texture. */
                 td.MipLevels      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
+                td.ArraySize      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
                 td.Usage          = D3D11_USAGE_DYNAMIC;
                 td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
                 td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -2348,11 +2360,11 @@ static int vmsvga3dBackSurfaceCreateDepthStencilTexture(PVGASTATECC pThisCC, PVM
         {
             /** @todo Can happen for a non GBO surface or if GBO texture was updated prior to creation if the hardware resource. Test this. */
             /** @todo for (i = 0; i < pSurface->cFaces * numMipLevels; ++i) */
-            for (uint32_t iFace = 0; iFace < 6; ++iFace)
+            for (uint32_t iArray = 0; iArray < pSurface->surfaceDesc.numArrayElements; ++iArray)
             {
                 for (uint32_t i = 0; i < numMipLevels; ++i)
                 {
-                    uint32_t const iSubresource = vmsvga3dCalcSubresource(i, iFace, numMipLevels);
+                    uint32_t const iSubresource = vmsvga3dCalcSubresource(i, iArray, numMipLevels);
 
                     PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iSubresource];
                     D3D11_SUBRESOURCE_DATA *p = &aInitialData[iSubresource];
@@ -2369,7 +2381,7 @@ static int vmsvga3dBackSurfaceCreateDepthStencilTexture(PVGASTATECC pThisCC, PVM
         td.Width              = cWidth;
         td.Height             = cHeight;
         td.MipLevels          = 1;
-        td.ArraySize          = 6;
+        td.ArraySize          = pSurface->surfaceDesc.numArrayElements;
         td.Format             = dxgiFormat;
         td.SampleDesc.Count   = 1;
         td.SampleDesc.Quality = 0;
@@ -2450,7 +2462,7 @@ static int vmsvga3dBackSurfaceCreateDepthStencilTexture(PVGASTATECC pThisCC, PVM
             td.Width              = cWidth;
             td.Height             = cHeight;
             td.MipLevels          = 1;
-            td.ArraySize          = 1;
+            td.ArraySize          = pSurface->surfaceDesc.numArrayElements;
             td.Format             = dxgiFormat;
             td.SampleDesc.Count   = 1;
             td.SampleDesc.Quality = 0;
@@ -2465,6 +2477,7 @@ static int vmsvga3dBackSurfaceCreateDepthStencilTexture(PVGASTATECC pThisCC, PVM
             {
                 /* Map-able texture. */
                 td.MipLevels      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
+                td.ArraySize      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
                 td.Usage          = D3D11_USAGE_DYNAMIC;
                 td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
                 td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -5238,6 +5251,8 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetSingleConstantBuffer(PVGASTATECC pThis
         initialData.SysMemSlicePitch = sizeInBytes;
 
         pInitialData = &initialData;
+
+        // Log(("%.*Rhxd\n", sizeInBytes, initialData.pSysMem));
     }
 
     D3D11_BUFFER_DESC bd;
@@ -5503,7 +5518,7 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                 /* Apply resource types to a pixel shader. */
                 if (shaderType == SVGA3D_SHADERTYPE_PS)
                 {
-                    SVGA3dResourceType aResourceType[SVGA3D_DX_MAX_SRVIEWS];
+                    VGPU10_RESOURCE_DIMENSION aResourceType[SVGA3D_DX_MAX_SRVIEWS];
                     RT_ZERO(aResourceType);
                     uint32_t cResourceType = 0;
 
@@ -5515,7 +5530,42 @@ static void dxSetupPipeline(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
                             SVGACOTableDXSRViewEntry const *pSRViewEntry = dxGetShaderResourceViewEntry(pDXContext, shaderResourceViewId);
                             AssertContinue(pSRViewEntry != NULL);
 
-                            aResourceType[idxSR] = pSRViewEntry->resourceDimension;
+                            PVMSVGA3DSURFACE pSurface;
+                            rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, pSRViewEntry->sid, &pSurface);
+                            AssertRCReturnVoid(rc);
+
+                            switch (pSRViewEntry->resourceDimension)
+                            {
+                                case SVGA3D_RESOURCE_BUFFEREX:
+                                case SVGA3D_RESOURCE_BUFFER:
+                                    aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_BUFFER;
+                                    break;
+                                case SVGA3D_RESOURCE_TEXTURE1D:
+                                    if (pSurface->surfaceDesc.numArrayElements <= 1)
+                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE1D;
+                                    else
+                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE1DARRAY;
+                                    break;
+                                case SVGA3D_RESOURCE_TEXTURE2D:
+                                    if (pSurface->surfaceDesc.numArrayElements <= 1)
+                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
+                                    else
+                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2DARRAY;
+                                    break;
+                                case SVGA3D_RESOURCE_TEXTURE3D:
+                                    aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE3D;
+                                    break;
+                                case SVGA3D_RESOURCE_TEXTURECUBE:
+                                    if (pSurface->surfaceDesc.numArrayElements <= 6)
+                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURECUBE;
+                                    else
+                                        aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURECUBEARRAY;
+                                    break;
+                                default:
+                                    ASSERT_GUEST_FAILED();
+                                    aResourceType[idxSR] = VGPU10_RESOURCE_DIMENSION_TEXTURE2D;
+                            }
+
                             cResourceType = idxSR + 1;
                         }
                     }

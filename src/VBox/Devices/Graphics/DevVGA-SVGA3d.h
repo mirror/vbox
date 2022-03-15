@@ -41,6 +41,25 @@
 #define SVGA3D_MAX_MIP_LEVELS                   16
 
 
+/** @todo Use this as a parameter for vmsvga3dSurfaceDefine and a field in VMSVGA3DSURFACE instead of a multiple values. */
+/* A surface description provided by the guest. Mostly mirrors SVGA3dCmdDefineGBSurface_v4 */
+typedef struct VMSVGA3D_SURFACE_DESC
+{
+   SVGA3dSurface1Flags surface1Flags;
+   SVGA3dSurface2Flags surface2Flags;
+   SVGA3dSurfaceFormat format;
+   uint32 numMipLevels;
+   uint32 multisampleCount;
+   SVGA3dMSPattern multisamplePattern;
+   SVGA3dMSQualityLevel qualityLevel;
+   SVGA3dTextureFilter autogenFilter;
+   SVGA3dSize size;
+   uint32 numArrayElements; /* "Number of array elements for a 1D/2D texture. For cubemap
+                             * texture number of faces * array_size."
+                             */
+   uint32 bufferByteStride;
+} VMSVGA3D_SURFACE_DESC;
+
 typedef enum VMSVGA3D_SURFACE_MAP
 {
     VMSVGA3D_SURFACE_MAP_READ,
@@ -76,7 +95,7 @@ int vmsvga3dQueryCaps(PVGASTATECC pThisCC, SVGA3dDevCapIndex idx3dCaps, uint32_t
 
 int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags surfaceFlags, SVGA3dSurfaceFormat format,
                           uint32_t multisampleCount, SVGA3dTextureFilter autogenFilter,
-                          uint32_t cMipLevels, SVGA3dSize const *pMipLevel0Size, bool fAllocMipLevels);
+                          uint32_t cMipLevels, SVGA3dSize const *pMipLevel0Size, uint32_t arraySize, bool fAllocMipLevels);
 int vmsvga3dSurfaceDestroy(PVGASTATECC pThisCC, uint32_t sid);
 int vmsvga3dSurfaceCopy(PVGASTATECC pThisCC, SVGA3dSurfaceImageId dest, SVGA3dSurfaceImageId src,
                         uint32_t cCopyBoxes, SVGA3dCopyBox *pBox);
@@ -148,10 +167,13 @@ DECLINLINE(void) vmsvga3dCalcMipmapSize(SVGA3dSize const *pSize0, uint32_t iMipm
     pSize->depth  = RT_MAX(pSize0->depth  >> iMipmap, 1);
 }
 
-DECLINLINE(uint32_t) vmsvga3dCalcSubresource(uint32_t iMipLevel, uint32_t iFace, uint32_t cMipLevels)
+uint32_t vmsvga3dGetArrayElements(PVGASTATECC pThisCC, SVGA3dSurfaceId sid);
+uint32_t vmsvga3dGetSubresourceCount(PVGASTATECC pThisCC, SVGA3dSurfaceId sid);
+
+DECLINLINE(uint32_t) vmsvga3dCalcSubresource(uint32_t iMipLevel, uint32_t iArray, uint32_t cMipLevels)
 {
     /* Same as in D3D */
-    return iMipLevel + iFace * cMipLevels;
+    return iMipLevel + iArray * cMipLevels;
 }
 
 DECLINLINE(void) vmsvga3dCalcMipmapAndFace(uint32_t cMipLevels, uint32_t iSubresource, uint32_t *piMipmap, uint32_t *piFace)

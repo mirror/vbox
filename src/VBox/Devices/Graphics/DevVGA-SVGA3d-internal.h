@@ -552,6 +552,9 @@ typedef struct VMSVGA3DSURFACE
      */
     uint32_t                idAssociatedContext;
 
+    /** @todo Only numArrayElements field is used currently. The code uses old fields cLevels, etc for anything else. */
+    VMSVGA3D_SURFACE_DESC   surfaceDesc;
+
     SVGA3dSurface1Flags     surfaceFlags; /** @todo SVGA3dSurfaceAllFlags as an union. */
     SVGA3dSurfaceFormat     format;
 #ifdef VMSVGA3D_OPENGL
@@ -573,7 +576,7 @@ typedef struct VMSVGA3DSURFACE
 #endif
     uint32_t                cFaces; /* Number of faces: 6 for cubemaps, 1 for everything else. */
     uint32_t                cLevels; /* Number of mipmap levels per face. */
-    PVMSVGA3DMIPMAPLEVEL    paMipmapLevels; /* cFaces * cLevels elements. */
+    PVMSVGA3DMIPMAPLEVEL    paMipmapLevels; /* surfaceDesc.numArrayElements * cLevels elements. */
     uint32_t                multiSampleCount;
     SVGA3dTextureFilter     autogenFilter;
 #ifdef VMSVGA3D_DIRECT3D
@@ -1332,17 +1335,17 @@ DECLINLINE(int) vmsvga3dSurfaceFromSid(PVMSVGA3DSTATE pState, uint32_t sid, PVMS
     return VERR_INVALID_PARAMETER;
 }
 
-DECLINLINE(int) vmsvga3dMipmapLevel(PVMSVGA3DSURFACE pSurface, uint32_t face, uint32_t mipmap,
+DECLINLINE(int) vmsvga3dMipmapLevel(PVMSVGA3DSURFACE pSurface, uint32_t iArrayElement, uint32_t mipmap,
                                     PVMSVGA3DMIPMAPLEVEL *ppMipmapLevel)
 {
-    AssertMsgReturn(face < pSurface->cFaces,
-                    ("cFaces %d, face %d\n", pSurface->cFaces, face),
+    AssertMsgReturn(iArrayElement < pSurface->surfaceDesc.numArrayElements,
+                    ("numArrayElements %d, iArrayElement %d\n", pSurface->surfaceDesc.numArrayElements, iArrayElement),
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn(mipmap < pSurface->cLevels,
                     ("numMipLevels %d, mipmap %d", pSurface->cLevels, mipmap),
                     VERR_INVALID_PARAMETER);
 
-    *ppMipmapLevel = &pSurface->paMipmapLevels[face * pSurface->cLevels + mipmap];
+    *ppMipmapLevel = &pSurface->paMipmapLevels[iArrayElement * pSurface->cLevels + mipmap];
     return VINF_SUCCESS;
 }
 

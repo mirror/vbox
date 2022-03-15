@@ -1290,7 +1290,7 @@ static void vmsvga3dCmdDefineSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineSurface
     /* Create the surface. */
     vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
                           pCmd->multisampleCount, pCmd->autogenFilter,
-                          pCmd->face[0].numMipLevels, &paMipLevelSizes[0], /* fAllocMipLevels = */ true);
+                          pCmd->face[0].numMipLevels, &paMipLevelSizes[0], /* arraySize = */ 0, /* fAllocMipLevels = */ true);
 }
 
 
@@ -1362,7 +1362,7 @@ static void vmsvga3dCmdDefineGBSurface(PVGASTATECC pThisCC, SVGA3dCmdDefineGBSur
         /* Create the host surface. */
         vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
                               pCmd->multisampleCount, pCmd->autogenFilter,
-                              pCmd->numMipLevels, &pCmd->size, /* fAllocMipLevels = */ false);
+                              pCmd->numMipLevels, &pCmd->size, /* arraySize = */ 0, /* fAllocMipLevels = */ false);
     }
 }
 
@@ -1659,9 +1659,7 @@ static void vmsvga3dCmdUpdateGBSurface(PVGASTATECC pThisCC, SVGA3dCmdUpdateGBSur
         PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, entrySurface.mobid);
         if (pMob)
         {
-            uint32 const arraySize = (entrySurface.surface1Flags & SVGA3D_SURFACE_CUBEMAP)
-                                   ? SVGA3D_MAX_SURFACE_FACES
-                                   : RT_MAX(entrySurface.arraySize, 1);
+            uint32 const arraySize = vmsvga3dGetArrayElements(pThisCC, pCmd->sid);
             for (uint32_t iArray = 0; iArray < arraySize; ++iArray)
             {
                 for (uint32_t iMipmap = 0; iMipmap < entrySurface.numMipLevels; ++iMipmap)
@@ -1723,9 +1721,7 @@ static void vmsvga3dCmdReadbackGBSurface(PVGASTATECC pThisCC, SVGA3dCmdReadbackG
         PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, entrySurface.mobid);
         if (pMob)
         {
-            uint32 const arraySize = (entrySurface.surface1Flags & SVGA3D_SURFACE_CUBEMAP)
-                                   ? SVGA3D_MAX_SURFACE_FACES
-                                   : RT_MAX(entrySurface.arraySize, 1);
+            uint32 const arraySize = vmsvga3dGetArrayElements(pThisCC, pCmd->sid);
             for (uint32_t iArray = 0; iArray < arraySize; ++iArray)
             {
                 for (uint32_t iMipmap = 0; iMipmap < entrySurface.numMipLevels; ++iMipmap)
@@ -2014,9 +2010,7 @@ static void vmsvga3dCmdDefineGBSurface_v2(PVGASTATECC pThisCC, SVGA3dCmdDefineGB
     entry.arraySize = pCmd->arraySize;
     // entry.mobPitch = 0;
     // ...
-Assert(   pCmd->arraySize == 0
-       || pCmd->arraySize == 1
-       || (pCmd->arraySize == 6 && (pCmd->surfaceFlags & SVGA3D_SURFACE_CUBEMAP)));
+
     int rc = vmsvgaR3OTableWrite(pSvgaR3State, &pSvgaR3State->aGboOTables[SVGA_OTABLE_SURFACE],
                                  pCmd->sid, SVGA3D_OTABLE_SURFACE_ENTRY_SIZE, &entry, sizeof(entry));
     if (RT_SUCCESS(rc))
@@ -2025,7 +2019,7 @@ Assert(   pCmd->arraySize == 0
         /** @todo SVGAOTableSurfaceEntry as input parameter? */
         vmsvga3dSurfaceDefine(pThisCC, pCmd->sid, pCmd->surfaceFlags, pCmd->format,
                               pCmd->multisampleCount, pCmd->autogenFilter,
-                              pCmd->numMipLevels, &pCmd->size, /* fAllocMipLevels = */ false);
+                              pCmd->numMipLevels, &pCmd->size, pCmd->arraySize, /* fAllocMipLevels = */ false);
     }
 }
 
@@ -2763,10 +2757,8 @@ static int vmsvga3dCmdDXUpdateSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXUpdate
         PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, entrySurface.mobid);
         if (pMob)
         {
-            uint32 const arraySize = (entrySurface.surface1Flags & SVGA3D_SURFACE_CUBEMAP)
-                                   ? SVGA3D_MAX_SURFACE_FACES
-                                   : RT_MAX(entrySurface.arraySize, 1);
-            ASSERT_GUEST_RETURN(pCmd->subResource < arraySize * entrySurface.numMipLevels, VERR_INVALID_PARAMETER);
+            uint32 const cSubresource = vmsvga3dGetSubresourceCount(pThisCC, pCmd->sid);
+            ASSERT_GUEST_RETURN(pCmd->subResource < cSubresource, VERR_INVALID_PARAMETER);
             /* pCmd->box will be verified by the mapping function. */
             RT_UNTRUSTED_VALIDATED_FENCE();
 
@@ -2808,10 +2800,8 @@ static int vmsvga3dCmdDXReadbackSubResource(PVGASTATECC pThisCC, SVGA3dCmdDXRead
         PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, entrySurface.mobid);
         if (pMob)
         {
-            uint32 const arraySize = (entrySurface.surface1Flags & SVGA3D_SURFACE_CUBEMAP)
-                                   ? SVGA3D_MAX_SURFACE_FACES
-                                   : RT_MAX(entrySurface.arraySize, 1);
-            ASSERT_GUEST_RETURN(pCmd->subResource < arraySize * entrySurface.numMipLevels, VERR_INVALID_PARAMETER);
+            uint32 const cSubresource = vmsvga3dGetSubresourceCount(pThisCC, pCmd->sid);
+            ASSERT_GUEST_RETURN(pCmd->subResource < cSubresource, VERR_INVALID_PARAMETER);
             RT_UNTRUSTED_VALIDATED_FENCE();
 
             /** @todo Mapping functions should use subresource index rather than SVGA3dSurfaceImageId? */
