@@ -79,7 +79,7 @@ class tdAudioTest(vbox.TestDriver):
             '/apps/VBoxAudioTest',
             'C:\\Apps\\vkat${EXESUFF}',
             'C:\\Apps\\VBoxAudioTest${EXESUFF}',
-            ## @odo VBoxAudioTest on Guest Additions?
+            ## @todo VBoxAudioTest on Guest Additions?
         ];
         self.asTestsDef       = [
             'guest_tone_playback', 'guest_tone_recording'
@@ -320,7 +320,7 @@ class tdAudioTest(vbox.TestDriver):
 
             # For Python 3.x we provide "real-time" output.
             if sys.version_info[0] >= 3:
-                while oProcess.stdout.readable():
+                while oProcess.stdout.readable(): # pylint: disable=no-member
                     sStdOut = oProcess.stdout.readline();
                     if sStdOut:
                         sStdOut = sStdOut.strip();
@@ -387,7 +387,7 @@ class tdAudioTest(vbox.TestDriver):
             while oThread.join(0.1):
                 if not oThread.is_alive():
                     break;
-                self.wait(1);
+                self.processEvents(0);
             reporter.log2('Thread returned exit code for "%s": %d' % (sWhat, self.iThreadHstProcRc));
         except:
             reporter.logXcpt('Starting thread for "%s" failed' % (sWhat,));
