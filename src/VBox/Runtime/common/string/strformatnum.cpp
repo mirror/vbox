@@ -298,7 +298,7 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
                 return fSign
                      ? rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+PseudoNan"))
                      : rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-PseudoNan"));
-            pszTmp = (char *)memcpy(pszTmp, RT_STR_TUPLE("PseudoNan[")) + 10;
+            pszTmp = (char *)memcpy(pszTmp, "PseudoNan[", 10) + 10;
         }
         else if (!(uFraction & RT_BIT_64(62)))
         {
@@ -308,7 +308,7 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
                      : rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Inf"));
             if (!(fFlags & RTSTR_F_SPECIAL))
                 return rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("Nan"));
-            pszTmp = (char *)memcpy(pszTmp, RT_STR_TUPLE("Nan[")) + 4;
+            pszTmp = (char *)memcpy(pszTmp, "Nan[", 4) + 4;
         }
         else
         {
@@ -318,7 +318,7 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
                      : rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Ind"));
             if (!(fFlags & RTSTR_F_SPECIAL))
                 return rtStrFormatR80CopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("QNan"));
-            pszTmp = (char *)memcpy(pszTmp, RT_STR_TUPLE("QNan[")) + 4;
+            pszTmp = (char *)memcpy(pszTmp, "QNan[", 5) + 5;
         }
         pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + 16, 0,
                                     RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
@@ -340,9 +340,9 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
     if (fDenormal && (fFlags & RTSTR_F_SPECIAL))
     {
         if (fInteger)
-            pszTmp = (char *)memcpy(pszTmp, RT_STR_TUPLE("[PDn]")) + 5;
+            pszTmp = (char *)memcpy(pszTmp, "[PDn]", 5) + 5;
         else
-            pszTmp = (char *)memcpy(pszTmp, RT_STR_TUPLE("[Den]")) + 5;
+            pszTmp = (char *)memcpy(pszTmp, "[Den]", 5) + 5;
     }
     return rtStrFormatR80CopyOutStr(pszBuf, cbBuf, szTmp, pszTmp - &szTmp[0]);
 }
