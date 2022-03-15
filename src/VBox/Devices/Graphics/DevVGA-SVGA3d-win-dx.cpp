@@ -1938,28 +1938,30 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
     /*
      * Create D3D11 texture object.
      */
+    D3D11_SUBRESOURCE_DATA *paInitialData = NULL;
+    if (pSurface->paMipmapLevels[0].pSurfaceData)
+    {
+        /* Can happen for a non GBO surface or if GBO texture was updated prior to creation of the hardware resource. */
+        uint32_t const cSubresource = numMipLevels * pSurface->surfaceDesc.numArrayElements;
+        paInitialData = (D3D11_SUBRESOURCE_DATA *)RTMemAlloc(cSubresource * sizeof(D3D11_SUBRESOURCE_DATA));
+        AssertPtrReturn(paInitialData, VERR_NO_MEMORY);
+
+        for (uint32_t i = 0; i < cSubresource; ++i)
+        {
+            PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[i];
+            D3D11_SUBRESOURCE_DATA *p = &paInitialData[i];
+            p->pSysMem          = pMipmapLevel->pSurfaceData;
+            p->SysMemPitch      = pMipmapLevel->cbSurfacePitch;
+            p->SysMemSlicePitch = pMipmapLevel->cbSurfacePlane;
+        }
+    }
+
     HRESULT hr = S_OK;
     if (pSurface->surfaceFlags & SVGA3D_SURFACE_SCREENTARGET)
     {
         /*
          * Create the texture in backend device and open for the specified context.
          */
-        D3D11_SUBRESOURCE_DATA *paInitialData = NULL;
-        D3D11_SUBRESOURCE_DATA aInitialData[SVGA3D_MAX_MIP_LEVELS];
-        if (pSurface->paMipmapLevels[0].pSurfaceData)
-        {
-            /** @todo Can happen for a non GBO surface or if GBO texture was updated prior to creation if the hardware resource. Test this. */
-            for (uint32_t i = 0; i < numMipLevels; ++i)
-            {
-                PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[i];
-                D3D11_SUBRESOURCE_DATA *p = &aInitialData[i];
-                p->pSysMem          = pMipmapLevel->pSurfaceData;
-                p->SysMemPitch      = pMipmapLevel->cbSurfacePitch;
-                p->SysMemSlicePitch = pMipmapLevel->cbSurfacePlane;
-            }
-            paInitialData = &aInitialData[0];
-        }
-
         D3D11_TEXTURE2D_DESC td;
         RT_ZERO(td);
         td.Width              = pSurface->paMipmapLevels[0].mipmapSize.width;
@@ -2023,27 +2025,6 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
         Assert(cWidth == cHeight);
         Assert(cDepth == 1);
 //DEBUG_BREAKPOINT_TEST();
-        D3D11_SUBRESOURCE_DATA *paInitialData = NULL;
-        D3D11_SUBRESOURCE_DATA aInitialData[6 * SVGA3D_MAX_MIP_LEVELS];
-        if (pSurface->paMipmapLevels[0].pSurfaceData)
-        {
-            /** @todo Can happen for a non GBO surface or if GBO texture was updated prior to creation if the hardware resource. Test this. */
-            /** @todo for (i = 0; i < pSurface->cFaces * numMipLevels; ++i) */
-            for (uint32_t iArray = 0; iArray < pSurface->surfaceDesc.numArrayElements; ++iArray)
-            {
-                for (uint32_t i = 0; i < numMipLevels; ++i)
-                {
-                    uint32_t const iSubresource = vmsvga3dCalcSubresource(i, iArray, numMipLevels);
-
-                    PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iSubresource];
-                    D3D11_SUBRESOURCE_DATA *p = &aInitialData[iSubresource];
-                    p->pSysMem          = pMipmapLevel->pSurfaceData;
-                    p->SysMemPitch      = pMipmapLevel->cbSurfacePitch;
-                    p->SysMemSlicePitch = pMipmapLevel->cbSurfacePlane;
-                }
-            }
-            paInitialData = &aInitialData[0];
-        }
 
         D3D11_TEXTURE2D_DESC td;
         RT_ZERO(td);
@@ -2121,22 +2102,7 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
              * Volume texture.
              */
             Assert(pSurface->cFaces == 1);
-
-            D3D11_SUBRESOURCE_DATA *paInitialData = NULL;
-            D3D11_SUBRESOURCE_DATA aInitialData[SVGA3D_MAX_MIP_LEVELS];
-            if (pSurface->paMipmapLevels[0].pSurfaceData)
-            {
-                /** @todo Can happen for a non GBO surface or if GBO texture was updated prior to creation if the hardware resource. Test this. */
-                for (uint32_t i = 0; i < numMipLevels; ++i)
-                {
-                    PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[i];
-                    D3D11_SUBRESOURCE_DATA *p = &aInitialData[i];
-                    p->pSysMem          = pMipmapLevel->pSurfaceData;
-                    p->SysMemPitch      = pMipmapLevel->cbSurfacePitch;
-                    p->SysMemSlicePitch = pMipmapLevel->cbSurfacePlane;
-                }
-                paInitialData = &aInitialData[0];
-            }
+            Assert(pSurface->surfaceDesc.numArrayElements == 1);
 
             D3D11_TEXTURE3D_DESC td;
             RT_ZERO(td);
@@ -2205,22 +2171,6 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
              */
             Assert(pSurface->cFaces == 1);
 
-            D3D11_SUBRESOURCE_DATA *paInitialData = NULL;
-            D3D11_SUBRESOURCE_DATA aInitialData[SVGA3D_MAX_MIP_LEVELS];
-            if (pSurface->paMipmapLevels[0].pSurfaceData)
-            {
-                /** @todo Can happen for a non GBO surface or if GBO texture was updated prior to creation if the hardware resource. Test this. */
-                for (uint32_t i = 0; i < numMipLevels; ++i)
-                {
-                    PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[i];
-                    D3D11_SUBRESOURCE_DATA *p = &aInitialData[i];
-                    p->pSysMem          = pMipmapLevel->pSurfaceData;
-                    p->SysMemPitch      = pMipmapLevel->cbSurfacePitch;
-                    p->SysMemSlicePitch = pMipmapLevel->cbSurfacePlane;
-                }
-                paInitialData = &aInitialData[0];
-            }
-
             D3D11_TEXTURE2D_DESC td;
             RT_ZERO(td);
             td.Width              = cWidth;
@@ -2288,6 +2238,8 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
 
     Assert(hr == S_OK);
 
+    RTMemFree(paInitialData);
+
     if (pSurface->autogenFilter != SVGA3D_TEX_FILTER_NONE)
     {
     }
@@ -2304,214 +2256,6 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             pSurface->idAssociatedContext = DX_CID_BACKEND;
         else
             pSurface->idAssociatedContext = pDXContext->cid;
-        return VINF_SUCCESS;
-    }
-
-    /** @todo different enmResType Failure. */
-    D3D_RELEASE(pBackendSurface->pStagingTexture);
-    D3D_RELEASE(pBackendSurface->pDynamicTexture);
-    D3D_RELEASE(pBackendSurface->u.pTexture2D);
-    RTMemFree(pBackendSurface);
-    return VERR_NO_MEMORY;
-}
-
-
-/** @todo This is practically the same code as vmsvga3dBackSurfaceCreateTexture */
-static int vmsvga3dBackSurfaceCreateDepthStencilTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, PVMSVGA3DSURFACE pSurface)
-{
-    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
-    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
-
-    if (pSurface->pBackendSurface != NULL)
-    {
-        AssertFailed(); /** @todo Should the function not be used like that? */
-        vmsvga3dBackSurfaceDestroy(pThisCC, pSurface);
-    }
-
-    PVMSVGA3DBACKENDSURFACE pBackendSurface;
-    int rc = dxBackendSurfaceAlloc(&pBackendSurface);
-    AssertRCReturn(rc, rc);
-
-    uint32_t const cWidth = pSurface->paMipmapLevels[0].mipmapSize.width;
-    uint32_t const cHeight = pSurface->paMipmapLevels[0].mipmapSize.height;
-    uint32_t const cDepth = pSurface->paMipmapLevels[0].mipmapSize.depth;
-    uint32_t const numMipLevels = pSurface->cLevels;
-
-    DXGI_FORMAT dxgiFormat = vmsvgaDXSurfaceFormat2Dxgi(pSurface->format);
-    AssertReturn(dxgiFormat != DXGI_FORMAT_UNKNOWN, E_FAIL);
-
-    /*
-     * Create D3D11 texture object.
-     */
-    HRESULT hr = S_OK;
-    if (pSurface->surfaceFlags & SVGA3D_SURFACE_CUBEMAP)
-    {
-        /*
-         * CubeMap texture.
-         */
-        Assert(pSurface->cFaces == 6);
-        Assert(cWidth == cHeight);
-        Assert(cDepth == 1);
-        Assert(numMipLevels == 1);
-//DEBUG_BREAKPOINT_TEST();
-        D3D11_SUBRESOURCE_DATA *paInitialData = NULL;
-        D3D11_SUBRESOURCE_DATA aInitialData[6 * SVGA3D_MAX_MIP_LEVELS];
-        if (pSurface->paMipmapLevels[0].pSurfaceData)
-        {
-            /** @todo Can happen for a non GBO surface or if GBO texture was updated prior to creation if the hardware resource. Test this. */
-            /** @todo for (i = 0; i < pSurface->cFaces * numMipLevels; ++i) */
-            for (uint32_t iArray = 0; iArray < pSurface->surfaceDesc.numArrayElements; ++iArray)
-            {
-                for (uint32_t i = 0; i < numMipLevels; ++i)
-                {
-                    uint32_t const iSubresource = vmsvga3dCalcSubresource(i, iArray, numMipLevels);
-
-                    PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[iSubresource];
-                    D3D11_SUBRESOURCE_DATA *p = &aInitialData[iSubresource];
-                    p->pSysMem          = pMipmapLevel->pSurfaceData;
-                    p->SysMemPitch      = pMipmapLevel->cbSurfacePitch;
-                    p->SysMemSlicePitch = pMipmapLevel->cbSurfacePlane;
-                }
-            }
-            paInitialData = &aInitialData[0];
-        }
-
-        D3D11_TEXTURE2D_DESC td;
-        RT_ZERO(td);
-        td.Width              = cWidth;
-        td.Height             = cHeight;
-        td.MipLevels          = 1;
-        td.ArraySize          = pSurface->surfaceDesc.numArrayElements;
-        td.Format             = dxgiFormat;
-        td.SampleDesc.Count   = 1;
-        td.SampleDesc.Quality = 0;
-        td.Usage              = D3D11_USAGE_DEFAULT;
-        td.BindFlags          = dxBindFlags(pSurface->surfaceFlags);
-        td.CPUAccessFlags     = 0;
-        td.MiscFlags          = D3D11_RESOURCE_MISC_TEXTURECUBE;
-
-        hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->u.pTexture2D);
-        Assert(SUCCEEDED(hr));
-        if (SUCCEEDED(hr))
-        {
-            /* Map-able texture. */
-            td.MipLevels      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
-            td.ArraySize      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
-            td.Usage          = D3D11_USAGE_DYNAMIC;
-            td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
-            td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            td.MiscFlags      = 0;
-            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->pDynamicTexture);
-            Assert(SUCCEEDED(hr));
-        }
-
-        if (SUCCEEDED(hr))
-        {
-            /* Staging texture. */
-            td.Usage          = D3D11_USAGE_STAGING;
-            td.BindFlags      = 0; /* No flags allowed. */
-            td.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-            td.MiscFlags      = 0;
-            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->pStagingTexture);
-            Assert(SUCCEEDED(hr));
-        }
-
-        if (SUCCEEDED(hr))
-        {
-            pBackendSurface->enmResType = VMSVGA3D_RESTYPE_TEXTURE_CUBE;
-        }
-    }
-    else if (pSurface->surfaceFlags & SVGA3D_SURFACE_1D)
-    {
-        AssertFailed(); /** @todo implement */
-        hr = E_FAIL;
-    }
-    else
-    {
-        if (cDepth > 1)
-        {
-            AssertFailed(); /** @todo implement */
-            hr = E_FAIL;
-        }
-        else
-        {
-            /*
-             * 2D texture.
-             */
-            Assert(pSurface->cFaces == 1);
-            Assert(numMipLevels == 1);
-
-            D3D11_SUBRESOURCE_DATA *paInitialData = NULL;
-            D3D11_SUBRESOURCE_DATA aInitialData[SVGA3D_MAX_MIP_LEVELS];
-            if (pSurface->paMipmapLevels[0].pSurfaceData)
-            {
-                /** @todo Can happen for a non GBO surface or if GBO texture was updated prior to creation if the hardware resource. Test this. */
-                for (uint32_t i = 0; i < numMipLevels; ++i)
-                {
-                    PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->paMipmapLevels[i];
-                    D3D11_SUBRESOURCE_DATA *p = &aInitialData[i];
-                    p->pSysMem          = pMipmapLevel->pSurfaceData;
-                    p->SysMemPitch      = pMipmapLevel->cbSurfacePitch;
-                    p->SysMemSlicePitch = pMipmapLevel->cbSurfacePlane;
-                }
-                paInitialData = &aInitialData[0];
-            }
-
-            D3D11_TEXTURE2D_DESC td;
-            RT_ZERO(td);
-            td.Width              = cWidth;
-            td.Height             = cHeight;
-            td.MipLevels          = 1;
-            td.ArraySize          = pSurface->surfaceDesc.numArrayElements;
-            td.Format             = dxgiFormat;
-            td.SampleDesc.Count   = 1;
-            td.SampleDesc.Quality = 0;
-            td.Usage              = D3D11_USAGE_DEFAULT;
-            td.BindFlags          = dxBindFlags(pSurface->surfaceFlags);
-            td.CPUAccessFlags     = 0;
-            td.MiscFlags          = 0;
-
-            hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->u.pTexture2D);
-            Assert(SUCCEEDED(hr));
-            if (SUCCEEDED(hr))
-            {
-                /* Map-able texture. */
-                td.MipLevels      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
-                td.ArraySize      = 1; /* Must be for D3D11_USAGE_DYNAMIC. */
-                td.Usage          = D3D11_USAGE_DYNAMIC;
-                td.BindFlags      = D3D11_BIND_SHADER_RESOURCE; /* Have to specify a supported flag, otherwise E_INVALIDARG will be returned. */
-                td.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-                td.MiscFlags      = 0;
-                hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->pDynamicTexture);
-                Assert(SUCCEEDED(hr));
-            }
-
-            if (SUCCEEDED(hr))
-            {
-                /* Staging texture. */
-                td.Usage          = D3D11_USAGE_STAGING;
-                td.BindFlags      = 0; /* No flags allowed. */
-                td.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-                td.MiscFlags      = 0;
-                hr = pDXDevice->pDevice->CreateTexture2D(&td, paInitialData, &pBackendSurface->pStagingTexture);
-                Assert(SUCCEEDED(hr));
-            }
-
-            if (SUCCEEDED(hr))
-            {
-                pBackendSurface->enmResType = VMSVGA3D_RESTYPE_TEXTURE_2D;
-            }
-        }
-    }
-
-    if (SUCCEEDED(hr))
-    {
-        /*
-         * Success.
-         */
-        pBackendSurface->enmDxgiFormat = dxgiFormat;
-        pSurface->pBackendSurface = pBackendSurface;
-        pSurface->idAssociatedContext = pDXContext->cid;
         return VINF_SUCCESS;
     }
 
@@ -6709,7 +6453,7 @@ static int dxDefineDepthStencilView(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXC
     if (pSurface->pBackendSurface == NULL)
     {
         /* Create the actual texture. */
-        rc = vmsvga3dBackSurfaceCreateDepthStencilTexture(pThisCC, pDXContext, pSurface);
+        rc = vmsvga3dBackSurfaceCreateTexture(pThisCC, pDXContext, pSurface);
         AssertRCReturn(rc, rc);
     }
 
