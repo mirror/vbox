@@ -71,12 +71,12 @@ static HRESULT checkAndSetCommonOptions(HandlerArg *a, PCLOUDCOMMONOPT pCommonOp
     /* check for required options */
     if (bstrProvider.isEmpty())
     {
-        errorSyntax(USAGE_S_NEWCMD, Cloud::tr("Parameter --provider is required"));
+        errorSyntax(Cloud::tr("Parameter --provider is required"));
         return E_FAIL;
     }
     if (bstrProfile.isEmpty())
     {
-        errorSyntax(USAGE_S_NEWCMD, Cloud::tr("Parameter --profile is required"));
+        errorSyntax(Cloud::tr("Parameter --profile is required"));
         return E_FAIL;
     }
 
@@ -218,7 +218,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
         if (strCompartmentId.isNotEmpty())
             RTPrintf(Cloud::tr("Found the compartment \'%s\':\n"), strCompartmentId.c_str());
         else
-            return errorSyntax(USAGE_S_NEWCMD, Cloud::tr("Parameter --compartment-id is required"));
+            return errorSyntax(Cloud::tr("Parameter --compartment-id is required"));
     }
 
     Bstr bstrProfileName;
@@ -379,7 +379,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
         if (strCompartmentId.isNotEmpty())
             RTPrintf(Cloud::tr("Found the compartment \'%s\':\n"), strCompartmentId.c_str());
         else
-            return errorSyntax(USAGE_S_NEWCMD, Cloud::tr("Parameter --compartment-id is required"));
+            return errorSyntax(Cloud::tr("Parameter --compartment-id is required"));
     }
 
     Bstr bstrProfileName;
