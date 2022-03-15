@@ -73,9 +73,6 @@ endif
 ifdef XML_CATALOG_DOCBOOK
  $(error XML_CATALOG_DOCBOOK was renamed to VBOX_XML_CATALOG_DOCBOOK!)
 endif
-ifdef VBOXMANAGEPATH
- $(error VBOXMANAGEPATH was renamed to VBOXMANAGEHELP_PATH!)
-endif
 ifdef PDFLATEX_INTERACTION
  $(error PDFLATEX_INTERACTION was renamed to VBOX_PDFLATEX_INTERACTION!)
 endif
@@ -89,8 +86,6 @@ endif
 VBOX_QHELP_OUTPUT_FILES = \
 	UserManual.qch \
 	UserManual.qhc
-
-VBOXMANAGEHELP_PATH       ?= $(PATH_STAGE_BIN)/VBoxManageHelp$(SUFF_EXE)
 
  # VBOX_PDFLATEX_INTERACTION = errorstopmode - Use this when you wants to figure out build failures
  #                                             without catting the log a million times.
@@ -203,7 +198,6 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
  $(eval VBOX_MANUAL_XML_FILES_GENERATED_$$(lang) := \
  	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
  	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/overview_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
- 	$$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
  	$$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_man_VBoxHeadless.xml \
  	$$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_man_vboximg-mount.xml \
  	$$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_isomakercmd-man.xml))
@@ -307,7 +301,6 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
         )) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
- 	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm) \
  	$(PATH_STAGE_BIN)/UserManual.pdf \
@@ -431,33 +424,6 @@ $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FIL
 	$(call MSG_TOOL,xsltproc $(notdir $(filter %.xsl,$^)),,$(firstword $(filter %.xml,$^)),$@)
 	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT) --output "$@" $< $(filter %.xml,$^)
 
-$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml: $(VBOXMANAGEHELP_PATH) $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,,$@,)
-	$(QUIET)$(RM) -f $@ $@.dumpopts
-	$(QUIET)$(APPEND) -tn "$@" \
-		'<?xml version="1.0" encoding="UTF-8"?>' \
-               '<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">' \
-               '<sect1> <!-- this will be skipped via xpointer in the include. --> '
-	$(QUIET)$(REDIRECT) -wo $@.dumpopts -E 'VBOX_LOG_FLAGS=disabled' -E 'VBOX_LOG_DEST=nofile' \
-		$(if $(eq $(KBUILD_TARGET),darwin), -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))') \
-		-- \
-		$(VBOXMANAGEHELP_PATH) --dumpopts
-	$(QUIET)$(SED) \
-		-e ':a' \
-		-e 'N' \
-		-e '$(DOLLAR)!ba' \
-		-e 's/</\&lt\;/g' \
-		-e 's/>/\&gt\;/g' \
-		-e 's/\n*$(DOLLAR)/<\/screen>/' \
-		-e 's/^/<screen>/' \
-		--append $@ $@.dumpopts
-	$(QUIET)$(RM) -f $@.dumpopts
-	$(QUIET)$(APPEND) -n "$@" \
-               '  <remark role="VBoxManage-overview">' \
-               $(foreach refentry, $(filter man_VBoxManage%,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
-		, '  <xi:include href="overview_$(refentry)" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />') \
-               '  </remark>' \
-               '</sect1>'
 
 
 
