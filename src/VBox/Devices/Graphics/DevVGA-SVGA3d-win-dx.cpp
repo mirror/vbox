@@ -1696,7 +1696,6 @@ static HRESULT dxShaderCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
 
                 SVGACOTableDXStreamOutputEntry const *pEntry = &pDXContext->cot.paStreamOutput[soid];
                 DXSTREAMOUTPUT *pDXStreamOutput = &pDXContext->pBackendDXContext->paStreamOutput[soid];
-                uint32_t const cSOTarget = pDXContext->pBackendDXContext->cSOTarget;
 
                 for (uint32_t i = 0; i < pDXStreamOutput->cDeclarationEntry; ++i)
                 {
