@@ -1867,7 +1867,7 @@ static int vmsvga3dBackSurfaceCreateScreenTarget(PVGASTATECC pThisCC, PVMSVGA3DS
     td.Usage              = D3D11_USAGE_DEFAULT;
     td.BindFlags          = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
     td.CPUAccessFlags     = 0;
-    td.MiscFlags          = D3D11_RESOURCE_MISC_SHARED;
+    td.MiscFlags          = pBackend->fSingleDevice ? 0 : D3D11_RESOURCE_MISC_SHARED;
 
     HRESULT hr = pDXDevice->pDevice->CreateTexture2D(&td, 0, &pBackendSurface->u.pTexture2D);
     Assert(SUCCEEDED(hr));
@@ -1892,7 +1892,8 @@ static int vmsvga3dBackSurfaceCreateScreenTarget(PVGASTATECC pThisCC, PVMSVGA3DS
         Assert(SUCCEEDED(hr));
     }
 
-    if (SUCCEEDED(hr))
+    if (   SUCCEEDED(hr)
+        && !pBackend->fSingleDevice)
     {
         /* Get the shared handle. */
         IDXGIResource *pDxgiResource = NULL;
