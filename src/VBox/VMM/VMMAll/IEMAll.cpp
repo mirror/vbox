@@ -8404,12 +8404,12 @@ IEM_STATIC uint16_t iemFpuCalcFullFtw(PCX86FXSTATE pFpuCtx)
                 uTag = 2; /* Exponent is all 1's => Special. */
             else if (pr80Reg->s.uExponent == 0x0000)
             {
-                if (pr80Reg->s.u64Mantissa == 0x0000)
+                if (pr80Reg->s.uMantissa == 0x0000)
                     uTag = 1; /* All bits are zero => Zero. */
                 else
                     uTag = 2; /* Must be special. */
             }
-            else if (pr80Reg->s.u64Mantissa & RT_BIT_64(63)) /* The J bit. */
+            else if (pr80Reg->s.uMantissa & RT_BIT_64(63)) /* The J bit. */
                 uTag = 0; /* Valid. */
             else
                 uTag = 2; /* Must be special. */
@@ -12223,9 +12223,9 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPUCC pVCpu, uint16_t uSel)
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataR80(pVCpu, &(a_r80Dst), (a_iSeg), (a_GCPtrMem)))
 #else
 # define IEM_MC_FETCH_MEM_R32(a_r32Dst, a_iSeg, a_GCPtrMem) \
-    ((a_r32Dst).u32 = iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
+    ((a_r32Dst).u = iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_R64(a_r64Dst, a_iSeg, a_GCPtrMem) \
-    ((a_r64Dst).au64[0] = iemMemFetchDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
+    ((a_r64Dst).u = iemMemFetchDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_R80(a_r80Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataR80Jmp(pVCpu, &(a_r80Dst), (a_iSeg), (a_GCPtrMem))
 #endif
@@ -12404,8 +12404,8 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPUCC pVCpu, uint16_t uSel)
 #define IEM_MC_STORE_MEM_I16_CONST_BY_REF(a_pi16Dst, a_i16C)    *(a_pi16Dst) = (a_i16C)
 #define IEM_MC_STORE_MEM_I32_CONST_BY_REF(a_pi32Dst, a_i32C)    *(a_pi32Dst) = (a_i32C)
 #define IEM_MC_STORE_MEM_I64_CONST_BY_REF(a_pi64Dst, a_i64C)    *(a_pi64Dst) = (a_i64C)
-#define IEM_MC_STORE_MEM_NEG_QNAN_R32_BY_REF(a_pr32Dst)         (a_pr32Dst)->u32     = UINT32_C(0xffc00000)
-#define IEM_MC_STORE_MEM_NEG_QNAN_R64_BY_REF(a_pr64Dst)         (a_pr64Dst)->au64[0] = UINT64_C(0xfff8000000000000)
+#define IEM_MC_STORE_MEM_NEG_QNAN_R32_BY_REF(a_pr32Dst)         (a_pr32Dst)->u = UINT32_C(0xffc00000)
+#define IEM_MC_STORE_MEM_NEG_QNAN_R64_BY_REF(a_pr64Dst)         (a_pr64Dst)->u = UINT64_C(0xfff8000000000000)
 #define IEM_MC_STORE_MEM_NEG_QNAN_R80_BY_REF(a_pr80Dst) \
     do { \
         (a_pr80Dst)->au64[0] = UINT64_C(0xc000000000000000); \

@@ -92,14 +92,6 @@ typedef struct IEMINSTRSTATS IEMINSTRSTATS;
 /** Pointer to IEM instruction statistics. */
 typedef IEMINSTRSTATS *PIEMINSTRSTATS;
 
-/** Finish and move to types.h */
-typedef union
-{
-    uint32_t u32;
-} RTFLOAT32U;
-typedef RTFLOAT32U *PRTFLOAT32U;
-typedef RTFLOAT32U const *PCRTFLOAT32U;
-
 
 /** @name IEMTARGETCPU_EFL_BEHAVIOR_XXX - IEMCPU::idxTargetCpuEflFlavour
  * @{ */
@@ -1363,7 +1355,7 @@ FNIEMAIMPLFPUR32    iemAImpl_fsubr_r80_by_r32;
 FNIEMAIMPLFPUR32    iemAImpl_fdiv_r80_by_r32;
 FNIEMAIMPLFPUR32    iemAImpl_fdivr_r80_by_r32;
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r32_to_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT32U pr32Val));
+IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r80_from_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT32U pr32Val));
 IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r32,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                  PRTFLOAT32U pr32Val, PCRTFLOAT80U pr80Val));
 /** @} */
@@ -1383,7 +1375,7 @@ FNIEMAIMPLFPUR64  iemAImpl_fdivr_r80_by_r64;
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r64,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2));
-IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r64_to_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT64U pr64Val));
+IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r80_from_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT64U pr64Val));
 IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r64,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                  PRTFLOAT64U pr32Val, PCRTFLOAT80U pr80Val));
 /** @} */

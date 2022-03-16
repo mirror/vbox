@@ -5457,10 +5457,10 @@ static bool BS3_NEAR_CODE Bs3Cg1CheckResult(PBS3CG1STATE pThis, uint8_t bTestXcp
                         || pResult->Ctx.x87.aRegs[i].au16[4] != pExpect->Ctx.x87.aRegs[i].au16[4])
                         fOkay = Bs3TestFailedF("ST[%u]: %c m=%#RX64 e=%d, expected %c m=%#RX64 e=%d", i,
                                                pResult->Ctx.x87.aRegs[i].r80Ex.s.fSign ? '-' : '+',
-                                               pResult->Ctx.x87.aRegs[i].r80Ex.s.u64Mantissa,
+                                               pResult->Ctx.x87.aRegs[i].r80Ex.s.uMantissa,
                                                pResult->Ctx.x87.aRegs[i].r80Ex.s.uExponent,
                                                pExpect->Ctx.x87.aRegs[i].r80Ex.s.fSign ? '-' : '+',
-                                               pExpect->Ctx.x87.aRegs[i].r80Ex.s.u64Mantissa,
+                                               pExpect->Ctx.x87.aRegs[i].r80Ex.s.uMantissa,
                                                pExpect->Ctx.x87.aRegs[i].r80Ex.s.uExponent);
                 for (i = 0; i < (ARCH_BITS == 64 ? 16 : 8); i++)
                     if (   pResult->Ctx.x87.aXMM[i].au64[0] != pExpect->Ctx.x87.aXMM[i].au64[0]

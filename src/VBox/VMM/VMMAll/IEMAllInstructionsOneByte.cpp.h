@@ -7452,7 +7452,7 @@ FNIEMOP_DEF_1(iemOp_fld_m32r, uint8_t, bRm)
 
     IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_IS_EMPTY(7)
-        IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r32_to_r80, pFpuRes, pr32Val);
+        IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r80_from_r32, pFpuRes, pr32Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
@@ -9338,7 +9338,7 @@ FNIEMOP_DEF_1(iemOp_fld_m64r,    uint8_t, bRm)
     IEM_MC_FETCH_MEM_R64(r64Val, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
     IEM_MC_PREPARE_FPU_USAGE();
     IEM_MC_IF_FPUREG_IS_EMPTY(7)
-        IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r64_to_r80, pFpuRes, pr64Val);
+        IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r80_from_r64, pFpuRes, pr64Val);
         IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pVCpu->iem.s.iEffSeg, GCPtrEffSrc);

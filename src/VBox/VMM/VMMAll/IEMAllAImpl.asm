@@ -2512,7 +2512,7 @@ ENDPROC iemAImpl_fistt_r80_to_i64
 ; @param    A1      Pointer to a IEMFPURESULT for the output.
 ; @param    A2      Pointer to the 32-bit floating point value to convert.
 ;
-BEGINPROC_FASTCALL iemAImpl_fld_r32_to_r80, 12
+BEGINPROC_FASTCALL iemAImpl_fld_r80_from_r32, 12
         PROLOGUE_3_ARGS
         sub     xSP, 20h
 
@@ -2527,7 +2527,7 @@ BEGINPROC_FASTCALL iemAImpl_fld_r32_to_r80, 12
         fninit
         add     xSP, 20h
         EPILOGUE_3_ARGS
-ENDPROC iemAImpl_fld_r32_to_r80
+ENDPROC iemAImpl_fld_r80_from_r32
 
 
 ;;
@@ -2637,7 +2637,7 @@ IEMIMPL_FPU_R80_BY_R32_FSW fcom
 ; @param    A1      Pointer to a IEMFPURESULT for the output.
 ; @param    A2      Pointer to the 64-bit floating point value to convert.
 ;
-BEGINPROC_FASTCALL iemAImpl_fld_r64_to_r80, 12
+BEGINPROC_FASTCALL iemAImpl_fld_r80_from_r64, 12
         PROLOGUE_3_ARGS
         sub     xSP, 20h
 
@@ -2651,7 +2651,7 @@ BEGINPROC_FASTCALL iemAImpl_fld_r64_to_r80, 12
         fninit
         add     xSP, 20h
         EPILOGUE_3_ARGS
-ENDPROC iemAImpl_fld_r64_to_r80
+ENDPROC iemAImpl_fld_r80_from_r64
 
 
 ;;

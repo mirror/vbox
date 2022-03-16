@@ -903,14 +903,64 @@ typedef const RTUINT512U RT_FAR *PCRTUINT512U;
 
 
 /**
+ * Single precision floating point format (32-bit).
+ */
+typedef union RTFLOAT32U
+{
+    /** Format using regular bitfields.  */
+    struct
+    {
+# ifdef RT_BIG_ENDIAN
+        /** The sign indicator. */
+        uint32_t    fSign : 1;
+        /** The exponent (offseted by 127). */
+        uint32_t    uExponent : 8;
+        /** The fraction. */
+        uint32_t    uFraction : 23;
+# else
+        /** The fraction. */
+        uint32_t    uFraction : 23;
+        /** The exponent (offseted by 127). */
+        uint32_t    uExponent : 8;
+        /** The sign indicator. */
+        uint32_t    fSign : 1;
+# endif
+    } s;
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    /** Double view. */
+    float       r;
+#endif
+    /** Unsigned integer view. */
+    uint32_t    u;
+    /** 32-bit view. */
+    uint32_t    au32[1];
+    /** 16-bit view. */
+    uint16_t    au16[2];
+    /** 8-bit view. */
+    uint8_t     au8[4];
+} RTFLOAT32U;
+/** Pointer to a single precision floating point format union. */
+typedef RTFLOAT32U RT_FAR *PRTFLOAT32U;
+/** Pointer to a const single precision floating point format union. */
+typedef const RTFLOAT32U RT_FAR *PCRTFLOAT32U;
+/** RTFLOAT32U initializer. */
+#ifdef RT_BIG_ENDIAN
+# define RTFLOAT32U_INIT(a_fSign, a_uFraction, a_uExponent)     { { (a_fSign), (a_uExponent), (a_uFraction) } }
+#else
+# define RTFLOAT32U_INIT(a_fSign, a_uFraction, a_uExponent)     { { (a_uFraction), (a_uExponent), (a_fSign) } }
+#endif
+#define RTFLOAT32U_INIT_C(a_fSign, a_uFraction, a_uExponent)    RTFLOAT32U_INIT((a_fSign), UINT32_C(a_uFraction), (a_uExponent))
+/** Check if two 32-bit floating values are identical (memcmp, not
+ *  numerically). */
+#define RTFLOAT32U_ARE_IDENTICAL(a_pLeft, a_pRight)             ((a_pLeft)->u == (a_pRight)->u)
+
+
+/**
  * Double precision floating point format (64-bit).
  */
 typedef union RTFLOAT64U
 {
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    /** Double view. */
-    double      rd;
-#endif
     /** Format using regular bitfields.  */
     struct
     {
@@ -920,14 +970,14 @@ typedef union RTFLOAT64U
         /** The exponent (offseted by 1023). */
         uint32_t    uExponent : 11;
         /** The fraction, bits 32 thru 51. */
-        uint32_t    u20FractionHigh : 20;
+        uint32_t    uFractionHigh : 20;
         /** The fraction, bits 0 thru 31. */
-        uint32_t    u32FractionLow;
+        uint32_t    uFractionLow;
 # else
         /** The fraction, bits 0 thru 31. */
-        uint32_t    u32FractionLow;
+        uint32_t    uFractionLow;
         /** The fraction, bits 32 thru 51. */
-        uint32_t    u20FractionHigh : 20;
+        uint32_t    uFractionHigh : 20;
         /** The exponent (offseted by 1023). */
         uint32_t    uExponent : 11;
         /** The sign indicator. */
@@ -957,6 +1007,12 @@ typedef union RTFLOAT64U
     } s64;
 #endif
 
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    /** Double view. */
+    double      rd;
+#endif
+    /** Unsigned integer view. */
+    uint64_t    u;
     /** 64-bit view. */
     uint64_t    au64[1];
     /** 32-bit view. */
@@ -970,6 +1026,18 @@ typedef union RTFLOAT64U
 typedef RTFLOAT64U RT_FAR *PRTFLOAT64U;
 /** Pointer to a const double precision floating point format union. */
 typedef const RTFLOAT64U RT_FAR *PCRTFLOAT64U;
+/** RTFLOAT64U initializer. */
+#ifdef RT_BIG_ENDIAN
+# define RTFLOAT64U_INIT(a_fSign, a_uFraction, a_uExponent)     \
+    { { (a_fSign), (a_uExponent), (uint32_t)((a_uFraction) >> 32), (uint32_t)(a_uFraction) } }
+#else
+# define RTFLOAT64U_INIT(a_fSign, a_uFraction, a_uExponent)     \
+    { { (uint32_t)(a_uFraction), (uint32_t)((a_uFraction) >> 32), (a_uExponent), (a_fSign) } }
+#endif
+#define RTFLOAT64U_INIT_C(a_fSign, a_uFraction, a_uExponent)    RTFLOAT64U_INIT((a_fSign), UINT64_C(a_uFraction), (a_uExponent))
+/** Check if two 64-bit floating values are identical (memcmp, not
+ *  numerically). */
+#define RTFLOAT64U_ARE_IDENTICAL(a_pLeft, a_pRight)             ((a_pLeft)->u == (a_pRight)->u)
 
 
 #if !defined(__IBMCPP__) && !defined(__IBMC__)
@@ -989,10 +1057,10 @@ typedef union RTFLOAT80U
         /** The exponent (offseted by 16383). */
         RT_GCC_EXTENSION uint16_t   uExponent : 15;
         /** The mantissa. */
-        uint64_t                    u64Mantissa;
+        uint64_t                    uMantissa;
 # else
         /** The mantissa. */
-        uint64_t                    u64Mantissa;
+        uint64_t                    uMantissa;
         /** The exponent (offseted by 16383). */
         RT_GCC_EXTENSION uint16_t   uExponent : 15;
         /** The sign indicator. */
@@ -1012,10 +1080,10 @@ typedef union RTFLOAT80U
         /** The J bit, aka the integer bit. */
         RT_GCC_EXTENSION uint64_t   fInteger : 1;
         /** The fraction. */
-        RT_GCC_EXTENSION uint64_t   u63Fraction : 63;
+        RT_GCC_EXTENSION uint64_t   uFraction : 63;
 #  else
         /** The fraction. */
-        RT_GCC_EXTENSION uint64_t   u63Fraction : 63;
+        RT_GCC_EXTENSION uint64_t   uFraction : 63;
         /** The J bit, aka the integer bit. */
         RT_GCC_EXTENSION uint64_t   fInteger : 1;
         /** The exponent (offseted by 16383). */
@@ -1046,8 +1114,7 @@ typedef const RTFLOAT80U RT_FAR *PCRTFLOAT80U;
 # else
 #  define RTFLOAT80U_INIT(a_fSign, a_uMantissa, a_uExponent)  { { (a_uMantissa), (a_uExponent), (a_fSign) } }
 # endif
-# define RTFLOAT80U_INIT_C(a_fSign, a_uMantissa, a_uExponent) RTFLOAT80U_INIT((a_fSign), (a_uExponent), UINT64_C(a_uMantissa))
-
+# define RTFLOAT80U_INIT_C(a_fSign, a_uMantissa, a_uExponent) RTFLOAT80U_INIT((a_fSign), UINT64_C(a_uMantissa), (a_uExponent))
 /** Check if two 80-bit floating values are identical (memcmp, not
  *  numberically). */
 # define RTFLOAT80U_ARE_IDENTICAL(a_pLeft, a_pRight) \
@@ -1074,10 +1141,10 @@ typedef union RTFLOAT80U2
         /** The exponent (offseted by 16383). */
         RT_GCC_EXTENSION uint16_t   uExponent : 15;
         /** The mantissa. */
-        uint64_t                    u64Mantissa;
+        uint64_t                    uMantissa;
 # else
         /** The mantissa. */
-        uint64_t                    u64Mantissa;
+        uint64_t                    uMantissa;
         /** The exponent (offseted by 16383). */
         RT_GCC_EXTENSION uint16_t   uExponent : 15;
         /** The sign indicator. */
@@ -1096,14 +1163,14 @@ typedef union RTFLOAT80U2
         /** The J bit, aka the integer bit. */
         uint32_t                    fInteger : 1;
         /** The fraction, bits 32 thru 62. */
-        uint32_t                    u31FractionHigh : 31;
+        uint32_t                    uFractionHigh : 31;
         /** The fraction, bits 0 thru 31. */
-        uint32_t                    u32FractionLow : 32;
+        uint32_t                    uFractionLow : 32;
 # else
         /** The fraction, bits 0 thru 31. */
-        uint32_t                    u32FractionLow : 32;
+        uint32_t                    uFractionLow : 32;
         /** The fraction, bits 32 thru 62. */
-        uint32_t                    u31FractionHigh : 31;
+        uint32_t                    uFractionHigh : 31;
         /** The J bit, aka the integer bit. */
         uint32_t                    fInteger : 1;
         /** The exponent (offseted by 16383). */
@@ -1125,10 +1192,10 @@ typedef union RTFLOAT80U2
         /** The J bit, aka the integer bit. */
         RT_GCC_EXTENSION uint64_t   fInteger : 1;
         /** The fraction. */
-        RT_GCC_EXTENSION uint64_t   u63Fraction : 63;
+        RT_GCC_EXTENSION uint64_t   uFraction : 63;
 #  else
         /** The fraction. */
-        RT_GCC_EXTENSION uint64_t   u63Fraction : 63;
+        RT_GCC_EXTENSION uint64_t   uFraction : 63;
         /** The J bit, aka the integer bit. */
         RT_GCC_EXTENSION uint64_t   fInteger : 1;
         /** The exponent (offseted by 16383). */

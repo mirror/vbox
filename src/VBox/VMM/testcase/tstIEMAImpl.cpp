@@ -193,19 +193,19 @@ typedef struct MULDIVU64_TEST_T
 *********************************************************************************************************************************/
 #define ENTRY(a_Name)       ENTRY_EX(a_Name, 0)
 #define ENTRY_EX(a_Name, a_uExtra) \
-    { #a_Name, iemAImpl_ ## a_Name, NULL, \
+    { RT_XSTR(a_Name), iemAImpl_ ## a_Name, NULL, \
       g_aTests_ ## a_Name, RT_ELEMENTS(g_aTests_ ## a_Name), \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_NATIVE /* means same for all here */ }
 
 #define ENTRY_INTEL(a_Name, a_fEflUndef) ENTRY_INTEL_EX(a_Name, a_fEflUndef, 0)
 #define ENTRY_INTEL_EX(a_Name, a_fEflUndef, a_uExtra) \
-    { #a_Name "_intel", iemAImpl_ ## a_Name ## _intel, iemAImpl_ ## a_Name, \
+    { RT_XSTR(a_Name) "_intel", iemAImpl_ ## a_Name ## _intel, iemAImpl_ ## a_Name, \
       g_aTests_ ## a_Name ## _intel, RT_ELEMENTS(g_aTests_ ## a_Name ## _intel), \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_INTEL }
 
 #define ENTRY_AMD(a_Name, a_fEflUndef)   ENTRY_AMD_EX(a_Name, a_fEflUndef, 0)
 #define ENTRY_AMD_EX(a_Name, a_fEflUndef, a_uExtra) \
-    { #a_Name "_amd", iemAImpl_ ## a_Name ## _amd,   iemAImpl_ ## a_Name, \
+    { RT_XSTR(a_Name) "_amd", iemAImpl_ ## a_Name ## _amd,   iemAImpl_ ## a_Name, \
       g_aTests_ ## a_Name ## _amd, RT_ELEMENTS(g_aTests_ ## a_Name ## _amd), \
       a_uExtra, IEMTARGETCPU_EFL_BEHAVIOR_AMD }
 
@@ -224,6 +224,9 @@ static uint16_t    *g_pu16,  *g_pu16Two;
 static uint32_t    *g_pu32,  *g_pu32Two,  *g_pfEfl;
 static uint64_t    *g_pu64,  *g_pu64Two;
 static RTUINT128U  *g_pu128, *g_pu128Two;
+
+static char         g_aszBuf[16][256];
+static unsigned     g_idxBuf = 0;
 
 
 #include "tstIEMAImplData.h"
@@ -340,6 +343,70 @@ static uint64_t  RandU64Src(uint32_t iTest)
 }
 
 
+static RTFLOAT80U RandR80Src(uint32_t iTest)
+{
+    RTFLOAT80U lrd;
+    if (iTest < g_cZeroSrcTests)
+    {
+        lrd.au64[0] = 0;
+        lrd.au16[4] = 0;
+    }
+    else
+    {
+        lrd.au64[0] = RandU64();
+        lrd.au16[4] = RandU16();
+    }
+    return lrd;
+}
+
+
+static RTFLOAT64U RandR64Src(uint32_t iTest)
+{
+    RTFLOAT64U rd;
+    if (iTest < g_cZeroSrcTests)
+        rd.u = 0;
+    else
+        rd.u = RandU64();
+    return rd;
+}
+
+
+static RTFLOAT32U RandR32Src(uint32_t iTest)
+{
+    RTFLOAT32U r;
+    if (iTest < g_cZeroSrcTests)
+        r.u = 0;
+    else
+        r.u = RandU32();
+    return r;
+}
+
+
+const char *GenFormatR80(PCRTFLOAT80U plrd)
+{
+    char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
+    RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), "RTFLOAT80U_INIT_C(%d,%#RX64,%u)",
+                plrd->s.fSign, plrd->s.uMantissa, plrd->s.uExponent);
+    return pszBuf;
+}
+
+const char *GenFormatR64(PCRTFLOAT64U prd)
+{
+    char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
+    RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), "RTFLOAT64U_INIT_C(%d,%#RX64,%u)",
+                prd->s.fSign, RT_MAKE_U64(prd->s.uFractionLow, prd->s.uFractionHigh), prd->s.uExponent);
+    return pszBuf;
+}
+
+
+const char *GenFormatR32(PCRTFLOAT32U pr)
+{
+    char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
+    RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), "RTFLOAT32U_INIT_C(%d,%#RX32,%u)", pr->s.fSign, pr->s.uFraction, pr->s.uExponent);
+    return pszBuf;
+}
+
+
 static void GenerateHeader(PRTSTREAM pOut, const char *pszFileInfix,
                            const char *pszCpuDesc, const char *pszCpuType, const char *pszCpuSuffU)
 {
@@ -398,18 +465,14 @@ static RTEXITCODE GenerateFooterAndClose(PRTSTREAM pOut, const char *pszFilename
 /*
  * Test helpers.
  */
-static char     g_szBuf[16][256];
-static unsigned g_idxBuf = 0;
-
-
 static const char *EFlagsDiff(uint32_t fActual, uint32_t fExpected)
 {
     if (fActual == fExpected)
         return "";
 
     uint32_t const fXor = fActual ^ fExpected;
-    char *pszBuf = g_szBuf[g_idxBuf++ % RT_ELEMENTS(g_szBuf)];
-    size_t cch = RTStrPrintf(pszBuf, sizeof(g_szBuf[0]), " - %#x", fXor);
+    char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
+    size_t cch = RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), " - %#x", fXor);
 
     static struct
     {
@@ -438,9 +501,9 @@ static const char *EFlagsDiff(uint32_t fActual, uint32_t fExpected)
     };
     for (size_t i = 0; i < RT_ELEMENTS(s_aFlags); i++)
         if (s_aFlags[i].fFlag & fXor)
-            cch += RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch,
+            cch += RTStrPrintf(&pszBuf[cch], sizeof(g_aszBuf[0]) - cch,
                                s_aFlags[i].fFlag & fActual ? "/%s" : "/!%s", s_aFlags[i].pszName);
-    RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch, "");
+    RTStrPrintf(&pszBuf[cch], sizeof(g_aszBuf[0]) - cch, "");
     return pszBuf;
 }
 
@@ -451,8 +514,8 @@ static const char *FswDiff(uint16_t fActual, uint16_t fExpected)
         return "";
 
     uint16_t const fXor = fActual ^ fExpected;
-    char *pszBuf = g_szBuf[g_idxBuf++ % RT_ELEMENTS(g_szBuf)];
-    size_t cch = RTStrPrintf(pszBuf, sizeof(g_szBuf[0]), " - %#x", fXor);
+    char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
+    size_t cch = RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), " - %#x", fXor);
 
     static struct
     {
@@ -477,19 +540,19 @@ static const char *FswDiff(uint16_t fActual, uint16_t fExpected)
     };
     for (size_t i = 0; i < RT_ELEMENTS(s_aFlags); i++)
         if (s_aFlags[i].fFlag & fXor)
-            cch += RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch,
+            cch += RTStrPrintf(&pszBuf[cch], sizeof(g_aszBuf[0]) - cch,
                                s_aFlags[i].fFlag & fActual ? "/%s" : "/!%s", s_aFlags[i].pszName);
     if (fXor & X86_FSW_TOP_MASK)
-        cch += RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch, "/TOP%u!%u",
+        cch += RTStrPrintf(&pszBuf[cch], sizeof(g_aszBuf[0]) - cch, "/TOP%u!%u",
                            X86_FSW_TOP_GET(fActual), X86_FSW_TOP_GET(fExpected));
-    RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch, "");
+    RTStrPrintf(&pszBuf[cch], sizeof(g_aszBuf[0]) - cch, "");
     return pszBuf;
 }
 
 
 static const char *FormatFcw(uint16_t fFcw)
 {
-    char *pszBuf = g_szBuf[g_idxBuf++ % RT_ELEMENTS(g_szBuf)];
+    char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
 
     const char *pszPC = NULL; /* (msc+gcc are too stupid) */
     switch (fFcw & X86_FCW_PC_MASK)
@@ -508,7 +571,7 @@ static const char *FormatFcw(uint16_t fFcw)
         case X86_FCW_RC_UP:         pszRC = "UP"; break;
         case X86_FCW_RC_ZERO:       pszRC = "ZERO"; break;
     }
-    size_t cch = RTStrPrintf(&pszBuf[0], sizeof(g_szBuf[0]), "%s %s", pszPC, pszRC);
+    size_t cch = RTStrPrintf(&pszBuf[0], sizeof(g_aszBuf[0]), "%s %s", pszPC, pszRC);
 
     static struct
     {
@@ -527,17 +590,39 @@ static const char *FormatFcw(uint16_t fFcw)
     };
     for (size_t i = 0; i < RT_ELEMENTS(s_aFlags); i++)
         if (fFcw & s_aFlags[i].fFlag)
-            cch += RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch, " %s", s_aFlags[i].pszName);
+            cch += RTStrPrintf(&pszBuf[cch], sizeof(g_aszBuf[0]) - cch, " %s", s_aFlags[i].pszName);
 
-    RTStrPrintf(&pszBuf[cch], sizeof(g_szBuf[0]) - cch, "");
+    RTStrPrintf(&pszBuf[cch], sizeof(g_aszBuf[0]) - cch, "");
     return pszBuf;
 }
 
 
 static const char *FormatR80(PCRTFLOAT80U pr80)
 {
-    char *pszBuf = g_szBuf[g_idxBuf++ % RT_ELEMENTS(g_szBuf)];
-    RTStrFormatR80(pszBuf, sizeof(g_szBuf[0]), pr80, 0, 0, RTSTR_F_SPECIAL);
+    char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
+    RTStrFormatR80(pszBuf, sizeof(g_aszBuf[0]), pr80, 0, 0, RTSTR_F_SPECIAL);
+    return pszBuf;
+}
+
+
+static const char *FormatR64(PCRTFLOAT64U pr64)
+{
+    char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
+    RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), "%c1m%#015RX64^%d",
+                pr64->s.fSign ? '-' : '+',
+                RT_MAKE_U64(pr64->s.uFractionLow, pr64->s.uFractionHigh),
+                pr64->s.uExponent - 1023);
+    return pszBuf;
+}
+
+
+static const char *FormatR32(PCRTFLOAT32U pr32)
+{
+    char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
+    RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), "%c1m%#010RX32^%d",
+                pr32->s.fSign ? '-' : '+',
+                pr32->s.uFraction,
+                pr32->s.uExponent - 127);
     return pszBuf;
 }
 
@@ -1899,9 +1984,10 @@ static void BswapTest(void)
 }
 
 
-/*
- * FPU constant loading.
- */
+
+/*********************************************************************************************************************************
+*   Floating point (x87 style)                                                                                                   *
+*********************************************************************************************************************************/
 
 typedef struct FPU_LD_CONST_TEST_T
 {
@@ -1910,6 +1996,49 @@ typedef struct FPU_LD_CONST_TEST_T
     uint16_t                fFswOut;
     RTFLOAT80U              rdResult;
 } FPU_LD_CONST_TEST_T;
+
+typedef struct FPU_R32_IN_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              rdResult;
+    RTFLOAT32U              InVal;
+} FPU_R32_IN_TEST_T;
+
+typedef struct FPU_R64_IN_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              rdResult;
+    RTFLOAT64U              InVal;
+} FPU_R64_IN_TEST_T;
+
+typedef struct FPU_R80_IN_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              rdResult;
+    RTFLOAT80U              InVal;
+} FPU_R80_IN_TEST_T;
+#include "tstIEMAImplDataFpu.h"
+
+
+/*
+ * FPU constant loading.
+ */
+
+#ifndef HAVE_FPU_LOAD_CONST_TESTS
+static const FPU_LD_CONST_TEST_T g_aTests_fld1[]   = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldl2t[] = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldl2e[] = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldpi[]  = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldlg2[] = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldln2[] = { {0} };
+static const FPU_LD_CONST_TEST_T g_aTests_fldz[]   = { {0} };
+#endif
 
 typedef struct FPU_LD_CONST_T
 {
@@ -1921,18 +2050,6 @@ typedef struct FPU_LD_CONST_T
     uint32_t                    uExtra;
     uint8_t                     idxCpuEflFlavour;
 } FPU_LD_CONST_T;
-
-#include "tstIEMAImplDataFpu.h"
-
-#ifndef HAVE_FPU_LOAD_CONST_TESTS
-static const FPU_LD_CONST_TEST_T g_aTests_fld1[]   = { {0} };
-static const FPU_LD_CONST_TEST_T g_aTests_fldl2t[] = { {0} };
-static const FPU_LD_CONST_TEST_T g_aTests_fldl2e[] = { {0} };
-static const FPU_LD_CONST_TEST_T g_aTests_fldpi[]  = { {0} };
-static const FPU_LD_CONST_TEST_T g_aTests_fldlg2[] = { {0} };
-static const FPU_LD_CONST_TEST_T g_aTests_fldln2[] = { {0} };
-static const FPU_LD_CONST_TEST_T g_aTests_fldz[]   = { {0} };
-#endif
 
 static const FPU_LD_CONST_T g_aFpuLdConst[] =
 {
@@ -1946,7 +2063,7 @@ static const FPU_LD_CONST_T g_aFpuLdConst[] =
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static void FpuLoadConstGenerate(PRTSTREAM pOut, uint32_t cTests)
+static void FpuLdConstGenerate(PRTSTREAM pOut, uint32_t cTests)
 {
     RTStrmPrintf(pOut, "\n\n#define HAVE_FPU_LOAD_CONST_TESTS\n");
     X86FXSTATE State;
@@ -1964,9 +2081,8 @@ static void FpuLoadConstGenerate(PRTSTREAM pOut, uint32_t cTests)
                 IEMFPURESULT Res;
                 State.FCW = (State.FCW & ~X86_FCW_RC_MASK) | (iRounding << X86_FCW_RC_SHIFT);
                 g_aFpuLdConst[iFn].pfn(&State, &Res);
-                RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, RTFLOAT80U_INIT_C(%d,%u,%#RX64) }, /* #%u */\n",
-                             State.FCW, State.FSW, Res.FSW,
-                             Res.r80Result.s.fSign, Res.r80Result.s.uExponent, Res.r80Result.s.u64Mantissa, iTest + iRounding);
+                RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s }, /* #%u */\n",
+                             State.FCW, State.FSW, Res.FSW, GenFormatR80(&Res.r80Result), iTest + iRounding);
             }
         }
         RTStrmPrintf(pOut, "};\n");
@@ -2016,6 +2132,125 @@ static void FpuLoadConstTest(void)
     }
 }
 
+
+/*
+ * Load values from memory.
+ */
+
+#ifndef HAVE_FPU_LD_MEM
+static FPU_R80_IN_TEST_T const g_aTests_fld_r80_from_r80[] = { {0} };
+static FPU_R64_IN_TEST_T const g_aTests_fld_r80_from_r64[] = { {0} };
+static FPU_R32_IN_TEST_T const g_aTests_fld_r80_from_r32[] = { {0} };
+#endif
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+# define GEN_FPU_LOAD(a_cBits, a_rdTypeIn, a_aSubTests, a_TestType) \
+static void FpuLdR ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+{ \
+    X86FXSTATE State; \
+    RT_ZERO(State); \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        RTStrmPrintf(pOut, "static const " #a_TestType " g_aTests_%s[] =\n{\n", a_aSubTests[iFn].pszName); \
+        for (uint32_t iTest = 0; iTest < cTests; iTest += 4) \
+        { \
+            State.FCW = RandU16() & (X86_FCW_MASK_ALL | X86_FCW_PC_MASK); \
+            State.FSW = RandU16() & (X86_FSW_C_MASK | X86_FSW_XCPT_ES_MASK | X86_FSW_TOP_MASK | X86_FSW_B); \
+            a_rdTypeIn InVal = RandR ## a_cBits ## Src(iTest); \
+            \
+            for (uint16_t iRounding = 0; iRounding < 4; iRounding++) \
+            { \
+                IEMFPURESULT Res; \
+                State.FCW = (State.FCW & ~X86_FCW_RC_MASK) | (iRounding << X86_FCW_RC_SHIFT); \
+                a_aSubTests[iFn].pfn(&State, &Res, &InVal); \
+                RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u */\n", \
+                             State.FCW, State.FSW, Res.FSW, GenFormatR80(&Res.r80Result), \
+                             GenFormatR ## a_cBits(&InVal), iTest + iRounding); \
+            } \
+        } \
+        RTStrmPrintf(pOut, "};\n"); \
+    } \
+}
+#else
+# define GEN_FPU_LOAD(a_cBits, a_rdTypeIn, a_aSubTests, a_TestType)
+#endif
+
+#define TEST_FPU_LOAD(a_cBits, a_rdTypeIn, a_SubTestType, a_aSubTests, a_TestType) \
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPULDR80FROM ## a_cBits,(PCX86FXSTATE, PIEMFPURESULT, PC ## a_rdTypeIn)); \
+typedef FNIEMAIMPLFPULDR80FROM ## a_cBits *PFNIEMAIMPLFPULDR80FROM ## a_cBits; \
+typedef struct a_SubTestType \
+{ \
+    const char                             *pszName; \
+    PFNIEMAIMPLFPULDR80FROM ## a_cBits      pfn, pfnNative; \
+    a_TestType const                       *paTests; \
+    uint32_t                                cTests; \
+    uint32_t                                uExtra; \
+    uint8_t                                 idxCpuEflFlavour; \
+} a_SubTestType; \
+\
+static const a_SubTestType a_aSubTests[] = \
+{ \
+    ENTRY(RT_CONCAT(fld_r80_from_r,a_cBits)) \
+}; \
+GEN_FPU_LOAD(a_cBits, a_rdTypeIn, a_aSubTests, a_TestType) \
+\
+static void FpuLdR ## a_cBits ## Test(void) \
+{ \
+    X86FXSTATE State; \
+    RT_ZERO(State); \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
+        \
+        uint32_t const                     cTests  = a_aSubTests[iFn].cTests; \
+        a_TestType const           * const paTests = a_aSubTests[iFn].paTests; \
+        PFNIEMAIMPLFPULDR80FROM ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
+        uint32_t const cVars = 1 + (a_aSubTests[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && a_aSubTests[iFn].pfnNative); \
+        for (uint32_t iVar = 0; iVar < cVars; iVar++) \
+        { \
+            for (uint32_t iTest = 0; iTest < cTests; iTest++) \
+            { \
+                a_rdTypeIn const InVal = paTests[iTest].InVal; \
+                State.FCW = paTests[iTest].fFcw; \
+                State.FSW = paTests[iTest].fFswIn; \
+                IEMFPURESULT Res; \
+                pfn(&State, &Res, &InVal); \
+                if (   Res.FSW != paTests[iTest].fFswOut \
+                    || !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].rdResult)) \
+                    RTTestFailed(g_hTest, "#%u%s: fcw=%#06x fsw=%#06x in=%s -> fsw=%#06x %s, expected %#06x %s%s%s (%s)\n", \
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fFcw, paTests[iTest].fFswIn, \
+                                 FormatR ## a_cBits(&paTests[iTest].InVal), \
+                                 Res.FSW, FormatR80(&Res.r80Result), \
+                                 paTests[iTest].fFswOut, FormatR80(&paTests[iTest].rdResult), \
+                                 FswDiff(Res.FSW, paTests[iTest].fFswOut), \
+                                 !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].rdResult) ? " - val" : "", \
+                                 FormatFcw(paTests[iTest].fFcw) ); \
+            } \
+            pfn = a_aSubTests[iFn].pfnNative; \
+        } \
+    } \
+}
+
+TEST_FPU_LOAD(80, RTFLOAT80U, FPU_LD_R80_T, g_aFpuLdR80, FPU_R80_IN_TEST_T)
+TEST_FPU_LOAD(64, RTFLOAT64U, FPU_LD_R64_T, g_aFpuLdR64, FPU_R64_IN_TEST_T)
+TEST_FPU_LOAD(32, RTFLOAT32U, FPU_LD_R32_T, g_aFpuLdR32, FPU_R32_IN_TEST_T)
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static void FpuLdMemGenerate(PRTSTREAM pOut, uint32_t cTests)
+{
+    RTStrmPrintf(pOut, "\n\n#define HAVE_FPU_LD_MEM\n");
+    FpuLdR80Generate(pOut, cTests);
+    FpuLdR64Generate(pOut, cTests);
+    FpuLdR32Generate(pOut, cTests);
+}
+#endif
+
+static void FpuLdMemTest(void)
+{
+    FpuLdR80Test();
+    FpuLdR64Test();
+    FpuLdR32Test();
+}
 
 
 int main(int argc, char **argv)
@@ -2126,7 +2361,6 @@ int main(int argc, char **argv)
     if (enmMode == kModeGenerate)
     {
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-
         char szCpuDesc[256] = {0};
         RTMpGetDescription(NIL_RTCPUID, szCpuDesc, sizeof(szCpuDesc));
         const char * const pszCpuType  = g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD ? "Amd"  : "Intel";
@@ -2194,7 +2428,8 @@ int main(int argc, char **argv)
             GenerateHeader(pStrmData, "Fpu", szCpuDesc, NULL, "");
             GenerateHeader(pStrmDataCpu, "Fpu", szCpuDesc, pszCpuType, pszCpuSuff);
 
-            FpuLoadConstGenerate(pStrmData, cTests);
+            FpuLdConstGenerate(pStrmData, cTests);
+            FpuLdMemGenerate(pStrmData, cTests);
 
             RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "Fpu", pszCpuSuff,
                                                        GenerateFooterAndClose(pStrmData, pszDataFile, "Fpu", "",
@@ -2216,6 +2451,8 @@ int main(int argc, char **argv)
     AssertRCReturn(rc, RTEXITCODE_FAILURE);
     if (enmMode == kModeTest)
     {
+        RTTestBanner(g_hTest);
+
         /* Allocate guarded memory for use in the tests. */
 #define ALLOC_GUARDED_VAR(a_puVar) do { \
             rc = RTTestGuardedAlloc(g_hTest, sizeof(*a_puVar), sizeof(*a_puVar), false /*fHead*/, (void **)&a_puVar); \
@@ -2255,6 +2492,7 @@ int main(int argc, char **argv)
             if (fFpu)
             {
                 FpuLoadConstTest();
+                FpuLdMemTest();
             }
         }
         return RTTestSummaryAndDestroy(g_hTest);
