@@ -1833,6 +1833,26 @@ static int dxBackendSurfaceAlloc(PVMSVGA3DBACKENDSURFACE *ppBackendSurface)
 }
 
 
+static HRESULT dxInitSharedHandle(PVMSVGA3DBACKEND pBackend, PVMSVGA3DBACKENDSURFACE pBackendSurface)
+{
+    if (pBackend->fSingleDevice)
+        return S_OK;
+
+    /* Get the shared handle. */
+    IDXGIResource *pDxgiResource = NULL;
+    HRESULT hr = pBackendSurface->u.pResource->QueryInterface(__uuidof(IDXGIResource), (void**)&pDxgiResource);
+    Assert(SUCCEEDED(hr));
+    if (SUCCEEDED(hr))
+    {
+        hr = pDxgiResource->GetSharedHandle(&pBackendSurface->SharedHandle);
+        Assert(SUCCEEDED(hr));
+        D3D_RELEASE(pDxgiResource);
+    }
+
+    return hr;
+}
+
+
 static int vmsvga3dBackSurfaceCreateScreenTarget(PVGASTATECC pThisCC, PVMSVGA3DSURFACE pSurface)
 {
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
@@ -1895,20 +1915,8 @@ static int vmsvga3dBackSurfaceCreateScreenTarget(PVGASTATECC pThisCC, PVMSVGA3DS
         Assert(SUCCEEDED(hr));
     }
 
-    if (   SUCCEEDED(hr)
-        && !pBackend->fSingleDevice)
-    {
-        /* Get the shared handle. */
-        IDXGIResource *pDxgiResource = NULL;
-        hr = pBackendSurface->u.pTexture2D->QueryInterface(__uuidof(IDXGIResource), (void**)&pDxgiResource);
-        Assert(SUCCEEDED(hr));
-        if (SUCCEEDED(hr))
-        {
-            hr = pDxgiResource->GetSharedHandle(&pBackendSurface->SharedHandle);
-            Assert(SUCCEEDED(hr));
-            D3D_RELEASE(pDxgiResource);
-        }
-    }
+    if (SUCCEEDED(hr))
+        hr = dxInitSharedHandle(pBackend, pBackendSurface);
 
     if (SUCCEEDED(hr))
     {
@@ -2064,20 +2072,8 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             Assert(SUCCEEDED(hr));
         }
 
-        if (   SUCCEEDED(hr)
-            && MiscFlags == D3D11_RESOURCE_MISC_SHARED)
-        {
-            /* Get the shared handle. */
-            IDXGIResource *pDxgiResource = NULL;
-            hr = pBackendSurface->u.pTexture2D->QueryInterface(__uuidof(IDXGIResource), (void**)&pDxgiResource);
-            Assert(SUCCEEDED(hr));
-            if (SUCCEEDED(hr))
-            {
-                hr = pDxgiResource->GetSharedHandle(&pBackendSurface->SharedHandle);
-                Assert(SUCCEEDED(hr));
-                D3D_RELEASE(pDxgiResource);
-            }
-        }
+        if (SUCCEEDED(hr))
+            hr = dxInitSharedHandle(pBackend, pBackendSurface);
 
         if (SUCCEEDED(hr))
         {
@@ -2134,20 +2130,8 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             Assert(SUCCEEDED(hr));
         }
 
-        if (   SUCCEEDED(hr)
-            && MiscFlags == D3D11_RESOURCE_MISC_SHARED)
-        {
-            /* Get the shared handle. */
-            IDXGIResource *pDxgiResource = NULL;
-            hr = pBackendSurface->u.pTexture2D->QueryInterface(__uuidof(IDXGIResource), (void**)&pDxgiResource);
-            Assert(SUCCEEDED(hr));
-            if (SUCCEEDED(hr))
-            {
-                hr = pDxgiResource->GetSharedHandle(&pBackendSurface->SharedHandle);
-                Assert(SUCCEEDED(hr));
-                D3D_RELEASE(pDxgiResource);
-            }
-        }
+        if (SUCCEEDED(hr))
+            hr = dxInitSharedHandle(pBackend, pBackendSurface);
 
         if (SUCCEEDED(hr))
         {
@@ -2201,20 +2185,8 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             Assert(SUCCEEDED(hr));
         }
 
-        if (   SUCCEEDED(hr)
-            && MiscFlags == D3D11_RESOURCE_MISC_SHARED)
-        {
-            /* Get the shared handle. */
-            IDXGIResource *pDxgiResource = NULL;
-            hr = pBackendSurface->u.pTexture1D->QueryInterface(__uuidof(IDXGIResource), (void**)&pDxgiResource);
-            Assert(SUCCEEDED(hr));
-            if (SUCCEEDED(hr))
-            {
-                hr = pDxgiResource->GetSharedHandle(&pBackendSurface->SharedHandle);
-                Assert(SUCCEEDED(hr));
-                D3D_RELEASE(pDxgiResource);
-            }
-        }
+        if (SUCCEEDED(hr))
+            hr = dxInitSharedHandle(pBackend, pBackendSurface);
 
         if (SUCCEEDED(hr))
         {
@@ -2271,20 +2243,8 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
                 Assert(SUCCEEDED(hr));
             }
 
-            if (   SUCCEEDED(hr)
-                && MiscFlags == D3D11_RESOURCE_MISC_SHARED)
-            {
-                /* Get the shared handle. */
-                IDXGIResource *pDxgiResource = NULL;
-                hr = pBackendSurface->u.pTexture3D->QueryInterface(__uuidof(IDXGIResource), (void**)&pDxgiResource);
-                Assert(SUCCEEDED(hr));
-                if (SUCCEEDED(hr))
-                {
-                    hr = pDxgiResource->GetSharedHandle(&pBackendSurface->SharedHandle);
-                    Assert(SUCCEEDED(hr));
-                    D3D_RELEASE(pDxgiResource);
-                }
-            }
+            if (SUCCEEDED(hr))
+                hr = dxInitSharedHandle(pBackend, pBackendSurface);
 
             if (SUCCEEDED(hr))
             {
@@ -2342,20 +2302,8 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
                 Assert(SUCCEEDED(hr));
             }
 
-            if (   SUCCEEDED(hr)
-                && MiscFlags == D3D11_RESOURCE_MISC_SHARED)
-            {
-                /* Get the shared handle. */
-                IDXGIResource *pDxgiResource = NULL;
-                hr = pBackendSurface->u.pTexture2D->QueryInterface(__uuidof(IDXGIResource), (void**)&pDxgiResource);
-                Assert(SUCCEEDED(hr));
-                if (SUCCEEDED(hr))
-                {
-                    hr = pDxgiResource->GetSharedHandle(&pBackendSurface->SharedHandle);
-                    Assert(SUCCEEDED(hr));
-                    D3D_RELEASE(pDxgiResource);
-                }
-            }
+            if (SUCCEEDED(hr))
+                hr = dxInitSharedHandle(pBackend, pBackendSurface);
 
             if (SUCCEEDED(hr))
             {
