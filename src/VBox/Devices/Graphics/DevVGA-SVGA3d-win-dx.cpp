@@ -236,7 +236,6 @@ typedef struct DXSHADER
 
 typedef struct DXQUERY
 {
-    SVGA3dQueryType             enmQueryType;
     ID3D11Query                *pQuery;
 } DXQUERY;
 
@@ -1275,7 +1274,7 @@ static int dxDefineStreamOutput(PVMSVGA3DDXCONTEXT pDXContext, SVGA3dStreamOutpu
 
 static void dxDestroyStreamOutput(DXSTREAMOUTPUT *pDXStreamOutput)
 {
-    RT_NOREF(pDXStreamOutput);
+    RT_ZERO(*pDXStreamOutput);
 }
 
 static D3D11_BLEND dxBlendFactorAlpha(uint8_t svgaBlend)
@@ -1709,7 +1708,8 @@ static HRESULT dxShaderCreate(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
 
                 hr = pDevice->pDevice->CreateGeometryShaderWithStreamOutput(pDXShader->pvDXBC, pDXShader->cbDXBC,
                     pDXStreamOutput->aDeclarationEntry, pDXStreamOutput->cDeclarationEntry,
-                    pEntry->streamOutputStrideInBytes, cSOTarget, pEntry->rasterizedStream,
+                    pEntry->numOutputStreamStrides ? pEntry->streamOutputStrideInBytes : NULL, pEntry->numOutputStreamStrides,
+                    pEntry->rasterizedStream,
                     /*pClassLinkage=*/ NULL, &pDXShader->pGeometryShader);
                 Assert(SUCCEEDED(hr));
                 if (SUCCEEDED(hr))
@@ -5508,7 +5508,11 @@ static DECLCALLBACK(int) vmsvga3dBackDXDraw(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
          */
 
         /* Make sure that 16 bit indices are enough. */
-        AssertReturn(vertexCount <= 65535, VERR_NOT_SUPPORTED);
+        if (vertexCount > 65535)
+        {
+            LogRelMax(1, ("VMSVGA: ignore Draw(TRIANGLEFAN, %u)\n", vertexCount));
+            return VERR_NOT_SUPPORTED;
+        }
 
         /* Generate indices. */
         UINT const IndexCount = 3 * (vertexCount - 2); /* 3_per_triangle * num_triangles */
@@ -5643,7 +5647,11 @@ static int dxDrawIndexedTriangleFan(DXDEVICE *pDevice, uint32_t IndexCountTF, ui
      */
 
     /* Make sure that 16 bit indices are enough. */
-    AssertReturn(IndexCountTF <= 65535, VERR_NOT_SUPPORTED);
+    if (IndexCountTF > 65535)
+    {
+        LogRelMax(1, ("VMSVGA: ignore DrawIndexed(TRIANGLEFAN, %u)\n", IndexCountTF));
+        return VERR_NOT_SUPPORTED;
+    }
 
     /* Save the current index buffer. */
     ID3D11Buffer *pSavedIndexBuffer = 0;
@@ -6128,7 +6136,6 @@ static int dxDefineQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVG
     AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
 
     DXQUERY *pDXQuery = &pDXContext->pBackendDXContext->paQuery[queryId];
-    Assert(pDXQuery->enmQueryType == SVGA3D_QUERYTYPE_INVALID);
 
     D3D11_QUERY_DESC desc;
     desc.Query     = dxQueryType((SVGA3dQueryType)pEntry->type);
@@ -6139,15 +6146,12 @@ static int dxDefineQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVG
     HRESULT hr = pDXDevice->pDevice->CreateQuery(&desc, &pDXQuery->pQuery);
     AssertReturn(SUCCEEDED(hr), VERR_INVALID_STATE);
 
-    pDXQuery->enmQueryType = (SVGA3dQueryType)pEntry->type;
-
     return VINF_SUCCESS;
 }
 
 
 static int dxDestroyQuery(DXQUERY *pDXQuery)
 {
-    pDXQuery->enmQueryType = SVGA3D_QUERYTYPE_INVALID;
     D3D_RELEASE(pDXQuery->pQuery);
     return VINF_SUCCESS;
 }
@@ -6183,13 +6187,14 @@ static DECLCALLBACK(int) vmsvga3dBackDXBindQuery(PVGASTATECC pThisCC, PVMSVGA3DD
 }
 
 
-static int dxBeginQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, DXQUERY *pDXQuery)
+static int dxBeginQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, DXQUERY *pDXQuery)
 {
     DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
     AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
 
     /* Begin is disabled for some queries. */
-    if (pDXQuery->enmQueryType == SVGA3D_QUERYTYPE_TIMESTAMP)
+    SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
+    if (pEntry->type == SVGA3D_QUERYTYPE_TIMESTAMP)
         return VINF_SUCCESS;
     pDXDevice->pImmediateContext->Begin(pDXQuery->pQuery);
     return VINF_SUCCESS;
@@ -6202,7 +6207,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXBeginQuery(PVGASTATECC pThisCC, PVMSVGA3D
     RT_NOREF(pBackend);
 
     DXQUERY *pDXQuery = &pDXContext->pBackendDXContext->paQuery[queryId];
-    int rc = dxBeginQuery(pThisCC, pDXContext, pDXQuery);
+    int rc = dxBeginQuery(pThisCC, pDXContext, queryId, pDXQuery);
     return rc;
 }
 
@@ -6228,13 +6233,57 @@ static DECLCALLBACK(int) vmsvga3dBackDXEndQuery(PVGASTATECC pThisCC, PVMSVGA3DDX
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXReadbackQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static int dxReadbackQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dQueryId queryId, DXQUERY *pDXQuery,
+                           void *pvData, uint32_t cbData, uint32_t *pcbOut)
+{
+    DXDEVICE *pDXDevice = dxDeviceFromContext(pThisCC->svga.p3dState, pDXContext);
+    AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
+
+    SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
+
+    uint32_t cbRequired;
+    switch (pEntry->type)
+    {
+        case SVGA3D_QUERYTYPE_OCCLUSION:               cbRequired = sizeof(UINT64); break;
+        case SVGA3D_QUERYTYPE_TIMESTAMP:               cbRequired = sizeof(UINT64); break;
+        case SVGA3D_QUERYTYPE_TIMESTAMPDISJOINT:       cbRequired = sizeof(D3D11_QUERY_DATA_TIMESTAMP_DISJOINT); break;
+        case SVGA3D_QUERYTYPE_PIPELINESTATS:           cbRequired = sizeof(D3D11_QUERY_DATA_PIPELINE_STATISTICS); break;
+        case SVGA3D_QUERYTYPE_OCCLUSIONPREDICATE:      cbRequired = sizeof(BOOL); break;
+        case SVGA3D_QUERYTYPE_STREAMOUTPUTSTATS:       cbRequired = sizeof(D3D11_QUERY_DATA_SO_STATISTICS); break;
+        case SVGA3D_QUERYTYPE_STREAMOVERFLOWPREDICATE: cbRequired = sizeof(BOOL); break;
+        case SVGA3D_QUERYTYPE_OCCLUSION64:             cbRequired = sizeof(UINT64); break;
+        case SVGA3D_QUERYTYPE_SOSTATS_STREAM0:         cbRequired = sizeof(D3D11_QUERY_DATA_SO_STATISTICS); break;
+        case SVGA3D_QUERYTYPE_SOSTATS_STREAM1:         cbRequired = sizeof(D3D11_QUERY_DATA_SO_STATISTICS); break;
+        case SVGA3D_QUERYTYPE_SOSTATS_STREAM2:         cbRequired = sizeof(D3D11_QUERY_DATA_SO_STATISTICS); break;
+        case SVGA3D_QUERYTYPE_SOSTATS_STREAM3:         cbRequired = sizeof(D3D11_QUERY_DATA_SO_STATISTICS); break;
+        case SVGA3D_QUERYTYPE_SOP_STREAM0:             cbRequired = sizeof(BOOL); break;
+        case SVGA3D_QUERYTYPE_SOP_STREAM1:             cbRequired = sizeof(BOOL); break;
+        case SVGA3D_QUERYTYPE_SOP_STREAM2:             cbRequired = sizeof(BOOL); break;
+        case SVGA3D_QUERYTYPE_SOP_STREAM3:             cbRequired = sizeof(BOOL); break;
+        default:
+            AssertFailedReturn(VERR_INVALID_STATE);
+    }
+
+    ASSERT_GUEST_RETURN(cbData > cbRequired, VERR_INVALID_PARAMETER);
+
+    while (pDXDevice->pImmediateContext->GetData(pDXQuery->pQuery, pvData, cbRequired, 0) != S_OK)
+    {
+    }
+
+    *pcbOut = cbRequired;
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) vmsvga3dBackDXReadbackQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext,
+                                                     SVGA3dQueryId queryId, void *pvData, uint32_t cbData, uint32_t *pcbOut)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    DXQUERY *pDXQuery = &pDXContext->pBackendDXContext->paQuery[queryId];
+    int rc = dxReadbackQuery(pThisCC, pDXContext, queryId, pDXQuery, pvData, cbData, pcbOut);
+    return rc;
 }
 
 
@@ -6708,7 +6757,7 @@ static DECLCALLBACK(int) vmsvga3dBackDXDefineElementLayout(PVGASTATECC pThisCC, 
 
     /* Not much can be done here because ID3D11Device::CreateInputLayout requires
      * a pShaderBytecodeWithInputSignature which is not known at this moment.
-     * InputLayout object will be created in SVGA_3D_CMD_DX_SET_INPUT_LAYOUT.
+     * InputLayout object will be created in setupPipeline.
      */
 
     Assert(elementLayoutId == pEntry->elid);
@@ -6741,6 +6790,7 @@ static int dxDefineBlendState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext
     return VERR_INVALID_STATE;
 }
 
+
 static DECLCALLBACK(int) vmsvga3dBackDXDefineBlendState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext,
                                                         SVGA3dBlendStateId blendId, SVGACOTableDXBlendStateEntry const *pEntry)
 {
@@ -6751,13 +6801,13 @@ static DECLCALLBACK(int) vmsvga3dBackDXDefineBlendState(PVGASTATECC pThisCC, PVM
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXDestroyBlendState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static DECLCALLBACK(int) vmsvga3dBackDXDestroyBlendState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dBlendStateId blendId)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    D3D_RELEASE(pDXContext->pBackendDXContext->papBlendState[blendId]);
+    return VINF_SUCCESS;
 }
 
 
@@ -6782,13 +6832,13 @@ static DECLCALLBACK(int) vmsvga3dBackDXDefineDepthStencilState(PVGASTATECC pThis
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXDestroyDepthStencilState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static DECLCALLBACK(int) vmsvga3dBackDXDestroyDepthStencilState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dDepthStencilStateId depthStencilId)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    D3D_RELEASE(pDXContext->pBackendDXContext->papDepthStencilState[depthStencilId]);
+    return VINF_SUCCESS;
 }
 
 
@@ -6813,13 +6863,13 @@ static DECLCALLBACK(int) vmsvga3dBackDXDefineRasterizerState(PVGASTATECC pThisCC
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXDestroyRasterizerState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static DECLCALLBACK(int) vmsvga3dBackDXDestroyRasterizerState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dRasterizerStateId rasterizerId)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    D3D_RELEASE(pDXContext->pBackendDXContext->papRasterizerState[rasterizerId]);
+    return VINF_SUCCESS;
 }
 
 
@@ -6844,15 +6894,14 @@ static DECLCALLBACK(int) vmsvga3dBackDXDefineSamplerState(PVGASTATECC pThisCC, P
 }
 
 
-static DECLCALLBACK(int) vmsvga3dBackDXDestroySamplerState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
+static DECLCALLBACK(int) vmsvga3dBackDXDestroySamplerState(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext, SVGA3dSamplerId samplerId)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
+    RT_NOREF(pBackend);
 
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
+    D3D_RELEASE(pDXContext->pBackendDXContext->papSamplerState[samplerId]);
+    return VINF_SUCCESS;
 }
-
 
 
 static int dxDefineShader(PVMSVGA3DDXCONTEXT pDXContext, SVGA3dShaderId shaderId, SVGACOTableDXShaderEntry const *pEntry)
@@ -7246,10 +7295,10 @@ static DECLCALLBACK(int) vmsvga3dBackDXSetCOTable(PVGASTATECC pThisCC, PVMSVGA3D
                 /* Define queries which were not defined yet in backend. */
                 DXQUERY *pDXQuery = &pBackendDXContext->paQuery[i];
                 if (   pEntry->type != SVGA3D_QUERYTYPE_INVALID
-                    && pDXQuery->enmQueryType == SVGA3D_QUERYTYPE_INVALID)
+                    && pDXQuery->pQuery == NULL)
                     dxDefineQuery(pThisCC, pDXContext, i, pEntry);
                 else
-                    Assert(pEntry->type == pDXQuery->enmQueryType);
+                    Assert(pEntry->type == SVGA3D_QUERYTYPE_INVALID || pDXQuery->pQuery);
             }
             break;
         case SVGA_COTABLE_DXSHADER:
@@ -7311,26 +7360,6 @@ static DECLCALLBACK(int) vmsvga3dBackDXSurfaceCopyAndReadback(PVGASTATECC pThisC
 
 
 static DECLCALLBACK(int) vmsvga3dBackDXMoveQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXBindAllQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
-{
-    PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
-
-    RT_NOREF(pBackend, pDXContext);
-    AssertFailed(); /** @todo Implement */
-    return VERR_NOT_IMPLEMENTED;
-}
-
-
-static DECLCALLBACK(int) vmsvga3dBackDXReadbackAllQuery(PVGASTATECC pThisCC, PVMSVGA3DDXCONTEXT pDXContext)
 {
     PVMSVGA3DBACKEND pBackend = pThisCC->svga.p3dState->pBackend;
 
@@ -8023,8 +8052,6 @@ static DECLCALLBACK(int) vmsvga3dBackQueryInterface(PVGASTATECC pThisCC, char co
                 p->pfnDXBufferCopy                = vmsvga3dBackDXBufferCopy;
                 p->pfnDXSurfaceCopyAndReadback    = vmsvga3dBackDXSurfaceCopyAndReadback;
                 p->pfnDXMoveQuery                 = vmsvga3dBackDXMoveQuery;
-                p->pfnDXBindAllQuery              = vmsvga3dBackDXBindAllQuery;
-                p->pfnDXReadbackAllQuery          = vmsvga3dBackDXReadbackAllQuery;
                 p->pfnDXMobFence64                = vmsvga3dBackDXMobFence64;
                 p->pfnDXBindAllShader             = vmsvga3dBackDXBindAllShader;
                 p->pfnDXHint                      = vmsvga3dBackDXHint;
