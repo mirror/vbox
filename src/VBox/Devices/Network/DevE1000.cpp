@@ -775,6 +775,7 @@ AssertCompileSize(E1KRXDESC, 16);
 #define E1K_DTYP_LEGACY -1
 #define E1K_DTYP_CONTEXT 0
 #define E1K_DTYP_DATA    1
+#define E1K_DTYP_INVALID 2
 
 struct E1kTDLegacy
 {
@@ -1709,6 +1710,7 @@ struct E1kTxDContext
     uint32_t tdlen;
     uint32_t tdh;
     uint32_t tdt;
+    uint8_t  nextPacket;
 };
 typedef struct E1kTxDContext E1KTXDC, *PE1KTXDC;
 
@@ -3718,7 +3720,7 @@ static DECLCALLBACK(void) e1kR3LinkUpTimer(PPDMDEVINS pDevIns, TMTIMERHANDLE hTi
  * @param   pGso                The GSO context to setup.
  * @param   pCtx                The context descriptor.
  */
-DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
+DECLINLINE(bool) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
 {
     pGso->u8Type = PDMNETWORKGSOTYPE_INVALID;
 
@@ -3730,33 +3732,33 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
     if (RT_UNLIKELY( pCtx->ip.u8CSS < sizeof(RTNETETHERHDR) ))
     {
         E1kLog(("e1kSetupGsoCtx: IPCSS=%#x\n", pCtx->ip.u8CSS));
-        return;
+        return false;
     }
     if (RT_UNLIKELY( pCtx->tu.u8CSS     < (size_t)pCtx->ip.u8CSS + (pCtx->dw2.fIP  ? RTNETIPV4_MIN_LEN : RTNETIPV6_MIN_LEN) ))
     {
         E1kLog(("e1kSetupGsoCtx: TUCSS=%#x\n", pCtx->tu.u8CSS));
-        return;
+        return false;
     }
     if (RT_UNLIKELY(   pCtx->dw2.fTCP
                      ? pCtx->dw3.u8HDRLEN <  (size_t)pCtx->tu.u8CSS + RTNETTCP_MIN_LEN
                      : pCtx->dw3.u8HDRLEN != (size_t)pCtx->tu.u8CSS + RTNETUDP_MIN_LEN ))
     {
         E1kLog(("e1kSetupGsoCtx: HDRLEN=%#x TCP=%d\n", pCtx->dw3.u8HDRLEN, pCtx->dw2.fTCP));
-        return;
+        return false;
     }
 
     /* The end of the TCP/UDP checksum should stop at the end of the packet or at least after the headers. */
     if (RT_UNLIKELY( pCtx->tu.u16CSE > 0 && pCtx->tu.u16CSE <= pCtx->dw3.u8HDRLEN ))
     {
         E1kLog(("e1kSetupGsoCtx: TUCSE=%#x HDRLEN=%#x\n", pCtx->tu.u16CSE, pCtx->dw3.u8HDRLEN));
-        return;
+        return false;
     }
 
     /* IPv4 checksum offset. */
     if (RT_UNLIKELY( pCtx->dw2.fIP && (size_t)pCtx->ip.u8CSO - pCtx->ip.u8CSS != RT_UOFFSETOF(RTNETIPV4, ip_sum) ))
     {
         E1kLog(("e1kSetupGsoCtx: IPCSO=%#x IPCSS=%#x\n", pCtx->ip.u8CSO, pCtx->ip.u8CSS));
-        return;
+        return false;
     }
 
     /* TCP/UDP checksum offsets. */
@@ -3766,7 +3768,7 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
                          : RT_UOFFSETOF(RTNETUDP, uh_sum) ) ))
     {
         E1kLog(("e1kSetupGsoCtx: TUCSO=%#x TUCSS=%#x TCP=%d\n", pCtx->ip.u8CSO, pCtx->ip.u8CSS, pCtx->dw2.fTCP));
-        return;
+        return false;
     }
 
     /*
@@ -3777,7 +3779,7 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
     {
         E1kLog(("e1kSetupGsoCtx: HDRLEN(=%#x) + PAYLEN(=%#x) = %#x, max is %#x\n",
                 pCtx->dw3.u8HDRLEN, pCtx->dw2.u20PAYLEN, pCtx->dw3.u8HDRLEN + pCtx->dw2.u20PAYLEN, VBOX_MAX_GSO_SIZE));
-        return;
+        return false;
     }
 
     /*
@@ -3814,6 +3816,7 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
     Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), pGso->cbMaxSeg * 5));
     E1kLog2(("e1kSetupGsoCtx: mss=%#x hdr=%#x hdrseg=%#x hdr1=%#x hdr2=%#x %s\n",
              pGso->cbMaxSeg, pGso->cbHdrsTotal, pGso->cbHdrsSeg, pGso->offHdr1, pGso->offHdr2, PDMNetGsoTypeName((PDMNETWORKGSOTYPE)pGso->u8Type) ));
+    return PDMNetGsoIsValid(pGso, sizeof(*pGso), pGso->cbMaxSeg * 5);
 }
 
 /**
@@ -4177,6 +4180,11 @@ static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pT
     uint32_t            cbFrame = pSg ? (uint32_t)pSg->cbUsed : 0;
     Assert(!pSg || pSg->cSegs == 1);
 
+    if (cbFrame < 14)
+    {
+        Log(("%s Ignoring invalid frame (%u bytes)\n", pThis->szPrf, cbFrame));
+        return;
+    }
     if (cbFrame > 70) /* unqualified guess */
         pThis->led.Asserted.s.fWriting = pThis->led.Actual.s.fWriting = 1;
 
@@ -4202,7 +4210,7 @@ static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pT
 #endif /* E1K_INT_STATS */
 
     /* Add VLAN tag */
-    if (cbFrame > 12 && pThis->fVTag)
+    if (cbFrame > 12 && pThis->fVTag && pSg->cbUsed + 4 <= pSg->cbAvailable)
     {
         E1kLog3(("%s Inserting VLAN tag %08x\n",
             pThis->szPrf, RT_BE2H_U16((uint16_t)VET) | (RT_BE2H_U16(pThis->u16VTagTCI) << 16)));
@@ -5276,6 +5284,11 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC,
             if (pDesc->legacy.cmd.u16Length == 0 || pDesc->legacy.u64BufAddr == 0)
             {
                 E1kLog(("%s Empty legacy descriptor, skipped.\n", pThis->szPrf));
+                if (pDesc->data.cmd.fEOP)
+                {
+                    e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
+                    pThis->u16TxPktLen = 0;
+                }
             }
             else
             {
@@ -5324,6 +5337,11 @@ DECLINLINE(bool) e1kUpdateTxContext(PE1KSTATE pThis, E1KTXDESC *pDesc)
 {
     if (pDesc->context.dw2.fTSE)
     {
+        if (!e1kSetupGsoCtx(&pThis->GsoCtx, &pDesc->context))
+        {
+            pThis->contextTSE.dw2.u4DTYP = E1K_DTYP_INVALID;
+            return false;
+        }
         pThis->contextTSE = pDesc->context;
         uint32_t cbMaxSegmentSize = pThis->contextTSE.dw3.u16MSS + pThis->contextTSE.dw3.u8HDRLEN + 4; /*VTAG*/
         if (RT_UNLIKELY(cbMaxSegmentSize > E1K_MAX_TX_PKT_SIZE))
@@ -5354,7 +5372,15 @@ DECLINLINE(bool) e1kUpdateTxContext(PE1KSTATE pThis, E1KTXDESC *pDesc)
     return true; /* Consider returning false for invalid descriptors */
 }
 
-static bool e1kLocateTxPacket(PE1KSTATE pThis)
+enum E1kPacketType
+{
+    E1K_PACKET_NONE = 0,
+    E1K_PACKET_LEGACY,
+    E1K_PACKET_NORMAL,
+    E1K_PACKET_TSE
+};
+
+static int e1kLocateTxPacket(PE1KSTATE pThis, PE1KTXDC pTxdc)
 {
     LogFlow(("%s e1kLocateTxPacket: ENTER cbTxAlloc=%d\n",
              pThis->szPrf, pThis->cbTxAlloc));
@@ -5366,6 +5392,23 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
         return true;
     }
 
+    pThis->fGSO = false;
+    pThis->fVTag = false;
+    pThis->fIPcsum  = false;
+    pThis->fTCPcsum = false;
+    pThis->u16TxPktLen = 0;
+
+    enum E1kPacketType packetType = E1K_PACKET_NONE;
+    enum E1kPacketType expectedPacketType = E1K_PACKET_NONE;
+    /*
+     * Valid packets start with 1 or 0 context descriptors, followed by 1 or
+     * more data descriptors of the same type: legacy, normal or TSE. Note
+     * that legacy descriptors do not belong to neither normal nor segmentation
+     * contexts rendering the sequence (context_descriptor, legacy_descriptor)
+     * invalid, but the context descriptor will still be applied and the legacy
+     * descriptor will be treated as the beginning of next packet.
+     */
+    bool fInvalidPacket = false;
     bool fTSE = false;
     uint32_t cbPacket = 0;
 
@@ -5374,11 +5417,17 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
     for (int i = pThis->iTxDCurrent; i < pThis->nTxDFetched; ++i)
     {
         E1KTXDESC *pDesc = &pThis->aTxDescriptors[i];
-        /* Assume the descriptor valid until proven otherwise. */
-        pThis->afTxDValid[i] = true;
+
         switch (e1kGetDescType(pDesc))
         {
             case E1K_DTYP_CONTEXT:
+                /* There can be only one context per packet. Each context descriptor starts a new packet. */
+                if (packetType != E1K_PACKET_NONE)
+                {
+                    fInvalidPacket = true;
+                    break;
+                }
+                packetType = (pDesc->context.dw2.fTSE) ? E1K_PACKET_TSE : E1K_PACKET_NORMAL;
                 if (cbPacket == 0)
                     pThis->afTxDValid[i] = e1kUpdateTxContext(pThis, pDesc);
                 else
@@ -5386,14 +5435,21 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
                             pThis->szPrf, cbPacket));
                 continue;
             case E1K_DTYP_LEGACY:
+                if (packetType != E1K_PACKET_NONE && packetType != E1K_PACKET_LEGACY)
+                {
+                    fInvalidPacket = true;
+                    break;
+                }
+                packetType = E1K_PACKET_LEGACY;
                 /* Skip invalid descriptors. */
                 if (cbPacket > 0 && (pThis->fGSO || fTSE))
                 {
                     E1kLog(("%s e1kLocateTxPacket: ignoring a legacy descriptor in the segmentation context, cbPacket=%d\n",
                             pThis->szPrf, cbPacket));
-                    pThis->afTxDValid[i] = false; /* Make sure it is skipped by processing */
                     continue;
                 }
+                pThis->afTxDValid[i] = true; /* Passed all checks, process it */
+
                 /* Skip empty descriptors. */
                 if (!pDesc->legacy.u64BufAddr || !pDesc->legacy.cmd.u16Length)
                     break;
@@ -5401,14 +5457,39 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
                 pThis->fGSO = false;
                 break;
             case E1K_DTYP_DATA:
+                expectedPacketType = pDesc->data.cmd.fTSE ? E1K_PACKET_TSE : E1K_PACKET_NORMAL;
+                if (packetType != E1K_PACKET_NONE && packetType != expectedPacketType)
+                {
+                    fInvalidPacket = true;
+                    break;
+                }
                 /* Skip invalid descriptors. */
+                if (pDesc->data.cmd.fTSE)
+                {
+                    if (pThis->contextTSE.dw2.u4DTYP == E1K_DTYP_INVALID)
+                    {
+                        E1kLog(("%s e1kLocateTxPacket: ignoring TSE descriptor in invalid segmentation context, cbPacket=%d\n",
+                                pThis->szPrf, cbPacket));
+                        continue;
+                    }
+                }
+                else /* !TSE */
+                {
+                    if (pThis->contextNormal.dw2.u4DTYP == E1K_DTYP_INVALID)
+                    {
+                        E1kLog(("%s e1kLocateTxPacket: ignoring non-TSE descriptor in invalid normal context, cbPacket=%d\n",
+                                pThis->szPrf, cbPacket));
+                        continue;
+                    }
+                }
                 if (cbPacket > 0 && (bool)pDesc->data.cmd.fTSE != fTSE)
                 {
                     E1kLog(("%s e1kLocateTxPacket: ignoring %sTSE descriptor in the %ssegmentation context, cbPacket=%d\n",
                             pThis->szPrf, pDesc->data.cmd.fTSE ? "" : "non-", fTSE ? "" : "non-", cbPacket));
-                    pThis->afTxDValid[i] = false; /* Make sure it is skipped by processing */
                     continue;
                 }
+                pThis->afTxDValid[i] = true; /* Passed all checks, process it */
+
                 /* Skip empty descriptors. */
                 if (!pDesc->data.u64BufAddr || !pDesc->data.cmd.u20DTALEN)
                     break;
@@ -5438,6 +5519,17 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
                 AssertMsgFailed(("Impossible descriptor type!"));
                 continue;
         }
+        if (fInvalidPacket)
+        {
+            for (int index = pThis->iTxDCurrent; index < i; ++index)
+                pThis->afTxDValid[index] = false; /* Make sure all descriptors for this packet are skipped by processing */
+            LogFlow(("%s e1kLocateTxPacket: marked %d descriptors as invalid\n", pThis->szPrf, i - pThis->iTxDCurrent));
+            LogFlow(("%s e1kLocateTxPacket: RET true cbTxAlloc=%d cbPacket=%d%s%s\n",
+                     pThis->szPrf, pThis->cbTxAlloc, cbPacket,
+                     pThis->fGSO ? " GSO" : "", fTSE ? " TSE" : ""));
+            pTxdc->nextPacket = i;
+            return true;
+        }
         if (pDesc->legacy.cmd.fEOP)
         {
             /*
@@ -5462,6 +5554,7 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
             LogFlow(("%s e1kLocateTxPacket: RET true cbTxAlloc=%d cbPacket=%d%s%s\n",
                      pThis->szPrf, pThis->cbTxAlloc, cbPacket,
                      pThis->fGSO ? " GSO" : "", fTSE ? " TSE" : ""));
+            pTxdc->nextPacket = i + 1;
             return true;
         }
     }
@@ -5471,6 +5564,7 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
         /* All descriptors were empty, we need to process them as a dummy packet */
         LogFlow(("%s e1kLocateTxPacket: RET true cbTxAlloc=%d, zero packet!\n",
                  pThis->szPrf, pThis->cbTxAlloc));
+        pTxdc->nextPacket = pThis->nTxDFetched;
         return true;
     }
     LogFlow(("%s e1kLocateTxPacket: RET false cbTxAlloc=%d cbPacket=%d\n",
@@ -5486,7 +5580,7 @@ static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThre
     LogFlow(("%s e1kXmitPacket: ENTER current=%d fetched=%d\n",
              pThis->szPrf, pThis->iTxDCurrent, pThis->nTxDFetched));
 
-    while (pThis->iTxDCurrent < pThis->nTxDFetched)
+    while (pThis->iTxDCurrent < pTxdc->nextPacket && pThis->iTxDCurrent < pThis->nTxDFetched)
     {
         E1KTXDESC *pDesc = &pThis->aTxDescriptors[pThis->iTxDCurrent];
         E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
@@ -5678,8 +5772,10 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
         bool fIncomplete = false;
         while (fTxContextValid && !pThis->fLocked && e1kTxDLazyLoad(pDevIns, pThis, &txdc))
         {
-            while (e1kLocateTxPacket(pThis))
+            while (e1kLocateTxPacket(pThis, &txdc))
             {
+                Log4(("%s e1kXmitPending: Located packet at %d. Next packet at %d\n",
+                      pThis->szPrf, pThis->iTxDCurrent, txdc.nextPacket));
                 fIncomplete = false;
                 /* Found a complete packet, allocate it. */
                 rc = e1kXmitAllocBuf(pThis, pThisCC, pThis->fGSO);
