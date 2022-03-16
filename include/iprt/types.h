@@ -1029,10 +1029,10 @@ typedef const RTFLOAT64U RT_FAR *PCRTFLOAT64U;
 /** RTFLOAT64U initializer. */
 #ifdef RT_BIG_ENDIAN
 # define RTFLOAT64U_INIT(a_fSign, a_uFraction, a_uExponent)     \
-    { { (a_fSign), (a_uExponent), (uint32_t)((a_uFraction) >> 32), (uint32_t)(a_uFraction) } }
+    { { (a_fSign), (a_uExponent), (uint32_t)((a_uFraction) >> 32), (uint32_t)((a_uFraction) & UINT32_MAX) } }
 #else
 # define RTFLOAT64U_INIT(a_fSign, a_uFraction, a_uExponent)     \
-    { { (uint32_t)(a_uFraction), (uint32_t)((a_uFraction) >> 32), (a_uExponent), (a_fSign) } }
+    { { (uint32_t)((a_uFraction) & UINT32_MAX), (uint32_t)((a_uFraction) >> 32), (a_uExponent), (a_fSign) } }
 #endif
 #define RTFLOAT64U_INIT_C(a_fSign, a_uFraction, a_uExponent)    RTFLOAT64U_INIT((a_fSign), UINT64_C(a_uFraction), (a_uExponent))
 /** Check if two 64-bit floating values are identical (memcmp, not
