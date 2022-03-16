@@ -481,7 +481,7 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
 #ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
                 DBGCVAR_INIT_NUMBER(pResult, (uint64_t)Value.r80Ex.lrd);
 #else
-                DBGCVAR_INIT_NUMBER(pResult, (uint64_t)Value.r80Ex.sj64.u63Fraction);
+                DBGCVAR_INIT_NUMBER(pResult, (uint64_t)Value.r80Ex.sj64.uFraction);
 #endif
                 return VINF_SUCCESS;
 
