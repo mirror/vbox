@@ -2490,10 +2490,9 @@ static int vmsvga3dCmdDXSetRasterizerState(PVGASTATECC pThisCC, uint32_t idDXCon
 static int vmsvga3dCmdDXDefineQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDefineQuery(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDefineQuery(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2505,10 +2504,9 @@ static int vmsvga3dCmdDXDefineQuery(PVGASTATECC pThisCC, uint32_t idDXContext, S
 static int vmsvga3dCmdDXDestroyQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDestroyQuery(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDestroyQuery(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2520,10 +2518,12 @@ static int vmsvga3dCmdDXDestroyQuery(PVGASTATECC pThisCC, uint32_t idDXContext, 
 static int vmsvga3dCmdDXBindQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
+    //DEBUG_BREAKPOINT_TEST();
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXBindQuery(pThisCC, idDXContext);
+    RT_NOREF(cbCmd);
+    /* This returns NULL if mob does not exist. If the guest sends a wrong mob id, the current mob will be unbound. */
+    PVMSVGAMOB pMob = vmsvgaR3MobGet(pSvgaR3State, pCmd->mobid);
+    return vmsvga3dDXBindQuery(pThisCC, idDXContext, pCmd, pMob);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2535,10 +2535,9 @@ static int vmsvga3dCmdDXBindQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVG
 static int vmsvga3dCmdDXSetQueryOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetQueryOffset const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXSetQueryOffset(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXSetQueryOffset(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2550,10 +2549,9 @@ static int vmsvga3dCmdDXSetQueryOffset(PVGASTATECC pThisCC, uint32_t idDXContext
 static int vmsvga3dCmdDXBeginQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBeginQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXBeginQuery(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXBeginQuery(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2565,10 +2563,9 @@ static int vmsvga3dCmdDXBeginQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SV
 static int vmsvga3dCmdDXEndQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXEndQuery const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXEndQuery(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXEndQuery(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;
@@ -2965,10 +2962,9 @@ static int vmsvga3dCmdDXDefineElementLayout(PVGASTATECC pThisCC, uint32_t idDXCo
 static int vmsvga3dCmdDXDestroyElementLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyElementLayout const *pCmd, uint32_t cbCmd)
 {
 #ifdef VMSVGA3D_DX
-    DEBUG_BREAKPOINT_TEST();
-    PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    RT_NOREF(pSvgaR3State, pCmd, cbCmd);
-    return vmsvga3dDXDestroyElementLayout(pThisCC, idDXContext);
+    //DEBUG_BREAKPOINT_TEST();
+    RT_NOREF(cbCmd);
+    return vmsvga3dDXDestroyElementLayout(pThisCC, idDXContext, pCmd);
 #else
     RT_NOREF(pThisCC, idDXContext, pCmd, cbCmd);
     return VERR_NOT_SUPPORTED;

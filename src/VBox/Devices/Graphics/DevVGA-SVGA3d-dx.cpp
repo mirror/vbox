@@ -859,7 +859,7 @@ int vmsvga3dDXSetRenderTargets(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3d
 
     ASSERT_GUEST_RETURN(   depthStencilViewId < pDXContext->cot.cDSView
                         || depthStencilViewId == SVGA_ID_INVALID, VERR_INVALID_PARAMETER);
-    ASSERT_GUEST_RETURN(cRenderTargetViewId < SVGA3D_MAX_RENDER_TARGETS, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(cRenderTargetViewId <= SVGA3D_MAX_RENDER_TARGETS, VERR_INVALID_PARAMETER);
     for (uint32_t i = 0; i < cRenderTargetViewId; ++i)
         ASSERT_GUEST_RETURN(   paRenderTargetViewId[i] < pDXContext->cot.cRTView
                             || paRenderTargetViewId[i] == SVGA_ID_INVALID, VERR_INVALID_PARAMETER);
@@ -950,7 +950,7 @@ int vmsvga3dDXSetRasterizerState(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA
 }
 
 
-int vmsvga3dDXDefineQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDefineQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDefineQuery const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -962,12 +962,29 @@ int vmsvga3dDXDefineQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDefineQuery(pThisCC, pDXContext);
+    SVGA3dQueryId const queryId = pCmd->queryId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paQuery, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(queryId < pDXContext->cot.cQuery, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(pCmd->type >= SVGA3D_QUERYTYPE_MIN && pCmd->type < SVGA3D_QUERYTYPE_MAX, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    /* Cleanup the current query. */
+    pSvgaR3State->pFuncsDX->pfnDXDestroyQuery(pThisCC, pDXContext, queryId);
+
+    SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
+    pEntry->type   = pCmd->type;
+    pEntry->state  = SVGADX_QDSTATE_IDLE;
+    pEntry->flags  = pCmd->flags;
+    pEntry->mobid  = SVGA_ID_INVALID;
+    pEntry->offset = 0;
+
+    rc = pSvgaR3State->pFuncsDX->pfnDXDefineQuery(pThisCC, pDXContext, queryId, pEntry);
     return rc;
 }
 
 
-int vmsvga3dDXDestroyQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDestroyQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyQuery const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -979,12 +996,27 @@ int vmsvga3dDXDestroyQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDestroyQuery(pThisCC, pDXContext);
+    SVGA3dQueryId const queryId = pCmd->queryId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paQuery, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(queryId < pDXContext->cot.cQuery, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    pSvgaR3State->pFuncsDX->pfnDXDestroyQuery(pThisCC, pDXContext, queryId);
+
+    /* Cleanup COTable entry.*/
+    SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
+    pEntry->type   = SVGA3D_QUERYTYPE_INVALID;
+    pEntry->state  = SVGADX_QDSTATE_INVALID;
+    pEntry->flags  = 0;
+    pEntry->mobid  = SVGA_ID_INVALID;
+    pEntry->offset = 0;
+
     return rc;
 }
 
 
-int vmsvga3dDXBindQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXBindQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBindQuery const *pCmd, PVMSVGAMOB pMob)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -996,16 +1028,25 @@ int vmsvga3dDXBindQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXBindQuery(pThisCC, pDXContext);
+    SVGA3dQueryId const queryId = pCmd->queryId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paQuery, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(queryId < pDXContext->cot.cQuery, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
+    pEntry->mobid = vmsvgaR3MobId(pMob);
+
+    rc = pSvgaR3State->pFuncsDX->pfnDXBindQuery(pThisCC, pDXContext, queryId);
     return rc;
 }
 
 
-int vmsvga3dDXSetQueryOffset(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXSetQueryOffset(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXSetQueryOffset const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
-    AssertReturn(pSvgaR3State->pFuncsDX && pSvgaR3State->pFuncsDX->pfnDXSetQueryOffset, VERR_INVALID_STATE);
+    AssertReturn(pSvgaR3State->pFuncsDX, VERR_INVALID_STATE);
     PVMSVGA3DSTATE p3dState = pThisCC->svga.p3dState;
     AssertReturn(p3dState, VERR_INVALID_STATE);
 
@@ -1013,12 +1054,20 @@ int vmsvga3dDXSetQueryOffset(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXSetQueryOffset(pThisCC, pDXContext);
+    SVGA3dQueryId const queryId = pCmd->queryId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paQuery, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(queryId < pDXContext->cot.cQuery, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
+    pEntry->offset = pCmd->mobOffset;
+
     return rc;
 }
 
 
-int vmsvga3dDXBeginQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXBeginQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXBeginQuery const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1030,12 +1079,25 @@ int vmsvga3dDXBeginQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXBeginQuery(pThisCC, pDXContext);
+    SVGA3dQueryId const queryId = pCmd->queryId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paQuery, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(queryId < pDXContext->cot.cQuery, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
+    Assert(pEntry->state == SVGADX_QDSTATE_IDLE || SVGADX_QDSTATE_PENDING);
+    if (pEntry->state != SVGADX_QDSTATE_ACTIVE)
+    {
+        rc = pSvgaR3State->pFuncsDX->pfnDXBeginQuery(pThisCC, pDXContext, queryId);
+        if (RT_SUCCESS(rc))
+            pEntry->state = SVGADX_QDSTATE_ACTIVE;
+    }
     return rc;
 }
 
 
-int vmsvga3dDXEndQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXEndQuery(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXEndQuery const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1047,7 +1109,21 @@ int vmsvga3dDXEndQuery(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXEndQuery(pThisCC, pDXContext);
+    SVGA3dQueryId const queryId = pCmd->queryId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paQuery, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(queryId < pDXContext->cot.cQuery, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    SVGACOTableDXQueryEntry *pEntry = &pDXContext->cot.paQuery[queryId];
+    Assert(pEntry->state == SVGADX_QDSTATE_ACTIVE);
+    if (pEntry->state == SVGADX_QDSTATE_ACTIVE)
+    {
+        rc = pSvgaR3State->pFuncsDX->pfnDXEndQuery(pThisCC, pDXContext, queryId);
+        if (RT_SUCCESS(rc))
+            pEntry->state = SVGADX_QDSTATE_PENDING;
+    }
+
     return rc;
 }
 
@@ -1496,7 +1572,7 @@ int vmsvga3dDXDefineElementLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVG
 }
 
 
-int vmsvga3dDXDestroyElementLayout(PVGASTATECC pThisCC, uint32_t idDXContext)
+int vmsvga3dDXDestroyElementLayout(PVGASTATECC pThisCC, uint32_t idDXContext, SVGA3dCmdDXDestroyElementLayout const *pCmd)
 {
     int rc;
     PVMSVGAR3STATE const pSvgaR3State = pThisCC->svga.pSvgaR3State;
@@ -1508,7 +1584,18 @@ int vmsvga3dDXDestroyElementLayout(PVGASTATECC pThisCC, uint32_t idDXContext)
     rc = vmsvga3dDXContextFromCid(p3dState, idDXContext, &pDXContext);
     AssertRCReturn(rc, rc);
 
-    rc = pSvgaR3State->pFuncsDX->pfnDXDestroyElementLayout(pThisCC, pDXContext);
+    SVGA3dElementLayoutId const elementLayoutId = pCmd->elementLayoutId;
+
+    ASSERT_GUEST_RETURN(pDXContext->cot.paElementLayout, VERR_INVALID_STATE);
+    ASSERT_GUEST_RETURN(elementLayoutId < pDXContext->cot.cElementLayout, VERR_INVALID_PARAMETER);
+    RT_UNTRUSTED_VALIDATED_FENCE();
+
+    pSvgaR3State->pFuncsDX->pfnDXDestroyElementLayout(pThisCC, pDXContext, elementLayoutId);
+
+    SVGACOTableDXElementLayoutEntry *pEntry = &pDXContext->cot.paElementLayout[elementLayoutId];
+    RT_ZERO(*pEntry);
+    pEntry->elid = SVGA3D_INVALID_ID;
+
     return rc;
 }
 
