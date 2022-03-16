@@ -805,7 +805,10 @@ static int vmsvgaDXCheckFormatSupport(PVMSVGA3DSTATE pState, SVGA3dSurfaceFormat
                 *pu32DevCap |= SVGA3D_DXFMT_MULTISAMPLE;
         }
         else
-            AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+        {
+            LogFunc(("CheckFormatSupport failed for 0x%08x, hr = 0x%08x\n", dxgiFormat, hr));
+            rc = VERR_NOT_SUPPORTED;
+        }
     }
     else
         rc = VERR_NOT_SUPPORTED;
@@ -2061,7 +2064,8 @@ static int vmsvga3dBackSurfaceCreateTexture(PVGASTATECC pThisCC, PVMSVGA3DDXCONT
             Assert(SUCCEEDED(hr));
         }
 
-        if (SUCCEEDED(hr))
+        if (   SUCCEEDED(hr)
+            && MiscFlags == D3D11_RESOURCE_MISC_SHARED)
         {
             /* Get the shared handle. */
             IDXGIResource *pDxgiResource = NULL;
@@ -2741,12 +2745,8 @@ static DECLCALLBACK(int) vmsvga3dBackInit(PPDMDEVINS pDevIns, PVGASTATE pThis, P
     {
         /* Failure to load the shader disassembler is ignored. */
         int rc2 = RTLdrLoadSystem("D3DCompiler_47", /* fNoUnload = */ true, &pBackend->hD3DCompiler);
-        AssertRC(rc2);
         if (RT_SUCCESS(rc2))
-        {
             rc2 = RTLdrGetSymbol(pBackend->hD3DCompiler, "D3DDisassemble", (void **)&pBackend->pfnD3DDisassemble);
-            AssertRC(rc2);
-        }
         Log6Func(("Load D3DDisassemble: %Rrc\n", rc2));
     }
 
@@ -2772,6 +2772,25 @@ static DECLCALLBACK(int) vmsvga3dBackPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis
     AssertReturn(pBackend, VERR_INVALID_STATE);
 
     int rc = dxDeviceCreate(pBackend, &pBackend->dxDevice);
+    if (RT_SUCCESS(rc))
+    {
+        IDXGIAdapter *pAdapter = NULL; 
+        HRESULT hr = pBackend->dxDevice.pDxgiFactory->EnumAdapters(0, &pAdapter);
+        if (SUCCEEDED(hr))
+        {
+            DXGI_ADAPTER_DESC desc;
+            hr = pAdapter->GetDesc(&desc);
+            if (SUCCEEDED(hr))
+            {
+                char sz[RT_ELEMENTS(desc.Description)];
+                for (unsigned i = 0; i < RT_ELEMENTS(desc.Description); ++i)
+                    sz[i] = (char)desc.Description[i];
+                LogRelMax(1, ("VMSVGA: Adapter [%s]\n", sz));
+            }
+
+            pAdapter->Release();
+        }
+    }
     return rc;
 }
 
