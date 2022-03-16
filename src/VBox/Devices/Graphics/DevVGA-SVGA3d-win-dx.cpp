@@ -2774,7 +2774,7 @@ static DECLCALLBACK(int) vmsvga3dBackPowerOn(PPDMDEVINS pDevIns, PVGASTATE pThis
     int rc = dxDeviceCreate(pBackend, &pBackend->dxDevice);
     if (RT_SUCCESS(rc))
     {
-        IDXGIAdapter *pAdapter = NULL; 
+        IDXGIAdapter *pAdapter = NULL;
         HRESULT hr = pBackend->dxDevice.pDxgiFactory->EnumAdapters(0, &pAdapter);
         if (SUCCEEDED(hr))
         {
