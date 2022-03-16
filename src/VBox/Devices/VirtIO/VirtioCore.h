@@ -182,8 +182,20 @@ static const VIRTIO_FEATURES_LIST s_aCoreFeatures[] =
 #define VIRTIO_ISR_VIRTQ_INTERRUPT           RT_BIT_32(0)        /**< Virtq interrupt bit of ISR register       */
 #define VIRTIO_ISR_DEVICE_CONFIG             RT_BIT_32(1)        /**< Device configuration changed bit of ISR   */
 #define DEVICE_PCI_NETWORK_SUBSYSTEM                    1        /**< Network Card, per VirtIO legacy spec.     */
+#define DEVICE_PCI_REVISION_ID_VIRTIO_TRANS             0        /**< VirtIO Transitional device revision (MBZ) */
+#define DEVICE_PCI_REVISION_ID_VIRTIO_V1                1        /**< VirtIO device revision (SHOULD be >= 1)   */
+
 #define DEVICE_PCI_VENDOR_ID_VIRTIO                0x1AF4        /**< Guest driver locates dev via (mandatory)  */
-#define DEVICE_PCI_REVISION_ID_VIRTIO                   0        /**< VirtIO Modern Transitional driver rev MBZ */
+
+/**
+ * Start of the PCI device id range for non-transitional devices.
+ *
+ * "Devices ... have the PCI Device ID calculated by adding 0x1040 to
+ * the Virtio Device ID, as indicated in section [Device Types]. ...
+ * Non-transitional devices SHOULD have a PCI Device ID in the range
+ * 0x1040 to 0x107f.
+ */
+#define DEVICE_PCI_DEVICE_ID_VIRTIO_BASE           0x1040
 
 /** Reserved (*negotiated*) Feature Bits (e.g. device independent features, VirtIO 1.0 spec,section 6) */
 

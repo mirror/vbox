@@ -2377,9 +2377,16 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-    PDMPciDevSetRevisionId(pPciDev,         DEVICE_PCI_REVISION_ID_VIRTIO);
     PDMPciDevSetVendorId(pPciDev,           DEVICE_PCI_VENDOR_ID_VIRTIO);
     PDMPciDevSetDeviceId(pPciDev,           pPciParams->uDeviceId);
+
+    if (pPciParams->uDeviceId < DEVICE_PCI_DEVICE_ID_VIRTIO_BASE)
+        /* Transitional devices MUST have a PCI Revision ID of 0. */
+        PDMPciDevSetRevisionId(pPciDev,     DEVICE_PCI_REVISION_ID_VIRTIO_TRANS);
+    else
+        /* Non-transitional devices SHOULD have a PCI Revision ID of 1 or higher. */
+        PDMPciDevSetRevisionId(pPciDev,     DEVICE_PCI_REVISION_ID_VIRTIO_V1);
+
     PDMPciDevSetSubSystemId(pPciDev,        DEVICE_PCI_NETWORK_SUBSYSTEM);
     PDMPciDevSetSubSystemVendorId(pPciDev,  DEVICE_PCI_VENDOR_ID_VIRTIO);
     PDMPciDevSetClassBase(pPciDev,          pPciParams->uClassBase);
