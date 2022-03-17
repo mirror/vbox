@@ -81,13 +81,27 @@ typedef struct STUBCLEANUPREC
 {
     /** List entry. */
     RTLISTNODE  ListEntry;
+    /** Stub package index (zero-based) this record belongs to. */
+    unsigned    idxPkg;
     /** True if file, false if directory. */
     bool        fFile;
+    union
+    {
+        /** File handle (if \a fFile is \c true). */
+        RTFILE  hFile;
+        /** Directory handle (if \a fFile is \c false). */
+        RTDIR   hDir;
+    };
     /** The path to the file or directory to clean up. */
     char        szPath[1];
 } STUBCLEANUPREC;
 /** Pointer to a cleanup record. */
 typedef STUBCLEANUPREC *PSTUBCLEANUPREC;
+
+/*********************************************************************************************************************************
+*   Prototypes                                                                                                                   *
+*********************************************************************************************************************************/
+static bool AddCleanupRec(const char *pszPath, bool fFile, const void *phObj);
 
 
 /*********************************************************************************************************************************
@@ -291,54 +305,6 @@ static int GetTempFileAlloc(const char  *pszTempPath,
 static int ExtractFile(const char *pszResourceName,
                        const char *pszTempFile)
 {
-#if 0 /* Another example of how unnecessarily complicated things get with
-         do-break-while-false and you end up with buggy code using uninitialized
-         variables. */
-    int rc;
-    RTFILE fh;
-    BOOL bCreatedFile = FALSE;
-
-    do
-    {
-        AssertMsgBreak(pszResourceName, ("Resource pointer invalid!\n")); /* rc is not initialized here, we'll return garbage. */
-        AssertMsgBreak(pszTempFile, ("Temp file pointer invalid!"));      /* Ditto. */
-
-        /* Read the data of the built-in resource. */
-        PVOID pvData = NULL;
-        DWORD dwDataSize = 0;
-        rc = FindData(pszResourceName, &pvData, &dwDataSize);
-        AssertMsgRCBreak(rc, ("Could not read resource data!\n"));
-
-        /* Create new (and replace an old) file. */
-        rc = RTFileOpen(&fh, pszTempFile,
-                          RTFILE_O_CREATE_REPLACE
-                        | RTFILE_O_WRITE
-                        | RTFILE_O_DENY_NOT_DELETE
-                        | RTFILE_O_DENY_WRITE);
-        AssertMsgRCBreak(rc, ("Could not open file for writing!\n"));
-        bCreatedFile = TRUE;
-
-        /* Write contents to new file. */
-        size_t cbWritten = 0;
-        rc = RTFileWrite(fh, pvData, dwDataSize, &cbWritten);
-        AssertMsgRCBreak(rc, ("Could not open file for writing!\n"));
-        AssertMsgBreak(dwDataSize == cbWritten, ("File was not extracted completely! Disk full?\n"));
-
-    } while (0);
-
-    if (RTFileIsValid(fh)) /* fh is unused uninitalized (MSC agrees) */
-        RTFileClose(fh);
-
-    if (RT_FAILURE(rc))
-    {
-        if (bCreatedFile)
-            RTFileDelete(pszTempFile);
-    }
-
-#else /* This is exactly the same as above, except no bug and better assertion
-         message.  Note only the return-success statment is indented, indicating
-         that the whole do-break-while-false approach was totally unnecessary.   */
-
     AssertPtrReturn(pszResourceName, VERR_INVALID_POINTER);
     AssertPtrReturn(pszTempFile, VERR_INVALID_POINTER);
 
@@ -353,24 +319,38 @@ static int ExtractFile(const char *pszResourceName,
     rc = RTFileOpen(&hFile, pszTempFile,
                       RTFILE_O_CREATE_REPLACE
                     | RTFILE_O_WRITE
-                    | RTFILE_O_DENY_NOT_DELETE
                     | RTFILE_O_DENY_WRITE);
+
     AssertMsgRCReturn(rc, ("Could not open '%s' for writing: %Rrc\n", pszTempFile, rc), rc);
+
+    /* Add a cleanup record, so that we can properly clean up (partially run) stuff. */
+    bool fRc = AddCleanupRec(pszTempFile, true /*fFile*/, &hFile);
+    AssertMsgReturn(fRc, ("Could not add cleanup record '%s': %Rrc\n", pszTempFile, rc), rc);
 
     /* Write contents to new file. */
     size_t cbWritten = 0;
     rc = RTFileWrite(hFile, pvData, dwDataSize, &cbWritten);
     AssertMsgStmt(cbWritten == dwDataSize || RT_FAILURE_NP(rc), ("%#zx vs %#x\n", cbWritten, dwDataSize), rc = VERR_WRITE_ERROR);
 
-    int rc2 = RTFileClose(hFile);
-    AssertRC(rc2);
+    /* See @bugref{10201} comment 8. */
+
+    rc = RTFileClose(hFile);
+    AssertMsgRCReturn(rc, ("Closing file failed: %Rrc\n", rc), rc);
+
+    rc = RTFileOpen(&hFile, pszTempFile,
+                      RTFILE_O_OPEN
+                    | RTFILE_O_READ
+                    | RTFILE_O_DENY_WRITE);
+    AssertMsgRCReturn(rc, ("Could not open '%s' for reading: %Rrc\n", pszTempFile, rc), rc);
+
+    /*
+     * Note: We keep the file open so that nobody else can write to it until we're done.
+     * See @bugref{10201}
+     */
 
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
-    RTFileDelete(pszTempFile);
-
-#endif
     return rc;
 }
 
@@ -433,17 +413,23 @@ static bool PackageIsNeeded(PVBOXSTUBPKG pPackage)
  * @returns Fully complained boolean success indicator.
  * @param   pszPath             The path to the file or directory to clean up.
  * @param   fFile               @c true if file, @c false if directory.
+ * @param   phObj               File / directory handle, depending on \a fFile.
  */
-static bool AddCleanupRec(const char *pszPath, bool fFile)
+static bool AddCleanupRec(const char *pszPath, bool fFile, const void *phObj)
 {
+    AssertPtrReturn(phObj, false);
     size_t cchPath = strlen(pszPath); Assert(cchPath > 0);
-    PSTUBCLEANUPREC pRec = (PSTUBCLEANUPREC)RTMemAlloc(RT_UOFFSETOF_DYN(STUBCLEANUPREC, szPath[cchPath + 1]));
+    PSTUBCLEANUPREC pRec = (PSTUBCLEANUPREC)RTMemAllocZ(RT_UOFFSETOF_DYN(STUBCLEANUPREC, szPath[cchPath + 1]));
     if (!pRec)
     {
         ShowError("Out of memory!");
         return false;
     }
     pRec->fFile = fFile;
+    if (pRec->fFile)
+        memcpy(&pRec->hFile, phObj, sizeof(RTFILE));
+    else
+        memcpy(&pRec->hDir, phObj, sizeof(RTDIR));
     memcpy(pRec->szPath, pszPath, cchPath + 1);
 
     RTListPrepend(&g_TmpFiles, &pRec->ListEntry);
@@ -462,19 +448,40 @@ static void CleanUp(const char *pszPkgDir)
 {
     for (int i = 0; i < 5; i++)
     {
-        int rc;
+        int rc = VINF_SUCCESS;
         bool fFinalTry = i == 4;
 
         PSTUBCLEANUPREC pCur, pNext;
         RTListForEachSafe(&g_TmpFiles, pCur, pNext, STUBCLEANUPREC, ListEntry)
         {
             if (pCur->fFile)
-                rc = RTFileDelete(pCur->szPath);
-            else
             {
-                rc = RTDirRemoveRecursive(pCur->szPath, RTDIRRMREC_F_CONTENT_AND_DIR);
-                if (rc == VERR_DIR_NOT_EMPTY && fFinalTry)
-                    rc = VINF_SUCCESS;
+                if (RTFileIsValid(pCur->hFile))
+                {
+                    rc = RTFileClose(pCur->hFile);
+                    if (RT_SUCCESS(rc))
+                        pCur->hFile = NIL_RTFILE;
+                }
+
+                if (RT_SUCCESS(rc))
+                    rc = RTFileDelete(pCur->szPath);
+            }
+            else /* Directory */
+            {
+                if (RTDirIsValid(pCur->hDir))
+                {
+                    rc = RTDirClose(pCur->hDir);
+                    if (RT_SUCCESS(rc))
+                        pCur->hDir = NIL_RTDIR;
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    /* Note: Not removing the directory recursively, as we should have separate cleanup records for that. */
+                    rc = RTDirRemove(pCur->szPath);
+                    if (rc == VERR_DIR_NOT_EMPTY && fFinalTry)
+                        rc = VINF_SUCCESS;
+                }
             }
             if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
                 rc = VINF_SUCCESS;
@@ -681,9 +688,34 @@ static RTEXITCODE ProcessPackage(unsigned iPackage, const char *pszPkgDir, const
      * Deal with the file based on it's extension.
      */
     char szPkgFile[RTPATH_MAX];
-    int rc = RTPathJoin(szPkgFile, sizeof(szPkgFile), pszPkgDir, pPackage->szFileName);
+
+    /*
+     * Use the cleanup record to built-up the final name to process, as the cleanup record's file name might be different
+     * than the original package's name.
+     *
+     * We can't write to the package's attributes, as those point to a write-protected area within the stub loader.
+     * So I didn't feel to re-writing nearly everything here and went for this approach instead.
+     *
+     ** @todo The structure / stub API needs a major overhaul.*
+     */
+    PSTUBCLEANUPREC pRec = NULL;
+    PSTUBCLEANUPREC pCur;
+    RTListForEach(&g_TmpFiles, pCur, STUBCLEANUPREC, ListEntry)
+    {
+        if (pCur->idxPkg == iPackage)
+        {
+            pRec = pCur;
+            break;
+        }
+    }
+    AssertMsgReturn(pRec != NULL, ("Package #%x not found in cleanup records\n", iPackage), RTEXITCODE_FAILURE);
+
+    const char *pszFileName = RTPathFilename(pRec->szPath);
+    AssertMsgReturn(pszFileName != NULL, ("Cleanup record does not have a valid file name\n"), RTEXITCODE_FAILURE);
+    int rc = RTPathJoin(szPkgFile, sizeof(szPkgFile), pszPkgDir, pszFileName);
     if (RT_FAILURE(rc))
         return ShowError("Internal error: RTPathJoin failed: %Rrc", rc);
+
     RTPathChangeToDosSlashes(szPkgFile, true /* Force conversion. */); /* paranoia */
 
     RTEXITCODE rcExit;
@@ -785,7 +817,20 @@ static RTEXITCODE CopyCustomDir(const char *pszDstDir)
         char *pszDstSubDir = RTPathJoinA(pszDstDir, ".custom");
         if (!pszDstSubDir)
             return ShowError("Out of memory!");
-        bool fRc = AddCleanupRec(pszDstSubDir, false /*fFile*/);
+
+        /*
+         * Note: We keep the directory open so that nobody else can delete / replace it while we're working on it.
+         * See @bugref{10201}
+         */
+        RTDIR hDstSubDir;
+        rc = RTDirOpen(&hDstSubDir, pszDstSubDir);
+        if (RT_FAILURE(rc))
+            return ShowError("Unable to open the destination .custom directory: %Rrc", rc);
+
+        /* Add a cleanup record. */
+        bool fRc = AddCleanupRec(pszDstSubDir, false /*fFile*/, &hDstSubDir);
+        AssertMsgReturn(fRc, ("Could not add cleanup record '%s': %Rrc\n", pszDstSubDir, rc), RTEXITCODE_FAILURE);
+
         RTStrFree(pszDstSubDir);
         if (!fRc)
             return RTEXITCODE_FAILURE;
@@ -808,36 +853,57 @@ static RTEXITCODE ExtractFiles(unsigned cPackages, const char *pszDstDir, bool f
         rc = RTDirCreate(pszDstDir, 0700, 0);
         if (RT_FAILURE(rc))
             return ShowError("Failed to create extraction path '%s': %Rrc", pszDstDir, rc);
+
         *pfCreatedExtractDir = true;
     }
+
+    RTDIR hDir;
+    rc = RTDirOpen(&hDir, pszDstDir);
+    if (RT_FAILURE(rc))
+        return ShowError("Failed to open extraction path '%s': %Rrc", pszDstDir, rc);
+
+    /* Add a cleanup record. */
+    bool fRc = AddCleanupRec(pszDstDir, false /*fFile*/, &hDir);
+    AssertMsgReturn(fRc, ("Could not add cleanup record '%s': %Rrc\n", pszDstDir, rc), RTEXITCODE_FAILURE);
 
     /*
      * Extract files.
      */
     for (unsigned k = 0; k < cPackages; k++)
     {
-        PVBOXSTUBPKG pPackage = FindPackageHeader(k);
+        PVBOXSTUBPKG const pPackage = FindPackageHeader(k);
         if (!pPackage)
             return RTEXITCODE_FAILURE; /* Done complaining already. */
 
         if (fExtractOnly || PackageIsNeeded(pPackage))
         {
             char szDstFile[RTPATH_MAX];
-            rc = RTPathJoin(szDstFile, sizeof(szDstFile), pszDstDir, pPackage->szFileName);
+            if (fExtractOnly) /* If we only extract, use the original file name. */
+            {
+                rc = RTPathJoin(szDstFile, sizeof(szDstFile), pszDstDir, pPackage->szFileName);
+            }
+            else /* When temporarily extracting and running, use a random file name. See @bugref{10201} */
+            {
+                rc = RTPathJoin(szDstFile, sizeof(szDstFile), pszDstDir, "XXXXXXXXXXXX");
+                if (RT_SUCCESS(rc))
+                {
+                    const char *pszDotExt = RTPathSuffix(pPackage->szFileName);
+                    if (pszDotExt)
+                        rc = RTStrCat(szDstFile, sizeof(szDstFile), pszDotExt);
+                    if (RT_SUCCESS(rc))
+                        rc = RTFileCreateTemp(szDstFile, 0700);
+                }
+            }
             if (RT_FAILURE(rc))
-                return ShowError("Internal error: RTPathJoin failed: %Rrc", rc);
+                return ShowError("Internal error: Build extraction file name failed: %Rrc", rc);
 
             rc = Extract(pPackage, szDstFile);
             if (RT_FAILURE(rc))
                 return ShowError("Error extracting package #%u: %Rrc", k, rc);
-
-            if (!fExtractOnly && !AddCleanupRec(szDstFile, true /*fFile*/))
-            {
-                RTFileDelete(szDstFile);
-                return RTEXITCODE_FAILURE;
-            }
         }
     }
+
+    /* Note: Closing the directory will be done when processing the cleanup record. */
 
     return RTEXITCODE_SUCCESS;
 }
@@ -1068,14 +1134,27 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         }
     }
 
-    /* Set the default extraction path if not given the the user. */
+    /*
+     * Set a default extraction path if not explicitly given by the user.
+     *
+     * By default we're constructing a non-deterministic path.
+     * See @bugref{10201}
+     */
     if (szExtractPath[0] == '\0')
     {
         vrc = RTPathTemp(szExtractPath, sizeof(szExtractPath));
         if (RT_SUCCESS(vrc))
-            vrc = RTPathAppend(szExtractPath, sizeof(szExtractPath), "VirtualBox");
+        {
+            if (!fExtractOnly) /* Only use a random sub-dir if we extract + run (and not just extract). */
+            {
+                vrc = RTPathAppend(szExtractPath, sizeof(szExtractPath), "XXXXXXXXXXXXXXXX");
+                if (RT_SUCCESS(vrc))
+                    vrc = RTDirCreateTemp(szExtractPath, 0700); /** @todo Use RTDirCreateTempSecure() once it's implemented. */
+            }
+        }
+
         if (RT_FAILURE(vrc))
-            return ShowError("Failed to construct extraction path: %Rrc", vrc);
+            return ShowError("Failed to create extraction path: %Rrc", vrc);
     }
     RTPathChangeToDosSlashes(szExtractPath, true /* Force conversion. */); /* MSI requirement. */
 
@@ -1117,6 +1196,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
     if (g_iVerbosity)
     {
+        RTPrintf("Extraction path          : %s\n",      szExtractPath);
         RTPrintf("Silent installation      : %RTbool\n", g_fSilent);
         RTPrintf("Logging enabled          : %RTbool\n", fEnableLogging);
 #ifdef VBOX_WITH_CODE_SIGNING
