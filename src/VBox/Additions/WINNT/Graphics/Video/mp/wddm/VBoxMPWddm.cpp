@@ -3152,18 +3152,18 @@ DxgkDdiEscape(
                     /*
                      * Inform the host about the visible region
                      */
-                    VMMDevVideoSetVisibleRegion *req = NULL;
+                    VMMDevVideoSetVisibleRegion *pReq = NULL;
 
-                    rc = VbglR0GRAlloc ((VMMDevRequestHeader **)&req,
+                    rc = VbglR0GRAlloc ((VMMDevRequestHeader **)&pReq,
                                       sizeof (VMMDevVideoSetVisibleRegion) + (cRects-1)*sizeof(RTRECT),
                                       VMMDevReq_VideoSetVisibleRegion);
                     AssertRC(rc);
                     if (RT_SUCCESS(rc))
                     {
-                        req->cRect = cRects;
-                        memcpy(&req->Rect, pRect, cRects*sizeof(RTRECT));
+                        pReq->cRect = cRects;
+                        memcpy(&pReq->Rect, pRect, cRects*sizeof(RTRECT));
 
-                        rc = VbglR0GRPerform (&req->header);
+                        rc = VbglR0GRPerform (&pReq->header);
                         AssertRC(rc);
                         if (RT_SUCCESS(rc))
                             Status = STATUS_SUCCESS;
@@ -3172,6 +3172,7 @@ DxgkDdiEscape(
                             WARN(("VbglR0GRPerform failed rc (%d)", rc));
                             Status = STATUS_UNSUCCESSFUL;
                         }
+                        VbglR0GRFree(&pReq->header);
                     }
                     else
                     {
