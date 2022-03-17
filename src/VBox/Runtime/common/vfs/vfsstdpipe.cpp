@@ -255,6 +255,7 @@ DECL_HIDDEN_CONST(const RTVFSIOSTREAMOPS) g_rtVfsStdPipeOps =
         "StdFile",
         rtVfsStdPipe_Close,
         rtVfsStdPipe_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,

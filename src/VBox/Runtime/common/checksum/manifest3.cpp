@@ -505,6 +505,7 @@ static RTVFSIOSTREAMOPS g_rtManifestPassthruIosOps =
         "manifest passthru I/O stream",
         rtManifestPtIos_Close,
         rtManifestPtIos_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,

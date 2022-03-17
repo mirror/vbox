@@ -581,6 +581,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_vdVfsStdFileOps =
             "VDFile",
             vdVfsFile_Close,
             vdVfsFile_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,

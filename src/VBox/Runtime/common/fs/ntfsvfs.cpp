@@ -2601,6 +2601,7 @@ static const RTVFSFILEOPS g_rtFsNtfsFileOps =
             "NTFS File",
             rtFsNtfsFile_Close,
             rtFsNtfsFile_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
@@ -4397,6 +4398,7 @@ static const RTVFSDIROPS g_rtFsNtfsDirOps =
         "NTFS Dir",
         rtFsNtfsDir_Close,
         rtFsNtfsDir_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSDIROPS_VERSION,
@@ -4756,6 +4758,7 @@ static const RTVFSOPS g_rtFsNtfsVolOps =
         /* .pszName = */        "NtfsVol",
         /* .pfnClose = */       rtFsNtfsVol_Close,
         /* .pfnQueryInfo = */   rtFsNtfsVol_QueryInfo,
+        /* .pfnQueryInfoEx = */ NULL,
         /* .uEndMarker = */     RTVFSOBJOPS_VERSION
     },
     /* .uVersion = */           RTVFSOPS_VERSION,

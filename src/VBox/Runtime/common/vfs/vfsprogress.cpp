@@ -307,6 +307,7 @@ DECL_HIDDEN_CONST(const RTVFSIOSTREAMOPS) g_rtVfsProgressIosOps =
         "I/O Stream Progress",
         rtVfsProgressFile_Close,
         rtVfsProgressFile_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,
@@ -438,6 +439,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtVfsProgressFileOps =
             "File Progress",
             rtVfsProgressFile_Close,
             rtVfsProgressFile_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,

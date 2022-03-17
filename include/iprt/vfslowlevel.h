@@ -162,6 +162,27 @@ DECLINLINE(void) RTVfsLockReleaseWrite(RTVFSLOCK hLock)
 /** @}  */
 
 /**
+ * Info queried via RTVFSOBJOPS::pfnQueryInfoEx, ++.
+ */
+typedef enum RTVFSQIEX
+{
+    /** Invalid zero value. */
+    RTVFSQIEX_INVALID = 0,
+    /** Volume label.
+     * Returns a UTF-8 string. */
+    RTVFSQIEX_VOL_LABEL,
+    /** Volume serial number.
+     * Returns a uint32_t, uint64_t or RTUUID. */
+    RTVFSQIEX_VOL_SERIAL,
+    /** End of valid queries. */
+    RTVFSQIEX_END,
+
+    /** The usual 32-bit hack. */
+    RTVFSQIEX_32BIT_SIZE_HACK = 0x7fffffff
+} RTVFSQIEX;
+
+
+/**
  * The basis for all virtual file system objects.
  */
 typedef struct RTVFSOBJOPS
@@ -186,12 +207,29 @@ typedef struct RTVFSOBJOPS
      *
      * @returns IPRT status code. See RTVfsObjQueryInfo.
      * @retval  VERR_WRONG_TYPE if file system or file system stream.
+     *
      * @param   pvThis      The implementation specific file data.
      * @param   pObjInfo    Where to return the object info on success.
      * @param   enmAddAttr  Which set of additional attributes to request.
      * @sa      RTVfsObjQueryInfo, RTFileQueryInfo, RTPathQueryInfo
      */
     DECLCALLBACKMEMBER(int, pfnQueryInfo,(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr));
+
+    /**
+     * Query arbritray information about the file, volume, or whatever.
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_BUFFER_OVERFLOW sets pcbRet.
+     *
+     * @param   pvThis      The implementation specific file data.
+     * @param   enmInfo     The information being queried.
+     * @param   pvInfo      Where to return the info.
+     * @param   cbInfo      The size of the @a pvInfo buffer.
+     * @param   pcbRet      The size of the returned data.  In case of
+     *                      VERR_BUFFER_OVERFLOW this will be set to the required
+     *                      buffer size.
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryInfoEx,(void *pvThis, RTVFSQIEX enmInfo, void *pvInfo, size_t cbInfo, size_t *pcbRet));
 
     /** Marks the end of the structure (RTVFSOBJOPS_VERSION). */
     uintptr_t               uEndMarker;
@@ -200,7 +238,7 @@ typedef struct RTVFSOBJOPS
 typedef RTVFSOBJOPS const *PCRTVFSOBJOPS;
 
 /** The RTVFSOBJOPS structure version. */
-#define RTVFSOBJOPS_VERSION         RT_MAKE_U32_FROM_U8(0xff,0x1f,1,0)
+#define RTVFSOBJOPS_VERSION         RT_MAKE_U32_FROM_U8(0xff,0x1f,2,0)
 
 
 /**

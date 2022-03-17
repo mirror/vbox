@@ -668,6 +668,7 @@ static RTVFSIOSTREAMOPS g_rtZipGzipOps =
         "gzip",
         rtZipGzip_Close,
         rtZipGzip_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,

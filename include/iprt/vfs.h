@@ -188,6 +188,19 @@ RTDECL(int) RTVfsQueryPathInfo(RTVFS hVfs, const char *pszPath, PRTFSOBJINFO pOb
  */
 RTDECL(int) RTVfsQueryRangeState(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUsed);
 
+/**
+ * Queries the volume label.
+ *
+ * @returns IPRT status code.
+ * @param   hVfs        VFS handle.
+ * @param   pszLabel    Where to store the lable.
+ * @param   cbLabel     Size of the buffer @a pszLable points at.
+ * @param   pcbActual   Where to return the label length, including the
+ *                      terminator.  In case of VERR_BUFFER_OVERFLOW returns,
+ *                      this will be set to the required buffer size.  Optional.
+ */
+RTDECL(int) RTVfsQueryLabel(RTVFS hVfs, char *pszLabel, size_t cbLabel, size_t *pcbActual);
+
 
 /** @defgroup grp_rt_vfs_obj        VFS Base Object API
  * @{

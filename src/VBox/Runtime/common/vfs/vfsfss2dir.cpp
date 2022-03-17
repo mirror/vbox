@@ -283,6 +283,7 @@ static const RTVFSFSSTREAMOPS g_rtVfsFssToDirOps =
         "TarFsStreamWriter",
         rtVfsFssToDir_Close,
         rtVfsFssToDir_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSFSSTREAMOPS_VERSION,

@@ -164,6 +164,7 @@ static const RTVFSIOSTREAMOPS g_memFssIosOps =
         "MemFsStream::IoStream",
         memFssIos_Close,
         memFssIos_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,

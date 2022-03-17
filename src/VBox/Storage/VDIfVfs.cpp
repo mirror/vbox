@@ -181,6 +181,7 @@ DECL_HIDDEN_CONST(const RTVFSIOSTREAMOPS) g_vdIfVfsIosOps =
         "VDIfIos",
         vdIfVfsIos_Close,
         vdIfVfsIos_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,
@@ -339,6 +340,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_vdIfVfsFileOps =
             "VDIfFile",
             vdIfVfsIos_Close,
             vdIfVfsIos_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,

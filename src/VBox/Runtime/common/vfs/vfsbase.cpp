@@ -71,6 +71,7 @@
         Assert(*(a_pObjOps)->pszName); \
         AssertPtr((a_pObjOps)->pfnClose); \
         AssertPtr((a_pObjOps)->pfnQueryInfo); \
+        AssertPtrNull((a_pObjOps)->pfnQueryInfoEx); \
         Assert((a_pObjOps)->uEndMarker == RTVFSOBJOPS_VERSION); \
     } while (0)
 
@@ -2306,6 +2307,31 @@ RTDECL(int) RTVfsQueryRangeState(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUs
     return rc;
 }
 
+
+RTDECL(int) RTVfsQueryLabel(RTVFS hVfs, char *pszLabel, size_t cbLabel, size_t *pcbActual)
+{
+    RTVFSINTERNAL *pThis = hVfs;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFS_MAGIC, VERR_INVALID_HANDLE);
+
+    if (cbLabel > 0)
+        AssertPtrReturn(pszLabel, VERR_INVALID_POINTER);
+
+    int rc;
+    if (pThis->pOps->Obj.pfnQueryInfoEx)
+    {
+        size_t cbActualIgn;
+        if (!pcbActual)
+            pcbActual = &cbActualIgn;
+
+        RTVfsLockAcquireRead(pThis->Base.hLock);
+        rc = pThis->pOps->Obj.pfnQueryInfoEx(pThis->Base.pvThis, RTVFSQIEX_VOL_LABEL, pszLabel, cbLabel, pcbActual);
+        RTVfsLockReleaseRead(pThis->Base.hLock);
+    }
+    else
+        rc = VERR_NOT_SUPPORTED;
+    return rc;
+}
 
 
 

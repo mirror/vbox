@@ -782,6 +782,7 @@ DECL_HIDDEN_CONST(const RTVFSIOSTREAMOPS) g_rtZipTarWriterIoStrmOps =
         "TAR push I/O Stream",
         rtZipTarWriterPush_Close,
         rtZipTarWriterPush_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,
@@ -809,6 +810,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtZipTarWriterFileOps =
             "TAR push file",
             rtZipTarWriterPush_Close,
             rtZipTarWriterPush_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
@@ -2055,6 +2057,7 @@ static const RTVFSFSSTREAMOPS g_rtZipTarFssOps =
         "TarFsStreamWriter",
         rtZipTarFssWriter_Close,
         rtZipTarFssWriter_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSFSSTREAMOPS_VERSION,

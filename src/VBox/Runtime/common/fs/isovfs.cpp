@@ -130,11 +130,12 @@
         else if ((a_pStruct)->a_Member[0] == 16) \
         { \
             PCRTUTF16 pwszTmp = (PCRTUTF16)&(a_pStruct)->a_Member[1]; \
-            char *pszTmp = NULL; \
+            char     *pszTmp  = NULL; \
             RTUtf16BigToUtf8Ex(pwszTmp, (sizeof((a_pStruct)->a_Member) - 2) / sizeof(RTUTF16), &pszTmp, 0, NULL); \
             Log2(("ISO/UDF:   %-32s 16: '%s' len=%u (actual=%u)\n", #a_Member ":", pszTmp, \
                   (a_pStruct)->a_Member[sizeof((a_pStruct)->a_Member) - 1], \
                   RTUtf16NLen(pwszTmp, (sizeof((a_pStruct)->a_Member) - 2) / sizeof(RTUTF16)) * sizeof(RTUTF16) + 1 /*??*/ )); \
+            RTStrFree(pszTmp); \
         } \
         else if (ASMMemIsZero(&(a_pStruct)->a_Member[0], sizeof((a_pStruct)->a_Member))) \
             Log2(("ISO/UDF:   %-32s empty\n", #a_Member ":")); \
@@ -426,8 +427,10 @@ typedef struct RTFSISOUDFVOLINFO
  */
 typedef enum RTFSISOVOLTYPE
 {
+    /** Invalid zero value.   */
+    RTFSISOVOLTYPE_INVALID = 0,
     /** Accessing the primary ISO-9660 volume. */
-    RTFSISOVOLTYPE_ISO9960 = 0,
+    RTFSISOVOLTYPE_ISO9960,
     /** Accessing the joliet volume (secondary ISO-9660). */
     RTFSISOVOLTYPE_JOLIET,
     /** Accessing the UDF volume. */
@@ -466,6 +469,10 @@ typedef struct RTFSISOVOL
     uint32_t            cVolumesInSet;
     /** The primary volume sequence ID. */
     uint32_t            idPrimaryVol;
+    /** The offset of the primary volume descriptor. */
+    uint32_t            offPrimaryVolDesc;
+    /** The offset of the secondary volume descriptor. */
+    uint32_t            offSecondaryVolDesc;
     /** Set if using UTF16-2 (joliet). */
     bool                fIsUtf16;
     /** @} */
@@ -2294,6 +2301,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIsoFileOps =
             "FatFile",
             rtFsIsoFile_Close,
             rtFsIsoFile_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
@@ -4378,6 +4386,7 @@ static const RTVFSDIROPS g_rtFsIsoDirOps =
         "ISO 9660 Dir",
         rtFsIsoDir_Close,
         rtFsIsoDir_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSDIROPS_VERSION,
@@ -4884,6 +4893,194 @@ static DECLCALLBACK(int) rtFsIsoVol_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInf
 }
 
 
+static int rtFsIsoVol_ReturnUdfDString(const char *pachSrc, size_t cchSrc, void *pvDst, size_t cbDst, size_t *pcbRet)
+{
+    char *pszDst = (char *)pvDst;
+
+    if (pachSrc[0] == 8)
+    {
+        uint8_t const cchText   = RT_MIN((uint8_t)pachSrc[cchSrc - 1], cchSrc - 2);
+        size_t  const cchActual = RTStrNLen(&pachSrc[1], cchText);
+        *pcbRet = cchActual + 1;
+        int rc = RTStrCopyEx(pszDst, cbDst, &pachSrc[1], cchActual);
+        if (cbDst > 0)
+            RTStrPurgeEncoding(pszDst);
+        return rc;
+    }
+
+    if (pachSrc[0] == 16)
+    {
+        PCRTUTF16 pwszSrc = (PCRTUTF16)&pachSrc[1];
+        if (cchSrc > 0)
+            return RTUtf16BigToUtf8Ex(pwszSrc, (cchSrc - 2) / sizeof(RTUTF16), &pszDst, cchSrc, pcbRet);
+        int rc = RTUtf16CalcUtf8LenEx(pwszSrc, (cchSrc - 2) / sizeof(RTUTF16), pcbRet);
+        if (RT_SUCCESS(rc))
+        {
+            *pcbRet += 1;
+            return VERR_BUFFER_OVERFLOW;
+        }
+        return rc;
+    }
+
+    if (ASMMemIsZero(pachSrc, cchSrc))
+    {
+        *pcbRet = 1;
+        if (cbDst >= 1)
+        {
+            *pszDst = '\0';
+            return VINF_SUCCESS;
+        }
+        return VERR_BUFFER_OVERFLOW;
+    }
+
+    *pcbRet = 0;
+    return VERR_INVALID_UTF8_ENCODING; /** @todo better status here */
+}
+
+
+/**
+ * For now this is a sanitized version of rtFsIsoVolGetMaybeUtf16Be, which is
+ * probably not correct or anything, but will have to do for now.
+ */
+static int rtFsIsoVol_ReturnIso9660D1String(const char *pachSrc, size_t cchSrc, void *pvDst, size_t cbDst, size_t *pcbRet)
+{
+    char *pszDst = (char *)pvDst;
+
+    /*
+     * Check if it may be some UTF16 variant by scanning for zero bytes
+     * (ISO-9660 doesn't allow zeros).
+     */
+    size_t cFirstZeros  = 0;
+    size_t cSecondZeros = 0;
+    for (size_t off = 0; off + 1 < cchSrc; off += 2)
+    {
+        cFirstZeros  += pachSrc[off]     == '\0';
+        cSecondZeros += pachSrc[off + 1] == '\0';
+    }
+    if (cFirstZeros > cSecondZeros)
+    {
+        /*
+         * UTF-16BE / UTC-2BE:
+         */
+        if (cchSrc & 1)
+        {
+            AssertReturn(pachSrc[cchSrc - 1] == '\0' || pachSrc[cchSrc - 1] == ' ', VERR_INVALID_UTF16_ENCODING);
+            cchSrc--;
+        }
+        while (   cchSrc >= 2
+               && pachSrc[cchSrc - 1] == ' '
+               && pachSrc[cchSrc - 2] == '\0')
+            cchSrc -= 2;
+
+        if (cbDst > 0)
+            return RTUtf16BigToUtf8Ex((PCRTUTF16)pachSrc, cchSrc / sizeof(RTUTF16), &pszDst, cbDst, pcbRet);
+        int rc = RTUtf16BigCalcUtf8LenEx((PCRTUTF16)pachSrc, cchSrc / sizeof(RTUTF16), pcbRet);
+        if (RT_SUCCESS(rc))
+        {
+            *pcbRet += 1;
+            return VERR_BUFFER_OVERFLOW;
+        }
+        return rc;
+    }
+
+    if (cSecondZeros > 0)
+    {
+        /*
+         * Little endian UTF-16 / UCS-2.
+         */
+        if (cchSrc & 1)
+        {
+            AssertReturn(pachSrc[cchSrc - 1] == '\0' || pachSrc[cchSrc - 1] == ' ', VERR_INVALID_UTF16_ENCODING);
+            cchSrc--;
+        }
+        while (   cchSrc >= 2
+               && pachSrc[cchSrc - 1] == '\0'
+               && pachSrc[cchSrc - 2] == ' ')
+            cchSrc -= 2;
+
+        if (cbDst)
+            return RTUtf16LittleToUtf8Ex((PCRTUTF16)pachSrc, cchSrc / sizeof(RTUTF16), &pszDst, cbDst, pcbRet);
+        int rc = RTUtf16LittleCalcUtf8LenEx((PCRTUTF16)pachSrc, cchSrc / sizeof(RTUTF16), pcbRet);
+        if (RT_SUCCESS(rc))
+        {
+            *pcbRet += 1;
+            return VERR_BUFFER_OVERFLOW;
+        }
+        return rc;
+    }
+
+    /*
+     * ASSUME UTF-8/ASCII.
+     */
+    while (   cchSrc > 0
+           && pachSrc[cchSrc - 1] == ' ')
+        cchSrc--;
+
+    *pcbRet = cchSrc + 1;
+    int rc = RTStrCopyEx(pszDst, cbDst, pachSrc, cchSrc);
+    if (cbDst > 0)
+        RTStrPurgeEncoding(pszDst);
+    return rc;
+}
+
+
+static int rtFsIsoVol_ReturnIso9660DString(const char *pachSrc, size_t cchSrc, void *pvDst, size_t cbDst, size_t *pcbRet)
+{
+    /* Lazy bird: */
+    return rtFsIsoVol_ReturnIso9660D1String(pachSrc, cchSrc, pvDst, cbDst, pcbRet);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS::Obj,pfnQueryInfoEx}
+ */
+static DECLCALLBACK(int) rtFsIsoVol_QueryInfoEx(void *pvThis, RTVFSQIEX enmInfo, void *pvInfo, size_t cbInfo, size_t *pcbRet)
+{
+    PRTFSISOVOL pThis = (PRTFSISOVOL)pvThis;
+    LogFlow(("rtFsIsoVol_QueryInfo(%p, %d,, %#zx,)\n", pThis, enmInfo, cbInfo));
+
+    union
+    {
+        uint8_t                 ab[RTFSISO_MAX_LOGICAL_BLOCK_SIZE];
+        ISO9660PRIMARYVOLDESC   PriVolDesc;
+        ISO9660SUPVOLDESC       SupVolDesc;
+    } uBuf;
+
+    switch (enmInfo)
+    {
+        case RTVFSQIEX_VOL_LABEL:
+        {
+            if (pThis->enmType == RTFSISOVOLTYPE_UDF)
+                return rtFsIsoVol_ReturnUdfDString(pThis->Udf.VolInfo.achLogicalVolumeID,
+                                                   sizeof(pThis->Udf.VolInfo.achLogicalVolumeID), pvInfo, cbInfo, pcbRet);
+            int rc = RTVfsFileReadAt(pThis->hVfsBacking,
+                                     pThis->enmType == RTFSISOVOLTYPE_ISO9960
+                                     ? pThis->offPrimaryVolDesc : pThis->offSecondaryVolDesc,
+                                     uBuf.ab, RT_MAX(RT_MIN(pThis->cbSector, sizeof(uBuf)), sizeof(uBuf.PriVolDesc)), NULL);
+            AssertRCReturn(rc, rc);
+            switch (enmInfo)
+            {
+                case RTVFSQIEX_VOL_LABEL:
+                    if (pThis->enmType == RTFSISOVOLTYPE_ISO9960)
+                        return rtFsIsoVol_ReturnIso9660DString(uBuf.PriVolDesc.achVolumeId, sizeof(uBuf.PriVolDesc.achVolumeId),
+                                                               pvInfo, cbInfo, pcbRet);
+                    return rtFsIsoVol_ReturnIso9660D1String(uBuf.SupVolDesc.achVolumeId, sizeof(uBuf.SupVolDesc.achVolumeId),
+                                                            pvInfo, cbInfo, pcbRet);
+                default:
+                    AssertFailedReturn(VERR_INTERNAL_ERROR);
+            }
+            break;
+        }
+
+        default:
+            return VERR_NOT_SUPPORTED;
+
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * @interface_method_impl{RTVFSOPS,pfnOpenRoot}
  */
@@ -4914,6 +5111,7 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsIsoVolOps =
         "ISO 9660/UDF",
         rtFsIsoVol_Close,
         rtFsIsoVol_QueryInfo,
+        rtFsIsoVol_QueryInfoEx,
         RTVFSOBJOPS_VERSION
     },
     RTVFSOPS_VERSION,
@@ -6423,6 +6621,12 @@ static int rtFsIsoVolHandlePrimaryVolDesc(PRTFSISOVOL pThis, PCISO9660PRIMARYVOL
                                    "Unsupported file structure version: %#x", pVolDesc->bFileStructureVersion);
 
     /*
+     * Take down the location of the primary volume descriptor so we can get
+     * the volume lable and other info from it later.
+     */
+    pThis->offPrimaryVolDesc = offVolDesc;
+
+    /*
      * We need the block size ...
      */
     pThis->cbBlock = RT_LE2H_U16(pVolDesc->cbLogicalBlock.le);
@@ -6555,6 +6759,12 @@ static int rtFsIsoVolHandleSupplementaryVolDesc(PRTFSISOVOL pThis, PCISO9660SUPV
         *pbUcs2Level    = pVolDesc->abEscapeSequences[2] == ISO9660_JOLIET_ESC_SEQ_2_LEVEL_1 ? 1
                         : pVolDesc->abEscapeSequences[2] == ISO9660_JOLIET_ESC_SEQ_2_LEVEL_2 ? 2 : 3;
         Log(("ISO9660: Joliet with UCS-2 level %u\n", *pbUcs2Level));
+
+        /*
+         * Take down the location of the secondary volume descriptor so we can get
+         * the volume lable and other info from it later.
+         */
+        pThis->offSecondaryVolDesc = offVolDesc;
     }
     return rc;
 }
@@ -6792,7 +7002,7 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     /*
      * If we found a UDF VRS and are interested in UDF, we have more work to do here.
      */
-    if (uUdfLevel > 0 && !(fFlags & RTFSISO9660_F_NO_UDF) )
+    if (uUdfLevel > 0 && !(fFlags & RTFSISO9660_F_NO_UDF))
     {
         Log(("rtFsIsoVolTryInit: uUdfLevel=%d\n", uUdfLevel));
         rc = rtFsIsoVolHandleUdfDetection(pThis, &uUdfLevel, offUdfBootVolDesc, Buf.ab, sizeof(Buf), pErrInfo);

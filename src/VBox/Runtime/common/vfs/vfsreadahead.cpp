@@ -534,6 +534,7 @@ DECL_HIDDEN_CONST(const RTVFSIOSTREAMOPS) g_VfsReadAheadIosOps =
         "Read ahead I/O stream",
         rtVfsReadAhead_Close,
         rtVfsReadAhead_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,
@@ -561,6 +562,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_VfsReadAheadFileOps =
             "Read ahead file",
             rtVfsReadAhead_Close,
             rtVfsReadAhead_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,

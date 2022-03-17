@@ -1266,6 +1266,7 @@ static const RTVFSFILEOPS g_rtEfiVarStoreFileOps =
             "EfiVarStore File",
             rtEfiVarStoreFile_Close,
             rtEfiVarStoreFile_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
@@ -1850,6 +1851,7 @@ static const RTVFSDIROPS g_rtEfiVarStoreDirOps =
         "EfiVarStore Dir",
         rtEfiVarStoreDir_Close,
         rtEfiVarStoreDir_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSDIROPS_VERSION,
@@ -2017,6 +2019,7 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtEfiVarStoreOps =
         /* .pszName = */        "EfiVarStore",
         /* .pfnClose = */       rtEfiVarStore_Close,
         /* .pfnQueryInfo = */   rtEfiVarStore_QueryInfo,
+        /* .pfnQueryInfoEx = */ NULL,
         /* .uEndMarker = */     RTVFSOBJOPS_VERSION
     },
     /* .uVersion = */           RTVFSOPS_VERSION,

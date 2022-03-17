@@ -811,6 +811,7 @@ static const RTVFSOBJOPS g_rtZipXarFssBaseObjOps =
     "XarFsStream::Obj",
     rtZipXarFssBaseObj_Close,
     rtZipXarFssBaseObj_QueryInfo,
+    NULL,
     RTVFSOBJOPS_VERSION
 };
 
@@ -1016,6 +1017,7 @@ static const RTVFSIOSTREAMOPS g_rtZipXarFssIosOps =
         "XarFsStream::IoStream",
         rtZipXarFssIos_Close,
         rtZipXarFssIos_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,
@@ -1145,6 +1147,7 @@ static const RTVFSFILEOPS g_rtZipXarFssFileOps =
             "XarFsStream::File",
             rtZipXarFssFile_Close,
             rtZipXarFssIos_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
@@ -1333,6 +1336,7 @@ static const RTVFSIOSTREAMOPS g_rtZipXarFssDecompIosOps =
         "XarFsStream::DecompIoStream",
         rtZipXarFssDecompIos_Close,
         rtZipXarFssDecompIos_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,
@@ -1426,6 +1430,7 @@ static const RTVFSSYMLINKOPS g_rtZipXarFssSymOps =
         "XarFsStream::Symlink",
         rtZipXarFssSym_Close,
         rtZipXarFssSym_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSSYMLINKOPS_VERSION,
@@ -1798,6 +1803,7 @@ static const RTVFSFSSTREAMOPS rtZipXarFssOps =
         "XarFsStream",
         rtZipXarFss_Close,
         rtZipXarFss_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSFSSTREAMOPS_VERSION,

@@ -165,6 +165,7 @@ static const RTVFSSYMLINKOPS g_rtVfsStdSymOps =
         "StdSymlink",
         rtVfsStdSym_Close,
         rtVfsStdSym_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSSYMLINKOPS_VERSION,
@@ -667,6 +668,7 @@ DECL_HIDDEN_CONST(const RTVFSDIROPS) g_rtVfsStdDirOps =
         "StdDir",
         rtVfsStdDir_Close,
         rtVfsStdDir_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSDIROPS_VERSION,

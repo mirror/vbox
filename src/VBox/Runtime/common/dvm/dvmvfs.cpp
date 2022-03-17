@@ -484,6 +484,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtDvmVfsStdFileOps =
             "DvmFile",
             rtDvmVfsFile_Close,
             rtDvmVfsFile_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
@@ -642,6 +643,7 @@ static const RTVFSSYMLINKOPS g_rtDvmVfsSymOps =
         "DvmSymlink",
         rtDvmVfsSym_Close,
         rtDvmVfsSym_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSSYMLINKOPS_VERSION,
@@ -1215,6 +1217,7 @@ static const RTVFSDIROPS g_rtDvmVfsDirOps =
         "DvmDir",
         rtDvmVfsDir_Close,
         rtDvmVfsDir_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSDIROPS_VERSION,
@@ -1311,6 +1314,7 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtDvmVfsVolOps =
         "DvmVol",
         rtDvmVfsVol_Close,
         rtDvmVfsVol_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSOPS_VERSION,

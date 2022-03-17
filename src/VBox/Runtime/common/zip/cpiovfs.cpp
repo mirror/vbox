@@ -441,6 +441,7 @@ static const RTVFSOBJOPS g_rtZipCpioFssBaseObjOps =
     "CpioFsStream::Obj",
     rtZipCpioFssBaseObj_Close,
     rtZipCpioFssBaseObj_QueryInfo,
+    NULL,
     RTVFSOBJOPS_VERSION
 };
 
@@ -585,6 +586,7 @@ static const RTVFSIOSTREAMOPS g_rtZipCpioFssIosOps =
         "CpioFsStream::IoStream",
         rtZipCpioFssIos_Close,
         rtZipCpioFssIos_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,
@@ -671,6 +673,7 @@ static const RTVFSSYMLINKOPS g_rtZipCpioFssSymOps =
         "CpioFsStream::Symlink",
         rtZipCpioFssSym_Close,
         rtZipCpioFssSym_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSSYMLINKOPS_VERSION,
@@ -1023,6 +1026,7 @@ static const RTVFSFSSTREAMOPS rtZipCpioFssOps =
         "CpioFsStream",
         rtZipCpioFss_Close,
         rtZipCpioFss_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSFSSTREAMOPS_VERSION,

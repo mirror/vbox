@@ -730,6 +730,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtVfsMemFileOps =
             "MemFile",
             rtVfsMemFile_Close,
             rtVfsMemFile_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,

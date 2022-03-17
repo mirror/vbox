@@ -2565,6 +2565,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsFatFileOps =
             "FatFile",
             rtFsFatFile_Close,
             rtFsFatFile_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
@@ -4634,6 +4635,7 @@ static const RTVFSDIROPS g_rtFsFatDirOps =
         "FatDir",
         rtFsFatDir_Close,
         rtFsFatDir_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSDIROPS_VERSION,
@@ -5000,6 +5002,7 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsFatVolOps =
         "FatVol",
         rtFsFatVol_Close,
         rtFsFatVol_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSOPS_VERSION,

@@ -1909,6 +1909,7 @@ static const RTVFSFILEOPS g_rtFsExtFileOps =
             "EXT File",
             rtFsExtFile_Close,
             rtFsExtFile_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
@@ -2337,6 +2338,7 @@ static const RTVFSDIROPS g_rtFsExtDirOps =
         "EXT Dir",
         rtFsExtDir_Close,
         rtFsExtDir_QueryInfo,
+        NULL,
         RTVFSOBJOPS_VERSION
     },
     RTVFSDIROPS_VERSION,
@@ -2574,6 +2576,7 @@ DECL_HIDDEN_CONST(const RTVFSOPS) g_rtFsExtVolOps =
         /* .pszName = */        "ExtVol",
         /* .pfnClose = */       rtFsExtVol_Close,
         /* .pfnQueryInfo = */   rtFsExtVol_QueryInfo,
+        /* .pfnQueryInfoEx = */ NULL,
         /* .uEndMarker = */     RTVFSOBJOPS_VERSION
     },
     /* .uVersion = */           RTVFSOPS_VERSION,

@@ -2903,6 +2903,7 @@
 # define RTVfsIoStrmWrite                               RT_MANGLER(RTVfsIoStrmWrite)
 # define RTVfsIoStrmWriteAt                             RT_MANGLER(RTVfsIoStrmWriteAt)
 # define RTVfsIoStrmZeroFill                            RT_MANGLER(RTVfsIoStrmZeroFill)
+# define RTVfsQueryLabel                                RT_MANGLER(RTVfsQueryLabel)
 # define RTVfsQueryRangeState                           RT_MANGLER(RTVfsQueryRangeState)
 # define RTVfsLockAcquireReadSlow                       RT_MANGLER(RTVfsLockAcquireReadSlow)
 # define RTVfsLockAcquireWriteSlow                      RT_MANGLER(RTVfsLockAcquireWriteSlow)

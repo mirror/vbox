@@ -7453,6 +7453,7 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtFsIsoMakerOutputFileOps =
             "ISO Maker Output File",
             rtFsIsoMakerOutFile_Close,
             rtFsIsoMakerOutFile_QueryInfo,
+            NULL,
             RTVFSOBJOPS_VERSION
         },
         RTVFSIOSTREAMOPS_VERSION,
