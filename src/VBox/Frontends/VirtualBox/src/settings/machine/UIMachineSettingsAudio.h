@@ -26,10 +26,9 @@
 
 /* Forward declarations: */
 class QCheckBox;
-class QGridLayout;
-class QLabel;
 class UIAudioControllerEditor;
 class UIAudioHostDriverEditor;
+class UIMachineAudioFeaturesEditor;
 struct UIDataSettingsMachineAudio;
 typedef UISettingsCache<UIDataSettingsMachineAudio> UISettingsCacheMachineAudio;
 
@@ -90,21 +89,15 @@ private:
     /** @name Widgets
      * @{ */
         /** Holds the audio check-box instance. */
-        QCheckBox               *m_pCheckBoxAudio;
+        QCheckBox                    *m_pCheckBoxAudio;
         /** Holds the audio settings widget instance. */
-        QWidget                 *m_pWidgetAudioSettings;
-        /** Holds the audio settings layout instance. */
-        QGridLayout             *m_pLayoutAudioSettings;
+        QWidget                      *m_pWidgetAudioSettings;
         /** Holds the audio host driver editor instance. */
-        UIAudioHostDriverEditor *m_pEditorAudioHostDriver;
-        /** Holds the audio host controller instance instance. */
-        UIAudioControllerEditor *m_pEditorAudioController;
-        /** Holds the audio extended label instance. */
-        QLabel                  *m_pLabelAudioExtended;
-        /** Holds the audio output check-box instance. */
-        QCheckBox               *m_pCheckBoxAudioOutput;
-        /** Holds the audio input check-box instance. */
-        QCheckBox               *m_pCheckBoxAudioInput;
+        UIAudioHostDriverEditor      *m_pEditorAudioHostDriver;
+        /** Holds the audio host controller editor instance. */
+        UIAudioControllerEditor      *m_pEditorAudioController;
+        /** Holds the audio features editor instance. */
+        UIMachineAudioFeaturesEditor *m_pEditorAudioFeatures;
     /** @} */
 };
 

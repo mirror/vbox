@@ -905,6 +905,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIHostComboEditor.h \
 	src/settings/editors/UIHotKeyEditor.h \
 	src/settings/editors/UILanguageSettingsEditor.h \
+	src/settings/editors/UIMachineAudioFeaturesEditor.h \
 	src/settings/editors/UIMaximumGuestScreenSizeEditor.h \
 	src/settings/editors/UINameAndSystemEditor.h \
 	src/settings/editors/UINetworkAttachmentEditor.h \
@@ -1460,6 +1461,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIHostComboEditor.cpp \
 	src/settings/editors/UIHotKeyEditor.cpp \
 	src/settings/editors/UILanguageSettingsEditor.cpp \
+	src/settings/editors/UIMachineAudioFeaturesEditor.cpp \
 	src/settings/editors/UIMaximumGuestScreenSizeEditor.cpp \
 	src/settings/editors/UINameAndSystemEditor.cpp \
 	src/settings/editors/UINetworkAttachmentEditor.cpp \
