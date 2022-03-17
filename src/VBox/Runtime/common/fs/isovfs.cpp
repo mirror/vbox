@@ -2903,7 +2903,7 @@ static void rtFsIsoDirShrd_ParseRockRidgeData(PRTFSISOVOL pVol, PRTFSISOROCKINFO
                     }
                     Assert(offDst < sizeof(pParseInfo->szLinkTarget));
                     pParseInfo->szLinkTarget[offDst] = '\0';
-                    pParseInfo->cchLinkTarget        = offDst;
+                    pParseInfo->cchLinkTarget        = (uint16_t)offDst;
                 }
                 break;
 
