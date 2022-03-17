@@ -5076,8 +5076,6 @@ static DECLCALLBACK(int) rtFsIsoVol_QueryInfoEx(void *pvThis, RTVFSQIEX enmInfo,
             return VERR_NOT_SUPPORTED;
 
     }
-
-    return VINF_SUCCESS;
 }
 
 
