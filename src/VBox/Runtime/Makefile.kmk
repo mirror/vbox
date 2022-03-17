@@ -640,6 +640,7 @@ RuntimeR3_SOURCES       = \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
 	common/string/RTStrFormat.cpp \
+	common/string/strformatfloat.cpp \
 	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \

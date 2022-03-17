@@ -1907,6 +1907,33 @@ RTDECL(ssize_t) RTStrFormatU256(char *pszBuf, size_t cbBuf, PCRTUINT256U pu256Va
 RTDECL(ssize_t) RTStrFormatU512(char *pszBuf, size_t cbBuf, PCRTUINT512U pu512Value, unsigned int uiBase,
                                 signed int cchWidth, signed int cchPrecision, uint32_t fFlags);
 
+/**
+ * Formats an 32-bit extended floating point number.
+ *
+ * @returns The length of the formatted number or VERR_BUFFER_OVERFLOW.
+ * @param   pszBuf          The output buffer.
+ * @param   cbBuf           The size of the output buffer.
+ * @param   pr80Value       The value to format.
+ * @param   cchWidth        Width.
+ * @param   cchPrecision    Precision.
+ * @param   fFlags          Flags, RTSTR_F_XXX.
+ */
+RTDECL(ssize_t) RTStrFormatR32(char *pszBuf, size_t cbBuf, PCRTFLOAT32U pr32Value, signed int cchWidth,
+                               signed int cchPrecision, uint32_t fFlags);
+
+/**
+ * Formats an 64-bit extended floating point number.
+ *
+ * @returns The length of the formatted number or VERR_BUFFER_OVERFLOW.
+ * @param   pszBuf          The output buffer.
+ * @param   cbBuf           The size of the output buffer.
+ * @param   pr80Value       The value to format.
+ * @param   cchWidth        Width.
+ * @param   cchPrecision    Precision.
+ * @param   fFlags          Flags, RTSTR_F_XXX.
+ */
+RTDECL(ssize_t) RTStrFormatR64(char *pszBuf, size_t cbBuf, PCRTFLOAT64U pr64Value, signed int cchWidth,
+                               signed int cchPrecision, uint32_t fFlags);
 
 /**
  * Formats an 80-bit extended floating point number.
