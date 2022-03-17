@@ -88,37 +88,6 @@ struct a_CtxName \
     { a_pszOption, a_chOptOrValue, a_fFlags }
 
 
-/** @name Syntax diagram category, i.e. the command.
- * @{ */
-typedef enum
-{
-    USAGE_INVALID = 0,
-    USAGE_I_LOADSYMS,
-    USAGE_I_LOADMAP,
-    USAGE_I_SETHDUUID,
-    USAGE_I_LISTPARTITIONS,
-    USAGE_I_CREATERAWVMDK,
-    USAGE_I_MODINSTALL,
-    USAGE_I_MODUNINSTALL,
-    USAGE_I_RENAMEVMDK,
-    USAGE_I_CONVERTTORAW,
-    USAGE_I_CONVERTHD,
-    USAGE_I_DUMPHDINFO,
-    USAGE_I_DEBUGLOG,
-    USAGE_I_SETHDPARENTUUID,
-    USAGE_I_PASSWORDHASH,
-    USAGE_I_GUESTSTATS,
-    USAGE_I_REPAIRHD,
-    /* Insert new entries before this line, but only if it is not an option
-     * to go for the new style command and help handling (see e.g. extpack,
-     * unattend or mediumio. */
-    USAGE_S_NEWCMD = 10000, /**< new style command with no old help support */
-    USAGE_S_ALL,
-    USAGE_S_DUMPOPTS
-} USAGECATEGORY;
-/** @} */
-
-
 /** command handler argument */
 struct HandlerArg
 {
@@ -157,9 +126,6 @@ extern bool g_fDetailedProgress;        // in VBoxManage.cpp
 ////////////////////////////////////////////////////////////////////////////////
 
 /* VBoxManageHelp.cpp */
-/* Legacy help infrastructure, to be replaced by new one using generated help. */
-void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM pStrm);
-
 void        setCurrentCommand(enum HELP_CMD_VBOXMANAGE enmCommand);
 void        setCurrentSubcommand(uint64_t fCurSubcommandScope);
 
@@ -185,6 +151,8 @@ HRESULT showProgress(ComPtr<IProgress> progress, uint32_t fFlags = SHOW_PROGRESS
 /* VBoxManage.cpp */
 void showLogo(PRTSTREAM pStrm);
 
+/* VBoxInternalManage.cpp */
+DECLHIDDEN(void) printUsageInternalCmds(PRTSTREAM pStrm);
 RTEXITCODE handleInternalCommands(HandlerArg *a);
 
 /* VBoxManageControlVM.cpp */

@@ -133,14 +133,38 @@ typedef struct HOSTPARTITIONS
 } HOSTPARTITIONS, *PHOSTPARTITIONS;
 
 
+/** @name Syntax diagram category, i.e. the command.
+ * @{ */
+typedef enum
+{
+    USAGE_INVALID = 0,
+    USAGE_I_LOADSYMS,
+    USAGE_I_LOADMAP,
+    USAGE_I_SETHDUUID,
+    USAGE_I_LISTPARTITIONS,
+    USAGE_I_CREATERAWVMDK,
+    USAGE_I_MODINSTALL,
+    USAGE_I_MODUNINSTALL,
+    USAGE_I_RENAMEVMDK,
+    USAGE_I_CONVERTTORAW,
+    USAGE_I_CONVERTHD,
+    USAGE_I_DUMPHDINFO,
+    USAGE_I_DEBUGLOG,
+    USAGE_I_SETHDPARENTUUID,
+    USAGE_I_PASSWORDHASH,
+    USAGE_I_GUESTSTATS,
+    USAGE_I_REPAIRHD,
+    USAGE_I_ALL
+} USAGECATEGORY;
+/** @} */
+
+
 /**
  * Print the usage info.
  */
 static void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm)
 {
     Assert(enmCommand != USAGE_INVALID);
-    Assert(enmCommand != USAGE_S_NEWCMD);
-    Assert(enmCommand != USAGE_S_DUMPOPTS);
     RTStrmPrintf(pStrm,
         Internal::tr(
          "Usage: VBoxManage internalcommands <command> [command arguments]\n"
@@ -152,46 +176,46 @@ static void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm)
          "         problems. It is completely unsupported and will change in\n"
          "         incompatible ways without warning.\n"),
 
-        (enmCommand == USAGE_I_LOADMAP || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_LOADMAP || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  loadmap <vmname|uuid> <symfile> <address> [module] [subtrahend] [segment]\n"
            "      This will instruct DBGF to load the given map file\n"
            "      during initialization.  (See also loadmap in the debugger.)\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_LOADSYMS || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_LOADSYMS || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  loadsyms <vmname|uuid> <symfile> [delta] [module] [module address]\n"
            "      This will instruct DBGF to load the given symbol file\n"
            "      during initialization.\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_SETHDUUID || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_SETHDUUID || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  sethduuid <filepath> [<uuid>]\n"
            "       Assigns a new UUID to the given image file. This way, multiple copies\n"
            "       of a container can be registered.\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_SETHDPARENTUUID || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_SETHDPARENTUUID || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  sethdparentuuid <filepath> <uuid>\n"
            "       Assigns a new parent UUID to the given image file.\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_DUMPHDINFO || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_DUMPHDINFO || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  dumphdinfo <filepath>\n"
            "       Prints information about the image at the given location.\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_LISTPARTITIONS || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_LISTPARTITIONS || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  listpartitions -rawdisk <diskname>\n"
            "       Lists all partitions on <diskname>.\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_CREATERAWVMDK || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_CREATERAWVMDK || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
            "                [-partitions <list of partition numbers> [-mbr <filename>] ]\n"
@@ -210,13 +234,13 @@ static void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm)
            "         VBoxManage internalcommands listpartitions\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_RENAMEVMDK || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_RENAMEVMDK || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  renamevmdk -from <filename> -to <filename>\n"
            "       Renames an existing VMDK image, including the base file and all its extents.\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_CONVERTTORAW || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_CONVERTTORAW || enmCommand == USAGE_I_ALL)
 #ifdef ENABLE_CONVERT_RAW_TO_STDOUT
         ? Internal::tr(
            "  converttoraw [-format <fileformat>] <filename> <outputfile>|stdout"
@@ -231,7 +255,7 @@ static void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm)
            "\n")
 #endif
         : "",
-        (enmCommand == USAGE_I_CONVERTHD || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_CONVERTHD || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  converthd [-srcformat VDI|VMDK|VHD|RAW]\n"
            "            [-dstformat VDI|VMDK|VHD|RAW]\n"
@@ -239,7 +263,7 @@ static void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm)
            "       converts hard disk images between formats\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_REPAIRHD || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_REPAIRHD || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  repairhd [-dry-run]\n"
            "           [-format VDI|VMDK|VHD|...]\n"
@@ -248,13 +272,13 @@ static void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm)
            "\n")
         : "",
 #ifdef RT_OS_WINDOWS
-        (enmCommand == USAGE_I_MODINSTALL || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_MODINSTALL || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  modinstall\n"
            "       Installs the necessary driver for the host OS\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_MODUNINSTALL || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_MODUNINSTALL || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  moduninstall\n"
            "       Deinstalls the driver\n"
@@ -264,20 +288,20 @@ static void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm)
         "",
         "",
 #endif
-        (enmCommand == USAGE_I_DEBUGLOG || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_DEBUGLOG || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  debuglog <vmname|uuid> [--enable|--disable] [--flags todo]\n"
            "           [--groups todo] [--destinations todo]\n"
            "       Controls debug logging.\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_PASSWORDHASH || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_PASSWORDHASH || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  passwordhash <password>\n"
            "       Generates a password hash.\n"
            "\n")
         : "",
-        (enmCommand == USAGE_I_GUESTSTATS || enmCommand == USAGE_S_ALL)
+        (enmCommand == USAGE_I_GUESTSTATS || enmCommand == USAGE_I_ALL)
         ? Internal::tr(
            "  gueststats <vmname|uuid> [--interval <seconds>]\n"
            "       Obtains and prints internal guest statistics.\n"
@@ -355,6 +379,19 @@ static RTEXITCODE errorGetOptInternal(USAGECATEGORY enmCommand, int rc, union RT
     if (pValueUnion->pDef)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%s: %Rrs", pValueUnion->pDef->pszLong, rc);
     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%Rrs", rc);
+}
+
+
+/**
+ * Externally visible wrapper around printUsageInternal() to dump the
+ * complete usage text.
+ *
+ * @returns nothing.
+ * @param   pStrm           The stream to dump the usage text to.
+ */
+DECLHIDDEN(void) printUsageInternalCmds(PRTSTREAM pStrm)
+{
+    printUsageInternal(USAGE_I_ALL, pStrm);
 }
 
 
@@ -2654,7 +2691,7 @@ RTEXITCODE handleInternalCommands(HandlerArg *a)
 {
     /* at least a command is required */
     if (a->argc < 1)
-        return errorSyntaxInternal(USAGE_S_ALL, Internal::tr("Command missing"));
+        return errorSyntaxInternal(USAGE_I_ALL, Internal::tr("Command missing"));
 
     /*
      * The 'string switch' on command name.
@@ -2694,5 +2731,5 @@ RTEXITCODE handleInternalCommands(HandlerArg *a)
         return CmdRepairHardDisk(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
 
     /* default: */
-    return errorSyntaxInternal(USAGE_S_ALL, Internal::tr("Invalid command '%s'"), a->argv[0]);
+    return errorSyntaxInternal(USAGE_I_ALL, Internal::tr("Invalid command '%s'"), a->argv[0]);
 }

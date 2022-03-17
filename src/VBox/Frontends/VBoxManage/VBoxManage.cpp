@@ -614,7 +614,7 @@ int main(int argc, char *argv[])
             if (i >= argc - 1)
             {
                 showLogo(g_pStdOut);
-                printUsage(USAGE_S_ALL, RTMSGREFENTRYSTR_SCOPE_GLOBAL, g_pStdOut);
+                printUsage(g_pStdOut);
                 return 0;
             }
             fShowLogo = true;
@@ -645,7 +645,7 @@ int main(int argc, char *argv[])
         {
             /* Special option to dump really all commands,
              * even the ones not understood on this platform. */
-            printUsage(USAGE_S_DUMPOPTS, RTMSGREFENTRYSTR_SCOPE_GLOBAL, g_pStdOut);
+            printUsage(g_pStdOut);
             return 0;
         }
 
@@ -739,7 +739,7 @@ int main(int argc, char *argv[])
             || argc - iCmdArg == 0))
     {
         if (pCmd->enmCmdHelp == VBMG_CMD_INTERNAL)
-            printUsage(USAGE_INVALID, RTMSGREFENTRYSTR_SCOPE_GLOBAL, g_pStdOut);
+            printUsageInternalCmds(g_pStdOut);
         else if (fShowHelp)
             printHelp(g_pStdOut);
         else

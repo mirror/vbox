@@ -35,7 +35,7 @@ VBOX_PATH_MANUAL_OUTBASE := $(PATH_OBJ)/manual
 
 ## List of refentry files (manpages).
 VBOX_MANUAL_XML_REFENTRY_FILES := \
-	man_VBoxManage.xml \
+	man_VBoxManage-common.xml \
 	man_VBoxManage-list.xml \
 	man_VBoxManage-showvminfo.xml \
 	man_VBoxManage-registervm.xml \

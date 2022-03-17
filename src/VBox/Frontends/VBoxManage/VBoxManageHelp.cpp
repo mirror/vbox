@@ -48,7 +48,7 @@
 *********************************************************************************************************************************/
 DECLARE_TRANSLATION_CONTEXT(Help);
 
-static enum HELP_CMD_VBOXMANAGE    g_enmCurCommand = HELP_CMD_VBOXMANAGE_INVALID;
+static enum HELP_CMD_VBOXMANAGE    g_enmCurCommand = HELP_CMD_COMMON;
 /** The scope mask for the current subcommand. */
 static uint64_t                    g_fCurSubcommandScope = RTMSGREFENTRYSTR_SCOPE_GLOBAL;
 
@@ -61,7 +61,7 @@ static uint64_t                    g_fCurSubcommandScope = RTMSGREFENTRYSTR_SCOP
  */
 void setCurrentCommand(enum HELP_CMD_VBOXMANAGE enmCommand)
 {
-    Assert(g_enmCurCommand == HELP_CMD_VBOXMANAGE_INVALID);
+    Assert(g_enmCurCommand == HELP_CMD_COMMON);
     g_enmCurCommand       = enmCommand;
     g_fCurSubcommandScope = RTMSGREFENTRYSTR_SCOPE_GLOBAL;
 }
@@ -127,7 +127,8 @@ static uint32_t printBriefCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCo
         for (uint32_t i = 0; i < cHelpEntries; i++)
         {
             PCRTMSGREFENTRY pHelp = apHelpLangEntries[k]->papHelpEntries[i];
-            if (pHelp->idInternal == (int64_t)enmCommand)
+            if (   pHelp->idInternal == (int64_t)enmCommand
+                || enmCommand == HELP_CMD_COMMON)
             {
                 cFound++;
                 if (cFound == 1)
@@ -193,7 +194,7 @@ static void printFullCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCommand
             PCRTMSGREFENTRY pHelp = apHelpLangEntries[k]->papHelpEntries[i];
 
             if (   pHelp->idInternal == (int64_t)enmCommand
-                || enmCommand == HELP_CMD_VBOXMANAGE_INVALID)
+                || enmCommand == HELP_CMD_COMMON)
             {
                 cFound++;
                 RTMsgRefEntryPrintStringTable(pStrm, &pHelp->Help, fSubcommandScope, &cPendingBlankLines, NULL /*pcLinesWritten*/);
@@ -500,63 +501,5 @@ void showLogo(PRTSTREAM pStrm)
                      "All rights reserved.\n"
                      "\n");
         s_fShown = true;
-    }
-}
-
-
-
-
-void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM pStrm)
-{
-    RT_NOREF(fSubcommandScope);
-
-    Assert(enmCommand != USAGE_INVALID);
-    Assert(enmCommand != USAGE_S_NEWCMD);
-
-    if (enmCommand == USAGE_S_DUMPOPTS)
-        enmCommand = USAGE_S_ALL;
-
-    RTStrmPrintf(pStrm,
-                 Help::tr("Usage:\n"
-                          "\n"));
-
-    if (enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                     "  VBoxManage [<general option>] <command>\n"
-                     "\n"
-                     "\n"
-                     "General Options:\n"
-                     "\n"
-                     "  [-V|--version]            print version number and exit\n"
-                     "  [--dump-build-type]       print build type and exit\n"
-                     "  [-q|--nologo]             suppress the logo\n"
-                     "  [--settingspw <pw>]       provide the settings password\n"
-                     "  [--settingspwfile <file>] provide a file containing the settings password\n"
-                     "  [@<response-file>]        load arguments from the given response file (bourne style)\n"
-                     "\n"
-                     "\n"
-                     "Commands:\n"
-                     "\n");
-
-    if (enmCommand == USAGE_S_ALL)
-    {
-        uint32_t            cPendingBlankLines = 0;
-        PCHELP_LANG_ENTRY_T pHelpLangEntry     = ASMAtomicUoReadPtrT(&g_pHelpLangEntry, PCHELP_LANG_ENTRY_T);
-        uint32_t const      cHelpEntries       = *pHelpLangEntry->pcHelpEntries;
-        for (uint32_t i = 0; i < cHelpEntries; i++)
-        {
-            PCRTMSGREFENTRY pHelp = pHelpLangEntry->papHelpEntries[i];
-
-            while (cPendingBlankLines-- > 0)
-                RTStrmPutCh(pStrm, '\n');
-
-            char szFirstChar[8];
-            RTStrmPrintf(pStrm, " %s%s:\n", szFirstChar, captialize(pHelp->pszBrief, szFirstChar));
-
-            cPendingBlankLines = 0;
-            RTMsgRefEntryPrintStringTable(pStrm, &pHelp->Synopsis, RTMSGREFENTRYSTR_SCOPE_GLOBAL,
-                                          &cPendingBlankLines, NULL /*pcLinesWritten*/);
-            cPendingBlankLines = RT_MAX(cPendingBlankLines, 1);
-        }
     }
 }
