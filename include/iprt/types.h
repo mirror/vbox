@@ -951,9 +951,26 @@ typedef const RTFLOAT32U RT_FAR *PCRTFLOAT32U;
 # define RTFLOAT32U_INIT(a_fSign, a_uFraction, a_uExponent)     { { (a_uFraction), (a_uExponent), (a_fSign) } }
 #endif
 #define RTFLOAT32U_INIT_C(a_fSign, a_uFraction, a_uExponent)    RTFLOAT32U_INIT((a_fSign), UINT32_C(a_uFraction), (a_uExponent))
+/** The exponent bias for the RTFLOAT32U format. */
+#define RTFLOAT32U_EXP_BIAS                     (127)
+/** The max exponent value for the RTFLOAT32U format. */
+#define RTFLOAT32U_EXP_MAX                      (255)
+/** Fraction width (in bits) for the RTFLOAT32U format. */
+#define RTFLOAT32U_FRACTION_BITS                (23)
 /** Check if two 32-bit floating values are identical (memcmp, not
  *  numerically). */
 #define RTFLOAT32U_ARE_IDENTICAL(a_pLeft, a_pRight)             ((a_pLeft)->u == (a_pRight)->u)
+/** @name RTFLOAT32U classification macros
+ * @{ */
+#define RTFLOAT32U_IS_ZERO(a_pr32)              (((a_pr32)->u & (RT_BIT_32(31) - 1)) == 0)
+#define RTFLOAT32U_IS_SUBNORMAL(a_pr32)         ((a_pr32)->s.uExponent == 0    && (a_pr32)->s.uFraction != 0)
+#define RTFLOAT32U_IS_INF(a_pr32)               ((a_pr32)->s.uExponent == 0xff && (a_pr32)->s.uFraction == 0)
+#define RTFLOAT32U_IS_SIGNALLING_NAN(a_pr32)    ((a_pr32)->s.uExponent == 0xff && !((a_pr32)->s.uFraction & RT_BIT_32(22)) \
+                                                 && (a_pr32)->s.uFraction != 0)
+#define RTFLOAT32U_IS_QUIET_NAN(a_pr32)         ((a_pr32)->s.uExponent == 0xff && ((a_pr32)->s.uFraction & RT_BIT_32(22)))
+#define RTFLOAT32U_IS_NAN(a_pr32)               ((a_pr32)->s.uExponent == 0xff && (a_pr32)->s.uFraction != 0)
+#define RTFLOAT32U_IS_NORMAL(a_pr32)            ((a_pr32)->s.uExponent > 0 && (a_pr32)->s.uExponent < 0xff)
+/** @} */
 
 
 /**
@@ -1035,9 +1052,31 @@ typedef const RTFLOAT64U RT_FAR *PCRTFLOAT64U;
     { { (uint32_t)((a_uFraction) & UINT32_MAX), (uint32_t)((a_uFraction) >> 32), (a_uExponent), (a_fSign) } }
 #endif
 #define RTFLOAT64U_INIT_C(a_fSign, a_uFraction, a_uExponent)    RTFLOAT64U_INIT((a_fSign), UINT64_C(a_uFraction), (a_uExponent))
+/** The exponent bias for the RTFLOAT64U format. */
+#define RTFLOAT64U_EXP_BIAS                     (1023)
+/** The max exponent value for the RTFLOAT64U format. */
+#define RTFLOAT64U_EXP_MAX                      (2047)
+/** Fraction width (in bits) for the RTFLOAT64U format. */
+#define RTFLOAT64U_FRACTION_BITS                (52)
 /** Check if two 64-bit floating values are identical (memcmp, not
  *  numerically). */
 #define RTFLOAT64U_ARE_IDENTICAL(a_pLeft, a_pRight)             ((a_pLeft)->u == (a_pRight)->u)
+/** @name RTFLOAT64U classification macros
+ * @{ */
+#define RTFLOAT64U_IS_ZERO(a_pr64)              (((a_pr64)->u & (RT_BIT_64(63) - 1)) == 0)
+#define RTFLOAT64U_IS_SUBNORMAL(a_pr64)         (   (a_pr64)->s.uExponent == 0 \
+                                                 && ((a_pr64)->s.uFractionLow != 0 || (a_pr64)->s.uFractionHigh != 0) )
+#define RTFLOAT64U_IS_INF(a_pr64)               (   (a_pr64)->s.uExponent == 0x7ff \
+                                                 && (a_pr64)->s.uFractionLow == 0 && (a_pr64)->s.uFractionHigh == 0)
+#define RTFLOAT64U_IS_SIGNALLING_NAN(a_pr64)    (   (a_pr64)->s.uExponent == 0x7ff \
+                                                 && !((a_pr64)->s.uFractionHigh & RT_BIT_32(19)) \
+                                                 && ((a_pr64)->s.uFractionHigh != 0 || (a_pr64)->s.uFractionLow != 0) )
+#define RTFLOAT64U_IS_QUIET_NAN(a_pr64)         ((a_pr64)->s.uExponent == 0x7ff && ((a_pr64)->s.uFractionHigh & RT_BIT_32(19)))
+#define RTFLOAT64U_IS_NAN(a_pr64)               (   (a_pr64)->s.uExponent == 0x7ff \
+                                                 && ((a_pr64)->s.uFractionHigh != 0 || (a_pr64)->s.uFractionLow != 0) )
+#define RTFLOAT64U_IS_NORMAL(a_pr64)            ((a_pr64)->s.uExponent > 0 && (a_pr64)->s.uExponent < 0x7ff)
+/** @} */
+
 
 
 #if !defined(__IBMCPP__) && !defined(__IBMC__)
@@ -1115,11 +1154,48 @@ typedef const RTFLOAT80U RT_FAR *PCRTFLOAT80U;
 #  define RTFLOAT80U_INIT(a_fSign, a_uMantissa, a_uExponent)  { { (a_uMantissa), (a_uExponent), (a_fSign) } }
 # endif
 # define RTFLOAT80U_INIT_C(a_fSign, a_uMantissa, a_uExponent) RTFLOAT80U_INIT((a_fSign), UINT64_C(a_uMantissa), (a_uExponent))
+/** The exponent bias for the RTFLOAT80U format. */
+# define RTFLOAT80U_EXP_BIAS                    (16383)
+/** The max exponent value for the RTFLOAT80U format. */
+# define RTFLOAT80U_EXP_MAX                     (32767)
+/** Fraction width (in bits) for the RTFLOAT80U format. */
+# define RTFLOAT80U_FRACTION_BITS               (63)
 /** Check if two 80-bit floating values are identical (memcmp, not
  *  numberically). */
 # define RTFLOAT80U_ARE_IDENTICAL(a_pLeft, a_pRight) \
     (   (a_pLeft)->au64[0] == (a_pRight)->au64[0] \
      && (a_pLeft)->au16[4] == (a_pRight)->au16[4] )
+/** @name RTFLOAT80U classification macros
+ * @{ */
+# define RTFLOAT80U_IS_ZERO(a_pr80) \
+    ((a_pr80)->s.uExponent == 0 && (a_pr80)->s.uMantissa == 0)
+# define RTFLOAT80U_IS_DENORMAL(a_pr80) \
+    ((a_pr80)->s.uExponent == 0 && (a_pr80)->s.uMantissa <  RT_BIT_64(63) && (a_pr80)->s.uMantissa != 0)
+# define RTFLOAT80U_IS_PSEUDO_DENORMAL(a_pr80) \
+    ((a_pr80)->s.uExponent == 0 && (a_pr80)->s.uMantissa >= RT_BIT_64(63))
+# define RTFLOAT80U_IS_PSEUDO_INF(a_pr80) \
+    ((a_pr80)->s.uExponent == 0x7fff && (a_pr80)->s.uMantissa == 0)
+# define RTFLOAT80U_IS_PSEUDO_NAN(a_pr80) \
+    ((a_pr80)->s.uExponent == 0x7fff && !((a_pr80)->s.uMantissa & RT_BIT_64(63)))
+# define RTFLOAT80U_IS_INF(a_pr80) \
+    ((a_pr80)->s.uExponent == 0x7fff && (a_pr80)->s.uMantissa == RT_BIT_64(63))
+# define RTFLOAT80U_IS_SIGNALLING_NAN(a_pr80) \
+    (   (a_pr80)->s.uExponent == 0x7fff \
+     && ((a_pr80)->s.uMantissa & (RT_BIT_64(63) | RT_BIT_64(62))) == RT_BIT_64(63) \
+     && ((a_pr80)->s.uMantissa & (RT_BIT_64(62) - 1)) != 0)
+# define RTFLOAT80U_IS_QUIET_NAN(a_pr80) \
+    (   (a_pr80)->s.uExponent == 0x7fff \
+     && ((a_pr80)->s.uMantissa & (RT_BIT_64(63) | RT_BIT_64(62))) == (RT_BIT_64(63) | RT_BIT_64(62)) \
+     && ((a_pr80)->s.uMantissa & (RT_BIT_64(62) - 1)) != 0)
+# define RTFLOAT80U_IS_NAN(a_pr80) \
+    ((a_pr80)->s.uExponent == 0x7fff && ((a_pr80)->s.uMantissa & (RT_BIT_64(63) - 1)) != 0)
+# define RTFLOAT80U_IS_INDEFINITE(a_pr80) \
+    ((a_pr80)->s.uExponent == 0x7fff && (a_pr80)->s.uMantissa == (RT_BIT_64(63) | RT_BIT_64(62)))
+# define RTFLOAT80U_IS_UNNORMAL(a_pr80) \
+    (!((a_pr80)->s.uMantissa & RT_BIT_64(63)) && (a_pr80)->s.uExponent > 0 && (a_pr80)->s.uExponent < 0x7fff)
+# define RTFLOAT80U_IS_NORMAL(a_pr80) \
+    (((a_pr80)->s.uMantissa & RT_BIT_64(63))  && (a_pr80)->s.uExponent > 0 && (a_pr80)->s.uExponent < 0x7fff)
+/** @} */
 
 
 /**
