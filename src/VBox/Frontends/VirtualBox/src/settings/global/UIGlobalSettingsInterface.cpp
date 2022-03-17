@@ -16,8 +16,8 @@
  */
 
 /* Qt includes: */
-#include <QGridLayout>
 #include <QLabel>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "UIColorThemeEditor.h"
@@ -135,15 +135,16 @@ void UIGlobalSettingsInterface::prepare()
 void UIGlobalSettingsInterface::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
-    if (pLayoutMain)
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    if (pLayout)
     {
-        pLayoutMain->setRowStretch(1, 1);
-
         /* Prepare color-theme editor: */
         m_pEditorColorTheme = new UIColorThemeEditor(this);
         if (m_pEditorColorTheme)
-            pLayoutMain->addWidget(m_pEditorColorTheme, 0, 0);
+            pLayout->addWidget(m_pEditorColorTheme);
+
+        /* Add stretch to the end: */
+        pLayout->addStretch();
     }
 }
 

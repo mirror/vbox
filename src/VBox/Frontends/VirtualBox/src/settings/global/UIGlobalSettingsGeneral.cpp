@@ -148,21 +148,21 @@ void UIGlobalSettingsGeneral::prepare()
 void UIGlobalSettingsGeneral::prepareWidgets()
 {
     /* Prepare main layout: */
-    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
-    if (pLayoutMain)
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    if (pLayout)
     {
         /* Prepare 'default machine folder' editor: */
         m_pEditorDefaultMachineFolder = new UIDefaultMachineFolderEditor(this);
         if (m_pEditorDefaultMachineFolder)
-            pLayoutMain->addWidget(m_pEditorDefaultMachineFolder);
+            pLayout->addWidget(m_pEditorDefaultMachineFolder);
 
         /* Prepare 'VRDE auth library' editor: */
         m_pEditorVRDEAuthLibrary = new UIVRDEAuthLibraryEditor(this);
         if (m_pEditorVRDEAuthLibrary)
-            pLayoutMain->addWidget(m_pEditorVRDEAuthLibrary);
+            pLayout->addWidget(m_pEditorVRDEAuthLibrary);
 
         /* Add stretch to the end: */
-        pLayoutMain->addStretch();
+        pLayout->addStretch();
     }
 }
 

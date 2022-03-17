@@ -132,13 +132,16 @@ void UIGlobalSettingsUpdate::prepare()
 void UIGlobalSettingsUpdate::prepareWidgets()
 {
     /* Prepare main layout: */
-    QVBoxLayout *pLayoutMain = new QVBoxLayout(this);
-    if (pLayoutMain)
+    QVBoxLayout *pLayout = new QVBoxLayout(this);
+    if (pLayout)
     {
         /* Prepare update settings editor: */
         m_pEditorUpdateSettings = new UIUpdateSettingsEditor(this);
         if (m_pEditorUpdateSettings)
-            pLayoutMain->addWidget(m_pEditorUpdateSettings);
+            pLayout->addWidget(m_pEditorUpdateSettings);
+
+        /* Add stretch to the end: */
+        pLayout->addStretch();
     }
 }
 
