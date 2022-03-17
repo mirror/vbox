@@ -178,6 +178,8 @@ private slots:
         void sltRemoveMedium();
         /** Handles command to release medium. */
         void sltReleaseMedium();
+        /** Removes all inaccessible media. */
+        void sltClear();
         /** Handles command to make medium details @a fVisible. */
         void sltToggleMediumDetailsVisibility(bool fVisible);
         /** Handles command to make medium search pane @a fVisible. */

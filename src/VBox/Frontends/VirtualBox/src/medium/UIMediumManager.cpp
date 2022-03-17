@@ -524,6 +524,10 @@ void UIMediumManagerWidget::sltReleaseMedium()
         refetchCurrentChosenMediumItem();
 }
 
+void UIMediumManagerWidget::sltClear()
+{
+}
+
 void UIMediumManagerWidget::sltToggleMediumDetailsVisibility(bool fVisible)
 {
     /* Save the setting: */
@@ -753,6 +757,7 @@ void UIMediumManagerWidget::prepareActions()
     addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Move));
     addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Remove));
     addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release));
+    addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Clear));
     addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search));
     addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details));
     addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Refresh));
@@ -770,6 +775,8 @@ void UIMediumManagerWidget::prepareActions()
             this, &UIMediumManagerWidget::sltRemoveMedium);
     connect(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release), &QAction::triggered,
             this, &UIMediumManagerWidget::sltReleaseMedium);
+    connect(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Clear), &QAction::triggered,
+            this, &UIMediumManagerWidget::sltClear);
     connect(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details), &QAction::toggled,
             this, &UIMediumManagerWidget::sltToggleMediumDetailsVisibility);
     connect(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search), &QAction::toggled,
@@ -826,6 +833,7 @@ void UIMediumManagerWidget::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Move));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Release));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_S_Clear));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Search));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexMN_M_Medium_T_Details));
         m_pToolBar->addSeparator();

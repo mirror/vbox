@@ -2751,6 +2751,50 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Perform Clear' action class. */
+class UIActionMenuManagerMediumPerformClear : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuManagerMediumPerformClear(UIActionPool *pParent)
+        : UIActionSimple(pParent)
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        setIcon(0, UIIconPool::iconSetFull(":/hd_remove_32px.png",          ":/hd_remove_16px.png",
+                                           ":/hd_remove_disabled_32px.png", ":/hd_remove_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_remove_32px.png",          ":/cd_remove_16px.png",
+                                           ":/cd_remove_disabled_32px.png", ":/cd_remove_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_remove_32px.png",          ":/fd_remove_16px.png",
+                                           ":/fd_remove_disabled_32px.png", ":/fd_remove_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const RT_OVERRIDE
+    {
+        return QString("Clear");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const RT_OVERRIDE
+    {
+        return QKeySequence();
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() RT_OVERRIDE
+    {
+        setName(QApplication::translate("UIActionPool", "&Clear"));
+        setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "remove all inaccessible media"));
+        setToolTip(  QApplication::translate("UIActionPool", "Remove All Inaccessible Media")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
+    }
+};
 
 /** Menu action extension, used as 'Network' menu class. */
 class UIActionMenuManagerNetwork : public UIActionMenu
@@ -3689,6 +3733,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexMN_M_Medium_T_Details] = new UIActionMenuManagerMediumToggleProperties(this);
     m_pool[UIActionIndexMN_M_Medium_T_Search] = new UIActionMenuManagerMediumToggleSearch(this);
     m_pool[UIActionIndexMN_M_Medium_S_Refresh] = new UIActionMenuManagerMediumPerformRefresh(this);
+    m_pool[UIActionIndexMN_M_Medium_S_Clear] = new UIActionMenuManagerMediumPerformClear(this);
 
     /* Network Manager actions: */
     m_pool[UIActionIndexMN_M_NetworkWindow] = new UIActionMenuManagerNetwork(this);
@@ -4375,6 +4420,8 @@ void UIActionPoolManager::updateMenuMediumWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_S_Remove)) || fSeparator;
     /* 'Release' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_S_Release)) || fSeparator;
+    /* 'Clean' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_S_Clear)) || fSeparator;
     /* 'Search' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexMN_M_Medium_T_Search)) || fSeparator;
     /* 'Properties' action: */
