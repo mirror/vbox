@@ -541,6 +541,9 @@ RTDECL(int)  RTFileSgWriteAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t c
  * Flushes the buffers for the specified file.
  *
  * @returns iprt status code.
+ * @retval  VINF_NOT_SUPPORTED if it is a special file that does not support
+ *          flushing.  This is reported as a informational status since in most
+ *          cases this is entirely harmless (e.g. tty) and simplifies the usage.
  * @param   File        Handle to the file.
  */
 RTDECL(int)  RTFileFlush(RTFILE File);

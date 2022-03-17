@@ -832,11 +832,15 @@ RTR3DECL(bool) RTFileIsValid(RTFILE hFile)
 }
 
 
-RTR3DECL(int)  RTFileFlush(RTFILE hFile)
+RTR3DECL(int) RTFileFlush(RTFILE hFile)
 {
-    if (fsync(RTFileToNative(hFile)))
-        return RTErrConvertFromErrno(errno);
-    return VINF_SUCCESS;
+    if (!fsync(RTFileToNative(hFile)))
+        return VINF_SUCCESS;
+    /* Ignore EINVAL here as that's what returned for pseudo ttys
+       and other odd handles. */
+    if (errno == EINVAL)
+        return VINF_NOT_SUPPORTED;
+    return RTErrConvertFromErrno(errno);
 }
 
 
