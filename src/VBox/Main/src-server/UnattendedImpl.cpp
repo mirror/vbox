@@ -1389,7 +1389,8 @@ static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmO
         pszOsAndVersion = RTStrStripL(pszOsAndVersion + 6);
     }
     else if (    (   RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Xubuntu")) == 0
-                  || RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Kubuntu")) == 0)
+                  || RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Kubuntu")) == 0
+                  || RTStrNICmp(pszOsAndVersion, RT_STR_TUPLE("Lubuntu")) == 0)
              && !RT_C_IS_ALNUM(pszOsAndVersion[7]))
     {
         *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
@@ -1421,6 +1422,41 @@ static bool detectLinuxDistroName(const char *pszOsAndVersion, VBOXOSTYPE *penmO
     return fRet;
 }
 
+static bool detectLinuxDistroNameII(const char *pszOsAndVersion, VBOXOSTYPE *penmOsType, const char **ppszNext)
+{
+    bool fRet = true;
+    if (   RTStrIStr(pszOsAndVersion, "RedHat")  != NULL
+        || RTStrIStr(pszOsAndVersion, "Red Hat") != NULL)
+            *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+    else if (RTStrIStr(pszOsAndVersion, "Oracle") != NULL)
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Oracle);
+    else if (RTStrIStr(pszOsAndVersion, "CentOS") != NULL)
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_RedHat);
+    else if (RTStrIStr(pszOsAndVersion, "Fedora") != NULL)
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_FedoraCore);
+    else if (RTStrIStr(pszOsAndVersion, "Ubuntu") != NULL)
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Ubuntu);
+    else if (RTStrIStr(pszOsAndVersion, "Debian"))
+        *penmOsType = (VBOXOSTYPE)((*penmOsType & VBOXOSTYPE_x64) | VBOXOSTYPE_Debian);
+    else
+        fRet = false;
+
+    /*
+     * Skip forward till we get a number.
+     */
+    if (ppszNext)
+    {
+        *ppszNext = pszOsAndVersion;
+        char ch;
+        for (const char *pszVersion = pszOsAndVersion; (ch = *pszVersion) != '\0'; pszVersion++)
+            if (RT_C_IS_DIGIT(ch))
+            {
+                *ppszNext = pszVersion;
+                break;
+            }
+    }
+    return fRet;
+}
 
 /**
  * Detect Linux distro ISOs.
@@ -1751,6 +1787,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
      * Ubuntu 16.04.6 LTS "Xenial Xerus" - Release i386 (20190227.1)
      * Debian GNU/Linux 8.11.1 "Jessie" - Official amd64 CD Binary-1 20190211-02:10
      * Kali GNU/Linux 2021.3a "Kali-last-snapshot" - Official amd64 BD Binary-1 with firmware 20211015-16:55
+     * Official Debian GNU/Linux Live 10.10.0 cinnamon 2021-06-19T12:13
      */
     vrc = RTVfsFileOpen(hVfsIso, ".disk/info", RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN, &hVfsFile);
     if (RT_SUCCESS(vrc))
@@ -1776,25 +1813,44 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
                 pszArch = psz;
         }
 
-        if (pszDiskName && pszArch)
+        /* Some Debian Live ISO's have info file content as follows:
+         * Official Debian GNU/Linux Live 10.10.0 cinnamon 2021-06-19T12:13
+         * thus  pszArch stays empty. Try Volume Id (label) if we get lucky and get architecture from that. */
+        if (!pszArch)
+        {
+            char szVolumeId[128];
+            size_t cchVolumeId;
+            vrc = RTVfsQueryLabel(hVfsIso, szVolumeId, 128, &cchVolumeId);
+            if (RT_SUCCESS(vrc))
+            {
+                if (!detectLinuxArchII(szVolumeId, &mEnmOsType, VBOXOSTYPE_Ubuntu))
+                    LogRel(("Unattended: .disk/info: Unknown: arch='%s'\n", pszArch));
+            }
+            else
+                LogRel(("Unattended: .disk/info No Volume Label found\n"));
+        }
+        else
         {
             if (!detectLinuxArchII(pszArch, &mEnmOsType, VBOXOSTYPE_Ubuntu))
-                LogRel(("Unattended: README.diskdefines: Unknown: arch='%s'\n", pszArch));
+                LogRel(("Unattended: .disk/info: Unknown: arch='%s'\n", pszArch));
+        }
 
+        if (pszDiskName)
+        {
             const char *pszVersion = NULL;
-            if (detectLinuxDistroName(pszDiskName, &mEnmOsType, &pszVersion))
+            if (detectLinuxDistroNameII(pszDiskName, &mEnmOsType, &pszVersion))
             {
-                LogRelFlow(("Unattended: README.diskdefines: version=%s\n", pszVersion));
+                LogRelFlow(("Unattended: .disk/info: version=%s\n", pszVersion));
                 try { mStrDetectedOSVersion = RTStrStripL(pszVersion); }
                 catch (std::bad_alloc &) { return E_OUTOFMEMORY; }
             }
             else
-                LogRel(("Unattended: README.diskdefines: Unknown: diskname='%s'\n", pszDiskName));
+                LogRel(("Unattended: .disk/info: Unknown: diskname='%s'\n", pszDiskName));
         }
-        else
-            LogRel(("Unattended: README.diskdefines: Did not find both DISKNAME and ARCH. :-/\n"));
 
-        if (mEnmOsType != VBOXOSTYPE_Unknown)
+        if (mEnmOsType == VBOXOSTYPE_Unknown)
+            LogRel(("Unattended: .disk/info: Did not find DISKNAME or/and ARCH. :-/\n"));
+        else
             return S_FALSE;
     }
 
