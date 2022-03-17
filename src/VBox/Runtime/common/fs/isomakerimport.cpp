@@ -178,7 +178,7 @@ typedef struct RTFSISOMKIMPORTER
     char                szRockNameBuf[_2K];
     /** Symlink target name buffer for rock ridge.  */
     char                szRockSymlinkTargetBuf[_2K];
-    /** A buffer for reading rock ridge continuation blocks into   */
+    /** A buffer for reading rock ridge continuation blocks into. */
     uint8_t             abRockBuf[ISO9660_SECTOR_SIZE];
     /** @} */
 } RTFSISOMKIMPORTER;
@@ -640,24 +640,14 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
 {
     RT_NOREF(pObjInfo);
 
-    /*
-     * Do skipping if specified.
-     */
-    if (pThis->offSuspSkip)
-    {
-        if (cbSys <= pThis->offSuspSkip)
-            return;
-        pbSys += pThis->offSuspSkip;
-        cbSys -= pThis->offSuspSkip;
-    }
-
     while (cbSys >= 4)
     {
         /*
          * Check header length and advance the sys variables.
          */
         PCISO9660SUSPUNION pUnion = (PCISO9660SUSPUNION)pbSys;
-        if (pUnion->Hdr.cbEntry > cbSys)
+        if (   pUnion->Hdr.cbEntry > cbSys
+            && pUnion->Hdr.cbEntry < sizeof(pUnion->Hdr))
         {
             LogRel(("rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge: cbEntry=%#x cbSys=%#x (%#x %#x)\n",
                     pUnion->Hdr.cbEntry, cbSys, pUnion->Hdr.bSig1, pUnion->Hdr.bSig2));
@@ -1013,6 +1003,7 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                     pThis->szRockSymlinkTargetBuf[offDst] = '\0';
 
                     /* Purge the encoding as we don't want invalid UTF-8 floating around. */
+                    /** @todo do this afterwards as needed. */
                     RTStrPurgeEncoding(pThis->szRockSymlinkTargetBuf);
                 }
                 break;
@@ -1035,7 +1026,7 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                     uint8_t const cchName = pUnion->NM.Hdr.cbEntry - (uint8_t)RT_UOFFSETOF(ISO9660RRIPNM, achName);
                     if (pUnion->NM.fFlags & (ISO9660RRIP_NM_F_CURRENT | ISO9660RRIP_NM_F_PARENT))
                     {
-                        if (cchName == 0 && pThis->szRockNameBuf[0] == '\0')
+                        if (cchName == 0)
                             Log(("rtFsIsoImport/Rock: Ignoring 'NM' entry for '.' and '..'\n"));
                         else
                             LogRel(("rtFsIsoImport/Rock: Ignoring malformed 'NM' using '.' or '..': fFlags=%#x cchName=%#x %.*Rhxs; szRockNameBuf='%s'\n",
@@ -1052,7 +1043,8 @@ static void rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(PRTFSISOMKIMPORT
                             pThis->szRockNameBuf[offDst + cchName] = '\0';
 
                             /* Purge the encoding as we don't want invalid UTF-8 floating around. */
-                            RTStrPurgeEncoding(pThis->szRockSymlinkTargetBuf);
+                            /** @todo do this afterwards as needed. */
+                            RTStrPurgeEncoding(pThis->szRockNameBuf);
                         }
                         else
                         {
@@ -1482,13 +1474,15 @@ static int rtFsIsoImportProcessIso9660TreeWorker(PRTFSISOMKIMPORTER pThis, uint3
 
             pThis->szRockNameBuf[0] = '\0';
             pThis->szRockSymlinkTargetBuf[0] = '\0';
-            if (cbSys > 0 && !(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_ROCK_RIDGE))
+            if (   cbSys > pThis->offSuspSkip
+                && !(pThis->fFlags & RTFSISOMK_IMPORT_F_NO_ROCK_RIDGE))
             {
                 pThis->fSeenLastNM               = false;
                 pThis->fSeenLastSL               = false;
                 pThis->szRockNameBuf[0]          = '\0';
                 pThis->szRockSymlinkTargetBuf[0] = '\0';
-                rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, pbSys, cbSys, fUnicode,
+                rtFsIsoImportProcessIso9660TreeWorkerParseRockRidge(pThis, &ObjInfo, &pbSys[pThis->offSuspSkip],
+                                                                    cbSys - pThis->offSuspSkip, fUnicode,
                                                                     false /*fContinuationRecord*/, false /*fIsFirstDirRec*/);
             }
 
