@@ -292,6 +292,8 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
                           &uAvailEventIdx, sizeof(uAvailEventIdx));
 }
 #endif
+/** @} */
+
 
 DECLINLINE(uint16_t) virtioCoreVirtqAvailCnt(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTQUEUE pVirtq)
 {
