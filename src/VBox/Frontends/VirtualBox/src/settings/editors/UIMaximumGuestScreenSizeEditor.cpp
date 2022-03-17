@@ -65,21 +65,6 @@ UIMaximumGuestScreenSizeEditor::UIMaximumGuestScreenSizeEditor(QWidget *pParent 
     prepare();
 }
 
-QWidget *UIMaximumGuestScreenSizeEditor::focusProxy1() const
-{
-    return m_pComboPolicy->focusProxy();
-}
-
-QWidget *UIMaximumGuestScreenSizeEditor::focusProxy2() const
-{
-    return m_pSpinboxMaxWidth;
-}
-
-QWidget *UIMaximumGuestScreenSizeEditor::focusProxy3() const
-{
-    return m_pSpinboxMaxHeight;
-}
-
 void UIMaximumGuestScreenSizeEditor::setValue(const UIMaximumGuestScreenSizeValue &guiValue)
 {
     /* Update cached value if value has changed: */
