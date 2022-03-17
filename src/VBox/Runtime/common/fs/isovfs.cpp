@@ -4899,7 +4899,7 @@ static int rtFsIsoVol_ReturnUdfDString(const char *pachSrc, size_t cchSrc, void 
 
     if (pachSrc[0] == 8)
     {
-        uint8_t const cchText   = RT_MIN((uint8_t)pachSrc[cchSrc - 1], cchSrc - 2);
+        size_t  const cchText   = RT_MIN((uint8_t)pachSrc[cchSrc - 1], cchSrc - 2);
         size_t  const cchActual = RTStrNLen(&pachSrc[1], cchText);
         *pcbRet = cchActual + 1;
         int rc = RTStrCopyEx(pszDst, cbDst, &pachSrc[1], cchActual);
