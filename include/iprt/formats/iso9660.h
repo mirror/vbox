@@ -1340,7 +1340,7 @@ typedef ISO9660RRIPNM const *PCISO9660RRIPNM;
 #define ISO9660RRIP_NM_F_PARENT         UINT8_C(0x04)
 /** Reserved / historically was uname network node name. */
 #define ISO9660RRIP_NM_F_UNAME          UINT8_C(0x20)
-/** Reserved mask (considers historically bits reserved). */
+/** Reserved mask (considers historical bits reserved). */
 #define ISO9660RRIP_NM_F_RESERVED_MASK  UINT8_C(0xf8)
 /** @} */
 
