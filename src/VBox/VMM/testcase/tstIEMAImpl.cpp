@@ -234,6 +234,14 @@ static unsigned     g_idxBuf = 0;
 #include "tstIEMAImplData-Amd.h"
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+static const char *FormatR80(PCRTFLOAT80U pr80);
+static const char *FormatR64(PCRTFLOAT64U pr64);
+static const char *FormatR32(PCRTFLOAT32U pr32);
+
+
 /*
  * Random helpers.
  */
@@ -343,42 +351,212 @@ static uint64_t  RandU64Src(uint32_t iTest)
 }
 
 
+static void SafeR80FractionShift(PRTFLOAT80U pr80, uint8_t cShift)
+{
+    if (pr80->sj64.uFraction >= RT_BIT_64(cShift))
+        pr80->sj64.uFraction >>= cShift;
+    else
+        pr80->sj64.uFraction = cShift % 19;
+}
+
+
 static RTFLOAT80U RandR80Src(uint32_t iTest)
 {
-    RTFLOAT80U lrd;
-    if (iTest < g_cZeroSrcTests)
+    RT_NOREF(iTest);
+
+    RTFLOAT80U r80;
+    r80.au64[0] = RandU64();
+    r80.au16[4] = RandU16();
+
+    /*
+     * Make it more likely that we get a good selection of special values.
+     */
+    uint8_t bType = RandU8() & 0x1f;
+    if (bType == 0 || bType == 1 || bType == 2 || bType == 3)
     {
-        lrd.au64[0] = 0;
-        lrd.au16[4] = 0;
+        /* Zero (0), Pseudo-Infinity (1), Infinity (2), Indefinite (3). We only keep fSign here. */
+        r80.sj64.uExponent     = bType == 0 ? 0 : 0x7fff;
+        r80.sj64.uFraction     = bType <= 2 ? 0 : RT_BIT_64(62);
+        r80.sj64.fInteger      = bType >= 2 ? 1 : 0;
+        AssertMsg(bType != 0 || RTFLOAT80U_IS_ZERO(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(bType != 1 || RTFLOAT80U_IS_PSEUDO_INF(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(bType != 2 || RTFLOAT80U_IS_INF(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(bType != 3 || RTFLOAT80U_IS_INDEFINITE(&r80), ("%s\n", FormatR80(&r80)));
     }
+    else if (bType == 4 || bType == 5 || bType == 6 || bType == 7)
+    {
+        /* Denormals (4,5) and Pseudo denormals (6,7) */
+        if (bType & 1)
+            SafeR80FractionShift(&r80, r80.sj64.uExponent % 62);
+        r80.sj64.uExponent = 0;
+        r80.sj64.fInteger  = bType >= 6;
+        AssertMsg(bType >= 6 || RTFLOAT80U_IS_DENORMAL(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(bType < 6  || RTFLOAT80U_IS_PSEUDO_DENORMAL(&r80), ("%s\n", FormatR80(&r80)));
+    }
+    else if (bType == 8 || bType == 9)
+    {
+        /* Pseudo NaN. */
+        if (bType & 1)
+            SafeR80FractionShift(&r80, r80.sj64.uExponent % 62);
+        r80.sj64.uExponent = 0x7fff;
+        if (r80.sj64.fInteger)
+            r80.sj64.uFraction |= RT_BIT_64(62);
+        else
+            r80.sj64.uFraction &= ~RT_BIT_64(62);
+        r80.sj64.fInteger  = 0;
+        AssertMsg(RTFLOAT80U_IS_PSEUDO_NAN(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(RTFLOAT80U_IS_NAN(&r80), ("%s\n", FormatR80(&r80)));
+    }
+    else if (bType == 10 || bType == 11)
+    {
+        /* Quiet and signalling NaNs (using fInteger to pick which). */
+        if (bType & 1)
+            SafeR80FractionShift(&r80, r80.sj64.uExponent % 62);
+        r80.sj64.uExponent = 0x7fff;
+        if (r80.sj64.fInteger)
+            r80.sj64.uFraction |= RT_BIT_64(62);
+        else
+            r80.sj64.uFraction &= ~RT_BIT_64(62);
+        r80.sj64.fInteger  = 1;
+        AssertMsg(RTFLOAT80U_IS_SIGNALLING_NAN(&r80) || RTFLOAT80U_IS_QUIET_NAN(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(RTFLOAT80U_IS_NAN(&r80), ("%s\n", FormatR80(&r80)));
+    }
+    else if (bType == 12 || bType == 13)
+    {
+        /* Unnormals */
+        if (bType & 1)
+            SafeR80FractionShift(&r80, RandU8() % 62);
+        r80.sj64.fInteger  = 0;
+        AssertMsg(RTFLOAT80U_IS_UNNORMAL(&r80), ("%s\n", FormatR80(&r80)));
+    }
+    else if (bType < 24)
+    {
+        /* Make sure we have lots of normalized values. */
+        r80.sj64.fInteger = 1;
+        if (r80.sj64.uExponent == 0)
+            r80.sj64.uExponent = 1;
+        else if (r80.sj64.uExponent == 0x7fff)
+            r80.sj64.uExponent = 0x7ffe;
+        AssertMsg(RTFLOAT80U_IS_NORMAL(&r80), ("%s\n", FormatR80(&r80)));
+    }
+    return r80;
+}
+
+
+static void SafeR64FractionShift(PRTFLOAT64U pr64, uint8_t cShift)
+{
+    if (pr64->s64.uFraction >= RT_BIT_64(cShift))
+        pr64->s64.uFraction >>= cShift;
     else
-    {
-        lrd.au64[0] = RandU64();
-        lrd.au16[4] = RandU16();
-    }
-    return lrd;
+        pr64->s64.uFraction = cShift % 19;
 }
 
 
 static RTFLOAT64U RandR64Src(uint32_t iTest)
 {
-    RTFLOAT64U rd;
-    if (iTest < g_cZeroSrcTests)
-        rd.u = 0;
+    RT_NOREF(iTest);
+
+    RTFLOAT64U r64;
+    r64.u = RandU64();
+
+    /*
+     * Make it more likely that we get a good selection of special values.
+     * On average 6 out of 16 calls should return a special value.
+     */
+    uint8_t bType = RandU8() & 0xf;
+    if (bType == 0 || bType == 1)
+    {
+        /* 0 or Infinity. We only keep fSign here. */
+        r64.s.uExponent     = bType == 0 ? 0 : 0x7ff;
+        r64.s.uFractionHigh = 0;
+        r64.s.uFractionLow  = 0;
+        AssertMsg(bType != 0 || RTFLOAT64U_IS_ZERO(&r64), ("%s\n", FormatR64(&r64)));
+        AssertMsg(bType != 1 || RTFLOAT64U_IS_INF(&r64), ("%s\n", FormatR64(&r64)));
+    }
+    else if (bType == 2 || bType == 3)
+    {
+        /* Subnormals */
+        if (bType == 3)
+            SafeR64FractionShift(&r64, r64.s64.uExponent % 51);
+        r64.s64.uExponent = 0;
+        AssertMsg(RTFLOAT64U_IS_SUBNORMAL(&r64), ("%s\n", FormatR64(&r64)));
+    }
+    else if (bType == 4 || bType == 5)
+    {
+        /* NaNs */
+        if (bType == 5)
+            SafeR64FractionShift(&r64, r64.s64.uExponent % 51);
+        r64.s64.uExponent = 0x7ff;
+        AssertMsg(RTFLOAT64U_IS_NAN(&r64), ("%s\n", FormatR64(&r64)));
+    }
+    else if (bType < 12)
+    {
+        /* Make sure we have lots of normalized values. */
+        if (r64.s.uExponent == 0)
+            r64.s.uExponent = 1;
+        else if (r64.s.uExponent == 0x7ff)
+            r64.s.uExponent = 0x7fe;
+        AssertMsg(RTFLOAT64U_IS_NORMAL(&r64), ("%s\n", FormatR64(&r64)));
+    }
+    return r64;
+}
+
+
+static void SafeR32FractionShift(PRTFLOAT32U pr32, uint8_t cShift)
+{
+    if (pr32->s.uFraction >= RT_BIT_32(cShift))
+        pr32->s.uFraction >>= cShift;
     else
-        rd.u = RandU64();
-    return rd;
+        pr32->s.uFraction = cShift % 19;
 }
 
 
 static RTFLOAT32U RandR32Src(uint32_t iTest)
 {
-    RTFLOAT32U r;
-    if (iTest < g_cZeroSrcTests)
-        r.u = 0;
-    else
-        r.u = RandU32();
-    return r;
+    RT_NOREF(iTest);
+
+    RTFLOAT32U r32;
+    r32.u = RandU32();
+
+    /*
+     * Make it more likely that we get a good selection of special values.
+     * On average 6 out of 16 calls should return a special value.
+     */
+    uint8_t bType = RandU8() & 0xf;
+    if (bType == 0 || bType == 1)
+    {
+        /* 0 or Infinity. We only keep fSign here. */
+        r32.s.uExponent = bType == 0 ? 0 : 0xff;
+        r32.s.uFraction = 0;
+        AssertMsg(bType != 0 || RTFLOAT32U_IS_ZERO(&r32), ("%s\n", FormatR32(&r32)));
+        AssertMsg(bType != 1 || RTFLOAT32U_IS_INF(&r32), ("%s\n", FormatR32(&r32)));
+    }
+    else if (bType == 2 || bType == 3)
+    {
+        /* Subnormals */
+        if (bType == 3)
+            SafeR32FractionShift(&r32, r32.s.uExponent % 22);
+        r32.s.uExponent = 0;
+        AssertMsg(RTFLOAT32U_IS_SUBNORMAL(&r32), ("%s\n", FormatR32(&r32)));
+    }
+    else if (bType == 4 || bType == 5)
+    {
+        /* NaNs */
+        if (bType == 5)
+            SafeR32FractionShift(&r32, r32.s.uExponent % 22);
+        r32.s.uExponent = 0xff;
+        AssertMsg(RTFLOAT32U_IS_NAN(&r32), ("%s\n", FormatR32(&r32)));
+    }
+    else if (bType < 12)
+    {
+        /* Make sure we have lots of normalized values. */
+        if (r32.s.uExponent == 0)
+            r32.s.uExponent = 1;
+        else if (r32.s.uExponent == 0xff)
+            r32.s.uExponent = 0xfe;
+        AssertMsg(RTFLOAT32U_IS_NORMAL(&r32), ("%s\n", FormatR32(&r32)));
+    }
+    return r32;
 }
 
 
@@ -608,10 +786,7 @@ static const char *FormatR80(PCRTFLOAT80U pr80)
 static const char *FormatR64(PCRTFLOAT64U pr64)
 {
     char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
-    RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), "%c1m%#015RX64^%d",
-                pr64->s.fSign ? '-' : '+',
-                RT_MAKE_U64(pr64->s.uFractionLow, pr64->s.uFractionHigh),
-                pr64->s.uExponent - 1023);
+    RTStrFormatR64(pszBuf, sizeof(g_aszBuf[0]), pr64, 0, 0, RTSTR_F_SPECIAL);
     return pszBuf;
 }
 
@@ -619,10 +794,7 @@ static const char *FormatR64(PCRTFLOAT64U pr64)
 static const char *FormatR32(PCRTFLOAT32U pr32)
 {
     char *pszBuf = g_aszBuf[g_idxBuf++ % RT_ELEMENTS(g_aszBuf)];
-    RTStrPrintf(pszBuf, sizeof(g_aszBuf[0]), "%c1m%#010RX32^%d",
-                pr32->s.fSign ? '-' : '+',
-                pr32->s.uFraction,
-                pr32->s.uExponent - 127);
+    RTStrFormatR32(pszBuf, sizeof(g_aszBuf[0]), pr32, 0, 0, RTSTR_F_SPECIAL);
     return pszBuf;
 }
 
@@ -2078,7 +2250,7 @@ static void FpuLdConstGenerate(PRTSTREAM pOut, uint32_t cTests)
 
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
             {
-                IEMFPURESULT Res;
+                IEMFPURESULT Res = { RTFLOAT80U_INIT(0, 0, 0), 0 };
                 State.FCW = (State.FCW & ~X86_FCW_RC_MASK) | (iRounding << X86_FCW_RC_SHIFT);
                 g_aFpuLdConst[iFn].pfn(&State, &Res);
                 RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s }, /* #%u */\n",
@@ -2115,7 +2287,7 @@ static void FpuLoadConstTest(void)
             {
                 State.FCW = paTests[iTest].fFcw;
                 State.FSW = paTests[iTest].fFswIn;
-                IEMFPURESULT Res;
+                IEMFPURESULT Res = { RTFLOAT80U_INIT(0, 0, 0), 0 };
                 pfn(&State, &Res);
                 if (   Res.FSW != paTests[iTest].fFswOut
                     || !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].rdResult))
@@ -2160,7 +2332,7 @@ static void FpuLdR ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
             \
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++) \
             { \
-                IEMFPURESULT Res; \
+                IEMFPURESULT Res = { RTFLOAT80U_INIT(0, 0, 0), 0 }; \
                 State.FCW = (State.FCW & ~X86_FCW_RC_MASK) | (iRounding << X86_FCW_RC_SHIFT); \
                 a_aSubTests[iFn].pfn(&State, &Res, &InVal); \
                 RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u */\n", \
@@ -2213,15 +2385,17 @@ static void FpuLdR ## a_cBits ## Test(void) \
                 a_rdTypeIn const InVal = paTests[iTest].InVal; \
                 State.FCW = paTests[iTest].fFcw; \
                 State.FSW = paTests[iTest].fFswIn; \
-                IEMFPURESULT Res; \
+                IEMFPURESULT Res = { RTFLOAT80U_INIT(0, 0, 0), 0 }; \
                 pfn(&State, &Res, &InVal); \
                 if (   Res.FSW != paTests[iTest].fFswOut \
                     || !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].rdResult)) \
-                    RTTestFailed(g_hTest, "#%u%s: fcw=%#06x fsw=%#06x in=%s -> fsw=%#06x %s, expected %#06x %s%s%s (%s)\n", \
+                    RTTestFailed(g_hTest, "#%03u%s: fcw=%#06x fsw=%#06x in=%s\n" \
+                                          "%s              -> fsw=%#06x    %s\n" \
+                                          "%s            expected %#06x    %s%s%s (%s)\n", \
                                  iTest, iVar ? "/n" : "", paTests[iTest].fFcw, paTests[iTest].fFswIn, \
                                  FormatR ## a_cBits(&paTests[iTest].InVal), \
-                                 Res.FSW, FormatR80(&Res.r80Result), \
-                                 paTests[iTest].fFswOut, FormatR80(&paTests[iTest].rdResult), \
+                                 iVar ? "  " : "", Res.FSW, FormatR80(&Res.r80Result), \
+                                 iVar ? "  " : "", paTests[iTest].fFswOut, FormatR80(&paTests[iTest].rdResult), \
                                  FswDiff(Res.FSW, paTests[iTest].fFswOut), \
                                  !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].rdResult) ? " - val" : "", \
                                  FormatFcw(paTests[iTest].fFcw) ); \
@@ -2427,6 +2601,9 @@ int main(int argc, char **argv)
 
             GenerateHeader(pStrmData, "Fpu", szCpuDesc, NULL, "");
             GenerateHeader(pStrmDataCpu, "Fpu", szCpuDesc, pszCpuType, pszCpuSuff);
+
+            if (cTests < 192)
+                cTests = 192; /* need better coverage here. */
 
             FpuLdConstGenerate(pStrmData, cTests);
             FpuLdMemGenerate(pStrmData, cTests);
