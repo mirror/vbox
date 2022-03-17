@@ -3252,21 +3252,146 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fisubr_r80_by_i32,(PCX86FXSTATE pFpuState, PIEM
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r80_from_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT32U pr32Val))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr32Val);
-    AssertReleaseFailed();
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
+    if (RTFLOAT32U_IS_NORMAL(pr32Val))
+    {
+        pFpuRes->r80Result.sj64.fSign     = pr32Val->s.fSign;
+        pFpuRes->r80Result.sj64.fInteger  = 1;
+        pFpuRes->r80Result.sj64.uFraction = (uint64_t)pr32Val->s.uFraction
+                                         << (RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS);
+        pFpuRes->r80Result.sj64.uExponent = pr32Val->s.uExponent - RTFLOAT32U_EXP_BIAS + RTFLOAT80U_EXP_BIAS;
+        Assert(RTFLOAT80U_IS_NORMAL(&pFpuRes->r80Result));
+    }
+    else if (RTFLOAT32U_IS_ZERO(pr32Val))
+    {
+        pFpuRes->r80Result.s.fSign     = pr32Val->s.fSign;
+        pFpuRes->r80Result.s.uExponent = 0;
+        pFpuRes->r80Result.s.uMantissa = 0;
+        Assert(RTFLOAT80U_IS_ZERO(&pFpuRes->r80Result));
+    }
+    else if (RTFLOAT32U_IS_SUBNORMAL(pr32Val))
+    {
+        /* Subnormal values gets normalized. */
+        pFpuRes->r80Result.sj64.fSign     = pr32Val->s.fSign;
+        pFpuRes->r80Result.sj64.fInteger  = 1;
+        unsigned const cExtraShift = RTFLOAT32U_FRACTION_BITS - ASMBitLastSetU32(pr32Val->s.uFraction);
+        pFpuRes->r80Result.sj64.uFraction = (uint64_t)pr32Val->s.uFraction
+                                         << (RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS + cExtraShift + 1);
+        pFpuRes->r80Result.sj64.uExponent = pr32Val->s.uExponent - RTFLOAT32U_EXP_BIAS + RTFLOAT80U_EXP_BIAS - cExtraShift;
+        pFpuRes->FSW |= X86_FSW_DE;
+        if (!(pFpuState->FCW & X86_FCW_DM))
+            pFpuRes->FSW |= X86_FSW_ES | X86_FSW_B; /* The value is still pushed. */
+    }
+    else if (RTFLOAT32U_IS_INF(pr32Val))
+    {
+        pFpuRes->r80Result.s.fSign     = pr32Val->s.fSign;
+        pFpuRes->r80Result.s.uExponent = RTFLOAT80U_EXP_MAX;
+        pFpuRes->r80Result.s.uMantissa = RT_BIT_64(63);
+        Assert(RTFLOAT80U_IS_INF(&pFpuRes->r80Result));
+    }
+    else
+    {
+        /* Signalling and quiet NaNs, both turn into quiet ones when loaded (weird). */
+        Assert(RTFLOAT32U_IS_NAN(pr32Val));
+        pFpuRes->r80Result.sj64.fSign     = pr32Val->s.fSign;
+        pFpuRes->r80Result.sj64.uExponent = RTFLOAT80U_EXP_MAX;
+        pFpuRes->r80Result.sj64.fInteger  = 1;
+        pFpuRes->r80Result.sj64.uFraction = (uint64_t)pr32Val->s.uFraction
+                                         << (RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS);
+        if (RTFLOAT32U_IS_SIGNALLING_NAN(pr32Val))
+        {
+            pFpuRes->r80Result.sj64.uFraction |= RT_BIT_64(62); /* make quiet */
+            Assert(RTFLOAT80U_IS_QUIET_NAN(&pFpuRes->r80Result));
+            pFpuRes->FSW |= X86_FSW_IE;
+
+            if (!(pFpuState->FCW & X86_FCW_IM))
+            {
+                /* The value is not pushed. */
+                pFpuRes->FSW &= ~X86_FSW_TOP_MASK;
+                pFpuRes->FSW |= X86_FSW_ES | X86_FSW_B;
+                pFpuRes->r80Result.au64[0] = 0;
+                pFpuRes->r80Result.au16[4] = 0;
+            }
+        }
+        else
+            Assert(RTFLOAT80U_IS_QUIET_NAN(&pFpuRes->r80Result));
+    }
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r80_from_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT64U pr64Val))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr64Val);
-    AssertReleaseFailed();
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
+    if (RTFLOAT64U_IS_NORMAL(pr64Val))
+    {
+        pFpuRes->r80Result.sj64.fSign     = pr64Val->s.fSign;
+        pFpuRes->r80Result.sj64.fInteger  = 1;
+        pFpuRes->r80Result.sj64.uFraction = pr64Val->s64.uFraction << (RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS);
+        pFpuRes->r80Result.sj64.uExponent = pr64Val->s.uExponent - RTFLOAT64U_EXP_BIAS + RTFLOAT80U_EXP_BIAS;
+        Assert(RTFLOAT80U_IS_NORMAL(&pFpuRes->r80Result));
+    }
+    else if (RTFLOAT64U_IS_ZERO(pr64Val))
+    {
+        pFpuRes->r80Result.s.fSign     = pr64Val->s.fSign;
+        pFpuRes->r80Result.s.uExponent = 0;
+        pFpuRes->r80Result.s.uMantissa = 0;
+        Assert(RTFLOAT80U_IS_ZERO(&pFpuRes->r80Result));
+    }
+    else if (RTFLOAT64U_IS_SUBNORMAL(pr64Val))
+    {
+        /* Subnormal values gets normalized. */
+        pFpuRes->r80Result.sj64.fSign     = pr64Val->s.fSign;
+        pFpuRes->r80Result.sj64.fInteger  = 1;
+        unsigned const cExtraShift = RTFLOAT64U_FRACTION_BITS - ASMBitLastSetU64(pr64Val->s64.uFraction);
+        pFpuRes->r80Result.sj64.uFraction = pr64Val->s64.uFraction
+                                         << (RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS + cExtraShift + 1);
+        pFpuRes->r80Result.sj64.uExponent = pr64Val->s.uExponent - RTFLOAT64U_EXP_BIAS + RTFLOAT80U_EXP_BIAS - cExtraShift;
+        pFpuRes->FSW |= X86_FSW_DE;
+        if (!(pFpuState->FCW & X86_FCW_DM))
+            pFpuRes->FSW |= X86_FSW_ES | X86_FSW_B; /* The value is still pushed. */
+    }
+    else if (RTFLOAT64U_IS_INF(pr64Val))
+    {
+        pFpuRes->r80Result.s.fSign     = pr64Val->s.fSign;
+        pFpuRes->r80Result.s.uExponent = RTFLOAT80U_EXP_MAX;
+        pFpuRes->r80Result.s.uMantissa = RT_BIT_64(63);
+        Assert(RTFLOAT80U_IS_INF(&pFpuRes->r80Result));
+    }
+    else
+    {
+        /* Signalling and quiet NaNs, both turn into quiet ones when loaded (weird). */
+        Assert(RTFLOAT64U_IS_NAN(pr64Val));
+        pFpuRes->r80Result.sj64.fSign     = pr64Val->s.fSign;
+        pFpuRes->r80Result.sj64.uExponent = RTFLOAT80U_EXP_MAX;
+        pFpuRes->r80Result.sj64.fInteger  = 1;
+        pFpuRes->r80Result.sj64.uFraction = pr64Val->s64.uFraction << (RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS);
+        if (RTFLOAT64U_IS_SIGNALLING_NAN(pr64Val))
+        {
+            pFpuRes->r80Result.sj64.uFraction |= RT_BIT_64(62); /* make quiet */
+            Assert(RTFLOAT80U_IS_QUIET_NAN(&pFpuRes->r80Result));
+            pFpuRes->FSW |= X86_FSW_IE;
+
+            if (!(pFpuState->FCW & X86_FCW_IM))
+            {
+                /* The value is not pushed. */
+                pFpuRes->FSW &= ~X86_FSW_TOP_MASK;
+                pFpuRes->FSW |= X86_FSW_ES | X86_FSW_B;
+                pFpuRes->r80Result.au64[0] = 0;
+                pFpuRes->r80Result.au16[4] = 0;
+            }
+        }
+        else
+            Assert(RTFLOAT80U_IS_QUIET_NAN(&pFpuRes->r80Result));
+    }
 }
+
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r80_from_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
 {
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
+    pFpuRes->r80Result.au64[0] = pr80Val->au64[0];
+    pFpuRes->r80Result.au16[4] = pr80Val->au16[4];
+    /* Raises no exceptions. */
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
 }
 
 
