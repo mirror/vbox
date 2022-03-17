@@ -1824,7 +1824,7 @@ HRESULT Unattended::i_innerDetectIsoOSLinux(RTVFS hVfsIso, DETECTBUFFER *pBuf)
             if (RT_SUCCESS(vrc))
             {
                 if (!detectLinuxArchII(szVolumeId, &mEnmOsType, VBOXOSTYPE_Ubuntu))
-                    LogRel(("Unattended: .disk/info: Unknown: arch='%s'\n", pszArch));
+                    LogRel(("Unattended: .disk/info: Unknown: arch='%s'\n", szVolumeId));
             }
             else
                 LogRel(("Unattended: .disk/info No Volume Label found\n"));
