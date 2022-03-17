@@ -250,7 +250,7 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
                  : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-0"));
         fDenormal = true;
     }
-    else if (uExponent == RTFLOAT64U_EXP_MAX)
+    else if (uExponent == RTFLOAT80U_EXP_MAX)
     {
         if (!fInteger)
         {
@@ -284,7 +284,7 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
                 return rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("QNan"));
             pszTmp = (char *)memcpy(pszTmp, "QNan[", 5) + 5;
         }
-        pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + RTFLOAT64U_FRACTION_BITS / 4, 0,
+        pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + RTFLOAT80U_FRACTION_BITS / 4, 0,
                                     RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
         *pszTmp++ = ']';
         return rtStrFormatCopyOutStr(pszBuf, cbBuf, szTmp, pszTmp - &szTmp[0]);
@@ -295,11 +295,11 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
      */
     *pszTmp++ = fInteger ? '1' : '0';
     *pszTmp++ = 'm';
-    pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + RTFLOAT64U_FRACTION_BITS / 4, 0,
+    pszTmp += RTStrFormatNumber(pszTmp, uFraction, 16, 2 + RTFLOAT80U_FRACTION_BITS / 4, 0,
                                 RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD | RTSTR_F_64BIT);
 
     *pszTmp++ = '^';
-    pszTmp += RTStrFormatNumber(pszTmp, (int32_t)uExponent - RTFLOAT64U_EXP_BIAS, 10, 0, 0,
+    pszTmp += RTStrFormatNumber(pszTmp, (int32_t)uExponent - RTFLOAT80U_EXP_BIAS, 10, 0, 0,
                                 RTSTR_F_ZEROPAD | RTSTR_F_32BIT | RTSTR_F_VALSIGNED);
     if (fDenormal && (fFlags & RTSTR_F_SPECIAL))
     {
