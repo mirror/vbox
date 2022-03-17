@@ -57,6 +57,31 @@
 # if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX)
 #  include <alloca.h>
 # endif
+
+# if defined(RT_OS_SOLARIS) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)) \
+  && defined(_SYS_REGSET_H) && !defined(IPRT_NO_SOLARIS_UCONTEXT_CLEANUPS)
+/* Solaris' sys/regset.h pollutes the namespace with register constants that
+   frequently conflicts with structure members and variable/parameter names.  */
+#  undef CS
+#  undef DS
+#  undef EAX
+#  undef EBP
+#  undef EBX
+#  undef ECX
+#  undef EDI
+#  undef EDX
+#  undef EFL
+#  undef EIP
+#  undef ERR
+#  undef ES
+#  undef ESI
+#  undef ESP
+#  undef FS
+#  undef GS
+#  undef SS
+#  undef TRAPNO
+#  undef UESP
+# endif
 #endif
 
 #endif /* !IPRT_INCLUDED_alloca_h */
