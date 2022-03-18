@@ -172,3 +172,18 @@ VBGLR3DECL(int) VbglR3DrmLegacyClientStart(void)
 #endif
 }
 
+/**
+ * Starts (executes) the legacy X11 resizing agent process ("VBoxClient --display").
+ *
+ * @returns VBox status code.
+ */
+VBGLR3DECL(int) VbglR3DrmLegacyX11AgentStart(void)
+{
+#if defined(RT_OS_LINUX)
+    const char *apszArgs[3] = { VBOX_DRMCLIENT_LEGACY_EXECUTABLE, "--display", NULL };
+    return VbglR3DrmStart(VBOX_DRMCLIENT_LEGACY_EXECUTABLE, apszArgs);
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
