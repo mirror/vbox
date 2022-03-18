@@ -954,6 +954,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
     VBGL_HGCM_HDR_INIT_TIMED(&Msg.hdr, idClient, GUEST_PROP_FN_GET_NOTIFICATION, 4, cMillies);
 
     VbglHGCMParmPtrSetString(&Msg.patterns, pszPatterns);
+    RT_BZERO(pvBuf, cbBuf);
     VbglHGCMParmPtrSet(&Msg.buffer, pvBuf, cbBuf);
     VbglHGCMParmUInt64Set(&Msg.timestamp, u64Timestamp);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
@@ -1007,10 +1008,6 @@ VBGLR3DECL(int) VbglR3GuestPropWait(HGCMCLIENTID idClient,
                             ("'%s'\n", pszWasDeleted), VERR_PARSE_ERROR);
         if (pfWasDeleted)
             *pfWasDeleted = chWasDeleted == '1';
-
-        /* Validate end of buffer string. */
-        char *pszEos = RTStrEnd(pszWasDeleted, cbBuf - (pszWasDeleted - (char *)pvBuf));
-        AssertPtrReturn(pszEos, VERR_TOO_MUCH_DATA);
     }
 
     /* And the timestamp, if requested. */
