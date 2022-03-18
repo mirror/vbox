@@ -135,6 +135,13 @@ test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
 MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
 BUILDINTMP="$MODULE_SRC/build_in_tmp"
 
+# Attempt to detect VirtualBox Guest Additions version and revision information.
+VBOXCLIENT="${INSTALL_DIR}/bin/VBoxClient"
+VBOX_VERSION="`"$VBOXCLIENT" --version | cut -d r -f1`"
+[ -n "$VBOX_VERSION" ] || VBOX_VERSION='unknown'
+VBOX_REVISION="r`"$VBOXCLIENT" --version | cut -d r -f2`"
+[ "$VBOX_REVISION" != "r" ] || VBOX_REVISION='unknown'
+
 running_vboxguest()
 {
     lsmod | grep -q "vboxguest[^_-]"
@@ -403,6 +410,75 @@ shared_folder_setup()
     fi
 }
 
+# Returns path to module file as seen by modinfo(8) or empty string.
+module_path()
+{
+    mod="$1"
+    [ -n "$mod" ] || return
+
+    modinfo "$mod" 2>/dev/null | grep -e "^filename:" | tr -s ' ' | cut -d " " -f2
+}
+
+# Returns module version if module is available or empty string.
+module_version()
+{
+    mod="$1"
+    [ -n "$mod" ] || return
+
+    modinfo "$mod" 2>/dev/null | grep -e "^version:" | tr -s ' ' | cut -d " " -f2
+}
+
+# Returns module revision if module is available in the system or empty string.
+module_revision()
+{
+    mod="$1"
+    [ -n "$mod" ] || return
+
+    modinfo "$mod" 2>/dev/null | grep -e "^version:" | tr -s ' ' | cut -d " " -f3
+}
+
+# Returns "1" if externally built module is available in the system and its
+# version and revision number do match to current VirtualBox installation.
+# Or empty string otherwise.
+module_available()
+{
+    mod="$1"
+    [ -n "$mod" ] || return
+
+    [ "$VBOX_VERSION" = "$(module_version "$mod")" ] || return
+    [ "$VBOX_REVISION" = "$(module_revision "$mod")" ] || return
+
+    # Check if module belongs to VirtualBox installation.
+    #
+    # We have a convention that only modules from /lib/modules/*/misc
+    # belong to us. Modules from other locations are treated as
+    # externally built.
+    mod_path="$(module_path "$mod")"
+
+    # If module path points to a symbolic link, resolve actual file location.
+    [ -L "$mod_path" ] && mod_path="$(readlink -e -- "$mod_path")"
+
+    # File exists?
+    [ -f "$mod_path" ] || return
+
+    # Extract last component of module path and check whether it is located
+    # outside of /lib/modules/*/misc.
+    mod_dir="$(dirname "$mod_path" | sed 's;^.*/;;')"
+    [ "$mod_dir" = "misc" ] || return
+
+    echo "1"
+}
+
+# Check if required modules are installed in the system and versions match.
+setup_complete()
+{
+    [ "$(module_available vboxguest)"   = "1" ] || return
+    [ "$(module_available vboxsf)"      = "1" ] || return
+
+    # All modules are in place.
+    echo "1"
+}
+
 # setup_script
 setup()
 {
@@ -411,18 +487,25 @@ setup()
         chcon -t bin_t "$BUILDINTMP" 2>/dev/null
 
     if test -z "$INSTALL_NO_MODULE_BUILDS"; then
-        info "Building the VirtualBox Guest Additions kernel modules.  This may take a while."
-        info "To build modules for other installed kernels, run"
-        info "  /sbin/rcvboxadd quicksetup <version>"
-        info "or"
-        info "  /sbin/rcvboxadd quicksetup all"
-        if test -d /lib/modules/"$TARGET_VER"/build; then
-            setup_modules "$TARGET_VER"
-            depmod
+        # Check whether modules setup is already complete for currently running kernel.
+        # Prevent unnecessary rebuilding in order to speed up booting process.
+        if test "$(setup_complete)" = "1"; then
+            info "VirtualBox Guest Additions kernel modules $VBOX_VERSION $VBOX_REVISION are"
+            info "already available for kernel $TARGET_VER and do not require to be rebuilt."
         else
-            info "Kernel headers not found for target kernel $TARGET_VER. \
+            info "Building the VirtualBox Guest Additions kernel modules.  This may take a while."
+            info "To build modules for other installed kernels, run"
+            info "  /sbin/rcvboxadd quicksetup <version>"
+            info "or"
+            info "  /sbin/rcvboxadd quicksetup all"
+            if test -d /lib/modules/"$TARGET_VER"/build; then
+                setup_modules "$TARGET_VER"
+                depmod
+            else
+                info "Kernel headers not found for target kernel $TARGET_VER. \
 Please install them and execute
   /sbin/rcvboxadd setup"
+            fi
         fi
     fi
     create_vbox_user
