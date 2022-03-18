@@ -50,6 +50,7 @@
 #define VBOXCLIENT_OPT_SEAMLESS             VBOXCLIENT_OPT_SERVICES + 3
 #define VBOXCLIENT_OPT_VMSVGA               VBOXCLIENT_OPT_SERVICES + 4
 #define VBOXCLIENT_OPT_VMSVGA_SESSION       VBOXCLIENT_OPT_SERVICES + 5
+#define VBOXCLIENT_OPT_DISPLAY              VBOXCLIENT_OPT_SERVICES + 6
 
 
 /*********************************************************************************************************************************
@@ -288,6 +289,7 @@ static void vboxClientUsage(const char *pcszFileName)
 #else
     RTPrintf("  --vmsvga-session     an alias for --vmsvga\n");
 #endif
+    RTPrintf("  --display            starts VMSVGA dynamic resizing for legacy guests\n");
 #endif
     RTPrintf("  -f, --foreground     run in the foreground (no daemonizing)\n");
     RTPrintf("  -d, --nodaemon       continues running as a system service\n");
@@ -388,6 +390,7 @@ int main(int argc, char *argv[])
 #ifdef VBOX_WITH_VMSVGA
         { "--vmsvga",                       VBOXCLIENT_OPT_VMSVGA,                    RTGETOPT_REQ_NOTHING },
         { "--vmsvga-session",               VBOXCLIENT_OPT_VMSVGA_SESSION,            RTGETOPT_REQ_NOTHING },
+        { "--display",                      VBOXCLIENT_OPT_DISPLAY,                    RTGETOPT_REQ_NOTHING },
 #endif
     };
 
@@ -508,6 +511,14 @@ int main(int argc, char *argv[])
 # else
                 g_Service.pDesc = &g_SvcDisplaySVGA;
 # endif
+                break;
+            }
+
+            case VBOXCLIENT_OPT_DISPLAY:
+            {
+                if (g_Service.pDesc)
+                    return vbclSyntaxOnlyOneService();
+                g_Service.pDesc = &g_SvcDisplayLegacy;
                 break;
             }
 #endif

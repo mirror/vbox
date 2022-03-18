@@ -210,7 +210,7 @@ static int determineOutputCount();
 #define checkFunctionPtr(pFunction) \
     do { \
         if (!pFunction) \
-            VBClLogFatalError("Could not find symbol address (%s)\n", #pFunction);\
+            VBClLogError("Could not find symbol address (%s)\n", #pFunction);\
     } while (0)
 
 
@@ -850,46 +850,46 @@ static int openLibRandR()
     x11Context.fMonitorInfoAvailable = x11Context.pXRRGetMonitors && x11Context.pXRRFreeMonitors;
 
     *(void **)(&x11Context.pXRRGetScreenResources) = dlsym(x11Context.pRandLibraryHandle, "XRRGetScreenResources");
-    checkFunctionPtrReturn(x11Context.pXRRGetScreenResources);
+    checkFunctionPtr(x11Context.pXRRGetScreenResources);
 
     *(void **)(&x11Context.pXRRSetCrtcConfig) = dlsym(x11Context.pRandLibraryHandle, "XRRSetCrtcConfig");
-    checkFunctionPtrReturn(x11Context.pXRRSetCrtcConfig);
+    checkFunctionPtr(x11Context.pXRRSetCrtcConfig);
 
     *(void **)(&x11Context.pXRRFreeScreenResources) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeScreenResources");
-    checkFunctionPtrReturn(x11Context.pXRRFreeScreenResources);
+    checkFunctionPtr(x11Context.pXRRFreeScreenResources);
 
     *(void **)(&x11Context.pXRRFreeModeInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeModeInfo");
-    checkFunctionPtrReturn(x11Context.pXRRFreeModeInfo);
+    checkFunctionPtr(x11Context.pXRRFreeModeInfo);
 
     *(void **)(&x11Context.pXRRFreeOutputInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeOutputInfo");
-    checkFunctionPtrReturn(x11Context.pXRRFreeOutputInfo);
+    checkFunctionPtr(x11Context.pXRRFreeOutputInfo);
 
     *(void **)(&x11Context.pXRRSetScreenSize) = dlsym(x11Context.pRandLibraryHandle, "XRRSetScreenSize");
-    checkFunctionPtrReturn(x11Context.pXRRSetScreenSize);
+    checkFunctionPtr(x11Context.pXRRSetScreenSize);
 
     *(void **)(&x11Context.pXRRUpdateConfiguration) = dlsym(x11Context.pRandLibraryHandle, "XRRUpdateConfiguration");
-    checkFunctionPtrReturn(x11Context.pXRRUpdateConfiguration);
+    checkFunctionPtr(x11Context.pXRRUpdateConfiguration);
 
     *(void **)(&x11Context.pXRRAllocModeInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRAllocModeInfo");
-    checkFunctionPtrReturn(x11Context.pXRRAllocModeInfo);
+    checkFunctionPtr(x11Context.pXRRAllocModeInfo);
 
     *(void **)(&x11Context.pXRRCreateMode) = dlsym(x11Context.pRandLibraryHandle, "XRRCreateMode");
-    checkFunctionPtrReturn(x11Context.pXRRCreateMode);
+    checkFunctionPtr(x11Context.pXRRCreateMode);
 
     *(void **)(&x11Context.pXRRGetOutputInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRGetOutputInfo");
-    checkFunctionPtrReturn(x11Context.pXRRGetOutputInfo);
+    checkFunctionPtr(x11Context.pXRRGetOutputInfo);
 
     *(void **)(&x11Context.pXRRGetCrtcInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRGetCrtcInfo");
-    checkFunctionPtrReturn(x11Context.pXRRGetCrtcInfo);
+    checkFunctionPtr(x11Context.pXRRGetCrtcInfo);
 
     *(void **)(&x11Context.pXRRFreeCrtcInfo) = dlsym(x11Context.pRandLibraryHandle, "XRRFreeCrtcInfo");
-    checkFunctionPtrReturn(x11Context.pXRRFreeCrtcInfo);
+    checkFunctionPtr(x11Context.pXRRFreeCrtcInfo);
 
     *(void **)(&x11Context.pXRRAddOutputMode) = dlsym(x11Context.pRandLibraryHandle, "XRRAddOutputMode");
-    checkFunctionPtrReturn(x11Context.pXRRAddOutputMode);
+    checkFunctionPtr(x11Context.pXRRAddOutputMode);
 
     *(void **)(&x11Context.pXRRSetOutputPrimary) = dlsym(x11Context.pRandLibraryHandle, "XRRSetOutputPrimary");
-    checkFunctionPtrReturn(x11Context.pXRRSetOutputPrimary);
+    checkFunctionPtr(x11Context.pXRRSetOutputPrimary);
 
     return VINF_SUCCESS;
 }
@@ -973,9 +973,13 @@ static void x11Connect()
         }
         if (x11Context.hRandRMajor < 1 || x11Context.hRandRMinor <= 3)
         {
-            VBClLogFatalError("Resizing service requires libXrandr Version >= 1.4. Detected version is %d.%d\n", x11Context.hRandRMajor, x11Context.hRandRMinor);
+            VBClLogError("Resizing service requires libXrandr Version >= 1.4. Detected version is %d.%d\n", x11Context.hRandRMajor, x11Context.hRandRMinor);
             XCloseDisplay(x11Context.pDisplay);
             x11Context.pDisplay = NULL;
+
+            int rc = VbglR3DrmLegacyX11AgentStart();
+            VBClLogInfo("Attempt to start legacy X11 resize agent, rc=%Rrc\n", rc);
+
             return;
         }
     }

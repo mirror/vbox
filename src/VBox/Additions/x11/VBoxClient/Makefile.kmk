@@ -126,6 +126,7 @@ endif
 ifdef VBOX_WITH_VMSVGA
  VBoxClient_DEFS    += VBOX_WITH_VMSVGA
  VBoxClient_SOURCES += \
+	display.cpp \
 	display-svga-x11.cpp
  VBoxClient_SOURCES.linux += \
 	display-svga-session.cpp \
