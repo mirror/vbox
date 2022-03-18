@@ -643,7 +643,7 @@ static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIMEDIA pHardDisk, PPDMMED
             || LCHSGeometry.cCylinders == 0
             || LCHSGeometry.cCylinders > 1024
             || LCHSGeometry.cHeads == 0
-            || LCHSGeometry.cHeads > 16
+            || LCHSGeometry.cHeads > 255
             || LCHSGeometry.cSectors == 0
             || LCHSGeometry.cSectors > 63)
         {
