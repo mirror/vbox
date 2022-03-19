@@ -3215,9 +3215,9 @@ class TxsConnectTask(TdTaskBase):
             self.oParentTask = dArgs['oParentTask'];
             self.sMachineId  = dArgs['sMachineId'];
 
-        def onGuestPropertyChange(self, sMachineId, sName, sValue, sFlags):
+        def onGuestPropertyChange(self, sMachineId, sName, sValue, sFlags, fWasDeleted):
             """Look for IP address."""
-            reporter.log2('onGuestPropertyChange(,%s,%s,%s,%s)' % (sMachineId, sName, sValue, sFlags));
+            reporter.log2('onGuestPropertyChange(,%s,%s,%s,%s,%s)' % (sMachineId, sName, sValue, sFlags, fWasDeleted));
             if    sMachineId == self.sMachineId \
               and sName  == '/VirtualBox/GuestInfo/Net/0/V4/IP':
                 oParentTask = self.oParentTask;
