@@ -957,6 +957,32 @@ RTDECL(int) RTFileMove(const char *pszSrc, const char *pszDst, unsigned fMove);
 
 
 /**
+ * Creates a new file with a unique name using the given template, returning a
+ * handle to it.
+ *
+ * One or more trailing X'es in the template will be replaced by random alpha
+ * numeric characters until a RTFileOpen with RTFILE_O_CREATE succeeds or we
+ * run out of patience.
+ * For instance:
+ *          "/tmp/myprog-XXXXXX"
+ *
+ * As an alternative to trailing X'es, it is possible to put 3 or more X'es
+ * somewhere inside the file name. In the following string only the last
+ * bunch of X'es will be modified:
+ *          "/tmp/myprog-XXX-XXX.tmp"
+ *
+ * @returns IPRT status code.
+ * @param   phFile          Where to return the file handle on success.  Set to
+ *                          NIL on failure.
+ * @param   pszTemplate     The file name template on input. The actual file
+ *                          name on success. Empty string on failure.
+ * @param   fOpen           The RTFILE_O_XXX flags to open the file with.
+ *                          RTFILE_O_CREATE is mandatory.
+ * @see     RTFileCreateTemp
+ */
+RTDECL(int) RTFileCreateUnique(PRTFILE phFile, char *pszTemplate, uint64_t fOpen);
+
+/**
  * Creates a new file with a unique name using the given template.
  *
  * One or more trailing X'es in the template will be replaced by random alpha
@@ -975,6 +1001,7 @@ RTDECL(int) RTFileMove(const char *pszSrc, const char *pszDst, unsigned fMove);
  *                          name on success. Empty string on failure.
  * @param   fMode           The mode to create the file with.  Use 0600 unless
  *                          you have reason not to.
+ * @see     RTFileCreateUnique
  */
 RTDECL(int) RTFileCreateTemp(char *pszTemplate, RTFMODE fMode);
 
@@ -997,6 +1024,7 @@ RTDECL(int) RTFileCreateTemp(char *pszTemplate, RTFMODE fMode);
  * @returns VERR_INSECURE      if the file could not be created securely.
  * @param   pszTemplate        The file name template on input. The actual
  *                             file name on success. Empty string on failure.
+ * @see     RTFileCreateUnique
  */
 RTDECL(int) RTFileCreateTempSecure(char *pszTemplate);
 

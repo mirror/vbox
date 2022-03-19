@@ -967,6 +967,7 @@
 # define RTFileCopyPartCleanup                          RT_MANGLER(RTFileCopyPartCleanup)
 # define RTFileCopyPartEx                               RT_MANGLER(RTFileCopyPartEx)
 # define RTFileCopyPartPrep                             RT_MANGLER(RTFileCopyPartPrep)
+# define RTFileCreateUnique                             RT_MANGLER(RTFileCreateUnique)
 # define RTFileCreateTemp                               RT_MANGLER(RTFileCreateTemp)
 # define RTFileCreateTempSecure                         RT_MANGLER(RTFileCreateTempSecure)
 # define RTFileDelete                                   RT_MANGLER(RTFileDelete)
