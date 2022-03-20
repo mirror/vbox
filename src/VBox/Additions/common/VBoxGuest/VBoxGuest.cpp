@@ -2343,6 +2343,7 @@ static int vgdrvCheckIfVmmReqIsAllowed(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
         case VMMDevReq_RegisterPatchMemory:
         case VMMDevReq_DeregisterPatchMemory:
         case VMMDevReq_GetMemBalloonChangeRequest:
+        case VMMDevReq_ChangeMemBalloon:
             enmRequired = kLevel_OnlyVBoxGuest;
             break;
 
@@ -2362,7 +2363,6 @@ static int vgdrvCheckIfVmmReqIsAllowed(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
         case VMMDevReq_ReportGuestStats:
         case VMMDevReq_ReportGuestUserState:
         case VMMDevReq_GetStatisticsChangeRequest:
-        case VMMDevReq_ChangeMemBalloon:
             enmRequired = kLevel_TrustedUsers;
             break;
 
