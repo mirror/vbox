@@ -295,58 +295,55 @@ static void vbglPhysHeapExcludeBlock (VBGLPHYSHEAPBLOCK *pBlock)
     pBlock->pPrev = NULL;
 }
 
-static VBGLPHYSHEAPBLOCK *vbglPhysHeapChunkAlloc (uint32_t cbSize)
+static VBGLPHYSHEAPBLOCK *vbglPhysHeapChunkAlloc(uint32_t cbMinBlock)
 {
-    RTCCPHYS physAddr;
+    RTCCPHYS           PhysAddr = NIL_RTHCPHYS;
     VBGLPHYSHEAPCHUNK *pChunk;
-    VBGLPHYSHEAPBLOCK *pBlock;
-    VBGL_PH_dprintf(("Allocating new chunk of size %d\n", cbSize));
+    uint32_t           cbChunk;
+    VBGL_PH_dprintf(("Allocating new chunk for %#x byte allocation\n", cbMinBlock));
+    AssertReturn(cbMinBlock < _128M, NULL); /* paranoia */
 
-    /* Compute chunk size to allocate */
-    if (cbSize < VBGL_PH_CHUNKSIZE)
+    /* Compute the size of the new chunk, rounding up to next chunk size,
+       which must be power of 2. */
+    Assert(RT_IS_POWER_OF_TWO(VBGL_PH_CHUNKSIZE));
+    cbChunk = cbMinBlock + sizeof(VBGLPHYSHEAPCHUNK) + sizeof(VBGLPHYSHEAPBLOCK);
+    cbChunk = RT_ALIGN_32(cbChunk, VBGL_PH_CHUNKSIZE);
+
+    /* This function allocates physical contiguous memory below 4 GB.  This 4GB
+       limitation stems from using a 32-bit OUT instruction to pass a block
+       physical address to the host. */
+    pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc(&PhysAddr, cbChunk);
+    if (pChunk)
     {
-        /* Includes case of block size 0 during initialization */
-        cbSize = VBGL_PH_CHUNKSIZE;
+        VBGLPHYSHEAPCHUNK *pOldHeadChunk;
+        VBGLPHYSHEAPBLOCK *pBlock;
+        AssertRelease(PhysAddr < _4G && PhysAddr + cbChunk <= _4G);
+
+        /* Init the new chunk. */
+        pChunk->u32Signature     = VBGL_PH_CHUNKSIGNATURE;
+        pChunk->cbSize           = cbChunk;
+        pChunk->physAddr         = (uint32_t)PhysAddr;
+        pChunk->cAllocatedBlocks = 0;
+        pChunk->pNext            = NULL;
+        pChunk->pPrev            = NULL;
+
+        /* Initialize the free block, which now occupies entire chunk. */
+        pBlock = (VBGLPHYSHEAPBLOCK *)(pChunk + 1);
+        vbglPhysHeapInitBlock(pBlock, pChunk, cbChunk - sizeof(VBGLPHYSHEAPCHUNK) - sizeof(VBGLPHYSHEAPBLOCK));
+        vbglPhysHeapInsertBlock(NULL, pBlock);
+
+        /* Add the chunk to the list. */
+        pOldHeadChunk = g_vbgldata.pChunkHead;
+        pChunk->pNext = pOldHeadChunk;
+        if (pOldHeadChunk)
+            pOldHeadChunk->pPrev = pChunk;
+        g_vbgldata.pChunkHead    = pChunk;
+
+        VBGL_PH_dprintf(("Allocated chunk %p LB %#x, block %p LB %#x\n", pChunk, cbChunk, pBlock, pBlock->cbDataSize));
+        return pBlock;
     }
-    else
-    {
-        /* Round up to next chunk size, which must be power of 2 */
-        cbSize = (cbSize + (VBGL_PH_CHUNKSIZE - 1)) & ~(VBGL_PH_CHUNKSIZE - 1);
-    }
-
-    physAddr = 0;
-    /* This function allocates physical contiguous memory (below 4GB) according to the IPRT docs.
-     * Address < 4G is required for the port IO.
-     */
-    pChunk = (VBGLPHYSHEAPCHUNK *)RTMemContAlloc (&physAddr, cbSize);
-
-    if (!pChunk)
-    {
-        LogRel(("vbglPhysHeapChunkAlloc: failed to alloc %u contiguous bytes.\n", cbSize));
-        return NULL;
-    }
-
-    AssertRelease(physAddr < _4G && physAddr + cbSize <= _4G);
-
-    pChunk->u32Signature     = VBGL_PH_CHUNKSIGNATURE;
-    pChunk->cbSize           = cbSize;
-    pChunk->physAddr         = (uint32_t)physAddr;
-    pChunk->cAllocatedBlocks = 0;
-    pChunk->pNext            = g_vbgldata.pChunkHead;
-    pChunk->pPrev            = NULL;
-
-    /* Initialize the free block, which now occupies entire chunk. */
-    pBlock = (VBGLPHYSHEAPBLOCK *)((char *)pChunk + sizeof (VBGLPHYSHEAPCHUNK));
-
-    vbglPhysHeapInitBlock (pBlock, pChunk, cbSize - sizeof (VBGLPHYSHEAPCHUNK) - sizeof (VBGLPHYSHEAPBLOCK));
-
-    vbglPhysHeapInsertBlock (NULL, pBlock);
-
-    g_vbgldata.pChunkHead = pChunk;
-
-    VBGL_PH_dprintf(("Allocated chunk %p, block = %p size=%x\n", pChunk, pBlock, cbSize));
-
-    return pBlock;
+    LogRel(("vbglPhysHeapChunkAlloc: failed to alloc %u (%#x) contiguous bytes.\n", cbChunk, cbChunk));
+    return NULL;
 }
 
 
@@ -404,8 +401,14 @@ static void vbglPhysHeapChunkDelete (VBGLPHYSHEAPCHUNK *pChunk)
 DECLR0VBGL(void *) VbglR0PhysHeapAlloc (uint32_t cbSize)
 {
     VBGLPHYSHEAPBLOCK *pBlock, *pIter;
-    int rc = vbglPhysHeapEnter ();
+    int rc;
 
+    /*
+     * Align the size to a pointer size to avoid getting misaligned header pointers and whatnot.
+     */
+    cbSize = RT_ALIGN_32(cbSize, sizeof(void *));
+
+    rc = vbglPhysHeapEnter ();
     if (RT_FAILURE(rc))
         return NULL;
 
