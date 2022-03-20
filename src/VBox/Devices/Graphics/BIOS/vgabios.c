@@ -1012,8 +1012,6 @@ void biosfn_set_video_mode(uint8_t mode)
  outb(VGAREG_ACTL_ADDRESS,0x14);
  outb(VGAREG_ACTL_WRITE_DATA,0x00);
 
- save_area[0] = video_param_table;
-
  // Save palette into the save area if it exists.
  if(save_area[1])
  {
