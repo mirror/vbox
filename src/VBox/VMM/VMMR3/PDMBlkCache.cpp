@@ -461,6 +461,12 @@ static size_t pdmBlkCacheEvictPagesFrom(PPDMBLKCACHEGLOBAL pCache, size_t cbData
                     RTMemFree(pCurr);
                 }
             }
+            else
+            {
+                LogFlow(("Someone raced us, entry %#p (%u bytes) cannot be evicted any more (fFlags=%#x cRefs=%#x)\n",
+                         pCurr, pCurr->cbData, pCurr->fFlags, pCurr->cRefs));
+                RTSemRWReleaseWrite(pBlkCache->SemRWEntries);
+            }
 
         }
         else
