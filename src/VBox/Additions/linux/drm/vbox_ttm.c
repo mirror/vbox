@@ -41,7 +41,7 @@
 # include <drm/ttm/ttm_page_alloc.h>
 #endif
 
-#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 # include <drm/ttm/ttm_range_manager.h>
 #endif
 
@@ -178,7 +178,7 @@ vbox_bo_evict_flags(struct ttm_buffer_object *bo, struct ttm_placement *pl)
 	*pl = vboxbo->placement;
 }
 
-#if RTLNX_VER_MAX(5,14,0) && !RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MAX(5,14,0) && !RTLNX_RHEL_RANGE(8,6, 8,99)
 static int vbox_bo_verify_access(struct ttm_buffer_object *bo,
 				 struct file *filp)
 {
@@ -379,7 +379,7 @@ static struct ttm_bo_driver vbox_bo_driver = {
 	.eviction_valuable = ttm_bo_eviction_valuable,
 #endif
 	.evict_flags = vbox_bo_evict_flags,
-#if RTLNX_VER_MAX(5,14,0) && !RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MAX(5,14,0) && !RTLNX_RHEL_RANGE(8,6, 8,99)
 	.verify_access = vbox_bo_verify_access,
 #endif
 	.io_mem_reserve = &vbox_ttm_io_mem_reserve,
@@ -568,7 +568,7 @@ void vbox_ttm_placement(struct vbox_bo *bo, u32 mem_type)
 static const struct drm_gem_object_funcs vbox_drm_gem_object_funcs = {
 	.free   = vbox_gem_free_object,
 	.print_info = drm_gem_ttm_print_info,
-# if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+# if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 	.mmap = drm_gem_ttm_mmap,
 # endif
 };
@@ -609,7 +609,7 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 				       sizeof(struct vbox_bo));
 #endif
 
-#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 	/* Initialization of the following was removed from DRM stack
 	 * in 5.14, so we need to do it manually. */
 	vboxbo->bo.base.funcs = &vbox_drm_gem_object_funcs;
@@ -653,7 +653,7 @@ err_exit:
 
 static inline u64 vbox_bo_gpu_offset(struct vbox_bo *bo)
 {
-#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 	return bo->bo.resource->start << PAGE_SHIFT;
 #elif RTLNX_VER_MIN(5,9,0) || RTLNX_RHEL_MIN(8,4) || RTLNX_SUSE_MAJ_PREREQ(15,3)
 	return bo->bo.mem.start << PAGE_SHIFT;
@@ -802,7 +802,7 @@ int vbox_mmap(struct file *filp, struct vm_area_struct *vma)
 	file_priv = filp->private_data;
 	vbox = file_priv->minor->dev->dev_private;
 
-#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 	if (drm_dev_is_unplugged(file_priv->minor->dev))
 		return -ENODEV;
 	ret = drm_gem_mmap(filp, vma);

@@ -232,7 +232,7 @@ static inline void drm_gem_object_put(struct drm_gem_object *obj)
 /** Field "pdev" of struct drm_device was removed in 5.14. This macro
  * transparently handles this change. Input argument is a pointer
  * to struct drm_device. */
-#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 # define VBOX_DRM_TO_PCI_DEV(_dev) to_pci_dev(_dev->dev)
 #else
 # define VBOX_DRM_TO_PCI_DEV(_dev) _dev->pdev

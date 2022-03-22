@@ -43,7 +43,7 @@
 # include <drm/drm_probe_helper.h>
 #endif
 
-#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 # include <drm/drm_aperture.h>
 #endif
 
@@ -82,7 +82,7 @@ static int vbox_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	struct drm_device *dev = NULL;
 	int ret = 0;
 
-# if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+# if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 #  if RTLNX_VER_MIN(5,15,0)
 	ret = drm_aperture_remove_conflicting_pci_framebuffers(pdev, &driver);
 #  else
@@ -100,7 +100,7 @@ static int vbox_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		ret = PTR_ERR(dev);
 		goto err_drv_alloc;
 	}
-# if RTLNX_VER_MAX(5,14,0) && !RTLNX_RHEL_MAJ_PREREQ(8,6)
+# if RTLNX_VER_MAX(5,14,0) && !RTLNX_RHEL_RANGE(8,6, 8,99)
 	dev->pdev = pdev;
 # endif
 	pci_set_drvdata(pdev, dev);
