@@ -535,6 +535,13 @@ protected:
      * @param   pEditor         Editor with the isolinux.cfg file loaded and parsed.
      */
     virtual HRESULT editIsoLinuxCfg(GeneralTextScript *pEditor);
+    /**
+     * Performs basic common edits on a isolinux.cfg and menu configuration file(s) (txt.cfg or menu.cfg etc).
+     *
+     * @returns COM status code
+     * @param   pEditor         Editor with the isolinux.cfg file loaded and parsed.
+     */
+    virtual HRESULT editIsoLinuxCommon(GeneralTextScript *pEditor);
 };
 
 
@@ -580,8 +587,13 @@ public:
 protected:
     HRESULT addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
                                      RTVFS hVfsOrgIso, bool fOverwrite);
+    /**
+     * Performs basic edits on menu configuration file(s) (txt.cfg or menu.cfg etc).
+     *
+     * @returns COM status code
+     * @param   pEditor         Editor with the isolinux.cfg file loaded and parsed.
+     */
     HRESULT editDebianTxtCfg(GeneralTextScript *pEditor);
-
 };
 
 
@@ -816,4 +828,3 @@ public:
 #endif
 
 #endif /* !MAIN_INCLUDED_UnattendedInstaller_h */
-

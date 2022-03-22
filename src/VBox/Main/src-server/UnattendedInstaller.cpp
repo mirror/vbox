@@ -864,19 +864,9 @@ HRESULT UnattendedLinuxInstaller::editIsoLinuxCfg(GeneralTextScript *pEditor)
 {
     try
     {
-        /* Set timeouts to 10 seconds. */
-        std::vector<size_t> vecLineNumbers = pEditor->findTemplate("timeout", RTCString::CaseInsensitive);
-        for (size_t i = 0; i < vecLineNumbers.size(); ++i)
-            if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("timeout", RTCString::CaseInsensitive))
-            {
-                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "timeout 10");
-                if (FAILED(hrc))
-                    return hrc;
-            }
-
         /* Don't include menu.cfg which may default (as most Debians do) to some vanilla menu item. txt.cfg has command
          * kernel line options pointing to our preseed file. */
-        vecLineNumbers = pEditor->findTemplate("include", RTCString::CaseInsensitive);
+        std::vector<size_t> vecLineNumbers = pEditor->findTemplate("include", RTCString::CaseInsensitive);
         for (size_t i = 0; i < vecLineNumbers.size(); ++i)
             if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("include", RTCString::CaseInsensitive))
             {
@@ -892,6 +882,27 @@ HRESULT UnattendedLinuxInstaller::editIsoLinuxCfg(GeneralTextScript *pEditor)
             if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("display", RTCString::CaseInsensitive))
             {
                 HRESULT hrc = pEditor->prependToLine(vecLineNumbers.at(i), "#");
+                if (FAILED(hrc))
+                    return hrc;
+            }
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+    return editIsoLinuxCommon(pEditor);
+}
+
+HRESULT UnattendedLinuxInstaller::editIsoLinuxCommon(GeneralTextScript *pEditor)
+{
+    try
+    {
+        /* Set timeouts to 10 seconds. */
+        std::vector<size_t> vecLineNumbers = pEditor->findTemplate("timeout", RTCString::CaseInsensitive);
+        for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+            if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("timeout", RTCString::CaseInsensitive))
+            {
+                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "timeout 10");
                 if (FAILED(hrc))
                     return hrc;
             }
@@ -1105,12 +1116,9 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
 
 HRESULT UnattendedDebianInstaller::editDebianTxtCfg(GeneralTextScript *pEditor)
 {
+    /* We attempt to set menu's default label to the one containing te word 'install'. */
     try
     {
-        /** @todo r=bird: Add some comments saying wtf you're actually up to here.
-         *        Repeating what's clear from function calls and boasting the
-         *        inteligence of the code isn't helpful. */
-        //find all lines with "label" inside
         std::vector<size_t> vecLineNumbers = pEditor->findTemplate("label", RTCString::CaseInsensitive);
         for (size_t i = 0; i < vecLineNumbers.size(); ++i)
         {
@@ -1137,7 +1145,7 @@ HRESULT UnattendedDebianInstaller::editDebianTxtCfg(GeneralTextScript *pEditor)
     {
         return E_OUTOFMEMORY;
     }
-    return UnattendedLinuxInstaller::editIsoLinuxCfg(pEditor);
+    return UnattendedLinuxInstaller::editIsoLinuxCommon(pEditor);
 }
 
 
