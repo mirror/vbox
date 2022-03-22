@@ -135,7 +135,7 @@ void UIGlobalSettingsLanguage::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
-        /* Prepare language settings editor: */
+        /* Prepare 'language settings' editor: */
         m_pEditorLanguageSettings = new UILanguageSettingsEditor(this);
         if (m_pEditorLanguageSettings)
             pLayout->addWidget(m_pEditorLanguageSettings);

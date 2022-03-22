@@ -16,8 +16,6 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
-#include <QLabel>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -26,7 +24,6 @@
 #include "UIGlobalDisplayFeaturesEditor.h"
 #include "UIGlobalSettingsDisplay.h"
 #include "UIMaximumGuestScreenSizeEditor.h"
-#include "UIMessageCenter.h"
 #include "UIScaleFactorEditor.h"
 
 
@@ -100,7 +97,7 @@ void UIGlobalSettingsDisplay::loadToCacheFrom(QVariant &data)
     oldData.m_fActivateHoveredMachineWindow = gEDataManager->activateHoveredMachineWindow();
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
     oldData.m_fDisableHostScreenSaver = gEDataManager->disableHostScreenSaver();
-#endif /* VBOX_WS_WIN || VBOX_WS_X11 */
+#endif
     m_pCache->cacheInitialData(oldData);
 
     /* Upload properties to data: */
@@ -174,17 +171,17 @@ void UIGlobalSettingsDisplay::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
-        /* Prepare maximum guest screen size editor: */
+        /* Prepare 'maximum guest screen size' editor: */
         m_pEditorMaximumGuestScreenSize = new UIMaximumGuestScreenSizeEditor(this);
         if (m_pEditorMaximumGuestScreenSize)
             pLayout->addWidget(m_pEditorMaximumGuestScreenSize);
 
-        /* Prepare scale-factor editor: */
+        /* Prepare 'scale-factor' editor: */
         m_pEditorScaleFactor = new UIScaleFactorEditor(this, true /* with label */);
         if (m_pEditorScaleFactor)
             pLayout->addWidget(m_pEditorScaleFactor);
 
-        /* Prepare global display features editor: */
+        /* Prepare 'global display features' editor: */
         m_pEditorGlobalDisplayFeatures = new UIGlobalDisplayFeaturesEditor(this);
         if (m_pEditorGlobalDisplayFeatures)
             pLayout->addWidget(m_pEditorGlobalDisplayFeatures);

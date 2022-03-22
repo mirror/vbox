@@ -25,8 +25,6 @@
 #include "UISettingsPage.h"
 
 /* Forward declarations: */
-class QCheckBox;
-class QLabel;
 class UIGlobalDisplayFeaturesEditor;
 class UIMaximumGuestScreenSizeEditor;
 class UIScaleFactorEditor;

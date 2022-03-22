@@ -25,7 +25,6 @@
 #include "UISettingsPage.h"
 
 /* Forward declarations: */
-class QLabel;
 class UIColorThemeEditor;
 struct UIDataSettingsGlobalInterface;
 typedef UISettingsCache<UIDataSettingsGlobalInterface> UISettingsCacheGlobalInterface;

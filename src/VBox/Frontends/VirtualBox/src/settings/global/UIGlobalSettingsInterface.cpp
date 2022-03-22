@@ -16,13 +16,13 @@
  */
 
 /* Qt includes: */
-#include <QLabel>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "UIColorThemeEditor.h"
 #include "UIExtraDataManager.h"
 #include "UIGlobalSettingsInterface.h"
+
 
 /** Global settings: User Interface page data structure. */
 struct UIDataSettingsGlobalInterface
@@ -138,7 +138,7 @@ void UIGlobalSettingsInterface::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
-        /* Prepare color-theme editor: */
+        /* Prepare 'color-theme' editor: */
         m_pEditorColorTheme = new UIColorThemeEditor(this);
         if (m_pEditorColorTheme)
             pLayout->addWidget(m_pEditorColorTheme);

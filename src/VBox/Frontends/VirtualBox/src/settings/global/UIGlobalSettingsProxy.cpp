@@ -21,6 +21,7 @@
 /* GUI includes: */
 #include "UIGlobalProxyFeaturesEditor.h"
 #include "UIGlobalSettingsProxy.h"
+#include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 
 /* COM includes: */
@@ -196,7 +197,7 @@ void UIGlobalSettingsProxy::prepareWidgets()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
-        /* Prepare global proxy features editor: */
+        /* Prepare 'global proxy features' editor: */
         m_pEditorGlobalProxyFeatures = new UIGlobalProxyFeaturesEditor(this);
         if (m_pEditorGlobalProxyFeatures)
             pLayout->addWidget(m_pEditorGlobalProxyFeatures);
@@ -252,6 +253,10 @@ bool UIGlobalSettingsProxy::saveData()
         if (   fSuccess
             && !gEDataManager->proxySettings().isEmpty())
             /* fSuccess = */ gEDataManager->setProxySettings(QString());
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_properties));
     }
     /* Return result: */
     return fSuccess;

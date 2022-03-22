@@ -40,7 +40,7 @@ public:
     /** Constructs Proxy settings page. */
     UIGlobalSettingsProxy();
     /** Destructs Proxy settings page. */
-    ~UIGlobalSettingsProxy();
+    virtual ~UIGlobalSettingsProxy() RT_OVERRIDE;
 
 protected:
 

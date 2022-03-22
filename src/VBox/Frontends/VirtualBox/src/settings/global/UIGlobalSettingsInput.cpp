@@ -16,12 +16,10 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "UIAutoCaptureKeyboardEditor.h"
-#include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIGlobalSettingsInput.h"
 #include "UIHostComboEditor.h"
