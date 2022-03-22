@@ -1116,7 +1116,11 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
 
 HRESULT UnattendedDebianInstaller::editDebianTxtCfg(GeneralTextScript *pEditor)
 {
-    /* We attempt to set menu's default label to the one containing te word 'install'. */
+    /*
+     * Unlike Redhats Debian variants define boot menu not in isolinux.cfg but some other
+     * menu configuration files. They are mostly called txt.cfg and menu.cfg (and possibly some other names)
+     * In this functions we attempt to set menu's default label to the one containing te word 'install'.
+     */
     try
     {
         std::vector<size_t> vecLineNumbers = pEditor->findTemplate("label", RTCString::CaseInsensitive);
@@ -1129,7 +1133,6 @@ HRESULT UnattendedDebianInstaller::editDebianTxtCfg(GeneralTextScript *pEditor)
             if (vecPartsOfcontent.size() > 1 && vecPartsOfcontent[1].contains("install")) /** @todo r=bird: case insensitive? */
             {
                 std::vector<size_t> vecDefaultLineNumbers = pEditor->findTemplate("default", RTCString::CaseInsensitive);
-                //handle the lines more intelligently
                 for (size_t j = 0; j < vecDefaultLineNumbers.size(); ++j)
                 {
                     Utf8Str strNewContent("default ");
