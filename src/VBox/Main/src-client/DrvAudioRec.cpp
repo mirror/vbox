@@ -323,16 +323,11 @@ int AudioVideoRec::applyConfiguration(const settings::RecordingSettings &Setting
 
 int AudioVideoRec::configureDriver(PCFGMNODE pLunCfg, PCVMMR3VTABLE pVMM)
 {
-    int rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "Object",    (uintptr_t)mpConsole->i_recordingGetAudioDrv());
-    AssertRCReturn(rc, rc);
-    rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "ObjectConsole", (uintptr_t)mpConsole);
-    AssertRCReturn(rc, rc);
-
     /** @todo For now we're using the configuration of the first screen here audio-wise. */
     Assert(mVideoRecCfg.mapScreens.size() >= 1);
     const settings::RecordingScreenSettings &Screen0Settings = mVideoRecCfg.mapScreens[0];
 
-    rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "ContainerType", (uint64_t)Screen0Settings.enmDest);
+    int rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "ContainerType", (uint64_t)Screen0Settings.enmDest);
     AssertRCReturn(rc, rc);
     if (Screen0Settings.enmDest == RecordingDestination_File)
     {
@@ -1133,23 +1128,19 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     /*
      * Get the Console object pointer.
      */
-    /** @todo No pointers!  */
-    void *pvUser;
-    int rc = pHlp->pfnCFGMQueryPtr(pCfg, "ObjectConsole", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
-    AssertRCReturn(rc, rc);
+    com::Guid ConsoleUuid(COM_IIDOF(IConsole));
+    IConsole *pIConsole = (IConsole *)PDMDrvHlpQueryGenericUserObject(pDrvIns, ConsoleUuid.raw());
+    AssertLogRelReturn(pIConsole, VERR_INTERNAL_ERROR_3);
+    Console *pConsole = static_cast<Console *>(pIConsole);
+    AssertLogRelReturn(pConsole, VERR_INTERNAL_ERROR_3);
 
-    /* CFGM tree saves the pointer to Console in the Object node of AudioVideoRec. */
-    pThis->pConsole = (Console *)pvUser;
+    pThis->pConsole = pConsole;
     AssertReturn(!pThis->pConsole.isNull(), VERR_INVALID_POINTER);
-
-    /*
-     * Get the pointer to the audio driver instance.
-     */
-    rc = pHlp->pfnCFGMQueryPtr(pCfg, "Object", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
-    AssertRCReturn(rc, rc);
-
-    pThis->pAudioVideoRec = (AudioVideoRec *)pvUser;
+    pThis->pAudioVideoRec = pConsole->i_recordingGetAudioDrv();
     AssertPtrReturn(pThis->pAudioVideoRec, VERR_INVALID_POINTER);
+
+    pThis->pAudioVideoRec->mpDrv = pThis;
+
 
     /*
      * Get the recording container and codec parameters from the audio driver instance.
@@ -1160,7 +1151,7 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
     RT_ZERO(pThis->ContainerParms);
     RT_ZERO(pThis->CodecParms);
 
-    rc = pHlp->pfnCFGMQueryU32(pCfg, "ContainerType", (uint32_t *)&pConParams->enmType);
+    int rc = pHlp->pfnCFGMQueryU32(pCfg, "ContainerType", (uint32_t *)&pConParams->enmType);
     AssertRCReturn(rc, rc);
 
     switch (pConParams->enmType)
@@ -1192,11 +1183,6 @@ static int avRecSinkInit(PDRVAUDIORECORDING pThis, PAVRECSINK pSink, PAVRECCONTA
 
     rc = pHlp->pfnCFGMQueryU32(pCfg, "CodecBitrate", &pCodecParms->uBitrate);
     AssertRCReturn(rc, rc);
-
-    pThis->pAudioVideoRec = (AudioVideoRec *)pvUser;
-    AssertPtrReturn(pThis->pAudioVideoRec, VERR_INVALID_POINTER);
-
-    pThis->pAudioVideoRec->mpDrv = pThis;
 
     /*
      * Get the interface for the above driver (DrvAudio) to make mixer/conversion calls.
