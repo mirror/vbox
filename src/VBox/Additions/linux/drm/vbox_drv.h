@@ -175,7 +175,7 @@
 #include <drm/ttm/ttm_bo_api.h>
 #include <drm/ttm/ttm_bo_driver.h>
 #include <drm/ttm/ttm_placement.h>
-#if RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_RANGE(8,6, 8,99)
 # include <drm/ttm/ttm_memory.h>
 #endif
 #if RTLNX_VER_MAX(5,12,0) && !RTLNX_RHEL_MAJ_PREREQ(8,5)
@@ -276,7 +276,7 @@ struct vbox_private {
 		struct drm_global_reference mem_global_ref;
 		struct ttm_bo_global_ref bo_global_ref;
 #endif
-#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 		struct ttm_device bdev;
 #else
 		struct ttm_bo_device bdev;

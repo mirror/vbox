@@ -52,7 +52,7 @@
 #endif
 
 
-#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 static inline struct vbox_private *vbox_bdev(struct ttm_device *bd)
 #else
 static inline struct vbox_private *vbox_bdev(struct ttm_bo_device *bd)
@@ -215,7 +215,7 @@ static int vbox_ttm_io_mem_reserve(struct ttm_bo_device *bdev,
 	return 0;
 }
 #else
-# if RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_MAJ_PREREQ(8,6)
+# if RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_RANGE(8,6, 8,99)
 static int vbox_ttm_io_mem_reserve(struct ttm_bo_device *bdev,
 				   struct ttm_resource *mem)
 # else /* > 5.13.0 */
@@ -256,7 +256,7 @@ static int vbox_ttm_io_mem_reserve(struct ttm_device *bdev,
 
 
 
-#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 static void vbox_ttm_io_mem_free(struct ttm_device *bdev,
 				 struct ttm_resource *mem)
 {
@@ -273,7 +273,7 @@ static void vbox_ttm_io_mem_free(struct ttm_bo_device *bdev,
 }
 #endif
 
-#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 static void vbox_ttm_tt_destroy(struct ttm_device *bdev, struct ttm_tt *tt)
 {
 	ttm_tt_fini(tt);
@@ -359,7 +359,7 @@ static int vbox_bo_move(struct ttm_buffer_object *bo, bool evict,
 }
 #endif
 
-#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 static struct ttm_device_funcs vbox_bo_driver = {
 #else /* < 5.13.0 */
 static struct ttm_bo_driver vbox_bo_driver = {
@@ -402,7 +402,7 @@ int vbox_mm_init(struct vbox_private *vbox)
 {
 	int ret;
 	struct drm_device *dev = vbox->dev;
-#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 	struct ttm_device *bdev = &vbox->ttm.bdev;
 #else
 	struct ttm_bo_device *bdev = &vbox->ttm.bdev;
@@ -413,7 +413,7 @@ int vbox_mm_init(struct vbox_private *vbox)
 	if (ret)
 		return ret;
 #endif
-#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 	ret = ttm_device_init(&vbox->ttm.bdev,
 #else
 	ret = ttm_bo_device_init(&vbox->ttm.bdev,
@@ -469,7 +469,7 @@ int vbox_mm_init(struct vbox_private *vbox)
 	return 0;
 
 err_device_release:
-#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 	ttm_device_fini(&vbox->ttm.bdev);
 #else
 	ttm_bo_device_release(&vbox->ttm.bdev);
@@ -490,7 +490,7 @@ void vbox_mm_fini(struct vbox_private *vbox)
 #else
 	arch_phys_wc_del(vbox->fb_mtrr);
 #endif
-#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_RANGE(8,6, 8,99)
 	ttm_device_fini(&vbox->ttm.bdev);
 #else
 	ttm_bo_device_release(&vbox->ttm.bdev);
@@ -579,7 +579,7 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 {
 	struct vbox_private *vbox = dev->dev_private;
 	struct vbox_bo *vboxbo;
-#if RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_RANGE(8,6, 8,99)
 	size_t acc_size;
 #endif
 	int ret;
@@ -604,7 +604,7 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 
 	vbox_ttm_placement(vboxbo, VBOX_MEM_TYPE_VRAM | VBOX_MEM_TYPE_SYSTEM);
 
-#if RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_MAJ_PREREQ(8,6)
+#if RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_RANGE(8,6, 8,99)
 	acc_size = ttm_bo_dma_acc_size(&vbox->ttm.bdev, size,
 				       sizeof(struct vbox_bo));
 #endif
@@ -624,7 +624,7 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
 			  ttm_bo_type_device, &vboxbo->placement,
 #if RTLNX_VER_MAX(4,17,0) && !RTLNX_RHEL_MAJ_PREREQ(7,6) && !RTLNX_SUSE_MAJ_PREREQ(15,1) && !RTLNX_SUSE_MAJ_PREREQ(12,5)
 			  align >> PAGE_SHIFT, false, NULL, acc_size,
-#elif RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_MAJ_PREREQ(8,6) /* < 5.13.0, < RHEL(8.6) */
+#elif RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_RANGE(8,6, 8,99) /* < 5.13.0, < RHEL(8.6, 8.99) */
 			  align >> PAGE_SHIFT, false, acc_size,
 #else /* > 5.13.0 */
 			  align >> PAGE_SHIFT, false,
