@@ -113,12 +113,6 @@ AudioVRDE::~AudioVRDE(void)
 
 int AudioVRDE::configureDriver(PCFGMNODE pLunCfg, PCVMMR3VTABLE pVMM)
 {
-    int rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "Object", (uintptr_t)this);
-    AssertRCReturn(rc, rc);
-
-    rc = pVMM->pfnCFGMR3InsertInteger(pLunCfg, "ObjectVRDPServer", (uintptr_t)mpConsole->i_consoleVRDPServer());
-    AssertRCReturn(rc, rc);
-
     return AudioDriver::configureDriver(pLunCfg, pVMM);
 }
 
@@ -712,6 +706,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Init the static parts.
      */
     pThis->pDrvIns                   = pDrvIns;
+    pThis->cClients                  = 0;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvAudioVrdeQueryInterface;
     /* IHostAudio */
@@ -743,27 +738,20 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->pIHostAudioPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHOSTAUDIOPORT);
     AssertPtrReturn(pThis->pIHostAudioPort, VERR_PDM_MISSING_INTERFACE_ABOVE);
 
-    /*
-     * Get the ConsoleVRDPServer object pointer.
-     */
-    void *pvUser;
-    int rc = pDrvIns->pHlpR3->pfnCFGMQueryPtr(pCfg, "ObjectVRDPServer", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
-    AssertMsgRCReturn(rc, ("Confguration error: No/bad \"ObjectVRDPServer\" value, rc=%Rrc\n", rc), rc);
+    /* Get the Console object pointer. */
+    com::Guid ConsoleUuid(COM_IIDOF(IConsole));
+    IConsole *pIConsole = (IConsole *)PDMDrvHlpQueryGenericUserObject(pDrvIns, ConsoleUuid.raw());
+    AssertLogRelReturn(pIConsole, VERR_INTERNAL_ERROR_3);
+    Console *pConsole = static_cast<Console *>(pIConsole);
+    AssertLogRelReturn(pConsole, VERR_INTERNAL_ERROR_3);
 
-    /* CFGM tree saves the pointer to ConsoleVRDPServer in the Object node of AudioVRDE. */
-    pThis->pConsoleVRDPServer = (ConsoleVRDPServer *)pvUser;
+    /* Get the console VRDP object pointer. */
+    pThis->pConsoleVRDPServer = pConsole->i_consoleVRDPServer();
     AssertLogRelMsgReturn(RT_VALID_PTR(pThis->pConsoleVRDPServer) || !pThis->pConsoleVRDPServer,
                           ("pConsoleVRDPServer=%p\n", pThis->pConsoleVRDPServer), VERR_INVALID_POINTER);
-    pThis->cClients = 0;
 
-    /*
-     * Get the AudioVRDE object pointer.
-     */
-    pvUser = NULL;
-    rc = pDrvIns->pHlpR3->pfnCFGMQueryPtr(pCfg, "Object", &pvUser); /** @todo r=andy Get rid of this hack and use IHostAudio::SetCallback. */
-    AssertMsgRCReturn(rc, ("Confguration error: No/bad \"Object\" value, rc=%Rrc\n", rc), rc);
-
-    pThis->pAudioVRDE = (AudioVRDE *)pvUser;
+    /* Get the AudioVRDE object pointer. */
+    pThis->pAudioVRDE = pConsole->i_getAudioVRDE();
     AssertLogRelMsgReturn(RT_VALID_PTR(pThis->pAudioVRDE), ("pAudioVRDE=%p\n", pThis->pAudioVRDE), VERR_INVALID_POINTER);
     RTCritSectEnter(&pThis->pAudioVRDE->mCritSect);
     pThis->pAudioVRDE->mpDrv = pThis;
