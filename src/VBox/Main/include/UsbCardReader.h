@@ -25,6 +25,8 @@
 #include <VBox/vmm/pdmcardreaderinfs.h>
 #include <VBox/vmm/pdmdrv.h>
 
+#define USBCARDREADER_OID "46225eac-10c9-4b57-92b6-e59efd48009f"
+
 class Console;
 typedef struct USBCARDREADER USBCARDREADER;
 typedef struct UCRREMOTE UCRREMOTE;

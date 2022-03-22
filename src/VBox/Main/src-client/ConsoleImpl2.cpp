@@ -2241,7 +2241,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Au
 # else
                 InsertConfigString(pLunL0, "Driver", "UsbCardReader");
                 InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "Object", (uintptr_t)mUsbCardReader);
 # endif
              }
 #endif

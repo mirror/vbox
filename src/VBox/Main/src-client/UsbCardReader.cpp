@@ -1885,7 +1885,10 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
     int rc = pDrvIns->pHlpR3->pfnCFGMQueryPtr(pCfg, "Object", &pv);
     AssertMsgRCReturn(rc, ("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc), rc);
 
-    pThis->pUsbCardReader = (UsbCardReader *)pv;
+    com::Guid uuid(USBCARDREADER_OID);
+    pThis->pUsbCardReader = (UsbCardReader *)PDMDrvHlpQueryGenericUserObject(pDrvIns, uuid.raw());
+    AssertMsgReturn(RT_VALID_PTR(pThis->pUsbCardReader), ("Configuration error: No/bad USB card reader object value!\n"), VERR_NOT_FOUND);
+
     pThis->pUsbCardReader->mpDrv = pThis;
     pThis->pDrvIns = pDrvIns;
 

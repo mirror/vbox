@@ -10945,6 +10945,9 @@ Console::i_vmm2User_QueryGenericObject(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTU
     if (UuidCopy == VMMDEV_OID)
         return pConsole->m_pVMMDev;
 
+    if (UuidCopy == USBCARDREADER_OID)
+        return pConsole->mUsbCardReader;
+
     if (UuidCopy == COM_IIDOF(ISnapshot))
         return ((MYVMM2USERMETHODS *)pThis)->pISnapshot;
 
