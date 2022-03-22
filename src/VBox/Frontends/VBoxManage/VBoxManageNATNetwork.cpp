@@ -113,7 +113,7 @@ static HRESULT printNATNetwork(const ComPtr<INATNetwork> &pNATNet,
         RTPrintf(Nat::tr("Gateway:      %ls\n"), strVal.raw());
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(NeedDhcpServer)(&fVal));
-        RTPrintf(Nat::tr("DHCP Sever:   %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
+        RTPrintf(Nat::tr("DHCP Server:  %s\n"),  fVal ? Nat::tr("Yes") : Nat::tr("No"));
 
         CHECK_ERROR_BREAK(pNATNet, COMGETTER(IPv6Enabled)(&fVal));
         RTPrintf("IPv6:         %s\n",  fVal ? Nat::tr("Yes") : Nat::tr("No"));
