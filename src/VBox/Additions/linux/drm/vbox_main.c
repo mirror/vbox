@@ -632,7 +632,7 @@ void vbox_gem_free_object(struct drm_gem_object *obj)
 {
 	struct vbox_bo *vbox_bo = gem_to_vbox_bo(obj);
 
-#if RTLNX_VER_MIN(5,14,0)
+#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
 	/* Starting from kernel 5.14, there is a warning appears in dmesg
 	 * on attempt to desroy pinned buffer object. Make sure it is unpinned. */
 	while (vbox_bo->bo.pin_count)
@@ -684,7 +684,7 @@ vbox_dumb_mmap_offset(struct drm_file *file,
 	bo = gem_to_vbox_bo(obj);
 	*offset = vbox_bo_mmap_offset(bo);
 
-#if RTLNX_VER_MIN(5,14,0)
+#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
 	ret = drm_vma_node_allow(&bo->bo.base.vma_node, file);
 	if (ret)
 	{

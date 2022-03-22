@@ -175,7 +175,7 @@
 #include <drm/ttm/ttm_bo_api.h>
 #include <drm/ttm/ttm_bo_driver.h>
 #include <drm/ttm/ttm_placement.h>
-#if RTLNX_VER_MAX(5,13,0)
+#if RTLNX_VER_MAX(5,13,0) && !RTLNX_RHEL_MAJ_PREREQ(8,6)
 # include <drm/ttm/ttm_memory.h>
 #endif
 #if RTLNX_VER_MAX(5,12,0) && !RTLNX_RHEL_MAJ_PREREQ(8,5)
@@ -232,7 +232,7 @@ static inline void drm_gem_object_put(struct drm_gem_object *obj)
 /** Field "pdev" of struct drm_device was removed in 5.14. This macro
  * transparently handles this change. Input argument is a pointer
  * to struct drm_device. */
-#if RTLNX_VER_MIN(5,14,0)
+#if RTLNX_VER_MIN(5,14,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
 # define VBOX_DRM_TO_PCI_DEV(_dev) to_pci_dev(_dev->dev)
 #else
 # define VBOX_DRM_TO_PCI_DEV(_dev) _dev->pdev
@@ -276,7 +276,7 @@ struct vbox_private {
 		struct drm_global_reference mem_global_ref;
 		struct ttm_bo_global_ref bo_global_ref;
 #endif
-#if RTLNX_VER_MIN(5,13,0)
+#if RTLNX_VER_MIN(5,13,0) || RTLNX_RHEL_MAJ_PREREQ(8,6)
 		struct ttm_device bdev;
 #else
 		struct ttm_bo_device bdev;
