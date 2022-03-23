@@ -100,7 +100,7 @@ typedef struct _DevListEntry
  */
 static inline int op_usbproxy_back_open(PUSBPROXYDEV p, const char *pszAddress)
 {
-     return g_USBProxyDeviceHost.pfnOpen (p, pszAddress, NULL);
+     return g_USBProxyDeviceHost.pfnOpen (p, pszAddress);
 }
 
 static inline void op_usbproxy_back_close(PUSBPROXYDEV pDev)
