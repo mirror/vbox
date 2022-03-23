@@ -1881,10 +1881,6 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
-    void *pv;
-    int rc = pDrvIns->pHlpR3->pfnCFGMQueryPtr(pCfg, "Object", &pv);
-    AssertMsgRCReturn(rc, ("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc), rc);
-
     com::Guid uuid(USBCARDREADER_OID);
     pThis->pUsbCardReader = (UsbCardReader *)PDMDrvHlpQueryGenericUserObject(pDrvIns, uuid.raw());
     AssertMsgReturn(RT_VALID_PTR(pThis->pUsbCardReader), ("Configuration error: No/bad USB card reader object value!\n"), VERR_NOT_FOUND);
@@ -1911,7 +1907,7 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
     AssertReturn(pThis->pICardReaderUp, VERR_PDM_MISSING_INTERFACE);
 
     /* Command Thread Synchronization primitives */
-    rc = RTReqQueueCreate(&pThis->hReqQCardReaderCmd);
+    int rc = RTReqQueueCreate(&pThis->hReqQCardReaderCmd);
     AssertLogRelRCReturn(rc, rc);
 
     rc = PDMDrvHlpThreadCreate(pDrvIns,
