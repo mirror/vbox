@@ -356,13 +356,13 @@ static void SafeR80FractionShift(PRTFLOAT80U pr80, uint8_t cShift)
     if (pr80->sj64.uFraction >= RT_BIT_64(cShift))
         pr80->sj64.uFraction >>= cShift;
     else
-        pr80->sj64.uFraction = cShift % 19;
+        pr80->sj64.uFraction = (cShift % 19) + 1;
 }
 
 
-static RTFLOAT80U RandR80Src(uint32_t iTest)
+static RTFLOAT80U RandR80Ex(unsigned cTarget = 80)
 {
-    RT_NOREF(iTest);
+    Assert(cTarget == 80 || cTarget == 64 || cTarget == 32);
 
     RTFLOAT80U r80;
     r80.au64[0] = RandU64();
@@ -378,9 +378,9 @@ static RTFLOAT80U RandR80Src(uint32_t iTest)
         r80.sj64.uExponent     = bType == 0 ? 0 : 0x7fff;
         r80.sj64.uFraction     = bType <= 2 ? 0 : RT_BIT_64(62);
         r80.sj64.fInteger      = bType >= 2 ? 1 : 0;
-        AssertMsg(bType != 0 || RTFLOAT80U_IS_ZERO(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(bType != 0 || RTFLOAT80U_IS_ZERO(&r80),       ("%s\n", FormatR80(&r80)));
         AssertMsg(bType != 1 || RTFLOAT80U_IS_PSEUDO_INF(&r80), ("%s\n", FormatR80(&r80)));
-        AssertMsg(bType != 2 || RTFLOAT80U_IS_INF(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(bType != 2 || RTFLOAT80U_IS_INF(&r80),        ("%s\n", FormatR80(&r80)));
         AssertMsg(bType != 3 || RTFLOAT80U_IS_INDEFINITE(&r80), ("%s\n", FormatR80(&r80)));
     }
     else if (bType == 4 || bType == 5 || bType == 6 || bType == 7)
@@ -388,30 +388,36 @@ static RTFLOAT80U RandR80Src(uint32_t iTest)
         /* Denormals (4,5) and Pseudo denormals (6,7) */
         if (bType & 1)
             SafeR80FractionShift(&r80, r80.sj64.uExponent % 62);
+        else if (r80.sj64.uFraction == 0 && bType < 6)
+            r80.sj64.uFraction = RTRandU64Ex(1, RT_BIT_64(RTFLOAT80U_FRACTION_BITS) - 1);
         r80.sj64.uExponent = 0;
         r80.sj64.fInteger  = bType >= 6;
-        AssertMsg(bType >= 6 || RTFLOAT80U_IS_DENORMAL(&r80), ("%s\n", FormatR80(&r80)));
-        AssertMsg(bType < 6  || RTFLOAT80U_IS_PSEUDO_DENORMAL(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(bType >= 6 || RTFLOAT80U_IS_DENORMAL(&r80),        ("%s bType=%#x\n", FormatR80(&r80), bType));
+        AssertMsg(bType < 6  || RTFLOAT80U_IS_PSEUDO_DENORMAL(&r80), ("%s bType=%#x\n", FormatR80(&r80), bType));
     }
     else if (bType == 8 || bType == 9)
     {
         /* Pseudo NaN. */
         if (bType & 1)
             SafeR80FractionShift(&r80, r80.sj64.uExponent % 62);
+        else if (r80.sj64.uFraction == 0 && !r80.sj64.fInteger)
+            r80.sj64.uFraction = RTRandU64Ex(1, RT_BIT_64(RTFLOAT80U_FRACTION_BITS) - 1);
         r80.sj64.uExponent = 0x7fff;
         if (r80.sj64.fInteger)
             r80.sj64.uFraction |= RT_BIT_64(62);
         else
             r80.sj64.uFraction &= ~RT_BIT_64(62);
         r80.sj64.fInteger  = 0;
-        AssertMsg(RTFLOAT80U_IS_PSEUDO_NAN(&r80), ("%s\n", FormatR80(&r80)));
-        AssertMsg(RTFLOAT80U_IS_NAN(&r80), ("%s\n", FormatR80(&r80)));
+        AssertMsg(RTFLOAT80U_IS_PSEUDO_NAN(&r80), ("%s bType=%#x\n", FormatR80(&r80), bType));
+        AssertMsg(RTFLOAT80U_IS_NAN(&r80),        ("%s bType=%#x\n", FormatR80(&r80), bType));
     }
     else if (bType == 10 || bType == 11)
     {
         /* Quiet and signalling NaNs (using fInteger to pick which). */
         if (bType & 1)
             SafeR80FractionShift(&r80, r80.sj64.uExponent % 62);
+        else if (r80.sj64.uFraction == 0)
+            r80.sj64.uFraction = RTRandU64Ex(1, RT_BIT_64(RTFLOAT80U_FRACTION_BITS) - 1);
         r80.sj64.uExponent = 0x7fff;
         if (r80.sj64.fInteger)
             r80.sj64.uFraction |= RT_BIT_64(62);
@@ -432,14 +438,39 @@ static RTFLOAT80U RandR80Src(uint32_t iTest)
     else if (bType < 24)
     {
         /* Make sure we have lots of normalized values. */
+        const unsigned uMinExp = cTarget == 64 ? RTFLOAT80U_EXP_BIAS - RTFLOAT64U_EXP_BIAS
+                               : cTarget == 32 ? RTFLOAT80U_EXP_BIAS - RTFLOAT32U_EXP_BIAS : 0;
+        const unsigned uMaxExp = cTarget == 64 ? uMinExp + RTFLOAT64U_EXP_MAX
+                               : cTarget == 32 ? uMinExp + RTFLOAT32U_EXP_MAX : RTFLOAT80U_EXP_MAX;
         r80.sj64.fInteger = 1;
-        if (r80.sj64.uExponent == 0)
-            r80.sj64.uExponent = 1;
-        else if (r80.sj64.uExponent == 0x7fff)
-            r80.sj64.uExponent = 0x7ffe;
+        if (r80.sj64.uExponent <= uMinExp)
+            r80.sj64.uExponent = uMinExp + 1;
+        else if (r80.sj64.uExponent >= uMaxExp)
+            r80.sj64.uExponent = uMaxExp - 1;
+
+        if (bType == 14)
+        {   /* All 1s is useful to testing rounding. Also try trigger special
+               behaviour by sometimes rounding out of range, while we're at it. */
+            r80.sj64.uFraction = RT_BIT_64(63) - 1;
+            uint8_t bExp = RandU8();
+            if ((bExp & 3) == 0)
+                r80.sj64.uExponent = uMaxExp - 1;
+            else if ((bExp & 3) == 1)
+                r80.sj64.uExponent = uMinExp + 1;
+            else if ((bExp & 3) == 2)
+                r80.sj64.uExponent = uMinExp - (bExp & 15); /* (small numbers are mapped to subnormal values) */
+        }
+
         AssertMsg(RTFLOAT80U_IS_NORMAL(&r80), ("%s\n", FormatR80(&r80)));
     }
     return r80;
+}
+
+
+static RTFLOAT80U RandR80Src(uint32_t iTest)
+{
+    RT_NOREF(iTest);
+    return RandR80Ex();
 }
 
 
@@ -448,7 +479,7 @@ static void SafeR64FractionShift(PRTFLOAT64U pr64, uint8_t cShift)
     if (pr64->s64.uFraction >= RT_BIT_64(cShift))
         pr64->s64.uFraction >>= cShift;
     else
-        pr64->s64.uFraction = cShift % 19;
+        pr64->s64.uFraction = (cShift % 19) + 1;
 }
 
 
@@ -470,24 +501,28 @@ static RTFLOAT64U RandR64Src(uint32_t iTest)
         r64.s.uExponent     = bType == 0 ? 0 : 0x7ff;
         r64.s.uFractionHigh = 0;
         r64.s.uFractionLow  = 0;
-        AssertMsg(bType != 0 || RTFLOAT64U_IS_ZERO(&r64), ("%s\n", FormatR64(&r64)));
-        AssertMsg(bType != 1 || RTFLOAT64U_IS_INF(&r64), ("%s\n", FormatR64(&r64)));
+        AssertMsg(bType != 0 || RTFLOAT64U_IS_ZERO(&r64), ("%s bType=%#x\n", FormatR64(&r64), bType));
+        AssertMsg(bType != 1 || RTFLOAT64U_IS_INF(&r64),  ("%s bType=%#x\n", FormatR64(&r64), bType));
     }
     else if (bType == 2 || bType == 3)
     {
         /* Subnormals */
         if (bType == 3)
             SafeR64FractionShift(&r64, r64.s64.uExponent % 51);
+        else if (r64.s64.uFraction == 0)
+            r64.s64.uFraction = RTRandU64Ex(1, RT_BIT_64(RTFLOAT64U_FRACTION_BITS) - 1);
         r64.s64.uExponent = 0;
-        AssertMsg(RTFLOAT64U_IS_SUBNORMAL(&r64), ("%s\n", FormatR64(&r64)));
+        AssertMsg(RTFLOAT64U_IS_SUBNORMAL(&r64), ("%s bType=%#x\n", FormatR64(&r64), bType));
     }
     else if (bType == 4 || bType == 5)
     {
         /* NaNs */
         if (bType == 5)
             SafeR64FractionShift(&r64, r64.s64.uExponent % 51);
+        else if (r64.s64.uFraction == 0)
+            r64.s64.uFraction = RTRandU64Ex(1, RT_BIT_64(RTFLOAT64U_FRACTION_BITS) - 1);
         r64.s64.uExponent = 0x7ff;
-        AssertMsg(RTFLOAT64U_IS_NAN(&r64), ("%s\n", FormatR64(&r64)));
+        AssertMsg(RTFLOAT64U_IS_NAN(&r64), ("%s bType=%#x\n", FormatR64(&r64), bType));
     }
     else if (bType < 12)
     {
@@ -496,7 +531,7 @@ static RTFLOAT64U RandR64Src(uint32_t iTest)
             r64.s.uExponent = 1;
         else if (r64.s.uExponent == 0x7ff)
             r64.s.uExponent = 0x7fe;
-        AssertMsg(RTFLOAT64U_IS_NORMAL(&r64), ("%s\n", FormatR64(&r64)));
+        AssertMsg(RTFLOAT64U_IS_NORMAL(&r64), ("%s bType=%#x\n", FormatR64(&r64), bType));
     }
     return r64;
 }
@@ -507,7 +542,7 @@ static void SafeR32FractionShift(PRTFLOAT32U pr32, uint8_t cShift)
     if (pr32->s.uFraction >= RT_BIT_32(cShift))
         pr32->s.uFraction >>= cShift;
     else
-        pr32->s.uFraction = cShift % 19;
+        pr32->s.uFraction = (cShift % 19) + 1;
 }
 
 
@@ -536,16 +571,20 @@ static RTFLOAT32U RandR32Src(uint32_t iTest)
         /* Subnormals */
         if (bType == 3)
             SafeR32FractionShift(&r32, r32.s.uExponent % 22);
+        else if (r32.s.uFraction == 0)
+            r32.s.uFraction = RTRandU32Ex(1, RT_BIT_32(RTFLOAT32U_FRACTION_BITS) - 1);
         r32.s.uExponent = 0;
-        AssertMsg(RTFLOAT32U_IS_SUBNORMAL(&r32), ("%s\n", FormatR32(&r32)));
+        AssertMsg(RTFLOAT32U_IS_SUBNORMAL(&r32), ("%s bType=%#x\n", FormatR32(&r32), bType));
     }
     else if (bType == 4 || bType == 5)
     {
         /* NaNs */
         if (bType == 5)
             SafeR32FractionShift(&r32, r32.s.uExponent % 22);
+        else if (r32.s.uFraction == 0)
+            r32.s.uFraction = RTRandU32Ex(1, RT_BIT_32(RTFLOAT32U_FRACTION_BITS) - 1);
         r32.s.uExponent = 0xff;
-        AssertMsg(RTFLOAT32U_IS_NAN(&r32), ("%s\n", FormatR32(&r32)));
+        AssertMsg(RTFLOAT32U_IS_NAN(&r32), ("%s bType=%#x\n", FormatR32(&r32), bType));
     }
     else if (bType < 12)
     {
@@ -554,7 +593,7 @@ static RTFLOAT32U RandR32Src(uint32_t iTest)
             r32.s.uExponent = 1;
         else if (r32.s.uExponent == 0xff)
             r32.s.uExponent = 0xfe;
-        AssertMsg(RTFLOAT32U_IS_NORMAL(&r32), ("%s\n", FormatR32(&r32)));
+        AssertMsg(RTFLOAT32U_IS_NORMAL(&r32), ("%s bType=%#x\n", FormatR32(&r32), bType));
     }
     return r32;
 }
@@ -2195,7 +2234,35 @@ typedef struct FPU_R80_IN_TEST_T
     RTFLOAT80U              rdResult;
     RTFLOAT80U              InVal;
 } FPU_R80_IN_TEST_T;
-#include "tstIEMAImplDataFpu.h"
+
+typedef struct FPU_ST_R32_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal;
+    RTFLOAT32U              OutVal;
+} FPU_ST_R32_TEST_T;
+
+typedef struct FPU_ST_R64_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal;
+    RTFLOAT64U              OutVal;
+} FPU_ST_R64_TEST_T;
+
+typedef struct FPU_ST_R80_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal;
+    RTFLOAT80U              OutVal;
+} FPU_ST_R80_TEST_T;
+
+#include "tstIEMAImplDataFpuLdSt.h"
 
 
 /*
@@ -2427,6 +2494,143 @@ static void FpuLdMemTest(void)
 }
 
 
+/*
+ * Store values to memory.
+ */
+
+#ifndef HAVE_FPU_ST_MEM
+static FPU_ST_R80_TEST_T const g_aTests_fst_r80_to_r80[] = { {0} };
+static FPU_ST_R64_TEST_T const g_aTests_fst_r80_to_r64[] = { {0} };
+static FPU_ST_R32_TEST_T const g_aTests_fst_r80_to_r32[] = { {0} };
+#endif
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+# define GEN_FPU_STORE(a_cBits, a_rdType, a_aSubTests, a_TestType) \
+static void FpuStR ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+{ \
+    X86FXSTATE State; \
+    RT_ZERO(State); \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        RTStrmPrintf(pOut, "static const " #a_TestType " g_aTests_%s[] =\n{\n", a_aSubTests[iFn].pszName); \
+        for (uint32_t iTest = 0; iTest < cTests; iTest += 1) \
+        { \
+            uint16_t const fFcw = RandU16() & (X86_FCW_MASK_ALL | X86_FCW_PC_MASK); \
+            State.FSW = RandU16() & (X86_FSW_C_MASK | X86_FSW_XCPT_ES_MASK | X86_FSW_TOP_MASK | X86_FSW_B); \
+            RTFLOAT80U const InVal = RandR80Src(iTest); \
+            \
+            for (uint16_t iRounding = 0; iRounding < 4; iRounding++) \
+            { \
+                /* PC doesn't influence these, so leave as is. */ \
+                AssertCompile(X86_FCW_OM_BIT + 1 == X86_FCW_UM_BIT && X86_FCW_UM_BIT + 1 == X86_FCW_PM_BIT); \
+                for (uint16_t iMask = 0; iMask < 16; iMask += 2 /*1*/) \
+                { \
+                    uint16_t uFswOut = 0; \
+                    a_rdType OutVal; \
+                    RT_ZERO(OutVal); \
+                    memset(&OutVal, 0xfe, sizeof(OutVal)); \
+                    State.FCW = (fFcw & ~(X86_FCW_RC_MASK | X86_FCW_UM | X86_FCW_PM)) \
+                              | (iRounding  << X86_FCW_RC_SHIFT); \
+                    /*if (iMask & 1) State.FCW ^= X86_FCW_MASK_ALL;*/ \
+                    State.FCW |= (iMask >> 1) << X86_FCW_OM_BIT; \
+                    a_aSubTests[iFn].pfn(&State, &uFswOut, &OutVal, &InVal); \
+                    RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u */\n", \
+                                 State.FCW, State.FSW, uFswOut, GenFormatR80(&InVal), \
+                                 GenFormatR ## a_cBits(&OutVal), iTest, iRounding, iMask); \
+                } \
+            } \
+        } \
+        RTStrmPrintf(pOut, "};\n"); \
+    } \
+}
+#else
+# define GEN_FPU_STORE(a_cBits, a_rdType, a_aSubTests, a_TestType)
+#endif
+
+#define TEST_FPU_STORE(a_cBits, a_rdType, a_SubTestType, a_aSubTests, a_TestType) \
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUSTR80TOR ## a_cBits,(PCX86FXSTATE, uint16_t *, \
+                                                                   PRTFLOAT ## a_cBits ## U, PCRTFLOAT80U)); \
+typedef FNIEMAIMPLFPUSTR80TOR ## a_cBits *PFNIEMAIMPLFPUSTR80TOR ## a_cBits; \
+typedef struct a_SubTestType \
+{ \
+    const char                             *pszName; \
+    PFNIEMAIMPLFPUSTR80TOR ## a_cBits       pfn, pfnNative; \
+    a_TestType const                       *paTests; \
+    uint32_t                                cTests; \
+    uint32_t                                uExtra; \
+    uint8_t                                 idxCpuEflFlavour; \
+} a_SubTestType; \
+\
+static const a_SubTestType a_aSubTests[] = \
+{ \
+    ENTRY(RT_CONCAT(fst_r80_to_r,a_cBits)) \
+}; \
+GEN_FPU_STORE(a_cBits, a_rdType, a_aSubTests, a_TestType) \
+\
+static void FpuStR ## a_cBits ## Test(void) \
+{ \
+    X86FXSTATE State; \
+    RT_ZERO(State); \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
+        \
+        uint32_t const                    cTests  = a_aSubTests[iFn].cTests; \
+        a_TestType const          * const paTests = a_aSubTests[iFn].paTests; \
+        PFNIEMAIMPLFPUSTR80TOR ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
+        uint32_t const cVars = 1 + (a_aSubTests[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && a_aSubTests[iFn].pfnNative); \
+        for (uint32_t iVar = 0; iVar < cVars; iVar++) \
+        { \
+            for (uint32_t iTest = 0; iTest < cTests; iTest++) \
+            { \
+                RTFLOAT80U const InVal   = paTests[iTest].InVal; \
+                uint16_t         uFswOut = 0; \
+                a_rdType         OutVal; \
+                RT_ZERO(OutVal); \
+                memset(&OutVal, 0xfe, sizeof(OutVal)); \
+                State.FCW = paTests[iTest].fFcw; \
+                State.FSW = paTests[iTest].fFswIn; \
+                pfn(&State, &uFswOut, &OutVal, &InVal); \
+                if (   uFswOut != paTests[iTest].fFswOut \
+                    || !RTFLOAT ## a_cBits ## U_ARE_IDENTICAL(&OutVal, &paTests[iTest].OutVal)) \
+                    RTTestFailed(g_hTest, "#%04u%s: fcw=%#06x fsw=%#06x in=%s\n" \
+                                          "%s               -> fsw=%#06x    %s\n" \
+                                          "%s             expected %#06x    %s%s%s (%s)\n", \
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fFcw, paTests[iTest].fFswIn, \
+                                 FormatR80(&paTests[iTest].InVal), \
+                                 iVar ? "  " : "", uFswOut, FormatR ## a_cBits(&OutVal), \
+                                 iVar ? "  " : "", paTests[iTest].fFswOut, FormatR ## a_cBits(&paTests[iTest].OutVal), \
+                                 FswDiff(uFswOut, paTests[iTest].fFswOut), \
+                                 !RTFLOAT ## a_cBits ## U_ARE_IDENTICAL(&OutVal, &paTests[iTest].OutVal) ? " - val" : "", \
+                                 FormatFcw(paTests[iTest].fFcw) ); \
+            } \
+            pfn = a_aSubTests[iFn].pfnNative; \
+        } \
+    } \
+}
+
+TEST_FPU_STORE(80, RTFLOAT80U, FPU_ST_R80_T, g_aFpuStR80, FPU_ST_R80_TEST_T)
+TEST_FPU_STORE(64, RTFLOAT64U, FPU_ST_R64_T, g_aFpuStR64, FPU_ST_R64_TEST_T)
+TEST_FPU_STORE(32, RTFLOAT32U, FPU_ST_R32_T, g_aFpuStR32, FPU_ST_R32_TEST_T)
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static void FpuStMemGenerate(PRTSTREAM pOut, uint32_t cTests)
+{
+    RTStrmPrintf(pOut, "\n\n#define HAVE_FPU_ST_MEM\n");
+    FpuStR80Generate(pOut, cTests);
+    FpuStR64Generate(pOut, cTests);
+    FpuStR32Generate(pOut, cTests);
+}
+#endif
+
+static void FpuStMemTest(void)
+{
+    FpuStR80Test();
+    FpuStR64Test();
+    FpuStR32Test();
+}
+
+
 int main(int argc, char **argv)
 {
     int rc = RTR3InitExe(argc, &argv, 0);
@@ -2449,20 +2653,31 @@ int main(int argc, char **argv)
      * Parse arguments.
      */
     enum { kModeNotSet, kModeTest, kModeGenerate }
-         enmMode       = kModeNotSet;
-    bool fInt          = true;
-    bool fFpu          = true;
-    bool fCpuData      = true;
-    bool fCommonData   = true;
-    RTGETOPTDEF const s_aOptions[] =
+                        enmMode       = kModeNotSet;
+    bool                fInt          = true;
+    bool                fFpuLdSt      = true;
+    bool                fFpuOther     = true;
+    bool                fCpuData      = true;
+    bool                fCommonData   = true;
+    uint32_t const      cDefaultTests = 96;
+    uint32_t            cTests        = cDefaultTests;
+    RTGETOPTDEF const   s_aOptions[]  =
     {
-        { "--generate",     'g', RTGETOPT_REQ_NOTHING },
-        { "--test",         't', RTGETOPT_REQ_NOTHING },
-        { "--all",          'a', RTGETOPT_REQ_NOTHING },
-        { "--only-fpu",     'f', RTGETOPT_REQ_NOTHING },
-        { "--only-int",     'i', RTGETOPT_REQ_NOTHING },
-        { "--only-common",  'm', RTGETOPT_REQ_NOTHING },
-        { "--only-cpu",     'c', RTGETOPT_REQ_NOTHING },
+        // mode:
+        { "--generate",             'g', RTGETOPT_REQ_NOTHING },
+        { "--test",                 't', RTGETOPT_REQ_NOTHING },
+        // test selection (both)
+        { "--all",                  'a', RTGETOPT_REQ_NOTHING },
+        { "--none",                 'z', RTGETOPT_REQ_NOTHING },
+        { "--zap",                  'z', RTGETOPT_REQ_NOTHING },
+        { "--fpu-ld-st",            'f', RTGETOPT_REQ_NOTHING },
+        { "--fpu-load-store",       'f', RTGETOPT_REQ_NOTHING },
+        { "--fpu-other",            'F', RTGETOPT_REQ_NOTHING },
+        { "--int",                  'i', RTGETOPT_REQ_NOTHING },
+        // generation parameters
+        { "--common",               'm', RTGETOPT_REQ_NOTHING },
+        { "--cpu",                  'c', RTGETOPT_REQ_NOTHING },
+        { "--number-of-tests",      'n', RTGETOPT_REQ_UINT32  },
     };
 
     RTGETOPTSTATE State;
@@ -2484,23 +2699,33 @@ int main(int argc, char **argv)
                 fCpuData    = true;
                 fCommonData = true;
                 fInt        = true;
-                fFpu        = true;
+                fFpuLdSt    = true;
+                fFpuOther   = true;
+                break;
+            case 'z':
+                fCpuData    = false;
+                fCommonData = false;
+                fInt        = false;
+                fFpuLdSt    = false;
+                fFpuOther   = false;
                 break;
             case 'f':
-                fFpu        = true;
-                fInt        = false;
+                fFpuLdSt    = true;
+                break;
+            case 'F':
+                fFpuOther   = true;
                 break;
             case 'i':
                 fInt        = true;
-                fFpu        = false;
                 break;
             case 'm':
                 fCommonData = true;
-                fCpuData    = false;
                 break;
             case 'c':
                 fCpuData    = true;
-                fCommonData = false;
+                break;
+            case 'n':
+                cTests      = ValueUnion.u32;
                 break;
             case 'h':
                 RTPrintf("usage: %s <-g|-t> [options]\n"
@@ -2511,18 +2736,26 @@ int main(int argc, char **argv)
                          "  -t, --test\n"
                          "    Execute tests.\n"
                          "\n"
-                         "Options:\n"
+                         "Test selection (both modes):\n"
                          "  -a, --all\n"
-                         "    Include all tests and generates common + CPU test data. (default)\n"
-                         "  -i, --only-int\n"
-                         "    Only non-FPU tests.\n"
-                         "  -f, --only-fpu\n"
-                         "    Only FPU tests.\n"
-                         "  -m, --only-common\n"
-                         "    Only generate common test data.\n"
+                         "    Enable all tests and generated test data. (default)\n"
+                         "  -z, --zap, --none\n"
+                         "    Disable all tests and test data types.\n"
+                         "  -i, --int\n"
+                         "    Enable non-FPU tests.\n"
+                         "  -f, --fpu-ld-st\n"
+                         "    Enable FPU load and store tests.\n"
+                         "  -f, --fpu-other\n"
+                         "    Enable other FPU tests.\n"
+                         "\n"
+                         "Generation:\n"
+                         "  -m, --common\n"
+                         "    Enable generating common test data.\n"
                          "  -c, --only-cpu\n"
-                         "    Only generate CPU specific test data.\n"
-                         , argv[0]);
+                         "    Enable generating CPU specific test data.\n"
+                         "  -n, --number-of-test <count>\n"
+                         "    Number of tests to generate. Default: %u\n"
+                         , argv[0], cDefaultTests);
                 return RTEXITCODE_SUCCESS;
             default:
                 return RTGetOptPrintError(rc, &ValueUnion);
@@ -2546,7 +2779,8 @@ int main(int argc, char **argv)
         const char * const pszBitBucket = "/dev/null";
 # endif
 
-        uint32_t cTests = 96;
+        if (cTests == 0)
+            cTests = cDefaultTests;
         g_cZeroDstTests = RT_MIN(cTests / 16, 32);
         g_cZeroSrcTests = g_cZeroDstTests * 2;
 
@@ -2584,16 +2818,16 @@ int main(int argc, char **argv)
                 return rcExit;
         }
 
-        if (fFpu)
+        if (fFpuLdSt)
         {
-            const char *pszDataFile = fCommonData ? "tstIEMAImplDataFpu.h" : pszBitBucket;
+            const char *pszDataFile = fCommonData ? "tstIEMAImplDataFpuLdSt.h" : pszBitBucket;
             PRTSTREAM   pStrmData   = NULL;
             rc = RTStrmOpen(pszDataFile, "w", &pStrmData);
             if (!pStrmData)
                 return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataFile, rc);
 
             const char *pszDataCpuFile = !fCpuData ? pszBitBucket : g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD
-                                       ? "tstIEMAImplDataFpu-Amd.h" : "tstIEMAImplDataFpu-Intel.h";
+                                       ? "tstIEMAImplDataFpuLdSt-Amd.h" : "tstIEMAImplDataFpuLdSt-Intel.h";
             PRTSTREAM   pStrmDataCpu   = NULL;
             rc = RTStrmOpen(pszDataCpuFile, "w", &pStrmDataCpu);
             if (!pStrmData)
@@ -2602,11 +2836,10 @@ int main(int argc, char **argv)
             GenerateHeader(pStrmData, "Fpu", szCpuDesc, NULL, "");
             GenerateHeader(pStrmDataCpu, "Fpu", szCpuDesc, pszCpuType, pszCpuSuff);
 
-            if (cTests < 192)
-                cTests = 192; /* need better coverage here. */
-
             FpuLdConstGenerate(pStrmData, cTests);
+            cTests = RT_MAX(cTests, 384); /* need better coverage for the next ones. */
             FpuLdMemGenerate(pStrmData, cTests);
+            FpuStMemGenerate(pStrmData, cTests);
 
             RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "Fpu", pszCpuSuff,
                                                        GenerateFooterAndClose(pStrmData, pszDataFile, "Fpu", "",
@@ -2614,6 +2847,36 @@ int main(int argc, char **argv)
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
         }
+
+        if (fFpuOther)
+        {
+# if 0
+            const char *pszDataFile = fCommonData ? "tstIEMAImplDataFpuOther.h" : pszBitBucket;
+            PRTSTREAM   pStrmData   = NULL;
+            rc = RTStrmOpen(pszDataFile, "w", &pStrmData);
+            if (!pStrmData)
+                return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataFile, rc);
+
+            const char *pszDataCpuFile = !fCpuData ? pszBitBucket : g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD
+                                       ? "tstIEMAImplDataFpuOther-Amd.h" : "tstIEMAImplDataFpuOther-Intel.h";
+            PRTSTREAM   pStrmDataCpu   = NULL;
+            rc = RTStrmOpen(pszDataCpuFile, "w", &pStrmDataCpu);
+            if (!pStrmData)
+                return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataCpuFile, rc);
+
+            GenerateHeader(pStrmData, "Fpu", szCpuDesc, NULL, "");
+            GenerateHeader(pStrmDataCpu, "Fpu", szCpuDesc, pszCpuType, pszCpuSuff);
+
+            /* later */
+
+            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "Fpu", pszCpuSuff,
+                                                       GenerateFooterAndClose(pStrmData, pszDataFile, "Fpu", "",
+                                                                              RTEXITCODE_SUCCESS));
+            if (rcExit != RTEXITCODE_SUCCESS)
+                return rcExit;
+# endif
+        }
+
         return RTEXITCODE_SUCCESS;
 #else
         return RTMsgErrorExitFailure("Test data generator not compiled in!");
@@ -2666,10 +2929,11 @@ int main(int argc, char **argv)
                 BswapTest();
             }
 
-            if (fFpu)
+            if (fFpuLdSt)
             {
                 FpuLoadConstTest();
                 FpuLdMemTest();
+                FpuStMemTest();
             }
         }
         return RTTestSummaryAndDestroy(g_hTest);
