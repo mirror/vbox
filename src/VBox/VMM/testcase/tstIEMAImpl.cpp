@@ -2841,8 +2841,8 @@ int main(int argc, char **argv)
             FpuLdMemGenerate(pStrmData, cTests);
             FpuStMemGenerate(pStrmData, cTests);
 
-            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "Fpu", pszCpuSuff,
-                                                       GenerateFooterAndClose(pStrmData, pszDataFile, "Fpu", "",
+            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "FpuLdSt", pszCpuSuff,
+                                                       GenerateFooterAndClose(pStrmData, pszDataFile, "FpuLdSt", "",
                                                                               RTEXITCODE_SUCCESS));
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
@@ -2869,8 +2869,8 @@ int main(int argc, char **argv)
 
             /* later */
 
-            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "Fpu", pszCpuSuff,
-                                                       GenerateFooterAndClose(pStrmData, pszDataFile, "Fpu", "",
+            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "FpuOther", pszCpuSuff,
+                                                       GenerateFooterAndClose(pStrmData, pszDataFile, "FpuOther", "",
                                                                               RTEXITCODE_SUCCESS));
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
