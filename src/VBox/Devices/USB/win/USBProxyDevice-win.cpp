@@ -111,9 +111,8 @@ static int usbProxyWinHandleUnpluggedDevice(PUSBPROXYDEV pProxyDev, DWORD dwErr)
  *
  * @returns VBox status code.
  */
-static DECLCALLBACK(int) usbProxyWinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
+static DECLCALLBACK(int) usbProxyWinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress)
 {
-    RT_NOREF(pvBackend);
     PPRIV_USBW32 pPriv = USBPROXYDEV_2_DATA(pProxyDev, PPRIV_USBW32);
 
     int rc = VINF_SUCCESS;
