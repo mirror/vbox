@@ -1173,7 +1173,7 @@ void UIMachineSettingsNetworkPage::getFromCache()
         /* Get adapter page: */
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTabWidget->widget(iSlot));
 
-        /* Load old adapter data from the cache: */
+        /* Load old adapter data from cache: */
         pTab->getAdapterDataFromCache(m_pCache->child(iSlot));
 
         /* Setup tab order: */
@@ -1214,8 +1214,8 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Update network data and failing state: */
-    setFailed(!saveNetworkData());
+    /* Update data and failing state: */
+    setFailed(!saveData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -1512,11 +1512,11 @@ bool UIMachineSettingsNetworkPage::saveGenericProperties(CNetworkAdapter &comAda
     return fSuccess;
 }
 
-bool UIMachineSettingsNetworkPage::saveNetworkData()
+bool UIMachineSettingsNetworkPage::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save network settings from the cache: */
+    /* Save network settings from cache: */
     if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
     {
         /* For each adapter: */
@@ -1531,12 +1531,12 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save adapter settings from the cache: */
+    /* Save adapter settings from cache: */
     if (fSuccess && m_pCache->child(iSlot).wasChanged())
     {
-        /* Get old network data from the cache: */
+        /* Get old network data from cache: */
         const UIDataSettingsMachineNetworkAdapter &oldAdapterData = m_pCache->child(iSlot).base();
-        /* Get new network data from the cache: */
+        /* Get new network data from cache: */
         const UIDataSettingsMachineNetworkAdapter &newAdapterData = m_pCache->child(iSlot).data();
 
         /* Get network adapter for further activities: */

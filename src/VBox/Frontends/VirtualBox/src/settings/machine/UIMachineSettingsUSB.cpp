@@ -434,7 +434,7 @@ void UIMachineSettingsUSB::getFromCache()
     /* Clear list initially: */
     m_pTreeWidgetFilters->clear();
 
-    /* Get old USB data from the cache: */
+    /* Get old USB data from cache: */
     const UIDataSettingsMachineUSB &oldUsbData = m_pCache->base();
 
     /* Load currently supported USB controllers: */
@@ -449,7 +449,7 @@ void UIMachineSettingsUSB::getFromCache()
     m_pRadioButtonUSB2->setVisible(supportedTypes.contains(KUSBControllerType_EHCI));
     m_pRadioButtonUSB3->setVisible(supportedTypes.contains(KUSBControllerType_XHCI));
 
-    /* Load old USB data from the cache: */
+    /* Load old USB data from cache: */
     m_pCheckBoxUSB->setChecked(oldUsbData.m_fUSBEnabled);
     switch (oldUsbData.m_USBControllerType)
     {
@@ -459,7 +459,7 @@ void UIMachineSettingsUSB::getFromCache()
         case KUSBControllerType_XHCI: m_pRadioButtonUSB3->setChecked(true); break;
     }
 
-    /* For each filter => load it from the cache: */
+    /* For each filter => load it from cache: */
     for (int iFilterIndex = 0; iFilterIndex < m_pCache->childCount(); ++iFilterIndex)
         addUSBFilterItem(m_pCache->child(iFilterIndex).base(), false /* its new? */);
 
@@ -511,8 +511,8 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Update USB data and failing state: */
-    setFailed(!saveUSBData());
+    /* Update data and failing state: */
+    setFailed(!saveData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -1086,14 +1086,14 @@ void UIMachineSettingsUSB::addUSBFilterItem(const UIDataSettingsMachineUSBFilter
     }
 }
 
-bool UIMachineSettingsUSB::saveUSBData()
+bool UIMachineSettingsUSB::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save USB settings from the cache: */
+    /* Save USB settings from cache: */
     if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
     {
-        /* Get new USB data from the cache: */
+        /* Get new USB data from cache: */
         const UIDataSettingsMachineUSB &newUsbData = m_pCache->data();
 
         /* Save USB data: */

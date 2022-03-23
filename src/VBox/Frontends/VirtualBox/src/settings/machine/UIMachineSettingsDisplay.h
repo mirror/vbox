@@ -56,7 +56,7 @@ public:
     /** Constructs Display settings page. */
     UIMachineSettingsDisplay();
     /** Destructs Display settings page. */
-    ~UIMachineSettingsDisplay();
+    virtual ~UIMachineSettingsDisplay() RT_OVERRIDE;
 
     /** Defines @a comGuestOSType. */
     void setGuestOSType(CGuestOSType comGuestOSType);
@@ -168,13 +168,13 @@ private:
     static int calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality);
     /** Calculates recording video quality for passed @a iFrameWidth, @a iFrameHeight, @a iFrameRate and @a iBitRate. */
     static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);
-    /** Saves existing display data from the cache. */
-    bool saveDisplayData();
-    /** Saves existing 'Screen' data from the cache. */
+    /** Saves existing data from cache. */
+    bool saveData();
+    /** Saves existing 'Screen' data from cache. */
     bool saveScreenData();
-    /** Saves existing 'Remote Display' data from the cache. */
+    /** Saves existing 'Remote Display' data from cache. */
     bool saveRemoteDisplayData();
-    /** Saves existing 'Recording' data from the cache. */
+    /** Saves existing 'Recording' data from cache. */
     bool saveRecordingData();
     /** Decide which of the recording related widgets are to be disabled/enabled. */
     void enableDisableRecordingWidgets();

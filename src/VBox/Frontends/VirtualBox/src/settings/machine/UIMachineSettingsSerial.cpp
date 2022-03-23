@@ -628,7 +628,7 @@ void UIMachineSettingsSerialPage::getFromCache()
         /* Get port page: */
         UIMachineSettingsSerial *pPage = qobject_cast<UIMachineSettingsSerial*>(m_pTabWidget->widget(iSlot));
 
-        /* Load old port data from the cache: */
+        /* Load old port data from cache: */
         pPage->loadPortData(m_pCache->child(iSlot).base());
 
         /* Setup tab order: */
@@ -675,8 +675,8 @@ void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Update serial data and failing state: */
-    setFailed(!saveSerialData());
+    /* Update data and failing state: */
+    setFailed(!saveData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -822,11 +822,11 @@ void UIMachineSettingsSerialPage::cleanup()
     m_pCache = 0;
 }
 
-bool UIMachineSettingsSerialPage::saveSerialData()
+bool UIMachineSettingsSerialPage::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save serial settings from the cache: */
+    /* Save serial settings from cache: */
     if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
     {
         /* For each port: */
@@ -841,12 +841,12 @@ bool UIMachineSettingsSerialPage::savePortData(int iSlot)
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save adapter settings from the cache: */
+    /* Save adapter settings from cache: */
     if (fSuccess && m_pCache->child(iSlot).wasChanged())
     {
-        /* Get old serial data from the cache: */
+        /* Get old serial data from cache: */
         const UIDataSettingsMachineSerialPort &oldPortData = m_pCache->child(iSlot).base();
-        /* Get new serial data from the cache: */
+        /* Get new serial data from cache: */
         const UIDataSettingsMachineSerialPort &newPortData = m_pCache->child(iSlot).data();
 
         /* Get serial port for further activities: */

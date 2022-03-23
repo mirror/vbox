@@ -394,7 +394,7 @@ void UIMachineSettingsSF::getFromCache()
     /* Update root items visibility: */
     updateRootItemsVisibility();
 
-    /* For each folder => load it from the cache: */
+    /* For each folder => load it from cache: */
     for (int iFolderIndex = 0; iFolderIndex < m_pCache->childCount(); ++iFolderIndex)
         addSharedFolderItem(m_pCache->child(iFolderIndex).base(), false /* its new? */);
 
@@ -436,8 +436,8 @@ void UIMachineSettingsSF::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Update folders data and failing state: */
-    setFailed(!saveFoldersData());
+    /* Update data and failing state: */
+    setFailed(!saveData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -1026,11 +1026,11 @@ bool UIMachineSettingsSF::getSharedFolder(const QString &strFolderName, const CS
     return fSuccess;
 }
 
-bool UIMachineSettingsSF::saveFoldersData()
+bool UIMachineSettingsSF::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save folders settings from the cache: */
+    /* Save folders settings from cache: */
     if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
     {
         /* For each folder: */

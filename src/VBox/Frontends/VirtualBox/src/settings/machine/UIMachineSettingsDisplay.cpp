@@ -492,14 +492,14 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsDisplay::getFromCache()
 {
-    /* Get old display data from the cache: */
+    /* Get old display data from cache: */
     const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
     /* We are doing that *now* because these combos have
      * dynamical content which depends on cashed value: */
     repopulateComboAuthType();
 
-    /* Load old 'Screen' data from the cache: */
+    /* Load old 'Screen' data from cache: */
     m_pSpinboxMonitorCount->setValue(oldDisplayData.m_cGuestScreenCount);
     m_pEditorScaleFactor->setScaleFactors(oldDisplayData.m_scaleFactors);
     m_pEditorScaleFactor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
@@ -519,7 +519,7 @@ void UIMachineSettingsDisplay::getFromCache()
     /* If remote display server is supported: */
     if (oldDisplayData.m_fRemoteDisplayServerSupported)
     {
-        /* Load old 'Remote Display' data from the cache: */
+        /* Load old 'Remote Display' data from cache: */
         m_pCheckboxRemoteDisplay->setChecked(oldDisplayData.m_fRemoteDisplayServerEnabled);
         m_pEditorRemoteDisplayPort->setText(oldDisplayData.m_strRemoteDisplayPort);
         const int iAuthTypePosition = m_pComboRemoteDisplayAuthMethod->findData(oldDisplayData.m_remoteDisplayAuthType);
@@ -528,7 +528,7 @@ void UIMachineSettingsDisplay::getFromCache()
         m_pCheckboxMultipleConn->setChecked(oldDisplayData.m_fRemoteDisplayMultiConnAllowed);
     }
 
-    /* Load old 'Recording' data from the cache: */
+    /* Load old 'Recording' data from cache: */
     m_pCheckboxRecording->setChecked(oldDisplayData.m_fRecordingEnabled);
     m_pEditorRecordingFilePath->setInitialPath(oldDisplayData.m_strRecordingFolder);
     m_pEditorRecordingFilePath->setPath(oldDisplayData.m_strRecordingFilePath);
@@ -632,8 +632,8 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Update display data and failing state: */
-    setFailed(!saveDisplayData());
+    /* Update data and failing state: */
+    setFailed(!saveData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -869,7 +869,7 @@ void UIMachineSettingsDisplay::retranslateUi()
 
 void UIMachineSettingsDisplay::polishPage()
 {
-    /* Get old display data from the cache: */
+    /* Get old display data from cache: */
     const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
     /* Polish 'Screen' availability: */
@@ -1848,20 +1848,20 @@ int UIMachineSettingsDisplay::calculateQuality(int iFrameWidth, int iFrameHeight
     return (int)dResult;
 }
 
-bool UIMachineSettingsDisplay::saveDisplayData()
+bool UIMachineSettingsDisplay::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save display settings from the cache: */
+    /* Save display settings from cache: */
     if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
     {
-        /* Save 'Screen' data from the cache: */
+        /* Save 'Screen' data from cache: */
         if (fSuccess)
             fSuccess = saveScreenData();
-        /* Save 'Remote Display' data from the cache: */
+        /* Save 'Remote Display' data from cache: */
         if (fSuccess)
             fSuccess = saveRemoteDisplayData();
-        /* Save 'Video Capture' data from the cache: */
+        /* Save 'Video Capture' data from cache: */
         if (fSuccess)
             fSuccess = saveRecordingData();
     }
@@ -1873,12 +1873,12 @@ bool UIMachineSettingsDisplay::saveScreenData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Screen' data from the cache: */
+    /* Save 'Screen' data from cache: */
     if (fSuccess)
     {
-        /* Get old display data from the cache: */
+        /* Get old display data from cache: */
         const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
-        /* Get new display data from the cache: */
+        /* Get new display data from cache: */
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
         /* Get graphics adapter for further activities: */
@@ -1942,12 +1942,12 @@ bool UIMachineSettingsDisplay::saveRemoteDisplayData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Remote Display' data from the cache: */
+    /* Save 'Remote Display' data from cache: */
     if (fSuccess)
     {
-        /* Get old display data from the cache: */
+        /* Get old display data from cache: */
         const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
-        /* Get new display data from the cache: */
+        /* Get new display data from cache: */
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
         /* Get remote display server for further activities: */
@@ -2005,12 +2005,12 @@ bool UIMachineSettingsDisplay::saveRecordingData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Recording' data from the cache: */
+    /* Save 'Recording' data from cache: */
     if (fSuccess)
     {
-        /* Get old display data from the cache: */
+        /* Get old display data from cache: */
         const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
-        /* Get new display data from the cache: */
+        /* Get new display data from cache: */
         const UIDataSettingsMachineDisplay &newDisplayData = m_pCache->data();
 
         CRecordingSettings recordingSettings = m_machine.GetRecordingSettings();

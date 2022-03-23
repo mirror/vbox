@@ -85,7 +85,7 @@ void UIGlobalSettingsInterface::loadToCacheFrom(QVariant &data)
 
 void UIGlobalSettingsInterface::getFromCache()
 {
-    /* Load old data from the cache: */
+    /* Load old data from cache: */
     const UIDataSettingsGlobalInterface &oldData = m_pCache->base();
     m_pEditorColorTheme->setValue(oldData.m_enmColorTheme);
 

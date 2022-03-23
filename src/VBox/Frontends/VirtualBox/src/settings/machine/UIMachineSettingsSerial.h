@@ -42,7 +42,7 @@ public:
     /** Constructs Serial settings page. */
     UIMachineSettingsSerialPage();
     /** Destructs Serial settings page. */
-    ~UIMachineSettingsSerialPage();
+    virtual ~UIMachineSettingsSerialPage() RT_OVERRIDE;
 
 protected:
 
@@ -79,9 +79,9 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Saves existing serial data from the cache. */
-    bool saveSerialData();
-    /** Saves existing port data from the cache. */
+    /** Saves existing data from cache. */
+    bool saveData();
+    /** Saves existing port data from cache. */
     bool savePortData(int iSlot);
 
     /** Holds the tab-widget instance. */

@@ -43,7 +43,7 @@ public:
     /** Constructs Network settings page. */
     UIMachineSettingsNetworkPage();
     /** Destructs Network settings page. */
-    ~UIMachineSettingsNetworkPage();
+    virtual ~UIMachineSettingsNetworkPage() RT_OVERRIDE;
 
     /** Returns the bridged adapter list. */
     const QStringList &bridgedAdapterList() const { return m_bridgedAdapterList; }
@@ -133,9 +133,9 @@ private:
     /** Saves generic @a strProperties to passed @a adapter. */
     static bool saveGenericProperties(CNetworkAdapter &comAdapter, const QString &strProperties);
 
-    /** Saves existing network data from the cache. */
-    bool saveNetworkData();
-    /** Saves existing adapter data from the cache. */
+    /** Saves existing data from cache. */
+    bool saveData();
+    /** Saves existing adapter data from cache. */
     bool saveAdapterData(int iSlot);
 
     /** Holds the tab-widget instance. */

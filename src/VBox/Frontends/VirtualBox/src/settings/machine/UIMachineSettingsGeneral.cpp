@@ -259,7 +259,7 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsGeneral::getFromCache()
 {
-    /* Get old general data from the cache: */
+    /* Get old general data from cache: */
     const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
 
     /* We are doing that *now* because these combos have
@@ -267,12 +267,12 @@ void UIMachineSettingsGeneral::getFromCache()
     repopulateComboClipboardMode();
     repopulateComboDnDMode();
 
-    /* Load old 'Basic' data from the cache: */
+    /* Load old 'Basic' data from cache: */
     AssertPtrReturnVoid(m_pEditorNameAndSystem);
     m_pEditorNameAndSystem->setName(oldGeneralData.m_strName);
     m_pEditorNameAndSystem->setTypeId(oldGeneralData.m_strGuestOsTypeId);
 
-    /* Load old 'Advanced' data from the cache: */
+    /* Load old 'Advanced' data from cache: */
     AssertPtrReturnVoid(m_pEditorSnapshotFolder);
     AssertPtrReturnVoid(m_pComboClipboard);
     AssertPtrReturnVoid(m_pComboDragAndDrop);
@@ -283,11 +283,11 @@ void UIMachineSettingsGeneral::getFromCache()
     const int iDnDModePosition = m_pComboDragAndDrop->findData(oldGeneralData.m_dndMode);
     m_pComboDragAndDrop->setCurrentIndex(iDnDModePosition == -1 ? 0 : iDnDModePosition);
 
-    /* Load old 'Description' data from the cache: */
+    /* Load old 'Description' data from cache: */
     AssertPtrReturnVoid(m_pEditorDescription);
     m_pEditorDescription->setPlainText(oldGeneralData.m_strDescription);
 
-    /* Load old 'Encryption' data from the cache: */
+    /* Load old 'Encryption' data from cache: */
     AssertPtrReturnVoid(m_pCheckBoxEncryption);
     AssertPtrReturnVoid(m_pComboCipher);
     m_pCheckBoxEncryption->setChecked(oldGeneralData.m_fEncryptionEnabled);
@@ -367,8 +367,8 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Update general data and failing state: */
-    setFailed(!saveGeneralData());
+    /* Update data and failing state: */
+    setFailed(!saveData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -891,23 +891,23 @@ void UIMachineSettingsGeneral::repopulateComboDnDMode()
     }
 }
 
-bool UIMachineSettingsGeneral::saveGeneralData()
+bool UIMachineSettingsGeneral::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save general settings from the cache: */
+    /* Save general settings from cache: */
     if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
     {
-        /* Save 'Basic' data from the cache: */
+        /* Save 'Basic' data from cache: */
         if (fSuccess)
             fSuccess = saveBasicData();
-        /* Save 'Advanced' data from the cache: */
+        /* Save 'Advanced' data from cache: */
         if (fSuccess)
             fSuccess = saveAdvancedData();
-        /* Save 'Description' data from the cache: */
+        /* Save 'Description' data from cache: */
         if (fSuccess)
             fSuccess = saveDescriptionData();
-        /* Save 'Encryption' data from the cache: */
+        /* Save 'Encryption' data from cache: */
         if (fSuccess)
             fSuccess = saveEncryptionData();
     }
@@ -919,12 +919,12 @@ bool UIMachineSettingsGeneral::saveBasicData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Basic' data from the cache: */
+    /* Save 'Basic' data from cache: */
     if (fSuccess)
     {
-        /* Get old general data from the cache: */
+        /* Get old general data from cache: */
         const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
-        /* Get new general data from the cache: */
+        /* Get new general data from cache: */
         const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
 
         /* Save machine OS type ID: */
@@ -958,12 +958,12 @@ bool UIMachineSettingsGeneral::saveAdvancedData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Advanced' data from the cache: */
+    /* Save 'Advanced' data from cache: */
     if (fSuccess)
     {
-        /* Get old general data from the cache: */
+        /* Get old general data from cache: */
         const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
-        /* Get new general data from the cache: */
+        /* Get new general data from cache: */
         const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
 
         /* Save machine clipboard mode: */
@@ -1005,12 +1005,12 @@ bool UIMachineSettingsGeneral::saveDescriptionData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Description' data from the cache: */
+    /* Save 'Description' data from cache: */
     if (fSuccess)
     {
-        /* Get old general data from the cache: */
+        /* Get old general data from cache: */
         const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
-        /* Get new general data from the cache: */
+        /* Get new general data from cache: */
         const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
 
         /* Save machine description: */
@@ -1032,12 +1032,12 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Encryption' data from the cache: */
+    /* Save 'Encryption' data from cache: */
     if (fSuccess)
     {
-        /* Get old general data from the cache: */
+        /* Get old general data from cache: */
         const UIDataSettingsMachineGeneral &oldGeneralData = m_pCache->base();
-        /* Get new general data from the cache: */
+        /* Get new general data from cache: */
         const UIDataSettingsMachineGeneral &newGeneralData = m_pCache->data();
 
         /* Make sure it either encryption state is changed itself,

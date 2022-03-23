@@ -42,7 +42,7 @@ public:
     /** Constructs Audio settings page. */
     UIMachineSettingsAudio();
     /** Destructs Audio settings page. */
-    ~UIMachineSettingsAudio();
+    virtual ~UIMachineSettingsAudio() RT_OVERRIDE;
 
 protected:
 
@@ -80,8 +80,8 @@ private:
     /** Cleanups all. */
     void cleanup();
 
-    /** Saves existing audio data from the cache. */
-    bool saveAudioData();
+    /** Saves existing data from cache. */
+    bool saveData();
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineAudio *m_pCache;

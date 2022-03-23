@@ -305,7 +305,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsSystem::getFromCache()
 {
-    /* Get old system data from the cache: */
+    /* Get old system data from cache: */
     const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
 
     /* We are doing that *now* because these combos have
@@ -314,7 +314,7 @@ void UIMachineSettingsSystem::getFromCache()
     repopulateComboPointingHIDType();
     repopulateComboParavirtProviderType();
 
-    /* Load old 'Motherboard' data from the cache: */
+    /* Load old 'Motherboard' data from cache: */
     m_pEditorBaseMemory->setValue(oldSystemData.m_iMemorySize);
     m_pEditorBootOrder->setValue(oldSystemData.m_bootItems);
     const int iChipsetTypePosition = m_pComboChipset->findData(oldSystemData.m_chipsetType);
@@ -325,13 +325,13 @@ void UIMachineSettingsSystem::getFromCache()
     m_pCheckBoxEFI->setChecked(oldSystemData.m_fEnabledEFI);
     m_pCheckBoxUTC->setChecked(oldSystemData.m_fEnabledUTC);
 
-    /* Load old 'Processor' data from the cache: */
+    /* Load old 'Processor' data from cache: */
     m_pSliderProcessorCount->setValue(oldSystemData.m_cCPUCount);
     m_pSliderProcessorExecCap->setValue(oldSystemData.m_iCPUExecCap);
     m_pCheckBoxPAE->setChecked(oldSystemData.m_fEnabledPAE);
     m_pCheckBoxNestedVirtualization->setChecked(oldSystemData.m_fEnabledNestedHwVirtEx);
 
-    /* Load old 'Acceleration' data from the cache: */
+    /* Load old 'Acceleration' data from cache: */
     const int iParavirtProviderPosition = m_pComboParavirtProvider->findData(oldSystemData.m_paravirtProvider);
     m_pComboParavirtProvider->setCurrentIndex(iParavirtProviderPosition == -1 ? 0 : iParavirtProviderPosition);
     m_pCheckBoxVirtualization->setChecked(oldSystemData.m_fEnabledHwVirtEx);
@@ -396,8 +396,8 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Update system data and failing state: */
-    setFailed(!saveSystemData());
+    /* Update data and failing state: */
+    setFailed(!saveData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -685,7 +685,7 @@ void UIMachineSettingsSystem::retranslateUi()
 
 void UIMachineSettingsSystem::polishPage()
 {
-    /* Get old system data from the cache: */
+    /* Get old system data from cache: */
     const UIDataSettingsMachineSystem &systemData = m_pCache->base();
 
     /* Polish 'Motherboard' availability: */
@@ -1317,20 +1317,20 @@ void UIMachineSettingsSystem::retranslateComboParavirtProvider()
     }
 }
 
-bool UIMachineSettingsSystem::saveSystemData()
+bool UIMachineSettingsSystem::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save general settings from the cache: */
+    /* Save general settings from cache: */
     if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
     {
-        /* Save 'Motherboard' data from the cache: */
+        /* Save 'Motherboard' data from cache: */
         if (fSuccess)
             fSuccess = saveMotherboardData();
-        /* Save 'Processor' data from the cache: */
+        /* Save 'Processor' data from cache: */
         if (fSuccess)
             fSuccess = saveProcessorData();
-        /* Save 'Acceleration' data from the cache: */
+        /* Save 'Acceleration' data from cache: */
         if (fSuccess)
             fSuccess = saveAccelerationData();
     }
@@ -1342,12 +1342,12 @@ bool UIMachineSettingsSystem::saveMotherboardData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Motherboard' settings from the cache: */
+    /* Save 'Motherboard' settings from cache: */
     if (fSuccess)
     {
-        /* Get old system data from the cache: */
+        /* Get old system data from cache: */
         const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
-        /* Get new system data from the cache: */
+        /* Get new system data from cache: */
         const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
 
         /* Save memory size: */
@@ -1405,12 +1405,12 @@ bool UIMachineSettingsSystem::saveProcessorData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Processor' settings from the cache: */
+    /* Save 'Processor' settings from cache: */
     if (fSuccess)
     {
-        /* Get old system data from the cache: */
+        /* Get old system data from cache: */
         const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
-        /* Get new system data from the cache: */
+        /* Get new system data from cache: */
         const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
 
         /* Save CPU count: */
@@ -1450,12 +1450,12 @@ bool UIMachineSettingsSystem::saveAccelerationData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Acceleration' settings from the cache: */
+    /* Save 'Acceleration' settings from cache: */
     if (fSuccess)
     {
-        /* Get old system data from the cache: */
+        /* Get old system data from cache: */
         const UIDataSettingsMachineSystem &oldSystemData = m_pCache->base();
-        /* Get new system data from the cache: */
+        /* Get new system data from cache: */
         const UIDataSettingsMachineSystem &newSystemData = m_pCache->data();
 
         /* Save paravirtualization provider: */

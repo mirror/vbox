@@ -52,7 +52,7 @@ public:
     /** Constructs Shared Folders settings page. */
     UIMachineSettingsSF();
     /** Destructs Shared Folders settings page. */
-    ~UIMachineSettingsSF();
+    virtual ~UIMachineSettingsSF() RT_OVERRIDE;
 
 protected:
 
@@ -143,8 +143,8 @@ private:
     /** Look for a folder with the the passed @a strFolderName. */
     bool getSharedFolder(const QString &strFolderName, const CSharedFolderVector &folders, CSharedFolder &comFolder);
 
-    /** Saves existing folder data from the cache. */
-    bool saveFoldersData();
+    /** Saves existing data from cache. */
+    bool saveData();
     /** Removes shared folder defined by a @a folderCache. */
     bool removeSharedFolder(const UISettingsCacheSharedFolder &folderCache);
     /** Creates shared folder defined by a @a folderCache. */

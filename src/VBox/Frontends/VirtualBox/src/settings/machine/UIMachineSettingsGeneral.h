@@ -47,7 +47,7 @@ public:
     /** Constructs General settings page. */
     UIMachineSettingsGeneral();
     /** Destructs General settings page. */
-    ~UIMachineSettingsGeneral();
+    virtual ~UIMachineSettingsGeneral() RT_OVERRIDE;
 
     /** Returns the VM OS type ID. */
     CGuestOSType guestOSType() const;
@@ -65,14 +65,14 @@ protected:
     /** Loads data into the cache from the corresponding external object(s).
       * @note This task COULD be performed in other than GUI thread. */
     virtual void loadToCacheFrom(QVariant &data) RT_OVERRIDE;
-    /** Loads data into the corresponding widgets from the cache,
+    /** Loads data into the corresponding widgets from cache,
       * @note This task SHOULD be performed in GUI thread only! */
     virtual void getFromCache() RT_OVERRIDE;
 
     /** Saves the data from the corresponding widgets into the cache,
       * @note This task SHOULD be performed in GUI thread only! */
     virtual void putToCache() RT_OVERRIDE;
-    /** Save data from the cache into the corresponding external object(s).
+    /** Save data from cache into the corresponding external object(s).
       * @note This task COULD be performed in other than GUI thread. */
     virtual void saveFromCacheTo(QVariant &data) /* overrride */;
 
@@ -119,15 +119,15 @@ private:
     /** Repopulates DnD mode combo-box. */
     void repopulateComboDnDMode();
 
-    /** Saves existing general data from the cache. */
-    bool saveGeneralData();
-    /** Saves existing 'Basic' data from the cache. */
+    /** Saves existing general data from cache. */
+    bool saveData();
+    /** Saves existing 'Basic' data from cache. */
     bool saveBasicData();
-    /** Saves existing 'Advanced' data from the cache. */
+    /** Saves existing 'Advanced' data from cache. */
     bool saveAdvancedData();
-    /** Saves existing 'Description' data from the cache. */
+    /** Saves existing 'Description' data from cache. */
     bool saveDescriptionData();
-    /** Saves existing 'Encryption' data from the cache. */
+    /** Saves existing 'Encryption' data from cache. */
     bool saveEncryptionData();
 
     /** Holds whether HW virtualization extension is enabled. */

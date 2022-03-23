@@ -210,10 +210,10 @@ void UIMachineSettingsInterface::loadToCacheFrom(QVariant &data)
 
 void UIMachineSettingsInterface::getFromCache()
 {
-    /* Get old interface data from the cache: */
+    /* Get old interface data from cache: */
     const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base();
 
-    /* Load old interface data from the cache: */
+    /* Load old interface data from cache: */
     m_pEditorStatusBar->setStatusBarEnabled(oldInterfaceData.m_fStatusBarEnabled);
     m_pEditorStatusBar->setStatusBarConfiguration(oldInterfaceData.m_statusBarRestrictions,
                                                   oldInterfaceData.m_statusBarOrder);
@@ -287,8 +287,8 @@ void UIMachineSettingsInterface::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Update interface data and failing state: */
-    setFailed(!saveInterfaceData());
+    /* Update data and failing state: */
+    setFailed(!saveData());
 
     /* Upload machine to data: */
     UISettingsPageMachine::uploadData(data);
@@ -412,23 +412,23 @@ void UIMachineSettingsInterface::cleanup()
     m_pCache = 0;
 }
 
-bool UIMachineSettingsInterface::saveInterfaceData()
+bool UIMachineSettingsInterface::saveData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save display settings from the cache: */
+    /* Save display settings from cache: */
     if (fSuccess && isMachineInValidMode() && m_pCache->wasChanged())
     {
-        /* Save 'Menu-bar' data from the cache: */
+        /* Save 'Menu-bar' data from cache: */
         if (fSuccess)
             fSuccess = saveMenuBarData();
-        /* Save 'Status-bar' data from the cache: */
+        /* Save 'Status-bar' data from cache: */
         if (fSuccess)
             fSuccess = saveStatusBarData();
-        /* Save 'Mini-toolbar' data from the cache: */
+        /* Save 'Mini-toolbar' data from cache: */
         if (fSuccess)
             fSuccess = saveMiniToolbarData();
-        /* Save 'Visual State' data from the cache: */
+        /* Save 'Visual State' data from cache: */
         if (fSuccess)
             fSuccess = saveVisualStateData();
     }
@@ -440,12 +440,12 @@ bool UIMachineSettingsInterface::saveMenuBarData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Menu-bar' data from the cache: */
+    /* Save 'Menu-bar' data from cache: */
     if (fSuccess)
     {
-        /* Get old interface data from the cache: */
+        /* Get old interface data from cache: */
         const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base();
-        /* Get new interface data from the cache: */
+        /* Get new interface data from cache: */
         const UIDataSettingsMachineInterface &newInterfaceData = m_pCache->data();
 
 #ifndef VBOX_WS_MAC
@@ -493,12 +493,12 @@ bool UIMachineSettingsInterface::saveStatusBarData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Status-bar' data from the cache: */
+    /* Save 'Status-bar' data from cache: */
     if (fSuccess)
     {
-        /* Get old interface data from the cache: */
+        /* Get old interface data from cache: */
         const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base();
-        /* Get new interface data from the cache: */
+        /* Get new interface data from cache: */
         const UIDataSettingsMachineInterface &newInterfaceData = m_pCache->data();
 
         /* Save whether status-bar is enabled: */
@@ -519,12 +519,12 @@ bool UIMachineSettingsInterface::saveMiniToolbarData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Mini-toolbar' data from the cache: */
+    /* Save 'Mini-toolbar' data from cache: */
     if (fSuccess)
     {
-        /* Get old interface data from the cache: */
+        /* Get old interface data from cache: */
         const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base(); Q_UNUSED(oldInterfaceData);
-        /* Get new interface data from the cache: */
+        /* Get new interface data from cache: */
         const UIDataSettingsMachineInterface &newInterfaceData = m_pCache->data(); Q_UNUSED(newInterfaceData);
 
 #ifndef VBOX_WS_MAC
@@ -544,12 +544,12 @@ bool UIMachineSettingsInterface::saveVisualStateData()
 {
     /* Prepare result: */
     bool fSuccess = true;
-    /* Save 'Visual State' data from the cache: */
+    /* Save 'Visual State' data from cache: */
     if (fSuccess)
     {
-        /* Get old interface data from the cache: */
+        /* Get old interface data from cache: */
         const UIDataSettingsMachineInterface &oldInterfaceData = m_pCache->base();
-        /* Get new interface data from the cache: */
+        /* Get new interface data from cache: */
         const UIDataSettingsMachineInterface &newInterfaceData = m_pCache->data();
 
         /* Save desired visual state: */

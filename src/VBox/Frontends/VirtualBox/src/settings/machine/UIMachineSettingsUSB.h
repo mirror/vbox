@@ -52,7 +52,7 @@ public:
     /** Constructs USB settings page. */
     UIMachineSettingsUSB();
     /** Destructs USB settings page. */
-    ~UIMachineSettingsUSB();
+    virtual ~UIMachineSettingsUSB() RT_OVERRIDE;
 
     /** Returns whether the USB is enabled. */
     bool isUSBEnabled() const;
@@ -135,8 +135,8 @@ private:
     /** Adds USB filter item based on a given @a filterData, fChoose if requested. */
     void addUSBFilterItem(const UIDataSettingsMachineUSBFilter &filterData, bool fChoose);
 
-    /** Saves existing USB data from the cache. */
-    bool saveUSBData();
+    /** Saves existing data from cache. */
+    bool saveData();
     /** Removes USB controllers of passed @a types. */
     bool removeUSBControllers(const QSet<KUSBControllerType> &types = QSet<KUSBControllerType>());
     /** Creates USB controllers of passed @a enmType. */
