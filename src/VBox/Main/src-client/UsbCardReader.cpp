@@ -1869,14 +1869,14 @@ int UsbCardReader::SetAttrib(struct USBCARDREADER *pDrv,
 
 /* static */ DECLCALLBACK(int) UsbCardReader::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
+    RT_NOREF(fFlags, pCfg);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
     LogFlowFunc(("iInstance/%d, pCfg:%p, fFlags:%x\n", pDrvIns->iInstance, pCfg, fFlags));
     PUSBCARDREADER pThis = PDMINS_2_DATA(pDrvIns, PUSBCARDREADER);
 
     pThis->hReqQCardReaderCmd = NIL_RTREQQUEUE;
 
-    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "Object", "");
+    PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, "", "");
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
