@@ -61,8 +61,7 @@ struct _REMOTEUSBBACKEND;
 typedef struct _REMOTEUSBBACKEND *PREMOTEUSBBACKEND;
 
 /**
- * Pointer to this structure is passed to pfnCreateProxyDevice as the device
- * specific pointer, when creating remote devices.
+ * Pointer to this structure is queried from USBREMOTEIF::pfnQueryRemoteUsbBackend.
  */
 typedef struct REMOTEUSBCALLBACK
 {
@@ -81,8 +80,34 @@ typedef struct REMOTEUSBCALLBACK
     DECLCALLBACKMEMBER(void, pfnCancelURB,(PREMOTEUSBDEVICE pDevice, PREMOTEUSBQURB pRemoteURB));
     DECLCALLBACKMEMBER(int, pfnWakeup,(PREMOTEUSBDEVICE pDevice));
 } REMOTEUSBCALLBACK;
+/** Pointer to a remote USB callback table. */
+typedef REMOTEUSBCALLBACK *PREMOTEUSBCALLBACK;
+
+/**
+ * Remote USB interface for querying the remote USB callback table for particular client.
+ * Returned from the *QueryGenericUserObject when passing REMOTEUSBIF_OID as the identifier.
+ */
+typedef struct REMOTEUSBIF
+{
+    /** Opqaue user data to pass as the first parameter to the callbacks. */
+    void                        *pvUser;
+
+    /**
+     * Queries the remote USB interface callback table for a given UUID/client ID pair.
+     *
+     * @returns Pointer to the remote USB callback table or NULL if the client ID and or UUID is invalid.
+     * @param   pvUser          Opaque user data from this interface.
+     * @param   pUuid           The device UUID to query the interface for.
+     * @param   idClient        The client ID to query the interface for.
+     */
+    DECLCALLBACKMEMBER(PREMOTEUSBCALLBACK, pfnQueryRemoteUsbBackend, (void *pvUser, PCRTUUID pUuid, uint32_t idClient));
+} REMOTEUSBIF;
+/** Pointer to a remote USB interface. */
+typedef REMOTEUSBIF *PREMOTEUSBIF;
+
+/** The UUID to identify the remote USB interface. */
+#define REMOTEUSBIF_OID "87012f58-2ad6-4f89-b7b1-92f72c7ea8cc"
 
 /** @} */
 
 #endif /* !VBOX_INCLUDED_vrdpusb_h */
-

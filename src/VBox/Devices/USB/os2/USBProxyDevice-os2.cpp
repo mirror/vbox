@@ -427,9 +427,8 @@ static DECLCALLBACK(int) usbProxyOs2AsyncThread(RTTHREAD Thread, void *pvProxyDe
  * @returns VBox status code.
  * @param   pProxyDev       The device instance.
  * @param   pszAddress      The path to the device.
- * @param   pvBackend       Backend specific pointer, unused for the linux backend.
  */
-static int usbProxyOs2Open(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
+static int usbProxyOs2Open(PUSBPROXYDEV pProxyDev, const char *pszAddress)
 {
     LogFlow(("usbProxyOs2Open: pProxyDev=%p pszAddress=%s\n", pProxyDev, pszAddress));
     int rc;

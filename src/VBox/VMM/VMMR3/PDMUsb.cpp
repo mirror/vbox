@@ -1018,12 +1018,14 @@ VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName
  * @param   pUuid               The UUID to be associated with the device.
  * @param   pszBackend          The proxy backend to use.
  * @param   pszAddress          The address string.
- * @param   pvBackend           Pointer to the backend.
+ * @param   pSubTree            The CFGM subtree to incorporate into the settings
+ *                              (same restrictions as for CFGMR3InsertSubTree() apply),
+ *                              optional.
  * @param   enmSpeed            The speed the USB device is operating at.
  * @param   fMaskedIfs          The interfaces to hide from the guest.
  * @param   pszCaptureFilename  Path to the file for USB traffic capturing, optional.
  */
-VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, const char *pszBackend, const char *pszAddress, void *pvBackend,
+VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, const char *pszBackend, const char *pszAddress, PCFGMNODE pSubTree,
                                          VUSBSPEED enmSpeed, uint32_t fMaskedIfs, const char *pszCaptureFilename)
 {
     /*
@@ -1077,9 +1079,13 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, const char *
         rc = RTUuidToStr(pUuid, &szUuid[0], sizeof(szUuid));                    AssertRCBreak(rc);
         rc = CFGMR3InsertString(pConfig,  "UUID", szUuid);                      AssertRCBreak(rc);
         rc = CFGMR3InsertString(pConfig, "Backend", pszBackend);                AssertRCBreak(rc);
-        rc = CFGMR3InsertInteger(pConfig, "pvBackend", (uintptr_t)pvBackend);   AssertRCBreak(rc);
         rc = CFGMR3InsertInteger(pConfig, "MaskedIfs", fMaskedIfs);             AssertRCBreak(rc);
         rc = CFGMR3InsertInteger(pConfig, "Force11Device", !(pHub->fVersions & iUsbVersion)); AssertRCBreak(rc);
+        if (pSubTree)
+        {
+            rc = CFGMR3InsertSubTree(pConfig, "BackendCfg", pSubTree, NULL /*ppChild*/);
+            AssertRCBreak(rc);
+        }
     } while (0); /* break loop */
     if (RT_FAILURE(rc))
     {
@@ -2178,6 +2184,25 @@ static DECLCALLBACK(VMRESUMEREASON) pdmR3UsbHlp_VMGetResumeReason(PPDMUSBINS pUs
 }
 
 
+/** @interface_method_impl{PDMUSBHLP,pfnQueryGenericUserObject} */
+static DECLCALLBACK(void *) pdmR3UsbHlp_QueryGenericUserObject(PPDMUSBINS pUsbIns, PCRTUUID pUuid)
+{
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    PVM  pVM  = pUsbIns->Internal.s.pVM;
+    PUVM pUVM = pVM->pUVM;
+
+    void *pvRet;
+    if (pUVM->pVmm2UserMethods->pfnQueryGenericObject)
+        pvRet = pUVM->pVmm2UserMethods->pfnQueryGenericObject(pUVM->pVmm2UserMethods, pUVM, pUuid);
+    else
+        pvRet = NULL;
+
+    Log(("pdmR3UsbHlp_QueryGenericUserObject: caller='%s'/%d: returns %#p for %RTuuid\n",
+         pUsbIns->pReg->szName, pUsbIns->iInstance, pvRet, pUuid));
+    return pvRet;
+}
+
+
 /**
  * The USB device helper structure.
  */
@@ -2375,7 +2400,7 @@ const PDMUSBHLP g_pdmR3UsbHlp =
     pdmR3UsbHlp_AsyncNotificationCompleted,
     pdmR3UsbHlp_VMGetSuspendReason,
     pdmR3UsbHlp_VMGetResumeReason,
-    NULL,
+    pdmR3UsbHlp_QueryGenericUserObject,
     NULL,
     NULL,
     NULL,

@@ -904,10 +904,6 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
     rc = pHlp->pfnCFGMQueryString(pCfg, "Backend", szBackend, sizeof(szBackend));
     AssertRCReturn(rc, rc);
 
-    void *pvBackend;
-    rc = pHlp->pfnCFGMQueryPtr(pCfg, "pvBackend", &pvBackend);
-    AssertRCReturn(rc, rc);
-
     /*
      * Select backend and open the device.
      */
@@ -928,7 +924,7 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
     if (!pThis->pvInstanceDataR3)
         return PDMUSB_SET_ERROR(pUsbIns, VERR_NO_MEMORY, N_("USBProxy: can't allocate memory for host backend"));
 
-    rc = pThis->pOps->pfnOpen(pThis, szAddress, pvBackend);
+    rc = pThis->pOps->pfnOpen(pThis, szAddress);
     if (RT_FAILURE(rc))
     {
         LogRel(("usbProxyConstruct: Failed to open '%s', rc=%Rrc\n", szAddress, rc));

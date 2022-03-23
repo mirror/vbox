@@ -50,9 +50,8 @@ typedef struct USBPROXYBACK
      * @returns VBox status code.
      * @param   pProxyDev   The USB Proxy Device instance.
      * @param   pszAddress  Host specific USB device address.
-     * @param   pvBackend   Pointer to backend specific data.
      */
-    DECLR3CALLBACKMEMBER(int, pfnOpen, (PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend));
+    DECLR3CALLBACKMEMBER(int, pfnOpen, (PUSBPROXYDEV pProxyDev, const char *pszAddress));
 
     /**
      * Optional callback for initializing the device after the configuration

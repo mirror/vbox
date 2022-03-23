@@ -915,6 +915,16 @@ typedef struct PDMUSBHLP
      */
     DECLR3CALLBACKMEMBER(VMRESUMEREASON, pfnVMGetResumeReason,(PPDMUSBINS pUsbIns));
 
+    /**
+     * Queries a generic object from the VMM user.
+     *
+     * @returns Pointer to the object if found, NULL if not.
+     * @param   pUsbIns             The USB device instance.
+     * @param   pUuid               The UUID of what's being queried.  The UUIDs and
+     *                              the usage conventions are defined by the user.
+     */
+    DECLR3CALLBACKMEMBER(void *, pfnQueryGenericUserObject,(PPDMUSBINS pUsbIns, PCRTUUID pUuid));
+
     /** @name Space reserved for minor interface changes.
      * @{ */
     DECLR3CALLBACKMEMBER(void, pfnReserved0,(PPDMUSBINS pUsbIns));
@@ -926,7 +936,6 @@ typedef struct PDMUSBHLP
     DECLR3CALLBACKMEMBER(void, pfnReserved6,(PPDMUSBINS pUsbIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved7,(PPDMUSBINS pUsbIns));
     DECLR3CALLBACKMEMBER(void, pfnReserved8,(PPDMUSBINS pUsbIns));
-    DECLR3CALLBACKMEMBER(void, pfnReserved9,(PPDMUSBINS pUsbIns));
     /** @}  */
 
     /** Just a safety precaution. */
@@ -938,7 +947,7 @@ typedef PDMUSBHLP *PPDMUSBHLP;
 typedef const PDMUSBHLP *PCPDMUSBHLP;
 
 /** Current USBHLP version number. */
-#define PDM_USBHLP_VERSION                      PDM_VERSION_MAKE(0xeefe, 6, 0)
+#define PDM_USBHLP_VERSION                      PDM_VERSION_MAKE(0xeefe, 6, 1)
 
 #endif /* IN_RING3 */
 
@@ -1413,6 +1422,14 @@ DECLINLINE(int) PDMUsbHlpSSMRegister(PPDMUSBINS pUsbIns, uint32_t uVersion, size
                                            pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 }
 
+/**
+ * @copydoc PDMUSBHLP::pfnQueryGenericUserObject
+ */
+DECLINLINE(void *) PDMUsbHlpQueryGenericUserObject(PPDMUSBINS pUsbIns, PCRTUUID pUuid)
+{
+    return pUsbIns->pHlpR3->pfnQueryGenericUserObject(pUsbIns, pUuid);
+}
+
 #endif /* IN_RING3 */
 
 
@@ -1458,7 +1475,7 @@ typedef DECLCALLBACKTYPE(int, FNPDMVBOXUSBREGISTER,(PCPDMUSBREGCB pCallbacks, ui
 
 VMMR3DECL(int)  PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName, PCFGMNODE pDeviceNode, PCRTUUID pUuid,
                                              const char *pszCaptureFilename);
-VMMR3DECL(int)  PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, const char *pszBackend, const char *pszAddress, void *pvBackend,
+VMMR3DECL(int)  PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, const char *pszBackend, const char *pszAddress, PCFGMNODE pSubTree,
                                           VUSBSPEED enmSpeed, uint32_t fMaskedIfs, const char *pszCaptureFilename);
 VMMR3DECL(int)  PDMR3UsbDetachDevice(PUVM pUVM, PCRTUUID pUuid);
 VMMR3DECL(bool) PDMR3UsbHasHub(PUVM pUVM);

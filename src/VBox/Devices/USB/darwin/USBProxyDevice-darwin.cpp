@@ -1100,11 +1100,9 @@ static DECLCALLBACK(void) usbProxyDarwinPerformWakeup(void *pInfo)
  * @param   pszAddress      The session id and/or location id of the device to open.
  *                          The format of this string is something iokit.c in Main defines, currently
  *                          it's sequences of "[l|s]=<value>" separated by ";".
- * @param   pvBackend       Backend specific pointer, unused for the Darwin backend.
  */
-static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
+static DECLCALLBACK(int) usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress)
 {
-    RT_NOREF(pvBackend);
     LogFlow(("usbProxyDarwinOpen: pProxyDev=%p pszAddress=%s\n", pProxyDev, pszAddress));
 
     /*

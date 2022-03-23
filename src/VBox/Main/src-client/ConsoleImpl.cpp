@@ -462,6 +462,9 @@ HRESULT Console::FinalConstruct()
     pIfSecKeyHlp->pConsole              = this;
     mpIfSecKeyHlp = pIfSecKeyHlp;
 
+    mRemoteUsbIf.pvUser                   = this;
+    mRemoteUsbIf.pfnQueryRemoteUsbBackend = Console::i_usbQueryRemoteUsbBackend;
+
     return BaseFinalConstruct();
 }
 
@@ -9415,6 +9418,21 @@ int Console::i_changeDnDMode(DnDMode_T aDnDMode)
 
 #ifdef VBOX_WITH_USB
 /**
+ * @interface_method_impl{REMOTEUSBIF,pfnQueryRemoteUsbBackend}
+ */
+/*static*/ DECLCALLBACK(PREMOTEUSBCALLBACK)
+Console::i_usbQueryRemoteUsbBackend(void *pvUser, PCRTUUID pUuid, uint32_t idClient)
+{
+    Console *pConsole = (Console *)pvUser;
+
+    AutoReadLock thatLock(pConsole COMMA_LOCKVAL_SRC_POS);
+
+    Guid const uuid(*pUuid);
+    return (PREMOTEUSBCALLBACK)pConsole->i_consoleVRDPServer()->USBBackendRequestPointer(idClient, &uuid);
+}
+
+
+/**
  * Sends a request to VMM to attach the given host device.
  * After this method succeeds, the attached device will appear in the
  * mUSBDevices collection.
@@ -9460,13 +9478,23 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs, co
 
     LogFlowThisFunc(("Proxying USB device '%s' {%RTuuid}...\n", Address.c_str(), uuid.raw()));
 
-    void *pvRemoteBackend = NULL;
+    PCFGMNODE pRemoteCfg = NULL;
     if (fRemote)
     {
         RemoteUSBDevice *pRemoteUSBDevice = static_cast<RemoteUSBDevice *>(aHostDevice);
-        pvRemoteBackend = i_consoleVRDPServer()->USBBackendRequestPointer(pRemoteUSBDevice->clientId(), &uuid);
-        if (!pvRemoteBackend)
-            return E_INVALIDARG; /* The clientId is invalid then. */
+
+        pRemoteCfg = mpVMM->pfnCFGMR3CreateTree(ptrVM.rawUVM());
+        if (pRemoteCfg)
+        {
+            int vrc = mpVMM->pfnCFGMR3InsertInteger(pRemoteCfg, "ClientId", pRemoteUSBDevice->clientId());
+            if (RT_FAILURE(vrc))
+            {
+                mpVMM->pfnCFGMR3DestroyTree(pRemoteCfg);
+                return setErrorBoth(E_FAIL, vrc, tr("Failed to create configuration for USB device."));
+            }
+        }
+        else
+            return setErrorBoth(E_OUTOFMEMORY, VERR_NO_MEMORY, tr("Failed to allocate config tree for USB device."));
     }
 
     USBConnectionSpeed_T enmSpeed;
@@ -9476,7 +9504,7 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs, co
     int vrc = ptrVM.vtable()->pfnVMR3ReqCallWaitU(ptrVM.rawUVM(), 0 /* idDstCpu (saved state, see #6232) */,
                                                   (PFNRT)i_usbAttachCallback, 11,
                                                   this, ptrVM.rawUVM(), ptrVM.vtable(), aHostDevice, uuid.raw(),
-                                                  strBackend.c_str(), Address.c_str(), pvRemoteBackend, enmSpeed, aMaskedIfs,
+                                                  strBackend.c_str(), Address.c_str(), pRemoteCfg, enmSpeed, aMaskedIfs,
                                                   aCaptureFilename.isEmpty() ? NULL : aCaptureFilename.c_str());
     if (RT_SUCCESS(vrc))
     {
@@ -9526,7 +9554,7 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs, co
 //static
 DECLCALLBACK(int)
 Console::i_usbAttachCallback(Console *that, PUVM pUVM, PCVMMR3VTABLE pVMM, IUSBDevice *aHostDevice, PCRTUUID aUuid,
-                             const char *pszBackend, const char *aAddress, void *pvRemoteBackend, USBConnectionSpeed_T aEnmSpeed,
+                             const char *pszBackend, const char *aAddress, PCFGMNODE pRemoteCfg, USBConnectionSpeed_T aEnmSpeed,
                              ULONG aMaskedIfs, const char *pszCaptureFilename)
 {
     RT_NOREF(aHostDevice);
@@ -9547,7 +9575,7 @@ Console::i_usbAttachCallback(Console *that, PUVM pUVM, PCVMMR3VTABLE pVMM, IUSBD
         default:                            AssertFailed();                     break;
     }
 
-    int vrc = pVMM->pfnPDMR3UsbCreateProxyDevice(pUVM, aUuid, pszBackend, aAddress, pvRemoteBackend,
+    int vrc = pVMM->pfnPDMR3UsbCreateProxyDevice(pUVM, aUuid, pszBackend, aAddress, pRemoteCfg,
                                                  enmSpeed, aMaskedIfs, pszCaptureFilename);
     LogFlowFunc(("vrc=%Rrc\n", vrc));
     LogFlowFuncLeave();
@@ -10950,6 +10978,9 @@ Console::i_vmm2User_QueryGenericObject(PCVMM2USERMETHODS pThis, PUVM pUVM, PCRTU
 
     if (UuidCopy == COM_IIDOF(ISnapshot))
         return ((MYVMM2USERMETHODS *)pThis)->pISnapshot;
+
+    if (UuidCopy == REMOTEUSBIF_OID)
+        return &pConsole->mRemoteUsbIf;
 
     return NULL;
 }

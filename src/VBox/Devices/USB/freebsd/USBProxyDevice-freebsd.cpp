@@ -365,17 +365,13 @@ static int usbProxyFreeBSDEndpointClose(PUSBPROXYDEV pProxyDev, int Endpoint)
  *                          the form "sysfs:<sysfs path>//device:<device node>".
  *                          In the second case, the two paths are guaranteed
  *                          not to contain the substring "//".
- * @param   pvBackend       Backend specific pointer, unused for the linux backend.
  */
-static DECLCALLBACK(int) usbProxyFreeBSDOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress,
-                                             void *pvBackend)
+static DECLCALLBACK(int) usbProxyFreeBSDOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress)
 {
     PUSBPROXYDEVFBSD pDevFBSD = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVFBSD);
     int rc;
 
     LogFlow(("usbProxyFreeBSDOpen: pProxyDev=%p pszAddress=%s\n", pProxyDev, pszAddress));
-
-    NOREF(pvBackend);
 
     /*
      * Try open the device node.

@@ -284,13 +284,12 @@ static inline int usbProxySolarisGetActiveConfig(PUSBPROXYDEVSOL pDevSol)
  * @param   pProxyDev       The device instance.
  * @param   pszAddress      The unique device identifier.
  *                          The format of this string is "VendorId:ProducIt:Release:StaticPath".
- * @param   pvBackend       Backend specific pointer, unused for the solaris backend.
  */
-static DECLCALLBACK(int) usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
+static DECLCALLBACK(int) usbProxySolarisOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress)
 {
     PUSBPROXYDEVSOL pDevSol = USBPROXYDEV_2_DATA(pProxyDev, PUSBPROXYDEVSOL);
 
-    LogFlowFunc((USBPROXY ":usbProxySolarisOpen: pProxyDev=%p pszAddress=%s pvBackend=%p\n", pProxyDev, pszAddress, pvBackend));
+    LogFlowFunc((USBPROXY ":usbProxySolarisOpen: pProxyDev=%p pszAddress=%s\n", pProxyDev, pszAddress));
 
     /*
      * Initialize our USB R3 lib.
