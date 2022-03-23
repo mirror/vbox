@@ -3278,16 +3278,22 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
  * @{ */
 /** Exception Mask: Invalid operation.  */
 #define X86_FCW_IM          RT_BIT_32(0)
+#define X86_FCW_IM_BIT      0
 /** Exception Mask: Denormalized operand.  */
 #define X86_FCW_DM          RT_BIT_32(1)
+#define X86_FCW_DM_BIT      1
 /** Exception Mask: Zero divide.  */
 #define X86_FCW_ZM          RT_BIT_32(2)
+#define X86_FCW_ZM_BIT      2
 /** Exception Mask: Overflow.  */
 #define X86_FCW_OM          RT_BIT_32(3)
+#define X86_FCW_OM_BIT      3
 /** Exception Mask: Underflow.  */
 #define X86_FCW_UM          RT_BIT_32(4)
+#define X86_FCW_UM_BIT      4
 /** Exception Mask: Precision.  */
 #define X86_FCW_PM          RT_BIT_32(5)
+#define X86_FCW_PM_BIT      5
 /** Mask all exceptions, the value typically loaded (by for instance fninit).
  * @remarks This includes reserved bit 6.  */
 #define X86_FCW_MASK_ALL    UINT16_C(0x007f)
