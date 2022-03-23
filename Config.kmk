@@ -7574,7 +7574,7 @@ if defined(VBOX_WITH_QTGUI) || defined(VBOX_WITH_NLS)
    VBOX_QT_MOD += QtOpenGL
   endif
  else if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris win)
-  VBOX_QT_MOD += Qt6Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
+  VBOX_QT_MOD += Qt5Core Qt5Gui Qt5Widgets Qt5PrintSupport $(if $(VBOX_GUI_USE_QGL),Qt5OpenGL,)
   if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
    VBOX_QT_MOD += Qt5DBus Qt5Xml Qt5XcbQpa Qt5X11Extras
    VBOX_QT_PLUGINS = \
