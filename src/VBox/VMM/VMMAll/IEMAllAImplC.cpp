@@ -3572,27 +3572,457 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fsqrt_r80,(PCX86FXSTATE pFpuState, PIEMFPURESUL
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r32,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
-                                                 PRTFLOAT32U pr32Dst, PCRTFLOAT80U pr80Src))
+/**
+ * Helper for storing a deconstructed and normal R80 value as a 64-bit one.
+ *
+ * This uses the rounding rules indicated by fFcw and returns updated fFsw.
+ *
+ * @returns Updated FPU status word value.
+ * @param   fSignIn     Incoming sign indicator.
+ * @param   uMantissaIn Incoming mantissa (dot between bit 63 and 62).
+ * @param   iExponentIn Unbiased exponent.
+ * @param   fFcw        The FPU control word.
+ * @param   fFsw        Prepped FPU status word, i.e. exceptions and C1 clear.
+ * @param   pr64Dst     Where to return the output value, if one should be
+ *                      returned.
+ *
+ * @note    Tailored as a helper for iemAImpl_fst_r80_to_r32 right now.
+ * @note    Exact same logic as iemAImpl_StoreNormalR80AsR64.
+ */
+static uint16_t iemAImpl_StoreNormalR80AsR32(bool fSignIn, uint64_t uMantissaIn, int32_t iExponentIn,
+                                             uint16_t fFcw, uint16_t fFsw, PRTFLOAT32U pr32Dst)
 {
-    RT_NOREF(pFpuState, pu16FSW, pr32Dst, pr80Src);
-    AssertReleaseFailed();
+    uint64_t const fRoundedOffMask = RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS) - 1; /* 0x7ff */
+    uint64_t const uRoundingAdd    = (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
+                                   ? RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS - 1)  /* 0x400 */
+                                   : (fFcw & X86_FCW_RC_MASK) == (fSignIn ? X86_FCW_RC_DOWN : X86_FCW_RC_UP)
+                                   ? fRoundedOffMask
+                                   : 0;
+    uint64_t       fRoundedOff     = uMantissaIn & fRoundedOffMask;
+
+    /*
+     * Deal with potential overflows/underflows first, optimizing for none.
+     * 0 and MAX are used for special values; MAX-1 may be rounded up to MAX.
+     */
+    int32_t iExponentOut = (int32_t)iExponentIn + RTFLOAT32U_EXP_BIAS;
+    if ((uint32_t)iExponentOut - 1 < (uint32_t)(RTFLOAT32U_EXP_MAX - 3))
+    { /* likely? */ }
+    /*
+     * Underflow if the exponent zero or negative.  This is attempted mapped
+     * to a subnormal number when possible, with some additional trickery ofc.
+     */
+    else if (iExponentOut <= 0)
+    {
+        bool const fIsTiny = iExponentOut < 0
+                          || UINT64_MAX - uMantissaIn > uRoundingAdd;
+        if (!(fFcw & X86_FCW_UM) && fIsTiny)
+            /* Note! 754-1985 sec 7.4 has something about bias adjust of 192 here, not in 2008 & 2019. Perhaps only 8087 & 287? */
+            return fFsw | X86_FSW_UE | X86_FSW_ES | X86_FSW_B;
+
+        if (iExponentOut <= 0)
+        {
+            uMantissaIn = iExponentOut <= -63
+                        ? uMantissaIn != 0
+                        : (uMantissaIn >> (-iExponentOut + 1)) | ((uMantissaIn & (RT_BIT_64(-iExponentOut + 1) - 1)) != 0);
+            fRoundedOff = uMantissaIn & fRoundedOffMask;
+            if (fRoundedOff && fIsTiny)
+                fFsw |= X86_FSW_UE;
+            iExponentOut   = 0;
+        }
+    }
+    /*
+     * Overflow if at or above max exponent value or if we will reach max
+     * when rounding.  Will return +/-zero or +/-max value depending on
+     * whether we're rounding or not.
+     */
+    else if (   iExponentOut >= RTFLOAT32U_EXP_MAX
+             || (   iExponentOut == RTFLOAT32U_EXP_MAX - 1
+                 && UINT64_MAX - uMantissaIn <= uRoundingAdd))
+    {
+        fFsw |= X86_FSW_OE;
+        if (!(fFcw & X86_FCW_OM))
+            return fFsw | X86_FSW_ES | X86_FSW_B;
+        if (fRoundedOff)
+        {
+            fFsw |= X86_FSW_PE;
+            if (uRoundingAdd)
+                fFsw |= X86_FSW_C1;
+            if (!(fFcw & X86_FCW_PM))
+                fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+
+        pr32Dst->s.fSign         = fSignIn;
+        if (uRoundingAdd)
+        {   /* Zero */
+            pr32Dst->s.uExponent = RTFLOAT32U_EXP_MAX;
+            pr32Dst->s.uFraction = 0;
+        }
+        else
+        {   /* Max */
+            pr32Dst->s.uExponent = RTFLOAT32U_EXP_MAX - 1;
+            pr32Dst->s.uFraction = RT_BIT_32(RTFLOAT32U_FRACTION_BITS) - 1;
+        }
+        return fFsw;
+    }
+
+    /*
+     * Normal or subnormal number.
+     */
+    /* Do rounding. */
+    uint64_t uMantissaOut = uMantissaIn + uRoundingAdd;
+    if (uMantissaOut < uMantissaIn)
+    {
+        uMantissaOut >>= 1;
+        iExponentOut++;
+        Assert(iExponentOut < RTFLOAT32U_EXP_MAX);  /* checked above */
+    }
+    /** @todo not sure if this is applied correctly, with the above carry check. */
+    else if (   (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
+             && !(fRoundedOff & RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS - 1)))
+        uMantissaOut &= ~(uint64_t)1;
+
+    /* Truncat the mantissa and set the return value. */
+    uMantissaOut >>= RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS;
+
+    pr32Dst->s.uFraction = (uint32_t)uMantissaOut; /* Note! too big for bitfield if normal. */
+    pr32Dst->s.uExponent = iExponentOut;
+    pr32Dst->s.fSign     = fSignIn;
+
+    /* Set status flags realted to rounding. */
+    if (fRoundedOff)
+    {
+        fFsw |= X86_FSW_PE;
+        if (uMantissaOut > (uMantissaIn >> (RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS)))
+            fFsw |= X86_FSW_C1;
+        if (!(fFcw & X86_FCW_PM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+
+    return fFsw;
 }
 
 
+/**
+ * @note Exact same logic as iemAImpl_fst_r80_to_r64.
+ */
+IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r32,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
+                                                 PRTFLOAT32U pr32Dst, PCRTFLOAT80U pr80Src))
+{
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t       fFsw = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3));
+    if (RTFLOAT80U_IS_NORMAL(pr80Src))
+        fFsw = iemAImpl_StoreNormalR80AsR32(pr80Src->s.fSign, pr80Src->s.uMantissa,
+                                            (int32_t)pr80Src->s.uExponent - RTFLOAT80U_EXP_BIAS, fFcw, fFsw, pr32Dst);
+    else if (RTFLOAT80U_IS_ZERO(pr80Src))
+    {
+        pr32Dst->s.fSign      = pr80Src->s.fSign;
+        pr32Dst->s.uExponent  = 0;
+        pr32Dst->s.uFraction  = 0;
+        Assert(RTFLOAT32U_IS_ZERO(pr32Dst));
+    }
+    else if (RTFLOAT80U_IS_INF(pr80Src))
+    {
+        pr32Dst->s.fSign      = pr80Src->s.fSign;
+        pr32Dst->s.uExponent  = RTFLOAT32U_EXP_MAX;
+        pr32Dst->s.uFraction  = 0;
+        Assert(RTFLOAT32U_IS_INF(pr32Dst));
+    }
+    else if (RTFLOAT80U_IS_INDEFINITE(pr80Src))
+    {
+        /* Mapped to +/-QNaN */
+        pr32Dst->s.fSign      = pr80Src->s.fSign;
+        pr32Dst->s.uExponent  = RTFLOAT32U_EXP_MAX;
+        pr32Dst->s.uFraction  = RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1);
+    }
+    else if (RTFLOAT80U_IS_PSEUDO_INF(pr80Src) || RTFLOAT80U_IS_UNNORMAL(pr80Src) || RTFLOAT80U_IS_PSEUDO_NAN(pr80Src))
+    {
+        /* Pseudo-Inf / Pseudo-Nan / Unnormal -> QNaN (during load, probably) */
+        if (fFcw & X86_FCW_IM)
+        {
+            pr32Dst->s.fSign      = 1;
+            pr32Dst->s.uExponent  = RTFLOAT32U_EXP_MAX;
+            pr32Dst->s.uFraction  = RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1);
+            fFsw |= X86_FSW_IE;
+        }
+        else
+            fFsw |= X86_FSW_IE | X86_FSW_ES | X86_FSW_B;;
+    }
+    else if (RTFLOAT80U_IS_NAN(pr80Src))
+    {
+        /* IM applies to signalled NaN input only. Everything is converted to quiet NaN. */
+        if ((fFcw & X86_FCW_IM) || !RTFLOAT80U_IS_SIGNALLING_NAN(pr80Src))
+        {
+            pr32Dst->s.fSign      = pr80Src->s.fSign;
+            pr32Dst->s.uExponent  = RTFLOAT32U_EXP_MAX;
+            pr32Dst->s.uFraction  = (uint32_t)(pr80Src->sj64.uFraction >> (RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS));
+            pr32Dst->s.uFraction |= RT_BIT_32(RTFLOAT32U_FRACTION_BITS - 1);
+            if (RTFLOAT80U_IS_SIGNALLING_NAN(pr80Src))
+                fFsw |= X86_FSW_IE;
+        }
+        else
+            fFsw |= X86_FSW_IE | X86_FSW_ES | X86_FSW_B;
+    }
+    else
+    {
+        /* Denormal values causes both an underflow and precision exception. */
+        Assert(RTFLOAT80U_IS_DENORMAL(pr80Src) || RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Src));
+        if (fFcw & X86_FCW_UM)
+        {
+            pr32Dst->s.fSign     = pr80Src->s.fSign;
+            pr32Dst->s.uExponent = 0;
+            if ((fFcw & X86_FCW_RC_MASK) == (!pr80Src->s.fSign ? X86_FCW_RC_UP : X86_FCW_RC_DOWN))
+            {
+                pr32Dst->s.uFraction = 1;
+                fFsw |= X86_FSW_UE | X86_FSW_PE | X86_FSW_C1;
+                if (!(fFcw & X86_FCW_PM))
+                    fFsw |= X86_FSW_ES | X86_FSW_B;
+            }
+            else
+            {
+                pr32Dst->s.uFraction = 0;
+                fFsw |= X86_FSW_UE | X86_FSW_PE;
+                if (!(fFcw & X86_FCW_PM))
+                    fFsw |= X86_FSW_ES | X86_FSW_B;
+            }
+        }
+        else
+            fFsw |= X86_FSW_UE | X86_FSW_ES | X86_FSW_B;
+    }
+    *pu16FSW = fFsw;
+}
+
+
+/**
+ * Helper for storing a deconstructed and normal R80 value as a 64-bit one.
+ *
+ * This uses the rounding rules indicated by fFcw and returns updated fFsw.
+ *
+ * @returns Updated FPU status word value.
+ * @param   fSignIn     Incoming sign indicator.
+ * @param   uMantissaIn Incoming mantissa (dot between bit 63 and 62).
+ * @param   iExponentIn Unbiased exponent.
+ * @param   fFcw        The FPU control word.
+ * @param   fFsw        Prepped FPU status word, i.e. exceptions and C1 clear.
+ * @param   pr64Dst     Where to return the output value, if one should be
+ *                      returned.
+ *
+ * @note    Tailored as a helper for iemAImpl_fst_r80_to_r64 right now.
+ * @note    Exact same logic as iemAImpl_StoreNormalR80AsR32.
+ */
+static uint16_t iemAImpl_StoreNormalR80AsR64(bool fSignIn, uint64_t uMantissaIn, int32_t iExponentIn,
+                                             uint16_t fFcw, uint16_t fFsw, PRTFLOAT64U pr64Dst)
+{
+    uint64_t const fRoundedOffMask = RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS) - 1; /* 0x7ff */
+    uint32_t const uRoundingAdd    = (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
+                                   ? RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS - 1)  /* 0x400 */
+                                   : (fFcw & X86_FCW_RC_MASK) == (fSignIn ? X86_FCW_RC_DOWN : X86_FCW_RC_UP)
+                                   ? fRoundedOffMask
+                                   : 0;
+    uint32_t       fRoundedOff     = uMantissaIn & fRoundedOffMask;
+
+    /*
+     * Deal with potential overflows/underflows first, optimizing for none.
+     * 0 and MAX are used for special values; MAX-1 may be rounded up to MAX.
+     */
+    int32_t iExponentOut = (int32_t)iExponentIn + RTFLOAT64U_EXP_BIAS;
+    if ((uint32_t)iExponentOut - 1 < (uint32_t)(RTFLOAT64U_EXP_MAX - 3))
+    { /* likely? */ }
+    /*
+     * Underflow if the exponent zero or negative.  This is attempted mapped
+     * to a subnormal number when possible, with some additional trickery ofc.
+     */
+    else if (iExponentOut <= 0)
+    {
+        bool const fIsTiny = iExponentOut < 0
+                          || UINT64_MAX - uMantissaIn > uRoundingAdd;
+        if (!(fFcw & X86_FCW_UM) && fIsTiny)
+            /* Note! 754-1985 sec 7.4 has something about bias adjust of 1536 here, not in 2008 & 2019. Perhaps only 8087 & 287? */
+            return fFsw | X86_FSW_UE | X86_FSW_ES | X86_FSW_B;
+
+        if (iExponentOut <= 0)
+        {
+            uMantissaIn = iExponentOut <= -63
+                        ? uMantissaIn != 0
+                        : (uMantissaIn >> (-iExponentOut + 1)) | ((uMantissaIn & (RT_BIT_64(-iExponentOut + 1) - 1)) != 0);
+            fRoundedOff = uMantissaIn & fRoundedOffMask;
+            if (fRoundedOff && fIsTiny)
+                fFsw |= X86_FSW_UE;
+            iExponentOut   = 0;
+        }
+    }
+    /*
+     * Overflow if at or above max exponent value or if we will reach max
+     * when rounding.  Will return +/-zero or +/-max value depending on
+     * whether we're rounding or not.
+     */
+    else if (   iExponentOut >= RTFLOAT64U_EXP_MAX
+             || (   iExponentOut == RTFLOAT64U_EXP_MAX - 1
+                 && UINT64_MAX - uMantissaIn <= uRoundingAdd))
+    {
+        fFsw |= X86_FSW_OE;
+        if (!(fFcw & X86_FCW_OM))
+            return fFsw | X86_FSW_ES | X86_FSW_B;
+        if (fRoundedOff)
+        {
+            fFsw |= X86_FSW_PE;
+            if (uRoundingAdd)
+                fFsw |= X86_FSW_C1;
+            if (!(fFcw & X86_FCW_PM))
+                fFsw |= X86_FSW_ES | X86_FSW_B;
+        }
+
+        pr64Dst->s64.fSign         = fSignIn;
+        if (uRoundingAdd)
+        {   /* Zero */
+            pr64Dst->s64.uExponent = RTFLOAT64U_EXP_MAX;
+            pr64Dst->s64.uFraction = 0;
+        }
+        else
+        {   /* Max */
+            pr64Dst->s64.uExponent = RTFLOAT64U_EXP_MAX - 1;
+            pr64Dst->s64.uFraction = RT_BIT_64(RTFLOAT64U_FRACTION_BITS) - 1;
+        }
+        return fFsw;
+    }
+
+    /*
+     * Normal or subnormal number.
+     */
+    /* Do rounding. */
+    uint64_t uMantissaOut = uMantissaIn + uRoundingAdd;
+    if (uMantissaOut < uMantissaIn)
+    {
+        uMantissaOut >>= 1;
+        iExponentOut++;
+        Assert(iExponentOut < RTFLOAT64U_EXP_MAX);  /* checked above */
+    }
+    /** @todo not sure if this is applied correctly, with the above carry check. */
+    else if (   (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
+             && !(fRoundedOff & RT_BIT_32(RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS - 1)))
+        uMantissaOut &= ~(uint64_t)1;
+
+    /* Truncat the mantissa and set the return value. */
+    uMantissaOut >>= RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS;
+
+    pr64Dst->s64.uFraction = uMantissaOut; /* Note! too big for bitfield if normal. */
+    pr64Dst->s64.uExponent = iExponentOut;
+    pr64Dst->s64.fSign     = fSignIn;
+
+    /* Set status flags realted to rounding. */
+    if (fRoundedOff)
+    {
+        fFsw |= X86_FSW_PE;
+        if (uMantissaOut > (uMantissaIn >> (RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS)))
+            fFsw |= X86_FSW_C1;
+        if (!(fFcw & X86_FCW_PM))
+            fFsw |= X86_FSW_ES | X86_FSW_B;
+    }
+
+    return fFsw;
+}
+
+
+/**
+ * @note Exact same logic as iemAImpl_fst_r80_to_r32.
+ */
 IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r64,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                  PRTFLOAT64U pr64Dst, PCRTFLOAT80U pr80Src))
 {
-    RT_NOREF(pFpuState, pu16FSW, pr64Dst, pr80Src);
-    AssertReleaseFailed();
+    uint16_t const fFcw = pFpuState->FCW;
+    uint16_t       fFsw = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3));
+    if (RTFLOAT80U_IS_NORMAL(pr80Src))
+        fFsw = iemAImpl_StoreNormalR80AsR64(pr80Src->s.fSign, pr80Src->s.uMantissa,
+                                            (int32_t)pr80Src->s.uExponent - RTFLOAT80U_EXP_BIAS, fFcw, fFsw, pr64Dst);
+    else if (RTFLOAT80U_IS_ZERO(pr80Src))
+    {
+        pr64Dst->s64.fSign      = pr80Src->s.fSign;
+        pr64Dst->s64.uExponent  = 0;
+        pr64Dst->s64.uFraction  = 0;
+        Assert(RTFLOAT64U_IS_ZERO(pr64Dst));
+    }
+    else if (RTFLOAT80U_IS_INF(pr80Src))
+    {
+        pr64Dst->s64.fSign      = pr80Src->s.fSign;
+        pr64Dst->s64.uExponent  = RTFLOAT64U_EXP_MAX;
+        pr64Dst->s64.uFraction  = 0;
+        Assert(RTFLOAT64U_IS_INF(pr64Dst));
+    }
+    else if (RTFLOAT80U_IS_INDEFINITE(pr80Src))
+    {
+        /* Mapped to +/-QNaN */
+        pr64Dst->s64.fSign      = pr80Src->s.fSign;
+        pr64Dst->s64.uExponent  = RTFLOAT64U_EXP_MAX;
+        pr64Dst->s64.uFraction  = RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1);
+    }
+    else if (RTFLOAT80U_IS_PSEUDO_INF(pr80Src) || RTFLOAT80U_IS_UNNORMAL(pr80Src) || RTFLOAT80U_IS_PSEUDO_NAN(pr80Src))
+    {
+        /* Pseudo-Inf / Pseudo-Nan / Unnormal -> QNaN (during load, probably) */
+        if (fFcw & X86_FCW_IM)
+        {
+            pr64Dst->s64.fSign      = 1;
+            pr64Dst->s64.uExponent  = RTFLOAT64U_EXP_MAX;
+            pr64Dst->s64.uFraction  = RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1);
+            fFsw |= X86_FSW_IE;
+        }
+        else
+            fFsw |= X86_FSW_IE | X86_FSW_ES | X86_FSW_B;;
+    }
+    else if (RTFLOAT80U_IS_NAN(pr80Src))
+    {
+        /* IM applies to signalled NaN input only. Everything is converted to quiet NaN. */
+        if ((fFcw & X86_FCW_IM) || !RTFLOAT80U_IS_SIGNALLING_NAN(pr80Src))
+        {
+            pr64Dst->s64.fSign      = pr80Src->s.fSign;
+            pr64Dst->s64.uExponent  = RTFLOAT64U_EXP_MAX;
+            pr64Dst->s64.uFraction  = pr80Src->sj64.uFraction >> (RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS);
+            pr64Dst->s64.uFraction |= RT_BIT_64(RTFLOAT64U_FRACTION_BITS - 1);
+            if (RTFLOAT80U_IS_SIGNALLING_NAN(pr80Src))
+                fFsw |= X86_FSW_IE;
+        }
+        else
+            fFsw |= X86_FSW_IE | X86_FSW_ES | X86_FSW_B;
+    }
+    else
+    {
+        /* Denormal values causes both an underflow and precision exception. */
+        Assert(RTFLOAT80U_IS_DENORMAL(pr80Src) || RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Src));
+        if (fFcw & X86_FCW_UM)
+        {
+            pr64Dst->s64.fSign     = pr80Src->s.fSign;
+            pr64Dst->s64.uExponent = 0;
+            if ((fFcw & X86_FCW_RC_MASK) == (!pr80Src->s.fSign ? X86_FCW_RC_UP : X86_FCW_RC_DOWN))
+            {
+                pr64Dst->s64.uFraction = 1;
+                fFsw |= X86_FSW_UE | X86_FSW_PE | X86_FSW_C1;
+                if (!(fFcw & X86_FCW_PM))
+                    fFsw |= X86_FSW_ES | X86_FSW_B;
+            }
+            else
+            {
+                pr64Dst->s64.uFraction = 0;
+                fFsw |= X86_FSW_UE | X86_FSW_PE;
+                if (!(fFcw & X86_FCW_PM))
+                    fFsw |= X86_FSW_ES | X86_FSW_B;
+            }
+        }
+        else
+            fFsw |= X86_FSW_UE | X86_FSW_ES | X86_FSW_B;
+    }
+    *pu16FSW = fFsw;
 }
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r80,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                  PRTFLOAT80U pr80Dst, PCRTFLOAT80U pr80Src))
 {
-    RT_NOREF(pFpuState, pu16FSW, pr80Dst, pr80Src);
-    AssertReleaseFailed();
+    /*
+     * FPU status word:
+     *      - TOP is irrelevant, but we must match x86 assembly version (0).
+     *      - C1 is always cleared as we don't have any stack overflows.
+     *      - C0, C2, and C3 are undefined and Intel 10980XE does not touch them.
+     */
+    *pu16FSW = pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3); /* see iemAImpl_fld1 */
+    *pr80Dst = *pr80Src;
 }
 
 
