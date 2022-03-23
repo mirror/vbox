@@ -302,7 +302,7 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     , m_pCache(0)
     , m_pTabWidget(0)
     , m_pTabScreen(0)
-    , m_pLabelVideoMemorySize(0)
+    , m_pLayoutScreen(0)
     , m_pEditorVideoMemorySize(0)
     , m_pLabelMonitorCount(0)
     , m_pSliderMonitorCount(0)
@@ -777,8 +777,6 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
 
 void UIMachineSettingsDisplay::retranslateUi()
 {
-    m_pLabelVideoMemorySize->setText(tr("Video &Memory:"));
-    m_pEditorVideoMemorySize->setToolTip(tr("Controls the amount of video memory provided to the virtual machine."));
     m_pLabelMonitorCount->setText(tr("Mo&nitor Count:"));
     m_pSliderMonitorCount->setToolTip(tr("Controls the amount of virtual monitors provided to the virtual machine."));
     m_pSpinboxMonitorCount->setToolTip(tr("Controls the amount of virtual monitors provided to the virtual machine."));
@@ -864,6 +862,16 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pComboRecordingMode->setItemText(1, gpConverter->toString(UISettingsDefs::RecordingMode_VideoOnly));
     m_pComboRecordingMode->setItemText(2, gpConverter->toString(UISettingsDefs::RecordingMode_AudioOnly));
 
+    /* These editors have own labels, but we want them to be properly layouted according to each other: */
+    int iMinimumLayoutHint = 0;
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVideoMemorySize->minimumLabelHorizontalHint());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelMonitorCount->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelScaleFactor->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelGraphicsController->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelAcceleration->minimumSizeHint().width());
+    m_pEditorVideoMemorySize->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pLayoutScreen->setColumnMinimumWidth(0, iMinimumLayoutHint);
+
     updateRecordingFileSizeHint();
 }
 
@@ -873,7 +881,6 @@ void UIMachineSettingsDisplay::polishPage()
     const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
     /* Polish 'Screen' availability: */
-    m_pLabelVideoMemorySize->setEnabled(isMachineOffline());
     m_pEditorVideoMemorySize->setEnabled(isMachineOffline());
     m_pLabelMonitorCount->setEnabled(isMachineOffline());
     m_pSliderMonitorCount->setEnabled(isMachineOffline());
@@ -1097,33 +1104,22 @@ void UIMachineSettingsDisplay::prepareTabScreen()
     if (m_pTabScreen)
     {
         /* Prepare 'Screen' tab layout: */
-        QGridLayout *pLayoutScreen = new QGridLayout(m_pTabScreen);
-        if (pLayoutScreen)
+        m_pLayoutScreen = new QGridLayout(m_pTabScreen);
+        if (m_pLayoutScreen)
         {
-            pLayoutScreen->setRowStretch(8, 1);
+            m_pLayoutScreen->setRowStretch(8, 1);
 
-            /* Prepare video memory label: */
-            m_pLabelVideoMemorySize = new QLabel(m_pTabScreen);
-            if (m_pLabelVideoMemorySize)
-            {
-                m_pLabelVideoMemorySize->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutScreen->addWidget(m_pLabelVideoMemorySize, 0, 0);
-            }
             /* Prepare video memory editor: */
             m_pEditorVideoMemorySize = new UIVideoMemoryEditor(m_pTabScreen);
             if (m_pEditorVideoMemorySize)
-            {
-                if (m_pLabelVideoMemorySize)
-                    m_pLabelVideoMemorySize->setBuddy(m_pEditorVideoMemorySize->focusProxy());
-                pLayoutScreen->addWidget(m_pEditorVideoMemorySize, 0, 1, 2, 2);
-            }
+                m_pLayoutScreen->addWidget(m_pEditorVideoMemorySize, 0, 0, 1, 3);
 
             /* Prepare monitor count label: */
             m_pLabelMonitorCount = new QLabel(m_pTabScreen);
             if (m_pLabelMonitorCount)
             {
                 m_pLabelMonitorCount->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutScreen->addWidget(m_pLabelMonitorCount, 2, 0);
+                m_pLayoutScreen->addWidget(m_pLabelMonitorCount, 1, 0);
             }
             /* Prepare monitor count layout: */
             QVBoxLayout *pLayoutMonitorCount = new QVBoxLayout;
@@ -1169,7 +1165,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
                     pLayoutMonitorCount->addLayout(pLayoutMonitorCountScale);
                 }
 
-                pLayoutScreen->addLayout(pLayoutMonitorCount, 2, 1, 2, 1);
+                m_pLayoutScreen->addLayout(pLayoutMonitorCount, 1, 1, 2, 1);
             }
             /* Prepare monitor count spinbox: */
             m_pSpinboxMonitorCount = new QSpinBox(m_pTabScreen);
@@ -1180,7 +1176,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
                 m_pSpinboxMonitorCount->setMinimum(1);
                 m_pSpinboxMonitorCount->setMaximum(comProperties.GetMaxGuestMonitors());
 
-                pLayoutScreen->addWidget(m_pSpinboxMonitorCount, 2, 2);
+                m_pLayoutScreen->addWidget(m_pSpinboxMonitorCount, 1, 2);
             }
 
             /* Prepare scale factor label: */
@@ -1188,7 +1184,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             if (m_pLabelScaleFactor)
             {
                 m_pLabelScaleFactor->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutScreen->addWidget(m_pLabelScaleFactor, 4, 0);
+                m_pLayoutScreen->addWidget(m_pLabelScaleFactor, 3, 0);
             }
             /* Prepare scale factor editor: */
             m_pEditorScaleFactor = new UIScaleFactorEditor(m_pTabScreen);
@@ -1196,7 +1192,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             {
                 if (m_pLabelScaleFactor)
                     m_pLabelScaleFactor->setBuddy(m_pEditorScaleFactor->focusProxy());
-                pLayoutScreen->addWidget(m_pEditorScaleFactor, 4, 1, 2, 2);
+                m_pLayoutScreen->addWidget(m_pEditorScaleFactor, 3, 1, 2, 2);
             }
 
             /* Prepare graphics controller label: */
@@ -1204,7 +1200,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             if (m_pLabelGraphicsController)
             {
                 m_pLabelGraphicsController->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutScreen->addWidget(m_pLabelGraphicsController, 6, 0);
+                m_pLayoutScreen->addWidget(m_pLabelGraphicsController, 5, 0);
             }
             /* Prepare graphics controller editor: */
             m_pEditorGraphicsController = new UIGraphicsControllerEditor(m_pTabScreen);
@@ -1212,7 +1208,7 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             {
                 if (m_pLabelGraphicsController)
                     m_pLabelGraphicsController->setBuddy(m_pEditorGraphicsController);
-                pLayoutScreen->addWidget(m_pEditorGraphicsController, 6, 1, 1, 2);
+                m_pLayoutScreen->addWidget(m_pEditorGraphicsController, 5, 1, 1, 2);
             }
 
             /* Prepare acceleration label: */
@@ -1220,12 +1216,12 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             if (m_pLabelAcceleration)
             {
                 m_pLabelAcceleration->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                pLayoutScreen->addWidget(m_pLabelAcceleration, 7, 0);
+                m_pLayoutScreen->addWidget(m_pLabelAcceleration, 6, 0);
             }
             /* Prepare 3D checkbox: */
             m_pCheckbox3D = new QCheckBox(m_pTabScreen);
             if (m_pCheckbox3D)
-                pLayoutScreen->addWidget(m_pCheckbox3D, 7, 1);
+                m_pLayoutScreen->addWidget(m_pCheckbox3D, 6, 1);
         }
 
         m_pTabWidget->addTab(m_pTabScreen, QString());

@@ -995,7 +995,7 @@ void UIDetailsElement::popupVideoMemoryEditor(const QString &strValue)
     if (pPopup)
     {
         /* Prepare editor: */
-        UIVideoMemoryEditor *pEditor = new UIVideoMemoryEditor(pPopup, true /* with label */);
+        UIVideoMemoryEditor *pEditor = new UIVideoMemoryEditor(pPopup);
         if (pEditor)
         {
             pEditor->setValue(strValue.toInt());

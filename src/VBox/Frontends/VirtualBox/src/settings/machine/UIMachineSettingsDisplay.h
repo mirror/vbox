@@ -198,8 +198,8 @@ private:
 
         /** Holds the 'Screen' tab instance. */
         QWidget                    *m_pTabScreen;
-        /** Holds the video memory size label instance. */
-        QLabel                     *m_pLabelVideoMemorySize;
+        /** Holds the 'Screen' layout instance. */
+        QGridLayout                *m_pLayoutScreen;
         /** Holds the video memory size editor instance. */
         UIVideoMemoryEditor        *m_pEditorVideoMemorySize;
         /** Holds the monitor count label instance. */

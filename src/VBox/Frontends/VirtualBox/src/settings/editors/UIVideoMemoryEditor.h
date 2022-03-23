@@ -33,6 +33,7 @@
 #include "CGuestOSType.h"
 
 /* Forward declarations: */
+class QGridLayout;
 class QLabel;
 class QSpinBox;
 class QIAdvancedSlider;
@@ -49,9 +50,8 @@ signals:
 
 public:
 
-    /** Constructs video-memory editor passing @a pParent to the base-class.
-      * @param  fWithLabel  Brings whether we should add label ourselves. */
-    UIVideoMemoryEditor(QWidget *pParent = 0, bool fWithLabel = false);
+    /** Constructs video-memory editor passing @a pParent to the base-class. */
+    UIVideoMemoryEditor(QWidget *pParent = 0);
 
     /** Defines editor @a iValue. */
     void setValue(int iValue);
@@ -73,6 +73,11 @@ public:
     /** Defines whether 3D acceleration is @a fEnabled. */
     void set3DAccelerationEnabled(bool fEnabled);
 #endif
+
+    /** Returns minimum layout hint. */
+    int minimumLabelHorizontalHint() const;
+    /** Defines minimum layout @a iIndent. */
+    void setMinimumLayoutIndent(int iIndent);
 
 protected:
 
@@ -100,9 +105,6 @@ private:
     /** Calculates the reasonably sane slider page step. */
     static int calculatePageStep(int iMax);
 
-    /** Holds whether descriptive label should be created. */
-    bool  m_fWithLabel;
-
     /** Holds the guest OS type ID. */
     CGuestOSType             m_comGuestOSType;
     /** Holds the guest screen count. */
@@ -127,6 +129,8 @@ private:
     /** Holds the initial VRAM value when the dialog is opened. */
     int  m_iInitialVRAM;
 
+    /** Holds the main layout instance. */
+    QGridLayout      *m_pLayout;
     /** Holds the memory label instance. */
     QLabel           *m_pLabelMemory;
     /** Holds the memory slider instance. */

@@ -31,9 +31,8 @@
 #include "CSystemProperties.h"
 
 
-UIVideoMemoryEditor::UIVideoMemoryEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+UIVideoMemoryEditor::UIVideoMemoryEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabel(fWithLabel)
     , m_comGuestOSType(CGuestOSType())
     , m_cGuestScreenCount(1)
     , m_enmGraphicsControllerType(KGraphicsControllerType_Null)
@@ -45,6 +44,7 @@ UIVideoMemoryEditor::UIVideoMemoryEditor(QWidget *pParent /* = 0 */, bool fWithL
     , m_iMaxVRAM(0)
     , m_iMaxVRAMVisible(0)
     , m_iInitialVRAM(0)
+    , m_pLayout(0)
     , m_pLabelMemory(0)
     , m_pSlider(0)
     , m_pLabelMemoryMin(0)
@@ -135,14 +135,38 @@ void UIVideoMemoryEditor::set3DAccelerationEnabled(bool fEnabled)
 }
 #endif /* VBOX_WITH_3D_ACCELERATION */
 
+int UIVideoMemoryEditor::minimumLabelHorizontalHint() const
+{
+    return m_pLabelMemory->minimumSizeHint().width();
+}
+
+void UIVideoMemoryEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
+}
+
 void UIVideoMemoryEditor::retranslateUi()
 {
     if (m_pLabelMemory)
         m_pLabelMemory->setText(tr("Video &Memory:"));
+
+    if (m_pSlider)
+        m_pSlider->setToolTip(tr("Holds the amount of video memory provided to the virtual machine."));
+    if (m_pSpinBox)
+        m_pSpinBox->setToolTip(tr("Holds the amount of video memory provided to the virtual machine."));
+
     if (m_pLabelMemoryMin)
+    {
         m_pLabelMemoryMin->setText(tr("%1 MB").arg(m_iMinVRAM));
+        m_pLabelMemoryMin->setToolTip(tr("Minimum possible video memory size."));
+    }
     if (m_pLabelMemoryMax)
+    {
         m_pLabelMemoryMax->setText(tr("%1 MB").arg(m_iMaxVRAMVisible));
+        m_pLabelMemoryMax->setToolTip(tr("Maximum possible video memory size."));
+    }
+
     if (m_pSpinBox)
         m_pSpinBox->setSuffix(QString(" %1").arg(tr("MB")));
 }
@@ -184,17 +208,18 @@ void UIVideoMemoryEditor::prepare()
     m_iMaxVRAMVisible = m_iMaxVRAM;
 
     /* Create main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-        int iRow = 0;
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create memory label: */
-        if (m_fWithLabel)
-            m_pLabelMemory = new QLabel(this);
+        m_pLabelMemory = new QLabel(this);
         if (m_pLabelMemory)
-            pMainLayout->addWidget(m_pLabelMemory, 0, iRow++, 1, 1);
+        {
+            m_pLabelMemory->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabelMemory, 0, 0);
+        }
 
         /* Create slider layout: */
         QVBoxLayout *pSliderLayout = new QVBoxLayout;
@@ -243,7 +268,7 @@ void UIVideoMemoryEditor::prepare()
             }
 
             /* Add slider layout to main layout: */
-            pMainLayout->addLayout(pSliderLayout, 0, iRow++, 2, 1);
+            m_pLayout->addLayout(pSliderLayout, 0, 1, 2, 1);
         }
 
         /* Create memory spin-box: */
@@ -257,7 +282,7 @@ void UIVideoMemoryEditor::prepare()
             m_pSpinBox->setMaximum(m_iMaxVRAMVisible);
             connect(m_pSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
                     this, &UIVideoMemoryEditor::sltHandleSpinBoxChange);
-            pMainLayout->addWidget(m_pSpinBox, 0, iRow++, 1, 1);
+            m_pLayout->addWidget(m_pSpinBox, 0, 2);
         }
     }
 
