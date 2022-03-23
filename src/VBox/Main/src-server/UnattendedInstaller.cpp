@@ -864,20 +864,8 @@ HRESULT UnattendedLinuxInstaller::editIsoLinuxCfg(GeneralTextScript *pEditor)
 {
     try
     {
-        /* Don't include menu.cfg which may default (as most Debians do) to some vanilla menu item. txt.cfg has command
-         * kernel line options pointing to our preseed file. */
-        std::vector<size_t> vecLineNumbers = pEditor->findTemplate("include", RTCString::CaseInsensitive);
-        for (size_t i = 0; i < vecLineNumbers.size(); ++i)
-            if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("include", RTCString::CaseInsensitive))
-            {
-                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), "include txt.cfg");
-                if (FAILED(hrc))
-                    return hrc;
-            }
-
-
         /* Comment out 'display <filename>' directives that's used for displaying files at boot time. */
-        vecLineNumbers = pEditor->findTemplate("display", RTCString::CaseInsensitive);
+        std::vector<size_t> vecLineNumbers =  pEditor->findTemplate("display", RTCString::CaseInsensitive);
         for (size_t i = 0; i < vecLineNumbers.size(); ++i)
             if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("display", RTCString::CaseInsensitive))
             {
@@ -1006,16 +994,11 @@ static bool hlpVfsFileExists(RTVFS hVfs, const char *pszPath)
 HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
                                                             RTVFS hVfsOrgIso, bool fOverwrite)
 {
-    /*
-     * The txt.cfg file used to be called isolinux.txt (ubuntu 4.10
-     * and possible others).
-     */
-    /** @todo Ubuntu 4.10 does not work, as we generate too long command lines
-     *        and the kernel crashes immediately. */
-    const char *pszIsoLinuxTxtCfg = "/isolinux/txt.cfg";
-    if (   !hlpVfsFileExists(hVfsOrgIso, pszIsoLinuxTxtCfg)
-        && hlpVfsFileExists(hVfsOrgIso, "/isolinux/isolinux.txt"))
-        pszIsoLinuxTxtCfg             = "/isolinux/isolinux.txt";
+    /* On Debian Live ISOs (at least from 9 to 11) the there is only menu.cfg. */
+    const char *pszMenuConfigFileName = "/isolinux/txt.cfg";
+    if (   !hlpVfsFileExists(hVfsOrgIso, pszMenuConfigFileName)
+        && hlpVfsFileExists(hVfsOrgIso, "/isolinux/menu.cfg"))
+        pszMenuConfigFileName     = "/isolinux/menu.cfg";
 
     /*
      * VISO bits and filenames.
@@ -1036,7 +1019,7 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
 
         /* Remove the two isolinux configure files we'll be replacing. */
         rVecArgs.append() = "isolinux/isolinux.cfg=:must-remove:";
-        rVecArgs.append().assign(&pszIsoLinuxTxtCfg[1]).append("=:must-remove:");
+        rVecArgs.append().assign(&pszMenuConfigFileName[1]).append("=:must-remove:");
 
         /* Add the replacement files. */
         strIsoLinuxCfg = mpParent->i_getAuxiliaryBasePath();
@@ -1045,7 +1028,7 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
 
         strTxtCfg = mpParent->i_getAuxiliaryBasePath();
         strTxtCfg.append("isolinux-txt.cfg");
-        rVecArgs.append().assign(&pszIsoLinuxTxtCfg[1]).append("=").append(strTxtCfg);
+        rVecArgs.append().assign(&pszMenuConfigFileName[1]).append("=").append(strTxtCfg);
     }
     catch (std::bad_alloc &)
     {
@@ -1059,7 +1042,7 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
         GeneralTextScript Editor(mpParent);
         HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, "/isolinux/isolinux.cfg", &Editor);
         if (SUCCEEDED(hrc))
-            hrc = editIsoLinuxCfg(&Editor);
+            hrc = editIsoLinuxCfg(&Editor, RTPathFilename(pszMenuConfigFileName));
         if (SUCCEEDED(hrc))
         {
             hrc = Editor.save(strIsoLinuxCfg, fOverwrite);
@@ -1081,13 +1064,13 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
     }
 
     /*
-     * Edit the txt.cfg file.
+     * Edit the menu config file file.
      */
     {
         GeneralTextScript Editor(mpParent);
-        HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, pszIsoLinuxTxtCfg, &Editor);
+        HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, pszMenuConfigFileName, &Editor);
         if (SUCCEEDED(hrc))
-            hrc = editDebianTxtCfg(&Editor);
+            hrc = editDebianMenuCfg(&Editor);
         if (SUCCEEDED(hrc))
         {
             hrc = Editor.save(strTxtCfg, fOverwrite);
@@ -1114,7 +1097,45 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
     return UnattendedLinuxInstaller::addFilesToAuxVisoVectors(rVecArgs, rVecFiles, hVfsOrgIso, fOverwrite);
 }
 
-HRESULT UnattendedDebianInstaller::editDebianTxtCfg(GeneralTextScript *pEditor)
+HRESULT UnattendedDebianInstaller::editIsoLinuxCfg(GeneralTextScript *pEditor, const char *pszMenuConfigFileName)
+{
+    try
+    {
+        /* Include menu config file. Since it can be txt.cfg, menu.cfg or something else we need to parametrize this. */
+        if (pszMenuConfigFileName && pszMenuConfigFileName[0] != '\0')
+        {
+            std::vector<size_t> vecLineNumbers = pEditor->findTemplate("include", RTCString::CaseInsensitive);
+            for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+            {
+                if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("include", RTCString::CaseInsensitive))
+                {
+                    Utf8Str strIncludeLine("include ");
+                    strIncludeLine.append(pszMenuConfigFileName);
+                    HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers.at(i), strIncludeLine);
+                    if (FAILED(hrc))
+                        return hrc;
+                }
+            }
+        }
+
+        /* Comment out default directives since in Debian case default is handled in menu config file. */
+        std::vector<size_t> vecLineNumbers =  pEditor->findTemplate("default", RTCString::CaseInsensitive);
+        for (size_t i = 0; i < vecLineNumbers.size(); ++i)
+            if (pEditor->getContentOfLine(vecLineNumbers[i]).startsWithWord("default", RTCString::CaseInsensitive))
+            {
+                HRESULT hrc = pEditor->prependToLine(vecLineNumbers.at(i), "#");
+                if (FAILED(hrc))
+                    return hrc;
+            }
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+    return UnattendedLinuxInstaller::editIsoLinuxCfg(pEditor);
+}
+
+HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor)
 {
     /*
      * Unlike Redhats Debian variants define boot menu not in isolinux.cfg but some other
