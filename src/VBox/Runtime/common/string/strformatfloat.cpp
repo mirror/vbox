@@ -68,12 +68,12 @@ RTDECL(ssize_t) RTStrFormatR32(char *pszBuf, size_t cbBuf, PCRTFLOAT32U pr32Valu
     bool const fSign = pr32Value->s.fSign;
     if (RTFLOAT32U_IS_ZERO(pr32Value))
         return fSign
-             ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+0"))
-             : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-0"));
+             ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-0"))
+             : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+0"));
     if (RTFLOAT32U_IS_INF(pr32Value))
         return fSign
-             ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+Inf"))
-             : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Inf"));
+             ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Inf"))
+             : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+Inf"));
 
     /*
      * Output sign first.
@@ -150,12 +150,12 @@ RTDECL(ssize_t) RTStrFormatR64(char *pszBuf, size_t cbBuf, PCRTFLOAT64U pr64Valu
     bool const fSign = pr64Value->s.fSign;
     if (RTFLOAT64U_IS_ZERO(pr64Value))
         return fSign
-             ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+0"))
-             : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-0"));
+             ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-0"))
+             : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+0"));
     if (RTFLOAT64U_IS_INF(pr64Value))
         return fSign
-             ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+Inf"))
-             : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Inf"));
+             ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Inf"))
+             : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+Inf"));
 
     /*
      * Output sign first.
@@ -246,8 +246,8 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
         if (   !uFraction
             && !fInteger)
             return fSign
-                 ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+0"))
-                 : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-0"));
+                 ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-0"))
+                 : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+0"));
         fDenormal = true;
     }
     else if (uExponent == RTFLOAT80U_EXP_MAX)
@@ -256,20 +256,20 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
         {
             if (!uFraction)
                 return fSign
-                     ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+PseudoInf"))
-                     : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-PseudoInf"));
+                     ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-PseudoInf"))
+                     : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+PseudoInf"));
             if (!(fFlags & RTSTR_F_SPECIAL))
                 return fSign
-                     ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+PseudoNan"))
-                     : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-PseudoNan"));
+                     ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-PseudoNan"))
+                     : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+PseudoNan"));
             pszTmp = (char *)memcpy(pszTmp, "PseudoNan[", 10) + 10;
         }
         else if (!(uFraction & RT_BIT_64(62)))
         {
             if (!(uFraction & (RT_BIT_64(62) - 1)))
                 return fSign
-                     ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+Inf"))
-                     : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Inf"));
+                     ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Inf"))
+                     : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+Inf"));
             if (!(fFlags & RTSTR_F_SPECIAL))
                 return rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("SNan"));
             pszTmp = (char *)memcpy(pszTmp, "SNan[", 5) + 5;
@@ -278,8 +278,8 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
         {
             if (!(uFraction & (RT_BIT_64(62) - 1)))
                 return fSign
-                     ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+Ind"))
-                     : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Ind"));
+                     ? rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("-Ind"))
+                     : rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("+Ind"));
             if (!(fFlags & RTSTR_F_SPECIAL))
                 return rtStrFormatCopyOutStr(pszBuf, cbBuf, RT_STR_TUPLE("QNan"));
             pszTmp = (char *)memcpy(pszTmp, "QNan[", 5) + 5;
@@ -301,12 +301,17 @@ static ssize_t rtStrFormatR80Worker(char *pszBuf, size_t cbBuf, bool const fSign
     *pszTmp++ = '^';
     pszTmp += RTStrFormatNumber(pszTmp, (int32_t)uExponent - RTFLOAT80U_EXP_BIAS, 10, 0, 0,
                                 RTSTR_F_ZEROPAD | RTSTR_F_32BIT | RTSTR_F_VALSIGNED);
-    if (fDenormal && (fFlags & RTSTR_F_SPECIAL))
+    if (fFlags & RTSTR_F_SPECIAL)
     {
-        if (fInteger)
-            pszTmp = (char *)memcpy(pszTmp, "[PDn]", 5) + 5;
-        else
-            pszTmp = (char *)memcpy(pszTmp, "[Den]", 5) + 5;
+        if (fDenormal)
+        {
+            if (fInteger)
+                pszTmp = (char *)memcpy(pszTmp, "[PDn]", 5) + 5;
+            else
+                pszTmp = (char *)memcpy(pszTmp, "[Den]", 5) + 5;
+        }
+        else if (!fInteger)
+            pszTmp = (char *)memcpy(pszTmp, "[Unn]", 5) + 5;
     }
     return rtStrFormatCopyOutStr(pszBuf, cbBuf, szTmp, pszTmp - &szTmp[0]);
 }
