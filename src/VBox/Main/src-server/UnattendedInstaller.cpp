@@ -1139,31 +1139,48 @@ HRESULT UnattendedDebianInstaller::editDebianMenuCfg(GeneralTextScript *pEditor)
 {
     /*
      * Unlike Redhats Debian variants define boot menu not in isolinux.cfg but some other
-     * menu configuration files. They are mostly called txt.cfg and menu.cfg (and possibly some other names)
-     * In this functions we attempt to set menu's default label to the one containing te word 'install'.
+     * menu configuration files. They are mostly called txt.cfg and/or menu.cfg (and possibly some other names)
+     * In this functions we attempt to set menu's default labels to the one containing the word 'install'.
      */
     try
     {
+        const char *pszNewLabel = "VBoxUnatendedInstall";
         std::vector<size_t> vecLineNumbers = pEditor->findTemplate("label", RTCString::CaseInsensitive);
+        bool fLabelFound = false;
         for (size_t i = 0; i < vecLineNumbers.size(); ++i)
         {
             RTCString const &rContent = pEditor->getContentOfLine(vecLineNumbers[i]);
-
-            // ASSUME: suppose general string looks like "label install", two words separated by " ".
-            RTCList<RTCString> vecPartsOfcontent = rContent.split(" ");
-            if (vecPartsOfcontent.size() > 1 && vecPartsOfcontent[1].contains("install")) /** @todo r=bird: case insensitive? */
+            /* Skip this line if it does not start with the word 'label'. */
+            if (!RTStrIStartsWith(rContent.c_str(), "label"))
+                continue;
+            /* Use the first menu item starting with word label  and have the word 'install'.*/
+            if (RTStrIStr(rContent.c_str(), "install") != NULL)
             {
-                std::vector<size_t> vecDefaultLineNumbers = pEditor->findTemplate("default", RTCString::CaseInsensitive);
-                for (size_t j = 0; j < vecDefaultLineNumbers.size(); ++j)
-                {
-                    Utf8Str strNewContent("default ");
-                    strNewContent.append(vecPartsOfcontent[1]);
-                    HRESULT hrc = pEditor->setContentOfLine(vecDefaultLineNumbers[j], strNewContent);
-                    if (FAILED(hrc))
-                        return hrc;
-                }
+
+                /* Set the content of the line. It looks like multiple word labels (like label Debian Installer)
+                 * does not work very well in some cases. */
+                Utf8Str strNewLabel("label ");
+                strNewLabel.append(pszNewLabel);
+                HRESULT hrc = pEditor->setContentOfLine(vecLineNumbers[i], strNewLabel);
+                if (!SUCCEEDED(hrc))
+                    return hrc;
+                fLabelFound = true;
+                break;
             }
         }
+        if (!fLabelFound)
+            return VERR_MISSING;
+        /* Modify the content of default lines so that they point to label we have chosen above. */
+        std::vector<size_t> vecDefaultLineNumbers = pEditor->findTemplate("default", RTCString::CaseInsensitive);
+        for (size_t j = 0; j < vecDefaultLineNumbers.size(); ++j)
+        {
+            Utf8Str strNewContent("default ");
+            strNewContent.append(pszNewLabel);
+            HRESULT hrc = pEditor->setContentOfLine(vecDefaultLineNumbers[j], strNewContent);
+            if (FAILED(hrc))
+                return hrc;
+        }
+
     }
     catch (std::bad_alloc &)
     {
