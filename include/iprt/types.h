@@ -1090,7 +1090,7 @@ typedef union RTFLOAT80U
     /** Format using bitfields.  */
     RT_GCC_EXTENSION struct
     {
-# ifdef RT_BIG_ENDIAN
+# ifdef RT_BIG_ENDIAN /** @todo big endian mapping is wrong. */
         /** The sign indicator. */
         RT_GCC_EXTENSION uint16_t   fSign : 1;
         /** The exponent (offseted by 16383). */
@@ -1111,7 +1111,7 @@ typedef union RTFLOAT80U
     /** 64-bit bitfields exposing the J bit and the fraction.  */
     RT_GCC_EXTENSION struct
     {
-#  ifdef RT_BIG_ENDIAN
+#  ifdef RT_BIG_ENDIAN /** @todo big endian mapping is wrong. */
         /** The sign indicator. */
         RT_GCC_EXTENSION uint16_t   fSign : 1;
         /** The exponent (offseted by 16383). */
@@ -1211,7 +1211,7 @@ typedef union RTFLOAT80U2
     /** Format using bitfields.  */
     RT_GCC_EXTENSION struct
     {
-# ifdef RT_BIG_ENDIAN
+# ifdef RT_BIG_ENDIAN /** @todo big endian mapping is wrong. */
         /** The sign indicator. */
         RT_GCC_EXTENSION uint16_t   fSign : 1;
         /** The exponent (offseted by 16383). */
@@ -1231,7 +1231,7 @@ typedef union RTFLOAT80U2
     /** Bitfield exposing the J bit and the fraction.  */
     RT_GCC_EXTENSION struct
     {
-# ifdef RT_BIG_ENDIAN
+# ifdef RT_BIG_ENDIAN /** @todo big endian mapping is wrong. */
         /** The sign indicator. */
         RT_GCC_EXTENSION uint16_t   fSign : 1;
         /** The exponent (offseted by 16383). */
@@ -1260,7 +1260,7 @@ typedef union RTFLOAT80U2
     /** 64-bit bitfields exposing the J bit and the fraction.  */
     RT_GCC_EXTENSION struct
     {
-#  ifdef RT_BIG_ENDIAN
+#  ifdef RT_BIG_ENDIAN /** @todo big endian mapping is wrong. */
         /** The sign indicator. */
         RT_GCC_EXTENSION uint16_t   fSign : 1;
         /** The exponent (offseted by 16383). */
@@ -1315,21 +1315,12 @@ typedef union RTPBCD80U
     /** Format using bitfields.  */
     RT_GCC_EXTENSION struct
     {
-# ifdef RT_BIG_ENDIAN
-        /** The sign indicator. */
-        RT_GCC_EXTENSION uint8_t    fSign : 1;
-        /** Padding, non-zero if indefinite. */
-        RT_GCC_EXTENSION uint8_t    uPad : 7;
         /** 18 packed BCD digits, two to a byte. */
-        uint8_t                     aBcdDigits[9];
-# else
-        /** 18 packed BCD digits, two to a byte. */
-        uint8_t                     aBcdDigits[9];
+        uint8_t                     abPairs[9];
         /** Padding, non-zero if indefinite. */
         RT_GCC_EXTENSION uint8_t    uPad : 7;
         /** The sign indicator. */
         RT_GCC_EXTENSION uint8_t    fSign : 1;
-# endif
     } s;
 
     /** 64-bit view. */
@@ -1346,6 +1337,49 @@ typedef union RTPBCD80U
 typedef RTPBCD80U RT_FAR *PRTPBCD80U;
 /** Pointer to a const packed BCD integer format union. */
 typedef const RTPBCD80U RT_FAR *PCRTPBCD80U;
+/** RTPBCD80U initializer. */
+#define RTPBCD80U_INIT_C(a_fSign, a_D17, a_D16, a_D15, a_D14, a_D13, a_D12, a_D11, a_D10, \
+                         a_D9, a_D8, a_D7, a_D6, a_D5, a_D4, a_D3, a_D2, a_D1, a_D0) \
+    RTPBCD80U_INIT_EX_C(0, a_fSign, a_D17, a_D16, a_D15, a_D14, a_D13, a_D12, a_D11, a_D10, \
+                        a_D9, a_D8, a_D7, a_D6, a_D5, a_D4, a_D3, a_D2, a_D1, a_D0)
+/** Extended RTPBCD80U initializer. */
+#define RTPBCD80U_INIT_EX_C(a_uPad, a_fSign, a_D17, a_D16, a_D15, a_D14, a_D13, a_D12, a_D11, a_D10, \
+                            a_D9, a_D8, a_D7, a_D6, a_D5, a_D4, a_D3, a_D2, a_D1, a_D0) \
+    { { { RTPBCD80U_MAKE_PAIR(a_D1, a_D0), \
+          RTPBCD80U_MAKE_PAIR(a_D3, a_D2), \
+          RTPBCD80U_MAKE_PAIR(a_D5, a_D4), \
+          RTPBCD80U_MAKE_PAIR(a_D7, a_D6), \
+          RTPBCD80U_MAKE_PAIR(a_D9, a_D8), \
+          RTPBCD80U_MAKE_PAIR(a_D11, a_D10), \
+          RTPBCD80U_MAKE_PAIR(a_D13, a_D12), \
+          RTPBCD80U_MAKE_PAIR(a_D15, a_D14), \
+          RTPBCD80U_MAKE_PAIR(a_D17, a_D16), }, (a_uPad), (a_fSign) } }
+/** RTPBCD80U initializer for the zero value. */
+#define RTPBCD80U_INIT_ZERO(a_fSign) RTPBCD80U_INIT_C(a_fSign, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0)
+/** RTPBCD80U initializer for the indefinite value. */
+#define RTPBCD80U_INIT_INDEFINITE() RTPBCD80U_INIT_EX_C(0x7f,1, 0xf,0xf, 0xf,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0)
+/** Makes a packs a pair of BCD digits. */
+#define RTPBCD80U_MAKE_PAIR(a_D1, a_D0) ((a_D0) | ((a_D1) << 4))
+/** Retrieves the lower digit of a BCD digit pair. */
+#define RTPBCD80U_LO_DIGIT(a_bPair) ((a_bPair) & 0xf)
+/** Retrieves the higher digit of a BCD digit pair. */
+#define RTPBCD80U_HI_DIGIT(a_bPair) ((a_bPair) >> 4)
+/** Checks if the packaged BCD number is representing indefinite. */
+#define RTPBCD80U_IS_INDEFINITE(a_pd80) \
+    (   (a_pd80)->s.uPad       == 0x7f \
+     && (a_pd80)->s.fSign      == 1 \
+     && (a_pd80)->s.abPairs[8] == 0xff \
+     && (a_pd80)->s.abPairs[7] == RTPBCD80U_MAKE_PAIR(0xf, 0) \
+     && (a_pd80)->s.abPairs[6] == 0 \
+     && (a_pd80)->s.abPairs[5] == 0 \
+     && (a_pd80)->s.abPairs[4] == 0 \
+     && (a_pd80)->s.abPairs[3] == 0 \
+     && (a_pd80)->s.abPairs[2] == 0 \
+     && (a_pd80)->s.abPairs[1] == 0 \
+     && (a_pd80)->s.abPairs[0] == 0)
+/** Check if @a a_pd80Left and @a a_pd80Right are exactly the same. */
+#define RTPBCD80U_ARE_IDENTICAL(a_pd80Left, a_pd80Right) \
+    ( (a_pd80Left)->au64[0] == (a_pd80Right)->au64[0] && (a_pd80Left)->au16[4] == (a_pd80Right)->au16[4] )
 
 
 /** Generic function type.
