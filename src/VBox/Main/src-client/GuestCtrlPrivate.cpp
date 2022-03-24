@@ -668,64 +668,54 @@ int GuestProcessStream::ParseBlock(GuestProcessStreamBlock &streamBlock)
 {
     if (   !m_pbBuffer
         || !m_cbUsed)
-    {
         return VERR_NO_DATA;
-    }
 
     AssertReturn(m_offBuffer <= m_cbUsed, VERR_INVALID_PARAMETER);
     if (m_offBuffer == m_cbUsed)
         return VERR_NO_DATA;
 
-    int rc = VINF_SUCCESS;
-
-    char    *pszOff    = (char*)&m_pbBuffer[m_offBuffer];
-    char    *pszStart  = pszOff;
-    uint32_t uDistance;
-    while (*pszStart)
+    int          rc        = VINF_SUCCESS;
+    char * const pszOff    = (char *)&m_pbBuffer[m_offBuffer];
+    size_t       cbLeft    = m_offBuffer < m_cbUsed ? m_cbUsed - m_offBuffer : 0;
+    char        *pszStart  = pszOff;
+    while (cbLeft > 0 && *pszStart != '\0')
     {
-        size_t pairLen = strlen(pszStart);
-        uDistance = (pszStart - pszOff);
-        if (m_offBuffer + uDistance + pairLen + 1 >= m_cbUsed)
+        char * const pszPairEnd = RTStrEnd(pszStart, cbLeft);
+        if (!pszPairEnd)
         {
             rc = VERR_MORE_DATA;
             break;
         }
+        size_t const cchPair = (size_t)(pszPairEnd - pszStart);
+        char *pszSep = (char *)memchr(pszStart, '=', cchPair);
+        if (pszSep)
+            *pszSep = '\0'; /* Terminate the separator so that we can  use pszStart as our key from now on. */
         else
         {
-            char *pszSep = strchr(pszStart, '=');
-            char *pszVal = NULL;
-            if (pszSep)
-                pszVal = pszSep + 1;
-            if (!pszSep || !pszVal)
-            {
-                rc = VERR_MORE_DATA;
-                break;
-            }
-
-            /* Terminate the separator so that we can
-             * use pszStart as our key from now on. */
-            *pszSep = '\0';
-
-            rc = streamBlock.SetValue(pszStart, pszVal);
-            if (RT_FAILURE(rc))
-                return rc;
+            rc = VERR_MORE_DATA; /** @todo r=bird: This is BOGUS because we'll be stuck here if the guest feeds us bad data! */
+            break;
         }
+        char const * const pszVal = pszSep + 1;
+
+        rc = streamBlock.SetValue(pszStart, pszVal);
+        if (RT_FAILURE(rc))
+            return rc;
 
         /* Next pair. */
-        pszStart += pairLen + 1;
+        pszStart = pszPairEnd + 1;
+        cbLeft  -= cchPair    + 1;
     }
 
     /* If we did not do any movement but we have stuff left
      * in our buffer just skip the current termination so that
      * we can try next time. */
-    uDistance = (pszStart - pszOff);
-    if (   !uDistance
+    size_t cbDistance = (pszStart - pszOff);
+    if (   !cbDistance
+        && cbLeft > 0
         && *pszStart == '\0'
         && m_offBuffer < m_cbUsed)
-    {
-        uDistance++;
-    }
-    m_offBuffer += uDistance;
+        cbDistance++;
+    m_offBuffer += cbDistance;
 
     return rc;
 }
