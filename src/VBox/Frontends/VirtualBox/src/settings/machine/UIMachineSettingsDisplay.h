@@ -214,8 +214,6 @@ private:
         QLabel                     *m_pLabelMonitorCountMax;
         /** Holds the scale factor editor instance. */
         UIScaleFactorEditor        *m_pEditorScaleFactor;
-        /** Holds the graphics controller label instance. */
-        QLabel                     *m_pLabelGraphicsController;
         /** Holds the graphics controller editor instance. */
         UIGraphicsControllerEditor *m_pEditorGraphicsController;
         /** Holds the acceleration label instance. */

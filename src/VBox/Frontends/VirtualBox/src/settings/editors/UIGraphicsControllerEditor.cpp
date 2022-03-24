@@ -30,10 +30,10 @@
 #include "CSystemProperties.h"
 
 
-UIGraphicsControllerEditor::UIGraphicsControllerEditor(QWidget *pParent /* = 0 */, bool fWithLabel /* = false */)
+UIGraphicsControllerEditor::UIGraphicsControllerEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabel(fWithLabel)
     , m_enmValue(KGraphicsControllerType_Max)
+    , m_pLayout(0)
     , m_pLabel(0)
     , m_pCombo(0)
 {
@@ -64,6 +64,17 @@ KGraphicsControllerType UIGraphicsControllerEditor::value() const
     return m_pCombo ? m_pCombo->currentData().value<KGraphicsControllerType>() : m_enmValue;
 }
 
+int UIGraphicsControllerEditor::minimumLabelHorizontalHint() const
+{
+    return m_pLabel->minimumSizeHint().width();
+}
+
+void UIGraphicsControllerEditor::setMinimumLayoutIndent(int iIndent)
+{
+    if (m_pLayout)
+        m_pLayout->setColumnMinimumWidth(0, iIndent);
+}
+
 void UIGraphicsControllerEditor::retranslateUi()
 {
     if (m_pLabel)
@@ -88,40 +99,42 @@ void UIGraphicsControllerEditor::sltHandleCurrentIndexChanged()
 void UIGraphicsControllerEditor::prepare()
 {
     /* Create main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    m_pLayout = new QGridLayout(this);
+    if (m_pLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
-        int iRow = 0;
+        m_pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create label: */
-        if (m_fWithLabel)
-            m_pLabel = new QLabel(this);
+        m_pLabel = new QLabel(this);
         if (m_pLabel)
-            pMainLayout->addWidget(m_pLabel, 0, iRow++, 1, 1);
+        {
+            m_pLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabel, 0, 0);
+        }
 
         /* Create combo layout: */
-        QHBoxLayout *pComboLayout = new QHBoxLayout;
-        if (pComboLayout)
+        QHBoxLayout *pLayoutCombo = new QHBoxLayout;
+        if (pLayoutCombo)
         {
             /* Create combo: */
             m_pCombo = new QComboBox(this);
             if (m_pCombo)
             {
                 /* This is necessary since contents is dynamical now: */
-                m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pCombo);
+                m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 connect(m_pCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                         this, &UIGraphicsControllerEditor::sltHandleCurrentIndexChanged);
-                pComboLayout->addWidget(m_pCombo);
+
+                pLayoutCombo->addWidget(m_pCombo);
             }
 
             /* Add stretch: */
-            pComboLayout->addStretch();
+            pLayoutCombo->addStretch();
 
             /* Add combo-layout into main-layout: */
-            pMainLayout->addLayout(pComboLayout, 0, iRow++, 1, 1);
+            m_pLayout->addLayout(pLayoutCombo, 0, 1);
         }
     }
 

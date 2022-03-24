@@ -33,6 +33,7 @@
 
 /* Forward declarations: */
 class QComboBox;
+class QGridLayout;
 class QLabel;
 
 /** QWidget subclass used as a graphics controller editor. */
@@ -47,9 +48,8 @@ signals:
 
 public:
 
-    /** Constructs graphics controller editor passing @a pParent to the base-class.
-      * @param  fWithLabel  Brings whether we should add label ourselves. */
-    UIGraphicsControllerEditor(QWidget *pParent = 0, bool fWithLabel = false);
+    /** Constructs graphics controller editor passing @a pParent to the base-class. */
+    UIGraphicsControllerEditor(QWidget *pParent = 0);
 
     /** Defines editor @a enmValue. */
     void setValue(KGraphicsControllerType enmValue);
@@ -58,6 +58,11 @@ public:
 
     /** Returns the vector of supported values. */
     QVector<KGraphicsControllerType> supportedValues() const { return m_supportedValues; }
+
+    /** Returns minimum layout hint. */
+    int minimumLabelHorizontalHint() const;
+    /** Defines minimum layout @a iIndent. */
+    void setMinimumLayoutIndent(int iIndent);
 
 protected:
 
@@ -76,19 +81,18 @@ private:
     /** Populates combo. */
     void populateCombo();
 
-    /** Holds whether descriptive label should be created. */
-    bool  m_fWithLabel;
-
     /** Holds the value to be selected. */
     KGraphicsControllerType  m_enmValue;
 
     /** Holds the vector of supported values. */
     QVector<KGraphicsControllerType>  m_supportedValues;
 
+    /** Holds the main layout instance. */
+    QGridLayout *m_pLayout;
     /** Holds the label instance. */
-    QLabel    *m_pLabel;
+    QLabel      *m_pLabel;
     /** Holds the combo instance. */
-    QComboBox *m_pCombo;
+    QComboBox   *m_pCombo;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIGraphicsControllerEditor_h */

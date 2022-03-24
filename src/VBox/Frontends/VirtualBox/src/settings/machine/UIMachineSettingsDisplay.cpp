@@ -310,7 +310,6 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     , m_pLabelMonitorCountMin(0)
     , m_pLabelMonitorCountMax(0)
     , m_pEditorScaleFactor(0)
-    , m_pLabelGraphicsController(0)
     , m_pEditorGraphicsController(0)
     , m_pLabelAcceleration(0)
     , m_pCheckbox3D(0)
@@ -777,7 +776,6 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pSliderMonitorCount->setToolTip(tr("Controls the amount of virtual monitors provided to the virtual machine."));
     m_pSpinboxMonitorCount->setToolTip(tr("Controls the amount of virtual monitors provided to the virtual machine."));
     m_pEditorScaleFactor->setToolTip(tr("Controls the guest screen scale factor."));
-    m_pLabelGraphicsController->setText(tr("&Graphics Controller:"));
     m_pLabelAcceleration->setText(tr("Acceleration:"));
     m_pCheckbox3D->setToolTip(tr("When checked, the virtual machine will be given access "
                                  "to the 3D graphics capabilities available on the host."));
@@ -862,10 +860,11 @@ void UIMachineSettingsDisplay::retranslateUi()
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVideoMemorySize->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelMonitorCount->minimumSizeHint().width());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorScaleFactor->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelGraphicsController->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorGraphicsController->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelAcceleration->minimumSizeHint().width());
     m_pEditorVideoMemorySize->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorScaleFactor->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorGraphicsController->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pLayoutScreen->setColumnMinimumWidth(0, iMinimumLayoutHint);
 
     updateRecordingFileSizeHint();
@@ -884,7 +883,6 @@ void UIMachineSettingsDisplay::polishPage()
     m_pLabelMonitorCountMax->setEnabled(isMachineOffline());
     m_pSpinboxMonitorCount->setEnabled(isMachineOffline());
     m_pEditorScaleFactor->setEnabled(isMachineInValidMode());
-    m_pLabelGraphicsController->setEnabled(isMachineOffline());
     m_pEditorGraphicsController->setEnabled(isMachineOffline());
     m_pLabelAcceleration->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_3D_ACCELERATION
@@ -1180,21 +1178,10 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             if (m_pEditorScaleFactor)
                 m_pLayoutScreen->addWidget(m_pEditorScaleFactor, 3, 0, 1, 3);
 
-            /* Prepare graphics controller label: */
-            m_pLabelGraphicsController = new QLabel(m_pTabScreen);
-            if (m_pLabelGraphicsController)
-            {
-                m_pLabelGraphicsController->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutScreen->addWidget(m_pLabelGraphicsController, 4, 0);
-            }
             /* Prepare graphics controller editor: */
             m_pEditorGraphicsController = new UIGraphicsControllerEditor(m_pTabScreen);
             if (m_pEditorGraphicsController)
-            {
-                if (m_pLabelGraphicsController)
-                    m_pLabelGraphicsController->setBuddy(m_pEditorGraphicsController);
-                m_pLayoutScreen->addWidget(m_pEditorGraphicsController, 4, 1, 1, 2);
-            }
+                m_pLayoutScreen->addWidget(m_pEditorGraphicsController, 4, 0, 1, 3);
 
             /* Prepare acceleration label: */
             m_pLabelAcceleration = new QLabel(m_pTabScreen);

@@ -1029,7 +1029,7 @@ void UIDetailsElement::popupGraphicsControllerTypeEditor(const QString &strValue
     if (pPopup)
     {
         /* Prepare editor: */
-        UIGraphicsControllerEditor *pEditor = new UIGraphicsControllerEditor(pPopup, true /* with label */);
+        UIGraphicsControllerEditor *pEditor = new UIGraphicsControllerEditor(pPopup);
         if (pEditor)
         {
             pEditor->setValue(static_cast<KGraphicsControllerType>(strValue.toInt()));
