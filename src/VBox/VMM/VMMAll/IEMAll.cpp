@@ -10093,6 +10093,50 @@ DECL_NO_INLINE(IEM_STATIC, void) iemMemFetchDataR80Jmp(PVMCPUCC pVCpu, PRTFLOAT8
 
 
 /**
+ * Fetches a data tword.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   pd80Dst             Where to return the tword.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+IEM_STATIC VBOXSTRICTRC iemMemFetchDataD80(PVMCPUCC pVCpu, PRTPBCD80U pd80Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+{
+    /* The lazy approach for now... */
+    PCRTPBCD80U pd80Src;
+    VBOXSTRICTRC rc = iemMemMap(pVCpu, (void **)&pd80Src, sizeof(*pd80Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
+    if (rc == VINF_SUCCESS)
+    {
+        *pd80Dst = *pd80Src;
+        rc = iemMemCommitAndUnmap(pVCpu, (void *)pd80Src, IEM_ACCESS_DATA_R);
+    }
+    return rc;
+}
+
+
+#ifdef IEM_WITH_SETJMP
+/**
+ * Fetches a data tword, longjmp on error.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure of the calling thread.
+ * @param   pd80Dst             Where to return the tword.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+DECL_NO_INLINE(IEM_STATIC, void) iemMemFetchDataD80Jmp(PVMCPUCC pVCpu, PRTPBCD80U pd80Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+{
+    /* The lazy approach for now... */
+    PCRTPBCD80U pd80Src = (PCRTPBCD80U)iemMemMapJmp(pVCpu, sizeof(*pd80Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
+    *pd80Dst = *pd80Src;
+    iemMemCommitAndUnmapJmp(pVCpu, (void *)pd80Src, IEM_ACCESS_DATA_R);
+}
+#endif
+
+
+/**
  * Fetches a data dqword (double qword), generally SSE related.
  *
  * @returns Strict VBox status code.
@@ -12221,6 +12265,8 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPUCC pVCpu, uint16_t uSel)
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pVCpu, &(a_r64Dst).au64[0], (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_R80(a_r80Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataR80(pVCpu, &(a_r80Dst), (a_iSeg), (a_GCPtrMem)))
+# define IEM_MC_FETCH_MEM_D80(a_d80Dst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataD80(pVCpu, &(a_d80Dst), (a_iSeg), (a_GCPtrMem)))
 #else
 # define IEM_MC_FETCH_MEM_R32(a_r32Dst, a_iSeg, a_GCPtrMem) \
     ((a_r32Dst).u = iemMemFetchDataU32Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
@@ -12228,6 +12274,8 @@ IEM_STATIC VBOXSTRICTRC iemMemMarkSelDescAccessed(PVMCPUCC pVCpu, uint16_t uSel)
     ((a_r64Dst).u = iemMemFetchDataU64Jmp(pVCpu, (a_iSeg), (a_GCPtrMem)))
 # define IEM_MC_FETCH_MEM_R80(a_r80Dst, a_iSeg, a_GCPtrMem) \
     iemMemFetchDataR80Jmp(pVCpu, &(a_r80Dst), (a_iSeg), (a_GCPtrMem))
+# define IEM_MC_FETCH_MEM_D80(a_d80Dst, a_iSeg, a_GCPtrMem) \
+    iemMemFetchDataD80Jmp(pVCpu, &(a_d80Dst), (a_iSeg), (a_GCPtrMem))
 #endif
 
 #ifndef IEM_WITH_SETJMP

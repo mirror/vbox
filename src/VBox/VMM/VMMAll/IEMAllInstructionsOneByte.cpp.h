@@ -10079,7 +10079,36 @@ FNIEMOP_DEF_1(iemOp_fistp_m16i,  uint8_t, bRm)
 
 
 /** Opcode 0xdf !11/4. */
-FNIEMOP_STUB_1(iemOp_fbld_m80d,   uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fbld_m80d,   uint8_t, bRm)
+{
+    IEMOP_MNEMONIC(fbld_m80d, "fbld m80d");
+
+    IEM_MC_BEGIN(2, 3);
+    IEM_MC_LOCAL(RTGCPTR,                   GCPtrEffSrc);
+    IEM_MC_LOCAL(IEMFPURESULT,              FpuRes);
+    IEM_MC_LOCAL(RTPBCD80U,                 d80Val);
+    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT,     pFpuRes,    FpuRes,     0);
+    IEM_MC_ARG_LOCAL_REF(PCRTPBCD80U,       pd80Val,    d80Val,     1);
+
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_FETCH_MEM_D80(d80Val, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+
+    IEM_MC_PREPARE_FPU_USAGE();
+    IEM_MC_IF_FPUREG_IS_EMPTY(7)
+        IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fld_r80_from_d80, pFpuRes, pd80Val);
+        IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+    IEM_MC_ELSE()
+        IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(pVCpu->iem.s.iEffSeg, GCPtrEffSrc);
+    IEM_MC_ENDIF();
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode 0xdf !11/5. */

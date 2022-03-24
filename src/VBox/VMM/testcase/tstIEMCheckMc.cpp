@@ -568,6 +568,7 @@ IEMOPMEDIAF2 g_iemAImpl_pcmpeqd;
 #define IEM_MC_FETCH_MEM_R32(a_r32Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTFLOAT32U, a_r32Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_R64(a_r64Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTFLOAT64U, a_r64Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_R80(a_r80Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTFLOAT80U, a_r80Dst); (void)fMcBegin; } while (0)
+#define IEM_MC_FETCH_MEM_D80(a_d80Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTPBCD80U,  a_d80Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U128(a_u128Dst, a_iSeg, a_GCPtrMem)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT128U, a_u128Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U128_ALIGN_SSE(a_u128Dst, a_iSeg, a_GCPtrMem)  do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT128U, a_u128Dst); (void)fMcBegin; } while (0)
 #define IEM_MC_FETCH_MEM_U256(a_u256Dst, a_iSeg, a_GCPtrMem)            do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTUINT256U, a_u256Dst); (void)fMcBegin; } while (0)
