@@ -193,7 +193,7 @@ HRESULT BaseTextScript::save(const Utf8Str &rStrFilename, bool fOverwrite)
 
 HRESULT GeneralTextScript::parse()
 {
-//  AssertReturn(!mfDataParsed, mpSetError->setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("parse called more than once")));
+    AssertReturn(!mfDataParsed, mpSetError->setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("parse called more than once")));
 
     /*
      * Split the raw context into an array of lines.
@@ -362,3 +362,18 @@ HRESULT GeneralTextScript::prependToLine(size_t idxLine, const Utf8Str &rStrToPr
     return S_OK;
 }
 
+HRESULT GeneralTextScript::appendLine(const Utf8Str &rStrLineToAppend)
+{
+    AssertReturn(mfDataParsed, mpSetError->setErrorBoth(E_FAIL, VERR_WRONG_ORDER, tr("appendLine() called before parse()")));
+
+    try
+    {
+        mScriptContentByLines.append(rStrLineToAppend);
+    }
+    catch (std::bad_alloc &)
+    {
+        return E_OUTOFMEMORY;
+    }
+    return S_OK;
+
+}

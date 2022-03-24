@@ -230,9 +230,12 @@ public:
      */
     HRESULT prependToLine(size_t idxLine, const Utf8Str &rStrToPrepend);
 
+    /**
+     * Append a new line at the end of the list of line.
+     */
+    HRESULT appendLine(const Utf8Str &rStrLineToAppend);
     //////////////////New functions//////////////////////////////
 };
 
 
 #endif /* !MAIN_INCLUDED_TextScript_h */
-
