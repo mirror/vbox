@@ -899,6 +899,40 @@ uint8_t cga_msr[8] = {
     0x2C, 0x28, 0x2D, 0x29, 0x2A, 0x2E, 0x1E, 0x29
 };
 
+/* Convert index in vga_modes[] to index in video_param_table[] for 200-line (CGA) text modes. */
+static int8_t line_to_vpti_200[8] = {
+    0x00, 0x01, 0x02, 0x03, -1, -1, -1, 0x07
+};
+
+/* Same for 350-line (EGA) text modes. */
+static int8_t line_to_vpti_350[8] = {
+    0x13, 0x14, 0x15, 0x16, -1, -1, -1, 0x07
+};
+
+/* Same for 400-line (VGA) text modes. */
+static int8_t line_to_vpti_400[8] = {
+    0x17, 0x17, 0x18, 0x18, -1, -1, -1, 0x19
+};
+
+int find_vpti(uint8_t line)
+{
+    int         idx;
+    uint8_t     mctl;
+
+    if (vga_modes[line].class == TEXT) {
+        mctl = read_byte(BIOSMEM_SEG, BIOSMEM_MODESET_CTL);
+        if (mctl & 0x10)
+            idx = line_to_vpti_400[line];
+        else if (mctl & 0x80)
+            idx = line_to_vpti_200[line];
+        else
+            idx = line_to_vpti_350[line];
+    } else
+        idx = line_to_vpti[line];
+
+    return idx;
+}
+
 static void biosfn_load_text_user_pat(uint8_t AL, uint16_t ES, uint16_t BP, uint16_t CX, uint16_t DX, uint8_t BL, uint8_t BH);
 
 void biosfn_set_video_mode(uint8_t mode)
@@ -941,8 +975,8 @@ void biosfn_set_video_mode(uint8_t mode)
  // Read the save area pointer.
  save_area = (void __far *)read_dword(BIOSMEM_SEG, BIOSMEM_VS_POINTER);
 
- vpti=line_to_vpti[line];
- vpt = save_area[0];
+ vpti = find_vpti(line);
+ vpt  = save_area[0];
  vpt += vpti;
 
 #if 0   // These are unused, but perhaps they shouldn't be?
@@ -1087,7 +1121,6 @@ void biosfn_set_video_mode(uint8_t mode)
  write_word(BIOSMEM_SEG,BIOSMEM_CHAR_HEIGHT,vpt->cheight);
  write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,(0x60|noclearmem));
  write_byte(BIOSMEM_SEG,BIOSMEM_SWITCHES,0xF9);
- write_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL,read_byte(BIOSMEM_SEG,BIOSMEM_MODESET_CTL)&0x7f);
 
  // FIXME We nearly have the good tables. to be reworked
  write_byte(BIOSMEM_SEG,BIOSMEM_DCC_INDEX,0x08);    // 8 is VGA should be ok for now
@@ -1117,7 +1150,16 @@ void biosfn_set_video_mode(uint8_t mode)
   {
      cso_txt __far   *ovr = save_area[2];
 
-     biosfn_load_text_8_16_pat(0x04, 0);    /* Load 8x16 font into page 0. */
+     switch (vpt->cheight) {
+     case 8:
+         biosfn_load_text_user_pat(0, 0xC000, (uint16_t)vgafont8,  256, 0, 0, vpt->cheight);
+         break;
+     case 14:
+         biosfn_load_text_user_pat(0, 0xC000, (uint16_t)vgafont14, 256, 0, 0, vpt->cheight);
+         break;
+     default:
+         biosfn_load_text_user_pat(0, 0xC000, (uint16_t)vgafont16, 256, 0, 0, vpt->cheight);
+     }
      if (ovr)
       {
 #ifdef VGA_DEBUG
@@ -2059,6 +2101,26 @@ static void biosfn_alternate_prtsc(void)
  unimplemented();
 #endif
 }
+// --------------------------------------------------------------------------------------------
+static void biosfn_set_txt_lines(uint8_t AL)
+{
+    uint8_t     mctl;
+
+    /* Read byte at 40:89. */
+    mctl = read_byte(BIOSMEM_SEG, BIOSMEM_MODESET_CTL);
+    mctl = mctl & 0x6F; /* Clear 400/200 line flags. */
+
+    switch (AL) /* AL was already validated to be in 0-2 range. */
+    {
+    case 0: /* 200 lines. */
+        mctl |= 0x80;
+        break;
+    case 2: /* 400 lines. */
+        mctl |= 0x10;
+        break;
+    }
+    write_byte(BIOSMEM_SEG, BIOSMEM_MODESET_CTL, mctl);
+}
 
 // --------------------------------------------------------------------------------------------
 static void biosfn_switch_video_interface (AL,ES,DX) uint8_t AL;uint16_t ES;uint16_t DX;
@@ -2635,6 +2697,12 @@ void __cdecl int10_func(uint16_t DI, uint16_t SI, uint16_t BP, uint16_t SP, uint
        case 0x20:
         biosfn_alternate_prtsc();
         break;
+       case 0x30:
+         if (GET_AL() <= 2) {
+             biosfn_set_txt_lines(GET_AL());
+             SET_AL(0x12);
+         }
+         break;
        case 0x34:   /* CGA text cursor emulation control. */
         if (GET_AL() < 2) {
             write_byte(BIOSMEM_SEG,BIOSMEM_VIDEO_CTL,
