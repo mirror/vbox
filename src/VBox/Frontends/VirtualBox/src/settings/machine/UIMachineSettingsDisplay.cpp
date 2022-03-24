@@ -32,7 +32,6 @@
 #include "QIWidgetValidator.h"
 #include "UICommon.h"
 #include "UIConverter.h"
-#include "UIDesktopWidgetWatchdog.h"
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIFilePathSelector.h"
@@ -42,6 +41,7 @@
 # include "UIMachineDisplayScreenFeaturesEditor.h"
 #endif
 #include "UIMachineSettingsDisplay.h"
+#include "UIMonitorCountEditor.h"
 #include "UIScaleFactorEditor.h"
 #include "UITranslator.h"
 #include "UIVideoMemoryEditor.h"
@@ -305,13 +305,8 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     , m_pCache(0)
     , m_pTabWidget(0)
     , m_pTabScreen(0)
-    , m_pLayoutScreen(0)
     , m_pEditorVideoMemorySize(0)
-    , m_pLabelMonitorCount(0)
-    , m_pSliderMonitorCount(0)
-    , m_pSpinboxMonitorCount(0)
-    , m_pLabelMonitorCountMin(0)
-    , m_pLabelMonitorCountMax(0)
+    , m_pEditorMonitorCount(0)
     , m_pEditorScaleFactor(0)
     , m_pEditorGraphicsController(0)
 #ifdef VBOX_WITH_3D_ACCELERATION
@@ -499,7 +494,7 @@ void UIMachineSettingsDisplay::getFromCache()
     repopulateComboAuthType();
 
     /* Load old 'Screen' data from cache: */
-    m_pSpinboxMonitorCount->setValue(oldDisplayData.m_cGuestScreenCount);
+    m_pEditorMonitorCount->setValue(oldDisplayData.m_cGuestScreenCount);
     m_pEditorScaleFactor->setScaleFactors(oldDisplayData.m_scaleFactors);
     m_pEditorScaleFactor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
     m_pEditorGraphicsController->setValue(oldDisplayData.m_graphicsControllerType);
@@ -507,7 +502,7 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pEditorDisplayScreenFeatures->setEnable3DAcceleration(oldDisplayData.m_f3dAccelerationEnabled);
 #endif
     /* Push required value to m_pEditorVideoMemorySize: */
-    sltHandleGuestScreenCountEditorChange();
+    sltHandleMonitorCountChange();
     sltHandleGraphicsControllerComboChange();
 #ifdef VBOX_WITH_3D_ACCELERATION
     sltHandle3DAccelerationFeatureStateChange();
@@ -565,7 +560,7 @@ void UIMachineSettingsDisplay::putToCache()
 
     /* Gather new 'Screen' data: */
     newDisplayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
-    newDisplayData.m_cGuestScreenCount = m_pSpinboxMonitorCount->value();
+    newDisplayData.m_cGuestScreenCount = m_pEditorMonitorCount->value();
     newDisplayData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
     newDisplayData.m_graphicsControllerType = m_pEditorGraphicsController->value();
 #ifdef VBOX_WITH_3D_ACCELERATION
@@ -652,7 +647,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         /* Video RAM amount test: */
         if (shouldWeWarnAboutLowVRAM() && !m_comGuestOSType.isNull())
         {
-            quint64 uNeedBytes = UICommon::requiredVideoMemory(m_comGuestOSType.GetId(), m_pSpinboxMonitorCount->value());
+            quint64 uNeedBytes = UICommon::requiredVideoMemory(m_comGuestOSType.GetId(), m_pEditorMonitorCount->value());
 
             /* Basic video RAM amount test: */
             if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
@@ -751,9 +746,8 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     /* Screen tab-order: */
     setTabOrder(pWidget, m_pTabWidget->focusProxy());
     setTabOrder(m_pTabWidget->focusProxy(), m_pEditorVideoMemorySize);
-    setTabOrder(m_pEditorVideoMemorySize, m_pSliderMonitorCount);
-    setTabOrder(m_pSliderMonitorCount, m_pSpinboxMonitorCount);
-    setTabOrder(m_pSpinboxMonitorCount, m_pEditorScaleFactor);
+    setTabOrder(m_pEditorVideoMemorySize, m_pEditorMonitorCount);
+    setTabOrder(m_pEditorMonitorCount, m_pEditorScaleFactor);
     setTabOrder(m_pEditorScaleFactor, m_pEditorGraphicsController);
 
     /* Remote Display tab-order: */
@@ -776,10 +770,6 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
 
 void UIMachineSettingsDisplay::retranslateUi()
 {
-    m_pLabelMonitorCount->setText(tr("Mo&nitor Count:"));
-    m_pSliderMonitorCount->setToolTip(tr("Controls the amount of virtual monitors provided to the virtual machine."));
-    m_pSpinboxMonitorCount->setToolTip(tr("Controls the amount of virtual monitors provided to the virtual machine."));
-    m_pEditorScaleFactor->setToolTip(tr("Controls the guest screen scale factor."));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabScreen), tr("&Screen"));
     m_pCheckboxRemoteDisplay->setToolTip(tr("When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing "
                                             "remote clients to connect and operate the VM (when it is running) using a standard "
@@ -825,11 +815,6 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pScrollerRecordingScreens->setToolTip(QString());
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRecording), tr("Re&cording"));
 
-    /* Screen stuff: */
-    CSystemProperties sys = uiCommon().virtualBox().GetSystemProperties();
-    m_pLabelMonitorCountMin->setText(QString::number(1));
-    m_pLabelMonitorCountMax->setText(QString::number(qMin(sys.GetMaxGuestMonitors(), (ULONG)8)));
-
     /* Translate Remote Display auth method combo: */
     AssertPtrReturnVoid(m_pComboRemoteDisplayAuthMethod);
     for (int iIndex = 0; iIndex < m_pComboRemoteDisplayAuthMethod->count(); ++iIndex)
@@ -858,19 +843,19 @@ void UIMachineSettingsDisplay::retranslateUi()
     /* These editors have own labels, but we want them to be properly layouted according to each other: */
     int iMinimumLayoutHint = 0;
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorVideoMemorySize->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelMonitorCount->minimumSizeHint().width());
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorMonitorCount->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorScaleFactor->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorGraphicsController->minimumLabelHorizontalHint());
 #ifdef VBOX_WITH_3D_ACCELERATION
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDisplayScreenFeatures->minimumLabelHorizontalHint());
 #endif
     m_pEditorVideoMemorySize->setMinimumLayoutIndent(iMinimumLayoutHint);
+    m_pEditorMonitorCount->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorScaleFactor->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorGraphicsController->setMinimumLayoutIndent(iMinimumLayoutHint);
 #ifdef VBOX_WITH_3D_ACCELERATION
     m_pEditorDisplayScreenFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
 #endif
-    m_pLayoutScreen->setColumnMinimumWidth(0, iMinimumLayoutHint);
 
     updateRecordingFileSizeHint();
 }
@@ -882,11 +867,7 @@ void UIMachineSettingsDisplay::polishPage()
 
     /* Polish 'Screen' availability: */
     m_pEditorVideoMemorySize->setEnabled(isMachineOffline());
-    m_pLabelMonitorCount->setEnabled(isMachineOffline());
-    m_pSliderMonitorCount->setEnabled(isMachineOffline());
-    m_pLabelMonitorCountMin->setEnabled(isMachineOffline());
-    m_pLabelMonitorCountMax->setEnabled(isMachineOffline());
-    m_pSpinboxMonitorCount->setEnabled(isMachineOffline());
+    m_pEditorMonitorCount->setEnabled(isMachineOffline());
     m_pEditorScaleFactor->setEnabled(isMachineInValidMode());
     m_pEditorGraphicsController->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_3D_ACCELERATION
@@ -905,33 +886,8 @@ void UIMachineSettingsDisplay::polishPage()
     sltHandleRecordingCheckboxToggle();
 }
 
-void UIMachineSettingsDisplay::sltHandleGuestScreenCountSliderChange()
+void UIMachineSettingsDisplay::sltHandleMonitorCountChange()
 {
-    /* Apply proposed screen-count: */
-    m_pSpinboxMonitorCount->blockSignals(true);
-    m_pSpinboxMonitorCount->setValue(m_pSliderMonitorCount->value());
-    m_pSpinboxMonitorCount->blockSignals(false);
-
-    /* Update Video RAM requirements: */
-    m_pEditorVideoMemorySize->setGuestScreenCount(m_pSliderMonitorCount->value());
-
-    /* Update recording tab screen count: */
-    updateGuestScreenCount();
-
-    /* Revalidate: */
-    revalidate();
-}
-
-void UIMachineSettingsDisplay::sltHandleGuestScreenCountEditorChange()
-{
-    /* Apply proposed screen-count: */
-    m_pSliderMonitorCount->blockSignals(true);
-    m_pSliderMonitorCount->setValue(m_pSpinboxMonitorCount->value());
-    m_pSliderMonitorCount->blockSignals(false);
-
-    /* Update Video RAM requirements: */
-    m_pEditorVideoMemorySize->setGuestScreenCount(m_pSpinboxMonitorCount->value());
-
     /* Update recording tab screen count: */
     updateGuestScreenCount();
 
@@ -1092,105 +1048,42 @@ void UIMachineSettingsDisplay::prepareWidgets()
 
 void UIMachineSettingsDisplay::prepareTabScreen()
 {
-    /* Prepare common variables: */
-    const CSystemProperties comProperties = uiCommon().virtualBox().GetSystemProperties();
-
     /* Prepare 'Screen' tab: */
     m_pTabScreen = new QWidget;
     if (m_pTabScreen)
     {
         /* Prepare 'Screen' tab layout: */
-        m_pLayoutScreen = new QGridLayout(m_pTabScreen);
-        if (m_pLayoutScreen)
+        QVBoxLayout *pLayoutScreen = new QVBoxLayout(m_pTabScreen);
+        if (pLayoutScreen)
         {
-            m_pLayoutScreen->setRowStretch(8, 1);
-
             /* Prepare video memory editor: */
             m_pEditorVideoMemorySize = new UIVideoMemoryEditor(m_pTabScreen);
             if (m_pEditorVideoMemorySize)
-                m_pLayoutScreen->addWidget(m_pEditorVideoMemorySize, 0, 0, 1, 3);
+                pLayoutScreen->addWidget(m_pEditorVideoMemorySize);
 
-            /* Prepare monitor count label: */
-            m_pLabelMonitorCount = new QLabel(m_pTabScreen);
-            if (m_pLabelMonitorCount)
-            {
-                m_pLabelMonitorCount->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutScreen->addWidget(m_pLabelMonitorCount, 1, 0);
-            }
-            /* Prepare monitor count layout: */
-            QVBoxLayout *pLayoutMonitorCount = new QVBoxLayout;
-            if (pLayoutMonitorCount)
-            {
-                pLayoutMonitorCount->setContentsMargins(0, 0, 0, 0);
-
-                /* Prepare monitor count slider: */
-                m_pSliderMonitorCount = new QIAdvancedSlider(m_pTabScreen);
-                if (m_pSliderMonitorCount)
-                {
-                    const uint cHostScreens = gpDesktop->screenCount();
-                    const uint cMinGuestScreens = 1;
-                    const uint cMaxGuestScreens = comProperties.GetMaxGuestMonitors();
-                    const uint cMaxGuestScreensForSlider = qMin(cMaxGuestScreens, (uint)8);
-                    m_pSliderMonitorCount->setOrientation(Qt::Horizontal);
-                    m_pSliderMonitorCount->setMinimum(cMinGuestScreens);
-                    m_pSliderMonitorCount->setMaximum(cMaxGuestScreensForSlider);
-                    m_pSliderMonitorCount->setPageStep(1);
-                    m_pSliderMonitorCount->setSingleStep(1);
-                    m_pSliderMonitorCount->setTickInterval(1);
-                    m_pSliderMonitorCount->setOptimalHint(cMinGuestScreens, cHostScreens);
-                    m_pSliderMonitorCount->setWarningHint(cHostScreens, cMaxGuestScreensForSlider);
-
-                    pLayoutMonitorCount->addWidget(m_pSliderMonitorCount);
-                }
-                /* Prepare monitor count scale layout: */
-                QHBoxLayout *pLayoutMonitorCountScale = new QHBoxLayout;
-                if (pLayoutMonitorCountScale)
-                {
-                    pLayoutMonitorCountScale->setContentsMargins(0, 0, 0, 0);
-
-                    /* Prepare monitor count min label: */
-                    m_pLabelMonitorCountMin = new QLabel(m_pTabScreen);
-                    if (m_pLabelMonitorCountMin)
-                        pLayoutMonitorCountScale->addWidget(m_pLabelMonitorCountMin);
-                    pLayoutMonitorCountScale->addStretch();
-                    /* Prepare monitor count max label: */
-                    m_pLabelMonitorCountMax = new QLabel(m_pTabScreen);
-                    if (m_pLabelMonitorCountMax)
-                        pLayoutMonitorCountScale->addWidget(m_pLabelMonitorCountMax);
-
-                    pLayoutMonitorCount->addLayout(pLayoutMonitorCountScale);
-                }
-
-                m_pLayoutScreen->addLayout(pLayoutMonitorCount, 1, 1, 2, 1);
-            }
-            /* Prepare monitor count spinbox: */
-            m_pSpinboxMonitorCount = new QSpinBox(m_pTabScreen);
-            if (m_pSpinboxMonitorCount)
-            {
-                if (m_pLabelMonitorCount)
-                    m_pLabelMonitorCount->setBuddy(m_pSpinboxMonitorCount);
-                m_pSpinboxMonitorCount->setMinimum(1);
-                m_pSpinboxMonitorCount->setMaximum(comProperties.GetMaxGuestMonitors());
-
-                m_pLayoutScreen->addWidget(m_pSpinboxMonitorCount, 1, 2);
-            }
+            /* Prepare monitor count editor: */
+            m_pEditorMonitorCount = new UIMonitorCountEditor(m_pTabScreen);
+            if (m_pEditorMonitorCount)
+                pLayoutScreen->addWidget(m_pEditorMonitorCount);
 
             /* Prepare scale factor editor: */
             m_pEditorScaleFactor = new UIScaleFactorEditor(m_pTabScreen);
             if (m_pEditorScaleFactor)
-                m_pLayoutScreen->addWidget(m_pEditorScaleFactor, 3, 0, 1, 3);
+                pLayoutScreen->addWidget(m_pEditorScaleFactor);
 
             /* Prepare graphics controller editor: */
             m_pEditorGraphicsController = new UIGraphicsControllerEditor(m_pTabScreen);
             if (m_pEditorGraphicsController)
-                m_pLayoutScreen->addWidget(m_pEditorGraphicsController, 4, 0, 1, 3);
+                pLayoutScreen->addWidget(m_pEditorGraphicsController);
 
 #ifdef VBOX_WITH_3D_ACCELERATION
             /* Prepare display screen features editor: */
             m_pEditorDisplayScreenFeatures = new UIMachineDisplayScreenFeaturesEditor(m_pTabScreen);
             if (m_pEditorDisplayScreenFeatures)
-                m_pLayoutScreen->addWidget(m_pEditorDisplayScreenFeatures, 5, 0, 1, 2);
+                pLayoutScreen->addWidget(m_pEditorDisplayScreenFeatures);
 #endif /* VBOX_WITH_3D_ACCELERATION */
+
+            pLayoutScreen->addStretch();
         }
 
         m_pTabWidget->addTab(m_pTabScreen, QString());
@@ -1676,10 +1569,8 @@ void UIMachineSettingsDisplay::prepareConnections()
     /* Configure 'Screen' connections: */
     connect(m_pEditorVideoMemorySize, &UIVideoMemoryEditor::sigValidChanged,
             this, &UIMachineSettingsDisplay::revalidate);
-    connect(m_pSliderMonitorCount, &QIAdvancedSlider::valueChanged,
-            this, &UIMachineSettingsDisplay::sltHandleGuestScreenCountSliderChange);
-    connect(m_pSpinboxMonitorCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-            this, &UIMachineSettingsDisplay::sltHandleGuestScreenCountEditorChange);
+    connect(m_pEditorMonitorCount, &UIMonitorCountEditor::sigValidChanged,
+            this, &UIMachineSettingsDisplay::sltHandleMonitorCountChange);
     connect(m_pEditorGraphicsController, &UIGraphicsControllerEditor::sigValueChanged,
             this, &UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange);
 #ifdef VBOX_WITH_3D_ACCELERATION
@@ -1768,9 +1659,9 @@ void UIMachineSettingsDisplay::updateGuestScreenCount()
 {
     /* Update copy of the cached item to get the desired result: */
     QVector<BOOL> screens = m_pCache->base().m_vecRecordingScreens;
-    screens.resize(m_pSpinboxMonitorCount->value());
+    screens.resize(m_pEditorMonitorCount->value());
     m_pScrollerRecordingScreens->setValue(screens);
-    m_pEditorScaleFactor->setMonitorCount(m_pSpinboxMonitorCount->value());
+    m_pEditorScaleFactor->setMonitorCount(m_pEditorMonitorCount->value());
 }
 
 void UIMachineSettingsDisplay::updateRecordingFileSizeHint()

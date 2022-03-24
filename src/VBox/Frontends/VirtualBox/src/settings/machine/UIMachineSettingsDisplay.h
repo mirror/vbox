@@ -32,7 +32,6 @@ class QCheckBox;
 class QComboBox;
 class QLabel;
 class QLineEdit;
-class QGridLayout;
 class QSpinBox;
 class QStackedLayout;
 class QIAdvancedSlider;
@@ -45,6 +44,7 @@ class UIGraphicsControllerEditor;
 #ifdef VBOX_WITH_3D_ACCELERATION
 class UIMachineDisplayScreenFeaturesEditor;
 #endif
+class UIMonitorCountEditor;
 class UIScaleFactorEditor;
 class UIVideoMemoryEditor;
 typedef UISettingsCache<UIDataSettingsMachineDisplay> UISettingsCacheMachineDisplay;
@@ -107,10 +107,8 @@ protected:
 
 private slots:
 
-    /** Handles Guest Screen count slider change. */
-    void sltHandleGuestScreenCountSliderChange();
-    /** Handles Guest Screen count editor change. */
-    void sltHandleGuestScreenCountEditorChange();
+    /** Handles monitor count change. */
+    void sltHandleMonitorCountChange();
     /** Handles Graphics Controller combo change. */
     void sltHandleGraphicsControllerComboChange();
 #ifdef VBOX_WITH_3D_ACCELERATION
@@ -201,20 +199,10 @@ private:
 
         /** Holds the 'Screen' tab instance. */
         QWidget                              *m_pTabScreen;
-        /** Holds the 'Screen' layout instance. */
-        QGridLayout                          *m_pLayoutScreen;
         /** Holds the video memory size editor instance. */
         UIVideoMemoryEditor                  *m_pEditorVideoMemorySize;
-        /** Holds the monitor count label instance. */
-        QLabel                               *m_pLabelMonitorCount;
-        /** Holds the monitor count slider instance. */
-        QIAdvancedSlider                     *m_pSliderMonitorCount;
         /** Holds the monitor count spinbox instance. */
-        QSpinBox                             *m_pSpinboxMonitorCount;
-        /** Holds the monitor count min label instance. */
-        QLabel                               *m_pLabelMonitorCountMin;
-        /** Holds the monitor count max label instance. */
-        QLabel                               *m_pLabelMonitorCountMax;
+        UIMonitorCountEditor                 *m_pEditorMonitorCount;
         /** Holds the scale factor editor instance. */
         UIScaleFactorEditor                  *m_pEditorScaleFactor;
         /** Holds the graphics controller editor instance. */
