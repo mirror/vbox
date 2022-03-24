@@ -1716,6 +1716,7 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
     bool blink_on, chr_blink_flip, cur_blink_flip;
     bool blink_enabled, blink_do_redraw;
     int uline_pos;
+    int s_incr;
 
     full_update |= vgaR3UpdatePalette16(pThis, pThisCC);
     palette = pThis->last_palette;
@@ -1757,8 +1758,11 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
 
     full_update |= vgaR3UpdateBasicParams(pThis, pThisCC);
 
+    /* Evaluate word/byte mode. Need to count by 4 because text is only in plane 0. */
+    s_incr = pThis->cr[0x17] & 0x40 ? 4 : 8;
+
     line_offset = pThis->line_offset;
-    s1 = pThisCC->pbVRam + (pThis->start_addr * 8); /** @todo r=bird: Add comment why we do *8 instead of *4, it's not so obvious... */
+    s1 = pThisCC->pbVRam + (pThis->start_addr * s_incr);
 
     /* double scanning - not for 9-wide modes */
     dscan = (pThis->cr[9] >> 7) & 1;
@@ -1939,7 +1943,7 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
                 }
             }
             d1 += x_incr;
-            src += 8; /* Every second byte of a plane is used in text mode. */
+            src += s_incr;  /* Even in text mode, word/byte mode matters. */
             ch_attr_ptr++;
         }
         if (cx_max != -1) {
@@ -1958,9 +1962,14 @@ static int vgaR3DrawText(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATER3 pThisC
             cx_max_upd = -1;
             cx_min_upd = width;
         }
+
         dest += linesize * cheight << dscan;
         s1 += line_offset;
-    }
+
+        /* Line compare works in text modes, too. */
+        if ((uint32_t)cy == pThis->line_compare)
+            s1 = 0;
+  }
     if (cy_start >= 0)
         /* Flush any remaining changes to display. */
         pDrv->pfnUpdateRect(pDrv, cx_min_upd * cw, cy_start * cheight,
@@ -4305,6 +4314,9 @@ static DECLCALLBACK(void) vgaR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     pHlp->pfnPrintf(pHlp, "start : %#x\n", val);
     if (!is_graph)
     {
+        uint8_t ch_stride;
+
+        ch_stride = pThis->cr[0x17] & 0x40 ? 4 : 8;
         val = (pThis->cr[9] & 0x1f) + 1;
         char_height = val;
         pHlp->pfnPrintf(pHlp, "char height %d\n", val);
@@ -4315,8 +4327,8 @@ static DECLCALLBACK(void) vgaR3InfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
         uint32_t uLineCompareIgn;
         vgaR3GetOffsets(pThis, &cbLine, &offStart, &uLineCompareIgn);
         if (!cbLine)
-            cbLine = 80 * 8;
-        offStart *= 8;
+            cbLine = 80 * ch_stride;
+        offStart *= ch_stride;
         pHlp->pfnPrintf(pHlp, "cbLine:   %#x\n", cbLine);
         pHlp->pfnPrintf(pHlp, "offStart: %#x (line %#x)\n", offStart, offStart / cbLine);
     }
@@ -4410,6 +4422,7 @@ static void vgaR3InfoTextWorker(PVGASTATE pThis, PVGASTATER3 pThisCC, PCDBGFINFO
 
     /* Do the dumping. */
     uint8_t const *pbSrcOuter = pThisCC->pbVRam + offStart;
+    uint8_t const cStride = pThis->cr[0x17] & 0x40 ? 4 : 8;
     uint32_t iRow;
     for (iRow = 0; iRow < cRows; iRow++, pbSrcOuter += cbLine)
     {
@@ -4432,7 +4445,7 @@ static void vgaR3InfoTextWorker(PVGASTATE pThis, PVGASTATER3 pThisCC, PCDBGFINFO
                 pHlp->pfnPrintf(pHlp, "%c", *pbSrc);
             else
                 pHlp->pfnPrintf(pHlp, ".");
-            pbSrc += 8;   /* chars are spaced 8 bytes apart */
+            pbSrc += cStride;   /* chars are spaced 8 or sometimes 4 bytes apart */
         }
         pHlp->pfnPrintf(pHlp, "\n");
     }
