@@ -3175,21 +3175,21 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r80_from_d80,(PCX86FXSTATE pFpuState, PIEMF
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fild_i16_to_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int16_t const *pi16Val))
+IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int16_t const *pi16Val))
 {
     RT_NOREF(pFpuState, pFpuRes, pi16Val);
     AssertReleaseFailed();
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fild_i32_to_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int32_t const *pi32Val))
+IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int32_t const *pi32Val))
 {
     RT_NOREF(pFpuState, pFpuRes, pi32Val);
     AssertReleaseFailed();
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fild_i64_to_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int64_t const *pi64Val))
+IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int64_t const *pi64Val))
 {
     RT_NOREF(pFpuState, pFpuRes, pi64Val);
     AssertReleaseFailed();

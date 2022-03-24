@@ -1469,7 +1469,7 @@ FNIEMAIMPLFPUI16    iemAImpl_fidivr_r80_by_i16;
 IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i16,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
                                                    PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2));
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fild_i16_to_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int16_t const *pi16Val));
+IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int16_t const *pi16Val));
 IEM_DECL_IMPL_DEF(void, iemAImpl_fist_r80_to_i16,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                   int16_t *pi16Val, PCRTFLOAT80U pr80Val));
 IEM_DECL_IMPL_DEF(void, iemAImpl_fistt_r80_to_i16,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
@@ -1492,7 +1492,7 @@ FNIEMAIMPLFPUI32    iemAImpl_fidivr_r80_by_i32;
 IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i32,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
                                                    PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2));
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fild_i32_to_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int32_t const *pi32Val));
+IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int32_t const *pi32Val));
 IEM_DECL_IMPL_DEF(void, iemAImpl_fist_r80_to_i32,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                   int32_t *pi32Val, PCRTFLOAT80U pr80Val));
 IEM_DECL_IMPL_DEF(void, iemAImpl_fistt_r80_to_i32,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
@@ -1515,7 +1515,7 @@ FNIEMAIMPLFPUI64    iemAImpl_fidivr_r80_by_i64;
 IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i64,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
                                                    PCRTFLOAT80U pr80Val1, int64_t const *pi64Val2));
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fild_i64_to_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int64_t const *pi64Val));
+IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int64_t const *pi64Val));
 IEM_DECL_IMPL_DEF(void, iemAImpl_fist_r80_to_i64,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                   int64_t *pi64Val, PCRTFLOAT80U pr80Val));
 IEM_DECL_IMPL_DEF(void, iemAImpl_fistt_r80_to_i64,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
