@@ -38,6 +38,9 @@
 #include "UIFilePathSelector.h"
 #include "UIFilmContainer.h"
 #include "UIGraphicsControllerEditor.h"
+#ifdef VBOX_WITH_3D_ACCELERATION
+# include "UIMachineDisplayScreenFeaturesEditor.h"
+#endif
 #include "UIMachineSettingsDisplay.h"
 #include "UIScaleFactorEditor.h"
 #include "UITranslator.h"
@@ -311,8 +314,9 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     , m_pLabelMonitorCountMax(0)
     , m_pEditorScaleFactor(0)
     , m_pEditorGraphicsController(0)
-    , m_pLabelAcceleration(0)
-    , m_pCheckbox3D(0)
+#ifdef VBOX_WITH_3D_ACCELERATION
+    , m_pEditorDisplayScreenFeatures(0)
+#endif
     , m_pTabRemoteDisplay(0)
     , m_pCheckboxRemoteDisplay(0)
     , m_pWidgetRemoteDisplaySettings(0)
@@ -392,7 +396,7 @@ void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType comGuestOSType)
 #ifdef VBOX_WITH_3D_ACCELERATION
 bool UIMachineSettingsDisplay::isAcceleration3DSelected() const
 {
-    return m_pCheckbox3D->isChecked();
+    return m_pEditorDisplayScreenFeatures->isEnabled3DAcceleration();
 }
 #endif /* VBOX_WITH_3D_ACCELERATION */
 
@@ -500,13 +504,13 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pEditorScaleFactor->setMonitorCount(oldDisplayData.m_cGuestScreenCount);
     m_pEditorGraphicsController->setValue(oldDisplayData.m_graphicsControllerType);
 #ifdef VBOX_WITH_3D_ACCELERATION
-    m_pCheckbox3D->setChecked(oldDisplayData.m_f3dAccelerationEnabled);
+    m_pEditorDisplayScreenFeatures->setEnable3DAcceleration(oldDisplayData.m_f3dAccelerationEnabled);
 #endif
     /* Push required value to m_pEditorVideoMemorySize: */
     sltHandleGuestScreenCountEditorChange();
     sltHandleGraphicsControllerComboChange();
 #ifdef VBOX_WITH_3D_ACCELERATION
-    sltHandle3DAccelerationCheckboxChange();
+    sltHandle3DAccelerationFeatureStateChange();
 #endif
     // Should be the last one for this tab, since it depends on some of others:
     m_pEditorVideoMemorySize->setValue(oldDisplayData.m_iCurrentVRAM);
@@ -565,7 +569,7 @@ void UIMachineSettingsDisplay::putToCache()
     newDisplayData.m_scaleFactors = m_pEditorScaleFactor->scaleFactors();
     newDisplayData.m_graphicsControllerType = m_pEditorGraphicsController->value();
 #ifdef VBOX_WITH_3D_ACCELERATION
-    newDisplayData.m_f3dAccelerationEnabled = m_pCheckbox3D->isChecked();
+    newDisplayData.m_f3dAccelerationEnabled = m_pEditorDisplayScreenFeatures->isEnabled3DAcceleration();
 #endif
     /* If remote display server is supported: */
     newDisplayData.m_fRemoteDisplayServerSupported = m_pCache->base().m_fRemoteDisplayServerSupported;
@@ -659,7 +663,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
             }
 #ifdef VBOX_WITH_3D_ACCELERATION
             /* 3D acceleration video RAM amount test: */
-            else if (m_pCheckbox3D->isChecked() && m_fWddmModeSupported)
+            else if (m_pEditorDisplayScreenFeatures->isEnabled3DAcceleration() && m_fWddmModeSupported)
             {
                 uNeedBytes = qMax(uNeedBytes, (quint64) 128 * _1M);
                 if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
@@ -679,7 +683,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
             if (graphicsControllerTypeCurrent() != graphicsControllerTypeRecommended())
             {
 #ifdef VBOX_WITH_3D_ACCELERATION
-                if (m_pCheckbox3D->isChecked())
+                if (m_pEditorDisplayScreenFeatures->isEnabled3DAcceleration())
                     message.second << tr("The virtual machine is configured to use 3D acceleration. This will work only if you "
                                          "pick a different graphics controller (%1). Either disable 3D acceleration or switch "
                                          "to required graphics controller type. The latter will be done automatically if you "
@@ -776,10 +780,6 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pSliderMonitorCount->setToolTip(tr("Controls the amount of virtual monitors provided to the virtual machine."));
     m_pSpinboxMonitorCount->setToolTip(tr("Controls the amount of virtual monitors provided to the virtual machine."));
     m_pEditorScaleFactor->setToolTip(tr("Controls the guest screen scale factor."));
-    m_pLabelAcceleration->setText(tr("Acceleration:"));
-    m_pCheckbox3D->setToolTip(tr("When checked, the virtual machine will be given access "
-                                 "to the 3D graphics capabilities available on the host."));
-    m_pCheckbox3D->setText(tr("Enable &3D Acceleration"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabScreen), tr("&Screen"));
     m_pCheckboxRemoteDisplay->setToolTip(tr("When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing "
                                             "remote clients to connect and operate the VM (when it is running) using a standard "
@@ -861,10 +861,15 @@ void UIMachineSettingsDisplay::retranslateUi()
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelMonitorCount->minimumSizeHint().width());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorScaleFactor->minimumLabelHorizontalHint());
     iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorGraphicsController->minimumLabelHorizontalHint());
-    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pLabelAcceleration->minimumSizeHint().width());
+#ifdef VBOX_WITH_3D_ACCELERATION
+    iMinimumLayoutHint = qMax(iMinimumLayoutHint, m_pEditorDisplayScreenFeatures->minimumLabelHorizontalHint());
+#endif
     m_pEditorVideoMemorySize->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorScaleFactor->setMinimumLayoutIndent(iMinimumLayoutHint);
     m_pEditorGraphicsController->setMinimumLayoutIndent(iMinimumLayoutHint);
+#ifdef VBOX_WITH_3D_ACCELERATION
+    m_pEditorDisplayScreenFeatures->setMinimumLayoutIndent(iMinimumLayoutHint);
+#endif
     m_pLayoutScreen->setColumnMinimumWidth(0, iMinimumLayoutHint);
 
     updateRecordingFileSizeHint();
@@ -884,11 +889,8 @@ void UIMachineSettingsDisplay::polishPage()
     m_pSpinboxMonitorCount->setEnabled(isMachineOffline());
     m_pEditorScaleFactor->setEnabled(isMachineInValidMode());
     m_pEditorGraphicsController->setEnabled(isMachineOffline());
-    m_pLabelAcceleration->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_3D_ACCELERATION
-    m_pCheckbox3D->setEnabled(isMachineOffline());
-#else
-    m_pCheckbox3D->hide();
+    m_pEditorDisplayScreenFeatures->setEnabled(isMachineOffline());
 #endif
 
     /* Polish 'Remote Display' availability: */
@@ -947,10 +949,10 @@ void UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange()
 }
 
 #ifdef VBOX_WITH_3D_ACCELERATION
-void UIMachineSettingsDisplay::sltHandle3DAccelerationCheckboxChange()
+void UIMachineSettingsDisplay::sltHandle3DAccelerationFeatureStateChange()
 {
     /* Update Video RAM requirements: */
-    m_pEditorVideoMemorySize->set3DAccelerationEnabled(m_pCheckbox3D->isChecked());
+    m_pEditorVideoMemorySize->set3DAccelerationEnabled(m_pEditorDisplayScreenFeatures->isEnabled3DAcceleration());
 
     /* Revalidate: */
     revalidate();
@@ -1183,17 +1185,12 @@ void UIMachineSettingsDisplay::prepareTabScreen()
             if (m_pEditorGraphicsController)
                 m_pLayoutScreen->addWidget(m_pEditorGraphicsController, 4, 0, 1, 3);
 
-            /* Prepare acceleration label: */
-            m_pLabelAcceleration = new QLabel(m_pTabScreen);
-            if (m_pLabelAcceleration)
-            {
-                m_pLabelAcceleration->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayoutScreen->addWidget(m_pLabelAcceleration, 5, 0);
-            }
-            /* Prepare 3D checkbox: */
-            m_pCheckbox3D = new QCheckBox(m_pTabScreen);
-            if (m_pCheckbox3D)
-                m_pLayoutScreen->addWidget(m_pCheckbox3D, 5, 1);
+#ifdef VBOX_WITH_3D_ACCELERATION
+            /* Prepare display screen features editor: */
+            m_pEditorDisplayScreenFeatures = new UIMachineDisplayScreenFeaturesEditor(m_pTabScreen);
+            if (m_pEditorDisplayScreenFeatures)
+                m_pLayoutScreen->addWidget(m_pEditorDisplayScreenFeatures, 5, 0, 1, 2);
+#endif /* VBOX_WITH_3D_ACCELERATION */
         }
 
         m_pTabWidget->addTab(m_pTabScreen, QString());
@@ -1686,8 +1683,8 @@ void UIMachineSettingsDisplay::prepareConnections()
     connect(m_pEditorGraphicsController, &UIGraphicsControllerEditor::sigValueChanged,
             this, &UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange);
 #ifdef VBOX_WITH_3D_ACCELERATION
-    connect(m_pCheckbox3D, &QCheckBox::stateChanged,
-            this, &UIMachineSettingsDisplay::sltHandle3DAccelerationCheckboxChange);
+    connect(m_pEditorDisplayScreenFeatures, &UIMachineDisplayScreenFeaturesEditor::sig3DAccelerationFeatureStatusChange,
+            this, &UIMachineSettingsDisplay::sltHandle3DAccelerationFeatureStateChange);
 #endif
 
     /* Configure 'Remote Display' connections: */

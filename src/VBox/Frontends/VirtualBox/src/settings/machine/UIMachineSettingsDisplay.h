@@ -42,6 +42,9 @@ struct UIDataSettingsMachineDisplay;
 class UIFilePathSelector;
 class UIFilmContainer;
 class UIGraphicsControllerEditor;
+#ifdef VBOX_WITH_3D_ACCELERATION
+class UIMachineDisplayScreenFeaturesEditor;
+#endif
 class UIScaleFactorEditor;
 class UIVideoMemoryEditor;
 typedef UISettingsCache<UIDataSettingsMachineDisplay> UISettingsCacheMachineDisplay;
@@ -111,8 +114,8 @@ private slots:
     /** Handles Graphics Controller combo change. */
     void sltHandleGraphicsControllerComboChange();
 #ifdef VBOX_WITH_3D_ACCELERATION
-    /** Handles 3D Acceleration check-box change. */
-    void sltHandle3DAccelerationCheckboxChange();
+    /** Handles 3D Acceleration feature state change. */
+    void sltHandle3DAccelerationFeatureStateChange();
 #endif
 
     /** Handles recording toggle. */
@@ -197,29 +200,29 @@ private:
         QITabWidget *m_pTabWidget;
 
         /** Holds the 'Screen' tab instance. */
-        QWidget                    *m_pTabScreen;
+        QWidget                              *m_pTabScreen;
         /** Holds the 'Screen' layout instance. */
-        QGridLayout                *m_pLayoutScreen;
+        QGridLayout                          *m_pLayoutScreen;
         /** Holds the video memory size editor instance. */
-        UIVideoMemoryEditor        *m_pEditorVideoMemorySize;
+        UIVideoMemoryEditor                  *m_pEditorVideoMemorySize;
         /** Holds the monitor count label instance. */
-        QLabel                     *m_pLabelMonitorCount;
+        QLabel                               *m_pLabelMonitorCount;
         /** Holds the monitor count slider instance. */
-        QIAdvancedSlider           *m_pSliderMonitorCount;
+        QIAdvancedSlider                     *m_pSliderMonitorCount;
         /** Holds the monitor count spinbox instance. */
-        QSpinBox                   *m_pSpinboxMonitorCount;
+        QSpinBox                             *m_pSpinboxMonitorCount;
         /** Holds the monitor count min label instance. */
-        QLabel                     *m_pLabelMonitorCountMin;
+        QLabel                               *m_pLabelMonitorCountMin;
         /** Holds the monitor count max label instance. */
-        QLabel                     *m_pLabelMonitorCountMax;
+        QLabel                               *m_pLabelMonitorCountMax;
         /** Holds the scale factor editor instance. */
-        UIScaleFactorEditor        *m_pEditorScaleFactor;
+        UIScaleFactorEditor                  *m_pEditorScaleFactor;
         /** Holds the graphics controller editor instance. */
-        UIGraphicsControllerEditor *m_pEditorGraphicsController;
-        /** Holds the acceleration label instance. */
-        QLabel                     *m_pLabelAcceleration;
-        /** Holds the 3D check-box instance. */
-        QCheckBox                  *m_pCheckbox3D;
+        UIGraphicsControllerEditor           *m_pEditorGraphicsController;
+#ifdef VBOX_WITH_3D_ACCELERATION
+        /** Holds the display screen features editor instance. */
+        UIMachineDisplayScreenFeaturesEditor *m_pEditorDisplayScreenFeatures;
+#endif
 
         /** Holds the 'Remote Display' tab instance. */
         QWidget   *m_pTabRemoteDisplay;
