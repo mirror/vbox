@@ -375,5 +375,4 @@ HRESULT GeneralTextScript::appendLine(const Utf8Str &rStrLineToAppend)
         return E_OUTOFMEMORY;
     }
     return S_OK;
-
 }
