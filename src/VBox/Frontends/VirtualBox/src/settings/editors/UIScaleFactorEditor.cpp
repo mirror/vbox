@@ -32,9 +32,8 @@
 #include <math.h>
 
 
-UIScaleFactorEditor::UIScaleFactorEditor(QWidget *pParent, bool fWithLabels /* = false */)
+UIScaleFactorEditor::UIScaleFactorEditor(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
-    , m_fWithLabels(fWithLabels)
     , m_pLayout(0)
     , m_pLabel(0)
     , m_pMonitorComboBox(0)
@@ -235,14 +234,11 @@ void UIScaleFactorEditor::prepare()
         m_pLayout->setColumnStretch(2, 1);
 
         /* Prepare label: */
-        if (m_fWithLabels)
+        m_pLabel = new QLabel(this);
+        if (m_pLabel)
         {
-            m_pLabel = new QLabel(this);
-            if (m_pLabel)
-            {
-                m_pLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_pLayout->addWidget(m_pLabel, 0, 0);
-            }
+            m_pLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            m_pLayout->addWidget(m_pLabel, 0, 0);
         }
 
         m_pMonitorComboBox = new QComboBox(this);

@@ -177,7 +177,7 @@ void UIGlobalSettingsDisplay::prepareWidgets()
             pLayout->addWidget(m_pEditorMaximumGuestScreenSize);
 
         /* Prepare 'scale-factor' editor: */
-        m_pEditorScaleFactor = new UIScaleFactorEditor(this, true /* with label */);
+        m_pEditorScaleFactor = new UIScaleFactorEditor(this);
         if (m_pEditorScaleFactor)
             pLayout->addWidget(m_pEditorScaleFactor);
 

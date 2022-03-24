@@ -42,9 +42,8 @@ class SHARED_LIBRARY_STUFF UIScaleFactorEditor : public QIWithRetranslateUI<QWid
 
 public:
 
-    /** Creates scale factor editor passing @a pParent to the base-class.
-      * @param  fWithLabels  Brings whether we should add labels ourselves. */
-    UIScaleFactorEditor(QWidget *pParent, bool fWithLabels = false);
+    /** Creates scale factor editor passing @a pParent to the base-class. */
+    UIScaleFactorEditor(QWidget *pParent);
 
     /** Defines @a iMonitorCount. */
     void setMonitorCount(int iMonitorCount);
@@ -100,7 +99,6 @@ private:
 
     /** @name Member widgets.
       * @{ */
-        bool              m_fWithLabels;
         QGridLayout      *m_pLayout;
         QLabel           *m_pLabel;
         QComboBox        *m_pMonitorComboBox;
