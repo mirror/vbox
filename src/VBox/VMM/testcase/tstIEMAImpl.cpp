@@ -967,7 +967,7 @@ static const char *FormatD80(PCRTPBCD80U pd80)
                     + s_bBadDigits[RTPBCD80U_LO_DIGIT(pd80->s.abPairs[iPair])];
     }
     if (cBadDigits || pd80->s.uPad != 0)
-        off =+ RTStrPrintf(&pszBuf[off], sizeof(g_aszBuf[0]) - off, "[%u,%#x]", cBadDigits, pd80->s.uPad);
+        off += RTStrPrintf(&pszBuf[off], sizeof(g_aszBuf[0]) - off, "[%u,%#x]", cBadDigits, pd80->s.uPad);
     pszBuf[off] = '\0';
     return pszBuf;
 }
