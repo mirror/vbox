@@ -4043,19 +4043,20 @@ ifdef VBOX_SIGNING_MODE
          $(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6) \
          $(call VBOX_CCS_SIGN_CMD,driver$(if-expr "$3" == "/ph",_pagehash,),$1,,-dual_sign -digest_algo SHA2))
    else ifdef VBOX_CERTIFICATE_SHA2_SUBJECT_NAME
-    VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) \
-    	sign /fd sha1\
+    ifdef VBOX_CERTIFICATE_SUBJECT_NAME
+     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) \
+	sign /fd sha1 \
 	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_STORE_ARGS) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
-       $(VBOX_CERTIFICATE_FINGERPRINT_ARGS) \
+	$(VBOX_CERTIFICATE_FINGERPRINT_ARGS) \
 	$(VBOX_TSA_URL_ARGS) \
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
 	"$(1)" \
-    	$(if-expr "$5" == "",\
+	$(if-expr "$5" == "",\
 	$(if-expr "$6" == "",$(if-expr "$4" == "2",$$(NLTAB),$(NLTAB)),$6)$(VBOX_SIGNTOOL) \
-    	sign /as /fd sha256 \
+	sign /as /fd sha256 \
 	$(VBOX_CROSS_CERTIFICATE_SHA2_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_SHA2_STORE_ARGS) \
 	$(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME_ARGS) \
@@ -4064,9 +4065,21 @@ ifdef VBOX_SIGNING_MODE
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
 	"$(1)",)
+    else
+     VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) \
+	sign /fd sha256 \
+	$(VBOX_CROSS_CERTIFICATE_SHA2_FILE_ARGS) \
+	$(VBOX_CERTIFICATE_SHA2_STORE_ARGS) \
+	$(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME_ARGS) \
+	$(VBOX_CERTIFICATE_SHA2_FINGERPRINT_ARGS) \
+	$(VBOX_TSA_SHA2_URL_ARGS) \
+	$(if $(strip $(2)),/d "$(strip $(2))",) \
+	$(3) \
+	"$(1)"
+    endif
    else
-    VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) sign \
-	/fd $(firstword $(VBOX_TEST_SIGN_ALGORITHM) sha256) \
+    VBOX_SIGN_FILE_FN     = $(VBOX_SIGNTOOL) \
+	sign /fd $(firstword $(VBOX_TEST_SIGN_ALGORITHM) sha256) \
 	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_STORE_ARGS) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
@@ -4086,7 +4099,7 @@ ifdef VBOX_SIGNING_MODE
     VBOX_SIGN_EV_FILE_FN  = $(call VBOX_CCS_SIGN_CMD,microsoftev,$1,$(if $2,$2,))
    else ifdef VBOX_CERTIFICATE_EV_SUBJECT_NAME
     VBOX_SIGN_EV_FILE_FN  = $(VBOX_SIGNTOOL) \
-    	sign /as /fd sha256 \
+	sign /fd sha256 \
 	$(VBOX_CERTIFICATE_EV_STORE_ARGS) \
 	$(VBOX_CERTIFICATE_EV_SUBJECT_NAME_ARGS) \
 	$(VBOX_CERTIFICATE_EV_FINGERPRINT_ARGS) \
