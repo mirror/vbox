@@ -1016,6 +1016,12 @@ void biosfn_set_video_mode(uint8_t mode)
       palette=&palette3[0];
       break;
     }
+   // Override for CGA text modes.
+   if(vga_modes[line].class==TEXT)
+    {
+     if(vpt->cheight == 8) // CGA
+      palette=&palette1[0];
+    }
    // Always 256*3 values
    for(i=0;i<0x0100;i++)
     {if(i<=dac_regs[vga_modes[line].dacmodel])
