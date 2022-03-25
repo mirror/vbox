@@ -1543,7 +1543,7 @@
   <xsl:choose>
     <!-- modifiers -->
     <xsl:when test="name(current())='type' and ../@mod">
-      <xsl:if test="../@safearray and ../@mod='ptr'">
+      <xsl:if test="../@safearray='yes' and ../@mod='ptr'">
         <xsl:message terminate="yes">
           <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
           <xsl:text>either 'safearray' or 'mod' attribute is allowed, but not both!</xsl:text>
@@ -1574,7 +1574,7 @@
           </xsl:choose>
         </xsl:when>
         <xsl:when test="../@mod='string'">
-          <xsl:if test="../@safearray">
+          <xsl:if test="../@safearray='yes'">
             <xsl:text>QVector&lt;</xsl:text>
           </xsl:if>
           <xsl:choose>
@@ -1591,7 +1591,7 @@
               </xsl:message>
             </xsl:otherwise>
           </xsl:choose>
-          <xsl:if test="../@safearray">
+          <xsl:if test="../@safearray='yes'">
             <xsl:text>&gt;</xsl:text>
           </xsl:if>
         </xsl:when>
@@ -1606,7 +1606,7 @@
     </xsl:when>
     <!-- no modifiers -->
     <xsl:otherwise>
-      <xsl:if test="../@safearray">
+      <xsl:if test="../@safearray='yes'">
         <xsl:text>QVector&lt;</xsl:text>
       </xsl:if>
       <xsl:choose>
@@ -1641,7 +1641,7 @@
           <xsl:message terminate="yes"><xsl:text>Unknown parameter type: </xsl:text><xsl:value-of select="."/></xsl:message>
         </xsl:otherwise>
       </xsl:choose>
-      <xsl:if test="../@safearray">
+      <xsl:if test="../@safearray='yes'">
         <xsl:text>&gt;</xsl:text>
       </xsl:if>
     </xsl:otherwise>
@@ -1657,7 +1657,7 @@
 <xsl:template match="attribute/@type | param/@type" mode="initializer">
   <xsl:choose>
     <!-- safearrays don't need initializers -->
-    <xsl:when test="../@safearray">
+    <xsl:when test="../@safearray='yes'">
     </xsl:when>
     <!-- modifiers -->
     <xsl:when test="name(current())='type' and ../@mod">
