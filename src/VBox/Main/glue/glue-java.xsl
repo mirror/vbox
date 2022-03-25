@@ -2324,7 +2324,7 @@
                 <xsl:value-of select="concat($parambacktype, '[] ', @name)" />
               </xsl:when>
               <xsl:otherwise>
-                <xsl:if test="@safearray">
+                <xsl:if test="@safearray='yes'">
                   <xsl:value-of select="concat('long len_', @name, ', ')" />
                 </xsl:if>
                 <xsl:value-of select="concat($parambacktype, ' ', @name)" />
