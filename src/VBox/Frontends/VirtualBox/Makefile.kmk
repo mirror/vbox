@@ -917,6 +917,7 @@ UICommon_QT_MOCHDRS = \
 	src/settings/editors/UIVirtualCPUEditor.h \
 	src/settings/editors/UIVisualStateEditor.h \
 	src/settings/editors/UIVRDEAuthLibraryEditor.h \
+	src/settings/editors/UIVRDESettingsEditor.h \
 	src/settings/global/UIGlobalSettingsGeneral.h \
 	src/settings/global/UIGlobalSettingsInput.h \
 	src/settings/global/UIGlobalSettingsLanguage.h \
@@ -1475,6 +1476,7 @@ UICommon_SOURCES = \
 	src/settings/editors/UIVirtualCPUEditor.cpp \
 	src/settings/editors/UIVisualStateEditor.cpp \
 	src/settings/editors/UIVRDEAuthLibraryEditor.cpp \
+	src/settings/editors/UIVRDESettingsEditor.cpp \
 	src/settings/global/UIGlobalSettingsGeneral.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/global/UIGlobalSettingsLanguage.cpp \

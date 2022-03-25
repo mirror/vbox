@@ -45,6 +45,7 @@
 #include "UIScaleFactorEditor.h"
 #include "UITranslator.h"
 #include "UIVideoMemoryEditor.h"
+#include "UIVRDESettingsEditor.h"
 
 /* COM includes: */
 #include "CGraphicsAdapter.h"
@@ -313,16 +314,7 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     , m_pEditorDisplayScreenFeatures(0)
 #endif
     , m_pTabRemoteDisplay(0)
-    , m_pCheckboxRemoteDisplay(0)
-    , m_pWidgetRemoteDisplaySettings(0)
-    , m_pLabelRemoteDisplayPort(0)
-    , m_pEditorRemoteDisplayPort(0)
-    , m_pLabelRemoteDisplayAuthMethod(0)
-    , m_pComboRemoteDisplayAuthMethod(0)
-    , m_pLabelRemoteDisplayTimeout(0)
-    , m_pEditorRemoteDisplayTimeout(0)
-    , m_pLabelRemoteDisplayOptions(0)
-    , m_pCheckboxMultipleConn(0)
+    , m_pEditorVRDESettings(0)
     , m_pTabRecording(0)
     , m_pCheckboxRecording(0)
     , m_pWidgetRecordingSettings(0)
@@ -489,10 +481,6 @@ void UIMachineSettingsDisplay::getFromCache()
     /* Get old display data from cache: */
     const UIDataSettingsMachineDisplay &oldDisplayData = m_pCache->base();
 
-    /* We are doing that *now* because these combos have
-     * dynamical content which depends on cashed value: */
-    repopulateComboAuthType();
-
     /* Load old 'Screen' data from cache: */
     m_pEditorMonitorCount->setValue(oldDisplayData.m_cGuestScreenCount);
     m_pEditorScaleFactor->setScaleFactors(oldDisplayData.m_scaleFactors);
@@ -514,12 +502,11 @@ void UIMachineSettingsDisplay::getFromCache()
     if (oldDisplayData.m_fRemoteDisplayServerSupported)
     {
         /* Load old 'Remote Display' data from cache: */
-        m_pCheckboxRemoteDisplay->setChecked(oldDisplayData.m_fRemoteDisplayServerEnabled);
-        m_pEditorRemoteDisplayPort->setText(oldDisplayData.m_strRemoteDisplayPort);
-        const int iAuthTypePosition = m_pComboRemoteDisplayAuthMethod->findData(oldDisplayData.m_remoteDisplayAuthType);
-        m_pComboRemoteDisplayAuthMethod->setCurrentIndex(iAuthTypePosition == -1 ? 0 : iAuthTypePosition);
-        m_pEditorRemoteDisplayTimeout->setText(QString::number(oldDisplayData.m_uRemoteDisplayTimeout));
-        m_pCheckboxMultipleConn->setChecked(oldDisplayData.m_fRemoteDisplayMultiConnAllowed);
+        m_pEditorVRDESettings->setFeatureEnabled(oldDisplayData.m_fRemoteDisplayServerEnabled);
+        m_pEditorVRDESettings->setPort(oldDisplayData.m_strRemoteDisplayPort);
+        m_pEditorVRDESettings->setAuthType(oldDisplayData.m_remoteDisplayAuthType);
+        m_pEditorVRDESettings->setTimeout(QString::number(oldDisplayData.m_uRemoteDisplayTimeout));
+        m_pEditorVRDESettings->setMultipleConnectionsAllowed(oldDisplayData.m_fRemoteDisplayMultiConnAllowed);
     }
 
     /* Load old 'Recording' data from cache: */
@@ -571,11 +558,11 @@ void UIMachineSettingsDisplay::putToCache()
     if (newDisplayData.m_fRemoteDisplayServerSupported)
     {
         /* Gather new 'Remote Display' data: */
-        newDisplayData.m_fRemoteDisplayServerEnabled = m_pCheckboxRemoteDisplay->isChecked();
-        newDisplayData.m_strRemoteDisplayPort = m_pEditorRemoteDisplayPort->text();
-        newDisplayData.m_remoteDisplayAuthType = m_pComboRemoteDisplayAuthMethod->currentData().value<KAuthType>();
-        newDisplayData.m_uRemoteDisplayTimeout = m_pEditorRemoteDisplayTimeout->text().toULong();
-        newDisplayData.m_fRemoteDisplayMultiConnAllowed = m_pCheckboxMultipleConn->isChecked();
+        newDisplayData.m_fRemoteDisplayServerEnabled = m_pEditorVRDESettings->isFeatureEnabled();
+        newDisplayData.m_strRemoteDisplayPort = m_pEditorVRDESettings->port();
+        newDisplayData.m_remoteDisplayAuthType = m_pEditorVRDESettings->authType();
+        newDisplayData.m_uRemoteDisplayTimeout = m_pEditorVRDESettings->timeout().toULong();
+        newDisplayData.m_fRemoteDisplayMultiConnAllowed = m_pEditorVRDESettings->isMultipleConnectionsAllowed();
     }
 
     /* Gather new 'Recording' data: */
@@ -704,8 +691,8 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         UIValidationMessage message;
         message.first = UITranslator::removeAccelMark(m_pTabWidget->tabText(1));
 
-        /* VRDE Extension Pack presence test: */
-        if (m_pCheckboxRemoteDisplay->isChecked())
+        /* Extension Pack presence test: */
+        if (m_pEditorVRDESettings->isFeatureEnabled())
         {
             CExtPackManager extPackManager = uiCommon().virtualBox().GetExtensionPackManager();
             if (!extPackManager.isNull() && !extPackManager.IsExtPackUsable(GUI_ExtPackName))
@@ -719,14 +706,14 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         }
 
         /* Check VRDE server port: */
-        if (m_pEditorRemoteDisplayPort->text().trimmed().isEmpty())
+        if (m_pEditorVRDESettings->port().trimmed().isEmpty())
         {
             message.second << tr("The VRDE server port value is not currently specified.");
             fPass = false;
         }
 
         /* Check VRDE server timeout: */
-        if (m_pEditorRemoteDisplayTimeout->text().trimmed().isEmpty())
+        if (m_pEditorVRDESettings->timeout().trimmed().isEmpty())
         {
             message.second << tr("The VRDE authentication timeout value is not currently specified.");
             fPass = false;
@@ -749,15 +736,17 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorVideoMemorySize, m_pEditorMonitorCount);
     setTabOrder(m_pEditorMonitorCount, m_pEditorScaleFactor);
     setTabOrder(m_pEditorScaleFactor, m_pEditorGraphicsController);
+#ifdef VBOX_WITH_3D_ACCELERATION
+    setTabOrder(m_pEditorGraphicsController, m_pEditorDisplayScreenFeatures);
+    setTabOrder(m_pEditorDisplayScreenFeatures, m_pEditorVRDESettings);
+#else
+    setTabOrder(m_pEditorGraphicsController, m_pEditorVRDESettings);
+#endif
 
     /* Remote Display tab-order: */
-    setTabOrder(m_pCheckboxRemoteDisplay, m_pEditorRemoteDisplayPort);
-    setTabOrder(m_pEditorRemoteDisplayPort, m_pComboRemoteDisplayAuthMethod);
-    setTabOrder(m_pComboRemoteDisplayAuthMethod, m_pEditorRemoteDisplayTimeout);
-    setTabOrder(m_pEditorRemoteDisplayTimeout, m_pCheckboxMultipleConn);
+    setTabOrder(m_pEditorVRDESettings, m_pCheckboxRecording);
 
     /* Recording tab-order: */
-    setTabOrder(m_pCheckboxMultipleConn, m_pCheckboxRecording);
     setTabOrder(m_pCheckboxRecording, m_pEditorRecordingFilePath);
     setTabOrder(m_pEditorRecordingFilePath, m_pComboRecordingFrameSize);
     setTabOrder(m_pComboRecordingFrameSize, m_pSpinboxRecordingFrameWidth);
@@ -771,20 +760,6 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
 void UIMachineSettingsDisplay::retranslateUi()
 {
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabScreen), tr("&Screen"));
-    m_pCheckboxRemoteDisplay->setToolTip(tr("When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing "
-                                            "remote clients to connect and operate the VM (when it is running) using a standard "
-                                            "RDP client."));
-    m_pCheckboxRemoteDisplay->setText(tr("&Enable Server"));
-    m_pLabelRemoteDisplayPort->setText(tr("Server &Port:"));
-    m_pEditorRemoteDisplayPort->setToolTip(tr("Holds the VRDP Server port number. You may specify <tt>0</tt> (zero), to select "
-                                              "port 3389, the standard port for RDP."));
-    m_pLabelRemoteDisplayAuthMethod->setText(tr("Authentication &Method:"));
-    m_pComboRemoteDisplayAuthMethod->setToolTip(tr("Selects the VRDP authentication method."));
-    m_pLabelRemoteDisplayTimeout->setText(tr("Authentication &Timeout:"));
-    m_pEditorRemoteDisplayTimeout->setToolTip(tr("Holds the timeout for guest authentication, in milliseconds."));
-    m_pLabelRemoteDisplayOptions->setText(tr("Extended Features:"));
-    m_pCheckboxMultipleConn->setToolTip(tr("When checked, multiple simultaneous connections to the VM are permitted."));
-    m_pCheckboxMultipleConn->setText(tr("&Allow Multiple Connections"));
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRemoteDisplay), tr("&Remote Display"));
     m_pCheckboxRecording->setToolTip(tr("When checked, VirtualBox will record the virtual machine session as a video file."));
     m_pCheckboxRecording->setText(tr("&Enable Recording"));
@@ -814,14 +789,6 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pLabelRecordingScreens->setText(tr("Scree&ns:"));
     m_pScrollerRecordingScreens->setToolTip(QString());
     m_pTabWidget->setTabText(m_pTabWidget->indexOf(m_pTabRecording), tr("Re&cording"));
-
-    /* Translate Remote Display auth method combo: */
-    AssertPtrReturnVoid(m_pComboRemoteDisplayAuthMethod);
-    for (int iIndex = 0; iIndex < m_pComboRemoteDisplayAuthMethod->count(); ++iIndex)
-    {
-        const KAuthType enmType = m_pComboRemoteDisplayAuthMethod->currentData().value<KAuthType>();
-        m_pComboRemoteDisplayAuthMethod->setItemText(iIndex, gpConverter->toString(enmType));
-    }
 
     /* Recording stuff: */
     m_pSpinboxRecordingFrameRate->setSuffix(QString(" %1").arg(tr("fps")));
@@ -877,12 +844,10 @@ void UIMachineSettingsDisplay::polishPage()
     /* Polish 'Remote Display' availability: */
     m_pTabWidget->setTabEnabled(1, oldDisplayData.m_fRemoteDisplayServerSupported);
     m_pTabRemoteDisplay->setEnabled(isMachineInValidMode());
-    m_pWidgetRemoteDisplaySettings->setEnabled(m_pCheckboxRemoteDisplay->isChecked());
-    m_pLabelRemoteDisplayOptions->setEnabled(isMachineOffline() || isMachineSaved());
-    m_pCheckboxMultipleConn->setEnabled(isMachineOffline() || isMachineSaved());
+    m_pEditorVRDESettings->setVRDEOptionsAvailable(isMachineOffline() || isMachineSaved());
 
     /* Polish 'Recording' availability: */
-    m_pWidgetRecordingSettings->setEnabled(isMachineInValidMode());
+    m_pTabRecording->setEnabled(isMachineInValidMode());
     sltHandleRecordingCheckboxToggle();
 }
 
@@ -1097,101 +1062,15 @@ void UIMachineSettingsDisplay::prepareTabRemoteDisplay()
     if (m_pTabRemoteDisplay)
     {
         /* Prepare 'Remote Display' tab layout: */
-        QGridLayout *pLayoutRemoteDisplay = new QGridLayout(m_pTabRemoteDisplay);
+        QVBoxLayout *pLayoutRemoteDisplay = new QVBoxLayout(m_pTabRemoteDisplay);
         if (pLayoutRemoteDisplay)
         {
-            pLayoutRemoteDisplay->setRowStretch(2, 1);
+            /* Prepare remote display settings editor: */
+            m_pEditorVRDESettings = new UIVRDESettingsEditor(m_pTabRemoteDisplay);
+            if (m_pEditorVRDESettings)
+                pLayoutRemoteDisplay->addWidget(m_pEditorVRDESettings);
 
-            /* Prepare remote display check-box: */
-            m_pCheckboxRemoteDisplay = new QCheckBox(m_pTabRemoteDisplay);
-            if (m_pCheckboxRemoteDisplay)
-                pLayoutRemoteDisplay->addWidget(m_pCheckboxRemoteDisplay, 0, 0, 1, 2);
-
-            /* Prepare 20-px shifting spacer: */
-            QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
-            if (pSpacerItem)
-                pLayoutRemoteDisplay->addItem(pSpacerItem, 1, 0);
-
-            /* Prepare remote display settings widget: */
-            m_pWidgetRemoteDisplaySettings = new QWidget(m_pTabRemoteDisplay);
-            if (m_pWidgetRemoteDisplaySettings)
-            {
-                /* Prepare remote display settings widget layout: */
-                QGridLayout *pLayoutRemoteDisplaySettings = new QGridLayout(m_pWidgetRemoteDisplaySettings);
-                if (pLayoutRemoteDisplaySettings)
-                {
-                    pLayoutRemoteDisplaySettings->setContentsMargins(0, 0, 0, 0);
-
-                    /* Prepare remote display port label: */
-                    m_pLabelRemoteDisplayPort = new QLabel(m_pWidgetRemoteDisplaySettings);
-                    if (m_pLabelRemoteDisplayPort)
-                    {
-                        m_pLabelRemoteDisplayPort->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                        pLayoutRemoteDisplaySettings->addWidget(m_pLabelRemoteDisplayPort, 0, 0);
-                    }
-                    /* Prepare remote display port editor: */
-                    m_pEditorRemoteDisplayPort = new QLineEdit(m_pWidgetRemoteDisplaySettings);
-                    if (m_pEditorRemoteDisplayPort)
-                    {
-                        if (m_pLabelRemoteDisplayPort)
-                            m_pLabelRemoteDisplayPort->setBuddy(m_pEditorRemoteDisplayPort);
-                        m_pEditorRemoteDisplayPort->setValidator(new QRegularExpressionValidator(
-                            QRegularExpression("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
-
-                        pLayoutRemoteDisplaySettings->addWidget(m_pEditorRemoteDisplayPort, 0, 1);
-                    }
-
-                    /* Prepare remote display auth method label: */
-                    m_pLabelRemoteDisplayAuthMethod = new QLabel(m_pWidgetRemoteDisplaySettings);
-                    if (m_pLabelRemoteDisplayAuthMethod)
-                    {
-                        m_pLabelRemoteDisplayAuthMethod->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                        pLayoutRemoteDisplaySettings->addWidget(m_pLabelRemoteDisplayAuthMethod, 1, 0);
-                    }
-                    /* Prepare remote display auth method combo: */
-                    m_pComboRemoteDisplayAuthMethod = new QComboBox(m_pWidgetRemoteDisplaySettings);
-                    if (m_pComboRemoteDisplayAuthMethod)
-                    {
-                        if (m_pLabelRemoteDisplayAuthMethod)
-                            m_pLabelRemoteDisplayAuthMethod->setBuddy(m_pComboRemoteDisplayAuthMethod);
-                        m_pComboRemoteDisplayAuthMethod->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-
-                        pLayoutRemoteDisplaySettings->addWidget(m_pComboRemoteDisplayAuthMethod, 1, 1);
-                    }
-
-                    /* Prepare remote display timeout label: */
-                    m_pLabelRemoteDisplayTimeout = new QLabel(m_pWidgetRemoteDisplaySettings);
-                    if (m_pLabelRemoteDisplayTimeout)
-                    {
-                        m_pLabelRemoteDisplayTimeout->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                        pLayoutRemoteDisplaySettings->addWidget(m_pLabelRemoteDisplayTimeout, 2, 0);
-                    }
-                    /* Prepare remote display timeout editor: */
-                    m_pEditorRemoteDisplayTimeout = new QLineEdit(m_pWidgetRemoteDisplaySettings);
-                    if (m_pEditorRemoteDisplayTimeout)
-                    {
-                        if (m_pLabelRemoteDisplayTimeout)
-                            m_pLabelRemoteDisplayTimeout->setBuddy(m_pEditorRemoteDisplayTimeout);
-                        m_pEditorRemoteDisplayTimeout->setValidator(new QIntValidator(this));
-
-                        pLayoutRemoteDisplaySettings->addWidget(m_pEditorRemoteDisplayTimeout, 2, 1);
-                    }
-
-                    /* Prepare remote display options label: */
-                    m_pLabelRemoteDisplayOptions = new QLabel(m_pWidgetRemoteDisplaySettings);
-                    if (m_pLabelRemoteDisplayOptions)
-                    {
-                        m_pLabelRemoteDisplayOptions->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                        pLayoutRemoteDisplaySettings->addWidget(m_pLabelRemoteDisplayOptions, 3, 0);
-                    }
-                    /* Prepare remote display multiple connections check-box: */
-                    m_pCheckboxMultipleConn = new QCheckBox(m_pWidgetRemoteDisplaySettings);
-                    if (m_pCheckboxMultipleConn)
-                        pLayoutRemoteDisplaySettings->addWidget(m_pCheckboxMultipleConn, 3, 1);
-                }
-
-                pLayoutRemoteDisplay->addWidget(m_pWidgetRemoteDisplaySettings, 1, 1);
-            }
+            pLayoutRemoteDisplay->addStretch();
         }
 
         m_pTabWidget->addTab(m_pTabRemoteDisplay, QString());
@@ -1579,10 +1458,8 @@ void UIMachineSettingsDisplay::prepareConnections()
 #endif
 
     /* Configure 'Remote Display' connections: */
-    connect(m_pCheckboxRemoteDisplay, &QCheckBox::toggled, m_pWidgetRemoteDisplaySettings, &QWidget::setEnabled);
-    connect(m_pCheckboxRemoteDisplay, &QCheckBox::toggled, this, &UIMachineSettingsDisplay::revalidate);
-    connect(m_pEditorRemoteDisplayPort, &QLineEdit::textChanged, this, &UIMachineSettingsDisplay::revalidate);
-    connect(m_pEditorRemoteDisplayTimeout, &QLineEdit::textChanged, this, &UIMachineSettingsDisplay::revalidate);
+    connect(m_pEditorVRDESettings, &UIVRDESettingsEditor::sigChanged,
+            this, &UIMachineSettingsDisplay::revalidate);
 
     /* Configure 'Recording' connections: */
     connect(m_pCheckboxRecording, &QCheckBox::toggled,
@@ -1610,29 +1487,6 @@ void UIMachineSettingsDisplay::cleanup()
     /* Cleanup cache: */
     delete m_pCache;
     m_pCache = 0;
-}
-
-void UIMachineSettingsDisplay::repopulateComboAuthType()
-{
-    AssertPtrReturnVoid(m_pComboRemoteDisplayAuthMethod);
-    {
-        /* Clear combo first of all: */
-        m_pComboRemoteDisplayAuthMethod->clear();
-
-        /// @todo get supported auth types, not hardcoded!
-        QVector<KAuthType> authTypes = QVector<KAuthType>() << KAuthType_Null
-                                                            << KAuthType_External
-                                                            << KAuthType_Guest;
-
-        /* Take into account currently cached value: */
-        const KAuthType enmCachedValue = m_pCache->base().m_remoteDisplayAuthType;
-        if (!authTypes.contains(enmCachedValue))
-            authTypes.prepend(enmCachedValue);
-
-        /* Populate combo finally: */
-        foreach (const KAuthType &enmType, authTypes)
-            m_pComboRemoteDisplayAuthMethod->addItem(gpConverter->toString(enmType), QVariant::fromValue(enmType));
-    }
 }
 
 bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVRAM()
