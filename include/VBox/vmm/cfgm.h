@@ -184,8 +184,6 @@ VMMR3DECL(int)          CFGMR3QueryUInt(        PCFGMNODE pNode, const char *psz
 VMMR3DECL(int)          CFGMR3QueryUIntDef(     PCFGMNODE pNode, const char *pszName, unsigned int *pu, unsigned int uDef);
 VMMR3DECL(int)          CFGMR3QuerySInt(        PCFGMNODE pNode, const char *pszName, signed int *pi);
 VMMR3DECL(int)          CFGMR3QuerySIntDef(     PCFGMNODE pNode, const char *pszName, signed int *pi, signed int iDef);
-VMMR3DECL(int)          CFGMR3QueryPtr(         PCFGMNODE pNode, const char *pszName, void **ppv);
-VMMR3DECL(int)          CFGMR3QueryPtrDef(      PCFGMNODE pNode, const char *pszName, void **ppv, void *pvDef);
 VMMR3DECL(int)          CFGMR3QueryGCPtr(       PCFGMNODE pNode, const char *pszName, PRTGCPTR pGCPtr);
 VMMR3DECL(int)          CFGMR3QueryGCPtrDef(    PCFGMNODE pNode, const char *pszName, PRTGCPTR pGCPtr, RTGCPTR GCPtrDef);
 VMMR3DECL(int)          CFGMR3QueryGCPtrU(      PCFGMNODE pNode, const char *pszName, PRTGCUINTPTR pGCPtr);

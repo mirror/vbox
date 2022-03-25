@@ -2235,8 +2235,6 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     CFGMR3QueryUIntDef,
     CFGMR3QuerySInt,
     CFGMR3QuerySIntDef,
-    CFGMR3QueryPtr,
-    CFGMR3QueryPtrDef,
     CFGMR3QueryGCPtr,
     CFGMR3QueryGCPtrDef,
     CFGMR3QueryGCPtrU,

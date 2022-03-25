@@ -48,7 +48,6 @@ EXPORTS
     CFGMR3QueryGCPtrSDef
     CFGMR3QueryGCPtrUDef
     CFGMR3QueryGCPtrDef
-    CFGMR3QueryPtrDef
     CFGMR3QueryBoolDef
     CFGMR3QueryS8Def
     CFGMR3QueryU8Def
@@ -65,7 +64,6 @@ EXPORTS
     CFGMR3QueryGCPtrS
     CFGMR3QueryGCPtrU
     CFGMR3QueryGCPtr
-    CFGMR3QueryPtr
     CFGMR3QueryBool
     CFGMR3QueryS8
     CFGMR3QueryU8
