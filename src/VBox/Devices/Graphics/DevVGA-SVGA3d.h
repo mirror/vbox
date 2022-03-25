@@ -57,6 +57,7 @@ typedef struct VMSVGA3D_SURFACE_DESC
    uint32 numArrayElements; /* "Number of array elements for a 1D/2D texture. For cubemap
                              * texture number of faces * array_size."
                              */
+   uint32 cbArrayElement;   /* Size of one array element. */
    uint32 bufferByteStride;
 } VMSVGA3D_SURFACE_DESC;
 
@@ -73,9 +74,11 @@ typedef struct VMSVGA3D_MAPPED_SURFACE
     VMSVGA3D_SURFACE_MAP enmMapType;
     SVGA3dSurfaceFormat format;
     SVGA3dBox box;
-    uint32_t cbPixel;
-    uint32_t cbRowPitch;
-    uint32_t cbDepthPitch;
+    uint32_t cbBlock;        /* Size of pixel block, usualy of 1 pixel for uncompressed formats. */
+    uint32_t cbRow;          /* Bytes per row. */
+    uint32_t cbRowPitch;     /* Bytes between rows. */
+    uint32_t cRows;          /* Number of rows. */
+    uint32_t cbDepthPitch;   /* Bytes between planes. */
     void *pvData;
 } VMSVGA3D_MAPPED_SURFACE;
 
@@ -154,7 +157,7 @@ typedef struct VMSGA3D_BOX_DIMENSIONS
     uint32_t cbRow;          /* Bytes per row. */
     int32_t  cbPitch;        /* Bytes between rows. */
     uint32_t cyBlocks;       /* Number of rows. */
-    uint32_t cDepth;         /* Number of planes. */
+    uint32_t cbDepthPitch;   /* Number of bytes between planes. */
 } VMSGA3D_BOX_DIMENSIONS;
 
 int vmsvga3dGetBoxDimensions(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox,

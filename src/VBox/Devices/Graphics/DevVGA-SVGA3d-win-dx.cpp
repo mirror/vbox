@@ -3092,18 +3092,8 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfa
         HRESULT hr = pDevice->pImmediateContext->Map(pMappedTexture, Subresource,
                                                      d3d11MapType, /* MapFlags =  */ 0, &mappedResource);
         if (SUCCEEDED(hr))
-        {
-            pMap->enmMapType   = enmMapType;
-            pMap->format       = pSurface->format;
-            pMap->box          = clipBox;
-            pMap->cbPixel      = pSurface->cbBlock;
-            pMap->cbRowPitch   = mappedResource.RowPitch;
-            pMap->cbDepthPitch = mappedResource.DepthPitch;
-            pMap->pvData       = (uint8_t *)mappedResource.pData
-                               + pMap->box.x * pMap->cbPixel
-                               + pMap->box.y * pMap->cbRowPitch
-                               + pMap->box.z * pMap->cbDepthPitch;
-        }
+            vmsvga3dSurfaceMapInit(pMap, enmMapType, &clipBox, pSurface,
+                                   mappedResource.pData, mappedResource.RowPitch, mappedResource.DepthPitch);
         else
             AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
     }
@@ -3147,22 +3137,12 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfa
         else
             pMappedResource = pBackendSurface->dynamic.pResource;
 
-        UINT const Subresource = 0;
+        UINT const Subresource = 0; /* Dynamic or staging textures have one subresource. */
         HRESULT hr = pDevice->pImmediateContext->Map(pMappedResource, Subresource,
                                                      d3d11MapType, /* MapFlags =  */ 0, &mappedResource);
         if (SUCCEEDED(hr))
-        {
-            pMap->enmMapType   = enmMapType;
-            pMap->format       = pSurface->format;
-            pMap->box          = clipBox;
-            pMap->cbPixel      = pSurface->cbBlock;
-            pMap->cbRowPitch   = mappedResource.RowPitch;
-            pMap->cbDepthPitch = mappedResource.DepthPitch;
-            pMap->pvData       = (uint8_t *)mappedResource.pData
-                               + (pMap->box.x / pSurface->cxBlock) * pMap->cbPixel
-                               + (pMap->box.y / pSurface->cyBlock) * pMap->cbRowPitch
-                               + pMap->box.z * pMap->cbDepthPitch;
-        }
+            vmsvga3dSurfaceMapInit(pMap, enmMapType, &clipBox, pSurface,
+                                   mappedResource.pData, mappedResource.RowPitch, mappedResource.DepthPitch);
         else
             AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
     }
@@ -3201,18 +3181,8 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfa
             HRESULT hr = pDevice->pImmediateContext->Map(pDevice->pStagingBuffer, Subresource,
                                                          d3d11MapType, /* MapFlags =  */ 0, &mappedResource);
             if (SUCCEEDED(hr))
-            {
-                pMap->enmMapType   = enmMapType;
-                pMap->format       = pSurface->format;
-                pMap->box          = clipBox;
-                pMap->cbPixel      = pSurface->cbBlock;
-                pMap->cbRowPitch   = mappedResource.RowPitch;
-                pMap->cbDepthPitch = mappedResource.DepthPitch;
-                pMap->pvData       = (uint8_t *)mappedResource.pData
-                                   + pMap->box.x * pMap->cbPixel
-                                   + pMap->box.y * pMap->cbRowPitch
-                                   + pMap->box.z * pMap->cbDepthPitch;
-            }
+                vmsvga3dSurfaceMapInit(pMap, enmMapType, &clipBox, pSurface,
+                                       mappedResource.pData, mappedResource.RowPitch, mappedResource.DepthPitch);
             else
                 AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
         }
@@ -3319,6 +3289,7 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceUnmap(PVGASTATECC pThisCC, SVGA3dSur
             uint32_t const cWidth0 = pSurface->paMipmapLevels[0].mipmapSize.width;
             uint32_t const cHeight0 = pSurface->paMipmapLevels[0].mipmapSize.height;
             uint32_t const cDepth0 = pSurface->paMipmapLevels[0].mipmapSize.depth;
+            /** @todo Entire subresource is always mapped. So find a way to copy it back, important for DEPTH_STENCIL mipmaps. */
             bool const fEntireResource = pMap->box.x == 0 && pMap->box.y == 0 && pMap->box.z == 0
                                       && pMap->box.w == cWidth0 && pMap->box.h == cHeight0 && pMap->box.d == cDepth0;
 

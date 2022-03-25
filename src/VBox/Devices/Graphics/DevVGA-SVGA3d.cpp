@@ -302,6 +302,14 @@ int vmsvga3dSurfaceDefine(PVGASTATECC pThisCC, uint32_t sid, SVGA3dSurface1Flags
 
     AssertLogRelRCReturnStmt(rc, RTMemFree(pSurface->paMipmapLevels), rc);
 
+    /* Compute the size of one array element. */
+    pSurface->surfaceDesc.cbArrayElement = 0;
+    for (uint32_t i = 0; i < pSurface->cLevels; ++i)
+    {
+        PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->paMipmapLevels[i];
+        pSurface->surfaceDesc.cbArrayElement += pMipLevel->cbSurface;
+    }
+
     if (vmsvga3dIsLegacyBackend(pThisCC))
     {
 #ifdef VMSVGA3D_DIRECT3D
@@ -1390,6 +1398,27 @@ int vmsvga3dShaderSetConst(PVGASTATECC pThisCC, uint32_t cid, uint32_t reg, SVGA
  *
  */
 
+void vmsvga3dSurfaceMapInit(VMSVGA3D_MAPPED_SURFACE *pMap, VMSVGA3D_SURFACE_MAP enmMapType, SVGA3dBox const *pBox,
+                            PVMSVGA3DSURFACE pSurface, void *pvData, uint32_t cbRowPitch, uint32_t cbDepthPitch)
+{
+    uint32_t const cxBlocks = (pBox->w + pSurface->cxBlock - 1) / pSurface->cxBlock;
+    uint32_t const cyBlocks = (pBox->h + pSurface->cyBlock - 1) / pSurface->cyBlock;
+
+    pMap->enmMapType   = enmMapType;
+    pMap->format       = pSurface->format;
+    pMap->box          = *pBox;
+    pMap->cbBlock      = pSurface->cbBlock;
+    pMap->cbRow        = cxBlocks * pSurface->cbBlock;
+    pMap->cbRowPitch   = cbRowPitch;
+    pMap->cRows        = cyBlocks;
+    pMap->cbDepthPitch = cbDepthPitch;
+    pMap->pvData       = (uint8_t *)pvData
+                       + (pBox->x / pSurface->cxBlock) * pSurface->cbBlock
+                       + (pBox->y / pSurface->cyBlock) * cbRowPitch
+                       + pBox->z * cbDepthPitch;
+}
+
+
 int vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, SVGA3dBox const *pBox,
                        VMSVGA3D_SURFACE_MAP enmMapType, VMSVGA3D_MAPPED_SURFACE *pMap)
 {
@@ -1435,16 +1464,8 @@ int vmsvga3dSurfaceMap(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pImage, 
     //if (enmMapType == VMSVGA3D_SURFACE_MAP_WRITE_DISCARD)
     //    RT_BZERO(.);
 
-    pMap->enmMapType   = enmMapType;
-    pMap->format       = pSurface->format;
-    pMap->box          = clipBox;
-    pMap->cbPixel      = pSurface->cbBlock;
-    pMap->cbRowPitch   = pMipLevel->cbSurfacePitch;
-    pMap->cbDepthPitch = pMipLevel->cbSurfacePlane;
-    pMap->pvData       = (uint8_t *)pMipLevel->pSurfaceData
-                       + (pMap->box.x / pSurface->cxBlock) * pMap->cbPixel
-                       + (pMap->box.y / pSurface->cyBlock) * pMap->cbRowPitch
-                       + pMap->box.z * pMap->cbDepthPitch;
+    vmsvga3dSurfaceMapInit(pMap, enmMapType, &clipBox, pSurface,
+                           pMipLevel->pSurfaceData, pMipLevel->cbSurfacePitch, pMipLevel->cbSurfacePlane);
 
     LogFunc(("SysMem: pvData %p\n", pMap->pvData));
     return VINF_SUCCESS;
@@ -1497,13 +1518,7 @@ uint32_t vmsvga3dCalcSubresourceOffset(PVGASTATECC pThisCC, SVGA3dSurfaceImageId
     int rc = vmsvga3dSurfaceFromSid(pThisCC->svga.p3dState, pImage->sid, &pSurface);
     AssertRCReturn(rc, 0);
 
-    /** @todo Store cbArraySlice in the surface structure. */
-    uint32_t cbArraySlice = 0;
-    for (uint32_t i = 0; i < pSurface->cLevels; ++i)
-    {
-        PVMSVGA3DMIPMAPLEVEL pMipLevel = &pSurface->paMipmapLevels[i];
-        cbArraySlice += pMipLevel->cbSurface;
-    }
+    ASSERT_GUEST_RETURN(pImage->face < pSurface->surfaceDesc.numArrayElements, 0);
 
     uint32_t offMipLevel = 0;
     for (uint32_t i = 0; i < pImage->mipmap; ++i)
@@ -1512,7 +1527,7 @@ uint32_t vmsvga3dCalcSubresourceOffset(PVGASTATECC pThisCC, SVGA3dSurfaceImageId
         offMipLevel += pMipmapLevel->cbSurface;
     }
 
-    uint32_t offSubresource = cbArraySlice * pImage->face + offMipLevel;
+    uint32_t offSubresource = pSurface->surfaceDesc.cbArrayElement * pImage->face + offMipLevel;
     /** @todo Multisample?  */
     return offSubresource;
 }
@@ -1573,7 +1588,6 @@ int vmsvga3dGetBoxDimensions(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pI
     uint32_t const cBlocksX = (clipBox.w + pSurface->cxBlock - 1) / pSurface->cxBlock;
     uint32_t const cBlocksY = (clipBox.h + pSurface->cyBlock - 1) / pSurface->cyBlock;
 
-    /** @todo Calculate offSubresource here, when pSurface will have cbArraySlice field. */
     pResult->offSubresource = vmsvga3dCalcSubresourceOffset(pThisCC, pImage);
     pResult->offBox   = (clipBox.x / pSurface->cxBlock) * pSurface->cbBlock
                       + (clipBox.y / pSurface->cyBlock) * pMipLevel->cbSurfacePitch
@@ -1581,7 +1595,7 @@ int vmsvga3dGetBoxDimensions(PVGASTATECC pThisCC, SVGA3dSurfaceImageId const *pI
     pResult->cbRow    = cBlocksX * pSurface->cbBlock;
     pResult->cbPitch  = pMipLevel->cbSurfacePitch;
     pResult->cyBlocks = cBlocksY;
-    pResult->cDepth   = clipBox.d;
+    pResult->cbDepthPitch = pMipLevel->cbSurfacePlane;
 
     return VINF_SUCCESS;
 }
