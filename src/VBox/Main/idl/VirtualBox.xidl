@@ -2407,23 +2407,23 @@
       </desc>
     </attribute>
 
-    <attribute name="minLeaseTime" type="unsigned long" readonly="no">
+    <attribute name="minLeaseTime" type="unsigned long">
       <desc>The minimum lease time in seconds, ignored if zero.</desc>
     </attribute>
-    <attribute name="defaultLeaseTime" type="unsigned long" readonly="no">
+    <attribute name="defaultLeaseTime" type="unsigned long">
       <desc>The default lease time in seconds, ignored if zero.</desc>
     </attribute>
-    <attribute name="maxLeaseTime" type="unsigned long" readonly="no">
+    <attribute name="maxLeaseTime" type="unsigned long">
       <desc>The maximum lease time in seconds, ignored if zero.</desc>
     </attribute>
 
-    <attribute name="forcedOptions" type="DHCPOption" safearray="yes" readonly="no">
+    <attribute name="forcedOptions" type="DHCPOption" safearray="yes">
       <desc>List of DHCP options which should be forced upon the clients in this
        config scope when they are available, whether the clients asks for them
        or not.</desc>
     </attribute>
 
-    <attribute name="suppressedOptions" type="DHCPOption" safearray="yes" readonly="no">
+    <attribute name="suppressedOptions" type="DHCPOption" safearray="yes">
       <desc>List of DHCP options which should not be sent to the clients in
         this config scope.  This is intended for cases where one client or a
         group of clients shouldn't see one or more (typically global) options.</desc>
@@ -2520,13 +2520,13 @@
     wsmap="managed"
     reservedMethods="3" reservedAttributes="3"
     >
-    <attribute name="inclusive" type="boolean" readonly="no">
+    <attribute name="inclusive" type="boolean">
       <desc>Whether this is an inclusive or exclusive group membership condition</desc>
     </attribute>
-    <attribute name="type" type="DHCPGroupConditionType" readonly="no">
+    <attribute name="type" type="DHCPGroupConditionType">
       <desc>Defines how the <link to="IDHCPGroupCondition::value"/> is interpreted.</desc>
     </attribute>
-    <attribute name="value" type="wstring" readonly="no">
+    <attribute name="value" type="wstring">
       <desc>The condition value.</desc>
     </attribute>
     <method name="remove">
@@ -2544,7 +2544,7 @@
       A configuration that applies to a group of NICs.
     </desc>
 
-    <attribute name="name" type="wstring" readonly="no">
+    <attribute name="name" type="wstring">
       <desc>The group name.</desc>
     </attribute>
 
@@ -2600,7 +2600,7 @@
       <desc>The NIC slot number of the VM if a <link to="DHCPConfigScope_MachineNIC"/> config.</desc>
     </attribute>
 
-    <attribute name="fixedAddress" type="wstring" readonly="no">
+    <attribute name="fixedAddress" type="wstring">
       <desc>Fixed IPv4 address assignment, dynamic if empty.</desc>
     </attribute>
 
@@ -11975,11 +11975,11 @@
       </desc>
     </attribute>
 
-    <attribute name="proxyMode" type="ProxyMode" readonly="no">
+    <attribute name="proxyMode" type="ProxyMode">
       <desc> The proxy mode setting: System, NoProxy or Manual.</desc>
     </attribute>
 
-    <attribute name="proxyURL" type="wstring" readonly="no">
+    <attribute name="proxyURL" type="wstring">
       <desc>
         Proxy server URL for the <link to="ProxyMode_Manual" /> proxy mode.
 
@@ -12190,26 +12190,26 @@
       </desc>
     </attribute>
 
-    <attribute name="VBoxUpdateEnabled" type="boolean" readonly="no">
+    <attribute name="VBoxUpdateEnabled" type="boolean">
       <desc> Is the VirtualBox update check enabled?</desc>
     </attribute>
 
-    <attribute name="VBoxUpdateFrequency" type="unsigned long" readonly="no">
+    <attribute name="VBoxUpdateFrequency" type="unsigned long">
       <desc> How often should a check for a newer version of VirtualBox be made? (in days)</desc>
     </attribute>
 
-    <attribute name="VBoxUpdateLastCheckDate" type="wstring" readonly="no">
+    <attribute name="VBoxUpdateLastCheckDate" type="wstring">
       <desc>
         When was the update check last performed? If updating this attribute the
         string must be in ISO 8601 format (e.g. 2020-05-11T21:13:39.348416000Z).
       </desc>
     </attribute>
 
-    <attribute name="VBoxUpdateTarget" type="VBoxUpdateTarget" readonly="no">
+    <attribute name="VBoxUpdateTarget" type="VBoxUpdateTarget">
       <desc> The preferred release type used for determining whether a newer version of VirtualBox is available.</desc>
     </attribute>
 
-    <attribute name="VBoxUpdateCount" type="unsigned long" readonly="no">
+    <attribute name="VBoxUpdateCount" type="unsigned long">
       <desc> The count of update check attempts.</desc>
     </attribute>
 
