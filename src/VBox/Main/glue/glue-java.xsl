@@ -1798,7 +1798,7 @@
   <xsl:choose>
     <xsl:when test="$G_vboxGlueStyle='xpcom'">
       <xsl:value-of select="concat('            ', $backtype, ' ', $retval, ' = getTypedWrapped().', $gettername, '(')" />
-      <xsl:if test="@safearray">
+      <xsl:if test="@safearray='yes'">
         <xsl:text>null</xsl:text>
       </xsl:if>
       <xsl:text>);&#10;</xsl:text>
