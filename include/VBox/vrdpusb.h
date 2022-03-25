@@ -89,7 +89,7 @@ typedef REMOTEUSBCALLBACK *PREMOTEUSBCALLBACK;
  */
 typedef struct REMOTEUSBIF
 {
-    /** Opqaue user data to pass as the first parameter to the callbacks. */
+    /** Opaque user data to pass as the first parameter to the callbacks. */
     void                        *pvUser;
 
     /**
@@ -107,6 +107,18 @@ typedef REMOTEUSBIF *PREMOTEUSBIF;
 
 /** The UUID to identify the remote USB interface. */
 #define REMOTEUSBIF_OID "87012f58-2ad6-4f89-b7b1-92f72c7ea8cc"
+
+
+typedef struct EMULATEDUSBIF
+{
+    /** Opaque user data to pass as the first parameter to the callbacks. */
+    void                        *pvUser;
+
+    DECLCALLBACKMEMBER(int, pfnQueryEmulatedUsbDataById, (void *pvUser, const char *pszId, void **ppvEmUsbCb, void **ppvEmUsbCbData, void **ppvObject));
+} EMULATEDUSBIF;
+typedef EMULATEDUSBIF *PEMULATEDUSBIF;
+
+#define EMULATEDUSBIF_OID "b7b4e194-ada0-4722-8e4e-1700ed9064f3"
 
 /** @} */
 

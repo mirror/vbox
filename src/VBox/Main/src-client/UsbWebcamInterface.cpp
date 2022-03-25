@@ -403,14 +403,25 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
         return VERR_PDM_MISSING_INTERFACE;
     }
 
-    void *pv = NULL;
-    int rc = pDrvIns->pHlpR3->pfnCFGMQueryPtr(pCfg, "Object", &pv);
-    if (!RT_VALID_PTR(pv))
-         rc = VERR_INVALID_PARAMETER;
-    AssertMsgRCReturn(rc, ("Configuration error: No/bad \"Object\" %p value! rc=%Rrc\n", pv, rc), rc);
+    char *pszId = NULL;
+    int rc = pDrvIns->pHlpR3->pfnCFGMQueryStringAlloc(pCfg, "Id", &pszId);
+    if (RT_SUCCESS(rc))
+    {
+        RTUUID UuidEmulatedUsbIf;
+        rc = RTUuidFromStr(&UuidEmulatedUsbIf, EMULATEDUSBIF_OID); AssertRC(rc);
+
+        PEMULATEDUSBIF pEmulatedUsbIf = (PEMULATEDUSBIF)PDMDrvHlpQueryGenericUserObject(pDrvIns, &UuidEmulatedUsbIf);
+        AssertPtrReturn(pEmulatedUsbIf, VERR_INVALID_PARAMETER);
+
+        rc = pEmulatedUsbIf->pfnQueryEmulatedUsbDataById(pEmulatedUsbIf->pvUser, pszId,
+                                                         NULL /*ppvEmUsbCb*/, NULL /*ppvEmUsbCbData*/, (void **)&pThis->pRemote);
+        pDrvIns->pHlpR3->pfnMMHeapFree(pDrvIns, pszId);
+        AssertRCReturn(rc, rc);
+    }
+    else
+        return rc;
 
     /* Everything ok. Initialize. */
-    pThis->pRemote = (EMWEBCAMREMOTE *)pv;
     pThis->pRemote->pEmWebcam->EmWebcamConstruct(pThis);
 
     pDrvIns->IBase.pfnQueryInterface = drvQueryInterface;

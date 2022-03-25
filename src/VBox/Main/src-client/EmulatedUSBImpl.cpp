@@ -100,6 +100,8 @@ public:
 
     bool HasId(const char *pszId) { return RTStrCmp(pszId, mszUuid) == 0;}
 
+    void *getObjectPtr() { return mpvObject; }
+
     EUSBDEVICESTATUS enmStatus;
 };
 
@@ -144,11 +146,6 @@ EUSBWEBCAM::emulatedWebcamAttach(PUVM pUVM, PCVMMR3VTABLE pVMM, EUSBWEBCAM *pThi
     AssertRCReturn(rc, rc);
     rc = pVMM->pfnCFGMR3InsertString(pEUSB,         "Id", pThis->mszUuid);
     AssertRCReturn(rc, rc);
-    /** @todo BUGBUG: No pointers via CFGM in 7.0!   */
-    rc = pVMM->pfnCFGMR3InsertInteger(pEUSB,        "pfnCallback", (uintptr_t)EmulatedUSB::i_eusbCallback);
-    AssertRCReturn(rc, rc);
-    rc = pVMM->pfnCFGMR3InsertInteger(pEUSB,        "pvCallback", (uintptr_t)pThis->mpEmulatedUSB);
-    AssertRCReturn(rc, rc);
 
     PCFGMNODE pLunL0;
     rc = pVMM->pfnCFGMR3InsertNode(pInstance,   "LUN#0", &pLunL0);
@@ -159,8 +156,7 @@ EUSBWEBCAM::emulatedWebcamAttach(PUVM pUVM, PCVMMR3VTABLE pVMM, EUSBWEBCAM *pThi
     AssertRCReturn(rc, rc);
     rc = pVMM->pfnCFGMR3InsertString(pConfig,       "DevicePath", pThis->mPath.c_str());
     AssertRCReturn(rc, rc);
-    /** @todo BUGBUG: No pointers via CFGM in 7.0!   */
-    rc = pVMM->pfnCFGMR3InsertInteger(pConfig,      "Object", (uintptr_t)pThis->mpvObject);
+    rc = pVMM->pfnCFGMR3InsertString(pConfig,       "Id", pThis->mszUuid);
     AssertRCReturn(rc, rc);
     rc = emulatedWebcamInsertSettings(pConfig, pVMM, &pThis->mDrvSettings);
     AssertRCReturn(rc, rc);
@@ -336,6 +332,9 @@ HRESULT EmulatedUSB::init(ComObjPtr<Console> pConsole)
 
     m.pConsole = pConsole;
 
+    mEmUsbIf.pvUser = this;
+    mEmUsbIf.pfnQueryEmulatedUsbDataById = EmulatedUSB::i_QueryEmulatedUsbDataById;
+
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
@@ -399,6 +398,11 @@ HRESULT EmulatedUSB::getWebcams(std::vector<com::Utf8Str> &aWebcams)
     }
 
     return hrc;
+}
+
+PEMULATEDUSBIF EmulatedUSB::i_getEmulatedUsbIf()
+{
+    return &mEmUsbIf;
 }
 
 static const Utf8Str s_pathDefault(".0");
@@ -600,6 +604,32 @@ EmulatedUSB::i_eusbCallback(void *pv, const char *pszId, uint32_t iEvent, const 
         RTMemFree(pvDataCopy);
     }
     return rc;
+}
+
+/*static*/
+DECLCALLBACK(int) EmulatedUSB::i_QueryEmulatedUsbDataById(void *pvUser, const char *pszId, void **ppvEmUsbCb, void **ppvEmUsbCbData, void **ppvObject)
+{
+    EmulatedUSB *pEmUsb = (EmulatedUSB *)pvUser;
+
+    AutoReadLock alock(pEmUsb COMMA_LOCKVAL_SRC_POS);
+    WebcamsMap::const_iterator it;
+    for (it = pEmUsb->m.webcams.begin(); it != pEmUsb->m.webcams.end(); ++it)
+    {
+        EUSBWEBCAM *p = it->second;
+        if (p->HasId(pszId))
+        {
+            if (ppvEmUsbCb)
+                *ppvEmUsbCb = (void *)EmulatedUSB::i_eusbCallback;
+            if (ppvEmUsbCbData)
+                *ppvEmUsbCbData = pEmUsb;
+            if (ppvObject)
+                *ppvObject = p->getObjectPtr();
+
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
 }
 
 HRESULT EmulatedUSB::webcamPathFromId(com::Utf8Str *pPath, const char *pszId)

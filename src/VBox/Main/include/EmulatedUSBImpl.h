@@ -23,6 +23,8 @@
 
 #include "EmulatedUSBWrap.h"
 
+#include <VBox/vrdpusb.h>
+
 class Console;
 class EUSBWEBCAM;
 
@@ -46,6 +48,8 @@ public:
     static DECLCALLBACK(int) i_eusbCallback(void *pv, const char *pszId, uint32_t iEvent,
                                             const void *pvData, uint32_t cbData);
 
+    PEMULATEDUSBIF i_getEmulatedUsbIf();
+
     HRESULT i_webcamAttachInternal(const com::Utf8Str &aPath,
                                    const com::Utf8Str &aSettings,
                                    const char *pszDriver,
@@ -56,6 +60,8 @@ private:
 
     static DECLCALLBACK(int) eusbCallbackEMT(EmulatedUSB *pThis, char *pszId, uint32_t iEvent,
                                              void *pvData, uint32_t cbData);
+
+    static DECLCALLBACK(int) i_QueryEmulatedUsbDataById(void *pvUser, const char *pszId, void **ppvEmUsbCb, void **ppvEmUsbCbData, void **ppvObject);
 
     HRESULT webcamPathFromId(com::Utf8Str *pPath, const char *pszId);
 
@@ -79,6 +85,7 @@ private:
     };
 
     Data m;
+    EMULATEDUSBIF mEmUsbIf;
 };
 
 #endif /* !MAIN_INCLUDED_EmulatedUSBImpl_h */
