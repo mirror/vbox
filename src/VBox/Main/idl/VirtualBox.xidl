@@ -61,7 +61,7 @@
          DOCTYPE below first (java doesn't seem to like it).
 -->
 
-<!-- <!DOCTYPE idl SYSTEM "VirtualBox.dtd"> -->
+<!DOCTYPE idl SYSTEM "VirtualBox.dtd">
 
 <idl>
 
