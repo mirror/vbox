@@ -40,6 +40,15 @@ endif
 # This leaves out most of the optional stuff to make compilation / linking much
 # faster for development cycles. Tweak to your likings if needed.
 #
+# Note! Rather hacky approach -- this *only* works when 'packing' is executed
+#       directly in the VBox\Installer directory; otherwise with WILL break the
+#       build mostly likely, as we mess with dependencies between components.
+#
+#       A better appraoch would be to define separate packing defines for dependencies
+#       to decouple the building process from the packing more in such a scenario.
+#
+#       Use with care!
+#
 ifdef VBOX_INSTALLER_QUICK
  VBOX_INSTALLER_LANGUAGES       := en_US
  VBOX_WITH_LICENSE_DISPLAY      :=
