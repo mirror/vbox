@@ -12190,7 +12190,7 @@
       </desc>
     </attribute>
 
-    <attribute name="VBoxUpdateEnabled" type="boolean" readyonly="no">
+    <attribute name="VBoxUpdateEnabled" type="boolean" readonly="no">
       <desc> Is the VirtualBox update check enabled?</desc>
     </attribute>
 
