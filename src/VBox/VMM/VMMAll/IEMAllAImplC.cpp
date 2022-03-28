@@ -3160,39 +3160,78 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fldpi,(PCX86FXSTATE pFpuState, PIEMFPURESULT pF
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fldz,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes))
 {
-    pFpuRes->r80Result.sj64.fSign       = 0;
-    pFpuRes->r80Result.sj64.uExponent   = 0;
-    pFpuRes->r80Result.sj64.fInteger    = 0;
-    pFpuRes->r80Result.sj64.uFraction   = 0;
+    pFpuRes->r80Result.s.fSign      = 0;
+    pFpuRes->r80Result.s.uExponent  = 0;
+    pFpuRes->r80Result.s.uMantissa  = 0;
     pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
 }
+
+#define EMIT_FILD(a_cBits) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i ## a_cBits,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, \
+                                                             int ## a_cBits ## _t const *piVal)) \
+{ \
+    int  ## a_cBits ## _t iVal = *piVal; \
+    if (iVal == 0) \
+    { \
+        pFpuRes->r80Result.s.fSign      = 0; \
+        pFpuRes->r80Result.s.uExponent  = 0; \
+        pFpuRes->r80Result.s.uMantissa  = 0; \
+    } \
+    else \
+    { \
+        if (iVal > 0) \
+            pFpuRes->r80Result.s.fSign  = 0; \
+        else \
+        { \
+            pFpuRes->r80Result.s.fSign  = 1; \
+            iVal = -iVal; \
+        } \
+        unsigned const cBits = ASMBitLastSetU ## a_cBits((uint ## a_cBits ## _t)iVal); \
+        pFpuRes->r80Result.s.uExponent  = cBits - 1 + RTFLOAT80U_EXP_BIAS; \
+        pFpuRes->r80Result.s.uMantissa  = (uint64_t)iVal << (RTFLOAT80U_FRACTION_BITS + 1 - cBits); \
+    } \
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */ \
+}
+EMIT_FILD(16)
+EMIT_FILD(32)
+EMIT_FILD(64)
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r80_from_d80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTPBCD80U pd80Val))
 {
-    RT_NOREF(pFpuState, pFpuRes, pd80Val);
-    AssertReleaseFailed();
-}
+    pFpuRes->FSW = (7 << X86_FSW_TOP_SHIFT) | (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); /* see iemAImpl_fld1 */
+    if (   pd80Val->s.abPairs[0] == 0
+        && pd80Val->s.abPairs[1] == 0
+        && pd80Val->s.abPairs[2] == 0
+        && pd80Val->s.abPairs[3] == 0
+        && pd80Val->s.abPairs[4] == 0
+        && pd80Val->s.abPairs[5] == 0
+        && pd80Val->s.abPairs[6] == 0
+        && pd80Val->s.abPairs[7] == 0
+        && pd80Val->s.abPairs[8] == 0)
+    {
+        pFpuRes->r80Result.s.fSign      = pd80Val->s.fSign;
+        pFpuRes->r80Result.s.uExponent  = 0;
+        pFpuRes->r80Result.s.uMantissa  = 0;
+    }
+    else
+    {
+        pFpuRes->r80Result.s.fSign      = pd80Val->s.fSign;
 
+        size_t   cPairs  = RT_ELEMENTS(pd80Val->s.abPairs);
+        while (cPairs > 0 && pd80Val->s.abPairs[cPairs - 1] == 0)
+            cPairs--;
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int16_t const *pi16Val))
-{
-    RT_NOREF(pFpuState, pFpuRes, pi16Val);
-    AssertReleaseFailed();
-}
+        uint64_t uVal    = 0;
+        uint64_t uFactor = 1;
+        for (size_t iPair = 0; iPair < cPairs; iPair++, uFactor *= 100)
+            uVal += RTPBCD80U_LO_DIGIT(pd80Val->s.abPairs[iPair]) * uFactor
+                  + RTPBCD80U_HI_DIGIT(pd80Val->s.abPairs[iPair]) * uFactor * 10;
 
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int32_t const *pi32Val))
-{
-    RT_NOREF(pFpuState, pFpuRes, pi32Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, int64_t const *pi64Val))
-{
-    RT_NOREF(pFpuState, pFpuRes, pi64Val);
-    AssertReleaseFailed();
+        unsigned const cBits = ASMBitLastSetU64(uVal);
+        pFpuRes->r80Result.s.uExponent  = cBits - 1 + RTFLOAT80U_EXP_BIAS;
+        pFpuRes->r80Result.s.uMantissa  = uVal << (RTFLOAT80U_FRACTION_BITS + 1 - cBits);
+    }
 }
 
 
@@ -3220,13 +3259,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fild_r80_from_i64,(PCX86FXSTATE pFpuState, PIEM
 static uint16_t iemAImpl_StoreNormalR80AsR32(bool fSignIn, uint64_t uMantissaIn, int32_t iExponentIn,
                                              uint16_t fFcw, uint16_t fFsw, PRTFLOAT32U pr32Dst)
 {
-    uint64_t const fRoundedOffMask = RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS) - 1; /* 0x7ff */
-    uint64_t const uRoundingAdd    = (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
-                                   ? RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS - 1)  /* 0x400 */
-                                   : (fFcw & X86_FCW_RC_MASK) == (fSignIn ? X86_FCW_RC_DOWN : X86_FCW_RC_UP)
-                                   ? fRoundedOffMask
-                                   : 0;
-    uint64_t       fRoundedOff     = uMantissaIn & fRoundedOffMask;
+    uint64_t const fRoundingOffMask = RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS) - 1; /* 0x7ff */
+    uint64_t const uRoundingAdd     = (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
+                                    ? RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT32U_FRACTION_BITS - 1)  /* 0x400 */
+                                    : (fFcw & X86_FCW_RC_MASK) == (fSignIn ? X86_FCW_RC_DOWN : X86_FCW_RC_UP)
+                                    ? fRoundingOffMask
+                                    : 0;
+    uint64_t       fRoundedOff      = uMantissaIn & fRoundingOffMask;
 
     /*
      * Deal with potential overflows/underflows first, optimizing for none.
@@ -3252,7 +3291,7 @@ static uint16_t iemAImpl_StoreNormalR80AsR32(bool fSignIn, uint64_t uMantissaIn,
             uMantissaIn = iExponentOut <= -63
                         ? uMantissaIn != 0
                         : (uMantissaIn >> (-iExponentOut + 1)) | ((uMantissaIn & (RT_BIT_64(-iExponentOut + 1) - 1)) != 0);
-            fRoundedOff = uMantissaIn & fRoundedOffMask;
+            fRoundedOff = uMantissaIn & fRoundingOffMask;
             if (fRoundedOff && fIsTiny)
                 fFsw |= X86_FSW_UE;
             iExponentOut   = 0;
@@ -3303,6 +3342,7 @@ static uint16_t iemAImpl_StoreNormalR80AsR32(bool fSignIn, uint64_t uMantissaIn,
         uMantissaOut >>= 1;
         iExponentOut++;
         Assert(iExponentOut < RTFLOAT32U_EXP_MAX);  /* checked above */
+        fFsw |= X86_FSW_C1;
     }
     /** @todo not sure if this is applied correctly, with the above carry check. */
     else if (   (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
@@ -3440,13 +3480,13 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r32,(PCX86FXSTATE pFpuState, uint16_
 static uint16_t iemAImpl_StoreNormalR80AsR64(bool fSignIn, uint64_t uMantissaIn, int32_t iExponentIn,
                                              uint16_t fFcw, uint16_t fFsw, PRTFLOAT64U pr64Dst)
 {
-    uint64_t const fRoundedOffMask = RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS) - 1; /* 0x7ff */
-    uint32_t const uRoundingAdd    = (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
-                                   ? RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS - 1)  /* 0x400 */
-                                   : (fFcw & X86_FCW_RC_MASK) == (fSignIn ? X86_FCW_RC_DOWN : X86_FCW_RC_UP)
-                                   ? fRoundedOffMask
-                                   : 0;
-    uint32_t       fRoundedOff     = uMantissaIn & fRoundedOffMask;
+    uint64_t const fRoundingOffMask = RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS) - 1; /* 0x7ff */
+    uint32_t const uRoundingAdd     = (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
+                                    ? RT_BIT_64(RTFLOAT80U_FRACTION_BITS - RTFLOAT64U_FRACTION_BITS - 1)  /* 0x400 */
+                                    : (fFcw & X86_FCW_RC_MASK) == (fSignIn ? X86_FCW_RC_DOWN : X86_FCW_RC_UP)
+                                    ? fRoundingOffMask
+                                    : 0;
+    uint32_t       fRoundedOff      = uMantissaIn & fRoundingOffMask;
 
     /*
      * Deal with potential overflows/underflows first, optimizing for none.
@@ -3472,7 +3512,7 @@ static uint16_t iemAImpl_StoreNormalR80AsR64(bool fSignIn, uint64_t uMantissaIn,
             uMantissaIn = iExponentOut <= -63
                         ? uMantissaIn != 0
                         : (uMantissaIn >> (-iExponentOut + 1)) | ((uMantissaIn & (RT_BIT_64(-iExponentOut + 1) - 1)) != 0);
-            fRoundedOff = uMantissaIn & fRoundedOffMask;
+            fRoundedOff = uMantissaIn & fRoundingOffMask;
             if (fRoundedOff && fIsTiny)
                 fFsw |= X86_FSW_UE;
             iExponentOut   = 0;
@@ -3523,6 +3563,7 @@ static uint16_t iemAImpl_StoreNormalR80AsR64(bool fSignIn, uint64_t uMantissaIn,
         uMantissaOut >>= 1;
         iExponentOut++;
         Assert(iExponentOut < RTFLOAT64U_EXP_MAX);  /* checked above */
+        fFsw |= X86_FSW_C1;
     }
     /** @todo not sure if this is applied correctly, with the above carry check. */
     else if (   (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST
@@ -3654,36 +3695,184 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r80,(PCX86FXSTATE pFpuState, uint16_
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_d80,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
-                                                 PRTPBCD80U pd80Dst, PCRTFLOAT80U pr80Src))
-{
-    RT_NOREF(pFpuState, pu16FSW, pd80Dst, pr80Src);
-    AssertReleaseFailed();
+/*
+ *
+ * Mantissa:
+ *  1[.]111 0000 1111 0000 1111 0000 1111 0000 1111 0000 1111 0000 1111 0000 1111 0000
+ *  ^          ^         ^         ^         ^         ^         ^         ^         ^
+ *  63        56        48        40        32        24        16         8         0
+ *
+ * int64_t has the same width, only bit 63 is the sign bit.  So, the max we can map over
+ * are bits 1 thru 63, dropping off bit 0, with an exponent of 62. The number of bits we
+ * drop off from the mantissa increases with decreasing exponent, till an exponent of 0
+ * where we'll drop off all but bit 63.
+ */
+#define EMIT_FIST(a_cBits, a_iType, a_iTypeMin, a_iTypeMax, a_iTypeIndefinite) \
+IEM_DECL_IMPL_DEF(void, iemAImpl_fist_r80_to_i ## a_cBits,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW, \
+                                                           a_iType *piDst, PCRTFLOAT80U pr80Val)) \
+{ \
+    uint16_t const fFcw    = pFpuState->FCW; \
+    uint16_t       fFsw    = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); \
+    bool const     fSignIn = pr80Val->s.fSign; \
+    \
+    /* \
+     * Deal with normal numbers first. \
+     */ \
+    if (RTFLOAT80U_IS_NORMAL(pr80Val)) \
+    { \
+        uint64_t       uMantissa = pr80Val->s.uMantissa; \
+        int32_t        iExponent = (int32_t)pr80Val->s.uExponent - RTFLOAT80U_EXP_BIAS; \
+        \
+        if ((uint32_t)iExponent <= a_cBits - 2) \
+        { \
+            unsigned const cShiftOff        = a_cBits - 1 - iExponent; \
+            uint64_t const fRoundingOffMask = RT_BIT_64(cShiftOff) - 1; \
+            uint64_t const uRoundingAdd     = (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST \
+                                            ? RT_BIT_64(cShiftOff - 1) \
+                                            : (fFcw & X86_FCW_RC_MASK) == (fSignIn ? X86_FCW_RC_DOWN : X86_FCW_RC_UP) \
+                                            ? fRoundingOffMask \
+                                            : 0; \
+            uint64_t       fRoundedOff      = uMantissa & fRoundingOffMask; \
+            \
+            uMantissa >>= cShiftOff; \
+            uint64_t const uRounding = (fRoundedOff + uRoundingAdd) >> cShiftOff; \
+            uMantissa += uRounding; \
+            if (!(uMantissa & RT_BIT_64(a_cBits - 1))) \
+            { \
+                if (fRoundedOff) \
+                { \
+                    if ((uMantissa & 1) && iExponent == a_cBits - 2 && ((fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST)) \
+                        uMantissa &= ~(uint64_t)1; \
+                    else if (uRounding) \
+                        fFsw |= X86_FSW_C1; \
+                    fFsw |= X86_FSW_PE; \
+                    if (!(fFcw & X86_FCW_PM)) \
+                        fFsw |= X86_FSW_ES | X86_FSW_B; \
+                } \
+                \
+                if (!fSignIn) \
+                    *piDst = (a_iType)uMantissa; \
+                else \
+                    *piDst = -(a_iType)uMantissa; \
+            } \
+            else \
+            { \
+                Assert(iExponent == a_cBits - 2); \
+                /* Special case for the integer minimum value. */ \
+                if (fSignIn && uMantissa == RT_BIT_64(a_cBits - 1)) \
+                { \
+                    *piDst = a_iTypeMin; \
+                    fFsw |= X86_FSW_PE | X86_FSW_C1; \
+                    if (!(fFcw & X86_FCW_PM)) \
+                        fFsw |= X86_FSW_ES | X86_FSW_B; \
+                } \
+                else \
+                { \
+                    /* overflowed after rounding. */ \
+                    fFsw |= X86_FSW_IE; \
+                    if (fFcw & X86_FCW_IM) \
+                    { \
+                        if (   (fSignIn && (fFcw & X86_FCW_RC_MASK) != X86_FCW_RC_DOWN) \
+                            || (!fSignIn && uMantissa == RT_BIT_64(a_cBits - 1)) ) \
+                            *piDst = a_iTypeMin; \
+                        else if (!fSignIn && (fFcw & X86_FCW_RC_MASK) != X86_FCW_RC_UP) \
+                            *piDst = a_iTypeMax; \
+                        else \
+                        { \
+                            *piDst = 0; \
+                            fFsw |= X86_FSW_C1; \
+                        } \
+                    } \
+                    else \
+                        fFsw |= X86_FSW_ES | X86_FSW_B | (7 << X86_FSW_TOP_SHIFT); \
+                } \
+            } \
+        } \
+        /* \
+         * Tiny sub-zero numbers. \
+         */ \
+        else if (iExponent < 0) \
+        { \
+            if (!fSignIn) \
+            { \
+                if (   (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_UP \
+                    || (iExponent == -1 && (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST)) \
+                { \
+                    *piDst = 1; \
+                    fFsw |= X86_FSW_C1; \
+                } \
+                else \
+                    *piDst = 0; \
+            } \
+            else \
+            { \
+                if (   (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_UP \
+                    || (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_ZERO \
+                    || (iExponent < -1 && (fFcw & X86_FCW_RC_MASK) == X86_FCW_RC_NEAREST)) \
+                    *piDst = 0; \
+                else \
+                { \
+                    *piDst = -1; \
+                    fFsw |= X86_FSW_C1; \
+                } \
+            } \
+            fFsw |= X86_FSW_PE; \
+            if (!(fFcw & X86_FCW_PM)) \
+                fFsw |= X86_FSW_ES | X86_FSW_B; \
+        } \
+        /* \
+         * Too large/small number outside the target integer range. \
+         */ \
+        else \
+        { \
+            fFsw |= X86_FSW_IE; \
+            if (fFcw & X86_FCW_IM) \
+                *piDst = a_iTypeIndefinite; \
+            else \
+                fFsw |= X86_FSW_ES | X86_FSW_B | (7 << X86_FSW_TOP_SHIFT); \
+        } \
+    } \
+    /* \
+     * Map both +0 and -0 to integer zero (signless/+). \
+     */ \
+    else if (RTFLOAT80U_IS_ZERO(pr80Val)) \
+        *piDst = 0; \
+    /* \
+     * Denormals are just really tiny sub-zero numbers that are either rounded \
+     * to zero, 1 or -1 depending on sign and rounding control. \
+     */ \
+    else if (RTFLOAT80U_IS_PSEUDO_DENORMAL(pr80Val) || RTFLOAT80U_IS_DENORMAL(pr80Val)) \
+    { \
+        /* Really small numbers that are either rounded to zero, 1 or -1 \
+           depending on sign and rounding control. */ \
+        if ((fFcw & X86_FCW_RC_MASK) != (fSignIn ? X86_FCW_RC_DOWN : X86_FCW_RC_UP)) \
+            *piDst = 0; \
+        else \
+        { \
+            *piDst = fSignIn ? -1 : 1; \
+            fFsw |= X86_FSW_C1; \
+        } \
+        fFsw |= X86_FSW_PE; \
+        if (!(fFcw & X86_FCW_PM)) \
+            fFsw |= X86_FSW_ES | X86_FSW_B; \
+    } \
+    /* \
+     * All other special values are considered invalid arguments and result \
+     * in an IE exception and indefinite value if masked. \
+     */ \
+    else \
+    { \
+        fFsw |= X86_FSW_IE; \
+        if (fFcw & X86_FCW_IM) \
+            *piDst = a_iTypeIndefinite; \
+        else \
+            fFsw |= X86_FSW_ES | X86_FSW_B | (7 << X86_FSW_TOP_SHIFT); \
+    } \
+    *pu16FSW = fFsw; \
 }
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fist_r80_to_i16,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
-                                                  int16_t *pi16Val, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pu16FSW, pi16Val, pr80Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fist_r80_to_i32,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
-                                                  int32_t *pi32Val, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pu16FSW, pi32Val, pr80Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fist_r80_to_i64,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
-                                                  int64_t *pi64Val, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pu16FSW, pi64Val, pr80Val);
-    AssertReleaseFailed();
-}
+EMIT_FIST(64, int64_t, INT64_MIN, INT64_MAX, X86_FPU_INT64_INDEFINITE)
+EMIT_FIST(32, int32_t, INT32_MIN, INT32_MAX, X86_FPU_INT32_INDEFINITE)
+EMIT_FIST(16, int16_t, INT16_MIN, INT16_MAX, X86_FPU_INT16_INDEFINITE)
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fistt_r80_to_i16,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
@@ -3692,7 +3881,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fistt_r80_to_i16,(PCX86FXSTATE pFpuState, uint1
     RT_NOREF(pFpuState, pu16FSW, pi16Val, pr80Val);
     AssertReleaseFailed();
 }
-
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fistt_r80_to_i32,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                    int32_t *pi32Val, PCRTFLOAT80U pr80Val))
@@ -3706,6 +3894,14 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fistt_r80_to_i64,(PCX86FXSTATE pFpuState, uint1
                                                    int64_t *pi64Val, PCRTFLOAT80U pr80Val))
 {
     RT_NOREF(pFpuState, pu16FSW, pi64Val, pr80Val);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_d80,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
+                                                 PRTPBCD80U pd80Dst, PCRTFLOAT80U pr80Src))
+{
+    RT_NOREF(pFpuState, pu16FSW, pd80Dst, pr80Src);
     AssertReleaseFailed();
 }
 

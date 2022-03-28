@@ -2977,6 +2977,14 @@ typedef const X86PML4 *PCX86PML4;
 /** The maximum valid invalidation type value.   */
 #define X86_INVPCID_TYPE_MAX_VALID                  X86_INVPCID_TYPE_ALL_CONTEXT_EXCL_GLOBAL
 
+
+/** @name Special FPU integer values.
+ * @{ */
+#define X86_FPU_INT64_INDEFINITE    INT64_MIN
+#define X86_FPU_INT32_INDEFINITE    INT32_MIN
+#define X86_FPU_INT16_INDEFINITE    INT16_MIN
+/** @} */
+
 /**
  * 32-bit protected mode FSTENV image.
  */
