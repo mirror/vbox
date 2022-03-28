@@ -357,6 +357,9 @@ static void shader_glsl_dump_shader_source(const struct wined3d_gl_info *gl_info
     WDLOG(("\n*****END shader source***\n\n"));
 #endif
     WDLOG(("\n"));
+#ifdef VBOX
+    HeapFree(GetProcessHeap(), 0, source);
+#endif
 }
 
 /* GL locking is done by the caller. */

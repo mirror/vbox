@@ -1229,6 +1229,36 @@ static DECLCALLBACK(int) vmsvga3dBackTerminate(PVGASTATECC pThisCC)
 #endif
     pState->pszOtherExtensions = NULL;
 
+    /* Free all leftover surface states. */
+    for (uint32_t i = 0; i < pState->cSurfaces; i++)
+    {
+        AssertPtr(pState->papSurfaces[i]);
+        RTMemFree(pState->papSurfaces[i]);
+        pState->papSurfaces[i] = NULL;
+    }
+
+    /* Destroy all leftover contexts. */
+    for (uint32_t i = 0; i < pState->cContexts; i++)
+    {
+        AssertPtr(pState->papContexts[i]);
+        RTMemFree(pState->papContexts[i]);
+        pState->papContexts[i] = NULL;
+    }
+
+    if (pState->papSurfaces)
+    {
+        RTMemFree(pState->papSurfaces);
+        pState->papSurfaces = NULL;
+    }
+
+    if (pState->papContexts)
+    {
+        RTMemFree(pState->papContexts);
+        pState->papContexts = NULL;
+    }
+
+    pThisCC->svga.p3dState = NULL;
+    RTMemFree(pState);
     return VINF_SUCCESS;
 }
 
@@ -3452,6 +3482,7 @@ int vmsvga3dContextDefineOgl(PVGASTATECC pThisCC, uint32_t cid, uint32_t fFlags)
 
     GLXContext shareContext = pSharedCtx ? pSharedCtx->glxContext : NULL;
     pContext->glxContext = glXCreateContext(pState->display, vi, shareContext, GL_TRUE);
+    XFree(vi);
     AssertLogRelMsgReturn(pContext->glxContext, ("glXCreateContext failed"), VERR_INTERNAL_ERROR);
 #endif
 
@@ -7501,6 +7532,12 @@ static DECLCALLBACK(int) vmsvga3dBackShaderDestroy(PVGASTATECC pThisCC, uint32_t
             &&  pContext->paVertexShader[shid].id == shid)
         {
             pShader = &pContext->paVertexShader[shid];
+            if (pContext->state.shidVertex == shid)
+            {
+                rc = ShaderSetVertexShader(pContext->pShaderContext, NULL);
+                AssertRC(rc);
+            }
+
             rc = ShaderDestroyVertexShader(pContext->pShaderContext, pShader->u.pVertexShader);
             AssertRC(rc);
         }
@@ -7512,6 +7549,12 @@ static DECLCALLBACK(int) vmsvga3dBackShaderDestroy(PVGASTATECC pThisCC, uint32_t
             &&  pContext->paPixelShader[shid].id == shid)
         {
             pShader = &pContext->paPixelShader[shid];
+            if (pContext->state.shidPixel == shid)
+            {
+                ShaderSetPixelShader(pContext->pShaderContext, NULL);
+                AssertRC(rc);
+            }
+
             rc = ShaderDestroyPixelShader(pContext->pShaderContext, pShader->u.pPixelShader);
             AssertRC(rc);
         }
