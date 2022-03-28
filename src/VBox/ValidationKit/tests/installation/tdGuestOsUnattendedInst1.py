@@ -517,6 +517,8 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             #             UnattendedVm.kfNoGAs),
             UnattendedVm(oSet, 'tst-ubuntu-19.04-64',   'Ubuntu_64', '6.0/uaisos/ubuntu-19.04-desktop-amd64.iso',    # >=6GiB
                          UnattendedVm.kfNoGAs),
+            UnattendedVm(oSet, 'tst-debian-9.3-64',     'Debian_64', '6.0/uaisos/debian-9.3.0-amd64-netinst.iso'),    # >=6GiB
+
             #
             # OS/2.
             #
@@ -525,7 +527,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         ]);
         # pylint: enable=line-too-long
         self.oTestVmSet = oSet;
-
+ka
         # For option parsing:
         self.aoSelectedVms = oSet.aoTestVms # type: list(UnattendedVm)
 
@@ -742,4 +744,3 @@ class tdGuestOsInstTest1(vbox.TestDriver):
 
 if __name__ == '__main__':
     sys.exit(tdGuestOsInstTest1().main(sys.argv))
-
