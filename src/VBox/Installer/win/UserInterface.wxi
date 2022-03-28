@@ -530,7 +530,9 @@
         <!-- This dialog is called after successful installation -->
         <Dialog Id="VBoxExitDlg" Width="370" Height="270" Title="[ProductName] !(loc.Setup)" NoMinimize="yes">
             <Control Id="Finish" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="!(loc.ButtonText_Finish)">
+<?if $(env.VBOX_WITH_QTGUI) = "yes" ?> <!-- Only expose action to start VirtualBox if we also ship FE/Qt with it. -->
                 <Publish Event="DoAction" Value="ca_StartVBox"><![CDATA[VBOX_START]]></Publish>
+<?endif ?>
                 <Publish Event="EndDialog" Value="Return">1</Publish>
             </Control>
 
@@ -546,6 +548,8 @@
                 <Text>!(loc.ExitDlg_ClickFinish)</Text>
             </Control>
 
+            <!-- Only show the checkbox to start VirtualBox if we also ship FE/Qt with it. -->
+<?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
             <!-- Note the gray background behind the checkboxes. Unfortunately there's no easy way to
                  fix this, without fixing it in the WiX source code. Because the control's background
                  uses the default dialog background color, changing the background image for the dialog to
@@ -561,7 +565,7 @@
                       (InstallMode="Change")]]>
                 </Condition>
             </Control>
-
+<?endif ?>
             <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
             <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes">
                 <Text>{\DlgVerdanaBold13}!(loc.ExitDlg_InstComplete)</Text>

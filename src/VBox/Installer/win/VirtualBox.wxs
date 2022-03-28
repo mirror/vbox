@@ -233,19 +233,9 @@
         NOT VBOXSUN
     </Condition>-->
 
-    <!-- Note: When we don't include FE/Qt, we just start *something* (e.g. Windows' calc.exe) to see if the custom action works. -->
-<?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
-    <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-        <CustomAction Id="ca_StartVBox" FileKey="file_VirtualBox.exe" ExeCommand="" Return="asyncNoWait" Impersonate="yes" />
-    <?else ?>
-        <CustomAction Id="ca_StartVBox" Directory="INSTALLDIR" ExeCommand='"[INSTALLDIR]\VBoxBugReport.exe"' Return="asyncNoWait" Impersonate="yes" />
-    <?endif ?>
-<?else ?>
-    <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-        <CustomAction Id="ca_StartVBox" Directory="file_VBoxBugReport.exe" ExeCommand="" Return="asyncNoWait" Impersonate="yes" />
-    <?else ?>
-        <CustomAction Id="ca_StartVBox" Directory="INSTALLDIR" ExeCommand='"[INSTALLDIR]\VBoxBugReport.exe"' Return="asyncNoWait" Impersonate="yes" />
-    <?endif ?>
+    <!-- Note: Only if we include FE/Qt, we offer to start VirtualBox at the end of a successful installation. -->
+<?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
+    <CustomAction Id="ca_StartVBox" FileKey="file_VirtualBox.exe" ExeCommand="" Return="asyncNoWait" Impersonate="yes" />
 <?endif ?>
 
     <CustomAction Id="ca_CheckSerial" BinaryKey="VBoxInstallHelper" DllEntry="CheckSerial" Impersonate="no"/>
