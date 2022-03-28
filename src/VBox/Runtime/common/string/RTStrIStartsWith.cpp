@@ -37,12 +37,9 @@ RTDECL(bool) RTStrIStartsWith(const char *pszString, const char *pszStart)
 {
     if (pszString)
     {
-        if (*pszString == *pszStart)
-        {
-            size_t cchStart = strlen(pszStart);
-            if (RTStrNICmp(pszString, pszStart, cchStart) == 0)
-                return true;
-        }
+        size_t cchStart = strlen(pszStart);
+        if (RTStrNICmp(pszString, pszStart, cchStart) == 0)
+            return true;
     }
     return false;
 }
