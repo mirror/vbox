@@ -235,7 +235,8 @@
 
     <!-- Note: Only if we include FE/Qt, we offer to start VirtualBox at the end of a successful installation. -->
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
-    <CustomAction Id="ca_StartVBox" FileKey="file_VirtualBox.exe" ExeCommand="" Return="asyncNoWait" Impersonate="yes" />
+    <!-- Note: Make sure to set the CWD (via 'Directory' attribute) to not run off a possibly temporary directory or some such (see @bugref{10203}). -->
+    <CustomAction Id="ca_StartVBox" Directory="INSTALLDIR" ExeCommand="[INSTALLDIR]VirtualBox.exe" Return="asyncNoWait" Impersonate="yes" />
 <?endif ?>
 
     <CustomAction Id="ca_CheckSerial" BinaryKey="VBoxInstallHelper" DllEntry="CheckSerial" Impersonate="no"/>
