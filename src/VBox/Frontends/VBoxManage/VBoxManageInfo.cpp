@@ -887,12 +887,18 @@ static HRESULT showMediumAttachments(ComPtr<IMachine> &machine, ComPtr<IStorageC
 
             BOOL fIsEjected = FALSE;
             BOOL fTempEject = FALSE;
+            BOOL fHotPlug = FALSE;
+            BOOL fNonRotational = FALSE;
+            BOOL fDiscard = FALSE;
             DeviceType_T devType = DeviceType_Null;
             if (mediumAttach)
             {
                 CHECK_ERROR2I_RET(mediumAttach, COMGETTER(TemporaryEject)(&fTempEject), hrcCheck);
                 CHECK_ERROR2I_RET(mediumAttach, COMGETTER(IsEjected)(&fIsEjected), hrcCheck);
                 CHECK_ERROR2I_RET(mediumAttach, COMGETTER(Type)(&devType), hrcCheck);
+                CHECK_ERROR2I_RET(mediumAttach, COMGETTER(HotPluggable)(&fHotPlug), hrcCheck);
+                CHECK_ERROR2I_RET(mediumAttach, COMGETTER(NonRotational)(&fNonRotational), hrcCheck);
+                CHECK_ERROR2I_RET(mediumAttach, COMGETTER(Discard)(&fDiscard), hrcCheck);
             }
 
             ComPtr<IMedium> medium;
@@ -911,11 +917,14 @@ static HRESULT showMediumAttachments(ComPtr<IMachine> &machine, ComPtr<IStorageC
                 CHECK_ERROR2I_RET(medium, COMGETTER(Id)(bstrUuid.asOutParam()), hrcCheck);
 
                 if (details != VMINFO_MACHINEREADABLE)
-                    RTPrintf(Info::tr("  Port %u, Unit %u: UUID: %ls%s%s%s\n    Location: \"%ls\"\n"),
+                    RTPrintf(Info::tr("  Port %u, Unit %u: UUID: %ls%s%s%s%s%s%s\n    Location: \"%ls\"\n"),
                              i, k, bstrUuid.raw(),
-                             fPassthrough ? Info::tr(", passthrough enabled") : "",
-                             fTempEject   ? Info::tr(", temp eject") : "",
-                             fIsEjected   ? Info::tr(", ejected") : "",
+                             fPassthrough   ? Info::tr(", passthrough enabled") : "",
+                             fTempEject     ? Info::tr(", temp eject") : "",
+                             fIsEjected     ? Info::tr(", ejected") : "",
+                             fHotPlug       ? Info::tr(", hot-pluggable") : "",
+                             fNonRotational ? Info::tr(", non-rotational (SSD)") : "",
+                             fDiscard       ? Info::tr(", discards unused blocks") : "",
                              bstrFilePath.raw());
                 else
                 {
@@ -937,6 +946,17 @@ static HRESULT showMediumAttachments(ComPtr<IMachine> &machine, ComPtr<IStorageC
                         outputMachineReadableStringWithFmtName(fIsEjected ? "on" : "off",
                                                                true, "%ls-IsEjected-%d-%d", bstrStorageCtlName.raw(), i, k);
                     }
+
+                    if (   bstrStorageCtlName.compare(Bstr("SATA"), Bstr::CaseInsensitive)== 0
+                        || bstrStorageCtlName.compare(Bstr("USB"), Bstr::CaseInsensitive)== 0)
+                        outputMachineReadableStringWithFmtName(fHotPlug ? "on" : "off",
+                                                               true, "%ls-hot-pluggable-%d-%d", bstrStorageCtlName.raw(),
+                                                               i, k);
+
+                    outputMachineReadableStringWithFmtName(fNonRotational ? "on" : "off",
+                                                           true, "%ls-nonrotational-%d-%d", bstrStorageCtlName.raw(), i, k);
+                    outputMachineReadableStringWithFmtName(fDiscard ? "on" : "off",
+                                                           true, "%ls-discard-%d-%d", bstrStorageCtlName.raw(), i, k);
                 }
             }
             else if (SUCCEEDED(hrc))

@@ -3543,15 +3543,19 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
         && strReconfig == "1")
         fSilent = true;
 
-    /* Check that the controller can do hotplugging if we detach the device while the VM is running. */
+    /* Check that the controller can do hot-plugging if we attach the device while the VM is running. */
     bool fHotplug = false;
     if (!fSilent && Global::IsOnlineOrTransient(mData->mMachineState))
         fHotplug = true;
 
     if (fHotplug && !i_isControllerHotplugCapable(ctrlType))
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Controller '%s' does not support hotplugging"),
+                        tr("Controller '%s' does not support hot-plugging"),
                         aName.c_str());
+
+    /* Attaching a USB device when a VM is powered off should default to being marked as hot-pluggable */
+    if (!fHotplug && !Global::IsOnlineOrTransient(mData->mMachineState) && ctrlType == StorageControllerType_USB)
+        fHotplug = true;
 
     // check that the port and device are not out of range
     rc = ctl->i_checkPortAndDeviceValid(aControllerPort, aDevice);
@@ -4121,14 +4125,14 @@ HRESULT Machine::detachDevice(const com::Utf8Str &aName, LONG aControllerPort,
         && strReconfig == "1")
         fSilent = true;
 
-    /* Check that the controller can do hotplugging if we detach the device while the VM is running. */
+    /* Check that the controller can do hot-plugging if we detach the device while the VM is running. */
     bool fHotplug = false;
     if (!fSilent && Global::IsOnlineOrTransient(mData->mMachineState))
         fHotplug = true;
 
     if (fHotplug && !i_isControllerHotplugCapable(ctrlType))
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Controller '%s' does not support hotplugging"),
+                        tr("Controller '%s' does not support hot-plugging"),
                         aName.c_str());
 
     MediumAttachment *pAttach = i_findAttachment(*mMediumAttachments.data(),
@@ -4142,7 +4146,7 @@ HRESULT Machine::detachDevice(const com::Utf8Str &aName, LONG aControllerPort,
 
     if (fHotplug && !pAttach->i_getHotPluggable())
         return setError(VBOX_E_NOT_SUPPORTED,
-                        tr("The device slot %d on port %d of controller '%s' does not support hotplugging"),
+                        tr("The device slot %d on port %d of controller '%s' does not support hot-plugging"),
                         aDevice, aControllerPort, aName.c_str());
 
     /*
@@ -4207,14 +4211,14 @@ HRESULT Machine::passthroughDevice(const com::Utf8Str &aName, LONG aControllerPo
         && strReconfig == "1")
         fSilent = true;
 
-    /* Check that the controller can do hotplugging if we detach the device while the VM is running. */
+    /* Check that the controller can do hot-plugging if we detach the device while the VM is running. */
     bool fHotplug = false;
     if (!fSilent && Global::IsOnlineOrTransient(mData->mMachineState))
         fHotplug = true;
 
     if (fHotplug && !i_isControllerHotplugCapable(ctrlType))
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Controller '%s' does not support hotplugging which is required to change the passthrough setting while the VM is running"),
+                        tr("Controller '%s' does not support hot-plugging which is required to change the passthrough setting while the VM is running"),
                         aName.c_str());
 
     MediumAttachment *pAttach = i_findAttachment(*mMediumAttachments.data(),
@@ -4412,9 +4416,13 @@ HRESULT Machine::setHotPluggableForDevice(const com::Utf8Str &aName, LONG aContr
                         aName.c_str());
 
     if (!i_isControllerHotplugCapable(ctrlType))
-    return setError(VBOX_E_NOT_SUPPORTED,
-                    tr("Controller '%s' does not support changing the hot-pluggable device flag"),
-                    aName.c_str());
+        return setError(VBOX_E_NOT_SUPPORTED,
+                        tr("Controller '%s' does not support changing the hot-pluggable device flag"),
+                        aName.c_str());
+
+    /* silently ignore attempts to modify the hot-plug status of USB devices */
+    if (ctrlType == StorageControllerType_USB)
+        return S_OK;
 
     i_setModified(IsModified_Storage);
     mMediumAttachments.backup();
