@@ -63,14 +63,9 @@ class SHARED_LIBRARY_STUFF UIMaximumGuestScreenSizeEditor : public QIWithRetrans
 {
     Q_OBJECT;
 
-signals:
-
-    /** Notifies listeners about @a guiValue change. */
-    void sigValueChanged(const UIMaximumGuestScreenSizeValue &guiValue);
-
 public:
 
-    /** Constructs maximum guest screen size editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIMaximumGuestScreenSizeEditor(QWidget *pParent = 0);
 
     /** Defines editor @a guiValue. */
@@ -92,8 +87,6 @@ private slots:
 
     /** Handles current policy index change. */
     void sltHandleCurrentPolicyIndexChanged();
-    /** Handles size change. */
-    void sltHandleSizeChanged();
 
 private:
 
@@ -105,20 +98,23 @@ private:
     /** Holds the value to be selected. */
     UIMaximumGuestScreenSizeValue  m_guiValue;
 
-    /** Holds the main layout: */
-    QGridLayout *m_pLayout;
-    /** Holds the policy label instance. */
-    QLabel      *m_pLabelPolicy;
-    /** Holds the policy combo instance. */
-    QComboBox   *m_pComboPolicy;
-    /** Holds the max width label instance. */
-    QLabel      *m_pLabelMaxWidth;
-    /** Holds the max width spinbox instance. */
-    QSpinBox    *m_pSpinboxMaxWidth;
-    /** Holds the max height label instance. */
-    QLabel      *m_pLabelMaxHeight;
-    /** Holds the max height spinbox instance. */
-    QSpinBox    *m_pSpinboxMaxHeight;
+    /** @name Widgets
+     * @{ */
+        /** Holds the main layout: */
+        QGridLayout *m_pLayout;
+        /** Holds the policy label instance. */
+        QLabel      *m_pLabelPolicy;
+        /** Holds the policy combo instance. */
+        QComboBox   *m_pComboPolicy;
+        /** Holds the max width label instance. */
+        QLabel      *m_pLabelMaxWidth;
+        /** Holds the max width spinbox instance. */
+        QSpinBox    *m_pSpinboxMaxWidth;
+        /** Holds the max height label instance. */
+        QLabel      *m_pLabelMaxHeight;
+        /** Holds the max height spinbox instance. */
+        QSpinBox    *m_pSpinboxMaxHeight;
+    /** @} */
 };
 
 

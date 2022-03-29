@@ -40,15 +40,13 @@ UIGlobalDisplayFeaturesEditor::UIGlobalDisplayFeaturesEditor(QWidget *pParent /*
 
 void UIGlobalDisplayFeaturesEditor::setActivateOnMouseHover(bool fOn)
 {
-    if (m_pCheckBoxActivateOnMouseHover)
+    /* Update cached value and
+     * check-box if value has changed: */
+    if (m_fActivateOnMouseHover != fOn)
     {
-        /* Update cached value and
-         * check-box if value has changed: */
-        if (m_fActivateOnMouseHover != fOn)
-        {
-            m_fActivateOnMouseHover = fOn;
-            m_pCheckBoxActivateOnMouseHover->setCheckState(fOn ? Qt::Checked : Qt::Unchecked);
-        }
+        m_fActivateOnMouseHover = fOn;
+        if (m_pCheckBoxActivateOnMouseHover)
+            m_pCheckBoxActivateOnMouseHover->setCheckState(m_fActivateOnMouseHover ? Qt::Checked : Qt::Unchecked);
     }
 }
 
@@ -61,15 +59,13 @@ bool UIGlobalDisplayFeaturesEditor::activateOnMouseHover() const
 
 void UIGlobalDisplayFeaturesEditor::setDisableHostScreenSaver(bool fOn)
 {
-    if (m_pCheckBoxDisableHostScreenSaver)
+    /* Update cached value and
+     * check-box if value has changed: */
+    if (m_fDisableHostScreenSaver != fOn)
     {
-        /* Update cached value and
-         * check-box if value has changed: */
-        if (m_fDisableHostScreenSaver != fOn)
-        {
-            m_fDisableHostScreenSaver = fOn;
-            m_pCheckBoxDisableHostScreenSaver->setCheckState(fOn ? Qt::Checked : Qt::Unchecked);
-        }
+        m_fDisableHostScreenSaver = fOn;
+        if (m_pCheckBoxDisableHostScreenSaver)
+            m_pCheckBoxDisableHostScreenSaver->setCheckState(m_fDisableHostScreenSaver ? Qt::Checked : Qt::Unchecked);
     }
 }
 
@@ -82,7 +78,7 @@ bool UIGlobalDisplayFeaturesEditor::disableHostScreenSaver() const
 
 int UIGlobalDisplayFeaturesEditor::minimumLabelHorizontalHint() const
 {
-    return m_pLabel->minimumSizeHint().width();
+    return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
 void UIGlobalDisplayFeaturesEditor::setMinimumLayoutIndent(int iIndent)
@@ -95,17 +91,19 @@ void UIGlobalDisplayFeaturesEditor::retranslateUi()
 {
     if (m_pLabel)
         m_pLabel->setText(tr("Extended Features:"));
+
     if (m_pCheckBoxActivateOnMouseHover)
     {
+        m_pCheckBoxActivateOnMouseHover->setText(tr("&Raise Window Under Mouse Pointer"));
         m_pCheckBoxActivateOnMouseHover->setToolTip(tr("When checked, machine windows will be raised "
                                                        "when the mouse pointer moves over them."));
-        m_pCheckBoxActivateOnMouseHover->setText(tr("&Raise Window Under Mouse Pointer"));
     }
+
     if (m_pCheckBoxDisableHostScreenSaver)
     {
+        m_pCheckBoxDisableHostScreenSaver->setText(tr("&Disable Host Screen Saver"));
         m_pCheckBoxDisableHostScreenSaver->setToolTip(tr("When checked, screen saver of "
                                                          "the host OS is disabled."));
-        m_pCheckBoxDisableHostScreenSaver->setText(tr("&Disable Host Screen Saver"));
     }
 }
 

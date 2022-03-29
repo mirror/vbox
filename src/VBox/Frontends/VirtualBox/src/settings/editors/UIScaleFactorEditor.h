@@ -42,7 +42,7 @@ class SHARED_LIBRARY_STUFF UIScaleFactorEditor : public QIWithRetranslateUI<QWid
 
 public:
 
-    /** Creates scale factor editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIScaleFactorEditor(QWidget *pParent);
 
     /** Defines @a iMonitorCount. */

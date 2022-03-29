@@ -35,15 +35,13 @@ UIAutoCaptureKeyboardEditor::UIAutoCaptureKeyboardEditor(QWidget *pParent /* = 0
 
 void UIAutoCaptureKeyboardEditor::setValue(bool fValue)
 {
-    if (m_pCheckBox)
+    /* Update cached value and
+     * check-box if value has changed: */
+    if (m_fValue != fValue)
     {
-        /* Update cached value and
-         * check-box if value has changed: */
-        if (m_fValue != fValue)
-        {
-            m_fValue = fValue;
-            m_pCheckBox->setCheckState(fValue ? Qt::Checked : Qt::Unchecked);
-        }
+        m_fValue = fValue;
+        if (m_pCheckBox)
+            m_pCheckBox->setCheckState(m_fValue ? Qt::Checked : Qt::Unchecked);
     }
 }
 
@@ -58,30 +56,30 @@ void UIAutoCaptureKeyboardEditor::retranslateUi()
         m_pLabel->setText(tr("Extended Features:"));
     if (m_pCheckBox)
     {
+        m_pCheckBox->setText(tr("&Auto Capture Keyboard"));
         m_pCheckBox->setToolTip(tr("When checked, the keyboard is automatically captured every time the VM window is "
                                    "activated. When the keyboard is captured, all keystrokes (including system ones like "
                                    "Alt-Tab) are directed to the VM."));
-        m_pCheckBox->setText(tr("&Auto Capture Keyboard"));
     }
 }
 
 void UIAutoCaptureKeyboardEditor::prepare()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
-    if (pLayoutMain)
+    QGridLayout *pLayout = new QGridLayout(this);
+    if (pLayout)
     {
-        pLayoutMain->setContentsMargins(0, 0, 0, 0);
-        pLayoutMain->setColumnStretch(1, 1);
+        pLayout->setContentsMargins(0, 0, 0, 0);
+        pLayout->setColumnStretch(1, 1);
 
         /* Prepare label: */
         m_pLabel = new QLabel(this);
         if (m_pLabel)
-            pLayoutMain->addWidget(m_pLabel, 0, 0);
+            pLayout->addWidget(m_pLabel, 0, 0);
         /* Prepare check-box: */
         m_pCheckBox = new QCheckBox(this);
         if (m_pCheckBox)
-            pLayoutMain->addWidget(m_pCheckBox, 0, 1);
+            pLayout->addWidget(m_pCheckBox, 0, 1);
     }
 
     /* Apply language settings: */

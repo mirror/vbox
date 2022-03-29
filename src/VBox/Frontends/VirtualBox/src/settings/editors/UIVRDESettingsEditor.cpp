@@ -48,6 +48,8 @@ UIVRDESettingsEditor::UIVRDESettingsEditor(QWidget *pParent /* = 0 */)
 
 void UIVRDESettingsEditor::setFeatureEnabled(bool fEnabled)
 {
+    /* Update cached value and
+     * check-box if value has changed: */
     if (m_fFeatureEnabled != fEnabled)
     {
         m_fFeatureEnabled = fEnabled;
@@ -74,6 +76,8 @@ void UIVRDESettingsEditor::setVRDEOptionsAvailable(bool fAvailable)
 
 void UIVRDESettingsEditor::setPort(const QString &strPort)
 {
+    /* Update cached value and
+     * line-edit if value has changed: */
     if (m_strPort != strPort)
     {
         m_strPort = strPort;
@@ -89,18 +93,12 @@ QString UIVRDESettingsEditor::port() const
 
 void UIVRDESettingsEditor::setAuthType(const KAuthType &enmType)
 {
+    /* Update cached value and
+     * combo if value has changed: */
     if (m_enmAuthType != enmType)
     {
         m_enmAuthType = enmType;
-        if (m_pComboAuthType)
-        {
-            /* We are doing that *now* because this combo have
-             * dynamical content which depends on cashed value: */
-            repopulateComboAuthType();
-
-            const int iAuthTypePosition = m_pComboAuthType->findData(enmType);
-            m_pComboAuthType->setCurrentIndex(iAuthTypePosition == -1 ? 0 : iAuthTypePosition);
-        }
+        repopulateComboAuthType();
     }
 }
 
@@ -111,6 +109,8 @@ KAuthType UIVRDESettingsEditor::authType() const
 
 void UIVRDESettingsEditor::setTimeout(const QString &strTimeout)
 {
+    /* Update cached value and
+     * line-edit if value has changed: */
     if (m_strTimeout != strTimeout)
     {
         m_strTimeout = strTimeout;
@@ -126,6 +126,8 @@ QString UIVRDESettingsEditor::timeout() const
 
 void UIVRDESettingsEditor::setMultipleConnectionsAllowed(bool fAllowed)
 {
+    /* Update cached value and
+     * check-box if value has changed: */
     if (m_fMultipleConnectionsAllowed != fAllowed)
     {
         m_fMultipleConnectionsAllowed = fAllowed;
@@ -225,9 +227,6 @@ void UIVRDESettingsEditor::prepareWidgets()
         m_pWidgetSettings = new QWidget(this);
         if (m_pWidgetSettings)
         {
-            /* Update widget availability: */
-            sltHandleFeatureToggled(m_pCheckboxFeature->isChecked());
-
             /* Prepare 'settings' layout: */
             QGridLayout *pLayoutRemoteDisplaySettings = new QGridLayout(m_pWidgetSettings);
             if (pLayoutRemoteDisplaySettings)
@@ -306,6 +305,10 @@ void UIVRDESettingsEditor::prepareWidgets()
             pLayout->addWidget(m_pWidgetSettings, 1, 1, 1, 2);
         }
     }
+
+    /* Update widget availability: */
+    if (m_pCheckboxFeature)
+        sltHandleFeatureToggled(m_pCheckboxFeature->isChecked());
 }
 
 void UIVRDESettingsEditor::prepareConnections()
@@ -337,5 +340,10 @@ void UIVRDESettingsEditor::repopulateComboAuthType()
         /* Populate combo finally: */
         foreach (const KAuthType &enmType, authTypes)
             m_pComboAuthType->addItem(gpConverter->toString(enmType), QVariant::fromValue(enmType));
+
+        /* Look for proper index to choose: */
+        const int iIndex = m_pComboAuthType->findData(QVariant::fromValue(m_enmAuthType));
+        if (iIndex != -1)
+            m_pComboAuthType->setCurrentIndex(iIndex);
     }
 }

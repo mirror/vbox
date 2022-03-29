@@ -21,9 +21,6 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QMap>
-
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 
@@ -49,7 +46,7 @@ signals:
 
 public:
 
-    /** Constructs VRDE settings editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIVRDESettingsEditor(QWidget *pParent = 0);
 
     /** Defines whether feature is @a fEnabled. */
@@ -102,7 +99,7 @@ private:
     /** Repopulates auth type combo-box. */
     void repopulateComboAuthType();
 
-    /** @name Variables
+    /** @name Values
      * @{ */
         /** Holds whether feature is enabled. */
         bool       m_fFeatureEnabled;

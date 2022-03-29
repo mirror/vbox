@@ -37,15 +37,13 @@ UIDefaultMachineFolderEditor::UIDefaultMachineFolderEditor(QWidget *pParent /* =
 
 void UIDefaultMachineFolderEditor::setValue(const QString &strValue)
 {
-    if (m_pSelector)
+    /* Update cached value and editor
+     * if value has changed: */
+    if (m_strValue != strValue)
     {
-        /* Update cached value and editor
-         * if value has changed: */
-        if (m_strValue != strValue)
-        {
-            m_strValue = strValue;
-            m_pSelector->setPath(strValue);
-        }
+        m_strValue = strValue;
+        if (m_pSelector)
+            m_pSelector->setPath(m_strValue);
     }
 }
 
@@ -56,7 +54,7 @@ QString UIDefaultMachineFolderEditor::value() const
 
 int UIDefaultMachineFolderEditor::minimumLabelHorizontalHint() const
 {
-    return m_pLabel->minimumSizeHint().width();
+    return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
 void UIDefaultMachineFolderEditor::setMinimumLayoutIndent(int iIndent)
@@ -72,12 +70,6 @@ void UIDefaultMachineFolderEditor::retranslateUi()
     if (m_pSelector)
         m_pSelector->setToolTip(tr("Holds the path to the default virtual machine folder. This folder is used, "
                                    "if not explicitly specified otherwise, when creating new virtual machines."));
-}
-
-void UIDefaultMachineFolderEditor::sltHandleSelectorPathChanged()
-{
-    if (m_pSelector)
-        emit sigValueChanged(m_pSelector->path());
 }
 
 void UIDefaultMachineFolderEditor::prepare()
@@ -104,8 +96,6 @@ void UIDefaultMachineFolderEditor::prepare()
             if (m_pLabel)
                 m_pLabel->setBuddy(m_pSelector);
             m_pSelector->setInitialPath(uiCommon().homeFolder());
-            connect(m_pSelector, &UIFilePathSelector::pathChanged,
-                    this, &UIDefaultMachineFolderEditor::sltHandleSelectorPathChanged);
 
             m_pLayout->addWidget(m_pSelector, 0, 1);
         }

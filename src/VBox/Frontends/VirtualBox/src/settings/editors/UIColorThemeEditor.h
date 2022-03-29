@@ -38,14 +38,9 @@ class SHARED_LIBRARY_STUFF UIColorThemeEditor : public QIWithRetranslateUI<QWidg
 {
     Q_OBJECT;
 
-signals:
-
-    /** Notifies listeners about @a enmValue change. */
-    void sigValueChanged(UIColorThemeType enmValue);
-
 public:
 
-    /** Constructs color theme editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIColorThemeEditor(QWidget *pParent = 0);
 
     /** Defines editor @a enmValue. */
@@ -58,20 +53,12 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
 
-private slots:
-
-    /** Handles current index change. */
-    void sltHandleCurrentIndexChanged();
-
 private:
 
     /** Prepares all. */
     void prepare();
     /** Populates combo. */
     void populateCombo();
-
-    /** Holds whether descriptive label should be created. */
-    bool  m_fWithLabel;
 
     /** Holds the value to be selected. */
     UIColorThemeType  m_enmValue;

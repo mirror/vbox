@@ -36,7 +36,7 @@ class SHARED_LIBRARY_STUFF UIMachineAudioFeaturesEditor : public QIWithRetransla
 
 public:
 
-    /** Constructs machine audio features editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIMachineAudioFeaturesEditor(QWidget *pParent = 0);
 
     /** Defines whether 'enable output' feature in @a fOn. */
@@ -64,19 +64,25 @@ private:
     /** Prepares all. */
     void prepare();
 
-    /** Holds the 'enable output' feature value. */
-    bool  m_fEnableOutput;
-    /** Holds the 'enable input' feature value. */
-    bool  m_fEnableInput;
+    /** @name Values
+     * @{ */
+        /** Holds the 'enable output' feature value. */
+        bool  m_fEnableOutput;
+        /** Holds the 'enable input' feature value. */
+        bool  m_fEnableInput;
+    /** @} */
 
-    /** Holds the main layout instance. */
-    QGridLayout *m_pLayout;
-    /** Holds the label instance. */
-    QLabel      *m_pLabel;
-    /** Holds the 'enable output' check-box instance. */
-    QCheckBox   *m_pCheckBoxEnableOutput;
-    /** Holds the 'enable input' check-box instance. */
-    QCheckBox   *m_pCheckBoxEnableInput;
+    /** @name Widgets
+     * @{ */
+        /** Holds the main layout instance. */
+        QGridLayout *m_pLayout;
+        /** Holds the label instance. */
+        QLabel      *m_pLabel;
+        /** Holds the 'enable output' check-box instance. */
+        QCheckBox   *m_pCheckBoxEnableOutput;
+        /** Holds the 'enable input' check-box instance. */
+        QCheckBox   *m_pCheckBoxEnableInput;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIMachineAudioFeaturesEditor_h */

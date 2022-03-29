@@ -74,7 +74,7 @@ void UIMaximumGuestScreenSizeEditor::setValue(const UIMaximumGuestScreenSizeValu
     /* Look for proper policy index to choose: */
     if (m_pComboPolicy)
     {
-        const int iIndex = m_pComboPolicy->findData(QVariant::fromValue(guiValue.m_enmPolicy));
+        const int iIndex = m_pComboPolicy->findData(QVariant::fromValue(m_guiValue.m_enmPolicy));
         if (iIndex != -1)
         {
             m_pComboPolicy->setCurrentIndex(iIndex);
@@ -84,10 +84,10 @@ void UIMaximumGuestScreenSizeEditor::setValue(const UIMaximumGuestScreenSizeValu
     /* Load size as well: */
     if (m_pSpinboxMaxWidth && m_pSpinboxMaxHeight)
     {
-        if (guiValue.m_enmPolicy == MaximumGuestScreenSizePolicy_Fixed)
+        if (m_guiValue.m_enmPolicy == MaximumGuestScreenSizePolicy_Fixed)
         {
-            m_pSpinboxMaxWidth->setValue(guiValue.m_size.width());
-            m_pSpinboxMaxHeight->setValue(guiValue.m_size.height());
+            m_pSpinboxMaxWidth->setValue(m_guiValue.m_size.width());
+            m_pSpinboxMaxHeight->setValue(m_guiValue.m_size.height());
         }
     }
 }
@@ -160,18 +160,6 @@ void UIMaximumGuestScreenSizeEditor::sltHandleCurrentPolicyIndexChanged()
             m_pLabelMaxHeight->setEnabled(fComboLevelWidgetsEnabled);
         if (m_pSpinboxMaxHeight)
             m_pSpinboxMaxHeight->setEnabled(fComboLevelWidgetsEnabled);
-
-        /* Notify listeners: */
-        emit sigValueChanged(value());
-    }
-}
-
-void UIMaximumGuestScreenSizeEditor::sltHandleSizeChanged()
-{
-    if (m_pSpinboxMaxWidth && m_pSpinboxMaxHeight)
-    {
-        /* Notify listeners: */
-        emit sigValueChanged(value());
     }
 }
 
@@ -222,8 +210,6 @@ void UIMaximumGuestScreenSizeEditor::prepare()
                 m_pLabelMaxWidth->setBuddy(m_pSpinboxMaxWidth);
             m_pSpinboxMaxWidth->setMinimum(iMinWidth);
             m_pSpinboxMaxWidth->setMaximum(iMaxSize);
-            connect(m_pSpinboxMaxWidth, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-                    this, &UIMaximumGuestScreenSizeEditor::sltHandleSizeChanged);
 
             m_pLayout->addWidget(m_pSpinboxMaxWidth, 1, 1);
         }
@@ -243,8 +229,6 @@ void UIMaximumGuestScreenSizeEditor::prepare()
                 m_pLabelMaxHeight->setBuddy(m_pSpinboxMaxHeight);
             m_pSpinboxMaxHeight->setMinimum(iMinHeight);
             m_pSpinboxMaxHeight->setMaximum(iMaxSize);
-            connect(m_pSpinboxMaxHeight, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
-                    this, &UIMaximumGuestScreenSizeEditor::sltHandleSizeChanged);
 
             m_pLayout->addWidget(m_pSpinboxMaxHeight, 2, 1);
         }
@@ -265,10 +249,10 @@ void UIMaximumGuestScreenSizeEditor::populateCombo()
         m_pComboPolicy->clear();
 
         /* Init currently supported maximum guest size policy types: */
-        QList<MaximumGuestScreenSizePolicy> supportedValues = QList<MaximumGuestScreenSizePolicy>()
-                                                          << MaximumGuestScreenSizePolicy_Automatic
-                                                          << MaximumGuestScreenSizePolicy_Any
-                                                          << MaximumGuestScreenSizePolicy_Fixed;
+        const QList<MaximumGuestScreenSizePolicy> supportedValues  = QList<MaximumGuestScreenSizePolicy>()
+                                                                  << MaximumGuestScreenSizePolicy_Automatic
+                                                                  << MaximumGuestScreenSizePolicy_Any
+                                                                  << MaximumGuestScreenSizePolicy_Fixed;
 
         /* Update combo with all the supported values: */
         foreach (const MaximumGuestScreenSizePolicy &enmType, supportedValues)

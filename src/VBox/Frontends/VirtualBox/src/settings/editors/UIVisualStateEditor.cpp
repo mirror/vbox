@@ -40,25 +40,23 @@ UIVisualStateEditor::UIVisualStateEditor(QWidget *pParent /* = 0 */)
 
 void UIVisualStateEditor::setMachineId(const QUuid &uMachineId)
 {
-    m_uMachineId = uMachineId;
+    /* Update cached value and
+     * combo if value has changed: */
+    if (m_uMachineId != uMachineId)
+    {
+        m_uMachineId = uMachineId;
+        populateCombo();
+    }
 }
 
 void UIVisualStateEditor::setValue(UIVisualStateType enmValue)
 {
-    if (m_pCombo)
+    /* Update cached value and
+     * combo if value has changed: */
+    if (m_enmValue != enmValue)
     {
-        /* Update cached value and
-         * combo if value has changed: */
-        if (m_enmValue != enmValue)
-        {
-            m_enmValue = enmValue;
-            populateCombo();
-        }
-
-        /* Look for proper index to choose: */
-        int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
-        if (iIndex != -1)
-            m_pCombo->setCurrentIndex(iIndex);
+        m_enmValue = enmValue;
+        populateCombo();
     }
 }
 
@@ -69,7 +67,7 @@ UIVisualStateType UIVisualStateEditor::value() const
 
 int UIVisualStateEditor::minimumLabelHorizontalHint() const
 {
-    return m_pLabel->minimumSizeHint().width();
+    return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
 void UIVisualStateEditor::setMinimumLayoutIndent(int iIndent)
@@ -92,12 +90,6 @@ void UIVisualStateEditor::retranslateUi()
         m_pCombo->setToolTip(tr("Selects the visual state. If machine is running it will be applied "
                                 "as soon as possible, otherwise desired one will be defined."));
     }
-}
-
-void UIVisualStateEditor::sltHandleCurrentIndexChanged()
-{
-    if (m_pCombo)
-        emit sigValueChanged(m_pCombo->itemData(m_pCombo->currentIndex()).value<UIVisualStateType>());
 }
 
 void UIVisualStateEditor::prepare()
@@ -128,8 +120,6 @@ void UIVisualStateEditor::prepare()
                 m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pCombo);
-                connect(m_pCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-                        this, &UIVisualStateEditor::sltHandleCurrentIndexChanged);
                 pComboLayout->addWidget(m_pCombo);
             }
 
@@ -179,6 +169,11 @@ void UIVisualStateEditor::populateCombo()
         /* Update combo with all the supported values: */
         foreach (const UIVisualStateType &enmType, m_supportedValues)
             m_pCombo->addItem(QString(), QVariant::fromValue(enmType));
+
+        /* Look for proper index to choose: */
+        const int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
+        if (iIndex != -1)
+            m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
         retranslateUi();

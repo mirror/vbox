@@ -53,7 +53,7 @@ signals:
 
 public:
 
-    /** Constructs network attachment editor passing @a pParent to the base-class.
+    /** Constructs editor passing @a pParent to the base-class.
       * @param  fWithLabels  Brings whether we should add labels ourselves. */
     UINetworkAttachmentEditor(QWidget *pParent = 0, bool fWithLabels = false);
 

@@ -36,7 +36,7 @@ class SHARED_LIBRARY_STUFF UIGlobalDisplayFeaturesEditor : public QIWithRetransl
 
 public:
 
-    /** Constructs global display features editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIGlobalDisplayFeaturesEditor(QWidget *pParent = 0);
 
     /** Defines whether 'activate on mouse hover' feature in @a fOn. */
@@ -64,19 +64,25 @@ private:
     /** Prepares all. */
     void prepare();
 
-    /** Holds the 'activate on mouse hover' feature value. */
-    bool  m_fActivateOnMouseHover;
-    /** Holds the 'disable host screen-saver' feature value. */
-    bool  m_fDisableHostScreenSaver;
+    /** @name Values
+     * @{ */
+        /** Holds the 'activate on mouse hover' feature value. */
+        bool  m_fActivateOnMouseHover;
+        /** Holds the 'disable host screen-saver' feature value. */
+        bool  m_fDisableHostScreenSaver;
+    /** @} */
 
-    /** Holds the main layout instance. */
-    QGridLayout *m_pLayout;
-    /** Holds the label instance. */
-    QLabel      *m_pLabel;
-    /** Holds the check-box instance. */
-    QCheckBox   *m_pCheckBoxActivateOnMouseHover;
-    /** Holds the check-box instance. */
-    QCheckBox   *m_pCheckBoxDisableHostScreenSaver;
+    /** @name Widgets
+     * @{ */
+        /** Holds the main layout instance. */
+        QGridLayout *m_pLayout;
+        /** Holds the label instance. */
+        QLabel      *m_pLabel;
+        /** Holds the check-box instance. */
+        QCheckBox   *m_pCheckBoxActivateOnMouseHover;
+        /** Holds the check-box instance. */
+        QCheckBox   *m_pCheckBoxDisableHostScreenSaver;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIGlobalDisplayFeaturesEditor_h */

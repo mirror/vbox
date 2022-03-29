@@ -42,7 +42,7 @@ void UIMachineDisplayScreenFeaturesEditor::setEnable3DAcceleration(bool fOn)
         if (m_fEnable3DAcceleration != fOn)
         {
             m_fEnable3DAcceleration = fOn;
-            m_pCheckBoxEnable3DAcceleration->setCheckState(fOn ? Qt::Checked : Qt::Unchecked);
+            m_pCheckBoxEnable3DAcceleration->setCheckState(m_fEnable3DAcceleration ? Qt::Checked : Qt::Unchecked);
         }
     }
 }
@@ -56,7 +56,7 @@ bool UIMachineDisplayScreenFeaturesEditor::isEnabled3DAcceleration() const
 
 int UIMachineDisplayScreenFeaturesEditor::minimumLabelHorizontalHint() const
 {
-    return m_pLabel->minimumSizeHint().width();
+    return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
 void UIMachineDisplayScreenFeaturesEditor::setMinimumLayoutIndent(int iIndent)

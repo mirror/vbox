@@ -104,21 +104,21 @@ void UIGlobalProxyFeaturesEditor::retranslateUi()
     /* Translate proxy mode editor: */
     if (m_pRadioButtonProxyAuto)
     {
+        m_pRadioButtonProxyAuto->setText(tr("&Auto-detect Host Proxy Settings"));
         m_pRadioButtonProxyAuto->setToolTip(tr("When chosen, VirtualBox will try to auto-detect host proxy settings for tasks "
                                                "like downloading Guest Additions from the network or checking for updates."));
-        m_pRadioButtonProxyAuto->setText(tr("&Auto-detect Host Proxy Settings"));
     }
     if (m_pRadioButtonProxyDisabled)
     {
+        m_pRadioButtonProxyDisabled->setText(tr("&Direct Connection to the Internet"));
         m_pRadioButtonProxyDisabled->setToolTip(tr("When chosen, VirtualBox will use direct Internet connection for tasks like "
                                                    "downloading Guest Additions from the network or checking for updates."));
-        m_pRadioButtonProxyDisabled->setText(tr("&Direct Connection to the Internet"));
     }
     if (m_pRadioButtonProxyEnabled)
     {
+        m_pRadioButtonProxyEnabled->setText(tr("&Manual Proxy Configuration"));
         m_pRadioButtonProxyEnabled->setToolTip(tr("When chosen, VirtualBox will use the proxy settings supplied for tasks like "
                                                   "downloading Guest Additions from the network or checking for updates."));
-        m_pRadioButtonProxyEnabled->setText(tr("&Manual Proxy Configuration"));
     }
 
     /* Translate proxy host editor: */

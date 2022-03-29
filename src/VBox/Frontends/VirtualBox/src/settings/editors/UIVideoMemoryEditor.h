@@ -50,7 +50,7 @@ signals:
 
 public:
 
-    /** Constructs video-memory editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIVideoMemoryEditor(QWidget *pParent = 0);
 
     /** Defines editor @a iValue. */
@@ -105,42 +105,49 @@ private:
     /** Calculates the reasonably sane slider page step. */
     static int calculatePageStep(int iMax);
 
-    /** Holds the guest OS type ID. */
-    CGuestOSType             m_comGuestOSType;
-    /** Holds the guest screen count. */
-    int                      m_cGuestScreenCount;
-    /** Holds the graphics controller type. */
-    KGraphicsControllerType  m_enmGraphicsControllerType;
+    /** Holds the value to be selected. */
+    int  m_iValue;
+
+    /** @name Options
+     * @{ */
+        /** Holds the guest OS type ID. */
+        CGuestOSType             m_comGuestOSType;
+        /** Holds the guest screen count. */
+        int                      m_cGuestScreenCount;
+        /** Holds the graphics controller type. */
+        KGraphicsControllerType  m_enmGraphicsControllerType;
 #ifdef VBOX_WITH_3D_ACCELERATION
-    /** Holds whether 3D acceleration is supported. */
-    bool                     m_f3DAccelerationSupported;
-    /** Holds whether 3D acceleration is enabled. */
-    bool                     m_f3DAccelerationEnabled;
+        /** Holds whether 3D acceleration is supported. */
+        bool                     m_f3DAccelerationSupported;
+        /** Holds whether 3D acceleration is enabled. */
+        bool                     m_f3DAccelerationEnabled;
 #endif
 
-    /** Holds the minimum lower limit of VRAM (MiB). */
-    int  m_iMinVRAM;
-    /** Holds the maximum upper limit of VRAM (MiB). */
-    int  m_iMaxVRAM;
-    /** Holds the upper limit of VRAM (MiB) for this dialog.
-      * @note This value is lower than m_iMaxVRAM to save
-      *       careless users from setting useless big values. */
-    int  m_iMaxVRAMVisible;
-    /** Holds the initial VRAM value when the dialog is opened. */
-    int  m_iInitialVRAM;
+        /** Holds the minimum lower limit of VRAM (MiB). */
+        int  m_iMinVRAM;
+        /** Holds the maximum upper limit of VRAM (MiB). */
+        int  m_iMaxVRAM;
+        /** Holds the upper limit of VRAM (MiB) for this dialog.
+          * @note This value is lower than m_iMaxVRAM to save
+          *       careless users from setting useless big values. */
+        int  m_iMaxVRAMVisible;
+    /** @} */
 
-    /** Holds the main layout instance. */
-    QGridLayout      *m_pLayout;
-    /** Holds the memory label instance. */
-    QLabel           *m_pLabelMemory;
-    /** Holds the memory slider instance. */
-    QIAdvancedSlider *m_pSlider;
-    /** Holds minimum memory label instance. */
-    QLabel           *m_pLabelMemoryMin;
-    /** Holds maximum memory label instance. */
-    QLabel           *m_pLabelMemoryMax;
-    /** Holds the memory spin-box instance. */
-    QSpinBox         *m_pSpinBox;
+    /** @name Widgets
+     * @{ */
+        /** Holds the main layout instance. */
+        QGridLayout      *m_pLayout;
+        /** Holds the memory label instance. */
+        QLabel           *m_pLabelMemory;
+        /** Holds the memory slider instance. */
+        QIAdvancedSlider *m_pSlider;
+        /** Holds minimum memory label instance. */
+        QLabel           *m_pLabelMemoryMin;
+        /** Holds maximum memory label instance. */
+        QLabel           *m_pLabelMemoryMax;
+        /** Holds the memory spin-box instance. */
+        QSpinBox         *m_pSpinBox;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIVideoMemoryEditor_h */

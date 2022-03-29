@@ -36,7 +36,7 @@ class UIShortcutSearchFunctor : public BaseClass
 {
 public:
 
-    /** Constructs shortcut search functor. */
+    /** Constructs search functor. */
     UIShortcutSearchFunctor() {}
 
     /** Returns the position of the 1st occurrence of the
@@ -58,7 +58,7 @@ class SHARED_LIBRARY_STUFF UIShortcutConfigurationItem
 {
 public:
 
-    /** Constructs shortcut configuration item on the basis of passed arguments.
+    /** Constructs item on the basis of passed arguments.
       * @param  strKey              Brings the unique key identifying held sequence.
       * @param  strScope            Brings the scope of the held sequence.
       * @param  strDescription      Brings the deescription for the held sequence.
@@ -76,7 +76,7 @@ public:
         , m_strDefaultSequence(strDefaultSequence)
     {}
 
-    /** Constructs shortcut configuration item on the basis of @a another one. */
+    /** Constructs item on the basis of @a another one. */
     UIShortcutConfigurationItem(const UIShortcutConfigurationItem &another)
         : m_strKey(another.key())
         , m_strScope(another.scope())
@@ -156,7 +156,7 @@ signals:
 
 public:
 
-    /** Constructs shortcut configuration editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIShortcutConfigurationEditor(QWidget *pParent = 0);
 
     /** Loads shortcut configuration list from passed @a value. */

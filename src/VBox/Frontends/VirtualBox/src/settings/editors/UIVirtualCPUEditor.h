@@ -45,7 +45,8 @@ class SHARED_LIBRARY_STUFF UIVirtualCPUEditor : public QIWithRetranslateUI<QWidg
 
 public:
 
-    /** @param  fWithLabel  Determines whether we should add label ourselves. */
+    /** Constructs editor passing @a pParent to the base-class.
+      * @param  fWithLabel  Determines whether we should add label ourselves. */
     UIVirtualCPUEditor(QWidget *pParent = 0, bool fWithLabel = false);
 
     /** Defines editor @a iValue. */

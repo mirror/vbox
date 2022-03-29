@@ -43,29 +43,24 @@ UIUpdateSettingsEditor::UIUpdateSettingsEditor(QWidget *pParent /* = 0 */)
 
 void UIUpdateSettingsEditor::setValue(const VBoxUpdateData &guiValue)
 {
-    /* Update value if changed: */
+    /* Update cached value and
+     * widgets if value has changed: */
     if (m_guiValue != guiValue)
     {
-        /* Update value itself: */
         m_guiValue = guiValue;
 
-        /* Update check-box if present: */
         if (m_pCheckBox)
         {
             m_pCheckBox->setChecked(!m_guiValue.isNoNeedToCheck());
 
             if (m_pCheckBox->isChecked())
             {
-                /* Update period combo if present: */
                 if (m_pComboUpdatePeriod)
                     m_pComboUpdatePeriod->setCurrentIndex(m_guiValue.periodIndex());
-
-                /* Update branch radio-buttons if present: */
                 if (m_mapRadioButtons.value(m_guiValue.branchIndex()))
                     m_mapRadioButtons.value(m_guiValue.branchIndex())->setChecked(true);
             }
 
-            /* Update other related widgets: */
             sltHandleUpdateToggle(m_pCheckBox->isChecked());
         }
     }
@@ -161,21 +156,21 @@ void UIUpdateSettingsEditor::prepare()
 void UIUpdateSettingsEditor::prepareWidgets()
 {
     /* Prepare main layout: */
-    QGridLayout *pLayoutMain = new QGridLayout(this);
-    if (pLayoutMain)
+    QGridLayout *pLayout = new QGridLayout(this);
+    if (pLayout)
     {
-        pLayoutMain->setContentsMargins(0, 0, 0, 0);
-        pLayoutMain->setRowStretch(2, 1);
+        pLayout->setContentsMargins(0, 0, 0, 0);
+        pLayout->setRowStretch(2, 1);
 
         /* Prepare update check-box: */
         m_pCheckBox = new QCheckBox(this);
         if (m_pCheckBox)
-            pLayoutMain->addWidget(m_pCheckBox, 0, 0, 1, 2);
+            pLayout->addWidget(m_pCheckBox, 0, 0, 1, 2);
 
         /* Prepare 20-px shifting spacer: */
         QSpacerItem *pSpacerItem = new QSpacerItem(20, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
         if (pSpacerItem)
-            pLayoutMain->addItem(pSpacerItem, 1, 0);
+            pLayout->addItem(pSpacerItem, 1, 0);
 
         /* Prepare update settings widget: */
         m_pWidgetUpdateSettings = new QWidget(this);
@@ -255,7 +250,7 @@ void UIUpdateSettingsEditor::prepareWidgets()
                 }
             }
 
-            pLayoutMain->addWidget(m_pWidgetUpdateSettings, 1, 1);
+            pLayout->addWidget(m_pWidgetUpdateSettings, 1, 1);
         }
     }
 }

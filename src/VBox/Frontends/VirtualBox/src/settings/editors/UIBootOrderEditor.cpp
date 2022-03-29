@@ -485,17 +485,17 @@ void UIBootOrderEditor::sltHandleCurrentBootItemChange()
 void UIBootOrderEditor::prepare()
 {
     /* Create main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    QGridLayout *pLayout = new QGridLayout(this);
+    if (pLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
+        pLayout->setContentsMargins(0, 0, 0, 0);
         int iRow = 0;
 
         /* Create label: */
         if (m_fWithLabel)
             m_pLabel = new QLabel(this);
         if (m_pLabel)
-            pMainLayout->addWidget(m_pLabel, 0, iRow++, 1, 1);
+            pLayout->addWidget(m_pLabel, 0, iRow++, 1, 1);
 
         /* Create table layout: */
         QHBoxLayout *pTableLayout = new QHBoxLayout;
@@ -540,7 +540,7 @@ void UIBootOrderEditor::prepare()
             }
 
             /* Add table layout to main layout: */
-            pMainLayout->addLayout(pTableLayout, 0, iRow++, 3, 1);
+            pLayout->addLayout(pTableLayout, 0, iRow++, 3, 1);
         }
     }
 

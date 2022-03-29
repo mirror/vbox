@@ -42,7 +42,7 @@ class SHARED_LIBRARY_STUFF UIUpdateSettingsEditor : public QIWithRetranslateUI<Q
 
 public:
 
-    /** Constructs update settings editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIUpdateSettingsEditor(QWidget *pParent = 0);
 
     /** Defines editor @a guiValue. */

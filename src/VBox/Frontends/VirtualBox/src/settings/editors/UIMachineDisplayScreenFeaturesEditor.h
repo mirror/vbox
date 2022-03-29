@@ -41,7 +41,7 @@ signals:
 
 public:
 
-    /** Constructs machine display screen features editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIMachineDisplayScreenFeaturesEditor(QWidget *pParent = 0);
 
     /** Defines whether 'enable 3D acceleration' feature in @a fOn. */
@@ -64,15 +64,21 @@ private:
     /** Prepares all. */
     void prepare();
 
-    /** Holds the 'enable 3D acceleration' feature value. */
-    bool  m_fEnable3DAcceleration;
+    /** @name Values
+     * @{ */
+        /** Holds the 'enable 3D acceleration' feature value. */
+        bool  m_fEnable3DAcceleration;
+    /** @} */
 
-    /** Holds the main layout instance. */
-    QGridLayout *m_pLayout;
-    /** Holds the label instance. */
-    QLabel      *m_pLabel;
-    /** Holds the 'enable 3D acceleration' check-box instance. */
-    QCheckBox   *m_pCheckBoxEnable3DAcceleration;
+    /** @name Widgets
+     * @{ */
+        /** Holds the main layout instance. */
+        QGridLayout *m_pLayout;
+        /** Holds the label instance. */
+        QLabel      *m_pLabel;
+        /** Holds the 'enable 3D acceleration' check-box instance. */
+        QCheckBox   *m_pCheckBoxEnable3DAcceleration;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIMachineDisplayScreenFeaturesEditor_h */

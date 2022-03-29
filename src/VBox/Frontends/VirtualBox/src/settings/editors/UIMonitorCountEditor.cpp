@@ -63,7 +63,7 @@ int UIMonitorCountEditor::value() const
 
 int UIMonitorCountEditor::minimumLabelHorizontalHint() const
 {
-    return m_pLabel->minimumSizeHint().width();
+    return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
 void UIMonitorCountEditor::setMinimumLayoutIndent(int iIndent)

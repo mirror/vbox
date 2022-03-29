@@ -35,7 +35,7 @@ class SHARED_LIBRARY_STUFF UIAutoCaptureKeyboardEditor : public QIWithRetranslat
 
 public:
 
-    /** Constructs auto capture keyboard editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIAutoCaptureKeyboardEditor(QWidget *pParent = 0);
 
     /** Defines editor @a fValue. */

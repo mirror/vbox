@@ -40,15 +40,13 @@ UIMachineAudioFeaturesEditor::UIMachineAudioFeaturesEditor(QWidget *pParent /* =
 
 void UIMachineAudioFeaturesEditor::setEnableOutput(bool fOn)
 {
-    if (m_pCheckBoxEnableOutput)
+    /* Update cached value and
+     * check-box if value has changed: */
+    if (m_fEnableOutput != fOn)
     {
-        /* Update cached value and
-         * check-box if value has changed: */
-        if (m_fEnableOutput != fOn)
-        {
-            m_fEnableOutput = fOn;
-            m_pCheckBoxEnableOutput->setCheckState(fOn ? Qt::Checked : Qt::Unchecked);
-        }
+        m_fEnableOutput = fOn;
+        if (m_pCheckBoxEnableOutput)
+            m_pCheckBoxEnableOutput->setCheckState(m_fEnableOutput ? Qt::Checked : Qt::Unchecked);
     }
 }
 
@@ -61,15 +59,13 @@ bool UIMachineAudioFeaturesEditor::outputEnabled() const
 
 void UIMachineAudioFeaturesEditor::setEnableInput(bool fOn)
 {
-    if (m_pCheckBoxEnableInput)
+    /* Update cached value and
+     * check-box if value has changed: */
+    if (m_fEnableInput != fOn)
     {
-        /* Update cached value and
-         * check-box if value has changed: */
-        if (m_fEnableInput != fOn)
-        {
-            m_fEnableInput = fOn;
-            m_pCheckBoxEnableInput->setCheckState(fOn ? Qt::Checked : Qt::Unchecked);
-        }
+        m_fEnableInput = fOn;
+        if (m_pCheckBoxEnableInput)
+            m_pCheckBoxEnableInput->setCheckState(m_fEnableInput ? Qt::Checked : Qt::Unchecked);
     }
 }
 
@@ -82,7 +78,7 @@ bool UIMachineAudioFeaturesEditor::inputEnabled() const
 
 int UIMachineAudioFeaturesEditor::minimumLabelHorizontalHint() const
 {
-    return m_pLabel->minimumSizeHint().width();
+    return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
 void UIMachineAudioFeaturesEditor::setMinimumLayoutIndent(int iIndent)

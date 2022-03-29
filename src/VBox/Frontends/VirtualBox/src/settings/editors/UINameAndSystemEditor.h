@@ -75,7 +75,7 @@ signals:
 
 public:
 
-    /** Constructs VM parameters editor passing @a pParent to the base-class.
+    /** Constructs editor passing @a pParent to the base-class.
      * @param  fChooseName    Controls whether we should propose to choose name.
      * @param  fChoosePath    Controls whether we should propose to choose path.
      * @param  fChooseImage   Controls whether we should propose to choose image.
@@ -172,65 +172,78 @@ private:
 
     ulong selectedEditionIndex() const;
 
-    /** Holds the current family ID list. */
-    QStringList  m_familyIDs;
+    /** @name Arguments
+     * @{ */
+        /** Holds whether we should propose to choose a name. */
+        bool  m_fChooseName;
+        /** Holds whether we should propose to choose a path. */
+        bool  m_fChoosePath;
+        /** Holds whether we should propose to choose an image. */
+        bool  m_fChooseImage;
+        /** Holds whether we should propose to choose an edition. */
+        bool  m_fChooseEdition;
+        /** Holds whether we should propose to choose a type. */
+        bool  m_fChooseType;
+    /** @} */
 
-    /** Holds the current type cache. */
-    QMap<QString, QList<UIGuestOSType> >  m_types;
+    /** @name Options
+     * @{ */
+        /** Holds whether host supports hardware virtualization. */
+        bool  m_fSupportsHWVirtEx;
+        /** Holds whether host supports long mode. */
+        bool  m_fSupportsLongMode;
+    /** @} */
 
-    /** Holds the VM OS type ID. */
-    QString  m_strTypeId;
-    /** Holds the VM OS family ID. */
-    QString  m_strFamilyId;
+    /** @name Values
+     * @{ */
+        /** Holds the current family ID list. */
+        QStringList  m_familyIDs;
 
-    /** Holds the currently chosen OS type IDs on per-family basis. */
-    QMap<QString, QString>  m_currentIds;
+        /** Holds the current type cache. */
+        QMap<QString, QList<UIGuestOSType> >  m_types;
 
-    /** Holds whether we should propose to choose a name. */
-    bool  m_fChooseName;
-    /** Holds whether we should propose to choose a path. */
-    bool  m_fChoosePath;
-    /** Holds whether we should propose to choose an image. */
-    bool  m_fChooseImage;
-    /** Holds whether we should propose to choose an edition. */
-    bool  m_fChooseEdition;
-    /** Holds whether we should propose to choose a type. */
-    bool  m_fChooseType;
-    /** Holds whether host supports hardware virtualization. */
-    bool  m_fSupportsHWVirtEx;
-    /** Holds whether host supports long mode. */
-    bool  m_fSupportsLongMode;
+        /** Holds the VM OS type ID. */
+        QString  m_strTypeId;
+        /** Holds the VM OS family ID. */
+        QString  m_strFamilyId;
 
-    /** Holds the main layout instance. */
-    QGridLayout *m_pLayout;
+        /** Holds the currently chosen OS type IDs on per-family basis. */
+        QMap<QString, QString>  m_currentIds;
+    /** @} */
 
-    /** Holds the VM name label instance. */
-    QLabel *m_pLabelName;
-    /** Holds the VM path label instance. */
-    QLabel *m_pLabelPath;
-    /** Holds the ISO image label instance. */
-    QLabel *m_pLabelImage;
-    /** Holds the edition label instance. */
-    QLabel *m_pLabelEdition;
-    /** Holds the VM OS family label instance. */
-    QLabel *m_pLabelFamily;
-    /** Holds the VM OS type label instance. */
-    QLabel *m_pLabelType;
-    /** Holds the VM OS type icon instance. */
-    QLabel *m_pIconType;
+    /** @name Widgets
+     * @{ */
+        /** Holds the main layout instance. */
+        QGridLayout *m_pLayout;
 
-    /** Holds the VM name editor instance. */
-    QILineEdit         *m_pEditorName;
-    /** Holds the VM path editor instance. */
-    UIFilePathSelector *m_pSelectorPath;
-    /** Holds the file selector for ISO image (either for unattended install or to be attached to vm). */
-    UIFilePathSelector *m_pSelectorImage;
-    /** Holds the VM OS edition combo (currently only Windows ISO have this). */
-    QComboBox          *m_pComboEdition;
-    /** Holds the VM OS family combo instance. */
-    QComboBox          *m_pComboFamily;
-    /** Holds the VM OS type combo instance. */
-    QComboBox          *m_pComboType;
+        /** Holds the VM name label instance. */
+        QLabel *m_pLabelName;
+        /** Holds the VM path label instance. */
+        QLabel *m_pLabelPath;
+        /** Holds the ISO image label instance. */
+        QLabel *m_pLabelImage;
+        /** Holds the edition label instance. */
+        QLabel *m_pLabelEdition;
+        /** Holds the VM OS family label instance. */
+        QLabel *m_pLabelFamily;
+        /** Holds the VM OS type label instance. */
+        QLabel *m_pLabelType;
+        /** Holds the VM OS type icon instance. */
+        QLabel *m_pIconType;
+
+        /** Holds the VM name editor instance. */
+        QILineEdit         *m_pEditorName;
+        /** Holds the VM path editor instance. */
+        UIFilePathSelector *m_pSelectorPath;
+        /** Holds the file selector for ISO image (either for unattended install or to be attached to vm). */
+        UIFilePathSelector *m_pSelectorImage;
+        /** Holds the VM OS edition combo (currently only Windows ISO have this). */
+        QComboBox          *m_pComboEdition;
+        /** Holds the VM OS family combo instance. */
+        QComboBox          *m_pComboFamily;
+        /** Holds the VM OS type combo instance. */
+        QComboBox          *m_pComboType;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UINameAndSystemEditor_h */

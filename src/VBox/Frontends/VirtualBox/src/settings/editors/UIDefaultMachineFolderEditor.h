@@ -38,11 +38,6 @@ class SHARED_LIBRARY_STUFF UIDefaultMachineFolderEditor : public QIWithRetransla
 {
     Q_OBJECT;
 
-signals:
-
-    /** Notifies listeners about @a enmValue change. */
-    void sigValueChanged(const QString &strValue);
-
 public:
 
     /** Constructs editor passing @a pParent to the base-class. */
@@ -62,11 +57,6 @@ protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE;
-
-private slots:
-
-    /** Handles selector path change. */
-    void sltHandleSelectorPathChanged();
 
 private:
 

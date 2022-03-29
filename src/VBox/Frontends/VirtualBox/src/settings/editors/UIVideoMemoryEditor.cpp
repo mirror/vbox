@@ -33,6 +33,7 @@
 
 UIVideoMemoryEditor::UIVideoMemoryEditor(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
+    , m_iValue(0)
     , m_comGuestOSType(CGuestOSType())
     , m_cGuestScreenCount(1)
     , m_enmGraphicsControllerType(KGraphicsControllerType_Null)
@@ -43,7 +44,6 @@ UIVideoMemoryEditor::UIVideoMemoryEditor(QWidget *pParent /* = 0 */)
     , m_iMinVRAM(0)
     , m_iMaxVRAM(0)
     , m_iMaxVRAMVisible(0)
-    , m_iInitialVRAM(0)
     , m_pLayout(0)
     , m_pLabelMemory(0)
     , m_pSlider(0)
@@ -56,82 +56,93 @@ UIVideoMemoryEditor::UIVideoMemoryEditor(QWidget *pParent /* = 0 */)
 
 void UIVideoMemoryEditor::setValue(int iValue)
 {
-    if (m_pSlider)
+    /* Update cached value and
+     * slider if value has changed: */
+    if (m_iValue != iValue)
     {
-        m_iInitialVRAM = RT_MIN(iValue, m_iMaxVRAM);
-        m_pSlider->setValue(m_iInitialVRAM);
+        m_iValue = RT_MIN(iValue, m_iMaxVRAM);
+        if (m_pSlider)
+            m_pSlider->setValue(m_iValue);
+
+        /* Update requirements: */
+        updateRequirements();
     }
 }
 
 int UIVideoMemoryEditor::value() const
 {
-    return m_pSlider ? m_pSlider->value() : 0;
+    return m_pSlider ? m_pSlider->value() : m_iValue;
 }
 
 void UIVideoMemoryEditor::setGuestOSType(const CGuestOSType &comGuestOSType)
 {
-    /* Check if guest OS type really changed: */
-    if (m_comGuestOSType == comGuestOSType)
-        return;
+    /* Update cached value and
+     * requirements if value has changed: */
+    if (m_comGuestOSType != comGuestOSType)
+    {
+        /* Remember new guest OS type: */
+        m_comGuestOSType = comGuestOSType;
 
-    /* Remember new guest OS type: */
-    m_comGuestOSType = comGuestOSType;
-
-    /* Update requirements: */
-    updateRequirements();
+        /* Update requirements: */
+        updateRequirements();
+    }
 }
 
 void UIVideoMemoryEditor::setGuestScreenCount(int cGuestScreenCount)
 {
-    /* Check if guest screen count really changed: */
-    if (m_cGuestScreenCount == cGuestScreenCount)
-        return;
+    /* Update cached value and
+     * requirements if value has changed: */
+    if (m_cGuestScreenCount != cGuestScreenCount)
+    {
+        /* Remember new guest screen count: */
+        m_cGuestScreenCount = cGuestScreenCount;
 
-    /* Remember new guest screen count: */
-    m_cGuestScreenCount = cGuestScreenCount;
-
-    /* Update requirements: */
-    updateRequirements();
+        /* Update requirements: */
+        updateRequirements();
+    }
 }
 
 void UIVideoMemoryEditor::setGraphicsControllerType(const KGraphicsControllerType &enmGraphicsControllerType)
 {
-    /* Check if graphics controller type really changed: */
-    if (m_enmGraphicsControllerType == enmGraphicsControllerType)
-        return;
+    /* Update cached value and
+     * requirements if value has changed: */
+    if (m_enmGraphicsControllerType != enmGraphicsControllerType)
+    {
+        /* Remember new graphics controller type: */
+        m_enmGraphicsControllerType = enmGraphicsControllerType;
 
-    /* Remember new graphics controller type: */
-    m_enmGraphicsControllerType = enmGraphicsControllerType;
-
-    /* Update requirements: */
-    updateRequirements();
+        /* Update requirements: */
+        updateRequirements();
+    }
 }
 
 #ifdef VBOX_WITH_3D_ACCELERATION
 void UIVideoMemoryEditor::set3DAccelerationSupported(bool fSupported)
 {
-    /* Check if 3D acceleration really changed: */
-    if (m_f3DAccelerationSupported == fSupported)
-        return;
+    /* Update cached value and
+     * requirements if value has changed: */
+    if (m_f3DAccelerationSupported != fSupported)
+    {
+        /* Remember new 3D acceleration: */
+        m_f3DAccelerationSupported = fSupported;
 
-    /* Remember new 3D acceleration: */
-    m_f3DAccelerationSupported = fSupported;
-
-    /* Update requirements: */
-    updateRequirements();
+        /* Update requirements: */
+        updateRequirements();
+    }
 }
 
 void UIVideoMemoryEditor::set3DAccelerationEnabled(bool fEnabled)
 {
-    /* Check if 3D acceleration really changed: */
-    if (m_f3DAccelerationEnabled == fEnabled)
-        return;
+    /* Update cached value and
+     * requirements if value has changed: */
+    if (m_f3DAccelerationEnabled != fEnabled)
+    {
+        /* Remember new 3D acceleration: */
+        m_f3DAccelerationEnabled = fEnabled;
 
-    /* Remember new 3D acceleration: */
-    m_f3DAccelerationEnabled = fEnabled;
-
-    /* Update requirements: */
-    updateRequirements();
+        /* Update requirements: */
+        updateRequirements();
+    }
 }
 #endif /* VBOX_WITH_3D_ACCELERATION */
 
@@ -314,10 +325,10 @@ void UIVideoMemoryEditor::updateRequirements()
         if (m_iMaxVRAMVisible < 256 && m_iMaxVRAM >= 256)
             m_iMaxVRAMVisible = 256;
     }
-#endif
+#endif /* VBOX_WITH_3D_ACCELERATION */
 
     /* Adjust visible maximum VRAM to be no less than initial VRAM: */
-    m_iMaxVRAMVisible = qMax(m_iMaxVRAMVisible, m_iInitialVRAM);
+    m_iMaxVRAMVisible = qMax(m_iMaxVRAMVisible, m_iValue);
     /* Adjust visible maximum VRAM to be no less than recommended VRAM: */
     m_iMaxVRAMVisible = qMax(m_iMaxVRAMVisible, iNeedMBytes);
 

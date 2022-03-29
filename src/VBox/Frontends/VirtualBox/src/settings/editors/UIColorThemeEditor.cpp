@@ -37,20 +37,12 @@ UIColorThemeEditor::UIColorThemeEditor(QWidget *pParent /* = 0 */)
 
 void UIColorThemeEditor::setValue(UIColorThemeType enmValue)
 {
-    if (m_pCombo)
+    /* Update cached value and
+     * combo if value has changed: */
+    if (m_enmValue != enmValue)
     {
-        /* Update cached value and
-         * combo if value has changed: */
-        if (m_enmValue != enmValue)
-        {
-            m_enmValue = enmValue;
-            populateCombo();
-        }
-
-        /* Look for proper index to choose: */
-        int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
-        if (iIndex != -1)
-            m_pCombo->setCurrentIndex(iIndex);
+        m_enmValue = enmValue;
+        populateCombo();
     }
 }
 
@@ -74,24 +66,18 @@ void UIColorThemeEditor::retranslateUi()
     }
 }
 
-void UIColorThemeEditor::sltHandleCurrentIndexChanged()
-{
-    if (m_pCombo)
-        emit sigValueChanged(m_pCombo->itemData(m_pCombo->currentIndex()).value<UIColorThemeType>());
-}
-
 void UIColorThemeEditor::prepare()
 {
     /* Create main layout: */
-    QGridLayout *pMainLayout = new QGridLayout(this);
-    if (pMainLayout)
+    QGridLayout *pLayout = new QGridLayout(this);
+    if (pLayout)
     {
-        pMainLayout->setContentsMargins(0, 0, 0, 0);
+        pLayout->setContentsMargins(0, 0, 0, 0);
 
         /* Create label: */
         m_pLabel = new QLabel(this);
         if (m_pLabel)
-            pMainLayout->addWidget(m_pLabel, 0, 0);
+            pLayout->addWidget(m_pLabel, 0, 0);
 
         /* Create combo layout: */
         QHBoxLayout *pComboLayout = new QHBoxLayout;
@@ -105,8 +91,6 @@ void UIColorThemeEditor::prepare()
                 m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pCombo);
-                connect(m_pCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-                        this, &UIColorThemeEditor::sltHandleCurrentIndexChanged);
                 pComboLayout->addWidget(m_pCombo);
             }
 
@@ -114,7 +98,7 @@ void UIColorThemeEditor::prepare()
             pComboLayout->addStretch();
 
             /* Add combo-layout into main-layout: */
-            pMainLayout->addLayout(pComboLayout, 0, 1);
+            pLayout->addLayout(pComboLayout, 0, 1);
         }
     }
 
@@ -141,6 +125,11 @@ void UIColorThemeEditor::populateCombo()
         /* Update combo with all the possible values: */
         foreach (const UIColorThemeType &enmType, possibleValues)
             m_pCombo->addItem(QString(), QVariant::fromValue(enmType));
+
+        /* Look for proper index to choose: */
+        const int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
+        if (iIndex != -1)
+            m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
         retranslateUi();

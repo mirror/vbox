@@ -47,7 +47,7 @@ signals:
 
 public:
 
-    /** Constructs global proxy features editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIGlobalProxyFeaturesEditor(QWidget *pParent = 0);
 
     /** Defines proxy @a enmMode. */
@@ -75,25 +75,31 @@ private:
     /** Prepares all. */
     void prepare();
 
-    /** Holds the proxy mode. */
-    KProxyMode  m_enmProxyMode;
-    /** Holds the proxy host. */
-    QString     m_strProxyHost;
+    /** @name Values
+     * @{ */
+        /** Holds the proxy mode. */
+        KProxyMode  m_enmProxyMode;
+        /** Holds the proxy host. */
+        QString     m_strProxyHost;
+    /** @} */
 
-    /** Holds the button-group instance. */
-    QButtonGroup *m_pButtonGroup;
-    /** Holds the 'proxy auto' radio-button instance. */
-    QRadioButton *m_pRadioButtonProxyAuto;
-    /** Holds the 'proxy disabled' radio-button instance. */
-    QRadioButton *m_pRadioButtonProxyDisabled;
-    /** Holds the 'proxy enabled' radio-button instance. */
-    QRadioButton *m_pRadioButtonProxyEnabled;
-    /** Holds the settings widget instance. */
-    QWidget      *m_pWidgetSettings;
-    /** Holds the host label instance. */
-    QLabel       *m_pLabelHost;
-    /** Holds the host editor instance. */
-    QILineEdit   *m_pEditorHost;
+    /** @name Widgets
+     * @{ */
+        /** Holds the button-group instance. */
+        QButtonGroup *m_pButtonGroup;
+        /** Holds the 'proxy auto' radio-button instance. */
+        QRadioButton *m_pRadioButtonProxyAuto;
+        /** Holds the 'proxy disabled' radio-button instance. */
+        QRadioButton *m_pRadioButtonProxyDisabled;
+        /** Holds the 'proxy enabled' radio-button instance. */
+        QRadioButton *m_pRadioButtonProxyEnabled;
+        /** Holds the settings widget instance. */
+        QWidget      *m_pWidgetSettings;
+        /** Holds the host label instance. */
+        QLabel       *m_pLabelHost;
+        /** Holds the host editor instance. */
+        QILineEdit   *m_pEditorHost;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIGlobalProxyFeaturesEditor_h */

@@ -37,7 +37,7 @@ class SHARED_LIBRARY_STUFF UILanguageSettingsEditor : public QIWithRetranslateUI
 
 public:
 
-    /** Constructs language settings editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UILanguageSettingsEditor(QWidget *pParent = 0);
 
     /** Defines editor @a strValue. */
@@ -67,10 +67,6 @@ private:
 
     /** Prepares all. */
     void prepare();
-    /** Prepares widgets. */
-    void prepareWidgets();
-    /** Prepares connections. */
-    void prepareConnections();
     /** Cleanups all. */
     void cleanup();
 

@@ -99,7 +99,7 @@ class SHARED_LIBRARY_STUFF UIHostComboWrapper
 {
 public:
 
-    /** Constructs host-combo wrapper on the basis of passed @a strHostCombo. */
+    /** Constructs wrapper on the basis of passed @a strHostCombo. */
     UIHostComboWrapper(const QString &strHostCombo = QString())
         : m_strHostCombo(strHostCombo)
     {}
@@ -128,7 +128,7 @@ signals:
 
 public:
 
-    /** Constructs host-combo editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIHostComboEditor(QWidget *pParent);
 
 protected:
@@ -170,9 +170,9 @@ signals:
 
 public:
 
-    /** Constructs host-combo editor private part. */
+    /** Constructs editor private part. */
     UIHostComboEditorPrivate();
-    /** Destructs host-combo editor private part. */
+    /** Destructs editor private part. */
     ~UIHostComboEditorPrivate();
 
     /** Defines host @a strCombo sequence. */

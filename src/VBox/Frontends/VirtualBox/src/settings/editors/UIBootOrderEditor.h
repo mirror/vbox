@@ -41,7 +41,7 @@ class CMachine;
 /** Boot item data structure. */
 struct UIBootItemData
 {
-    /** Constructs boot item data. */
+    /** Constructs item data. */
     UIBootItemData()
         : m_enmType(KDeviceType_Null)
         , m_fEnabled(false)
@@ -56,9 +56,9 @@ struct UIBootItemData
                ;
     }
 
-    /** Holds the boot device type. */
+    /** Holds the device type. */
     KDeviceType  m_enmType;
-    /** Holds whether the boot device enabled. */
+    /** Holds whether the device enabled. */
     bool         m_fEnabled;
 };
 typedef QList<UIBootItemData> UIBootItemDataList;
@@ -68,7 +68,7 @@ Q_DECLARE_METATYPE(UIBootItemDataList);
 /** Boot data tools namespace. */
 namespace UIBootDataTools
 {
-    /** Loads boot item list for passed @a comMachine. */
+    /** Loads item list for passed @a comMachine. */
     SHARED_LIBRARY_STUFF UIBootItemDataList loadBootItems(const CMachine &comMachine);
     /** Saves @a bootItems list to passed @a comMachine. */
     SHARED_LIBRARY_STUFF void saveBootItems(const UIBootItemDataList &bootItems, CMachine &comMachine);
@@ -91,7 +91,7 @@ class SHARED_LIBRARY_STUFF UIBootOrderEditor : public QIWithRetranslateUI<QWidge
 
 public:
 
-    /** Constructs boot order editor passing @a pParent to the base-class.
+    /** Constructs editor passing @a pParent to the base-class.
       * @param  fWithLabel  Brings whether we should add label ourselves. */
     UIBootOrderEditor(QWidget *pParent = 0, bool fWithLabel = false);
 
@@ -110,7 +110,7 @@ protected:
 
 private slots:
 
-    /** Handles current boot item change. */
+    /** Handles current item change. */
     void sltHandleCurrentBootItemChange();
 
 private:

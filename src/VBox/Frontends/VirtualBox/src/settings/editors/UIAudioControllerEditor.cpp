@@ -41,20 +41,12 @@ UIAudioControllerEditor::UIAudioControllerEditor(QWidget *pParent /* = 0 */)
 
 void UIAudioControllerEditor::setValue(KAudioControllerType enmValue)
 {
-    if (m_pCombo)
+    /* Update cached value and
+     * combo if value has changed: */
+    if (m_enmValue != enmValue)
     {
-        /* Update cached value and
-         * combo if value has changed: */
-        if (m_enmValue != enmValue)
-        {
-            m_enmValue = enmValue;
-            populateCombo();
-        }
-
-        /* Look for proper index to choose: */
-        int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
-        if (iIndex != -1)
-            m_pCombo->setCurrentIndex(iIndex);
+        m_enmValue = enmValue;
+        populateCombo();
     }
 }
 
@@ -65,7 +57,7 @@ KAudioControllerType UIAudioControllerEditor::value() const
 
 int UIAudioControllerEditor::minimumLabelHorizontalHint() const
 {
-    return m_pLabel->minimumSizeHint().width();
+    return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
 void UIAudioControllerEditor::setMinimumLayoutIndent(int iIndent)
@@ -88,12 +80,6 @@ void UIAudioControllerEditor::retranslateUi()
         m_pCombo->setToolTip(tr("Selects the type of the virtual sound card. Depending on this value, "
                                 "VirtualBox will provide different audio hardware to the virtual machine."));
     }
-}
-
-void UIAudioControllerEditor::sltHandleCurrentIndexChanged()
-{
-    if (m_pCombo)
-        emit sigValueChanged(m_pCombo->itemData(m_pCombo->currentIndex()).value<KAudioControllerType>());
 }
 
 void UIAudioControllerEditor::prepare()
@@ -124,8 +110,6 @@ void UIAudioControllerEditor::prepare()
                 m_pCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
                 if (m_pLabel)
                     m_pLabel->setBuddy(m_pCombo);
-                connect(m_pCombo, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-                        this, &UIAudioControllerEditor::sltHandleCurrentIndexChanged);
                 pComboLayout->addWidget(m_pCombo);
             }
 
@@ -163,6 +147,11 @@ void UIAudioControllerEditor::populateCombo()
         /* Update combo with all the supported values: */
         foreach (const KAudioControllerType &enmType, m_supportedValues)
             m_pCombo->addItem(QString(), QVariant::fromValue(enmType));
+
+        /* Look for proper index to choose: */
+        const int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
+        if (iIndex != -1)
+            m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
         retranslateUi();

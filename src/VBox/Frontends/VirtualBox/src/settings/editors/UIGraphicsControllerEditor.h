@@ -48,7 +48,7 @@ signals:
 
 public:
 
-    /** Constructs graphics controller editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIGraphicsControllerEditor(QWidget *pParent = 0);
 
     /** Defines editor @a enmValue. */

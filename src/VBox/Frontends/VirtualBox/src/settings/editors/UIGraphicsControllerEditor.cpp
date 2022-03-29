@@ -42,20 +42,12 @@ UIGraphicsControllerEditor::UIGraphicsControllerEditor(QWidget *pParent /* = 0 *
 
 void UIGraphicsControllerEditor::setValue(KGraphicsControllerType enmValue)
 {
-    if (m_pCombo)
+    /* Update cached value and
+     * combo if value has changed: */
+    if (m_enmValue != enmValue)
     {
-        /* Update cached value and
-         * combo if value has changed: */
-        if (m_enmValue != enmValue)
-        {
-            m_enmValue = enmValue;
-            populateCombo();
-        }
-
-        /* Look for proper index to choose: */
-        int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
-        if (iIndex != -1)
-            m_pCombo->setCurrentIndex(iIndex);
+        m_enmValue = enmValue;
+        populateCombo();
     }
 }
 
@@ -66,7 +58,7 @@ KGraphicsControllerType UIGraphicsControllerEditor::value() const
 
 int UIGraphicsControllerEditor::minimumLabelHorizontalHint() const
 {
-    return m_pLabel->minimumSizeHint().width();
+    return m_pLabel ? m_pLabel->minimumSizeHint().width() : 0;
 }
 
 void UIGraphicsControllerEditor::setMinimumLayoutIndent(int iIndent)
@@ -164,6 +156,11 @@ void UIGraphicsControllerEditor::populateCombo()
         /* Update combo with all the supported values: */
         foreach (const KGraphicsControllerType &enmType, m_supportedValues)
             m_pCombo->addItem(QString(), QVariant::fromValue(enmType));
+
+        /* Look for proper index to choose: */
+        const int iIndex = m_pCombo->findData(QVariant::fromValue(m_enmValue));
+        if (iIndex != -1)
+            m_pCombo->setCurrentIndex(iIndex);
 
         /* Retranslate finally: */
         retranslateUi();

@@ -110,7 +110,7 @@ signals:
 
 public:
 
-    /** Constructs hot-key editor passing @a pParent to the base-class. */
+    /** Constructs editor passing @a pParent to the base-class. */
     UIHotKeyEditor(QWidget *pParent);
 
 private slots:
