@@ -63,7 +63,7 @@ public:
     virtual QString details() const = 0;
     /** Returns object internal name. */
     virtual QString internalName() const = 0;
-    /** Returns object help heyword. */
+    /** Returns object help keyword. */
     virtual QString helpKeyword() const = 0;
     /** Handles notification-object being added. */
     virtual void handle() = 0;
@@ -105,7 +105,7 @@ protected:
     virtual QString details() const /* override final */;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
-    /** Returns object help heyword. */
+    /** Returns object help keyword. */
     virtual QString helpKeyword() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
@@ -165,7 +165,7 @@ public:
     virtual bool isDone() const RT_OVERRIDE;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
-    /** Returns object help heyword. */
+    /** Returns object help keyword. */
     virtual QString helpKeyword() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
@@ -235,7 +235,7 @@ public:
     virtual bool isDone() const RT_OVERRIDE;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
-    /** Returns object help heyword. */
+    /** Returns object help keyword. */
     virtual QString helpKeyword() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
@@ -304,7 +304,7 @@ public:
     virtual bool isDone() const RT_OVERRIDE;
     /** Returns object internal name. */
     virtual QString internalName() const /* override final */;
-    /** Returns object help heyword. */
+    /** Returns object help keyword. */
     virtual QString helpKeyword() const /* override final */;
     /** Handles notification-object being added. */
     virtual void handle() /* override final */;
