@@ -527,7 +527,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
         ]);
         # pylint: enable=line-too-long
         self.oTestVmSet = oSet;
-ka
+
         # For option parsing:
         self.aoSelectedVms = oSet.aoTestVms # type: list(UnattendedVm)
 
