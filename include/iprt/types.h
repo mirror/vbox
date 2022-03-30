@@ -1355,21 +1355,29 @@ typedef const RTPBCD80U RT_FAR *PCRTPBCD80U;
           RTPBCD80U_MAKE_PAIR(a_D15, a_D14), \
           RTPBCD80U_MAKE_PAIR(a_D17, a_D16), }, (a_uPad), (a_fSign) } }
 /** RTPBCD80U initializer for the zero value. */
-#define RTPBCD80U_INIT_ZERO(a_fSign) RTPBCD80U_INIT_C(a_fSign, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0)
+#define RTPBCD80U_INIT_ZERO(a_fSign)    RTPBCD80U_INIT_C(a_fSign, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0)
 /** RTPBCD80U initializer for the indefinite value. */
-#define RTPBCD80U_INIT_INDEFINITE() RTPBCD80U_INIT_EX_C(0x7f,1, 0xf,0xf, 0xf,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0)
+#define RTPBCD80U_INIT_INDEFINITE()     RTPBCD80U_INIT_EX_C(0x7f,1, 0xf,0xf, 0xc,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0, 0,0)
+/** RTPBCD80U initializer for the minimum value. */
+#define RTPBCD80U_INIT_MIN()            RTPBCD80U_INIT_C(1, 9,9, 9,9, 9,9, 9,9, 9,9, 9,9, 9,9, 9,9, 9,9)
+/** RTPBCD80U initializer for the maximum value. */
+#define RTPBCD80U_INIT_MAX()            RTPBCD80U_INIT_C(0, 9,9, 9,9, 9,9, 9,9, 9,9, 9,9, 9,9, 9,9, 9,9)
+/** RTPBCD80U minimum value. */
+#define RTPBCD80U_MIN                   INT64_C(-999999999999999999)
+/** RTPBCD80U maximum value. */
+#define RTPBCD80U_MAX                   INT64_C(999999999999999999)
 /** Makes a packs a pair of BCD digits. */
 #define RTPBCD80U_MAKE_PAIR(a_D1, a_D0) ((a_D0) | ((a_D1) << 4))
 /** Retrieves the lower digit of a BCD digit pair. */
-#define RTPBCD80U_LO_DIGIT(a_bPair) ((a_bPair) & 0xf)
+#define RTPBCD80U_LO_DIGIT(a_bPair)     ((a_bPair) & 0xf)
 /** Retrieves the higher digit of a BCD digit pair. */
-#define RTPBCD80U_HI_DIGIT(a_bPair) ((a_bPair) >> 4)
+#define RTPBCD80U_HI_DIGIT(a_bPair)     ((a_bPair) >> 4)
 /** Checks if the packaged BCD number is representing indefinite. */
 #define RTPBCD80U_IS_INDEFINITE(a_pd80) \
     (   (a_pd80)->s.uPad       == 0x7f \
      && (a_pd80)->s.fSign      == 1 \
      && (a_pd80)->s.abPairs[8] == 0xff \
-     && (a_pd80)->s.abPairs[7] == RTPBCD80U_MAKE_PAIR(0xf, 0) \
+     && (a_pd80)->s.abPairs[7] == RTPBCD80U_MAKE_PAIR(0xc, 0) \
      && (a_pd80)->s.abPairs[6] == 0 \
      && (a_pd80)->s.abPairs[5] == 0 \
      && (a_pd80)->s.abPairs[4] == 0 \
