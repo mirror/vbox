@@ -4168,232 +4168,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_d80,(PCX86FXSTATE pFpuState, uint16_
 
 
 /*********************************************************************************************************************************
-*   x87 FPU Other Operations                                                                                                     *
+*   x86 FPU Division Operations                                                                                                  *
 *********************************************************************************************************************************/
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fimul_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fimul_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fisub_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fisub_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fisubr_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                    PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fisubr_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                    PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fmul_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fmul_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr64Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fmul_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fpatan_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fprem_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fprem1_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pFpuResTwo, pr80Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_frndint_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fscale_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsin_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pFpuResTwo, pr80Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fsqrt_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_f2xm1_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fabs_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr64Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fchs_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r32,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
-{
-    RT_NOREF(pFpuState, pFSW, pr80Val1, pr32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r64,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
-{
-    RT_NOREF(pFpuState, pFSW, pr80Val1, pr64Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
-                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
-{
-    RT_NOREF(pFpuState, pFSW, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_fcomi_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
-                                                       PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
-{
-    RT_NOREF(pFpuState, pFSW, pr80Val1, pr80Val2);
-    AssertReleaseFailed();
-    return 0;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fcos_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val);
-    AssertReleaseFailed();
-}
-
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fdiv_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
@@ -4443,38 +4219,6 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fdivr_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMF
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fiadd_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_fiadd_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
-                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i16,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
-                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
-{
-    RT_NOREF(pFpuState, pu16Fsw, pr80Val1, pi16Val2);
-    AssertReleaseFailed();
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i32,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
-                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
-{
-    RT_NOREF(pFpuState, pu16Fsw, pr80Val1, pi32Val2);
-    AssertReleaseFailed();
-}
-
-
 IEM_DECL_IMPL_DEF(void, iemAImpl_fidiv_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                    PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
 {
@@ -4500,6 +4244,142 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fidivr_r80_by_i16,(PCX86FXSTATE pFpuState, PIEM
 
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fidivr_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                    PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fprem_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                   PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fprem1_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+    AssertReleaseFailed();
+}
+
+
+/*********************************************************************************************************************************
+*   x87 FPU Multiplication Operations                                                                                            *
+*********************************************************************************************************************************/
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fmul_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr32Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fmul_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr64Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fmul_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fimul_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fimul_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
+    AssertReleaseFailed();
+}
+
+
+/*********************************************************************************************************************************
+*   x87 FPU Addition and Subtraction                                                                                             *
+*********************************************************************************************************************************/
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr32Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr64Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fadd_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fiadd_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fiadd_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fisub_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fisub_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fisubr_r80_by_i16,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                    PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi16Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fisubr_r80_by_i32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                     PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
 {
     RT_NOREF(pFpuState, pFpuRes, pr80Val1, pi32Val2);
@@ -4555,10 +4435,94 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fsubr_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMF
 }
 
 
+/*********************************************************************************************************************************
+*   x87 FPU Trigometric Operations                                                                                               *
+*********************************************************************************************************************************/
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fpatan_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
+{
+    RT_NOREF(pFpuState, pFpuResTwo, pr80Val);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsin_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsincos_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
+{
+    RT_NOREF(pFpuState, pFpuResTwo, pr80Val);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fcos_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val);
+    AssertReleaseFailed();
+}
+
+
+/*********************************************************************************************************************************
+*   x87 FPU Compare and Testing Operations                                                                                       *
+*********************************************************************************************************************************/
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_ftst_r80,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw, PCRTFLOAT80U pr80Val))
 {
     RT_NOREF(pFpuState, pu16Fsw, pr80Val);
     AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fxam_r80,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw, PCRTFLOAT80U pr80Val))
+{
+    RT_NOREF(pFpuState, pu16Fsw, pr80Val);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r32,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2))
+{
+    RT_NOREF(pFpuState, pFSW, pr80Val1, pr32Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r64,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2))
+{
+    RT_NOREF(pFpuState, pFSW, pr80Val1, pr64Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fcom_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
+                                                  PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    RT_NOREF(pFpuState, pFSW, pr80Val1, pr80Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_fcomi_r80_by_r80,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
+                                                       PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    RT_NOREF(pFpuState, pFSW, pr80Val1, pr80Val2);
+    AssertReleaseFailed();
+    return 0;
 }
 
 
@@ -4579,9 +4543,66 @@ IEM_DECL_IMPL_DEF(uint32_t, iemAImpl_fucomi_r80_by_r80,(PCX86FXSTATE pFpuState, 
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fxam_r80,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw, PCRTFLOAT80U pr80Val))
+IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i16,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
+                                                   PCRTFLOAT80U pr80Val1, int16_t const *pi16Val2))
 {
-    RT_NOREF(pFpuState, pu16Fsw, pr80Val);
+    RT_NOREF(pFpuState, pu16Fsw, pr80Val1, pi16Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i32,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
+                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2))
+{
+    RT_NOREF(pFpuState, pu16Fsw, pr80Val1, pi32Val2);
+    AssertReleaseFailed();
+}
+
+
+/*********************************************************************************************************************************
+*   x87 FPU Other Operations                                                                                                     *
+*********************************************************************************************************************************/
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_frndint_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fscale_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fsqrt_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_f2xm1_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fabs_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val);
+    AssertReleaseFailed();
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fchs_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val))
+{
+    RT_NOREF(pFpuState, pFpuRes, pr80Val);
     AssertReleaseFailed();
 }
 

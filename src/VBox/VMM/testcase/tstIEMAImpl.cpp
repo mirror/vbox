@@ -3450,6 +3450,601 @@ static void FpuStD80Test(void)
 }
 
 
+
+/*
+ * Other FPU stuff.
+ */
+
+typedef struct FPU_BINARY_R80_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal1;
+    RTFLOAT80U              InVal2;
+    RTFLOAT80U              OutVal;
+} FPU_BINARY_R80_TEST_T;
+
+typedef struct FPU_BINARY_R64_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal1;
+    RTFLOAT64U              InVal2;
+    RTFLOAT80U              OutVal;
+} FPU_BINARY_R64_TEST_T;
+
+typedef struct FPU_BINARY_R32_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal1;
+    RTFLOAT32U              InVal2;
+    RTFLOAT80U              OutVal;
+} FPU_BINARY_R32_TEST_T;
+
+typedef struct FPU_BINARY_EFL_R80_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal1;
+    RTFLOAT80U              InVal2;
+    uint32_t                fEflOut;
+} FPU_BINARY_EFL_R80_TEST_T;
+
+#include "tstIEMAImplDataFpuBinary.h"
+
+
+/*
+ * Binary FPU operations on two 80-bit floating point values.
+ */
+
+#ifndef HAVE_FPU_BINARY_R80
+static FPU_BINARY_R80_TEST_T const g_aTests_fadd_r80_by_r80[]    = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fsub_r80_by_r80[]    = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fsubr_r80_by_r80[]   = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fmul_r80_by_r80[]    = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fdiv_r80_by_r80[]    = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fdivr_r80_by_r80[]   = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fprem_r80_by_r80[]   = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fprem1_r80_by_r80[]  = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fscale_r80_by_r80[]  = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fpatan_r80_by_r80[]  = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fyl2x_r80_by_r80[]   = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fyl2xp1_r80_by_r80[] = { {0} };
+#endif
+
+typedef struct FPU_BINARY_R80_T
+{
+    const char                     *pszName;
+    PFNIEMAIMPLFPUR80               pfn, pfnNative;
+    FPU_BINARY_R80_TEST_T const    *paTests;
+    uint32_t                        cTests;
+    uint32_t                        uExtra;
+    uint8_t                         idxCpuEflFlavour;
+} FPU_BINARY_R80_T;
+
+static const FPU_BINARY_R80_T g_aFpuBinaryR80[] =
+{
+    ENTRY(fadd_r80_by_r80),
+    ENTRY(fsub_r80_by_r80),
+    ENTRY(fsubr_r80_by_r80),
+    ENTRY(fmul_r80_by_r80),
+    ENTRY(fdiv_r80_by_r80),
+    ENTRY(fdivr_r80_by_r80),
+    ENTRY(fprem_r80_by_r80),
+    ENTRY(fprem1_r80_by_r80),
+    ENTRY(fscale_r80_by_r80),
+    ENTRY(fpatan_r80_by_r80),
+    ENTRY(fyl2x_r80_by_r80),
+    ENTRY(fyl2xp1_r80_by_r80),
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static void FpuBinaryR80Generate(PRTSTREAM pOut, uint32_t cTests)
+{
+    static struct { RTFLOAT80U Val1, Val2; } const s_aSpecials[] =
+    {
+        {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS),
+            RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS)   }, /* whatever */
+    };
+
+    RTStrmPrintf(pOut, "\n\n#define HAVE_FPU_BINARY_R80\n");
+    X86FXSTATE State;
+    RT_ZERO(State);
+    uint32_t cMinNormalPairs = cTests / 4;
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryR80); iFn++)
+    {
+        RTStrmPrintf(pOut, "static const FPU_BINARY_R80_TEST_T g_aTests_%s[] =\n{\n", g_aFpuBinaryR80[iFn].pszName);
+        uint32_t cNormalInputPairs = 0;
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
+        {
+            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Ex() : s_aSpecials[iTest - cTests].Val1;
+            RTFLOAT80U const InVal2 = iTest < cTests ? RandR80Ex() : s_aSpecials[iTest - cTests].Val2;
+            if (RTFLOAT80U_IS_NORMAL(&InVal1) && RTFLOAT80U_IS_NORMAL(&InVal2))
+                cNormalInputPairs++;
+            else if (cNormalInputPairs < cMinNormalPairs && iTest + cMinNormalPairs >= cTests && iTest < cTests)
+            {
+                iTest -= 1;
+                continue;
+            }
+
+            uint16_t const fFcw = RandFcw();
+            State.FSW = RandFsw();
+
+            for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
+            {
+                for (uint16_t iPrecision = 0; iPrecision < 4; iPrecision++)
+                {
+                    for (uint16_t iMask = 0; iMask <= X86_FCW_MASK_ALL; iMask += X86_FCW_MASK_ALL)
+                    {
+                        State.FCW = (fFcw & ~(X86_FCW_RC_MASK | X86_FCW_PC_MASK | X86_FCW_MASK_ALL))
+                                  | (iRounding  << X86_FCW_RC_SHIFT)
+                                  | (iPrecision << X86_FCW_PC_SHIFT)
+                                  | iMask;
+                        IEMFPURESULT Res = { RTFLOAT80U_INIT(0, 0, 0), 0 };
+                        g_aFpuBinaryR80[iFn].pfn(&State, &Res, &InVal1, &InVal2);
+                        RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/%c */\n",
+                                     State.FCW, State.FSW, Res.FSW, GenFormatR80(&InVal1), GenFormatR80(&InVal2),
+                                     GenFormatR80(&Res.r80Result), iTest, iRounding, iPrecision, iMask ? 'c' : 'u');
+                    }
+                }
+            }
+        }
+        RTStrmPrintf(pOut, "};\n");
+    }
+}
+#endif
+
+
+static void FpuBinaryR80Test(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryR80); iFn++)
+    {
+        RTTestSub(g_hTest, g_aFpuBinaryR80[iFn].pszName);
+
+        uint32_t const                      cTests  = g_aFpuBinaryR80[iFn].cTests;
+        FPU_BINARY_R80_TEST_T const * const paTests = g_aFpuBinaryR80[iFn].paTests;
+        PFNIEMAIMPLFPUR80                   pfn     = g_aFpuBinaryR80[iFn].pfn;
+        uint32_t const cVars = 1 + (g_aFpuBinaryR80[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && g_aFpuBinaryR80[iFn].pfnNative);
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests; iTest++)
+            {
+                RTFLOAT80U const InVal1 = paTests[iTest].InVal1;
+                RTFLOAT80U const InVal2 = paTests[iTest].InVal2;
+                IEMFPURESULT     Res    = { RTFLOAT80U_INIT(0, 0, 0), 0 };
+                State.FCW = paTests[iTest].fFcw;
+                State.FSW = paTests[iTest].fFswIn;
+                pfn(&State, &Res, &InVal1, &InVal2);
+                if (   Res.FSW != paTests[iTest].fFswOut
+                    || !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].OutVal))
+                    RTTestFailed(g_hTest, "#%04u%s: fcw=%#06x fsw=%#06x in1=%s in2=%s\n"
+                                          "%s               -> fsw=%#06x    %s\n"
+                                          "%s             expected %#06x    %s%s%s (%s)\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fFcw, paTests[iTest].fFswIn,
+                                 FormatR80(&paTests[iTest].InVal1), FormatR80(&paTests[iTest].InVal2),
+                                 iVar ? "  " : "", Res.FSW, FormatR80(&Res.r80Result),
+                                 iVar ? "  " : "", paTests[iTest].fFswOut, FormatR80(&paTests[iTest].OutVal),
+                                 FswDiff(Res.FSW, paTests[iTest].fFswOut),
+                                 RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].OutVal) ? " - val" : "",
+                                 FormatFcw(paTests[iTest].fFcw) );
+            }
+            pfn = g_aFpuBinaryR80[iFn].pfnNative;
+        }
+    }
+}
+
+
+/*
+ * Binary FPU operations on one 80-bit floating point value and one 64-bit or 32-bit one.
+ */
+
+#ifndef HAVE_FPU_BINARY_R64
+static FPU_BINARY_R64_TEST_T const g_aTests_fadd_r80_by_r64[]   = { {0} };
+static FPU_BINARY_R64_TEST_T const g_aTests_fmul_r80_by_r64[]   = { {0} };
+static FPU_BINARY_R64_TEST_T const g_aTests_fsub_r80_by_r64[]   = { {0} };
+static FPU_BINARY_R64_TEST_T const g_aTests_fsubr_r80_by_r64[]  = { {0} };
+static FPU_BINARY_R64_TEST_T const g_aTests_fdiv_r80_by_r64[]   = { {0} };
+static FPU_BINARY_R64_TEST_T const g_aTests_fdivr_r80_by_r64[]  = { {0} };
+#endif
+#ifndef HAVE_FPU_BINARY_R32
+static FPU_BINARY_R32_TEST_T const g_aTests_fadd_r80_by_r32[]   = { {0} };
+static FPU_BINARY_R32_TEST_T const g_aTests_fmul_r80_by_r32[]   = { {0} };
+static FPU_BINARY_R32_TEST_T const g_aTests_fsub_r80_by_r32[]   = { {0} };
+static FPU_BINARY_R32_TEST_T const g_aTests_fsubr_r80_by_r32[]  = { {0} };
+static FPU_BINARY_R32_TEST_T const g_aTests_fdiv_r80_by_r32[]   = { {0} };
+static FPU_BINARY_R32_TEST_T const g_aTests_fdivr_r80_by_r32[]  = { {0} };
+#endif
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static struct { RTFLOAT80U Val1; RTFLOAT64U Val2; } const s_aFpuBinaryR64Specials[] =
+{
+    {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS),
+        RTFLOAT64U_INIT_C(0, 0xfeeeeddddcccc,    RTFLOAT64U_EXP_BIAS)   }, /* whatever */
+};
+static struct { RTFLOAT80U Val1; RTFLOAT32U Val2; } const s_aFpuBinaryR32Specials[] =
+{
+    {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS),
+        RTFLOAT32U_INIT_C(0, 0x7fffee, RTFLOAT32U_EXP_BIAS)             }, /* whatever */
+};
+
+# define GEN_FPU_BINARY_SMALL(a_cBits, a_rdType, a_aSubTests, a_TestType) \
+static void FpuBinaryR ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+{ \
+    RTStrmPrintf(pOut, "\n\n#define HAVE_FPU_BINARY_R" #a_cBits "\n"); \
+    X86FXSTATE State; \
+    RT_ZERO(State); \
+    uint32_t cMinNormalPairs = cTests / 4; \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        RTStrmPrintf(pOut, "static const " #a_TestType " g_aTests_%s[] =\n{\n", a_aSubTests[iFn].pszName); \
+        uint32_t cNormalInputPairs = 0; \
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aFpuBinaryR ## a_cBits ## Specials); iTest += 1) \
+        { \
+            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Ex() \
+                                    : s_aFpuBinaryR ## a_cBits ## Specials[iTest - cTests].Val1; \
+            a_rdType   const InVal2 = iTest < cTests ? RandR ## a_cBits ## Src(a_cBits) \
+                                    : s_aFpuBinaryR ## a_cBits ## Specials[iTest - cTests].Val2; \
+            if (RTFLOAT80U_IS_NORMAL(&InVal1) && a_rdType ## _IS_NORMAL(&InVal2)) \
+                cNormalInputPairs++; \
+            else if (cNormalInputPairs < cMinNormalPairs && iTest + cMinNormalPairs >= cTests && iTest < cTests) \
+            { \
+                iTest -= 1; \
+                continue; \
+            } \
+            \
+            uint16_t const fFcw = RandFcw(); \
+            State.FSW = RandFsw(); \
+            \
+            for (uint16_t iRounding = 0; iRounding < 4; iRounding++) \
+            { \
+                for (uint16_t iPrecision = 0; iPrecision < 4; iPrecision++) \
+                { \
+                    for (uint16_t iMask = 0; iMask <= X86_FCW_MASK_ALL; iMask += X86_FCW_MASK_ALL) \
+                    { \
+                        State.FCW = (fFcw & ~(X86_FCW_RC_MASK | X86_FCW_PC_MASK | X86_FCW_MASK_ALL)) \
+                                  | (iRounding  << X86_FCW_RC_SHIFT) \
+                                  | (iPrecision << X86_FCW_PC_SHIFT) \
+                                  | iMask; \
+                        IEMFPURESULT Res = { RTFLOAT80U_INIT(0, 0, 0), 0 }; \
+                        a_aSubTests[iFn].pfn(&State, &Res, &InVal1, &InVal2); \
+                        RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/%c */\n", \
+                                     State.FCW, State.FSW, Res.FSW, GenFormatR80(&InVal1), GenFormatR ## a_cBits(&InVal2), \
+                                     GenFormatR80(&Res.r80Result), iTest, iRounding, iPrecision, iMask ? 'c' : 'u'); \
+                    } \
+                } \
+            } \
+        } \
+        RTStrmPrintf(pOut, "};\n"); \
+    } \
+}
+#else
+# define GEN_FPU_BINARY_SMALL(a_cBits, a_rdType, a_aSubTests, a_TestType)
+#endif
+
+#define TEST_FPU_BINARY_SMALL(a_cBits, a_rdType, a_SubTestType, a_aSubTests, a_TestType) \
+typedef struct a_SubTestType \
+{ \
+    const char                     *pszName; \
+    PFNIEMAIMPLFPUR ## a_cBits      pfn, pfnNative; \
+    a_TestType const               *paTests; \
+    uint32_t                        cTests; \
+    uint32_t                        uExtra; \
+    uint8_t                         idxCpuEflFlavour; \
+} a_SubTestType; \
+\
+static const a_SubTestType a_aSubTests[] = \
+{ \
+    ENTRY(RT_CONCAT(fadd_r80_by_r,  a_cBits)), \
+    ENTRY(RT_CONCAT(fmul_r80_by_r,  a_cBits)), \
+    ENTRY(RT_CONCAT(fsub_r80_by_r,  a_cBits)), \
+    ENTRY(RT_CONCAT(fsubr_r80_by_r, a_cBits)), \
+    ENTRY(RT_CONCAT(fdiv_r80_by_r,  a_cBits)), \
+    ENTRY(RT_CONCAT(fdivr_r80_by_r, a_cBits)), \
+}; \
+\
+GEN_FPU_BINARY_SMALL(a_cBits, a_rdType, a_aSubTests, a_TestType) \
+\
+static void FpuBinaryR ## a_cBits ##Test(void) \
+{ \
+    X86FXSTATE State; \
+    RT_ZERO(State); \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
+        \
+        uint32_t const             cTests  = a_aSubTests[iFn].cTests; \
+        a_TestType const * const   paTests = a_aSubTests[iFn].paTests; \
+        PFNIEMAIMPLFPUR ## a_cBits pfn     = a_aSubTests[iFn].pfn; \
+        uint32_t const cVars = 1 + (a_aSubTests[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && a_aSubTests[iFn].pfnNative); \
+        for (uint32_t iVar = 0; iVar < cVars; iVar++) \
+        { \
+            for (uint32_t iTest = 0; iTest < cTests; iTest++) \
+            { \
+                RTFLOAT80U const InVal1 = paTests[iTest].InVal1; \
+                a_rdType   const InVal2 = paTests[iTest].InVal2; \
+                IEMFPURESULT     Res    = { RTFLOAT80U_INIT(0, 0, 0), 0 }; \
+                State.FCW = paTests[iTest].fFcw; \
+                State.FSW = paTests[iTest].fFswIn; \
+                pfn(&State, &Res, &InVal1, &InVal2); \
+                if (   Res.FSW != paTests[iTest].fFswOut \
+                    || !RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].OutVal)) \
+                    RTTestFailed(g_hTest, "#%04u%s: fcw=%#06x fsw=%#06x in1=%s in2=%s\n" \
+                                          "%s               -> fsw=%#06x    %s\n" \
+                                          "%s             expected %#06x    %s%s%s (%s)\n", \
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fFcw, paTests[iTest].fFswIn, \
+                                 FormatR80(&paTests[iTest].InVal1), FormatR ## a_cBits(&paTests[iTest].InVal2), \
+                                 iVar ? "  " : "", Res.FSW, FormatR80(&Res.r80Result), \
+                                 iVar ? "  " : "", paTests[iTest].fFswOut, FormatR80(&paTests[iTest].OutVal), \
+                                 FswDiff(Res.FSW, paTests[iTest].fFswOut), \
+                                 RTFLOAT80U_ARE_IDENTICAL(&Res.r80Result, &paTests[iTest].OutVal) ? " - val" : "", \
+                                 FormatFcw(paTests[iTest].fFcw) ); \
+            } \
+            pfn = a_aSubTests[iFn].pfnNative; \
+        } \
+    } \
+}
+
+TEST_FPU_BINARY_SMALL(64, RTFLOAT64U, FPU_BINARY_R64_T, g_aFpuBinaryR64, FPU_BINARY_R64_TEST_T)
+TEST_FPU_BINARY_SMALL(32, RTFLOAT32U, FPU_BINARY_R32_T, g_aFpuBinaryR32, FPU_BINARY_R32_TEST_T)
+
+
+/*
+ * Binary operations on 80-, 64- and 32-bit floating point only affecting FSW.
+ */
+#ifndef HAVE_FPU_BINARY_FSW_R80
+static FPU_BINARY_R80_TEST_T const g_aTests_fcom_r80_by_r80[]   = { {0} };
+static FPU_BINARY_R80_TEST_T const g_aTests_fucom_r80_by_r80[]  = { {0} };
+#endif
+#ifndef HAVE_FPU_BINARY_FSW_R64
+static FPU_BINARY_R64_TEST_T const g_aTests_fcom_r80_by_r64[]   = { {0} };
+#endif
+#ifndef HAVE_FPU_BINARY_FSW_R32
+static FPU_BINARY_R32_TEST_T const g_aTests_fcom_r80_by_r32[]   = { {0} };
+#endif
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static struct { RTFLOAT80U Val1, Val2; } const s_aFpuBinaryFswR80Specials[] =
+{
+    {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS),
+        RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS) }, /* whatever */
+};
+static struct { RTFLOAT80U Val1; RTFLOAT64U Val2; } const s_aFpuBinaryFswR64Specials[] =
+{
+    {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS),
+        RTFLOAT64U_INIT_C(0, 0xfeeeeddddcccc,    RTFLOAT64U_EXP_BIAS) }, /* whatever */
+};
+static struct { RTFLOAT80U Val1; RTFLOAT32U Val2; } const s_aFpuBinaryFswR32Specials[] =
+{
+    {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS),
+        RTFLOAT32U_INIT_C(0, 0x7fffee,           RTFLOAT32U_EXP_BIAS) }, /* whatever */
+};
+
+# define GEN_FPU_BINARY_FSW(a_cBits, a_rdType, a_aSubTests, a_TestType) \
+static void FpuBinaryFswR ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+{ \
+    RTStrmPrintf(pOut, "\n\n#define HAVE_FPU_BINARY_FSW_R" #a_cBits "\n"); \
+    X86FXSTATE State; \
+    RT_ZERO(State); \
+    uint32_t cMinNormalPairs = cTests / 4; \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        RTStrmPrintf(pOut, "static const " #a_TestType " g_aTests_%s[] =\n{\n", a_aSubTests[iFn].pszName); \
+        uint32_t cNormalInputPairs = 0; \
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aFpuBinaryFswR ## a_cBits ## Specials); iTest += 1) \
+        { \
+            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Ex() \
+                                    : s_aFpuBinaryFswR ## a_cBits ## Specials[iTest - cTests].Val1; \
+            a_rdType   const InVal2 = iTest < cTests ? RandR ## a_cBits ## Src(a_cBits) \
+                                    : s_aFpuBinaryFswR ## a_cBits ## Specials[iTest - cTests].Val2; \
+            if (RTFLOAT80U_IS_NORMAL(&InVal1) && a_rdType ## _IS_NORMAL(&InVal2)) \
+                cNormalInputPairs++; \
+            else if (cNormalInputPairs < cMinNormalPairs && iTest + cMinNormalPairs >= cTests && iTest < cTests) \
+            { \
+                iTest -= 1; \
+                continue; \
+            } \
+            \
+            uint16_t const fFcw = RandFcw(); \
+            State.FSW = RandFsw(); \
+            \
+            /* Guess these aren't affected by precision or rounding, so just flip the exception mask. */ \
+            for (uint16_t iMask = 0; iMask <= X86_FCW_MASK_ALL; iMask += X86_FCW_MASK_ALL) \
+            { \
+                State.FCW = (fFcw & ~(X86_FCW_MASK_ALL)) | iMask; \
+                uint16_t uFswOut = 0; \
+                a_aSubTests[iFn].pfn(&State, &uFswOut, &InVal1, &InVal2); \
+                RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%c */\n", \
+                             State.FCW, State.FSW, uFswOut, GenFormatR80(&InVal1), GenFormatR ## a_cBits(&InVal2), \
+                             iTest, iMask ? 'c' : 'u'); \
+            } \
+        } \
+        RTStrmPrintf(pOut, "};\n"); \
+    } \
+}
+#else
+# define GEN_FPU_BINARY_FSW(a_cBits, a_rdType, a_aSubTests, a_TestType)
+#endif
+
+#define TEST_FPU_BINARY_FSW(a_cBits, a_rdType, a_SubTestType, a_aSubTests, a_TestType, ...) \
+typedef struct a_SubTestType \
+{ \
+    const char                         *pszName; \
+    PFNIEMAIMPLFPUR ## a_cBits ## FSW   pfn, pfnNative; \
+    a_TestType const                   *paTests; \
+    uint32_t                            cTests; \
+    uint32_t                            uExtra; \
+    uint8_t                             idxCpuEflFlavour; \
+} a_SubTestType; \
+\
+static const a_SubTestType a_aSubTests[] = \
+{ \
+    ENTRY(RT_CONCAT(fcom_r80_by_r,  a_cBits)), \
+    __VA_ARGS__\
+}; \
+\
+GEN_FPU_BINARY_FSW(a_cBits, a_rdType, a_aSubTests, a_TestType) \
+\
+static void FpuBinaryFswR ## a_cBits ##Test(void) \
+{ \
+    X86FXSTATE State; \
+    RT_ZERO(State); \
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
+    { \
+        RTTestSub(g_hTest, a_aSubTests[iFn].pszName); \
+        \
+        uint32_t const                      cTests  = a_aSubTests[iFn].cTests; \
+        a_TestType const * const            paTests = a_aSubTests[iFn].paTests; \
+        PFNIEMAIMPLFPUR ## a_cBits ## FSW   pfn     = a_aSubTests[iFn].pfn; \
+        uint32_t const cVars = 1 + (a_aSubTests[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && a_aSubTests[iFn].pfnNative); \
+        for (uint32_t iVar = 0; iVar < cVars; iVar++) \
+        { \
+            for (uint32_t iTest = 0; iTest < cTests; iTest++) \
+            { \
+                RTFLOAT80U const InVal1 = paTests[iTest].InVal1; \
+                a_rdType   const InVal2 = paTests[iTest].InVal2; \
+                State.FCW = paTests[iTest].fFcw; \
+                State.FSW = paTests[iTest].fFswIn; \
+                uint16_t uFswOut = 0; \
+                pfn(&State, &uFswOut, &InVal1, &InVal2); \
+                if (uFswOut != paTests[iTest].fFswOut) \
+                    RTTestFailed(g_hTest, "#%04u%s: fcw=%#06x fsw=%#06x in1=%s in2=%s\n" \
+                                          "%s               -> fsw=%#06x\n" \
+                                          "%s             expected %#06x %s (%s)\n", \
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fFcw, paTests[iTest].fFswIn, \
+                                 FormatR80(&paTests[iTest].InVal1), FormatR ## a_cBits(&paTests[iTest].InVal2), \
+                                 iVar ? "  " : "", uFswOut, \
+                                 iVar ? "  " : "", paTests[iTest].fFswOut, \
+                                 FswDiff(uFswOut, paTests[iTest].fFswOut), FormatFcw(paTests[iTest].fFcw) ); \
+            } \
+            pfn = a_aSubTests[iFn].pfnNative; \
+        } \
+    } \
+}
+
+TEST_FPU_BINARY_FSW(80, RTFLOAT80U, FPU_BINARY_FSW_R80_T, g_aFpuBinaryFswR80, FPU_BINARY_R80_TEST_T, ENTRY(fucom_r80_by_r80))
+TEST_FPU_BINARY_FSW(64, RTFLOAT64U, FPU_BINARY_FSW_R64_T, g_aFpuBinaryFswR64, FPU_BINARY_R64_TEST_T, RT_NOTHING)
+TEST_FPU_BINARY_FSW(32, RTFLOAT32U, FPU_BINARY_FSW_R32_T, g_aFpuBinaryFswR32, FPU_BINARY_R32_TEST_T, RT_NOTHING)
+
+
+/*
+ * Binary operations on 80-bit floating point that effects only EFLAGS and possibly FSW.
+ */
+#ifndef HAVE_FPU_BINARY_EFL_R80
+static FPU_BINARY_EFL_R80_TEST_T const g_aTests_fcomi_r80_by_r80[]  = { {0} };
+static FPU_BINARY_EFL_R80_TEST_T const g_aTests_fucomi_r80_by_r80[] = { {0} };
+#endif
+
+typedef struct FPU_BINARY_EFL_R80_T
+{
+    const char                         *pszName;
+    PFNIEMAIMPLFPUR80EFL                pfn, pfnNative;
+    FPU_BINARY_EFL_R80_TEST_T const    *paTests;
+    uint32_t                            cTests;
+    uint32_t                            uExtra;
+    uint8_t                             idxCpuEflFlavour;
+} FPU_BINARY_EFL_R80_T;
+
+static const FPU_BINARY_EFL_R80_T g_aFpuBinaryEflR80[] =
+{
+    ENTRY(fcomi_r80_by_r80),
+    ENTRY(fucomi_r80_by_r80),
+};
+
+#ifdef TSTIEMAIMPL_WITH_GENERATOR
+static struct { RTFLOAT80U Val1, Val2; } const s_aFpuBinaryEflR80Specials[] =
+{
+    {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS),
+        RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS) }, /* whatever */
+};
+
+static void FpuBinaryEflR80Generate(PRTSTREAM pOut, uint32_t cTests)
+{
+    RTStrmPrintf(pOut, "\n\n#define HAVE_FPU_BINARY_EFL_R80\n");
+    X86FXSTATE State;
+    RT_ZERO(State);
+    uint32_t cMinNormalPairs = cTests / 4;
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryEflR80); iFn++)
+    {
+        RTStrmPrintf(pOut, "static const FPU_BINARY_EFL_R80_TEST_T g_aTests_%s[] =\n{\n", g_aFpuBinaryEflR80[iFn].pszName);
+        uint32_t cNormalInputPairs = 0;
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aFpuBinaryEflR80Specials); iTest += 1)
+        {
+            RTFLOAT80U const InVal1 = iTest < cTests ? RandR80Ex() : s_aFpuBinaryEflR80Specials[iTest - cTests].Val1;
+            RTFLOAT80U const InVal2 = iTest < cTests ? RandR80Ex() : s_aFpuBinaryEflR80Specials[iTest - cTests].Val2;
+            if (RTFLOAT80U_IS_NORMAL(&InVal1) && RTFLOAT80U_IS_NORMAL(&InVal2))
+                cNormalInputPairs++;
+            else if (cNormalInputPairs < cMinNormalPairs && iTest + cMinNormalPairs >= cTests && iTest < cTests)
+            {
+                iTest -= 1;
+                continue;
+            }
+
+            uint16_t const fFcw = RandFcw();
+            State.FSW = RandFsw();
+
+            /* Guess these aren't affected by precision or rounding, so just flip the exception mask. */
+            for (uint16_t iMask = 0; iMask <= X86_FCW_MASK_ALL; iMask += X86_FCW_MASK_ALL)
+            {
+                State.FCW = (fFcw & ~(X86_FCW_MASK_ALL)) | iMask;
+                uint16_t uFswOut = 0;
+                uint32_t fEflOut = g_aFpuBinaryEflR80[iFn].pfn(&State, &uFswOut, &InVal1, &InVal2);
+                RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s, %s, %#08x }, /* #%u/%c */\n",
+                             State.FCW, State.FSW, uFswOut, GenFormatR80(&InVal1), GenFormatR80(&InVal2), fEflOut,
+                             iTest, iMask ? 'c' : 'u');
+            }
+        }
+        RTStrmPrintf(pOut, "};\n");
+    }
+}
+#endif /*TSTIEMAIMPL_WITH_GENERATOR*/
+
+static void FpuBinaryEflR80Test(void)
+{
+    X86FXSTATE State;
+    RT_ZERO(State);
+    for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryEflR80); iFn++)
+    {
+        RTTestSub(g_hTest, g_aFpuBinaryEflR80[iFn].pszName);
+
+        uint32_t const                          cTests  = g_aFpuBinaryEflR80[iFn].cTests;
+        FPU_BINARY_EFL_R80_TEST_T const * const paTests = g_aFpuBinaryEflR80[iFn].paTests;
+        PFNIEMAIMPLFPUR80EFL                    pfn     = g_aFpuBinaryEflR80[iFn].pfn;
+        uint32_t const cVars = 1 + (g_aFpuBinaryEflR80[iFn].idxCpuEflFlavour == g_idxCpuEflFlavour && g_aFpuBinaryEflR80[iFn].pfnNative);
+        for (uint32_t iVar = 0; iVar < cVars; iVar++)
+        {
+            for (uint32_t iTest = 0; iTest < cTests; iTest++)
+            {
+                RTFLOAT80U const InVal1 = paTests[iTest].InVal1;
+                RTFLOAT80U const InVal2 = paTests[iTest].InVal2;
+                State.FCW = paTests[iTest].fFcw;
+                State.FSW = paTests[iTest].fFswIn;
+                uint16_t uFswOut = 0;
+                uint32_t fEflOut = pfn(&State, &uFswOut, &InVal1, &InVal2);
+                if (   uFswOut != paTests[iTest].fFswOut
+                    || fEflOut != paTests[iTest].fEflOut)
+                    RTTestFailed(g_hTest, "#%04u%s: fcw=%#06x fsw=%#06x in1=%s in2=%s\n"
+                                          "%s               -> fsw=%#06x efl=%#08x\n"
+                                          "%s             expected %#06x     %#08x %s (%s)\n",
+                                 iTest, iVar ? "/n" : "", paTests[iTest].fFcw, paTests[iTest].fFswIn,
+                                 FormatR80(&paTests[iTest].InVal1), FormatR80(&paTests[iTest].InVal2),
+                                 iVar ? "  " : "", uFswOut, fEflOut,
+                                 iVar ? "  " : "", paTests[iTest].fFswOut, paTests[iTest].fEflOut,
+                                 EFlagsDiff(fEflOut, paTests[iTest].fEflOut), FormatFcw(paTests[iTest].fFcw));
+            }
+            pfn = g_aFpuBinaryEflR80[iFn].pfnNative;
+        }
+    }
+}
+
+
+
 int main(int argc, char **argv)
 {
     int rc = RTR3InitExe(argc, &argv, 0);
@@ -3475,6 +4070,7 @@ int main(int argc, char **argv)
                         enmMode       = kModeNotSet;
     bool                fInt          = true;
     bool                fFpuLdSt      = true;
+    bool                fFpuBinary    = true;
     bool                fFpuOther     = true;
     bool                fCpuData      = true;
     bool                fCommonData   = true;
@@ -3489,9 +4085,10 @@ int main(int argc, char **argv)
         { "--all",                  'a', RTGETOPT_REQ_NOTHING },
         { "--none",                 'z', RTGETOPT_REQ_NOTHING },
         { "--zap",                  'z', RTGETOPT_REQ_NOTHING },
-        { "--fpu-ld-st",            'f', RTGETOPT_REQ_NOTHING },
-        { "--fpu-load-store",       'f', RTGETOPT_REQ_NOTHING },
-        { "--fpu-other",            'F', RTGETOPT_REQ_NOTHING },
+        { "--fpu-ld-st",            'F', RTGETOPT_REQ_NOTHING },  /* FPU stuff is upper case */
+        { "--fpu-load-store",       'F', RTGETOPT_REQ_NOTHING },
+        { "--fpu-binary",           'B', RTGETOPT_REQ_NOTHING },
+        { "--fpu-other",            'O', RTGETOPT_REQ_NOTHING },
         { "--int",                  'i', RTGETOPT_REQ_NOTHING },
         // generation parameters
         { "--common",               'm', RTGETOPT_REQ_NOTHING },
@@ -3519,6 +4116,7 @@ int main(int argc, char **argv)
                 fCommonData = true;
                 fInt        = true;
                 fFpuLdSt    = true;
+                fFpuBinary  = true;
                 fFpuOther   = true;
                 break;
             case 'z':
@@ -3526,13 +4124,17 @@ int main(int argc, char **argv)
                 fCommonData = false;
                 fInt        = false;
                 fFpuLdSt    = false;
+                fFpuBinary  = false;
                 fFpuOther   = false;
                 break;
-            case 'f':
+            case 'F':
                 fFpuLdSt    = true;
                 break;
-            case 'F':
+            case 'O':
                 fFpuOther   = true;
+                break;
+            case 'B':
+                fFpuBinary  = true;
                 break;
             case 'i':
                 fInt        = true;
@@ -3562,9 +4164,11 @@ int main(int argc, char **argv)
                          "    Disable all tests and test data types.\n"
                          "  -i, --int\n"
                          "    Enable non-FPU tests.\n"
-                         "  -f, --fpu-ld-st\n"
+                         "  -F, --fpu-ld-st\n"
                          "    Enable FPU load and store tests.\n"
-                         "  -f, --fpu-other\n"
+                         "  -B, --fpu-binary\n"
+                         "    Enable FPU binary 80, 64 and 32-bit FP tests.\n"
+                         "  -O, --fpu-other\n"
                          "    Enable other FPU tests.\n"
                          "\n"
                          "Generation:\n"
@@ -3673,9 +4277,43 @@ int main(int argc, char **argv)
                 return rcExit;
         }
 
+        if (fFpuBinary)
+        {
+            const char *pszFileInfix = "FpuBinary";
+            const char *pszDataFile  = fCommonData ? "tstIEMAImplDataFpuBinary.h" : pszBitBucket;
+            PRTSTREAM   pStrmData    = NULL;
+            rc = RTStrmOpen(pszDataFile, "w", &pStrmData);
+            if (!pStrmData)
+                return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataFile, rc);
+
+            const char *pszDataCpuFile = !fCpuData ? pszBitBucket : g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD
+                                       ? "tstIEMAImplDataFpuBinary-Amd.h" : "tstIEMAImplDataFpuBinary-Intel.h";
+            PRTSTREAM   pStrmDataCpu   = NULL;
+            rc = RTStrmOpen(pszDataCpuFile, "w", &pStrmDataCpu);
+            if (!pStrmData)
+                return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataCpuFile, rc);
+
+            GenerateHeader(pStrmData, pszFileInfix, szCpuDesc, NULL, "");
+            GenerateHeader(pStrmDataCpu, pszFileInfix, szCpuDesc, pszCpuType, pszCpuSuff);
+
+            FpuBinaryR80Generate(pStrmData, cTests);
+            FpuBinaryR64Generate(pStrmData, cTests);
+            FpuBinaryR32Generate(pStrmData, cTests);
+            FpuBinaryFswR80Generate(pStrmData, cTests);
+            FpuBinaryFswR64Generate(pStrmData, cTests);
+            FpuBinaryFswR32Generate(pStrmData, cTests);
+            FpuBinaryEflR80Generate(pStrmData, cTests);
+
+            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, pszFileInfix, pszCpuSuff,
+                                                       GenerateFooterAndClose(pStrmData, pszDataFile, pszFileInfix, "",
+                                                                              RTEXITCODE_SUCCESS));
+            if (rcExit != RTEXITCODE_SUCCESS)
+                return rcExit;
+        }
+
+# if 0
         if (fFpuOther)
         {
-# if 0
             const char *pszFileInfix = "FpuOther";
             const char *pszDataFile  = fCommonData ? "tstIEMAImplDataFpuOther.h" : pszBitBucket;
             PRTSTREAM   pStrmData    = NULL;
@@ -3700,8 +4338,8 @@ int main(int argc, char **argv)
                                                                               RTEXITCODE_SUCCESS));
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
-# endif
         }
+# endif
 
         return RTEXITCODE_SUCCESS;
 #else
@@ -3764,6 +4402,17 @@ int main(int argc, char **argv)
                 FpuStMemTest();
                 FpuStIntTest();
                 FpuStD80Test();
+            }
+
+            if (fFpuBinary)
+            {
+                FpuBinaryR80Test();
+                FpuBinaryR64Test();
+                FpuBinaryR32Test();
+                FpuBinaryFswR80Test();
+                FpuBinaryFswR64Test();
+                FpuBinaryFswR32Test();
+                FpuBinaryEflR80Test();
             }
         }
         return RTTestSummaryAndDestroy(g_hTest);
