@@ -395,6 +395,8 @@ class tdUnitTest1(vbox.TestDriver):
         This sets sVBoxInstallRoot and sUnitTestsPathBase and returns True/False.
         """
 
+        reporter.log2('Detecting paths ...');
+
         #
         # We need a VBox install (/ build) to test.
         #
@@ -508,7 +510,7 @@ class tdUnitTest1(vbox.TestDriver):
                 raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
             self.sUnitTestsPathSrc = asArgs[iArg];
             self.sMode = 'remote-exec';
-            reporter.log('Unittest source explicitly set to "%s"' % (self.sUnitTestsPathSrc));
+            reporter.log('Unit test source explicitly set to "%s"' % (self.sUnitTestsPathSrc));
         elif asArgs[iArg] == '--only-whitelist':
             self.fOnlyWhiteList = True;
         elif asArgs[iArg] == '--quick':
@@ -557,7 +559,7 @@ class tdUnitTest1(vbox.TestDriver):
         return True;
 
     def actionExecute(self):
-        if self.sUnitTestsPathSrc is None:
+        if not self.sUnitTestsPathSrc:
             if not self._detectPaths():
                 return False;
         reporter.log2('Unit test source path is "%s"\n' % self.sUnitTestsPathSrc);
