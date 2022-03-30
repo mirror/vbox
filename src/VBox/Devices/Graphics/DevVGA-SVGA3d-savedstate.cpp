@@ -210,6 +210,180 @@ static int vmsvga3dLoadVMSVGA3DSURFACEPreMipLevels(PPDMDEVINS pDevIns, PSSMHANDL
     return rc;
 }
 
+
+/*
+ * Load the legacy VMSVGA3DCONTEXT from saved state version VGA_SAVEDSTATE_VERSION_VMSVGA_MIPLEVELS (23)
+ * or earlier, i.e. 6.1 or old trunk.
+ *
+ * The saved state incompatibility has been introduced in two revisions:
+ *
+ * - r140506: which makes sure that VMSVGA structures are tightly packed (pragma pack(1)).
+ *   This caused all structures which have a member from VMSVGA headers (like VMSVGALIGHTSTATE) to be packed too.
+ *   For example the size of aLightData element (VMSVGALIGHTSTATE) is 2 bytes smaller on trunk (118) than on 6.1 (120),
+ *   which happens because SVGA3dLightData member offset is 2 on trunk and 4 on 6.1.
+ *
+ * - r141385: new VMSVGA device headers.
+ *   SVGA3D_RS_MAX is 99 with new VMSVGA headers, but it was 100 with old headers.
+ *   6.1 always saved 100 entries; trunk before r141385 saved 100 entries; trunk at r141385 saves 99 entries.
+ *
+ *   6.1 saved state version is VGA_SAVEDSTATE_VERSION_VMSVGA_SCREENS (21).
+ *   Trunk r141287 introduced VGA_SAVEDSTATE_VERSION_VMSVGA_MIPLEVELS (23).
+ *
+ * Both issues has been solved by loading a compatible context structure for saved state
+ * version < VGA_SAVEDSTATE_VERSION_VMSVGA_MIPLEVELS.
+ * This means that trunk will not be able to load states created from r140506 to r141385.
+ */
+static int vmsvga3dLoadVMSVGA3DCONTEXT23(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, VMSVGA3DCONTEXT *pContext)
+{
+#pragma pack(1)
+    struct VMSVGA3DCONTEXT23
+    {
+        uint32_t                id;
+#ifdef VMSVGA3D_OPENGL
+        uint32_t                lastError;
+#endif
+        uint32_t                cPixelShaders;
+        uint32_t                cVertexShaders;
+        struct
+        {
+            uint32_t            u32UpdateFlags;
+            SVGA3dRenderState   aRenderState[/*SVGA3D_RS_MAX=*/ 100];
+            SVGA3dTextureState  aTextureStates[/*SVGA3D_MAX_TEXTURE_STAGE=*/ 8][/*SVGA3D_TS_MAX=*/ 30];
+            struct
+            {
+                bool            fValid;
+                bool            pad[3];
+                float           matrix[16];
+            } aTransformState[SVGA3D_TRANSFORM_MAX];
+            struct
+            {
+                bool            fValid;
+                bool            pad[3];
+                SVGA3dMaterial  material;
+            } aMaterial[SVGA3D_FACE_MAX];
+            struct
+            {
+                bool            fValid;
+                bool            pad[3];
+                float           plane[4];
+            } aClipPlane[SVGA3D_CLIPPLANE_5];
+            struct
+            {
+                bool            fEnabled;
+                bool            fValidData;
+                bool            pad[2];
+                SVGA3dLightData data;
+            } aLightData[SVGA3D_MAX_LIGHTS];
+            uint32_t            aRenderTargets[SVGA3D_RT_MAX];
+            SVGA3dRect          RectScissor;
+            SVGA3dRect          RectViewPort;
+            SVGA3dZRange        zRange;
+            uint32_t            shidPixel;
+            uint32_t            shidVertex;
+            uint32_t            cPixelShaderConst;
+            uint32_t            cVertexShaderConst;
+        } state;
+    };
+#pragma pack()
+
+    static SSMFIELD const g_aVMSVGA3DCONTEXT23Fields[] =
+    {
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, id),
+#ifdef VMSVGA3D_OPENGL
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, lastError),
+#endif
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, cPixelShaders),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, cVertexShaders),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.u32UpdateFlags),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.aRenderState),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.aTextureStates),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.aTransformState),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.aMaterial),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.aClipPlane),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.aLightData),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.aRenderTargets),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.RectScissor),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.RectViewPort),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.zRange),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.shidPixel),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.shidVertex),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.cPixelShaderConst),
+        SSMFIELD_ENTRY(VMSVGA3DCONTEXT23, state.cVertexShaderConst),
+        SSMFIELD_ENTRY_TERM()
+    };
+
+    struct VMSVGA3DCONTEXT23 ctx;
+    int rc = pDevIns->pHlpR3->pfnSSMGetStructEx(pSSM, &ctx, sizeof(ctx), 0, g_aVMSVGA3DCONTEXT23Fields, NULL);
+    AssertRCReturn(rc, rc);
+
+    pContext->id                       = ctx.id;
+#ifdef VMSVGA3D_OPENGL
+    pContext->lastError                = (GLenum)ctx.lastError;
+#endif
+
+    pContext->cPixelShaders            = ctx.cPixelShaders;
+    pContext->cVertexShaders           = ctx.cVertexShaders;
+    pContext->state.u32UpdateFlags     = ctx.state.u32UpdateFlags;
+
+    AssertCompile(sizeof(SVGA3dRenderState) == 8);
+    AssertCompile(RT_ELEMENTS(pContext->state.aRenderState) == 99);
+    for (unsigned i = 0; i < RT_ELEMENTS(pContext->state.aRenderState); ++i)
+        pContext->state.aRenderState[i] = ctx.state.aRenderState[i];
+
+    // Skip pContext->state.aTextureStates
+    AssertCompile(sizeof(SVGA3dTextureState) == 12);
+
+    AssertCompile(sizeof(VMSVGATRANSFORMSTATE) == 68);
+    AssertCompile(RT_ELEMENTS(pContext->state.aTransformState) == 15);
+    for (unsigned i = 0; i < RT_ELEMENTS(pContext->state.aTransformState); ++i)
+    {
+        pContext->state.aTransformState[i].fValid = ctx.state.aTransformState[i].fValid;
+        memcpy(pContext->state.aTransformState[i].matrix, ctx.state.aTransformState[i].matrix, sizeof(pContext->state.aTransformState[i].matrix));
+    }
+
+    AssertCompile(sizeof(SVGA3dMaterial) == 68);
+    AssertCompile(RT_ELEMENTS(pContext->state.aMaterial) == 5);
+    for (unsigned i = 0; i < RT_ELEMENTS(pContext->state.aMaterial); ++i)
+    {
+        pContext->state.aMaterial[i].fValid = ctx.state.aMaterial[i].fValid;
+        pContext->state.aMaterial[i].material = ctx.state.aMaterial[i].material;
+    }
+
+    AssertCompile(sizeof(VMSVGACLIPPLANESTATE) == 20);
+    AssertCompile(RT_ELEMENTS(pContext->state.aClipPlane) == (1 << 5));
+    for (unsigned i = 0; i < RT_ELEMENTS(pContext->state.aClipPlane); ++i)
+    {
+        pContext->state.aClipPlane[i].fValid = ctx.state.aClipPlane[i].fValid;
+        memcpy(pContext->state.aClipPlane[i].plane, ctx.state.aClipPlane[i].plane, sizeof(pContext->state.aClipPlane[i].plane));
+    }
+
+    AssertCompile(sizeof(SVGA3dLightData) == 116);
+    AssertCompile(RT_ELEMENTS(pContext->state.aLightData) == 32);
+    for (unsigned i = 0; i < RT_ELEMENTS(pContext->state.aLightData); ++i)
+    {
+        pContext->state.aLightData[i].fEnabled = ctx.state.aLightData[i].fEnabled;
+        pContext->state.aLightData[i].fValidData = ctx.state.aLightData[i].fValidData;
+        pContext->state.aLightData[i].data = ctx.state.aLightData[i].data;
+    }
+
+    AssertCompile(RT_ELEMENTS(pContext->state.aRenderTargets) == 10);
+    memcpy(pContext->state.aRenderTargets, ctx.state.aRenderTargets, SVGA3D_RT_MAX * sizeof(uint32_t));
+
+    AssertCompile(sizeof(SVGA3dRect) == 16);
+    pContext->state.RectScissor        = ctx.state.RectScissor;
+    pContext->state.RectViewPort       = ctx.state.RectViewPort;
+
+    AssertCompile(sizeof(SVGA3dZRange) == 8);
+    pContext->state.zRange             = ctx.state.zRange;
+
+    pContext->state.shidPixel          = ctx.state.shidPixel;
+    pContext->state.shidVertex         = ctx.state.shidVertex;
+    pContext->state.cPixelShaderConst  = ctx.state.cPixelShaderConst;
+    pContext->state.cVertexShaderConst = ctx.state.cVertexShaderConst;
+
+    return VINF_SUCCESS;
+}
+
 int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     RT_NOREF(pDevIns, pThis, uPass);
@@ -266,7 +440,10 @@ int vmsvga3dLoadExec(PPDMDEVINS pDevIns, PVGASTATE pThis, PVGASTATECC pThisCC, P
             }
             AssertReturn(pContext->id == cid, VERR_INTERNAL_ERROR);
 
-            rc = pHlp->pfnSSMGetStructEx(pSSM, pContext, sizeof(*pContext), 0, g_aVMSVGA3DCONTEXTFields, NULL);
+            if (uVersion >= VGA_SAVEDSTATE_VERSION_VMSVGA_MIPLEVELS)
+                rc = pHlp->pfnSSMGetStructEx(pSSM, pContext, sizeof(*pContext), 0, g_aVMSVGA3DCONTEXTFields, NULL);
+            else
+                rc = vmsvga3dLoadVMSVGA3DCONTEXT23(pDevIns, pSSM, pContext);
             AssertRCReturn(rc, rc);
 
             cPixelShaders                       = pContext->cPixelShaders;
