@@ -373,9 +373,9 @@ static void SafeR80FractionShift(PRTFLOAT80U pr80, uint8_t cShift)
 }
 
 
-static RTFLOAT80U RandR80Ex(unsigned cTarget = 80)
+static RTFLOAT80U RandR80Ex(unsigned cTarget = 80, bool fIntTarget = false)
 {
-    Assert(cTarget == 80 || cTarget == 64 || cTarget == 32);
+    Assert(cTarget == (!fIntTarget ? 80 : 16) || cTarget == 64 || cTarget == 32 || (cTarget == 59 && fIntTarget));
 
     RTFLOAT80U r80;
     r80.au64[0] = RandU64();
@@ -446,32 +446,59 @@ static RTFLOAT80U RandR80Ex(unsigned cTarget = 80)
         if (bType & 1)
             SafeR80FractionShift(&r80, RandU8() % 62);
         r80.sj64.fInteger  = 0;
+        if (r80.sj64.uExponent == RTFLOAT80U_EXP_MAX || r80.sj64.uExponent == 0)
+            r80.sj64.uExponent = (uint16_t)RTRandU32Ex(1, RTFLOAT80U_EXP_MAX - 1);
         AssertMsg(RTFLOAT80U_IS_UNNORMAL(&r80), ("%s\n", FormatR80(&r80)));
     }
     else if (bType < 24)
     {
         /* Make sure we have lots of normalized values. */
-        const unsigned uMinExp = cTarget == 64 ? RTFLOAT80U_EXP_BIAS - RTFLOAT64U_EXP_BIAS
-                               : cTarget == 32 ? RTFLOAT80U_EXP_BIAS - RTFLOAT32U_EXP_BIAS : 0;
-        const unsigned uMaxExp = cTarget == 64 ? uMinExp + RTFLOAT64U_EXP_MAX
-                               : cTarget == 32 ? uMinExp + RTFLOAT32U_EXP_MAX : RTFLOAT80U_EXP_MAX;
-        r80.sj64.fInteger = 1;
-        if (r80.sj64.uExponent <= uMinExp)
-            r80.sj64.uExponent = uMinExp + 1;
-        else if (r80.sj64.uExponent >= uMaxExp)
-            r80.sj64.uExponent = uMaxExp - 1;
-
-        if (bType == 14)
-        {   /* All 1s is useful to testing rounding. Also try trigger special
-               behaviour by sometimes rounding out of range, while we're at it. */
-            r80.sj64.uFraction = RT_BIT_64(63) - 1;
-            uint8_t bExp = RandU8();
-            if ((bExp & 3) == 0)
-                r80.sj64.uExponent = uMaxExp - 1;
-            else if ((bExp & 3) == 1)
+        if (!fIntTarget)
+        {
+            const unsigned uMinExp = cTarget == 64 ? RTFLOAT80U_EXP_BIAS - RTFLOAT64U_EXP_BIAS
+                                   : cTarget == 32 ? RTFLOAT80U_EXP_BIAS - RTFLOAT32U_EXP_BIAS : 0;
+            const unsigned uMaxExp = cTarget == 64 ? uMinExp + RTFLOAT64U_EXP_MAX
+                                   : cTarget == 32 ? uMinExp + RTFLOAT32U_EXP_MAX              : RTFLOAT80U_EXP_MAX;
+            r80.sj64.fInteger = 1;
+            if (r80.sj64.uExponent <= uMinExp)
                 r80.sj64.uExponent = uMinExp + 1;
-            else if ((bExp & 3) == 2)
-                r80.sj64.uExponent = uMinExp - (bExp & 15); /* (small numbers are mapped to subnormal values) */
+            else if (r80.sj64.uExponent >= uMaxExp)
+                r80.sj64.uExponent = uMaxExp - 1;
+
+            if (bType == 14)
+            {   /* All 1s is useful to testing rounding. Also try trigger special
+                   behaviour by sometimes rounding out of range, while we're at it. */
+                r80.sj64.uFraction = RT_BIT_64(63) - 1;
+                uint8_t bExp = RandU8();
+                if ((bExp & 3) == 0)
+                    r80.sj64.uExponent = uMaxExp - 1;
+                else if ((bExp & 3) == 1)
+                    r80.sj64.uExponent = uMinExp + 1;
+                else if ((bExp & 3) == 2)
+                    r80.sj64.uExponent = uMinExp - (bExp & 15); /* (small numbers are mapped to subnormal values) */
+            }
+        }
+        else
+        {
+            /* integer target: */
+            const unsigned uMinExp = RTFLOAT80U_EXP_BIAS;
+            const unsigned uMaxExp = RTFLOAT80U_EXP_BIAS + cTarget - 2;
+            r80.sj64.fInteger = 1;
+            if (r80.sj64.uExponent < uMinExp)
+                r80.sj64.uExponent = uMinExp;
+            else if (r80.sj64.uExponent > uMaxExp)
+                r80.sj64.uExponent = uMaxExp;
+
+            if (bType == 14)
+            {   /* All 1s is useful to testing rounding. Also try trigger special
+                   behaviour by sometimes rounding out of range, while we're at it. */
+                r80.sj64.uFraction = RT_BIT_64(63) - 1;
+                uint8_t bExp = RandU8();
+                if ((bExp & 3) == 0)
+                    r80.sj64.uExponent = uMaxExp;
+                else if ((bExp & 3) == 1)
+                    r80.sj64.uFraction &= ~(RT_BIT_64(cTarget - 1 - r80.sj64.uExponent) - 1); /* no rounding */
+            }
         }
 
         AssertMsg(RTFLOAT80U_IS_NORMAL(&r80), ("%s\n", FormatR80(&r80)));
@@ -2928,19 +2955,39 @@ static FPU_ST_R32_TEST_T const g_aTests_fst_r80_to_r32[] = { {0} };
 #endif
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
+static const RTFLOAT80U g_aFpuStR32Specials[] =
+{
+    RTFLOAT80U_INIT_C(0, 0xffffff8000000000, RTFLOAT80U_EXP_BIAS), /* near rounding with carry */
+    RTFLOAT80U_INIT_C(1, 0xffffff8000000000, RTFLOAT80U_EXP_BIAS), /* near rounding with carry */
+    RTFLOAT80U_INIT_C(0, 0xfffffe8000000000, RTFLOAT80U_EXP_BIAS), /* near rounding */
+    RTFLOAT80U_INIT_C(1, 0xfffffe8000000000, RTFLOAT80U_EXP_BIAS), /* near rounding */
+};
+static const RTFLOAT80U g_aFpuStR64Specials[] =
+{
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffc00, RTFLOAT80U_EXP_BIAS), /* near rounding with carry */
+    RTFLOAT80U_INIT_C(1, 0xfffffffffffffc00, RTFLOAT80U_EXP_BIAS), /* near rounding with carry */
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffff400, RTFLOAT80U_EXP_BIAS), /* near rounding  */
+    RTFLOAT80U_INIT_C(1, 0xfffffffffffff400, RTFLOAT80U_EXP_BIAS), /* near rounding  */
+    RTFLOAT80U_INIT_C(0, 0xd0b9e6fdda887400, 687 + RTFLOAT80U_EXP_BIAS), /* random example for this */
+};
+static const RTFLOAT80U g_aFpuStR80Specials[] =
+{
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, RTFLOAT80U_EXP_BIAS), /* placeholder */
+};
 # define GEN_FPU_STORE(a_cBits, a_rdType, a_aSubTests, a_TestType) \
 static void FpuStR ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
+    uint32_t const cTotalTests = cTests + RT_ELEMENTS(g_aFpuStR ## a_cBits ## Specials); \
     X86FXSTATE State; \
     RT_ZERO(State); \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
         RTStrmPrintf(pOut, "static const " #a_TestType " g_aTests_%s[] =\n{\n", a_aSubTests[iFn].pszName); \
-        for (uint32_t iTest = 0; iTest < cTests; iTest += 1) \
+        for (uint32_t iTest = 0; iTest < cTotalTests; iTest++) \
         { \
             uint16_t const fFcw = RandFcw(); \
             State.FSW = RandFsw(); \
-            RTFLOAT80U const InVal = RandR80Src(iTest); \
+            RTFLOAT80U const InVal = iTest < cTests ? RandR80Src(iTest) : g_aFpuStR ## a_cBits ## Specials[iTest - cTests]; \
             \
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++) \
             { \
@@ -3068,6 +3115,96 @@ static FPU_ST_I16_TEST_T const g_aTests_fistt_r80_to_i16[] = { {0} };
 #endif
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
+static const RTFLOAT80U g_aFpuStI16Specials[] = /* 16-bit variant borrows properties from the 32-bit one, thus all this stuff. */
+{
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 13 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffff0, 13 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000080000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000080000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000100000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000100000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000200000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000200000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000400000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000400000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000800000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000800000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000ffffffffffff, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8001000000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8001000000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffff0, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0xfffffffffffffff0, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xffff800000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xffff000000000000, 14 + RTFLOAT80U_EXP_BIAS), /* overflow to min/nan */
+    RTFLOAT80U_INIT_C(0, 0xfffe000000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0xffff800000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0xffff000000000000, 14 + RTFLOAT80U_EXP_BIAS), /* min */
+    RTFLOAT80U_INIT_C(1, 0xfffe000000000000, 14 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 15 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffff0, 15 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 16 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 17 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 20 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 24 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 28 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 30 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000000, 30 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffff0, 30 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0xfffffffffffffff0, 30 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000000, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000001, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000001, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000ffffffffffff, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000ffffffffffff, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8001000000000000, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8001000000000000, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffff0, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0xfffffffffffffff0, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 32 + RTFLOAT80U_EXP_BIAS),
+};
+static const RTFLOAT80U g_aFpuStI32Specials[] =
+{
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 30 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000000, 30 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffff0, 30 + RTFLOAT80U_EXP_BIAS), /* overflow to min/nan */
+    RTFLOAT80U_INIT_C(1, 0xfffffffffffffff0, 30 + RTFLOAT80U_EXP_BIAS), /* min */
+    RTFLOAT80U_INIT_C(0, 0xffffffff80000000, 30 + RTFLOAT80U_EXP_BIAS), /* overflow to min/nan */
+    RTFLOAT80U_INIT_C(1, 0xffffffff80000000, 30 + RTFLOAT80U_EXP_BIAS), /* min */
+    RTFLOAT80U_INIT_C(0, 0xffffffff00000000, 30 + RTFLOAT80U_EXP_BIAS), /* overflow to min/nan */
+    RTFLOAT80U_INIT_C(1, 0xffffffff00000000, 30 + RTFLOAT80U_EXP_BIAS), /* min */
+    RTFLOAT80U_INIT_C(0, 0xfffffffe00000000, 30 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0xfffffffe00000000, 30 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000000, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000001, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000001, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffff0, 31 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0xfffffffffffffff0, 31 + RTFLOAT80U_EXP_BIAS),
+};
+static const RTFLOAT80U g_aFpuStI64Specials[] =
+{
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 61 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xffffffffffffffff, 61 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 62 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000000, 62 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffff0, 62 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0xfffffffffffffff0, 62 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xffffffffffffffff, 62 + RTFLOAT80U_EXP_BIAS), /* overflow to min/nan */
+    RTFLOAT80U_INIT_C(1, 0xffffffffffffffff, 62 + RTFLOAT80U_EXP_BIAS), /* min */
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffffe, 62 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0xfffffffffffffffe, 62 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000000, 63 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000000, 63 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000001, 63 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000001, 63 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0x8000000000000002, 63 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(1, 0x8000000000000002, 63 + RTFLOAT80U_EXP_BIAS),
+    RTFLOAT80U_INIT_C(0, 0xfffffffffffffff0, 63 + RTFLOAT80U_EXP_BIAS),
+};
+
 # define GEN_FPU_STORE_INT(a_cBits, a_iType, a_szFmt, a_aSubTests, a_TestType) \
 static void FpuStI ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 { \
@@ -3076,11 +3213,13 @@ static void FpuStI ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
         RTStrmPrintf(pOut, "static const " #a_TestType " g_aTests_%s[] =\n{\n", a_aSubTests[iFn].pszName); \
-        for (uint32_t iTest = 0; iTest < cTests; iTest += 1) \
+        uint32_t const cTotalTests = cTests + RT_ELEMENTS(g_aFpuStI ## a_cBits ## Specials); \
+        for (uint32_t iTest = 0; iTest < cTotalTests; iTest++) \
         { \
             uint16_t const fFcw = RandFcw(); \
             State.FSW = RandFsw(); \
-            RTFLOAT80U const InVal = RandR80Src(iTest); \
+            RTFLOAT80U const InVal = iTest < cTests ? RandR80Ex(a_cBits, true) \
+                                   : g_aFpuStI ## a_cBits ## Specials[iTest - cTests]; \
             \
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++) \
             { \
@@ -3217,17 +3356,33 @@ static const FPU_ST_D80_T g_aFpuStD80[] =
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 static void FpuStD80Generate(PRTSTREAM pOut, uint32_t cTests)
 {
+    static RTFLOAT80U const s_aSpecials[] =
+    {
+        RTFLOAT80U_INIT_C(0, 0xde0b6b3a763fffe0, RTFLOAT80U_EXP_BIAS + 59), /* 1 below max */
+        RTFLOAT80U_INIT_C(1, 0xde0b6b3a763fffe0, RTFLOAT80U_EXP_BIAS + 59), /* 1 above min */
+        RTFLOAT80U_INIT_C(0, 0xde0b6b3a763ffff0, RTFLOAT80U_EXP_BIAS + 59), /* exact max */
+        RTFLOAT80U_INIT_C(1, 0xde0b6b3a763ffff0, RTFLOAT80U_EXP_BIAS + 59), /* exact min */
+        RTFLOAT80U_INIT_C(0, 0xde0b6b3a763fffff, RTFLOAT80U_EXP_BIAS + 59), /* max & all rounded off bits set */
+        RTFLOAT80U_INIT_C(1, 0xde0b6b3a763fffff, RTFLOAT80U_EXP_BIAS + 59), /* min & all rounded off bits set */
+        RTFLOAT80U_INIT_C(0, 0xde0b6b3a763ffff8, RTFLOAT80U_EXP_BIAS + 59), /* max & some rounded off bits set */
+        RTFLOAT80U_INIT_C(1, 0xde0b6b3a763ffff8, RTFLOAT80U_EXP_BIAS + 59), /* min & some rounded off bits set */
+        RTFLOAT80U_INIT_C(0, 0xde0b6b3a763ffff1, RTFLOAT80U_EXP_BIAS + 59), /* max & some other rounded off bits set */
+        RTFLOAT80U_INIT_C(1, 0xde0b6b3a763ffff1, RTFLOAT80U_EXP_BIAS + 59), /* min & some other rounded off bits set */
+        RTFLOAT80U_INIT_C(0, 0xde0b6b3a76400000, RTFLOAT80U_EXP_BIAS + 59), /* 1 above max */
+        RTFLOAT80U_INIT_C(1, 0xde0b6b3a76400000, RTFLOAT80U_EXP_BIAS + 59), /* 1 below min */
+    };
+
     RTStrmPrintf(pOut, "\n\n#define HAVE_FPU_ST_BCD\n");
     X86FXSTATE State;
     RT_ZERO(State);
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuStD80); iFn++)
     {
         RTStrmPrintf(pOut, "static const FPU_ST_D80_TEST_T g_aTests_%s[] =\n{\n", g_aFpuStD80[iFn].pszName);
-        for (uint32_t iTest = 0; iTest < cTests; iTest += 1)
+        for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
             uint16_t const fFcw = RandFcw();
             State.FSW = RandFsw();
-            RTFLOAT80U const InVal = RandR80Src(iTest);
+            RTFLOAT80U const InVal = iTest < cTests ? RandR80Ex(59, true) : s_aSpecials[iTest - cTests];
 
             for (uint16_t iRounding = 0; iRounding < 4; iRounding++)
             {
@@ -3450,8 +3605,9 @@ int main(int argc, char **argv)
 
         if (fInt)
         {
-            const char *pszDataFile = fCommonData ? "tstIEMAImplData.h" : pszBitBucket;
-            PRTSTREAM   pStrmData   = NULL;
+            const char *pszFileInfix = "";
+            const char *pszDataFile  = fCommonData ? "tstIEMAImplData.h" : pszBitBucket;
+            PRTSTREAM   pStrmData    = NULL;
             rc = RTStrmOpen(pszDataFile, "w", &pStrmData);
             if (!pStrmData)
                 return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataFile, rc);
@@ -3463,8 +3619,8 @@ int main(int argc, char **argv)
             if (!pStrmData)
                 return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataCpuFile, rc);
 
-            GenerateHeader(pStrmData, "", szCpuDesc, NULL, "");
-            GenerateHeader(pStrmDataCpu, "", szCpuDesc, pszCpuType, pszCpuSuff);
+            GenerateHeader(pStrmData, pszFileInfix, szCpuDesc, NULL, "");
+            GenerateHeader(pStrmDataCpu, pszFileInfix, szCpuDesc, pszCpuType, pszCpuSuff);
 
             BinU8Generate( pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
             BinU16Generate(pStrmData, pStrmDataCpu, pszCpuSuffU, cTests);
@@ -3475,8 +3631,8 @@ int main(int argc, char **argv)
             ShiftGenerate(pStrmDataCpu, pszCpuSuffU, cTests);
             MulDivGenerate(pStrmDataCpu, pszCpuSuffU, cTests);
 
-            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "", pszCpuSuff,
-                                                       GenerateFooterAndClose(pStrmData, pszDataFile, "", "",
+            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, pszFileInfix, pszCpuSuff,
+                                                       GenerateFooterAndClose(pStrmData, pszDataFile, pszFileInfix, "",
                                                                               RTEXITCODE_SUCCESS));
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
@@ -3484,8 +3640,9 @@ int main(int argc, char **argv)
 
         if (fFpuLdSt)
         {
-            const char *pszDataFile = fCommonData ? "tstIEMAImplDataFpuLdSt.h" : pszBitBucket;
-            PRTSTREAM   pStrmData   = NULL;
+            const char *pszFileInfix = "FpuLdSt";
+            const char *pszDataFile  = fCommonData ? "tstIEMAImplDataFpuLdSt.h" : pszBitBucket;
+            PRTSTREAM   pStrmData    = NULL;
             rc = RTStrmOpen(pszDataFile, "w", &pStrmData);
             if (!pStrmData)
                 return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataFile, rc);
@@ -3497,8 +3654,8 @@ int main(int argc, char **argv)
             if (!pStrmData)
                 return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataCpuFile, rc);
 
-            GenerateHeader(pStrmData, "Fpu", szCpuDesc, NULL, "");
-            GenerateHeader(pStrmDataCpu, "Fpu", szCpuDesc, pszCpuType, pszCpuSuff);
+            GenerateHeader(pStrmData, pszFileInfix, szCpuDesc, NULL, "");
+            GenerateHeader(pStrmDataCpu, pszFileInfix, szCpuDesc, pszCpuType, pszCpuSuff);
 
             FpuLdConstGenerate(pStrmData, cTests);
             FpuLdIntGenerate(pStrmData, cTests);
@@ -3509,8 +3666,8 @@ int main(int argc, char **argv)
             FpuLdMemGenerate(pStrmData, cTests);
             FpuStMemGenerate(pStrmData, cTests);
 
-            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "FpuLdSt", pszCpuSuff,
-                                                       GenerateFooterAndClose(pStrmData, pszDataFile, "FpuLdSt", "",
+            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, pszFileInfix, pszCpuSuff,
+                                                       GenerateFooterAndClose(pStrmData, pszDataFile, pszFileInfix, "",
                                                                               RTEXITCODE_SUCCESS));
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
@@ -3519,8 +3676,9 @@ int main(int argc, char **argv)
         if (fFpuOther)
         {
 # if 0
-            const char *pszDataFile = fCommonData ? "tstIEMAImplDataFpuOther.h" : pszBitBucket;
-            PRTSTREAM   pStrmData   = NULL;
+            const char *pszFileInfix = "FpuOther";
+            const char *pszDataFile  = fCommonData ? "tstIEMAImplDataFpuOther.h" : pszBitBucket;
+            PRTSTREAM   pStrmData    = NULL;
             rc = RTStrmOpen(pszDataFile, "w", &pStrmData);
             if (!pStrmData)
                 return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataFile, rc);
@@ -3532,13 +3690,13 @@ int main(int argc, char **argv)
             if (!pStrmData)
                 return RTMsgErrorExitFailure("Failed to open %s for writing: %Rrc", pszDataCpuFile, rc);
 
-            GenerateHeader(pStrmData, "Fpu", szCpuDesc, NULL, "");
-            GenerateHeader(pStrmDataCpu, "Fpu", szCpuDesc, pszCpuType, pszCpuSuff);
+            GenerateHeader(pStrmData, pszFileInfix, szCpuDesc, NULL, "");
+            GenerateHeader(pStrmDataCpu, pszFileInfix, szCpuDesc, pszCpuType, pszCpuSuff);
 
             /* later */
 
-            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, "FpuOther", pszCpuSuff,
-                                                       GenerateFooterAndClose(pStrmData, pszDataFile, "FpuOther", "",
+            RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile, pszFileInfix, pszCpuSuff,
+                                                       GenerateFooterAndClose(pStrmData, pszDataFile, pszFileInfix, "",
                                                                               RTEXITCODE_SUCCESS));
             if (rcExit != RTEXITCODE_SUCCESS)
                 return rcExit;
@@ -3612,3 +3770,4 @@ int main(int argc, char **argv)
     }
     return RTTestSkipAndDestroy(g_hTest, "unfinished testcase");
 }
+
