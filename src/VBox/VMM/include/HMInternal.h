@@ -632,6 +632,10 @@ AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
 
 /** @} */
 
+
+/** @addtogroup grp_hm_int_vmx  VMX Internal
+ * @{ */
+
 /** @name Host-state restoration flags.
  * @note If you change these values don't forget to update the assembly
  *       defines as well!
@@ -706,6 +710,7 @@ typedef DECLCALLBACKTYPE(int, FNHMVMXSTARTVM,(PVMXVMCSINFO pVmcsInfo, PVMCPUCC p
 /** Pointer to a VMX StartVM function. */
 typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
 /** @} */
+
 
 /**
  * HM VMCPU Instance data.

@@ -1260,7 +1260,7 @@ AssertCompileSizeAlignment(PDMNSBWGROUP, 64);
 /** Pointer to a bandwidth group. */
 typedef PDMNSBWGROUP *PPDMNSBWGROUP;
 
-/* @} */
+/** @} */
 
 
 /**

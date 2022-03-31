@@ -223,7 +223,6 @@ VMMR3DECL(char *)   MMR3HeapAPrintfVU(PUVM pUVM, MMTAG enmTag, const char *pszFo
 VMMR3DECL(void)     MMR3HeapFree(void *pv);
 /** @} */
 
-/** @} */
 #endif /* IN_RING3 || DOXYGEN_RUNNING */
 
 
