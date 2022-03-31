@@ -517,7 +517,7 @@ class tdUnitTest1(vbox.TestDriver):
             iArg += 1;
             if iArg >= len(asArgs):
                 raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
-            if asArgs[iArg] in ('local', 'remote-copy', 'remote-exec'):
+            if asArgs[iArg] in [ 'local', 'remote-copy', 'remote-exec' ]:
                 self.sMode = asArgs[iArg];
             else:
                 raise base.InvalidOption('Argument "%s" invalid' % (asArgs[iArg]));
