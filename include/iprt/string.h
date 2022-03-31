@@ -1913,7 +1913,7 @@ RTDECL(ssize_t) RTStrFormatU512(char *pszBuf, size_t cbBuf, PCRTUINT512U pu512Va
  * @returns The length of the formatted number or VERR_BUFFER_OVERFLOW.
  * @param   pszBuf          The output buffer.
  * @param   cbBuf           The size of the output buffer.
- * @param   pr80Value       The value to format.
+ * @param   pr32Value       The value to format.
  * @param   cchWidth        Width.
  * @param   cchPrecision    Precision.
  * @param   fFlags          Flags, RTSTR_F_XXX.
@@ -1927,7 +1927,7 @@ RTDECL(ssize_t) RTStrFormatR32(char *pszBuf, size_t cbBuf, PCRTFLOAT32U pr32Valu
  * @returns The length of the formatted number or VERR_BUFFER_OVERFLOW.
  * @param   pszBuf          The output buffer.
  * @param   cbBuf           The size of the output buffer.
- * @param   pr80Value       The value to format.
+ * @param   pr64Value       The value to format.
  * @param   cchWidth        Width.
  * @param   cchPrecision    Precision.
  * @param   fFlags          Flags, RTSTR_F_XXX.
