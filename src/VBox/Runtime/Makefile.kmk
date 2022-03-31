@@ -324,6 +324,9 @@ endif
 ifdef IPRT_HTTP_WITH_WEBDAV
  RuntimeR3_DEFS        += IPRT_HTTP_WITH_WEBDAV
 endif
+ifdef IPRT_WITHOUT_PAM
+ RuntimeR3_DEFS        += IPRT_WITHOUT_PAM
+endif
 RuntimeR3_INCS          = \
 	include \
 	$(SDK_VBOX_ZLIB_INCS) \

@@ -85,6 +85,7 @@
 #endif
 
 #if !defined(IPRT_USE_PAM) \
+ && !defined(IPRT_WITHOUT_PAM) \
  && ( defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD) )
 # define IPRT_USE_PAM
 #endif
