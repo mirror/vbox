@@ -398,12 +398,20 @@ class tdUnitTest1(vbox.TestDriver):
         reporter.log2('Detecting paths ...');
 
         #
+        # Do some sanity checking first.
+        #
+        if  self.sMode == 'remote-exec' \
+        and not self.sUnitTestsPathSrc: # There is no way we can figure this out automatically.
+            reporter.error('Unit tests source must be specified explicitly for selected mode!');
+            return False;
+
+        #
         # We need a VBox install (/ build) to test.
         #
         if False is True: ## @todo r=andy WTF?
             if not self.importVBoxApi():
-                reporter.error('Unabled to import the VBox Python API.')
-                return False
+                reporter.error('Unabled to import the VBox Python API.');
+                return False;
         else:
             self._detectBuild();
             if self.oBuild is None:
@@ -414,49 +422,60 @@ class tdUnitTest1(vbox.TestDriver):
         # Where are the files installed?
         # Solaris requires special handling because of it's multi arch subdirs.
         #
-        self.sVBoxInstallRoot = self.oBuild.sInstallPath
-        if not self.oBuild.isDevBuild() and utils.getHostOs() == 'solaris':
-            sArchDir = utils.getHostArch();
-            if sArchDir == 'x86': sArchDir = 'i386';
-            self.sVBoxInstallRoot = os.path.join(self.sVBoxInstallRoot, sArchDir);
+        if not self.sVBoxInstallRoot:
+            self.sVBoxInstallRoot = self.oBuild.sInstallPath;
+            if not self.oBuild.isDevBuild() and utils.getHostOs() == 'solaris':
+                sArchDir = utils.getHostArch();
+                if sArchDir == 'x86': sArchDir = 'i386';
+                self.sVBoxInstallRoot = os.path.join(self.sVBoxInstallRoot, sArchDir);
 
-        # Add the installation root to the PATH on windows so we can get DLLs from it.
-        if utils.getHostOs() == 'win':
-            sPathName = 'PATH';
-            if not sPathName in os.environ:
-                sPathName = 'Path';
-            sPath = os.environ.get(sPathName, '.');
-            if sPath and sPath[-1] != ';':
-                sPath += ';';
-            os.environ[sPathName] = sPath + self.sVBoxInstallRoot + ';';
+            ## @todo r=andy Make sure the install root really exists and is accessible.
+
+            # Add the installation root to the PATH on windows so we can get DLLs from it.
+            if utils.getHostOs() == 'win':
+                sPathName = 'PATH';
+                if not sPathName in os.environ:
+                    sPathName = 'Path';
+                sPath = os.environ.get(sPathName, '.');
+                if sPath and sPath[-1] != ';':
+                    sPath += ';';
+                os.environ[sPathName] = sPath + self.sVBoxInstallRoot + ';';
+        else:
+            reporter.log2('VBox installation root already set to "%s"' % (self.sVBoxInstallRoot));
 
         #
         # The unittests are generally not installed, so look for them.
         #
-        sBinOrDist = 'dist' if utils.getHostOs() in [ 'darwin', ] else 'bin';
-        asCandidates = [
-            self.oBuild.sInstallPath,
-            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), self.oBuild.sType, sBinOrDist),
-            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'release', sBinOrDist),
-            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'debug',   sBinOrDist),
-            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'strict',  sBinOrDist),
-            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'dbgopt',  sBinOrDist),
-            os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'profile', sBinOrDist),
-            os.path.join(self.sScratchPath, sBinOrDist + '.' + utils.getHostArch()),
-            os.path.join(self.sScratchPath, sBinOrDist, utils.getHostArch()),
-            os.path.join(self.sScratchPath, sBinOrDist),
-        ];
-        if utils.getHostOs() == 'darwin':
-            for i in range(1, len(asCandidates)):
-                asCandidates[i] = os.path.join(asCandidates[i], 'VirtualBox.app', 'Contents', 'MacOS');
+        if not self.sUnitTestsPathSrc:
+            sBinOrDist = 'dist' if utils.getHostOs() in [ 'darwin', ] else 'bin';
+            asCandidates = [
+                self.oBuild.sInstallPath,
+                os.path.join(self.sScratchPath, utils.getHostOsDotArch(), self.oBuild.sType, sBinOrDist),
+                os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'release', sBinOrDist),
+                os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'debug',   sBinOrDist),
+                os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'strict',  sBinOrDist),
+                os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'dbgopt',  sBinOrDist),
+                os.path.join(self.sScratchPath, utils.getHostOsDotArch(), 'profile', sBinOrDist),
+                os.path.join(self.sScratchPath, sBinOrDist + '.' + utils.getHostArch()),
+                os.path.join(self.sScratchPath, sBinOrDist, utils.getHostArch()),
+                os.path.join(self.sScratchPath, sBinOrDist),
+            ];
+            if utils.getHostOs() == 'darwin':
+                for i in range(1, len(asCandidates)):
+                    asCandidates[i] = os.path.join(asCandidates[i], 'VirtualBox.app', 'Contents', 'MacOS');
 
-        for sCandidat in asCandidates:
-            if os.path.exists(os.path.join(sCandidat, 'testcase', 'tstVMStructSize' + self.sExeSuff)):
-                self.sUnitTestsPathSrc = sCandidat;
-                return True;
+            for sCandidat in asCandidates:
+                if os.path.exists(os.path.join(sCandidat, 'testcase', 'tstVMStructSize' + self.sExeSuff)):
+                    self.sUnitTestsPathSrc = sCandidat;
+                    break;
 
-        reporter.error('Unable to find unit test dir. Candidates: %s' % (asCandidates,))
-        return False;
+            if not self.sUnitTestsPathSrc:
+                reporter.error('Unable to find unit test source dir. Candidates: %s' % (asCandidates,));
+                return False;
+        else:
+            reporter.log2('Unit test source dir already set to "%s"' % (self.sUnitTestsPathSrc));
+
+        return True;
 
     #
     # Overridden methods.
@@ -471,8 +490,11 @@ class tdUnitTest1(vbox.TestDriver):
         reporter.log('Unit Test #1 options:');
         reporter.log('  --dryrun');
         reporter.log('      Performs a dryrun (no tests being executed).');
-        reporter.log('  --mode <local|remote>');
-        reporter.log('      Specifies the execution mode.');
+        reporter.log('  --mode <local|remote-copy|remote-exec>');
+        reporter.log('      Specifies the test execution mode:');
+        reporter.log('      local:       Locally on the same machine.');
+        reporter.log('      remote-copy: On remote (guest) by copying them from the local source.');
+        reporter.log('      remote-exec: On remote (guest) directly (needs unit test source).');
         reporter.log('  --only-whitelist');
         reporter.log('      Only processes the white list.');
         reporter.log('  --quick');
@@ -495,13 +517,8 @@ class tdUnitTest1(vbox.TestDriver):
             iArg += 1;
             if iArg >= len(asArgs):
                 raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
-            if asArgs[iArg] == 'local':
+            if asArgs[iArg] in ('local', 'remote-copy', 'remote-exec'):
                 self.sMode = asArgs[iArg];
-            elif asArgs[iArg] == 'remote':
-                if self.sUnitTestsPathSrc:
-                    self.sMode = 'remote-exec';
-                else:
-                    self.sMode = 'remote-copy';
             else:
                 raise base.InvalidOption('Argument "%s" invalid' % (asArgs[iArg]));
         elif asArgs[iArg] == '--unittest-source':
@@ -509,8 +526,6 @@ class tdUnitTest1(vbox.TestDriver):
             if iArg >= len(asArgs):
                 raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
             self.sUnitTestsPathSrc = asArgs[iArg];
-            self.sMode = 'remote-exec';
-            reporter.log('Unit test source explicitly set to "%s"' % (self.sUnitTestsPathSrc));
         elif asArgs[iArg] == '--only-whitelist':
             self.fOnlyWhiteList = True;
         elif asArgs[iArg] == '--quick':
@@ -520,7 +535,6 @@ class tdUnitTest1(vbox.TestDriver):
             if iArg >= len(asArgs):
                 raise base.InvalidOption('Option "%s" needs a value' % (asArgs[iArg - 1]));
             self.sVBoxInstallRoot = asArgs[iArg];
-            reporter.log('VBox installation root explicitly set to "%s"' % (self.sVBoxInstallRoot));
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
         return iArg + 1;
@@ -559,9 +573,8 @@ class tdUnitTest1(vbox.TestDriver):
         return True;
 
     def actionExecute(self):
-        if not self.sUnitTestsPathSrc:
-            if not self._detectPaths():
-                return False;
+        if not self._detectPaths():
+            return False;
         reporter.log2('Unit test source path is "%s"\n' % self.sUnitTestsPathSrc);
 
         if not self.sUnitTestsPathDst:
