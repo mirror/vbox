@@ -387,6 +387,19 @@ class tdUnitTest1(vbox.TestDriver):
         self.fDryRun        = False;
         self.fOnlyWhiteList = False;
 
+    @staticmethod
+    def _sanitizePath(sPath):
+        """
+        Does a little bit of sanitizing a given path by removing quoting, if any.
+
+        This is needed because handed-in paths via command line arguments can contain variables like "${CDROM}"
+        which might need to get processed by TXS on the guest side first.
+
+        Returns the sanitized path.
+        """
+        if sPath is None: # Keep uninitialized strings as-is.
+            return None;
+        return sPath.strip('\"').strip('\'');
 
     def _detectPaths(self):
         """
@@ -443,6 +456,8 @@ class tdUnitTest1(vbox.TestDriver):
         else:
             reporter.log2('VBox installation root already set to "%s"' % (self.sVBoxInstallRoot));
 
+        self.sVBoxInstallRoot = self._sanitizePath(self.sVBoxInstallRoot);
+
         #
         # The unittests are generally not installed, so look for them.
         #
@@ -474,6 +489,8 @@ class tdUnitTest1(vbox.TestDriver):
                 return False;
         else:
             reporter.log2('Unit test source dir already set to "%s"' % (self.sUnitTestsPathSrc));
+
+        self.sUnitTestsPathSrc = self._sanitizePath(self.sUnitTestsPathSrc);
 
         return True;
 
