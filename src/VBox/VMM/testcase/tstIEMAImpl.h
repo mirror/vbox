@@ -284,6 +284,36 @@ typedef struct FPU_BINARY_R32_TEST_T
     RTFLOAT80U              OutVal;
 } FPU_BINARY_R32_TEST_T;
 
+typedef struct FPU_BINARY_I64_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal1;
+    int64_t                 InVal2;
+    RTFLOAT80U              OutVal;
+} FPU_BINARY_I64_TEST_T;
+
+typedef struct FPU_BINARY_I32_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal1;
+    int32_t                 InVal2;
+    RTFLOAT80U              OutVal;
+} FPU_BINARY_I32_TEST_T;
+
+typedef struct FPU_BINARY_I16_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal1;
+    int16_t                 InVal2;
+    RTFLOAT80U              OutVal;
+} FPU_BINARY_I16_TEST_T;
+
 typedef struct FPU_BINARY_EFL_R80_TEST_T
 {
     uint16_t                fFcw;
@@ -293,6 +323,25 @@ typedef struct FPU_BINARY_EFL_R80_TEST_T
     RTFLOAT80U              InVal2;
     uint32_t                fEflOut;
 } FPU_BINARY_EFL_R80_TEST_T;
+
+typedef struct FPU_UNARY_R80_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal;
+    RTFLOAT80U              OutVal;
+} FPU_UNARY_R80_TEST_T;
+
+typedef struct FPU_UNARY_TWO_R80_TEST_T
+{
+    uint16_t                fFcw;
+    uint16_t                fFswIn;
+    uint16_t                fFswOut;
+    RTFLOAT80U              InVal;
+    RTFLOAT80U              OutVal1;
+    RTFLOAT80U              OutVal2;
+} FPU_UNARY_TWO_R80_TEST_T;
 
 /** @} */
 
@@ -616,13 +665,44 @@ TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_R32_TEST_T,      fsubr_r8
 TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_R32_TEST_T,      fdiv_r80_by_r32          );
 TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_R32_TEST_T,      fdivr_r80_by_r32         );
 
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I32_TEST_T,      fiadd_r80_by_i32         );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I32_TEST_T,      fimul_r80_by_i32         );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I32_TEST_T,      fisub_r80_by_i32         );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I32_TEST_T,      fisubr_r80_by_i32        );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I32_TEST_T,      fidiv_r80_by_i32         );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I32_TEST_T,      fidivr_r80_by_i32        );
+
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I16_TEST_T,      fiadd_r80_by_i16         );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I16_TEST_T,      fimul_r80_by_i16         );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I16_TEST_T,      fisub_r80_by_i16         );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I16_TEST_T,      fisubr_r80_by_i16        );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I16_TEST_T,      fidiv_r80_by_i16         );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I16_TEST_T,      fidivr_r80_by_i16        );
+
 TSTIEM_DECLARE_TEST_ARRAY(FpuBinary1,       FPU_BINARY_R80_TEST_T,      fcom_r80_by_r80          );
 TSTIEM_DECLARE_TEST_ARRAY(FpuBinary1,       FPU_BINARY_R80_TEST_T,      fucom_r80_by_r80         );
 TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_R64_TEST_T,      fcom_r80_by_r64          );
 TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_R32_TEST_T,      fcom_r80_by_r32          );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I32_TEST_T,      ficom_r80_by_i32         );
+TSTIEM_DECLARE_TEST_ARRAY(FpuBinary2,       FPU_BINARY_I16_TEST_T,      ficom_r80_by_i16         );
 
 TSTIEM_DECLARE_TEST_ARRAY(FpuBinary1,       FPU_BINARY_EFL_R80_TEST_T,  fcomi_r80_by_r80         );
 TSTIEM_DECLARE_TEST_ARRAY(FpuBinary1,       FPU_BINARY_EFL_R80_TEST_T,  fucomi_r80_by_r80        );
+
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fabs_r80                 );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fchs_r80                 );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       f2xm1_r80                );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fsqrt_r80                );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       frndint_r80              );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fsin_r80                 );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fcos_r80                 );
+
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       ftst_r80                 );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_R80_TEST_T,       fxam_r80                 );
+
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_TWO_R80_TEST_T,   fptan_r80_r80            );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_TWO_R80_TEST_T,   fxtract_r80_r80          );
+TSTIEM_DECLARE_TEST_ARRAY(FpuOther,         FPU_UNARY_TWO_R80_TEST_T,   fsincos_r80_r80          );
 
 #endif /* !VMM_INCLUDED_SRC_testcase_tstIEMAImpl_h */
 

@@ -256,11 +256,12 @@ tstIEMAImpl_CLEAN     = \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary1.cpp \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary1-Amd.cpp \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary1-Intel.cpp \
-	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary2.cpp
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary2.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuOther.cpp
 tstIEMAImpl_SOURCES   = \
 	tstIEMAImpl.cpp \
-       ../VMMAll/IEMAllAImplC.cpp \
-       $(tstIEMAImpl_CLEAN)
+	../VMMAll/IEMAllAImplC.cpp \
+	$(tstIEMAImpl_CLEAN)
 $(call KB_FN_DO_PASS0_ON_TARGET,tstIEMAImpl)
 
 # This variant mainly for generating data.
@@ -269,9 +270,9 @@ tstIEMAImplAsm_DEFS      = $(VMM_COMMON_DEFS) IEM_WITH_ASSEMBLY IN_TSTVMSTRUCT T
 tstIEMAImplAsm_INCS      = ../include .
 tstIEMAImplAsm_SOURCES   = \
 	tstIEMAImpl.cpp \
-       ../VMMAll/IEMAllAImpl.asm \
-       ../VMMAll/IEMAllAImplC.cpp \
-       $(tstIEMAImpl_CLEAN)
+	../VMMAll/IEMAllAImpl.asm \
+	../VMMAll/IEMAllAImplC.cpp \
+	$(tstIEMAImpl_CLEAN)
 
 ## @param 1   The sub-name of the file in question.
 define def_tstIEMAImplData_adjust
@@ -299,6 +300,7 @@ $(evalcall2 def_tstIEMAImplData_adjust,FpuBinary1)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuBinary1-Amd)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuBinary1-Intel)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuBinary2)
+$(evalcall2 def_tstIEMAImplData_adjust,FpuOther)
 
 
 #
