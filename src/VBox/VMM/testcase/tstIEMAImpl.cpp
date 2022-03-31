@@ -3100,10 +3100,6 @@ static struct { RTFLOAT80U Val1; RTFLOAT32U Val2; } const s_aFpuBinaryR32Special
     {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS),
         RTFLOAT32U_INIT_C(0, 0x7fffee, RTFLOAT32U_EXP_BIAS)             }, /* whatever */
 };
-static struct { RTFLOAT80U Val1; int64_t Val2; } const s_aFpuBinaryI64Specials[] =
-{
-    {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS), INT64_MAX    }, /* whatever */
-};
 static struct { RTFLOAT80U Val1; int32_t Val2; } const s_aFpuBinaryI32Specials[] =
 {
     {   RTFLOAT80U_INIT_C(0, 0xffffeeeeddddcccc, RTFLOAT80U_EXP_BIAS), INT32_MAX    }, /* whatever */
