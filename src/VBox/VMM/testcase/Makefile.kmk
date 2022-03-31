@@ -218,7 +218,7 @@ endif # VBOX_WITH_RAW_MODE
 
 
 #
-# Glboal config tool.
+# Global config tool.
 #
 if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
 tstGlobalConfigHardened_TEMPLATE = VBoxR3HardenedTstExe
@@ -236,6 +236,7 @@ endif
 tstGlobalConfig_SOURCES  = tstGlobalConfig.cpp
 tstGlobalConfig_LIBS     = $(LIB_RUNTIME)
 
+
 #
 # Testcase for checking the C (IEMAllAImplC.cpp) and assembly (IEMAllAImpl.asm)
 # instruction emulation helpers.
@@ -244,19 +245,52 @@ tstGlobalConfig_LIBS     = $(LIB_RUNTIME)
 #
 tstIEMAImpl_TEMPLATE  = VBOXR3TSTEXE
 tstIEMAImpl_DEFS      = $(VMM_COMMON_DEFS) IEM_WITHOUT_ASSEMBLY IN_TSTVMSTRUCT
-tstIEMAImpl_INCS      = ../include
+tstIEMAImpl_INCS      = ../include .
+tstIEMAImpl_CLEAN     = \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataInt.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataInt-Amd.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataInt-Intel.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuLdSt.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary1.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary2.cpp
 tstIEMAImpl_SOURCES   = \
 	tstIEMAImpl.cpp \
-       ../VMMAll/IEMAllAImplC.cpp
+       ../VMMAll/IEMAllAImplC.cpp \
+       $(tstIEMAImpl_CLEAN)
+$(call KB_FN_DO_PASS0_ON_TARGET,tstIEMAImpl)
 
 # This variant mainly for generating data.
 tstIEMAImplAsm_TEMPLATE  = VBOXR3TSTEXE
 tstIEMAImplAsm_DEFS      = $(VMM_COMMON_DEFS) IEM_WITH_ASSEMBLY IN_TSTVMSTRUCT TSTIEMAIMPL_WITH_GENERATOR
-tstIEMAImplAsm_INCS      = ../include
+tstIEMAImplAsm_INCS      = ../include .
 tstIEMAImplAsm_SOURCES   = \
 	tstIEMAImpl.cpp \
        ../VMMAll/IEMAllAImpl.asm \
-       ../VMMAll/IEMAllAImplC.cpp
+       ../VMMAll/IEMAllAImplC.cpp \
+       $(tstIEMAImpl_CLEAN)
+
+## @param 1   The sub-name of the file in question.
+define def_tstIEMAImplData_adjust
+$$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplData$(1).cpp: \
+		$$(tstIEMAImpl_DEFPATH)/tstIEMAImplData$(1).cpp \
+		$$(tstIEMAImpl_DEFPATH)/tstIEMAImplData.sh \
+		$$(tstIEMAImpl_DEFPATH)/tstIEMAImpl.h \
+		| $$(tstIEMAImpl_0_OUTDIR)/
+	$$(ASH)	"$$(tstIEMAImpl_DEFPATH)/tstIEMAImplData.sh" \
+		"$$(CP_EXT)" \
+		"$$(MV_EXT)" \
+		"$$(SED_EXT)" \
+		"$$(tstIEMAImpl_0_OUTDIR)" \
+		"$$(tstIEMAImpl_DEFPATH)" \
+		"$(1)"
+endef
+$(evalcall2 def_tstIEMAImplData_adjust,Int)
+$(evalcall2 def_tstIEMAImplData_adjust,Int-Amd)
+$(evalcall2 def_tstIEMAImplData_adjust,Int-Intel)
+$(evalcall2 def_tstIEMAImplData_adjust,FpuLdSt)
+$(evalcall2 def_tstIEMAImplData_adjust,FpuBinary1)
+$(evalcall2 def_tstIEMAImplData_adjust,FpuBinary2)
+
 
 #
 # Testcase for checking the repurposing of the IEM instruction code.
