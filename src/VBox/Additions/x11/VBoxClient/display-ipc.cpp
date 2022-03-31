@@ -206,12 +206,6 @@ static PVBOX_DRMIPC_TX_LIST_ENTRY vbDrmIpcSessionPickupTxMessage(PVBOX_DRMIPC_CL
     return pEntry;
 }
 
-/**
- * Verify if remote IPC peer process is running by user from allowed group.
- *
- * @return  IPRT status code.
- * @param   hClientSession    IPC session handle.
- */
 RTDECL(int) vbDrmIpcAuth(RTLOCALIPCSESSION hClientSession)
 {
     int rc = VERR_ACCESS_DENIED;
@@ -247,13 +241,6 @@ RTDECL(int) vbDrmIpcAuth(RTLOCALIPCSESSION hClientSession)
     return rc;
 }
 
-/**
- * Request remote IPC peer to set primary display (called by IPC server).
- *
- * @return  IPRT status code.
- * @param   pClient     IPC session private data.
- * @param   idDisplay       ID of display to be set as primary.
- */
 RTDECL(int) vbDrmIpcSetPrimaryDisplay(PVBOX_DRMIPC_CLIENT pClient, uint32_t idDisplay)
 {
     int rc = VERR_GENERAL_FAILURE;
