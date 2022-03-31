@@ -1,0 +1,34 @@
+# $Id$
+## @file
+# OpenSSL Sub-Makefile.
+#
+
+#
+# Copyright (C) 2022 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += providers_keymgmt
+providers_keymgmt_TEMPLATE = SUBLIBCRYPTO
+providers_keymgmt_DEFS = OPENSSL_NO_DEPRECATED
+providers_keymgmt_SOURCES = \
+	dh_kmgmt.c \
+	dsa_kmgmt.c \
+	ec_kmgmt.c \
+	ecx_kmgmt.c \
+	kdf_legacy_kmgmt.c \
+	mac_legacy_kmgmt.c \
+	rsa_kmgmt.c
+$(evalcall VBOX_OPENSSL_X86,providers_keymgmt)
+
+include $(FILE_KBUILD_SUB_FOOTER)

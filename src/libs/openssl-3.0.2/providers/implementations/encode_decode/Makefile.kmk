@@ -1,0 +1,38 @@
+# $Id$
+## @file
+# OpenSSL Sub-Makefile.
+#
+
+#
+# Copyright (C) 2022 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += providers_encode_decode
+providers_encode_decode_TEMPLATE = SUBLIBCRYPTO
+providers_encode_decode_DEFS = OPENSSL_NO_DEPRECATED
+providers_encode_decode_SOURCES = \
+	decode_der2key.c \
+	decode_epki2pki.c \
+	decode_msblob2key.c \
+	decode_pem2der.c \
+	decode_pvk2key.c \
+	decode_spki2typespki.c \
+	encode_key2any.c \
+	encode_key2blob.c \
+	encode_key2ms.c \
+	encode_key2text.c \
+	endecoder_common.c
+$(evalcall VBOX_OPENSSL_X86,providers_encode_decode)
+
+include $(FILE_KBUILD_SUB_FOOTER)

@@ -1,0 +1,49 @@
+# $Id$
+## @file
+# OpenSSL Sub-Makefile.
+#
+
+#
+# Copyright (C) 2022 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += crypto_engine
+crypto_engine_TEMPLATE = SUBLIBCRYPTO
+crypto_engine_DEFS = OPENSSL_NO_DEPRECATED
+crypto_engine_SOURCES = \
+	eng_all.c \
+	eng_cnf.c \
+	eng_ctrl.c \
+	eng_dyn.c \
+	eng_err.c \
+	eng_fat.c \
+	eng_init.c \
+	eng_lib.c \
+	eng_list.c \
+	eng_openssl.c \
+	eng_pkey.c \
+	eng_rdrand.c \
+	eng_table.c \
+	tb_asnmth.c \
+	tb_cipher.c \
+	tb_dh.c \
+	tb_digest.c \
+	tb_dsa.c \
+	tb_eckey.c \
+	tb_pkmeth.c \
+	tb_rand.c \
+	tb_rsa.c
+$(evalcall VBOX_OPENSSL_X86,crypto_engine)
+
+include $(FILE_KBUILD_SUB_FOOTER)

@@ -1,0 +1,42 @@
+# $Id$
+## @file
+# OpenSSL Sub-Makefile.
+#
+
+#
+# Copyright (C) 2022 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+LIBRARIES += providers_rands
+providers_rands_TEMPLATE = SUBLIBCRYPTO
+providers_rands_DEFS = OPENSSL_NO_DEPRECATED
+providers_rands_SOURCES = \
+	crngt.c \
+	drbg.c \
+	drbg_ctr.c \
+	drbg_hash.c \
+	drbg_hmac.c \
+	seed_src.c \
+	test_rng.c \
+	seeding/rand_cpu_x86.c
+ifn1of ($(KBUILD_TARGET), win)
+providers_rands_SOURCES += \
+	seeding/rand_unix.c
+else
+providers_rands_SOURCES += \
+	seeding/rand_win.c
+endif
+$(evalcall VBOX_OPENSSL_X86,providers_rands)
+
+include $(FILE_KBUILD_SUB_FOOTER)
