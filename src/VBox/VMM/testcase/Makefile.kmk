@@ -280,6 +280,7 @@ $$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplData$(1).cpp: \
 		"$$(CP_EXT)" \
 		"$$(MV_EXT)" \
 		"$$(SED_EXT)" \
+		"$$(APPEND_EXT)" \
 		"$$(tstIEMAImpl_0_OUTDIR)" \
 		"$$(tstIEMAImpl_DEFPATH)" \
 		"$(1)"

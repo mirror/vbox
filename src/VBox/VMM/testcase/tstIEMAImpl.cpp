@@ -233,7 +233,7 @@ static void SafeR80FractionShift(PRTFLOAT80U pr80, uint8_t cShift)
 
 static RTFLOAT80U RandR80Ex(unsigned cTarget = 80, bool fIntTarget = false)
 {
-    Assert(cTarget == (!fIntTarget ? 80 : 16) || cTarget == 64 || cTarget == 32 || (cTarget == 59 && fIntTarget));
+    Assert(cTarget == (!fIntTarget ? 80U : 16U) || cTarget == 64U || cTarget == 32U || (cTarget == 59U && fIntTarget));
 
     RTFLOAT80U r80;
     r80.au64[0] = RandU64();

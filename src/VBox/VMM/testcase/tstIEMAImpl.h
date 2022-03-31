@@ -279,12 +279,12 @@ typedef struct FPU_BINARY_EFL_R80_TEST_T
 
 
 #define TSTIEM_DEFINE_EMPTY_TEST_ARRAY(a_Type, a_Instr) \
-    const a_Type   RT_CONCAT(g_aTests_, a_Instr)[] = { {0} }; \
-    const uint32_t RT_CONCAT(g_cTests_, a_Instr)   = 0
+    extern a_Type const  RT_CONCAT(g_aTests_, a_Instr)[] = { {0} }; \
+    extern uint32_t const RT_CONCAT(g_cTests_, a_Instr)  = 0
 
 #define TSTIEM_DECLARE_TEST_ARRAY(a_szFile, a_Type, a_Instr) \
-    extern const a_Type   RT_CONCAT(g_aTests_, a_Instr)[]; \
-    extern const uint32_t RT_CONCAT(g_cTests_, a_Instr)
+    extern a_Type   const RT_CONCAT(g_aTests_, a_Instr)[]; \
+    extern uint32_t const RT_CONCAT(g_cTests_, a_Instr)
 
 TSTIEM_DECLARE_TEST_ARRAY(Int,          BINU8_TEST_T,               add_u8             );
 TSTIEM_DECLARE_TEST_ARRAY(Int,          BINU8_TEST_T,               add_u8_locked      );
