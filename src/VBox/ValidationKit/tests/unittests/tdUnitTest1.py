@@ -584,8 +584,12 @@ class tdUnitTest1(vbox.TestDriver):
         reporter.log2('Unit test destination path is "%s"\n' % self.sUnitTestsPathDst);
 
         if self.sMode.startswith('remote'): # Run on a test VM (guest).
-            assert self.oTestVmSet is not None;
-            fRc = self.oTestVmSet.actionExecute(self, self.testOneVmConfig);
+            if self.fpApiVer < 7.0: ## @todo Needs Validation Kit .ISO tweaking (including the unit tests) first.
+                reporter.log('Remote unit tests for non-trunk builds skipped.');
+                fRc = True;
+            else:
+                assert self.oTestVmSet is not None;
+                fRc = self.oTestVmSet.actionExecute(self, self.testOneVmConfig);
         else: # Run locally (host).
             self._figureVersion();
             self._makeEnvironmentChanges();
