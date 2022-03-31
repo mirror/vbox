@@ -3567,9 +3567,9 @@ int main(int argc, char **argv)
             FpuLdD80Generate(pStrmData, cTests);
             FpuStIntGenerate(pStrmData, pStrmDataCpu, cTests);
             FpuStD80Generate(pStrmData, cTests);
-            cTests = RT_MAX(cTests, 384); /* need better coverage for the next ones. */
-            FpuLdMemGenerate(pStrmData, cTests);
-            FpuStMemGenerate(pStrmData, cTests);
+            uint32_t const cTests2 = RT_MAX(cTests, 384); /* need better coverage for the next ones. */
+            FpuLdMemGenerate(pStrmData, cTests2);
+            FpuStMemGenerate(pStrmData, cTests2);
 
             RTEXITCODE rcExit = GenerateFooterAndClose(pStrmDataCpu, pszDataCpuFile,
                                                        GenerateFooterAndClose(pStrmData, pszDataFile, RTEXITCODE_SUCCESS));
