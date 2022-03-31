@@ -2521,26 +2521,6 @@ static PFNSUPTRUSTEDMAIN supR3HardenedMainGetTrustedMain(const char *pszProgName
 }
 
 
-/**
- * Secure main.
- *
- * This is used for the set-user-ID-on-execute binaries on unixy systems
- * and when using the open-vboxdrv-via-root-service setup on Windows.
- *
- * This function will perform the integrity checks of the VirtualBox
- * installation, open the support driver, open the root service (later),
- * and load the DLL corresponding to \a pszProgName and execute its main
- * function.
- *
- * @returns Return code appropriate for main().
- *
- * @param   pszProgName     The program name. This will be used to figure out which
- *                          DLL/SO/DYLIB to load and execute.
- * @param   fFlags          Flags.
- * @param   argc            The argument count.
- * @param   argv            The argument vector.
- * @param   envp            The environment vector.
- */
 DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int argc, char **argv, char **envp)
 {
     SUP_DPRINTF(("SUPR3HardenedMain: pszProgName=%s fFlags=%#x\n", pszProgName, fFlags));
