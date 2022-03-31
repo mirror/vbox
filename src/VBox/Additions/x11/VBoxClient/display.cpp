@@ -268,8 +268,9 @@ static DECLCALLBACK(int) init(void)
 /**
  * @interface_method_impl{VBCLSERVICE,pfnWorker}
  */
-static DECLCALLBACK(int) run(bool volatile *)
+static DECLCALLBACK(int) run(bool volatile *pfShutdown)
 {
+    RT_NOREF(pfShutdown); /** @todo Probably very wrong not to check pfShutdown... Especially given no pfnStop implementation. */
     struct DISPLAYSTATE *pSelf = &g_DisplayState;
 
     if (!pSelf->mfInit)
