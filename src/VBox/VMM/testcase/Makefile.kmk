@@ -251,7 +251,11 @@ tstIEMAImpl_CLEAN     = \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataInt-Amd.cpp \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataInt-Intel.cpp \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuLdSt.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuLdSt-Amd.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuLdSt-Intel.cpp \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary1.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary1-Amd.cpp \
+	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary1-Intel.cpp \
 	$(tstIEMAImpl_0_OUTDIR)/tstIEMAImplDataFpuBinary2.cpp
 tstIEMAImpl_SOURCES   = \
 	tstIEMAImpl.cpp \
@@ -289,7 +293,11 @@ $(evalcall2 def_tstIEMAImplData_adjust,Int)
 $(evalcall2 def_tstIEMAImplData_adjust,Int-Amd)
 $(evalcall2 def_tstIEMAImplData_adjust,Int-Intel)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuLdSt)
+$(evalcall2 def_tstIEMAImplData_adjust,FpuLdSt-Amd)
+$(evalcall2 def_tstIEMAImplData_adjust,FpuLdSt-Intel)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuBinary1)
+$(evalcall2 def_tstIEMAImplData_adjust,FpuBinary1-Amd)
+$(evalcall2 def_tstIEMAImplData_adjust,FpuBinary1-Intel)
 $(evalcall2 def_tstIEMAImplData_adjust,FpuBinary2)
 
 

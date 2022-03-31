@@ -3888,6 +3888,8 @@ EMIT_FIST(64, int64_t, INT64_MIN, X86_FPU_INT64_INDEFINITE)
 EMIT_FIST(32, int32_t, INT32_MIN, X86_FPU_INT32_INDEFINITE)
 EMIT_FIST(16, int16_t, INT16_MIN, X86_FPU_INT16_INDEFINITE)
 
+#endif /*IEM_WITHOUT_ASSEMBLY */
+
 
 /*
  * The FISTT instruction was added with SSE3 and are a lot simpler than FIST.
@@ -3896,9 +3898,9 @@ EMIT_FIST(16, int16_t, INT16_MIN, X86_FPU_INT16_INDEFINITE)
  * as if it was the 32-bit version (i.e. starting with exp 31 instead of 15),
  * thus the @a a_cBitsIn.
  */
-#define EMIT_FISTT(a_cBits, a_cBitsIn, a_iType, a_iTypeMin, a_iTypeMax, a_iTypeIndefinite) \
-IEM_DECL_IMPL_DEF(void, iemAImpl_fistt_r80_to_i ## a_cBits,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW, \
-                                                            a_iType *piDst, PCRTFLOAT80U pr80Val)) \
+#define EMIT_FISTT(a_cBits, a_cBitsIn, a_iType, a_iTypeMin, a_iTypeMax, a_iTypeIndefinite, a_Suffix, a_fIntelVersion) \
+IEM_DECL_IMPL_DEF(void, RT_CONCAT3(iemAImpl_fistt_r80_to_i,a_cBits,a_Suffix),(PCX86FXSTATE pFpuState, uint16_t *pu16FSW, \
+                                                                              a_iType *piDst, PCRTFLOAT80U pr80Val)) \
 { \
     uint16_t const fFcw    = pFpuState->FCW; \
     uint16_t       fFsw    = (pFpuState->FSW & (X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3)); \
@@ -4011,10 +4013,16 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fistt_r80_to_i ## a_cBits,(PCX86FXSTATE pFpuSta
     } \
     *pu16FSW = fFsw; \
 }
-EMIT_FISTT(64, 64, int64_t, INT64_MIN, INT64_MAX, X86_FPU_INT64_INDEFINITE)
-EMIT_FISTT(32, 32, int32_t, INT32_MIN, INT32_MAX, X86_FPU_INT32_INDEFINITE)
-EMIT_FISTT(16, 32, int16_t, INT16_MIN, INT16_MAX, 0 /* X86_FPU_INT16_INDEFINITE - weird weird weird! */)
+#if defined(IEM_WITHOUT_ASSEMBLY)
+EMIT_FISTT(64, 64, int64_t, INT64_MIN, INT64_MAX, X86_FPU_INT64_INDEFINITE, RT_NOTHING, 1)
+EMIT_FISTT(32, 32, int32_t, INT32_MIN, INT32_MAX, X86_FPU_INT32_INDEFINITE, RT_NOTHING, 1)
+EMIT_FISTT(16, 32, int16_t, INT16_MIN, INT16_MAX, 0 /* X86_FPU_INT16_INDEFINITE - weird weird weird! */, RT_NOTHING, 1)
+#endif
+EMIT_FISTT(16, 32, int16_t, INT16_MIN, INT16_MAX, 0 /* X86_FPU_INT16_INDEFINITE - weird weird weird! */, _intel,     1)
+EMIT_FISTT(16, 32, int16_t, INT16_MIN, INT16_MAX, 0 /* X86_FPU_INT16_INDEFINITE - weird weird weird! */, _amd,       0)
 
+
+#if defined(IEM_WITHOUT_ASSEMBLY)
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_d80,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                  PRTPBCD80U pd80Dst, PCRTFLOAT80U pr80Src))
@@ -4439,6 +4447,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fsubr_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMF
 *   x87 FPU Trigometric Operations                                                                                               *
 *********************************************************************************************************************************/
 
+
 IEM_DECL_IMPL_DEF(void, iemAImpl_fpatan_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                     PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
 {
@@ -4446,6 +4455,22 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fpatan_r80_by_r80,(PCX86FXSTATE pFpuState, PIEM
     AssertReleaseFailed();
 }
 
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fpatan_r80_by_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                          PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    iemAImpl_fpatan_r80_by_r80(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fpatan_r80_by_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                        PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    iemAImpl_fpatan_r80_by_r80(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+}
+
+
+#if defined(IEM_WITHOUT_ASSEMBLY)
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val))
 {
@@ -4621,6 +4646,21 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fyl2x_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMF
     AssertReleaseFailed();
 }
 
+#endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fyl2x_r80_by_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                         PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    iemAImpl_fyl2x_r80_by_r80(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fyl2x_r80_by_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                       PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    iemAImpl_fyl2x_r80_by_r80(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+}
+
+#if defined(IEM_WITHOUT_ASSEMBLY)
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_fyl2xp1_r80_by_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                      PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
@@ -4630,6 +4670,18 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fyl2xp1_r80_by_r80,(PCX86FXSTATE pFpuState, PIE
 }
 
 #endif /* IEM_WITHOUT_ASSEMBLY */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fyl2xp1_r80_by_r80_intel,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                           PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    iemAImpl_fyl2xp1_r80_by_r80(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+}
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fyl2xp1_r80_by_r80_amd,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                         PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2))
+{
+    iemAImpl_fyl2xp1_r80_by_r80(pFpuState, pFpuRes, pr80Val1, pr80Val2);
+}
 
 
 /*********************************************************************************************************************************

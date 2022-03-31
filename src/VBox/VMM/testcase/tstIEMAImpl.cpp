@@ -2537,6 +2537,27 @@ static void FpuStMemTest(void)
 /*
  * Store integer values to memory or register.
  */
+TYPEDEF_SUBTEST_TYPE(FPU_ST_I16_T, FPU_ST_I16_TEST_T, PFNIEMAIMPLFPUSTR80TOI16);
+TYPEDEF_SUBTEST_TYPE(FPU_ST_I32_T, FPU_ST_I32_TEST_T, PFNIEMAIMPLFPUSTR80TOI32);
+TYPEDEF_SUBTEST_TYPE(FPU_ST_I64_T, FPU_ST_I64_TEST_T, PFNIEMAIMPLFPUSTR80TOI64);
+
+static const FPU_ST_I16_T g_aFpuStI16[] =
+{
+    ENTRY(fist_r80_to_i16),
+    ENTRY_AMD(  fistt_r80_to_i16, 0),
+    ENTRY_INTEL(fistt_r80_to_i16, 0),
+};
+static const FPU_ST_I32_T g_aFpuStI32[] =
+{
+    ENTRY(fist_r80_to_i32),
+    ENTRY(fistt_r80_to_i32),
+};
+static const FPU_ST_I64_T g_aFpuStI64[] =
+{
+    ENTRY(fist_r80_to_i64),
+    ENTRY(fistt_r80_to_i64),
+};
+
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
 static const RTFLOAT80U g_aFpuStI16Specials[] = /* 16-bit variant borrows properties from the 32-bit one, thus all this stuff. */
 {
@@ -2629,13 +2650,23 @@ static const RTFLOAT80U g_aFpuStI64Specials[] =
 };
 
 # define GEN_FPU_STORE_INT(a_cBits, a_iType, a_szFmt, a_aSubTests, a_TestType) \
-static void FpuStI ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
+static void FpuStI ## a_cBits ## Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTests) \
 { \
     X86FXSTATE State; \
     RT_ZERO(State); \
     for (size_t iFn = 0; iFn < RT_ELEMENTS(a_aSubTests); iFn++) \
     { \
-        GenerateArrayStart(pOut, a_aSubTests[iFn].pszName, #a_TestType); \
+        PFNIEMAIMPLFPUSTR80TOI ## a_cBits const pfn    = a_aSubTests[iFn].pfnNative \
+                                                       ? a_aSubTests[iFn].pfnNative : a_aSubTests[iFn].pfn; \
+        PRTSTREAM                               pOutFn = pOut; \
+        if (a_aSubTests[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE) \
+        { \
+            if (a_aSubTests[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour) \
+                continue; \
+            pOutFn = pOutCpu; \
+        } \
+        \
+        GenerateArrayStart(pOutFn, a_aSubTests[iFn].pszName, #a_TestType); \
         uint32_t const cTotalTests = cTests + RT_ELEMENTS(g_aFpuStI ## a_cBits ## Specials); \
         for (uint32_t iTest = 0; iTest < cTotalTests; iTest++) \
         { \
@@ -2656,14 +2687,14 @@ static void FpuStI ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
                               | (iRounding  << X86_FCW_RC_SHIFT); \
                     /*if (iMask & 1) State.FCW ^= X86_FCW_MASK_ALL;*/ \
                     State.FCW |= (iMask >> 1) << X86_FCW_OM_BIT; \
-                    a_aSubTests[iFn].pfn(&State, &uFswOut, &iOutVal, &InVal); \
-                    RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u */\n", \
+                    pfn(&State, &uFswOut, &iOutVal, &InVal); \
+                    RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s }, /* #%u/%u/%u */\n", \
                                  State.FCW, State.FSW, uFswOut, GenFormatR80(&InVal), \
                                  GenFormatI ## a_cBits(iOutVal), iTest, iRounding, iMask); \
                 } \
             } \
         } \
-        GenerateArrayEnd(pOut, a_aSubTests[iFn].pszName); \
+        GenerateArrayEnd(pOutFn, a_aSubTests[iFn].pszName); \
     } \
 }
 #else
@@ -2671,15 +2702,6 @@ static void FpuStI ## a_cBits ## Generate(PRTSTREAM pOut, uint32_t cTests) \
 #endif
 
 #define TEST_FPU_STORE_INT(a_cBits, a_iType, a_szFmt, a_SubTestType, a_aSubTests, a_TestType) \
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUSTR80TOI ## a_cBits,(PCX86FXSTATE, uint16_t *, a_iType *, PCRTFLOAT80U)); \
-typedef FNIEMAIMPLFPUSTR80TOI ## a_cBits *PFNIEMAIMPLFPUSTR80TOI ## a_cBits; \
-TYPEDEF_SUBTEST_TYPE(a_SubTestType, a_TestType, PFNIEMAIMPLFPUSTR80TOI ## a_cBits); \
-\
-static const a_SubTestType a_aSubTests[] = \
-{ \
-    ENTRY(RT_CONCAT(fist_r80_to_i,a_cBits)), \
-    ENTRY(RT_CONCAT(fistt_r80_to_i,a_cBits)) \
-}; \
 GEN_FPU_STORE_INT(a_cBits, a_iType, a_szFmt, a_aSubTests, a_TestType) \
 \
 static void FpuStI ## a_cBits ## Test(void) \
@@ -2722,16 +2744,18 @@ static void FpuStI ## a_cBits ## Test(void) \
     } \
 }
 
+//fistt_r80_to_i16 diffs for AMD, of course :-)
+
 TEST_FPU_STORE_INT(64, int64_t, "%RI64", FPU_ST_I64_T, g_aFpuStI64, FPU_ST_I64_TEST_T)
 TEST_FPU_STORE_INT(32, int32_t, "%RI32", FPU_ST_I32_T, g_aFpuStI32, FPU_ST_I32_TEST_T)
 TEST_FPU_STORE_INT(16, int16_t, "%RI16", FPU_ST_I16_T, g_aFpuStI16, FPU_ST_I16_TEST_T)
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static void FpuStIntGenerate(PRTSTREAM pOut, uint32_t cTests)
+static void FpuStIntGenerate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTests)
 {
-    FpuStI64Generate(pOut, cTests);
-    FpuStI32Generate(pOut, cTests);
-    FpuStI16Generate(pOut, cTests);
+    FpuStI64Generate(pOut, pOutCpu, cTests);
+    FpuStI32Generate(pOut, pOutCpu, cTests);
+    FpuStI16Generate(pOut, pOutCpu, cTests);
 }
 #endif
 
@@ -2873,13 +2897,16 @@ static const FPU_BINARY_R80_T g_aFpuBinaryR80[] =
     ENTRY(fprem_r80_by_r80),
     ENTRY(fprem1_r80_by_r80),
     ENTRY(fscale_r80_by_r80),
-    ENTRY(fpatan_r80_by_r80),
-    ENTRY(fyl2x_r80_by_r80),
-    ENTRY(fyl2xp1_r80_by_r80),
+    ENTRY_AMD(  fpatan_r80_by_r80,  0),  // C1 and rounding differs on AMD
+    ENTRY_INTEL(fpatan_r80_by_r80,  0),  // C1 and rounding differs on AMD
+    ENTRY_AMD(  fyl2x_r80_by_r80,   0),  // C1 and rounding differs on AMD
+    ENTRY_INTEL(fyl2x_r80_by_r80,   0),  // C1 and rounding differs on AMD
+    ENTRY_AMD(  fyl2xp1_r80_by_r80, 0),  // C1 and rounding differs on AMD
+    ENTRY_INTEL(fyl2xp1_r80_by_r80, 0),  // C1 and rounding differs on AMD
 };
 
 #ifdef TSTIEMAIMPL_WITH_GENERATOR
-static void FpuBinaryR80Generate(PRTSTREAM pOut, uint32_t cTests)
+static void FpuBinaryR80Generate(PRTSTREAM pOut, PRTSTREAM pOutCpu, uint32_t cTests)
 {
     static struct { RTFLOAT80U Val1, Val2; } const s_aSpecials[] =
     {
@@ -2892,7 +2919,16 @@ static void FpuBinaryR80Generate(PRTSTREAM pOut, uint32_t cTests)
     uint32_t cMinNormalPairs = cTests / 4;
     for (size_t iFn = 0; iFn < RT_ELEMENTS(g_aFpuBinaryR80); iFn++)
     {
-        GenerateArrayStart(pOut, g_aFpuBinaryR80[iFn].pszName, "FPU_BINARY_R80_TEST_T");
+        PFNIEMAIMPLFPUR80 const pfn = g_aFpuBinaryR80[iFn].pfnNative ? g_aFpuBinaryR80[iFn].pfnNative : g_aFpuBinaryR80[iFn].pfn;
+        PRTSTREAM            pOutFn = pOut;
+        if (g_aFpuBinaryR80[iFn].idxCpuEflFlavour != IEMTARGETCPU_EFL_BEHAVIOR_NATIVE)
+        {
+            if (g_aFpuBinaryR80[iFn].idxCpuEflFlavour != g_idxCpuEflFlavour)
+                continue;
+            pOutFn = pOutCpu;
+        }
+
+        GenerateArrayStart(pOutFn, g_aFpuBinaryR80[iFn].pszName, "FPU_BINARY_R80_TEST_T");
         uint32_t cNormalInputPairs = 0;
         for (uint32_t iTest = 0; iTest < cTests + RT_ELEMENTS(s_aSpecials); iTest += 1)
         {
@@ -2920,15 +2956,15 @@ static void FpuBinaryR80Generate(PRTSTREAM pOut, uint32_t cTests)
                                   | (iPrecision << X86_FCW_PC_SHIFT)
                                   | iMask;
                         IEMFPURESULT Res = { RTFLOAT80U_INIT(0, 0, 0), 0 };
-                        g_aFpuBinaryR80[iFn].pfn(&State, &Res, &InVal1, &InVal2);
-                        RTStrmPrintf(pOut, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/%c */\n",
+                        pfn(&State, &Res, &InVal1, &InVal2);
+                        RTStrmPrintf(pOutFn, "    { %#06x, %#06x, %#06x, %s, %s, %s }, /* #%u/%u/%u/%c */\n",
                                      State.FCW, State.FSW, Res.FSW, GenFormatR80(&InVal1), GenFormatR80(&InVal2),
                                      GenFormatR80(&Res.r80Result), iTest, iRounding, iPrecision, iMask ? 'c' : 'u');
                     }
                 }
             }
         }
-        GenerateArrayEnd(pOut, g_aFpuBinaryR80[iFn].pszName);
+        GenerateArrayEnd(pOutFn, g_aFpuBinaryR80[iFn].pszName);
     }
 }
 #endif
@@ -3529,7 +3565,7 @@ int main(int argc, char **argv)
             FpuLdConstGenerate(pStrmData, cTests);
             FpuLdIntGenerate(pStrmData, cTests);
             FpuLdD80Generate(pStrmData, cTests);
-            FpuStIntGenerate(pStrmData, cTests);
+            FpuStIntGenerate(pStrmData, pStrmDataCpu, cTests);
             FpuStD80Generate(pStrmData, cTests);
             cTests = RT_MAX(cTests, 384); /* need better coverage for the next ones. */
             FpuLdMemGenerate(pStrmData, cTests);
@@ -3545,13 +3581,13 @@ int main(int argc, char **argv)
         {
             const char *pszDataFile    = fCommonData ? "tstIEMAImplDataFpuBinary1.cpp" : pszBitBucket;
             PRTSTREAM   pStrmData      = GenerateOpenWithHdr(pszDataFile, szCpuDesc, NULL);
-            const char *pszDataCpuFile = pszBitBucket; /*!fCpuData ? pszBitBucket : g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD
-                                       ? "tstIEMAImplDataFpuBinary1-Amd.cpp" : "tstIEMAImplDataFpuBinary1-Intel.cpp";*/
+            const char *pszDataCpuFile = !fCpuData ? pszBitBucket : g_idxCpuEflFlavour == IEMTARGETCPU_EFL_BEHAVIOR_AMD
+                                       ? "tstIEMAImplDataFpuBinary1-Amd.cpp" : "tstIEMAImplDataFpuBinary1-Intel.cpp";
             PRTSTREAM   pStrmDataCpu   = GenerateOpenWithHdr(pszDataCpuFile, szCpuDesc, pszCpuType);
             if (!pStrmData || !pStrmDataCpu)
                 return RTEXITCODE_FAILURE;
 
-            FpuBinaryR80Generate(pStrmData, cTests);
+            FpuBinaryR80Generate(pStrmData, pStrmDataCpu, cTests);
             FpuBinaryFswR80Generate(pStrmData, cTests);
             FpuBinaryEflR80Generate(pStrmData, cTests);
 
