@@ -1570,7 +1570,8 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b,(PRTUINT128U pu128Dst, PRTUINT128U p
 
 #endif /* defined(IEM_WITHOUT_ASSEMBLY) */
 
-#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
+#if (!defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)) \
+ && !defined(DOXYGEN_RUNNING) /* Doxygen has some groking issues here and ends up mixing up input. Not worth tracking down now. */
 
 /*
  * MUL, IMUL, DIV and IDIV helpers.
@@ -1942,10 +1943,13 @@ EMIT_IDIV(8,16,(uint16_t *puAX, uint8_t uDivisor, uint32_t *pfEFlags),          
 #  endif /* !defined(RT_ARCH_X86) || defined(IEM_WITHOUT_ASSEMBLY) */
 # endif /* !DOXYGEN_RUNNING */
 
+#endif /* (!defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)) && !defined(DOXYGEN_RUNNING) */
+
 
 /*********************************************************************************************************************************
 *   Unary operations.                                                                                                            *
 *********************************************************************************************************************************/
+#if !defined(RT_ARCH_AMD64) || defined(IEM_WITHOUT_ASSEMBLY)
 
 /** @def IEM_EFL_UPDATE_STATUS_BITS_FOR_INC_DEC
  * Updates the status bits (CF, PF, AF, ZF, SF, and OF) for an INC or DEC instruction.
@@ -3250,7 +3254,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r80_from_d80,(PCX86FXSTATE pFpuState, PIEMF
  * @param   iExponentIn Unbiased exponent.
  * @param   fFcw        The FPU control word.
  * @param   fFsw        Prepped FPU status word, i.e. exceptions and C1 clear.
- * @param   pr64Dst     Where to return the output value, if one should be
+ * @param   pr32Dst     Where to return the output value, if one should be
  *                      returned.
  *
  * @note    Tailored as a helper for iemAImpl_fst_r80_to_r32 right now.
